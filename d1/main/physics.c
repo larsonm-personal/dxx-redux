@@ -23,6 +23,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "physics.h"
 #include "key.h"
 #include "game.h"
+#include "player.h"
 #include "collide.h"
 #include "fvi.h"
 #include "newdemo.h"
@@ -30,6 +31,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ai.h"
 #include "wall.h"
 #include "laser.h"
+#include "input_demo_replay.h"
+#include "input_demo_recorder.h"
 
 #include <math.h>
 
@@ -43,6 +46,139 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 //set means behind that side
 
 int floor_levelling=0;
+
+static int input_demo_trace_motion_probe_active(void)
+{
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+}
+
+static unsigned int input_demo_trace_motion_frame_index(void)
+{
+	if (input_demo_replay_is_loaded())
+		return (unsigned int)input_demo_replay_next_frame_index();
+	if (input_demo_recorder_is_active()) {
+		const unsigned int frame_count = (unsigned int)input_demo_recorder_frame_count();
+
+		return frame_count ? frame_count - 1 : 0;
+	}
+	return 0;
+}
+
+static const char *input_demo_trace_motion_mode_name(void)
+{
+	if (input_demo_replay_is_loaded())
+		return "replay";
+	if (input_demo_recorder_is_active())
+		return "record";
+	return "none";
+}
+
+static int input_demo_player_robot_hit_object_probe_active(object *obj, int hit_object)
+{
+	object *other;
+
+	if (!input_demo_trace_motion_probe_active() ||
+		!ConsoleObject ||
+		hit_object < 0 ||
+		hit_object > Highest_object_index)
+		return 0;
+
+	other = &Objects[hit_object];
+	if (obj != ConsoleObject && other != ConsoleObject)
+		return 0;
+
+	if (obj == ConsoleObject)
+		return other->type == OBJ_ROBOT;
+
+	return obj->type == OBJ_ROBOT;
+}
+
+static void input_demo_log_player_robot_hit_object_probe(
+	const char *step,
+	object *moving_obj,
+	int hit_object,
+	const vms_vector *collision_point,
+	const vms_vector *old_velocity,
+	int ignore_count,
+	int will_retry,
+	int ignored_hit)
+{
+	object *other;
+	object *player;
+	object *robot;
+	const int unchanged_velocity = old_velocity &&
+		old_velocity->x == moving_obj->mtype.phys_info.velocity.x &&
+		old_velocity->y == moving_obj->mtype.phys_info.velocity.y &&
+		old_velocity->z == moving_obj->mtype.phys_info.velocity.z;
+
+	if (!input_demo_player_robot_hit_object_probe_active(moving_obj, hit_object))
+		return;
+
+	other = &Objects[hit_object];
+	player = moving_obj == ConsoleObject ? moving_obj : other;
+	robot = moving_obj == ConsoleObject ? other : moving_obj;
+	con_printf(CON_NORMAL,
+		"Input demo physics object contact: mode=%s frame=%u gt=%lld step=%s move_obj=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) flags=0x%x ctype=%d mtype=%d persistent=%d unchanged=%d retry=%d ignored=%d ignore_count=%d old_vel=(%d,%d,%d) player=%d/%d/%d seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) shields=%d flags=0x%x robot=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) shields=%d flags=0x%x ctype=%d mtype=%d cp=(%d,%d,%d)\n",
+		input_demo_trace_motion_mode_name(),
+		input_demo_trace_motion_frame_index(),
+		(long long)GameTime64,
+		step,
+		moving_obj - Objects,
+		moving_obj->type,
+		moving_obj->id,
+		moving_obj->signature,
+		moving_obj->segnum,
+		moving_obj->pos.x,
+		moving_obj->pos.y,
+		moving_obj->pos.z,
+		moving_obj->last_pos.x,
+		moving_obj->last_pos.y,
+		moving_obj->last_pos.z,
+		moving_obj->mtype.phys_info.velocity.x,
+		moving_obj->mtype.phys_info.velocity.y,
+		moving_obj->mtype.phys_info.velocity.z,
+		moving_obj->flags,
+		moving_obj->control_type,
+		moving_obj->movement_type,
+		(moving_obj->mtype.phys_info.flags & PF_PERSISTENT) != 0,
+		unchanged_velocity,
+		will_retry,
+		ignored_hit,
+		ignore_count,
+		old_velocity ? old_velocity->x : 0,
+		old_velocity ? old_velocity->y : 0,
+		old_velocity ? old_velocity->z : 0,
+		player - Objects,
+		player->type,
+		player->id,
+		player->segnum,
+		player->pos.x,
+		player->pos.y,
+		player->pos.z,
+		player->mtype.phys_info.velocity.x,
+		player->mtype.phys_info.velocity.y,
+		player->mtype.phys_info.velocity.z,
+		Players[Player_num].shields,
+		player->flags,
+		robot - Objects,
+		robot->type,
+		robot->id,
+		robot->signature,
+		robot->segnum,
+		robot->pos.x,
+		robot->pos.y,
+		robot->pos.z,
+		robot->mtype.phys_info.velocity.x,
+		robot->mtype.phys_info.velocity.y,
+		robot->mtype.phys_info.velocity.z,
+		robot->shields,
+		robot->flags,
+		robot->control_type,
+		robot->movement_type,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+}
 
 //make sure matrix is orthogonal
 void check_and_fix_matrix(vms_matrix *m)
@@ -807,14 +943,16 @@ void do_physics_sim(object *obj)
 			}
 
 			case HIT_OBJECT:		{
-				vms_vector old_vel;
+				vms_vector old_vel, pos_hit;
+				int ignored_hit = 0;
+				int will_retry = 0;
 
 				// Mark the hit object so that on a retry the fvi code
 				// ignores this object.
 
 				Assert(hit_info.hit_object != -1);
 				//	Calculcate the hit point between the two objects.
-				{	vms_vector	*ppos0, *ppos1, pos_hit;
+				{	vms_vector	*ppos0, *ppos1;
 					fix			size0, size1;
 					ppos0 = &Objects[hit_info.hit_object].pos;
 					ppos1 = &obj->pos;
@@ -827,8 +965,10 @@ void do_physics_sim(object *obj)
 					vm_vec_scale_add(&pos_hit,ppos0,&pos_hit,fixdiv(size0, size0 + size1));
 
 					old_vel = obj->mtype.phys_info.velocity;
+					input_demo_log_player_robot_hit_object_probe("hit_object_pre_collide", obj, hit_info.hit_object, &pos_hit, &old_vel, n_ignore_objs, 0, 0);
 
 					collide_two_objects( obj, &Objects[hit_info.hit_object], &pos_hit);
+					input_demo_log_player_robot_hit_object_probe("hit_object_post_collide", obj, hit_info.hit_object, &pos_hit, &old_vel, n_ignore_objs, 0, 0);
 
 				}
 
@@ -840,8 +980,11 @@ void do_physics_sim(object *obj)
 						//if (Objects[hit_info.hit_object].type == OBJ_POWERUP)
 							ignore_obj_list[n_ignore_objs++] = hit_info.hit_object;
 						try_again = 1;
+						ignored_hit = 1;
+						will_retry = 1;
 					}
 				}
+				input_demo_log_player_robot_hit_object_probe("hit_object_retry_state", obj, hit_info.hit_object, &pos_hit, &old_vel, n_ignore_objs, will_retry, ignored_hit);
 
 				break;
 			}	

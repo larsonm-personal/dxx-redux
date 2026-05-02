@@ -113,7 +113,7 @@ static void input_demo_record_wall_impact_event(object *weapon, int hitwall, int
 	snprintf(json, sizeof(json),
 		"{\"kind\":\"impact\",\"target\":\"wall\",\"gt\":%lld,\"weapon_obj\":%d,\"weapon_id\":%d,\"parent\":%d,\"seg\":%d,\"hitwall\":%d,\"blew_up\":%s,\"escort\":%s}",
 		(long long)GameTime64,
-		weapon - Objects,
+		(int)(weapon - Objects),
 		weapon->id,
 		weapon->ctype.laser_info.parent_num,
 		weapon->segnum,
@@ -154,10 +154,10 @@ static void input_demo_record_robot_impact_event(object *weapon, object *robot)
 	snprintf(json, sizeof(json),
 		"{\"kind\":\"impact\",\"target\":\"robot\",\"gt\":%lld,\"weapon_obj\":%d,\"weapon_id\":%d,\"parent\":%d,\"robot_obj\":%d,\"robot_id\":%d,\"seg\":%d}",
 		(long long)GameTime64,
-		weapon - Objects,
+		(int)(weapon - Objects),
 		weapon->id,
 		weapon->ctype.laser_info.parent_num,
-		robot - Objects,
+		(int)(robot - Objects),
 		robot->id,
 		weapon->segnum);
 	input_demo_record_frame_event_json(json);
@@ -232,26 +232,28 @@ int check_collision_delayfunc_exec()
 		return "none";
 	}
 
-	static int input_demo_trace_player_weapon_bump_active(object *obj0, object *obj1)
+		static int input_demo_trace_player_bump_active(object *obj0, object *obj1)
 	{
 		const object *player = NULL;
-		const object *weapon = NULL;
+			const object *other = NULL;
 
 		if (!input_demo_trace_collision_pose_active())
 			return 0;
-		if (obj0 == ConsoleObject && obj0->type == OBJ_PLAYER && obj1 && obj1->type == OBJ_WEAPON) {
+			if (obj0 == ConsoleObject && obj0->type == OBJ_PLAYER &&
+				obj1 && (obj1->type == OBJ_WEAPON || obj1->type == OBJ_ROBOT)) {
 			player = obj0;
-			weapon = obj1;
-		} else if (obj1 == ConsoleObject && obj1->type == OBJ_PLAYER && obj0 && obj0->type == OBJ_WEAPON) {
+				other = obj1;
+			} else if (obj1 == ConsoleObject && obj1->type == OBJ_PLAYER &&
+				obj0 && (obj0->type == OBJ_WEAPON || obj0->type == OBJ_ROBOT)) {
 			player = obj1;
-			weapon = obj0;
+				other = obj0;
 		}
-		if (!player || !weapon)
+			if (!player || !other)
 			return 0;
 		return 1;
 	}
 
-	static void input_demo_log_player_weapon_bump_probe(const char *step,
+		static void input_demo_log_player_bump_probe(const char *step,
 		object *obj0,
 		object *obj1,
 		const vms_vector *relative_velocity,
@@ -263,7 +265,7 @@ int check_collision_delayfunc_exec()
 		vms_vector fix_force = {0, 0, 0};
 		vms_vector force_delta = {0, 0, 0};
 
-		if (!input_demo_trace_player_weapon_bump_active(obj0, obj1))
+		if (!input_demo_trace_player_bump_active(obj0, obj1))
 			return;
 		if (relative_velocity && scale_den) {
 			fix_force.x = fixmuldiv(relative_velocity->x, scale_num, scale_den);
@@ -277,7 +279,7 @@ int check_collision_delayfunc_exec()
 		}
 
 		con_printf(CON_NORMAL,
-			"Input demo bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d obj1=%d/%d/%d damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
+			"Input demo bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d seg=%d pos=(%d,%d,%d) obj1=%d/%d/%d seg=%d pos=(%d,%d,%d) damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
 			input_demo_trace_collision_mode_name(),
 			input_demo_trace_collision_frame_index(),
 			(long long)GameTime64,
@@ -285,9 +287,17 @@ int check_collision_delayfunc_exec()
 			obj0 ? (int)(obj0 - Objects) : -1,
 			obj0 ? obj0->type : -1,
 			obj0 ? obj0->id : -1,
+			obj0 ? obj0->segnum : -1,
+			obj0 ? obj0->pos.x : 0,
+			obj0 ? obj0->pos.y : 0,
+			obj0 ? obj0->pos.z : 0,
 			obj1 ? (int)(obj1 - Objects) : -1,
 			obj1 ? obj1->type : -1,
 			obj1 ? obj1->id : -1,
+			obj1 ? obj1->segnum : -1,
+			obj1 ? obj1->pos.x : 0,
+			obj1 ? obj1->pos.y : 0,
+			obj1 ? obj1->pos.z : 0,
 			damage_flag,
 			relative_velocity ? relative_velocity->x : 0,
 			relative_velocity ? relative_velocity->y : 0,
@@ -311,6 +321,58 @@ int check_collision_delayfunc_exec()
 			obj1 ? obj1->mtype.phys_info.velocity.z : 0,
 			obj0 ? obj0->mtype.phys_info.mass : 0,
 			obj1 ? obj1->mtype.phys_info.mass : 0);
+	}
+
+	static void input_demo_log_player_robot_contact_probe(const char *step,
+		object *playerobj,
+		object *robot,
+		const vms_vector *collision_point,
+		fix damage)
+	{
+		if (!input_demo_trace_collision_pose_active() ||
+			!playerobj ||
+			playerobj != ConsoleObject ||
+			playerobj->type != OBJ_PLAYER ||
+			!robot ||
+			robot->type != OBJ_ROBOT)
+			return;
+
+		con_printf(CON_NORMAL,
+			"Input demo player robot contact: mode=%s frame=%u gt=%lld step=%s player=%d/%d/%d seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) shields=%d robot=%d/%d/%d seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) flags=0x%x companion=%d thief=%d kamikaze=%d drain=%d cp=(%d,%d,%d) damage=%d\n",
+			input_demo_trace_collision_mode_name(),
+			input_demo_trace_collision_frame_index(),
+			(long long)GameTime64,
+			step,
+			(int)(playerobj - Objects),
+			playerobj->type,
+			playerobj->id,
+			playerobj->segnum,
+			playerobj->pos.x,
+			playerobj->pos.y,
+			playerobj->pos.z,
+			playerobj->mtype.phys_info.velocity.x,
+			playerobj->mtype.phys_info.velocity.y,
+			playerobj->mtype.phys_info.velocity.z,
+			Players[playerobj->id].shields,
+			(int)(robot - Objects),
+			robot->type,
+			robot->id,
+			robot->segnum,
+			robot->pos.x,
+			robot->pos.y,
+			robot->pos.z,
+			robot->mtype.phys_info.velocity.x,
+			robot->mtype.phys_info.velocity.y,
+			robot->mtype.phys_info.velocity.z,
+			robot->flags,
+			Robot_info[robot->id].companion,
+			Robot_info[robot->id].thief,
+			Robot_info[robot->id].kamikaze,
+			Robot_info[robot->id].energy_drain,
+			collision_point ? collision_point->x : 0,
+			collision_point ? collision_point->y : 0,
+			collision_point ? collision_point->z : 0,
+			damage);
 	}
 
 	static object *input_demo_collision_pose_player_from_weapon(object *weapon, int *parent_num_out, int *parent_sig_match_out)
@@ -591,9 +653,9 @@ void bump_two_objects(object *obj0,object *obj1,int damage_flag)
 	if (t) {
 		Assert(t->movement_type == MT_PHYSICS);
 		vm_vec_copy_scale(&force,&t->mtype.phys_info.velocity,-t->mtype.phys_info.mass);
-		input_demo_log_player_weapon_bump_probe("nonphysics_pre", obj0, obj1, &force, &force, -t->mtype.phys_info.mass, F1_0, damage_flag);
+		input_demo_log_player_bump_probe("nonphysics_pre", obj0, obj1, &force, &force, -t->mtype.phys_info.mass, F1_0, damage_flag);
 		phys_apply_force(t,&force);
-		input_demo_log_player_weapon_bump_probe("nonphysics_post", obj0, obj1, &force, &force, -t->mtype.phys_info.mass, F1_0, damage_flag);
+		input_demo_log_player_bump_probe("nonphysics_post", obj0, obj1, &force, &force, -t->mtype.phys_info.mass, F1_0, damage_flag);
 		return;
 	}
 
@@ -602,13 +664,13 @@ void bump_two_objects(object *obj0,object *obj1,int damage_flag)
 	scale_num = 2*fixmul(obj0->mtype.phys_info.mass,obj1->mtype.phys_info.mass);
 	scale_den = obj0->mtype.phys_info.mass+obj1->mtype.phys_info.mass;
 	vm_vec_scale2(&force,scale_num,scale_den);
-	input_demo_log_player_weapon_bump_probe("pre", obj0, obj1, &relative_velocity, &force, scale_num, scale_den, damage_flag);
+	input_demo_log_player_bump_probe("pre", obj0, obj1, &relative_velocity, &force, scale_num, scale_den, damage_flag);
 
 	bump_this_object(obj1, obj0, &force, damage_flag);
 	vm_vec_negate(&force);
 	bump_this_object(obj0, obj1, &force, damage_flag);
 	vm_vec_negate(&force);
-	input_demo_log_player_weapon_bump_probe("post", obj0, obj1, &relative_velocity, &force, scale_num, scale_den, damage_flag);
+	input_demo_log_player_bump_probe("post", obj0, obj1, &relative_velocity, &force, scale_num, scale_den, damage_flag);
 
 }
 
@@ -1321,19 +1383,25 @@ fix64 Last_thief_hit_time;
 void collide_robot_and_player( object * robot, object * playerobj, vms_vector *collision_point )
 {
 	int	steal_attempt = 0;
+	input_demo_log_player_robot_contact_probe("robot_player_entry", playerobj, robot, collision_point, 0);
 
 	if (object_is_observer(playerobj)) {
 		return;
 	}
 
-	if (robot->flags&OF_EXPLODING)
+	if (robot->flags&OF_EXPLODING) {
+		input_demo_log_player_robot_contact_probe("robot_player_skip_exploding", playerobj, robot, collision_point, 0);
 		return;
+	}
 
 	if (playerobj->id == Player_num) {
-		if (Robot_info[robot->id].companion)	//	Player and companion don't collide.
+		if (Robot_info[robot->id].companion) {	//	Player and companion don't collide.
+			input_demo_log_player_robot_contact_probe("robot_player_skip_companion", playerobj, robot, collision_point, 0);
 			return;
+		}
 		if (Robot_info[robot->id].kamikaze) {
 			apply_damage_to_robot(robot, robot->shields+1, playerobj-Objects);
+			input_demo_log_player_robot_contact_probe("robot_player_kamikaze", playerobj, robot, collision_point, 0);
 			if (playerobj == ConsoleObject) {
 				add_points_to_score(Robot_info[robot->id].score_value);
 				// android port: coop QoL -- track local player robot kill
@@ -1346,9 +1414,12 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 				Last_thief_hit_time = GameTime64;
 				attempt_to_steal_item(robot, playerobj->id);
 				steal_attempt = 1;
-			} else if (GameTime64 - Last_thief_hit_time < F1_0*2)
+				input_demo_log_player_robot_contact_probe("robot_player_thief_attack", playerobj, robot, collision_point, 0);
+			} else if (GameTime64 - Last_thief_hit_time < F1_0*2) {
+				input_demo_log_player_robot_contact_probe("robot_player_skip_thief_window", playerobj, robot, collision_point, 0);
 				return;		//	ZOUNDS!  BRILLIANT!  Thief not collide with player if not stealing!
 								// NO!  VERY DUMB!  makes thief look very stupid if player hits him while cloaked! -AP
+			}
 			else
 				Last_thief_hit_time = GameTime64;
 		}
@@ -1369,6 +1440,7 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 #ifdef NETWORK
 	else
 	{
+		input_demo_log_player_robot_contact_probe("robot_player_network_handoff", playerobj, robot, collision_point, 0);
 		multi_robot_request_change(robot, playerobj->id);
 		return; // only controlling player should make damage otherwise we might juggle robot back and forth, killing it instantly
 	}
@@ -1388,7 +1460,9 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 			object_create_explosion( collision_seg, collision_point, Weapon_info[0].impact_size, Weapon_info[0].wall_hit_vclip );
 	}
 
+	input_demo_log_player_robot_contact_probe("robot_player_before_bump", playerobj, robot, collision_point, 0);
 	bump_two_objects(robot, playerobj, 1);
+	input_demo_log_player_robot_contact_probe("robot_player_after_bump", playerobj, robot, collision_point, 0);
 	return;
 }
 
@@ -2995,9 +3069,11 @@ void collide_player_and_nasty_robot( object * playerobj, object * robot, vms_vec
 
 	object_create_explosion( playerobj->segnum, collision_point, i2f(10)/2, VCLIP_PLAYER_HIT );
 
-	bump_two_objects(playerobj, robot, 0);	//no damage from bump
+		fix damage = F1_0*(Difficulty_level+1);
+		input_demo_log_player_robot_contact_probe("before_bump", playerobj, robot, collision_point, damage);
 
-	fix damage = F1_0*(Difficulty_level+1); 
+	bump_two_objects(playerobj, robot, 0);	//no damage from bump
+		input_demo_log_player_robot_contact_probe("after_bump", playerobj, robot, collision_point, damage);
 
 	#ifdef NETWORK
 		if (Game_mode & GM_MULTI)
@@ -3008,6 +3084,7 @@ void collide_player_and_nasty_robot( object * playerobj, object * robot, vms_vec
 		}
 	#endif
 	apply_damage_to_player( playerobj, robot, damage, 0);
+	input_demo_log_player_robot_contact_probe("after_damage", playerobj, robot, collision_point, damage);
 
 	return;
 }

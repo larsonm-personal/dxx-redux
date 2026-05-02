@@ -102,6 +102,8 @@ static const char *input_demo_weapon_trace_mode_name(void)
 	return "none";
 }
 
+static int input_demo_replay_weapon_creation_probe_active(void);
+
 static int input_demo_weapon_create_probe_active(object *obj)
 {
 	if (!obj || !input_demo_weapon_trace_active())
@@ -253,7 +255,7 @@ static void input_demo_record_weapon_create_event(object *obj)
 	snprintf(json, sizeof(json),
 		"{\"kind\":\"weapon_create\",\"gt\":%lld,\"obj\":%d,\"id\":%d,\"sig\":%d,\"track\":%d,\"seg\":%d,\"life\":%d,\"shields\":%d,\"flags\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"ctime\":%lld,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"x\":%d,\"y\":%d,\"z\":%d}",
 		(long long)GameTime64,
-		obj - Objects,
+		(int)(obj - Objects),
 		obj->id,
 		obj->signature,
 		tracked_index,
@@ -283,7 +285,7 @@ static void input_demo_record_player_shot_event(object *obj, int laser_type, int
 	snprintf(json, sizeof(json),
 		"{\"kind\":\"player_shot\",\"gt\":%lld,\"shooter_obj\":%d,\"laser_type\":%d,\"gun\":%d,\"spreadr\":%d,\"spreadu\":%d,\"delay\":%d,\"harmless\":%s,\"sound\":%s}",
 		(long long)GameTime64,
-		obj - Objects,
+		(int)(obj - Objects),
 		laser_type,
 		gun_num,
 		spreadr,
