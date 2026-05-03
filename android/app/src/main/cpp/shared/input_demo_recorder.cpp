@@ -55,6 +55,7 @@ struct input_demo_recorder_session {
 	std::vector<unsigned char> checkpoint_data;
 	int64_t checkpoint_start_gt;
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
+	bool record_per_frame_state;
 	std::vector<input_demo_control_frame> control_frames;
 	std::vector<input_demo_rng_frame> rng_frames;
 	std::vector<uint8_t> has_state_frames;
@@ -62,7 +63,7 @@ struct input_demo_recorder_session {
 	std::vector<std::vector<std::string>> frame_events;
 
 	input_demo_recorder_session()
-	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0)
+	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0), record_per_frame_state(false)
 	{
 		input_demo_player_cfg_clear(&player_cfg);
 		input_demo_checkpoint_escort_state_clear(&checkpoint_escort_state);
@@ -321,6 +322,7 @@ void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings)
 	settings->has_checkpoint_start_gt = 0;
 	settings->checkpoint_start_gt = 0;
 	input_demo_checkpoint_escort_state_clear(&settings->checkpoint_escort_state);
+	settings->record_per_frame_state = 0;
 }
 
 int input_demo_recorder_is_active(void)
@@ -375,6 +377,7 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 	if (settings->has_player_cfg)
 		g_input_demo_recorder_session.player_cfg = settings->player_cfg;
 	g_input_demo_recorder_session.has_checkpoint = have_checkpoint ? true : false;
+	g_input_demo_recorder_session.record_per_frame_state = settings->record_per_frame_state ? true : false;
 	if (have_checkpoint) {
 		g_input_demo_recorder_session.checkpoint_save_name = settings->checkpoint_save_name;
 		g_input_demo_recorder_session.checkpoint_data.assign(settings->checkpoint_data,
@@ -420,12 +423,12 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 	rng_frame.has_call_count = has_rng_call_count ? 1 : 0;
 	rng_frame.call_count = rng_call_count;
 	input_demo_result_clear(&snapshot);
-	if (frame_state)
+	if (frame_state && g_input_demo_recorder_session.record_per_frame_state)
 		snapshot = *frame_state;
 
 	g_input_demo_recorder_session.control_frames.push_back(control_frame);
 	g_input_demo_recorder_session.rng_frames.push_back(rng_frame);
-	g_input_demo_recorder_session.has_state_frames.push_back(frame_state ? 1 : 0);
+	g_input_demo_recorder_session.has_state_frames.push_back((frame_state && g_input_demo_recorder_session.record_per_frame_state) ? 1 : 0);
 	g_input_demo_recorder_session.state_frames.push_back(snapshot);
 	g_input_demo_recorder_session.frame_events.push_back(std::vector<std::string>());
 	return 1;
@@ -439,6 +442,8 @@ int input_demo_recorder_append_frame_event_json(const char *json_text,
 
 	if (!g_input_demo_recorder_session.active)
 		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
+	if (!g_input_demo_recorder_session.record_per_frame_state)
+		return 1;
 	if (g_input_demo_recorder_session.frame_events.empty())
 		return input_demo_recorder_copy_error("input demo recorder has no current frame", error, error_size);
 	if (!input_demo_recorder_canonicalize_event_json(json_text, &canonical_json, &shared_error))

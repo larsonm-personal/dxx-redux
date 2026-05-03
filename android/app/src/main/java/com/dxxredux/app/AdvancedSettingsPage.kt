@@ -590,6 +590,9 @@ private fun RecordedInputDemosSection(
     var installTarget by remember { mutableStateOf<StagedInputDemo?>(null) }
     var installName by remember { mutableStateOf("") }
 
+    val sharedPrefs = remember { ctx.getSharedPreferences("launcher_prefs", android.content.Context.MODE_PRIVATE) }
+    var recordPerFrameState by remember { mutableStateOf(sharedPrefs.getBoolean("demo_record_per_frame_state", false)) }
+
     fun refresh() {
         demos = InputDemoManager.listStagedDemos(filesDir)
     }
@@ -601,6 +604,29 @@ private fun RecordedInputDemosSection(
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Record per-frame state", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Text(
+                "Include detailed state snapshots and events in demos (larger files)",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Checkbox(
+            checked = recordPerFrameState,
+            onCheckedChange = { newValue ->
+                recordPerFrameState = newValue
+                sharedPrefs.edit().putBoolean("demo_record_per_frame_state", newValue).apply()
+            },
+            modifier = Modifier.size(24.dp),
+        )
+    }
 
     if (demos.isEmpty()) {
         Spacer(modifier = Modifier.height(4.dp))
