@@ -53,6 +53,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "maths.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
+#include "replay_debug_overlay.h"
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -839,6 +840,7 @@ void game_render_frame_mono(int flip)
 #ifdef ANDROID
 	g_debug_tex_label_count = 0;
 #endif
+	g_replay_robot_label_count = 0;
 
 	gr_set_current_canvas(&Screen_3d_window);
 	
@@ -981,6 +983,20 @@ void game_render_frame_mono(int flip)
 		g_font_rgb_override[0] = -1.f;
 	}
 #endif
+
+	/* android port: robot number labels and frame counter during input demo replay */
+	if (input_demo_replay_is_loaded()) {
+		int i;
+		gr_set_current_canvas(NULL);
+		gr_set_curfont(GAME_FONT);
+		gr_set_fontcolor(BM_XRGB(0, 63, 0), -1);
+		for (i = 0; i < g_replay_robot_label_count; i++) {
+			struct replay_robot_label *lbl = &g_replay_robot_labels[i];
+			gr_printf(lbl->sx, lbl->sy, "%d", lbl->objnum);
+		}
+		gr_set_fontcolor(BM_XRGB(63, 63, 0), -1);
+		gr_printf(FSPACX(2), FSPACY(2), "F:%u", (unsigned int)input_demo_replay_next_frame_index());
+	}
 }
 
 void toggle_cockpit()

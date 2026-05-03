@@ -1233,6 +1233,7 @@ int	Buddy_objnum;
 fix64	Last_come_back_message_time = 0;
 
 fix64	Buddy_last_missile_time;
+extern fix64	Re_init_thief_time;
 
 void escort_get_input_demo_checkpoint_state(input_demo_checkpoint_escort_state *escort_state)
 {

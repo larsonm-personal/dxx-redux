@@ -14,6 +14,8 @@ param(
     [string]$Pilot,
     [switch]$NoRender,
     [switch]$PreferHeadlessConsole,
+    [ValidateSet('auto', 'visual', 'fast', 'windowed-no-present', 'headless-console')]
+    [string]$Runner = 'auto',
     [switch]$ReuseSandbox,
     [switch]$KeepSandbox,
     [switch]$ListOnly,
@@ -545,17 +547,15 @@ function New-LaunchSandbox {
     }
 }
 
-function Test-UseHeadlessConsoleRunner {
+function Test-CanUseHeadlessConsoleRunner {
     param(
         [string]$ResolvedGame,
         [hashtable]$Header,
         [hashtable]$LaunchMode,
-        [string]$Pilot,
-        [switch]$NoRender,
-        [switch]$PreferHeadlessConsole
+        [string]$Pilot
     )
 
-    if (-not $PreferHeadlessConsole -or $NoRender -or $Pilot) {
+    if ($Pilot) {
         return $false
     }
     if ($ResolvedGame -ne 'd2') {
@@ -570,6 +570,112 @@ function Test-UseHeadlessConsoleRunner {
 
     $headlessExe = Get-HeadlessConsoleExe -GameName $ResolvedGame
     return $headlessExe -and (Test-Path -LiteralPath $headlessExe)
+}
+
+function Resolve-ReplayRunnerSelection {
+    param(
+        [string]$RequestedRunner,
+        [string]$ResolvedGame,
+        [hashtable]$Header,
+        [hashtable]$LaunchMode,
+        [string]$Pilot,
+        [switch]$NoRender,
+        [switch]$PreferHeadlessConsole
+    )
+
+    $headlessAvailable = Test-CanUseHeadlessConsoleRunner -ResolvedGame $ResolvedGame -Header $Header -LaunchMode $LaunchMode -Pilot $Pilot
+
+    switch ($RequestedRunner) {
+        'visual' {
+            if ($NoRender) {
+                throw '-Runner visual cannot be combined with -NoRender'
+            }
+            if ($PreferHeadlessConsole) {
+                throw '-Runner visual cannot be combined with -PreferHeadlessConsole'
+            }
+            return @{
+                UseHeadlessConsole = $false
+                UseNoRender = $false
+                Name = 'visual-windowed'
+                Description = 'full game binary with normal window, event, and render path'
+                Selection = 'explicit'
+            }
+        }
+        'windowed-no-present' {
+            if ($PreferHeadlessConsole) {
+                throw '-Runner windowed-no-present cannot be combined with -PreferHeadlessConsole'
+            }
+            return @{
+                UseHeadlessConsole = $false
+                UseNoRender = $true
+                Name = 'fast-windowed-no-present'
+                Description = 'full game binary with draw/present bypassed via -inputdemo-norender'
+                Selection = 'explicit'
+            }
+        }
+        'headless-console' {
+            if ($NoRender) {
+                throw '-Runner headless-console cannot be combined with -NoRender'
+            }
+            if (-not $headlessAvailable) {
+                throw '-Runner headless-console is unavailable for this replay (requires d2 accelerated checkpoint replay with headless build present)'
+            }
+            return @{
+                UseHeadlessConsole = $true
+                UseNoRender = $false
+                Name = 'fast-headless-console'
+                Description = 'headless replay binary with dedicated console main'
+                Selection = 'explicit'
+            }
+        }
+        'fast' {
+            if ($headlessAvailable -and -not $NoRender) {
+                return @{
+                    UseHeadlessConsole = $true
+                    UseNoRender = $false
+                    Name = 'fast-headless-console'
+                    Description = 'headless replay binary with dedicated console main'
+                    Selection = 'explicit'
+                }
+            }
+            return @{
+                UseHeadlessConsole = $false
+                UseNoRender = $true
+                Name = 'fast-windowed-no-present'
+                Description = 'full game binary with draw/present bypassed via -inputdemo-norender'
+                Selection = 'explicit'
+            }
+        }
+        'auto' {
+            if ($NoRender) {
+                return @{
+                    UseHeadlessConsole = $false
+                    UseNoRender = $true
+                    Name = 'fast-windowed-no-present'
+                    Description = 'legacy -NoRender selection'
+                    Selection = 'legacy'
+                }
+            }
+            if ($PreferHeadlessConsole -and $headlessAvailable) {
+                return @{
+                    UseHeadlessConsole = $true
+                    UseNoRender = $false
+                    Name = 'fast-headless-console'
+                    Description = 'legacy -PreferHeadlessConsole selection'
+                    Selection = 'legacy'
+                }
+            }
+            return @{
+                UseHeadlessConsole = $false
+                UseNoRender = $false
+                Name = 'visual-windowed'
+                Description = 'default visual replay path using the full game binary'
+                Selection = 'auto-default'
+            }
+        }
+    }
+
+    throw "Unsupported runner selection: $RequestedRunner"
 }
 
 function Get-HeadlessConsoleLaunchArguments {
@@ -1061,7 +1167,9 @@ if ($RngLogPath -or $TraceRng -or $CompareRngTrace) {
         New-Item -ItemType Directory -Path $rngLogDirectory -Force | Out-Null
     }
 }
-$useHeadlessConsole = Test-UseHeadlessConsoleRunner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole
+$runnerSelection = Resolve-ReplayRunnerSelection -RequestedRunner $Runner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole
+$useHeadlessConsole = $runnerSelection.UseHeadlessConsole
+$effectiveNoRender = $runnerSelection.UseNoRender
 $headlessQuietConsole = $useHeadlessConsole -and ($HeadlessConsoleOutput -eq 1)
 $headlessConsoleExe = if ($useHeadlessConsole) { Get-HeadlessConsoleExe -GameName $resolvedGame } else { $null }
 if ($useHeadlessConsole) {
@@ -1104,10 +1212,10 @@ $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -
 $launchArgs = if ($useHeadlessConsole) {
     Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath -HeadlessConsoleOutput $HeadlessConsoleOutput
 } else {
-    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$NoRender -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
+    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
 }
 $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
-$runnerName = if ($useHeadlessConsole) { 'headless-console' } elseif ($NoRender) { 'windowed-no-present' } else { 'windowed' }
+$runnerName = $runnerSelection.Name
 $quotedArgs = Get-QuotedArgumentString -Arguments $launchArgs
 
 if (-not (Test-Path -LiteralPath $launchExecutable)) {
@@ -1129,12 +1237,14 @@ if (-not $headlessQuietConsole) {
     Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
     Write-Host "Game: $resolvedGame"
     Write-Host "Runner: $runnerName"
+    Write-Host "Runner selection: $($runnerSelection.Selection)"
+    Write-Host "Replay path: $($runnerSelection.Description)"
     Write-Host "Mode: $($launchMode.Name)"
     Write-Host "Render profile: $($renderProfileSelection.Name) ($($renderProfileSelection.Description))"
     if ($useHeadlessConsole -and $renderProfileSelection.ExtraArgs.Count -gt 0) {
         Write-Host 'Render profile args: ignored by headless runner'
     }
-    if ($NoRender -and -not $useHeadlessConsole) {
+    if ($effectiveNoRender -and -not $useHeadlessConsole) {
         Write-Host 'Render: no-present'
     }
     Write-Host "Data: $(Get-RelativeRepoPath -Path $resolvedDataDir)"

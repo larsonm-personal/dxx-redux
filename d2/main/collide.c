@@ -73,6 +73,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
+#include "input_demo_debug_logging.h"
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -555,10 +556,11 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 		int	volume;
 		volume = (hitspeed-(WALL_DAMAGE_SCALE*WALL_DAMAGE_THRESHOLD)) / WALL_LOUDNESS_SCALE ;
 
-		if (input_demo_replay_is_loaded())
+		if (input_demo_trace_collision_pose_active())
 			con_printf(CON_NORMAL,
-				"Input demo replay impact probe: frame=%u kind=player_wall player_obj=%d seg=%d hitwall=%d hitspeed=%d damage=%d force=%d\n",
-				(unsigned int)input_demo_replay_next_frame_index(),
+				"Input demo impact probe: mode=%s frame=%u kind=player_wall player_obj=%d seg=%d hitwall=%d hitspeed=%d damage=%d force=%d\n",
+				input_demo_trace_collision_mode_name(),
+				input_demo_trace_collision_frame_index(),
 				playerobj - Objects,
 				hitseg,
 				hitwall,
@@ -566,6 +568,7 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 				damage,
 				ForceFieldHit);
 
+		input_demo_set_awareness_source("collide_player_wall", playerobj - Objects, hitseg);
 		create_awareness_event(playerobj, PA_WEAPON_WALL_COLLISION);
 
 		if ( volume > F1_0 )
@@ -1054,10 +1057,11 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 
 		if (!(weapon->flags & OF_SILENT) && (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)) {
 			input_demo_record_wall_impact_event(weapon, hitwall, blew_up, robot_escort);
-			if (input_demo_replay_is_loaded())
+			if (input_demo_trace_collision_pose_active())
 				con_printf(CON_NORMAL,
-					"Input demo replay impact probe: frame=%u kind=wall weapon_obj=%d weapon_id=%d parent=%d seg=%d hitwall=%d blew_up=%d escort=%d\n",
-					(unsigned int)input_demo_replay_next_frame_index(),
+					"Input demo impact probe: mode=%s frame=%u kind=wall weapon_obj=%d weapon_id=%d parent=%d seg=%d hitwall=%d blew_up=%d escort=%d\n",
+					input_demo_trace_collision_mode_name(),
+					input_demo_trace_collision_frame_index(),
 					weapon - Objects,
 					weapon->id,
 					weapon->ctype.laser_info.parent_num,
@@ -1065,6 +1069,7 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 					hitwall,
 					blew_up,
 					robot_escort);
+			input_demo_set_awareness_source("collide_weapon_wall", weapon - Objects, hitseg);
 			create_awareness_event(weapon, PA_WEAPON_WALL_COLLISION);			// object "weapon" can attract attention to player
 		}
 
@@ -1238,15 +1243,17 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 				Last_thief_hit_time = GameTime64;
 		}
 
-		if (input_demo_replay_is_loaded())
+		if (input_demo_trace_collision_pose_active())
 			con_printf(CON_NORMAL,
-				"Input demo replay impact probe: frame=%u kind=player_robot player_obj=%d robot_obj=%d robot_id=%d seg=%d\n",
-				(unsigned int)input_demo_replay_next_frame_index(),
+				"Input demo impact probe: mode=%s frame=%u kind=player_robot player_obj=%d robot_obj=%d robot_id=%d seg=%d\n",
+				input_demo_trace_collision_mode_name(),
+				input_demo_trace_collision_frame_index(),
 				playerobj - Objects,
 				robot - Objects,
 				robot->id,
 				playerobj->segnum);
 
+		input_demo_set_awareness_source("collide_player_robot", playerobj - Objects, robot - Objects);
 		create_awareness_event(playerobj, PA_PLAYER_COLLISION);			// object robot can attract attention to player
 		do_ai_robot_hit_attack(robot, playerobj, collision_point);
 		do_ai_robot_hit(robot, PA_WEAPON_ROBOT_COLLISION);
@@ -1969,16 +1976,18 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 
 		if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) {
 			input_demo_record_robot_impact_event(weapon, robot);
-			if (input_demo_replay_is_loaded())
+			if (input_demo_trace_collision_pose_active())
 				con_printf(CON_NORMAL,
-					"Input demo replay impact probe: frame=%u kind=robot weapon_obj=%d weapon_id=%d parent=%d robot_obj=%d robot_id=%d seg=%d\n",
-					(unsigned int)input_demo_replay_next_frame_index(),
+					"Input demo impact probe: mode=%s frame=%u kind=robot weapon_obj=%d weapon_id=%d parent=%d robot_obj=%d robot_id=%d seg=%d\n",
+					input_demo_trace_collision_mode_name(),
+					input_demo_trace_collision_frame_index(),
 					weapon - Objects,
 					weapon->id,
 					weapon->ctype.laser_info.parent_num,
 					robot - Objects,
 					robot->id,
 					weapon->segnum);
+			input_demo_set_awareness_source("collide_weapon_robot", weapon - Objects, robot - Objects);
 			create_awareness_event(weapon, PA_WEAPON_ROBOT_COLLISION);			// object "weapon" can attract attention to player
 			do_ai_robot_hit(robot, PA_WEAPON_ROBOT_COLLISION);
 		}

@@ -1128,6 +1128,7 @@ player_led: ;
 	if (input_demo_trace_robot_fire_active(obj))
 		input_demo_log_robot_fire_state("robot_fire before_awareness", obj);
 
+	input_demo_set_awareness_source("ai2_robot_fire", obj - Objects, weapon_type);
 	create_awareness_event(obj, PA_NEARBY_ROBOT_FIRED);
 
 	if (input_demo_trace_robot_fire_active(obj))

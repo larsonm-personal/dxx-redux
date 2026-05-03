@@ -1599,6 +1599,7 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	}
 	input_demo_record_player_shot_event(obj, laser_type, gun_num, spreadr, spreadu, delay_time, make_sound, harmless);
 
+	input_demo_set_awareness_source("laser_player_fire", obj - Objects, laser_type);
 	create_awareness_event(obj, PA_WEAPON_WALL_COLLISION);
 
 	// Find the initial position of the laser

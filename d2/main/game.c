@@ -274,9 +274,18 @@ static void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *dia
 	}
 }
 
+#define INPUT_DEMO_RESULT_KILLS_MODE_NONE   0
+#define INPUT_DEMO_RESULT_KILLS_MODE_REPLAY 1
+#define INPUT_DEMO_RESULT_KILLS_MODE_RECORD 2
+
+static int input_demo_result_kills_mode = 0;
+static int input_demo_result_kills_baseline = 0;
+static int input_demo_result_kills_baseline_valid = 0;
+
 void input_demo_capture_current_result(input_demo_result *result)
 {
 	player *current_player = &Players[Player_num];
+	int robots_killed = 0;
 	int i;
 
 	input_demo_result_clear(result);
@@ -323,7 +332,11 @@ void input_demo_capture_current_result(input_demo_result *result)
 
 	result->level_summary.present = 1;
 	result->level_summary.robots_alive = input_demo_count_live_objects_of_type(OBJ_ROBOT);
-	result->level_summary.robots_killed = current_player->num_robots_level;
+	if (input_demo_result_kills_baseline_valid)
+		robots_killed = current_player->num_kills_level - input_demo_result_kills_baseline;
+	if (robots_killed < 0)
+		robots_killed = 0;
+	result->level_summary.robots_killed = robots_killed;
 	result->level_summary.hostages_remaining = input_demo_count_live_objects_of_type(OBJ_HOSTAGE);
 	result->level_summary.powerups_remaining = input_demo_count_live_objects_of_type(OBJ_POWERUP);
 	result->level_summary.control_center_destroyed = Control_center_destroyed ? 1 : 0;
@@ -332,6 +345,29 @@ void input_demo_capture_current_result(input_demo_result *result)
 
 static int input_demo_replay_logged_state_mismatch = 0;
 static int input_demo_replay_logged_state_trace_error = 0;
+
+static void input_demo_update_result_kills_baseline(void)
+{
+	int mode = INPUT_DEMO_RESULT_KILLS_MODE_NONE;
+
+	if (input_demo_replay_is_loaded())
+		mode = INPUT_DEMO_RESULT_KILLS_MODE_REPLAY;
+	else if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active())
+		mode = INPUT_DEMO_RESULT_KILLS_MODE_RECORD;
+
+	if (mode != input_demo_result_kills_mode) {
+		input_demo_result_kills_mode = mode;
+		input_demo_result_kills_baseline_valid = 0;
+	}
+
+	if (mode == INPUT_DEMO_RESULT_KILLS_MODE_NONE)
+		return;
+
+	if (!input_demo_result_kills_baseline_valid) {
+		input_demo_result_kills_baseline = Players[Player_num].num_kills_level;
+		input_demo_result_kills_baseline_valid = 1;
+	}
+}
 
 
 
@@ -548,6 +584,7 @@ int input_demo_prepare_replay_frame(void)
 
 	if (!input_demo_replay_is_loaded())
 		return 0;
+	input_demo_update_result_kills_baseline();
 	if (input_demo_replay_is_finished()) {
 		input_demo_stop_replay(1);
 		return 0;
@@ -1945,6 +1982,8 @@ void GameProcessFrame(void)
 	if (Newdemo_state != ND_STATE_PLAYBACK)
 		do_controlcen_dead_frame();
 
+	input_demo_update_result_kills_baseline();
+
 	process_super_mines_frame();
 	do_seismic_stuff();
 	do_ambient_sounds();
@@ -2385,6 +2424,7 @@ void FireLaser()
 							Auto_fire_fusion_cannon_time > 0,
 							Fusion_charge,
 							(long long)Fusion_next_sound_time);
+					input_demo_set_awareness_source("game_fusion_warmup", ConsoleObject - Objects, Fusion_charge);
 					create_awareness_event(ConsoleObject, PA_WEAPON_ROBOT_COLLISION);
 					digi_play_sample( SOUND_FUSION_WARMUP, F1_0 );
 					#ifdef NETWORK
