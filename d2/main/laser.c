@@ -1579,8 +1579,12 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	int			objnum;
 
 	if (input_demo_replay_is_loaded())
+	{
+		unsigned int sim_calls = d_rand_get_call_count();
+		unsigned int sim_state = 0;
+		d_rand_get_state(&sim_state);
 		con_printf(CON_NORMAL,
-			"Input demo replay fire probe: frame=%u kind=player_shot shooter_obj=%d laser_type=%d gun=%d spreadr=%d spreadu=%d delay=%d harmless=%d sound=%d\n",
+			"Input demo replay fire probe: frame=%u kind=player_shot shooter_obj=%d laser_type=%d gun=%d spreadr=%d spreadu=%d delay=%d harmless=%d sound=%d sim_calls=%u sim_state=%u\n",
 			(unsigned int)input_demo_replay_next_frame_index(),
 			obj - Objects,
 			laser_type,
@@ -1589,7 +1593,10 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 			spreadu,
 			delay_time,
 			harmless,
-			make_sound);
+			make_sound,
+			sim_calls,
+			sim_state);
+	}
 	input_demo_record_player_shot_event(obj, laser_type, gun_num, spreadr, spreadu, delay_time, make_sound, harmless);
 
 	create_awareness_event(obj, PA_WEAPON_WALL_COLLISION);
@@ -2069,14 +2076,21 @@ void do_laser_firing_player(void)
 			if (Players[Player_num].primary_weapon == SPREADFIRE_INDEX) {
 				input_demo_record_spreadfire_emit_event(nfires, flags);
 				if (input_demo_replay_spreadfire_probe_active())
-					con_printf(CON_NORMAL,
-						"Input demo replay fire probe: frame=%u kind=spreadfire_emit nfires=%d toggle_before=%d flags=%d next_laser_delta=%lld last_laser_delta=%lld\n",
-						(unsigned int)input_demo_replay_next_frame_index(),
-						nfires,
-						Spreadfire_toggle,
-						flags,
-						(long long)(Next_laser_fire_time - GameTime64),
-						(long long)(Last_laser_fired_time - GameTime64));
+					{
+						unsigned int sim_calls = d_rand_get_call_count();
+						unsigned int sim_state = 0;
+						d_rand_get_state(&sim_state);
+						con_printf(CON_NORMAL,
+							"Input demo replay fire probe: frame=%u kind=spreadfire_emit nfires=%d toggle_before=%d flags=%d next_laser_delta=%lld last_laser_delta=%lld sim_calls=%u sim_state=%u\n",
+							(unsigned int)input_demo_replay_next_frame_index(),
+							nfires,
+							Spreadfire_toggle,
+							flags,
+							(long long)(Next_laser_fire_time - GameTime64),
+							(long long)(Last_laser_fired_time - GameTime64),
+							sim_calls,
+							sim_state);
+					}
 				if (Spreadfire_toggle)
 					flags |= LASER_SPREADFIRE_TOGGLED;
 				Spreadfire_toggle = !Spreadfire_toggle;
@@ -2592,6 +2606,7 @@ void do_missile_firing(int drop_bomb)
 	int bomb = which_bomb();
 	int weapon = (drop_bomb) ? bomb : Players[Player_num].secondary_weapon;
 	fix fire_frame_overhead = 0;
+	const int rng_probe = input_demo_replay_is_loaded();
 
 	Network_laser_track = -1;
 
@@ -2607,6 +2622,15 @@ void do_missile_firing(int drop_bomb)
 	}
 
 	vms_vector orient = Objects[Players[Player_num].objnum].orient.fvec;
+
+	if (rng_probe) {
+		con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_enter|gt=%lld|weapon=%d|drop=%d|sim_calls=%d|sim_state=%u\n",
+			(long long)GameTime64,
+			weapon,
+			drop_bomb,
+			d_rand_get_call_count(),
+			d_rand_get_state(D_RNG_SIM));
+	}
 
 	if (!Player_is_dead && (Players[Player_num].secondary_ammo[weapon] > 0))	{
 
@@ -2628,7 +2652,27 @@ void do_missile_firing(int drop_bomb)
 			Missile_gun++;
 		}
 
+		if (rng_probe) {
+			con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_before_fire|gt=%lld|weapon=%d|weapon_index=%d|weapon_gun=%d|sim_calls=%d|sim_state=%u\n",
+				(long long)GameTime64,
+				weapon,
+				weapon_index,
+				weapon_gun,
+				d_rand_get_call_count(),
+				d_rand_get_state(D_RNG_SIM));
+		}
+
 		Laser_player_fire( ConsoleObject, weapon_index, weapon_gun, 1, 0, orient);
+
+		if (rng_probe) {
+			con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_after_fire|gt=%lld|weapon=%d|weapon_index=%d|weapon_gun=%d|sim_calls=%d|sim_state=%u\n",
+				(long long)GameTime64,
+				weapon,
+				weapon_index,
+				weapon_gun,
+				d_rand_get_call_count(),
+				d_rand_get_state(D_RNG_SIM));
+		}
 
 		if (weapon == PROXIMITY_INDEX) {
 			if (++Proximity_dropped == 4) {
@@ -2659,6 +2703,14 @@ void do_missile_firing(int drop_bomb)
 		if (weapon == MEGA_INDEX || weapon == SMISSILE5_INDEX) {
 			vms_vector force_vec;
 
+			if (rng_probe) {
+				con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_before_recoil_rand|gt=%lld|weapon=%d|sim_calls=%d|sim_state=%u\n",
+					(long long)GameTime64,
+					weapon,
+					d_rand_get_call_count(),
+					d_rand_get_state(D_RNG_SIM));
+			}
+
 			force_vec.x = -(ConsoleObject->orient.fvec.x << 7);
 			force_vec.y = -(ConsoleObject->orient.fvec.y << 7);
 			force_vec.z = -(ConsoleObject->orient.fvec.z << 7);
@@ -2668,6 +2720,14 @@ void do_missile_firing(int drop_bomb)
 			force_vec.y = (force_vec.y >> 4) + d_rand() - 16384;
 			force_vec.z = (force_vec.z >> 4) + d_rand() - 16384;
 			phys_apply_rot(ConsoleObject, &force_vec);
+
+			if (rng_probe) {
+				con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_after_recoil_rand|gt=%lld|weapon=%d|sim_calls=%d|sim_state=%u\n",
+					(long long)GameTime64,
+					weapon,
+					d_rand_get_call_count(),
+					d_rand_get_state(D_RNG_SIM));
+			}
 		}
 
 #ifdef NETWORK

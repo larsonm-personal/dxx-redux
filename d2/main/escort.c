@@ -56,6 +56,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "automap.h"
 #include "laser.h"
 #include "escort.h"
+#include "collide.h"
 #include "maths.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -1260,19 +1261,35 @@ void escort_get_input_demo_checkpoint_state(input_demo_checkpoint_escort_state *
 #endif
 }
 
+void escort_get_input_demo_checkpoint_thief_state(input_demo_checkpoint_thief_state *thief_state)
+{
+	if (!thief_state)
+		return;
+
+	input_demo_checkpoint_thief_state_clear(thief_state);
+	thief_state->valid = 1;
+	thief_state->stolen_item_index = Stolen_item_index;
+	thief_state->re_init_thief_time = Re_init_thief_time;
+	thief_state->last_thief_hit_time = Last_thief_hit_time;
+}
+
 void escort_rebuild_runtime_state_after_restore(void)
 {
 	ai_local *ailp = NULL;
 	object *buddy_objp = NULL;
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
+	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	int have_checkpoint_escort_state;
+	int have_checkpoint_thief_state;
 	fix64 raw_time_player_seen;
 	fix64 raw_escort_last_path_created;
 	int i;
 
 	input_demo_reset_escort_state_probes();
 	input_demo_checkpoint_escort_state_clear(&checkpoint_escort_state);
+	input_demo_checkpoint_thief_state_clear(&checkpoint_thief_state);
 	have_checkpoint_escort_state = input_demo_replay_get_checkpoint_escort_state(&checkpoint_escort_state);
+	have_checkpoint_thief_state = input_demo_replay_get_checkpoint_thief_state(&checkpoint_thief_state);
 
 	Buddy_objnum = -1;
 	Buddy_last_seen_player = 0;
@@ -1289,6 +1306,12 @@ void escort_rebuild_runtime_state_after_restore(void)
 	if (Buddy_objnum != -1) {
 		buddy_objp = &Objects[Buddy_objnum];
 		ailp = &Ai_local_info[Buddy_objnum];
+	}
+
+	if (have_checkpoint_thief_state) {
+		Stolen_item_index = checkpoint_thief_state.stolen_item_index;
+		Re_init_thief_time = checkpoint_thief_state.re_init_thief_time;
+		Last_thief_hit_time = checkpoint_thief_state.last_thief_hit_time;
 	}
 
 	if (have_checkpoint_escort_state) {
@@ -1322,7 +1345,7 @@ void escort_rebuild_runtime_state_after_restore(void)
 	#endif
 		if (input_demo_trace_escort_active())
 			con_printf(CON_NORMAL,
-				"Input demo replay escort restore checkpoint: gt=%lld obj=%d seg=%d mode=%d talk=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld kill=%d escort_last_path=%lld goal=%d/%d/%d suppress=%d sorry=%lld marker=%d last_key=%d last_msg=%lld come_back=%lld last_missile=%lld seen=%lld owner=%d\n",
+				"Input demo replay escort restore checkpoint: gt=%lld obj=%d seg=%d mode=%d talk=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld kill=%d escort_last_path=%lld goal=%d/%d/%d suppress=%d sorry=%lld marker=%d last_key=%d last_msg=%lld come_back=%lld last_missile=%lld seen=%lld owner=%d thief_valid=%d thief_index=%d thief_reinit=%lld thief_last_hit=%lld\n",
 				(long long)GameTime64,
 				Buddy_objnum,
 				buddy_objp ? buddy_objp->segnum : -1,
@@ -1346,7 +1369,11 @@ void escort_rebuild_runtime_state_after_restore(void)
 				(long long)Last_come_back_message_time,
 				(long long)Buddy_last_missile_time,
 				(long long)(ailp ? ailp->time_player_seen : -1),
-				Escort_owner_player);
+				Escort_owner_player,
+				have_checkpoint_thief_state,
+				Stolen_item_index,
+				(long long)Re_init_thief_time,
+				(long long)Last_thief_hit_time);
 		return;
 	}
 

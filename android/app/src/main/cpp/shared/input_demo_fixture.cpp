@@ -46,6 +46,13 @@ extern "C" void input_demo_checkpoint_escort_state_clear(input_demo_checkpoint_e
 	escort_state->escort_owner_player = INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET;
 }
 
+extern "C" void input_demo_checkpoint_thief_state_clear(input_demo_checkpoint_thief_state *thief_state)
+{
+	if (!thief_state)
+		return;
+	memset(thief_state, 0, sizeof(*thief_state));
+}
+
 static bool fail(std::string *error, const std::string &message)
 {
 	if (error)
@@ -480,6 +487,8 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 	    checkpoint.escort_state.buddy_allowed_to_talk != 0 &&
 	    checkpoint.escort_state.buddy_allowed_to_talk != 1)
 		return fail(error, "checkpoint buddy_allowed_to_talk must be 0 or 1");
+	if (checkpoint.thief_state.valid && checkpoint.thief_state.stolen_item_index < 0)
+		return fail(error, "checkpoint thief_stolen_item_index must be non-negative");
 	if (checkpoint.data.empty())
 		return fail(error, "checkpoint data is required");
 	return true;
@@ -552,6 +561,9 @@ static bool parse_checkpoint_record(const ordered_json &root,
 	bool have_escort_last_path_created = false;
 	bool have_last_come_back_message_time = false;
 	bool have_buddy_last_missile_time = false;
+	bool have_thief_stolen_item_index = false;
+	bool have_re_init_thief_time = false;
+	bool have_last_thief_hit_time = false;
 
 	if (!checkpoint)
 		return fail(error, "missing checkpoint output");
@@ -643,6 +655,18 @@ static bool parse_checkpoint_record(const ordered_json &root,
 		} else if (name == "escort_owner_player") {
 			if (!parse_int_field(it.value(), &parsed.escort_state.escort_owner_player, error, "checkpoint escort_owner_player"))
 				return false;
+		} else if (name == "thief_stolen_item_index") {
+			if (!parse_int_field(it.value(), &parsed.thief_state.stolen_item_index, error, "checkpoint thief_stolen_item_index"))
+				return false;
+			have_thief_stolen_item_index = true;
+		} else if (name == "re_init_thief_time") {
+			if (!parse_int64_field(it.value(), &parsed.thief_state.re_init_thief_time, error, "checkpoint re_init_thief_time"))
+				return false;
+			have_re_init_thief_time = true;
+		} else if (name == "last_thief_hit_time") {
+			if (!parse_int64_field(it.value(), &parsed.thief_state.last_thief_hit_time, error, "checkpoint last_thief_hit_time"))
+				return false;
+			have_last_thief_hit_time = true;
 		} else if (name == "data") {
 			if (!it.value().is_string())
 				return fail(error, "checkpoint data must be a string");
@@ -659,6 +683,11 @@ static bool parse_checkpoint_record(const ordered_json &root,
 		      have_last_come_back_message_time && have_buddy_last_missile_time))
 			return fail(error, "checkpoint escort state requires all guidebot fields");
 		parsed.escort_state.valid = 1;
+	}
+	if (have_thief_stolen_item_index || have_re_init_thief_time || have_last_thief_hit_time) {
+		if (!(have_thief_stolen_item_index && have_re_init_thief_time && have_last_thief_hit_time))
+			return fail(error, "checkpoint thief state requires all thief fields");
+		parsed.thief_state.valid = 1;
 	}
 	if (!validate_checkpoint(parsed, error))
 		return false;
@@ -711,6 +740,11 @@ static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoi
 		root["buddy_last_missile_time"] = checkpoint.escort_state.buddy_last_missile_time;
 		if (checkpoint.escort_state.escort_owner_player != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
 			root["escort_owner_player"] = checkpoint.escort_state.escort_owner_player;
+	}
+	if (checkpoint.thief_state.valid) {
+		root["thief_stolen_item_index"] = checkpoint.thief_state.stolen_item_index;
+		root["re_init_thief_time"] = checkpoint.thief_state.re_init_thief_time;
+		root["last_thief_hit_time"] = checkpoint.thief_state.last_thief_hit_time;
 	}
 	root["data"] = checkpoint.data;
 	*line = root.dump();

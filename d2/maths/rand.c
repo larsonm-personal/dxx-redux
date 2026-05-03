@@ -7,6 +7,7 @@
 
 #define DXX_D_RAND_NO_ANNOTATION 1
 
+#include <stdio.h>
 #include <stdlib.h>
 #include "maths.h"
 #include "input_demo_rng_trace.h"
@@ -112,6 +113,14 @@ int d_rand_set_stream_state(d_rng_stream stream, unsigned int state)
 
 #endif
 
+/* android port: tracks whether we're inside d_rand_annotated to detect untraced callers */
+static int g_in_d_rand_annotated;
+
+#if defined(DXX_HEADLESS_CONSOLE) && defined(_MSC_VER)
+/* MSVC intrinsic: returns address of the instruction after the call in the caller */
+#pragma intrinsic(_ReturnAddress)
+__declspec(noinline)
+#endif
 int d_rand(void)
 {
 	return d_rand_stream(D_RNG_SIM);
@@ -119,6 +128,17 @@ int d_rand(void)
 
 int d_rand_stream(d_rng_stream stream)
 {
+#if defined(DXX_HEADLESS_CONSOLE) && defined(_MSC_VER)
+	if (stream == D_RNG_SIM && !g_in_d_rand_annotated && input_demo_rng_trace_is_active()) {
+		void *caller = _ReturnAddress();
+		unsigned int cur_state = 0;
+		d_rand_get_stream_state(D_RNG_SIM, &cur_state);
+		fprintf(stderr,
+			"[rng-gap] untraced d_rand_stream(sim) call: state=%u caller=%p\n",
+			cur_state,
+			caller);
+	}
+#endif
 	return d_rand_internal(stream);
 }
 
@@ -127,7 +147,9 @@ int d_rand_annotated(d_rng_stream stream, const char *file, const char *func, in
 	unsigned int state_before = 0;
 	unsigned int state_after = 0;
 	int has_state_before = d_rand_get_stream_state(stream, &state_before);
+	g_in_d_rand_annotated = 1;
 	int result = d_rand_internal(stream);
+	g_in_d_rand_annotated = 0;
 	int has_state_after = d_rand_get_stream_state(stream, &state_after);
 	unsigned int call_count = d_rand_get_stream_call_count(stream);
 

@@ -44,6 +44,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "screens.h"
 #include "textures.h"
 #include "input_demo_energy_trace.h"
+#include "input_demo_replay.h"
 #include "slew.h"
 #include "gauges.h"
 #include "texmap.h"
@@ -259,6 +260,17 @@ int which_bomb()
 void do_weapon_n_item_stuff()
 {
 	int i;
+	const int rng_probe = input_demo_replay_is_loaded();
+
+	if (rng_probe) {
+		con_printf(CON_NORMAL, "RNG_PROBE|tag=weapon_item_entry|gt=%lld|sim_calls=%d|sim_state=%u|fire_secondary_state=%d|fire_secondary_count=%d|global_missile=%d\n",
+			(long long)GameTime64,
+			d_rand_get_call_count(),
+			d_rand_get_state(D_RNG_SIM),
+			Controls.fire_secondary_state,
+			Controls.fire_secondary_count,
+			Global_missile_firing_count);
+	}
 
 	if (Controls.fire_flare_count > 0)
 	{
@@ -269,10 +281,33 @@ void do_weapon_n_item_stuff()
 
 	if (allowed_to_fire_missile() && (Controls.fire_secondary_state || Controls.fire_secondary_count))
 		Global_missile_firing_count += Weapon_info[Secondary_weapon_to_weapon_info[Players[Player_num].secondary_weapon]].fire_count;
+	if (rng_probe) {
+		con_printf(CON_NORMAL, "RNG_PROBE|tag=weapon_item_after_secondary_accum|gt=%lld|sim_calls=%d|sim_state=%u|fire_secondary_state=%d|fire_secondary_count=%d|global_missile=%d\n",
+			(long long)GameTime64,
+			d_rand_get_call_count(),
+			d_rand_get_state(D_RNG_SIM),
+			Controls.fire_secondary_state,
+			Controls.fire_secondary_count,
+			Global_missile_firing_count);
+	}
 	Controls.fire_secondary_count = 0;
 
 	if (Global_missile_firing_count) {
+		if (input_demo_replay_is_loaded()) {
+			con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_loop_enter|gt=%lld|sim_calls=%d|sim_state=%u|pending=%d\n",
+				(long long)GameTime64,
+				d_rand_get_call_count(),
+				d_rand_get_state(D_RNG_SIM),
+				Global_missile_firing_count);
+		}
 		do_missile_firing(0);
+		if (input_demo_replay_is_loaded()) {
+			con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_loop_exit|gt=%lld|sim_calls=%d|sim_state=%u|pending=%d\n",
+				(long long)GameTime64,
+				d_rand_get_call_count(),
+				d_rand_get_state(D_RNG_SIM),
+				Global_missile_firing_count);
+		}
 		Global_missile_firing_count--;
 	}
 

@@ -8,6 +8,7 @@
 #define _ESCORT_H
 
 struct input_demo_checkpoint_escort_state;
+struct input_demo_checkpoint_thief_state;
 
 #define GUIDEBOT_NAME_LEN 9
 extern void change_guidebot_name(void);
@@ -16,6 +17,7 @@ extern void detect_escort_goal_accomplished(int index);
 extern void set_escort_special_goal(int key);
 extern void escort_rebuild_runtime_state_after_restore(void);
 extern void escort_get_input_demo_checkpoint_state(struct input_demo_checkpoint_escort_state *escort_state);
+extern void escort_get_input_demo_checkpoint_thief_state(struct input_demo_checkpoint_thief_state *thief_state);
 extern int Buddy_objnum, Buddy_allowed_to_talk;
 
 #ifdef NETWORK

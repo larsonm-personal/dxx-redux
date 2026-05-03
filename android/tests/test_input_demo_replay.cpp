@@ -218,6 +218,26 @@ static int expect_test_checkpoint_escort_state(const input_demo_checkpoint_escor
 	return 0;
 }
 
+static void fill_test_checkpoint_thief_state(input_demo_checkpoint_thief_state *thief_state)
+{
+	input_demo_checkpoint_thief_state_clear(thief_state);
+	thief_state->valid = 1;
+	thief_state->stolen_item_index = 5;
+	thief_state->re_init_thief_time = 1703936;
+	thief_state->last_thief_hit_time = 1507328;
+}
+
+static int expect_test_checkpoint_thief_state(const input_demo_checkpoint_thief_state *thief_state)
+{
+	if (!thief_state || !thief_state->valid)
+		return report_failure("replay checkpoint thief state missing");
+	if (thief_state->stolen_item_index != 5 ||
+	    thief_state->re_init_thief_time != 1703936 ||
+	    thief_state->last_thief_hit_time != 1507328)
+		return report_failure("replay checkpoint thief state mismatch");
+	return 0;
+}
+
 static int make_test_dir(const char *path)
 {
 #if defined(_WIN32)
@@ -304,6 +324,7 @@ static int write_checkpoint_test_fixture(const char *path)
 	settings.has_checkpoint_start_gt = 1;
 	settings.checkpoint_start_gt = 124125;
 	fill_test_checkpoint_escort_state(&settings.checkpoint_escort_state);
+	fill_test_checkpoint_thief_state(&settings.checkpoint_thief_state);
 	if (!input_demo_recorder_start(&settings, error, sizeof(error)))
 		return report_failure_string(std::string("checkpoint recorder start failed: ") + error);
 	input_demo_control_state_clear(&state);
@@ -369,10 +390,14 @@ static int expect_replay_loader(void)
 		return report_failure("replay should not start finished");
 	{
 		input_demo_checkpoint_escort_state escort_state;
+		input_demo_checkpoint_thief_state thief_state;
 
 		input_demo_checkpoint_escort_state_clear(&escort_state);
 		if (input_demo_replay_get_checkpoint_escort_state(&escort_state))
 			return report_failure("new_level replay should not expose checkpoint escort state");
+		input_demo_checkpoint_thief_state_clear(&thief_state);
+		if (input_demo_replay_get_checkpoint_thief_state(&thief_state))
+			return report_failure("new_level replay should not expose checkpoint thief state");
 	}
 	if (!input_demo_replay_actual_result_path() || std::string(input_demo_replay_actual_result_path()) != actual_result_path)
 		return report_failure("replay actual result path mismatch");
@@ -477,11 +502,17 @@ static int expect_checkpoint_replay_loader(void)
 		return report_failure("checkpoint replay timing metadata mismatch");
 	{
 		input_demo_checkpoint_escort_state escort_state;
+		input_demo_checkpoint_thief_state thief_state;
 
 		input_demo_checkpoint_escort_state_clear(&escort_state);
 		if (!input_demo_replay_get_checkpoint_escort_state(&escort_state))
 			return report_failure("checkpoint replay escort state missing");
 		if (expect_test_checkpoint_escort_state(&escort_state))
+			return 1;
+		input_demo_checkpoint_thief_state_clear(&thief_state);
+		if (!input_demo_replay_get_checkpoint_thief_state(&thief_state))
+			return report_failure("checkpoint replay thief state missing");
+		if (expect_test_checkpoint_thief_state(&thief_state))
 			return 1;
 	}
 	if (!input_demo_replay_actual_result_path() || std::string(input_demo_replay_actual_result_path()) != actual_result_path)

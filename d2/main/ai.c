@@ -1637,6 +1637,17 @@ void ai_do_cloak_stuff(void)
 // Returns false if awareness is considered too puny to add, else returns true.
 int add_awareness_event(object *objp, int type)
 {
+	const int trace_awareness = input_demo_replay_awareness_probe_active();
+	unsigned int sim_calls_before = 0;
+	unsigned int sim_calls_after = 0;
+	unsigned int sim_state_before = 0;
+	unsigned int sim_state_after = 0;
+
+	if (trace_awareness) {
+		sim_calls_before = d_rand_get_call_count();
+		d_rand_get_state(&sim_state_before);
+	}
+
 	// If player cloaked and hit a robot, then increase awareness
 	if ((type == PA_WEAPON_ROBOT_COLLISION) || (type == PA_WEAPON_WALL_COLLISION) || (type == PA_PLAYER_COLLISION))
 		ai_do_cloak_stuff();
@@ -1644,8 +1655,36 @@ int add_awareness_event(object *objp, int type)
 	if (Num_awareness_events < MAX_AWARENESS_EVENTS) {
 		if ((type == PA_WEAPON_WALL_COLLISION) || (type == PA_WEAPON_ROBOT_COLLISION))
 			if (objp->id == VULCAN_ID)
-				if (d_rand() > 3276)
-					return 0;       // For vulcan cannon, only about 1/10 actually cause awareness
+				{
+					const int vulcan_roll = d_rand();
+					if (trace_awareness)
+						con_printf(CON_NORMAL,
+							"Input demo replay awareness vulcan roll: frame=%u gt=%lld type=%d obj=%d roll=%d threshold=3276 calls_before=%u state_before=%u\n",
+							input_demo_trace_frame_index(),
+							(long long)GameTime64,
+							type,
+							objp - Objects,
+							vulcan_roll,
+							sim_calls_before,
+							sim_state_before);
+					if (vulcan_roll > 3276) {
+						if (trace_awareness) {
+							sim_calls_after = d_rand_get_call_count();
+							d_rand_get_state(&sim_state_after);
+							con_printf(CON_NORMAL,
+								"Input demo replay awareness add return: frame=%u gt=%lld type=%d obj=%d added=0 reason=vulcan calls=%u->%u state=%u->%u\n",
+								input_demo_trace_frame_index(),
+								(long long)GameTime64,
+								type,
+								objp - Objects,
+								sim_calls_before,
+								sim_calls_after,
+								sim_state_before,
+								sim_state_after);
+						}
+						return 0;
+					}
+				}
 
 		Awareness_events[Num_awareness_events].segnum = objp->segnum;
 		Awareness_events[Num_awareness_events].pos = objp->pos;
@@ -1655,6 +1694,21 @@ int add_awareness_event(object *objp, int type)
 		//Int3();   // Hey -- Overflowed Awareness_events, make more or something
 		// This just gets ignored, so you can just
 		// continue.
+	}
+
+	if (trace_awareness) {
+		sim_calls_after = d_rand_get_call_count();
+		d_rand_get_state(&sim_state_after);
+		con_printf(CON_NORMAL,
+			"Input demo replay awareness add return: frame=%u gt=%lld type=%d obj=%d added=1 calls=%u->%u state=%u->%u\n",
+			input_demo_trace_frame_index(),
+			(long long)GameTime64,
+			type,
+			objp - Objects,
+			sim_calls_before,
+			sim_calls_after,
+			sim_state_before,
+			sim_state_after);
 	}
 	return 1;
 
@@ -1671,6 +1725,29 @@ void create_awareness_event(object *objp, int type)
 	int awareness_added = 0;
 	int rng_gate_value = -1;
 	int rng_gate_pass = 0;
+	unsigned int sim_calls_entry = 0;
+	unsigned int sim_state_entry = 0;
+	unsigned int sim_calls_after_add = 0;
+	unsigned int sim_state_after_add = 0;
+	unsigned int sim_calls_after_gate = 0;
+	unsigned int sim_state_after_gate = 0;
+	const int trace_awareness = input_demo_replay_awareness_probe_active();
+
+	if (trace_awareness) {
+		sim_calls_entry = d_rand_get_call_count();
+		d_rand_get_state(&sim_state_entry);
+		con_printf(CON_NORMAL,
+			"Input demo replay awareness entry: frame=%u gt=%lld type=%d obj=%d calls=%u state=%u awareness=%d agitation=%d gate=%d\n",
+			input_demo_trace_frame_index(),
+			(long long)GameTime64,
+			type,
+			objp - Objects,
+			sim_calls_entry,
+			sim_state_entry,
+			num_awareness_before,
+			overall_agitation_before,
+			multiplayer_awareness_allowed);
+	}
 
 	if (object_is_observer(objp)) {
 		if (input_demo_replay_awareness_probe_active())
@@ -1724,9 +1801,40 @@ void create_awareness_event(object *objp, int type)
 	// If not in multiplayer, or in multiplayer with robots, do this, else unnecessary!
 	if (multiplayer_awareness_allowed) {
 		awareness_added = add_awareness_event(objp, type);
+		if (trace_awareness) {
+			sim_calls_after_add = d_rand_get_call_count();
+			d_rand_get_state(&sim_state_after_add);
+			con_printf(CON_NORMAL,
+				"Input demo replay awareness post-add: frame=%u gt=%lld type=%d obj=%d added=%d calls=%u->%u state=%u->%u\n",
+				input_demo_trace_frame_index(),
+				(long long)GameTime64,
+				type,
+				objp - Objects,
+				awareness_added,
+				sim_calls_entry,
+				sim_calls_after_add,
+				sim_state_entry,
+				sim_state_after_add);
+		}
 		if (awareness_added) {
 			rng_gate_value = ((d_rand() * (type+4)) >> 15);
 			rng_gate_pass = (rng_gate_value > 4);
+			if (trace_awareness) {
+				sim_calls_after_gate = d_rand_get_call_count();
+				d_rand_get_state(&sim_state_after_gate);
+				con_printf(CON_NORMAL,
+					"Input demo replay awareness post-gate: frame=%u gt=%lld type=%d obj=%d rng=%d pass=%d calls=%u->%u state=%u->%u\n",
+					input_demo_trace_frame_index(),
+					(long long)GameTime64,
+					type,
+					objp - Objects,
+					rng_gate_value,
+					rng_gate_pass,
+					sim_calls_after_add,
+					sim_calls_after_gate,
+					sim_state_after_add,
+					sim_state_after_gate);
+			}
 			if (rng_gate_pass)
 				Overall_agitation++;
 			if (Overall_agitation > OVERALL_AGITATION_MAX)

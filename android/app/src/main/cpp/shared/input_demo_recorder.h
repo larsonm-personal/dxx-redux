@@ -26,6 +26,7 @@ typedef struct input_demo_recorder_settings {
 	int has_checkpoint_start_gt;
 	int64_t checkpoint_start_gt;
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
+	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	int record_per_frame_state;
 } input_demo_recorder_settings;
 

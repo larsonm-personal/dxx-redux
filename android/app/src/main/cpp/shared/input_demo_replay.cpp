@@ -36,6 +36,7 @@ struct input_demo_replay_session {
 	std::vector<uint8_t> checkpoint_data;
 	int64_t checkpoint_start_gt;
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
+	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	int64_t final_game_time64;
 	uint32_t next_frame_index;
 	std::vector<input_demo_replay_frame> frames;
@@ -47,6 +48,7 @@ struct input_demo_replay_session {
 		input_demo_result_clear(&expected_result);
 		input_demo_player_cfg_clear(&player_cfg);
 		input_demo_checkpoint_escort_state_clear(&checkpoint_escort_state);
+		input_demo_checkpoint_thief_state_clear(&checkpoint_thief_state);
 	}
 };
 
@@ -131,6 +133,7 @@ static bool load_checkpoint(const input_demo_checkpoint &checkpoint,
 	session->checkpoint_data = raw_checkpoint;
 	session->checkpoint_start_gt = checkpoint.start_gt;
 	session->checkpoint_escort_state = checkpoint.escort_state;
+	session->checkpoint_thief_state = checkpoint.thief_state;
 	return true;
 }
 
@@ -399,6 +402,14 @@ int input_demo_replay_get_checkpoint_escort_state(input_demo_checkpoint_escort_s
 	if (!input_demo_replay_has_checkpoint() || !escort_state || !g_input_demo_replay_session.checkpoint_escort_state.valid)
 		return 0;
 	*escort_state = g_input_demo_replay_session.checkpoint_escort_state;
+	return 1;
+}
+
+int input_demo_replay_get_checkpoint_thief_state(input_demo_checkpoint_thief_state *thief_state)
+{
+	if (!input_demo_replay_has_checkpoint() || !thief_state || !g_input_demo_replay_session.checkpoint_thief_state.valid)
+		return 0;
+	*thief_state = g_input_demo_replay_session.checkpoint_thief_state;
 	return 1;
 }
 

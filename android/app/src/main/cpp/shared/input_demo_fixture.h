@@ -71,10 +71,18 @@ typedef struct input_demo_checkpoint_escort_state {
 	int32_t escort_owner_player;
 } input_demo_checkpoint_escort_state;
 
+typedef struct input_demo_checkpoint_thief_state {
+	uint8_t valid;
+	int32_t stolen_item_index;
+	int64_t re_init_thief_time;
+	int64_t last_thief_hit_time;
+} input_demo_checkpoint_thief_state;
+
 void input_demo_rng_frame_clear(input_demo_rng_frame *frame);
 void input_demo_rng_record_clear(input_demo_rng_record *record);
 void input_demo_player_cfg_clear(input_demo_player_cfg *player_cfg);
 void input_demo_checkpoint_escort_state_clear(input_demo_checkpoint_escort_state *escort_state);
+void input_demo_checkpoint_thief_state_clear(input_demo_checkpoint_thief_state *thief_state);
 
 #if defined(_MSC_VER)
 #pragma pack(pop)
@@ -125,12 +133,14 @@ struct input_demo_checkpoint {
 	uint8_t has_start_gt;
 	int64_t start_gt;
 	input_demo_checkpoint_escort_state escort_state;
+	input_demo_checkpoint_thief_state thief_state;
 	std::string data;
 
 	input_demo_checkpoint()
 	    : compression("none"), size(0), has_start_gt(0), start_gt(0)
 	{
 		input_demo_checkpoint_escort_state_clear(&escort_state);
+		input_demo_checkpoint_thief_state_clear(&thief_state);
 	}
 };
 
