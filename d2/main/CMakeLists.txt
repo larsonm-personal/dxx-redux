@@ -69,6 +69,7 @@ set(D2X_MAIN_SOURCES
     wall.c
     weapon.c
     ../../android/app/src/main/cpp/shared/input_demo_fp_env.c
+    ../../android/app/src/main/cpp/shared/input_demo_debug_logging.cpp
     )
 
 if(ANDROID)

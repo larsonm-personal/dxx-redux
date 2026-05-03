@@ -119,36 +119,7 @@ static int input_demo_warning_probe_frame_active(void)
 	return (frame >= 231) && (frame <= 232);
 }
 
-static void input_demo_log_warning_probe(const char *label,
-	object *obj,
-	fix view_x,
-	fix view_y,
-	fix view_z,
-	int near_center,
-	int prev_danger_obj,
-	int prev_danger_sig)
-{
-	if (!input_demo_warning_probe_frame_active())
-		return;
 
-	con_printf(CON_NORMAL,
-		"Input demo replay warning probe: frame=%u step=%s obj=%d sig=%d seg=%d laser=%d laser_sig=%d view=(%d,%d,%d) near=%d prev_danger=%d/%d new_danger=%d/%d\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
-		label,
-		(int)(obj - Objects),
-		obj->signature,
-		obj->segnum,
-		Player_fired_laser_this_frame,
-		(Player_fired_laser_this_frame >= 0) ? Objects[Player_fired_laser_this_frame].signature : 0,
-		view_x,
-		view_y,
-		view_z,
-		near_center,
-		prev_danger_obj,
-		prev_danger_sig,
-		obj->ctype.ai_info.danger_laser_num,
-		obj->ctype.ai_info.danger_laser_signature);
-}
 
 //Data for objects
 
@@ -752,7 +723,7 @@ void update_all_robot_location_info_with_view(const vms_vector *viewer_eye, cons
 		view_z = vm_vec_dot(&vec_to_obj, &view_orient->fvec);
 
 		if (view_z <= 0) {
-			input_demo_log_warning_probe("headless_view", obj, view_x, view_y, view_z, 0, prev_danger_obj, prev_danger_sig);
+			input_demo_debug_log_warning_probe("headless_view", (void *)obj, (int)view_x, (int)view_y, (int)view_z, 0, prev_danger_obj, prev_danger_sig);
 			continue;
 		}
 
@@ -762,7 +733,7 @@ void update_all_robot_location_info_with_view(const vms_vector *viewer_eye, cons
 			obj->ctype.ai_info.danger_laser_signature = Objects[Player_fired_laser_this_frame].signature;
 		}
 
-		input_demo_log_warning_probe("headless_view", obj, view_x, view_y, view_z, near_center, prev_danger_obj, prev_danger_sig);
+		input_demo_debug_log_warning_probe("headless_view", (void *)obj, (int)view_x, (int)view_y, (int)view_z, near_center, prev_danger_obj, prev_danger_sig);
 	}
 }
 
