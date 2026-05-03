@@ -16,7 +16,9 @@ param(
     [string]$StateLogPath,
     [switch]$TraceState,
     [switch]$CompareStateTrace,
-    [switch]$SkipExpectedChecks
+    [switch]$SkipExpectedChecks,
+    [ValidateSet(1, 2)]
+    [int]$HeadlessConsoleOutput = 1
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,6 +32,7 @@ $args = @(
     '-Game', $Game,
     '-Mode', $Mode,
     '-TimeoutSeconds', [string]$TimeoutSeconds,
+    '-HeadlessConsoleOutput', [string]$HeadlessConsoleOutput,
     '-PreferHeadlessConsole'
 )
 
@@ -67,6 +70,8 @@ if ($SkipExpectedChecks) {
     $args += '-SkipExpectedChecks'
 }
 
-Write-Host 'Headless stage: prefer the dedicated D2 headless console runner; unsupported cases fall back to normal replay'
+if ($HeadlessConsoleOutput -eq 2) {
+    Write-Host 'Headless stage: prefer the dedicated D2 headless console runner; unsupported cases fall back to normal replay'
+}
 & $pwsh @args
 exit $LASTEXITCODE

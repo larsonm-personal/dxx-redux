@@ -68,7 +68,19 @@ static int find_arg_index(int argc, char *argv[], const char *name)
 	return -1;
 }
 
-static int init_headless_runtime(int argc, char *argv[], char *error, size_t error_size)
+static int parse_headless_console_output_mode(const char *value)
+{
+	int mode;
+
+	if (!value)
+		return 2;
+	mode = atoi(value);
+	if (mode != 1 && mode != 2)
+		return 0;
+	return mode;
+}
+
+static int init_headless_runtime(int argc, char *argv[], int console_output_mode, char *error, size_t error_size)
 {
 	int screen_w;
 	int screen_h;
@@ -77,6 +89,8 @@ static int init_headless_runtime(int argc, char *argv[], char *error, size_t err
 	error_init(msgbox_error);
 	set_warn_func(msgbox_warning);
 	PHYSFSX_init(argc, argv);
+	if (console_output_mode == 1)
+		GameArg.DbgVerbose = -1;
 	con_init();
 	if (GameArg.SysShowCmdHelp) {
 		snprintf(error, error_size, "%s", "help requested");
@@ -130,8 +144,11 @@ int main(int argc, char *argv[])
 	const char *demo_path = find_arg_value(argc, argv, "-inputdemo-replay");
 	int state_log_arg_index = find_arg_index(argc, argv, "-inputdemo-state-log");
 	int rng_trace_arg_index = find_arg_index(argc, argv, "-inputdemo-rng-trace");
+	int console_output_arg_index = find_arg_index(argc, argv, "-headless-console-output");
 	const char *state_log_path = state_log_arg_index >= 0 ? find_arg_value(argc, argv, "-inputdemo-state-log") : NULL;
 	const char *rng_trace_path = rng_trace_arg_index >= 0 ? find_arg_value(argc, argv, "-inputdemo-rng-trace") : NULL;
+	const char *console_output_value = console_output_arg_index >= 0 ? find_arg_value(argc, argv, "-headless-console-output") : NULL;
+	int console_output_mode = parse_headless_console_output_mode(console_output_value);
 	char mission_name[64] = "";
 	char start_mode[32] = "";
 	char result_path[260] = "";
@@ -140,7 +157,7 @@ int main(int argc, char *argv[])
 	unsigned int frame_count = 0;
 
 	if (!demo_path) {
-		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo> [-inputdemo-state-log <actual_state.jsonl>] [-inputdemo-rng-trace <actual_rngtrace.jsonl>]\n", argc > 0 ? argv[0] : "dxx-redux-d2-headless");
+		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo> [-inputdemo-state-log <actual_state.jsonl>] [-inputdemo-rng-trace <actual_rngtrace.jsonl>] [-headless-console-output <1|2>]\n", argc > 0 ? argv[0] : "dxx-redux-d2-headless");
 		return 1;
 	}
 	if (state_log_arg_index >= 0 && !state_log_path) {
@@ -151,7 +168,15 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "HEADLESS-RUN FAIL args missing value for -inputdemo-rng-trace\n");
 		return 1;
 	}
-	if (!init_headless_runtime(argc, argv, error, sizeof(error))) {
+	if (console_output_arg_index >= 0 && !console_output_value) {
+		fprintf(stderr, "HEADLESS-RUN FAIL args missing value for -headless-console-output\n");
+		return 1;
+	}
+	if (console_output_mode == 0) {
+		fprintf(stderr, "HEADLESS-RUN FAIL args invalid -headless-console-output (use 1 or 2)\n");
+		return 1;
+	}
+	if (!init_headless_runtime(argc, argv, console_output_mode, error, sizeof(error))) {
 		fprintf(stderr, "HEADLESS-RUN FAIL init %s\n", error[0] ? error : "runtime init failed");
 		return 1;
 	}

@@ -64,49 +64,65 @@ function Format-CompareValue {
     return [string]$Value
 }
 
-function Compare-JsonSubset {
+function Compare-JsonDiff {
     param(
         [object]$Expected,
         [object]$Actual,
         [string]$Path = 'state'
     )
 
+    $diffs = New-Object System.Collections.Generic.List[string]
+
     if ($Expected -is [System.Collections.IDictionary]) {
         if (-not ($Actual -is [System.Collections.IDictionary])) {
-            return "${Path}: expected object, actual $(Format-CompareValue -Value $Actual)"
+            $diffs.Add("${Path}: expected object, actual $(Format-CompareValue -Value $Actual)")
+            return $diffs
+        }
+
+        foreach ($key in $Expected.Keys) {
+            if (-not $Actual.Contains($key)) {
+                $diffs.Add("${Path}.${key}: missing from actual trace")
+            }
+        }
+        foreach ($key in $Actual.Keys) {
+            if (-not $Expected.Contains($key)) {
+                $diffs.Add("${Path}.${key}: extra in actual trace = $(Format-CompareValue -Value $Actual[$key])")
+            }
         }
         foreach ($key in $Expected.Keys) {
             if (-not $Actual.Contains($key)) {
-                return "${Path}.${key}: missing from actual trace"
+                continue
             }
-            $nested = Compare-JsonSubset -Expected $Expected[$key] -Actual $Actual[$key] -Path "${Path}.${key}"
-            if ($nested) {
-                return $nested
+            $nested = Compare-JsonDiff -Expected $Expected[$key] -Actual $Actual[$key] -Path "${Path}.${key}"
+            foreach ($line in $nested) {
+                $diffs.Add($line)
             }
         }
-        return $null
+        return $diffs
     }
 
     if ($Expected -is [System.Collections.IList] -and -not ($Expected -is [string])) {
         if (-not ($Actual -is [System.Collections.IList])) {
-            return "${Path}: expected array, actual $(Format-CompareValue -Value $Actual)"
+            $diffs.Add("${Path}: expected array, actual $(Format-CompareValue -Value $Actual)")
+            return $diffs
         }
         if ($Expected.Count -ne $Actual.Count) {
-            return "${Path}: expected array length $($Expected.Count), actual $($Actual.Count)"
+            $diffs.Add("${Path}: expected array length $($Expected.Count), actual $($Actual.Count)")
         }
-        for ($index = 0; $index -lt $Expected.Count; $index++) {
-            $nested = Compare-JsonSubset -Expected $Expected[$index] -Actual $Actual[$index] -Path "${Path}[$index]"
-            if ($nested) {
-                return $nested
+        $maxShared = [Math]::Min($Expected.Count, $Actual.Count)
+        for ($index = 0; $index -lt $maxShared; $index++) {
+            $nested = Compare-JsonDiff -Expected $Expected[$index] -Actual $Actual[$index] -Path "${Path}[$index]"
+            foreach ($line in $nested) {
+                $diffs.Add($line)
             }
         }
-        return $null
+        return $diffs
     }
 
     if ($Expected -ne $Actual) {
-        return "${Path}: expected $(Format-CompareValue -Value $Expected), actual $(Format-CompareValue -Value $Actual)"
+        $diffs.Add("${Path}: expected $(Format-CompareValue -Value $Expected), actual $(Format-CompareValue -Value $Actual)")
     }
-    return $null
+    return $diffs
 }
 
 function Get-MismatchStageLabel {
@@ -232,9 +248,14 @@ foreach ($frameKey in (@($expectedFrames.Keys) | Sort-Object { [int]$_ })) {
     if ($CompareFrameMetadata) {
         foreach ($key in @('ft', 'rng')) {
             if ($expected.Contains($key)) {
-                $metadataError = Compare-JsonSubset -Expected $expected[$key] -Actual $actual[$key] -Path $key
-                if ($metadataError) {
-                    $mismatches.Add("frame=$frame $metadataError")
+                $metadataDiffs = Compare-JsonDiff -Expected $expected[$key] -Actual $actual[$key] -Path $key
+                if ($metadataDiffs.Count -gt 0) {
+                    foreach ($metadataDiff in $metadataDiffs) {
+                        $mismatches.Add("frame=$frame $metadataDiff")
+                        if ($mismatches.Count -ge $MaxMismatches) {
+                            break
+                        }
+                    }
                     break
                 }
             }
@@ -244,10 +265,15 @@ foreach ($frameKey in (@($expectedFrames.Keys) | Sort-Object { [int]$_ })) {
         break
     }
 
-    $stateError = Compare-JsonSubset -Expected $expected.state -Actual $actual.state -Path 'state'
-    if ($stateError) {
-        $stageLabel = Get-MismatchStageLabel -StateError $stateError -ActualFrame $actual -PreviousActualFrame $previousActual
-        $mismatches.Add("frame=$frame stage=$stageLabel $stateError")
+    $stateDiffs = Compare-JsonDiff -Expected $expected.state -Actual $actual.state -Path 'state'
+    if ($stateDiffs.Count -gt 0) {
+        $stageLabel = Get-MismatchStageLabel -StateError $stateDiffs[0] -ActualFrame $actual -PreviousActualFrame $previousActual
+        foreach ($stateDiff in $stateDiffs) {
+            $mismatches.Add("frame=$frame stage=$stageLabel $stateDiff")
+            if ($mismatches.Count -ge $MaxMismatches) {
+                break
+            }
+        }
         if ($mismatches.Count -ge $MaxMismatches) {
             break
         }

@@ -25,6 +25,8 @@ param(
     [switch]$CompareRngTrace,
     [switch]$SkipExpectedChecks,
     [switch]$AllowMissingActualResult,
+    [ValidateSet(1, 2)]
+    [int]$HeadlessConsoleOutput = 1,
     [Alias('RebuildBeforeRun')]
     [switch]$BuildBeforeRun,
     [switch]$RequireFreshBuild
@@ -100,7 +102,8 @@ function Resolve-AbsolutePath {
 function Invoke-StateTraceComparison {
     param(
         [string]$DemoPath,
-        [string]$ActualPath
+        [string]$ActualPath,
+        [switch]$Silent
     )
 
     $expectedDir = Split-Path -Path $ActualPath -Parent
@@ -116,27 +119,30 @@ function Invoke-StateTraceComparison {
 
     $compareOutput = & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compareScript -ExpectedPath $expectedPath -ActualPath $ActualPath -CompareFrameMetadata 2>&1
     $compareExitCode = $LASTEXITCODE
-    $firstMismatchLine = ''
+    $mismatchLines = New-Object System.Collections.Generic.List[string]
     foreach ($line in $compareOutput) {
         $text = [string]$line
         if ($text) {
-            Write-Host $text
-            if (-not $firstMismatchLine -and $text -match '^frame=') {
-                $firstMismatchLine = $text.Trim()
+            if (-not $Silent) {
+                Write-Host $text
+            }
+            if ($text -match '^frame=') {
+                $mismatchLines.Add($text.Trim())
             }
         }
     }
     return @{
         ExpectedPath = $expectedPath
         ExitCode = $compareExitCode
-        FirstMismatch = $firstMismatchLine
+        MismatchLines = $mismatchLines
     }
 }
 
 function Invoke-RngTraceComparison {
     param(
         [string]$DemoPath,
-        [string]$ActualPath
+        [string]$ActualPath,
+        [switch]$Silent
     )
 
     $expectedPath = [System.IO.Path]::GetFullPath($DemoPath + '.rngtrace.jsonl')
@@ -147,7 +153,14 @@ function Invoke-RngTraceComparison {
         throw "Recorded rng trace not found: $expectedPath"
     }
 
-    & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compareScript -ExpectedPath $expectedPath -ActualPath $ActualPath
+    $compareOutput = & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compareScript -ExpectedPath $expectedPath -ActualPath $ActualPath 2>&1
+    if (-not $Silent) {
+        foreach ($line in $compareOutput) {
+            if ($line) {
+                Write-Host ([string]$line)
+            }
+        }
+    }
     return @{
         ExpectedPath = $expectedPath
         ExitCode = $LASTEXITCODE
@@ -564,7 +577,8 @@ function Get-HeadlessConsoleLaunchArguments {
         [string]$ResolvedDataDir,
         [string]$ResolvedDemoPath,
         [string]$ResolvedStateLogPath,
-        [string]$ResolvedRngLogPath
+        [string]$ResolvedRngLogPath,
+        [int]$HeadlessConsoleOutput
     )
 
     $launchParameters = @(
@@ -577,6 +591,7 @@ function Get-HeadlessConsoleLaunchArguments {
     if ($ResolvedRngLogPath) {
         $launchParameters += @('-inputdemo-rng-trace', $ResolvedRngLogPath)
     }
+    $launchParameters += @('-headless-console-output', [string]$HeadlessConsoleOutput)
     return $launchParameters
 }
 
@@ -864,50 +879,65 @@ function Format-CompareValue {
     return [string]$Value
 }
 
-function Compare-JsonSubset {
+function Compare-JsonDiff {
     param(
         [object]$Expected,
         [object]$Actual,
         [string]$Path = 'result'
     )
 
+    $diffs = New-Object System.Collections.Generic.List[string]
+
     if ($Expected -is [System.Collections.IDictionary]) {
         if (-not ($Actual -is [System.Collections.IDictionary])) {
-            return "${Path}: expected object, actual $(Format-CompareValue -Value $Actual)"
+            $diffs.Add("${Path}: expected object, actual $(Format-CompareValue -Value $Actual)")
+            return $diffs
         }
         foreach ($key in $Expected.Keys) {
             if (-not $Actual.Contains($key)) {
-                return "${Path}.${key}: missing from actual result"
-            }
-            $nested = Compare-JsonSubset -Expected $Expected[$key] -Actual $Actual[$key] -Path "${Path}.${key}"
-            if ($nested) {
-                return $nested
+                $diffs.Add("${Path}.${key}: missing from actual result")
             }
         }
-        return $null
+        foreach ($key in $Actual.Keys) {
+            if (-not $Expected.Contains($key)) {
+                $diffs.Add("${Path}.${key}: extra in actual result = $(Format-CompareValue -Value $Actual[$key])")
+            }
+        }
+        foreach ($key in $Expected.Keys) {
+            if (-not $Actual.Contains($key)) {
+                continue
+            }
+            $nested = Compare-JsonDiff -Expected $Expected[$key] -Actual $Actual[$key] -Path "${Path}.${key}"
+            foreach ($line in $nested) {
+                $diffs.Add($line)
+            }
+        }
+        return $diffs
     }
 
     if ($Expected -is [System.Collections.IList] -and -not ($Expected -is [string])) {
         if (-not ($Actual -is [System.Collections.IList])) {
-            return "${Path}: expected array, actual $(Format-CompareValue -Value $Actual)"
+            $diffs.Add("${Path}: expected array, actual $(Format-CompareValue -Value $Actual)")
+            return $diffs
         }
         if ($Expected.Count -ne $Actual.Count) {
-            return "${Path}: expected array length $($Expected.Count), actual $($Actual.Count)"
+            $diffs.Add("${Path}: expected array length $($Expected.Count), actual $($Actual.Count)")
         }
-        for ($i = 0; $i -lt $Expected.Count; $i++) {
-            $nested = Compare-JsonSubset -Expected $Expected[$i] -Actual $Actual[$i] -Path "${Path}[$i]"
-            if ($nested) {
-                return $nested
+        $maxShared = [Math]::Min($Expected.Count, $Actual.Count)
+        for ($i = 0; $i -lt $maxShared; $i++) {
+            $nested = Compare-JsonDiff -Expected $Expected[$i] -Actual $Actual[$i] -Path "${Path}[$i]"
+            foreach ($line in $nested) {
+                $diffs.Add($line)
             }
         }
-        return $null
+        return $diffs
     }
 
     if ($Expected -ne $Actual) {
-        return "${Path}: expected $(Format-CompareValue -Value $Expected), actual $(Format-CompareValue -Value $Actual)"
+        $diffs.Add("${Path}: expected $(Format-CompareValue -Value $Expected), actual $(Format-CompareValue -Value $Actual)")
     }
 
-    return $null
+    return $diffs
 }
 
 function Read-JsonFileAsHashtable {
@@ -1032,6 +1062,7 @@ if ($RngLogPath -or $TraceRng -or $CompareRngTrace) {
     }
 }
 $useHeadlessConsole = Test-UseHeadlessConsoleRunner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole
+$headlessQuietConsole = $useHeadlessConsole -and ($HeadlessConsoleOutput -eq 1)
 $headlessConsoleExe = if ($useHeadlessConsole) { Get-HeadlessConsoleExe -GameName $resolvedGame } else { $null }
 if ($useHeadlessConsole) {
     if ($BuildBeforeRun) {
@@ -1071,7 +1102,7 @@ $expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
 $checkpointRecord = Get-DemoCheckpointRecord -Path $resolvedDemoPath
 $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -Header $header -Checkpoint $checkpointRecord
 $launchArgs = if ($useHeadlessConsole) {
-    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
+    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath -HeadlessConsoleOutput $HeadlessConsoleOutput
 } else {
     Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$NoRender -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
 }
@@ -1093,30 +1124,32 @@ if ($resolvedRngLogPath -and (Test-Path -LiteralPath $resolvedRngLogPath)) {
     Remove-Item -LiteralPath $resolvedRngLogPath -Force
 }
 
-Write-Host ''
-Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
-Write-Host "Game: $resolvedGame"
-Write-Host "Runner: $runnerName"
-Write-Host "Mode: $($launchMode.Name)"
-Write-Host "Render profile: $($renderProfileSelection.Name) ($($renderProfileSelection.Description))"
-if ($useHeadlessConsole -and $renderProfileSelection.ExtraArgs.Count -gt 0) {
-    Write-Host 'Render profile args: ignored by headless runner'
+if (-not $headlessQuietConsole) {
+    Write-Host ''
+    Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
+    Write-Host "Game: $resolvedGame"
+    Write-Host "Runner: $runnerName"
+    Write-Host "Mode: $($launchMode.Name)"
+    Write-Host "Render profile: $($renderProfileSelection.Name) ($($renderProfileSelection.Description))"
+    if ($useHeadlessConsole -and $renderProfileSelection.ExtraArgs.Count -gt 0) {
+        Write-Host 'Render profile args: ignored by headless runner'
+    }
+    if ($NoRender -and -not $useHeadlessConsole) {
+        Write-Host 'Render: no-present'
+    }
+    Write-Host "Data: $(Get-RelativeRepoPath -Path $resolvedDataDir)"
+    Write-Host "Sandbox: $(Get-RelativeRepoPath -Path $sandbox.Directory)"
+    if ($resolvedStateLogPath) {
+        Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
+    }
+    if ($resolvedRngLogPath) {
+        Write-Host "Rng trace: $(Get-RelativeRepoPath -Path $resolvedRngLogPath)"
+    }
+    if ($ReuseSandbox) {
+        Write-Host 'Sandbox mode: reuse'
+    }
+    Write-Host "Command: $launchExecutable $quotedArgs"
 }
-if ($NoRender -and -not $useHeadlessConsole) {
-    Write-Host 'Render: no-present'
-}
-Write-Host "Data: $(Get-RelativeRepoPath -Path $resolvedDataDir)"
-Write-Host "Sandbox: $(Get-RelativeRepoPath -Path $sandbox.Directory)"
-if ($resolvedStateLogPath) {
-    Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
-}
-if ($resolvedRngLogPath) {
-    Write-Host "Rng trace: $(Get-RelativeRepoPath -Path $resolvedRngLogPath)"
-}
-if ($ReuseSandbox) {
-    Write-Host 'Sandbox mode: reuse'
-}
-Write-Host "Command: $launchExecutable $quotedArgs"
 
 $startInfo = New-Object System.Diagnostics.ProcessStartInfo
 $startInfo.FileName = $launchExecutable
@@ -1178,16 +1211,18 @@ if ($resolvedStateLogPath) {
     if (-not (Test-Path -LiteralPath $resolvedStateLogPath)) {
         $stateTraceCompareError = "Replay did not write state trace: $resolvedStateLogPath"
     } elseif ($shouldCompareStateTrace) {
-        $stateTraceResult = Invoke-StateTraceComparison -DemoPath $resolvedDemoPath -ActualPath $resolvedStateLogPath
+        $stateTraceResult = Invoke-StateTraceComparison -DemoPath $resolvedDemoPath -ActualPath $resolvedStateLogPath -Silent:$headlessQuietConsole
         $stateTraceExpectedPath = $stateTraceResult.ExpectedPath
-        Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
+        if (-not $headlessQuietConsole) {
+            Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
+        }
         if ($stateTraceResult.ExitCode -ne 0) {
-            if ($stateTraceResult.FirstMismatch) {
-                $stateTraceCompareError = "State trace compare failed ($($stateTraceResult.FirstMismatch))"
+            if ($stateTraceResult.MismatchLines -and $stateTraceResult.MismatchLines.Count -gt 0) {
+                $stateTraceCompareError = "State trace compare failed`n" + ($stateTraceResult.MismatchLines -join "`n")
             } else {
                 $stateTraceCompareError = 'State trace compare failed'
             }
-        } else {
+        } elseif (-not $headlessQuietConsole) {
             Write-Host 'State trace compare: PASS'
         }
     }
@@ -1196,12 +1231,14 @@ if ($resolvedRngLogPath) {
     if (-not (Test-Path -LiteralPath $resolvedRngLogPath)) {
         $rngTraceCompareError = "Replay did not write rng trace: $resolvedRngLogPath"
     } elseif ($shouldCompareRngTrace) {
-        $rngTraceResult = Invoke-RngTraceComparison -DemoPath $resolvedDemoPath -ActualPath $resolvedRngLogPath
+        $rngTraceResult = Invoke-RngTraceComparison -DemoPath $resolvedDemoPath -ActualPath $resolvedRngLogPath -Silent:$headlessQuietConsole
         $rngTraceExpectedPath = $rngTraceResult.ExpectedPath
-        Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
+        if (-not $headlessQuietConsole) {
+            Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
+        }
         if ($rngTraceResult.ExitCode -ne 0) {
             $rngTraceCompareError = 'RNG trace compare failed'
-        } else {
+        } elseif (-not $headlessQuietConsole) {
             Write-Host 'RNG trace compare: PASS'
         }
     }
@@ -1210,7 +1247,10 @@ $compareError = $null
 if ($SkipExpectedChecks) {
     $compareError = $null
 } elseif ($actualResult) {
-    $compareError = Compare-JsonSubset -Expected $expectedForCompare -Actual $actualResult
+    $compareDiffs = Compare-JsonDiff -Expected $expectedForCompare -Actual $actualResult
+    if ($compareDiffs.Count -gt 0) {
+        $compareError = "Result compare failed`n" + ($compareDiffs -join "`n")
+    }
 } elseif (-not $AllowMissingActualResult) {
     $compareError = "Replay did not write an actual result: $actualResultPath"
 }
