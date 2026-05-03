@@ -11,16 +11,16 @@ extern "C" {
 #endif
 
 typedef struct input_demo_state_trace_diag {
-    int32_t awareness_events;
-    int32_t camera_awake_robots;
-    int32_t danger_laser_robots;
-    int32_t d_tick_count;
-    int32_t player_vel_x;
-    int32_t player_vel_y;
-    int32_t player_vel_z;
-    int32_t player_last_x;
-    int32_t player_last_y;
-    int32_t player_last_z;
+	int32_t awareness_events;
+	int32_t camera_awake_robots;
+	int32_t danger_laser_robots;
+	int32_t d_tick_count;
+	int32_t player_vel_x;
+	int32_t player_vel_y;
+	int32_t player_vel_z;
+	int32_t player_last_x;
+	int32_t player_last_y;
+	int32_t player_last_z;
 } input_demo_state_trace_diag;
 
 int input_demo_state_trace_is_active(void);

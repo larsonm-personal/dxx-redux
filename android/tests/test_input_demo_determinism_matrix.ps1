@@ -67,17 +67,17 @@ function Read-Fixtures {
         }
 
         $fixtures.Add([ordered]@{
-            Game = $game
-            DemoPath = $resolvedDemoPath
-            DemoRelative = Get-RelativeRepoPath -Path $resolvedDemoPath
-        })
+                Game = $game
+                DemoPath = $resolvedDemoPath
+                DemoRelative = Get-RelativeRepoPath -Path $resolvedDemoPath
+            })
     }
 
     if ($fixtures.Count -eq 0) {
         throw "No fixtures found in list: $resolvedListPath"
     }
 
-    return ,$fixtures
+    return , $fixtures
 }
 
 function New-RunVariants {
@@ -92,38 +92,38 @@ function New-RunVariants {
     }
 
     $variants.Add([ordered]@{
-        Name = 'windowed-default'
-        Script = $replayScript
-        Args = @($defaultReplayArgs + @('-RenderProfile', 'default'))
-    })
+            Name = 'windowed-default'
+            Script = $replayScript
+            Args = @($defaultReplayArgs + @('-RenderProfile', 'default'))
+        })
     $variants.Add([ordered]@{
-        Name = 'windowed-lowres'
-        Script = $replayScript
-        Args = @($defaultReplayArgs + @('-RenderProfile', 'lowres-assets'))
-    })
+            Name = 'windowed-lowres'
+            Script = $replayScript
+            Args = @($defaultReplayArgs + @('-RenderProfile', 'lowres-assets'))
+        })
     $variants.Add([ordered]@{
-        Name = 'windowed-norender'
-        Script = $replayScript
-        Args = if ($NoOracle) {
-            @('-Mode', 'accelerated', '-NoRender', '-AllowMissingActualResult', '-SkipExpectedChecks')
-        } else {
-            @('-Mode', 'accelerated', '-NoRender', '-CompareStateTrace', '-AllowMissingActualResult')
-        }
-    })
+            Name = 'windowed-norender'
+            Script = $replayScript
+            Args = if ($NoOracle) {
+                @('-Mode', 'accelerated', '-NoRender', '-AllowMissingActualResult', '-SkipExpectedChecks')
+            } else {
+                @('-Mode', 'accelerated', '-NoRender', '-CompareStateTrace', '-AllowMissingActualResult')
+            }
+        })
 
     if ($IncludeHeadless -and $Game -eq 'd2') {
         $variants.Add([ordered]@{
-            Name = 'headless-console'
-            Script = $headlessScript
-            Args = if ($NoOracle) {
-                @('-Mode', 'accelerated', '-SkipExpectedChecks')
-            } else {
-                @('-Mode', 'accelerated', '-CompareStateTrace')
-            }
-        })
+                Name = 'headless-console'
+                Script = $headlessScript
+                Args = if ($NoOracle) {
+                    @('-Mode', 'accelerated', '-SkipExpectedChecks')
+                } else {
+                    @('-Mode', 'accelerated', '-CompareStateTrace')
+                }
+            })
     }
 
-    return ,$variants
+    return , $variants
 }
 
 function Get-FirstMismatchLine {
@@ -205,17 +205,17 @@ foreach ($fixture in $fixtures) {
         $firstStage = Get-StageFromMismatchLine -MismatchLine $firstMismatch
 
         $results.Add([ordered]@{
-            fixture = $fixture.DemoRelative
-            game = $fixture.Game
-            variant = $variant.Name
-            status = if ($exitCode -eq 0) { 'PASS' } else { 'FAIL' }
-            exit_code = $exitCode
-            duration_sec = [Math]::Round($sw.Elapsed.TotalSeconds, 3)
-            first_stage = $firstStage
-            first_mismatch = $firstMismatch
-            log = Get-RelativeRepoPath -Path $logPath
-            state_trace = Get-RelativeRepoPath -Path $statePath
-        })
+                fixture = $fixture.DemoRelative
+                game = $fixture.Game
+                variant = $variant.Name
+                status = if ($exitCode -eq 0) { 'PASS' } else { 'FAIL' }
+                exit_code = $exitCode
+                duration_sec = [Math]::Round($sw.Elapsed.TotalSeconds, 3)
+                first_stage = $firstStage
+                first_mismatch = $firstMismatch
+                log = Get-RelativeRepoPath -Path $logPath
+                state_trace = Get-RelativeRepoPath -Path $statePath
+            })
 
         $stateTraceByKey["$($fixture.DemoRelative)|$($variant.Name)"] = $statePath
     }

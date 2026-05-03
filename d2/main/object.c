@@ -723,43 +723,8 @@ int	Player_fired_laser_this_frame=-1;
 
 
 // -----------------------------------------------------------------------------
-//this routine checks to see if an robot rendered near the middle of
-//the screen, and if so and the player had fired, "warns" the robot
-void set_robot_location_info(object *objp)
-{
-	/* android port: don't modify AI state during replay -- render runs after physics and the
-	 * danger info must not bleed into the next physics frame. update_all_robot_location_info_with_view
-	 * has the same guard. */
-	if (input_demo_replay_is_loaded())
-		return;
-	if (Player_fired_laser_this_frame != -1) {
-		g3s_point temp;
-		int prev_danger_obj = objp->ctype.ai_info.danger_laser_num;
-		int prev_danger_sig = objp->ctype.ai_info.danger_laser_signature;
-		int near_center;
-
-		g3_rotate_point(&temp,&objp->pos);
-
-		if (temp.p3_codes & CC_BEHIND) {		//robot behind the screen
-			input_demo_log_warning_probe("render_draw", objp, temp.p3_x, temp.p3_y, 0, 0, prev_danger_obj, prev_danger_sig);
-			return;
-		}
-
-		//the code below to check for object near the center of the screen
-		//completely ignores z, which may not be good
-
-		near_center = (abs(temp.p3_x) < F1_0*4) && (abs(temp.p3_y) < F1_0*4);
-		if (near_center) {
-			objp->ctype.ai_info.danger_laser_num = Player_fired_laser_this_frame;
-			objp->ctype.ai_info.danger_laser_signature = Objects[Player_fired_laser_this_frame].signature;
-		}
-
-		input_demo_log_warning_probe("render_draw", objp, temp.p3_x, temp.p3_y, temp.p3_z, near_center, prev_danger_obj, prev_danger_sig);
-	}
-
-
-}
-
+// update all robots from gameplay view orientation so warning state does not
+// depend on rendering execution
 void update_all_robot_location_info_with_view(const vms_vector *viewer_eye, const vms_matrix *view_orient)
 {
 	int i;
@@ -918,9 +883,6 @@ void render_object(object *obj)
 				gr_settransblend( 10, GR_BLEND_ADDITIVE_A );
 
 			draw_polygon_object(obj);
-
-			if (obj->type == OBJ_ROBOT) //"warn" robot if being shot at
-				set_robot_location_info(obj);
 			break;
 
 		case RT_MORPH:

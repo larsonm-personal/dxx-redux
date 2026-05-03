@@ -21,10 +21,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#if defined(_WIN32) && defined(_MSC_VER)
-#include <float.h>
-#include <xmmintrin.h>
-#endif
 #include <SDL.h>
 #include <setjmp.h>
 #include "pstypes.h"
@@ -109,6 +105,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_recorder.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_rng_trace.h"
+#include "input_demo_fp_env.h"
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -766,18 +763,6 @@ static void input_demo_delay_replay_frame(fix frame_time)
 		elapsed = timer_value - input_demo_replay_last_timer_value;
 	}
 	input_demo_replay_last_timer_value = timer_value;
-}
-
-static void input_demo_restore_replay_fp_environment(void)
-{
-#if defined(_WIN32) && defined(_MSC_VER)
-	unsigned int control_word = 0;
-	#if defined(_M_IX86)
-	_controlfp_s(&control_word, _PC_53, _MCW_PC);
-	#endif
-	_controlfp_s(&control_word, _RC_NEAR, _MCW_RC);
-	_mm_setcsr(0x1f80u);
-#endif
 }
 
 int input_demo_prepare_replay_frame(void)
@@ -1981,152 +1966,11 @@ int game_handler(window *wind, d_event *event, void *data)
 
 			if (!Automap_active)		// efficiency hack
 			{
-				/* android port: replay determinism -- save all physics and allocation state before
-				 * render and restore after. this prevents render side effects (object creation,
-				 * destruction, physics mutation) from contaminating simulation state.
-				 * we save: object free-list/count, per-object physics fields, type, movement_type */
-				typedef struct {
-					vms_vector velocity;
-					vms_vector rotvel;
-					vms_vector thrust;
-					vms_vector rotthrust;
-					vms_vector pos;
-					vms_matrix orient;
-					vms_vector last_pos;
-					fix turnroll;
-					fix phys_flags;
-					int obj_flags;
-					int segnum;
-					ubyte type;
-					ubyte movement_type;
-					int valid;
-				} replay_obj_snapshot;
-				static replay_obj_snapshot replay_all_snaps[MAX_OBJECTS];
-				static object_runtime_state replay_obj_alloc_snap;
-				int replay_restore_all = 0;
-				int replay_snap_highest = 0;
-				if (input_demo_replay_is_loaded()) {
-					int i;
-					replay_snap_highest = Highest_object_index;
-					for (i = 0; i <= Highest_object_index; i++) {
-						object *o = &Objects[i];
-						replay_all_snaps[i].valid = (o->type != OBJ_NONE) ? 1 : 0;
-						if (replay_all_snaps[i].valid) {
-							replay_all_snaps[i].type          = o->type;
-							replay_all_snaps[i].movement_type = o->movement_type;
-							replay_all_snaps[i].segnum        = o->segnum;
-							replay_all_snaps[i].obj_flags     = o->flags;
-							if (o->movement_type == MT_PHYSICS) {
-								replay_all_snaps[i].velocity     = o->mtype.phys_info.velocity;
-								replay_all_snaps[i].rotvel       = o->mtype.phys_info.rotvel;
-								replay_all_snaps[i].thrust       = o->mtype.phys_info.thrust;
-								replay_all_snaps[i].rotthrust    = o->mtype.phys_info.rotthrust;
-								replay_all_snaps[i].pos          = o->pos;
-								replay_all_snaps[i].orient       = o->orient;
-								replay_all_snaps[i].last_pos     = o->last_pos;
-								replay_all_snaps[i].turnroll     = o->mtype.phys_info.turnroll;
-								replay_all_snaps[i].phys_flags   = o->mtype.phys_info.flags;
-							}
-						}
-					}
-					object_get_runtime_state(&replay_obj_alloc_snap);
-					replay_restore_all = 1;
-				}
-				/* android port: log RNG consumption during render to detect d_rand divergence */
-				unsigned int replay_rng_count_pre = d_rand_get_call_count();
 				if (force_cockpit_redraw) {			//screen need redrawing?
 					init_cockpit();
 					force_cockpit_redraw=0;
 				}
 				game_render_frame();
-				if (replay_restore_all) {
-					int i;
-					unsigned int replay_rng_count_post = d_rand_get_call_count();
-					if (replay_rng_count_post != replay_rng_count_pre)
-						con_printf(CON_NORMAL,
-							"replay render consumed rng: frame=%u pre=%u post=%u delta=%u\n",
-							(unsigned int)input_demo_replay_next_frame_index(),
-							replay_rng_count_pre,
-							replay_rng_count_post,
-							replay_rng_count_post - replay_rng_count_pre);
-					/* android port: restore allocation state (free list, num_objects, Highest_object_index)
-					 * so object slot allocation is identical to NOR mode for the next physics frame */
-					int post_highest = Highest_object_index;
-					object_set_runtime_state(&replay_obj_alloc_snap);
-					/* android port: clean up objects created by render that are beyond snap_highest:
-					 * just unlink them; the restored runtime state already marks those slots free */
-					for (i = replay_snap_highest + 1; i <= post_highest; i++) {
-						if (Objects[i].type != OBJ_NONE) {
-							con_printf(CON_NORMAL,
-								"replay render created obj=%d type=%d frame=%u - unlinking\n",
-								i, Objects[i].type,
-								(unsigned int)input_demo_replay_next_frame_index());
-							obj_unlink(i);
-							Objects[i].type = OBJ_NONE;
-						}
-					}
-					/* android port: restore per-object state within snap_highest range */
-					for (i = 0; i <= replay_snap_highest; i++) {
-						object *o = &Objects[i];
-						if (replay_all_snaps[i].valid) {
-							/* object was alive before render */
-							if (o->type == OBJ_NONE) {
-								/* render destroyed it: restore type, re-link to segment */
-								con_printf(CON_NORMAL,
-									"replay render destroyed obj=%d type=%d frame=%u - restoring\n",
-									i, replay_all_snaps[i].type,
-									(unsigned int)input_demo_replay_next_frame_index());
-								o->type          = replay_all_snaps[i].type;
-								o->movement_type = replay_all_snaps[i].movement_type;
-								/* segnum=-1 set by obj_delete, safe to call obj_link */
-								obj_link(i, replay_all_snaps[i].segnum);
-							}
-							/* restore flags that render may have changed (e.g. OF_SHOULD_BE_DEAD) */
-							o->flags = replay_all_snaps[i].obj_flags;
-							if (o->movement_type == MT_PHYSICS) {
-								/* android port: log render-induced physics mutations */
-								if (o->mtype.phys_info.velocity.x != replay_all_snaps[i].velocity.x ||
-									o->mtype.phys_info.velocity.y != replay_all_snaps[i].velocity.y ||
-									o->mtype.phys_info.velocity.z != replay_all_snaps[i].velocity.z)
-									con_printf(CON_NORMAL,
-										"replay render mutated obj=%d type=%d vel pre=(%d,%d,%d) post=(%d,%d,%d)\n",
-										i, o->type,
-										replay_all_snaps[i].velocity.x, replay_all_snaps[i].velocity.y, replay_all_snaps[i].velocity.z,
-										o->mtype.phys_info.velocity.x, o->mtype.phys_info.velocity.y, o->mtype.phys_info.velocity.z);
-								if (o->pos.x != replay_all_snaps[i].pos.x ||
-									o->pos.y != replay_all_snaps[i].pos.y ||
-									o->pos.z != replay_all_snaps[i].pos.z)
-									con_printf(CON_NORMAL,
-										"replay render mutated obj=%d type=%d pos pre=(%d,%d,%d) post=(%d,%d,%d)\n",
-										i, o->type,
-										replay_all_snaps[i].pos.x, replay_all_snaps[i].pos.y, replay_all_snaps[i].pos.z,
-										o->pos.x, o->pos.y, o->pos.z);
-								o->mtype.phys_info.velocity  = replay_all_snaps[i].velocity;
-								o->mtype.phys_info.rotvel    = replay_all_snaps[i].rotvel;
-								o->mtype.phys_info.thrust    = replay_all_snaps[i].thrust;
-								o->mtype.phys_info.rotthrust = replay_all_snaps[i].rotthrust;
-								o->pos                       = replay_all_snaps[i].pos;
-								o->orient                    = replay_all_snaps[i].orient;
-								o->last_pos                  = replay_all_snaps[i].last_pos;
-								o->mtype.phys_info.turnroll  = replay_all_snaps[i].turnroll;
-								o->mtype.phys_info.flags     = replay_all_snaps[i].phys_flags;
-								if (o->segnum != replay_all_snaps[i].segnum)
-									obj_relink(i, replay_all_snaps[i].segnum);
-							}
-						} else {
-							/* object was dead before render */
-							if (o->type != OBJ_NONE) {
-								/* render created it in a reused slot: unlink and kill */
-								con_printf(CON_NORMAL,
-									"replay render created obj=%d type=%d in free slot frame=%u - unlinking\n",
-									i, o->type,
-									(unsigned int)input_demo_replay_next_frame_index());
-								obj_unlink(i);
-								o->type = OBJ_NONE;
-							}
-						}
-					}
-				}
 			}
 			break;
 
@@ -2469,8 +2313,7 @@ void GameProcessFrame(void)
 			game_leave_menus();
 	}
 
-	if (GameArg.SysInputDemoNoRender && !input_demo_replay_is_loaded())
-		render_warn_robots_about_player_fire();
+	render_warn_robots_about_player_fire();
 
 	input_demo_log_player_motion_state("exit");
 

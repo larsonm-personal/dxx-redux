@@ -1921,8 +1921,7 @@ void render_warn_robots_about_player_fire(void)
 		viewm = Viewer->orient;
 	}
 
-	if (!input_demo_replay_is_loaded())
-		update_all_robot_location_info_with_view(&Viewer_eye, &viewm);
+	update_all_robot_location_info_with_view(&Viewer_eye, &viewm);
 }
 
 int first_terminal_seg;

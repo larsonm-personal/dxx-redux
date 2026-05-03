@@ -560,28 +560,41 @@ void draw_polygon_object(object *obj)
 int	Player_fired_laser_this_frame=-1;
 
 // -----------------------------------------------------------------------------
-//this routine checks to see if an robot rendered near the middle of
-//the screen, and if so and the player had fired, "warns" the robot
-void set_robot_location_info(object *objp)
+// update robot warning info from the gameplay view so simulation does not depend
+// on whether rendering ran this frame
+void update_all_robot_location_info(void)
 {
-	if (Player_fired_laser_this_frame != -1) {
-		g3s_point temp;
+	int i;
 
-		g3_rotate_point(&temp,&objp->pos);
+	if (Player_fired_laser_this_frame == -1 || !ConsoleObject)
+		return;
 
-		if (temp.p3_codes & CC_BEHIND)		//robot behind the screen
-			return;
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *objp = &Objects[i];
+		vms_vector vec_to_obj;
+		fix view_x, view_y, view_z;
 
-		//the code below to check for object near the center of the screen
-		//completely ignores z, which may not be good
+		if ((objp->type != OBJ_ROBOT) || (objp->render_type != RT_POLYOBJ))
+			continue;
 
-		if ((abs(temp.p3_x) < F1_0*4) && (abs(temp.p3_y) < F1_0*4)) {
+		vm_vec_sub(&vec_to_obj, &objp->pos, &ConsoleObject->pos);
+		view_x = vm_vec_dot(&vec_to_obj, &ConsoleObject->orient.rvec);
+		view_y = vm_vec_dot(&vec_to_obj, &ConsoleObject->orient.uvec);
+		view_z = vm_vec_dot(&vec_to_obj, &ConsoleObject->orient.fvec);
+
+		if (Rear_view) {
+			view_x = -view_x;
+			view_z = -view_z;
+		}
+
+		if (view_z <= 0)
+			continue;
+
+		if ((abs(view_x) < F1_0*4) && (abs(view_y) < F1_0*4)) {
 			objp->ctype.ai_info.danger_laser_num = Player_fired_laser_this_frame;
 			objp->ctype.ai_info.danger_laser_signature = Objects[Player_fired_laser_this_frame].signature;
 		}
 	}
-
-
 }
 
 //	------------------------------------------------------------------------------------------------------------------
@@ -698,9 +711,6 @@ void render_object(object *obj)
 
 		case RT_POLYOBJ:
 			draw_polygon_object(obj);
-
-			if (obj->type == OBJ_ROBOT) //"warn" robot if being shot at
-				set_robot_location_info(obj);
 			break;
 
 		case RT_MORPH:

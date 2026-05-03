@@ -385,6 +385,7 @@ extern int Player_exploded;
 extern int Player_eggs_dropped;
 extern int Death_sequence_aborted;
 extern int Player_fired_laser_this_frame;
+void update_all_robot_location_info(void);
 
 /*
  * FUNCTIONS

@@ -188,7 +188,7 @@ int input_demo_state_trace_write_frame(uint32_t frame,
                                        uint32_t rng_state,
                                        int has_rng_call_count,
                                        uint32_t rng_call_count,
-									   const input_demo_state_trace_diag *diag,
+                                       const input_demo_state_trace_diag *diag,
                                        const input_demo_result *state,
                                        char *error,
                                        size_t error_size)

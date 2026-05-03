@@ -102,6 +102,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #include "input_demo_state_trace.h"
 #include "input_demo_rng_trace.h"
+#include "input_demo_fp_env.h"
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -581,6 +582,7 @@ void input_demo_advance_replay_frame(void)
 
 int input_demo_step_replay_frame(void)
 {
+	input_demo_restore_replay_fp_environment();
 	if (!input_demo_prepare_replay_frame())
 		return 0;
 	if (ReadControlsReplayFrame())
@@ -1557,89 +1559,11 @@ int game_handler(window *wind, d_event *event, void *data)
 
 			if (!Automap_active)		// efficiency hack
 			{
-				/* android port: replay determinism -- save all physics object states before render,
-			 * restore after to prevent render side-effects from contaminating simulation */
-				typedef struct {
-					vms_vector velocity;
-					vms_vector rotvel;
-					vms_vector thrust;
-					vms_vector rotthrust;
-					vms_vector pos;
-					vms_matrix orient;
-					vms_vector last_pos;
-					fix turnroll;
-					fix flags;
-					int segnum;
-					int valid;
-				} replay_obj_snapshot;
-				static replay_obj_snapshot replay_all_snaps[MAX_OBJECTS];
-				int replay_restore_all = 0;
-				if (input_demo_replay_is_loaded()) {
-					int i;
-					for (i = 0; i <= Highest_object_index; i++) {
-						object *o = &Objects[i];
-						if (o->type != OBJ_NONE && o->movement_type == MT_PHYSICS) {
-							replay_all_snaps[i].velocity  = o->mtype.phys_info.velocity;
-							replay_all_snaps[i].rotvel    = o->mtype.phys_info.rotvel;
-							replay_all_snaps[i].thrust    = o->mtype.phys_info.thrust;
-							replay_all_snaps[i].rotthrust = o->mtype.phys_info.rotthrust;
-							replay_all_snaps[i].pos       = o->pos;
-							replay_all_snaps[i].orient    = o->orient;
-							replay_all_snaps[i].last_pos  = o->last_pos;
-							replay_all_snaps[i].turnroll  = o->mtype.phys_info.turnroll;
-							replay_all_snaps[i].flags     = o->mtype.phys_info.flags;
-							replay_all_snaps[i].segnum    = o->segnum;
-							replay_all_snaps[i].valid     = 1;
-						} else {
-							replay_all_snaps[i].valid = 0;
-						}
-					}
-					replay_restore_all = 1;
-				}
 				if (force_cockpit_redraw) {			//screen need redrawing?
 					init_cockpit();
 					force_cockpit_redraw=0;
 				}
 				game_render_frame();
-				if (replay_restore_all) {
-					int i;
-					for (i = 0; i <= Highest_object_index; i++) {
-						if (!replay_all_snaps[i].valid)
-							continue;
-						object *o = &Objects[i];
-						if (o->type == OBJ_NONE || o->movement_type != MT_PHYSICS)
-							continue;
-						/* android port: log render-induced mutations for debugging */
-						if (o->mtype.phys_info.velocity.x != replay_all_snaps[i].velocity.x ||
-							o->mtype.phys_info.velocity.y != replay_all_snaps[i].velocity.y ||
-							o->mtype.phys_info.velocity.z != replay_all_snaps[i].velocity.z)
-							con_printf(CON_NORMAL,
-								"replay render mutated obj=%d type=%d vel pre=(%d,%d,%d) post=(%d,%d,%d)\n",
-								i, o->type,
-								replay_all_snaps[i].velocity.x, replay_all_snaps[i].velocity.y, replay_all_snaps[i].velocity.z,
-								o->mtype.phys_info.velocity.x, o->mtype.phys_info.velocity.y, o->mtype.phys_info.velocity.z);
-						if (o->pos.x != replay_all_snaps[i].pos.x ||
-							o->pos.y != replay_all_snaps[i].pos.y ||
-							o->pos.z != replay_all_snaps[i].pos.z)
-							con_printf(CON_NORMAL,
-								"replay render mutated obj=%d type=%d pos pre=(%d,%d,%d) post=(%d,%d,%d)\n",
-								i, o->type,
-								replay_all_snaps[i].pos.x, replay_all_snaps[i].pos.y, replay_all_snaps[i].pos.z,
-								o->pos.x, o->pos.y, o->pos.z);
-						/* restore all fields */
-						o->mtype.phys_info.velocity  = replay_all_snaps[i].velocity;
-						o->mtype.phys_info.rotvel    = replay_all_snaps[i].rotvel;
-						o->mtype.phys_info.thrust    = replay_all_snaps[i].thrust;
-						o->mtype.phys_info.rotthrust = replay_all_snaps[i].rotthrust;
-						o->pos                       = replay_all_snaps[i].pos;
-						o->orient                    = replay_all_snaps[i].orient;
-						o->last_pos                  = replay_all_snaps[i].last_pos;
-						o->mtype.phys_info.turnroll  = replay_all_snaps[i].turnroll;
-						o->mtype.phys_info.flags     = replay_all_snaps[i].flags;
-						if (o->segnum != replay_all_snaps[i].segnum)
-							obj_relink(i, replay_all_snaps[i].segnum);
-					}
-				}
 			}
 			break;
 
@@ -1870,6 +1794,8 @@ void GameProcessFrame(void)
 			(Automap_active && ((Player_is_dead != player_was_dead) || (Players[Player_num].shields<=0 && player_shields>0))) ) // close autmap when dying ...
 			game_leave_menus();
 	}
+
+	update_all_robot_location_info();
 
 	input_demo_log_player_motion_state("exit");
 

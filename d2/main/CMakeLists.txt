@@ -68,6 +68,7 @@ set(D2X_MAIN_SOURCES
     vclip.c
     wall.c
     weapon.c
+    ../../android/app/src/main/cpp/shared/input_demo_fp_env.c
     )
 
 if(ANDROID)
@@ -76,7 +77,7 @@ else()
     add_executable(dxx-redux-d2 ${D2X_MAIN_SOURCES})
 endif()
 
-include_directories(../include ../arch/include)
+include_directories(../include ../arch/include ../../android/app/src/main/cpp/shared)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-codec-deps.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-build-metadata.cmake)

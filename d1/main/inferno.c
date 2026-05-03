@@ -29,11 +29,6 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#if defined(_WIN32) && defined(_MSC_VER)
-#include <float.h>
-#else
-#include <fenv.h>
-#endif
 #include <SDL.h>
 
 #ifdef __unix__
@@ -80,44 +75,19 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "input_demo_rng_trace.h"
 #include "input_demo_state_trace.h"
 #include "joy.h"
+#include "input_demo_fp_env.h"
 #include "../texmap/scanline.h" //for select_tmap -MM
 #include "event.h"
 #include "rbaudio.h"
 #include "messagebox.h"
 
-#if defined(_WIN32) && defined(_MSC_VER)
 static void configure_startup_fp_environment(void)
 {
-	unsigned int control_word = 0;
+	char error[128] = "";
 
-#if defined(_M_IX86)
-	if (_controlfp_s(&control_word, _PC_53, _MCW_PC) != 0)
-		Error("Failed to set floating point precision");
-#endif
-	if (_controlfp_s(&control_word, _RC_NEAR, _MCW_RC) != 0)
-		Error("Failed to set floating point rounding mode");
-	if (_controlfp_s(&control_word, 0, 0) != 0)
-		Error("Failed to read floating point control word");
-	if ((control_word & _MCW_RC) != _RC_NEAR)
-		Error("Floating point rounding mode is not round-to-nearest");
-#if defined(_M_IX86)
-	if ((control_word & _MCW_PC) != _PC_53)
-		Error("Floating point precision is not 53-bit");
-#endif
+	if (!input_demo_configure_startup_fp_environment(error, sizeof(error)))
+		Error("%s", error);
 }
-#elif defined(FE_TONEAREST)
-static void configure_startup_fp_environment(void)
-{
-	if (fesetround(FE_TONEAREST) != 0)
-		Error("Failed to set floating point rounding mode");
-	if (fegetround() != FE_TONEAREST)
-		Error("Floating point rounding mode is not round-to-nearest");
-}
-#else
-static void configure_startup_fp_environment(void)
-{
-}
-#endif
 
 #ifdef EDITOR
 #include "editor/editor.h"
