@@ -39,6 +39,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "laser.h"
 #include "newdemo.h"
 #include "input_demo_energy_trace.h"
+#include "input_demo_debug_logging.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #ifdef NETWORK
@@ -59,7 +60,8 @@ extern fix	Seismic_tremor_magnitude;
 
 static int input_demo_trace_player_control_active(void)
 {
-	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+	return input_demo_debug_is_enabled() &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
 }
 
 static unsigned int input_demo_trace_player_control_frame_index(void)

@@ -94,7 +94,7 @@ static int input_demo_trace_ai_rng_active(object *obj)
 	ai_static *aip;
 	ai_local *ailp;
 
-	if (!obj || !input_demo_replay_is_loaded() || (obj->type != OBJ_ROBOT))
+	if (!obj || !input_demo_debug_is_enabled() || !input_demo_replay_is_loaded() || (obj->type != OBJ_ROBOT))
 		return 0;
 
 	aip = &obj->ctype.ai_info;
@@ -125,7 +125,8 @@ static int input_demo_robot_lifecycle_probe_active(void)
 {
 	unsigned int frame = 0;
 
-	if (!input_demo_recorder_is_active() && !input_demo_replay_is_loaded())
+	if (!input_demo_debug_is_enabled() ||
+		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
 		return 0;
 
 	if (input_demo_replay_is_loaded())
@@ -143,7 +144,7 @@ static int input_demo_robot_visual_probe_active(void)
 {
 	unsigned int frame;
 
-	if (!input_demo_replay_is_loaded())
+	if (!input_demo_debug_is_enabled() || !input_demo_replay_is_loaded())
 		return 0;
 
 	frame = (unsigned int)input_demo_replay_next_frame_index();

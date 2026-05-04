@@ -39,6 +39,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "fireball.h"
 #include "game.h"
+#include "input_demo_debug_logging.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 
@@ -84,7 +85,8 @@ static unsigned int input_demo_trace_frame_index(void)
 
 static int input_demo_trace_path_active(void)
 {
-	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+	return input_demo_debug_is_enabled() &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
 }
 
 static int input_demo_replay_path_probe_active(object *objp)

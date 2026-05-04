@@ -60,6 +60,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "net_udp.h"
 #include "scores.h"
+#include "input_demo_debug_logging.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 
@@ -1599,7 +1600,7 @@ void add_points_to_score(int points)
 
 	Players[Player_num].score += points;
 	input_demo_record_score_event("normal", points);
-	if (input_demo_replay_is_loaded())
+	if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
 		con_printf(CON_NORMAL,
 			"Input demo replay score probe: frame=%u gt=%lld kind=normal delta=%d score=%d\n",
 			(unsigned int)input_demo_replay_next_frame_index(),
@@ -1638,7 +1639,7 @@ void add_bonus_points_to_score(int points)
 
 	Players[Player_num].score += points;
 	input_demo_record_score_event("bonus", points);
-	if (input_demo_replay_is_loaded())
+	if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
 		con_printf(CON_NORMAL,
 			"Input demo replay score probe: frame=%u gt=%lld kind=bonus delta=%d score=%d\n",
 			(unsigned int)input_demo_replay_next_frame_index(),

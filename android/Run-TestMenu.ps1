@@ -25,6 +25,28 @@ $runTestScript = Join-Path -Path $ScriptDir -ChildPath "run_test.ps1"
 
 . "$ScriptDir\test_helpers.ps1"
 
+function Read-NumberedChoice {
+    param(
+        [string]$Prompt,
+        [int]$OptionCount,
+        [int]$DefaultChoice = 1
+    )
+
+    while ($true) {
+        $choice = Read-Host $Prompt
+        if ([string]::IsNullOrWhiteSpace($choice)) {
+            return $DefaultChoice
+        }
+
+        $selected = 0
+        if ([int]::TryParse($choice, [ref]$selected) -and $selected -ge 1 -and $selected -le $OptionCount) {
+            return $selected
+        }
+
+        Write-Host "Enter a number between 1 and $OptionCount" -ForegroundColor Yellow
+    }
+}
+
 if (-not (Test-Path $runTestScript)) {
     Write-Host "[!] run_test.ps1 not found at $runTestScript" -ForegroundColor Red
     exit 1
@@ -79,13 +101,7 @@ for ($i = 0; $i -lt $allTests.Count; $i++) {
 }
 Write-Host ""
 
-$choice = Read-Host "Select test (1-$($allTests.Count))"
-$parsed = 0
-if (-not [int]::TryParse($choice, [ref]$parsed) -or $parsed -lt 1 -or $parsed -gt $allTests.Count) {
-    Write-Host "[!] Invalid selection" -ForegroundColor Red
-    exit 1
-}
-
+$parsed = Read-NumberedChoice -Prompt "Select test (1-$($allTests.Count))" -OptionCount $allTests.Count
 $selected = $allTests[$parsed - 1]
 Write-Host ""
 Write-Host "[*] Selected: $($selected.Name)  $($selected.Tag)" -ForegroundColor Green
@@ -118,9 +134,8 @@ if ($selected.Type -eq "json5") {
         }
         Write-Host "  $($games.Count + 1)) Both (run sequentially)"
         Write-Host ""
-        $gameChoice = Read-Host "Select game (1-$($games.Count + 1))"
-        $gc = 0
-        if ([int]::TryParse($gameChoice, [ref]$gc) -and $gc -ge 1 -and $gc -le $games.Count) {
+        $gc = Read-NumberedChoice -Prompt "Select game (1-$($games.Count + 1))" -OptionCount ($games.Count + 1)
+        if ($gc -le $games.Count) {
             $gameArg = @{ Game = $games[$gc - 1] }
         }
     }
@@ -141,14 +156,8 @@ if ($selected.Type -eq "json5") {
                 Write-Host "  $($pi + 1)) $($optKeys[$pi])"
             }
             Write-Host ""
-            $pc = Read-Host "Select (1-$($optKeys.Count))"
-            $pci = 0
-            if ([int]::TryParse($pc, [ref]$pci) -and $pci -ge 1 -and $pci -le $optKeys.Count) {
-                $selectedParams[$pName] = $optKeys[$pci - 1]
-            } else {
-                Write-Host "  Defaulting to $($optKeys[0])" -ForegroundColor Yellow
-                $selectedParams[$pName] = $optKeys[0]
-            }
+            $pci = Read-NumberedChoice -Prompt "Select (1-$($optKeys.Count))" -OptionCount $optKeys.Count
+            $selectedParams[$pName] = $optKeys[$pci - 1]
         }
         $paramArg = @{ Params = $selectedParams }
     }

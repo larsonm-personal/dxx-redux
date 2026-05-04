@@ -49,6 +49,28 @@ New-Item -Path (Join-Path $REPO_ROOT "temp") -ItemType Directory -Force -ErrorAc
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
+function Read-NumberedChoice {
+    param(
+        [string]$Prompt,
+        [int]$OptionCount,
+        [int]$DefaultChoice = 1
+    )
+
+    while ($true) {
+        $choice = Read-Host $Prompt
+        if ([string]::IsNullOrWhiteSpace($choice)) {
+            return $DefaultChoice
+        }
+
+        $selected = 0
+        if ([int]::TryParse($choice, [ref]$selected) -and $selected -ge 1 -and $selected -le $OptionCount) {
+            return $selected
+        }
+
+        Write-Status "Enter a number between 1 and $OptionCount" "Yellow"
+    }
+}
+
 function Wait-ForBoot {
     param([string]$Serial, [int]$TimeoutSec = 240)
     Write-Status "Waiting for $Serial to boot (timeout ${TimeoutSec}s)..."
@@ -109,16 +131,11 @@ function Show-NatMenu {
     for ($i = 0; $i -lt $NAT_PRESETS.Count; $i++) {
         $p = $NAT_PRESETS[$i]
         $tag = if ($p.NatA) { "[$($p.NatA) / $($p.NatB)]" } else { "[direct]" }
-        Write-Host "  $i) $($p.Label)  $tag"
+        Write-Host "  $($i + 1)) $($p.Label)  $tag"
     }
     Write-Host ""
-    $choice = Read-Host "Select NAT mode (0-$($NAT_PRESETS.Count - 1))"
-    $idx = 0
-    if (-not [int]::TryParse($choice, [ref]$idx) -or $idx -lt 0 -or $idx -ge $NAT_PRESETS.Count) {
-        Write-Status "Invalid selection, defaulting to 0 (no NAT)" "Yellow"
-        $idx = 0
-    }
-    return $NAT_PRESETS[$idx]
+    $idx = Read-NumberedChoice -Prompt "Select NAT mode (1-$($NAT_PRESETS.Count))" -OptionCount $NAT_PRESETS.Count
+    return $NAT_PRESETS[$idx - 1]
 }
 
 function Setup-DockerNat {

@@ -52,6 +52,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "effects.h"
 #include "playsave.h"
 #include "input_demo_replay.h"
+#include "input_demo_debug_logging.h"
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -60,6 +61,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 /* android port: robot label overlay -- global array definition */
 struct replay_robot_label g_replay_robot_labels[REPLAY_ROBOT_LABEL_MAX];
 int g_replay_robot_label_count = 0;
+int g_replay_robot_labels_enabled = 0;
 
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
@@ -923,8 +925,9 @@ void do_render_object(int objnum, int window_num)
 		//NOTE LINK TO ABOVE
 		render_object(obj);
 
-	/* android port: accumulate label for replay debug overlay */
-	if (input_demo_replay_is_loaded() && g_replay_robot_label_count < REPLAY_ROBOT_LABEL_MAX) {
+	/* android port: accumulate replay label overlay positions */
+	if (input_demo_replay_is_loaded() && g_replay_robot_labels_enabled &&
+		g_replay_robot_label_count < REPLAY_ROBOT_LABEL_MAX) {
 		g3s_point pt;
 		ubyte cc = g3_rotate_point(&pt, &obj->pos);
 		if (!(cc & CC_BEHIND)) {
@@ -1215,7 +1218,7 @@ static int input_demo_render_probe_active(void)
 {
 	unsigned int frame;
 
-	if (!input_demo_replay_is_loaded())
+	if (!input_demo_debug_is_enabled() || !input_demo_replay_is_loaded())
 		return 0;
 
 	frame = (unsigned int)input_demo_replay_next_frame_index();
@@ -1227,7 +1230,7 @@ static void input_demo_render_probe_update_first_player_shot_frame(void)
 	unsigned int frame;
 	int i;
 
-	if (!input_demo_replay_is_loaded())
+	if (!input_demo_render_probe_active())
 		return;
 
 	if (input_demo_render_probe_first_player_shot_frame != (unsigned int)-1)
@@ -1314,7 +1317,7 @@ static int input_demo_render_probe_should_log_boundary(void)
 {
 	unsigned int frame;
 
-	if (!input_demo_replay_is_loaded())
+	if (!input_demo_render_probe_active())
 		return 0;
 
 	frame = (unsigned int)input_demo_replay_next_frame_index();
@@ -1352,7 +1355,7 @@ static void input_demo_render_probe_log_target_robot_visibility(void)
 	static const int target_objs[] = {73, 74, 75, 107, 158};
 	int ti;
 
-	if (!input_demo_replay_is_loaded())
+	if (!input_demo_render_probe_active())
 		return;
 
 	frame = (unsigned int)input_demo_replay_next_frame_index();
@@ -2509,7 +2512,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	render_start_frame();
 	{
 		static int input_demo_render_probe_render_mine_unconditional_logged = 0;
-		if (!input_demo_render_probe_render_mine_unconditional_logged) {
+		if (input_demo_debug_is_enabled() && !input_demo_render_probe_render_mine_unconditional_logged) {
 			input_demo_render_probe_render_mine_unconditional_logged = 1;
 			con_printf(CON_NORMAL,
 				"Input demo render target state: step=render_mine_enter_unconditional frame=%u nd_state=%d replay_loaded=%d\n",
@@ -2520,7 +2523,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	}
 	{
 		static int input_demo_render_probe_render_mine_count_logged = 0;
-		if (input_demo_replay_is_loaded() && !input_demo_render_probe_render_mine_count_logged) {
+		if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded() && !input_demo_render_probe_render_mine_count_logged) {
 			input_demo_render_probe_render_mine_count_logged = 1;
 			con_printf(CON_NORMAL,
 				"Input demo render target state: step=render_mine_enter frame=%u\n",

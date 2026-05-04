@@ -9,6 +9,28 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Read-NumberedChoice {
+    param(
+        [string]$Prompt,
+        [int]$OptionCount,
+        [int]$DefaultChoice = 1
+    )
+
+    while ($true) {
+        $choice = Read-Host $Prompt
+        if ([string]::IsNullOrWhiteSpace($choice)) {
+            return [string]$DefaultChoice
+        }
+
+        $selected = 0
+        if ([int]::TryParse($choice, [ref]$selected) -and $selected -ge 1 -and $selected -le $OptionCount) {
+            return [string]$selected
+        }
+
+        Write-Host "Enter a number between 1 and $OptionCount" -ForegroundColor Yellow
+    }
+}
+
 Push-Location $PSScriptRoot
 try {
     # Set JAVA_HOME if not already set
@@ -36,9 +58,9 @@ try {
         Write-Host "  2) Release (signed, for Play Console)"
         Write-Host "  3) Internal (debug + release signing, for Play internal testing)"
         Write-Host ""
-        $BuildType = Read-Host "Enter choice [3]"
+        $BuildType = Read-NumberedChoice -Prompt "Enter choice (1-3)" -OptionCount 3
     }
-    if (-not $BuildType) { $BuildType = "3" }
+    if (-not $BuildType) { $BuildType = "1" }
 
     if ($BuildType -eq '1') {
         $variant = "Debug"

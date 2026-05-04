@@ -92,6 +92,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "switch.h"
 #include "escort.h"
 #include "window.h"
+#include "input_demo_debug_logging.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -260,7 +261,7 @@ int which_bomb()
 void do_weapon_n_item_stuff()
 {
 	int i;
-	const int rng_probe = input_demo_replay_is_loaded();
+	const int rng_probe = input_demo_replay_is_loaded() && input_demo_debug_is_enabled();
 
 	if (rng_probe) {
 		con_printf(CON_NORMAL, "RNG_PROBE|tag=weapon_item_entry|gt=%lld|sim_calls=%d|sim_state=%u|fire_secondary_state=%d|fire_secondary_count=%d|global_missile=%d\n",

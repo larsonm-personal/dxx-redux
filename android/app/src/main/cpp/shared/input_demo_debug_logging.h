@@ -5,8 +5,9 @@
 extern "C" {
 #endif
 
-// Stub function declarations - implementations use void* to avoid d1/d2 header includes
-// These are designed to be called from d1/d2 code
+int input_demo_debug_is_enabled(void);
+void input_demo_debug_set_enabled(int enabled);
+void input_demo_debug_printf(const char *fmt, ...);
 
 void input_demo_debug_log_player_motion_state(const char *stage);
 void input_demo_debug_log_warning_probe(const char *label, void *obj, int view_x, int view_y, int view_z, int near_center, int prev_danger_obj, int prev_danger_sig);

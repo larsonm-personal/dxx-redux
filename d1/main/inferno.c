@@ -74,6 +74,7 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "input_demo_replay.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_state_trace.h"
+#include "input_demo_debug_logging.h"
 #include "joy.h"
 #include "input_demo_fp_env.h"
 #include "../texmap/scanline.h" //for select_tmap -MM
@@ -173,6 +174,8 @@ void print_commandline_help()
 	printf( "  -norun                        Bail out after initialization\n");
 	printf( "  -inputdemo-validate <s>       Validate input demo file rng_mode and exit\n");
 	printf( "  -inputdemo-replay <s>         Replay input demo file through the D1 engine\n");
+	printf( "  -inputdemo-replay-labels      Accept and ignore replay label toggle for helper parity\n");
+	printf( "  -inputdemo-debug-log          Enable optional input demo debug probe logging\n");
 	printf( "  -inputdemo-state-log <s>      Write replay frame-state JSONL during input demo replay\n");
 	printf( "  -inputdemo-rng-trace <s>      Write replay RNG trace JSONL during input demo replay\n");
 	printf( "  -renderstats                  Enable renderstats info by default\n");
@@ -271,6 +274,8 @@ static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *play
 int input_demo_maybe_start_replay_from_cmdline(void)
 {
 	int arg_index = find_cmd_arg("-inputdemo-replay");
+	int replay_labels_arg_index = find_cmd_arg("-inputdemo-replay-labels");
+	int debug_log_arg_index = find_cmd_arg("-inputdemo-debug-log");
 	int state_log_arg_index = find_cmd_arg("-inputdemo-state-log");
 	int rng_trace_arg_index = find_cmd_arg("-inputdemo-rng-trace");
 	int engine_mode;
@@ -291,6 +296,9 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 	input_demo_player_cfg replay_player_cfg;
 	char local_player_callsign[CALLSIGN_LEN + 1] = "";
 	int have_replay_player_cfg = 0;
+
+	(void)replay_labels_arg_index;
+	input_demo_debug_set_enabled(debug_log_arg_index ? 1 : 0);
 
 	if (!arg_index)
 		return -1;

@@ -21,6 +21,28 @@ param(
 $ErrorActionPreference = "Stop"
 $PACKAGE = "com.dxxredux.app"
 
+function Read-NumberedChoice {
+    param(
+        [string]$Prompt,
+        [int]$OptionCount,
+        [int]$DefaultChoice = 1
+    )
+
+    while ($true) {
+        $choice = Read-Host $Prompt
+        if ([string]::IsNullOrWhiteSpace($choice)) {
+            return [string]$DefaultChoice
+        }
+
+        $selected = 0
+        if ([int]::TryParse($choice, [ref]$selected) -and $selected -ge 1 -and $selected -le $OptionCount) {
+            return [string]$selected
+        }
+
+        Write-Host "Enter a number between 1 and $OptionCount" -ForegroundColor Yellow
+    }
+}
+
 # -- Locate credentials ----------------------------------------------
 if (-not $CredentialsPath) {
     $CredentialsPath = Join-Path $PSScriptRoot "play-store-credentials.json"
@@ -120,13 +142,6 @@ for ($i = 0; $i -lt $trackNames.Count; $i++) {
     $num = $i + 1
     Write-Host "  ${num}) ${name}${info}"
 }
-# Default to "internal" if available, otherwise first track
-$defaultIdx = 0
-for ($j = 0; $j -lt $trackNames.Count; $j++) {
-    if ($trackNames[$j] -eq "internal") { $defaultIdx = $j; break }
-}
-$defaultNum = $defaultIdx + 1
-
 # Use TrackName if provided, then TrackIndex, otherwise prompt
 if ($TrackName) {
     $found = $false
@@ -144,9 +159,8 @@ if ($TrackName) {
     $choice = "$TrackIndex"
 } else {
     Write-Host ""
-    $choice = Read-Host "Select track [$defaultNum]"
+    $choice = Read-NumberedChoice -Prompt "Select track (1-$($trackNames.Count))" -OptionCount $trackNames.Count
 }
-if (-not $choice) { $choice = "$defaultNum" }
 $idx = [int]$choice - 1
 if ($idx -lt 0 -or $idx -ge $trackNames.Count) {
     Write-Error "Invalid selection: $choice"

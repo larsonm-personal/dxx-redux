@@ -58,6 +58,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "escort.h"
 #include "collide.h"
 #include "maths.h"
+#include "input_demo_debug_logging.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 
@@ -83,7 +84,8 @@ extern fix64 Buddy_last_seen_player, Buddy_last_player_path_created;
 
 static int input_demo_trace_escort_active(void)
 {
-	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+	return input_demo_debug_is_enabled() &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
 }
 
 static unsigned int input_demo_trace_frame_index(void)

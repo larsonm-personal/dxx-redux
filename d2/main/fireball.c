@@ -57,6 +57,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseg.h"
 #include "automap.h"
 #include "byteswap.h"
+#include "input_demo_debug_logging.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 
@@ -69,7 +70,8 @@ int	PK1=1, PK2=8;
 
 static int input_demo_trace_explosion_probe_active(void)
 {
-	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+	return input_demo_debug_is_enabled() &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
 }
 
 static unsigned int input_demo_trace_explosion_frame_index(void)

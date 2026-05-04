@@ -35,6 +35,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "piggy.h"
 #include "player.h"
 #include "game.h"
+#include "input_demo_debug_logging.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 
@@ -624,7 +625,8 @@ static void input_demo_log_fvi_weapon_robot_check(
 	fix miss_delta;
 	unsigned int frame;
 
-	if (!input_demo_replay_is_loaded() && !input_demo_recorder_is_active())
+	if (!input_demo_debug_is_enabled() ||
+		(!input_demo_replay_is_loaded() && !input_demo_recorder_is_active()))
 		return;
 	if (weapon_objnum < 0 || robot_objnum < 0)
 		return;

@@ -204,12 +204,13 @@ int check_collision_delayfunc_exec()
 
 	static int input_demo_replay_collision_probe_active(void)
 	{
-		return input_demo_replay_is_loaded();
+		return input_demo_debug_is_enabled() && input_demo_replay_is_loaded();
 	}
 
 	static int input_demo_trace_collision_pose_active(void)
 	{
-		return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+		return input_demo_debug_is_enabled() &&
+			(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
 	}
 
 	static unsigned int input_demo_trace_collision_frame_index(void)
@@ -1628,7 +1629,7 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 	robot->shields -= damage;
 	newdemo_dump_note_robot_damage(robot, old_shields, damage);
 	input_demo_record_robot_damage_event(robot, damage, old_shields);
-	if (input_demo_replay_is_loaded())
+	if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
 		con_printf(CON_NORMAL,
 			"Input demo replay robot damage: gt=%lld frame=%u robot_obj=%d robot_sig=%d robot_id=%d damage=%d shields=%d->%d dead=%d pos=(%d,%d,%d)\n",
 			(long long)GameTime64,

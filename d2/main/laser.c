@@ -46,6 +46,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "input_demo_energy_trace.h"
+#include "input_demo_debug_logging.h"
 #include "sounds.h"
 #include "ai.h"
 #include "powerup.h"
@@ -67,18 +68,20 @@ static int Input_demo_record_laser_event_logged_error = 0;
 
 static int input_demo_replay_spreadfire_probe_active(void)
 {
-	return input_demo_replay_is_loaded() &&
+	return input_demo_debug_is_enabled() &&
+		input_demo_replay_is_loaded() &&
 		Players[Player_num].primary_weapon == SPREADFIRE_INDEX;
 }
 
 static int input_demo_replay_weapon_lifetime_probe_active(void)
 {
-	return input_demo_replay_is_loaded();
+	return input_demo_debug_is_enabled() && input_demo_replay_is_loaded();
 }
 
 static int input_demo_weapon_trace_active(void)
 {
-	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+	return input_demo_debug_is_enabled() &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
 }
 
 static unsigned int input_demo_weapon_trace_frame_index(void)
@@ -1578,7 +1581,7 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	vms_matrix	m;
 	int			objnum;
 
-	if (input_demo_replay_is_loaded())
+	if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
 	{
 		unsigned int sim_calls = d_rand_get_call_count();
 		unsigned int sim_state = 0;
@@ -2607,7 +2610,7 @@ void do_missile_firing(int drop_bomb)
 	int bomb = which_bomb();
 	int weapon = (drop_bomb) ? bomb : Players[Player_num].secondary_weapon;
 	fix fire_frame_overhead = 0;
-	const int rng_probe = input_demo_replay_is_loaded();
+	const int rng_probe = input_demo_replay_is_loaded() && input_demo_debug_is_enabled();
 
 	Network_laser_track = -1;
 

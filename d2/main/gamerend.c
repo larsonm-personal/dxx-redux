@@ -53,6 +53,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "maths.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
+#include "input_demo_debug_logging.h"
 #include "replay_debug_overlay.h"
 
 #ifdef OGL
@@ -809,7 +810,9 @@ static void input_demo_restore_preserved_ui_rng(int preserve_rng, unsigned int s
 
 static int input_demo_should_log_preserved_ui_rng(void)
 {
-	return input_demo_replay_is_loaded() && input_demo_replay_next_frame_index() < 2;
+	return input_demo_debug_is_enabled() &&
+		input_demo_replay_is_loaded() &&
+		input_demo_replay_next_frame_index() < 2;
 }
 
 static void input_demo_log_preserved_ui_rng(const char *stage, int preserve_rng, unsigned int saved_rng_state, int no_draw_hud)
@@ -984,8 +987,8 @@ void game_render_frame_mono(int flip)
 	}
 #endif
 
-	/* android port: robot number labels and frame counter during input demo replay */
-	if (input_demo_replay_is_loaded()) {
+	/* android port: replay robot labels and frame counter */
+	if (input_demo_replay_is_loaded() && g_replay_robot_labels_enabled) {
 		int i;
 		gr_set_current_canvas(NULL);
 		gr_set_curfont(GAME_FONT);

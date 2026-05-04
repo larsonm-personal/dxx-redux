@@ -76,6 +76,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "rbaudio.h"
 #include "gamepal.h"
 #include "mission.h"
+#include "input_demo_debug_logging.h"
 
 #include "multi.h"
 #include "cntrlcen.h"
@@ -2442,7 +2443,7 @@ void FireLaser()
 					
 					apply_damage_to_player(ConsoleObject, ConsoleObject, damage, 0);
 				} else {
-					if (input_demo_replay_is_loaded())
+					if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
 						con_printf(CON_NORMAL,
 							"Input demo replay fire probe: frame=%u kind=fusion_warmup player_obj=%d auto=%d charge=%d next_sound=%lld\n",
 							(unsigned int)input_demo_replay_next_frame_index(),

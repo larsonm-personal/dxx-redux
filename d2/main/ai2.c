@@ -59,6 +59,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
+#include "input_demo_debug_logging.h"
 #include "input_demo_energy_trace.h"
 
 #ifdef EDITOR
@@ -95,7 +96,8 @@ static unsigned int input_demo_trace_frame_index(void)
 
 static int input_demo_trace_robot_fire_active(object *objp)
 {
-	return (input_demo_recorder_is_active() || input_demo_replay_is_loaded()) &&
+	return input_demo_debug_is_enabled() &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded()) &&
 		objp &&
 		(objp->type == OBJ_ROBOT);
 }
@@ -2290,7 +2292,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 	fix	dot;
 	#define REPLAY_LOG_ACTUAL_FIRE(step_label, fire_gun) \
 		do { \
-			if (input_demo_replay_is_loaded()) \
+			if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded()) \
 				con_printf(CON_NORMAL, \
 					"Input demo replay AI fire: frame=%u obj=%d step=%s gun=%d vis=%d dist=%d last_dist=%d last_fired=(%d,%d,%d) believed=(%d,%d,%d)\n", \
 					(unsigned int)input_demo_replay_next_frame_index(), \

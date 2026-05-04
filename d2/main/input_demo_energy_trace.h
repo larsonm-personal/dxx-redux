@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 
+#include "input_demo_debug_logging.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 
@@ -46,7 +47,7 @@ static void input_demo_trace_energy_change(const char *cause, fix energy_before,
 	if (wrote > 0 && wrote < (int)sizeof(json))
 		input_demo_trace_record_frame_event_json(json);
 
-	if (input_demo_replay_is_loaded())
+	if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
 		con_printf(CON_NORMAL,
 			"Input demo replay energy change: frame=%u cause=%s before=%d after=%d delta=%d before_raw=%d after_raw=%d delta_raw=%d%s\n",
 			(unsigned int)input_demo_replay_next_frame_index(),

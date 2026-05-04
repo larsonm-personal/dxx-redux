@@ -14,6 +14,9 @@ param(
     [string]$Pilot,
     [switch]$NoRender,
     [switch]$PreferHeadlessConsole,
+    [ValidateSet('auto', 'hide', 'show')]
+    [string]$ReplayRobotLabels = 'auto',
+    [switch]$ReplayDebugLog,
     [ValidateSet('auto', 'visual', 'fast', 'windowed-no-present', 'headless-console')]
     [string]$Runner = 'auto',
     [switch]$ReuseSandbox,
@@ -684,6 +687,7 @@ function Get-HeadlessConsoleLaunchArguments {
         [string]$ResolvedDemoPath,
         [string]$ResolvedStateLogPath,
         [string]$ResolvedRngLogPath,
+        [switch]$ReplayDebugLog,
         [int]$HeadlessConsoleOutput
     )
 
@@ -697,8 +701,37 @@ function Get-HeadlessConsoleLaunchArguments {
     if ($ResolvedRngLogPath) {
         $launchParameters += @('-inputdemo-rng-trace', $ResolvedRngLogPath)
     }
+    if ($ReplayDebugLog) {
+        $launchParameters += '-inputdemo-debug-log'
+    }
     $launchParameters += @('-headless-console-output', [string]$HeadlessConsoleOutput)
     return $launchParameters
+}
+
+function Read-NumberedChoice {
+    param(
+        [string]$Prompt,
+        [int]$OptionCount,
+        [int]$DefaultChoice = 1
+    )
+
+    while ($true) {
+        $choice = Read-Host $Prompt
+        if ([string]::IsNullOrWhiteSpace($choice)) {
+            return $DefaultChoice
+        }
+
+        $selected = 0
+        if ([int]::TryParse($choice, [ref]$selected) -and $selected -ge 1 -and $selected -le $OptionCount) {
+            return $selected
+        }
+
+        if ($OptionCount -eq 2) {
+            Write-Host 'Enter 1 or 2'
+        } else {
+            Write-Host "Enter a number between 1 and $OptionCount"
+        }
+    }
 }
 
 function Get-LaunchMode {
@@ -716,11 +749,10 @@ function Get-LaunchMode {
         Write-Host "  [1] Real time     maxfps=$realTimeFps"
         Write-Host "  [2] Accelerated   maxfps=$($Config.MaxFps) + -nonicefps"
         while ($RequestedMode -eq 'prompt') {
-            $choice = Read-Host 'Choose replay mode (1 or 2)'
+            $choice = Read-NumberedChoice -Prompt 'Choose replay mode (1 or 2)' -OptionCount 2
             switch ($choice) {
-                '1' { $RequestedMode = 'realtime' }
-                '2' { $RequestedMode = 'accelerated' }
-                default { Write-Host 'Enter 1 or 2' }
+                1 { $RequestedMode = 'realtime' }
+                2 { $RequestedMode = 'accelerated' }
             }
         }
     }
@@ -754,13 +786,12 @@ function Get-RenderProfile {
         Write-Host '  [3] Compat texture formats   disables legacy 4-bit/2-bit internal formats'
         Write-Host '  [4] Lowres assets            adds -lowresgraphics'
         while ($RequestedProfile -eq 'auto') {
-            $choice = Read-Host 'Choose render profile (1-4)'
+            $choice = Read-NumberedChoice -Prompt 'Choose render profile (1-4)' -OptionCount 4
             switch ($choice) {
-                '1' { $RequestedProfile = 'default' }
-                '2' { $RequestedProfile = 'legacy-texmerge' }
-                '3' { $RequestedProfile = 'compat-texture-formats' }
-                '4' { $RequestedProfile = 'lowres-assets' }
-                default { Write-Host 'Enter 1, 2, 3, or 4' }
+                1 { $RequestedProfile = 'default' }
+                2 { $RequestedProfile = 'legacy-texmerge' }
+                3 { $RequestedProfile = 'compat-texture-formats' }
+                4 { $RequestedProfile = 'lowres-assets' }
             }
         }
     }
@@ -816,6 +847,8 @@ function Get-LaunchArguments {
         [hashtable]$RenderProfileSelection,
         [string]$Pilot,
         [switch]$NoRender,
+        [switch]$ShowReplayRobotLabels,
+        [switch]$ReplayDebugLog,
         [string]$ResolvedStateLogPath,
         [string]$ResolvedRngLogPath
     )
@@ -840,6 +873,12 @@ function Get-LaunchArguments {
     }
     if ($Pilot) {
         $launchParameters += @('-pilot', $Pilot)
+    }
+    if ($ShowReplayRobotLabels) {
+        $launchParameters += '-inputdemo-replay-labels'
+    }
+    if ($ReplayDebugLog) {
+        $launchParameters += '-inputdemo-debug-log'
     }
     if ($ResolvedStateLogPath) {
         $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
@@ -920,14 +959,8 @@ function Select-DemoCandidate {
     }
 
     Show-DemoCandidates -Candidates $Candidates
-    while ($true) {
-        $choice = Read-Host 'Choose demo number'
-        $index = 0
-        if ([int]::TryParse($choice, [ref]$index) -and $index -ge 1 -and $index -le $Candidates.Count) {
-            return $Candidates[$index - 1]
-        }
-        Write-Host "Enter a number between 1 and $($Candidates.Count)"
-    }
+    $index = Read-NumberedChoice -Prompt 'Choose demo number' -OptionCount $Candidates.Count
+    return $Candidates[$index - 1]
 }
 
 function ConvertTo-DeepHashtableClone {
@@ -1171,6 +1204,33 @@ $runnerSelection = Resolve-ReplayRunnerSelection -RequestedRunner $Runner -Resol
 $useHeadlessConsole = $runnerSelection.UseHeadlessConsole
 $effectiveNoRender = $runnerSelection.UseNoRender
 $headlessQuietConsole = $useHeadlessConsole -and ($HeadlessConsoleOutput -eq 1)
+$interactiveReplaySelection = ($Mode -eq 'prompt') -or (-not $DemoPath)
+$showReplayRobotLabels = $false
+$replayRobotLabelsIgnored = $false
+$canShowReplayRobotLabels = ($resolvedGame -eq 'd2') -and -not $useHeadlessConsole -and -not $effectiveNoRender
+
+if ($canShowReplayRobotLabels) {
+    switch ($ReplayRobotLabels) {
+        'show' {
+            $showReplayRobotLabels = $true
+        }
+        'hide' {
+            $showReplayRobotLabels = $false
+        }
+        default {
+            if ($interactiveReplaySelection) {
+                Write-Host ''
+                Write-Host 'Replay robot labels:'
+                Write-Host '  [1] No'
+                Write-Host '  [2] Yes'
+                $showReplayRobotLabels = (Read-NumberedChoice -Prompt 'Show replay robot labels (1 or 2)' -OptionCount 2) -eq 2
+            }
+        }
+    }
+} elseif ($ReplayRobotLabels -eq 'show') {
+    $replayRobotLabelsIgnored = $true
+}
+
 $headlessConsoleExe = if ($useHeadlessConsole) { Get-HeadlessConsoleExe -GameName $resolvedGame } else { $null }
 if ($useHeadlessConsole) {
     if ($BuildBeforeRun) {
@@ -1210,9 +1270,9 @@ $expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
 $checkpointRecord = Get-DemoCheckpointRecord -Path $resolvedDemoPath
 $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -Header $header -Checkpoint $checkpointRecord
 $launchArgs = if ($useHeadlessConsole) {
-    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath -HeadlessConsoleOutput $HeadlessConsoleOutput
+    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath -ReplayDebugLog:$ReplayDebugLog -HeadlessConsoleOutput $HeadlessConsoleOutput
 } else {
-    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
+    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
 }
 $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
 $runnerName = $runnerSelection.Name
@@ -1241,6 +1301,12 @@ if (-not $headlessQuietConsole) {
     Write-Host "Replay path: $($runnerSelection.Description)"
     Write-Host "Mode: $($launchMode.Name)"
     Write-Host "Render profile: $($renderProfileSelection.Name) ($($renderProfileSelection.Description))"
+    if ($canShowReplayRobotLabels) {
+        Write-Host "Replay labels: $(if ($showReplayRobotLabels) { 'on' } else { 'off' })"
+    } elseif ($replayRobotLabelsIgnored) {
+        Write-Host 'Replay labels: ignored by this runner'
+    }
+    Write-Host "Replay debug log: $(if ($ReplayDebugLog) { 'on' } else { 'off' })"
     if ($useHeadlessConsole -and $renderProfileSelection.ExtraArgs.Count -gt 0) {
         Write-Host 'Render profile args: ignored by headless runner'
     }

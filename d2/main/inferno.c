@@ -58,6 +58,7 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "inferno.h"
 #include "dxxerror.h"
 #include "game.h"
+#include "replay_debug_overlay.h"
 #include "segment.h"		//for Side_to_verts
 #include "u_mem.h"
 #include "screens.h"
@@ -73,6 +74,7 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "input_demo_rng_trace.h"
 #include "input_demo_state_trace.h"
 #include "input_demo_rng_mode.h"
+#include "input_demo_debug_logging.h"
 #include "titles.h"
 #include "text.h"
 #include "gauges.h"
@@ -192,6 +194,8 @@ void print_commandline_help()
 	printf( "  -norun                        Bail out after initialization\n");
 	printf( "  -inputdemo-validate <s>       Validate input demo file rng_mode and exit\n");
 	printf( "  -inputdemo-replay <s>         Replay input demo file through the D2 engine\n");
+	printf( "  -inputdemo-replay-labels      Draw replay robot labels and frame counter during replay\n");
+	printf( "  -inputdemo-debug-log          Enable optional input demo debug probe logging\n");
 	printf( "  -inputdemo-state-log <s>      Write replay frame-state JSONL during input demo replay\n");
 	printf( "  -inputdemo-rng-trace <s>      Write replay RNG trace JSONL during input demo replay\n");
 	printf( "  -classicdemo-dump-json <s> <s> Dump classic .dem to JSONL and exit\n");
@@ -265,12 +269,17 @@ static int maybe_validate_input_demo_metadata(void)
 int input_demo_maybe_start_replay_from_cmdline(void)
 {
 	int arg_index = find_cmd_arg("-inputdemo-replay");
+	int replay_labels_arg_index = find_cmd_arg("-inputdemo-replay-labels");
+	int debug_log_arg_index = find_cmd_arg("-inputdemo-debug-log");
 	int state_log_arg_index = find_cmd_arg("-inputdemo-state-log");
 	int rng_trace_arg_index = find_cmd_arg("-inputdemo-rng-trace");
 	const char *demo_path;
 	const char *state_log_path = NULL;
 	const char *rng_trace_path = NULL;
 	char replay_error[256] = "";
+
+	input_demo_debug_set_enabled(debug_log_arg_index ? 1 : 0);
+	g_replay_robot_labels_enabled = replay_labels_arg_index ? 1 : 0;
 
 	if (!arg_index)
 		return -1;
