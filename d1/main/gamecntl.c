@@ -71,6 +71,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "endlevel.h"
 #include "config.h"
 #include "kconfig.h"
+#include "input_demo_control_info.h"
+#include "input_demo_recorder.h"
 #include "mouse.h"
 #include "titles.h"
 #include "gr.h"
@@ -1604,6 +1606,13 @@ int ReadControls(d_event *event)
 	if (should_read_controls)
 	{
 		kconfig_read_controls(event, 0);
+		if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) {
+			input_demo_control_state ignored_state;
+			input_demo_control_pulse pulse;
+
+			input_demo_control_state_from_control_info(&ignored_state, &pulse, &Controls);
+			input_demo_recorder_stage_pulse(&pulse);
+		}
 
 		check_rear_view();
 

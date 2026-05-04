@@ -146,10 +146,10 @@ ubyte object_rendered[MAX_OBJECTS];
 #endif
 
 static unsigned int input_demo_render_probe_drawn_frame[MAX_OBJECTS];
-static unsigned int input_demo_render_probe_first_player_shot_frame = (unsigned int)-1;
+static unsigned int input_demo_render_probe_skip_state[MAX_OBJECTS];
+static ubyte input_demo_render_probe_skip_logged[MAX_OBJECTS];
 static int input_demo_render_probe_active(void);
 static void input_demo_render_probe_log_skipped_robots(void);
-static void input_demo_render_probe_log_target_robot_visibility(void);
 
 #ifdef EDITOR
 int	Render_only_bottom=0;
@@ -1225,93 +1225,7 @@ static int input_demo_render_probe_active(void)
 	return (frame >= 300) && (frame <= 2000);
 }
 
-static void input_demo_render_probe_update_first_player_shot_frame(void)
-{
-	unsigned int frame;
-	int i;
-
-	if (!input_demo_render_probe_active())
-		return;
-
-	if (input_demo_render_probe_first_player_shot_frame != (unsigned int)-1)
-		return;
-
-	frame = (unsigned int)input_demo_replay_next_frame_index();
-
-	if (Player_fired_laser_this_frame != -1) {
-		input_demo_render_probe_first_player_shot_frame = frame;
-		con_printf(CON_NORMAL,
-			"Input demo render target state: frame=%u step=first_shot_detected source=player_fired_laser_this_frame obj=%d\n",
-			frame,
-			Player_fired_laser_this_frame);
-		return;
-	}
-
-	for (i = 0; i <= Highest_object_index; i++) {
-		object *weapon = &Objects[i];
-
-		if (weapon->type != OBJ_WEAPON)
-			continue;
-		if (weapon->flags & (OF_SHOULD_BE_DEAD | OF_HARMLESS))
-			continue;
-		if (weapon->ctype.laser_info.parent_type != OBJ_PLAYER)
-			continue;
-		if (weapon->ctype.laser_info.parent_num != Players[Player_num].objnum)
-			continue;
-
-		input_demo_render_probe_first_player_shot_frame = frame;
-		con_printf(CON_NORMAL,
-			"Input demo render target state: frame=%u step=first_shot_detected source=active_player_weapon weapon_obj=%d parent_obj=%d\n",
-			frame,
-			i,
-			weapon->ctype.laser_info.parent_num);
-		return;
-	}
-}
-
-static int input_demo_render_probe_obj_in_seg_list(int objnum)
-{
-	object *obj = &Objects[objnum];
-	int cur;
-	int safety = 0;
-
-	if (obj->segnum < 0 || obj->segnum >= MAX_SEGMENTS)
-		return 0;
-
-	cur = Segments[obj->segnum].objects;
-	while (cur != -1 && safety < MAX_OBJECTS) {
-		if (cur == objnum)
-			return 1;
-		cur = Objects[cur].next;
-		safety++;
-	}
-	return 0;
-}
-
-static int input_demo_render_probe_target_in_object_list(int objnum)
-{
-	int nn;
-
-	for (nn = 0; nn < N_render_segs; nn++)
-		if (input_demo_render_probe_list_has_object(nn, objnum))
-			return 1;
-
-	return 0;
-}
-
-static int input_demo_render_probe_target_in_render_seg(object *obj)
-{
-	int nn;
-
-	if (!obj)
-		return 0;
-
-	for (nn = 0; nn < N_render_segs; nn++)
-		if (Render_list[nn] == obj->segnum)
-			return 1;
-
-	return 0;
-}
+static int input_demo_render_probe_list_has_object(int listnum, int objnum);
 
 static int input_demo_render_probe_should_log_boundary(void)
 {
@@ -1347,83 +1261,6 @@ static int input_demo_render_probe_first_robot_in_seg(int segnum, int *objnum_ou
 	return 0;
 }
 
-static void input_demo_render_probe_log_target_robot_visibility(void)
-{
-	unsigned int frame;
-	int target_obj;
-	/* android port: target objects for render visibility probe */
-	static const int target_objs[] = {73, 74, 75, 107, 158};
-	int ti;
-
-	if (!input_demo_render_probe_active())
-		return;
-
-	frame = (unsigned int)input_demo_replay_next_frame_index();
-	if (frame < 300 || frame > 2000)
-		return;
-
-	input_demo_render_probe_update_first_player_shot_frame();
-
-	for (ti = 0; ti < 5; ti++) {
-		int target_obj = target_objs[ti];
-		object *obj = &Objects[target_obj];
-		int drawn = input_demo_render_probe_drawn_frame[target_obj] == frame;
-		int in_render_seg = input_demo_render_probe_target_in_render_seg(obj);
-		int in_obj_list = input_demo_render_probe_target_in_object_list(target_obj);
-		int pre_shot = input_demo_render_probe_first_player_shot_frame == (unsigned int)-1;
-		int in_seg_list = input_demo_render_probe_obj_in_seg_list(target_obj);
-
-		if (target_obj == 73 && (frame % 200u) == 0u)
-			con_printf(CON_NORMAL,
-				"Input demo render target state: frame=%u step=probe_heartbeat pre_shot=%d first_shot_frame=%u in_render_seg=%d in_obj_list=%d in_seg_list=%d drawn=%d type=%d seg=%d\n",
-				frame,
-				pre_shot,
-				input_demo_render_probe_first_player_shot_frame,
-				in_render_seg,
-				in_obj_list,
-				in_seg_list,
-				drawn,
-				obj->type,
-				obj->segnum);
-
-		/* for obj 107, log every frame near disappearance; for others skip if not drawn post-shot */
-		if (target_obj == 107) {
-			if (frame < 1390 || frame > 1510)
-				continue;
-		} else if (target_obj == 158) {
-			if (frame < 1880 || frame > 1950)
-				continue;
-		} else if (!pre_shot && !drawn) {
-			continue;
-		}
-
-		con_printf(CON_NORMAL,
-			"Input demo render target state: frame=%u pre_shot=%d first_shot_frame=%u obj=%d type=%d sig=%d id=%d seg=%d in_render_seg=%d in_obj_list=%d in_seg_list=%d drawn=%d render_type=%d flags=0x%x exploding=%d should_die=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
-			frame,
-			pre_shot,
-			input_demo_render_probe_first_player_shot_frame,
-			target_obj,
-			obj->type,
-			obj->signature,
-			obj->id,
-			obj->segnum,
-			in_render_seg,
-			in_obj_list,
-			in_seg_list,
-			drawn,
-			obj->render_type,
-			obj->flags,
-			(obj->flags & OF_EXPLODING) != 0,
-			(obj->flags & OF_SHOULD_BE_DEAD) != 0,
-			obj->pos.x,
-			obj->pos.y,
-			obj->pos.z,
-			obj->mtype.phys_info.velocity.x,
-			obj->mtype.phys_info.velocity.y,
-			obj->mtype.phys_info.velocity.z);
-	}
-}
-
 static int input_demo_render_probe_list_has_object(int listnum, int objnum)
 {
 	int objnp = 0;
@@ -1449,6 +1286,20 @@ static int input_demo_render_probe_list_has_object(int listnum, int objnum)
 	return 0;
 }
 
+static unsigned int input_demo_render_probe_skip_state_key(object *obj, int depth, int in_obj_list)
+{
+	unsigned int key = (unsigned int)obj->signature;
+
+	key = key * 131u + (unsigned int)(obj->segnum & 0xffff);
+	key = key * 131u + (unsigned int)depth;
+	key = key * 131u + (unsigned int)in_obj_list;
+	key = key * 131u + (unsigned int)obj->flags;
+	key = key * 131u + (unsigned int)obj->control_type;
+	key = key * 131u + (unsigned int)obj->movement_type;
+
+	return key;
+}
+
 static void input_demo_render_probe_log_skipped_robots(void)
 {
 	int nn;
@@ -1469,6 +1320,7 @@ static void input_demo_render_probe_log_skipped_robots(void)
 
 		for (objnum=Segments[segnum].objects; objnum!=-1; objnum=obj->next) {
 			int in_obj_list;
+			unsigned int skip_state;
 
 			obj = &Objects[objnum];
 
@@ -1478,10 +1330,19 @@ static void input_demo_render_probe_log_skipped_robots(void)
 			if (obj->flags & OF_ATTACHED)
 				continue;
 
-			if (input_demo_render_probe_drawn_frame[objnum] == frame)
+			if (input_demo_render_probe_drawn_frame[objnum] == frame) {
+				input_demo_render_probe_skip_logged[objnum] = 0;
 				continue;
+			}
 
 			in_obj_list = input_demo_render_probe_list_has_object(nn, objnum);
+			skip_state = input_demo_render_probe_skip_state_key(obj, nn, in_obj_list);
+			if (input_demo_render_probe_skip_logged[objnum] &&
+				input_demo_render_probe_skip_state[objnum] == skip_state)
+				continue;
+
+			input_demo_render_probe_skip_logged[objnum] = 1;
+			input_demo_render_probe_skip_state[objnum] = skip_state;
 			con_printf(CON_NORMAL,
 				"Input demo render robot skip: frame=%u obj=%d sig=%d id=%d seg=%d depth=%d in_obj_list=%d render_type=%d flags=0x%x control=%d movement=%d life=%d\n",
 				frame,
@@ -2510,26 +2371,6 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	//set up for rendering
 
 	render_start_frame();
-	{
-		static int input_demo_render_probe_render_mine_unconditional_logged = 0;
-		if (input_demo_debug_is_enabled() && !input_demo_render_probe_render_mine_unconditional_logged) {
-			input_demo_render_probe_render_mine_unconditional_logged = 1;
-			con_printf(CON_NORMAL,
-				"Input demo render target state: step=render_mine_enter_unconditional frame=%u nd_state=%d replay_loaded=%d\n",
-				(unsigned int)input_demo_replay_next_frame_index(),
-				Newdemo_state,
-				input_demo_replay_is_loaded());
-		}
-	}
-	{
-		static int input_demo_render_probe_render_mine_count_logged = 0;
-		if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded() && !input_demo_render_probe_render_mine_count_logged) {
-			input_demo_render_probe_render_mine_count_logged = 1;
-			con_printf(CON_NORMAL,
-				"Input demo render target state: step=render_mine_enter frame=%u\n",
-				(unsigned int)input_demo_replay_next_frame_index());
-		}
-	}
 #ifdef ANDROID
 	g_merged_wall_frame_id++;
 	g_merged_wall_render_pass = 0;
@@ -2833,7 +2674,6 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 #endif
 
 	// -- commented out by mk on 09/14/94...did i do a good thing??  object_render_targets();
-	input_demo_render_probe_log_target_robot_visibility();
 	input_demo_render_probe_log_skipped_robots();
 
 #ifdef EDITOR

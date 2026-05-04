@@ -235,6 +235,7 @@ static int expect_record_and_flush(void)
 	settings.difficulty = 2;
 	settings.rng_mode = input_demo_test_rng_mode();
 	settings.has_player_cfg = 1;
+	settings.record_per_frame_state = 1;
 	fill_test_player_cfg(&settings.player_cfg);
 	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
 		remove_test_dir(dir);
@@ -350,6 +351,7 @@ static int expect_record_and_flush_checkpoint(void)
 	settings.difficulty = 2;
 	settings.rng_mode = input_demo_test_rng_mode();
 	settings.has_player_cfg = 1;
+	settings.record_per_frame_state = 1;
 	fill_test_player_cfg(&settings.player_cfg);
 	settings.checkpoint_save_name = "inputdemo_start.dgss";
 	settings.checkpoint_data = checkpoint_data;
@@ -407,6 +409,92 @@ static int expect_record_and_flush_checkpoint(void)
 		parsed.checkpoint.sha256 != "077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5" ||
 		parsed.checkpoint.data != "REdTUxgAAAA=")
 		return report_failure("checkpoint recorder demo round trip mismatch");
+	return 0;
+}
+
+static int expect_stage_consumed_pulse(void)
+{
+	const char *dir = "test_input_demo_recorder_staged_pulse_fixture";
+	const std::string demo_path = std::string(dir) + "/recorded_staged_pulse.dximdemo";
+	const std::string trace_path = demo_path + INPUT_DEMO_RNG_TRACE_SUFFIX;
+	input_demo_recorder_settings settings;
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	input_demo_control_pulse staged_pulse;
+	input_demo_result frame_state;
+	input_demo_file parsed;
+	char error[256] = "";
+	std::string read_error;
+	std::string text;
+
+	if (!make_test_dir(dir))
+		return report_failure("could not create staged pulse recorder test directory");
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.difficulty = 2;
+	settings.rng_mode = input_demo_test_rng_mode();
+	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
+		remove_test_dir(dir);
+		return report_failure_string(std::string("staged pulse recorder start failed: ") + error);
+	}
+	input_demo_control_state_clear(&state);
+	input_demo_control_pulse_clear(&pulse);
+	input_demo_control_pulse_clear(&staged_pulse);
+	staged_pulse.fire_secondary_count = 2;
+	staged_pulse.select_weapon_count = 4;
+	input_demo_recorder_stage_pulse(&staged_pulse);
+	pulse.fire_primary_count = 1;
+	fill_test_frame_state(&frame_state, 0);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("staged pulse capture frame 0 failed: ") + error);
+	}
+	input_demo_control_pulse_clear(&pulse);
+	fill_test_frame_state(&frame_state, 1);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 101, 0, 0, &frame_state, error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("staged pulse capture frame 1 failed: ") + error);
+	}
+	if (!input_demo_recorder_flush(demo_path.c_str(), error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("staged pulse recorder flush failed: ") + error);
+	}
+	if (!read_text_file(demo_path.c_str(), &text)) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure("could not read staged pulse recorder demo file");
+	}
+	if (text.find("\"f1\":1") == std::string::npos ||
+		text.find("\"f2\":2") == std::string::npos ||
+		text.find("\"sw\":4") == std::string::npos) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("unexpected staged pulse recorder demo file: ") + text);
+	}
+	if (!input_demo_file_read(demo_path.c_str(), &parsed, &read_error)) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("staged pulse recorder demo read failed: ") + read_error);
+	}
+	remove(demo_path.c_str());
+	remove(trace_path.c_str());
+	remove_test_dir(dir);
+	if (parsed.frames.size() != 2 ||
+		!parsed.frames[0].input.pulse.has_fire_primary_count || parsed.frames[0].input.pulse.fire_primary_count != 1 ||
+		!parsed.frames[0].input.pulse.has_fire_secondary_count || parsed.frames[0].input.pulse.fire_secondary_count != 2 ||
+		!parsed.frames[0].input.pulse.has_select_weapon_count || parsed.frames[0].input.pulse.select_weapon_count != 4 ||
+		parsed.frames[1].input.pulse.has_fire_primary_count ||
+		parsed.frames[1].input.pulse.has_fire_secondary_count ||
+		parsed.frames[1].input.pulse.has_select_weapon_count)
+		return report_failure("staged pulse recorder demo round trip mismatch");
 	return 0;
 }
 
@@ -490,6 +578,7 @@ static int expect_record_and_flush_events(void)
 	settings.level = 1;
 	settings.difficulty = 2;
 	settings.rng_mode = input_demo_test_rng_mode();
+	settings.record_per_frame_state = 1;
 	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
 		remove_test_dir(dir);
 		return report_failure_string(std::string("events recorder start failed: ") + error);
@@ -563,6 +652,8 @@ int main(void)
 	if (expect_record_and_flush())
 		return 1;
 	if (expect_record_and_flush_checkpoint())
+		return 1;
+	if (expect_stage_consumed_pulse())
 		return 1;
 	if (expect_write_state_trace())
 		return 1;

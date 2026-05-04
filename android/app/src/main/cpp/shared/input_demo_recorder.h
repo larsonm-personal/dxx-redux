@@ -44,8 +44,25 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       uint32_t rng_call_count,
                                       const input_demo_result *frame_state,
                                       char *error, size_t error_size);
+void input_demo_recorder_stage_pulse(const input_demo_control_pulse *pulse);
+int input_demo_recorder_stage_frame_event_json(const char *json_text,
+                                               char *error, size_t error_size);
 int input_demo_recorder_append_frame_event_json(const char *json_text,
                                                 char *error, size_t error_size);
+int input_demo_recorder_stage_direct_command_guidebot_goal(int special_key,
+                                                           int from_menu,
+                                                           char *error, size_t error_size);
+int input_demo_recorder_stage_direct_command_drop_marker(int player_marker_num,
+                                                         const char *message,
+                                                         char *error, size_t error_size);
+int input_demo_recorder_stage_direct_command_drop_current_weapon(char *error,
+                                                                 size_t error_size);
+int input_demo_recorder_stage_direct_command_drop_secondary_weapon(char *error,
+                                                                   size_t error_size);
+int input_demo_recorder_stage_direct_command_drop_flag(char *error,
+                                                       size_t error_size);
+int input_demo_recorder_stage_direct_command_escort_release_control(char *error,
+                                                                    size_t error_size);
 int input_demo_recorder_flush_with_result(const char *demo_path,
                                           const input_demo_result *result,
                                           char *error, size_t error_size);

@@ -78,6 +78,16 @@ static int input_demo_replay_weapon_lifetime_probe_active(void)
 	return input_demo_debug_is_enabled() && input_demo_replay_is_loaded();
 }
 
+static int input_demo_replay_weapon_focus_active(void)
+{
+	unsigned int frame;
+
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	frame = (unsigned int)input_demo_replay_next_frame_index();
+	return frame >= 1265 && frame <= 1267;
+}
+
 static int input_demo_weapon_trace_active(void)
 {
 	return input_demo_debug_is_enabled() &&
@@ -2053,9 +2063,27 @@ void do_laser_firing_player(void)
 	if	(!((plp->energy >= energy_used) && (primary_ammo >= ammo_used)))
 		auto_select_weapon(0);		//	Make sure the player can fire from this weapon.
 
+	if (input_demo_replay_weapon_focus_active())
+		con_printf(CON_NORMAL,
+			"Input demo weapon focus: frame=%u phase=entry gt=%lld primary=%d weapon_id=%d energy=%d ammo=%d fire_state=%u fire_count=%u glfc=%d next_laser_delta=%lld last_laser_delta=%lld spreadfire_toggle=%d helix=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(long long)GameTime64,
+			Players[Player_num].primary_weapon,
+			weapon_id,
+			plp->energy,
+			primary_ammo,
+			(unsigned int)Controls.fire_primary_state,
+			(unsigned int)Controls.fire_primary_count,
+			Global_laser_firing_count,
+			(long long)(Next_laser_fire_time - GameTime64),
+			(long long)(Last_laser_fired_time - GameTime64),
+			Spreadfire_toggle,
+			Helix_orientation);
+
 	while (Next_laser_fire_time <= GameTime64) {
 		if	((plp->energy >= energy_used) && (primary_ammo >= ammo_used)) {
 			int	laser_level, flags, fire_frame_overhead = 0;
+			int spreadfire_toggle_before = Spreadfire_toggle;
 			fix fire_wait = Weapon_info[weapon_id].fire_wait;
 
 			if ((Game_mode & GM_MULTI) && Netgame.RebalancedWeapons) {
@@ -2107,6 +2135,23 @@ void do_laser_firing_player(void)
 
 			if (Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS)
 				flags |= LASER_QUAD;
+
+			if (input_demo_replay_weapon_focus_active())
+				con_printf(CON_NORMAL,
+					"Input demo weapon focus: frame=%u phase=dispatch gt=%lld primary=%d weapon_id=%d laser_level=%d flags=%d nfires=%d fire_wait=%d next_laser_delta=%lld last_laser_delta=%lld spreadfire_toggle_before=%d spreadfire_toggle_after=%d helix=%d\n",
+					(unsigned int)input_demo_replay_next_frame_index(),
+					(long long)GameTime64,
+					Players[Player_num].primary_weapon,
+					weapon_id,
+					laser_level,
+					flags,
+					nfires,
+					fire_wait,
+					(long long)(Next_laser_fire_time - GameTime64),
+					(long long)(Last_laser_fired_time - GameTime64),
+					spreadfire_toggle_before,
+					Spreadfire_toggle,
+					Helix_orientation);
 
 			rval += do_laser_firing(Players[Player_num].objnum, Players[Player_num].primary_weapon, laser_level, flags, nfires, Objects[Players[Player_num].objnum].orient.fvec);
 

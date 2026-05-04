@@ -734,6 +734,31 @@ function Read-NumberedChoice {
     }
 }
 
+function Get-RunnerPromptDefaults {
+    param(
+        [string]$RequestedRunner,
+        [string]$RequestedMode,
+        [string]$RequestedProfile
+    )
+
+    $effectiveMode = $RequestedMode
+    $effectiveProfile = $RequestedProfile
+
+    if ($RequestedRunner -eq 'headless-console') {
+        if ($effectiveMode -eq 'prompt') {
+            $effectiveMode = 'accelerated'
+        }
+        if ($effectiveProfile -eq 'auto') {
+            $effectiveProfile = 'default'
+        }
+    }
+
+    return @{
+        Mode = $effectiveMode
+        RenderProfile = $effectiveProfile
+    }
+}
+
 function Get-LaunchMode {
     param(
         [string]$RequestedMode,
@@ -1170,8 +1195,9 @@ if ($RequireFreshBuild) {
     Assert-ExecutableFresh -Config $config
 }
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
-$renderProfileSelection = Get-RenderProfile -RequestedProfile $RenderProfile -RequestedMode $Mode
-$launchMode = Get-LaunchMode -RequestedMode $Mode -Path $resolvedDemoPath -Config $config
+$runnerPromptDefaults = Get-RunnerPromptDefaults -RequestedRunner $Runner -RequestedMode $Mode -RequestedProfile $RenderProfile
+$renderProfileSelection = Get-RenderProfile -RequestedProfile $runnerPromptDefaults.RenderProfile -RequestedMode $runnerPromptDefaults.Mode
+$launchMode = Get-LaunchMode -RequestedMode $runnerPromptDefaults.Mode -Path $resolvedDemoPath -Config $config
 $shouldCompareStateTrace = $TraceState -or $CompareStateTrace
 $shouldCompareRngTrace = $TraceRng -or $CompareRngTrace
 $resolvedStateLogPath = $null

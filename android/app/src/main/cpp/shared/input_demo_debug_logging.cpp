@@ -3,6 +3,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "input_demo_recorder.h"
+#include "input_demo_replay.h"
+
 extern "C" void con_printf(int level, const char *fmt, ...);
 
 static int g_input_demo_debug_enabled = 0;
@@ -33,6 +36,27 @@ void input_demo_debug_printf(const char *fmt, ...)
 	va_end(args);
 	buffer[sizeof(buffer) - 1] = 0;
 	con_printf(0, "%s", buffer);
+}
+
+const char *input_demo_debug_activity_mode_name(void)
+{
+	if (input_demo_replay_is_loaded())
+		return "replay";
+	if (input_demo_recorder_is_active())
+		return "record";
+	return "none";
+}
+
+unsigned int input_demo_debug_frame_index(void)
+{
+	if (input_demo_replay_is_loaded())
+		return (unsigned int) input_demo_replay_next_frame_index();
+	if (input_demo_recorder_is_active()) {
+		const uint32_t frame_count = input_demo_recorder_frame_count();
+
+		return frame_count ? (unsigned int) (frame_count - 1) : 0;
+	}
+	return 0;
 }
 
 void input_demo_debug_log_player_motion_state(const char *stage)

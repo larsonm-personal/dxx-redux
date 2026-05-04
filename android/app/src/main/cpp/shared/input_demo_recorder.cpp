@@ -62,6 +62,8 @@ struct input_demo_recorder_session {
 	std::vector<uint8_t> has_state_frames;
 	std::vector<input_demo_result> state_frames;
 	std::vector<std::vector<std::string>> frame_events;
+	std::vector<std::string> pending_frame_events;
+	input_demo_control_pulse pending_pulse;
 
 	input_demo_recorder_session()
 	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0), record_per_frame_state(false)
@@ -69,6 +71,7 @@ struct input_demo_recorder_session {
 		input_demo_player_cfg_clear(&player_cfg);
 		input_demo_checkpoint_escort_state_clear(&checkpoint_escort_state);
 		input_demo_checkpoint_thief_state_clear(&checkpoint_thief_state);
+		input_demo_control_pulse_clear(&pending_pulse);
 	}
 };
 
@@ -80,6 +83,32 @@ static int input_demo_recorder_copy_error(const std::string &message,
 	if (error && error_size)
 		snprintf(error, error_size, "%s", message.c_str());
 	return 0;
+}
+
+static uint8_t input_demo_recorder_saturating_add_u8(uint8_t left, uint8_t right)
+{
+	const unsigned int sum = (unsigned int) left + (unsigned int) right;
+
+	return (sum > UINT8_MAX) ? UINT8_MAX : (uint8_t) sum;
+}
+
+static void input_demo_recorder_accumulate_pulse(input_demo_control_pulse *dst,
+                                                 const input_demo_control_pulse *src)
+{
+	if (!dst || !src)
+		return;
+	dst->fire_primary_count = input_demo_recorder_saturating_add_u8(dst->fire_primary_count, src->fire_primary_count);
+	dst->fire_secondary_count = input_demo_recorder_saturating_add_u8(dst->fire_secondary_count, src->fire_secondary_count);
+	dst->fire_flare_count = input_demo_recorder_saturating_add_u8(dst->fire_flare_count, src->fire_flare_count);
+	dst->drop_bomb_count = input_demo_recorder_saturating_add_u8(dst->drop_bomb_count, src->drop_bomb_count);
+	dst->cycle_primary_count = input_demo_recorder_saturating_add_u8(dst->cycle_primary_count, src->cycle_primary_count);
+	dst->cycle_secondary_count = input_demo_recorder_saturating_add_u8(dst->cycle_secondary_count, src->cycle_secondary_count);
+	if (src->select_weapon_count)
+		dst->select_weapon_count = src->select_weapon_count;
+	dst->rear_view_count = input_demo_recorder_saturating_add_u8(dst->rear_view_count, src->rear_view_count);
+	dst->automap_count = input_demo_recorder_saturating_add_u8(dst->automap_count, src->automap_count);
+	dst->toggle_bomb_count = input_demo_recorder_saturating_add_u8(dst->toggle_bomb_count, src->toggle_bomb_count);
+	dst->headlight_count = input_demo_recorder_saturating_add_u8(dst->headlight_count, src->headlight_count);
 }
 
 static bool input_demo_recorder_fail(std::string *error, const std::string &message)
@@ -108,6 +137,21 @@ static bool input_demo_recorder_canonicalize_event_json(const char *json_text,
 		return input_demo_recorder_fail(error, "frame event json must be an object");
 	*canonical_json = parsed.dump();
 	return true;
+}
+
+static int input_demo_recorder_stage_canonical_frame_event(const std::string &canonical_json,
+                                                           char *error, size_t error_size)
+{
+	if (!g_input_demo_recorder_session.active)
+		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
+	g_input_demo_recorder_session.pending_frame_events.push_back(canonical_json);
+	return 1;
+}
+
+static int input_demo_recorder_stage_direct_command_event(const ordered_json &event,
+                                                          char *error, size_t error_size)
+{
+	return input_demo_recorder_stage_canonical_frame_event(event.dump(), error, error_size);
 }
 
 static bool input_demo_recorder_session_has_events(const input_demo_recorder_session &session)
@@ -411,6 +455,7 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 	input_demo_control_frame control_frame;
 	input_demo_rng_frame rng_frame;
 	input_demo_result snapshot;
+	std::vector<std::string> frame_events;
 
 	if (!g_input_demo_recorder_session.active)
 		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
@@ -421,7 +466,9 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 	control_frame.frame = static_cast<uint32_t>(g_input_demo_recorder_session.control_frames.size());
 	control_frame.frame_time = frame_time;
 	control_frame.state = *state;
-	control_frame.pulse = *pulse;
+	input_demo_recorder_accumulate_pulse(&control_frame.pulse, &g_input_demo_recorder_session.pending_pulse);
+	input_demo_recorder_accumulate_pulse(&control_frame.pulse, pulse);
+	input_demo_control_pulse_clear(&g_input_demo_recorder_session.pending_pulse);
 
 	input_demo_rng_frame_clear(&rng_frame);
 	rng_frame.frame = control_frame.frame;
@@ -431,13 +478,35 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 	input_demo_result_clear(&snapshot);
 	if (frame_state && g_input_demo_recorder_session.record_per_frame_state)
 		snapshot = *frame_state;
+	frame_events = g_input_demo_recorder_session.pending_frame_events;
+	g_input_demo_recorder_session.pending_frame_events.clear();
 
 	g_input_demo_recorder_session.control_frames.push_back(control_frame);
 	g_input_demo_recorder_session.rng_frames.push_back(rng_frame);
 	g_input_demo_recorder_session.has_state_frames.push_back((frame_state && g_input_demo_recorder_session.record_per_frame_state) ? 1 : 0);
 	g_input_demo_recorder_session.state_frames.push_back(snapshot);
-	g_input_demo_recorder_session.frame_events.push_back(std::vector<std::string>());
+	g_input_demo_recorder_session.frame_events.push_back(std::move(frame_events));
 	return 1;
+}
+
+void input_demo_recorder_stage_pulse(const input_demo_control_pulse *pulse)
+{
+	if (!g_input_demo_recorder_session.active || !pulse)
+		return;
+	input_demo_recorder_accumulate_pulse(&g_input_demo_recorder_session.pending_pulse, pulse);
+}
+
+int input_demo_recorder_stage_frame_event_json(const char *json_text,
+                                               char *error, size_t error_size)
+{
+	std::string canonical_json;
+	std::string shared_error;
+
+	if (!g_input_demo_recorder_session.active)
+		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
+	if (!input_demo_recorder_canonicalize_event_json(json_text, &canonical_json, &shared_error))
+		return input_demo_recorder_copy_error(shared_error, error, error_size);
+	return input_demo_recorder_stage_canonical_frame_event(canonical_json, error, error_size);
 }
 
 int input_demo_recorder_append_frame_event_json(const char *json_text,
@@ -456,6 +525,72 @@ int input_demo_recorder_append_frame_event_json(const char *json_text,
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
 	g_input_demo_recorder_session.frame_events.back().push_back(canonical_json);
 	return 1;
+}
+
+int input_demo_recorder_stage_direct_command_guidebot_goal(int special_key,
+                                                           int from_menu,
+                                                           char *error, size_t error_size)
+{
+	ordered_json event = ordered_json::object();
+
+	event["kind"] = "direct_command";
+	event["command"] = "guidebot_goal";
+	event["special_key"] = special_key;
+	event["from_menu"] = from_menu ? true : false;
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
+int input_demo_recorder_stage_direct_command_drop_marker(int player_marker_num,
+                                                         const char *message,
+                                                         char *error, size_t error_size)
+{
+	ordered_json event = ordered_json::object();
+
+	event["kind"] = "direct_command";
+	event["command"] = "drop_marker";
+	event["player_marker_num"] = player_marker_num;
+	event["message"] = message ? message : "";
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
+int input_demo_recorder_stage_direct_command_drop_current_weapon(char *error,
+                                                                 size_t error_size)
+{
+	ordered_json event = ordered_json::object();
+
+	event["kind"] = "direct_command";
+	event["command"] = "drop_current_weapon";
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
+int input_demo_recorder_stage_direct_command_drop_secondary_weapon(char *error,
+                                                                   size_t error_size)
+{
+	ordered_json event = ordered_json::object();
+
+	event["kind"] = "direct_command";
+	event["command"] = "drop_secondary_weapon";
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
+int input_demo_recorder_stage_direct_command_drop_flag(char *error,
+                                                       size_t error_size)
+{
+	ordered_json event = ordered_json::object();
+
+	event["kind"] = "direct_command";
+	event["command"] = "drop_flag";
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
+int input_demo_recorder_stage_direct_command_escort_release_control(char *error,
+                                                                    size_t error_size)
+{
+	ordered_json event = ordered_json::object();
+
+	event["kind"] = "direct_command";
+	event["command"] = "escort_release_control";
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
 }
 
 int input_demo_recorder_flush_with_result(const char *demo_path,

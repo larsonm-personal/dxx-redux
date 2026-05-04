@@ -110,17 +110,6 @@ static int input_demo_trace_ai_rng_active(object *obj)
 		(ailp->player_awareness_type > 0);
 }
 
-static int input_demo_warning_probe_frame_active(void)
-{
-	unsigned int frame;
-
-	if (!input_demo_replay_is_loaded())
-		return 0;
-
-	frame = (unsigned int)input_demo_replay_next_frame_index();
-	return (frame >= 231) && (frame <= 232);
-}
-
 static int input_demo_robot_lifecycle_probe_active(void)
 {
 	unsigned int frame = 0;
@@ -186,45 +175,6 @@ static int input_demo_robot_lifecycle_is_target(int objnum, object *obj)
 		return 1;
 
 	return 0;
-}
-
-static void input_demo_robot_lifecycle_track_should_die_transition(void)
-{
-	static ubyte was_marked_should_die[MAX_OBJECTS];
-	int i;
-
-	for (i = 0; i <= Highest_object_index; i++) {
-		object *objp = &Objects[i];
-		const int now_marked = (objp->type == OBJ_ROBOT) && ((objp->flags & OF_SHOULD_BE_DEAD) != 0);
-
-		if (!was_marked_should_die[i] && now_marked && input_demo_robot_lifecycle_is_target(i, objp))
-			con_printf(CON_NORMAL,
-				"Input demo robot lifecycle: mode=%s frame=%u gt=%lld step=should_die_set obj=%d sig=%d id=%d seg=%d flags=0x%x shields=%d life=%d exploding=%d control=%d movement=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
-				input_demo_robot_lifecycle_mode_name(),
-				input_demo_robot_lifecycle_frame_index(),
-				(long long)GameTime64,
-				i,
-				objp->signature,
-				objp->id,
-				objp->segnum,
-				objp->flags,
-				objp->shields,
-				objp->lifeleft,
-				(objp->flags & OF_EXPLODING) != 0,
-				objp->control_type,
-				objp->movement_type,
-				objp->pos.x,
-				objp->pos.y,
-				objp->pos.z,
-				objp->mtype.phys_info.velocity.x,
-				objp->mtype.phys_info.velocity.y,
-				objp->mtype.phys_info.velocity.z);
-
-		if (objp->type == OBJ_NONE)
-			was_marked_should_die[i] = 0;
-		else
-			was_marked_should_die[i] = now_marked;
-	}
 }
 
 
@@ -2194,21 +2144,6 @@ void obj_delete_all_that_should_be_dead()
 
 	for (i=0;i<=Highest_object_index;i++) {
 		if ((objp->type!=OBJ_NONE) && (objp->flags&OF_SHOULD_BE_DEAD) )	{
-			if (input_demo_robot_lifecycle_is_target(i, objp))
-				con_printf(CON_NORMAL,
-					"Input demo robot lifecycle: mode=%s frame=%u gt=%lld step=delete_sweep obj=%d sig=%d id=%d seg=%d flags=0x%x shields=%d life=%d exploding=%d should_die=%d\n",
-					input_demo_robot_lifecycle_mode_name(),
-					input_demo_robot_lifecycle_frame_index(),
-					(long long)GameTime64,
-					i,
-					objp->signature,
-					objp->id,
-					objp->segnum,
-					objp->flags,
-					objp->shields,
-					objp->lifeleft,
-					(objp->flags & OF_EXPLODING) != 0,
-					(objp->flags & OF_SHOULD_BE_DEAD) != 0);
 			Assert(!(objp->type==OBJ_FIREBALL && objp->ctype.expl_info.delete_time!=-1));
 			if (objp->type==OBJ_PLAYER) {
 				if ( objp->id == Player_num ) {
@@ -2232,32 +2167,8 @@ void obj_delete_all_that_should_be_dead()
 //from its old segment, and links it into the new segment
 void obj_relink(int objnum,int newsegnum)
 {
-	object *objp = &Objects[objnum];
-	const int oldsegnum = objp->segnum;
-
 	Assert((objnum >= 0) && (objnum <= Highest_object_index));
 	Assert((newsegnum <= Highest_segment_index) && (newsegnum >= 0));
-
-	if (oldsegnum != newsegnum && input_demo_robot_lifecycle_is_target(objnum, objp))
-		con_printf(CON_NORMAL,
-			"Input demo robot lifecycle: mode=%s frame=%u gt=%lld step=obj_relink obj=%d sig=%d id=%d old_seg=%d new_seg=%d flags=0x%x exploding=%d should_die=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
-			input_demo_robot_lifecycle_mode_name(),
-			input_demo_robot_lifecycle_frame_index(),
-			(long long)GameTime64,
-			objnum,
-			objp->signature,
-			objp->id,
-			oldsegnum,
-			newsegnum,
-			objp->flags,
-			(objp->flags & OF_EXPLODING) != 0,
-			(objp->flags & OF_SHOULD_BE_DEAD) != 0,
-			objp->pos.x,
-			objp->pos.y,
-			objp->pos.z,
-			objp->mtype.phys_info.velocity.x,
-			objp->mtype.phys_info.velocity.y,
-			objp->mtype.phys_info.velocity.z);
 
 	obj_unlink(objnum);
 
@@ -2591,9 +2502,6 @@ void object_move_all()
 	if (Highest_object_index > MAX_USED_OBJECTS)
 		free_object_slots(MAX_USED_OBJECTS);		//	Free all possible object slots.
 
-	if (input_demo_robot_lifecycle_probe_active())
-		input_demo_robot_lifecycle_track_should_die_transition();
-
 	obj_delete_all_that_should_be_dead();
 
 	if (PlayerCfg.AutoLeveling)
@@ -2628,9 +2536,6 @@ void object_move_all()
 		}
 		objp++;
 	}
-
-	if (input_demo_robot_lifecycle_probe_active())
-		input_demo_robot_lifecycle_track_should_die_transition();
 	#else
 		i=0;	//kill warning
 	#endif
@@ -2732,25 +2637,6 @@ int update_object_seg(object * obj )
 	newseg = find_object_seg(obj);
 
 	if (newseg == -1) {
-		if (input_demo_robot_lifecycle_is_target((int)(obj - Objects), obj))
-			con_printf(CON_NORMAL,
-				"Input demo robot lifecycle: mode=%s frame=%u gt=%lld step=update_seg_fail obj=%d sig=%d id=%d seg=%d flags=0x%x exploding=%d should_die=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
-				input_demo_robot_lifecycle_mode_name(),
-				input_demo_robot_lifecycle_frame_index(),
-				(long long)GameTime64,
-				(int)(obj - Objects),
-				obj->signature,
-				obj->id,
-				obj->segnum,
-				obj->flags,
-				(obj->flags & OF_EXPLODING) != 0,
-				(obj->flags & OF_SHOULD_BE_DEAD) != 0,
-				obj->pos.x,
-				obj->pos.y,
-				obj->pos.z,
-				obj->mtype.phys_info.velocity.x,
-				obj->mtype.phys_info.velocity.y,
-				obj->mtype.phys_info.velocity.z);
 		return 0;
 	}
 

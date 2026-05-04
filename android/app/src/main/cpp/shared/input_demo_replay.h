@@ -29,11 +29,28 @@ typedef struct input_demo_replay_frame {
 	input_demo_result state_result;
 } input_demo_replay_frame;
 
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_NONE                   0
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL          1
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER            2
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_CURRENT_WEAPON    3
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_SECONDARY_WEAPON  4
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_FLAG              5
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL 6
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_TEXT_SIZE              40
+
+typedef struct input_demo_replay_direct_command_event {
+	int32_t kind;
+	int32_t value0;
+	int32_t value1;
+	char text[INPUT_DEMO_REPLAY_DIRECT_COMMAND_TEXT_SIZE];
+} input_demo_replay_direct_command_event;
+
 #if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
 #pragma pack(pop)
 #endif
 
 void input_demo_replay_frame_clear(input_demo_replay_frame *frame);
+void input_demo_replay_direct_command_event_clear(input_demo_replay_direct_command_event *event);
 int input_demo_replay_is_loaded(void);
 void input_demo_replay_unload(void);
 int input_demo_replay_load(const char *demo_path, char *error, size_t error_size);
@@ -61,6 +78,11 @@ int input_demo_replay_get_expected_result(input_demo_result *result,
                                           char *error, size_t error_size);
 int input_demo_replay_compare_result(const input_demo_result *actual,
                                      char *error, size_t error_size);
+int input_demo_replay_get_current_frame_direct_command_count(uint32_t *count,
+                                                             char *error, size_t error_size);
+int input_demo_replay_get_current_frame_direct_command_event(uint32_t direct_command_index,
+                                                             input_demo_replay_direct_command_event *event,
+                                                             char *error, size_t error_size);
 int input_demo_replay_get_current_frame(input_demo_replay_frame *frame,
                                         char *error, size_t error_size);
 int input_demo_replay_advance_frame(char *error, size_t error_size);

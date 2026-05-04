@@ -141,6 +141,66 @@ static int input_demo_player_drag_probe_active(object *obj)
 	return input_demo_player_motion_detail_probe_active(obj);
 }
 
+static unsigned int input_demo_trace_motion_hash_step(const char *step)
+{
+	unsigned int key = 0;
+
+	if (!step)
+		return 0;
+
+	while (*step) {
+		key = key * 131u + (unsigned int)(unsigned char)(*step);
+		step++;
+	}
+
+	return key;
+}
+
+static unsigned int input_demo_player_drag_probe_state_key(object *obj,
+	const char *step,
+	const vms_vector *velocity,
+	const vms_vector *accel,
+	fix drag,
+	int count,
+	fix remainder,
+	fix ratio)
+{
+	unsigned int key = input_demo_trace_motion_hash_step(step);
+
+	key = key * 131u + (unsigned int)(obj->segnum & 0xffff);
+	key = key * 131u + (unsigned int)(velocity ? velocity->x : 0);
+	key = key * 131u + (unsigned int)(velocity ? velocity->y : 0);
+	key = key * 131u + (unsigned int)(velocity ? velocity->z : 0);
+	key = key * 131u + (unsigned int)(accel ? accel->x : 0);
+	key = key * 131u + (unsigned int)(accel ? accel->y : 0);
+	key = key * 131u + (unsigned int)(accel ? accel->z : 0);
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.x;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.y;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.z;
+	key = key * 131u + (unsigned int)drag;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.mass;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.flags;
+	key = key * 131u + (unsigned int)count;
+	key = key * 131u + (unsigned int)remainder;
+	key = key * 131u + (unsigned int)ratio;
+
+	return key;
+}
+
+static int input_demo_player_drag_probe_should_log(unsigned int state_key)
+{
+	static unsigned int last_frame = (unsigned int)-1;
+	static unsigned int last_state_key = 0;
+	const unsigned int frame = input_demo_trace_motion_frame_index();
+
+	if (last_frame != (unsigned int)-1 && frame == last_frame + 1 && last_state_key == state_key)
+		return 0;
+
+	last_frame = frame;
+	last_state_key = state_key;
+	return 1;
+}
+
 static void input_demo_log_player_drag_probe(object *obj,
 	const char *step,
 	const vms_vector *velocity,
@@ -150,7 +210,11 @@ static void input_demo_log_player_drag_probe(object *obj,
 	fix remainder,
 	fix ratio)
 {
+	const unsigned int state_key = input_demo_player_drag_probe_state_key(obj, step, velocity, accel, drag, count, remainder, ratio);
+
 	if (!input_demo_player_drag_probe_active(obj))
+		return;
+	if (!input_demo_player_drag_probe_should_log(state_key))
 		return;
 
 	con_printf(CON_NORMAL,
@@ -184,8 +248,41 @@ static void input_demo_log_player_motion_detail_probe(object *obj,
 	const vms_vector *new_pos,
 	fix sim_time)
 {
+	static unsigned int last_frame = (unsigned int)-1;
+	static unsigned int last_state_key = 0;
+	unsigned int state_key = input_demo_trace_motion_hash_step(step);
+	const unsigned int frame = input_demo_trace_motion_frame_index();
+
+	state_key = state_key * 131u + (unsigned int)(obj->segnum & 0xffff);
+	state_key = state_key * 131u + (unsigned int)obj->pos.x;
+	state_key = state_key * 131u + (unsigned int)obj->pos.y;
+	state_key = state_key * 131u + (unsigned int)obj->pos.z;
+	state_key = state_key * 131u + (unsigned int)obj->last_pos.x;
+	state_key = state_key * 131u + (unsigned int)obj->last_pos.y;
+	state_key = state_key * 131u + (unsigned int)obj->last_pos.z;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.velocity.x;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.velocity.y;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.velocity.z;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.thrust.x;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.thrust.y;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.thrust.z;
+	state_key = state_key * 131u + (unsigned int)(frame_vec ? frame_vec->x : 0);
+	state_key = state_key * 131u + (unsigned int)(frame_vec ? frame_vec->y : 0);
+	state_key = state_key * 131u + (unsigned int)(frame_vec ? frame_vec->z : 0);
+	state_key = state_key * 131u + (unsigned int)(new_pos ? new_pos->x : 0);
+	state_key = state_key * 131u + (unsigned int)(new_pos ? new_pos->y : 0);
+	state_key = state_key * 131u + (unsigned int)(new_pos ? new_pos->z : 0);
+	state_key = state_key * 131u + (unsigned int)sim_time;
+	state_key = state_key * 131u + (unsigned int)FrameTime;
+	state_key = state_key * 131u + (unsigned int)obj->mtype.phys_info.flags;
+
 	if (!input_demo_player_motion_detail_probe_active(obj))
 		return;
+	if (last_frame != (unsigned int)-1 && frame == last_frame + 1 && last_state_key == state_key)
+		return;
+
+	last_frame = frame;
+	last_state_key = state_key;
 
 	con_printf(CON_NORMAL,
 		"Input demo player motion detail: mode=%s frame=%u gt=%lld step=%s seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) thrust=(%d,%d,%d) frame_vec=(%d,%d,%d) target=(%d,%d,%d) sim_time=%d ft=%d flags=0x%x\n",

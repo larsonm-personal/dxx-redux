@@ -131,12 +131,55 @@ static int input_demo_player_control_probe_active(object *obj)
 	return threat_now || frames_remaining > 0;
 }
 
+static unsigned int input_demo_player_control_state_key(object *obj, fix resolved_forward_thrust_time)
+{
+	unsigned int key = (unsigned int)(obj->segnum & 0xffff);
+
+	key = key * 131u + (unsigned int)resolved_forward_thrust_time;
+	key = key * 131u + (unsigned int)Controls.pitch_time;
+	key = key * 131u + (unsigned int)Controls.heading_time;
+	key = key * 131u + (unsigned int)Controls.bank_time;
+	key = key * 131u + (unsigned int)Controls.forward_thrust_time;
+	key = key * 131u + (unsigned int)Controls.sideways_thrust_time;
+	key = key * 131u + (unsigned int)Controls.vertical_thrust_time;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.x;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.y;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.thrust.z;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.rotthrust.x;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.rotthrust.y;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.rotthrust.z;
+	key = key * 131u + (unsigned int)obj->mtype.phys_info.flags;
+	key = key * 131u + (unsigned int)Players[Player_num].flags;
+	key = key * 131u + (unsigned int)Controls.afterburner_state;
+	key = key * 131u + (unsigned int)Players[Player_num].afterburner_charge;
+
+	return key;
+}
+
+static int input_demo_player_control_probe_should_log(unsigned int state_key)
+{
+	static unsigned int last_frame = (unsigned int)-1;
+	static unsigned int last_state_key = 0;
+	const unsigned int frame = input_demo_trace_player_control_frame_index();
+
+	if (last_frame != (unsigned int)-1 && frame == last_frame + 1 && last_state_key == state_key)
+		return 0;
+
+	last_frame = frame;
+	last_state_key = state_key;
+	return 1;
+}
+
 static void input_demo_log_player_control_probe(object *obj,
 	const vms_vector *pre_scale_thrust,
 	const vms_vector *pre_scale_rotthrust,
 	fix resolved_forward_thrust_time)
 {
+	const unsigned int state_key = input_demo_player_control_state_key(obj, resolved_forward_thrust_time);
+
 	if (!input_demo_player_control_probe_active(obj))
+		return;
+	if (!input_demo_player_control_probe_should_log(state_key))
 		return;
 
 	con_printf(CON_NORMAL,
@@ -191,6 +234,10 @@ static void input_demo_log_player_wiggle_probe(object *obj,
 	int wiggle_applied)
 {
 	if (!input_demo_player_control_probe_active(obj))
+		return;
+	if (!wiggle_applied &&
+		(!wiggle_delta ||
+		(wiggle_delta->x == 0 && wiggle_delta->y == 0 && wiggle_delta->z == 0)))
 		return;
 
 	con_printf(CON_NORMAL,

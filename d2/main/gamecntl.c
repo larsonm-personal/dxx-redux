@@ -45,6 +45,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_replay.h"
+#include "input_demo_control_info.h"
+#include "input_demo_recorder.h"
 #include "slew.h"
 #include "gauges.h"
 #include "texmap.h"
@@ -294,7 +296,7 @@ void do_weapon_n_item_stuff()
 	Controls.fire_secondary_count = 0;
 
 	if (Global_missile_firing_count) {
-		if (input_demo_replay_is_loaded()) {
+		if (rng_probe) {
 			con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_loop_enter|gt=%lld|sim_calls=%d|sim_state=%u|pending=%d\n",
 				(long long)GameTime64,
 				d_rand_get_call_count(),
@@ -302,7 +304,7 @@ void do_weapon_n_item_stuff()
 				Global_missile_firing_count);
 		}
 		do_missile_firing(0);
-		if (input_demo_replay_is_loaded()) {
+		if (rng_probe) {
 			con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_loop_exit|gt=%lld|sim_calls=%d|sim_state=%u|pending=%d\n",
 				(long long)GameTime64,
 				d_rand_get_call_count(),
@@ -1129,6 +1131,110 @@ int HandleSystemKey(int key)
 
 extern void DropFlag();
 
+static void input_demo_log_direct_command_record_error(const char *context, const char *error)
+{
+	if (error && error[0])
+		con_printf(CON_NORMAL, "Input demo recorder %s event failed: %s\n", context, error);
+}
+
+static void input_demo_record_direct_command_guidebot_goal(int special_key, int from_menu)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_guidebot_goal(special_key, from_menu, error, sizeof(error)))
+		input_demo_log_direct_command_record_error("guidebot goal", error);
+}
+
+static void input_demo_record_direct_command_drop_current_weapon(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_drop_current_weapon(error, sizeof(error)))
+		input_demo_log_direct_command_record_error("drop current weapon", error);
+}
+
+static void input_demo_record_direct_command_drop_secondary_weapon(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_drop_secondary_weapon(error, sizeof(error)))
+		input_demo_log_direct_command_record_error("drop secondary weapon", error);
+}
+
+static void input_demo_record_direct_command_drop_flag(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_drop_flag(error, sizeof(error)))
+		input_demo_log_direct_command_record_error("drop flag", error);
+}
+
+static void input_demo_record_direct_command_escort_release_control(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_escort_release_control(error, sizeof(error)))
+		input_demo_log_direct_command_record_error("escort release", error);
+}
+
+static int input_demo_abort_replay_direct_commands(const char *error)
+{
+	con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error ? error : "direct command replay failed");
+	input_demo_replay_unload();
+	return 0;
+}
+
+static int input_demo_replay_apply_direct_commands(void)
+{
+	uint32_t direct_command_count = 0;
+	uint32_t direct_command_index;
+	input_demo_replay_direct_command_event event;
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return 1;
+	if (!input_demo_replay_get_current_frame_direct_command_count(&direct_command_count, error, sizeof(error)))
+		return input_demo_abort_replay_direct_commands(error);
+	for (direct_command_index = 0; direct_command_index != direct_command_count; ++direct_command_index) {
+		input_demo_replay_direct_command_event_clear(&event);
+		if (!input_demo_replay_get_current_frame_direct_command_event(direct_command_index, &event, error, sizeof(error)))
+			return input_demo_abort_replay_direct_commands(error);
+		switch (event.kind) {
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL:
+				input_demo_apply_recorded_guidebot_goal(event.value0, event.value1);
+				break;
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER:
+				input_demo_apply_recorded_marker_drop(event.value0, event.text);
+				break;
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_CURRENT_WEAPON:
+				DropCurrentWeapon();
+				break;
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_SECONDARY_WEAPON:
+				DropSecondaryWeapon();
+				break;
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_FLAG:
+				DropFlag();
+				break;
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL:
+				escort_release_control();
+				break;
+			default:
+				return input_demo_abort_replay_direct_commands("unknown direct command replay event");
+		}
+	}
+	return 1;
+}
+
 int HandleGameKey(int key)
 {
 	int new_obs = Current_obs_player;
@@ -1139,6 +1245,7 @@ int ReadControlsReplayFrame(void);
 	/* android port: consume guide-bot release flag set from touch wheel */
 	if (android_escort_release_pending) {
 		android_escort_release_pending = 0;
+		input_demo_record_direct_command_escort_release_control();
 		escort_release_control();
 	}
 #endif
@@ -1158,8 +1265,10 @@ int ReadControlsReplayFrame(void);
 			if (PlayerCfg.EscortHotKeys)
 			{
 				if (!(Game_mode & GM_MULTI)) {
+					input_demo_record_direct_command_guidebot_goal(key, 0);
 					set_escort_special_goal(key);
 				} else if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == Player_num) {
+					input_demo_record_direct_command_guidebot_goal(key, 0);
 					set_escort_special_goal(key);
 				} else if (Game_mode & GM_MULTI_COOP) {
 					HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
@@ -1323,16 +1432,19 @@ int ReadControlsReplayFrame(void);
 
 				KEY_MAC(case KEY_COMMAND+KEY_SHIFTED+KEY_5:)
 			case KEY_F5 + KEY_SHIFTED:
+				input_demo_record_direct_command_drop_current_weapon();
 				DropCurrentWeapon();
 				break;
 
 			KEY_MAC(case KEY_COMMAND+KEY_SHIFTED+KEY_6:)
 			case KEY_F6 + KEY_SHIFTED:
+				input_demo_record_direct_command_drop_secondary_weapon();
 				DropSecondaryWeapon();
 				break;
 
 #ifdef NETWORK
 			case KEY_0 + KEY_ALTED:
+				input_demo_record_direct_command_drop_flag();
 				DropFlag ();
 				game_flush_inputs();
 				break;
@@ -2021,6 +2133,8 @@ int ReadControlsReplayFrame(void)
 	Player_fired_laser_this_frame = -1;
 
 	if (!Endlevel_sequence && !Player_is_dead) {
+		if (!input_demo_replay_apply_direct_commands())
+			return 0;
 		check_rear_view();
 
 		if (Controls.automap_count > 0)
@@ -2212,6 +2326,13 @@ int ReadControls(d_event *event)
 	{
 
 		kconfig_read_controls(event, 0);
+		if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) {
+			input_demo_control_state ignored_state;
+			input_demo_control_pulse pulse;
+
+			input_demo_control_state_from_control_info(&ignored_state, &pulse, &Controls);
+			input_demo_recorder_stage_pulse(&pulse);
+		}
 
 		check_rear_view();
 

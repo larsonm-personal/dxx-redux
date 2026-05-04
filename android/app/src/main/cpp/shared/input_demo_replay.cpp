@@ -5,6 +5,7 @@
 
 #include <limits>
 
+#include <nlohmann/json.hpp>
 #include <zlib.h>
 
 #include <string>
@@ -17,6 +18,8 @@
 
 namespace
 {
+
+using ordered_json = nlohmann::ordered_json;
 
 struct input_demo_replay_session {
 	bool loaded;
@@ -40,6 +43,7 @@ struct input_demo_replay_session {
 	int64_t final_game_time64;
 	uint32_t next_frame_index;
 	std::vector<input_demo_replay_frame> frames;
+	std::vector<std::vector<std::string>> frame_events;
 
 	input_demo_replay_session()
 	    : loaded(false), game(0), has_expected_result(false), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false),
@@ -80,6 +84,88 @@ static bool fail(std::string *error, const std::string &message)
 	if (error)
 		*error = message;
 	return false;
+}
+
+static bool parse_direct_command_event_json(const std::string &json_text,
+                                            bool *is_direct_command,
+                                            input_demo_replay_direct_command_event *event,
+                                            std::string *error)
+{
+	ordered_json parsed;
+	ordered_json::const_iterator it;
+	std::string command;
+
+	if (!is_direct_command || !event)
+		return fail(error, "missing direct command parse output");
+	*is_direct_command = false;
+	input_demo_replay_direct_command_event_clear(event);
+	try {
+		parsed = ordered_json::parse(json_text);
+	} catch (const std::exception &ex) {
+		return fail(error, std::string("frame event parse failed: ") + ex.what());
+	}
+	if (!parsed.is_object())
+		return fail(error, "frame event must be an object");
+	it = parsed.find("kind");
+	if (it == parsed.end())
+		return fail(error, "frame event is missing kind");
+	if (!it->is_string())
+		return fail(error, "frame event kind must be a string");
+	if (it->get<std::string>() != "direct_command")
+		return true;
+	*is_direct_command = true;
+	it = parsed.find("command");
+	if (it == parsed.end())
+		return fail(error, "direct command event is missing command");
+	if (!it->is_string())
+		return fail(error, "direct command event command must be a string");
+	command = it->get<std::string>();
+	if (command == "guidebot_goal") {
+		it = parsed.find("special_key");
+		if (it == parsed.end() || !it->is_number_integer())
+			return fail(error, "guidebot goal event is missing special_key");
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL;
+		event->value0 = it->get<int32_t>();
+		it = parsed.find("from_menu");
+		if (it != parsed.end()) {
+			if (!it->is_boolean())
+				return fail(error, "guidebot goal event from_menu must be a boolean");
+			event->value1 = it->get<bool>() ? 1 : 0;
+		}
+		return true;
+	}
+	if (command == "drop_marker") {
+		std::string message;
+
+		it = parsed.find("player_marker_num");
+		if (it == parsed.end() || !it->is_number_integer())
+			return fail(error, "drop marker event is missing player_marker_num");
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER;
+		event->value0 = it->get<int32_t>();
+		it = parsed.find("message");
+		if (it == parsed.end() || !it->is_string())
+			return fail(error, "drop marker event is missing message");
+		message = it->get<std::string>();
+		snprintf(event->text, sizeof(event->text), "%s", message.c_str());
+		return true;
+	}
+	if (command == "drop_current_weapon") {
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_CURRENT_WEAPON;
+		return true;
+	}
+	if (command == "drop_secondary_weapon") {
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_SECONDARY_WEAPON;
+		return true;
+	}
+	if (command == "drop_flag") {
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_FLAG;
+		return true;
+	}
+	if (command == "escort_release_control") {
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL;
+		return true;
+	}
+	return fail(error, std::string("unknown direct command event command: ") + command);
 }
 
 static bool zlib_decompress(const std::vector<uint8_t> &compressed,
@@ -237,6 +323,14 @@ void input_demo_replay_frame_clear(input_demo_replay_frame *frame)
 	input_demo_result_clear(&frame->state_result);
 }
 
+void input_demo_replay_direct_command_event_clear(input_demo_replay_direct_command_event *event)
+{
+	if (!event)
+		return;
+	memset(event, 0, sizeof(*event));
+	event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_NONE;
+}
+
 int input_demo_replay_is_loaded(void)
 {
 	return g_input_demo_replay_session.loaded ? 1 : 0;
@@ -297,6 +391,9 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 		return copy_error(replay_error, error, error_size);
 	}
 	g_input_demo_replay_session.frames = frames;
+	g_input_demo_replay_session.frame_events.resize(frames.size());
+	for (i = 0; i != demo.frames.size() && i != g_input_demo_replay_session.frame_events.size(); ++i)
+		g_input_demo_replay_session.frame_events[i] = demo.frames[i].events;
 	for (i = 0; i != g_input_demo_replay_session.frames.size(); ++i)
 		g_input_demo_replay_session.final_game_time64 += g_input_demo_replay_session.frames[i].frame_time;
 	return 1;
@@ -434,6 +531,69 @@ int input_demo_replay_compare_result(const input_demo_result *actual,
 	if (!input_demo_replay_get_expected_result(&expected, error, error_size))
 		return 0;
 	return input_demo_result_compare(&expected, actual, error, error_size);
+}
+
+int input_demo_replay_get_current_frame_direct_command_count(uint32_t *count,
+                                                             char *error, size_t error_size)
+{
+	const std::vector<std::string> *frame_events;
+	std::string replay_error;
+	input_demo_replay_direct_command_event event;
+	bool is_direct_command;
+	size_t i;
+
+	if (!g_input_demo_replay_session.loaded)
+		return copy_error("input demo replay is not loaded", error, error_size);
+	if (input_demo_replay_is_finished())
+		return copy_error("input demo replay is at end of stream", error, error_size);
+	if (!count)
+		return copy_error("missing direct command count output", error, error_size);
+	*count = 0;
+	if (g_input_demo_replay_session.next_frame_index >= g_input_demo_replay_session.frame_events.size())
+		return 1;
+	frame_events = &g_input_demo_replay_session.frame_events[g_input_demo_replay_session.next_frame_index];
+	for (i = 0; i != frame_events->size(); ++i) {
+		if (!parse_direct_command_event_json((*frame_events)[i], &is_direct_command, &event, &replay_error))
+			return copy_error(replay_error, error, error_size);
+		if (is_direct_command)
+			(*count)++;
+	}
+	return 1;
+}
+
+int input_demo_replay_get_current_frame_direct_command_event(uint32_t direct_command_index,
+                                                             input_demo_replay_direct_command_event *event,
+                                                             char *error, size_t error_size)
+{
+	const std::vector<std::string> *frame_events;
+	std::string replay_error;
+	input_demo_replay_direct_command_event parsed_event;
+	bool is_direct_command;
+	uint32_t current_index = 0;
+	size_t i;
+
+	if (!g_input_demo_replay_session.loaded)
+		return copy_error("input demo replay is not loaded", error, error_size);
+	if (input_demo_replay_is_finished())
+		return copy_error("input demo replay is at end of stream", error, error_size);
+	if (!event)
+		return copy_error("missing direct command event output", error, error_size);
+	input_demo_replay_direct_command_event_clear(event);
+	if (g_input_demo_replay_session.next_frame_index >= g_input_demo_replay_session.frame_events.size())
+		return copy_error("direct command event index out of range", error, error_size);
+	frame_events = &g_input_demo_replay_session.frame_events[g_input_demo_replay_session.next_frame_index];
+	for (i = 0; i != frame_events->size(); ++i) {
+		if (!parse_direct_command_event_json((*frame_events)[i], &is_direct_command, &parsed_event, &replay_error))
+			return copy_error(replay_error, error, error_size);
+		if (!is_direct_command)
+			continue;
+		if (current_index == direct_command_index) {
+			*event = parsed_event;
+			return 1;
+		}
+		current_index++;
+	}
+	return copy_error("direct command event index out of range", error, error_size);
 }
 
 int input_demo_replay_get_current_frame(input_demo_replay_frame *frame,

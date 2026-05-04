@@ -73,14 +73,7 @@ static int input_demo_should_match_android_companion_velocity(void)
 
 static unsigned int input_demo_trace_frame_index(void)
 {
-	if (input_demo_replay_is_loaded())
-		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t frame_count = input_demo_recorder_frame_count();
-
-		return frame_count ? (unsigned int)(frame_count - 1) : 0;
-	}
-	return 0;
+	return input_demo_debug_frame_index();
 }
 
 static int input_demo_trace_path_active(void)
@@ -1313,24 +1306,6 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 	goal_point = Point_segs[aip->hide_index + aip->cur_path_index].point;
 	dist_to_goal = vm_vec_dist_quick(&goal_point, &objp->pos);
-	if (input_demo_replay_follow_probe_active(objp))
-		con_printf(CON_NORMAL,
-			"Input demo replay follow probe: frame=%u obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d seg=%d goal_seg=%d dist=%d\n",
-			input_demo_trace_frame_index(),
-			(int)(objp - Objects),
-			objp->signature,
-			objp->id,
-			robptr->companion,
-			aip->behavior,
-			ailp->mode,
-			aip->cur_path_index,
-			aip->path_length,
-			aip->PATH_DIR,
-			objp->segnum,
-			ailp->goal_segment,
-			dist_to_goal);
-	if (input_demo_replay_follow_probe_active(objp))
-		input_demo_log_path_robot_state("follow probe", objp);
 
 	//	If running from player, only run until can't be seen.
 	if (ailp->mode == AIM_RUN_FROM_OBJECT) {

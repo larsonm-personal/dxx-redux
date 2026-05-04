@@ -100,6 +100,47 @@ static unsigned int input_demo_trace_frame_index(void)
 	return 0;
 }
 
+typedef struct input_demo_trace_key_snapshot {
+	int valid;
+	unsigned int state_key;
+} input_demo_trace_key_snapshot;
+
+static unsigned int input_demo_trace_hash_label(const char *label)
+{
+	unsigned int key = 0;
+
+	if (!label)
+		return 0;
+
+	while (*label) {
+		key = key * 131u + (unsigned int)(unsigned char)(*label);
+		label++;
+	}
+
+	return key;
+}
+
+static int input_demo_trace_fix_bucket(fix value)
+{
+	if (value < 0)
+		return -1;
+
+	return f2i(value);
+}
+
+static int input_demo_trace_key_snapshot_should_log(input_demo_trace_key_snapshot *snapshot, unsigned int state_key)
+{
+	if (!snapshot)
+		return 1;
+
+	if (snapshot->valid && snapshot->state_key == state_key)
+		return 0;
+
+	snapshot->valid = 1;
+	snapshot->state_key = state_key;
+	return 1;
+}
+
 static void input_demo_log_escort_rng_progress(const char *label, unsigned int *rng_before, unsigned int *rng_call_count_before)
 {
 	unsigned int rng_after;
@@ -196,7 +237,36 @@ typedef struct input_demo_escort_visit_snapshot {
 	int visit;
 } input_demo_escort_visit_snapshot;
 
+typedef struct input_demo_escort_state_snapshot {
+	int valid;
+	int player_visibility;
+	int mode;
+	int buddy_allowed_to_talk;
+	int buddy_seg;
+	int player_seg;
+	int cur_path_index;
+	int path_length;
+	int hide_index;
+	fix64 buddy_last_seen_player;
+	fix64 buddy_last_player_path_created;
+	fix64 escort_last_path_created;
+	fix64 time_player_seen;
+	int escort_goal_object;
+	int escort_special_goal;
+	int should_visit_player;
+	int away_gate;
+	int recent_path_gate;
+	int goto_player_gate;
+	int same_seg_gate;
+	int early_path_gate;
+} input_demo_escort_state_snapshot;
+
 static input_demo_escort_visit_snapshot g_input_demo_escort_visit_snapshot;
+static input_demo_escort_state_snapshot g_input_demo_escort_state_snapshot;
+static input_demo_trace_key_snapshot g_input_demo_snipe_entry_snapshot;
+static input_demo_trace_key_snapshot g_input_demo_snipe_exit_snapshot;
+static input_demo_trace_key_snapshot g_input_demo_thief_entry_snapshot;
+static input_demo_trace_key_snapshot g_input_demo_thief_exit_snapshot;
 static int g_input_demo_escort_segment_snapshot_valid = 0;
 static int g_input_demo_escort_segment_snapshot_player_seg = -1;
 static int g_input_demo_escort_segment_snapshot_believed_seg = -1;
@@ -204,6 +274,11 @@ static int g_input_demo_escort_segment_snapshot_believed_seg = -1;
 static void input_demo_reset_escort_state_probes(void)
 {
 	memset(&g_input_demo_escort_visit_snapshot, 0, sizeof(g_input_demo_escort_visit_snapshot));
+	memset(&g_input_demo_escort_state_snapshot, 0, sizeof(g_input_demo_escort_state_snapshot));
+	memset(&g_input_demo_snipe_entry_snapshot, 0, sizeof(g_input_demo_snipe_entry_snapshot));
+	memset(&g_input_demo_snipe_exit_snapshot, 0, sizeof(g_input_demo_snipe_exit_snapshot));
+	memset(&g_input_demo_thief_entry_snapshot, 0, sizeof(g_input_demo_thief_entry_snapshot));
+	memset(&g_input_demo_thief_exit_snapshot, 0, sizeof(g_input_demo_thief_exit_snapshot));
 	g_input_demo_escort_segment_snapshot_valid = 0;
 	g_input_demo_escort_segment_snapshot_player_seg = -1;
 	g_input_demo_escort_segment_snapshot_believed_seg = -1;
@@ -353,6 +428,177 @@ static void input_demo_log_escort_visit_change(object *objp, ai_local *ailp, ai_
 		current.visit);
 
 	g_input_demo_escort_visit_snapshot = current;
+}
+
+static void input_demo_log_escort_state(object *objp, ai_local *ailp, ai_static *aip,
+	fix dist_to_player, int player_visibility, int should_visit_player,
+	fix64 since_seen, fix64 since_player_path, int away_gate,
+	int recent_path_gate, int goto_player_gate, int same_seg_gate,
+	int early_path_gate)
+{
+	input_demo_escort_state_snapshot current;
+
+	if (!input_demo_trace_escort_active() || !objp || !ailp || !aip)
+		return;
+
+	current.valid = 1;
+	current.player_visibility = player_visibility;
+	current.mode = ailp->mode;
+	current.buddy_allowed_to_talk = Buddy_allowed_to_talk;
+	current.buddy_seg = objp->segnum;
+	current.player_seg = ConsoleObject ? ConsoleObject->segnum : -1;
+	current.cur_path_index = aip->cur_path_index;
+	current.path_length = aip->path_length;
+	current.hide_index = aip->hide_index;
+	current.buddy_last_seen_player = Buddy_last_seen_player;
+	current.buddy_last_player_path_created = Buddy_last_player_path_created;
+	current.escort_last_path_created = Escort_last_path_created;
+	current.time_player_seen = ailp->time_player_seen;
+	current.escort_goal_object = Escort_goal_object;
+	current.escort_special_goal = Escort_special_goal;
+	current.should_visit_player = should_visit_player;
+	current.away_gate = away_gate;
+	current.recent_path_gate = recent_path_gate;
+	current.goto_player_gate = goto_player_gate;
+	current.same_seg_gate = same_seg_gate;
+	current.early_path_gate = early_path_gate;
+
+	if (g_input_demo_escort_state_snapshot.valid &&
+		(current.player_visibility == g_input_demo_escort_state_snapshot.player_visibility) &&
+		(current.mode == g_input_demo_escort_state_snapshot.mode) &&
+		(current.buddy_allowed_to_talk == g_input_demo_escort_state_snapshot.buddy_allowed_to_talk) &&
+		(current.buddy_seg == g_input_demo_escort_state_snapshot.buddy_seg) &&
+		(current.player_seg == g_input_demo_escort_state_snapshot.player_seg) &&
+		(current.cur_path_index == g_input_demo_escort_state_snapshot.cur_path_index) &&
+		(current.path_length == g_input_demo_escort_state_snapshot.path_length) &&
+		(current.hide_index == g_input_demo_escort_state_snapshot.hide_index) &&
+		(current.buddy_last_seen_player == g_input_demo_escort_state_snapshot.buddy_last_seen_player) &&
+		(current.buddy_last_player_path_created == g_input_demo_escort_state_snapshot.buddy_last_player_path_created) &&
+		(current.escort_last_path_created == g_input_demo_escort_state_snapshot.escort_last_path_created) &&
+		(current.time_player_seen == g_input_demo_escort_state_snapshot.time_player_seen) &&
+		(current.escort_goal_object == g_input_demo_escort_state_snapshot.escort_goal_object) &&
+		(current.escort_special_goal == g_input_demo_escort_state_snapshot.escort_special_goal) &&
+		(current.should_visit_player == g_input_demo_escort_state_snapshot.should_visit_player) &&
+		(current.away_gate == g_input_demo_escort_state_snapshot.away_gate) &&
+		(current.recent_path_gate == g_input_demo_escort_state_snapshot.recent_path_gate) &&
+		(current.goto_player_gate == g_input_demo_escort_state_snapshot.goto_player_gate) &&
+		(current.same_seg_gate == g_input_demo_escort_state_snapshot.same_seg_gate) &&
+		(current.early_path_gate == g_input_demo_escort_state_snapshot.early_path_gate))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay escort state: frame=%u gt=%lld vis=%d mode=%d talk=%d dist=%d buddy_seg=%d player_seg=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld escort_last_path=%lld seen=%lld goal=%d special=%d visit=%d since_seen=%lld since_player_path=%lld away_gate=%d recent_path_gate=%d goto_player_gate=%d same_seg_gate=%d early_path_gate=%d\n",
+			input_demo_trace_frame_index(),
+			(long long)GameTime64,
+			player_visibility,
+			ailp->mode,
+			Buddy_allowed_to_talk,
+			dist_to_player,
+			objp->segnum,
+			ConsoleObject ? ConsoleObject->segnum : -1,
+			aip->cur_path_index,
+			aip->path_length,
+			aip->hide_index,
+			(long long)Buddy_last_seen_player,
+			(long long)Buddy_last_player_path_created,
+			(long long)Escort_last_path_created,
+			(long long)ailp->time_player_seen,
+			Escort_goal_object,
+			Escort_special_goal,
+			should_visit_player,
+			(long long)since_seen,
+			(long long)since_player_path,
+			away_gate,
+			recent_path_gate,
+			goto_player_gate,
+			same_seg_gate,
+			early_path_gate);
+
+	g_input_demo_escort_state_snapshot = current;
+}
+
+static void input_demo_log_snipe_detail_probe(input_demo_trace_key_snapshot *snapshot,
+	const char *step, object *objp, ai_local *ailp,
+	int player_visibility, fix dist_to_player)
+{
+	ai_static *aip;
+	unsigned int state_key;
+
+	if (!input_demo_trace_escort_active() || !snapshot || !objp || !ailp)
+		return;
+
+	aip = &objp->ctype.ai_info;
+	state_key = input_demo_trace_hash_label(step);
+	state_key = state_key * 131u + (unsigned int)ailp->mode;
+	state_key = state_key * 131u + (unsigned int)input_demo_trace_fix_bucket(ailp->next_action_time);
+	state_key = state_key * 131u + (unsigned int)player_visibility;
+	state_key = state_key * 131u + (unsigned int)aip->cur_path_index;
+	state_key = state_key * 131u + (unsigned int)aip->path_length;
+	state_key = state_key * 131u + (unsigned int)aip->hide_index;
+	state_key = state_key * 131u + (unsigned int)objp->segnum;
+
+	if (!input_demo_trace_key_snapshot_should_log(snapshot, state_key))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay snipe detail: frame=%u obj=%d step=%s mode=%d next_action=%d vis=%d dist=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
+		input_demo_trace_frame_index(),
+		(int)(objp - Objects),
+		step,
+		ailp->mode,
+		ailp->next_action_time,
+		player_visibility,
+		dist_to_player,
+		aip->cur_path_index,
+		aip->path_length,
+		aip->hide_index,
+		objp->segnum,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z);
+}
+
+static void input_demo_log_thief_detail_probe(input_demo_trace_key_snapshot *snapshot,
+	const char *step, object *objp, ai_local *ailp,
+	int player_visibility, fix dist_to_player)
+{
+	ai_static *aip;
+	unsigned int state_key;
+
+	if (!input_demo_trace_escort_active() || !snapshot || !objp || !ailp)
+		return;
+
+	aip = &objp->ctype.ai_info;
+	state_key = input_demo_trace_hash_label(step);
+	state_key = state_key * 131u + (unsigned int)ailp->mode;
+	state_key = state_key * 131u + (unsigned int)input_demo_trace_fix_bucket(ailp->next_action_time);
+	state_key = state_key * 131u + (unsigned int)player_visibility;
+	state_key = state_key * 131u + (unsigned int)ailp->player_awareness_type;
+	state_key = state_key * 131u + (unsigned int)aip->cur_path_index;
+	state_key = state_key * 131u + (unsigned int)aip->path_length;
+	state_key = state_key * 131u + (unsigned int)aip->hide_index;
+	state_key = state_key * 131u + (unsigned int)objp->segnum;
+
+	if (!input_demo_trace_key_snapshot_should_log(snapshot, state_key))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay thief detail: frame=%u obj=%d step=%s mode=%d next_action=%d vis=%d aware=%d dist=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
+		input_demo_trace_frame_index(),
+		(int)(objp - Objects),
+		step,
+		ailp->mode,
+		ailp->next_action_time,
+		player_visibility,
+		ailp->player_awareness_type,
+		dist_to_player,
+		aip->cur_path_index,
+		aip->path_length,
+		aip->hide_index,
+		objp->segnum,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z);
 }
 
 
@@ -850,6 +1096,18 @@ void set_escort_special_goal(int special_key)
 	// -- Escort_goal_object = escort_set_goal_object();
 
 	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+}
+
+void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu)
+{
+	if (from_menu) {
+		Looking_for_marker = -1;
+		Last_buddy_key = -1;
+		set_escort_special_goal(special_key);
+		Last_buddy_key = -1;
+		return;
+	}
+	set_escort_special_goal(special_key);
 }
 
 //	-----------------------------------------------------------------------------
@@ -1635,32 +1893,10 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			replay_visit_same_seg_gate, replay_visit_early_path_gate, replay_should_visit_player);
 	}
 	if (replay_state_probe_active)
-		con_printf(CON_NORMAL,
-			"Input demo replay escort state: frame=%u gt=%lld vis=%d mode=%d talk=%d dist=%d buddy_seg=%d player_seg=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld escort_last_path=%lld seen=%lld goal=%d special=%d visit=%d since_seen=%lld since_player_path=%lld away_gate=%d recent_path_gate=%d goto_player_gate=%d same_seg_gate=%d early_path_gate=%d\n",
-				input_demo_trace_frame_index(),
-			(long long)GameTime64,
-			player_visibility,
-			ailp->mode,
-			Buddy_allowed_to_talk,
-			dist_to_player,
-			objp->segnum,
-			ConsoleObject->segnum,
-			aip->cur_path_index,
-			aip->path_length,
-			aip->hide_index,
-			(long long)Buddy_last_seen_player,
-			(long long)Buddy_last_player_path_created,
-			(long long)Escort_last_path_created,
-			(long long)ailp->time_player_seen,
-			Escort_goal_object,
-			Escort_special_goal,
-			replay_should_visit_player,
-			(long long)replay_since_seen,
-			(long long)replay_since_player_path,
-			replay_visit_away_gate,
-			replay_visit_recent_path_gate,
-			replay_visit_goto_player_gate,
-			replay_visit_same_seg_gate,
+		input_demo_log_escort_state(objp, ailp, aip, dist_to_player, player_visibility,
+			replay_should_visit_player, replay_since_seen, replay_since_player_path,
+			replay_visit_away_gate, replay_visit_recent_path_gate,
+			replay_visit_goto_player_gate, replay_visit_same_seg_gate,
 			replay_visit_early_path_gate);
 
 	if ((Escort_special_goal != ESCORT_GOAL_SCRAM) && (replay_state_probe_active ? replay_should_visit_player : time_to_visit_player(objp, ailp, aip))) {
@@ -1741,21 +1977,8 @@ void do_snipe_frame(object *objp, fix dist_to_player, int player_visibility, vms
 	int			replay_snipe_probe_active = input_demo_trace_escort_active() && objnum == 15;
 
 	if (replay_snipe_probe_active)
-		con_printf(CON_NORMAL,
-			"Input demo replay snipe detail: frame=%u obj=%d step=entry mode=%d next_action=%d vis=%d dist=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
-			input_demo_trace_frame_index(),
-			objnum,
-			ailp->mode,
-			ailp->next_action_time,
-			player_visibility,
-			dist_to_player,
-			objp->ctype.ai_info.cur_path_index,
-			objp->ctype.ai_info.path_length,
-			objp->ctype.ai_info.hide_index,
-			objp->segnum,
-			objp->pos.x,
-			objp->pos.y,
-			objp->pos.z);
+		input_demo_log_snipe_detail_probe(&g_input_demo_snipe_entry_snapshot,
+			"entry", objp, ailp, player_visibility, dist_to_player);
 
 	if (dist_to_player > F1_0*500)
 		return;
@@ -1825,20 +2048,8 @@ void do_snipe_frame(object *objp, fix dist_to_player, int player_visibility, vms
 	}
 
 	if (replay_snipe_probe_active)
-		con_printf(CON_NORMAL,
-			"Input demo replay snipe detail: frame=%u obj=%d step=exit mode=%d next_action=%d vis=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
-			input_demo_trace_frame_index(),
-			objnum,
-			ailp->mode,
-			ailp->next_action_time,
-			player_visibility,
-			objp->ctype.ai_info.cur_path_index,
-			objp->ctype.ai_info.path_length,
-			objp->ctype.ai_info.hide_index,
-			objp->segnum,
-			objp->pos.x,
-			objp->pos.y,
-			objp->pos.z);
+		input_demo_log_snipe_detail_probe(&g_input_demo_snipe_exit_snapshot,
+			"exit", objp, ailp, player_visibility, dist_to_player);
 
 }
 
@@ -1911,22 +2122,8 @@ void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms
 		return;
 
 	if (replay_thief_probe_active)
-		con_printf(CON_NORMAL,
-			"Input demo replay thief detail: frame=%u obj=%d step=entry mode=%d next_action=%d vis=%d aware=%d dist=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
-			input_demo_trace_frame_index(),
-			objnum,
-			ailp->mode,
-			ailp->next_action_time,
-			player_visibility,
-			ailp->player_awareness_type,
-			dist_to_player,
-			objp->ctype.ai_info.cur_path_index,
-			objp->ctype.ai_info.path_length,
-			objp->ctype.ai_info.hide_index,
-			objp->segnum,
-			objp->pos.x,
-			objp->pos.y,
-			objp->pos.z);
+		input_demo_log_thief_detail_probe(&g_input_demo_thief_entry_snapshot,
+			"entry", objp, ailp, player_visibility, dist_to_player);
 
 	if (Player_is_dead)
 		ailp->mode = AIM_THIEF_RETREAT;
@@ -2038,21 +2235,8 @@ void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms
 	}
 
 	if (replay_thief_probe_active)
-		con_printf(CON_NORMAL,
-			"Input demo replay thief detail: frame=%u obj=%d step=exit mode=%d next_action=%d vis=%d aware=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
-			input_demo_trace_frame_index(),
-			objnum,
-			ailp->mode,
-			ailp->next_action_time,
-			player_visibility,
-			ailp->player_awareness_type,
-			objp->ctype.ai_info.cur_path_index,
-			objp->ctype.ai_info.path_length,
-			objp->ctype.ai_info.hide_index,
-			objp->segnum,
-			objp->pos.x,
-			objp->pos.y,
-			objp->pos.z);
+		input_demo_log_thief_detail_probe(&g_input_demo_thief_exit_snapshot,
+			"exit", objp, ailp, player_visibility, dist_to_player);
 
 }
 
@@ -2325,6 +2509,7 @@ typedef struct escort_menu
 int escort_menu_keycommand(window *wind, d_event *event, escort_menu *menu)
 {
 	int	key;
+	char error[256] = "";
 	
 	key = event_key_get(event);
 	
@@ -2339,6 +2524,10 @@ int escort_menu_keycommand(window *wind, d_event *event, escort_menu *menu)
 		case KEY_7:
 		case KEY_8:
 		case KEY_9:
+			if (input_demo_recorder_is_active() &&
+			    !input_demo_recorder_stage_direct_command_guidebot_goal(key, 1, error, sizeof(error)) &&
+			    error[0])
+				con_printf(CON_NORMAL, "Input demo recorder guidebot goal event failed: %s\n", error);
 			Looking_for_marker = -1;
 			Last_buddy_key = -1;
 			set_escort_special_goal(key);

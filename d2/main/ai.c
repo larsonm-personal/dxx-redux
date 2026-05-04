@@ -256,23 +256,12 @@ static int input_demo_trace_robot_pose_active(void)
 
 static const char *input_demo_trace_robot_pose_mode_name(void)
 {
-	if (input_demo_replay_is_loaded())
-		return "replay";
-	if (input_demo_recorder_is_active())
-		return "record";
-	return "none";
+	return input_demo_debug_activity_mode_name();
 }
 
 static unsigned int input_demo_trace_frame_index(void)
 {
-	if (input_demo_replay_is_loaded())
-		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t frame_count = input_demo_recorder_frame_count();
-
-		return frame_count ? (unsigned int)(frame_count - 1) : 0;
-	}
-	return 0;
+	return input_demo_debug_frame_index();
 }
 
 typedef struct input_demo_trace_view_probe {
@@ -379,6 +368,10 @@ static void input_demo_trace_tracked_robot_poses(void)
 	static short tracked_last_seg[MAX_OBJECTS];
 	static unsigned int last_frame = UINT_MAX;
 	static int tracked_total = 0;
+	static int last_summary_tracked_total = -1;
+	static int last_summary_tracked_visible = -1;
+	static int last_summary_tracked_list_count = -1;
+	static char last_summary_list[512];
 	static int last_score = -1;
 	static int last_kills = -1;
 	char tracked_list[512];
@@ -399,6 +392,10 @@ static void input_demo_trace_tracked_robot_poses(void)
 		memset(tracked_last_seg, 0xff, sizeof(tracked_last_seg));
 		last_frame = UINT_MAX;
 		tracked_total = 0;
+		last_summary_tracked_total = -1;
+		last_summary_tracked_visible = -1;
+		last_summary_tracked_list_count = -1;
+		last_summary_list[0] = '\0';
 		last_score = -1;
 		last_kills = -1;
 		return;
@@ -411,6 +408,10 @@ static void input_demo_trace_tracked_robot_poses(void)
 		memset(tracked_last_in_view, 0xff, sizeof(tracked_last_in_view));
 		memset(tracked_last_seg, 0xff, sizeof(tracked_last_seg));
 		tracked_total = 0;
+		last_summary_tracked_total = -1;
+		last_summary_tracked_visible = -1;
+		last_summary_tracked_list_count = -1;
+		last_summary_list[0] = '\0';
 		last_score = -1;
 		last_kills = -1;
 	}
@@ -549,33 +550,7 @@ static void input_demo_trace_tracked_robot_poses(void)
 
 			tracked_last_in_view[i] = in_view ? 1 : 0;
 			tracked_last_seg[i] = (short)objp->segnum;
-
-			con_printf(CON_NORMAL,
-				"Input demo robot pose track: mode=%s frame=%u gt=%lld step=pose tracked_total=%d robot_obj=%d robot_sig=%d robot_id=%d robot_seg=%d calc_seg=%d in_view=%d los=%d front_dot=%d pos=(%d,%d,%d) vel=(%d,%d,%d) shields=%d life=%d flags=0x%x exploding=%d companion=%d boss=%d\n",
-				input_demo_trace_robot_pose_mode_name(),
-				frame,
-				(long long)GameTime64,
-				tracked_total,
-				i,
-				objp->signature,
-				objp->id,
-				objp->segnum,
-				calc_seg,
-				in_view,
-				los,
-				front_dot,
-				objp->pos.x,
-				objp->pos.y,
-				objp->pos.z,
-				objp->mtype.phys_info.velocity.x,
-				objp->mtype.phys_info.velocity.y,
-				objp->mtype.phys_info.velocity.z,
-				objp->shields,
-				objp->lifeleft,
-				objp->flags,
-				(objp->flags & OF_EXPLODING) != 0,
-				Robot_info[objp->id].companion,
-				Robot_info[objp->id].boss_flag);
+			(void)calc_seg;
 		} else {
 			tracked_last_in_view[i] = -1;
 			tracked_last_seg[i] = -1;
@@ -617,15 +592,24 @@ static void input_demo_trace_tracked_robot_poses(void)
 	}
 
 	tracked_list[tracked_list_len] = '\0';
-	con_printf(CON_NORMAL,
-		"Input demo robot pose track: mode=%s frame=%u gt=%lld step=summary tracked_total=%d tracked_visible=%d listed=%d list=%s\n",
-		input_demo_trace_robot_pose_mode_name(),
-		frame,
-		(long long)GameTime64,
-		tracked_total,
-		tracked_visible,
-		tracked_list_count,
-		tracked_list_len ? tracked_list : "none");
+	if ((tracked_total != last_summary_tracked_total) ||
+	    (tracked_visible != last_summary_tracked_visible) ||
+	    (tracked_list_count != last_summary_tracked_list_count) ||
+	    strcmp(tracked_list_len ? tracked_list : "none", last_summary_list) != 0) {
+		con_printf(CON_NORMAL,
+			"Input demo robot pose track: mode=%s frame=%u gt=%lld step=summary tracked_total=%d tracked_visible=%d listed=%d list=%s\n",
+			input_demo_trace_robot_pose_mode_name(),
+			frame,
+			(long long)GameTime64,
+			tracked_total,
+			tracked_visible,
+			tracked_list_count,
+			tracked_list_len ? tracked_list : "none");
+		last_summary_tracked_total = tracked_total;
+		last_summary_tracked_visible = tracked_visible;
+		last_summary_tracked_list_count = tracked_list_count;
+		snprintf(last_summary_list, sizeof(last_summary_list), "%s", tracked_list_len ? tracked_list : "none");
+	}
 	last_score = score_now;
 	last_kills = kills_now;
 }
@@ -638,11 +622,7 @@ static int input_demo_replay_awareness_probe_active(void)
 
 static const char *input_demo_awareness_probe_mode_name(void)
 {
-	if (input_demo_replay_is_loaded())
-		return "replay";
-	if (input_demo_recorder_is_active())
-		return "record";
-	return "none";
+	return input_demo_debug_activity_mode_name();
 }
 
 void input_demo_set_awareness_source(const char *source_tag, int source_objnum, int aux_objnum)

@@ -68,6 +68,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "window.h"
 #include "playsave.h"
 #include "args.h"
+#include "input_demo_recorder.h"
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -309,6 +310,20 @@ void DropMarker (int player_marker_num)
 		multi_send_drop_marker (Player_num,playerp->pos,player_marker_num,MarkerMessage[marker_num]);
 #endif
 
+}
+
+extern ubyte LastMarkerDropped;
+
+void input_demo_apply_recorded_marker_drop(int player_marker_num, const char *message)
+{
+	const int marker_num = (Player_num * 2) + player_marker_num;
+
+	if (player_marker_num < 0 || marker_num < 0 || marker_num >= NUM_MARKERS)
+		return;
+	strncpy(MarkerMessage[marker_num], message ? message : "", MARKER_MESSAGE_LEN - 1);
+	MarkerMessage[marker_num][MARKER_MESSAGE_LEN - 1] = '\0';
+	DropMarker(player_marker_num);
+	LastMarkerDropped = (ubyte)player_marker_num;
 }
 
 void DropBuddyMarker(object *objp)
@@ -1567,6 +1582,8 @@ void InitMarkerInput ()
 
 int MarkerInputMessage(int key)
 {
+	char error[256] = "";
+
 	switch( key )
 	{
 		case KEY_F8:
@@ -1584,6 +1601,12 @@ int MarkerInputMessage(int key)
 			break;
 		case KEY_ENTER:
 			strcpy (MarkerMessage[(Player_num*2)+MarkerBeingDefined],Marker_input);
+			if (input_demo_recorder_is_active() &&
+			    !input_demo_recorder_stage_direct_command_drop_marker(MarkerBeingDefined,
+			                                                       MarkerMessage[(Player_num*2)+MarkerBeingDefined],
+			                                                       error, sizeof(error)) &&
+			    error[0])
+				con_printf(CON_NORMAL, "Input demo recorder marker event failed: %s\n", error);
 			DropMarker(MarkerBeingDefined);
 			LastMarkerDropped = MarkerBeingDefined;
 			key_toggle_repeat(0);
