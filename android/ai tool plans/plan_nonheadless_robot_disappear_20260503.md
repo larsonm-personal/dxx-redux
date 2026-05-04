@@ -14,6 +14,7 @@ Determine why robots near door transitions disappear visually during non-headles
 - [x] Implement minimal wrapper fix for visual vs fast replay selection
 - [x] Verify updated wrapper behavior with a reliable replay run
 - [ ] Isolate engine-side cause for robots 73/74/75 missing from render traversal
+- [x] Isolate late-frame matcen invisibility for robot 158 around frames 1917-1930
 - [x] Update this plan with outcomes and evidence
 
 ## Findings
@@ -37,6 +38,34 @@ Determine why robots near door transitions disappear visually during non-headles
 - Example occlusion drop/restore sequence from the same run:
 	- obj 92 drops at frame 1098 (`los=0`, `hit_seg=304`, `hit_side=2`, `doorway=0x2`) and restores at frame 1434 (`los=1`, `front_dot>0`)
 - For the previously discussed blue-key trio (obj 73/74/75), no `step=view_gate` drop was logged before disappearance in this replay; they remained visible (`in_view=1`) until lifecycle deletion points above
+- Focused late-frame replay probes for obj 158 (sig 4871) show it is continuously in all render traversals at 1910-1939: `in_render_seg=1`, `in_obj_list=1`, `in_seg_list=1`, `drawn=1`
+- New visual-state logs from `draw_polygon_object` show obj 158 is not entering cloaked rendering in that window: `cloak=0`, `cloak_type=0`, `path=default`
+- Lighting at 1910-1939 is stable and non-zero (`light.r/g/b` about 199k-211k), ruling out a simple zero-light black-frame cause
+- Additional projection probe shows obj 158 is fully on-screen through the suspect window: `probe_codes=0`, `probe_behind=0`, `probe_projected=1`, `probe_p3_codes=0`, with screen coordinates around `(314,154)` at frame 1917 and smoothly moving through 1935
+- Id-family probe for robot id 38 shows exactly one rendered candidate in frames 1910-1935: `obj=158 sig=4871`; there is no competing id-38 robot in that window to explain a mistaken visual target
+- Combined evidence indicates the 1917-1930 case is not a render traversal skip and not robot cloak fade logic for obj 158; remaining candidates are perception mismatch (different object slot in visual trace) or a downstream draw/present artifact outside object gating
+- **NEW: Polygon face probe** (phase: instrument `draw_polygon_model` per-face counts via `g3_poly_faces_considered`/`g3_poly_faces_drawn` globals in interp.c, reset and logged in object.c around the main probe target draw call):
+	- Frames 1880-1933: `faces_considered=53, faces_drawn=23-27` every frame - model interpreter working normally, ~half the faces pass backface culling
+	- Frame 1934+: `faces_considered=25, faces_drawn=11-12` - LOD switch to simpler model (robot moving away, `simpler_model` depth threshold fires in polyobj.c)
+	- No zero-face-drawn frames in the probe window
+	- **Conclusion**: `g3_draw_polygon_model` is submitting faces to `g3_draw_tmap`/`g3_draw_poly` normally. The "invisibility" is downstream of the model interpreter - definitively in the GL rasterizer (depth test or blend state)
+	- **Most likely cause**: depth occlusion - the robot spawns inside the matcen structure; the matcen segment is visible from the camera (hence `in_render_seg=1`), but the robot's faces are all behind the matcen wall geometry in the depth buffer. This is expected matcen spawn behavior. The robot becomes visible when it exits the matcen chamber around frame 1930+
+- **NEW: Robot 107 non-matcen cross-check** (frames 1380-1435, requested focus):
+	- Render traversal still marks robot 107 as drawn through the reported disappearance window: `in_render_seg=1`, `in_obj_list=1`, `in_seg_list=1`, `drawn=1` at least 1408-1435
+	- Deep object draw probe confirms robot 107 is fully submitted in the same window:
+		- `Input demo robot visual state`: `probe_codes=0`, `probe_behind=0`, `probe_projected=1`, stable on-screen `probe_sxy` (e.g. frame 1415 `(282,195)`, frame 1425 `(352,161)`, frame 1430 `(298,165)`)
+		- `Input demo robot poly probe`: `model_num=41`, `faces_considered=80`, `faces_drawn=33-38` from 1408 through 1435
+	- Robot 107 is in the `tmap_override` draw path throughout this interval (`tmap_override=158`), but override texture diagnostics show `override_bm_flags=0x0` (not a transparent bitmap-flag path)
+	- Robot 107 is actually killed at frame 1432 (`shields 524288 -> -65536`, `dead=1`) and transitions to exploding state at frame 1433 (`flags=0x1`, `exploding=1`), so the 1425-1430 visual loss occurs **before** death while draw submission is still healthy
+	- **Conclusion**: this non-matcen case matches the matcen case at the critical layer: replay is still issuing model draw calls and faces. The failure is downstream in visibility at raster time (depth/ordering/state interaction), not in object traversal or polygon-model submission
+- **Root-cause synthesis after code review**:
+	- Windows D2 builds define `OGL_MERGE` (`d2/CMakeLists.txt`), while the replay sandbox config has `ClassicDepth=0`, so the Windows replay uses render.c's 3-pass OGL alpha ordering path: pass 1 transparent level geometry with `glAlphaFunc(GL_GEQUAL, 0.8)`, pass 2 objects, pass 3 transparent geometry with normal alpha
+	- In desktop `OGL_MERGE`, `ogl_start_frame()` did **not** enable `GL_ALPHA_TEST` because the startup condition was `#if defined(OGLES) || !defined(OGL_MERGE)`. That makes render.c's pass-1 `glAlphaFunc(GL_GEQUAL, 0.8)` call a no-op on Windows desktop OGL_MERGE
+	- With alpha test disabled, transparent/door wall faces can write a full invisible/low-alpha depth surface before objects render. The later object pass then submits robot faces normally, but every pixel behind the invisible depth surface fails depth. This exactly matches both robot probes: render traversal and polygon submission remain healthy, but the robot is visually gone
+	- Android is a plausible counterexample because the Android/GLES OGL_MERGE path has separate transparent-wall handling and the startup condition already enables the alpha-test-equivalent path for `OGLES`; it also has Android-only merged-wall/cutout logic around transparent portal faces
+	- Minimal trial fix applied in `d2/arch/ogl/ogl.c`: enable `GL_ALPHA_TEST` unconditionally in `ogl_start_frame()` and set the default threshold to `0.02`, so the existing render.c high-alpha prepass thresholds take effect again on Windows desktop OGL_MERGE
+	- Build verification: `ninja dxx-redux-d2 dxx-redux-d2-headless` in `buildd2` completed and linked successfully after the fix; warnings were existing `loadgl.h`/GLEW macro redefinitions plus `ogl_get_free_texture` C4715
+	- Next hard validation: replay the same demo visually on Windows with the fix. If the robots reappear, this closes the defect. If not, add a one-frame diagnostic that disables depth test only around obj 107/158 draws; that will distinguish invisible depth occlusion from any remaining color/blend/texture state issue
 
 ## Replay fidelity direction
 - Windowed replay should remain the canonical visual-fidelity path: same game executable, same window/event loop, same render traversal, same gameplay code, with only the control source swapped to recorded input

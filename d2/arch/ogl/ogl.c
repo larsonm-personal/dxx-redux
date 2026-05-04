@@ -2220,10 +2220,8 @@ void ogl_start_frame(void){
 	ogl_last_blend_mode = -1; /* invalidate cache; ogl_do_palfx changes blend directly */
 #endif
 
-#if defined(OGLES) || !defined(OGL_MERGE)
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GEQUAL,0.02);
-#endif
 
 	if (!GameCfg.ClassicDepth || (Game_mode & GM_MULTI))
 		glEnable(GL_DEPTH_TEST);

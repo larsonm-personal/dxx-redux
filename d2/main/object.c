@@ -70,6 +70,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_energy_trace.h"
 #include "input_demo_replay.h"
 #include "input_demo_debug_logging.h"
+#include "interp.h"
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -136,6 +137,18 @@ static int input_demo_robot_lifecycle_probe_active(void)
 	}
 
 	return (frame >= 500) && (frame <= 2200);
+}
+
+static int input_demo_robot_visual_probe_active(void)
+{
+	unsigned int frame;
+
+	if (!input_demo_replay_is_loaded())
+		return 0;
+
+	frame = (unsigned int)input_demo_replay_next_frame_index();
+	return ((frame >= 1360) && (frame <= 1450)) ||
+		((frame >= 1880) && (frame <= 1950));
 }
 
 static unsigned int input_demo_robot_lifecycle_frame_index(void)
@@ -562,6 +575,49 @@ void draw_polygon_object(object *obj)
 	g3s_lrgb light;
 	int	imsave;
 	fix engine_glow_value[2];		//element 0 is for engine glow, 1 for headlight
+	g3s_point probe_point;
+	ubyte probe_codes = 0;
+	int probe_projected = 0;
+	int probe_behind = 0;
+	const int objnum = (int)(obj - Objects);
+	const int visual_probe_id38 = input_demo_robot_visual_probe_active() &&
+		(obj->type == OBJ_ROBOT) &&
+		(obj->id == 38);
+	const int visual_probe_target_158 = input_demo_robot_visual_probe_active() &&
+		(obj->type == OBJ_ROBOT) &&
+		(objnum == 158) &&
+		(obj->signature == 4871);
+	const int visual_probe_target_107 = input_demo_robot_visual_probe_active() &&
+		(obj->type == OBJ_ROBOT) &&
+		(objnum == 107) &&
+		(obj->signature == 3818);
+	const int visual_probe_target = visual_probe_target_158 || visual_probe_target_107;
+
+	if (visual_probe_target || visual_probe_id38) {
+		probe_codes = g3_rotate_point(&probe_point, &obj->pos);
+		probe_behind = (probe_codes & CC_BEHIND) != 0;
+		if (!probe_behind) {
+			g3_project_point(&probe_point);
+			probe_projected = (probe_point.p3_flags & PF_PROJECTED) != 0;
+		}
+	}
+
+	if (visual_probe_id38)
+		con_printf(CON_NORMAL,
+			"Input demo robot visual id38: frame=%u obj=%d sig=%d seg=%d flags=0x%x codes=0x%x behind=%d projected=%d p3_codes=0x%x p3_flags=0x%x sxy=(%d,%d) z=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			objnum,
+			obj->signature,
+			obj->segnum,
+			obj->flags,
+			probe_codes,
+			probe_behind,
+			probe_projected,
+			probe_point.p3_codes,
+			probe_point.p3_flags,
+			probe_projected ? f2i(probe_point.p3_sx) : -1,
+			probe_projected ? f2i(probe_point.p3_sy) : -1,
+			probe_point.p3_z);
 
 	light = compute_object_light(obj,NULL);
 
@@ -632,6 +688,8 @@ void draw_polygon_object(object *obj)
 		polymodel *pm = &Polygon_models[obj->rtype.pobj_info.model_num];
 #endif
 		bitmap_index bm_ptrs[12];
+		int override_bm_index = -1;
+		int override_bm_flags = 0;
 
 		int i;
 
@@ -639,6 +697,41 @@ void draw_polygon_object(object *obj)
 
 		for (i=0;i<12;i++)		//fill whole array, in case simple model needs more
 			bm_ptrs[i] = Textures[obj->rtype.pobj_info.tmap_override];
+		override_bm_index = bm_ptrs[0].index;
+		override_bm_flags = GameBitmaps[override_bm_index].bm_flags;
+
+		if (visual_probe_target)
+			con_printf(CON_NORMAL,
+				"Input demo robot visual state: frame=%u obj=%d sig=%d id=%d seg=%d rtype=%d cloak=%d cloak_type=%d flags=0x%x light=(%d,%d,%d) alpha=%d path=tmap_override tmap_override=%d override_bm_index=%d override_bm_flags=0x%x probe_codes=0x%x probe_behind=%d probe_projected=%d probe_p3_codes=0x%x probe_p3_flags=0x%x probe_sxy=(%d,%d) probe_z=%d\n",
+				(unsigned int)input_demo_replay_next_frame_index(),
+				objnum,
+				obj->signature,
+				obj->id,
+				obj->segnum,
+				obj->render_type,
+				obj->ctype.ai_info.CLOAKED,
+				Robot_info[obj->id].cloak_type,
+				obj->flags,
+				light.r,
+				light.g,
+				light.b,
+				PlayerCfg.AlphaEffects,
+				obj->rtype.pobj_info.tmap_override,
+				override_bm_index,
+				override_bm_flags,
+				probe_codes,
+				probe_behind,
+				probe_projected,
+				probe_point.p3_codes,
+				probe_point.p3_flags,
+				probe_projected ? f2i(probe_point.p3_sx) : -1,
+				probe_projected ? f2i(probe_point.p3_sy) : -1,
+				probe_point.p3_z);
+
+		if (visual_probe_target) {
+			g3_poly_faces_considered = 0;
+			g3_poly_faces_drawn = 0;
+		}
 
 		draw_polygon_model(&obj->pos,
 				   &obj->orient,
@@ -648,12 +741,62 @@ void draw_polygon_object(object *obj)
 				   light,
 				   engine_glow_value,
 				   bm_ptrs);
+
+		if (visual_probe_target)
+			con_printf(CON_NORMAL,
+				"Input demo robot poly probe: frame=%u obj=%d sig=%d model_num=%d faces_considered=%d faces_drawn=%d path=tmap_override tmap_override=%d\n",
+				(unsigned int)input_demo_replay_next_frame_index(),
+				objnum,
+				obj->signature,
+				obj->rtype.pobj_info.model_num,
+				g3_poly_faces_considered,
+				g3_poly_faces_drawn,
+				obj->rtype.pobj_info.tmap_override);
 	}
 	else {
+		if (visual_probe_target)
+			con_printf(CON_NORMAL,
+				"Input demo robot visual state: frame=%u obj=%d sig=%d id=%d seg=%d rtype=%d cloak=%d cloak_type=%d flags=0x%x light=(%d,%d,%d) alpha=%d path=default probe_codes=0x%x probe_behind=%d probe_projected=%d probe_p3_codes=0x%x probe_p3_flags=0x%x probe_sxy=(%d,%d) probe_z=%d\n",
+				(unsigned int)input_demo_replay_next_frame_index(),
+				objnum,
+				obj->signature,
+				obj->id,
+				obj->segnum,
+				obj->render_type,
+				obj->ctype.ai_info.CLOAKED,
+				Robot_info[obj->id].cloak_type,
+				obj->flags,
+				light.r,
+				light.g,
+				light.b,
+				PlayerCfg.AlphaEffects,
+				probe_codes,
+				probe_behind,
+				probe_projected,
+				probe_point.p3_codes,
+				probe_point.p3_flags,
+				probe_projected ? f2i(probe_point.p3_sx) : -1,
+				probe_projected ? f2i(probe_point.p3_sy) : -1,
+				probe_point.p3_z);
 
 		if (obj->type==OBJ_PLAYER && (Players[obj->id].flags&PLAYER_FLAGS_CLOAKED))
+		{
+			if (visual_probe_target)
+				con_printf(CON_NORMAL,
+					"Input demo robot visual state: frame=%u obj=%d sig=%d path=player_cloak\n",
+					(unsigned int)input_demo_replay_next_frame_index(),
+					objnum,
+					obj->signature);
 			draw_cloaked_object(obj,light,engine_glow_value,Players[obj->id].cloak_time,Players[obj->id].cloak_time+CLOAK_TIME_MAX);
+		}
 		else if ((obj->type == OBJ_ROBOT) && (obj->ctype.ai_info.CLOAKED)) {
+			if (visual_probe_target)
+				con_printf(CON_NORMAL,
+					"Input demo robot visual state: frame=%u obj=%d sig=%d path=robot_cloak boss=%d\n",
+					(unsigned int)input_demo_replay_next_frame_index(),
+					objnum,
+					obj->signature,
+					Robot_info[obj->id].boss_flag != 0);
 			if (Robot_info[obj->id].boss_flag)
 				draw_cloaked_object(obj,light,engine_glow_value, Boss_cloak_start_time, Boss_cloak_end_time);
 			else
@@ -693,6 +836,10 @@ void draw_polygon_object(object *obj)
 			int observed = is_observer() && Obs_at_distance && obj->type == OBJ_PLAYER && is_observing_player() && Players[Current_obs_player].objnum == obj - Objects;
 			if (observed && PlayerCfg.ObsTransparentThirdPerson[get_observer_game_mode()])
 				gr_settransblend(CLOAKED_FADE_LEVEL*2/3, GR_BLEND_NORMAL);
+			if (visual_probe_target) {
+				g3_poly_faces_considered = 0;
+				g3_poly_faces_drawn = 0;
+			}
 			draw_polygon_model(&obj->pos,
 					   &obj->orient,
 					   (vms_angvec *)&obj->rtype.pobj_info.anim_angles,obj->rtype.pobj_info.model_num,
@@ -700,6 +847,15 @@ void draw_polygon_object(object *obj)
 					   light,
 					   engine_glow_value,
 					   alt_textures);
+			if (visual_probe_target)
+				con_printf(CON_NORMAL,
+					"Input demo robot poly probe: frame=%u obj=%d sig=%d model_num=%d faces_considered=%d faces_drawn=%d\n",
+					(unsigned int)input_demo_replay_next_frame_index(),
+					objnum,
+					obj->signature,
+					obj->rtype.pobj_info.model_num,
+					g3_poly_faces_considered,
+					g3_poly_faces_drawn);
 			if (observed && PlayerCfg.ObsTransparentThirdPerson[get_observer_game_mode()])
 				gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
 

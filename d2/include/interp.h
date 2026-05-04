@@ -17,6 +17,10 @@
 //gives the interpreter an array of points to use
 void g3_set_interp_points(g3s_point *pointlist);
 
+// Android port probe: face counters reset by caller before draw_polygon_model
+extern int g3_poly_faces_considered;
+extern int g3_poly_faces_drawn;
+
 //calls the object interpreter to render an object.  The object renderer
 //is really a seperate pipeline. returns true if drew
 bool g3_draw_polygon_model(ubyte *model_ptr,grs_bitmap **model_bitmaps,vms_angvec *anim_angles,g3s_lrgb light,fix *glow_values);

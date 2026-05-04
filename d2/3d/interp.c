@@ -46,6 +46,10 @@ int g3d_interp_outline;
 
 g3s_point *Interp_point_list = NULL;
 
+// Android port probe: polygon face counters for draw_polygon_model diagnostic
+int g3_poly_faces_considered = 0;
+int g3_poly_faces_drawn = 0;
+
 #define MAX_INTERP_COLORS 100
 
 //gives the interpreter an array of points to use
@@ -405,7 +409,9 @@ bool g3_draw_polygon_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_
 				int nv = w(p+2);
 
 				Assert( nv < MAX_POINTS_PER_POLY );
+				g3_poly_faces_considered++;
 				if (g3_check_normal_facing(vp(p+4),vp(p+16)) > 0) {
+					g3_poly_faces_drawn++;
 					int i;
 #ifdef FADE_FLATPOLY
 					short c;
@@ -445,7 +451,9 @@ bool g3_draw_polygon_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_
 				g3s_uvl uvl_copy[MAX_POINTS_PER_POLY];
 
 				Assert( nv < MAX_POINTS_PER_POLY );
+				g3_poly_faces_considered++;
 				if (g3_check_normal_facing(vp(p+4),vp(p+16)) > 0) {
+					g3_poly_faces_drawn++;
 					int i;
 					g3s_lrgb light, *lrgb_list;
 

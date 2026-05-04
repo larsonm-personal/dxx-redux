@@ -345,6 +345,8 @@ void input_demo_capture_current_result(input_demo_result *result)
 
 static int input_demo_replay_logged_state_mismatch = 0;
 static int input_demo_replay_logged_state_trace_error = 0;
+static int input_demo_replay_manual_paused = 0;
+static int input_demo_replay_manual_step = 0;
 
 static void input_demo_update_result_kills_baseline(void)
 {
@@ -1756,18 +1758,40 @@ int game_handler(window *wind, d_event *event, void *data)
 		case EVENT_MOUSE_BUTTON_UP:
 		case EVENT_MOUSE_BUTTON_DOWN:
 		case EVENT_MOUSE_MOVED:
-		case EVENT_KEY_COMMAND:
 		case EVENT_KEY_RELEASE:
 		case EVENT_IDLE:
 			if (input_demo_replay_is_loaded())
 				return 1;
 			return ReadControls(event);
 
+		case EVENT_KEY_COMMAND:
+			if (input_demo_replay_is_loaded()) {
+				int replay_key = event_key_get(event) & 0xFF;
+
+				if (replay_key == KEY_SPACEBAR) {
+					input_demo_replay_manual_paused = !input_demo_replay_manual_paused;
+					input_demo_replay_manual_step = 0;
+					return 1;
+				}
+				if (replay_key == KEY_RIGHT) {
+					input_demo_replay_manual_paused = 1;
+					input_demo_replay_manual_step = 1;
+					return 1;
+				}
+				return 1;
+			}
+			return ReadControls(event);
+
 		case EVENT_WINDOW_DRAW:
 			if (input_demo_replay_is_loaded()) {
-				if (!input_demo_step_replay_frame())
-					return 1;
+				if (!input_demo_replay_manual_paused || input_demo_replay_manual_step) {
+					if (!input_demo_step_replay_frame())
+						return 1;
+					input_demo_replay_manual_step = 0;
+				}
 			} else {
+				input_demo_replay_manual_paused = 0;
+				input_demo_replay_manual_step = 0;
 				calc_frame_time();
 				if (!time_paused)
 				{
@@ -1788,6 +1812,8 @@ int game_handler(window *wind, d_event *event, void *data)
 
 		case EVENT_WINDOW_CLOSE:
 			digi_stop_digi_sounds();
+			input_demo_replay_manual_paused = 0;
+			input_demo_replay_manual_step = 0;
 			input_demo_replay_unload();
 
 			if ( (Newdemo_state == ND_STATE_RECORDING) || (Newdemo_state == ND_STATE_PAUSED) )

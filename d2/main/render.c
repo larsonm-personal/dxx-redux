@@ -1219,7 +1219,7 @@ static int input_demo_render_probe_active(void)
 		return 0;
 
 	frame = (unsigned int)input_demo_replay_next_frame_index();
-	return (frame >= 300) && (frame <= 1600);
+	return (frame >= 300) && (frame <= 2000);
 }
 
 static void input_demo_render_probe_update_first_player_shot_frame(void)
@@ -1318,7 +1318,7 @@ static int input_demo_render_probe_should_log_boundary(void)
 		return 0;
 
 	frame = (unsigned int)input_demo_replay_next_frame_index();
-	return (frame >= 300u) && (frame <= 1600u);
+	return (frame >= 300u) && (frame <= 2000u);
 }
 
 static int input_demo_render_probe_first_robot_in_seg(int segnum, int *objnum_out, int *objid_out)
@@ -1348,17 +1348,21 @@ static void input_demo_render_probe_log_target_robot_visibility(void)
 {
 	unsigned int frame;
 	int target_obj;
+	/* android port: target objects for render visibility probe */
+	static const int target_objs[] = {73, 74, 75, 107, 158};
+	int ti;
 
 	if (!input_demo_replay_is_loaded())
 		return;
 
 	frame = (unsigned int)input_demo_replay_next_frame_index();
-	if (frame < 300 || frame > 1600)
+	if (frame < 300 || frame > 2000)
 		return;
 
 	input_demo_render_probe_update_first_player_shot_frame();
 
-	for (target_obj = 73; target_obj <= 75; target_obj++) {
+	for (ti = 0; ti < 5; ti++) {
+		int target_obj = target_objs[ti];
 		object *obj = &Objects[target_obj];
 		int drawn = input_demo_render_probe_drawn_frame[target_obj] == frame;
 		int in_render_seg = input_demo_render_probe_target_in_render_seg(obj);
@@ -1379,8 +1383,16 @@ static void input_demo_render_probe_log_target_robot_visibility(void)
 				obj->type,
 				obj->segnum);
 
-		if (!pre_shot && !drawn)
+		/* for obj 107, log every frame near disappearance; for others skip if not drawn post-shot */
+		if (target_obj == 107) {
+			if (frame < 1390 || frame > 1510)
+				continue;
+		} else if (target_obj == 158) {
+			if (frame < 1880 || frame > 1950)
+				continue;
+		} else if (!pre_shot && !drawn) {
 			continue;
+		}
 
 		con_printf(CON_NORMAL,
 			"Input demo render target state: frame=%u pre_shot=%d first_shot_frame=%u obj=%d type=%d sig=%d id=%d seg=%d in_render_seg=%d in_obj_list=%d in_seg_list=%d drawn=%d render_type=%d flags=0x%x exploding=%d should_die=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
