@@ -65,6 +65,7 @@ int input_demo_replay_difficulty(void);
 const char *input_demo_replay_start_mode(void);
 const char *input_demo_replay_rng_mode(void);
 const char *input_demo_replay_actual_result_path(void);
+void input_demo_replay_set_actual_result_path(const char *path);
 int input_demo_replay_has_player_cfg(void);
 int input_demo_replay_get_player_cfg(input_demo_player_cfg *player_cfg);
 int input_demo_replay_has_checkpoint(void);

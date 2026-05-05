@@ -174,8 +174,11 @@ void print_commandline_help()
 	printf( "  -norun                        Bail out after initialization\n");
 	printf( "  -inputdemo-validate <s>       Validate input demo file rng_mode and exit\n");
 	printf( "  -inputdemo-replay <s>         Replay input demo file through the D1 engine\n");
+	printf( "  -inputdemo-actual-result <s>  Write replay final-result JSON to <s>\n");
 	printf( "  -inputdemo-replay-labels      Accept and ignore replay label toggle for helper parity\n");
+#if INPUT_DEMO_DEBUG_LOGGING_AVAILABLE
 	printf( "  -inputdemo-debug-log          Enable optional input demo debug probe logging\n");
+#endif
 	printf( "  -inputdemo-state-log <s>      Write replay frame-state JSONL during input demo replay\n");
 	printf( "  -inputdemo-rng-trace <s>      Write replay RNG trace JSONL during input demo replay\n");
 	printf( "  -renderstats                  Enable renderstats info by default\n");
@@ -274,13 +277,18 @@ static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *play
 int input_demo_maybe_start_replay_from_cmdline(void)
 {
 	int arg_index = find_cmd_arg("-inputdemo-replay");
+	int actual_result_arg_index = find_cmd_arg("-inputdemo-actual-result");
 	int replay_labels_arg_index = find_cmd_arg("-inputdemo-replay-labels");
-	int debug_log_arg_index = find_cmd_arg("-inputdemo-debug-log");
+	int debug_log_arg_index = 0;
+	#if INPUT_DEMO_DEBUG_LOGGING_AVAILABLE
+	debug_log_arg_index = find_cmd_arg("-inputdemo-debug-log");
+	#endif
 	int state_log_arg_index = find_cmd_arg("-inputdemo-state-log");
 	int rng_trace_arg_index = find_cmd_arg("-inputdemo-rng-trace");
 	int engine_mode;
 	int demo_mode;
 	const char *demo_path;
+	const char *actual_result_path = NULL;
 	const char *state_log_path = NULL;
 	const char *rng_trace_path = NULL;
 	const char *validation_error;
@@ -306,6 +314,15 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 	{
 		printf("Missing value for -inputdemo-replay\n");
 		return 1;
+	}
+	if (actual_result_arg_index)
+	{
+		if (actual_result_arg_index + 1 >= Num_args || !Args[actual_result_arg_index + 1] || Args[actual_result_arg_index + 1][0] == '-')
+		{
+			printf("Missing value for -inputdemo-actual-result\n");
+			return 1;
+		}
+		actual_result_path = Args[actual_result_arg_index + 1];
 	}
 	if (state_log_arg_index)
 	{
@@ -342,6 +359,8 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 		printf("Input demo replay load failed: %s\n", replay_error);
 		return 1;
 	}
+	if (actual_result_path)
+		input_demo_replay_set_actual_result_path(actual_result_path);
 	if (rng_trace_path && !input_demo_rng_trace_start_replay(rng_trace_path, replay_error, sizeof(replay_error)))
 	{
 		printf("Input demo replay rng trace start failed: %s\n", replay_error);
@@ -400,6 +419,8 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 		}
 		if (rng_trace_path)
 			printf("Input demo replay rng trace: %s\n", rng_trace_path);
+		if (actual_result_path)
+			printf("Input demo replay actual result: %s\n", actual_result_path);
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(input_demo_replay_level());
 		return 0;
@@ -535,6 +556,8 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 	}
 	if (rng_trace_path)
 		printf("Input demo replay rng trace: %s\n", rng_trace_path);
+	if (actual_result_path)
+		printf("Input demo replay actual result: %s\n", actual_result_path);
 	return 0;
 }
 

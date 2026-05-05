@@ -245,13 +245,12 @@ fix Dist_to_last_fired_upon_player_pos = 0;
 
 static int input_demo_trace_ai_active(void)
 {
-	return input_demo_debug_is_enabled() && input_demo_recorder_is_active();
+	return input_demo_debug_record_probe_active();
 }
 
 static int input_demo_trace_robot_pose_active(void)
 {
-	return input_demo_debug_is_enabled() &&
-		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+	return input_demo_debug_activity_probe_active();
 }
 
 static const char *input_demo_trace_robot_pose_mode_name(void)
@@ -616,8 +615,7 @@ static void input_demo_trace_tracked_robot_poses(void)
 
 static int input_demo_replay_awareness_probe_active(void)
 {
-	return input_demo_debug_is_enabled() &&
-		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+	return input_demo_debug_activity_probe_active();
 }
 
 static const char *input_demo_awareness_probe_mode_name(void)

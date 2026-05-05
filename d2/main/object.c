@@ -94,7 +94,7 @@ static int input_demo_trace_ai_rng_active(object *obj)
 	ai_static *aip;
 	ai_local *ailp;
 
-	if (!obj || !input_demo_debug_is_enabled() || !input_demo_replay_is_loaded() || (obj->type != OBJ_ROBOT))
+	if (!obj || !input_demo_debug_replay_probe_active() || (obj->type != OBJ_ROBOT))
 		return 0;
 
 	aip = &obj->ctype.ai_info;
@@ -112,54 +112,13 @@ static int input_demo_trace_ai_rng_active(object *obj)
 
 static int input_demo_robot_lifecycle_probe_active(void)
 {
-	unsigned int frame = 0;
-
-	if (!input_demo_debug_is_enabled() ||
-		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
-		return 0;
-
-	if (input_demo_replay_is_loaded())
-		frame = (unsigned int)input_demo_replay_next_frame_index();
-	else {
-		const uint32_t recorder_frame_count = input_demo_recorder_frame_count();
-
-		frame = recorder_frame_count ? (unsigned int)(recorder_frame_count - 1) : 0;
-	}
-
-	return (frame >= 500) && (frame <= 2200);
+	return input_demo_debug_activity_frame_in_range(500u, 2200u);
 }
 
 static int input_demo_robot_visual_probe_active(void)
 {
-	unsigned int frame;
-
-	if (!input_demo_debug_is_enabled() || !input_demo_replay_is_loaded())
-		return 0;
-
-	frame = (unsigned int)input_demo_replay_next_frame_index();
-	return ((frame >= 1360) && (frame <= 1450)) ||
-		((frame >= 1880) && (frame <= 1950));
-}
-
-static unsigned int input_demo_robot_lifecycle_frame_index(void)
-{
-	if (input_demo_replay_is_loaded())
-		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t recorder_frame_count = input_demo_recorder_frame_count();
-
-		return recorder_frame_count ? (unsigned int)(recorder_frame_count - 1) : 0;
-	}
-	return 0;
-}
-
-static const char *input_demo_robot_lifecycle_mode_name(void)
-{
-	if (input_demo_replay_is_loaded())
-		return "replay";
-	if (input_demo_recorder_is_active())
-		return "record";
-	return "none";
+	return input_demo_debug_replay_frame_in_range(1360u, 1450u) ||
+		input_demo_debug_replay_frame_in_range(1880u, 1950u);
 }
 
 static int input_demo_robot_lifecycle_is_target(int objnum, object *obj)
@@ -1754,8 +1713,8 @@ void obj_delete(int objnum)
 	if (input_demo_robot_lifecycle_is_target(objnum, obj))
 		con_printf(CON_NORMAL,
 			"Input demo robot lifecycle: mode=%s frame=%u gt=%lld step=obj_delete obj=%d sig=%d id=%d seg=%d flags=0x%x shields=%d life=%d exploding=%d should_die=%d\n",
-			input_demo_robot_lifecycle_mode_name(),
-			input_demo_robot_lifecycle_frame_index(),
+			input_demo_debug_activity_mode_name(),
+			input_demo_debug_frame_index(),
 			(long long)GameTime64,
 			objnum,
 			obj->signature,

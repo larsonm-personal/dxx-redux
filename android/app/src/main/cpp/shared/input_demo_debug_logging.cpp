@@ -6,6 +6,8 @@
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 
+#if INPUT_DEMO_DEBUG_LOGGING_AVAILABLE
+
 extern "C" void con_printf(int level, const char *fmt, ...);
 
 static int g_input_demo_debug_enabled = 0;
@@ -13,6 +15,41 @@ static int g_input_demo_debug_enabled = 0;
 int input_demo_debug_is_enabled(void)
 {
 	return g_input_demo_debug_enabled;
+}
+
+int input_demo_debug_record_probe_active(void)
+{
+	return g_input_demo_debug_enabled && input_demo_recorder_is_active();
+}
+
+int input_demo_debug_activity_probe_active(void)
+{
+	return g_input_demo_debug_enabled &&
+	       (input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+}
+
+int input_demo_debug_replay_probe_active(void)
+{
+	return g_input_demo_debug_enabled && input_demo_replay_is_loaded();
+}
+
+int input_demo_debug_frame_in_range(unsigned int start_frame, unsigned int end_frame)
+{
+	const unsigned int frame = input_demo_debug_frame_index();
+
+	return (frame >= start_frame) && (frame <= end_frame);
+}
+
+int input_demo_debug_activity_frame_in_range(unsigned int start_frame, unsigned int end_frame)
+{
+	return input_demo_debug_activity_probe_active() &&
+	       input_demo_debug_frame_in_range(start_frame, end_frame);
+}
+
+int input_demo_debug_replay_frame_in_range(unsigned int start_frame, unsigned int end_frame)
+{
+	return input_demo_debug_replay_probe_active() &&
+	       input_demo_debug_frame_in_range(start_frame, end_frame);
 }
 
 void input_demo_debug_set_enabled(int enabled)
@@ -202,3 +239,5 @@ void input_demo_debug_log_exploding_object_probe(const char *step, void *obj, in
 	if (step)
 		input_demo_debug_printf("Input demo exploding: step=%s\n", step);
 }
+
+#endif

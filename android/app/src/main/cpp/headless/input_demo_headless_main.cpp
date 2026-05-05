@@ -142,9 +142,11 @@ int main(int argc, char *argv[])
 {
 	char error[256] = "";
 	const char *demo_path = find_arg_value(argc, argv, "-inputdemo-replay");
+	int actual_result_arg_index = find_arg_index(argc, argv, "-inputdemo-actual-result");
 	int state_log_arg_index = find_arg_index(argc, argv, "-inputdemo-state-log");
 	int rng_trace_arg_index = find_arg_index(argc, argv, "-inputdemo-rng-trace");
 	int console_output_arg_index = find_arg_index(argc, argv, "-headless-console-output");
+	const char *actual_result_path = actual_result_arg_index >= 0 ? find_arg_value(argc, argv, "-inputdemo-actual-result") : NULL;
 	const char *state_log_path = state_log_arg_index >= 0 ? find_arg_value(argc, argv, "-inputdemo-state-log") : NULL;
 	const char *rng_trace_path = rng_trace_arg_index >= 0 ? find_arg_value(argc, argv, "-inputdemo-rng-trace") : NULL;
 	const char *console_output_value = console_output_arg_index >= 0 ? find_arg_value(argc, argv, "-headless-console-output") : NULL;
@@ -157,7 +159,11 @@ int main(int argc, char *argv[])
 	unsigned int frame_count = 0;
 
 	if (!demo_path) {
-		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo> [-inputdemo-state-log <actual_state.jsonl>] [-inputdemo-rng-trace <actual_rngtrace.jsonl>] [-headless-console-output <1|2>]\n", argc > 0 ? argv[0] : "dxx-redux-d2-headless");
+		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo> [-inputdemo-actual-result <actual_result.json>] [-inputdemo-state-log <actual_state.jsonl>] [-inputdemo-rng-trace <actual_rngtrace.jsonl>] [-headless-console-output <1|2>]\n", argc > 0 ? argv[0] : "dxx-redux-d2-headless");
+		return 1;
+	}
+	if (actual_result_arg_index >= 0 && !actual_result_path) {
+		fprintf(stderr, "HEADLESS-RUN FAIL args missing value for -inputdemo-actual-result\n");
 		return 1;
 	}
 	if (state_log_arg_index >= 0 && !state_log_path) {
@@ -185,6 +191,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "HEADLESS-RUN FAIL load %s\n", error[0] ? error : "replay load failed");
 		return 1;
 	}
+	if (actual_result_path)
+		input_demo_replay_set_actual_result_path(actual_result_path);
 	if (rng_trace_path && !input_demo_rng_trace_start_replay(rng_trace_path, error, sizeof(error))) {
 		fprintf(stderr, "HEADLESS-RUN FAIL rng trace %s\n", error[0] ? error : "rng trace start failed");
 		input_demo_replay_unload();

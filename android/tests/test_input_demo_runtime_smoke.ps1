@@ -142,7 +142,8 @@ function Invoke-ReplaySmoke {
     $config = Get-GameConfig $GameName
     $fixtureDir = Join-Path $outRoot $GameName
     $demoPath = Join-Path $fixtureDir 'smoke.dximdemo'
-    $actualResultPath = $demoPath + '.actual.json'
+    $actualResultDir = Join-Path $outRoot "results\$GameName"
+    $actualResultPath = Join-Path $actualResultDir 'result.actual.json'
     $actualStatePath = $demoPath + '.actual_state.jsonl'
     $actualRngTracePath = $demoPath + '.actual_rngtrace.jsonl'
 
@@ -161,6 +162,10 @@ function Invoke-ReplaySmoke {
 
     New-Fixture -GameName $GameName -Config $config -FixtureDir $fixtureDir
     $sandboxExe = New-LaunchSandbox -GameName $GameName -Config $config
+    New-Item -ItemType Directory -Path $actualResultDir -Force | Out-Null
+    if (Test-Path -LiteralPath $actualResultPath) {
+        Remove-Item -LiteralPath $actualResultPath -Force
+    }
     $launchArgs = @(
         '-hogdir', $DataDir,
         '-window',
@@ -168,6 +173,7 @@ function Invoke-ReplaySmoke {
         '-nomusic',
         '-nosound',
         '-inputdemo-replay', $demoPath,
+        '-inputdemo-actual-result', $actualResultPath,
         '-inputdemo-state-log', $actualStatePath,
         '-inputdemo-rng-trace', $actualRngTracePath
     )

@@ -456,6 +456,16 @@ const char *input_demo_replay_actual_result_path(void)
 	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.actual_result_path.c_str() : NULL;
 }
 
+void input_demo_replay_set_actual_result_path(const char *path)
+{
+	if (!g_input_demo_replay_session.loaded)
+		return;
+	if (path && path[0])
+		g_input_demo_replay_session.actual_result_path = path;
+	else
+		g_input_demo_replay_session.actual_result_path.clear();
+}
+
 int input_demo_replay_has_player_cfg(void)
 {
 	return g_input_demo_replay_session.loaded && g_input_demo_replay_session.has_player_cfg ? 1 : 0;

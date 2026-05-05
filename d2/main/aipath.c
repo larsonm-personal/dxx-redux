@@ -78,8 +78,7 @@ static unsigned int input_demo_trace_frame_index(void)
 
 static int input_demo_trace_path_active(void)
 {
-	return input_demo_debug_is_enabled() &&
-		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+	return input_demo_debug_activity_probe_active();
 }
 
 static int input_demo_replay_path_probe_active(object *objp)
@@ -98,6 +97,36 @@ static int input_demo_replay_follow_probe_active(object *objp)
 static int input_demo_replay_path_request_probe_active(object *objp)
 {
 	return input_demo_replay_path_probe_active(objp);
+}
+
+typedef struct input_demo_path_probe_state {
+	int valid;
+	int signature;
+	unsigned int hash;
+} input_demo_path_probe_state;
+
+static input_demo_path_probe_state g_input_demo_last_path_detail[MAX_OBJECTS];
+static input_demo_path_probe_state g_input_demo_last_path_points[MAX_OBJECTS];
+
+static unsigned int input_demo_path_probe_hash_add(unsigned int hash, int value)
+{
+	hash ^= (unsigned int)value;
+	hash *= 16777619u;
+	return hash;
+}
+
+static unsigned int input_demo_path_probe_hash_text(unsigned int hash, const char *text)
+{
+	int i;
+
+	if (!text)
+		return input_demo_path_probe_hash_add(hash, -1);
+
+	for (i = 0; text[i]; i++) {
+		hash ^= (unsigned char)text[i];
+		hash *= 16777619u;
+	}
+	return input_demo_path_probe_hash_add(hash, 0);
 }
 
 static void input_demo_log_path_robot_state(const char *label, object *objp)
@@ -252,6 +281,42 @@ static void input_demo_log_path_detail(object *objp,
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 	ai_static *aip = (objp && objnum >= 0) ? &objp->ctype.ai_info : NULL;
 	ai_local *ailp = (objp && objnum >= 0) ? &Ai_local_info[objnum] : NULL;
+	input_demo_path_probe_state *last_detail;
+	unsigned int detail_hash = 2166136261u;
+	int companion;
+
+	if (!input_demo_replay_path_probe_active(objp) || (objnum < 0))
+		return;
+
+	companion = (objp->type == OBJ_ROBOT) ? Robot_info[objp->id].companion : 0;
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, objp->type);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, objp->control_type);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, objp->id);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, companion);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, aip ? aip->behavior : -1);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, ailp ? ailp->mode : -1);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, objp->segnum);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, ConsoleObject ? ConsoleObject->segnum : -1);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, Believed_player_seg);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, start_seg);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, end_seg);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, random_flag);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, random_xlate_seed_count);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, random_xlate_refresh_roll_count);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, random_xlate_refresh_count);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, queue_push_count);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, raw_num_points);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, final_num_points);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, ailp ? ailp->goal_segment : -1);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, aip ? aip->cur_path_index : -1);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, aip ? aip->path_length : -1);
+	detail_hash = input_demo_path_probe_hash_add(detail_hash, aip ? aip->hide_index : -1);
+	last_detail = &g_input_demo_last_path_detail[objnum];
+	if (last_detail->valid && (last_detail->signature == objp->signature) && (last_detail->hash == detail_hash))
+		return;
+	last_detail->valid = 1;
+	last_detail->signature = objp->signature;
+	last_detail->hash = detail_hash;
 
 	con_printf(CON_NORMAL,
 		"Input demo replay path detail: frame=%u obj=%d type=%d control=%d id=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d start=%d end=%d same=%d random=%d seed_xlate=%d refresh_rolls=%d refresh_xlate=%d queue_pushes=%d raw_points=%d final_points=%d goal_seg=%d cur_path=%d/%d hide=%d\n",
@@ -285,14 +350,28 @@ static void input_demo_log_path_detail(object *objp,
 
 static void input_demo_log_path_points(const char *label, object *objp, point_seg *psegs, int num_points)
 {
+	const int objnum = objp ? (int)(objp - Objects) : -1;
 	char segs[512];
 	int i;
 	int limit;
 	int offset;
 	int written;
+	input_demo_path_probe_state *last_points;
+	unsigned int points_hash = 2166136261u;
 
-	if (!input_demo_replay_path_probe_active(objp) || !psegs || num_points <= 0)
+	if (!input_demo_replay_path_probe_active(objp) || (objnum < 0) || !psegs || num_points <= 0)
 		return;
+
+	points_hash = input_demo_path_probe_hash_text(points_hash, label);
+	points_hash = input_demo_path_probe_hash_add(points_hash, num_points);
+	for (i = 0; i < num_points; i++)
+		points_hash = input_demo_path_probe_hash_add(points_hash, psegs[i].segnum);
+	last_points = &g_input_demo_last_path_points[objnum];
+	if (last_points->valid && (last_points->signature == objp->signature) && (last_points->hash == points_hash))
+		return;
+	last_points->valid = 1;
+	last_points->signature = objp->signature;
+	last_points->hash = points_hash;
 
 	limit = num_points < 24 ? num_points : 24;
 	offset = 0;
@@ -314,7 +393,7 @@ static void input_demo_log_path_points(const char *label, object *objp, point_se
 		"Input demo replay path points: frame=%u step=%s obj=%d points=%d listed=%d segs=%s\n",
 		input_demo_trace_frame_index(),
 		label,
-		objp ? (int)(objp - Objects) : -1,
+		objnum,
 		num_points,
 		limit,
 		segs);

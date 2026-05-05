@@ -84,20 +84,12 @@ extern fix64 Buddy_last_seen_player, Buddy_last_player_path_created;
 
 static int input_demo_trace_escort_active(void)
 {
-	return input_demo_debug_is_enabled() &&
-		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+	return input_demo_debug_activity_probe_active();
 }
 
 static unsigned int input_demo_trace_frame_index(void)
 {
-	if (input_demo_replay_is_loaded())
-		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t frame_count = input_demo_recorder_frame_count();
-
-		return frame_count ? (unsigned int)(frame_count - 1) : 0;
-	}
-	return 0;
+	return input_demo_debug_frame_index();
 }
 
 typedef struct input_demo_trace_key_snapshot {

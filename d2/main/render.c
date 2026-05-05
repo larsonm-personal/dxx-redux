@@ -898,7 +898,7 @@ void do_render_object(int objnum, int window_num)
 	}
 
 	if (input_demo_render_probe_active() && obj->type == OBJ_ROBOT)
-		input_demo_render_probe_drawn_frame[objnum] = (unsigned int)input_demo_replay_next_frame_index();
+		input_demo_render_probe_drawn_frame[objnum] = input_demo_debug_frame_index();
 
 	if ((count++ > MAX_OBJECTS) || (obj->next == objnum)) {
 		Int3();					// infinite loop detected
@@ -1216,26 +1216,14 @@ short render_obj_list[MAX_RENDER_SEGS+N_EXTRA_OBJ_LISTS][OBJS_PER_SEG];
 
 static int input_demo_render_probe_active(void)
 {
-	unsigned int frame;
-
-	if (!input_demo_debug_is_enabled() || !input_demo_replay_is_loaded())
-		return 0;
-
-	frame = (unsigned int)input_demo_replay_next_frame_index();
-	return (frame >= 300) && (frame <= 2000);
+	return input_demo_debug_replay_frame_in_range(300u, 2000u);
 }
 
 static int input_demo_render_probe_list_has_object(int listnum, int objnum);
 
 static int input_demo_render_probe_should_log_boundary(void)
 {
-	unsigned int frame;
-
-	if (!input_demo_render_probe_active())
-		return 0;
-
-	frame = (unsigned int)input_demo_replay_next_frame_index();
-	return (frame >= 300u) && (frame <= 2000u);
+	return input_demo_render_probe_active();
 }
 
 static int input_demo_render_probe_first_robot_in_seg(int segnum, int *objnum_out, int *objid_out)
@@ -1308,7 +1296,7 @@ static void input_demo_render_probe_log_skipped_robots(void)
 	if (!input_demo_render_probe_active())
 		return;
 
-	frame = (unsigned int)input_demo_replay_next_frame_index();
+	frame = input_demo_debug_frame_index();
 
 	for (nn=0; nn<N_render_segs; nn++) {
 		int segnum = Render_list[nn];
@@ -2192,7 +2180,7 @@ void build_segment_list(int start_seg_num, int window_num)
 					if (input_demo_render_probe_first_robot_in_seg(ch, &robot_objnum, &robot_id))
 						con_printf(CON_NORMAL,
 							"Input demo render boundary gate: frame=%u step=child_reject_no_rendpast parent_seg=%d side=%d child_seg=%d wid=0x%x robot_obj=%d robot_id=%d viewer_seg=%d replay=%d\n",
-							(unsigned int)input_demo_replay_next_frame_index(),
+							input_demo_debug_frame_index(),
 							segnum,
 							c,
 							ch,
@@ -2226,7 +2214,7 @@ void build_segment_list(int start_seg_num, int window_num)
 								if (input_demo_render_probe_first_robot_in_seg(ch, &robot_objnum, &robot_id))
 									con_printf(CON_NORMAL,
 										"Input demo render boundary gate: frame=%u step=child_reject_behind parent_seg=%d side=%d child_seg=%d wid=0x%x robot_obj=%d robot_id=%d viewer_seg=%d replay=%d\n",
-										(unsigned int)input_demo_replay_next_frame_index(),
+										input_demo_debug_frame_index(),
 										segnum,
 										c,
 										ch,

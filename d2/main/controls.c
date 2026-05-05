@@ -60,29 +60,17 @@ extern fix	Seismic_tremor_magnitude;
 
 static int input_demo_trace_player_control_active(void)
 {
-	return input_demo_debug_is_enabled() &&
-		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+	return input_demo_debug_activity_probe_active();
 }
 
 static unsigned int input_demo_trace_player_control_frame_index(void)
 {
-	if (input_demo_replay_is_loaded())
-		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t frame_count = input_demo_recorder_frame_count();
-
-		return frame_count ? (unsigned int)(frame_count - 1) : 0;
-	}
-	return 0;
+	return input_demo_debug_frame_index();
 }
 
 static const char *input_demo_trace_player_control_mode_name(void)
 {
-	if (input_demo_replay_is_loaded())
-		return "replay";
-	if (input_demo_recorder_is_active())
-		return "record";
-	return "none";
+	return input_demo_debug_activity_mode_name();
 }
 
 static int input_demo_player_weapon_threat_now(object *obj)

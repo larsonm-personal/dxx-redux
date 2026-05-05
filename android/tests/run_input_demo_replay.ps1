@@ -685,6 +685,7 @@ function Get-HeadlessConsoleLaunchArguments {
     param(
         [string]$ResolvedDataDir,
         [string]$ResolvedDemoPath,
+        [string]$ActualResultPath,
         [string]$ResolvedStateLogPath,
         [string]$ResolvedRngLogPath,
         [switch]$ReplayDebugLog,
@@ -693,7 +694,8 @@ function Get-HeadlessConsoleLaunchArguments {
 
     $launchParameters = @(
         '-hogdir', $ResolvedDataDir,
-        '-inputdemo-replay', $ResolvedDemoPath
+        '-inputdemo-replay', $ResolvedDemoPath,
+        '-inputdemo-actual-result', $ActualResultPath
     )
     if ($resolvedStateLogPath) {
         $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
@@ -868,6 +870,7 @@ function Get-LaunchArguments {
         [hashtable]$Config,
         [string]$ResolvedDataDir,
         [string]$ResolvedDemoPath,
+        [string]$ActualResultPath,
         [hashtable]$LaunchMode,
         [hashtable]$RenderProfileSelection,
         [string]$Pilot,
@@ -885,7 +888,8 @@ function Get-LaunchArguments {
         '-nomusic',
         '-nosound',
         '-maxfps', [string]$LaunchMode.MaxFps,
-        '-inputdemo-replay', $ResolvedDemoPath
+        '-inputdemo-replay', $ResolvedDemoPath,
+        '-inputdemo-actual-result', $ActualResultPath
     )
     if ($LaunchMode.ExtraArgs.Count -gt 0) {
         $launchParameters += $LaunchMode.ExtraArgs
@@ -1291,14 +1295,18 @@ if ($useHeadlessConsole) {
     }
 }
 $sandbox = New-LaunchSandbox -Config $config -SandboxName ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)) -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
-$actualResultPath = $resolvedDemoPath + '.actual.json'
+$actualResultDirectory = Join-Path $sandbox.Directory 'results'
+if (-not (Test-Path -LiteralPath $actualResultDirectory)) {
+    New-Item -ItemType Directory -Path $actualResultDirectory -Force | Out-Null
+}
+$actualResultPath = Join-Path $actualResultDirectory 'result.actual.json'
 $expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
 $checkpointRecord = Get-DemoCheckpointRecord -Path $resolvedDemoPath
 $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -Header $header -Checkpoint $checkpointRecord
 $launchArgs = if ($useHeadlessConsole) {
-    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath -ReplayDebugLog:$ReplayDebugLog -HeadlessConsoleOutput $HeadlessConsoleOutput
+    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath -ReplayDebugLog:$ReplayDebugLog -HeadlessConsoleOutput $HeadlessConsoleOutput
 } else {
-    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
+    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
 }
 $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
 $runnerName = $runnerSelection.Name
