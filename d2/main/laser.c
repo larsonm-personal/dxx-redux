@@ -43,6 +43,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "newdemo.h"
 #include "timer.h"
 #include "player.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "input_demo_energy_trace.h"

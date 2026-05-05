@@ -164,110 +164,9 @@ void game_init_render_sub_buffers(int x, int y, int w, int h);
 extern void multi_check_for_killgoal_winner();
 
 extern int ReadControls(d_event *event);		// located in gamecntl.c
-extern int ReadControlsReplayFrame(void);	// located in gamecntl.c
 extern void do_final_boss_frame(void);
-
-static int input_demo_count_live_player_weapons(int weapon_id)
-{
-	int count = 0;
-	int i;
-
-	for (i = 0; i <= Highest_object_index; ++i) {
-		object *obj = &Objects[i];
-
-		if (obj->type != OBJ_WEAPON)
-			continue;
-		if (obj->flags & OF_SHOULD_BE_DEAD)
-			continue;
-		if (obj->ctype.laser_info.parent_type != OBJ_PLAYER)
-			continue;
-		if (obj->ctype.laser_info.parent_num != Players[Player_num].objnum)
-			continue;
-		if ((weapon_id != -1) && (obj->id != weapon_id))
-			continue;
-		count++;
-	}
-	return count;
-}
 static int input_demo_replay_manual_paused = 0;
 static int input_demo_replay_manual_step = 0;
-
-
-
-static int input_demo_replay_tail_probe_frame_active(uint32_t frame)
-{
-	return frame >= 816 && frame <= 825;
-}
-
-
-
-static int input_demo_replay_fire_probe_active(void)
-{
-	if (!input_demo_replay_is_loaded())
-		return 0;
-
-	return Controls.fire_primary_state ||
-		Controls.fire_primary_count ||
-		Global_laser_firing_count ||
-		(Player_fired_laser_this_frame != -1) ||
-		(Fusion_charge > 0) ||
-		(Auto_fire_fusion_cannon_time > 0) ||
-		(input_demo_count_live_player_weapons(-1) > 0);
-}
-
-
-
-static void input_demo_log_replay_energy_stage(const char *label)
-{
-	player *current_player = &Players[Player_num];
-	uint32_t replay_frame_index;
-
-	if (!input_demo_replay_is_loaded())
-		return;
-	replay_frame_index = (uint32_t)input_demo_replay_next_frame_index();
-	if (!input_demo_replay_tail_probe_frame_active(replay_frame_index))
-		return;
-
-	con_printf(CON_NORMAL,
-		"Input demo replay energy stage: frame=%u gt=%lld step=%s energy=%d energy_raw=%d shields=%d shields_raw=%d primary=%d flags=0x%x f1s=%u f1c=%u flare=%u transfer=%u headlight=%u ab=%d glfc=%d seg=%d pos=(%d,%d,%d)\n",
-		(unsigned int)replay_frame_index,
-		(long long)GameTime64,
-		label,
-		f2i(current_player->energy),
-		current_player->energy,
-		f2i(current_player->shields),
-		current_player->shields,
-		current_player->primary_weapon,
-		current_player->flags,
-		(unsigned int)Controls.fire_primary_state,
-		(unsigned int)Controls.fire_primary_count,
-		(unsigned int)Controls.fire_flare_count,
-		(unsigned int)Controls.energy_to_shield_state,
-		(unsigned int)Controls.headlight_count,
-		current_player->afterburner_charge,
-		Global_laser_firing_count,
-		ConsoleObject ? ConsoleObject->segnum : -1,
-		ConsoleObject ? ConsoleObject->pos.x : 0,
-		ConsoleObject ? ConsoleObject->pos.y : 0,
-		ConsoleObject ? ConsoleObject->pos.z : 0);
-}
-
-int input_demo_step_replay_frame(void)
-{
-	input_demo_restore_replay_fp_environment();
-	if (!input_demo_prepare_replay_frame())
-		return 0;
-	if (ReadControlsReplayFrame())
-		return 0;
-	if (!time_paused)
-	{
-		calc_game_time();
-		GameProcessFrame();
-		input_demo_advance_replay_frame();
-	}
-	return 1;
-}
-
 
 // text functions
 
@@ -479,6 +378,11 @@ void start_time()
 		timer_update();
 		time = timer_query();
 	}
+}
+
+int game_is_time_paused(void)
+{
+	return time_paused != 0;
 }
 
 void game_flush_inputs()

@@ -31,6 +31,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "robot.h"
 #include "endlevel.h"
 #include "byteswap.h"
+#include "input_demo_hooks.h"
 
 reactor Reactors[MAX_REACTORS];
 

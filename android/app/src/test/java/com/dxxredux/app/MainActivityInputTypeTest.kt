@@ -1,7 +1,9 @@
 package com.dxxredux.app
 
 import android.text.InputType
+import android.view.KeyEvent
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -25,5 +27,26 @@ class MainActivityInputTypeTest {
             InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
             inputType and InputType.TYPE_MASK_VARIATION,
         )
+    }
+
+    @Test
+    fun imeCommittedCodePointFromKeyEvent_returnsPrintableDigits() {
+        assertEquals('5'.code, imeCommittedCodePointFromKeyEvent(KeyEvent.KEYCODE_5, '5'.code))
+        assertEquals('0'.code, imeCommittedCodePointFromKeyEvent(KeyEvent.KEYCODE_NUMPAD_0, '0'.code))
+    }
+
+    @Test
+    fun imeCommittedCodePointFromKeyEvent_ignoresSpecialKeys() {
+        assertNull(imeCommittedCodePointFromKeyEvent(KeyEvent.KEYCODE_DEL, 0))
+        assertNull(imeCommittedCodePointFromKeyEvent(KeyEvent.KEYCODE_ENTER, '\r'.code))
+        assertNull(imeCommittedCodePointFromKeyEvent(KeyEvent.KEYCODE_NUMPAD_ENTER, '\n'.code))
+    }
+
+    @Test
+    fun imeNativeSpecialKeyCode_mapsDeleteAndEnter() {
+        assertEquals(KeyEvent.KEYCODE_DEL, imeNativeSpecialKeyCode(KeyEvent.KEYCODE_DEL))
+        assertEquals(KeyEvent.KEYCODE_ENTER, imeNativeSpecialKeyCode(KeyEvent.KEYCODE_ENTER))
+        assertEquals(KeyEvent.KEYCODE_ENTER, imeNativeSpecialKeyCode(KeyEvent.KEYCODE_NUMPAD_ENTER))
+        assertNull(imeNativeSpecialKeyCode(KeyEvent.KEYCODE_7))
     }
 }

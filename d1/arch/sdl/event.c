@@ -14,6 +14,7 @@
 #include "timer.h"
 #include "config.h"
 #include "args.h"
+#include "input_demo_hooks.h"
 #ifdef INTROSPECT_ON
 #include "game_introspect.h"
 #include "game_automate.h"
@@ -26,7 +27,6 @@ extern void mouse_button_handler(SDL_MouseButtonEvent *mbe);
 extern void mouse_motion_handler(SDL_MouseMotionEvent *mme);
 extern void mouse_cursor_autohide();
 extern int input_demo_replay_is_loaded(void);
-extern int input_demo_step_replay_frame(void);
 
 static int initialised=0;
 

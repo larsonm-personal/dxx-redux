@@ -92,6 +92,30 @@ internal fun buildKeyboardEditorInputType(baseInputType: Int): Int =
         }
     }
 
+internal fun imeCommittedCodePointFromKeyEvent(
+    keyCode: Int,
+    unicodeChar: Int,
+): Int? =
+    when (keyCode) {
+        KeyEvent.KEYCODE_DEL,
+        KeyEvent.KEYCODE_ENTER,
+        KeyEvent.KEYCODE_NUMPAD_ENTER,
+        -> null
+
+        else -> unicodeChar.takeIf { it > 31 }
+    }
+
+internal fun imeNativeSpecialKeyCode(keyCode: Int): Int? =
+    when (keyCode) {
+        KeyEvent.KEYCODE_DEL -> KeyEvent.KEYCODE_DEL
+
+        KeyEvent.KEYCODE_ENTER,
+        KeyEvent.KEYCODE_NUMPAD_ENTER,
+        -> KeyEvent.KEYCODE_ENTER
+
+        else -> null
+    }
+
 internal fun shouldUseControllerSettingsTrayShortcuts(
     gamepadOnlyMode: Boolean,
     touchOverlayActive: Boolean,
@@ -2296,6 +2320,11 @@ class MainActivity :
         Log.d("DXX-Select", message)
     }
 
+    private fun logImeRouting(message: String) {
+        DebugLog.log(DebugLogCategory.GAME, "[ime] $message")
+        Log.d("DXX-IME", message)
+    }
+
     private fun motionAxisDirection(value: Float): Int =
         when {
             value < -0.5f -> -1
@@ -2764,10 +2793,15 @@ class MainActivity :
                     else -> InputType.TYPE_CLASS_TEXT
                 }
             keyboardInputView.currentInputType = gameSurfaceView.currentInputType
+            keyboardInputView.setText("")
+            keyboardInputView.setSelection(0)
             hatXState = 0
             hatYState = 0
             gameSurfaceView.keyboardActive = true
             keyboardInputView.keyboardActive = true
+            logImeRouting(
+                "show type=$inputType editorType=${buildKeyboardEditorInputType(keyboardInputView.currentInputType)}",
+            )
             keyboardInputView.requestFocus()
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             imm.restartInput(keyboardInputView)
@@ -3038,6 +3072,15 @@ class MainActivity :
     private inner class GameInputConnection(
         view: View,
     ) : BaseInputConnection(view, false) {
+        private fun logCallback(
+            name: String,
+            detail: String,
+        ) {
+            logImeRouting(
+                "$name class=${keyboardInputView.currentInputType and InputType.TYPE_MASK_CLASS} $detail",
+            )
+        }
+
         override fun setComposingText(
             text: CharSequence,
             newCursorPosition: Int,
@@ -3045,6 +3088,10 @@ class MainActivity :
             // Some IMEs still compose even with NO_SUGGESTIONS.
             // Finish composition immediately and commit the text so each
             // character appears in the game without waiting for a space.
+            logCallback(
+                "setComposingText",
+                "text=${text.toString().replace("\n", "\\n")} cursor=$newCursorPosition",
+            )
             finishComposingText()
             return commitText(text, newCursorPosition)
         }
@@ -3053,10 +3100,46 @@ class MainActivity :
             text: CharSequence,
             newCursorPosition: Int,
         ): Boolean {
+            logCallback(
+                "commitText",
+                "text=${text.toString().replace("\n", "\\n")} cursor=$newCursorPosition",
+            )
             for (c in text) {
                 nativeTextInput(c.code)
             }
             return true
+        }
+
+        override fun sendKeyEvent(event: KeyEvent): Boolean {
+            val unicodeChar = event.unicodeChar
+            val specialKeyCode = imeNativeSpecialKeyCode(event.keyCode)
+            val committedCodePoint = imeCommittedCodePointFromKeyEvent(event.keyCode, unicodeChar)
+            logCallback(
+                "sendKeyEvent",
+                "action=${event.action} keyCode=${event.keyCode} unicode=$unicodeChar",
+            )
+
+            if (specialKeyCode != null) {
+                nativeKeyEvent(
+                    if (event.action == KeyEvent.ACTION_DOWN) 0 else 1,
+                    specialKeyCode,
+                    if (event.action == KeyEvent.ACTION_DOWN && specialKeyCode == KeyEvent.KEYCODE_ENTER) {
+                        '\r'.code
+                    } else {
+                        0
+                    },
+                )
+                return true
+            }
+
+            if (committedCodePoint != null) {
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    nativeTextInput(committedCodePoint)
+                }
+                return true
+            }
+
+            return super.sendKeyEvent(event)
         }
 
         override fun deleteSurroundingText(
@@ -3064,6 +3147,7 @@ class MainActivity :
             afterLength: Int,
         ): Boolean {
             // Each "before" character = one Backspace press
+            logCallback("deleteSurroundingText", "before=$beforeLength after=$afterLength")
             repeat(beforeLength) {
                 nativeKeyEvent(0, KeyEvent.KEYCODE_DEL, 0)
                 nativeKeyEvent(1, KeyEvent.KEYCODE_DEL, 0)
@@ -3073,6 +3157,7 @@ class MainActivity :
 
         override fun performEditorAction(actionCode: Int): Boolean {
             // "Done" / Enter on the soft keyboard → inject Enter key
+            logCallback("performEditorAction", "actionCode=$actionCode")
             nativeKeyEvent(0, KeyEvent.KEYCODE_ENTER, '\r'.code)
             nativeKeyEvent(1, KeyEvent.KEYCODE_ENTER, 0)
             return true

@@ -132,12 +132,6 @@ unsigned int game_get_simulation_frame_id(void);
 void game_get_d_tick_state(game_d_tick_state *state);
 void game_set_d_tick_state(const game_d_tick_state *state);
 int do_flythrough(struct object *obj,int first_time);
-int input_demo_prepare_replay_frame(void);
-int input_demo_step_replay_frame(void);
-void input_demo_advance_replay_frame(void);
-void input_demo_finish_replay_without_close(void);
-int input_demo_finish_replay_from_level_exit(void);
-int input_demo_finish_replay_from_mine_exit(void);
 
 extern int Difficulty_level;    // Difficulty level in 0..NDL-1, 0 = easiest, NDL-1 = hardest
 extern int Global_laser_firing_count;

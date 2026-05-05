@@ -41,6 +41,42 @@
   - moved the remaining D2 replay mismatch logging, replay result writing, replay prepare/advance flow, and level-exit and mine-exit replay finish helpers out of `d2/main/game.c` into `d2/main/input_demo_hooks.c`
   - intentionally left `input_demo_step_replay_frame` in both original `game.c` files because it still reaches the local `time_paused` state, and left the D2 tail/fire probe helpers in `game.c` because they still directly instrument the local game-loop stages
   - validated with `run-windows-build.ps1 -Target d1`, `run-windows-build.ps1 -Target d2`, and the focused D2 headless replay smoke test
+- Phase 7 complete
+  - moved `input_demo_step_replay_frame` out of both original `game.c` files and into the per-game `input_demo_hooks.c` files without changing its public signature
+  - added small `game_is_time_paused()` accessors in `d1/main/game.c` and `d2/main/game.c` so the extracted wrapper can still honor the local pause state without moving broader pause control into new files
+  - kept the D2 tail/fire probe helpers in `d2/main/game.c` because they still directly instrument local game-loop stages
+  - validated with `run-windows-build.ps1 -Target d1`, `run-windows-build.ps1 -Target d2`, and the focused D2 headless replay smoke test
+- Phase 8 complete
+  - moved the extracted replay-helper declarations out of `d1/main/game.h` and `d2/main/game.h` into the per-game `input_demo_hooks.h` files
+  - rewired the remaining non-`game.c` consumers to include the hook headers directly, including the SDL event loops, mine-exit and endlevel callers, and the headless replay runner
+  - narrowed `input_demo_hooks.h` to opaque forward declarations for result and state-trace types so SDL code can include it without pulling in the shared trace header, and added direct includes only where full struct definitions are needed
+  - validated with `run-windows-build.ps1 -Target d1`, `run-windows-build.ps1 -Target d2`, and the focused D2 headless replay smoke test
+- Phase 9 complete
+  - moved the D2 `aipath.c` path-probe helper block and its private path-probe state into `d2/main/input_demo_hooks.c`
+  - kept `d2/main/aipath.c` down to local call sites plus narrow `extern` declarations instead of widening `d2/main/input_demo_hooks.h` with `object` and `point_seg` signatures that no other file needs yet
+  - aligned the plan with the already-completed move of the D2 replay tail/fire/energy probe helpers out of `d2/main/game.c`
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 10 complete
+  - moved the D2 `object.c` robot lifecycle helper block into `d2/main/input_demo_hooks.c`
+  - kept `d2/main/object.c` down to local call sites plus narrow `extern` declarations, matching the `aipath.c` extraction pattern
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 11 complete
+  - moved D2 awareness-source ownership out of `d2/main/ai.c` and into `d2/main/input_demo_hooks.c`
+  - moved the public `input_demo_set_awareness_source` declaration out of `d2/main/ai.h` and into `d2/main/input_demo_hooks.h`, then rewired the real callers in `ai.c`, `ai2.c`, `collide.c`, and `laser.c`
+  - kept the new awareness-source consume helper local to `ai.c` via a narrow `extern` declaration instead of widening `input_demo_hooks.h` with an internal-only API
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 12 complete
+  - moved the D2 `ai2.c` robot-fire probe helper block into `d2/main/input_demo_hooks.c`
+  - kept `d2/main/ai2.c` down to local call sites plus narrow `extern` declarations, matching the earlier `aipath.c` and `object.c` extraction pattern
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 13 complete
+  - moved the longest D2 `object.c` robot visual-state logging printers into `d2/main/input_demo_hooks.c` so the legacy file keeps short call sites instead of formatter-expanded `con_printf` argument lists
+  - kept the extracted helpers file-local to `object.c` via narrow `extern` declarations instead of growing `d2/main/input_demo_hooks.h`
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 14 complete
+  - moved the D2 `ai.c` robot pose and view-probe helper block into `d2/main/input_demo_hooks.c`, including the long pose-tracking log bodies that were inflating the legacy file diff
+  - kept `d2/main/ai.c` down to a single local `extern` plus the existing `input_demo_trace_tracked_robot_poses()` call site in `init_ai_frame()`
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
 
 ## Existing Dedicated Input Demo Files
 - Keep using `d2/main/input_demo_start.c` and `d2/main/input_demo_start.h` for D2 replay startup logic
@@ -71,7 +107,7 @@
 ### D1 replay and result frame helpers
 - Current file: `d1/main/game.c`
 - Move to: `d1/main/input_demo_hooks.c`, frame/replay section
-- Status: mostly completed across the second and third implementation tranches
+- Status: mostly completed across the second through fourth implementation tranches
 - Functions:
   - `input_demo_record_game_frame`
   - `input_demo_update_rng_trace_context`
@@ -90,7 +126,7 @@
   - `input_demo_step_replay_frame`
   - `input_demo_finish_replay_from_mine_exit`
 - Original file should keep only small calls from the game loop and exit paths
-- Public declarations should move out of `game.h` into `d1/main/input_demo_hooks.h`, with original files including that header where needed
+- Public declarations now live in `d1/main/input_demo_hooks.h`, with original callers including that header where needed
 - Completed in this tranche:
   - `input_demo_record_game_frame`
   - `input_demo_update_rng_trace_context`
@@ -108,8 +144,10 @@
   - `input_demo_prepare_replay_frame`
   - `input_demo_advance_replay_frame`
   - `input_demo_finish_replay_from_mine_exit`
-- Remaining in `d1/main/game.c` for now:
+- Completed in the latest tranche:
   - `input_demo_step_replay_frame`
+- Remaining in `d1/main/game.c` for now:
+  - `game_is_time_paused`
 
 ### D1 replay startup and metadata helpers
 - Current file: `d1/main/inferno.c`
@@ -178,7 +216,7 @@
 ### D2 replay and result frame helpers
 - Current file: `d2/main/game.c`
 - Move to: `d2/main/input_demo_hooks.c`, frame/replay section
-- Status: mostly completed across the second and third implementation tranches
+- Status: mostly completed across the second through fourth implementation tranches
 - Functions:
   - `input_demo_record_game_frame`
   - `input_demo_update_rng_trace_context`
@@ -201,7 +239,7 @@
   - `input_demo_finish_replay_without_close`
   - `input_demo_step_replay_frame`
 - Original `game.c` should keep only game-loop and exit-path calls
-- Public declarations should move out of `game.h` into `d2/main/input_demo_hooks.h`
+- Public declarations now live in `d2/main/input_demo_hooks.h`
 - Completed in this tranche:
   - `input_demo_record_game_frame`
   - `input_demo_update_rng_trace_context`
@@ -219,16 +257,20 @@
   - `input_demo_prepare_replay_frame`
   - `input_demo_advance_replay_frame`
   - `input_demo_finish_replay_without_close`
-- Remaining in `d2/main/game.c` for now:
+- Completed in the latest tranche:
   - `input_demo_step_replay_frame`
+- Completed after the latest tranche:
   - `input_demo_count_live_player_weapons`
   - `input_demo_replay_tail_probe_frame_active`
   - `input_demo_replay_fire_probe_active`
   - `input_demo_log_replay_energy_stage`
+- Remaining in `d2/main/game.c` for now:
+  - `game_is_time_paused`
 
 ### D2 path and guidebot path probes
 - Current file: `d2/main/aipath.c`
 - Move to: `d2/main/input_demo_hooks.c`, path section
+- Status: completed in the current tranche
 - Functions and state:
   - `input_demo_should_match_android_companion_velocity`
   - `input_demo_trace_frame_index`
@@ -246,22 +288,25 @@
   - `input_demo_log_path_probe`
   - `input_demo_log_path_detail`
   - `input_demo_log_path_points`
-- Original `aipath.c` should keep only calls at path creation, follow, detail, and velocity adjustment points
+- Original `aipath.c` now keeps only calls at path creation, follow, detail, and velocity adjustment points, plus narrow local `extern` declarations for the extracted helpers
 - Exact examples from the user belong in this cluster
 
 ### D2 robot lifecycle and object probes
 - Current file: `d2/main/object.c`
 - Move to: `d2/main/input_demo_hooks.c`, robot/object section
+- Status: partially completed for lifecycle helpers plus the longest visual-state logging printers
 - Functions:
   - `input_demo_trace_ai_rng_active`
   - `input_demo_robot_lifecycle_probe_active`
   - `input_demo_robot_visual_probe_active`
   - `input_demo_robot_lifecycle_is_target`
+- Original `object.c` now keeps the local call sites and only the shorter remaining visual/debug logging, while the lifecycle predicate helpers and longest visual-state printers live in `d2/main/input_demo_hooks.c`
 - Prefer replacing `input_demo_robot_lifecycle_is_target` call sites with a single `input_demo_log_robot_lifecycle_delete(objnum, obj)` helper so `object.c` does not keep target-selection details
 
 ### D2 AI and awareness probes
 - Current files: `d2/main/ai.c`, `d2/main/ai2.c`
 - Move to: `d2/main/input_demo_hooks.c`, AI section
+- Status: partially completed for awareness-source ownership, the `ai2.c` robot-fire probe helpers, and the `ai.c` robot pose/view probe block
 - Functions and state:
   - `Input_demo_awareness_source_tag`
   - `Input_demo_awareness_source_objnum`
@@ -281,7 +326,13 @@
   - `input_demo_log_ai_robot_state`
   - `ai2.c` robot fire helpers: `input_demo_trace_robot_fire_active`, `input_demo_log_robot_fire_state`
 - Original AI files should keep only probe/log calls near the AI transitions
-- Move the public declaration for `input_demo_set_awareness_source` out of `ai.h` into `input_demo_hooks.h`
+- Completed in the current tranches:
+  - awareness-source state ownership and setter declaration move
+  - `ai2.c` robot fire helpers
+  - `ai.c` robot pose/view probe helpers and tracked-pose logging block
+- Remaining in `ai.c` and `ai2.c` for now:
+  - awareness probe mode/activity helpers
+  - AI robot trace/log helpers
 
 ### D2 weapon, collision, score, and frame-event recording
 - Current files: `d2/main/laser.c`, `d2/main/collide.c`, `d2/main/gauges.c`, `d2/main/fireball.c`, `d2/main/fvi.c`

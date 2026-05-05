@@ -157,23 +157,6 @@ void game_init_render_sub_buffers(int x, int y, int w, int h);
 extern void multi_check_for_killgoal_winner();
 
 extern int ReadControls(d_event *event);		// located in gamecntl.c
-extern int ReadControlsReplayFrame(void);	// located in gamecntl.c
-
-int input_demo_step_replay_frame(void)
-{
-	input_demo_restore_replay_fp_environment();
-	if (!input_demo_prepare_replay_frame())
-		return 0;
-	if (ReadControlsReplayFrame())
-		return 0;
-	if (!time_paused)
-	{
-		calc_game_time();
-		GameProcessFrame();
-		input_demo_advance_replay_frame();
-	}
-	return 1;
-}
 
 // Cheats
 game_cheats cheats;
@@ -374,6 +357,11 @@ void start_time()
 		timer_update();
 		time = timer_query();
 	}
+}
+
+int game_is_time_paused(void)
+{
+	return time_paused != 0;
 }
 
 void game_flush_inputs()

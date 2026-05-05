@@ -27,10 +27,13 @@ Source bug: [android/outstanding_bugs.md](android/outstanding_bugs.md)
 - If needed, narrow the `inputType` flags so numeric mode does not include text-only variation flags.
 
 ### Current status
-- Implemented the narrower `inputType` fix in `MainActivity.kt`: numeric keyboard mode now keeps `TYPE_CLASS_NUMBER` untouched instead of OR-ing in text-only flags.
-- Added `MainActivityInputTypeTest` to lock the regression down with a unit test for numeric vs text editor attributes.
-- Focused validation passed with `:app:testDebugUnitTest --tests com.dxxredux.app.MainActivityInputTypeTest`.
-- Scoped formatter/lint validation passed with `android\run-code-quality.ps1 -Fix -Paths android\app\src\main\java\com\dxxredux\app\MainActivity.kt`.
+- First pass narrowed numeric `EditorInfo.inputType`, but the user confirmed that alone did not fix the device repro.
+- Second pass now bridges `sendKeyEvent` in `GameInputConnection`, which is a common numeric-keypad callback path that previously fell through to the hidden `EditText` instead of the game.
+- Added exported debug-log lines with an `[ime]` prefix for `setComposingText`, `commitText`, `sendKeyEvent`, `deleteSurroundingText`, `performEditorAction`, and keyboard show so device logs can confirm which IME callback path fired.
+- `showKeyboard()` now clears the hidden `keyboardInputView` text before focus/restart to avoid stale hidden-buffer state from previous IME sessions.
+- Extended `MainActivityInputTypeTest` to cover the new `sendKeyEvent` helper logic for printable digits and special-key routing.
+- Focused validation passed with `:app:testDebugUnitTest --tests com.dxxredux.app.MainActivityInputTypeTest` after the second pass.
+- Scoped formatter/lint validation passed with `android\run-code-quality.ps1 -Fix -Paths android\app\src\main\java\com\dxxredux\app\MainActivity.kt` after the second pass.
 - No on-device verification yet, so the bug stays at ready-to-test instead of fixed.
 
 ### Validation plan

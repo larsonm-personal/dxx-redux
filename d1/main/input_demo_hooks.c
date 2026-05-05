@@ -10,7 +10,9 @@
 #include "game.h"
 #include "gameseq.h"
 #include "input_demo_control_info.h"
+#include "input_demo_fp_env.h"
 #include "input_demo_result.h"
+#include "input_demo_state_trace.h"
 #include "input_demo_hooks.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -23,6 +25,9 @@
 #include "player.h"
 
 extern int Num_awareness_events;
+extern int ReadControlsReplayFrame(void);
+extern void GameProcessFrame(void);
+extern int game_is_time_paused(void);
 
 static int input_demo_count_live_objects_of_type(int object_type)
 {
@@ -333,6 +338,22 @@ int input_demo_prepare_replay_frame(void)
 	else
 		d_rand_reset_call_count();
 	FrameTime = (fix)replay_frame.frame_time;
+	return 1;
+}
+
+int input_demo_step_replay_frame(void)
+{
+	input_demo_restore_replay_fp_environment();
+	if (!input_demo_prepare_replay_frame())
+		return 0;
+	if (ReadControlsReplayFrame())
+		return 0;
+	if (!game_is_time_paused())
+	{
+		calc_game_time();
+		GameProcessFrame();
+		input_demo_advance_replay_frame();
+	}
 	return 1;
 }
 

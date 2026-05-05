@@ -89,52 +89,12 @@ object *ConsoleObject;					//the object that is the player
 static short free_obj_list[MAX_OBJECTS];
 static short object_signature_seed = 0;
 
-static int input_demo_trace_ai_rng_active(object *obj)
-{
-	ai_static *aip;
-	ai_local *ailp;
-
-	if (!obj || !input_demo_debug_replay_probe_active() || (obj->type != OBJ_ROBOT))
-		return 0;
-
-	aip = &obj->ctype.ai_info;
-	ailp = &Ai_local_info[obj-Objects];
-
-	return Robot_info[obj->id].companion ||
-		(obj->segnum == ConsoleObject->segnum) ||
-		(obj->segnum == Believed_player_seg) ||
-		(ailp->goal_segment == ConsoleObject->segnum) ||
-		(ailp->goal_segment == Believed_player_seg) ||
-		(ailp->mode >= AIM_GOTO_PLAYER) ||
-		(aip->behavior == AIB_SNIPE) ||
-		(ailp->player_awareness_type > 0);
-}
-
-static int input_demo_robot_lifecycle_probe_active(void)
-{
-	return input_demo_debug_activity_frame_in_range(500u, 2200u);
-}
-
-static int input_demo_robot_visual_probe_active(void)
-{
-	return input_demo_debug_replay_frame_in_range(1360u, 1450u) ||
-		input_demo_debug_replay_frame_in_range(1880u, 1950u);
-}
-
-static int input_demo_robot_lifecycle_is_target(int objnum, object *obj)
-{
-	if (!input_demo_robot_lifecycle_probe_active() || !obj || (obj->type != OBJ_ROBOT))
-		return 0;
-
-	if ((objnum >= 73) && (objnum <= 75))
-		return 1;
-	if ((obj->signature >= 3784) && (obj->signature <= 3786))
-		return 1;
-	if (obj->flags & (OF_EXPLODING | OF_SHOULD_BE_DEAD))
-		return 1;
-
-	return 0;
-}
+extern int input_demo_trace_ai_rng_active(object *obj);
+extern int input_demo_robot_lifecycle_probe_active(void);
+extern int input_demo_robot_visual_probe_active(void);
+extern int input_demo_robot_lifecycle_is_target(int objnum, object *obj);
+extern void input_demo_log_robot_visual_state_default(object *obj, const g3s_lrgb *light, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
+extern void input_demo_log_robot_visual_state_tmap_override(object *obj, const g3s_lrgb *light, int override_bm_index, int override_bm_flags, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
 
 
 
@@ -611,32 +571,9 @@ void draw_polygon_object(object *obj)
 		override_bm_flags = GameBitmaps[override_bm_index].bm_flags;
 
 		if (visual_probe_target)
-			con_printf(CON_NORMAL,
-				"Input demo robot visual state: frame=%u obj=%d sig=%d id=%d seg=%d rtype=%d cloak=%d cloak_type=%d flags=0x%x light=(%d,%d,%d) alpha=%d path=tmap_override tmap_override=%d override_bm_index=%d override_bm_flags=0x%x probe_codes=0x%x probe_behind=%d probe_projected=%d probe_p3_codes=0x%x probe_p3_flags=0x%x probe_sxy=(%d,%d) probe_z=%d\n",
-				(unsigned int)input_demo_replay_next_frame_index(),
-				objnum,
-				obj->signature,
-				obj->id,
-				obj->segnum,
-				obj->render_type,
-				obj->ctype.ai_info.CLOAKED,
-				Robot_info[obj->id].cloak_type,
-				obj->flags,
-				light.r,
-				light.g,
-				light.b,
-				PlayerCfg.AlphaEffects,
-				obj->rtype.pobj_info.tmap_override,
-				override_bm_index,
-				override_bm_flags,
-				probe_codes,
-				probe_behind,
-				probe_projected,
-				probe_point.p3_codes,
-				probe_point.p3_flags,
-				probe_projected ? f2i(probe_point.p3_sx) : -1,
-				probe_projected ? f2i(probe_point.p3_sy) : -1,
-				probe_point.p3_z);
+			input_demo_log_robot_visual_state_tmap_override(obj, &light, override_bm_index,
+				override_bm_flags, probe_codes, probe_behind, probe_projected,
+				&probe_point);
 
 		if (visual_probe_target) {
 			g3_poly_faces_considered = 0;
@@ -665,29 +602,8 @@ void draw_polygon_object(object *obj)
 	}
 	else {
 		if (visual_probe_target)
-			con_printf(CON_NORMAL,
-				"Input demo robot visual state: frame=%u obj=%d sig=%d id=%d seg=%d rtype=%d cloak=%d cloak_type=%d flags=0x%x light=(%d,%d,%d) alpha=%d path=default probe_codes=0x%x probe_behind=%d probe_projected=%d probe_p3_codes=0x%x probe_p3_flags=0x%x probe_sxy=(%d,%d) probe_z=%d\n",
-				(unsigned int)input_demo_replay_next_frame_index(),
-				objnum,
-				obj->signature,
-				obj->id,
-				obj->segnum,
-				obj->render_type,
-				obj->ctype.ai_info.CLOAKED,
-				Robot_info[obj->id].cloak_type,
-				obj->flags,
-				light.r,
-				light.g,
-				light.b,
-				PlayerCfg.AlphaEffects,
-				probe_codes,
-				probe_behind,
-				probe_projected,
-				probe_point.p3_codes,
-				probe_point.p3_flags,
-				probe_projected ? f2i(probe_point.p3_sx) : -1,
-				probe_projected ? f2i(probe_point.p3_sy) : -1,
-				probe_point.p3_z);
+			input_demo_log_robot_visual_state_default(obj, &light, probe_codes,
+				probe_behind, probe_projected, &probe_point);
 
 		if (obj->type==OBJ_PLAYER && (Players[obj->id].flags&PLAYER_FLAGS_CLOAKED))
 		{

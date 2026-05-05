@@ -71,6 +71,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "switch.h"
 #include "palette.h"
 #include "gameseq.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "input_demo_debug_logging.h"

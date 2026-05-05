@@ -3,6 +3,7 @@
 
 #include <SDL.h>
 
+#include "input_demo_hooks.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_start.h"
 #include "input_demo_replay.h"
