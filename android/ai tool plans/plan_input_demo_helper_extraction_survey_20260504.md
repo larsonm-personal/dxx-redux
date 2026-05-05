@@ -23,6 +23,24 @@
   - classified helper clusters by destination and extraction risk
 - Phase 3 complete
   - work list below captures the recommended move order and target files
+- Phase 4 complete
+  - extracted D1/D2 replay metadata validation and replay startup command-line handling out of `inferno.c`
+  - added `d1/main/input_demo_start.c` and `d1/main/input_demo_start.h`
+  - expanded `d2/main/input_demo_start.c` and `d2/main/input_demo_start.h`
+  - moved skip-level-intro input-demo state out of `gameseq.c` and into the dedicated start files for both games
+  - validated with `run-windows-build.ps1 -Target both` and one focused D2 headless replay run
+- Phase 5 complete
+  - added `d1/main/input_demo_hooks.c` and `d1/main/input_demo_hooks.h`
+  - added `d2/main/input_demo_hooks.c` and `d2/main/input_demo_hooks.h`
+  - moved the top-of-`game.c` replay/result snapshot helpers out of the original D1/D2 `game.c` files and into the new hook files
+  - moved D2 result kill-baseline state and its updater into `d2/main/input_demo_hooks.c` with the extracted result-capture helper
+  - rewired `newdemo.c`, `game.c`, `game.h`, and both `main/CMakeLists.txt` files to use the dedicated hook headers instead of keeping those helper bodies in original files
+  - validated with `run-windows-build.ps1 -Target both` and the focused D2 headless replay smoke test
+- Phase 6 complete
+  - moved the remaining D1 replay mismatch logging, replay result writing, replay prepare/advance flow, and mine-exit replay finish helper out of `d1/main/game.c` into `d1/main/input_demo_hooks.c`
+  - moved the remaining D2 replay mismatch logging, replay result writing, replay prepare/advance flow, and level-exit and mine-exit replay finish helpers out of `d2/main/game.c` into `d2/main/input_demo_hooks.c`
+  - intentionally left `input_demo_step_replay_frame` in both original `game.c` files because it still reaches the local `time_paused` state, and left the D2 tail/fire probe helpers in `game.c` because they still directly instrument the local game-loop stages
+  - validated with `run-windows-build.ps1 -Target d1`, `run-windows-build.ps1 -Target d2`, and the focused D2 headless replay smoke test
 
 ## Existing Dedicated Input Demo Files
 - Keep using `d2/main/input_demo_start.c` and `d2/main/input_demo_start.h` for D2 replay startup logic
@@ -53,6 +71,7 @@
 ### D1 replay and result frame helpers
 - Current file: `d1/main/game.c`
 - Move to: `d1/main/input_demo_hooks.c`, frame/replay section
+- Status: mostly completed across the second and third implementation tranches
 - Functions:
   - `input_demo_record_game_frame`
   - `input_demo_update_rng_trace_context`
@@ -72,10 +91,30 @@
   - `input_demo_finish_replay_from_mine_exit`
 - Original file should keep only small calls from the game loop and exit paths
 - Public declarations should move out of `game.h` into `d1/main/input_demo_hooks.h`, with original files including that header where needed
+- Completed in this tranche:
+  - `input_demo_record_game_frame`
+  - `input_demo_update_rng_trace_context`
+  - `input_demo_count_live_objects_of_type`
+  - `input_demo_capture_state_trace_diag`
+  - `input_demo_capture_current_result`
+- Completed in the next tranche:
+  - `input_demo_write_replay_frame_state_trace`
+  - `input_demo_log_replay_frame_state_mismatch`
+  - `input_demo_log_current_replay_frame_state_mismatch`
+  - `input_demo_write_replay_result`
+  - `input_demo_finish_replay_without_close`
+  - `input_demo_stop_replay`
+  - `input_demo_delay_replay_frame`
+  - `input_demo_prepare_replay_frame`
+  - `input_demo_advance_replay_frame`
+  - `input_demo_finish_replay_from_mine_exit`
+- Remaining in `d1/main/game.c` for now:
+  - `input_demo_step_replay_frame`
 
 ### D1 replay startup and metadata helpers
 - Current file: `d1/main/inferno.c`
 - Move to: `d1/main/input_demo_hooks.c`, startup section, or a new `d1/main/input_demo_start.c` if matching D2 is preferred
+- Status: completed in the first implementation tranche using new `d1/main/input_demo_start.c` and `d1/main/input_demo_start.h`
 - Functions:
   - `maybe_validate_input_demo_metadata`
   - `input_demo_replay_hash_u8_sequence`
@@ -119,6 +158,7 @@
 ### D1 level intro control
 - Current file: `d1/main/gameseq.c`
 - Move to: `d1/main/input_demo_hooks.c`, startup/control section
+- Status: startup skip-intro state and setter completed in the first implementation tranche via `d1/main/input_demo_start.c`
 - Function:
   - `input_demo_set_skip_level_intro`
 - Keep the call site in level startup code small
@@ -128,6 +168,7 @@
 ### D2 replay startup and command-line glue
 - Current file: `d2/main/inferno.c`
 - Move to: existing `d2/main/input_demo_start.c` and `d2/main/input_demo_start.h`
+- Status: completed in the first implementation tranche
 - Functions:
   - `maybe_validate_input_demo_metadata`
   - `input_demo_maybe_start_replay_from_cmdline`
@@ -137,6 +178,7 @@
 ### D2 replay and result frame helpers
 - Current file: `d2/main/game.c`
 - Move to: `d2/main/input_demo_hooks.c`, frame/replay section
+- Status: mostly completed across the second and third implementation tranches
 - Functions:
   - `input_demo_record_game_frame`
   - `input_demo_update_rng_trace_context`
@@ -160,6 +202,29 @@
   - `input_demo_step_replay_frame`
 - Original `game.c` should keep only game-loop and exit-path calls
 - Public declarations should move out of `game.h` into `d2/main/input_demo_hooks.h`
+- Completed in this tranche:
+  - `input_demo_record_game_frame`
+  - `input_demo_update_rng_trace_context`
+  - `input_demo_count_live_objects_of_type`
+  - `input_demo_capture_state_trace_diag`
+  - `input_demo_capture_current_result`
+  - result kill baseline state and its updater
+- Completed in the next tranche:
+  - `input_demo_log_current_replay_frame_state_mismatch`
+  - `input_demo_write_replay_result`
+  - `input_demo_finish_replay_from_level_exit`
+  - `input_demo_finish_replay_from_mine_exit`
+  - `input_demo_stop_replay`
+  - `input_demo_delay_replay_frame`
+  - `input_demo_prepare_replay_frame`
+  - `input_demo_advance_replay_frame`
+  - `input_demo_finish_replay_without_close`
+- Remaining in `d2/main/game.c` for now:
+  - `input_demo_step_replay_frame`
+  - `input_demo_count_live_player_weapons`
+  - `input_demo_replay_tail_probe_frame_active`
+  - `input_demo_replay_fire_probe_active`
+  - `input_demo_log_replay_energy_stage`
 
 ### D2 path and guidebot path probes
 - Current file: `d2/main/aipath.c`
@@ -243,6 +308,7 @@
 ### D2 direct commands and replayed actions
 - Current files: `d2/main/gamecntl.c`, `d2/main/automap.c`, `d2/main/escort.c`, `d2/main/gameseq.c`, `d2/main/newdemo.c`
 - Move to: `d2/main/input_demo_hooks.c`, commands/recorder section
+- Status: the `gameseq.c` skip-level-intro piece is already completed in the first implementation tranche via `d2/main/input_demo_start.c`
 - Functions:
   - `gamecntl.c`: direct command record helpers, direct command replay apply/abort helpers
   - `automap.c`: `input_demo_apply_recorded_marker_drop`

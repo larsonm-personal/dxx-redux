@@ -14,6 +14,8 @@ set(D1X_MAIN_SOURCES
     digiobj.c
     dumpmine.c
     effects.c
+    input_demo_hooks.c
+    input_demo_start.c
     endlevel.c
     fireball.c
     fuelcen.c

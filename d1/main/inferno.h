@@ -53,8 +53,6 @@ extern int Quitting;
 extern int Screen_mode;			// editor screen or game screen?
 extern int MacHog;
 
-int input_demo_maybe_start_replay_from_cmdline(void);
-
 // Default event handler for everything except the editor
 int standard_handler(struct d_event *event);
 

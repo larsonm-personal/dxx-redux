@@ -2,23 +2,21 @@
 #include <string.h>
 
 #include "args.h"
+#include "console.h"
 #include "game.h"
 #include "gameseq.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_replay.h"
 #include "input_demo_rng_mode.h"
 #include "input_demo_rng_trace.h"
+#include "input_demo_start.h"
+#include "input_demo_state_trace.h"
 #include "mission.h"
-#include "newmenu.h"
 #include "object.h"
 #include "physfsx.h"
 #include "playsave.h"
 #include "player.h"
-#include "replay_debug_overlay.h"
 #include "state.h"
-#include "text.h"
-#include "input_demo_start.h"
-#include "input_demo_state_trace.h"
 
 static int input_demo_skip_level_intro = 0;
 
@@ -42,6 +40,32 @@ static const char *input_demo_cmd_arg_value(int arg_index, const char *name)
 	}
 
 	return Args[arg_index + 1];
+}
+
+static unsigned int input_demo_replay_hash_u8_sequence(const ubyte *values, int count)
+{
+	unsigned int hash = 2166136261u;
+	int i;
+
+	for (i = 0; i < count; i++) {
+		hash ^= values[i];
+		hash *= 16777619u;
+	}
+	return hash;
+}
+
+static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *player_cfg)
+{
+	if (!player_cfg)
+		return;
+	PlayerCfg.AutoLeveling = player_cfg->auto_leveling;
+	PlayerCfg.PersistentDebris = player_cfg->persistent_debris;
+	PlayerCfg.NoFireAutoselect = player_cfg->no_fire_autoselect;
+	PlayerCfg.CycleAutoselectOnly = player_cfg->cycle_autoselect_only;
+	PlayerCfg.SelectAfterFire = player_cfg->select_after_fire;
+	PlayerCfg.ClassicAutoselectWeapon = player_cfg->classic_autoselect_weapon;
+	memcpy(PlayerCfg.PrimaryOrder, player_cfg->primary_order, MAX_PRIMARY_WEAPONS + 2);
+	memcpy(PlayerCfg.SecondaryOrder, player_cfg->secondary_order, MAX_SECONDARY_WEAPONS + 1);
 }
 
 void input_demo_set_skip_level_intro(int skip)
@@ -86,64 +110,24 @@ int input_demo_maybe_validate_metadata_from_cmdline(void)
 	return 0;
 }
 
-static unsigned int input_demo_replay_hash_u8_sequence(const ubyte *values, int count)
+int input_demo_maybe_start_replay_from_cmdline(void)
 {
-	unsigned int hash = 2166136261u;
-	int i;
-
-	for (i = 0; i < count; i++) {
-		hash ^= values[i];
-		hash *= 16777619u;
-	}
-	return hash;
-}
-
-static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *player_cfg)
-{
-	if (!player_cfg)
-		return;
-	PlayerCfg.AutoLeveling = player_cfg->auto_leveling;
-	PlayerCfg.PersistentDebris = player_cfg->persistent_debris;
-	if (player_cfg->has_headlight_active_default)
-		PlayerCfg.HeadlightActiveDefault = player_cfg->headlight_active_default;
-	PlayerCfg.NoFireAutoselect = player_cfg->no_fire_autoselect;
-	PlayerCfg.CycleAutoselectOnly = player_cfg->cycle_autoselect_only;
-	PlayerCfg.SelectAfterFire = player_cfg->select_after_fire;
-	PlayerCfg.ClassicAutoselectWeapon = player_cfg->classic_autoselect_weapon;
-	memcpy(PlayerCfg.PrimaryOrder, player_cfg->primary_order, MAX_PRIMARY_WEAPONS + 1);
-	memcpy(PlayerCfg.SecondaryOrder, player_cfg->secondary_order, MAX_SECONDARY_WEAPONS + 1);
-}
-
-int input_demo_load_replay_from_path(const char *demo_path, char *error, size_t error_size)
-{
+	int arg_index = input_demo_find_cmd_arg("-inputdemo-replay");
+	int actual_result_arg_index = input_demo_find_cmd_arg("-inputdemo-actual-result");
+	int replay_labels_arg_index = input_demo_find_cmd_arg("-inputdemo-replay-labels");
+	int debug_log_arg_index = 0;
+	#if INPUT_DEMO_DEBUG_LOGGING_AVAILABLE
+	debug_log_arg_index = input_demo_find_cmd_arg("-inputdemo-debug-log");
+	#endif
+	int state_log_arg_index = input_demo_find_cmd_arg("-inputdemo-state-log");
+	int rng_trace_arg_index = input_demo_find_cmd_arg("-inputdemo-rng-trace");
 	int engine_mode;
 	int demo_mode;
+	const char *demo_path;
+	const char *actual_result_path = NULL;
+	const char *state_log_path = NULL;
+	const char *rng_trace_path = NULL;
 	const char *validation_error;
-
-	if (!demo_path || !demo_path[0]) {
-		snprintf(error, error_size, "%s", "missing demo path");
-		return 0;
-	}
-	engine_mode = d_rand_get_replay_mode();
-	validation_error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode,
-		&demo_mode);
-	if (validation_error) {
-		snprintf(error, error_size, "%s", validation_error);
-		return 0;
-	}
-	if (!input_demo_replay_load(demo_path, error, error_size))
-		return 0;
-	if (input_demo_replay_game() != INPUT_DEMO_GAME_D2)
-	{
-		input_demo_replay_unload();
-		snprintf(error, error_size, "%s", "Input demo replay currently supports D2 demos only");
-		return 0;
-	}
-	return 1;
-}
-
-int input_demo_start_loaded_replay(void)
-{
 	char replay_error[256] = "";
 	char mission_name[PATH_MAX] = "";
 	char local_checkpoint_name[PATH_MAX] = "";
@@ -157,9 +141,60 @@ int input_demo_start_loaded_replay(void)
 	char local_player_callsign[CALLSIGN_LEN + 1] = "";
 	int have_replay_player_cfg = 0;
 
-	if (!input_demo_replay_is_loaded())
+	(void)replay_labels_arg_index;
+	input_demo_debug_set_enabled(debug_log_arg_index ? 1 : 0);
+
+	if (!arg_index)
+		return -1;
+	demo_path = input_demo_cmd_arg_value(arg_index, "-inputdemo-replay");
+	if (!demo_path)
+		return 1;
+	if (actual_result_arg_index) {
+		actual_result_path = input_demo_cmd_arg_value(actual_result_arg_index,
+			"-inputdemo-actual-result");
+		if (!actual_result_path)
+			return 1;
+	}
+	if (state_log_arg_index) {
+		state_log_path = input_demo_cmd_arg_value(state_log_arg_index,
+			"-inputdemo-state-log");
+		if (!state_log_path)
+			return 1;
+	}
+	if (rng_trace_arg_index) {
+		rng_trace_path = input_demo_cmd_arg_value(rng_trace_arg_index,
+			"-inputdemo-rng-trace");
+		if (!rng_trace_path)
+			return 1;
+	}
+	engine_mode = d_rand_get_replay_mode();
+	validation_error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode,
+		&demo_mode);
+	if (validation_error)
 	{
-		printf("Input demo replay is not loaded\n");
+		printf("Input demo replay file invalid: %s\n", demo_path);
+		printf("%s\n", validation_error);
+		printf("Active RNG backend expects: %s\n",
+			input_demo_rng_mode_name(engine_mode));
+		return 1;
+	}
+	if (!input_demo_replay_load(demo_path, replay_error, sizeof(replay_error)))
+	{
+		printf("Input demo replay load failed: %s\n", replay_error);
+		return 1;
+	}
+	if (actual_result_path)
+		input_demo_replay_set_actual_result_path(actual_result_path);
+	if (rng_trace_path && !input_demo_rng_trace_start_replay(rng_trace_path, replay_error, sizeof(replay_error)))
+	{
+		printf("Input demo replay rng trace start failed: %s\n", replay_error);
+		input_demo_replay_unload();
+		return 1;
+	}
+	if (input_demo_replay_game() != INPUT_DEMO_GAME_D1)
+	{
+		printf("Input demo replay currently supports D1 demos only\n");
+		input_demo_replay_unload();
 		return 1;
 	}
 	if (Player_num >= 0 && Player_num < MAX_PLAYERS)
@@ -181,7 +216,10 @@ int input_demo_start_loaded_replay(void)
 		input_demo_replay_unload();
 		return 1;
 	}
-	snprintf(mission_name, sizeof(mission_name), "%s", input_demo_replay_mission());
+	if (!d_stricmp(input_demo_replay_mission(), "d1"))
+		snprintf(mission_name, sizeof(mission_name), "%s", D1_MISSION_FILENAME);
+	else
+		snprintf(mission_name, sizeof(mission_name), "%s", input_demo_replay_mission());
 	if (!strcmp(start_mode, "new_level")) {
 		if (!load_mission_by_name(mission_name))
 		{
@@ -194,6 +232,19 @@ int input_demo_start_loaded_replay(void)
 			input_demo_apply_replay_player_cfg(&replay_player_cfg);
 		printf("Input demo replay starting: %s level %d, %u frames\n",
 			mission_name, input_demo_replay_level(), input_demo_replay_frame_count());
+		if (state_log_path) {
+			if (!input_demo_state_trace_start_replay(state_log_path, replay_error, sizeof(replay_error)))
+			{
+				printf("Input demo replay state trace start failed: %s\n", replay_error);
+				input_demo_replay_unload();
+				return 1;
+			}
+			printf("Input demo replay state trace: %s\n", state_log_path);
+		}
+		if (rng_trace_path)
+			printf("Input demo replay rng trace: %s\n", rng_trace_path);
+		if (actual_result_path)
+			printf("Input demo replay actual result: %s\n", actual_result_path);
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(input_demo_replay_level());
 		return 0;
@@ -244,7 +295,7 @@ int input_demo_start_loaded_replay(void)
 	}
 	PHYSFS_close(checkpoint_file);
 	checkpoint_file = NULL;
-	if (!state_restore_all_sub(local_checkpoint_name, 0))
+	if (!state_restore_all_sub(local_checkpoint_name))
 	{
 		PHYSFS_delete(local_checkpoint_name);
 		printf("Input demo replay could not restore checkpoint: %s\n", local_checkpoint_name);
@@ -281,7 +332,7 @@ int input_demo_start_loaded_replay(void)
 			input_demo_apply_replay_player_cfg(&replay_player_cfg);
 		else if (replay_auto_level >= 0)
 			PlayerCfg.AutoLeveling = replay_auto_level;
-		primary_order_hash = input_demo_replay_hash_u8_sequence(PlayerCfg.PrimaryOrder, MAX_PRIMARY_WEAPONS + 1);
+		primary_order_hash = input_demo_replay_hash_u8_sequence(PlayerCfg.PrimaryOrder, MAX_PRIMARY_WEAPONS + 2);
 		secondary_order_hash = input_demo_replay_hash_u8_sequence(PlayerCfg.SecondaryOrder, MAX_SECONDARY_WEAPONS + 1);
 		replay_callsign = Players[Player_num].callsign[0] ? Players[Player_num].callsign : "<empty>";
 		if (ConsoleObject) {
@@ -298,9 +349,9 @@ int input_demo_start_loaded_replay(void)
 			ship_max_rotthrust = Player_ship->max_rotthrust;
 			ship_wiggle = Player_ship->wiggle;
 		}
-		con_printf(CON_NORMAL, "Input demo replay player config: callsign=%s result=%d auto_level=%d debris=%d headlight_default=%d autoselect=(nofire=%d,after=%d,cycle=%d,classic=%d) order_hash=(0x%x,0x%x) player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
+		con_printf(CON_NORMAL, "Input demo replay player config: callsign=%s result=%d auto_level=%d debris=%d autoselect=(nofire=%d,after=%d,cycle=%d,classic=%d) order_hash=(0x%x,0x%x) player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
 			replay_callsign, player_cfg_result, PlayerCfg.AutoLeveling,
-			PlayerCfg.PersistentDebris, PlayerCfg.HeadlightActiveDefault,
+			PlayerCfg.PersistentDebris,
 			PlayerCfg.NoFireAutoselect, PlayerCfg.SelectAfterFire,
 			PlayerCfg.CycleAutoselectOnly, PlayerCfg.ClassicAutoselectWeapon,
 			primary_order_hash, secondary_order_hash,
@@ -318,76 +369,18 @@ int input_demo_start_loaded_replay(void)
 	}
 	printf("Input demo replay starting: %s level %d, %u frames\n",
 		mission_name, input_demo_replay_level(), input_demo_replay_frame_count());
-	return 0;
-}
-
-int input_demo_maybe_start_replay_from_cmdline(void)
-{
-	int arg_index = input_demo_find_cmd_arg("-inputdemo-replay");
-	int actual_result_arg_index = input_demo_find_cmd_arg("-inputdemo-actual-result");
-	int replay_labels_arg_index = input_demo_find_cmd_arg("-inputdemo-replay-labels");
-	int debug_log_arg_index = 0;
-	#if INPUT_DEMO_DEBUG_LOGGING_AVAILABLE
-	debug_log_arg_index = input_demo_find_cmd_arg("-inputdemo-debug-log");
-	#endif
-	int state_log_arg_index = input_demo_find_cmd_arg("-inputdemo-state-log");
-	int rng_trace_arg_index = input_demo_find_cmd_arg("-inputdemo-rng-trace");
-	const char *demo_path;
-	const char *actual_result_path = NULL;
-	const char *state_log_path = NULL;
-	const char *rng_trace_path = NULL;
-	char replay_error[256] = "";
-
-	input_demo_debug_set_enabled(debug_log_arg_index ? 1 : 0);
-	g_replay_robot_labels_enabled = replay_labels_arg_index ? 1 : 0;
-
-	if (!arg_index)
-		return -1;
-	demo_path = input_demo_cmd_arg_value(arg_index, "-inputdemo-replay");
-	if (!demo_path)
-		return 1;
-	if (actual_result_arg_index) {
-		actual_result_path = input_demo_cmd_arg_value(actual_result_arg_index,
-			"-inputdemo-actual-result");
-		if (!actual_result_path)
+	if (state_log_path) {
+		if (!input_demo_state_trace_start_replay(state_log_path, replay_error, sizeof(replay_error)))
+		{
+			printf("Input demo replay state trace start failed: %s\n", replay_error);
+			input_demo_replay_unload();
 			return 1;
-	}
-	if (state_log_arg_index) {
-		state_log_path = input_demo_cmd_arg_value(state_log_arg_index,
-			"-inputdemo-state-log");
-		if (!state_log_path)
-			return 1;
-	}
-	if (rng_trace_arg_index) {
-		rng_trace_path = input_demo_cmd_arg_value(rng_trace_arg_index,
-			"-inputdemo-rng-trace");
-		if (!rng_trace_path)
-			return 1;
-	}
-	if (!input_demo_load_replay_from_path(demo_path, replay_error, sizeof(replay_error)))
-	{
-		printf("Input demo replay load failed: %s\n", replay_error);
-		return 1;
-	}
-	if (actual_result_path)
-		input_demo_replay_set_actual_result_path(actual_result_path);
-	if (rng_trace_path && !input_demo_rng_trace_start_replay(rng_trace_path, replay_error, sizeof(replay_error)))
-	{
-		printf("Input demo replay rng trace start failed: %s\n", replay_error);
-		input_demo_replay_unload();
-		return 1;
-	}
-	if (state_log_path && !input_demo_state_trace_start_replay(state_log_path, replay_error, sizeof(replay_error)))
-	{
-		printf("Input demo replay state trace start failed: %s\n", replay_error);
-		input_demo_replay_unload();
-		return 1;
+		}
+		printf("Input demo replay state trace: %s\n", state_log_path);
 	}
 	if (rng_trace_path)
 		printf("Input demo replay rng trace: %s\n", rng_trace_path);
-	if (state_log_path)
-		printf("Input demo replay state trace: %s\n", state_log_path);
 	if (actual_result_path)
 		printf("Input demo replay actual result: %s\n", actual_result_path);
-	return input_demo_start_loaded_replay();
+	return 0;
 }

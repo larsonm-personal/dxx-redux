@@ -49,7 +49,6 @@ extern int Player_highest_level;
 
 // starts a new game on the given level
 void StartNewGame(int start_level);
-void input_demo_set_skip_level_intro(int skip);
 
 // starts the next level
 void StartNewLevel(int level_num);

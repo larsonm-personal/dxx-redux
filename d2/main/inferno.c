@@ -58,7 +58,6 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "inferno.h"
 #include "dxxerror.h"
 #include "game.h"
-#include "replay_debug_overlay.h"
 #include "segment.h"		//for Side_to_verts
 #include "u_mem.h"
 #include "screens.h"
@@ -70,10 +69,6 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "args.h"
 #include "mission.h"
 #include "maths.h"
-#include "input_demo_replay.h"
-#include "input_demo_rng_trace.h"
-#include "input_demo_state_trace.h"
-#include "input_demo_rng_mode.h"
 #include "input_demo_debug_logging.h"
 #include "titles.h"
 #include "text.h"
@@ -235,121 +230,6 @@ static int find_cmd_arg(const char *name)
 			return i;
 
 	return 0;
-}
-
-static int maybe_validate_input_demo_metadata(void)
-{
-	int arg_index = find_cmd_arg("-inputdemo-validate");
-	int engine_mode;
-	int demo_mode;
-	const char *demo_path;
-	const char *error;
-
-	if (!arg_index)
-		return -1;
-	if (arg_index + 1 >= Num_args || !Args[arg_index + 1] || Args[arg_index + 1][0] == '-')
-	{
-		printf("Missing value for -inputdemo-validate\n");
-		return 1;
-	}
-	demo_path = Args[arg_index + 1];
-	engine_mode = d_rand_get_replay_mode();
-	error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode,
-		&demo_mode);
-	if (error)
-	{
-		printf("Input demo file invalid: %s\n", demo_path);
-		printf("%s\n", error);
-		printf("Active RNG backend expects: %s\n",
-			input_demo_rng_mode_name(engine_mode));
-		return 1;
-	}
-	printf("Input demo file OK: %s\n", demo_path);
-	printf("rng_mode: %s\n", input_demo_rng_mode_name(demo_mode));
-	return 0;
-}
-
-int input_demo_maybe_start_replay_from_cmdline(void)
-{
-	int arg_index = find_cmd_arg("-inputdemo-replay");
-	int actual_result_arg_index = find_cmd_arg("-inputdemo-actual-result");
-	int replay_labels_arg_index = find_cmd_arg("-inputdemo-replay-labels");
-	int debug_log_arg_index = 0;
-	#if INPUT_DEMO_DEBUG_LOGGING_AVAILABLE
-	debug_log_arg_index = find_cmd_arg("-inputdemo-debug-log");
-	#endif
-	int state_log_arg_index = find_cmd_arg("-inputdemo-state-log");
-	int rng_trace_arg_index = find_cmd_arg("-inputdemo-rng-trace");
-	const char *demo_path;
-	const char *actual_result_path = NULL;
-	const char *state_log_path = NULL;
-	const char *rng_trace_path = NULL;
-	char replay_error[256] = "";
-
-	input_demo_debug_set_enabled(debug_log_arg_index ? 1 : 0);
-	g_replay_robot_labels_enabled = replay_labels_arg_index ? 1 : 0;
-
-	if (!arg_index)
-		return -1;
-	if (arg_index + 1 >= Num_args || !Args[arg_index + 1] || Args[arg_index + 1][0] == '-')
-	{
-		printf("Missing value for -inputdemo-replay\n");
-		return 1;
-	}
-	if (actual_result_arg_index)
-	{
-		if (actual_result_arg_index + 1 >= Num_args || !Args[actual_result_arg_index + 1] || Args[actual_result_arg_index + 1][0] == '-')
-		{
-			printf("Missing value for -inputdemo-actual-result\n");
-			return 1;
-		}
-		actual_result_path = Args[actual_result_arg_index + 1];
-	}
-	if (state_log_arg_index)
-	{
-		if (state_log_arg_index + 1 >= Num_args || !Args[state_log_arg_index + 1] || Args[state_log_arg_index + 1][0] == '-')
-		{
-			printf("Missing value for -inputdemo-state-log\n");
-			return 1;
-		}
-		state_log_path = Args[state_log_arg_index + 1];
-	}
-	if (rng_trace_arg_index)
-	{
-		if (rng_trace_arg_index + 1 >= Num_args || !Args[rng_trace_arg_index + 1] || Args[rng_trace_arg_index + 1][0] == '-')
-		{
-			printf("Missing value for -inputdemo-rng-trace\n");
-			return 1;
-		}
-		rng_trace_path = Args[rng_trace_arg_index + 1];
-	}
-	demo_path = Args[arg_index + 1];
-	if (!input_demo_load_replay_from_path(demo_path, replay_error, sizeof(replay_error)))
-	{
-		printf("Input demo replay load failed: %s\n", replay_error);
-		return 1;
-	}
-	if (actual_result_path)
-		input_demo_replay_set_actual_result_path(actual_result_path);
-	if (rng_trace_path && !input_demo_rng_trace_start_replay(rng_trace_path, replay_error, sizeof(replay_error)))
-	{
-		printf("Input demo replay rng trace start failed: %s\n", replay_error);
-		input_demo_replay_unload();
-		return 1;
-	}
-	if (state_log_path && !input_demo_state_trace_start_replay(state_log_path, replay_error, sizeof(replay_error)))
-	{
-		printf("Input demo replay state trace start failed: %s\n", replay_error);
-		input_demo_replay_unload();
-		return 1;
-	}
-	if (rng_trace_path)
-		printf("Input demo replay rng trace: %s\n", rng_trace_path);
-	if (state_log_path)
-		printf("Input demo replay state trace: %s\n", state_log_path);
-	if (actual_result_path)
-		printf("Input demo replay actual result: %s\n", actual_result_path);
-	return input_demo_start_loaded_replay();
 }
 
 static int maybe_dump_classic_demo_json(void)
@@ -544,7 +424,7 @@ int main(int argc, char *argv[])
 		return(0);
 	}
 	{
-		int validate_result = maybe_validate_input_demo_metadata();
+		int validate_result = input_demo_maybe_validate_metadata_from_cmdline();
 		if (validate_result >= 0)
 			return validate_result;
 	}
