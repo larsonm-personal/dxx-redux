@@ -2,7 +2,7 @@
 
 Source bug: [android/outstanding_bugs.md](android/outstanding_bugs.md)
 
-## 1. [ready to test] Trace regular-Android numeric IME input on the level-select prompt
+## 1. [done] Trace regular-Android numeric IME input on the level-select prompt
 
 ### Scope
 - Regular Android in-game level-select prompt opened from New Game
@@ -29,12 +29,12 @@ Source bug: [android/outstanding_bugs.md](android/outstanding_bugs.md)
 ### Current status
 - First pass narrowed numeric `EditorInfo.inputType`, but the user confirmed that alone did not fix the device repro.
 - Second pass now bridges `sendKeyEvent` in `GameInputConnection`, which is a common numeric-keypad callback path that previously fell through to the hidden `EditText` instead of the game.
-- Added exported debug-log lines with an `[ime]` prefix for `setComposingText`, `commitText`, `sendKeyEvent`, `deleteSurroundingText`, `performEditorAction`, and keyboard show so device logs can confirm which IME callback path fired.
 - `showKeyboard()` now clears the hidden `keyboardInputView` text before focus/restart to avoid stale hidden-buffer state from previous IME sessions.
 - Extended `MainActivityInputTypeTest` to cover the new `sendKeyEvent` helper logic for printable digits and special-key routing.
 - Focused validation passed with `:app:testDebugUnitTest --tests com.dxxredux.app.MainActivityInputTypeTest` after the second pass.
 - Scoped formatter/lint validation passed with `android\run-code-quality.ps1 -Fix -Paths android\app\src\main\java\com\dxxredux\app\MainActivity.kt` after the second pass.
-- No on-device verification yet, so the bug stays at ready-to-test instead of fixed.
+- Temporary `[ime]` callback tracing was removed after the user confirmed the on-device fix, leaving only the durable `sendKeyEvent` bridge, numeric `inputType` cleanup, and hidden-buffer reset.
+- User confirmed the device behavior now works, so the bug is marked fixed in `android/outstanding_bugs.md`.
 
 ### Validation plan
 - Run a focused Kotlin compile for the Android app after the first edit.

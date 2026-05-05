@@ -77,6 +77,14 @@
   - moved the D2 `ai.c` robot pose and view-probe helper block into `d2/main/input_demo_hooks.c`, including the long pose-tracking log bodies that were inflating the legacy file diff
   - kept `d2/main/ai.c` down to a single local `extern` plus the existing `input_demo_trace_tracked_robot_poses()` call site in `init_ai_frame()`
   - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 15 complete
+  - moved the remaining D2 `object.c` input-demo render log printers into `d2/main/input_demo_hooks.c`, including the `id38`, cloak-path, and poly-probe log bodies
+  - kept `d2/main/object.c` down to short local helper calls plus narrow `extern` declarations so formatter expansion stays out of the legacy file
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 16 complete
+  - moved the D2 `ai.c` AI robot trace predicate and long robot-state log printer into `d2/main/input_demo_hooks.c`
+  - kept `d2/main/ai.c` down to narrow local `extern` declarations plus the existing frame-level call sites
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
 
 ## Existing Dedicated Input Demo Files
 - Keep using `d2/main/input_demo_start.c` and `d2/main/input_demo_start.h` for D2 replay startup logic
@@ -294,19 +302,19 @@
 ### D2 robot lifecycle and object probes
 - Current file: `d2/main/object.c`
 - Move to: `d2/main/input_demo_hooks.c`, robot/object section
-- Status: partially completed for lifecycle helpers plus the longest visual-state logging printers
+- Status: largely completed for lifecycle helpers and the visual/render logging printers
 - Functions:
   - `input_demo_trace_ai_rng_active`
   - `input_demo_robot_lifecycle_probe_active`
   - `input_demo_robot_visual_probe_active`
   - `input_demo_robot_lifecycle_is_target`
-- Original `object.c` now keeps the local call sites and only the shorter remaining visual/debug logging, while the lifecycle predicate helpers and longest visual-state printers live in `d2/main/input_demo_hooks.c`
+- Original `object.c` now keeps the local call sites while the lifecycle predicate helpers and visual/render logging printers live in `d2/main/input_demo_hooks.c`
 - Prefer replacing `input_demo_robot_lifecycle_is_target` call sites with a single `input_demo_log_robot_lifecycle_delete(objnum, obj)` helper so `object.c` does not keep target-selection details
 
 ### D2 AI and awareness probes
 - Current files: `d2/main/ai.c`, `d2/main/ai2.c`
 - Move to: `d2/main/input_demo_hooks.c`, AI section
-- Status: partially completed for awareness-source ownership, the `ai2.c` robot-fire probe helpers, and the `ai.c` robot pose/view probe block
+- Status: partially completed for awareness-source ownership, the `ai2.c` robot-fire probe helpers, the `ai.c` robot pose/view probe block, and the `ai.c` AI robot trace/log helper pair
 - Functions and state:
   - `Input_demo_awareness_source_tag`
   - `Input_demo_awareness_source_objnum`
@@ -330,9 +338,9 @@
   - awareness-source state ownership and setter declaration move
   - `ai2.c` robot fire helpers
   - `ai.c` robot pose/view probe helpers and tracked-pose logging block
+  - `ai.c` AI robot trace predicate and long robot-state printer
 - Remaining in `ai.c` and `ai2.c` for now:
   - awareness probe mode/activity helpers
-  - AI robot trace/log helpers
 
 ### D2 weapon, collision, score, and frame-event recording
 - Current files: `d2/main/laser.c`, `d2/main/collide.c`, `d2/main/gauges.c`, `d2/main/fireball.c`, `d2/main/fvi.c`

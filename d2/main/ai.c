@@ -132,6 +132,8 @@ int             Num_awareness_events = 0;
 awareness_event Awareness_events[MAX_AWARENESS_EVENTS];
 extern void input_demo_consume_awareness_source(const char **source_tag, int *source_objnum, int *aux_objnum);
 extern void input_demo_trace_tracked_robot_poses(void);
+extern int input_demo_trace_ai_robot_active(object *objp, ai_static *aip, ai_local *ailp);
+extern void input_demo_log_ai_robot_state(const char *label, object *objp);
 
 vms_vector      Believed_player_pos;
 int             Believed_player_seg;
@@ -261,74 +263,6 @@ static int input_demo_replay_awareness_probe_active(void)
 static const char *input_demo_awareness_probe_mode_name(void)
 {
 	return input_demo_debug_activity_mode_name();
-}
-
-static int input_demo_trace_ai_robot_active(object *objp, ai_static *aip, ai_local *ailp)
-{
-	if (!input_demo_trace_ai_active() || !objp || (objp->type != OBJ_ROBOT))
-		return 0;
-
-	return Robot_info[objp->id].companion ||
-		(objp->segnum == ConsoleObject->segnum) ||
-		(objp->segnum == Believed_player_seg) ||
-		(ailp->goal_segment == ConsoleObject->segnum) ||
-		(ailp->goal_segment == Believed_player_seg) ||
-		(ailp->mode >= AIM_GOTO_PLAYER) ||
-		(aip->behavior == AIB_SNIPE) ||
-		(ailp->player_awareness_type > 0);
-}
-
-static void input_demo_log_ai_robot_state(const char *label, object *objp)
-{
-	const int objnum = objp - Objects;
-	ai_static *aip = &objp->ctype.ai_info;
-	ai_local *ailp = &Ai_local_info[objnum];
-
-	con_printf(CON_NORMAL,
-		"Input demo replay AI robot: frame=%u step=%s obj=%d sig=%d id=%d size=%d shields=%d life=%d companion=%d behavior=%d mode=%d cur_state=%d goal_state=%d gun=%d path_dir=%d goal_side=%d danger_obj=%d danger_sig=%d retry=%d retry_chain=%d rapid=%d seg=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d skip=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
-		input_demo_trace_frame_index(),
-		label,
-		objnum,
-		objp->signature,
-		objp->id,
-		objp->size,
-		objp->shields,
-		objp->lifeleft,
-		Robot_info[objp->id].companion,
-		aip->behavior,
-		ailp->mode,
-		aip->CURRENT_STATE,
-		aip->GOAL_STATE,
-		aip->CURRENT_GUN,
-		aip->PATH_DIR,
-		aip->GOALSIDE,
-		aip->danger_laser_num,
-		aip->danger_laser_signature,
-		ailp->retry_count,
-		ailp->consecutive_retries,
-		ailp->rapidfire_count,
-		objp->segnum,
-		ConsoleObject->segnum,
-		Believed_player_seg,
-		ailp->goal_segment,
-		ailp->previous_visibility,
-		ailp->player_awareness_type,
-		ailp->player_awareness_time,
-		(long long)ailp->time_player_seen,
-		ailp->time_since_processed,
-		ailp->next_action_time,
-		ailp->next_fire,
-		ailp->next_fire2,
-		aip->cur_path_index,
-		aip->path_length,
-		aip->hide_index,
-		aip->SKIP_AI_COUNT,
-		objp->pos.x,
-		objp->pos.y,
-		objp->pos.z,
-		objp->mtype.phys_info.velocity.x,
-		objp->mtype.phys_info.velocity.y,
-		objp->mtype.phys_info.velocity.z);
 }
 
 // ----------------------------------------------------------------------------

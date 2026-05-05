@@ -93,8 +93,12 @@ extern int input_demo_trace_ai_rng_active(object *obj);
 extern int input_demo_robot_lifecycle_probe_active(void);
 extern int input_demo_robot_visual_probe_active(void);
 extern int input_demo_robot_lifecycle_is_target(int objnum, object *obj);
+extern void input_demo_log_robot_visual_id38(object *obj, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
 extern void input_demo_log_robot_visual_state_default(object *obj, const g3s_lrgb *light, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
 extern void input_demo_log_robot_visual_state_tmap_override(object *obj, const g3s_lrgb *light, int override_bm_index, int override_bm_flags, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
+extern void input_demo_log_robot_visual_player_cloak(object *obj);
+extern void input_demo_log_robot_visual_robot_cloak(object *obj);
+extern void input_demo_log_robot_poly_probe(object *obj, int faces_considered, int faces_drawn, int tmap_override);
 
 
 
@@ -473,21 +477,8 @@ void draw_polygon_object(object *obj)
 	}
 
 	if (visual_probe_id38)
-		con_printf(CON_NORMAL,
-			"Input demo robot visual id38: frame=%u obj=%d sig=%d seg=%d flags=0x%x codes=0x%x behind=%d projected=%d p3_codes=0x%x p3_flags=0x%x sxy=(%d,%d) z=%d\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
-			objnum,
-			obj->signature,
-			obj->segnum,
-			obj->flags,
-			probe_codes,
-			probe_behind,
-			probe_projected,
-			probe_point.p3_codes,
-			probe_point.p3_flags,
-			probe_projected ? f2i(probe_point.p3_sx) : -1,
-			probe_projected ? f2i(probe_point.p3_sy) : -1,
-			probe_point.p3_z);
+		input_demo_log_robot_visual_id38(obj, probe_codes, probe_behind, probe_projected,
+			&probe_point);
 
 	light = compute_object_light(obj,NULL);
 
@@ -590,15 +581,8 @@ void draw_polygon_object(object *obj)
 				   bm_ptrs);
 
 		if (visual_probe_target)
-			con_printf(CON_NORMAL,
-				"Input demo robot poly probe: frame=%u obj=%d sig=%d model_num=%d faces_considered=%d faces_drawn=%d path=tmap_override tmap_override=%d\n",
-				(unsigned int)input_demo_replay_next_frame_index(),
-				objnum,
-				obj->signature,
-				obj->rtype.pobj_info.model_num,
-				g3_poly_faces_considered,
-				g3_poly_faces_drawn,
-				obj->rtype.pobj_info.tmap_override);
+			input_demo_log_robot_poly_probe(obj, g3_poly_faces_considered,
+				g3_poly_faces_drawn, obj->rtype.pobj_info.tmap_override);
 	}
 	else {
 		if (visual_probe_target)
@@ -608,21 +592,12 @@ void draw_polygon_object(object *obj)
 		if (obj->type==OBJ_PLAYER && (Players[obj->id].flags&PLAYER_FLAGS_CLOAKED))
 		{
 			if (visual_probe_target)
-				con_printf(CON_NORMAL,
-					"Input demo robot visual state: frame=%u obj=%d sig=%d path=player_cloak\n",
-					(unsigned int)input_demo_replay_next_frame_index(),
-					objnum,
-					obj->signature);
+				input_demo_log_robot_visual_player_cloak(obj);
 			draw_cloaked_object(obj,light,engine_glow_value,Players[obj->id].cloak_time,Players[obj->id].cloak_time+CLOAK_TIME_MAX);
 		}
 		else if ((obj->type == OBJ_ROBOT) && (obj->ctype.ai_info.CLOAKED)) {
 			if (visual_probe_target)
-				con_printf(CON_NORMAL,
-					"Input demo robot visual state: frame=%u obj=%d sig=%d path=robot_cloak boss=%d\n",
-					(unsigned int)input_demo_replay_next_frame_index(),
-					objnum,
-					obj->signature,
-					Robot_info[obj->id].boss_flag != 0);
+				input_demo_log_robot_visual_robot_cloak(obj);
 			if (Robot_info[obj->id].boss_flag)
 				draw_cloaked_object(obj,light,engine_glow_value, Boss_cloak_start_time, Boss_cloak_end_time);
 			else
@@ -674,14 +649,8 @@ void draw_polygon_object(object *obj)
 					   engine_glow_value,
 					   alt_textures);
 			if (visual_probe_target)
-				con_printf(CON_NORMAL,
-					"Input demo robot poly probe: frame=%u obj=%d sig=%d model_num=%d faces_considered=%d faces_drawn=%d\n",
-					(unsigned int)input_demo_replay_next_frame_index(),
-					objnum,
-					obj->signature,
-					obj->rtype.pobj_info.model_num,
-					g3_poly_faces_considered,
-					g3_poly_faces_drawn);
+				input_demo_log_robot_poly_probe(obj, g3_poly_faces_considered,
+					g3_poly_faces_drawn, -1);
 			if (observed && PlayerCfg.ObsTransparentThirdPerson[get_observer_game_mode()])
 				gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
 

@@ -688,6 +688,35 @@ static void input_demo_log_robot_visual_state(object *obj, const g3s_lrgb *light
 		probe_z);
 }
 
+void input_demo_log_robot_visual_id38(object *obj, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point)
+{
+	const int objnum = obj ? (int)(obj - Objects) : -1;
+	const int probe_p3_codes = probe_point ? probe_point->p3_codes : 0;
+	const int probe_p3_flags = probe_point ? probe_point->p3_flags : 0;
+	const int probe_sx = (probe_projected && probe_point) ? f2i(probe_point->p3_sx) : -1;
+	const int probe_sy = (probe_projected && probe_point) ? f2i(probe_point->p3_sy) : -1;
+	const int probe_z = probe_point ? probe_point->p3_z : 0;
+
+	if (!obj || (objnum < 0))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo robot visual id38: frame=%u obj=%d sig=%d seg=%d flags=0x%x codes=0x%x behind=%d projected=%d p3_codes=0x%x p3_flags=0x%x sxy=(%d,%d) z=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		objnum,
+		obj->signature,
+		obj->segnum,
+		obj->flags,
+		probe_codes,
+		probe_behind,
+		probe_projected,
+		probe_p3_codes,
+		probe_p3_flags,
+		probe_sx,
+		probe_sy,
+		probe_z);
+}
+
 void input_demo_log_robot_visual_state_default(object *obj, const g3s_lrgb *light, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point)
 {
 	input_demo_log_robot_visual_state(obj, light, -1, -1, 0, probe_codes, probe_behind, probe_projected, probe_point);
@@ -696,6 +725,65 @@ void input_demo_log_robot_visual_state_default(object *obj, const g3s_lrgb *ligh
 void input_demo_log_robot_visual_state_tmap_override(object *obj, const g3s_lrgb *light, int override_bm_index, int override_bm_flags, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point)
 {
 	input_demo_log_robot_visual_state(obj, light, obj ? obj->rtype.pobj_info.tmap_override : -1, override_bm_index, override_bm_flags, probe_codes, probe_behind, probe_projected, probe_point);
+}
+
+void input_demo_log_robot_visual_player_cloak(object *obj)
+{
+	const int objnum = obj ? (int)(obj - Objects) : -1;
+
+	if (!obj || (objnum < 0))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo robot visual state: frame=%u obj=%d sig=%d path=player_cloak\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		objnum,
+		obj->signature);
+}
+
+void input_demo_log_robot_visual_robot_cloak(object *obj)
+{
+	const int objnum = obj ? (int)(obj - Objects) : -1;
+
+	if (!obj || (objnum < 0))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo robot visual state: frame=%u obj=%d sig=%d path=robot_cloak boss=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		objnum,
+		obj->signature,
+		Robot_info[obj->id].boss_flag != 0);
+}
+
+void input_demo_log_robot_poly_probe(object *obj, int faces_considered, int faces_drawn, int tmap_override)
+{
+	const int objnum = obj ? (int)(obj - Objects) : -1;
+
+	if (!obj || (objnum < 0))
+		return;
+
+	if (tmap_override != -1) {
+		con_printf(CON_NORMAL,
+			"Input demo robot poly probe: frame=%u obj=%d sig=%d model_num=%d faces_considered=%d faces_drawn=%d path=tmap_override tmap_override=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			objnum,
+			obj->signature,
+			obj->rtype.pobj_info.model_num,
+			faces_considered,
+			faces_drawn,
+			tmap_override);
+		return;
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo robot poly probe: frame=%u obj=%d sig=%d model_num=%d faces_considered=%d faces_drawn=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		objnum,
+		obj->signature,
+		obj->rtype.pobj_info.model_num,
+		faces_considered,
+		faces_drawn);
 }
 
 static int input_demo_trace_robot_pose_active(void)
@@ -1122,6 +1210,80 @@ void input_demo_log_robot_fire_state(const char *label, object *objp)
 		aip->path_length,
 		aip->hide_index,
 		aip->PATH_DIR,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z,
+		objp->mtype.phys_info.velocity.x,
+		objp->mtype.phys_info.velocity.y,
+		objp->mtype.phys_info.velocity.z);
+}
+
+int input_demo_trace_ai_robot_active(object *objp, ai_static *aip, ai_local *ailp)
+{
+	if (!input_demo_debug_record_probe_active() || !objp || (objp->type != OBJ_ROBOT))
+		return 0;
+
+	return Robot_info[objp->id].companion ||
+		(objp->segnum == ConsoleObject->segnum) ||
+		(objp->segnum == Believed_player_seg) ||
+		(ailp->goal_segment == ConsoleObject->segnum) ||
+		(ailp->goal_segment == Believed_player_seg) ||
+		(ailp->mode >= AIM_GOTO_PLAYER) ||
+		(aip->behavior == AIB_SNIPE) ||
+		(ailp->player_awareness_type > 0);
+}
+
+void input_demo_log_ai_robot_state(const char *label, object *objp)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_static *aip;
+	ai_local *ailp;
+
+	if (!objp || (objnum < 0))
+		return;
+
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[objnum];
+
+	con_printf(CON_NORMAL,
+		"Input demo replay AI robot: frame=%u step=%s obj=%d sig=%d id=%d size=%d shields=%d life=%d companion=%d behavior=%d mode=%d cur_state=%d goal_state=%d gun=%d path_dir=%d goal_side=%d danger_obj=%d danger_sig=%d retry=%d retry_chain=%d rapid=%d seg=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d skip=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
+		input_demo_trace_frame_index(),
+		label,
+		objnum,
+		objp->signature,
+		objp->id,
+		objp->size,
+		objp->shields,
+		objp->lifeleft,
+		Robot_info[objp->id].companion,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		aip->CURRENT_GUN,
+		aip->PATH_DIR,
+		aip->GOALSIDE,
+		aip->danger_laser_num,
+		aip->danger_laser_signature,
+		ailp->retry_count,
+		ailp->consecutive_retries,
+		ailp->rapidfire_count,
+		objp->segnum,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		ailp->goal_segment,
+		ailp->previous_visibility,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		(long long)ailp->time_player_seen,
+		ailp->time_since_processed,
+		ailp->next_action_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		aip->cur_path_index,
+		aip->path_length,
+		aip->hide_index,
+		aip->SKIP_AI_COUNT,
 		objp->pos.x,
 		objp->pos.y,
 		objp->pos.z,

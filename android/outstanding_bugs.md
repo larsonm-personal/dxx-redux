@@ -1,5 +1,5 @@
 # bugs
-[ready to test] regular android: at "new game" "you may start on any level..." screen: the numbers-only keyboard wasn't filling the text box even though backspace sometimes worked
+[fixed] regular android: at "new game" "you may start on any level..." screen: the numbers-only keyboard wasn't filling the text box even though backspace sometimes worked
 [ ] android TV: can't multi-select files in "import" saf picker in order to have bin+cue selected for import. any press, long or short, of "a"/"select" immediately selects the single file under it
 [ ] android TV: d2 gog installer is failing to extract the CD image, it skips forward instead of extracting it. might be failing with limited memory or something, need logging
 [ ] select button should open the overlay settings menu, not the in-game menu. maybe the in-game menu doesn't show when we have the touch overlay off?
