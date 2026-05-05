@@ -67,6 +67,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "playsave.h"
 #include "timer.h"
+#include "input_demo_hooks.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_replay.h"
 #include "input_demo_debug_logging.h"
@@ -88,18 +89,6 @@ object *ConsoleObject;					//the object that is the player
 
 static short free_obj_list[MAX_OBJECTS];
 static short object_signature_seed = 0;
-
-extern int input_demo_trace_ai_rng_active(object *obj);
-extern int input_demo_robot_lifecycle_probe_active(void);
-extern int input_demo_robot_visual_probe_active(void);
-extern int input_demo_robot_lifecycle_is_target(int objnum, object *obj);
-extern void input_demo_log_robot_lifecycle_delete(int objnum, object *obj);
-extern void input_demo_log_robot_visual_id38(object *obj, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
-extern void input_demo_log_robot_visual_state_default(object *obj, const g3s_lrgb *light, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
-extern void input_demo_log_robot_visual_state_tmap_override(object *obj, const g3s_lrgb *light, int override_bm_index, int override_bm_flags, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
-extern void input_demo_log_robot_visual_player_cloak(object *obj);
-extern void input_demo_log_robot_visual_robot_cloak(object *obj);
-extern void input_demo_log_robot_poly_probe(object *obj, int faces_considered, int faces_drawn, int tmap_override);
 
 
 

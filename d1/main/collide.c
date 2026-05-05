@@ -59,6 +59,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multi.h"
 #include "cntrlcen.h"
 #include "newdemo.h"
+#include "input_demo_hooks.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "endlevel.h"
@@ -105,97 +106,6 @@ static const char *input_demo_trace_collision_mode_name(void)
 	if (input_demo_recorder_is_active())
 		return "record";
 	return "none";
-}
-
-static int input_demo_trace_player_bump_active(object *obj0, object *obj1)
-{
-	const object *player = NULL;
-	const object *other = NULL;
-
-	if (!input_demo_trace_collision_pose_active())
-		return 0;
-	if (obj0 == ConsoleObject && obj0->type == OBJ_PLAYER &&
-		obj1 && (obj1->type == OBJ_WEAPON || obj1->type == OBJ_ROBOT)) {
-		player = obj0;
-		other = obj1;
-	} else if (obj1 == ConsoleObject && obj1->type == OBJ_PLAYER &&
-		obj0 && (obj0->type == OBJ_WEAPON || obj0->type == OBJ_ROBOT)) {
-		player = obj1;
-		other = obj0;
-	}
-	if (!player || !other)
-		return 0;
-	return 1;
-}
-
-static void input_demo_log_player_bump_probe(const char *step,
-	object *obj0,
-	object *obj1,
-	const vms_vector *relative_velocity,
-	const vms_vector *float_force,
-	fix scale_num,
-	fix scale_den,
-	int damage_flag)
-{
-	vms_vector fix_force = {0, 0, 0};
-	vms_vector force_delta = {0, 0, 0};
-
-	if (!input_demo_trace_player_bump_active(obj0, obj1))
-		return;
-	if (relative_velocity && scale_den) {
-		fix_force.x = fixmuldiv(relative_velocity->x, scale_num, scale_den);
-		fix_force.y = fixmuldiv(relative_velocity->y, scale_num, scale_den);
-		fix_force.z = fixmuldiv(relative_velocity->z, scale_num, scale_den);
-	}
-	if (float_force) {
-		force_delta.x = float_force->x - fix_force.x;
-		force_delta.y = float_force->y - fix_force.y;
-		force_delta.z = float_force->z - fix_force.z;
-	}
-
-	con_printf(CON_NORMAL,
-		"Input demo bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d seg=%d pos=(%d,%d,%d) obj1=%d/%d/%d seg=%d pos=(%d,%d,%d) damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
-		input_demo_trace_collision_mode_name(),
-		input_demo_trace_collision_frame_index(),
-		(long long)GameTime64,
-		step,
-		obj0 ? (int)(obj0 - Objects) : -1,
-		obj0 ? obj0->type : -1,
-		obj0 ? obj0->id : -1,
-		obj0 ? obj0->segnum : -1,
-		obj0 ? obj0->pos.x : 0,
-		obj0 ? obj0->pos.y : 0,
-		obj0 ? obj0->pos.z : 0,
-		obj1 ? (int)(obj1 - Objects) : -1,
-		obj1 ? obj1->type : -1,
-		obj1 ? obj1->id : -1,
-		obj1 ? obj1->segnum : -1,
-		obj1 ? obj1->pos.x : 0,
-		obj1 ? obj1->pos.y : 0,
-		obj1 ? obj1->pos.z : 0,
-		damage_flag,
-		relative_velocity ? relative_velocity->x : 0,
-		relative_velocity ? relative_velocity->y : 0,
-		relative_velocity ? relative_velocity->z : 0,
-		scale_num,
-		scale_den,
-		float_force ? float_force->x : 0,
-		float_force ? float_force->y : 0,
-		float_force ? float_force->z : 0,
-		fix_force.x,
-		fix_force.y,
-		fix_force.z,
-		force_delta.x,
-		force_delta.y,
-		force_delta.z,
-		obj0 ? obj0->mtype.phys_info.velocity.x : 0,
-		obj0 ? obj0->mtype.phys_info.velocity.y : 0,
-		obj0 ? obj0->mtype.phys_info.velocity.z : 0,
-		obj1 ? obj1->mtype.phys_info.velocity.x : 0,
-		obj1 ? obj1->mtype.phys_info.velocity.y : 0,
-		obj1 ? obj1->mtype.phys_info.velocity.z : 0,
-		obj0 ? obj0->mtype.phys_info.mass : 0,
-		obj1 ? obj1->mtype.phys_info.mass : 0);
 }
 
 static void input_demo_log_player_robot_contact_probe(const char *step,

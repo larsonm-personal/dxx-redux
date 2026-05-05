@@ -39,6 +39,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "fireball.h"
 #include "game.h"
+#include "input_demo_hooks.h"
 
 #define	PARALLAX	0		//	If !0, then special debugging for Parallax eyes enabled.
 
@@ -58,17 +59,6 @@ void ai_path_garbage_collect(void);
 #if PATH_VALIDATION
 int validate_path(int debug_flag, point_seg* psegs, int num_points);
 #endif
-
-extern int input_demo_should_match_android_companion_velocity(void);
-extern unsigned int input_demo_trace_frame_index(void);
-extern int input_demo_replay_path_probe_active(object *objp);
-extern int input_demo_replay_follow_probe_active(object *objp);
-extern int input_demo_replay_path_request_probe_active(object *objp);
-extern void input_demo_log_path_robot_state(const char *label, object *objp);
-extern void input_demo_log_path_request(const char *label, object *objp, int start_seg, int end_seg, int max_length, int safety_flag, int avoid_seg);
-extern void input_demo_log_path_probe(object *objp, int start_seg, int end_seg, int max_depth, int random_flag, int safety_flag, int avoid_seg, int result, unsigned int rng_before, unsigned int rng_call_count_before);
-extern void input_demo_log_path_detail(object *objp, int start_seg, int end_seg, int random_flag, int random_xlate_seed_count, int random_xlate_refresh_roll_count, int random_xlate_refresh_count, int queue_push_count, int raw_num_points, int final_num_points);
-extern void input_demo_log_path_points(const char *label, object *objp, point_seg *psegs, int num_points);
 
 //	------------------------------------------------------------------------
 void create_random_xlate(sbyte *xt)

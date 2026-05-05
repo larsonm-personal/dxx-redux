@@ -40,6 +40,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 $outRoot = Join-Path $repoRoot 'temp\input_demo_runtime_wrapper'
 
 function Write-AsciiFile {
@@ -318,115 +319,6 @@ function Get-GameConfig {
     }
 
     throw "Unsupported game: $Name"
-}
-
-function Get-GameBuildTarget {
-    param([string]$Name)
-
-    switch ($Name) {
-        'd1' { return 'd1' }
-        'd2' { return 'd2' }
-    }
-
-    throw "Unsupported game: $Name"
-}
-
-function Get-FreshnessSourceRoots {
-    param([string]$GameName)
-
-    $roots = @(
-        (Join-Path $repoRoot $GameName),
-        (Join-Path $repoRoot 'common'),
-        (Join-Path $repoRoot 'arch'),
-        (Join-Path $repoRoot 'android\app\src\main\cpp\shared')
-    )
-
-    return $roots | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -Unique
-}
-
-function Get-LatestSourceFileStamp {
-    param([string]$GameName)
-
-    $latestFile = $null
-    foreach ($root in (Get-FreshnessSourceRoots -GameName $GameName)) {
-        $candidate = Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
-            Where-Object {
-                $_.Extension -in @('.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl')
-            } |
-            Sort-Object -Property LastWriteTimeUtc -Descending |
-            Select-Object -First 1
-        if (-not $candidate) {
-            continue
-        }
-        if (-not $latestFile -or $candidate.LastWriteTimeUtc -gt $latestFile.LastWriteTimeUtc) {
-            $latestFile = $candidate
-        }
-    }
-
-    if (-not $latestFile) {
-        return $null
-    }
-
-    return @{
-        Path = $latestFile.FullName
-        TimestampUtc = $latestFile.LastWriteTimeUtc
-    }
-}
-
-function Invoke-HostBuild {
-    param([hashtable]$Config)
-
-    $buildScript = Join-Path $repoRoot 'run-windows-build.ps1'
-    $buildTarget = Get-GameBuildTarget -Name $Config.Name
-
-    if (-not (Test-Path -LiteralPath $buildScript)) {
-        throw "Host build script not found: $buildScript"
-    }
-
-    Write-Host "Build guardrail: rebuilding host target $buildTarget"
-    try {
-        & $buildScript -Target $buildTarget
-        if ($LASTEXITCODE -ne 0) {
-            throw "Host build failed with exit code $LASTEXITCODE"
-        }
-        return
-    } catch {
-        $message = [string]$_
-        if ($message -notmatch "Supported values:\s*([A-Za-z0-9_,\s-]+)") {
-            throw
-        }
-
-        $supportedArchList = @($matches[1].Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
-        if ($supportedArchList.Count -eq 0) {
-            throw
-        }
-
-        $fallbackArch = $supportedArchList[0]
-        Write-Host "Build guardrail: retrying host build with -VcVarsArch $fallbackArch"
-        & $buildScript -Target $buildTarget -VcVarsArch $fallbackArch
-        if ($LASTEXITCODE -ne 0) {
-            throw "Host build failed with exit code $LASTEXITCODE (fallback arch: $fallbackArch)"
-        }
-    }
-}
-
-function Assert-ExecutableFresh {
-    param([hashtable]$Config)
-
-    if (-not (Test-Path -LiteralPath $Config.Exe)) {
-        throw "Built executable not found: $($Config.Exe)"
-    }
-
-    $exeItem = Get-Item -LiteralPath $Config.Exe
-    $sourceStamp = Get-LatestSourceFileStamp -GameName $Config.Name
-    if (-not $sourceStamp) {
-        return
-    }
-
-    if ($exeItem.LastWriteTimeUtc -lt $sourceStamp.TimestampUtc) {
-        $sourceRelative = Get-RelativeRepoPath -Path $sourceStamp.Path
-        throw "Executable is older than source files`nExe: $($Config.Exe)`nExe time (utc): $($exeItem.LastWriteTimeUtc)`nNewest source: $sourceRelative`nSource time (utc): $($sourceStamp.TimestampUtc)`nRun: .\\run-windows-build.ps1 -Target $($Config.Name)"
-    }
 }
 
 function Get-HeadlessConsoleExe {
@@ -1176,28 +1068,6 @@ if ($DemoPath) {
 $header = Get-DemoHeader -Path $resolvedDemoPath
 $resolvedGame = Resolve-DemoGame -Header $header -RequestedGame $Game
 $config = Get-GameConfig -Name $resolvedGame
-if ($BuildBeforeRun) {
-    Invoke-HostBuild -Config $config
-} elseif (-not $RequireFreshBuild) {
-    # Auto-rebuild if the executable is missing or older than source files
-    $exeStale = $false
-    if (-not (Test-Path -LiteralPath $config.Exe)) {
-        $exeStale = $true
-    } else {
-        $sourceStamp = Get-LatestSourceFileStamp -GameName $config.Name
-        if ($sourceStamp -and (Get-Item -LiteralPath $config.Exe).LastWriteTimeUtc -lt $sourceStamp.TimestampUtc) {
-            $sourceRelative = Get-RelativeRepoPath -Path $sourceStamp.Path
-            Write-Host "Auto-rebuild: $($config.Exe) is older than $sourceRelative"
-            $exeStale = $true
-        }
-    }
-    if ($exeStale) {
-        Invoke-HostBuild -Config $config
-    }
-}
-if ($RequireFreshBuild) {
-    Assert-ExecutableFresh -Config $config
-}
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
 $runnerPromptDefaults = Get-RunnerPromptDefaults -RequestedRunner $Runner -RequestedMode $Mode -RequestedProfile $RenderProfile
 $renderProfileSelection = Get-RenderProfile -RequestedProfile $runnerPromptDefaults.RenderProfile -RequestedMode $runnerPromptDefaults.Mode
@@ -1263,36 +1133,9 @@ if ($canShowReplayRobotLabels) {
 
 $headlessConsoleExe = if ($useHeadlessConsole) { Get-HeadlessConsoleExe -GameName $resolvedGame } else { $null }
 if ($useHeadlessConsole) {
-    if ($BuildBeforeRun) {
-        Invoke-HostBuild -Config $config
-    } elseif (-not $RequireFreshBuild) {
-        # Auto-rebuild if the selected headless executable is missing or stale
-        $headlessExeStale = $false
-        if (-not (Test-Path -LiteralPath $headlessConsoleExe)) {
-            $headlessExeStale = $true
-        } else {
-            $sourceStamp = Get-LatestSourceFileStamp -GameName $config.Name
-            if ($sourceStamp -and (Get-Item -LiteralPath $headlessConsoleExe).LastWriteTimeUtc -lt $sourceStamp.TimestampUtc) {
-                $sourceRelative = Get-RelativeRepoPath -Path $sourceStamp.Path
-                Write-Host "Auto-rebuild: $headlessConsoleExe is older than $sourceRelative"
-                $headlessExeStale = $true
-            }
-        }
-        if ($headlessExeStale) {
-            Invoke-HostBuild -Config $config
-        }
-    }
-
-    if ($RequireFreshBuild) {
-        if (-not (Test-Path -LiteralPath $headlessConsoleExe)) {
-            throw "Built executable not found: $headlessConsoleExe"
-        }
-        $sourceStamp = Get-LatestSourceFileStamp -GameName $config.Name
-        if ($sourceStamp -and (Get-Item -LiteralPath $headlessConsoleExe).LastWriteTimeUtc -lt $sourceStamp.TimestampUtc) {
-            $sourceRelative = Get-RelativeRepoPath -Path $sourceStamp.Path
-            throw "Headless executable is older than source files`nExe: $headlessConsoleExe`nExe time (utc): $((Get-Item -LiteralPath $headlessConsoleExe).LastWriteTimeUtc)`nNewest source: $sourceRelative`nSource time (utc): $($sourceStamp.TimestampUtc)`nRun: .\\run-windows-build.ps1 -Target $($config.Name)"
-        }
-    }
+    Ensure-InputDemoExecutable -RepoRoot $repoRoot -GameName $config.Name -ExecutablePath $headlessConsoleExe -Description 'Headless executable' -BuildBeforeRun:$BuildBeforeRun -RequireFreshBuild:$RequireFreshBuild
+} else {
+    Ensure-InputDemoExecutable -RepoRoot $repoRoot -GameName $config.Name -ExecutablePath $config.Exe -BuildBeforeRun:$BuildBeforeRun -RequireFreshBuild:$RequireFreshBuild
 }
 $sandbox = New-LaunchSandbox -Config $config -SandboxName ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)) -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
 $actualResultDirectory = Join-Path $sandbox.Directory 'results'

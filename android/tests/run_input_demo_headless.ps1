@@ -23,8 +23,28 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+$repoRoot = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 $wrapper = Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'
 $pwsh = (Get-Process -Id $PID).Path
+
+if (-not $ListOnly) {
+    $preflightGames = if ($Game -eq 'auto') {
+        if ($DemoPath) {
+            @(Get-InputDemoRecordedGameName -DemoPath $DemoPath)
+        } else {
+            @('d1', 'd2')
+        }
+    } else {
+        @($Game)
+    }
+
+    foreach ($preflightGame in ($preflightGames | Sort-Object -Unique)) {
+        $preferHeadless = $preflightGame -eq 'd2' -and $Mode -eq 'accelerated'
+        Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $preflightGame -PreferHeadlessConsole:$preferHeadless
+    }
+}
+
 $args = @(
     '-NoProfile',
     '-ExecutionPolicy', 'Bypass',

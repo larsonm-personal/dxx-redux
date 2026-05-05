@@ -10,6 +10,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 if (-not $DataDir) {
     $DataDir = Join-Path $repoRoot 'game_data_to_copy_to_emulator\temp'
 }
@@ -252,6 +253,9 @@ if (-not (Test-Path $outRoot)) {
 }
 
 $games = if ($Game -eq 'both') { @('d1', 'd2') } else { @($Game) }
+foreach ($gameName in $games) {
+    Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $gameName
+}
 foreach ($gameName in $games) {
     Invoke-ReplaySmoke -GameName $gameName
 }

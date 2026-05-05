@@ -169,6 +169,93 @@ void input_demo_capture_current_result(input_demo_result *result)
 	result->level_summary.endlevel_completed = Endlevel_sequence ? 1 : 0;
 }
 
+void input_demo_log_player_bump_probe(const char *step, object *obj0, object *obj1, const vms_vector *relative_velocity, const vms_vector *float_force, fix scale_num, fix scale_den, int damage_flag)
+{
+	const object *player = NULL;
+	const object *other = NULL;
+	const char *mode_name = "none";
+	unsigned int frame_index = 0;
+	vms_vector fix_force = {0, 0, 0};
+	vms_vector force_delta = {0, 0, 0};
+
+	if (input_demo_replay_is_loaded()) {
+		mode_name = "replay";
+		frame_index = (unsigned int)input_demo_replay_next_frame_index();
+	} else if (input_demo_recorder_is_active()) {
+		const uint32_t frame_count = input_demo_recorder_frame_count();
+
+		mode_name = "record";
+		frame_index = frame_count ? (unsigned int)(frame_count - 1) : 0;
+	} else
+		return;
+
+	if (obj0 == ConsoleObject && obj0 && obj0->type == OBJ_PLAYER &&
+		obj1 && (obj1->type == OBJ_WEAPON || obj1->type == OBJ_ROBOT)) {
+		player = obj0;
+		other = obj1;
+	} else if (obj1 == ConsoleObject && obj1 && obj1->type == OBJ_PLAYER &&
+		obj0 && (obj0->type == OBJ_WEAPON || obj0->type == OBJ_ROBOT)) {
+		player = obj1;
+		other = obj0;
+	}
+	if (!player || !other)
+		return;
+	if (relative_velocity && scale_den) {
+		fix_force.x = fixmuldiv(relative_velocity->x, scale_num, scale_den);
+		fix_force.y = fixmuldiv(relative_velocity->y, scale_num, scale_den);
+		fix_force.z = fixmuldiv(relative_velocity->z, scale_num, scale_den);
+	}
+	if (float_force) {
+		force_delta.x = float_force->x - fix_force.x;
+		force_delta.y = float_force->y - fix_force.y;
+		force_delta.z = float_force->z - fix_force.z;
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d seg=%d pos=(%d,%d,%d) obj1=%d/%d/%d seg=%d pos=(%d,%d,%d) damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
+		mode_name,
+		frame_index,
+		(long long)GameTime64,
+		step,
+		obj0 ? (int)(obj0 - Objects) : -1,
+		obj0 ? obj0->type : -1,
+		obj0 ? obj0->id : -1,
+		obj0 ? obj0->segnum : -1,
+		obj0 ? obj0->pos.x : 0,
+		obj0 ? obj0->pos.y : 0,
+		obj0 ? obj0->pos.z : 0,
+		obj1 ? (int)(obj1 - Objects) : -1,
+		obj1 ? obj1->type : -1,
+		obj1 ? obj1->id : -1,
+		obj1 ? obj1->segnum : -1,
+		obj1 ? obj1->pos.x : 0,
+		obj1 ? obj1->pos.y : 0,
+		obj1 ? obj1->pos.z : 0,
+		damage_flag,
+		relative_velocity ? relative_velocity->x : 0,
+		relative_velocity ? relative_velocity->y : 0,
+		relative_velocity ? relative_velocity->z : 0,
+		scale_num,
+		scale_den,
+		float_force ? float_force->x : 0,
+		float_force ? float_force->y : 0,
+		float_force ? float_force->z : 0,
+		fix_force.x,
+		fix_force.y,
+		fix_force.z,
+		force_delta.x,
+		force_delta.y,
+		force_delta.z,
+		obj0 ? obj0->mtype.phys_info.velocity.x : 0,
+		obj0 ? obj0->mtype.phys_info.velocity.y : 0,
+		obj0 ? obj0->mtype.phys_info.velocity.z : 0,
+		obj1 ? obj1->mtype.phys_info.velocity.x : 0,
+		obj1 ? obj1->mtype.phys_info.velocity.y : 0,
+		obj1 ? obj1->mtype.phys_info.velocity.z : 0,
+		obj0 ? obj0->mtype.phys_info.mass : 0,
+		obj1 ? obj1->mtype.phys_info.mass : 0);
+}
+
 static int input_demo_replay_logged_state_mismatch = 0;
 static int input_demo_replay_logged_state_trace_error = 0;
 static fix64 input_demo_replay_last_timer_value = 0;

@@ -83,10 +83,6 @@ enum {
 	Attack_scale = 24,
 };
 
-extern unsigned int input_demo_trace_robot_fire_frame_index(void);
-extern int input_demo_trace_robot_fire_active(object *objp);
-extern void input_demo_log_robot_fire_state(const char *label, object *objp);
-
 static const sbyte   Mike_to_matt_xlate[] = {AS_REST, AS_REST, AS_ALERT, AS_ALERT, AS_FLINCH, AS_FIRE, AS_RECOIL, AS_REST};
 
 //	Amount of time since the current robot was last processed for things such as movement.

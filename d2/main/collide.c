@@ -75,20 +75,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "input_demo_debug_logging.h"
-
-extern void input_demo_log_reactor_hit(object *controlcen, fix damage, fix old_shields);
-extern void input_demo_log_reactor_destroyed(object *controlcen);
-extern void input_demo_log_collision_player_wall_impact(const char *mode_name, unsigned int frame_index, object *playerobj, int hitseg, int hitwall, int hitspeed, int damage, int force_field_hit);
-extern void input_demo_log_replay_player_wall_collision(object *playerobj, int hitseg, int hitwall, int hitspeed, const vms_vector *hitpt);
-extern void input_demo_log_collision_weapon_wall_impact(const char *mode_name, unsigned int frame_index, object *weapon, int hitwall, int blew_up, int robot_escort);
-extern void input_demo_log_collision_player_robot_impact(const char *mode_name, unsigned int frame_index, object *playerobj, object *robot);
-extern void input_demo_log_collision_weapon_robot_impact(const char *mode_name, unsigned int frame_index, object *weapon, object *robot);
-extern void input_demo_log_replay_robot_damage(object *robot, fix damage, fix old_shields);
-extern void input_demo_log_player_damage_probe(const char *mode_name, unsigned int frame_index, int damage, fix old_shields, fix shields_after, int killer_type, int killer_obj, int killer_id, int killer_sig, int killer_seg, int possibly_friendly);
-extern void input_demo_log_player_weapon_hit(const char *mode_name, unsigned int frame_index, object *weapon, object *playerobj, int damage, const vms_vector *collision_point);
-extern void input_demo_log_replay_powerup_probe_before(object *powerup, int energy_before, int shields_before);
-extern void input_demo_log_replay_powerup_probe_after(object *powerup, int powerup_used, int energy_before, int energy_after, int shields_before, int shields_after);
-extern void input_demo_log_replay_object_object_collision(object *a, object *b, const vms_vector *collision_point);
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -247,27 +233,6 @@ int check_collision_delayfunc_exec()
 		if (input_demo_recorder_is_active())
 			return "record";
 		return "none";
-	}
-
-		static int input_demo_trace_player_bump_active(object *obj0, object *obj1)
-	{
-		const object *player = NULL;
-			const object *other = NULL;
-
-		if (!input_demo_trace_collision_pose_active())
-			return 0;
-			if (obj0 == ConsoleObject && obj0->type == OBJ_PLAYER &&
-				obj1 && (obj1->type == OBJ_WEAPON || obj1->type == OBJ_ROBOT)) {
-			player = obj0;
-				other = obj1;
-			} else if (obj1 == ConsoleObject && obj1->type == OBJ_PLAYER &&
-				obj0 && (obj0->type == OBJ_WEAPON || obj0->type == OBJ_ROBOT)) {
-			player = obj1;
-				other = obj0;
-		}
-			if (!player || !other)
-			return 0;
-		return 1;
 	}
 
 
@@ -484,9 +449,9 @@ void bump_two_objects(object *obj0,object *obj1,int damage_flag)
 	if (t) {
 		Assert(t->movement_type == MT_PHYSICS);
 		vm_vec_copy_scale(&force,&t->mtype.phys_info.velocity,-t->mtype.phys_info.mass);
-		input_demo_debug_log_player_bump_probe("nonphysics_pre", (void *)obj0, (void *)obj1, (void *)&force, (void *)&force, -t->mtype.phys_info.mass, F1_0, damage_flag);
+		input_demo_log_player_bump_probe("nonphysics_pre", obj0, obj1, &force, &force, -t->mtype.phys_info.mass, F1_0, damage_flag);
 		phys_apply_force(t,&force);
-		input_demo_debug_log_player_bump_probe("nonphysics_post", (void *)obj0, (void *)obj1, (void *)&force, (void *)&force, -t->mtype.phys_info.mass, F1_0, damage_flag);
+		input_demo_log_player_bump_probe("nonphysics_post", obj0, obj1, &force, &force, -t->mtype.phys_info.mass, F1_0, damage_flag);
 		return;
 	}
 
@@ -495,13 +460,13 @@ void bump_two_objects(object *obj0,object *obj1,int damage_flag)
 	scale_num = 2*fixmul(obj0->mtype.phys_info.mass,obj1->mtype.phys_info.mass);
 	scale_den = obj0->mtype.phys_info.mass+obj1->mtype.phys_info.mass;
 	vm_vec_scale2(&force,scale_num,scale_den);
-	input_demo_debug_log_player_bump_probe("pre", (void *)obj0, (void *)obj1, (void *)&relative_velocity, (void *)&force, scale_num, scale_den, damage_flag);
+	input_demo_log_player_bump_probe("pre", obj0, obj1, &relative_velocity, &force, scale_num, scale_den, damage_flag);
 
 	bump_this_object(obj1, obj0, &force, damage_flag);
 	vm_vec_negate(&force);
 	bump_this_object(obj0, obj1, &force, damage_flag);
 	vm_vec_negate(&force);
-	input_demo_debug_log_player_bump_probe("post", (void *)obj0, (void *)obj1, (void *)&relative_velocity, (void *)&force, scale_num, scale_den, damage_flag);
+	input_demo_log_player_bump_probe("post", obj0, obj1, &relative_velocity, &force, scale_num, scale_den, damage_flag);
 
 }
 

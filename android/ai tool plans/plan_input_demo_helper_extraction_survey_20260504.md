@@ -125,6 +125,10 @@
   - moved the final standalone D2 `collide.c` object-object replay collision probe printer into `d2/main/input_demo_hooks.c`
   - finished the current collide replay-printer cleanup so the legacy collision file now keeps the gates and control flow while the replay log bodies live in the hook file
   - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 27 complete
+  - moved `input_demo_log_player_bump_probe(...)` out of `d1/main/collide.c` and `d2/main/collide.c` and into the per-game `input_demo_hooks.c` files
+  - removed the now-redundant D1 local player-bump predicate/body and the stale D2-only player-bump gate so both legacy collision files keep only control flow plus narrow `extern` calls
+  - validated with `run-windows-build.ps1 -Target both`, the focused D2 headless replay smoke test, and Android arm64 Gradle tasks `:app:buildCMakeDebug[arm64-v8a]` and `:app:buildCMakeDebug[arm64-v8a]-2`
 
 ## Existing Dedicated Input Demo Files
 - Keep using `d2/main/input_demo_start.c` and `d2/main/input_demo_start.h` for D2 replay startup logic
@@ -235,10 +239,12 @@
 - Current files: `d1/main/collide.c`, `d1/main/physics.c`, `d1/main/fireball.c`, `d1/main/fvi.c`
 - Move to: `d1/main/input_demo_hooks.c`, probe section
 - Candidate helpers:
-  - collision: `input_demo_trace_collision_pose_active`, `input_demo_trace_collision_frame_index`, `input_demo_trace_collision_mode_name`, `input_demo_trace_player_bump_active`, `input_demo_log_player_bump_probe`, `input_demo_log_player_robot_contact_probe`, `input_demo_trace_local_player_weapon_robot_active`, `input_demo_log_weapon_robot_accept_seq`
+  - collision: `input_demo_trace_collision_pose_active`, `input_demo_trace_collision_frame_index`, `input_demo_trace_collision_mode_name`, `input_demo_log_player_robot_contact_probe`, `input_demo_trace_local_player_weapon_robot_active`, `input_demo_log_weapon_robot_accept_seq`
   - physics: `input_demo_trace_motion_probe_active`, `input_demo_trace_motion_frame_index`, `input_demo_trace_motion_mode_name`, `input_demo_player_robot_hit_object_probe_active`, `input_demo_log_player_robot_hit_object_probe`
   - fireball: `input_demo_trace_explosion_probe_active`, `input_demo_trace_explosion_frame_index`, `input_demo_trace_explosion_mode_name`, `input_demo_exploding_robot_probe_active`, `input_demo_log_exploding_object_probe`
   - FVI: `fvi_input_demo_frame_index`, `fvi_input_demo_mode_name`, `input_demo_log_fvi_weapon_robot_check`
+- Completed in the latest tranche:
+  - `input_demo_log_player_bump_probe` now lives in `d1/main/input_demo_hooks.c`, and the old D1 local player-bump predicate/body no longer live in `d1/main/collide.c`
 - Original files should keep only calls like `input_demo_log_*` near the instrumented engine operation
 
 ### D1 level intro control
@@ -401,8 +407,9 @@
   - `collide.c` player-weapon-hit replay printer now routes through a hook helper in `d2/main/input_demo_hooks.c`
   - `collide.c` replay powerup before/after probe printers now route through hook helpers in `d2/main/input_demo_hooks.c`
   - `collide.c` object-object replay collision probe now routes through a hook helper in `d2/main/input_demo_hooks.c`
+  - `collide.c` player-bump probe logging now routes through `input_demo_log_player_bump_probe()` in `d2/main/input_demo_hooks.c`, and the stale local D2 player-bump gate is gone
 - Remaining in `collide.c` for now:
-  - collision pose/player bump helper cleanup
+  - collision pose helper cleanup
 - Consolidate repeated `input_demo_record_frame_event_json` bodies during this move
 
 ### D2 movement, controls, render, UI RNG, and escort probes

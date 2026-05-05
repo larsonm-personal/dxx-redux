@@ -9,6 +9,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 $replayScript = Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'
 $headlessScript = Join-Path $PSScriptRoot 'run_input_demo_headless.ps1'
 $compareTraceScript = Join-Path $PSScriptRoot 'compare_input_demo_state_trace.ps1'
@@ -162,6 +163,13 @@ function Get-StageFromMismatchLine {
 }
 
 $fixtures = Read-Fixtures -ListPath $FixtureListPath
+$fixtureGames = @($fixtures | Select-Object -ExpandProperty Game -Unique)
+foreach ($fixtureGame in $fixtureGames) {
+    Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $fixtureGame
+}
+if ($IncludeHeadless -and $fixtureGames -contains 'd2') {
+    Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName 'd2' -PreferHeadlessConsole
+}
 
 $outDir = Join-Path $repoRoot 'temp\input_demo_determinism_matrix'
 if (-not (Test-Path -LiteralPath $outDir)) {

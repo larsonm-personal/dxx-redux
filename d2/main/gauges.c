@@ -61,10 +61,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "net_udp.h"
 #include "scores.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
-
-extern void input_demo_log_score_probe(const char *score_kind, int points, int score_after);
 
 static int Input_demo_record_score_event_logged_error = 0;
 

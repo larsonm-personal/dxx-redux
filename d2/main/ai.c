@@ -130,22 +130,6 @@ fvi_info    Hit_data;
 
 int             Num_awareness_events = 0;
 awareness_event Awareness_events[MAX_AWARENESS_EVENTS];
-extern void input_demo_consume_awareness_source(const char **source_tag, int *source_objnum, int *aux_objnum);
-extern void input_demo_trace_tracked_robot_poses(void);
-extern int input_demo_trace_ai_active(void);
-extern int input_demo_replay_awareness_probe_active(void);
-extern int input_demo_trace_ai_robot_active(object *objp, ai_static *aip, ai_local *ailp);
-extern void input_demo_log_ai_robot_state(const char *label, object *objp);
-extern void input_demo_log_awareness_vulcan_roll(object *objp, int type, int vulcan_roll, unsigned int sim_calls_before, unsigned int sim_state_before);
-extern void input_demo_log_awareness_add_return(const char *reason, object *objp, int type, int added, unsigned int sim_calls_before, unsigned int sim_calls_after, unsigned int sim_state_before, unsigned int sim_state_after);
-extern void input_demo_log_awareness_entry(object *objp, int type, const char *source_tag, int source_objnum, int aux_objnum, unsigned int sim_calls_entry, unsigned int sim_state_entry, int num_awareness_before, int overall_agitation_before, int multiplayer_awareness_allowed);
-extern void input_demo_log_awareness_probe(object *objp, int type);
-extern void input_demo_log_awareness_post_add(object *objp, int type, int awareness_added, unsigned int sim_calls_entry, unsigned int sim_calls_after_add, unsigned int sim_state_entry, unsigned int sim_state_after_add);
-extern void input_demo_log_awareness_post_gate(object *objp, int type, int rng_gate_value, int rng_gate_pass, unsigned int sim_calls_before, unsigned int sim_calls_after, unsigned int sim_state_before, unsigned int sim_state_after);
-extern void input_demo_log_awareness_result(object *objp, int type, const char *source_tag, int source_objnum, int aux_objnum, int awareness_added, int skipped_observer, int awareness_before, int awareness_after, int agitation_before, int agitation_after, int multiplayer_awareness_allowed, int rng_gate_value, int rng_gate_pass);
-extern void input_demo_log_ai_state(void);
-extern void input_demo_log_ai_frame(void);
-extern void input_demo_log_ai_frame_summary(int traced_robot_count);
 
 vms_vector      Believed_player_pos;
 int             Believed_player_seg;

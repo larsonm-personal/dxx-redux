@@ -225,6 +225,13 @@ static input_demo_path_probe_state g_input_demo_last_path_points[MAX_OBJECTS];
 static const char *input_demo_awareness_source_tag = "unset";
 static int input_demo_awareness_source_objnum = -1;
 static int input_demo_awareness_aux_objnum = -1;
+static int input_demo_record_laser_event_logged_error = 0;
+
+#define INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START 594
+#define INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_END 615
+#define INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT 3
+
+static int input_demo_suspect_spreadfire_signatures[INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT] = { -1, -1, -1 };
 
 void input_demo_set_awareness_source(const char *source_tag, int source_objnum, int aux_objnum)
 {
@@ -268,6 +275,350 @@ int input_demo_trace_ai_active(void)
 int input_demo_replay_awareness_probe_active(void)
 {
 	return input_demo_debug_activity_probe_active();
+}
+
+int input_demo_replay_spreadfire_probe_active(void)
+{
+	return input_demo_debug_is_enabled() &&
+		input_demo_replay_is_loaded() &&
+		Players[Player_num].primary_weapon == SPREADFIRE_INDEX;
+}
+
+static int input_demo_replay_weapon_lifetime_probe_active(void)
+{
+	return input_demo_debug_is_enabled() && input_demo_replay_is_loaded();
+}
+
+int input_demo_replay_weapon_focus_active(void)
+{
+	unsigned int frame;
+
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	frame = (unsigned int)input_demo_replay_next_frame_index();
+	return frame >= 1265 && frame <= 1267;
+}
+
+int input_demo_weapon_trace_active(void)
+{
+	return input_demo_debug_is_enabled() &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+}
+
+static unsigned int input_demo_weapon_trace_frame_index(void)
+{
+	if (input_demo_replay_is_loaded())
+		return (unsigned int)input_demo_replay_next_frame_index();
+	if (input_demo_recorder_is_active()) {
+		const uint32_t frame_count = input_demo_recorder_frame_count();
+
+		return frame_count ? (unsigned int)(frame_count - 1) : 0;
+	}
+	return 0;
+}
+
+static const char *input_demo_weapon_trace_mode_name(void)
+{
+	if (input_demo_replay_is_loaded())
+		return "replay";
+	if (input_demo_recorder_is_active())
+		return "record";
+	return "none";
+}
+
+static int input_demo_replay_weapon_creation_probe_active(void)
+{
+	return input_demo_replay_spreadfire_probe_active() ||
+		input_demo_replay_weapon_lifetime_probe_active();
+}
+
+int input_demo_replay_is_player_owned_weapon(object *obj)
+{
+	return obj &&
+		obj->type == OBJ_WEAPON &&
+		obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
+		obj->ctype.laser_info.parent_num == Players[Player_num].objnum;
+}
+
+int input_demo_weapon_create_probe_active(object *obj)
+{
+	if (!obj || !input_demo_weapon_trace_active())
+		return 0;
+	if (obj->ctype.laser_info.parent_type == OBJ_ROBOT)
+		return !(obj->flags & OF_HARMLESS);
+	return input_demo_replay_is_player_owned_weapon(obj) && obj->id != FLARE_ID;
+}
+
+static void input_demo_reset_suspect_spreadfire_tracking(void)
+{
+	int i;
+
+	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
+		input_demo_suspect_spreadfire_signatures[i] = -1;
+}
+
+static int input_demo_suspect_spreadfire_frame_active(unsigned int frame)
+{
+	return frame >= INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START &&
+		frame <= INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_END;
+}
+
+static void input_demo_refresh_suspect_spreadfire_tracking(void)
+{
+	if (!input_demo_replay_is_loaded() ||
+		input_demo_replay_next_frame_index() < INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START)
+		input_demo_reset_suspect_spreadfire_tracking();
+}
+
+static int input_demo_tracked_suspect_spreadfire_index(object *obj)
+{
+	unsigned int frame;
+	int i;
+
+	if (!obj || !input_demo_replay_is_loaded())
+		return -1;
+
+	input_demo_refresh_suspect_spreadfire_tracking();
+	frame = (unsigned int)input_demo_replay_next_frame_index();
+	if (!input_demo_suspect_spreadfire_frame_active(frame))
+		return -1;
+
+	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
+		if (input_demo_suspect_spreadfire_signatures[i] == obj->signature)
+			return i;
+
+	return -1;
+}
+
+void input_demo_maybe_track_suspect_spreadfire(object *obj)
+{
+	unsigned int frame;
+	int i;
+
+	if (!obj || !input_demo_replay_is_loaded())
+		return;
+
+	input_demo_refresh_suspect_spreadfire_tracking();
+	frame = (unsigned int)input_demo_replay_next_frame_index();
+	if (frame != INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START ||
+		!input_demo_replay_is_player_owned_weapon(obj) ||
+		obj->id != SPREADFIRE_ID)
+		return;
+
+	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
+		if (input_demo_suspect_spreadfire_signatures[i] == obj->signature)
+			return;
+
+	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
+		if (input_demo_suspect_spreadfire_signatures[i] == -1) {
+			input_demo_suspect_spreadfire_signatures[i] = obj->signature;
+			return;
+		}
+}
+
+void input_demo_log_weapon_lifetime(const char *step, object *obj)
+{
+	const int tracked_index = input_demo_tracked_suspect_spreadfire_index(obj);
+
+	if (!obj || !input_demo_weapon_trace_active())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo weapon probe: mode=%s frame=%u gt=%lld step=%s obj=%d id=%d sig=%d track=%d seg=%d life=%d shields=%d flags=0x%x parent_type=%d parent=%d parent_sig=%d last_hit=%d ctime=%lld vel=(%d,%d,%d) pos=(%d,%d,%d) last=(%d,%d,%d)\n",
+		input_demo_weapon_trace_mode_name(),
+		input_demo_weapon_trace_frame_index(),
+		(long long)GameTime64,
+		step,
+		obj - Objects,
+		obj->id,
+		obj->signature,
+		tracked_index,
+		obj->segnum,
+		obj->lifeleft,
+		obj->shields,
+		obj->flags,
+		obj->ctype.laser_info.parent_type,
+		obj->ctype.laser_info.parent_num,
+		obj->ctype.laser_info.parent_signature,
+		obj->ctype.laser_info.last_hitobj,
+		(long long)obj->ctype.laser_info.creation_time,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z,
+		obj->last_pos.x,
+		obj->last_pos.y,
+		obj->last_pos.z);
+}
+
+static void input_demo_record_frame_event_json(const char *json_text)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_append_frame_event_json(json_text, error, sizeof(error)) &&
+		!input_demo_record_laser_event_logged_error) {
+		input_demo_record_laser_event_logged_error = 1;
+		con_printf(CON_NORMAL, "Input demo recorder event append failed: %s\n", error);
+	}
+}
+
+void input_demo_record_weapon_create_event(object *obj)
+{
+	char json[512];
+	const int tracked_index = input_demo_tracked_suspect_spreadfire_index(obj);
+
+	if (!obj)
+		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"weapon_create\",\"gt\":%lld,\"obj\":%d,\"id\":%d,\"sig\":%d,\"track\":%d,\"seg\":%d,\"life\":%d,\"shields\":%d,\"flags\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"ctime\":%lld,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"x\":%d,\"y\":%d,\"z\":%d}",
+		(long long)GameTime64,
+		(int)(obj - Objects),
+		obj->id,
+		obj->signature,
+		tracked_index,
+		obj->segnum,
+		obj->lifeleft,
+		obj->shields,
+		obj->flags,
+		obj->ctype.laser_info.parent_type,
+		obj->ctype.laser_info.parent_num,
+		obj->ctype.laser_info.parent_signature,
+		(long long)obj->ctype.laser_info.creation_time,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z);
+	input_demo_record_frame_event_json(json);
+}
+
+void input_demo_record_player_shot_event(object *obj, int laser_type, int gun_num, int32_t spreadr, int32_t spreadu, int32_t delay_time, int make_sound, int harmless)
+{
+	char json[256];
+
+	if (!obj)
+		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"player_shot\",\"gt\":%lld,\"shooter_obj\":%d,\"laser_type\":%d,\"gun\":%d,\"spreadr\":%d,\"spreadu\":%d,\"delay\":%d,\"harmless\":%s,\"sound\":%s}",
+		(long long)GameTime64,
+		(int)(obj - Objects),
+		laser_type,
+		gun_num,
+		spreadr,
+		spreadu,
+		delay_time,
+		harmless ? "true" : "false",
+		make_sound ? "true" : "false");
+	input_demo_record_frame_event_json(json);
+}
+
+void input_demo_record_spreadfire_emit_event(int nfires, int flags, int spreadfire_toggle, int64_t next_laser_delta, int64_t last_laser_delta)
+{
+	char json[256];
+
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"spreadfire_emit\",\"gt\":%lld,\"nfires\":%d,\"toggle_before\":%d,\"flags\":%d,\"next_laser_delta\":%lld,\"last_laser_delta\":%lld}",
+		(long long)GameTime64,
+		nfires,
+		spreadfire_toggle,
+		flags,
+		(long long)next_laser_delta,
+		(long long)last_laser_delta);
+	input_demo_record_frame_event_json(json);
+}
+
+void input_demo_log_player_bump_probe(const char *step, object *obj0, object *obj1, const vms_vector *relative_velocity, const vms_vector *float_force, fix scale_num, fix scale_den, int damage_flag)
+{
+	const object *player = NULL;
+	const object *other = NULL;
+	const char *mode_name = "none";
+	unsigned int frame_index = 0;
+	vms_vector fix_force = {0, 0, 0};
+	vms_vector force_delta = {0, 0, 0};
+
+	if (!input_demo_debug_is_enabled())
+		return;
+	if (input_demo_replay_is_loaded()) {
+		mode_name = "replay";
+		frame_index = (unsigned int)input_demo_replay_next_frame_index();
+	} else if (input_demo_recorder_is_active()) {
+		const uint32_t frame_count = input_demo_recorder_frame_count();
+
+		mode_name = "record";
+		frame_index = frame_count ? (unsigned int)(frame_count - 1) : 0;
+	} else
+		return;
+
+	if (obj0 == ConsoleObject && obj0 && obj0->type == OBJ_PLAYER &&
+		obj1 && (obj1->type == OBJ_WEAPON || obj1->type == OBJ_ROBOT)) {
+		player = obj0;
+		other = obj1;
+	} else if (obj1 == ConsoleObject && obj1 && obj1->type == OBJ_PLAYER &&
+		obj0 && (obj0->type == OBJ_WEAPON || obj0->type == OBJ_ROBOT)) {
+		player = obj1;
+		other = obj0;
+	}
+	if (!player || !other)
+		return;
+	if (relative_velocity && scale_den) {
+		fix_force.x = fixmuldiv(relative_velocity->x, scale_num, scale_den);
+		fix_force.y = fixmuldiv(relative_velocity->y, scale_num, scale_den);
+		fix_force.z = fixmuldiv(relative_velocity->z, scale_num, scale_den);
+	}
+	if (float_force) {
+		force_delta.x = float_force->x - fix_force.x;
+		force_delta.y = float_force->y - fix_force.y;
+		force_delta.z = float_force->z - fix_force.z;
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d seg=%d pos=(%d,%d,%d) obj1=%d/%d/%d seg=%d pos=(%d,%d,%d) damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
+		mode_name,
+		frame_index,
+		(long long)GameTime64,
+		step,
+		obj0 ? (int)(obj0 - Objects) : -1,
+		obj0 ? obj0->type : -1,
+		obj0 ? obj0->id : -1,
+		obj0 ? obj0->segnum : -1,
+		obj0 ? obj0->pos.x : 0,
+		obj0 ? obj0->pos.y : 0,
+		obj0 ? obj0->pos.z : 0,
+		obj1 ? (int)(obj1 - Objects) : -1,
+		obj1 ? obj1->type : -1,
+		obj1 ? obj1->id : -1,
+		obj1 ? obj1->segnum : -1,
+		obj1 ? obj1->pos.x : 0,
+		obj1 ? obj1->pos.y : 0,
+		obj1 ? obj1->pos.z : 0,
+		damage_flag,
+		relative_velocity ? relative_velocity->x : 0,
+		relative_velocity ? relative_velocity->y : 0,
+		relative_velocity ? relative_velocity->z : 0,
+		scale_num,
+		scale_den,
+		float_force ? float_force->x : 0,
+		float_force ? float_force->y : 0,
+		float_force ? float_force->z : 0,
+		fix_force.x,
+		fix_force.y,
+		fix_force.z,
+		force_delta.x,
+		force_delta.y,
+		force_delta.z,
+		obj0 ? obj0->mtype.phys_info.velocity.x : 0,
+		obj0 ? obj0->mtype.phys_info.velocity.y : 0,
+		obj0 ? obj0->mtype.phys_info.velocity.z : 0,
+		obj1 ? obj1->mtype.phys_info.velocity.x : 0,
+		obj1 ? obj1->mtype.phys_info.velocity.y : 0,
+		obj1 ? obj1->mtype.phys_info.velocity.z : 0,
+		obj0 ? obj0->mtype.phys_info.mass : 0,
+		obj1 ? obj1->mtype.phys_info.mass : 0);
 }
 
 void input_demo_log_score_probe(const char *score_kind, int points, int score_after)
@@ -818,8 +1169,9 @@ void input_demo_log_path_detail(object *objp,
 	input_demo_log_path_robot_state("create_path_points detail", objp);
 }
 
-void input_demo_log_path_points(const char *label, object *objp, point_seg *psegs, int num_points)
+void input_demo_log_path_points(const char *label, object *objp, const void *psegs_data, int num_points)
 {
+	const point_seg *psegs = (const point_seg *)psegs_data;
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 	char segs[512];
 	int i;

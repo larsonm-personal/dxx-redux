@@ -19,7 +19,22 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 $wrapper = Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'
+
+function Get-RegressionBuildGames {
+    param(
+        [object[]]$Demos,
+        [string]$RequestedGame
+    )
+
+    if ($RequestedGame -ne 'auto') {
+        return @($RequestedGame)
+    }
+
+    return @($Demos | ForEach-Object { Get-InputDemoRecordedGameName -DemoPath $_.FullName } | Sort-Object -Unique)
+}
+
 if (-not $DemoRoot) {
     $DemoRoot = Join-Path $repoRoot 'android\regression_demos'
 }
@@ -42,6 +57,12 @@ if ($ListOnly) {
 
 if ($demos.Count -eq 0) {
     throw "No .dximdemo files found under $resolvedDemoRoot"
+}
+
+$buildGames = Get-RegressionBuildGames -Demos $demos -RequestedGame $Game
+foreach ($buildGame in $buildGames) {
+    $preferHeadless = $buildGame -eq 'd2' -and $Mode -eq 'accelerated'
+    Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $buildGame -PreferHeadlessConsole:$preferHeadless
 }
 
 $pwsh = (Get-Process -Id $PID).Path
