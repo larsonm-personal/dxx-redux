@@ -78,6 +78,20 @@ internal fun shouldEnableNetEventsControl(
     hasPendingLaunchInfo: Boolean,
 ): Boolean = shouldEnableNetStatsControl(isMultiplayerGame, hasPendingLaunchInfo)
 
+// Keep text-only flags off numeric editors so number-pad IMEs still commit digits
+internal fun buildKeyboardEditorInputType(baseInputType: Int): Int =
+    when (baseInputType and InputType.TYPE_MASK_CLASS) {
+        InputType.TYPE_CLASS_NUMBER -> {
+            baseInputType
+        }
+
+        else -> {
+            baseInputType or
+                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
+                InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        }
+    }
+
 internal fun shouldUseControllerSettingsTrayShortcuts(
     gamepadOnlyMode: Boolean,
     touchOverlayActive: Boolean,
@@ -2989,9 +3003,7 @@ class MainActivity :
         override fun onCheckIsTextEditor(): Boolean = keyboardActive
 
         override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
-            outAttrs.inputType = currentInputType or
-                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
-                InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            outAttrs.inputType = buildKeyboardEditorInputType(currentInputType)
             outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE or
                 EditorInfo.IME_FLAG_NO_EXTRACT_UI
             return GameInputConnection(this)
@@ -3010,9 +3022,7 @@ class MainActivity :
         override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
             // Disable word prediction / autocorrect so each keystroke arrives
             // immediately via commitText instead of being buffered in composition.
-            outAttrs.inputType = currentInputType or
-                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
-                InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            outAttrs.inputType = buildKeyboardEditorInputType(currentInputType)
             outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE or
                 EditorInfo.IME_FLAG_NO_EXTRACT_UI
             return GameInputConnection(this)
