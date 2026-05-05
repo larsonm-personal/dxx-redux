@@ -85,6 +85,46 @@
   - moved the D2 `ai.c` AI robot trace predicate and long robot-state log printer into `d2/main/input_demo_hooks.c`
   - kept `d2/main/ai.c` down to narrow local `extern` declarations plus the existing frame-level call sites
   - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 17 complete
+  - moved the D2 `ai.c` awareness log printers into `d2/main/input_demo_hooks.c`, including the vulcan roll, add-return, entry, probe, post-add, post-gate, and result log bodies
+  - kept the awareness control flow in `d2/main/ai.c` and replaced the formatter-heavy `con_printf` blocks with short helper calls
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 18 complete
+  - moved the remaining D2 `ai.c` frame-level AI log printers into `d2/main/input_demo_hooks.c`, covering the AI state, AI frame, and AI frame summary messages
+  - removed the now-unused local awareness/frame-name wrappers from `d2/main/ai.c` after the logger moves so the slice stayed warning-clean apart from pre-existing warnings
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 19 complete
+  - moved the remaining D2 `ai.c` awareness/activity gate wrappers into `d2/main/input_demo_hooks.c`
+  - reused the existing `trace_awareness` local in `create_awareness_event()` so the legacy AI file keeps only the control-flow call sites instead of repeated gate calls
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 20 complete
+  - replaced the remaining D2 `object.c` lifecycle delete predicate-plus-printer block with a single `input_demo_log_robot_lifecycle_delete(objnum, obj)` helper in `d2/main/input_demo_hooks.c`
+  - kept `d2/main/object.c` down to the `obj_delete()` call site plus a narrow local `extern`, removing the last formatter-heavy lifecycle delete logging body from the legacy file
+  - validated with a subsequent `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 21 complete
+  - moved the repeated D2 `gauges.c` replay score probe printers into `d2/main/input_demo_hooks.c` as `input_demo_log_score_probe()`
+  - kept `d2/main/gauges.c` down to the existing score update and record calls plus a narrow local `extern`, removing the formatter-heavy replay score log bodies from the legacy file
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 22 complete
+  - moved the D2 `collide.c` replay reactor hit and reactor destroyed log bodies into `d2/main/input_demo_hooks.c`
+  - kept `d2/main/collide.c` down to the existing control-center damage flow plus narrow local `extern` calls, removing another pair of formatter-heavy replay log bodies from the legacy file
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 23 complete
+  - moved the remaining D2 `collide.c` player-wall, weapon-wall, player-robot, and weapon-robot impact probe log bodies plus the player-wall replay collision probe and the replay robot/player damage log bodies into `d2/main/input_demo_hooks.c`
+  - kept `d2/main/collide.c` down to the collision control flow, the existing trace/replay gates, and narrow local `extern` calls instead of formatter-heavy `con_printf` blocks
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 24 complete
+  - moved the long D2 `collide.c` player-weapon-hit replay printer into `d2/main/input_demo_hooks.c`
+  - kept the legacy collision path down to the existing gate and a single helper call, so the parent-slot scratch locals and formatter-heavy log body no longer live in `d2/main/collide.c`
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 25 complete
+  - moved the D2 `collide.c` replay powerup before/after probe printers into `d2/main/input_demo_hooks.c`
+  - kept the legacy powerup path down to the existing replay-frame gate, the live energy/shields locals, and narrow local `extern` calls instead of the probe formatter bodies
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
+- Phase 26 complete
+  - moved the final standalone D2 `collide.c` object-object replay collision probe printer into `d2/main/input_demo_hooks.c`
+  - finished the current collide replay-printer cleanup so the legacy collision file now keeps the gates and control flow while the replay log bodies live in the hook file
+  - validated with `run-windows-build.ps1 -Target d2`, the focused D2 headless replay smoke test, and `android\gradlew.bat ":app:buildCMakeDebug[arm64-v8a]-2"`
 
 ## Existing Dedicated Input Demo Files
 - Keep using `d2/main/input_demo_start.c` and `d2/main/input_demo_start.h` for D2 replay startup logic
@@ -302,19 +342,20 @@
 ### D2 robot lifecycle and object probes
 - Current file: `d2/main/object.c`
 - Move to: `d2/main/input_demo_hooks.c`, robot/object section
-- Status: largely completed for lifecycle helpers and the visual/render logging printers
+- Status: completed for the current lifecycle helper set and visual/render logging printers
 - Functions:
   - `input_demo_trace_ai_rng_active`
   - `input_demo_robot_lifecycle_probe_active`
   - `input_demo_robot_visual_probe_active`
   - `input_demo_robot_lifecycle_is_target`
 - Original `object.c` now keeps the local call sites while the lifecycle predicate helpers and visual/render logging printers live in `d2/main/input_demo_hooks.c`
-- Prefer replacing `input_demo_robot_lifecycle_is_target` call sites with a single `input_demo_log_robot_lifecycle_delete(objnum, obj)` helper so `object.c` does not keep target-selection details
+- Completed in the current tranches:
+  - `input_demo_log_robot_lifecycle_delete(objnum, obj)` now owns the lifecycle delete target-selection detail and log body
 
 ### D2 AI and awareness probes
 - Current files: `d2/main/ai.c`, `d2/main/ai2.c`
 - Move to: `d2/main/input_demo_hooks.c`, AI section
-- Status: partially completed for awareness-source ownership, the `ai2.c` robot-fire probe helpers, the `ai.c` robot pose/view probe block, and the `ai.c` AI robot trace/log helper pair
+- Status: largely completed for awareness-source ownership, the `ai2.c` robot-fire probe helpers, the `ai.c` robot pose/view probe block, the `ai.c` AI robot trace/log helper pair, the awareness log printers, the frame-level AI log printers, and the awareness/activity gate wrappers
 - Functions and state:
   - `Input_demo_awareness_source_tag`
   - `Input_demo_awareness_source_objnum`
@@ -328,7 +369,6 @@
   - `input_demo_trace_robot_is_in_view`
   - `input_demo_trace_tracked_robot_poses`
   - `input_demo_replay_awareness_probe_active`
-  - `input_demo_awareness_probe_mode_name`
   - `input_demo_set_awareness_source`
   - `input_demo_trace_ai_robot_active`
   - `input_demo_log_ai_robot_state`
@@ -339,8 +379,11 @@
   - `ai2.c` robot fire helpers
   - `ai.c` robot pose/view probe helpers and tracked-pose logging block
   - `ai.c` AI robot trace predicate and long robot-state printer
+  - `ai.c` awareness log printers
+  - `ai.c` frame-level AI state/frame printers
+  - `ai.c` awareness/activity gate wrappers
 - Remaining in `ai.c` and `ai2.c` for now:
-  - awareness probe mode/activity helpers
+  - any remaining direct awareness probe/log call sites that still sit beside the AI transitions
 
 ### D2 weapon, collision, score, and frame-event recording
 - Current files: `d2/main/laser.c`, `d2/main/collide.c`, `d2/main/gauges.c`, `d2/main/fireball.c`, `d2/main/fvi.c`
@@ -351,6 +394,15 @@
   - `gauges.c`: `input_demo_record_score_event`
   - `fireball.c`: explosion probe helpers
   - `fvi.c`: FVI weapon/robot check helpers
+- Completed in the current tranches:
+  - `gauges.c` replay score probe printers now route through `input_demo_log_score_probe()` in `d2/main/input_demo_hooks.c`
+  - `collide.c` replay reactor hit/destroyed printers now route through hook helpers in `d2/main/input_demo_hooks.c`
+  - `collide.c` impact probes, the player-wall replay collision probe, and the replay robot/player damage printers now route through hook helpers in `d2/main/input_demo_hooks.c`
+  - `collide.c` player-weapon-hit replay printer now routes through a hook helper in `d2/main/input_demo_hooks.c`
+  - `collide.c` replay powerup before/after probe printers now route through hook helpers in `d2/main/input_demo_hooks.c`
+  - `collide.c` object-object replay collision probe now routes through a hook helper in `d2/main/input_demo_hooks.c`
+- Remaining in `collide.c` for now:
+  - collision pose/player bump helper cleanup
 - Consolidate repeated `input_demo_record_frame_event_json` bodies during this move
 
 ### D2 movement, controls, render, UI RNG, and escort probes

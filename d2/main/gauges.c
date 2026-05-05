@@ -64,6 +64,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 
+extern void input_demo_log_score_probe(const char *score_kind, int points, int score_after);
+
 static int Input_demo_record_score_event_logged_error = 0;
 
 static void input_demo_record_frame_event_json(const char *json_text)
@@ -1600,13 +1602,7 @@ void add_points_to_score(int points)
 
 	Players[Player_num].score += points;
 	input_demo_record_score_event("normal", points);
-	if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
-		con_printf(CON_NORMAL,
-			"Input demo replay score probe: frame=%u gt=%lld kind=normal delta=%d score=%d\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
-			(long long)GameTime64,
-			points,
-			Players[Player_num].score);
+	input_demo_log_score_probe("normal", points, Players[Player_num].score);
 
 	if (Newdemo_state == ND_STATE_RECORDING)
 		newdemo_record_player_score(points);
@@ -1639,13 +1635,7 @@ void add_bonus_points_to_score(int points)
 
 	Players[Player_num].score += points;
 	input_demo_record_score_event("bonus", points);
-	if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
-		con_printf(CON_NORMAL,
-			"Input demo replay score probe: frame=%u gt=%lld kind=bonus delta=%d score=%d\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
-			(long long)GameTime64,
-			points,
-			Players[Player_num].score);
+	input_demo_log_score_probe("bonus", points, Players[Player_num].score);
 
 
 	if (Newdemo_state == ND_STATE_RECORDING)

@@ -75,6 +75,20 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "input_demo_debug_logging.h"
+
+extern void input_demo_log_reactor_hit(object *controlcen, fix damage, fix old_shields);
+extern void input_demo_log_reactor_destroyed(object *controlcen);
+extern void input_demo_log_collision_player_wall_impact(const char *mode_name, unsigned int frame_index, object *playerobj, int hitseg, int hitwall, int hitspeed, int damage, int force_field_hit);
+extern void input_demo_log_replay_player_wall_collision(object *playerobj, int hitseg, int hitwall, int hitspeed, const vms_vector *hitpt);
+extern void input_demo_log_collision_weapon_wall_impact(const char *mode_name, unsigned int frame_index, object *weapon, int hitwall, int blew_up, int robot_escort);
+extern void input_demo_log_collision_player_robot_impact(const char *mode_name, unsigned int frame_index, object *playerobj, object *robot);
+extern void input_demo_log_collision_weapon_robot_impact(const char *mode_name, unsigned int frame_index, object *weapon, object *robot);
+extern void input_demo_log_replay_robot_damage(object *robot, fix damage, fix old_shields);
+extern void input_demo_log_player_damage_probe(const char *mode_name, unsigned int frame_index, int damage, fix old_shields, fix shields_after, int killer_type, int killer_obj, int killer_id, int killer_sig, int killer_seg, int possibly_friendly);
+extern void input_demo_log_player_weapon_hit(const char *mode_name, unsigned int frame_index, object *weapon, object *playerobj, int damage, const vms_vector *collision_point);
+extern void input_demo_log_replay_powerup_probe_before(object *powerup, int energy_before, int shields_before);
+extern void input_demo_log_replay_powerup_probe_after(object *powerup, int powerup_used, int energy_before, int energy_after, int shields_before, int shields_after);
+extern void input_demo_log_replay_object_object_collision(object *a, object *b, const vms_vector *collision_point);
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -559,11 +573,10 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 		volume = (hitspeed-(WALL_DAMAGE_SCALE*WALL_DAMAGE_THRESHOLD)) / WALL_LOUDNESS_SCALE ;
 
 		if (input_demo_trace_collision_pose_active())
-			con_printf(CON_NORMAL,
-				"Input demo impact probe: mode=%s frame=%u kind=player_wall player_obj=%d seg=%d hitwall=%d hitspeed=%d damage=%d force=%d\n",
+			input_demo_log_collision_player_wall_impact(
 				input_demo_trace_collision_mode_name(),
 				input_demo_trace_collision_frame_index(),
-				playerobj - Objects,
+				playerobj,
 				hitseg,
 				hitwall,
 				hitspeed,
@@ -596,20 +609,7 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 			  	apply_damage_to_player( playerobj, playerobj, damage, 0 );			  	
 			}
 				if (input_demo_replay_collision_probe_active() && playerobj == ConsoleObject)
-					con_printf(CON_NORMAL,
-						"Input demo replay collision probe: frame=%u gt=%lld step=player_wall seg=%d hitseg=%d wall=%d speed=%d pos=(%d,%d,%d) hit=(%d,%d,%d)\n",
-						(unsigned int)input_demo_replay_next_frame_index(),
-						(long long)GameTime64,
-						playerobj->segnum,
-						hitseg,
-						hitwall,
-						hitspeed,
-						playerobj->pos.x,
-						playerobj->pos.y,
-						playerobj->pos.z,
-						hitpt ? hitpt->x : 0,
-						hitpt ? hitpt->y : 0,
-						hitpt ? hitpt->z : 0);
+					input_demo_log_replay_player_wall_collision(playerobj, hitseg, hitwall, hitspeed, hitpt);
 		}
 
 		// -- No point in doing this unless we compute a reasonable hitpt.  Currently it is just the player's position. --MK, 01/18/96
@@ -1060,14 +1060,10 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 		if (!(weapon->flags & OF_SILENT) && (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)) {
 			input_demo_record_wall_impact_event(weapon, hitwall, blew_up, robot_escort);
 			if (input_demo_trace_collision_pose_active())
-				con_printf(CON_NORMAL,
-					"Input demo impact probe: mode=%s frame=%u kind=wall weapon_obj=%d weapon_id=%d parent=%d seg=%d hitwall=%d blew_up=%d escort=%d\n",
+				input_demo_log_collision_weapon_wall_impact(
 					input_demo_trace_collision_mode_name(),
 					input_demo_trace_collision_frame_index(),
-					weapon - Objects,
-					weapon->id,
-					weapon->ctype.laser_info.parent_num,
-					weapon->segnum,
+					weapon,
 					hitwall,
 					blew_up,
 					robot_escort);
@@ -1246,14 +1242,11 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 		}
 
 		if (input_demo_trace_collision_pose_active())
-			con_printf(CON_NORMAL,
-				"Input demo impact probe: mode=%s frame=%u kind=player_robot player_obj=%d robot_obj=%d robot_id=%d seg=%d\n",
+			input_demo_log_collision_player_robot_impact(
 				input_demo_trace_collision_mode_name(),
 				input_demo_trace_collision_frame_index(),
-				playerobj - Objects,
-				robot - Objects,
-				robot->id,
-				playerobj->segnum);
+				playerobj,
+				robot);
 
 		input_demo_set_awareness_source("collide_player_robot", playerobj - Objects, robot - Objects);
 		create_awareness_event(playerobj, PA_PLAYER_COLLISION);			// object robot can attract attention to player
@@ -1345,25 +1338,11 @@ void apply_damage_to_controlcen(object *controlcen, fix damage, short who)
 	if ( controlcen->shields >= 0 )
 		controlcen->shields -= damage;
 
-	if (input_demo_replay_is_loaded() && Objects[who].id == Player_num)
-		con_printf(CON_NORMAL,
-			"Input demo replay reactor hit: gt=%lld frame=%u damage=%d shields=%d->%d seg=%d obj=%d\n",
-			(long long)GameTime64,
-			(unsigned int)input_demo_replay_next_frame_index(),
-			f2i(damage),
-			f2i(old_shields),
-			f2i(controlcen->shields),
-			controlcen->segnum,
-			(int)(controlcen - Objects));
+	if (Objects[who].id == Player_num)
+		input_demo_log_reactor_hit(controlcen, damage, old_shields);
 
 	if ( (controlcen->shields < 0) && !(controlcen->flags&(OF_EXPLODING|OF_DESTROYED)) ) {
-		if (input_demo_replay_is_loaded())
-			con_printf(CON_NORMAL,
-				"Input demo replay reactor destroyed: gt=%lld frame=%u seg=%d obj=%d\n",
-				(long long)GameTime64,
-				(unsigned int)input_demo_replay_next_frame_index(),
-				controlcen->segnum,
-				(int)(controlcen - Objects));
+		input_demo_log_reactor_destroyed(controlcen);
 
 		do_controlcen_destroyed_stuff(controlcen);
 
@@ -1630,21 +1609,7 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 	robot->shields -= damage;
 	newdemo_dump_note_robot_damage(robot, old_shields, damage);
 	input_demo_record_robot_damage_event(robot, damage, old_shields);
-	if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
-		con_printf(CON_NORMAL,
-			"Input demo replay robot damage: gt=%lld frame=%u robot_obj=%d robot_sig=%d robot_id=%d damage=%d shields=%d->%d dead=%d pos=(%d,%d,%d)\n",
-			(long long)GameTime64,
-			(unsigned int)input_demo_replay_next_frame_index(),
-			(int)(robot - Objects),
-			robot->signature,
-			robot->id,
-			damage,
-			old_shields,
-			robot->shields,
-			robot->shields < 0,
-			robot->pos.x,
-			robot->pos.y,
-			robot->pos.z);
+	input_demo_log_replay_robot_damage(robot, damage, old_shields);
 
 #ifdef __ANDROID__
 	/* android port: coop QoL -- track engagement for warp availability */
@@ -1979,16 +1944,11 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 		if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) {
 			input_demo_record_robot_impact_event(weapon, robot);
 			if (input_demo_trace_collision_pose_active())
-				con_printf(CON_NORMAL,
-					"Input demo impact probe: mode=%s frame=%u kind=robot weapon_obj=%d weapon_id=%d parent=%d robot_obj=%d robot_id=%d seg=%d\n",
+				input_demo_log_collision_weapon_robot_impact(
 					input_demo_trace_collision_mode_name(),
 					input_demo_trace_collision_frame_index(),
-					weapon - Objects,
-					weapon->id,
-					weapon->ctype.laser_info.parent_num,
-					robot - Objects,
-					robot->id,
-					weapon->segnum);
+					weapon,
+					robot);
 			input_demo_set_awareness_source("collide_weapon_robot", weapon - Objects, robot - Objects);
 			create_awareness_event(weapon, PA_WEAPON_ROBOT_COLLISION);			// object "weapon" can attract attention to player
 			do_ai_robot_hit(robot, PA_WEAPON_ROBOT_COLLISION);
@@ -2611,10 +2571,8 @@ void apply_damage_to_player(object *playerobj, object *killer, fix damage, ubyte
 		Players[Player_num].shields -= damage;
 		input_demo_record_player_damage_event(damage, old_shields, killer, possibly_friendly);
 		if (input_demo_trace_collision_pose_active())
-			con_printf(CON_NORMAL,
-				"Input demo player damage: mode=%s gt=%lld frame=%u damage=%d shields=%d->%d killer_type=%d killer_obj=%d killer_id=%d killer_sig=%d killer_seg=%d friendly=%d\n",
+			input_demo_log_player_damage_probe(
 				input_demo_trace_collision_mode_name(),
-				(long long)GameTime64,
 				input_demo_trace_collision_frame_index(),
 				damage,
 				old_shields,
@@ -2809,52 +2767,13 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 
 		if (!(weapon->flags & OF_HARMLESS)) {
 			if (input_demo_trace_collision_pose_active() && playerobj->id == Player_num) {
-				int weapon_obj = (int)(weapon - Objects);
-				int parent_num = weapon->ctype.laser_info.parent_num;
-				int parent_slot_valid = parent_num > -1 && parent_num <= Highest_object_index;
-				int parent_slot_type = parent_slot_valid ? Objects[parent_num].type : -1;
-				int parent_slot_id = parent_slot_valid ? Objects[parent_num].id : -1;
-				int parent_slot_sig = parent_slot_valid ? Objects[parent_num].signature : -1;
-				int parent_slot_seg = parent_slot_valid ? Objects[parent_num].segnum : -1;
-
-				con_printf(CON_NORMAL,
-					"Input demo player weapon hit: mode=%s gt=%lld frame=%u weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d damage=%d parent_type=%d parent_num=%d parent_sig=%d slot_valid=%d slot_type=%d slot_id=%d slot_sig=%d slot_seg=%d sig_match=%d weapon_life=%d weapon_shields=%d weapon_flags=0x%x weapon_ctime=%lld weapon_pos=(%d,%d,%d) weapon_vel=(%d,%d,%d) player_pos=(%d,%d,%d) player_vel=(%d,%d,%d) hit=(%d,%d,%d)\n",
+				input_demo_log_player_weapon_hit(
 					input_demo_trace_collision_mode_name(),
-					(long long)GameTime64,
 					input_demo_trace_collision_frame_index(),
-					weapon_obj,
-					weapon->id,
-					weapon->signature,
-					weapon->segnum,
+					weapon,
+					playerobj,
 					damage,
-					weapon->ctype.laser_info.parent_type,
-					parent_num,
-					weapon->ctype.laser_info.parent_signature,
-					parent_slot_valid,
-					parent_slot_type,
-					parent_slot_id,
-					parent_slot_sig,
-					parent_slot_seg,
-					parent_slot_valid && parent_slot_sig == weapon->ctype.laser_info.parent_signature,
-					weapon->lifeleft,
-					weapon->shields,
-					weapon->flags,
-					(long long)weapon->ctype.laser_info.creation_time,
-					weapon->pos.x,
-					weapon->pos.y,
-					weapon->pos.z,
-					weapon->mtype.phys_info.velocity.x,
-					weapon->mtype.phys_info.velocity.y,
-					weapon->mtype.phys_info.velocity.z,
-					playerobj->pos.x,
-					playerobj->pos.y,
-					playerobj->pos.z,
-					playerobj->mtype.phys_info.velocity.x,
-					playerobj->mtype.phys_info.velocity.y,
-					playerobj->mtype.phys_info.velocity.z,
-					collision_point ? collision_point->x : 0,
-					collision_point ? collision_point->y : 0,
-					collision_point ? collision_point->z : 0);
+					collision_point);
 			}
 
 			if(playerobj->id == Player_num && ! Player_is_dead) {
@@ -3030,33 +2949,12 @@ void collide_player_and_powerup( object * playerobj, object * powerup, vms_vecto
 		int shields_before = Players[Player_num].shields;
 
 		if (input_demo_replay_powerup_probe_active())
-			con_printf(CON_NORMAL,
-				"Input demo replay powerup probe: frame=%u step=before obj=%d id=%d energy=%d shields=%d flags=0x%x seg=%d pos=(%d,%d,%d)\n",
-				(unsigned int)input_demo_replay_next_frame_index(),
-				(int)(powerup - Objects),
-				powerup->id,
-				energy_before,
-				shields_before,
-				powerup->flags,
-				powerup->segnum,
-				powerup->pos.x,
-				powerup->pos.y,
-				powerup->pos.z);
+			input_demo_log_replay_powerup_probe_before(powerup, energy_before, shields_before);
 
 		powerup_used = do_powerup(powerup);
 		if (input_demo_replay_powerup_probe_active())
-			con_printf(CON_NORMAL,
-				"Input demo replay powerup probe: frame=%u step=after obj=%d id=%d used=%d energy_before=%d energy_after=%d shields_before=%d shields_after=%d flags=0x%x dead=%d\n",
-				(unsigned int)input_demo_replay_next_frame_index(),
-				(int)(powerup - Objects),
-				powerup->id,
-				powerup_used,
-				energy_before,
-				Players[Player_num].energy,
-				shields_before,
-				Players[Player_num].shields,
-				powerup->flags,
-				(powerup->flags & OF_SHOULD_BE_DEAD) != 0);
+			input_demo_log_replay_powerup_probe_after(powerup, powerup_used, energy_before,
+				Players[Player_num].energy, shields_before, Players[Player_num].shields);
 
 		if (powerup_used)	{
 			powerup->flags |= OF_SHOULD_BE_DEAD;
@@ -3252,21 +3150,7 @@ void collide_two_objects( object * A, object * B, vms_vector *collision_point )
 
 	if (input_demo_replay_collision_probe_active() &&
 		(A == ConsoleObject || B == ConsoleObject))
-		con_printf(CON_NORMAL,
-			"Input demo replay collision probe: frame=%u gt=%lld step=object_object a=%d/%d/%d seg=%d b=%d/%d/%d seg=%d point=(%d,%d,%d)\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
-			(long long)GameTime64,
-			(int)(A - Objects),
-			A->type,
-			A->id,
-			A->segnum,
-			(int)(B - Objects),
-			B->type,
-			B->id,
-			B->segnum,
-			collision_point ? collision_point->x : 0,
-			collision_point ? collision_point->y : 0,
-			collision_point ? collision_point->z : 0);
+		input_demo_log_replay_object_object_collision(A, B, collision_point);
 
 	collision_type = COLLISION_OF(A->type,B->type);
 

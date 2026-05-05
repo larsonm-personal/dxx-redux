@@ -132,8 +132,20 @@ int             Num_awareness_events = 0;
 awareness_event Awareness_events[MAX_AWARENESS_EVENTS];
 extern void input_demo_consume_awareness_source(const char **source_tag, int *source_objnum, int *aux_objnum);
 extern void input_demo_trace_tracked_robot_poses(void);
+extern int input_demo_trace_ai_active(void);
+extern int input_demo_replay_awareness_probe_active(void);
 extern int input_demo_trace_ai_robot_active(object *objp, ai_static *aip, ai_local *ailp);
 extern void input_demo_log_ai_robot_state(const char *label, object *objp);
+extern void input_demo_log_awareness_vulcan_roll(object *objp, int type, int vulcan_roll, unsigned int sim_calls_before, unsigned int sim_state_before);
+extern void input_demo_log_awareness_add_return(const char *reason, object *objp, int type, int added, unsigned int sim_calls_before, unsigned int sim_calls_after, unsigned int sim_state_before, unsigned int sim_state_after);
+extern void input_demo_log_awareness_entry(object *objp, int type, const char *source_tag, int source_objnum, int aux_objnum, unsigned int sim_calls_entry, unsigned int sim_state_entry, int num_awareness_before, int overall_agitation_before, int multiplayer_awareness_allowed);
+extern void input_demo_log_awareness_probe(object *objp, int type);
+extern void input_demo_log_awareness_post_add(object *objp, int type, int awareness_added, unsigned int sim_calls_entry, unsigned int sim_calls_after_add, unsigned int sim_state_entry, unsigned int sim_state_after_add);
+extern void input_demo_log_awareness_post_gate(object *objp, int type, int rng_gate_value, int rng_gate_pass, unsigned int sim_calls_before, unsigned int sim_calls_after, unsigned int sim_state_before, unsigned int sim_state_after);
+extern void input_demo_log_awareness_result(object *objp, int type, const char *source_tag, int source_objnum, int aux_objnum, int awareness_added, int skipped_observer, int awareness_before, int awareness_after, int agitation_before, int agitation_after, int multiplayer_awareness_allowed, int rng_gate_value, int rng_gate_pass);
+extern void input_demo_log_ai_state(void);
+extern void input_demo_log_ai_frame(void);
+extern void input_demo_log_ai_frame_summary(int traced_robot_count);
 
 vms_vector      Believed_player_pos;
 int             Believed_player_seg;
@@ -245,26 +257,6 @@ static const sbyte Ai_transition_table[AI_MAX_EVENT][AI_MAX_STATE][AI_MAX_STATE]
 
 fix Dist_to_last_fired_upon_player_pos = 0;
 
-static int input_demo_trace_ai_active(void)
-{
-	return input_demo_debug_record_probe_active();
-}
-
-static unsigned int input_demo_trace_frame_index(void)
-{
-	return input_demo_debug_frame_index();
-}
-
-static int input_demo_replay_awareness_probe_active(void)
-{
-	return input_demo_debug_activity_probe_active();
-}
-
-static const char *input_demo_awareness_probe_mode_name(void)
-{
-	return input_demo_debug_activity_mode_name();
-}
-
 // ----------------------------------------------------------------------------
 void init_ai_frame(void)
 {
@@ -274,24 +266,7 @@ void init_ai_frame(void)
 
 	Dist_to_last_fired_upon_player_pos = vm_vec_dist_quick(&Last_fired_upon_player_pos, &Believed_player_pos);
 	if (input_demo_trace_ai_active())
-		con_printf(CON_NORMAL,
-			"Input demo replay AI state: frame=%u gt=%lld player_seg=%d believed_seg=%d player=(%d,%d,%d) believed=(%d,%d,%d) last_fired=(%d,%d,%d) dist=%d events=%d agitation=%d\n",
-			input_demo_trace_frame_index(),
-			(long long)GameTime64,
-			ConsoleObject->segnum,
-			Believed_player_seg,
-			ConsoleObject->pos.x,
-			ConsoleObject->pos.y,
-			ConsoleObject->pos.z,
-			Believed_player_pos.x,
-			Believed_player_pos.y,
-			Believed_player_pos.z,
-			Last_fired_upon_player_pos.x,
-			Last_fired_upon_player_pos.y,
-			Last_fired_upon_player_pos.z,
-			Dist_to_last_fired_upon_player_pos,
-			Num_awareness_events,
-			Overall_agitation);
+		input_demo_log_ai_state();
 
 	ab_state = Players[Player_num].afterburner_charge && Controls.afterburner_state && (Players[Player_num].flags & PLAYER_FLAGS_AFTERBURNER);
 
@@ -1404,30 +1379,14 @@ int add_awareness_event(object *objp, int type)
 				{
 					const int vulcan_roll = d_rand();
 					if (trace_awareness)
-						con_printf(CON_NORMAL,
-							"Input demo awareness vulcan roll: mode=%s frame=%u gt=%lld type=%d obj=%d roll=%d threshold=3276 calls_before=%u state_before=%u\n",
-							input_demo_awareness_probe_mode_name(),
-							input_demo_trace_frame_index(),
-							(long long)GameTime64,
-							type,
-							objp - Objects,
-							vulcan_roll,
-							sim_calls_before,
-							sim_state_before);
+						input_demo_log_awareness_vulcan_roll(objp, type, vulcan_roll,
+							sim_calls_before, sim_state_before);
 					if (vulcan_roll > 3276) {
 						if (trace_awareness) {
 							sim_calls_after = d_rand_get_call_count();
 							d_rand_get_state(&sim_state_after);
-							con_printf(CON_NORMAL,
-								"Input demo awareness add return: mode=%s frame=%u gt=%lld type=%d obj=%d added=0 reason=vulcan calls=%u->%u state=%u->%u\n",
-								input_demo_awareness_probe_mode_name(),
-								input_demo_trace_frame_index(),
-								(long long)GameTime64,
-								type,
-								objp - Objects,
-								sim_calls_before,
-								sim_calls_after,
-								sim_state_before,
+							input_demo_log_awareness_add_return("vulcan", objp, type, 0,
+								sim_calls_before, sim_calls_after, sim_state_before,
 								sim_state_after);
 						}
 						return 0;
@@ -1447,17 +1406,8 @@ int add_awareness_event(object *objp, int type)
 	if (trace_awareness) {
 		sim_calls_after = d_rand_get_call_count();
 		d_rand_get_state(&sim_state_after);
-		con_printf(CON_NORMAL,
-			"Input demo awareness add return: mode=%s frame=%u gt=%lld type=%d obj=%d added=1 calls=%u->%u state=%u->%u\n",
-			input_demo_awareness_probe_mode_name(),
-			input_demo_trace_frame_index(),
-			(long long)GameTime64,
-			type,
-			objp - Objects,
-			sim_calls_before,
-			sim_calls_after,
-			sim_state_before,
-			sim_state_after);
+		input_demo_log_awareness_add_return(NULL, objp, type, 1, sim_calls_before,
+			sim_calls_after, sim_state_before, sim_state_after);
 	}
 	return 1;
 
@@ -1490,75 +1440,22 @@ void create_awareness_event(object *objp, int type)
 	if (trace_awareness) {
 		sim_calls_entry = d_rand_get_call_count();
 		d_rand_get_state(&sim_state_entry);
-		con_printf(CON_NORMAL,
-			"Input demo awareness entry: mode=%s frame=%u gt=%lld type=%d obj=%d source=%s source_obj=%d aux_obj=%d calls=%u state=%u awareness=%d agitation=%d gate=%d\n",
-			input_demo_awareness_probe_mode_name(),
-			input_demo_trace_frame_index(),
-			(long long)GameTime64,
-			type,
-			objp - Objects,
-			source_tag,
-			source_objnum,
-			aux_objnum,
-			sim_calls_entry,
-			sim_state_entry,
-			num_awareness_before,
-			overall_agitation_before,
-			multiplayer_awareness_allowed);
+		input_demo_log_awareness_entry(objp, type, source_tag, source_objnum,
+			aux_objnum, sim_calls_entry, sim_state_entry, num_awareness_before,
+			overall_agitation_before, multiplayer_awareness_allowed);
 	}
 
 	if (object_is_observer(objp)) {
-		if (input_demo_replay_awareness_probe_active())
-			con_printf(CON_NORMAL,
-				"Input demo awareness result: mode=%s frame=%u gt=%lld type=%d obj=%d source=%s source_obj=%d aux_obj=%d skipped=observer awareness=%d->%d agitation=%d->%d gate=%d rng=%d rng_pass=%d\n",
-				input_demo_awareness_probe_mode_name(),
-				input_demo_trace_frame_index(),
-				(long long)GameTime64,
-				type,
-				objp - Objects,
-				source_tag,
-				source_objnum,
-				aux_objnum,
-				num_awareness_before,
-				Num_awareness_events,
-				overall_agitation_before,
-				Overall_agitation,
-				multiplayer_awareness_allowed,
-				rng_gate_value,
-				rng_gate_pass);
+		if (trace_awareness)
+			input_demo_log_awareness_result(objp, type, source_tag, source_objnum,
+				aux_objnum, awareness_added, 1, num_awareness_before,
+				Num_awareness_events, overall_agitation_before, Overall_agitation,
+				multiplayer_awareness_allowed, rng_gate_value, rng_gate_pass);
 		return;
 	}
 
-	if (input_demo_replay_awareness_probe_active()) {
-		int parent_type = -1;
-		int parent_num = -1;
-		int parent_sig = -1;
-
-		if (objp->type == OBJ_WEAPON) {
-			parent_type = objp->ctype.laser_info.parent_type;
-			parent_num = objp->ctype.laser_info.parent_num;
-			parent_sig = objp->ctype.laser_info.parent_signature;
-		}
-
-		con_printf(CON_NORMAL,
-			"Input demo awareness probe: mode=%s frame=%u gt=%lld type=%d obj=%d obj_type=%d obj_id=%d sig=%d seg=%d life=%d flags=%d parent_type=%d parent_num=%d parent_sig=%d pos=(%d,%d,%d)\n",
-			input_demo_awareness_probe_mode_name(),
-			input_demo_trace_frame_index(),
-			(long long)GameTime64,
-			type,
-			objp - Objects,
-			objp->type,
-			objp->id,
-			objp->signature,
-			objp->segnum,
-			objp->lifeleft,
-			objp->flags,
-			parent_type,
-			parent_num,
-			parent_sig,
-			objp->pos.x,
-			objp->pos.y,
-			objp->pos.z);
+	if (trace_awareness) {
+		input_demo_log_awareness_probe(objp, type);
 	}
 
 	// If not in multiplayer, or in multiplayer with robots, do this, else unnecessary!
@@ -1567,17 +1464,8 @@ void create_awareness_event(object *objp, int type)
 		if (trace_awareness) {
 			sim_calls_after_add = d_rand_get_call_count();
 			d_rand_get_state(&sim_state_after_add);
-			con_printf(CON_NORMAL,
-				"Input demo awareness post-add: mode=%s frame=%u gt=%lld type=%d obj=%d added=%d calls=%u->%u state=%u->%u\n",
-				input_demo_awareness_probe_mode_name(),
-				input_demo_trace_frame_index(),
-				(long long)GameTime64,
-				type,
-				objp - Objects,
-				awareness_added,
-				sim_calls_entry,
-				sim_calls_after_add,
-				sim_state_entry,
+			input_demo_log_awareness_post_add(objp, type, awareness_added,
+				sim_calls_entry, sim_calls_after_add, sim_state_entry,
 				sim_state_after_add);
 		}
 		if (awareness_added) {
@@ -1586,19 +1474,9 @@ void create_awareness_event(object *objp, int type)
 			if (trace_awareness) {
 				sim_calls_after_gate = d_rand_get_call_count();
 				d_rand_get_state(&sim_state_after_gate);
-				con_printf(CON_NORMAL,
-					"Input demo awareness post-gate: mode=%s frame=%u gt=%lld type=%d obj=%d rng=%d pass=%d calls=%u->%u state=%u->%u\n",
-					input_demo_awareness_probe_mode_name(),
-					input_demo_trace_frame_index(),
-					(long long)GameTime64,
-					type,
-					objp - Objects,
-					rng_gate_value,
-					rng_gate_pass,
-					sim_calls_after_add,
-					sim_calls_after_gate,
-					sim_state_after_add,
-					sim_state_after_gate);
+				input_demo_log_awareness_post_gate(objp, type, rng_gate_value,
+					rng_gate_pass, sim_calls_after_add, sim_calls_after_gate,
+					sim_state_after_add, sim_state_after_gate);
 			}
 			if (rng_gate_pass)
 				Overall_agitation++;
@@ -1607,25 +1485,11 @@ void create_awareness_event(object *objp, int type)
 		}
 	}
 
-	if (input_demo_replay_awareness_probe_active())
-		con_printf(CON_NORMAL,
-			"Input demo awareness result: mode=%s frame=%u gt=%lld type=%d obj=%d source=%s source_obj=%d aux_obj=%d added=%d awareness=%d->%d agitation=%d->%d gate=%d rng=%d rng_pass=%d\n",
-			input_demo_awareness_probe_mode_name(),
-			input_demo_trace_frame_index(),
-			(long long)GameTime64,
-			type,
-			objp - Objects,
-			source_tag,
-			source_objnum,
-			aux_objnum,
-			awareness_added,
-			num_awareness_before,
-			Num_awareness_events,
-			overall_agitation_before,
-			Overall_agitation,
-			multiplayer_awareness_allowed,
-			rng_gate_value,
-			rng_gate_pass);
+	if (trace_awareness)
+		input_demo_log_awareness_result(objp, type, source_tag, source_objnum,
+			aux_objnum, awareness_added, 0, num_awareness_before,
+			Num_awareness_events, overall_agitation_before, Overall_agitation,
+			multiplayer_awareness_allowed, rng_gate_value, rng_gate_pass);
 }
 
 sbyte New_awareness[MAX_SEGMENTS];
@@ -1741,14 +1605,7 @@ void do_ai_frame_all(void)
 	if (input_demo_trace_ai_active()) {
 		int traced_robot_count = 0;
 
-		con_printf(CON_NORMAL,
-			"Input demo replay AI frame: frame=%u gt=%lld player_seg=%d believed_seg=%d events=%d agitation=%d\n",
-			input_demo_trace_frame_index(),
-			(long long)GameTime64,
-			ConsoleObject->segnum,
-			Believed_player_seg,
-			Num_awareness_events,
-			Overall_agitation);
+		input_demo_log_ai_frame();
 
 		for (i=0; i<=Highest_object_index; i++)
 			if ((Objects[i].control_type == CT_AI) && (Objects[i].type == OBJ_ROBOT) && (Objects[i].segnum != -1)) {
@@ -1758,11 +1615,7 @@ void do_ai_frame_all(void)
 				}
 			}
 
-		con_printf(CON_NORMAL,
-			"Input demo replay AI frame summary: frame=%u traced=%d highest_obj=%d\n",
-			input_demo_trace_frame_index(),
-			traced_robot_count,
-			Highest_object_index);
+		input_demo_log_ai_frame_summary(traced_robot_count);
 	}
 
 	if (Ai_last_missile_camera > -1) {

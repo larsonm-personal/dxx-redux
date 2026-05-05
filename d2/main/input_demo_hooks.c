@@ -260,6 +260,301 @@ unsigned int input_demo_trace_frame_index(void)
 	return input_demo_debug_frame_index();
 }
 
+int input_demo_trace_ai_active(void)
+{
+	return input_demo_debug_record_probe_active();
+}
+
+int input_demo_replay_awareness_probe_active(void)
+{
+	return input_demo_debug_activity_probe_active();
+}
+
+void input_demo_log_score_probe(const char *score_kind, int points, int score_after)
+{
+	if (!input_demo_debug_is_enabled() || !input_demo_replay_is_loaded())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay score probe: frame=%u gt=%lld kind=%s delta=%d score=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(long long)GameTime64,
+		score_kind,
+		points,
+		score_after);
+}
+
+void input_demo_log_reactor_hit(object *controlcen, fix damage, fix old_shields)
+{
+	if (!controlcen || !input_demo_replay_is_loaded())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay reactor hit: gt=%lld frame=%u damage=%d shields=%d->%d seg=%d obj=%d\n",
+		(long long)GameTime64,
+		(unsigned int)input_demo_replay_next_frame_index(),
+		f2i(damage),
+		f2i(old_shields),
+		f2i(controlcen->shields),
+		controlcen->segnum,
+		(int)(controlcen - Objects));
+}
+
+void input_demo_log_reactor_destroyed(object *controlcen)
+{
+	if (!controlcen || !input_demo_replay_is_loaded())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay reactor destroyed: gt=%lld frame=%u seg=%d obj=%d\n",
+		(long long)GameTime64,
+		(unsigned int)input_demo_replay_next_frame_index(),
+		controlcen->segnum,
+		(int)(controlcen - Objects));
+}
+
+void input_demo_log_collision_player_wall_impact(const char *mode_name, unsigned int frame_index, object *playerobj, int hitseg, int hitwall, int hitspeed, int damage, int force_field_hit)
+{
+	if (!mode_name || !playerobj)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo impact probe: mode=%s frame=%u kind=player_wall player_obj=%d seg=%d hitwall=%d hitspeed=%d damage=%d force=%d\n",
+		mode_name,
+		frame_index,
+		(int)(playerobj - Objects),
+		hitseg,
+		hitwall,
+		hitspeed,
+		damage,
+		force_field_hit);
+}
+
+void input_demo_log_replay_player_wall_collision(object *playerobj, int hitseg, int hitwall, int hitspeed, const vms_vector *hitpt)
+{
+	if (!playerobj || !input_demo_replay_is_loaded())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay collision probe: frame=%u gt=%lld step=player_wall seg=%d hitseg=%d wall=%d speed=%d pos=(%d,%d,%d) hit=(%d,%d,%d)\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(long long)GameTime64,
+		playerobj->segnum,
+		hitseg,
+		hitwall,
+		hitspeed,
+		playerobj->pos.x,
+		playerobj->pos.y,
+		playerobj->pos.z,
+		hitpt ? hitpt->x : 0,
+		hitpt ? hitpt->y : 0,
+		hitpt ? hitpt->z : 0);
+}
+
+void input_demo_log_collision_weapon_wall_impact(const char *mode_name, unsigned int frame_index, object *weapon, int hitwall, int blew_up, int robot_escort)
+{
+	if (!mode_name || !weapon)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo impact probe: mode=%s frame=%u kind=wall weapon_obj=%d weapon_id=%d parent=%d seg=%d hitwall=%d blew_up=%d escort=%d\n",
+		mode_name,
+		frame_index,
+		(int)(weapon - Objects),
+		weapon->id,
+		weapon->ctype.laser_info.parent_num,
+		weapon->segnum,
+		hitwall,
+		blew_up,
+		robot_escort);
+}
+
+void input_demo_log_collision_player_robot_impact(const char *mode_name, unsigned int frame_index, object *playerobj, object *robot)
+{
+	if (!mode_name || !playerobj || !robot)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo impact probe: mode=%s frame=%u kind=player_robot player_obj=%d robot_obj=%d robot_id=%d seg=%d\n",
+		mode_name,
+		frame_index,
+		(int)(playerobj - Objects),
+		(int)(robot - Objects),
+		robot->id,
+		playerobj->segnum);
+}
+
+void input_demo_log_collision_weapon_robot_impact(const char *mode_name, unsigned int frame_index, object *weapon, object *robot)
+{
+	if (!mode_name || !weapon || !robot)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo impact probe: mode=%s frame=%u kind=robot weapon_obj=%d weapon_id=%d parent=%d robot_obj=%d robot_id=%d seg=%d\n",
+		mode_name,
+		frame_index,
+		(int)(weapon - Objects),
+		weapon->id,
+		weapon->ctype.laser_info.parent_num,
+		(int)(robot - Objects),
+		robot->id,
+		weapon->segnum);
+}
+
+void input_demo_log_replay_robot_damage(object *robot, fix damage, fix old_shields)
+{
+	if (!robot || !input_demo_debug_is_enabled() || !input_demo_replay_is_loaded())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay robot damage: gt=%lld frame=%u robot_obj=%d robot_sig=%d robot_id=%d damage=%d shields=%d->%d dead=%d pos=(%d,%d,%d)\n",
+		(long long)GameTime64,
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(int)(robot - Objects),
+		robot->signature,
+		robot->id,
+		damage,
+		old_shields,
+		robot->shields,
+		robot->shields < 0,
+		robot->pos.x,
+		robot->pos.y,
+		robot->pos.z);
+}
+
+void input_demo_log_player_damage_probe(const char *mode_name, unsigned int frame_index, int damage, fix old_shields, fix shields_after, int killer_type, int killer_obj, int killer_id, int killer_sig, int killer_seg, int possibly_friendly)
+{
+	if (!mode_name)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo player damage: mode=%s gt=%lld frame=%u damage=%d shields=%d->%d killer_type=%d killer_obj=%d killer_id=%d killer_sig=%d killer_seg=%d friendly=%d\n",
+		mode_name,
+		(long long)GameTime64,
+		frame_index,
+		damage,
+		old_shields,
+		shields_after,
+		killer_type,
+		killer_obj,
+		killer_id,
+		killer_sig,
+		killer_seg,
+		possibly_friendly);
+}
+
+void input_demo_log_player_weapon_hit(const char *mode_name, unsigned int frame_index, object *weapon, object *playerobj, int damage, const vms_vector *collision_point)
+{
+	const int parent_num = weapon ? weapon->ctype.laser_info.parent_num : -1;
+	const int parent_slot_valid = parent_num > -1 && parent_num <= Highest_object_index;
+	const int parent_slot_type = parent_slot_valid ? Objects[parent_num].type : -1;
+	const int parent_slot_id = parent_slot_valid ? Objects[parent_num].id : -1;
+	const int parent_slot_sig = parent_slot_valid ? Objects[parent_num].signature : -1;
+	const int parent_slot_seg = parent_slot_valid ? Objects[parent_num].segnum : -1;
+
+	if (!mode_name || !weapon || !playerobj)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo player weapon hit: mode=%s gt=%lld frame=%u weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d damage=%d parent_type=%d parent_num=%d parent_sig=%d slot_valid=%d slot_type=%d slot_id=%d slot_sig=%d slot_seg=%d sig_match=%d weapon_life=%d weapon_shields=%d weapon_flags=0x%x weapon_ctime=%lld weapon_pos=(%d,%d,%d) weapon_vel=(%d,%d,%d) player_pos=(%d,%d,%d) player_vel=(%d,%d,%d) hit=(%d,%d,%d)\n",
+		mode_name,
+		(long long)GameTime64,
+		frame_index,
+		(int)(weapon - Objects),
+		weapon->id,
+		weapon->signature,
+		weapon->segnum,
+		damage,
+		weapon->ctype.laser_info.parent_type,
+		parent_num,
+		weapon->ctype.laser_info.parent_signature,
+		parent_slot_valid,
+		parent_slot_type,
+		parent_slot_id,
+		parent_slot_sig,
+		parent_slot_seg,
+		parent_slot_valid && parent_slot_sig == weapon->ctype.laser_info.parent_signature,
+		weapon->lifeleft,
+		weapon->shields,
+		weapon->flags,
+		(long long)weapon->ctype.laser_info.creation_time,
+		weapon->pos.x,
+		weapon->pos.y,
+		weapon->pos.z,
+		weapon->mtype.phys_info.velocity.x,
+		weapon->mtype.phys_info.velocity.y,
+		weapon->mtype.phys_info.velocity.z,
+		playerobj->pos.x,
+		playerobj->pos.y,
+		playerobj->pos.z,
+		playerobj->mtype.phys_info.velocity.x,
+		playerobj->mtype.phys_info.velocity.y,
+		playerobj->mtype.phys_info.velocity.z,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+}
+
+void input_demo_log_replay_powerup_probe_before(object *powerup, int energy_before, int shields_before)
+{
+	if (!powerup)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay powerup probe: frame=%u step=before obj=%d id=%d energy=%d shields=%d flags=0x%x seg=%d pos=(%d,%d,%d)\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(int)(powerup - Objects),
+		powerup->id,
+		energy_before,
+		shields_before,
+		powerup->flags,
+		powerup->segnum,
+		powerup->pos.x,
+		powerup->pos.y,
+		powerup->pos.z);
+}
+
+void input_demo_log_replay_powerup_probe_after(object *powerup, int powerup_used, int energy_before, int energy_after, int shields_before, int shields_after)
+{
+	if (!powerup)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay powerup probe: frame=%u step=after obj=%d id=%d used=%d energy_before=%d energy_after=%d shields_before=%d shields_after=%d flags=0x%x dead=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(int)(powerup - Objects),
+		powerup->id,
+		powerup_used,
+		energy_before,
+		energy_after,
+		shields_before,
+		shields_after,
+		powerup->flags,
+		(powerup->flags & OF_SHOULD_BE_DEAD) != 0);
+}
+
+void input_demo_log_replay_object_object_collision(object *a, object *b, const vms_vector *collision_point)
+{
+	if (!a || !b)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay collision probe: frame=%u gt=%lld step=object_object a=%d/%d/%d seg=%d b=%d/%d/%d seg=%d point=(%d,%d,%d)\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(long long)GameTime64,
+		(int)(a - Objects),
+		a->type,
+		a->id,
+		a->segnum,
+		(int)(b - Objects),
+		b->type,
+		b->id,
+		b->segnum,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+}
+
 static int input_demo_trace_path_active(void)
 {
 	return input_demo_debug_activity_probe_active();
@@ -619,6 +914,27 @@ int input_demo_robot_lifecycle_is_target(int objnum, object *obj)
 		return 1;
 
 	return 0;
+}
+
+void input_demo_log_robot_lifecycle_delete(int objnum, object *obj)
+{
+	if (!input_demo_robot_lifecycle_is_target(objnum, obj))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo robot lifecycle: mode=%s frame=%u gt=%lld step=obj_delete obj=%d sig=%d id=%d seg=%d flags=0x%x shields=%d life=%d exploding=%d should_die=%d\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_debug_frame_index(),
+		(long long)GameTime64,
+		objnum,
+		obj->signature,
+		obj->id,
+		obj->segnum,
+		obj->flags,
+		obj->shields,
+		obj->lifeleft,
+		(obj->flags & OF_EXPLODING) != 0,
+		(obj->flags & OF_SHOULD_BE_DEAD) != 0);
 }
 
 static void input_demo_log_robot_visual_state(object *obj, const g3s_lrgb *light, int tmap_override, int override_bm_index, int override_bm_flags, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point)
@@ -1290,6 +1606,264 @@ void input_demo_log_ai_robot_state(const char *label, object *objp)
 		objp->mtype.phys_info.velocity.x,
 		objp->mtype.phys_info.velocity.y,
 		objp->mtype.phys_info.velocity.z);
+}
+
+void input_demo_log_awareness_vulcan_roll(object *objp, int type, int vulcan_roll, unsigned int sim_calls_before, unsigned int sim_state_before)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!objp || (objnum < 0))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo awareness vulcan roll: mode=%s frame=%u gt=%lld type=%d obj=%d roll=%d threshold=3276 calls_before=%u state_before=%u\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		type,
+		objnum,
+		vulcan_roll,
+		sim_calls_before,
+		sim_state_before);
+}
+
+void input_demo_log_awareness_add_return(const char *reason, object *objp, int type, int added, unsigned int sim_calls_before, unsigned int sim_calls_after, unsigned int sim_state_before, unsigned int sim_state_after)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!objp || (objnum < 0))
+		return;
+
+	if (reason && reason[0]) {
+		con_printf(CON_NORMAL,
+			"Input demo awareness add return: mode=%s frame=%u gt=%lld type=%d obj=%d added=%d reason=%s calls=%u->%u state=%u->%u\n",
+			input_demo_debug_activity_mode_name(),
+			input_demo_trace_frame_index(),
+			(long long)GameTime64,
+			type,
+			objnum,
+			added,
+			reason,
+			sim_calls_before,
+			sim_calls_after,
+			sim_state_before,
+			sim_state_after);
+		return;
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo awareness add return: mode=%s frame=%u gt=%lld type=%d obj=%d added=%d calls=%u->%u state=%u->%u\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		type,
+		objnum,
+		added,
+		sim_calls_before,
+		sim_calls_after,
+		sim_state_before,
+		sim_state_after);
+}
+
+void input_demo_log_awareness_entry(object *objp, int type, const char *source_tag, int source_objnum, int aux_objnum, unsigned int sim_calls_entry, unsigned int sim_state_entry, int num_awareness_before, int overall_agitation_before, int multiplayer_awareness_allowed)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!objp || (objnum < 0))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo awareness entry: mode=%s frame=%u gt=%lld type=%d obj=%d source=%s source_obj=%d aux_obj=%d calls=%u state=%u awareness=%d agitation=%d gate=%d\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		type,
+		objnum,
+		source_tag,
+		source_objnum,
+		aux_objnum,
+		sim_calls_entry,
+		sim_state_entry,
+		num_awareness_before,
+		overall_agitation_before,
+		multiplayer_awareness_allowed);
+}
+
+void input_demo_log_awareness_probe(object *objp, int type)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	int parent_type = -1;
+	int parent_num = -1;
+	int parent_sig = -1;
+
+	if (!objp || (objnum < 0))
+		return;
+
+	if (objp->type == OBJ_WEAPON) {
+		parent_type = objp->ctype.laser_info.parent_type;
+		parent_num = objp->ctype.laser_info.parent_num;
+		parent_sig = objp->ctype.laser_info.parent_signature;
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo awareness probe: mode=%s frame=%u gt=%lld type=%d obj=%d obj_type=%d obj_id=%d sig=%d seg=%d life=%d flags=%d parent_type=%d parent_num=%d parent_sig=%d pos=(%d,%d,%d)\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		type,
+		objnum,
+		objp->type,
+		objp->id,
+		objp->signature,
+		objp->segnum,
+		objp->lifeleft,
+		objp->flags,
+		parent_type,
+		parent_num,
+		parent_sig,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z);
+}
+
+void input_demo_log_awareness_post_add(object *objp, int type, int awareness_added, unsigned int sim_calls_entry, unsigned int sim_calls_after_add, unsigned int sim_state_entry, unsigned int sim_state_after_add)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!objp || (objnum < 0))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo awareness post-add: mode=%s frame=%u gt=%lld type=%d obj=%d added=%d calls=%u->%u state=%u->%u\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		type,
+		objnum,
+		awareness_added,
+		sim_calls_entry,
+		sim_calls_after_add,
+		sim_state_entry,
+		sim_state_after_add);
+}
+
+void input_demo_log_awareness_post_gate(object *objp, int type, int rng_gate_value, int rng_gate_pass, unsigned int sim_calls_before, unsigned int sim_calls_after, unsigned int sim_state_before, unsigned int sim_state_after)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!objp || (objnum < 0))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo awareness post-gate: mode=%s frame=%u gt=%lld type=%d obj=%d rng=%d pass=%d calls=%u->%u state=%u->%u\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		type,
+		objnum,
+		rng_gate_value,
+		rng_gate_pass,
+		sim_calls_before,
+		sim_calls_after,
+		sim_state_before,
+		sim_state_after);
+}
+
+void input_demo_log_awareness_result(object *objp, int type, const char *source_tag, int source_objnum, int aux_objnum, int awareness_added, int skipped_observer, int awareness_before, int awareness_after, int agitation_before, int agitation_after, int multiplayer_awareness_allowed, int rng_gate_value, int rng_gate_pass)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!objp || (objnum < 0))
+		return;
+
+	if (skipped_observer) {
+		con_printf(CON_NORMAL,
+			"Input demo awareness result: mode=%s frame=%u gt=%lld type=%d obj=%d source=%s source_obj=%d aux_obj=%d skipped=observer awareness=%d->%d agitation=%d->%d gate=%d rng=%d rng_pass=%d\n",
+			input_demo_debug_activity_mode_name(),
+			input_demo_trace_frame_index(),
+			(long long)GameTime64,
+			type,
+			objnum,
+			source_tag,
+			source_objnum,
+			aux_objnum,
+			awareness_before,
+			awareness_after,
+			agitation_before,
+			agitation_after,
+			multiplayer_awareness_allowed,
+			rng_gate_value,
+			rng_gate_pass);
+		return;
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo awareness result: mode=%s frame=%u gt=%lld type=%d obj=%d source=%s source_obj=%d aux_obj=%d added=%d awareness=%d->%d agitation=%d->%d gate=%d rng=%d rng_pass=%d\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		type,
+		objnum,
+		source_tag,
+		source_objnum,
+		aux_objnum,
+		awareness_added,
+		awareness_before,
+		awareness_after,
+		agitation_before,
+		agitation_after,
+		multiplayer_awareness_allowed,
+		rng_gate_value,
+		rng_gate_pass);
+}
+
+void input_demo_log_ai_state(void)
+{
+	if (!ConsoleObject)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay AI state: frame=%u gt=%lld player_seg=%d believed_seg=%d player=(%d,%d,%d) believed=(%d,%d,%d) last_fired=(%d,%d,%d) dist=%d events=%d agitation=%d\n",
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		ConsoleObject->segnum,
+		Believed_player_seg,
+		ConsoleObject->pos.x,
+		ConsoleObject->pos.y,
+		ConsoleObject->pos.z,
+		Believed_player_pos.x,
+		Believed_player_pos.y,
+		Believed_player_pos.z,
+		Last_fired_upon_player_pos.x,
+		Last_fired_upon_player_pos.y,
+		Last_fired_upon_player_pos.z,
+		Dist_to_last_fired_upon_player_pos,
+		Num_awareness_events,
+		Overall_agitation);
+}
+
+void input_demo_log_ai_frame(void)
+{
+	if (!ConsoleObject)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay AI frame: frame=%u gt=%lld player_seg=%d believed_seg=%d events=%d agitation=%d\n",
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		ConsoleObject->segnum,
+		Believed_player_seg,
+		Num_awareness_events,
+		Overall_agitation);
+}
+
+void input_demo_log_ai_frame_summary(int traced_robot_count)
+{
+	con_printf(CON_NORMAL,
+		"Input demo replay AI frame summary: frame=%u traced=%d highest_obj=%d\n",
+		input_demo_trace_frame_index(),
+		traced_robot_count,
+		Highest_object_index);
 }
 
 static int input_demo_count_live_player_weapons(int weapon_id)

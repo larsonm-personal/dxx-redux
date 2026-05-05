@@ -93,6 +93,7 @@ extern int input_demo_trace_ai_rng_active(object *obj);
 extern int input_demo_robot_lifecycle_probe_active(void);
 extern int input_demo_robot_visual_probe_active(void);
 extern int input_demo_robot_lifecycle_is_target(int objnum, object *obj);
+extern void input_demo_log_robot_lifecycle_delete(int objnum, object *obj);
 extern void input_demo_log_robot_visual_id38(object *obj, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
 extern void input_demo_log_robot_visual_state_default(object *obj, const g3s_lrgb *light, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
 extern void input_demo_log_robot_visual_state_tmap_override(object *obj, const g3s_lrgb *light, int override_bm_index, int override_bm_flags, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point);
@@ -1595,21 +1596,7 @@ void obj_delete(int objnum)
 	Assert(obj->type != OBJ_NONE);
 	Assert(obj != ConsoleObject);
 
-	if (input_demo_robot_lifecycle_is_target(objnum, obj))
-		con_printf(CON_NORMAL,
-			"Input demo robot lifecycle: mode=%s frame=%u gt=%lld step=obj_delete obj=%d sig=%d id=%d seg=%d flags=0x%x shields=%d life=%d exploding=%d should_die=%d\n",
-			input_demo_debug_activity_mode_name(),
-			input_demo_debug_frame_index(),
-			(long long)GameTime64,
-			objnum,
-			obj->signature,
-			obj->id,
-			obj->segnum,
-			obj->flags,
-			obj->shields,
-			obj->lifeleft,
-			(obj->flags & OF_EXPLODING) != 0,
-			(obj->flags & OF_SHOULD_BE_DEAD) != 0);
+	input_demo_log_robot_lifecycle_delete(objnum, obj);
 
 	if (obj->type==OBJ_WEAPON && obj->id==GUIDEDMISS_ID && obj->ctype.laser_info.parent_type==OBJ_PLAYER)
 	{
