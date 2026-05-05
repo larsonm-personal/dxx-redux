@@ -18,6 +18,12 @@ void input_demo_record_game_frame(void);
 void input_demo_update_rng_trace_context(void);
 void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag);
 void input_demo_capture_current_result(input_demo_result *result);
+int input_demo_trace_collision_pose_active(void);
+unsigned int input_demo_trace_collision_frame_index(void);
+const char *input_demo_trace_collision_mode_name(void);
+void input_demo_log_player_robot_contact_probe(const char *step, struct object *player, struct object *robot,
+	const struct vms_vector *collision_point, int32_t damage);
+void input_demo_log_weapon_robot_accept_seq(struct object *weapon, struct object *robot);
 void input_demo_log_player_bump_probe(const char *step, struct object *obj0, struct object *obj1,
 	const struct vms_vector *relative_velocity, const struct vms_vector *float_force,
 	int32_t scale_num, int32_t scale_den, int damage_flag);
