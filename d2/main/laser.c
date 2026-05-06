@@ -896,6 +896,11 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 		input_demo_log_weapon_lifetime("create", obj);
 	if (input_demo_replay_is_player_owned_weapon(obj) && obj->id != FLARE_ID)
 		input_demo_record_weapon_create_event(obj);
+	if (input_demo_recorder_is_active() && Weapon_info[obj->id].homing_flag)
+		input_demo_record_homing_state("create", obj, 1, 0,
+			obj->ctype.laser_info.track_goal,
+			obj->ctype.laser_info.track_goal, F1_0, 0,
+			obj->ctype.laser_info.creation_framecount);
 
 	return objnum;
 }
@@ -1415,6 +1420,25 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	}
 
 	objnum = Laser_create_new( &LaserDir, &LaserPos, LaserSeg, obj-Objects, laser_type, make_sound );
+	if (objnum != -1 && input_demo_replay_homing_desync_probe_active()) {
+		char probe[256];
+
+		snprintf(probe, sizeof(probe),
+			"shooter=%d laser_type=%d gun=%d harmless=%d sound=%d pos=(%d,%d,%d) dir=(%d,%d,%d)",
+			obj - Objects,
+			laser_type,
+			gun_num,
+			harmless,
+			make_sound,
+			LaserPos.x,
+			LaserPos.y,
+			LaserPos.z,
+			LaserDir.x,
+			LaserDir.y,
+			LaserDir.z);
+		input_demo_append_replay_probe_message("player_shot_create",
+			&Objects[objnum], probe);
+	}
 
 	//	Omega cannon is a hack, not surprisingly.  Don't want to do the rest of this stuff.
 	if (laser_type == OMEGA_ID)
@@ -1564,14 +1588,19 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 	const int track_player_weapon = input_demo_weapon_trace_active() &&
 		input_demo_replay_is_player_owned_weapon(obj) &&
 		obj->id != FLARE_ID;
+	const int record_probe_weapon = input_demo_recorder_is_active();
+	const int replay_probe_player_weapon =
+		input_demo_replay_homing_desync_probe_active() &&
+		(input_demo_replay_is_player_owned_weapon(obj) ||
+		 Weapon_info[obj->id].homing_flag);
 
 	Assert(obj->control_type == CT_WEAPON);
 
-	if (track_player_weapon)
+	if (track_player_weapon || replay_probe_player_weapon || record_probe_weapon)
 		input_demo_log_weapon_lifetime("sequence_entry", obj);
 
 	if (obj->lifeleft < 0 ) {		// We died of old age
-		if (track_player_weapon)
+		if (track_player_weapon || replay_probe_player_weapon || record_probe_weapon)
 			input_demo_log_weapon_lifetime("old_age", obj);
 		obj->flags |= OF_SHOULD_BE_DEAD;
 		if ( Weapon_info[obj->id].damage_radius )
@@ -1580,7 +1609,7 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 	}
 
 	if (omega_cleanup(obj)) {
-		if (track_player_weapon)
+		if (track_player_weapon || replay_probe_player_weapon || record_probe_weapon)
 			input_demo_log_weapon_lifetime("omega_cleanup", obj);
 		return;
 	}
@@ -1590,7 +1619,7 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 			(obj->id != FLARE_ID) &&
 			(Weapon_info[obj->id].speed[Difficulty_level] > 0) &&
 			(vm_vec_mag_quick(&obj->mtype.phys_info.velocity) < F2_0)) {
-		if (track_player_weapon)
+		if (track_player_weapon || replay_probe_player_weapon || record_probe_weapon)
 			input_demo_log_weapon_lifetime("stopped_delete", obj);
 		obj_delete(obj-Objects);
 		return;
@@ -1609,6 +1638,10 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 		vms_vector		vector_to_object, temp_vec;
 		fix				dot=F1_0;
 		fix				speed, max_speed;
+		const int straight_time_active =
+			(obj->ctype.laser_info.creation_time + HOMING_MISSILE_STRAIGHT_TIME >=
+			GameTime64);
+		const int track_goal_before = obj->ctype.laser_info.track_goal;
 
 		//	For first 1/2 second of life, missile flies straight.
 		if (obj->ctype.laser_info.creation_time + HOMING_MISSILE_STRAIGHT_TIME < GameTime64) {
@@ -1725,6 +1758,10 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 					homing_missile_turn_towards_velocity(obj, &temp_vec);		//	temp_vec is normalized velocity.
 #endif
 			}
+			if (input_demo_recorder_is_active())
+				input_demo_record_homing_state("sequence", obj,
+					straight_time_active, doHomerFrame, track_goal_before,
+					track_goal, dot, idealHomerFrameTime, homerFrameCount);
 		}
 	}
 

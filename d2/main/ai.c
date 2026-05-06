@@ -302,6 +302,46 @@ void make_nearby_robot_snipe(void)
 
 int Ai_last_missile_camera = -1;
 
+static int input_demo_trace_ai_desync_window_active(void)
+{
+	return input_demo_replay_is_loaded() &&
+		(input_demo_debug_frame_in_range(454, 460) ||
+		 input_demo_debug_frame_in_range(1313, 1319));
+}
+
+static void input_demo_log_ai_schedule_probe(const char *label, object *obj, ai_static *aip,
+	ai_local *ailp, fix dist_to_player, int previous_visibility, int obj_ref)
+{
+	if (!input_demo_trace_ai_desync_window_active() || !obj || !aip || !ailp)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo AI schedule: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d behavior=%d mode_ai=%d prev_vis=%d aware=%d aware_time=%d skip=%d since=%d dist=%d obj_ref=%d goal_seg=%d path=%d/%d retry=%d retry_chain=%d rapid=%d\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		label,
+		(int)(obj - Objects),
+		obj->signature,
+		obj->id,
+		obj->segnum,
+		aip->behavior,
+		ailp->mode,
+		previous_visibility,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		aip->SKIP_AI_COUNT,
+		ailp->time_since_processed,
+		dist_to_player,
+		obj_ref,
+		ailp->goal_segment,
+		aip->cur_path_index,
+		aip->path_length,
+		ailp->retry_count,
+		ailp->consecutive_retries,
+		ailp->rapidfire_count);
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 void do_ai_frame(object *obj)
 {
@@ -320,9 +360,13 @@ void do_ai_frame(object *obj)
 	int         previous_visibility;
 	vms_vector  gun_point;
 	vms_vector  vis_vec_pos;
+	fix         schedule_dist_to_player = 0;
 	ailp->next_action_time -= FrameTime;
 
 	if (aip->SKIP_AI_COUNT) {
+		input_demo_note_ai_schedule_skip_return(obj);
+		input_demo_log_ai_schedule_probe("skip_return_pre", obj, aip, ailp, 0,
+			ailp->previous_visibility, -1);
 		aip->SKIP_AI_COUNT--;
 		if (obj->mtype.phys_info.flags & PF_USES_THRUST) {
 			obj->mtype.phys_info.rotthrust.x = (obj->mtype.phys_info.rotthrust.x * 15)/16;
@@ -331,6 +375,8 @@ void do_ai_frame(object *obj)
 			if (!aip->SKIP_AI_COUNT)
 				obj->mtype.phys_info.flags &= ~PF_USES_THRUST;
 		}
+		input_demo_log_ai_schedule_probe("skip_return_post", obj, aip, ailp, 0,
+			ailp->previous_visibility, -1);
 		return;
 	}
 
@@ -436,6 +482,7 @@ _exit_cheat:
 		}
 	}
 	dist_to_player = vm_vec_dist_quick(&Believed_player_pos, &obj->pos);
+	schedule_dist_to_player = dist_to_player;
 
 	// If this robot can fire, compute visibility from gun position.
 	// Don't want to compute visibility twice, as it is expensive.  (So is call to calc_gun_point).
@@ -666,15 +713,40 @@ _exit_cheat:
 		if (Break_on_object != objnum) {    // don't time slice if we're interested in this object.
 #endif
 			if ((aip->behavior == AIB_STATION) && (ailp->mode == AIM_FOLLOW_PATH) && (aip->hide_segment != obj->segnum)) {
-				if (dist_to_player > F1_0*250)  // station guys not at home always processed until 250 units away.
+				if (dist_to_player > F1_0*250) { // station guys not at home always processed until 250 units away.
+					input_demo_note_ai_schedule_timeslice_return(obj);
+					input_demo_note_ai_schedule_detail("station_far_return", obj,
+						previous_visibility, ailp->player_awareness_type,
+						ailp->player_awareness_time, aip->SKIP_AI_COUNT,
+						ailp->time_since_processed, schedule_dist_to_player,
+						obj_ref);
+					input_demo_log_ai_schedule_probe("station_far_return", obj, aip,
+						ailp, schedule_dist_to_player, previous_visibility, obj_ref);
 					return;
+				}
 			} else if ((!ailp->previous_visibility) && ((dist_to_player >> 7) > ailp->time_since_processed)) {  // 128 units away (6.4 segments) processed after 1 second.
+				input_demo_note_ai_schedule_timeslice_return(obj);
+				input_demo_note_ai_schedule_detail("timeslice_return", obj,
+					previous_visibility, ailp->player_awareness_type,
+					ailp->player_awareness_time, aip->SKIP_AI_COUNT,
+					ailp->time_since_processed, schedule_dist_to_player,
+					obj_ref);
+				input_demo_log_ai_schedule_probe("timeslice_return", obj, aip, ailp,
+					schedule_dist_to_player, previous_visibility, obj_ref);
 				return;
 			}
 #ifndef NDEBUG
 		}
 #endif
 	}
+
+	input_demo_note_ai_schedule_process(obj);
+	input_demo_note_ai_schedule_detail("process_enter", obj,
+		previous_visibility, ailp->player_awareness_type,
+		ailp->player_awareness_time, aip->SKIP_AI_COUNT,
+		ailp->time_since_processed, schedule_dist_to_player, obj_ref);
+	input_demo_log_ai_schedule_probe("process_enter", obj, aip, ailp,
+		schedule_dist_to_player, previous_visibility, obj_ref);
 
 	// Reset time since processed, but skew objects so not everything
 	// processed synchronously, else we get fast frames with the
@@ -1420,6 +1492,20 @@ void create_awareness_event(object *objp, int type)
 	const int trace_awareness = input_demo_replay_awareness_probe_active();
 
 	input_demo_consume_awareness_source(&source_tag, &source_objnum, &aux_objnum);
+	if (input_demo_replay_homing_desync_probe_active()) {
+		char probe[256];
+
+		snprintf(probe, sizeof(probe),
+			"source=%s source_obj=%d aux_obj=%d type=%d awareness_before=%d agitation_before=%d multiplayer=%d",
+			source_tag,
+			source_objnum,
+			aux_objnum,
+			type,
+			num_awareness_before,
+			overall_agitation_before,
+			multiplayer_awareness_allowed);
+		input_demo_append_replay_probe_message("awareness_entry", objp, probe);
+	}
 
 	if (trace_awareness) {
 		sim_calls_entry = d_rand_get_call_count();
@@ -1455,6 +1541,29 @@ void create_awareness_event(object *objp, int type)
 		if (awareness_added) {
 			rng_gate_value = ((d_rand() * (type+4)) >> 15);
 			rng_gate_pass = (rng_gate_value > 4);
+			if (input_demo_replay_homing_desync_probe_active()) {
+				char probe[256];
+
+				snprintf(probe, sizeof(probe),
+					"source=%s source_obj=%d aux_obj=%d type=%d added=%d awareness_before=%d awareness_after=%d agitation_before=%d agitation_after=%d rng=%d pass=%d calls=%u->%u state=%u->%u",
+					source_tag,
+					source_objnum,
+					aux_objnum,
+					type,
+					awareness_added,
+					num_awareness_before,
+					Num_awareness_events,
+					overall_agitation_before,
+					Overall_agitation,
+					rng_gate_value,
+					rng_gate_pass,
+					sim_calls_after_add,
+					d_rand_get_call_count(),
+					sim_state_after_add,
+					d_rand_get_state(&sim_state_after_gate) ? sim_state_after_gate : 0);
+				input_demo_append_replay_probe_message("awareness_rng_gate", objp,
+					probe);
+			}
 			if (trace_awareness) {
 				sim_calls_after_gate = d_rand_get_call_count();
 				d_rand_get_state(&sim_state_after_gate);

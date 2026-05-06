@@ -21,6 +21,24 @@ typedef struct input_demo_state_trace_diag {
 	int32_t player_last_x;
 	int32_t player_last_y;
 	int32_t player_last_z;
+	int32_t ai_probe_skip_count;
+	int32_t ai_probe_skip_obj;
+	int32_t ai_probe_skip_sig;
+	int32_t ai_probe_skip_id;
+	int32_t ai_probe_timeslice_count;
+	int32_t ai_probe_timeslice_obj;
+	int32_t ai_probe_timeslice_sig;
+	int32_t ai_probe_timeslice_id;
+	int32_t ai_probe_process_count;
+	int32_t ai_probe_process_obj;
+	int32_t ai_probe_process_sig;
+	int32_t ai_probe_process_id;
+	int32_t ai_probe_phys_skip_count;
+	int32_t ai_probe_phys_skip_obj;
+	int32_t ai_probe_phys_skip_sig;
+	int32_t ai_probe_phys_skip_id;
+	int32_t ai_probe_phys_skip_before;
+	int32_t ai_probe_phys_skip_after;
 } input_demo_state_trace_diag;
 
 int input_demo_state_trace_is_active(void);

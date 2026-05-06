@@ -53,6 +53,8 @@ private data class StorageFileEntry(
 fun AdvancedSettingsPage(
     filesDir: File,
     fileSetManager: FileSetManager,
+    isGameReady: (String) -> Boolean,
+    onPlayInputDemo: (StagedInputDemo) -> Unit,
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
@@ -149,7 +151,7 @@ fun AdvancedSettingsPage(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // -- Newly-Recorded Demos --
-                    RecordedInputDemosSection(filesDir, fileSetManager)
+                    RecordedInputDemosSection(filesDir, fileSetManager, isGameReady, onPlayInputDemo)
 
                     Spacer(modifier = Modifier.height(16.dp))
                     HorizontalDivider()
@@ -577,6 +579,8 @@ private fun CrashReportsSection() {
 private fun RecordedInputDemosSection(
     filesDir: File,
     fileSetManager: FileSetManager,
+    isGameReady: (String) -> Boolean,
+    onPlayInputDemo: (StagedInputDemo) -> Unit,
 ) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -591,7 +595,11 @@ private fun RecordedInputDemosSection(
     var installName by remember { mutableStateOf("") }
 
     val sharedPrefs = remember { ctx.getSharedPreferences("launcher_prefs", android.content.Context.MODE_PRIVATE) }
-    var recordPerFrameState by remember { mutableStateOf(sharedPrefs.getBoolean("demo_record_per_frame_state", false)) }
+    var recordPerFrameState by remember {
+        mutableStateOf(
+            sharedPrefs.getBoolean(PREF_DEMO_RECORD_PER_FRAME_STATE, false),
+        )
+    }
 
     fun refresh() {
         demos = InputDemoManager.listStagedDemos(filesDir)
@@ -600,7 +608,7 @@ private fun RecordedInputDemosSection(
     Text("Newly-Recorded Demos", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. When present, paired .rngtrace.jsonl and .dem sidecars export with the demo and follow it into the active set ($activeSetName)",
+        "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. Play launches the staged input demo directly, and paired .rngtrace.jsonl and .dem sidecars still export with the demo and follow it into the active set ($activeSetName)",
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -622,7 +630,7 @@ private fun RecordedInputDemosSection(
             checked = recordPerFrameState,
             onCheckedChange = { newValue ->
                 recordPerFrameState = newValue
-                sharedPrefs.edit().putBoolean("demo_record_per_frame_state", newValue).apply()
+                sharedPrefs.edit().putBoolean(PREF_DEMO_RECORD_PER_FRAME_STATE, newValue).apply()
             },
             modifier = Modifier.size(24.dp),
         )
@@ -643,6 +651,7 @@ private fun RecordedInputDemosSection(
     Spacer(modifier = Modifier.height(4.dp))
 
     for (demo in demos) {
+        val gameReady = isGameReady(demo.game)
         Column(
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         ) {
@@ -683,6 +692,13 @@ private fun RecordedInputDemosSection(
                     if (!demo.headerReadable) {
                         Text(
                             "Header unreadable. Save, add, and delete still work",
+                            fontSize = 10.sp,
+                            color = Color(0xFFFF9800),
+                        )
+                    }
+                    if (!gameReady) {
+                        Text(
+                            "${demo.game.uppercase(Locale.US)} data missing. Play is disabled",
                             fontSize = 10.sp,
                             color = Color(0xFFFF9800),
                         )
@@ -781,6 +797,15 @@ private fun RecordedInputDemosSection(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                OutlinedButton(
+                    onClick = { onPlayInputDemo(demo) },
+                    enabled = gameReady,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.height(28.dp),
+                ) {
+                    Text("Play", fontSize = 11.sp)
+                }
+                Spacer(modifier = Modifier.width(4.dp))
                 OutlinedButton(
                     onClick = {
                         installTarget = demo

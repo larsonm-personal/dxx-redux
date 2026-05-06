@@ -71,6 +71,8 @@ if ($outputParent -and -not (Test-Path -LiteralPath $outputParent)) {
 
 $header = $null
 $lastFrameTime = $null
+$frameRecordCount = 0
+$recordedStateFrameCount = 0
 $frameLines = New-Object System.Collections.Generic.List[string]
 
 foreach ($line in [System.IO.File]::ReadLines($resolvedDemoPath)) {
@@ -85,10 +87,13 @@ foreach ($line in [System.IO.File]::ReadLines($resolvedDemoPath)) {
     if ($record.type -ne 'frame') {
         continue
     }
+    $frameRecordCount++
     if ($record.ContainsKey('ft')) {
         $lastFrameTime = [int]$record.ft
     }
-    if (-not $record.ContainsKey('state')) {
+    if ($record.ContainsKey('state')) {
+        $recordedStateFrameCount++
+    } else {
         continue
     }
 
@@ -113,6 +118,18 @@ foreach ($line in [System.IO.File]::ReadLines($resolvedDemoPath)) {
     }
     $outRecord.state = $record.state
     $frameLines.Add(($outRecord | ConvertTo-Json -Compress -Depth 32))
+}
+
+if ($frameRecordCount -eq 0) {
+    throw "Demo contains no frame records: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
+}
+
+if ($recordedStateFrameCount -eq 0) {
+    throw "Demo contains no recorded per-frame state: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
+}
+
+if ($frameLines.Count -eq 0) {
+    throw "No recorded per-frame state records matched the requested frame range for $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
 }
 
 $meta = [ordered]@{

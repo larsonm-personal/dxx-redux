@@ -16,6 +16,10 @@ void input_demo_rng_trace_reset(void);
 int input_demo_rng_trace_stop(char *error, size_t error_size);
 int input_demo_rng_trace_is_active(void);
 void input_demo_rng_trace_set_context(uint32_t frame, int64_t game_time64);
+void input_demo_rng_trace_set_object_context(int object_num,
+                                             int object_signature,
+                                             int object_id);
+void input_demo_rng_trace_clear_object_context(void);
 void input_demo_rng_trace_record_rand(int stream,
                                       const char *file,
                                       const char *func,

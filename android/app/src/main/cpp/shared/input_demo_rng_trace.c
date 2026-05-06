@@ -18,9 +18,13 @@ typedef struct input_demo_rng_trace_event {
 	uint32_t seed;
 	int32_t result;
 	int32_t line;
+	int32_t object_num;
+	int32_t object_signature;
+	int32_t object_id;
 	uint8_t stream;
 	uint8_t kind;
 	uint8_t has_context;
+	uint8_t has_object_context;
 	uint8_t has_state_before;
 	uint8_t has_state_after;
 	const char *file;
@@ -34,6 +38,10 @@ typedef struct input_demo_rng_trace_session {
 	int has_context;
 	uint32_t frame;
 	int64_t game_time64;
+	int has_object_context;
+	int32_t object_num;
+	int32_t object_signature;
+	int32_t object_id;
 	char *output_path;
 	input_demo_rng_trace_event *events;
 	size_t count;
@@ -208,6 +216,12 @@ static int write_trace_file(const char *path, char *error, size_t error_size)
 		write_event_stream(out, event->stream);
 		if (!event->has_context)
 			fputs(",\"has_context\":false", out);
+		if (event->has_object_context)
+			fprintf(out,
+			        ",\"ctx_obj\":%d,\"ctx_sig\":%d,\"ctx_id\":%d",
+			        event->object_num,
+			        event->object_signature,
+			        event->object_id);
 		if (event->has_state_before)
 			fprintf(out, ",\"state_before\":%u", event->state_before);
 		if (event->has_state_after)
@@ -277,6 +291,26 @@ void input_demo_rng_trace_set_context(uint32_t frame, int64_t game_time64)
 	g_input_demo_rng_trace_session.game_time64 = game_time64;
 }
 
+void input_demo_rng_trace_set_object_context(int object_num,
+	int object_signature,
+	int object_id)
+{
+	if (!g_input_demo_rng_trace_session.active)
+		return;
+	g_input_demo_rng_trace_session.has_object_context = 1;
+	g_input_demo_rng_trace_session.object_num = object_num;
+	g_input_demo_rng_trace_session.object_signature = object_signature;
+	g_input_demo_rng_trace_session.object_id = object_id;
+}
+
+void input_demo_rng_trace_clear_object_context(void)
+{
+	g_input_demo_rng_trace_session.has_object_context = 0;
+	g_input_demo_rng_trace_session.object_num = 0;
+	g_input_demo_rng_trace_session.object_signature = 0;
+	g_input_demo_rng_trace_session.object_id = 0;
+}
+
 void input_demo_rng_trace_record_rand(int stream,
                                       const char *file,
                                       const char *func,
@@ -298,9 +332,13 @@ void input_demo_rng_trace_record_rand(int stream,
 	event.state_after = state_after;
 	event.result = result;
 	event.line = line;
+	event.object_num = g_input_demo_rng_trace_session.object_num;
+	event.object_signature = g_input_demo_rng_trace_session.object_signature;
+	event.object_id = g_input_demo_rng_trace_session.object_id;
 	event.stream = (uint8_t) stream;
 	event.kind = INPUT_DEMO_RNG_TRACE_KIND_RAND;
 	event.has_context = g_input_demo_rng_trace_session.has_context ? 1 : 0;
+	event.has_object_context = g_input_demo_rng_trace_session.has_object_context ? 1 : 0;
 	event.has_state_before = has_state_before ? 1 : 0;
 	event.has_state_after = has_state_after ? 1 : 0;
 	event.file = file ? file : "";
@@ -329,9 +367,13 @@ void input_demo_rng_trace_record_srand(int stream,
 	event.state_after = state_after;
 	event.seed = seed;
 	event.line = line;
+	event.object_num = g_input_demo_rng_trace_session.object_num;
+	event.object_signature = g_input_demo_rng_trace_session.object_signature;
+	event.object_id = g_input_demo_rng_trace_session.object_id;
 	event.stream = (uint8_t) stream;
 	event.kind = INPUT_DEMO_RNG_TRACE_KIND_SRAND;
 	event.has_context = g_input_demo_rng_trace_session.has_context ? 1 : 0;
+	event.has_object_context = g_input_demo_rng_trace_session.has_object_context ? 1 : 0;
 	event.has_state_before = has_state_before ? 1 : 0;
 	event.has_state_after = has_state_after ? 1 : 0;
 	event.file = file ? file : "";

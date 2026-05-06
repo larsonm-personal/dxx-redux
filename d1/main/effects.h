@@ -63,6 +63,15 @@ void reset_special_effects();
 // Function called in game loop to do effects.
 extern void do_special_effects();
 
+// Compute the deterministic loop state for an effect at a given level time.
+void effect_get_loop_state(const eclip *ec, fix64 elapsed_time, int *frame_count, fix *time_left);
+
+// Reapply the current texture or object bitmap mapping for a runtime effect state.
+void effect_apply_bitmap_state(int effect_num);
+
+// Reset all effects to their deterministic loop state for a given level time.
+void reset_special_effects_to_time(fix64 elapsed_time);
+
 // Restore bitmap
 extern void restore_effect_bitmap_icons();
 

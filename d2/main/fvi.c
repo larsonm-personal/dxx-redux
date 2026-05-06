@@ -35,7 +35,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "piggy.h"
 #include "player.h"
 #include "game.h"
+#include "bm.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 
@@ -640,8 +642,32 @@ static void input_demo_log_fvi_weapon_robot_check(
 	center_dist = vm_vec_dist(p0, &robot->pos);
 	combined_rad = robot->size + fudged_rad;
 	miss_delta = center_dist - combined_rad;
-	if (!d && miss_delta > (8 * f1_0))
+	if (!input_demo_homing_desync_probe_active() && !d && miss_delta > (8 * f1_0))
 		return;
+	if (input_demo_homing_desync_probe_active()) {
+		char probe[512];
+
+		snprintf(probe, sizeof(probe),
+			"weapon_obj=%d weapon_sig=%d weapon_id=%d p0=(%d,%d,%d) p1=(%d,%d,%d) robot_obj=%d robot_sig=%d robot_id=%d robot_pos=(%d,%d,%d) robot_size=%d fudged_rad=%d combined_rad=%d center_dist=%d miss_delta=%d d=%d hit=%d",
+			weapon_objnum,
+			weapon->signature,
+			weapon->id,
+			p0->x, p0->y, p0->z,
+			p1->x, p1->y, p1->z,
+			robot_objnum,
+			robot->signature,
+			robot->id,
+			robot->pos.x, robot->pos.y, robot->pos.z,
+			robot->size,
+			fudged_rad,
+			combined_rad,
+			center_dist,
+			miss_delta,
+			d,
+			d > 0);
+		input_demo_append_replay_probe_message("fvi_weapon_robot_check", robot,
+			probe);
+	}
 	con_printf(CON_NORMAL,
 		"Input demo fvi weapon robot check: mode=%s frame=%u gt=%lld "
 		"weapon_obj=%d weapon_sig=%d p0=(%d,%d,%d) p1=(%d,%d,%d) "
@@ -689,6 +715,7 @@ int fvi_hit_side;		// what side was hit
 int fvi_hit_side_seg;// what seg the hitside is in
 vms_vector wall_norm;	//ptr to surface normal of hit wall
 int fvi_hit_seg2;		// what segment the hit point is in
+static int fvi_active_flags;
 
 int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p1,fix rad,short thisobjnum,int *ignore_obj_list,int flags,int *seglist,int *n_segs,int entry_seg);
 
@@ -712,6 +739,7 @@ int find_vector_intersection(fvi_query *fq,fvi_info *hit_data)
 
 	Assert(fq->ignore_obj_list != (int *)(-1));
 	Assert((fq->startseg <= Highest_segment_index) && (fq->startseg >= 0));
+	fvi_active_flags = fq->flags;
 
 	fvi_hit_seg = -1;
 	fvi_hit_side = -1;
@@ -999,9 +1027,33 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 							wid_flag = WALL_IS_DOORWAY(seg, side);
 						}
 
+						if (input_demo_homing_desync_probe_active() &&
+							(seg - Segments == 254) && (side == 4)) {
+							char probe[448];
+							snprintf(probe, sizeof(probe),
+								"seg=%d side=%d face=%d flags=0x%x wid=0x%x thisobj=%d entry_seg=%d hit_point=(%d,%d,%d) p0=(%d,%d,%d) p1=(%d,%d,%d)",
+								(int)(seg - Segments), side, face, flags, wid_flag, thisobjnum, entry_seg,
+								hit_point.x, hit_point.y, hit_point.z,
+								p0->x, p0->y, p0->z,
+								p1->x, p1->y, p1->z);
+							input_demo_append_replay_probe_message("fvi_side2544_call", NULL, probe);
+						}
+
 						if ((wid_flag & WID_FLY_FLAG) ||
 							(((wid_flag & WID_RENDER_FLAG) && (wid_flag & WID_RENDPAST_FLAG)) &&
 								((flags & FQ_TRANSWALL) || (flags & FQ_TRANSPOINT && check_trans_wall(&hit_point,seg,side,face))))) {
+
+								if (input_demo_homing_desync_probe_active() &&
+									(seg - Segments == 254) && (side == 4)) {
+									char probe[384];
+									snprintf(probe, sizeof(probe),
+										"seg=%d side=%d face=%d flags=0x%x thisobj=%d entry_seg=%d hit_point=(%d,%d,%d) p0=(%d,%d,%d) p1=(%d,%d,%d)",
+										(int)(seg - Segments), side, face, flags, thisobjnum, entry_seg,
+										hit_point.x, hit_point.y, hit_point.z,
+										p0->x, p0->y, p0->z,
+										p1->x, p1->y, p1->z);
+									input_demo_append_replay_probe_message("fvi_side2544_context", NULL, probe);
+								}
 
 							int newsegnum;
 							vms_vector sub_hit_point;
@@ -1293,6 +1345,58 @@ int check_trans_wall(vms_vector *pnt,segment *seg,int sidenum,int facenum)
 //note: the line above had -v, but that was wrong, so I changed it.  if
 //something doesn't work, and you want to make it negative again, you
 //should figure out what's going on.
+
+	if (input_demo_homing_desync_probe_active() &&
+		seg - Segments == 254 && sidenum == 4) {
+		char probe[512];
+		char probe2[256];
+		const int pixel = bm->bm_data[bmy*bm->bm_w+bmx];
+		const int x0 = (bmx + bm->bm_w - 1) % bm->bm_w;
+		const int x2 = (bmx + 1) % bm->bm_w;
+		const int y0 = (bmy + bm->bm_h - 1) % bm->bm_h;
+		const int y2 = (bmy + 1) % bm->bm_h;
+
+		snprintf(probe, sizeof(probe),
+			"seg=%d side=%d face=%d pnt=(%d,%d,%d) u=%d v=%d bm=%dx%d flags=0x%x tmap=%d tmap2=%d slide_u=%d slide_v=%d fvi_flags=0x%x bmx=%d bmy=%d pixel=%d nb=(%d,%d,%d;%d,%d,%d;%d,%d,%d) transparent_color=%d pass=%d",
+			(int)(seg - Segments),
+			sidenum,
+			facenum,
+			pnt->x,
+			pnt->y,
+			pnt->z,
+			u,
+			v,
+			bm->bm_w,
+			bm->bm_h,
+			bm->bm_flags,
+			side->tmap_num,
+			side->tmap_num2,
+			TmapInfo[side->tmap_num].slide_u,
+			TmapInfo[side->tmap_num].slide_v,
+			fvi_active_flags,
+			bmx,
+			bmy,
+			pixel,
+			bm->bm_data[y0*bm->bm_w+x0],
+			bm->bm_data[y0*bm->bm_w+bmx],
+			bm->bm_data[y0*bm->bm_w+x2],
+			bm->bm_data[bmy*bm->bm_w+x0],
+			bm->bm_data[bmy*bm->bm_w+bmx],
+			bm->bm_data[bmy*bm->bm_w+x2],
+			bm->bm_data[y2*bm->bm_w+x0],
+			bm->bm_data[y2*bm->bm_w+bmx],
+			bm->bm_data[y2*bm->bm_w+x2],
+			TRANSPARENCY_COLOR,
+			pixel == TRANSPARENCY_COLOR);
+		input_demo_append_replay_probe_message("fvi_trans_wall", NULL, probe);
+		snprintf(probe2, sizeof(probe2),
+			"seg=254 side=4 uvls=(%d,%d;%d,%d;%d,%d;%d,%d)",
+			side->uvls[0].u, side->uvls[0].v,
+			side->uvls[1].u, side->uvls[1].v,
+			side->uvls[2].u, side->uvls[2].v,
+			side->uvls[3].u, side->uvls[3].v);
+		input_demo_append_replay_probe_message("fvi_trans_wall_uvls", NULL, probe2);
+	}
 
 	return (bm->bm_data[bmy*bm->bm_w+bmx] == TRANSPARENCY_COLOR);
 }

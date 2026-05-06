@@ -34,6 +34,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseg.h"
 #include "switch.h"
 #include "game.h"
+#include "effects.h"
 #include "newmenu.h"
 #include "fuelcen.h"
 #include "hash.h"
@@ -74,10 +75,11 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 8
+#define STATE_VERSION 9
 #define STATE_COMPATIBLE_VERSION 6
 #define STATE_RUNTIME_VERSION 8
 #define STATE_FIDELITY_VERSION 8
+#define STATE_EFFECT_RUNTIME_VERSION 9
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -89,6 +91,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 8 - Store thumbnail as raw RGB instead of indexed + palette
 //     Save deterministic runtime state for checkpoint fidelity:
 //     weapon, morph, wall, reactor state and AI awareness
+// 9 - Save effect loop time and runtime effect overrides so animated
+//     wall/object textures restore deterministically from saves/checkpoints
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -139,6 +143,29 @@ static fix64 state_read_time_delta(PHYSFS_file *fp, int swap)
 	return (fix64)PHYSFSX_readSXE32(fp, swap);
 }
 
+static void state_write_fix64_value(PHYSFS_file *fp, fix64 value)
+{
+	PHYSFS_uint32 low, high;
+	PHYSFS_uint64 raw_value;
+
+	raw_value = (PHYSFS_uint64)value;
+	low = (PHYSFS_uint32)(raw_value & 0xffffffffu);
+	high = (PHYSFS_uint32)(raw_value >> 32);
+	PHYSFS_write(fp, &low, sizeof(low), 1);
+	PHYSFS_write(fp, &high, sizeof(high), 1);
+}
+
+static fix64 state_read_fix64_value(PHYSFS_file *fp, int swap)
+{
+	PHYSFS_uint32 low, high;
+	PHYSFS_uint64 raw_value;
+
+	low = (PHYSFS_uint32)PHYSFSX_readSXE32(fp, swap);
+	high = (PHYSFS_uint32)PHYSFSX_readSXE32(fp, swap);
+	raw_value = ((PHYSFS_uint64)high << 32) | (PHYSFS_uint64)low;
+	return (fix64)raw_value;
+}
+
 static void state_write_physics_info(PHYSFS_file *fp, physics_info *phys_info)
 {
 	PHYSFSX_writeVector(fp, &phys_info->velocity);
@@ -180,6 +207,97 @@ static void state_clear_stuck_object_state(void)
 static void state_clear_controlcen_runtime_state(void)
 {
 	controlcen_death_silence = 0;
+}
+
+static int state_effect_has_runtime_override(int effect_num, fix64 effect_loop_time)
+{
+	int frame_count;
+	fix time_left;
+	eclip *ec;
+
+	ec = &Effects[effect_num];
+	effect_get_loop_state(ec, effect_loop_time, &frame_count, &time_left);
+	if (ec->flags & (EF_ONE_SHOT | EF_STOPPED))
+		return 1;
+	if (ec->segnum != -1)
+		return 1;
+	if (ec->frame_count != frame_count)
+		return 1;
+	if (ec->time_left != time_left)
+		return 1;
+	return 0;
+}
+
+static void state_write_effect_runtime_state(PHYSFS_file *fp, fix64 effect_loop_time)
+{
+	int count, dynamic_flags, i;
+
+	count = 0;
+	state_write_fix64_value(fp, effect_loop_time);
+	for (i = 0; i < Num_effects; i++)
+		if (state_effect_has_runtime_override(i, effect_loop_time))
+			count++;
+
+	PHYSFS_write(fp, &count, sizeof(count), 1);
+	for (i = 0; i < Num_effects; i++) {
+		if (!state_effect_has_runtime_override(i, effect_loop_time))
+			continue;
+
+		dynamic_flags = Effects[i].flags & (EF_ONE_SHOT | EF_STOPPED);
+		PHYSFS_write(fp, &i, sizeof(i), 1);
+		PHYSFS_write(fp, &Effects[i].time_left, sizeof(Effects[i].time_left), 1);
+		PHYSFS_write(fp, &Effects[i].frame_count, sizeof(Effects[i].frame_count), 1);
+		PHYSFS_write(fp, &dynamic_flags, sizeof(dynamic_flags), 1);
+		PHYSFS_write(fp, &Effects[i].segnum, sizeof(Effects[i].segnum), 1);
+		PHYSFS_write(fp, &Effects[i].sidenum, sizeof(Effects[i].sidenum), 1);
+		PHYSFS_write(fp, &Effects[i].dest_bm_num, sizeof(Effects[i].dest_bm_num), 1);
+	}
+}
+
+static void state_read_effect_runtime_state(PHYSFS_file *fp, int swap, int version, fix64 default_effect_loop_time)
+{
+	fix64 effect_loop_time;
+	int count, dynamic_flags, i;
+
+	effect_loop_time = default_effect_loop_time;
+	if (version >= STATE_EFFECT_RUNTIME_VERSION)
+		effect_loop_time = state_read_fix64_value(fp, swap);
+
+	if (version < STATE_EFFECT_RUNTIME_VERSION) {
+		reset_special_effects_to_time(effect_loop_time);
+		return;
+	}
+
+	count = PHYSFSX_readSXE32(fp, swap);
+	reset_special_effects_to_time(effect_loop_time);
+
+	for (i = 0; i < count; i++) {
+		int dest_bm_num, effect_num, frame_count, segnum, sidenum;
+		fix time_left;
+
+		effect_num = PHYSFSX_readSXE32(fp, swap);
+		time_left = PHYSFSX_readSXE32(fp, swap);
+		frame_count = PHYSFSX_readSXE32(fp, swap);
+		dynamic_flags = PHYSFSX_readSXE32(fp, swap);
+		segnum = PHYSFSX_readSXE32(fp, swap);
+		sidenum = PHYSFSX_readSXE32(fp, swap);
+		dest_bm_num = PHYSFSX_readSXE32(fp, swap);
+
+		if (effect_num < 0 || effect_num >= Num_effects)
+			continue;
+
+		Effects[effect_num].time_left = time_left;
+		Effects[effect_num].frame_count = frame_count;
+		Effects[effect_num].flags =
+			(Effects[effect_num].flags & ~(EF_ONE_SHOT | EF_STOPPED)) |
+			(dynamic_flags & (EF_ONE_SHOT | EF_STOPPED));
+		Effects[effect_num].segnum = segnum;
+		Effects[effect_num].sidenum = sidenum;
+		Effects[effect_num].dest_bm_num = dest_bm_num;
+	}
+
+	for (i = 0; i < Num_effects; i++)
+		effect_apply_bitmap_state(i);
 }
 
 static void state_write_weapon_fidelity_state(PHYSFS_file *fp)
@@ -407,6 +525,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	state_write_morph_state(fp);
 	state_write_stuck_object_state(fp);
 	state_write_controlcen_runtime_state(fp);
+	state_write_effect_runtime_state(fp, GameTime64);
 }
 
 static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
@@ -450,6 +569,7 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 		state_read_stuck_object_state(fp, swap);
 		state_read_controlcen_runtime_state(fp, swap);
 	}
+	state_read_effect_runtime_state(fp, swap, version, GameTime64);
 
 	Next_laser_fire_time = next_laser_fire_time;
 	Next_missile_fire_time = next_missile_fire_time;

@@ -68,6 +68,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamesave.h"
 #include "gamemine.h"
 #include "switch.h"
+
+#if defined(__ANDROID__)
+extern volatile int g_demo_record_per_frame_state;
+#endif
 #include "gauges.h"
 #include "player.h"
 #include "vecmat.h"
@@ -3371,6 +3375,10 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 		settings->level = Current_level_num;
 		settings->difficulty = Difficulty_level;
 		settings->rng_mode = input_demo_rng_mode_name(replay_mode);
+		settings->record_per_frame_state = 0;
+#if defined(__ANDROID__)
+		settings->record_per_frame_state = g_demo_record_per_frame_state ? 1 : 0;
+#endif
 		input_demo_fill_recorder_player_cfg(settings);
 	}
 	if (input_demo_is_mid_level_record_start() && !input_demo_capture_recorder_checkpoint(settings, error, error_size))

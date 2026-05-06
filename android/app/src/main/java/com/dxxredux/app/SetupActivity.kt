@@ -521,11 +521,50 @@ class SetupActivity : ComponentActivity() {
         startActivity(intent)
     }
 
-    private fun createGameLaunchIntent(game: String): Intent {
+    private fun gameDisplayName(game: String): String = if (game == "d1") "Descent 1" else "Descent 2"
+
+    private fun hasLaunchDataForGame(game: String): Boolean {
+        val fsm = FileSetManager(filesDir)
+        val setDir = fsm.getSetDir(fsm.getActive())
+        val hogFile = if (game == "d1") "descent.hog" else "descent2.hog"
+
+        return setDir.listFiles()?.any {
+            it.name.equals(hogFile, ignoreCase = true)
+        } == true
+    }
+
+    private fun launchInputDemoReplay(demo: StagedInputDemo) {
+        if (!demo.file.isFile) {
+            Toast.makeText(this, "Recorded demo file is missing", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (gameRunningFlag || isGameProcessAlive()) {
+            Toast.makeText(this, "Close the running game before starting a recorded demo", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!hasLaunchDataForGame(demo.game)) {
+            Toast.makeText(this, "${gameDisplayName(demo.game)} data is not ready", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        FileSetManager(filesDir).writeActiveSetPath()
+        AudioSourceManager(filesDir).writePlaylist(contentResolver)
+        ModManager(filesDir).writeEnabledModPaths(demo.game)
+        writeInitialGameConfig()
+        writeMusicConfigForLaunch()
+
+        val intent = createGameLaunchIntent(demo.game, demo.file.absolutePath)
+        startActivity(intent)
+    }
+
+    private fun createGameLaunchIntent(
+        game: String,
+        inputDemoReplayPath: String? = getIntent().getStringExtra("input_demo_replay"),
+    ): Intent {
         val intent = Intent(this, MainActivity::class.java)
         intent.putExtra("game", game)
         DebugLog.currentFilePath()?.let { intent.putExtra("netlog_path", it) }
-        getIntent().getStringExtra("input_demo_replay")?.let {
+        inputDemoReplayPath?.takeIf { it.isNotBlank() }?.let {
             intent.putExtra("input_demo_replay", it)
         }
         return intent
@@ -548,17 +587,11 @@ class SetupActivity : ComponentActivity() {
                             finish()
                         } else {
                             val game = intent.getStringExtra("game") ?: "d2"
-                            val fsm = FileSetManager(filesDir)
-                            val setDir = fsm.getSetDir(fsm.getActive())
-                            val hogFile = if (game == "d1") "descent.hog" else "descent2.hog"
-                            val hasData =
-                                setDir.listFiles()?.any {
-                                    it.name.equals(hogFile, ignoreCase = true)
-                                } ?: false
-                            if (!hasData) {
-                                Log.e("DXX-Setup", "Cannot launch $game: $hogFile not found in ${setDir.absolutePath}")
+                            if (!hasLaunchDataForGame(game)) {
+                                Log.e("DXX-Setup", "Cannot launch $game: ${gameDisplayName(game)} data is not ready")
                                 return
                             }
+                            val fsm = FileSetManager(filesDir)
                             fsm.writeActiveSetPath()
                             AudioSourceManager(filesDir).writePlaylist(contentResolver)
                             ModManager(filesDir).writeEnabledModPaths(game)
@@ -2150,6 +2183,9 @@ class SetupActivity : ComponentActivity() {
                         // the game returns here instead of the launcher.
                     }
                 },
+                onPlayInputDemo = { demo ->
+                    launchInputDemoReplay(demo)
+                },
                 onMultiplayerLaunch = { info ->
                     launchMultiplayerGame(info)
                 },
@@ -3085,6 +3121,7 @@ private fun SetupScreen(
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     onLaunchGame: (String) -> Unit,
+    onPlayInputDemo: (StagedInputDemo) -> Unit,
     onMultiplayerLaunch: (com.dxxredux.app.multiplayer.GameLaunchInfo) -> Unit,
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> },
@@ -3683,6 +3720,8 @@ private fun SetupScreen(
             AdvancedSettingsPage(
                 filesDir = filesDir,
                 fileSetManager = fileSetManager,
+                isGameReady = { game -> if (game == "d1") d1RequiredOk else d2RequiredOk },
+                onPlayInputDemo = onPlayInputDemo,
                 onBack = { showAdvancedPage = false },
             )
             return@MaterialTheme

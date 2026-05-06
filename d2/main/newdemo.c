@@ -68,6 +68,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamesave.h"
 #include "gamemine.h"
 #include "switch.h"
+
+#if defined(__ANDROID__)
+extern volatile int g_demo_record_per_frame_state;
+#endif
 #include "gauges.h"
 #include "player.h"
 #include "vecmat.h"
@@ -575,6 +579,12 @@ static void nd_read_shortpos(object *obj)
 	nd_read_short(&(sp.velx));
 	nd_read_short(&(sp.vely));
 	nd_read_short(&(sp.velz));
+
+	if (nd_dump_v_active && nd_dump_v_frame_number >= 78 && nd_dump_v_frame_number <= 82 &&
+		(obj->signature == 190 || obj->signature == 191))
+		fprintf(stderr, "classic raw_shortpos frame=%d sig=%d seg=%d xo=%d yo=%d zo=%d vel=(%d,%d,%d)\n",
+			nd_dump_v_frame_number, obj->signature, sp.segment, sp.xo, sp.yo, sp.zo,
+			sp.velx, sp.vely, sp.velz);
 
 	my_extract_shortpos(obj, &sp);
 	if ((obj->id == VCLIP_MORPHING_ROBOT) && (render_type == RT_FIREBALL) && (obj->control_type == CT_EXPLOSION))
@@ -1934,6 +1944,13 @@ int newdemo_read_frame_information(int rewrite)
 
 	while( !done ) {
 		nd_read_byte(&c);
+		if (nd_dump_v_active && nd_dump_v_frame_number >= 70 && nd_dump_v_frame_number <= 110) {
+			fprintf(stderr, "classic dump event=%d frame=%d ofs=%lld\n",
+				(int)c,
+				nd_dump_v_frame_number,
+				(long long)PHYSFS_tell(infile));
+			fflush(stderr);
+		}
 		if (nd_playback_v_bad_read) { done = -1; break; }
 		if (rewrite && (c != ND_EVENT_EOF))
 			nd_write_byte(c);
@@ -2003,6 +2020,10 @@ int newdemo_read_frame_information(int rewrite)
 
 				if (Newdemo_vcr_state != ND_STATE_PAUSED) {
 					segnum = Viewer->segnum;
+					if (nd_dump_v_active) {
+						Viewer->next = Viewer->prev = -1;
+						break;
+					}
 					Viewer->next = Viewer->prev = Viewer->segnum = -1;
 
 					// HACK HACK HACK -- since we have multiple level recording, it can be the case
@@ -2010,7 +2031,7 @@ int newdemo_read_frame_information(int rewrite)
 					// HACK HACK HACK -- that is greater than the highest index of segments.  Bash
 					// HACK HACK HACK -- the viewer to segment 0 for bogus view.
 
-					if (segnum > Highest_segment_index)
+					if (segnum < 0 || segnum > Highest_segment_index)
 						segnum = 0;
 					obj_link(Viewer-Objects,segnum);
 				}
@@ -2031,12 +2052,16 @@ int newdemo_read_frame_information(int rewrite)
 			}
 			if (Newdemo_vcr_state != ND_STATE_PAUSED) {
 				segnum = obj->segnum;
+				if (nd_dump_v_active) {
+					obj->next = obj->prev = -1;
+					break;
+				}
 				obj->next = obj->prev = obj->segnum = -1;
 
 				// HACK HACK HACK -- don't render objects is segments greater than Highest_segment_index
 				// HACK HACK HACK -- (see above)
 
-				if (segnum > Highest_segment_index)
+				if (segnum < 0 || segnum > Highest_segment_index)
 					break;
 
 				obj_link(obj-Objects,segnum);
@@ -2163,12 +2188,25 @@ int newdemo_read_frame_information(int rewrite)
 		case ND_EVENT_WALL_HIT_PROCESS: {
 			int player, segnum;
 			fix damage;
+			int wall_num = -1;
 
 			nd_read_int(&segnum);
 			nd_read_int(&side);
 			nd_read_fix(&damage);
 			nd_read_int(&player);
 			if (nd_playback_v_bad_read) { done = -1; break; }
+			if ((segnum >= 0) && (segnum <= Highest_segment_index) && (side >= 0) && (side < 6))
+				wall_num = Segments[segnum].sides[side].wall_num;
+			if (nd_dump_v_active && nd_dump_v_frame_number >= 70 && nd_dump_v_frame_number <= 110) {
+				if ((wall_num >= 0) && (wall_num < Num_walls))
+					fprintf(stderr, "classic wall_hit frame=%d seg=%d side=%d damage=%d player=%d wall=%d type=%d state=%d flags=0x%x trigger=%d\n",
+						nd_dump_v_frame_number, segnum, side, damage, player, wall_num,
+						Walls[wall_num].type, Walls[wall_num].state, Walls[wall_num].flags, Walls[wall_num].trigger);
+				else
+					fprintf(stderr, "classic wall_hit frame=%d seg=%d side=%d damage=%d player=%d wall=%d\n",
+						nd_dump_v_frame_number, segnum, side, damage, player, wall_num);
+				fflush(stderr);
+			}
 			if (rewrite)
 			{
 				nd_write_int(segnum);
@@ -2188,6 +2226,26 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_int(&objnum);
 			nd_read_int(&shot);
 			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (nd_dump_v_active && nd_dump_v_frame_number >= 70 && nd_dump_v_frame_number <= 110) {
+				int wall_num = -1;
+				int trigger_num = -1;
+				if ((segnum >= 0) && (segnum <= Highest_segment_index) && (side >= 0) && (side < 6))
+					wall_num = Segments[segnum].sides[side].wall_num;
+				if ((wall_num >= 0) && (wall_num < Num_walls))
+					trigger_num = Walls[wall_num].trigger;
+				if ((trigger_num >= 0) && (trigger_num < Num_triggers)) {
+					trigger *trig = &Triggers[trigger_num];
+					fprintf(stderr, "classic trigger frame=%d seg=%d side=%d objnum=%d shot=%d wall=%d type=%d state=%d flags=0x%x trigger=%d trig_type=%d trig_flags=0x%x links=%d link0=%d:%d\n",
+						nd_dump_v_frame_number, segnum, side, objnum, shot, wall_num,
+						Walls[wall_num].type, Walls[wall_num].state, Walls[wall_num].flags, trigger_num,
+						trig->type, trig->flags, trig->num_links,
+						trig->num_links > 0 ? trig->seg[0] : -1,
+						trig->num_links > 0 ? trig->side[0] : -1);
+				} else
+					fprintf(stderr, "classic trigger frame=%d seg=%d side=%d objnum=%d shot=%d wall=%d trigger=%d\n",
+						nd_dump_v_frame_number, segnum, side, objnum, shot, wall_num, trigger_num);
+				fflush(stderr);
+			}
 			if (rewrite)
 			{
 				nd_write_int(segnum);
@@ -2967,9 +3025,36 @@ int newdemo_read_frame_information(int rewrite)
 
 		case ND_EVENT_NEW_LEVEL: {
 			sbyte new_level, old_level, loaded_level;
+			int dump_level;
 
 			nd_read_byte (&new_level);
 			nd_read_byte (&old_level);
+			if (nd_dump_v_active) {
+				dump_level = ((Newdemo_vcr_state == ND_STATE_REWINDING) ||
+					(Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD)) ? old_level : new_level;
+				Current_level_num = dump_level;
+				if (nd_playback_v_juststarted) {
+					int wall_count;
+					int wall_index;
+					ubyte wall_type, wall_flags, wall_state;
+					short tmap_num, tmap_num2;
+
+					nd_read_int(&wall_count);
+					for (wall_index = 0; wall_index < wall_count; wall_index++) {
+						nd_read_byte((signed char *)&wall_type);
+						nd_read_byte((signed char *)&wall_flags);
+						nd_read_byte((signed char *)&wall_state);
+						nd_read_short(&tmap_num);
+						nd_read_short(&tmap_num2);
+						if (wall_index == 135)
+							fprintf(stderr, "classic restore wall135 type=%d flags=0x%x state=%d tmap=%d tmap2=%d\n",
+								(int)wall_type, (unsigned)wall_flags, (int)wall_state,
+								(int)tmap_num, (int)tmap_num2);
+					}
+					nd_playback_v_juststarted = 0;
+				}
+				break;
+			}
 			if (rewrite)
 			{
 				nd_write_byte (new_level);
@@ -2981,7 +3066,9 @@ int newdemo_read_frame_information(int rewrite)
 				if (Newdemo_vcr_state == ND_STATE_PAUSED)
 					break;
 
+				if (nd_dump_v_active) { fprintf(stderr, "classic dump before stop_time\n"); fflush(stderr); }
 				stop_time();
+				if (nd_dump_v_active) { fprintf(stderr, "classic dump after stop_time\n"); fflush(stderr); }
 				if ((Newdemo_vcr_state == ND_STATE_REWINDING) || (Newdemo_vcr_state == ND_STATE_ONEFRAMEBACKWARD))
 					loaded_level = old_level;
 				else {
@@ -2997,13 +3084,17 @@ int newdemo_read_frame_information(int rewrite)
 					return -1;
 				}
 
+				if (nd_dump_v_active) { fprintf(stderr, "classic dump before LoadLevel %d\n", (int)loaded_level); fflush(stderr); }
 				LoadLevel((int)loaded_level,1);
+				if (nd_dump_v_active) { fprintf(stderr, "classic dump after LoadLevel %d walls=%d\n", (int)loaded_level, Num_walls); fflush(stderr); }
 				nd_playback_v_cntrlcen_destroyed = 0;
 			}
 
 			if (nd_playback_v_juststarted)
 			{
+				if (nd_dump_v_active) { fprintf(stderr, "classic dump before wall restore\n"); fflush(stderr); }
 				nd_read_int (&Num_walls);
+				if (nd_dump_v_active) { fprintf(stderr, "classic dump wall count %d\n", Num_walls); fflush(stderr); }
 				if (rewrite)
 					nd_write_int (Num_walls);
 				for (i=0;i<Num_walls;i++)    // restore the walls
@@ -3796,6 +3887,10 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 		settings->level = Current_level_num;
 		settings->difficulty = Difficulty_level;
 		settings->rng_mode = input_demo_rng_mode_name(replay_mode);
+		settings->record_per_frame_state = 0;
+#if defined(__ANDROID__)
+		settings->record_per_frame_state = g_demo_record_per_frame_state ? 1 : 0;
+#endif
 		input_demo_fill_recorder_player_cfg(settings);
 	}
 	if (input_demo_is_mid_level_record_start() && !input_demo_capture_recorder_checkpoint(settings, error, error_size))
@@ -4891,11 +4986,19 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	while (!nd_playback_v_at_eof) {
 		int i;
 		int active_objects = 0;
+		int player_objnum;
 
 		if (newdemo_read_frame_information(0) == -1) {
 			if (!nd_playback_v_at_eof)
 				newdemo_dump_set_error(error, error_size, "classic demo frame decode failed");
 			break;
+		}
+		player_objnum = Players[Player_num].objnum;
+		if (player_objnum < 0 || player_objnum > Highest_object_index ||
+			Objects[player_objnum].type == OBJ_NONE) {
+			newdemo_dump_reset_player_control_trace();
+			newdemo_dump_reset_player_wiggle();
+			continue;
 		}
 		for (i = 0; i <= Highest_object_index; ++i)
 			if (Objects[i].type != OBJ_NONE && Objects[i].segnum != -1)

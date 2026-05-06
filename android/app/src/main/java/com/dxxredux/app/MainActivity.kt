@@ -240,6 +240,8 @@ class MainActivity :
 
     external fun nativeSetSkipIntroMovie(enabled: Boolean)
 
+    external fun nativeSetDemoRecordPerFrameState(enabled: Boolean)
+
     external fun nativeIsSaveLoadMenuActive(): Boolean
 
     external fun nativeIsPlayerDead(): Boolean
@@ -566,6 +568,7 @@ class MainActivity :
             }
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
+        applyDemoRecordingPref()
 
         // Allow rendering into the display cutout (notch) area
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -1302,6 +1305,7 @@ class MainActivity :
         syncDebugLogPrefs()
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
+        applyDemoRecordingPref()
         applyGraphicsDebugPrefs(prefs)
         applyGraphicsSettingsPrefs(prefs)
         // Start polling in-game state to show/hide overlay
@@ -1378,6 +1382,15 @@ class MainActivity :
                 prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true),
                 prefs.getBoolean(PREF_GUIDEBOT_HELPER_LINE, true),
             )
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
+    }
+
+    private fun applyDemoRecordingPref() {
+        try {
+            val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
+            nativeSetDemoRecordPerFrameState(prefs.getBoolean(PREF_DEMO_RECORD_PER_FRAME_STATE, false))
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }

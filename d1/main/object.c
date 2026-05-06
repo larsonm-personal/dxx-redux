@@ -38,6 +38,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "slew.h"
 #include "render.h"
 #include "wall.h"
+#include "input_demo_rng_trace.h"
 #include "vclip.h"
 #include "polyobj.h"
 #include "fireball.h"
@@ -1859,7 +1860,10 @@ void object_move_one( object * obj )
 		case CT_AI:
 			//NOTE LINK TO CT_MORPH ABOVE!!!
 			if (Game_suspended & SUSP_ROBOTS) return;
+			input_demo_rng_trace_set_object_context((int)(obj - Objects), obj->signature,
+				obj->id);
 			do_ai_frame(obj);
+			input_demo_rng_trace_clear_object_context();
 			break;
 
 		case CT_WEAPON:		Laser_do_weapon_sequence(obj, doHomerFrame, idealHomerFrameTime, homerFrameCount); break; // CED

@@ -54,6 +54,10 @@ int input_demo_weapon_create_probe_active(struct object *obj);
 int input_demo_replay_is_player_owned_weapon(struct object *obj);
 void input_demo_maybe_track_suspect_spreadfire(struct object *obj);
 void input_demo_log_weapon_lifetime(const char *step, struct object *obj);
+void input_demo_record_homing_state(const char *step, struct object *obj,
+	int straight_time_active, int do_homer_frame, int track_goal_before,
+	int track_goal_after, int dot, int32_t ideal_homer_frame_time,
+	unsigned int homer_frame_count);
 void input_demo_record_weapon_create_event(struct object *obj);
 void input_demo_record_player_shot_event(struct object *obj, int laser_type, int gun_num, int32_t spreadr, int32_t spreadu, int32_t delay_time, int make_sound, int harmless);
 void input_demo_record_spreadfire_emit_event(int nfires, int flags, int spreadfire_toggle, int64_t next_laser_delta, int64_t last_laser_delta);
@@ -62,9 +66,21 @@ void input_demo_set_awareness_source(const char *source_tag, int source_objnum, 
 void input_demo_trace_tracked_robot_poses(void);
 int input_demo_trace_ai_active(void);
 int input_demo_replay_awareness_probe_active(void);
+int input_demo_replay_homing_desync_probe_active(void);
+int input_demo_homing_desync_probe_active(void);
 int input_demo_trace_escort_active(void);
 int input_demo_trace_ai_robot_active(struct object *objp, struct ai_static *aip, struct ai_local *ailp);
 void input_demo_log_ai_robot_state(const char *label, struct object *objp);
+void input_demo_note_ai_schedule_skip_return(struct object *objp);
+void input_demo_note_ai_schedule_timeslice_return(struct object *objp);
+void input_demo_note_ai_schedule_process(struct object *objp);
+void input_demo_note_ai_schedule_phys_skip(struct object *objp, int skip_before, int skip_after);
+void input_demo_note_ai_schedule_detail(const char *kind, struct object *objp,
+	int previous_visibility, int awareness_type, int awareness_time,
+	int skip_ai_count, int time_since_processed, int dist_to_player,
+	int obj_ref);
+void input_demo_append_replay_probe_message(const char *kind, struct object *objp,
+	const char *message);
 void input_demo_log_awareness_vulcan_roll(struct object *objp, int type, int vulcan_roll, unsigned int sim_calls_before, unsigned int sim_state_before);
 void input_demo_log_awareness_add_return(const char *reason, struct object *objp, int type, int added, unsigned int sim_calls_before, unsigned int sim_calls_after, unsigned int sim_state_before, unsigned int sim_state_after);
 void input_demo_log_awareness_entry(struct object *objp, int type, const char *source_tag, int source_objnum, int aux_objnum, unsigned int sim_calls_entry, unsigned int sim_state_entry, int num_awareness_before, int overall_agitation_before, int multiplayer_awareness_allowed);
@@ -107,7 +123,14 @@ void input_demo_log_robot_visual_robot_cloak(struct object *obj);
 void input_demo_log_robot_poly_probe(struct object *obj, int faces_considered, int faces_drawn, int tmap_override);
 unsigned int input_demo_trace_robot_fire_frame_index(void);
 int input_demo_trace_robot_fire_active(struct object *objp);
-void input_demo_log_robot_fire_state(const char *label, struct object *objp);
+void input_demo_log_robot_fire_state(const char *label, struct object *objp,
+	int weapon_type);
+void input_demo_record_phys_apply_rot_event(struct object *obj,
+	const struct vms_vector *force_vec, int skip_before, int addval,
+	int skip_after, int rate, int vecmag, int tval);
+void input_demo_record_claw_contact_event(const char *step, struct object *robot,
+	struct object *playerobj, const struct vms_vector *collision_point,
+	int next_fire, int distance_to_player, int damage);
 void input_demo_update_result_kills_baseline(void);
 void input_demo_log_current_replay_frame_state_mismatch(void);
 void input_demo_log_replay_energy_stage(const char *label);

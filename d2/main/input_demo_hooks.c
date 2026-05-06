@@ -30,6 +30,7 @@
 #include "player.h"
 #include "playsave.h"
 #include "laser.h"
+#include "weapon.h"
 #include "wall.h"
 
 extern int Num_awareness_events;
@@ -44,6 +45,242 @@ extern int game_is_time_paused(void);
 static int input_demo_result_kills_mode = 0;
 static int input_demo_result_kills_baseline = 0;
 static int input_demo_result_kills_baseline_valid = 0;
+
+typedef struct input_demo_ai_schedule_probe_diag {
+	int valid;
+	unsigned int frame;
+	int skip_count;
+	int skip_obj;
+	int skip_sig;
+	int skip_id;
+	int timeslice_count;
+	int timeslice_obj;
+	int timeslice_sig;
+	int timeslice_id;
+	int process_count;
+	int process_obj;
+	int process_sig;
+	int process_id;
+	int phys_skip_count;
+	int phys_skip_obj;
+	int phys_skip_sig;
+	int phys_skip_id;
+	int phys_skip_before;
+	int phys_skip_after;
+} input_demo_ai_schedule_probe_diag;
+
+static input_demo_ai_schedule_probe_diag input_demo_ai_schedule_probe_state;
+
+static int input_demo_ai_schedule_probe_frame_active(unsigned int frame)
+{
+	return (frame <= 110) || (frame >= 129 && frame <= 132) ||
+		(frame >= 454 && frame <= 460) ||
+		(frame >= 1313 && frame <= 1319);
+}
+
+static void input_demo_reset_ai_schedule_probe_state(void)
+{
+	memset(&input_demo_ai_schedule_probe_state, 0, sizeof(input_demo_ai_schedule_probe_state));
+	input_demo_ai_schedule_probe_state.skip_obj = -1;
+	input_demo_ai_schedule_probe_state.skip_sig = -1;
+	input_demo_ai_schedule_probe_state.skip_id = -1;
+	input_demo_ai_schedule_probe_state.timeslice_obj = -1;
+	input_demo_ai_schedule_probe_state.timeslice_sig = -1;
+	input_demo_ai_schedule_probe_state.timeslice_id = -1;
+	input_demo_ai_schedule_probe_state.process_obj = -1;
+	input_demo_ai_schedule_probe_state.process_sig = -1;
+	input_demo_ai_schedule_probe_state.process_id = -1;
+	input_demo_ai_schedule_probe_state.phys_skip_obj = -1;
+	input_demo_ai_schedule_probe_state.phys_skip_sig = -1;
+	input_demo_ai_schedule_probe_state.phys_skip_id = -1;
+	input_demo_ai_schedule_probe_state.phys_skip_before = -1;
+	input_demo_ai_schedule_probe_state.phys_skip_after = -1;
+}
+
+static int input_demo_prepare_ai_schedule_probe_frame(void)
+{
+	const unsigned int frame = input_demo_trace_frame_index();
+
+	if (!input_demo_state_trace_is_active() || !input_demo_replay_is_loaded() ||
+		!input_demo_ai_schedule_probe_frame_active(frame))
+		return 0;
+
+	if (!input_demo_ai_schedule_probe_state.valid ||
+		input_demo_ai_schedule_probe_state.frame != frame) {
+		input_demo_reset_ai_schedule_probe_state();
+		input_demo_ai_schedule_probe_state.valid = 1;
+		input_demo_ai_schedule_probe_state.frame = frame;
+	}
+
+	return 1;
+}
+
+static void input_demo_record_ai_schedule_obj(int *count, int *objnum, int *sig, int *id, object *objp)
+{
+	if (!count || !objnum || !sig || !id || !objp)
+		return;
+
+	(*count)++;
+	if (*objnum != -1)
+		return;
+
+	*objnum = (int)(objp - Objects);
+	*sig = objp->signature;
+	*id = objp->id;
+}
+
+static void input_demo_append_ai_schedule_probe_log(const char *kind, object *objp, int skip_before, int skip_after)
+{
+	char path[PATH_MAX];
+	char *slash;
+	FILE *file;
+	const char *result_path = input_demo_replay_actual_result_path();
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!result_path || !result_path[0] || !kind)
+		return;
+
+	snprintf(path, sizeof(path), "%s", result_path);
+	slash = strrchr(path, '\\');
+	if (!slash)
+		slash = strrchr(path, '/');
+	if (!slash)
+		return;
+	slash[1] = 0;
+	if (strlen(path) + strlen("ai_schedule_probe.log") + 1 >= sizeof(path))
+		return;
+	strcat(path, "ai_schedule_probe.log");
+
+	file = fopen(path, "a");
+	if (!file)
+		return;
+	fprintf(file,
+		"frame=%u gt=%lld kind=%s obj=%d sig=%d id=%d seg=%d skip_before=%d skip_after=%d\n",
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		kind,
+		objnum,
+		objp ? objp->signature : -1,
+		objp ? objp->id : -1,
+		objp ? objp->segnum : -1,
+		skip_before,
+		skip_after);
+	fclose(file);
+}
+
+static void input_demo_record_frame_event_json(const char *json_text);
+
+void input_demo_append_replay_probe_message(const char *kind, object *objp,
+	const char *message)
+{
+	char json[1024];
+	char msg_sanitized[512];
+	int i;
+	int j;
+	char path[PATH_MAX];
+	char *slash;
+	FILE *file;
+	const char *result_path = input_demo_replay_actual_result_path();
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!kind || !message)
+		return;
+
+	if (input_demo_recorder_is_active()) {
+		for (i = 0, j = 0; message[i] && j < (int)sizeof(msg_sanitized) - 1; ++i) {
+			if (message[i] == '"' || message[i] == '\\' || message[i] == '\n' || message[i] == '\r')
+				msg_sanitized[j++] = '_';
+			else
+				msg_sanitized[j++] = message[i];
+		}
+		msg_sanitized[j] = 0;
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_log\",\"gt\":%lld,\"probe_kind\":\"%s\",\"obj\":%d,\"sig\":%d,\"id\":%d,\"seg\":%d,\"msg\":\"%s\"}",
+			(long long)GameTime64,
+			kind,
+			objnum,
+			objp ? objp->signature : -1,
+			objp ? objp->id : -1,
+			objp ? objp->segnum : -1,
+			msg_sanitized);
+		input_demo_record_frame_event_json(json);
+	}
+
+	if (!result_path || !result_path[0])
+		return;
+
+	snprintf(path, sizeof(path), "%s", result_path);
+	slash = strrchr(path, '\\');
+	if (!slash)
+		slash = strrchr(path, '/');
+	if (!slash)
+		return;
+	slash[1] = 0;
+	if (strlen(path) + strlen("ai_schedule_probe.log") + 1 >= sizeof(path))
+		return;
+	strcat(path, "ai_schedule_probe.log");
+
+	file = fopen(path, "a");
+	if (!file)
+		return;
+	fprintf(file, "frame=%u gt=%lld kind=%s obj=%d sig=%d id=%d seg=%d %s\n",
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		kind,
+		objnum,
+		objp ? objp->signature : -1,
+		objp ? objp->id : -1,
+		objp ? objp->segnum : -1,
+		message);
+	fclose(file);
+}
+
+static int input_demo_ai_schedule_detail_obj_active(object *objp)
+{
+	(void)objp;
+	return input_demo_trace_frame_index() <= 460;
+}
+
+static int input_demo_record_probe_events_active(void)
+{
+	return input_demo_recorder_is_active();
+}
+
+static int input_demo_console_weapon_trace_active(void)
+{
+	return input_demo_debug_is_enabled() &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+}
+
+static int input_demo_console_activity_trace_active(void)
+{
+	return input_demo_debug_activity_probe_active();
+}
+
+static int input_demo_record_weapon_probe_target(object *obj)
+{
+	if (!obj || obj->type != OBJ_WEAPON)
+		return 0;
+	if (input_demo_replay_is_player_owned_weapon(obj) && obj->id != FLARE_ID)
+		return 1;
+	return Weapon_info[obj->id].homing_flag;
+}
+
+int input_demo_replay_homing_desync_probe_active(void)
+{
+	return input_demo_replay_is_loaded() &&
+		(input_demo_debug_frame_index() <= 260 ||
+		 input_demo_debug_frame_in_range(437, 470));
+}
+
+int input_demo_homing_desync_probe_active(void)
+{
+	if (input_demo_replay_is_loaded())
+		return input_demo_replay_homing_desync_probe_active();
+	return input_demo_debug_is_enabled() && input_demo_recorder_is_active();
+}
+
+static void input_demo_record_frame_event_json(const char *json_text);
 
 static int input_demo_count_live_objects_of_type(int object_type)
 {
@@ -129,6 +366,137 @@ void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
 		if (obj->ctype.ai_info.danger_laser_num != -1)
 			diag->danger_laser_robots++;
 	}
+
+	if (input_demo_prepare_ai_schedule_probe_frame()) {
+		diag->ai_probe_skip_count = input_demo_ai_schedule_probe_state.skip_count;
+		diag->ai_probe_skip_obj = input_demo_ai_schedule_probe_state.skip_obj;
+		diag->ai_probe_skip_sig = input_demo_ai_schedule_probe_state.skip_sig;
+		diag->ai_probe_skip_id = input_demo_ai_schedule_probe_state.skip_id;
+		diag->ai_probe_timeslice_count = input_demo_ai_schedule_probe_state.timeslice_count;
+		diag->ai_probe_timeslice_obj = input_demo_ai_schedule_probe_state.timeslice_obj;
+		diag->ai_probe_timeslice_sig = input_demo_ai_schedule_probe_state.timeslice_sig;
+		diag->ai_probe_timeslice_id = input_demo_ai_schedule_probe_state.timeslice_id;
+		diag->ai_probe_process_count = input_demo_ai_schedule_probe_state.process_count;
+		diag->ai_probe_process_obj = input_demo_ai_schedule_probe_state.process_obj;
+		diag->ai_probe_process_sig = input_demo_ai_schedule_probe_state.process_sig;
+		diag->ai_probe_process_id = input_demo_ai_schedule_probe_state.process_id;
+		diag->ai_probe_phys_skip_count = input_demo_ai_schedule_probe_state.phys_skip_count;
+		diag->ai_probe_phys_skip_obj = input_demo_ai_schedule_probe_state.phys_skip_obj;
+		diag->ai_probe_phys_skip_sig = input_demo_ai_schedule_probe_state.phys_skip_sig;
+		diag->ai_probe_phys_skip_id = input_demo_ai_schedule_probe_state.phys_skip_id;
+		diag->ai_probe_phys_skip_before = input_demo_ai_schedule_probe_state.phys_skip_before;
+		diag->ai_probe_phys_skip_after = input_demo_ai_schedule_probe_state.phys_skip_after;
+	}
+}
+
+void input_demo_note_ai_schedule_skip_return(object *objp)
+{
+	if (!input_demo_prepare_ai_schedule_probe_frame())
+		return;
+
+	input_demo_append_ai_schedule_probe_log("skip_return", objp, -1, -1);
+	input_demo_record_ai_schedule_obj(&input_demo_ai_schedule_probe_state.skip_count,
+		&input_demo_ai_schedule_probe_state.skip_obj,
+		&input_demo_ai_schedule_probe_state.skip_sig,
+		&input_demo_ai_schedule_probe_state.skip_id,
+		objp);
+}
+
+void input_demo_note_ai_schedule_timeslice_return(object *objp)
+{
+	if (!input_demo_prepare_ai_schedule_probe_frame())
+		return;
+
+	input_demo_append_ai_schedule_probe_log("timeslice_return", objp, -1, -1);
+	input_demo_record_ai_schedule_obj(&input_demo_ai_schedule_probe_state.timeslice_count,
+		&input_demo_ai_schedule_probe_state.timeslice_obj,
+		&input_demo_ai_schedule_probe_state.timeslice_sig,
+		&input_demo_ai_schedule_probe_state.timeslice_id,
+		objp);
+}
+
+void input_demo_note_ai_schedule_process(object *objp)
+{
+	if (!input_demo_prepare_ai_schedule_probe_frame())
+		return;
+
+	input_demo_append_ai_schedule_probe_log("process_enter", objp, -1, -1);
+	input_demo_record_ai_schedule_obj(&input_demo_ai_schedule_probe_state.process_count,
+		&input_demo_ai_schedule_probe_state.process_obj,
+		&input_demo_ai_schedule_probe_state.process_sig,
+		&input_demo_ai_schedule_probe_state.process_id,
+		objp);
+}
+
+void input_demo_note_ai_schedule_phys_skip(object *objp, int skip_before, int skip_after)
+{
+	if (!input_demo_prepare_ai_schedule_probe_frame())
+		return;
+
+	input_demo_append_ai_schedule_probe_log("phys_skip_add", objp, skip_before,
+		skip_after);
+	input_demo_record_ai_schedule_obj(&input_demo_ai_schedule_probe_state.phys_skip_count,
+		&input_demo_ai_schedule_probe_state.phys_skip_obj,
+		&input_demo_ai_schedule_probe_state.phys_skip_sig,
+		&input_demo_ai_schedule_probe_state.phys_skip_id,
+		objp);
+	if (input_demo_ai_schedule_probe_state.phys_skip_before == -1) {
+		input_demo_ai_schedule_probe_state.phys_skip_before = skip_before;
+		input_demo_ai_schedule_probe_state.phys_skip_after = skip_after;
+	}
+}
+
+void input_demo_note_ai_schedule_detail(const char *kind, object *objp,
+	int previous_visibility, int awareness_type, int awareness_time,
+	int skip_ai_count, int time_since_processed, int dist_to_player,
+	int obj_ref)
+{
+	char path[PATH_MAX];
+	char *slash;
+	FILE *file;
+	const char *result_path;
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!input_demo_prepare_ai_schedule_probe_frame())
+		return;
+	if (!kind || !objp || !input_demo_ai_schedule_detail_obj_active(objp))
+		return;
+
+	result_path = input_demo_replay_actual_result_path();
+	if (!result_path || !result_path[0])
+		return;
+
+	snprintf(path, sizeof(path), "%s", result_path);
+	slash = strrchr(path, '\\');
+	if (!slash)
+		slash = strrchr(path, '/');
+	if (!slash)
+		return;
+	slash[1] = 0;
+	if (strlen(path) + strlen("ai_schedule_probe.log") + 1 >= sizeof(path))
+		return;
+	strcat(path, "ai_schedule_probe.log");
+
+	file = fopen(path, "a");
+	if (!file)
+		return;
+	fprintf(file,
+		"frame=%u gt=%lld kind=%s_detail obj=%d sig=%d id=%d seg=%d prev_vis=%d aware=%d aware_time=%d skip=%d since=%d dist=%d obj_ref=%d\n",
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		kind,
+		objnum,
+		objp->signature,
+		objp->id,
+		objp->segnum,
+		previous_visibility,
+		awareness_type,
+		awareness_time,
+		skip_ai_count,
+		time_since_processed,
+		dist_to_player,
+		obj_ref);
+	fclose(file);
 }
 
 void input_demo_capture_current_result(input_demo_result *result)
@@ -295,6 +663,39 @@ static int input_demo_suspect_spreadfire_signatures[INPUT_DEMO_SUSPECT_SPREADFIR
 
 void input_demo_set_awareness_source(const char *source_tag, int source_objnum, int aux_objnum)
 {
+	if (input_demo_record_probe_events_active()) {
+		char json[512];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_awareness_source\",\"gt\":%lld,\"source\":\"%s\",\"source_obj\":%d,\"aux_obj\":%d,\"previous_source\":\"%s\",\"previous_obj\":%d,\"previous_aux\":%d}",
+			(long long)GameTime64,
+			source_tag ? source_tag : "unset",
+			source_objnum,
+			aux_objnum,
+			input_demo_awareness_source_tag ? input_demo_awareness_source_tag : "unset",
+			input_demo_awareness_source_objnum,
+			input_demo_awareness_aux_objnum);
+		input_demo_record_frame_event_json(json);
+	}
+
+	if (input_demo_replay_homing_desync_probe_active()) {
+		char probe[192];
+		object *source_objp = (source_objnum >= 0 && source_objnum < MAX_OBJECTS)
+			? &Objects[source_objnum]
+			: NULL;
+
+		snprintf(probe, sizeof(probe),
+			"source=%s source_obj=%d aux_obj=%d previous_source=%s previous_obj=%d previous_aux=%d",
+			source_tag ? source_tag : "unset",
+			source_objnum,
+			aux_objnum,
+			input_demo_awareness_source_tag,
+			input_demo_awareness_source_objnum,
+			input_demo_awareness_aux_objnum);
+		input_demo_append_replay_probe_message("awareness_source_set",
+			source_objp, probe);
+	}
+
 	input_demo_awareness_source_tag = source_tag ? source_tag : "unset";
 	input_demo_awareness_source_objnum = source_objnum;
 	input_demo_awareness_aux_objnum = aux_objnum;
@@ -334,7 +735,8 @@ int input_demo_trace_ai_active(void)
 
 int input_demo_replay_awareness_probe_active(void)
 {
-	return input_demo_debug_activity_probe_active();
+	return input_demo_record_probe_events_active() ||
+		input_demo_debug_activity_probe_active();
 }
 
 int input_demo_trace_escort_active(void)
@@ -398,8 +800,9 @@ int input_demo_replay_weapon_focus_active(void)
 
 int input_demo_weapon_trace_active(void)
 {
-	return input_demo_debug_is_enabled() &&
-		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+	return input_demo_record_probe_events_active() ||
+		(input_demo_debug_is_enabled() &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded()));
 }
 
 static unsigned int input_demo_weapon_trace_frame_index(void)
@@ -517,7 +920,72 @@ void input_demo_log_weapon_lifetime(const char *step, object *obj)
 {
 	const int tracked_index = input_demo_tracked_suspect_spreadfire_index(obj);
 
-	if (!obj || !input_demo_weapon_trace_active())
+	if (!obj)
+		return;
+	if (input_demo_record_probe_events_active() &&
+		input_demo_record_weapon_probe_target(obj)) {
+		char json[768];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_weapon_life\",\"gt\":%lld,\"step\":\"%s\",\"obj\":%d,\"id\":%d,\"sig\":%d,\"track\":%d,\"seg\":%d,\"life\":%d,\"shields\":%d,\"flags\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"last_hit\":%d,\"track_goal\":%d,\"creation_frame\":%u,\"ctime\":%lld,\"homing\":%s,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"x\":%d,\"y\":%d,\"z\":%d,\"lastx\":%d,\"lasty\":%d,\"lastz\":%d}",
+			(long long)GameTime64,
+			step ? step : "unset",
+			(int)(obj - Objects),
+			obj->id,
+			obj->signature,
+			tracked_index,
+			obj->segnum,
+			obj->lifeleft,
+			obj->shields,
+			obj->flags,
+			obj->ctype.laser_info.parent_type,
+			obj->ctype.laser_info.parent_num,
+			obj->ctype.laser_info.parent_signature,
+			obj->ctype.laser_info.last_hitobj,
+			obj->ctype.laser_info.track_goal,
+			obj->ctype.laser_info.creation_framecount,
+			(long long)obj->ctype.laser_info.creation_time,
+			Weapon_info[obj->id].homing_flag ? "true" : "false",
+			obj->mtype.phys_info.velocity.x,
+			obj->mtype.phys_info.velocity.y,
+			obj->mtype.phys_info.velocity.z,
+			obj->pos.x,
+			obj->pos.y,
+			obj->pos.z,
+			obj->last_pos.x,
+			obj->last_pos.y,
+			obj->last_pos.z);
+		input_demo_record_frame_event_json(json);
+	}
+	if (input_demo_replay_homing_desync_probe_active() &&
+		input_demo_record_weapon_probe_target(obj)) {
+		char probe[384];
+
+		snprintf(probe, sizeof(probe),
+			"step=%s id=%d homing=%d parent_type=%d parent=%d parent_sig=%d last_hit=%d track_goal=%d life=%d seg=%d vel=(%d,%d,%d) pos=(%d,%d,%d) last=(%d,%d,%d)",
+			step,
+			obj->id,
+			Weapon_info[obj->id].homing_flag,
+			obj->ctype.laser_info.parent_type,
+			obj->ctype.laser_info.parent_num,
+			obj->ctype.laser_info.parent_signature,
+			obj->ctype.laser_info.last_hitobj,
+			obj->ctype.laser_info.track_goal,
+			obj->lifeleft,
+			obj->segnum,
+			obj->mtype.phys_info.velocity.x,
+			obj->mtype.phys_info.velocity.y,
+			obj->mtype.phys_info.velocity.z,
+			obj->pos.x,
+			obj->pos.y,
+			obj->pos.z,
+			obj->last_pos.x,
+			obj->last_pos.y,
+			obj->last_pos.z);
+		input_demo_append_replay_probe_message("weapon_life", obj,
+			probe);
+	}
+	if (!input_demo_console_weapon_trace_active())
 		return;
 
 	con_printf(CON_NORMAL,
@@ -701,6 +1169,47 @@ void input_demo_record_player_shot_event(object *obj, int laser_type, int gun_nu
 		delay_time,
 		harmless ? "true" : "false",
 		make_sound ? "true" : "false");
+	input_demo_record_frame_event_json(json);
+}
+
+void input_demo_record_homing_state(const char *step, object *obj,
+	int straight_time_active, int do_homer_frame, int track_goal_before,
+	int track_goal_after, int dot, int32_t ideal_homer_frame_time,
+	unsigned int homer_frame_count)
+{
+	char json[768];
+
+	if (!obj || !input_demo_record_probe_events_active())
+		return;
+	if (obj->type != OBJ_WEAPON || !Weapon_info[obj->id].homing_flag)
+		return;
+
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"probe_homing\",\"gt\":%lld,\"step\":\"%s\",\"obj\":%d,\"id\":%d,\"sig\":%d,\"seg\":%d,\"life\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"straight\":%s,\"do_homer_frame\":%s,\"track_goal_before\":%d,\"track_goal_after\":%d,\"dot\":%d,\"ideal_frame_time\":%d,\"homer_frame_count\":%u,\"creation_frame\":%u,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"x\":%d,\"y\":%d,\"z\":%d}",
+		(long long)GameTime64,
+		step ? step : "unset",
+		(int)(obj - Objects),
+		obj->id,
+		obj->signature,
+		obj->segnum,
+		obj->lifeleft,
+		obj->ctype.laser_info.parent_type,
+		obj->ctype.laser_info.parent_num,
+		obj->ctype.laser_info.parent_signature,
+		straight_time_active ? "true" : "false",
+		do_homer_frame ? "true" : "false",
+		track_goal_before,
+		track_goal_after,
+		dot,
+		ideal_homer_frame_time,
+		homer_frame_count,
+		obj->ctype.laser_info.creation_framecount,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z);
 	input_demo_record_frame_event_json(json);
 }
 
@@ -2458,13 +2967,13 @@ unsigned int input_demo_trace_robot_fire_frame_index(void)
 
 int input_demo_trace_robot_fire_active(object *objp)
 {
-	return input_demo_debug_is_enabled() &&
+	return (input_demo_record_probe_events_active() || input_demo_debug_is_enabled()) &&
 		(input_demo_recorder_is_active() || input_demo_replay_is_loaded()) &&
 		objp &&
 		(objp->type == OBJ_ROBOT);
 }
 
-void input_demo_log_robot_fire_state(const char *label, object *objp)
+void input_demo_log_robot_fire_state(const char *label, object *objp, int weapon_type)
 {
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 	ai_static *aip;
@@ -2477,14 +2986,63 @@ void input_demo_log_robot_fire_state(const char *label, object *objp)
 	aip = &objp->ctype.ai_info;
 	ailp = &Ai_local_info[objnum];
 	robptr = &Robot_info[objp->id];
+	if (input_demo_record_probe_events_active()) {
+		char json[1024];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_robot_fire\",\"gt\":%lld,\"step\":\"%s\",\"obj\":%d,\"sig\":%d,\"id\":%d,\"weapon\":%d,\"weapon_homing\":%s,\"attack_type\":%d,\"companion\":%d,\"behavior\":%d,\"mode\":%d,\"cur_state\":%d,\"goal_state\":%d,\"gun\":%d,\"seg\":%d,\"player_seg\":%d,\"believed_seg\":%d,\"goal_seg\":%d,\"prev_vis\":%d,\"aware\":%d,\"aware_time\":%d,\"retry\":%d,\"retry_chain\":%d,\"rapid\":%d,\"seen\":%lld,\"since\":%d,\"next_action\":%d,\"next_fire\":%d,\"next_fire2\":%d,\"path_index\":%d,\"path_length\":%d,\"hide\":%d,\"dir\":%d,\"x\":%d,\"y\":%d,\"z\":%d,\"vx\":%d,\"vy\":%d,\"vz\":%d}",
+			(long long)GameTime64,
+			label ? label : "unset",
+			objnum,
+			objp->signature,
+			objp->id,
+			weapon_type,
+			(weapon_type >= 0 && Weapon_info[weapon_type].homing_flag) ? "true" : "false",
+			robptr->attack_type,
+			robptr->companion,
+			aip->behavior,
+			ailp->mode,
+			aip->CURRENT_STATE,
+			aip->GOAL_STATE,
+			aip->CURRENT_GUN,
+			objp->segnum,
+			ConsoleObject ? ConsoleObject->segnum : -1,
+			Believed_player_seg,
+			ailp->goal_segment,
+			ailp->previous_visibility,
+			ailp->player_awareness_type,
+			ailp->player_awareness_time,
+			ailp->retry_count,
+			ailp->consecutive_retries,
+			ailp->rapidfire_count,
+			(long long)ailp->time_player_seen,
+			ailp->time_since_processed,
+			ailp->next_action_time,
+			ailp->next_fire,
+			ailp->next_fire2,
+			aip->cur_path_index,
+			aip->path_length,
+			aip->hide_index,
+			aip->PATH_DIR,
+			objp->pos.x,
+			objp->pos.y,
+			objp->pos.z,
+			objp->mtype.phys_info.velocity.x,
+			objp->mtype.phys_info.velocity.y,
+			objp->mtype.phys_info.velocity.z);
+		input_demo_record_frame_event_json(json);
+	}
+	if (!input_demo_debug_is_enabled())
+		return;
 
 	con_printf(CON_NORMAL,
-		"Input demo replay fire state: frame=%u step=%s obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d cur_state=%d goal_state=%d gun=%d seg=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d retry=%d retry_chain=%d rapid=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d dir=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
+		"Input demo replay fire state: frame=%u step=%s obj=%d sig=%d id=%d weapon=%d companion=%d behavior=%d mode=%d cur_state=%d goal_state=%d gun=%d seg=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d retry=%d retry_chain=%d rapid=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d dir=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
 		input_demo_trace_robot_fire_frame_index(),
 		label,
 		objnum,
 		objp->signature,
 		objp->id,
+		weapon_type,
 		robptr->companion,
 		aip->behavior,
 		ailp->mode,
@@ -2598,6 +3156,21 @@ void input_demo_log_awareness_vulcan_roll(object *objp, int type, int vulcan_rol
 
 	if (!objp || (objnum < 0))
 		return;
+	if (input_demo_record_probe_events_active()) {
+		char json[384];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_awareness_vulcan\",\"gt\":%lld,\"obj\":%d,\"type\":%d,\"roll\":%d,\"calls_before\":%u,\"state_before\":%u}",
+			(long long)GameTime64,
+			objnum,
+			type,
+			vulcan_roll,
+			sim_calls_before,
+			sim_state_before);
+		input_demo_record_frame_event_json(json);
+	}
+	if (!input_demo_console_activity_trace_active())
+		return;
 
 	con_printf(CON_NORMAL,
 		"Input demo awareness vulcan roll: mode=%s frame=%u gt=%lld type=%d obj=%d roll=%d threshold=3276 calls_before=%u state_before=%u\n",
@@ -2616,6 +3189,24 @@ void input_demo_log_awareness_add_return(const char *reason, object *objp, int t
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 
 	if (!objp || (objnum < 0))
+		return;
+	if (input_demo_record_probe_events_active()) {
+		char json[512];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_awareness_add_return\",\"gt\":%lld,\"obj\":%d,\"type\":%d,\"added\":%d,\"reason\":\"%s\",\"calls_before\":%u,\"calls_after\":%u,\"state_before\":%u,\"state_after\":%u}",
+			(long long)GameTime64,
+			objnum,
+			type,
+			added,
+			reason ? reason : "",
+			sim_calls_before,
+			sim_calls_after,
+			sim_state_before,
+			sim_state_after);
+		input_demo_record_frame_event_json(json);
+	}
+	if (!input_demo_console_activity_trace_active())
 		return;
 
 	if (reason && reason[0]) {
@@ -2655,6 +3246,29 @@ void input_demo_log_awareness_entry(object *objp, int type, const char *source_t
 
 	if (!objp || (objnum < 0))
 		return;
+	if (input_demo_record_probe_events_active()) {
+		char json[768];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_awareness_entry\",\"gt\":%lld,\"obj\":%d,\"sig\":%d,\"id\":%d,\"seg\":%d,\"type\":%d,\"source\":\"%s\",\"source_obj\":%d,\"aux_obj\":%d,\"calls\":%u,\"state\":%u,\"awareness_before\":%d,\"agitation_before\":%d,\"multiplayer\":%d}",
+			(long long)GameTime64,
+			objnum,
+			objp->signature,
+			objp->id,
+			objp->segnum,
+			type,
+			source_tag ? source_tag : "unset",
+			source_objnum,
+			aux_objnum,
+			sim_calls_entry,
+			sim_state_entry,
+			num_awareness_before,
+			overall_agitation_before,
+			multiplayer_awareness_allowed);
+		input_demo_record_frame_event_json(json);
+	}
+	if (!input_demo_console_activity_trace_active())
+		return;
 
 	con_printf(CON_NORMAL,
 		"Input demo awareness entry: mode=%s frame=%u gt=%lld type=%d obj=%d source=%s source_obj=%d aux_obj=%d calls=%u state=%u awareness=%d agitation=%d gate=%d\n",
@@ -2688,6 +3302,30 @@ void input_demo_log_awareness_probe(object *objp, int type)
 		parent_num = objp->ctype.laser_info.parent_num;
 		parent_sig = objp->ctype.laser_info.parent_signature;
 	}
+	if (input_demo_record_probe_events_active()) {
+		char json[768];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_awareness_object\",\"gt\":%lld,\"obj\":%d,\"type\":%d,\"obj_type\":%d,\"obj_id\":%d,\"sig\":%d,\"seg\":%d,\"life\":%d,\"flags\":%d,\"parent_type\":%d,\"parent_num\":%d,\"parent_sig\":%d,\"x\":%d,\"y\":%d,\"z\":%d}",
+			(long long)GameTime64,
+			objnum,
+			type,
+			objp->type,
+			objp->id,
+			objp->signature,
+			objp->segnum,
+			objp->lifeleft,
+			objp->flags,
+			parent_type,
+			parent_num,
+			parent_sig,
+			objp->pos.x,
+			objp->pos.y,
+			objp->pos.z);
+		input_demo_record_frame_event_json(json);
+	}
+	if (!input_demo_console_activity_trace_active())
+		return;
 
 	con_printf(CON_NORMAL,
 		"Input demo awareness probe: mode=%s frame=%u gt=%lld type=%d obj=%d obj_type=%d obj_id=%d sig=%d seg=%d life=%d flags=%d parent_type=%d parent_num=%d parent_sig=%d pos=(%d,%d,%d)\n",
@@ -2716,6 +3354,23 @@ void input_demo_log_awareness_post_add(object *objp, int type, int awareness_add
 
 	if (!objp || (objnum < 0))
 		return;
+	if (input_demo_record_probe_events_active()) {
+		char json[512];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_awareness_post_add\",\"gt\":%lld,\"obj\":%d,\"type\":%d,\"added\":%d,\"calls_before\":%u,\"calls_after\":%u,\"state_before\":%u,\"state_after\":%u}",
+			(long long)GameTime64,
+			objnum,
+			type,
+			awareness_added,
+			sim_calls_entry,
+			sim_calls_after_add,
+			sim_state_entry,
+			sim_state_after_add);
+		input_demo_record_frame_event_json(json);
+	}
+	if (!input_demo_console_activity_trace_active())
+		return;
 
 	con_printf(CON_NORMAL,
 		"Input demo awareness post-add: mode=%s frame=%u gt=%lld type=%d obj=%d added=%d calls=%u->%u state=%u->%u\n",
@@ -2736,6 +3391,24 @@ void input_demo_log_awareness_post_gate(object *objp, int type, int rng_gate_val
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 
 	if (!objp || (objnum < 0))
+		return;
+	if (input_demo_record_probe_events_active()) {
+		char json[512];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_awareness_gate\",\"gt\":%lld,\"obj\":%d,\"type\":%d,\"rng\":%d,\"pass\":%d,\"calls_before\":%u,\"calls_after\":%u,\"state_before\":%u,\"state_after\":%u}",
+			(long long)GameTime64,
+			objnum,
+			type,
+			rng_gate_value,
+			rng_gate_pass,
+			sim_calls_before,
+			sim_calls_after,
+			sim_state_before,
+			sim_state_after);
+		input_demo_record_frame_event_json(json);
+	}
+	if (!input_demo_console_activity_trace_active())
 		return;
 
 	con_printf(CON_NORMAL,
@@ -2758,6 +3431,33 @@ void input_demo_log_awareness_result(object *objp, int type, const char *source_
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 
 	if (!objp || (objnum < 0))
+		return;
+	if (input_demo_record_probe_events_active()) {
+		char json[768];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_awareness_result\",\"gt\":%lld,\"obj\":%d,\"sig\":%d,\"id\":%d,\"seg\":%d,\"type\":%d,\"source\":\"%s\",\"source_obj\":%d,\"aux_obj\":%d,\"added\":%d,\"skipped_observer\":%d,\"awareness_before\":%d,\"awareness_after\":%d,\"agitation_before\":%d,\"agitation_after\":%d,\"multiplayer\":%d,\"rng\":%d,\"rng_pass\":%d}",
+			(long long)GameTime64,
+			objnum,
+			objp->signature,
+			objp->id,
+			objp->segnum,
+			type,
+			source_tag ? source_tag : "unset",
+			source_objnum,
+			aux_objnum,
+			awareness_added,
+			skipped_observer,
+			awareness_before,
+			awareness_after,
+			agitation_before,
+			agitation_after,
+			multiplayer_awareness_allowed,
+			rng_gate_value,
+			rng_gate_pass);
+		input_demo_record_frame_event_json(json);
+	}
+	if (!input_demo_console_activity_trace_active())
 		return;
 
 	if (skipped_observer) {
@@ -2799,6 +3499,79 @@ void input_demo_log_awareness_result(object *objp, int type, const char *source_
 		multiplayer_awareness_allowed,
 		rng_gate_value,
 		rng_gate_pass);
+}
+
+void input_demo_record_phys_apply_rot_event(object *obj,
+	const vms_vector *force_vec, int skip_before, int addval, int skip_after,
+	int rate, int vecmag, int tval)
+{
+	char json[640];
+
+	if (!obj || !force_vec || !input_demo_record_probe_events_active())
+		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"probe_phys_apply_rot\",\"gt\":%lld,\"obj\":%d,\"sig\":%d,\"id\":%d,\"seg\":%d,\"attack_type\":%d,\"thief\":%d,\"skip_before\":%d,\"add\":%d,\"skip_after\":%d,\"rate\":%d,\"vecmag\":%d,\"tval\":%d,\"fx\":%d,\"fy\":%d,\"fz\":%d}",
+		(long long)GameTime64,
+		(int)(obj - Objects),
+		obj->signature,
+		obj->id,
+		obj->segnum,
+		(obj->type == OBJ_ROBOT) ? Robot_info[obj->id].attack_type : 0,
+		(obj->type == OBJ_ROBOT) ? Robot_info[obj->id].thief : 0,
+		skip_before,
+		addval,
+		skip_after,
+		rate,
+		vecmag,
+		tval,
+		force_vec->x,
+		force_vec->y,
+		force_vec->z);
+	input_demo_record_frame_event_json(json);
+}
+
+void input_demo_record_claw_contact_event(const char *step, object *robot,
+	object *playerobj, const vms_vector *collision_point, int next_fire,
+	int distance_to_player, int damage)
+{
+	char json[896];
+	const int robot_obj = robot ? (int)(robot - Objects) : -1;
+	const int player_obj = playerobj ? (int)(playerobj - Objects) : -1;
+	const int range_limit = (robot && playerobj)
+		? robot->size + playerobj->size + F1_0 * 2
+		: -1;
+
+	if (!robot || !playerobj || !input_demo_record_probe_events_active())
+		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"probe_claw_contact\",\"gt\":%lld,\"step\":\"%s\",\"robot_obj\":%d,\"robot_sig\":%d,\"robot_id\":%d,\"robot_seg\":%d,\"player_obj\":%d,\"player_seg\":%d,\"attack_type\":%d,\"energy_drain\":%d,\"next_fire\":%d,\"distance\":%d,\"range_limit\":%d,\"damage\":%d,\"cloaked\":%s,\"player_shields\":%d,\"player_energy\":%d,\"collision_x\":%d,\"collision_y\":%d,\"collision_z\":%d,\"robot_x\":%d,\"robot_y\":%d,\"robot_z\":%d,\"player_x\":%d,\"player_y\":%d,\"player_z\":%d}",
+		(long long)GameTime64,
+		step ? step : "unset",
+		robot_obj,
+		robot->signature,
+		robot->id,
+		robot->segnum,
+		player_obj,
+		playerobj->segnum,
+		Robot_info[robot->id].attack_type,
+		Robot_info[robot->id].energy_drain,
+		next_fire,
+		distance_to_player,
+		range_limit,
+		damage,
+		(Players[Player_num].flags & PLAYER_FLAGS_CLOAKED) ? "true" : "false",
+		Players[Player_num].shields,
+		Players[Player_num].energy,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0,
+		robot->pos.x,
+		robot->pos.y,
+		robot->pos.z,
+		playerobj->pos.x,
+		playerobj->pos.y,
+		playerobj->pos.z);
+	input_demo_record_frame_event_json(json);
 }
 
 void input_demo_log_ai_state(void)
@@ -2936,6 +3709,58 @@ static int64_t input_demo_replay_result_game_time64_override = 0;
 static int input_demo_replay_result_endlevel_completed_override = -1;
 static int input_demo_replay_compare_terminal_exit_only = 0;
 
+static void input_demo_write_replay_frame_state_trace(const input_demo_replay_frame *replay_frame)
+{
+	input_demo_result actual_state;
+	input_demo_state_trace_diag diag;
+	char error[256] = "";
+
+	if (!replay_frame || !input_demo_state_trace_is_active())
+		return;
+	input_demo_capture_current_result(&actual_state);
+	input_demo_capture_state_trace_diag(&diag);
+	if (input_demo_state_trace_write_frame(replay_frame->frame,
+					  replay_frame->frame_time,
+					  replay_frame->rng_state,
+					  replay_frame->has_rng_call_count,
+					  replay_frame->rng_call_count,
+					  &diag,
+					  &actual_state,
+					  error,
+					  sizeof(error)))
+		return;
+	if (!input_demo_replay_logged_state_trace_error)
+		con_printf(CON_NORMAL, "Input demo replay state trace write failed: %s\n", error);
+	input_demo_replay_logged_state_trace_error = 1;
+	input_demo_state_trace_stop();
+}
+
+static void input_demo_log_replay_frame_state_mismatch(const input_demo_replay_frame *replay_frame)
+{
+	input_demo_result actual_state;
+	char error[256] = "";
+	char expected_json[4096] = "";
+	char actual_json[4096] = "";
+
+	if (!replay_frame || !replay_frame->has_state || input_demo_replay_logged_state_mismatch)
+		return;
+	input_demo_capture_current_result(&actual_state);
+	if (input_demo_result_compare_snapshot(&replay_frame->state_result, &actual_state, error, sizeof(error)))
+		return;
+	input_demo_replay_logged_state_mismatch = 1;
+	if (!input_demo_result_snapshot_to_json_buffer(&replay_frame->state_result, expected_json, sizeof(expected_json)))
+		snprintf(expected_json, sizeof(expected_json), "<snapshot encode failed>");
+	if (!input_demo_result_snapshot_to_json_buffer(&actual_state, actual_json, sizeof(actual_json)))
+		snprintf(actual_json, sizeof(actual_json), "<snapshot encode failed>");
+	con_printf(CON_NORMAL,
+		"Input demo replay frame state mismatch: frame=%u gt=%lld %s\n",
+		(unsigned int)replay_frame->frame,
+		(long long)GameTime64,
+		error);
+	con_printf(CON_NORMAL, "Input demo replay expected state: %s\n", expected_json);
+	con_printf(CON_NORMAL, "Input demo replay actual state: %s\n", actual_json);
+}
+
 void input_demo_log_current_replay_frame_state_mismatch(void)
 {
 	input_demo_replay_frame replay_frame;
@@ -2945,6 +3770,8 @@ void input_demo_log_current_replay_frame_state_mismatch(void)
 		return;
 	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error)))
 		return;
+	input_demo_write_replay_frame_state_trace(&replay_frame);
+	input_demo_log_replay_frame_state_mismatch(&replay_frame);
 	input_demo_debug_write_replay_frame_state_trace((void *)&replay_frame);
 	input_demo_debug_log_replay_frame_state_mismatch((void *)&replay_frame);
 }

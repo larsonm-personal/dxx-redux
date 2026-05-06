@@ -215,7 +215,7 @@ int input_demo_state_trace_write_frame(uint32_t frame,
 	fputs("}", file);
 	if (diag)
 		fprintf(file,
-		        ",\"diag\":{\"awareness_events\":%d,\"camera_awake_robots\":%d,\"danger_laser_robots\":%d,\"d_tick_count\":%d,\"player_vel_x\":%d,\"player_vel_y\":%d,\"player_vel_z\":%d,\"player_last_x\":%d,\"player_last_y\":%d,\"player_last_z\":%d}",
+		        ",\"diag\":{\"awareness_events\":%d,\"camera_awake_robots\":%d,\"danger_laser_robots\":%d,\"d_tick_count\":%d,\"player_vel_x\":%d,\"player_vel_y\":%d,\"player_vel_z\":%d,\"player_last_x\":%d,\"player_last_y\":%d,\"player_last_z\":%d,\"ai_probe_skip_count\":%d,\"ai_probe_skip_obj\":%d,\"ai_probe_skip_sig\":%d,\"ai_probe_skip_id\":%d,\"ai_probe_timeslice_count\":%d,\"ai_probe_timeslice_obj\":%d,\"ai_probe_timeslice_sig\":%d,\"ai_probe_timeslice_id\":%d,\"ai_probe_process_count\":%d,\"ai_probe_process_obj\":%d,\"ai_probe_process_sig\":%d,\"ai_probe_process_id\":%d,\"ai_probe_phys_skip_count\":%d,\"ai_probe_phys_skip_obj\":%d,\"ai_probe_phys_skip_sig\":%d,\"ai_probe_phys_skip_id\":%d,\"ai_probe_phys_skip_before\":%d,\"ai_probe_phys_skip_after\":%d}",
 		        diag->awareness_events,
 		        diag->camera_awake_robots,
 		        diag->danger_laser_robots,
@@ -225,7 +225,25 @@ int input_demo_state_trace_write_frame(uint32_t frame,
 		        diag->player_vel_z,
 		        diag->player_last_x,
 		        diag->player_last_y,
-		        diag->player_last_z);
+		        diag->player_last_z,
+		        diag->ai_probe_skip_count,
+		        diag->ai_probe_skip_obj,
+		        diag->ai_probe_skip_sig,
+		        diag->ai_probe_skip_id,
+		        diag->ai_probe_timeslice_count,
+		        diag->ai_probe_timeslice_obj,
+		        diag->ai_probe_timeslice_sig,
+		        diag->ai_probe_timeslice_id,
+		        diag->ai_probe_process_count,
+		        diag->ai_probe_process_obj,
+		        diag->ai_probe_process_sig,
+		        diag->ai_probe_process_id,
+		        diag->ai_probe_phys_skip_count,
+		        diag->ai_probe_phys_skip_obj,
+		        diag->ai_probe_phys_skip_sig,
+		        diag->ai_probe_phys_skip_id,
+		        diag->ai_probe_phys_skip_before,
+		        diag->ai_probe_phys_skip_after);
 	fprintf(file, ",\"state\":%s}\n", state_json);
 	if (fflush(file) != 0)
 		return copy_error("could not flush input demo state trace file", error, error_size);

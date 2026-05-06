@@ -60,6 +60,10 @@ volatile int g_intro_active = 0;
  * Written by JNI from Kotlin, read by d1/d2 titles.c. */
 volatile int g_skip_intro_pref = 0;
 
+/* Shared launcher preference: include per-frame state in live input demo
+ * recordings. Written by JNI from Kotlin, read by d1/d2 newdemo.c. */
+volatile int g_demo_record_per_frame_state = 0;
+
 /* Set to 1 when the current launch actually bypassed the intro/title segment
  * because the launcher preference requested it.  Exposed via introspection for
  * automation checks. */
@@ -735,6 +739,12 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetSkipIntroMovie(JNIEnv *env, jobject thiz, jboolean enabled)
 {
 	g_skip_intro_pref = enabled ? 1 : 0;
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetDemoRecordPerFrameState(JNIEnv *env, jobject thiz, jboolean enabled)
+{
+	g_demo_record_per_frame_state = enabled ? 1 : 0;
 }
 
 extern volatile int g_saveload_menu_active;

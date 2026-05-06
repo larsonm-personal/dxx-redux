@@ -71,6 +71,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_energy_trace.h"
 #include "input_demo_replay.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_rng_trace.h"
 #include "interp.h"
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -2111,14 +2112,54 @@ void object_move_one( object * obj )
 		case CT_AI:
 			//NOTE LINK TO CT_MORPH ABOVE!!!
 			if (Game_suspended & SUSP_ROBOTS) return;
-			if (input_demo_trace_ai_rng_active(obj)) {
+			if (input_demo_replay_homing_desync_probe_active()) {
 				unsigned int rng_before = 0;
 				unsigned int rng_call_count_before = d_rand_get_call_count();
 				unsigned int rng_after = 0;
 				unsigned int rng_call_count_after;
 
 				d_rand_get_state(&rng_before);
+				input_demo_rng_trace_set_object_context((int)(obj - Objects),
+					obj->signature, obj->id);
 				do_ai_frame(obj);
+				input_demo_rng_trace_clear_object_context();
+				rng_call_count_after = d_rand_get_call_count();
+				d_rand_get_state(&rng_after);
+				if ((rng_after != rng_before) || (rng_call_count_after != rng_call_count_before)) {
+					char probe[384];
+
+					snprintf(probe, sizeof(probe),
+						"behavior=%d mode=%d goal_seg=%d aware=%d aware_time=%d skip=%d dist=%d calls=%u->%u state=%u->%u pos=(%d,%d,%d) vel=(%d,%d,%d)",
+						obj->ctype.ai_info.behavior,
+						Ai_local_info[obj-Objects].mode,
+						Ai_local_info[obj-Objects].goal_segment,
+						Ai_local_info[obj-Objects].player_awareness_type,
+						Ai_local_info[obj-Objects].player_awareness_time,
+						obj->ctype.ai_info.SKIP_AI_COUNT,
+						vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos),
+						rng_call_count_before,
+						rng_call_count_after,
+						rng_before,
+						rng_after,
+						obj->pos.x,
+						obj->pos.y,
+						obj->pos.z,
+						obj->mtype.phys_info.velocity.x,
+						obj->mtype.phys_info.velocity.y,
+						obj->mtype.phys_info.velocity.z);
+					input_demo_append_replay_probe_message("ai_rng", obj, probe);
+				}
+			} else if (input_demo_trace_ai_rng_active(obj)) {
+				unsigned int rng_before = 0;
+				unsigned int rng_call_count_before = d_rand_get_call_count();
+				unsigned int rng_after = 0;
+				unsigned int rng_call_count_after;
+
+				d_rand_get_state(&rng_before);
+				input_demo_rng_trace_set_object_context((int)(obj - Objects),
+					obj->signature, obj->id);
+				do_ai_frame(obj);
+				input_demo_rng_trace_clear_object_context();
 				rng_call_count_after = d_rand_get_call_count();
 				d_rand_get_state(&rng_after);
 				if ((rng_after != rng_before) || (rng_call_count_after != rng_call_count_before))
@@ -2136,8 +2177,12 @@ void object_move_one( object * obj )
 						rng_call_count_after,
 						rng_before,
 						rng_after);
-			} else
+			} else {
+				input_demo_rng_trace_set_object_context((int)(obj - Objects),
+					obj->signature, obj->id);
 				do_ai_frame(obj);
+				input_demo_rng_trace_clear_object_context();
+			}
 			break;
 
 		case CT_WEAPON:

@@ -43,6 +43,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "robot.h"
 #include "bm.h"
 #include "byteswap.h"
+#include "input_demo_hooks.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -50,6 +51,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 trigger Triggers[MAX_TRIGGERS];
 int Num_triggers;
+
+static void input_demo_log_trigger_probe(const char *phase, segment *seg, short side, short objnum, int shot, int trigger_num);
 
 //link Links[MAX_WALL_LINKS];
 //int Num_links;
@@ -215,6 +218,7 @@ int do_change_walls(sbyte trigger_num)
 
 			segp = &Segments[Triggers[trigger_num].seg[i]];
 			side = Triggers[trigger_num].side[i];
+			input_demo_log_trigger_probe("change_link_before", segp, side, -1, 0, trigger_num);
 
 			if (segp->children[side] < 0)
 			{
@@ -289,6 +293,7 @@ int do_change_walls(sbyte trigger_num)
 						Walls[csegp->sides[cside].wall_num].type = new_wall_type;
 					break;
 			}
+			input_demo_log_trigger_probe("change_link_after", segp, side, -1, 0, trigger_num);
 
 
 			kill_stuck_objects(segp->sides[side].wall_num);
@@ -360,6 +365,64 @@ void do_il_off(sbyte trigger_num)
 extern void EnterSecretLevel(void);
 extern void ExitSecretLevel(void);
 extern int p_secret_level_destroyed(void);
+
+static void input_demo_log_trigger_probe(const char *phase, segment *seg, short side, short objnum, int shot, int trigger_num)
+{
+	char probe[512];
+	object *objp = NULL;
+	int wall_num = -1;
+	int wall_type = -1;
+	int wall_state = -1;
+	int wall_flags = -1;
+	int wall_trigger = -1;
+	int obj_type = -1;
+	int obj_id = -1;
+	int obj_sig = -1;
+	int obj_seg = -1;
+	int player_connected = (Player_num >= 0 && Player_num < MAX_PLAYERS) ? Players[Player_num].connected : -1;
+
+	if (!input_demo_replay_homing_desync_probe_active())
+		return;
+	if (objnum >= 0 && objnum <= Highest_object_index) {
+		objp = &Objects[objnum];
+		obj_type = objp->type;
+		obj_id = objp->id;
+		obj_sig = objp->signature;
+		obj_seg = objp->segnum;
+	}
+	if (seg && side >= 0 && side < MAX_SIDES_PER_SEGMENT) {
+		wall_num = seg->sides[side].wall_num;
+		if (wall_num >= 0 && wall_num < Num_walls) {
+			wall *wallp = &Walls[wall_num];
+
+			wall_type = wallp->type;
+			wall_state = wallp->state;
+			wall_flags = wallp->flags;
+			wall_trigger = wallp->trigger;
+		}
+	}
+	snprintf(probe, sizeof(probe),
+		"phase=%s seg=%d side=%d shot=%d obj=%d obj_type=%d obj_id=%d obj_sig=%d obj_seg=%d wall=%d wall_type=%d wall_state=%d wall_flags=0x%x wall_trigger=%d trigger=%d game_mode=0x%x player=%d connected=%d",
+		phase,
+		seg ? (int)(seg - Segments) : -1,
+		side,
+		shot,
+		objnum,
+		obj_type,
+		obj_id,
+		obj_sig,
+		obj_seg,
+		wall_num,
+		wall_type,
+		wall_state,
+		wall_flags,
+		wall_trigger,
+		trigger_num,
+		Game_mode,
+		Player_num,
+		player_connected);
+	input_demo_append_replay_probe_message("trigger_probe", objp, probe);
+}
 
 int wall_is_forcefield(trigger *trig)
 {
@@ -555,9 +618,12 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 	int wall_num, trigger_num;	//, ctrigger_num;
 	//segment *csegp;
  	//short cside;
+	input_demo_log_trigger_probe("entry", seg, side, objnum, shot, -1);
 
-	if ((Game_mode & GM_MULTI) && (Players[Player_num].connected != CONNECT_PLAYING)) // as a host we may want to handle triggers for our clients. so this function may be called when we are not playing.
+	if ((Game_mode & GM_MULTI) && (Players[Player_num].connected != CONNECT_PLAYING)) { // as a host we may want to handle triggers for our clients. so this function may be called when we are not playing.
+		input_demo_log_trigger_probe("skip_not_connected", seg, side, objnum, shot, -1);
 		return;
+	}
 
 	if ((objnum == Players[Player_num].objnum) || ((Objects[objnum].type == OBJ_ROBOT) && (Robot_info[Objects[objnum].id].companion))) {
 
@@ -565,15 +631,26 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 			newdemo_record_trigger( seg-Segments, side, objnum,shot);
 
 		wall_num = seg->sides[side].wall_num;
-		if ( wall_num == -1 ) return;
+		if ( wall_num == -1 ) {
+			input_demo_log_trigger_probe("skip_no_wall", seg, side, objnum, shot, -1);
+			return;
+		}
 
 		trigger_num = Walls[wall_num].trigger;
 
-		if (trigger_num == -1)
+		if (trigger_num == -1) {
+			input_demo_log_trigger_probe("skip_no_trigger", seg, side, objnum, shot, -1);
 			return;
+		}
 
-		if (check_trigger_sub(trigger_num, Player_num,shot))
+		input_demo_log_trigger_probe("before_sub", seg, side, objnum, shot, trigger_num);
+
+		if (check_trigger_sub(trigger_num, Player_num,shot)) {
+			input_demo_log_trigger_probe("sub_returned_skip", seg, side, objnum, shot, trigger_num);
 			return;
+		}
+
+		input_demo_log_trigger_probe("handled", seg, side, objnum, shot, trigger_num);
 
 #ifdef NETWORK
 		if (Game_mode & GM_MULTI)

@@ -770,9 +770,17 @@ void do_ai_robot_hit_attack(object *robot, object *playerobj, vms_vector *collis
 		return;
 
 	if (robptr->attack_type == 1) {
+		const int dist_to_player = vm_vec_dist_quick(&playerobj->pos,
+			&robot->pos);
+
+		input_demo_record_claw_contact_event("attack_gate", robot, playerobj,
+			collision_point, ailp->next_fire, dist_to_player, 0);
 		if (ailp->next_fire <= 0) {
 			if (!(Players[Player_num].flags & PLAYER_FLAGS_CLOAKED))
-				if (vm_vec_dist_quick(&ConsoleObject->pos, &robot->pos) < robot->size + ConsoleObject->size + F1_0*2) {
+				if (dist_to_player < robot->size + playerobj->size + F1_0*2) {
+					input_demo_record_claw_contact_event("attack_hit", robot,
+						playerobj, collision_point, ailp->next_fire,
+						dist_to_player, 0);
 					collide_player_and_nasty_robot( playerobj, robot, collision_point );
 					if (robptr->energy_drain && Players[Player_num].energy) {
 						const fix energy_before = Players[Player_num].energy;
@@ -1056,18 +1064,21 @@ player_led: ;
 			fire_vec.z);
 
 	if (input_demo_trace_robot_fire_active(obj))
-		input_demo_log_robot_fire_state("robot_fire before_awareness", obj);
+		input_demo_log_robot_fire_state("robot_fire before_awareness", obj,
+			weapon_type);
 
 	input_demo_set_awareness_source("ai2_robot_fire", obj - Objects, weapon_type);
 	create_awareness_event(obj, PA_NEARBY_ROBOT_FIRED);
 
 	if (input_demo_trace_robot_fire_active(obj))
-		input_demo_log_robot_fire_state("robot_fire after_awareness", obj);
+		input_demo_log_robot_fire_state("robot_fire after_awareness", obj,
+			weapon_type);
 
 	set_next_fire_time(obj, ailp, robptr, gun_num);
 
 	if (input_demo_trace_robot_fire_active(obj))
-		input_demo_log_robot_fire_state("robot_fire after_set_next_fire_time", obj);
+		input_demo_log_robot_fire_state("robot_fire after_set_next_fire_time",
+			obj, weapon_type);
 
 }
 
