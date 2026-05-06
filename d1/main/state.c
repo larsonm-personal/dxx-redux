@@ -998,9 +998,13 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj)
 			break;
 		case CT_CNTRLCEN:
 		{
-			// gun points of reactor now part of the object but of course not saved in object_rw and overwritten due to reset_objects(). Let's just recompute them.
+			// Boss levels keep a hidden CT_CNTRLCEN placeholder as OBJ_GHOST/RT_NONE.
+			// Only rebuild gun points for the live reactor object.
 			int i = 0;
-			reactor *reactor = get_reactor_definition(obj->id);
+			reactor *reactor;
+			if (obj->type != OBJ_CNTRLCEN || obj->render_type != RT_POLYOBJ)
+				break;
+			reactor = get_reactor_definition(obj->id);
 			for (i=0; i<reactor->n_guns; i++)
 				calc_controlcen_gun_point(reactor, obj, i);
 			break;

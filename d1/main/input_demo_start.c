@@ -18,6 +18,15 @@
 #include "player.h"
 #include "state.h"
 
+#ifdef __ANDROID__
+#include "android_crash_handler.h"
+#define INPUT_DEMO_CRUMB(msg) crash_breadcrumb(msg)
+#define INPUT_DEMO_CRUMB_V crash_breadcrumb_v
+#else
+#define INPUT_DEMO_CRUMB(msg) ((void)0)
+#define INPUT_DEMO_CRUMB_V(...) ((void)0)
+#endif
+
 static int input_demo_skip_level_intro = 0;
 
 static int input_demo_find_cmd_arg(const char *name)
@@ -149,6 +158,7 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 	demo_path = input_demo_cmd_arg_value(arg_index, "-inputdemo-replay");
 	if (!demo_path)
 		return 1;
+	INPUT_DEMO_CRUMB_V("input_demo: cmdline path=%s", demo_path);
 	if (actual_result_arg_index) {
 		actual_result_path = input_demo_cmd_arg_value(actual_result_arg_index,
 			"-inputdemo-actual-result");
@@ -183,6 +193,10 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 		printf("Input demo replay load failed: %s\n", replay_error);
 		return 1;
 	}
+	INPUT_DEMO_CRUMB_V("input_demo: replay load ok start_mode=%s mission=%s level=%d",
+		input_demo_replay_start_mode() ? input_demo_replay_start_mode() : "(null)",
+		input_demo_replay_mission() ? input_demo_replay_mission() : "(null)",
+		input_demo_replay_level());
 	if (actual_result_path)
 		input_demo_replay_set_actual_result_path(actual_result_path);
 	if (rng_trace_path && !input_demo_rng_trace_start_replay(rng_trace_path, replay_error, sizeof(replay_error)))
@@ -221,6 +235,8 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 	else
 		snprintf(mission_name, sizeof(mission_name), "%s", input_demo_replay_mission());
 	if (!strcmp(start_mode, "new_level")) {
+		INPUT_DEMO_CRUMB_V("input_demo: new_level mission=%s level=%d frames=%u",
+			mission_name, input_demo_replay_level(), input_demo_replay_frame_count());
 		if (!load_mission_by_name(mission_name))
 		{
 			printf("Input demo replay could not load mission: %s\n", mission_name);
@@ -239,12 +255,13 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 				input_demo_replay_unload();
 				return 1;
 			}
-			printf("Input demo replay state trace: %s\n", state_log_path);
+			input_demo_debug_printf("Input demo replay state trace: %s\n", state_log_path);
 		}
 		if (rng_trace_path)
-			printf("Input demo replay rng trace: %s\n", rng_trace_path);
+			input_demo_debug_printf("Input demo replay rng trace: %s\n", rng_trace_path);
 		if (actual_result_path)
-			printf("Input demo replay actual result: %s\n", actual_result_path);
+			input_demo_debug_printf("Input demo replay actual result: %s\n", actual_result_path);
+		INPUT_DEMO_CRUMB("input_demo: new_level StartNewGame");
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(input_demo_replay_level());
 		return 0;
@@ -273,8 +290,10 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 		snprintf(local_checkpoint_name, sizeof(local_checkpoint_name), "Players/%s", checkpoint_base_name);
 	else
 		snprintf(local_checkpoint_name, sizeof(local_checkpoint_name), "%s", checkpoint_base_name);
-	printf("Input demo replay checkpoint temp path: recorded=%s local=%s\n",
+	input_demo_debug_printf("Input demo replay checkpoint temp path: recorded=%s local=%s\n",
 		checkpoint_name, local_checkpoint_name);
+	INPUT_DEMO_CRUMB_V("input_demo: checkpoint temp=%s size=%u",
+		local_checkpoint_name, (unsigned int)checkpoint_size);
 	if (!strncmp(local_checkpoint_name, "Players/", 8))
 		PHYSFS_mkdir("Players");
 	PHYSFS_delete(local_checkpoint_name);
@@ -295,6 +314,7 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 	}
 	PHYSFS_close(checkpoint_file);
 	checkpoint_file = NULL;
+	INPUT_DEMO_CRUMB("input_demo: checkpoint bytes written");
 	if (!state_restore_all_sub(local_checkpoint_name))
 	{
 		PHYSFS_delete(local_checkpoint_name);
@@ -303,6 +323,8 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 		return 1;
 	}
 	PHYSFS_delete(local_checkpoint_name);
+	INPUT_DEMO_CRUMB_V("input_demo: checkpoint restored mission=%s level=%d difficulty=%d gt=%lld",
+		Current_mission_filename, Current_level_num, Difficulty_level, (long long)GameTime64);
 	{
 		int player_cfg_result;
 		int replay_auto_level = -1;
@@ -349,7 +371,7 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 			ship_max_rotthrust = Player_ship->max_rotthrust;
 			ship_wiggle = Player_ship->wiggle;
 		}
-		con_printf(CON_NORMAL, "Input demo replay player config: callsign=%s result=%d auto_level=%d debris=%d autoselect=(nofire=%d,after=%d,cycle=%d,classic=%d) order_hash=(0x%x,0x%x) player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
+		input_demo_debug_printf("Input demo replay player config: callsign=%s result=%d auto_level=%d debris=%d autoselect=(nofire=%d,after=%d,cycle=%d,classic=%d) order_hash=(0x%x,0x%x) player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
 			replay_callsign, player_cfg_result, PlayerCfg.AutoLeveling,
 			PlayerCfg.PersistentDebris,
 			PlayerCfg.NoFireAutoselect, PlayerCfg.SelectAfterFire,
@@ -376,11 +398,13 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 			input_demo_replay_unload();
 			return 1;
 		}
-		printf("Input demo replay state trace: %s\n", state_log_path);
+		input_demo_debug_printf("Input demo replay state trace: %s\n", state_log_path);
 	}
 	if (rng_trace_path)
-		printf("Input demo replay rng trace: %s\n", rng_trace_path);
+		input_demo_debug_printf("Input demo replay rng trace: %s\n", rng_trace_path);
 	if (actual_result_path)
-		printf("Input demo replay actual result: %s\n", actual_result_path);
+		input_demo_debug_printf("Input demo replay actual result: %s\n", actual_result_path);
+	INPUT_DEMO_CRUMB_V("input_demo: replay armed mission=%s level=%d frames=%u",
+		mission_name, input_demo_replay_level(), input_demo_replay_frame_count());
 	return 0;
 }

@@ -124,6 +124,7 @@ function Invoke-InputDemoHostBuild {
 
     $buildScript = Join-Path $RepoRoot 'run-windows-build.ps1'
     $buildTarget = Get-InputDemoBuildTarget -GameName $GameName
+    $originalLocation = Get-Location
 
     if (-not (Test-Path -LiteralPath $buildScript)) {
         throw "Host build script not found: $buildScript"
@@ -153,6 +154,8 @@ function Invoke-InputDemoHostBuild {
         if ($LASTEXITCODE -ne 0) {
             throw "Host build failed with exit code $LASTEXITCODE (fallback arch: $fallbackArch)"
         }
+    } finally {
+        Set-Location -LiteralPath $originalLocation.Path
     }
 }
 
