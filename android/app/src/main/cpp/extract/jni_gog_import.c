@@ -7,6 +7,7 @@
  */
 
 #include <jni.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <android/log.h>
@@ -41,6 +42,43 @@ static const char *basename_only(const char *path)
 		if (*p == '/' || *p == '\\') last = p + 1;
 	}
 	return last;
+}
+
+static void launcher_log(JNIEnv *env, const char *message)
+{
+	if (!env || !message || !message[0]) return;
+	jclass cls = (*env)->FindClass(env, "com/dxxredux/app/LauncherDebugLog");
+	if (!cls) {
+		(*env)->ExceptionClear(env);
+		return;
+	}
+	jmethodID mid = (*env)->GetStaticMethodID(env, cls, "log", "(Ljava/lang/String;)V");
+	if (!mid) {
+		(*env)->DeleteLocalRef(env, cls);
+		(*env)->ExceptionClear(env);
+		return;
+	}
+	jstring jmessage = (*env)->NewStringUTF(env, message);
+	if (!jmessage) {
+		(*env)->DeleteLocalRef(env, cls);
+		(*env)->ExceptionClear(env);
+		return;
+	}
+	(*env)->CallStaticVoidMethod(env, cls, mid, jmessage);
+	if ((*env)->ExceptionCheck(env))
+		(*env)->ExceptionClear(env);
+	(*env)->DeleteLocalRef(env, jmessage);
+	(*env)->DeleteLocalRef(env, cls);
+}
+
+static void launcher_logf(JNIEnv *env, const char *fmt, ...)
+{
+	char buf[512];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+	launcher_log(env, buf);
 }
 
 static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
@@ -221,16 +259,37 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 		if (!has_game_extension(arc->files[i].destination)) continue;
 		if (!includeAudio && is_audio_extension(arc->files[i].destination)) continue;
 		const char *fname = basename_only(arc->files[i].destination);
+		int is_audio = is_audio_extension(arc->files[i].destination);
 		char out_path[1024];
 		snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);
 		long long file_comp_size = 0;
 		if (arc->files[i].location < (uint32_t) arc->data_entry_count)
 			file_comp_size = (long long) arc->data_entries[arc->files[i].location].chunk_compressed_size;
+		if (is_audio) {
+			launcher_logf(env,
+			             "launcher-gog-native-start file=%s comp_bytes=%lld gog_galaxy=%d",
+			             fname,
+			             file_comp_size,
+			             arc->files[i].gog_galaxy ? 1 : 0);
+		}
 		if (inno_extract_file(arc, i, out_path,
 		                      progress ? gog_progress_cb : NULL, &ctx) == 0) {
 			extracted++;
+			if (is_audio) {
+				launcher_logf(env,
+				             "launcher-gog-native-done file=%s comp_bytes=%lld gog_galaxy=%d",
+				             fname,
+				             file_comp_size,
+				             arc->files[i].gog_galaxy ? 1 : 0);
+			}
 		} else {
 			LOGE("Failed to extract: %s", arc->files[i].destination);
+			launcher_logf(env,
+			             "launcher-gog-native-fail file=%s audio=%d comp_bytes=%lld gog_galaxy=%d",
+			             fname,
+			             is_audio,
+			             file_comp_size,
+			             arc->files[i].gog_galaxy ? 1 : 0);
 			errors++;
 		}
 		ctx.completed_bytes += file_comp_size;

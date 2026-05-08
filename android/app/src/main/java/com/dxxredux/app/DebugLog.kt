@@ -2,8 +2,10 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.core.content.FileProvider
+import androidx.core.content.pm.PackageInfoCompat
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
@@ -125,15 +127,12 @@ object DebugLog {
         message: String,
     ) {
         synchronized(lock) {
-            val w = writer ?: return
+            writer ?: return
             if (category < 0 || category >= DebugLogCategory.COUNT) return
             if (!enabledCategories[category]) return
             try {
-                val ts = tsFormat.format(Date())
                 val tag = DebugLogCategory.labels[category].uppercase()
-                w.write("$ts [$tag] ${message.trimEnd()}")
-                w.newLine()
-                w.flush()
+                writeLine(tag, message)
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to write log line", e)
             }
@@ -197,17 +196,11 @@ object DebugLog {
             writer = BufferedWriter(FileWriter(file, true))
             currentFile = file
             rememberActiveLog(context, file)
-            // Write header with enabled categories
             val enabled =
                 (0 until DebugLogCategory.COUNT)
                     .filter { enabledCategories[it] }
                     .joinToString(", ") { DebugLogCategory.labels[it] }
-            log(
-                DebugLogCategory.NETWORK,
-                "Log started -- build ${BuildInfo.GIT_COMMIT_COUNT}" +
-                    " (${BuildInfo.GIT_SHORT_HASH}) ${BuildInfo.BUILD_DATE}" +
-                    " ${BuildInfo.BUILD_TYPE} -- categories: $enabled",
-            )
+            writeLine(headerTag(), buildHeaderLine(context, enabled))
         } catch (e: Exception) {
             Log.e(TAG, "Failed to open log file", e)
             writer = null
@@ -247,6 +240,46 @@ object DebugLog {
     }
 
     private fun currentBuildStamp(): String = "${BuildInfo.GIT_COMMIT_COUNT}:${BuildInfo.GIT_SHORT_HASH}"
+
+    private fun headerTag(): String {
+        val firstEnabled = (0 until DebugLogCategory.COUNT).firstOrNull { enabledCategories[it] }
+        return if (firstEnabled != null) DebugLogCategory.labels[firstEnabled].uppercase() else "DEBUG"
+    }
+
+    private fun buildHeaderLine(
+        context: Context,
+        enabled: String,
+    ): String {
+        val packageInfo =
+            try {
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            } catch (_: Exception) {
+                null
+            }
+        val versionName = packageInfo?.versionName?.takeUnless { it.isNullOrBlank() } ?: "unknown"
+        val versionCode = packageInfo?.let { PackageInfoCompat.getLongVersionCode(it).toString() } ?: "unknown"
+        val primaryAbi = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown"
+        val osArch = System.getProperty("os.arch").takeUnless { it.isNullOrBlank() } ?: "unknown"
+        return buildString {
+            append("Log started -- app=$versionName ($versionCode)")
+            append(" build=${BuildInfo.GIT_COMMIT_COUNT} (${BuildInfo.GIT_SHORT_HASH})")
+            append(" ${BuildInfo.BUILD_TYPE}")
+            append(" built=${BuildInfo.BUILD_DATE} ${BuildInfo.BUILD_TIME}")
+            append(" abi=$primaryAbi arch=$osArch")
+            append(" categories=$enabled")
+        }
+    }
+
+    private fun writeLine(
+        tag: String,
+        message: String,
+    ) {
+        val w = writer ?: return
+        val ts = tsFormat.format(Date())
+        w.write("$ts [$tag] ${message.trimEnd()}")
+        w.newLine()
+        w.flush()
+    }
 
     private fun closeLog() {
         try {

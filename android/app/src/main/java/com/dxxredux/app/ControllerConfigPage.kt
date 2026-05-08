@@ -90,6 +90,29 @@ private val cHighlight = Color(0x44FFFF00) // translucent yellow for selection
 private val PICKER_RADIO_SIZE = 24.dp
 private val PICKER_RADIO_GAP = 4.dp
 private val PICKER_FONT_SIZE = 13.sp
+private const val NAV_REPEAT_INITIAL_DELAY_FALLBACK_MS = 500L
+private const val NAV_REPEAT_INTERVAL_FALLBACK_MS = 125L
+
+private data class PickerNavRepeatTiming(
+    val initialDelayMs: Long,
+    val repeatIntervalMs: Long,
+)
+
+private fun androidStaticRepeatTiming(methodName: String): Long? =
+    runCatching {
+        when (val value = android.view.ViewConfiguration::class.java.getMethod(methodName).invoke(null)) {
+            is Int -> value.toLong()
+            is Number -> value.toLong()
+            else -> null
+        }
+    }.getOrNull()
+
+private val pickerNavRepeatTiming: PickerNavRepeatTiming by lazy {
+    PickerNavRepeatTiming(
+        initialDelayMs = androidStaticRepeatTiming("getKeyRepeatTimeout") ?: NAV_REPEAT_INITIAL_DELAY_FALLBACK_MS,
+        repeatIntervalMs = androidStaticRepeatTiming("getKeyRepeatDelay") ?: NAV_REPEAT_INTERVAL_FALLBACK_MS,
+    )
+}
 
 // ── Data Model ──────────────────────────────────────────────────────────────
 
@@ -323,40 +346,66 @@ private fun actionButtonModifier(selected: Boolean): Modifier =
     }
 
 @Composable
-private fun verticalDpadFocusEscape(): Modifier {
+private fun repeatVerticalDpadFocus(downFocusRequester: FocusRequester? = null): Modifier {
     val focusManager = LocalFocusManager.current
-    return Modifier.onPreviewKeyEvent { ev ->
-        when (ev.key) {
-            Key.DirectionUp -> {
-                if (ev.type == KeyEventType.KeyDown) focusManager.moveFocus(FocusDirection.Up)
-                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
-            }
+    val coroutineScope = rememberCoroutineScope()
+    var heldDirection by remember { mutableIntStateOf(0) }
+    var repeatJob by remember { mutableStateOf<Job?>(null) }
 
-            Key.DirectionDown -> {
-                if (ev.type == KeyEventType.KeyDown) focusManager.moveFocus(FocusDirection.Down)
-                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
-            }
+    fun stopRepeat() {
+        repeatJob?.cancel()
+        repeatJob = null
+        heldDirection = 0
+    }
 
-            else -> {
-                false
-            }
+    fun moveFocus(direction: Int) {
+        if (direction < 0) {
+            focusManager.moveFocus(FocusDirection.Up)
+        } else {
+            val moved = focusManager.moveFocus(FocusDirection.Down)
+            if (!moved) downFocusRequester?.requestFocus()
         }
     }
-}
 
-@Composable
-private fun verticalDpadFocusEscape(downFocusRequester: FocusRequester): Modifier {
-    val focusManager = LocalFocusManager.current
+    DisposableEffect(Unit) {
+        onDispose { stopRepeat() }
+    }
+
     return Modifier.onPreviewKeyEvent { ev ->
-        when (ev.key) {
-            Key.DirectionUp -> {
-                if (ev.type == KeyEventType.KeyDown) focusManager.moveFocus(FocusDirection.Up)
-                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
+        val direction =
+            when (ev.key) {
+                Key.DirectionUp -> -1
+                Key.DirectionDown -> 1
+                else -> 0
+            }
+        if (direction == 0) {
+            return@onPreviewKeyEvent false
+        }
+
+        when (ev.type) {
+            KeyEventType.KeyDown -> {
+                if (heldDirection != direction) {
+                    stopRepeat()
+                    heldDirection = direction
+                    moveFocus(direction)
+                    val repeatTiming = pickerNavRepeatTiming
+                    repeatJob =
+                        coroutineScope.launch {
+                            delay(repeatTiming.initialDelayMs)
+                            while (heldDirection == direction) {
+                                moveFocus(direction)
+                                delay(repeatTiming.repeatIntervalMs)
+                            }
+                        }
+                }
+                true
             }
 
-            Key.DirectionDown -> {
-                if (ev.type == KeyEventType.KeyDown) downFocusRequester.requestFocus()
-                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
+            KeyEventType.KeyUp -> {
+                if (heldDirection == direction) {
+                    stopRepeat()
+                }
+                true
             }
 
             else -> {
@@ -2560,6 +2609,10 @@ private fun ButtonFunctionPickerDialog(
             BUTTON_FUNCTIONS
         }
     val isAxisFunc = currentFunc != null && (currentFunc in AXIS_KC_INDEX || currentFunc in HALF_AXIS_MAP)
+    val usesDeadZone = currentFunc in HALF_AXIS_MAP
+    val thresholdLabel = if (usesDeadZone) "Dead zone" else "Threshold"
+    val thresholdRange = if (usesDeadZone) 0f..95f else 5f..95f
+    val thresholdSteps = if (usesDeadZone) 18 else 17
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -2567,10 +2620,23 @@ private fun ButtonFunctionPickerDialog(
         text = {
             DialogGenericMotionBridge(onDialogGenericMotionEvent, onDialogViewChanged)
             val btnScrollState = rememberScrollState()
-            Box(modifier = Modifier.heightIn(max = 400.dp)) {
+            Box(modifier = Modifier.heightIn(max = 400.dp).then(repeatVerticalDpadFocus(footerFocus))) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(btnScrollState)) {
                     if (threshold != null) {
                         AxisThresholdBar(axisValue ?: 0f, threshold)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "$thresholdLabel: $threshold%",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Slider(
+                            value = threshold.toFloat(),
+                            onValueChange = { onThresholdChange?.invoke(it.roundToInt()) },
+                            valueRange = thresholdRange,
+                            steps = thresholdSteps,
+                            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                        )
                         Spacer(Modifier.height(8.dp))
                     }
                     Row(
@@ -2683,21 +2749,6 @@ private fun ButtonFunctionPickerDialog(
                             )
                         }
                     }
-                    if (threshold != null && onThresholdChange != null) {
-                        Spacer(Modifier.height(8.dp))
-                        Text("Threshold: $threshold%", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        Slider(
-                            value = threshold.toFloat(),
-                            onValueChange = { onThresholdChange(it.roundToInt()) },
-                            valueRange = 5f..95f,
-                            steps = 17,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .tvFocusBorder()
-                                    .then(verticalDpadFocusEscape(footerFocus)),
-                        )
-                    }
                 }
                 ScrollArrows(btnScrollState)
             }
@@ -2759,6 +2810,34 @@ private fun StickPickerDialog(
     val yHasBinding = if (yButtonMode) yNegFunc != null || yPosFunc != null else selectedY != null
     val confirmLabel = if (xHasBinding && yHasBinding) "Save" else "OK"
 
+    @Composable
+    fun AxisThresholdEditor(
+        label: String,
+        threshold: Int,
+        buttonMode: Boolean,
+        axisValue: Float,
+        onThresholdChange: ((Int) -> Unit)?,
+    ) {
+        onThresholdChange ?: return
+        val valueRange = if (buttonMode) 5f..95f else 0f..95f
+        val steps = if (buttonMode) 17 else 18
+
+        AxisThresholdBar(axisValue, threshold)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "$label: $threshold%",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Slider(
+            value = threshold.toFloat(),
+            onValueChange = { onThresholdChange(it.roundToInt()) },
+            valueRange = valueRange,
+            steps = steps,
+            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+        )
+    }
+
     LaunchedEffect(xButtonMode) {
         onXThresholdChange ?: return@LaunchedEffect
         if (xButtonMode && xThreshold == DEFAULT_STICK_DEAD_ZONE) {
@@ -2782,7 +2861,7 @@ private fun StickPickerDialog(
         text = {
             DialogGenericMotionBridge(onDialogGenericMotionEvent, onDialogViewChanged)
             val stickScrollState = rememberScrollState()
-            Box(modifier = Modifier.heightIn(max = 450.dp)) {
+            Box(modifier = Modifier.heightIn(max = 450.dp).then(repeatVerticalDpadFocus(confirmFocus))) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(stickScrollState)) {
                     // -- X Axis --
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2793,6 +2872,14 @@ private fun StickPickerDialog(
                             modifier = Modifier.weight(1f),
                         )
                     }
+                    AxisThresholdEditor(
+                        label = if (xButtonMode) "Threshold" else "Dead zone",
+                        threshold = xThreshold,
+                        buttonMode = xButtonMode,
+                        axisValue = xAxisValue,
+                        onThresholdChange = onXThresholdChange,
+                    )
+                    Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
                             checked = xButtonMode,
@@ -2831,35 +2918,12 @@ private fun StickPickerDialog(
                         ) {
                             xPosFunc = it
                         }
-                        if (onXThresholdChange != null) {
-                            Text("Threshold: $xThreshold%", fontSize = 11.sp)
-                            Slider(
-                                value = xThreshold.toFloat(),
-                                onValueChange = { onXThresholdChange(it.roundToInt()) },
-                                valueRange = 5f..95f,
-                                steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
-                            )
-                            AxisThresholdBar(xAxisValue, xThreshold)
-                        }
                     } else {
                         AxisFunctionRadioGroup(
                             selected = selectedX,
                             assignedFunctions = assignedFunctions,
                             onSelect = { selectedX = it },
                         )
-                        if (onXThresholdChange != null) {
-                            Spacer(Modifier.height(6.dp))
-                            Text("Dead zone: $xThreshold%", fontSize = 11.sp)
-                            Slider(
-                                value = xThreshold.toFloat(),
-                                onValueChange = { onXThresholdChange(it.roundToInt()) },
-                                valueRange = 0f..95f,
-                                steps = 18,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
-                            )
-                            AxisThresholdBar(xAxisValue, xThreshold)
-                        }
                     }
                     Spacer(Modifier.height(8.dp))
 
@@ -2872,7 +2936,13 @@ private fun StickPickerDialog(
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    AxisThresholdBar(yAxisValue, yThreshold)
+                    AxisThresholdEditor(
+                        label = if (yButtonMode) "Threshold" else "Dead zone",
+                        threshold = yThreshold,
+                        buttonMode = yButtonMode,
+                        axisValue = yAxisValue,
+                        onThresholdChange = onYThresholdChange,
+                    )
                     Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
@@ -2907,41 +2977,12 @@ private fun StickPickerDialog(
                         ) {
                             yPosFunc = it
                         }
-                        if (onYThresholdChange != null) {
-                            Text("Threshold: $yThreshold%", fontSize = 11.sp)
-                            Slider(
-                                value = yThreshold.toFloat(),
-                                onValueChange = { onYThresholdChange(it.roundToInt()) },
-                                valueRange = 5f..95f,
-                                steps = 17,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .tvFocusBorder()
-                                        .then(verticalDpadFocusEscape(confirmFocus)),
-                            )
-                        }
                     } else {
                         AxisFunctionRadioGroup(
                             selected = selectedY,
                             assignedFunctions = assignedFunctions,
                             onSelect = { selectedY = it },
                         )
-                        if (onYThresholdChange != null) {
-                            Spacer(Modifier.height(6.dp))
-                            Text("Dead zone: $yThreshold%", fontSize = 11.sp)
-                            Slider(
-                                value = yThreshold.toFloat(),
-                                onValueChange = { onYThresholdChange(it.roundToInt()) },
-                                valueRange = 0f..95f,
-                                steps = 18,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .tvFocusBorder()
-                                        .then(verticalDpadFocusEscape(confirmFocus)),
-                            )
-                        }
                     }
                 }
                 ScrollArrows(stickScrollState)
@@ -3089,7 +3130,7 @@ private fun DpadFunctionPickerDialog(
         text = {
             DialogGenericMotionBridge(onDialogViewChanged = onDialogViewChanged)
             val dpadScrollState = rememberScrollState()
-            Box(modifier = Modifier.heightIn(max = 400.dp)) {
+            Box(modifier = Modifier.heightIn(max = 400.dp).then(repeatVerticalDpadFocus())) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(dpadScrollState)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

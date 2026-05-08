@@ -1478,6 +1478,89 @@ int inno_open_fd(int source_fd, inno_archive_t *arc)
 	return inno_open_owned_fd(fd, "<fd>", arc);
 }
 
+static int inflate_gog_galaxy_file_to_disk(const inno_file_entry_t *fe,
+	                                       const inno_data_entry_t *de,
+	                                       const uint8_t *file_data,
+	                                       size_t file_len,
+	                                       FILE *out,
+	                                       inno_progress_fn progress,
+	                                       void *user_data,
+	                                       size_t *written_out)
+{
+	uint8_t out_buf[262144];
+	z_stream zs;
+	size_t written = 0;
+	size_t last_progress_in = 0;
+	int zret;
+
+	memset(&zs, 0, sizeof(zs));
+	if (inflateInit(&zs) != Z_OK) {
+		INNO_LOG("inflateInit failed for GOG Galaxy file %s", fe->destination);
+		return -1;
+	}
+
+	INNO_LOG("streaming GOG Galaxy file %s: inner_compressed=%zu expected_output=%llu",
+	         fe->destination,
+	         file_len,
+	         (unsigned long long) fe->external_size);
+
+	zs.next_in = (Bytef *) file_data;
+	zs.avail_in = (uInt) file_len;
+
+	do {
+		zs.next_out = out_buf;
+		zs.avail_out = (uInt) sizeof(out_buf);
+		zret = inflate(&zs, Z_NO_FLUSH);
+		if (zret != Z_OK && zret != Z_STREAM_END) {
+			INNO_LOG("inner zlib inflate failed for %s: zret=%d total_in=%lu total_out=%lu",
+			         fe->destination,
+			         zret,
+			         (unsigned long) zs.total_in,
+			         (unsigned long) zs.total_out);
+			inflateEnd(&zs);
+			return -1;
+		}
+
+		size_t produced = sizeof(out_buf) - zs.avail_out;
+		if (produced > 0) {
+			if (fwrite(out_buf, 1, produced, out) != produced) {
+				INNO_LOG("write error while streaming GOG Galaxy file %s: %s",
+				         fe->destination,
+				         strerror(errno));
+				inflateEnd(&zs);
+				return -1;
+			}
+			written += produced;
+		}
+
+		if (progress &&
+		    file_len > 0 &&
+		    (size_t) zs.total_in - last_progress_in >= 1048576) {
+			long long done =
+				(long long) (((uint64_t) zs.total_in * de->chunk_compressed_size) / file_len);
+			if (done > (long long) de->chunk_compressed_size)
+				done = (long long) de->chunk_compressed_size;
+			progress(fe->destination, done,
+			         (long long) de->chunk_compressed_size, user_data);
+			last_progress_in = (size_t) zs.total_in;
+		}
+	} while (zret != Z_STREAM_END);
+
+	inflateEnd(&zs);
+
+	if (written_out)
+		*written_out = written;
+
+	if (fe->external_size > 0 && written != (size_t) fe->external_size) {
+		INNO_LOG("GOG Galaxy output size mismatch for %s: expected %llu got %zu",
+		         fe->destination,
+		         (unsigned long long) fe->external_size,
+		         written);
+	}
+
+	return 0;
+}
+
 int inno_extract_file(inno_archive_t *arc, int file_index,
                       const char *output_path,
                       inno_progress_fn progress, void *user_data)
@@ -1532,91 +1615,52 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	/* Write to output file — GOG Galaxy files need zlib decompression */
 	uint8_t *file_data = chunk + de->file_offset;
 	size_t file_len = (size_t) de->file_size;
-	uint8_t *inflated = NULL;
-
-	if (fe->gog_galaxy) {
-		/* GOG Galaxy double-compression: data in chunk is zlib-compressed */
-		size_t inf_cap = file_len * 4;
-		if (inf_cap < 65536) inf_cap = 65536;
-		inflated = (uint8_t *) malloc(inf_cap);
-		if (!inflated) {
-			free(chunk);
-			return -1;
-		}
-
-		z_stream zs;
-		memset(&zs, 0, sizeof(zs));
-		if (inflateInit(&zs) != Z_OK) {
-			free(inflated);
-			free(chunk);
-			return -1;
-		}
-
-		zs.next_in = file_data;
-		zs.avail_in = (uInt) file_len;
-		zs.next_out = inflated;
-		zs.avail_out = (uInt) inf_cap;
-
-		int zret;
-		while ((zret = inflate(&zs, Z_NO_FLUSH)) == Z_OK || zret == Z_BUF_ERROR) {
-			if (zs.avail_out == 0) {
-				size_t done = zs.total_out;
-				inf_cap *= 2;
-				uint8_t *tmp = (uint8_t *) realloc(inflated, inf_cap);
-				if (!tmp) {
-					inflateEnd(&zs);
-					free(inflated);
-					free(chunk);
-					return -1;
-				}
-				inflated = tmp;
-				zs.next_out = inflated + done;
-				zs.avail_out = (uInt) (inf_cap - done);
-			}
-			if (zs.avail_in == 0) break;
-		}
-		inflateEnd(&zs);
-
-		file_data = inflated;
-		file_len = zs.total_out;
-	}
 
 	FILE *out = fopen(output_path, "wb");
 	if (!out) {
 		INNO_LOG("cannot create %s: %s", output_path, strerror(errno));
-		free(inflated);
 		free(chunk);
 		return -1;
 	}
 
 	size_t written = 0;
 	size_t last_progress_written = 0;
-	while (written < file_len) {
-		size_t chunk = file_len - written;
-		if (chunk > 262144) chunk = 262144;
-		size_t n = fwrite(file_data + written, 1, chunk, out);
-		if (n == 0) break;
-		written += n;
-		if (progress && !de->chunk_compressed &&
-		    written - last_progress_written >= 1048576) {
-			long long done = (long long) written;
-			if (done > (long long) de->chunk_compressed_size)
-				done = (long long) de->chunk_compressed_size;
-			progress(fe->destination, done,
-			         (long long) de->chunk_compressed_size, user_data);
-			last_progress_written = written;
+	if (fe->gog_galaxy) {
+		if (inflate_gog_galaxy_file_to_disk(fe, de, file_data, file_len,
+		                                   out, progress, user_data,
+		                                   &written) < 0) {
+			fclose(out);
+			remove(output_path);
+			free(chunk);
+			return -1;
+		}
+	} else {
+		while (written < file_len) {
+			size_t chunk = file_len - written;
+			if (chunk > 262144) chunk = 262144;
+			size_t n = fwrite(file_data + written, 1, chunk, out);
+			if (n == 0) break;
+			written += n;
+			if (progress && !de->chunk_compressed &&
+			    written - last_progress_written >= 1048576) {
+				long long done = (long long) written;
+				if (done > (long long) de->chunk_compressed_size)
+					done = (long long) de->chunk_compressed_size;
+				progress(fe->destination, done,
+				         (long long) de->chunk_compressed_size, user_data);
+				last_progress_written = written;
+			}
 		}
 	}
 	fclose(out);
 
 	if (written != file_len) {
 		INNO_LOG("write error for %s", output_path);
-		free(inflated);
+		remove(output_path);
 		free(chunk);
 		return -1;
 	}
 
-	free(inflated);
 	free(chunk);
 
 	if (progress) {

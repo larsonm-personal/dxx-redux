@@ -114,6 +114,68 @@ internal fun buttonExtendsDragZoneStart(
         buttonCenterY in zoneTop..zoneBottom &&
         hypot(touchX - buttonCenterX, touchY - buttonCenterY) <= buttonRadius * 1.3f
 
+internal data class RemainingTouchAction(
+    val binding: Int,
+    val label: String,
+)
+
+internal fun touchLayoutBoundActionBindings(layout: TouchLayout): Set<Int> {
+    val bindings = linkedSetOf<Int>()
+
+    layout.buttons.forEach { button ->
+        bindings.add(button.binding)
+        if (button.longPressEnabled && button.longPressBinding >= 0) {
+            bindings.add(button.longPressBinding)
+        }
+    }
+    layout.sticks.forEach { stick ->
+        if (stick.buttonMode) {
+            bindings.add(stick.negXBinding)
+            bindings.add(stick.posXBinding)
+            bindings.add(stick.negYBinding)
+            bindings.add(stick.posYBinding)
+        }
+        if (stick.doubleTapBinding >= 0) {
+            bindings.add(stick.doubleTapBinding)
+        }
+    }
+    layout.radialMenus.forEach { radial ->
+        radial.segments.forEach { segment ->
+            if (segment.bindingType == "action") {
+                bindings.add(segment.binding)
+            }
+        }
+        if (radial.centerBinding >= 0) {
+            bindings.add(radial.centerBinding)
+        }
+    }
+    layout.dpads.forEach { dpad ->
+        bindings.add(dpad.upBinding)
+        bindings.add(dpad.downBinding)
+        bindings.add(dpad.leftBinding)
+        bindings.add(dpad.rightBinding)
+    }
+
+    return bindings
+}
+
+internal fun remainingKeyTouchActions(
+    layout: TouchLayout,
+    gameVariant: String,
+): List<RemainingTouchAction> {
+    val boundBindings = touchLayoutBoundActionBindings(layout)
+    val actions = mutableListOf<RemainingTouchAction>()
+
+    if (gameVariant != "d1" && TouchBindings.BTN_HEADLIGHT !in boundBindings) {
+        actions.add(RemainingTouchAction(TouchBindings.BTN_HEADLIGHT, "Headlight"))
+    }
+    if (TouchBindings.META_PAUSE !in boundBindings) {
+        actions.add(RemainingTouchAction(TouchBindings.META_PAUSE, "Pause"))
+    }
+
+    return actions
+}
+
 private const val MOUSE_HISTORY_WINDOW_MS = 16f
 private const val MOUSE_HISTORY_DECAY_PER_WINDOW = 0.75f
 private const val MOUSE_NO_ACCEL_DISTANCE_PER_WINDOW = 8f
@@ -848,6 +910,11 @@ class TouchOverlayView
         private var adminTrayPointerId = -1
         private val adminTrayRects = mutableListOf<RectF>()
         private var adminTrayTabRect = RectF()
+        private var remainingActionOpen = false
+        private var remainingActionPointerId = -1
+        private var remainingActionPressedIndex = -1
+        private var remainingActionButtonRect = RectF()
+        private val remainingActionItemRects = mutableListOf<RectF>()
 
         // Slide animation: 0 = fully closed (off-screen), 1 = fully open
         private var adminTraySlide = 0f
@@ -1031,6 +1098,212 @@ class TouchOverlayView
                 ar.right = wf * z.rightPct / 100f
                 ar.bottom = hf * z.bottomPct / 100f
             }
+
+            recomputeRemainingActionGeometry()
+        }
+
+        private fun currentRemainingTouchActions(): List<RemainingTouchAction> =
+            remainingKeyTouchActions(layout, gameVariant)
+
+        private fun recomputeRemainingActionGeometry() {
+            remainingActionItemRects.clear()
+            remainingActionButtonRect = RectF()
+
+            val actions = currentRemainingTouchActions()
+            val wf = width.toFloat()
+            val hf = height.toFloat()
+            if (actions.isEmpty() || wf <= 0f || hf <= 0f) {
+                return
+            }
+
+            val base = min(wf, hf)
+            val margin = base * 0.03f
+            val buttonH = hf * 0.05f
+            val buttonW = maxOf(wf * 0.16f, base * 0.16f)
+            remainingActionButtonRect = RectF(margin, hf - buttonH - margin, margin + buttonW, hf - margin)
+
+            val itemH = hf * 0.06f
+            val gap = base * 0.012f
+            val itemW = maxOf(buttonW * 1.35f, wf * 0.22f)
+            val totalHeight = actions.size * itemH + (actions.size - 1).coerceAtLeast(0) * gap
+            val top = (remainingActionButtonRect.top - gap - totalHeight).coerceAtLeast(margin)
+
+            actions.indices.forEach { index ->
+                val itemTop = top + index * (itemH + gap)
+                remainingActionItemRects.add(
+                    RectF(
+                        remainingActionButtonRect.left,
+                        itemTop,
+                        remainingActionButtonRect.left + itemW,
+                        itemTop + itemH,
+                    ),
+                )
+            }
+        }
+
+        private fun closeRemainingActions() {
+            remainingActionOpen = false
+            remainingActionPointerId = -1
+            remainingActionPressedIndex = -1
+            invalidate()
+        }
+
+        private fun triggerRemainingAction(binding: Int) {
+            val sourceTag = "touch:remaining:$binding"
+            dispatchTouchButton(binding, true, sourceTag)
+            mainHandler.postDelayed({ dispatchTouchButton(binding, false, sourceTag) }, DOUBLE_TAP_RELEASE_DELAY_MS)
+        }
+
+        private fun drawRemainingActions(canvas: Canvas) {
+            if (adminTrayOpen) {
+                closeRemainingActions()
+                return
+            }
+            val actions = currentRemainingTouchActions()
+            if (actions.isEmpty()) {
+                remainingActionOpen = false
+                remainingActionPointerId = -1
+                remainingActionPressedIndex = -1
+                remainingActionButtonRect = RectF()
+                remainingActionItemRects.clear()
+                return
+            }
+
+            recomputeRemainingActionGeometry()
+
+            val buttonBg =
+                if (!remainingActionOpen &&
+                    remainingActionPressedIndex == -2
+                ) {
+                    paintBtnPressed
+                } else {
+                    paintBtnIdle
+                }
+            buttonBg.alpha = if (remainingActionOpen || remainingActionPressedIndex == -2) 0x88 else 0x44
+            val buttonCorner = remainingActionButtonRect.height() * 0.45f
+            canvas.drawRoundRect(remainingActionButtonRect, buttonCorner, buttonCorner, buttonBg)
+            paintRing.alpha = 0x66
+            canvas.drawRoundRect(remainingActionButtonRect, buttonCorner, buttonCorner, paintRing)
+
+            val buttonText =
+                Paint(paintBtnLabel).apply {
+                    textSize = remainingActionButtonRect.height() * 0.38f
+                    textAlign = Paint.Align.CENTER
+                    alpha = 0xAA
+                }
+            canvas.drawText(
+                "More",
+                remainingActionButtonRect.centerX(),
+                remainingActionButtonRect.centerY() + buttonText.textSize * 0.35f,
+                buttonText,
+            )
+
+            if (!remainingActionOpen) {
+                return
+            }
+
+            val itemText =
+                Paint(paintBtnLabel).apply {
+                    textSize = remainingActionButtonRect.height() * 0.34f
+                    textAlign = Paint.Align.LEFT
+                    alpha = 0xCC
+                }
+            actions.forEachIndexed { index, action ->
+                val rect = remainingActionItemRects[index]
+                val bg = if (remainingActionPressedIndex == index) paintBtnPressed else paintBtnIdle
+                bg.alpha = if (remainingActionPressedIndex == index) 0x99 else 0x55
+                val corner = rect.height() * 0.3f
+                canvas.drawRoundRect(rect, corner, corner, bg)
+                paintRing.alpha = 0x66
+                canvas.drawRoundRect(rect, corner, corner, paintRing)
+                canvas.drawText(
+                    action.label,
+                    rect.left + rect.height() * 0.35f,
+                    rect.centerY() + itemText.textSize * 0.35f,
+                    itemText,
+                )
+            }
+        }
+
+        private fun handleRemainingActionsTouch(event: MotionEvent): Boolean {
+            val actions = currentRemainingTouchActions()
+            if (actions.isEmpty()) {
+                closeRemainingActions()
+                return false
+            }
+
+            recomputeRemainingActionGeometry()
+            val idx = event.actionIndex
+            val px = event.getX(idx)
+            val py = event.getY(idx)
+            val pid = event.getPointerId(idx)
+
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    if (remainingActionOpen) {
+                        val pressedIndex = remainingActionItemRects.indexOfFirst { it.contains(px, py) }
+                        if (pressedIndex >= 0) {
+                            remainingActionPointerId = pid
+                            remainingActionPressedIndex = pressedIndex
+                            invalidate()
+                        } else {
+                            closeRemainingActions()
+                        }
+                        return true
+                    }
+                    if (remainingActionButtonRect.contains(px, py)) {
+                        remainingActionPointerId = pid
+                        remainingActionPressedIndex = -2
+                        invalidate()
+                        return true
+                    }
+                }
+
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                    if (pid != remainingActionPointerId) {
+                        return remainingActionOpen
+                    }
+                    if (!remainingActionOpen &&
+                        remainingActionPressedIndex == -2 &&
+                        remainingActionButtonRect.contains(px, py)
+                    ) {
+                        remainingActionOpen = true
+                        remainingActionPointerId = -1
+                        remainingActionPressedIndex = -1
+                        invalidate()
+                        return true
+                    }
+                    if (remainingActionOpen && remainingActionPressedIndex in actions.indices) {
+                        val pressedIndex = remainingActionPressedIndex
+                        val fired = remainingActionItemRects[pressedIndex].contains(px, py)
+                        closeRemainingActions()
+                        if (fired) {
+                            triggerRemainingAction(actions[pressedIndex].binding)
+                            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        }
+                        return true
+                    }
+                    remainingActionPointerId = -1
+                    remainingActionPressedIndex = -1
+                    invalidate()
+                    return false
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    if (pid == remainingActionPointerId || remainingActionPointerId < 0) {
+                        if (remainingActionOpen) {
+                            closeRemainingActions()
+                        } else {
+                            remainingActionPointerId = -1
+                            remainingActionPressedIndex = -1
+                            invalidate()
+                        }
+                        return true
+                    }
+                }
+            }
+
+            return remainingActionOpen
         }
 
         /** Recompute automap button rectangles based on current marker count. */
@@ -1116,6 +1389,8 @@ class TouchOverlayView
                 }
                 drawDiagnostic(canvas, d, gAlpha)
             }
+
+            drawRemainingActions(canvas)
 
             // ── Cheats overlay (drawn last, on top of everything) ──
             if (cheatsOverlayOpen) drawCheatsOverlay(canvas)
@@ -1732,6 +2007,8 @@ class TouchOverlayView
                 if (handleSettingsDiagnosticWhileTrayOpen(event)) return true
                 return handleAdminTrayTouch(event)
             }
+
+            if (remainingActionOpen || handleRemainingActionsTouch(event)) return true
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
@@ -3487,6 +3764,7 @@ class TouchOverlayView
             }
 
         fun openAdminTray(fromGamepad: Boolean = false) {
+            closeRemainingActions()
             if (adminTrayOpen) {
                 if (fromGamepad && adminTraySelectedIndex < 0) {
                     adminTraySelectedIndex = defaultAdminTraySelectedIndex()

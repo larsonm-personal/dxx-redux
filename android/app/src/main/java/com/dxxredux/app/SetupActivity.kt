@@ -6231,6 +6231,60 @@ private fun findGogPair(dir: File): String? {
     return gogFile.substringBeforeLast('.')
 }
 
+private fun findGogAudioBaseNames(
+    files: Collection<String>,
+    extension: String,
+): Set<String> =
+    files
+        .asSequence()
+        .filter { it.endsWith(extension, ignoreCase = true) }
+        .map { it.substringBeforeLast('.').lowercase(Locale.US) }
+        .toSet()
+
+private fun summarizeGogAudioFiles(files: Collection<String>): String {
+    val audioFiles = files.filter { AndroidGameFileExtensions.isGogAudioFile(it) }.sortedBy { it.lowercase(Locale.US) }
+    return if (audioFiles.isEmpty()) "-" else audioFiles.joinToString(",")
+}
+
+private fun summarizeGogAudioEntrySizes(files: Collection<GogImportBridge.GogFile>): String {
+    val audioFiles =
+        files
+            .asSequence()
+            .filter { AndroidGameFileExtensions.isGogAudioFile(it.name) }
+            .sortedBy { it.name.lowercase(Locale.US) }
+            .toList()
+    return if (audioFiles.isEmpty()) {
+        "-"
+    } else {
+        audioFiles.joinToString(",") { "${File(it.name).name}:${it.size}" }
+    }
+}
+
+private fun describeNamedFileStates(dir: File, names: Collection<String>): String {
+    val orderedNames = names.map { File(it).name }.distinct().sortedBy { it.lowercase(Locale.US) }
+    return if (orderedNames.isEmpty()) {
+        "-"
+    } else {
+        orderedNames.joinToString(",") { name ->
+            val file = File(dir, name)
+            if (file.exists()) "$name:${file.length()}" else "$name:missing"
+        }
+    }
+}
+
+private fun describeGogPairState(files: Collection<String>): String {
+    val gogBases = findGogAudioBaseNames(files, ".gog")
+    val instBases = findGogAudioBaseNames(files, ".inst")
+    val paired = (gogBases intersect instBases).sorted()
+    return when {
+        paired.isNotEmpty() -> "paired:${paired.joinToString(",")}"
+        gogBases.isEmpty() && instBases.isEmpty() -> "missing-both"
+        gogBases.isEmpty() -> "missing-gog inst-only:${instBases.sorted().joinToString(",")}"
+        instBases.isEmpty() -> "missing-inst gog-only:${gogBases.sorted().joinToString(",")}"
+        else -> "mismatched gog:${gogBases.sorted().joinToString(",")} inst:${instBases.sorted().joinToString(",")}"
+    }
+}
+
 /**
  * Register a GOG .gog/.inst pair as a BIN/CUE audio source.
  * The .gog file is the BIN image and the .inst file is the CUE sheet.
@@ -7321,6 +7375,26 @@ private fun GogImportDialog(
                     files = staged.third
                 }
                 tempPath = tmpPath
+                val analyzedFiles = files ?: emptyList()
+                val audioCandidates =
+                    analyzedFiles.filter {
+                        GogImportBridge.isAudioFile(it.name)
+                    }
+                val analyzedAudioNames = audioCandidates.map { it.name }
+                val analyzedAudioSummary = summarizeGogAudioFiles(analyzedAudioNames)
+                val analyzedAudioSizes = summarizeGogAudioEntrySizes(audioCandidates)
+                val analyzedPairState = describeGogPairState(analyzedAudioNames)
+                LauncherDebugLog.log(
+                    "launcher-gog-analysis installer=$installerName direct_exe=$directExe " +
+                        "format=$fmt " +
+                        "staged_copy=${tmpPath != null} total_entries=${analyzedFiles.size} " +
+                        "audio_entries=${audioCandidates.size}",
+                )
+                LauncherDebugLog.log(
+                    "launcher-gog-analysis-audio installer=$installerName " +
+                        "audio_names=$analyzedAudioSummary audio_sizes=$analyzedAudioSizes " +
+                        "audio_pair_state=$analyzedPairState",
+                )
                 withContext(Dispatchers.Main) {
                     format = fmt
                     fileList = files
@@ -7338,6 +7412,9 @@ private fun GogImportDialog(
                 }
             } catch (e: Exception) {
                 Log.e("DXX-GogImport", "Analysis failed", e)
+                LauncherDebugLog.log(
+                    "launcher-gog-analysis-error installer=$installerName message=${e.message ?: e.javaClass.simpleName}",
+                )
                 withContext(Dispatchers.Main) {
                     copyingInstaller = false
                     status = "Error: ${e.message}"
@@ -7506,6 +7583,19 @@ private fun GogImportDialog(
                                         setDir.list()?.toSet() ?: emptySet()
                                     }
                                 withContext(Dispatchers.IO) {
+                                    val sourceKind = if (tempPath != null) "staged" else "fd"
+                                    val analyzedAudioEntries =
+                                        fileList!!
+                                            .asSequence()
+                                            .filter { GogImportBridge.isAudioFile(it.name) }
+                                            .toList()
+                                    val analyzedAudioNames = analyzedAudioEntries.map { File(it.name).name }
+                                    val analyzedAudioSummary = summarizeGogAudioFiles(analyzedAudioNames)
+                                    val analyzedAudioSizes = summarizeGogAudioEntrySizes(analyzedAudioEntries)
+                                    val analyzedPairState = describeGogPairState(analyzedAudioNames)
+                                    val freeBeforeBytes = setDir.usableSpace
+                                    val audioOutputBuckets = mutableMapOf<String, Long>()
+                                    val audioProgressStarts = mutableSetOf<String>()
                                     try {
                                         val progress =
                                             object : GogImportBridge.ExtractProgress {
@@ -7514,6 +7604,31 @@ private fun GogImportDialog(
                                                     bytesDone: Long,
                                                     bytesTotal: Long,
                                                 ): Int {
+                                                    val currentName = File(currentFile).name
+                                                    if (includeAudio && GogImportBridge.isAudioFile(currentName)) {
+                                                        val outputFile = File(setDir, currentName)
+                                                        val outputBytes = if (outputFile.exists()) outputFile.length() else -1L
+                                                        val outputBucket =
+                                                            if (outputBytes >= 0L) {
+                                                                outputBytes / (64L * 1024L * 1024L)
+                                                            } else {
+                                                                -1L
+                                                            }
+                                                        val previousBucket = audioOutputBuckets[currentName]
+                                                        val shouldLog =
+                                                            audioProgressStarts.add(currentName) ||
+                                                                previousBucket == null ||
+                                                                outputBucket > previousBucket
+                                                        if (shouldLog) {
+                                                            audioOutputBuckets[currentName] = outputBucket
+                                                            LauncherDebugLog.log(
+                                                                "launcher-gog-audio-progress installer=$installerName source=$sourceKind " +
+                                                                    "file=$currentName done=$bytesDone total=$bytesTotal " +
+                                                                    "exists=${outputFile.exists()} out_bytes=$outputBytes " +
+                                                                    "free_bytes=${setDir.usableSpace}",
+                                                            )
+                                                        }
+                                                    }
                                                     val pct =
                                                         if (bytesTotal > 0) {
                                                             bytesDone.toFloat() / bytesTotal
@@ -7527,6 +7642,19 @@ private fun GogImportDialog(
                                                     return 0
                                                 }
                                             }
+                                        LauncherDebugLog.log(
+                                            "launcher-gog-extract-start installer=$installerName source=$sourceKind " +
+                                                "include_audio=$includeAudio total_entries=${fileList!!.size}",
+                                        )
+                                        LauncherDebugLog.log(
+                                            "launcher-gog-extract-start-path installer=$installerName source=$sourceKind " +
+                                                "set_dir=${setDir.absolutePath} free_before_bytes=$freeBeforeBytes",
+                                        )
+                                        LauncherDebugLog.log(
+                                            "launcher-gog-extract-start-audio installer=$installerName source=$sourceKind " +
+                                                "audio_names=$analyzedAudioSummary audio_sizes=$analyzedAudioSizes " +
+                                                "audio_pair_state=$analyzedPairState",
+                                        )
                                         val count =
                                             if (tempPath != null) {
                                                 GogImportBridge.extractFiles(
@@ -7560,6 +7688,41 @@ private fun GogImportDialog(
                                         }
                                         val filesAfter = setDir.list()?.toSet() ?: emptySet()
                                         val newFiles = (filesAfter - filesBefore).sorted()
+                                        val setAudioNames =
+                                            filesAfter
+                                                .asSequence()
+                                                .filter { GogImportBridge.isAudioFile(it) }
+                                                .sortedBy { it.lowercase(Locale.US) }
+                                                .toList()
+                                        val newAudioNames =
+                                            newFiles
+                                                .asSequence()
+                                                .filter { GogImportBridge.isAudioFile(it) }
+                                                .toList()
+                                        val missingExpectedAudio =
+                                            analyzedAudioNames.filter { expected ->
+                                                setAudioNames.none { it.equals(expected, ignoreCase = true) }
+                                            }
+                                        val newAudioSummary = summarizeGogAudioFiles(newAudioNames)
+                                        val setAudioSummary = summarizeGogAudioFiles(setAudioNames)
+                                        val expectedAudioState = describeNamedFileStates(setDir, analyzedAudioNames)
+                                        val setPairState = describeGogPairState(setAudioNames)
+                                        val freeAfterBytes = setDir.usableSpace
+                                        LauncherDebugLog.log(
+                                            "launcher-gog-extract-result installer=$installerName source=$sourceKind " +
+                                                "include_audio=$includeAudio extracted=$count has_gog_pair=$hasGog " +
+                                                "new_files=${newFiles.size} new_audio=$newAudioSummary",
+                                        )
+                                        LauncherDebugLog.log(
+                                            "launcher-gog-extract-result-audio installer=$installerName source=$sourceKind " +
+                                                "set_audio=$setAudioSummary set_pair_state=$setPairState " +
+                                                "missing_expected_audio=${summarizeGogAudioFiles(missingExpectedAudio)}",
+                                        )
+                                        LauncherDebugLog.log(
+                                            "launcher-gog-extract-result-files installer=$installerName source=$sourceKind " +
+                                                "expected_audio_state=$expectedAudioState " +
+                                                "free_after_bytes=$freeAfterBytes",
+                                        )
                                         withContext(Dispatchers.Main) {
                                             extractedCount = count
                                             extractedFileNames = newFiles
@@ -7577,8 +7740,13 @@ private fun GogImportDialog(
                                         }
                                     } catch (e: Exception) {
                                         Log.e("DXX-GogImport", "Extraction failed", e)
+                                        LauncherDebugLog.log(
+                                            "launcher-gog-extract-error installer=$installerName source=$sourceKind " +
+                                                "include_audio=$includeAudio message=${e.message ?: e.javaClass.simpleName}",
+                                        )
                                         withContext(Dispatchers.Main) {
                                             status = "Extract error: ${e.message}"
+                                            errorMsg = e.message
                                         }
                                     }
                                 }

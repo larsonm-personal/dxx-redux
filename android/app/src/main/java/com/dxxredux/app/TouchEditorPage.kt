@@ -42,6 +42,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.launch
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -58,6 +59,133 @@ private val cSelected = Color(0xFF2196F3)
 private val cGrid = Color(0x22FFFFFF)
 private val cBackground = Color(0xFF1A1A1A)
 private val cCollisionWarn = Color(0xCCFF5722.toInt())
+private const val SELECTED_TYPE_STICK_ZONE_EDGE = "stickZoneEdge"
+private const val SELECTED_TYPE_AXIS_REGION_EDGE = "axisRegionEdge"
+private const val MIN_RESIZABLE_ZONE_SIZE_PCT = 2f
+
+internal enum class FloatingZoneEdge {
+    LEFT,
+    TOP,
+    RIGHT,
+    BOTTOM,
+}
+
+private val floatingZoneEdges = FloatingZoneEdge.values()
+
+internal fun encodeFloatingZoneEdgeSelection(
+    index: Int,
+    edge: FloatingZoneEdge,
+): Int = index * floatingZoneEdges.size + edge.ordinal
+
+internal fun decodeFloatingZoneEdgeSelection(selectionIndex: Int): Pair<Int, FloatingZoneEdge> {
+    val edgeIndex = selectionIndex % floatingZoneEdges.size
+    return selectionIndex / floatingZoneEdges.size to floatingZoneEdges[edgeIndex]
+}
+
+internal fun defaultTouchEditorEdgeHitSlopPx(buttonRadius: Float): Float = max(buttonRadius * 0.3f, 12f)
+
+internal fun resizeFloatingZone(
+    zone: FloatingZone,
+    edge: FloatingZoneEdge,
+    dxPct: Float,
+    dyPct: Float,
+    minSizePct: Float = MIN_RESIZABLE_ZONE_SIZE_PCT,
+): FloatingZone =
+    when (edge) {
+        FloatingZoneEdge.LEFT -> {
+            val newLeft = (zone.leftPct + dxPct).coerceIn(0f, zone.rightPct - minSizePct)
+            zone.copy(leftPct = newLeft)
+        }
+
+        FloatingZoneEdge.TOP -> {
+            val newTop = (zone.topPct + dyPct).coerceIn(0f, zone.bottomPct - minSizePct)
+            zone.copy(topPct = newTop)
+        }
+
+        FloatingZoneEdge.RIGHT -> {
+            val newRight = (zone.rightPct + dxPct).coerceIn(zone.leftPct + minSizePct, 100f)
+            zone.copy(rightPct = newRight)
+        }
+
+        FloatingZoneEdge.BOTTOM -> {
+            val newBottom = (zone.bottomPct + dyPct).coerceIn(zone.topPct + minSizePct, 100f)
+            zone.copy(bottomPct = newBottom)
+        }
+    }
+
+private fun resolveEditorSelection(
+    type: String?,
+    index: Int,
+): Pair<String, Int>? =
+    when (type) {
+        null -> null
+        SELECTED_TYPE_STICK_ZONE_EDGE -> decodeFloatingZoneEdgeSelection(index).let { "stick" to it.first }
+        SELECTED_TYPE_AXIS_REGION_EDGE -> decodeFloatingZoneEdgeSelection(index).let { "axisRegion" to it.first }
+        else -> type to index
+    }
+
+private fun selectedZoneEdge(
+    selectedType: String?,
+    selectedIndex: Int,
+    edgeSelectionType: String,
+    controlIndex: Int,
+): FloatingZoneEdge? {
+    if (selectedType != edgeSelectionType) return null
+    val (selectedControlIndex, edge) = decodeFloatingZoneEdgeSelection(selectedIndex)
+    return if (selectedControlIndex == controlIndex) edge else null
+}
+
+private fun DrawScope.drawSelectedZoneEdge(
+    left: Float,
+    top: Float,
+    right: Float,
+    bottom: Float,
+    edge: FloatingZoneEdge,
+) {
+    when (edge) {
+        FloatingZoneEdge.LEFT -> drawLine(cSelected, Offset(left, top), Offset(left, bottom), strokeWidth = 4f)
+        FloatingZoneEdge.TOP -> drawLine(cSelected, Offset(left, top), Offset(right, top), strokeWidth = 4f)
+        FloatingZoneEdge.RIGHT -> drawLine(cSelected, Offset(right, top), Offset(right, bottom), strokeWidth = 4f)
+        FloatingZoneEdge.BOTTOM -> drawLine(cSelected, Offset(left, bottom), Offset(right, bottom), strokeWidth = 4f)
+    }
+}
+
+private fun addFloatingZoneEdgeHits(
+    hits: MutableList<Pair<String, Int>>,
+    selectionType: String,
+    controlIndex: Int,
+    zone: FloatingZone,
+    offset: Offset,
+    canvasWidth: Float,
+    canvasHeight: Float,
+    edgeHitSlopPx: Float,
+) {
+    val left = canvasWidth * zone.leftPct / 100f
+    val top = canvasHeight * zone.topPct / 100f
+    val right = canvasWidth * zone.rightPct / 100f
+    val bottom = canvasHeight * zone.bottomPct / 100f
+
+    if (offset.x in (left - edgeHitSlopPx)..(left + edgeHitSlopPx) &&
+        offset.y in (top - edgeHitSlopPx)..(bottom + edgeHitSlopPx)
+    ) {
+        hits.add(selectionType to encodeFloatingZoneEdgeSelection(controlIndex, FloatingZoneEdge.LEFT))
+    }
+    if (offset.x in (left - edgeHitSlopPx)..(right + edgeHitSlopPx) &&
+        offset.y in (top - edgeHitSlopPx)..(top + edgeHitSlopPx)
+    ) {
+        hits.add(selectionType to encodeFloatingZoneEdgeSelection(controlIndex, FloatingZoneEdge.TOP))
+    }
+    if (offset.x in (right - edgeHitSlopPx)..(right + edgeHitSlopPx) &&
+        offset.y in (top - edgeHitSlopPx)..(bottom + edgeHitSlopPx)
+    ) {
+        hits.add(selectionType to encodeFloatingZoneEdgeSelection(controlIndex, FloatingZoneEdge.RIGHT))
+    }
+    if (offset.x in (left - edgeHitSlopPx)..(right + edgeHitSlopPx) &&
+        offset.y in (bottom - edgeHitSlopPx)..(bottom + edgeHitSlopPx)
+    ) {
+        hits.add(selectionType to encodeFloatingZoneEdgeSelection(controlIndex, FloatingZoneEdge.BOTTOM))
+    }
+}
 
 /**
  * Full-screen touch layout editor.
@@ -262,188 +390,192 @@ fun TouchEditorPage(
 
             // ── Properties panel (visible when sheet is expanded) ──
             if (selectedType != null && selectedIndex >= 0) {
-                val panelScrollState = rememberScrollState()
-                Box(modifier = Modifier.heightIn(max = 300.dp)) {
-                    Column(
-                        modifier =
-                            Modifier
-                                .verticalScroll(panelScrollState)
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                    ) {
-                        when (selectedType) {
-                            "stick" -> {
-                                StickPropertiesPanel(
-                                    stick = layout.sticks[selectedIndex],
-                                    gameVariant = gameVariant,
-                                    onUpdate = { updated ->
-                                        layout =
-                                            layout.copy(
-                                                sticks =
-                                                    layout.sticks.toMutableList().also {
-                                                        it[selectedIndex] = updated
-                                                    },
-                                            )
-                                        dirty = true
-                                    },
-                                    onDelete = {
-                                        layout =
-                                            layout.copy(
-                                                sticks =
-                                                    layout.sticks.toMutableList().also {
-                                                        it.removeAt(selectedIndex)
-                                                    },
-                                            )
-                                        selectedType = null
-                                        selectedIndex = -1
-                                        dirty = true
-                                    },
-                                )
-                            }
+                val selectedTarget = resolveEditorSelection(selectedType, selectedIndex)
+                if (selectedTarget != null) {
+                    val (panelType, panelIndex) = selectedTarget
+                    val panelScrollState = rememberScrollState()
+                    Box(modifier = Modifier.heightIn(max = 300.dp)) {
+                        Column(
+                            modifier =
+                                Modifier
+                                    .verticalScroll(panelScrollState)
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                        ) {
+                            when (panelType) {
+                                "stick" -> {
+                                    StickPropertiesPanel(
+                                        stick = layout.sticks[panelIndex],
+                                        gameVariant = gameVariant,
+                                        onUpdate = { updated ->
+                                            layout =
+                                                layout.copy(
+                                                    sticks =
+                                                        layout.sticks.toMutableList().also {
+                                                            it[panelIndex] = updated
+                                                        },
+                                                )
+                                            dirty = true
+                                        },
+                                        onDelete = {
+                                            layout =
+                                                layout.copy(
+                                                    sticks =
+                                                        layout.sticks.toMutableList().also {
+                                                            it.removeAt(panelIndex)
+                                                        },
+                                                )
+                                            selectedType = null
+                                            selectedIndex = -1
+                                            dirty = true
+                                        },
+                                    )
+                                }
 
-                            "button" -> {
-                                ButtonPropertiesPanel(
-                                    button = layout.buttons[selectedIndex],
-                                    gameVariant = gameVariant,
-                                    onUpdate = { updated ->
-                                        layout =
-                                            layout.copy(
-                                                buttons =
-                                                    layout.buttons.toMutableList().also {
-                                                        it[selectedIndex] = updated
-                                                    },
-                                            )
-                                        dirty = true
-                                    },
-                                    onDelete = {
-                                        layout =
-                                            layout.copy(
-                                                buttons =
-                                                    layout.buttons.toMutableList().also {
-                                                        it.removeAt(selectedIndex)
-                                                    },
-                                            )
-                                        selectedType = null
-                                        selectedIndex = -1
-                                        dirty = true
-                                    },
-                                )
-                            }
+                                "button" -> {
+                                    ButtonPropertiesPanel(
+                                        button = layout.buttons[panelIndex],
+                                        gameVariant = gameVariant,
+                                        onUpdate = { updated ->
+                                            layout =
+                                                layout.copy(
+                                                    buttons =
+                                                        layout.buttons.toMutableList().also {
+                                                            it[panelIndex] = updated
+                                                        },
+                                                )
+                                            dirty = true
+                                        },
+                                        onDelete = {
+                                            layout =
+                                                layout.copy(
+                                                    buttons =
+                                                        layout.buttons.toMutableList().also {
+                                                            it.removeAt(panelIndex)
+                                                        },
+                                                )
+                                            selectedType = null
+                                            selectedIndex = -1
+                                            dirty = true
+                                        },
+                                    )
+                                }
 
-                            "radial" -> {
-                                RadialPropertiesPanel(
-                                    radial = layout.radialMenus[selectedIndex],
-                                    gameVariant = gameVariant,
-                                    onUpdate = { updated ->
-                                        layout =
-                                            layout.copy(
-                                                radialMenus =
-                                                    layout.radialMenus.toMutableList().also {
-                                                        it[selectedIndex] = updated
-                                                    },
-                                            )
-                                        dirty = true
-                                    },
-                                    onDelete = {
-                                        layout =
-                                            layout.copy(
-                                                radialMenus =
-                                                    layout.radialMenus.toMutableList().also {
-                                                        it.removeAt(selectedIndex)
-                                                    },
-                                            )
-                                        selectedType = null
-                                        selectedIndex = -1
-                                        dirty = true
-                                    },
-                                )
-                            }
+                                "radial" -> {
+                                    RadialPropertiesPanel(
+                                        radial = layout.radialMenus[panelIndex],
+                                        gameVariant = gameVariant,
+                                        onUpdate = { updated ->
+                                            layout =
+                                                layout.copy(
+                                                    radialMenus =
+                                                        layout.radialMenus.toMutableList().also {
+                                                            it[panelIndex] = updated
+                                                        },
+                                                )
+                                            dirty = true
+                                        },
+                                        onDelete = {
+                                            layout =
+                                                layout.copy(
+                                                    radialMenus =
+                                                        layout.radialMenus.toMutableList().also {
+                                                            it.removeAt(panelIndex)
+                                                        },
+                                                )
+                                            selectedType = null
+                                            selectedIndex = -1
+                                            dirty = true
+                                        },
+                                    )
+                                }
 
-                            "slider" -> {
-                                SliderPropertiesPanel(
-                                    slider = layout.sliders[selectedIndex],
-                                    onUpdate = { updated ->
-                                        layout =
-                                            layout.copy(
-                                                sliders =
-                                                    layout.sliders.toMutableList().also {
-                                                        it[selectedIndex] = updated
-                                                    },
-                                            )
-                                        dirty = true
-                                    },
-                                    onDelete = {
-                                        layout =
-                                            layout.copy(
-                                                sliders =
-                                                    layout.sliders.toMutableList().also {
-                                                        it.removeAt(selectedIndex)
-                                                    },
-                                            )
-                                        selectedType = null
-                                        selectedIndex = -1
-                                        dirty = true
-                                    },
-                                )
-                            }
+                                "slider" -> {
+                                    SliderPropertiesPanel(
+                                        slider = layout.sliders[panelIndex],
+                                        onUpdate = { updated ->
+                                            layout =
+                                                layout.copy(
+                                                    sliders =
+                                                        layout.sliders.toMutableList().also {
+                                                            it[panelIndex] = updated
+                                                        },
+                                                )
+                                            dirty = true
+                                        },
+                                        onDelete = {
+                                            layout =
+                                                layout.copy(
+                                                    sliders =
+                                                        layout.sliders.toMutableList().also {
+                                                            it.removeAt(panelIndex)
+                                                        },
+                                                )
+                                            selectedType = null
+                                            selectedIndex = -1
+                                            dirty = true
+                                        },
+                                    )
+                                }
 
-                            "diagnostic" -> {
-                                DiagnosticPropertiesPanel(
-                                    diag = layout.diagnostics[selectedIndex],
-                                    onUpdate = { updated ->
-                                        layout =
-                                            layout.copy(
-                                                diagnostics =
-                                                    layout.diagnostics.toMutableList().also {
-                                                        it[selectedIndex] = updated
-                                                    },
-                                            )
-                                        dirty = true
-                                    },
-                                    onDelete = {
-                                        layout =
-                                            layout.copy(
-                                                diagnostics =
-                                                    layout.diagnostics.toMutableList().also {
-                                                        it.removeAt(selectedIndex)
-                                                    },
-                                            )
-                                        selectedType = null
-                                        selectedIndex = -1
-                                        dirty = true
-                                    },
-                                )
-                            }
+                                "diagnostic" -> {
+                                    DiagnosticPropertiesPanel(
+                                        diag = layout.diagnostics[panelIndex],
+                                        onUpdate = { updated ->
+                                            layout =
+                                                layout.copy(
+                                                    diagnostics =
+                                                        layout.diagnostics.toMutableList().also {
+                                                            it[panelIndex] = updated
+                                                        },
+                                                )
+                                            dirty = true
+                                        },
+                                        onDelete = {
+                                            layout =
+                                                layout.copy(
+                                                    diagnostics =
+                                                        layout.diagnostics.toMutableList().also {
+                                                            it.removeAt(panelIndex)
+                                                        },
+                                                )
+                                            selectedType = null
+                                            selectedIndex = -1
+                                            dirty = true
+                                        },
+                                    )
+                                }
 
-                            "axisRegion" -> {
-                                AxisRegionPropertiesPanel(
-                                    region = layout.axisRegions[selectedIndex],
-                                    onUpdate = { updated ->
-                                        layout =
-                                            layout.copy(
-                                                axisRegions =
-                                                    layout.axisRegions.toMutableList().also {
-                                                        it[selectedIndex] = updated
-                                                    },
-                                            )
-                                        dirty = true
-                                    },
-                                    onDelete = {
-                                        layout =
-                                            layout.copy(
-                                                axisRegions =
-                                                    layout.axisRegions.toMutableList().also {
-                                                        it.removeAt(selectedIndex)
-                                                    },
-                                            )
-                                        selectedType = null
-                                        selectedIndex = -1
-                                        dirty = true
-                                    },
-                                )
+                                "axisRegion" -> {
+                                    AxisRegionPropertiesPanel(
+                                        region = layout.axisRegions[panelIndex],
+                                        onUpdate = { updated ->
+                                            layout =
+                                                layout.copy(
+                                                    axisRegions =
+                                                        layout.axisRegions.toMutableList().also {
+                                                            it[panelIndex] = updated
+                                                        },
+                                                )
+                                            dirty = true
+                                        },
+                                        onDelete = {
+                                            layout =
+                                                layout.copy(
+                                                    axisRegions =
+                                                        layout.axisRegions.toMutableList().also {
+                                                            it.removeAt(panelIndex)
+                                                        },
+                                                )
+                                            selectedType = null
+                                            selectedIndex = -1
+                                            dirty = true
+                                        },
+                                    )
+                                }
                             }
                         }
+                        ScrollArrows(panelScrollState)
                     }
-                    ScrollArrows(panelScrollState)
                 }
             } else {
                 Box(
@@ -771,6 +903,7 @@ private fun drawAllControls(
         val cy = h * stick.yPct / 100f
         val r = baseScale * 0.12f * stick.sizeMult
         val selected = selType == "stick" && selIdx == i
+        val selectedEdge = selectedZoneEdge(selType, selIdx, SELECTED_TYPE_STICK_ZONE_EDGE, i)
         val alpha = layout.globalOpacity * stick.opacity
 
         // Floating zone indicator
@@ -800,8 +933,14 @@ private fun drawAllControls(
 
         if (stick.mouseMode) {
             // Mouse mode: selection highlight is a rect around the floating zone
+            val fz = stick.floatingZone
+            val fzTopLeft = Offset(w * fz.leftPct / 100f, h * fz.topPct / 100f)
+            val fzSize =
+                androidx.compose.ui.geometry.Size(
+                    w * (fz.rightPct - fz.leftPct) / 100f,
+                    h * (fz.bottomPct - fz.topPct) / 100f,
+                )
             if (selected) {
-                val fz = stick.floatingZone
                 scope.drawRect(
                     color = cSelected,
                     topLeft = Offset(w * fz.leftPct / 100f - 3f, h * fz.topPct / 100f - 3f),
@@ -811,6 +950,14 @@ private fun drawAllControls(
                             h * (fz.bottomPct - fz.topPct) / 100f + 6f,
                         ),
                     style = Stroke(width = 3f),
+                )
+            } else if (selectedEdge != null) {
+                scope.drawSelectedZoneEdge(
+                    left = fzTopLeft.x,
+                    top = fzTopLeft.y,
+                    right = fzTopLeft.x + fzSize.width,
+                    bottom = fzTopLeft.y + fzSize.height,
+                    edge = selectedEdge,
                 )
             }
         } else {
@@ -1157,6 +1304,7 @@ private fun drawAllControls(
         val right = w * z.rightPct / 100f
         val bottom = h * z.bottomPct / 100f
         val selected = selType == "axisRegion" && selIdx == i
+        val selectedEdge = selectedZoneEdge(selType, selIdx, SELECTED_TYPE_AXIS_REGION_EDGE, i)
         val alpha = layout.globalOpacity * ar.opacity
 
         scope.drawRect(
@@ -1177,6 +1325,8 @@ private fun drawAllControls(
                 size = ComposeSize(right - left + 4f, bottom - top + 4f),
                 style = Stroke(width = 3f),
             )
+        } else if (selectedEdge != null) {
+            scope.drawSelectedZoneEdge(left, top, right, bottom, selectedEdge)
         }
         val arLabel =
             textMeasurer.measure(
@@ -1334,7 +1484,7 @@ private fun hitTest(
     return all.firstOrNull()
 }
 
-/** Returns all controls hit at the given offset, in priority order (buttons > radials > sliders > sticks). */
+/** Returns all controls hit at the given offset, in priority order. */
 private fun hitTestAll(
     layout: TouchLayout,
     offset: Offset,
@@ -1343,6 +1493,7 @@ private fun hitTestAll(
 ): List<Pair<String, Int>> {
     val baseScale = sqrt(canvasWidth * canvasHeight)
     val hits = mutableListOf<Pair<String, Int>>()
+    val edgeHitSlopPx = defaultTouchEditorEdgeHitSlopPx(baseScale * 0.04f)
 
     // Check buttons first (smaller targets, should take priority)
     layout.buttons.forEachIndexed { i, btn ->
@@ -1351,6 +1502,33 @@ private fun hitTestAll(
         val r = baseScale * 0.04f * btn.sizeMult
         val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
         if (dist <= r * 1.3f) hits.add(Pair("button", i))
+    }
+
+    // Check mouse-mode stick and axis-region edges before larger body hits.
+    layout.sticks.forEachIndexed { i, stick ->
+        if (!stick.mouseMode) return@forEachIndexed
+        addFloatingZoneEdgeHits(
+            hits = hits,
+            selectionType = SELECTED_TYPE_STICK_ZONE_EDGE,
+            controlIndex = i,
+            zone = stick.floatingZone,
+            offset = offset,
+            canvasWidth = canvasWidth,
+            canvasHeight = canvasHeight,
+            edgeHitSlopPx = edgeHitSlopPx,
+        )
+    }
+    layout.axisRegions.forEachIndexed { i, ar ->
+        addFloatingZoneEdgeHits(
+            hits = hits,
+            selectionType = SELECTED_TYPE_AXIS_REGION_EDGE,
+            controlIndex = i,
+            zone = ar.zone,
+            offset = offset,
+            canvasWidth = canvasWidth,
+            canvasHeight = canvasHeight,
+            edgeHitSlopPx = edgeHitSlopPx,
+        )
     }
 
     // Check radial menus (before sticks, they have smaller triggers)
@@ -1497,6 +1675,34 @@ private fun moveControl(
                         it[index] =
                             ar.copy(
                                 zone = FloatingZone(newLeft, newTop, newLeft + w, newTop + h),
+                            )
+                    },
+            )
+        }
+
+        SELECTED_TYPE_STICK_ZONE_EDGE -> {
+            val (stickIndex, edge) = decodeFloatingZoneEdgeSelection(index)
+            val stick = layout.sticks[stickIndex]
+            layout.copy(
+                sticks =
+                    layout.sticks.toMutableList().also {
+                        it[stickIndex] =
+                            stick.copy(
+                                floatingZone = resizeFloatingZone(stick.floatingZone, edge, dxPct, dyPct),
+                            )
+                    },
+            )
+        }
+
+        SELECTED_TYPE_AXIS_REGION_EDGE -> {
+            val (regionIndex, edge) = decodeFloatingZoneEdgeSelection(index)
+            val region = layout.axisRegions[regionIndex]
+            layout.copy(
+                axisRegions =
+                    layout.axisRegions.toMutableList().also {
+                        it[regionIndex] =
+                            region.copy(
+                                zone = resizeFloatingZone(region.zone, edge, dxPct, dyPct),
                             )
                     },
             )
