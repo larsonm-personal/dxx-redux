@@ -29,7 +29,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -40,15 +39,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -90,29 +83,6 @@ private val cHighlight = Color(0x44FFFF00) // translucent yellow for selection
 private val PICKER_RADIO_SIZE = 24.dp
 private val PICKER_RADIO_GAP = 4.dp
 private val PICKER_FONT_SIZE = 13.sp
-private const val NAV_REPEAT_INITIAL_DELAY_FALLBACK_MS = 500L
-private const val NAV_REPEAT_INTERVAL_FALLBACK_MS = 125L
-
-private data class PickerNavRepeatTiming(
-    val initialDelayMs: Long,
-    val repeatIntervalMs: Long,
-)
-
-private fun androidStaticRepeatTiming(methodName: String): Long? =
-    runCatching {
-        when (val value = android.view.ViewConfiguration::class.java.getMethod(methodName).invoke(null)) {
-            is Int -> value.toLong()
-            is Number -> value.toLong()
-            else -> null
-        }
-    }.getOrNull()
-
-private val pickerNavRepeatTiming: PickerNavRepeatTiming by lazy {
-    PickerNavRepeatTiming(
-        initialDelayMs = androidStaticRepeatTiming("getKeyRepeatTimeout") ?: NAV_REPEAT_INITIAL_DELAY_FALLBACK_MS,
-        repeatIntervalMs = androidStaticRepeatTiming("getKeyRepeatDelay") ?: NAV_REPEAT_INTERVAL_FALLBACK_MS,
-    )
-}
 
 // ── Data Model ──────────────────────────────────────────────────────────────
 
@@ -344,76 +314,6 @@ private fun actionButtonModifier(selected: Boolean): Modifier =
     } else {
         Modifier
     }
-
-@Composable
-private fun repeatVerticalDpadFocus(downFocusRequester: FocusRequester? = null): Modifier {
-    val focusManager = LocalFocusManager.current
-    val coroutineScope = rememberCoroutineScope()
-    var heldDirection by remember { mutableIntStateOf(0) }
-    var repeatJob by remember { mutableStateOf<Job?>(null) }
-
-    fun stopRepeat() {
-        repeatJob?.cancel()
-        repeatJob = null
-        heldDirection = 0
-    }
-
-    fun moveFocus(direction: Int) {
-        if (direction < 0) {
-            focusManager.moveFocus(FocusDirection.Up)
-        } else {
-            val moved = focusManager.moveFocus(FocusDirection.Down)
-            if (!moved) downFocusRequester?.requestFocus()
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose { stopRepeat() }
-    }
-
-    return Modifier.onPreviewKeyEvent { ev ->
-        val direction =
-            when (ev.key) {
-                Key.DirectionUp -> -1
-                Key.DirectionDown -> 1
-                else -> 0
-            }
-        if (direction == 0) {
-            return@onPreviewKeyEvent false
-        }
-
-        when (ev.type) {
-            KeyEventType.KeyDown -> {
-                if (heldDirection != direction) {
-                    stopRepeat()
-                    heldDirection = direction
-                    moveFocus(direction)
-                    val repeatTiming = pickerNavRepeatTiming
-                    repeatJob =
-                        coroutineScope.launch {
-                            delay(repeatTiming.initialDelayMs)
-                            while (heldDirection == direction) {
-                                moveFocus(direction)
-                                delay(repeatTiming.repeatIntervalMs)
-                            }
-                        }
-                }
-                true
-            }
-
-            KeyEventType.KeyUp -> {
-                if (heldDirection == direction) {
-                    stopRepeat()
-                }
-                true
-            }
-
-            else -> {
-                false
-            }
-        }
-    }
-}
 
 private fun refreshAxisIndicesForControl(controlId: String?): Pair<Set<Int>, Set<Int>> =
     when (controlId) {
@@ -2615,12 +2515,13 @@ private fun ButtonFunctionPickerDialog(
     val thresholdSteps = if (usesDeadZone) 18 else 17
 
     AlertDialog(
+        modifier = Modifier.repeatVerticalDpadFocus(footerFocus),
         onDismissRequest = onDismiss,
         title = { Text("Assign: $controlLabel") },
         text = {
             DialogGenericMotionBridge(onDialogGenericMotionEvent, onDialogViewChanged)
             val btnScrollState = rememberScrollState()
-            Box(modifier = Modifier.heightIn(max = 400.dp).then(repeatVerticalDpadFocus(footerFocus))) {
+            Box(modifier = Modifier.heightIn(max = 400.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(btnScrollState)) {
                     if (threshold != null) {
                         AxisThresholdBar(axisValue ?: 0f, threshold)
@@ -2856,12 +2757,13 @@ private fun StickPickerDialog(
     }
 
     AlertDialog(
+        modifier = Modifier.repeatVerticalDpadFocus(confirmFocus),
         onDismissRequest = onDismiss,
         title = { Text(stickLabel) },
         text = {
             DialogGenericMotionBridge(onDialogGenericMotionEvent, onDialogViewChanged)
             val stickScrollState = rememberScrollState()
-            Box(modifier = Modifier.heightIn(max = 450.dp).then(repeatVerticalDpadFocus(confirmFocus))) {
+            Box(modifier = Modifier.heightIn(max = 450.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(stickScrollState)) {
                     // -- X Axis --
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -3125,12 +3027,13 @@ private fun DpadFunctionPickerDialog(
         }
 
     AlertDialog(
+        modifier = Modifier.repeatVerticalDpadFocus(),
         onDismissRequest = onDismiss,
         title = { Text("Assign: $directionLabel") },
         text = {
             DialogGenericMotionBridge(onDialogViewChanged = onDialogViewChanged)
             val dpadScrollState = rememberScrollState()
-            Box(modifier = Modifier.heightIn(max = 400.dp).then(repeatVerticalDpadFocus())) {
+            Box(modifier = Modifier.heightIn(max = 400.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(dpadScrollState)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

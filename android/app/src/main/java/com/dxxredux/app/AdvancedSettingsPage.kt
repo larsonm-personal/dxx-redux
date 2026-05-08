@@ -73,7 +73,8 @@ fun AdvancedSettingsPage(
                 Modifier
                     .fillMaxSize()
                     .safeDrawingPadding()
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .repeatVerticalDpadFocus(),
         ) {
             // Top bar
             Row(

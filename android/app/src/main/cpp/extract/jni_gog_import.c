@@ -267,29 +267,29 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 			file_comp_size = (long long) arc->data_entries[arc->files[i].location].chunk_compressed_size;
 		if (is_audio) {
 			launcher_logf(env,
-			             "launcher-gog-native-start file=%s comp_bytes=%lld gog_galaxy=%d",
-			             fname,
-			             file_comp_size,
-			             arc->files[i].gog_galaxy ? 1 : 0);
+			              "launcher-gog-native-start file=%s comp_bytes=%lld gog_galaxy=%d",
+			              fname,
+			              file_comp_size,
+			              arc->files[i].gog_galaxy ? 1 : 0);
 		}
 		if (inno_extract_file(arc, i, out_path,
 		                      progress ? gog_progress_cb : NULL, &ctx) == 0) {
 			extracted++;
 			if (is_audio) {
 				launcher_logf(env,
-				             "launcher-gog-native-done file=%s comp_bytes=%lld gog_galaxy=%d",
-				             fname,
-				             file_comp_size,
-				             arc->files[i].gog_galaxy ? 1 : 0);
+				              "launcher-gog-native-done file=%s comp_bytes=%lld gog_galaxy=%d",
+				              fname,
+				              file_comp_size,
+				              arc->files[i].gog_galaxy ? 1 : 0);
 			}
 		} else {
 			LOGE("Failed to extract: %s", arc->files[i].destination);
 			launcher_logf(env,
-			             "launcher-gog-native-fail file=%s audio=%d comp_bytes=%lld gog_galaxy=%d",
-			             fname,
-			             is_audio,
-			             file_comp_size,
-			             arc->files[i].gog_galaxy ? 1 : 0);
+			              "launcher-gog-native-fail file=%s audio=%d comp_bytes=%lld gog_galaxy=%d",
+			              fname,
+			              is_audio,
+			              file_comp_size,
+			              arc->files[i].gog_galaxy ? 1 : 0);
 			errors++;
 		}
 		ctx.completed_bytes += file_comp_size;

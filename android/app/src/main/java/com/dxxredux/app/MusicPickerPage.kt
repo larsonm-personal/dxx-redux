@@ -24,11 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,35 +46,8 @@ private const val MUSIC_MODE_FILES = "files"
 
 private const val TAG = "DXX-MusicPicker"
 
-// Make a Slider transparent to D-pad up/down so TV focus traversal can leave
-// the slider vertically. Left/Right keep working for seeking. We intercept
-// the key-down in onPreviewKeyEvent and explicitly move focus, otherwise the
-// Slider swallows up/down for large-step value changes and traps focus
 @Composable
-private fun verticalDpadFocusEscape(): Modifier {
-    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
-    return Modifier.onPreviewKeyEvent { ev ->
-        when (ev.key) {
-            Key.DirectionUp -> {
-                if (ev.type == KeyEventType.KeyDown) {
-                    focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Up)
-                }
-                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
-            }
-
-            Key.DirectionDown -> {
-                if (ev.type == KeyEventType.KeyDown) {
-                    focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down)
-                }
-                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
-            }
-
-            else -> {
-                false
-            }
-        }
-    }
-}
+private fun verticalDpadFocusEscape(): Modifier = Modifier.repeatVerticalDpadFocus()
 
 // Duplicated from FingerprintBridge.kt -- both files need it for filtering
 private fun isPlaceholderName(name: String): Boolean = name == "[unknown] - [untitled]"
@@ -146,7 +114,8 @@ fun MusicPickerPage(
                 Modifier
                     .fillMaxSize()
                     .safeDrawingPadding()
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .repeatVerticalDpadFocus(),
         ) {
             // Top bar
             Row(
@@ -806,23 +775,20 @@ private fun CdAudioSection(
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        val src = removeSource
-                        if (isSafSource && src != null) {
+                        val src =
+                            removeSource ?: run {
+                                removeConfirmId = null
+                                return@TextButton
+                            }
+                        if (isSafSource) {
                             // Release persistable URI permissions
                             for (uriStr in listOfNotNull(src.binContentUri, src.cueContentUri)) {
-                                try {
-                                    ctx.contentResolver.releasePersistableUriPermission(
-                                        android.net.Uri.parse(uriStr),
-                                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                                    )
-                                } catch (_: SecurityException) {
-                                    // already released
-                                }
+                                releaseReadPermissionForUri(ctx, android.net.Uri.parse(uriStr))
                             }
                             // Delete local CUE copy only
                             val cueFile = File(filesDir, src.cuePath)
                             if (cueFile.exists()) cueFile.delete()
-                        } else if (filesInAppDir && src != null) {
+                        } else if (filesInAppDir) {
                             // Delete files if they're in app data dir
                             val deletedDirs = mutableSetOf<File>()
                             for (bin in src.binPaths) {
@@ -1241,6 +1207,7 @@ private fun TrackPreviewDialog(
     customMgr: CustomAudioSetManager,
     onDismiss: () -> Unit,
 ) {
+    val closeFocus = remember { FocusRequester() }
     val title =
         if (musicMode == MUSIC_MODE_CD) "CD Audio Track Order" else "Audio File Playlist"
 
@@ -1297,6 +1264,7 @@ private fun TrackPreviewDialog(
     val filesDir = LocalContext.current.filesDir
 
     AlertDialog(
+        modifier = Modifier.repeatVerticalDpadFocus(closeFocus),
         onDismissRequest = onDismiss,
         title = { Text(title, fontSize = 16.sp) },
         text = {
@@ -1350,7 +1318,7 @@ private fun TrackPreviewDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(closeFocus)) { Text("Close") }
         },
     )
 
@@ -1421,11 +1389,25 @@ private fun CdTrackDetailDialog(
                 if (source.binContentUri != null) {
                     // SAF source: open fd via content resolver
                     val uri = android.net.Uri.parse(source.binContentUri)
-                    val pfd = ctx.contentResolver.openFileDescriptor(uri, "r")
-                    if (pfd != null) {
-                        val ok = CdPreviewBridge.startFd(pfd.detachFd(), cuePath, audioTrackIdx, sampleRate)
-                        ok
-                    } else {
+                    try {
+                        ctx.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+                            CdPreviewBridge.startFd(pfd.detachFd(), cuePath, audioTrackIdx, sampleRate)
+                        } ?: false
+                    } catch (e: SecurityException) {
+                        LauncherDebugLog.log(
+                            "launcher-cd-preview-open-fail disc=${source.discLabel} track=$audioTrackIdx reason=security",
+                        )
+                        Log.w(TAG, "CD preview lost SAF permission for ${source.discLabel}", e)
+                        Toast
+                            .makeText(
+                                ctx,
+                                "This CD audio source no longer has file access. Re-import it from the folder or file picker",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        false
+                    } catch (e: Exception) {
+                        Log.e(TAG, "CD preview open failed for ${source.discLabel}", e)
+                        Toast.makeText(ctx, "Could not open this CD audio track", Toast.LENGTH_LONG).show()
                         false
                     }
                 } else {
@@ -1776,13 +1758,8 @@ internal suspend fun importAudioFiles(
                         }
                     } else {
                         // Take persistable URI permission so we can read later
-                        try {
-                            ctx.contentResolver.takePersistableUriPermission(
-                                uri,
-                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                            )
-                        } catch (e: SecurityException) {
-                            Log.w(TAG, "Could not persist URI permission for $fileName", e)
+                        if (!persistReadPermissionForUri(ctx, uri)) {
+                            Log.w(TAG, "Could not persist URI permission for $fileName")
                         }
                         referencedUris[fileName] = uri.toString()
                     }

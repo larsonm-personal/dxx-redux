@@ -292,8 +292,8 @@ void input_demo_rng_trace_set_context(uint32_t frame, int64_t game_time64)
 }
 
 void input_demo_rng_trace_set_object_context(int object_num,
-	int object_signature,
-	int object_id)
+                                             int object_signature,
+                                             int object_id)
 {
 	if (!g_input_demo_rng_trace_session.active)
 		return;

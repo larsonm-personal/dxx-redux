@@ -80,6 +80,9 @@
 #endif
 
 /* ── LZMA SDK allocator ──────────────────────────────────────────── */
+static const uint64_t INNO_STREAM_DIRECT_THRESHOLD = 64ULL * 1024ULL * 1024ULL;
+#define INNO_STREAM_BUFFER_SIZE 65536
+
 static void *lzma_alloc(ISzAllocPtr p, size_t size)
 {
 	(void) p;
@@ -1478,86 +1481,576 @@ int inno_open_fd(int source_fd, inno_archive_t *arc)
 	return inno_open_owned_fd(fd, "<fd>", arc);
 }
 
-static int inflate_gog_galaxy_file_to_disk(const inno_file_entry_t *fe,
-	                                       const inno_data_entry_t *de,
-	                                       const uint8_t *file_data,
-	                                       size_t file_len,
-	                                       FILE *out,
-	                                       inno_progress_fn progress,
-	                                       void *user_data,
-	                                       size_t *written_out)
-{
-	uint8_t out_buf[262144];
-	z_stream zs;
-	size_t written = 0;
-	size_t last_progress_in = 0;
-	int zret;
+typedef int (*inno_chunk_sink_fn)(const uint8_t *data, size_t len, void *user_data);
 
-	memset(&zs, 0, sizeof(zs));
-	if (inflateInit(&zs) != Z_OK) {
+static int stream_chunk_file_range(int fd, uint64_t data_offset,
+                                   const inno_file_entry_t *fe,
+                                   const inno_data_entry_t *de,
+                                   inno_compress_method_t method,
+                                   inno_progress_fn progress,
+                                   void *progress_data,
+                                   inno_chunk_sink_fn sink,
+                                   void *sink_data);
+
+typedef struct {
+	const inno_file_entry_t *fe;
+	const inno_data_entry_t *de;
+	FILE *out;
+	inno_progress_fn progress;
+	void *progress_data;
+	z_stream zs;
+	size_t inner_size;
+	size_t written;
+	size_t last_progress_in;
+	int finished;
+	int initialized;
+} gog_galaxy_stream_writer_t;
+
+static int emit_chunk_range(const uint8_t *buf, size_t buf_len,
+                            uint64_t *stream_pos,
+                            uint64_t range_start,
+                            uint64_t range_end,
+                            inno_chunk_sink_fn sink,
+                            void *sink_data)
+{
+	uint64_t chunk_start = *stream_pos;
+	uint64_t chunk_end = chunk_start + buf_len;
+	if (chunk_end > range_start && chunk_start < range_end) {
+		size_t start = 0;
+		if (chunk_start < range_start)
+			start = (size_t) (range_start - chunk_start);
+		uint64_t overlap_end = chunk_end < range_end ? chunk_end : range_end;
+		size_t count = (size_t) (overlap_end - (chunk_start + start));
+		if (count > 0 && sink(buf + start, count, sink_data) < 0)
+			return -1;
+	}
+	*stream_pos = chunk_end;
+	return 0;
+}
+
+typedef struct {
+	int fd;
+	uint64_t next_offset;
+	uint64_t remaining;
+	uint64_t total_in;
+	uint8_t buf[INNO_STREAM_BUFFER_SIZE];
+	size_t pos;
+	size_t len;
+} inno_stream_input_t;
+
+static void init_stream_input(inno_stream_input_t *input, int fd,
+                              uint64_t offset, uint64_t size,
+                              uint64_t initial_total_in)
+{
+	input->fd = fd;
+	input->next_offset = offset;
+	input->remaining = size;
+	input->total_in = initial_total_in;
+	input->pos = 0;
+	input->len = 0;
+}
+
+static int refill_stream_input(inno_stream_input_t *input)
+{
+	if (input->remaining == 0) {
+		input->pos = 0;
+		input->len = 0;
+		return 0;
+	}
+	size_t want = sizeof(input->buf);
+	if ((uint64_t) want > input->remaining)
+		want = (size_t) input->remaining;
+	if (read_at(input->fd, input->next_offset, input->buf, want) < 0)
+		return -1;
+	input->next_offset += want;
+	input->remaining -= want;
+	input->pos = 0;
+	input->len = want;
+	return 1;
+}
+
+static int gog_galaxy_stream_writer_init(gog_galaxy_stream_writer_t *writer,
+                                         const inno_file_entry_t *fe,
+                                         const inno_data_entry_t *de,
+                                         FILE *out,
+                                         inno_progress_fn progress,
+                                         void *progress_data)
+{
+	memset(writer, 0, sizeof(*writer));
+	writer->fe = fe;
+	writer->de = de;
+	writer->out = out;
+	writer->progress = progress;
+	writer->progress_data = progress_data;
+	writer->inner_size = (size_t) de->file_size;
+	if (inflateInit(&writer->zs) != Z_OK) {
 		INNO_LOG("inflateInit failed for GOG Galaxy file %s", fe->destination);
 		return -1;
 	}
-
-	INNO_LOG("streaming GOG Galaxy file %s: inner_compressed=%zu expected_output=%llu",
+	writer->initialized = 1;
+	INNO_LOG("streaming GOG Galaxy file %s without outer chunk buffer: inner_compressed=%llu expected_output=%llu",
 	         fe->destination,
-	         file_len,
+	         (unsigned long long) de->file_size,
 	         (unsigned long long) fe->external_size);
+	return 0;
+}
 
-	zs.next_in = (Bytef *) file_data;
-	zs.avail_in = (uInt) file_len;
+static int gog_galaxy_stream_writer_feed(const uint8_t *data, size_t len, void *user_data)
+{
+	gog_galaxy_stream_writer_t *writer = (gog_galaxy_stream_writer_t *) user_data;
+	uint8_t out_buf[INNO_STREAM_BUFFER_SIZE];
+	int zret;
 
-	do {
-		zs.next_out = out_buf;
-		zs.avail_out = (uInt) sizeof(out_buf);
-		zret = inflate(&zs, Z_NO_FLUSH);
+	if (writer->finished) {
+		INNO_LOG("trailing inner zlib data for %s after stream end",
+		         writer->fe->destination);
+		return -1;
+	}
+
+	writer->zs.next_in = (Bytef *) data;
+	writer->zs.avail_in = (uInt) len;
+	while (writer->zs.avail_in > 0) {
+		unsigned long prev_in = writer->zs.total_in;
+		unsigned long prev_out = writer->zs.total_out;
+		writer->zs.next_out = out_buf;
+		writer->zs.avail_out = (uInt) sizeof(out_buf);
+		zret = inflate(&writer->zs, Z_NO_FLUSH);
 		if (zret != Z_OK && zret != Z_STREAM_END) {
 			INNO_LOG("inner zlib inflate failed for %s: zret=%d total_in=%lu total_out=%lu",
-			         fe->destination,
+			         writer->fe->destination,
 			         zret,
-			         (unsigned long) zs.total_in,
-			         (unsigned long) zs.total_out);
-			inflateEnd(&zs);
+			         (unsigned long) writer->zs.total_in,
+			         (unsigned long) writer->zs.total_out);
 			return -1;
 		}
 
-		size_t produced = sizeof(out_buf) - zs.avail_out;
+		size_t produced = sizeof(out_buf) - writer->zs.avail_out;
 		if (produced > 0) {
-			if (fwrite(out_buf, 1, produced, out) != produced) {
+			if (fwrite(out_buf, 1, produced, writer->out) != produced) {
 				INNO_LOG("write error while streaming GOG Galaxy file %s: %s",
-				         fe->destination,
+				         writer->fe->destination,
 				         strerror(errno));
+				return -1;
+			}
+			writer->written += produced;
+		}
+
+		if (writer->progress && writer->inner_size > 0 &&
+		    (size_t) writer->zs.total_in - writer->last_progress_in >= 1048576) {
+			long long done =
+			    (long long) (((uint64_t) writer->zs.total_in * writer->de->chunk_compressed_size) /
+			                 writer->inner_size);
+			if (done > (long long) writer->de->chunk_compressed_size)
+				done = (long long) writer->de->chunk_compressed_size;
+			writer->progress(writer->fe->destination, done,
+			                 (long long) writer->de->chunk_compressed_size,
+			                 writer->progress_data);
+			writer->last_progress_in = (size_t) writer->zs.total_in;
+		}
+
+		if (zret == Z_STREAM_END) {
+			writer->finished = 1;
+			break;
+		}
+
+		if (writer->zs.total_in == prev_in && writer->zs.total_out == prev_out) {
+			INNO_LOG("inner zlib made no progress for %s",
+			         writer->fe->destination);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+static int gog_galaxy_stream_writer_finish(gog_galaxy_stream_writer_t *writer,
+                                           size_t *written_out)
+{
+	if (writer->initialized)
+		inflateEnd(&writer->zs);
+	if (!writer->finished) {
+		INNO_LOG("inner zlib stream ended early for %s: total_in=%lu total_out=%lu",
+		         writer->fe->destination,
+		         (unsigned long) writer->zs.total_in,
+		         (unsigned long) writer->zs.total_out);
+		return -1;
+	}
+	if (written_out)
+		*written_out = writer->written;
+	if (writer->fe->external_size > 0 && writer->written != (size_t) writer->fe->external_size) {
+		INNO_LOG("GOG Galaxy output size mismatch for %s: expected %llu got %zu",
+		         writer->fe->destination,
+		         (unsigned long long) writer->fe->external_size,
+		         writer->written);
+	}
+	return 0;
+}
+
+typedef struct {
+	const inno_file_entry_t *fe;
+	FILE *out;
+	size_t written;
+} raw_file_stream_writer_t;
+
+static int raw_file_stream_writer_feed(const uint8_t *data, size_t len, void *user_data)
+{
+	raw_file_stream_writer_t *writer = (raw_file_stream_writer_t *) user_data;
+	if (fwrite(data, 1, len, writer->out) != len) {
+		INNO_LOG("write error while streaming file %s: %s",
+		         writer->fe->destination,
+		         strerror(errno));
+		return -1;
+	}
+	writer->written += len;
+	return 0;
+}
+
+static int extract_regular_file_streamed(inno_archive_t *arc,
+                                         const inno_file_entry_t *fe,
+                                         const inno_data_entry_t *de,
+                                         const char *output_path,
+                                         inno_progress_fn progress,
+                                         void *user_data,
+                                         size_t *written_out)
+{
+	raw_file_stream_writer_t writer;
+	FILE *out = fopen(output_path, "wb");
+	if (!out) {
+		INNO_LOG("cannot create %s: %s", output_path, strerror(errno));
+		return -1;
+	}
+	writer.fe = fe;
+	writer.out = out;
+	writer.written = 0;
+	if (stream_chunk_file_range(arc->fd, arc->data_offset, fe, de,
+	                            arc->compression, progress, user_data,
+	                            raw_file_stream_writer_feed, &writer) < 0) {
+		fclose(out);
+		remove(output_path);
+		return -1;
+	}
+	if (fclose(out) != 0) {
+		INNO_LOG("write error while closing %s: %s", output_path, strerror(errno));
+		remove(output_path);
+		return -1;
+	}
+	if (written_out)
+		*written_out = writer.written;
+	if (writer.written != (size_t) de->file_size) {
+		INNO_LOG("streamed file size mismatch for %s: expected %llu got %zu",
+		         fe->destination,
+		         (unsigned long long) de->file_size,
+		         writer.written);
+		remove(output_path);
+		return -1;
+	}
+	return 0;
+}
+
+static int stream_chunk_file_range(int fd, uint64_t data_offset,
+                                   const inno_file_entry_t *fe,
+                                   const inno_data_entry_t *de,
+                                   inno_compress_method_t method,
+                                   inno_progress_fn progress,
+                                   void *progress_data,
+                                   inno_chunk_sink_fn sink,
+                                   void *sink_data)
+{
+	uint64_t chunk_pos = data_offset + de->chunk_offset;
+	uint64_t range_start = de->file_offset;
+	uint64_t range_end = de->file_offset + de->file_size;
+	uint8_t magic[4];
+	uint64_t comp_size = de->chunk_compressed_size;
+	inno_compress_method_t actual_method =
+	    de->chunk_compressed ? method : INNO_COMPRESS_STORED;
+	uint64_t outer_pos = 0;
+
+	if (read_at(fd, chunk_pos, magic, 4) < 0) return -1;
+	if (magic[0] != 'z' || magic[1] != 'l' || magic[2] != 'b' || magic[3] != 0x1A) {
+		INNO_LOG("missing zlb magic at 0x%llx", (unsigned long long) chunk_pos);
+		return -1;
+	}
+
+	if (actual_method == INNO_COMPRESS_STORED) {
+		uint8_t in_buf[INNO_STREAM_BUFFER_SIZE];
+		uint64_t copy_start = chunk_pos + 4 + range_start;
+		uint64_t remaining = de->file_size;
+		uint64_t copied = range_start;
+		while (remaining > 0) {
+			size_t want = sizeof(in_buf);
+			if ((uint64_t) want > remaining)
+				want = (size_t) remaining;
+			if (read_at(fd, copy_start, in_buf, want) < 0)
+				return -1;
+			if (emit_chunk_range(in_buf, want, &copied,
+			                     range_start, range_end, sink, sink_data) < 0)
+				return -1;
+			copy_start += want;
+			remaining -= want;
+			if (progress && fe->destination[0]) {
+				long long done = (long long) copied;
+				if (done > (long long) comp_size)
+					done = (long long) comp_size;
+				progress(fe->destination, done,
+				         (long long) comp_size, progress_data);
+			}
+		}
+		outer_pos = range_end;
+		if (outer_pos < range_end) {
+			INNO_LOG("stored chunk too small for %s: need %llu bytes, have %llu",
+			         fe->destination,
+			         (unsigned long long) range_end,
+			         (unsigned long long) outer_pos);
+			return -1;
+		}
+		return 0;
+	}
+
+	if (actual_method == INNO_COMPRESS_ZLIB) {
+		inno_stream_input_t input;
+		uint8_t out_buf[INNO_STREAM_BUFFER_SIZE];
+		z_stream zs;
+		int zret;
+		size_t last_progress_in = 0;
+		memset(&zs, 0, sizeof(zs));
+		init_stream_input(&input, fd, chunk_pos + 4, comp_size, 0);
+		if (inflateInit(&zs) != Z_OK) {
+			return -1;
+		}
+		do {
+			if (zs.avail_in == 0) {
+				int fill = refill_stream_input(&input);
+				if (fill < 0) {
+					inflateEnd(&zs);
+					return -1;
+				}
+				if (fill == 0) break;
+				zs.next_in = input.buf;
+				zs.avail_in = (uInt) input.len;
+			}
+			unsigned long prev_in = zs.total_in;
+			unsigned long prev_out = zs.total_out;
+			uInt prev_avail_in = zs.avail_in;
+			zs.next_out = out_buf;
+			zs.avail_out = (uInt) sizeof(out_buf);
+			zret = inflate(&zs, Z_NO_FLUSH);
+			if (zret != Z_OK && zret != Z_STREAM_END) {
 				inflateEnd(&zs);
 				return -1;
 			}
-			written += produced;
+			input.pos += (size_t) (prev_avail_in - zs.avail_in);
+			input.total_in += (uint64_t) (prev_avail_in - zs.avail_in);
+			size_t produced = sizeof(out_buf) - zs.avail_out;
+			if (produced > 0 &&
+			    emit_chunk_range(out_buf, produced, &outer_pos,
+			                     range_start, range_end, sink, sink_data) < 0) {
+				inflateEnd(&zs);
+				return -1;
+			}
+			if (progress && fe->destination[0] &&
+			    (size_t) input.total_in - last_progress_in >= 1048576) {
+				progress(fe->destination, (long long) input.total_in,
+				         (long long) comp_size, progress_data);
+				last_progress_in = (size_t) input.total_in;
+			}
+			if (outer_pos >= range_end) break;
+			if (zs.total_in == prev_in && zs.total_out == prev_out) {
+				inflateEnd(&zs);
+				return -1;
+			}
+		} while (zret != Z_STREAM_END);
+		inflateEnd(&zs);
+		if (outer_pos < range_end) {
+			INNO_LOG("zlib chunk too small for %s: need %llu bytes, have %llu",
+			         fe->destination,
+			         (unsigned long long) range_end,
+			         (unsigned long long) outer_pos);
+			return -1;
 		}
-
-		if (progress &&
-		    file_len > 0 &&
-		    (size_t) zs.total_in - last_progress_in >= 1048576) {
-			long long done =
-				(long long) (((uint64_t) zs.total_in * de->chunk_compressed_size) / file_len);
-			if (done > (long long) de->chunk_compressed_size)
-				done = (long long) de->chunk_compressed_size;
-			progress(fe->destination, done,
-			         (long long) de->chunk_compressed_size, user_data);
-			last_progress_in = (size_t) zs.total_in;
-		}
-	} while (zret != Z_STREAM_END);
-
-	inflateEnd(&zs);
-
-	if (written_out)
-		*written_out = written;
-
-	if (fe->external_size > 0 && written != (size_t) fe->external_size) {
-		INNO_LOG("GOG Galaxy output size mismatch for %s: expected %llu got %zu",
-		         fe->destination,
-		         (unsigned long long) fe->external_size,
-		         written);
+		return 0;
 	}
 
+	if (actual_method == INNO_COMPRESS_LZMA1) {
+		inno_stream_input_t input;
+		uint8_t lzma_props[5];
+		if (comp_size < 5) {
+			return -1;
+		}
+		if (read_at(fd, chunk_pos + 4, lzma_props, 5) < 0)
+			return -1;
+		uint8_t out_buf[INNO_STREAM_BUFFER_SIZE];
+		CLzmaDec dec;
+		size_t last_progress_pos = 0;
+		init_stream_input(&input, fd, chunk_pos + 9, comp_size - 5, 5);
+		LzmaDec_Construct(&dec);
+		if (LzmaDec_Allocate(&dec, lzma_props, 5, &g_lzma_alloc) != SZ_OK) {
+			return -1;
+		}
+		LzmaDec_Init(&dec);
+		while (input.total_in < comp_size) {
+			if (input.pos == input.len) {
+				int fill = refill_stream_input(&input);
+				if (fill < 0) {
+					LzmaDec_Free(&dec, &g_lzma_alloc);
+					return -1;
+				}
+				if (fill == 0) break;
+			}
+			size_t dest_len = sizeof(out_buf);
+			size_t src_len = input.len - input.pos;
+			ELzmaStatus status;
+			if (progress && fe->destination[0] &&
+			    (size_t) input.total_in - last_progress_pos >= 1048576) {
+				progress(fe->destination, (long long) input.total_in,
+				         (long long) comp_size, progress_data);
+				last_progress_pos = (size_t) input.total_in;
+			}
+			SRes res = LzmaDec_DecodeToBuf(&dec, out_buf, &dest_len,
+			                               input.buf + input.pos, &src_len,
+			                               LZMA_FINISH_ANY, &status);
+			input.pos += src_len;
+			input.total_in += src_len;
+			if (dest_len > 0 &&
+			    emit_chunk_range(out_buf, dest_len, &outer_pos,
+			                     range_start, range_end, sink, sink_data) < 0) {
+				LzmaDec_Free(&dec, &g_lzma_alloc);
+				return -1;
+			}
+			if (outer_pos >= range_end) break;
+			if (res != SZ_OK) {
+				LzmaDec_Free(&dec, &g_lzma_alloc);
+				return -1;
+			}
+			if (status == LZMA_STATUS_FINISHED_WITH_MARK ||
+			    status == LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK)
+				break;
+			if (dest_len == 0 && src_len == 0) {
+				LzmaDec_Free(&dec, &g_lzma_alloc);
+				return -1;
+			}
+		}
+		LzmaDec_Free(&dec, &g_lzma_alloc);
+		if (outer_pos < range_end) {
+			INNO_LOG("LZMA chunk too small for %s: need %llu bytes, have %llu",
+			         fe->destination,
+			         (unsigned long long) range_end,
+			         (unsigned long long) outer_pos);
+			return -1;
+		}
+		return 0;
+	}
+
+	if (actual_method == INNO_COMPRESS_LZMA2) {
+		inno_stream_input_t input;
+		uint8_t lzma2_prop;
+		if (comp_size < 1) {
+			return -1;
+		}
+		if (read_at(fd, chunk_pos + 4, &lzma2_prop, 1) < 0)
+			return -1;
+		uint8_t out_buf[INNO_STREAM_BUFFER_SIZE];
+		CLzma2Dec dec;
+		size_t last_progress_pos2 = 0;
+		init_stream_input(&input, fd, chunk_pos + 5, comp_size - 1, 1);
+		Lzma2Dec_Construct(&dec);
+		if (Lzma2Dec_Allocate(&dec, lzma2_prop, &g_lzma_alloc) != SZ_OK) {
+			return -1;
+		}
+		Lzma2Dec_Init(&dec);
+		while (input.total_in < comp_size) {
+			if (input.pos == input.len) {
+				int fill = refill_stream_input(&input);
+				if (fill < 0) {
+					Lzma2Dec_Free(&dec, &g_lzma_alloc);
+					return -1;
+				}
+				if (fill == 0) break;
+			}
+			size_t dest_len = sizeof(out_buf);
+			size_t src_len = input.len - input.pos;
+			ELzmaStatus status;
+			if (progress && fe->destination[0] &&
+			    (size_t) input.total_in - last_progress_pos2 >= 1048576) {
+				progress(fe->destination, (long long) input.total_in,
+				         (long long) comp_size, progress_data);
+				last_progress_pos2 = (size_t) input.total_in;
+			}
+			SRes res = Lzma2Dec_DecodeToBuf(&dec, out_buf, &dest_len,
+			                                input.buf + input.pos, &src_len,
+			                                LZMA_FINISH_ANY, &status);
+			input.pos += src_len;
+			input.total_in += src_len;
+			if (dest_len > 0 &&
+			    emit_chunk_range(out_buf, dest_len, &outer_pos,
+			                     range_start, range_end, sink, sink_data) < 0) {
+				Lzma2Dec_Free(&dec, &g_lzma_alloc);
+				return -1;
+			}
+			if (outer_pos >= range_end) break;
+			if (res != SZ_OK) {
+				Lzma2Dec_Free(&dec, &g_lzma_alloc);
+				return -1;
+			}
+			if (status == LZMA_STATUS_FINISHED_WITH_MARK ||
+			    status == LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK)
+				break;
+			if (dest_len == 0 && src_len == 0) {
+				Lzma2Dec_Free(&dec, &g_lzma_alloc);
+				return -1;
+			}
+		}
+		Lzma2Dec_Free(&dec, &g_lzma_alloc);
+		if (outer_pos < range_end) {
+			INNO_LOG("LZMA2 chunk too small for %s: need %llu bytes, have %llu",
+			         fe->destination,
+			         (unsigned long long) range_end,
+			         (unsigned long long) outer_pos);
+			return -1;
+		}
+		return 0;
+	}
+
+	INNO_LOG("unknown compression method %d", actual_method);
+	return -1;
+}
+
+static int extract_gog_galaxy_file_streamed(inno_archive_t *arc,
+                                            const inno_file_entry_t *fe,
+                                            const inno_data_entry_t *de,
+                                            const char *output_path,
+                                            inno_progress_fn progress,
+                                            void *user_data,
+                                            size_t *written_out)
+{
+	gog_galaxy_stream_writer_t writer;
+	FILE *out = fopen(output_path, "wb");
+	if (!out) {
+		INNO_LOG("cannot create %s: %s", output_path, strerror(errno));
+		return -1;
+	}
+	if (gog_galaxy_stream_writer_init(&writer, fe, de, out, progress, user_data) < 0) {
+		fclose(out);
+		remove(output_path);
+		return -1;
+	}
+	if (stream_chunk_file_range(arc->fd, arc->data_offset, fe, de,
+	                            arc->compression, progress, user_data,
+	                            gog_galaxy_stream_writer_feed, &writer) < 0) {
+		gog_galaxy_stream_writer_finish(&writer, NULL);
+		fclose(out);
+		remove(output_path);
+		return -1;
+	}
+	if (gog_galaxy_stream_writer_finish(&writer, written_out) < 0) {
+		fclose(out);
+		remove(output_path);
+		return -1;
+	}
+	if (fclose(out) != 0) {
+		INNO_LOG("write error while closing %s: %s", output_path, strerror(errno));
+		remove(output_path);
+		return -1;
+	}
 	return 0;
 }
 
@@ -1591,6 +2084,38 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 		         (long long) de->chunk_compressed_size, user_data);
 	}
 
+	if (!fe->gog_galaxy &&
+	    (de->chunk_compressed_size >= INNO_STREAM_DIRECT_THRESHOLD ||
+	     de->file_size >= INNO_STREAM_DIRECT_THRESHOLD)) {
+		size_t written = 0;
+		if (extract_regular_file_streamed(arc, fe, de, output_path,
+		                                  progress, user_data,
+		                                  &written) < 0) {
+			return -1;
+		}
+		if (progress) {
+			progress(fe->destination,
+			         (long long) de->chunk_compressed_size,
+			         (long long) de->chunk_compressed_size, user_data);
+		}
+		return 0;
+	}
+
+	if (fe->gog_galaxy) {
+		size_t written = 0;
+		if (extract_gog_galaxy_file_streamed(arc, fe, de, output_path,
+		                                     progress, user_data,
+		                                     &written) < 0) {
+			return -1;
+		}
+		if (progress) {
+			progress(fe->destination,
+			         (long long) de->chunk_compressed_size,
+			         (long long) de->chunk_compressed_size, user_data);
+		}
+		return 0;
+	}
+
 	/* Decompress the chunk */
 	size_t chunk_len = 0;
 	uint8_t *chunk = decompress_chunk(arc->fd, arc->data_offset, de,
@@ -1612,7 +2137,7 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 		return -1;
 	}
 
-	/* Write to output file — GOG Galaxy files need zlib decompression */
+	/* Write to output file */
 	uint8_t *file_data = chunk + de->file_offset;
 	size_t file_len = (size_t) de->file_size;
 
@@ -1625,16 +2150,7 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 
 	size_t written = 0;
 	size_t last_progress_written = 0;
-	if (fe->gog_galaxy) {
-		if (inflate_gog_galaxy_file_to_disk(fe, de, file_data, file_len,
-		                                   out, progress, user_data,
-		                                   &written) < 0) {
-			fclose(out);
-			remove(output_path);
-			free(chunk);
-			return -1;
-		}
-	} else {
+	{
 		while (written < file_len) {
 			size_t chunk = file_len - written;
 			if (chunk > 262144) chunk = 262144;

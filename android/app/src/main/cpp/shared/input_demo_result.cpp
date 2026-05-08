@@ -181,18 +181,18 @@ static bool input_demo_result_parse_level_summary(const nlohmann::json &level_js
 static const char *input_demo_result_terminal_exit_name(int32_t terminal_exit)
 {
 	switch (terminal_exit) {
-	case INPUT_DEMO_RESULT_TERMINAL_EXIT_LEVEL_EXIT:
-		return "level_exit";
-	case INPUT_DEMO_RESULT_TERMINAL_EXIT_MINE_EXIT:
-		return "mine_exit";
-	default:
-		return "none";
+		case INPUT_DEMO_RESULT_TERMINAL_EXIT_LEVEL_EXIT:
+			return "level_exit";
+		case INPUT_DEMO_RESULT_TERMINAL_EXIT_MINE_EXIT:
+			return "mine_exit";
+		default:
+			return "none";
 	}
 }
 
 static bool input_demo_result_parse_terminal_exit(const nlohmann::json &terminal_exit_json,
-	                                              int32_t *terminal_exit,
-	                                              std::string *error)
+                                                  int32_t *terminal_exit,
+                                                  std::string *error)
 {
 	std::string value;
 
@@ -235,8 +235,8 @@ static bool input_demo_result_compare_string(const char *field, const char *labe
 }
 
 static bool input_demo_result_compare_terminal_exit(int32_t expected,
-	                                                int32_t actual,
-	                                                std::string *error)
+                                                    int32_t actual,
+                                                    std::string *error)
 {
 	if (expected == actual)
 		return true;

@@ -6260,7 +6260,10 @@ private fun summarizeGogAudioEntrySizes(files: Collection<GogImportBridge.GogFil
     }
 }
 
-private fun describeNamedFileStates(dir: File, names: Collection<String>): String {
+private fun describeNamedFileStates(
+    dir: File,
+    names: Collection<String>,
+): String {
     val orderedNames = names.map { File(it).name }.distinct().sortedBy { it.lowercase(Locale.US) }
     return if (orderedNames.isEmpty()) {
         "-"
@@ -6271,6 +6274,8 @@ private fun describeNamedFileStates(dir: File, names: Collection<String>): Strin
         }
     }
 }
+
+private fun leafName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')
 
 private fun describeGogPairState(files: Collection<String>): String {
     val gogBases = findGogAudioBaseNames(files, ".gog")
@@ -7604,7 +7609,7 @@ private fun GogImportDialog(
                                                     bytesDone: Long,
                                                     bytesTotal: Long,
                                                 ): Int {
-                                                    val currentName = File(currentFile).name
+                                                    val currentName = leafName(currentFile)
                                                     if (includeAudio && GogImportBridge.isAudioFile(currentName)) {
                                                         val outputFile = File(setDir, currentName)
                                                         val outputBytes = if (outputFile.exists()) outputFile.length() else -1L
@@ -7716,7 +7721,9 @@ private fun GogImportDialog(
                                         LauncherDebugLog.log(
                                             "launcher-gog-extract-result-audio installer=$installerName source=$sourceKind " +
                                                 "set_audio=$setAudioSummary set_pair_state=$setPairState " +
-                                                "missing_expected_audio=${summarizeGogAudioFiles(missingExpectedAudio)}",
+                                                "missing_expected_audio=${summarizeGogAudioFiles(
+                                                    missingExpectedAudio,
+                                                )}",
                                         )
                                         LauncherDebugLog.log(
                                             "launcher-gog-extract-result-files installer=$installerName source=$sourceKind " +
@@ -8281,17 +8288,16 @@ private fun DiscImportDialog(
                                             val tmpDest = File(filesDir, cueName.lowercase())
                                             tempCuePath?.let { LauncherFileCopy.copyFileToFile(File(it), tmpDest) }
 
+                                            if (!persistReadPermissionForUri(context, cueUri)) {
+                                                Log.w("DXX-DiscImport", "Could not persist URI for $cueName")
+                                            }
+
                                             // Take persistable URI permissions on BIN files
                                             val binNames = mutableListOf<String>()
                                             var firstBinUri: Uri? = null
                                             for ((name, uri) in binUris) {
-                                                try {
-                                                    context.contentResolver.takePersistableUriPermission(
-                                                        uri,
-                                                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                                                    )
-                                                } catch (e: SecurityException) {
-                                                    Log.w("DXX-DiscImport", "Could not persist URI for $name", e)
+                                                if (!persistReadPermissionForUri(context, uri)) {
+                                                    Log.w("DXX-DiscImport", "Could not persist URI for $name")
                                                 }
                                                 binNames.add(name.lowercase())
                                                 if (firstBinUri == null) firstBinUri = uri

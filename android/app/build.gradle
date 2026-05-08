@@ -147,6 +147,9 @@ tasks.configureEach { task ->
         task.name.startsWith('buildCMake') || task.name == 'preBuild') {
         task.dependsOn('downloadSoundfont')
     }
+    if (task.name == 'preBuild') {
+        task.dependsOn('generateLauncherArt')
+    }
     if (task.name.startsWith('compile') && task.name.contains('Kotlin')) {
         task.dependsOn('generateBuildInfo')
     }
@@ -155,6 +158,92 @@ tasks.configureEach { task ->
 // Load dependency base path
 def depBaseFile = rootProject.file("../dependency_base.txt")
 def depBase = depBaseFile.exists() ? depBaseFile.text.trim().replace('\\', '/') : null
+
+def launcherArtDir = rootProject.file("app_images")
+def launcherIconSource = new File(launcherArtDir, "icon_512.png")
+def launcherTvBannerSource = new File(launcherArtDir, "tv_banner.png")
+def generatedLauncherResDir = file("$buildDir/generated/icon-res/main")
+
+def readLauncherPng = { File inputFile ->
+    if (!inputFile.exists()) {
+        throw new GradleException("Missing launcher art: ${inputFile}. Put the PNG in android/app_images/")
+    }
+    def image = javax.imageio.ImageIO.read(inputFile)
+    if (image == null) {
+        throw new GradleException("Could not decode PNG launcher art: ${inputFile}")
+    }
+    return image
+}
+
+def resizeLauncherImage = { sourceImage, int width, int height ->
+    def resized = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+    def graphics = resized.createGraphics()
+    graphics.setRenderingHint(java.awt.RenderingHints.KEY_ALPHA_INTERPOLATION, java.awt.RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY)
+    graphics.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+    graphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+    graphics.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY)
+    graphics.drawImage(sourceImage, 0, 0, width, height, null)
+    graphics.dispose()
+    return resized
+}
+
+def writeLauncherPng = { image, File outputFile ->
+    outputFile.parentFile.mkdirs()
+    if (!javax.imageio.ImageIO.write(image, 'png', outputFile)) {
+        throw new GradleException("Could not write PNG launcher art: ${outputFile}")
+    }
+}
+
+def buildFallbackTvBanner = { iconImage ->
+    def banner = new java.awt.image.BufferedImage(320, 180, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+    def graphics = banner.createGraphics()
+    graphics.setRenderingHint(java.awt.RenderingHints.KEY_ALPHA_INTERPOLATION, java.awt.RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY)
+    graphics.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+    graphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+    graphics.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY)
+    graphics.color = new java.awt.Color(0x1a, 0x1a, 0x2e)
+    graphics.fillRect(0, 0, banner.width, banner.height)
+
+    def centeredIcon = resizeLauncherImage(iconImage, 120, 120)
+    def iconLeft = (banner.width - centeredIcon.width).intdiv(2)
+    def iconTop = (banner.height - centeredIcon.height).intdiv(2)
+    graphics.drawImage(centeredIcon, iconLeft, iconTop, null)
+    graphics.dispose()
+    return banner
+}
+
+tasks.register('generateLauncherArt') {
+    description = 'Generate phone launcher icons and the Android TV banner from android/app_images'
+    inputs.dir(launcherArtDir)
+    outputs.dir(generatedLauncherResDir)
+
+    doLast {
+        def iconImage = readLauncherPng(launcherIconSource)
+        if (iconImage.width != iconImage.height) {
+            throw new GradleException("icon_512.png must be square, got ${iconImage.width}x${iconImage.height}")
+        }
+
+        project.delete(generatedLauncherResDir)
+
+        [mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192].each { density, size ->
+            def launcherImage = resizeLauncherImage(iconImage, size, size)
+            writeLauncherPng(launcherImage, new File(generatedLauncherResDir, "mipmap-${density}/ic_launcher.png"))
+            writeLauncherPng(launcherImage, new File(generatedLauncherResDir, "mipmap-${density}/ic_launcher_round.png"))
+        }
+
+        def bannerImage
+        if (launcherTvBannerSource.exists()) {
+            def customBanner = readLauncherPng(launcherTvBannerSource)
+            if (customBanner.width * 9 != customBanner.height * 16) {
+                throw new GradleException("tv_banner.png must use a 16:9 aspect ratio, got ${customBanner.width}x${customBanner.height}")
+            }
+            bannerImage = resizeLauncherImage(customBanner, 320, 180)
+        } else {
+            bannerImage = buildFallbackTvBanner(iconImage)
+        }
+        writeLauncherPng(bannerImage, new File(generatedLauncherResDir, 'drawable/tv_banner.png'))
+    }
+}
 
 android {
     namespace 'com.dxxredux.app'
@@ -232,6 +321,12 @@ android {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
             version toolVersions['CMAKE_VERSION'] + '+'
+        }
+    }
+
+    sourceSets {
+        main {
+            res.srcDir(generatedLauncherResDir)
         }
     }
 

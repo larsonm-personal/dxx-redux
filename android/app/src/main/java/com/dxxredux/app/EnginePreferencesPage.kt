@@ -112,7 +112,8 @@ fun EnginePreferencesPage(
                 Modifier
                     .fillMaxSize()
                     .safeDrawingPadding()
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .repeatVerticalDpadFocus(),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
