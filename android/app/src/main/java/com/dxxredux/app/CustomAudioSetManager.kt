@@ -24,6 +24,21 @@ class CustomAudioSetManager(
         const val NAMES_FILE = "custom_music_names.json"
     }
 
+    private fun logInfo(message: String) {
+        runCatching { Log.i(TAG, message) }
+    }
+
+    private fun logWarn(message: String) {
+        runCatching { Log.w(TAG, message) }
+    }
+
+    private fun logError(
+        message: String,
+        error: Throwable,
+    ) {
+        runCatching { Log.e(TAG, message, error) }
+    }
+
     data class AudioSet(
         val id: String,
         val label: String,
@@ -55,7 +70,7 @@ class CustomAudioSetManager(
         sets.removeAll { it.id == set.id }
         sets.add(set)
         save()
-        Log.i(TAG, "Added set: ${set.label} (${set.files.size} files)")
+        logInfo("Added set: ${set.label} (${set.files.size} files)")
     }
 
     /** Append files to an existing set */
@@ -78,7 +93,7 @@ class CustomAudioSetManager(
             )
         sets.replaceAll { if (it.id == id) merged else it }
         save()
-        Log.i(TAG, "Added ${newFiles.size} files to set '${existing.label}'")
+        logInfo("Added ${newFiles.size} files to set '${existing.label}'")
     }
 
     fun removeSet(
@@ -93,6 +108,23 @@ class CustomAudioSetManager(
         }
         sets.removeAll { it.id == id }
         save()
+    }
+
+    fun removeReferencedFile(
+        id: String,
+        filename: String,
+    ) {
+        val set = sets.firstOrNull { it.id == id } ?: return
+        val updated = removeReferencedFileFromSet(set, filename)
+        if (updated == null) {
+            sets.removeAll { it.id == id }
+            save()
+            logInfo("Removed final referenced file '$filename' and deleted set '${set.label}'")
+            return
+        }
+        sets.replaceAll { if (it.id == id) updated else it }
+        save()
+        logInfo("Removed referenced file '$filename' from set '${set.label}'")
     }
 
     fun setEnabled(
@@ -144,7 +176,7 @@ class CustomAudioSetManager(
                         }
                         allFiles.add(f.lowercase() to staged.absolutePath)
                     } catch (e: Exception) {
-                        Log.w(TAG, "Failed to stage referenced file $f: ${e.message}")
+                        logWarn("Failed to stage referenced file $f: ${e.message}")
                     }
                 } else {
                     val path = File(dir, f)
@@ -186,7 +218,7 @@ class CustomAudioSetManager(
         } else {
             File(filesDir, NAMES_FILE).delete()
         }
-        Log.i(TAG, "Wrote $PLAYLIST_FILE with ${allFiles.size} tracks, ${namesJson.length()} names")
+        logInfo("Wrote $PLAYLIST_FILE with ${allFiles.size} tracks, ${namesJson.length()} names")
         return File(filesDir, PLAYLIST_FILE).absolutePath
     }
 
@@ -278,9 +310,9 @@ class CustomAudioSetManager(
                             referencedUris = refs,
                         )
                     }.toMutableList()
-            Log.i(TAG, "Loaded ${sets.size} custom audio sets")
+            logInfo("Loaded ${sets.size} custom audio sets")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load $SETS_FILE", e)
+            logError("Failed to load $SETS_FILE", e)
             sets = mutableListOf()
         }
     }
@@ -322,4 +354,19 @@ class CustomAudioSetManager(
         json.put("sets", arr)
         File(filesDir, SETS_FILE).writeText(json.toString(2))
     }
+}
+
+internal fun removeReferencedFileFromSet(
+    set: CustomAudioSetManager.AudioSet,
+    filename: String,
+): CustomAudioSetManager.AudioSet? {
+    val updated =
+        set.copy(
+            files = set.files.filter { it != filename },
+            trackNames = set.trackNames - filename,
+            trackConfidences = set.trackConfidences - filename,
+            trackNumbers = set.trackNumbers - filename,
+            referencedUris = set.referencedUris - filename,
+        )
+    return updated.takeIf { it.files.isNotEmpty() }
 }

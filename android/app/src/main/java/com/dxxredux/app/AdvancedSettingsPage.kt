@@ -1212,28 +1212,49 @@ private fun StorageInspectorSection(filesDir: File) {
     }
 
     if (showSafDialog) {
+        var refreshSafEntries by remember { mutableIntStateOf(0) }
+
         data class SafEntry(
             val label: String,
             val uri: String,
             val accessible: Boolean,
-        )
+            val customSetId: String? = null,
+            val customFilename: String? = null,
+            val cdSourceId: String? = null,
+            val isPermissionEntry: Boolean = false,
+        ) {
+            val key: String
+                get() =
+                    when {
+                        customSetId != null -> "custom:$customSetId:$customFilename:$uri"
+                        cdSourceId != null -> "cd:$cdSourceId:$uri"
+                        isPermissionEntry -> "perm:$uri"
+                        else -> uri
+                    }
+        }
+
+        var selectedSafEntry by remember { mutableStateOf<SafEntry?>(null) }
+        var removeSafEntry by remember { mutableStateOf<SafEntry?>(null) }
 
         val safEntries =
-            remember {
+            remember(refreshSafEntries) {
                 val entries = mutableListOf<SafEntry>()
+                val trackedSafUris = mutableSetOf<String>()
                 // Custom audio referenced URIs
                 try {
                     val customMgr = CustomAudioSetManager(filesDir)
                     for (set in customMgr.getSets()) {
                         for ((filename, uriStr) in set.referencedUris) {
-                            val ok =
-                                try {
-                                    ctx.contentResolver.openInputStream(Uri.parse(uriStr))?.close()
-                                    true
-                                } catch (_: Exception) {
-                                    false
-                                }
-                            entries.add(SafEntry("Audio: $filename (${set.label})", uriStr, ok))
+                            trackedSafUris.add(uriStr)
+                            entries.add(
+                                SafEntry(
+                                    label = "Audio: $filename (${set.label})",
+                                    uri = uriStr,
+                                    accessible = canAccessSafUri(ctx, Uri.parse(uriStr)),
+                                    customSetId = set.id,
+                                    customFilename = filename,
+                                ),
+                            )
                         }
                     }
                 } catch (_: Exception) {
@@ -1242,26 +1263,36 @@ private fun StorageInspectorSection(filesDir: File) {
                 try {
                     val srcMgr = AudioSourceManager(filesDir)
                     for (src in srcMgr.getSources()) {
-                        src.binContentUri?.let { uriStr ->
-                            val ok =
-                                try {
-                                    ctx.contentResolver.openFileDescriptor(Uri.parse(uriStr), "r")?.close()
-                                    true
-                                } catch (_: Exception) {
-                                    false
-                                }
-                            entries.add(SafEntry("CD BIN: ${src.discLabel}", uriStr, ok))
-                        }
-                        src.cueContentUri?.let { uriStr ->
-                            val ok =
-                                try {
-                                    ctx.contentResolver.openInputStream(Uri.parse(uriStr))?.close()
-                                    true
-                                } catch (_: Exception) {
-                                    false
-                                }
-                            entries.add(SafEntry("CD CUE: ${src.discLabel}", uriStr, ok))
-                        }
+                        if (src.binContentUri == null && src.cueContentUri == null) continue
+                        val safBinUri = src.binContentUri?.takeUnless(::isLocalCdContentPath)
+                        val safCueUri = src.cueContentUri?.takeUnless(::isLocalCdContentPath)
+                        val localBinPath = src.binContentUri?.takeIf(::isLocalCdContentPath)
+                        val localCuePath =
+                            src.cueContentUri?.takeIf(::isLocalCdContentPath)
+                                ?: File(filesDir, src.cuePath).absolutePath
+                        listOfNotNull(safBinUri, safCueUri).forEach(trackedSafUris::add)
+                        val displayUri = safCueUri ?: safBinUri ?: localCuePath
+                        val accessible =
+                            if (safBinUri != null || safCueUri != null) {
+                                listOfNotNull(
+                                    safBinUri?.let { uriStr ->
+                                        canAccessSafUri(ctx, Uri.parse(uriStr), useFileDescriptor = true)
+                                    },
+                                    safCueUri?.let { uriStr ->
+                                        canAccessSafUri(ctx, Uri.parse(uriStr))
+                                    },
+                                ).all { it }
+                            } else {
+                                File(localCuePath).isFile && (localBinPath?.let { File(it).isFile } ?: true)
+                            }
+                        entries.add(
+                            SafEntry(
+                                label = "CD Source: ${src.discLabel}",
+                                uri = displayUri,
+                                accessible = accessible,
+                                cdSourceId = src.id,
+                            ),
+                        )
                     }
                 } catch (_: Exception) {
                 }
@@ -1269,8 +1300,15 @@ private fun StorageInspectorSection(filesDir: File) {
                 val persisted = ctx.contentResolver.persistedUriPermissions
                 for (perm in persisted) {
                     val uriStr = perm.uri.toString()
-                    if (entries.none { it.uri == uriStr }) {
-                        entries.add(SafEntry("Permission", uriStr, perm.isReadPermission))
+                    if (!isPersistedPermissionCoveredByTrackedUris(uriStr, trackedSafUris)) {
+                        entries.add(
+                            SafEntry(
+                                label = "Permission",
+                                uri = uriStr,
+                                accessible = perm.isReadPermission,
+                                isPermissionEntry = true,
+                            ),
+                        )
                     }
                 }
                 entries.toList()
@@ -1284,8 +1322,15 @@ private fun StorageInspectorSection(filesDir: File) {
                     Text("No SAF links", fontSize = 12.sp)
                 } else {
                     LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                        items(safEntries) { entry ->
-                            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                        items(items = safEntries, key = { it.key }) { entry ->
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedSafEntry = entry }
+                                        .focusable()
+                                        .padding(vertical = 4.dp),
+                            ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(entry.label, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -1315,6 +1360,128 @@ private fun StorageInspectorSection(filesDir: File) {
                 TextButton(onClick = { showSafDialog = false }) { Text("Close") }
             },
         )
+
+        selectedSafEntry?.let { entry ->
+            val removeSummary =
+                when {
+                    entry.customSetId != null -> {
+                        "This removes the referenced audio file from the launcher set only. External storage files are not deleted"
+                    }
+
+                    entry.cdSourceId != null -> {
+                        "This removes the CD audio source from the launcher. External storage files are not deleted"
+                    }
+
+                    entry.isPermissionEntry -> {
+                        "This revokes the persisted SAF permission. Other entries that still rely on this grant may stop working"
+                    }
+
+                    else -> {
+                        "This entry can be removed from the launcher"
+                    }
+                }
+
+            AlertDialog(
+                onDismissRequest = { selectedSafEntry = null },
+                title = { Text(entry.label) },
+                text = {
+                    Column {
+                        Text(
+                            if (entry.accessible) "Status: OK" else "Status: BROKEN",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (entry.accessible) MaterialTheme.colorScheme.primary else Color(0xFFF44336),
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("URI:", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text(entry.uri, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(removeSummary, fontSize = 12.sp)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { selectedSafEntry = null }) { Text("Close") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { removeSafEntry = entry }) { Text("Remove") }
+                },
+            )
+        }
+
+        removeSafEntry?.let { entry ->
+            val removeDetail =
+                when {
+                    entry.customSetId != null -> {
+                        "Remove this referenced audio file from its launcher set? This will not delete the external file"
+                    }
+
+                    entry.cdSourceId != null -> {
+                        "Remove this CD audio source from the launcher? This will not delete the external file"
+                    }
+
+                    entry.isPermissionEntry -> {
+                        "Revoke this persisted SAF permission? Any remaining launcher entries that still need it may stop working"
+                    }
+
+                    else -> {
+                        "Remove this SAF entry from the launcher?"
+                    }
+                }
+
+            AlertDialog(
+                onDismissRequest = { removeSafEntry = null },
+                title = { Text("Remove SAF link?") },
+                text = {
+                    Column {
+                        Text(entry.uri, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(removeDetail, fontSize = 12.sp)
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            var removed = false
+                            when {
+                                entry.customSetId != null && entry.customFilename != null -> {
+                                    CustomAudioSetManager(
+                                        filesDir,
+                                    ).removeReferencedFile(entry.customSetId, entry.customFilename)
+                                    Toast.makeText(ctx, "Removed SAF audio link", Toast.LENGTH_SHORT).show()
+                                    removed = true
+                                }
+
+                                entry.cdSourceId != null -> {
+                                    val srcMgr = AudioSourceManager(filesDir)
+                                    val source = srcMgr.getSources().firstOrNull { it.id == entry.cdSourceId }
+                                    if (source != null) {
+                                        val cueFile = File(filesDir, source.cuePath)
+                                        if (cueFile.exists()) cueFile.delete()
+                                        srcMgr.removeSource(source.id)
+                                        Toast.makeText(ctx, "Removed CD audio source", Toast.LENGTH_SHORT).show()
+                                        removed = true
+                                    }
+                                }
+
+                                entry.isPermissionEntry -> {
+                                    releaseReadPermissionForUri(ctx, Uri.parse(entry.uri))
+                                    Toast.makeText(ctx, "Removed SAF permission", Toast.LENGTH_SHORT).show()
+                                    removed = true
+                                }
+                            }
+                            removeSafEntry = null
+                            selectedSafEntry = null
+                            if (removed) {
+                                refreshSafEntries++
+                            }
+                        },
+                    ) { Text("Remove") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { removeSafEntry = null }) { Text("Cancel") }
+                },
+            )
+        }
     }
 }
 

@@ -46,6 +46,49 @@ private const val MUSIC_MODE_FILES = "files"
 
 private const val TAG = "DXX-MusicPicker"
 
+internal fun shouldDisplayCdAudioSource(
+    source: AudioSourceManager.AudioSource,
+    canAccessUri: (uri: String, useFileDescriptor: Boolean) -> Boolean,
+): Boolean {
+    val binOk =
+        source.binContentUri?.let { uri ->
+            if (isLocalCdContentPath(uri)) File(uri).isFile else canAccessUri(uri, true)
+        } ?: true
+    val cueOk =
+        source.cueContentUri?.let { uri ->
+            if (isLocalCdContentPath(uri)) File(uri).isFile else canAccessUri(uri, false)
+        } ?: true
+    return binOk && cueOk
+}
+
+internal fun resolveCdPreviewLocalBinPath(
+    filesDir: File,
+    source: AudioSourceManager.AudioSource,
+): String? =
+    when {
+        source.binContentUri?.let(::isLocalCdContentPath) == true -> {
+            source.binContentUri
+        }
+
+        source.binContentUri == null && source.binPaths.isNotEmpty() -> {
+            File(filesDir, source.binPaths.first()).absolutePath
+        }
+
+        else -> {
+            null
+        }
+    }
+
+private fun visibleCdAudioSources(
+    ctx: Context,
+    audioSrcManager: AudioSourceManager,
+): List<AudioSourceManager.AudioSource> =
+    audioSrcManager.getSources().filter { source ->
+        shouldDisplayCdAudioSource(source) { uri, useFileDescriptor ->
+            canAccessSafUri(ctx, Uri.parse(uri), useFileDescriptor = useFileDescriptor)
+        }
+    }
+
 @Composable
 private fun verticalDpadFocusEscape(): Modifier = Modifier.repeatVerticalDpadFocus()
 
@@ -72,7 +115,7 @@ fun MusicPickerPage(
 
     // Redbook source management
     val audioSrcManager = remember { AudioSourceManager(filesDir) }
-    var audioSources by remember { mutableStateOf(audioSrcManager.getSources()) }
+    var audioSources by remember { mutableStateOf(visibleCdAudioSources(ctx, audioSrcManager)) }
 
     // Custom audio set management
     val customMgr = remember { CustomAudioSetManager(filesDir) }
@@ -176,7 +219,7 @@ fun MusicPickerPage(
                             CdAudioSection(
                                 audioSrcManager = audioSrcManager,
                                 audioSources = audioSources,
-                                onSourcesChanged = { audioSources = audioSrcManager.getSources() },
+                                onSourcesChanged = { audioSources = visibleCdAudioSources(ctx, audioSrcManager) },
                                 onShowTrackPreview = { showTrackPreview = true },
                             )
                         }
@@ -257,7 +300,7 @@ fun MusicPickerPage(
     if (showTrackPreview) {
         TrackPreviewDialog(
             musicMode = musicMode,
-            audioSrcManager = audioSrcManager,
+            audioSources = audioSources,
             customMgr = customMgr,
             onDismiss = { showTrackPreview = false },
         )
@@ -1203,7 +1246,7 @@ private fun AudioFilesSection(
 @Composable
 private fun TrackPreviewDialog(
     musicMode: String,
-    audioSrcManager: AudioSourceManager,
+    audioSources: List<AudioSourceManager.AudioSource>,
     customMgr: CustomAudioSetManager,
     onDismiss: () -> Unit,
 ) {
@@ -1231,7 +1274,7 @@ private fun TrackPreviewDialog(
 
     val tracks: List<TrackRow> =
         if (musicMode == MUSIC_MODE_CD) {
-            val sources = audioSrcManager.getEnabledSources()
+            val sources = audioSources.filter { it.enabled }
             if (sources.isEmpty()) {
                 listOf(TrackRow("(no sources enabled)", "", null))
             } else {
@@ -1385,8 +1428,18 @@ private fun CdTrackDetailDialog(
     fun togglePlayback() {
         if (!playing) {
             val cuePath = File(filesDir, source.cuePath).absolutePath
+            val localBinPath = resolveCdPreviewLocalBinPath(filesDir, source)
             val started =
-                if (source.binContentUri != null) {
+                if (localBinPath != null) {
+                    val localStarted = CdPreviewBridge.start(localBinPath, cuePath, audioTrackIdx, sampleRate)
+                    if (!localStarted) {
+                        LauncherDebugLog.log(
+                            "launcher-cd-preview-open-fail disc=${source.discLabel} track=$audioTrackIdx reason=local-start-false path=$localBinPath",
+                        )
+                        Toast.makeText(ctx, "Could not open this CD audio track", Toast.LENGTH_LONG).show()
+                    }
+                    localStarted
+                } else if (source.binContentUri != null) {
                     // SAF source: open fd via content resolver
                     val uri = android.net.Uri.parse(source.binContentUri)
                     try {
@@ -1406,14 +1459,15 @@ private fun CdTrackDetailDialog(
                             ).show()
                         false
                     } catch (e: Exception) {
+                        LauncherDebugLog.log(
+                            "launcher-cd-preview-open-fail disc=${source.discLabel} track=$audioTrackIdx reason=open-exception uri=$uri",
+                        )
                         Log.e(TAG, "CD preview open failed for ${source.discLabel}", e)
                         Toast.makeText(ctx, "Could not open this CD audio track", Toast.LENGTH_LONG).show()
                         false
                     }
                 } else {
-                    // Local source: use file path
-                    val binPath = File(filesDir, source.binPaths.first()).absolutePath
-                    CdPreviewBridge.start(binPath, cuePath, audioTrackIdx, sampleRate)
+                    false
                 }
             if (started) playing = true
         } else {

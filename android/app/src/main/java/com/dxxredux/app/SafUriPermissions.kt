@@ -52,6 +52,21 @@ internal fun releaseReadPermissionForUri(
     deriveOwningTreeUri(uri)?.let(::releaseOne)
 }
 
+internal fun canAccessSafUri(
+    context: Context,
+    uri: Uri,
+    useFileDescriptor: Boolean = false,
+): Boolean =
+    try {
+        if (useFileDescriptor) {
+            context.contentResolver.openFileDescriptor(uri, "r")?.use { true } ?: false
+        } else {
+            context.contentResolver.openInputStream(uri)?.use { true } ?: false
+        }
+    } catch (_: Exception) {
+        false
+    }
+
 internal fun deriveOwningTreeUri(uri: Uri): Uri? = deriveOwningTreeUriString(uri.toString())?.let(Uri::parse)
 
 internal fun deriveOwningTreeUriString(uri: String): String? {
@@ -62,3 +77,11 @@ internal fun deriveOwningTreeUriString(uri: String): String? {
     val documentStart = uri.indexOf(documentMarker, treeStart + treeMarker.length)
     return if (documentStart >= 0) uri.substring(0, documentStart) else uri
 }
+
+internal fun isPersistedPermissionCoveredByTrackedUris(
+    permissionUri: String,
+    trackedUris: Collection<String>,
+): Boolean =
+    trackedUris.any { trackedUri ->
+        trackedUri == permissionUri || deriveOwningTreeUriString(trackedUri) == permissionUri
+    }
