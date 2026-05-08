@@ -905,15 +905,24 @@ private fun drawAllControls(
         val selected = selType == "stick" && selIdx == i
         val selectedEdge = selectedZoneEdge(selType, selIdx, SELECTED_TYPE_STICK_ZONE_EDGE, i)
         val alpha = layout.globalOpacity * stick.opacity
+        val hasEditableZone = stick.floating || stick.mouseMode
+        var zoneLeft = 0f
+        var zoneTop = 0f
+        var zoneRight = 0f
+        var zoneBottom = 0f
 
         // Floating zone indicator
-        if (stick.floating || stick.mouseMode) {
+        if (hasEditableZone) {
             val fz = stick.floatingZone
-            val fzTopLeft = Offset(w * fz.leftPct / 100f, h * fz.topPct / 100f)
+            zoneLeft = w * fz.leftPct / 100f
+            zoneTop = h * fz.topPct / 100f
+            zoneRight = w * fz.rightPct / 100f
+            zoneBottom = h * fz.bottomPct / 100f
+            val fzTopLeft = Offset(zoneLeft, zoneTop)
             val fzSize =
                 androidx.compose.ui.geometry.Size(
-                    w * (fz.rightPct - fz.leftPct) / 100f,
-                    h * (fz.bottomPct - fz.topPct) / 100f,
+                    zoneRight - zoneLeft,
+                    zoneBottom - zoneTop,
                 )
             scope.drawRect(
                 color = Color(0x1488CCFF),
@@ -981,6 +990,9 @@ private fun drawAllControls(
                     style = Stroke(width = 3f),
                 )
             }
+        }
+        if (selectedEdge != null && hasEditableZone && !stick.mouseMode) {
+            scope.drawSelectedZoneEdge(zoneLeft, zoneTop, zoneRight, zoneBottom, selectedEdge)
         }
         // Label
         val label = TouchBindings.AXIS_LABELS[stick.axisX]?.take(3) ?: "?"
@@ -1485,7 +1497,7 @@ private fun hitTest(
 }
 
 /** Returns all controls hit at the given offset, in priority order. */
-private fun hitTestAll(
+internal fun hitTestAll(
     layout: TouchLayout,
     offset: Offset,
     canvasWidth: Float,
@@ -1504,9 +1516,9 @@ private fun hitTestAll(
         if (dist <= r * 1.3f) hits.add(Pair("button", i))
     }
 
-    // Check mouse-mode stick and axis-region edges before larger body hits.
+    // Check editable stick-zone and axis-region edges before larger body hits.
     layout.sticks.forEachIndexed { i, stick ->
-        if (!stick.mouseMode) return@forEachIndexed
+        if (!stick.floating && !stick.mouseMode) return@forEachIndexed
         addFloatingZoneEdgeHits(
             hits = hits,
             selectionType = SELECTED_TYPE_STICK_ZONE_EDGE,

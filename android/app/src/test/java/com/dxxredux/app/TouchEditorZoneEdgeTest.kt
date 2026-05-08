@@ -1,6 +1,8 @@
 package com.dxxredux.app
 
+import androidx.compose.ui.geometry.Offset
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -51,5 +53,52 @@ class TouchEditorZoneEdgeTest {
         assertEquals(20f, resized.topPct, 0.001f)
         assertEquals(30f, resized.rightPct, 0.001f)
         assertTrue(resized.bottomPct > zone.bottomPct)
+    }
+
+    @Test
+    fun floatingStickEdgesAreHitTestedOutsideMouseMode() {
+        val layout =
+            TouchLayout(
+                sticks =
+                    listOf(
+                        AnalogStickControl(
+                            id = "stick0",
+                            xPct = 80f,
+                            yPct = 80f,
+                            axisX = 0,
+                            axisY = 1,
+                            floating = true,
+                            floatingZone = FloatingZone(leftPct = 10f, topPct = 20f, rightPct = 30f, bottomPct = 50f),
+                        ),
+                    ),
+            )
+
+        val hits = hitTestAll(layout, Offset(100f, 350f), canvasWidth = 1000f, canvasHeight = 1000f)
+
+        assertTrue(hits.contains("stickZoneEdge" to encodeFloatingZoneEdgeSelection(0, FloatingZoneEdge.LEFT)))
+    }
+
+    @Test
+    fun nonFloatingNonMouseStickDoesNotExposeZoneEdges() {
+        val layout =
+            TouchLayout(
+                sticks =
+                    listOf(
+                        AnalogStickControl(
+                            id = "stick0",
+                            xPct = 80f,
+                            yPct = 80f,
+                            axisX = 0,
+                            axisY = 1,
+                            floating = false,
+                            mouseMode = false,
+                            floatingZone = FloatingZone(leftPct = 10f, topPct = 20f, rightPct = 30f, bottomPct = 50f),
+                        ),
+                    ),
+            )
+
+        val hits = hitTestAll(layout, Offset(100f, 350f), canvasWidth = 1000f, canvasHeight = 1000f)
+
+        assertFalse(hits.any { it.first == "stickZoneEdge" })
     }
 }
