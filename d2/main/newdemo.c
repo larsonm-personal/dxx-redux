@@ -3667,6 +3667,7 @@ static void input_demo_clear_quick_recording(void)
 	input_demo_android_quick_recording = 0;
 	input_demo_android_quick_record_level = 0;
 	input_demo_android_quick_record_mission[0] = 0;
+	input_demo_clear_recording_terminal_exit();
 }
 
 static void input_demo_release_recorder_settings(input_demo_recorder_settings *settings)
@@ -4069,6 +4070,15 @@ int newdemo_stop_quick_recording(void)
 	return 1;
 }
 
+int newdemo_stop_quick_recording_for_level_exit(void)
+{
+	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_android_quick_recording)
+		return 0;
+	input_demo_set_recording_terminal_exit(INPUT_DEMO_RESULT_TERMINAL_EXIT_LEVEL_EXIT);
+	newdemo_stop_recording(0);
+	return 1;
+}
+
 int newdemo_toggle_quick_recording(void)
 {
 	char error[256] = "";
@@ -4086,6 +4096,7 @@ int newdemo_toggle_quick_recording(void)
 		con_printf(CON_NORMAL, "Input demo recording skipped: %s\n", error);
 		return 0;
 	}
+	input_demo_clear_recording_terminal_exit();
 	input_demo_android_quick_recording = 1;
 	input_demo_android_quick_record_level = Current_level_num;
 	snprintf(input_demo_android_quick_record_mission,

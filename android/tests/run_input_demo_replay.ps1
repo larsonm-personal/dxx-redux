@@ -917,6 +917,16 @@ function Get-TerminalExitExpectedSubset {
             $subset[$key] = $Expected[$key]
         }
     }
+    if ($Expected.ContainsKey('terminal_exit')) {
+        $subset.terminal_exit = $Expected.terminal_exit
+    } elseif ($Actual.ContainsKey('terminal_exit')) {
+        $subset.terminal_exit = $Actual.terminal_exit
+    }
+    foreach ($key in @('player0', 'position')) {
+        if ($Actual.ContainsKey($key)) {
+            $subset[$key] = ConvertTo-DeepHashtableClone -Value $Actual[$key]
+        }
+    }
     if ($Expected.ContainsKey('level_summary')) {
         $subset.level_summary = ConvertTo-DeepHashtableClone -Value $Expected.level_summary
         if ($Actual.ContainsKey('level_summary') -and $Actual.level_summary -is [System.Collections.IDictionary] -and
@@ -1007,20 +1017,74 @@ function Read-JsonFileAsHashtable {
 }
 
 function Test-ReplayUsedTerminalExitSubset {
-    param([string]$SandboxDirectory)
+    param(
+        [string]$SandboxDirectory,
+        [hashtable]$Expected,
+        [hashtable]$Actual
+    )
 
     $gamelogPath = Join-Path $SandboxDirectory 'gamelog.txt'
-    if (-not (Test-Path -LiteralPath $gamelogPath)) {
-        return $false
-    }
-
-    foreach ($line in [System.IO.File]::ReadLines($gamelogPath)) {
-        if ($line.Contains('Input demo replay level-exit:') -or $line.Contains('Input demo replay mine-exit:')) {
-            return $true
+    if (Test-Path -LiteralPath $gamelogPath) {
+        foreach ($line in [System.IO.File]::ReadLines($gamelogPath)) {
+            if ($line.Contains('Input demo replay level-exit:') -or $line.Contains('Input demo replay mine-exit:')) {
+                return $true
+            }
         }
     }
 
-    return $false
+    if (-not $Expected -or -not $Actual) {
+        return $false
+    }
+
+    $expectedTerminalExit = if ($Expected.ContainsKey('terminal_exit')) { [string]$Expected.terminal_exit } else { $null }
+    $actualTerminalExit = if ($Actual.ContainsKey('terminal_exit')) { [string]$Actual.terminal_exit } else { $null }
+    foreach ($terminalExit in @($expectedTerminalExit, $actualTerminalExit)) {
+        if ($terminalExit -ne 'level_exit' -and $terminalExit -ne 'mine_exit') {
+            continue
+        }
+        $terminalExitExpected = Get-TerminalExitExpectedSubset -Expected $Expected -Actual $Actual
+        $terminalExitDiffs = Compare-JsonDiff -Expected $terminalExitExpected -Actual $Actual
+        return ($terminalExitDiffs.Count -eq 0)
+    }
+
+    if (-not ($Expected.ContainsKey('level_summary') -and $Expected.level_summary -is [System.Collections.IDictionary])) {
+        return $false
+    }
+    if (-not ($Actual.ContainsKey('level_summary') -and $Actual.level_summary -is [System.Collections.IDictionary])) {
+        return $false
+    }
+    if (-not ($Expected.level_summary.Contains('endlevel_completed') -and $Actual.level_summary.Contains('endlevel_completed'))) {
+        return $false
+    }
+    if ([bool]$Expected.level_summary.endlevel_completed -or -not [bool]$Actual.level_summary.endlevel_completed) {
+        return $false
+    }
+
+    $rawDiffs = Compare-JsonDiff -Expected $Expected -Actual $Actual
+    if ($rawDiffs.Count -eq 0) {
+        return $false
+    }
+    foreach ($diff in $rawDiffs) {
+        $separator = $diff.IndexOf(':')
+        if ($separator -lt 0) {
+            return $false
+        }
+        $path = $diff.Substring(0, $separator)
+        if ($path -eq 'result.level_summary.endlevel_completed') {
+            continue
+        }
+        if ($path -eq 'result.player0' -or $path.StartsWith('result.player0.')) {
+            continue
+        }
+        if ($path -eq 'result.position' -or $path.StartsWith('result.position.')) {
+            continue
+        }
+        return $false
+    }
+
+    $terminalExitExpected = Get-TerminalExitExpectedSubset -Expected $Expected -Actual $Actual
+    $terminalExitDiffs = Compare-JsonDiff -Expected $terminalExitExpected -Actual $Actual
+    return ($terminalExitDiffs.Count -eq 0)
 }
 
 function Wait-ForReplayResult {
@@ -1257,7 +1321,7 @@ $stateTraceCompareError = $null
 $stateTraceExpectedPath = $null
 $rngTraceCompareError = $null
 $rngTraceExpectedPath = $null
-if ($actualResult -and (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory)) {
+if ($actualResult -and (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory -Expected $normalizedExpectedResult -Actual $actualResult)) {
     $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $normalizedExpectedResult -Actual $actualResult
 }
 if ($resolvedStateLogPath) {

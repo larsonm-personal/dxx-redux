@@ -51,6 +51,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "args.h"
 #include "maths.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "input_demo_debug_logging.h"
@@ -823,16 +824,9 @@ static void input_demo_log_preserved_ui_rng(const char *stage, int preserve_rng,
 		return;
 	if (!d_rand_get_state(&current_rng_state))
 		return;
-	con_printf(CON_NORMAL,
-		"Input demo replay ui rng: frame=%u stage=%s preserve=%d saved=%u current=%u cockpit=%d no_hud=%d observer=%d\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
-		stage,
-		preserve_rng,
-		saved_rng_state,
-		current_rng_state,
-		PlayerCfg.CurrentCockpitMode,
-		no_draw_hud,
-		is_observer());
+	input_demo_log_preserved_ui_rng_probe(stage, preserve_rng,
+		saved_rng_state, current_rng_state, PlayerCfg.CurrentCockpitMode,
+		no_draw_hud, is_observer());
 }
 
 //render a frame for the game

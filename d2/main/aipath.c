@@ -1108,23 +1108,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	velocity_mag = vm_vec_mag_quick(&objp->mtype.phys_info.velocity);
 	threshold_distance = fixmul(velocity_mag, FrameTime)*2 + F1_0*2;
 	if (input_demo_replay_follow_probe_active(objp) && (dist_to_goal < threshold_distance))
-		con_printf(CON_NORMAL,
-			"Input demo replay follow advance trigger: frame=%u obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d seg=%d goal_seg=%d dist=%d threshold=%d vel=%d\n",
-			input_demo_trace_frame_index(),
-			(int)(objp - Objects),
-			objp->signature,
-			objp->id,
-			robptr->companion,
-			aip->behavior,
-			ailp->mode,
-			aip->cur_path_index,
-			aip->path_length,
-			aip->PATH_DIR,
-			objp->segnum,
-			ailp->goal_segment,
-			dist_to_goal,
-			threshold_distance,
-			velocity_mag);
+		input_demo_log_follow_advance_trigger(objp, dist_to_goal,
+			threshold_distance, velocity_mag);
 	if (input_demo_replay_follow_probe_active(objp) && (dist_to_goal < threshold_distance))
 		input_demo_log_path_robot_state("follow advance trigger", objp);
 
@@ -1140,21 +1125,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 		//	See if next point wraps past end of path (in either direction), and if so, deal with it based on mode.
 		if ((aip->cur_path_index >= aip->path_length) || (aip->cur_path_index < 0)) {
 			if (input_demo_replay_follow_probe_active(objp))
-				con_printf(CON_NORMAL,
-					"Input demo replay follow wrap: frame=%u obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d vis=%d escort_goal=%d special=%d\n",
-					input_demo_trace_frame_index(),
-					(int)(objp - Objects),
-					objp->signature,
-					objp->id,
-					robptr->companion,
-					aip->behavior,
-					ailp->mode,
-					aip->cur_path_index,
-					aip->path_length,
-					aip->PATH_DIR,
-					player_visibility,
-					Escort_goal_object,
-					Escort_special_goal);
+				input_demo_log_follow_wrap(objp, player_visibility);
 			if (input_demo_replay_follow_probe_active(objp))
 				input_demo_log_path_robot_state("follow wrap", objp);
 			//	Buddy bot.  If he's in mode to get away from player and at end of line,
@@ -1271,25 +1242,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	}	//	end while
 
 	if (input_demo_replay_follow_probe_active(objp) && ((aip->cur_path_index != original_index) || (aip->PATH_DIR != original_dir)))
-		con_printf(CON_NORMAL,
-			"Input demo replay follow advance result: frame=%u obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d from=%d to=%d path=%d dir=%d->%d seg=%d goal_seg=%d dist=%d threshold=%d vel=%d forced=%d\n",
-			input_demo_trace_frame_index(),
-			(int)(objp - Objects),
-			objp->signature,
-			objp->id,
-			robptr->companion,
-			aip->behavior,
-			ailp->mode,
-			original_index,
-			aip->cur_path_index,
-			aip->path_length,
-			original_dir,
-			aip->PATH_DIR,
-			objp->segnum,
-			ailp->goal_segment,
-			dist_to_goal,
-			threshold_distance,
-			velocity_mag,
+		input_demo_log_follow_advance_result(objp, original_index,
+			original_dir, dist_to_goal, threshold_distance, velocity_mag,
 			forced_break);
 	if (input_demo_replay_follow_probe_active(objp) && ((aip->cur_path_index != original_index) || (aip->PATH_DIR != original_dir)))
 		input_demo_log_path_robot_state("follow advance result", objp);

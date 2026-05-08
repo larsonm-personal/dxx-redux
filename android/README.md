@@ -22,3 +22,8 @@
    - Android client ID (linked to app signing key SHA-1)
    - Web/server client ID (for server-side token exchange)
 4. Add the Games project to the app's Play Console listing
+
+## crash reports
+* Crash reports are exportable from the launcher's Advanced page
+* If xCrash only shows the child exit stub or another incomplete native report, inspect the exported tombstone's `dxx-redux breadcrumbs` section before digging into gameplay logs
+* If the tombstone is missing custom sections or the crash callback only had emergency data, also inspect any exported `crash_error_*.txt` fallback report from the same Advanced page export

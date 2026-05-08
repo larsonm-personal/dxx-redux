@@ -959,31 +959,14 @@ void fix_illegal_wall_intersection(object *obj, vms_vector *origin)
 	if ( object_intersects_wall_d(obj,&hseg,&hside,&hface) )
 	{
 		if (input_demo_trace_motion_probe_active() && obj == ConsoleObject)
-			con_printf(CON_NORMAL,
-				"Input demo replay motion probe: frame=%u gt=%lld step=fix_illegal_wall_intersection before seg=%d hitseg=%d side=%d face=%d pos=(%d,%d,%d) origin=(%d,%d,%d)\n",
-				input_demo_trace_motion_frame_index(),
-				(long long)GameTime64,
-				obj->segnum,
-				hseg,
-				hside,
-				hface,
-				obj->pos.x,
-				obj->pos.y,
-				obj->pos.z,
-				origin ? origin->x : 0,
-				origin ? origin->y : 0,
-				origin ? origin->z : 0);
+			input_demo_log_motion_fix_illegal_before(obj,
+				input_demo_trace_motion_frame_index(), hseg, hside, hface,
+				origin);
 		vm_vec_scale_add2(&obj->pos,&Segments[hseg].sides[hside].normals[0],FrameTime*10);
 		update_object_seg(obj);
 		if (input_demo_trace_motion_probe_active() && obj == ConsoleObject)
-			con_printf(CON_NORMAL,
-				"Input demo replay motion probe: frame=%u gt=%lld step=fix_illegal_wall_intersection after seg=%d pos=(%d,%d,%d)\n",
-				input_demo_trace_motion_frame_index(),
-				(long long)GameTime64,
-				obj->segnum,
-				obj->pos.x,
-				obj->pos.y,
-				obj->pos.z);
+			input_demo_log_motion_fix_illegal_after(obj,
+				input_demo_trace_motion_frame_index());
 	}
 }
 

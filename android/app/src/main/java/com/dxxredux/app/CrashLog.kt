@@ -15,6 +15,10 @@ import java.io.File
  * and append it plus build metadata into the generated tombstone files.
  *
  * Reports are viewable and exportable from the Advanced Settings page.
+ * If xCrash only produces the child exit stub, loses custom sections, or
+ * falls back to emergency-only callback data, inspect the exported
+ * tombstone's dxx-redux breadcrumbs section and any crash_error_*.txt
+ * fallback report from the same export.
  */
 object CrashLog {
     private const val TAG = "CrashLog"
@@ -126,10 +130,17 @@ object CrashLog {
             appendedBreadcrumbs = appendCustomSection(reportFile, BREADCRUMBS_SECTION, breadcrumbs)
         }
 
-        if (!emergency.isNullOrBlank()) {
-            val fallback = writeEmergencyFallbackReport(appContext, reportFile, header, emergency, breadcrumbs)
+        val fallbackReason =
+            when {
+                !emergency.isNullOrBlank() -> "xCrash supplied emergency crash info"
+                reportFile != null -> getCrashFallbackReason(reportFile, breadcrumbs)
+                else -> null
+            }
+        if (fallbackReason != null) {
+            val fallback =
+                writeCrashFallbackReport(appContext, reportFile, header, fallbackReason, emergency, breadcrumbs)
             if (fallback != null) {
-                Log.w(TAG, "Wrote emergency crash fallback report: ${fallback.absolutePath}")
+                Log.w(TAG, "Wrote crash fallback report: ${fallback.absolutePath}")
             }
         }
 
@@ -281,15 +292,44 @@ object CrashLog {
             false
         }
 
-    private fun writeEmergencyFallbackReport(
+    private fun getCrashFallbackReason(
+        logFile: File,
+        breadcrumbs: String,
+    ): String? {
+        val firstLine = readCrashReportFirstLine(logFile)
+        if (firstLine != null && firstLine.startsWith("xcrash error:")) {
+            return firstLine
+        }
+        if (!hasCustomSection(logFile, HEADER_SECTION)) {
+            return "$HEADER_SECTION missing from xCrash report"
+        }
+        if (breadcrumbs.isNotBlank() && !hasCustomSection(logFile, BREADCRUMBS_SECTION)) {
+            return "$BREADCRUMBS_SECTION missing from xCrash report"
+        }
+        return null
+    }
+
+    private fun readCrashReportFirstLine(file: File): String? =
+        try {
+            if (!file.isFile) return null
+            file.bufferedReader(Charsets.UTF_8).use { reader ->
+                reader.readLine()?.trim()?.takeUnless { it.isEmpty() }
+            }
+        } catch (_: Exception) {
+            null
+        }
+
+    private fun writeCrashFallbackReport(
         context: Context,
         logFile: File?,
         header: String,
-        emergency: String,
+        reason: String,
+        emergency: String?,
         breadcrumbs: String,
     ): File? {
         val crashDir = getTombstoneDir(context)
-        val fallback = File(crashDir, "crash_error_emergency_${System.currentTimeMillis()}.txt")
+        val fallbackKind = if (emergency.isNullOrBlank()) "degraded" else "emergency"
+        val fallback = File(crashDir, "crash_error_${fallbackKind}_${System.currentTimeMillis()}.txt")
 
         return try {
             crashDir.mkdirs()
@@ -304,9 +344,14 @@ object CrashLog {
                     writer.appendLine(logFile.absolutePath)
                     writer.appendLine()
                 }
-                writer.appendLine("xcrash emergency:")
-                writer.appendLine(emergency.trimEnd())
+                writer.appendLine("xcrash fallback reason:")
+                writer.appendLine(reason.trimEnd())
                 writer.appendLine()
+                if (!emergency.isNullOrBlank()) {
+                    writer.appendLine("xcrash emergency:")
+                    writer.appendLine(emergency.trimEnd())
+                    writer.appendLine()
+                }
                 if (breadcrumbs.isNotBlank()) {
                     writer.appendLine("$BREADCRUMBS_SECTION:")
                     writer.appendLine(breadcrumbs.trimEnd())
@@ -315,7 +360,7 @@ object CrashLog {
             }
             fallback
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to write emergency crash fallback report", e)
+            Log.w(TAG, "Failed to write crash fallback report", e)
             null
         }
     }

@@ -70,6 +70,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ogl_init.h"
 #endif
 #include "physfsx.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #ifdef __ANDROID__
 #include "coop_save.h"
@@ -663,14 +664,13 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	laser_set_runtime_state(&laser_state);
 	rebuild_guided_missile_state();
 	if (input_demo_replay_has_checkpoint())
-		con_printf(CON_NORMAL,
-			"Input demo replay checkpoint runtime restore: gt=%lld next_laser_delta=%lld next_missile_delta=%lld last_laser_delta=%lld next_flare_delta=%lld auto_fusion_delta=%lld glfc=%d gmfc=%d spreadfire_toggle=%d missile_gun=%d helix=%d proximity=%d smartmines=%d omega_delta=%lld d_tick=(%d,%d,%d) rng=%u has_rng=%d\n",
-			(long long)GameTime64,
-			(long long)(Next_laser_fire_time - GameTime64),
-			(long long)(Next_missile_fire_time - GameTime64),
-			(long long)(Last_laser_fired_time - GameTime64),
-			(long long)(Next_flare_fire_time - GameTime64),
-			(long long)(Auto_fire_fusion_cannon_time - GameTime64),
+		input_demo_log_checkpoint_runtime_restore(
+			GameTime64,
+			Next_laser_fire_time - GameTime64,
+			Next_missile_fire_time - GameTime64,
+			Last_laser_fired_time - GameTime64,
+			Next_flare_fire_time - GameTime64,
+			Auto_fire_fusion_cannon_time - GameTime64,
 			Global_laser_firing_count,
 			Global_missile_firing_count,
 			laser_state.spreadfire_toggle,
@@ -678,12 +678,68 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 			laser_state.helix_orientation,
 			laser_state.proximity_dropped,
 			laser_state.smartmines_dropped,
-			(long long)(laser_state.last_omega_fire_time - GameTime64),
+			laser_state.last_omega_fire_time - GameTime64,
 			d_tick_state.count,
 			d_tick_state.step,
 			d_tick_state.timer,
 			rng_state,
 			has_rng_state);
+}
+
+static void state_log_checkpoint_ai_restore_state(void)
+{
+	int i;
+
+	if (!input_demo_replay_is_loaded() || !input_demo_replay_has_checkpoint())
+		return;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+		ai_local *ailp;
+		char probe[768];
+
+		if ((obj->type != OBJ_ROBOT) || (obj->control_type != CT_AI))
+			continue;
+
+		ailp = &Ai_local_info[i];
+		snprintf(probe, sizeof(probe),
+			"behavior=%d mode=%d cur_state=%d goal_state=%d gun=%d "
+			"player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d "
+			"aware_time=%d retry=%d retry_chain=%d rapid=%d skip=%d "
+			"seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d "
+			"path_index=%d path_length=%d hide=%d dir=%d pos=(%d,%d,%d) vel=(%d,%d,%d)",
+			obj->ctype.ai_info.behavior,
+			ailp->mode,
+			obj->ctype.ai_info.CURRENT_STATE,
+			obj->ctype.ai_info.GOAL_STATE,
+			obj->ctype.ai_info.CURRENT_GUN,
+			ConsoleObject ? ConsoleObject->segnum : -1,
+			Believed_player_seg,
+			ailp->goal_segment,
+			ailp->previous_visibility,
+			ailp->player_awareness_type,
+			ailp->player_awareness_time,
+			ailp->retry_count,
+			ailp->consecutive_retries,
+			ailp->rapidfire_count,
+			obj->ctype.ai_info.SKIP_AI_COUNT,
+			(long long)ailp->time_player_seen,
+			ailp->time_since_processed,
+			ailp->next_action_time,
+			ailp->next_fire,
+			ailp->next_fire2,
+			obj->ctype.ai_info.cur_path_index,
+			obj->ctype.ai_info.path_length,
+			obj->ctype.ai_info.hide_index,
+			obj->ctype.ai_info.PATH_DIR,
+			obj->pos.x,
+			obj->pos.y,
+			obj->pos.z,
+			obj->mtype.phys_info.velocity.x,
+			obj->mtype.phys_info.velocity.y,
+			obj->mtype.phys_info.velocity.z);
+		input_demo_append_replay_probe_message("restore_ai", obj, probe);
+	}
 }
 
 int sc_last_item= 0;
@@ -2552,6 +2608,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 	if (version >= STATE_RUNTIME_VERSION)
 		state_read_runtime_state(fp, swap, secret_restore, version);
+	state_log_checkpoint_ai_restore_state();
 
 #ifdef __ANDROID__
 	{

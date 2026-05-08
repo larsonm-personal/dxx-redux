@@ -17,6 +17,10 @@ extern "C" {
 #define INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO   16
 #define INPUT_DEMO_RESULT_MAX_SECONDARY_AMMO 16
 
+#define INPUT_DEMO_RESULT_TERMINAL_EXIT_NONE       0
+#define INPUT_DEMO_RESULT_TERMINAL_EXIT_LEVEL_EXIT 1
+#define INPUT_DEMO_RESULT_TERMINAL_EXIT_MINE_EXIT  2
+
 typedef struct input_demo_result_player {
 	int32_t present;
 	int32_t energy;
@@ -61,6 +65,7 @@ typedef struct input_demo_result {
 	int32_t level;
 	int32_t difficulty;
 	uint32_t frame_count;
+	int32_t terminal_exit;
 	/* Keep the 64-bit field on an explicit boundary shared by C and C++ builds */
 	int32_t has_game_time64;
 	int32_t reserved0;

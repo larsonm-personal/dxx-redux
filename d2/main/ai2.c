@@ -1044,24 +1044,7 @@ player_led: ;
 	}
 #endif
 
-	if (input_demo_trace_robot_fire_active(obj))
-		con_printf(CON_NORMAL,
-			"Input demo replay fire probe: frame=%u kind=robot_fire robot_obj=%d sig=%d robot_id=%d seg=%d gun=%d weapon=%d believed_seg=%d player_seg=%d pos=(%d,%d,%d) vec=(%d,%d,%d)\n",
-			input_demo_trace_robot_fire_frame_index(),
-			obj - Objects,
-			obj->signature,
-			obj->id,
-			obj->segnum,
-			obj->ctype.ai_info.CURRENT_GUN,
-			weapon_type,
-			Believed_player_seg,
-			ConsoleObject ? ConsoleObject->segnum : -1,
-			obj->pos.x,
-			obj->pos.y,
-			obj->pos.z,
-			fire_vec.x,
-			fire_vec.y,
-			fire_vec.z);
+	input_demo_log_robot_fire_probe(obj, &fire_vec, weapon_type);
 
 	if (input_demo_trace_robot_fire_active(obj))
 		input_demo_log_robot_fire_state("robot_fire before_awareness", obj,
@@ -2231,22 +2214,8 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 	fix	dot;
 	#define REPLAY_LOG_ACTUAL_FIRE(step_label, fire_gun) \
 		do { \
-			if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded()) \
-				con_printf(CON_NORMAL, \
-					"Input demo replay AI fire: frame=%u obj=%d step=%s gun=%d vis=%d dist=%d last_dist=%d last_fired=(%d,%d,%d) believed=(%d,%d,%d)\n", \
-					(unsigned int)input_demo_replay_next_frame_index(), \
-					obj - Objects, \
-					step_label, \
-					fire_gun, \
-					player_visibility, \
-					dist_to_player, \
-					vm_vec_dist_quick(&Last_fired_upon_player_pos, &Believed_player_pos), \
-					Last_fired_upon_player_pos.x, \
-					Last_fired_upon_player_pos.y, \
-					Last_fired_upon_player_pos.z, \
-					Believed_player_pos.x, \
-					Believed_player_pos.y, \
-					Believed_player_pos.z); \
+			input_demo_log_ai_fire_probe(obj, step_label, fire_gun, \
+				player_visibility, dist_to_player); \
 		} while (0)
 
 	if ((player_visibility == 2) || (Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD )) {

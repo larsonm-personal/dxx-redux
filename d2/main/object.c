@@ -2112,7 +2112,9 @@ void object_move_one( object * obj )
 		case CT_AI:
 			//NOTE LINK TO CT_MORPH ABOVE!!!
 			if (Game_suspended & SUSP_ROBOTS) return;
-			if (input_demo_replay_homing_desync_probe_active()) {
+			if (input_demo_replay_homing_desync_probe_active() ||
+				input_demo_replay_obj95_state_probe_active(obj)) {
+				const int force_probe = input_demo_replay_obj95_state_probe_active(obj);
 				unsigned int rng_before = 0;
 				unsigned int rng_call_count_before = d_rand_get_call_count();
 				unsigned int rng_after = 0;
@@ -2125,18 +2127,38 @@ void object_move_one( object * obj )
 				input_demo_rng_trace_clear_object_context();
 				rng_call_count_after = d_rand_get_call_count();
 				d_rand_get_state(&rng_after);
-				if ((rng_after != rng_before) || (rng_call_count_after != rng_call_count_before)) {
-					char probe[384];
+				if (force_probe ||
+					(rng_after != rng_before) ||
+					(rng_call_count_after != rng_call_count_before)) {
+					char probe[768];
 
 					snprintf(probe, sizeof(probe),
-						"behavior=%d mode=%d goal_seg=%d aware=%d aware_time=%d skip=%d dist=%d calls=%u->%u state=%u->%u pos=(%d,%d,%d) vel=(%d,%d,%d)",
+						"behavior=%d mode=%d cur_state=%d goal_state=%d gun=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d retry=%d retry_chain=%d rapid=%d skip=%d dist=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path_index=%d path_length=%d hide=%d dir=%d calls=%u->%u state=%u->%u pos=(%d,%d,%d) vel=(%d,%d,%d)",
 						obj->ctype.ai_info.behavior,
 						Ai_local_info[obj-Objects].mode,
+						obj->ctype.ai_info.CURRENT_STATE,
+						obj->ctype.ai_info.GOAL_STATE,
+						obj->ctype.ai_info.CURRENT_GUN,
+						ConsoleObject ? ConsoleObject->segnum : -1,
+						Believed_player_seg,
 						Ai_local_info[obj-Objects].goal_segment,
+						Ai_local_info[obj-Objects].previous_visibility,
 						Ai_local_info[obj-Objects].player_awareness_type,
 						Ai_local_info[obj-Objects].player_awareness_time,
+						Ai_local_info[obj-Objects].retry_count,
+						Ai_local_info[obj-Objects].consecutive_retries,
+						Ai_local_info[obj-Objects].rapidfire_count,
 						obj->ctype.ai_info.SKIP_AI_COUNT,
 						vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos),
+						(long long)Ai_local_info[obj-Objects].time_player_seen,
+						Ai_local_info[obj-Objects].time_since_processed,
+						Ai_local_info[obj-Objects].next_action_time,
+						Ai_local_info[obj-Objects].next_fire,
+						Ai_local_info[obj-Objects].next_fire2,
+						obj->ctype.ai_info.cur_path_index,
+						obj->ctype.ai_info.path_length,
+						obj->ctype.ai_info.hide_index,
+						obj->ctype.ai_info.PATH_DIR,
 						rng_call_count_before,
 						rng_call_count_after,
 						rng_before,
@@ -2162,21 +2184,9 @@ void object_move_one( object * obj )
 				input_demo_rng_trace_clear_object_context();
 				rng_call_count_after = d_rand_get_call_count();
 				d_rand_get_state(&rng_after);
-				if ((rng_after != rng_before) || (rng_call_count_after != rng_call_count_before))
-					con_printf(CON_NORMAL,
-						"Input demo replay AI rng: frame=%u obj=%d id=%d companion=%d behavior=%d mode=%d seg=%d goal_seg=%d calls=%u->%u before=%u after=%u\n",
-						(unsigned int)input_demo_replay_next_frame_index(),
-						(int)(obj - Objects),
-						obj->id,
-						Robot_info[obj->id].companion,
-						obj->ctype.ai_info.behavior,
-						Ai_local_info[obj-Objects].mode,
-						obj->segnum,
-						Ai_local_info[obj-Objects].goal_segment,
-						rng_call_count_before,
-						rng_call_count_after,
-						rng_before,
-						rng_after);
+				input_demo_log_ai_rng_probe(obj, rng_before,
+					rng_call_count_before, rng_after,
+					rng_call_count_after);
 			} else {
 				input_demo_rng_trace_set_object_context((int)(obj - Objects),
 					obj->signature, obj->id);

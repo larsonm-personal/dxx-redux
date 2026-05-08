@@ -1943,14 +1943,10 @@ void FireLaser()
 					
 					apply_damage_to_player(ConsoleObject, ConsoleObject, damage, 0);
 				} else {
-					if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
-						con_printf(CON_NORMAL,
-							"Input demo replay fire probe: frame=%u kind=fusion_warmup player_obj=%d auto=%d charge=%d next_sound=%lld\n",
-							(unsigned int)input_demo_replay_next_frame_index(),
-							ConsoleObject - Objects,
-							Auto_fire_fusion_cannon_time > 0,
-							Fusion_charge,
-							(long long)Fusion_next_sound_time);
+					input_demo_log_replay_fusion_warmup_probe(ConsoleObject,
+						Auto_fire_fusion_cannon_time > 0,
+						Fusion_charge,
+						Fusion_next_sound_time);
 					input_demo_set_awareness_source("game_fusion_warmup", ConsoleObject - Objects, Fusion_charge);
 					create_awareness_event(ConsoleObject, PA_WEAPON_ROBOT_COLLISION);
 					digi_play_sample( SOUND_FUSION_WARMUP, F1_0 );

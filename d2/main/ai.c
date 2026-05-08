@@ -503,11 +503,51 @@ _exit_cheat:
 	// Occasionally make non-still robots make a path to the player.  Based on agitation and distance from player.
 	if ((aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_RUN_FROM) && (aip->behavior != AIB_STILL) && !(Game_mode & GM_MULTI) && (robptr->companion != 1) && (robptr->thief != 1))
 		if (Overall_agitation > 70) {
-			if ((dist_to_player < F1_0*200) && (d_rand() < FrameTime/4)) {
-				if (d_rand() * (Overall_agitation - 40) > F1_0*5) {
-					create_path_to_player(obj, 4 + Overall_agitation/8 + Difficulty_level, 1);
-					return;
+			if (dist_to_player < F1_0*200) {
+				int agitation_path_trigger_roll = d_rand();
+				int agitation_path_trigger_pass = agitation_path_trigger_roll < FrameTime/4;
+				int agitation_path_roll = -1;
+				int agitation_path_pass = 0;
+				int agitation_path_max_length = 4 + Overall_agitation/8 + Difficulty_level;
+				int agitation_path_pre_mode = ailp->mode;
+				int agitation_path_pre_goal_segment = ailp->goal_segment;
+				int agitation_path_pre_path_index = aip->cur_path_index;
+				int agitation_path_pre_path_length = aip->path_length;
+				int agitation_path_pre_hide_index = aip->hide_index;
+				int agitation_path_pre_path_dir = aip->PATH_DIR;
+				int64_t agitation_path_pre_time_player_seen = ailp->time_player_seen;
+
+				if (agitation_path_trigger_pass) {
+					agitation_path_roll = d_rand();
+					agitation_path_pass = agitation_path_roll * (Overall_agitation - 40) > F1_0*5;
 				}
+
+				if (agitation_path_pass) {
+					create_path_to_player(obj, agitation_path_max_length, 1);
+				}
+
+				if (agitation_path_trigger_pass ||
+					input_demo_replay_obj95_state_probe_active(obj))
+					input_demo_log_ai_agitation_path_gate(obj,
+						dist_to_player,
+						Overall_agitation,
+						agitation_path_trigger_roll,
+						FrameTime/4,
+						agitation_path_trigger_pass,
+						agitation_path_roll,
+						Overall_agitation - 40,
+						agitation_path_pass,
+						agitation_path_max_length,
+						agitation_path_pre_mode,
+						agitation_path_pre_goal_segment,
+						agitation_path_pre_path_index,
+						agitation_path_pre_path_length,
+						agitation_path_pre_hide_index,
+						agitation_path_pre_path_dir,
+						agitation_path_pre_time_player_seen);
+
+				if (agitation_path_pass)
+					return;
 			}
 		}
 

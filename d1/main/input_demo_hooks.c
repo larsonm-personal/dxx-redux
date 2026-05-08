@@ -10,6 +10,7 @@
 #include "game.h"
 #include "gameseq.h"
 #include "input_demo_control_info.h"
+#include "input_demo_debug_logging.h"
 #include "input_demo_fp_env.h"
 #include "input_demo_result.h"
 #include "input_demo_state_trace.h"
@@ -423,8 +424,8 @@ static void input_demo_log_replay_frame_state_mismatch(const input_demo_replay_f
 		(unsigned int)replay_frame->frame,
 		(long long)GameTime64,
 		error);
-	con_printf(CON_NORMAL, "Input demo replay expected state: %s\n", expected_json);
-	con_printf(CON_NORMAL, "Input demo replay actual state: %s\n", actual_json);
+	input_demo_debug_printf("Input demo replay expected state: %s\n", expected_json);
+	input_demo_debug_printf("Input demo replay actual state: %s\n", actual_json);
 }
 
 void input_demo_log_current_replay_frame_state_mismatch(void)
@@ -455,7 +456,7 @@ static void input_demo_write_replay_result(void)
 	if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
 		con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
 	else {
-		con_printf(CON_NORMAL, "Input demo replay result written: %s\n", result_path);
+		input_demo_debug_printf("Input demo replay result written: %s\n", result_path);
 		if (!input_demo_replay_compare_result(&result, error, sizeof(error)))
 			con_printf(CON_NORMAL, "Input demo replay result mismatch: %s\n", error);
 		else
@@ -508,6 +509,30 @@ static void input_demo_delay_replay_frame(fix frame_time)
 	input_demo_replay_last_timer_value = timer_value;
 }
 
+static int input_demo_sync_replay_rng_to_current_frame(void)
+{
+	input_demo_replay_frame replay_frame;
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		input_demo_stop_replay(0);
+		return 0;
+	}
+	if (!d_rand_set_state(replay_frame.rng_state)) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: active RNG backend cannot restore state\n");
+		input_demo_stop_replay(0);
+		return 0;
+	}
+	if (input_demo_rng_trace_is_active() && replay_frame.has_rng_call_count)
+		d_rand_set_call_count(replay_frame.rng_call_count);
+	else
+		d_rand_reset_call_count();
+	return 1;
+}
+
 int input_demo_prepare_replay_frame(void)
 {
 	input_demo_replay_frame replay_frame;
@@ -530,25 +555,21 @@ int input_demo_prepare_replay_frame(void)
 	}
 	input_demo_delay_replay_frame((fix)replay_frame.frame_time);
 	input_demo_control_info_from_state(&Controls, &replay_frame.state, &replay_frame.pulse);
-	if (!d_rand_set_state(replay_frame.rng_state)) {
-		con_printf(CON_NORMAL, "Input demo replay stopped: active RNG backend cannot restore state\n");
-		input_demo_stop_replay(0);
-		return 0;
-	}
-	if (input_demo_rng_trace_is_active() && replay_frame.has_rng_call_count)
-		d_rand_set_call_count(replay_frame.rng_call_count);
-	else
-		d_rand_reset_call_count();
 	FrameTime = (fix)replay_frame.frame_time;
 	return 1;
 }
 
 int input_demo_step_replay_frame(void)
 {
+	int read_controls_result;
+
 	input_demo_restore_replay_fp_environment();
 	if (!input_demo_prepare_replay_frame())
 		return 0;
-	if (ReadControlsReplayFrame())
+	read_controls_result = ReadControlsReplayFrame();
+	if (!input_demo_sync_replay_rng_to_current_frame())
+		return 0;
+	if (read_controls_result)
 		return 0;
 	if (!game_is_time_paused())
 	{

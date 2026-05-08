@@ -178,6 +178,38 @@ static bool input_demo_result_parse_level_summary(const nlohmann::json &level_js
 	return true;
 }
 
+static const char *input_demo_result_terminal_exit_name(int32_t terminal_exit)
+{
+	switch (terminal_exit) {
+	case INPUT_DEMO_RESULT_TERMINAL_EXIT_LEVEL_EXIT:
+		return "level_exit";
+	case INPUT_DEMO_RESULT_TERMINAL_EXIT_MINE_EXIT:
+		return "mine_exit";
+	default:
+		return "none";
+	}
+}
+
+static bool input_demo_result_parse_terminal_exit(const nlohmann::json &terminal_exit_json,
+	                                              int32_t *terminal_exit,
+	                                              std::string *error)
+{
+	std::string value;
+
+	if (!terminal_exit)
+		return error ? (*error = "missing terminal_exit output", false) : false;
+	if (!terminal_exit_json.is_string())
+		return error ? (*error = "terminal_exit must be a string", false) : false;
+	value = terminal_exit_json.get_ref<const std::string &>();
+	if (value == "level_exit")
+		*terminal_exit = INPUT_DEMO_RESULT_TERMINAL_EXIT_LEVEL_EXIT;
+	else if (value == "mine_exit")
+		*terminal_exit = INPUT_DEMO_RESULT_TERMINAL_EXIT_MINE_EXIT;
+	else
+		return error ? (*error = std::string("unknown terminal_exit value: ") + value, false) : false;
+	return true;
+}
+
 static bool input_demo_result_compare_int64(const char *field, const char *label,
                                             int64_t expected, int64_t actual,
                                             std::string *error)
@@ -199,6 +231,19 @@ static bool input_demo_result_compare_string(const char *field, const char *labe
 	if (error)
 		*error = std::string(field) + " (" + label + ") mismatch: expected '" + expected +
 		         "', actual '" + actual + "'";
+	return false;
+}
+
+static bool input_demo_result_compare_terminal_exit(int32_t expected,
+	                                                int32_t actual,
+	                                                std::string *error)
+{
+	if (expected == actual)
+		return true;
+	if (error)
+		*error = std::string("terminal_exit (terminal exit) mismatch: expected '") +
+		         input_demo_result_terminal_exit_name(expected) + "', actual '" +
+		         input_demo_result_terminal_exit_name(actual) + "'";
 	return false;
 }
 
@@ -289,10 +334,10 @@ static bool input_demo_result_parse_json_object(const nlohmann::json &root,
 {
 	static const char *const result_allowed_keys[] = {
 		"version", "game", "mission", "level", "difficulty", "frame_count",
-		"game_time64", "player0", "position", "level_summary"
+		"terminal_exit", "game_time64", "player0", "position", "level_summary"
 	};
 	static const char *const snapshot_allowed_keys[] = {
-		"game_time64", "player0", "position", "level_summary"
+		"terminal_exit", "game_time64", "player0", "position", "level_summary"
 	};
 	const char *const *allowed_keys = require_metadata ? result_allowed_keys : snapshot_allowed_keys;
 	const size_t allowed_key_count = require_metadata ? sizeof(result_allowed_keys) / sizeof(result_allowed_keys[0])
@@ -318,6 +363,9 @@ static bool input_demo_result_parse_json_object(const nlohmann::json &root,
 		result->difficulty = root.at("difficulty").get<int32_t>();
 		result->frame_count = root.at("frame_count").get<uint32_t>();
 	}
+	if (root.contains("terminal_exit") &&
+	    !input_demo_result_parse_terminal_exit(root.at("terminal_exit"), &result->terminal_exit, error))
+		return false;
 	if (root.contains("game_time64")) {
 		result->has_game_time64 = 1;
 		result->game_time64 = root.at("game_time64").get<int64_t>();
@@ -344,6 +392,8 @@ static nlohmann::ordered_json input_demo_result_to_json_object(const input_demo_
 		root["difficulty"] = result->difficulty;
 		root["frame_count"] = result->frame_count;
 	}
+	if (result->terminal_exit != INPUT_DEMO_RESULT_TERMINAL_EXIT_NONE)
+		root["terminal_exit"] = input_demo_result_terminal_exit_name(result->terminal_exit);
 	if (result->has_game_time64)
 		root["game_time64"] = result->game_time64;
 
@@ -415,6 +465,9 @@ static int input_demo_result_compare_internal(const input_demo_result *expected,
 	     !input_demo_result_compare_int64("level", "level", expected->level, actual->level, &compare_error) ||
 	     !input_demo_result_compare_int64("difficulty", "difficulty", expected->difficulty, actual->difficulty, &compare_error) ||
 	     !input_demo_result_compare_int64("frame_count", "frame count", expected->frame_count, actual->frame_count, &compare_error)))
+		return input_demo_result_copy_error(compare_error, error, error_size);
+	if (expected->terminal_exit != INPUT_DEMO_RESULT_TERMINAL_EXIT_NONE &&
+	    !input_demo_result_compare_terminal_exit(expected->terminal_exit, actual->terminal_exit, &compare_error))
 		return input_demo_result_copy_error(compare_error, error, error_size);
 	if (expected->has_game_time64 &&
 	    !input_demo_result_compare_int64("game_time64", compare_metadata ? "final GameTime64" : "frame GameTime64",

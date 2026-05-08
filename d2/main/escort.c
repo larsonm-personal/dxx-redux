@@ -763,22 +763,8 @@ void escort_create_path_to_goal(object *objp)
 	int			objnum = objp-Objects;
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objnum];
-	int			replay_goal_probe_active = input_demo_trace_escort_active() &&
-		objnum == 28;
 
-	if (replay_goal_probe_active)
-		con_printf(CON_NORMAL,
-			"Input demo replay escort goal probe: frame=%u step=entry obj=%d seg=%d mode=%d behavior=%d goal=%d special=%d cur_path=%d/%d hide=%d\n",
-			input_demo_trace_frame_index(),
-			objnum,
-			objp->segnum,
-			ailp->mode,
-			aip->behavior,
-			Escort_goal_object,
-			Escort_special_goal,
-			aip->cur_path_index,
-			aip->path_length,
-			aip->hide_index);
+	input_demo_log_escort_goal_probe("entry", objp, ailp, aip, -1, -1);
 
 	if (Escort_special_goal != -1)
 		Escort_goal_object = Escort_special_goal;
@@ -861,18 +847,8 @@ void escort_create_path_to_goal(object *objp)
 		}
 	}
 
-	if (replay_goal_probe_active)
-		con_printf(CON_NORMAL,
-			"Input demo replay escort goal probe: frame=%u step=resolved obj=%d goal=%d special=%d goal_index=%d goal_seg=%d cur_path=%d/%d hide=%d\n",
-			input_demo_trace_frame_index(),
-			objnum,
-			Escort_goal_object,
-			Escort_special_goal,
-			Escort_goal_index,
-			goal_seg,
-			aip->cur_path_index,
-			aip->path_length,
-			aip->hide_index);
+	input_demo_log_escort_goal_probe("resolved", objp, ailp, aip, goal_seg,
+		Escort_goal_index);
 
 	if ((Escort_goal_index < 0) && (Escort_goal_index != -3)) {	//	I apologize for this statement -- MK, 09/22/95
 		if (Escort_goal_index == -1) {
@@ -1085,37 +1061,12 @@ void escort_rebuild_runtime_state_after_restore(void)
 		if (checkpoint_escort_state.escort_owner_player != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
 			Escort_owner_player = checkpoint_escort_state.escort_owner_player;
 	#endif
-		if (input_demo_trace_escort_active())
-			con_printf(CON_NORMAL,
-				"Input demo replay escort restore checkpoint: gt=%lld obj=%d seg=%d mode=%d talk=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld kill=%d escort_last_path=%lld goal=%d/%d/%d suppress=%d sorry=%lld marker=%d last_key=%d last_msg=%lld come_back=%lld last_missile=%lld seen=%lld owner=%d thief_valid=%d thief_index=%d thief_reinit=%lld thief_last_hit=%lld\n",
-				(long long)GameTime64,
-				Buddy_objnum,
-				buddy_objp ? buddy_objp->segnum : -1,
-				ailp ? ailp->mode : -1,
-				Buddy_allowed_to_talk,
-				buddy_objp ? buddy_objp->ctype.ai_info.cur_path_index : -1,
-				buddy_objp ? buddy_objp->ctype.ai_info.path_length : -1,
-				buddy_objp ? buddy_objp->ctype.ai_info.hide_index : -1,
-				(long long)Buddy_last_seen_player,
-				(long long)Buddy_last_player_path_created,
-				Escort_kill_object,
-				(long long)Escort_last_path_created,
-				Escort_goal_object,
-				Escort_special_goal,
-				Escort_goal_index,
-				Buddy_messages_suppressed,
-				(long long)Buddy_sorry_time,
-				Looking_for_marker,
-				Last_buddy_key,
-				(long long)Last_buddy_message_time,
-				(long long)Last_come_back_message_time,
-				(long long)Buddy_last_missile_time,
-				(long long)(ailp ? ailp->time_player_seen : -1),
-				Escort_owner_player,
-				have_checkpoint_thief_state,
-				Stolen_item_index,
-				(long long)Re_init_thief_time,
-				(long long)Last_thief_hit_time);
+		input_demo_log_escort_restore_checkpoint(buddy_objp, ailp,
+			have_checkpoint_thief_state, Buddy_messages_suppressed,
+			Buddy_sorry_time, Looking_for_marker, Last_buddy_key,
+			Last_buddy_message_time, Last_come_back_message_time,
+			Buddy_last_missile_time, Re_init_thief_time,
+			Last_thief_hit_time);
 		return;
 	}
 
@@ -1144,21 +1095,7 @@ void escort_rebuild_runtime_state_after_restore(void)
 
 	Last_come_back_message_time = Buddy_last_player_path_created;
 	input_demo_log_escort_restore_normalization(buddy_objp, ailp, raw_time_player_seen, raw_escort_last_path_created);
-	if (input_demo_trace_escort_active())
-		con_printf(CON_NORMAL,
-			"Input demo replay escort restore: gt=%lld obj=%d seg=%d mode=%d talk=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld escort_last_path=%lld seen=%lld\n",
-			(long long)GameTime64,
-			Buddy_objnum,
-			Objects[Buddy_objnum].segnum,
-			ailp->mode,
-			Buddy_allowed_to_talk,
-			Objects[Buddy_objnum].ctype.ai_info.cur_path_index,
-			Objects[Buddy_objnum].ctype.ai_info.path_length,
-			Objects[Buddy_objnum].ctype.ai_info.hide_index,
-			(long long)Buddy_last_seen_player,
-			(long long)Buddy_last_player_path_created,
-			(long long)Escort_last_path_created,
-			(long long)ailp->time_player_seen);
+	input_demo_log_escort_restore_state(buddy_objp, ailp);
 }
 
 //	-----------------------------------------------------------------------------
@@ -1347,13 +1284,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	if (((Escort_special_goal != ESCORT_GOAL_SCRAM) && ((Escort_last_path_created + F1_0*5) < GameTime64)) ||
 		((Escort_special_goal == ESCORT_GOAL_SCRAM) && ((Escort_last_path_created + F1_0*15) < GameTime64))) {
 		if (replay_state_probe_active)
-			con_printf(CON_NORMAL,
-				"Input demo replay escort goal reset: frame=%u gt=%lld goal=%d special=%d last_path=%lld\n",
-				input_demo_trace_frame_index(),
-				(long long)GameTime64,
-				Escort_goal_object,
-				Escort_special_goal,
-				(long long)Escort_last_path_created);
+			input_demo_log_escort_goal_reset();
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 		Escort_last_path_created = GameTime64;
 	}

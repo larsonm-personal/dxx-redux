@@ -1,1 +1,4 @@
 *.actual.json
+*.dximdemo
+*.dem
+*.dximdemo.rngtrace.jsonl

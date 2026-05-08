@@ -1053,6 +1053,13 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 	int	i;
 	fix	max_dot = -F1_0*2;
 	int	best_objnum = -1;
+	const unsigned int trace_frame = input_demo_trace_frame_index();
+	const int homing_path_probe =
+		tracker &&
+		tracker->type == OBJ_WEAPON &&
+		Weapon_info[tracker->id].homing_flag &&
+		input_demo_replay_is_player_owned_weapon(tracker) &&
+		trace_frame >= 2790 && trace_frame <= 2820;
 
 	//	Contact Mike: This is a bad and stupid thing.  Who called this routine with an illegal laser type??
 	Assert((Weapon_info[tracker->id].homing_flag) || (tracker->id == OMEGA_ID));
@@ -1073,8 +1080,22 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 			if (!(Players[Player_num].flags & PLAYER_FLAGS_CLOAKED))
 				best_objnum = ConsoleObject - Objects;
 		} else {
-			if (input_demo_replay_is_loaded())
+			if (homing_path_probe)
+				con_printf(CON_NORMAL,
+					"Input demo homing path: frame=%u tracker_obj=%d id=%d parent=%d replay_loaded=%d\n",
+					trace_frame,
+					tracker - Objects,
+					tracker->id,
+					tracker->ctype.laser_info.parent_num,
+					input_demo_replay_is_loaded());
+			if (input_demo_replay_is_loaded()) {
+				if (homing_path_probe)
+					con_printf(CON_NORMAL,
+						"Input demo homing path: frame=%u tracker_obj=%d branch=complete_replay\n",
+						trace_frame,
+						tracker - Objects);
 				return call_find_homing_object_complete(tracker, curpos);
+			}
 			int	window_num = -1;
 			fix	dist, max_trackable_dist;
 
@@ -1089,6 +1110,11 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 
 			//	Couldn't find suitable view from this frame, so do complete search.
 			if (window_num == -1) {
+				if (homing_path_probe)
+					con_printf(CON_NORMAL,
+						"Input demo homing path: frame=%u tracker_obj=%d branch=complete_no_window\n",
+						trace_frame,
+						tracker - Objects);
 				return call_find_homing_object_complete(tracker, curpos);
 			}
 
@@ -1146,6 +1172,15 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 					}
 				}
 			}
+
+			if (homing_path_probe)
+				con_printf(CON_NORMAL,
+					"Input demo homing path: frame=%u tracker_obj=%d branch=rendered_window window=%d result=%d max_dot=%d\n",
+					trace_frame,
+					tracker - Objects,
+					window_num,
+					best_objnum,
+					max_dot);
 		}
 	}
 
@@ -1165,6 +1200,12 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 	int	best_objnum = -1;
 	fix	max_trackable_dist;
 	fix	min_trackable_dot;
+	const int homing_probe_active =
+		input_demo_replay_homing_desync_probe_active() &&
+		tracker &&
+		tracker->type == OBJ_WEAPON &&
+		Weapon_info[tracker->id].homing_flag &&
+		input_demo_replay_is_player_owned_weapon(tracker);
 
 	//	Contact Mike: This is a bad and stupid thing.  Who called this routine with an illegal laser type??
 	Assert((Weapon_info[tracker->id].homing_flag) || (tracker->id == OMEGA_ID));
@@ -1177,71 +1218,273 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 		min_trackable_dot = OMEGA_MIN_TRACKABLE_DOT;
 	}
 
+	if (homing_probe_active) {
+		char probe[320];
+
+		snprintf(probe, sizeof(probe),
+			"frame=%u target_types=%d,%d parent=%d parent_sig=%d curpos=(%d,%d,%d) forward=(%d,%d,%d) max_dist=%d min_dot=%d",
+			input_demo_trace_frame_index(),
+			track_obj_type1,
+			track_obj_type2,
+			tracker->ctype.laser_info.parent_num,
+			tracker->ctype.laser_info.parent_signature,
+			curpos->x,
+			curpos->y,
+			curpos->z,
+			tracker->orient.fvec.x,
+			tracker->orient.fvec.y,
+			tracker->orient.fvec.z,
+			max_trackable_dist,
+			min_trackable_dot);
+		input_demo_append_replay_probe_message("homing_scan_start", tracker,
+			probe);
+	}
+
 	for (objnum=0; objnum<=Highest_object_index; objnum++) {
 		int			is_proximity = 0;
 		fix			dot, dist;
 		vms_vector	vec_to_curobj;
 		object		*curobjp = &Objects[objnum];
+		const int track_probe_candidate = homing_probe_active && objnum == 95;
 
 		if ((curobjp->type != track_obj_type1) && (curobjp->type != track_obj_type2))
 		{
 			if ((curobjp->type == OBJ_WEAPON) && (is_proximity_bomb_or_smart_mine(curobjp->id))) {
 				if (curobjp->ctype.laser_info.parent_signature != tracker->ctype.laser_info.parent_signature)
 					is_proximity = 1;
-				else
+				else {
+					if (track_probe_candidate) {
+						char probe[256];
+
+						snprintf(probe, sizeof(probe),
+							"frame=%u candidate=%d type=%d id=%d sig=%d reason=own_proximity parent_sig=%d",
+							input_demo_trace_frame_index(),
+							objnum,
+							curobjp->type,
+							curobjp->id,
+							curobjp->signature,
+							curobjp->ctype.laser_info.parent_signature);
+						input_demo_append_replay_probe_message("homing_scan_candidate",
+							tracker, probe);
+					}
 					continue;
+				}
 			} else
+			{
+				if (track_probe_candidate) {
+					char probe[256];
+
+					snprintf(probe, sizeof(probe),
+						"frame=%u candidate=%d type=%d id=%d sig=%d reason=type_mismatch",
+						input_demo_trace_frame_index(),
+						objnum,
+						curobjp->type,
+						curobjp->id,
+						curobjp->signature);
+					input_demo_append_replay_probe_message("homing_scan_candidate",
+						tracker, probe);
+				}
 				continue;
+			}
 		}
 
-		if (objnum == tracker->ctype.laser_info.parent_num) // Don't track shooter
+		if (objnum == tracker->ctype.laser_info.parent_num) { // Don't track shooter
+			if (track_probe_candidate) {
+				char probe[256];
+
+				snprintf(probe, sizeof(probe),
+					"frame=%u candidate=%d type=%d id=%d sig=%d reason=parent",
+					input_demo_trace_frame_index(),
+					objnum,
+					curobjp->type,
+					curobjp->id,
+					curobjp->signature);
+				input_demo_append_replay_probe_message("homing_scan_candidate",
+					tracker, probe);
+			}
 			continue;
+		}
 
 		//	Don't track cloaked players.
 		if (curobjp->type == OBJ_PLAYER)
 		{
-			if (Players[curobjp->id].flags & PLAYER_FLAGS_CLOAKED)
+			if (Players[curobjp->id].flags & PLAYER_FLAGS_CLOAKED) {
+				if (track_probe_candidate) {
+					char probe[256];
+
+					snprintf(probe, sizeof(probe),
+						"frame=%u candidate=%d type=%d id=%d sig=%d reason=cloaked_player",
+						input_demo_trace_frame_index(),
+						objnum,
+						curobjp->type,
+						curobjp->id,
+						curobjp->signature);
+					input_demo_append_replay_probe_message("homing_scan_candidate",
+						tracker, probe);
+				}
 				continue;
+			}
 			// Don't track teammates in team games
 			#ifdef NETWORK
-			if ((Game_mode & GM_TEAM) && (Objects[tracker->ctype.laser_info.parent_num].type == OBJ_PLAYER) && (get_team(curobjp->id) == get_team(Objects[tracker->ctype.laser_info.parent_num].id)))
+			if ((Game_mode & GM_TEAM) && (Objects[tracker->ctype.laser_info.parent_num].type == OBJ_PLAYER) && (get_team(curobjp->id) == get_team(Objects[tracker->ctype.laser_info.parent_num].id))) {
+				if (track_probe_candidate) {
+					char probe[256];
+
+					snprintf(probe, sizeof(probe),
+						"frame=%u candidate=%d type=%d id=%d sig=%d reason=teammate",
+						input_demo_trace_frame_index(),
+						objnum,
+						curobjp->type,
+						curobjp->id,
+						curobjp->signature);
+					input_demo_append_replay_probe_message("homing_scan_candidate",
+						tracker, probe);
+				}
 				continue;
+			}
 			#endif
 		}
 
 		//	Can't track AI object if he's cloaked.
 		if (curobjp->type == OBJ_ROBOT) {
-			if (curobjp->ctype.ai_info.CLOAKED)
+			if (curobjp->ctype.ai_info.CLOAKED) {
+				if (track_probe_candidate) {
+					char probe[256];
+
+					snprintf(probe, sizeof(probe),
+						"frame=%u candidate=%d type=%d id=%d sig=%d reason=cloaked_robot",
+						input_demo_trace_frame_index(),
+						objnum,
+						curobjp->type,
+						curobjp->id,
+						curobjp->signature);
+					input_demo_append_replay_probe_message("homing_scan_candidate",
+						tracker, probe);
+				}
 				continue;
+			}
 
 			//	Your missiles don't track your escort.
 			if (Robot_info[curobjp->id].companion)
-				if (tracker->ctype.laser_info.parent_type == OBJ_PLAYER)
+				if (tracker->ctype.laser_info.parent_type == OBJ_PLAYER) {
+					if (track_probe_candidate) {
+						char probe[256];
+
+						snprintf(probe, sizeof(probe),
+							"frame=%u candidate=%d type=%d id=%d sig=%d reason=escort",
+							input_demo_trace_frame_index(),
+							objnum,
+							curobjp->type,
+							curobjp->id,
+							curobjp->signature);
+						input_demo_append_replay_probe_message("homing_scan_candidate",
+							tracker, probe);
+					}
 					continue;
+				}
 		}
 
 		vm_vec_sub(&vec_to_curobj, &curobjp->pos, curpos);
 		dist = vm_vec_mag(&vec_to_curobj);
 
-		if (dist < max_trackable_dist) {
-			vm_vec_normalize(&vec_to_curobj);
-			dot = vm_vec_dot(&vec_to_curobj, &tracker->orient.fvec);
-			if (is_proximity)
-				dot = ((dot << 3) + dot) >> 3;		//	I suspect Watcom would be too stupid to figure out the obvious...
+		if (dist >= max_trackable_dist) {
+			if (track_probe_candidate) {
+				char probe[320];
 
-			//	Note: This uses the constant, not-scaled-by-frametime value, because it is only used
-			//	to determine if an object is initially trackable.  find_homing_object is called on subsequent
-			//	frames to determine if the object remains trackable.
-			if (dot > min_trackable_dot) {
-				if (dot > max_dot) {
-					if (object_to_object_visibility(tracker, &Objects[objnum], FQ_TRANSWALL)) {
-						max_dot = dot;
-						best_objnum = objnum;
-					}
-				}
+				snprintf(probe, sizeof(probe),
+					"frame=%u candidate=%d type=%d id=%d sig=%d dist=%d max_dist=%d reason=distance pos=(%d,%d,%d)",
+					input_demo_trace_frame_index(),
+					objnum,
+					curobjp->type,
+					curobjp->id,
+					curobjp->signature,
+					dist,
+					max_trackable_dist,
+					curobjp->pos.x,
+					curobjp->pos.y,
+					curobjp->pos.z);
+				input_demo_append_replay_probe_message("homing_scan_candidate",
+					tracker, probe);
+			}
+			continue;
+		}
+
+		vm_vec_normalize(&vec_to_curobj);
+		dot = vm_vec_dot(&vec_to_curobj, &tracker->orient.fvec);
+		if (is_proximity)
+			dot = ((dot << 3) + dot) >> 3;		//	I suspect Watcom would be too stupid to figure out the obvious...
+
+		//	Note: This uses the constant, not-scaled-by-frametime value, because it is only used
+		//	to determine if an object is initially trackable.  find_homing_object is called on subsequent
+		//	frames to determine if the object remains trackable.
+		if (dot <= min_trackable_dot) {
+			if (track_probe_candidate) {
+				char probe[320];
+
+				snprintf(probe, sizeof(probe),
+					"frame=%u candidate=%d type=%d id=%d sig=%d dist=%d dot=%d min_dot=%d reason=dot pos=(%d,%d,%d)",
+					input_demo_trace_frame_index(),
+					objnum,
+					curobjp->type,
+					curobjp->id,
+					curobjp->signature,
+					dist,
+					dot,
+					min_trackable_dot,
+					curobjp->pos.x,
+					curobjp->pos.y,
+					curobjp->pos.z);
+				input_demo_append_replay_probe_message("homing_scan_candidate",
+					tracker, probe);
+			}
+			continue;
+		}
+
+		if (dot > max_dot) {
+			const int visible = object_to_object_visibility(tracker, &Objects[objnum], FQ_TRANSWALL);
+
+			if (track_probe_candidate || (homing_probe_active && visible)) {
+				char probe[352];
+
+				snprintf(probe, sizeof(probe),
+					"frame=%u candidate=%d type=%d id=%d sig=%d dist=%d dot=%d visible=%d pos=(%d,%d,%d) current_best=%d current_max_dot=%d",
+					input_demo_trace_frame_index(),
+					objnum,
+					curobjp->type,
+					curobjp->id,
+					curobjp->signature,
+					dist,
+					dot,
+					visible,
+					curobjp->pos.x,
+					curobjp->pos.y,
+					curobjp->pos.z,
+					best_objnum,
+					max_dot);
+				input_demo_append_replay_probe_message(visible ? "homing_scan_candidate" : "homing_scan_reject",
+					tracker, probe);
+			}
+
+			if (visible) {
+				max_dot = dot;
+				best_objnum = objnum;
 			}
 		}
 
+	}
+
+	if (homing_probe_active) {
+		char probe[288];
+
+		snprintf(probe, sizeof(probe),
+			"frame=%u result=%d max_dot=%d track_types=%d,%d",
+			input_demo_trace_frame_index(),
+			best_objnum,
+			max_dot,
+			track_obj_type1,
+			track_obj_type2);
+		input_demo_append_replay_probe_message("homing_scan_result", tracker,
+			probe);
 	}
 
 	return best_objnum;
@@ -1332,25 +1575,8 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	vms_matrix	m;
 	int			objnum;
 
-	if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
-	{
-		unsigned int sim_calls = d_rand_get_call_count();
-		unsigned int sim_state = 0;
-		d_rand_get_state(&sim_state);
-		con_printf(CON_NORMAL,
-			"Input demo replay fire probe: frame=%u kind=player_shot shooter_obj=%d laser_type=%d gun=%d spreadr=%d spreadu=%d delay=%d harmless=%d sound=%d sim_calls=%u sim_state=%u\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
-			obj - Objects,
-			laser_type,
-			gun_num,
-			spreadr,
-			spreadu,
-			delay_time,
-			harmless,
-			make_sound,
-			sim_calls,
-			sim_state);
-	}
+	input_demo_log_replay_player_shot_probe(obj, laser_type, gun_num, spreadr,
+		spreadu, delay_time, make_sound, harmless);
 	input_demo_record_player_shot_event(obj, laser_type, gun_num, spreadr, spreadu, delay_time, make_sound, harmless);
 
 	input_demo_set_awareness_source("laser_player_fire", obj - Objects, laser_type);
@@ -1439,6 +1665,21 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 		input_demo_append_replay_probe_message("player_shot_create",
 			&Objects[objnum], probe);
 	}
+	if (objnum != -1 && input_demo_replay_is_loaded() &&
+		laser_type == HOMING_ID) {
+		const unsigned int trace_frame = input_demo_trace_frame_index();
+
+		if (trace_frame >= 2790 && trace_frame <= 2820)
+			con_printf(CON_NORMAL,
+				"Input demo homing runtime: frame=%u step=create new_obj=%d laser_type=%d homing_flag=%d shooter_obj=%d console_obj=%d player_obj=%d\n",
+				trace_frame,
+				objnum,
+				laser_type,
+				Weapon_info[laser_type].homing_flag,
+				obj - Objects,
+				ConsoleObject ? (int)(ConsoleObject - Objects) : -1,
+				Players[Player_num].objnum);
+	}
 
 	//	Omega cannon is a hack, not surprisingly.  Don't want to do the rest of this stuff.
 	if (laser_type == OMEGA_ID)
@@ -1481,9 +1722,25 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 		Player_fired_laser_this_frame = objnum;
 
 	if (Weapon_info[laser_type].homing_flag) {
+		if (input_demo_replay_homing_desync_probe_active())
+			con_printf(CON_NORMAL,
+				"Input demo homing create gate: frame=%u shooter_obj=%d console_obj=%d player_obj=%d laser_type=%d new_obj=%d will_find=%d\n",
+				input_demo_trace_frame_index(),
+				obj - Objects,
+				ConsoleObject ? (int)(ConsoleObject - Objects) : -1,
+				Players[Player_num].objnum,
+				laser_type,
+				objnum,
+				obj == ConsoleObject);
 		if (obj == ConsoleObject)
 		{
 			Objects[objnum].ctype.laser_info.track_goal = find_homing_object(&LaserPos, &Objects[objnum]);
+			if (input_demo_replay_homing_desync_probe_active())
+				con_printf(CON_NORMAL,
+					"Input demo homing create result: frame=%u new_obj=%d track_goal=%d\n",
+					input_demo_trace_frame_index(),
+					objnum,
+					Objects[objnum].ctype.laser_info.track_goal);
 			#ifdef NETWORK
 			Network_laser_track = Objects[objnum].ctype.laser_info.track_goal;
 			#endif
@@ -1598,6 +1855,19 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 
 	if (track_player_weapon || replay_probe_player_weapon || record_probe_weapon)
 		input_demo_log_weapon_lifetime("sequence_entry", obj);
+	if (input_demo_replay_is_loaded() && obj->id == HOMING_ID) {
+		const unsigned int trace_frame = input_demo_trace_frame_index();
+
+		if (trace_frame >= 2790 && trace_frame <= 2820)
+			con_printf(CON_NORMAL,
+				"Input demo homing runtime: frame=%u step=sequence_entry obj=%d homing_flag=%d track_goal=%d parent_type=%d parent=%d\n",
+				trace_frame,
+				obj - Objects,
+				Weapon_info[obj->id].homing_flag,
+				obj->ctype.laser_info.track_goal,
+				obj->ctype.laser_info.parent_type,
+				obj->ctype.laser_info.parent_num);
+	}
 
 	if (obj->lifeleft < 0 ) {		// We died of old age
 		if (track_player_weapon || replay_probe_player_weapon || record_probe_weapon)
@@ -1758,10 +2028,9 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 					homing_missile_turn_towards_velocity(obj, &temp_vec);		//	temp_vec is normalized velocity.
 #endif
 			}
-			if (input_demo_recorder_is_active())
-				input_demo_record_homing_state("sequence", obj,
-					straight_time_active, doHomerFrame, track_goal_before,
-					track_goal, dot, idealHomerFrameTime, homerFrameCount);
+			input_demo_record_homing_state("sequence", obj,
+				straight_time_active, doHomerFrame, track_goal_before,
+				track_goal, dot, idealHomerFrameTime, homerFrameCount);
 		}
 	}
 
@@ -1881,22 +2150,10 @@ void do_laser_firing_player(void)
 			if (Players[Player_num].primary_weapon == SPREADFIRE_INDEX) {
 				input_demo_record_spreadfire_emit_event(nfires, flags, Spreadfire_toggle,
 					Next_laser_fire_time - GameTime64, Last_laser_fired_time - GameTime64);
-				if (input_demo_replay_spreadfire_probe_active())
-					{
-						unsigned int sim_calls = d_rand_get_call_count();
-						unsigned int sim_state = 0;
-						d_rand_get_state(&sim_state);
-						con_printf(CON_NORMAL,
-							"Input demo replay fire probe: frame=%u kind=spreadfire_emit nfires=%d toggle_before=%d flags=%d next_laser_delta=%lld last_laser_delta=%lld sim_calls=%u sim_state=%u\n",
-							(unsigned int)input_demo_replay_next_frame_index(),
-							nfires,
-							Spreadfire_toggle,
-							flags,
-							(long long)(Next_laser_fire_time - GameTime64),
-							(long long)(Last_laser_fired_time - GameTime64),
-							sim_calls,
-							sim_state);
-					}
+				input_demo_log_replay_spreadfire_emit_probe(nfires, flags,
+					Spreadfire_toggle,
+					Next_laser_fire_time - GameTime64,
+					Last_laser_fired_time - GameTime64);
 				if (Spreadfire_toggle)
 					flags |= LASER_SPREADFIRE_TOGGLED;
 				Spreadfire_toggle = !Spreadfire_toggle;
