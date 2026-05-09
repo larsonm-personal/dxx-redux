@@ -58,6 +58,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "automap.h"
 #include "byteswap.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 
@@ -382,6 +383,36 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 									}
 
 									// Explosions CAN be friendly fire.
+					if ((input_demo_recorder_is_active() || input_demo_replay_is_loaded()) && obj0p->id == Player_num) {
+						char blast_probe[512];
+
+						snprintf(blast_probe, sizeof(blast_probe),
+							"mode=%s damage=%d source_obj=%d source_type=%d source_id=%d source_sig=%d source_seg=%d explosion_obj=%d explosion_seg=%d parent=%d killer_obj=%d killer_type=%d killer_id=%d killer_sig=%d killer_seg=%d dist=%d maxdistance=%d force=%d hit=(%d,%d,%d)",
+							input_demo_trace_explosion_mode_name(),
+							damage,
+							objp ? (int)(objp - Objects) : -1,
+							objp ? objp->type : -1,
+							objp ? objp->id : -1,
+							objp ? objp->signature : -1,
+							objp ? objp->segnum : -1,
+							(int)(obj - Objects),
+							obj->segnum,
+							parent,
+							killer ? (int)(killer - Objects) : -1,
+							killer ? killer->type : -1,
+							killer ? killer->id : -1,
+							killer ? killer->signature : -1,
+							killer ? killer->segnum : -1,
+							dist,
+							maxdistance,
+							force,
+							pos_hit.x,
+							pos_hit.y,
+							pos_hit.z);
+						input_demo_append_replay_probe_message("player_blast_damage", objp ? objp : obj0p, blast_probe);
+						if (objp != NULL && objp->type == OBJ_WEAPON)
+							input_demo_log_player_weapon_hit(input_demo_trace_explosion_mode_name(), input_demo_trace_explosion_frame_index(), objp, obj0p, damage, &pos_hit);
+					}
 									apply_damage_to_player(obj0p, killer, damage, 1);
 								}
 							}

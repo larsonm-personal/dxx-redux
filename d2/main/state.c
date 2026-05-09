@@ -78,11 +78,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_log.h"
 #endif
 
-#define STATE_VERSION 24
+#define STATE_VERSION 25
 #define STATE_COMPATIBLE_VERSION 20
 #define STATE_RUNTIME_VERSION 23
 #define STATE_FIDELITY_VERSION 23
 #define STATE_EFFECT_RUNTIME_VERSION 24
+#define STATE_AI_PATH_RUNTIME_VERSION 25
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -109,6 +110,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 //     transient AI awareness and aim state
 // 24- Save effect loop time and runtime effect overrides so animated
 //     wall/object textures restore deterministically from saves/checkpoints
+// 25- Save AI path allocator timing and player path cursors for replay checkpoints
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -558,6 +560,7 @@ static void state_read_afterburner_runtime_state(PHYSFS_file *fp, int swap, int 
 static void state_write_runtime_state(PHYSFS_file *fp)
 {
 	object_runtime_state object_state;
+	ai_path_runtime_state ai_path_state;
 	game_d_tick_state d_tick_state;
 	laser_runtime_state laser_state;
 	int has_rng_state = 0;
@@ -565,6 +568,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	unsigned int rng_state = 0;
 
 	object_get_runtime_state(&object_state);
+	ai_path_get_runtime_state(&ai_path_state);
 	game_get_d_tick_state(&d_tick_state);
 	laser_get_runtime_state(&laser_state);
 	has_rng_state = d_rand_get_state(&rng_state);
@@ -600,12 +604,20 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	state_write_stuck_object_state(fp);
 	state_write_controlcen_runtime_state(fp);
 	state_write_afterburner_runtime_state(fp);
+	PHYSFS_write(fp, &ai_path_state.last_tick_garbage_collected, sizeof(ai_path_state.last_tick_garbage_collected), 1);
+	PHYSFS_write(fp, &ai_path_state.last_buddy_polish_path_tick, sizeof(ai_path_state.last_buddy_polish_path_tick), 1);
+	PHYSFS_write(fp, &ai_path_state.player_path_length, sizeof(ai_path_state.player_path_length), 1);
+	PHYSFS_write(fp, &ai_path_state.player_hide_index, sizeof(ai_path_state.player_hide_index), 1);
+	PHYSFS_write(fp, &ai_path_state.player_cur_path_index, sizeof(ai_path_state.player_cur_path_index), 1);
+	PHYSFS_write(fp, &ai_path_state.player_following_path_flag, sizeof(ai_path_state.player_following_path_flag), 1);
+	PHYSFS_write(fp, &ai_path_state.player_goal_segment, sizeof(ai_path_state.player_goal_segment), 1);
 	state_write_effect_runtime_state(fp, GameTime64);
 }
 
 static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version)
 {
 	object_runtime_state object_state;
+	ai_path_runtime_state ai_path_state;
 	game_d_tick_state d_tick_state;
 	laser_runtime_state laser_state;
 	int apply_runtime_state = !secret_restore;
@@ -646,6 +658,15 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 		state_read_controlcen_runtime_state(fp, swap, apply_runtime_state);
 		state_read_afterburner_runtime_state(fp, swap, apply_runtime_state);
 	}
+	if (version >= STATE_AI_PATH_RUNTIME_VERSION) {
+		ai_path_state.last_tick_garbage_collected = PHYSFSX_readSXE32(fp, swap);
+		ai_path_state.last_buddy_polish_path_tick = PHYSFSX_readSXE32(fp, swap);
+		ai_path_state.player_path_length = PHYSFSX_readSXE16(fp, swap);
+		ai_path_state.player_hide_index = PHYSFSX_readSXE32(fp, swap);
+		ai_path_state.player_cur_path_index = PHYSFSX_readSXE32(fp, swap);
+		ai_path_state.player_following_path_flag = PHYSFSX_readSXE32(fp, swap);
+		ai_path_state.player_goal_segment = PHYSFSX_readSXE32(fp, swap);
+	}
 	state_read_effect_runtime_state(fp, swap, apply_runtime_state, version, GameTime64);
 
 	if (secret_restore)
@@ -661,6 +682,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	d_rand_reset_call_count();
 	game_set_d_tick_state(&d_tick_state);
 	object_set_runtime_state(&object_state);
+	if (version >= STATE_AI_PATH_RUNTIME_VERSION)
+		ai_path_set_runtime_state(&ai_path_state);
 	laser_set_runtime_state(&laser_state);
 	rebuild_guided_missile_state();
 	if (input_demo_replay_has_checkpoint())

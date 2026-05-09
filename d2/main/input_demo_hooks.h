@@ -41,6 +41,7 @@ void input_demo_log_collision_weapon_wall_impact(const char *mode_name, unsigned
 void input_demo_log_collision_player_robot_impact(const char *mode_name, unsigned int frame_index, struct object *playerobj, struct object *robot);
 void input_demo_log_collision_weapon_robot_impact(const char *mode_name, unsigned int frame_index, struct object *weapon, struct object *robot);
 void input_demo_log_replay_robot_damage(struct object *robot, int32_t damage, int32_t old_shields);
+void input_demo_trace_player_shield_change(const char *cause, int32_t shields_before, int32_t shields_after, const char *extra_json, const char *extra_log);
 void input_demo_log_player_damage_probe(const char *mode_name, unsigned int frame_index, int damage, int32_t old_shields, int32_t shields_after, int killer_type, int killer_obj, int killer_id, int killer_sig, int killer_seg, int possibly_friendly);
 void input_demo_log_player_weapon_hit(const char *mode_name, unsigned int frame_index, struct object *weapon, struct object *playerobj, int damage, const struct vms_vector *collision_point);
 void input_demo_log_replay_powerup_probe_before(struct object *powerup, int energy_before, int shields_before);

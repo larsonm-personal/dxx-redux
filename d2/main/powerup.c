@@ -48,6 +48,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "newdemo.h"
 #include "escort.h"
 #include "input_demo_energy_trace.h"
+#include "input_demo_hooks.h"
 #ifdef EDITOR
 #include "gr.h"	//	for powerup outline drawing
 #include "editor/editor.h"
@@ -285,6 +286,9 @@ int do_powerup(object *obj)
 		case POW_SHIELD_BOOST:
 			if (Players[Player_num].shields < MAX_SHIELDS) {
 				fix boost = 3*F1_0 + 3*F1_0*(NDL - Difficulty_level);
+				fix shields_before = Players[Player_num].shields;
+				char extra_json[160];
+				char extra_log[160];
 				if (Difficulty_level == 0)
 					boost += boost/2;
 
@@ -294,6 +298,9 @@ int do_powerup(object *obj)
 				Players[Player_num].shields += boost;
 				if (Players[Player_num].shields > MAX_SHIELDS)
 					Players[Player_num].shields = MAX_SHIELDS;
+				snprintf(extra_json, sizeof(extra_json), ",\"powerup_id\":%d,\"boost_raw\":%d", obj->id, boost);
+				snprintf(extra_log, sizeof(extra_log), " powerup_id=%d boost_raw=%d", obj->id, boost);
+				input_demo_trace_player_shield_change("shield_powerup", shields_before, Players[Player_num].shields, extra_json, extra_log);
 				powerup_basic(0, 0, 15, SHIELD_SCORE, "%s %s %d",TXT_SHIELD,TXT_BOOSTED_TO,f2ir(Players[Player_num].shields));
 				if (Game_mode & GM_MULTI && PlayerCfg.MultiMessages)
 					con_printf(CON_NORMAL, "You picked up %.1f shields, shields now %.1f\n", f2fl(boost), f2fl(Players[Player_num].shields));

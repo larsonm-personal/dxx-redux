@@ -44,6 +44,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "screens.h"
 #include "textures.h"
 #include "input_demo_energy_trace.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_control_info.h"
 #include "input_demo_recorder.h"
@@ -199,6 +200,7 @@ void transfer_energy_to_shield()
 		snprintf(extra_json, sizeof(extra_json), ",\"transfer_raw\":%d,\"shields_before\":%d,\"shields_after\":%d", e, f2i(shields_before), f2i(Players[Player_num].shields));
 		snprintf(extra_log, sizeof(extra_log), " transfer_raw=%d shields_before=%d shields_after=%d", e, f2i(shields_before), f2i(Players[Player_num].shields));
 		input_demo_trace_energy_change("converter", energy_before, Players[Player_num].energy, extra_json, extra_log);
+		input_demo_trace_player_shield_change("converter", shields_before, Players[Player_num].shields, extra_json, extra_log);
 	}
 
 	if (last_play_time > GameTime64)

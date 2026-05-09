@@ -1,12 +1,67 @@
 package com.dxxredux.app
 
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+
+internal fun getManagedInternalArtifactPaths(
+    filesDir: File,
+    sources: List<AudioSourceManager.AudioSource>,
+): Set<String> =
+    sources
+        .flatMap { source -> getManagedInternalArtifactFilesForSource(filesDir, source) }
+        .map { it.absolutePath }
+        .toSet()
+
+internal fun getSafLinkedHelperArtifactPaths(
+    filesDir: File,
+    sources: List<AudioSourceManager.AudioSource>,
+): Set<String> = getManagedInternalArtifactPaths(filesDir, sources.filter(::hasSafLinkedCdContent))
+
+private fun getManagedInternalArtifactFilesForSource(
+    filesDir: File,
+    source: AudioSourceManager.AudioSource,
+): List<File> {
+    val files = linkedSetOf<File>()
+    val cueFile = File(filesDir, source.cuePath)
+    if (isUnderDirectory(cueFile, filesDir)) {
+        files.add(cueFile)
+    }
+
+    val localBinContentPath = source.binContentUri?.takeIf(::isLocalCdContentPath)
+    if (localBinContentPath != null) {
+        val binFile = File(localBinContentPath)
+        if (isUnderDirectory(binFile, filesDir)) {
+            files.add(binFile)
+        }
+    } else if (source.binContentUri == null) {
+        source.binPaths
+            .map { File(filesDir, it) }
+            .filter { file -> isUnderDirectory(file, filesDir) }
+            .forEach(files::add)
+    }
+
+    return files.toList()
+}
+
+private fun isUnderDirectory(
+    file: File,
+    root: File,
+): Boolean =
+    try {
+        val filePath = file.canonicalPath
+        val rootPath = root.canonicalPath
+        filePath == rootPath || filePath.startsWith(rootPath + File.separator)
+    } catch (_: Exception) {
+        val filePath = file.absolutePath
+        val rootPath = root.absolutePath
+        filePath == rootPath || filePath.startsWith(rootPath + File.separator)
+    }
 
 /**
  * Manages multiple BIN/CUE audio sources for Redbook CD audio playback.
@@ -95,14 +150,73 @@ class AudioSourceManager(
     }
 
     /** Remove an audio source by id */
-    fun removeSource(id: String) {
+    fun removeSource(
+        id: String,
+        context: Context? = null,
+    ) {
+        val source = sources.firstOrNull { it.id == id } ?: return
+        releaseSourceResources(source, context)
         sources.removeAll { it.id == id }
+        pruneOrphanedGeneratedMergedFiles()
         save()
     }
+
+    fun getManagedInternalArtifactPaths(): Set<String> = getManagedInternalArtifactPaths(filesDir, sources)
 
     fun clearAll() {
         sources.clear()
         save()
+    }
+
+    private fun releaseSourceResources(
+        source: AudioSource,
+        context: Context?,
+    ) {
+        if (context != null) {
+            listOfNotNull(source.binContentUri, source.cueContentUri)
+                .filterNot(::isLocalCdContentPath)
+                .forEach { uriStr ->
+                    releaseReadPermissionForUri(context, Uri.parse(uriStr))
+                }
+        }
+
+        val managedFiles = managedInternalFilesForSource(source)
+        managedFiles.forEach { file ->
+            if (file.exists()) {
+                file.delete()
+            }
+        }
+        cleanupEmptyManagedDirs(managedFiles)
+    }
+
+    private fun managedInternalFilesForSource(source: AudioSource): List<File> =
+        getManagedInternalArtifactFilesForSource(filesDir, source)
+
+    private fun cleanupEmptyManagedDirs(files: List<File>) {
+        files
+            .mapNotNull(File::getParentFile)
+            .distinct()
+            .forEach { parent ->
+                var current = parent
+                while (current != filesDir && current.isDirectory && (current.list()?.isEmpty() == true)) {
+                    current.delete()
+                    current = current.parentFile ?: break
+                }
+            }
+    }
+
+    private fun pruneOrphanedGeneratedMergedFiles() {
+        val referencedPaths = getManagedInternalArtifactPaths()
+        val cueFiles =
+            filesDir.listFiles()?.filter { it.isFile && it.name.endsWith(".cue", ignoreCase = true) } ?: return
+        cueFiles.forEach { cueFile ->
+            if (!isGeneratedMergedCueFile(cueFile)) return@forEach
+            val binFile = File(filesDir, "${cueFile.nameWithoutExtension}.bin")
+            if (!binFile.isFile) return@forEach
+            if (cueFile.absolutePath in referencedPaths || binFile.absolutePath in referencedPaths) return@forEach
+            cueFile.delete()
+            binFile.delete()
+        }
     }
 
     /**

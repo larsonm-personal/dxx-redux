@@ -1,11 +1,74 @@
 package com.dxxredux.app
 
+import java.io.File
 import java.util.Locale
 
 private const val CD_SECTOR_BYTES = 2352L
+internal const val GENERATED_MERGED_CUE_MARKER = "REM DXX-REDUX GENERATED MERGED LOCAL SOURCE"
+private const val FALLBACK_CD_AUDIO_SOURCE_STEM = "cd_audio_source"
 
 internal fun isLocalCdContentPath(path: String): Boolean =
     path.startsWith("/") || Regex("^[A-Za-z]:[\\\\/]").containsMatchIn(path)
+
+internal fun hasSafLinkedCdContent(source: AudioSourceManager.AudioSource): Boolean =
+    source.binContentUri?.let { !isLocalCdContentPath(it) } == true ||
+        source.cueContentUri?.let { !isLocalCdContentPath(it) } == true
+
+internal fun sanitizeCdAudioImportStem(name: String): String {
+    val safeName =
+        name
+            .trim()
+            .replace(Regex("[^A-Za-z0-9._-]+"), "_")
+            .trim('_', '.')
+            .lowercase(Locale.US)
+
+    return if (safeName.isEmpty()) FALLBACK_CD_AUDIO_SOURCE_STEM else safeName
+}
+
+internal fun chooseUniqueCdAudioImportStem(
+    preferredStem: String,
+    existingFileNames: Set<String>,
+): String {
+    val normalizedStem = sanitizeCdAudioImportStem(preferredStem)
+    val takenNames = existingFileNames.map { it.lowercase(Locale.US) }.toSet()
+    var candidate = normalizedStem
+    var suffix = 2
+    while ("$candidate.bin" in takenNames || "$candidate.cue" in takenNames) {
+        candidate = "$normalizedStem-$suffix"
+        suffix += 1
+    }
+    return candidate
+}
+
+internal fun isGeneratedMergedCueFile(cueFile: File): Boolean {
+    if (!cueFile.isFile || !cueFile.name.endsWith(".cue", ignoreCase = true)) return false
+    if (cueFile.nameWithoutExtension.startsWith("custom-")) return true
+    return try {
+        cueFile.bufferedReader().use { it.readLine() == GENERATED_MERGED_CUE_MARKER }
+    } catch (_: Exception) {
+        false
+    }
+}
+
+internal fun isGeneratedMergedStorageArtifact(file: File): Boolean =
+    when {
+        !file.isFile -> {
+            false
+        }
+
+        file.name.endsWith(".cue", ignoreCase = true) -> {
+            isGeneratedMergedCueFile(file)
+        }
+
+        file.name.endsWith(".bin", ignoreCase = true) -> {
+            val siblingCue = File(file.parentFile ?: return false, "${file.nameWithoutExtension}.cue")
+            isGeneratedMergedCueFile(siblingCue)
+        }
+
+        else -> {
+            false
+        }
+    }
 
 internal fun usesMultipleCueFiles(tracks: List<DiscImportBridge.CueTrack>): Boolean {
     if (tracks.isEmpty()) return false
@@ -42,6 +105,8 @@ internal fun buildMergedCueText(
     tracks: List<DiscImportBridge.CueTrack>,
 ): String {
     val builder = StringBuilder()
+    builder.append(GENERATED_MERGED_CUE_MARKER)
+    builder.append('\n')
     builder.append("FILE \"")
     builder.append(escapeCueText(binFileName))
     builder.append("\" BINARY\n")

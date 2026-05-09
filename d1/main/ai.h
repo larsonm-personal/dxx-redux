@@ -75,6 +75,18 @@ extern int ai_behavior_to_mode(int behavior);
 extern void create_path_to_player(object *objp, int max_length, int safety_flag);
 extern void attempt_to_resume_path(object *objp);
 
+typedef struct ai_path_runtime_state {
+	int last_tick_garbage_collected;
+	short player_path_length;
+	int player_hide_index;
+	int player_cur_path_index;
+	int player_following_path_flag;
+	int player_goal_segment;
+} ai_path_runtime_state;
+
+extern void ai_path_get_runtime_state(ai_path_runtime_state *state);
+extern void ai_path_set_runtime_state(const ai_path_runtime_state *state);
+
 //	When a robot and a player collide, some robots attack!
 extern void do_ai_robot_hit_attack(object *robot, object *player, vms_vector *collision_point);
 extern void ai_open_doors_in_segment(object *robot);

@@ -99,6 +99,7 @@ internal fun launcherStorageFilePurpose(
     val path = relativePath.replace('\\', '/').lowercase(Locale.US)
     val importedPath = importedRootFile || path.startsWith("imported/") || path.startsWith("sets/")
     return when {
+        isGeneratedMergedStorageArtifact(file) -> "Imported (merged) CD audio"
         importedPath -> launcherFileTypeLabel(name)
         path.startsWith("d1x-redux/") || path.startsWith("d2x-redux/") -> launcherFileTypeLabel(name)
         path.startsWith("mods/") -> launcherFileTypeLabel(name)

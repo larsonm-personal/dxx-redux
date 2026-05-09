@@ -40,6 +40,17 @@ class CdAudioSourceVisibilityTest {
         assertNull(resolveCdPreviewLocalBinPath(filesDir, safSource))
     }
 
+    @Test
+    fun reservesSafEntriesForActualSafBackedCdSources() {
+        val localSource = testSource(id = "local")
+        val mergedLocalSource = testSource(id = "merged", binContentUri = File("/tmp/merged.bin").absolutePath)
+        val safSource = testSource(id = "saf", binContentUri = "content://good-bin", cueContentUri = "content://good-cue")
+
+        assertEquals(false, hasSafLinkedCdContent(localSource))
+        assertEquals(false, hasSafLinkedCdContent(mergedLocalSource))
+        assertEquals(true, hasSafLinkedCdContent(safSource))
+    }
+
     private fun testSource(
         id: String,
         binContentUri: String? = null,

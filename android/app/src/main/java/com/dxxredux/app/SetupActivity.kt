@@ -6388,7 +6388,12 @@ private fun registerDiscAudioSourceFromPath(
     }
 
     val id = discId ?: "custom-${System.currentTimeMillis()}"
-    val destCue = File(filesDir, "$id.cue")
+    val sourceFileStem =
+        chooseUniqueCdAudioImportStem(
+            preferredStem = File(cuePath).nameWithoutExtension,
+            existingFileNames = filesDir.list()?.toSet() ?: emptySet(),
+        )
+    val destCue = File(filesDir, "$sourceFileStem.cue")
     LauncherFileCopy.copyFileToFile(File(cuePath), destCue)
     srcManager.addSource(
         AudioSourceManager.AudioSource(
@@ -6415,15 +6420,15 @@ private data class StagedMergedSafDiscAudioSource(
 private suspend fun stageMergedSafDiscAudioSource(
     filesDir: File,
     context: Context,
-    sourceId: String,
+    sourceFileStem: String,
     binUris: List<Pair<String, Uri>>,
     tracks: List<DiscImportBridge.CueTrack>,
     binSizes: List<Long>,
     onStatus: suspend (String) -> Unit = {},
 ): StagedMergedSafDiscAudioSource {
     val mergedCueTracks = normalizeCueTracksForMergedBin(tracks, binSizes)
-    val destBin = File(filesDir, "$sourceId.bin".lowercase())
-    val destCue = File(filesDir, "$sourceId.cue".lowercase())
+    val destBin = File(filesDir, "$sourceFileStem.bin")
+    val destCue = File(filesDir, "$sourceFileStem.cue")
 
     java.io.FileOutputStream(destBin).use { output ->
         binUris.forEachIndexed { index, (name, uri) ->
@@ -8347,10 +8352,6 @@ private fun DiscImportDialog(
                                                 if (firstBinUri == null) firstBinUri = uri
                                             }
 
-                                            LauncherDebugLog.log(
-                                                "launcher-cd-import cue=$cueName bins=${binUris.size} mode=${if (multiBinSource) "merged-local" else "saf-in-place"}",
-                                            )
-
                                             // Try to identify the disc via SAF fd
                                             try {
                                                 val identifier = DiscIdentifier(context)
@@ -8382,12 +8383,20 @@ private fun DiscImportDialog(
 
                                             val srcManager = AudioSourceManager(filesDir)
                                             val id = discId ?: "custom-${System.currentTimeMillis()}"
+                                            val sourceFileStem =
+                                                chooseUniqueCdAudioImportStem(
+                                                    preferredStem = File(cueName).nameWithoutExtension,
+                                                    existingFileNames = filesDir.list()?.toSet() ?: emptySet(),
+                                                )
+                                            LauncherDebugLog.log(
+                                                "launcher-cd-import cue=$cueName bins=${binUris.size} mode=${if (multiBinSource) "merged-local" else "saf-in-place"} file_stem=$sourceFileStem",
+                                            )
                                             val stagedMergedSource =
                                                 if (multiBinSource) {
                                                     stageMergedSafDiscAudioSource(
                                                         filesDir = filesDir,
                                                         context = context,
-                                                        sourceId = id,
+                                                        sourceFileStem = sourceFileStem,
                                                         binUris = binUris,
                                                         tracks = parsedTracks,
                                                         binSizes = parsedBinSizes,
@@ -8400,7 +8409,7 @@ private fun DiscImportDialog(
                                                     null
                                                 }
                                             val destCue =
-                                                stagedMergedSource?.cueFile ?: File(filesDir, "$id.cue".lowercase())
+                                                stagedMergedSource?.cueFile ?: File(filesDir, "$sourceFileStem.cue")
                                             if (stagedMergedSource == null) {
                                                 tempCuePath?.let {
                                                     LauncherFileCopy.copyFileToFile(File(it), destCue)
@@ -8490,7 +8499,7 @@ private fun DiscImportDialog(
                                                     releaseReadPermissionForUri(context, uri)
                                                 }
                                                 LauncherDebugLog.log(
-                                                    "launcher-cd-import-cleanup cue=$cueName mode=merged-local released_permissions=true",
+                                                    "launcher-cd-import-cleanup cue=$cueName mode=merged-local file_stem=$sourceFileStem released_permissions=true",
                                                 )
                                             }
 

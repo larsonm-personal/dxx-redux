@@ -75,11 +75,12 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 9
+#define STATE_VERSION 10
 #define STATE_COMPATIBLE_VERSION 6
 #define STATE_RUNTIME_VERSION 8
 #define STATE_FIDELITY_VERSION 8
 #define STATE_EFFECT_RUNTIME_VERSION 9
+#define STATE_AI_PATH_RUNTIME_VERSION 10
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -93,6 +94,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 //     weapon, morph, wall, reactor state and AI awareness
 // 9 - Save effect loop time and runtime effect overrides so animated
 //     wall/object textures restore deterministically from saves/checkpoints
+// 10- Save AI path allocator timing and player path cursors for replay checkpoints
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -487,6 +489,7 @@ static void state_read_controlcen_runtime_state(PHYSFS_file *fp, int swap)
 static void state_write_runtime_state(PHYSFS_file *fp)
 {
 	object_runtime_state object_state;
+	ai_path_runtime_state ai_path_state;
 	game_d_tick_state d_tick_state;
 	laser_runtime_state laser_state;
 	int has_rng_state = 0;
@@ -494,6 +497,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	unsigned int rng_state = 0;
 
 	object_get_runtime_state(&object_state);
+	ai_path_get_runtime_state(&ai_path_state);
 	game_get_d_tick_state(&d_tick_state);
 	laser_get_runtime_state(&laser_state);
 	has_rng_state = d_rand_get_state(&rng_state);
@@ -525,12 +529,19 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	state_write_morph_state(fp);
 	state_write_stuck_object_state(fp);
 	state_write_controlcen_runtime_state(fp);
+	PHYSFS_write(fp, &ai_path_state.last_tick_garbage_collected, sizeof(ai_path_state.last_tick_garbage_collected), 1);
+	PHYSFS_write(fp, &ai_path_state.player_path_length, sizeof(ai_path_state.player_path_length), 1);
+	PHYSFS_write(fp, &ai_path_state.player_hide_index, sizeof(ai_path_state.player_hide_index), 1);
+	PHYSFS_write(fp, &ai_path_state.player_cur_path_index, sizeof(ai_path_state.player_cur_path_index), 1);
+	PHYSFS_write(fp, &ai_path_state.player_following_path_flag, sizeof(ai_path_state.player_following_path_flag), 1);
+	PHYSFS_write(fp, &ai_path_state.player_goal_segment, sizeof(ai_path_state.player_goal_segment), 1);
 	state_write_effect_runtime_state(fp, GameTime64);
 }
 
 static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 {
 	object_runtime_state object_state;
+	ai_path_runtime_state ai_path_state;
 	game_d_tick_state d_tick_state;
 	laser_runtime_state laser_state;
 	fix64 next_laser_fire_time = GameTime64 + state_read_time_delta(fp, swap);
@@ -569,6 +580,14 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 		state_read_stuck_object_state(fp, swap);
 		state_read_controlcen_runtime_state(fp, swap);
 	}
+	if (version >= STATE_AI_PATH_RUNTIME_VERSION) {
+		ai_path_state.last_tick_garbage_collected = PHYSFSX_readSXE32(fp, swap);
+		ai_path_state.player_path_length = PHYSFSX_readSXE16(fp, swap);
+		ai_path_state.player_hide_index = PHYSFSX_readSXE32(fp, swap);
+		ai_path_state.player_cur_path_index = PHYSFSX_readSXE32(fp, swap);
+		ai_path_state.player_following_path_flag = PHYSFSX_readSXE32(fp, swap);
+		ai_path_state.player_goal_segment = PHYSFSX_readSXE32(fp, swap);
+	}
 	state_read_effect_runtime_state(fp, swap, version, GameTime64);
 
 	Next_laser_fire_time = next_laser_fire_time;
@@ -581,6 +600,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 	d_rand_reset_call_count();
 	game_set_d_tick_state(&d_tick_state);
 	object_set_runtime_state(&object_state);
+	if (version >= STATE_AI_PATH_RUNTIME_VERSION)
+		ai_path_set_runtime_state(&ai_path_state);
 	laser_set_runtime_state(&laser_state);
 }
 

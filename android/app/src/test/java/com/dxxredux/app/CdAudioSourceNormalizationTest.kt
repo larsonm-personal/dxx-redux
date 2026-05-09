@@ -2,6 +2,8 @@ package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.io.File
+import kotlin.io.path.createTempDirectory
 
 class CdAudioSourceNormalizationTest {
     @Test
@@ -30,7 +32,8 @@ class CdAudioSourceNormalizationTest {
         val cueText = buildMergedCueText("merged.bin", tracks)
 
         assertEquals(
-            "FILE \"merged.bin\" BINARY\n" +
+            "REM DXX-REDUX GENERATED MERGED LOCAL SOURCE\n" +
+                "FILE \"merged.bin\" BINARY\n" +
                 "  TRACK 01 MODE1/2352\n" +
                 "    TITLE \"Data\"\n" +
                 "    INDEX 01 00:00:00\n" +
@@ -38,6 +41,44 @@ class CdAudioSourceNormalizationTest {
                 "    TITLE \"A 'Song'\"\n" +
                 "    INDEX 01 00:01:25\n",
             cueText,
+        )
+    }
+
+    @Test
+    fun detectsGeneratedMergedArtifactsFromCueMarkerAndLegacyCustomStem() {
+        val tempDir = createTempDirectory("merged-cue-test").toFile()
+        val markedCue = File(tempDir, "known-disc.cue")
+        markedCue.writeText("$GENERATED_MERGED_CUE_MARKER\nFILE \"known-disc.bin\" BINARY\n")
+        val markedBin = File(tempDir, "known-disc.bin")
+        markedBin.writeText("test")
+
+        val legacyCue = File(tempDir, "custom-123.cue")
+        legacyCue.writeText("FILE \"custom-123.bin\" BINARY\n")
+        val legacyBin = File(tempDir, "custom-123.bin")
+        legacyBin.writeText("test")
+
+        assertEquals(true, isGeneratedMergedCueFile(markedCue))
+        assertEquals(true, isGeneratedMergedStorageArtifact(markedBin))
+        assertEquals(true, isGeneratedMergedCueFile(legacyCue))
+        assertEquals(true, isGeneratedMergedStorageArtifact(legacyBin))
+    }
+
+    @Test
+    fun choosesCueBasedCdAudioImportStemAndAvoidsCollisions() {
+        assertEquals("infinite_abyss_disc_1", sanitizeCdAudioImportStem("Infinite Abyss Disc 1"))
+        assertEquals(
+            "infinite_abyss_disc_1-2",
+            chooseUniqueCdAudioImportStem(
+                preferredStem = "Infinite Abyss Disc 1",
+                existingFileNames = setOf("infinite_abyss_disc_1.bin"),
+            ),
+        )
+        assertEquals(
+            "cd_audio_source",
+            chooseUniqueCdAudioImportStem(
+                preferredStem = "   ???   ",
+                existingFileNames = emptySet(),
+            ),
         )
     }
 }

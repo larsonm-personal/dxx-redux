@@ -877,6 +877,49 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point)
 }
 
 int	Last_tick_garbage_collected = 0;
+#ifdef EDITOR
+extern short Player_path_length;
+extern int Player_hide_index;
+extern int Player_cur_path_index;
+extern int Player_following_path_flag;
+extern int Player_goal_segment;
+#endif
+
+void ai_path_get_runtime_state(ai_path_runtime_state *state)
+{
+	if (!state)
+		return;
+
+	state->last_tick_garbage_collected = Last_tick_garbage_collected;
+#ifdef EDITOR
+	state->player_path_length = Player_path_length;
+	state->player_hide_index = Player_hide_index;
+	state->player_cur_path_index = Player_cur_path_index;
+	state->player_following_path_flag = Player_following_path_flag;
+	state->player_goal_segment = Player_goal_segment;
+#else
+	state->player_path_length = 0;
+	state->player_hide_index = -1;
+	state->player_cur_path_index = 0;
+	state->player_following_path_flag = 0;
+	state->player_goal_segment = -1;
+#endif
+}
+
+void ai_path_set_runtime_state(const ai_path_runtime_state *state)
+{
+	if (!state)
+		return;
+
+	Last_tick_garbage_collected = state->last_tick_garbage_collected;
+#ifdef EDITOR
+	Player_path_length = state->player_path_length;
+	Player_hide_index = state->player_hide_index;
+	Player_cur_path_index = state->player_cur_path_index;
+	Player_following_path_flag = state->player_following_path_flag;
+	Player_goal_segment = state->player_goal_segment;
+#endif
+}
 
 //	----------------------------------------------------------------------------------------------------------
 //	Garbage colledion -- Free all unused records in Point_segs and compress all paths.

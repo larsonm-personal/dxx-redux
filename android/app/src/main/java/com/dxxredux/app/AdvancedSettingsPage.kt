@@ -1029,6 +1029,8 @@ private fun StorageInspectorSection(filesDir: File) {
         val allFiles =
             remember(refreshFiles) {
                 val importRoot = ImportLocationManager(filesDir).getActiveRoot()
+                val helperArtifacts =
+                    getSafLinkedHelperArtifactPaths(filesDir, AudioSourceManager(filesDir).getSources())
                 val entries = mutableListOf<StorageFileEntry>()
 
                 fun addTree(
@@ -1040,6 +1042,7 @@ private fun StorageInspectorSection(filesDir: File) {
                     root
                         .walkTopDown()
                         .filter { it.isFile }
+                        .filterNot { location == "internal" && it.absolutePath in helperArtifacts }
                         .forEach { f ->
                             val rel = f.relativeTo(root).path
                             entries.add(
@@ -1263,28 +1266,20 @@ private fun StorageInspectorSection(filesDir: File) {
                 try {
                     val srcMgr = AudioSourceManager(filesDir)
                     for (src in srcMgr.getSources()) {
-                        if (src.binContentUri == null && src.cueContentUri == null) continue
+                        if (!hasSafLinkedCdContent(src)) continue
                         val safBinUri = src.binContentUri?.takeUnless(::isLocalCdContentPath)
                         val safCueUri = src.cueContentUri?.takeUnless(::isLocalCdContentPath)
-                        val localBinPath = src.binContentUri?.takeIf(::isLocalCdContentPath)
-                        val localCuePath =
-                            src.cueContentUri?.takeIf(::isLocalCdContentPath)
-                                ?: File(filesDir, src.cuePath).absolutePath
                         listOfNotNull(safBinUri, safCueUri).forEach(trackedSafUris::add)
-                        val displayUri = safCueUri ?: safBinUri ?: localCuePath
+                        val displayUri = safCueUri ?: safBinUri ?: continue
                         val accessible =
-                            if (safBinUri != null || safCueUri != null) {
-                                listOfNotNull(
-                                    safBinUri?.let { uriStr ->
-                                        canAccessSafUri(ctx, Uri.parse(uriStr), useFileDescriptor = true)
-                                    },
-                                    safCueUri?.let { uriStr ->
-                                        canAccessSafUri(ctx, Uri.parse(uriStr))
-                                    },
-                                ).all { it }
-                            } else {
-                                File(localCuePath).isFile && (localBinPath?.let { File(it).isFile } ?: true)
-                            }
+                            listOfNotNull(
+                                safBinUri?.let { uriStr ->
+                                    canAccessSafUri(ctx, Uri.parse(uriStr), useFileDescriptor = true)
+                                },
+                                safCueUri?.let { uriStr ->
+                                    canAccessSafUri(ctx, Uri.parse(uriStr))
+                                },
+                            ).all { it }
                         entries.add(
                             SafEntry(
                                 label = "CD Source: ${src.discLabel}",
@@ -1455,9 +1450,7 @@ private fun StorageInspectorSection(filesDir: File) {
                                     val srcMgr = AudioSourceManager(filesDir)
                                     val source = srcMgr.getSources().firstOrNull { it.id == entry.cdSourceId }
                                     if (source != null) {
-                                        val cueFile = File(filesDir, source.cuePath)
-                                        if (cueFile.exists()) cueFile.delete()
-                                        srcMgr.removeSource(source.id)
+                                        srcMgr.removeSource(source.id, ctx)
                                         Toast.makeText(ctx, "Removed CD audio source", Toast.LENGTH_SHORT).show()
                                         removed = true
                                     }

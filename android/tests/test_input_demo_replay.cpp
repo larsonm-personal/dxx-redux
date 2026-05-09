@@ -274,6 +274,7 @@ static int write_test_fixture(const char *path)
 	settings.difficulty = 2;
 	settings.rng_mode = input_demo_test_rng_mode();
 	settings.has_player_cfg = 1;
+	settings.record_per_frame_state = 1;
 	fill_test_player_cfg(&settings.player_cfg);
 	if (!input_demo_recorder_start(&settings, error, sizeof(error)))
 		return report_failure_string(std::string("recorder start failed: ") + error);
@@ -317,6 +318,7 @@ static int write_checkpoint_test_fixture(const char *path)
 	settings.difficulty = 2;
 	settings.rng_mode = input_demo_test_rng_mode();
 	settings.has_player_cfg = 1;
+	settings.record_per_frame_state = 1;
 	fill_test_player_cfg(&settings.player_cfg);
 	settings.checkpoint_save_name = "inputdemo_start.dgss";
 	settings.checkpoint_data = checkpoint_data;

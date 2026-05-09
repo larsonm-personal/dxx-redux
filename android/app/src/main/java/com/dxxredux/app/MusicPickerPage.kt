@@ -823,39 +823,7 @@ private fun CdAudioSection(
                                 removeConfirmId = null
                                 return@TextButton
                             }
-                        if (isSafSource) {
-                            // Release persistable URI permissions
-                            for (uriStr in listOfNotNull(src.binContentUri, src.cueContentUri)) {
-                                releaseReadPermissionForUri(ctx, android.net.Uri.parse(uriStr))
-                            }
-                            // Delete local CUE copy only
-                            val cueFile = File(filesDir, src.cuePath)
-                            if (cueFile.exists()) cueFile.delete()
-                        } else if (filesInAppDir) {
-                            // Delete files if they're in app data dir
-                            val deletedDirs = mutableSetOf<File>()
-                            for (bin in src.binPaths) {
-                                val f = File(filesDir, bin)
-                                if (f.exists()) {
-                                    deletedDirs.add(f.parentFile!!)
-                                    f.delete()
-                                }
-                            }
-                            val cueFile = File(filesDir, src.cuePath)
-                            if (cueFile.exists()) {
-                                deletedDirs.add(cueFile.parentFile!!)
-                                cueFile.delete()
-                            }
-                            // Clean up empty parent dirs (e.g. sets/<name>/)
-                            for (dir in deletedDirs) {
-                                var d = dir
-                                while (d != filesDir && d.isDirectory && (d.list()?.isEmpty() == true)) {
-                                    d.delete()
-                                    d = d.parentFile ?: break
-                                }
-                            }
-                        }
-                        audioSrcManager.removeSource(removeConfirmId!!)
+                        audioSrcManager.removeSource(src.id, ctx)
                         removeConfirmId = null
                         onSourcesChanged()
                     }) { Text(if (filesInAppDir) "Delete" else "Remove") }
@@ -938,6 +906,7 @@ private fun CdAudioSection(
                 onInfo = { infoSource = src },
             )
         }
+
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(
             onClick = onShowTrackPreview,

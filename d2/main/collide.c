@@ -2468,6 +2468,14 @@ void apply_damage_to_player(object *playerobj, object *killer, fix damage, ubyte
 			coop_warp_record_engagement();
 #endif
 		Players[Player_num].shields -= damage;
+		{
+			char extra_json[224];
+			char extra_log[224];
+
+			snprintf(extra_json, sizeof(extra_json), ",\"killer_type\":%d,\"killer_obj\":%d,\"killer_id\":%d,\"killer_sig\":%d,\"killer_seg\":%d,\"friendly\":%d", killer_type, killer_obj, killer_id, killer_sig, killer_seg, possibly_friendly);
+			snprintf(extra_log, sizeof(extra_log), " killer_type=%d killer_obj=%d killer_id=%d killer_sig=%d killer_seg=%d friendly=%d", killer_type, killer_obj, killer_id, killer_sig, killer_seg, possibly_friendly);
+			input_demo_trace_player_shield_change("apply_damage", old_shields, Players[Player_num].shields, extra_json, extra_log);
+		}
 		input_demo_record_player_damage_event(damage, old_shields, killer, possibly_friendly);
 		if (input_demo_trace_collision_pose_active())
 			input_demo_log_player_damage_probe(
@@ -2641,6 +2649,16 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 	if (!(Game_mode & GM_MULTI) || !Netgame.RemoteHitSpark || playerobj->id == Player_num)
 		object_create_explosion( playerobj->segnum, collision_point, i2f(10)/2, VCLIP_PLAYER_HIT );
 
+	if ((input_demo_recorder_is_active() || input_demo_replay_is_loaded()) && playerobj->id == Player_num) {
+		input_demo_log_player_weapon_hit(
+			input_demo_trace_collision_mode_name(),
+			input_demo_trace_collision_frame_index(),
+			weapon,
+			playerobj,
+			damage,
+			collision_point);
+	}
+
 	if ( Weapon_info[weapon->id].damage_radius ) {
 		vms_vector player2weapon;
 		vm_vec_sub(&player2weapon, collision_point, &playerobj->pos);
@@ -2679,16 +2697,6 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 //			damage /= 4;
 
 		if (!(weapon->flags & OF_HARMLESS)) {
-			if (input_demo_trace_collision_pose_active() && playerobj->id == Player_num) {
-				input_demo_log_player_weapon_hit(
-					input_demo_trace_collision_mode_name(),
-					input_demo_trace_collision_frame_index(),
-					weapon,
-					playerobj,
-					damage,
-					collision_point);
-			}
-
 			if(playerobj->id == Player_num && ! Player_is_dead) {
 				char* killer_name;
 				char* weapon_name; 

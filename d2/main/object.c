@@ -2083,7 +2083,14 @@ void object_move_one( object * obj )
 
 		fix shields = repaircen_give_shields( &Segments[obj->segnum], INITIAL_SHIELDS-Players[Player_num].shields );
 		if (shields > 0) {
+			fix shields_before = Players[Player_num].shields;
+			char extra_json[160];
+			char extra_log[160];
+
 			Players[Player_num].shields += shields;
+			snprintf(extra_json, sizeof(extra_json), ",\"seg\":%d,\"repair_raw\":%d", obj->segnum, shields);
+			snprintf(extra_log, sizeof(extra_log), " seg=%d repair_raw=%d", obj->segnum, shields);
+			input_demo_trace_player_shield_change("repaircen", shields_before, Players[Player_num].shields, extra_json, extra_log);
 		}
 	}
 

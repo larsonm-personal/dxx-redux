@@ -46,8 +46,22 @@ static int input_demo_result_kills_mode = 0;
 static int input_demo_result_kills_baseline = 0;
 static int input_demo_result_kills_baseline_valid = 0;
 static int input_demo_recording_terminal_exit = INPUT_DEMO_RESULT_TERMINAL_EXIT_NONE;
+static int input_demo_player_shield_probe_valid = 0;
+static fix input_demo_player_shield_probe_value = 0;
 
 static int input_demo_replay_fire_probe_active(void);
+
+static void input_demo_note_player_shield_probe_value(fix shields)
+{
+	input_demo_player_shield_probe_valid = 1;
+	input_demo_player_shield_probe_value = shields;
+}
+
+static void input_demo_reset_player_shield_probe(void)
+{
+	input_demo_player_shield_probe_valid = 0;
+	input_demo_player_shield_probe_value = 0;
+}
 
 typedef struct input_demo_ai_schedule_probe_diag {
 	int valid;
@@ -527,6 +541,17 @@ void input_demo_capture_current_result(input_demo_result *result)
 	int robots_killed = 0;
 	int i;
 
+	if (input_demo_recorder_is_active() || input_demo_replay_is_loaded()) {
+		if (!input_demo_player_shield_probe_valid)
+			input_demo_note_player_shield_probe_value(current_player->shields);
+		else if (current_player->shields != input_demo_player_shield_probe_value)
+			input_demo_trace_player_shield_change("unknown_observed",
+				input_demo_player_shield_probe_value,
+				current_player->shields,
+				"",
+				"");
+	}
+
 	input_demo_result_clear(result);
 	snprintf(result->game, sizeof(result->game), "%s", "d2");
 	if (Current_mission && Current_mission_filename)
@@ -606,6 +631,7 @@ void input_demo_update_result_kills_baseline(void)
 	if (mode != input_demo_result_kills_mode) {
 		input_demo_result_kills_mode = mode;
 		input_demo_result_kills_baseline_valid = 0;
+		input_demo_reset_player_shield_probe();
 	}
 
 	if (mode == INPUT_DEMO_RESULT_KILLS_MODE_NONE)
@@ -1598,6 +1624,67 @@ void input_demo_log_replay_robot_damage(object *robot, fix damage, fix old_shiel
 		robot->pos.z);
 }
 
+void input_demo_trace_player_shield_change(const char *cause, fix shields_before, fix shields_after, const char *extra_json, const char *extra_log)
+{
+	char json[640];
+	char probe[640];
+	const int before_value = f2i(shields_before);
+	const int after_value = f2i(shields_after);
+	const int delta_value = after_value - before_value;
+	const int delta_raw = shields_after - shields_before;
+	const int wrote_json = snprintf(
+		json,
+		sizeof(json),
+		"{\"kind\":\"shield_change\",\"cause\":\"%s\",\"before\":%d,\"after\":%d,\"delta\":%d,\"before_raw\":%d,\"after_raw\":%d,\"delta_raw\":%d%s}",
+		cause ? cause : "unset",
+		before_value,
+		after_value,
+		delta_value,
+		shields_before,
+		shields_after,
+		delta_raw,
+		extra_json ? extra_json : "");
+	const int wrote_probe = snprintf(
+		probe,
+		sizeof(probe),
+		"cause=%s before=%d after=%d delta=%d before_raw=%d after_raw=%d delta_raw=%d%s",
+		cause ? cause : "unset",
+		before_value,
+		after_value,
+		delta_value,
+		shields_before,
+		shields_after,
+		delta_raw,
+		extra_log ? extra_log : "");
+
+	if (shields_before == shields_after) {
+		input_demo_note_player_shield_probe_value(shields_after);
+		return;
+	}
+
+	if (wrote_json > 0 && wrote_json < (int)sizeof(json) && input_demo_record_probe_events_active())
+		input_demo_record_frame_event_json(json);
+
+	if (wrote_probe > 0 && wrote_probe < (int)sizeof(probe) && input_demo_replay_is_loaded())
+		input_demo_append_replay_probe_message("shield_change", ConsoleObject, probe);
+
+	if (input_demo_debug_is_enabled() && input_demo_replay_is_loaded())
+		con_printf(CON_NORMAL,
+			"Input demo replay shield change: frame=%u gt=%lld cause=%s before=%d after=%d delta=%d before_raw=%d after_raw=%d delta_raw=%d%s\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(long long)GameTime64,
+			cause ? cause : "unset",
+			before_value,
+			after_value,
+			delta_value,
+			shields_before,
+			shields_after,
+			delta_raw,
+			extra_log ? extra_log : "");
+
+	input_demo_note_player_shield_probe_value(shields_after);
+}
+
 void input_demo_log_player_damage_probe(const char *mode_name, unsigned int frame_index, int damage, fix old_shields, fix shields_after, int killer_type, int killer_obj, int killer_id, int killer_sig, int killer_seg, int possibly_friendly)
 {
 	if (!mode_name)
@@ -1627,12 +1714,63 @@ void input_demo_log_player_weapon_hit(const char *mode_name, unsigned int frame_
 	const int parent_slot_id = parent_slot_valid ? Objects[parent_num].id : -1;
 	const int parent_slot_sig = parent_slot_valid ? Objects[parent_num].signature : -1;
 	const int parent_slot_seg = parent_slot_valid ? Objects[parent_num].segnum : -1;
+	const int player_objnum = playerobj ? (int)(playerobj - Objects) : -1;
+	const int player_hit_recorded =
+		weapon && player_objnum >= 0 && player_objnum < MAX_OBJECTS ?
+		weapon->ctype.laser_info.hitobj_list[player_objnum] : -1;
+	char replay_probe[768];
 
 	if (!mode_name || !weapon || !playerobj)
 		return;
 
+	snprintf(replay_probe, sizeof(replay_probe),
+		"mode=%s damage=%d weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d parent_type=%d parent_num=%d parent_sig=%d slot_valid=%d slot_type=%d slot_id=%d slot_sig=%d slot_seg=%d sig_match=%d last_hit=%d player_hit=%d creation_frame=%u weapon_life=%d weapon_shields=%d weapon_flags=0x%x weapon_ctime=%lld weapon_pos=(%d,%d,%d) weapon_last=(%d,%d,%d) weapon_vel=(%d,%d,%d) player_pos=(%d,%d,%d) player_vel=(%d,%d,%d) hit=(%d,%d,%d)",
+		mode_name,
+		damage,
+		(int)(weapon - Objects),
+		weapon->id,
+		weapon->signature,
+		weapon->segnum,
+		weapon->ctype.laser_info.parent_type,
+		parent_num,
+		weapon->ctype.laser_info.parent_signature,
+		parent_slot_valid,
+		parent_slot_type,
+		parent_slot_id,
+		parent_slot_sig,
+		parent_slot_seg,
+		parent_slot_valid && parent_slot_sig == weapon->ctype.laser_info.parent_signature,
+		weapon->ctype.laser_info.last_hitobj,
+		player_hit_recorded,
+		weapon->ctype.laser_info.creation_framecount,
+		weapon->lifeleft,
+		weapon->shields,
+		weapon->flags,
+		(long long)weapon->ctype.laser_info.creation_time,
+		weapon->pos.x,
+		weapon->pos.y,
+		weapon->pos.z,
+		weapon->last_pos.x,
+		weapon->last_pos.y,
+		weapon->last_pos.z,
+		weapon->mtype.phys_info.velocity.x,
+		weapon->mtype.phys_info.velocity.y,
+		weapon->mtype.phys_info.velocity.z,
+		playerobj->pos.x,
+		playerobj->pos.y,
+		playerobj->pos.z,
+		playerobj->mtype.phys_info.velocity.x,
+		playerobj->mtype.phys_info.velocity.y,
+		playerobj->mtype.phys_info.velocity.z,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+	input_demo_append_replay_probe_message("player_weapon_hit", weapon, replay_probe);
+	if (!input_demo_debug_is_enabled())
+		return;
+
 	con_printf(CON_NORMAL,
-		"Input demo player weapon hit: mode=%s gt=%lld frame=%u weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d damage=%d parent_type=%d parent_num=%d parent_sig=%d slot_valid=%d slot_type=%d slot_id=%d slot_sig=%d slot_seg=%d sig_match=%d weapon_life=%d weapon_shields=%d weapon_flags=0x%x weapon_ctime=%lld weapon_pos=(%d,%d,%d) weapon_vel=(%d,%d,%d) player_pos=(%d,%d,%d) player_vel=(%d,%d,%d) hit=(%d,%d,%d)\n",
+		"Input demo player weapon hit: mode=%s gt=%lld frame=%u weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d damage=%d parent_type=%d parent_num=%d parent_sig=%d slot_valid=%d slot_type=%d slot_id=%d slot_sig=%d slot_seg=%d sig_match=%d last_hit=%d player_hit=%d creation_frame=%u weapon_life=%d weapon_shields=%d weapon_flags=0x%x weapon_ctime=%lld weapon_pos=(%d,%d,%d) weapon_last=(%d,%d,%d) weapon_vel=(%d,%d,%d) player_pos=(%d,%d,%d) player_vel=(%d,%d,%d) hit=(%d,%d,%d)\n",
 		mode_name,
 		(long long)GameTime64,
 		frame_index,
@@ -1650,6 +1788,9 @@ void input_demo_log_player_weapon_hit(const char *mode_name, unsigned int frame_
 		parent_slot_sig,
 		parent_slot_seg,
 		parent_slot_valid && parent_slot_sig == weapon->ctype.laser_info.parent_signature,
+		weapon->ctype.laser_info.last_hitobj,
+		player_hit_recorded,
+		weapon->ctype.laser_info.creation_framecount,
 		weapon->lifeleft,
 		weapon->shields,
 		weapon->flags,
@@ -1657,6 +1798,9 @@ void input_demo_log_player_weapon_hit(const char *mode_name, unsigned int frame_
 		weapon->pos.x,
 		weapon->pos.y,
 		weapon->pos.z,
+		weapon->last_pos.x,
+		weapon->last_pos.y,
+		weapon->last_pos.z,
 		weapon->mtype.phys_info.velocity.x,
 		weapon->mtype.phys_info.velocity.y,
 		weapon->mtype.phys_info.velocity.z,
@@ -3458,8 +3602,26 @@ int input_demo_trace_robot_fire_active(object *objp)
 void input_demo_log_robot_fire_probe(object *objp, const vms_vector *fire_vec,
 	int weapon_type)
 {
+	char probe[192];
+
 	if (!input_demo_trace_robot_fire_active(objp) || !fire_vec)
 		return;
+
+	if (input_demo_replay_is_loaded()) {
+		snprintf(probe, sizeof(probe),
+			"weapon=%d gun=%d player_seg=%d believed_seg=%d fire_vec=(%d,%d,%d) pos=(%d,%d,%d)",
+			weapon_type,
+			objp->ctype.ai_info.CURRENT_GUN,
+			ConsoleObject ? ConsoleObject->segnum : -1,
+			Believed_player_seg,
+			fire_vec->x,
+			fire_vec->y,
+			fire_vec->z,
+			objp->pos.x,
+			objp->pos.y,
+			objp->pos.z);
+		input_demo_append_replay_probe_message("probe_robot_fire_vec", objp, probe);
+	}
 
 	input_demo_debug_printf(
 		"Input demo replay fire probe: frame=%u kind=robot_fire robot_obj=%d sig=%d robot_id=%d seg=%d gun=%d weapon=%d believed_seg=%d player_seg=%d pos=(%d,%d,%d) vec=(%d,%d,%d)\n",
