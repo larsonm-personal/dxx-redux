@@ -486,18 +486,14 @@ void ogl_bindbmtex(grs_bitmap *bm){
 	}
 	OGL_BINDTEXTURE(bm->gltexture->handle);
 #ifdef ANDROID
-	/* Selective filtering: set the correct texture filter for the current
-	 * render context. Must be bidirectional -- if a prior context set
-	 * GL_NEAREST on this texture object, we must restore the original
-	 * mipmap filter when returning to a context that wants filtering.
+	/* Selective filtering: menu and HUD draws can force nearest on texture
+	 * objects that are also reused by filtered world draws, so restore the
+	 * appropriate state whenever the render context changes.
 	 *
-	 * Font/text textures (OGL_FLAG_NOCOLOR) never have mipmaps -- they
-	 * use MenuTexFilt regardless of render context so that text filtering
-	 * is grouped with menus/briefings/videos/reticle (default off).
-	 *
-	 * Fullscreen menu and loading art can also arrive without mipmaps on
-	 * Android, notably through the ETC2/KTX path, so the menu/HUD override
-	 * must handle both mipmapped and non-mipmapped texture objects. */
+	 * Font/text textures (OGL_FLAG_NOCOLOR) never have mipmaps and always use
+	 * MenuTexFilt. Fullscreen menu and loading art can also arrive without
+	 * mipmaps on Android, notably through the ETC2/KTX path, so handle both
+	 * mipmapped and non-mipmapped texture objects here. */
 	if (GameCfg.TexFilt > 0) {
 		if (bm->gltexture->flags & OGL_FLAG_NOCOLOR) {
 			/* Font texture: filter controlled by MenuTexFilt in all contexts */

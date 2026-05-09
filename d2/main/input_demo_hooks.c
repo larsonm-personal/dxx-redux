@@ -283,13 +283,38 @@ static int input_demo_console_activity_trace_active(void)
 	return input_demo_debug_activity_probe_active();
 }
 
+static int input_demo_record_robot_weapon_probe_target(object *obj)
+{
+	object *parent;
+
+	if (!obj || obj->type != OBJ_WEAPON || !ConsoleObject)
+		return 0;
+	if (obj->ctype.laser_info.parent_type != OBJ_ROBOT)
+		return 0;
+	if (obj->segnum == ConsoleObject->segnum)
+		return 1;
+	if (vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos) <= i2f(40))
+		return 1;
+	if (obj->ctype.laser_info.parent_num < 0 || obj->ctype.laser_info.parent_num > Highest_object_index)
+		return 0;
+	parent = &Objects[obj->ctype.laser_info.parent_num];
+	if ((parent->flags & OF_SHOULD_BE_DEAD) ||
+		parent->signature != obj->ctype.laser_info.parent_signature)
+		return 0;
+	if (parent->segnum == ConsoleObject->segnum)
+		return 1;
+	return vm_vec_dist_quick(&parent->pos, &ConsoleObject->pos) <= i2f(40);
+}
+
 static int input_demo_record_weapon_probe_target(object *obj)
 {
 	if (!obj || obj->type != OBJ_WEAPON)
 		return 0;
 	if (input_demo_replay_is_player_owned_weapon(obj) && obj->id != FLARE_ID)
 		return 1;
-	return Weapon_info[obj->id].homing_flag;
+	if (Weapon_info[obj->id].homing_flag)
+		return 1;
+	return input_demo_record_robot_weapon_probe_target(obj);
 }
 
 int input_demo_replay_homing_desync_probe_active(void)
@@ -1245,6 +1270,8 @@ void input_demo_record_weapon_create_event(object *obj)
 	const int tracked_index = input_demo_tracked_suspect_spreadfire_index(obj);
 
 	if (!obj)
+		return;
+	if (!input_demo_record_weapon_probe_target(obj))
 		return;
 	snprintf(json, sizeof(json),
 		"{\"kind\":\"weapon_create\",\"gt\":%lld,\"obj\":%d,\"id\":%d,\"sig\":%d,\"track\":%d,\"seg\":%d,\"life\":%d,\"shields\":%d,\"flags\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"ctime\":%lld,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"x\":%d,\"y\":%d,\"z\":%d}",

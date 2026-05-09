@@ -127,8 +127,21 @@ int title_handler(window *wind, d_event *event, title_screen *ts)
 			break;
 
 		case EVENT_WINDOW_DRAW:
+#ifdef ANDROID
+			{
+				extern int g_ogl_render_context;
+				int prev_context = g_ogl_render_context;
+				/* Title art is drawn fullscreen outside the usual menu wrapper,
+				 * so force menu filtering for this blit. */
+				g_ogl_render_context = 0;
+				gr_set_current_canvas( NULL );
+				show_fullscr(&ts->title_bm);
+				g_ogl_render_context = prev_context;
+			}
+#else
 			gr_set_current_canvas( NULL );
 			show_fullscr(&ts->title_bm);
+#endif
 			break;
 
 		case EVENT_WINDOW_CLOSE:
@@ -149,9 +162,6 @@ int show_title_screen( char * filename, int allow_keys, int from_hog_only )
 	window *wind;
 	int pcx_error;
 	char new_filename[PATH_MAX] = "";
-#ifdef ANDROID
-	crash_breadcrumb_v("show_title_screen: %s", filename ? filename : "(null)");
-#endif
 
 	MALLOC(ts, title_screen, 1);
 	if (!ts)

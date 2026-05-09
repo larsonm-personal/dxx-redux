@@ -894,7 +894,7 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	input_demo_maybe_track_suspect_spreadfire(obj);
 	if (input_demo_weapon_create_probe_active(obj))
 		input_demo_log_weapon_lifetime("create", obj);
-	if (input_demo_replay_is_player_owned_weapon(obj) && obj->id != FLARE_ID)
+	if (input_demo_recorder_is_active())
 		input_demo_record_weapon_create_event(obj);
 	if (input_demo_recorder_is_active() && Weapon_info[obj->id].homing_flag)
 		input_demo_record_homing_state("create", obj, 1, 0,

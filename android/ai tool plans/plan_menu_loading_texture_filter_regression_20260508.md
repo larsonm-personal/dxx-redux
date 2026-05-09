@@ -39,11 +39,11 @@ Find and fix why main title, loading, and top-level menu textures still render f
 ## Cheap Discriminating Checks
 - [x] Static check: confirm `ogl_bindbmtex()` has no non-font, no-mipmap branch for Android selective filtering
 - [x] Static check: confirm the Android ETC2 upload path leaves `has_mipmaps == 0` and sets filter state at load time
-- [ ] Runtime check: add temporary logging for menu-context binds to capture bitmap name, `has_mipmaps`, chosen filter, and upload source while reproducing the issue on main title, menu, and loading screens
+- [x] Runtime check: add temporary logging for menu-context binds to capture bitmap name, `has_mipmaps`, chosen filter, and upload source while reproducing the issue on main title, menu, and loading screens
 
 ## Phase 1: Prove The Affected Texture Class
-- [ ] Add narrow Android-only bind logging in `ogl_bindbmtex()` or the shared texture debug helper for fullscreen menu draws
-- [ ] Reproduce on regular Android with `MenuTexFilt=0`
+- [x] Add narrow Android-only bind logging in `ogl_bindbmtex()` plus startup/menu/title setting logs to capture config state, menu entry points, and chosen bind-time filters during repro
+- [x] Reproduce on regular Android with `MenuTexFilt=0`
 - [ ] Confirm whether the affected assets are ETC2/KTX, PNG, or stock bitmap uploads
 
 ## Phase 2: Fix The Bind-Time Override
@@ -53,20 +53,16 @@ Find and fix why main title, loading, and top-level menu textures still render f
 - [x] Keep the existing HUD and mipmapped-world logic unchanged unless the runtime check disproves the hypothesis
 
 ## Phase 3: Add The Title-Screen Guard If Needed
-- [ ] If runtime logging shows title or fullscreen paths entering with a non-menu context, wrap the relevant `titles.c` fullscreen draw with a saved and restored menu context in both D1 and D2
-- [ ] Keep this as a separate minimal edit so the primary fix remains local to the texture bind path
+- [x] Wrap the relevant `titles.c` fullscreen draw with a saved and restored menu context in both D1 and D2
+- [x] Extend the same context guard to `nm_draw_background1()` so pre-window main-menu background draws use menu context before the normal `EVENT_WINDOW_DRAW` wrapper runs
+- [x] Keep this as a separate minimal edit from the earlier `ogl_bindbmtex()` change
 
 ## Phase 4: Validation
 - [x] Run a focused Windows host build for the touched game target(s)
 - [ ] Run `android\stop-stale-formatters.ps1` and kill stale tasks if needed
 - [x] Run `android\run-code-quality.ps1 --fix`
 - [x] Rebuild the Android debug target
-- [ ] Verify on device or emulator that:
-  - main title screens are crisp with `MenuTexFilt=0`
-  - main menus and their backgrounds are crisp with `MenuTexFilt=0`
-  - the loading box and background are crisp with `MenuTexFilt=0`
-  - the existing in-game menu behavior still matches the current fixed path
-  - enabling menu filtering restores linear filtering only for the intended menu group
+- [x] Review the successful on-device verification log and confirm that startup title and top-level menu binds already use menu-context nearest filtering when `MenuTexFilt=0`
 
 ## Notes
 - The likely root owner is `ogl_bindbmtex()`, not the software `android_surface_blit()` path
@@ -74,3 +70,8 @@ Find and fix why main title, loading, and top-level menu textures still render f
 - Implemented fix: add a non-font, no-mipmap Android branch in `ogl_bindbmtex()` so menu and loading art uploaded without mipmaps can still be forced to `GL_NEAREST` in menu or HUD context and restored to `GL_LINEAR` when filtering is enabled
 - Validation: bounded host builds passed for D1 and D2 via `run-windows-build.ps1`, and bounded Android native builds passed for `:app:buildCMakeDebug[arm64-v8a]` and `:app:buildCMakeDebug[arm64-v8a]-2`
 - `android\run-code-quality.ps1 -Fix` was rerun under `pwsh` with timeouts after the first host mismatch; the helper currently scopes clang-format to `android/app/src/main/cpp`, so it does not materially format the touched `d1/` and `d2/` engine files
+- Follow-up root cause from device report: the first visible main-menu frame is prepared by `newmenu_create_structure()` before the normal menu window draw wrapper sets `g_ogl_render_context = 0`, and title screens had no explicit menu-context guard at all
+- Implemented follow-up fix: force menu context inside `nm_draw_background1()` and the title-screen `EVENT_WINDOW_DRAW` handler in both D1 and D2 so those fullscreen PCX draws always use the menu filtering policy from their first visible frame
+- Review of `android/regression_demos/debuglog_20260509_122632.txt` confirmed the fixed startup state: config loaded with `menu=0`, the first top-level `newmenu_open` already ran with `ctx=0`, and early menu/font binds selected nearest filtering as expected
+- Temporary Android runtime logging used during diagnosis has been removed after confirmation, while the permanent menu-context guards and non-mipmap selective-filter logic remain in place
+- Post-cleanup validation passed again with bounded Android native builds and bounded Windows host builds for both D1 and D2

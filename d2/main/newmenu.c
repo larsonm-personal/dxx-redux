@@ -61,10 +61,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "gamepal.h"
 
-#ifdef __ANDROID__
-#include "android_log.h"
-#endif
-
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -132,7 +128,11 @@ void nm_draw_background1(char * filename)
 {
 	int pcx_error;
 #ifdef ANDROID
-	crash_breadcrumb_v("nm_draw_bg1: %s", filename ? filename : "(null)");
+	extern int g_ogl_render_context;
+	int prev_context = g_ogl_render_context;
+	/* newmenu_create_structure() can draw the fullscreen background before
+	 * the normal menu window draw wrapper sets menu context. */
+	g_ogl_render_context = 0;
 #endif
 
 	if (filename != NULL)
@@ -162,6 +162,9 @@ void nm_draw_background1(char * filename)
 	}
 
 	strcpy(last_palette_loaded,"");		//force palette load next time
+#ifdef ANDROID
+	g_ogl_render_context = prev_context;
+#endif
 }
 
 #define MENU_BACKGROUND_BITMAP_HIRES (PHYSFSX_exists("scoresb.pcx",1)?"scoresb.pcx":"scores.pcx")
