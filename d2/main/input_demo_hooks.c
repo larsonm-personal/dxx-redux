@@ -535,6 +535,61 @@ void input_demo_note_ai_schedule_detail(const char *kind, object *objp,
 	fclose(file);
 }
 
+void input_demo_log_ai_schedule_record_probe(const char *step_label,
+	object *objp, ai_static *aip, ai_local *ailp, int previous_visibility,
+	int dist_to_player, int obj_ref)
+{
+	char json[1024];
+	robot_info *robptr;
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!input_demo_record_probe_events_active() || !step_label || !objp || !aip ||
+		!ailp || (objnum < 0) || (objp->type != OBJ_ROBOT))
+		return;
+
+	robptr = &Robot_info[objp->id];
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"probe_ai_schedule\",\"gt\":%lld,\"step\":\"%s\",\"obj\":%d,\"sig\":%d,\"id\":%d,\"attack_type\":%d,\"companion\":%d,\"thief\":%d,\"behavior\":%d,\"mode\":%d,\"cur_state\":%d,\"goal_state\":%d,\"seg\":%d,\"player_seg\":%d,\"believed_seg\":%d,\"goal_seg\":%d,\"prev_vis\":%d,\"aware\":%d,\"aware_time\":%d,\"skip\":%d,\"since\":%d,\"dist\":%d,\"obj_ref\":%d,\"retry\":%d,\"retry_chain\":%d,\"rapid\":%d,\"seen\":%lld,\"next_action\":%d,\"next_fire\":%d,\"next_fire2\":%d,\"path_index\":%d,\"path_length\":%d,\"hide\":%d,\"dir\":%d,\"x\":%d,\"y\":%d,\"z\":%d}",
+		(long long)GameTime64,
+		step_label,
+		objnum,
+		objp->signature,
+		objp->id,
+		robptr->attack_type,
+		robptr->companion,
+		robptr->thief,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		objp->segnum,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		ailp->goal_segment,
+		previous_visibility,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		aip->SKIP_AI_COUNT,
+		ailp->time_since_processed,
+		dist_to_player,
+		obj_ref,
+		ailp->retry_count,
+		ailp->consecutive_retries,
+		ailp->rapidfire_count,
+		(long long)ailp->time_player_seen,
+		ailp->next_action_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		aip->cur_path_index,
+		aip->path_length,
+		aip->hide_index,
+		aip->PATH_DIR,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z);
+	input_demo_record_frame_event_json(json);
+}
+
 void input_demo_capture_current_result(input_demo_result *result)
 {
 	player *current_player = &Players[Player_num];
@@ -2233,7 +2288,7 @@ void input_demo_log_escort_restore_normalization(object *objp, ai_local *ailp,
 {
 	ai_static *aip;
 
-	if (!input_demo_trace_escort_active() || !objp || !ailp)
+	if (!input_demo_replay_is_loaded() || !objp || !ailp)
 		return;
 
 	aip = &objp->ctype.ai_info;
@@ -2545,7 +2600,7 @@ void input_demo_log_thief_detail_probe(int entry_probe, const char *step, object
 	ai_static *aip;
 	unsigned int state_key;
 
-	if (!input_demo_trace_escort_active() || !objp || !ailp)
+	if (!input_demo_replay_is_loaded() || !objp || !ailp)
 		return;
 
 	snapshot = entry_probe ? &g_input_demo_thief_entry_snapshot : &g_input_demo_thief_exit_snapshot;
@@ -2563,7 +2618,7 @@ void input_demo_log_thief_detail_probe(int entry_probe, const char *step, object
 	if (!input_demo_trace_key_snapshot_should_log(snapshot, state_key))
 		return;
 
-	con_printf(CON_NORMAL,
+	printf(
 		"Input demo replay thief detail: frame=%u obj=%d step=%s mode=%d next_action=%d vis=%d aware=%d dist=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
 		input_demo_trace_frame_index(),
 		(int)(objp - Objects),
@@ -2580,6 +2635,7 @@ void input_demo_log_thief_detail_probe(int entry_probe, const char *step, object
 		objp->pos.x,
 		objp->pos.y,
 		objp->pos.z);
+	fflush(stdout);
 }
 
 void input_demo_log_path_robot_state(const char *label, object *objp)
@@ -2923,7 +2979,7 @@ void input_demo_log_ai_agitation_path_gate(object *objp,
 	robptr = &Robot_info[objp->id];
 	d_rand_get_state(&rng_state);
 
-	if (input_demo_record_probe_events_active() && trigger_pass) {
+	if (input_demo_record_probe_events_active()) {
 		char json[1024];
 
 		snprintf(json, sizeof(json),
@@ -2968,7 +3024,8 @@ void input_demo_log_ai_agitation_path_gate(object *objp,
 		input_demo_record_frame_event_json(json);
 	}
 
-	if (!input_demo_replay_obj95_state_probe_active(objp))
+	if (!input_demo_replay_is_loaded() &&
+		!input_demo_replay_obj95_state_probe_active(objp))
 		return;
 
 	snprintf(probe, sizeof(probe),
@@ -3797,6 +3854,264 @@ int input_demo_trace_ai_robot_active(object *objp, ai_static *aip, ai_local *ail
 		(ailp->mode >= AIM_GOTO_PLAYER) ||
 		(aip->behavior == AIB_SNIPE) ||
 		(ailp->player_awareness_type > 0);
+}
+
+int input_demo_trace_ai_visibility_active(object *objp)
+{
+	return objp &&
+		(objp->type == OBJ_ROBOT) &&
+		(input_demo_record_probe_events_active() || input_demo_replay_is_loaded());
+}
+
+void input_demo_log_ai_visibility_probe(object *objp, const char *step_label,
+	int previous_visibility, int raw_player_visibility,
+	int final_player_visibility, int sight_sound_gate,
+	int attack_sound_gate, int misc_sound_gate, const vms_vector *pos,
+	const vms_vector *believed_player_pos)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_static *aip;
+	ai_local *ailp;
+	char probe[640];
+
+	if (!input_demo_trace_ai_visibility_active(objp) || (objnum < 0) || !pos ||
+		!believed_player_pos)
+		return;
+
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[objnum];
+	if (input_demo_record_probe_events_active()) {
+		char json[1024];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_ai_visibility\",\"gt\":%lld,\"step\":\"%s\",\"obj\":%d,\"sig\":%d,\"id\":%d,\"behavior\":%d,\"mode\":%d,\"cur_state\":%d,\"goal_state\":%d,\"gun\":%d,\"seg\":%d,\"player_seg\":%d,\"believed_seg\":%d,\"goal_seg\":%d,\"prev_vis\":%d,\"raw_vis\":%d,\"final_vis\":%d,\"aware\":%d,\"aware_time\":%d,\"next_fire\":%d,\"next_fire2\":%d,\"next_misc\":%lld,\"seen\":%lld,\"sight_sound\":%d,\"attack_sound\":%d,\"misc_sound\":%d,\"x\":%d,\"y\":%d,\"z\":%d,\"believed_x\":%d,\"believed_y\":%d,\"believed_z\":%d}",
+			(long long)GameTime64,
+			step_label ? step_label : "unset",
+			objnum,
+			objp->signature,
+			objp->id,
+			aip->behavior,
+			ailp->mode,
+			aip->CURRENT_STATE,
+			aip->GOAL_STATE,
+			aip->CURRENT_GUN,
+			objp->segnum,
+			ConsoleObject ? ConsoleObject->segnum : -1,
+			Believed_player_seg,
+			ailp->goal_segment,
+			previous_visibility,
+			raw_player_visibility,
+			final_player_visibility,
+			ailp->player_awareness_type,
+			ailp->player_awareness_time,
+			ailp->next_fire,
+			ailp->next_fire2,
+			(long long)ailp->next_misc_sound_time,
+			(long long)ailp->time_player_seen,
+			sight_sound_gate,
+			attack_sound_gate,
+			misc_sound_gate,
+			pos->x,
+			pos->y,
+			pos->z,
+			believed_player_pos->x,
+			believed_player_pos->y,
+			believed_player_pos->z);
+		input_demo_record_frame_event_json(json);
+	}
+	snprintf(probe, sizeof(probe),
+		"step=%s prev_vis=%d raw_vis=%d final_vis=%d behavior=%d mode=%d cur_state=%d goal_state=%d gun=%d player_seg=%d believed_seg=%d goal_seg=%d aware=%d aware_time=%d next_fire=%d next_fire2=%d next_misc=%lld seen=%lld sound_gates=%d/%d/%d pos=(%d,%d,%d) believed=(%d,%d,%d)",
+		step_label ? step_label : "unset",
+		previous_visibility,
+		raw_player_visibility,
+		final_player_visibility,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		aip->CURRENT_GUN,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		ailp->goal_segment,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		(long long)ailp->next_misc_sound_time,
+		(long long)ailp->time_player_seen,
+		sight_sound_gate,
+		attack_sound_gate,
+		misc_sound_gate,
+		pos->x,
+		pos->y,
+		pos->z,
+		believed_player_pos->x,
+		believed_player_pos->y,
+		believed_player_pos->z);
+	input_demo_append_replay_probe_message("probe_ai_visibility", objp, probe);
+
+	if (!input_demo_debug_is_enabled())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo AI visibility: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d prev_vis=%d raw_vis=%d final_vis=%d behavior=%d mode_ai=%d cur_state=%d goal_state=%d aware=%d aware_time=%d next_fire=%d next_fire2=%d next_misc=%lld seen=%lld sound_gates=%d/%d/%d pos=(%d,%d,%d) believed=(%d,%d,%d)\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		step_label ? step_label : "unset",
+		objnum,
+		objp->signature,
+		objp->id,
+		objp->segnum,
+		previous_visibility,
+		raw_player_visibility,
+		final_player_visibility,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		(long long)ailp->next_misc_sound_time,
+		(long long)ailp->time_player_seen,
+		sight_sound_gate,
+		attack_sound_gate,
+		misc_sound_gate,
+		pos->x,
+		pos->y,
+		pos->z,
+		believed_player_pos->x,
+		believed_player_pos->y,
+		believed_player_pos->z);
+}
+
+void input_demo_log_ai_awareness_roll_probe(object *objp,
+	const char *step_label, int previous_visibility, int player_visibility,
+	int dist_to_player, int obj_ref, int roll, int threshold, int pass,
+	int headlight)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_static *aip;
+	ai_local *ailp;
+	char probe[640];
+
+	if (!input_demo_trace_ai_visibility_active(objp) || (objnum < 0))
+		return;
+
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[objnum];
+	if (input_demo_record_probe_events_active()) {
+		char json[1024];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_ai_awareness_roll\",\"gt\":%lld,\"step\":\"%s\",\"obj\":%d,\"sig\":%d,\"id\":%d,\"behavior\":%d,\"mode\":%d,\"cur_state\":%d,\"goal_state\":%d,\"seg\":%d,\"player_seg\":%d,\"believed_seg\":%d,\"goal_seg\":%d,\"prev_vis\":%d,\"player_vis\":%d,\"aware\":%d,\"aware_time\":%d,\"dist\":%d,\"obj_ref\":%d,\"roll\":%d,\"threshold\":%d,\"pass\":%s,\"headlight\":%d,\"next_action\":%d,\"next_fire\":%d,\"next_fire2\":%d,\"path_index\":%d,\"path_length\":%d,\"hide\":%d,\"dir\":%d,\"x\":%d,\"y\":%d,\"z\":%d}",
+			(long long)GameTime64,
+			step_label ? step_label : "unset",
+			objnum,
+			objp->signature,
+			objp->id,
+			aip->behavior,
+			ailp->mode,
+			aip->CURRENT_STATE,
+			aip->GOAL_STATE,
+			objp->segnum,
+			ConsoleObject ? ConsoleObject->segnum : -1,
+			Believed_player_seg,
+			ailp->goal_segment,
+			previous_visibility,
+			player_visibility,
+			ailp->player_awareness_type,
+			ailp->player_awareness_time,
+			dist_to_player,
+			obj_ref,
+			roll,
+			threshold,
+			pass ? "true" : "false",
+			headlight,
+			ailp->next_action_time,
+			ailp->next_fire,
+			ailp->next_fire2,
+			aip->cur_path_index,
+			aip->path_length,
+			aip->hide_index,
+			aip->PATH_DIR,
+			objp->pos.x,
+			objp->pos.y,
+			objp->pos.z);
+		input_demo_record_frame_event_json(json);
+	}
+	snprintf(probe, sizeof(probe),
+		"step=%s prev_vis=%d player_vis=%d behavior=%d mode=%d cur_state=%d goal_state=%d player_seg=%d believed_seg=%d goal_seg=%d aware=%d aware_time=%d dist=%d obj_ref=%d roll=%d threshold=%d pass=%d headlight=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d dir=%d pos=(%d,%d,%d)",
+		step_label ? step_label : "unset",
+		previous_visibility,
+		player_visibility,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		ailp->goal_segment,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		dist_to_player,
+		obj_ref,
+		roll,
+		threshold,
+		pass,
+		headlight,
+		ailp->next_action_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		aip->cur_path_index,
+		aip->path_length,
+		aip->hide_index,
+		aip->PATH_DIR,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z);
+	input_demo_append_replay_probe_message("probe_ai_awareness_roll", objp,
+		probe);
+
+	if (!input_demo_debug_is_enabled())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo AI awareness roll: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d prev_vis=%d player_vis=%d behavior=%d mode_ai=%d cur_state=%d goal_state=%d aware=%d aware_time=%d dist=%d obj_ref=%d roll=%d threshold=%d pass=%d headlight=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d dir=%d pos=(%d,%d,%d)\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		step_label ? step_label : "unset",
+		objnum,
+		objp->signature,
+		objp->id,
+		objp->segnum,
+		previous_visibility,
+		player_visibility,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		dist_to_player,
+		obj_ref,
+		roll,
+		threshold,
+		pass,
+		headlight,
+		ailp->next_action_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		aip->cur_path_index,
+		aip->path_length,
+		aip->hide_index,
+		aip->PATH_DIR,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z);
 }
 
 void input_demo_log_ai_robot_state(const char *label, object *objp)

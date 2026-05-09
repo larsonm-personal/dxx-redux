@@ -1124,12 +1124,57 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 		}
 
 		if (Robot_info[robot->id].thief) {
+			int replay_thief_contact_probe_active = input_demo_replay_is_loaded() &&
+				input_demo_trace_frame_index() >= 1280u &&
+				input_demo_trace_frame_index() <= 1335u;
 			if (Ai_local_info[robot-Objects].mode == AIM_THIEF_ATTACK) {
+				int pre_mercury_ammo = Players[playerobj->id].secondary_ammo[8];
+				int pre_stolen_item_index = Stolen_item_index;
 				Last_thief_hit_time = GameTime64;
 				attempt_to_steal_item(robot, playerobj->id);
 				steal_attempt = 1;
+				if (replay_thief_contact_probe_active)
+					printf(
+						"Input demo replay thief contact: frame=%u step=attack obj=%d seg=%d mode=%d aware=%d next_action=%d last_hit=%lld mercury=%d->%d stolen_index=%d->%d player_seg=%d robot_pos=(%d,%d,%d) player_pos=(%d,%d,%d)\n",
+						input_demo_trace_frame_index(),
+						(int)(robot - Objects),
+						robot->segnum,
+						Ai_local_info[robot-Objects].mode,
+						Ai_local_info[robot-Objects].player_awareness_type,
+						Ai_local_info[robot-Objects].next_action_time,
+						(long long)Last_thief_hit_time,
+						pre_mercury_ammo,
+						Players[playerobj->id].secondary_ammo[8],
+						pre_stolen_item_index,
+						Stolen_item_index,
+						playerobj->segnum,
+						robot->pos.x,
+						robot->pos.y,
+						robot->pos.z,
+						playerobj->pos.x,
+						playerobj->pos.y,
+						playerobj->pos.z);
+					fflush(stdout);
 				input_demo_debug_log_player_robot_contact_probe("robot_player_thief_attack", (void *)playerobj, (void *)robot, (void *)collision_point, 0);
 			} else if (GameTime64 - Last_thief_hit_time < F1_0*2) {
+				if (replay_thief_contact_probe_active)
+					printf(
+						"Input demo replay thief contact: frame=%u step=skip_window obj=%d seg=%d mode=%d aware=%d next_action=%d last_hit=%lld player_seg=%d robot_pos=(%d,%d,%d) player_pos=(%d,%d,%d)\n",
+						input_demo_trace_frame_index(),
+						(int)(robot - Objects),
+						robot->segnum,
+						Ai_local_info[robot-Objects].mode,
+						Ai_local_info[robot-Objects].player_awareness_type,
+						Ai_local_info[robot-Objects].next_action_time,
+						(long long)Last_thief_hit_time,
+						playerobj->segnum,
+						robot->pos.x,
+						robot->pos.y,
+						robot->pos.z,
+						playerobj->pos.x,
+						playerobj->pos.y,
+						playerobj->pos.z);
+					fflush(stdout);
 				input_demo_debug_log_player_robot_contact_probe("robot_player_skip_thief_window", (void *)playerobj, (void *)robot, (void *)collision_point, 0);
 				return;		//	ZOUNDS!  BRILLIANT!  Thief not collide with player if not stealing!
 								// NO!  VERY DUMB!  makes thief look very stupid if player hits him while cloaked! -AP

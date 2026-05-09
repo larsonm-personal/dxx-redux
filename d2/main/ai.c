@@ -302,17 +302,55 @@ void make_nearby_robot_snipe(void)
 
 int Ai_last_missile_camera = -1;
 
-static int input_demo_trace_ai_desync_window_active(void)
+static int input_demo_trace_ai_schedule_probe_active(object *obj, ai_local *ailp,
+	fix dist_to_player, int previous_visibility, int obj_ref)
 {
-	return input_demo_replay_is_loaded() &&
-		(input_demo_debug_frame_in_range(454, 460) ||
-		 input_demo_debug_frame_in_range(1313, 1319));
+	if (!input_demo_trace_ai_visibility_active(obj) || !ailp)
+		return 0;
+	if (obj_ref < 0)
+		return 1;
+	if (ailp->player_awareness_type >= PA_PLAYER_COLLISION)
+		return 1;
+	if ((dist_to_player <= 0) || (dist_to_player >= F1_0*120))
+		return 0;
+	return previous_visibility ||
+		(ailp->player_awareness_type >= PA_NEARBY_ROBOT_FIRED) ||
+		((obj_ref & 3) == 0);
 }
 
 static void input_demo_log_ai_schedule_probe(const char *label, object *obj, ai_static *aip,
 	ai_local *ailp, fix dist_to_player, int previous_visibility, int obj_ref)
 {
-	if (!input_demo_trace_ai_desync_window_active() || !obj || !aip || !ailp)
+	char probe[512];
+
+	if (!input_demo_trace_ai_schedule_probe_active(obj, ailp, dist_to_player,
+		previous_visibility, obj_ref) || !obj || !aip)
+		return;
+
+	input_demo_log_ai_schedule_record_probe(label, obj, aip, ailp,
+		previous_visibility, dist_to_player, obj_ref);
+
+	snprintf(probe, sizeof(probe),
+		"step=%s behavior=%d mode=%d prev_vis=%d aware=%d aware_time=%d skip=%d since=%d dist=%d obj_ref=%d goal_seg=%d path=%d/%d retry=%d retry_chain=%d rapid=%d",
+		label,
+		aip->behavior,
+		ailp->mode,
+		previous_visibility,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		aip->SKIP_AI_COUNT,
+		ailp->time_since_processed,
+		dist_to_player,
+		obj_ref,
+		ailp->goal_segment,
+		aip->cur_path_index,
+		aip->path_length,
+		ailp->retry_count,
+		ailp->consecutive_retries,
+		ailp->rapidfire_count);
+	input_demo_append_replay_probe_message("probe_ai_schedule", obj, probe);
+
+	if (!input_demo_debug_is_enabled())
 		return;
 
 	con_printf(CON_NORMAL,
@@ -483,6 +521,8 @@ _exit_cheat:
 	}
 	dist_to_player = vm_vec_dist_quick(&Believed_player_pos, &obj->pos);
 	schedule_dist_to_player = dist_to_player;
+	input_demo_log_ai_schedule_probe("pre_awareness", obj, aip, ailp,
+		schedule_dist_to_player, previous_visibility, obj_ref);
 
 	// If this robot can fire, compute visibility from gun position.
 	// Don't want to compute visibility twice, as it is expensive.  (So is call to calc_gun_point).
@@ -526,7 +566,7 @@ _exit_cheat:
 					create_path_to_player(obj, agitation_path_max_length, 1);
 				}
 
-				if (agitation_path_trigger_pass ||
+				if (agitation_path_trigger_pass || input_demo_trace_ai_visibility_active(obj) ||
 					input_demo_replay_obj95_state_probe_active(obj))
 					input_demo_log_ai_agitation_path_gate(obj,
 						dist_to_player,
@@ -681,11 +721,16 @@ _exit_cheat:
 			player_visibility = 2;
 	} else if (((obj_ref&3) == 0) && !previous_visibility && (dist_to_player < F1_0*100)) {
 		fix sval, rval;
+		const int headlight_on = (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON) ? 1 : 0;
+		int threshold;
+		int awareness_pass;
 
 		rval = d_rand();
 		sval = (dist_to_player * (Difficulty_level+1))/64;
+		threshold = sval ? fixdiv(FrameTime, sval) : 0;
+		awareness_pass = (fixmul(rval, sval) < FrameTime) || headlight_on;
 
-		if ((fixmul(rval, sval) < FrameTime) || (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON)) {
+		if (awareness_pass) {
 			ailp->player_awareness_type = PA_PLAYER_COLLISION;
 			ailp->player_awareness_time = F1_0*3;
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
@@ -693,6 +738,9 @@ _exit_cheat:
 				player_visibility = 2;
 			}
 		}
+		input_demo_log_ai_awareness_roll_probe(obj, "near_player_roll",
+			previous_visibility, player_visibility, dist_to_player, obj_ref,
+			rval, threshold, awareness_pass, headlight_on);
 	}
 
 

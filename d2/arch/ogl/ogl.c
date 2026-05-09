@@ -493,7 +493,11 @@ void ogl_bindbmtex(grs_bitmap *bm){
 	 *
 	 * Font/text textures (OGL_FLAG_NOCOLOR) never have mipmaps -- they
 	 * use MenuTexFilt regardless of render context so that text filtering
-	 * is grouped with menus/briefings/videos/reticle (default off). */
+	 * is grouped with menus/briefings/videos/reticle (default off).
+	 *
+	 * Fullscreen menu and loading art can also arrive without mipmaps on
+	 * Android, notably through the ETC2/KTX path, so the menu/HUD override
+	 * must handle both mipmapped and non-mipmapped texture objects. */
 	if (GameCfg.TexFilt > 0) {
 		if (bm->gltexture->flags & OGL_FLAG_NOCOLOR) {
 			/* Font texture: filter controlled by MenuTexFilt in all contexts */
@@ -518,6 +522,21 @@ void ogl_bindbmtex(grs_bitmap *bm){
 				GLenum min_f = GameCfg.TexFilt >= 2
 					? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			}
+		} else {
+			/* Non-font texture without mipmaps: restore linear filtering when the
+			 * current context allows it, otherwise force nearest for menu/HUD. */
+			int use_nearest = 0;
+			if (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
+				use_nearest = 1;
+			else if (g_ogl_render_context == 2 && !GameCfg.HudTexFilt)
+				use_nearest = 1;
+			if (use_nearest) {
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			} else {
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			}
 		}

@@ -81,6 +81,17 @@ int input_demo_replay_homing_desync_probe_active(void);
 int input_demo_replay_obj95_state_probe_active(struct object *obj);
 int input_demo_homing_desync_probe_active(void);
 int input_demo_trace_escort_active(void);
+int input_demo_trace_ai_visibility_active(struct object *objp);
+void input_demo_log_ai_visibility_probe(struct object *objp,
+	const char *step_label, int previous_visibility,
+	int raw_player_visibility, int final_player_visibility,
+	int sight_sound_gate, int attack_sound_gate, int misc_sound_gate,
+	const struct vms_vector *pos,
+	const struct vms_vector *believed_player_pos);
+void input_demo_log_ai_awareness_roll_probe(struct object *objp,
+	const char *step_label, int previous_visibility, int player_visibility,
+	int dist_to_player, int obj_ref, int roll, int threshold, int pass,
+	int headlight);
 int input_demo_trace_ai_robot_active(struct object *objp, struct ai_static *aip, struct ai_local *ailp);
 void input_demo_log_ai_robot_state(const char *label, struct object *objp);
 void input_demo_note_ai_schedule_skip_return(struct object *objp);
@@ -91,6 +102,9 @@ void input_demo_note_ai_schedule_detail(const char *kind, struct object *objp,
 	int previous_visibility, int awareness_type, int awareness_time,
 	int skip_ai_count, int time_since_processed, int dist_to_player,
 	int obj_ref);
+void input_demo_log_ai_schedule_record_probe(const char *step_label,
+	struct object *objp, struct ai_static *aip, struct ai_local *ailp,
+	int previous_visibility, int dist_to_player, int obj_ref);
 void input_demo_append_replay_probe_message(const char *kind, struct object *objp,
 	const char *message);
 void input_demo_log_awareness_vulcan_roll(struct object *objp, int type, int vulcan_roll, unsigned int sim_calls_before, unsigned int sim_state_before);
