@@ -4817,7 +4817,7 @@ int input_demo_step_replay_frame(void)
 	if (!input_demo_sync_replay_rng_to_current_frame())
 		return 0;
 	if (read_controls_result)
-		return 0;
+		return 1;
 	if (!game_is_time_paused())
 	{
 		calc_game_time();

@@ -1424,11 +1424,9 @@ int ReadControlsReplayFrame(void)
 		if ( Controls.automap_count > 0 )
 		{
 			Controls.automap_count = 0;
-			if (!((Game_mode & GM_MULTI) && Control_center_destroyed && (Countdown_seconds_left < 10)))
-			{
-				do_automap();
-				return 1;
-			}
+			/* Replay demos stage the automap pulse onto the next gameplay frame
+			 * after the player returns, so ignore it here instead of opening a
+			 * modal automap window or skipping the gameplay frame. */
 		}
 
 		do_weapon_n_item_stuff();
