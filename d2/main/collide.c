@@ -99,7 +99,7 @@ static void input_demo_log_replay_collision_pair(const char *kind,
 	char probe[512];
 
 	if (!input_demo_replay_is_loaded() ||
-		!input_demo_replay_homing_desync_probe_active() ||
+		!input_demo_replay_collision_probe_active() ||
 		!obj0 || !obj1)
 		return;
 	if (!((obj0->type == OBJ_ROBOT && obj1->type == OBJ_PLAYER) ||
@@ -134,6 +134,43 @@ static void input_demo_log_replay_collision_pair(const char *kind,
 		collision_point ? collision_point->y : 0,
 		collision_point ? collision_point->z : 0);
 	input_demo_append_replay_probe_message(kind, obj0, probe);
+}
+
+static void input_demo_log_replay_weapon_robot_resolution(const char *kind,
+	object *weapon,
+	object *robot,
+	const vms_vector *collision_point,
+	fix damage,
+	fix robot_old_shields,
+	int robot_died)
+{
+	char probe[512];
+	int skip_ai_count = -1;
+	int gauss_gate_pass = 0;
+
+	if (!input_demo_replay_is_loaded() ||
+		!input_demo_replay_collision_probe_active() ||
+		!weapon || !robot || weapon->type != OBJ_WEAPON || robot->type != OBJ_ROBOT)
+		return;
+	if (weapon->id == GAUSS_ID) {
+		const ai_static *aip = &robot->ctype.ai_info;
+
+		skip_ai_count = aip->SKIP_AI_COUNT;
+		gauss_gate_pass = !Robot_info[robot->id].companion &&
+			!Robot_info[robot->id].boss_flag &&
+			(skip_ai_count * FrameTime < F1_0);
+	}
+
+	snprintf(probe, sizeof(probe),
+		"weapon_obj=%d weapon_sig=%d weapon_id=%d robot_obj=%d robot_sig=%d robot_id=%d damage=%d shields=%d->%d died=%d gauss_gate=%d skip_ai_count=%d frame_time=%d cp=(%d,%d,%d)",
+		(int)(weapon - Objects), weapon->signature, weapon->id,
+		(int)(robot - Objects), robot->signature, robot->id,
+		damage, robot_old_shields, robot->shields, robot_died,
+		gauss_gate_pass, skip_ai_count, FrameTime,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+	input_demo_append_replay_probe_message(kind, robot, probe);
 }
 
 static int input_demo_disable_homing_player_bump(void)
@@ -1933,6 +1970,9 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 				input_demo_debug_log_weapon_robot_collision_pose("weapon_robot pre_damage", (void *)weapon, (void *)robot, (void *)collision_point, (int)damage, (int)robot_old_shields);
 
 			robot_died = apply_damage_to_robot(robot, damage, weapon->ctype.laser_info.parent_num);
+			input_demo_log_replay_weapon_robot_resolution("collide_robot_weapon_resolve",
+				weapon, robot, collision_point, damage, robot_old_shields,
+				robot_died);
 			if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)
 				input_demo_debug_log_weapon_robot_collision_pose("weapon_robot post_damage", (void *)weapon, (void *)robot, (void *)collision_point, (int)damage, (int)robot_old_shields);
 

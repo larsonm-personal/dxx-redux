@@ -625,10 +625,8 @@ static void input_demo_log_fvi_weapon_robot_check(
 	fix center_dist;
 	fix combined_rad;
 	fix miss_delta;
-	unsigned int frame;
 
-	if (!input_demo_debug_is_enabled() ||
-		(!input_demo_replay_is_loaded() && !input_demo_recorder_is_active()))
+	if (!input_demo_replay_is_loaded() && !input_demo_recorder_is_active())
 		return;
 	if (weapon_objnum < 0 || robot_objnum < 0)
 		return;
@@ -638,48 +636,13 @@ static void input_demo_log_fvi_weapon_robot_check(
 		return;
 	if (robot->type != OBJ_ROBOT)
 		return;
-	frame = fvi_input_demo_frame_index();
 	center_dist = vm_vec_dist(p0, &robot->pos);
 	combined_rad = robot->size + fudged_rad;
 	miss_delta = center_dist - combined_rad;
 	if (!input_demo_homing_desync_probe_active() && !d && miss_delta > (8 * f1_0))
 		return;
-	if (input_demo_homing_desync_probe_active()) {
-		char probe[512];
-
-		snprintf(probe, sizeof(probe),
-			"weapon_obj=%d weapon_sig=%d weapon_id=%d p0=(%d,%d,%d) p1=(%d,%d,%d) robot_obj=%d robot_sig=%d robot_id=%d robot_pos=(%d,%d,%d) robot_size=%d fudged_rad=%d combined_rad=%d center_dist=%d miss_delta=%d d=%d hit=%d",
-			weapon_objnum,
-			weapon->signature,
-			weapon->id,
-			p0->x, p0->y, p0->z,
-			p1->x, p1->y, p1->z,
-			robot_objnum,
-			robot->signature,
-			robot->id,
-			robot->pos.x, robot->pos.y, robot->pos.z,
-			robot->size,
-			fudged_rad,
-			combined_rad,
-			center_dist,
-			miss_delta,
-			d,
-			d > 0);
-		input_demo_append_replay_probe_message("fvi_weapon_robot_check", robot,
-			probe);
-	}
-	con_printf(CON_NORMAL,
-		"Input demo fvi weapon robot check: mode=%s frame=%u gt=%lld "
-		"weapon_obj=%d weapon_sig=%d p0=(%d,%d,%d) p1=(%d,%d,%d) "
-		"robot_obj=%d robot_sig=%d robot_id=%d robot_pos=(%d,%d,%d) "
-		"robot_size=%d fudged_rad=%d combined_rad=%d center_dist=%d miss_delta=%d d=%d hit=%d\n",
-		fvi_input_demo_mode_name(), frame, (long long)GameTime64,
-		weapon_objnum, weapon->signature,
-		p0->x, p0->y, p0->z,
-		p1->x, p1->y, p1->z,
-		robot_objnum, robot->signature, robot->id,
-		robot->pos.x, robot->pos.y, robot->pos.z,
-		robot->size, fudged_rad, combined_rad, center_dist, miss_delta, d, d > 0);
+	input_demo_log_weapon_robot_fvi_check(weapon, robot, p0, p1,
+		fudged_rad, combined_rad, center_dist, miss_delta, d);
 }
 
 //determine if a vector intersects with an object

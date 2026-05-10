@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -272,6 +273,27 @@ static int input_demo_record_probe_events_active(void)
 	return input_demo_recorder_is_active();
 }
 
+static void input_demo_append_activity_probe_message(const char *kind,
+	object *objp,
+	const char *fmt,
+	...)
+{
+	char message[768];
+	va_list args;
+
+	if (!input_demo_replay_is_loaded() || !kind || !fmt)
+		return;
+
+	va_start(args, fmt);
+	if (vsnprintf(message, sizeof(message), fmt, args) < 0) {
+		va_end(args);
+		return;
+	}
+	va_end(args);
+	message[sizeof(message) - 1] = 0;
+	input_demo_append_replay_probe_message(kind, objp, message);
+}
+
 static int input_demo_console_weapon_trace_active(void)
 {
 	return input_demo_debug_is_enabled() &&
@@ -342,6 +364,139 @@ int input_demo_homing_desync_probe_active(void)
 }
 
 static void input_demo_record_frame_event_json(const char *json_text);
+
+static unsigned char input_demo_powerup_probe_prev_live[MAX_OBJECTS];
+static int input_demo_powerup_probe_prev_count;
+static uint32_t input_demo_powerup_probe_prev_frame;
+static int input_demo_powerup_probe_prev_level;
+static int input_demo_powerup_probe_prev_mode;
+static int input_demo_powerup_probe_valid;
+
+static int input_demo_powerup_probe_mode(void)
+{
+	if (input_demo_replay_is_loaded())
+		return 2;
+	if (input_demo_recorder_is_active())
+		return 1;
+	return 0;
+}
+
+static void input_demo_reset_powerup_live_probe_state(void)
+{
+	memset(input_demo_powerup_probe_prev_live, 0,
+		sizeof(input_demo_powerup_probe_prev_live));
+	input_demo_powerup_probe_prev_count = 0;
+	input_demo_powerup_probe_prev_frame = 0;
+	input_demo_powerup_probe_prev_level = 0;
+	input_demo_powerup_probe_prev_mode = 0;
+	input_demo_powerup_probe_valid = 0;
+}
+
+static void input_demo_append_powerup_delta_entry(char *message, size_t message_size,
+	const char *prefix, int objnum)
+{
+	char entry[96];
+	object *obj;
+
+	if (!message || !message_size)
+		return;
+	if (objnum < 0 || objnum > Highest_object_index)
+		return;
+
+	obj = &Objects[objnum];
+	snprintf(entry, sizeof(entry), " %s=%d/%d/%d/%d/0x%x/%d",
+		prefix,
+		objnum,
+		obj->signature,
+		obj->id,
+		obj->segnum,
+		obj->flags,
+		obj->lifeleft);
+	if (strlen(message) + strlen(entry) + 1 < message_size)
+		strcat(message, entry);
+}
+
+static void input_demo_note_powerup_live_delta(int current_count)
+{
+	unsigned char current_live[MAX_OBJECTS];
+	char message[512];
+	int mode = input_demo_powerup_probe_mode();
+	int added_logged = 0;
+	int removed_logged = 0;
+	int added_total = 0;
+	int removed_total = 0;
+	int first_objnum = -1;
+	int i;
+
+	if (!mode) {
+		input_demo_reset_powerup_live_probe_state();
+		return;
+	}
+
+	if (input_demo_powerup_probe_valid &&
+		((input_demo_powerup_probe_prev_mode != mode) ||
+		 (input_demo_powerup_probe_prev_level != Current_level_num) ||
+		 (input_demo_trace_frame_index() < input_demo_powerup_probe_prev_frame)))
+		input_demo_reset_powerup_live_probe_state();
+
+	memset(current_live, 0, sizeof(current_live));
+	for (i = 0; i <= Highest_object_index; ++i) {
+		if (Objects[i].type != OBJ_POWERUP)
+			continue;
+		if (Objects[i].flags & OF_SHOULD_BE_DEAD)
+			continue;
+		current_live[i] = 1;
+	}
+
+	if (input_demo_powerup_probe_valid &&
+		(current_count != input_demo_powerup_probe_prev_count)) {
+		snprintf(message, sizeof(message), "count=%d prev=%d",
+			current_count,
+			input_demo_powerup_probe_prev_count);
+		for (i = 0; i <= Highest_object_index; ++i) {
+			if (current_live[i] == input_demo_powerup_probe_prev_live[i])
+				continue;
+			if (current_live[i]) {
+				added_total++;
+				if (first_objnum < 0)
+					first_objnum = i;
+				if (added_logged < 4) {
+					input_demo_append_powerup_delta_entry(message,
+						sizeof(message), "add", i);
+					added_logged++;
+				}
+			} else {
+				removed_total++;
+				if (first_objnum < 0)
+					first_objnum = i;
+				if (removed_logged < 4) {
+					input_demo_append_powerup_delta_entry(message,
+						sizeof(message), "rem", i);
+					removed_logged++;
+				}
+			}
+		}
+		if ((added_total > added_logged) || (removed_total > removed_logged)) {
+			char extra[64];
+
+			snprintf(extra, sizeof(extra), " more_add=%d more_rem=%d",
+				added_total - added_logged,
+				removed_total - removed_logged);
+			if (strlen(message) + strlen(extra) + 1 < sizeof(message))
+				strcat(message, extra);
+		}
+		input_demo_append_replay_probe_message("powerup_live_delta",
+			first_objnum >= 0 ? &Objects[first_objnum] : NULL, message);
+	}
+
+	memcpy(input_demo_powerup_probe_prev_live, current_live,
+		sizeof(input_demo_powerup_probe_prev_live));
+	input_demo_powerup_probe_prev_count = current_count;
+	input_demo_powerup_probe_prev_frame = input_demo_trace_frame_index();
+	input_demo_powerup_probe_prev_level = Current_level_num;
+	input_demo_powerup_probe_prev_mode = mode;
+	input_demo_powerup_probe_valid = 1;
+}
 
 static int input_demo_count_live_objects_of_type(int object_type)
 {
@@ -630,6 +785,8 @@ void input_demo_capture_current_result(input_demo_result *result)
 				current_player->shields,
 				"",
 				"");
+	} else {
+		input_demo_reset_powerup_live_probe_state();
 	}
 
 	input_demo_result_clear(result);
@@ -685,6 +842,7 @@ void input_demo_capture_current_result(input_demo_result *result)
 	result->level_summary.robots_killed = robots_killed;
 	result->level_summary.hostages_remaining = input_demo_count_live_objects_of_type(OBJ_HOSTAGE);
 	result->level_summary.powerups_remaining = input_demo_count_live_objects_of_type(OBJ_POWERUP);
+	input_demo_note_powerup_live_delta(result->level_summary.powerups_remaining);
 	result->level_summary.control_center_destroyed = Control_center_destroyed ? 1 : 0;
 	result->level_summary.endlevel_completed = Endlevel_sequence ? 1 : 0;
 }
@@ -818,22 +976,20 @@ void input_demo_set_awareness_source(const char *source_tag, int source_objnum, 
 		input_demo_record_frame_event_json(json);
 	}
 
-	if (input_demo_replay_homing_desync_probe_active()) {
-		char probe[192];
+	if (input_demo_replay_is_loaded()) {
 		object *source_objp = (source_objnum >= 0 && source_objnum < MAX_OBJECTS)
 			? &Objects[source_objnum]
 			: NULL;
 
-		snprintf(probe, sizeof(probe),
+		input_demo_append_activity_probe_message("awareness_source_set",
+			source_objp,
 			"source=%s source_obj=%d aux_obj=%d previous_source=%s previous_obj=%d previous_aux=%d",
 			source_tag ? source_tag : "unset",
 			source_objnum,
 			aux_objnum,
-			input_demo_awareness_source_tag,
+			input_demo_awareness_source_tag ? input_demo_awareness_source_tag : "unset",
 			input_demo_awareness_source_objnum,
 			input_demo_awareness_aux_objnum);
-		input_demo_append_replay_probe_message("awareness_source_set",
-			source_objp, probe);
 	}
 
 	input_demo_awareness_source_tag = source_tag ? source_tag : "unset";
@@ -875,6 +1031,9 @@ int input_demo_trace_ai_active(void)
 
 int input_demo_replay_awareness_probe_active(void)
 {
+	if (input_demo_replay_is_loaded())
+		return 1;
+
 	return input_demo_record_probe_events_active() ||
 		input_demo_debug_activity_probe_active();
 }
@@ -1097,7 +1256,10 @@ void input_demo_log_weapon_lifetime(const char *step, object *obj)
 			obj->last_pos.z);
 		input_demo_record_frame_event_json(json);
 	}
-	if (input_demo_replay_homing_desync_probe_active() &&
+	if ((input_demo_replay_homing_desync_probe_active() ||
+			(input_demo_replay_collision_probe_active() &&
+				input_demo_replay_is_player_owned_weapon(obj) &&
+				obj->id != FLARE_ID)) &&
 		input_demo_record_weapon_probe_target(obj)) {
 		char probe[384];
 
@@ -1683,6 +1845,86 @@ void input_demo_log_collision_weapon_robot_impact(const char *mode_name, unsigne
 		(int)(robot - Objects),
 		robot->id,
 		weapon->segnum);
+}
+
+void input_demo_log_weapon_robot_fvi_check(object *weapon, object *robot,
+	const vms_vector *p0, const vms_vector *p1,
+	int32_t fudged_rad, int32_t combined_rad, int32_t center_dist,
+	int32_t miss_delta, int32_t d)
+{
+	const unsigned int frame = input_demo_trace_collision_frame_index();
+	const char *mode_name = input_demo_trace_collision_mode_name();
+
+	if (!weapon || !robot || !p0 || !p1)
+		return;
+
+	if (input_demo_record_probe_events_active()) {
+		char json[640];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_fvi_weapon_robot\",\"frame\":%u,\"gt\":%lld,\"weapon_obj\":%d,\"weapon_sig\":%d,\"weapon_id\":%d,\"p0x\":%d,\"p0y\":%d,\"p0z\":%d,\"p1x\":%d,\"p1y\":%d,\"p1z\":%d,\"robot_obj\":%d,\"robot_sig\":%d,\"robot_id\":%d,\"robot_x\":%d,\"robot_y\":%d,\"robot_z\":%d,\"robot_size\":%d,\"fudged_rad\":%d,\"combined_rad\":%d,\"center_dist\":%d,\"miss_delta\":%d,\"d\":%d,\"hit\":%s}",
+			frame,
+			(long long)GameTime64,
+			(int)(weapon - Objects),
+			weapon->signature,
+			weapon->id,
+			p0->x, p0->y, p0->z,
+			p1->x, p1->y, p1->z,
+			(int)(robot - Objects),
+			robot->signature,
+			robot->id,
+			robot->pos.x, robot->pos.y, robot->pos.z,
+			robot->size,
+			fudged_rad,
+			combined_rad,
+			center_dist,
+			miss_delta,
+			d,
+			d > 0 ? "true" : "false");
+		input_demo_record_frame_event_json(json);
+	}
+
+	if ((input_demo_replay_homing_desync_probe_active() ||
+			input_demo_replay_collision_probe_active()) &&
+		input_demo_debug_is_enabled()) {
+		char probe[512];
+
+		snprintf(probe, sizeof(probe),
+			"weapon_obj=%d weapon_sig=%d weapon_id=%d p0=(%d,%d,%d) p1=(%d,%d,%d) robot_obj=%d robot_sig=%d robot_id=%d robot_pos=(%d,%d,%d) robot_size=%d fudged_rad=%d combined_rad=%d center_dist=%d miss_delta=%d d=%d hit=%d",
+			(int)(weapon - Objects),
+			weapon->signature,
+			weapon->id,
+			p0->x, p0->y, p0->z,
+			p1->x, p1->y, p1->z,
+			(int)(robot - Objects),
+			robot->signature,
+			robot->id,
+			robot->pos.x, robot->pos.y, robot->pos.z,
+			robot->size,
+			fudged_rad,
+			combined_rad,
+			center_dist,
+			miss_delta,
+			d,
+			d > 0);
+		input_demo_append_replay_probe_message("fvi_weapon_robot_check", robot,
+			probe);
+	}
+
+	if (input_demo_debug_is_enabled() && mode_name)
+		con_printf(CON_NORMAL,
+			"Input demo fvi weapon robot check: mode=%s frame=%u gt=%lld "
+			"weapon_obj=%d weapon_sig=%d p0=(%d,%d,%d) p1=(%d,%d,%d) "
+			"robot_obj=%d robot_sig=%d robot_id=%d robot_pos=(%d,%d,%d) "
+			"robot_size=%d fudged_rad=%d combined_rad=%d center_dist=%d miss_delta=%d d=%d hit=%d\n",
+			mode_name, frame, (long long)GameTime64,
+			(int)(weapon - Objects), weapon->signature,
+			p0->x, p0->y, p0->z,
+			p1->x, p1->y, p1->z,
+			(int)(robot - Objects), robot->signature, robot->id,
+			robot->pos.x, robot->pos.y, robot->pos.z,
+			robot->size, fudged_rad, combined_rad, center_dist, miss_delta, d,
+			d > 0);
 }
 
 void input_demo_log_replay_robot_damage(object *robot, fix damage, fix old_shields)
@@ -2336,6 +2578,212 @@ void input_demo_log_escort_restore_normalization(object *objp, ai_local *ailp,
 		aip->hide_index);
 }
 
+void input_demo_log_ai_chase_path_gate(object *objp,
+	int dist_to_player, int previous_visibility, int player_visibility,
+	int chase_gate_pass, int awareness_allowed, int path_created,
+	int pre_mode, int pre_goal_segment, int pre_path_index,
+	int pre_path_length, int pre_hide_index, int pre_path_dir,
+	int64_t pre_time_player_seen)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_static *aip;
+	ai_local *ailp;
+	robot_info *robptr;
+	unsigned int rng_state = 0;
+	unsigned int rng_calls = d_rand_get_call_count();
+	char probe[768];
+
+	if (!objp || (objnum < 0) || (objp->type != OBJ_ROBOT))
+		return;
+
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[objnum];
+	robptr = &Robot_info[objp->id];
+	d_rand_get_state(&rng_state);
+
+	if (input_demo_record_probe_events_active()) {
+		char json[1024];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_ai_chase_path_gate\",\"gt\":%lld,\"obj\":%d,\"sig\":%d,\"id\":%d,\"attack_type\":%d,\"companion\":%d,\"behavior\":%d,\"pre_mode\":%d,\"mode\":%d,\"seg\":%d,\"player_seg\":%d,\"believed_seg\":%d,\"pre_goal_seg\":%d,\"goal_seg\":%d,\"aware\":%d,\"aware_time\":%d,\"dist\":%d,\"prev_vis\":%d,\"player_vis\":%d,\"gate_pass\":%s,\"awareness_allowed\":%s,\"path_created\":%s,\"pre_path_index\":%d,\"path_index\":%d,\"pre_path_length\":%d,\"path_length\":%d,\"pre_hide\":%d,\"hide\":%d,\"pre_dir\":%d,\"dir\":%d,\"pre_seen\":%lld,\"seen\":%lld,\"calls\":%u,\"state\":%u}",
+			(long long)GameTime64,
+			objnum,
+			objp->signature,
+			objp->id,
+			robptr->attack_type,
+			robptr->companion,
+			aip->behavior,
+			pre_mode,
+			ailp->mode,
+			objp->segnum,
+			ConsoleObject ? ConsoleObject->segnum : -1,
+			Believed_player_seg,
+			pre_goal_segment,
+			ailp->goal_segment,
+			ailp->player_awareness_type,
+			ailp->player_awareness_time,
+			dist_to_player,
+			previous_visibility,
+			player_visibility,
+			chase_gate_pass ? "true" : "false",
+			awareness_allowed ? "true" : "false",
+			path_created ? "true" : "false",
+			pre_path_index,
+			aip->cur_path_index,
+			pre_path_length,
+			aip->path_length,
+			pre_hide_index,
+			aip->hide_index,
+			pre_path_dir,
+			aip->PATH_DIR,
+			(long long)pre_time_player_seen,
+			(long long)ailp->time_player_seen,
+			rng_calls,
+			rng_state);
+		input_demo_record_frame_event_json(json);
+	}
+
+	if (!input_demo_replay_is_loaded() &&
+		!input_demo_trace_ai_visibility_active(objp))
+		return;
+
+	snprintf(probe, sizeof(probe),
+		"behavior=%d pre_mode=%d mode=%d player_seg=%d believed_seg=%d pre_goal_seg=%d goal_seg=%d aware=%d aware_time=%d dist=%d prev_vis=%d player_vis=%d gate_pass=%d awareness_allowed=%d path_created=%d pre_path_index=%d path_index=%d pre_path_length=%d path_length=%d pre_hide=%d hide=%d pre_dir=%d dir=%d pre_seen=%lld seen=%lld calls=%u state=%u",
+		aip->behavior,
+		pre_mode,
+		ailp->mode,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		pre_goal_segment,
+		ailp->goal_segment,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		dist_to_player,
+		previous_visibility,
+		player_visibility,
+		chase_gate_pass,
+		awareness_allowed,
+		path_created,
+		pre_path_index,
+		aip->cur_path_index,
+		pre_path_length,
+		aip->path_length,
+		pre_hide_index,
+		aip->hide_index,
+		pre_path_dir,
+		aip->PATH_DIR,
+		(long long)pre_time_player_seen,
+		(long long)ailp->time_player_seen,
+		rng_calls,
+		rng_state);
+	input_demo_append_replay_probe_message("chase_path_gate", objp, probe);
+}
+
+void input_demo_log_ai_follow_path_transition(object *objp,
+	int dist_to_player, int anger_level, int previous_visibility,
+	int player_visibility, int awareness_allowed, int follow_called,
+	int visible_chase_pass, int still_pass, int pre_mode,
+	int pre_goal_segment, int pre_path_index, int pre_path_length,
+	int pre_hide_index, int pre_path_dir, int64_t pre_time_player_seen)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_static *aip;
+	ai_local *ailp;
+	robot_info *robptr;
+	unsigned int rng_state = 0;
+	unsigned int rng_calls = d_rand_get_call_count();
+	char probe[768];
+
+	if (!objp || (objnum < 0) || (objp->type != OBJ_ROBOT))
+		return;
+
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[objnum];
+	robptr = &Robot_info[objp->id];
+	d_rand_get_state(&rng_state);
+
+	if (input_demo_record_probe_events_active()) {
+		char json[1024];
+
+		snprintf(json, sizeof(json),
+			"{\"kind\":\"probe_ai_follow_path_transition\",\"gt\":%lld,\"obj\":%d,\"sig\":%d,\"id\":%d,\"attack_type\":%d,\"companion\":%d,\"behavior\":%d,\"anger\":%d,\"pre_mode\":%d,\"mode\":%d,\"seg\":%d,\"player_seg\":%d,\"believed_seg\":%d,\"pre_goal_seg\":%d,\"goal_seg\":%d,\"aware\":%d,\"aware_time\":%d,\"dist\":%d,\"prev_vis\":%d,\"player_vis\":%d,\"awareness_allowed\":%s,\"follow_called\":%s,\"visible_chase_pass\":%s,\"still_pass\":%s,\"pre_path_index\":%d,\"path_index\":%d,\"pre_path_length\":%d,\"path_length\":%d,\"pre_hide\":%d,\"hide\":%d,\"pre_dir\":%d,\"dir\":%d,\"pre_seen\":%lld,\"seen\":%lld,\"calls\":%u,\"state\":%u}",
+			(long long)GameTime64,
+			objnum,
+			objp->signature,
+			objp->id,
+			robptr->attack_type,
+			robptr->companion,
+			aip->behavior,
+			anger_level,
+			pre_mode,
+			ailp->mode,
+			objp->segnum,
+			ConsoleObject ? ConsoleObject->segnum : -1,
+			Believed_player_seg,
+			pre_goal_segment,
+			ailp->goal_segment,
+			ailp->player_awareness_type,
+			ailp->player_awareness_time,
+			dist_to_player,
+			previous_visibility,
+			player_visibility,
+			awareness_allowed ? "true" : "false",
+			follow_called ? "true" : "false",
+			visible_chase_pass ? "true" : "false",
+			still_pass ? "true" : "false",
+			pre_path_index,
+			aip->cur_path_index,
+			pre_path_length,
+			aip->path_length,
+			pre_hide_index,
+			aip->hide_index,
+			pre_path_dir,
+			aip->PATH_DIR,
+			(long long)pre_time_player_seen,
+			(long long)ailp->time_player_seen,
+			rng_calls,
+			rng_state);
+		input_demo_record_frame_event_json(json);
+	}
+
+	if (!input_demo_replay_is_loaded() &&
+		!input_demo_trace_ai_visibility_active(objp))
+		return;
+
+	snprintf(probe, sizeof(probe),
+		"behavior=%d anger=%d pre_mode=%d mode=%d player_seg=%d believed_seg=%d pre_goal_seg=%d goal_seg=%d aware=%d aware_time=%d dist=%d prev_vis=%d player_vis=%d awareness_allowed=%d follow_called=%d visible_chase_pass=%d still_pass=%d pre_path_index=%d path_index=%d pre_path_length=%d path_length=%d pre_hide=%d hide=%d pre_dir=%d dir=%d pre_seen=%lld seen=%lld calls=%u state=%u",
+		aip->behavior,
+		anger_level,
+		pre_mode,
+		ailp->mode,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		pre_goal_segment,
+		ailp->goal_segment,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		dist_to_player,
+		previous_visibility,
+		player_visibility,
+		awareness_allowed,
+		follow_called,
+		visible_chase_pass,
+		still_pass,
+		pre_path_index,
+		aip->cur_path_index,
+		pre_path_length,
+		aip->path_length,
+		pre_hide_index,
+		aip->hide_index,
+		pre_path_dir,
+		aip->PATH_DIR,
+		(long long)pre_time_player_seen,
+		(long long)ailp->time_player_seen,
+		rng_calls,
+		rng_state);
+	input_demo_append_replay_probe_message("follow_path_transition", objp, probe);
+}
+
 void input_demo_log_escort_restore_state(object *objp, ai_local *ailp)
 {
 	if (!input_demo_trace_escort_active() || !objp || !ailp)
@@ -2730,6 +3178,23 @@ void input_demo_log_path_request(const char *label,
 	ai_static *aip = (objp && objnum >= 0) ? &objp->ctype.ai_info : NULL;
 	ai_local *ailp = (objp && objnum >= 0) ? &Ai_local_info[objnum] : NULL;
 
+	input_demo_append_activity_probe_message("path_request", objp,
+		"step=%s start=%d end=%d same=%d goal_seg=%d max=%d safety=%d avoid=%d behavior=%d mode=%d cur_path=%d/%d hide=%d dir=%d",
+		label ? label : "",
+		start_seg,
+		end_seg,
+		start_seg == end_seg,
+		ailp ? ailp->goal_segment : -1,
+		max_length,
+		safety_flag,
+		avoid_seg,
+		aip ? aip->behavior : -1,
+		ailp ? ailp->mode : -1,
+		aip ? aip->cur_path_index : -1,
+		aip ? aip->path_length : -1,
+		aip ? aip->hide_index : -1,
+		aip ? aip->PATH_DIR : 0);
+
 	con_printf(CON_NORMAL,
 		"Input demo replay path request: frame=%u step=%s obj=%d type=%d control=%d id=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d start=%d end=%d same=%d goal_seg=%d max=%d safety=%d avoid=%d cur_path=%d/%d hide=%d dir=%d\n",
 		input_demo_trace_frame_index(),
@@ -2775,6 +3240,23 @@ void input_demo_log_path_probe(object *objp,
 	ai_local *ailp = (objp && objnum >= 0) ? &Ai_local_info[objnum] : NULL;
 
 	d_rand_get_state(&rng_after);
+	input_demo_append_activity_probe_message("path_rng", objp,
+		"start=%d end=%d same=%d max=%d random=%d safety=%d avoid=%d result=%d calls=%u->%u before=%u after=%u behavior=%d mode=%d goal_seg=%d",
+		start_seg,
+		end_seg,
+		start_seg == end_seg,
+		max_depth,
+		random_flag,
+		safety_flag,
+		avoid_seg,
+		result,
+		rng_call_count_before,
+		rng_call_count_after,
+		rng_before,
+		rng_after,
+		objp ? objp->ctype.ai_info.behavior : -1,
+		ailp ? ailp->mode : -1,
+		ailp ? ailp->goal_segment : -1);
 	con_printf(CON_NORMAL,
 		"Input demo replay path probe: frame=%u obj=%d type=%d control=%d id=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d start=%d end=%d same=%d max=%d random=%d safety=%d avoid=%d result=%d calls=%u->%u before=%u after=%u\n",
 		input_demo_trace_frame_index(),
@@ -2854,6 +3336,25 @@ void input_demo_log_path_detail(object *objp,
 	last_detail->signature = objp->signature;
 	last_detail->hash = detail_hash;
 
+	input_demo_append_activity_probe_message("path_detail", objp,
+		"start=%d end=%d same=%d random=%d seed_xlate=%d refresh_rolls=%d refresh_xlate=%d queue_pushes=%d raw_points=%d final_points=%d goal_seg=%d cur_path=%d/%d hide=%d behavior=%d mode=%d",
+		start_seg,
+		end_seg,
+		start_seg == end_seg,
+		random_flag,
+		random_xlate_seed_count,
+		random_xlate_refresh_roll_count,
+		random_xlate_refresh_count,
+		queue_push_count,
+		raw_num_points,
+		final_num_points,
+		ailp ? ailp->goal_segment : -1,
+		aip ? aip->cur_path_index : -1,
+		aip ? aip->path_length : -1,
+		aip ? aip->hide_index : -1,
+		aip ? aip->behavior : -1,
+		ailp ? ailp->mode : -1);
+
 	con_printf(CON_NORMAL,
 		"Input demo replay path detail: frame=%u obj=%d type=%d control=%d id=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d start=%d end=%d same=%d random=%d seed_xlate=%d refresh_rolls=%d refresh_xlate=%d queue_pushes=%d raw_points=%d final_points=%d goal_seg=%d cur_path=%d/%d hide=%d\n",
 		input_demo_trace_frame_index(),
@@ -2925,6 +3426,13 @@ void input_demo_log_path_points(const char *label, object *objp, const void *pse
 	}
 	if ((limit < num_points) && (offset < (int)sizeof(segs)))
 		snprintf(segs + offset, sizeof(segs) - offset, ",...");
+
+	input_demo_append_activity_probe_message("path_points", objp,
+		"step=%s points=%d listed=%d segs=%s",
+		label ? label : "",
+		num_points,
+		limit,
+		segs);
 
 	con_printf(CON_NORMAL,
 		"Input demo replay path points: frame=%u step=%s obj=%d points=%d listed=%d segs=%s\n",
@@ -4294,9 +4802,20 @@ void input_demo_log_awareness_entry(object *objp, int type, const char *source_t
 {
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 
-	if (!objp || (objnum < 0))
+	if (objp && (objnum < 0))
 		return;
-	if (input_demo_record_probe_events_active()) {
+	input_demo_append_activity_probe_message("awareness_entry", objp,
+		"type=%d source=%s source_obj=%d aux_obj=%d calls=%u state=%u awareness=%d agitation=%d gate=%d",
+		type,
+		source_tag ? source_tag : "unset",
+		source_objnum,
+		aux_objnum,
+		sim_calls_entry,
+		sim_state_entry,
+		num_awareness_before,
+		overall_agitation_before,
+		multiplayer_awareness_allowed);
+	if (objp && input_demo_record_probe_events_active()) {
 		char json[768];
 
 		snprintf(json, sizeof(json),
@@ -4327,7 +4846,7 @@ void input_demo_log_awareness_entry(object *objp, int type, const char *source_t
 		(long long)GameTime64,
 		type,
 		objnum,
-		source_tag,
+		source_tag ? source_tag : "unset",
 		source_objnum,
 		aux_objnum,
 		sim_calls_entry,
@@ -4352,6 +4871,19 @@ void input_demo_log_awareness_probe(object *objp, int type)
 		parent_num = objp->ctype.laser_info.parent_num;
 		parent_sig = objp->ctype.laser_info.parent_signature;
 	}
+	input_demo_append_activity_probe_message("awareness_object", objp,
+		"type=%d obj_type=%d obj_id=%d life=%d flags=%d parent_type=%d parent_num=%d parent_sig=%d pos=(%d,%d,%d)",
+		type,
+		objp->type,
+		objp->id,
+		objp->lifeleft,
+		objp->flags,
+		parent_type,
+		parent_num,
+		parent_sig,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z);
 	if (input_demo_record_probe_events_active()) {
 		char json[768];
 
@@ -4402,8 +4934,16 @@ void input_demo_log_awareness_post_add(object *objp, int type, int awareness_add
 {
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 
-	if (!objp || (objnum < 0))
+	if (objp && (objnum < 0))
 		return;
+	input_demo_append_activity_probe_message("awareness_post_add", objp,
+		"type=%d added=%d calls=%u->%u state=%u->%u",
+		type,
+		awareness_added,
+		sim_calls_entry,
+		sim_calls_after_add,
+		sim_state_entry,
+		sim_state_after_add);
 	if (input_demo_record_probe_events_active()) {
 		char json[512];
 
@@ -4440,8 +4980,17 @@ void input_demo_log_awareness_post_gate(object *objp, int type, int rng_gate_val
 {
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 
-	if (!objp || (objnum < 0))
+	if (objp && (objnum < 0))
 		return;
+	input_demo_append_activity_probe_message("awareness_post_gate", objp,
+		"type=%d rng=%d pass=%d calls=%u->%u state=%u->%u",
+		type,
+		rng_gate_value,
+		rng_gate_pass,
+		sim_calls_before,
+		sim_calls_after,
+		sim_state_before,
+		sim_state_after);
 	if (input_demo_record_probe_events_active()) {
 		char json[512];
 
@@ -4480,9 +5029,24 @@ void input_demo_log_awareness_result(object *objp, int type, const char *source_
 {
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 
-	if (!objp || (objnum < 0))
+	if (objp && (objnum < 0))
 		return;
-	if (input_demo_record_probe_events_active()) {
+	input_demo_append_activity_probe_message("awareness_result", objp,
+		"type=%d source=%s source_obj=%d aux_obj=%d added=%d skipped=%d awareness=%d->%d agitation=%d->%d gate=%d rng=%d rng_pass=%d",
+		type,
+		source_tag ? source_tag : "unset",
+		source_objnum,
+		aux_objnum,
+		awareness_added,
+		skipped_observer,
+		awareness_before,
+		awareness_after,
+		agitation_before,
+		agitation_after,
+		multiplayer_awareness_allowed,
+		rng_gate_value,
+		rng_gate_pass);
+	if (objp && input_demo_record_probe_events_active()) {
 		char json[768];
 
 		snprintf(json, sizeof(json),
@@ -4518,7 +5082,7 @@ void input_demo_log_awareness_result(object *objp, int type, const char *source_
 			(long long)GameTime64,
 			type,
 			objnum,
-			source_tag,
+			source_tag ? source_tag : "unset",
 			source_objnum,
 			aux_objnum,
 			awareness_before,
@@ -4538,7 +5102,7 @@ void input_demo_log_awareness_result(object *objp, int type, const char *source_
 		(long long)GameTime64,
 		type,
 		objnum,
-		source_tag,
+		source_tag ? source_tag : "unset",
 		source_objnum,
 		aux_objnum,
 		awareness_added,

@@ -1274,6 +1274,31 @@ int object_create_egg(object *objp)
 
 	if (rval != -1)
 	{
+		if (objp->contains_type == OBJ_POWERUP) {
+			char probe[256];
+			object *created = &Objects[rval];
+
+			snprintf(probe, sizeof(probe),
+				"source=%d/%d/%d/%d seg=%d flags=0x%x contains=%d/%d/%d created=%d/%d/%d/%d count=%d",
+				(int)(objp - Objects),
+				objp->signature,
+				objp->type,
+				objp->id,
+				objp->segnum,
+				objp->flags,
+				objp->contains_type,
+				objp->contains_id,
+				objp->contains_count,
+				rval,
+				created->signature,
+				created->id,
+				created->segnum,
+				created->flags,
+				created->ctype.powerup_info.count);
+			input_demo_append_replay_probe_message("powerup_spawn", created,
+				probe);
+		}
+
 		if ((objp->type == OBJ_PLAYER) && (objp->id == Player_num))
 			Objects[rval].flags |= OF_PLAYER_DROPPED;
 

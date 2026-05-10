@@ -985,6 +985,16 @@ _exit_cheat:
 	switch (ailp->mode) {
 		case AIM_CHASE_OBJECT: {        // chasing player, sort of, chase if far, back off if close, circle in between
 			fix circle_distance;
+			int chase_path_pre_mode = ailp->mode;
+			int chase_path_pre_goal_segment = ailp->goal_segment;
+			int chase_path_pre_path_index = aip->cur_path_index;
+			int chase_path_pre_path_length = aip->path_length;
+			int chase_path_pre_hide_index = aip->hide_index;
+			int chase_path_pre_path_dir = aip->PATH_DIR;
+			int64_t chase_path_pre_time_player_seen = ailp->time_player_seen;
+			int chase_path_gate_pass;
+			int chase_path_awareness_allowed = 1;
+			int chase_path_created = 0;
 
 			circle_distance = robptr->circle_distance[Difficulty_level] + ConsoleObject->size;
 			// Green guy doesn't get his circle distance boosted, else he might never attack.
@@ -992,17 +1002,51 @@ _exit_cheat:
 				circle_distance += (objnum&0xf) * F1_0/2;
 
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
+			chase_path_gate_pass = (player_visibility < 2) && (previous_visibility == 2);
 
 			// @mk, 12/27/94, structure here was strange.  Would do both clauses of what are now this if/then/else.  Used to be if/then, if/then.
-			if ((player_visibility < 2) && (previous_visibility == 2)) { // this is redundant: mk, 01/15/95: && (ailp->mode == AIM_CHASE_OBJECT)) {
+			if (chase_path_gate_pass) { // this is redundant: mk, 01/15/95: && (ailp->mode == AIM_CHASE_OBJECT)) {
 				if (!ai_multiplayer_awareness(obj, 53)) {
+					chase_path_awareness_allowed = 0;
+					input_demo_log_ai_chase_path_gate(obj,
+						dist_to_player,
+						previous_visibility,
+						player_visibility,
+						chase_path_gate_pass,
+						chase_path_awareness_allowed,
+						chase_path_created,
+						chase_path_pre_mode,
+						chase_path_pre_goal_segment,
+						chase_path_pre_path_index,
+						chase_path_pre_path_length,
+						chase_path_pre_hide_index,
+						chase_path_pre_path_dir,
+						chase_path_pre_time_player_seen);
 					if (maybe_ai_do_actual_firing_stuff(obj, aip))
 						ai_do_actual_firing_stuff(obj, aip, ailp, robptr, &vec_to_player, dist_to_player, &gun_point, player_visibility, object_animates, aip->CURRENT_GUN);
 					return;
 				}
 				create_path_to_player(obj, 8, 1);
+				chase_path_created = 1;
 				ai_multi_send_robot_position(objnum, -1);
-			} else if ((player_visibility == 0) && (dist_to_player > F1_0*80) && (!(Game_mode & GM_MULTI))) {
+			}
+
+			input_demo_log_ai_chase_path_gate(obj,
+				dist_to_player,
+				previous_visibility,
+				player_visibility,
+				chase_path_gate_pass,
+				chase_path_awareness_allowed,
+				chase_path_created,
+				chase_path_pre_mode,
+				chase_path_pre_goal_segment,
+				chase_path_pre_path_index,
+				chase_path_pre_path_length,
+				chase_path_pre_hide_index,
+				chase_path_pre_path_dir,
+				chase_path_pre_time_player_seen);
+
+			if ((player_visibility == 0) && (dist_to_player > F1_0*80) && (!(Game_mode & GM_MULTI))) {
 				// If pretty far from the player, player cannot be seen
 				// (obstructed) and in chase mode, switch to follow path mode.
 				// This has one desirable benefit of avoiding physics retries.
@@ -1131,6 +1175,17 @@ _exit_cheat:
 
 		case AIM_FOLLOW_PATH: {
 			int anger_level = 65;
+			int follow_path_pre_mode = ailp->mode;
+			int follow_path_pre_goal_segment = ailp->goal_segment;
+			int follow_path_pre_path_index = aip->cur_path_index;
+			int follow_path_pre_path_length = aip->path_length;
+			int follow_path_pre_hide_index = aip->hide_index;
+			int follow_path_pre_path_dir = aip->PATH_DIR;
+			int64_t follow_path_pre_time_player_seen = ailp->time_player_seen;
+			int follow_path_awareness_allowed = 1;
+			int follow_path_called = 0;
+			int follow_path_visible_chase_pass = 0;
+			int follow_path_still_pass = 0;
 
 			if (aip->behavior == AIB_STATION)
 				if (Point_segs[aip->hide_index + aip->path_length - 1].segnum == aip->hide_segment) {
@@ -1140,6 +1195,23 @@ _exit_cheat:
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 
 			if (!ai_multiplayer_awareness(obj, anger_level)) {
+				follow_path_awareness_allowed = 0;
+				input_demo_log_ai_follow_path_transition(obj,
+					dist_to_player,
+					anger_level,
+					previous_visibility,
+					player_visibility,
+					follow_path_awareness_allowed,
+					follow_path_called,
+					follow_path_visible_chase_pass,
+					follow_path_still_pass,
+					follow_path_pre_mode,
+					follow_path_pre_goal_segment,
+					follow_path_pre_path_index,
+					follow_path_pre_path_length,
+					follow_path_pre_hide_index,
+					follow_path_pre_path_dir,
+					follow_path_pre_time_player_seen);
 				if (maybe_ai_do_actual_firing_stuff(obj, aip)) {
 					compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 					ai_do_actual_firing_stuff(obj, aip, ailp, robptr, &vec_to_player, dist_to_player, &gun_point, player_visibility, object_animates, aip->CURRENT_GUN);
@@ -1148,6 +1220,7 @@ _exit_cheat:
 			}
 
 			ai_follow_path(obj, player_visibility, previous_visibility, &vec_to_player);
+			follow_path_called = 1;
 
 			if (aip->GOAL_STATE != AIS_FLIN)
 				aip->GOAL_STATE = AIS_LOCK;
@@ -1157,19 +1230,50 @@ _exit_cheat:
 			if (aip->behavior != AIB_RUN_FROM)
 				do_firing_stuff(obj, player_visibility, &vec_to_player);
 
-			if ((player_visibility == 2) && (aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_FOLLOW) && (aip->behavior != AIB_RUN_FROM) && (obj->id != ROBOT_BRAIN) && (robptr->companion != 1) && (robptr->thief != 1)) {
+			follow_path_visible_chase_pass =
+				(player_visibility == 2) &&
+				(aip->behavior != AIB_SNIPE) &&
+				(aip->behavior != AIB_FOLLOW) &&
+				(aip->behavior != AIB_RUN_FROM) &&
+				(obj->id != ROBOT_BRAIN) &&
+				(robptr->companion != 1) &&
+				(robptr->thief != 1);
+
+			if (follow_path_visible_chase_pass) {
 				if (robptr->attack_type == 0)
 					ailp->mode = AIM_CHASE_OBJECT;
 				// This should not just be distance based, but also time-since-player-seen based.
-			} else if ((dist_to_player > F1_0*(20*(2*Difficulty_level + robptr->pursuit)))
-						&& (GameTime64 - ailp->time_player_seen > (F1_0/2*(Difficulty_level+robptr->pursuit)))
-						&& (player_visibility == 0)
-						&& (aip->behavior == AIB_NORMAL)
-						&& (ailp->mode == AIM_FOLLOW_PATH)) {
+			} else {
+				follow_path_still_pass =
+					(dist_to_player > F1_0*(20*(2*Difficulty_level + robptr->pursuit))) &&
+					(GameTime64 - ailp->time_player_seen > (F1_0/2*(Difficulty_level+robptr->pursuit))) &&
+					(player_visibility == 0) &&
+					(aip->behavior == AIB_NORMAL) &&
+					(ailp->mode == AIM_FOLLOW_PATH);
+
+				if (follow_path_still_pass) {
 				ailp->mode = AIM_STILL;
 				aip->hide_index = -1;
 				aip->path_length = 0;
+				}
 			}
+
+			input_demo_log_ai_follow_path_transition(obj,
+				dist_to_player,
+				anger_level,
+				previous_visibility,
+				player_visibility,
+				follow_path_awareness_allowed,
+				follow_path_called,
+				follow_path_visible_chase_pass,
+				follow_path_still_pass,
+				follow_path_pre_mode,
+				follow_path_pre_goal_segment,
+				follow_path_pre_path_index,
+				follow_path_pre_path_length,
+				follow_path_pre_hide_index,
+				follow_path_pre_path_dir,
+				follow_path_pre_time_player_seen);
 
 			ai_multi_send_robot_position(objnum, -1);
 

@@ -31,6 +31,10 @@ void input_demo_record_wall_impact_event(struct object *weapon, int hitwall, int
 void input_demo_record_robot_damage_event(struct object *robot, int32_t damage, int32_t old_shields);
 void input_demo_record_robot_impact_event(struct object *weapon, struct object *robot);
 void input_demo_record_player_damage_event(int32_t damage, int32_t old_shields, struct object *killer, int possibly_friendly);
+void input_demo_log_weapon_robot_fvi_check(struct object *weapon, struct object *robot,
+	const struct vms_vector *p0, const struct vms_vector *p1,
+	int32_t fudged_rad, int32_t combined_rad, int32_t center_dist,
+	int32_t miss_delta, int32_t d);
 int input_demo_replay_powerup_probe_active(void);
 void input_demo_log_reactor_hit(struct object *controlcen, int32_t damage, int32_t old_shields);
 void input_demo_log_reactor_destroyed(struct object *controlcen);
@@ -134,6 +138,18 @@ void input_demo_log_ai_agitation_path_gate(struct object *objp,
 	int path_pass, int max_length, int pre_mode, int pre_goal_segment,
 	int pre_path_index, int pre_path_length, int pre_hide_index,
 	int pre_path_dir, int64_t pre_time_player_seen);
+void input_demo_log_ai_chase_path_gate(struct object *objp,
+	int dist_to_player, int previous_visibility, int player_visibility,
+	int chase_gate_pass, int awareness_allowed, int path_created,
+	int pre_mode, int pre_goal_segment, int pre_path_index,
+	int pre_path_length, int pre_hide_index, int pre_path_dir,
+	int64_t pre_time_player_seen);
+void input_demo_log_ai_follow_path_transition(struct object *objp,
+	int dist_to_player, int anger_level, int previous_visibility,
+	int player_visibility, int awareness_allowed, int follow_called,
+	int visible_chase_pass, int still_pass, int pre_mode,
+	int pre_goal_segment, int pre_path_index, int pre_path_length,
+	int pre_hide_index, int pre_path_dir, int64_t pre_time_player_seen);
 void input_demo_log_motion_fix_illegal_before(struct object *obj, int frame,
 	int hitseg, int hitside, int hitface,
 	const struct vms_vector *origin);
