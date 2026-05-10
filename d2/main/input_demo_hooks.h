@@ -118,6 +118,11 @@ void input_demo_log_ai_state(void);
 void input_demo_log_ai_frame(void);
 void input_demo_log_ai_frame_summary(int traced_robot_count);
 int input_demo_trace_ai_rng_active(struct object *obj);
+void input_demo_log_ai_fire_gate_probe(struct object *obj,
+	const char *step_label, int fire_gun, int player_visibility,
+	int dist_to_player, int dot, int dot_threshold, int roll,
+	int roll_threshold, int melee_limit, int hit_dist,
+	int object_animates);
 void input_demo_log_ai_fire_probe(struct object *obj, const char *step_label,
 	int fire_gun, int player_visibility, int dist_to_player);
 void input_demo_log_ai_rng_probe(struct object *obj, unsigned int rng_before,

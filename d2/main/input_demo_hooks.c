@@ -4673,11 +4673,112 @@ void input_demo_log_ai_frame_summary(int traced_robot_count)
 		Highest_object_index);
 }
 
+void input_demo_log_ai_fire_gate_probe(object *obj, const char *step_label,
+	int fire_gun, int player_visibility, int dist_to_player, int dot,
+	int dot_threshold, int roll, int roll_threshold, int melee_limit,
+	int hit_dist, int object_animates)
+{
+	const int objnum = obj ? (int)(obj - Objects) : -1;
+	ai_static *aip;
+	ai_local *ailp;
+	char probe[384];
+	const int last_dist = vm_vec_dist_quick(&Last_fired_upon_player_pos,
+		&Believed_player_pos);
+
+	if (!input_demo_trace_ai_visibility_active(obj) || (objnum < 0))
+		return;
+
+	aip = &obj->ctype.ai_info;
+	ailp = &Ai_local_info[objnum];
+	snprintf(probe, sizeof(probe),
+		"step=%s gun=%d vis=%d dist=%d mode=%d cur=%d goal=%d cur_gun=%d aware=%d/%d next=%d next2=%d attack=%d anim=%d dot=%d dot_gate=%d roll=%d roll_gate=%d melee=%d hit=%d last=%d segs=%d/%d/%d",
+		step_label ? step_label : "unset",
+		fire_gun,
+		player_visibility,
+		dist_to_player,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		aip->CURRENT_GUN,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		Robot_info[obj->id].attack_type,
+		object_animates,
+		dot,
+		dot_threshold,
+		roll,
+		roll_threshold,
+		melee_limit,
+		hit_dist,
+		last_dist,
+		obj->segnum,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg);
+	input_demo_append_replay_probe_message("probe_ai_fire_gate", obj, probe);
+
+	if (!input_demo_debug_is_enabled())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo AI fire gate: mode=%s frame=%u gt=%lld obj=%d sig=%d id=%d seg=%d step=%s gun=%d vis=%d dist=%d mode_ai=%d cur=%d goal=%d cur_gun=%d aware=%d/%d next=%d next2=%d attack=%d anim=%d dot=%d dot_gate=%d roll=%d roll_gate=%d melee=%d hit=%d last=%d player_seg=%d believed_seg=%d\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		objnum,
+		obj->signature,
+		obj->id,
+		obj->segnum,
+		step_label ? step_label : "unset",
+		fire_gun,
+		player_visibility,
+		dist_to_player,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		aip->CURRENT_GUN,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		Robot_info[obj->id].attack_type,
+		object_animates,
+		dot,
+		dot_threshold,
+		roll,
+		roll_threshold,
+		melee_limit,
+		hit_dist,
+		last_dist,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg);
+}
+
 void input_demo_log_ai_fire_probe(object *obj, const char *step_label,
 	int fire_gun, int player_visibility, int dist_to_player)
 {
+	char probe[256];
+	const int last_dist = vm_vec_dist_quick(&Last_fired_upon_player_pos,
+		&Believed_player_pos);
+
 	if (!obj || !input_demo_debug_is_enabled() || !input_demo_replay_is_loaded())
 		return;
+
+	snprintf(probe, sizeof(probe),
+		"step=%s gun=%d vis=%d dist=%d last_dist=%d last_fired=(%d,%d,%d) believed=(%d,%d,%d)",
+		step_label ? step_label : "unset",
+		fire_gun,
+		player_visibility,
+		dist_to_player,
+		last_dist,
+		Last_fired_upon_player_pos.x,
+		Last_fired_upon_player_pos.y,
+		Last_fired_upon_player_pos.z,
+		Believed_player_pos.x,
+		Believed_player_pos.y,
+		Believed_player_pos.z);
+	input_demo_append_replay_probe_message("probe_ai_fire", obj, probe);
 
 	con_printf(CON_NORMAL,
 		"Input demo replay AI fire: frame=%u obj=%d step=%s gun=%d vis=%d dist=%d last_dist=%d last_fired=(%d,%d,%d) believed=(%d,%d,%d)\n",
@@ -4687,7 +4788,7 @@ void input_demo_log_ai_fire_probe(object *obj, const char *step_label,
 		fire_gun,
 		player_visibility,
 		dist_to_player,
-		vm_vec_dist_quick(&Last_fired_upon_player_pos, &Believed_player_pos),
+		last_dist,
 		Last_fired_upon_player_pos.x,
 		Last_fired_upon_player_pos.y,
 		Last_fired_upon_player_pos.z,

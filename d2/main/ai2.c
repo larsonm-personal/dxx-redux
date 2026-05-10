@@ -2235,10 +2235,19 @@ vms_vector	Last_fired_upon_player_pos;
 void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robot_info *robptr, vms_vector *vec_to_player, fix dist_to_player, vms_vector *gun_point, int player_visibility, int object_animates, int gun_num)
 {
 	fix	dot;
+	const int melee_dist_limit = obj->size +
+		(ConsoleObject ? ConsoleObject->size : 0) + F1_0*2;
 	#define REPLAY_LOG_ACTUAL_FIRE(step_label, fire_gun) \
 		do { \
 			input_demo_log_ai_fire_probe(obj, step_label, fire_gun, \
 				player_visibility, dist_to_player); \
+		} while (0)
+	#define REPLAY_LOG_FIRE_GATE(step_label, fire_gun, dot_value, dot_gate, roll_value, roll_gate, melee_value, hit_value) \
+		do { \
+			input_demo_log_ai_fire_gate_probe(obj, step_label, fire_gun, \
+				player_visibility, dist_to_player, dot_value, dot_gate, \
+				roll_value, roll_gate, melee_value, hit_value, \
+				object_animates); \
 		} while (0)
 
 	if ((player_visibility == 2) || (Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD )) {
@@ -2259,24 +2268,36 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 
 				if (gun_num < Robot_info[obj->id].n_guns) {
 					if (robptr->attack_type == 1) {
-						if (!Player_exploded && (dist_to_player < obj->size + ConsoleObject->size + F1_0*2)) {		// robptr->circle_distance[Difficulty_level] + ConsoleObject->size) {
-							if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION-2))
+						if (!Player_exploded && (dist_to_player < melee_dist_limit)) {		// robptr->circle_distance[Difficulty_level] + ConsoleObject->size) {
+							if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION-2)) {
+								REPLAY_LOG_FIRE_GATE("gate_direct_awareness_blocked", gun_num,
+									dot, 7*F1_0/8, -1, -1, melee_dist_limit, -1);
 								return;
+							}
 							do_ai_robot_hit_attack(obj, ConsoleObject, &obj->pos);
 						} else {
+							REPLAY_LOG_FIRE_GATE("gate_direct_melee_blocked", gun_num,
+								dot, 7*F1_0/8, -1, -1, melee_dist_limit, -1);
 							return;
 						}
 					} else {
+						int fired_any = 0;
+
 						if ((gun_point->x == 0) && (gun_point->y == 0) && (gun_point->z == 0)) {
-							;
+							REPLAY_LOG_FIRE_GATE("gate_direct_gun_point_null", gun_num,
+								dot, 7*F1_0/8, -1, -1, -1, -1);
 						} else {
-							if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION))
+							if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION)) {
+								REPLAY_LOG_FIRE_GATE("gate_direct_awareness_blocked", gun_num,
+									dot, 7*F1_0/8, -1, -1, -1, -1);
 								return;
+							}
 							//	New, multi-weapon-type system, 06/05/95 (life is slipping away...)
 							if (gun_num != 0) {
 								if (ailp->next_fire <= 0) {
 									ai_fire_laser_at_player(obj, gun_point, gun_num, &fire_pos);
 									Last_fired_upon_player_pos = fire_pos;
+									fired_any = 1;
 									REPLAY_LOG_ACTUAL_FIRE("actual_fire_direct", gun_num);
 								}
 
@@ -2284,13 +2305,22 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 									calc_gun_point(gun_point, obj, 0);
 									ai_fire_laser_at_player(obj, gun_point, 0, &fire_pos);
 									Last_fired_upon_player_pos = fire_pos;
+									fired_any = 1;
 									REPLAY_LOG_ACTUAL_FIRE("actual_fire_direct", 0);
 								}
+
+								if (!fired_any)
+									REPLAY_LOG_FIRE_GATE("gate_direct_cooldown", gun_num,
+										dot, 7*F1_0/8, -1, -1, -1, -1);
 
 							} else if (ailp->next_fire <= 0) {
 								ai_fire_laser_at_player(obj, gun_point, gun_num, &fire_pos);
 								Last_fired_upon_player_pos = fire_pos;
+								fired_any = 1;
 								REPLAY_LOG_ACTUAL_FIRE("actual_fire_direct", gun_num);
+							} else {
+								REPLAY_LOG_FIRE_GATE("gate_direct_cooldown", gun_num,
+									dot, 7*F1_0/8, -1, -1, -1, -1);
 							}
 						}
 					}
@@ -2303,6 +2333,9 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 						 && (!robptr->attack_type)
 						 && ((ailp->mode == AIM_FOLLOW_PATH) || (ailp->mode == AIM_STILL)))
 						ailp->mode = AIM_CHASE_OBJECT;
+				} else {
+					REPLAY_LOG_FIRE_GATE("gate_direct_gun_oob", gun_num,
+						dot, 7*F1_0/8, -1, -1, -1, -1);
 				}
 
 				aip->GOAL_STATE = AIS_RECO;
@@ -2317,15 +2350,30 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 					else
 						aip->CURRENT_GUN = 1;
 				}
+			} else {
+				REPLAY_LOG_FIRE_GATE("gate_direct_dot_low", gun_num,
+					dot, 7*F1_0/8, -1, -1, -1, -1);
 			}
+		} else {
+			REPLAY_LOG_FIRE_GATE("gate_direct_not_ready", gun_num,
+				-1, 7*F1_0/8, -1, -1, -1, -1);
 		}
 	} else if ( ((!robptr->attack_type) && (Weapon_info[Robot_info[obj->id].weapon_type].homing_flag == 1)) || (((Robot_info[obj->id].weapon_type2 != -1) && (Weapon_info[Robot_info[obj->id].weapon_type2].homing_flag == 1))) ) {
-		//	Robots which fire homing weapons might fire even if they don't have a bead on the player.
+		const int hit_dist = vm_vec_dist_quick(&Hit_pos, &obj->pos);
+
 		if (((!object_animates) || (ailp->achieved_state[aip->CURRENT_GUN] == AIS_FIRE))
-				 && (((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0)) || ((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)))
-				 && (vm_vec_dist_quick(&Hit_pos, &obj->pos) > F1_0*40)) {
-			if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION) || IS_VEC_NULL(gun_point))
+					&& (((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0)) || ((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)))
+					&& (hit_dist > F1_0*40)) {
+			if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION)) {
+				REPLAY_LOG_FIRE_GATE("gate_homing_awareness_blocked", gun_num,
+					-1, -1, -1, -1, -1, hit_dist);
 				return;
+			}
+			if (IS_VEC_NULL(gun_point)) {
+				REPLAY_LOG_FIRE_GATE("gate_homing_gun_point_null", gun_num,
+					-1, -1, -1, -1, -1, hit_dist);
+				return;
+			}
 			ai_fire_laser_at_player(obj, gun_point, gun_num, &Believed_player_pos);
 
 			aip->GOAL_STATE = AIS_RECO;
@@ -2336,15 +2384,20 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 			if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
 				aip->CURRENT_GUN = 0;
 		} else {
+			REPLAY_LOG_FIRE_GATE("gate_homing_preconditions", gun_num,
+				-1, -1, -1, -1, -1, hit_dist);
 			// Switch to next gun for next fire.
 			aip->CURRENT_GUN++;
 			if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
 				aip->CURRENT_GUN = 0;
 		}
 	} else {
+		const int blind_roll = d_rand()/2;
+		const int blind_threshold = fixmul(FrameTime,
+			(Difficulty_level << 12) + 0x4000);
 		vms_vector	vec_to_last_pos;
 
-		if (d_rand()/2 < fixmul(FrameTime, (Difficulty_level << 12) + 0x4000)) {
+		if (blind_roll < blind_threshold) {
 			if ((!object_animates || ready_to_fire(robptr, ailp)) && (Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD)) {
 				vm_vec_normalized_dir_quick(&vec_to_last_pos, &Believed_player_pos, &obj->pos);
 				dot = vm_vec_dot(&obj->orient.fvec, &vec_to_last_pos);
@@ -2352,35 +2405,62 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 
 					if (aip->CURRENT_GUN < Robot_info[obj->id].n_guns) {
 						if (robptr->attack_type == 1) {
-							if (!Player_exploded && (dist_to_player < obj->size + ConsoleObject->size + F1_0*2)) {		// robptr->circle_distance[Difficulty_level] + ConsoleObject->size) {
-								if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION-2))
+							if (!Player_exploded && (dist_to_player < melee_dist_limit)) {		// robptr->circle_distance[Difficulty_level] + ConsoleObject->size) {
+								if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION-2)) {
+									REPLAY_LOG_FIRE_GATE("gate_blind_awareness_blocked", gun_num,
+										dot, 7*F1_0/8, blind_roll, blind_threshold,
+										melee_dist_limit, -1);
 									return;
+								}
 								do_ai_robot_hit_attack(obj, ConsoleObject, &obj->pos);
 							} else {
+								REPLAY_LOG_FIRE_GATE("gate_blind_melee_blocked", gun_num,
+									dot, 7*F1_0/8, blind_roll, blind_threshold,
+									melee_dist_limit, -1);
 								return;
 							}
 						} else {
+							int fired_any = 0;
+
 							if ((gun_point->x == 0) && (gun_point->y == 0) && (gun_point->z == 0)) {
-								;
+								REPLAY_LOG_FIRE_GATE("gate_blind_gun_point_null", gun_num,
+									dot, 7*F1_0/8, blind_roll, blind_threshold, -1,
+									-1);
 							} else {
-								if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION))
+								if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION)) {
+									REPLAY_LOG_FIRE_GATE("gate_blind_awareness_blocked", gun_num,
+										dot, 7*F1_0/8, blind_roll, blind_threshold,
+										-1, -1);
 									return;
+								}
 								//	New, multi-weapon-type system, 06/05/95 (life is slipping away...)
 								if (gun_num != 0) {
 									if (ailp->next_fire <= 0) {
 										ai_fire_laser_at_player(obj, gun_point, gun_num, &Last_fired_upon_player_pos);
+										fired_any = 1;
 										REPLAY_LOG_ACTUAL_FIRE("actual_fire_blind", gun_num);
 									}
 
 									if ((ailp->next_fire2 <= 0) && (robptr->weapon_type2 != -1)) {
 										calc_gun_point(gun_point, obj, 0);
 										ai_fire_laser_at_player(obj, gun_point, 0, &Last_fired_upon_player_pos);
+										fired_any = 1;
 										REPLAY_LOG_ACTUAL_FIRE("actual_fire_blind", 0);
 									}
 
+									if (!fired_any)
+										REPLAY_LOG_FIRE_GATE("gate_blind_cooldown", gun_num,
+											dot, 7*F1_0/8, blind_roll, blind_threshold,
+											-1, -1);
+
 								} else if (ailp->next_fire <= 0) {
 									ai_fire_laser_at_player(obj, gun_point, gun_num, &Last_fired_upon_player_pos);
+									fired_any = 1;
 									REPLAY_LOG_ACTUAL_FIRE("actual_fire_blind", gun_num);
+								} else {
+									REPLAY_LOG_FIRE_GATE("gate_blind_cooldown", gun_num,
+										dot, 7*F1_0/8, blind_roll, blind_threshold,
+										-1, -1);
 								}
 							}
 						}
@@ -2388,6 +2468,9 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 						//	Wants to fire, so should go into chase mode, probably.
 						if ( (aip->behavior != AIB_RUN_FROM) && (aip->behavior != AIB_STILL) && (aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_FOLLOW) && ((ailp->mode == AIM_FOLLOW_PATH) || (ailp->mode == AIM_STILL)))
 							ailp->mode = AIM_CHASE_OBJECT;
+					} else {
+						REPLAY_LOG_FIRE_GATE("gate_blind_gun_oob", gun_num,
+							dot, 7*F1_0/8, blind_roll, blind_threshold, -1, -1);
 					}
 					aip->GOAL_STATE = AIS_RECO;
 					ailp->goal_state[aip->CURRENT_GUN] = AIS_RECO;
@@ -2401,10 +2484,20 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 						else
 							aip->CURRENT_GUN = 1;
 					}
+				} else {
+					REPLAY_LOG_FIRE_GATE("gate_blind_dot_low", gun_num,
+						dot, 7*F1_0/8, blind_roll, blind_threshold, -1, -1);
 				}
+			} else {
+				REPLAY_LOG_FIRE_GATE("gate_blind_preconditions", gun_num,
+					-1, 7*F1_0/8, blind_roll, blind_threshold, -1, -1);
 			}
+		} else {
+			REPLAY_LOG_FIRE_GATE("gate_blind_roll", gun_num,
+				-1, 7*F1_0/8, blind_roll, blind_threshold, -1, -1);
 		}
 	}
+	#undef REPLAY_LOG_FIRE_GATE
 	#undef REPLAY_LOG_ACTUAL_FIRE
 }
 
