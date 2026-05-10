@@ -69,6 +69,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "input_demo_hooks.h"
 #include "input_demo_energy_trace.h"
+#include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_rng_trace.h"
@@ -106,6 +107,90 @@ object Objects[MAX_OBJECTS];
 int num_objects=0;
 int Highest_object_index=0;
 int Highest_ever_object_index=0;
+
+static int input_demo_allocator_probe_active(void)
+{
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+}
+
+static int input_demo_current_move_objnum = -1;
+static int input_demo_current_move_signature = -1;
+static int input_demo_current_move_type = -1;
+static int input_demo_current_move_id = -1;
+static int input_demo_current_move_segnum = -1;
+static int input_demo_current_move_control_type = -1;
+
+static void input_demo_log_allocator_event(const char *step, int objnum,
+	object *objp, int type, int id, int signature, int segnum, int flags)
+{
+	char message[384];
+	const int free0 = (num_objects < MAX_OBJECTS) ? free_obj_list[num_objects] : -1;
+	const int free1 = (num_objects + 1 < MAX_OBJECTS) ? free_obj_list[num_objects + 1] : -1;
+	const int free2 = (num_objects + 2 < MAX_OBJECTS) ? free_obj_list[num_objects + 2] : -1;
+	const int free3 = (num_objects + 3 < MAX_OBJECTS) ? free_obj_list[num_objects + 3] : -1;
+
+	if (!step || !input_demo_allocator_probe_active())
+		return;
+
+	snprintf(message, sizeof(message),
+		"step=%s slot=%d type=%d id=%d sig=%d seg=%d flags=0x%x num=%d highest=%d sig_seed=%d free0=%d free1=%d free2=%d free3=%d ctx_obj=%d ctx_sig=%d ctx_type=%d ctx_id=%d ctx_seg=%d ctx_control=%d",
+		step,
+		objnum,
+		type,
+		id,
+		signature,
+		segnum,
+		flags,
+		num_objects,
+		Highest_object_index,
+		object_signature_seed,
+		free0,
+		free1,
+		free2,
+		free3,
+		input_demo_current_move_objnum,
+		input_demo_current_move_signature,
+		input_demo_current_move_type,
+		input_demo_current_move_id,
+		input_demo_current_move_segnum,
+		input_demo_current_move_control_type);
+	message[sizeof(message) - 1] = 0;
+	input_demo_append_replay_probe_message("allocator", objp, message);
+}
+
+static void input_demo_log_small_fireball_event(const char *step,
+	object *source_obj, int sound_flag, fix size_scale, fix size,
+	int segnum, const vms_vector *pos, object *spawned_obj)
+{
+	char message[512];
+
+	if (!step || !source_obj || !pos || !input_demo_allocator_probe_active())
+		return;
+
+	snprintf(message, sizeof(message),
+		"step=%s source=%d/%d/%d/%d/%d flags=0x%x sound=%d size_scale=%d size=%d seg=%d pos=(%d,%d,%d) spawned=%d/%d/%d/%d/%d",
+		step,
+		source_obj - Objects,
+		source_obj->signature,
+		source_obj->type,
+		source_obj->id,
+		source_obj->segnum,
+		source_obj->flags,
+		sound_flag,
+		size_scale,
+		size,
+		segnum,
+		pos->x,
+		pos->y,
+		pos->z,
+		spawned_obj ? (int)(spawned_obj - Objects) : -1,
+		spawned_obj ? spawned_obj->signature : -1,
+		spawned_obj ? spawned_obj->type : -1,
+		spawned_obj ? spawned_obj->id : -1,
+		spawned_obj ? spawned_obj->segnum : -1);
+	input_demo_append_replay_probe_message("small_fireball",
+		spawned_obj ? spawned_obj : source_obj, message);
+}
 
 // grs_bitmap *robot_bms[MAX_ROBOT_BITMAPS];	//all bitmaps for all robots
 
@@ -802,8 +887,13 @@ void create_small_fireball_on_object(object *objp, fix size_scale, int sound_fla
 	if (segnum != -1) {
 		object *expl_obj;
 		expl_obj = object_create_explosion(segnum, &pos, size, VCLIP_SMALL_EXPLOSION);
-		if (!expl_obj)
+		if (!expl_obj) {
+			input_demo_log_small_fireball_event("create_failed", objp,
+				sound_flag, size_scale, size, segnum, &pos, NULL);
 			return;
+		}
+		input_demo_log_small_fireball_event("create", objp, sound_flag,
+			size_scale, size, segnum, &pos, expl_obj);
 		obj_attach(objp,expl_obj);
 		if (d_rand_fx() < 8192) {
 			fix	vol = F1_0/2;
@@ -1540,6 +1630,9 @@ int obj_create(enum object_type_t type,ubyte id,int segnum,const vms_vector *pos
 	if (obj->type == OBJ_DEBRIS)
 		Debris_object_count++;
 
+	input_demo_log_allocator_event("create", objnum, obj, obj->type,
+		obj->id, obj->signature, obj->segnum, obj->flags);
+
 	return objnum;
 }
 
@@ -1582,6 +1675,11 @@ void obj_delete(int objnum)
 {
 	int pnum;
 	object *obj = &Objects[objnum];
+	const int old_type = obj->type;
+	const int old_id = obj->id;
+	const int old_signature = obj->signature;
+	const int old_segnum = obj->segnum;
+	const int old_flags = obj->flags;
 
 	Assert(objnum != -1);
 	Assert(objnum != 0 );
@@ -1623,6 +1721,8 @@ void obj_delete(int objnum)
 	obj->segnum=-1;				// zero it!
 
 	obj_free(objnum);
+	input_demo_log_allocator_event("delete", objnum, NULL, old_type,
+		old_id, old_signature, old_segnum, old_flags);
 }
 
 #define	DEATH_SEQUENCE_LENGTH			(F1_0*5)
@@ -2430,7 +2530,19 @@ void object_move_all()
 	#ifndef DEMO_ONLY
 	for (i=0;i<=Highest_object_index;i++) {
 		if ( (objp->type != OBJ_NONE) && (!(objp->flags&OF_SHOULD_BE_DEAD)) )	{
+			input_demo_current_move_objnum = i;
+			input_demo_current_move_signature = objp->signature;
+			input_demo_current_move_type = objp->type;
+			input_demo_current_move_id = objp->id;
+			input_demo_current_move_segnum = objp->segnum;
+			input_demo_current_move_control_type = objp->control_type;
 			object_move_one( objp );
+			input_demo_current_move_objnum = -1;
+			input_demo_current_move_signature = -1;
+			input_demo_current_move_type = -1;
+			input_demo_current_move_id = -1;
+			input_demo_current_move_segnum = -1;
+			input_demo_current_move_control_type = -1;
 		}
 		objp++;
 	}

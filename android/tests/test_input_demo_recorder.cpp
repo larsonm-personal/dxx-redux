@@ -682,6 +682,14 @@ static int expect_record_and_flush_diag(void)
 	diag.awareness_events = 7;
 	diag.player_weapon_count = 2;
 	diag.player_weapon_hash = 123456789u;
+	diag.live_object_count = 219;
+	diag.live_object_hash = 987654321u;
+	diag.robot_object_count = 93;
+	diag.robot_state_hash = 314159265u;
+	diag.fireball_object_count = 17;
+	diag.fireball_state_hash = 271828182u;
+	diag.debris_object_count = 4;
+	diag.debris_state_hash = 42424242u;
 	diag.player_weapon_obj0 = 58;
 	diag.player_weapon_sig0 = 19479;
 	diag.player_weapon_id0 = 32;
@@ -723,6 +731,8 @@ static int expect_record_and_flush_diag(void)
 	}
 	if (text.find("\"diag\":{\"awareness_events\":7") == std::string::npos ||
 		text.find("\"player_weapon_count\":2") == std::string::npos ||
+		text.find("\"live_object_count\":219") == std::string::npos ||
+		text.find("\"debris_state_hash\":42424242") == std::string::npos ||
 		text.find("\"player_weapon_obj0\":58") == std::string::npos ||
 		text.find("\"player_weapon_obj1\":115") == std::string::npos) {
 		remove(demo_path.c_str());
@@ -740,7 +750,9 @@ static int expect_record_and_flush_diag(void)
 	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	if (parsed.frames.size() != 1 || !parsed.frames[0].has_diag ||
+		parsed.frames[0].diag_json.find("\"live_object_hash\":987654321") == std::string::npos ||
 		parsed.frames[0].diag_json.find("\"player_weapon_hash\":123456789") == std::string::npos ||
+		parsed.frames[0].diag_json.find("\"fireball_object_count\":17") == std::string::npos ||
 		parsed.frames[0].diag_json.find("\"player_weapon_obj1\":115") == std::string::npos)
 		return report_failure("diag recorder demo round trip mismatch");
 	return 0;

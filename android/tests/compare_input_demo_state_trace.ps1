@@ -64,6 +64,82 @@ function Format-CompareValue {
     return [string]$Value
 }
 
+function Normalize-DiagSentinels {
+    param([hashtable]$Diag)
+
+    if (-not ($Diag -is [System.Collections.IDictionary])) {
+        return
+    }
+
+    foreach ($prefix in @('ai_probe_skip', 'ai_probe_timeslice', 'ai_probe_process')) {
+        $countKey = "${prefix}_count"
+        if (-not $Diag.Contains($countKey) -or [int]$Diag[$countKey] -ne 0) {
+            continue
+        }
+        foreach ($suffix in @('obj', 'sig', 'id')) {
+            $Diag["${prefix}_$suffix"] = -1
+        }
+    }
+
+    if ($Diag.Contains('ai_probe_phys_skip_count') -and [int]$Diag.ai_probe_phys_skip_count -eq 0) {
+        foreach ($key in @('ai_probe_phys_skip_obj', 'ai_probe_phys_skip_sig', 'ai_probe_phys_skip_id', 'ai_probe_phys_skip_before', 'ai_probe_phys_skip_after')) {
+            $Diag[$key] = -1
+        }
+    }
+}
+
+function Compare-JsonExpectedSubset {
+    param(
+        [object]$Expected,
+        [object]$Actual,
+        [string]$Path = 'diag'
+    )
+
+    $diffs = New-Object System.Collections.Generic.List[string]
+
+    if ($Expected -is [System.Collections.IDictionary]) {
+        if (-not ($Actual -is [System.Collections.IDictionary])) {
+            $diffs.Add("${Path}: expected object, actual $(Format-CompareValue -Value $Actual)")
+            return $diffs
+        }
+
+        foreach ($key in $Expected.Keys) {
+            if (-not $Actual.Contains($key)) {
+                $diffs.Add("${Path}.${key}: missing from actual trace")
+                continue
+            }
+            $nested = Compare-JsonExpectedSubset -Expected $Expected[$key] -Actual $Actual[$key] -Path "${Path}.${key}"
+            foreach ($line in $nested) {
+                $diffs.Add($line)
+            }
+        }
+        return $diffs
+    }
+
+    if ($Expected -is [System.Collections.IList] -and -not ($Expected -is [string])) {
+        if (-not ($Actual -is [System.Collections.IList])) {
+            $diffs.Add("${Path}: expected array, actual $(Format-CompareValue -Value $Actual)")
+            return $diffs
+        }
+        if ($Expected.Count -ne $Actual.Count) {
+            $diffs.Add("${Path}: expected array length $($Expected.Count), actual $($Actual.Count)")
+        }
+        $maxShared = [Math]::Min($Expected.Count, $Actual.Count)
+        for ($index = 0; $index -lt $maxShared; $index++) {
+            $nested = Compare-JsonExpectedSubset -Expected $Expected[$index] -Actual $Actual[$index] -Path "${Path}[$index]"
+            foreach ($line in $nested) {
+                $diffs.Add($line)
+            }
+        }
+        return $diffs
+    }
+
+    if ($Expected -ne $Actual) {
+        $diffs.Add("${Path}: expected $(Format-CompareValue -Value $Expected), actual $(Format-CompareValue -Value $Actual)")
+    }
+    return $diffs
+}
+
 function Compare-JsonDiff {
     param(
         [object]$Expected,
@@ -201,6 +277,7 @@ function Read-StateTraceFrames {
                 $item.rng = $record.rng
             }
             if ($record.ContainsKey('diag')) {
+                Normalize-DiagSentinels -Diag $record.diag
                 $item.diag = $record.diag
             }
             $frames[[string]$frame] = $item
@@ -211,6 +288,9 @@ function Read-StateTraceFrames {
         }
         if (-not $record.ContainsKey('state')) {
             continue
+        }
+        if ($record.ContainsKey('diag')) {
+            Normalize-DiagSentinels -Diag $record.diag
         }
         $traceFrame = [int]$record.f
         if (-not (Test-FrameInRange -Frame $traceFrame)) {
@@ -246,18 +326,39 @@ foreach ($frameKey in (@($expectedFrames.Keys) | Sort-Object { [int]$_ })) {
     $compared++
 
     if ($CompareFrameMetadata) {
-        foreach ($key in @('ft', 'rng')) {
-            if ($expected.Contains($key)) {
-                $metadataDiffs = Compare-JsonDiff -Expected $expected[$key] -Actual $actual[$key] -Path $key
-                if ($metadataDiffs.Count -gt 0) {
-                    foreach ($metadataDiff in $metadataDiffs) {
-                        $mismatches.Add("frame=$frame $metadataDiff")
-                        if ($mismatches.Count -ge $MaxMismatches) {
-                            break
-                        }
-                    }
-                    break
+        foreach ($key in @('ft', 'rng', 'diag')) {
+            $expectedHas = $expected.Contains($key)
+            $actualHas = $actual.Contains($key)
+            if (-not $expectedHas -and -not $actualHas) {
+                continue
+            }
+            if ($key -eq 'diag') {
+                if (-not $expectedHas) {
+                    continue
                 }
+                if (-not $actualHas) {
+                    $metadataDiffs = [System.Collections.Generic.List[string]]::new()
+                    $metadataDiffs.Add('diag: missing from actual trace')
+                } else {
+                    $metadataDiffs = Compare-JsonExpectedSubset -Expected $expected[$key] -Actual $actual[$key] -Path $key
+                }
+            } elseif ($expectedHas -and $actualHas) {
+                $metadataDiffs = Compare-JsonDiff -Expected $expected[$key] -Actual $actual[$key] -Path $key
+            } elseif ($expectedHas) {
+                $metadataDiffs = [System.Collections.Generic.List[string]]::new()
+                $metadataDiffs.Add("${key}: missing from actual trace")
+            } else {
+                $metadataDiffs = [System.Collections.Generic.List[string]]::new()
+                $metadataDiffs.Add("${key}: extra in actual trace = $(Format-CompareValue -Value $actual[$key])")
+            }
+            if ($metadataDiffs.Count -gt 0) {
+                foreach ($metadataDiff in $metadataDiffs) {
+                    $mismatches.Add("frame=$frame $metadataDiff")
+                    if ($mismatches.Count -ge $MaxMismatches) {
+                        break
+                    }
+                }
+                break
             }
         }
     }

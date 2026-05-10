@@ -134,6 +134,125 @@ static void input_demo_capture_player_weapon_diag(input_demo_state_trace_diag *d
 	}
 }
 
+static unsigned int input_demo_state_trace_hash_object(unsigned int hash,
+	const object *obj)
+{
+	if (!obj)
+		return hash;
+
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->signature);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->type);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->id);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->segnum);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->control_type);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->movement_type);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->render_type);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->flags);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->size);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->shields);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->lifeleft);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->attached_obj);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->pos.x);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->pos.y);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->pos.z);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->last_pos.x);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->last_pos.y);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int)obj->last_pos.z);
+
+	if (obj->movement_type == MT_PHYSICS) {
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.velocity.x);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.velocity.y);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.velocity.z);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.rotvel.x);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.rotvel.y);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.rotvel.z);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.mass);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.drag);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.brakes);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.turnroll);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->mtype.phys_info.flags);
+	}
+
+	if (obj->type == OBJ_WEAPON) {
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->ctype.laser_info.parent_type);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->ctype.laser_info.parent_num);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->ctype.laser_info.parent_signature);
+	}
+
+	if (obj->render_type == RT_POLYOBJ) {
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->rtype.pobj_info.model_num);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->rtype.pobj_info.subobj_flags);
+		hash = input_demo_state_trace_hash_update(hash,
+			(unsigned int)obj->rtype.pobj_info.tmap_override);
+	}
+
+	return hash;
+}
+
+static void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
+{
+	int i;
+
+	if (!diag)
+		return;
+
+	for (i = 0; i <= Highest_object_index; ++i) {
+		object *obj = &Objects[i];
+
+		if (obj->type == OBJ_NONE)
+			continue;
+		if (obj->flags & OF_SHOULD_BE_DEAD)
+			continue;
+
+		diag->live_object_count++;
+		diag->live_object_hash = input_demo_state_trace_hash_object(
+			diag->live_object_hash, obj);
+
+		switch (obj->type) {
+			case OBJ_ROBOT:
+				diag->robot_object_count++;
+				diag->robot_state_hash = input_demo_state_trace_hash_object(
+					diag->robot_state_hash, obj);
+				if (Ai_local_info[i].player_awareness_type > 0)
+					diag->camera_awake_robots++;
+				if (obj->ctype.ai_info.danger_laser_num != -1)
+					diag->danger_laser_robots++;
+				break;
+			case OBJ_WEAPON:
+				diag->weapon_object_count++;
+				diag->weapon_state_hash = input_demo_state_trace_hash_object(
+					diag->weapon_state_hash, obj);
+				break;
+			case OBJ_FIREBALL:
+				diag->fireball_object_count++;
+				diag->fireball_state_hash = input_demo_state_trace_hash_object(
+					diag->fireball_state_hash, obj);
+				break;
+			case OBJ_DEBRIS:
+				diag->debris_object_count++;
+				diag->debris_state_hash = input_demo_state_trace_hash_object(
+					diag->debris_state_hash, obj);
+				break;
+		}
+	}
+}
+
 void input_demo_record_game_frame(void)
 {
 	input_demo_control_state state;
@@ -186,19 +305,22 @@ void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
 	memset(diag, 0, sizeof(*diag));
 	diag->awareness_events = Num_awareness_events;
 	diag->d_tick_count = d_tick_count;
+	diag->ai_probe_skip_obj = -1;
+	diag->ai_probe_skip_sig = -1;
+	diag->ai_probe_skip_id = -1;
+	diag->ai_probe_timeslice_obj = -1;
+	diag->ai_probe_timeslice_sig = -1;
+	diag->ai_probe_timeslice_id = -1;
+	diag->ai_probe_process_obj = -1;
+	diag->ai_probe_process_sig = -1;
+	diag->ai_probe_process_id = -1;
+	diag->ai_probe_phys_skip_obj = -1;
+	diag->ai_probe_phys_skip_sig = -1;
+	diag->ai_probe_phys_skip_id = -1;
+	diag->ai_probe_phys_skip_before = -1;
+	diag->ai_probe_phys_skip_after = -1;
+	input_demo_capture_object_state_diag(diag);
 	input_demo_capture_player_weapon_diag(diag);
-	for (i = 0; i <= Highest_object_index; ++i) {
-		object *obj = &Objects[i];
-
-		if (obj->type != OBJ_ROBOT)
-			continue;
-		if (obj->flags & OF_SHOULD_BE_DEAD)
-			continue;
-		if (Ai_local_info[i].player_awareness_type > 0)
-			diag->camera_awake_robots++;
-		if (obj->ctype.ai_info.danger_laser_num != -1)
-			diag->danger_laser_robots++;
-	}
 }
 
 int input_demo_trace_collision_pose_active(void)

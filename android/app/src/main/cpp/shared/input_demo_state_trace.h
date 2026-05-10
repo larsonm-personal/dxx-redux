@@ -23,6 +23,16 @@ typedef struct input_demo_state_trace_diag {
 	int32_t player_last_z;
 	int32_t player_weapon_count;
 	uint32_t player_weapon_hash;
+	int32_t live_object_count;
+	uint32_t live_object_hash;
+	int32_t robot_object_count;
+	uint32_t robot_state_hash;
+	int32_t weapon_object_count;
+	uint32_t weapon_state_hash;
+	int32_t fireball_object_count;
+	uint32_t fireball_state_hash;
+	int32_t debris_object_count;
+	uint32_t debris_state_hash;
 	int32_t player_weapon_obj0;
 	int32_t player_weapon_sig0;
 	int32_t player_weapon_id0;

@@ -116,6 +116,16 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["player_last_z"] = diag.player_last_z;
 	root["player_weapon_count"] = diag.player_weapon_count;
 	root["player_weapon_hash"] = diag.player_weapon_hash;
+	root["live_object_count"] = diag.live_object_count;
+	root["live_object_hash"] = diag.live_object_hash;
+	root["robot_object_count"] = diag.robot_object_count;
+	root["robot_state_hash"] = diag.robot_state_hash;
+	root["weapon_object_count"] = diag.weapon_object_count;
+	root["weapon_state_hash"] = diag.weapon_state_hash;
+	root["fireball_object_count"] = diag.fireball_object_count;
+	root["fireball_state_hash"] = diag.fireball_state_hash;
+	root["debris_object_count"] = diag.debris_object_count;
+	root["debris_state_hash"] = diag.debris_state_hash;
 	root["player_weapon_obj0"] = diag.player_weapon_obj0;
 	root["player_weapon_sig0"] = diag.player_weapon_sig0;
 	root["player_weapon_id0"] = diag.player_weapon_id0;

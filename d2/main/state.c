@@ -559,6 +559,29 @@ static void state_read_afterburner_runtime_state(PHYSFS_file *fp, int swap, int 
 	}
 }
 
+static void state_log_checkpoint_allocator_snapshot(const char *label,
+	const object_runtime_state *object_state)
+{
+	char message[256];
+
+	if (!label || !object_state)
+		return;
+
+	snprintf(message, sizeof(message),
+		"stage=%s num=%d highest=%d sig_seed=%d free0=%d free1=%d free2=%d free3=%d",
+		label,
+		object_state->num_objects,
+		object_state->highest_object_index,
+		object_state->signature_seed,
+		object_state->free_obj_list[0],
+		object_state->free_obj_list[1],
+		object_state->free_obj_list[2],
+		object_state->free_obj_list[3]);
+	message[sizeof(message) - 1] = 0;
+	input_demo_append_replay_probe_message("checkpoint_allocator", NULL,
+		message);
+}
+
 static void state_write_runtime_state(PHYSFS_file *fp)
 {
 	object_runtime_state object_state;
@@ -689,6 +712,7 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	d_rand_reset_call_count();
 	game_set_d_tick_state(&d_tick_state);
 	object_set_runtime_state(&object_state);
+	state_log_checkpoint_allocator_snapshot("post_apply", &object_state);
 	if (version >= STATE_AI_PATH_RUNTIME_VERSION)
 		ai_path_set_runtime_state(&ai_path_state);
 	laser_set_runtime_state(&laser_state);
@@ -2297,8 +2321,14 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		for (i=0; i<=Highest_object_index; i++)
 			Objects[i].signature = i + 1;
 
-	if (!state_restore_segment_object_links())
+	if (!state_restore_segment_object_links()) {
+		input_demo_append_replay_probe_message("checkpoint_object_links", NULL,
+			"restore=invalid fallback=relink_by_index");
 		state_relink_objects_by_index();
+	} else {
+		input_demo_append_replay_probe_message("checkpoint_object_links", NULL,
+			"restore=ok");
+	}
 
 	for (i=0; i<=Highest_object_index; i++ )	{
 		obj = &Objects[i];

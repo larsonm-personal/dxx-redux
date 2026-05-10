@@ -173,6 +173,92 @@ static void input_demo_log_replay_weapon_robot_resolution(const char *kind,
 	input_demo_append_replay_probe_message(kind, robot, probe);
 }
 
+static void input_demo_log_weapon_robot_path_event(const char *step,
+	object *weapon,
+	object *robot,
+	const vms_vector *collision_point,
+	int damage_flag,
+	int boss_invul_flag,
+	int vclip_type,
+	object *expl_obj)
+{
+	char probe[512];
+	const int should_log = weapon &&
+		(input_demo_replay_collision_probe_active() ||
+			weapon->ctype.laser_info.parent_num == Players[Player_num].objnum);
+
+	if (!step || !should_log || !robot ||
+		weapon->type != OBJ_WEAPON || robot->type != OBJ_ROBOT)
+		return;
+
+	snprintf(probe, sizeof(probe),
+		"step=%s weapon_parent_type=%d parent=%d parent_sig=%d damage_flag=%d boss_invul=%d robot_flags=0x%x robot_shields=%d robot_seg=%d vclip=%d expl_obj=%d expl_sig=%d expl_id=%d expl_seg=%d cp=(%d,%d,%d)",
+		step,
+		weapon->ctype.laser_info.parent_type,
+		weapon->ctype.laser_info.parent_num,
+		weapon->ctype.laser_info.parent_signature,
+		damage_flag,
+		boss_invul_flag,
+		robot->flags,
+		robot->shields,
+		robot->segnum,
+		vclip_type,
+		expl_obj ? (int)(expl_obj - Objects) : -1,
+		expl_obj ? expl_obj->signature : -1,
+		expl_obj ? expl_obj->id : -1,
+		expl_obj ? expl_obj->segnum : -1,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+	input_demo_append_replay_probe_message("weapon_robot_path", weapon, probe);
+}
+
+static void input_demo_log_debris_collision_event(const char *step,
+	object *debris,
+	object *weapon,
+	fix hitspeed,
+	short hitseg,
+	short hitwall,
+	const vms_vector *collision_point)
+{
+	char probe[512];
+	int wall_damage = 0;
+
+	if (!step || !debris ||
+		!(input_demo_recorder_is_active() || input_demo_replay_is_loaded()))
+		return;
+
+	if (hitseg >= 0 && hitwall >= 0)
+		wall_damage = TmapInfo[Segments[hitseg].sides[hitwall].tmap_num].damage;
+
+	snprintf(probe, sizeof(probe),
+		"step=%s debris=%d/%d/%d/%d/%d life=%d size=%d flags=0x%x phys=0x%x hitspeed=%d hitseg=%d hitwall=%d wall_damage=%d persistent=%d weapon=%d/%d/%d/%d/%d cp=(%d,%d,%d)",
+		step,
+		debris - Objects,
+		debris->signature,
+		debris->type,
+		debris->id,
+		debris->segnum,
+		debris->lifeleft,
+		debris->size,
+		debris->flags,
+		debris->mtype.phys_info.flags,
+		hitspeed,
+		hitseg,
+		hitwall,
+		wall_damage,
+		PERSISTENT_DEBRIS,
+		weapon ? (int)(weapon - Objects) : -1,
+		weapon ? weapon->signature : -1,
+		weapon ? weapon->type : -1,
+		weapon ? weapon->id : -1,
+		weapon ? weapon->segnum : -1,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+	input_demo_append_replay_probe_message("debris_collision", debris, probe);
+}
+
 static int input_demo_disable_homing_player_bump(void)
 {
 	static int initialized;
@@ -1066,8 +1152,11 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 //##}
 
 void collide_debris_and_wall( object * debris, fix hitspeed, short hitseg, short hitwall, vms_vector * hitpt)	{
-	if (!PERSISTENT_DEBRIS || TmapInfo[Segments[hitseg].sides[hitwall].tmap_num].damage)
+	if (!PERSISTENT_DEBRIS || TmapInfo[Segments[hitseg].sides[hitwall].tmap_num].damage) {
+		input_demo_log_debris_collision_event("wall_hit", debris, NULL,
+			hitspeed, hitseg, hitwall, hitpt);
 		explode_object(debris,0);
+	}
 	return;
 }
 
@@ -1898,12 +1987,14 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 	//	unless this is trapped elsewhere.
 	if ( Weapon_info[weapon->id].damage_radius )
 	{
+		object *badass_expl_obj = NULL;
+		const int badass_vclip = Weapon_info[weapon->id].robot_hit_vclip;
 		if (boss_invul_flag) {			//don't make badass sound
 			weapon_info *wi = &Weapon_info[weapon->id];
 
 			//this code copied from explode_badass_weapon()
 
-			object_create_badass_explosion( weapon, weapon->segnum, collision_point,
+			badass_expl_obj = object_create_badass_explosion( weapon, weapon->segnum, collision_point,
 							wi->impact_size,
 							wi->robot_hit_vclip,
 							wi->strength[Difficulty_level],
@@ -1912,15 +2003,21 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 		}
 		else		//normal badass explosion
-			explode_badass_weapon(weapon,collision_point);
+			badass_expl_obj = explode_badass_weapon(weapon,collision_point);
+		input_demo_log_weapon_robot_path_event("badass_explosion", weapon,
+			robot, collision_point, damage_flag, boss_invul_flag,
+			badass_vclip, badass_expl_obj);
 	}
 
 	if ( ((weapon->ctype.laser_info.parent_type==OBJ_PLAYER) || cheats.robotskillrobots) && !(robot->flags & OF_EXPLODING) )	{
 		object *expl_obj=NULL;
+		int impact_vclip = -1;
 
 		input_demo_debug_log_weapon_robot_path_probe("accept", (void *)weapon, (void *)robot, (void *)collision_point);
 input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *)robot, (void *)collision_point);
 			input_demo_debug_log_weapon_robot_accept_seq((void *)weapon, (void *)robot);
+		input_demo_log_weapon_robot_path_event("accept_pre", weapon, robot,
+			collision_point, damage_flag, boss_invul_flag, -1, NULL);
 
 		if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) {
 			input_demo_record_robot_impact_event(weapon, robot);
@@ -1939,10 +2036,17 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 			multi_robot_request_change(robot, Objects[weapon->ctype.laser_info.parent_num].id);
 #endif
 
-		if ( Robot_info[robot->id].exp1_vclip_num > -1 )
+		if ( Robot_info[robot->id].exp1_vclip_num > -1 ) {
+			impact_vclip = Robot_info[robot->id].exp1_vclip_num;
 			expl_obj = object_create_explosion( weapon->segnum, collision_point, (robot->size/2*3)/4, Robot_info[robot->id].exp1_vclip_num );
-		else if ( Weapon_info[weapon->id].robot_hit_vclip > -1 )
+		}
+		else if ( Weapon_info[weapon->id].robot_hit_vclip > -1 ) {
+			impact_vclip = Weapon_info[weapon->id].robot_hit_vclip;
 			expl_obj = object_create_explosion( weapon->segnum, collision_point, Weapon_info[weapon->id].impact_size, Weapon_info[weapon->id].robot_hit_vclip );
+		}
+		input_demo_log_weapon_robot_path_event("accept_explosion", weapon,
+			robot, collision_point, damage_flag, boss_invul_flag,
+			impact_vclip, expl_obj);
 
 		if (expl_obj)
 			obj_attach(robot,expl_obj);
@@ -2006,9 +2110,17 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 	{
 		input_demo_debug_log_weapon_robot_path_probe("skip_robot_exploding", (void *)weapon, (void *)robot, (void *)collision_point);
 		input_demo_debug_log_weapon_robot_reason_probe("skip_robot_exploding", (void *)weapon, (void *)robot, (void *)collision_point);
+		input_demo_log_weapon_robot_path_event("skip_robot_exploding",
+			weapon, robot, collision_point, damage_flag, boss_invul_flag,
+			-1, NULL);
 	}
 	else
+	{
 		input_demo_debug_log_weapon_robot_reason_probe("skip_accept_gate", (void *)weapon, (void *)robot, (void *)collision_point);
+		input_demo_log_weapon_robot_path_event("skip_accept_gate", weapon,
+			robot, collision_point, damage_flag, boss_invul_flag, -1,
+			NULL);
+	}
 
 	maybe_kill_weapon(weapon,robot);
 
@@ -3081,6 +3193,8 @@ void collide_weapon_and_debris( object * weapon, object * debris, vms_vector *co
 	if ( (weapon->ctype.laser_info.parent_type==OBJ_PLAYER) && !(debris->flags & OF_EXPLODING) )	{
 		digi_link_sound_to_pos( SOUND_ROBOT_HIT, weapon->segnum , 0, collision_point, 0, F1_0 );
 
+		input_demo_log_debris_collision_event("weapon_hit", debris, weapon,
+			0, debris->segnum, -1, collision_point);
 		explode_object(debris,0);
 		if ( Weapon_info[weapon->id].damage_radius )
 			explode_badass_weapon(weapon,collision_point);

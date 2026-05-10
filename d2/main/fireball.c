@@ -110,14 +110,61 @@ static int input_demo_exploding_robot_probe_active(object *obj)
 	return vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos) < obj->size + ConsoleObject->size + F1_0 * 20;
 }
 
+static int input_demo_exploding_object_probe_active(object *obj)
+{
+	if (!input_demo_trace_explosion_probe_active() ||
+		!ConsoleObject ||
+		!obj)
+		return 0;
+
+	if (obj->type == OBJ_ROBOT)
+		return input_demo_exploding_robot_probe_active(obj);
+
+	if (obj->type != OBJ_CLUTTER && obj->type != OBJ_CNTRLCEN &&
+		obj->type != OBJ_PLAYER)
+		return 0;
+
+	if (obj->segnum == ConsoleObject->segnum)
+		return 1;
+
+	return vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos) <
+		obj->size + ConsoleObject->size + F1_0 * 20;
+}
+
 static void input_demo_log_exploding_object_probe(const char *step, object *obj, fix delay_time, int spawned_objnum)
 {
+	char probe[512];
 	fix player_dist;
+	object *spawned_obj = NULL;
 
-	if (!input_demo_exploding_robot_probe_active(obj))
+	if (!input_demo_exploding_object_probe_active(obj))
 		return;
 
+	if (spawned_objnum >= 0 && spawned_objnum <= Highest_object_index)
+		spawned_obj = &Objects[spawned_objnum];
+
 	player_dist = vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos);
+	snprintf(probe, sizeof(probe),
+		"step=%s source=%d/%d/%d/%d/%d flags=0x%x shields=%d life=%d delay=%d spawned=%d/%d/%d/%d/%d player_seg=%d player_dist=%d",
+		step,
+		obj - Objects,
+		obj->signature,
+		obj->type,
+		obj->id,
+		obj->segnum,
+		obj->flags,
+		obj->shields,
+		obj->lifeleft,
+		delay_time,
+		spawned_obj ? (int)(spawned_obj - Objects) : spawned_objnum,
+		spawned_obj ? spawned_obj->signature : -1,
+		spawned_obj ? spawned_obj->type : -1,
+		spawned_obj ? spawned_obj->id : -1,
+		spawned_obj ? spawned_obj->segnum : -1,
+		ConsoleObject->segnum,
+		player_dist);
+	input_demo_append_replay_probe_message("explode_object", spawned_obj ? spawned_obj : obj,
+		probe);
 	con_printf(CON_NORMAL,
 		"Input demo exploding object probe: mode=%s frame=%u gt=%lld step=%s obj=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) shields=%d size=%d life=%d flags=0x%x ctype=%d mtype=%d rtype=%d delay=%d spawned=%d player_seg=%d player_dist=%d player_pos=(%d,%d,%d) player_vel=(%d,%d,%d) player_shields=%d\n",
 		input_demo_trace_explosion_mode_name(),
@@ -156,6 +203,107 @@ static void input_demo_log_exploding_object_probe(const char *step, object *obj,
 		ConsoleObject->mtype.phys_info.velocity.y,
 		ConsoleObject->mtype.phys_info.velocity.z,
 		Players[Player_num].shields);
+}
+
+static void input_demo_log_debris_event(const char *step, object *source_obj,
+	object *debris_obj, int subobj_num)
+{
+	char probe[512];
+
+	if (!step || !debris_obj ||
+		!(input_demo_recorder_is_active() || input_demo_replay_is_loaded()))
+		return;
+
+	snprintf(probe, sizeof(probe),
+		"step=%s source=%d/%d/%d/%d/%d debris=%d/%d/%d/%d/%d subobj=%d life=%d size=%d mass=%d drag=%d flags=0x%x phys=0x%x seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) rot=(%d,%d,%d)",
+		step,
+		source_obj ? (int)(source_obj - Objects) : -1,
+		source_obj ? source_obj->signature : -1,
+		source_obj ? source_obj->type : -1,
+		source_obj ? source_obj->id : -1,
+		source_obj ? source_obj->segnum : -1,
+		debris_obj - Objects,
+		debris_obj->signature,
+		debris_obj->type,
+		debris_obj->id,
+		debris_obj->segnum,
+		subobj_num,
+		debris_obj->lifeleft,
+		debris_obj->size,
+		debris_obj->mtype.phys_info.mass,
+		debris_obj->mtype.phys_info.drag,
+		debris_obj->flags,
+		debris_obj->mtype.phys_info.flags,
+		debris_obj->segnum,
+		debris_obj->pos.x,
+		debris_obj->pos.y,
+		debris_obj->pos.z,
+		debris_obj->mtype.phys_info.velocity.x,
+		debris_obj->mtype.phys_info.velocity.y,
+		debris_obj->mtype.phys_info.velocity.z,
+		debris_obj->mtype.phys_info.rotvel.x,
+		debris_obj->mtype.phys_info.rotvel.y,
+		debris_obj->mtype.phys_info.rotvel.z);
+	input_demo_append_replay_probe_message("debris_probe", debris_obj, probe);
+}
+
+static int input_demo_secondary_explosion_probe_active(object *obj, object *del_obj)
+{
+	if (!input_demo_trace_explosion_probe_active() || !ConsoleObject)
+		return 0;
+
+	if (del_obj && del_obj->type == OBJ_ROBOT)
+		return input_demo_exploding_robot_probe_active(del_obj);
+
+	if (!obj)
+		return 0;
+
+	if (obj->segnum == ConsoleObject->segnum)
+		return 1;
+
+	return vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos) <
+		obj->size + ConsoleObject->size + F1_0 * 20;
+}
+
+static void input_demo_log_secondary_explosion_spawn(const char *step,
+	object *obj,
+	object *del_obj,
+	object *spawned_obj,
+	int vclip_num)
+{
+	char probe[512];
+
+	if (!step || !obj ||
+		!input_demo_secondary_explosion_probe_active(obj, del_obj))
+		return;
+
+	snprintf(probe, sizeof(probe),
+		"step=%s source=%d/%d/%d/%d/%d life=%d spawn_time=%d delete_time=%d delete_objnum=%d del=%d/%d/%d/%d/%d flags=0x%x shields=%d spawned=%d/%d/%d/%d/%d vclip=%d",
+		step,
+		(int)(obj - Objects),
+		obj->signature,
+		obj->type,
+		obj->id,
+		obj->segnum,
+		obj->lifeleft,
+		obj->ctype.expl_info.spawn_time,
+		obj->ctype.expl_info.delete_time,
+		obj->ctype.expl_info.delete_objnum,
+		del_obj ? (int)(del_obj - Objects) : -1,
+		del_obj ? del_obj->signature : -1,
+		del_obj ? del_obj->type : -1,
+		del_obj ? del_obj->id : -1,
+		del_obj ? del_obj->segnum : -1,
+		del_obj ? del_obj->flags : 0,
+		del_obj ? del_obj->shields : 0,
+		spawned_obj ? (int)(spawned_obj - Objects) : -1,
+		spawned_obj ? spawned_obj->signature : -1,
+		spawned_obj ? spawned_obj->type : -1,
+		spawned_obj ? spawned_obj->id : -1,
+		spawned_obj ? spawned_obj->segnum : -1,
+		vclip_num);
+	input_demo_append_replay_probe_message("explosion_spawn",
+		spawned_obj ? spawned_obj : obj, probe);
 }
 
 object *object_create_explosion_sub(object *objp, short segnum, vms_vector * position, fix size, int vclip_type, fix maxdamage, fix maxdistance, fix maxforce, int parent )
@@ -560,6 +708,8 @@ object *object_create_debris(object *parent, int subobj_num)
 		obj->mtype.phys_info.flags |= PF_BOUNCE;
 		obj->mtype.phys_info.drag = 128;
 	}
+
+	input_demo_log_debris_event("create", parent, obj, subobj_num);
 
 	return obj;
 
@@ -1473,8 +1623,10 @@ void do_debris_frame(object *obj)
 {
 	Assert(obj->control_type == CT_DEBRIS);
 
-	if (obj->lifeleft < 0)
+	if (obj->lifeleft < 0) {
+		input_demo_log_debris_event("age_expire", NULL, obj, -1);
 		explode_object(obj,0);
+	}
 
 }
 
@@ -1517,6 +1669,8 @@ void do_explosion_sequence(object *obj)
 			expl_obj = object_create_badass_explosion( del_obj, del_obj->segnum, spawn_pos, fixmul(del_obj->size, EXPLOSION_SCALE), vclip_num, F1_0*Robot_info[del_obj->id].badass, i2f(4)*Robot_info[del_obj->id].badass, i2f(35)*Robot_info[del_obj->id].badass, -1 );
 		else
 			expl_obj = object_create_explosion( del_obj->segnum, spawn_pos, fixmul(del_obj->size, EXPLOSION_SCALE), vclip_num );
+		input_demo_log_secondary_explosion_spawn("secondary_spawn",
+			obj, del_obj, expl_obj, vclip_num);
 
 		if ((del_obj->contains_count > 0) && !(Game_mode & GM_MULTI)) { // Multiplayer handled outside of this code!!
 			//	If dropping a weapon that the player has, drop energy instead, unless it's vulcan, in which case drop vulcan ammo.
