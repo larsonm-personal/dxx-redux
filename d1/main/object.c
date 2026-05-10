@@ -887,6 +887,7 @@ void object_get_runtime_state(object_runtime_state *state)
 	state->num_objects = num_objects;
 	state->highest_object_index = Highest_object_index;
 	memcpy(state->free_obj_list, free_obj_list, sizeof(free_obj_list));
+	state->signature_seed = object_signature_seed;
 	state->homer_frame_count = homerFrameCount;
 	state->current_homer_frame_time = currentHomerFrameTime;
 	state->do_homer_frame = doHomerFrame;
@@ -904,6 +905,7 @@ void object_set_runtime_state(const object_runtime_state *state)
 	if (Highest_object_index > Highest_ever_object_index)
 		Highest_ever_object_index = Highest_object_index;
 	memcpy(free_obj_list, state->free_obj_list, sizeof(free_obj_list));
+	object_signature_seed = (short)(state->signature_seed < 0 ? 0 : state->signature_seed);
 	homerFrameCount = state->homer_frame_count;
 	currentHomerFrameTime = state->current_homer_frame_time;
 	doHomerFrame = state->do_homer_frame;

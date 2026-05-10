@@ -78,12 +78,13 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_log.h"
 #endif
 
-#define STATE_VERSION 25
+#define STATE_VERSION 26
 #define STATE_COMPATIBLE_VERSION 20
 #define STATE_RUNTIME_VERSION 23
 #define STATE_FIDELITY_VERSION 23
 #define STATE_EFFECT_RUNTIME_VERSION 24
 #define STATE_AI_PATH_RUNTIME_VERSION 25
+#define STATE_OBJECT_SIGNATURE_RUNTIME_VERSION 26
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -111,6 +112,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 24- Save effect loop time and runtime effect overrides so animated
 //     wall/object textures restore deterministically from saves/checkpoints
 // 25- Save AI path allocator timing and player path cursors for replay checkpoints
+// 26- Save object signature seed for deterministic post-checkpoint object creation
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -589,6 +591,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	PHYSFS_write(fp, &object_state.highest_object_index, sizeof(object_state.highest_object_index), 1);
 	for (i = 0; i < MAX_OBJECTS; i++)
 		PHYSFS_write(fp, &object_state.free_obj_list[i], sizeof(object_state.free_obj_list[i]), 1);
+	PHYSFS_write(fp, &object_state.signature_seed, sizeof(object_state.signature_seed), 1);
 	PHYSFS_write(fp, &object_state.homer_frame_count, sizeof(object_state.homer_frame_count), 1);
 	PHYSFS_write(fp, &object_state.current_homer_frame_time, sizeof(object_state.current_homer_frame_time), 1);
 	PHYSFS_write(fp, &object_state.do_homer_frame, sizeof(object_state.do_homer_frame), 1);
@@ -641,6 +644,10 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	object_state.highest_object_index = PHYSFSX_readSXE32(fp, swap);
 	for (i = 0; i < MAX_OBJECTS; i++)
 		object_state.free_obj_list[i] = (short)PHYSFSX_readSXE16(fp, swap);
+	if (version >= STATE_OBJECT_SIGNATURE_RUNTIME_VERSION)
+		object_state.signature_seed = PHYSFSX_readSXE32(fp, swap);
+	else
+		object_state.signature_seed = 0;
 	object_state.homer_frame_count = (unsigned int)PHYSFSX_readSXE32(fp, swap);
 	object_state.current_homer_frame_time = PHYSFSX_readSXE32(fp, swap);
 	object_state.do_homer_frame = PHYSFSX_readSXE32(fp, swap);

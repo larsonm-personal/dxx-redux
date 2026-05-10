@@ -424,6 +424,7 @@ typedef struct object_runtime_state {
 	int num_objects;
 	int highest_object_index;
 	short free_obj_list[MAX_OBJECTS];
+	int signature_seed;
 	unsigned int homer_frame_count;
 	fix current_homer_frame_time;
 	int do_homer_frame;
