@@ -149,10 +149,12 @@ struct input_demo_file_frame {
 	input_demo_rng_record rng;
 	bool has_state;
 	input_demo_result state;
+	bool has_diag;
+	std::string diag_json;
 	std::vector<std::string> events;
 
 	input_demo_file_frame()
-	    : has_state(false)
+	    : has_state(false), has_diag(false)
 	{
 		input_demo_control_record_clear(&input);
 		input_demo_rng_record_clear(&rng);

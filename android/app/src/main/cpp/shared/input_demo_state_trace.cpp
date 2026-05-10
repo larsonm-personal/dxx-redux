@@ -3,10 +3,16 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
+#include <nlohmann/json.hpp>
+
 #include "input_demo_replay.h"
 
 namespace
 {
+
+using ordered_json = nlohmann::ordered_json;
 
 enum {
 	INPUT_DEMO_STATE_TRACE_MAX_SOURCE = 32,
@@ -94,7 +100,74 @@ static int game_name_from_id(int game, char *name, size_t name_size)
 	return 0;
 }
 
+static ordered_json input_demo_state_trace_build_diag_json(const input_demo_state_trace_diag &diag)
+{
+	ordered_json root = ordered_json::object();
+
+	root["awareness_events"] = diag.awareness_events;
+	root["camera_awake_robots"] = diag.camera_awake_robots;
+	root["danger_laser_robots"] = diag.danger_laser_robots;
+	root["d_tick_count"] = diag.d_tick_count;
+	root["player_vel_x"] = diag.player_vel_x;
+	root["player_vel_y"] = diag.player_vel_y;
+	root["player_vel_z"] = diag.player_vel_z;
+	root["player_last_x"] = diag.player_last_x;
+	root["player_last_y"] = diag.player_last_y;
+	root["player_last_z"] = diag.player_last_z;
+	root["player_weapon_count"] = diag.player_weapon_count;
+	root["player_weapon_hash"] = diag.player_weapon_hash;
+	root["player_weapon_obj0"] = diag.player_weapon_obj0;
+	root["player_weapon_sig0"] = diag.player_weapon_sig0;
+	root["player_weapon_id0"] = diag.player_weapon_id0;
+	root["player_weapon_obj1"] = diag.player_weapon_obj1;
+	root["player_weapon_sig1"] = diag.player_weapon_sig1;
+	root["player_weapon_id1"] = diag.player_weapon_id1;
+	root["player_weapon_obj2"] = diag.player_weapon_obj2;
+	root["player_weapon_sig2"] = diag.player_weapon_sig2;
+	root["player_weapon_id2"] = diag.player_weapon_id2;
+	root["player_weapon_obj3"] = diag.player_weapon_obj3;
+	root["player_weapon_sig3"] = diag.player_weapon_sig3;
+	root["player_weapon_id3"] = diag.player_weapon_id3;
+	root["ai_probe_skip_count"] = diag.ai_probe_skip_count;
+	root["ai_probe_skip_obj"] = diag.ai_probe_skip_obj;
+	root["ai_probe_skip_sig"] = diag.ai_probe_skip_sig;
+	root["ai_probe_skip_id"] = diag.ai_probe_skip_id;
+	root["ai_probe_timeslice_count"] = diag.ai_probe_timeslice_count;
+	root["ai_probe_timeslice_obj"] = diag.ai_probe_timeslice_obj;
+	root["ai_probe_timeslice_sig"] = diag.ai_probe_timeslice_sig;
+	root["ai_probe_timeslice_id"] = diag.ai_probe_timeslice_id;
+	root["ai_probe_process_count"] = diag.ai_probe_process_count;
+	root["ai_probe_process_obj"] = diag.ai_probe_process_obj;
+	root["ai_probe_process_sig"] = diag.ai_probe_process_sig;
+	root["ai_probe_process_id"] = diag.ai_probe_process_id;
+	root["ai_probe_phys_skip_count"] = diag.ai_probe_phys_skip_count;
+	root["ai_probe_phys_skip_obj"] = diag.ai_probe_phys_skip_obj;
+	root["ai_probe_phys_skip_sig"] = diag.ai_probe_phys_skip_sig;
+	root["ai_probe_phys_skip_id"] = diag.ai_probe_phys_skip_id;
+	root["ai_probe_phys_skip_before"] = diag.ai_probe_phys_skip_before;
+	root["ai_probe_phys_skip_after"] = diag.ai_probe_phys_skip_after;
+	return root;
+}
+
 } // namespace
+
+bool input_demo_state_trace_diag_to_json_text(const input_demo_state_trace_diag *diag,
+                                              std::string *json_text,
+                                              std::string *error)
+{
+	if (!diag) {
+		if (error)
+			*error = "missing state trace diag";
+		return false;
+	}
+	if (!json_text) {
+		if (error)
+			*error = "missing state trace diag output";
+		return false;
+	}
+	*json_text = input_demo_state_trace_build_diag_json(*diag).dump();
+	return true;
+}
 
 extern "C" {
 
@@ -195,6 +268,8 @@ int input_demo_state_trace_write_frame(uint32_t frame,
 {
 	char state_json[INPUT_DEMO_STATE_TRACE_MAX_STATE_JSON] = "";
 	FILE *file;
+	std::string diag_json;
+	std::string diag_error;
 
 	if (!g_input_demo_state_trace_session.active || !g_input_demo_state_trace_session.file)
 		return copy_error("input demo state trace is not active", error, error_size);
@@ -202,6 +277,8 @@ int input_demo_state_trace_write_frame(uint32_t frame,
 		return copy_error("missing input demo state trace frame state", error, error_size);
 	if (!input_demo_result_snapshot_to_json_buffer(state, state_json, sizeof(state_json)))
 		return copy_error("could not encode input demo state trace frame state", error, error_size);
+	if (diag && !input_demo_state_trace_diag_to_json_text(diag, &diag_json, &diag_error))
+		return copy_error(diag_error.c_str(), error, error_size);
 	file = g_input_demo_state_trace_session.file;
 	fputs("{\"type\":\"frame_state\",\"source\":", file);
 	write_json_string(file, g_input_demo_state_trace_session.source);
@@ -214,36 +291,7 @@ int input_demo_state_trace_write_frame(uint32_t frame,
 		fprintf(file, ",\"c\":%u", rng_call_count);
 	fputs("}", file);
 	if (diag)
-		fprintf(file,
-		        ",\"diag\":{\"awareness_events\":%d,\"camera_awake_robots\":%d,\"danger_laser_robots\":%d,\"d_tick_count\":%d,\"player_vel_x\":%d,\"player_vel_y\":%d,\"player_vel_z\":%d,\"player_last_x\":%d,\"player_last_y\":%d,\"player_last_z\":%d,\"ai_probe_skip_count\":%d,\"ai_probe_skip_obj\":%d,\"ai_probe_skip_sig\":%d,\"ai_probe_skip_id\":%d,\"ai_probe_timeslice_count\":%d,\"ai_probe_timeslice_obj\":%d,\"ai_probe_timeslice_sig\":%d,\"ai_probe_timeslice_id\":%d,\"ai_probe_process_count\":%d,\"ai_probe_process_obj\":%d,\"ai_probe_process_sig\":%d,\"ai_probe_process_id\":%d,\"ai_probe_phys_skip_count\":%d,\"ai_probe_phys_skip_obj\":%d,\"ai_probe_phys_skip_sig\":%d,\"ai_probe_phys_skip_id\":%d,\"ai_probe_phys_skip_before\":%d,\"ai_probe_phys_skip_after\":%d}",
-		        diag->awareness_events,
-		        diag->camera_awake_robots,
-		        diag->danger_laser_robots,
-		        diag->d_tick_count,
-		        diag->player_vel_x,
-		        diag->player_vel_y,
-		        diag->player_vel_z,
-		        diag->player_last_x,
-		        diag->player_last_y,
-		        diag->player_last_z,
-		        diag->ai_probe_skip_count,
-		        diag->ai_probe_skip_obj,
-		        diag->ai_probe_skip_sig,
-		        diag->ai_probe_skip_id,
-		        diag->ai_probe_timeslice_count,
-		        diag->ai_probe_timeslice_obj,
-		        diag->ai_probe_timeslice_sig,
-		        diag->ai_probe_timeslice_id,
-		        diag->ai_probe_process_count,
-		        diag->ai_probe_process_obj,
-		        diag->ai_probe_process_sig,
-		        diag->ai_probe_process_id,
-		        diag->ai_probe_phys_skip_count,
-		        diag->ai_probe_phys_skip_obj,
-		        diag->ai_probe_phys_skip_sig,
-		        diag->ai_probe_phys_skip_id,
-		        diag->ai_probe_phys_skip_before,
-		        diag->ai_probe_phys_skip_after);
+		fprintf(file, ",\"diag\":%s", diag_json.c_str());
 	fprintf(file, ",\"state\":%s}\n", state_json);
 	if (fflush(file) != 0)
 		return copy_error("could not flush input demo state trace file", error, error_size);

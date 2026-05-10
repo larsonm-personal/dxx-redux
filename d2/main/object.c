@@ -2203,9 +2203,17 @@ void object_move_one( object * obj )
 			break;
 
 		case CT_WEAPON:
+			input_demo_rng_trace_set_object_context((int)(obj - Objects),
+				obj->signature, obj->id);
 			Laser_do_weapon_sequence(obj, doHomerFrame, idealHomerFrameTime, homerFrameCount);
+			input_demo_rng_trace_clear_object_context();
 			break; // CED
-		case CT_EXPLOSION:	do_explosion_sequence(obj); break;
+		case CT_EXPLOSION:
+			input_demo_rng_trace_set_object_context((int)(obj - Objects),
+				obj->signature, obj->id);
+			do_explosion_sequence(obj);
+			input_demo_rng_trace_clear_object_context();
+			break;
 
 		#ifndef RELEASE
 		case CT_SLEW:
@@ -2255,6 +2263,9 @@ void object_move_one( object * obj )
 	if (obj->type == OBJ_NONE || obj->flags&OF_SHOULD_BE_DEAD)
 		return;         // object has been deleted
 
+	input_demo_rng_trace_set_object_context((int)(obj - Objects),
+		obj->signature, obj->id);
+
 	switch (obj->movement_type) {
 
 		case MT_NONE:			break;				//this doesn't move
@@ -2282,8 +2293,10 @@ void object_move_one( object * obj )
 
 				//maybe we've gone on to the next level.  if so, bail!
 #ifdef NETWORK
-				if (Current_level_num != old_level)
+				if (Current_level_num != old_level) {
+					input_demo_rng_trace_clear_object_context();
 					return;
+				}
 #endif
 			}
 		}
@@ -2372,6 +2385,7 @@ void object_move_one( object * obj )
 	#else
 		obj++;		//kill warning
 	#endif		//DEMO_ONLY
+	input_demo_rng_trace_clear_object_context();
 }
 
 //--------------------------------------------------------------------

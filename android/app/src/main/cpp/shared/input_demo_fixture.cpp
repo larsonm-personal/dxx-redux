@@ -917,6 +917,7 @@ static bool parse_frame_record(const ordered_json &root, int game, uint32_t expe
 	ordered_json control = ordered_json::object();
 	ordered_json rng = ordered_json::object();
 	ordered_json state = ordered_json::object();
+	ordered_json diag = ordered_json::object();
 	ordered_json events = ordered_json::array();
 	ordered_json::const_iterator it;
 	uint32_t parsed_frame = 0;
@@ -924,6 +925,7 @@ static bool parse_frame_record(const ordered_json &root, int game, uint32_t expe
 	bool have_input = false;
 	bool have_rng = false;
 	bool have_state = false;
+	bool have_diag = false;
 	bool have_events = false;
 	std::string line_error;
 
@@ -965,6 +967,11 @@ static bool parse_frame_record(const ordered_json &root, int game, uint32_t expe
 				return fail(error, "frame state must be an object");
 			state = it.value();
 			have_state = true;
+		} else if (name == "diag") {
+			if (!it.value().is_object())
+				return fail(error, "frame diag must be an object");
+			diag = it.value();
+			have_diag = true;
 		} else if (name == "events") {
 			size_t event_index;
 
@@ -998,6 +1005,10 @@ static bool parse_frame_record(const ordered_json &root, int game, uint32_t expe
 			return fail(error, "frame state: " + line_error);
 		frame->has_state = true;
 	}
+	if (have_diag) {
+		frame->has_diag = true;
+		frame->diag_json = diag.dump();
+	}
 	if (have_events) {
 		size_t event_index;
 
@@ -1014,10 +1025,12 @@ static bool frame_record_to_json_line(const input_demo_file_frame &frame, int ga
 	ordered_json input = ordered_json::object();
 	ordered_json rng = ordered_json::object();
 	ordered_json state = ordered_json::object();
+	ordered_json diag = ordered_json::object();
 	ordered_json events = ordered_json::array();
 	ordered_json control_record;
 	ordered_json rng_record;
 	ordered_json state_record;
+	ordered_json diag_record;
 	std::string control_line;
 	std::string rng_line;
 	std::string state_line;
@@ -1054,6 +1067,12 @@ static bool frame_record_to_json_line(const input_demo_file_frame &frame, int ga
 	if (frame.has_state) {
 		state = std::move(state_record);
 		root["state"] = std::move(state);
+	}
+	if (frame.has_diag) {
+		if (!parse_json_line(frame.diag_json, "frame diag", &diag_record, error))
+			return false;
+		diag = std::move(diag_record);
+		root["diag"] = std::move(diag);
 	}
 	for (event_index = 0; event_index != frame.events.size(); ++event_index) {
 		ordered_json event_record;

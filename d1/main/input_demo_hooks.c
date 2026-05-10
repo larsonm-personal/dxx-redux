@@ -45,11 +45,101 @@ static int input_demo_count_live_objects_of_type(int object_type)
 	return count;
 }
 
+static unsigned int input_demo_state_trace_hash_update(unsigned int hash,
+	unsigned int value)
+{
+	hash ^= value + 0x9e3779b9u + (hash << 6) + (hash >> 2);
+	return hash;
+}
+
+static void input_demo_set_player_weapon_diag_slot(input_demo_state_trace_diag *diag,
+	int slot, int objnum, const object *obj)
+{
+	if (!diag || !obj)
+		return;
+
+	switch (slot) {
+		case 0:
+			diag->player_weapon_obj0 = objnum;
+			diag->player_weapon_sig0 = obj->signature;
+			diag->player_weapon_id0 = obj->id;
+			break;
+		case 1:
+			diag->player_weapon_obj1 = objnum;
+			diag->player_weapon_sig1 = obj->signature;
+			diag->player_weapon_id1 = obj->id;
+			break;
+		case 2:
+			diag->player_weapon_obj2 = objnum;
+			diag->player_weapon_sig2 = obj->signature;
+			diag->player_weapon_id2 = obj->id;
+			break;
+		case 3:
+			diag->player_weapon_obj3 = objnum;
+			diag->player_weapon_sig3 = obj->signature;
+			diag->player_weapon_id3 = obj->id;
+			break;
+	}
+}
+
+static void input_demo_capture_player_weapon_diag(input_demo_state_trace_diag *diag)
+{
+	int i;
+	int player_objnum;
+
+	if (!diag)
+		return;
+
+	diag->player_weapon_obj0 = -1;
+	diag->player_weapon_sig0 = -1;
+	diag->player_weapon_id0 = -1;
+	diag->player_weapon_obj1 = -1;
+	diag->player_weapon_sig1 = -1;
+	diag->player_weapon_id1 = -1;
+	diag->player_weapon_obj2 = -1;
+	diag->player_weapon_sig2 = -1;
+	diag->player_weapon_id2 = -1;
+	diag->player_weapon_obj3 = -1;
+	diag->player_weapon_sig3 = -1;
+	diag->player_weapon_id3 = -1;
+	player_objnum = Players[Player_num].objnum;
+
+	for (i = 0; i <= Highest_object_index; ++i) {
+		object *obj = &Objects[i];
+
+		if (obj->type != OBJ_WEAPON)
+			continue;
+		if (obj->flags & OF_SHOULD_BE_DEAD)
+			continue;
+		if (obj->ctype.laser_info.parent_type != OBJ_PLAYER)
+			continue;
+		if (obj->ctype.laser_info.parent_num != player_objnum)
+			continue;
+
+		diag->player_weapon_hash = input_demo_state_trace_hash_update(
+			diag->player_weapon_hash, (unsigned int)i);
+		diag->player_weapon_hash = input_demo_state_trace_hash_update(
+			diag->player_weapon_hash, (unsigned int)obj->signature);
+		diag->player_weapon_hash = input_demo_state_trace_hash_update(
+			diag->player_weapon_hash, (unsigned int)obj->id);
+		diag->player_weapon_hash = input_demo_state_trace_hash_update(
+			diag->player_weapon_hash, (unsigned int)obj->segnum);
+		diag->player_weapon_hash = input_demo_state_trace_hash_update(
+			diag->player_weapon_hash,
+			(unsigned int)obj->ctype.laser_info.parent_signature);
+		if (diag->player_weapon_count < 4)
+			input_demo_set_player_weapon_diag_slot(diag,
+				diag->player_weapon_count, i, obj);
+		diag->player_weapon_count++;
+	}
+}
+
 void input_demo_record_game_frame(void)
 {
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
 	input_demo_result frame_state;
+	input_demo_state_trace_diag diag;
 	unsigned int rng_call_count;
 	unsigned int rng_state;
 	char error[256] = "";
@@ -64,8 +154,10 @@ void input_demo_record_game_frame(void)
 	rng_call_count = d_rand_get_call_count();
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
 	input_demo_capture_current_result(&frame_state);
+	input_demo_capture_state_trace_diag(&diag);
 	if (!input_demo_recorder_capture_frame((int32_t)FrameTime, &state, &pulse, rng_state, 1, rng_call_count,
 		&frame_state,
+		&diag,
 		error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
@@ -94,6 +186,7 @@ void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
 	memset(diag, 0, sizeof(*diag));
 	diag->awareness_events = Num_awareness_events;
 	diag->d_tick_count = d_tick_count;
+	input_demo_capture_player_weapon_diag(diag);
 	for (i = 0; i <= Highest_object_index; ++i) {
 		object *obj = &Objects[i];
 

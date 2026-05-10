@@ -282,17 +282,17 @@ static int write_test_fixture(const char *path)
 	input_demo_control_pulse_clear(&pulse);
 	state.forward_thrust_time = 44;
 	fill_test_frame_state(&frame_state, 0);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error)))
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, NULL, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 0 failed: ") + error);
 	input_demo_control_pulse_clear(&pulse);
 	pulse.fire_primary_count = 1;
 	fill_test_frame_state(&frame_state, 1);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error)))
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, NULL, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 1 failed: ") + error);
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
 	fill_test_frame_state(&frame_state, 2);
-	if (!input_demo_recorder_capture_frame(4000, &state, &pulse, 102, 1, 3, &frame_state, error, sizeof(error)))
+	if (!input_demo_recorder_capture_frame(4000, &state, &pulse, 102, 1, 3, &frame_state, NULL, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 2 failed: ") + error);
 	if (!input_demo_recorder_flush(path, error, sizeof(error)))
 		return report_failure_string(std::string("recorder flush failed: ") + error);
@@ -333,7 +333,7 @@ static int write_checkpoint_test_fixture(const char *path)
 	input_demo_control_pulse_clear(&pulse);
 	state.forward_thrust_time = 44;
 	fill_test_frame_state(&frame_state, 0);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error)))
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, NULL, error, sizeof(error)))
 		return report_failure_string(std::string("checkpoint capture frame failed: ") + error);
 	input_demo_result_clear(&result);
 	snprintf(result.game, sizeof(result.game), "%s", input_demo_test_game_name());

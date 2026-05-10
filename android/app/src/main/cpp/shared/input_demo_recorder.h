@@ -7,6 +7,7 @@
 #include "input_demo_fixture.h"
 #include "input_demo_controls.h"
 #include "input_demo_result.h"
+#include "input_demo_state_trace.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +44,7 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       int has_rng_call_count,
                                       uint32_t rng_call_count,
                                       const input_demo_result *frame_state,
+                                      const input_demo_state_trace_diag *frame_diag,
                                       char *error, size_t error_size);
 void input_demo_recorder_stage_pulse(const input_demo_control_pulse *pulse);
 int input_demo_recorder_stage_frame_event_json(const char *json_text,

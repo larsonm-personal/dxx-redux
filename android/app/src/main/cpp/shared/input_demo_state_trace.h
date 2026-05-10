@@ -21,6 +21,20 @@ typedef struct input_demo_state_trace_diag {
 	int32_t player_last_x;
 	int32_t player_last_y;
 	int32_t player_last_z;
+	int32_t player_weapon_count;
+	uint32_t player_weapon_hash;
+	int32_t player_weapon_obj0;
+	int32_t player_weapon_sig0;
+	int32_t player_weapon_id0;
+	int32_t player_weapon_obj1;
+	int32_t player_weapon_sig1;
+	int32_t player_weapon_id1;
+	int32_t player_weapon_obj2;
+	int32_t player_weapon_sig2;
+	int32_t player_weapon_id2;
+	int32_t player_weapon_obj3;
+	int32_t player_weapon_sig3;
+	int32_t player_weapon_id3;
 	int32_t ai_probe_skip_count;
 	int32_t ai_probe_skip_obj;
 	int32_t ai_probe_skip_sig;
@@ -68,6 +82,12 @@ int input_demo_state_trace_write_frame(uint32_t frame,
 
 #ifdef __cplusplus
 }
+
+#include <string>
+
+bool input_demo_state_trace_diag_to_json_text(const input_demo_state_trace_diag *diag,
+                                              std::string *json_text,
+                                              std::string *error);
 #endif
 
 #endif

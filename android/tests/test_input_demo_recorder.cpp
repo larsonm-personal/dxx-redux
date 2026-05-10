@@ -248,17 +248,17 @@ static int expect_record_and_flush(void)
 	input_demo_control_pulse_clear(&pulse);
 	state.forward_thrust_time = 44;
 	fill_test_frame_state(&frame_state, 0);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error)))
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, NULL, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 0 failed: ") + error);
 	input_demo_control_pulse_clear(&pulse);
 	pulse.fire_primary_count = 1;
 	fill_test_frame_state(&frame_state, 1);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error)))
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, NULL, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 1 failed: ") + error);
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
 	fill_test_frame_state(&frame_state, 2);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 102, 0, 0, &frame_state, error, sizeof(error)))
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 102, 0, 0, &frame_state, NULL, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 2 failed: ") + error);
 	input_demo_result_clear(&result);
 	snprintf(result.game, sizeof(result.game), "%s", input_demo_test_game_name());
@@ -366,7 +366,7 @@ static int expect_record_and_flush_checkpoint(void)
 	input_demo_control_pulse_clear(&pulse);
 	state.forward_thrust_time = 44;
 	fill_test_frame_state(&frame_state, 0);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error))) {
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, NULL, error, sizeof(error))) {
 		input_demo_recorder_cancel();
 		remove_test_dir(dir);
 		return report_failure_string(std::string("checkpoint capture frame failed: ") + error);
@@ -447,14 +447,14 @@ static int expect_stage_consumed_pulse(void)
 	input_demo_recorder_stage_pulse(&staged_pulse);
 	pulse.fire_primary_count = 1;
 	fill_test_frame_state(&frame_state, 0);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error))) {
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, NULL, error, sizeof(error))) {
 		input_demo_recorder_cancel();
 		remove_test_dir(dir);
 		return report_failure_string(std::string("staged pulse capture frame 0 failed: ") + error);
 	}
 	input_demo_control_pulse_clear(&pulse);
 	fill_test_frame_state(&frame_state, 1);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 101, 0, 0, &frame_state, error, sizeof(error))) {
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 101, 0, 0, &frame_state, NULL, error, sizeof(error))) {
 		input_demo_recorder_cancel();
 		remove_test_dir(dir);
 		return report_failure_string(std::string("staged pulse capture frame 1 failed: ") + error);
@@ -586,7 +586,7 @@ static int expect_record_and_flush_events(void)
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
 	fill_test_frame_state(&frame_state, 0);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error))) {
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, NULL, error, sizeof(error))) {
 		input_demo_recorder_cancel();
 		remove_test_dir(dir);
 		return report_failure_string(std::string("events capture frame 0 failed: ") + error);
@@ -599,7 +599,7 @@ static int expect_record_and_flush_events(void)
 		return report_failure_string(std::string("append score event failed: ") + error);
 	}
 	fill_test_frame_state(&frame_state, 1);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 101, 0, 0, &frame_state, error, sizeof(error))) {
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 101, 0, 0, &frame_state, NULL, error, sizeof(error))) {
 		input_demo_recorder_cancel();
 		remove_test_dir(dir);
 		return report_failure_string(std::string("events capture frame 1 failed: ") + error);
@@ -647,6 +647,105 @@ static int expect_record_and_flush_events(void)
 	return 0;
 }
 
+static int expect_record_and_flush_diag(void)
+{
+	const char *dir = "test_input_demo_recorder_diag_fixture";
+	const std::string demo_path = std::string(dir) + "/recorded_diag.dximdemo";
+	const std::string trace_path = demo_path + INPUT_DEMO_RNG_TRACE_SUFFIX;
+	input_demo_recorder_settings settings;
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	input_demo_result frame_state;
+	input_demo_state_trace_diag diag;
+	input_demo_file parsed;
+	char error[256] = "";
+	std::string read_error;
+	std::string text;
+
+	if (!make_test_dir(dir))
+		return report_failure("could not create recorder diag test directory");
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.difficulty = 2;
+	settings.rng_mode = input_demo_test_rng_mode();
+	settings.record_per_frame_state = 1;
+	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
+		remove_test_dir(dir);
+		return report_failure_string(std::string("diag recorder start failed: ") + error);
+	}
+	input_demo_control_state_clear(&state);
+	input_demo_control_pulse_clear(&pulse);
+	fill_test_frame_state(&frame_state, 0);
+	memset(&diag, 0, sizeof(diag));
+	diag.awareness_events = 7;
+	diag.player_weapon_count = 2;
+	diag.player_weapon_hash = 123456789u;
+	diag.player_weapon_obj0 = 58;
+	diag.player_weapon_sig0 = 19479;
+	diag.player_weapon_id0 = 32;
+	diag.player_weapon_obj1 = 115;
+	diag.player_weapon_sig1 = 19474;
+	diag.player_weapon_id1 = 32;
+	diag.player_weapon_obj2 = -1;
+	diag.player_weapon_sig2 = -1;
+	diag.player_weapon_id2 = -1;
+	diag.player_weapon_obj3 = -1;
+	diag.player_weapon_sig3 = -1;
+	diag.player_weapon_id3 = -1;
+	diag.ai_probe_skip_obj = -1;
+	diag.ai_probe_skip_sig = -1;
+	diag.ai_probe_skip_id = -1;
+	diag.ai_probe_timeslice_obj = -1;
+	diag.ai_probe_timeslice_sig = -1;
+	diag.ai_probe_timeslice_id = -1;
+	diag.ai_probe_process_obj = -1;
+	diag.ai_probe_process_sig = -1;
+	diag.ai_probe_process_id = -1;
+	diag.ai_probe_phys_skip_obj = -1;
+	diag.ai_probe_phys_skip_sig = -1;
+	diag.ai_probe_phys_skip_id = -1;
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, &diag, error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("diag capture frame failed: ") + error);
+	}
+	if (!input_demo_recorder_flush(demo_path.c_str(), error, sizeof(error))) {
+		remove_test_dir(dir);
+		return report_failure_string(std::string("diag recorder flush failed: ") + error);
+	}
+	if (!read_text_file(demo_path.c_str(), &text)) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure("could not read recorder diag demo file");
+	}
+	if (text.find("\"diag\":{\"awareness_events\":7") == std::string::npos ||
+		text.find("\"player_weapon_count\":2") == std::string::npos ||
+		text.find("\"player_weapon_obj0\":58") == std::string::npos ||
+		text.find("\"player_weapon_obj1\":115") == std::string::npos) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("unexpected recorder diag demo file: ") + text);
+	}
+	if (!input_demo_file_read(demo_path.c_str(), &parsed, &read_error)) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("diag recorder demo read failed: ") + read_error);
+	}
+	remove(demo_path.c_str());
+	remove(trace_path.c_str());
+	remove_test_dir(dir);
+	if (parsed.frames.size() != 1 || !parsed.frames[0].has_diag ||
+		parsed.frames[0].diag_json.find("\"player_weapon_hash\":123456789") == std::string::npos ||
+		parsed.frames[0].diag_json.find("\"player_weapon_obj1\":115") == std::string::npos)
+		return report_failure("diag recorder demo round trip mismatch");
+	return 0;
+}
+
 int main(void)
 {
 	if (expect_record_and_flush())
@@ -658,6 +757,8 @@ int main(void)
 	if (expect_write_state_trace())
 		return 1;
 	if (expect_record_and_flush_events())
+		return 1;
+	if (expect_record_and_flush_diag())
 		return 1;
 	puts("PASS");
 	return 0;
