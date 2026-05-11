@@ -733,6 +733,7 @@ int input_demo_replay_homing_desync_probe_active(void)
 {
 	return input_demo_replay_is_loaded() &&
 		(input_demo_debug_frame_index() <= 260 ||
+		 input_demo_debug_frame_in_range(360, 367) ||
 		 input_demo_debug_frame_in_range(437, 470) ||
 		 input_demo_debug_frame_in_range(2790, 2820));
 }
@@ -1961,8 +1962,9 @@ void input_demo_record_spreadfire_emit_event(int nfires, int flags, int spreadfi
 
 void input_demo_log_replay_player_shot_probe(object *obj, int laser_type,
 	int gun_num, int32_t spreadr, int32_t spreadu, int32_t delay_time,
-	int make_sound, int harmless)
+	int make_sound, int harmless, const vms_vector *shot_orientation)
 {
+	char probe[512];
 	unsigned int sim_calls;
 	unsigned int sim_state = 0;
 
@@ -1971,8 +1973,33 @@ void input_demo_log_replay_player_shot_probe(object *obj, int laser_type,
 
 	sim_calls = d_rand_get_call_count();
 	d_rand_get_state(&sim_state);
+	snprintf(probe, sizeof(probe),
+		"shooter_obj=%d laser_type=%d gun=%d spreadr=%d spreadu=%d delay=%d harmless=%d sound=%d sim_calls=%u sim_state=%u shot=(%d,%d,%d) f=(%d,%d,%d) r=(%d,%d,%d) u=(%d,%d,%d)",
+		obj - Objects,
+		laser_type,
+		gun_num,
+		spreadr,
+		spreadu,
+		delay_time,
+		harmless,
+		make_sound,
+		sim_calls,
+		sim_state,
+		shot_orientation ? shot_orientation->x : 0,
+		shot_orientation ? shot_orientation->y : 0,
+		shot_orientation ? shot_orientation->z : 0,
+		obj->orient.fvec.x,
+		obj->orient.fvec.y,
+		obj->orient.fvec.z,
+		obj->orient.rvec.x,
+		obj->orient.rvec.y,
+		obj->orient.rvec.z,
+		obj->orient.uvec.x,
+		obj->orient.uvec.y,
+		obj->orient.uvec.z);
+	input_demo_append_replay_probe_message("player_shot_probe", obj, probe);
 	input_demo_debug_printf(
-		"Input demo replay fire probe: frame=%u kind=player_shot shooter_obj=%d laser_type=%d gun=%d spreadr=%d spreadu=%d delay=%d harmless=%d sound=%d sim_calls=%u sim_state=%u\n",
+		"Input demo replay fire probe: frame=%u kind=player_shot shooter_obj=%d laser_type=%d gun=%d spreadr=%d spreadu=%d delay=%d harmless=%d sound=%d sim_calls=%u sim_state=%u shot=(%d,%d,%d) f=(%d,%d,%d) r=(%d,%d,%d) u=(%d,%d,%d)\n",
 		(unsigned int)input_demo_replay_next_frame_index(),
 		obj - Objects,
 		laser_type,
@@ -1983,7 +2010,19 @@ void input_demo_log_replay_player_shot_probe(object *obj, int laser_type,
 		harmless,
 		make_sound,
 		sim_calls,
-		sim_state);
+		sim_state,
+		shot_orientation ? shot_orientation->x : 0,
+		shot_orientation ? shot_orientation->y : 0,
+		shot_orientation ? shot_orientation->z : 0,
+		obj->orient.fvec.x,
+		obj->orient.fvec.y,
+		obj->orient.fvec.z,
+		obj->orient.rvec.x,
+		obj->orient.rvec.y,
+		obj->orient.rvec.z,
+		obj->orient.uvec.x,
+		obj->orient.uvec.y,
+		obj->orient.uvec.z);
 }
 
 void input_demo_log_replay_spreadfire_emit_probe(int nfires, int flags,

@@ -1311,13 +1311,21 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 		case VULCAN_INDEX: {
 			//	Only make sound for 1/4 of vulcan bullets.
 			int	make_sound = 1;
+			fix spreadr;
+			fix spreadu;
 			//if (d_rand() > 24576)
 			//	make_sound = 1;
-			Laser_player_fire_spread( objp, VULCAN_ID, 6, d_rand()/8 - 32767/16, d_rand()/8 - 32767/16, make_sound, 0, shot_orientation);
+			spreadr = d_rand()/8 - 32767/16;
+			spreadu = d_rand()/8 - 32767/16;
+			Laser_player_fire_spread( objp, VULCAN_ID, 6, spreadr, spreadu, make_sound, 0, shot_orientation);
 			if (nfires > 1) {
-				Laser_player_fire_spread( objp, VULCAN_ID, 6, d_rand()/8 - 32767/16, d_rand()/8 - 32767/16, 0, 0, shot_orientation);
+				spreadr = d_rand()/8 - 32767/16;
+				spreadu = d_rand()/8 - 32767/16;
+				Laser_player_fire_spread( objp, VULCAN_ID, 6, spreadr, spreadu, 0, 0, shot_orientation);
 				if (nfires > 2) {
-					Laser_player_fire_spread( objp, VULCAN_ID, 6, d_rand()/8 - 32767/16, d_rand()/8 - 32767/16, 0, 0, shot_orientation);
+					spreadr = d_rand()/8 - 32767/16;
+					spreadu = d_rand()/8 - 32767/16;
+					Laser_player_fire_spread( objp, VULCAN_ID, 6, spreadr, spreadu, 0, 0, shot_orientation);
 				}
 			}
 			break;
