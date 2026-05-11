@@ -23,6 +23,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <string.h>
 
 #include "dxxerror.h"
+#include "maths.h"
 #include "pstypes.h"
 #include "songs.h"
 #include "digi.h"
@@ -454,7 +455,7 @@ int songs_play_level_song( int levelnum, int offset )
 		case MUSIC_TYPE_CUSTOM:
 		{
 			if (GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_RAND)
-				GameCfg.CMLevelMusicTrack[0] = d_rand() % GameCfg.CMLevelMusicTrack[1]; // simply a random selection - no check if this song has already been played. But that's how I roll!
+				GameCfg.CMLevelMusicTrack[0] = d_rand_fx() % GameCfg.CMLevelMusicTrack[1]; // simply a random selection - no check if this song has already been played. But that's how I roll!
 			else if (!offset)
 			{
 				if (GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_CONT)

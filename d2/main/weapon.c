@@ -985,7 +985,7 @@ void rock_the_mine_frame(void)
 			if (!Seismic_sound_playing) {
 				digi_play_sample_looping(Seismic_sound, F1_0, -1, -1);
 				Seismic_sound_playing = 1;
-				Next_seismic_sound_time = GameTime64 + d_rand()/2;
+				Next_seismic_sound_time = GameTime64 + d_rand_fx()/2;
 			}
 
 			if (delta_time < SMEGA_SHAKE_TIME) {
@@ -1067,7 +1067,7 @@ int start_seismic_disturbance(void)
 		if (!Seismic_sound_playing) {
 			digi_play_sample_looping(Seismic_sound, F1_0, -1, -1);
 			Seismic_sound_playing = 1;
-			Next_seismic_sound_time = GameTime64 + d_rand()/2;
+			Next_seismic_sound_time = GameTime64 + d_rand_fx()/2;
 		}
 
 #ifdef NETWORK
@@ -1504,7 +1504,7 @@ void do_seismic_stuff(void)
 			if (volume > F1_0)
 				volume = F1_0;
 			digi_change_looping_volume(volume);
-			Next_seismic_sound_time = GameTime64 + d_rand()/4 + 8192;
+			Next_seismic_sound_time = GameTime64 + d_rand_fx()/4 + 8192;
 		}
 	}
 

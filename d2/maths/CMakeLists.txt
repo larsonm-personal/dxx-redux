@@ -30,6 +30,10 @@ if(NOT ANDROID)
     add_executable(test_rng_seed_resume ../../android/tests/test_rng_seed_resume.c)
     target_link_libraries(test_rng_seed_resume PRIVATE ${DXX_TARGET_PREFIX}maths)
 
+    add_executable(test_deterministic_math ../../android/tests/test_deterministic_math.c)
+    target_link_libraries(test_deterministic_math PRIVATE ${DXX_TARGET_PREFIX}maths)
+    target_include_directories(test_deterministic_math PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_input_demo_rng_mode
         ../../android/tests/test_input_demo_rng_mode.c
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c)

@@ -103,11 +103,44 @@ static int game_name_from_id(int game, char *name, size_t name_size)
 static ordered_json input_demo_state_trace_build_diag_json(const input_demo_state_trace_diag &diag)
 {
 	ordered_json root = ordered_json::object();
+	ordered_json object_slot_counts = ordered_json::array();
+	ordered_json object_slot_hashes = ordered_json::array();
+
+	for (int index = 0; index < INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT; ++index) {
+		object_slot_counts.push_back(diag.object_slot_counts[index]);
+		object_slot_hashes.push_back(diag.object_slot_hashes[index]);
+	}
 
 	root["awareness_events"] = diag.awareness_events;
 	root["camera_awake_robots"] = diag.camera_awake_robots;
 	root["danger_laser_robots"] = diag.danger_laser_robots;
 	root["d_tick_count"] = diag.d_tick_count;
+	root["runtime_state_hash"] = diag.runtime_state_hash;
+	root["object_allocator_num_objects"] = diag.object_allocator_num_objects;
+	root["object_signature_seed"] = diag.object_signature_seed;
+	root["object_free_list_count"] = diag.object_free_list_count;
+	root["object_free_list_hash"] = diag.object_free_list_hash;
+	root["object_free_head0"] = diag.object_free_head0;
+	root["object_free_head1"] = diag.object_free_head1;
+	root["object_free_head2"] = diag.object_free_head2;
+	root["object_free_head3"] = diag.object_free_head3;
+	root["object_homer_frame_count"] = diag.object_homer_frame_count;
+	root["object_current_homer_frame_time"] = diag.object_current_homer_frame_time;
+	root["object_do_homer_frame"] = diag.object_do_homer_frame;
+	root["weapon_next_laser_delta"] = diag.weapon_next_laser_delta;
+	root["weapon_next_missile_delta"] = diag.weapon_next_missile_delta;
+	root["weapon_last_laser_delta"] = diag.weapon_last_laser_delta;
+	root["weapon_next_flare_delta"] = diag.weapon_next_flare_delta;
+	root["weapon_auto_fusion_delta"] = diag.weapon_auto_fusion_delta;
+	root["weapon_last_omega_delta"] = diag.weapon_last_omega_delta;
+	root["weapon_global_laser_firing_count"] = diag.weapon_global_laser_firing_count;
+	root["weapon_global_missile_firing_count"] = diag.weapon_global_missile_firing_count;
+	root["weapon_fusion_charge"] = diag.weapon_fusion_charge;
+	root["weapon_spreadfire_toggle"] = diag.weapon_spreadfire_toggle;
+	root["weapon_missile_gun"] = diag.weapon_missile_gun;
+	root["weapon_proximity_dropped"] = diag.weapon_proximity_dropped;
+	root["weapon_helix_orientation"] = diag.weapon_helix_orientation;
+	root["weapon_smartmines_dropped"] = diag.weapon_smartmines_dropped;
 	root["player_vel_x"] = diag.player_vel_x;
 	root["player_vel_y"] = diag.player_vel_y;
 	root["player_vel_z"] = diag.player_vel_z;
@@ -116,8 +149,12 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["player_last_z"] = diag.player_last_z;
 	root["player_weapon_count"] = diag.player_weapon_count;
 	root["player_weapon_hash"] = diag.player_weapon_hash;
+	root["highest_object_index"] = diag.highest_object_index;
 	root["live_object_count"] = diag.live_object_count;
 	root["live_object_hash"] = diag.live_object_hash;
+	root["object_slot_bucket_size"] = diag.object_slot_bucket_size;
+	root["object_slot_counts"] = object_slot_counts;
+	root["object_slot_hashes"] = object_slot_hashes;
 	root["robot_object_count"] = diag.robot_object_count;
 	root["robot_state_hash"] = diag.robot_state_hash;
 	root["weapon_object_count"] = diag.weapon_object_count;
@@ -126,6 +163,9 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["fireball_state_hash"] = diag.fireball_state_hash;
 	root["debris_object_count"] = diag.debris_object_count;
 	root["debris_state_hash"] = diag.debris_state_hash;
+	root["segment_object_list_count"] = diag.segment_object_list_count;
+	root["segment_object_list_hash"] = diag.segment_object_list_hash;
+	root["segment_object_link_error_count"] = diag.segment_object_link_error_count;
 	root["player_weapon_obj0"] = diag.player_weapon_obj0;
 	root["player_weapon_sig0"] = diag.player_weapon_sig0;
 	root["player_weapon_id0"] = diag.player_weapon_id0;

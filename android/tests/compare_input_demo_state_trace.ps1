@@ -64,7 +64,7 @@ function Format-CompareValue {
     return [string]$Value
 }
 
-function Normalize-DiagSentinels {
+function Set-DiagSentinels {
     param([hashtable]$Diag)
 
     if (-not ($Diag -is [System.Collections.IDictionary])) {
@@ -241,6 +241,122 @@ function Get-MismatchStageLabel {
     return 'unknown'
 }
 
+function Get-DiagMismatchStageLabel {
+    param([string]$MetadataDiff)
+
+    if ($MetadataDiff -match '^diag\.(runtime_state_hash|object_allocator|object_signature_seed|object_free|object_homer|weapon_)') {
+        return 'runtime_state'
+    }
+    if ($MetadataDiff -match '^diag\.segment_object_(list|link)') {
+        return 'object_list_order'
+    }
+    if ($MetadataDiff -match '^diag\.(highest_object_index|live_object|object_slot|robot_state|weapon_state|fireball_state|debris_state)') {
+        return 'object_state'
+    }
+    if ($MetadataDiff -match '^diag\.player_weapon') {
+        return 'player_weapon_state'
+    }
+    if ($MetadataDiff -match '^diag\.player_(vel|last)_') {
+        return 'motion'
+    }
+    if ($MetadataDiff -match '^diag\.d_tick_count') {
+        return 'frame_phase'
+    }
+    if ($MetadataDiff -match '^diag\.ai_probe') {
+        return 'ai_schedule'
+    }
+    if ($MetadataDiff -match '^diag\.(awareness_events|camera_awake_robots|danger_laser_robots)') {
+        return 'robot_wake_transition'
+    }
+    return 'diag'
+}
+
+function Format-DiagSelectedValues {
+    param([object]$Diag)
+
+    if (-not ($Diag -is [System.Collections.IDictionary])) {
+        return '{}'
+    }
+
+    $parts = New-Object System.Collections.Generic.List[string]
+    foreach ($key in @(
+            'runtime_state_hash',
+            'object_allocator_num_objects',
+            'object_signature_seed',
+            'object_free_list_count',
+            'object_free_list_hash',
+            'object_free_head0',
+            'object_homer_frame_count',
+            'weapon_next_laser_delta',
+            'weapon_next_missile_delta',
+            'weapon_last_laser_delta',
+            'weapon_auto_fusion_delta',
+            'weapon_global_laser_firing_count',
+            'weapon_global_missile_firing_count',
+            'weapon_spreadfire_toggle',
+            'weapon_missile_gun',
+            'live_object_count',
+            'live_object_hash',
+            'highest_object_index',
+            'object_slot_bucket_size',
+            'segment_object_list_count',
+            'segment_object_list_hash',
+            'segment_object_link_error_count',
+            'weapon_object_count',
+            'weapon_state_hash',
+            'fireball_object_count',
+            'fireball_state_hash',
+            'debris_object_count',
+            'debris_state_hash',
+            'player_weapon_count',
+            'player_weapon_hash')) {
+        if ($Diag.Contains($key)) {
+            $parts.Add("${key}=$(Format-CompareValue -Value $Diag[$key])")
+        }
+    }
+    if ($parts.Count -eq 0) {
+        return '{}'
+    }
+    return '{' + ($parts -join ',') + '}'
+}
+
+function Format-DiagMismatchSummary {
+    param(
+        [object]$ExpectedDiag,
+        [object]$ActualDiag,
+        [string]$Stage
+    )
+
+    if ($Stage -notin @('runtime_state', 'object_list_order', 'object_state', 'player_weapon_state')) {
+        return ''
+    }
+    return " expected_diag=$(Format-DiagSelectedValues -Diag $ExpectedDiag) actual_diag=$(Format-DiagSelectedValues -Diag $ActualDiag)"
+}
+
+function Format-ObjectSlotBucketHint {
+    param(
+        [string]$MetadataDiff,
+        [object]$ExpectedDiag,
+        [object]$ActualDiag
+    )
+
+    if ($MetadataDiff -notmatch '^diag\.object_slot_(counts|hashes)\[(\d+)\]') {
+        return ''
+    }
+
+    $bucket = [int]$matches[2]
+    $bucketSize = 32
+    if ($ExpectedDiag -is [System.Collections.IDictionary] -and $ExpectedDiag.Contains('object_slot_bucket_size')) {
+        $bucketSize = [int]$ExpectedDiag.object_slot_bucket_size
+    } elseif ($ActualDiag -is [System.Collections.IDictionary] -and $ActualDiag.Contains('object_slot_bucket_size')) {
+        $bucketSize = [int]$ActualDiag.object_slot_bucket_size
+    }
+
+    $firstSlot = $bucket * $bucketSize
+    $lastSlot = $firstSlot + $bucketSize - 1
+    return " object_slot_range=${firstSlot}-${lastSlot}"
+}
+
 function Read-StateTraceFrames {
     param([string]$Path)
 
@@ -277,7 +393,7 @@ function Read-StateTraceFrames {
                 $item.rng = $record.rng
             }
             if ($record.ContainsKey('diag')) {
-                Normalize-DiagSentinels -Diag $record.diag
+                Set-DiagSentinels -Diag $record.diag
                 $item.diag = $record.diag
             }
             $frames[[string]$frame] = $item
@@ -290,7 +406,7 @@ function Read-StateTraceFrames {
             continue
         }
         if ($record.ContainsKey('diag')) {
-            Normalize-DiagSentinels -Diag $record.diag
+            Set-DiagSentinels -Diag $record.diag
         }
         $traceFrame = [int]$record.f
         if (-not (Test-FrameInRange -Frame $traceFrame)) {
@@ -353,7 +469,14 @@ foreach ($frameKey in (@($expectedFrames.Keys) | Sort-Object { [int]$_ })) {
             }
             if ($metadataDiffs.Count -gt 0) {
                 foreach ($metadataDiff in $metadataDiffs) {
-                    $mismatches.Add("frame=$frame $metadataDiff")
+                    if ($key -eq 'diag') {
+                        $diagStage = Get-DiagMismatchStageLabel -MetadataDiff $metadataDiff
+                        $diagSummary = Format-DiagMismatchSummary -ExpectedDiag $expected[$key] -ActualDiag $actual[$key] -Stage $diagStage
+                        $diagHint = Format-ObjectSlotBucketHint -MetadataDiff $metadataDiff -ExpectedDiag $expected[$key] -ActualDiag $actual[$key]
+                        $mismatches.Add("frame=$frame stage=$diagStage $metadataDiff$diagHint$diagSummary")
+                    } else {
+                        $mismatches.Add("frame=$frame $metadataDiff")
+                    }
                     if ($mismatches.Count -ge $MaxMismatches) {
                         break
                     }

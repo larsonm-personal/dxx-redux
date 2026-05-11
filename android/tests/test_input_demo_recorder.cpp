@@ -503,6 +503,7 @@ static int expect_write_state_trace(void)
 	const char *dir = "test_input_demo_state_trace_fixture";
 	const std::string trace_path = std::string(dir) + "/replay.actual_state.jsonl";
 	input_demo_result state;
+	input_demo_state_trace_diag diag;
 	std::string text;
 	char error[256] = "";
 
@@ -521,6 +522,44 @@ static int expect_write_state_trace(void)
 	state.player0.shields = 155;
 	state.level_summary.present = 1;
 	state.level_summary.powerups_remaining = 66;
+	memset(&diag, 0, sizeof(diag));
+	diag.runtime_state_hash = 424242u;
+	diag.object_allocator_num_objects = 88;
+	diag.object_signature_seed = 19479;
+	diag.object_free_list_count = 912;
+	diag.object_free_list_hash = 789u;
+	diag.object_free_head0 = 95;
+	diag.object_free_head1 = 96;
+	diag.object_free_head2 = 97;
+	diag.object_free_head3 = 98;
+	diag.object_homer_frame_count = 12u;
+	diag.object_current_homer_frame_time = 3276;
+	diag.object_do_homer_frame = 1;
+	diag.weapon_next_laser_delta = 700;
+	diag.weapon_next_missile_delta = 800;
+	diag.weapon_last_laser_delta = -900;
+	diag.weapon_next_flare_delta = 1000;
+	diag.weapon_auto_fusion_delta = -2233467;
+	diag.weapon_last_omega_delta = -1200;
+	diag.weapon_global_laser_firing_count = 2;
+	diag.weapon_global_missile_firing_count = 1;
+	diag.weapon_fusion_charge = 42;
+	diag.weapon_spreadfire_toggle = 1;
+	diag.weapon_missile_gun = 3;
+	diag.weapon_proximity_dropped = 1;
+	diag.weapon_helix_orientation = 2;
+	diag.weapon_smartmines_dropped = 0;
+	diag.highest_object_index = 95;
+	diag.live_object_count = 3;
+	diag.live_object_hash = 1234u;
+	diag.object_slot_bucket_size = INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE;
+	diag.object_slot_counts[0] = 1;
+	diag.object_slot_counts[3] = 2;
+	diag.object_slot_hashes[0] = 101u;
+	diag.object_slot_hashes[3] = 202u;
+	diag.segment_object_list_count = 3;
+	diag.segment_object_list_hash = 5678u;
+	diag.segment_object_link_error_count = 0;
 	if (!input_demo_state_trace_start(trace_path.c_str(),
 					     "replay",
 					     input_demo_test_game_name(),
@@ -534,7 +573,7 @@ static int expect_write_state_trace(void)
 		remove_test_dir(dir);
 		return report_failure_string(std::string("state trace start failed: ") + error);
 	}
-	if (!input_demo_state_trace_write_frame(810, 2622, 2636896831u, 1, 22066u, NULL, &state, error, sizeof(error))) {
+	if (!input_demo_state_trace_write_frame(810, 2622, 2636896831u, 1, 22066u, &diag, &state, error, sizeof(error))) {
 		input_demo_state_trace_stop();
 		remove_test_dir(dir);
 		return report_failure_string(std::string("state trace write failed: ") + error);
@@ -551,6 +590,15 @@ static int expect_write_state_trace(void)
 		text.find("\"f\":810") == std::string::npos ||
 		text.find("\"ft\":2622") == std::string::npos ||
 		text.find("\"rng\":{\"s\":2636896831,\"c\":22066}") == std::string::npos ||
+		text.find("\"runtime_state_hash\":424242") == std::string::npos ||
+		text.find("\"object_signature_seed\":19479") == std::string::npos ||
+		text.find("\"object_free_head0\":95") == std::string::npos ||
+		text.find("\"weapon_last_laser_delta\":-900") == std::string::npos ||
+		text.find("\"weapon_spreadfire_toggle\":1") == std::string::npos ||
+		text.find("\"highest_object_index\":95") == std::string::npos ||
+		text.find("\"object_slot_bucket_size\":32") == std::string::npos ||
+		text.find("\"object_slot_hashes\":[101") == std::string::npos ||
+		text.find("\"segment_object_list_hash\":5678") == std::string::npos ||
 		text.find("\"game_time64\":2233467") == std::string::npos)
 		return report_failure_string(std::string("unexpected state trace text: ") + text);
 	return 0;
@@ -680,16 +728,51 @@ static int expect_record_and_flush_diag(void)
 	fill_test_frame_state(&frame_state, 0);
 	memset(&diag, 0, sizeof(diag));
 	diag.awareness_events = 7;
+	diag.runtime_state_hash = 2468u;
+	diag.object_allocator_num_objects = 219;
+	diag.object_signature_seed = 19480;
+	diag.object_free_list_count = 781;
+	diag.object_free_list_hash = 13579u;
+	diag.object_free_head0 = 348;
+	diag.object_free_head1 = 349;
+	diag.object_free_head2 = 350;
+	diag.object_free_head3 = 351;
+	diag.object_homer_frame_count = 333u;
+	diag.object_current_homer_frame_time = 1638;
+	diag.object_do_homer_frame = 1;
+	diag.weapon_next_laser_delta = 444;
+	diag.weapon_next_missile_delta = 555;
+	diag.weapon_last_laser_delta = -666;
+	diag.weapon_next_flare_delta = 777;
+	diag.weapon_auto_fusion_delta = -888;
+	diag.weapon_last_omega_delta = -999;
+	diag.weapon_global_laser_firing_count = 2;
+	diag.weapon_global_missile_firing_count = 1;
+	diag.weapon_fusion_charge = 123;
+	diag.weapon_spreadfire_toggle = 1;
+	diag.weapon_missile_gun = 2;
+	diag.weapon_proximity_dropped = 3;
+	diag.weapon_helix_orientation = 4;
+	diag.weapon_smartmines_dropped = 5;
 	diag.player_weapon_count = 2;
 	diag.player_weapon_hash = 123456789u;
+	diag.highest_object_index = 347;
 	diag.live_object_count = 219;
 	diag.live_object_hash = 987654321u;
+	diag.object_slot_bucket_size = INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE;
+	diag.object_slot_counts[0] = 9;
+	diag.object_slot_counts[7] = 5;
+	diag.object_slot_hashes[0] = 111u;
+	diag.object_slot_hashes[7] = 222u;
 	diag.robot_object_count = 93;
 	diag.robot_state_hash = 314159265u;
 	diag.fireball_object_count = 17;
 	diag.fireball_state_hash = 271828182u;
 	diag.debris_object_count = 4;
 	diag.debris_state_hash = 42424242u;
+	diag.segment_object_list_count = 219;
+	diag.segment_object_list_hash = 11235813u;
+	diag.segment_object_link_error_count = 0;
 	diag.player_weapon_obj0 = 58;
 	diag.player_weapon_sig0 = 19479;
 	diag.player_weapon_id0 = 32;
@@ -730,9 +813,15 @@ static int expect_record_and_flush_diag(void)
 		return report_failure("could not read recorder diag demo file");
 	}
 	if (text.find("\"diag\":{\"awareness_events\":7") == std::string::npos ||
+		text.find("\"runtime_state_hash\":2468") == std::string::npos ||
+		text.find("\"object_free_list_hash\":13579") == std::string::npos ||
+		text.find("\"weapon_auto_fusion_delta\":-888") == std::string::npos ||
 		text.find("\"player_weapon_count\":2") == std::string::npos ||
+		text.find("\"highest_object_index\":347") == std::string::npos ||
 		text.find("\"live_object_count\":219") == std::string::npos ||
+		text.find("\"object_slot_counts\":[9") == std::string::npos ||
 		text.find("\"debris_state_hash\":42424242") == std::string::npos ||
+		text.find("\"segment_object_list_hash\":11235813") == std::string::npos ||
 		text.find("\"player_weapon_obj0\":58") == std::string::npos ||
 		text.find("\"player_weapon_obj1\":115") == std::string::npos) {
 		remove(demo_path.c_str());
@@ -750,7 +839,12 @@ static int expect_record_and_flush_diag(void)
 	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	if (parsed.frames.size() != 1 || !parsed.frames[0].has_diag ||
+		parsed.frames[0].diag_json.find("\"runtime_state_hash\":2468") == std::string::npos ||
+		parsed.frames[0].diag_json.find("\"object_signature_seed\":19480") == std::string::npos ||
+		parsed.frames[0].diag_json.find("\"weapon_last_omega_delta\":-999") == std::string::npos ||
 		parsed.frames[0].diag_json.find("\"live_object_hash\":987654321") == std::string::npos ||
+		parsed.frames[0].diag_json.find("\"object_slot_hashes\":[111") == std::string::npos ||
+		parsed.frames[0].diag_json.find("\"segment_object_list_count\":219") == std::string::npos ||
 		parsed.frames[0].diag_json.find("\"player_weapon_hash\":123456789") == std::string::npos ||
 		parsed.frames[0].diag_json.find("\"fireball_object_count\":17") == std::string::npos ||
 		parsed.frames[0].diag_json.find("\"player_weapon_obj1\":115") == std::string::npos)

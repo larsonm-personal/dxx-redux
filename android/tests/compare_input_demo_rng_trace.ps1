@@ -34,7 +34,24 @@ function Get-LineSummary {
     }
 
     $parts = New-Object System.Collections.Generic.List[string]
-    foreach ($key in @('type', 'seq', 'frame', 'call_count', 'stream', 'has_context', 'file', 'func', 'line')) {
+    foreach ($key in @(
+            'type',
+            'seq',
+            'frame',
+            'gt',
+            'call_count',
+            'stream',
+            'has_context',
+            'ctx_obj',
+            'ctx_sig',
+            'ctx_id',
+            'state_before',
+            'state_after',
+            'seed',
+            'result',
+            'file',
+            'func',
+            'line')) {
         if ($record.ContainsKey($key)) {
             $parts.Add("${key}=$($record[$key])")
         }

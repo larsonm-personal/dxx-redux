@@ -12,6 +12,7 @@
 #include "hudmsg.h"
 #include "songs.h"
 #include "jukebox.h"
+#include "maths.h"
 #include "dxxerror.h"
 #include "console.h"
 #include "config.h"
@@ -238,7 +239,7 @@ void jukebox_hook_next()
 	if (!JukeboxSongs.list || GameCfg.CMLevelMusicTrack[0] == -1) return;
 
 	if (GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_RAND)
-		GameCfg.CMLevelMusicTrack[0] = d_rand() % GameCfg.CMLevelMusicTrack[1]; // simply a random selection - no check if this song has already been played. But that's how I roll!
+		GameCfg.CMLevelMusicTrack[0] = d_rand_fx() % GameCfg.CMLevelMusicTrack[1]; // simply a random selection - no check if this song has already been played. But that's how I roll!
 	else
 		GameCfg.CMLevelMusicTrack[0]++;
 	if (GameCfg.CMLevelMusicTrack[0] + 1 > GameCfg.CMLevelMusicTrack[1])

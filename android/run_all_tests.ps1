@@ -101,7 +101,7 @@ function Test-GameDataAvailable {
 function Test-DockerAvailable {
     if ($SkipDocker) { return $false }
     try {
-        $ver = docker version --format '{{.Server.Version}}' 2>&1
+        $null = docker version --format '{{.Server.Version}}' 2>&1
         return ($LASTEXITCODE -eq 0)
     } catch { return $false }
 }
@@ -128,7 +128,12 @@ $testTimeouts = @{
     "test_mp"                             = 240
 }
 $extractTests = @("test_extract", "test_all_extracts")  # emulator + game data, run last
-$noInfraTests = @("test_cue_iso", "test_server_integration")
+$noInfraTests = @(
+    "test_cue_iso",
+    "test_server_integration",
+    "test_input_demo_state_trace_compare",
+    "test_input_demo_rng_trace_compare"
+)
 
 $allTests = @()
 
@@ -246,7 +251,7 @@ $script:startedEmu1 = $false
 $script:startedEmu2 = $false
 $script:startedDocker = $false
 
-function Run-SingleTest {
+function Invoke-SingleTest {
     param([hashtable]$Test)
     $name = $Test.Name
     $logFile = Join-Path $ReportDir "${name}_${timestamp}.log"
@@ -348,7 +353,7 @@ if ($tierNone.Count -gt 0 -and -not $stopEarly) {
     Write-Host "== Tier 0: No-infrastructure tests ==" -ForegroundColor Cyan
     foreach ($test in $tierNone) {
         if ($stopEarly) { break }
-        Run-SingleTest -Test $test
+        Invoke-SingleTest -Test $test
     }
 }
 
@@ -389,7 +394,7 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
 
         foreach ($test in $tierSingleEmu) {
             if ($stopEarly) { break }
-            Run-SingleTest -Test $test
+            Invoke-SingleTest -Test $test
         }
     } else {
         foreach ($test in $tierSingleEmu) {
@@ -446,7 +451,7 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
 
         foreach ($test in $tierDualEmu) {
             if ($stopEarly) { break }
-            Run-SingleTest -Test $test
+            Invoke-SingleTest -Test $test
         }
     } else {
         $reason = if (-not $emu1Ok) { "could not start emulator" }
@@ -483,7 +488,7 @@ if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
             Push-GameDataToDevice
             foreach ($test in $tierExtract) {
                 if ($stopEarly) { break }
-                Run-SingleTest -Test $test
+                Invoke-SingleTest -Test $test
             }
         } else {
             foreach ($test in $tierExtract) {

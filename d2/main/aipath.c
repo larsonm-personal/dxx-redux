@@ -39,6 +39,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "fireball.h"
 #include "game.h"
+#include "deterministic_math.h"
 #include "input_demo_hooks.h"
 
 #define	PARALLAX	0		//	If !0, then special debugging for Parallax eyes enabled.
@@ -1303,9 +1304,9 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	if (dot < -15*F1_0/16) {
 		norm_cur_vel = norm_vec_to_goal;
 	} else {
-		norm_cur_vel.x += norm_vec_to_goal.x/2/((float)(F1_0/30)/FrameTime);
-		norm_cur_vel.y += norm_vec_to_goal.y/2/((float)(F1_0/30)/FrameTime);
-		norm_cur_vel.z += norm_vec_to_goal.z/2/((float)(F1_0/30)/FrameTime);
+		norm_cur_vel.x += dxx_ai_path_smoothing_delta(norm_vec_to_goal.x, FrameTime);
+		norm_cur_vel.y += dxx_ai_path_smoothing_delta(norm_vec_to_goal.y, FrameTime);
+		norm_cur_vel.z += dxx_ai_path_smoothing_delta(norm_vec_to_goal.z, FrameTime);
 	}
 
 	vm_vec_normalize_quick(&norm_cur_vel);
@@ -1624,9 +1625,9 @@ void player_path_set_orient_and_vel(object *objp, vms_vector *goal_point)
 	if (dot < -15*F1_0/16) {
 		norm_cur_vel = norm_vec_to_goal;
 	} else {
-		norm_cur_vel.x += norm_vec_to_goal.x/2/((float)(F1_0/30)/FrameTime);
-		norm_cur_vel.y += norm_vec_to_goal.y/2/((float)(F1_0/30)/FrameTime);
-		norm_cur_vel.z += norm_vec_to_goal.z/2/((float)(F1_0/30)/FrameTime);
+		norm_cur_vel.x += dxx_ai_path_smoothing_delta(norm_vec_to_goal.x, FrameTime);
+		norm_cur_vel.y += dxx_ai_path_smoothing_delta(norm_vec_to_goal.y, FrameTime);
+		norm_cur_vel.z += dxx_ai_path_smoothing_delta(norm_vec_to_goal.z, FrameTime);
 	}
 
 	vm_vec_normalize_quick(&norm_cur_vel);
