@@ -479,6 +479,7 @@ int main_menu_handler(newmenu *menu, d_event *event, int *menu_choice )
 				n_demos = newdemo_count_demos();
 				keyd_time_when_last_pressed = timer_query();			// Reset timer so that disk won't thrash if no demos.
 
+				// FX RNG: menu only, this just chooses which attract-mode item to show next
 				if (((d_rand_fx() % (n_demos+1)) == 0) && !GameArg.SysAutoDemo)
 				{
 #ifdef OGL

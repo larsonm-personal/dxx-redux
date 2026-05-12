@@ -1461,9 +1461,10 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 			raw_player_visibility = *player_visibility;
 			// *player_visibility = 2;
 
+			// FX RNG: sound only, this just jitters robot chatter cadence
 			if ((ailp->next_misc_sound_time < GameTime64) && ((ailp->next_fire < F1_0) || (ailp->next_fire2 < F1_0)) && (dist < F1_0*20)) {
 				misc_sound_gate = 1;
-				ailp->next_misc_sound_time = GameTime64 + (d_rand() + F1_0) * (7 - Difficulty_level) / 1;
+				ailp->next_misc_sound_time = GameTime64 + (d_rand_fx() + F1_0) * (7 - Difficulty_level) / 1;
 				digi_link_sound_to_pos( robptr->see_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
 			}
 		} else {
@@ -1486,13 +1487,14 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 				}
 			}
 
+			// FX RNG: sound only, these timers only vary robot sight and attack chatter cadence
 			if ((ailp->previous_visibility != *player_visibility) && (*player_visibility == 2)) {
 				if (ailp->previous_visibility == 0) {
 					if (ailp->time_player_seen + F1_0/2 < GameTime64) {
 						sight_sound_gate = 1;
 						digi_link_sound_to_pos( robptr->see_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
 						ailp->time_player_sound_attacked = GameTime64;
-						ailp->next_misc_sound_time = GameTime64 + F1_0 + d_rand()*4;
+						ailp->next_misc_sound_time = GameTime64 + F1_0 + d_rand_fx()*4;
 					}
 				} else if (ailp->time_player_sound_attacked + F1_0/4 < GameTime64) {
 					attack_sound_gate = 1;
@@ -1503,7 +1505,7 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 
 			if ((*player_visibility == 2) && (ailp->next_misc_sound_time < GameTime64)) {
 				misc_sound_gate = 1;
-				ailp->next_misc_sound_time = GameTime64 + (d_rand() + F1_0) * (7 - Difficulty_level) / 2;
+				ailp->next_misc_sound_time = GameTime64 + (d_rand_fx() + F1_0) * (7 - Difficulty_level) / 2;
 				digi_link_sound_to_pos( robptr->attack_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
 			}
 			ailp->previous_visibility = *player_visibility;
@@ -2056,6 +2058,7 @@ int do_robot_dying_frame(object *objp, fix64 start_time, fix roll_duration, sbyt
 		if (!*dying_sound_playing) {
 			*dying_sound_playing = 1;
 			digi_link_sound_to_object2( death_sound, objp-Objects, 0, sound_scale, sound_scale*256 );	//	F1_0*512 means play twice as loud
+		// FX RNG: graphics only, this only controls cosmetic death fireballs
 		} else if (d_rand_fx() < FrameTime*16)
 			create_small_fireball_on_object(objp, (F1_0 + d_rand_fx()) * (16 * expl_scale/F1_0)/8, 0);
 	} else if (d_rand_fx() < FrameTime*8)

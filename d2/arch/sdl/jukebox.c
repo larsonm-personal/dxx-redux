@@ -238,6 +238,7 @@ void jukebox_hook_next()
 {
 	if (!JukeboxSongs.list || GameCfg.CMLevelMusicTrack[0] == -1) return;
 
+	// FX RNG: music selection only, this just shuffles jukebox playback order
 	if (GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_RAND)
 		GameCfg.CMLevelMusicTrack[0] = d_rand_fx() % GameCfg.CMLevelMusicTrack[1]; // simply a random selection - no check if this song has already been played. But that's how I roll!
 	else

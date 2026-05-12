@@ -985,6 +985,7 @@ void rock_the_mine_frame(void)
 			if (!Seismic_sound_playing) {
 				digi_play_sample_looping(Seismic_sound, F1_0, -1, -1);
 				Seismic_sound_playing = 1;
+				// FX RNG: sound only, this just jitters seismic rumble cadence
 				Next_seismic_sound_time = GameTime64 + d_rand_fx()/2;
 			}
 
@@ -1067,6 +1068,7 @@ int start_seismic_disturbance(void)
 		if (!Seismic_sound_playing) {
 			digi_play_sample_looping(Seismic_sound, F1_0, -1, -1);
 			Seismic_sound_playing = 1;
+			// FX RNG: sound only, this just jitters seismic rumble cadence
 			Next_seismic_sound_time = GameTime64 + d_rand_fx()/2;
 		}
 
@@ -1504,6 +1506,7 @@ void do_seismic_stuff(void)
 			if (volume > F1_0)
 				volume = F1_0;
 			digi_change_looping_volume(volume);
+			// FX RNG: sound only, this just jitters seismic rumble cadence
 			Next_seismic_sound_time = GameTime64 + d_rand_fx()/4 + 8192;
 		}
 	}

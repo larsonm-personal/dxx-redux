@@ -488,6 +488,7 @@ void do_endlevel_frame()
 			}
 		}
 
+		// FX RNG: graphics and sound only, these endlevel blasts are cutscene dressing
 		//do explosions chasing player
 		if ((explosion_wait1-=FrameTime) < 0) {
 			vms_vector tpnt;
@@ -513,6 +514,7 @@ void do_endlevel_frame()
 		}
 	}
 
+	// FX RNG: graphics only, these endlevel wall explosions are cutscene dressing
 	//do little explosions on walls
 	if (Endlevel_sequence >= EL_FLYTHROUGH && Endlevel_sequence < EL_OUTSIDE)
 		if ((explosion_wait2-=FrameTime) < 0) {
@@ -926,6 +928,7 @@ void generate_starfield()
 {
 	int i;
 
+	// FX RNG: graphics only, this just scatters background stars for the endlevel flyout
 	for (i=0;i<MAX_STARS;i++) {
 
 				stars[i].x = (d_rand_fx() - D_RAND_MAX/2) << 14;

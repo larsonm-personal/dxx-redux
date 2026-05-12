@@ -861,6 +861,7 @@ void update_all_robot_location_info_with_view(const vms_vector *viewer_eye, cons
 //	------------------------------------------------------------------------------------------------------------------
 static void make_random_vector_fx(vms_vector *vec)
 {
+	// FX RNG: graphics only, this helper just scatters attached effects around the parent object
 	vec->x = (d_rand_fx() - 16384) | 1;
 	vec->y = d_rand_fx() - 16384;
 	vec->z = d_rand_fx() - 16384;
@@ -874,6 +875,7 @@ void create_small_fireball_on_object(object *objp, fix size_scale, int sound_fla
 	vms_vector	pos, rand_vec;
 	int			segnum;
 
+	// FX RNG: graphics and sound only, this only varies attached fireball placement, size, and crackle
 	pos = objp->pos;
 	make_random_vector_fx(&rand_vec);
 
@@ -912,6 +914,7 @@ void create_vclip_on_object(object *objp, fix size_scale, int vclip_num)
 	vms_vector	pos, rand_vec;
 	int			segnum;
 
+	// FX RNG: graphics only, this only varies attached vclip placement and size
 	pos = objp->pos;
 	make_random_vector_fx(&rand_vec);
 
@@ -1952,7 +1955,8 @@ void dead_player_frame(void)
 #endif					
 			}
 		} else {
-			if (d_rand() < FrameTime*4) {
+			// FX RNG: graphics only, this just varies post-death fireball cadence
+			if (d_rand_fx() < FrameTime*4) {
 				#ifdef NETWORK
 				if (Game_mode & GM_MULTI)
 					multi_send_create_explosion(Player_num);

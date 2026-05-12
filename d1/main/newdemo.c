@@ -3922,7 +3922,8 @@ void newdemo_start_playback(char * filename)
 			GameArg.SysAutoDemo = 0;
 			return;     // No files found!
 		}
-		RandFileNum = d_rand() % NumFiles;
+		// FX RNG: menu only, this just picks which demo file autoplay shows
+		RandFileNum = d_rand_fx() % NumFiles;
 		NumFiles = 0;
 
 		find = PHYSFSX_findFiles(DEMO_DIR, types);

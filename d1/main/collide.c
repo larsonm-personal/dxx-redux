@@ -88,7 +88,8 @@ int check_collision_delayfunc_exec()
 	if (last_play_time + (F1_0/3) < GameTime64 || last_play_time > GameTime64)
 	{
 		last_play_time = GameTime64;
-		last_play_time -= (d_rand()/2); // add some randomness
+		// FX RNG: sound only, this just jitters impact effect pacing
+		last_play_time -= (d_rand_fx()/2); // add some randomness
 		return 1;
 	}
 	return 0;

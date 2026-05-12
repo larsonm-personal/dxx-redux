@@ -454,6 +454,7 @@ int songs_play_level_song( int levelnum, int offset )
 #ifdef USE_SDLMIXER
 		case MUSIC_TYPE_CUSTOM:
 		{
+			// FX RNG: music selection only, this just shuffles the custom soundtrack order
 			if (GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_RAND)
 				GameCfg.CMLevelMusicTrack[0] = d_rand_fx() % GameCfg.CMLevelMusicTrack[1]; // simply a random selection - no check if this song has already been played. But that's how I roll!
 			else if (!offset)

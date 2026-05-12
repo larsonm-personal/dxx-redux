@@ -289,7 +289,8 @@ g3s_lrgb compute_light_emission(int objnum)
 			fix tval = Weapon_info[obj->id].light;
 			if (Game_mode & GM_MULTI)
 				if (obj->id == OMEGA_ID)
-					if (d_rand() > 8192)
+					// FX RNG: graphics only, this just flickers omega blob light contribution
+					if (d_rand_fx() > 8192)
 						light_intensity = 0; // 3/4 of time, omega blobs will cast 0 light!
 
 			if (obj->id == FLARE_ID )

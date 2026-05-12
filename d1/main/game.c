@@ -671,6 +671,7 @@ void diminish_palette_towards_normal(void)
 	int	dec_amount = 0;
 	int	diminish_rate = !(Game_mode & GM_MULTI) || !Netgame.ReducedFlash ? DIMINISH_RATE : (DIMINISH_RATE * 20);
 
+	// FX RNG: graphics only, this just smooths palette fade cadence
 	//	Diminish at DIMINISH_RATE units/second.
 	//	For frame rates > DIMINISH_RATE Hz, use randomness to achieve this.
 	if (FrameTime < F1_0/diminish_rate) {
@@ -1430,7 +1431,8 @@ void FireLaser()
 						multi_send_play_sound(SOUND_FUSION_WARMUP, F1_0);
 					#endif
 				}
-				Fusion_next_sound_time = GameTime64 + F1_0/8 + d_rand()/4;
+				// FX RNG: sound only, this just jitters fusion warmup cadence
+				Fusion_next_sound_time = GameTime64 + F1_0/8 + d_rand_fx()/4;
 			}
 
 			if (Game_mode & GM_MULTI)

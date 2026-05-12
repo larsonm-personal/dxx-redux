@@ -120,8 +120,9 @@ void do_controlcen_dead_frame(void)
 	if ((Game_mode & GM_MULTI) && (Players[Player_num].connected != CONNECT_PLAYING)) // if out of level already there's no need for this
 		return;
 
+	// FX RNG: graphics only, this just varies dead-reactor burn fireball cadence
 	if ((Dead_controlcen_object_num != -1) && (Countdown_seconds_left > 0))
-		if (d_rand() < FrameTime*4)
+		if (d_rand_fx() < FrameTime*4)
 			create_small_fireball_on_object(&Objects[Dead_controlcen_object_num], F1_0*3, 1);
 
 	if (Control_center_destroyed && !Endlevel_sequence)
