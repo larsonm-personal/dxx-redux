@@ -61,6 +61,7 @@ private val cBackground = Color(0xFF1A1A1A)
 private val cCollisionWarn = Color(0xCCFF5722.toInt())
 private const val SELECTED_TYPE_STICK_ZONE_EDGE = "stickZoneEdge"
 private const val SELECTED_TYPE_AXIS_REGION_EDGE = "axisRegionEdge"
+private const val SELECTED_TYPE_MORE_ACTIONS = "moreActions"
 private const val MIN_RESIZABLE_ZONE_SIZE_PCT = 2f
 
 internal enum class FloatingZoneEdge {
@@ -200,7 +201,7 @@ fun TouchEditorPage(
     BackHandler(onBack = onBack)
     val context = LocalContext.current
     var layout by remember { mutableStateOf(TouchLayoutRepository.load(context)) }
-    var selectedType by remember { mutableStateOf<String?>(null) } // "stick", "button"
+    var selectedType by remember { mutableStateOf<String?>(null) }
     var selectedIndex by remember { mutableIntStateOf(-1) }
     var dirty by remember { mutableStateOf(false) }
     var canvasWidth by remember { mutableFloatStateOf(1f) }
@@ -568,6 +569,16 @@ fun TouchEditorPage(
                                                 )
                                             selectedType = null
                                             selectedIndex = -1
+                                            dirty = true
+                                        },
+                                    )
+                                }
+
+                                SELECTED_TYPE_MORE_ACTIONS -> {
+                                    MoreActionsPropertiesPanel(
+                                        control = layout.moreActions,
+                                        onUpdate = { updated ->
+                                            layout = layout.copy(moreActions = updated)
                                             dirty = true
                                         },
                                     )
@@ -1066,6 +1077,40 @@ private fun drawAllControls(
         )
     }
 
+    // Draw built-in More actions button
+    val more = layout.moreActions
+    val moreBase = min(w, h)
+    val moreH = h * 0.05f * more.sizeMult
+    val moreW = max(w * 0.16f, moreBase * 0.16f) * more.sizeMult
+    val moreCx = w * more.xPct / 100f
+    val moreCy = h * more.yPct / 100f
+    val moreSelected = selType == SELECTED_TYPE_MORE_ACTIONS
+    val moreAlpha = layout.globalOpacity * more.opacity
+    scope.drawRoundRect(
+        color = cButton.copy(alpha = moreAlpha),
+        topLeft = Offset(moreCx - moreW / 2f, moreCy - moreH / 2f),
+        size = ComposeSize(moreW, moreH),
+        cornerRadius = CornerRadius(moreH * 0.45f),
+    )
+    if (moreSelected) {
+        scope.drawRoundRect(
+            color = cSelected,
+            topLeft = Offset(moreCx - moreW / 2f - 3f, moreCy - moreH / 2f - 3f),
+            size = ComposeSize(moreW + 6f, moreH + 6f),
+            cornerRadius = CornerRadius(moreH * 0.45f + 3f),
+            style = Stroke(width = 3f),
+        )
+    }
+    val moreLabel =
+        textMeasurer.measure(
+            "More",
+            style = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = moreAlpha)),
+        )
+    scope.drawText(
+        moreLabel,
+        topLeft = Offset(moreCx - moreLabel.size.width / 2f, moreCy - moreLabel.size.height / 2f),
+    )
+
     // Draw radial menus (as trigger circles with segment count label)
     layout.radialMenus.forEachIndexed { i, rm ->
         val cx = w * rm.xPct / 100f
@@ -1375,6 +1420,13 @@ private fun drawAllControls(
             ),
         )
     }
+    allBounds.add(
+        ControlBounds(
+            w * layout.moreActions.xPct / 100f,
+            h * layout.moreActions.yPct / 100f,
+            max(w * 0.08f, min(w, h) * 0.08f) * layout.moreActions.sizeMult,
+        ),
+    )
     layout.radialMenus.forEach { rm ->
         allBounds.add(
             ControlBounds(
@@ -1461,6 +1513,11 @@ private fun controlCenter(
             Offset(canvasWidth * d.xPct / 100f, canvasHeight * d.yPct / 100f)
         }
 
+        SELECTED_TYPE_MORE_ACTIONS -> {
+            val more = layout.moreActions
+            Offset(canvasWidth * more.xPct / 100f, canvasHeight * more.yPct / 100f)
+        }
+
         else -> {
             Offset.Zero
         }
@@ -1476,12 +1533,34 @@ private fun controlRadius(
 ): Float {
     val baseScale = sqrt(canvasWidth * canvasHeight)
     return when (type) {
-        "stick" -> baseScale * 0.12f * layout.sticks[index].sizeMult
-        "button" -> baseScale * 0.04f * layout.buttons[index].sizeMult
-        "radial" -> baseScale * 0.14f * layout.radialMenus[index].sizeMult
-        "slider" -> baseScale * 0.10f * layout.sliders[index].sizeMult
-        "diagnostic" -> baseScale * 0.06f * layout.diagnostics[index].sizeMult
-        else -> 0f
+        "stick" -> {
+            baseScale * 0.12f * layout.sticks[index].sizeMult
+        }
+
+        "button" -> {
+            baseScale * 0.04f * layout.buttons[index].sizeMult
+        }
+
+        "radial" -> {
+            baseScale * 0.14f * layout.radialMenus[index].sizeMult
+        }
+
+        "slider" -> {
+            baseScale * 0.10f * layout.sliders[index].sizeMult
+        }
+
+        "diagnostic" -> {
+            baseScale * 0.06f * layout.diagnostics[index].sizeMult
+        }
+
+        SELECTED_TYPE_MORE_ACTIONS -> {
+            max(canvasWidth * 0.08f, min(canvasWidth, canvasHeight) * 0.08f) *
+                layout.moreActions.sizeMult
+        }
+
+        else -> {
+            0f
+        }
     }
 }
 
@@ -1514,6 +1593,18 @@ internal fun hitTestAll(
         val r = baseScale * 0.04f * btn.sizeMult
         val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
         if (dist <= r * 1.3f) hits.add(Pair("button", i))
+    }
+
+    val more = layout.moreActions
+    val moreBase = min(canvasWidth, canvasHeight)
+    val moreH = canvasHeight * 0.05f * more.sizeMult
+    val moreW = max(canvasWidth * 0.16f, moreBase * 0.16f) * more.sizeMult
+    val moreCx = canvasWidth * more.xPct / 100f
+    val moreCy = canvasHeight * more.yPct / 100f
+    if (offset.x in (moreCx - moreW / 2f)..(moreCx + moreW / 2f) &&
+        offset.y in (moreCy - moreH / 2f)..(moreCy + moreH / 2f)
+    ) {
+        hits.add(Pair(SELECTED_TYPE_MORE_ACTIONS, 0))
     }
 
     // Check editable stick-zone and axis-region edges before larger body hits.
@@ -1672,6 +1763,13 @@ private fun moveControl(
                         it[index] = d.copy(xPct = newX, yPct = newY)
                     },
             )
+        }
+
+        SELECTED_TYPE_MORE_ACTIONS -> {
+            val more = layout.moreActions
+            val newX = (more.xPct + dxPct).coerceIn(2f, 98f)
+            val newY = (more.yPct + dyPct).coerceIn(2f, 98f)
+            layout.copy(moreActions = more.copy(xPct = newX, yPct = newY))
         }
 
         "axisRegion" -> {
@@ -2460,6 +2558,35 @@ private fun AxisRegionPropertiesPanel(
     LabeledToggle("Invert", region.invert) { onUpdate(region.copy(invert = it)) }
     CurvePicker("Curve", region.responseCurve, Modifier.fillMaxWidth()) {
         onUpdate(region.copy(responseCurve = it))
+    }
+}
+
+@Composable
+private fun MoreActionsPropertiesPanel(
+    control: MoreActionsControl,
+    onUpdate: (MoreActionsControl) -> Unit,
+) {
+    Text("More Actions", color = Color.White, fontSize = 14.sp)
+
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider(
+            "Size",
+            control.sizeMult,
+            TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE,
+            Modifier.weight(1f),
+        ) {
+            onUpdate(control.copy(sizeMult = it))
+        }
+        LabeledSlider(
+            "Opacity",
+            control.opacity,
+            TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY,
+            Modifier.weight(1f),
+        ) {
+            onUpdate(control.copy(opacity = it))
+        }
     }
 }
 

@@ -43,6 +43,7 @@ object HumanReadableConfig {
         if (layout.axisRegions.isNotEmpty()) {
             j.put("axisRegions", JSONArray(layout.axisRegions.map { axisRegionToHuman(it) }))
         }
+        j.put("moreActions", layout.moreActions.toJson())
         return j
     }
 
@@ -164,6 +165,12 @@ object HumanReadableConfig {
                 } else {
                     GyroConfig()
                 }
+            val moreActions =
+                if (json.has("moreActions")) {
+                    MoreActionsControl.fromJson(json.getJSONObject("moreActions"))
+                } else {
+                    MoreActionsControl()
+                }
             val layout =
                 TouchLayout(
                     version = json.optInt("version", 1),
@@ -181,6 +188,7 @@ object HumanReadableConfig {
                     dpads = dpads,
                     diagnostics = diagnostics,
                     axisRegions = axisRegions,
+                    moreActions = moreActions,
                     gyro = gyro,
                 )
             return ParseResult(layout, warnings)

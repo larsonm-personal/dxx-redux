@@ -101,4 +101,13 @@ class TouchEditorZoneEdgeTest {
 
         assertFalse(hits.any { it.first == "stickZoneEdge" })
     }
+
+    @Test
+    fun moreActionsButtonIsHitTestedInEditor() {
+        val layout = TouchLayout(moreActions = MoreActionsControl(xPct = 50f, yPct = 50f))
+
+        val hits = hitTestAll(layout, Offset(500f, 500f), canvasWidth = 1000f, canvasHeight = 1000f)
+
+        assertTrue(hits.contains("moreActions" to 0))
+    }
 }

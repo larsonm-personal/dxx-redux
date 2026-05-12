@@ -640,6 +640,32 @@ data class AxisRegionControl(
     }
 }
 
+data class MoreActionsControl(
+    val xPct: Float = 11f,
+    val yPct: Float = 94.5f,
+    val sizeMult: Float = 1f,
+    val opacity: Float = 0.7f,
+) {
+    fun toJson() =
+        JSONObject().apply {
+            put("type", "more_actions")
+            put("x", xPct.toDouble())
+            put("y", yPct.toDouble())
+            put("size", sizeMult.toDouble())
+            put("opacity", opacity.toDouble())
+        }
+
+    companion object {
+        fun fromJson(j: JSONObject) =
+            MoreActionsControl(
+                xPct = j.optDouble("x", 11.0).toFloat(),
+                yPct = j.optDouble("y", 94.5).toFloat(),
+                sizeMult = j.optDouble("size", 1.0).toFloat(),
+                opacity = j.optDouble("opacity", 0.7).toFloat(),
+            )
+    }
+}
+
 data class TouchLayout(
     val version: Int = 2,
     val name: String = "Default",
@@ -651,6 +677,7 @@ data class TouchLayout(
     val dpads: List<DPadControl> = emptyList(),
     val diagnostics: List<DiagnosticControl> = emptyList(),
     val axisRegions: List<AxisRegionControl> = emptyList(),
+    val moreActions: MoreActionsControl = MoreActionsControl(),
     val gyro: GyroConfig = GyroConfig(),
 ) {
     fun toJson() =
@@ -665,6 +692,7 @@ data class TouchLayout(
             put("dpads", JSONArray(dpads.map { it.toJson() }))
             put("diagnostics", JSONArray(diagnostics.map { it.toJson() }))
             put("axisRegions", JSONArray(axisRegions.map { it.toJson() }))
+            put("moreActions", moreActions.toJson())
             put("gyro", gyro.toJson())
         }
 
@@ -688,6 +716,15 @@ data class TouchLayout(
                 dpads = parseArray("dpads") { DPadControl.fromJson(it) },
                 diagnostics = parseArray("diagnostics") { DiagnosticControl.fromJson(it) },
                 axisRegions = parseArray("axisRegions") { AxisRegionControl.fromJson(it) },
+                moreActions =
+                    if (j.has(
+                            "moreActions",
+                        )
+                    ) {
+                        MoreActionsControl.fromJson(j.getJSONObject("moreActions"))
+                    } else {
+                        MoreActionsControl()
+                    },
                 gyro = if (j.has("gyro")) GyroConfig.fromJson(j.getJSONObject("gyro")) else GyroConfig(),
             )
         }

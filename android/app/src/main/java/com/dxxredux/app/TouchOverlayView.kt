@@ -119,6 +119,52 @@ internal data class RemainingTouchAction(
     val label: String,
 )
 
+private val remainingBaseActionBindings =
+    listOf(
+        TouchBindings.META_PAUSE,
+        TouchBindings.META_GAME_MENU,
+        TouchBindings.BTN_AUTOMAP,
+        TouchBindings.META_QUICK_SAVE,
+        TouchBindings.META_QUICK_LOAD,
+        TouchBindings.BTN_FIRE_FLARE,
+        TouchBindings.BTN_DROP_BOMB,
+        TouchBindings.BTN_CYCLE_PRIMARY,
+        TouchBindings.BTN_CYCLE_SECONDARY,
+        TouchBindings.BTN_HEADLIGHT,
+        TouchBindings.BTN_TOGGLE_BOMB,
+        TouchBindings.BTN_ENERGY_SHIELD,
+        TouchBindings.META_MULTIPLAYER_HUD,
+        TouchBindings.META_DROP_MARKER,
+        TouchBindings.META_DROP_FLAG,
+        TouchBindings.META_GYRO_TOGGLE,
+        TouchBindings.META_DEMO_RECORD_TOGGLE,
+        TouchBindings.META_RETURN_TO_LAUNCHER,
+    )
+
+private val remainingPrimaryWeaponBindings =
+    listOf(
+        TouchBindings.META_WEAPON_1,
+        TouchBindings.META_WEAPON_2,
+        TouchBindings.META_WEAPON_3,
+        TouchBindings.META_WEAPON_4,
+        TouchBindings.META_WEAPON_5,
+    )
+
+private val remainingSecondaryWeaponBindings =
+    listOf(
+        TouchBindings.META_WEAPON_6,
+        TouchBindings.META_WEAPON_7,
+        TouchBindings.META_WEAPON_8,
+        TouchBindings.META_WEAPON_9,
+        TouchBindings.META_WEAPON_10,
+    )
+
+private val remainingGuideBindings =
+    listOf(
+        TouchBindings.META_GUIDE_BOT_MENU,
+        TouchBindings.META_GUIDE_RELEASE_CONTROL,
+    )
+
 internal fun touchLayoutBoundActionBindings(layout: TouchLayout): Set<Int> {
     val bindings = linkedSetOf<Int>()
 
@@ -141,7 +187,7 @@ internal fun touchLayoutBoundActionBindings(layout: TouchLayout): Set<Int> {
     }
     layout.radialMenus.forEach { radial ->
         radial.segments.forEach { segment ->
-            if (segment.bindingType == "action") {
+            if (segment.bindingType == "action" || TouchBindings.isMetaAction(segment.binding)) {
                 bindings.add(segment.binding)
             }
         }
@@ -159,21 +205,30 @@ internal fun touchLayoutBoundActionBindings(layout: TouchLayout): Set<Int> {
     return bindings
 }
 
+private fun remainingCandidateBindings(layout: TouchLayout): List<Int> =
+    buildList {
+        addAll(remainingBaseActionBindings)
+        if (layout.radialMenus.none { it.id == "PriWpn" }) addAll(remainingPrimaryWeaponBindings)
+        if (layout.radialMenus.none { it.id == "SecWpn" }) addAll(remainingSecondaryWeaponBindings)
+        if (layout.radialMenus.none { it.id == "Guide" }) addAll(remainingGuideBindings)
+    }
+
+private fun remainingActionLabel(binding: Int): String =
+    TouchBindings.ALL_BUTTON_LABELS[binding]
+        ?: TouchBindings.bindingToName(binding).removePrefix("Meta: ")
+
 internal fun remainingKeyTouchActions(
     layout: TouchLayout,
     gameVariant: String,
 ): List<RemainingTouchAction> {
     val boundBindings = touchLayoutBoundActionBindings(layout)
-    val actions = mutableListOf<RemainingTouchAction>()
-
-    if (gameVariant != "d1" && TouchBindings.BTN_HEADLIGHT !in boundBindings) {
-        actions.add(RemainingTouchAction(TouchBindings.BTN_HEADLIGHT, "Headlight"))
-    }
-    if (TouchBindings.META_PAUSE !in boundBindings) {
-        actions.add(RemainingTouchAction(TouchBindings.META_PAUSE, "Pause"))
-    }
-
-    return actions
+    return remainingCandidateBindings(layout)
+        .filter { binding ->
+            gameVariant != "d1" ||
+                (binding !in TouchBindings.D2_ONLY_BUTTONS && binding !in TouchBindings.D2_ONLY_META_ACTIONS)
+        }.filter { it !in boundBindings }
+        .distinct()
+        .map { RemainingTouchAction(it, remainingActionLabel(it)) }
 }
 
 private const val MOUSE_HISTORY_WINDOW_MS = 16f
@@ -1118,23 +1173,54 @@ class TouchOverlayView
 
             val base = min(wf, hf)
             val margin = base * 0.03f
-            val buttonH = hf * 0.05f
-            val buttonW = maxOf(wf * 0.16f, base * 0.16f)
-            remainingActionButtonRect = RectF(margin, hf - buttonH - margin, margin + buttonW, hf - margin)
+            val control = layout.moreActions
+            val buttonH = hf * 0.05f * control.sizeMult
+            val buttonW = maxOf(wf * 0.16f, base * 0.16f) * control.sizeMult
+            val buttonLeft = (wf * control.xPct / 100f - buttonW / 2f).coerceIn(margin, wf - margin - buttonW)
+            val buttonTop = (hf * control.yPct / 100f - buttonH / 2f).coerceIn(margin, hf - margin - buttonH)
+            remainingActionButtonRect = RectF(buttonLeft, buttonTop, buttonLeft + buttonW, buttonTop + buttonH)
 
-            val itemH = hf * 0.06f
+            val itemH = hf * 0.06f * control.sizeMult
             val gap = base * 0.012f
-            val itemW = maxOf(buttonW * 1.35f, wf * 0.22f)
-            val totalHeight = actions.size * itemH + (actions.size - 1).coerceAtLeast(0) * gap
-            val top = (remainingActionButtonRect.top - gap - totalHeight).coerceAtLeast(margin)
+            val itemW = maxOf(buttonW * 1.35f, wf * 0.22f * control.sizeMult)
+            val maxRows = (((hf - margin * 2f) + gap) / (itemH + gap)).toInt().coerceAtLeast(1)
+            val columnCount = ((actions.size + maxRows - 1) / maxRows).coerceAtLeast(1)
+            val rowCount = ((actions.size + columnCount - 1) / columnCount).coerceAtLeast(1)
+            val totalWidth = columnCount * itemW + (columnCount - 1).coerceAtLeast(0) * gap
+            val totalHeight = rowCount * itemH + (rowCount - 1).coerceAtLeast(0) * gap
+            val top =
+                if (remainingActionButtonRect.top - gap - totalHeight >= margin) {
+                    remainingActionButtonRect.top - gap - totalHeight
+                } else if (remainingActionButtonRect.bottom + gap + totalHeight <= hf - margin) {
+                    remainingActionButtonRect.bottom + gap
+                } else {
+                    val maxTop = hf - margin - totalHeight
+                    if (maxTop >= margin) {
+                        (remainingActionButtonRect.centerY() - totalHeight / 2f).coerceIn(margin, maxTop)
+                    } else {
+                        margin
+                    }
+                }
+            val left =
+                if (remainingActionButtonRect.left + totalWidth <= wf - margin) {
+                    remainingActionButtonRect.left
+                } else {
+                    remainingActionButtonRect.right - totalWidth
+                }.let { candidate ->
+                    val maxLeft = wf - margin - totalWidth
+                    if (maxLeft >= margin) candidate.coerceIn(margin, maxLeft) else margin
+                }
 
             actions.indices.forEach { index ->
-                val itemTop = top + index * (itemH + gap)
+                val column = index / rowCount
+                val row = index % rowCount
+                val itemLeft = left + column * (itemW + gap)
+                val itemTop = top + row * (itemH + gap)
                 remainingActionItemRects.add(
                     RectF(
-                        remainingActionButtonRect.left,
+                        itemLeft,
                         itemTop,
-                        remainingActionButtonRect.left + itemW,
+                        itemLeft + itemW,
                         itemTop + itemH,
                     ),
                 )
@@ -1150,8 +1236,11 @@ class TouchOverlayView
 
         private fun triggerRemainingAction(binding: Int) {
             val sourceTag = "touch:remaining:$binding"
-            dispatchTouchButton(binding, true, sourceTag)
-            mainHandler.postDelayed({ dispatchTouchButton(binding, false, sourceTag) }, DOUBLE_TAP_RELEASE_DELAY_MS)
+            pressLayoutButtonBinding(binding, sourceTag)
+            mainHandler.postDelayed(
+                { releaseLayoutButtonBinding(binding, true, sourceTag) },
+                DOUBLE_TAP_RELEASE_DELAY_MS,
+            )
         }
 
         private fun drawRemainingActions(canvas: Canvas) {
@@ -1170,6 +1259,7 @@ class TouchOverlayView
             }
 
             recomputeRemainingActionGeometry()
+            val eff = (layout.globalOpacity * layout.moreActions.opacity).coerceIn(0f, 1f)
 
             val buttonBg =
                 if (!remainingActionOpen &&
@@ -1179,17 +1269,18 @@ class TouchOverlayView
                 } else {
                     paintBtnIdle
                 }
-            buttonBg.alpha = if (remainingActionOpen || remainingActionPressedIndex == -2) 0x88 else 0x44
+            buttonBg.alpha =
+                ((if (remainingActionOpen || remainingActionPressedIndex == -2) 0x88 else 0x44) * eff).toInt()
             val buttonCorner = remainingActionButtonRect.height() * 0.45f
             canvas.drawRoundRect(remainingActionButtonRect, buttonCorner, buttonCorner, buttonBg)
-            paintRing.alpha = 0x66
+            paintRing.alpha = (0x66 * eff).toInt()
             canvas.drawRoundRect(remainingActionButtonRect, buttonCorner, buttonCorner, paintRing)
 
             val buttonText =
                 Paint(paintBtnLabel).apply {
                     textSize = remainingActionButtonRect.height() * 0.38f
                     textAlign = Paint.Align.CENTER
-                    alpha = 0xAA
+                    alpha = (0xAA * eff).toInt()
                 }
             canvas.drawText(
                 "More",
@@ -1206,15 +1297,15 @@ class TouchOverlayView
                 Paint(paintBtnLabel).apply {
                     textSize = remainingActionButtonRect.height() * 0.34f
                     textAlign = Paint.Align.LEFT
-                    alpha = 0xCC
+                    alpha = (0xCC * eff).toInt()
                 }
             actions.forEachIndexed { index, action ->
                 val rect = remainingActionItemRects[index]
                 val bg = if (remainingActionPressedIndex == index) paintBtnPressed else paintBtnIdle
-                bg.alpha = if (remainingActionPressedIndex == index) 0x99 else 0x55
+                bg.alpha = ((if (remainingActionPressedIndex == index) 0x99 else 0x55) * eff).toInt()
                 val corner = rect.height() * 0.3f
                 canvas.drawRoundRect(rect, corner, corner, bg)
-                paintRing.alpha = 0x66
+                paintRing.alpha = (0x66 * eff).toInt()
                 canvas.drawRoundRect(rect, corner, corner, paintRing)
                 canvas.drawText(
                     action.label,
@@ -2008,7 +2099,7 @@ class TouchOverlayView
                 return handleAdminTrayTouch(event)
             }
 
-            if (remainingActionOpen || handleRemainingActionsTouch(event)) return true
+            if (handleRemainingActionsTouch(event)) return true
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
