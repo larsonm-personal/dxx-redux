@@ -1,9 +1,9 @@
 # bugs
-[ ] on regular android, the main loading screen and menus are back to having texture filtering, even though the setting for that directs it to be off for these textures (as it is for in-game menu textures). the setting is "enable filters for..." "menus / briefings / videos / text / reticle" in the graphics tab
-[ ] on regular android, an imported "infinite abyss" CD (which is reconstructed into a game data folder single image file) plays as static. other types of CD audio work
-[ ] select button should open the overlay settings menu, not the in-game menu. maybe the in-game menu doesn't show when we have the touch overlay off?
+[ ] on regular android, an imported "infinite abyss" CD (which is reconstructed into a game data folder single image file) plays as static. other types of CD audio work. the audio plays correctly in the launcher's track list player
+[ ] gamepad select button should open the overlay settings menu, not the in-game menu. maybe the in-game menu doesn't show when we have the touch overlay off?
 [needs testing] mouse mode for the touch interface in-game look axis: it now has a *significant* deadband that can't be turned off (even with curve=linear). this is new as of sometime in the last few days
 [ready to test] when loading a mod and close to device storage capacity, this can cause a crash (with no crash dump). 1. need kotlin crash dumps working in this case and 2. check for free space when extracting things into game data
+[fixed] on regular android, the main loading screen and menus are back to having texture filtering, even though the setting for that directs it to be off for these textures (as it is for in-game menu textures). the setting is "enable filters for..." "menus / briefings / videos / text / reticle" in the graphics tab
 [fixed] android TV: d2 gog installer is failing to extract the CD image, it skips forward instead of extracting it. might be failing with limited memory or something, need logging
 [fixed] android TV: can't multi-select files in "import" saf picker in order to have bin+cue selected for import. any press, long or short, of "a"/"select" immediately selects the single file under it
 [fixed] regular android: at "new game" "you may start on any level..." screen: the numbers-only keyboard wasn't filling the text box even though backspace sometimes worked
@@ -24,7 +24,7 @@
 [fixed] android TV doesn't use the gamepad for the on-screen keyboard. only "a" works as a button press to select the current character, d-pad or sticks don't move around chars
 
 # nice to haves
-[ ] the android build system - dependency fetcher, build scripts, test scripts - all needs to be ported to linux
+[ ] the android build system - dependency fetcher, build scripts, test scripts - needs to be ported to linux
 [ ] need auto save on minimize. save to save slot 10 and call it "AUTO SAVE"
 [needs testing] allow buttons to be placed within the drag zones (they currently are allowed, but don't have special handling). if the button is pressed it stays active as long as the drag continues, then the button is released on drag stop. this will give another way to fire weapons while looking with the same thumb
 [needs testing] controls editor needs to have a route to open the edit axis/button binding page for a specific axis/button if it's held for 2 seconds. that would enable quick controller-only bindings setup. for axes, the detection would be looking for an axis held to >80% of full range in a single direction without any other axis going >30% or any other button being pressed (for 2 seconds). for buttons, a button held >2s with no axis >30% or other button presses. only run this detection on the main controller edit page, don't open it for other bindings once a particular binding sub menu is shown

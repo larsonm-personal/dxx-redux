@@ -653,6 +653,7 @@ class MainActivity :
             nativeKeyEvent(action, keyCode, unicode)
         }
         touchOverlay.gameVariant = game
+        touchOverlay.isMultiplayerGameProvider = { isMultiplayerGame }
         touchOverlay.gamepadOnlyMode = gamepadOnlyMode
         touchOverlay.isEscortOwnerProvider = {
             try {

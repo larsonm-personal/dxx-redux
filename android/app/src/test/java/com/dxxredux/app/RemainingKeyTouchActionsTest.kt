@@ -10,12 +10,33 @@ class RemainingKeyTouchActionsTest {
         val actions = remainingKeyTouchActions(TouchLayout(name = "Empty"), gameVariant = "d2")
         val bindings = actions.map { it.binding }
 
-        assertEquals(TouchBindings.META_PAUSE, bindings.first())
+        assertEquals(TouchBindings.BTN_AUTOMAP, bindings.first())
         assertTrue(TouchBindings.BTN_HEADLIGHT in bindings)
-        assertTrue(TouchBindings.META_QUICK_SAVE in bindings)
+        assertTrue(TouchBindings.META_QUICK_SAVE !in bindings)
+        assertTrue(TouchBindings.META_QUICK_LOAD !in bindings)
+        assertTrue(TouchBindings.META_GAME_MENU !in bindings)
+        assertTrue(TouchBindings.META_PAUSE !in bindings)
+        assertTrue(TouchBindings.META_MULTIPLAYER_HUD !in bindings)
+        assertTrue(TouchBindings.META_DROP_FLAG !in bindings)
         assertTrue(TouchBindings.META_WEAPON_1 in bindings)
         assertTrue(TouchBindings.META_WEAPON_10 in bindings)
         assertTrue(TouchBindings.META_GUIDE_BOT_MENU in bindings)
+    }
+
+    @Test
+    fun d2MultiplayerLayoutGetsMultiplayerOnlyOverflowActions() {
+        val actions =
+            remainingKeyTouchActions(
+                TouchLayout(name = "Empty"),
+                gameVariant = "d2",
+                isMultiplayerGame = true,
+            )
+        val bindings = actions.map { it.binding }
+
+        assertTrue(TouchBindings.META_MULTIPLAYER_HUD in bindings)
+        assertTrue(TouchBindings.META_DROP_FLAG in bindings)
+        assertTrue(TouchBindings.META_QUICK_SAVE !in bindings)
+        assertTrue(TouchBindings.META_PAUSE !in bindings)
     }
 
     @Test
@@ -23,15 +44,15 @@ class RemainingKeyTouchActionsTest {
         val actions = remainingKeyTouchActions(TouchLayout(name = "Empty"), gameVariant = "d1")
         val bindings = actions.map { it.binding }
 
-        assertTrue(TouchBindings.META_PAUSE in bindings)
         assertTrue(TouchBindings.META_WEAPON_1 in bindings)
+        assertTrue(TouchBindings.META_PAUSE !in bindings)
         assertTrue(TouchBindings.BTN_HEADLIGHT !in bindings)
         assertTrue(TouchBindings.META_DROP_MARKER !in bindings)
         assertTrue(TouchBindings.META_GUIDE_BOT_MENU !in bindings)
     }
 
     @Test
-    fun alreadyBoundHeadlightAndPauseAreFilteredOut() {
+    fun alreadyBoundHeadlightAndLauncherAreFilteredOut() {
         val layout =
             TouchLayout(
                 name = "Bound",
@@ -52,7 +73,7 @@ class RemainingKeyTouchActionsTest {
                             yPct = 60f,
                             axisX = TouchBindings.AXIS_RIGHT_X,
                             axisY = TouchBindings.AXIS_RIGHT_Y,
-                            doubleTapBinding = TouchBindings.META_PAUSE,
+                            doubleTapBinding = TouchBindings.META_RETURN_TO_LAUNCHER,
                         ),
                     ),
             )
@@ -61,8 +82,8 @@ class RemainingKeyTouchActionsTest {
         val bindings = actions.map { it.binding }
 
         assertTrue(TouchBindings.BTN_HEADLIGHT !in bindings)
-        assertTrue(TouchBindings.META_PAUSE !in bindings)
-        assertTrue(TouchBindings.META_QUICK_SAVE in bindings)
+        assertTrue(TouchBindings.META_RETURN_TO_LAUNCHER !in bindings)
+        assertTrue(TouchBindings.BTN_FIRE_FLARE in bindings)
     }
 
     @Test
@@ -81,6 +102,8 @@ class RemainingKeyTouchActionsTest {
 
         assertTrue(TouchBindings.META_WEAPON_1 !in bindings)
         assertTrue(TouchBindings.META_WEAPON_10 !in bindings)
+        assertTrue(TouchBindings.BTN_CYCLE_PRIMARY !in bindings)
+        assertTrue(TouchBindings.BTN_CYCLE_SECONDARY !in bindings)
     }
 
     @Test

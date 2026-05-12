@@ -121,24 +121,22 @@ internal data class RemainingTouchAction(
 
 private val remainingBaseActionBindings =
     listOf(
-        TouchBindings.META_PAUSE,
-        TouchBindings.META_GAME_MENU,
         TouchBindings.BTN_AUTOMAP,
-        TouchBindings.META_QUICK_SAVE,
-        TouchBindings.META_QUICK_LOAD,
         TouchBindings.BTN_FIRE_FLARE,
         TouchBindings.BTN_DROP_BOMB,
-        TouchBindings.BTN_CYCLE_PRIMARY,
-        TouchBindings.BTN_CYCLE_SECONDARY,
         TouchBindings.BTN_HEADLIGHT,
         TouchBindings.BTN_TOGGLE_BOMB,
         TouchBindings.BTN_ENERGY_SHIELD,
-        TouchBindings.META_MULTIPLAYER_HUD,
         TouchBindings.META_DROP_MARKER,
-        TouchBindings.META_DROP_FLAG,
         TouchBindings.META_GYRO_TOGGLE,
         TouchBindings.META_DEMO_RECORD_TOGGLE,
         TouchBindings.META_RETURN_TO_LAUNCHER,
+    )
+
+private val remainingMultiplayerActionBindings =
+    listOf(
+        TouchBindings.META_MULTIPLAYER_HUD,
+        TouchBindings.META_DROP_FLAG,
     )
 
 private val remainingPrimaryWeaponBindings =
@@ -205,11 +203,24 @@ internal fun touchLayoutBoundActionBindings(layout: TouchLayout): Set<Int> {
     return bindings
 }
 
-private fun remainingCandidateBindings(layout: TouchLayout): List<Int> =
+private fun remainingCandidateBindings(
+    layout: TouchLayout,
+    isMultiplayerGame: Boolean,
+): List<Int> =
     buildList {
+        val hasPrimaryWheel = layout.radialMenus.any { it.id == "PriWpn" }
+        val hasSecondaryWheel = layout.radialMenus.any { it.id == "SecWpn" }
+
         addAll(remainingBaseActionBindings)
-        if (layout.radialMenus.none { it.id == "PriWpn" }) addAll(remainingPrimaryWeaponBindings)
-        if (layout.radialMenus.none { it.id == "SecWpn" }) addAll(remainingSecondaryWeaponBindings)
+        if (isMultiplayerGame) addAll(remainingMultiplayerActionBindings)
+        if (!hasPrimaryWheel) {
+            add(TouchBindings.BTN_CYCLE_PRIMARY)
+            addAll(remainingPrimaryWeaponBindings)
+        }
+        if (!hasSecondaryWheel) {
+            add(TouchBindings.BTN_CYCLE_SECONDARY)
+            addAll(remainingSecondaryWeaponBindings)
+        }
         if (layout.radialMenus.none { it.id == "Guide" }) addAll(remainingGuideBindings)
     }
 
@@ -220,9 +231,10 @@ private fun remainingActionLabel(binding: Int): String =
 internal fun remainingKeyTouchActions(
     layout: TouchLayout,
     gameVariant: String,
+    isMultiplayerGame: Boolean = false,
 ): List<RemainingTouchAction> {
     val boundBindings = touchLayoutBoundActionBindings(layout)
-    return remainingCandidateBindings(layout)
+    return remainingCandidateBindings(layout, isMultiplayerGame)
         .filter { binding ->
             gameVariant != "d1" ||
                 (binding !in TouchBindings.D2_ONLY_BUTTONS && binding !in TouchBindings.D2_ONLY_META_ACTIONS)
@@ -339,6 +351,9 @@ class TouchOverlayView
 
         /** "d1" or "d2" — determines which cheat list to show. Set by MainActivity. */
         var gameVariant: String = "d2"
+
+        /** Returns true while this activity is running a multiplayer session. */
+        var isMultiplayerGameProvider: (() -> Boolean)? = null
 
         /** Returns true if local player owns the Guide-Bot in coop. Set by MainActivity. */
         var isEscortOwnerProvider: (() -> Boolean)? = null
@@ -1158,7 +1173,11 @@ class TouchOverlayView
         }
 
         private fun currentRemainingTouchActions(): List<RemainingTouchAction> =
-            remainingKeyTouchActions(layout, gameVariant)
+            remainingKeyTouchActions(
+                layout = layout,
+                gameVariant = gameVariant,
+                isMultiplayerGame = isMultiplayerGameProvider?.invoke() == true,
+            )
 
         private fun recomputeRemainingActionGeometry() {
             remainingActionItemRects.clear()

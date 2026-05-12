@@ -2566,7 +2566,7 @@ private fun MoreActionsPropertiesPanel(
     control: MoreActionsControl,
     onUpdate: (MoreActionsControl) -> Unit,
 ) {
-    Text("More Actions", color = Color.White, fontSize = 14.sp)
+    Text("More Actions (anything unassigned)", color = Color.White, fontSize = 14.sp)
 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         LabeledSlider(
