@@ -1007,6 +1007,7 @@ void rock_the_mine_frame(void)
 
 				if (d_tick_step)
 				{
+					// SIM RNG: these rolls directly shake player and buddy physics
 					rx = fixmul(d_rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32);
 					rz = fixmul(d_rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32);
 
@@ -1060,6 +1061,7 @@ int start_seismic_disturbance(void)
 	if (Level_shake_duration < 1)
 		return 0;
 
+	// SIM RNG: this decides whether a real seismic event starts
 	rval =  (2 * fixmul(d_rand(), Level_shake_frequency)) < FrameTime;
 
 	if (rval) {
@@ -1102,6 +1104,7 @@ void seismic_disturbance_frame(void)
 
 			if (d_tick_step)
 			{
+				// SIM RNG: these rolls directly shake player physics
 				rx = fixmul(d_rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32);
 				rz = fixmul(d_rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32);
 
@@ -1226,6 +1229,7 @@ int spit_powerup(object *spitter, int id,int seed)
 
 	vm_vec_scale_add(&new_velocity,&spitter->mtype.phys_info.velocity,&spitter->orient.fvec,i2f(SPIT_SPEED));
 
+	// SIM RNG: these rolls set real dropped powerup trajectory
 	new_velocity.x += (d_rand() - 16384) * SPIT_SPEED * 2;
 	new_velocity.y += (d_rand() - 16384) * SPIT_SPEED * 2;
 	new_velocity.z += (d_rand() - 16384) * SPIT_SPEED * 2;
@@ -1279,6 +1283,7 @@ int spit_powerup(object *spitter, int id,int seed)
 		case POW_MISSILE_4:
 		case POW_SHIELD_BOOST:
 		case POW_ENERGY:
+			// SIM RNG: timed dropped powerups keep their real lifetime on sim
 			obj->lifeleft = (d_rand() + F1_0*3) * 64;		//	Lives for 3 to 3.5 binary minutes (a binary minute is 64 seconds)
 			if (Game_mode & GM_MULTI)
 				obj->lifeleft /= 2;
@@ -1308,6 +1313,7 @@ void DropCurrentWeapon ()
 	HUD_init_message(HM_DEFAULT, "%s dropped!",PRIMARY_WEAPON_NAMES(Players[Player_num].primary_weapon));
 	digi_play_sample (SOUND_DROP_WEAPON,F1_0);
 
+	// SIM RNG: this seed drives dropped powerup trajectory and lifetime
 	seed = d_rand();
 
 	objnum = spit_powerup(ConsoleObject,Primary_weapon_to_powerup[Players[Player_num].primary_weapon],seed);
@@ -1458,6 +1464,7 @@ void DropSecondaryWeapon ()
 	HUD_init_message(HM_DEFAULT, "%s dropped!",SECONDARY_WEAPON_NAMES(Players[Player_num].secondary_weapon));
 	digi_play_sample (SOUND_DROP_WEAPON,F1_0);
 
+	// SIM RNG: this seed drives dropped powerup trajectory and lifetime
 	seed = d_rand();
 
 	objnum = spit_powerup(ConsoleObject,weapon_drop_id,seed);

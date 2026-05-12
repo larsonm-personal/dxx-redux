@@ -99,6 +99,7 @@ int check_collision_delayfunc_exec()
 	if (Collision_delay_last_play_time + (F1_0/3) < GameTime64 || Collision_delay_last_play_time > GameTime64)
 	{
 		Collision_delay_last_play_time = GameTime64;
+		// SIM RNG: this gate also controls live collision explosion spawning
 		Collision_delay_last_play_time -= (d_rand()/2); // add some randomness
 		return 1;
 	}
@@ -411,6 +412,7 @@ void scrape_player_on_wall(object *obj, short hitseg, short hitside, vms_vector 
 		vm_vec_normalize_quick(&hit_dir);
 		bump_one_object(obj, &hit_dir, F1_0*8);
 
+		// SIM RNG: this directly spins the hit object after the live bump
 		obj->mtype.phys_info.rotvel.x = (d_rand() - 16384)/2;
 		obj->mtype.phys_info.rotvel.z = (d_rand() - 16384)/2;
 

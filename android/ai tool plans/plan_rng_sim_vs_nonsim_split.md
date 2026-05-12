@@ -233,8 +233,8 @@ Explicitly **not** to be migrated (these stay on the sim stream):
   the sim stream after deciding collision-adjacent throttles are too close to
   live player/robot contact handling to treat as safe FX-only state.
 - [x] Audit the d1/d2 AI sound-timer paths and keep the `next_misc_sound_time`
-  scheduling rolls on the sim stream because that timer is persisted and reused
-  by cloaked-visibility handling in `compute_vis_and_vec`.
+  scheduling rolls on the FX stream after confirming they only throttle robot
+  chatter playback and their own timer update inside `compute_vis_and_vec`.
 - [x] Audit the d1/d2 robot death-roll fireball path and move its cadence/size
   rolls plus the shared `object.c` visual fireball/vclip helper randomness to
   `d_rand_fx()`.
@@ -320,9 +320,10 @@ Explicitly **not** to be migrated (these stay on the sim stream):
   `gameseq.c` files were explicitly left on the sim stream.
 - [x] Phase 4 re-audited the d1/d2 collision sound-delay jitter in `collide.c`
   and restored it to the sim stream.
-- [x] Phase 4 re-audited `next_misc_sound_time` in d1/d2 AI and restored its
-  scheduling rolls to the sim stream, while leaving the shared non-damaging
-  small-fireball/vclip helper randomness in `object.c` on the FX stream.
+- [x] Phase 4 re-audited `next_misc_sound_time` in d1/d2 AI and confirmed it
+  stays on the FX stream, while the collision-delay helper in `collide.c`
+  stays on the sim stream and the shared non-damaging small-fireball/vclip
+  helper randomness in `object.c` stays on the FX stream.
 - [x] D2 validation passed: `run-windows-build.ps1 -Target d2` and
   `buildd2\maths\test_rng_seed_resume.exe`.
 - [x] D1 validation passed: `run-windows-build.ps1 -Target d1` and
@@ -330,9 +331,9 @@ Explicitly **not** to be migrated (these stay on the sim stream):
 
 ## New Notes
 
-- `Fusion_next_sound_time` stays on the sim stream for now. The warmup branch
-  shares code with overcharge damage timing and damage rolls, so moving its RNG
-  without a more careful split could change gameplay.
+- `Fusion_next_sound_time` remains FX-owned. The live warmup branch uses the
+  random draw only to reschedule the warmup sample cadence after the gameplay
+  path has already decided the current fusion charge state.
 - Legacy rngtrace sidecars recorded before this split still contain palette-only
   calls. The `141502` demo now reaches the expected sim state by frame 2 once
   those old palette events are mentally filtered out, which means future
@@ -340,13 +341,16 @@ Explicitly **not** to be migrated (these stay on the sim stream):
 - The D2 main-menu autodemo chooser is presentation-only and now uses `d_rand_fx()`.
   The matching D1 main menu has no RNG at that site because it delegates random
   demo selection to `newdemo_start_playback(NULL)` without a local roll.
-- `next_misc_sound_time` is now explicitly treated as sim-owned. Even though it
-  throttles robot chatter, it is serialized in `ai_local_rw` and participates in
-  the cloaked-visibility path in `compute_vis_and_vec`, so it is not a disposable
-  presentation-only timer.
+- `next_misc_sound_time` remains FX-owned. It is serialized in `ai_local_rw`,
+  but the live `compute_vis_and_vec` reads only use it to throttle chatter
+  playback and rewrite the timer itself; it does not gate visibility,
+  awareness, movement, or attack decisions.
 - `check_collision_delayfunc_exec()` is also back on the sim stream. Its current
   effect is still sound/explosion throttling, but it sits directly on live
   player/robot collision handling, so the safer classification is simulation.
+- D2 `Next_seismic_sound_time` remains FX-owned. The simulation-owned rolls
+  already decide whether seismic shaking starts and how much rotation is
+  applied; the FX timer only jitters looping rumble cadence and volume updates.
 - `gameseq.c` remains simulation-owned. Its `d_srand((fix)timer_query())` and
   `d_rand()` calls directly choose multiplayer spawn positions and therefore must
   stay on the sim stream.

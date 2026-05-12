@@ -391,6 +391,7 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 
 									if (obj->ctype.ai_info.SKIP_AI_COUNT * FrameTime < F1_0) {
 										aip->SKIP_AI_COUNT += force_val;
+										// SIM RNG: this directly feeds live robot stun spin physics
 										obj0p->mtype.phys_info.rotthrust.x = ((d_rand() - 16384) * force_val)/16;
 										obj0p->mtype.phys_info.rotthrust.y = ((d_rand() - 16384) * force_val)/16;
 										obj0p->mtype.phys_info.rotthrust.z = ((d_rand() - 16384) * force_val)/16;
@@ -686,6 +687,7 @@ object *object_create_debris(object *parent, int subobj_num)
 	obj->rtype.pobj_info.tmap_override = parent->rtype.pobj_info.tmap_override;
 
 	//Set physics data for this object
+	// SIM RNG: debris stays physical and weapons can still hit it
 
 	obj->mtype.phys_info.velocity.x = D_RAND_MAX/2 - d_rand();
 	obj->mtype.phys_info.velocity.y = D_RAND_MAX/2 - d_rand();
@@ -1165,6 +1167,7 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 		del_obj->contains_count = 0;
 	else if (weapon_index != -1) {
 		if ((player_has_weapon(Player_num, weapon_index, 0) & HAS_WEAPON_FLAG) || weapon_nearby(del_obj, del_obj->contains_id)) {
+			// SIM RNG: this picks the actual replacement drop for duplicate weapons
 			if (d_rand() > 16384) {
 				del_obj->contains_type = OBJ_POWERUP;
 				if (weapon_index == VULCAN_INDEX) {
@@ -1181,6 +1184,7 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 		}
 	} else if (del_obj->contains_id == POW_QUAD_FIRE)
 		if ((Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS) || weapon_nearby(del_obj, del_obj->contains_id)) {
+			// SIM RNG: this picks the actual replacement drop for duplicate quads
 			if (d_rand() > 16384) {
 				del_obj->contains_type = OBJ_POWERUP;
 				del_obj->contains_id = POW_ENERGY;
@@ -1227,6 +1231,7 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 				} else
 					rand_scale = 2;
 
+				// SIM RNG: these rolls set real dropped powerup trajectory
 				new_velocity.x += fixmul(old_mag+F1_0*32, d_rand()*rand_scale - 16384*rand_scale);
 				new_velocity.y += fixmul(old_mag+F1_0*32, d_rand()*rand_scale - 16384*rand_scale);
 				new_velocity.z += fixmul(old_mag+F1_0*32, d_rand()*rand_scale - 16384*rand_scale);
@@ -1287,6 +1292,7 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 						}
 					case POW_SHIELD_BOOST:
 					case POW_ENERGY:
+							// SIM RNG: timed pickups keep their real lifetime on the sim stream
 						obj->lifeleft = (d_rand() + F1_0*3) * 64;		//	Lives for 3 to 3.5 binary minutes (a binary minute is 64 seconds)
 						if (Game_mode & GM_MULTI)
 							obj->lifeleft /= 2;
@@ -1313,6 +1319,7 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 //				else
 					rand_scale = 2;
 
+				// SIM RNG: these rolls set real spawned-robot motion
 				new_velocity.x += (d_rand()-16384)*2;
 				new_velocity.y += (d_rand()-16384)*2;
 				new_velocity.z += (d_rand()-16384)*2;
@@ -1377,6 +1384,7 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 
 			// At JasenW's request, robots which contain robots
 			// sometimes drop shields.
+			// SIM RNG: this decides whether the spawned robot also drops a shield pickup
 			if (d_rand() > 16384)
 				drop_powerup(OBJ_POWERUP, POW_SHIELD_BOOST, 1, init_vel, pos, segnum);
 
@@ -1402,20 +1410,24 @@ int object_create_egg(object *objp)
 		{
 			if (objp->contains_id == POW_SHIELD_BOOST) {
 				if (Players[Player_num].shields >= i2f(100)) {
+					// SIM RNG: this decides whether the shield drop exists at all
 					if (d_rand() > 16384) {
 						return -1;
 					}
 				} else  if (Players[Player_num].shields >= i2f(150)) {
+					// SIM RNG: this decides whether the shield drop exists at all
 					if (d_rand() > 8192) {
 						return -1;
 					}
 				}
 			} else if (objp->contains_id == POW_ENERGY) {
 				if (Players[Player_num].energy >= i2f(100)) {
+					// SIM RNG: this decides whether the energy drop exists at all
 					if (d_rand() > 16384) {
 						return -1;
 					}
 				} else  if (Players[Player_num].energy >= i2f(150)) {
+					// SIM RNG: this decides whether the energy drop exists at all
 					if (d_rand() > 8192) {
 						return -1;
 					}
@@ -1684,6 +1696,7 @@ void do_explosion_sequence(object *obj)
 		} else if ((del_obj->type == OBJ_ROBOT) && !(Game_mode & GM_MULTI)) { // Multiplayer handled outside this code!!
 			robot_info	*robptr = &Robot_info[del_obj->id];
 			if (robptr->contains_count) {
+				// SIM RNG: this decides whether robot loot spawns and how much drops
 				if (((d_rand() * 16) >> 15) < robptr->contains_prob) {
 					del_obj->contains_count = ((d_rand() * robptr->contains_count) >> 15) + 1;
 					del_obj->contains_type = robptr->contains_type;
@@ -1848,6 +1861,7 @@ void do_exploding_wall_frame()
 				vm_vec_sub(&vv0,v0,v1);
 				vm_vec_sub(&vv1,v2,v1);
 
+				// SIM RNG: wall blast jitter can feed damaging badass explosions
 				vm_vec_scale_add(&pos,v1,&vv0,d_rand()*2);
 				vm_vec_scale_add2(&pos,&vv1,d_rand()*2);
 

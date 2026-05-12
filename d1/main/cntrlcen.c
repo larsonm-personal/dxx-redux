@@ -150,6 +150,7 @@ void do_countdown_frame()
 
 	if (d_tick_step)
 	{
+		// SIM RNG: these rolls directly rock live ship physics
 		ConsoleObject->mtype.phys_info.rotvel.x += (fixmul(d_rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32))/div_scale;
 		ConsoleObject->mtype.phys_info.rotvel.z += (fixmul(d_rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32))/div_scale;
 	}
@@ -333,6 +334,7 @@ void do_controlcen_frame(object *obj)
 			Laser_create_new_easy( &vec_to_goal, &obj->ctype.reactor_info.gun_pos[best_gun_num], obj-Objects, CONTROLCEN_WEAPON_NUM, 1);
 
 			//	1/4 of time, fire another thing, not directly at player, so it might hit him if he's constantly moving.
+			// SIM RNG: this decides whether the reactor fires an extra live shot
 			if (d_rand() < 32767/4) {
 				vms_vector	randvec;
 

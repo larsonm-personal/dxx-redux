@@ -180,6 +180,7 @@ void do_countdown_frame()
 
 	if (d_tick_step)
 	{
+		// SIM RNG: these rolls directly rock live ship physics
 		ConsoleObject->mtype.phys_info.rotvel.x += (fixmul(d_rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32))/div_scale;
 		ConsoleObject->mtype.phys_info.rotvel.z += (fixmul(d_rand() - 16384, 3*F1_0/16 + (F1_0*(16-fc))/32))/div_scale;
 	}
@@ -393,6 +394,7 @@ void do_controlcen_frame(object *obj)
 			//	some of time, based on level, fire another thing, not directly at player, so it might hit him if he's constantly moving.
 			rand_prob = F1_0/(abs(Current_level_num)/4+2);
 			count = 0;
+			// SIM RNG: this decides how many extra live reactor shots get fired
 			while ((d_rand() > rand_prob) && (count < 4)) {
 				vms_vector	randvec;
 

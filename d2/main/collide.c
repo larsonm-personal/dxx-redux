@@ -291,6 +291,7 @@ int check_collision_delayfunc_exec()
 	if (Collision_delay_last_play_time + (F1_0/3) < GameTime64 || Collision_delay_last_play_time > GameTime64)
 	{
 		Collision_delay_last_play_time = GameTime64;
+		// SIM RNG: this gate also controls live collision explosion spawning
 		Collision_delay_last_play_time -= (d_rand()/2); // add some randomness
 		return 1;
 	}
@@ -568,6 +569,7 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 		PALETTE_FLASH_ADD(0, 0, 60);	//flash blue
 
 		//knock player around
+		// SIM RNG: this directly perturbs live player physics on forcefield hits
 		force.x = 40*(d_rand() - 16384);
 		force.y = 40*(d_rand() - 16384);
 		force.z = 40*(d_rand() - 16384);
@@ -702,6 +704,7 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 				PALETTE_FLASH_ADD(f2i(damage*4), 0, 0);	//flash red
 			}
 
+			// SIM RNG: this directly spins the hit object after the live bump
 			obj->mtype.phys_info.rotvel.x = (d_rand() - 16384)/2;
 			obj->mtype.phys_info.rotvel.z = (d_rand() - 16384)/2;
 		}
@@ -1816,6 +1819,7 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 	if (weapon->ctype.laser_info.parent_type == OBJ_PLAYER)
 		if ((Weapon_info[weapon->id].matter && Boss_spews_bots_matter[d2_boss_index]) || (!Weapon_info[weapon->id].matter && Boss_spews_bots_energy[d2_boss_index])) {
 			if (Boss_spew_more[d2_boss_index])
+				// SIM RNG: this decides whether the boss spits an extra live robot
 				if (d_rand() > 16384) {
 					if (boss_spew_robot(robot, collision_point) != -1)
 						Last_gate_time = GameTime64 - Gate_interval - 1;	//	Force allowing spew of another bot.
@@ -1842,7 +1846,8 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 			if (Buddy_objnum != -1)
 			{
 				if (Last_time_buddy_gave_hint == 0)
-					Last_time_buddy_gave_hint = d_rand()*32 + F1_0*16;
+					// FX RNG: buddy hint delay is message timing only
+					Last_time_buddy_gave_hint = d_rand_fx()*32 + F1_0*16;
 
 				if (Buddy_gave_hint_count) {
 					if (Last_time_buddy_gave_hint + F1_0*20 < GameTime64) {
@@ -1850,7 +1855,8 @@ int do_boss_weapon_collision(object *robot, object *weapon, vms_vector *collisio
 
 						Buddy_gave_hint_count--;
 						Last_time_buddy_gave_hint = GameTime64;
-						sval = (d_rand()*4) >> 15;
+						// FX RNG: buddy hint text choice is UI only
+						sval = (d_rand_fx()*4) >> 15;
 						switch (sval) {
 							case 0:	buddy_message("Hit him in the back!");	break;
 							case 1:	buddy_message("He's invulnerable there!");	break;
@@ -1987,6 +1993,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 			probval = Robot_info[robot->id].energy_blobs * probval/(NDL*32);
 
 			num_blobs = probval >> 16;
+			// SIM RNG: this decides whether one more smart child actually spawns
 			if (2*d_rand() < (probval & 0xffff))
 				num_blobs++;
 
@@ -2108,6 +2115,7 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 
 			if (aip->SKIP_AI_COUNT * FrameTime < F1_0) {
 				aip->SKIP_AI_COUNT++;
+				// SIM RNG: these rolls directly torque live robot physics
 				robot->mtype.phys_info.rotthrust.x = fixmul((d_rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
 				robot->mtype.phys_info.rotthrust.y = fixmul((d_rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
 				robot->mtype.phys_info.rotthrust.z = fixmul((d_rand() - 16384), FrameTime * aip->SKIP_AI_COUNT);
@@ -2330,6 +2338,7 @@ void drop_player_eggs_remote(object *playerobj, ubyte remote)
 
 		//	If the player had smart mines, maybe arm one of them.
 		rthresh = 30000;
+		// SIM RNG: this decides whether a real armed smart mine spawns on death
 		while ((Players[playerobj->id].secondary_ammo[SMART_MINE_INDEX]%4==1) && (d_rand() < rthresh)) {
 			int			newseg;
 			vms_vector	tvec;

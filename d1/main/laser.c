@@ -414,6 +414,7 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 //	obj->lifeleft = Weapon_info[obj->id].lifetime;
 
 	if ((obj->type == OBJ_WEAPON) && (obj->id == FLARE_ID))
+		// SIM RNG: this changes how long the live flare object persists
 		obj->lifeleft += (d_rand()-16384) << 2;		//	add in -2..2 seconds
 
 	return objnum;
@@ -1315,6 +1316,7 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 			fix spreadu;
 			//if (d_rand() > 24576)
 			//	make_sound = 1;
+			// SIM RNG: these rolls change live vulcan shot spread and hit results
 			spreadr = d_rand()/8 - 32767/16;
 			spreadu = d_rand()/8 - 32767/16;
 			Laser_player_fire_spread( objp, VULCAN_ID, 6, spreadr, spreadu, make_sound, 0, shot_orientation);
@@ -1367,6 +1369,7 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 			force_vec.z = -(objp->orient.fvec.z << 7);
 			phys_apply_force(objp, &force_vec);
 
+			// SIM RNG: these rolls change live recoil rotation after firing
 			force_vec.x = (force_vec.x >> 4) + d_rand() - 16384;
 			force_vec.y = (force_vec.y >> 4) + d_rand() - 16384;
 			force_vec.z = (force_vec.z >> 4) + d_rand() - 16384;
@@ -1499,6 +1502,7 @@ void create_smart_children(object *objp, int num_smart_children)
 		}
 
 		for (i=0; i<num_smart_children; i++) {
+			// SIM RNG: this chooses which live target each smart child homes toward
 			sel_objnum = (numobjs==0)?-1:objlist[(d_rand() * numobjs) >> 15];
 			if (numobjs > 1)
 				while (sel_objnum == last_sel_objnum)
@@ -1603,6 +1607,7 @@ void do_missile_firing(int drop_bomb)
 			force_vec.z = -(ConsoleObject->orient.fvec.z << 7);
 			phys_apply_force(ConsoleObject, &force_vec);
 
+			// SIM RNG: these rolls change live recoil rotation after firing
 			force_vec.x = (force_vec.x >> 4) + d_rand() - 16384;
 			force_vec.y = (force_vec.y >> 4) + d_rand() - 16384;
 			force_vec.z = (force_vec.z >> 4) + d_rand() - 16384;

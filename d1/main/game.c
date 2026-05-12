@@ -1300,6 +1300,7 @@ void GameProcessFrame(void)
 
 				Global_laser_firing_count = 0;
 
+				// SIM RNG: fusion overcharge directly kicks ship rotation and bump physics
 				ConsoleObject->mtype.phys_info.rotvel.x += (d_rand() - 16384)/8;
 				ConsoleObject->mtype.phys_info.rotvel.z += (d_rand() - 16384)/8;
 
