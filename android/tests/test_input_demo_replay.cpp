@@ -175,20 +175,20 @@ static int expect_test_player_cfg(const input_demo_player_cfg *player_cfg)
 	if (!player_cfg)
 		return report_failure("replay player_cfg output missing");
 	if (player_cfg->auto_leveling != 1 || player_cfg->persistent_debris != 1 ||
-		player_cfg->no_fire_autoselect != 1 || player_cfg->cycle_autoselect_only != 1 ||
-		player_cfg->select_after_fire != 0 || player_cfg->classic_autoselect_weapon != 1)
+	    player_cfg->no_fire_autoselect != 1 || player_cfg->cycle_autoselect_only != 1 ||
+	    player_cfg->select_after_fire != 0 || player_cfg->classic_autoselect_weapon != 1)
 		return report_failure("replay player_cfg scalar mismatch");
 #if defined(INPUT_DEMO_TEST_D2)
 	if (!player_cfg->has_headlight_active_default || player_cfg->headlight_active_default != 0 ||
-		player_cfg->primary_order_count != 11 || player_cfg->secondary_order_count != 11 ||
-		player_cfg->primary_order[0] != 9 || player_cfg->primary_order[10] != 255 ||
-		player_cfg->secondary_order[0] != 9 || player_cfg->secondary_order[10] != 2)
+	    player_cfg->primary_order_count != 11 || player_cfg->secondary_order_count != 11 ||
+	    player_cfg->primary_order[0] != 9 || player_cfg->primary_order[10] != 255 ||
+	    player_cfg->secondary_order[0] != 9 || player_cfg->secondary_order[10] != 2)
 		return report_failure("replay D2 player_cfg mismatch");
 #else
 	if (player_cfg->has_headlight_active_default ||
-		player_cfg->primary_order_count != 7 || player_cfg->secondary_order_count != 6 ||
-		player_cfg->primary_order[0] != 4 || player_cfg->primary_order[6] != 16 ||
-		player_cfg->secondary_order[0] != 4 || player_cfg->secondary_order[5] != 2)
+	    player_cfg->primary_order_count != 7 || player_cfg->secondary_order_count != 6 ||
+	    player_cfg->primary_order[0] != 4 || player_cfg->primary_order[6] != 16 ||
+	    player_cfg->secondary_order[0] != 4 || player_cfg->secondary_order[5] != 2)
 		return report_failure("replay D1 player_cfg mismatch");
 #endif
 	return 0;
@@ -239,7 +239,7 @@ static int expect_test_checkpoint_thief_state(const input_demo_checkpoint_thief_
 }
 
 static void fill_test_checkpoint_collision_delay(int *has_last_play_time,
-	int64_t *last_play_time)
+                                                 int64_t *last_play_time)
 {
 	if (has_last_play_time)
 		*has_last_play_time = 1;
@@ -248,7 +248,7 @@ static void fill_test_checkpoint_collision_delay(int *has_last_play_time,
 }
 
 static int expect_test_checkpoint_collision_delay(int has_last_play_time,
-	int64_t last_play_time)
+                                                  int64_t last_play_time)
 {
 	if (!has_last_play_time)
 		return report_failure("replay checkpoint collision delay state missing");
@@ -303,6 +303,8 @@ static int write_test_fixture(const char *path)
 	fill_test_frame_state(&frame_state, 0);
 	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, NULL, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 0 failed: ") + error);
+	if (!input_demo_recorder_stage_direct_command_death_abort(error, sizeof(error)))
+		return report_failure_string(std::string("stage death abort command failed: ") + error);
 	input_demo_control_pulse_clear(&pulse);
 	pulse.fire_primary_count = 1;
 	fill_test_frame_state(&frame_state, 1);
@@ -345,7 +347,7 @@ static int write_checkpoint_test_fixture(const char *path)
 	settings.has_checkpoint_start_gt = 1;
 	settings.checkpoint_start_gt = 124125;
 	fill_test_checkpoint_collision_delay(&settings.has_checkpoint_collision_delay_last_play_time,
-		&settings.checkpoint_collision_delay_last_play_time);
+	                                     &settings.checkpoint_collision_delay_last_play_time);
 	fill_test_checkpoint_escort_state(&settings.checkpoint_escort_state);
 	fill_test_checkpoint_thief_state(&settings.checkpoint_thief_state);
 	if (!input_demo_recorder_start(&settings, error, sizeof(error)))
@@ -375,8 +377,10 @@ static int expect_replay_loader(void)
 	const std::string demo_path = std::string(dir) + "/replay.dximdemo";
 	const std::string actual_result_path = demo_path + ".actual.json";
 	input_demo_replay_frame frame;
+	input_demo_replay_direct_command_event direct_command_event;
 	input_demo_player_cfg player_cfg;
 	input_demo_result actual_result;
+	uint32_t direct_command_count = 0;
 	char error[256] = "";
 
 	if (!make_test_dir(dir))
@@ -431,27 +435,40 @@ static int expect_replay_loader(void)
 	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
 		return report_failure_string(std::string("replay current frame 0 failed: ") + error);
 	if (frame.frame != 0 || frame.frame_time != 3276 || frame.state.forward_thrust_time != 44 ||
-		frame.pulse.fire_primary_count != 0 || frame.rng_state != 100 || frame.has_rng_call_count ||
-		!frame.has_state || frame.state_result.player0.score != 12500 || frame.state_result.position.segment != 142)
+	    frame.pulse.fire_primary_count != 0 || frame.rng_state != 100 || frame.has_rng_call_count ||
+	    !frame.has_state || frame.state_result.player0.score != 12500 || frame.state_result.position.segment != 142)
 		return report_failure("replay frame 0 mismatch");
+	if (!input_demo_replay_get_current_frame_direct_command_count(&direct_command_count, error, sizeof(error)))
+		return report_failure_string(std::string("replay frame 0 direct command count failed: ") + error);
+	if (direct_command_count != 0)
+		return report_failure("replay frame 0 direct command count mismatch");
 	if (!input_demo_replay_advance_frame(error, sizeof(error)))
 		return report_failure_string(std::string("replay advance 0 failed: ") + error);
 
 	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
 		return report_failure_string(std::string("replay current frame 1 failed: ") + error);
 	if (frame.frame != 1 || frame.frame_time != 3276 || frame.state.forward_thrust_time != 44 ||
-		frame.pulse.fire_primary_count != 1 || frame.rng_state != 100 || frame.has_rng_call_count ||
-		!frame.has_state || frame.state_result.player0.score != 12501 || frame.state_result.position.segment != 143)
+	    frame.pulse.fire_primary_count != 1 || frame.rng_state != 100 || frame.has_rng_call_count ||
+	    !frame.has_state || frame.state_result.player0.score != 12501 || frame.state_result.position.segment != 143)
 		return report_failure("replay frame 1 mismatch");
+	if (!input_demo_replay_get_current_frame_direct_command_count(&direct_command_count, error, sizeof(error)))
+		return report_failure_string(std::string("replay frame 1 direct command count failed: ") + error);
+	if (direct_command_count != 1)
+		return report_failure("replay frame 1 direct command count mismatch");
+	input_demo_replay_direct_command_event_clear(&direct_command_event);
+	if (!input_demo_replay_get_current_frame_direct_command_event(0, &direct_command_event, error, sizeof(error)))
+		return report_failure_string(std::string("replay frame 1 direct command event failed: ") + error);
+	if (direct_command_event.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT)
+		return report_failure("replay frame 1 death abort direct command mismatch");
 	if (!input_demo_replay_advance_frame(error, sizeof(error)))
 		return report_failure_string(std::string("replay advance 1 failed: ") + error);
 
 	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
 		return report_failure_string(std::string("replay current frame 2 failed: ") + error);
 	if (frame.frame != 2 || frame.frame_time != 4000 || frame.state.forward_thrust_time != 0 ||
-		frame.pulse.fire_primary_count != 0 || frame.rng_state != 102 || !frame.has_rng_call_count ||
-		frame.rng_call_count != 3 || !frame.has_state || frame.state_result.player0.score != 12502 ||
-		frame.state_result.level_summary.control_center_destroyed != 1)
+	    frame.pulse.fire_primary_count != 0 || frame.rng_state != 102 || !frame.has_rng_call_count ||
+	    frame.rng_call_count != 3 || !frame.has_state || frame.state_result.player0.score != 12502 ||
+	    frame.state_result.level_summary.control_center_destroyed != 1)
 		return report_failure("replay frame 2 mismatch");
 	if (!input_demo_replay_advance_frame(error, sizeof(error)))
 		return report_failure_string(std::string("replay advance 2 failed: ") + error);
@@ -512,7 +529,7 @@ static int expect_checkpoint_replay_loader(void)
 	if (!input_demo_replay_has_checkpoint())
 		return report_failure("checkpoint replay should retain checkpoint payload");
 	if (!input_demo_replay_checkpoint_save_name() ||
-		std::string(input_demo_replay_checkpoint_save_name()) != "inputdemo_start.dgss")
+	    std::string(input_demo_replay_checkpoint_save_name()) != "inputdemo_start.dgss")
 		return report_failure("checkpoint replay save_name mismatch");
 	if (input_demo_replay_checkpoint_size() != 256)
 		return report_failure("checkpoint replay size mismatch");
@@ -543,9 +560,9 @@ static int expect_checkpoint_replay_loader(void)
 		if (expect_test_checkpoint_thief_state(&thief_state))
 			return 1;
 		have_collision_delay_last_play_time =
-			input_demo_replay_get_checkpoint_collision_delay_last_play_time(&collision_delay_last_play_time);
+		    input_demo_replay_get_checkpoint_collision_delay_last_play_time(&collision_delay_last_play_time);
 		if (expect_test_checkpoint_collision_delay(have_collision_delay_last_play_time,
-			collision_delay_last_play_time))
+		                                           collision_delay_last_play_time))
 			return 1;
 	}
 	if (!input_demo_replay_actual_result_path() || std::string(input_demo_replay_actual_result_path()) != actual_result_path)

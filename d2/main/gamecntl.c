@@ -576,9 +576,12 @@ int HandleEndlevelKey(int key)
 }
 
 int is_key_rotate_event(d_event *event); 
+static void input_demo_record_direct_command_death_abort(void);
 
 int HandleDeathInput(d_event *event)
 {
+	int was_aborted = Death_sequence_aborted;
+
 	if (event->type == EVENT_KEY_COMMAND)
 	{
 		int key = event_key_get(event);
@@ -603,6 +606,8 @@ int HandleDeathInput(d_event *event)
 
 	if (Death_sequence_aborted)
 	{
+		if (!was_aborted)
+			input_demo_record_direct_command_death_abort();
 		// Causes problems with joystick throttle -- joy_axis data is cleared, and will only
 		// be updated when joystick moves (could be long enough for player to notice)
 		//game_flush_inputs();
@@ -1189,6 +1194,16 @@ static void input_demo_record_direct_command_escort_release_control(void)
 		input_demo_log_direct_command_record_error("escort release", error);
 }
 
+static void input_demo_record_direct_command_death_abort(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_death_abort(error, sizeof(error)))
+		input_demo_log_direct_command_record_error("death abort", error);
+}
+
 static int input_demo_abort_replay_direct_commands(const char *error)
 {
 	con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error ? error : "direct command replay failed");
@@ -1230,9 +1245,32 @@ static int input_demo_replay_apply_direct_commands(void)
 			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL:
 				escort_release_control();
 				break;
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT:
+				break;
 			default:
 				return input_demo_abort_replay_direct_commands("unknown direct command replay event");
 		}
+	}
+	return 1;
+}
+
+static int input_demo_replay_apply_death_abort_direct_commands(void)
+{
+	uint32_t direct_command_count = 0;
+	uint32_t direct_command_index;
+	input_demo_replay_direct_command_event event;
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return 1;
+	if (!input_demo_replay_get_current_frame_direct_command_count(&direct_command_count, error, sizeof(error)))
+		return input_demo_abort_replay_direct_commands(error);
+	for (direct_command_index = 0; direct_command_index != direct_command_count; ++direct_command_index) {
+		input_demo_replay_direct_command_event_clear(&event);
+		if (!input_demo_replay_get_current_frame_direct_command_event(direct_command_index, &event, error, sizeof(error)))
+			return input_demo_abort_replay_direct_commands(error);
+		if (event.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT)
+			Death_sequence_aborted = 1;
 	}
 	return 1;
 }
@@ -2133,6 +2171,10 @@ void play_test_sound()
 int ReadControlsReplayFrame(void)
 {
 	Player_fired_laser_this_frame = -1;
+	if (Player_is_dead) {
+		if (!input_demo_replay_apply_death_abort_direct_commands())
+			return 0;
+	}
 
 	if (!Endlevel_sequence && !Player_is_dead) {
 		if (!input_demo_replay_apply_direct_commands())

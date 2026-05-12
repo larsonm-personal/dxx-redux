@@ -174,6 +174,10 @@ static bool parse_direct_command_event_json(const std::string &json_text,
 		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL;
 		return true;
 	}
+	if (command == "death_abort") {
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT;
+		return true;
+	}
 	return fail(error, std::string("unknown direct command event command: ") + command);
 }
 
@@ -235,7 +239,7 @@ static bool load_checkpoint(const input_demo_checkpoint &checkpoint,
 }
 
 static void load_legacy_fx_rng_seed_from_sidecar(const char *demo_path,
-	input_demo_replay_session *session)
+                                                 input_demo_replay_session *session)
 {
 	std::ifstream input;
 	std::string line;
@@ -581,7 +585,7 @@ int input_demo_replay_get_checkpoint_collision_delay_last_play_time(int64_t *las
 }
 
 int input_demo_replay_get_legacy_fx_rng_seed(uint32_t *state,
-	uint32_t *call_count)
+                                             uint32_t *call_count)
 {
 	if (!input_demo_replay_has_checkpoint() || !state || !call_count ||
 	    !g_input_demo_replay_session.has_legacy_fx_rng_state ||

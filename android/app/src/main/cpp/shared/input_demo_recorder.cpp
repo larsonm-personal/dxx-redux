@@ -458,9 +458,9 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 		                                                     settings->checkpoint_data + settings->checkpoint_size);
 		g_input_demo_recorder_session.checkpoint_start_gt = settings->checkpoint_start_gt;
 		g_input_demo_recorder_session.has_checkpoint_collision_delay_last_play_time =
-			settings->has_checkpoint_collision_delay_last_play_time ? true : false;
+		    settings->has_checkpoint_collision_delay_last_play_time ? true : false;
 		g_input_demo_recorder_session.checkpoint_collision_delay_last_play_time =
-			settings->checkpoint_collision_delay_last_play_time;
+		    settings->checkpoint_collision_delay_last_play_time;
 		g_input_demo_recorder_session.checkpoint_escort_state = settings->checkpoint_escort_state;
 		g_input_demo_recorder_session.checkpoint_thief_state = settings->checkpoint_thief_state;
 	}
@@ -627,6 +627,16 @@ int input_demo_recorder_stage_direct_command_escort_release_control(char *error,
 
 	event["kind"] = "direct_command";
 	event["command"] = "escort_release_control";
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
+int input_demo_recorder_stage_direct_command_death_abort(char *error,
+                                                         size_t error_size)
+{
+	ordered_json event = ordered_json::object();
+
+	event["kind"] = "direct_command";
+	event["command"] = "death_abort";
 	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
 }
 
