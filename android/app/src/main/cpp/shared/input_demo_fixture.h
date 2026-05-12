@@ -132,12 +132,15 @@ struct input_demo_checkpoint {
 	std::string save_name;
 	uint8_t has_start_gt;
 	int64_t start_gt;
+	uint8_t has_collision_delay_last_play_time;
+	int64_t collision_delay_last_play_time;
 	input_demo_checkpoint_escort_state escort_state;
 	input_demo_checkpoint_thief_state thief_state;
 	std::string data;
 
 	input_demo_checkpoint()
-	    : compression("none"), size(0), has_start_gt(0), start_gt(0)
+	    : compression("none"), size(0), has_start_gt(0), start_gt(0),
+	      has_collision_delay_last_play_time(0), collision_delay_last_play_time(0)
 	{
 		input_demo_checkpoint_escort_state_clear(&escort_state);
 		input_demo_checkpoint_thief_state_clear(&thief_state);

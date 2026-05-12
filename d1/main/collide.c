@@ -82,14 +82,24 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define FORCE_DAMAGE_THRESHOLD (F1_0/3)
 #define STANDARD_EXPL_DELAY (F1_0/4)
 
+static fix64 Collision_delay_last_play_time = 0;
+
+fix64 collide_get_collision_delay_last_play_time(void)
+{
+	return Collision_delay_last_play_time;
+}
+
+void collide_set_collision_delay_last_play_time(fix64 last_play_time)
+{
+	Collision_delay_last_play_time = last_play_time;
+}
+
 int check_collision_delayfunc_exec()
 {
-	static fix64 last_play_time=0;
-	if (last_play_time + (F1_0/3) < GameTime64 || last_play_time > GameTime64)
+	if (Collision_delay_last_play_time + (F1_0/3) < GameTime64 || Collision_delay_last_play_time > GameTime64)
 	{
-		last_play_time = GameTime64;
-		// FX RNG: sound only, this just jitters impact effect pacing
-		last_play_time -= (d_rand_fx()/2); // add some randomness
+		Collision_delay_last_play_time = GameTime64;
+		Collision_delay_last_play_time -= (d_rand()/2); // add some randomness
 		return 1;
 	}
 	return 0;

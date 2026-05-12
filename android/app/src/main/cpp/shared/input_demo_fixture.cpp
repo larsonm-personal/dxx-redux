@@ -561,6 +561,7 @@ static bool parse_checkpoint_record(const ordered_json &root,
 	bool have_escort_last_path_created = false;
 	bool have_last_come_back_message_time = false;
 	bool have_buddy_last_missile_time = false;
+	bool have_collision_delay_last_play_time = false;
 	bool have_thief_stolen_item_index = false;
 	bool have_re_init_thief_time = false;
 	bool have_last_thief_hit_time = false;
@@ -601,6 +602,10 @@ static bool parse_checkpoint_record(const ordered_json &root,
 			if (!parse_int64_field(it.value(), &parsed.start_gt, error, "checkpoint start_gt"))
 				return false;
 			parsed.has_start_gt = 1;
+		} else if (name == "collision_delay_last_play_time") {
+			if (!parse_int64_field(it.value(), &parsed.collision_delay_last_play_time, error, "checkpoint collision_delay_last_play_time"))
+				return false;
+			have_collision_delay_last_play_time = true;
 		} else if (name == "buddy_allowed_to_talk") {
 			if (!parse_int_field(it.value(), &parsed.escort_state.buddy_allowed_to_talk, error, "checkpoint buddy_allowed_to_talk"))
 				return false;
@@ -689,6 +694,8 @@ static bool parse_checkpoint_record(const ordered_json &root,
 			return fail(error, "checkpoint thief state requires all thief fields");
 		parsed.thief_state.valid = 1;
 	}
+	if (have_collision_delay_last_play_time)
+		parsed.has_collision_delay_last_play_time = 1;
 	if (!validate_checkpoint(parsed, error))
 		return false;
 	*checkpoint = parsed;
@@ -713,6 +720,8 @@ static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoi
 	root["sha256"] = checkpoint.sha256;
 	root["save_name"] = checkpoint.save_name;
 	root["start_gt"] = checkpoint.start_gt;
+	if (checkpoint.has_collision_delay_last_play_time)
+		root["collision_delay_last_play_time"] = checkpoint.collision_delay_last_play_time;
 	if (checkpoint.escort_state.valid) {
 		root["buddy_allowed_to_talk"] = checkpoint.escort_state.buddy_allowed_to_talk;
 		root["buddy_last_seen_player"] = checkpoint.escort_state.buddy_last_seen_player;

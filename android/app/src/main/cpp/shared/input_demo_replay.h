@@ -73,6 +73,9 @@ const char *input_demo_replay_checkpoint_save_name(void);
 const uint8_t *input_demo_replay_checkpoint_data(void);
 size_t input_demo_replay_checkpoint_size(void);
 int64_t input_demo_replay_checkpoint_start_gt(void);
+int input_demo_replay_get_checkpoint_collision_delay_last_play_time(int64_t *last_play_time);
+int input_demo_replay_get_legacy_fx_rng_seed(uint32_t *state,
+											 uint32_t *call_count);
 int input_demo_replay_get_checkpoint_escort_state(input_demo_checkpoint_escort_state *escort_state);
 int input_demo_replay_get_checkpoint_thief_state(input_demo_checkpoint_thief_state *thief_state);
 int input_demo_replay_get_expected_result(input_demo_result *result,

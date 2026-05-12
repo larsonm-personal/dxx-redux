@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <fstream>
 #include <limits>
 
 #include <nlohmann/json.hpp>
@@ -38,6 +39,12 @@ struct input_demo_replay_session {
 	std::string checkpoint_save_name;
 	std::vector<uint8_t> checkpoint_data;
 	int64_t checkpoint_start_gt;
+	bool has_checkpoint_collision_delay_last_play_time;
+	int64_t checkpoint_collision_delay_last_play_time;
+	bool has_legacy_fx_rng_state;
+	uint32_t legacy_fx_rng_state;
+	bool has_legacy_fx_rng_call_count;
+	uint32_t legacy_fx_rng_call_count;
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
 	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	int64_t final_game_time64;
@@ -47,7 +54,9 @@ struct input_demo_replay_session {
 
 	input_demo_replay_session()
 	    : loaded(false), game(0), has_expected_result(false), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false),
-	      checkpoint_start_gt(0), final_game_time64(0), next_frame_index(0)
+	      checkpoint_start_gt(0), has_checkpoint_collision_delay_last_play_time(false), checkpoint_collision_delay_last_play_time(0),
+	      has_legacy_fx_rng_state(false), legacy_fx_rng_state(0), has_legacy_fx_rng_call_count(false), legacy_fx_rng_call_count(0),
+	      final_game_time64(0), next_frame_index(0)
 	{
 		input_demo_result_clear(&expected_result);
 		input_demo_player_cfg_clear(&player_cfg);
@@ -218,9 +227,65 @@ static bool load_checkpoint(const input_demo_checkpoint &checkpoint,
 	session->checkpoint_save_name = checkpoint.save_name;
 	session->checkpoint_data = raw_checkpoint;
 	session->checkpoint_start_gt = checkpoint.start_gt;
+	session->has_checkpoint_collision_delay_last_play_time = checkpoint.has_collision_delay_last_play_time ? true : false;
+	session->checkpoint_collision_delay_last_play_time = checkpoint.collision_delay_last_play_time;
 	session->checkpoint_escort_state = checkpoint.escort_state;
 	session->checkpoint_thief_state = checkpoint.thief_state;
 	return true;
+}
+
+static void load_legacy_fx_rng_seed_from_sidecar(const char *demo_path,
+	input_demo_replay_session *session)
+{
+	std::ifstream input;
+	std::string line;
+
+	if (!demo_path || !demo_path[0] || !session)
+		return;
+	input.open(std::string(demo_path) + INPUT_DEMO_RNG_TRACE_SUFFIX);
+	if (!input.is_open())
+		return;
+	while (std::getline(input, line)) {
+		ordered_json parsed;
+		ordered_json::const_iterator it;
+		std::string type;
+		uint32_t call_count;
+
+		parsed = ordered_json::parse(line, nullptr, false);
+		if (parsed.is_discarded() || !parsed.is_object())
+			continue;
+		it = parsed.find("type");
+		if (it == parsed.end() || !it->is_string())
+			continue;
+		type = it->get<std::string>();
+		if (type != "rand" && type != "srand")
+			continue;
+		it = parsed.find("stream");
+		if (it == parsed.end() || !it->is_number_integer() || it->get<int>() != 1)
+			continue;
+		it = parsed.find("call_count");
+		if (it == parsed.end() || !it->is_number_unsigned())
+			continue;
+		call_count = it->get<uint32_t>();
+		if (type == "rand") {
+			it = parsed.find("state_before");
+			if (it == parsed.end() || !it->is_number_unsigned())
+				continue;
+			session->has_legacy_fx_rng_state = true;
+			session->legacy_fx_rng_state = it->get<uint32_t>();
+			session->has_legacy_fx_rng_call_count = true;
+			session->legacy_fx_rng_call_count = call_count ? call_count - 1 : 0;
+			return;
+		}
+		it = parsed.find("seed");
+		if (it == parsed.end() || !it->is_number_unsigned())
+			continue;
+		session->has_legacy_fx_rng_state = true;
+		session->legacy_fx_rng_state = it->get<uint32_t>();
+		session->has_legacy_fx_rng_call_count = true;
+		session->legacy_fx_rng_call_count = call_count;
+		return;
+	}
 }
 
 static bool expand_control_records(const std::vector<input_demo_control_record> &records,
@@ -390,6 +455,8 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 		reset_session();
 		return copy_error(replay_error, error, error_size);
 	}
+	if (g_input_demo_replay_session.has_checkpoint)
+		load_legacy_fx_rng_seed_from_sidecar(demo_path, &g_input_demo_replay_session);
 	g_input_demo_replay_session.frames = frames;
 	g_input_demo_replay_session.frame_events.resize(frames.size());
 	for (i = 0; i != demo.frames.size() && i != g_input_demo_replay_session.frame_events.size(); ++i)
@@ -502,6 +569,27 @@ size_t input_demo_replay_checkpoint_size(void)
 int64_t input_demo_replay_checkpoint_start_gt(void)
 {
 	return input_demo_replay_has_checkpoint() ? g_input_demo_replay_session.checkpoint_start_gt : 0;
+}
+
+int input_demo_replay_get_checkpoint_collision_delay_last_play_time(int64_t *last_play_time)
+{
+	if (!input_demo_replay_has_checkpoint() || !last_play_time ||
+	    !g_input_demo_replay_session.has_checkpoint_collision_delay_last_play_time)
+		return 0;
+	*last_play_time = g_input_demo_replay_session.checkpoint_collision_delay_last_play_time;
+	return 1;
+}
+
+int input_demo_replay_get_legacy_fx_rng_seed(uint32_t *state,
+	uint32_t *call_count)
+{
+	if (!input_demo_replay_has_checkpoint() || !state || !call_count ||
+	    !g_input_demo_replay_session.has_legacy_fx_rng_state ||
+	    !g_input_demo_replay_session.has_legacy_fx_rng_call_count)
+		return 0;
+	*state = g_input_demo_replay_session.legacy_fx_rng_state;
+	*call_count = g_input_demo_replay_session.legacy_fx_rng_call_count;
+	return 1;
 }
 
 int input_demo_replay_get_checkpoint_escort_state(input_demo_checkpoint_escort_state *escort_state)

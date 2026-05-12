@@ -42,6 +42,8 @@ extern void scrape_player_on_wall(object *obj, short hitseg, short hitwall, vms_
 extern int maybe_detonate_weapon(object *obj0p, object *obj, vms_vector *pos);
 
 extern void collide_player_and_nasty_robot(object * player, object * robot, vms_vector *collision_point);
+extern fix64 collide_get_collision_delay_last_play_time(void);
+extern void collide_set_collision_delay_last_play_time(fix64 last_play_time);
 
 extern void net_destroy_controlcen(object *controlcen);
 extern void collide_player_and_powerup(object * player, object * powerup, vms_vector *collision_point);

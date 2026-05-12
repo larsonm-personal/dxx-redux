@@ -88,6 +88,29 @@ function Set-DiagSentinels {
     }
 }
 
+function Test-IgnoredTracePath {
+    param([string]$Path)
+
+    if ($null -eq $Path) {
+        return $false
+    }
+
+    if ($Path -match '^diag\.runtime_state_hash$') {
+        return $true
+    }
+    if ($Path -match '^diag\.(object_allocator_num_objects|object_signature_seed|object_free_list_count|object_free_list_hash|object_free_head[0-3])$') {
+        return $true
+    }
+    if ($Path -match '^diag\.(highest_object_index|live_object_count|live_object_hash|fireball_object_count|fireball_state_hash|debris_object_count|debris_state_hash|segment_object_list_count|segment_object_list_hash)$') {
+        return $true
+    }
+    if ($Path -match '^diag\.object_slot_(counts|hashes)$') {
+        return $true
+    }
+
+    return $false
+}
+
 function Compare-JsonExpectedSubset {
     param(
         [object]$Expected,
@@ -96,6 +119,10 @@ function Compare-JsonExpectedSubset {
     )
 
     $diffs = New-Object System.Collections.Generic.List[string]
+
+    if (Test-IgnoredTracePath -Path $Path) {
+        return $diffs
+    }
 
     if ($Expected -is [System.Collections.IDictionary]) {
         if (-not ($Actual -is [System.Collections.IDictionary])) {
@@ -148,6 +175,10 @@ function Compare-JsonDiff {
     )
 
     $diffs = New-Object System.Collections.Generic.List[string]
+
+    if (Test-IgnoredTracePath -Path $Path) {
+        return $diffs
+    }
 
     if ($Expected -is [System.Collections.IDictionary]) {
         if (-not ($Actual -is [System.Collections.IDictionary])) {

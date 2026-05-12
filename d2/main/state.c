@@ -62,6 +62,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "controls.h"
 #include "laser.h"
 #include "state.h"
+#include "collide.h"
 #include "multi.h"
 #include "escort.h"
 #include "gr.h"
@@ -78,13 +79,14 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_log.h"
 #endif
 
-#define STATE_VERSION 26
+#define STATE_VERSION 27
 #define STATE_COMPATIBLE_VERSION 20
 #define STATE_RUNTIME_VERSION 23
 #define STATE_FIDELITY_VERSION 23
 #define STATE_EFFECT_RUNTIME_VERSION 24
 #define STATE_AI_PATH_RUNTIME_VERSION 25
 #define STATE_OBJECT_SIGNATURE_RUNTIME_VERSION 26
+#define STATE_FX_RNG_RUNTIME_VERSION 27
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -113,6 +115,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 //     wall/object textures restore deterministically from saves/checkpoints
 // 25- Save AI path allocator timing and player path cursors for replay checkpoints
 // 26- Save object signature seed for deterministic post-checkpoint object creation
+// 27- Save FX RNG state and call count for deterministic checkpoint replay
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -589,7 +592,10 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	game_d_tick_state d_tick_state;
 	laser_runtime_state laser_state;
 	int has_rng_state = 0;
+	int has_fx_rng_state = 0;
 	int i;
+	unsigned int fx_rng_call_count = 0;
+	unsigned int fx_rng_state = 0;
 	unsigned int rng_state = 0;
 
 	object_get_runtime_state(&object_state);
@@ -597,6 +603,8 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	game_get_d_tick_state(&d_tick_state);
 	laser_get_runtime_state(&laser_state);
 	has_rng_state = d_rand_get_state(&rng_state);
+	has_fx_rng_state = d_rand_get_stream_state(D_RNG_FX, &fx_rng_state);
+	fx_rng_call_count = d_rand_get_stream_call_count(D_RNG_FX);
 
 	state_write_time_delta(fp, Next_laser_fire_time);
 	state_write_time_delta(fp, Next_missile_fire_time);
@@ -607,6 +615,9 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	PHYSFS_write(fp, &Global_missile_firing_count, sizeof(Global_missile_firing_count), 1);
 	PHYSFS_write(fp, &has_rng_state, sizeof(has_rng_state), 1);
 	PHYSFS_write(fp, &rng_state, sizeof(rng_state), 1);
+	PHYSFS_write(fp, &has_fx_rng_state, sizeof(has_fx_rng_state), 1);
+	PHYSFS_write(fp, &fx_rng_state, sizeof(fx_rng_state), 1);
+	PHYSFS_write(fp, &fx_rng_call_count, sizeof(fx_rng_call_count), 1);
 	PHYSFS_write(fp, &d_tick_state.count, sizeof(d_tick_state.count), 1);
 	PHYSFS_write(fp, &d_tick_state.step, sizeof(d_tick_state.step), 1);
 	PHYSFS_write(fp, &d_tick_state.timer, sizeof(d_tick_state.timer), 1);
@@ -652,14 +663,25 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	fix64 last_laser_fired_time = GameTime64 + state_read_time_delta(fp, swap);
 	fix64 next_flare_fire_time = GameTime64 + state_read_time_delta(fp, swap);
 	fix64 auto_fire_fusion_cannon_time = GameTime64 + state_read_time_delta(fp, swap);
+	int have_legacy_fx_rng_seed = 0;
 	int has_rng_state;
+	int has_fx_rng_state = 0;
 	int i;
+	unsigned int fx_rng_call_count = 0;
+	unsigned int fx_rng_state = 0;
+	unsigned int legacy_fx_rng_call_count = 0;
+	unsigned int legacy_fx_rng_state = 0;
 	unsigned int rng_state;
 
 	Global_laser_firing_count = PHYSFSX_readSXE32(fp, swap);
 	Global_missile_firing_count = PHYSFSX_readSXE32(fp, swap);
 	has_rng_state = PHYSFSX_readSXE32(fp, swap);
 	rng_state = (unsigned int)PHYSFSX_readSXE32(fp, swap);
+	if (version >= STATE_FX_RNG_RUNTIME_VERSION) {
+		has_fx_rng_state = PHYSFSX_readSXE32(fp, swap);
+		fx_rng_state = (unsigned int)PHYSFSX_readSXE32(fp, swap);
+		fx_rng_call_count = (unsigned int)PHYSFSX_readSXE32(fp, swap);
+	}
 	d_tick_state.count = PHYSFSX_readSXE32(fp, swap);
 	d_tick_state.step = PHYSFSX_readSXE32(fp, swap);
 	d_tick_state.timer = PHYSFSX_readSXE32(fp, swap);
@@ -710,6 +732,18 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	if (has_rng_state)
 		d_rand_set_state(rng_state);
 	d_rand_reset_call_count();
+	if (has_fx_rng_state) {
+		d_rand_set_stream_state(D_RNG_FX, fx_rng_state);
+		d_rand_set_stream_call_count(D_RNG_FX, fx_rng_call_count);
+	} else if (input_demo_replay_has_checkpoint()) {
+		have_legacy_fx_rng_seed = input_demo_replay_get_legacy_fx_rng_seed(
+			&legacy_fx_rng_state,
+			&legacy_fx_rng_call_count);
+		if (have_legacy_fx_rng_seed) {
+			d_rand_set_stream_state(D_RNG_FX, legacy_fx_rng_state);
+			d_rand_set_stream_call_count(D_RNG_FX, legacy_fx_rng_call_count);
+		}
+	}
 	game_set_d_tick_state(&d_tick_state);
 	object_set_runtime_state(&object_state);
 	state_log_checkpoint_allocator_snapshot("post_apply", &object_state);
@@ -2785,6 +2819,14 @@ int state_restore_all_sub(char *filename, int secret_restore)
 #endif
 
 	PHYSFS_close(fp);
+	if (input_demo_replay_has_checkpoint()) {
+		int64_t collision_delay_last_play_time = 0;
+
+		if (input_demo_replay_get_checkpoint_collision_delay_last_play_time(&collision_delay_last_play_time))
+			collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
+		else
+			collide_set_collision_delay_last_play_time(0);
+	}
 	escort_rebuild_runtime_state_after_restore();
 
 	if (Game_wind)

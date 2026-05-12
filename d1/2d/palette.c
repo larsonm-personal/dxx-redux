@@ -84,6 +84,7 @@ void gr_use_palette_table( char * filename )
 #define	MAX_COMPUTED_COLORS	32
 
 int	Num_computed_colors=0;
+int	Next_computed_color=0;
 
 typedef struct {
 	ubyte	r,g,b,color_num;
@@ -102,8 +103,11 @@ void add_computed_color(int r, int g, int b, int color_num)
 		add_index = Num_computed_colors;
 		Num_computed_colors++;
 	} else
-		// FX RNG: graphics only, this just picks a palette-cache entry to recycle
-		add_index = (d_rand_fx() * MAX_COMPUTED_COLORS) >> 15;
+		// Palette-cache eviction must not perturb the shared FX stream.
+		add_index = Next_computed_color++;
+
+	if (Next_computed_color >= MAX_COMPUTED_COLORS)
+		Next_computed_color = 0;
 
 	Computed_colors[add_index].r = r;
 	Computed_colors[add_index].g = g;
@@ -115,6 +119,7 @@ void init_computed_colors(void)
 {
 	int	i;
 
+	Next_computed_color = 0;
 	for (i=0; i<MAX_COMPUTED_COLORS; i++)
 		Computed_colors[i].r = 255;		//	Make impossible to match.
 }

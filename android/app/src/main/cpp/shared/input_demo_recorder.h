@@ -26,6 +26,8 @@ typedef struct input_demo_recorder_settings {
 	size_t checkpoint_size;
 	int has_checkpoint_start_gt;
 	int64_t checkpoint_start_gt;
+    int has_checkpoint_collision_delay_last_play_time;
+    int64_t checkpoint_collision_delay_last_play_time;
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
 	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	int record_per_frame_state;

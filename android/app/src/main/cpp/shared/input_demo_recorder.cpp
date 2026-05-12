@@ -54,6 +54,8 @@ struct input_demo_recorder_session {
 	std::string checkpoint_save_name;
 	std::vector<unsigned char> checkpoint_data;
 	int64_t checkpoint_start_gt;
+	bool has_checkpoint_collision_delay_last_play_time;
+	int64_t checkpoint_collision_delay_last_play_time;
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
 	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	bool record_per_frame_state;
@@ -68,7 +70,7 @@ struct input_demo_recorder_session {
 	input_demo_control_pulse pending_pulse;
 
 	input_demo_recorder_session()
-	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0), record_per_frame_state(false)
+	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0), has_checkpoint_collision_delay_last_play_time(false), checkpoint_collision_delay_last_play_time(0), record_per_frame_state(false)
 	{
 		input_demo_player_cfg_clear(&player_cfg);
 		input_demo_checkpoint_escort_state_clear(&checkpoint_escort_state);
@@ -250,6 +252,8 @@ static bool input_demo_recorder_build_checkpoint(input_demo_checkpoint *checkpoi
 	checkpoint->save_name = session.checkpoint_save_name;
 	checkpoint->has_start_gt = 1;
 	checkpoint->start_gt = session.checkpoint_start_gt;
+	checkpoint->has_collision_delay_last_play_time = session.has_checkpoint_collision_delay_last_play_time ? 1 : 0;
+	checkpoint->collision_delay_last_play_time = session.checkpoint_collision_delay_last_play_time;
 	checkpoint->escort_state = session.checkpoint_escort_state;
 	checkpoint->thief_state = session.checkpoint_thief_state;
 	if (!input_demo_recorder_zlib_compress(session.checkpoint_data.data(), session.checkpoint_data.size(),
@@ -388,6 +392,8 @@ void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings)
 	settings->checkpoint_size = 0;
 	settings->has_checkpoint_start_gt = 0;
 	settings->checkpoint_start_gt = 0;
+	settings->has_checkpoint_collision_delay_last_play_time = 0;
+	settings->checkpoint_collision_delay_last_play_time = 0;
 	input_demo_checkpoint_escort_state_clear(&settings->checkpoint_escort_state);
 	input_demo_checkpoint_thief_state_clear(&settings->checkpoint_thief_state);
 	settings->record_per_frame_state = 0;
@@ -451,6 +457,10 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 		g_input_demo_recorder_session.checkpoint_data.assign(settings->checkpoint_data,
 		                                                     settings->checkpoint_data + settings->checkpoint_size);
 		g_input_demo_recorder_session.checkpoint_start_gt = settings->checkpoint_start_gt;
+		g_input_demo_recorder_session.has_checkpoint_collision_delay_last_play_time =
+			settings->has_checkpoint_collision_delay_last_play_time ? true : false;
+		g_input_demo_recorder_session.checkpoint_collision_delay_last_play_time =
+			settings->checkpoint_collision_delay_last_play_time;
 		g_input_demo_recorder_session.checkpoint_escort_state = settings->checkpoint_escort_state;
 		g_input_demo_recorder_session.checkpoint_thief_state = settings->checkpoint_thief_state;
 	}

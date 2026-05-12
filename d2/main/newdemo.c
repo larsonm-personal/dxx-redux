@@ -3738,6 +3738,8 @@ static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *
 	settings->checkpoint_size = (size_t) file_size;
 	settings->has_checkpoint_start_gt = 1;
 	settings->checkpoint_start_gt = GameTime64;
+	settings->has_checkpoint_collision_delay_last_play_time = 1;
+	settings->checkpoint_collision_delay_last_play_time = collide_get_collision_delay_last_play_time();
 	escort_get_input_demo_checkpoint_state(&settings->checkpoint_escort_state);
 	escort_get_input_demo_checkpoint_thief_state(&settings->checkpoint_thief_state);
 	return 1;
