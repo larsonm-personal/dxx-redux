@@ -866,6 +866,7 @@ void escort_create_path_to_goal(object *objp)
 		Escort_special_goal = -1;
 	} else {
 		if (goal_seg == -3) {
+			// SIM RNG: this changes the live scram path the guidebot follows
 			create_n_segment_path(objp, 16 + d_rand() * 16, -1);
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("escort_create_path_to_goal scram", objp);
@@ -884,6 +885,7 @@ void escort_create_path_to_goal(object *objp)
 				if (dist_to_player > MIN_ESCORT_DISTANCE)
 					create_path_to_player(objp, Max_escort_length, 1);	//	MK!: Last parm used to be 1!
 				else {
+					// SIM RNG: this changes the live fallback scram path the guidebot follows
 					create_n_segment_path(objp, 8 + d_rand() * 8, -1);
 					aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 					input_demo_log_escort_path_state("escort_create_path_to_goal fallback_scram", objp);
@@ -1262,6 +1264,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	//	If the player is now visible, then create a path.
 	if (ailp->mode == AIM_WANDER)
 		if (player_visibility) {
+			// SIM RNG: this changes the live rejoin path the guidebot follows
 			create_n_segment_path(objp, 16 + d_rand() * 16, -1);
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			if (replay_rng_probe_active)
@@ -1271,6 +1274,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	if (Escort_special_goal == ESCORT_GOAL_SCRAM) {
 		if (player_visibility)
 			if (Escort_last_path_created + F1_0*3 < GameTime64) {
+				// SIM RNG: this changes the live scram path the guidebot follows
 				create_n_segment_path(objp, 10 + d_rand() * 16, ConsoleObject->segnum);
 				Escort_last_path_created = GameTime64;
 				if (replay_rng_probe_active)
@@ -1441,6 +1445,7 @@ void do_snipe_frame(object *objp, fix dist_to_player, int player_visibility, vms
 		case AIM_SNIPE_FIRE:
 			if (ailp->next_action_time < 0) {
 				ai_static	*aip = &objp->ctype.ai_info;
+				// SIM RNG: these rolls set the live retreat path and retreat mode
 				create_n_segment_path(objp, 10 + d_rand()/2048, ConsoleObject->segnum);
 				aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 				if (d_rand() < 8192)
@@ -1486,6 +1491,7 @@ int choose_thief_recreation_segment(void)
 	}
 
 	if (segnum == -1) {
+		// SIM RNG: this picks the thief's live respawn segment if no connected path works
 		return (d_rand() * Highest_segment_index) >> 15;
 	} else
 		return segnum;
@@ -1608,6 +1614,7 @@ void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms
 		case AIM_THIEF_ATTACK:
 			if (ailp->player_awareness_type >= PA_PLAYER_COLLISION) {
 				ailp->player_awareness_type = 0;
+				// SIM RNG: this decides whether the thief breaks off into a retreat path
 				if (d_rand() > 8192) {
 					create_n_segment_path(objp, 10, ConsoleObject->segnum);
 					Ai_local_info[objp-Objects].next_action_time = Thief_wait_times[Difficulty_level]/2;
@@ -1660,6 +1667,7 @@ void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms
 int maybe_steal_flag_item(int player_num, int flagval)
 {
 	if (Players[player_num].flags & flagval) {
+		// SIM RNG: this decides whether the thief removes a real flag-backed inventory item
 		if (d_rand() < THIEF_PROBABILITY) {
 			int	powerup_index=-1;
 			Players[player_num].flags &= (~flagval);
@@ -1713,6 +1721,7 @@ int maybe_steal_flag_item(int player_num, int flagval)
 int maybe_steal_secondary_weapon(int player_num, int weapon_num)
 {
 	if ((Players[player_num].secondary_weapon_flags & HAS_FLAG(weapon_num)) && Players[player_num].secondary_ammo[weapon_num])
+		// SIM RNG: these rolls decide whether the thief removes real secondary inventory
 		if (d_rand() < THIEF_PROBABILITY) {
 			if (weapon_num == PROXIMITY_INDEX)
 				if (d_rand() > 8192)		//	Come in groups of 4, only add 1/4 of time.
@@ -1740,6 +1749,7 @@ int maybe_steal_secondary_weapon(int player_num, int weapon_num)
 int maybe_steal_primary_weapon(int player_num, int weapon_num)
 {
 	if ((Players[player_num].primary_weapon_flags & HAS_FLAG(weapon_num)) && Players[player_num].primary_ammo[weapon_num]) {
+		// SIM RNG: this decides whether the thief removes a real primary weapon or laser level
 		if (d_rand() < THIEF_PROBABILITY) {
 			if (weapon_num == 0) {
 				if (Players[player_num].laser_level > 0) {
@@ -1838,6 +1848,7 @@ int attempt_to_steal_item_2(object *objp, int player_num)
 
 	if (rval) {
 		Stolen_item_index = (Stolen_item_index+1) % MAX_STOLEN_ITEMS;
+		// SIM RNG: this decides whether a successful theft consumes an extra stolen-item slot
 		if (d_rand() > 20000)	//	Occasionally, boost the value again
 			Stolen_item_index = (Stolen_item_index+1) % MAX_STOLEN_ITEMS;
 	}
@@ -1861,6 +1872,7 @@ int attempt_to_steal_item(object *objp, int player_num)
 	rval += attempt_to_steal_item_2(objp, player_num);
 
 	for (i=0; i<3; i++) {
+		// SIM RNG: this decides whether the thief steals additional real items in the same attack
 		if (!rval || (d_rand() < 11000)) {	//	about 1/3 of time, steal another item
 			rval += attempt_to_steal_item_2(objp, player_num);
 		} else

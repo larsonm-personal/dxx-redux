@@ -61,8 +61,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "controls.h"
 #include "kconfig.h"
 #include "input_demo_hooks.h"
-#include "input_demo_recorder.h"
-#include "input_demo_replay.h"
 #include "input_demo_debug_logging.h"
 
 #ifdef EDITOR
@@ -544,6 +542,7 @@ _exit_cheat:
 	if ((aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_RUN_FROM) && (aip->behavior != AIB_STILL) && !(Game_mode & GM_MULTI) && (robptr->companion != 1) && (robptr->thief != 1))
 		if (Overall_agitation > 70) {
 			if (dist_to_player < F1_0*200) {
+				// SIM RNG: these rolls decide whether the robot creates a live agitation path to the player
 				int agitation_path_trigger_roll = d_rand();
 				int agitation_path_trigger_pass = agitation_path_trigger_roll < FrameTime/4;
 				int agitation_path_roll = -1;
@@ -558,6 +557,7 @@ _exit_cheat:
 				int64_t agitation_path_pre_time_player_seen = ailp->time_player_seen;
 
 				if (agitation_path_trigger_pass) {
+					// SIM RNG: this second roll decides whether the live agitation path is actually created
 					agitation_path_roll = d_rand();
 					agitation_path_pass = agitation_path_roll * (Overall_agitation - 40) > F1_0*5;
 				}
@@ -687,6 +687,7 @@ _exit_cheat:
 
 
 	if (Player_is_dead && (ailp->player_awareness_type == 0))
+		// SIM RNG: this decides whether a live robot re-paths toward the dead player
 		if ((dist_to_player < F1_0*200) && (d_rand() < FrameTime/8)) {
 			if ((aip->behavior != AIB_STILL) && (aip->behavior != AIB_RUN_FROM)) {
 				if (!ai_multiplayer_awareness(obj, 30))
@@ -725,6 +726,7 @@ _exit_cheat:
 		int threshold;
 		int awareness_pass;
 
+		// SIM RNG: this roll decides whether the live robot wakes from ambient awareness
 		rval = d_rand();
 		sval = (dist_to_player * (Difficulty_level+1))/64;
 		threshold = sval ? fixdiv(FrameTime, sval) : 0;
@@ -950,6 +952,7 @@ _exit_cheat:
 			if (do_stuff) {
 				Laser_create_new_easy( &obj->orient.fvec, &obj->pos, obj-Objects, FLARE_ID, 1);
 				ailp->next_fire = F1_0/2;
+				// SIM RNG: this changes the live flare refire delay for the companion
 				if (!Buddy_allowed_to_talk) // If buddy not talking, make him fire flares less often.
 					ailp->next_fire += d_rand()*4;
 			}
@@ -975,6 +978,7 @@ _exit_cheat:
 				// @mk, 05/08/95: Firing flare from center of object, this is dumb...
 				Laser_create_new_easy( &obj->orient.fvec, &obj->pos, obj-Objects, FLARE_ID, 1);
 				ailp->next_fire = F1_0/2;
+				// SIM RNG: this changes the live flare refire delay for the thief
 				if (Stolen_item_index == 0)     // If never stolen an item, fire flares less often (bad: Stolen_item_index wraps, but big deal)
 					ailp->next_fire += d_rand()*4;
 			}
@@ -1059,6 +1063,7 @@ _exit_cheat:
 
 			if ((aip->CURRENT_STATE == AIS_REST) && (aip->GOAL_STATE == AIS_REST)) {
 				if (player_visibility) {
+					// SIM RNG: these rolls decide whether a live resting robot wakes into search state
 					if (d_rand() < FrameTime*player_visibility) {
 						if (dist_to_player/256 < d_rand()*player_visibility) {
 							aip->GOAL_STATE = AIS_SRCH;
@@ -1625,6 +1630,7 @@ int add_awareness_event(object *objp, int type)
 		if ((type == PA_WEAPON_WALL_COLLISION) || (type == PA_WEAPON_ROBOT_COLLISION))
 			if (objp->id == VULCAN_ID)
 				{
+					// SIM RNG: this filters whether vulcan impacts wake nearby robots
 					const int vulcan_roll = d_rand();
 					if (trace_awareness)
 						input_demo_log_awareness_vulcan_roll(objp, type, vulcan_roll,
@@ -1731,6 +1737,7 @@ void create_awareness_event(object *objp, int type)
 				sim_state_after_add);
 		}
 		if (awareness_added) {
+			// SIM RNG: this decides whether the live global agitation level increases
 			rng_gate_value = ((d_rand() * (type+4)) >> 15);
 			rng_gate_pass = (rng_gate_value > 4);
 			if (input_demo_replay_homing_desync_probe_active()) {

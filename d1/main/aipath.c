@@ -61,6 +61,7 @@ void create_random_xlate(sbyte *xt)
 		xt[i] = i;
 
 	for (i=0; i<MAX_SIDES_PER_SEGMENT; i++) {
+		// SIM RNG: this shuffles side traversal order and can change live path choice
                 int     j = (d_rand()*MAX_SIDES_PER_SEGMENT)/(D_RAND_MAX+1);
 		sbyte	temp_byte;
 		Assert((j >= 0) && (j < MAX_SIDES_PER_SEGMENT));
@@ -1045,6 +1046,7 @@ void attempt_to_resume_path(object *objp)
 	int new_path_index;
 
 	if (aip->behavior == AIB_STATION)
+		// SIM RNG: this decides whether a stuck station robot gives up and goes still
 		if (d_rand() > 8192) {
 			ai_local *ailp = &Ai_local_info[objp-Objects];
 

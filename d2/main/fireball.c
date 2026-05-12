@@ -698,12 +698,14 @@ object *object_create_debris(object *parent, int subobj_num)
 	vm_vec_add2(&obj->mtype.phys_info.velocity,&parent->mtype.phys_info.velocity);
 
 	// -- used to be: Notice, not random! vm_vec_make(&obj->mtype.phys_info.rotvel,10*0x2000/3,10*0x4000/3,10*0x7000/3);
+	// SIM RNG: these rolls set live debris spin
 	rotvel_x = d_rand() + 0x1000;
 	rotvel_y = d_rand()*2 + 0x4000;
 	rotvel_z = d_rand()*3 + 0x2000;
 	vm_vec_make(&obj->mtype.phys_info.rotvel, rotvel_x, rotvel_y, rotvel_z);
 	vm_vec_zero(&obj->mtype.phys_info.rotthrust);
 
+	// SIM RNG: this changes how long the live debris object persists
 	obj->lifeleft = 3*DEBRIS_LIFE/4 + fixmul(d_rand(), DEBRIS_LIFE);	//	Some randomness, so they don't all go away at the same time.
 
 	obj->mtype.phys_info.mass = fixmuldiv(parent->mtype.phys_info.mass,obj->size,parent->size);
@@ -807,6 +809,7 @@ int pick_connected_segment(object *objp, int max_depth)
 	for (i=0; i<4; i++) {
 		int	ind1, temp;
 
+		// SIM RNG: this randomizes the live side traversal order
 		ind1 = (d_rand() * MAX_SIDES_PER_SEGMENT) >> 15;
 		temp = side_rand[ind1];
 		side_rand[ind1] = side_rand[i];
@@ -827,6 +830,7 @@ int pick_connected_segment(object *objp, int max_depth)
 		tail &= QUEUE_SIZE-1;
 
 		//	to make random, switch a pair of entries in side_rand.
+		// SIM RNG: these rolls keep the live traversal order shuffled while searching
 		ind1 = (d_rand() * MAX_SIDES_PER_SEGMENT) >> 15;
 		ind2 = (d_rand() * MAX_SIDES_PER_SEGMENT) >> 15;
 		temp = side_rand[ind1];

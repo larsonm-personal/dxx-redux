@@ -1805,6 +1805,7 @@ void pick_random_point_in_seg(vms_vector *new_pos, int segnum)
 	vms_vector	vec2;
 
 	compute_segment_center(new_pos, &Segments[segnum]);
+	// SIM RNG: this picks a live placement point inside the segment
 	vnum = (d_rand() * MAX_VERTICES_PER_SEGMENT) >> 15;
 	vm_vec_sub(&vec2, &Vertices[Segments[segnum].verts[vnum]], new_pos);
 	vm_vec_scale(&vec2, d_rand());          // d_rand() always in 0..1/2

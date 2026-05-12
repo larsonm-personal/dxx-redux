@@ -2332,6 +2332,7 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 			spreadu = d_rand()/8 - 32767/16;
 			Laser_player_fire_spread( objp, VULCAN_ID, 6, spreadr, spreadu, make_sound, 0, shot_orientation);
 			if (nfires > 1) {
+				// SIM RNG: follow-up vulcan rounds keep their own live spread and hit results
 				spreadr = d_rand()/8 - 32767/16;
 				spreadu = d_rand()/8 - 32767/16;
 				Laser_player_fire_spread( objp, VULCAN_ID, 6, spreadr, spreadu, 0, 0, shot_orientation);
@@ -2407,6 +2408,7 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 			//if (d_rand() > 24576)
 			//	make_sound = 1;
 
+			// SIM RNG: gauss rounds keep their own live spread and hit results
 			spreadr = (d_rand()/8 - 32767/16)/5;
 			spreadu = (d_rand()/8 - 32767/16)/5;
 			Laser_player_fire_spread( objp, GAUSS_ID, 6, spreadr, spreadu, make_sound, 0, shot_orientation);
@@ -2415,6 +2417,7 @@ int do_laser_firing(int objnum, int weapon_num, int level, int flags, int nfires
 				spreadu = (d_rand()/8 - 32767/16)/5;
 				Laser_player_fire_spread( objp, GAUSS_ID, 6, spreadr, spreadu, 0, 0, shot_orientation);
 				if (nfires > 2) {
+					// SIM RNG: later gauss rounds keep their own live spread and hit results
 					spreadr = (d_rand()/8 - 32767/16)/5;
 					spreadu = (d_rand()/8 - 32767/16)/5;
 					Laser_player_fire_spread( objp, GAUSS_ID, 6, spreadr, spreadu, 0, 0, shot_orientation);

@@ -1934,6 +1934,7 @@ void FireLaser()
 				if (Fusion_charge > F1_0*2) {
 					digi_play_sample( 11, F1_0 );
 
+					// SIM RNG: this sets the live overcharge damage applied to the player
 					fix damage = d_rand() * 4; 
 					#ifdef NETWORK
 					if(Game_mode & GM_MULTI) {
@@ -2065,6 +2066,7 @@ int mark_player_path_to_segment(int segnum)
 		obj->rtype.vclip_info.vclip_num = Powerup_info[obj->id].vclip_num;
 		obj->rtype.vclip_info.frametime = Vclip[obj->rtype.vclip_info.vclip_num].frame_time;
 		obj->rtype.vclip_info.framenum = 0;
+		// SIM RNG: this changes how long the live breadcrumb powerup remains in the mine
 		obj->lifeleft = F1_0*100 + d_rand() * 4;
 	}
 

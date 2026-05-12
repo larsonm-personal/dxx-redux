@@ -409,6 +409,7 @@ void robotmaker_proc( FuelCenter * robotcen )
 		else
 		{
 			dist_to_player = vm_vec_dist_quick( &ConsoleObject->pos, &robotcen->Center );
+			// SIM RNG: these rolls set live matcen spawn timing
 			top_time = dist_to_player/64 + d_rand() * 2 + F1_0*2;
 			if ( top_time > ROBOT_GEN_TIME )
 				top_time = ROBOT_GEN_TIME + d_rand();
@@ -495,6 +496,7 @@ void robotmaker_proc( FuelCenter * robotcen )
 				if (num_types == 1)
 					type = legal_types[0];
 				else
+					// SIM RNG: this chooses which real robot the matcen spawns
 					type = legal_types[(d_rand() * num_types) / 32768];
 
 				obj = create_morph_robot(&Segments[robotcen->segnum], &cur_object_loc, type );

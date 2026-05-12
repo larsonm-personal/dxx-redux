@@ -485,10 +485,7 @@ void draw_automap(automap *am)
 		}
 	}
 	if (am->pause_game)
-	{
 		FrameTime=am->t2-am->t1;
-		calc_d_tick();
-	}
 	am->t1 = am->t2;
 }
 

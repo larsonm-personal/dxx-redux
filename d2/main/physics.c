@@ -1705,6 +1705,7 @@ void phys_apply_rot(object *obj,vms_vector *force_vec)
 
 					addval = f2i(tval);
 
+					// SIM RNG: this stochastic round-up changes live SKIP_AI_COUNT integration
 					if ( (d_rand() * 2) < (tval & 0xffff))
 						addval++;
 					skip_after = skip_before + addval;

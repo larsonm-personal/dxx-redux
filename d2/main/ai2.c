@@ -726,6 +726,7 @@ void set_next_fire_time(object *objp, ai_local *ailp, robot_info *robptr, int gu
 {
 	//	For guys in snipe mode, they have a 50% shot of getting this shot in free.
 	if ((gun_num != 0) || (robptr->weapon_type2 == -1))
+		// SIM RNG: this controls whether the live rapidfire burst advances
 		if ((objp->ctype.ai_info.behavior != AIB_SNIPE) || (d_rand() > 16384))
 			ailp->rapidfire_count++;
 
@@ -947,6 +948,7 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 		fix64	cloak_time = Ai_cloak_info[objnum % MAX_AI_CLOAK_INFO].last_time;
 
 		if (GameTime64 - cloak_time > CLOAK_TIME_MAX/4)
+			// SIM RNG: this decides whether cloaking suppresses a live shot
 			if (d_rand() > fixdiv(GameTime64 - cloak_time, CLOAK_TIME_MAX)/2) {
 				set_next_fire_time(obj, ailp, robptr, gun_num);
 				return;
@@ -1012,6 +1014,7 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 	//	Lead the player half the time.
 	//	Note that when leading the player, aim is perfect.  This is probably acceptable since leading is so hacked in.
 	//	Problem is all robots will lead equally badly.
+	// SIM RNG: this chooses direct aim versus predictive leading for the live shot
 	if (d_rand() < 16384) {
 		if (lead_player(obj, fire_point, believed_player_pos, gun_num, &fire_vec))		//	Stuff direction to fire at in fire_point.
 			goto player_led;
@@ -1020,6 +1023,7 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 	dot = 0;
 	count = 0;			//	Don't want to sit in this loop forever...
 	while ((count < 4) && (dot < F1_0/4)) {
+		// SIM RNG: these rolls add live shot error
 		bpp_diff.x = believed_player_pos->x + fixmul((d_rand()-16384) * (NDL-Difficulty_level-1) * 4, aim);
 		bpp_diff.y = believed_player_pos->y + fixmul((d_rand()-16384) * (NDL-Difficulty_level-1) * 4, aim);
 		bpp_diff.z = believed_player_pos->z + fixmul((d_rand()-16384) * (NDL-Difficulty_level-1) * 4, aim);
@@ -1300,6 +1304,7 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 	if (robptr->attack_type == 1) {
 		if (((ailp->next_fire > robptr->firing_wait[Difficulty_level]/4) && (dist_to_player < F1_0*30)) || Player_is_dead) {
 			//	1/4 of time, move around player, 3/4 of time, move away from player
+			// SIM RNG: this decides which live evasive movement the green guy takes
 			if (d_rand() < 8192) {
 				move_around_player(objp, vec_to_player, -1);
 			} else {
@@ -1339,6 +1344,7 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 //	Compute a somewhat random, normalized vector.
 void make_random_vector(vms_vector *vec)
 {
+	// SIM RNG: this builds live AI motion and aim vectors
 	vec->x = (d_rand() - 16384) | 1;	// make sure we don't create null vector
 	vec->y = d_rand() - 16384;
 	vec->z = d_rand() - 16384;
@@ -1397,6 +1403,7 @@ void do_ai_robot_hit(object *objp, int type)
 					//	Attack robots (eg, green guy) shouldn't have behavior = still.
 					Assert(Robot_info[objp->id].attack_type == 0);
 
+					// SIM RNG: these rolls choose the robot's live hit-reaction path
 					r = d_rand();
 					//	1/8 time, charge player, 1/4 time create path, rest of time, do nothing
 					if (r < 4096) {
@@ -1405,6 +1412,7 @@ void do_ai_robot_hit(object *objp, int type)
 						objp->ctype.ai_info.hide_segment = objp->segnum;
 						Ai_local_info[objp-Objects].mode = AIM_CHASE_OBJECT;
 					} else if (r < 4096+8192) {
+						// SIM RNG: this changes the length of the live follow path after the hit
 						create_n_segment_path(objp, d_rand()/8192 + 2, -1);
 						Ai_local_info[objp-Objects].mode = AIM_FOLLOW_PATH;
 					}
@@ -1900,6 +1908,7 @@ int boss_spew_robot(object *objp, vms_vector *pos)
 		return -1;
 	}	
 
+	// SIM RNG: this chooses which live robot the boss spews
 	objnum = create_gated_robot( segnum, Spew_bots[boss_index][(Max_spew_bots[boss_index] * d_rand()) >> 15], pos);
  
 	//	Make spewed robot come tumbling out as if blasted by a flash missile.
@@ -1911,6 +1920,7 @@ int boss_spew_robot(object *objp, vms_vector *pos)
 
 		if (force_val) {
 			newobjp->ctype.ai_info.SKIP_AI_COUNT += force_val;
+			// SIM RNG: these rolls set the spewed robot's live tumble
 			newobjp->mtype.phys_info.rotthrust.x = ((d_rand() - 16384) * force_val)/16;
 			newobjp->mtype.phys_info.rotthrust.y = ((d_rand() - 16384) * force_val)/16;
 			newobjp->mtype.phys_info.rotthrust.z = ((d_rand() - 16384) * force_val)/16;
@@ -1947,6 +1957,7 @@ void init_ai_for_ship(void)
 int gate_in_robot(int type, int segnum)
 {
 	if (segnum < 0)
+		// SIM RNG: this chooses the live gate-in segment for the spawned robot
 		segnum = Boss_gate_segs[(d_rand() * Num_boss_gate_segs) >> 15];
 
 	Assert((segnum >= 0) && (segnum <= Highest_segment_index));
@@ -1989,6 +2000,7 @@ void teleport_boss(object *objp)
 	Assert(Num_boss_teleport_segs > 0);
 
 	//	Pick a random segment from the list of boss-teleportable-to segments.
+	// SIM RNG: this chooses the live boss teleport destination
 	rand_index = (d_rand() * Num_boss_teleport_segs) >> 15;	
 	rand_segnum = Boss_teleport_segs[rand_index];
 	Assert((rand_segnum >= 0) && (rand_segnum <= Highest_segment_index));
@@ -2395,6 +2407,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 				aip->CURRENT_GUN = 0;
 		}
 	} else {
+		// SIM RNG: this decides whether blind-fire logic attempts a live shot
 		const int blind_roll = d_rand()/2;
 		const int blind_threshold = fixmul(FrameTime,
 			(Difficulty_level << 12) + 0x4000);

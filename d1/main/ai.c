@@ -464,6 +464,7 @@ void ai_turn_randomly(vms_vector *vec_to_player, object *obj, fix rate, int prev
 
 	//	Random turning looks too stupid, so 1/4 of time, cheat.
 	if (previous_visibility)
+		// SIM RNG: this decides whether a live robot snaps its turn toward the player
                 if (d_rand() > 0x7400) {
 			ai_turn_towards_vector(vec_to_player, obj, rate);
 			return;
@@ -817,6 +818,7 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point)
 		fix64	cloak_time = Ai_cloak_info[objnum % MAX_AI_CLOAK_INFO].last_time;
 
 		if (GameTime64 - cloak_time > CLOAK_TIME_MAX/4)
+			// SIM RNG: this decides whether cloaking suppresses a live shot
                         if (d_rand() > fixdiv(GameTime64 - cloak_time, CLOAK_TIME_MAX)/2) {
 				set_next_fire_time(ailp, robptr);
 				return;
@@ -843,11 +845,13 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point)
 //--		return;
 
 	//	Set position to fire at based on difficulty level.
+	// SIM RNG: these rolls add live shot error
         bpp_diff.x = Believed_player_pos.x + (d_rand()-16384) * (NDL-Difficulty_level-1) * 4;
         bpp_diff.y = Believed_player_pos.y + (d_rand()-16384) * (NDL-Difficulty_level-1) * 4;
         bpp_diff.z = Believed_player_pos.z + (d_rand()-16384) * (NDL-Difficulty_level-1) * 4;
 
 	//	Half the time fire at the player, half the time lead the player.
+	// SIM RNG: this chooses direct aim versus predictive leading for the live shot
         if (d_rand() > 16384) {
 
 		vm_vec_normalized_dir_quick(&fire_vec, &bpp_diff, fire_point);
@@ -1151,6 +1155,7 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 	if (robptr->attack_type == 1) {
 		if (((ailp->next_fire > robptr->firing_wait[Difficulty_level]/4) && (dist_to_player < F1_0*30)) || Player_is_dead) {
 			//	1/4 of time, move around player, 3/4 of time, move away from player
+			// SIM RNG: this chooses the robot's live evasive movement
                         if (d_rand() < 8192) {
 				move_around_player(objp, vec_to_player, -1);
 			} else {
@@ -1174,6 +1179,7 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 //	Compute a somewhat random, normalized vector.
 void make_random_vector(vms_vector *vec)
 {
+	// SIM RNG: this builds live AI motion and aim vectors
         vec->x = (d_rand() - 16384) | 1;  // make sure we don't create null vector
         vec->y = d_rand() - 16384;
         vec->z = d_rand() - 16384;
@@ -1495,6 +1501,7 @@ int get_random_child(int segnum)
 	int	sidenum;
 	segment	*segp = &Segments[segnum];
 
+	// SIM RNG: this chooses the next reachable segment for live AI pathing
         sidenum = (d_rand() * 6) >> 15;
 
 	while (!(WALL_IS_DOORWAY(segp, sidenum) & WID_FLY_FLAG))
@@ -1616,6 +1623,7 @@ int create_gated_robot( int segnum, int object_id)
 int gate_in_robot(int type, int segnum)
 {
 	if (segnum < 0)
+		// SIM RNG: this chooses the live gate-in segment for the spawned robot
                 segnum = Boss_gate_segs[(d_rand() * Num_boss_gate_segs) >> 15];
 
 	Assert((segnum >= 0) && (segnum <= Highest_segment_index));
@@ -1753,6 +1761,7 @@ void teleport_boss(object *objp)
 	Assert(Num_boss_teleport_segs > 0);
 
 	//	Pick a random segment from the list of boss-teleportable-to segments.
+	// SIM RNG: this chooses the live boss teleport destination
         rand_seg = (d_rand() * Num_boss_teleport_segs) >> 15; 
 	rand_segnum = Boss_teleport_segs[rand_seg];
 	Assert((rand_segnum >= 0) && (rand_segnum <= Highest_segment_index));
@@ -1953,6 +1962,7 @@ void do_super_boss_stuff(object *objp, fix dist_to_player, int player_visibility
 		if (GameTime64 - Last_gate_time > Gate_interval)
 			if (ai_multiplayer_awareness(objp, 99)) {
 				int	rtval;
+				// SIM RNG: this chooses which live robot type the boss gates into the mine
                                 int     randtype = (d_rand() * MAX_GATE_INDEX) >> 15;
 
 				Assert(randtype < MAX_GATE_INDEX);
@@ -2190,6 +2200,7 @@ void do_ai_frame(object *obj)
 	//	Occasionally make non-still robots make a path to the player.  Based on agitation and distance from player.
 	if ((aip->behavior != AIB_RUN_FROM) && (aip->behavior != AIB_STILL) && !(Game_mode & GM_MULTI))
 		if (Overall_agitation > 70) {
+			// SIM RNG: these rolls decide whether the robot creates a live agitation path to the player
                         if ((dist_to_player < F1_0*200) && (d_rand() < FrameTime/4)) {
                                 if (d_rand() * (Overall_agitation - 40) > F1_0*5) {
 					create_path_to_player(obj, 4 + Overall_agitation/8 + Difficulty_level, 1);
@@ -2303,6 +2314,7 @@ void do_ai_frame(object *obj)
 
 
 	if (Player_is_dead && (ailp->player_awareness_type == 0))
+		// SIM RNG: this decides whether a live robot re-paths toward the dead player
 		if ((dist_to_player < F1_0*200) && (d_rand() < FrameTime/8)) {
 			if ((aip->behavior != AIB_STILL) && (aip->behavior != AIB_RUN_FROM)) {
 				if (!ai_multiplayer_awareness(obj, 30))
@@ -2480,6 +2492,7 @@ void do_ai_frame(object *obj)
 
 			if ((aip->CURRENT_STATE == AIS_REST) && (aip->GOAL_STATE == AIS_REST)) {
 				if (player_visibility) {
+					// SIM RNG: these rolls decide whether a live resting robot wakes into search state
 					if (d_rand() < FrameTime*player_visibility) {
 						if (dist_to_player/256 < d_rand()*player_visibility) {
 							aip->GOAL_STATE = AIS_SRCH;
@@ -2653,6 +2666,7 @@ void do_ai_frame(object *obj)
 
 				// turn towards vector if visible this time or last time, or rand
 				// new!
+				// SIM RNG: this decides whether a live idle robot turns to face the player
                                 if ((player_visibility) || (previous_visibility) || ((d_rand() > 0x4000) && !(Game_mode & GM_MULTI))) {
 					if (!ai_multiplayer_awareness(obj, 71)) {
 						if (maybe_ai_do_actual_firing_stuff(obj, aip))
@@ -2913,6 +2927,7 @@ int add_awareness_event(object *objp, int type)
 	if (Num_awareness_events < MAX_AWARENESS_EVENTS) {
 		if ((type == PA_WEAPON_WALL_COLLISION) || (type == PA_WEAPON_ROBOT_COLLISION))
 			if (objp->id == VULCAN_ID)
+				// SIM RNG: this filters whether vulcan impacts wake nearby robots
 				if (d_rand() > 3276)
 					return 0;       // For vulcan cannon, only about 1/10 actually cause awareness
 
@@ -2937,6 +2952,7 @@ void create_awareness_event(object *objp, int type)
 	}
 
 		if (add_awareness_event(objp, type)) {
+			// SIM RNG: this decides whether the live global agitation level increases
 			if (((d_rand() * (type+4)) >> 15) > 4)
 				Overall_agitation++;
 			if (Overall_agitation > OVERALL_AGITATION_MAX)

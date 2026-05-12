@@ -70,6 +70,7 @@ void create_random_xlate(sbyte *xt)
 		xt[i] = i;
 
 	for (i=0; i<MAX_SIDES_PER_SEGMENT; i++) {
+		// SIM RNG: this shuffles side traversal order and can change live path choice
 		int	j = (d_rand()*MAX_SIDES_PER_SEGMENT)/(D_RAND_MAX+1);
 		sbyte temp_byte;
 		Assert((j >= 0) && (j < MAX_SIDES_PER_SEGMENT));
@@ -179,6 +180,7 @@ void move_towards_outside(point_seg *psegs, int *num_points, object *objp, int r
 		if (abs(vm_vec_dot(&a, &b)) > 3*F1_0/4 ) {
 			if (abs(a.z) < F1_0/2) {
 				if (rand_flag) {
+					// SIM RNG: this perturbs live path geometry and downstream robot movement
 					e.x = (d_rand()-16384)/2;
 					e.y = (d_rand()-16384)/2;
 					e.z = abs(e.x) + abs(e.y) + 1;
@@ -190,6 +192,7 @@ void move_towards_outside(point_seg *psegs, int *num_points, object *objp, int r
 				}
 			} else {
 				if (rand_flag) {
+					// SIM RNG: this perturbs live path geometry and downstream robot movement
 					e.y = (d_rand()-16384)/2;
 					e.z = (d_rand()-16384)/2;
 					e.x = abs(e.y) + abs(e.z) + 1;
@@ -347,6 +350,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 
 		if (random_flag) {
 			random_xlate_refresh_roll_count++;
+			// SIM RNG: this decides whether the live path perturbation basis is refreshed
 			if (d_rand() < 8192) {
 				create_random_xlate(random_xlate);
 				random_xlate_refresh_count++;
@@ -1135,6 +1139,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 				if (Escort_special_goal == ESCORT_GOAL_SCRAM)
 				{
 					if (player_visibility) {
+						// SIM RNG: this changes the live escape path the companion follows
 						create_n_segment_path(objp, 16 + d_rand() * 16, -1);
 						aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 						Assert(aip->path_length != 0);
@@ -1519,6 +1524,7 @@ void attempt_to_resume_path(object *objp)
 	int new_path_index;
 
 	if ((aip->behavior == AIB_STATION) && (Robot_info[objp->id].companion != 1))
+		// SIM RNG: this decides whether a stuck station robot gives up and goes still
 		if (d_rand() > 8192) {
 			ai_local *ailp = &Ai_local_info[objp-Objects];
 
