@@ -41,6 +41,26 @@ class CdAudioSourceVisibilityTest {
     }
 
     @Test
+    fun resolvesPlaylistCuePathToAbsoluteLocalCueForMergedSources() {
+        val filesDir = File("build/test-playlist-cue").absoluteFile
+        filesDir.mkdirs()
+        val localCue = File(filesDir, "disc.cue")
+        localCue.writeText("FILE \"disc.bin\" BINARY\n")
+        val mergedSource = testSource(id = "merged", binContentUri = File(filesDir, "merged.bin").absolutePath)
+
+        assertEquals(localCue.absolutePath, resolvePlaylistCuePath(filesDir, mergedSource) { "fallback.cue" })
+    }
+
+    @Test
+    fun fallsBackToStagedCuePathForSafPlaylistSources() {
+        val filesDir = File("build/test-playlist-cue-fallback").absoluteFile
+        filesDir.mkdirs()
+        val safSource = testSource(id = "saf", binContentUri = "content://good-bin")
+
+        assertEquals("fallback.cue", resolvePlaylistCuePath(filesDir, safSource) { "fallback.cue" })
+    }
+
+    @Test
     fun reservesSafEntriesForActualSafBackedCdSources() {
         val localSource = testSource(id = "local")
         val mergedLocalSource = testSource(id = "merged", binContentUri = File("/tmp/merged.bin").absolutePath)

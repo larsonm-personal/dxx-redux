@@ -27,6 +27,7 @@
 #include "pstypes.h"
 #include "dxxerror.h"
 #include "args.h"
+#include "config.h"
 #include "rbaudio.h"
 #include "console.h"
 #include "timer.h"
@@ -35,9 +36,12 @@
 
 #ifdef ANDROID
 #include <android/log.h>
-#define RBA_LOG(...) __android_log_print(ANDROID_LOG_INFO, "RBAudio", __VA_ARGS__)
+#include "android_log.h"
+#define RBA_LOG(...)  __android_log_print(ANDROID_LOG_INFO, "RBAudio", __VA_ARGS__)
+#define RBA_DIAG(...) debug_log(DLOG_GAME, "[RBA] " __VA_ARGS__)
 #else
-#define RBA_LOG(...) con_printf(CON_VERBOSE, __VA_ARGS__)
+#define RBA_LOG(...)  con_printf(CON_VERBOSE, __VA_ARGS__)
+#define RBA_DIAG(...) ((void) 0)
 #endif
 
 /* ── Constants ───────────────────────────────────────────────────────── */
@@ -167,6 +171,7 @@ static int s_rb_cb_count = 0;  /* total callbacks */
 
 static void (*s_finished_hook)(void) = NULL;
 static volatile int s_song_finished = 0;
+static int s_logged_data_track_decode = 0;
 
 /* ── PCM input buffer (raw CD audio before resampling) ───────────────── */
 
@@ -367,34 +372,65 @@ static void pj_skip_value(const char **pp)
 
 /*
  * Parse a single CUE file for a given source and append tracks to the
- * combined table.  cue_name and bin_name are PhysFS-relative filenames.
- * source_idx is which s_sources[] entry to associate tracks with.
- * Returns the number of tracks parsed, or 0 on failure.
+ * combined table. cue_name may be an absolute filesystem path or a
+ * PhysFS-relative filename. source_idx is which s_sources[] entry to
+ * associate tracks with. Returns the number of tracks parsed, or 0 on
+ * failure.
  */
 static int parse_source_cue(const char *cue_name, const char *bin_name,
                             int source_idx)
 {
 	PHYSFS_File *f;
+	FILE *sf;
 	PHYSFS_sint64 file_size;
+	const char *cue_real_dir;
+	int use_stdio;
 	int cur_track = -1;
 	int base = s_num_tracks; /* where this source's tracks start */
 	int i, total_sectors, count;
 
-	f = open_ci(cue_name);
-	if (!f) {
+	f = NULL;
+	sf = NULL;
+	use_stdio = cue_name[0] == '/';
+	if (use_stdio) {
+		cue_real_dir = cue_name;
+		sf = fopen(cue_name, "rb");
+	} else {
+		cue_real_dir = PHYSFS_getRealDir(cue_name);
+		f = open_ci(cue_name);
+	}
+
+	RBA_DIAG("parse_source_cue src=%d cue=%s mode=%s cue_real_dir=%s bin=%s",
+	         source_idx, cue_name, use_stdio ? "stdio" : "physfs",
+	         cue_real_dir ? cue_real_dir : "(null)", bin_name);
+
+	if (!f && !sf) {
 		RBA_LOG("parse_source_cue: cannot open %s", cue_name);
+		RBA_DIAG("parse_source_cue open failed src=%d cue=%s mode=%s err=%s",
+		         source_idx, cue_name, use_stdio ? "stdio" : "physfs",
+		         use_stdio ? "(stdio open failed)" : PHYSFS_getLastError());
 		return 0;
 	}
 
-	while (!PHYSFS_eof(f)) {
+	for (;;) {
 		char line[512];
 		int li = 0;
-		while (li < (int) sizeof(line) - 1 && !PHYSFS_eof(f)) {
+		int got_line = 0;
+		while (li < (int) sizeof(line) - 1) {
 			char c;
-			if (PHYSFS_read(f, &c, 1, 1) != 1) break;
+			if (use_stdio) {
+				int ch = fgetc(sf);
+				if (ch == EOF) break;
+				c = (char) ch;
+			} else {
+				if (PHYSFS_eof(f)) break;
+				if (PHYSFS_read(f, &c, 1, 1) != 1) break;
+			}
+			got_line = 1;
 			if (c == '\n') break;
 			if (c != '\r') line[li++] = c;
 		}
+		if (!got_line) break;
 		line[li] = '\0';
 
 		/* TRACK nn TYPE */
@@ -442,7 +478,10 @@ static int parse_source_cue(const char *cue_name, const char *bin_name,
 			}
 		}
 	}
-	PHYSFS_close(f);
+	if (sf)
+		fclose(sf);
+	else
+		PHYSFS_close(f);
 
 	count = s_num_tracks - base;
 	if (count <= 0) return 0;
@@ -486,6 +525,19 @@ static int parse_source_cue(const char *cue_name, const char *bin_name,
 	RBA_LOG("Source %d (%s): %d tracks (%d audio) from %s",
 	        source_idx, s_sources[source_idx].disc_label,
 	        count, s_sources[source_idx].audio_count, bin_name);
+	RBA_DIAG("source %d label=%s tracks=%d audio=%d bin=%s bin_bytes=%lld first_combined=%d",
+	         source_idx, s_sources[source_idx].disc_label,
+	         count, s_sources[source_idx].audio_count, bin_name,
+	         (long long) file_size, s_sources[source_idx].first_combined);
+	for (i = base; i < s_num_tracks; i++) {
+		RBA_DIAG("track %d type=%s start=%d len=%d src=%d name=%s",
+		         i + 1,
+		         s_tracks[i].type ? "audio" : "data",
+		         s_tracks[i].start_sector,
+		         s_tracks[i].num_sectors,
+		         s_tracks[i].source_index,
+		         s_tracks[i].name[0] ? s_tracks[i].name : "(none)");
+	}
 
 	return count;
 }
@@ -634,6 +686,8 @@ static int parse_audio_playlist(void)
 		if (cue_name[0] && bin_name[0]) {
 			int src = s_num_sources;
 			int base = s_num_tracks;
+			RBA_DIAG("playlist source=%d label=%s cue=%s bin=%s legacy_disc_id=%ld",
+			         src, label[0] ? label : "Unknown", cue_name, bin_name, legacy_id);
 			memset(&s_sources[src], 0, sizeof(s_sources[src]));
 			strncpy(s_sources[src].disc_label, label[0] ? label : "Unknown",
 			        sizeof(s_sources[src].disc_label) - 1);
@@ -832,6 +886,17 @@ static int refill_pcm(void)
 			s_current_track++;
 			s_read_sector = s_tracks[s_current_track - 1].start_sector;
 			s_track_end = s_read_sector + s_tracks[s_current_track - 1].num_sectors;
+		}
+
+		if (!s_logged_data_track_decode &&
+		    s_current_track >= 1 && s_current_track <= s_num_tracks &&
+		    s_tracks[s_current_track - 1].type != 1) {
+			s_logged_data_track_decode = 1;
+			RBA_DIAG("decoding data track current=%d play_range=%d-%d disc_id=0x%08lx orig_track_order=%d start=%d len=%d",
+			         s_current_track, s_play_first, s_play_last,
+			         (unsigned long) RBAGetDiscID(), GameCfg.OrigTrackOrder,
+			         s_tracks[s_current_track - 1].start_sector,
+			         s_tracks[s_current_track - 1].num_sectors);
 		}
 
 		{
@@ -1063,11 +1128,18 @@ int RBAPlayTrack(int track)
 	s_paused = 0;
 	s_rb_underruns = 0;
 	s_rb_cb_count = 0;
+	s_logged_data_track_decode = 0;
 	s_playing = 1;
 
 	render_thread_start();
 	Mix_HookMusic(rba_music_callback, NULL);
 
+	RBA_DIAG("play_track track=%d type=%s disc_id=0x%08lx orig_track_order=%d start=%d len=%d",
+	         track,
+	         s_tracks[track - 1].type ? "audio" : "data",
+	         (unsigned long) RBAGetDiscID(), GameCfg.OrigTrackOrder,
+	         s_tracks[track - 1].start_sector,
+	         s_tracks[track - 1].num_sectors);
 	RBA_LOG("Playing track %d (sectors %d–%d)", track, s_read_sector, s_track_end - 1);
 	return track;
 }
@@ -1095,11 +1167,18 @@ int RBAPlayTracks(int first, int last, void (*hook_finished)(void))
 	s_paused = 0;
 	s_rb_underruns = 0;
 	s_rb_cb_count = 0;
+	s_logged_data_track_decode = 0;
 	s_playing = 1;
 
 	render_thread_start();
 	Mix_HookMusic(rba_music_callback, NULL);
 
+	RBA_DIAG("play_tracks first=%d last=%d first_type=%s disc_id=0x%08lx orig_track_order=%d first_start=%d first_len=%d",
+	         first, last,
+	         s_tracks[first - 1].type ? "audio" : "data",
+	         (unsigned long) RBAGetDiscID(), GameCfg.OrigTrackOrder,
+	         s_tracks[first - 1].start_sector,
+	         s_tracks[first - 1].num_sectors);
 	RBA_LOG("Playing tracks %d–%d", first, last);
 	return 1;
 }
@@ -1113,6 +1192,7 @@ void RBAStop(void)
 	Mix_HookMusic(NULL, NULL);
 	s_finished_hook = NULL;
 	s_song_finished = 0;
+	s_logged_data_track_decode = 0;
 	rb_reset();
 
 	RBA_LOG("Playback stopped");

@@ -23,6 +23,19 @@ internal fun getSafLinkedHelperArtifactPaths(
     sources: List<AudioSourceManager.AudioSource>,
 ): Set<String> = getManagedInternalArtifactPaths(filesDir, sources.filter(::hasSafLinkedCdContent))
 
+internal fun resolvePlaylistCuePath(
+    filesDir: File,
+    source: AudioSourceManager.AudioSource,
+    fallback: () -> String,
+): String {
+    val localCue = File(filesDir, source.cuePath)
+    return if (source.binContentUri?.let(::isLocalCdContentPath) == true && localCue.exists()) {
+        localCue.absolutePath
+    } else {
+        fallback()
+    }
+}
+
 private fun getManagedInternalArtifactFilesForSource(
     filesDir: File,
     source: AudioSourceManager.AudioSource,
@@ -290,7 +303,8 @@ class AudioSourceManager(
         val arr = JSONArray()
         for (src in enabled) {
             val entry = JSONObject()
-            entry.put("cue", stagedCuePath(src, activeSetDir))
+            val cuePath = resolvePlaylistCuePath(filesDir, src) { stagedCuePath(src, activeSetDir) }
+            entry.put("cue", cuePath)
             val bins = JSONArray()
             if (src.binContentUri != null) {
                 // SAF source (or test filesystem path): open fd and use /proc/self/fd path
