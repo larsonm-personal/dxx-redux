@@ -2195,6 +2195,12 @@ int ReadControlsReplayFrame(void)
 	return 0;
 }
 
+void ReadControlsReplayPostFrame(void)
+{
+	if (!Endlevel_sequence && !Player_is_dead)
+		do_weapon_n_item_stuff();
+}
+
 int ReadControls(d_event *event)
 {
 	int key;

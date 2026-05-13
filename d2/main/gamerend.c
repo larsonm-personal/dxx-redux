@@ -856,8 +856,6 @@ void game_render_frame_mono(int flip)
 
 		update_rendered_data(0, Viewer, 0, 0);
 		render_frame(0, 0);
-
-		wake_up_rendered_objects(Viewer, 0);
 		show_HUD_names();
 
 		Viewer = viewer_save;

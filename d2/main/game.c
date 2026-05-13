@@ -1658,6 +1658,7 @@ void GameProcessFrame(void)
 	}
 
 	render_warn_robots_about_player_fire();
+	wake_up_missile_camera_robots();
 
 	input_demo_debug_log_player_motion_state("exit");
 

@@ -579,7 +579,7 @@ extern void create_small_fireball_on_object(object *objp, fix size_scale, int so
 // returns object number
 int drop_marker_object(vms_vector *pos, int segnum, vms_matrix *orient, int marker_num);
 
-extern void wake_up_rendered_objects(object *gmissp, int window_num);
+extern void wake_up_missile_camera_robots(void);
 
 void reset_player_object(void);
 

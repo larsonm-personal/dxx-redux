@@ -28,6 +28,7 @@
 
 extern int Num_awareness_events;
 extern int ReadControlsReplayFrame(void);
+extern void ReadControlsReplayPostFrame(void);
 extern void GameProcessFrame(void);
 extern int game_is_time_paused(void);
 
@@ -974,6 +975,7 @@ int input_demo_step_replay_frame(void)
 	{
 		calc_game_time();
 		GameProcessFrame();
+		ReadControlsReplayPostFrame();
 		input_demo_advance_replay_frame();
 	}
 	return 1;

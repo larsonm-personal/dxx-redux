@@ -4912,12 +4912,6 @@ void do_cockpit_window_view(int win,object *viewer,int rear_view_flag,int user,c
 
 	render_frame(0, win+1);
 
-	//	HACK! If guided missile, wake up robots as necessary.
-	if (viewer->type == OBJ_WEAPON) {
-		// -- Used to require to be GUIDED -- if (viewer->id == GUIDEDMISS_ID)
-		wake_up_rendered_objects(viewer, win+1);
-	}
-
 	if (label) {
 		gr_set_curfont( GAME_FONT );
 		if (Color_0_31_0 == -1)

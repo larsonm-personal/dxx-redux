@@ -2815,43 +2815,139 @@ int drop_marker_object(vms_vector *pos,int segnum,vms_matrix *orient, int marker
 
 extern int Ai_last_missile_camera;
 
-//	*viewer is a viewer, probably a missile.
-//	wake up all robots that were rendered last frame subject to some constraints.
-void wake_up_rendered_objects(object *viewer, int window_num)
+static int guided_missile_camera_is_valid(object *viewer)
 {
-	int	i;
+	int objnum;
 
-	if (input_demo_replay_is_loaded())
-		return;
+	if (!viewer)
+		return 0;
+	objnum = (int)(viewer - Objects);
+	return objnum >= 0 && objnum <= Highest_object_index && viewer->type == OBJ_WEAPON && viewer->id == GUIDEDMISS_ID &&
+		viewer->signature == Guided_missile_sig[Player_num];
+}
 
-	//	Make sure that we are processing current data.
-	if (Window_rendered_data[window_num].simulation_frame_id != game_get_simulation_frame_id()) {
-		return;
+static int player_missile_camera_weapon_is_valid(object *viewer)
+{
+	laser_info *laser;
+	object *parent;
+	int objnum;
+
+	if (!viewer)
+		return 0;
+	objnum = (int)(viewer - Objects);
+	if (objnum < 0 || objnum > Highest_object_index || viewer->type != OBJ_WEAPON)
+		return 0;
+	switch (viewer->id) {
+		case CONCUSSION_ID:
+		case HOMING_ID:
+		case SMART_ID:
+		case MEGA_ID:
+		case FLASH_ID:
+		case GUIDEDMISS_ID:
+		case MERCURY_ID:
+		case EARTHSHAKER_ID:
+			break;
+		default:
+			return 0;
 	}
+	laser = &viewer->ctype.laser_info;
+	if (laser->parent_type != OBJ_PLAYER || laser->parent_num < 0 || laser->parent_num > Highest_object_index)
+		return 0;
+	parent = &Objects[laser->parent_num];
+	return parent->type == OBJ_PLAYER && parent->id == Player_num && parent->signature == laser->parent_signature;
+}
 
-	Ai_last_missile_camera = viewer-Objects;
+static object *find_player_missile_camera_viewer(void)
+{
+	object *best = NULL;
+	int i;
 
-	for (i=0; i<Window_rendered_data[window_num].num_objects; i++) {
-		int	objnum;
-		object *objp;
-		int	fcval = d_tick_count & 3;
+	for (i=0; i<=Highest_object_index; i++) {
+		object *candidate = &Objects[i];
 
-		objnum = Window_rendered_data[window_num].rendered_objects[i];
-		if ((objnum & 3) == fcval) {
-			objp = &Objects[objnum];
-	
-			if (objp->type == OBJ_ROBOT) {
-				if (vm_vec_dist_quick(&viewer->pos, &objp->pos) < F1_0*100) {
-					ai_local		*ailp = &Ai_local_info[objnum];
-					if (ailp->player_awareness_type == 0) {
-						objp->ctype.ai_info.SUB_FLAGS |= SUB_FLAGS_CAMERA_AWAKE;
-						ailp->player_awareness_type = PA_WEAPON_ROBOT_COLLISION;
-						ailp->player_awareness_time = F1_0*3;
-						ailp->previous_visibility = 2;
-					}
-				}
-			}
-		}
+		if (!player_missile_camera_weapon_is_valid(candidate))
+			continue;
+		if (!best || candidate->ctype.laser_info.creation_time < best->ctype.laser_info.creation_time)
+			best = candidate;
+	}
+	return best;
+}
+
+static object *get_missile_camera_viewer(void)
+{
+	object *viewer = Guided_missile[Player_num];
+
+	if (guided_missile_camera_is_valid(viewer))
+		return viewer;
+	if (viewer)
+		Guided_missile[Player_num] = NULL;
+	viewer = Missile_viewer;
+	if (viewer && Missile_viewer_sig == -1)
+		Missile_viewer_sig = viewer->signature;
+	if (viewer && viewer->signature == Missile_viewer_sig && player_missile_camera_weapon_is_valid(viewer))
+		return viewer;
+	if (viewer) {
+		Missile_viewer = NULL;
+		Missile_viewer_sig = -1;
+	}
+	viewer = find_player_missile_camera_viewer();
+	if (!viewer)
+		return NULL;
+	Missile_viewer = viewer;
+	Missile_viewer_sig = viewer->signature;
+	return viewer;
+}
+
+static int missile_camera_can_wake_robot(object *viewer, object *robot)
+{
+	int robot_objnum = (int)(robot - Objects);
+	fix dist;
+	fix dot;
+	int visible;
+	vms_vector vec_to_robot;
+
+	if (robot_objnum < 0 || robot_objnum > Highest_object_index)
+		return 0;
+	if (robot->type != OBJ_ROBOT)
+		return 0;
+	if (Ai_local_info[robot_objnum].player_awareness_type != 0)
+		return 0;
+	vm_vec_sub(&vec_to_robot, &robot->pos, &viewer->pos);
+	dist = vm_vec_normalize_quick(&vec_to_robot);
+	if (dist <= 0 || dist >= F1_0*100)
+		return 0;
+	dot = vm_vec_dot(&vec_to_robot, &viewer->orient.fvec);
+	if (dist >= F1_0*50 && dot <= F1_0/4)
+		return 0;
+	visible = object_to_object_visibility(viewer, robot, FQ_TRANSWALL) != 0;
+	return visible;
+}
+
+static void wake_up_robot_from_missile_camera(object *robot)
+{
+	int robot_objnum = (int)(robot - Objects);
+	ai_local *ailp = &Ai_local_info[robot_objnum];
+
+	robot->ctype.ai_info.SUB_FLAGS |= SUB_FLAGS_CAMERA_AWAKE;
+	ailp->player_awareness_type = PA_WEAPON_ROBOT_COLLISION;
+	ailp->player_awareness_time = F1_0*3;
+	ailp->previous_visibility = 2;
+}
+
+void wake_up_missile_camera_robots(void)
+{
+	object *viewer = get_missile_camera_viewer();
+	int fcval = d_tick_count & 3;
+	int i;
+
+	if (!viewer)
+		return;
+	Ai_last_missile_camera = (int)(viewer - Objects);
+	for (i=0; i<=Highest_object_index; i++) {
+		if ((i & 3) != fcval)
+			continue;
+		if (missile_camera_can_wake_robot(viewer, &Objects[i]))
+			wake_up_robot_from_missile_camera(&Objects[i]);
 	}
 }
 
