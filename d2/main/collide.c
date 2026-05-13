@@ -1264,9 +1264,7 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 		}
 
 		if (Robot_info[robot->id].thief) {
-			int replay_thief_contact_probe_active = input_demo_replay_is_loaded() &&
-				input_demo_trace_frame_index() >= 1280u &&
-				input_demo_trace_frame_index() <= 1335u;
+			int replay_thief_contact_probe_active = input_demo_trace_thief_contact_active(robot);
 			if (Ai_local_info[robot-Objects].mode == AIM_THIEF_ATTACK) {
 				int pre_mercury_ammo = Players[playerobj->id].secondary_ammo[8];
 				int pre_stolen_item_index = Stolen_item_index;

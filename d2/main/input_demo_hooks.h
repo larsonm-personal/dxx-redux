@@ -5,8 +5,6 @@
 
 struct ai_local;
 struct ai_static;
-struct g3s_lrgb;
-struct g3s_point;
 struct object;
 struct vms_vector;
 
@@ -59,7 +57,6 @@ int input_demo_replay_weapon_focus_active(void);
 int input_demo_weapon_trace_active(void);
 int input_demo_weapon_create_probe_active(struct object *obj);
 int input_demo_replay_is_player_owned_weapon(struct object *obj);
-void input_demo_maybe_track_suspect_spreadfire(struct object *obj);
 void input_demo_log_weapon_lifetime(const char *step, struct object *obj);
 void input_demo_record_homing_state(const char *step, struct object *obj,
 	int straight_time_active, int do_homer_frame, int track_goal_before,
@@ -82,9 +79,13 @@ void input_demo_trace_tracked_robot_poses(void);
 int input_demo_trace_ai_active(void);
 int input_demo_replay_awareness_probe_active(void);
 int input_demo_replay_homing_desync_probe_active(void);
-int input_demo_replay_obj95_state_probe_active(struct object *obj);
+int input_demo_replay_homing_path_probe_active(struct object *tracker);
+int input_demo_replay_homing_scan_candidate_probe_active(struct object *obj);
 int input_demo_homing_desync_probe_active(void);
 int input_demo_trace_escort_active(void);
+int input_demo_trace_snipe_detail_active(struct object *objp);
+int input_demo_trace_thief_detail_active(struct object *objp);
+int input_demo_trace_thief_contact_active(struct object *robot);
 int input_demo_trace_ai_visibility_active(struct object *objp);
 void input_demo_log_ai_visibility_probe(struct object *objp,
 	const char *step_label, int previous_visibility,
@@ -167,10 +168,8 @@ void input_demo_log_checkpoint_runtime_restore(int64_t game_time,
 	int smartmines_dropped, int64_t omega_delta, int d_tick_count,
 	int d_tick_step, int d_tick_timer, unsigned int rng_state,
 	int has_rng_state);
-int input_demo_robot_lifecycle_probe_active(void);
-int input_demo_robot_visual_probe_active(void);
-int input_demo_robot_lifecycle_is_target(int objnum, struct object *obj);
 int input_demo_should_match_android_companion_velocity(void);
+int input_demo_replay_ai_skip_probe_active(void);
 unsigned int input_demo_trace_frame_index(void);
 int input_demo_replay_path_probe_active(struct object *objp);
 int input_demo_replay_follow_probe_active(struct object *objp);
@@ -209,12 +208,6 @@ void input_demo_log_path_probe(struct object *objp, int start_seg, int end_seg, 
 void input_demo_log_path_detail(struct object *objp, int start_seg, int end_seg, int random_flag, int random_xlate_seed_count, int random_xlate_refresh_roll_count, int random_xlate_refresh_count, int queue_push_count, int raw_num_points, int final_num_points);
 void input_demo_log_path_points(const char *label, struct object *objp, const void *psegs, int num_points);
 void input_demo_log_robot_lifecycle_delete(int objnum, struct object *obj);
-void input_demo_log_robot_visual_id38(struct object *obj, unsigned char probe_codes, int probe_behind, int probe_projected, const struct g3s_point *probe_point);
-void input_demo_log_robot_visual_state_default(struct object *obj, const struct g3s_lrgb *light, unsigned char probe_codes, int probe_behind, int probe_projected, const struct g3s_point *probe_point);
-void input_demo_log_robot_visual_state_tmap_override(struct object *obj, const struct g3s_lrgb *light, int override_bm_index, int override_bm_flags, unsigned char probe_codes, int probe_behind, int probe_projected, const struct g3s_point *probe_point);
-void input_demo_log_robot_visual_player_cloak(struct object *obj);
-void input_demo_log_robot_visual_robot_cloak(struct object *obj);
-void input_demo_log_robot_poly_probe(struct object *obj, int faces_considered, int faces_drawn, int tmap_override);
 unsigned int input_demo_trace_robot_fire_frame_index(void);
 int input_demo_trace_robot_fire_active(struct object *objp);
 void input_demo_log_robot_fire_probe(struct object *objp,

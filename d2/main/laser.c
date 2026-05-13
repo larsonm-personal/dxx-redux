@@ -894,7 +894,6 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 		// SIM RNG: this changes how long the live flare object persists
 		obj->lifeleft += (d_rand()-16384) << 2;		//	add in -2..2 seconds
 
-	input_demo_maybe_track_suspect_spreadfire(obj);
 	if (input_demo_weapon_create_probe_active(obj))
 		input_demo_log_weapon_lifetime("create", obj);
 	if (input_demo_recorder_is_active())
@@ -1056,13 +1055,7 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 	int	i;
 	fix	max_dot = -F1_0*2;
 	int	best_objnum = -1;
-	const unsigned int trace_frame = input_demo_trace_frame_index();
-	const int homing_path_probe =
-		tracker &&
-		tracker->type == OBJ_WEAPON &&
-		Weapon_info[tracker->id].homing_flag &&
-		input_demo_replay_is_player_owned_weapon(tracker) &&
-		trace_frame >= 2790 && trace_frame <= 2820;
+	const int homing_path_probe = input_demo_replay_homing_path_probe_active(tracker);
 
 	//	Contact Mike: This is a bad and stupid thing.  Who called this routine with an illegal laser type??
 	Assert((Weapon_info[tracker->id].homing_flag) || (tracker->id == OMEGA_ID));
@@ -1086,7 +1079,7 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 			if (homing_path_probe)
 				con_printf(CON_NORMAL,
 					"Input demo homing path: frame=%u tracker_obj=%d id=%d parent=%d replay_loaded=%d\n",
-					trace_frame,
+					input_demo_trace_frame_index(),
 					tracker - Objects,
 					tracker->id,
 					tracker->ctype.laser_info.parent_num,
@@ -1095,7 +1088,7 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 				if (homing_path_probe)
 					con_printf(CON_NORMAL,
 						"Input demo homing path: frame=%u tracker_obj=%d branch=complete_replay\n",
-						trace_frame,
+						input_demo_trace_frame_index(),
 						tracker - Objects);
 				return call_find_homing_object_complete(tracker, curpos);
 			}
@@ -1116,7 +1109,7 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 				if (homing_path_probe)
 					con_printf(CON_NORMAL,
 						"Input demo homing path: frame=%u tracker_obj=%d branch=complete_no_window\n",
-						trace_frame,
+						input_demo_trace_frame_index(),
 						tracker - Objects);
 				return call_find_homing_object_complete(tracker, curpos);
 			}
@@ -1179,7 +1172,7 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 			if (homing_path_probe)
 				con_printf(CON_NORMAL,
 					"Input demo homing path: frame=%u tracker_obj=%d branch=rendered_window window=%d result=%d max_dot=%d\n",
-					trace_frame,
+					input_demo_trace_frame_index(),
 					tracker - Objects,
 					window_num,
 					best_objnum,
@@ -1248,7 +1241,8 @@ int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_o
 		fix			dot, dist;
 		vms_vector	vec_to_curobj;
 		object		*curobjp = &Objects[objnum];
-		const int track_probe_candidate = homing_probe_active && objnum == 95;
+		const int track_probe_candidate = homing_probe_active &&
+			input_demo_replay_homing_scan_candidate_probe_active(curobjp);
 
 		if ((curobjp->type != track_obj_type1) && (curobjp->type != track_obj_type2))
 		{
@@ -1668,22 +1662,6 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 		input_demo_append_replay_probe_message("player_shot_create",
 			&Objects[objnum], probe);
 	}
-	if (objnum != -1 && input_demo_replay_is_loaded() &&
-		laser_type == HOMING_ID) {
-		const unsigned int trace_frame = input_demo_trace_frame_index();
-
-		if (trace_frame >= 2790 && trace_frame <= 2820)
-			con_printf(CON_NORMAL,
-				"Input demo homing runtime: frame=%u step=create new_obj=%d laser_type=%d homing_flag=%d shooter_obj=%d console_obj=%d player_obj=%d\n",
-				trace_frame,
-				objnum,
-				laser_type,
-				Weapon_info[laser_type].homing_flag,
-				obj - Objects,
-				ConsoleObject ? (int)(ConsoleObject - Objects) : -1,
-				Players[Player_num].objnum);
-	}
-
 	//	Omega cannon is a hack, not surprisingly.  Don't want to do the rest of this stuff.
 	if (laser_type == OMEGA_ID)
 		return;
@@ -1858,20 +1836,6 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 
 	if (track_player_weapon || replay_probe_player_weapon || record_probe_weapon)
 		input_demo_log_weapon_lifetime("sequence_entry", obj);
-	if (input_demo_replay_is_loaded() && obj->id == HOMING_ID) {
-		const unsigned int trace_frame = input_demo_trace_frame_index();
-
-		if (trace_frame >= 2790 && trace_frame <= 2820)
-			con_printf(CON_NORMAL,
-				"Input demo homing runtime: frame=%u step=sequence_entry obj=%d homing_flag=%d track_goal=%d parent_type=%d parent=%d\n",
-				trace_frame,
-				obj - Objects,
-				Weapon_info[obj->id].homing_flag,
-				obj->ctype.laser_info.track_goal,
-				obj->ctype.laser_info.parent_type,
-				obj->ctype.laser_info.parent_num);
-	}
-
 	if (obj->lifeleft < 0 ) {		// We died of old age
 		if (track_player_weapon || replay_probe_player_weapon || record_probe_weapon)
 			input_demo_log_weapon_lifetime("old_age", obj);

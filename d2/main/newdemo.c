@@ -580,12 +580,6 @@ static void nd_read_shortpos(object *obj)
 	nd_read_short(&(sp.vely));
 	nd_read_short(&(sp.velz));
 
-	if (nd_dump_v_active && nd_dump_v_frame_number >= 78 && nd_dump_v_frame_number <= 82 &&
-		(obj->signature == 190 || obj->signature == 191))
-		fprintf(stderr, "classic raw_shortpos frame=%d sig=%d seg=%d xo=%d yo=%d zo=%d vel=(%d,%d,%d)\n",
-			nd_dump_v_frame_number, obj->signature, sp.segment, sp.xo, sp.yo, sp.zo,
-			sp.velx, sp.vely, sp.velz);
-
 	my_extract_shortpos(obj, &sp);
 	if ((obj->id == VCLIP_MORPHING_ROBOT) && (render_type == RT_FIREBALL) && (obj->control_type == CT_EXPLOSION))
 		extract_orient_from_segment(&obj->orient,&Segments[obj->segnum]);
@@ -1944,13 +1938,6 @@ int newdemo_read_frame_information(int rewrite)
 
 	while( !done ) {
 		nd_read_byte(&c);
-		if (nd_dump_v_active && nd_dump_v_frame_number >= 70 && nd_dump_v_frame_number <= 110) {
-			fprintf(stderr, "classic dump event=%d frame=%d ofs=%lld\n",
-				(int)c,
-				nd_dump_v_frame_number,
-				(long long)PHYSFS_tell(infile));
-			fflush(stderr);
-		}
 		if (nd_playback_v_bad_read) { done = -1; break; }
 		if (rewrite && (c != ND_EVENT_EOF))
 			nd_write_byte(c);
@@ -2197,16 +2184,6 @@ int newdemo_read_frame_information(int rewrite)
 			if (nd_playback_v_bad_read) { done = -1; break; }
 			if ((segnum >= 0) && (segnum <= Highest_segment_index) && (side >= 0) && (side < 6))
 				wall_num = Segments[segnum].sides[side].wall_num;
-			if (nd_dump_v_active && nd_dump_v_frame_number >= 70 && nd_dump_v_frame_number <= 110) {
-				if ((wall_num >= 0) && (wall_num < Num_walls))
-					fprintf(stderr, "classic wall_hit frame=%d seg=%d side=%d damage=%d player=%d wall=%d type=%d state=%d flags=0x%x trigger=%d\n",
-						nd_dump_v_frame_number, segnum, side, damage, player, wall_num,
-						Walls[wall_num].type, Walls[wall_num].state, Walls[wall_num].flags, Walls[wall_num].trigger);
-				else
-					fprintf(stderr, "classic wall_hit frame=%d seg=%d side=%d damage=%d player=%d wall=%d\n",
-						nd_dump_v_frame_number, segnum, side, damage, player, wall_num);
-				fflush(stderr);
-			}
 			if (rewrite)
 			{
 				nd_write_int(segnum);
@@ -2226,26 +2203,6 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_int(&objnum);
 			nd_read_int(&shot);
 			if (nd_playback_v_bad_read) { done = -1; break; }
-			if (nd_dump_v_active && nd_dump_v_frame_number >= 70 && nd_dump_v_frame_number <= 110) {
-				int wall_num = -1;
-				int trigger_num = -1;
-				if ((segnum >= 0) && (segnum <= Highest_segment_index) && (side >= 0) && (side < 6))
-					wall_num = Segments[segnum].sides[side].wall_num;
-				if ((wall_num >= 0) && (wall_num < Num_walls))
-					trigger_num = Walls[wall_num].trigger;
-				if ((trigger_num >= 0) && (trigger_num < Num_triggers)) {
-					trigger *trig = &Triggers[trigger_num];
-					fprintf(stderr, "classic trigger frame=%d seg=%d side=%d objnum=%d shot=%d wall=%d type=%d state=%d flags=0x%x trigger=%d trig_type=%d trig_flags=0x%x links=%d link0=%d:%d\n",
-						nd_dump_v_frame_number, segnum, side, objnum, shot, wall_num,
-						Walls[wall_num].type, Walls[wall_num].state, Walls[wall_num].flags, trigger_num,
-						trig->type, trig->flags, trig->num_links,
-						trig->num_links > 0 ? trig->seg[0] : -1,
-						trig->num_links > 0 ? trig->side[0] : -1);
-				} else
-					fprintf(stderr, "classic trigger frame=%d seg=%d side=%d objnum=%d shot=%d wall=%d trigger=%d\n",
-						nd_dump_v_frame_number, segnum, side, objnum, shot, wall_num, trigger_num);
-				fflush(stderr);
-			}
 			if (rewrite)
 			{
 				nd_write_int(segnum);

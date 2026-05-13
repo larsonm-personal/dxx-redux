@@ -1216,7 +1216,7 @@ short render_obj_list[MAX_RENDER_SEGS+N_EXTRA_OBJ_LISTS][OBJS_PER_SEG];
 
 static int input_demo_render_probe_active(void)
 {
-	return input_demo_debug_replay_frame_in_range(300u, 2000u);
+	return input_demo_debug_replay_probe_active();
 }
 
 static int input_demo_render_probe_list_has_object(int listnum, int objnum);

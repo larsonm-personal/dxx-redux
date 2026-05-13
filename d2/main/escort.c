@@ -1390,7 +1390,7 @@ void do_snipe_frame(object *objp, fix dist_to_player, int player_visibility, vms
 	int			objnum = objp-Objects;
 	ai_local		*ailp = &Ai_local_info[objnum];
 	fix			connected_distance;
-	int			replay_snipe_probe_active = input_demo_trace_escort_active() && objnum == 15;
+	int			replay_snipe_probe_active = input_demo_trace_snipe_detail_active(objp);
 
 	if (replay_snipe_probe_active)
 		input_demo_log_snipe_detail_probe(1,
@@ -1528,10 +1528,7 @@ void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms
 	int			objnum = objp-Objects;
 	ai_local		*ailp = &Ai_local_info[objnum];
 	fix			connected_distance;
-	int			replay_thief_probe_active = input_demo_replay_is_loaded() &&
-		input_demo_trace_frame_index() >= 1280u &&
-		input_demo_trace_frame_index() <= 1360u &&
-		Robot_info[objp->id].thief;
+	int			replay_thief_probe_active = input_demo_trace_thief_detail_active(objp);
 
 	if ((Current_level_num < 0) && (Re_init_thief_time < GameTime64)) {
 		if (Re_init_thief_time > GameTime64 - F1_0*2)

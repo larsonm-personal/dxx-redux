@@ -42,6 +42,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "sounds.h"
 #include "ai.h"
+#include "input_demo_replay.h"
 #include "powerup.h"
 #include "multi.h"
 #include "physics.h"
@@ -569,6 +570,9 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 				best_objnum = ConsoleObject - Objects;
 		} else {
 			//	Not in network mode and fired by player.
+			if (input_demo_replay_is_loaded())
+				return find_homing_object_complete(curpos, tracker, OBJ_ROBOT, -1);
+
 			for (i=Num_rendered_objects-1; i>=0; i--) {
 				fix			dot; //, dist;
 				vms_vector	vec_to_curobj;

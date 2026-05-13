@@ -566,8 +566,7 @@ _exit_cheat:
 					create_path_to_player(obj, agitation_path_max_length, 1);
 				}
 
-				if (agitation_path_trigger_pass || input_demo_trace_ai_visibility_active(obj) ||
-					input_demo_replay_obj95_state_probe_active(obj))
+				if (agitation_path_trigger_pass || input_demo_trace_ai_visibility_active(obj))
 					input_demo_log_ai_agitation_path_gate(obj,
 						dist_to_player,
 						Overall_agitation,

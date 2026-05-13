@@ -313,7 +313,7 @@ static const char *input_demo_replay_physics_fate_name(int fate)
 	}
 }
 
-static int input_demo_replay_frame100_collision_probe_active(void)
+static int input_demo_replay_physics_collision_probe_active(void)
 {
 	if (input_demo_replay_is_loaded())
 		return input_demo_replay_homing_desync_probe_active();
@@ -329,7 +329,7 @@ static int input_demo_replay_player_weapon_probe_object(object *obj)
 
 static int input_demo_replay_collision_probe_object(object *obj)
 {
-	return input_demo_replay_frame100_collision_probe_active() &&
+	return input_demo_replay_physics_collision_probe_active() &&
 		(obj == ConsoleObject || input_demo_replay_player_weapon_probe_object(obj));
 }
 
@@ -1730,8 +1730,7 @@ void phys_apply_rot(object *obj,vms_vector *force_vec)
 					obj->ctype.ai_info.SKIP_AI_COUNT = skip_after;
 					input_demo_note_ai_schedule_phys_skip(obj, skip_before,
 						obj->ctype.ai_info.SKIP_AI_COUNT);
-					if (input_demo_replay_is_loaded() &&
-						input_demo_debug_frame_in_range(454, 460)) {
+					if (input_demo_replay_ai_skip_probe_active()) {
 						con_printf(CON_NORMAL,
 							"Input demo AI skip add: mode=%s frame=%u gt=%lld obj=%d sig=%d id=%d seg=%d skip=%d->%d add=%d rate=%d vecmag=%d tval=%d force=(%d,%d,%d)\n",
 							input_demo_debug_activity_mode_name(),

@@ -482,9 +482,8 @@ static input_demo_ai_schedule_probe_diag input_demo_ai_schedule_probe_state;
 
 static int input_demo_ai_schedule_probe_frame_active(unsigned int frame)
 {
-	return (frame <= 110) || (frame >= 129 && frame <= 132) ||
-		(frame >= 454 && frame <= 460) ||
-		(frame >= 1313 && frame <= 1319);
+	(void)frame;
+	return input_demo_debug_replay_probe_active();
 }
 
 static void input_demo_reset_ai_schedule_probe_state(void)
@@ -655,8 +654,7 @@ void input_demo_append_replay_probe_message(const char *kind, object *objp,
 
 static int input_demo_ai_schedule_detail_obj_active(object *objp)
 {
-	(void)objp;
-	return input_demo_trace_frame_index() <= 460;
+	return objp && input_demo_debug_replay_probe_active();
 }
 
 static int input_demo_record_probe_events_active(void)
@@ -732,20 +730,23 @@ static int input_demo_record_weapon_probe_target(object *obj)
 
 int input_demo_replay_homing_desync_probe_active(void)
 {
-	return input_demo_replay_is_loaded() &&
-		(input_demo_debug_frame_index() <= 260 ||
-		 input_demo_debug_frame_in_range(360, 367) ||
-		 input_demo_debug_frame_in_range(437, 470) ||
-		 input_demo_debug_frame_in_range(2790, 2820));
+	return input_demo_debug_replay_probe_active();
 }
 
-int input_demo_replay_obj95_state_probe_active(object *obj)
+int input_demo_replay_homing_path_probe_active(object *tracker)
 {
-	return obj &&
-		input_demo_replay_is_loaded() &&
-		(obj->type == OBJ_ROBOT) &&
-		((obj - Objects) == 95) &&
-		input_demo_debug_frame_in_range(2500, 2820);
+	return input_demo_replay_homing_desync_probe_active() &&
+		tracker &&
+		tracker->type == OBJ_WEAPON &&
+		Weapon_info[tracker->id].homing_flag &&
+		input_demo_replay_is_player_owned_weapon(tracker);
+}
+
+int input_demo_replay_homing_scan_candidate_probe_active(object *obj)
+{
+	return input_demo_replay_homing_desync_probe_active() &&
+		obj &&
+		obj->type == OBJ_ROBOT;
 }
 
 int input_demo_homing_desync_probe_active(void)
@@ -1353,12 +1354,6 @@ static int g_input_demo_escort_segment_snapshot_believed_seg = -1;
 
 extern fix64 Buddy_last_seen_player, Buddy_last_player_path_created;
 
-#define INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START 594
-#define INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_END 615
-#define INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT 3
-
-static int input_demo_suspect_spreadfire_signatures[INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT] = { -1, -1, -1 };
-
 void input_demo_set_awareness_source(const char *source_tag, int source_objnum, int aux_objnum)
 {
 	if (input_demo_record_probe_events_active()) {
@@ -1443,6 +1438,35 @@ int input_demo_trace_escort_active(void)
 	return input_demo_debug_activity_probe_active();
 }
 
+int input_demo_trace_snipe_detail_active(object *objp)
+{
+	return input_demo_trace_escort_active() &&
+		objp &&
+		objp->type == OBJ_ROBOT &&
+		objp->ctype.ai_info.behavior == AIB_SNIPE;
+}
+
+int input_demo_trace_thief_detail_active(object *objp)
+{
+	return input_demo_trace_escort_active() &&
+		objp &&
+		objp->type == OBJ_ROBOT &&
+		Robot_info[objp->id].thief;
+}
+
+int input_demo_trace_thief_contact_active(object *robot)
+{
+	return input_demo_debug_replay_probe_active() &&
+		robot &&
+		robot->type == OBJ_ROBOT &&
+		Robot_info[robot->id].thief;
+}
+
+int input_demo_replay_ai_skip_probe_active(void)
+{
+	return input_demo_debug_replay_probe_active();
+}
+
 int input_demo_replay_collision_probe_active(void)
 {
 	return input_demo_debug_is_enabled() && input_demo_replay_is_loaded();
@@ -1489,12 +1513,7 @@ static int input_demo_replay_weapon_lifetime_probe_active(void)
 
 int input_demo_replay_weapon_focus_active(void)
 {
-	unsigned int frame;
-
-	if (!input_demo_replay_is_loaded())
-		return 0;
-	frame = (unsigned int)input_demo_replay_next_frame_index();
-	return frame >= 1265 && frame <= 1267;
+	return input_demo_debug_replay_probe_active();
 }
 
 int input_demo_weapon_trace_active(void)
@@ -1548,76 +1567,9 @@ int input_demo_weapon_create_probe_active(object *obj)
 	return input_demo_replay_is_player_owned_weapon(obj) && obj->id != FLARE_ID;
 }
 
-static void input_demo_reset_suspect_spreadfire_tracking(void)
-{
-	int i;
-
-	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
-		input_demo_suspect_spreadfire_signatures[i] = -1;
-}
-
-static int input_demo_suspect_spreadfire_frame_active(unsigned int frame)
-{
-	return frame >= INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START &&
-		frame <= INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_END;
-}
-
-static void input_demo_refresh_suspect_spreadfire_tracking(void)
-{
-	if (!input_demo_replay_is_loaded() ||
-		input_demo_replay_next_frame_index() < INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START)
-		input_demo_reset_suspect_spreadfire_tracking();
-}
-
-static int input_demo_tracked_suspect_spreadfire_index(object *obj)
-{
-	unsigned int frame;
-	int i;
-
-	if (!obj || !input_demo_replay_is_loaded())
-		return -1;
-
-	input_demo_refresh_suspect_spreadfire_tracking();
-	frame = (unsigned int)input_demo_replay_next_frame_index();
-	if (!input_demo_suspect_spreadfire_frame_active(frame))
-		return -1;
-
-	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
-		if (input_demo_suspect_spreadfire_signatures[i] == obj->signature)
-			return i;
-
-	return -1;
-}
-
-void input_demo_maybe_track_suspect_spreadfire(object *obj)
-{
-	unsigned int frame;
-	int i;
-
-	if (!obj || !input_demo_replay_is_loaded())
-		return;
-
-	input_demo_refresh_suspect_spreadfire_tracking();
-	frame = (unsigned int)input_demo_replay_next_frame_index();
-	if (frame != INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START ||
-		!input_demo_replay_is_player_owned_weapon(obj) ||
-		obj->id != SPREADFIRE_ID)
-		return;
-
-	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
-		if (input_demo_suspect_spreadfire_signatures[i] == obj->signature)
-			return;
-
-	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
-		if (input_demo_suspect_spreadfire_signatures[i] == -1) {
-			input_demo_suspect_spreadfire_signatures[i] = obj->signature;
-			return;
-		}
-}
-
 void input_demo_log_weapon_lifetime(const char *step, object *obj)
 {
-	const int tracked_index = input_demo_tracked_suspect_spreadfire_index(obj);
+	const int tracked_index = -1;
 
 	if (!obj)
 		return;
@@ -1821,15 +1773,13 @@ void input_demo_record_player_damage_event(int32_t damage, int32_t old_shields, 
 
 int input_demo_replay_powerup_probe_active(void)
 {
-	const uint32_t frame = (uint32_t)input_demo_replay_next_frame_index();
-
-	return input_demo_replay_is_loaded() && frame >= 816 && frame <= 818;
+	return input_demo_debug_replay_probe_active();
 }
 
 void input_demo_record_weapon_create_event(object *obj)
 {
 	char json[512];
-	const int tracked_index = input_demo_tracked_suspect_spreadfire_index(obj);
+	const int tracked_index = -1;
 
 	if (!obj)
 		return;
@@ -3997,8 +3947,7 @@ void input_demo_log_ai_agitation_path_gate(object *objp,
 		input_demo_record_frame_event_json(json);
 	}
 
-	if (!input_demo_replay_is_loaded() &&
-		!input_demo_replay_obj95_state_probe_active(objp))
+	if (!input_demo_replay_is_loaded())
 		return;
 
 	snprintf(probe, sizeof(probe),
@@ -4036,26 +3985,18 @@ void input_demo_log_ai_agitation_path_gate(object *objp,
 	input_demo_append_replay_probe_message("agitation_path_gate", objp, probe);
 }
 
-int input_demo_robot_lifecycle_probe_active(void)
+static int input_demo_robot_lifecycle_probe_active(void)
 {
-	return input_demo_debug_activity_frame_in_range(500u, 2200u);
+	return input_demo_debug_activity_probe_active();
 }
 
-int input_demo_robot_visual_probe_active(void)
+static int input_demo_robot_lifecycle_is_target(int objnum, object *obj)
 {
-	return input_demo_debug_replay_frame_in_range(1360u, 1450u) ||
-		input_demo_debug_replay_frame_in_range(1880u, 1950u);
-}
+	(void)objnum;
 
-int input_demo_robot_lifecycle_is_target(int objnum, object *obj)
-{
 	if (!input_demo_robot_lifecycle_probe_active() || !obj || (obj->type != OBJ_ROBOT))
 		return 0;
 
-	if ((objnum >= 73) && (objnum <= 75))
-		return 1;
-	if ((obj->signature >= 3784) && (obj->signature <= 3786))
-		return 1;
 	if (obj->flags & (OF_EXPLODING | OF_SHOULD_BE_DEAD))
 		return 1;
 
@@ -4081,171 +4022,6 @@ void input_demo_log_robot_lifecycle_delete(int objnum, object *obj)
 		obj->lifeleft,
 		(obj->flags & OF_EXPLODING) != 0,
 		(obj->flags & OF_SHOULD_BE_DEAD) != 0);
-}
-
-static void input_demo_log_robot_visual_state(object *obj, const g3s_lrgb *light, int tmap_override, int override_bm_index, int override_bm_flags, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point)
-{
-	const int objnum = obj ? (int)(obj - Objects) : -1;
-	const int probe_p3_codes = probe_point ? probe_point->p3_codes : 0;
-	const int probe_p3_flags = probe_point ? probe_point->p3_flags : 0;
-	const int probe_sx = (probe_projected && probe_point) ? f2i(probe_point->p3_sx) : -1;
-	const int probe_sy = (probe_projected && probe_point) ? f2i(probe_point->p3_sy) : -1;
-	const int probe_z = probe_point ? probe_point->p3_z : 0;
-
-	if (!obj || !light || (objnum < 0))
-		return;
-
-	if (tmap_override != -1) {
-		con_printf(CON_NORMAL,
-			"Input demo robot visual state: frame=%u obj=%d sig=%d id=%d seg=%d rtype=%d cloak=%d cloak_type=%d flags=0x%x light=(%d,%d,%d) alpha=%d path=tmap_override tmap_override=%d override_bm_index=%d override_bm_flags=0x%x probe_codes=0x%x probe_behind=%d probe_projected=%d probe_p3_codes=0x%x probe_p3_flags=0x%x probe_sxy=(%d,%d) probe_z=%d\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
-			objnum,
-			obj->signature,
-			obj->id,
-			obj->segnum,
-			obj->render_type,
-			obj->ctype.ai_info.CLOAKED,
-			Robot_info[obj->id].cloak_type,
-			obj->flags,
-			light->r,
-			light->g,
-			light->b,
-			PlayerCfg.AlphaEffects,
-			tmap_override,
-			override_bm_index,
-			override_bm_flags,
-			probe_codes,
-			probe_behind,
-			probe_projected,
-			probe_p3_codes,
-			probe_p3_flags,
-			probe_sx,
-			probe_sy,
-			probe_z);
-		return;
-	}
-
-	con_printf(CON_NORMAL,
-		"Input demo robot visual state: frame=%u obj=%d sig=%d id=%d seg=%d rtype=%d cloak=%d cloak_type=%d flags=0x%x light=(%d,%d,%d) alpha=%d path=default probe_codes=0x%x probe_behind=%d probe_projected=%d probe_p3_codes=0x%x probe_p3_flags=0x%x probe_sxy=(%d,%d) probe_z=%d\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
-		objnum,
-		obj->signature,
-		obj->id,
-		obj->segnum,
-		obj->render_type,
-		obj->ctype.ai_info.CLOAKED,
-		Robot_info[obj->id].cloak_type,
-		obj->flags,
-		light->r,
-		light->g,
-		light->b,
-		PlayerCfg.AlphaEffects,
-		probe_codes,
-		probe_behind,
-		probe_projected,
-		probe_p3_codes,
-		probe_p3_flags,
-		probe_sx,
-		probe_sy,
-		probe_z);
-}
-
-void input_demo_log_robot_visual_id38(object *obj, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point)
-{
-	const int objnum = obj ? (int)(obj - Objects) : -1;
-	const int probe_p3_codes = probe_point ? probe_point->p3_codes : 0;
-	const int probe_p3_flags = probe_point ? probe_point->p3_flags : 0;
-	const int probe_sx = (probe_projected && probe_point) ? f2i(probe_point->p3_sx) : -1;
-	const int probe_sy = (probe_projected && probe_point) ? f2i(probe_point->p3_sy) : -1;
-	const int probe_z = probe_point ? probe_point->p3_z : 0;
-
-	if (!obj || (objnum < 0))
-		return;
-
-	con_printf(CON_NORMAL,
-		"Input demo robot visual id38: frame=%u obj=%d sig=%d seg=%d flags=0x%x codes=0x%x behind=%d projected=%d p3_codes=0x%x p3_flags=0x%x sxy=(%d,%d) z=%d\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
-		objnum,
-		obj->signature,
-		obj->segnum,
-		obj->flags,
-		probe_codes,
-		probe_behind,
-		probe_projected,
-		probe_p3_codes,
-		probe_p3_flags,
-		probe_sx,
-		probe_sy,
-		probe_z);
-}
-
-void input_demo_log_robot_visual_state_default(object *obj, const g3s_lrgb *light, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point)
-{
-	input_demo_log_robot_visual_state(obj, light, -1, -1, 0, probe_codes, probe_behind, probe_projected, probe_point);
-}
-
-void input_demo_log_robot_visual_state_tmap_override(object *obj, const g3s_lrgb *light, int override_bm_index, int override_bm_flags, ubyte probe_codes, int probe_behind, int probe_projected, const g3s_point *probe_point)
-{
-	input_demo_log_robot_visual_state(obj, light, obj ? obj->rtype.pobj_info.tmap_override : -1, override_bm_index, override_bm_flags, probe_codes, probe_behind, probe_projected, probe_point);
-}
-
-void input_demo_log_robot_visual_player_cloak(object *obj)
-{
-	const int objnum = obj ? (int)(obj - Objects) : -1;
-
-	if (!obj || (objnum < 0))
-		return;
-
-	con_printf(CON_NORMAL,
-		"Input demo robot visual state: frame=%u obj=%d sig=%d path=player_cloak\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
-		objnum,
-		obj->signature);
-}
-
-void input_demo_log_robot_visual_robot_cloak(object *obj)
-{
-	const int objnum = obj ? (int)(obj - Objects) : -1;
-
-	if (!obj || (objnum < 0))
-		return;
-
-	con_printf(CON_NORMAL,
-		"Input demo robot visual state: frame=%u obj=%d sig=%d path=robot_cloak boss=%d\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
-		objnum,
-		obj->signature,
-		Robot_info[obj->id].boss_flag != 0);
-}
-
-void input_demo_log_robot_poly_probe(object *obj, int faces_considered, int faces_drawn, int tmap_override)
-{
-	const int objnum = obj ? (int)(obj - Objects) : -1;
-
-	if (!obj || (objnum < 0))
-		return;
-
-	if (tmap_override != -1) {
-		con_printf(CON_NORMAL,
-			"Input demo robot poly probe: frame=%u obj=%d sig=%d model_num=%d faces_considered=%d faces_drawn=%d path=tmap_override tmap_override=%d\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
-			objnum,
-			obj->signature,
-			obj->rtype.pobj_info.model_num,
-			faces_considered,
-			faces_drawn,
-			tmap_override);
-		return;
-	}
-
-	con_printf(CON_NORMAL,
-		"Input demo robot poly probe: frame=%u obj=%d sig=%d model_num=%d faces_considered=%d faces_drawn=%d\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
-		objnum,
-		obj->signature,
-		obj->rtype.pobj_info.model_num,
-		faces_considered,
-		faces_drawn);
 }
 
 static int input_demo_trace_robot_pose_active(void)
@@ -4622,7 +4398,6 @@ int input_demo_trace_robot_fire_active(object *objp)
 {
 	return (input_demo_record_probe_events_active() ||
 		input_demo_replay_homing_desync_probe_active() ||
-		input_demo_replay_obj95_state_probe_active(objp) ||
 		input_demo_debug_is_enabled()) &&
 		(input_demo_recorder_is_active() || input_demo_replay_is_loaded()) &&
 		objp &&
@@ -4732,8 +4507,7 @@ void input_demo_log_robot_fire_state(const char *label, object *objp, int weapon
 			objp->mtype.phys_info.velocity.z);
 		input_demo_record_frame_event_json(json);
 	}
-	if (input_demo_replay_homing_desync_probe_active() ||
-		input_demo_replay_obj95_state_probe_active(objp)) {
+	if (input_demo_replay_homing_desync_probe_active()) {
 		snprintf(probe, sizeof(probe),
 			"step=%s weapon=%d companion=%d behavior=%d mode=%d cur_state=%d goal_state=%d gun=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d retry=%d retry_chain=%d rapid=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path_index=%d path_length=%d hide=%d dir=%d pos=(%d,%d,%d) vel=(%d,%d,%d)",
 			label ? label : "unset",
@@ -5911,7 +5685,8 @@ static int input_demo_count_live_player_weapons(int weapon_id)
 
 static int input_demo_replay_tail_probe_frame_active(uint32_t frame)
 {
-	return frame >= 816 && frame <= 825;
+	(void)frame;
+	return input_demo_debug_replay_probe_active();
 }
 
 static int input_demo_replay_fire_probe_active(void)

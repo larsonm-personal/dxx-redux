@@ -990,33 +990,9 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 							wid_flag = WALL_IS_DOORWAY(seg, side);
 						}
 
-						if (input_demo_homing_desync_probe_active() &&
-							(seg - Segments == 254) && (side == 4)) {
-							char probe[448];
-							snprintf(probe, sizeof(probe),
-								"seg=%d side=%d face=%d flags=0x%x wid=0x%x thisobj=%d entry_seg=%d hit_point=(%d,%d,%d) p0=(%d,%d,%d) p1=(%d,%d,%d)",
-								(int)(seg - Segments), side, face, flags, wid_flag, thisobjnum, entry_seg,
-								hit_point.x, hit_point.y, hit_point.z,
-								p0->x, p0->y, p0->z,
-								p1->x, p1->y, p1->z);
-							input_demo_append_replay_probe_message("fvi_side2544_call", NULL, probe);
-						}
-
 						if ((wid_flag & WID_FLY_FLAG) ||
 							(((wid_flag & WID_RENDER_FLAG) && (wid_flag & WID_RENDPAST_FLAG)) &&
 								((flags & FQ_TRANSWALL) || (flags & FQ_TRANSPOINT && check_trans_wall(&hit_point,seg,side,face))))) {
-
-								if (input_demo_homing_desync_probe_active() &&
-									(seg - Segments == 254) && (side == 4)) {
-									char probe[384];
-									snprintf(probe, sizeof(probe),
-										"seg=%d side=%d face=%d flags=0x%x thisobj=%d entry_seg=%d hit_point=(%d,%d,%d) p0=(%d,%d,%d) p1=(%d,%d,%d)",
-										(int)(seg - Segments), side, face, flags, thisobjnum, entry_seg,
-										hit_point.x, hit_point.y, hit_point.z,
-										p0->x, p0->y, p0->z,
-										p1->x, p1->y, p1->z);
-									input_demo_append_replay_probe_message("fvi_side2544_context", NULL, probe);
-								}
 
 							int newsegnum;
 							vms_vector sub_hit_point;
@@ -1308,58 +1284,6 @@ int check_trans_wall(vms_vector *pnt,segment *seg,int sidenum,int facenum)
 //note: the line above had -v, but that was wrong, so I changed it.  if
 //something doesn't work, and you want to make it negative again, you
 //should figure out what's going on.
-
-	if (input_demo_homing_desync_probe_active() &&
-		seg - Segments == 254 && sidenum == 4) {
-		char probe[512];
-		char probe2[256];
-		const int pixel = bm->bm_data[bmy*bm->bm_w+bmx];
-		const int x0 = (bmx + bm->bm_w - 1) % bm->bm_w;
-		const int x2 = (bmx + 1) % bm->bm_w;
-		const int y0 = (bmy + bm->bm_h - 1) % bm->bm_h;
-		const int y2 = (bmy + 1) % bm->bm_h;
-
-		snprintf(probe, sizeof(probe),
-			"seg=%d side=%d face=%d pnt=(%d,%d,%d) u=%d v=%d bm=%dx%d flags=0x%x tmap=%d tmap2=%d slide_u=%d slide_v=%d fvi_flags=0x%x bmx=%d bmy=%d pixel=%d nb=(%d,%d,%d;%d,%d,%d;%d,%d,%d) transparent_color=%d pass=%d",
-			(int)(seg - Segments),
-			sidenum,
-			facenum,
-			pnt->x,
-			pnt->y,
-			pnt->z,
-			u,
-			v,
-			bm->bm_w,
-			bm->bm_h,
-			bm->bm_flags,
-			side->tmap_num,
-			side->tmap_num2,
-			TmapInfo[side->tmap_num].slide_u,
-			TmapInfo[side->tmap_num].slide_v,
-			fvi_active_flags,
-			bmx,
-			bmy,
-			pixel,
-			bm->bm_data[y0*bm->bm_w+x0],
-			bm->bm_data[y0*bm->bm_w+bmx],
-			bm->bm_data[y0*bm->bm_w+x2],
-			bm->bm_data[bmy*bm->bm_w+x0],
-			bm->bm_data[bmy*bm->bm_w+bmx],
-			bm->bm_data[bmy*bm->bm_w+x2],
-			bm->bm_data[y2*bm->bm_w+x0],
-			bm->bm_data[y2*bm->bm_w+bmx],
-			bm->bm_data[y2*bm->bm_w+x2],
-			TRANSPARENCY_COLOR,
-			pixel == TRANSPARENCY_COLOR);
-		input_demo_append_replay_probe_message("fvi_trans_wall", NULL, probe);
-		snprintf(probe2, sizeof(probe2),
-			"seg=254 side=4 uvls=(%d,%d;%d,%d;%d,%d;%d,%d)",
-			side->uvls[0].u, side->uvls[0].v,
-			side->uvls[1].u, side->uvls[1].v,
-			side->uvls[2].u, side->uvls[2].v,
-			side->uvls[3].u, side->uvls[3].v);
-		input_demo_append_replay_probe_message("fvi_trans_wall_uvls", NULL, probe2);
-	}
 
 	return (bm->bm_data[bmy*bm->bm_w+bmx] == TRANSPARENCY_COLOR);
 }
