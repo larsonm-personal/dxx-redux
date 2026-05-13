@@ -1918,6 +1918,7 @@ class SetupActivity : ComponentActivity() {
             debugPrefs.put("launcher_log_enabled", launcherLogEnabled)
             debugPrefs.put("graphics_debug_logging", graphicsLogEnabled && textureLogEnabled)
             root.put("debug_prefs", debugPrefs)
+            root.put("resume_offer_enabled", prefs.getBoolean(PREF_SHOW_RESUME_OFFER, true))
 
             // D2 section
             val d2 = JSONObject()
@@ -1930,6 +1931,8 @@ class SetupActivity : ComponentActivity() {
             d1.put("ready", d1Ready)
             d1.put("files", fileStatusArray(d1Statuses))
             root.put("d1", d1)
+
+			ResumeSaveBridge.findNewest(dir)?.let { root.put("resume_candidate", it.toJson()) }
 
             // Active downloads
             if (downloadStates.isNotEmpty()) {

@@ -74,6 +74,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #ifdef __ANDROID__
+#include "android_save_meta.h"
 #include "coop_save.h"
 #include "coop_indicator_lines.h"
 #include "android_log.h"
@@ -141,6 +142,55 @@ int state_runtime_version(void)
 }
 
 extern int First_secret_visit;
+
+#ifdef __ANDROID__
+static uint32_t state_time_to_seconds(fix time_value, sbyte hours_value)
+{
+	if (hours_value < 0)
+		hours_value = 0;
+	if (time_value < 0)
+		time_value = 0;
+	return (uint32_t)hours_value * 3600u + (uint32_t)f2i(time_value);
+}
+
+static int state_read_android_save_meta(PHYSFS_file *fp, PHYSFS_sint64 file_len,
+	android_save_meta_disk *meta)
+{
+	PHYSFS_sint64 saved_pos;
+	PHYSFS_sint64 meta_start;
+	android_save_meta_footer footer;
+
+	if (file_len < (PHYSFS_sint64)sizeof(footer))
+		return 0;
+
+	saved_pos = PHYSFS_tell(fp);
+	meta_start = file_len - (PHYSFS_sint64)sizeof(footer);
+	if (!PHYSFS_seek(fp, meta_start))
+		goto fail;
+	if (PHYSFS_read(fp, &footer, sizeof(footer), 1) != 1)
+		goto fail;
+	if (footer.tag != ANDROID_SAVE_META_TAG ||
+		footer.version != ANDROID_SAVE_META_VERSION ||
+		footer.trailer_bytes != sizeof(*meta) ||
+		file_len < (PHYSFS_sint64)footer.trailer_bytes)
+		goto fail;
+	meta_start = file_len - (PHYSFS_sint64)footer.trailer_bytes;
+	if (!PHYSFS_seek(fp, meta_start))
+		goto fail;
+	if (PHYSFS_read(fp, meta, sizeof(*meta), 1) != 1)
+		goto fail;
+	if (!PHYSFS_seek(fp, saved_pos))
+		return 0;
+	return android_save_meta_is_valid(meta);
+
+fail:
+	PHYSFS_seek(fp, saved_pos);
+	return 0;
+}
+
+static int g_android_save_meta_kind = ANDROID_SAVE_META_KIND_MANUAL;
+static int g_android_save_blank_thumbnail = 0;
+#endif
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -1751,6 +1801,63 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 	return rval;
 }
 
+#ifdef __ANDROID__
+int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
+{
+	int result;
+	int prev_kind = g_android_save_meta_kind;
+	int prev_blank = g_android_save_blank_thumbnail;
+	char filename[PATH_MAX], save_desc[DESC_LENGTH + 1];
+	char temp_fname[PATH_MAX], fc;
+
+	if (!desc || slotnum < 0 || slotnum >= NUM_SAVES) {
+		debug_log(DLOG_GAME, "autosave skipped: invalid D2 slot request");
+		return 0;
+	}
+	if (Current_level_num < 0) {
+		debug_log(DLOG_GAME, "autosave skipped: D2 secret level is active");
+		return 0;
+	}
+	if (Final_boss_is_dead) {
+		debug_log(DLOG_GAME, "autosave skipped: D2 final boss death sequence is active");
+		return 0;
+	}
+	if (Game_mode & GM_MULTI) {
+		debug_log(DLOG_GAME, "autosave skipped: D2 multiplayer is active");
+		return 0;
+	}
+
+	stop_time();
+	memset(filename, 0, sizeof(filename));
+	memset(save_desc, 0, sizeof(save_desc));
+	strncpy(save_desc, desc, DESC_LENGTH);
+	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.sg%x" : "%s.sg%x",
+		Players[Player_num].callsign, slotnum);
+	if (slotnum >= 10)
+		fc = (slotnum - 10) + 'a';
+	else
+		fc = '0' + slotnum;
+	sprintf(temp_fname, GameArg.SysUsePlayersDir ? "Players/%csecret.sgc" : "%csecret.sgc", fc);
+	if (PHYSFSX_exists(temp_fname, 0)) {
+		if (!PHYSFS_delete(temp_fname))
+			Error("Cannot delete file <%s>: %s", temp_fname, PHYSFS_getLastError());
+	}
+	if (PHYSFSX_exists(SECRETC_FILENAME, 0)) {
+		int copy_result = copy_file(SECRETC_FILENAME, temp_fname);
+		Assert(copy_result == 0);
+		(void)copy_result;
+	}
+	g_android_save_meta_kind = save_kind;
+	g_android_save_blank_thumbnail = 1;
+	result = state_save_all_sub(filename, save_desc);
+	g_android_save_meta_kind = prev_kind;
+	g_android_save_blank_thumbnail = prev_blank;
+	if (!result)
+		debug_log(DLOG_GAME, "autosave failed: D2 slot %d", slotnum);
+	return result;
+}
+#endif
+
 extern	fix	Flash_effect;
 extern fix64 Time_flash_last_played;
 
@@ -1796,7 +1903,9 @@ int state_save_all_sub(char *filename, char *desc)
 	PHYSFS_write(fp, desc, sizeof(char) * DESC_LENGTH, 1);
 
 // Save the current screen shot...
-
+	if (g_android_save_blank_thumbnail) {
+		state_write_blank_thumbnail(fp);
+	} else {
 	cnv = gr_create_canvas( THUMBNAIL_W, THUMBNAIL_H );
 	if ( cnv )
 	{
@@ -1860,6 +1969,7 @@ int state_save_all_sub(char *filename, char *desc)
 	else
 	{
 		state_write_blank_thumbnail(fp);
+	}
 	}
 
 // Save the Between levels flag...
@@ -2038,6 +2148,28 @@ int state_save_all_sub(char *filename, char *desc)
 
 #ifdef __ANDROID__
 	coop_write_save_metadata(fp);
+	{
+		android_save_meta_disk android_meta;
+		android_save_meta_write_params android_params;
+		char android_desc[DESC_LENGTH + 1];
+
+		memset(&android_params, 0, sizeof(android_params));
+		memcpy(android_desc, desc, DESC_LENGTH);
+		android_desc[DESC_LENGTH] = '\0';
+		android_params.game_id = ANDROID_SAVE_META_GAME_D2;
+		android_params.save_kind = g_android_save_meta_kind;
+		android_params.callsign = Players[Player_num].callsign;
+		android_params.description = android_desc;
+		android_params.mission_name = mission_filename;
+		android_params.level_num = Current_level_num;
+		android_params.level_name = Current_level_name;
+		android_params.level_seconds = state_time_to_seconds(
+			Players[Player_num].time_level, Players[Player_num].hours_level);
+		android_params.total_seconds = state_time_to_seconds(
+			Players[Player_num].time_total, Players[Player_num].hours_total);
+		if (android_save_meta_build(&android_meta, &android_params))
+			PHYSFS_write(fp, &android_meta, sizeof(android_meta), 1);
+	}
 #endif
 
 	PHYSFS_close(fp);
@@ -2790,6 +2922,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	{
 		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
 		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
+		android_save_meta_disk android_meta;
+		int have_android_meta = state_read_android_save_meta(fp, file_len, &android_meta);
 		coop_save_metadata coop_meta;
 		if (coop_read_save_metadata(fp, pos_after_base, &coop_meta)) {
 			con_printf(CON_DEBUG, "coop_save: restored metadata (%d active, %d absent)",
@@ -2808,7 +2942,9 @@ int state_restore_all_sub(char *filename, int secret_restore)
 						HUD_init_message(HM_DEFAULT, "Guide-Bot: %s has control", Players[Escort_owner_player].callsign);
 				}
 			}
-		} else if (pos_after_base != file_len)
+			} else if (!(have_android_meta &&
+				file_len - pos_after_base == (PHYSFS_sint64)sizeof(android_meta)) &&
+				pos_after_base != file_len)
 			con_printf(CON_URGENT, "savegame not completely read, might be corrupt! (cur %d, size %d)",
 				(int)pos_after_base, (int)file_len);
 	}

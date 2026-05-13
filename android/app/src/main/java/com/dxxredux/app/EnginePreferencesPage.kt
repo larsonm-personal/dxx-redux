@@ -43,6 +43,7 @@ import java.io.File
 internal const val PREF_GUIDEBOT_HELPER_LINE = "guidebot_helper_line_enabled"
 internal const val PREF_NEAREST_PLAYER_LINE = "nearest_player_line_enabled"
 internal const val PREF_SKIP_INTRO_MOVIE = "skip_intro_movie"
+internal const val PREF_SHOW_RESUME_OFFER = "show_resume_offer"
 
 private const val CM_FULL_COCKPIT = 0
 private const val CM_STATUS_BAR = 2
@@ -84,6 +85,9 @@ fun EnginePreferencesPage(
     }
     var skipIntroMovie by remember {
         mutableStateOf(prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
+    }
+    var showResumeOffer by remember {
+        mutableStateOf(prefs.getBoolean(PREF_SHOW_RESUME_OFFER, true))
     }
 
     val hasChanges = cockpitMode != savedCockpitMode || autoLeveling != savedAutoLeveling
@@ -267,6 +271,41 @@ fun EnginePreferencesPage(
                         Text("Skip intro movie on launch", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(
                             "Skips the D1/D2 startup intro sequence, but leaves other movies skippable by tap",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Launcher", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    "Launcher-only options that control setup-screen behavior before the game starts",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = showResumeOffer,
+                        onCheckedChange = { checked ->
+                            showResumeOffer = checked
+                            prefs.edit().putBoolean(PREF_SHOW_RESUME_OFFER, checked).apply()
+                        },
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Show resume offer on launch", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "When a recent save is found, offer to resume it from the launcher before opening the game",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

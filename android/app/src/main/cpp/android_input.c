@@ -18,6 +18,7 @@
 #include <string.h>
 #include <android/keycodes.h>
 #include "android_log.h"
+#include "android_save_meta.h"
 #include "fix.h"
 #include "gr.h"
 #include "timer.h"
@@ -84,6 +85,10 @@ volatile int g_levelcomplete_active = 0;
  * The game thread consumes these in d1/d2 gamecntl.c. */
 volatile int g_android_open_save_menu = 0;
 volatile int g_android_open_load_menu = 0;
+
+/* Set on the UI thread when Android lifecycle or launcher actions request
+ * an autosave.  The game thread consumes this in d1/d2 gamecntl.c. */
+volatile int g_android_autosave_request_kind = 0;
 
 /* Forward declaration — defined later in this file, written by the blit path. */
 extern volatile int g_blit_y_offset;
@@ -592,6 +597,12 @@ static jboolean queue_android_saveload_request(int save_request)
 	return JNI_TRUE;
 }
 
+static void queue_android_autosave_request(int save_kind)
+{
+	if (save_kind > g_android_autosave_request_kind)
+		g_android_autosave_request_kind = save_kind;
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnResume(JNIEnv *env, jobject thiz)
 {
@@ -604,6 +615,24 @@ Java_com_dxxredux_app_MainActivity_nativeOnResume(JNIEnv *env, jobject thiz)
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 {
+	if (!Game_wind || Screen_mode != SCREEN_GAME) {
+		LOGI("nativeOnPause — not in live gameplay, skipping autosave and Escape injection");
+		android_surface_pause();
+		mix_background_pause();
+		RBAPause();
+		return;
+	}
+
+	if (Game_mode & GM_MULTI) {
+		LOGI("nativeOnPause — multiplayer active, skipping autosave and Escape injection");
+		android_surface_pause();
+		mix_background_pause();
+		RBAPause();
+		return;
+	}
+
+	queue_android_autosave_request(ANDROID_SAVE_META_KIND_AUTO_MINIMIZE);
+
 	/* Stop the rendering thread from touching ANativeWindow before the
 	 * surface is destroyed.  This must happen first so that by the time
 	 * surfaceDestroyed → nativeSetSurface(null) runs, no blit is in
@@ -614,34 +643,15 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 	mix_background_pause();
 	RBAPause();
 
-	/* Inject Escape only when the player is in live gameplay.
-	 * We check Game_wind (non-NULL means a level is loaded) and
-	 * Screen_mode (SCREEN_GAME means we are in the 3-D view).
-	 * Both are simple atomic reads — we intentionally avoid
-	 * window_get_front() here because it traverses a linked list
-	 * that the game thread mutates concurrently. */
-	if (!Game_wind || Screen_mode != SCREEN_GAME) {
-		LOGI("nativeOnPause — not in live gameplay, skipping Escape injection");
-		return;
-	}
-
-	/* In multiplayer games, do NOT inject Escape — the session must
-	 * stay alive while the app is backgrounded.  A foreground service
-	 * keeps the process from being killed. */
-	if (Game_mode & GM_MULTI) {
-		LOGI("nativeOnPause — multiplayer active, skipping Escape injection");
-		return;
-	}
-
 	/* If a menu window already covers the game (e.g., the player already
 	 * opened the game menu), the game is already paused — do not inject
 	 * another Escape which would close the menu and unpause. */
 	if (window_get_front() != Game_wind) {
-		LOGI("nativeOnPause — game menu already open, skipping Escape injection");
+		LOGI("nativeOnPause — autosave queued, game menu already open");
 		return;
 	}
 
-	LOGI("nativeOnPause — injecting Escape key");
+	LOGI("nativeOnPause — autosave queued, injecting Escape key");
 	inject_key_tap(SDLK_ESCAPE);
 }
 

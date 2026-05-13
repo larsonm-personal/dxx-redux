@@ -34,6 +34,10 @@ int state_save_all_sub(char *filename, char *desc);
 int state_restore_all_sub(char *filename, int secret_restore);
 int state_runtime_version(void);
 
+#ifdef __ANDROID__
+int state_android_save_to_slot(int slotnum, const char *desc, int save_kind);
+#endif
+
 int state_get_save_file(char *fname, char * dsc, int blind_save);
 int state_get_restore_file(char *fname);
 int state_get_game_id(char *filename);

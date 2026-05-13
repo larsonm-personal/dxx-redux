@@ -18,10 +18,12 @@
 #include <android/log.h>
 #include "android_meta_actions.h"
 #include "android_crash_handler.h"
+#include "android_save_meta.h"
 
 volatile int android_force_quit = 0;
 volatile int android_escort_release_pending = 0;
 volatile int android_demo_record_toggle_pending = 0;
+extern volatile int g_android_autosave_request_kind;
 
 #define LOG_TAG   "DXX-MetaAction"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -127,22 +129,14 @@ int meta_action_dispatch(int action_id, int pressed)
 		return 0;
 	}
 
-	/* Special case: return to launcher.  SDL_QUIT cascades through
-	 * the Quitting mechanism to close all windows and exit the game
-	 * loop.  android_force_quit tells standard_handler to skip the
-	 * "Abort Game?" dialog.  No ESC injection -- that would open
-	 * the game menu when Game_wind is the front window. */
+	/* Special case: return to launcher.  Queue an autosave request for
+	 * the game thread to consume, then let it push SDL_QUIT after the
+	 * save succeeds or is skipped. */
 	if (action_id == META_RETURN_TO_LAUNCHER) {
 		if (pressed) {
-			SDL_Event ev;
-
-			/* Tell standard_handler to skip the "Abort Game?" dialog */
-			android_force_quit = 1;
-
-			memset(&ev, 0, sizeof(ev));
-			ev.type = SDL_QUIT;
-			SDL_PushEvent(&ev);
-			LOGI("meta_action_dispatch: SDL_QUIT pushed (return to launcher)");
+			if (g_android_autosave_request_kind < ANDROID_SAVE_META_KIND_AUTO_EXIT)
+				g_android_autosave_request_kind = ANDROID_SAVE_META_KIND_AUTO_EXIT;
+			LOGI("meta_action_dispatch: queued exit autosave request");
 		}
 		return 0;
 	}

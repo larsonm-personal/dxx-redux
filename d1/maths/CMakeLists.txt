@@ -34,6 +34,12 @@ if(NOT ANDROID)
     target_link_libraries(test_deterministic_math PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_deterministic_math PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_android_save_meta
+        ../../android/tests/test_android_save_meta.c
+        ../../android/app/src/main/cpp/shared/android_save_meta.c)
+    target_link_libraries(test_android_save_meta PRIVATE ${DXX_TARGET_PREFIX}maths)
+    target_include_directories(test_android_save_meta PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_input_demo_rng_mode
         ../../android/tests/test_input_demo_rng_mode.c
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c)

@@ -80,6 +80,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "titles.h"
 #include "gr.h"
 #include "playsave.h"
+#ifdef __ANDROID__
+#include "android_log.h"
+#include "android_meta_actions.h"
+#include "android_save_meta.h"
+#include <SDL.h>
+#endif
 #include "movie.h"
 #include "scores.h"
 
@@ -401,6 +407,7 @@ extern int netplayerinfo_on;
 #ifdef __ANDROID__
 extern volatile int g_android_open_save_menu;
 extern volatile int g_android_open_load_menu;
+extern volatile int g_android_autosave_request_kind;
 
 static void android_clear_saveload_requests(void)
 {
@@ -411,7 +418,13 @@ static void android_clear_saveload_requests(void)
 static int android_handle_pause_saveload_request(window *wind)
 {
 	if (!g_android_open_save_menu && !g_android_open_load_menu)
+	{
+		if (g_android_autosave_request_kind) {
+			window_close(wind);
+			return 1;
+		}
 		return 0;
+	}
 
 	if (g_android_open_save_menu) {
 		if (Player_is_dead) {
@@ -429,6 +442,35 @@ static int android_handle_pause_saveload_request(window *wind)
 
 static int android_handle_ingame_saveload_request(void)
 {
+	if (g_android_autosave_request_kind) {
+		int request_kind = g_android_autosave_request_kind;
+		int slotnum = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ? N_SAVE_SLOTS - 2 : N_SAVE_SLOTS - 1;
+		const char *desc = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ? "AUTO EXIT" : "AUTO SAVE";
+		int saved = 0;
+
+		g_android_autosave_request_kind = 0;
+		if (Player_is_dead)
+			debug_log(DLOG_GAME, "autosave skipped: D2 player is dead");
+		else
+			saved = state_android_save_to_slot(slotnum, desc, request_kind);
+
+		if (saved)
+			debug_log(DLOG_GAME, "autosave saved: D2 slot %d", slotnum);
+
+		if (request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT) {
+			SDL_Event ev;
+
+			android_force_quit = 1;
+			memset(&ev, 0, sizeof(ev));
+			ev.type = SDL_QUIT;
+			SDL_PushEvent(&ev);
+			debug_log(DLOG_GAME, "autosave exit queued: D2 slot %d", slotnum);
+			return 1;
+		}
+
+		return saved;
+	}
+
 	if (g_android_open_save_menu) {
 		android_clear_saveload_requests();
 		if (!Player_is_dead) {
