@@ -78,6 +78,24 @@ internal fun shouldEnableNetEventsControl(
     hasPendingLaunchInfo: Boolean,
 ): Boolean = shouldEnableNetStatsControl(isMultiplayerGame, hasPendingLaunchInfo)
 
+internal data class GyroRuntimeState(
+    val configured: Boolean,
+    val activeInGame: Boolean,
+) {
+    val effectiveEnabled: Boolean
+        get() = configured && activeInGame
+}
+
+internal fun gyroRuntimeStateFromConfig(config: GyroConfig): GyroRuntimeState =
+    GyroRuntimeState(configured = config.enabled, activeInGame = config.enabled)
+
+internal fun toggledGyroRuntimeState(state: GyroRuntimeState): GyroRuntimeState =
+    if (!state.configured) {
+        state.copy(activeInGame = false)
+    } else {
+        state.copy(activeInGame = !state.activeInGame)
+    }
+
 // Keep text-only flags off numeric editors so number-pad IMEs still commit digits
 internal fun buildKeyboardEditorInputType(baseInputType: Int): Int =
     when (baseInputType and InputType.TYPE_MASK_CLASS) {
@@ -439,6 +457,7 @@ class MainActivity :
     private var imeNavigationDispatchDepth = 0
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
+    private var gyroRuntimeState = gyroRuntimeStateFromConfig(GyroConfig())
     private var activeTouchLayout = TouchLayoutRepository.defaultLayout()
     private var isActivityResumed = false
     private var gameVariantId = "d2" // "d1" or "d2", set in onCreate
@@ -630,6 +649,7 @@ class MainActivity :
         // Touch overlay
         touchOverlay = TouchOverlayView(this)
         activeTouchLayout = TouchLayoutRepository.load(this)
+        gyroRuntimeState = gyroRuntimeStateFromConfig(activeTouchLayout.gyro)
         touchOverlay.setLayout(activeTouchLayout)
 
         // Input mixer: combines button/axis inputs from touch, controller, gyro
@@ -2157,10 +2177,14 @@ class MainActivity :
 
     private fun applyGyroConfig(config: GyroConfig) {
         val manager = ensureGyroManager()
-        manager.setConfig(config)
-        touchOverlay.updateGyroEnabled(config.enabled)
+        val effectiveConfig = config.copy(enabled = gyroRuntimeState.effectiveEnabled)
+        manager.setConfig(effectiveConfig)
+        touchOverlay.updateGyroState(
+            configured = gyroRuntimeState.configured,
+            active = gyroRuntimeState.activeInGame,
+        )
         if (isActivityResumed) {
-            if (config.enabled) {
+            if (effectiveConfig.enabled) {
                 manager.resume()
             } else {
                 manager.pause()
@@ -2168,10 +2192,10 @@ class MainActivity :
         }
     }
 
-    private fun setGyroEnabled(enabled: Boolean) {
-        if (activeTouchLayout.gyro.enabled == enabled) return
-        activeTouchLayout = activeTouchLayout.copy(gyro = activeTouchLayout.gyro.copy(enabled = enabled))
-        TouchLayoutRepository.save(this, activeTouchLayout)
+    private fun toggleGyroInGame() {
+        val nextState = toggledGyroRuntimeState(gyroRuntimeState)
+        if (nextState == gyroRuntimeState) return
+        gyroRuntimeState = nextState
         applyGyroConfig(activeTouchLayout.gyro)
     }
 
@@ -2180,7 +2204,7 @@ class MainActivity :
         pressed: Boolean,
     ) {
         if (actionId == TouchBindings.META_GYRO_TOGGLE) {
-            if (pressed) setGyroEnabled(!activeTouchLayout.gyro.enabled)
+            if (pressed) toggleGyroInGame()
             return
         }
         NativeMetaActions.nativeMetaAction(actionId, if (pressed) 1 else 0)

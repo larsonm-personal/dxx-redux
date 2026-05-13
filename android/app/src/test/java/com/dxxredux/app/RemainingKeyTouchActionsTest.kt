@@ -18,9 +18,23 @@ class RemainingKeyTouchActionsTest {
         assertTrue(TouchBindings.META_PAUSE !in bindings)
         assertTrue(TouchBindings.META_MULTIPLAYER_HUD !in bindings)
         assertTrue(TouchBindings.META_DROP_FLAG !in bindings)
+        assertTrue(TouchBindings.META_GYRO_TOGGLE !in bindings)
+        assertTrue(TouchBindings.META_RETURN_TO_LAUNCHER !in bindings)
         assertTrue(TouchBindings.META_WEAPON_1 in bindings)
         assertTrue(TouchBindings.META_WEAPON_10 in bindings)
         assertTrue(TouchBindings.META_GUIDE_BOT_MENU in bindings)
+    }
+
+    @Test
+    fun configuredGyroAddsGyroToggleToOverflow() {
+        val actions =
+            remainingKeyTouchActions(
+                TouchLayout(name = "Gyro", gyro = GyroConfig(enabled = true)),
+                gameVariant = "d2",
+            )
+        val bindings = actions.map { it.binding }
+
+        assertTrue(TouchBindings.META_GYRO_TOGGLE in bindings)
     }
 
     @Test
@@ -107,6 +121,20 @@ class RemainingKeyTouchActionsTest {
     }
 
     @Test
+    fun toggleBombLabelShowsCurrentBombSelection() {
+        val actions =
+            remainingKeyTouchActions(
+                TouchLayout(name = "Bombs"),
+                gameVariant = "d2",
+                weaponState = weaponState(currentBomb = 7),
+            )
+
+        val toggleBomb = actions.first { it.binding == TouchBindings.BTN_TOGGLE_BOMB }
+
+        assertEquals("Toggle Bomb [current: Smart Mine]", toggleBomb.label)
+    }
+
+    @Test
     fun boundBindingsIncludeLongPressButtonModeRadialAndDpadSources() {
         val layout =
             TouchLayout(
@@ -190,4 +218,21 @@ class RemainingKeyTouchActionsTest {
 
         assertTrue(TouchBindings.META_GUIDE_FIND_ENERGY in bindings)
     }
+
+    private fun weaponState(
+        playerFlags: Int = 0,
+        currentBomb: Int = -1,
+    ) =
+        WeaponState(
+            primaryFlags = 0,
+            secondaryFlags = 0,
+            playerFlags = playerFlags,
+            primaryAmmo = IntArray(10),
+            secondaryAmmo = IntArray(10),
+            primaryAmmoMax = IntArray(10),
+            secondaryAmmoMax = IntArray(10),
+            currentPrimary = 0,
+            currentSecondary = 0,
+            currentBomb = currentBomb,
+        )
 }
