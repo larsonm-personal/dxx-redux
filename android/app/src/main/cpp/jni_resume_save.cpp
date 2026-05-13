@@ -195,4 +195,35 @@ Java_com_dxxredux_app_ResumeSaveBridge_nativeFindNewestSave(JNIEnv *env,
 	return env->NewStringUTF(dumped.c_str());
 }
 
+extern "C" JNIEXPORT jbyteArray JNICALL
+Java_com_dxxredux_app_ResumeSaveBridge_nativeReadThumbnailRgb6(JNIEnv *env,
+	jobject /* thiz */,
+	jstring jpath)
+{
+	android_save_meta_disk meta;
+	const char *path;
+	jbyteArray out;
+
+	if (!jpath)
+		return NULL;
+	path = env->GetStringUTFChars(jpath, NULL);
+	if (!path)
+		return NULL;
+	if (!android_save_meta_read_path(path, &meta)) {
+		env->ReleaseStringUTFChars(jpath, path);
+		return NULL;
+	}
+	env->ReleaseStringUTFChars(jpath, path);
+	if (meta.thumbnail_format != ANDROID_SAVE_META_THUMB_RGB6 ||
+		meta.thumbnail_width != ANDROID_SAVE_META_THUMB_W ||
+		meta.thumbnail_height != ANDROID_SAVE_META_THUMB_H)
+		return NULL;
+	out = env->NewByteArray((jsize)sizeof(meta.thumbnail_rgb6));
+	if (!out)
+		return NULL;
+	env->SetByteArrayRegion(out, 0, (jsize)sizeof(meta.thumbnail_rgb6),
+		reinterpret_cast<const jbyte *>(meta.thumbnail_rgb6));
+	return out;
+}
+
 #endif

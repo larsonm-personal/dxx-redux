@@ -28,6 +28,7 @@ object ResumeSaveBridge {
         val hasThumbnail: Boolean,
         val thumbnailWidth: Int,
         val thumbnailHeight: Int,
+        val thumbnailRgb6: ByteArray?,
     ) {
         fun toJson(): JSONObject =
             JSONObject().apply {
@@ -63,8 +64,10 @@ object ResumeSaveBridge {
 
         return try {
             val obj = JSONObject(raw)
+            val path = obj.optString("path")
+            val hasThumbnail = obj.optBoolean("has_thumbnail")
             ResumeSaveCandidate(
-                path = obj.optString("path"),
+                path = path,
                 relativePath = obj.optString("relative_path"),
                 game = obj.optString("game"),
                 saveKind = obj.optString("save_kind"),
@@ -77,9 +80,10 @@ object ResumeSaveBridge {
                 levelSeconds = obj.optLong("level_seconds"),
                 totalSeconds = obj.optLong("total_seconds"),
                 slot = obj.optInt("slot", -1),
-                hasThumbnail = obj.optBoolean("has_thumbnail"),
+                hasThumbnail = hasThumbnail,
                 thumbnailWidth = obj.optInt("thumbnail_width"),
                 thumbnailHeight = obj.optInt("thumbnail_height"),
+                thumbnailRgb6 = if (hasThumbnail && path.isNotBlank()) nativeReadThumbnailRgb6(path) else null,
             )
         } catch (e: Exception) {
             Log.w(TAG, "Failed to parse native resume-save JSON", e)
@@ -88,4 +92,6 @@ object ResumeSaveBridge {
     }
 
     private external fun nativeFindNewestSave(filesDir: String): String?
+
+    private external fun nativeReadThumbnailRgb6(savePath: String): ByteArray?
 }

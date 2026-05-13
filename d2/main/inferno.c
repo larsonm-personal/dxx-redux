@@ -137,6 +137,7 @@ void print_commandline_help()
 	printf( "  -use_players_dir              put player files and saved games in Players subdirectory\n");
 	printf( "  -lowmem                       Lowers animation detail for better performance with\n\t\t\t\tlow memory\n");
 	printf( "  -pilot <s>                    Select pilot <s> automatically\n");
+	printf( "  -resume-save <s>              Restore savegame path <s> on startup\n");
 	printf( "  -autodemo                     Start in demo mode\n");
 	printf( "  -window                       Run the game in a window\n");
 	printf( "  -noborders                    Do not show borders in window mode\n");
@@ -256,6 +257,21 @@ static int maybe_dump_classic_demo_json(void)
 	}
 	printf("Classic demo JSON dump written: %s\n", output_path);
 	return 0;
+}
+
+static int maybe_resume_save_from_cmdline(void)
+{
+	const int arg_index = find_cmd_arg("-resume-save");
+
+	if (!arg_index)
+		return 0;
+	if (arg_index + 1 >= Num_args || !Args[arg_index + 1] || !Args[arg_index + 1][0]) {
+		con_printf(CON_URGENT, "startup resume: missing save path\n");
+		return 0;
+	}
+
+	con_printf(CON_NORMAL, "startup resume: restoring '%s'\n", Args[arg_index + 1]);
+	return state_restore_all_path(0, Args[arg_index + 1]);
 }
 
 int Quitting = 0;
@@ -612,10 +628,12 @@ int main(int argc, char *argv[])
 		if (replay_result > 0)
 			return replay_result;
 		if (replay_result < 0) {
-			Game_mode = GM_GAME_OVER;
-			CHECKPOINT("entering DoMenu");
-			DoMenu();
-			CHECKPOINT("DoMenu returned");
+			if (!maybe_resume_save_from_cmdline()) {
+				Game_mode = GM_GAME_OVER;
+				CHECKPOINT("entering DoMenu");
+				DoMenu();
+				CHECKPOINT("DoMenu returned");
+			}
 		}
 	}
 

@@ -1802,8 +1802,7 @@ int state_save_all_sub(char *filename, char *desc)
 	return 1;
 }
 
-//	-----------------------------------------------------------------------------------
-int state_restore_all(int in_game)
+static int state_restore_all_internal(int in_game, char *filename_override)
 {
 	char filename[PATH_MAX];
 
@@ -1821,7 +1820,9 @@ int state_restore_all(int in_game)
 	}
 
 	stop_time();
-	if (!state_get_restore_file(filename))	{
+	if (filename_override && filename_override[0])
+		snprintf(filename, PATH_MAX, "%s", filename_override);
+	else if (!state_get_restore_file(filename)) {
 		start_time();
 		return 0;
 	}
@@ -1838,6 +1839,17 @@ int state_restore_all(int in_game)
 	start_time();
 
 	return state_restore_all_sub(filename);
+}
+
+//	-----------------------------------------------------------------------------------
+int state_restore_all(int in_game)
+{
+	return state_restore_all_internal(in_game, NULL);
+}
+
+int state_restore_all_path(int in_game, char *filename_override)
+{
+	return state_restore_all_internal(in_game, filename_override);
 }
 
 int state_restore_all_sub(char *filename)

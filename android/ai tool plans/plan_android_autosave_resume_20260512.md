@@ -46,16 +46,16 @@ Design Android minimize and exit-to-launcher autosaves, launcher resume prompt, 
 	- [x] Add debug log entries for saved, skipped, and failed autosaves
 	- [x] Validate Android native compile for the autosave path
 
-3. Launcher resume offer [in progress]
+3. Launcher resume offer [done]
 	- [x] Add native save scanning bridge and Kotlin wrapper
-	- [ ] Add Compose resume dialog
+	- [x] Add Compose resume dialog
 	- [x] Add preference toggle and config export/import coverage in "game preferences"
 	- [x] Add setup introspection fields for current resume candidate and preference state
 	- [x] Add setup introspection field for the current resume candidate
 
-4. Direct resume load
-	- [ ] Pass candidate game, callsign, and save path through launch intent
-	- [ ] Add Android startup restore handling in D1 and D2
+4. Direct resume load [in progress]
+	- [x] Pass candidate game, callsign, and save path through launch intent
+	- [x] Add Android startup restore handling in D1 and D2
 	- [ ] Verify that the game reaches the loaded level without user menu input
 
 5. Validation

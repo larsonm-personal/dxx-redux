@@ -603,6 +603,27 @@ static void queue_android_autosave_request(int save_kind)
 		g_android_autosave_request_kind = save_kind;
 }
 
+static int android_can_queue_minimize_autosave(void)
+{
+	if (!Game_wind || Screen_mode != SCREEN_GAME)
+		return 0;
+	if (Game_mode & GM_MULTI)
+		return 0;
+	return 1;
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeQueueMinimizeAutosave(JNIEnv *env, jobject thiz)
+{
+	if (!android_can_queue_minimize_autosave()) {
+		LOGI("nativeQueueMinimizeAutosave: not in autosaveable gameplay");
+		return;
+	}
+
+	queue_android_autosave_request(ANDROID_SAVE_META_KIND_AUTO_MINIMIZE);
+	LOGI("nativeQueueMinimizeAutosave: autosave queued");
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnResume(JNIEnv *env, jobject thiz)
 {

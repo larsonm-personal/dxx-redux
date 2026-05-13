@@ -31,6 +31,7 @@ extern int state_save_old_game(int slotnum, char * sg_name, player_rw * sg_playe
 
 int state_save_all_sub(char *filename, char *desc);
 int state_restore_all_sub(char *filename);
+int state_restore_all_path(int in_game, char *filename_override);
 int state_runtime_version(void);
 
 #ifdef __ANDROID__

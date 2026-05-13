@@ -2265,6 +2265,11 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 	return state_restore_all_sub(filename, secret_restore);
 }
 
+int state_restore_all_path(int in_game, char *filename_override)
+{
+	return state_restore_all(in_game, 0, filename_override);
+}
+
 extern void init_player_stats_new_ship(ubyte pnum);
 
 void ShowLevelIntro(int level_num);

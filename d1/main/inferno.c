@@ -125,6 +125,7 @@ void print_commandline_help()
 	printf( "  -use_players_dir              put player files and saved games in Players subdirectory\n");
 	printf( "  -lowmem                       Lowers animation detail for better performance with\n\t\t\t\tlow memory\n");
 	printf( "  -pilot <s>                    Select pilot <s> automatically\n");
+	printf( "  -resume-save <s>              Restore savegame path <s> on startup\n");
 	printf( "  -autodemo                     Start in demo mode\n");
 	printf( "  -window                       Run the game in a window\n");
 	printf( "  -noborders                    Do not show borders in window mode\n");
@@ -201,6 +202,32 @@ void print_commandline_help()
 	printf( "\n Help:\n\n");
 	printf( "  -help, -h, -?, ?             View this help screen\n");
 	printf( "\n\n");
+}
+
+static int find_cmd_arg(const char *name)
+{
+	int i;
+
+	for (i = 1; i < Num_args; ++i)
+		if (!d_stricmp(Args[i], name))
+			return i;
+
+	return 0;
+}
+
+static int maybe_resume_save_from_cmdline(void)
+{
+	const int arg_index = find_cmd_arg("-resume-save");
+
+	if (!arg_index)
+		return 0;
+	if (arg_index + 1 >= Num_args || !Args[arg_index + 1] || !Args[arg_index + 1][0]) {
+		con_printf(CON_URGENT, "startup resume: missing save path\n");
+		return 0;
+	}
+
+	con_printf(CON_NORMAL, "startup resume: restoring '%s'\n", Args[arg_index + 1]);
+	return state_restore_all_path(0, Args[arg_index + 1]);
 }
 
 int Quitting = 0;
@@ -510,8 +537,10 @@ int main(int argc, char *argv[])
 			if (replay_result > 0)
 				return replay_result;
 			if (replay_result < 0) {
-				Game_mode = GM_GAME_OVER;
-				DoMenu();
+				if (!maybe_resume_save_from_cmdline()) {
+					Game_mode = GM_GAME_OVER;
+					DoMenu();
+				}
 			}
 		}
 

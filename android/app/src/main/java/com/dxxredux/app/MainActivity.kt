@@ -195,6 +195,8 @@ class MainActivity :
 
     external fun nativeOnResume()
 
+    external fun nativeQueueMinimizeAutosave()
+
     external fun nativeQuit()
 
     external fun nativeGetGameState(): String
@@ -1291,6 +1293,31 @@ class MainActivity :
     }
 
     // ── Lifecycle ────────────────────────────────────────────
+    private var backgroundPauseApplied = false
+
+    private fun requestMinimizeAutosave() {
+        if (gameStarted) {
+            nativeQueueMinimizeAutosave()
+        }
+    }
+
+    private fun applyBackgroundPause() {
+        if (gameStarted && !backgroundPauseApplied) {
+            nativeOnPause()
+            backgroundPauseApplied = true
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        requestMinimizeAutosave()
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        requestMinimizeAutosave()
+    }
+
     override fun onStop() {
         super.onStop()
         isActivityResumed = false
@@ -1299,13 +1326,19 @@ class MainActivity :
         gamepadButtonEdgeTracker.clear()
         // Inject Escape so the engine opens its pause / game menu.
         // This pauses a single-player game while the app is in the background.
-        if (gameStarted) {
-            nativeOnPause()
+        applyBackgroundPause()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level == TRIM_MEMORY_UI_HIDDEN) {
+            applyBackgroundPause()
         }
     }
 
     override fun onResume() {
         super.onResume()
+        backgroundPauseApplied = false
         isActivityResumed = true
         gyroManager?.resume()
         // Resume music that was paused when backgrounded

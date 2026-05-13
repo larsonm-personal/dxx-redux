@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
@@ -24,6 +25,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,6 +48,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -560,12 +564,20 @@ class SetupActivity : ComponentActivity() {
     private fun createGameLaunchIntent(
         game: String,
         inputDemoReplayPath: String? = getIntent().getStringExtra("input_demo_replay"),
+        resumeSavePath: String? = null,
+        resumeCallsign: String? = null,
     ): Intent {
         val intent = Intent(this, MainActivity::class.java)
         intent.putExtra("game", game)
         DebugLog.currentFilePath()?.let { intent.putExtra("netlog_path", it) }
         inputDemoReplayPath?.takeIf { it.isNotBlank() }?.let {
             intent.putExtra("input_demo_replay", it)
+        }
+        resumeSavePath?.takeIf { it.isNotBlank() }?.let {
+            intent.putExtra("resume_save_path", it)
+        }
+        resumeCallsign?.takeIf { it.isNotBlank() }?.let {
+            intent.putExtra("resume_callsign", it)
         }
         return intent
     }
@@ -650,6 +662,12 @@ class SetupActivity : ComponentActivity() {
                         val value = intent.getBooleanExtra("value", false)
                         getSharedPreferences("dxx_prefs", MODE_PRIVATE).edit().putBoolean(key, value).commit()
                         Log.i("DXX-Setup", "write_bool_pref: $key=$value")
+                        requestSetupRefresh()
+                    }
+
+                    "clear_save_files" -> {
+                        val deleted = clearSaveFilesForAutomation()
+                        Log.i("DXX-Setup", "clear_save_files: deleted $deleted file(s)")
                         requestSetupRefresh()
                     }
 
@@ -2086,6 +2104,22 @@ class SetupActivity : ComponentActivity() {
         return arr
     }
 
+    private fun clearSaveFilesForAutomation(): Int {
+        val saveRegex = Regex("""\.(?:sg|mg)[0-9]$""", RegexOption.IGNORE_CASE)
+        var deleted = 0
+        for (subdir in arrayOf("d1x-redux", "d2x-redux")) {
+            val dir = File(filesDir, subdir)
+            if (!dir.exists()) continue
+            dir
+                .walkTopDown()
+                .filter { it.isFile && saveRegex.containsMatchIn(it.name) }
+                .forEach {
+                    if (it.delete()) deleted++
+                }
+        }
+        return deleted
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -2155,24 +2189,23 @@ class SetupActivity : ComponentActivity() {
             }
         }
 
-        val gameRunning = intent.getBooleanExtra("gameRunning", false)
-        gameRunningFlag = gameRunning
+        gameRunningFlag = intent.getBooleanExtra("gameRunning", false) || isGameProcessAlive()
         val filesDir = filesDir
 
         setContent {
             SetupScreen(
                 filesDir = filesDir,
-                gameRunning = gameRunning,
+            gameRunning = gameRunningFlag,
                 refreshTrigger = refreshTrigger.intValue,
                 controllerAxes = controllerAxes,
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration.intValue,
                 pressedButtons = pressedButtons,
-                onLaunchGame = { game ->
+                onLaunchGame = { game, resumeCandidate ->
                     val pending = launcherExecutor?.consumePendingLaunch()
                     if (pending != null) {
                         launchGameForAutomation(game, pending.scriptPath, pending.nextStep)
-                    } else if (gameRunning || isGameProcessAlive()) {
+                    } else if (gameRunningFlag || isGameProcessAlive()) {
                         finish() // return to the already-running game
                     } else {
                         FileSetManager(filesDir).writeActiveSetPath()
@@ -2180,7 +2213,11 @@ class SetupActivity : ComponentActivity() {
                         ModManager(filesDir).writeEnabledModPaths(game)
                         writeInitialGameConfig()
                         writeMusicConfigForLaunch()
-                        val intent = createGameLaunchIntent(game)
+                        val intent = createGameLaunchIntent(
+                            game = game,
+                            resumeSavePath = resumeCandidate?.path,
+                            resumeCallsign = resumeCandidate?.callsign,
+                        )
                         startActivity(intent)
                         // Don't finish() -- stay in back stack so quitting
                         // the game returns here instead of the launcher.
@@ -2296,6 +2333,7 @@ class SetupActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         mpGameLaunching = false
+        gameRunningFlag = isGameProcessAlive()
         // If a LAN host was broadcasting in-game, stop now
         com.dxxredux.app.lobby.LobbyService
             .stopInGameBroadcast()
@@ -3123,7 +3161,7 @@ private fun SetupScreen(
     dpadAxes: FloatArray,
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
-    onLaunchGame: (String) -> Unit,
+    onLaunchGame: (String, ResumeSaveBridge.ResumeSaveCandidate?) -> Unit,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
     onMultiplayerLaunch: (com.dxxredux.app.multiplayer.GameLaunchInfo) -> Unit,
     onRefresh: () -> Unit,
@@ -3172,6 +3210,23 @@ private fun SetupScreen(
     val canLaunch = d2RequiredOk || d1RequiredOk
 
     val context = androidx.compose.ui.platform.LocalContext.current
+    val resumeOfferEnabled =
+        context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+            .getBoolean(PREF_SHOW_RESUME_OFFER, true)
+    val newestResumeCandidate = remember(refreshTrigger) { ResumeSaveBridge.findNewest(filesDir) }
+    val resumeCandidate =
+        newestResumeCandidate?.takeIf { candidate ->
+            (candidate.game == "d1" && d1RequiredOk) || (candidate.game != "d1" && d2RequiredOk)
+        }
+    val resumeDialogKey = resumeCandidate?.let { "${it.path}|${it.saveTimeUnixSeconds}" }
+    var dismissedResumeKey by remember(refreshTrigger) { mutableStateOf<String?>(null) }
+    val showResumeDialog =
+        !gameRunning &&
+            !isHashing &&
+            resumeOfferEnabled &&
+            resumeCandidate != null &&
+            resumeDialogKey != null &&
+            dismissedResumeKey != resumeDialogKey
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
 
     // ── Startup: prune stale entries, then hash new/changed files ──
@@ -3836,6 +3891,107 @@ private fun SetupScreen(
                                     "Arch: $arch\n" +
                                     "Renderer: ${BuildConfig.RENDERER}",
                             )
+                        },
+                    )
+                }
+
+                if (showResumeDialog) {
+                    val resumeThumbnail = remember(resumeDialogKey) { decodeResumeSaveThumbnail(resumeCandidate) }
+                    AlertDialog(
+                        onDismissRequest = { dismissedResumeKey = resumeDialogKey },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    dismissedResumeKey = resumeDialogKey
+                                    selectedGame = resumeCandidate.game
+                                    gamePrefs.edit().putString("selected_game", resumeCandidate.game).apply()
+                                    onLaunchGame(resumeCandidate.game, resumeCandidate)
+                                },
+                            ) {
+                                Text("Load Last Save")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    context
+                                        .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+                                        .edit()
+                                        .putBoolean(PREF_SHOW_RESUME_OFFER, false)
+                                        .apply()
+                                    dismissedResumeKey = resumeDialogKey
+                                },
+                            ) {
+                                Text("Stop Showing This")
+                            }
+                        },
+                        title = { Text("Resume Recent Save") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text(
+                                    "Most recent save found in ${resumeGameDisplayName(resumeCandidate.game)}",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.Top,
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(width = 140.dp, height = 70.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                    ) {
+                                        if (resumeThumbnail != null) {
+                                            Image(
+                                                bitmap = resumeThumbnail.asImageBitmap(),
+                                                contentDescription = "Save thumbnail",
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.FillBounds,
+                                            )
+                                        } else {
+                                            Box(
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Text(
+                                                    "No thumbnail",
+                                                    fontSize = 11.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        Text(
+                                            resumeCandidate.description.ifBlank { "AUTO SAVE" },
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
+                                        Text("Pilot: ${resumeCandidate.callsign}", fontSize = 12.sp)
+                                        Text(
+                                            "Save time: ${formatResumeSaveTime(resumeCandidate.saveTimeUnixSeconds)}",
+                                            fontSize = 12.sp,
+                                        )
+                                        Text(
+                                            "Type: ${resumeSaveKindLabel(resumeCandidate.saveKind)}",
+                                            fontSize = 12.sp,
+                                        )
+                                        Text(
+                                            "Level: ${resumeCandidate.levelNum} ${resumeCandidate.levelName}".trim(),
+                                            fontSize = 12.sp,
+                                        )
+                                        Text(
+                                            "In-level time: ${formatResumeDuration(resumeCandidate.levelSeconds)}",
+                                            fontSize = 12.sp,
+                                        )
+                                        Text(
+                                            "Total time: ${formatResumeDuration(resumeCandidate.totalSeconds)}",
+                                            fontSize = 12.sp,
+                                        )
+                                    }
+                                }
+                            }
                         },
                     )
                 }
@@ -5073,7 +5229,7 @@ private fun SetupScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Button(
-                        onClick = { onLaunchGame(selectedGame) },
+                        onClick = { onLaunchGame(selectedGame, null) },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -5151,6 +5307,61 @@ private fun SetupScreen(
             }
         }
     }
+}
+
+private fun resumeGameDisplayName(game: String): String = if (game == "d1") "Descent 1" else "Descent 2"
+
+private fun resumeSaveKindLabel(saveKind: String): String =
+    when (saveKind) {
+        "auto_minimize" -> "Auto-save on minimize"
+        "auto_exit" -> "Auto-save on exit"
+        else -> "Manual save"
+    }
+
+private fun formatResumeSaveTime(unixSeconds: Long): String {
+    if (unixSeconds <= 0L) return "Unknown"
+    val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+    return format.format(Date(unixSeconds * 1000L))
+}
+
+private fun formatResumeDuration(totalSeconds: Long): String {
+    if (totalSeconds < 0L) return "Unknown"
+    val hours = totalSeconds / 3600L
+    val minutes = (totalSeconds % 3600L) / 60L
+    val seconds = totalSeconds % 60L
+    return if (hours > 0L) {
+        String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format(Locale.US, "%d:%02d", minutes, seconds)
+    }
+}
+
+private fun decodeResumeSaveThumbnail(candidate: ResumeSaveBridge.ResumeSaveCandidate): Bitmap? {
+    val rgb = candidate.thumbnailRgb6 ?: return null
+    val width = candidate.thumbnailWidth
+    val height = candidate.thumbnailHeight
+    val pixelCount = width * height
+    val expectedBytes = pixelCount * 3
+    var hasVisiblePixel = false
+
+    if (width <= 0 || height <= 0 || rgb.size < expectedBytes) return null
+    for (index in 0 until expectedBytes) {
+        if (rgb[index].toInt() != 0) {
+            hasVisiblePixel = true
+            break
+        }
+    }
+    if (!hasVisiblePixel) return null
+
+    val pixels = IntArray(pixelCount)
+    var src = 0
+    for (index in 0 until pixelCount) {
+        val red = rgb[src++].toInt() and 0xFF
+        val green = rgb[src++].toInt() and 0xFF
+        val blue = rgb[src++].toInt() and 0xFF
+        pixels[index] = (0xFF shl 24) or (red shl 16) or (green shl 8) or blue
+    }
+    return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
 }
 
 @Composable
