@@ -59,24 +59,6 @@ internal fun readReturnableGameActivityState(context: Context): GameActivityStat
     return if (isGameProcessRunning(context, pid)) GameActivityState(pid, game) else null
 }
 
-internal fun gameActivityStateDebugJson(context: Context): JSONObject {
-    val stateFile = gameActivityStateFile(context)
-    val json =
-        JSONObject()
-            .put("path", stateFile.absolutePath)
-            .put("exists", stateFile.isFile)
-    if (!stateFile.isFile) return json
-    return try {
-        val content = JSONObject(stateFile.readText())
-        val pid = content.optInt("pid", 0)
-        json
-            .put("content", content)
-            .put("returnable", pid > 0 && isGameProcessRunning(context, pid))
-    } catch (e: Exception) {
-        json.put("read_error", e.message ?: e.javaClass.simpleName)
-    }
-}
-
 private fun gameActivityStateFile(context: Context): File = File(context.filesDir, GAME_ACTIVITY_STATE_FILE)
 
 private fun isGameProcessRunning(

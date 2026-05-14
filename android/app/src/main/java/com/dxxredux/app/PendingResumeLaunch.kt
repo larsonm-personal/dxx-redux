@@ -39,7 +39,7 @@ internal fun writePendingResumeLaunch(
         }
         DebugLog.log(
             DebugLogCategory.GAME,
-            "pending resume launch write: " + pendingResumeLaunchDebugJson(context).toString(),
+            "pending resume launch write: game=$game path=$savePath callsign=${callsign ?: ""} token=$token",
         )
     } catch (e: Exception) {
         DebugLog.log(
@@ -64,11 +64,12 @@ internal fun readPendingResumeLaunch(
             )
             return null
         }
+    val pendingSummary = pendingResumeLaunchSummary(json)
     val createdAtMs = json.optLong("created_at_ms", 0L)
     if (createdAtMs <= 0L || System.currentTimeMillis() - createdAtMs > PENDING_RESUME_LAUNCH_MAX_AGE_MS) {
         DebugLog.log(
             DebugLogCategory.GAME,
-            "pending resume launch rejected: reason=stale expected_game=$expectedGame content=$json",
+            "pending resume launch rejected: reason=stale expected_game=$expectedGame $pendingSummary",
         )
         stateFile.delete()
         return null
@@ -77,7 +78,7 @@ internal fun readPendingResumeLaunch(
     if (game != expectedGame) {
         DebugLog.log(
             DebugLogCategory.GAME,
-            "pending resume launch rejected: reason=game_mismatch expected_game=$expectedGame content=$json",
+            "pending resume launch rejected: reason=game_mismatch expected_game=$expectedGame $pendingSummary",
         )
         return null
     }
@@ -86,7 +87,7 @@ internal fun readPendingResumeLaunch(
             ?: run {
                 DebugLog.log(
                     DebugLogCategory.GAME,
-                    "pending resume launch rejected: reason=missing_save_path expected_game=$expectedGame content=$json",
+                    "pending resume launch rejected: reason=missing_save_path expected_game=$expectedGame $pendingSummary",
                 )
                 return null
             }
@@ -95,13 +96,13 @@ internal fun readPendingResumeLaunch(
             ?: run {
                 DebugLog.log(
                     DebugLogCategory.GAME,
-                    "pending resume launch rejected: reason=missing_token expected_game=$expectedGame content=$json",
+                    "pending resume launch rejected: reason=missing_token expected_game=$expectedGame $pendingSummary",
                 )
                 return null
             }
     DebugLog.log(
         DebugLogCategory.GAME,
-        "pending resume launch accepted: expected_game=$expectedGame content=$json",
+        "pending resume launch accepted: expected_game=$expectedGame $pendingSummary",
     )
     return PendingResumeLaunch(
         game = game,
@@ -117,45 +118,35 @@ internal fun clearPendingResumeLaunch(
 ) {
     val stateFile = pendingResumeLaunchFile(context)
     if (token != null) {
-        val existingToken =
+        val existingState =
             try {
-                JSONObject(stateFile.readText()).optString("token", "")
+                JSONObject(stateFile.readText())
             } catch (_: Exception) {
-                ""
+                null
             }
+        val existingToken = existingState?.optString("token", "") ?: ""
         if (existingToken.isNotBlank() && existingToken != token) {
             DebugLog.log(
                 DebugLogCategory.GAME,
-                "pending resume launch clear skipped: requested_token=$token existing_token=$existingToken state=" +
-                    pendingResumeLaunchDebugJson(context).toString(),
+                "pending resume launch clear skipped: requested_token=$token existing_token=$existingToken " +
+                    (existingState?.let(::pendingResumeLaunchSummary) ?: "state=unreadable"),
             )
             return
         }
     }
     DebugLog.log(
         DebugLogCategory.GAME,
-        "pending resume launch clear: token=${token ?: ""} state=" + pendingResumeLaunchDebugJson(context).toString(),
+        "pending resume launch clear: token=${token ?: ""}",
     )
     stateFile.delete()
 }
 
-internal fun pendingResumeLaunchDebugJson(context: Context): JSONObject {
-    val stateFile = pendingResumeLaunchFile(context)
-    val json =
-        JSONObject()
-            .put("path", stateFile.absolutePath)
-            .put("exists", stateFile.isFile)
-    if (!stateFile.isFile) return json
-    json
-        .put("length", stateFile.length())
-        .put("last_modified_ms", stateFile.lastModified())
-        .put("age_ms", System.currentTimeMillis() - stateFile.lastModified())
-    try {
-        json.put("content", JSONObject(stateFile.readText()))
-    } catch (e: Exception) {
-        json.put("read_error", e.message ?: e.javaClass.simpleName)
-    }
-    return json
+private fun pendingResumeLaunchSummary(json: JSONObject): String {
+    val game = json.optString("game", "")
+    val savePath = json.optString("resume_save_path", "")
+    val callsign = json.optString("resume_callsign", "")
+    val token = json.optString("token", "")
+    return "game=$game path=$savePath callsign=$callsign token=$token"
 }
 
 private fun pendingResumeLaunchFile(context: Context): File = File(context.filesDir, PENDING_RESUME_LAUNCH_FILE)

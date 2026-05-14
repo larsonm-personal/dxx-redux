@@ -46,6 +46,7 @@ extern "C" {
 #include "piggy.h"
 #include "textures.h"
 #include "wall.h"
+#include "android_menu_scale.h"
 
 /* Android port: hires texture tracking counters from ogl.c */
 extern int r_hires_found;
@@ -993,19 +994,31 @@ extern "C" char *game_introspect_get_state(void)
 	/* -- Keyboard viewport offset state -------------------------- */
 	{
 		extern volatile int g_blit_y_offset;
-		extern int g_menu_scale_active;
 		/* These are in android_input.c -- declared static, so we
-		 * expose them via a helper instead of extern. */
+		 * expose them via a helper instead of extern */
 		extern int android_get_keyboard_state(int *kb_native, int *scr_native, int *field_y);
+		android_menu_scale_result menu_scale = {};
 		int kb_native = 0, scr_native = 0, field_y_val = 0;
+		int have_menu_scale = android_menu_scale_get_state(&menu_scale);
 		android_get_keyboard_state(&kb_native, &scr_native, &field_y_val);
 		json kb;
 		kb["keyboard_height_native"] = kb_native;
 		kb["screen_height_native"] = scr_native;
 		kb["active_input_field_y"] = field_y_val;
 		kb["blit_y_offset"] = (int) g_blit_y_offset;
-		kb["scale_blit_active"] = (bool) g_menu_scale_active;
+		kb["scale_blit_active"] = have_menu_scale && menu_scale.active;
 		j["keyboard_viewport"] = kb;
+
+		json scale;
+		scale["active"] = have_menu_scale && menu_scale.active;
+		scale["target_fill"] = android_menu_scale_get_target_fill();
+		scale["scale"] = menu_scale.scale;
+		scale["crop_left"] = menu_scale.crop_left;
+		scale["crop_top"] = menu_scale.crop_top;
+		scale["box"] = { { "x", menu_scale.box.x }, { "y", menu_scale.box.y }, { "w", menu_scale.box.w }, { "h", menu_scale.box.h } };
+		scale["src"] = { { "x", menu_scale.src.x }, { "y", menu_scale.src.y }, { "w", menu_scale.src.w }, { "h", menu_scale.src.h } };
+		scale["dst"] = { { "x", menu_scale.dst.x }, { "y", menu_scale.dst.y }, { "w", menu_scale.dst.w }, { "h", menu_scale.dst.h } };
+		j["menu_scale"] = scale;
 	}
 
 	/* -- Mounted mods (PhysFS search path .dxa entries) --------------- */

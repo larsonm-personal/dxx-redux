@@ -24,6 +24,11 @@
 [fixed] android TV doesn't use the gamepad for the on-screen keyboard. only "a" works as a button press to select the current character, d-pad or sticks don't move around chars
 
 # nice to haves
+[ ] resurrect the code that made sure game menus filled 90% of the visible area (or whatever it was) as was done for the software renderer near the beginning of the "cmake" branch (current branch). that code worked great. the intent is to, because this is a touch-first interface, ensure any and all game menus are touch-friendly by being drawn so that their height fills 90% of the visible height of the screen. by default, the menu size gets smaller as the screen resolution goes up, which means it's too small on many newer phones
+1. find the original plan files for the existing changes for the software renderer
+2. consider how they might be brought over to the opengl render path
+3. the math that was worked out for the software renderer was pretty good and took a lot of work. be sure to study it because I want to use it to short-circuit having to redo that work for opengl
+4. please study this and come up with the key files and changes needing to be done and create a work plan 
 [ ] need a full re-run of existing tests and cleanup and de-flaking
 [ ] d1 regression demos - the demo system was largely worked out with d2, d1 had only mirrored changes. probably has a few bugs left
 [ ] the android build system - dependency fetcher, build scripts, test scripts - needs to be ported to linux

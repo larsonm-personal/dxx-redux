@@ -55,6 +55,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef ANDROID
 #include "android_log.h"
+#include "android_menu_scale.h"
 #endif
 
 #ifdef OGL
@@ -568,6 +569,27 @@ void kconfig_draw(kc_menu *menu)
 	gr_set_fontcolor( BM_XRGB(28,28,28), -1 );
 	grd_curcanv->cv_font	= save_font;
 	gr_set_current_canvas( save_canvas );
+
+#ifdef ANDROID
+	/* Post-draw scale-blit for kconfig menus through the shared Android helper */
+	{
+		android_menu_scale_result menu_scale;
+		int source_x = ((SWIDTH - w) / 2) - BORDERX;
+		int source_y = ((SHEIGHT - h) / 2) - BORDERY;
+		int source_w = w + 2 * BORDERX;
+		int source_h = h + 2 * BORDERY;
+
+		if (android_menu_scale_compute_kconfig(source_x, source_y, source_w,
+		                                      source_h, SWIDTH, SHEIGHT,
+		                                      &menu_scale)) {
+			android_menu_scale_blit_screen(&menu_scale);
+
+			android_menu_scale_publish(&menu_scale);
+		} else {
+			android_menu_scale_clear();
+		}
+	}
+#endif
 }
 
 void kconfig_start_changing(kc_menu *menu)

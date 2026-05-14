@@ -653,19 +653,6 @@ class SetupActivity : ComponentActivity() {
         if (transientLaunchToken != null) {
             intent.putExtra(EXTRA_TRANSIENT_LAUNCH_TOKEN, transientLaunchToken)
         }
-        logGameStartupDiagnostic(
-            "setup-create-game-launch-intent",
-            JSONObject()
-                .put("game", game)
-                .putNullable("input_demo_replay_arg", cleanInputDemoReplayPath)
-                .putNullable("resume_save_path_arg", cleanResumeSavePath)
-                .putNullable("resume_callsign_arg", cleanResumeCallsign)
-                .putNullable("transient_launch_token", transientLaunchToken)
-                .putNullable("active_debug_log", DebugLog.currentFilePath())
-                .put("intent", intent.startupJson())
-                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
-                .put("game_activity_state", gameActivityStateDebugJson(this)),
-        )
         return intent
     }
 
@@ -675,14 +662,9 @@ class SetupActivity : ComponentActivity() {
         resolvedPath: String?,
         resolvedCallsign: String?,
     ) {
-        logGameStartupDiagnostic(
-            event,
-            JSONObject()
-                .put("candidate", candidate.toJson())
-                .putNullable("resolved_resume_save_path", resolvedPath)
-                .putNullable("resolved_resume_callsign", resolvedCallsign)
-                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
-                .put("game_activity_state", gameActivityStateDebugJson(this)),
+        LauncherDebugLog.log(
+            "$event ${resumeCandidateLogSummary(candidate)} " +
+                "resolved_path=${resolvedPath ?: ""} resolved_callsign=${resolvedCallsign ?: ""}",
         )
     }
 
@@ -3425,24 +3407,6 @@ private fun SetupScreen(
             resumeCandidate != null &&
             resumeOfferKey != null &&
             dismissedResumeKey != resumeOfferKey
-    LaunchedEffect(
-        refreshTrigger,
-        newestResumeCandidate?.path,
-        resumeCandidate?.path,
-        resumeOfferEnabled,
-        gameRunning,
-        isHashing,
-        dismissedResumeKey,
-        showResumePanel,
-    ) {
-        LauncherDebugLog.log(
-            "launcher-resume-offer-state refresh=$refreshTrigger enabled=$resumeOfferEnabled " +
-                "running=$gameRunning hashing=$isHashing d1_ready=$d1RequiredOk d2_ready=$d2RequiredOk " +
-                "raw=${resumeCandidateLogSummary(newestResumeCandidate)} " +
-                "accepted=${resumeCandidateLogSummary(resumeCandidate)} " +
-                "dismissed=${dismissedResumeKey == resumeOfferKey} show=$showResumePanel",
-        )
-    }
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
 
     // ── Startup: prune stale entries, then hash new/changed files ──

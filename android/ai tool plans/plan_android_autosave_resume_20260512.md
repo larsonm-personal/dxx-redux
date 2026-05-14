@@ -146,3 +146,9 @@ Design Android minimize and exit-to-launcher autosaves, launcher resume prompt, 
 	- [x] Keep launcher resume offers to metadata-backed Android saves so stale legacy manual saves do not mask broken autosaves
 	- [x] Add downloadable Game Logs diagnostics for native lifecycle autosave queue decisions
 	- [x] Run focused code quality and Android debug build validation
+
+17. Autosave/resume cleanup and extraction [done]
+	- [x] Remove JSON-heavy startup forensic diagnostics while keeping concise runtime logs
+	- [x] Keep minimal JNI argv logging and compact resume/autosave result logs
+	- [x] Extract duplicated Android resume pilot and autosave callsign repair helpers out of D1 and D2
+	- [x] Rebuild and rerun focused code quality checks

@@ -67,6 +67,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef ANDROID
 #include "android_crash_handler.h"
+#include "android_menu_scale.h"
 #endif
 
 
@@ -1636,109 +1637,49 @@ int newmenu_draw(window *wind, newmenu *menu)
 	}
 #endif
 
-#if defined(ANDROID) && !defined(OGL)
-	/* Scale-blit the menu content so it fills ~85% of the screen.
-	 * Two paths:
-	 * 1) Menus with an opaque box (filename==NULL): copy the drawn menu
-	 *    region, scale it up, write it back (background box scales with it).
-	 * 2) Menus with a fullscreen PCX background (filename!=NULL): render
-	 *    menu text to an offscreen bitmap filled with TRANSPARENCY_COLOR,
-	 *    scale that up, then masked-blit onto the screen so only text
-	 *    pixels overwrite the background — the PCX art stays untouched.
-	 *
-	 * At higher internal resolutions (e.g. 1280x720) the bitmap fonts stay
-	 * the same pixel size but BORDERX/BORDERY grow proportionally. To keep
-	 * the text filling the same fraction of the screen at every resolution,
-	 * we crop the excess border from the source before scaling. */
+#ifdef ANDROID
 	{
-		extern int g_menu_scale_src_x, g_menu_scale_src_y;
-		extern int g_menu_scale_src_w, g_menu_scale_src_h;
-		extern int g_menu_scale_dst_x, g_menu_scale_dst_y;
-		extern int g_menu_scale_dst_w, g_menu_scale_dst_h;
-		extern int g_menu_scale_active;
+		android_menu_scale_result menu_scale;
+		int source_x = menu->x - (menu->is_scroll_box ? (int)FSPACX(5) : 0);
+		int source_y = menu->y;
+		int source_w = menu->x + menu->w - source_x;
+		int source_h = menu->y + menu->h - source_y;
 
-		int sx1 = menu->x - (menu->is_scroll_box ? (int)FSPACX(5) : 0);
-		int sy1 = menu->y;
-		int sx2 = menu->x + menu->w;
-		int sy2 = menu->y + menu->h;
-		int sw = sx2 - sx1;
-		int sh = sy2 - sy1;
-
-		/* Crop excess border: keep 15 px of padding around content.
-		 * BORDERX/BORDERY grow with resolution; the text does not.
-		 * By trimming to a fixed padding, the text-to-source ratio
-		 * stays constant so the 85%-of-screen target yields the same
-		 * visual text size at every resolution. */
-		int crop_pad = 15;
-		int crop_l = BORDERX - crop_pad; if (crop_l < 0) crop_l = 0;
-		int crop_t = BORDERY - crop_pad; if (crop_t < 0) crop_t = 0;
-		int crop_r = crop_l;
-		int crop_b = crop_t;
-		int cw = sw - crop_l - crop_r; if (cw < 1) cw = sw;
-		int ch = sh - crop_t - crop_b; if (ch < 1) ch = sh;
-
-		float scx = 0.85f * SWIDTH  / cw;
-		float scy = 0.85f * SHEIGHT / ch;
-		float scale = (scx < scy) ? scx : scy;
-
-		if (scale > 1.05f && sw > 0 && sh > 0) {
-			/* Clamp source to screen */
-			if (sx1 < 0) { sw += sx1; sx1 = 0; }
-			if (sy1 < 0) { sh += sy1; sy1 = 0; }
-			if (sx1 + sw > SWIDTH)  sw = SWIDTH  - sx1;
-			if (sy1 + sh > SHEIGHT) sh = SHEIGHT - sy1;
-
-			/* Recompute crops if source was clamped */
-			if (crop_l > sw) crop_l = 0;
-			if (crop_t > sh) crop_t = 0;
-			crop_r = crop_l;
-			crop_b = crop_t;
-			cw = sw - crop_l - crop_r; if (cw < 1) cw = sw;
-			ch = sh - crop_t - crop_b; if (ch < 1) ch = sh;
-
-			int dw = (int)(cw * scale);
-			int dh = (int)(ch * scale);
-			int dx = (SWIDTH  - dw) / 2;
-			int dy = (SHEIGHT - dh) / 2;
-
+		if (android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
+		                                      SWIDTH, SHEIGHT, BORDERX, BORDERY,
+		                                      &menu_scale)) {
 			if (menu->filename != NULL) {
-				/* PCX background: build an offscreen text-only bitmap.
-				 * Fill with 255 (TRANSPARENCY_COLOR), draw all menu
-				 * content onto it, scale up, masked-blit.
-				 * First re-draw the PCX to erase the small text that
-				 * was already rendered by the normal draw path above. */
 				gr_set_current_canvas(NULL);
 				show_fullscr(&nm_background1);
 
 				grs_bitmap tmp;
-				gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, sw, sh, sw);
-				memset(tmp.bm_data, 255, sw * sh);
+				gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, menu_scale.box.w,
+				                     menu_scale.box.h, menu_scale.box.w);
+				memset(tmp.bm_data, 255, menu_scale.box.w * menu_scale.box.h);
 
-				/* Set up a canvas on the temp bitmap and redraw menu content */
 				{
 					grs_canvas off_canvas;
-					gr_init_canvas(&off_canvas, tmp.bm_data, BM_LINEAR, sw, sh);
+					gr_init_canvas(&off_canvas, tmp.bm_data, BM_LINEAR,
+					               menu_scale.box.w, menu_scale.box.h);
 					grs_canvas *prev = grd_curcanv;
+					int origin_x = menu->x - menu_scale.box.x;
+					int origin_y = menu->y - menu_scale.box.y;
+					int title_height = 0;
 					gr_set_current_canvas(&off_canvas);
-
-					/* Adjust coordinates: items are relative to menu->x,y
-					 * but our canvas origin is sx1,sy1 */
-					int ox = menu->x - sx1;
-					int oy = menu->y - sy1;
-					int tth = 0;
 
 					if (menu->title) {
 						gr_set_curfont(HUGE_FONT);
 						gr_set_fontcolor(BM_XRGB(31,31,31), -1);
 						gr_get_string_size(menu->title, &string_width, &string_height, &average_width);
-						tth = string_height;
-						gr_string(ox + (menu->w - string_width) / 2, oy + BORDERY, menu->title);
+						title_height = string_height;
+						gr_string(origin_x + (menu->w - string_width) / 2, origin_y + BORDERY, menu->title);
 					}
 					if (menu->subtitle) {
 						gr_set_curfont(MEDIUM3_FONT);
 						gr_set_fontcolor(BM_XRGB(21,21,21), -1);
 						gr_get_string_size(menu->subtitle, &string_width, &string_height, &average_width);
-						gr_string(ox + (menu->w - string_width) / 2, oy + BORDERY + tth, menu->subtitle);
+						gr_string(origin_x + (menu->w - string_width) / 2,
+						          origin_y + BORDERY + title_height, menu->subtitle);
 					}
 
 					gr_set_curfont(menu->tiny_mode ? GAME_FONT : MEDIUM1_FONT);
@@ -1748,48 +1689,28 @@ int newmenu_draw(window *wind, newmenu *menu)
 					gr_set_current_canvas(prev);
 				}
 
-				/* Crop the offscreen bitmap to content area, then
-				 * masked scale-blit onto screen */
 				{
 					grs_bitmap cropped;
-					gr_init_bitmap_alloc(&cropped, BM_LINEAR, 0, 0, cw, ch, cw);
-					for (int r = 0; r < ch; r++)
-						memcpy(cropped.bm_data + r * cw,
-						       tmp.bm_data + (crop_t + r) * sw + crop_l, cw);
+					gr_init_bitmap_alloc(&cropped, BM_LINEAR, 0, 0,
+					                     menu_scale.src.w, menu_scale.src.h,
+					                     menu_scale.src.w);
+					for (int row = 0; row < menu_scale.src.h; row++)
+						memcpy(cropped.bm_data + row * menu_scale.src.w,
+						       tmp.bm_data + (menu_scale.crop_top + row) * menu_scale.box.w +
+						       menu_scale.crop_left,
+						       menu_scale.src.w);
 
-					grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
-					gr_bitmap_scale_to_masked(&cropped, &sub->cv_bitmap);
-					gr_free_sub_canvas(sub);
+					android_menu_scale_blit_bitmap(&cropped, &menu_scale, 1);
 					gr_free_bitmap_data(&cropped);
 				}
 				gr_free_bitmap_data(&tmp);
 			} else {
-				/* Opaque-box menu: copy the content region and scale */
-				grs_bitmap tmp;
-				gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, cw, ch, cw);
-				{
-					unsigned char *scr = grd_curscreen->sc_canvas.cv_bitmap.bm_data;
-					int rowsize = grd_curscreen->sc_canvas.cv_bitmap.bm_rowsize;
-					for (int r = 0; r < ch; r++)
-						memcpy(tmp.bm_data + r * cw,
-						       scr + (sy1 + crop_t + r) * rowsize + (sx1 + crop_l), cw);
-				}
-				{
-					grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
-					gr_bitmap_scale_to(&tmp, &sub->cv_bitmap);
-					gr_free_sub_canvas(sub);
-				}
-				gr_free_bitmap_data(&tmp);
+				android_menu_scale_blit_screen(&menu_scale);
 			}
 
-			/* Publish rects for touch remapping */
-			g_menu_scale_src_x = sx1 + crop_l; g_menu_scale_src_y = sy1 + crop_t;
-			g_menu_scale_src_w = cw;            g_menu_scale_src_h = ch;
-			g_menu_scale_dst_x = dx;  g_menu_scale_dst_y = dy;
-			g_menu_scale_dst_w = dw;  g_menu_scale_dst_h = dh;
-			g_menu_scale_active = 1;
+			android_menu_scale_publish(&menu_scale);
 		} else {
-			g_menu_scale_active = 0;
+			android_menu_scale_clear();
 		}
 	}
 #endif
@@ -1991,9 +1912,8 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 #ifdef ANDROID
 			{
 				extern void android_hide_keyboard(void);
-				extern int g_menu_scale_active;
 				android_hide_keyboard();
-				g_menu_scale_active = 0;
+				android_menu_scale_clear();
 			}
 #endif
 			d_free(menu);
@@ -2546,76 +2466,22 @@ int listbox_draw(window *wind, listbox *lb)
 			(*lb->listbox_callback)(lb, &event, lb->userdata);
 	}
 
-#if defined(ANDROID) && !defined(OGL)
+#ifdef ANDROID
 	{
-		extern int g_menu_scale_src_x, g_menu_scale_src_y;
-		extern int g_menu_scale_src_w, g_menu_scale_src_h;
-		extern int g_menu_scale_dst_x, g_menu_scale_dst_y;
-		extern int g_menu_scale_dst_w, g_menu_scale_dst_h;
-		extern int g_menu_scale_active;
+		android_menu_scale_result menu_scale;
+		int source_x = lb->box_x - BORDERX;
+		int source_y = lb->box_y - lb->title_height - BORDERY;
+		int source_w = lb->box_w + 2 * BORDERX;
+		int source_h = lb->height + lb->title_height + 2 * BORDERY;
 
-		int sx1 = lb->box_x - BORDERX;
-		int sy1 = lb->box_y - lb->title_height - BORDERY;
-		int sx2 = lb->box_x + lb->box_w + BORDERX;
-		int sy2 = lb->box_y + lb->height + BORDERY;
-		int sw = sx2 - sx1;
-		int sh = sy2 - sy1;
+		if (android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
+		                                      SWIDTH, SHEIGHT, BORDERX, BORDERY,
+		                                      &menu_scale)) {
+			android_menu_scale_blit_screen(&menu_scale);
 
-		/* Crop excess border (same logic as newmenu path) */
-		int crop_pad = 15;
-		int crop_l = BORDERX - crop_pad; if (crop_l < 0) crop_l = 0;
-		int crop_t = BORDERY - crop_pad; if (crop_t < 0) crop_t = 0;
-		int crop_r = crop_l;
-		int crop_b = crop_t;
-		int cw = sw - crop_l - crop_r; if (cw < 1) cw = sw;
-		int ch = sh - crop_t - crop_b; if (ch < 1) ch = sh;
-
-		float scx = 0.85f * SWIDTH  / cw;
-		float scy = 0.85f * SHEIGHT / ch;
-		float scale = (scx < scy) ? scx : scy;
-
-		if (scale > 1.05f && sw > 0 && sh > 0) {
-			if (sx1 < 0) { sw += sx1; sx1 = 0; }
-			if (sy1 < 0) { sh += sy1; sy1 = 0; }
-			if (sx1 + sw > SWIDTH)  sw = SWIDTH  - sx1;
-			if (sy1 + sh > SHEIGHT) sh = SHEIGHT - sy1;
-
-			if (crop_l > sw) crop_l = 0;
-			if (crop_t > sh) crop_t = 0;
-			crop_r = crop_l;
-			crop_b = crop_t;
-			cw = sw - crop_l - crop_r; if (cw < 1) cw = sw;
-			ch = sh - crop_t - crop_b; if (ch < 1) ch = sh;
-
-			int dw = (int)(cw * scale);
-			int dh = (int)(ch * scale);
-			int dx = (SWIDTH  - dw) / 2;
-			int dy = (SHEIGHT - dh) / 2;
-
-			grs_bitmap tmp;
-			gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, cw, ch, cw);
-			{
-				unsigned char *scr = grd_curscreen->sc_canvas.cv_bitmap.bm_data;
-				int rowsize = grd_curscreen->sc_canvas.cv_bitmap.bm_rowsize;
-				for (int r = 0; r < ch; r++)
-					memcpy(tmp.bm_data + r * cw,
-					       scr + (sy1 + crop_t + r) * rowsize + (sx1 + crop_l), cw);
-			}
-
-			{
-				grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
-				gr_bitmap_scale_to(&tmp, &sub->cv_bitmap);
-				gr_free_sub_canvas(sub);
-			}
-			gr_free_bitmap_data(&tmp);
-
-			g_menu_scale_src_x = sx1 + crop_l; g_menu_scale_src_y = sy1 + crop_t;
-			g_menu_scale_src_w = cw;            g_menu_scale_src_h = ch;
-			g_menu_scale_dst_x = dx;  g_menu_scale_dst_y = dy;
-			g_menu_scale_dst_w = dw;  g_menu_scale_dst_h = dh;
-			g_menu_scale_active = 1;
+			android_menu_scale_publish(&menu_scale);
 		} else {
-			g_menu_scale_active = 0;
+			android_menu_scale_clear();
 		}
 	}
 #endif
@@ -2730,8 +2596,7 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 		case EVENT_WINDOW_CLOSE:
 #ifdef ANDROID
 			{
-				extern int g_menu_scale_active;
-				g_menu_scale_active = 0;
+				android_menu_scale_clear();
 			}
 #endif
 			d_free(lb);

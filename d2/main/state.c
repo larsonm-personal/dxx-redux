@@ -74,6 +74,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #ifdef __ANDROID__
+#include "android_resume_pilot.h"
 #include "android_save_meta.h"
 #include "coop_save.h"
 #include "coop_indicator_lines.h"
@@ -187,88 +188,6 @@ static int state_read_android_save_meta(PHYSFS_file *fp, PHYSFS_sint64 file_len,
 fail:
 	PHYSFS_seek(fp, saved_pos);
 	return 0;
-}
-
-static void state_android_copy_log_string(char *out, size_t out_size,
-	const char *in, size_t in_size)
-{
-	size_t i = 0;
-
-	if (!out_size)
-		return;
-	while (i + 1 < out_size && i < in_size && in[i]) {
-		unsigned char ch = (unsigned char)in[i];
-		out[i] = (ch >= 32 && ch < 127) ? (char)ch : '?';
-		i++;
-	}
-	out[i] = '\0';
-}
-
-static int state_android_digest_save_file(PHYSFS_file *fp, PHYSFS_sint64 *out_len,
-	unsigned *out_hash)
-{
-	PHYSFS_sint64 saved_pos = PHYSFS_tell(fp);
-	PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
-	PHYSFS_sint64 remaining = file_len;
-	unsigned char buf[4096];
-	unsigned hash = 2166136261u;
-
-	if (file_len < 0 || !PHYSFS_seek(fp, 0))
-		goto fail;
-	while (remaining > 0) {
-		PHYSFS_uint32 want = (remaining > (PHYSFS_sint64)sizeof(buf)) ?
-			(PHYSFS_uint32)sizeof(buf) : (PHYSFS_uint32)remaining;
-		PHYSFS_sint64 got = PHYSFS_read(fp, buf, 1, want);
-		PHYSFS_uint32 i;
-
-		if (got != want)
-			goto fail;
-		for (i = 0; i < want; i++)
-			hash = (hash ^ buf[i]) * 16777619u;
-		remaining -= got;
-	}
-	if (!PHYSFS_seek(fp, saved_pos))
-		return 0;
-	*out_len = file_len;
-	*out_hash = hash;
-	return 1;
-
-fail:
-	PHYSFS_seek(fp, saved_pos);
-	return 0;
-}
-
-static void state_android_log_save_metadata(const char *filename, PHYSFS_file *fp)
-{
-	PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
-	android_save_meta_disk meta;
-	unsigned save_hash = 0;
-	int have_digest = state_android_digest_save_file(fp, &file_len, &save_hash);
-	int have_meta = state_read_android_save_meta(fp, file_len, &meta);
-
-	if (have_meta) {
-		char callsign[ANDROID_SAVE_META_CALLSIGN_LEN + 1];
-		char desc[ANDROID_SAVE_META_DESC_LEN + 1];
-		char mission[ANDROID_SAVE_META_MISSION_LEN + 1];
-		char level_name[ANDROID_SAVE_META_LEVEL_NAME_LEN + 1];
-
-		state_android_copy_log_string(callsign, sizeof(callsign), meta.callsign, sizeof(meta.callsign));
-		state_android_copy_log_string(desc, sizeof(desc), meta.description, sizeof(meta.description));
-		state_android_copy_log_string(mission, sizeof(mission), meta.mission_name, sizeof(meta.mission_name));
-		state_android_copy_log_string(level_name, sizeof(level_name), meta.level_name, sizeof(meta.level_name));
-		debug_log(DLOG_GAME,
-			"restore save metadata: game=d2 file='%s' file_len=%lld digest_ok=%d fnv1a32=%08x meta_game=%u kind=%u wall=%llu callsign='%s' desc='%s' mission='%s' level=%d level_name='%s' level_seconds=%u total_seconds=%u thumb_format=%u thumb=%ux%u",
-			filename, (long long)file_len, have_digest, save_hash, (unsigned)meta.game_id,
-			(unsigned)meta.save_kind, (unsigned long long)meta.wall_clock_unix_seconds,
-			callsign, desc, mission, (int)meta.level_num, level_name,
-			(unsigned)meta.level_seconds, (unsigned)meta.total_seconds,
-			(unsigned)meta.thumbnail_format, (unsigned)meta.thumbnail_width,
-			(unsigned)meta.thumbnail_height);
-	} else {
-		debug_log(DLOG_GAME,
-			"restore save metadata: game=d2 file='%s' file_len=%lld digest_ok=%d fnv1a32=%08x have_android_meta=0",
-			filename, (long long)file_len, have_digest, save_hash);
-	}
 }
 
 static int g_android_save_meta_kind = ANDROID_SAVE_META_KIND_MANUAL;
@@ -1916,68 +1835,6 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 }
 
 #ifdef __ANDROID__
-static int android_is_real_pilot_callsign(const char *callsign)
-{
-	return callsign && callsign[0] && strcmp(callsign, COOP_AUTOSAVE_CALLSIGN);
-}
-
-static int android_find_fallback_pilot_callsign(char *callsign)
-{
-	char **list;
-	char **entry;
-	int found = 0;
-	static const char *const types[] = { ".plr", NULL };
-
-	if (!callsign)
-		return 0;
-	callsign[0] = '\0';
-	list = PHYSFSX_findFiles(GameArg.SysUsePlayersDir ? "Players/" : "", types);
-	if (!list)
-		return 0;
-	for (entry = list; *entry; entry++) {
-		char candidate[CALLSIGN_LEN + 1];
-		char *dot = strstr(*entry, ".plr");
-		size_t len;
-
-		if (!dot || dot == *entry || dot[4])
-			continue;
-		len = (size_t) (dot - *entry);
-		if (len > CALLSIGN_LEN)
-			continue;
-		memset(candidate, 0, sizeof(candidate));
-		memcpy(candidate, *entry, len);
-		if (!android_is_real_pilot_callsign(candidate))
-			continue;
-		strncpy(callsign, candidate, CALLSIGN_LEN);
-		callsign[CALLSIGN_LEN] = '\0';
-		found = 1;
-		break;
-	}
-	PHYSFS_freeList(list);
-	return found;
-}
-
-static void android_repair_player_callsign_for_autosave(const char *game_name)
-{
-	char fallback[CALLSIGN_LEN + 1];
-	const char *repair_callsign = GameCfg.LastPlayer;
-
-	if (android_is_real_pilot_callsign(Players[Player_num].callsign))
-		return;
-	if (!android_is_real_pilot_callsign(repair_callsign)) {
-		if (android_find_fallback_pilot_callsign(fallback))
-			repair_callsign = fallback;
-		else
-			repair_callsign = "player";
-	}
-	debug_log(DLOG_GAME, "autosave repairing %s pilot callsign current='%s' last='%s' repair='%s'",
-		game_name, Players[Player_num].callsign, GameCfg.LastPlayer, repair_callsign);
-	strncpy(Players[Player_num].callsign, repair_callsign, CALLSIGN_LEN);
-	Players[Player_num].callsign[CALLSIGN_LEN] = '\0';
-	strncpy(GameCfg.LastPlayer, repair_callsign, CALLSIGN_LEN);
-	GameCfg.LastPlayer[CALLSIGN_LEN] = '\0';
-}
-
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 {
 	int result;
@@ -2487,7 +2344,6 @@ int state_restore_all_sub(char *filename, int secret_restore)
 #ifdef __ANDROID__
 	debug_log(DLOG_GAME, "restore open: game=d2 file='%s' current_callsign='%s' player_num=%d game_mode=%d secret_restore=%d",
 		filename, Players[Player_num].callsign, Player_num, Game_mode, secret_restore);
-	state_android_log_save_metadata(filename, fp);
 #endif
 
 //Read id
@@ -2598,20 +2454,6 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	GameTime64 = (fix64)tmptime32;
 	if (input_demo_replay_has_checkpoint())
 		GameTime64 += input_demo_replay_checkpoint_start_gt();
-#ifdef __ANDROID__
-	{
-		char desc_log[DESC_LENGTH + 1];
-		char mission_log[sizeof(mission)];
-
-		state_android_copy_log_string(desc_log, sizeof(desc_log), desc, DESC_LENGTH);
-		state_android_copy_log_string(mission_log, sizeof(mission_log), mission, sizeof(mission));
-		debug_log(DLOG_GAME,
-			"restore save header: game=d2 file='%s' version=%d swap=%d desc='%s' mission='%s' level=%d gametime=%d current_callsign='%s' game_mode=%d secret_restore=%d",
-			filename, version, swap, desc_log, mission_log, current_level,
-			(int)tmptime32, Players[Player_num].callsign, Game_mode,
-			secret_restore);
-	}
-#endif
 
 // Start new game....
 	if (!(Game_mode & GM_MULTI_COOP))
@@ -2680,13 +2522,6 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	strcpy( Players[Player_num].callsign, org_callsign );
 	if (Game_mode & GM_MULTI_COOP)
 		Players[Player_num].objnum = coop_org_objnum;
-#ifdef __ANDROID__
-	debug_log(DLOG_GAME,
-		"restore player state: game=d2 file='%s' callsign='%s' level=%d lives=%d objnum=%d n_players=%d game_mode=%d secret_restore=%d",
-		filename, Players[Player_num].callsign, Players[Player_num].level,
-		Players[Player_num].lives, Players[Player_num].objnum, N_players,
-		Game_mode, secret_restore);
-#endif
 
 // Restore the weapon states
 	PHYSFS_read(fp, &Players[Player_num].primary_weapon, sizeof(sbyte), 1);

@@ -516,20 +516,9 @@ class MainActivity :
         } else {
             DebugLog.init(this)
         }
-        logGameStartupDiagnostic(
-            "main-on-create-before-transient-refresh",
-            JSONObject()
-                .put("intent", intent.startupJson())
-                .putNullable("active_debug_log", DebugLog.currentFilePath())
-                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
-                .put("game_activity_state", gameActivityStateDebugJson(this)),
-        )
         refreshTransientLaunchState(intent)
         if (shouldRedirectConsumedTransientLaunch()) {
-            logGameStartupDiagnostic(
-                "main-on-create-redirect-consumed-transient-launch",
-                transientLaunchDebugJson(intent),
-            )
+            Log.i("MainActivity", "Transient launch token already consumed on create; returning to setup")
             redirectConsumedTransientLaunchToSetup()
             return
         }
@@ -553,14 +542,6 @@ class MainActivity :
 
         // Sync C-side per-category enable flags with Kotlin prefs
         syncDebugLogPrefs()
-        logGameStartupDiagnostic(
-            "main-on-create-after-native-log-sync",
-            transientLaunchDebugJson(intent)
-                .put("game", gameVariantId)
-                .put("lib", libName)
-                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
-                .put("game_activity_state", gameActivityStateDebugJson(this)),
-        )
 
         // Rewrite audio playlist in the game process so SAF fds are valid.
         // SetupActivity runs in the default process; this activity runs in
@@ -1275,25 +1256,14 @@ class MainActivity :
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        logGameStartupDiagnostic(
-            "main-on-new-intent-before-transient-refresh",
-            JSONObject()
-                .put("intent", intent.startupJson())
-                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
-                .put("game_activity_state", gameActivityStateDebugJson(this)),
-        )
         refreshTransientLaunchState(intent)
         if (gameStarted && hasPendingTransientLaunchRequest()) {
             Log.w("MainActivity", "Transient launch request delivered to a running game; leaving it pending")
-            logGameStartupDiagnostic("main-on-new-intent-running-game-left-pending", transientLaunchDebugJson(intent))
             clearTransientLaunchExtrasFromIntent(intent)
             return
         }
         if (shouldRedirectConsumedTransientLaunch()) {
-            logGameStartupDiagnostic(
-                "main-on-new-intent-redirect-consumed-transient-launch",
-                transientLaunchDebugJson(intent),
-            )
+            Log.i("MainActivity", "Transient launch token already consumed on new intent; returning to setup")
             redirectConsumedTransientLaunchToSetup()
             return
         }
@@ -2071,24 +2041,7 @@ class MainActivity :
                     "callsign=${pendingResumeCallsign ?: ""} token=${pendingTransientLaunchToken ?: ""}",
             )
         }
-        logGameStartupDiagnostic(
-            "main-refresh-transient-launch-state",
-            transientLaunchDebugJson(sourceIntent)
-                .put("launch_game", launchGame)
-                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
-                .put("game_activity_state", gameActivityStateDebugJson(this)),
-        )
     }
-
-    private fun transientLaunchDebugJson(sourceIntent: Intent): JSONObject =
-        JSONObject()
-            .put("intent", sourceIntent.startupJson())
-            .putNullable("pending_input_demo_replay_path", pendingInputDemoReplayPath)
-            .putNullable("pending_resume_save_path", pendingResumeSavePath)
-            .putNullable("pending_resume_callsign", pendingResumeCallsign)
-            .putNullable("pending_transient_launch_token", pendingTransientLaunchToken)
-            .put("game_started", gameStarted)
-            .put("game_variant_id", gameVariantId)
 
     private fun hasPendingTransientLaunchRequest(): Boolean =
         pendingInputDemoReplayPath != null || pendingResumeSavePath != null
@@ -2133,14 +2086,6 @@ class MainActivity :
     @Suppress("unused")
     fun consumeResumeSavePath(): String? =
         pendingResumeSavePath.also { savePath ->
-            logGameStartupDiagnostic(
-                "main-consume-resume-save-path",
-                JSONObject()
-                    .putNullable("return_value", savePath)
-                    .putNullable("pending_resume_callsign", pendingResumeCallsign)
-                    .putNullable("pending_transient_launch_token", pendingTransientLaunchToken)
-                    .put("pending_resume_launch_before_clear", pendingResumeLaunchDebugJson(this)),
-            )
             if (savePath != null) clearPendingResumeLaunch(this, pendingTransientLaunchToken)
             pendingResumeSavePath = null
         }
@@ -2148,12 +2093,6 @@ class MainActivity :
     @Suppress("unused")
     fun consumeResumeCallsign(): String? =
         pendingResumeCallsign.also { callsign ->
-            logGameStartupDiagnostic(
-                "main-consume-resume-callsign",
-                JSONObject()
-                    .putNullable("return_value", callsign)
-                    .putNullable("pending_transient_launch_token", pendingTransientLaunchToken),
-            )
             pendingResumeCallsign = null
         }
 

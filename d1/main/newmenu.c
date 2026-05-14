@@ -64,6 +64,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef ANDROID
 #include "android_crash_handler.h"
+#include "android_menu_scale.h"
 #endif
 
 
@@ -1625,6 +1626,84 @@ int newmenu_draw(window *wind, newmenu *menu)
 	}
 #endif
 
+#ifdef ANDROID
+	{
+		android_menu_scale_result menu_scale;
+		int source_x = menu->x - (menu->is_scroll_box ? (int)FSPACX(5) : 0);
+		int source_y = menu->y;
+		int source_w = menu->x + menu->w - source_x;
+		int source_h = menu->y + menu->h - source_y;
+
+		if (android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
+		                                      SWIDTH, SHEIGHT, BORDERX, BORDERY,
+		                                      &menu_scale)) {
+			if (menu->filename != NULL) {
+				gr_set_current_canvas(NULL);
+				show_fullscr(&nm_background1);
+
+				grs_bitmap tmp;
+				gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, menu_scale.box.w,
+				                     menu_scale.box.h, menu_scale.box.w);
+				memset(tmp.bm_data, 255, menu_scale.box.w * menu_scale.box.h);
+
+				{
+					grs_canvas off_canvas;
+					gr_init_canvas(&off_canvas, tmp.bm_data, BM_LINEAR,
+					               menu_scale.box.w, menu_scale.box.h);
+					grs_canvas *prev = grd_curcanv;
+					int origin_x = menu->x - menu_scale.box.x;
+					int origin_y = menu->y - menu_scale.box.y;
+					int title_height = 0;
+					gr_set_current_canvas(&off_canvas);
+
+					if (menu->title) {
+						gr_set_curfont(HUGE_FONT);
+						gr_set_fontcolor(BM_XRGB(31,31,31), -1);
+						gr_get_string_size(menu->title, &string_width, &string_height, &average_width);
+						title_height = string_height;
+						gr_string(origin_x + (menu->w - string_width) / 2, origin_y + BORDERY, menu->title);
+					}
+					if (menu->subtitle) {
+						gr_set_curfont(MEDIUM3_FONT);
+						gr_set_fontcolor(BM_XRGB(21,21,21), -1);
+						gr_get_string_size(menu->subtitle, &string_width, &string_height, &average_width);
+						gr_string(origin_x + (menu->w - string_width) / 2,
+						          origin_y + BORDERY + title_height, menu->subtitle);
+					}
+
+					gr_set_curfont(menu->tiny_mode ? GAME_FONT : MEDIUM1_FONT);
+					for (i = menu->scroll_offset; i < menu->max_displayable + menu->scroll_offset; i++)
+						draw_item(&menu->items[i], (i == menu->citem && !menu->all_text), menu->tiny_mode, menu->tabs_flag, menu->scroll_offset);
+
+					gr_set_current_canvas(prev);
+				}
+
+				{
+					grs_bitmap cropped;
+					gr_init_bitmap_alloc(&cropped, BM_LINEAR, 0, 0,
+					                     menu_scale.src.w, menu_scale.src.h,
+					                     menu_scale.src.w);
+					for (int row = 0; row < menu_scale.src.h; row++)
+						memcpy(cropped.bm_data + row * menu_scale.src.w,
+						       tmp.bm_data + (menu_scale.crop_top + row) * menu_scale.box.w +
+						       menu_scale.crop_left,
+						       menu_scale.src.w);
+
+					android_menu_scale_blit_bitmap(&cropped, &menu_scale, 1);
+					gr_free_bitmap_data(&cropped);
+				}
+				gr_free_bitmap_data(&tmp);
+			} else {
+				android_menu_scale_blit_screen(&menu_scale);
+			}
+
+			android_menu_scale_publish(&menu_scale);
+		} else {
+			android_menu_scale_clear();
+		}
+	}
+#endif
+
 	return 1;
 }
 
@@ -1817,9 +1896,8 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 #ifdef ANDROID
 			{
 				extern void android_hide_keyboard(void);
-				extern int g_menu_scale_active;
 				android_hide_keyboard();
-				g_menu_scale_active = 0;
+				android_menu_scale_clear();
 			}
 #endif
 			d_free(menu);
@@ -2375,6 +2453,26 @@ int listbox_draw(window *wind, listbox *lb)
 			(*lb->listbox_callback)(lb, &event, lb->userdata);
 	}
 
+#ifdef ANDROID
+	{
+		android_menu_scale_result menu_scale;
+		int source_x = lb->box_x - BORDERX;
+		int source_y = lb->box_y - lb->title_height - BORDERY;
+		int source_w = lb->box_w + 2 * BORDERX;
+		int source_h = lb->height + lb->title_height + 2 * BORDERY;
+
+		if (android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
+		                                      SWIDTH, SHEIGHT, BORDERX, BORDERY,
+		                                      &menu_scale)) {
+			android_menu_scale_blit_screen(&menu_scale);
+
+			android_menu_scale_publish(&menu_scale);
+		} else {
+			android_menu_scale_clear();
+		}
+	}
+#endif
+
 	return 1;
 }
 
@@ -2485,8 +2583,7 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 		case EVENT_WINDOW_CLOSE:
 #ifdef ANDROID
 			{
-				extern int g_menu_scale_active;
-				g_menu_scale_active = 0;
+				android_menu_scale_clear();
 			}
 #endif
 			d_free(lb);

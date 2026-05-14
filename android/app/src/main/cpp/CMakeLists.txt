@@ -555,6 +555,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_loading_progress.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
@@ -674,6 +676,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_loading_progress.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c

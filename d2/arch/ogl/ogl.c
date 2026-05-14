@@ -3546,6 +3546,74 @@ bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scal
 	return 0;
 }
 
+void ogl_copy_screen_region_scaled(int sx, int sy, int sw, int sh, int dx, int dy, int dw, int dh)
+{
+	GLuint texture;
+	int tex_w, tex_h;
+	GLfloat u2, v2, xo, yo, xf, yf;
+	GLfloat color_array[] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+		1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+	GLfloat texcoord_array[] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+	GLfloat vertex_array[] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+	if (sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0)
+		return;
+
+	sx += grd_curcanv->cv_bitmap.bm_x;
+	sy += grd_curcanv->cv_bitmap.bm_y;
+	dx += grd_curcanv->cv_bitmap.bm_x;
+	dy += grd_curcanv->cv_bitmap.bm_y;
+	tex_w = pow2ize(sw);
+	tex_h = pow2ize(sh);
+	u2 = (GLfloat)sw / (GLfloat)tex_w;
+	v2 = (GLfloat)sh / (GLfloat)tex_h;
+
+	glGenTextures(1, &texture);
+	OGL_BINDTEXTURE(texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, ogl_rgba_internalformat, tex_w, tex_h, 0,
+	             GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sx, last_height - sy - sh, sw, sh);
+
+	xo = dx / (float)last_width;
+	xf = (dw + dx) / (float)last_width;
+	yo = 1.0 - dy / (float)last_height;
+	yf = 1.0 - (dh + dy) / (float)last_height;
+	vertex_array[0] = xo;
+	vertex_array[1] = yo;
+	vertex_array[2] = xf;
+	vertex_array[3] = yo;
+	vertex_array[4] = xf;
+	vertex_array[5] = yf;
+	vertex_array[6] = xo;
+	vertex_array[7] = yf;
+	texcoord_array[0] = 0.0;
+	texcoord_array[1] = 0.0;
+	texcoord_array[2] = u2;
+	texcoord_array[3] = 0.0;
+	texcoord_array[4] = u2;
+	texcoord_array[5] = v2;
+	texcoord_array[6] = 0.0;
+	texcoord_array[7] = v2;
+
+	OGL_ENABLE(TEXTURE_2D);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, vertex_array);
+	glColorPointer(4, GL_FLOAT, 0, color_array);
+	glTexCoordPointer(2, GL_FLOAT, 0, texcoord_array);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	OGL_BINDTEXTURE(0);
+	glDeleteTextures(1, &texture);
+}
+
 void ogl_update_window_clip()
 {
 	extern int Window_clip_left, Window_clip_top, Window_clip_right, Window_clip_bot;
