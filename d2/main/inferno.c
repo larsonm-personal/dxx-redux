@@ -84,6 +84,10 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "movie.h"
 #include "playsave.h"
 #include "state.h"
+#ifdef __ANDROID__
+#include "coop_save.h"
+#include "android_log.h"
+#endif
 #include "input_demo_start.h"
 #include "collide.h"
 #include "newdemo.h"
@@ -259,9 +263,72 @@ static int maybe_dump_classic_demo_json(void)
 	return 0;
 }
 
+#ifdef __ANDROID__
+static int android_load_pilot_from_resume_save(const char *save_path)
+{
+	char save_callsign[CALLSIGN_LEN + 1];
+	char filename[32] = "";
+	int j;
+
+	debug_log(DLOG_GAME, "startup resume pilot prep: game=d2 path='%s' current_callsign='%s' use_players_dir=%d",
+		save_path ? save_path : "", Players[Player_num].callsign, GameArg.SysUsePlayersDir);
+	if (!save_path || !save_path[0]) {
+		debug_log(DLOG_GAME, "startup resume pilot prep failed: empty save path");
+		return 0;
+	}
+	if (!state_get_save_file_callsign((char *)save_path, save_callsign, sizeof(save_callsign))) {
+		con_printf(CON_URGENT, "startup resume: could not read save callsign\n");
+		debug_log(DLOG_GAME, "startup resume pilot prep: could not read save callsign; fallback_current='%s'",
+			Players[Player_num].callsign);
+		return Players[Player_num].callsign[0] != '\0' &&
+		       strcmp(Players[Player_num].callsign, COOP_AUTOSAVE_CALLSIGN);
+	}
+	debug_log(DLOG_GAME, "startup resume pilot prep: save_callsign='%s' current_callsign='%s'",
+		save_callsign, Players[Player_num].callsign);
+	if (!strcmp(save_callsign, COOP_AUTOSAVE_CALLSIGN)) {
+		con_printf(CON_URGENT, "startup resume: save uses sentinel pilot '%s'\n", save_callsign);
+		debug_log(DLOG_GAME, "startup resume pilot prep: save uses sentinel callsign; fallback_current='%s'",
+			Players[Player_num].callsign);
+		return Players[Player_num].callsign[0] != '\0' &&
+		       strcmp(Players[Player_num].callsign, COOP_AUTOSAVE_CALLSIGN);
+	}
+	if (!strcmp(Players[Player_num].callsign, save_callsign)) {
+		debug_log(DLOG_GAME, "startup resume pilot prep: current pilot already matches save callsign");
+		return 1;
+	}
+
+	if (GameArg.SysUsePlayersDir)
+		strcpy(filename, "Players/");
+	strncat(filename, save_callsign, CALLSIGN_LEN);
+	filename[(GameArg.SysUsePlayersDir ? 8 : 0) + CALLSIGN_LEN] = '\0';
+	for (j = GameArg.SysUsePlayersDir ? 8 : 0; filename[j] != '\0'; j++) {
+		if (filename[j] == ' ')
+			filename[j] = '\0';
+	}
+	if (!strstr(filename, ".plr"))
+		strcat(filename, ".plr");
+	debug_log(DLOG_GAME, "startup resume pilot prep: derived_pilot_file='%s' exists=%d",
+		filename, PHYSFSX_exists(filename, 0));
+	if (!PHYSFSX_exists(filename, 0)) {
+		con_printf(CON_URGENT, "startup resume: pilot file not found for '%s'; using save callsign\n", save_callsign);
+		strcpy(Players[Player_num].callsign, save_callsign);
+		debug_log(DLOG_GAME, "startup resume pilot prep: missing pilot file; using save callsign '%s'", save_callsign);
+		return 1;
+	}
+	strcpy(strstr(filename, ".plr"), "\0");
+	strcpy(Players[Player_num].callsign, GameArg.SysUsePlayersDir ? &filename[8] : filename);
+	read_player_file();
+	WriteConfigFile();
+	debug_log(DLOG_GAME, "startup resume pilot prep: loaded pilot file; final_callsign='%s'",
+		Players[Player_num].callsign);
+	return 1;
+}
+#endif
+
 static int maybe_resume_save_from_cmdline(void)
 {
 	const int arg_index = find_cmd_arg("-resume-save");
+	int restored;
 
 	if (!arg_index)
 		return 0;
@@ -270,8 +337,38 @@ static int maybe_resume_save_from_cmdline(void)
 		return 0;
 	}
 
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME, "startup resume check: game=d2 Num_args=%d arg_index=%d current_callsign='%s'",
+		Num_args, arg_index, Players[Player_num].callsign);
+	if (arg_index) {
+		int i;
+		for (i = 0; i < Num_args; i++)
+			debug_log(DLOG_GAME, "startup resume Args[%d]=%s", i, Args[i] ? Args[i] : "<null>");
+	}
+	if (!android_load_pilot_from_resume_save(Args[arg_index + 1]))
+	{
+		con_printf(CON_URGENT, "startup resume: could not prepare pilot for '%s'\n", Args[arg_index + 1]);
+		debug_log(DLOG_GAME, "startup resume aborted: could not prepare pilot for '%s'", Args[arg_index + 1]);
+		return 0;
+	}
+#endif
 	con_printf(CON_NORMAL, "startup resume: restoring '%s'\n", Args[arg_index + 1]);
-	return state_restore_all_path(0, Args[arg_index + 1]);
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME, "startup resume restore begin: game=d2 path='%s' callsign='%s'",
+		Args[arg_index + 1], Players[Player_num].callsign);
+#endif
+	restored = state_restore_all_path(0, Args[arg_index + 1]);
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME, "startup resume restore result: game=d2 path='%s' restored=%d callsign='%s'",
+		Args[arg_index + 1], restored, Players[Player_num].callsign);
+#endif
+	if (!restored)
+		con_printf(CON_URGENT, "startup resume: restore failed for '%s'\n", Args[arg_index + 1]);
+#ifdef __ANDROID__
+	if (restored)
+		game_flush_inputs();
+#endif
+	return restored;
 }
 
 int Quitting = 0;
@@ -427,6 +524,14 @@ int main(int argc, char *argv[])
 	CHECKPOINT("PHYSFSX_init done");
 	con_init();  // Initialise the console
 	CHECKPOINT("con_init done");
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME, "startup args parsed: game=d2 Num_args=%d argc=%d", Num_args, argc);
+	{
+		int i;
+		for (i = 0; i < Num_args; i++)
+			debug_log(DLOG_GAME, "startup parsed Args[%d]=%s", i, Args[i] ? Args[i] : "<null>");
+	}
+#endif
 
 	setbuf(stdout, NULL); // unbuffered output via printf
 #ifdef _WIN32

@@ -43,14 +43,10 @@ AAssetManager *g_asset_manager = NULL;
  * process.  The static flag survives across Activity instances. */
 static volatile int g_game_running = 0;
 
-static char *android_get_intent_string_extra(JNIEnv *env, jobject activity, const char *extra_name)
+static char *android_consume_activity_string(JNIEnv *env, jobject activity, const char *method_name)
 {
 	jclass activity_class;
-	jmethodID get_intent;
-	jobject intent;
-	jclass intent_class;
-	jmethodID get_string_extra;
-	jstring key;
+	jmethodID method;
 	jstring value;
 	const char *value_chars;
 	char *copied;
@@ -58,23 +54,10 @@ static char *android_get_intent_string_extra(JNIEnv *env, jobject activity, cons
 	activity_class = (*env)->GetObjectClass(env, activity);
 	if (!activity_class)
 		return NULL;
-	get_intent = (*env)->GetMethodID(env, activity_class, "getIntent", "()Landroid/content/Intent;");
-	if (!get_intent)
+	method = (*env)->GetMethodID(env, activity_class, method_name, "()Ljava/lang/String;");
+	if (!method)
 		return NULL;
-	intent = (*env)->CallObjectMethod(env, activity, get_intent);
-	if (!intent)
-		return NULL;
-	intent_class = (*env)->GetObjectClass(env, intent);
-	if (!intent_class)
-		return NULL;
-	get_string_extra = (*env)->GetMethodID(env, intent_class, "getStringExtra", "(Ljava/lang/String;)Ljava/lang/String;");
-	if (!get_string_extra)
-		return NULL;
-	key = (*env)->NewStringUTF(env, extra_name);
-	if (!key)
-		return NULL;
-	value = (jstring) (*env)->CallObjectMethod(env, intent, get_string_extra, key);
-	(*env)->DeleteLocalRef(env, key);
+	value = (jstring) (*env)->CallObjectMethod(env, activity, method);
 	if (!value)
 		return NULL;
 	value_chars = (*env)->GetStringUTFChars(env, value, NULL);
@@ -90,6 +73,27 @@ static char *android_get_intent_string_extra(JNIEnv *env, jobject activity, cons
 		return NULL;
 	}
 	return copied;
+}
+
+static const char *android_log_value(const char *value)
+{
+	return value ? value : "<null>";
+}
+
+static void android_log_startup_argv(const char *phase, int argc, char **argv,
+                                     const char *input_demo_replay_path, const char *resume_save_path,
+                                     const char *resume_callsign)
+{
+	int i;
+
+	debug_log(DLOG_GAME,
+	          "jni startup %s: argc=%d input_demo_replay=%s resume_save=%s resume_callsign=%s game_running=%d",
+	          phase, argc, android_log_value(input_demo_replay_path),
+	          android_log_value(resume_save_path), android_log_value(resume_callsign),
+	          g_game_running);
+	for (i = 0; i < argc; i++)
+		debug_log(DLOG_GAME, "jni startup argv[%d]=%s", i,
+		          i == 0 ? "<PHYSFS_AndroidInit>" : android_log_value(argv[i]));
 }
 
 /* Callable from Kotlin to check if main() is already executing. */
@@ -125,6 +129,7 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	 * (e.g. user presses Home then taps "Launch" in the launcher). */
 	if (g_game_running) {
 		LOGE("startGame() called while game already running -- aborting to avoid crash");
+		debug_log(DLOG_GAME, "jni startup rejected: startGame called while native game is already running");
 		/* Finish this redundant Activity so the user sees the running game. */
 		jclass cls = (*env)->GetObjectClass(env, thiz);
 		jmethodID mid = (*env)->GetMethodID(env, cls, "finish", "()V");
@@ -217,28 +222,31 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	androidInit.context = (void *) thiz; /* Activity is a valid Context */
 
 	argv_startup[0] = (char *) &androidInit;
-	input_demo_replay_path = android_get_intent_string_extra(env, thiz, "input_demo_replay");
+	input_demo_replay_path = android_consume_activity_string(env, thiz, "consumeInputDemoReplayPath");
 	if (input_demo_replay_path) {
 		LOGI("Launching input demo replay: %s", input_demo_replay_path);
 		argv_startup[argc++] = "-inputdemo-replay";
 		argv_startup[argc++] = input_demo_replay_path;
 	} else {
-		resume_save_path = android_get_intent_string_extra(env, thiz, "resume_save_path");
-		resume_callsign = android_get_intent_string_extra(env, thiz, "resume_callsign");
+		resume_save_path = android_consume_activity_string(env, thiz, "consumeResumeSavePath");
+		resume_callsign = android_consume_activity_string(env, thiz, "consumeResumeCallsign");
 		if (resume_save_path && resume_save_path[0]) {
 			if (resume_callsign && resume_callsign[0]) {
 				LOGI("Launching startup resume for pilot '%s': %s",
 				     resume_callsign, resume_save_path);
 				argv_startup[argc++] = "-pilot";
 				argv_startup[argc++] = resume_callsign;
-				argv_startup[argc++] = "-resume-save";
-				argv_startup[argc++] = resume_save_path;
 			} else {
-				LOGI("Ignoring startup resume without callsign: %s", resume_save_path);
+				LOGI("Launching startup resume with save-derived pilot: %s", resume_save_path);
 			}
+			argv_startup[argc++] = "-resume-save";
+			argv_startup[argc++] = resume_save_path;
 		}
 	}
+	android_log_startup_argv("before-main", argc, argv_startup,
+	                         input_demo_replay_path, resume_save_path, resume_callsign);
 	main(argc, argv_startup);
+	debug_log(DLOG_GAME, "jni startup main returned");
 	free(input_demo_replay_path);
 	free(resume_save_path);
 	free(resume_callsign);

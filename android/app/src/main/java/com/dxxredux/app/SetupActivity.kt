@@ -11,6 +11,8 @@ import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.provider.DocumentsContract
 import android.util.Log
@@ -25,6 +27,13 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -53,6 +62,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
@@ -62,6 +72,7 @@ import com.dxxredux.app.multiplayer.MatchmakingStateHolder
 import com.dxxredux.app.multiplayer.NetworkConstants
 import com.dxxredux.app.multiplayer.PlayGamesAuth
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
@@ -94,6 +105,8 @@ import java.util.zip.ZipInputStream
 class SetupActivity : ComponentActivity() {
     /** Incremented in onResume so Compose re-checks file status. */
     private val refreshTrigger = mutableIntStateOf(0)
+    private val resumeOfferRefreshHandler = Handler(Looper.getMainLooper())
+    private val resumeOfferRefreshRunnable = Runnable { refreshTrigger.intValue++ }
 
     // ── Setup-screen introspection ──────────────────────────────────────
     //   adb shell am broadcast -a com.dxxredux.SETUP_INTROSPECT
@@ -128,12 +141,16 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_cd_stop
     private var gameRunningFlag = false
 
-    /** Check if the :game process is alive (game engine still running).
-     *  On Android 5.1+ runningAppProcesses returns only same-uid processes,
-     *  which is exactly what we need -- :game shares our uid. */
-    private fun isGameProcessAlive(): Boolean {
-        val am = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-        return am.runningAppProcesses?.any { it.processName == "$packageName:game" } == true
+    private fun returnableGameActivityState(): GameActivityState? = readReturnableGameActivityState(this)
+
+    private fun hasReturnableGameActivity(): Boolean = returnableGameActivityState() != null
+
+    private fun returnToGame(): Boolean {
+        val state = returnableGameActivityState() ?: return false
+        val intent = createGameLaunchIntent(state.game, inputDemoReplayPath = null)
+        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        startActivity(intent)
+        return true
     }
 
     /** Guard against double-launch of multiplayer game (auto-launch from
@@ -513,13 +530,52 @@ class SetupActivity : ComponentActivity() {
         game: String,
         scriptPath: String,
         startStep: Int,
+        resumeCandidate: ResumeSaveBridge.ResumeSaveCandidate? = null,
     ) {
+        val launchGame = resumeCandidate?.game ?: game
         FileSetManager(filesDir).writeActiveSetPath()
         AudioSourceManager(filesDir).writePlaylist(contentResolver)
-        ModManager(filesDir).writeEnabledModPaths(game)
+        ModManager(filesDir).writeEnabledModPaths(launchGame)
         writeInitialGameConfig()
         writeMusicConfigForLaunch()
-        val intent = createGameLaunchIntent(game)
+        val resolvedResumeSavePath =
+            resumeCandidate?.let { candidate ->
+                resolveResumeSaveLaunchPath(filesDir, candidate)
+            }
+        val resolvedResumeCallsign =
+            resumeCandidate?.let { candidate ->
+                resolveResumeSaveLaunchCallsign(candidate)
+            }
+        if (resumeCandidate != null && resolvedResumeSavePath.isNullOrBlank()) {
+            Log.w(
+                "DXX-Setup",
+                "Automation resume candidate has no launch path: path=${resumeCandidate.path} " +
+                    "relative=${resumeCandidate.relativePath} callsign=${resumeCandidate.callsign}",
+            )
+            logResumeCandidateLaunch(
+                "setup-automation-resume-candidate-invalid",
+                resumeCandidate,
+                null,
+                resolvedResumeCallsign,
+            )
+            Toast.makeText(this, "Could not read the save launch details", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (resumeCandidate != null) {
+            logResumeCandidateLaunch(
+                "setup-automation-resume-candidate-selected",
+                resumeCandidate,
+                resolvedResumeSavePath,
+                resolvedResumeCallsign,
+            )
+        }
+        val intent =
+            createGameLaunchIntent(
+                game = launchGame,
+                inputDemoReplayPath = null,
+                resumeSavePath = resolvedResumeSavePath,
+                resumeCallsign = resolvedResumeCallsign,
+            )
         intent.putExtra("automation_script", scriptPath)
         intent.putExtra("automation_start_step", startStep)
         startActivity(intent)
@@ -542,7 +598,7 @@ class SetupActivity : ComponentActivity() {
             Toast.makeText(this, "Recorded demo file is missing", Toast.LENGTH_SHORT).show()
             return
         }
-        if (gameRunningFlag || isGameProcessAlive()) {
+        if (gameRunningFlag || hasReturnableGameActivity()) {
             Toast.makeText(this, "Close the running game before starting a recorded demo", Toast.LENGTH_SHORT).show()
             return
         }
@@ -568,22 +624,77 @@ class SetupActivity : ComponentActivity() {
         resumeCallsign: String? = null,
     ): Intent {
         val intent = Intent(this, MainActivity::class.java)
+        val cleanInputDemoReplayPath = inputDemoReplayPath?.takeIf { it.isNotBlank() }
+        val cleanResumeSavePath = resumeSavePath?.takeIf { it.isNotBlank() }
+        val cleanResumeCallsign = resumeCallsign?.takeIf { it.isNotBlank() }
+        val hasTransientLaunchRequest =
+            cleanInputDemoReplayPath != null || cleanResumeSavePath != null
+        val transientLaunchToken =
+            if (hasTransientLaunchRequest) SystemClock.elapsedRealtimeNanos().toString() else null
         intent.putExtra("game", game)
         DebugLog.currentFilePath()?.let { intent.putExtra("netlog_path", it) }
-        inputDemoReplayPath?.takeIf { it.isNotBlank() }?.let {
+        cleanInputDemoReplayPath?.let {
             intent.putExtra("input_demo_replay", it)
         }
-        resumeSavePath?.takeIf { it.isNotBlank() }?.let {
+        cleanResumeSavePath?.let {
             intent.putExtra("resume_save_path", it)
         }
-        resumeCallsign?.takeIf { it.isNotBlank() }?.let {
+        cleanResumeCallsign?.let {
             intent.putExtra("resume_callsign", it)
         }
+        if (cleanResumeSavePath != null && transientLaunchToken != null) {
+            writePendingResumeLaunch(this, game, cleanResumeSavePath, cleanResumeCallsign, transientLaunchToken)
+            Log.i(
+                "DXX-Setup",
+                "resume-launch-request game=$game path=$cleanResumeSavePath " +
+                    "callsign=${cleanResumeCallsign ?: ""} token=$transientLaunchToken",
+            )
+        }
+        if (transientLaunchToken != null) {
+            intent.putExtra(EXTRA_TRANSIENT_LAUNCH_TOKEN, transientLaunchToken)
+        }
+        logGameStartupDiagnostic(
+            "setup-create-game-launch-intent",
+            JSONObject()
+                .put("game", game)
+                .putNullable("input_demo_replay_arg", cleanInputDemoReplayPath)
+                .putNullable("resume_save_path_arg", cleanResumeSavePath)
+                .putNullable("resume_callsign_arg", cleanResumeCallsign)
+                .putNullable("transient_launch_token", transientLaunchToken)
+                .putNullable("active_debug_log", DebugLog.currentFilePath())
+                .put("intent", intent.startupJson())
+                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
+                .put("game_activity_state", gameActivityStateDebugJson(this)),
+        )
         return intent
+    }
+
+    private fun logResumeCandidateLaunch(
+        event: String,
+        candidate: ResumeSaveBridge.ResumeSaveCandidate,
+        resolvedPath: String?,
+        resolvedCallsign: String?,
+    ) {
+        logGameStartupDiagnostic(
+            event,
+            JSONObject()
+                .put("candidate", candidate.toJson())
+                .putNullable("resolved_resume_save_path", resolvedPath)
+                .putNullable("resolved_resume_callsign", resolvedCallsign)
+                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
+                .put("game_activity_state", gameActivityStateDebugJson(this)),
+        )
     }
 
     private fun requestSetupRefresh() {
         runOnUiThread { refreshTrigger.intValue++ }
+    }
+
+    private fun schedulePostResumeRefreshes() {
+        resumeOfferRefreshHandler.removeCallbacks(resumeOfferRefreshRunnable)
+        resumeOfferRefreshHandler.postDelayed(resumeOfferRefreshRunnable, 250L)
+        resumeOfferRefreshHandler.postDelayed(resumeOfferRefreshRunnable, 1000L)
+        resumeOfferRefreshHandler.postDelayed(resumeOfferRefreshRunnable, 2500L)
     }
 
     private val commandReceiver =
@@ -595,8 +706,11 @@ class SetupActivity : ComponentActivity() {
                 val cmd = intent?.getStringExtra("command") ?: return
                 when (cmd) {
                     "launch" -> {
-                        if (gameRunningFlag || isGameProcessAlive()) {
-                            finish()
+                        if (gameRunningFlag || hasReturnableGameActivity()) {
+                            if (!returnToGame()) {
+                                gameRunningFlag = false
+                                requestSetupRefresh()
+                            }
                         } else {
                             val game = intent.getStringExtra("game") ?: "d2"
                             if (!hasLaunchDataForGame(game)) {
@@ -668,6 +782,12 @@ class SetupActivity : ComponentActivity() {
                     "clear_save_files" -> {
                         val deleted = clearSaveFilesForAutomation()
                         Log.i("DXX-Setup", "clear_save_files: deleted $deleted file(s)")
+                        requestSetupRefresh()
+                    }
+
+                    "clear_pilot_files" -> {
+                        val deleted = clearPilotFilesForAutomation()
+                        Log.i("DXX-Setup", "clear_pilot_files: deleted $deleted file(s)")
                         requestSetupRefresh()
                     }
 
@@ -1950,7 +2070,7 @@ class SetupActivity : ComponentActivity() {
             d1.put("files", fileStatusArray(d1Statuses))
             root.put("d1", d1)
 
-			ResumeSaveBridge.findNewest(dir)?.let { root.put("resume_candidate", it.toJson()) }
+            ResumeSaveBridge.findNewest(dir)?.let { root.put("resume_candidate", it.toJson()) }
 
             // Active downloads
             if (downloadStates.isNotEmpty()) {
@@ -2120,6 +2240,22 @@ class SetupActivity : ComponentActivity() {
         return deleted
     }
 
+    private fun clearPilotFilesForAutomation(): Int {
+        val pilotRegex = Regex("""\.(?:plr|plx)$""", RegexOption.IGNORE_CASE)
+        var deleted = 0
+        for (subdir in arrayOf("d1x-redux", "d2x-redux")) {
+            val dir = File(filesDir, subdir)
+            if (!dir.exists()) continue
+            dir
+                .walkTopDown()
+                .filter { it.isFile && pilotRegex.containsMatchIn(it.name) }
+                .forEach {
+                    if (it.delete()) deleted++
+                }
+        }
+        return deleted
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -2130,6 +2266,7 @@ class SetupActivity : ComponentActivity() {
         System.loadLibrary("dxx-redux-d2")
         Log.i("SetupActivity", "Loaded native library: dxx-redux-d2")
         CrashLog.installNativeHandler(this)
+        DebugLog.init(this)
         KnownVersions.init(this)
         com.dxxredux.app.multiplayer.NetLog
             .init(this)
@@ -2189,13 +2326,13 @@ class SetupActivity : ComponentActivity() {
             }
         }
 
-        gameRunningFlag = intent.getBooleanExtra("gameRunning", false) || isGameProcessAlive()
+        gameRunningFlag = hasReturnableGameActivity()
         val filesDir = filesDir
 
         setContent {
             SetupScreen(
                 filesDir = filesDir,
-            gameRunning = gameRunningFlag,
+                gameRunning = gameRunningFlag,
                 refreshTrigger = refreshTrigger.intValue,
                 controllerAxes = controllerAxes,
                 dpadAxes = dpadAxes,
@@ -2204,23 +2341,67 @@ class SetupActivity : ComponentActivity() {
                 onLaunchGame = { game, resumeCandidate ->
                     val pending = launcherExecutor?.consumePendingLaunch()
                     if (pending != null) {
-                        launchGameForAutomation(game, pending.scriptPath, pending.nextStep)
-                    } else if (gameRunningFlag || isGameProcessAlive()) {
-                        finish() // return to the already-running game
+                        launchGameForAutomation(game, pending.scriptPath, pending.nextStep, resumeCandidate)
+                    } else if (resumeCandidate == null && (gameRunningFlag || hasReturnableGameActivity())) {
+                        if (!returnToGame()) {
+                            gameRunningFlag = false
+                            refreshTrigger.intValue++
+                        }
+                    } else if (resumeCandidate != null && hasReturnableGameActivity()) {
+                        Toast
+                            .makeText(
+                                this,
+                                "Return to the running game before loading a save",
+                                Toast.LENGTH_SHORT,
+                            ).show()
                     } else {
+                        val launchGame = resumeCandidate?.game ?: game
                         FileSetManager(filesDir).writeActiveSetPath()
                         AudioSourceManager(filesDir).writePlaylist(contentResolver)
-                        ModManager(filesDir).writeEnabledModPaths(game)
+                        ModManager(filesDir).writeEnabledModPaths(launchGame)
                         writeInitialGameConfig()
                         writeMusicConfigForLaunch()
-                        val intent = createGameLaunchIntent(
-                            game = game,
-                            resumeSavePath = resumeCandidate?.path,
-                            resumeCallsign = resumeCandidate?.callsign,
-                        )
-                        startActivity(intent)
-                        // Don't finish() -- stay in back stack so quitting
-                        // the game returns here instead of the launcher.
+                        val resolvedResumeSavePath =
+                            resumeCandidate?.let { candidate ->
+                                resolveResumeSaveLaunchPath(filesDir, candidate)
+                            }
+                        val resolvedResumeCallsign =
+                            resumeCandidate?.let { candidate ->
+                                resolveResumeSaveLaunchCallsign(candidate)
+                            }
+                        if (resumeCandidate != null && resolvedResumeSavePath.isNullOrBlank()) {
+                            Log.w(
+                                "DXX-Setup",
+                                "Resume candidate has no launch path: path=${resumeCandidate.path} " +
+                                    "relative=${resumeCandidate.relativePath} callsign=${resumeCandidate.callsign}",
+                            )
+                            logResumeCandidateLaunch(
+                                "setup-resume-candidate-invalid",
+                                resumeCandidate,
+                                null,
+                                resolvedResumeCallsign,
+                            )
+                            Toast.makeText(this, "Could not read the save launch details", Toast.LENGTH_SHORT).show()
+                        } else {
+                            if (resumeCandidate != null) {
+                                logResumeCandidateLaunch(
+                                    "setup-resume-candidate-selected",
+                                    resumeCandidate,
+                                    resolvedResumeSavePath,
+                                    resolvedResumeCallsign,
+                                )
+                            }
+                            val intent =
+                                createGameLaunchIntent(
+                                    game = launchGame,
+                                    inputDemoReplayPath = null,
+                                    resumeSavePath = resolvedResumeSavePath,
+                                    resumeCallsign = resolvedResumeCallsign,
+                                )
+                            startActivity(intent)
+                            // Don't finish() -- stay in back stack so quitting
+                            // the game returns here instead of the launcher.
+                        }
                     }
                 },
                 onPlayInputDemo = { demo ->
@@ -2333,7 +2514,7 @@ class SetupActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         mpGameLaunching = false
-        gameRunningFlag = isGameProcessAlive()
+        gameRunningFlag = hasReturnableGameActivity()
         // If a LAN host was broadcasting in-game, stop now
         com.dxxredux.app.lobby.LobbyService
             .stopInGameBroadcast()
@@ -2346,12 +2527,13 @@ class SetupActivity : ComponentActivity() {
         }
         wasLanDiscoveringBeforeLaunch = false
         refreshTrigger.intValue++
+        schedulePostResumeRefreshes()
         // If the host returns from a game, signal the server to reset the lobby
         val mpState =
             com.dxxredux.app.multiplayer.MatchmakingStateHolder
                 .state
                 .value
-        if (mpState.currentLobby?.isHost == true && !isGameProcessAlive()) {
+        if (mpState.currentLobby?.isHost == true && !hasReturnableGameActivity()) {
             com.dxxredux.app.multiplayer.MatchmakingService
                 .endGame()
         }
@@ -2383,6 +2565,7 @@ class SetupActivity : ComponentActivity() {
                     )
                     resultFile.delete()
                     kotlinx.coroutines.MainScope().launch {
+                        waitForAutomationGameExit()
                         if (existingExecutor != null) {
                             executor.resume(nextStep)
                         } else if (resultScriptPath != null) {
@@ -2398,7 +2581,21 @@ class SetupActivity : ComponentActivity() {
         }
     }
 
+    private suspend fun waitForAutomationGameExit() {
+        val deadline = SystemClock.elapsedRealtime() + 5000L
+        while (hasReturnableGameActivity() && SystemClock.elapsedRealtime() < deadline) {
+            delay(100L)
+        }
+        gameRunningFlag = hasReturnableGameActivity()
+        if (gameRunningFlag) {
+            Log.w("DXX-Setup", "LAUNCHER_CONTINUE: game process still returnable after wait")
+        } else {
+            requestSetupRefresh()
+        }
+    }
+
     override fun onDestroy() {
+        resumeOfferRefreshHandler.removeCallbacks(resumeOfferRefreshRunnable)
         try {
             unregisterReceiver(introspectReceiver)
         } catch (_: Exception) {
@@ -3211,22 +3408,41 @@ private fun SetupScreen(
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val resumeOfferEnabled =
-        context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+        context
+            .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
             .getBoolean(PREF_SHOW_RESUME_OFFER, true)
     val newestResumeCandidate = remember(refreshTrigger) { ResumeSaveBridge.findNewest(filesDir) }
     val resumeCandidate =
         newestResumeCandidate?.takeIf { candidate ->
             (candidate.game == "d1" && d1RequiredOk) || (candidate.game != "d1" && d2RequiredOk)
         }
-    val resumeDialogKey = resumeCandidate?.let { "${it.path}|${it.saveTimeUnixSeconds}" }
-    var dismissedResumeKey by remember(refreshTrigger) { mutableStateOf<String?>(null) }
-    val showResumeDialog =
+    val resumeOfferKey = resumeCandidate?.let { "${it.path}|${it.saveTimeUnixSeconds}" }
+    var dismissedResumeKey by remember { mutableStateOf<String?>(null) }
+    val showResumePanel =
         !gameRunning &&
             !isHashing &&
             resumeOfferEnabled &&
             resumeCandidate != null &&
-            resumeDialogKey != null &&
-            dismissedResumeKey != resumeDialogKey
+            resumeOfferKey != null &&
+            dismissedResumeKey != resumeOfferKey
+    LaunchedEffect(
+        refreshTrigger,
+        newestResumeCandidate?.path,
+        resumeCandidate?.path,
+        resumeOfferEnabled,
+        gameRunning,
+        isHashing,
+        dismissedResumeKey,
+        showResumePanel,
+    ) {
+        LauncherDebugLog.log(
+            "launcher-resume-offer-state refresh=$refreshTrigger enabled=$resumeOfferEnabled " +
+                "running=$gameRunning hashing=$isHashing d1_ready=$d1RequiredOk d2_ready=$d2RequiredOk " +
+                "raw=${resumeCandidateLogSummary(newestResumeCandidate)} " +
+                "accepted=${resumeCandidateLogSummary(resumeCandidate)} " +
+                "dismissed=${dismissedResumeKey == resumeOfferKey} show=$showResumePanel",
+        )
+    }
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
 
     // ── Startup: prune stale entries, then hash new/changed files ──
@@ -3895,105 +4111,41 @@ private fun SetupScreen(
                     )
                 }
 
-                if (showResumeDialog) {
-                    val resumeThumbnail = remember(resumeDialogKey) { decodeResumeSaveThumbnail(resumeCandidate) }
-                    AlertDialog(
-                        onDismissRequest = { dismissedResumeKey = resumeDialogKey },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    dismissedResumeKey = resumeDialogKey
-                                    selectedGame = resumeCandidate.game
-                                    gamePrefs.edit().putString("selected_game", resumeCandidate.game).apply()
-                                    onLaunchGame(resumeCandidate.game, resumeCandidate)
-                                },
-                            ) {
-                                Text("Load Last Save")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(
-                                onClick = {
-                                    context
-                                        .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-                                        .edit()
-                                        .putBoolean(PREF_SHOW_RESUME_OFFER, false)
-                                        .apply()
-                                    dismissedResumeKey = resumeDialogKey
-                                },
-                            ) {
-                                Text("Stop Showing This")
-                            }
-                        },
-                        title = { Text("Resume Recent Save") },
-                        text = {
-                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text(
-                                    "Most recent save found in ${resumeGameDisplayName(resumeCandidate.game)}",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    verticalAlignment = Alignment.Top,
-                                ) {
-                                    Surface(
-                                        modifier = Modifier.size(width = 140.dp, height = 70.dp),
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                    ) {
-                                        if (resumeThumbnail != null) {
-                                            Image(
-                                                bitmap = resumeThumbnail.asImageBitmap(),
-                                                contentDescription = "Save thumbnail",
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentScale = ContentScale.FillBounds,
-                                            )
-                                        } else {
-                                            Box(
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentAlignment = Alignment.Center,
-                                            ) {
-                                                Text(
-                                                    "No thumbnail",
-                                                    fontSize = 11.sp,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                        Text(
-                                            resumeCandidate.description.ifBlank { "AUTO SAVE" },
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                        )
-                                        Text("Pilot: ${resumeCandidate.callsign}", fontSize = 12.sp)
-                                        Text(
-                                            "Save time: ${formatResumeSaveTime(resumeCandidate.saveTimeUnixSeconds)}",
-                                            fontSize = 12.sp,
-                                        )
-                                        Text(
-                                            "Type: ${resumeSaveKindLabel(resumeCandidate.saveKind)}",
-                                            fontSize = 12.sp,
-                                        )
-                                        Text(
-                                            "Level: ${resumeCandidate.levelNum} ${resumeCandidate.levelName}".trim(),
-                                            fontSize = 12.sp,
-                                        )
-                                        Text(
-                                            "In-level time: ${formatResumeDuration(resumeCandidate.levelSeconds)}",
-                                            fontSize = 12.sp,
-                                        )
-                                        Text(
-                                            "Total time: ${formatResumeDuration(resumeCandidate.totalSeconds)}",
-                                            fontSize = 12.sp,
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                    )
+                resumeCandidate?.let { candidate ->
+                    val resumeThumbnail = remember(resumeOfferKey) { decodeResumeSaveThumbnail(candidate) }
+                    AnimatedVisibility(
+                        visible = showResumePanel,
+                        enter =
+                            slideInVertically(initialOffsetY = { -it / 2 }) +
+                                expandVertically(expandFrom = Alignment.Top) +
+                                fadeIn(),
+                        exit =
+                            slideOutVertically(targetOffsetY = { -it / 2 }) +
+                                shrinkVertically(shrinkTowards = Alignment.Top) +
+                                fadeOut(),
+                    ) {
+                        ResumeSavePanel(
+                            candidate = candidate,
+                            thumbnail = resumeThumbnail,
+                            onLoad = {
+                                selectedGame = candidate.game
+                                gamePrefs.edit().putString("selected_game", candidate.game).apply()
+                                onLaunchGame(candidate.game, candidate)
+                            },
+                            onHide = { dismissedResumeKey = resumeOfferKey },
+                            onStopShowing = {
+                                context
+                                    .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+                                    .edit()
+                                    .putBoolean(PREF_SHOW_RESUME_OFFER, false)
+                                    .apply()
+                                dismissedResumeKey = resumeOfferKey
+                            },
+                        )
+                    }
+                    if (showResumePanel) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
                 }
 
                 // ── File detail popup ──
@@ -5362,6 +5514,191 @@ private fun decodeResumeSaveThumbnail(candidate: ResumeSaveBridge.ResumeSaveCand
         pixels[index] = (0xFF shl 24) or (red shl 16) or (green shl 8) or blue
     }
     return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
+}
+
+@Composable
+private fun ResumeSavePanel(
+    candidate: ResumeSaveBridge.ResumeSaveCandidate,
+    thumbnail: Bitmap?,
+    onLoad: () -> Unit,
+    onHide: () -> Unit,
+    onStopShowing: () -> Unit,
+) {
+    val panelColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.94f)
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors =
+            CardDefaults.elevatedCardColors(
+                containerColor = panelColor,
+            ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    modifier = Modifier.size(width = 54.dp, height = 27.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                ) {
+                    if (thumbnail != null) {
+                        Image(
+                            bitmap = thumbnail.asImageBitmap(),
+                            contentDescription = "Save thumbnail",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.FillBounds,
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                "No thumbnail",
+                                fontSize = 6.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "Resume Recent Save",
+                    modifier = Modifier.weight(1f),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                IconButton(
+                    onClick = onHide,
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowUp,
+                        contentDescription = "Hide resume panel",
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(1.dp),
+            ) {
+                Text(
+                    resumePanelPrimaryLine(candidate),
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    resumePanelSecondaryLine(candidate),
+                    fontSize = 7.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(
+                    onClick = onStopShowing,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = panelColor,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                ) {
+                    Text("Stop Showing This", fontSize = 9.sp, maxLines = 1)
+                }
+                Button(
+                    onClick = onLoad,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                ) {
+                    Text("Load Last Save", fontSize = 9.sp, maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+private fun resolveResumeSaveLaunchPath(
+    filesDir: File,
+    candidate: ResumeSaveBridge.ResumeSaveCandidate,
+): String? {
+    candidate.relativePath.takeIf { it.isNotBlank() }?.let { return it }
+    val filesPrefix = filesDir.absolutePath.replace('\\', '/') + "/"
+    val absolutePath = candidate.path.replace('\\', '/')
+    absolutePath.takeIf { it.startsWith(filesPrefix) }?.removePrefix(filesPrefix)?.let { return it }
+    return relativeSavePathFromGameAnchor(absolutePath)
+}
+
+private fun resolveResumeSaveLaunchCallsign(candidate: ResumeSaveBridge.ResumeSaveCandidate): String? {
+    candidate.callsign.takeIf { it.isNotBlank() }?.let { return it }
+    return callsignFromSavePath(candidate.relativePath)
+        ?: callsignFromSavePath(candidate.path)
+}
+
+private fun relativeSavePathFromGameAnchor(path: String): String? {
+    val normalized = path.replace('\\', '/')
+    listOf("/d1x-redux/", "/d2x-redux/").forEach { anchor ->
+        val index = normalized.indexOf(anchor)
+        if (index >= 0) return normalized.substring(index + 1)
+    }
+    return null
+}
+
+private fun callsignFromSavePath(path: String): String? {
+    val normalized = path.replace('\\', '/')
+    val fileName = normalized.substringAfterLast('/')
+    val dotIndex = fileName.lastIndexOf('.')
+    if (dotIndex <= 0) return null
+    return fileName.substring(0, dotIndex).takeIf { it.isNotBlank() }
+}
+
+private fun resumePanelPrimaryLine(candidate: ResumeSaveBridge.ResumeSaveCandidate): String {
+    val callsign = resolveResumeSaveLaunchCallsign(candidate) ?: "unknown pilot"
+    return buildString {
+        append(candidate.description.ifBlank { "AUTO SAVE" })
+        append(" | ")
+        append(resumeGameDisplayName(candidate.game))
+        append(" | ")
+        append(callsign)
+    }
+}
+
+private fun resumePanelSecondaryLine(candidate: ResumeSaveBridge.ResumeSaveCandidate): String =
+    buildString {
+        append(resumeSaveKindLabel(candidate.saveKind))
+        append(" | ")
+        append(("${candidate.levelNum} ${candidate.levelName}").trim())
+        append(" | ")
+        append(formatResumeSaveTime(candidate.saveTimeUnixSeconds))
+        append(" | ")
+        append(formatResumeDuration(candidate.levelSeconds))
+        append(" lvl")
+        append(" | ")
+        append(formatResumeDuration(candidate.totalSeconds))
+        append(" total")
+    }
+
+private fun resumeCandidateLogSummary(candidate: ResumeSaveBridge.ResumeSaveCandidate?): String {
+    if (candidate == null) return "none"
+    val launchPath = candidate.relativePath.ifBlank { candidate.path }
+    val callsign = candidate.callsign.ifBlank { "-" }
+    return "game=${candidate.game} kind=${candidate.saveKind} slot=${candidate.slot} " +
+        "path=$launchPath callsign=$callsign meta=${candidate.metadataBacked}"
 }
 
 @Composable
@@ -7864,7 +8201,12 @@ private fun GogImportDialog(
                                                     val currentName = leafName(currentFile)
                                                     if (includeAudio && GogImportBridge.isAudioFile(currentName)) {
                                                         val outputFile = File(setDir, currentName)
-                                                        val outputBytes = if (outputFile.exists()) outputFile.length() else -1L
+                                                        val outputBytes =
+                                                            if (outputFile.exists()) {
+                                                                outputFile.length()
+                                                            } else {
+                                                                -1L
+                                                            }
                                                         val outputBucket =
                                                             if (outputBytes >= 0L) {
                                                                 outputBytes / (64L * 1024L * 1024L)
@@ -7879,10 +8221,12 @@ private fun GogImportDialog(
                                                         if (shouldLog) {
                                                             audioOutputBuckets[currentName] = outputBucket
                                                             LauncherDebugLog.log(
-                                                                "launcher-gog-audio-progress installer=$installerName source=$sourceKind " +
-                                                                    "file=$currentName done=$bytesDone total=$bytesTotal " +
-                                                                    "exists=${outputFile.exists()} out_bytes=$outputBytes " +
-                                                                    "free_bytes=${setDir.usableSpace}",
+                                                                "launcher-gog-audio-progress " +
+                                                                    "installer=$installerName " +
+                                                                    "source=$sourceKind file=$currentName " +
+                                                                    "done=$bytesDone total=$bytesTotal " +
+                                                                    "exists=${outputFile.exists()} " +
+                                                                    "out_bytes=$outputBytes free_bytes=${setDir.usableSpace}",
                                                             )
                                                         }
                                                     }
@@ -7900,15 +8244,18 @@ private fun GogImportDialog(
                                                 }
                                             }
                                         LauncherDebugLog.log(
-                                            "launcher-gog-extract-start installer=$installerName source=$sourceKind " +
+                                            "launcher-gog-extract-start " +
+                                                "installer=$installerName source=$sourceKind " +
                                                 "include_audio=$includeAudio total_entries=${fileList!!.size}",
                                         )
                                         LauncherDebugLog.log(
-                                            "launcher-gog-extract-start-path installer=$installerName source=$sourceKind " +
+                                            "launcher-gog-extract-start-path " +
+                                                "installer=$installerName source=$sourceKind " +
                                                 "set_dir=${setDir.absolutePath} free_before_bytes=$freeBeforeBytes",
                                         )
                                         LauncherDebugLog.log(
-                                            "launcher-gog-extract-start-audio installer=$installerName source=$sourceKind " +
+                                            "launcher-gog-extract-start-audio " +
+                                                "installer=$installerName source=$sourceKind " +
                                                 "audio_names=$analyzedAudioSummary audio_sizes=$analyzedAudioSizes " +
                                                 "audio_pair_state=$analyzedPairState",
                                         )
@@ -7941,7 +8288,12 @@ private fun GogImportDialog(
                                             }
                                         if (hasGog) {
                                             enableRedbookInConfig(filesDir, context)
-                                            registerGogAudioSource(srcManager, filesDir, setDir, context)
+                                            registerGogAudioSource(
+                                                srcManager,
+                                                filesDir,
+                                                setDir,
+                                                context,
+                                            )
                                         }
                                         val filesAfter = setDir.list()?.toSet() ?: emptySet()
                                         val newFiles = (filesAfter - filesBefore).sorted()
@@ -7958,27 +8310,33 @@ private fun GogImportDialog(
                                                 .toList()
                                         val missingExpectedAudio =
                                             analyzedAudioNames.filter { expected ->
-                                                setAudioNames.none { it.equals(expected, ignoreCase = true) }
+                                                setAudioNames.none {
+                                                    it.equals(expected, ignoreCase = true)
+                                                }
                                             }
                                         val newAudioSummary = summarizeGogAudioFiles(newAudioNames)
                                         val setAudioSummary = summarizeGogAudioFiles(setAudioNames)
-                                        val expectedAudioState = describeNamedFileStates(setDir, analyzedAudioNames)
+                                        val expectedAudioState =
+                                            describeNamedFileStates(setDir, analyzedAudioNames)
                                         val setPairState = describeGogPairState(setAudioNames)
                                         val freeAfterBytes = setDir.usableSpace
                                         LauncherDebugLog.log(
-                                            "launcher-gog-extract-result installer=$installerName source=$sourceKind " +
+                                            "launcher-gog-extract-result " +
+                                                "installer=$installerName source=$sourceKind " +
                                                 "include_audio=$includeAudio extracted=$count has_gog_pair=$hasGog " +
                                                 "new_files=${newFiles.size} new_audio=$newAudioSummary",
                                         )
                                         LauncherDebugLog.log(
-                                            "launcher-gog-extract-result-audio installer=$installerName source=$sourceKind " +
+                                            "launcher-gog-extract-result-audio " +
+                                                "installer=$installerName source=$sourceKind " +
                                                 "set_audio=$setAudioSummary set_pair_state=$setPairState " +
                                                 "missing_expected_audio=${summarizeGogAudioFiles(
                                                     missingExpectedAudio,
                                                 )}",
                                         )
                                         LauncherDebugLog.log(
-                                            "launcher-gog-extract-result-files installer=$installerName source=$sourceKind " +
+                                            "launcher-gog-extract-result-files " +
+                                                "installer=$installerName source=$sourceKind " +
                                                 "expected_audio_state=$expectedAudioState " +
                                                 "free_after_bytes=$freeAfterBytes",
                                         )

@@ -861,23 +861,32 @@ Java_com_dxxredux_app_MainActivity_nativeAcceptJoinRequest(JNIEnv *env, jobject 
  */
 static ubyte g_saved_control_type = 0;
 static int g_overlay_joystick = 0;
+static void android_touch_enable_joystick_mode(void)
+{
+	if (!g_overlay_joystick) {
+		g_saved_control_type = PlayerCfg.ControlType;
+		g_overlay_joystick = 1;
+	}
+	PlayerCfg.ControlType = CONTROL_USING_JOYSTICK; /* joystick only */
+}
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetJoystickEnabled(JNIEnv *env, jobject thiz,
                                                             jboolean enabled)
 {
-	if (enabled && !g_overlay_joystick) {
-		g_saved_control_type = PlayerCfg.ControlType;
-		PlayerCfg.ControlType = CONTROL_USING_JOYSTICK; /* joystick only */
-		g_overlay_joystick = 1;
+	if (enabled) {
+		int was_overlay_joystick = g_overlay_joystick;
+		android_touch_enable_joystick_mode();
 
-		/* Release any stuck mouse-button state so fire stops immediately */
-		SDL_Event ev;
-		memset(&ev, 0, sizeof(ev));
-		ev.type = SDL_MOUSEBUTTONUP;
-		ev.button.button = SDL_BUTTON_LEFT;
-		ev.button.state = SDL_RELEASED;
-		SDL_PushEvent(&ev);
+		if (!was_overlay_joystick) {
+			/* Release any stuck mouse-button state so fire stops immediately */
+			SDL_Event ev;
+			memset(&ev, 0, sizeof(ev));
+			ev.type = SDL_MOUSEBUTTONUP;
+			ev.button.button = SDL_BUTTON_LEFT;
+			ev.button.state = SDL_RELEASED;
+			SDL_PushEvent(&ev);
+		}
 	} else if (!enabled && g_overlay_joystick) {
 		PlayerCfg.ControlType = g_saved_control_type;
 		g_overlay_joystick = 0;
@@ -971,6 +980,8 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickAxis(JNIEnv *env, jobject thiz,
 	ev.jaxis.which = 0; /* virtual joystick 0 */
 	ev.jaxis.axis = (Uint8) (axis | (touch_source ? ANDROID_TOUCH_AXIS_FLAG : 0));
 	ev.jaxis.value = (Sint16) (value * 32767.0f);
+	if (touch_source)
+		android_touch_enable_joystick_mode();
 	if (axis >= 0 && axis < 8 && (axis == 2 || axis == 3) && value != 0.0f) {
 		int abs_sdl = ev.jaxis.value < 0 ? -ev.jaxis.value : ev.jaxis.value;
 		int count = ++joy_jni_diag_count[axis];

@@ -53,18 +53,83 @@ Design Android minimize and exit-to-launcher autosaves, launcher resume prompt, 
 	- [x] Add setup introspection fields for current resume candidate and preference state
 	- [x] Add setup introspection field for the current resume candidate
 
-4. Direct resume load [in progress]
+4. Direct resume load [done]
 	- [x] Pass candidate game, callsign, and save path through launch intent
 	- [x] Add Android startup restore handling in D1 and D2
-	- [ ] Verify that the game reaches the loaded level without user menu input
+	- [x] Verify that the game reaches the loaded level without user menu input
 
-5. Validation
+5. Launcher resume follow-up [done]
+	- [x] Replace the popup resume offer with a top slide-down launcher panel
+	- [x] Flush startup resume input state so touch controls start cleanly after launcher resume
+	- [x] Re-run Android compile smoke tests for the launcher resume path
+	- [x] Make transient launcher resume intents single-use so recents/task restore does not replay a save load
+	- [x] Add resume save path/callsign fallback derivation in the launcher handoff
+	- [x] Compact the launcher resume panel to a 3-line summary with a much smaller thumbnail
+	- [x] Reset touch overlay state on suspend/launcher handoff so touch input is re-armed on return
+
+6. Launcher resume task and panel follow-up [in progress]
+	- [x] Compact the slide-down panel header and move the thumbnail into the header row
+	- [x] Make Stop Showing This match Load Last Save size while using the panel background color
+	- [x] Rework Load Last Save so a resume candidate bypasses the generic live-game return branch
+	- [x] Rework Return To Game so it brings the existing MainActivity task forward instead of just finishing SetupActivity
+	- [x] Compile the Android debug/native path and verify the upload build script reaches its build phase
+
+7. Validation
 	- [x] Run native/unit tests for the metadata scanner
-	- [ ] Run an Android automation test for exit-to-launcher autosave and launcher resume offer
+	- [x] Run an Android automation test for exit-to-launcher autosave and launcher resume offer
 	- [ ] Run a manual or scripted HOME/minimize test and inspect the autosave slot via native scanner or setup introspection
-	- [ ] Run `android\run-code-quality.ps1 --fix` after checking for stale formatter locks
+	- [x] Run `android\run-code-quality.ps1 -Fix` after checking for stale formatter locks
 	- [x] Run a normal Windows host build and Android native compile smoke test for D1 and D2
+
+8. Touch-axis and refreshed autosave resume follow-up [done]
+	- [x] Trace touch axis events past JNI/SDL/deadzone into gameplay control application
+	- [x] Fix loaded-save touch axis controls so translate/look/throttle do not remain effectively disabled
+	- [x] Fix refreshed autosave resume details when metadata callsign/path is missing or incomplete
+	- [x] Re-run focused Android compile and the upload wrapper build-only validation
 
 ## Notes
 - Keep D1 and D2 source edits small and mirrored where engine hooks are needed
 - Prefer C save/config code as the source of truth, with Kotlin calling narrow native helpers
+
+9. Direct-load resume regressions reported from build 13334 [done]
+	- [x] Treat build 13334 device results as current and reproduce or instrument with emulator where useful
+	- [x] Re-check launcher candidate selection and game launch routing when first Load Last Save opens pilot select
+	- [x] Re-check startup resume argument consumption from Kotlin through JNI into D1 and D2
+	- [x] Re-check post-restore control state after direct-loaded saves from runtime introspection/logs, not only code review
+	- [x] Patch root causes and validate with build plus emulator/manual-friendly diagnostics
+	- [x] Preserve resume save extras through launcher automation continuation so the regression test covers real direct restore
+	- [x] Validate D1 and D2 autosave resume automation reaches in-game with non-255 joystick axis bindings
+
+10. Resume offer visibility regression [done]
+	- [x] Confirm whether setup introspection sees a candidate while the panel buttons are absent
+	- [x] Refresh the Compose resume candidate after delayed exit-autosave completion
+	- [x] Keep per-save panel dismissal stable across automatic setup refreshes
+	- [x] Validate the launcher shows Load Last Save when a candidate exists
+	- [x] Validate D1 and D2 autosave resume automation assert both resume panel buttons
+
+11. Device resume offer still absent in build 13336 [done]
+	- [x] Treat device logs as current and avoid assuming a UI refresh race
+	- [x] Add scanner fallback so any single-player `.sg#` save can produce a resume candidate even without readable metadata
+	- [x] Stop rejecting candidates solely because metadata callsign and pilot filename do not match exactly
+	- [x] Add launcher debug log lines for candidate selection and panel show/hide gates
+	- [x] Validate fresh setup launch and autosave resume flows with emulator diagnostics
+
+12. Re-show offer after load and first direct resume [done]
+	- [x] Do not mark a save offer dismissed when the user taps Load Last Save
+	- [x] Let Android startup resume restore from a save-derived callsign even if the `.plr` file is missing on the first attempt
+	- [x] Validate that returning to the launcher after loading still shows the current save offer
+	- [x] Validate first-attempt D1 and D2 direct resume from clean launcher state
+
+13. Real-device direct load still reaches pilot select [done]
+	- [x] Add durable diagnostics for the exact resume candidate, launch extras, JNI argv, and startup resume result
+	- [x] Verify the automated test is asserting a true direct restore, not passing after normal menu state or stale game state
+	- [x] Make Android startup resume survive missing intent extras by writing a pending resume launch request before starting the game process
+	- [x] Validate with D1 and D2 from a force-stopped/fresh game process and with pilot files cleared
+
+14. Persistent game-log diagnostics for stubborn direct-load pilot select [in progress]
+	- [x] Log launcher resume candidate, launch intent extras, pending resume file state, and game activity state to the downloadable Game Logs category
+	- [x] Log JNI startup parameters, consumed resume values, and final argv through DLOG_GAME
+	- [x] Log D1 and D2 startup resume decisions and pilot fallback state through DLOG_GAME
+	- [x] Serialize save header/metadata details and a save-file digest when restore opens a save, including failure branches before restore can enter the level
+	- [x] Run code quality checks scoped to the touched Kotlin files and rebuild the Android debug APK
+	- [ ] Focused resume validation: attempted with Game Logs enabled, but adb/logcat wedged before the test produced output; retry on a fresh emulator/device

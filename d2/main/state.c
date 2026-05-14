@@ -188,9 +188,92 @@ fail:
 	return 0;
 }
 
+static void state_android_copy_log_string(char *out, size_t out_size,
+	const char *in, size_t in_size)
+{
+	size_t i = 0;
+
+	if (!out_size)
+		return;
+	while (i + 1 < out_size && i < in_size && in[i]) {
+		unsigned char ch = (unsigned char)in[i];
+		out[i] = (ch >= 32 && ch < 127) ? (char)ch : '?';
+		i++;
+	}
+	out[i] = '\0';
+}
+
+static int state_android_digest_save_file(PHYSFS_file *fp, PHYSFS_sint64 *out_len,
+	unsigned *out_hash)
+{
+	PHYSFS_sint64 saved_pos = PHYSFS_tell(fp);
+	PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
+	PHYSFS_sint64 remaining = file_len;
+	unsigned char buf[4096];
+	unsigned hash = 2166136261u;
+
+	if (file_len < 0 || !PHYSFS_seek(fp, 0))
+		goto fail;
+	while (remaining > 0) {
+		PHYSFS_uint32 want = (remaining > (PHYSFS_sint64)sizeof(buf)) ?
+			(PHYSFS_uint32)sizeof(buf) : (PHYSFS_uint32)remaining;
+		PHYSFS_sint64 got = PHYSFS_read(fp, buf, 1, want);
+		PHYSFS_uint32 i;
+
+		if (got != want)
+			goto fail;
+		for (i = 0; i < want; i++)
+			hash = (hash ^ buf[i]) * 16777619u;
+		remaining -= got;
+	}
+	if (!PHYSFS_seek(fp, saved_pos))
+		return 0;
+	*out_len = file_len;
+	*out_hash = hash;
+	return 1;
+
+fail:
+	PHYSFS_seek(fp, saved_pos);
+	return 0;
+}
+
+static void state_android_log_save_metadata(const char *filename, PHYSFS_file *fp)
+{
+	PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
+	android_save_meta_disk meta;
+	unsigned save_hash = 0;
+	int have_digest = state_android_digest_save_file(fp, &file_len, &save_hash);
+	int have_meta = state_read_android_save_meta(fp, file_len, &meta);
+
+	if (have_meta) {
+		char callsign[ANDROID_SAVE_META_CALLSIGN_LEN + 1];
+		char desc[ANDROID_SAVE_META_DESC_LEN + 1];
+		char mission[ANDROID_SAVE_META_MISSION_LEN + 1];
+		char level_name[ANDROID_SAVE_META_LEVEL_NAME_LEN + 1];
+
+		state_android_copy_log_string(callsign, sizeof(callsign), meta.callsign, sizeof(meta.callsign));
+		state_android_copy_log_string(desc, sizeof(desc), meta.description, sizeof(meta.description));
+		state_android_copy_log_string(mission, sizeof(mission), meta.mission_name, sizeof(meta.mission_name));
+		state_android_copy_log_string(level_name, sizeof(level_name), meta.level_name, sizeof(meta.level_name));
+		debug_log(DLOG_GAME,
+			"restore save metadata: game=d2 file='%s' file_len=%lld digest_ok=%d fnv1a32=%08x meta_game=%u kind=%u wall=%llu callsign='%s' desc='%s' mission='%s' level=%d level_name='%s' level_seconds=%u total_seconds=%u thumb_format=%u thumb=%ux%u",
+			filename, (long long)file_len, have_digest, save_hash, (unsigned)meta.game_id,
+			(unsigned)meta.save_kind, (unsigned long long)meta.wall_clock_unix_seconds,
+			callsign, desc, mission, (int)meta.level_num, level_name,
+			(unsigned)meta.level_seconds, (unsigned)meta.total_seconds,
+			(unsigned)meta.thumbnail_format, (unsigned)meta.thumbnail_width,
+			(unsigned)meta.thumbnail_height);
+	} else {
+		debug_log(DLOG_GAME,
+			"restore save metadata: game=d2 file='%s' file_len=%lld digest_ok=%d fnv1a32=%08x have_android_meta=0",
+			filename, (long long)file_len, have_digest, save_hash);
+	}
+}
+
 static int g_android_save_meta_kind = ANDROID_SAVE_META_KIND_MANUAL;
-static int g_android_save_blank_thumbnail = 0;
 #endif
+
+static int g_android_save_blank_thumbnail = 0;
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -1547,6 +1630,36 @@ int state_quick_item = -1;
  * For restoring, dsc should be NULL, in which case empty slots will not be
  * selectable and savagames descriptions will not be editable.
  */
+#ifdef __ANDROID__
+static void state_android_restore_player_flight_state(void)
+{
+	object *obj;
+	int objnum = Players[Player_num].objnum;
+
+	if (objnum < 0 || objnum > Highest_object_index)
+		return;
+
+	Viewer = ConsoleObject = &Objects[objnum];
+	obj = ConsoleObject;
+	if (obj->type == OBJ_GHOST)
+		obj->type = OBJ_PLAYER;
+	if (obj->type != OBJ_PLAYER)
+		return;
+
+	if (Player_is_dead || obj->control_type != CT_FLYING || obj->movement_type != MT_PHYSICS ||
+	    !(obj->mtype.phys_info.flags & PF_USES_THRUST))
+		debug_log(DLOG_GAME,
+			"restore controls repaired: D2 obj=%d ct=%d mt=%d flags=0x%x dead=%d",
+			objnum, obj->control_type, obj->movement_type,
+			obj->mtype.phys_info.flags, Player_is_dead);
+
+	Player_is_dead = 0;
+	obj->control_type = CT_FLYING;
+	obj->movement_type = MT_PHYSICS;
+	obj->mtype.phys_info.flags |= PF_TURNROLL | PF_LEVELLING | PF_WIGGLE | PF_USES_THRUST;
+}
+#endif
+
 int state_get_savegame_filename(char * fname, char * dsc, char * caption, int blind_save)
 {
 	PHYSFS_file * fp;
@@ -2299,11 +2412,28 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	#endif
 
 	fp = PHYSFSX_openReadBuffered(filename);
-	if ( !fp ) return 0;
+	if ( !fp ) {
+		con_printf(CON_URGENT, "restore: could not open '%s'\n", filename);
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME, "restore open failed: game=d2 file='%s' current_callsign='%s' game_mode=%d",
+			filename, Players[Player_num].callsign, Game_mode);
+#endif
+		return 0;
+	}
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME, "restore open: game=d2 file='%s' current_callsign='%s' player_num=%d game_mode=%d secret_restore=%d",
+		filename, Players[Player_num].callsign, Player_num, Game_mode, secret_restore);
+	state_android_log_save_metadata(filename, fp);
+#endif
 
 //Read id
 	PHYSFS_read(fp, id, sizeof(char) * 4, 1);
 	if ( memcmp( id, dgss_id, 4 )) {
+		con_printf(CON_URGENT, "restore: bad save id in '%s'\n", filename);
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME, "restore bad id: game=d2 file='%s' id='%c%c%c%c'",
+			filename, id[0], id[1], id[2], id[3]);
+#endif
 		PHYSFS_close(fp);
 		return 0;
 	}
@@ -2316,8 +2446,17 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		swap = 1;
 		version = SWAPINT(version);
 	}
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME, "restore version: game=d2 file='%s' version=%d swap=%d compatible=%d runtime=%d",
+		filename, version, swap, STATE_COMPATIBLE_VERSION, STATE_RUNTIME_VERSION);
+#endif
 
 	if (version < STATE_COMPATIBLE_VERSION)	{
+		con_printf(CON_URGENT, "restore: unsupported save version %d in '%s'\n", version, filename);
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME, "restore unsupported version: game=d2 file='%s' version=%d compatible=%d",
+			filename, version, STATE_COMPATIBLE_VERSION);
+#endif
 		PHYSFS_close(fp);
 		return 0;
 	}
@@ -2335,6 +2474,12 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		if (strcmp(saved_callsign, Players[Player_num].callsign))
 #endif
 		{
+			con_printf(CON_URGENT, "restore: coop callsign mismatch '%s' vs '%s'\n",
+				saved_callsign, Players[Player_num].callsign);
+#ifdef __ANDROID__
+			debug_log(DLOG_GAME, "restore coop callsign mismatch: game=d2 file='%s' saved='%s' current='%s'",
+				filename, saved_callsign, Players[Player_num].callsign);
+#endif
 			PHYSFS_close(fp);
 			return 0;
 		}
@@ -2342,6 +2487,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 // Read description
 	PHYSFS_read(fp, desc, sizeof(char) * DESC_LENGTH, 1);
+	desc[DESC_LENGTH] = '\0';
 
 // Skip the current screen shot...
 	state_skip_thumbnail(fp, version);
@@ -2357,6 +2503,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		char *p;
 		PHYSFS_read(fp, mission, 128, 1);
 		if (mission[127]) {
+			con_printf(CON_URGENT, "restore: invalid mission name in '%s'\n", filename);
+#ifdef __ANDROID__
+			debug_log(DLOG_GAME, "restore invalid mission name: game=d2 file='%s'", filename);
+#endif
 			PHYSFS_close(fp);
 			return 0;
 		}
@@ -2365,6 +2515,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	}
 
 	if (!load_mission_by_name( mission ))	{
+		con_printf(CON_URGENT, "restore: unable to load mission '%s' from '%s'\n", mission, filename);
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME, "restore unable to load mission: game=d2 file='%s' mission='%s'",
+			filename, mission);
+#endif
 		nm_messagebox( NULL, 1, "Ok", "Error!\nUnable to load mission\n'%s'\n", mission );
 		PHYSFS_close(fp);
 		return 0;
@@ -2379,6 +2534,20 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	GameTime64 = (fix64)tmptime32;
 	if (input_demo_replay_has_checkpoint())
 		GameTime64 += input_demo_replay_checkpoint_start_gt();
+#ifdef __ANDROID__
+	{
+		char desc_log[DESC_LENGTH + 1];
+		char mission_log[sizeof(mission)];
+
+		state_android_copy_log_string(desc_log, sizeof(desc_log), desc, DESC_LENGTH);
+		state_android_copy_log_string(mission_log, sizeof(mission_log), mission, sizeof(mission));
+		debug_log(DLOG_GAME,
+			"restore save header: game=d2 file='%s' version=%d swap=%d desc='%s' mission='%s' level=%d gametime=%d current_callsign='%s' game_mode=%d secret_restore=%d",
+			filename, version, swap, desc_log, mission_log, current_level,
+			(int)tmptime32, Players[Player_num].callsign, Game_mode,
+			secret_restore);
+	}
+#endif
 
 // Start new game....
 	if (!(Game_mode & GM_MULTI_COOP))
@@ -2447,6 +2616,13 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	strcpy( Players[Player_num].callsign, org_callsign );
 	if (Game_mode & GM_MULTI_COOP)
 		Players[Player_num].objnum = coop_org_objnum;
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME,
+		"restore player state: game=d2 file='%s' callsign='%s' level=%d lives=%d objnum=%d n_players=%d game_mode=%d secret_restore=%d",
+		filename, Players[Player_num].callsign, Players[Player_num].level,
+		Players[Player_num].lives, Players[Player_num].objnum, N_players,
+		Game_mode, secret_restore);
+#endif
 
 // Restore the weapon states
 	PHYSFS_read(fp, &Players[Player_num].primary_weapon, sizeof(sbyte), 1);
@@ -2736,17 +2912,17 @@ int state_restore_all_sub(char *filename, int secret_restore)
 				multi_reset_player_object(obj);
 			}
 		}
-#ifdef __ANDROID__
-		/* Log saved player list for mapping diagnostics */
+		#ifdef __ANDROID__
 		for (i = 0; i < N_players; i++)
+		{
 			COOPLOG("restore_players[%d]: callsign='%s' connected=%d objnum=%d",
 				i, restore_players[i].callsign, restore_players[i].connected,
 				restore_players[i].objnum);
-		for (i = 0; i < N_players; i++)
 			COOPLOG("current_players[%d]: callsign='%s' connected=%d objnum=%d",
 				i, Players[i].callsign, Players[i].connected,
 				Players[i].objnum);
-#endif
+		}
+		#endif
 #ifdef __ANDROID__
 		/* Match current players to saved players using client_id from
 		 * the metadata trailer (preferred) or callsign (fallback).
@@ -2919,11 +3095,19 @@ int state_restore_all_sub(char *filename, int secret_restore)
 #endif
 	}
 
+#ifdef __ANDROID__
+	state_android_restore_player_flight_state();
+#endif
+
 	if (version >= STATE_RUNTIME_VERSION)
 		state_read_runtime_state(fp, swap, secret_restore, version);
 	state_log_checkpoint_ai_restore_state();
 
 #ifdef __ANDROID__
+	debug_log(DLOG_GAME,
+		"restore save complete: game=d2 file='%s' current_level=%d callsign='%s' highest_object=%d game_mode=%d secret_restore=%d",
+		filename, Current_level_num, Players[Player_num].callsign,
+		Highest_object_index, Game_mode, secret_restore);
 	{
 		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
 		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
@@ -3033,3 +3217,56 @@ int state_get_game_id(char *filename)
 
 	return state_game_id;
 }
+
+#ifdef __ANDROID__
+int state_get_save_file_callsign(char *filename, char *callsign, int callsign_size)
+{
+	PHYSFS_file *fp;
+	char id[5];
+	char mission[128];
+	int version;
+	int swap = 0;
+	player_rw pl_rw;
+
+	if (!filename || !callsign || callsign_size <= 0)
+		return 0;
+	callsign[0] = '\0';
+	fp = PHYSFSX_openReadBuffered(filename);
+	if (!fp)
+		return 0;
+
+	PHYSFS_read(fp, id, sizeof(char) * 4, 1);
+	if (memcmp(id, dgss_id, 4)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	PHYSFS_read(fp, &version, sizeof(int), 1);
+	if (version & 0xffff0000) {
+		swap = 1;
+		version = SWAPINT(version);
+	}
+	if (version < STATE_COMPATIBLE_VERSION) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+
+	PHYSFS_seek(fp, PHYSFS_tell(fp) + DESC_LENGTH);
+	state_skip_thumbnail(fp, version);
+	PHYSFSX_readSXE32(fp, swap);
+	PHYSFS_read(fp, mission, sizeof(char) * 9, 1);
+	if (mission[8] == 1)
+		PHYSFS_read(fp, mission, 128, 1);
+	PHYSFSX_readSXE32(fp, swap);
+	PHYSFSX_readSXE32(fp, swap);
+	PHYSFSX_readSXE32(fp, swap);
+	memset(&pl_rw, 0, sizeof(pl_rw));
+	if (PHYSFS_read(fp, &pl_rw, sizeof(pl_rw), 1) != 1) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	PHYSFS_close(fp);
+	strncpy(callsign, pl_rw.callsign, callsign_size - 1);
+	callsign[callsign_size - 1] = '\0';
+	return callsign[0] != '\0';
+}
+#endif

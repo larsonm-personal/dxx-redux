@@ -28,6 +28,7 @@ object ResumeSaveBridge {
         val hasThumbnail: Boolean,
         val thumbnailWidth: Int,
         val thumbnailHeight: Int,
+        val metadataBacked: Boolean,
         val thumbnailRgb6: ByteArray?,
     ) {
         fun toJson(): JSONObject =
@@ -48,6 +49,7 @@ object ResumeSaveBridge {
                 put("has_thumbnail", hasThumbnail)
                 put("thumbnail_width", thumbnailWidth)
                 put("thumbnail_height", thumbnailHeight)
+                put("metadata_backed", metadataBacked)
             }
     }
 
@@ -66,6 +68,17 @@ object ResumeSaveBridge {
             val obj = JSONObject(raw)
             val path = obj.optString("path")
             val hasThumbnail = obj.optBoolean("has_thumbnail")
+            val thumbnailRgb6 =
+                if (hasThumbnail && path.isNotBlank()) {
+                    try {
+                        nativeReadThumbnailRgb6(path)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to read resume-save thumbnail", e)
+                        null
+                    }
+                } else {
+                    null
+                }
             ResumeSaveCandidate(
                 path = path,
                 relativePath = obj.optString("relative_path"),
@@ -83,7 +96,8 @@ object ResumeSaveBridge {
                 hasThumbnail = hasThumbnail,
                 thumbnailWidth = obj.optInt("thumbnail_width"),
                 thumbnailHeight = obj.optInt("thumbnail_height"),
-                thumbnailRgb6 = if (hasThumbnail && path.isNotBlank()) nativeReadThumbnailRgb6(path) else null,
+                metadataBacked = obj.optBoolean("metadata_backed"),
+                thumbnailRgb6 = thumbnailRgb6,
             )
         } catch (e: Exception) {
             Log.w(TAG, "Failed to parse native resume-save JSON", e)

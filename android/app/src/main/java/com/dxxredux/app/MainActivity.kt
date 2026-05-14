@@ -45,6 +45,9 @@ import com.dxxredux.app.multiplayer.MatchmakingService
 import org.json.JSONObject
 import java.io.File
 
+internal const val EXTRA_TRANSIENT_LAUNCH_TOKEN = "transient_launch_token"
+private const val PREF_LAST_CONSUMED_TRANSIENT_LAUNCH_TOKEN = "last_consumed_transient_launch_token"
+
 internal fun shouldShowTouchOverlay(
     inGame: Boolean,
     overlayEnabled: Boolean,
@@ -435,6 +438,10 @@ class MainActivity :
     }
 
     private var gameStarted = false
+    private var pendingInputDemoReplayPath: String? = null
+    private var pendingResumeSavePath: String? = null
+    private var pendingResumeCallsign: String? = null
+    private var pendingTransientLaunchToken: String? = null
     private lateinit var gameSurfaceView: GameSurfaceView
     private lateinit var keyboardInputView: KeyboardInputView
     private lateinit var touchOverlay: TouchOverlayView
@@ -509,11 +516,32 @@ class MainActivity :
         } else {
             DebugLog.init(this)
         }
+        logGameStartupDiagnostic(
+            "main-on-create-before-transient-refresh",
+            JSONObject()
+                .put("intent", intent.startupJson())
+                .putNullable("active_debug_log", DebugLog.currentFilePath())
+                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
+                .put("game_activity_state", gameActivityStateDebugJson(this)),
+        )
+        refreshTransientLaunchState(intent)
+        if (shouldRedirectConsumedTransientLaunch()) {
+            logGameStartupDiagnostic(
+                "main-on-create-redirect-consumed-transient-launch",
+                transientLaunchDebugJson(intent),
+            )
+            redirectConsumedTransientLaunchToSetup()
+            return
+        }
+        consumeTransientLaunchToken()
+        clearTransientLaunchExtrasFromIntent(intent)
+
         MatchmakingService.setActivity(this)
 
         // Load the correct game library based on the launcher's selection
         val game = intent.getStringExtra("game") ?: "d2"
         gameVariantId = game
+        writeGameActivityState(this, gameVariantId)
         gamepadOnlyMode =
             !packageManager.hasSystemFeature(
                 android.content.pm.PackageManager.FEATURE_TOUCHSCREEN,
@@ -525,6 +553,14 @@ class MainActivity :
 
         // Sync C-side per-category enable flags with Kotlin prefs
         syncDebugLogPrefs()
+        logGameStartupDiagnostic(
+            "main-on-create-after-native-log-sync",
+            transientLaunchDebugJson(intent)
+                .put("game", gameVariantId)
+                .put("lib", libName)
+                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
+                .put("game_activity_state", gameActivityStateDebugJson(this)),
+        )
 
         // Rewrite audio playlist in the game process so SAF fds are valid.
         // SetupActivity runs in the default process; this activity runs in
@@ -1236,6 +1272,35 @@ class MainActivity :
         if (hasFocus) hideSystemBars()
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        logGameStartupDiagnostic(
+            "main-on-new-intent-before-transient-refresh",
+            JSONObject()
+                .put("intent", intent.startupJson())
+                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
+                .put("game_activity_state", gameActivityStateDebugJson(this)),
+        )
+        refreshTransientLaunchState(intent)
+        if (gameStarted && hasPendingTransientLaunchRequest()) {
+            Log.w("MainActivity", "Transient launch request delivered to a running game; leaving it pending")
+            logGameStartupDiagnostic("main-on-new-intent-running-game-left-pending", transientLaunchDebugJson(intent))
+            clearTransientLaunchExtrasFromIntent(intent)
+            return
+        }
+        if (shouldRedirectConsumedTransientLaunch()) {
+            logGameStartupDiagnostic(
+                "main-on-new-intent-redirect-consumed-transient-launch",
+                transientLaunchDebugJson(intent),
+            )
+            redirectConsumedTransientLaunchToSetup()
+            return
+        }
+        consumeTransientLaunchToken()
+        clearTransientLaunchExtrasFromIntent(intent)
+    }
+
     // ── SurfaceHolder.Callback ──────────────────────────────
     override fun surfaceCreated(holder: SurfaceHolder) {
         nativeSetSurface(holder.surface)
@@ -1324,6 +1389,7 @@ class MainActivity :
         gyroManager?.pause()
         overlayPoller.removeCallbacksAndMessages(null)
         gamepadButtonEdgeTracker.clear()
+        resetTouchOverlayForSuspend()
         // Inject Escape so the engine opens its pause / game menu.
         // This pauses a single-player game while the app is in the background.
         applyBackgroundPause()
@@ -1338,6 +1404,7 @@ class MainActivity :
 
     override fun onResume() {
         super.onResume()
+        writeGameActivityState(this, gameVariantId)
         backgroundPauseApplied = false
         isActivityResumed = true
         gyroManager?.resume()
@@ -1838,6 +1905,7 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        clearGameActivityState(this)
         AudioSourceManager.closeActivePfds()
         com.dxxredux.app.multiplayer.MultiplayerForegroundService
             .stop(this)
@@ -1969,9 +2037,136 @@ class MainActivity :
 
     /** Open the setup screen (game pauses automatically via onStop). */
     private fun openSetupScreen() {
+        resetTouchOverlayForSuspend()
         val intent = Intent(this, SetupActivity::class.java)
         intent.putExtra("gameRunning", true)
         startActivity(intent)
+    }
+
+    private fun refreshTransientLaunchState(sourceIntent: Intent) {
+        val launchGame = sourceIntent.getStringExtra("game") ?: gameVariantId
+        pendingInputDemoReplayPath =
+            sourceIntent.getStringExtra("input_demo_replay")?.takeIf { it.isNotBlank() }
+        pendingResumeSavePath =
+            sourceIntent.getStringExtra("resume_save_path")?.takeIf { it.isNotBlank() }
+        pendingResumeCallsign =
+            sourceIntent.getStringExtra("resume_callsign")?.takeIf { it.isNotBlank() }
+        pendingTransientLaunchToken =
+            sourceIntent.getStringExtra(EXTRA_TRANSIENT_LAUNCH_TOKEN)?.takeIf { it.isNotBlank() }
+        if (pendingInputDemoReplayPath == null && pendingResumeSavePath == null) {
+            readPendingResumeLaunch(this, launchGame)?.let { pending ->
+                pendingResumeSavePath = pending.savePath
+                pendingResumeCallsign = pending.callsign
+                pendingTransientLaunchToken = pending.token
+                Log.i(
+                    "MainActivity",
+                    "Using pending resume launch file: game=${pending.game} path=${pending.savePath} " +
+                        "callsign=${pending.callsign ?: ""} token=${pending.token}",
+                )
+            }
+        } else if (pendingResumeSavePath != null) {
+            Log.i(
+                "MainActivity",
+                "Using resume launch extras: game=$launchGame path=$pendingResumeSavePath " +
+                    "callsign=${pendingResumeCallsign ?: ""} token=${pendingTransientLaunchToken ?: ""}",
+            )
+        }
+        logGameStartupDiagnostic(
+            "main-refresh-transient-launch-state",
+            transientLaunchDebugJson(sourceIntent)
+                .put("launch_game", launchGame)
+                .put("pending_resume_launch", pendingResumeLaunchDebugJson(this))
+                .put("game_activity_state", gameActivityStateDebugJson(this)),
+        )
+    }
+
+    private fun transientLaunchDebugJson(sourceIntent: Intent): JSONObject =
+        JSONObject()
+            .put("intent", sourceIntent.startupJson())
+            .putNullable("pending_input_demo_replay_path", pendingInputDemoReplayPath)
+            .putNullable("pending_resume_save_path", pendingResumeSavePath)
+            .putNullable("pending_resume_callsign", pendingResumeCallsign)
+            .putNullable("pending_transient_launch_token", pendingTransientLaunchToken)
+            .put("game_started", gameStarted)
+            .put("game_variant_id", gameVariantId)
+
+    private fun hasPendingTransientLaunchRequest(): Boolean =
+        pendingInputDemoReplayPath != null || pendingResumeSavePath != null
+
+    private fun shouldRedirectConsumedTransientLaunch(): Boolean {
+        if (!hasPendingTransientLaunchRequest()) return false
+        val token = pendingTransientLaunchToken ?: return false
+        val lastConsumed =
+            getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+                .getString(PREF_LAST_CONSUMED_TRANSIENT_LAUNCH_TOKEN, null)
+        return token == lastConsumed
+    }
+
+    private fun consumeTransientLaunchToken() {
+        if (pendingInputDemoReplayPath == null && pendingResumeSavePath == null) return
+        val token = pendingTransientLaunchToken ?: return
+        getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+            .edit()
+            .putString(PREF_LAST_CONSUMED_TRANSIENT_LAUNCH_TOKEN, token)
+            .apply()
+    }
+
+    private fun clearTransientLaunchExtrasFromIntent(sourceIntent: Intent) {
+        sourceIntent.removeExtra("input_demo_replay")
+        sourceIntent.removeExtra("resume_save_path")
+        sourceIntent.removeExtra("resume_callsign")
+        sourceIntent.removeExtra(EXTRA_TRANSIENT_LAUNCH_TOKEN)
+        setIntent(sourceIntent)
+    }
+
+    private fun redirectConsumedTransientLaunchToSetup() {
+        startActivity(
+            Intent(this, SetupActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+        )
+        finish()
+    }
+
+    @Suppress("unused")
+    fun consumeInputDemoReplayPath(): String? = pendingInputDemoReplayPath.also { pendingInputDemoReplayPath = null }
+
+    @Suppress("unused")
+    fun consumeResumeSavePath(): String? =
+        pendingResumeSavePath.also { savePath ->
+            logGameStartupDiagnostic(
+                "main-consume-resume-save-path",
+                JSONObject()
+                    .putNullable("return_value", savePath)
+                    .putNullable("pending_resume_callsign", pendingResumeCallsign)
+                    .putNullable("pending_transient_launch_token", pendingTransientLaunchToken)
+                    .put("pending_resume_launch_before_clear", pendingResumeLaunchDebugJson(this)),
+            )
+            if (savePath != null) clearPendingResumeLaunch(this, pendingTransientLaunchToken)
+            pendingResumeSavePath = null
+        }
+
+    @Suppress("unused")
+    fun consumeResumeCallsign(): String? =
+        pendingResumeCallsign.also { callsign ->
+            logGameStartupDiagnostic(
+                "main-consume-resume-callsign",
+                JSONObject()
+                    .putNullable("return_value", callsign)
+                    .putNullable("pending_transient_launch_token", pendingTransientLaunchToken),
+            )
+            pendingResumeCallsign = null
+        }
+
+    private fun resetTouchOverlayForSuspend() {
+        if (!::touchOverlay.isInitialized) return
+        if (touchOverlay.isActive) {
+            try {
+                nativeSetJoystickEnabled(false)
+            } catch (_: Exception) {
+            }
+        }
+        touchOverlay.isActive = false
+        touchOverlay.automapActive = false
     }
 
     /** Toggle the automap by injecting a TAB key press/release. */
