@@ -149,13 +149,6 @@ static const char *save_kind_name(uint8_t save_kind)
 	}
 }
 
-static uint8_t game_id_from_path(const char *path)
-{
-	if (path && strstr(path, "/d1x-redux/"))
-		return ANDROID_SAVE_META_GAME_D1;
-	return ANDROID_SAVE_META_GAME_D2;
-}
-
 static std::string callsign_from_path(const char *path)
 {
 	const char *slash;
@@ -193,19 +186,6 @@ static bool is_sentinel_callsign(const std::string &callsign)
 	return strcasecmp(callsign.c_str(), "coopsave") == 0;
 }
 
-static void fill_fallback_meta(const char *path, android_save_meta_disk *meta)
-{
-	std::string callsign = callsign_from_path(path);
-
-	memset(meta, 0, sizeof(*meta));
-	meta->game_id = game_id_from_path(path);
-	meta->save_kind = ANDROID_SAVE_META_KIND_MANUAL;
-	meta->thumbnail_format = ANDROID_SAVE_META_THUMB_NONE;
-	meta->wall_clock_unix_seconds = file_mtime_seconds(path);
-	copy_meta_text(meta->callsign, sizeof(meta->callsign), callsign);
-	copy_meta_text(meta->description, sizeof(meta->description), "Saved Game");
-}
-
 static bool select_newest_resume_save(const std::vector<std::string> &paths,
                                       android_save_meta_candidate *out)
 {
@@ -222,14 +202,16 @@ static bool select_newest_resume_save(const std::vector<std::string> &paths,
 
 		has_meta = android_save_meta_read_path(path.c_str(), &meta) != 0;
 		if (!has_meta)
-			fill_fallback_meta(path.c_str(), &meta);
-		else if (meta.wall_clock_unix_seconds == 0)
+			continue;
+		if (meta.wall_clock_unix_seconds == 0)
 			meta.wall_clock_unix_seconds = file_mtime_seconds(path.c_str());
 		callsign = sanitize_text(meta.callsign);
 		if (callsign.empty()) {
 			callsign = callsign_from_path(path.c_str());
 			copy_meta_text(meta.callsign, sizeof(meta.callsign), callsign);
 		}
+		if (callsign.empty())
+			continue;
 		if (is_sentinel_callsign(callsign))
 			continue;
 		if (!found ||

@@ -133,3 +133,16 @@ Design Android minimize and exit-to-launcher autosaves, launcher resume prompt, 
 	- [x] Serialize save header/metadata details and a save-file digest when restore opens a save, including failure branches before restore can enter the level
 	- [x] Run code quality checks scoped to the touched Kotlin files and rebuild the Android debug APK
 	- [ ] Focused resume validation: attempted with Game Logs enabled, but adb/logcat wedged before the test produced output; retry on a fresh emulator/device
+
+15. Nameless autosave resume candidate fix [done]
+	- [x] Recover D1 and D2 Android autosave callsigns from `LastPlayer` if the active player struct unexpectedly has an empty callsign
+	- [x] Prevent the launcher resume scanner from offering saves whose metadata and filename cannot resolve a real callsign
+	- [x] Rebuild and run focused checks
+
+16. Sentinel pilot poisoning and stale resume offers [done]
+	- [x] Diagnose `debuglog_20260513_195940.txt`: D2 loaded `Players/coopsave.sg9`, then minimize autosave skipped because current and `LastPlayer` were both `coopsave`
+	- [x] Prevent `coopsave` from persisting as the last single-player pilot in D1 and D2 config/menu startup paths
+	- [x] Make Android autosave repair invalid current and last-pilot identity from a real player file or the default player name instead of skipping
+	- [x] Keep launcher resume offers to metadata-backed Android saves so stale legacy manual saves do not mask broken autosaves
+	- [x] Add downloadable Game Logs diagnostics for native lifecycle autosave queue decisions
+	- [x] Run focused code quality and Android debug build validation

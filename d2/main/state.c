@@ -78,6 +78,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop_save.h"
 #include "coop_indicator_lines.h"
 #include "android_log.h"
+#include "config.h"
 #endif
 
 #define STATE_VERSION 27
@@ -1915,6 +1916,68 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 }
 
 #ifdef __ANDROID__
+static int android_is_real_pilot_callsign(const char *callsign)
+{
+	return callsign && callsign[0] && strcmp(callsign, COOP_AUTOSAVE_CALLSIGN);
+}
+
+static int android_find_fallback_pilot_callsign(char *callsign)
+{
+	char **list;
+	char **entry;
+	int found = 0;
+	static const char *const types[] = { ".plr", NULL };
+
+	if (!callsign)
+		return 0;
+	callsign[0] = '\0';
+	list = PHYSFSX_findFiles(GameArg.SysUsePlayersDir ? "Players/" : "", types);
+	if (!list)
+		return 0;
+	for (entry = list; *entry; entry++) {
+		char candidate[CALLSIGN_LEN + 1];
+		char *dot = strstr(*entry, ".plr");
+		size_t len;
+
+		if (!dot || dot == *entry || dot[4])
+			continue;
+		len = (size_t) (dot - *entry);
+		if (len > CALLSIGN_LEN)
+			continue;
+		memset(candidate, 0, sizeof(candidate));
+		memcpy(candidate, *entry, len);
+		if (!android_is_real_pilot_callsign(candidate))
+			continue;
+		strncpy(callsign, candidate, CALLSIGN_LEN);
+		callsign[CALLSIGN_LEN] = '\0';
+		found = 1;
+		break;
+	}
+	PHYSFS_freeList(list);
+	return found;
+}
+
+static void android_repair_player_callsign_for_autosave(const char *game_name)
+{
+	char fallback[CALLSIGN_LEN + 1];
+	const char *repair_callsign = GameCfg.LastPlayer;
+
+	if (android_is_real_pilot_callsign(Players[Player_num].callsign))
+		return;
+	if (!android_is_real_pilot_callsign(repair_callsign)) {
+		if (android_find_fallback_pilot_callsign(fallback))
+			repair_callsign = fallback;
+		else
+			repair_callsign = "player";
+	}
+	debug_log(DLOG_GAME, "autosave repairing %s pilot callsign current='%s' last='%s' repair='%s'",
+		game_name, Players[Player_num].callsign, GameCfg.LastPlayer, repair_callsign);
+	strncpy(Players[Player_num].callsign, repair_callsign, CALLSIGN_LEN);
+	Players[Player_num].callsign[CALLSIGN_LEN] = '\0';
+	strncpy(GameCfg.LastPlayer, repair_callsign, CALLSIGN_LEN);
+	GameCfg.LastPlayer[CALLSIGN_LEN] = '\0';
+}
+
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 {
 	int result;
@@ -1939,6 +2002,7 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 		debug_log(DLOG_GAME, "autosave skipped: D2 multiplayer is active");
 		return 0;
 	}
+	android_repair_player_callsign_for_autosave("D2");
 
 	stop_time();
 	memset(filename, 0, sizeof(filename));

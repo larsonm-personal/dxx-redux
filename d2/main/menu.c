@@ -56,6 +56,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "state.h"
 #include "mission.h"
 #include "songs.h"
+#ifdef ANDROID
+#include "coop_save.h"
+#endif
 #ifdef USE_SDLMIXER
 #include "jukebox.h" // for jukebox_exts
 #endif
@@ -347,6 +350,13 @@ int RegisterPlayer()
 	int i = 0, NumItems;
 	int citem = 0;
 	int allow_abort_flag = 1;
+
+#ifdef ANDROID
+	if (!strcmp(Players[Player_num].callsign, COOP_AUTOSAVE_CALLSIGN))
+		Players[Player_num].callsign[0] = '\0';
+	if (!strcmp(GameCfg.LastPlayer, COOP_AUTOSAVE_CALLSIGN))
+		GameCfg.LastPlayer[0] = '\0';
+#endif
 
 	if ( Players[Player_num].callsign[0] == 0 )
 	{

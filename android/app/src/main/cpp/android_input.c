@@ -603,6 +603,12 @@ static void queue_android_autosave_request(int save_kind)
 		g_android_autosave_request_kind = save_kind;
 }
 
+static void android_log_autosave_gate(const char *event)
+{
+	debug_log(DLOG_GAME, "autosave lifecycle %s: game_wind=%d screen_mode=%d game_mode=%d request_kind=%d",
+	          event, Game_wind ? 1 : 0, Screen_mode, Game_mode, g_android_autosave_request_kind);
+}
+
 static int android_can_queue_minimize_autosave(void)
 {
 	if (!Game_wind || Screen_mode != SCREEN_GAME)
@@ -616,11 +622,13 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeQueueMinimizeAutosave(JNIEnv *env, jobject thiz)
 {
 	if (!android_can_queue_minimize_autosave()) {
+		android_log_autosave_gate("queue-minimize-skipped");
 		LOGI("nativeQueueMinimizeAutosave: not in autosaveable gameplay");
 		return;
 	}
 
 	queue_android_autosave_request(ANDROID_SAVE_META_KIND_AUTO_MINIMIZE);
+	android_log_autosave_gate("queue-minimize-accepted");
 	LOGI("nativeQueueMinimizeAutosave: autosave queued");
 }
 
@@ -637,6 +645,7 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 {
 	if (!Game_wind || Screen_mode != SCREEN_GAME) {
+		android_log_autosave_gate("pause-skipped-not-gameplay");
 		LOGI("nativeOnPause — not in live gameplay, skipping autosave and Escape injection");
 		android_surface_pause();
 		mix_background_pause();
@@ -645,6 +654,7 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 	}
 
 	if (Game_mode & GM_MULTI) {
+		android_log_autosave_gate("pause-skipped-multiplayer");
 		LOGI("nativeOnPause — multiplayer active, skipping autosave and Escape injection");
 		android_surface_pause();
 		mix_background_pause();
@@ -653,6 +663,7 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 	}
 
 	queue_android_autosave_request(ANDROID_SAVE_META_KIND_AUTO_MINIMIZE);
+	android_log_autosave_gate("pause-queued");
 
 	/* Stop the rendering thread from touching ANativeWindow before the
 	 * surface is destroyed.  This must happen first so that by the time
@@ -668,10 +679,12 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 	 * opened the game menu), the game is already paused — do not inject
 	 * another Escape which would close the menu and unpause. */
 	if (window_get_front() != Game_wind) {
+		android_log_autosave_gate("pause-menu-already-open");
 		LOGI("nativeOnPause — autosave queued, game menu already open");
 		return;
 	}
 
+	android_log_autosave_gate("pause-inject-escape");
 	LOGI("nativeOnPause — autosave queued, injecting Escape key");
 	inject_key_tap(SDLK_ESCAPE);
 }

@@ -35,6 +35,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "physfsx.h"
 #ifdef ANDROID
 #include "playsave.h"
+#include "coop_save.h"
 #endif
 
 struct Cfg GameCfg;
@@ -229,6 +230,10 @@ int ReadConfigFile()
 				strncpy( GameCfg.LastPlayer, value, CALLSIGN_LEN );
 				p = strchr( GameCfg.LastPlayer, '\n');
 				if ( p ) *p = 0;
+#ifdef ANDROID
+				if (!strcmp(GameCfg.LastPlayer, COOP_AUTOSAVE_CALLSIGN))
+					GameCfg.LastPlayer[0] = '\0';
+#endif
 			}
 			else if (!strcmp(token, LastMissionStr))	{
 				char * p;
@@ -304,8 +309,14 @@ int ReadConfigFile()
 int WriteConfigFile()
 {
 	PHYSFS_file *infile;
+	const char *last_player;
 
 	GameCfg.GammaLevel = gr_palette_get_gamma();
+	last_player = Players[Player_num].callsign;
+#ifdef ANDROID
+	if (!last_player[0] || !strcmp(last_player, COOP_AUTOSAVE_CALLSIGN))
+		last_player = strcmp(GameCfg.LastPlayer, COOP_AUTOSAVE_CALLSIGN) ? GameCfg.LastPlayer : "";
+#endif
 
 	infile = PHYSFSX_openWriteBuffered("descent.cfg");
 
@@ -328,7 +339,7 @@ int WriteConfigFile()
 	PHYSFSX_printf(infile, "%s=%s\n", CMMiscMusic3Str, GameCfg.CMMiscMusic[SONG_ENDGAME]);
 	PHYSFSX_printf(infile, "%s=%s\n", CMMiscMusic4Str, GameCfg.CMMiscMusic[SONG_CREDITS]);
 	PHYSFSX_printf(infile, "%s=%d\n", GammaLevelStr, GameCfg.GammaLevel);
-	PHYSFSX_printf(infile, "%s=%s\n", LastPlayerStr, Players[Player_num].callsign);
+	PHYSFSX_printf(infile, "%s=%s\n", LastPlayerStr, last_player);
 	PHYSFSX_printf(infile, "%s=%s\n", LastMissionStr, GameCfg.LastMission);
 	PHYSFSX_printf(infile, "%s=%i\n", ResolutionXStr, SM_W(Game_screen_mode));
 	PHYSFSX_printf(infile, "%s=%i\n", ResolutionYStr, SM_H(Game_screen_mode));
