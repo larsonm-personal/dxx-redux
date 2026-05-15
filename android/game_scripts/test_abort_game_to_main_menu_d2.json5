@@ -21,6 +21,10 @@
     }},
 
     {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": true}, "post_delay_ms": 250},
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
     {"action": "log", "message": "=== TEST: D2 abort game returns to main menu ==="},
@@ -56,6 +60,19 @@
         "menu_type": "newmenu",
         "current_level_num": "0"
     }},
+
+    {"action": "log", "message": "=== Main menu verified -- entering launcher to inspect exit autosave ==="},
+    {"action": "enter_launcher"},
+    {"action": "wait_for", "field": "resume_offer_enabled", "value": "true", "timeout_ms": 10000},
+    {"action": "assert", "expect": {
+        "resume_offer_enabled": "true",
+        "resume_candidate.game": "d2",
+        "resume_candidate.save_kind": "auto_exit",
+        "resume_candidate.description": "AUTO EXIT",
+        "resume_candidate.level_num": "1"
+    }},
+    {"action": "assert_button", "text": "Load Last Save", "enabled": true},
+    {"action": "assert_button", "text": "Stop Showing This", "enabled": true},
 
     {"action": "log", "message": "=== TEST: D2 abort game returns to main menu -- PASS ==="},
     {"action": "introspect"}

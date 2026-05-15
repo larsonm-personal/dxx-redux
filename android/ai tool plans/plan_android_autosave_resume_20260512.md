@@ -152,3 +152,10 @@ Design Android minimize and exit-to-launcher autosaves, launcher resume prompt, 
 	- [x] Keep minimal JNI argv logging and compact resume/autosave result logs
 	- [x] Extract duplicated Android resume pilot and autosave callsign repair helpers out of D1 and D2
 	- [x] Rebuild and rerun focused code quality checks
+
+18. Exit-route autosave regression [done]
+	- [x] Re-check which live exit routes still queue `AUTO_EXIT` after the recent launcher/exit rework
+	- [x] Restore exit-slot autosave when aborting from in-game back to the main menu without quitting the app
+	- [x] Re-run focused exit-to-launcher and abort-to-menu validation
+	- [x] Keep the direct launcher exit path on the existing queued `AUTO_EXIT` flow
+	- [x] Keep the abort-to-menu path as a synchronous in-thread save before the game window closes

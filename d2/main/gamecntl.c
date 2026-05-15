@@ -957,6 +957,11 @@ int HandleSystemKey(int key)
 				switch(choice)
 				{
 					case 0: // Abort Game
+					#ifdef __ANDROID__
+						if (state_android_save_to_slot(N_SAVE_SLOTS - 2, "AUTO EXIT",
+						    ANDROID_SAVE_META_KIND_AUTO_EXIT))
+							debug_log(DLOG_GAME, "autosave saved: D2 slot %d", N_SAVE_SLOTS - 2);
+					#endif
 						set_screen_mode(SCREEN_MENU);
 						Current_level_num = 0;
 						Current_level_name[0] = '\0';
@@ -1145,6 +1150,7 @@ int HandleSystemKey(int key)
 			/*
 			 * Jukebox hotkeys -- MD2211, 2007
 			 * Now for all music
+						debug_log(DLOG_GAME, "autosave abort requested: D2 level=%d", Current_level_num);
 			 * ==============================================
 			 */
 		case KEY_ALTED + KEY_SHIFTED + KEY_F9:

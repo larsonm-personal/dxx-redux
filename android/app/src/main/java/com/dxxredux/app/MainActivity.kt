@@ -775,7 +775,7 @@ class MainActivity :
                 }
 
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER -> {
-                    handleExitControl()
+                    NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
                 }
 
                 TouchOverlayView.ADMIN_VIDEO_INFO -> {
@@ -900,13 +900,12 @@ class MainActivity :
                 visibility = View.GONE
             }
 
-        // Always-visible exit button (upper-left). During gameplay it opens the
-        // in-engine game menu; otherwise it returns to the launcher.
+        // Always-visible exit button (upper-left, returns to launcher from any screen)
         exitButton =
             ExitButtonView(this).apply {
                 exitCallback = {
                     try {
-                        handleExitControl()
+                        NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
                     } catch (_: Exception) {
                         // Native side is dead or dying (e.g. Error() was called during init).
                         // Kill the process directly so the user isn't stuck on a frozen screen.
@@ -1568,22 +1567,6 @@ class MainActivity :
             nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
             nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
         }
-    }
-
-    private fun handleExitControl() {
-        val inGame =
-            try {
-                nativeIsInGame()
-            } catch (_: Exception) {
-                false
-            }
-
-        if (inGame) {
-            openGameMenuSafely()
-            return
-        }
-
-        NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
     }
 
     private fun startOverlayPolling() {
