@@ -957,6 +957,9 @@ int HandleSystemKey(int key)
 				switch(choice)
 				{
 					case 0: // Abort Game
+						set_screen_mode(SCREEN_MENU);
+						Current_level_num = 0;
+						Current_level_name[0] = '\0';
 						window_close(Game_wind);
 						break;
 					case 1: // Options

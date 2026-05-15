@@ -1,10 +1,10 @@
 #include "android_menu_scale.h"
 
+#include <string.h>
+
 #ifdef OGL
 #include "ogl_init.h"
 #endif
-
-#include <string.h>
 
 /* Single tuning point for Android menu fill */
 static const float k_target_fill = 0.85f;
@@ -67,11 +67,17 @@ int android_menu_scale_compute_cropped(int source_x, int source_y, int source_w,
                                        android_menu_scale_result *result)
 {
 	int crop_left, crop_top, crop_right, crop_bottom;
-	int content_w, content_h;
 	float scale_x, scale_y, scale;
 
 	clear_result(result);
 	if (!result || source_w <= 0 || source_h <= 0 || screen_w <= 0 || screen_h <= 0)
+		return 0;
+
+	result->box.x = source_x;
+	result->box.y = source_y;
+	result->box.w = source_w;
+	result->box.h = source_h;
+	if (!clamp_source_box(&result->box, screen_w, screen_h))
 		return 0;
 
 	crop_left = border_x - k_crop_pad;
@@ -83,26 +89,6 @@ int android_menu_scale_compute_cropped(int source_x, int source_y, int source_w,
 	crop_right = crop_left;
 	crop_bottom = crop_top;
 
-	content_w = source_w - crop_left - crop_right;
-	content_h = source_h - crop_top - crop_bottom;
-	if (content_w < 1)
-		content_w = source_w;
-	if (content_h < 1)
-		content_h = source_h;
-
-	scale_x = k_target_fill * screen_w / content_w;
-	scale_y = k_target_fill * screen_h / content_h;
-	scale = scale_x < scale_y ? scale_x : scale_y;
-	if (scale <= k_min_scale)
-		return 0;
-
-	result->box.x = source_x;
-	result->box.y = source_y;
-	result->box.w = source_w;
-	result->box.h = source_h;
-	if (!clamp_source_box(&result->box, screen_w, screen_h))
-		return 0;
-
 	if (crop_left + crop_right >= result->box.w) {
 		crop_left = 0;
 		crop_right = 0;
@@ -112,19 +98,16 @@ int android_menu_scale_compute_cropped(int source_x, int source_y, int source_w,
 		crop_bottom = 0;
 	}
 
-	content_w = result->box.w - crop_left - crop_right;
-	content_h = result->box.h - crop_top - crop_bottom;
-	if (content_w < 1)
-		content_w = result->box.w;
-	if (content_h < 1)
-		content_h = result->box.h;
-
 	result->crop_left = crop_left;
 	result->crop_top = crop_top;
-	result->src.x = result->box.x + crop_left;
-	result->src.y = result->box.y + crop_top;
-	result->src.w = content_w;
-	result->src.h = content_h;
+	result->src = result->box;
+
+	scale_x = k_target_fill * screen_w / result->box.w;
+	scale_y = k_target_fill * screen_h / result->box.h;
+	scale = scale_x < scale_y ? scale_x : scale_y;
+	if (scale <= k_min_scale)
+		return 0;
+
 	return compute_destination(result, screen_w, screen_h, scale);
 }
 
@@ -209,15 +192,32 @@ void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
 
 #ifdef OGL
 	{
+		grs_bitmap scaled;
 		grs_canvas *save_canvas = grd_curcanv;
-		int old_flags = bitmap->bm_flags;
+		grs_bitmap *target_bitmap = &grd_curscreen->sc_canvas.cv_bitmap;
+		int old_flags;
+		gr_init_bitmap_alloc(&scaled, BM_LINEAR, 0, 0, result->dst.w,
+		                     result->dst.h, result->dst.w);
 		if (masked)
-			bitmap->bm_flags |= BM_FLAG_TRANSPARENT;
-		gr_set_current_canvas(NULL);
-		ogl_ubitmapm_cs(result->dst.x, result->dst.y, result->dst.w,
-		                result->dst.h, bitmap, -1, F1_0);
-		gr_set_current_canvas(save_canvas);
-		bitmap->bm_flags = old_flags;
+			memset(scaled.bm_data, TRANSPARENCY_COLOR, result->dst.w * result->dst.h);
+		if (masked)
+			gr_bitmap_scale_to_masked(bitmap, &scaled);
+		else
+			gr_bitmap_scale_to(bitmap, &scaled);
+		old_flags = scaled.bm_flags;
+		if (masked)
+			scaled.bm_flags |= BM_FLAG_TRANSPARENT;
+		if (target_bitmap && target_bitmap->bm_type == BM_OGL)
+			ogl_ubitblt_i(result->dst.w, result->dst.h, result->dst.x,
+			              result->dst.y, result->dst.w, result->dst.h,
+			              0, 0, &scaled, target_bitmap, 1);
+		else {
+			gr_set_current_canvas(NULL);
+			gr_bitmap(result->dst.x, result->dst.y, &scaled);
+			gr_set_current_canvas(save_canvas);
+		}
+		scaled.bm_flags = old_flags;
+		gr_free_bitmap_data(&scaled);
 	}
 #else
 	{
@@ -229,39 +229,6 @@ void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
 		else
 			gr_bitmap_scale_to(bitmap, &sub->cv_bitmap);
 		gr_free_sub_canvas(sub);
-	}
-#endif
-}
-
-void android_menu_scale_blit_screen(const android_menu_scale_result *result)
-{
-	if (!result || !result->active)
-		return;
-
-#ifdef OGL
-	{
-		grs_canvas *save_canvas = grd_curcanv;
-		gr_set_current_canvas(NULL);
-		ogl_copy_screen_region_scaled(result->src.x, result->src.y, result->src.w,
-		                              result->src.h, result->dst.x, result->dst.y,
-		                              result->dst.w, result->dst.h);
-		gr_set_current_canvas(save_canvas);
-	}
-#else
-	{
-		grs_bitmap tmp;
-		gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, result->src.w,
-		                     result->src.h, result->src.w);
-		{
-			unsigned char *screen = grd_curscreen->sc_canvas.cv_bitmap.bm_data;
-			int rowsize = grd_curscreen->sc_canvas.cv_bitmap.bm_rowsize;
-			for (int row = 0; row < result->src.h; row++)
-				memcpy(tmp.bm_data + row * result->src.w,
-				       screen + (result->src.y + row) * rowsize + result->src.x,
-				       result->src.w);
-		}
-		android_menu_scale_blit_bitmap(&tmp, result, 0);
-		gr_free_bitmap_data(&tmp);
 	}
 #endif
 }

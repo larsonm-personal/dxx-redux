@@ -699,14 +699,29 @@ void diminish_palette_towards_normal(void)
 }
 
 int	Redsave, Bluesave, Greensave;
+static ubyte Saved_game_palette[768];
+static ubyte Saved_game_fade_table[256 * 34];
+static int Have_saved_game_palette = 0;
 
 void palette_save(void)
 {
 	Redsave = PaletteRedAdd; Bluesave = PaletteBlueAdd; Greensave = PaletteGreenAdd;
+	memcpy(Saved_game_palette, gr_palette, sizeof(Saved_game_palette));
+	memcpy(Saved_game_fade_table, gr_fade_table, sizeof(Saved_game_fade_table));
+	Have_saved_game_palette = 1;
 }
 
 void palette_restore(void)
 {
+	if (Have_saved_game_palette) {
+		memcpy(gr_palette, Saved_game_palette, sizeof(Saved_game_palette));
+		memcpy(gr_fade_table, Saved_game_fade_table, sizeof(Saved_game_fade_table));
+		gr_palette_load(gr_palette);
+		#if defined(OGL) && defined(__ANDROID__)
+		ogl_smash_texture_list();
+		#endif
+	}
+
 	PaletteRedAdd = Redsave; PaletteBlueAdd = Bluesave; PaletteGreenAdd = Greensave;
 	gr_palette_step_up( PaletteRedAdd, PaletteGreenAdd, PaletteBlueAdd );
 }
@@ -1149,7 +1164,7 @@ int game_handler(window *wind, d_event *event, void *data)
 #ifdef EDITOR
 			if (!EditorWindow)		// have to do it this way because of the necessary longjmp. Yuck.
 #endif
-				show_menus();
+				restore_game_menus();
 			Game_wind = NULL;
 			event_toggle_focus(0);
 			key_toggle_repeat(1);

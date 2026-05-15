@@ -3,17 +3,17 @@
 
 #include <stdint.h>
 
-#define ANDROID_SAVE_META_TAG 0x44584153u /* "DXAS" */
+#define ANDROID_SAVE_META_TAG     0x44584153u /* "DXAS" */
 #define ANDROID_SAVE_META_VERSION 1
 
-#define ANDROID_SAVE_META_CALLSIGN_LEN 8
-#define ANDROID_SAVE_META_DESC_LEN 20
-#define ANDROID_SAVE_META_MISSION_LEN 8
-#define ANDROID_SAVE_META_LEVEL_NAME_LEN 36
-#define ANDROID_SAVE_META_THUMB_W 100
-#define ANDROID_SAVE_META_THUMB_H 50
+#define ANDROID_SAVE_META_CALLSIGN_LEN     8
+#define ANDROID_SAVE_META_DESC_LEN         20
+#define ANDROID_SAVE_META_MISSION_LEN      8
+#define ANDROID_SAVE_META_LEVEL_NAME_LEN   36
+#define ANDROID_SAVE_META_THUMB_W          100
+#define ANDROID_SAVE_META_THUMB_H          50
 #define ANDROID_SAVE_META_THUMB_RGB6_BYTES (ANDROID_SAVE_META_THUMB_W * ANDROID_SAVE_META_THUMB_H * 3)
-#define ANDROID_SAVE_META_PATH_LEN 1024
+#define ANDROID_SAVE_META_PATH_LEN         1024
 
 enum {
 	ANDROID_SAVE_META_GAME_D1 = 1,
@@ -80,10 +80,10 @@ typedef struct android_save_meta_candidate {
 } android_save_meta_candidate;
 
 int android_save_meta_build(android_save_meta_disk *out,
-	const android_save_meta_write_params *params);
+                            const android_save_meta_write_params *params);
 int android_save_meta_is_valid(const android_save_meta_disk *meta);
 int android_save_meta_read_path(const char *path, android_save_meta_disk *out);
-int android_save_meta_select_newest(const char * const *paths, int path_count,
-	android_save_meta_candidate *out);
+int android_save_meta_select_newest(const char *const *paths, int path_count,
+                                    android_save_meta_candidate *out);
 
 #endif

@@ -12,7 +12,7 @@ static void android_save_meta_copy_string(char *dst, int dst_size, const char *s
 	memset(dst, 0, dst_size);
 	if (!src)
 		return;
-	strncpy(dst, src, (size_t)(dst_size - 1));
+	strncpy(dst, src, (size_t) (dst_size - 1));
 }
 
 static void android_save_meta_sanitize(android_save_meta_disk *meta)
@@ -33,12 +33,12 @@ static int android_save_meta_path_precedes(const char *lhs, const char *rhs)
 }
 
 int android_save_meta_build(android_save_meta_disk *out,
-	const android_save_meta_write_params *params)
+                            const android_save_meta_write_params *params)
 {
 	if (!out || !params)
 		return 0;
 	if (params->game_id != ANDROID_SAVE_META_GAME_D1 &&
-		params->game_id != ANDROID_SAVE_META_GAME_D2)
+	    params->game_id != ANDROID_SAVE_META_GAME_D2)
 		return 0;
 	if (params->save_kind > ANDROID_SAVE_META_KIND_AUTO_EXIT)
 		return 0;
@@ -46,8 +46,7 @@ int android_save_meta_build(android_save_meta_disk *out,
 	memset(out, 0, sizeof(*out));
 	out->game_id = params->game_id;
 	out->save_kind = params->save_kind;
-	out->wall_clock_unix_seconds = params->wall_clock_unix_seconds ?
-		params->wall_clock_unix_seconds : (uint64_t)time(NULL);
+	out->wall_clock_unix_seconds = params->wall_clock_unix_seconds ? params->wall_clock_unix_seconds : (uint64_t) time(NULL);
 	android_save_meta_copy_string(out->callsign, sizeof(out->callsign), params->callsign);
 	android_save_meta_copy_string(out->description, sizeof(out->description), params->description);
 	android_save_meta_copy_string(out->mission_name, sizeof(out->mission_name), params->mission_name);
@@ -56,8 +55,8 @@ int android_save_meta_build(android_save_meta_disk *out,
 	out->level_seconds = params->level_seconds;
 	out->total_seconds = params->total_seconds;
 	if (params->thumbnail_rgb6 &&
-		params->thumbnail_width == ANDROID_SAVE_META_THUMB_W &&
-		params->thumbnail_height == ANDROID_SAVE_META_THUMB_H) {
+	    params->thumbnail_width == ANDROID_SAVE_META_THUMB_W &&
+	    params->thumbnail_height == ANDROID_SAVE_META_THUMB_H) {
 		out->thumbnail_format = ANDROID_SAVE_META_THUMB_RGB6;
 		out->thumbnail_width = params->thumbnail_width;
 		out->thumbnail_height = params->thumbnail_height;
@@ -65,7 +64,7 @@ int android_save_meta_build(android_save_meta_disk *out,
 	}
 	out->footer.tag = ANDROID_SAVE_META_TAG;
 	out->footer.version = ANDROID_SAVE_META_VERSION;
-	out->footer.trailer_bytes = (uint16_t)sizeof(*out);
+	out->footer.trailer_bytes = (uint16_t) sizeof(*out);
 	android_save_meta_sanitize(out);
 	return 1;
 }
@@ -81,7 +80,7 @@ int android_save_meta_is_valid(const android_save_meta_disk *meta)
 	if (meta->footer.trailer_bytes != sizeof(*meta))
 		return 0;
 	if (meta->game_id != ANDROID_SAVE_META_GAME_D1 &&
-		meta->game_id != ANDROID_SAVE_META_GAME_D2)
+	    meta->game_id != ANDROID_SAVE_META_GAME_D2)
 		return 0;
 	if (meta->save_kind > ANDROID_SAVE_META_KIND_AUTO_EXIT)
 		return 0;
@@ -113,11 +112,11 @@ int android_save_meta_read_path(const char *path, android_save_meta_disk *out)
 		return 0;
 	}
 	file_len = ftell(f);
-	if (file_len < (long)sizeof(footer)) {
+	if (file_len < (long) sizeof(footer)) {
 		fclose(f);
 		return 0;
 	}
-	if (fseek(f, file_len - (long)sizeof(footer), SEEK_SET) != 0) {
+	if (fseek(f, file_len - (long) sizeof(footer), SEEK_SET) != 0) {
 		fclose(f);
 		return 0;
 	}
@@ -126,13 +125,13 @@ int android_save_meta_read_path(const char *path, android_save_meta_disk *out)
 		return 0;
 	}
 	if (footer.tag != ANDROID_SAVE_META_TAG ||
-		footer.version != ANDROID_SAVE_META_VERSION ||
-		footer.trailer_bytes != sizeof(*out) ||
-		file_len < (long)footer.trailer_bytes) {
+	    footer.version != ANDROID_SAVE_META_VERSION ||
+	    footer.trailer_bytes != sizeof(*out) ||
+	    file_len < (long) footer.trailer_bytes) {
 		fclose(f);
 		return 0;
 	}
-	if (fseek(f, file_len - (long)footer.trailer_bytes, SEEK_SET) != 0) {
+	if (fseek(f, file_len - (long) footer.trailer_bytes, SEEK_SET) != 0) {
 		fclose(f);
 		return 0;
 	}
@@ -145,8 +144,8 @@ int android_save_meta_read_path(const char *path, android_save_meta_disk *out)
 	return android_save_meta_is_valid(out);
 }
 
-int android_save_meta_select_newest(const char * const *paths, int path_count,
-	android_save_meta_candidate *out)
+int android_save_meta_select_newest(const char *const *paths, int path_count,
+                                    android_save_meta_candidate *out)
 {
 	android_save_meta_candidate best;
 	int found = 0;
@@ -162,9 +161,9 @@ int android_save_meta_select_newest(const char * const *paths, int path_count,
 		if (!android_save_meta_read_path(paths[i], &meta))
 			continue;
 		if (!found ||
-			meta.wall_clock_unix_seconds > best.meta.wall_clock_unix_seconds ||
-			(meta.wall_clock_unix_seconds == best.meta.wall_clock_unix_seconds &&
-				android_save_meta_path_precedes(paths[i], best.path))) {
+		    meta.wall_clock_unix_seconds > best.meta.wall_clock_unix_seconds ||
+		    (meta.wall_clock_unix_seconds == best.meta.wall_clock_unix_seconds &&
+		     android_save_meta_path_precedes(paths[i], best.path))) {
 			memset(&best, 0, sizeof(best));
 			strncpy(best.path, paths[i], sizeof(best.path) - 1);
 			best.meta = meta;

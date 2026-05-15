@@ -1,0 +1,32 @@
+// TEST: Stage D2 Reticle Options menu for touch validation
+[
+    {"_info": {
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 250, "timeout_ms": 5000},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "Options", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Graphics Options...", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Reticle Options", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "menu.type": "newmenu",
+        "menu.is_scroll_box": "true",
+        "menu.subtitle": "Reticle Options",
+        "menu.selected_index": {"gte": 0}
+    }}
+]

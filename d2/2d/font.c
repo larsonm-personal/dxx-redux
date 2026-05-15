@@ -771,7 +771,83 @@ int ogl_internal_string(int x, int y, const char *s )
 	return 0;
 }
 
+static int gr_internal_color_string_linear(int x, int y, const char *s)
+{
+	grs_bitmap char_bm;
+	unsigned char *fp;
+	const char *text_ptr, *next_row, *text_ptr1;
+	int width, spacing, letter;
+	int xx, yy;
+
+	next_row = s;
+	yy = y;
+
+	while (next_row != NULL) {
+		text_ptr1 = next_row;
+		next_row = NULL;
+		text_ptr = text_ptr1;
+		xx = x;
+
+		if (xx == 0x8000)
+			xx = get_centered_x(text_ptr);
+
+		while (*text_ptr) {
+			int raw_width, draw_width, draw_height;
+			grs_bitmap *draw_bitmap;
+			grs_bitmap scaled_bm;
+
+			if (*text_ptr == '\n') {
+				next_row = &text_ptr[1];
+				yy += grd_curcanv->cv_font->ft_h + FSPACY(1);
+				break;
+			}
+
+			letter = (unsigned char)*text_ptr - grd_curcanv->cv_font->ft_minchar;
+			get_char_width(text_ptr[0], text_ptr[1], &width, &spacing);
+
+			if (!INFONT(letter)) {
+				xx += spacing;
+				text_ptr++;
+				continue;
+			}
+
+			raw_width = (grd_curcanv->cv_font->ft_flags & FT_PROPORTIONAL) ?
+			                grd_curcanv->cv_font->ft_widths[letter] :
+			                grd_curcanv->cv_font->ft_w;
+			draw_width = width;
+			draw_height = FONTSCALE_Y(grd_curcanv->cv_font->ft_h);
+			if (draw_width < 1)
+				draw_width = 1;
+			if (draw_height < 1)
+				draw_height = 1;
+
+			if (grd_curcanv->cv_font->ft_flags & FT_PROPORTIONAL)
+				fp = grd_curcanv->cv_font->ft_chars[letter];
+			else
+				fp = grd_curcanv->cv_font->ft_data + letter * raw_width * grd_curcanv->cv_font->ft_h;
+
+			gr_init_bitmap(&char_bm, BM_LINEAR, 0, 0, raw_width,
+			               grd_curcanv->cv_font->ft_h, raw_width, fp);
+			draw_bitmap = &char_bm;
+			if (draw_width != raw_width || draw_height != grd_curcanv->cv_font->ft_h) {
+				gr_init_bitmap_alloc(&scaled_bm, BM_LINEAR, 0, 0, draw_width,
+				                     draw_height, draw_width);
+				gr_bitmap_scale_to(&char_bm, &scaled_bm);
+				draw_bitmap = &scaled_bm;
+			}
+			gr_bitmapm(xx, yy, draw_bitmap);
+			if (draw_bitmap == &scaled_bm)
+				gr_free_bitmap_data(&scaled_bm);
+			xx += spacing;
+			text_ptr++;
+		}
+	}
+	return 0;
+}
+
 int gr_internal_color_string(int x, int y, const char *s ){
+	if (TYPE != BM_OGL)
+		return gr_internal_color_string_linear(x, y, s);
 	return ogl_internal_string(x,y,s);
 }
 #endif //OGL

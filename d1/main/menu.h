@@ -22,6 +22,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 extern int hide_menus(void);
 extern void show_menus(void);
+extern void restore_game_menus(void);
 
 // called once at program startup to get the player's name
 extern int RegisterPlayer();

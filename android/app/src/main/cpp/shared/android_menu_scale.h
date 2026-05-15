@@ -35,7 +35,6 @@ void android_menu_scale_clear(void);
 int android_menu_scale_get_state(android_menu_scale_result *result);
 void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
                                     const android_menu_scale_result *result, int masked);
-void android_menu_scale_blit_screen(const android_menu_scale_result *result);
 
 #ifdef __cplusplus
 }

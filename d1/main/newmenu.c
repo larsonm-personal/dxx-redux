@@ -47,6 +47,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "endlevel.h"
 #include "screens.h"
 #include "config.h"
+#ifdef OGL
+#include "ogl_init.h"
+#endif
 #include "player.h"
 #include "state.h"
 #include "newdemo.h"
@@ -92,6 +95,7 @@ struct newmenu
 	int				all_text;		//set true if all text items
 	int				is_scroll_box;   // Is this a scrolling box? Set to false at init
 	int				max_on_menu;
+	int				scroll_line_spacing;
 	int				mouse_state, dblclick_flag;
 	int				drag_start_y;	// Y coord at touch start for drag-to-scroll, -1 if inactive
 	int				drag_happened;	// Set when a drag-scroll actually occurred (suppresses tap activation)
@@ -151,6 +155,12 @@ void nm_draw_background1(char * filename)
 			memcpy(gr_palette, nm_background1_palette, sizeof(nm_background1_palette));
 		}
 #endif
+		/* Startup menus can touch this cached bitmap before the final menu
+		 * palette is active. Force the OGL texture to re-upload so the visible
+		 * draw uses the current palette instead of the first cached upload. */
+#ifdef OGL
+		ogl_freebmtexture(&nm_background1);
+#endif
 		gr_palette_load( gr_palette );
 		show_fullscr(&nm_background1);
 	}
@@ -178,6 +188,7 @@ void nm_draw_background(int x1, int y1, int x2, int y2 )
 		pcx_error = pcx_read_bitmap(MENU_BACKGROUND_BITMAP,&nm_background,BM_LINEAR,background_palette);
 		Assert(pcx_error == PCX_ERROR_NONE);
 		(void)pcx_error;
+		gr_palette_load( gr_palette );
 		gr_remap_bitmap_good( &nm_background, background_palette, -1, -1 );
 		BGScaleX=((float)SWIDTH/nm_background.bm_w);
 		BGScaleY=((float)SHEIGHT/nm_background.bm_h);
@@ -359,8 +370,18 @@ void nm_string_inputbox( int w, int x, int y, char * text, int current )
 		gr_string( x+w1, y, CURSOR_STRING );
 }
 
-void draw_item( newmenu_item *item, int is_current, int tiny, int tabs_flag, int scroll_offset )
+static int newmenu_get_scroll_line_spacing(newmenu *menu)
 {
+	if (menu && menu->scroll_line_spacing > 0) {
+		return menu->scroll_line_spacing;
+	}
+	return (int)LINE_SPACING;
+}
+
+void draw_item( newmenu_item *item, int is_current, int tiny, int tabs_flag, int scroll_offset, int scroll_line_spacing )
+{
+	int visible_y = item->y - (scroll_line_spacing * scroll_offset);
+
 	if (tiny)
 	{
 		if (is_current)
@@ -379,7 +400,7 @@ void draw_item( newmenu_item *item, int is_current, int tiny, int tabs_flag, int
 	switch( item->type )	{
 		case NM_TYPE_TEXT:
 		case NM_TYPE_MENU:
-			nm_string( item->w, item->x, item->y-(((int)LINE_SPACING)*scroll_offset), item->text, tabs_flag );
+			nm_string( item->w, item->x, visible_y, item->text, tabs_flag );
 			break;
 		case NM_TYPE_SLIDER:
 		{
@@ -394,42 +415,42 @@ void draw_item( newmenu_item *item, int is_current, int tiny, int tabs_flag, int
 
 			item->saved_text[item->value+1+strlen(item->text)+1] = SLIDER_MARKER[0];
 
-			nm_string_slider( item->w, item->x, item->y-(((int)LINE_SPACING)*scroll_offset), item->saved_text );
+			nm_string_slider( item->w, item->x, visible_y, item->saved_text );
 		}
 			break;
 		case NM_TYPE_INPUT_MENU:
 			if ( item->group==0 )
 			{
-				nm_string( item->w, item->x, item->y-(((int)LINE_SPACING)*scroll_offset), item->text, tabs_flag );
+				nm_string( item->w, item->x, visible_y, item->text, tabs_flag );
 			} else {
-				nm_string_inputbox( item->w, item->x, item->y-(((int)LINE_SPACING)*scroll_offset), item->text, is_current );
+				nm_string_inputbox( item->w, item->x, visible_y, item->text, is_current );
 			}
 			break;
 		case NM_TYPE_INPUT:
-			nm_string_inputbox( item->w, item->x, item->y-(((int)LINE_SPACING)*scroll_offset), item->text, is_current );
+			nm_string_inputbox( item->w, item->x, visible_y, item->text, is_current );
 			break;
 		case NM_TYPE_CHECK:
-			nm_string( item->w, item->x, item->y-(((int)LINE_SPACING)*scroll_offset), item->text, tabs_flag );
+			nm_string( item->w, item->x, visible_y, item->text, tabs_flag );
 			if (item->value)
-				nm_rstring( item->right_offset,item->x, item->y-(((int)LINE_SPACING)*scroll_offset), CHECKED_CHECK_BOX );
+				nm_rstring( item->right_offset,item->x, visible_y, CHECKED_CHECK_BOX );
 			else
-				nm_rstring( item->right_offset,item->x, item->y-(((int)LINE_SPACING)*scroll_offset), NORMAL_CHECK_BOX );
+				nm_rstring( item->right_offset,item->x, visible_y, NORMAL_CHECK_BOX );
 			break;
 		case NM_TYPE_RADIO:
-			nm_string( item->w, item->x, item->y-(((int)LINE_SPACING)*scroll_offset), item->text, tabs_flag );
+			nm_string( item->w, item->x, visible_y, item->text, tabs_flag );
 			if (item->value)
-				nm_rstring( item->right_offset, item->x, item->y-(((int)LINE_SPACING)*scroll_offset), CHECKED_RADIO_BOX );
+				nm_rstring( item->right_offset, item->x, visible_y, CHECKED_RADIO_BOX );
 			else
-				nm_rstring( item->right_offset, item->x, item->y-(((int)LINE_SPACING)*scroll_offset), NORMAL_RADIO_BOX );
+				nm_rstring( item->right_offset, item->x, visible_y, NORMAL_RADIO_BOX );
 			break;
 		case NM_TYPE_NUMBER:
 		{
 			char text[10];
 			if (item->value < item->min_value) item->value=item->min_value;
 			if (item->value > item->max_value) item->value=item->max_value;
-			nm_string( item->w, item->x, item->y-(((int)LINE_SPACING)*scroll_offset), item->text, tabs_flag );
+			nm_string( item->w, item->x, visible_y, item->text, tabs_flag );
 			sprintf( text, "%d", item->value );
-			nm_rstring( item->right_offset,item->x, item->y-(((int)LINE_SPACING)*scroll_offset), text );
+			nm_rstring( item->right_offset,item->x, visible_y, text );
 		}
 			break;
 	}
@@ -674,6 +695,23 @@ void newmenu_scroll(newmenu *menu, int amount)
 	}
 }
 
+static void newmenu_get_item_bounds(newmenu *menu, int item_index,
+	                                int *x1, int *y1, int *x2, int *y2)
+{
+	newmenu_item *item = &menu->items[item_index];
+	int row_height = item->h;
+	int scroll_line_spacing = newmenu_get_scroll_line_spacing(menu);
+	int visible_y = item->y - (scroll_line_spacing * menu->scroll_offset);
+
+	if (row_height < scroll_line_spacing)
+		row_height = scroll_line_spacing;
+
+	*x1 = grd_curcanv->cv_bitmap.bm_x + item->x - FSPACX(13);
+	*x2 = *x1 + item->w + FSPACX(13);
+	*y1 = grd_curcanv->cv_bitmap.bm_y + visible_y;
+	*y2 = *y1 + row_height;
+}
+
 int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 {
 	int old_choice, i, mx=0, my=0, mz=0, x1 = 0, x2, y1, y2, changed = 0;
@@ -691,10 +729,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 			{
 				mouse_get_pos(&mx, &my, &mz);
 				for (i=menu->scroll_offset; i<menu->max_on_menu+menu->scroll_offset; i++ )	{
-					x1 = grd_curcanv->cv_bitmap.bm_x + menu->items[i].x-FSPACX(13) /*- menu->items[i].right_offset - 6*/;
-					x2 = x1 + menu->items[i].w+FSPACX(13);
-					y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[i].y - (((int)LINE_SPACING)*menu->scroll_offset);
-					y2 = y1 + menu->items[i].h;
+					newmenu_get_item_bounds(menu, i, &x1, &y1, &x2, &y2);
 					if (((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2))) {
 						if (i != menu->citem) {
 							if(Hack_DblClick_MenuMode) menu->dblclick_flag = 0;
@@ -754,7 +789,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 					if (menu->scroll_offset != 0) {
 						gr_get_string_size(UP_ARROW_MARKER, &arrow_width, &arrow_height, &aw);
 						x1 = grd_curcanv->cv_bitmap.bm_x+BORDERX-FSPACX(12);
-						y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[menu->scroll_offset].y-(((int)LINE_SPACING)*menu->scroll_offset);
+						y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[menu->scroll_offset].y-(newmenu_get_scroll_line_spacing(menu)*menu->scroll_offset);
 						x2 = x1 + arrow_width;
 						y2 = y1 + arrow_height;
 						if (((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2)) && ScrollAllow) {
@@ -764,7 +799,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 					if (menu->scroll_offset+menu->max_displayable<menu->nitems) {
 						gr_get_string_size(DOWN_ARROW_MARKER, &arrow_width, &arrow_height, &aw);
 						x1 = grd_curcanv->cv_bitmap.bm_x+BORDERX-FSPACX(12);
-						y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[menu->scroll_offset+menu->max_displayable-1].y-(((int)LINE_SPACING)*menu->scroll_offset);
+						y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[menu->scroll_offset+menu->max_displayable-1].y-(newmenu_get_scroll_line_spacing(menu)*menu->scroll_offset);
 						x2 = x1 + arrow_width;
 						y2 = y1 + arrow_height;
 						if (((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2)) && ScrollAllow) {
@@ -774,10 +809,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 				}
 
 				for (i=menu->scroll_offset; i<menu->max_on_menu+menu->scroll_offset; i++ )	{
-					x1 = grd_curcanv->cv_bitmap.bm_x + menu->items[i].x-FSPACX(13);
-					x2 = x1 + menu->items[i].w+FSPACX(13);
-					y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[i].y - (((int)LINE_SPACING)*menu->scroll_offset);
-					y2 = y1 + menu->items[i].h;
+					newmenu_get_item_bounds(menu, i, &x1, &y1, &x2, &y2);
 
 					if (((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2)) && (menu->items[i].type != NM_TYPE_TEXT) ) {
 						if (i != menu->citem) {
@@ -842,10 +874,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 			{
 				mouse_get_pos(&mx, &my, &mz);
 				for (i=menu->scroll_offset; i<menu->max_on_menu+menu->scroll_offset; i++ )	{
-					x1 = grd_curcanv->cv_bitmap.bm_x + menu->items[i].x-FSPACX(13);
-					x2 = x1 + menu->items[i].w+FSPACX(13);
-					y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[i].y - (((int)LINE_SPACING)*menu->scroll_offset);
-					y2 = y1 + menu->items[i].h;
+					newmenu_get_item_bounds(menu, i, &x1, &y1, &x2, &y2);
 					if (((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2))) {
 						if (Hack_DblClick_MenuMode) {
 							if (menu->dblclick_flag)
@@ -896,10 +925,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 			if ((event->type == EVENT_MOUSE_BUTTON_UP) && menu->is_scroll_box && !menu->drag_happened && (menu->citem > -1))
 			{
 				mouse_get_pos(&mx, &my, &mz);
-				x1 = grd_curcanv->cv_bitmap.bm_x + menu->items[menu->citem].x-FSPACX(13);
-				x2 = x1 + menu->items[menu->citem].w+FSPACX(13);
-				y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[menu->citem].y - (((int)LINE_SPACING)*menu->scroll_offset);
-				y2 = y1 + menu->items[menu->citem].h;
+				newmenu_get_item_bounds(menu, menu->citem, &x1, &y1, &x2, &y2);
 				if (((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2))) {
 					switch (menu->items[menu->citem].type) {
 						case NM_TYPE_CHECK:
@@ -1316,6 +1342,7 @@ void newmenu_create_structure( newmenu *menu )
 	th += FSPACY(5);		//put some space between titles & body
 
 	gr_set_curfont(menu->tiny_mode?GAME_FONT:MEDIUM1_FONT);
+	menu->scroll_line_spacing = (int)LINE_SPACING;
 
 	menu->w = aw = 0;
 	menu->h = th;
@@ -1408,7 +1435,7 @@ void newmenu_create_structure( newmenu *menu )
 	if (i > menu->max_on_menu)
 	{
 		menu->is_scroll_box=1;
-		menu->h = th+(LINE_SPACING*menu->max_on_menu);
+		menu->h = th+(menu->scroll_line_spacing*menu->max_on_menu);
 		menu->max_displayable=menu->max_on_menu;
 
 		// if our last citem was > menu->max_on_menu, make sure we re-scroll when we call this menu again
@@ -1516,28 +1543,12 @@ void newmenu_create_structure( newmenu *menu )
 	gr_set_current_canvas(save_canvas);
 }
 
-int newmenu_draw(window *wind, newmenu *menu)
+static void newmenu_draw_contents(newmenu *menu)
 {
-	grs_canvas *menu_canvas = window_get_canvas(wind), *save_canvas = grd_curcanv;
 	int th = 0, ty, sx, sy;
 	int i;
+	int scroll_line_spacing = newmenu_get_scroll_line_spacing(menu);
 	int string_width, string_height, average_width;
-
-	if (menu->swidth != SWIDTH || menu->sheight != SHEIGHT || menu->fntscalex != FNTScaleX || menu->fntscalex != FNTScaleY)
-	{
-		newmenu_create_structure ( menu );
-		if (menu_canvas)
-		{
-			gr_init_sub_canvas(menu_canvas, &grd_curscreen->sc_canvas, menu->x, menu->y, menu->w, menu->h);
-		}
-	}
-
-	gr_set_current_canvas( NULL );
-	nm_draw_background1(menu->filename);
-	if (menu->filename == NULL)
-		nm_draw_background(menu->x-(menu->is_scroll_box?FSPACX(5):0),menu->y,menu->x+menu->w,menu->y+menu->h);
-
-	gr_set_current_canvas( menu_canvas );
 
 	ty = BORDERY;
 
@@ -1561,7 +1572,8 @@ int newmenu_draw(window *wind, newmenu *menu)
 	// Redraw everything...
 	for (i=menu->scroll_offset; i<menu->max_displayable+menu->scroll_offset; i++ )
 	{
-		draw_item( &menu->items[i], (i==menu->citem && !menu->all_text),menu->tiny_mode, menu->tabs_flag, menu->scroll_offset );
+		draw_item( &menu->items[i], (i==menu->citem && !menu->all_text),menu->tiny_mode, menu->tabs_flag, menu->scroll_offset, scroll_line_spacing );
+
 	}
 
 	if (menu->is_scroll_box)
@@ -1569,7 +1581,7 @@ int newmenu_draw(window *wind, newmenu *menu)
 		menu->last_scroll_check=menu->scroll_offset;
 		gr_set_curfont(menu->tiny_mode?GAME_FONT:MEDIUM2_FONT);
 
-		sy=menu->items[menu->scroll_offset].y-(((int)LINE_SPACING)*menu->scroll_offset);
+		sy=menu->items[menu->scroll_offset].y-(scroll_line_spacing*menu->scroll_offset);
 		sx=BORDERX-FSPACX(12);
 
 		if (menu->scroll_offset!=0)
@@ -1577,7 +1589,7 @@ int newmenu_draw(window *wind, newmenu *menu)
 		else
 			gr_printf( sx, sy, "  " );
 
-		sy=menu->items[menu->scroll_offset+menu->max_displayable-1].y-(((int)LINE_SPACING)*menu->scroll_offset);
+		sy=menu->items[menu->scroll_offset+menu->max_displayable-1].y-(scroll_line_spacing*menu->scroll_offset);
 		sx=BORDERX-FSPACX(12);
 
 		if (menu->scroll_offset+menu->max_displayable<menu->nitems)
@@ -1594,112 +1606,146 @@ int newmenu_draw(window *wind, newmenu *menu)
 		if (menu->subfunction)
 			(*menu->subfunction)(menu, &event, menu->userdata);
 	}
-
-	gr_set_current_canvas(save_canvas);
+}
 
 #ifdef ANDROID
-	if (menu->citem >= 0 && menu->citem < menu->nitems) {
-		extern void android_update_keyboard_field_y(int field_y);
-		int visible_y = menu->y + menu->items[menu->citem].y - (((int)LINE_SPACING) * menu->scroll_offset);
-		android_update_keyboard_field_y(visible_y);
+static void android_menu_scale_blit_source_region(grs_bitmap *bitmap,
+                                                  const android_menu_scale_result *result, int masked)
+{
+	int row;
+	grs_bitmap cropped;
 
-		if (window_get_front() == wind) {
-			extern void android_show_keyboard(int numeric, int field_y);
-			extern void android_hide_keyboard(void);
-			extern int android_is_keyboard_shown(void);
-			int keyboard_shown = android_is_keyboard_shown();
-			int needs_kb = (menu->items[menu->citem].type == NM_TYPE_INPUT ||
-			                (menu->items[menu->citem].type == NM_TYPE_INPUT_MENU && menu->items[menu->citem].group == 1));
-			// Don't open keyboard while finger is down (drag in progress) --
-			// dragging over a text-input item would pop the keyboard, shift
-			// the blit offset, and cause selection oscillation.
-			if (needs_kb && !keyboard_shown && !menu->mouse_state) {
-				int numeric = 0;
-				const char *p = Newmenu_allowed_chars;
-				if (p && p[0] == '0' && p[1] == '9' && p[2] == '\0')
-					numeric = 1;
-				android_show_keyboard(numeric, visible_y);
-			} else if (!needs_kb && keyboard_shown) {
-				android_hide_keyboard();
-			}
+	if (!bitmap || !result || !result->active)
+		return;
+
+	gr_init_bitmap_alloc(&cropped, BM_LINEAR, 0, 0, result->src.w,
+	                     result->src.h, result->src.w);
+	for (row = 0; row < result->src.h; row++)
+		memcpy(cropped.bm_data + row * result->src.w,
+		       bitmap->bm_data + (result->src.y + row) * bitmap->bm_rowsize +
+		       result->src.x,
+		       result->src.w);
+	android_menu_scale_blit_bitmap(&cropped, result, masked);
+	gr_free_bitmap_data(&cropped);
+}
+
+static void android_newmenu_draw_scaled(newmenu *menu,
+                                        const android_menu_scale_result *result)
+{
+	int masked = menu->filename != NULL;
+	grs_bitmap source_bitmap;
+	grs_canvas source_canvas, menu_canvas;
+	grs_canvas *save_canvas = grd_curcanv;
+
+	if (menu->filename != NULL) {
+		gr_set_current_canvas(NULL);
+		nm_draw_background1(menu->filename);
+	}
+
+	gr_init_bitmap_alloc(&source_bitmap, BM_LINEAR, 0, 0, SWIDTH, SHEIGHT, SWIDTH);
+	if (masked)
+		memset(source_bitmap.bm_data, TRANSPARENCY_COLOR, SWIDTH * SHEIGHT);
+	gr_init_canvas(&source_canvas, source_bitmap.bm_data, BM_LINEAR, SWIDTH, SHEIGHT);
+	gr_set_current_canvas(&source_canvas);
+	if (menu->filename == NULL)
+		nm_draw_background(menu->x-(menu->is_scroll_box?FSPACX(5):0),menu->y,menu->x+menu->w,menu->y+menu->h);
+
+	gr_init_sub_canvas(&menu_canvas, &source_canvas, menu->x, menu->y, menu->w, menu->h);
+	gr_set_current_canvas(&menu_canvas);
+	newmenu_draw_contents(menu);
+
+	gr_set_current_canvas(save_canvas);
+	android_menu_scale_blit_source_region(&source_bitmap, result, masked);
+	gr_set_current_canvas(save_canvas);
+	gr_free_bitmap_data(&source_bitmap);
+}
+#endif
+
+int newmenu_draw(window *wind, newmenu *menu)
+{
+	grs_canvas *menu_canvas = window_get_canvas(wind), *save_canvas = grd_curcanv;
+	#ifdef ANDROID
+	android_menu_scale_result menu_scale;
+	int have_menu_scale;
+	#endif
+
+	if (menu->swidth != SWIDTH || menu->sheight != SHEIGHT || menu->fntscalex != FNTScaleX || menu->fntscalex != FNTScaleY)
+	{
+		newmenu_create_structure ( menu );
+		if (menu_canvas)
+		{
+			gr_init_sub_canvas(menu_canvas, &grd_curscreen->sc_canvas, menu->x, menu->y, menu->w, menu->h);
 		}
 	}
-#endif
 
 #ifdef ANDROID
 	{
-		android_menu_scale_result menu_scale;
 		int source_x = menu->x - (menu->is_scroll_box ? (int)FSPACX(5) : 0);
 		int source_y = menu->y;
 		int source_w = menu->x + menu->w - source_x;
 		int source_h = menu->y + menu->h - source_y;
 
-		if (android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
-		                                      SWIDTH, SHEIGHT, BORDERX, BORDERY,
-		                                      &menu_scale)) {
-			if (menu->filename != NULL) {
-				gr_set_current_canvas(NULL);
-				show_fullscr(&nm_background1);
+		have_menu_scale = android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
+		                                                   SWIDTH, SHEIGHT, BORDERX, BORDERY,
+		                                                   &menu_scale);
+	}
+	if (have_menu_scale) {
+		android_newmenu_draw_scaled(menu, &menu_scale);
+		android_menu_scale_publish(&menu_scale);
+	} else
+#endif
+	{
+		gr_set_current_canvas( NULL );
+		nm_draw_background1(menu->filename);
+		if (menu->filename == NULL)
+			nm_draw_background(menu->x-(menu->is_scroll_box?FSPACX(5):0),menu->y,menu->x+menu->w,menu->y+menu->h);
 
-				grs_bitmap tmp;
-				gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, menu_scale.box.w,
-				                     menu_scale.box.h, menu_scale.box.w);
-				memset(tmp.bm_data, 255, menu_scale.box.w * menu_scale.box.h);
+		gr_set_current_canvas( menu_canvas );
+		newmenu_draw_contents(menu);
+		gr_set_current_canvas(save_canvas);
+#ifdef ANDROID
+		android_menu_scale_clear();
+#endif
+	}
 
-				{
-					grs_canvas off_canvas;
-					gr_init_canvas(&off_canvas, tmp.bm_data, BM_LINEAR,
-					               menu_scale.box.w, menu_scale.box.h);
-					grs_canvas *prev = grd_curcanv;
-					int origin_x = menu->x - menu_scale.box.x;
-					int origin_y = menu->y - menu_scale.box.y;
-					int title_height = 0;
-					gr_set_current_canvas(&off_canvas);
+#ifdef ANDROID
+	{
+		newmenu_item *current_item = NULL;
+		int front_menu = window_get_front() == wind;
 
-					if (menu->title) {
-						gr_set_curfont(HUGE_FONT);
-						gr_set_fontcolor(BM_XRGB(31,31,31), -1);
-						gr_get_string_size(menu->title, &string_width, &string_height, &average_width);
-						title_height = string_height;
-						gr_string(origin_x + (menu->w - string_width) / 2, origin_y + BORDERY, menu->title);
-					}
-					if (menu->subtitle) {
-						gr_set_curfont(MEDIUM3_FONT);
-						gr_set_fontcolor(BM_XRGB(21,21,21), -1);
-						gr_get_string_size(menu->subtitle, &string_width, &string_height, &average_width);
-						gr_string(origin_x + (menu->w - string_width) / 2,
-						          origin_y + BORDERY + title_height, menu->subtitle);
-					}
+		if (menu->items && menu->citem >= 0 && menu->citem < menu->nitems)
+			current_item = &menu->items[menu->citem];
 
-					gr_set_curfont(menu->tiny_mode ? GAME_FONT : MEDIUM1_FONT);
-					for (i = menu->scroll_offset; i < menu->max_displayable + menu->scroll_offset; i++)
-						draw_item(&menu->items[i], (i == menu->citem && !menu->all_text), menu->tiny_mode, menu->tabs_flag, menu->scroll_offset);
+		if (current_item &&
+		    (current_item->type == NM_TYPE_INPUT ||
+		     (current_item->type == NM_TYPE_INPUT_MENU && current_item->group == 1))) {
+			extern void android_update_keyboard_field_y(int field_y);
+			int visible_y = menu->y + current_item->y - (newmenu_get_scroll_line_spacing(menu) * menu->scroll_offset);
+			android_update_keyboard_field_y(visible_y);
 
-					gr_set_current_canvas(prev);
+			if (front_menu) {
+				extern void android_show_keyboard(int numeric, int field_y);
+				extern void android_hide_keyboard(void);
+				extern int android_is_keyboard_shown(void);
+				int keyboard_shown = android_is_keyboard_shown();
+				// Don't open keyboard while finger is down (drag in progress) --
+				// dragging over a text-input item would pop the keyboard, shift
+				// the blit offset, and cause selection oscillation.
+				if (!keyboard_shown && !menu->mouse_state) {
+					int numeric = 0;
+					const char *p = Newmenu_allowed_chars;
+					if (p && p[0] == '0' && p[1] == '9' && p[2] == '\0')
+						numeric = 1;
+					android_show_keyboard(numeric, visible_y);
+				} else if (keyboard_shown && !current_item) {
+					android_hide_keyboard();
 				}
-
-				{
-					grs_bitmap cropped;
-					gr_init_bitmap_alloc(&cropped, BM_LINEAR, 0, 0,
-					                     menu_scale.src.w, menu_scale.src.h,
-					                     menu_scale.src.w);
-					for (int row = 0; row < menu_scale.src.h; row++)
-						memcpy(cropped.bm_data + row * menu_scale.src.w,
-						       tmp.bm_data + (menu_scale.crop_top + row) * menu_scale.box.w +
-						       menu_scale.crop_left,
-						       menu_scale.src.w);
-
-					android_menu_scale_blit_bitmap(&cropped, &menu_scale, 1);
-					gr_free_bitmap_data(&cropped);
-				}
-				gr_free_bitmap_data(&tmp);
-			} else {
-				android_menu_scale_blit_screen(&menu_scale);
 			}
-
-			android_menu_scale_publish(&menu_scale);
-		} else {
-			android_menu_scale_clear();
+		} else if (front_menu) {
+			extern void android_hide_keyboard(void);
+			extern int android_is_keyboard_shown(void);
+			if (android_is_keyboard_shown())
+				android_hide_keyboard();
 		}
 	}
 #endif
@@ -1825,7 +1871,7 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 				gr_set_current_canvas(menu_canvas);
 
 				mouse_get_pos(&mx, &my, &mz);
-				int ls = (int)LINE_SPACING;
+				int ls = newmenu_get_scroll_line_spacing(menu);
 				if (ls > 0) {
 					int delta = my - menu->drag_start_y;
 					int lines = delta / ls;
@@ -2059,7 +2105,7 @@ struct listbox
 	int citem, first_item;
 	int marquee_maxchars, marquee_charpos, marquee_scrollback;
 	fix64 marquee_lasttime; // to scroll text if string does not fit in box
-	int box_w, height, box_x, box_y, title_height;
+	int box_w, height, box_x, box_y, title_height, row_height, selected_row_height;
 	short swidth, sheight; float fntscalex, fntscaley; // with these we check if resolution or fonts have changed so listbox structure can be recreated
 	int mouse_state;
 	void *userdata;
@@ -2132,6 +2178,18 @@ void update_scroll_position(listbox *lb)
 	if (lb->first_item < 0 ) lb->first_item = 0;
 }
 
+static void listbox_get_item_bounds(listbox *lb, int item_index,
+	                              int *x1, int *y1, int *x2, int *y2)
+{
+	int visible_y = (item_index - lb->first_item) * LINE_SPACING + lb->box_y;
+	int row_height = item_index == lb->citem ? lb->selected_row_height : lb->row_height;
+
+	*x1 = lb->box_x;
+	*x2 = lb->box_x + lb->box_w;
+	*y1 = visible_y - FSPACY(1);
+	*y2 = *y1 + row_height;
+}
+
 int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 {
 	int i, mx, my, mz, x1, x2, y1, y2;
@@ -2142,17 +2200,11 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 		{
 			if (lb->mouse_state)
 			{
-				int w, h, aw;
-
 				mouse_get_pos(&mx, &my, &mz);
 				for (i=lb->first_item; i<lb->first_item+LB_ITEMS_ON_SCREEN; i++ )	{
 					if (i >= lb->nitems)
 						break;
-					gr_get_string_size(lb->item[i], &w, &h, &aw  );
-					x1 = lb->box_x;
-					x2 = lb->box_x + lb->box_w;
-					y1 = (i-lb->first_item)*LINE_SPACING+lb->box_y;
-					y2 = y1+h;
+					listbox_get_item_bounds(lb, i, &x1, &y1, &x2, &y2);
 					if ( ((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2)) ) {
 						lb->citem = i;
 						return 1;
@@ -2161,17 +2213,11 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 			}
 			else if (event->type == EVENT_MOUSE_BUTTON_UP)
 			{
-				int w, h, aw;
-
 				if (lb->citem < 0)
 					return 0;
 
 				mouse_get_pos(&mx, &my, &mz);
-				gr_get_string_size(lb->item[lb->citem], &w, &h, &aw  );
-				x1 = lb->box_x;
-				x2 = lb->box_x + lb->box_w;
-				y1 = (lb->citem-lb->first_item)*LINE_SPACING+lb->box_y;
-				y2 = y1+h;
+				listbox_get_item_bounds(lb, lb->citem, &x1, &y1, &x2, &y2);
 				if ( ((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2)) )
 				{
 					// Tell callback, allow staying in menu
@@ -2337,6 +2383,16 @@ void listbox_create_structure( listbox *lb)
 		lb->title_height = h+FSPACY(5);
 	}
 
+	gr_set_curfont(MEDIUM1_FONT);
+	gr_get_string_size("O", &i, &lb->row_height, &lb->title_height);
+	gr_set_curfont(MEDIUM2_FONT);
+	gr_get_string_size("O", &i, &lb->selected_row_height, &lb->title_height);
+	if (lb->row_height < LINE_SPACING + FSPACY(1))
+		lb->row_height = LINE_SPACING + FSPACY(1);
+	if (lb->selected_row_height < lb->row_height)
+		lb->selected_row_height = lb->row_height;
+	gr_set_curfont(MEDIUM3_FONT);
+
 	lb->marquee_maxchars = lb->marquee_charpos = lb->marquee_scrollback = lb->marquee_lasttime = 0;
 	// The box is bigger than we can fit on the screen since at least one string is too long. Check how many chars we can fit on the screen (at least only - MEDIUM*_FONT is variable font!) so we can make a marquee-like effect.
 	if (lb->box_w + (BORDERX*2) > SWIDTH)
@@ -2367,14 +2423,10 @@ void listbox_create_structure( listbox *lb)
 	lb->fntscaley = FNTScaleY;
 }
 
-int listbox_draw(window *wind, listbox *lb)
+static void listbox_draw_contents(listbox *lb)
 {
 	int i;
 
-	if (lb->swidth != SWIDTH || lb->sheight != SHEIGHT || lb->fntscalex != FNTScaleX || lb->fntscalex != FNTScaleY)
-		listbox_create_structure ( lb );
-
-	gr_set_current_canvas(NULL);
 	nm_draw_background( lb->box_x-BORDERX,lb->box_y-lb->title_height-BORDERY,lb->box_x+lb->box_w+BORDERX,lb->box_y+lb->height+BORDERY );
 	gr_set_curfont(MEDIUM3_FONT);
 	gr_string( 0x8000, lb->box_y - lb->title_height, lb->title );
@@ -2452,6 +2504,33 @@ int listbox_draw(window *wind, listbox *lb)
 		if ( lb->listbox_callback )
 			(*lb->listbox_callback)(lb, &event, lb->userdata);
 	}
+}
+
+#ifdef ANDROID
+static void android_listbox_draw_scaled(listbox *lb,
+                                        const android_menu_scale_result *result)
+{
+	grs_bitmap source_bitmap;
+	grs_canvas source_canvas;
+	grs_canvas *save_canvas = grd_curcanv;
+
+	gr_init_bitmap_alloc(&source_bitmap, BM_LINEAR, 0, 0, SWIDTH, SHEIGHT, SWIDTH);
+	gr_init_canvas(&source_canvas, source_bitmap.bm_data, BM_LINEAR, SWIDTH, SHEIGHT);
+	gr_set_current_canvas(&source_canvas);
+	listbox_draw_contents(lb);
+	gr_set_current_canvas(save_canvas);
+	android_menu_scale_blit_source_region(&source_bitmap, result, 0);
+	gr_set_current_canvas(save_canvas);
+	gr_free_bitmap_data(&source_bitmap);
+}
+#endif
+
+int listbox_draw(window *wind, listbox *lb)
+{
+	(void)wind;
+
+	if (lb->swidth != SWIDTH || lb->sheight != SHEIGHT || lb->fntscalex != FNTScaleX || lb->fntscalex != FNTScaleY)
+		listbox_create_structure ( lb );
 
 #ifdef ANDROID
 	{
@@ -2464,14 +2543,17 @@ int listbox_draw(window *wind, listbox *lb)
 		if (android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
 		                                      SWIDTH, SHEIGHT, BORDERX, BORDERY,
 		                                      &menu_scale)) {
-			android_menu_scale_blit_screen(&menu_scale);
-
+			android_listbox_draw_scaled(lb, &menu_scale);
 			android_menu_scale_publish(&menu_scale);
+			return 1;
 		} else {
 			android_menu_scale_clear();
 		}
 	}
 #endif
+
+	gr_set_current_canvas(NULL);
+	listbox_draw_contents(lb);
 
 	return 1;
 }

@@ -169,6 +169,14 @@ void show_menus(void)
 	menus[0] = NULL;
 }
 
+void restore_game_menus(void)
+{
+	if (menus[0])
+		show_menus();
+	else
+		DoMenu();
+}
+
 //pairs of chars describing ranges
 char playername_allowed_chars[] = "azAZ09__--";
 
