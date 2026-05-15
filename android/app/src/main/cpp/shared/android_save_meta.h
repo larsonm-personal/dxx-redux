@@ -2,6 +2,7 @@
 #define ANDROID_SAVE_META_H
 
 #include <stdint.h>
+#include <physfs.h>
 
 #define ANDROID_SAVE_META_TAG     0x44584153u /* "DXAS" */
 #define ANDROID_SAVE_META_VERSION 1
@@ -83,6 +84,10 @@ int android_save_meta_build(android_save_meta_disk *out,
                             const android_save_meta_write_params *params);
 int android_save_meta_is_valid(const android_save_meta_disk *meta);
 int android_save_meta_read_path(const char *path, android_save_meta_disk *out);
+int android_save_meta_write_physfs(PHYSFS_file *fp,
+                                   const android_save_meta_write_params *params);
+int android_save_meta_read_physfs(PHYSFS_file *fp, PHYSFS_sint64 file_len,
+                                  android_save_meta_disk *out);
 int android_save_meta_select_newest(const char *const *paths, int path_count,
                                     android_save_meta_candidate *out);
 

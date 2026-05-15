@@ -139,41 +139,6 @@ static uint32_t state_time_to_seconds(fix time_value, sbyte hours_value)
 	return (uint32_t)hours_value * 3600u + (uint32_t)f2i(time_value);
 }
 
-static int state_read_android_save_meta(PHYSFS_file *fp, PHYSFS_sint64 file_len,
-	android_save_meta_disk *meta)
-{
-	PHYSFS_sint64 saved_pos;
-	PHYSFS_sint64 meta_start;
-	android_save_meta_footer footer;
-
-	if (file_len < (PHYSFS_sint64)sizeof(footer))
-		return 0;
-
-	saved_pos = PHYSFS_tell(fp);
-	meta_start = file_len - (PHYSFS_sint64)sizeof(footer);
-	if (!PHYSFS_seek(fp, meta_start))
-		goto fail;
-	if (PHYSFS_read(fp, &footer, sizeof(footer), 1) != 1)
-		goto fail;
-	if (footer.tag != ANDROID_SAVE_META_TAG ||
-		footer.version != ANDROID_SAVE_META_VERSION ||
-		footer.trailer_bytes != sizeof(*meta) ||
-		file_len < (PHYSFS_sint64)footer.trailer_bytes)
-		goto fail;
-	meta_start = file_len - (PHYSFS_sint64)footer.trailer_bytes;
-	if (!PHYSFS_seek(fp, meta_start))
-		goto fail;
-	if (PHYSFS_read(fp, meta, sizeof(*meta), 1) != 1)
-		goto fail;
-	if (!PHYSFS_seek(fp, saved_pos))
-		return 0;
-	return android_save_meta_is_valid(meta);
-
-fail:
-	PHYSFS_seek(fp, saved_pos);
-	return 0;
-}
-
 static int g_android_save_meta_kind = ANDROID_SAVE_META_KIND_MANUAL;
 #endif
 
@@ -1443,7 +1408,6 @@ int state_save_old_game(int slotnum, char * sg_name, player_rw * sg_player,
                         int sg_difficulty_level, int sg_primary_weapon, 
                         int sg_secondary_weapon, int sg_next_level_num  	)
 {
-	int i;
 	int temp_int;
 	ubyte temp_byte;
 	char desc[DESC_LENGTH+1];
@@ -1776,7 +1740,6 @@ int state_save_all_sub(char *filename, char *desc)
 #ifdef __ANDROID__
 	coop_write_save_metadata(fp);
 	{
-		android_save_meta_disk android_meta;
 		android_save_meta_write_params android_params;
 		char android_desc[DESC_LENGTH + 1];
 
@@ -1794,8 +1757,7 @@ int state_save_all_sub(char *filename, char *desc)
 			Players[Player_num].time_level, Players[Player_num].hours_level);
 		android_params.total_seconds = state_time_to_seconds(
 			Players[Player_num].time_total, Players[Player_num].hours_total);
-		if (android_save_meta_build(&android_meta, &android_params))
-			PHYSFS_write(fp, &android_meta, sizeof(android_meta), 1);
+		android_save_meta_write_physfs(fp, &android_params);
 	}
 #endif
 
@@ -2469,7 +2431,7 @@ RetryObjectLoading:
 		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
 		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
 		android_save_meta_disk android_meta;
-		int have_android_meta = state_read_android_save_meta(fp, file_len, &android_meta);
+		int have_android_meta = android_save_meta_read_physfs(fp, file_len, &android_meta);
 		coop_save_metadata coop_meta;
 		if (coop_read_save_metadata(fp, pos_after_base, &coop_meta)) {
 			con_printf(CON_DEBUG, "coop_save: restored metadata (%d active, %d absent)",

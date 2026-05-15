@@ -271,13 +271,16 @@ int which_bomb()
 void do_weapon_n_item_stuff()
 {
 	int i;
+	unsigned int sim_state;
 	const int rng_probe = input_demo_replay_is_loaded() && input_demo_debug_is_enabled();
 
 	if (rng_probe) {
+		sim_state = 0;
+		d_rand_get_state(&sim_state);
 		con_printf(CON_NORMAL, "RNG_PROBE|tag=weapon_item_entry|gt=%lld|sim_calls=%d|sim_state=%u|fire_secondary_state=%d|fire_secondary_count=%d|global_missile=%d\n",
 			(long long)GameTime64,
 			d_rand_get_call_count(),
-			d_rand_get_state(D_RNG_SIM),
+			sim_state,
 			Controls.fire_secondary_state,
 			Controls.fire_secondary_count,
 			Global_missile_firing_count);
@@ -293,10 +296,12 @@ void do_weapon_n_item_stuff()
 	if (allowed_to_fire_missile() && (Controls.fire_secondary_state || Controls.fire_secondary_count))
 		Global_missile_firing_count += Weapon_info[Secondary_weapon_to_weapon_info[Players[Player_num].secondary_weapon]].fire_count;
 	if (rng_probe) {
+		sim_state = 0;
+		d_rand_get_state(&sim_state);
 		con_printf(CON_NORMAL, "RNG_PROBE|tag=weapon_item_after_secondary_accum|gt=%lld|sim_calls=%d|sim_state=%u|fire_secondary_state=%d|fire_secondary_count=%d|global_missile=%d\n",
 			(long long)GameTime64,
 			d_rand_get_call_count(),
-			d_rand_get_state(D_RNG_SIM),
+			sim_state,
 			Controls.fire_secondary_state,
 			Controls.fire_secondary_count,
 			Global_missile_firing_count);
@@ -305,18 +310,22 @@ void do_weapon_n_item_stuff()
 
 	if (Global_missile_firing_count) {
 		if (rng_probe) {
+			sim_state = 0;
+			d_rand_get_state(&sim_state);
 			con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_loop_enter|gt=%lld|sim_calls=%d|sim_state=%u|pending=%d\n",
 				(long long)GameTime64,
 				d_rand_get_call_count(),
-				d_rand_get_state(D_RNG_SIM),
+				sim_state,
 				Global_missile_firing_count);
 		}
 		do_missile_firing(0);
 		if (rng_probe) {
+			sim_state = 0;
+			d_rand_get_state(&sim_state);
 			con_printf(CON_NORMAL, "RNG_PROBE|tag=missile_loop_exit|gt=%lld|sim_calls=%d|sim_state=%u|pending=%d\n",
 				(long long)GameTime64,
 				d_rand_get_call_count(),
-				d_rand_get_state(D_RNG_SIM),
+				sim_state,
 				Global_missile_firing_count);
 		}
 		Global_missile_firing_count--;

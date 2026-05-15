@@ -95,6 +95,53 @@ int android_save_meta_is_valid(const android_save_meta_disk *meta)
 	return 1;
 }
 
+int android_save_meta_write_physfs(PHYSFS_file *fp,
+                                   const android_save_meta_write_params *params)
+{
+	android_save_meta_disk meta;
+
+	if (!fp || !params)
+		return 0;
+	if (!android_save_meta_build(&meta, params))
+		return 0;
+	return PHYSFS_write(fp, &meta, sizeof(meta), 1) == 1;
+}
+
+int android_save_meta_read_physfs(PHYSFS_file *fp, PHYSFS_sint64 file_len,
+                                  android_save_meta_disk *out)
+{
+	PHYSFS_sint64 saved_pos;
+	PHYSFS_sint64 meta_start;
+	android_save_meta_footer footer;
+
+	if (!fp || !out || file_len < (PHYSFS_sint64) sizeof(footer))
+		return 0;
+
+	saved_pos = PHYSFS_tell(fp);
+	meta_start = file_len - (PHYSFS_sint64) sizeof(footer);
+	if (!PHYSFS_seek(fp, meta_start))
+		goto fail;
+	if (PHYSFS_read(fp, &footer, sizeof(footer), 1) != 1)
+		goto fail;
+	if (footer.tag != ANDROID_SAVE_META_TAG ||
+	    footer.version != ANDROID_SAVE_META_VERSION ||
+	    footer.trailer_bytes != sizeof(*out) ||
+	    file_len < (PHYSFS_sint64) footer.trailer_bytes)
+		goto fail;
+	meta_start = file_len - (PHYSFS_sint64) footer.trailer_bytes;
+	if (!PHYSFS_seek(fp, meta_start))
+		goto fail;
+	if (PHYSFS_read(fp, out, sizeof(*out), 1) != 1)
+		goto fail;
+	if (!PHYSFS_seek(fp, saved_pos))
+		return 0;
+	return android_save_meta_is_valid(out);
+
+fail:
+	PHYSFS_seek(fp, saved_pos);
+	return 0;
+}
+
 int android_save_meta_read_path(const char *path, android_save_meta_disk *out)
 {
 	FILE *f;
