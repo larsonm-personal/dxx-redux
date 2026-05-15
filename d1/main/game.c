@@ -718,7 +718,7 @@ void palette_restore(void)
 		memcpy(gr_fade_table, Saved_game_fade_table, sizeof(Saved_game_fade_table));
 		gr_palette_load(gr_palette);
 		#if defined(OGL) && defined(__ANDROID__)
-		ogl_smash_texture_list();
+		ogl_invalidate_game_palette_textures();
 		#endif
 	}
 

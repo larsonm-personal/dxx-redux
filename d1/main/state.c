@@ -179,6 +179,26 @@ static int g_android_save_meta_kind = ANDROID_SAVE_META_KIND_MANUAL;
 
 static int g_android_save_blank_thumbnail = 0;
 
+#ifdef __ANDROID__
+static ubyte g_android_save_meta_thumbnail_rgb6[THUMBNAIL_RGB_BYTES];
+static int g_android_save_meta_thumbnail_valid = 0;
+
+static void state_clear_android_save_meta_thumbnail(void)
+{
+	g_android_save_meta_thumbnail_valid = 0;
+}
+
+static void state_set_android_save_meta_thumbnail(const ubyte *rgb)
+{
+	if (!rgb) {
+		g_android_save_meta_thumbnail_valid = 0;
+		return;
+	}
+	memcpy(g_android_save_meta_thumbnail_rgb6, rgb, THUMBNAIL_RGB_BYTES);
+	g_android_save_meta_thumbnail_valid = 1;
+}
+#endif
+
 static fix state_time_to_delta_fix(fix64 time_value)
 {
 	fix64 delta = time_value - GameTime64;
@@ -768,6 +788,9 @@ static grs_bitmap *state_read_thumbnail(PHYSFS_file *fp, int version)
 static void state_write_blank_thumbnail(PHYSFS_file *fp)
 {
 	ubyte *zero = d_malloc(THUMBNAIL_RGB_BYTES);
+	#ifdef __ANDROID__
+	state_clear_android_save_meta_thumbnail();
+	#endif
 	if (!zero)
 		return;
 	memset(zero, 0, THUMBNAIL_RGB_BYTES);
@@ -784,6 +807,9 @@ static void state_write_current_frame_thumbnail(PHYSFS_file *fp)
 	grs_canvas *cnv_save;
 	ubyte *rgb;
 	int i;
+	#ifdef __ANDROID__
+	state_clear_android_save_meta_thumbnail();
+	#endif
 
 	if (!cnv) {
 		state_write_blank_thumbnail(fp);
@@ -835,6 +861,9 @@ static void state_write_current_frame_thumbnail(PHYSFS_file *fp)
 	}
 #endif
 
+	#ifdef __ANDROID__
+	state_set_android_save_meta_thumbnail(rgb);
+	#endif
 	PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1);
 	d_free(rgb);
 
@@ -1575,7 +1604,7 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.sg%x" : "%s.sg%x",
 		Players[Player_num].callsign, slotnum);
 	g_android_save_meta_kind = save_kind;
-	g_android_save_blank_thumbnail = 1;
+	g_android_save_blank_thumbnail = 0;
 	result = state_save_all_sub(filename, save_desc);
 	g_android_save_meta_kind = prev_kind;
 	g_android_save_blank_thumbnail = prev_blank;
@@ -1794,6 +1823,11 @@ int state_save_all_sub(char *filename, char *desc)
 			Players[Player_num].time_level, Players[Player_num].hours_level);
 		android_params.total_seconds = state_time_to_seconds(
 			Players[Player_num].time_total, Players[Player_num].hours_total);
+		if (g_android_save_meta_thumbnail_valid) {
+			android_params.thumbnail_rgb6 = g_android_save_meta_thumbnail_rgb6;
+			android_params.thumbnail_width = THUMBNAIL_W;
+			android_params.thumbnail_height = THUMBNAIL_H;
+		}
 		if (android_save_meta_build(&android_meta, &android_params))
 			PHYSFS_write(fp, &android_meta, sizeof(android_meta), 1);
 	}

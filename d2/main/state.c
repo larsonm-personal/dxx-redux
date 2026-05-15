@@ -195,6 +195,26 @@ static int g_android_save_meta_kind = ANDROID_SAVE_META_KIND_MANUAL;
 
 static int g_android_save_blank_thumbnail = 0;
 
+#ifdef __ANDROID__
+static ubyte g_android_save_meta_thumbnail_rgb6[THUMBNAIL_RGB_BYTES];
+static int g_android_save_meta_thumbnail_valid = 0;
+
+static void state_clear_android_save_meta_thumbnail(void)
+{
+	g_android_save_meta_thumbnail_valid = 0;
+}
+
+static void state_set_android_save_meta_thumbnail(const ubyte *rgb)
+{
+	if (!rgb) {
+		g_android_save_meta_thumbnail_valid = 0;
+		return;
+	}
+	memcpy(g_android_save_meta_thumbnail_rgb6, rgb, THUMBNAIL_RGB_BYTES);
+	g_android_save_meta_thumbnail_valid = 1;
+}
+#endif
+
 static fix state_time_to_delta_fix(fix64 time_value)
 {
 	fix64 delta = time_value - GameTime64;
@@ -1882,7 +1902,7 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 		(void)copy_result;
 	}
 	g_android_save_meta_kind = save_kind;
-	g_android_save_blank_thumbnail = 1;
+	g_android_save_blank_thumbnail = 0;
 	result = state_save_all_sub(filename, save_desc);
 	g_android_save_meta_kind = prev_kind;
 	g_android_save_blank_thumbnail = prev_blank;
@@ -1937,6 +1957,9 @@ int state_save_all_sub(char *filename, char *desc)
 	PHYSFS_write(fp, desc, sizeof(char) * DESC_LENGTH, 1);
 
 // Save the current screen shot...
+	#ifdef __ANDROID__
+	state_clear_android_save_meta_thumbnail();
+	#endif
 	if (g_android_save_blank_thumbnail) {
 		state_write_blank_thumbnail(fp);
 	} else {
@@ -1976,6 +1999,9 @@ int state_save_all_sub(char *filename, char *desc)
 			rgb[dst + 1] = buf[4*i + 1] / 4;
 			rgb[dst + 2] = buf[4*i + 2] / 4;
 		}
+		#ifdef __ANDROID__
+		state_set_android_save_meta_thumbnail(rgb);
+		#endif
 		PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1);
 		d_free(rgb);
 		d_free(buf);
@@ -1989,6 +2015,9 @@ int state_save_all_sub(char *filename, char *desc)
 					rgb[i*3 + 1] = gr_palette[idx*3 + 1];
 					rgb[i*3 + 2] = gr_palette[idx*3 + 2];
 				}
+				#ifdef __ANDROID__
+				state_set_android_save_meta_thumbnail(rgb);
+				#endif
 				PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1);
 				d_free(rgb);
 			} else {
@@ -2201,6 +2230,11 @@ int state_save_all_sub(char *filename, char *desc)
 			Players[Player_num].time_level, Players[Player_num].hours_level);
 		android_params.total_seconds = state_time_to_seconds(
 			Players[Player_num].time_total, Players[Player_num].hours_total);
+		if (g_android_save_meta_thumbnail_valid) {
+			android_params.thumbnail_rgb6 = g_android_save_meta_thumbnail_rgb6;
+			android_params.thumbnail_width = THUMBNAIL_W;
+			android_params.thumbnail_height = THUMBNAIL_H;
+		}
 		if (android_save_meta_build(&android_meta, &android_params))
 			PHYSFS_write(fp, &android_meta, sizeof(android_meta), 1);
 	}

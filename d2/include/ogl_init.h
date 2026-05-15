@@ -111,7 +111,7 @@ void ogl_prepare_framebuffer_readback(void);
 void ogl_swap_buffers_internal(void);
 void ogl_set_screen_mode(void);
 void ogl_cache_level_textures(void);
-void ogl_smash_texture_list(void);
+void ogl_invalidate_game_palette_textures(void);
 
 void ogl_urect(int left, int top, int right, int bot);
 bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scale);

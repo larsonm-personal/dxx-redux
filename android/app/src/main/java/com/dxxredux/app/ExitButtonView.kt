@@ -10,7 +10,8 @@ import kotlin.math.min
 /**
  * Small circular "EXIT" button shown in the upper-left corner of the game surface.
  * Always visible while the game activity is running (menus and gameplay alike).
- * Tapping it pushes SDL_QUIT via META_RETURN_TO_LAUNCHER to return to the launcher.
+ * Tapping it opens the in-engine game menu during gameplay, and otherwise
+ * returns to the launcher.
  */
 class ExitButtonView(
     context: Context,

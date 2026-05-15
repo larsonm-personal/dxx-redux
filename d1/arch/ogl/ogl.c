@@ -665,9 +665,19 @@ void ogl_texwrap(ogl_texture *gltexture,int state)
 	}
 }
 
-void ogl_smash_texture_list(void)
+void ogl_invalidate_game_palette_textures(void)
 {
-	ogl_smash_texture_list_internal();
+	int i;
+
+#if defined(ANDROID) && defined(OGL_MERGE)
+	android_merged_wall_cached_texmerge_clear_cache();
+#endif
+
+	for (i = 0; i < Num_bitmap_files; i++) {
+		if (GameBitmaps[i].bm_parent)
+			continue;
+		ogl_freebmtexture(&GameBitmaps[i]);
+	}
 }
 
 #if defined(ANDROID) && defined(OGL_MERGE)
