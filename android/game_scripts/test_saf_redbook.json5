@@ -61,9 +61,13 @@
 
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
-    // Accept default pilot name
+    // Skip intro, then handle either the direct pilot-name prompt or the
+    // select-pilot list.
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
-    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Ok", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "player", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Main menu -> New game
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
