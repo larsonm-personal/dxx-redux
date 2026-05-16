@@ -1407,9 +1407,11 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 		case EVENT_JOYSTICK_BUTTON_UP:
 			if (!(PlayerCfg.ControlType & CONTROL_USING_JOYSTICK))
 				break;
+			{
+				const int joy_button = event_joystick_get_button(event);
 			for (i = 0; i < NUM_JOYSTICK_CONTROLS; i++)
 			{
-				if (kc_joystick[i].value < 255 && kc_joystick[i].type == BT_JOY_BUTTON && JOY_BTN_MATCHES(i, event_joystick_get_button(event)))
+				if (kc_joystick[i].value < 255 && kc_joystick[i].type == BT_JOY_BUTTON && JOY_BTN_MATCHES(i, joy_button))
 				{
 					if (kc_joystick[i].ci_state_ptr != NULL)
 					{
@@ -1425,11 +1427,12 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 			}
 			if (!automap_flag && event->type == EVENT_JOYSTICK_BUTTON_DOWN)
 				for (i = 1, j = 0; i < 29; i += 3, j++)
-					if (kc_d2x[i].value < 255 && kc_d2x[i].value == event_joystick_get_button(event))
+					if (kc_d2x[i].value < 255 && kc_d2x[i].value == joy_button)
 					{
 						Controls.select_weapon_count = j+1;
 						break;
 					}
+			}
 			break;
 		case EVENT_MOUSE_BUTTON_DOWN:
 		case EVENT_MOUSE_BUTTON_UP:

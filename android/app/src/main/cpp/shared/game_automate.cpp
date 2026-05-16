@@ -59,6 +59,7 @@ extern "C" {
 
 #ifdef ANDROID
 extern "C" void android_test_inject_touch_tap(void);
+extern "C" void android_automation_joystick_button(int button, int pressed);
 #endif
 
 /* D1 does not have SCREEN_MOVIE */
@@ -612,6 +613,9 @@ static void inject_axis(int axis, float value)
 
 static void inject_button(int button, int pressed)
 {
+	#ifdef ANDROID
+	android_automation_joystick_button(button, pressed);
+	#else
 	SDL_Event ev;
 	memset(&ev, 0, sizeof(ev));
 	ev.type = pressed ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
@@ -619,6 +623,7 @@ static void inject_button(int button, int pressed)
 	ev.jbutton.button = (Uint8) button;
 	ev.jbutton.state = pressed ? SDL_PRESSED : SDL_RELEASED;
 	SDL_PushEvent(&ev);
+	#endif
 	LOGI("Injecting button %d %s", button, pressed ? "DOWN" : "UP");
 }
 
@@ -1955,6 +1960,12 @@ extern "C" void game_automate_tick(void)
 		case STEP_SEND_BUTTON:
 			if (!s.button_pressed) {
 				/* Release-only mode */
+				inject_button(s.button_id, 0);
+				advance_step();
+			} else if (!s.button_held && s.post_delay_ms <= 100 && s.button_id >= 0) {
+				/* Short taps need to land within one frame; otherwise slow emulator
+				 * frame cadence stretches a 50 ms pulse into a multi-second hold. */
+				inject_button(s.button_id, 1);
 				inject_button(s.button_id, 0);
 				advance_step();
 			} else if (g_key_phase == 0 && s.button_id >= 0) {

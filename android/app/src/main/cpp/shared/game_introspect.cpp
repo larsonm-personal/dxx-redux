@@ -968,6 +968,11 @@ extern "C" char *game_introspect_get_state(void)
 		/* Diagnostic: raw axis state and modifier flags for axis test debugging */
 		j["slide_on_state"] = (int) Controls.slide_on_state;
 		j["bank_on_state"] = (int) Controls.bank_on_state;
+		j["fire_primary_state"] = (int) Controls.fire_primary_state;
+		j["fire_primary_count"] = (int) Controls.fire_primary_count;
+		j["global_laser_firing_count"] = Global_laser_firing_count;
+		j["next_laser_fire_delta"] = (long long) (Next_laser_fire_time - GameTime64);
+		j["last_laser_fired_delta"] = (long long) (Last_laser_fired_time - GameTime64);
 		j["control_type"] = (int) PlayerCfg.ControlType;
 		j["cockpit_mode"] = (int) PlayerCfg.PreferredCockpitMode;
 		j["current_cockpit_mode"] = (int) PlayerCfg.CurrentCockpitMode;

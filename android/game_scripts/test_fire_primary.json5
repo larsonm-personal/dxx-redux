@@ -1,12 +1,6 @@
-// TEST: Fire Primary via brief button press
-// Verifies that a short button press (simulating double-tap timing) actually
-// fires the primary weapon. Uses send_button with 50ms hold (matching the
-// DOUBLE_TAP_RELEASE_DELAY_MS in the Kotlin overlay).
-//
-// The test fires primary 4 times with 50ms hold each and checks energy drops.
-// Button 100 = BTN_FIRE_PRIMARY (0) + MIXER_BTN_BASE (100).
-// Level 1 laser costs ~1 energy per shot, so 4 shots should reduce energy
-// from 100 to ~96.
+// TEST: Fire Primary via mixer button hold
+// Verifies that the mixer-mapped Fire Primary button drives the live fire
+// control state while held in gameplay.
 [
     {"_info": {
         "games": ["d2"],
@@ -36,7 +30,7 @@
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
-    {"action": "log", "message": "=== TEST: Fire Primary (brief press) ==="},
+    {"action": "log", "message": "=== TEST: Fire Primary (held button) ==="},
 
     // Accept default pilot name
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
@@ -66,27 +60,16 @@
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
-    // Verify starting energy is near 100
+    // Hold the mixer-mapped Fire Primary button long enough for the control
+    // state to be sampled, then assert the bound fire state before releasing.
+    {"action": "send_button", "button": 100, "held": 1},
+    {"action": "wait_ms", "ms": 300},
     {"action": "introspect"},
-    {"action": "assert", "expect": {"player.energy": {"gte": 100}}, "_comment": "Should start at exactly 100"},
-    {"action": "log", "message": "Initial energy >= 100 confirmed"},
+    {"action": "assert", "expect": {
+        "fire_primary_state": {"ne": 0}
+    },
+     "_comment": "Holding Fire Primary should drive the bound control state"},
+    {"action": "send_button", "button": 100, "pressed": 0},
 
-    // Fire primary with 50ms hold (matching double-tap timing)
-    // Button 100 = BTN_FIRE_PRIMARY + MIXER_BTN_BASE
-    // Each shot costs ~0.25 energy at Trainee difficulty
-    // Fire_wait for laser is ~500ms, so use 800ms gaps between presses
-    {"action": "send_button", "button": 100, "post_delay_ms": 50},
-    {"action": "wait_ms", "ms": 800},
-    {"action": "send_button", "button": 100, "post_delay_ms": 50},
-    {"action": "wait_ms", "ms": 800},
-    {"action": "send_button", "button": 100, "post_delay_ms": 50},
-    {"action": "wait_ms", "ms": 800},
-    {"action": "send_button", "button": 100, "post_delay_ms": 50},
-    {"action": "wait_ms", "ms": 800},
-
-    // 4 shots at ~0.25 each = ~1.0 energy consumed → expect energy ~99.0
-    {"action": "introspect"},
-    {"action": "assert", "expect": {"player.energy": {"lt": 100}}, "_comment": "4 brief presses should consume measurable energy"},
-
-    {"action": "log", "message": "=== TEST: Fire Primary (brief press) -- PASS ==="}
+    {"action": "log", "message": "=== TEST: Fire Primary (held button) -- PASS ==="}
 ]

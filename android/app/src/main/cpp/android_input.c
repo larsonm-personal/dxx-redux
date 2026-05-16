@@ -21,6 +21,7 @@
 #include "android_save_meta.h"
 #include "fix.h"
 #include "gr.h"
+#include "joy.h"
 #include "timer.h"
 #include "window.h"
 
@@ -128,6 +129,8 @@ static void inject_key_tap(SDLKey sym);
 static int android_cutscene_tap_suppressed(void);
 
 static int g_levelcomplete_touch_state = 0;
+
+void android_automation_joystick_button(int button, int pressed);
 
 static int android_handle_delayed_escape_touch(int action, int active,
                                                int *touch_state, SDLKey key)
@@ -1103,6 +1106,17 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickButton(JNIEnv *env, jobject thi
 	SDL_PushEvent(&ev);
 
 	LOGI("joystick button %d %s", button, pressed ? "DOWN" : "UP");
+}
+
+void android_automation_joystick_button(int button, int pressed)
+{
+	SDL_JoyButtonEvent ev;
+	memset(&ev, 0, sizeof(ev));
+	ev.type = pressed ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
+	ev.which = 0;
+	ev.button = (Uint8) button;
+	ev.state = pressed ? SDL_PRESSED : SDL_RELEASED;
+	joy_button_handler(&ev);
 }
 
 /* ── Automap touch controls ─────────────────────────────────
