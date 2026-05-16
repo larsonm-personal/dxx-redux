@@ -48,7 +48,7 @@
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
-    {"action": "trigger_endlevel"},
+    {"action": "trigger_levelcomplete"},
     {"action": "wait_for", "field": "levelcomplete_active", "value": "true", "timeout_ms": 2000},
     {"action": "wait_for", "field": "cutscene_tap_suppress_active", "value": "true", "timeout_ms": 1000},
     {"action": "send_touch_tap"},

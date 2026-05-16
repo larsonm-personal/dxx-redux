@@ -65,6 +65,7 @@ extern "C" int ogl_get_egl_recreate_count(void);
 extern "C" volatile int g_intro_active;
 extern "C" volatile int g_intro_skip_applied;
 extern "C" volatile int g_levelcomplete_active;
+extern "C" volatile int g_cutscene_tap_suppress_arms;
 extern "C" volatile int g_cutscene_tap_suppress_hits;
 extern "C" int android_cutscene_tap_suppress_active(void);
 
@@ -638,6 +639,7 @@ extern "C" char *game_introspect_get_state(void)
 	j["intro_skip_applied"] = (bool) g_intro_skip_applied;
 	j["levelcomplete_active"] = (bool) g_levelcomplete_active;
 	j["cutscene_tap_suppress_active"] = (bool) android_cutscene_tap_suppress_active();
+	j["cutscene_tap_suppress_arms"] = (int) g_cutscene_tap_suppress_arms;
 	j["cutscene_tap_suppress_hits"] = (int) g_cutscene_tap_suppress_hits;
 	j["difficulty"] = Difficulty_level;
 	j["current_level_num"] = Current_level_num;

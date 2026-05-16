@@ -53,6 +53,7 @@ extern "C" {
 #include "newmenu.h"
 #include "gameseg.h"
 #include "endlevel.h"
+#include "gameseq.h"
 #include "object.h"
 }
 
@@ -251,6 +252,7 @@ enum step_type {
 	STEP_SETUP_COMMAND,           /* launcher-only: no-op in game engine (skip) */
 	STEP_RESET_STATE,             /* launcher-only: no-op in game engine (skip) */
 	STEP_TRIGGER_ENDLEVEL,        /* call start_endlevel_sequence() */
+	STEP_TRIGGER_LEVELCOMPLETE,   /* call PlayerFinishedLevel(0) directly */
 	STEP_WRITE_CONFIG,            /* launcher-only: no-op in game engine (skip) */
 	STEP_TAP_BUTTON,              /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_BUTTON,           /* launcher-only: no-op in game engine (skip) */
@@ -410,6 +412,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SETUP_COMMAND: return "setup_command";
 		case STEP_RESET_STATE: return "reset_state";
 		case STEP_TRIGGER_ENDLEVEL: return "trigger_endlevel";
+		case STEP_TRIGGER_LEVELCOMPLETE: return "trigger_levelcomplete";
 		case STEP_WRITE_CONFIG: return "write_config";
 		case STEP_TAP_BUTTON: return "tap_button";
 		case STEP_ASSERT_BUTTON: return "assert_button";
@@ -1317,6 +1320,7 @@ static int parse_script(const char *json_text)
 			else if (action == "setup_command") s.type = STEP_SETUP_COMMAND;
 			else if (action == "reset_state") s.type = STEP_RESET_STATE;
 			else if (action == "trigger_endlevel") s.type = STEP_TRIGGER_ENDLEVEL;
+			else if (action == "trigger_levelcomplete") s.type = STEP_TRIGGER_LEVELCOMPLETE;
 			else if (action == "write_config") s.type = STEP_WRITE_CONFIG;
 			else if (action == "tap_button") s.type = STEP_TAP_BUTTON;
 			else if (action == "assert_button") s.type = STEP_ASSERT_BUTTON;
@@ -2311,6 +2315,15 @@ extern "C" void game_automate_tick(void)
 			}
 			advance_step();
 			start_endlevel_sequence();
+			break;
+
+		case STEP_TRIGGER_LEVELCOMPLETE:
+			if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+				stop_script_fail("trigger_levelcomplete: game is not running");
+				break;
+			}
+			advance_step();
+			PlayerFinishedLevel(0);
 			break;
 
 		case STEP_SET_DEBUG:

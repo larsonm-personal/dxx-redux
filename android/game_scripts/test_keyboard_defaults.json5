@@ -38,13 +38,20 @@
 
     // -- Launcher preamble --
     {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
     {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
 
     {"action": "log", "message": "=== TEST: Keyboard Defaults Regression ==="},
 
     // -- Create fresh pilot and launch into game --
-    // D1 shows 3 title screens (3s each = 9s) before set_screen_mode(SCREEN_MENU).
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},

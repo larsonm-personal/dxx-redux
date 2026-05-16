@@ -35,6 +35,11 @@
     {"action": "enter_launcher"},
     {"action": "log", "message": "=== Phase 1: Patch pilots + controller introspect (${GAME}) ==="},
     {"action": "reset_state"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_default_config", "post_delay_ms": 1000},
     {"action": "setup_command", "command": "patch_pilots", "post_delay_ms": 1000},
     {"action": "setup_command", "command": "controller_introspect",
@@ -47,6 +52,8 @@
     {"action": "log", "message": "=== Phase 2: In-game introspect (${GAME}) ==="},
 
     // D1 shows title screens (~9s) before menu. D2 goes straight to pilot list.
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     // Pilot listbox: press enter to accept the patched pilot
     {"action": "key", "key": "enter", "post_delay_ms": 100},

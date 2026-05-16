@@ -35,13 +35,20 @@
 
     // -- Launcher preamble --
     {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
     {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
 
     {"action": "log", "message": "=== TEST: Keyboard Viewport Offset ==="},
 
     // Fresh launch: pilot name entry screen appears (keyboard should open)
-    // D1 shows title screens first (~9s), so use generous timeout
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
 
     // We should now be on "Enter your callsign" with keyboard open.

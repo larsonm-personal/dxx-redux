@@ -111,6 +111,7 @@ static int g_intro_skip_touch_pressed = 0;
 static int g_touch_down_suppressed = 0;
 static unsigned short g_suppressed_joy_buttons = 0;
 static volatile fix64 g_cutscene_tap_suppress_until = 0;
+volatile int g_cutscene_tap_suppress_arms = 0;
 volatile int g_cutscene_tap_suppress_hits = 0;
 
 #define CUTSCENE_TAP_SUPPRESS_WINDOW (F1_0 / 2)
@@ -197,6 +198,7 @@ void android_arm_cutscene_tap_suppress(void)
 	g_cutscene_tap_suppress_until = timer_query() + CUTSCENE_TAP_SUPPRESS_WINDOW;
 	g_touch_down_suppressed = 0;
 	g_suppressed_joy_buttons = 0;
+	g_cutscene_tap_suppress_arms++;
 	g_cutscene_tap_suppress_hits = 0;
 }
 
@@ -323,6 +325,15 @@ static void android_push_touch_action(int action, int gameX, int gameY)
 
 void android_test_inject_touch_tap(void)
 {
+	if (android_handle_delayed_escape_touch(0, g_levelcomplete_active,
+	                                        &g_levelcomplete_touch_state,
+	                                        SDLK_ESCAPE)) {
+		android_handle_delayed_escape_touch(2, g_levelcomplete_active,
+		                                   &g_levelcomplete_touch_state,
+		                                   SDLK_ESCAPE);
+		return;
+	}
+
 	int screenW = grd_curscreen ? grd_curscreen->sc_w : 640;
 	int screenH = grd_curscreen ? grd_curscreen->sc_h : 480;
 	int gameX = screenW > 2 ? screenW / 2 : 1;
