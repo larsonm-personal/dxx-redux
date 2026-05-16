@@ -19,6 +19,10 @@
 
     {"action": "enter_launcher"},
     {"action": "log", "message": "=== TEST: Launcher graphics debug prefs bridge ==="},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
 
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "show_video_info_debug_options", "value": true}, "post_delay_ms": 250},
@@ -38,6 +42,8 @@
     }},
 
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "assert", "expect": {
         "screen_mode": "menu",

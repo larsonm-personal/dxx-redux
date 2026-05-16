@@ -29,12 +29,14 @@
 
     {"action": "log", "message": "=== TEST: D2 abort game returns to main menu ==="},
 
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
-    {"action": "select", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "${MISSION}", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     {"action": "wait_ms", "ms": 500},

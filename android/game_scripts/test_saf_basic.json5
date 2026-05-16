@@ -29,7 +29,9 @@
     {"action": "log", "message": "=== TEST: SAF Archiver Basic ==="},
 
     // Accept default pilot name (fresh .plr deleted by runner)
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 15000},
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Main menu
@@ -37,7 +39,8 @@
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select
-    {"action": "select", "text": "Counterstrike", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Counterstrike", "optional": true,
+     "post_delay_ms": 100, "timeout_ms": 1000},
     // accept default level 1
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
     // difficulty

@@ -174,6 +174,80 @@ function Get-GameIntrospection {
     catch { return [PSCustomObject]@{ screen_mode = 'loading'; menu = $null; in_game = $false } }
 }
 
+function Get-ExtractAutomationScriptText {
+    param([string]$MissionName, [string]$LevelName)
+
+    $templatePath = Join-Path (Split-Path $PSScriptRoot) 'game_scripts\test_extract_regression_template.json5'
+    $text = Get-Content -LiteralPath $templatePath -Raw
+    $text = $text.Replace('"MISSION_NAME"', (ConvertTo-Json ([string]$MissionName) -Compress))
+    $text = $text.Replace('"LEVEL_NAME"', (ConvertTo-Json ([string]$LevelName) -Compress))
+    return $text -replace "`r`n", "`n"
+}
+
+function Write-GameAutomationDiagnostics {
+    $stepLog = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/automation_log.jsonl')
+    if ($stepLog) {
+        Write-Status '--- automation_log.jsonl (last 20 lines) ---' 'Yellow'
+        $stepLines = $stepLog -split "`r?`n" | Where-Object { $_ }
+        foreach ($line in ($stepLines | Select-Object -Last 20)) {
+            Write-Status "  $line" 'Yellow'
+        }
+    }
+
+    $autoLogcat = Adb -CmdArgs @('logcat', '-d', '-s', 'DXX-Automate:*')
+    if ($autoLogcat) {
+        Write-Status '--- logcat DXX-Automate (last 20 lines) ---' 'Yellow'
+        $logcatLines = $autoLogcat -split "`r?`n" | Where-Object { $_ }
+        foreach ($line in ($logcatLines | Select-Object -Last 20)) {
+            Write-Status "  $line" 'Yellow'
+        }
+    }
+}
+
+function Invoke-GameAutomationScript {
+    param(
+        [string]$ScriptText,
+        [int]$TimeoutSeconds = 120
+    )
+
+    $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+    $tempDir = Join-Path $repoRoot 'temp'
+    if (-not (Test-Path $tempDir)) {
+        New-Item -ItemType Directory -Path $tempDir | Out-Null
+    }
+
+    $scriptName = "extract_regression_$([Guid]::NewGuid().ToString('N')).json5"
+    $localPath = Join-Path $tempDir $scriptName
+    [System.IO.File]::WriteAllText($localPath, $ScriptText, [System.Text.UTF8Encoding]::new($false))
+
+    try {
+        Adb -CmdArgs @('push', $localPath, "/data/local/tmp/$scriptName") -Timeout 60 | Out-Null
+        Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cp', "/data/local/tmp/$scriptName", "files/$scriptName") | Out-Null
+        Adb -CmdArgs @('shell', 'rm', '-f', "/data/local/tmp/$scriptName") | Out-Null
+
+        Adb -CmdArgs @('logcat', '-c') | Out-Null
+        Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/automation_result.json') | Out-Null
+        Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/automation_log.jsonl') | Out-Null
+
+        Write-Status "Sending automation broadcast for: $scriptName" 'Cyan'
+        Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.AUTOMATE', '--es', 'script', $scriptName) | Out-Null
+
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+            Start-Sleep -Milliseconds 1500
+            $resultJson = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/automation_result.json')
+            if ($resultJson -and $resultJson -match '^\s*\{') {
+                try { return ($resultJson | ConvertFrom-Json) } catch { }
+            }
+        }
+
+        return $null
+    } finally {
+        try { Remove-Item -LiteralPath $localPath -Force -ErrorAction Ignore } catch { }
+        try { Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "files/$scriptName") | Out-Null } catch { }
+    }
+}
+
 function Send-SetupCommand {
     param([string]$Command, [string]$Name, [string]$Path, [string]$Game)
     $args_ = @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
@@ -985,132 +1059,28 @@ if (-not $menuReached) {
 
 Write-Status "Game reached menu: '$($gi.menu.title)'" 'Green'
 
-# Navigate to new game via introspection-guided keypresses.
-# Most menus just need Enter. The level-start dialog has a number input
-# focused by default -- need Down to reach the Ok button before pressing Enter.
-Write-Status "Navigating to game (introspection-guided)..."
+# Navigate to new game with the in-game automation engine. This uses the
+# same front-menu key path as the maintained JSON5 tests instead of brittle
+# shell keyevents, which do not reliably drive the pilot prompt on Android.
+Write-Status 'Navigating to game (automation)...'
 
-$navAttempts = 0
-$maxNav = 25
-$inGame = $false
-$loadingCount = 0  # consecutive 'loading' states (game non-responsive)
-
-while ($navAttempts -lt $maxNav) {
-    $navAttempts++
-    $gi = Get-GameIntrospection
-
-    # Already in-game -- done
-    if ($gi.in_game) {
-        $inGame = $true
-        break
-    }
-
-    # Game is non-responsive (loading state -- introspect.json not written)
-    if ($gi.screen_mode -eq 'loading') {
-        $loadingCount++
-        # Check process alive every few loading states
-        if ($loadingCount % 3 -eq 0) {
-            $procCheck = Adb -CmdArgs @('shell', 'pidof', $PACKAGE)
-            if (-not $procCheck -or $procCheck -notmatch '^\d+') {
-                Write-Status "FAIL: Game process died during navigation" 'Red'
-                Exit-Test 1 'fail' 'crash' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
-            }
-        }
-        Write-Status "  [$navAttempts] game loading/non-responsive (${loadingCount}x)" 'Gray'
-        # Don't press any keys while loading -- just wait
-        Start-Sleep -Seconds 2
-        continue
-    }
-    $loadingCount = 0
-
-    # Movie/briefing screen -- press Enter to skip through pages
-    if ($gi.screen_mode -eq 'movie') {
-        Write-Status "  [$navAttempts] briefing/movie, pressing Enter to skip" 'Gray'
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
-        Start-Sleep -Seconds 1
-        continue
-    }
-
-    # In-game screen but not marked in_game (e.g., D1 demo/title screen)
-    if ($gi.screen_mode -eq 'game' -and -not $gi.in_game) {
-        Write-Status "  [$navAttempts] game screen but not in_game, pressing Escape" 'Gray'
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
-        Start-Sleep -Seconds 1
-        continue
-    }
-
-    # -- "Player already exists" dialog: press Enter on Ok --
-    if ($gi.menu -and $gi.menu.subtitle -match 'already exists') {
-        Write-Status "  [$navAttempts] 'already exists' dialog, pressing Enter" 'Gray'
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
-        Start-Sleep -Seconds 1
-        # Clear the input field and type a unique name
-        $uniqueName = "plt$([System.Random]::new().Next(1000,9999))"
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_MOVE_HOME') | Out-Null
-        # Select all + delete
-        for ($c = 0; $c -lt 20; $c++) {
-            Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_DEL') | Out-Null
-        }
-        Adb -CmdArgs @('shell', 'input', 'text', $uniqueName) | Out-Null
-        Start-Sleep -Milliseconds 500
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
-        Start-Sleep -Seconds 1
-        continue
-    }
-
-    # -- Pilot selection listbox: navigate to <Create New> (index 0) --
-    if ($gi.menu -and $gi.menu.type -eq 'listbox' -and $gi.menu.title -match 'Select pilot') {
-        $sel = $gi.menu.selected_index
-        if ($sel -gt 0) {
-            Write-Status "  [$navAttempts] pilot listbox: moving from index $sel to 0" 'Gray'
-            for ($u = 0; $u -lt $sel; $u++) {
-                Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_DPAD_UP') | Out-Null
-                Start-Sleep -Milliseconds 100
-            }
-        } else {
-            Write-Status "  [$navAttempts] pilot listbox: selecting <Create New>" 'Gray'
-        }
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
-        Start-Sleep -Seconds 2
-        # After <Create New>, a callsign input dialog appears with pre-filled name.
-        # Just press Enter to accept the default callsign.
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
-        Start-Sleep -Seconds 1
-        continue
-    }
-
-    # Unknown window (e.g., D1 briefing) -- press Escape to skip
-    if ($gi.menu -and $gi.menu.type -eq 'unknown_window') {
-        Write-Status "  [$navAttempts] unknown window (briefing?), pressing Escape to skip" 'Gray'
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
-        Start-Sleep -Seconds 2
-        continue
-    }
-
-    # Determine what to press based on menu state.
-    # The level-start dialog has an input/number field selected by default --
-    # need Down to reach the "Ok" button before pressing Enter.
-    $hasInputItem = $false
-    if ($gi.menu -and $gi.menu.items) {
-        foreach ($item in $gi.menu.items) {
-            if ($item.type -eq 'number' -or $item.type -eq 'input') {
-                $hasInputItem = $true; break
-            }
-        }
-    }
-
-    if ($hasInputItem) {
-        # Level-start dialog: Down to Ok button, then Enter
-        Write-Status "  [$navAttempts] input field detected, pressing Down+Enter" 'Gray'
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_DPAD_DOWN') | Out-Null
-        Start-Sleep -Milliseconds 200
-    } else {
-        Write-Status "  [$navAttempts] menu='$(if ($gi.menu) { $gi.menu.title } else { $gi.screen_mode })'" 'Gray'
-    }
-
-    Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
-    Start-Sleep -Seconds 1
+$automationScript = Get-ExtractAutomationScriptText -MissionName $spec.expected_mission -LevelName $spec.expected_level1
+$automationResult = Invoke-GameAutomationScript -ScriptText $automationScript -TimeoutSeconds 120
+if (-not $automationResult) {
+    Write-Status 'FAIL: Automation timed out before producing automation_result.json' 'Red'
+    Write-GameAutomationDiagnostics
+    Exit-Test 1 'fail' 'automation_timeout' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
+
+if ($automationResult.result -ne 'PASS') {
+    Write-Status "FAIL: Automation could not reach in-game state ($($automationResult.reason))" 'Red'
+    Write-GameAutomationDiagnostics
+    Exit-Test 1 'fail' 'automation_fail' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
+}
+
+Start-Sleep -Milliseconds 500
+$gi = Get-GameIntrospection
+$inGame = $gi.in_game
 
 if ($inGame) {
     $levelMatch = ($gi.current_level_name -eq $spec.expected_level1)

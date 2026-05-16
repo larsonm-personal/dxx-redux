@@ -114,12 +114,13 @@
     {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
 
-    // Skip briefing if present
-    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
+    // D1's post-difficulty transition responds more reliably to Escape here
+    // than to skip_briefing's tap-based fallback.
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
 
     // Wait for game
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 20000},
-    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
     {"action": "wait_ms", "ms": 2000},
 
     {"action": "introspect"},

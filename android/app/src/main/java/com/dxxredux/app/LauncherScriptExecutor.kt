@@ -314,26 +314,40 @@ class LauncherScriptExecutor(
                 "assert_button" -> {
                     val text = step.optString("text", "")
                     val exact = step.optBoolean("exact", false)
+                    val timeoutMs = step.optLong("timeout_ms", 10000)
                     if (text.isEmpty()) {
                         fail("assert_button: missing 'text' field")
                         return
                     }
-                    val button = activity.findButtonByText(text, exact)
-                    if (button == null) {
-                        val available =
-                            activity
-                                .collectAccessibleButtons()
-                                .joinToString(", ") { "\"${it.text}\"" }
-                        fail("assert_button: no button matching \"$text\" (available: $available)")
-                        return
-                    }
-                    if (step.has("enabled")) {
-                        val expectEnabled = step.optBoolean("enabled", true)
-                        if (button.enabled != expectEnabled) {
-                            fail(
-                                "assert_button: \"${button.text}\" enabled=${button.enabled} (expected $expectEnabled)",
-                            )
+                    val expectEnabled = if (step.has("enabled")) step.optBoolean("enabled", true) else null
+                    val deadline = System.currentTimeMillis() + timeoutMs
+                    var button: SetupActivity.ButtonInfo? = null
+                    var scrollAttempts = 0
+                    while (true) {
+                        button = activity.findButtonByText(text, exact)
+                        if (button != null && (expectEnabled == null || button.enabled == expectEnabled)) {
+                            break
+                        }
+                        if (System.currentTimeMillis() > deadline) {
+                            if (button != null && expectEnabled != null && button.enabled != expectEnabled) {
+                                fail(
+                                    "assert_button: \"${button.text}\" enabled=${button.enabled} (expected $expectEnabled)",
+                                )
+                            } else {
+                                val available =
+                                    activity
+                                        .collectAccessibleButtons()
+                                        .joinToString(", ") { "\"${it.text}\"" }
+                                fail("assert_button: no button matching \"$text\" (available: $available)")
+                            }
                             return
+                        }
+                        if (button == null && scrollAttempts < 20) {
+                            activity.scrollDown()
+                            scrollAttempts++
+                            delay(400)
+                        } else {
+                            delay(500)
                         }
                     }
                     Log.i(TAG, "ASSERT_PASS: button \"${button.text}\" enabled=${button.enabled}")

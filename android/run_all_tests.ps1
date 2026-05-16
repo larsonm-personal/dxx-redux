@@ -13,10 +13,10 @@
             2. Server-only tests (matchmaking bot/client checks)
             3. Single emulator started, APK installed, game data pushed
             4. Single-emulator tests (json5 automation + ps1 emulator tests)
-            5. Second emulator started, APK installed, game data pushed
-            6. Matchmaking server started
-            7. Two-emulator tests (multiplayer and LAN)
-            8. Docker NAT tests (if Docker is available)
+            5. Extract regressions (single emulator + source import checks)
+            6. Second emulator started, APK installed, game data pushed
+            7. Matchmaking server started for the dual-emulator tier
+            8. Two-emulator tests (multiplayer and LAN)
             9. Cleanup in reverse order
 
 .PARAMETER Filter
@@ -149,6 +149,7 @@ $manualTests = @(
     "test_dual_emu_setup"      # interactive setup
     "test_lan_discovery"       # host-side bot for by-hand discovery checks
     "test_manual_lan_coop"     # launches manual LAN coop setup
+    "test_skip_every_launch_button_manual_unified" # requires an external adb tap during the intro
 )
 
 # Infrastructure requirement classification
@@ -173,7 +174,7 @@ $extractTests = @(
     "test_extract",
     "test_gog_installer_d1_unified",
     "test_gog_installer_redbook_unified"
-)  # emulator + game data, run last
+)  # single emulator + game data, run before the dual-emulator tier
 $noInfraTests = @(
     "test_cue_iso",
     "test_fpcalc_and_acoustid",
@@ -466,12 +467,11 @@ function Invoke-SecondaryEmulatorPreflight {
 
 function Invoke-SuitePreflight {
     $needsPrimaryEmulator = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
-    $needsSecondaryEmulator = $tierDualEmu.Count -gt 0
-    $needsServer = ($tierServer.Count + $tierDualEmu.Count) -gt 0
+    $needsServer = $tierServer.Count -gt 0
     $needsExtractData = $tierExtract.Count -gt 0
     $needsStandardGameData = ($tierSingleEmu.Count + $tierDualEmu.Count) -gt 0
 
-    if (-not ($needsPrimaryEmulator -or $needsSecondaryEmulator -or $needsServer -or $needsExtractData)) {
+    if (-not ($needsPrimaryEmulator -or $needsServer -or $needsExtractData)) {
         return $true
     }
 
@@ -488,14 +488,6 @@ function Invoke-SuitePreflight {
         $preflightEmu1 = Invoke-PrimaryEmulatorPreflight -RequireStandardGameData:$needsStandardGameData
         if (-not $preflightEmu1) {
             Write-Host "FAIL: Suite preflight could not prepare a healthy primary emulator" -ForegroundColor Red
-            return $false
-        }
-    }
-
-    if ($needsSecondaryEmulator) {
-        $preflightEmu2 = Invoke-SecondaryEmulatorPreflight -RequireStandardGameData:$needsStandardGameData
-        if (-not $preflightEmu2) {
-            Write-Host "FAIL: Suite preflight could not prepare a healthy second emulator" -ForegroundColor Red
             return $false
         }
     }
@@ -539,8 +531,8 @@ Write-Host "Tests found: $($allTests.Count) total, $($runnableTests.Count) runna
 Write-Host "  Tier 0 (no infra):       $($tierNone.Count)"
 Write-Host "  Tier 1 (server only):    $($tierServer.Count)"
 Write-Host "  Tier 2 (single emu):     $($tierSingleEmu.Count)"
-Write-Host "  Tier 3 (dual emu):       $($tierDualEmu.Count)"
-Write-Host "  Tier 4 (extract/slow):   $($tierExtract.Count)"
+Write-Host "  Tier 3 (extract):        $($tierExtract.Count)"
+Write-Host "  Tier 4 (dual emu):       $($tierDualEmu.Count)"
 if ($selectedRegressionDemoModes.Count -gt 0) {
     Write-Host "  Demo regressions:       $regressionDemoCount demo(s), modes: $($selectedRegressionDemoModes -join '+'), replay runs: $selectedRegressionDemoReplayCount"
 } else {
@@ -803,13 +795,48 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
     }
 }
 
-# ── Tier 3: dual-emulator tests ──────────────────────────────────────────
+# ── Tier 3: extract regression tests ─────────────────────────────────────
+
+if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
+    Write-Host ""
+    Write-Host "== Tier 3: Extract regression tests ==" -ForegroundColor Cyan
+
+    $hasGameData = Test-GameDataAvailable
+    if (-not $hasGameData) {
+        foreach ($test in $tierExtract) {
+            $infraSkipped += @{ Name = $test.Name; Reason = "no game data (CD images)"; Type = $test.Type }
+        }
+    } else {
+        # Ensure emulator is running (may already be from tier 2)
+        if (-not (Test-SingleEmulator)) {
+            $emu1Ok = Start-SingleEmulator
+            if ($emu1Ok) { $script:startedEmu1 = $true }
+        } else {
+            $emu1Ok = $true
+        }
+
+        if ($emu1Ok) {
+            Install-ApkOnDevice | Out-Null
+            Push-GameDataToDevice
+            foreach ($test in $tierExtract) {
+                if ($stopEarly) { break }
+                Invoke-SingleTest -Test $test
+            }
+        } else {
+            foreach ($test in $tierExtract) {
+                $infraSkipped += @{ Name = $test.Name; Reason = "could not start emulator"; Type = $test.Type }
+            }
+        }
+    }
+}
+
+# ── Tier 4: dual-emulator tests ──────────────────────────────────────────
 
 if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
     Write-Host ""
-    Write-Host "== Tier 3: Dual-emulator tests ==" -ForegroundColor Cyan
+    Write-Host "== Tier 4: Dual-emulator tests ==" -ForegroundColor Cyan
 
-    # Ensure first emulator is running (may already be from tier 1)
+    # Ensure first emulator is running (may already be from earlier tiers)
     if (-not (Test-SingleEmulator)) {
         $emu1Ok = Start-SingleEmulator
         if ($emu1Ok) { $script:startedEmu1 = $true }
@@ -859,41 +886,6 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
         else { "could not start matchmaking server" }
         foreach ($test in $tierDualEmu) {
             $infraSkipped += @{ Name = $test.Name; Reason = $reason; Type = $test.Type }
-        }
-    }
-}
-
-# ── Tier 4: extract regression tests (slow, run last) ───────────────────
-
-if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
-    Write-Host ""
-    Write-Host "== Tier 4: Extract regression tests (slow) ==" -ForegroundColor Cyan
-
-    $hasGameData = Test-GameDataAvailable
-    if (-not $hasGameData) {
-        foreach ($test in $tierExtract) {
-            $infraSkipped += @{ Name = $test.Name; Reason = "no game data (CD images)"; Type = $test.Type }
-        }
-    } else {
-        # Ensure emulator is running (may already be from tier 1/2)
-        if (-not (Test-SingleEmulator)) {
-            $emu1Ok = Start-SingleEmulator
-            if ($emu1Ok) { $script:startedEmu1 = $true }
-        } else {
-            $emu1Ok = $true
-        }
-
-        if ($emu1Ok) {
-            Install-ApkOnDevice | Out-Null
-            Push-GameDataToDevice
-            foreach ($test in $tierExtract) {
-                if ($stopEarly) { break }
-                Invoke-SingleTest -Test $test
-            }
-        } else {
-            foreach ($test in $tierExtract) {
-                $infraSkipped += @{ Name = $test.Name; Reason = "could not start emulator"; Type = $test.Type }
-            }
         }
     }
 }

@@ -135,6 +135,7 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_autoselect --es game d2 --es primary "8,9,7,6,5,4,3,2,1,0,255" --es secondary "9,8,4,3,1,5,0,255,7,6,2"
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_engine_prefs --ei cockpit_mode 2 --ez auto_leveling false
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command clear_crash_reports
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_midi_play --ei source 0 --ei track 2
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_midi_stop
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_cd_play --ei source 0 --ei track 2
@@ -429,6 +430,54 @@ class SetupActivity : ComponentActivity() {
     /** Inject a scroll-down swipe gesture (finger moves upward to scroll content down). */
     suspend fun scrollDown() {
         withContext(kotlinx.coroutines.Dispatchers.Main) {
+            val root = window.decorView
+            val composeView = findComposeView(root)
+            val provider = composeView?.accessibilityNodeProvider
+            if (composeView != null && provider != null) {
+                val semanticsIds = collectSemanticsNodeIds(composeView)
+                val maxScanId =
+                    if (semanticsIds.isNotEmpty()) {
+                        semanticsIds.max() + 500
+                    } else {
+                        16383
+                    }
+                var bestScrollNodeId: Int? = null
+                var bestScrollArea = 0
+                for (id in -1..maxScanId) {
+                    val info = provider.createAccessibilityNodeInfo(id) ?: continue
+                    val canScrollForward =
+                        info.actionList.any {
+                            it.id == android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD ||
+                                it.id == android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+                        }
+                    if (!canScrollForward) continue
+                    val bounds = Rect()
+                    info.getBoundsInScreen(bounds)
+                    val area = bounds.width() * bounds.height()
+                    if (area > bestScrollArea) {
+                        bestScrollArea = area
+                        bestScrollNodeId = id
+                    }
+                }
+                if (bestScrollNodeId != null) {
+                    val scrolled =
+                        provider.performAction(
+                            bestScrollNodeId,
+                            android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
+                            null,
+                        ) ||
+                            provider.performAction(
+                                bestScrollNodeId,
+                                android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id,
+                                null,
+                            )
+                    if (scrolled) {
+                        kotlinx.coroutines.delay(250)
+                        return@withContext
+                    }
+                }
+            }
+
             val decorView = window.decorView
             val centerX = decorView.width / 2f
             val startY = decorView.height * 0.62f
@@ -764,6 +813,13 @@ class SetupActivity : ComponentActivity() {
                     "clear_save_files" -> {
                         val deleted = clearSaveFilesForAutomation()
                         Log.i("DXX-Setup", "clear_save_files: deleted $deleted file(s)")
+                        requestSetupRefresh()
+                    }
+
+                    "clear_crash_reports" -> {
+                        val deleted = CrashLog.listCrashFiles(this@SetupActivity).size
+                        CrashLog.deleteAllCrashFiles(this@SetupActivity)
+                        Log.i("DXX-Setup", "clear_crash_reports: deleted $deleted file(s)")
                         requestSetupRefresh()
                     }
 
@@ -7148,6 +7204,13 @@ private fun ControllerSection(
     val displayedController = remember(gamepads) { selectDisplayedController(gamepads.map(::controllerDisplayDevice)) }
     val hasController = displayedController != null
     var expanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(initialFocusRequester) {
+        if (initialFocusRequester != null) {
+            withFrameNanos { }
+            initialFocusRequester.requestFocus()
+        }
+    }
 
     // ── Header ──
     Row(

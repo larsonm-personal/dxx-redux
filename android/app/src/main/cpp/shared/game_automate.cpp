@@ -318,7 +318,7 @@ static int g_current_step = 0;
 static int g_active = 0;
 static int g_failed = 0;        /* set to 1 on assert/timeout failure */
 static Uint32 g_step_start = 0; /* SDL_GetTicks() when step began */
-static int g_key_phase = 0;     /* 0=not sent, 1=down sent, 2=done */
+static int g_key_phase = 0;     /* 0=not sent, 1=sent */
 static Uint32 g_repeat_start = 0;
 
 /* -- STEP_SELECT state (multi-frame navigation) ----------------------- */
@@ -697,7 +697,7 @@ struct automate_key_event {
  * On failure logs the error and returns false.
  */
 static bool select_find_item(const char *text, int *out_target, int *out_current,
-	int *out_current_type)
+                             int *out_current_type)
 {
 	window *front = window_get_front();
 	if (!front) {
@@ -719,7 +719,7 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 		int citem = newmenu_get_citem(menu);
 		int current_type = (citem >= 0 && citem < nitems) ? items[citem].type : -1;
 		const char *current_text =
-			(citem >= 0 && citem < nitems && items[citem].text) ? items[citem].text : "(null)";
+		    (citem >= 0 && citem < nitems && items[citem].text) ? items[citem].text : "(null)";
 
 		for (int i = 0; i < nitems; i++) {
 			if (items[i].text && icontains(items[i].text, text)) {
@@ -767,11 +767,11 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 }
 
 static bool select_can_confirm_current_input_as_ok(const auto_step &s,
-	int delta, int current_type)
+                                                   int delta, int current_type)
 {
 	return delta == 1 &&
-		current_type == NM_TYPE_INPUT &&
-		strcasecmp(s.select_text.c_str(), "ok") == 0;
+	       current_type == NM_TYPE_INPUT &&
+	       strcasecmp(s.select_text.c_str(), "ok") == 0;
 }
 
 static bool select_dispatch_front_menu_key(int keycode, const char *key_name)
@@ -805,8 +805,6 @@ static bool select_dispatch_front_menu_key(int keycode, const char *key_name)
 		return true;
 	}
 	if (cb == (int (*)(window *, d_event *, void *)) game_handler) {
-		if (keycode == KEY_ESC)
-			return false;
 		LOGI("KEY: dispatching game key %s (key=%d)", key_name, keycode);
 		game_handler(front, (d_event *) &key_event, data);
 		return true;
@@ -842,6 +840,37 @@ static bool select_dispatch_front_menu_key(int keycode, const char *key_name)
 	}
 #endif
 
+	return false;
+}
+
+static bool can_direct_dispatch_front_key_command(void)
+{
+	window *front = window_get_front();
+	if (!front)
+		return false;
+
+	int (*cb)(window *, d_event *, void *) = window_get_callback(front);
+	if (!cb)
+		return false;
+
+	void *data = window_get_data(front);
+
+	if (cb == (int (*)(window *, d_event *, void *)) newmenu_handler)
+		return data != NULL;
+	if (cb == (int (*)(window *, d_event *, void *)) listbox_handler)
+		return data != NULL;
+	if (cb == (int (*)(window *, d_event *, void *)) game_handler)
+		return true;
+	if (cb == (int (*)(window *, d_event *, void *)) automap_handler)
+		return data != NULL;
+#ifdef DXX_BUILD_DESCENT_II
+	if (cb == (int (*)(window *, d_event *, void *)) title_handler)
+		return data != NULL;
+	if (cb == (int (*)(window *, d_event *, void *)) briefing_handler)
+		return data != NULL;
+	if (cb == (int (*)(window *, d_event *, void *)) MovieHandler)
+		return data != NULL;
+#endif
 	return false;
 }
 
@@ -1754,10 +1783,14 @@ extern "C" void game_automate_tick(void)
 					inject_key_combo(s.modifier_name, s.key_name);
 				else {
 					int keycode = lookup_key_command(s.key_name.c_str());
-					if (keycode >= 0 && select_dispatch_front_menu_key(keycode, s.key_name.c_str())) {
-						/* dispatched directly */
-					} else
-						inject_key_tap(s.key_name);
+					if (keycode >= 0 && can_direct_dispatch_front_key_command()) {
+						g_key_phase = 1;
+						g_step_start = now;
+						if (select_dispatch_front_menu_key(keycode, s.key_name.c_str()))
+							break;
+						g_key_phase = 0;
+					}
+					inject_key_tap(s.key_name);
 				}
 				g_key_phase = 1;
 				g_step_start = now;
@@ -1850,7 +1883,7 @@ extern "C" void game_automate_tick(void)
 				 */
 				int target, current, current_type;
 				if (!select_find_item(s.select_text.c_str(), &target, &current,
-							     &current_type)) {
+				                      &current_type)) {
 					stop_script_fail("SELECT: menu disappeared during navigation");
 					break;
 				}
