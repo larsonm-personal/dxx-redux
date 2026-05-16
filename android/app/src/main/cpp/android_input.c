@@ -123,6 +123,49 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
                                                   jint action, jint androidKeyCode,
                                                   jint unicodeChar);
+static void inject_key_tap(SDLKey sym);
+
+static int g_levelcomplete_touch_state = 0;
+
+static int android_handle_delayed_escape_touch(int action, int active,
+                                               int *touch_state, SDLKey key)
+{
+	if (!touch_state)
+		return 0;
+
+	if (!active) {
+		*touch_state = 0;
+		return 0;
+	}
+
+	switch (action) {
+		case 0: /* ACTION_DOWN */
+			if (android_cutscene_tap_suppressed()) {
+				*touch_state = -1;
+				g_cutscene_tap_suppress_hits++;
+			} else {
+				*touch_state = 1;
+			}
+			return 1;
+
+		case 1: /* ACTION_MOVE */
+			return *touch_state != 0;
+
+		case 2: /* ACTION_UP */
+			if (*touch_state > 0)
+				inject_key_tap(key);
+			if (*touch_state != 0) {
+				*touch_state = 0;
+				return 1;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	return 0;
+}
 
 static int android_intro_skip_touch_inside(jfloat normX, jfloat normY, int screenW, int screenH)
 {
@@ -333,6 +376,13 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 				break;
 		}
 	}
+
+	if (android_handle_delayed_escape_touch(action, g_levelcomplete_active,
+	                                        &g_levelcomplete_touch_state,
+	                                        SDLK_ESCAPE)) {
+		return;
+	}
+
 	jint gameX = (jint) (normX * screenW);
 	jint gameY = (jint) (normY * screenH);
 	if (gameX < 0) gameX = 0;

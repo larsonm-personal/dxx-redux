@@ -987,8 +987,12 @@ void DoEndLevelScoreGlitz(int network)
 	Assert(c <= N_GLITZITEMS);
 
 #ifdef __ANDROID__
+	extern void android_arm_cutscene_tap_suppress(void);
+	extern void game_flush_inputs(void);
 	extern volatile int g_levelcomplete_active;
 	g_levelcomplete_active = 1;
+	game_flush_inputs();
+	android_arm_cutscene_tap_suppress();
 #endif
 #ifdef NETWORK
 	if ( network && (Game_mode & GM_NETWORK) )

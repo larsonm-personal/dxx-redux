@@ -64,6 +64,7 @@ extern "C" int ogl_get_egl_recreate_count(void);
 /* -- Android intro tracking globals (defined in android_input.c) -- */
 extern "C" volatile int g_intro_active;
 extern "C" volatile int g_intro_skip_applied;
+extern "C" volatile int g_levelcomplete_active;
 extern "C" volatile int g_cutscene_tap_suppress_hits;
 extern "C" int android_cutscene_tap_suppress_active(void);
 
@@ -635,6 +636,7 @@ extern "C" char *game_introspect_get_state(void)
 	j["quitting"] = (bool) Quitting;
 	j["intro_active"] = (bool) g_intro_active;
 	j["intro_skip_applied"] = (bool) g_intro_skip_applied;
+	j["levelcomplete_active"] = (bool) g_levelcomplete_active;
 	j["cutscene_tap_suppress_active"] = (bool) android_cutscene_tap_suppress_active();
 	j["cutscene_tap_suppress_hits"] = (int) g_cutscene_tap_suppress_hits;
 	j["difficulty"] = Difficulty_level;

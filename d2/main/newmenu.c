@@ -1698,10 +1698,14 @@ int newmenu_draw(window *wind, newmenu *menu)
 		int source_y = menu->y;
 		int source_w = menu->x + menu->w - source_x;
 		int source_h = menu->y + menu->h - source_y;
+		extern volatile int g_levelcomplete_active;
 
-		have_menu_scale = android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
-		                                                   SWIDTH, SHEIGHT, BORDERX, BORDERY,
-		                                                   &menu_scale);
+		if (g_levelcomplete_active)
+			have_menu_scale = 0;
+		else
+			have_menu_scale = android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
+			                                                   SWIDTH, SHEIGHT, BORDERX, BORDERY,
+			                                                   &menu_scale);
 	}
 	if (have_menu_scale) {
 		android_newmenu_draw_scaled(menu, &menu_scale);
