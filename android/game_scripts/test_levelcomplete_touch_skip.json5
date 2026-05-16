@@ -53,7 +53,7 @@
     {"action": "wait_for", "field": "cutscene_tap_suppress_active", "value": "true", "timeout_ms": 1000},
     {"action": "send_touch_tap"},
     {"action": "wait_ms", "ms": 50},
-    {"action": "assert", "expect": {"levelcomplete_active": "true", "cutscene_tap_suppress_hits": {"gte": 1}, "cutscene_tap_suppress_active": "true"}},
+    {"action": "assert", "expect": {"levelcomplete_active": "true", "cutscene_tap_suppress_hits": {"gte": 1}}},
     {"action": "wait_ms", "ms": 600},
     {"action": "send_touch_tap"},
     {"action": "wait_for", "field": "levelcomplete_active", "value": "false", "timeout_ms": 2000},

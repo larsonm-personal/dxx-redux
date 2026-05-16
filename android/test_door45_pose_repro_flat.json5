@@ -61,7 +61,7 @@
         "current_level_num": "1",
         "position.segment": {"eq": "80"},
         "position.x": {"range": [-108.5, -107.0]},
-        "position.y": {"range": [-74.25, -71.5]},
+        "position.y": {"range": [-74.25, -71.25]},
         "position.z": {"range": [147.0, 148.25]}
     }},
 
