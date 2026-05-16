@@ -27,6 +27,34 @@ param(
 $ErrorActionPreference = "Stop"
 . "$PSScriptRoot\test_helpers.ps1"
 
+function Push-TestScriptToDevice {
+    param(
+        [Parameter(Mandatory = $true)][string]$SourcePath,
+        [Parameter(Mandatory = $true)][string]$DeviceName
+    )
+
+    Write-Status "Pushing test script: $DeviceName"
+    Adb -AdbArgs @("push", $SourcePath, "/data/local/tmp/$DeviceName") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/$DeviceName", "files/$DeviceName") | Out-Null
+
+    $staged = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "files/$DeviceName") -Seconds 5
+    if (-not $staged -or $staged -match 'No such file') {
+        Write-Status "FAIL: Could not stage test script on device: $DeviceName" "Red"
+        return $false
+    }
+    return $true
+}
+
+function Send-SetupCommand {
+    param([Parameter(Mandatory = $true)][string]$Command)
+
+    Adb -AdbArgs @(
+        "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+        "--es", "command", $Command
+    ) | Out-Null
+}
+
 # -- Step 1: Health check -------------------------------------
 
 Ensure-EmulatorHealthy
@@ -40,7 +68,10 @@ if ($Install) {
         exit 1
     }
     Write-Status "Installing APK..."
-    Adb -AdbArgs @("install", "-r", $apk) | Write-Host
+    if (-not (Install-ApkOnDevice)) {
+        Write-Status "FAIL: APK install failed" "Red"
+        exit 1
+    }
 }
 
 # -- Step 3: Determine which game(s) to run -------------------
@@ -124,9 +155,6 @@ foreach ($gameId in $gameList) {
     } else {
         $pushSrc = $scriptPath
     }
-    Write-Status "Pushing test script: $ScriptName"
-    Adb -AdbArgs @("push", $pushSrc, "/data/local/tmp/$pushName") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/$pushName", "files/$pushName") | Out-Null
 
     # -- Resolve declarative game data deps (if present) ----------
 
@@ -167,8 +195,17 @@ foreach ($gameId in $gameList) {
     $scriptTimeout = $TimeoutSeconds
     if ($TimeoutSeconds -eq 300) {
         $srcForTimeout = if ($resolvedPath -ne $scriptPath) { $resolvedPath } else { $scriptPath }
-        $scriptTimeout = Get-ScriptTimeoutSeconds -ScriptPath $srcForTimeout
-        Write-Status "Calculated timeout: ${scriptTimeout}s (from script timing fields)"
+        $scriptEstimate = Get-ScriptTimeoutSeconds -ScriptPath $srcForTimeout
+        $scriptTimeout = [Math]::Max($TimeoutSeconds, $scriptEstimate)
+        if ($scriptEstimate -gt $TimeoutSeconds) {
+            Write-Status "Calculated timeout: ${scriptTimeout}s (from script timing fields)"
+        } else {
+            Write-Status "Using default timeout: ${scriptTimeout}s (script estimate: ${scriptEstimate}s)"
+        }
+    }
+    if ($isLauncherScript -and $TimeoutSeconds -eq 300 -and $scriptTimeout -lt 600) {
+        $scriptTimeout = 600
+        Write-Status "Using launcher minimum timeout: ${scriptTimeout}s"
     }
 
     if ($isLauncherScript) {
@@ -185,6 +222,16 @@ foreach ($gameId in $gameList) {
         Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
         if (-not (Wait-SetupActivityReady)) {
             Write-Status "FAIL: SetupActivity not responding" "Red"
+            $allPassed = $false
+            if ($gameList.Count -gt 1) { continue }
+            exit 1
+        }
+
+        Write-Status "Clearing save files for clean launcher state"
+        Send-SetupCommand -Command "clear_save_files"
+        Start-Sleep -Milliseconds 250
+
+        if (-not (Push-TestScriptToDevice -SourcePath $pushSrc -DeviceName $pushName)) {
             $allPassed = $false
             if ($gameList.Count -gt 1) { continue }
             exit 1
@@ -215,6 +262,12 @@ foreach ($gameId in $gameList) {
         if ($skipGameData) { $launchParams.SkipGameData = $true }
 
         if (-not (Start-GameWithRetry @launchParams)) {
+            $allPassed = $false
+            if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
+            exit 1
+        }
+
+        if (-not (Push-TestScriptToDevice -SourcePath $pushSrc -DeviceName $pushName)) {
             $allPassed = $false
             if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
             exit 1

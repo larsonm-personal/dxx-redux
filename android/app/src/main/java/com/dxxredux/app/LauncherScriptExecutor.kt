@@ -260,7 +260,7 @@ class LauncherScriptExecutor(
                     val exact = step.optBoolean("exact", false)
                     val launchesGame = step.optBoolean("launches_game", false)
                     val postDelay = step.optLong("post_delay_ms", 300)
-                    val timeoutMs = step.optLong("timeout_ms", 10000)
+                    val timeoutMs = step.optLong("timeout_ms", if (launchesGame) 30000 else 10000)
                     if (text.isEmpty()) {
                         fail("tap_button: missing 'text' field")
                         return
@@ -378,6 +378,7 @@ class LauncherScriptExecutor(
 
     private fun resetGameState() {
         val dir = context.filesDir
+        val saveRegex = Regex("""\.(?:sg|mg)[0-9]$""", RegexOption.IGNORE_CASE)
         val patterns =
             listOf(
                 "*.plr",
@@ -403,10 +404,15 @@ class LauncherScriptExecutor(
             File(subDir, "descent.cfg").delete()
             subDir
                 .walkTopDown()
-                .filter { it.isFile && (it.name.endsWith(".plr") || it.name.endsWith(".plx")) }
+                .filter {
+                    it.isFile &&
+                        (it.name.endsWith(".plr") ||
+                            it.name.endsWith(".plx") ||
+                            saveRegex.containsMatchIn(it.name))
+                }
                 .forEach { it.delete() }
         }
-        Log.i(TAG, "Game state reset (deleted plr/plx/cfg/file_sets files)")
+        Log.i(TAG, "Game state reset (deleted plr/plx/sg/mg/cfg/file_sets files)")
     }
 
     /** Check a field in setup_introspect.json. Triggers a fresh introspect first. */

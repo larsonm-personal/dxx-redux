@@ -128,14 +128,14 @@ try {
     # Verify game data on both emulators, push if missing
     foreach ($emu in @($EMU1, $EMU2)) {
         $files = Adb-Dev-Timeout -Serial $emu -AdbArgs @(
-            "shell", "run-as", $PACKAGE, "ls", "files/sets/default/"
+            "shell", "run-as", $PACKAGE, "ls", "$($script:DEFAULT_SET_DIR)/"
         ) -Seconds 5
         $required = if ($Game -eq "d1") { "DESCENT.HOG" } else { "DESCENT2.HOG" }
         if (-not $files -or $files -notmatch $required) {
             Write-Status "Game data missing on $emu, pushing..." "Yellow"
             Install-AppAndData -Serial $emu
             $files = Adb-Dev-Timeout -Serial $emu -AdbArgs @(
-                "shell", "run-as", $PACKAGE, "ls", "files/sets/default/"
+                "shell", "run-as", $PACKAGE, "ls", "$($script:DEFAULT_SET_DIR)/"
             ) -Seconds 5
             if (-not $files -or $files -notmatch $required) {
                 Write-Status "FAIL: Game data still missing on $emu after push" "Red"

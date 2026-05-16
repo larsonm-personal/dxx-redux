@@ -56,6 +56,8 @@ if (-not $SpecPath) {
 $PACKAGE = 'com.dxxredux.app'
 $ACTIVITY = 'com.dxxredux.app.SetupActivity'
 $TEST_SET = 'regression_test'
+$SETS_ROOT = 'files/imported/sets'
+$SETS_ROOT_ABS = "/data/data/$PACKAGE/$SETS_ROOT"
 
 $_depBaseFile = Join-Path (Split-Path (Split-Path $PSScriptRoot)) 'dependency_base.txt'
 if (-not (Test-Path $_depBaseFile)) {
@@ -258,7 +260,7 @@ function Push-FileToSet {
     # Push a local file to the active set dir via staging.
     param([string]$LocalPath, [string]$RemoteName)
     $stagingPath = "/data/local/tmp/$RemoteName"
-    $dest = "/data/data/$PACKAGE/files/sets/$TEST_SET/$RemoteName"
+    $dest = "$SETS_ROOT_ABS/$TEST_SET/$RemoteName"
     Adb -CmdArgs @('push', $LocalPath, $stagingPath) -Timeout 120 | Out-Null
     Adb -CmdArgs @('shell', 'chmod', '644', $stagingPath) | Out-Null
     # Direct ProcessStartInfo call -- the sh -c argument needs single quotes to
@@ -281,7 +283,7 @@ function Push-FileToSet {
 
 function Get-RemoteFileSize {
     param([string]$SetName, [string]$FileName)
-    $result = Adb-RunAs "stat -c %s /data/data/$PACKAGE/files/sets/$SetName/$FileName 2>/dev/null"
+    $result = Adb-RunAs "stat -c %s $SETS_ROOT_ABS/$SetName/$FileName 2>/dev/null"
     if ($result -match '^\d+$') { return [long]$result }
     return 0
 }
@@ -529,19 +531,19 @@ Start-Sleep -Seconds 1
 Send-SetupCommand 'clear_set' -Name $TEST_SET
 Start-Sleep -Seconds 1
 Write-Status "  Direct-cleaning test set files..."
-$testSetFiles = (Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "files/sets/$TEST_SET/")) -split "`n" |
+$testSetFiles = (Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "$SETS_ROOT/$TEST_SET/")) -split "`n" |
     ForEach-Object { $_.Trim() } | Where-Object { $_ }
 foreach ($tsf in $testSetFiles) {
-    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "files/sets/$TEST_SET/$tsf") | Out-Null
+    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "$SETS_ROOT/$TEST_SET/$tsf") | Out-Null
 }
 
 # Clear the default set too (prevent leaking)
 Send-SetupCommand 'clear_set' -Name 'default'
 Start-Sleep -Seconds 1
-$defaultFiles = (Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "files/sets/default/")) -split "`n" |
+$defaultFiles = (Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "$SETS_ROOT/default/")) -split "`n" |
     ForEach-Object { $_.Trim() } | Where-Object { $_ }
 foreach ($df in $defaultFiles) {
-    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "files/sets/default/$df") | Out-Null
+    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "$SETS_ROOT/default/$df") | Out-Null
 }
 
 Send-SetupCommand 'clear_audio_sources'
@@ -831,7 +833,7 @@ foreach ($sf in $signatureFiles) {
     }
 
     # Hash the file on device using sha1sum (don't use sh -c, it splits args)
-    $remotePath = "files/sets/$TEST_SET/$sfLower"
+    $remotePath = "$SETS_ROOT/$TEST_SET/$sfLower"
     $hashOutput = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'sha1sum', $remotePath)
     if ($hashOutput -match '^([0-9a-f]{40})') {
         $deviceHash = $Matches[1]

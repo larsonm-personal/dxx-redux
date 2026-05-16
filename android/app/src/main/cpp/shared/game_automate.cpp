@@ -48,6 +48,7 @@ extern "C" {
 #include "game.h"
 #include "screens.h"
 #include "inferno.h"
+#include "key.h"
 #include "window.h"
 #include "newmenu.h"
 #include "gameseg.h"
@@ -74,6 +75,11 @@ extern "C" volatile int g_intro_active;
 struct key_entry {
 	const char *name;
 	SDLKey sym;
+};
+
+struct key_command_entry {
+	const char *name;
+	int keycode;
 };
 
 static const key_entry key_map[] = {
@@ -179,6 +185,43 @@ static SDLKey lookup_key(const char *name)
 			return k->sym;
 	}
 	return SDLK_UNKNOWN;
+}
+
+static const key_command_entry key_command_map[] = {
+	{ "enter", KEY_ENTER },
+	{ "return", KEY_ENTER },
+	{ "escape", KEY_ESC },
+	{ "esc", KEY_ESC },
+	{ "tab", KEY_TAB },
+	{ "space", KEY_SPACEBAR },
+	{ "backspace", KEY_BACKSP },
+	{ "delete", KEY_DELETE },
+	{ "up", KEY_UP },
+	{ "down", KEY_DOWN },
+	{ "left", KEY_LEFT },
+	{ "right", KEY_RIGHT },
+	{ "f1", KEY_F1 },
+	{ "f2", KEY_F2 },
+	{ "f3", KEY_F3 },
+	{ "f4", KEY_F4 },
+	{ "f5", KEY_F5 },
+	{ "f6", KEY_F6 },
+	{ "f7", KEY_F7 },
+	{ "f8", KEY_F8 },
+	{ "f9", KEY_F9 },
+	{ "f10", KEY_F10 },
+	{ "f11", KEY_F11 },
+	{ "f12", KEY_F12 },
+	{ NULL, -1 }
+};
+
+static int lookup_key_command(const char *name)
+{
+	for (const key_command_entry *k = key_command_map; k->name; k++) {
+		if (strcasecmp(k->name, name) == 0)
+			return k->keycode;
+	}
+	return -1;
 }
 
 /* -- Step types ------------------------------------------------------- */
@@ -624,15 +667,34 @@ static bool icontains(const char *haystack, const char *needle)
 
 extern "C" int newmenu_handler(window *wind, d_event *event, void *data);
 extern "C" int listbox_handler(window *wind, d_event *event, void *data);
+extern "C" int newmenu_key_command(window *wind, d_event *event, newmenu *menu);
+extern "C" int listbox_key_command(window *wind, d_event *event, listbox *lb);
+extern "C" int game_handler(window *wind, d_event *event, void *data);
+typedef struct automap automap;
+extern "C" int automap_handler(window *wind, d_event *event, automap *am);
+extern "C" int automap_key_command(window *wind, d_event *event, automap *am);
+#ifdef DXX_BUILD_DESCENT_II
+extern "C" int title_handler(window *wind, d_event *event, void *data);
+extern "C" int briefing_handler(window *wind, d_event *event, void *data);
+extern "C" int MovieHandler(window *wind, d_event *event, void *data);
+#endif
+
+struct automate_key_event {
+	event_type type;
+	int keycode;
+};
 
 /*
  * Find a menu item whose text contains `text` (case-insensitive).
  * Searches the front window (newmenu or listbox).
  * On success sets *out_target to the item index and *out_current to
- * the currently selected item. Returns true.
+ * the currently selected item. If out_current_type is non-NULL and the
+ * front window is a newmenu, also stores the current item's type there.
+ * Returns true.
  * On failure logs the error and returns false.
  */
-static bool select_find_item(const char *text, int *out_target, int *out_current)
+static bool select_find_item(const char *text, int *out_target, int *out_current,
+	int *out_current_type)
 {
 	window *front = window_get_front();
 	if (!front) {
@@ -652,6 +714,9 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 		newmenu_item *items = newmenu_get_items(menu);
 		int nitems = newmenu_get_nitems(menu);
 		int citem = newmenu_get_citem(menu);
+		int current_type = (citem >= 0 && citem < nitems) ? items[citem].type : -1;
+		const char *current_text =
+			(citem >= 0 && citem < nitems && items[citem].text) ? items[citem].text : "(null)";
 
 		for (int i = 0; i < nitems; i++) {
 			if (items[i].text && icontains(items[i].text, text)) {
@@ -659,8 +724,11 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 				if (items[i].type == NM_TYPE_TEXT) continue;
 				*out_target = i;
 				*out_current = citem;
-				LOGI("SELECT: found \"%s\" at index %d (current=%d) in newmenu",
-				     items[i].text, i, citem);
+				if (out_current_type) {
+					*out_current_type = current_type;
+				}
+				LOGI("SELECT: found \"%s\" at index %d (current=%d type=%d text=\"%s\") in newmenu",
+				     items[i].text, i, citem, current_type, current_text);
 				return true;
 			}
 		}
@@ -673,6 +741,8 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 		char **items = listbox_get_items(lb);
 		int nitems = listbox_get_nitems(lb);
 		int citem = listbox_get_citem(lb);
+		if (out_current_type)
+			*out_current_type = -1;
 
 		for (int i = 0; i < nitems; i++) {
 			if (items[i] && icontains(items[i], text)) {
@@ -691,6 +761,124 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 		LOGE("SELECT: front window is not a newmenu or listbox");
 		return false;
 	}
+}
+
+static bool select_can_confirm_current_input_as_ok(const auto_step &s,
+	int delta, int current_type)
+{
+	return delta == 1 &&
+		current_type == NM_TYPE_INPUT &&
+		strcasecmp(s.select_text.c_str(), "ok") == 0;
+}
+
+static bool select_dispatch_front_menu_key(int keycode, const char *key_name)
+{
+	window *front = window_get_front();
+	if (!front)
+		return false;
+
+	int (*cb)(window *, d_event *, void *) = window_get_callback(front);
+	if (!cb)
+		return false;
+
+	void *data = window_get_data(front);
+
+	automate_key_event key_event;
+	key_event.type = EVENT_KEY_COMMAND;
+	key_event.keycode = keycode;
+
+	if (cb == (int (*)(window *, d_event *, void *)) newmenu_handler) {
+		if (!data)
+			return false;
+		LOGI("SELECT: dispatching newmenu key %s (key=%d)", key_name, keycode);
+		newmenu_key_command(front, (d_event *) &key_event, (newmenu *) data);
+		return true;
+	}
+	if (cb == (int (*)(window *, d_event *, void *)) listbox_handler) {
+		if (!data)
+			return false;
+		LOGI("SELECT: dispatching listbox key %s (key=%d)", key_name, keycode);
+		listbox_key_command(front, (d_event *) &key_event, (listbox *) data);
+		return true;
+	}
+	if (cb == (int (*)(window *, d_event *, void *)) game_handler) {
+		if (keycode == KEY_ESC)
+			return false;
+		LOGI("KEY: dispatching game key %s (key=%d)", key_name, keycode);
+		game_handler(front, (d_event *) &key_event, data);
+		return true;
+	}
+	if (cb == (int (*)(window *, d_event *, void *)) automap_handler) {
+		if (!data)
+			return false;
+		LOGI("KEY: dispatching automap key %s (key=%d)", key_name, keycode);
+		automap_key_command(front, (d_event *) &key_event, (automap *) data);
+		return true;
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (cb == (int (*)(window *, d_event *, void *)) title_handler) {
+		if (!data)
+			return false;
+		LOGI("SELECT: dispatching title key %s (key=%d)", key_name, keycode);
+		title_handler(front, (d_event *) &key_event, data);
+		return true;
+	}
+	if (cb == (int (*)(window *, d_event *, void *)) briefing_handler) {
+		if (!data)
+			return false;
+		LOGI("SELECT: dispatching briefing key %s (key=%d)", key_name, keycode);
+		briefing_handler(front, (d_event *) &key_event, data);
+		return true;
+	}
+	if (cb == (int (*)(window *, d_event *, void *)) MovieHandler) {
+		if (!data)
+			return false;
+		LOGI("SELECT: dispatching movie key %s (key=%d)", key_name, keycode);
+		MovieHandler(front, (d_event *) &key_event, data);
+		return true;
+	}
+#endif
+
+	return false;
+}
+
+static const char *describe_window_handler(window *wind)
+{
+	if (!wind)
+		return "none";
+
+	int (*cb)(window *, d_event *, void *) = window_get_callback(wind);
+	if (cb == (int (*)(window *, d_event *, void *)) newmenu_handler)
+		return "newmenu";
+	if (cb == (int (*)(window *, d_event *, void *)) listbox_handler)
+		return "listbox";
+#ifdef DXX_BUILD_DESCENT_II
+	if (cb == (int (*)(window *, d_event *, void *)) title_handler)
+		return "title";
+	if (cb == (int (*)(window *, d_event *, void *)) briefing_handler)
+		return "briefing";
+	if (cb == (int (*)(window *, d_event *, void *)) MovieHandler)
+		return "movie";
+#endif
+	return "unknown";
+}
+
+static bool close_front_fullscreen_window(void)
+{
+	window *front = window_get_front();
+	if (!front)
+		return false;
+
+#ifdef DXX_BUILD_DESCENT_II
+	int (*cb)(window *, d_event *, void *) = window_get_callback(front);
+	if (cb == (int (*)(window *, d_event *, void *)) title_handler ||
+	    cb == (int (*)(window *, d_event *, void *)) briefing_handler) {
+		LOGI("skip_briefing: closing %s window directly", describe_window_handler(front));
+		window_close(front);
+		return true;
+	}
+#endif
+	return false;
 }
 
 static void average_three_vectors(vms_vector *dest, const vms_vector *a, const vms_vector *b, const vms_vector *c)
@@ -1560,8 +1748,13 @@ extern "C" void game_automate_tick(void)
 			if (g_key_phase == 0) {
 				if (!s.modifier_name.empty())
 					inject_key_combo(s.modifier_name, s.key_name);
-				else
-					inject_key_tap(s.key_name);
+				else {
+					int keycode = lookup_key_command(s.key_name.c_str());
+					if (keycode >= 0 && select_dispatch_front_menu_key(keycode, s.key_name.c_str())) {
+						/* dispatched directly */
+					} else
+						inject_key_tap(s.key_name);
+				}
 				g_key_phase = 1;
 				g_step_start = now;
 			} else if (g_key_phase == 1) {
@@ -1623,7 +1816,7 @@ extern "C" void game_automate_tick(void)
 				 * If timeout_ms is set, poll each frame until the item appears
 				 * instead of failing immediately. */
 				int target, current;
-				if (!select_find_item(s.select_text.c_str(), &target, &current)) {
+				if (!select_find_item(s.select_text.c_str(), &target, &current, NULL)) {
 					if (s.timeout_ms > 0 && elapsed < (Uint32) s.timeout_ms) {
 						break; /* retry next frame */
 					}
@@ -1643,10 +1836,6 @@ extern "C" void game_automate_tick(void)
 				}
 				g_select_delta = target - current;
 				g_select_phase = 1;
-				if (g_select_delta == 0) {
-					/* Already on the right item -- go straight to enter */
-					g_select_phase = 2;
-				}
 			}
 			if (g_select_phase == 1) {
 				/*
@@ -1655,19 +1844,34 @@ extern "C" void game_automate_tick(void)
 				 * newmenu_scroll() skips NM_TYPE_TEXT items, so a single
 				 * DOWN press may advance by more than one index.
 				 */
-				int target, current;
-				if (!select_find_item(s.select_text.c_str(), &target, &current)) {
+				int target, current, current_type;
+				if (!select_find_item(s.select_text.c_str(), &target, &current,
+							     &current_type)) {
 					stop_script_fail("SELECT: menu disappeared during navigation");
 					break;
 				}
 				int delta = target - current;
-				if (delta > 0) {
-					inject_key_tap("down");
-				} else if (delta < 0) {
-					inject_key_tap("up");
+				if (select_can_confirm_current_input_as_ok(s, delta, current_type)) {
+					LOGI("SELECT: confirming current input for adjacent \"Ok\"");
+					g_select_phase = 3;
+					g_step_start = now;
+					if (!select_dispatch_front_menu_key(KEY_ENTER, "enter"))
+						inject_key_tap("enter");
+					break;
 				}
-				if (delta == 0) {
-					g_select_phase = 2;
+				if (delta > 0) {
+					if (!select_dispatch_front_menu_key(KEY_DOWN, "down"))
+						inject_key_tap("down");
+				} else if (delta < 0) {
+					if (!select_dispatch_front_menu_key(KEY_UP, "up"))
+						inject_key_tap("up");
+				} else {
+					g_select_phase = 3;
+					g_step_start = now;
+					if (!select_dispatch_front_menu_key(KEY_ENTER, "enter"))
+						inject_key_tap("enter");
+					LOGI("SELECT: confirmed \"%s\"", s.select_text.c_str());
+					break;
 				}
 				/* else: keep navigating next frame */
 			} else if (g_select_phase == 2) {
@@ -1675,7 +1879,7 @@ extern "C" void game_automate_tick(void)
 				 * The cursor can drift between Phase 1 and 2 if the
 				 * game loop stalls (e.g. emulator lag). */
 				int target, current;
-				if (!select_find_item(s.select_text.c_str(), &target, &current)) {
+				if (!select_find_item(s.select_text.c_str(), &target, &current, NULL)) {
 					stop_script_fail("SELECT: menu disappeared before confirm");
 					break;
 				}
@@ -1684,10 +1888,11 @@ extern "C" void game_automate_tick(void)
 					g_select_phase = 1;
 					break;
 				}
-				inject_key_tap("enter");
-				LOGI("SELECT: confirmed \"%s\"", s.select_text.c_str());
 				g_select_phase = 3;
 				g_step_start = now;
+				if (!select_dispatch_front_menu_key(KEY_ENTER, "enter"))
+					inject_key_tap("enter");
+				LOGI("SELECT: confirmed \"%s\"", s.select_text.c_str());
 			} else if (g_select_phase == 3) {
 				/* Phase 3: wait for the key to be processed before advancing */
 				if (elapsed >= (Uint32) s.post_delay_ms) {
@@ -1788,25 +1993,34 @@ extern "C" void game_automate_tick(void)
 				if (Game_wind != NULL && (front == NULL || front == Game_wind)) {
 					LOGI("skip_briefing: game window is front, done");
 					advance_step();
+				} else if (s.timeout_ms > 0 && elapsed >= (Uint32) s.timeout_ms) {
+					stop_script_fail("skip_briefing: timed out waiting for game window");
 				} else if (front != NULL && front != Game_wind) {
 					/* Briefing or other non-game window on top -- dismiss it. */
-					LOGI("skip_briefing: dismissing non-game window (Game_wind=%s)",
-					     Game_wind ? "exists" : "NULL");
-					inject_key_tap("escape");
-					g_key_phase = 1;
-					g_step_start = now;
-				} else {
-					/* No windows at all yet -- keep polling. */
-					if (s.timeout_ms > 0 && elapsed >= (Uint32) s.timeout_ms) {
-						LOGI("skip_briefing: timed out with no windows (%u ms)", elapsed);
-						advance_step();
+					LOGI("skip_briefing: dismissing non-game window (Game_wind=%s front=%s)",
+					     Game_wind ? "exists" : "NULL",
+					     describe_window_handler(front));
+					if (Game_wind == NULL && close_front_fullscreen_window()) {
+						/* closed directly */
+					} else if (!select_dispatch_front_menu_key(KEY_ESC, "escape")) {
+						if (Game_wind == NULL)
+							inject_mouse_tap();
+						else
+							inject_key_tap("escape");
 					}
+					g_key_phase = 1;
+					g_repeat_start = now;
 				}
 			} else if (g_key_phase == 1) {
 				/* Escape was sent; wait post_delay then re-check (phase 0). */
-				if (elapsed >= (Uint32) s.post_delay_ms) {
-					g_key_phase = 0;
-					g_step_start = now;
+				if (now - g_repeat_start >= (Uint32) s.post_delay_ms) {
+					window *front = window_get_front();
+					if (Game_wind != NULL && (front == NULL || front == Game_wind)) {
+						LOGI("skip_briefing: game window reached after dismiss");
+						advance_step();
+					} else {
+						g_key_phase = 0;
+					}
 				}
 			}
 			break;

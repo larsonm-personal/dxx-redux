@@ -13,10 +13,6 @@ $ErrorActionPreference = "Stop"
 function Fail($msg) { Write-Error "FAIL: $msg"; exit 1 }
 function Info($msg) { Write-Host $msg }
 
-function WaitMs($ms) {
-    Start-Process -FilePath "cmd.exe" -ArgumentList "/c timeout $([Math]::Ceiling($ms / 1000))" -NoNewWindow -Wait
-}
-
 function GetSetupButtons {
     # Poll until setup_introspect.json has a non-empty buttons array.
     # Returns button text array, or fails after timeout.
@@ -35,6 +31,52 @@ function GetSetupButtons {
     return $obj.buttons | ForEach-Object { $_.text }
 }
 
+function Test-ContainsButton {
+    param(
+        [string[]]$Buttons,
+        [string]$Text
+    )
+
+    return $Buttons -contains $Text
+}
+
+function Test-ContainsButtonMatch {
+    param(
+        [string[]]$Buttons,
+        [string]$Pattern
+    )
+
+    foreach ($button in $Buttons) {
+        if ($button -match $Pattern) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Wait-ForSetupButtons {
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$Predicate,
+        [Parameter(Mandatory = $true)][string]$Failure,
+        [int]$TimeoutSeconds = 10
+    )
+
+    $matched = Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 500 -Predicate {
+        param($obj)
+        if ($null -eq $obj.buttons -or $obj.buttons.Count -eq 0) {
+            return $false
+        }
+        $texts = @($obj.buttons | ForEach-Object { $_.text })
+        return (& $Predicate (, $texts))
+    }
+
+    $buttons = GetSetupButtons
+    if (-not $matched) {
+        Fail "$Failure (got: $($buttons -join ', '))"
+    }
+    return $buttons
+}
+
 function SendKey($code) {
     & $script:ADB shell input keyevent $code 2>$null
 }
@@ -43,7 +85,7 @@ function SendKey($code) {
 Info "Checking emulator..."
 Ensure-EmulatorHealthy
 
-# Push game data so canLaunch=true and Multiplayer button is enabled/focusable
+# Push game data so launcher pages that depend on game-ready state are available.
 Info "Resolving game data deps..."
 if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
     Fail "Could not resolve game data deps"
@@ -64,69 +106,68 @@ if (-not (Wait-SetupActivityReady -TimeoutSeconds 30)) {
     Fail "SetupActivity did not become ready within 30s"
 }
 
-# --- Test 1: Initial page shows main buttons ---
+# --- Test 1: Initial page shows current launcher controls ---
 Info "Test 1: Verify main page buttons..."
 $buttons = GetSetupButtons
 Info "  Found buttons: $($buttons -join ', ')"
-if ($buttons -notcontains "Multiplayer") { Fail "Main page missing Multiplayer button (got: $($buttons -join ', '))" }
+if (-not (Test-ContainsButton -Buttons $buttons -Text "Define Controls")) {
+    Fail "Main page missing Define Controls button (got: $($buttons -join ', '))"
+}
+if (-not (Test-ContainsButton -Buttons $buttons -Text "Touch Layout")) {
+    Fail "Main page missing Touch Layout button (got: $($buttons -join ', '))"
+}
 Info "  PASS: Main page has expected buttons"
 
-# --- Test 2: DPAD_CENTER activates Multiplayer (initial focus target) ---
-Info "Test 2: DPAD_CENTER on initial focus (Multiplayer)..."
+# --- Test 2: DPAD_CENTER activates Define Controls (initial focus target) ---
+Info "Test 2: DPAD_CENTER on initial focus (Define Controls)..."
 & $script:ADB logcat -c
 SendKey 23  # DPAD_CENTER
-WaitMs 2000
 $buttons = GetSetupButtons
-if ($buttons -contains "Multiplayer") {
-    Fail "DPAD_CENTER did not navigate away from main page (focus not on Multiplayer)"
-}
-if ($buttons -notcontains "Back") {
-    # Could show "< Back" or "Back" depending on the page
-    $hasBack = $false
-    foreach ($b in $buttons) { if ($b -match "Back") { $hasBack = $true; break } }
-    if (-not $hasBack) { Fail "Expected a Back button on the sub-page" }
+if (($buttons -contains "Define Controls") -or
+    ($buttons -notcontains "Cancel") -or
+    (@($buttons | Where-Object { $_ -like "Save*" }).Count -eq 0)) {
+    Fail "DPAD_CENTER did not navigate to the controller page (got: $($buttons -join ', '))"
 }
 Info "  PASS: Navigated to sub-page via DPAD_CENTER"
 
 # --- Test 3: BACK key returns to main page ---
 Info "Test 3: BACK returns to main page..."
 SendKey 4  # KEYCODE_BACK
-WaitMs 2000
 $buttons = GetSetupButtons
-if ($buttons -notcontains "Multiplayer") { Fail "BACK did not return to main page (got: $($buttons -join ', '))" }
+if (($buttons -notcontains "Define Controls") -or ($buttons -notcontains "Touch Layout")) {
+    Fail "BACK did not return to the main page (got: $($buttons -join ', '))"
+}
 Info "  PASS: Returned to main page"
 
 # --- Test 4: Focus restoration after return - DPAD_CENTER works again ---
 Info "Test 4: Focus restoration after return..."
-WaitMs 500
 SendKey 23  # DPAD_CENTER
-WaitMs 2000
 $buttons = GetSetupButtons
-if ($buttons -contains "Multiplayer") {
-    Fail "Focus not restored after return from sub-page"
+if (($buttons -contains "Define Controls") -or
+    ($buttons -notcontains "Cancel") -or
+    (@($buttons | Where-Object { $_ -like "Save*" }).Count -eq 0)) {
+    Fail "Focus was not restored after returning from the controller page (got: $($buttons -join ', '))"
 }
 Info "  PASS: Focus restored, navigated to sub-page again"
 
-# --- Test 5: DPAD navigation (UP from Multiplayer to a settings button) ---
-Info "Test 5: DPAD UP navigation..."
+# --- Test 5: DPAD_RIGHT moves from Define Controls to Touch Layout ---
+Info "Test 5: DPAD RIGHT navigation..."
 SendKey 4  # BACK to main
-WaitMs 2000
-# UP 3x to skip past game selection chips and reach a settings button
-SendKey 19  # DPAD_UP (to game chip)
-SendKey 19  # DPAD_UP (to another chip or settings row)
-SendKey 19  # DPAD_UP (to a settings button)
-SendKey 23  # DPAD_CENTER
-WaitMs 2000
 $buttons = GetSetupButtons
-if ($buttons -contains "Multiplayer") {
-    Info "  DEBUG: buttons after UP-x3+CENTER: $($buttons -join ', ')"
-    Fail "DPAD_UP + CENTER did not navigate (focus didn't move)"
+if (($buttons -notcontains "Define Controls") -or ($buttons -notcontains "Touch Layout")) {
+    Fail "Did not return to the main page before DPAD_RIGHT test (got: $($buttons -join ', '))"
 }
-Info "  PASS: DPAD_UP moved focus to a settings button"
+SendKey 22  # DPAD_RIGHT to Touch Layout
+SendKey 23  # DPAD_CENTER
+$buttons = GetSetupButtons
+if ($buttons -notcontains "Close Editor") {
+    Info "  DEBUG: buttons after RIGHT+CENTER: $($buttons -join ', ')"
+    Fail "DPAD_RIGHT + CENTER did not open the Touch Layout editor"
+}
+Info "  PASS: DPAD_RIGHT moved focus to Touch Layout"
 
 # --- Cleanup ---
 SendKey 4  # BACK
-WaitMs 1000
 & $script:ADB shell am force-stop com.dxxredux.app
 
 Info ""

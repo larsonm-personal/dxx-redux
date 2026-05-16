@@ -778,6 +778,10 @@ void ogl_cache_level_textures(void)
 					piggy_bitmap_get_flags(bm),
 					(void *)bm->gltexture,
 					(void *)bm->gltexture_mask);
+			if (i == 0 || i + 1 == Num_bitmap_files || ((i + 1) % 50) == 0)
+				__android_log_print(ANDROID_LOG_INFO, "DXX",
+				    "ogl_cache: loading %d/%d name=%s flags=0x%x",
+				    i + 1, Num_bitmap_files, cname ? cname : "<null>", bm->bm_flags);
 			int had_tex = (bm->gltexture && bm->gltexture->handle > 0);
 			ogl_loadbmtexture(bm);
 			if (cname && !d_stricmp(cname, "metl154"))

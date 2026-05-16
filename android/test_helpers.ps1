@@ -30,6 +30,7 @@ $script:DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
 $script:ADB = "$script:DEP_BASE\android-sdk\platform-tools\adb.exe"
 $script:PACKAGE = "com.dxxredux.app"
 $script:ACTIVITY = "com.dxxredux.app.SetupActivity"
+$script:DEFAULT_SET_DIR = "files/imported/sets/default"
 
 function Adb {
     param([string[]]$AdbArgs)
@@ -82,6 +83,12 @@ function Test-EmulatorHealthy {
     if ($devices -notmatch 'emulator-\d+\s+device') { return $false }
     $boot = Adb-Timeout -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 10
     if ($null -eq $boot -or $boot -ne "1") { return $false }
+    $packageService = Adb-Timeout -AdbArgs @("shell", "cmd", "package", "list", "packages", "android") -Seconds 10
+    if ($null -eq $packageService -or
+        $packageService -match 'Can''t find service: package' -or
+        $packageService -notmatch 'package:android') {
+        return $false
+    }
     return $true
 }
 
@@ -337,7 +344,7 @@ function Install-AppAndData {
     $apk = Join-Path $repoRoot "android\app\build\outputs\apk\debug\app-debug.apk"
     if (Test-Path $apk) {
         Write-Status "  Installing APK on $Serial..."
-        Adb-Dev-Timeout -Serial $Serial -AdbArgs @("install", "-r", $apk) -Seconds 60 | Out-Null
+        Adb-Dev-Timeout -Serial $Serial -AdbArgs @("install", "-r", $apk) -Seconds 180 | Out-Null
     }
     # Set ANDROID_SERIAL so Adb/Adb-Timeout target the right device
     $prevSerial = $env:ANDROID_SERIAL
@@ -390,13 +397,12 @@ function Start-EmulatorIfNeeded {
 }
 
 function Reset-GameState {
-    # Delete pilot files, config, and controller config for fresh test state.
+    # Reset shared config for a fresh test state.
+    # Preserve pilot files so launcher-backed tests do not re-enter the
+    # first-launch pilot flow on every run. Tests that need a missing pilot
+    # state clear those files explicitly via setup_command clear_pilot_files.
     # Also reset the active file set to "default" so the game finds its HOGs.
     # Centralized here so every test uses the same cleanup logic.
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-        "find", "files", "-name", "'*.plr'", "-delete") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-        "find", "files", "-name", "'*.plx'", "-delete") | Out-Null
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
         "find", "files", "-name", "'descent.cfg'", "-delete") | Out-Null
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
@@ -500,7 +506,7 @@ function Resolve-GameDataDeps {
         return $false
     }
 
-    $defaultTarget = "files/sets/default"
+    $defaultTarget = $script:DEFAULT_SET_DIR
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", $defaultTarget) | Out-Null
 
     # Group deps by target dir, list what's on device per target
@@ -622,7 +628,7 @@ function Ensure-GameDataOnDevice {
     param([ValidateSet("d1", "d2")][string]$Game = "d2")
 
     $repoRoot = Split-Path $PSScriptRoot
-    $setDir = "files/sets/default"
+    $setDir = $script:DEFAULT_SET_DIR
 
     # Required files per game (lowercase). Must match SetupActivity.kt D2_FILES/D1_FILES.
     $d2Required = @("descent2.hog", "descent2.ham", "groupa.pig", "descent2.s22",
@@ -786,9 +792,29 @@ function Watch-AutomationResult {
     $passed = $false
     $backgroundHandled = $false
     $launcherChecked = $false
-    $launcherResumeHandled = $false
+    $lastLauncherResumeStep = -1
+    $cacheActive = $false
+    $cacheStartSeconds = -1
+    $cacheLastIndex = -1
+    $cacheTotal = 0
+    $lastCacheProgressSeconds = -1
+    $postCacheGraceDeadlineSeconds = -1
+    $cacheProgressGraceSeconds = 60
+    $cachePhaseMaxSeconds = 900
+    $lastAutomationSeq = -1
+    $lastAutomationProgressSeconds = -1
+    $automationProgressGraceSeconds = 120
 
-    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds -and -not $finished) {
+    while (-not $finished) {
+        $elapsedNow = [int]$sw.Elapsed.TotalSeconds
+        $cacheProgressGrace = $cacheActive -and $lastCacheProgressSeconds -ge 0 -and (($elapsedNow - $lastCacheProgressSeconds) -lt $cacheProgressGraceSeconds)
+        $cachePhaseGrace = $cacheActive -and $cacheStartSeconds -ge 0 -and (($elapsedNow - $cacheStartSeconds) -lt $cachePhaseMaxSeconds)
+        $postCacheGrace = $postCacheGraceDeadlineSeconds -ge 0 -and ($elapsedNow -lt $postCacheGraceDeadlineSeconds)
+        $automationProgressGrace = $lastAutomationProgressSeconds -ge 0 -and (($elapsedNow - $lastAutomationProgressSeconds) -lt $automationProgressGraceSeconds)
+        if ($elapsedNow -ge $TimeoutSeconds -and -not ($cacheProgressGrace -or $cachePhaseGrace -or $postCacheGrace -or $automationProgressGrace)) {
+            break
+        }
+
         Start-Sleep -Milliseconds 1500
 
         $elapsed = [int]$sw.Elapsed.TotalSeconds
@@ -804,6 +830,44 @@ function Watch-AutomationResult {
                 }
             }
             $lastHealthCheck = $elapsed
+
+            $cacheLog = Adb-Timeout -AdbArgs @("logcat", "-d", "-t", "400", "-s", "DXX:*") -Seconds 10
+            if ($cacheLog) {
+                foreach ($line in ($cacheLog -split "`n")) {
+                    if ($line -match 'ogl_cache: starting,\s+(\d+)\s+bitmaps') {
+                        $cacheTotal = [int]$matches[1]
+                        $cacheActive = $true
+                        if ($cacheStartSeconds -lt 0) {
+                            $cacheStartSeconds = $elapsed
+                            $lastCacheProgressSeconds = $elapsed
+                            if ($elapsed -ge $TimeoutSeconds) {
+                                Write-Status "Extending timeout: ogl_cache started (0/$cacheTotal) after ${elapsed}s" "Yellow"
+                            }
+                        }
+                    } elseif ($line -match 'ogl_cache: loading\s+(\d+)/(\d+)') {
+                        $cacheIndex = [int]$matches[1]
+                        $cacheTotal = [int]$matches[2]
+                        if ($cacheStartSeconds -lt 0) {
+                            $cacheStartSeconds = $elapsed
+                        }
+                        $cacheActive = $true
+                        if ($cacheIndex -gt $cacheLastIndex) {
+                            $cacheLastIndex = $cacheIndex
+                            $lastCacheProgressSeconds = $elapsed
+                            if ($elapsed -ge $TimeoutSeconds) {
+                                Write-Status "Extending timeout: ogl_cache progress $cacheIndex/$cacheTotal after ${elapsed}s" "Yellow"
+                            }
+                        }
+                    } elseif ($line -match 'ogl_cache: done') {
+                        if ($cacheActive) {
+                            $cacheActive = $false
+                            $cacheStartSeconds = -1
+                            $postCacheGraceDeadlineSeconds = $elapsed + 30
+                            Write-Status "ogl_cache completed -- allowing 30s for automation to resume" "Yellow"
+                        }
+                    }
+                }
+            }
 
             # Stuck-at-launcher detection: after 15s, if no automation progress,
             # check if the game is actually stuck at the launcher/setup screen.
@@ -843,6 +907,28 @@ function Watch-AutomationResult {
             }
         }
 
+        if ($elapsed -ge ($TimeoutSeconds - 60) -or $cacheActive -or $postCacheGraceDeadlineSeconds -ge 0) {
+            $stepLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_log.jsonl") -Seconds 3
+            if ($stepLog) {
+                $lastStepLine = ($stepLog -split "`n" | Where-Object { $_.Trim().StartsWith("{") } | Select-Object -Last 1)
+                if ($lastStepLine) {
+                    try {
+                        $stepObj = $lastStepLine | ConvertFrom-Json
+                        $stepSeq = [int]$stepObj.seq
+                        if ($stepSeq -gt $lastAutomationSeq) {
+                            $lastAutomationSeq = $stepSeq
+                            $lastAutomationProgressSeconds = $elapsed
+                            if ($elapsed -ge $TimeoutSeconds) {
+                                Write-Status "Extending timeout: automation progress step $($stepObj.step)/$($stepObj.total) $($stepObj.action) $($stepObj.status) after ${elapsed}s" "Yellow"
+                            }
+                        }
+                    } catch {
+                        # Ignore malformed or partial log lines
+                    }
+                }
+            }
+        }
+
         # Primary: check file-based result (survives logcat issues)
         $resultJson = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_result.json") -Seconds 3
         if ($resultJson -and $resultJson -match '"result"') {
@@ -865,8 +951,8 @@ function Watch-AutomationResult {
                     # clean process. SetupActivity recreates the executor from
                     # automation_result.json's script_path on resume.
                     $nextStep = $resultObj.next_step
-                    if ($IsLauncherScript -and -not $launcherResumeHandled) {
-                        $launcherResumeHandled = $true
+                    if ($IsLauncherScript -and $nextStep -ne $lastLauncherResumeStep) {
+                        $lastLauncherResumeStep = $nextStep
                         Write-Status "LAUNCHER_CONTINUE at step $nextStep -- restarting launcher cleanly" "Yellow"
                         Stop-AppAndWait
                         Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
@@ -1384,8 +1470,16 @@ function Install-ApkOnDevice {
         return $false
     }
     $args_ = if ($Serial) { @("-s", $Serial, "install", "-r", $apk) } else { @("install", "-r", $apk) }
-    $result = Adb-Timeout -AdbArgs $args_ -Seconds 60
-    return ($result -and $result -match "Success")
+    $result = Adb-Timeout -AdbArgs $args_ -Seconds 180
+    if (-not $result) {
+        Write-Status "WARN: APK install timed out" "Yellow"
+        return $false
+    }
+    if ($result -notmatch "Success") {
+        Write-Host $result
+        return $false
+    }
+    return $true
 }
 
 function Push-GameDataToDevice {

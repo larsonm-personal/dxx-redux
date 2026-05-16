@@ -1016,6 +1016,39 @@ function Read-JsonFileAsHashtable {
     return ([System.IO.File]::ReadAllText($Path) | ConvertFrom-Json -AsHashtable)
 }
 
+function Get-TextFileLinesWithRetry {
+    param(
+        [string]$Path,
+        [int]$RetryCount = 20,
+        [int]$RetryDelayMs = 100
+    )
+
+    for ($attempt = 0; $attempt -lt $RetryCount; $attempt++) {
+        try {
+            $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+            try {
+                $reader = [System.IO.StreamReader]::new($stream)
+                try {
+                    $lines = New-Object System.Collections.Generic.List[string]
+                    while (($line = $reader.ReadLine()) -ne $null) {
+                        $lines.Add($line)
+                    }
+                    return $lines.ToArray()
+                } finally {
+                    $reader.Dispose()
+                }
+            } finally {
+                $stream.Dispose()
+            }
+        } catch [System.IO.IOException] {
+            if ($attempt -ge ($RetryCount - 1)) {
+                throw
+            }
+            [System.Threading.Thread]::Sleep($RetryDelayMs)
+        }
+    }
+}
+
 function Test-ReplayUsedTerminalExitSubset {
     param(
         [string]$SandboxDirectory,
@@ -1025,7 +1058,7 @@ function Test-ReplayUsedTerminalExitSubset {
 
     $gamelogPath = Join-Path $SandboxDirectory 'gamelog.txt'
     if (Test-Path -LiteralPath $gamelogPath) {
-        foreach ($line in [System.IO.File]::ReadLines($gamelogPath)) {
+        foreach ($line in Get-TextFileLinesWithRetry -Path $gamelogPath) {
             if ($line.Contains('Input demo replay level-exit:') -or $line.Contains('Input demo replay mine-exit:')) {
                 return $true
             }

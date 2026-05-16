@@ -11,8 +11,8 @@ $actualPath = Join-Path $fixtureDir 'actual_state.jsonl'
 function Write-FixtureTrace {
     param(
         [string]$Path,
-        [uint32]$SegmentListHash,
-        [uint32]$ObjectSlotHash = 333
+        [uint32]$SegmentLinkErrorCount = 0,
+        [uint32]$ObjectSlotBucketSize = 32
     )
 
     $slotCounts = @(0) * 32
@@ -26,12 +26,12 @@ function Write-FixtureTrace {
             highest_object_index = 191
             live_object_count = 2
             live_object_hash = 123
-            object_slot_bucket_size = 32
+            object_slot_bucket_size = $ObjectSlotBucketSize
             object_slot_counts = $slotCounts
             object_slot_hashes = $slotHashes
             segment_object_list_count = 2
-            segment_object_list_hash = $SegmentListHash
-            segment_object_link_error_count = 0
+            segment_object_list_hash = 111
+            segment_object_link_error_count = $SegmentLinkErrorCount
         }
         state = @{}
     } | ConvertTo-Json -Compress -Depth 8 | Set-Content -LiteralPath $Path -Encoding utf8NoBOM
@@ -50,33 +50,33 @@ try {
         New-Item -ItemType Directory -Path $fixtureDir -Force | Out-Null
     }
 
-    Write-FixtureTrace -Path $expectedPath -SegmentListHash 111
-    Write-FixtureTrace -Path $actualPath -SegmentListHash 111
+    Write-FixtureTrace -Path $expectedPath
+    Write-FixtureTrace -Path $actualPath
     $matching = Invoke-CompareFixture
     if ($matching.ExitCode -ne 0) {
         throw "matching state trace compare failed`n$($matching.Output)"
     }
 
-    Write-FixtureTrace -Path $actualPath -SegmentListHash 222
+    Write-FixtureTrace -Path $actualPath -SegmentLinkErrorCount 1
     $mismatch = Invoke-CompareFixture
     if ($mismatch.ExitCode -ne 1) {
         throw "mismatched state trace compare returned $($mismatch.ExitCode)`n$($mismatch.Output)"
     }
     if ($mismatch.Output -notmatch 'stage=object_list_order' -or
-        $mismatch.Output -notmatch 'segment_object_list_hash' -or
+        $mismatch.Output -notmatch 'segment_object_link_error_count' -or
         $mismatch.Output -notmatch 'expected_diag=') {
         throw "mismatched state trace compare missed object-list diagnostics`n$($mismatch.Output)"
     }
 
-    Write-FixtureTrace -Path $actualPath -SegmentListHash 111 -ObjectSlotHash 444
-    $slotMismatch = Invoke-CompareFixture
-    if ($slotMismatch.ExitCode -ne 1) {
-        throw "mismatched object-slot compare returned $($slotMismatch.ExitCode)`n$($slotMismatch.Output)"
+    Write-FixtureTrace -Path $actualPath -ObjectSlotBucketSize 64
+    $objectStateMismatch = Invoke-CompareFixture
+    if ($objectStateMismatch.ExitCode -ne 1) {
+        throw "mismatched object-state compare returned $($objectStateMismatch.ExitCode)`n$($objectStateMismatch.Output)"
     }
-    if ($slotMismatch.Output -notmatch 'stage=object_state' -or
-        $slotMismatch.Output -notmatch 'object_slot_hashes\[5\]' -or
-        $slotMismatch.Output -notmatch 'object_slot_range=160-191') {
-        throw "mismatched object-slot compare missed bucket diagnostics`n$($slotMismatch.Output)"
+    if ($objectStateMismatch.Output -notmatch 'stage=object_state' -or
+        $objectStateMismatch.Output -notmatch 'object_slot_bucket_size' -or
+        $objectStateMismatch.Output -notmatch 'expected_diag=') {
+        throw "mismatched object-state compare missed diagnostics`n$($objectStateMismatch.Output)"
     }
 
     Write-Host 'PASS'

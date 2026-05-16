@@ -1,4 +1,4 @@
 # game|demo_path
 # Paths are repo-relative
 
-d2|android/regression_demos/d2_descent2_level2_20260501_141150.dximdemo
+d2|android/regression_demos/d2_descent2_level10_20260512_231237.dximdemo

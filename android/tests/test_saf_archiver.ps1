@@ -207,8 +207,8 @@ if ($installResult -match "Success") {
 Write-Host ""
 Write-Progress-Flush "Step 4: Moving $TEST_FILE to SAF test location..." Yellow
 
-# Get the file size (game data lives under sets/default/)
-$GAME_DATA_DIR = "files/sets/default"
+# Get the file size from the active default file set.
+$GAME_DATA_DIR = $script:DEFAULT_SET_DIR
 $sizeOutput = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE"
 if (-not $sizeOutput -or $sizeOutput -match 'No such file') {
     # File missing -- a previous timed-out run may not have cleaned up.

@@ -67,7 +67,7 @@ function Read-Fixtures {
             throw "Fixture demo not found: $resolvedDemoPath"
         }
 
-        $fixtures.Add([ordered]@{
+        $fixtures.Add([pscustomobject][ordered]@{
                 Game = $game
                 DemoPath = $resolvedDemoPath
                 DemoRelative = Get-RelativeRepoPath -Path $resolvedDemoPath

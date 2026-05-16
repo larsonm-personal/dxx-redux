@@ -8,15 +8,16 @@
     infrastructure (emulators, matchmaking server, Docker NAT containers),
     runs tests sequentially, and produces a summary report.
 
-    Infrastructure is brought up on demand and torn down at the end:
-      1. No-infra tests (game_data extraction, cue/iso, server unit tests)
-      2. Single emulator started, APK installed, game data pushed
-      3. Single-emulator tests (json5 automation + ps1 emulator tests)
-      4. Second emulator started, APK installed, game data pushed
-      5. Matchmaking server started
-      6. Two-emulator + server tests (multiplayer, LAN, bot client)
-      7. Docker NAT tests (if Docker is available)
-      8. Cleanup in reverse order
+        Infrastructure is brought up on demand and torn down at the end:
+            1. No-infra tests (host-side comparisons, unit tests, server integration)
+            2. Server-only tests (matchmaking bot/client checks)
+            3. Single emulator started, APK installed, game data pushed
+            4. Single-emulator tests (json5 automation + ps1 emulator tests)
+            5. Second emulator started, APK installed, game data pushed
+            6. Matchmaking server started
+            7. Two-emulator tests (multiplayer and LAN)
+            8. Docker NAT tests (if Docker is available)
+            9. Cleanup in reverse order
 
 .PARAMETER Filter
     Glob filter for test names (e.g. "test_death*").
@@ -106,13 +107,48 @@ function Test-DockerAvailable {
     } catch { return $false }
 }
 
+function Get-RegressionDemoCount {
+    $demoRoot = Join-Path $scriptDir "regression_demos"
+    if (-not (Test-Path -LiteralPath $demoRoot)) {
+        return 0
+    }
+
+    return @(
+        Get-ChildItem -Path $demoRoot -Recurse -Filter "*.dximdemo" -File -ErrorAction SilentlyContinue
+    ).Count
+}
+
+function Get-TestBaseName {
+    param([string]$TestName)
+
+    switch ($TestName) {
+        "test_input_demo_regressions_graphics" { return "test_input_demo_regressions" }
+        default { return $TestName }
+    }
+}
+
+function Test-MatchesRequestedFilter {
+    param(
+        [hashtable]$Test,
+        [string]$RequestedFilter
+    )
+
+    if (-not $RequestedFilter) {
+        return $true
+    }
+
+    return ($Test.Name -like $RequestedFilter -or $Test.BaseName -like $RequestedFilter)
+}
+
 # -- Test catalog --
 
 # Tests always skipped in unattended mode
 $manualTests = @(
-    "test_keyboard_manual"     # requires human interaction
+    "test_keyboard_manual"     # by-hand keyboard interaction test
     "test_dual_emu"            # interactive menu
     "test_dual_emu_setup"      # interactive setup
+    "test_lan_discovery"       # host-side bot for by-hand discovery checks
+    "test_manual_lan_coop"     # launches manual LAN coop setup
 )
 
 # Infrastructure requirement classification
@@ -122,14 +158,30 @@ $serverTests = @("test_bot_client")
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
     "test_autoselect_crash_unified"       = 240
+    "test_gog_installer_d1_unified"       = 420
     "test_gog_installer_redbook_unified"  = 420
+    "test_gradle_unit_tests"              = 600
+    "test_input_demo_determinism_matrix"  = 600
+    "test_input_demo_regressions"         = 900
+    "test_input_demo_regressions_graphics" = 900
     "test_saf_archiver"                   = 360
     "test_all_extracts"                   = 300
     "test_mp"                             = 240
 }
-$extractTests = @("test_extract", "test_all_extracts")  # emulator + game data, run last
+$extractTests = @(
+    "test_all_extracts",
+    "test_extract",
+    "test_gog_installer_d1_unified",
+    "test_gog_installer_redbook_unified"
+)  # emulator + game data, run last
 $noInfraTests = @(
     "test_cue_iso",
+    "test_fpcalc_and_acoustid",
+    "test_gradle_unit_tests",
+    "test_input_demo_determinism_matrix",
+    "test_input_demo_regressions",
+    "test_input_demo_regressions_graphics",
+    "test_input_demo_runtime_smoke",
     "test_server_integration",
     "test_input_demo_state_trace_compare",
     "test_input_demo_rng_trace_compare"
@@ -147,6 +199,7 @@ foreach ($t in $json5Files) {
     $name = $t.BaseName
     $allTests += @{
         Name = $name
+        BaseName = $name
         Type = "json5"
         Path = $t.FullName
         Requires = "emulator"
@@ -159,6 +212,7 @@ $testsDir = Join-Path $scriptDir "tests"
 $ps1Files = @(Get-ChildItem -Path $testsDir -Filter "test_*.ps1" -File -ErrorAction SilentlyContinue | Sort-Object Name)
 foreach ($t in $ps1Files) {
     $name = $t.BaseName
+    $baseName = Get-TestBaseName -TestName $name
     $req = "none"
     if ($name -in $twoEmuTests) { $req = "two_emulators" }
     elseif ($name -in $serverTests) { $req = "server" }
@@ -166,18 +220,31 @@ foreach ($t in $ps1Files) {
     elseif ($name -in $noInfraTests) { $req = "none" }
     else { $req = "emulator" }
 
+    $timeoutSeconds = 0
+    if ($testTimeouts.ContainsKey($name)) {
+        $timeoutSeconds = $testTimeouts[$name]
+    } elseif ($testTimeouts.ContainsKey($baseName)) {
+        $timeoutSeconds = $testTimeouts[$baseName]
+    }
+
     $allTests += @{
         Name = $name
+        BaseName = $baseName
         Type = "ps1"
         Path = $t.FullName
         Requires = $req
-        TimeoutSeconds = if ($testTimeouts.ContainsKey($name)) { $testTimeouts[$name] } else { 0 }
+        TimeoutSeconds = $timeoutSeconds
+        DemoRunMode = if ($baseName -eq "test_input_demo_regressions") {
+            if ($name -eq "test_input_demo_regressions_graphics") { "graphics" } else { "headless" }
+        } else {
+            ""
+        }
     }
 }
 
 # Apply filter
 if ($Filter) {
-    $allTests = @($allTests | Where-Object { $_.Name -like $Filter })
+    $allTests = @($allTests | Where-Object { Test-MatchesRequestedFilter -Test $_ -RequestedFilter $Filter })
 }
 
 # Separate manual from runnable
@@ -193,9 +260,235 @@ foreach ($test in $allTests) {
 
 # Group by infrastructure tier
 $tierNone = @($runnableTests | Where-Object { $_.Requires -eq "none" })
+$tierServer = @($runnableTests | Where-Object { $_.Requires -eq "server" })
 $tierSingleEmu = @($runnableTests | Where-Object { $_.Requires -eq "emulator" })
-$tierDualEmu = @($runnableTests | Where-Object { $_.Requires -eq "two_emulators" -or $_.Requires -eq "server" })
+$tierDualEmu = @($runnableTests | Where-Object { $_.Requires -eq "two_emulators" })
 $tierExtract = @($runnableTests | Where-Object { $_.Requires -eq "extract" })
+
+$selectedRegressionDemoTests = @($runnableTests | Where-Object { $_.BaseName -eq "test_input_demo_regressions" })
+$selectedRegressionDemoModes = @($selectedRegressionDemoTests | ForEach-Object { $_.DemoRunMode } | Where-Object { $_ } | Sort-Object -Unique)
+$regressionDemoCount = Get-RegressionDemoCount
+$selectedRegressionDemoReplayCount = $regressionDemoCount * $selectedRegressionDemoTests.Count
+
+function Restart-AdbServer {
+    Write-Status "Restarting ADB server..." "DarkGray"
+    Get-Process adb -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    & $script:ADB start-server 2>$null
+    Start-Sleep -Seconds 2
+}
+
+function Get-OnlineEmulatorSerials {
+    $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
+    if (-not $devices) {
+        return @()
+    }
+
+    return @([regex]::Matches($devices, "(emulator-\d+)\s+device") |
+        ForEach-Object { $_.Groups[1].Value } |
+        Sort-Object -Unique)
+}
+
+function Invoke-WithAndroidSerial {
+    param(
+        [string]$Serial,
+        [scriptblock]$ScriptBlock
+    )
+
+    $prevSerial = $env:ANDROID_SERIAL
+    if ($Serial) {
+        $env:ANDROID_SERIAL = $Serial
+    }
+
+    try {
+        return (& $ScriptBlock)
+    } finally {
+        if ($prevSerial) {
+            $env:ANDROID_SERIAL = $prevSerial
+        } else {
+            Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Invoke-SetupActivityPreflight {
+    param(
+        [string]$Serial,
+        [switch]$RequireStandardGameData
+    )
+
+    $serialLabel = if ($Serial) { $Serial } else { 'default-emulator' }
+    Write-Status "Preflight: verifying SetupActivity on $serialLabel..." "DarkGray"
+
+    $ready = Invoke-WithAndroidSerial -Serial $Serial -ScriptBlock {
+        Stop-AppAndWait
+        Reset-GameState
+        Adb -AdbArgs @("logcat", "-c") | Out-Null
+        Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+        if (-not (Wait-SetupActivityReady -TimeoutSeconds 30)) {
+            return $false
+        }
+
+        $setup = Get-SetupIntrospection
+        if (-not $setup) {
+            return $false
+        }
+
+        if ($RequireStandardGameData) {
+            $d1Ready = $false
+            $d2Ready = $false
+            if ($setup.d1) { $d1Ready = [bool]$setup.d1.ready }
+            if ($setup.d2) { $d2Ready = [bool]$setup.d2.ready }
+            if (-not $d1Ready -or -not $d2Ready) {
+                Write-Status "Preflight: standard game data missing on device (d1=$d1Ready d2=$d2Ready)" "Red"
+                return $false
+            }
+        }
+
+        return $true
+    }
+
+    if ($ready) {
+        Write-Status "Preflight: SetupActivity ready on $serialLabel" "Green"
+    }
+
+    return $ready
+}
+
+function Invoke-PrimaryEmulatorPreflight {
+    param([switch]$RequireStandardGameData)
+
+    $healthScript = Join-Path $scriptDir "emu_health.ps1"
+
+    for ($attempt = 1; $attempt -le 2; $attempt++) {
+        if (-not (Test-SingleEmulator)) {
+            $emu1Started = Start-SingleEmulator
+            if (-not $emu1Started) {
+                return $null
+            }
+            $script:startedEmu1 = $true
+        }
+
+        Ensure-EmulatorHealthy | Out-Null
+
+        $serial = Get-OnlineEmulatorSerials | Select-Object -First 1
+        if (-not $serial) {
+            Write-Status "Preflight: no online primary emulator found" "Red"
+            return $null
+        }
+
+        Install-AppAndData -Serial $serial
+        if (Invoke-SetupActivityPreflight -Serial $serial -RequireStandardGameData:$RequireStandardGameData) {
+            return $serial
+        }
+
+        if ($attempt -lt 2) {
+            Write-Status "Preflight: restarting primary emulator and retrying launcher readiness" "Yellow"
+            & $healthScript -Restart -Wait -TimeoutSeconds 180
+            $healthExit = $LASTEXITCODE
+            if ($healthExit -ne 0 -and $healthExit -ne 2) {
+                Write-Status "Preflight: emulator restart failed (exit $healthExit)" "Red"
+                return $null
+            }
+            $script:startedEmu1 = $true
+        }
+    }
+
+    return $null
+}
+
+function Invoke-SecondaryEmulatorPreflight {
+    param([switch]$RequireStandardGameData)
+
+    if (-not (Test-TwoEmulators)) {
+        $emu2Started = Start-SecondEmulator
+        if (-not $emu2Started) {
+            return $null
+        }
+        $script:startedEmu2 = $true
+    }
+
+    $serials = Get-OnlineEmulatorSerials
+    if ($serials.Count -lt 2) {
+        Write-Status "Preflight: second emulator not visible in adb" "Red"
+        return $null
+    }
+
+    $serial = $serials | Select-Object -Last 1
+    Install-AppAndData -Serial $serial
+    if (-not (Invoke-SetupActivityPreflight -Serial $serial -RequireStandardGameData:$RequireStandardGameData)) {
+        return $null
+    }
+
+    return $serial
+}
+
+function Invoke-SuitePreflight {
+    $needsPrimaryEmulator = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
+    $needsSecondaryEmulator = $tierDualEmu.Count -gt 0
+    $needsServer = ($tierServer.Count + $tierDualEmu.Count) -gt 0
+    $needsExtractData = $tierExtract.Count -gt 0
+    $needsStandardGameData = ($tierSingleEmu.Count + $tierDualEmu.Count) -gt 0
+
+    if (-not ($needsPrimaryEmulator -or $needsSecondaryEmulator -or $needsServer -or $needsExtractData)) {
+        return $true
+    }
+
+    Write-Host ""
+    Write-Host "== Suite preflight ==" -ForegroundColor Cyan
+
+    if ($needsExtractData -and -not (Test-GameDataAvailable)) {
+        Write-Host "FAIL: Extract tests are selected but the required CD-image game data is not available" -ForegroundColor Red
+        return $false
+    }
+
+    if ($needsPrimaryEmulator) {
+        Restart-AdbServer
+        $preflightEmu1 = Invoke-PrimaryEmulatorPreflight -RequireStandardGameData:$needsStandardGameData
+        if (-not $preflightEmu1) {
+            Write-Host "FAIL: Suite preflight could not prepare a healthy primary emulator" -ForegroundColor Red
+            return $false
+        }
+    }
+
+    if ($needsSecondaryEmulator) {
+        $preflightEmu2 = Invoke-SecondaryEmulatorPreflight -RequireStandardGameData:$needsStandardGameData
+        if (-not $preflightEmu2) {
+            Write-Host "FAIL: Suite preflight could not prepare a healthy second emulator" -ForegroundColor Red
+            return $false
+        }
+    }
+
+    if ($needsServer) {
+        if (-not (Test-MatchmakingServer)) {
+            $script:autoServerProc = Start-MatchmakingServer
+            if ($null -eq $script:autoServerProc) {
+                Write-Host "FAIL: Suite preflight could not start the matchmaking server" -ForegroundColor Red
+                return $false
+            }
+        }
+    }
+
+    Write-Host "  Preflight OK" -ForegroundColor Green
+    Write-Host ""
+    return $true
+}
+
+function ConvertTo-ArgumentText {
+    param([string[]]$Arguments)
+
+    if (-not $Arguments -or $Arguments.Count -eq 0) {
+        return ""
+    }
+
+    return ($Arguments | ForEach-Object {
+            if ($_ -match '[\s"]') {
+                '"' + ($_ -replace '"', '\"') + '"'
+            } else {
+                $_
+            }
+        }) -join ' '
+}
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
@@ -203,9 +496,15 @@ Write-Host "========================================================" -Foregroun
 Write-Host ""
 Write-Host "Tests found: $($allTests.Count) total, $($runnableTests.Count) runnable, $($manualSkipped.Count) manual-skipped" -ForegroundColor White
 Write-Host "  Tier 0 (no infra):       $($tierNone.Count)"
-Write-Host "  Tier 1 (single emu):     $($tierSingleEmu.Count)"
-Write-Host "  Tier 2 (dual emu/server): $($tierDualEmu.Count)"
-Write-Host "  Tier 3 (extract/slow):   $($tierExtract.Count)"
+Write-Host "  Tier 1 (server only):    $($tierServer.Count)"
+Write-Host "  Tier 2 (single emu):     $($tierSingleEmu.Count)"
+Write-Host "  Tier 3 (dual emu):       $($tierDualEmu.Count)"
+Write-Host "  Tier 4 (extract/slow):   $($tierExtract.Count)"
+if ($selectedRegressionDemoModes.Count -gt 0) {
+    Write-Host "  Demo regressions:       $regressionDemoCount demo(s), modes: $($selectedRegressionDemoModes -join '+'), replay runs: $selectedRegressionDemoReplayCount"
+} else {
+    Write-Host "  Demo regressions:       0 replay runs selected"
+}
 Write-Host ""
 
 if ($runnableTests.Count -eq 0) {
@@ -232,6 +531,10 @@ if ($needsApk) {
         Pop-Location
     }
     Write-Host ""
+}
+
+if (-not (Invoke-SuitePreflight)) {
+    exit 1
 }
 
 # -- Execution helpers --
@@ -265,17 +568,28 @@ function Invoke-SingleTest {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
     if ($Test.Type -eq "json5") {
-        $scriptFile = [System.IO.Path]::GetFileName($Test.Path)
-        $testCmd = "& '$runTestScript' '$scriptFile'"
+        $psScript = $runTestScript
+        $psArguments = @("-ScriptName", [System.IO.Path]::GetFileName($Test.Path))
     } elseif ($Test.Name -eq "test_saf_archiver") {
-        $testCmd = "& '$($Test.Path)' -NoBuild"
+        $psScript = $Test.Path
+        $psArguments = @("-NoBuild")
     } else {
-        $testCmd = "& '$($Test.Path)'"
+        $psScript = $Test.Path
+        $psArguments = @()
+    }
+    if ($Test.Arguments) {
+        $psArguments += $Test.Arguments
     }
 
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = "pwsh"
-    $psi.Arguments = "-NoProfile -NonInteractive -Command `"$testCmd; exit `$LASTEXITCODE`""
+    $quotedScript = if ($psScript -match '[\s"]') {
+        '"' + ($psScript -replace '"', '\"') + '"'
+    } else {
+        $psScript
+    }
+    $argumentText = ConvertTo-ArgumentText -Arguments $psArguments
+    $psi.Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File $quotedScript $argumentText"
     $psi.WorkingDirectory = $scriptDir
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
@@ -357,19 +671,39 @@ if ($tierNone.Count -gt 0 -and -not $stopEarly) {
     }
 }
 
-# ── Tier 1: single-emulator tests ───────────────────────────────────────
+# ── Tier 1: server-only tests ────────────────────────────────────────────
+
+if ($tierServer.Count -gt 0 -and -not $stopEarly) {
+    Write-Host ""
+    Write-Host "== Tier 1: Server-only tests ==" -ForegroundColor Cyan
+
+    if (-not (Test-MatchmakingServer)) {
+        $script:autoServerProc = Start-MatchmakingServer
+        $serverOk = ($null -ne $script:autoServerProc)
+    } else {
+        $serverOk = $true
+    }
+
+    if ($serverOk) {
+        foreach ($test in $tierServer) {
+            if ($stopEarly) { break }
+            Invoke-SingleTest -Test $test
+        }
+    } else {
+        foreach ($test in $tierServer) {
+            $infraSkipped += @{ Name = $test.Name; Reason = "could not start matchmaking server"; Type = $test.Type }
+        }
+    }
+}
+
+# ── Tier 2: single-emulator tests ───────────────────────────────────────
 
 if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
     Write-Host ""
-    Write-Host "== Tier 1: Single-emulator tests ==" -ForegroundColor Cyan
+    Write-Host "== Tier 2: Single-emulator tests ==" -ForegroundColor Cyan
 
-    # Kill stale ADB server to prevent hangs on first device command.
-    # A zombie adb.exe from a prior session can block indefinitely.
-    Write-Host "  Restarting ADB server..." -ForegroundColor DarkGray
-    Get-Process adb -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 1
-    & $script:ADB start-server 2>$null
-    Start-Sleep -Seconds 2
+    # Kill stale ADB server to prevent hangs on the first device command in this tier.
+    Restart-AdbServer
 
     # Ensure emulator is running
     if (-not (Test-SingleEmulator)) {
@@ -403,11 +737,11 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
     }
 }
 
-# ── Tier 2: dual-emulator + server tests ────────────────────────────────
+# ── Tier 3: dual-emulator tests ──────────────────────────────────────────
 
 if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
     Write-Host ""
-    Write-Host "== Tier 2: Dual-emulator + server tests ==" -ForegroundColor Cyan
+    Write-Host "== Tier 3: Dual-emulator tests ==" -ForegroundColor Cyan
 
     # Ensure first emulator is running (may already be from tier 1)
     if (-not (Test-SingleEmulator)) {
@@ -463,11 +797,11 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
     }
 }
 
-# ── Tier 3: extract regression tests (slow, run last) ───────────────────
+# ── Tier 4: extract regression tests (slow, run last) ───────────────────
 
 if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
     Write-Host ""
-    Write-Host "== Tier 3: Extract regression tests (slow) ==" -ForegroundColor Cyan
+    Write-Host "== Tier 4: Extract regression tests (slow) ==" -ForegroundColor Cyan
 
     $hasGameData = Test-GameDataAvailable
     if (-not $hasGameData) {

@@ -93,7 +93,7 @@ try {
     # Verify game data
     foreach ($emu in @($EMU1, $EMU2)) {
         $files = Adb-Dev-Timeout -Serial $emu -AdbArgs @(
-            "shell", "run-as", $PACKAGE, "ls", "files/sets/default/"
+            "shell", "run-as", $PACKAGE, "ls", "$($script:DEFAULT_SET_DIR)/"
         ) -Seconds 5
         $required = if ($Game -eq "d1") { "descent.hog" } else { "descent2.hog" }
         if (-not $files -or $files -notmatch "(?i)$required") {
