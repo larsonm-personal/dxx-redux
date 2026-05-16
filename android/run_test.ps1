@@ -218,10 +218,51 @@ foreach ($gameId in $gameList) {
         Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
         Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
 
-        Write-Status "Launching SetupActivity..."
-        Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
-        if (-not (Wait-SetupActivityReady)) {
-            Write-Status "FAIL: SetupActivity not responding" "Red"
+        $launcherReady = $false
+        $launcherRecoveryFailed = $false
+        for ($launcherAttempt = 1; $launcherAttempt -le 2; $launcherAttempt++) {
+            Write-Status "Launching SetupActivity..."
+            Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+            if (Wait-SetupActivityReady) {
+                $launcherReady = $true
+                break
+            }
+
+            Write-Status "SetupActivity not responding after 30s" "Yellow"
+            if ($launcherAttempt -ge 2) {
+                break
+            }
+
+            if (-not (Invoke-LauncherStartupRecovery -Reason "SetupActivity launch timed out for $ScriptName")) {
+                $launcherRecoveryFailed = $true
+                break
+            }
+
+            Install-ApkOnDevice | Out-Null
+            if ($deps) {
+                Write-Status "Re-provisioning declared game data deps after launcher recovery"
+                if (-not (Resolve-GameDataDeps -Deps $deps)) {
+                    $launcherRecoveryFailed = $true
+                    break
+                }
+            } elseif (-not $skipGameData -and -not (Ensure-GameDataOnDevice -Game $gameId)) {
+                $launcherRecoveryFailed = $true
+                break
+            }
+
+            Stop-AppAndWait
+            Reset-GameState
+            Adb -AdbArgs @("logcat", "-c") | Out-Null
+            Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
+            Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
+        }
+
+        if (-not $launcherReady) {
+            if ($launcherRecoveryFailed) {
+                Write-Status "FAIL: SetupActivity recovery could not restore launcher prerequisites" "Red"
+            } else {
+                Write-Status "FAIL: SetupActivity not responding" "Red"
+            }
             $allPassed = $false
             if ($gameList.Count -gt 1) { continue }
             exit 1

@@ -516,7 +516,8 @@ int main(int argc, char *argv[])
 
 	set_default_handler(standard_handler);
 
-	show_titles();
+	if (!find_cmd_arg("-resume-save"))
+		show_titles();
 
 	set_screen_mode(SCREEN_MENU);
 

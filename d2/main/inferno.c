@@ -583,8 +583,10 @@ int main(int argc, char *argv[])
 	init_movies();		//init movie libraries
 	CHECKPOINT("movies init done");
 
-	show_titles();
-	CHECKPOINT("titles shown");
+	if (!find_cmd_arg("-resume-save")) {
+		show_titles();
+		CHECKPOINT("titles shown");
+	}
 
 	set_screen_mode(SCREEN_MENU);
 	CHECKPOINT("screen mode set to menu");

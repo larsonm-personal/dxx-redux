@@ -112,6 +112,35 @@ function Ensure-EmulatorHealthy {
     return $true
 }
 
+function Restart-AdbServer {
+    Write-Status "Restarting ADB server..." "DarkGray"
+    Get-Process adb -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    & $script:ADB start-server 2>$null | Out-Null
+    Start-Sleep -Seconds 2
+}
+
+function Invoke-LauncherStartupRecovery {
+    param(
+        [string]$Reason = "SetupActivity not responding",
+        [int]$TimeoutSeconds = 180
+    )
+
+    Write-Status "$Reason -- restarting emulator for launcher recovery" "Yellow"
+    Restart-AdbServer
+
+    $healthScript = Join-Path $PSScriptRoot "emu_health.ps1"
+    & $healthScript -Restart -Wait -TimeoutSeconds $TimeoutSeconds
+    $emuExit = $LASTEXITCODE
+    if ($emuExit -ne 0 -and $emuExit -ne 2) {
+        Write-Status "Launcher recovery failed: emulator restart exit $emuExit" "Red"
+        return $false
+    }
+
+    Write-Status "Launcher recovery complete" "Green"
+    return $true
+}
+
 function Wait-ProcessDead {
     # Poll until the app process is gone (after force-stop). Returns $true
     # when the process is confirmed dead, $false on timeout.
@@ -725,6 +754,15 @@ function Start-GameWithRetry {
 
         if (-not (Wait-SetupActivityReady)) {
             Write-Status "SetupActivity not responding after 30s" "Yellow"
+            if ($attempt -lt $MaxAttempts) {
+                if (-not (Invoke-LauncherStartupRecovery -Reason "SetupActivity launch timed out")) {
+                    continue
+                }
+                if (-not $SkipGameData -and -not (Ensure-GameDataOnDevice -Game $Game)) {
+                    Write-Status "FAIL: Could not restore game data for $Game after launcher recovery" "Red"
+                    return $false
+                }
+            }
             continue
         }
 

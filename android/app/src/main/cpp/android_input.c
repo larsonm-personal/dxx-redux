@@ -124,6 +124,7 @@ Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
                                                   jint action, jint androidKeyCode,
                                                   jint unicodeChar);
 static void inject_key_tap(SDLKey sym);
+static int android_cutscene_tap_suppressed(void);
 
 static int g_levelcomplete_touch_state = 0;
 

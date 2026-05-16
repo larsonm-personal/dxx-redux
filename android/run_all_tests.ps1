@@ -289,6 +289,47 @@ function Get-OnlineEmulatorSerials {
         Sort-Object -Unique)
 }
 
+function Test-SingleEmulatorFailureNeedsRecovery {
+    param([hashtable]$Result)
+
+    if (-not $Result -or $Result.Status -eq "PASS" -or -not $Result.LogFile -or -not (Test-Path $Result.LogFile)) {
+        return $false
+    }
+
+    $logText = Get-Content $Result.LogFile -Raw -ErrorAction SilentlyContinue
+    if (-not $logText) {
+        return $false
+    }
+
+    return $logText -match 'SetupActivity not responding|SetupActivity not responding after 30s|Game never started after \d+ attempts|SetupActivity recovery could not restore launcher prerequisites|Launcher recovery failed|Emulator could not be restored|Can''t find service: package|no emulator device found|shell unresponsive'
+}
+
+function Recover-SingleEmulatorEnvironment {
+    param([ref]$SerialRef)
+
+    Write-Status "Single-emulator recovery: restarting primary emulator and reprovisioning app/data" "Yellow"
+    Restart-AdbServer
+
+    $healthScript = Join-Path $scriptDir "emu_health.ps1"
+    & $healthScript -Restart -Wait -TimeoutSeconds 180
+    $healthExit = $LASTEXITCODE
+    if ($healthExit -ne 0 -and $healthExit -ne 2) {
+        Write-Status "Single-emulator recovery failed: emulator restart exit $healthExit" "Red"
+        return $false
+    }
+
+    $serial = Get-OnlineEmulatorSerials | Select-Object -First 1
+    if (-not $serial) {
+        Write-Status "Single-emulator recovery failed: no online emulator after restart" "Red"
+        return $false
+    }
+
+    Install-AppAndData -Serial $serial
+    $SerialRef.Value = $serial
+    Write-Status "Single-emulator recovery complete" "Green"
+    return $true
+}
+
 function Invoke-WithAndroidSerial {
     param(
         [string]$Serial,
@@ -649,15 +690,18 @@ function Invoke-SingleTest {
 
     if ($exitCode -eq 0) { $script:passCount++ } else { $script:failCount++ }
 
-    $script:results += @{
+    $result = @{
         Name = $name; Type = $Test.Type; Status = $status
         ExitCode = $exitCode; Elapsed = $elapsed; LogFile = $logFile
     }
+    $script:results += $result
 
     if ($StopOnFail -and $exitCode -ne 0) {
         Write-Host "  Stopping early (-StopOnFail)" -ForegroundColor Yellow
         $script:stopEarly = $true
     }
+
+    return $result
 }
 
 # ── Tier 0: no-infrastructure tests ─────────────────────────────────────
@@ -726,9 +770,31 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
             Push-GameDataToDevice
         }
 
+        $singleEmuFailureStreak = 0
         foreach ($test in $tierSingleEmu) {
             if ($stopEarly) { break }
-            Invoke-SingleTest -Test $test
+            $result = Invoke-SingleTest -Test $test
+            if ($result.Status -eq "PASS") {
+                $singleEmuFailureStreak = 0
+                continue
+            }
+
+            $singleEmuFailureStreak++
+            $needsRecovery = Test-SingleEmulatorFailureNeedsRecovery -Result $result
+            if ($needsRecovery -or $singleEmuFailureStreak -ge 3) {
+                $reason = if ($needsRecovery) {
+                    "launcher-health failure signature after $($result.Name)"
+                } else {
+                    "$singleEmuFailureStreak consecutive single-emulator failures"
+                }
+                Write-Status "Tier 2 recovery: $reason" "Yellow"
+                if (Recover-SingleEmulatorEnvironment -SerialRef ([ref]$emu1Serial)) {
+                    $singleEmuFailureStreak = 0
+                } else {
+                    Write-Status "Tier 2 recovery failed; stopping remaining single-emulator tests" "Red"
+                    break
+                }
+            }
         }
     } else {
         foreach ($test in $tierSingleEmu) {

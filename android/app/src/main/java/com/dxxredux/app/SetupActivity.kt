@@ -2568,6 +2568,18 @@ class SetupActivity : ComponentActivity() {
         while (hasReturnableGameActivity() && SystemClock.elapsedRealtime() < deadline) {
             delay(100L)
         }
+        val staleState = returnableGameActivityState()
+        if (staleState != null) {
+            Log.w(
+                "DXX-Setup",
+                "LAUNCHER_CONTINUE: killing stale game process pid=${staleState.pid} game=${staleState.game}",
+            )
+            android.os.Process.killProcess(staleState.pid)
+            val killDeadline = SystemClock.elapsedRealtime() + 2000L
+            while (hasReturnableGameActivity() && SystemClock.elapsedRealtime() < killDeadline) {
+                delay(100L)
+            }
+        }
         gameRunningFlag = hasReturnableGameActivity()
         if (gameRunningFlag) {
             Log.w("DXX-Setup", "LAUNCHER_CONTINUE: game process still returnable after wait")
