@@ -286,8 +286,8 @@ function Get-OnlineEmulatorSerials {
     }
 
     return @([regex]::Matches($devices, "(emulator-\d+)\s+device") |
-        ForEach-Object { $_.Groups[1].Value } |
-        Sort-Object -Unique)
+            ForEach-Object { $_.Groups[1].Value } |
+            Sort-Object -Unique)
 }
 
 function Test-SingleEmulatorFailureNeedsRecovery {
@@ -696,6 +696,70 @@ function Invoke-SingleTest {
     return $result
 }
 
+function Get-ReportLogExcerpt {
+    param(
+        [string]$LogFile,
+        [string]$Status
+    )
+
+    if (-not $LogFile -or -not (Test-Path -LiteralPath $LogFile)) {
+        return @()
+    }
+
+    $lines = @(Get-Content -LiteralPath $LogFile -ErrorAction SilentlyContinue)
+    if ($lines.Count -eq 0) {
+        return @()
+    }
+
+    $patterns = @(
+        'Running as D[12]',
+        'FAIL for D[12]',
+        'PASS for D[12]',
+        'ASSERT_FAIL',
+        'script","status":"FAIL',
+        'TIMEOUT',
+        'SetupActivity not responding',
+        'SetupActivity recovery could not restore launcher prerequisites',
+        'Launcher recovery failed',
+        'Emulator could not be restored',
+        "Can't find service: package",
+        'no emulator device found',
+        'shell unresponsive',
+        'EXCEPTION:',
+        'FAIL: APK build failed'
+    )
+
+    if ($Status -eq 'TIMEOUT') {
+        $patterns = @('TIMEOUT waiting', 'TIMEOUT:', 'timed out') + $patterns
+    }
+
+    $selectedIndexes = [System.Collections.Generic.HashSet[int]]::new()
+    for ($index = 0; $index -lt $lines.Count; $index++) {
+        $line = $lines[$index]
+        foreach ($pattern in $patterns) {
+            if ($line -match $pattern) {
+                $start = [Math]::Max(0, $index - 2)
+                $end = [Math]::Min($lines.Count - 1, $index + 2)
+                for ($cursor = $start; $cursor -le $end; $cursor++) {
+                    $null = $selectedIndexes.Add($cursor)
+                }
+                break
+            }
+        }
+    }
+
+    if ($selectedIndexes.Count -eq 0) {
+        return @($lines | Select-Object -Last 20)
+    }
+
+    $orderedIndexes = @($selectedIndexes | Sort-Object)
+    if ($orderedIndexes.Count -gt 40) {
+        $orderedIndexes = @($orderedIndexes | Select-Object -Last 40)
+    }
+
+    return @($orderedIndexes | ForEach-Object { $lines[$_] })
+}
+
 # ── Tier 0: no-infrastructure tests ─────────────────────────────────────
 
 if ($tierNone.Count -gt 0 -and -not $stopEarly) {
@@ -943,17 +1007,18 @@ foreach ($s in $allSkipped) {
 }
 $md += ""
 
-if ($failCount -gt 0) {
-    $md += "## Failures"
+if ($failCount -gt 0 -or $timeoutCount -gt 0) {
+    $md += "## Non-passing Results"
     $md += ""
-    foreach ($r in ($results | Where-Object { $_.Status -eq "FAIL" })) {
+    foreach ($r in ($results | Where-Object { $_.Status -eq "FAIL" -or $_.Status -eq "TIMEOUT" })) {
         $md += "### $($r.Name)"
+        $md += "- Status: $($r.Status)"
         $md += "- Exit code: $($r.ExitCode)"
         $md += "- Log: ``$(Split-Path $r.LogFile -Leaf)``"
         if (Test-Path $r.LogFile) {
-            $tail = Get-Content $r.LogFile -Tail 20
+            $excerpt = Get-ReportLogExcerpt -LogFile $r.LogFile -Status $r.Status
             $md += '```'
-            $md += $tail
+            $md += $excerpt
             $md += '```'
         }
         $md += ""

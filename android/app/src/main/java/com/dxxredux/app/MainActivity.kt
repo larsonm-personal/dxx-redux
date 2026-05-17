@@ -265,10 +265,6 @@ class MainActivity :
 
     external fun nativeSetDemoRecordPerFrameState(enabled: Boolean)
 
-    external fun nativeSetRewindEnabled(enabled: Boolean)
-
-    external fun nativeSetRewindTargetSeconds(seconds: Int)
-
     external fun nativeIsSaveLoadMenuActive(): Boolean
 
     external fun nativeIsPlayerDead(): Boolean
@@ -512,6 +508,14 @@ class MainActivity :
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        refreshTransientLaunchState(intent)
+        if (shouldRedirectConsumedTransientLaunch()) {
+            redirectConsumedTransientLaunchToSetup()
+            return
+        }
+        consumeTransientLaunchToken()
+        clearTransientLaunchExtrasFromIntent(intent)
+
         CrashLog.install(this)
         // Append to the main-process log file if a path was passed, otherwise create new
         val netlogPath = intent.getStringExtra("netlog_path")
@@ -520,15 +524,6 @@ class MainActivity :
         } else {
             DebugLog.init(this)
         }
-        refreshTransientLaunchState(intent)
-        if (shouldRedirectConsumedTransientLaunch()) {
-            Log.i("MainActivity", "Transient launch token already consumed on create; returning to setup")
-            redirectConsumedTransientLaunchToSetup()
-            return
-        }
-        consumeTransientLaunchToken()
-        clearTransientLaunchExtrasFromIntent(intent)
-
         MatchmakingService.setActivity(this)
 
         // Load the correct game library based on the launcher's selection
@@ -608,10 +603,9 @@ class MainActivity :
             } else {
                 android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             }
-        applySkipIntroPref(prefs, forceSkipIntro = mpMode != null)
+        applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyDemoRecordingPref()
-        applyRewindPref(prefs)
 
         // Allow rendering into the display cutout (notch) area
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -1268,7 +1262,6 @@ class MainActivity :
             return
         }
         if (shouldRedirectConsumedTransientLaunch()) {
-            Log.i("MainActivity", "Transient launch token already consumed on new intent; returning to setup")
             redirectConsumedTransientLaunchToSetup()
             return
         }
@@ -1399,10 +1392,9 @@ class MainActivity :
             }
         overlayEnabled = prefs.getBoolean("touch_overlay_enabled", !hasController)
         syncDebugLogPrefs()
-        applySkipIntroPref(prefs, forceSkipIntro = isMultiplayerGame)
+        applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyDemoRecordingPref()
-        applyRewindPref(prefs)
         applyGraphicsDebugPrefs(prefs)
         applyGraphicsSettingsPrefs(prefs)
         // Start polling in-game state to show/hide overlay
@@ -1465,12 +1457,9 @@ class MainActivity :
         }
     }
 
-    private fun applySkipIntroPref(
-        prefs: android.content.SharedPreferences,
-        forceSkipIntro: Boolean = false,
-    ) {
+    private fun applySkipIntroPref(prefs: android.content.SharedPreferences) {
         try {
-            nativeSetSkipIntroMovie(forceSkipIntro || prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
+            nativeSetSkipIntroMovie(prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }
@@ -1491,19 +1480,6 @@ class MainActivity :
         try {
             val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
             nativeSetDemoRecordPerFrameState(prefs.getBoolean(PREF_DEMO_RECORD_PER_FRAME_STATE, false))
-        } catch (_: Exception) {
-            // JNI may not be ready yet when the activity is first coming up
-        }
-    }
-
-    private fun applyRewindPref(prefs: android.content.SharedPreferences) {
-        try {
-            nativeSetRewindTargetSeconds(
-                sanitizeRewindTargetSeconds(
-                    prefs.getInt(PREF_REWIND_TARGET_SECONDS, DEFAULT_REWIND_TARGET_SECONDS),
-                ),
-            )
-            nativeSetRewindEnabled(prefs.getBoolean(PREF_REWIND_SUPPORT_ENABLED, true))
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }
@@ -2113,10 +2089,7 @@ class MainActivity :
         }
 
     @Suppress("unused")
-    fun consumeResumeCallsign(): String? =
-        pendingResumeCallsign.also { callsign ->
-            pendingResumeCallsign = null
-        }
+    fun consumeResumeCallsign(): String? = pendingResumeCallsign.also { pendingResumeCallsign = null }
 
     private fun resetTouchOverlayForSuspend() {
         if (!::touchOverlay.isInitialized) return

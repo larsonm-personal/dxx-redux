@@ -66,8 +66,9 @@
     {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
 
-    // Skip briefing
-    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
+    // D1 reaches gameplay more reliably with a direct Escape here.
+    {"action": "key", "key": "escape", "when": "d1", "post_delay_ms": 100},
+    {"action": "skip_briefing", "when": "d2", "timeout_ms": 10000, "post_delay_ms": 100},
 
     // Wait for in-game
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},

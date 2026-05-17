@@ -250,6 +250,7 @@ Suite cleanup rules:
 - Clear cross-test state in shared reset paths, not in every individual test.
 - Prefer durable readiness signals over sleeps: setup introspection, automation result files, automation logs, debug-log progress checkpoints, and specific game introspection fields.
 - For long launcher-backed tests, treat default timeouts as floors and extend from durable progress signals rather than plain wall-clock waits.
+- For launcher-backed D1 scripts that go straight from difficulty selection into gameplay and then wait for `game_window_is_front`, prefer a single `Escape` after difficulty over generic `skip_briefing`. The generic path can stall before the D1 game window is visible, while an extra `Escape` can overshoot and open the in-game menu.
 
 Useful commands:
 

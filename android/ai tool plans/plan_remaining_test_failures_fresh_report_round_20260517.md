@@ -43,15 +43,23 @@ Out of scope for this round:
 
 ## Work items
 
-- [ ] Confirm emulator and ADB health before any Android rerun.
-- [ ] Parse the latest report into a short candidate table that includes both `FAIL` and `TIMEOUT` rows.
-- [ ] Inspect full logs, not just report tails, for the first few candidates and identify whether the failure is D1-only, D2-only, both-game, timeout, infrastructure, or report stale.
-- [ ] Patch `android/run_all_tests.ps1` so markdown detail sections include both failures and timeouts.
-- [ ] If cheap, add a concise status-specific snippet selection for failure details, preferring `automation_result.json`, `automation_log.jsonl`, `ASSERT_FAIL`, `TIMEOUT`, `FAIL for`, `SetupActivity not responding`, and runner kill lines over a plain last-20-lines tail.
-- [ ] Run `android/run-code-quality.ps1 -Fix -Paths android/run_all_tests.ps1` after report-runner edits.
-- [ ] Generate a fresh focused report in a new report directory, starting with no-infra tests and then the highest-signal stale candidates.
-- [ ] If a candidate reproduces, fix the smallest local cause and rerun that exact test.
+- [x] Confirm emulator and ADB health before any Android rerun.
+- [x] Parse the latest report into a short candidate table that includes both `FAIL` and `TIMEOUT` rows.
+- [x] Inspect full logs, not just report tails, for the first few candidates and identify whether the failure is D1-only, D2-only, both-game, timeout, infrastructure, or report stale.
+- [x] Patch `android/run_all_tests.ps1` so markdown detail sections include both failures and timeouts.
+- [x] If cheap, add a concise status-specific snippet selection for failure details, preferring `automation_result.json`, `automation_log.jsonl`, `ASSERT_FAIL`, `TIMEOUT`, `FAIL for`, `SetupActivity not responding`, and runner kill lines over a plain last-20-lines tail.
+- [x] Run `android/run-code-quality.ps1 -Fix -Paths android/run_all_tests.ps1` after report-runner edits.
+- [x] Generate a fresh focused report in a new report directory, starting with no-infra tests and then the highest-signal stale candidates.
+- [x] If a candidate reproduces, fix the smallest local cause and rerun that exact test.
 - [ ] If no candidate reproduces, update this plan with the fresh pass/non-repro evidence and stop rather than editing scripts speculatively.
+
+## Validated outcomes
+
+- `android/run_all_tests.ps1` now writes `## Non-passing Results`, includes both `FAIL` and `TIMEOUT` rows, and prefers status-aware log excerpts over a blind tail.
+- Emulator health was re-established first and stayed healthy for this round on `emulator-5554`.
+- Fresh isolated rerun: `test_death` is currently stale and passed on the current build.
+- Fresh isolated rerun: `test_axis_mapping` was a real current failure, but only on the D1 path. The D1 phase timed out in `skip_briefing` after difficulty select while D2 passed. Switching the D1 path to a single direct `Escape` fixed the test, and the focused rerun passed in `report_20260517_150522.md`.
+- Fresh isolated rerun: `test_dpad_triggers` reproduced the same D1-only `skip_briefing` timeout shape. Applying the same D1-specific post-difficulty `Escape` routing fixed it, and the focused rerun passed in `report_20260517_151014.md`.
 
 ## Candidate rerun order
 
