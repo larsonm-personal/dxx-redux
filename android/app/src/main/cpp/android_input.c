@@ -18,6 +18,7 @@
 #include <string.h>
 #include <android/keycodes.h>
 #include "android_log.h"
+#include "android_rewind.h"
 #include "android_save_meta.h"
 #include "fix.h"
 #include "gr.h"
@@ -854,6 +855,12 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetDemoRecordPerFrameState(JNIEnv *env, jobject thiz, jboolean enabled)
 {
 	g_demo_record_per_frame_state = enabled ? 1 : 0;
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetRewindEnabled(JNIEnv *env, jobject thiz, jboolean enabled)
+{
+	android_rewind_set_enabled(enabled ? 1 : 0);
 }
 
 extern volatile int g_saveload_menu_active;

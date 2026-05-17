@@ -121,6 +121,7 @@ object TouchBindings {
     const val META_GUIDE_RELEASE_CONTROL = 1032
     const val META_GYRO_TOGGLE = 1033
     const val META_DEMO_RECORD_TOGGLE = 1034
+    const val META_REWIND = 1035
 
     /** Labels for meta actions, used in Extra button pickers. */
     val META_BUTTON_LABELS: Map<Int, String> =
@@ -155,6 +156,7 @@ object TouchBindings {
             META_WEAPON_10 to "Weapon 10",
             META_PAUSE to "Pause",
             META_DEMO_RECORD_TOGGLE to "Demo Recording",
+            META_REWIND to "Rewind",
             META_GYRO_TOGGLE to "Gyro On/Off",
             META_RETURN_TO_LAUNCHER to "Exit to Launcher",
         )

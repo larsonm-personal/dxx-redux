@@ -498,6 +498,99 @@ static int expect_stage_consumed_pulse(void)
 	return 0;
 }
 
+static int expect_truncate_recording(void)
+{
+	const char *dir = "test_input_demo_recorder_truncate_fixture";
+	const std::string demo_path = std::string(dir) + "/recorded_truncate.dximdemo";
+	const std::string trace_path = demo_path + INPUT_DEMO_RNG_TRACE_SUFFIX;
+	input_demo_recorder_settings settings;
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	input_demo_file parsed;
+	char error[256] = "";
+	std::string read_error;
+	std::string text;
+
+	if (!make_test_dir(dir))
+		return report_failure("could not create truncate recorder test directory");
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.difficulty = 2;
+	settings.rng_mode = input_demo_test_rng_mode();
+	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
+		remove_test_dir(dir);
+		return report_failure_string(std::string("truncate recorder start failed: ") + error);
+	}
+	input_demo_control_state_clear(&state);
+	input_demo_control_pulse_clear(&pulse);
+	state.forward_thrust_time = 44;
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, NULL, NULL, error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("truncate capture frame 0 failed: ") + error);
+	}
+	input_demo_control_pulse_clear(&pulse);
+	pulse.fire_primary_count = 1;
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 101, 0, 0, NULL, NULL, error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("truncate capture frame 1 failed: ") + error);
+	}
+	input_demo_control_state_clear(&state);
+	input_demo_control_pulse_clear(&pulse);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 102, 0, 0, NULL, NULL, error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("truncate capture frame 2 failed: ") + error);
+	}
+	input_demo_rng_trace_set_context(0, 3276);
+	input_demo_rng_trace_record_srand(0, __FILE__, __func__, __LINE__, 1, 1, 11, 1, 12, 1234);
+	input_demo_rng_trace_set_context(1, 6552);
+	input_demo_rng_trace_record_rand(0, __FILE__, __func__, __LINE__, 2, 1, 12, 1, 13, 77);
+	if (input_demo_recorder_frame_count() != 3)
+		return report_failure("truncate recorder expected 3 captured frames before truncate");
+	if (input_demo_rng_trace_event_count() != 2)
+		return report_failure("truncate recorder expected 2 rng events before truncate");
+	if (!input_demo_recorder_truncate(1))
+		return report_failure("truncate recorder frame truncate failed");
+	if (!input_demo_rng_trace_truncate(1))
+		return report_failure("truncate recorder rng truncate failed");
+	if (input_demo_recorder_frame_count() != 1)
+		return report_failure("truncate recorder expected 1 captured frame after truncate");
+	if (input_demo_rng_trace_event_count() != 1)
+		return report_failure("truncate recorder expected 1 rng event after truncate");
+	if (!input_demo_recorder_flush(demo_path.c_str(), error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("truncate recorder flush failed: ") + error);
+	}
+	if (!input_demo_file_read(demo_path.c_str(), &parsed, &read_error)) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("truncate recorder demo read failed: ") + read_error);
+	}
+	if (!read_text_file(trace_path.c_str(), &text)) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure("could not read truncate recorder rng trace file");
+	}
+	remove(demo_path.c_str());
+	remove(trace_path.c_str());
+	remove_test_dir(dir);
+	if (parsed.frames.size() != 1 || parsed.metadata.frame_count != 1 || parsed.result.frame_count != 1 ||
+		parsed.frames[0].rng.state != 100 || parsed.frames[0].input.held.forward_thrust_time != 44)
+		return report_failure("truncate recorder demo round trip mismatch");
+	if (text.find("\"events\":1") == std::string::npos ||
+		text.find("\"seq\":0") == std::string::npos ||
+		text.find("\"seq\":1") != std::string::npos)
+		return report_failure_string(std::string("unexpected truncate recorder rng trace file: ") + text);
+	return 0;
+}
+
 static int expect_write_state_trace(void)
 {
 	const char *dir = "test_input_demo_state_trace_fixture";
@@ -859,6 +952,8 @@ int main(void)
 	if (expect_record_and_flush_checkpoint())
 		return 1;
 	if (expect_stage_consumed_pulse())
+		return 1;
+	if (expect_truncate_recording())
 		return 1;
 	if (expect_write_state_trace())
 		return 1;

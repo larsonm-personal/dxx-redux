@@ -386,6 +386,16 @@ size_t input_demo_rng_trace_event_count(void)
 	return g_input_demo_rng_trace_session.count;
 }
 
+int input_demo_rng_trace_truncate(size_t event_count)
+{
+	if (!g_input_demo_rng_trace_session.active)
+		return 0;
+	if (event_count > g_input_demo_rng_trace_session.count)
+		return 0;
+	g_input_demo_rng_trace_session.count = event_count;
+	return 1;
+}
+
 int input_demo_rng_trace_write_to_path(const char *path, char *error, size_t error_size)
 {
 	return write_trace_file(path, error, error_size);

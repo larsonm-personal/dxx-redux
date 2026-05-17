@@ -23,6 +23,7 @@
 volatile int android_force_quit = 0;
 volatile int android_escort_release_pending = 0;
 volatile int android_demo_record_toggle_pending = 0;
+volatile int android_rewind_pending = 0;
 extern volatile int g_android_autosave_request_kind;
 
 #define LOG_TAG   "DXX-MetaAction"
@@ -126,6 +127,14 @@ int meta_action_dispatch(int action_id, int pressed)
 	if (action_id == META_DEMO_RECORD_TOGGLE) {
 		if (pressed)
 			android_demo_record_toggle_pending = 1;
+		return 0;
+	}
+
+	/* Special case: rewind must run on the game thread because it will
+	 * eventually restore game state and input-demo recorder state. */
+	if (action_id == META_REWIND) {
+		if (pressed)
+			android_rewind_pending = 1;
 		return 0;
 	}
 

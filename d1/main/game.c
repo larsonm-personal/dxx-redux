@@ -87,6 +87,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multibot.h"
 #ifdef __ANDROID__
 #include "android_crash_handler.h"
+#include "android_rewind.h"
 #include "coop_save.h"
 #endif
 #include "fvi.h"
@@ -1223,6 +1224,9 @@ void GameProcessFrame(void)
 	input_demo_debug_log_player_motion_state("entry");
 	input_demo_log_current_replay_frame_state_mismatch();
 	input_demo_record_game_frame();
+	#ifdef __ANDROID__
+	android_rewind_maybe_capture_frame();
+	#endif
 	update_player_stats();
 	diminish_palette_towards_normal();		//	Should leave palette effect up for as long as possible by putting right before render.
 	do_cloak_stuff();

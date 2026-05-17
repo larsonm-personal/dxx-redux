@@ -36,6 +36,7 @@ typedef struct input_demo_recorder_settings {
 void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);
 int input_demo_recorder_is_active(void);
 uint32_t input_demo_recorder_frame_count(void);
+int input_demo_recorder_truncate(uint32_t frame_count);
 int input_demo_recorder_start(const input_demo_recorder_settings *settings,
                               char *error, size_t error_size);
 void input_demo_recorder_cancel(void);

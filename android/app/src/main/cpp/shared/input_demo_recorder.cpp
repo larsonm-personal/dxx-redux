@@ -409,6 +409,24 @@ uint32_t input_demo_recorder_frame_count(void)
 	return static_cast<uint32_t>(g_input_demo_recorder_session.control_frames.size());
 }
 
+int input_demo_recorder_truncate(uint32_t frame_count)
+{
+	if (!g_input_demo_recorder_session.active)
+		return 0;
+	if (frame_count > g_input_demo_recorder_session.control_frames.size())
+		return 0;
+	g_input_demo_recorder_session.control_frames.resize(frame_count);
+	g_input_demo_recorder_session.rng_frames.resize(frame_count);
+	g_input_demo_recorder_session.has_state_frames.resize(frame_count);
+	g_input_demo_recorder_session.state_frames.resize(frame_count);
+	g_input_demo_recorder_session.has_diag_frames.resize(frame_count);
+	g_input_demo_recorder_session.diag_frames.resize(frame_count);
+	g_input_demo_recorder_session.frame_events.resize(frame_count);
+	g_input_demo_recorder_session.pending_frame_events.clear();
+	input_demo_control_pulse_clear(&g_input_demo_recorder_session.pending_pulse);
+	return 1;
+}
+
 int input_demo_recorder_start(const input_demo_recorder_settings *settings,
                               char *error, size_t error_size)
 {

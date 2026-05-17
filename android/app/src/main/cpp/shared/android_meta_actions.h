@@ -47,6 +47,7 @@
 #define META_RETURN_TO_LAUNCHER    1031
 #define META_GUIDE_RELEASE_CONTROL 1032
 #define META_DEMO_RECORD_TOGGLE    1034
+#define META_REWIND                1035
 
 /* Flags for dispatch table entries */
 #define META_FLAG_INSTANT 1 /* inject full press+release on button down, ignore up */
@@ -64,6 +65,10 @@ extern volatile int android_escort_release_pending;
 /* Set on UI thread by META_DEMO_RECORD_TOGGLE, consumed on the game thread
  * in gamecntl.c to start or stop Android quick input-demo recording. */
 extern volatile int android_demo_record_toggle_pending;
+
+/* Set on UI thread by META_REWIND, consumed on the game thread
+ * in gamecntl.c to trigger Android rewind handling. */
+extern volatile int android_rewind_pending;
 
 /*
  * Dispatch a meta action.  Called from JNI (UI thread).

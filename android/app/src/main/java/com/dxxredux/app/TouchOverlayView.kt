@@ -274,6 +274,7 @@ private val remainingBaseActionBindings =
         TouchBindings.BTN_ENERGY_SHIELD,
         TouchBindings.META_DROP_MARKER,
         TouchBindings.META_DEMO_RECORD_TOGGLE,
+        TouchBindings.META_REWIND,
     )
 
 private val remainingMultiplayerActionBindings =

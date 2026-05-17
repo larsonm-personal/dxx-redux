@@ -36,6 +36,7 @@ int state_runtime_version(void);
 
 #ifdef __ANDROID__
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind);
+int state_android_save_to_path(const char *filename, const char *desc, int save_kind, int blank_thumbnail);
 int state_get_save_file_callsign(char *filename, char *callsign, int callsign_size);
 #endif
 

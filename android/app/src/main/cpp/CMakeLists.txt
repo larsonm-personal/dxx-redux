@@ -554,6 +554,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_loading_progress.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
@@ -675,6 +676,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_loading_progress.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c

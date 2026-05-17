@@ -41,6 +41,7 @@ void input_demo_rng_trace_record_srand(int stream,
                                        uint32_t state_after,
                                        uint32_t seed);
 size_t input_demo_rng_trace_event_count(void);
+int input_demo_rng_trace_truncate(size_t event_count);
 int input_demo_rng_trace_write_to_path(const char *path, char *error, size_t error_size);
 int input_demo_rng_trace_write_sidecar_for_demo(const char *demo_path,
                                                 char *error,

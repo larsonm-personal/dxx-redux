@@ -43,6 +43,7 @@ import java.io.File
 internal const val PREF_GUIDEBOT_HELPER_LINE = "guidebot_helper_line_enabled"
 internal const val PREF_NEAREST_PLAYER_LINE = "nearest_player_line_enabled"
 internal const val PREF_SKIP_INTRO_MOVIE = "skip_intro_movie"
+internal const val PREF_REWIND_SUPPORT_ENABLED = "rewind_support_enabled"
 internal const val PREF_SHOW_RESUME_OFFER = "show_resume_offer"
 
 private const val CM_FULL_COCKPIT = 0
@@ -85,6 +86,9 @@ fun EnginePreferencesPage(
     }
     var skipIntroMovie by remember {
         mutableStateOf(prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
+    }
+    var rewindSupportEnabled by remember {
+        mutableStateOf(prefs.getBoolean(PREF_REWIND_SUPPORT_ENABLED, true))
     }
     var showResumeOffer by remember {
         mutableStateOf(prefs.getBoolean(PREF_SHOW_RESUME_OFFER, true))
@@ -271,6 +275,41 @@ fun EnginePreferencesPage(
                         Text("Skip intro movie on launch", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(
                             "Skips the D1/D2 startup intro sequence, but leaves other movies skippable by tap",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Gameplay", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    "Android runtime options that affect in-level helper features",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = rewindSupportEnabled,
+                        onCheckedChange = { checked ->
+                            rewindSupportEnabled = checked
+                            prefs.edit().putBoolean(PREF_REWIND_SUPPORT_ENABLED, checked).apply()
+                        },
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Enable rewind support", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Keeps rewind points available for the Rewind binding in single-player",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

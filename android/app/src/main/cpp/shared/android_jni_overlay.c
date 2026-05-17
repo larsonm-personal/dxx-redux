@@ -4,6 +4,7 @@
  */
 
 #include "android_jni_overlay.h"
+#include "overlay_ringbuf.h"
 
 #ifdef ANDROID
 #include <jni.h>
@@ -38,6 +39,12 @@ void android_send_level_name(const char *name)
 	call_java_string_method("showLevelName", name);
 }
 
+void android_send_overlay_line(const char *text)
+{
+	call_java_string_method("showLevelName", text);
+	overlay_ringbuf_add("rewind", text ? text : "");
+}
+
 #else
 void android_send_track_name(const char *name)
 {
@@ -46,5 +53,9 @@ void android_send_track_name(const char *name)
 void android_send_level_name(const char *name)
 {
 	(void) name;
+}
+void android_send_overlay_line(const char *text)
+{
+	(void) text;
 }
 #endif

@@ -75,6 +75,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #ifdef __ANDROID__
 #include "android_resume_pilot.h"
+#include "android_rewind.h"
 #include "android_save_meta.h"
 #include "coop_save.h"
 #include "coop_indicator_lines.h"
@@ -1800,12 +1801,32 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 }
 
 #ifdef __ANDROID__
+int state_android_save_to_path(const char *filename, const char *desc, int save_kind, int blank_thumbnail)
+{
+	int result;
+	char save_filename[PATH_MAX];
+	char save_desc[DESC_LENGTH + 1];
+	int prev_kind = g_android_save_meta_kind;
+	int prev_blank = g_android_save_blank_thumbnail;
+
+	if (!filename || !filename[0] || !desc)
+		return 0;
+	memset(save_filename, 0, sizeof(save_filename));
+	memset(save_desc, 0, sizeof(save_desc));
+	strncpy(save_filename, filename, PATH_MAX - 1);
+	strncpy(save_desc, desc, DESC_LENGTH);
+	g_android_save_meta_kind = save_kind;
+	g_android_save_blank_thumbnail = blank_thumbnail ? 1 : 0;
+	result = state_save_all_sub(save_filename, save_desc);
+	g_android_save_meta_kind = prev_kind;
+	g_android_save_blank_thumbnail = prev_blank;
+	return result;
+}
+
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 {
 	int result;
-	int prev_kind = g_android_save_meta_kind;
-	int prev_blank = g_android_save_blank_thumbnail;
-	char filename[PATH_MAX], save_desc[DESC_LENGTH + 1];
+	char filename[PATH_MAX];
 	char temp_fname[PATH_MAX], fc;
 
 	if (!desc || slotnum < 0 || slotnum >= NUM_SAVES) {
@@ -1828,8 +1849,6 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 
 	stop_time();
 	memset(filename, 0, sizeof(filename));
-	memset(save_desc, 0, sizeof(save_desc));
-	strncpy(save_desc, desc, DESC_LENGTH);
 	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.sg%x" : "%s.sg%x",
 		Players[Player_num].callsign, slotnum);
 	if (slotnum >= 10)
@@ -1846,11 +1865,7 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 		Assert(copy_result == 0);
 		(void)copy_result;
 	}
-	g_android_save_meta_kind = save_kind;
-	g_android_save_blank_thumbnail = 1;
-	result = state_save_all_sub(filename, save_desc);
-	g_android_save_meta_kind = prev_kind;
-	g_android_save_blank_thumbnail = prev_blank;
+	result = state_android_save_to_path(filename, desc, save_kind, 1);
 	if (!result)
 		debug_log(DLOG_GAME, "autosave failed: D2 slot %d", slotnum);
 	return result;
@@ -2414,9 +2429,17 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 //Restore GameTime
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	GameTime64 = (fix64)tmptime32;
-	if (input_demo_replay_has_checkpoint())
-		GameTime64 += input_demo_replay_checkpoint_start_gt();
+	#ifdef __ANDROID__
+	if (android_rewind_restore_game_time64_active())
+		GameTime64 = (fix64) android_rewind_restore_game_time64();
+	else {
+	#endif
+		GameTime64 = (fix64)tmptime32;
+		if (input_demo_replay_has_checkpoint())
+			GameTime64 += input_demo_replay_checkpoint_start_gt();
+	#ifdef __ANDROID__
+	}
+	#endif
 
 // Start new game....
 	if (!(Game_mode & GM_MULTI_COOP))
@@ -3006,6 +3029,20 @@ int state_restore_all_sub(char *filename, int secret_restore)
 #endif
 
 	PHYSFS_close(fp);
+	#ifdef __ANDROID__
+	{
+		int64_t collision_delay_last_play_time = 0;
+
+		if (android_rewind_get_restore_collision_delay_last_play_time(&collision_delay_last_play_time))
+		collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
+		else if (input_demo_replay_has_checkpoint()) {
+			if (input_demo_replay_get_checkpoint_collision_delay_last_play_time(&collision_delay_last_play_time))
+			collide_set_collision_delay_last_play_time((fix64) collision_delay_last_play_time);
+			else
+			collide_set_collision_delay_last_play_time(0);
+	}
+	}
+	#else
 	if (input_demo_replay_has_checkpoint()) {
 		int64_t collision_delay_last_play_time = 0;
 
@@ -3014,6 +3051,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		else
 			collide_set_collision_delay_last_play_time(0);
 	}
+	#endif
 	escort_rebuild_runtime_state_after_restore();
 
 	if (Game_wind)

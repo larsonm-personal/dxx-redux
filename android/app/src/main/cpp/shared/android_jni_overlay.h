@@ -12,4 +12,7 @@ void android_send_track_name(const char *name);
 /* Send a level name string to the Java showLevelName() overlay. No-op on non-Android. */
 void android_send_level_name(const char *name);
 
+/* Send a generic overlay line through the Android popup overlay. No-op on non-Android. */
+void android_send_overlay_line(const char *text);
+
 #endif

@@ -14,6 +14,18 @@ Research a single-player rewind feature that stores about 60 seconds of 5 second
 - [x] Add preference and binding requirements to the implementation plan
 - [x] Add demo consistency, rewind target, overlay, and anti-stutter notes
 
+## Implementation Tranche
+- [x] Wire `META_REWIND` through touch, gamepad, and More menu surfaces
+- [x] Add rewind enable toggle in Game Preferences and pass it to native
+- [x] Add shared native rewind API with status results and HUD feedback
+- [x] Add D1/D2 pending-action consumption for rewind requests
+- [x] Add initial rewind ring manager skeleton and level-reset behavior
+- [ ] Replace the temp-file DGSS bridge with a pure memory-backed capture/restore path
+- [x] Add input-demo truncation APIs for kept-path rewinds
+- [x] Add overlay notification for successful rewinds
+- [ ] Add focused tests for binding and target selection
+- [x] Add focused recorder truncation test coverage
+
 ## Notes
 - Keep any future source edits minimal in `d1/` and `d2/`
 - Prefer reusing existing save/load serialization if it is efficient enough

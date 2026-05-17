@@ -265,6 +265,8 @@ class MainActivity :
 
     external fun nativeSetDemoRecordPerFrameState(enabled: Boolean)
 
+    external fun nativeSetRewindEnabled(enabled: Boolean)
+
     external fun nativeIsSaveLoadMenuActive(): Boolean
 
     external fun nativeIsPlayerDead(): Boolean
@@ -607,6 +609,7 @@ class MainActivity :
         applySkipIntroPref(prefs, forceSkipIntro = mpMode != null)
         applyCoopIndicatorPrefs(prefs)
         applyDemoRecordingPref()
+        applyRewindPref(prefs)
 
         // Allow rendering into the display cutout (notch) area
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -1397,6 +1400,7 @@ class MainActivity :
         applySkipIntroPref(prefs, forceSkipIntro = isMultiplayerGame)
         applyCoopIndicatorPrefs(prefs)
         applyDemoRecordingPref()
+        applyRewindPref(prefs)
         applyGraphicsDebugPrefs(prefs)
         applyGraphicsSettingsPrefs(prefs)
         // Start polling in-game state to show/hide overlay
@@ -1485,6 +1489,14 @@ class MainActivity :
         try {
             val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
             nativeSetDemoRecordPerFrameState(prefs.getBoolean(PREF_DEMO_RECORD_PER_FRAME_STATE, false))
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
+    }
+
+    private fun applyRewindPref(prefs: android.content.SharedPreferences) {
+        try {
+            nativeSetRewindEnabled(prefs.getBoolean(PREF_REWIND_SUPPORT_ENABLED, true))
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }

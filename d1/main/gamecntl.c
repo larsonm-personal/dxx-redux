@@ -81,6 +81,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "android_log.h"
 #include "android_meta_actions.h"
+#include "android_rewind.h"
 #include "android_save_meta.h"
 #include <SDL.h>
 #endif
@@ -331,6 +332,30 @@ static int android_handle_ingame_saveload_request(void)
 	if (android_demo_record_toggle_pending) {
 		android_demo_record_toggle_pending = 0;
 		return newdemo_toggle_quick_recording();
+	}
+
+	if (android_rewind_pending) {
+		int rewind_result;
+
+		android_rewind_pending = 0;
+		if (Game_mode & GM_MULTI) {
+			HUD_init_message_literal(HM_DEFAULT, "Rewind is single-player only");
+			return 1;
+		}
+		rewind_result = android_rewind_request(NULL);
+		if (rewind_result == ANDROID_REWIND_STATUS_DISABLED) {
+			HUD_init_message_literal(HM_DEFAULT, "Rewind is disabled");
+			return 1;
+		}
+		if (rewind_result == ANDROID_REWIND_STATUS_NO_POINT) {
+			HUD_init_message_literal(HM_DEFAULT, "No rewind point yet");
+			return 1;
+		}
+		if (rewind_result == ANDROID_REWIND_STATUS_FAILED) {
+			HUD_init_message_literal(HM_DEFAULT, "Rewind failed");
+			return 1;
+		}
+		return 1;
 	}
 
 	return 0;
