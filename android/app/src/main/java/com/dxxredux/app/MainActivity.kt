@@ -604,7 +604,7 @@ class MainActivity :
             } else {
                 android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             }
-        applySkipIntroPref(prefs)
+        applySkipIntroPref(prefs, forceSkipIntro = mpMode != null)
         applyCoopIndicatorPrefs(prefs)
         applyDemoRecordingPref()
 
@@ -1394,7 +1394,7 @@ class MainActivity :
             }
         overlayEnabled = prefs.getBoolean("touch_overlay_enabled", !hasController)
         syncDebugLogPrefs()
-        applySkipIntroPref(prefs)
+        applySkipIntroPref(prefs, forceSkipIntro = isMultiplayerGame)
         applyCoopIndicatorPrefs(prefs)
         applyDemoRecordingPref()
         applyGraphicsDebugPrefs(prefs)
@@ -1459,9 +1459,12 @@ class MainActivity :
         }
     }
 
-    private fun applySkipIntroPref(prefs: android.content.SharedPreferences) {
+    private fun applySkipIntroPref(
+        prefs: android.content.SharedPreferences,
+        forceSkipIntro: Boolean = false,
+    ) {
         try {
-            nativeSetSkipIntroMovie(prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
+            nativeSetSkipIntroMovie(forceSkipIntro || prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }

@@ -37,6 +37,12 @@
 
     // Main menu
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5024},
+    // Intro-skip taps can leave D2 in the Multiplayer submenu. Normalize by
+    // opening Multiplayer from the main menu when present, then backing out.
+    {"action": "select", "text": "Multiplayer", "optional": true,
+     "post_delay_ms": 100, "timeout_ms": 1000},
+    {"action": "key", "key": "esc", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select

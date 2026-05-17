@@ -31,6 +31,31 @@ function GetSetupButtons {
     return $obj.buttons | ForEach-Object { $_.text }
 }
 
+function Wait-ForMainPageDpadReady {
+    param(
+        [int]$TimeoutSeconds = 8,
+        [int]$SettleMs = 1500
+    )
+
+    $ready = Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 400 -Predicate {
+        param($obj)
+        if ($null -eq $obj.buttons -or $obj.buttons.Count -eq 0) {
+            return $false
+        }
+        $texts = @($obj.buttons | ForEach-Object { $_.text })
+        return (($texts -contains "Define Controls") -and ($texts -contains "Touch Layout"))
+    }
+
+    if (-not $ready) {
+        $buttons = GetSetupButtons
+        Fail "Main page did not become ready for D-pad navigation (got: $($buttons -join ', '))"
+    }
+
+    Start-Sleep -Milliseconds $SettleMs
+
+    return GetSetupButtons
+}
+
 function Test-ContainsButton {
     param(
         [string[]]$Buttons,
@@ -120,6 +145,7 @@ Info "  PASS: Main page has expected buttons"
 
 # --- Test 2: DPAD_CENTER activates Define Controls (initial focus target) ---
 Info "Test 2: DPAD_CENTER on initial focus (Define Controls)..."
+$buttons = Wait-ForMainPageDpadReady
 & $script:ADB logcat -c
 SendKey 23  # DPAD_CENTER
 $buttons = GetSetupButtons
@@ -133,7 +159,7 @@ Info "  PASS: Navigated to sub-page via DPAD_CENTER"
 # --- Test 3: BACK key returns to main page ---
 Info "Test 3: BACK returns to main page..."
 SendKey 4  # KEYCODE_BACK
-$buttons = GetSetupButtons
+$buttons = Wait-ForMainPageDpadReady
 if (($buttons -notcontains "Define Controls") -or ($buttons -notcontains "Touch Layout")) {
     Fail "BACK did not return to the main page (got: $($buttons -join ', '))"
 }
@@ -153,7 +179,7 @@ Info "  PASS: Focus restored, navigated to sub-page again"
 # --- Test 5: DPAD_RIGHT moves from Define Controls to Touch Layout ---
 Info "Test 5: DPAD RIGHT navigation..."
 SendKey 4  # BACK to main
-$buttons = GetSetupButtons
+$buttons = Wait-ForMainPageDpadReady
 if (($buttons -notcontains "Define Controls") -or ($buttons -notcontains "Touch Layout")) {
     Fail "Did not return to the main page before DPAD_RIGHT test (got: $($buttons -join ', '))"
 }
