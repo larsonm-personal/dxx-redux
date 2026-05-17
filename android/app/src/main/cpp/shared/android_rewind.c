@@ -6,6 +6,7 @@
 
 #include "android_jni_overlay.h"
 #include "android_log.h"
+#include "android_rewind_policy.h"
 #include "android_save_meta.h"
 #include "collide.h"
 #include "fix.h"
@@ -54,7 +55,7 @@ typedef struct android_rewind_session {
 	int snapshot_count;
 } android_rewind_session;
 
-static android_rewind_session g_android_rewind_session = {1, 0, 0, "", 0, 0, 0, 0, 0, {{0}}, 0};
+static android_rewind_session g_android_rewind_session = { 1, 0, 0, "", 0, 0, 0, 0, 0, { { 0 } }, 0 };
 
 static void android_rewind_copy_mission(char *dst, size_t dst_size)
 {
@@ -95,13 +96,13 @@ static void android_rewind_begin_level_history(void)
 	g_android_rewind_session.has_level_identity = 1;
 	g_android_rewind_session.level_num = Current_level_num;
 	android_rewind_copy_mission(g_android_rewind_session.mission,
-	                           sizeof(g_android_rewind_session.mission));
+	                            sizeof(g_android_rewind_session.mission));
 	g_android_rewind_session.next_capture_game_time64 = 0;
 	g_android_rewind_session.snapshot_count = 0;
 }
 
 static void android_rewind_snapshot_get_buffer(android_rewind_snapshot *snapshot,
-	                                           rewind_memory_buffer *buffer)
+                                               rewind_memory_buffer *buffer)
 {
 	if (!snapshot || !buffer)
 		return;
@@ -111,7 +112,7 @@ static void android_rewind_snapshot_get_buffer(android_rewind_snapshot *snapshot
 }
 
 static void android_rewind_snapshot_set_buffer(android_rewind_snapshot *snapshot,
-	                                           const rewind_memory_buffer *buffer)
+                                               const rewind_memory_buffer *buffer)
 {
 	if (!snapshot || !buffer)
 		return;
@@ -137,14 +138,14 @@ static void android_rewind_record_demo_timeline(android_rewind_snapshot *snapsho
 
 static int android_rewind_capture_snapshot(android_rewind_snapshot *snapshot)
 {
-	rewind_memory_buffer buffer = {NULL, 0, 0};
+	rewind_memory_buffer buffer = { NULL, 0, 0 };
 
 	if (!snapshot)
 		return 0;
 	android_rewind_snapshot_get_buffer(snapshot, &buffer);
-	if (!state_android_save_to_memory(&buffer, "REWIND", ANDROID_SAVE_META_KIND_MANUAL, 1)) {
+	if (!state_save_to_memory(&buffer, "REWIND", ANDROID_SAVE_META_KIND_MANUAL, 1)) {
 		debug_log(DLOG_GAME, "rewind capture save failed: gt=%lld level=%d mission='%s'",
-			(long long) GameTime64, Current_level_num, Current_mission_filename);
+		          (long long) GameTime64, Current_level_num, Current_mission_filename);
 		return 0;
 	}
 	android_rewind_snapshot_set_buffer(snapshot, &buffer);
@@ -159,35 +160,21 @@ static int android_rewind_capture_snapshot(android_rewind_snapshot *snapshot)
 
 static int android_rewind_select_snapshot_index(void)
 {
+	android_rewind_selection_snapshot snapshots[ANDROID_REWIND_SNAPSHOT_LIMIT];
 	const int require_demo_timeline =
-		(Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) ? 1 : 0;
-	int viable_count = 0;
-	int last_viable = -1;
+	    (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) ? 1 : 0;
 	int i;
-	int64_t target_time = GameTime64 - ANDROID_REWIND_MIN_AGE;
 
 	for (i = 0; i < g_android_rewind_session.snapshot_count; ++i) {
-		android_rewind_snapshot *snapshot = &g_android_rewind_session.snapshots[i];
-
-		if (require_demo_timeline && !snapshot->has_demo_timeline)
-			continue;
-		viable_count++;
-		last_viable = i;
+		snapshots[i].game_time64 = g_android_rewind_session.snapshots[i].game_time64;
+		snapshots[i].has_demo_timeline = g_android_rewind_session.snapshots[i].has_demo_timeline;
 	}
-	if (viable_count == 0)
-		return -1;
-	for (i = g_android_rewind_session.snapshot_count - 1; i >= 0; --i) {
-		android_rewind_snapshot *snapshot = &g_android_rewind_session.snapshots[i];
-
-		if (require_demo_timeline && !snapshot->has_demo_timeline)
-			continue;
-		if (snapshot->game_time64 <= target_time)
-			return i;
-	}
-	if (viable_count == 1 && last_viable >= 0 &&
-		g_android_rewind_session.snapshots[last_viable].game_time64 < GameTime64)
-		return last_viable;
-	return -1;
+	return android_rewind_select_snapshot_index_for_game_time(
+	    snapshots,
+	    g_android_rewind_session.snapshot_count,
+	    GameTime64,
+	    ANDROID_REWIND_MIN_AGE,
+	    require_demo_timeline);
 }
 
 static void android_rewind_prepare_restore_overrides(const android_rewind_snapshot *snapshot)
@@ -197,9 +184,9 @@ static void android_rewind_prepare_restore_overrides(const android_rewind_snapsh
 	g_android_rewind_session.has_restore_game_time64 = 1;
 	g_android_rewind_session.restore_game_time64 = snapshot->game_time64;
 	g_android_rewind_session.has_restore_collision_delay_last_play_time =
-		snapshot->has_collision_delay_last_play_time;
+	    snapshot->has_collision_delay_last_play_time;
 	g_android_rewind_session.restore_collision_delay_last_play_time =
-		snapshot->collision_delay_last_play_time;
+	    snapshot->collision_delay_last_play_time;
 }
 
 static void android_rewind_record_success_overlay(int rewound_seconds)
@@ -241,26 +228,26 @@ void android_rewind_maybe_capture_frame(void)
 	if (!android_rewind_current_level_matches_session())
 		android_rewind_begin_level_history();
 	if (g_android_rewind_session.snapshot_count > 0 &&
-		GameTime64 < g_android_rewind_session.snapshots[g_android_rewind_session.snapshot_count - 1].game_time64)
+	    GameTime64 < g_android_rewind_session.snapshots[g_android_rewind_session.snapshot_count - 1].game_time64)
 		android_rewind_begin_level_history();
 	if (g_android_rewind_session.snapshot_count > 0 &&
-		GameTime64 < g_android_rewind_session.next_capture_game_time64)
+	    GameTime64 < g_android_rewind_session.next_capture_game_time64)
 		return;
 	if (g_android_rewind_session.snapshot_count > 0 &&
-		g_android_rewind_session.snapshots[g_android_rewind_session.snapshot_count - 1].game_time64 == GameTime64)
+	    g_android_rewind_session.snapshots[g_android_rewind_session.snapshot_count - 1].game_time64 == GameTime64)
 		return;
 	if (g_android_rewind_session.snapshot_count < ANDROID_REWIND_SNAPSHOT_LIMIT) {
 		captured = android_rewind_capture_snapshot(
-			&g_android_rewind_session.snapshots[g_android_rewind_session.snapshot_count]);
+		    &g_android_rewind_session.snapshots[g_android_rewind_session.snapshot_count]);
 		if (captured)
 			g_android_rewind_session.snapshot_count++;
 	} else {
 		rotated_snapshot = g_android_rewind_session.snapshots[0];
 		memmove(&g_android_rewind_session.snapshots[0], &g_android_rewind_session.snapshots[1],
-			sizeof(g_android_rewind_session.snapshots[0]) * (ANDROID_REWIND_SNAPSHOT_LIMIT - 1));
+		        sizeof(g_android_rewind_session.snapshots[0]) * (ANDROID_REWIND_SNAPSHOT_LIMIT - 1));
 		g_android_rewind_session.snapshots[ANDROID_REWIND_SNAPSHOT_LIMIT - 1] = rotated_snapshot;
 		captured = android_rewind_capture_snapshot(
-			&g_android_rewind_session.snapshots[ANDROID_REWIND_SNAPSHOT_LIMIT - 1]);
+		    &g_android_rewind_session.snapshots[ANDROID_REWIND_SNAPSHOT_LIMIT - 1]);
 		if (!captured)
 			g_android_rewind_session.snapshot_count = ANDROID_REWIND_SNAPSHOT_LIMIT - 1;
 	}
@@ -272,7 +259,7 @@ void android_rewind_maybe_capture_frame(void)
 int android_rewind_request(int *rewound_seconds)
 {
 	android_rewind_snapshot *snapshot;
-	rewind_memory_buffer buffer = {NULL, 0, 0};
+	rewind_memory_buffer buffer = { NULL, 0, 0 };
 	int snapshot_index;
 	int restore_ok;
 	int seconds;
@@ -291,19 +278,19 @@ int android_rewind_request(int *rewound_seconds)
 	android_rewind_snapshot_get_buffer(snapshot, &buffer);
 	current_game_time64 = GameTime64;
 	android_rewind_prepare_restore_overrides(snapshot);
-	restore_ok = state_android_restore_from_memory(&buffer);
+	restore_ok = state_restore_from_memory(&buffer);
 	android_rewind_finish_restore();
 	if (!restore_ok) {
 		debug_log(DLOG_GAME, "rewind restore failed: index=%d gt=%lld target_gt=%lld bytes=%u",
-			snapshot_index, (long long) current_game_time64, (long long) snapshot->game_time64,
-			(unsigned int) snapshot->size);
+		          snapshot_index, (long long) current_game_time64, (long long) snapshot->game_time64,
+		          (unsigned int) snapshot->size);
 		return ANDROID_REWIND_STATUS_FAILED;
 	}
 	if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active() && snapshot->has_demo_timeline) {
 		if (!input_demo_recorder_truncate(snapshot->recorder_frame_count) ||
-			!input_demo_rng_trace_truncate(snapshot->rng_event_count)) {
+		    !input_demo_rng_trace_truncate(snapshot->rng_event_count)) {
 			debug_log(DLOG_GAME, "rewind demo truncate failed: frames=%u rng=%u",
-				snapshot->recorder_frame_count, (unsigned int) snapshot->rng_event_count);
+			          snapshot->recorder_frame_count, (unsigned int) snapshot->rng_event_count);
 			return ANDROID_REWIND_STATUS_FAILED;
 		}
 	}
@@ -316,8 +303,8 @@ int android_rewind_request(int *rewound_seconds)
 		*rewound_seconds = seconds;
 	android_rewind_record_success_overlay(seconds);
 	debug_log(DLOG_GAME, "rewind restored: seconds=%d gt=%lld target_gt=%lld slot=%d count=%d",
-		seconds, (long long) current_game_time64, (long long) snapshot->game_time64,
-		snapshot_index, g_android_rewind_session.snapshot_count);
+	          seconds, (long long) current_game_time64, (long long) snapshot->game_time64,
+	          snapshot_index, g_android_rewind_session.snapshot_count);
 	return ANDROID_REWIND_STATUS_RESTORED;
 }
 

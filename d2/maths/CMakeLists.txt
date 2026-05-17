@@ -40,6 +40,12 @@ if(NOT ANDROID)
     target_link_libraries(test_android_save_meta PRIVATE ${DXX_TARGET_PREFIX}maths ${PHYSFS_LIBRARY})
     target_include_directories(test_android_save_meta PRIVATE ../../android/app/src/main/cpp/shared ${PHYSFS_INCLUDE_DIR})
 
+    add_executable(test_android_rewind_policy
+        ../../android/tests/test_android_rewind_policy.c
+        ../../android/app/src/main/cpp/shared/android_rewind_policy.c)
+    target_link_libraries(test_android_rewind_policy PRIVATE ${DXX_TARGET_PREFIX}maths)
+    target_include_directories(test_android_rewind_policy PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_input_demo_rng_mode
         ../../android/tests/test_input_demo_rng_mode.c
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c)

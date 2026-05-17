@@ -23,6 +23,17 @@ class RemainingKeyTouchActionsTest {
         assertTrue(TouchBindings.META_WEAPON_1 in bindings)
         assertTrue(TouchBindings.META_WEAPON_10 in bindings)
         assertTrue(TouchBindings.META_GUIDE_BOT_MENU in bindings)
+        assertTrue(TouchBindings.META_REWIND in bindings)
+    }
+
+    @Test
+    fun rewindOverflowActionUsesSharedMetaLabel() {
+        val action =
+            remainingKeyTouchActions(TouchLayout(name = "Empty"), gameVariant = "d1")
+                .first { it.binding == TouchBindings.META_REWIND }
+
+        assertEquals("Rewind", action.label)
+        assertEquals("Rewind", TouchBindings.META_BUTTON_LABELS[TouchBindings.META_REWIND])
     }
 
     @Test
@@ -98,6 +109,27 @@ class RemainingKeyTouchActionsTest {
         assertTrue(TouchBindings.BTN_HEADLIGHT !in bindings)
         assertTrue(TouchBindings.META_RETURN_TO_LAUNCHER !in bindings)
         assertTrue(TouchBindings.BTN_FIRE_FLARE in bindings)
+    }
+
+    @Test
+    fun alreadyBoundRewindIsFilteredOut() {
+        val layout =
+            TouchLayout(
+                name = "Rewind",
+                buttons =
+                    listOf(
+                        ButtonControl(
+                            id = "rewind",
+                            xPct = 15f,
+                            yPct = 15f,
+                            binding = TouchBindings.META_REWIND,
+                        ),
+                    ),
+            )
+
+        val bindings = remainingKeyTouchActions(layout, gameVariant = "d2").map { it.binding }
+
+        assertTrue(TouchBindings.META_REWIND !in bindings)
     }
 
     @Test

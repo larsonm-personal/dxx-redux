@@ -24,7 +24,7 @@ Research a single-player rewind feature that stores about 60 seconds of 5 second
 - [x] Generalize `rewind_file` into a cross-platform file abstraction and collapse Android-only helper signatures
 - [x] Add input-demo truncation APIs for kept-path rewinds
 - [x] Add overlay notification for successful rewinds
-- [ ] Add focused tests for binding and target selection
+- [x] Add focused tests for binding and target selection
 - [x] Add focused recorder truncation test coverage
 
 ## Notes
@@ -32,6 +32,7 @@ Research a single-player rewind feature that stores about 60 seconds of 5 second
 - Prefer reusing existing save/load serialization if it is efficient enough
 - Rewind is single-player only for the initial feature
 - The memory-backed rewind path now uses a shared `rewind_file` abstraction so D1 and D2 can keep reusing the normal DGSS serializer without temp `.rwtmp` files, while public helper signatures stay free of Android-only `#ifdef` splits
+- Focused rewind coverage now lives in `RemainingKeyTouchActionsTest` for Android binding exposure and `test_android_rewind_policy` for the 3 second target-selection rule and demo-timeline filtering
 
 ## Research Summary
 
