@@ -267,6 +267,14 @@ Get-Content temp\test_pause_menu_return_d2.txt | Select-Object -Last 60
 
 For Android test runs, always clear logcat first and capture output to a file. Do not rely on terminal scrollback for pass/fail.
 
+Report triage rules:
+
+- Treat old suite reports as historical until a focused rerun proves the failure still reproduces.
+- Include both `FAIL` and `TIMEOUT` rows when building a candidate list from `run_all_tests.ps1` output.
+- Inspect the full per-test log, not just the markdown report tail. Multi-game scripts can show a later game pass after an earlier game failed.
+- Prefer durable files and explicit markers over generic log tails: `automation_result.json`, `automation_log.jsonl`, `ASSERT_FAIL`, `TIMEOUT`, `FAIL for`, runner kill lines, setup readiness failures, and emulator health failures.
+- Use a dedicated `-ReportDir` for each triage round so fresh evidence is not mixed with stale suite output.
+
 ## Validation ladder
 
 Pick the smallest ladder that covers the tranche. A typical cleanup ladder is:
