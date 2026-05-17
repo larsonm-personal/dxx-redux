@@ -160,6 +160,7 @@ int gamedata_init()
 void bm_read_all(PHYSFS_file * fp)
 {
 	int i,t;
+	REWIND_PHYSFS_FILE(rewind_fp, fp);
 
 	NumTextures = PHYSFSX_readInt(fp);
 	bitmap_index_read_n(Textures, NumTextures, fp );
@@ -176,7 +177,7 @@ void bm_read_all(PHYSFS_file * fp)
 	eclip_read_n(Effects, Num_effects, fp);
 
 	Num_wall_anims = PHYSFSX_readInt(fp);
-	wclip_read_n(WallAnims, Num_wall_anims, fp);
+	wclip_read_n(WallAnims, Num_wall_anims, rewind_fp);
 
 	N_robot_types = PHYSFSX_readInt(fp);
 	robot_info_read_n(Robot_info, N_robot_types, fp);
@@ -223,7 +224,7 @@ void bm_read_all(PHYSFS_file * fp)
 	First_multi_bitmap_num = PHYSFSX_readInt(fp);
 
 	Num_reactors = PHYSFSX_readInt(fp);
-	reactor_read_n(Reactors, Num_reactors, fp);
+	reactor_read_n(Reactors, Num_reactors, rewind_fp);
 
 	Marker_model_num = PHYSFSX_readInt(fp);
 

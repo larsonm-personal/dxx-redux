@@ -815,13 +815,14 @@ int load_game_data(PHYSFS_file *LoadFile)
 	}
 
 	//===================== READ WALL INFO ============================
+	REWIND_PHYSFS_FILE(load_rewind_file, LoadFile);
 
 	for (i = 0; i < Num_walls; i++) {
 		if (game_top_fileinfo_version >= 20)
-			wall_read(&Walls[i], LoadFile); // v20 walls and up.
+			wall_read(&Walls[i], load_rewind_file); // v20 walls and up.
 		else if (game_top_fileinfo_version >= 17) {
 			v19_wall w;
-			v19_wall_read(&w, LoadFile);
+			v19_wall_read(&w, load_rewind_file);
 			Walls[i].segnum	        = w.segnum;
 			Walls[i].sidenum	= w.sidenum;
 			Walls[i].linked_wall	= w.linked_wall;
@@ -834,7 +835,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 			Walls[i].state		= WALL_DOOR_CLOSED;
 		} else {
 			v16_wall w;
-			v16_wall_read(&w, LoadFile);
+			v16_wall_read(&w, load_rewind_file);
 			Walls[i].segnum = Walls[i].sidenum = Walls[i].linked_wall = -1;
 			Walls[i].type		= w.type;
 			Walls[i].flags		= w.flags;
@@ -885,7 +886,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 	for (i = 0; i < Num_triggers; i++)
 	{
 		if (game_top_fileinfo_version <= 25)
-			trigger_read(&Triggers[i], LoadFile);
+			trigger_read(&Triggers[i], load_rewind_file);
 		else {
 			int type;
 			switch ((type = PHYSFSX_readByte(LoadFile)))
@@ -931,12 +932,12 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 	//================ READ CONTROL CENTER TRIGGER INFO ===============
 
-	control_center_triggers_read_n(&ControlCenterTriggers, 1, LoadFile);
+	control_center_triggers_read_n(&ControlCenterTriggers, 1, load_rewind_file);
 
 	//================ READ MATERIALOGRIFIZATIONATORS INFO ===============
 
 	for (i = 0; i < Num_robot_centers; i++) {
-		matcen_info_read(&RobotCenters[i], LoadFile, game_top_fileinfo_version);
+		matcen_info_read(&RobotCenters[i], load_rewind_file, game_top_fileinfo_version);
 		
 		//	Set links in RobotCenters to Station array
 		for (j = 0; j <= Highest_segment_index; j++)
@@ -1384,10 +1385,11 @@ int save_game_data(PHYSFS_file *SaveFile)
 		write_object(&Objects[i], SaveFile);
 
 	//==================== SAVE WALL INFO =============================
+	REWIND_PHYSFS_FILE(save_rewind_file, SaveFile);
 
 	walls_offset = PHYSFS_tell(SaveFile);
 	for (i = 0; i < Num_walls; i++)
-		wall_write(&Walls[i], game_top_fileinfo_version, SaveFile);
+		wall_write(&Walls[i], game_top_fileinfo_version, save_rewind_file);
 
 	//==================== SAVE DOOR INFO =============================
 
@@ -1401,19 +1403,19 @@ int save_game_data(PHYSFS_file *SaveFile)
 
 	triggers_offset = PHYSFS_tell(SaveFile);
 	for (i = 0; i < Num_triggers; i++)
-		trigger_write(&Triggers[i], game_top_fileinfo_version, SaveFile);
+		trigger_write(&Triggers[i], game_top_fileinfo_version, save_rewind_file);
 
 	//================ SAVE CONTROL CENTER TRIGGER INFO ===============
 
 	control_offset = PHYSFS_tell(SaveFile);
-	control_center_triggers_write(&ControlCenterTriggers, SaveFile);
+	control_center_triggers_write(&ControlCenterTriggers, save_rewind_file);
 
 
 	//================ SAVE MATERIALIZATION CENTER TRIGGER INFO ===============
 
 	matcen_offset = PHYSFS_tell(SaveFile);
 	for (i = 0; i < Num_robot_centers; i++)
-		matcen_info_write(&RobotCenters[i], game_top_fileinfo_version, SaveFile);
+		matcen_info_write(&RobotCenters[i], game_top_fileinfo_version, save_rewind_file);
 
 	//============= REWRITE FILE INFO, TO SAVE OFFSETS ===============
 

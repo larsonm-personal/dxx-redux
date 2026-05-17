@@ -309,20 +309,13 @@ extern void init_ai_frame(void);
 extern void create_bfs_list(int start_seg, short bfs_list[], int *length, int max_segs);
 extern void init_thief_for_level();
 
-#ifdef __ANDROID__
-#include "android_rewind_file.h"
-#endif
+#include "rewind_file.h"
 
 
 extern int Escort_goal_object;
 
-#ifdef __ANDROID__
 extern int ai_save_state(rewind_file * fp);
 extern int ai_restore_state(rewind_file *fp, int version, int swap);
-#else
-extern int ai_save_state(PHYSFS_file * fp);
-extern int ai_restore_state(PHYSFS_file *fp, int version, int swap);
-#endif
 
 extern int Buddy_objnum, Buddy_allowed_to_talk;
 

@@ -101,21 +101,14 @@ extern void force_dump_ai_objects_all(char *msg);
 #define force_dump_ai_objects_all(msg)
 #endif
 
-#ifdef __ANDROID__
-#include "android_rewind_file.h"
-#endif
+#include "rewind_file.h"
 
 extern void start_boss_death_sequence(object *objp);
 extern void ai_init_boss_for_ship(void);
 extern int Boss_been_hit;
 extern fix AI_proc_time;
 
-#ifdef __ANDROID__
 extern int ai_save_state(rewind_file * fp);
 extern int ai_restore_state(rewind_file *fp, int version, int swap, int rebirth);
-#else
-extern int ai_save_state(PHYSFS_file * fp);
-extern int ai_restore_state(PHYSFS_file *fp, int version, int swap, int rebirth);
-#endif
 
 #endif

@@ -21,6 +21,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifndef _FIREBALL_H
 #define _FIREBALL_H
 
+#include "rewind_file.h"
+
 // explosion types
 #define ET_SPARKS       0   //little sparks, like when laser hits wall
 #define ET_MULTI_START  1   //first part of multi-part explosion
@@ -66,20 +68,12 @@ extern void maybe_replace_powerup_with_energy(object *del_obj);
 extern int get_explosion_vclip(object *obj, int stage);
 extern int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *pos, int segnum);
 
-#ifdef __ANDROID__
-#include "android_rewind_file.h"
-#endif
-
 // creates afterburner blobs behind the specified object
 void drop_afterburner_blobs(object *obj, int count, fix size_scale, fix lifetime);
 
 /*
  * reads n expl_wall structs from a PHYSFS_file and swaps if specified
  */
-#ifdef __ANDROID__
 extern void expl_wall_read_n_swap(expl_wall *ew, int n, int swap, rewind_file *fp);
-#else
-extern void expl_wall_read_n_swap(expl_wall *ew, int n, int swap, PHYSFS_file *fp);
-#endif
 
 #endif /* _FIREBALL_H */

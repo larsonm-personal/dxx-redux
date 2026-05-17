@@ -22,9 +22,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define _STATE_H
 #include "playsave.h"
 
-#ifdef __ANDROID__
-#include "android_rewind_file.h"
-#endif
+#include "rewind_file.h"
 
 int state_save_all(int blind_save);
 int state_restore_all(int in_game );

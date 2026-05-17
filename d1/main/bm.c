@@ -142,6 +142,7 @@ int gamedata_init()
 void properties_read_cmp(PHYSFS_file * fp)
 {
 	int i;
+	REWIND_PHYSFS_FILE(rewind_fp, fp);
 
 	//  bitmap_index is a short
 	
@@ -159,7 +160,7 @@ void properties_read_cmp(PHYSFS_file * fp)
 	eclip_read_n(Effects, MAX_EFFECTS, fp);
 
 	Num_wall_anims = PHYSFSX_readInt(fp);
-	wclip_read_n(WallAnims, MAX_WALL_ANIMS, fp);
+	wclip_read_n(WallAnims, MAX_WALL_ANIMS, rewind_fp);
 
 	N_robot_types = PHYSFSX_readInt(fp);
 	robot_info_read_n(Robot_info, MAX_ROBOT_TYPES, fp);
