@@ -1,7 +1,5 @@
 #include "android_rewind.h"
 
-#include <limits.h>
-#include <physfs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +7,6 @@
 #include "android_jni_overlay.h"
 #include "android_log.h"
 #include "android_save_meta.h"
-#include "args.h"
 #include "collide.h"
 #include "fix.h"
 #include "game.h"
@@ -17,7 +14,6 @@
 #include "input_demo_rng_trace.h"
 #include "mission.h"
 #include "newdemo.h"
-#include "physfsx.h"
 #include "player.h"
 #include "pstypes.h"
 #include "state.h"
@@ -104,67 +100,24 @@ static void android_rewind_begin_level_history(void)
 	g_android_rewind_session.snapshot_count = 0;
 }
 
-static int android_rewind_build_temp_path(char *path, size_t path_size)
+static void android_rewind_snapshot_get_buffer(android_rewind_snapshot *snapshot,
+	                                           rewind_memory_buffer *buffer)
 {
-	const char *callsign;
-
-	if (!path || !path_size)
-		return 0;
-	callsign = Players[Player_num].callsign[0] ? Players[Player_num].callsign : "player";
-	snprintf(path, path_size, GameArg.SysUsePlayersDir ? "Players/%s.rwtmp" : "%s.rwtmp", callsign);
-	return 1;
+	if (!snapshot || !buffer)
+		return;
+	buffer->data = snapshot->data;
+	buffer->size = snapshot->size;
+	buffer->capacity = snapshot->capacity;
 }
 
-static int android_rewind_read_snapshot_file(const char *path,
-	                                         android_rewind_snapshot *snapshot)
+static void android_rewind_snapshot_set_buffer(android_rewind_snapshot *snapshot,
+	                                           const rewind_memory_buffer *buffer)
 {
-	PHYSFS_file *fp;
-	PHYSFS_sint64 file_len;
-	unsigned char *next_data;
-
-	if (!path || !snapshot)
-		return 0;
-	fp = PHYSFSX_openReadBuffered(path);
-	if (!fp)
-		return 0;
-	file_len = PHYSFS_fileLength(fp);
-	if (file_len < 0 || (PHYSFS_uint64) file_len > UINT32_MAX) {
-		PHYSFS_close(fp);
-		return 0;
-	}
-	if ((size_t) file_len > snapshot->capacity) {
-		next_data = (unsigned char *) realloc(snapshot->data, (size_t) file_len);
-		if (!next_data) {
-			PHYSFS_close(fp);
-			return 0;
-		}
-		snapshot->data = next_data;
-		snapshot->capacity = (size_t) file_len;
-	}
-	if (file_len > 0 && PHYSFS_read(fp, snapshot->data, 1, (PHYSFS_uint32) file_len) != file_len) {
-		PHYSFS_close(fp);
-		return 0;
-	}
-	snapshot->size = (size_t) file_len;
-	return PHYSFS_close(fp);
-}
-
-static int android_rewind_write_snapshot_file(const char *path,
-	                                          const unsigned char *data,
-	                                          size_t data_size)
-{
-	PHYSFS_file *fp;
-
-	if (!path || (!data && data_size != 0) || data_size > UINT32_MAX)
-		return 0;
-	fp = PHYSFSX_openWriteBuffered(path);
-	if (!fp)
-		return 0;
-	if (data_size > 0 && PHYSFS_write(fp, data, 1, (PHYSFS_uint32) data_size) != (PHYSFS_sint64) data_size) {
-		PHYSFS_close(fp);
-		return 0;
-	}
-	return PHYSFS_close(fp);
+	if (!snapshot || !buffer)
+		return;
+	snapshot->data = buffer->data;
+	snapshot->size = buffer->size;
+	snapshot->capacity = buffer->capacity;
 }
 
 static void android_rewind_record_demo_timeline(android_rewind_snapshot *snapshot)
@@ -184,20 +137,17 @@ static void android_rewind_record_demo_timeline(android_rewind_snapshot *snapsho
 
 static int android_rewind_capture_snapshot(android_rewind_snapshot *snapshot)
 {
-	char path[PATH_MAX];
+	rewind_memory_buffer buffer = {NULL, 0, 0};
 
-	if (!snapshot || !android_rewind_build_temp_path(path, sizeof(path)))
+	if (!snapshot)
 		return 0;
-	if (!state_android_save_to_path(path, "REWIND", ANDROID_SAVE_META_KIND_MANUAL, 1)) {
-		debug_log(DLOG_GAME, "rewind capture save failed: path='%s' gt=%lld level=%d mission='%s'",
-			path, (long long) GameTime64, Current_level_num, Current_mission_filename);
-		return 0;
-	}
-	if (!android_rewind_read_snapshot_file(path, snapshot)) {
-		debug_log(DLOG_GAME, "rewind capture read failed: path='%s' gt=%lld level=%d",
-			path, (long long) GameTime64, Current_level_num);
+	android_rewind_snapshot_get_buffer(snapshot, &buffer);
+	if (!state_android_save_to_memory(&buffer, "REWIND", ANDROID_SAVE_META_KIND_MANUAL, 1)) {
+		debug_log(DLOG_GAME, "rewind capture save failed: gt=%lld level=%d mission='%s'",
+			(long long) GameTime64, Current_level_num, Current_mission_filename);
 		return 0;
 	}
+	android_rewind_snapshot_set_buffer(snapshot, &buffer);
 	snapshot->level_num = Current_level_num;
 	android_rewind_copy_mission(snapshot->mission, sizeof(snapshot->mission));
 	snapshot->game_time64 = GameTime64;
@@ -322,7 +272,7 @@ void android_rewind_maybe_capture_frame(void)
 int android_rewind_request(int *rewound_seconds)
 {
 	android_rewind_snapshot *snapshot;
-	char path[PATH_MAX];
+	rewind_memory_buffer buffer = {NULL, 0, 0};
 	int snapshot_index;
 	int restore_ok;
 	int seconds;
@@ -338,23 +288,15 @@ int android_rewind_request(int *rewound_seconds)
 	if (snapshot_index < 0)
 		return ANDROID_REWIND_STATUS_NO_POINT;
 	snapshot = &g_android_rewind_session.snapshots[snapshot_index];
-	if (!android_rewind_build_temp_path(path, sizeof(path)) ||
-		!android_rewind_write_snapshot_file(path, snapshot->data, snapshot->size)) {
-		debug_log(DLOG_GAME, "rewind restore write failed: path='%s' bytes=%u index=%d",
-			path, (unsigned int) snapshot->size, snapshot_index);
-		return ANDROID_REWIND_STATUS_FAILED;
-	}
+	android_rewind_snapshot_get_buffer(snapshot, &buffer);
 	current_game_time64 = GameTime64;
 	android_rewind_prepare_restore_overrides(snapshot);
-#ifdef DXX_BUILD_DESCENT_II
-	restore_ok = state_restore_all_sub(path, 0);
-#else
-	restore_ok = state_restore_all_sub(path);
-#endif
+	restore_ok = state_android_restore_from_memory(&buffer);
 	android_rewind_finish_restore();
 	if (!restore_ok) {
-		debug_log(DLOG_GAME, "rewind restore failed: path='%s' index=%d gt=%lld target_gt=%lld",
-			path, snapshot_index, (long long) current_game_time64, (long long) snapshot->game_time64);
+		debug_log(DLOG_GAME, "rewind restore failed: index=%d gt=%lld target_gt=%lld bytes=%u",
+			snapshot_index, (long long) current_game_time64, (long long) snapshot->game_time64,
+			(unsigned int) snapshot->size);
 		return ANDROID_REWIND_STATUS_FAILED;
 	}
 	if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active() && snapshot->has_demo_timeline) {

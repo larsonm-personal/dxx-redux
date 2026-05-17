@@ -24,6 +24,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "segment.h"
 #include "object.h"
 
+#ifdef __ANDROID__
+#include "android_rewind_file.h"
+#endif
+
 #define MAX_WALLS               254 // Maximum number of walls
 #define MAX_WALL_ANIMS          60  // Maximum different types of doors
 #define MAX_DOORS               90  // Maximum number of open doors
@@ -260,54 +264,102 @@ void kill_stuck_objects(int wallnum);
 void start_wall_cloak(segment *seg, int side);
 void start_wall_decloak(segment *seg, int side);
 
+#ifdef __ANDROID__
+extern int wclip_read_n_d1(wclip *wc, int n, rewind_file *fp);
+#else
 extern int wclip_read_n_d1(wclip *wc, int n, PHYSFS_file *fp);
+#endif
 
 /*
  * reads n wclip structs from a PHYSFS_file
  */
+#ifdef __ANDROID__
+extern int wclip_read_n(wclip *wc, int n, rewind_file *fp);
+#else
 extern int wclip_read_n(wclip *wc, int n, PHYSFS_file *fp);
+#endif
 
 /*
  * reads a v16_wall structure from a PHYSFS_file
  */
+#ifdef __ANDROID__
+extern void v16_wall_read(v16_wall *w, rewind_file *fp);
+#else
 extern void v16_wall_read(v16_wall *w, PHYSFS_file *fp);
+#endif
 
 /*
  * reads a v19_wall structure from a PHYSFS_file
  */
+#ifdef __ANDROID__
+extern void v19_wall_read(v19_wall *w, rewind_file *fp);
+#else
 extern void v19_wall_read(v19_wall *w, PHYSFS_file *fp);
+#endif
+
+#ifdef __ANDROID__
+#include "android_rewind_file.h"
+#endif
 
 /*
  * reads a wall structure from a PHYSFS_file
  */
+#ifdef __ANDROID__
+extern void wall_read(wall *w, rewind_file *fp);
+#else
 extern void wall_read(wall *w, PHYSFS_file *fp);
+#endif
 
 /*
  * reads n wall structs from a PHYSFS_file and swaps if specified
  */
+#ifdef __ANDROID__
+extern void wall_read_n_swap(wall *w, int n, int swap, rewind_file *fp);
+#else
 extern void wall_read_n_swap(wall *w, int n, int swap, PHYSFS_file *fp);
+#endif
 
 /*
  * reads a v19_door structure from a PHYSFS_file
  */
+#ifdef __ANDROID__
+extern void v19_door_read(v19_door *d, rewind_file *fp);
+#else
 extern void v19_door_read(v19_door *d, PHYSFS_file *fp);
+#endif
 
 /*
  * reads an active_door structure from a PHYSFS_file
  */
+#ifdef __ANDROID__
+extern void active_door_read(active_door *ad, rewind_file *fp);
+#else
 extern void active_door_read(active_door *ad, PHYSFS_file *fp);
+#endif
 
 /*
  * reads n active_door structs from a PHYSFS_file and swaps if specified
  */
+#ifdef __ANDROID__
+extern void active_door_read_n_swap(active_door *ad, int n, int swap, rewind_file *fp);
+#else
 extern void active_door_read_n_swap(active_door *ad, int n, int swap, PHYSFS_file *fp);
+#endif
 
 /*
  * reads n cloaking_wall structs from a PHYSFS_file and swaps if specified
  */
+#ifdef __ANDROID__
+void cloaking_wall_read_n_swap(cloaking_wall *cw, int n, int swap, rewind_file *fp);
+#else
 void cloaking_wall_read_n_swap(cloaking_wall *cw, int n, int swap, PHYSFS_file *fp);
+#endif
 
+#ifdef __ANDROID__
+extern void wall_write(wall *w, short version, rewind_file *fp);
+#else
 extern void wall_write(wall *w, short version, PHYSFS_file *fp);
+#endif
 void wall_close_door_num(int door_num);
 
 #endif

@@ -22,6 +22,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define _STATE_H
 #include "playsave.h"
 
+#ifdef __ANDROID__
+#include "android_rewind_file.h"
+#endif
+
 int state_save_all(int blind_save);
 int state_restore_all(int in_game );
 
@@ -37,6 +41,8 @@ int state_runtime_version(void);
 #ifdef __ANDROID__
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind);
 int state_android_save_to_path(const char *filename, const char *desc, int save_kind, int blank_thumbnail);
+int state_android_save_to_memory(rewind_memory_buffer *buffer, const char *desc, int save_kind, int blank_thumbnail);
+int state_android_restore_from_memory(const rewind_memory_buffer *buffer);
 int state_get_save_file_callsign(char *filename, char *callsign, int callsign_size);
 #endif
 

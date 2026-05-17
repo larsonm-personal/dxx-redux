@@ -20,7 +20,7 @@ Research a single-player rewind feature that stores about 60 seconds of 5 second
 - [x] Add shared native rewind API with status results and HUD feedback
 - [x] Add D1/D2 pending-action consumption for rewind requests
 - [x] Add initial rewind ring manager skeleton and level-reset behavior
-- [ ] Replace the temp-file DGSS bridge with a pure memory-backed capture/restore path
+- [x] Replace the temp-file DGSS bridge with a pure memory-backed capture/restore path
 - [x] Add input-demo truncation APIs for kept-path rewinds
 - [x] Add overlay notification for successful rewinds
 - [ ] Add focused tests for binding and target selection
@@ -30,6 +30,7 @@ Research a single-player rewind feature that stores about 60 seconds of 5 second
 - Keep any future source edits minimal in `d1/` and `d2/`
 - Prefer reusing existing save/load serialization if it is efficient enough
 - Rewind is single-player only for the initial feature
+- The memory-backed rewind path now uses an Android-only `rewind_file` adapter so D1 and D2 can keep reusing the normal DGSS serializer without temp `.rwtmp` files
 
 ## Research Summary
 

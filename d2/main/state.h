@@ -21,6 +21,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifndef _STATE_H
 #define _STATE_H
 
+#ifdef __ANDROID__
+#include "android_rewind_file.h"
+#endif
+
 #define SECRETB_FILENAME	GameArg.SysUsePlayersDir? "Players/secret.sgb" : "secret.sgb"
 #define SECRETC_FILENAME	GameArg.SysUsePlayersDir? "Players/secret.sgc" : "secret.sgc"
 
@@ -38,6 +42,8 @@ int state_runtime_version(void);
 #ifdef __ANDROID__
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind);
 int state_android_save_to_path(const char *filename, const char *desc, int save_kind, int blank_thumbnail);
+int state_android_save_to_memory(rewind_memory_buffer *buffer, const char *desc, int save_kind, int blank_thumbnail);
+int state_android_restore_from_memory(const rewind_memory_buffer *buffer);
 int state_get_save_file_callsign(char *filename, char *callsign, int callsign_size);
 #endif
 

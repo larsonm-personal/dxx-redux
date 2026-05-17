@@ -25,6 +25,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "wall.h"
 //#include "switch.h"
 
+#ifdef __ANDROID__
+#include "android_rewind_file.h"
+#endif
+
 #define CONTROLCEN_WEAPON_NUM   6
 
 #define MAX_CONTROLCEN_LINKS    10
@@ -101,18 +105,38 @@ extern int Reactor_strength;
 /*
  * reads n reactor structs from a PHYSFS_file
  */
+#ifdef __ANDROID__
+extern int reactor_read_n(reactor *r, int n, rewind_file *fp);
+#else
 extern int reactor_read_n(reactor *r, int n, PHYSFS_file *fp);
+#endif
+
+#ifdef __ANDROID__
+#include "android_rewind_file.h"
+#endif
 
 /*
  * reads n control_center_triggers structs from a PHYSFS_file
  */
+#ifdef __ANDROID__
+extern int control_center_triggers_read_n(control_center_triggers *cct, int n, rewind_file *fp);
+#else
 extern int control_center_triggers_read_n(control_center_triggers *cct, int n, PHYSFS_file *fp);
+#endif
 
 /*
  * reads n control_center_triggers structs from a PHYSFS_file and swaps if specified
  */
+#ifdef __ANDROID__
+extern void control_center_triggers_read_n_swap(control_center_triggers *cct, int n, int swap, rewind_file *fp);
+#else
 extern void control_center_triggers_read_n_swap(control_center_triggers *cct, int n, int swap, PHYSFS_file *fp);
+#endif
 
+#ifdef __ANDROID__
+extern int control_center_triggers_write(control_center_triggers *cct, rewind_file *fp);
+#else
 extern int control_center_triggers_write(control_center_triggers *cct, PHYSFS_file *fp);
+#endif
 
 #endif /* _CNTRLCEN_H */

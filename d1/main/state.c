@@ -141,6 +141,104 @@ static uint32_t state_time_to_seconds(fix time_value, sbyte hours_value)
 }
 
 static int g_android_save_meta_kind = ANDROID_SAVE_META_KIND_MANUAL;
+static rewind_memory_buffer *g_state_android_memory_write_buffer = NULL;
+static const rewind_memory_buffer *g_state_android_memory_read_buffer = NULL;
+
+static void state_android_memory_filename(char *filename, size_t filename_size)
+{
+	if (!filename || !filename_size)
+		return;
+	snprintf(filename, filename_size,
+		GameArg.SysUsePlayersDir ? "Players/__rewind__.d1sg" : "__rewind__.d1sg");
+}
+
+static int state_android_is_memory_filename(const char *filename)
+{
+	char expected[PATH_MAX];
+
+	state_android_memory_filename(expected, sizeof(expected));
+	return filename && !strcmp(filename, expected);
+}
+
+static rewind_file *state_android_open_read_buffered(const char *filename)
+{
+	rewind_file *file = (rewind_file *) d_malloc(sizeof(*file));
+	PHYSFS_file *physfs_file;
+
+	if (state_android_is_memory_filename(filename)) {
+		if (!g_state_android_memory_read_buffer) {
+			d_free(file);
+			return NULL;
+		}
+		rewind_file_init_memory_read(file,
+			g_state_android_memory_read_buffer->data,
+			g_state_android_memory_read_buffer->size);
+		return file;
+	}
+	physfs_file = PHYSFSX_openReadBuffered(filename);
+	if (!physfs_file) {
+		d_free(file);
+		return NULL;
+	}
+	rewind_file_init_physfs(file, physfs_file);
+	return file;
+}
+
+static rewind_file *state_android_open_write_buffered(const char *filename)
+{
+	rewind_file *file = (rewind_file *) d_malloc(sizeof(*file));
+	PHYSFS_file *physfs_file;
+
+	if (state_android_is_memory_filename(filename)) {
+		if (!g_state_android_memory_write_buffer) {
+			d_free(file);
+			return NULL;
+		}
+		rewind_file_init_memory_write(file, g_state_android_memory_write_buffer);
+		return file;
+	}
+	physfs_file = PHYSFSX_openWriteBuffered(filename);
+	if (!physfs_file) {
+		d_free(file);
+		return NULL;
+	}
+	rewind_file_init_physfs(file, physfs_file);
+	return file;
+}
+
+static int state_android_close_file(rewind_file *file)
+{
+	int result = rewind_file_close(file);
+	d_free(file);
+	return result;
+}
+
+#define PHYSFS_file rewind_file
+#define PHYSFS_read rewind_file_read
+#define PHYSFS_write rewind_file_write
+#define PHYSFS_seek rewind_file_seek
+#define PHYSFS_tell rewind_file_tell
+#define PHYSFS_fileLength rewind_file_length
+#define PHYSFS_eof rewind_file_eof
+#define PHYSFS_close state_android_close_file
+#define PHYSFS_writeSLE16 rewind_file_write_sle16
+#define PHYSFS_writeSLE32 rewind_file_write_sle32
+#define PHYSFSX_openReadBuffered state_android_open_read_buffered
+#define PHYSFSX_openWriteBuffered state_android_open_write_buffered
+#define PHYSFSX_readInt rewind_file_read_int
+#define PHYSFSX_readShort rewind_file_read_short
+#define PHYSFSX_readByte rewind_file_read_byte
+#define PHYSFSX_readFix rewind_file_read_fix
+#define PHYSFSX_readFixAng rewind_file_read_fixang
+#define PHYSFSX_readSXE16 rewind_file_read_sxe16
+#define PHYSFSX_readSXE32 rewind_file_read_sxe32
+#define PHYSFSX_readVector(v, fp) rewind_file_read_vector((fp), (v))
+#define PHYSFSX_readVectorX rewind_file_read_vector_x
+#define PHYSFSX_readAngleVec(v, fp) rewind_file_read_anglevec((fp), (v))
+#define PHYSFSX_readAngleVecX rewind_file_read_anglevec_x
+#define PHYSFSX_writeFix rewind_file_write_fix
+#define PHYSFSX_writeU8 rewind_file_write_u8
+#define PHYSFSX_writeVector rewind_file_write_vector
 #endif
 
 static int g_android_save_blank_thumbnail = 0;
@@ -1537,6 +1635,34 @@ int state_android_save_to_path(const char *filename, const char *desc, int save_
 	return result;
 }
 
+int state_android_save_to_memory(rewind_memory_buffer *buffer, const char *desc, int save_kind, int blank_thumbnail)
+{
+	int result;
+	char filename[PATH_MAX];
+
+	if (!buffer || !desc)
+		return 0;
+	state_android_memory_filename(filename, sizeof(filename));
+	g_state_android_memory_write_buffer = buffer;
+	result = state_android_save_to_path(filename, desc, save_kind, blank_thumbnail);
+	g_state_android_memory_write_buffer = NULL;
+	return result;
+}
+
+int state_android_restore_from_memory(const rewind_memory_buffer *buffer)
+{
+	int result;
+	char filename[PATH_MAX];
+
+	if (!buffer || (!buffer->data && buffer->size != 0))
+		return 0;
+	state_android_memory_filename(filename, sizeof(filename));
+	g_state_android_memory_read_buffer = buffer;
+	result = state_restore_all_sub(filename);
+	g_state_android_memory_read_buffer = NULL;
+	return result;
+}
+
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 {
 	int result;
@@ -1752,8 +1878,11 @@ int state_save_all_sub(char *filename, char *desc)
 	state_write_runtime_state(fp);
 
 #ifdef __ANDROID__
-	coop_write_save_metadata(fp);
-	{
+	if (!rewind_file_is_memory(fp)) {
+		struct PHYSFS_File *physfs_fp = rewind_file_physfs_handle(fp);
+
+		coop_write_save_metadata(physfs_fp);
+		{
 		android_save_meta_write_params android_params;
 		char android_desc[DESC_LENGTH + 1];
 
@@ -1771,7 +1900,8 @@ int state_save_all_sub(char *filename, char *desc)
 			Players[Player_num].time_level, Players[Player_num].hours_level);
 		android_params.total_seconds = state_time_to_seconds(
 			Players[Player_num].time_total, Players[Player_num].hours_total);
-		android_save_meta_write_physfs(fp, &android_params);
+		android_save_meta_write_physfs(physfs_fp, &android_params);
+		}
 	}
 #endif
 
@@ -2277,10 +2407,11 @@ RetryObjectLoading:
 		{
 			coop_save_metadata meta_early;
 			int have_meta = 0;
+			struct PHYSFS_File *physfs_fp = rewind_file_physfs_handle(fp);
 			PHYSFS_sint64 saved_pos = PHYSFS_tell(fp);
 			PHYSFS_sint64 meta_start = PHYSFS_fileLength(fp) - (PHYSFS_sint64)sizeof(coop_save_metadata);
-			if (meta_start > saved_pos)
-				have_meta = coop_read_save_metadata(fp, meta_start, &meta_early);
+			if (physfs_fp && meta_start > saved_pos)
+				have_meta = coop_read_save_metadata(physfs_fp, meta_start, &meta_early);
 			PHYSFS_seek(fp, saved_pos);
 
 			for (i = 0; i < MAX_PLAYERS; i++)
@@ -2449,13 +2580,14 @@ RetryObjectLoading:
 		"restore save complete: game=d1 file='%s' current_level=%d callsign='%s' highest_object=%d game_mode=%d",
 		filename, Current_level_num, Players[Player_num].callsign,
 		Highest_object_index, Game_mode);
-	{
+	if (!rewind_file_is_memory(fp)) {
+		struct PHYSFS_File *physfs_fp = rewind_file_physfs_handle(fp);
 		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
 		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
 		android_save_meta_disk android_meta;
-		int have_android_meta = android_save_meta_read_physfs(fp, file_len, &android_meta);
+		int have_android_meta = android_save_meta_read_physfs(physfs_fp, file_len, &android_meta);
 		coop_save_metadata coop_meta;
-		if (coop_read_save_metadata(fp, pos_after_base, &coop_meta)) {
+		if (coop_read_save_metadata(physfs_fp, pos_after_base, &coop_meta)) {
 			con_printf(CON_DEBUG, "coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);
 			/* Repopulate the absent player list so returning players get inventory back */

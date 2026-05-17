@@ -23,6 +23,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "segment.h"
 #include "object.h"
 
+#ifdef __ANDROID__
+#include "android_rewind_file.h"
+#endif
+
 //------------------------------------------------------------
 // A refueling center is one segment... to identify it in the
 // segment structure, the "special" field is set to
@@ -152,23 +156,47 @@ void fuelcen_check_for_hoard_goal(segment *segp);
 /*
  * reads an d1_matcen_info structure from a PHYSFS_file
  */
+#ifdef __ANDROID__
+void d1_matcen_info_read(d1_matcen_info *mi, rewind_file *fp);
+#else
 void d1_matcen_info_read(d1_matcen_info *mi, PHYSFS_file *fp);
+#endif
+
+#ifdef __ANDROID__
+#include "android_rewind_file.h"
+#endif
 
 /*
  * reads a matcen_info structure from a PHYSFS_file
  */
+#ifdef __ANDROID__
+void matcen_info_read(matcen_info *ps, rewind_file *fp);
+#else
 void matcen_info_read(matcen_info *ps, PHYSFS_file *fp);
+#endif
 
 /*
  * reads n matcen_info structs from a PHYSFS_file and swaps if specified
  */
+#ifdef __ANDROID__
+void matcen_info_read_n_swap(matcen_info *mi, int n, int swap, rewind_file *fp);
+#else
 void matcen_info_read_n_swap(matcen_info *mi, int n, int swap, PHYSFS_file *fp);
+#endif
 
+#ifdef __ANDROID__
+void matcen_info_write(matcen_info *mi, short version, rewind_file *fp);
+#else
 void matcen_info_write(matcen_info *mi, short version, PHYSFS_file *fp);
+#endif
 
 /*
  * reads n Station structs from a PHYSFS_file and swaps if specified
  */
+#ifdef __ANDROID__
+void fuelcen_read_n_swap(FuelCenter *fc, int n, int swap, rewind_file *fp);
+#else
 void fuelcen_read_n_swap(FuelCenter *fc, int n, int swap, PHYSFS_file *fp);
+#endif
 
 #endif

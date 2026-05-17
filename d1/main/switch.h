@@ -23,6 +23,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "inferno.h"
 #include "segment.h"
 
+#ifdef __ANDROID__
+#include "android_rewind_file.h"
+#endif
+
 #define MAX_TRIGGERS        100
 #define MAX_WALLS_PER_LINK  10
 
@@ -78,6 +82,10 @@ extern int Num_triggers;
 
 extern void trigger_init();
 
+#ifdef __ANDROID__
+#include "android_rewind_file.h"
+#endif
+
 void check_trigger(segment *seg, short side, short objnum, int shot);
 int check_trigger_sub(int trigger_num, int player_num, int shot);
 
@@ -86,14 +94,26 @@ extern void triggers_frame_process();
 /*
  * reads a trigger structure from a PHYSFS_file
  */
+#ifdef __ANDROID__
+extern void trigger_read(trigger *t, rewind_file *fp);
+#else
 extern void trigger_read(trigger *t, PHYSFS_file *fp);
+#endif
 
 /*
  * reads n trigger structs from a PHYSFS_file and swaps if specified
  */
+#ifdef __ANDROID__
+extern void trigger_read_n_swap(trigger *t, int n, int swap, rewind_file *fp);
+#else
 extern void trigger_read_n_swap(trigger *t, int n, int swap, PHYSFS_file *fp);
+#endif
 
+#ifdef __ANDROID__
+extern void trigger_write(trigger *t, short version, rewind_file *fp);
+#else
 extern void trigger_write(trigger *t, short version, PHYSFS_file *fp);
+#endif
 
 #endif
  
