@@ -507,11 +507,13 @@ static int android_handle_ingame_saveload_request(void)
 		int rewind_result;
 
 		android_rewind_pending = 0;
-		if (Game_mode & GM_MULTI) {
-			HUD_init_message_literal(HM_DEFAULT, "Rewind is single-player only");
+		rewind_result = android_rewind_request(NULL);
+		if (rewind_result == ANDROID_REWIND_STATUS_NOT_HOST)
+			return 1;
+		if (rewind_result == ANDROID_REWIND_STATUS_BLOCKED_MULTIPLAYER) {
+			HUD_init_message_literal(HM_DEFAULT, "Rewind is unavailable in current multiplayer state");
 			return 1;
 		}
-		rewind_result = android_rewind_request(NULL);
 		if (rewind_result == ANDROID_REWIND_STATUS_DISABLED) {
 			HUD_init_message_literal(HM_DEFAULT, "Rewind is disabled");
 			return 1;

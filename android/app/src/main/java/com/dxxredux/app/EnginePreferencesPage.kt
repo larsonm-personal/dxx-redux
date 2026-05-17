@@ -44,7 +44,15 @@ internal const val PREF_GUIDEBOT_HELPER_LINE = "guidebot_helper_line_enabled"
 internal const val PREF_NEAREST_PLAYER_LINE = "nearest_player_line_enabled"
 internal const val PREF_SKIP_INTRO_MOVIE = "skip_intro_movie"
 internal const val PREF_REWIND_SUPPORT_ENABLED = "rewind_support_enabled"
+internal const val PREF_REWIND_TARGET_SECONDS = "rewind_target_seconds"
 internal const val PREF_SHOW_RESUME_OFFER = "show_resume_offer"
+
+// Keep in sync with android_rewind_policy.h.
+internal const val DEFAULT_REWIND_TARGET_SECONDS = 10
+internal val REWIND_TARGET_SECONDS_OPTIONS = listOf(5, DEFAULT_REWIND_TARGET_SECONDS, 20)
+
+internal fun sanitizeRewindTargetSeconds(value: Int): Int =
+    if (value in REWIND_TARGET_SECONDS_OPTIONS) value else DEFAULT_REWIND_TARGET_SECONDS
 
 private const val CM_FULL_COCKPIT = 0
 private const val CM_STATUS_BAR = 2
@@ -89,6 +97,13 @@ fun EnginePreferencesPage(
     }
     var rewindSupportEnabled by remember {
         mutableStateOf(prefs.getBoolean(PREF_REWIND_SUPPORT_ENABLED, true))
+    }
+    var rewindTargetSeconds by remember {
+        mutableIntStateOf(
+            sanitizeRewindTargetSeconds(
+                prefs.getInt(PREF_REWIND_TARGET_SECONDS, DEFAULT_REWIND_TARGET_SECONDS),
+            ),
+        )
     }
     var showResumeOffer by remember {
         mutableStateOf(prefs.getBoolean(PREF_SHOW_RESUME_OFFER, true))
@@ -313,6 +328,32 @@ fun EnginePreferencesPage(
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                }
+
+                if (rewindSupportEnabled) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("Rewind amount", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Targets the first rewind point at least this far back. Actual distance snaps to saved 5 second points",
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    REWIND_TARGET_SECONDS_OPTIONS.forEach { seconds ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            RadioButton(
+                                selected = rewindTargetSeconds == seconds,
+                                onClick = {
+                                    rewindTargetSeconds = seconds
+                                    prefs.edit().putInt(PREF_REWIND_TARGET_SECONDS, seconds).apply()
+                                },
+                            )
+                            Text("$seconds seconds", fontSize = 10.sp)
+                        }
                     }
                 }
 

@@ -333,8 +333,8 @@ void android_test_inject_touch_tap(void)
 	                                        &g_levelcomplete_touch_state,
 	                                        SDLK_ESCAPE)) {
 		android_handle_delayed_escape_touch(2, g_levelcomplete_active,
-		                                   &g_levelcomplete_touch_state,
-		                                   SDLK_ESCAPE);
+		                                    &g_levelcomplete_touch_state,
+		                                    SDLK_ESCAPE);
 		return;
 	}
 
@@ -861,6 +861,12 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetRewindEnabled(JNIEnv *env, jobject thiz, jboolean enabled)
 {
 	android_rewind_set_enabled(enabled ? 1 : 0);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetRewindTargetSeconds(JNIEnv *env, jobject thiz, jint seconds)
+{
+	android_rewind_set_target_seconds((int) seconds);
 }
 
 extern volatile int g_saveload_menu_active;

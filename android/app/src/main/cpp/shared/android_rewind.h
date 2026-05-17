@@ -12,9 +12,12 @@ typedef enum android_rewind_status {
 	ANDROID_REWIND_STATUS_DISABLED = 1,
 	ANDROID_REWIND_STATUS_NO_POINT = 2,
 	ANDROID_REWIND_STATUS_FAILED = 3,
+	ANDROID_REWIND_STATUS_NOT_HOST = 4,
+	ANDROID_REWIND_STATUS_BLOCKED_MULTIPLAYER = 5,
 } android_rewind_status;
 
 void android_rewind_set_enabled(int enabled);
+void android_rewind_set_target_seconds(int target_seconds);
 int android_rewind_is_enabled(void);
 void android_rewind_reset_level(void);
 void android_rewind_maybe_capture_frame(void);

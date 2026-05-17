@@ -6845,10 +6845,26 @@ void multi_save_game(ubyte slot, uint id, char *desc)
 	state_save_all_sub(filename, desc );
 }
 
+void multi_prepare_restore_sync(void)
+{
+	int i;
+
+	for (i = 0; i < N_players; i++)
+		multi_strip_robots(i);
+	if (multi_i_am_master())
+		for (i = 0; i < MAX_PLAYERS; i++)
+			if (Players[i].connected == CONNECT_PLAYING && i != Player_num) {
+				Players[i].connected = CONNECT_WAITING;
+
+				if (Current_obs_player == i) {
+					reset_obs();
+				}
+			}
+}
+
 void multi_restore_game(ubyte slot, uint id)
 {
 	char filename[PATH_MAX];
-	int i;
 	int thisid;
 
 	if ((Endlevel_sequence) || (Control_center_destroyed))
@@ -6880,18 +6896,8 @@ void multi_restore_game(ubyte slot, uint id)
 	}
 	COOPLOG("multi_restore_game: file='%s' slot=%d id=%u", filename, slot, id);
 #endif
-   
-	for (i = 0; i < N_players; i++)
-		multi_strip_robots(i);
-	if (multi_i_am_master()) // put all players to wait-state again so we can sync up properly
-		for (i = 0; i < MAX_PLAYERS; i++)
-			if (Players[i].connected == CONNECT_PLAYING && i != Player_num) {
-				Players[i].connected = CONNECT_WAITING;
 
-				if (Current_obs_player == i) {
-					reset_obs();
-				}
-			}
+	multi_prepare_restore_sync();
    
 	thisid=state_get_game_id(filename);
 #ifdef __ANDROID__

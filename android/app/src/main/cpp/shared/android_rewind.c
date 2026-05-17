@@ -14,6 +14,7 @@
 #include "input_demo_recorder.h"
 #include "input_demo_rng_trace.h"
 #include "mission.h"
+#include "multi.h"
 #include "newdemo.h"
 #include "player.h"
 #include "pstypes.h"
@@ -22,7 +23,6 @@
 enum {
 	ANDROID_REWIND_SNAPSHOT_LIMIT = 12,
 	ANDROID_REWIND_INTERVAL = 5 * F1_0,
-	ANDROID_REWIND_MIN_AGE = 3 * F1_0,
 	ANDROID_REWIND_OVERLAY_TEXT_LEN = 64,
 	ANDROID_REWIND_MISSION_LEN = 32,
 };
@@ -43,6 +43,7 @@ typedef struct android_rewind_snapshot {
 
 typedef struct android_rewind_session {
 	int enabled;
+	int target_seconds;
 	int has_level_identity;
 	int level_num;
 	char mission[ANDROID_REWIND_MISSION_LEN];
@@ -55,7 +56,74 @@ typedef struct android_rewind_session {
 	int snapshot_count;
 } android_rewind_session;
 
-static android_rewind_session g_android_rewind_session = { 1, 0, 0, "", 0, 0, 0, 0, 0, { { 0 } }, 0 };
+static android_rewind_session g_android_rewind_session = {
+	1,
+	ANDROID_REWIND_TARGET_SECONDS_DEFAULT,
+	0,
+	0,
+	"",
+	0,
+	0,
+	0,
+	0,
+	0,
+	{ { 0 } },
+	0,
+};
+
+static void android_rewind_record_overlay_text(const char *text)
+{
+	if (!text || !text[0])
+		return;
+	android_send_overlay_line(text);
+}
+
+static int android_rewind_has_duplicate_callsigns(void)
+{
+	int i;
+	int j;
+
+	for (i = 0; i < N_players; ++i) {
+		if (!(Players[i].connected == CONNECT_PLAYING || Players[i].connected == CONNECT_WAITING))
+			continue;
+		for (j = i + 1; j < N_players; ++j) {
+			if (!(Players[j].connected == CONNECT_PLAYING || Players[j].connected == CONNECT_WAITING))
+				continue;
+			if (!strcmp(Players[i].callsign, Players[j].callsign))
+				return 1;
+		}
+	}
+	return 0;
+}
+
+static int android_rewind_capture_context_allowed(void)
+{
+	const int is_multiplayer = (Game_mode & GM_MULTI) ? 1 : 0;
+	const int is_coop = (Game_mode & GM_MULTI_COOP) ? 1 : 0;
+	const int is_host = is_multiplayer ? multi_i_am_master() : 1;
+	const int all_players_alive = is_multiplayer ? multi_all_players_alive() : 1;
+	const int host_is_observer = (is_multiplayer && is_coop && Netgame.host_is_obs) ? 1 : 0;
+
+	return android_rewind_is_capture_context_allowed(
+	    is_multiplayer, is_coop, is_host, all_players_alive, host_is_observer);
+}
+
+static android_rewind_request_access android_rewind_request_context(void)
+{
+	const int is_multiplayer = (Game_mode & GM_MULTI) ? 1 : 0;
+	const int is_coop = (Game_mode & GM_MULTI_COOP) ? 1 : 0;
+	const int is_host = is_multiplayer ? multi_i_am_master() : 1;
+	const int all_players_alive = is_multiplayer ? multi_all_players_alive() : 1;
+	const int host_is_observer = (is_multiplayer && is_coop && Netgame.host_is_obs) ? 1 : 0;
+	const int has_duplicate_callsigns = (is_multiplayer && is_coop) ? android_rewind_has_duplicate_callsigns() : 0;
+
+	return android_rewind_classify_request_context(is_multiplayer,
+	                                               is_coop,
+	                                               is_host,
+	                                               all_players_alive,
+	                                               host_is_observer,
+	                                               has_duplicate_callsigns);
+}
 
 static void android_rewind_copy_mission(char *dst, size_t dst_size)
 {
@@ -127,7 +195,8 @@ static void android_rewind_record_demo_timeline(android_rewind_snapshot *snapsho
 		return;
 	if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) {
 		snapshot->has_demo_timeline = 1;
-		snapshot->recorder_frame_count = input_demo_recorder_frame_count();
+		snapshot->recorder_frame_count =
+		    android_rewind_demo_timeline_frame_count(input_demo_recorder_frame_count());
 		snapshot->rng_event_count = input_demo_rng_trace_event_count();
 		return;
 	}
@@ -161,6 +230,8 @@ static int android_rewind_capture_snapshot(android_rewind_snapshot *snapshot)
 static int android_rewind_select_snapshot_index(void)
 {
 	android_rewind_selection_snapshot snapshots[ANDROID_REWIND_SNAPSHOT_LIMIT];
+	const int64_t min_age_game_time64 =
+	    (int64_t) g_android_rewind_session.target_seconds * F1_0;
 	const int require_demo_timeline =
 	    (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) ? 1 : 0;
 	int i;
@@ -173,7 +244,7 @@ static int android_rewind_select_snapshot_index(void)
 	    snapshots,
 	    g_android_rewind_session.snapshot_count,
 	    GameTime64,
-	    ANDROID_REWIND_MIN_AGE,
+	    min_age_game_time64,
 	    require_demo_timeline);
 }
 
@@ -193,8 +264,8 @@ static void android_rewind_record_success_overlay(int rewound_seconds)
 {
 	char text[ANDROID_REWIND_OVERLAY_TEXT_LEN];
 
-	snprintf(text, sizeof(text), "Rewound %d seconds", rewound_seconds);
-	android_send_overlay_line(text);
+	snprintf(text, sizeof(text), "Rewinding %d seconds", rewound_seconds);
+	android_rewind_record_overlay_text(text);
 }
 
 void android_rewind_set_enabled(int enabled)
@@ -202,6 +273,11 @@ void android_rewind_set_enabled(int enabled)
 	g_android_rewind_session.enabled = enabled ? 1 : 0;
 	if (!g_android_rewind_session.enabled)
 		android_rewind_reset_history();
+}
+
+void android_rewind_set_target_seconds(int target_seconds)
+{
+	g_android_rewind_session.target_seconds = android_rewind_sanitize_target_seconds(target_seconds);
 }
 
 int android_rewind_is_enabled(void)
@@ -221,7 +297,7 @@ void android_rewind_maybe_capture_frame(void)
 
 	if (!android_rewind_is_enabled())
 		return;
-	if ((Game_mode & GM_MULTI) || Newdemo_state == ND_STATE_PLAYBACK || Current_level_num == 0) {
+	if (!android_rewind_capture_context_allowed() || Newdemo_state == ND_STATE_PLAYBACK || Current_level_num == 0) {
 		android_rewind_reset_history();
 		return;
 	}
@@ -264,11 +340,19 @@ int android_rewind_request(int *rewound_seconds)
 	int restore_ok;
 	int seconds;
 	int64_t current_game_time64;
+	android_rewind_request_access request_access;
 
 	if (rewound_seconds)
 		*rewound_seconds = 0;
 	if (!android_rewind_is_enabled())
 		return ANDROID_REWIND_STATUS_DISABLED;
+	request_access = android_rewind_request_context();
+	if (request_access == ANDROID_REWIND_REQUEST_NOT_HOST) {
+		android_rewind_record_overlay_text("Not host");
+		return ANDROID_REWIND_STATUS_NOT_HOST;
+	}
+	if (request_access == ANDROID_REWIND_REQUEST_BLOCKED)
+		return ANDROID_REWIND_STATUS_BLOCKED_MULTIPLAYER;
 	if (!android_rewind_current_level_matches_session() || g_android_rewind_session.snapshot_count == 0)
 		return ANDROID_REWIND_STATUS_NO_POINT;
 	snapshot_index = android_rewind_select_snapshot_index();
@@ -277,6 +361,12 @@ int android_rewind_request(int *rewound_seconds)
 	snapshot = &g_android_rewind_session.snapshots[snapshot_index];
 	android_rewind_snapshot_get_buffer(snapshot, &buffer);
 	current_game_time64 = GameTime64;
+	seconds = android_rewind_round_seconds_for_snapshot(current_game_time64, snapshot->game_time64);
+	if (rewound_seconds)
+		*rewound_seconds = seconds;
+	android_rewind_record_success_overlay(seconds);
+	if (Game_mode & GM_MULTI_COOP)
+		multi_prepare_restore_sync();
 	android_rewind_prepare_restore_overrides(snapshot);
 	restore_ok = state_restore_from_memory(&buffer);
 	android_rewind_finish_restore();
@@ -294,14 +384,10 @@ int android_rewind_request(int *rewound_seconds)
 			return ANDROID_REWIND_STATUS_FAILED;
 		}
 	}
+	if ((Game_mode & GM_MULTI_COOP) && multi_i_am_master())
+		multi_send_score();
 	g_android_rewind_session.snapshot_count = snapshot_index + 1;
 	g_android_rewind_session.next_capture_game_time64 = snapshot->game_time64 + ANDROID_REWIND_INTERVAL;
-	seconds = (int) ((current_game_time64 - snapshot->game_time64 + (F1_0 / 2)) / F1_0);
-	if (seconds < 1)
-		seconds = 1;
-	if (rewound_seconds)
-		*rewound_seconds = seconds;
-	android_rewind_record_success_overlay(seconds);
 	debug_log(DLOG_GAME, "rewind restored: seconds=%d gt=%lld target_gt=%lld slot=%d count=%d",
 	          seconds, (long long) current_game_time64, (long long) snapshot->game_time64,
 	          snapshot_index, g_android_rewind_session.snapshot_count);

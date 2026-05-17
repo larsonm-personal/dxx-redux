@@ -53,8 +53,8 @@ static inline void rewind_file_init_physfs(rewind_file *file, PHYSFS_file *physf
 }
 
 static inline void rewind_file_init_memory_read(rewind_file *file,
-	const unsigned char *data,
-	size_t size)
+                                                const unsigned char *data,
+                                                size_t size)
 {
 	if (!file)
 		return;
@@ -65,7 +65,7 @@ static inline void rewind_file_init_memory_read(rewind_file *file,
 }
 
 static inline void rewind_file_init_memory_write(rewind_file *file,
-	rewind_memory_buffer *buffer)
+                                                 rewind_memory_buffer *buffer)
 {
 	if (!file)
 		return;
@@ -141,9 +141,9 @@ static inline int rewind_file_memory_reserve(rewind_file *file, size_t required)
 }
 
 static inline PHYSFS_sint64 rewind_file_read(rewind_file *file,
-	void *buffer,
-	PHYSFS_uint32 obj_size,
-	PHYSFS_uint32 obj_count)
+                                             void *buffer,
+                                             PHYSFS_uint32 obj_size,
+                                             PHYSFS_uint32 obj_count)
 {
 	PHYSFS_uint64 requested_bytes;
 
@@ -165,9 +165,9 @@ static inline PHYSFS_sint64 rewind_file_read(rewind_file *file,
 }
 
 static inline PHYSFS_sint64 rewind_file_write(rewind_file *file,
-	const void *buffer,
-	PHYSFS_uint32 obj_size,
-	PHYSFS_uint32 obj_count)
+                                              const void *buffer,
+                                              PHYSFS_uint32 obj_size,
+                                              PHYSFS_uint32 obj_count)
 {
 	size_t requested_bytes;
 	size_t end_position;
@@ -330,8 +330,8 @@ static inline int rewind_file_write_u8(rewind_file *file, uint8_t value)
 static inline int rewind_file_write_vector(rewind_file *file, vms_vector *vector)
 {
 	if (!rewind_file_write_sle32(file, vector->x) ||
-	 !rewind_file_write_sle32(file, vector->y) ||
-	 !rewind_file_write_sle32(file, vector->z))
+	    !rewind_file_write_sle32(file, vector->y) ||
+	    !rewind_file_write_sle32(file, vector->z))
 		return 0;
 	return 1;
 }
@@ -346,7 +346,7 @@ typedef PHYSFS_file rewind_file;
 
 #if REWIND_FILE_USES_WRAPPER
 #define REWIND_PHYSFS_FILE(name, physfs) \
-	rewind_file name##_storage; \
+	rewind_file name##_storage;          \
 	rewind_file *name = rewind_file_wrap_physfs(&name##_storage, (physfs))
 #else
 #define REWIND_PHYSFS_FILE(name, physfs) rewind_file *name = (physfs)

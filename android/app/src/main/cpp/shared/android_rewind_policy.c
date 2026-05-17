@@ -1,5 +1,68 @@
 #include "android_rewind_policy.h"
 
+#include "fix.h"
+
+int android_rewind_is_capture_context_allowed(int is_multiplayer,
+                                              int is_coop,
+                                              int is_host,
+                                              int all_players_alive,
+                                              int host_is_observer)
+{
+	if (!is_multiplayer)
+		return 1;
+	if (!is_coop)
+		return 0;
+	if (!is_host || !all_players_alive || host_is_observer)
+		return 0;
+	return 1;
+}
+
+android_rewind_request_access android_rewind_classify_request_context(
+    int is_multiplayer,
+    int is_coop,
+    int is_host,
+    int all_players_alive,
+    int host_is_observer,
+    int has_duplicate_callsigns)
+{
+	if (!is_multiplayer)
+		return ANDROID_REWIND_REQUEST_ALLOW;
+	if (!is_coop)
+		return ANDROID_REWIND_REQUEST_BLOCKED;
+	if (!is_host)
+		return ANDROID_REWIND_REQUEST_NOT_HOST;
+	if (!all_players_alive || host_is_observer || has_duplicate_callsigns)
+		return ANDROID_REWIND_REQUEST_BLOCKED;
+	return ANDROID_REWIND_REQUEST_ALLOW;
+}
+
+int android_rewind_sanitize_target_seconds(int target_seconds)
+{
+	switch (target_seconds) {
+		case ANDROID_REWIND_TARGET_SECONDS_SHORT:
+		case ANDROID_REWIND_TARGET_SECONDS_DEFAULT:
+		case ANDROID_REWIND_TARGET_SECONDS_LONG:
+			return target_seconds;
+		default:
+			return ANDROID_REWIND_TARGET_SECONDS_DEFAULT;
+	}
+}
+
+int android_rewind_round_seconds_for_snapshot(int64_t current_game_time64,
+                                              int64_t snapshot_game_time64)
+{
+	int seconds = (int) ((current_game_time64 - snapshot_game_time64 + (F1_0 / 2)) / F1_0);
+
+	if (seconds < 1)
+		seconds = 1;
+	return seconds;
+}
+
+uint32_t android_rewind_demo_timeline_frame_count(uint32_t recorder_frame_count)
+{
+	return recorder_frame_count;
+}
+
 int android_rewind_select_snapshot_index_for_game_time(
     const android_rewind_selection_snapshot *snapshots,
     int snapshot_count,

@@ -32,6 +32,7 @@
 - `test_pause_menu_return` advanced cleanly during the sequential rerun and is currently treated as stale/non-repro
 - `test_launch_to_automap` had a real D1 script failure. First it needed the same D1 post-difficulty `Escape` handling as other D1 scripts; then the extra `Escape` was found to open the D1 in-game Game Menu. The script now uses a single D1 `Escape`, and the fresh D1 rerun passes
 - `test_axis_mapping`, `test_engine_prefs_unified`, and `test_keyboard_defaults` all advanced through the final sweep without reproducing the report failures
+- `test_dpad_triggers` is non-repro on fresh reruns. D2 currently exits `0` with `PASS for D2`, and a fresh D1-only rerun also reaches a file-based PASS (`65/64 steps`, about `16s`) and clears the trigger/slide assertions. The D1 path still spends extra time in `skip_briefing` dismissing `front=unknown`, but it does not currently fail the test
 
 ## Steps
 
@@ -43,4 +44,5 @@
 
 ## Remaining follow-up
 
-- `test_dpad_triggers` was listed in the original report but was not rerun in this tranche
+- No original report candidate is currently reproducing on the current build
+- If more failure work is needed, generate a fresh report or fresh targeted reruns instead of continuing to chase the stale 2026-05-16 list

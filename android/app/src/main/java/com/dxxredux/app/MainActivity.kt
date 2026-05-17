@@ -267,6 +267,8 @@ class MainActivity :
 
     external fun nativeSetRewindEnabled(enabled: Boolean)
 
+    external fun nativeSetRewindTargetSeconds(seconds: Int)
+
     external fun nativeIsSaveLoadMenuActive(): Boolean
 
     external fun nativeIsPlayerDead(): Boolean
@@ -1496,6 +1498,11 @@ class MainActivity :
 
     private fun applyRewindPref(prefs: android.content.SharedPreferences) {
         try {
+            nativeSetRewindTargetSeconds(
+                sanitizeRewindTargetSeconds(
+                    prefs.getInt(PREF_REWIND_TARGET_SECONDS, DEFAULT_REWIND_TARGET_SECONDS),
+                ),
+            )
             nativeSetRewindEnabled(prefs.getBoolean(PREF_REWIND_SUPPORT_ENABLED, true))
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up

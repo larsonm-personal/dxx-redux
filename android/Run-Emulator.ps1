@@ -42,9 +42,9 @@ $DEP_BASE = (Get-Content $depBaseFile -First 1).Trim()
 # Find newest folder matching a prefix
 function Find-Newest {
     param([string]$Prefix)
-    $matches = Get-ChildItem -Path $DEP_BASE -Directory -Filter "${Prefix}*" -ErrorAction SilentlyContinue |
+    $matchDirs = Get-ChildItem -Path $DEP_BASE -Directory -Filter "${Prefix}*" -ErrorAction SilentlyContinue |
         Sort-Object Name
-    if ($matches) { return $matches[-1].FullName }
+    if ($matchDirs) { return $matchDirs[-1].FullName }
     return $null
 }
 
@@ -118,10 +118,16 @@ if (-not $NoBuild) {
 
     if ($needsBuild) {
         Write-Host "=== Building APK ==="
-        & "$ScriptDir\gradlew.bat" assembleDebug --no-daemon 2>&1 | ForEach-Object { Write-Host $_ }
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "ERROR: Build failed" -ForegroundColor Red
-            exit 1
+        Push-Location $ScriptDir
+        try {
+            & ".\gradlew.bat" assembleDebug --no-daemon 2>&1 | ForEach-Object { Write-Host $_ }
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "ERROR: Build failed" -ForegroundColor Red
+                exit 1
+            }
+        }
+        finally {
+            Pop-Location
         }
         Write-Host ""
     }
@@ -213,7 +219,7 @@ if ($LASTEXITCODE -ne 0) {
 $LAUNCHER_DIR = "/data/data/com.google.android.apps.nexuslauncher/databases"
 $ICON_INTENT = "#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;launchFlags=0x10200000;component=${PACKAGE}/.SetupActivity;end"
 
-$rootResult = & $ADB root 2>$null
+& $ADB root 2>$null
 if ($LASTEXITCODE -eq 0) {
     Start-Sleep -Seconds 1
     $launcherDb = (& $ADB shell "ls ${LAUNCHER_DIR}/launcher*.db 2>/dev/null | head -1" 2>$null)

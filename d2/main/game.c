@@ -1313,6 +1313,9 @@ int game_handler(window *wind, d_event *event, void *data)
 				calc_frame_time();
 				if (!time_paused)
 				{
+					#ifdef __ANDROID__
+					android_rewind_maybe_capture_frame();
+					#endif
 					calc_game_time();
 					GameProcessFrame();
 				}
@@ -1470,9 +1473,6 @@ void GameProcessFrame(void)
 	input_demo_debug_log_player_motion_state("entry");
 	input_demo_log_current_replay_frame_state_mismatch();
 	input_demo_record_game_frame();
-	#ifdef __ANDROID__
-	android_rewind_maybe_capture_frame();
-	#endif
 	update_player_stats();
 	diminish_palette_towards_normal();		//	Should leave palette effect up for as long as possible by putting right before render.
 	do_afterburner_stuff();
