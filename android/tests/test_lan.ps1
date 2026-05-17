@@ -61,7 +61,7 @@ try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -Error
 function Cleanup {
     Write-Status "Cleaning up..."
     $relayLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
-    if (Test-Path $relayLog) {
+    if ($UseRelay -and (Test-Path $relayLog)) {
         $lines = Get-Content $relayLog -ErrorAction SilentlyContinue
         if ($lines) {
             Write-Status "  Relay log ($($lines.Count) lines):" "Gray"
@@ -166,8 +166,8 @@ try {
     $logcatFile2 = Join-Path $REPO_ROOT "temp\lan_emu2_logcat.txt"
     & $ADB -s $EMU1 logcat -c 2>&1 | Out-Null
     & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
-    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu1_logcat_err.txt")
-    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*", "MatchmakingService:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu2_logcat_err.txt")
+    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu1_logcat_err.txt")
+    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*", "MatchmakingService:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu2_logcat_err.txt")
     Start-Sleep -Seconds 1
 
     # Host (EMU1)
@@ -212,11 +212,13 @@ try {
     }
     Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras $joinExtras
 
-    # -- Step 4: Verify multiplayer sync via MPDIAG logcat --
+    # -- Step 4: Verify multiplayer launch --
     #
-    # The success criterion is that the host's MPDIAG logs show:
-    #   1) Both players added (add_player ... N_players now 2)
-    #   2) Level sync completed (send_sync ... sending SYNC to all)
+    # Primary signal: both emulators reach in-game network state with two
+    # connected players in game introspection.
+    #
+    # Fallback: if an emulator dies during 3D render, accept host MPDIAG
+    # sync lines when they are available.
     #
     # In direct LAN mode, traffic goes:
     #   EMU2 -> LAN proxy -> host wlan0 IP -> host engine
@@ -246,28 +248,63 @@ try {
     }
 
     $script:pollCount = 0
-    $syncOk = Wait-ForCondition -Description "MPDIAG sync on host" -TimeoutSec $TimeoutSeconds -PollMs 3000 -Condition {
+    $syncOk = Wait-ForCondition -Description "LAN game sync" -TimeoutSec $TimeoutSeconds -PollMs 3000 -Condition {
         $script:pollCount++
-        if (-not (Test-Path $logcatFile1)) { return $false }
-        $lines = Get-Content $logcatFile1 -ErrorAction SilentlyContinue
-        $hasSync = $lines | Where-Object { $_ -match 'send_sync.*sending SYNC to all' }
-        $hasTwoPlayers = $lines | Where-Object { $_ -match 'N_players now 2' }
-        $lastMpdiag = ($lines | Where-Object { $_ -match 'MPDIAG' } | Select-Object -Last 1)
-        if ($lastMpdiag) {
-            Write-Status "  [poll $($script:pollCount)] last MPDIAG: $($lastMpdiag.Substring([Math]::Max(0,$lastMpdiag.Length - 80)))" "Gray"
-        } else {
-            Write-Status "  [poll $($script:pollCount)] no MPDIAG yet" "Gray"
+
+        $gi1 = Get-GameIntrospection -Serial $EMU1
+        $gi2 = Get-GameIntrospection -Serial $EMU2
+        $script:lastGi1 = $gi1
+        $script:lastGi2 = $gi2
+
+        $hostInGame = if ($gi1) { [bool]$gi1.in_game } else { $false }
+        $hostNet = if ($gi1) { [bool]$gi1.is_network } else { $false }
+        $hostPlayers = if ($gi1 -and $gi1.multiplayer) { [int]$gi1.multiplayer.num_connected } else { 0 }
+        $joinInGame = if ($gi2) { [bool]$gi2.in_game } else { $false }
+        $joinNet = if ($gi2) { [bool]$gi2.is_network } else { $false }
+        $joinPlayers = if ($gi2 -and $gi2.multiplayer) { [int]$gi2.multiplayer.num_connected } else { 0 }
+
+        if ($gi1 -or $gi2) {
+            $hostPlayersLabel = if ($gi1 -and $gi1.multiplayer) { $hostPlayers } else { "?" }
+            $joinPlayersLabel = if ($gi2 -and $gi2.multiplayer) { $joinPlayers } else { "?" }
+            Write-Status "  [poll $($script:pollCount)] host in_game=$hostInGame net=$hostNet players=$hostPlayersLabel | join in_game=$joinInGame net=$joinNet players=$joinPlayersLabel" "Gray"
+            if ($hostInGame -and $hostNet -and $hostPlayers -ge 2 -and $joinInGame -and $joinNet -and $joinPlayers -ge 2) {
+                return $true
+            }
+        } elseif (Test-Path $logcatFile1) {
+            $lines = Get-Content $logcatFile1 -ErrorAction SilentlyContinue
+            $hasSync = $lines | Where-Object { $_ -match 'send_sync.*sending SYNC to all' }
+            $hasTwoPlayers = $lines | Where-Object { $_ -match 'N_players now 2' }
+            $lastMpdiag = ($lines | Where-Object { $_ -match 'MPDIAG' } | Select-Object -Last 1)
+            if ($lastMpdiag) {
+                Write-Status "  [poll $($script:pollCount)] fallback MPDIAG: $($lastMpdiag.Substring([Math]::Max(0, $lastMpdiag.Length - 80)))" "Gray"
+            } else {
+                Write-Status "  [poll $($script:pollCount)] introspection unavailable, no MPDIAG yet" "Gray"
+            }
+            if ($hasSync -and $hasTwoPlayers) {
+                return $true
+            }
         }
+
         # Every 3rd poll, show EMU2 proxy/mp state for diagnostics
         if ($script:pollCount % 3 -eq 1 -and (Test-Path $logcatFile2)) {
             $emu2lines = Get-Content $logcatFile2 -ErrorAction SilentlyContinue | Where-Object { $_ -match 'LocalhostProxy|MPDIAG|lan_launch|DXX-MP' } | Select-Object -Last 3
             foreach ($l in $emu2lines) { Write-Status "  [EMU2] $l" "Gray" }
         }
-        return ($hasSync -and $hasTwoPlayers)
+        return $false
     }
 
     if (-not $syncOk) {
-        Write-Status "FAIL: Multiplayer sync never completed on host" "Red"
+        Write-Status "FAIL: Multiplayer sync never completed" "Red"
+        $gi1 = $script:lastGi1
+        $gi2 = $script:lastGi2
+        if ($gi1) {
+            $hostPlayers = if ($gi1.multiplayer) { [int]$gi1.multiplayer.num_connected } else { "?" }
+            Write-Status "  EMU1 state: screen=$($gi1.screen_mode) in_game=$($gi1.in_game) net=$($gi1.is_network) players=$hostPlayers" "Gray"
+        }
+        if ($gi2) {
+            $joinPlayers = if ($gi2.multiplayer) { [int]$gi2.multiplayer.num_connected } else { "?" }
+            Write-Status "  EMU2 state: screen=$($gi2.screen_mode) in_game=$($gi2.in_game) net=$($gi2.is_network) players=$joinPlayers" "Gray"
+        }
         if (Test-Path $logcatFile1) {
             Write-Status "  EMU1 MPDIAG lines:" "Gray"
             Get-Content $logcatFile1 -ErrorAction SilentlyContinue | Where-Object { $_ -match 'MPDIAG' } | ForEach-Object { Write-Status "    $_" "Gray" }
@@ -299,9 +336,9 @@ try {
         Write-Status "Direct LAN mode -- no relay traffic to verify"
     }
 
-    # Check MPDIAG details from host logcat
-    $hostLines = Get-Content $logcatFile1 -ErrorAction SilentlyContinue | Where-Object { $_ -match 'MPDIAG' }
-    Write-Status "Host MPDIAG log ($($hostLines.Count) lines):" "Gray"
+    # Check captured host diagnostics from logcat
+    $hostLines = Get-Content $logcatFile1 -ErrorAction SilentlyContinue | Where-Object { $_ -match 'MPDIAG|auto_net|lan_launch|LocalhostProxy' }
+    Write-Status "Host LAN log ($($hostLines.Count) lines):" "Gray"
     foreach ($line in $hostLines) {
         Write-Status "  $line" "Gray"
     }
@@ -314,17 +351,27 @@ try {
     }
 
     # Optionally check in-game state if emulators are still alive
-    $gi1 = Get-GameIntrospection -Serial $EMU1
-    $gi2 = Get-GameIntrospection -Serial $EMU2
+    $gi1 = if ($script:lastGi1) { $script:lastGi1 } else { Get-GameIntrospection -Serial $EMU1 }
+    $gi2 = if ($script:lastGi2) { $script:lastGi2 } else { Get-GameIntrospection -Serial $EMU2 }
     if ($gi1) {
-        Write-Status "EMU1: screen=$($gi1.screen_mode) in_game=$($gi1.in_game) game_mode=$($gi1.game_mode)"
+        $hostPlayers = if ($gi1.multiplayer) { [int]$gi1.multiplayer.num_connected } else { "?" }
+        Write-Status "EMU1: screen=$($gi1.screen_mode) in_game=$($gi1.in_game) net=$($gi1.is_network) players=$hostPlayers game_mode=$($gi1.game_mode)"
     } else {
         Write-Status "EMU1: introspection unavailable (emulator may have crashed during level load)" "Yellow"
     }
     if ($gi2) {
-        Write-Status "EMU2: screen=$($gi2.screen_mode) in_game=$($gi2.in_game) game_mode=$($gi2.game_mode)"
+        $joinPlayers = if ($gi2.multiplayer) { [int]$gi2.multiplayer.num_connected } else { "?" }
+        Write-Status "EMU2: screen=$($gi2.screen_mode) in_game=$($gi2.in_game) net=$($gi2.is_network) players=$joinPlayers game_mode=$($gi2.game_mode)"
     } else {
         Write-Status "EMU2: introspection unavailable (emulator may have crashed during level load)" "Yellow"
+    }
+    if (-not ($gi1 -and $gi1.is_network -and $gi1.multiplayer -and [int]$gi1.multiplayer.num_connected -ge 2)) {
+        Write-Status "FAIL: EMU1 did not report an active two-player network game" "Red"
+        $testPassed = $false
+    }
+    if (-not ($gi2 -and $gi2.is_network -and $gi2.multiplayer -and [int]$gi2.multiplayer.num_connected -ge 2)) {
+        Write-Status "FAIL: EMU2 did not report an active two-player network game" "Red"
+        $testPassed = $false
     }
 
     # Stop logcat capture

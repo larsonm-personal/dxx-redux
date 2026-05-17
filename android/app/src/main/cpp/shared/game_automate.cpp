@@ -40,6 +40,7 @@ extern "C" {
 #include "game_automate.h"
 #include "game_introspect.h"
 #include "overlay_ringbuf.h"
+#include "android_save_meta.h"
 #include "android_log.h"
 #include "android_texture_debug.h"
 #include "android_meta_actions.h"
@@ -49,6 +50,8 @@ extern "C" {
 #include "screens.h"
 #include "inferno.h"
 #include "key.h"
+#include "playsave.h"
+#include "state.h"
 #include "window.h"
 #include "newmenu.h"
 #include "gameseg.h"
@@ -60,6 +63,27 @@ extern "C" {
 #ifdef ANDROID
 extern "C" void android_test_inject_touch_tap(void);
 extern "C" void android_automation_joystick_button(int button, int pressed);
+
+static void automation_enter_launcher(void)
+{
+	const int slotnum = N_SAVE_SLOTS - 2;
+	int saved = 0;
+	SDL_Event ev;
+
+	if (Player_is_dead)
+		debug_log(DLOG_GAME, "autosave skipped: enter_launcher player is dead");
+	else
+		saved = state_android_save_to_slot(slotnum, "AUTO EXIT",
+		                                   ANDROID_SAVE_META_KIND_AUTO_EXIT);
+	if (saved)
+		debug_log(DLOG_GAME, "autosave saved: enter_launcher slot %d", slotnum);
+
+	android_force_quit = 1;
+	memset(&ev, 0, sizeof(ev));
+	ev.type = SDL_QUIT;
+	SDL_PushEvent(&ev);
+	debug_log(DLOG_GAME, "autosave exit queued: enter_launcher slot %d", slotnum);
+}
 #endif
 
 /* D1 does not have SCREEN_MOVIE */
@@ -613,9 +637,9 @@ static void inject_axis(int axis, float value)
 
 static void inject_button(int button, int pressed)
 {
-	#ifdef ANDROID
+#ifdef ANDROID
 	android_automation_joystick_button(button, pressed);
-	#else
+#else
 	SDL_Event ev;
 	memset(&ev, 0, sizeof(ev));
 	ev.type = pressed ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
@@ -623,7 +647,7 @@ static void inject_button(int button, int pressed)
 	ev.jbutton.button = (Uint8) button;
 	ev.jbutton.state = pressed ? SDL_PRESSED : SDL_RELEASED;
 	SDL_PushEvent(&ev);
-	#endif
+#endif
 	LOGI("Injecting button %d %s", button, pressed ? "DOWN" : "UP");
 }
 
@@ -2329,9 +2353,11 @@ extern "C" void game_automate_tick(void)
 			g_active = 0;
 
 			/* Use the same Android force-exit path as the Exit to Launcher control so
-			 * the engine does not stall in a quit confirmation/menu unwind state. */
+			 * the engine does not stall in a quit confirmation/menu unwind state.
+			 * This already runs on the game thread, so save synchronously instead of
+			 * relying on a later idle tick that can be preempted by the launcher. */
 #ifdef ANDROID
-			meta_action_dispatch(META_RETURN_TO_LAUNCHER, 1);
+			automation_enter_launcher();
 #else
 			extern int Quitting;
 			Quitting = 1;
