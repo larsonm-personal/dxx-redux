@@ -157,6 +157,7 @@ function Wait-ProcessDead {
 function Stop-AppAndWait {
     # Force-stop the app and wait for the process to actually die.
     Adb -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
+    Adb -AdbArgs @("shell", "am", "force-stop", "com.google.android.documentsui") | Out-Null
     Wait-ProcessDead | Out-Null
 }
 
@@ -188,8 +189,9 @@ function Write-Status {
     param([string]$Msg, [string]$Color = "Cyan")
     $line = "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg"
     Write-Host $line -ForegroundColor $Color
-    if ($script:LogFile) {
-        $line | Add-Content -Path $script:LogFile -Encoding utf8
+    $logFileVar = Get-Variable -Name LogFile -Scope Script -ErrorAction SilentlyContinue
+    if ($logFileVar -and $logFileVar.Value) {
+        $line | Add-Content -Path $logFileVar.Value -Encoding utf8
     }
 }
 
@@ -984,20 +986,36 @@ function Watch-AutomationResult {
                     $passed = $false
                     continue
                 } elseif ($resultObj.result -eq "LAUNCHER_CONTINUE") {
-                    # Unified script: game exited, launcher resumes execution.
-                    # Force-stop first so the next launcher phase starts from a
-                    # clean process. SetupActivity recreates the executor from
-                    # automation_result.json's script_path on resume.
+                    # Unified script: game exited, launcher resumes execution
+                    # If SetupActivity already consumed the handoff, let the
+                    # in-process executor keep running
+                    # Otherwise restart the launcher so it can recreate the
+                    # executor from the file
                     $nextStep = $resultObj.next_step
                     if ($IsLauncherScript -and $nextStep -ne $lastLauncherResumeStep) {
                         $lastLauncherResumeStep = $nextStep
-                        Write-Status "LAUNCHER_CONTINUE at step $nextStep -- restarting launcher cleanly" "Yellow"
-                        Stop-AppAndWait
-                        Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
-                        if (Wait-SetupActivityReady -TimeoutSeconds 15) {
-                            Write-Status "Launcher resumed -- continuing test monitoring" "Green"
+                        Write-Status "LAUNCHER_CONTINUE at step $nextStep -- checking launcher handoff" "Yellow"
+                        $handoffConsumed = $false
+                        for ($handoffCheck = 0; $handoffCheck -lt 4; $handoffCheck++) {
+                            Start-Sleep -Milliseconds 500
+                            $handoffJson = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE,
+                                "cat", "files/automation_result.json") -Seconds 3
+                            if (-not ($handoffJson -and $handoffJson -match '"result"\s*:\s*"LAUNCHER_CONTINUE"')) {
+                                $handoffConsumed = $true
+                                break
+                            }
+                        }
+                        if ($handoffConsumed) {
+                            Write-Status "Launcher consumed LAUNCHER_CONTINUE -- continuing test monitoring" "Green"
                         } else {
-                            Write-Status "Launcher did not become ready after LAUNCHER_CONTINUE" "Yellow"
+                            Write-Status "LAUNCHER_CONTINUE at step $nextStep -- restarting launcher cleanly" "Yellow"
+                            Stop-AppAndWait
+                            Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+                            if (Wait-SetupActivityReady -TimeoutSeconds 15) {
+                                Write-Status "Launcher resumed -- continuing test monitoring" "Green"
+                            } else {
+                                Write-Status "Launcher did not become ready after LAUNCHER_CONTINUE" "Yellow"
+                            }
                         }
                     } else {
                         Write-Status "LAUNCHER_CONTINUE at step $nextStep -- waiting for launcher to resume" "Yellow"

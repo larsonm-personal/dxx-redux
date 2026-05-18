@@ -443,12 +443,14 @@ class SetupActivity : ComponentActivity() {
                     }
                 var bestScrollNodeId: Int? = null
                 var bestScrollArea = 0
+                val scrollDownAction =
+                    android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
                 for (id in -1..maxScanId) {
                     val info = provider.createAccessibilityNodeInfo(id) ?: continue
                     val canScrollForward =
                         info.actionList.any {
                             it.id == android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD ||
-                                it.id == android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+                                it.id == scrollDownAction
                         }
                     if (!canScrollForward) continue
                     val bounds = Rect()
@@ -468,7 +470,7 @@ class SetupActivity : ComponentActivity() {
                         ) ||
                             provider.performAction(
                                 bestScrollNodeId,
-                                android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id,
+                                scrollDownAction,
                                 null,
                             )
                     if (scrolled) {
@@ -3988,8 +3990,12 @@ private fun SetupScreen(
             showMultiplayerPage ||
             showAutoselectPage ||
             showMusicPage
-    LaunchedEffect(anySubPageOpen) {
-        if (!anySubPageOpen) initialFocus.requestFocus()
+    LaunchedEffect(anySubPageOpen, canLaunch, showResumePanel) {
+        if (!anySubPageOpen) {
+            withFrameNanos { }
+            withFrameNanos { }
+            initialFocus.requestFocus()
+        }
     }
 
     MaterialTheme(colorScheme = darkColorScheme()) {

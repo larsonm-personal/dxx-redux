@@ -250,7 +250,10 @@ Suite cleanup rules:
 - Clear cross-test state in shared reset paths, not in every individual test.
 - Prefer durable readiness signals over sleeps: setup introspection, automation result files, automation logs, debug-log progress checkpoints, and specific game introspection fields.
 - For long launcher-backed tests, treat default timeouts as floors and extend from durable progress signals rather than plain wall-clock waits.
+- For long multi-game launcher tests, remember `run_all_tests.ps1` has its own outer per-test timeout. Add a focused `$testTimeouts` override when the inner `run_test.ps1` timeout is already long enough but the suite wrapper can still kill the combined D1+D2 run.
 - For launcher-backed D1 scripts that go straight from difficulty selection into gameplay and then wait for `game_window_is_front`, prefer a single `Escape` after difficulty over generic `skip_briefing`. The generic path can stall before the D1 game window is visible, while an extra `Escape` can overshoot and open the in-game menu.
+- For launcher scripts that use `LAUNCHER_CONTINUE`, do not unconditionally force-stop the launcher after seeing the handoff file. Re-read `automation_result.json` after a short grace period; if SetupActivity already consumed or replaced the handoff, let the in-process launcher executor continue. Restart only when the `LAUNCHER_CONTINUE` file remains unclaimed.
+- Host-side launcher tests should clear save/resume-offer state when they need the plain main page. If a failed D-pad or picker test can leave Android DocumentsUI in front, close `com.google.android.documentsui` as part of shared app cleanup before SetupActivity preflight.
 
 Useful commands:
 

@@ -1458,8 +1458,9 @@ class MainActivity :
     }
 
     private fun applySkipIntroPref(prefs: android.content.SharedPreferences) {
+        val skipIntro = isMultiplayerGame || prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false)
         try {
-            nativeSetSkipIntroMovie(prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
+            nativeSetSkipIntroMovie(skipIntro)
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }

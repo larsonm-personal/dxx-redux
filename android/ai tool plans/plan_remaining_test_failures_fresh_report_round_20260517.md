@@ -51,7 +51,9 @@ Out of scope for this round:
 - [x] Run `android/run-code-quality.ps1 -Fix -Paths android/run_all_tests.ps1` after report-runner edits.
 - [x] Generate a fresh focused report in a new report directory, starting with no-infra tests and then the highest-signal stale candidates.
 - [x] If a candidate reproduces, fix the smallest local cause and rerun that exact test.
-- [ ] If no candidate reproduces, update this plan with the fresh pass/non-repro evidence and stop rather than editing scripts speculatively.
+- [x] Because candidates reproduced, update this plan with the fresh pass/fix evidence rather than editing scripts speculatively.
+- [x] Continue into the autosave cluster, separate suite-timeout issues from real launcher handoff failures, and rerun the cluster after the harness fix.
+- [x] Revisit `test_launcher_dpad` from fresh evidence, fix the current focus and stale-picker causes, and rerun it after formatting.
 
 ## Validated outcomes
 
@@ -60,6 +62,18 @@ Out of scope for this round:
 - Fresh isolated rerun: `test_death` is currently stale and passed on the current build.
 - Fresh isolated rerun: `test_axis_mapping` was a real current failure, but only on the D1 path. The D1 phase timed out in `skip_briefing` after difficulty select while D2 passed. Switching the D1 path to a single direct `Escape` fixed the test, and the focused rerun passed in `report_20260517_150522.md`.
 - Fresh isolated rerun: `test_dpad_triggers` reproduced the same D1-only `skip_briefing` timeout shape. Applying the same D1-specific post-difficulty `Escape` routing fixed it, and the focused rerun passed in `report_20260517_151014.md`.
+- Fresh isolated rerun: `test_launch_to_automap` is currently stale and passed on the current build with no changes in `report_20260517_151319.md`.
+- Fresh isolated rerun: `test_pause_menu_return` reproduced the same D1-only `skip_briefing` timeout shape. Applying the same D1-specific post-difficulty `Escape` routing fixed it, and the focused rerun passed in `report_20260517_151752.md`.
+- Fresh isolated rerun: `test_keyboard_defaults` reproduced the same D1-only `skip_briefing` timeout shape. Applying the same D1-specific post-difficulty `Escape` routing fixed it, and the focused rerun passed in `report_20260517_152213.md`.
+- Fresh isolated rerun: `test_engine_prefs_unified` reproduced the same D1 post-difficulty `skip_briefing` failure in `report_20260517_152549.md`. Because the script runs D1 and D2 inside one suite test, the later D2 phase was also killed by the outer `run_all_tests.ps1` 120s timeout after D1 consumed time. Applying the D1-specific post-difficulty `Escape` routing and adding a 240s per-test timeout override fixed it; the focused rerun passed in `report_20260517_152919.md`.
+- Fresh autosave cluster rerun: `test_autosave_resume_missing_pilot_unified` was first killed by the suite wrapper timeout in `report_20260517_153354.md`. Adding a 300s per-test timeout override exposed that the script itself was healthy; it passed in `report_20260517_153657.md` and again in the cluster report `report_20260517_155844.md`.
+- Fresh autosave cluster rerun: `test_autosave_resume_unified` was first killed by the suite wrapper timeout in `report_20260517_154055.md`. After adding a 300s override, `report_20260517_154350.md` exposed a real launcher harness race: SetupActivity consumed `LAUNCHER_CONTINUE` and resumed at step 24, while `Watch-AutomationResult` also saw the handoff file and force-stopped the resumed launcher, losing the executor. `android/test_helpers.ps1` now rechecks whether `automation_result.json` is still an unclaimed `LAUNCHER_CONTINUE` before restarting; if SetupActivity consumed it, the watcher lets the in-process executor continue. The focused rerun passed in `report_20260517_155321.md`, and the full `test_autosave_resume*` cluster passed in `report_20260517_155844.md`.
+- Fresh isolated rerun: `test_launcher_dpad` first reproduced as stale save/resume-offer state in `report_20260517_160728.md`. After the test cleared save files and disabled the resume offer at startup, it reproduced the older focus bug in `report_20260517_160937.md`: `DPAD_CENTER` activated the import picker instead of `Define Controls`. The launcher now re-requests main-page focus after the full page settles, the test and shared app-stop helper close stale DocumentsUI pickers, and the focused rerun passed in `report_20260517_161620.md` and again after formatting in `report_20260517_161837.md`.
+- Scoped code quality passed after the runner, launcher, and script edits: `android/run-code-quality.ps1 -Fix -Paths @('android/app/src/main/java/com/dxxredux/app/SetupActivity.kt','android/tests/test_launcher_dpad.ps1','android/test_helpers.ps1','android/run_all_tests.ps1','android/game_scripts/test_engine_prefs_unified.json5')`.
+
+## Likely next candidate if continuing
+
+- The D1 post-difficulty briefing cluster, autosave resume cluster, and launcher D-pad test are cleared for the focused scripts rerun in this round. If continuing this tranche, move to the next stale timeout candidate, likely `test_lan`, only after deciding whether this round should switch to dual-emulator/network scope.
 
 ## Candidate rerun order
 

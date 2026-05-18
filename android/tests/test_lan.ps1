@@ -76,6 +76,37 @@ function Cleanup {
     }
 }
 
+function Get-IntroMultiplayer {
+    param($Intro)
+
+    if (-not $Intro) {
+        return $null
+    }
+
+    $prop = $Intro.PSObject.Properties['multiplayer']
+    if ($null -eq $prop) {
+        return $null
+    }
+
+    return $prop.Value
+}
+
+function Get-IntroNumConnected {
+    param($Intro)
+
+    $mp = Get-IntroMultiplayer -Intro $Intro
+    if (-not $mp) {
+        return $null
+    }
+
+    $prop = $mp.PSObject.Properties['num_connected']
+    if ($null -eq $prop) {
+        return $null
+    }
+
+    return [int]$prop.Value
+}
+
 # ---- Main Test Flow ----
 
 try {
@@ -258,14 +289,14 @@ try {
 
         $hostInGame = if ($gi1) { [bool]$gi1.in_game } else { $false }
         $hostNet = if ($gi1) { [bool]$gi1.is_network } else { $false }
-        $hostPlayers = if ($gi1 -and $gi1.multiplayer) { [int]$gi1.multiplayer.num_connected } else { 0 }
+        $hostPlayers = if ($gi1) { Get-IntroNumConnected -Intro $gi1 } else { $null }
         $joinInGame = if ($gi2) { [bool]$gi2.in_game } else { $false }
         $joinNet = if ($gi2) { [bool]$gi2.is_network } else { $false }
-        $joinPlayers = if ($gi2 -and $gi2.multiplayer) { [int]$gi2.multiplayer.num_connected } else { 0 }
+        $joinPlayers = if ($gi2) { Get-IntroNumConnected -Intro $gi2 } else { $null }
 
         if ($gi1 -or $gi2) {
-            $hostPlayersLabel = if ($gi1 -and $gi1.multiplayer) { $hostPlayers } else { "?" }
-            $joinPlayersLabel = if ($gi2 -and $gi2.multiplayer) { $joinPlayers } else { "?" }
+            $hostPlayersLabel = if ($null -ne $hostPlayers) { $hostPlayers } else { "?" }
+            $joinPlayersLabel = if ($null -ne $joinPlayers) { $joinPlayers } else { "?" }
             Write-Status "  [poll $($script:pollCount)] host in_game=$hostInGame net=$hostNet players=$hostPlayersLabel | join in_game=$joinInGame net=$joinNet players=$joinPlayersLabel" "Gray"
             if ($hostInGame -and $hostNet -and $hostPlayers -ge 2 -and $joinInGame -and $joinNet -and $joinPlayers -ge 2) {
                 return $true
@@ -298,11 +329,13 @@ try {
         $gi1 = $script:lastGi1
         $gi2 = $script:lastGi2
         if ($gi1) {
-            $hostPlayers = if ($gi1.multiplayer) { [int]$gi1.multiplayer.num_connected } else { "?" }
+            $hostPlayers = Get-IntroNumConnected -Intro $gi1
+            if ($null -eq $hostPlayers) { $hostPlayers = "?" }
             Write-Status "  EMU1 state: screen=$($gi1.screen_mode) in_game=$($gi1.in_game) net=$($gi1.is_network) players=$hostPlayers" "Gray"
         }
         if ($gi2) {
-            $joinPlayers = if ($gi2.multiplayer) { [int]$gi2.multiplayer.num_connected } else { "?" }
+            $joinPlayers = Get-IntroNumConnected -Intro $gi2
+            if ($null -eq $joinPlayers) { $joinPlayers = "?" }
             Write-Status "  EMU2 state: screen=$($gi2.screen_mode) in_game=$($gi2.in_game) net=$($gi2.is_network) players=$joinPlayers" "Gray"
         }
         if (Test-Path $logcatFile1) {
@@ -354,22 +387,26 @@ try {
     $gi1 = if ($script:lastGi1) { $script:lastGi1 } else { Get-GameIntrospection -Serial $EMU1 }
     $gi2 = if ($script:lastGi2) { $script:lastGi2 } else { Get-GameIntrospection -Serial $EMU2 }
     if ($gi1) {
-        $hostPlayers = if ($gi1.multiplayer) { [int]$gi1.multiplayer.num_connected } else { "?" }
+        $hostPlayers = Get-IntroNumConnected -Intro $gi1
+        if ($null -eq $hostPlayers) { $hostPlayers = "?" }
         Write-Status "EMU1: screen=$($gi1.screen_mode) in_game=$($gi1.in_game) net=$($gi1.is_network) players=$hostPlayers game_mode=$($gi1.game_mode)"
     } else {
         Write-Status "EMU1: introspection unavailable (emulator may have crashed during level load)" "Yellow"
     }
     if ($gi2) {
-        $joinPlayers = if ($gi2.multiplayer) { [int]$gi2.multiplayer.num_connected } else { "?" }
+        $joinPlayers = Get-IntroNumConnected -Intro $gi2
+        if ($null -eq $joinPlayers) { $joinPlayers = "?" }
         Write-Status "EMU2: screen=$($gi2.screen_mode) in_game=$($gi2.in_game) net=$($gi2.is_network) players=$joinPlayers game_mode=$($gi2.game_mode)"
     } else {
         Write-Status "EMU2: introspection unavailable (emulator may have crashed during level load)" "Yellow"
     }
-    if (-not ($gi1 -and $gi1.is_network -and $gi1.multiplayer -and [int]$gi1.multiplayer.num_connected -ge 2)) {
+    $hostFinalPlayers = Get-IntroNumConnected -Intro $gi1
+    $joinFinalPlayers = Get-IntroNumConnected -Intro $gi2
+    if (-not ($gi1 -and $gi1.is_network -and $hostFinalPlayers -ge 2)) {
         Write-Status "FAIL: EMU1 did not report an active two-player network game" "Red"
         $testPassed = $false
     }
-    if (-not ($gi2 -and $gi2.is_network -and $gi2.multiplayer -and [int]$gi2.multiplayer.num_connected -ge 2)) {
+    if (-not ($gi2 -and $gi2.is_network -and $joinFinalPlayers -ge 2)) {
         Write-Status "FAIL: EMU2 did not report an active two-player network game" "Red"
         $testPassed = $false
     }

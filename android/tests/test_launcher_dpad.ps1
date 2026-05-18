@@ -106,6 +106,19 @@ function SendKey($code) {
     & $script:ADB shell input keyevent $code 2>$null
 }
 
+function SendSetupCommand {
+    param(
+        [Parameter(Mandatory = $true)][string]$Command,
+        [string[]]$Extras = @()
+    )
+
+    $args = @(
+        "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+        "--es", "command", $Command
+    ) + $Extras
+    Adb -AdbArgs $args | Out-Null
+}
+
 # --- Setup ---
 Info "Checking emulator..."
 Ensure-EmulatorHealthy
@@ -123,6 +136,7 @@ Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_intr
 
 Info "Force-stopping app..."
 & $script:ADB shell am force-stop com.dxxredux.app
+& $script:ADB shell am force-stop com.google.android.documentsui 2>$null
 
 Info "Launching SetupActivity..."
 & $script:ADB shell am start -n "com.dxxredux.app/.SetupActivity" 2>&1 | Out-Null
@@ -131,9 +145,14 @@ if (-not (Wait-SetupActivityReady -TimeoutSeconds 30)) {
     Fail "SetupActivity did not become ready within 30s"
 }
 
+Info "Clearing save and resume-offer state..."
+SendSetupCommand -Command "clear_save_files"
+SendSetupCommand -Command "write_bool_pref" -Extras @("--es", "key", "show_resume_offer", "--ez", "value", "false")
+Start-Sleep -Milliseconds 500
+
 # --- Test 1: Initial page shows current launcher controls ---
 Info "Test 1: Verify main page buttons..."
-$buttons = GetSetupButtons
+$buttons = Wait-ForMainPageDpadReady -TimeoutSeconds 15 -SettleMs 500
 Info "  Found buttons: $($buttons -join ', ')"
 if (-not (Test-ContainsButton -Buttons $buttons -Text "Define Controls")) {
     Fail "Main page missing Define Controls button (got: $($buttons -join ', '))"

@@ -159,6 +159,9 @@ $serverTests = @("test_bot_client")
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
     "test_autoselect_crash_unified"       = 240
+    "test_autosave_resume_unified"        = 300
+    "test_autosave_resume_missing_pilot_unified" = 300
+    "test_engine_prefs_unified"           = 240
     "test_gog_installer_d1_unified"       = 420
     "test_gog_installer_redbook_unified"  = 420
     "test_gradle_unit_tests"              = 600
@@ -610,8 +613,16 @@ function Invoke-SingleTest {
         $psScript = $Test.Path
         $psArguments = @()
     }
-    if ($Test.Arguments) {
-        $psArguments += $Test.Arguments
+    $extraArguments = $null
+    if ($Test -is [System.Collections.IDictionary]) {
+        if ($Test.Contains('Arguments')) {
+            $extraArguments = $Test['Arguments']
+        }
+    } elseif ($Test.PSObject.Properties['Arguments']) {
+        $extraArguments = $Test.Arguments
+    }
+    if ($extraArguments) {
+        $psArguments += $extraArguments
     }
 
     $psi = New-Object System.Diagnostics.ProcessStartInfo
