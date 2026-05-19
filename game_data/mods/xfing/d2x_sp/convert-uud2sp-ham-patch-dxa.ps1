@@ -137,6 +137,7 @@ $summary = [pscustomobject]@{
     bitmapXlatOffset = $analysis.bitmapXlatOffset
     bitmapXlatCount = $analysis.bitmapXlatCount
     engineReadableMainLength = $analysis.engineReadableMainLength
+    originalEngineComparableSha256 = $analysis.originalEngineComparableSha256
     engineComparableLength = $analysis.engineComparableLength
     engineComparableSha256 = $analysis.engineComparableSha256
     generatedComparableSha256 = $analysis.generatedComparableSha256
@@ -147,10 +148,13 @@ $summary = [pscustomobject]@{
         reason = "HAXMED trailer after the retail-length HAM prefix, intentionally not included in the DXA"
     }
     counts = $analysis.counts
+    sourceFieldDeltaCount = $analysis.sourceChangedFieldCount
     fieldDeltaCount = $analysis.changedFieldCount
+    combinedAlignmentFieldDeltaCount = $analysis.combinedAlignmentFieldCount
     operationCount = $analysis.operationCount
     sectionDeltaCounts = [pscustomobject]$sectionDeltaCounts
     fieldDeltas = @($analysis.rows)
+    combinedAlignmentFieldDeltas = @($analysis.combinedAlignmentRows)
 }
 
 Write-XfingJsonFile -Path (Join-Uud2spStagePath -StageRoot $stageRoot -ZipPath $script:Uud2spHamPatchPath) -Value @($analysis.patchOperations)
@@ -187,8 +191,10 @@ $sourceFiles += [pscustomobject]@{
     sha256 = $analysis.patchSha256
     size = $analysis.patchSize
     engineComparableSha256 = $analysis.engineComparableSha256
+    originalEngineComparableSha256 = $analysis.originalEngineComparableSha256
     ignoredTrailerSha256 = $analysis.ignoredTrailerSha256
     ignoredTrailerSize = $analysis.ignoredTrailerLength
+    combinedAlignmentFieldDeltas = @($analysis.combinedAlignmentRows)
 }
 $sourceFiles += @($soundFiles | ForEach-Object {
         [pscustomobject]@{ role = "soundFile"; path = $_.sourcePath; sha256 = $_.sha256; size = $_.size; archivePath = $_.path }
@@ -206,6 +212,7 @@ $manifest = [pscustomobject]@{
         "Sound payloads are the UUD2SP Descent2.S11 and Descent2.S22 files",
         "No full HAM file is included",
         "HAM changes use RFC 6902 JSON Patch against semantic engine fields",
+        "Overlapping HAM field values are aligned to Xfing's D2TP+SP combined pack",
         "The original HAXMED HAM trailer is recorded in metadata and intentionally omitted",
         "Patch verification compares the retail-length HAM prefix, including GameBitmapXlat"
     )
@@ -224,9 +231,11 @@ $manifest = [pscustomobject]@{
         hamPatchSummaryPath = $script:Uud2spHamPatchSummaryPath
         hamPatchOperationCount = $analysis.operationCount
         hamFieldDeltaCount = $analysis.changedFieldCount
+        combinedAlignmentHamFieldDeltaCount = $analysis.combinedAlignmentFieldCount
         hamMainLength = $analysis.hamMainLength
         bitmapXlatCount = $analysis.bitmapXlatCount
         engineComparableHamSha256 = $analysis.engineComparableSha256
+        originalEngineComparableHamSha256 = $analysis.originalEngineComparableSha256
         ignoredOriginalHamTrailer = $summary.ignoredOriginalTrailer
     }
 }
@@ -239,6 +248,7 @@ Write-Host "Created $OutputPath"
     path = $OutputPath
     archiveBytes = (Get-Item -LiteralPath $OutputPath).Length
     hamFieldDeltas = $analysis.changedFieldCount
+    combinedAlignmentHamFieldDeltas = $analysis.combinedAlignmentFieldCount
     hamPatchOperations = $analysis.operationCount
     soundFiles = @($soundFiles).Count
     ignoredOriginalHamTrailerBytes = $analysis.ignoredTrailerLength

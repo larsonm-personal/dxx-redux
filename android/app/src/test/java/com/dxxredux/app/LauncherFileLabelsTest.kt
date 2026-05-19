@@ -10,6 +10,9 @@ class LauncherFileLabelsTest {
     fun labelsDemoAndDxaFilesSpecifically() {
         assertEquals("Demo recording", launcherFileTypeLabel("yep9.dem"))
         assertEquals("Game mod", launcherFileTypeLabel("hires.dxa"))
+        assertEquals("Game mod", launcherFileTypeLabel("uud1sp.dxa (1)"))
+        assertEquals(".dxa - game mod", launcherExtensionDescription("uud1sp.dxa (1)"))
+        assertEquals(".dxarchive file", launcherFileTypeLabel("not_a_mod.dxarchive"))
     }
 
     @Test
@@ -21,6 +24,10 @@ class LauncherFileLabelsTest {
         assertEquals(
             "Game mod",
             launcherStorageFilePurpose(File("hires.dxa"), "mods/hires.dxa", importedRootFile = true),
+        )
+        assertEquals(
+            "Game mod",
+            launcherStorageFilePurpose(File("uud1sp.dxa (1)"), "mods/uud1sp.dxa (1)", importedRootFile = true),
         )
     }
 

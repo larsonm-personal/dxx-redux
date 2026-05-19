@@ -62,7 +62,7 @@ internal fun isDirectoryImportCandidateName(
         lowercaseName.endsWith(".exe") ||
         lowercaseName.endsWith(".pkg") ||
         lowercaseName.endsWith(".sow") ||
-        lowercaseName.endsWith(".dxa") ||
+        isLauncherDxaFilename(name) ||
         AndroidGameFileExtensions.hasGameExtension(name) ||
         lowercaseName in allGameFileNames ||
         AndroidGameFileExtensions.isGogAudioFile(name)

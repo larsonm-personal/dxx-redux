@@ -59,10 +59,21 @@ private val savedGameExtensions =
 
 private fun leafName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')
 
-private fun extensionOf(filename: String): String {
+internal fun launcherExtensionOf(filename: String): String {
     val leaf = leafName(filename).lowercase(Locale.US)
     val ext = leaf.substringAfterLast('.', "")
-    return if (ext == leaf) "" else ext
+    if (ext == leaf) return ""
+    if (ext.length >= 3 && ext.take(3) == "dxa" && (ext.length == 3 || !ext[3].isLetterOrDigit())) {
+        return "dxa"
+    }
+    return ext
+}
+
+internal fun isLauncherDxaFilename(filename: String): Boolean = launcherExtensionOf(filename) == "dxa"
+
+internal fun stripLauncherDxaSuffix(filename: String): String {
+    val dotIndex = filename.lastIndexOf('.')
+    return if (dotIndex >= 0 && isLauncherDxaFilename(filename)) filename.substring(0, dotIndex) else filename
 }
 
 private fun lowerFirst(text: String): String =
@@ -70,7 +81,7 @@ private fun lowerFirst(text: String): String =
 
 internal fun launcherFileTypeLabel(filename: String): String {
     val leaf = leafName(filename).lowercase(Locale.US)
-    val ext = extensionOf(leaf)
+    val ext = launcherExtensionOf(leaf)
     return when {
         leaf == "assets.json" -> "Game file manifest"
         leaf == ".saf_manifest.json" -> "SAF game-file link manifest"
@@ -85,7 +96,7 @@ internal fun launcherFileTypeLabel(filename: String): String {
 }
 
 internal fun launcherExtensionDescription(filename: String): String {
-    val ext = extensionOf(filename)
+    val ext = launcherExtensionOf(filename)
     val label = launcherFileTypeLabel(filename)
     return if (ext.isEmpty()) label else ".$ext - ${lowerFirst(label)}"
 }

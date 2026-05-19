@@ -3768,7 +3768,7 @@ private fun SetupScreen(
                             audioFileUris.add(uri)
                         }
 
-                        lname.endsWith(".dxa") -> {
+                        isLauncherDxaFilename(name) -> {
                             dxaImportUris.add(name to uri)
                         }
 

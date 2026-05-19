@@ -22,8 +22,10 @@ class ImportTreeScannerTest {
                         ImportTreeRow("iso-1", "descent2.iso", "application/octet-stream"),
                         ImportTreeRow("gog-installer", "setup.exe", "application/octet-stream"),
                         ImportTreeRow("sow-1", "descent.sow", "application/octet-stream"),
+                        ImportTreeRow("mod-1", "uud1sp.dxa (1)", "application/octet-stream"),
                         ImportTreeRow("audio-bin", "descent_ii.gog", "application/octet-stream"),
                         ImportTreeRow("audio-cue", "descent_ii.inst", "application/octet-stream"),
+                        ImportTreeRow("not-mod", "not_a_mod.dxarchive", "application/octet-stream"),
                         ImportTreeRow("ignored", "notes.txt", "text/plain"),
                         ImportTreeRow("nameless", null, "application/octet-stream"),
                     ),
@@ -32,11 +34,11 @@ class ImportTreeScannerTest {
 
         assertEquals(listOf("dir-1"), result.childDirectoryIds)
         assertEquals(
-            listOf("cue-1", "bin-1", "iso-1", "gog-installer", "sow-1", "audio-bin", "audio-cue"),
+            listOf("cue-1", "bin-1", "iso-1", "gog-installer", "sow-1", "mod-1", "audio-bin", "audio-cue"),
             result.importableDocumentIds,
         )
-        assertEquals(8, result.scannedFileCount)
-        assertEquals(1, result.skippedUnknownFileCount)
+        assertEquals(10, result.scannedFileCount)
+        assertEquals(2, result.skippedUnknownFileCount)
     }
 
     @Test

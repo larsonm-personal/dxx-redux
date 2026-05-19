@@ -25,6 +25,7 @@ class ModManager(
     companion object {
         private const val TAG = "DXX-Mods"
         private const val MANIFEST_FILE = "mod_manifest.json"
+        private const val GENERATED_PATCH_DIR = ".generated_mod_patches"
         private val BASE_REPLACEMENT_EXTENSIONS =
             setOf("ham", "hog", "mn2", "msn", "mvl", "pig", "pog", "rdl", "rl2", "s11", "s22", "vham")
         private val TEXTURE_EXTENSIONS = setOf("dtx", "ktx2", "png", "tga")
@@ -57,6 +58,7 @@ class ModManager(
     data class ModPatchConflict(
         val patchPath: String,
         val modDisplayNames: List<String>,
+        val details: List<String> = emptyList(),
     )
 
     data class ModCompatibilityReport(
@@ -110,6 +112,10 @@ class ModManager(
                         append(conflict.patchPath)
                         append(": ")
                         append(conflict.modDisplayNames.joinToString(", "))
+                        if (conflict.details.isNotEmpty()) {
+                            append("\n")
+                            append(conflict.details.joinToString("\n"))
+                        }
                     }
                 }
             }
@@ -178,6 +184,36 @@ class ModManager(
     private data class PatchOwner(
         val patchPath: String,
         val modDisplayName: String,
+        val modFilename: String,
+    )
+
+    private data class PatchScope(
+        val rowPath: String,
+        val field: String?,
+    ) {
+        val displayPath: String
+            get() = if (this.field == null) rowPath else "$rowPath/${this.field}"
+
+        fun overlaps(other: PatchScope): Boolean =
+            rowPath == other.rowPath && (field == null || other.field == null || field == other.field)
+    }
+
+    private data class PatchWrite(
+        val owner: PatchOwner,
+        val scope: PatchScope,
+        val valueText: String,
+    )
+
+    private data class ModPatchDocument(
+        val owner: PatchOwner,
+        val operations: JSONArray?,
+        val writes: List<PatchWrite>,
+        val problem: String? = null,
+    )
+
+    private data class PatchConflictBuilder(
+        val names: MutableSet<String> = linkedSetOf(),
+        val details: MutableSet<String> = linkedSetOf(),
     )
 
     private data class CategoryBucket(
@@ -361,11 +397,14 @@ class ModManager(
                 .sortedBy { it.order }
         val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
         val pathFile = File(File(filesDir, gameDir), ".active_mod_paths")
+        val generatedPatchDir = generatedPatchDir(game)
+        generatedPatchDir.deleteRecursively()
         pathFile.parentFile?.mkdirs()
         if (enabled.isEmpty()) {
             pathFile.delete()
         } else {
             val validPaths = mutableListOf<String>()
+            writeGeneratedPatchOverrides(game, enabled)?.let { validPaths += it.absolutePath }
             for (mod in enabled) {
                 val modFile = File(modsDir, mod.filename)
                 if (modFile.exists() && modFile.length() > 0) {
@@ -381,7 +420,7 @@ class ModManager(
                 pathFile.writeText(validPaths.joinToString("\n"))
             }
         }
-        Log.i(TAG, "Wrote ${enabled.size} mod paths for $game to ${pathFile.absolutePath}")
+        logInfo("Wrote ${enabled.size} mod paths for $game to ${pathFile.absolutePath}")
     }
 
     fun checkEnabledModCompatibility(
@@ -394,23 +433,14 @@ class ModManager(
                 .sortedBy { it.order }
         val assetEntries = AssetManifest(setDir).load().associateBy { it.filename.lowercase(Locale.US) }
         val failures = mutableListOf<ModCompatibilityFailure>()
-        val patchOwners = mutableListOf<PatchOwner>()
+        val patchDocuments = mutableListOf<ModPatchDocument>()
         for (mod in enabled) {
             val modFile = File(modsDir, mod.filename)
             if (!modFile.isFile) continue
             failures += checkModCompatibility(mod, modFile, game, setDir, assetEntries)
-            patchOwners += collectModPatchOwners(mod, modFile, game)
+            patchDocuments += collectModPatchDocuments(mod, modFile, game)
         }
-        val patchConflicts =
-            patchOwners
-                .groupBy { it.patchPath }
-                .filterValues { owners -> owners.map { it.modDisplayName }.distinct().size > 1 }
-                .map { (patchPath, owners) ->
-                    ModPatchConflict(
-                        patchPath = patchPath,
-                        modDisplayNames = owners.map { it.modDisplayName }.distinct(),
-                    )
-                }
+        val patchConflicts = collectPatchConflicts(patchDocuments)
         return ModCompatibilityReport(failures, patchConflicts)
     }
 
@@ -481,14 +511,15 @@ class ModManager(
         }
     }
 
-    private fun collectModPatchOwners(
+    private fun collectModPatchDocuments(
         mod: ModInfo,
         modFile: File,
         game: String?,
-    ): List<PatchOwner> {
+    ): List<ModPatchDocument> {
         try {
             ZipFile(modFile).use { zip ->
                 val patchPaths = mutableSetOf<String>()
+                val entriesByPath = mutableMapOf<String, java.util.zip.ZipEntry>()
                 val manifest = readModManifest(zip)
                 if (manifest != null) {
                     val manifestGame = manifest.optString("game", "both")
@@ -500,16 +531,208 @@ class ModManager(
                 while (entries.hasMoreElements()) {
                     val zipEntry = entries.nextElement()
                     if (!zipEntry.isDirectory && isPatchEntry(zipEntry.name, game)) {
-                        patchPaths += normalizeDxaPath(zipEntry.name)
+                        val patchPath = normalizeDxaPath(zipEntry.name)
+                        patchPaths += patchPath
+                        entriesByPath[patchPath] = zipEntry
                     }
                 }
-                return patchPaths.map { PatchOwner(it, mod.displayName) }
+                return patchPaths.map { patchPath ->
+                    val owner = PatchOwner(patchPath, mod.displayName, mod.filename)
+                    val entry = entriesByPath[patchPath]
+                    if (entry == null) {
+                        ModPatchDocument(
+                            owner = owner,
+                            operations = null,
+                            writes = emptyList(),
+                            problem = "declares $patchPath but the archive entry is missing",
+                        )
+                    } else {
+                        readPatchDocument(zip, entry, owner)
+                    }
+                }
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to read DXA patch metadata from ${modFile.name}: ${e.message}")
             return emptyList()
         }
     }
+
+    private fun readPatchDocument(
+        zip: ZipFile,
+        entry: java.util.zip.ZipEntry,
+        owner: PatchOwner,
+    ): ModPatchDocument =
+        try {
+            val text = zip.getInputStream(entry).bufferedReader().use { it.readText() }
+            val operations = JSONArray(text)
+            ModPatchDocument(owner, operations, collectPatchWrites(owner, operations))
+        } catch (e: Exception) {
+            ModPatchDocument(
+                owner = owner,
+                operations = null,
+                writes = emptyList(),
+                problem = "could not read ${owner.patchPath}: ${e.message ?: e.javaClass.simpleName}",
+            )
+        }
+
+    private fun collectPatchWrites(
+        owner: PatchOwner,
+        operations: JSONArray,
+    ): List<PatchWrite> {
+        val testsByPath = mutableMapOf<String, Any?>()
+        val writes = mutableListOf<PatchWrite>()
+        for (index in 0 until operations.length()) {
+            val operation =
+                operations.optJSONObject(index) ?: throw IllegalArgumentException("operation $index is not an object")
+            val operationName = operation.optString("op")
+            val path = operation.optString("path")
+            if (path.isBlank()) throw IllegalArgumentException("operation $index is missing path")
+            if (operationName == "test") {
+                testsByPath[path] = operation.opt("value")
+                continue
+            }
+            if (operationName != "add" && operationName != "replace" && operationName != "remove") {
+                throw IllegalArgumentException("unsupported JSON Patch operation '$operationName'")
+            }
+            val scope = parsePatchScope(path) ?: throw IllegalArgumentException("unsupported patch path $path")
+            val value = operation.opt("value")
+            val testedValue = testsByPath[path]
+            if (operationName == "replace" && scope.field == null && value is JSONObject && testedValue is JSONObject) {
+                addChangedObjectFieldWrites(owner, scope, testedValue, value, writes)
+            } else {
+                writes += PatchWrite(owner, scope, canonicalJson(value))
+            }
+        }
+        return writes
+    }
+
+    private fun addChangedObjectFieldWrites(
+        owner: PatchOwner,
+        rowScope: PatchScope,
+        baseValue: JSONObject,
+        patchValue: JSONObject,
+        writes: MutableList<PatchWrite>,
+    ) {
+        val keys = linkedSetOf<String>()
+        val baseKeys = baseValue.keys()
+        while (baseKeys.hasNext()) keys += baseKeys.next()
+        val patchKeys = patchValue.keys()
+        while (patchKeys.hasNext()) keys += patchKeys.next()
+        for (key in keys.sorted()) {
+            val baseField = baseValue.opt(key)
+            val patchField = patchValue.opt(key)
+            if (canonicalJson(baseField) != canonicalJson(patchField)) {
+                writes += PatchWrite(owner, rowScope.copy(field = key), canonicalJson(patchField))
+            }
+        }
+    }
+
+    private fun collectPatchConflicts(documents: List<ModPatchDocument>): List<ModPatchConflict> {
+        val builders = linkedMapOf<String, PatchConflictBuilder>()
+        for (document in documents) {
+            val problem = document.problem ?: continue
+            val builder = builders.getOrPut(document.owner.patchPath) { PatchConflictBuilder() }
+            builder.names += document.owner.modDisplayName
+            builder.details += "${document.owner.modDisplayName}: $problem"
+        }
+        val documentsByPath = documents.filter { it.problem == null }.groupBy { it.owner.patchPath }
+        for ((patchPath, patchDocuments) in documentsByPath) {
+            val writes = patchDocuments.flatMap { it.writes }
+            for (leftIndex in writes.indices) {
+                val left = writes[leftIndex]
+                for (rightIndex in leftIndex + 1 until writes.size) {
+                    val right = writes[rightIndex]
+                    if (left.owner.modFilename == right.owner.modFilename) continue
+                    if (!left.scope.overlaps(right.scope) || left.valueText == right.valueText) continue
+                    val builder = builders.getOrPut(patchPath) { PatchConflictBuilder() }
+                    builder.names += left.owner.modDisplayName
+                    builder.names += right.owner.modDisplayName
+                    builder.details +=
+                        "${left.scope.displayPath}: ${left.owner.modDisplayName} and ${right.owner.modDisplayName} write different values"
+                }
+            }
+        }
+        return builders.map { (patchPath, builder) ->
+            ModPatchConflict(
+                patchPath = patchPath,
+                modDisplayNames = builder.names.toList(),
+                details = builder.details.toList(),
+            )
+        }
+    }
+
+    private fun generatedPatchDir(game: String): File {
+        val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
+        return File(File(filesDir, gameDir), GENERATED_PATCH_DIR)
+    }
+
+    private fun writeGeneratedPatchOverrides(
+        game: String,
+        enabled: List<ModInfo>,
+    ): File? {
+        val documents = mutableListOf<ModPatchDocument>()
+        for (mod in enabled) {
+            val modFile = File(modsDir, mod.filename)
+            if (modFile.isFile) documents += collectModPatchDocuments(mod, modFile, game)
+        }
+        if (collectPatchConflicts(documents).isNotEmpty()) return null
+        val root = generatedPatchDir(game)
+        var wrotePatch = false
+        for ((patchPath, patchDocuments) in documents.filter { it.operations != null }.groupBy { it.owner.patchPath }) {
+            if (patchDocuments.map { it.owner.modFilename }.distinct().size <= 1) continue
+            val merged = JSONArray()
+            for (document in patchDocuments) {
+                val operations = document.operations ?: continue
+                for (index in 0 until operations.length()) merged.put(operations.get(index))
+            }
+            val output = File(root, patchPath.replace('/', File.separatorChar))
+            output.parentFile?.mkdirs()
+            output.writeText(merged.toString(2))
+            wrotePatch = true
+        }
+        return if (wrotePatch) root else null
+    }
+
+    private fun parsePatchScope(path: String): PatchScope? {
+        if (!path.startsWith("/")) return null
+        val segments = path.split('/').drop(1).map { decodeJsonPointerSegment(it) }
+        if (segments.size !in 3..4 || segments[0] != "sections") return null
+        val index = segments[2].toIntOrNull() ?: return null
+        val rowPath = "/sections/${segments[1]}/$index"
+        return PatchScope(rowPath, segments.getOrNull(3))
+    }
+
+    private fun decodeJsonPointerSegment(text: String): String = text.replace("~1", "/").replace("~0", "~")
+
+    private fun canonicalJson(value: Any?): String =
+        when (value) {
+            null, JSONObject.NULL -> {
+                "null"
+            }
+
+            is JSONObject -> {
+                val keys = mutableListOf<String>()
+                val iterator = value.keys()
+                while (iterator.hasNext()) keys += iterator.next()
+                keys.sorted().joinToString(prefix = "{", postfix = "}") { key ->
+                    JSONObject.quote(key) + ":" + canonicalJson(value.opt(key))
+                }
+            }
+
+            is JSONArray -> {
+                (0 until value.length()).joinToString(prefix = "[", postfix = "]") { index ->
+                    canonicalJson(value.opt(index))
+                }
+            }
+
+            is String -> {
+                JSONObject.quote(value)
+            }
+
+            else -> {
+                value.toString()
+            }
+        }
 
     private fun addManifestPatchPaths(
         manifest: JSONObject,
@@ -737,17 +960,13 @@ class ModManager(
         }
 
     private fun collectPatchConflictsForMod(mod: ModInfo): List<ModPatchConflict> {
-        val owners = mutableListOf<PatchOwner>()
+        val documents = mutableListOf<ModPatchDocument>()
         for (candidate in mods.filter { it.enabled || it.filename == mod.filename }) {
             val candidateFile = File(modsDir, candidate.filename)
             if (!candidateFile.isFile) continue
-            owners += collectModPatchOwners(candidate, candidateFile, game = null)
+            documents += collectModPatchDocuments(candidate, candidateFile, game = null)
         }
-        return owners
-            .groupBy { it.patchPath }
-            .mapValues { (_, patchOwners) -> patchOwners.map { it.modDisplayName }.distinct() }
-            .filterValues { names -> mod.displayName in names && names.size > 1 }
-            .map { (patchPath, names) -> ModPatchConflict(patchPath, names) }
+        return collectPatchConflicts(documents).filter { conflict -> mod.displayName in conflict.modDisplayNames }
     }
 
     private fun describeBaseRequirementProblem(requirement: ModBaseRequirement): String {
@@ -800,8 +1019,7 @@ class ModManager(
     }
 
     private fun generateDisplayName(filename: String): String =
-        filename
-            .removeSuffix(".dxa")
+        stripLauncherDxaSuffix(filename)
             .replace(Regex("[_-]"), " ")
             .split(" ")
             .joinToString(" ") { word ->
@@ -858,5 +1076,13 @@ class ModManager(
             )
         }
         manifestFile.writeText(JSONObject().put("mods", arr).toString(2))
+    }
+
+    private fun logInfo(message: String) {
+        try {
+            Log.i(TAG, message)
+        } catch (_: RuntimeException) {
+            // Android Log is not available in local JVM tests
+        }
     }
 }

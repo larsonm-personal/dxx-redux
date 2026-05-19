@@ -371,6 +371,41 @@ function New-Uud2spChangedFieldRow {
     }
 }
 
+$script:Uud2spCombinedFieldOverrides = @(
+    [pscustomobject]@{
+        section = "wclips"
+        index = 9
+        field = "PlayTime"
+        patch = 65536
+        reason = "Matches Xfing's D2TP+SP combined HAM"
+    }
+)
+
+function Set-Uud2spCombinedPatchValues {
+    param([object[]]$Rows)
+
+    $alignedRows = @()
+    foreach ($override in $script:Uud2spCombinedFieldOverrides) {
+        $matches = @($Rows | Where-Object { $_.section -eq $override.section -and [int]$_.index -eq [int]$override.index -and $_.field -eq $override.field })
+        if ($matches.Count -ne 1) {
+            throw "Expected one UUD2SP combined alignment row for /sections/$($override.section)/$($override.index)/$($override.field), found $($matches.Count)"
+        }
+        $row = $matches[0]
+        $sourcePatch = [int]$row.patch
+        $row.patch = [int]$override.patch
+        $alignedRows += [pscustomobject]@{
+            section = $row.section
+            index = [int]$row.index
+            field = $row.field
+            base = [int]$row.base
+            sourcePatch = $sourcePatch
+            patch = [int]$override.patch
+            reason = $override.reason
+        }
+    }
+    return @($alignedRows)
+}
+
 function Add-Uud2spChangedFieldRows {
     param(
         [System.Collections.Generic.List[object]]$Rows,
@@ -498,11 +533,19 @@ function New-Uud2spHamPatchAnalysis {
     Add-Uud2spChangedFieldRows -Rows $rows -BaseBytes $baseBytes -BaseLayout $baseLayout -PatchBytes $patchBytes -PatchLayout $patchLayout -Section "weapons" -Count $baseLayout.WeaponCount -Fields @($script:Uud2spWeaponFields.Keys)
     Add-Uud2spChangedFieldRows -Rows $rows -BaseBytes $baseBytes -BaseLayout $baseLayout -PatchBytes $patchBytes -PatchLayout $patchLayout -Section "objBitmaps" -Count $baseLayout.ObjBitmapCount -Fields @("Bitmap", "Pointer")
 
-    $patchOps = ConvertTo-Uud2spJsonPatch -Rows @($rows)
+    $sourceRows = @($rows)
+    $combinedAlignmentRows = Set-Uud2spCombinedPatchValues -Rows $sourceRows
+    $patchRows = @($sourceRows)
+    $expectedBytes = Copy-Uud2spBytes $patchBytes
+    foreach ($row in $combinedAlignmentRows) {
+        Write-Uud2spHamFieldValue -Bytes $expectedBytes -Layout $patchLayout -Section $row.section -Index $row.index -Field $row.field -Value ([int]$row.patch)
+    }
+
+    $patchOps = ConvertTo-Uud2spJsonPatch -Rows @($patchRows)
     $generatedBytes = Apply-Uud2spHamPatchOperations -BaseBytes $baseBytes -PatchOperations $patchOps
-    $firstDifference = Get-Uud2spFirstByteDifference -Left $generatedBytes -Right $patchBytes -Length $baseBytes.Length
+    $firstDifference = Get-Uud2spFirstByteDifference -Left $generatedBytes -Right $expectedBytes -Length $baseBytes.Length
     if ($firstDifference -ge 0) {
-        throw "Generated HAM does not match the patched HAM retail-length prefix at byte $firstDifference"
+        throw "Generated HAM does not match the normalized patched HAM retail-length prefix at byte $firstDifference"
     }
 
     return [pscustomobject]@{
@@ -515,7 +558,8 @@ function New-Uud2spHamPatchAnalysis {
         bitmapXlatCount = $baseBitmapXlatCount
         engineReadableMainLength = $baseLayout.MainEnd
         engineComparableLength = $baseBytes.Length
-        engineComparableSha256 = Get-XfingSha256ForBytes -Bytes $patchBytes -Offset 0 -Length $baseBytes.Length
+        originalEngineComparableSha256 = Get-XfingSha256ForBytes -Bytes $patchBytes -Offset 0 -Length $baseBytes.Length
+        engineComparableSha256 = Get-XfingSha256ForBytes -Bytes $expectedBytes -Offset 0 -Length $baseBytes.Length
         generatedComparableSha256 = Get-XfingSha256ForBytes -Bytes $generatedBytes
         ignoredTrailerOffset = $baseBytes.Length
         ignoredTrailerLength = $patchBytes.Length - $baseBytes.Length
@@ -534,9 +578,12 @@ function New-Uud2spHamPatchAnalysis {
             objectBitmaps = $baseLayout.ObjBitmapCount
             reactors = $baseLayout.ReactorCount
         }
-        rows = @($rows)
+        rows = @($patchRows)
+        combinedAlignmentRows = @($combinedAlignmentRows)
+        sourceChangedFieldCount = @($sourceRows).Count
         patchOperations = @($patchOps)
-        changedFieldCount = @($rows).Count
+        changedFieldCount = @($patchRows).Count
+        combinedAlignmentFieldCount = @($combinedAlignmentRows).Count
         operationCount = @($patchOps).Count
     }
 }

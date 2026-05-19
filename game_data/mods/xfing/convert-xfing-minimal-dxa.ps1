@@ -384,6 +384,40 @@ function New-XfingD1Archive {
     }
 }
 
+$script:XfingD2SpCombinedWclipAlignment = @(
+    [pscustomobject]@{ index = 5; values = [ordered]@{ PlayTime = 52428; OpenSound = 88; CloseSound = 89 } },
+    [pscustomobject]@{ index = 9; values = [ordered]@{ PlayTime = 65536; OpenSound = 88; CloseSound = 89 } }
+)
+
+function Set-XfingD2SpCombinedWclipValues {
+    param([object[]]$Rows)
+
+    $aligned = @()
+    foreach ($override in $script:XfingD2SpCombinedWclipAlignment) {
+        $row = @($Rows | Where-Object { $_.section -eq "wclip" -and [int]$_.index -eq [int]$override.index }) | Select-Object -First 1
+        if (-not $row) {
+            throw "Missing UUD2TP wclip $($override.index) row for D2TP+SP combined alignment"
+        }
+        foreach ($property in $override.values.GetEnumerator()) {
+            if (-not ($row.patch.PSObject.Properties.Name -contains $property.Key)) {
+                throw "Missing UUD2TP wclip $($override.index) field $($property.Key) for D2TP+SP combined alignment"
+            }
+            $previousPatchValue = $row.patch.PSObject.Properties[$property.Key].Value
+            $row.patch.PSObject.Properties[$property.Key].Value = $property.Value
+            $aligned += [pscustomobject]@{
+                section = "wclips"
+                index = [int]$override.index
+                field = $property.Key
+                base = $row.base.PSObject.Properties[$property.Key].Value
+                sourcePatch = $previousPatchValue
+                patch = $property.Value
+                reason = "Matches Xfing's D2TP+SP combined HAM"
+            }
+        }
+    }
+    return @($aligned)
+}
+
 function New-XfingHamDelta {
     param(
         [string]$StageRoot,
@@ -400,6 +434,7 @@ function New-XfingHamDelta {
     $vclipRows = Compare-XfingRowsByJson -BaseRows $baseHam.Vclips -PatchRows $patchHam.Vclips -Section "vclip"
     $eclipRows = Compare-XfingRowsByJson -BaseRows $baseHam.Eclips -PatchRows $patchHam.Eclips -Section "eclip"
     $wclipRows = Compare-XfingRowsByJson -BaseRows $baseHam.Walls -PatchRows $patchHam.Walls -Section "wclip"
+    $spCombinedAlignment = Set-XfingD2SpCombinedWclipValues -Rows $wclipRows
     $patchOps = @()
     $patchOps += Convert-XfingRowsToJsonPatch -Rows $textureRows -BasePath "/sections/textures"
     $patchOps += Convert-XfingRowsToJsonPatch -Rows $vclipRows -BasePath "/sections/vclips"
@@ -428,6 +463,7 @@ function New-XfingHamDelta {
         vclipDeltas = @($vclipRows)
         eclipDeltas = @($eclipRows)
         wclipDeltas = @($wclipRows)
+        spCombinedAlignment = @($spCombinedAlignment)
     }
     $hamPatchPath = "patches/d2/ham_patch.rfc6902.json"
     $hamSummaryPath = "patches/d2/ham_patch_summary.json"
@@ -442,6 +478,7 @@ function New-XfingHamDelta {
         vclipDeltas = @($vclipRows).Count
         eclipDeltas = @($eclipRows).Count
         wclipDeltas = @($wclipRows).Count
+        spCombinedAlignmentDeltas = @($spCombinedAlignment).Count
     }
 }
 
@@ -602,6 +639,7 @@ function New-XfingD2Archive {
                 eclips = $hamDelta.eclipDeltas
                 wclips = $hamDelta.wclipDeltas
             }
+            spCombinedAlignmentFieldDeltas = $hamDelta.spCombinedAlignmentDeltas
             skippedSources = @($skippedSources)
         }
     }

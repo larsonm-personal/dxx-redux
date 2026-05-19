@@ -125,8 +125,20 @@ try {
 
     $baseBytes = [IO.File]::ReadAllBytes($baseHamPath)
     $patchedBytes = [IO.File]::ReadAllBytes($patchedHamPath)
+    $expectedBytes = Copy-Uud2spBytes $patchedBytes
+    $expectedLayout = Get-Uud2spHamLayout $expectedBytes
+    if ($summary.PSObject.Properties.Name -contains "ignoredFieldDeltas") {
+        foreach ($row in @($summary.ignoredFieldDeltas)) {
+            Write-Uud2spHamFieldValue -Bytes $expectedBytes -Layout $expectedLayout -Section $row.section -Index $row.index -Field $row.field -Value ([int]$row.base)
+        }
+    }
+    if ($summary.PSObject.Properties.Name -contains "combinedAlignmentFieldDeltas") {
+        foreach ($row in @($summary.combinedAlignmentFieldDeltas)) {
+            Write-Uud2spHamFieldValue -Bytes $expectedBytes -Layout $expectedLayout -Section $row.section -Index $row.index -Field $row.field -Value ([int]$row.patch)
+        }
+    }
     $generatedBytes = Apply-Uud2spHamPatchOperations -BaseBytes $baseBytes -PatchOperations $patchOps
-    Assert-Uud2spBytesEqual -Left $generatedBytes -Right $patchedBytes -Length $baseBytes.Length -Description "Generated HAM retail-length prefix"
+    Assert-Uud2spBytesEqual -Left $generatedBytes -Right $expectedBytes -Length $baseBytes.Length -Description "Generated normalized HAM retail-length prefix"
     if ([long]$summary.bitmapXlatOffset + ([long]$summary.bitmapXlatCount * 2) -ne [long]$summary.engineComparableLength) {
         throw "Summary GameBitmapXlat span does not match comparable HAM length"
     }
@@ -135,9 +147,15 @@ try {
     if ($generatedSha256 -ne $summary.generatedComparableSha256) {
         throw "Generated HAM SHA-256 does not match summary"
     }
-    $patchedComparableSha256 = Get-XfingSha256ForBytes -Bytes $patchedBytes -Offset 0 -Length $baseBytes.Length
+    $patchedComparableSha256 = Get-XfingSha256ForBytes -Bytes $expectedBytes -Offset 0 -Length $baseBytes.Length
     if ($patchedComparableSha256 -ne $summary.engineComparableSha256) {
-        throw "Patched HAM comparable SHA-256 does not match summary"
+        throw "Normalized patched HAM comparable SHA-256 does not match summary"
+    }
+    if ($summary.originalEngineComparableSha256) {
+        $originalComparableSha256 = Get-XfingSha256ForBytes -Bytes $patchedBytes -Offset 0 -Length $baseBytes.Length
+        if ($originalComparableSha256 -ne $summary.originalEngineComparableSha256) {
+            throw "Original patched HAM comparable SHA-256 does not match summary"
+        }
     }
     $ignoredTrailerLength = $patchedBytes.Length - $baseBytes.Length
     if ($ignoredTrailerLength -ne [int]$summary.ignoredOriginalTrailer.size) {
@@ -164,6 +182,8 @@ try {
         hamEntries = $hamEntries.Count
         hamPatchOperations = $patchOps.Count
         hamFieldDeltas = [int]$summary.fieldDeltaCount
+        ignoredHamFieldDeltas = if ($summary.PSObject.Properties.Name -contains "ignoredFieldDeltaCount") { [int]$summary.ignoredFieldDeltaCount } else { 0 }
+        combinedAlignmentHamFieldDeltas = if ($summary.PSObject.Properties.Name -contains "combinedAlignmentFieldDeltaCount") { [int]$summary.combinedAlignmentFieldDeltaCount } else { 0 }
         generatedComparableSha256 = $generatedSha256
         originalPatchedHamSha256 = Get-XfingSha256ForBytes -Bytes $patchedBytes
         ignoredOriginalHamTrailerBytes = $ignoredTrailerLength
