@@ -31,6 +31,21 @@ function GetSetupButtons {
     return $obj.buttons | ForEach-Object { $_.text }
 }
 
+function GetSetupIntrospect {
+    $result = Wait-SetupCondition -TimeoutSeconds 15 -PollMs 800 -Predicate {
+        param($obj)
+        return ($null -ne $obj.buttons -and $obj.buttons.Count -gt 0)
+    }
+    if (-not $result) {
+        $raw = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
+        Info "  DEBUG: setup_introspect.json content: $raw"
+        Fail "Timed out waiting for setup introspection (15s)"
+    }
+
+    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
+    return $json | ConvertFrom-Json
+}
+
 function Wait-ForMainPageDpadReady {
     param(
         [int]$TimeoutSeconds = 8,
@@ -102,6 +117,34 @@ function Wait-ForSetupButtons {
     return $buttons
 }
 
+function Wait-ForSetupButtonFocus {
+    param(
+        [Parameter(Mandatory = $true)][string]$Text,
+        [int]$TimeoutSeconds = 10
+    )
+
+    $matched = Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 500 -Predicate {
+        param($obj)
+        if ($null -eq $obj.buttons -or $obj.buttons.Count -eq 0) {
+            return $false
+        }
+
+        foreach ($button in $obj.buttons) {
+            if ($button.text -eq $Text -and $button.focused) {
+                return $true
+            }
+        }
+
+        return $false
+    }
+
+    $obj = GetSetupIntrospect
+    $focused = @($obj.buttons | Where-Object { $_.focused } | ForEach-Object { $_.text })
+    if (-not $matched) {
+        Fail "Timed out waiting for focus on '$Text' (focused: $($focused -join ', '))"
+    }
+}
+
 function SendKey($code) {
     & $script:ADB shell input keyevent $code 2>$null
 }
@@ -165,6 +208,7 @@ Info "  PASS: Main page has expected buttons"
 # --- Test 2: DPAD_CENTER activates Define Controls (initial focus target) ---
 Info "Test 2: DPAD_CENTER on initial focus (Define Controls)..."
 $buttons = Wait-ForMainPageDpadReady
+Wait-ForSetupButtonFocus -Text "Define Controls"
 & $script:ADB logcat -c
 SendKey 23  # DPAD_CENTER
 $buttons = GetSetupButtons
@@ -186,6 +230,7 @@ Info "  PASS: Returned to main page"
 
 # --- Test 4: Focus restoration after return - DPAD_CENTER works again ---
 Info "Test 4: Focus restoration after return..."
+Wait-ForSetupButtonFocus -Text "Define Controls"
 SendKey 23  # DPAD_CENTER
 $buttons = GetSetupButtons
 if (($buttons -contains "Define Controls") -or
@@ -202,6 +247,7 @@ $buttons = Wait-ForMainPageDpadReady
 if (($buttons -notcontains "Define Controls") -or ($buttons -notcontains "Touch Layout")) {
     Fail "Did not return to the main page before DPAD_RIGHT test (got: $($buttons -join ', '))"
 }
+Wait-ForSetupButtonFocus -Text "Define Controls"
 SendKey 22  # DPAD_RIGHT to Touch Layout
 SendKey 23  # DPAD_CENTER
 $buttons = GetSetupButtons

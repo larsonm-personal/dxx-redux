@@ -59,10 +59,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -4019,6 +4021,7 @@ private fun SetupScreen(
 
     // ── Initial focus for D-pad/keyboard navigation ─────
     val initialFocus = remember { FocusRequester() }
+    val inputModeManager = LocalInputModeManager.current
 
     // ── Page navigation state ────────────────────────────
     var showControllerPage by remember { mutableStateOf(false) }
@@ -4042,10 +4045,12 @@ private fun SetupScreen(
             showMusicPage
     LaunchedEffect(anySubPageOpen, canLaunch, showResumePanel, focusResumeTrigger) {
         if (!anySubPageOpen) {
+            inputModeManager.requestInputMode(InputMode.Keyboard)
             withFrameNanos { }
             withFrameNanos { }
             initialFocus.requestFocus()
             delay(300)
+            inputModeManager.requestInputMode(InputMode.Keyboard)
             withFrameNanos { }
             initialFocus.requestFocus()
         }
@@ -7507,12 +7512,15 @@ private fun ControllerSection(
     val hasController = displayedController != null
     var expanded by remember { mutableStateOf(false) }
     var defineControlsReady by remember { mutableStateOf(false) }
+    val inputModeManager = LocalInputModeManager.current
 
     LaunchedEffect(initialFocusRequester, defineControlsReady) {
         if (initialFocusRequester != null && defineControlsReady) {
+            inputModeManager.requestInputMode(InputMode.Keyboard)
             withFrameNanos { }
             initialFocusRequester.requestFocus()
             kotlinx.coroutines.delay(300)
+            inputModeManager.requestInputMode(InputMode.Keyboard)
             withFrameNanos { }
             initialFocusRequester.requestFocus()
         }
