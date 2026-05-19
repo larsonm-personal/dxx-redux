@@ -48,43 +48,62 @@ class ModManager(
         val reason: String,
     )
 
+    data class ModPatchConflict(
+        val patchPath: String,
+        val modDisplayNames: List<String>,
+    )
+
     data class ModCompatibilityReport(
         val failures: List<ModCompatibilityFailure>,
+        val patchConflicts: List<ModPatchConflict> = emptyList(),
     ) {
-        val ok: Boolean get() = failures.isEmpty()
+        val ok: Boolean get() = failures.isEmpty() && patchConflicts.isEmpty()
 
         fun toUserMessage(): String {
             if (ok) return ""
             return buildString {
-                append("One or more enabled mods require different base game files")
-                val grouped = failures.groupBy { it.modDisplayName }
-                for ((modName, modFailures) in grouped) {
-                    append("\n\n")
-                    append(modName)
-                    val description = modFailures.first().requiredBaseDescription
-                    if (description.isNotBlank()) {
-                        append("\nRequired base files: ")
-                        append(description)
-                    }
-                    for (failure in modFailures) {
-                        append("\n")
-                        append(failure.filename)
-                        append(": expected ")
-                        append(failure.expectedVersion)
-                        append(" sha256=")
-                        append(failure.expectedSha256)
-                        append("; found ")
-                        if (failure.actualSha256 == null) {
-                            append("missing")
-                        } else {
-                            append(failure.actualVersion ?: "unknown")
-                            append(" sha256=")
-                            append(failure.actualSha256)
+                if (failures.isNotEmpty()) {
+                    append("One or more enabled mods require different base game files")
+                    val grouped = failures.groupBy { it.modDisplayName }
+                    for ((modName, modFailures) in grouped) {
+                        append("\n\n")
+                        append(modName)
+                        val description = modFailures.first().requiredBaseDescription
+                        if (description.isNotBlank()) {
+                            append("\nRequired base files: ")
+                            append(description)
                         }
-                        if (failure.reason.isNotBlank()) {
+                        for (failure in modFailures) {
                             append("\n")
-                            append(failure.reason)
+                            append(failure.filename)
+                            append(": expected ")
+                            append(failure.expectedVersion)
+                            append(" sha256=")
+                            append(failure.expectedSha256)
+                            append("; found ")
+                            if (failure.actualSha256 == null) {
+                                append("missing")
+                            } else {
+                                append(failure.actualVersion ?: "unknown")
+                                append(" sha256=")
+                                append(failure.actualSha256)
+                            }
+                            if (failure.reason.isNotBlank()) {
+                                append("\n")
+                                append(failure.reason)
+                            }
                         }
+                    }
+                }
+                if (patchConflicts.isNotEmpty()) {
+                    if (isNotEmpty()) append("\n\n")
+                    append("Two or more enabled mods patch the same engine metadata file")
+                    append("\nMove or disable one of the conflicting mods, or use a combined patch DXA")
+                    for (conflict in patchConflicts) {
+                        append("\n")
+                        append(conflict.patchPath)
+                        append(": ")
+                        append(conflict.modDisplayNames.joinToString(", "))
                     }
                 }
             }
@@ -96,6 +115,11 @@ class ModManager(
     private data class ActualBaseFile(
         val sha256: String,
         val versionName: String?,
+    )
+
+    private data class PatchOwner(
+        val patchPath: String,
+        val modDisplayName: String,
     )
 
     private val modsDir get() = File(filesDir, "mods").also { it.mkdirs() }
@@ -305,13 +329,86 @@ class ModManager(
                 .sortedBy { it.order }
         val assetEntries = AssetManifest(setDir).load().associateBy { it.filename.lowercase(Locale.US) }
         val failures = mutableListOf<ModCompatibilityFailure>()
+        val patchOwners = mutableListOf<PatchOwner>()
         for (mod in enabled) {
             val modFile = File(modsDir, mod.filename)
             if (!modFile.isFile) continue
             failures += checkModCompatibility(mod, modFile, game, setDir, assetEntries)
+            patchOwners += collectModPatchOwners(mod, modFile, game)
         }
-        return ModCompatibilityReport(failures)
+        val patchConflicts =
+            patchOwners
+                .groupBy { it.patchPath }
+                .filterValues { owners -> owners.map { it.modDisplayName }.distinct().size > 1 }
+                .map { (patchPath, owners) ->
+                    ModPatchConflict(
+                        patchPath = patchPath,
+                        modDisplayNames = owners.map { it.modDisplayName }.distinct(),
+                    )
+                }
+        return ModCompatibilityReport(failures, patchConflicts)
     }
+
+    private fun collectModPatchOwners(
+        mod: ModInfo,
+        modFile: File,
+        game: String,
+    ): List<PatchOwner> {
+        try {
+            ZipFile(modFile).use { zip ->
+                val patchPaths = mutableSetOf<String>()
+                val entry = zip.getEntry("metadata/manifest.json")
+                if (entry != null) {
+                    val manifestText = zip.getInputStream(entry).bufferedReader().use { it.readText() }
+                    val manifest = JSONObject(manifestText)
+                    val manifestGame = manifest.optString("game", "both")
+                    if (manifestGame == "both" || manifestGame == game) {
+                        addManifestPatchPaths(manifest, game, patchPaths)
+                    }
+                }
+                val entries = zip.entries()
+                while (entries.hasMoreElements()) {
+                    val zipEntry = entries.nextElement()
+                    if (!zipEntry.isDirectory && isPatchEntry(zipEntry.name, game)) {
+                        patchPaths += normalizeDxaPath(zipEntry.name)
+                    }
+                }
+                return patchPaths.map { PatchOwner(it, mod.displayName) }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read DXA patch metadata from ${modFile.name}: ${e.message}")
+            return emptyList()
+        }
+    }
+
+    private fun addManifestPatchPaths(
+        manifest: JSONObject,
+        game: String,
+        patchPaths: MutableSet<String>,
+    ) {
+        val compatibility = manifest.optJSONObject("compatibility") ?: return
+        val requiredFiles = compatibility.optJSONArray("requiredBaseFiles") ?: return
+        for (index in 0 until requiredFiles.length()) {
+            val required = requiredFiles.optJSONObject(index) ?: continue
+            val requiredGame = required.optString("game", game)
+            if (requiredGame != "both" && requiredGame != game) continue
+            val paths = required.optJSONArray("patchPaths") ?: continue
+            for (pathIndex in 0 until paths.length()) {
+                val patchPath = normalizeDxaPath(paths.optString(pathIndex))
+                if (patchPath.isNotBlank()) patchPaths += patchPath
+            }
+        }
+    }
+
+    private fun isPatchEntry(
+        name: String,
+        game: String,
+    ): Boolean {
+        val normalized = normalizeDxaPath(name)
+        return normalized.startsWith("patches/$game/") && normalized.endsWith(".rfc6902.json")
+    }
+
+    private fun normalizeDxaPath(path: String): String = path.replace('\\', '/').trim('/').lowercase(Locale.US)
 
     private fun checkModCompatibility(
         mod: ModInfo,

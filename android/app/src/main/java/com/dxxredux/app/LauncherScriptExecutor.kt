@@ -426,6 +426,11 @@ class LauncherScriptExecutor(
                 }
                 .forEach { it.delete() }
         }
+        context
+            .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .remove("selected_game")
+            .apply()
         Log.i(TAG, "Game state reset (deleted plr/plx/sg/mg/cfg/file_sets files)")
     }
 

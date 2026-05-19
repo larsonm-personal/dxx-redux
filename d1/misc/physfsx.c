@@ -114,26 +114,33 @@ void PHYSFSX_init(int argc, char *argv[])
 		PHYSFSX_addRelToSearchPath("data", 1);
 
 		/* Mod support: mount enabled .dxa files listed in .active_mod_paths.
-		 * These are prepended (priority 0) so mod content overrides base
-		 * game files.  Written by Kotlin ModManager before launch. */
+		 * Kotlin writes the list in UI order, highest priority first.  Mount in
+		 * reverse with prepend so the final PhysFS search path keeps that order. */
 		if (pref)
 		{
 			char modpath[512];
+			char mod_lines[64][512];
+			int mod_count = 0;
 			snprintf(modpath, sizeof(modpath), "%sd1x-redux/.active_mod_paths", pref);
 			FILE *mf = fopen(modpath, "r");
 			if (mf) {
 				char line[512];
+				int i;
 				while (fgets(line, sizeof(line), mf)) {
-					char *nl = strchr(line, '\n');
+					char *nl = strpbrk(line, "\r\n");
 					if (nl) *nl = '\0';
-					if (strlen(line) > 0) {
-						if (PHYSFS_mount(line, NULL, 0))
-							con_printf(CON_NORMAL, "PHYSFS: Mounted mod %s\n", line);
-						else
-							con_printf(CON_NORMAL, "PHYSFS: Failed to mount mod %s: %s\n", line, PHYSFS_getLastError());
+					if (strlen(line) > 0 && mod_count < (int)(sizeof(mod_lines) / sizeof(mod_lines[0]))) {
+						snprintf(mod_lines[mod_count], sizeof(mod_lines[mod_count]), "%s", line);
+						mod_count++;
 					}
 				}
 				fclose(mf);
+				for (i = mod_count - 1; i >= 0; i--) {
+					if (PHYSFS_mount(mod_lines[i], NULL, 0))
+						con_printf(CON_NORMAL, "PHYSFS: Mounted mod %s\n", mod_lines[i]);
+					else
+						con_printf(CON_NORMAL, "PHYSFS: Failed to mount mod %s: %s\n", mod_lines[i], PHYSFS_getLastError());
+				}
 			} else {
 				con_printf(CON_NORMAL, "PHYSFS: No .active_mod_paths at %s\n", modpath);
 			}

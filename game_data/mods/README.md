@@ -2,8 +2,8 @@
 
 This directory groups optional mod pack conversion work by source family.
 
-- `d2x-xl-tp/` contains the D2X-XL high-resolution texture and sound pack conversion scripts, docs, source archives, and generated DXAs.
-- `xfing/` contains the Xfing/UUD plain texture DXA conversion scripts, docs, source files, and generated DXAs.
+- `d2x-xl/` contains the D2X-XL high-resolution texture and sound pack conversion scripts, docs, source archives, and generated DXAs
+- `xfing/` contains the Xfing/UUD plain texture DXA conversion scripts, docs, source files, and generated DXAs
 
 The `.gitignore` files keep large source archives and generated packs out of git while allowing reusable scripts and documentation to be committed.DXA texture packs
 

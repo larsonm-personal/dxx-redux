@@ -95,6 +95,14 @@ game_data/**
 !game_data/**/
 !game_data/**/*_regression.json5
 !game_data/**/track_fingerprints.json
+!game_data/mods/README.md
+!game_data/mods/.gitignore
+!game_data/mods/d2x-xl/.gitignore
+!game_data/mods/d2x-xl/*.md
+!game_data/mods/d2x-xl/*.ps1
+!game_data/mods/xfing/.gitignore
+!game_data/mods/xfing/*.md
+!game_data/mods/xfing/*.ps1
 
 # android emulator testing
 game_data_to_copy_to_emulator/data/*

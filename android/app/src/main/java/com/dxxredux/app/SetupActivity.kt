@@ -5956,6 +5956,12 @@ private fun ModsSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
             )
+            Text(
+                "Load order is top to bottom; higher enabled mods take priority when files overlap",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp),
+            )
             mods.forEachIndexed { index, mod ->
                 ModRow(
                     mod = mod,
@@ -7386,8 +7392,7 @@ private fun ControllerSection(
                     .padding(vertical = 2.dp)
                     .onGloballyPositioned {
                         defineControlsReady = true
-                    }
-                    .then(
+                    }.then(
                         if (initialFocusRequester !=
                             null
                         ) {
