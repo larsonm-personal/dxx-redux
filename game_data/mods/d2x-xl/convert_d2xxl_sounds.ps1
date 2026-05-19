@@ -79,9 +79,9 @@ function Read-WavData {
         $chunkSize = [BitConverter]::ToInt32($bytes, $pos + 4)
 
         if ($chunkId -eq "fmt ") {
-            $audioFormat   = [BitConverter]::ToUInt16($bytes, $pos + 8)
-            $numChannels   = [BitConverter]::ToUInt16($bytes, $pos + 10)
-            $sampleRate    = [BitConverter]::ToInt32($bytes, $pos + 12)
+            $audioFormat = [BitConverter]::ToUInt16($bytes, $pos + 8)
+            $numChannels = [BitConverter]::ToUInt16($bytes, $pos + 10)
+            $sampleRate = [BitConverter]::ToInt32($bytes, $pos + 12)
             $bitsPerSample = [BitConverter]::ToUInt16($bytes, $pos + 22)
 
             if ($audioFormat -ne 1) { throw "Not PCM format (format=$audioFormat): $Path" }
@@ -118,8 +118,8 @@ function Convert-ToR22 {
 
     $srcRate = $Wav.SampleRate
     $srcBits = $Wav.BitsPerSample
-    $srcCh   = $Wav.Channels
-    $data    = $Wav.Data
+    $srcCh = $Wav.Channels
+    $data = $Wav.Data
 
     $bytesPerSample = $srcBits / 8
     $frameSize = $bytesPerSample * $srcCh
@@ -143,7 +143,7 @@ function Convert-ToR22 {
                 $sum += $sample / 32768.0
             } elseif ($srcBits -eq 24) {
                 # 24-bit signed little-endian
-                $val = $data[$chOffset] -bor ($data[$chOffset+1] -shl 8) -bor ($data[$chOffset+2] -shl 16)
+                $val = $data[$chOffset] -bor ($data[$chOffset + 1] -shl 8) -bor ($data[$chOffset + 2] -shl 16)
                 if ($val -band 0x800000) { $val = $val -bor (-1 -bxor 0xFFFFFF) }
                 $sum += $val / 8388608.0
             } else {

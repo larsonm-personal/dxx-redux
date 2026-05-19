@@ -74,7 +74,7 @@ if (-not (Test-Path $progressHelperScript)) {
 
 # Auto-detect etc2tool if not provided
 if (-not $Etc2Tool) {
-    $repoRoot = Split-Path (Split-Path $scriptDir)
+    $repoRoot = (Resolve-Path (Join-Path $scriptDir "..\..\..")).Path
     $candidate = Join-Path $repoRoot "tools\etc2tool\build\Release\etc2tool.exe"
     if (Test-Path $candidate) { $Etc2Tool = $candidate }
 }
@@ -112,8 +112,8 @@ function Test-IsSuperTransparentColor {
     )
 
     return $Blue -eq $script:superTransparentKeyBlue -and
-        $Green -eq $script:superTransparentKeyGreen -and
-        $Red -eq $script:superTransparentKeyRed
+    $Green -eq $script:superTransparentKeyGreen -and
+    $Red -eq $script:superTransparentKeyRed
 }
 
 function Read-TGA {
@@ -122,20 +122,20 @@ function Read-TGA {
     $bytes = [System.IO.File]::ReadAllBytes($Path)
     if ($bytes.Length -lt 18) { throw "TGA too small: $Path" }
 
-    $identSize   = $bytes[0]
+    $identSize = $bytes[0]
     $colorMapType = $bytes[1]
-    $imageType   = $bytes[2]
+    $imageType = $bytes[2]
     # Color map spec: bytes 3-7
-    $cmapStart   = [BitConverter]::ToUInt16($bytes, 3)
-    $cmapLength  = [BitConverter]::ToUInt16($bytes, 5)
-    $cmapBits    = $bytes[7]
+    $cmapStart = [BitConverter]::ToUInt16($bytes, 3)
+    $cmapLength = [BitConverter]::ToUInt16($bytes, 5)
+    $cmapBits = $bytes[7]
     # Image spec: bytes 8-17
-    $xOrigin     = [BitConverter]::ToUInt16($bytes, 8)
-    $yOrigin     = [BitConverter]::ToUInt16($bytes, 10)
-    $width       = [BitConverter]::ToUInt16($bytes, 12)
-    $height      = [BitConverter]::ToUInt16($bytes, 14)
-    $bpp         = $bytes[16]
-    $descriptor  = $bytes[17]
+    $xOrigin = [BitConverter]::ToUInt16($bytes, 8)
+    $yOrigin = [BitConverter]::ToUInt16($bytes, 10)
+    $width = [BitConverter]::ToUInt16($bytes, 12)
+    $height = [BitConverter]::ToUInt16($bytes, 14)
+    $bpp = $bytes[16]
+    $descriptor = $bytes[17]
 
     if ($imageType -ne 2) {
         throw "Unsupported TGA type $imageType (only uncompressed RGB/RGBA supported): $Path"
@@ -192,8 +192,8 @@ function Read-TGA {
         # Pre-allocate mask: 4 bytes/pixel (BGRA), all white/opaque
         $maskBytes = [byte[]]::new($height * $width * 4)
         for ($mi = 0; $mi -lt $maskBytes.Length; $mi += 4) {
-            $maskBytes[$mi] = 255; $maskBytes[$mi+1] = 255
-            $maskBytes[$mi+2] = 255; $maskBytes[$mi+3] = 255
+            $maskBytes[$mi] = 255; $maskBytes[$mi + 1] = 255
+            $maskBytes[$mi + 2] = 255; $maskBytes[$mi + 3] = 255
         }
     }
 
@@ -211,8 +211,8 @@ function Read-TGA {
                     $hasKeyColor = $true
                     $hasTransparentPixels = $true
                     $mIdx = ($row * $width + $px / 4) * 4
-                    $maskBytes[$mIdx] = 0; $maskBytes[$mIdx+1] = 0
-                    $maskBytes[$mIdx+2] = 0; $maskBytes[$mIdx+3] = 0
+                    $maskBytes[$mIdx] = 0; $maskBytes[$mIdx + 1] = 0
+                    $maskBytes[$mIdx + 2] = 0; $maskBytes[$mIdx + 3] = 0
                 } elseif ($alphaBits -gt 0) {
                     if ($bytes[$idx + 3] -eq 0) {
                         $bytes[$idx] = 0; $bytes[$idx + 1] = 0; $bytes[$idx + 2] = 0
@@ -236,15 +236,15 @@ function Read-TGA {
                 if (Test-IsSuperTransparentColor -Blue $bytes[$idx] -Green $bytes[$idx + 1] -Red $bytes[$idx + 2]) {
                     $hasTransparentPixels = $true
                     $mIdx = ($row * $width + $px / 3) * 4
-                    $maskBytes[$mIdx] = 0; $maskBytes[$mIdx+1] = 0
-                    $maskBytes[$mIdx+2] = 0; $maskBytes[$mIdx+3] = 0
-                    $rowBuffer[$dst] = 0; $rowBuffer[$dst+1] = 0
-                    $rowBuffer[$dst+2] = 0; $rowBuffer[$dst+3] = 0
+                    $maskBytes[$mIdx] = 0; $maskBytes[$mIdx + 1] = 0
+                    $maskBytes[$mIdx + 2] = 0; $maskBytes[$mIdx + 3] = 0
+                    $rowBuffer[$dst] = 0; $rowBuffer[$dst + 1] = 0
+                    $rowBuffer[$dst + 2] = 0; $rowBuffer[$dst + 3] = 0
                 } else {
                     $rowBuffer[$dst] = $bytes[$idx]
-                    $rowBuffer[$dst+1] = $bytes[$idx + 1]
-                    $rowBuffer[$dst+2] = $bytes[$idx + 2]
-                    $rowBuffer[$dst+3] = 255
+                    $rowBuffer[$dst + 1] = $bytes[$idx + 1]
+                    $rowBuffer[$dst + 2] = $bytes[$idx + 2]
+                    $rowBuffer[$dst + 3] = 255
                 }
             }
             [System.Runtime.InteropServices.Marshal]::Copy(
@@ -288,14 +288,14 @@ function Read-TGA {
                         if ($nx -lt 0 -or $nx -ge $width -or $ny -lt 0 -or $ny -ge $height) { continue }
                         $ni = $ny * $stride2 + $nx * 4
                         if ($pixBuf[$ni + 3] -eq 0) { continue }
-                        $sumB += $pixBuf[$ni]; $sumG += $pixBuf[$ni+1]; $sumR += $pixBuf[$ni+2]
+                        $sumB += $pixBuf[$ni]; $sumG += $pixBuf[$ni + 1]; $sumR += $pixBuf[$ni + 2]
                         $cnt++
                     }
                 }
                 if ($cnt -gt 0) {
                     $pixBuf[$pi] = [byte]([Math]::Round($sumB / $cnt))
-                    $pixBuf[$pi+1] = [byte]([Math]::Round($sumG / $cnt))
-                    $pixBuf[$pi+2] = [byte]([Math]::Round($sumR / $cnt))
+                    $pixBuf[$pi + 1] = [byte]([Math]::Round($sumG / $cnt))
+                    $pixBuf[$pi + 2] = [byte]([Math]::Round($sumR / $cnt))
                     # alpha stays 0
                 }
             }
@@ -324,7 +324,7 @@ function Read-TGA {
                 $width * 4)
         }
         $maskBmp.UnlockBits($maskData)
-            $script:lastTransparencyMask = $maskBmp
+        $script:lastTransparencyMask = $maskBmp
     }
 
     return $bmp
@@ -405,14 +405,14 @@ function Convert-WithMagick {
     if ($InputPath -match '#') {
         $dir = Split-Path $InputPath
         $ext = [IO.Path]::GetExtension($InputPath)
-        $safeInput = Join-Path $dir ("_safe_input_" + [IO.Path]::GetFileNameWithoutExtension($InputPath).Replace('#','_H_') + $ext)
+        $safeInput = Join-Path $dir ("_safe_input_" + [IO.Path]::GetFileNameWithoutExtension($InputPath).Replace('#', '_H_') + $ext)
         Copy-Item $InputPath $safeInput -Force
     }
     $safeOutput = $OutputPath
     if ($OutputPath -match '#') {
         $dir = Split-Path $OutputPath
         $ext = [IO.Path]::GetExtension($OutputPath)
-        $safeOutput = Join-Path $dir ("_safe_output_" + [IO.Path]::GetFileNameWithoutExtension($OutputPath).Replace('#','_H_') + $ext)
+        $safeOutput = Join-Path $dir ("_safe_output_" + [IO.Path]::GetFileNameWithoutExtension($OutputPath).Replace('#', '_H_') + $ext)
     }
     # ImageMagick pipeline: sRGB -> linear -> Lanczos resize -> micro-sharpen -> sRGB
     $magickArgs = @(
@@ -726,14 +726,14 @@ function Convert-GameTextures {
                     if ($maskPrePng -match '#') {
                         $dir = Split-Path $maskPrePng
                         $ext = [IO.Path]::GetExtension($maskPrePng)
-                        $safeMaskIn = Join-Path $dir ("_safe_mask_" + [IO.Path]::GetFileNameWithoutExtension($maskPrePng).Replace('#','_H_') + $ext)
+                        $safeMaskIn = Join-Path $dir ("_safe_mask_" + [IO.Path]::GetFileNameWithoutExtension($maskPrePng).Replace('#', '_H_') + $ext)
                         Copy-Item $maskPrePng $safeMaskIn -Force
                     }
                     $safeMaskOut = $tempMaskPng
                     if ($tempMaskPng -match '#') {
                         $dir = Split-Path $tempMaskPng
                         $ext = [IO.Path]::GetExtension($tempMaskPng)
-                        $safeMaskOut = Join-Path $dir ("_safe_mask_out_" + [IO.Path]::GetFileNameWithoutExtension($tempMaskPng).Replace('#','_H_') + $ext)
+                        $safeMaskOut = Join-Path $dir ("_safe_mask_out_" + [IO.Path]::GetFileNameWithoutExtension($tempMaskPng).Replace('#', '_H_') + $ext)
                     }
                     & $MagickPath $safeMaskIn -filter Point -resize "${effectiveMaxDim}x${effectiveMaxDim}" $safeMaskOut 2>$null
                     if ($safeMaskIn -ne $maskPrePng) { Remove-Item $safeMaskIn -Force -ErrorAction SilentlyContinue }

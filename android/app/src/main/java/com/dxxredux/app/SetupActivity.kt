@@ -59,6 +59,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -584,11 +585,10 @@ class SetupActivity : ComponentActivity() {
         resumeCandidate: ResumeSaveBridge.ResumeSaveCandidate? = null,
     ) {
         val launchGame = resumeCandidate?.game ?: game
-        FileSetManager(filesDir).writeActiveSetPath()
-        AudioSourceManager(filesDir).writePlaylist(contentResolver)
-        ModManager(filesDir).writeEnabledModPaths(launchGame)
-        writeInitialGameConfig()
-        writeMusicConfigForLaunch()
+        prepareGameLaunchFiles(launchGame)?.let { report ->
+            showModCompatibilityFailure(report)
+            return
+        }
         val resolvedResumeSavePath =
             resumeCandidate?.let { candidate ->
                 resolveResumeSaveLaunchPath(filesDir, candidate)
@@ -658,11 +658,10 @@ class SetupActivity : ComponentActivity() {
             return
         }
 
-        FileSetManager(filesDir).writeActiveSetPath()
-        AudioSourceManager(filesDir).writePlaylist(contentResolver)
-        ModManager(filesDir).writeEnabledModPaths(demo.game)
-        writeInitialGameConfig()
-        writeMusicConfigForLaunch()
+        prepareGameLaunchFiles(demo.game)?.let { report ->
+            showModCompatibilityFailure(report)
+            return
+        }
 
         val intent = createGameLaunchIntent(demo.game, demo.file.absolutePath)
         startActivity(intent)
@@ -705,6 +704,28 @@ class SetupActivity : ComponentActivity() {
             intent.putExtra(EXTRA_TRANSIENT_LAUNCH_TOKEN, transientLaunchToken)
         }
         return intent
+    }
+
+    private fun prepareGameLaunchFiles(game: String): ModManager.ModCompatibilityReport? {
+        val fileSetManager = FileSetManager(filesDir)
+        val activeSetDir = fileSetManager.getSetDir(fileSetManager.getActive())
+        val modManager = ModManager(filesDir)
+        val compatibility = modManager.checkEnabledModCompatibility(game, activeSetDir)
+        if (!compatibility.ok) {
+            Log.e("DXX-Setup", "Mod compatibility check failed for $game: ${compatibility.toLogMessage()}")
+            LauncherDebugLog.log("mod-compatibility-block game=$game ${compatibility.toLogMessage()}")
+            return compatibility
+        }
+        fileSetManager.writeActiveSetPath()
+        AudioSourceManager(filesDir).writePlaylist(contentResolver)
+        modManager.writeEnabledModPaths(game)
+        writeInitialGameConfig()
+        writeMusicConfigForLaunch()
+        return null
+    }
+
+    private fun showModCompatibilityFailure(report: ModManager.ModCompatibilityReport) {
+        Toast.makeText(this, report.toUserMessage(), Toast.LENGTH_LONG).show()
     }
 
     private fun logResumeCandidateLaunch(
@@ -750,12 +771,10 @@ class SetupActivity : ComponentActivity() {
                                 Log.e("DXX-Setup", "Cannot launch $game: ${gameDisplayName(game)} data is not ready")
                                 return
                             }
-                            val fsm = FileSetManager(filesDir)
-                            fsm.writeActiveSetPath()
-                            AudioSourceManager(filesDir).writePlaylist(contentResolver)
-                            ModManager(filesDir).writeEnabledModPaths(game)
-                            writeInitialGameConfig()
-                            writeMusicConfigForLaunch()
+                            prepareGameLaunchFiles(game)?.let { report ->
+                                showModCompatibilityFailure(report)
+                                return
+                            }
                             val launchIntent = createGameLaunchIntent(game)
                             startActivity(launchIntent)
                         }
@@ -1932,11 +1951,11 @@ class SetupActivity : ComponentActivity() {
             com.dxxredux.app.lobby.LobbyService
                 .stopDiscovery()
         }
-        FileSetManager(filesDir).writeActiveSetPath()
-        AudioSourceManager(filesDir).writePlaylist(contentResolver)
-        ModManager(filesDir).writeEnabledModPaths(info.game)
-        writeInitialGameConfig()
-        writeMusicConfigForLaunch()
+        prepareGameLaunchFiles(info.game)?.let { report ->
+            showModCompatibilityFailure(report)
+            mpGameLaunching = false
+            return
+        }
         val mpIntent = createGameLaunchIntent(info.game)
         mpIntent.putExtra("mp_callsign", mpCallsign)
         if (info.isHost) {
@@ -2370,6 +2389,23 @@ class SetupActivity : ComponentActivity() {
         val filesDir = filesDir
 
         setContent {
+            var modCompatibilityMessage by remember { mutableStateOf<String?>(null) }
+            modCompatibilityMessage?.let { message ->
+                AlertDialog(
+                    onDismissRequest = { modCompatibilityMessage = null },
+                    title = { Text("Mod Compatibility Check Failed") },
+                    text = {
+                        SelectionContainer {
+                            Text(message, fontSize = 12.sp)
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { modCompatibilityMessage = null }) {
+                            Text("OK")
+                        }
+                    },
+                )
+            }
             SetupScreen(
                 filesDir = filesDir,
                 gameRunning = gameRunningFlag,
@@ -2378,7 +2414,7 @@ class SetupActivity : ComponentActivity() {
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration.intValue,
                 pressedButtons = pressedButtons,
-                onLaunchGame = { game, resumeCandidate ->
+                onLaunchGame = launch@{ game, resumeCandidate ->
                     val pending = launcherExecutor?.consumePendingLaunch()
                     if (pending != null) {
                         launchGameForAutomation(game, pending.scriptPath, pending.nextStep, resumeCandidate)
@@ -2396,11 +2432,10 @@ class SetupActivity : ComponentActivity() {
                             ).show()
                     } else {
                         val launchGame = resumeCandidate?.game ?: game
-                        FileSetManager(filesDir).writeActiveSetPath()
-                        AudioSourceManager(filesDir).writePlaylist(contentResolver)
-                        ModManager(filesDir).writeEnabledModPaths(launchGame)
-                        writeInitialGameConfig()
-                        writeMusicConfigForLaunch()
+                        prepareGameLaunchFiles(launchGame)?.let { report ->
+                            modCompatibilityMessage = report.toUserMessage()
+                            return@launch
+                        }
                         val resolvedResumeSavePath =
                             resumeCandidate?.let { candidate ->
                                 resolveResumeSaveLaunchPath(filesDir, candidate)
@@ -2468,7 +2503,7 @@ class SetupActivity : ComponentActivity() {
      * the engine overwrites this file and their preferences stick.
      *
      * Settings that live in binary .plr files (like ControlType) can't be
-     * handled here — those are set in config.c's android_apply_initial_defaults().
+     * handled here -- those are set in config.c's android_apply_initial_defaults().
      */
     private fun writeInitialGameConfig() {
         writeDefaultControllerConfig()
@@ -3993,6 +4028,9 @@ private fun SetupScreen(
     LaunchedEffect(anySubPageOpen, canLaunch, showResumePanel) {
         if (!anySubPageOpen) {
             withFrameNanos { }
+            withFrameNanos { }
+            initialFocus.requestFocus()
+            delay(300)
             withFrameNanos { }
             initialFocus.requestFocus()
         }
@@ -7210,9 +7248,13 @@ private fun ControllerSection(
     val displayedController = remember(gamepads) { selectDisplayedController(gamepads.map(::controllerDisplayDevice)) }
     val hasController = displayedController != null
     var expanded by remember { mutableStateOf(false) }
+    var defineControlsReady by remember { mutableStateOf(false) }
 
-    LaunchedEffect(initialFocusRequester) {
-        if (initialFocusRequester != null) {
+    LaunchedEffect(initialFocusRequester, defineControlsReady) {
+        if (initialFocusRequester != null && defineControlsReady) {
+            withFrameNanos { }
+            initialFocusRequester.requestFocus()
+            kotlinx.coroutines.delay(300)
             withFrameNanos { }
             initialFocusRequester.requestFocus()
         }
@@ -7342,6 +7384,9 @@ private fun ControllerSection(
                 Modifier
                     .height(32.dp)
                     .padding(vertical = 2.dp)
+                    .onGloballyPositioned {
+                        defineControlsReady = true
+                    }
                     .then(
                         if (initialFocusRequester !=
                             null

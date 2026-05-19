@@ -12,6 +12,7 @@ set(D2X_MAIN_SOURCES
     credits.c
     digiobj.c
     dumpmine.c
+    dxa_metadata_patch.cpp
     effects.c
     input_demo_hooks.c
     input_demo_start.c

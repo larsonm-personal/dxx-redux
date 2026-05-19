@@ -8,7 +8,7 @@
 
 ## Current Findings
 - `android/app/src/main/java/com/dxxredux/app/DxaTextureScanner.kt` only scans `.png` and `.tga` entries. It ignores `.ktx2` and `.jpg`
-- `game_data/mods/convert_d2xxl_textures.ps1` packages real texture payloads as `.ktx2` and writes `_mask.png` sidecars for supertransparency masks. The launcher summary is therefore likely counting mask PNGs while ignoring the real texture entries
+- `game_data/mods/d2x-xl/convert_d2xxl_textures.ps1` packages real texture payloads as `.ktx2` and writes `_mask.png` sidecars for supertransparency masks. The launcher summary is therefore likely counting mask PNGs while ignoring the real texture entries
 - `android/app/src/test/java/com/dxxredux/app/DxaTextureScannerTest.kt` currently codifies that `.ktx2` entries are ignored
 - `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt` only writes launcher DXA scan details to the debug log when `oversizedCount > 0`, so the temp logs do not currently explain a non-oversized `512x512` pack summary
 - `android/temp_game_logs/debuglog_20260413_210857.txt` confirms the mounted pack is `d2-hires-512-textures-ktx2.dxa`
@@ -30,7 +30,7 @@
 - `android/app/src/main/java/com/dxxredux/app/DxaTextureScanner.kt`
 - `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
 - `android/app/src/test/java/com/dxxredux/app/DxaTextureScannerTest.kt`
-- `game_data/mods/convert_d2xxl_textures.ps1`
+- `game_data/mods/d2x-xl/convert_d2xxl_textures.ps1`
 
 ### Likely Functions
 - `DxaTextureScanner.scan(...)`

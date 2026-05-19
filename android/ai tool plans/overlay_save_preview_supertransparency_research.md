@@ -42,7 +42,7 @@
 - The source `metl154.tga` is overwhelmingly binary alpha (`121010` fully transparent pixels, `140610` fully opaque pixels, only `784` partial-alpha pixels), but still has no exact key-color pixels, so it should not get a D2X-XL-style supertransparent mask
 - Follow-up door analysis showed the converter-side tolerance was broadening keyed masks on textures like `door04#0.tga` while still doing nothing for `metl154`
 - The corrected Android rule is narrower: keep exact-key `*_mask.png` generation for true D2X-XL supertransparent assets, keep transparent-edge color bleed for alpha-cutout TGAs before ETC2 compression, and do not synthesize `metl154_mask.png`
-- Likely touch points remain `game_data/mods/convert_d2xxl_textures.ps1` first, with runtime OGL merge changes only if later emulator testing still shows a separate alpha/compression issue after the regression rollback
+- Likely touch points remain `game_data/mods/d2x-xl/convert_d2xxl_textures.ps1` first, with runtime OGL merge changes only if later emulator testing still shows a separate alpha/compression issue after the regression rollback
 
 ### Implementation plan
 

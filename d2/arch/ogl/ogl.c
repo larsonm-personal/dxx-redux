@@ -2938,6 +2938,61 @@ void ogl_loadpngmask(png_data *pdata, grs_bitmap *bm, int texfilt)
 }
 
 #ifdef ANDROID
+static const char *ogl_d2_texture_set_from_pigfile(const char *pigfile)
+{
+	const char *name;
+	const char *slash;
+	const char *backslash;
+
+	if (!pigfile || !*pigfile)
+		return NULL;
+	slash = strrchr(pigfile, '/');
+	backslash = strrchr(pigfile, '\\');
+	name = slash;
+	if (!name || (backslash && backslash > name))
+		name = backslash;
+	name = name ? name + 1 : pigfile;
+
+	if (!d_stricmp(name, "groupa.pig"))
+		return "groupa";
+	if (!d_stricmp(name, "alien1.pig"))
+		return "alien1";
+	if (!d_stricmp(name, "alien2.pig"))
+		return "alien2";
+	if (!d_stricmp(name, "fire.pig"))
+		return "fire";
+	if (!d_stricmp(name, "ice.pig"))
+		return "ice";
+	if (!d_stricmp(name, "water.pig"))
+		return "water";
+	if (!d_stricmp(name, "descent.pig"))
+		return "descent";
+	return NULL;
+}
+
+static int ogl_make_d2_texture_set_name(char *out, const char *bitmapname)
+{
+	const char *texture_set = ogl_d2_texture_set_from_pigfile(piggy_current_pigfile());
+
+	if (!texture_set || !bitmapname)
+		return 0;
+	sprintf(out, "textures/d2/sets/%s/%s", texture_set, bitmapname);
+	return 1;
+}
+
+static int ogl_read_texture_with_extensions(char *filename, const char *basename, png_data *pdata)
+{
+	static const char *exts[] = {".png", ".jpg", ".tga"};
+	int ei;
+
+	for (ei = 0; ei < 3; ei++) {
+		sprintf(filename, "%s%s", basename, exts[ei]);
+		if (read_png(filename, pdata))
+			return 1;
+	}
+	return 0;
+}
+
 /* Load pre-generated super-transparent mask from DXA texture pack.
  * The mask is a PNG with alpha=0 for super-transparent pixels. */
 static void ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfilt)
@@ -3007,11 +3062,14 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 	if (ogl_allow_png() && bitmapname && !(bm->gltexture && bm->gltexture->is_png)
 	)
 	{
-		char filename[64];
+		char filename[256];
 		png_data pdata;
 		int png_loaded = 0;
 
 #ifdef ANDROID
+		const char *dxa_bitmapname = bitmapname;
+		char texture_set_bitmapname[256];
+
 		/* Try pre-compressed ETC2 first (from .dxa texture packs). */
 		if (!ogl_etc2_broken)
 		{
@@ -3168,7 +3226,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 					}
 #ifdef OGL_MERGE
 					if (real_flags & BM_FLAG_SUPER_TRANSPARENT)
-						ogl_load_dxa_mask(bitmapname, bm, texfilt);
+						ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt);
 #endif
 					return;
 				}
@@ -3178,12 +3236,13 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		skip_ktx2:
 		/* Try multiple extensions -- stb_image handles all formats */
 		{
-			static const char *exts[] = {".png", ".jpg", ".tga"};
-			int ei;
-			for (ei = 0; ei < 3 && !png_loaded; ei++) {
-				sprintf(filename, "%s%s", bitmapname, exts[ei]);
-				png_loaded = read_png(filename, &pdata);
+			if (ogl_make_d2_texture_set_name(texture_set_bitmapname, bitmapname)) {
+				png_loaded = ogl_read_texture_with_extensions(filename, texture_set_bitmapname, &pdata);
+				if (png_loaded)
+					dxa_bitmapname = texture_set_bitmapname;
 			}
+			if (!png_loaded)
+				png_loaded = ogl_read_texture_with_extensions(filename, bitmapname, &pdata);
 		}
 #else
 		sprintf(filename, /*"textures/"*/ "%s.png", bitmapname);
@@ -3225,7 +3284,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				#ifdef OGL_MERGE
 				if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
 #ifdef ANDROID
-					ogl_load_dxa_mask(bitmapname, bm, texfilt);
+					ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt);
 #else
 					ogl_loadpngmask(&pdata, bm, texfilt);
 #endif

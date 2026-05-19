@@ -1,0 +1,4 @@
+*
+!*.md
+!*.ps1
+!.gitignore

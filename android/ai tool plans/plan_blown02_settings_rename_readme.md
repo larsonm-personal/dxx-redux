@@ -17,7 +17,7 @@
 - Old: d2xxl-hires-sounds-{game}.dxa
 - New: {game}-hires-sounds.dxa
 - Updated: convert_d2xxl_textures.ps1, convert_all.ps1, convert_d2xxl_sounds.ps1
-- Updated: test_mod_loading.json5, game_data/mods/README.md
+- Updated: test_mod_loading.json5, game_data/mods/d2x-xl/README.md
 
 ## Task 4: Update README text for mobile KTX2 [DONE]
 - Updated Get-ReadmeText in convert_all.ps1 to note mobile-specific ETC2/KTX2 encoding

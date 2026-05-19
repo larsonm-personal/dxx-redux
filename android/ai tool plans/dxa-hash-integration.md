@@ -45,8 +45,8 @@ enhanced files are used.
 ## Files changed
 - game_data/generate_game_data_index.ps1 -- added .dxa extension, game_data/mods search dir
 - game_data/game_data_index.txt -- regenerated with 4 new DXA entries
-- game_data/mods/convert_d2xxl_sounds.ps1 -- fixed nested Join-Path for PS 5.1
-- game_data/mods/convert_d2xxl_textures.ps1 -- fixed nested Join-Path for PS 5.1
+- game_data/mods/d2x-xl/convert_d2xxl_sounds.ps1 -- fixed nested Join-Path for PS 5.1
+- game_data/mods/d2x-xl/convert_d2xxl_textures.ps1 -- fixed nested Join-Path for PS 5.1
 - android/app/src/main/cpp/shared/game_introspect.cpp -- added mounted_mods from PhysFS
 - android/app/src/main/cpp/shared/game_automate.cpp -- added `contains` assertion op, `optional` select flag
 - android/app/src/main/java/com/dxxredux/app/SetupActivity.kt -- added performAccessibilityClick

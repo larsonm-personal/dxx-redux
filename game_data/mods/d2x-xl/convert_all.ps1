@@ -39,7 +39,7 @@ if (-not (Test-Path $progressHelperScript)) {
     exit 1
 }
 . $progressHelperScript
-$repoRoot = Split-Path (Split-Path $scriptDir)
+$repoRoot = (Resolve-Path (Join-Path $scriptDir "..\..\..")).Path
 
 # Auto-locate etc2tool
 if (-not $Etc2Tool) {
@@ -119,8 +119,8 @@ Original textures from d2x-xl by ${credits}
 # Texture size configs: (TexSize=source archive, MaxSize=downscale target, Downscaled flag)
 $texConfigs = @(
     @{ TexSize = 512; MaxSize = 128; Downscaled = $true },
-    @{ TexSize = 256; MaxSize = 0;   Downscaled = $false },
-    @{ TexSize = 512; MaxSize = 0;   Downscaled = $false }
+    @{ TexSize = 256; MaxSize = 0; Downscaled = $false },
+    @{ TexSize = 512; MaxSize = 0; Downscaled = $false }
 )
 
 Write-Host "=== All-in-one d2x-xl mod conversion ==="
@@ -309,7 +309,7 @@ function Convert-AndAdd {
         $processed = 0
         $mergeTotal = $MissingNames.Count
         $etc2Files = @()
-        Write-Host "    Target $label: processing $mergeTotal textures"
+        Write-Host "    Target ${label}: processing $mergeTotal textures"
         foreach ($name in $MissingNames) {
             $processed++
             Write-ItemStartLine -Stopwatch $targetStopwatch -Index $processed -Total $mergeTotal -ItemName $name -Indent "      "

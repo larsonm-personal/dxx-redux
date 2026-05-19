@@ -19,14 +19,14 @@
 - [x] Downloads portable Q16-HDRI-x64 7z archive
 - [x] Uses 7z to extract; returns path to magick.exe
 
-### 3. game_data/mods/convert_d2xxl_textures.ps1
+### 3. game_data/mods/d2x-xl/convert_d2xxl_textures.ps1
 - [x] Add -Magick parameter
 - [x] When Magick provided + MaxDim > 0: use ImageMagick pipeline
   - sRGB -> linear RGB -> Lanczos resize -> micro-sharpen -> sRGB
   - Detect alpha from TGA header to choose PNG vs JPEG output
 - [x] Fall back to System.Drawing when Magick not provided
 
-### 4. game_data/mods/convert_all.ps1
+### 4. game_data/mods/d2x-xl/convert_all.ps1
 - [x] Change 128 config TexSize from 256 to 512
 - [x] Add -Magick parameter with auto-locate from dep base
 - [x] Multi-line per-pack README texts (not one-liners)

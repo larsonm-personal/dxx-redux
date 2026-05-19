@@ -6,7 +6,11 @@ import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.security.MessageDigest
+import java.util.Locale
+import java.util.zip.ZipFile
 
 /**
  * Manages .dxa mod files: import, enable/disable, reorder, delete.
@@ -31,6 +35,67 @@ class ModManager(
         val sizeBytes: Long,
         val game: String, // "d1", "d2", or "both"
         val order: Int,
+    )
+
+    data class ModCompatibilityFailure(
+        val modDisplayName: String,
+        val requiredBaseDescription: String,
+        val filename: String,
+        val expectedSha256: String,
+        val expectedVersion: String,
+        val actualSha256: String?,
+        val actualVersion: String?,
+        val reason: String,
+    )
+
+    data class ModCompatibilityReport(
+        val failures: List<ModCompatibilityFailure>,
+    ) {
+        val ok: Boolean get() = failures.isEmpty()
+
+        fun toUserMessage(): String {
+            if (ok) return ""
+            return buildString {
+                append("One or more enabled mods require different base game files")
+                val grouped = failures.groupBy { it.modDisplayName }
+                for ((modName, modFailures) in grouped) {
+                    append("\n\n")
+                    append(modName)
+                    val description = modFailures.first().requiredBaseDescription
+                    if (description.isNotBlank()) {
+                        append("\nRequired base files: ")
+                        append(description)
+                    }
+                    for (failure in modFailures) {
+                        append("\n")
+                        append(failure.filename)
+                        append(": expected ")
+                        append(failure.expectedVersion)
+                        append(" sha256=")
+                        append(failure.expectedSha256)
+                        append("; found ")
+                        if (failure.actualSha256 == null) {
+                            append("missing")
+                        } else {
+                            append(failure.actualVersion ?: "unknown")
+                            append(" sha256=")
+                            append(failure.actualSha256)
+                        }
+                        if (failure.reason.isNotBlank()) {
+                            append("\n")
+                            append(failure.reason)
+                        }
+                    }
+                }
+            }
+        }
+
+        fun toLogMessage(): String = toUserMessage().replace('\n', ' ')
+    }
+
+    private data class ActualBaseFile(
+        val sha256: String,
+        val versionName: String?,
     )
 
     private val modsDir get() = File(filesDir, "mods").also { it.mkdirs() }
@@ -228,6 +293,107 @@ class ModManager(
             }
         }
         Log.i(TAG, "Wrote ${enabled.size} mod paths for $game to ${pathFile.absolutePath}")
+    }
+
+    fun checkEnabledModCompatibility(
+        game: String,
+        setDir: File,
+    ): ModCompatibilityReport {
+        val enabled =
+            mods
+                .filter { it.enabled && (it.game == game || it.game == "both") }
+                .sortedBy { it.order }
+        val assetEntries = AssetManifest(setDir).load().associateBy { it.filename.lowercase(Locale.US) }
+        val failures = mutableListOf<ModCompatibilityFailure>()
+        for (mod in enabled) {
+            val modFile = File(modsDir, mod.filename)
+            if (!modFile.isFile) continue
+            failures += checkModCompatibility(mod, modFile, game, setDir, assetEntries)
+        }
+        return ModCompatibilityReport(failures)
+    }
+
+    private fun checkModCompatibility(
+        mod: ModInfo,
+        modFile: File,
+        game: String,
+        setDir: File,
+        assetEntries: Map<String, AssetManifest.AssetEntry>,
+    ): List<ModCompatibilityFailure> {
+        try {
+            ZipFile(modFile).use { zip ->
+                val entry = zip.getEntry("metadata/manifest.json") ?: return emptyList()
+                val manifestText = zip.getInputStream(entry).bufferedReader().use { it.readText() }
+                val manifest = JSONObject(manifestText)
+                val manifestGame = manifest.optString("game", "both")
+                if (manifestGame != "both" && manifestGame != game) return emptyList()
+                val compatibility = manifest.optJSONObject("compatibility") ?: return emptyList()
+                val description = compatibility.optString("requiredBaseDescription")
+                val requiredFiles = compatibility.optJSONArray("requiredBaseFiles") ?: return emptyList()
+                val failures = mutableListOf<ModCompatibilityFailure>()
+                for (index in 0 until requiredFiles.length()) {
+                    val required = requiredFiles.optJSONObject(index) ?: continue
+                    if (!required.optBoolean("required", true)) continue
+                    val requiredGame = required.optString("game", game)
+                    if (requiredGame != "both" && requiredGame != game) continue
+                    val filename = required.optString("filename").lowercase(Locale.US)
+                    val expectedSha256 = required.optString("sha256").lowercase(Locale.US)
+                    if (filename.isBlank() || expectedSha256.isBlank()) continue
+                    val actual = findActualBaseFile(setDir, assetEntries, filename)
+                    if (actual?.sha256 != expectedSha256) {
+                        failures +=
+                            ModCompatibilityFailure(
+                                modDisplayName = mod.displayName,
+                                requiredBaseDescription = description,
+                                filename = filename,
+                                expectedSha256 = expectedSha256,
+                                expectedVersion = required.optString("version", "required version"),
+                                actualSha256 = actual?.sha256,
+                                actualVersion = actual?.versionName,
+                                reason = required.optString("reason"),
+                            )
+                    }
+                }
+                return failures
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read DXA compatibility metadata from ${modFile.name}: ${e.message}")
+            return emptyList()
+        }
+    }
+
+    private fun findActualBaseFile(
+        setDir: File,
+        assetEntries: Map<String, AssetManifest.AssetEntry>,
+        filename: String,
+    ): ActualBaseFile? {
+        val lower = filename.lowercase(Locale.US)
+        val diskFile = setDir.listFiles()?.firstOrNull { it.name.equals(lower, ignoreCase = true) }
+        val manifestEntry = assetEntries[lower]
+        if (manifestEntry != null && (diskFile == null || diskFile.length() == manifestEntry.sizeBytes)) {
+            return ActualBaseFile(manifestEntry.sha256.lowercase(Locale.US), manifestEntry.versionName)
+        }
+        if (diskFile?.isFile != true) return null
+        val sha256 = computeSha256(diskFile) ?: return null
+        return ActualBaseFile(sha256, KnownVersions.lookup(lower, sha256))
+    }
+
+    private fun computeSha256(file: File): String? {
+        try {
+            val digest = MessageDigest.getInstance("SHA-256")
+            val buffer = ByteArray(8192)
+            FileInputStream(file).use { input ->
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read <= 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+            return digest.digest().joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to hash ${file.absolutePath}", e)
+            return null
+        }
     }
 
     private fun detectGame(filename: String): String {

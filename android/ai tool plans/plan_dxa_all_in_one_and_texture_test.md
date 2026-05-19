@@ -1,7 +1,7 @@
 # Plan: All-in-one DXA conversion, texture test, mod fixes
 
 ## Task 1: All-in-one mod conversion script
-- Create `game_data/mods/convert_all.ps1` that calls:
+- Create `game_data/mods/d2x-xl/convert_all.ps1` that calls:
   - convert_d2xxl_textures.ps1 -Game d2 (512x512)
   - convert_d2xxl_textures.ps1 -Game d1 (512x512)
   - convert_d2xxl_textures.ps1 -Game d2 -MaxSize 256 (256x256 source)

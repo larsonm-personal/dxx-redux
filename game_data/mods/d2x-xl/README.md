@@ -1,11 +1,6 @@
-# Mod pack conversion workspaces
+DXA texture packs
 
-This directory groups optional mod pack conversion work by source family.
-
-- `d2x-xl-tp/` contains the D2X-XL high-resolution texture and sound pack conversion scripts, docs, source archives, and generated DXAs.
-- `xfing/` contains the Xfing/UUD plain texture DXA conversion scripts, docs, source files, and generated DXAs.
-
-The `.gitignore` files keep large source archives and generated packs out of git while allowing reusable scripts and documentation to be committed.DXA texture packs
+This workspace contains the D2X-XL high-resolution texture and sound pack conversion scripts, source archives, and generated DXA files.
 
 D2
 - d2-hires-512-textures-ktx2.dxa: High-resolution textures from d2x-xl by Aus-RED-5D, DizzyRox, MetalBeast, Novacron, Theftbot
@@ -21,6 +16,6 @@ DXA sound packs
 - d2-hires-sounds.dxa
 - d1-hires-sounds.dxa
 
-These DXA files are converted from the d2x-xl hires texture and sound packs.
+These DXA files are converted from the d2x-xl hires texture and sound packs stored under `d2x-xl/`.
 Texture packs use KTX2 containers with ETC2 compression for mobile/Android.
-The conversion scripts convert_all.ps1, convert_d2xxl_textures.ps1, and convert_d2xxl_sounds.ps1 repackage the original 7z archives into DXA format for dxx-redux on Android.
+The conversion scripts `convert_all.ps1`, `convert_d2xxl_textures.ps1`, and `convert_d2xxl_sounds.ps1` repackage the original 7z archives into DXA format for dxx-redux on Android.

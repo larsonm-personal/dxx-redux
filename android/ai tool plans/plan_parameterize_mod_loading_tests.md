@@ -27,7 +27,7 @@ be baked into the source PNGs rather than a runtime bug.
 ## 128px Creation Pipeline Survey
 
 ### Pipeline overview
-1. Source: `game_data/mods/d2x-xl/D2-textures-512x512.7z` (native 512px TGA textures)
+1. Source: `game_data/mods/d2x-xl/d2x-xl/D2-textures-512x512.7z` (native 512px TGA textures)
 2. Script: `convert_all.ps1` calls `convert_d2xxl_textures.ps1 -TexSize 512 -MaxSize 128`
 3. For each TGA, the `Convert-WithMagick` function runs:
    ```

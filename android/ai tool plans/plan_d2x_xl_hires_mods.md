@@ -5,14 +5,14 @@
 ## Completed Work
 
 ### Phase 1a: Texture conversion script -- DONE
-- Created `game_data/mods/convert_d2xxl_textures.ps1`
+- Created `game_data/mods/d2x-xl/convert_d2xxl_textures.ps1`
 - Pure PowerShell + .NET System.Drawing (no external deps like ImageMagick)
 - Reads uncompressed type-2 TGA, converts to PNG, packs into .dxa (renamed ZIP)
 - Supports optional `-MaxSize` downscaling for mobile
 - Tested: D1 279 textures (190.8 MB .dxa), D2 569 textures (358.7 MB .dxa), 0 errors
 
 ### Phase 1b: Sound conversion script -- DONE
-- Created `game_data/mods/convert_d2xxl_sounds.ps1`
+- Created `game_data/mods/d2x-xl/convert_d2xxl_sounds.ps1`
 - Pure PowerShell WAV parser + resampler to 8-bit unsigned mono 22050 Hz .r22
 - Files placed in `Sounds/` subdirectory inside .dxa
 - Tested: D1 113 sounds (1.8 MB .dxa), D2 191 sounds (3.5 MB .dxa), 0 errors
@@ -231,7 +231,7 @@ Could be a PowerShell + ImageMagick script, or a Python script with Pillow.
 
 ## Recommended Order of Work
 
-1. ~~Write TGA-to-PNG conversion script~~ -- DONE (`game_data/mods/convert_d2xxl_textures.ps1`)
+1. ~~Write TGA-to-PNG conversion script~~ -- DONE (`game_data/mods/d2x-xl/convert_d2xxl_textures.ps1`)
 2. ~~Enable PNG on Android (stb_image)~~ -- DONE (`pngfile_stb.c` + CMakeLists changes)
 3. Test hires textures on emulator with a handful of converted textures
 4. Add WAV sound loading to engine (both d1/ and d2/) -- currently using offline .r22 conversion

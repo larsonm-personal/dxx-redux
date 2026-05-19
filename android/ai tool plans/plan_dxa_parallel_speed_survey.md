@@ -52,7 +52,7 @@ Implementation notes:
 - Added elapsed-time stage banners around extraction, fixups, strip splitting, inventory, conversion, and archive finalization
 - Added per-item start lines plus periodic summary lines with ok count, error count, average time, and ETA
 - Added archive update progress inside the merge DXA update path
-- Extracted the shared progress and extraction helpers into game_data/mods/convert_progress_helpers.ps1 and dot-sourced it from all three conversion scripts
+- Extracted the shared progress and extraction helpers into game_data/mods/d2x-xl/convert_progress_helpers.ps1 and dot-sourced it from all three conversion scripts
 
 Estimated impact:
 - No meaningful speedup by itself

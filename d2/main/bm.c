@@ -53,6 +53,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "console.h"
 #include "rle.h"
 #include "xmodel.h"
+#include "dxa_metadata_patch.h"
 
 ubyte Sounds[MAX_SOUNDS];
 ubyte AltSounds[MAX_SOUNDS];
@@ -238,6 +239,8 @@ void bm_read_all(PHYSFS_file * fp)
 	}
 	else
 		exit_modelnum = destroyed_exit_modelnum = N_polygon_models;
+
+	dxa_metadata_patch_apply_d2_ham();
 }
 
 //these values are the number of each item in the release of d2
