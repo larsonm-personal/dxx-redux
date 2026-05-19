@@ -6148,6 +6148,12 @@ private fun ModDetailsDialog(
                                 .verticalScroll(scrollState)
                                 .padding(end = 8.dp),
                     ) {
+                        Text(
+                            details.archivePath,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 4.dp),
+                        )
                         DetailRow("Archive", "${details.fileCount} files, ${formatSize(details.archiveSizeBytes)}")
                         DetailRow("Game", mod.game.uppercase(Locale.US))
                         DetailRow("State", if (mod.enabled) "Enabled" else "Disabled")
@@ -6174,12 +6180,14 @@ private fun ModDetailsDialog(
                                     modifier = Modifier.padding(top = 2.dp),
                                 )
                                 if (category.examples.isNotEmpty()) {
+                                    val exampleText =
+                                        category.examples.joinToString("; ") +
+                                            if (category.examplesTruncated) "; ..." else ""
                                     Text(
-                                        category.examples.joinToString("; "),
+                                        exampleText,
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(bottom = 1.dp),
                                     )
                                 }
                             }
@@ -6236,13 +6244,15 @@ private fun ModDetailsDialog(
                                     color = statusColor,
                                     modifier = Modifier.padding(top = 2.dp),
                                 )
+                                baseRequirementSha256Lines(requirement).forEach { line ->
+                                    ModDetailLine(line, color = statusColor)
+                                }
                                 if (requirement.reason.isNotBlank()) {
                                     Text(
                                         requirement.reason,
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(bottom = 1.dp),
                                     )
                                 }
                             }
@@ -6250,7 +6260,7 @@ private fun ModDetailsDialog(
 
                         if (details.notes.isNotEmpty()) {
                             ModDetailSectionTitle("Notes")
-                            details.notes.take(3).forEach { note -> ModDetailLine(note) }
+                            details.notes.forEach { note -> ModDetailLine(note) }
                         }
                     }
                     ScrollArrows(scrollState)
@@ -6280,10 +6290,16 @@ private fun ModDetailLine(
         "- $text",
         fontSize = 11.sp,
         color = color,
-        maxLines = 3,
-        overflow = TextOverflow.Ellipsis,
         modifier = Modifier.padding(bottom = 1.dp),
     )
+}
+
+private fun baseRequirementSha256Lines(requirement: ModManager.ModBaseRequirement): List<String> {
+    val result = mutableListOf("Expected sha256=${requirement.expectedSha256}")
+    if (!requirement.ok && requirement.actualSha256 != null) {
+        result += "Actual sha256=${requirement.actualSha256}"
+    }
+    return result
 }
 
 @Composable

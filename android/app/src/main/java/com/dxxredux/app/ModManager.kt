@@ -129,6 +129,7 @@ class ModManager(
         val count: Int,
         val sizeBytes: Long,
         val examples: List<String>,
+        val examplesTruncated: Boolean,
     )
 
     data class ModPatchDetail(
@@ -155,6 +156,7 @@ class ModManager(
     }
 
     data class ModDetails(
+        val archivePath: String,
         val fileCount: Int,
         val archiveSizeBytes: Long,
         val manifestSchema: String?,
@@ -451,6 +453,7 @@ class ModManager(
         val modFile = File(modsDir, mod.filename)
         if (!modFile.isFile) {
             return ModDetails(
+                archivePath = modFile.absolutePath,
                 fileCount = 0,
                 archiveSizeBytes = 0,
                 manifestSchema = null,
@@ -482,11 +485,10 @@ class ModManager(
                     problems += describeBaseRequirementProblem(requirement)
                 }
                 for (conflict in conflicts) {
-                    val otherMods = conflict.modDisplayNames.filter { it != mod.displayName }
-                    problems +=
-                        "Patch conflict: ${conflict.patchPath} also used by ${otherMods.joinToString(", ")}"
+                    problems += describePatchConflictProblem(mod, conflict)
                 }
                 ModDetails(
+                    archivePath = modFile.absolutePath,
                     fileCount = entries.size,
                     archiveSizeBytes = modFile.length(),
                     manifestSchema = manifest?.optString("schema")?.takeIf { it.isNotBlank() },
@@ -499,6 +501,7 @@ class ModManager(
             }
         } catch (e: Exception) {
             ModDetails(
+                archivePath = modFile.absolutePath,
                 fileCount = 0,
                 archiveSizeBytes = modFile.length(),
                 manifestSchema = null,
@@ -894,6 +897,7 @@ class ModManager(
                 count = bucket.count,
                 sizeBytes = bucket.sizeBytes,
                 examples = bucket.examples,
+                examplesTruncated = bucket.count > bucket.examples.size,
             )
         }
     }
@@ -972,7 +976,24 @@ class ModManager(
     private fun describeBaseRequirementProblem(requirement: ModBaseRequirement): String {
         if (requirement.actualSha256 == null) return "Missing base file: ${requirement.filename}"
         val actual = requirement.actualVersion ?: "unknown #${KnownVersions.shortHash(requirement.actualSha256)}"
-        return "Base mismatch: ${requirement.filename} expected ${requirement.expectedVersion}, found $actual"
+        return "Base mismatch: ${requirement.filename} expected ${requirement.expectedVersion}, found $actual" +
+            "\nExpected sha256=${requirement.expectedSha256}" +
+            "\nActual sha256=${requirement.actualSha256}"
+    }
+
+    private fun describePatchConflictProblem(
+        mod: ModInfo,
+        conflict: ModPatchConflict,
+    ): String {
+        val otherMods = conflict.modDisplayNames.filter { it != mod.displayName }
+        val header =
+            if (otherMods.isEmpty()) {
+                "Patch problem: ${conflict.patchPath}"
+            } else {
+                "Patch conflict: ${conflict.patchPath} also used by ${otherMods.joinToString(", ")}"
+            }
+        if (conflict.details.isEmpty()) return header
+        return header + "\n" + conflict.details.joinToString("\n")
     }
 
     private fun findActualBaseFile(
@@ -984,7 +1005,10 @@ class ModManager(
         val diskFile = setDir.listFiles()?.firstOrNull { it.name.equals(lower, ignoreCase = true) }
         val manifestEntry = assetEntries[lower]
         if (manifestEntry != null && (diskFile == null || diskFile.length() == manifestEntry.sizeBytes)) {
-            return ActualBaseFile(manifestEntry.sha256.lowercase(Locale.US), manifestEntry.versionName)
+            return ActualBaseFile(
+                manifestEntry.sha256.lowercase(Locale.US),
+                manifestEntry.versionName,
+            )
         }
         if (diskFile?.isFile != true) return null
         val sha256 = computeSha256(diskFile) ?: return null
