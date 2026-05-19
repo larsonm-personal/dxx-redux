@@ -35,15 +35,22 @@ function Push-TestScriptToDevice {
 
     Write-Status "Pushing test script: $DeviceName"
     Adb -AdbArgs @("push", $SourcePath, "/data/local/tmp/$DeviceName") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/$DeviceName", "files/$DeviceName") | Out-Null
+    for ($stageAttempt = 1; $stageAttempt -le 3; $stageAttempt++) {
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/$DeviceName", "files/$DeviceName") | Out-Null
 
-    $staged = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "files/$DeviceName") -Seconds 5
-    if (-not $staged -or $staged -match 'No such file') {
-        Write-Status "FAIL: Could not stage test script on device: $DeviceName" "Red"
-        return $false
+        $staged = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "files/$DeviceName") -Seconds 5
+        if ($staged -and $staged -notmatch 'No such file') {
+            return $true
+        }
+
+        if ($stageAttempt -lt 3) {
+            Write-Status "Test script stage check missed, retrying $($stageAttempt + 1)/3..." "Yellow"
+        }
     }
-    return $true
+
+    Write-Status "FAIL: Could not stage test script on device: $DeviceName" "Red"
+    return $false
 }
 
 function Send-SetupCommand {

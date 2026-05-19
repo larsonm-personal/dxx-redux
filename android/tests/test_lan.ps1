@@ -128,10 +128,26 @@ try {
         ) -Seconds 5
         $required = if ($Game -eq "d1") { "descent.hog" } else { "descent2.hog" }
         if (-not $files -or $files -notmatch "(?i)$required") {
-            Write-Status "FAIL: Game data missing on $emu (need $required)" "Red"; exit 1
+            Write-Status "Game data missing on $emu, pushing..." "Yellow"
+            Install-AppAndData -Serial $emu
+            $files = Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+                "shell", "run-as", $PACKAGE, "ls", "$($script:DEFAULT_SET_DIR)/"
+            ) -Seconds 5
+            if (-not $files -or $files -notmatch "(?i)$required") {
+                Write-Status "FAIL: Game data still missing on $emu after push (need $required)" "Red"; exit 1
+            }
         }
     }
     Write-Status "Game data verified on both emulators" "Green"
+
+    foreach ($emu in @($EMU1, $EMU2)) {
+        Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+            "shell", "am", "force-stop", $PACKAGE
+        ) -Seconds 5 | Out-Null
+        Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+            "shell", "run-as", $PACKAGE, "rm", "-f", "files/file_sets.json"
+        ) -Seconds 5 | Out-Null
+    }
 
     # -- Step 1: Launch SetupActivity on both --
     Write-Status ""

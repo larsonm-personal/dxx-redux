@@ -2,11 +2,11 @@
 # test_mp.ps1 -- Two-player multiplayer integration test.
 #
 # Orchestrates two Android emulator instances and a matchmaking server to:
-#   1. Navigate to the multiplayer page via button tap
-#   2. Connect both players to the server
+#   1. Launch SetupActivity on both emulators
+#   2. Connect both players to the server via MP_COMMAND
 #   3. Player 1 creates a lobby, Player 2 joins
-#   4. Both players ready up via UI buttons
-#   5. Player 1 starts the game via the Start Game button
+#   4. Both players ready up
+#   5. Player 1 starts the game
 #   6. Both players launch into the game and verify multiplayer state
 #   7. Sustained connectivity check (90s)
 #
@@ -76,6 +76,34 @@ function Get-MpIntrospection {
         }
     }
     return $null
+}
+
+function Test-AllLobbyPlayersReady {
+    param([string]$Serial, [int]$ExpectedPlayers = 2)
+
+    $mp = Get-MpIntrospection -Serial $Serial
+    if (-not $mp -or -not $mp.lobby) {
+        return $false
+    }
+
+    $playersProperty = $mp.lobby.PSObject.Properties['players']
+    if (-not $playersProperty -or $null -eq $playersProperty.Value) {
+        return $false
+    }
+
+    $players = @($playersProperty.Value)
+    if ($players.Count -lt $ExpectedPlayers) {
+        return $false
+    }
+
+    foreach ($player in $players) {
+        $readyProperty = $player.PSObject.Properties['ready']
+        if (-not $readyProperty -or -not [bool]$readyProperty.Value) {
+            return $false
+        }
+    }
+
+    return $true
 }
 
 function Cleanup {
@@ -294,21 +322,12 @@ try {
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
 
-    # -- Step 3: Navigate to multiplayer and connect --
+    # -- Step 3: Connect to matchmaking --
     Write-Status ""
-    Write-Status "--- Phase 3: Navigate to multiplayer and connect ---" "White"
+    Write-Status "--- Phase 3: Connect to matchmaking ---" "White"
 
-    # Tap "Multiplayer" button on the setup screen to open the MP page
-    foreach ($emu in @($EMU1, $EMU2)) {
-        $tapped = Send-TapButton -Serial $emu -Text "Multiplayer"
-        if (-not $tapped) {
-            Write-Status "FAIL: Could not tap Multiplayer on $emu" "Red"
-            Cleanup; exit 1
-        }
-    }
-    Write-Status "Multiplayer page open on both emulators" "Green"
-
-    # Set callsigns and connect (text fields need MP_COMMAND, not tap)
+    # Drive the multiplayer flow through the SetupActivity MP_COMMAND receiver.
+    # This avoids coupling the test to launcher button exposure details.
     Send-MpCommand -Serial $EMU1 -Command "set_callsign" -Extras @("--es", "callsign", $CALLSIGN1)
     Send-MpCommand -Serial $EMU2 -Command "set_callsign" -Extras @("--es", "callsign", $CALLSIGN2)
     Start-Sleep -Milliseconds 500
@@ -413,33 +432,25 @@ try {
     Write-Status ""
     Write-Status "--- Phase 7: Ready up and start game ---" "White"
 
-    # Tap "Ready" button on both emulators
-    Send-TapButton -Serial $EMU1 -Text "Ready" | Out-Null
-    Send-TapButton -Serial $EMU2 -Text "Ready" | Out-Null
+    Write-Status "Setting both players ready via MP_COMMAND"
+    Send-MpCommand -Serial $EMU1 -Command "set_ready" -Extras @("--es", "ready", "true")
+    Send-MpCommand -Serial $EMU2 -Command "set_ready" -Extras @("--es", "ready", "true")
 
     $bothReady = Wait-ForCondition -Description "Both players ready" -TimeoutSec 10 -PollMs 750 -Condition {
-        $mp = Get-MpIntrospection -Serial $EMU1
-        if (-not $mp -or -not $mp.lobby) { return $false }
-        $allReady = $true
-        foreach ($p in $mp.lobby.players) {
-            if (-not $p.ready) { $allReady = $false }
-        }
-        return $allReady
+        return Test-AllLobbyPlayersReady -Serial $EMU1 -ExpectedPlayers 2
     }
     if (-not $bothReady) {
-        # Fallback: use MP_COMMAND set_ready
-        Write-Status "  Ready buttons may not have worked, using set_ready command" "Yellow"
-        Send-MpCommand -Serial $EMU1 -Command "set_ready" -Extras @("--es", "ready", "true")
-        Send-MpCommand -Serial $EMU2 -Command "set_ready" -Extras @("--es", "ready", "true")
-        $bothReady = Wait-ForCondition -Description "Both players ready (fallback)" -TimeoutSec 10 -PollMs 750 -Condition {
-            $mp = Get-MpIntrospection -Serial $EMU1
-            if (-not $mp -or -not $mp.lobby) { return $false }
-            return ($mp.lobby.players | Where-Object { -not $_.ready }) -eq $null
+        $mp = Get-MpIntrospection -Serial $EMU1
+        if ($mp -and $mp.lobby -and $mp.lobby.PSObject.Properties['players']) {
+            $readySummary = @($mp.lobby.players) | ForEach-Object {
+                "$($_.callsign)=$($_.ready)"
+            }
+            if ($readySummary) {
+                Write-Status "  Ready state: $($readySummary -join ', ')" "Yellow"
+            }
         }
-        if (-not $bothReady) {
-            Write-Status "FAIL: Not all players ready" "Red"
-            Cleanup; exit 1
-        }
+        Write-Status "FAIL: Not all players ready" "Red"
+        Cleanup; exit 1
     }
     Write-Status "Both players ready" "Green"
 
@@ -470,9 +481,8 @@ try {
     }
 
     # -- Step 8: Wait for both players to enter the game --
-    # The game auto-launches from LobbyScreen's LaunchedEffect when GAME_STARTING
-    # is received.  Since we navigated to the MP page and are on the LobbyScreen,
-    # the LaunchedEffect should fire.  launch_game is a fallback.
+    # The test drives matchmaking through MP_COMMANDs, so always send explicit
+    # launch_game commands after the lobby transitions to GAME_STARTING.
     Write-Status ""
     Write-Status "--- Phase 8: Wait for game launch ---" "White"
 

@@ -70,6 +70,8 @@ If `stop-stale-formatters.ps1` reports an active stale formatter after a timeout
 
 Do not start two cleanup or formatter passes in parallel. `android/run-code-quality.ps1` uses `android/temp/run-code-quality.lock.json`; treat a live lock as real unless the owning process is gone.
 
+When triaging from an older unattended test report, do not assume the remaining named failures are still live. After one or two fixes land, rerun the surviving candidates individually with `run_all_tests.ps1 -Filter ... -StopOnFail` before reading old timeout logs or editing code.
+
 ## General cleanup principles
 
 - Prefer behavior-preserving cleanup: remove dead diagnostics, narrow warning fixes, move duplicate helper bodies, and delete compatibility aliases only when the replacement is already proven.
@@ -207,6 +209,8 @@ Guardrails:
 
 The recurring test cleanup goal is to keep coverage high while reducing repeated setup, duplicated scripts, stale state, and blind waiting.
 
+In late-round triage, prefer the first candidate with a concrete current automation mismatch over a timeout-only row, but still confirm it with a fresh isolated rerun before editing code.
+
 Use shared helpers before adding local helper copies:
 
 - [android/test_helpers.ps1](../../test_helpers.ps1) for PowerShell test helpers
@@ -254,6 +258,11 @@ Suite cleanup rules:
 - For launcher-backed D1 scripts that go straight from difficulty selection into gameplay and then wait for `game_window_is_front`, prefer a single `Escape` after difficulty over generic `skip_briefing`. The generic path can stall before the D1 game window is visible, while an extra `Escape` can overshoot and open the in-game menu.
 - For launcher scripts that use `LAUNCHER_CONTINUE`, do not unconditionally force-stop the launcher after seeing the handoff file. Re-read `automation_result.json` after a short grace period; if SetupActivity already consumed or replaced the handoff, let the in-process launcher executor continue. Restart only when the `LAUNCHER_CONTINUE` file remains unclaimed.
 - Host-side launcher tests should clear save/resume-offer state when they need the plain main page. If a failed D-pad or picker test can leave Android DocumentsUI in front, close `com.google.android.documentsui` as part of shared app cleanup before SetupActivity preflight.
+- In strict-mode PowerShell harness code, guard optional JSON fields and optional test-record properties with `PSObject.Properties[...]` or dictionary checks. Direct property reads like `$gi.multiplayer` or `$Test.Arguments` can abort the harness before the real failure shows up.
+- Multiplayer `MainActivity` launches should force a runtime-only launch-intro skip on both `onCreate` and `onResume`. Reapplying only the saved `skip_intro_movie` preference can leave auto-host or auto-join stuck in `screen_mode=movie` and break LAN or matchmaking tests.
+- When validating Gradle directly from a persistent PowerShell shell, pin both `$env:JAVA_HOME` and prepend `$env:PATH` to the same JDK, for example `C:\local\jdk-21`. `android/test_env.ps1` only fills `JAVA_HOME` when it is missing, so an inherited Java 8 shell can still make `gradlew` fail before the real test result appears.
+- `enter_launcher` automation should only create a fresh `AUTO EXIT` save when an active in-level game is still running. If it autosaves again from a top-level menu, it can overwrite the real exit autosave with `current_level_num = 0` and break resume-offer tests.
+- SetupActivity main-page D-pad focus can still be lost after the first frame if setup commands or late launcher recomposition update the page after the initial request. A delayed second `FocusRequester.requestFocus()` on the main launcher target can stabilize `DPAD_CENTER` activation for tests and TV navigation.
 
 Useful commands:
 

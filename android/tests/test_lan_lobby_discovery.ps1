@@ -43,6 +43,8 @@ $script:LogFile = Join-Path $REPO_ROOT "temp\lan_discovery_test_log.txt"
 try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -ErrorAction SilentlyContinue } } catch { }
 "" | Set-Content -Path $script:LogFile -Encoding utf8 -ErrorAction SilentlyContinue
 
+$found = $false
+
 try {
     Write-Status "=== LAN Lobby Discovery Test ===" "White"
 
@@ -92,7 +94,6 @@ try {
     )
 
     # Poll for discovery
-    $found = $false
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     $pollN = 0
     while ((Get-Date) -lt $deadline -and -not $found) {

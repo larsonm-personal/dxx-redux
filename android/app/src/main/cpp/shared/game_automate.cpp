@@ -72,6 +72,8 @@ static void automation_enter_launcher(void)
 
 	if (Player_is_dead)
 		debug_log(DLOG_GAME, "autosave skipped: enter_launcher player is dead");
+	else if (Screen_mode != SCREEN_GAME || Game_wind == NULL || Current_level_num <= 0)
+		debug_log(DLOG_GAME, "autosave skipped: enter_launcher not in active level");
 	else
 		saved = state_android_save_to_slot(slotnum, "AUTO EXIT",
 		                                   ANDROID_SAVE_META_KIND_AUTO_EXIT);
@@ -349,6 +351,8 @@ static Uint32 g_repeat_start = 0;
 /* -- STEP_SELECT state (multi-frame navigation) ----------------------- */
 static int g_select_phase = 0; /* 0=init, 1=navigating, 2=enter sent */
 static int g_select_delta = 0; /* remaining navigation steps (+down, -up) */
+static int g_held_axis_active[8] = { 0 };
+static float g_held_axis_value[8] = { 0.0f };
 
 static char g_automate_dir[512] = "";
 static char g_pending_script[512] = "";
@@ -631,6 +635,39 @@ static void inject_axis(int axis, float value)
 		LOGI("Injecting axis %d = %.3f (raw %d)", axis, value, ival);
 		g_inject_axis_logged = 1;
 	}
+}
+
+static void clear_held_axes(void)
+{
+	int axis;
+
+	for (axis = 0; axis < 8; ++axis) {
+		g_held_axis_active[axis] = 0;
+		g_held_axis_value[axis] = 0.0f;
+	}
+}
+
+static void set_held_axis(int axis, float value)
+{
+	if (axis < 0 || axis >= 8)
+		return;
+
+	if (value > -0.0001f && value < 0.0001f) {
+		g_held_axis_active[axis] = 0;
+		g_held_axis_value[axis] = 0.0f;
+	} else {
+		g_held_axis_active[axis] = 1;
+		g_held_axis_value[axis] = value;
+	}
+}
+
+static void inject_held_axes(void)
+{
+	int axis;
+
+	for (axis = 0; axis < 8; ++axis)
+		if (g_held_axis_active[axis])
+			inject_axis(axis, g_held_axis_value[axis]);
 }
 
 /* -- Button injection ------------------------------------------------- */
@@ -1710,6 +1747,7 @@ static void stop_script_fail(const char *reason)
 {
 	LOGE("SCRIPT_RESULT: FAIL at step %d/%d -- %s",
 	     g_current_step + 1, (int) g_steps.size(), reason);
+	clear_held_axes();
 	write_result_file("FAIL", reason);
 	log_append("script", "FAIL", reason ? reason : "");
 	if (g_log_fp) {
@@ -1732,6 +1770,7 @@ static void advance_step(void)
 
 	if (g_current_step >= (int) g_steps.size()) {
 		LOGI("SCRIPT_RESULT: PASS (%d steps)", (int) g_steps.size());
+		clear_held_axes();
 		write_result_file("PASS", NULL);
 		log_append("script", "PASS", "");
 		if (g_log_fp) {
@@ -1783,6 +1822,7 @@ extern "C" void game_automate_tick(void)
 			g_start_step = 0; /* reset for next load */
 			g_step_start = SDL_GetTicks();
 			g_script_start = g_step_start;
+			clear_held_axes();
 			g_key_phase = 0;
 			g_select_phase = 0;
 			g_select_delta = 0;
@@ -1800,6 +1840,8 @@ extern "C" void game_automate_tick(void)
 
 	if (!g_active || g_current_step >= (int) g_steps.size())
 		return;
+
+	inject_held_axes();
 
 	auto &s = g_steps[g_current_step];
 	Uint32 now = SDL_GetTicks();
@@ -1969,12 +2011,11 @@ extern "C" void game_automate_tick(void)
 
 		case STEP_SEND_AXIS:
 			if (g_key_phase == 0 && s.axis_id >= 0 && s.axis_id < 8) {
+				set_held_axis(s.axis_id, s.axis_value);
 				inject_axis(s.axis_id, s.axis_value);
 				g_key_phase = 1;
 				g_step_start = now;
 			} else if (g_key_phase == 1) {
-				/* Re-inject every tick to fight the touch overlay's zero-flood */
-				inject_axis(s.axis_id, s.axis_value);
 				if (elapsed >= (Uint32) s.post_delay_ms) {
 					advance_step();
 				}

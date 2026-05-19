@@ -1128,12 +1128,12 @@ Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 
 if (-not $KeepFiles) {
     Write-Status "Cleaning up test set..."
-    # Need to re-launch SetupActivity for broadcast
-    Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-    Start-Sleep -Seconds 2
-    Send-SetupCommand 'clear_set' -Name $TEST_SET
-    Send-SetupCommand 'clear_audio_sources'
-    Start-Sleep -Seconds 1
+    $testSetFiles = (Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "$SETS_ROOT/$TEST_SET/")) -split "`n" |
+        ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    foreach ($tsf in $testSetFiles) {
+        Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "$SETS_ROOT/$TEST_SET/$tsf") | Out-Null
+    }
+    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/audio_sources.json', 'files/audio_playlist.json') | Out-Null
     Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 }
 
