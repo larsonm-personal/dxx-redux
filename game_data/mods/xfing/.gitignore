@@ -2,3 +2,7 @@
 !*.md
 !*.ps1
 !.gitignore
+!d2x_sp/
+!d2x_sp/.gitignore
+!d2x_sp/*.md
+!d2x_sp/*.ps1

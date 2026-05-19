@@ -103,6 +103,9 @@ game_data/**
 !game_data/mods/xfing/.gitignore
 !game_data/mods/xfing/*.md
 !game_data/mods/xfing/*.ps1
+!game_data/mods/xfing/d2x_sp/.gitignore
+!game_data/mods/xfing/d2x_sp/*.md
+!game_data/mods/xfing/d2x_sp/*.ps1
 
 # android emulator testing
 game_data_to_copy_to_emulator/data/*

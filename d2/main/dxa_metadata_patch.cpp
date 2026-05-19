@@ -12,10 +12,13 @@ extern "C" {
 #include "gr.h"
 #include "bm.h"
 #include "piggy.h"
+#include "sounds.h"
 #include "textures.h"
 #include "vclip.h"
 #include "effects.h"
 #include "wall.h"
+#include "robot.h"
+#include "weapon.h"
 #include "console.h"
 #include "physfsx.h"
 #include "dxa_metadata_patch.h"
@@ -28,15 +31,22 @@ const char kD2HamPatchPath[] = "patches/d2/ham_patch.rfc6902.json";
 const PHYSFS_sint64 kMaxPatchBytes = 2 * 1024 * 1024;
 int g_max_virtual_bitmap_index = -1;
 
+int required_int_value(const json &value, const char *description, int min_value, int max_value)
+{
+	if (!value.is_number_integer())
+		throw std::runtime_error(std::string("missing integer value ") + description);
+	long long result = value.get<long long>();
+	if (result < min_value || result > max_value)
+		throw std::runtime_error(std::string("integer value out of range ") + description);
+	return static_cast<int>(result);
+}
+
 int required_int(const json &value, const char *key, int min_value, int max_value)
 {
 	auto it = value.find(key);
-	if (it == value.end() || !it->is_number_integer())
+	if (it == value.end())
 		throw std::runtime_error(std::string("missing integer field ") + key);
-	long long result = it->get<long long>();
-	if (result < min_value || result > max_value)
-		throw std::runtime_error(std::string("integer field out of range ") + key);
-	return static_cast<int>(result);
+	return required_int_value(*it, key, min_value, max_value);
 }
 
 void note_bitmap_index(int bitmap_index)
@@ -108,6 +118,7 @@ bool read_physfs_text(const char *path, std::string &text)
 struct patch_path {
 	std::string section;
 	int index;
+	std::string field;
 };
 
 patch_path parse_patch_path(const std::string &path)
@@ -120,16 +131,25 @@ patch_path parse_patch_path(const std::string &path)
 		throw std::runtime_error("patch path is missing index");
 	patch_path parsed;
 	parsed.section = path.substr(prefix.size(), slash - prefix.size());
-	std::string index_text = path.substr(slash + 1);
+	size_t field_slash = path.find('/', slash + 1);
+	std::string index_text = path.substr(slash + 1, field_slash == std::string::npos ? std::string::npos : field_slash - slash - 1);
 	if (index_text.empty() || index_text.find_first_not_of("0123456789") != std::string::npos)
 		throw std::runtime_error("patch path index is invalid");
 	parsed.index = std::stoi(index_text);
+	if (field_slash != std::string::npos) {
+		parsed.field = path.substr(field_slash + 1);
+		if (parsed.field.empty() || parsed.field.find('/') != std::string::npos)
+			throw std::runtime_error("patch path field is invalid");
+	}
 	return parsed;
 }
 
 std::string patch_path_text(const patch_path &path)
 {
-	return "/sections/" + path.section + "/" + std::to_string(path.index);
+	std::string text = "/sections/" + path.section + "/" + std::to_string(path.index);
+	if (!path.field.empty())
+		text += "/" + path.field;
+	return text;
 }
 
 std::string short_json_text(const json &value)
@@ -249,7 +269,247 @@ json current_wclip_value(int index)
 	};
 }
 
-json current_patch_value(const patch_path &path)
+json current_sound_value(int index)
+{
+	if (index < 0 || index >= MAX_SOUNDS)
+		throw std::runtime_error("sound test path is outside the current HAM sound table");
+	return json{
+		{"Index", index},
+		{"Sound", static_cast<int>(Sounds[index])},
+		{"AltSound", static_cast<int>(AltSounds[index])},
+	};
+}
+
+json current_obj_bitmap_value(int index)
+{
+	if (index < 0 || index >= N_ObjBitmaps)
+		throw std::runtime_error("object bitmap test path is outside the current HAM object bitmap table");
+	return json{
+		{"Index", index},
+		{"Bitmap", ObjBitmaps[index].index},
+		{"Pointer", ObjBitmapPtrs[index]},
+	};
+}
+
+bool parse_indexed_field(const std::string &field, const char *prefix, int max_count, int &index)
+{
+	std::string prefix_text(prefix);
+	if (field.compare(0, prefix_text.size(), prefix_text) != 0)
+		return false;
+	std::string index_text = field.substr(prefix_text.size());
+	if (index_text.empty() || index_text.find_first_not_of("0123456789") != std::string::npos)
+		throw std::runtime_error("invalid indexed robot HAM patch field");
+	index = std::stoi(index_text);
+	if (index < 0 || index >= max_count)
+		throw std::runtime_error("indexed robot HAM patch field out of range");
+	return true;
+}
+
+bool parse_gun_point_field(const std::string &field, int &gun, char &axis)
+{
+	const std::string prefix = "GunPoint";
+	if (field.compare(0, prefix.size(), prefix) != 0)
+		return false;
+	if (field.size() <= prefix.size() + 1)
+		throw std::runtime_error("invalid gun point HAM patch field");
+	axis = field[field.size() - 1];
+	if (axis != 'X' && axis != 'Y' && axis != 'Z')
+		throw std::runtime_error("invalid gun point HAM patch axis");
+	std::string index_text = field.substr(prefix.size(), field.size() - prefix.size() - 1);
+	if (index_text.empty() || index_text.find_first_not_of("0123456789") != std::string::npos)
+		throw std::runtime_error("invalid gun point HAM patch index");
+	gun = std::stoi(index_text);
+	if (gun < 0 || gun >= MAX_GUNS)
+		throw std::runtime_error("gun point HAM patch index out of range");
+	return true;
+}
+
+bool parse_anim_state_field(const std::string &field, int &gun, int &state, bool &offset_field)
+{
+	const std::string prefix = "AnimState";
+	if (field.compare(0, prefix.size(), prefix) != 0)
+		return false;
+	size_t underscore = field.find('_', prefix.size());
+	if (underscore == std::string::npos)
+		throw std::runtime_error("invalid animation state HAM patch field");
+	std::string gun_text = field.substr(prefix.size(), underscore - prefix.size());
+	if (gun_text.empty() || gun_text.find_first_not_of("0123456789") != std::string::npos)
+		throw std::runtime_error("invalid animation state gun index");
+	gun = std::stoi(gun_text);
+	if (gun < 0 || gun >= MAX_GUNS + 1)
+		throw std::runtime_error("animation state gun index out of range");
+	std::string rest = field.substr(underscore + 1);
+	const std::string joints_suffix = "Joints";
+	const std::string offset_suffix = "Offset";
+	std::string state_text;
+	if (rest.size() > joints_suffix.size() && rest.compare(rest.size() - joints_suffix.size(), joints_suffix.size(), joints_suffix) == 0) {
+		state_text = rest.substr(0, rest.size() - joints_suffix.size());
+		offset_field = false;
+	} else if (rest.size() > offset_suffix.size() && rest.compare(rest.size() - offset_suffix.size(), offset_suffix.size(), offset_suffix) == 0) {
+		state_text = rest.substr(0, rest.size() - offset_suffix.size());
+		offset_field = true;
+	} else
+		throw std::runtime_error("invalid animation state field suffix");
+	if (state_text.empty() || state_text.find_first_not_of("0123456789") != std::string::npos)
+		throw std::runtime_error("invalid animation state index");
+	state = std::stoi(state_text);
+	if (state < 0 || state >= N_ANIM_STATES)
+		throw std::runtime_error("animation state index out of range");
+	return true;
+}
+
+fix *robot_gun_point_component(robot_info &robot, int gun, char axis)
+{
+	if (axis == 'X')
+		return &robot.gun_points[gun].x;
+	if (axis == 'Y')
+		return &robot.gun_points[gun].y;
+	return &robot.gun_points[gun].z;
+}
+
+fix *robot_fix_array_field(robot_info &robot, const std::string &field)
+{
+	int index = 0;
+	if (parse_indexed_field(field, "FieldOfView", NDL, index))
+		return &robot.field_of_view[index];
+	if (parse_indexed_field(field, "FiringWait2", NDL, index))
+		return &robot.firing_wait2[index];
+	if (parse_indexed_field(field, "FiringWait", NDL, index))
+		return &robot.firing_wait[index];
+	if (parse_indexed_field(field, "TurnTime", NDL, index))
+		return &robot.turn_time[index];
+	if (parse_indexed_field(field, "MaxSpeed", NDL, index))
+		return &robot.max_speed[index];
+	if (parse_indexed_field(field, "CircleDistance", NDL, index))
+		return &robot.circle_distance[index];
+	return nullptr;
+}
+
+json current_robot_field_value(int index, const std::string &field)
+{
+	if (index < 0 || index >= N_robot_types)
+		throw std::runtime_error("robot test path is outside the current HAM robot table");
+	robot_info &robot = Robot_info[index];
+	int field_index = 0;
+	int state_index = 0;
+	char axis = 'X';
+	bool offset_field = false;
+	if (parse_gun_point_field(field, field_index, axis))
+		return *robot_gun_point_component(robot, field_index, axis);
+	if (parse_anim_state_field(field, field_index, state_index, offset_field))
+		return offset_field ? robot.anim_states[field_index][state_index].offset : robot.anim_states[field_index][state_index].n_joints;
+	if (parse_indexed_field(field, "GunSubmodel", MAX_GUNS, field_index))
+		return static_cast<int>(robot.gun_submodels[field_index]);
+	if (fix *fix_field = robot_fix_array_field(robot, field))
+		return *fix_field;
+	if (parse_indexed_field(field, "RapidfireCount", NDL, field_index))
+		return static_cast<int>(static_cast<ubyte>(robot.rapidfire_count[field_index]));
+	if (parse_indexed_field(field, "EvadeSpeed", NDL, field_index))
+		return static_cast<int>(static_cast<ubyte>(robot.evade_speed[field_index]));
+	if (field == "Exp1Sound")
+		return robot.exp1_sound_num;
+	if (field == "Exp1Vclip")
+		return robot.exp1_vclip_num;
+	if (field == "Exp2Sound")
+		return robot.exp2_sound_num;
+	if (field == "Exp2Vclip")
+		return robot.exp2_vclip_num;
+	if (field == "WeaponType")
+		return static_cast<int>(static_cast<ubyte>(robot.weapon_type));
+	if (field == "WeaponType2")
+		return static_cast<int>(static_cast<ubyte>(robot.weapon_type2));
+	if (field == "NGuns")
+		return static_cast<int>(static_cast<ubyte>(robot.n_guns));
+	if (field == "ContainsId")
+		return static_cast<int>(static_cast<ubyte>(robot.contains_id));
+	if (field == "ContainsCount")
+		return static_cast<int>(static_cast<ubyte>(robot.contains_count));
+	if (field == "ContainsProb")
+		return static_cast<int>(static_cast<ubyte>(robot.contains_prob));
+	if (field == "ContainsType")
+		return static_cast<int>(static_cast<ubyte>(robot.contains_type));
+	if (field == "Kamikaze")
+		return static_cast<int>(static_cast<ubyte>(robot.kamikaze));
+	if (field == "ScoreValue")
+		return robot.score_value;
+	if (field == "Badass")
+		return static_cast<int>(static_cast<ubyte>(robot.badass));
+	if (field == "EnergyDrain")
+		return static_cast<int>(static_cast<ubyte>(robot.energy_drain));
+	if (field == "Lighting")
+		return robot.lighting;
+	if (field == "Strength")
+		return robot.strength;
+	if (field == "Mass")
+		return robot.mass;
+	if (field == "Drag")
+		return robot.drag;
+	if (field == "CloakType")
+		return static_cast<int>(static_cast<ubyte>(robot.cloak_type));
+	if (field == "AttackType")
+		return static_cast<int>(static_cast<ubyte>(robot.attack_type));
+	if (field == "SeeSound")
+		return static_cast<int>(robot.see_sound);
+	if (field == "AttackSound")
+		return static_cast<int>(robot.attack_sound);
+	if (field == "ClawSound")
+		return static_cast<int>(robot.claw_sound);
+	if (field == "TauntSound")
+		return static_cast<int>(robot.taunt_sound);
+	if (field == "BossFlag")
+		return static_cast<int>(static_cast<ubyte>(robot.boss_flag));
+	if (field == "Companion")
+		return static_cast<int>(static_cast<ubyte>(robot.companion));
+	if (field == "SmartBlobs")
+		return static_cast<int>(static_cast<ubyte>(robot.smart_blobs));
+	if (field == "EnergyBlobs")
+		return static_cast<int>(static_cast<ubyte>(robot.energy_blobs));
+	if (field == "Thief")
+		return static_cast<int>(static_cast<ubyte>(robot.thief));
+	if (field == "Pursuit")
+		return static_cast<int>(static_cast<ubyte>(robot.pursuit));
+	if (field == "Lightcast")
+		return static_cast<int>(static_cast<ubyte>(robot.lightcast));
+	if (field == "DeathRoll")
+		return static_cast<int>(static_cast<ubyte>(robot.death_roll));
+	if (field == "Flags")
+		return static_cast<int>(robot.flags);
+	if (field == "DeathrollSound")
+		return static_cast<int>(robot.deathroll_sound);
+	if (field == "Glow")
+		return static_cast<int>(robot.glow);
+	if (field == "Behavior")
+		return static_cast<int>(robot.behavior);
+	if (field == "Aim")
+		return static_cast<int>(robot.aim);
+	if (field == "Always0xabcd")
+		return robot.always_0xabcd;
+	throw std::runtime_error("unsupported robot HAM patch field");
+}
+
+json current_weapon_field_value(int index, const std::string &field)
+{
+	if (index < 0 || index >= N_weapon_types)
+		throw std::runtime_error("weapon test path is outside the current HAM weapon table");
+	weapon_info &weapon = Weapon_info[index];
+	if (field == "FlashSound")
+		return weapon.flash_sound;
+	if (field == "RobotHitSound")
+		return weapon.robot_hit_sound;
+	if (field == "WallHitSound")
+		return weapon.wall_hit_sound;
+	throw std::runtime_error("unsupported weapon HAM patch field");
+}
+
+json field_value(const json &object, const std::string &field)
+{
+	auto it = object.find(field);
+	if (it == object.end())
+		throw std::runtime_error("unsupported HAM patch field " + field);
+	return *it;
+}
+
+json current_patch_row_value(const patch_path &path)
 {
 	if (path.section == "textures")
 		return current_texture_value(path.index);
@@ -259,7 +519,22 @@ json current_patch_value(const patch_path &path)
 		return current_eclip_value(path.index);
 	if (path.section == "wclips")
 		return current_wclip_value(path.index);
+	if (path.section == "sounds")
+		return current_sound_value(path.index);
+	if (path.section == "objBitmaps")
+		return current_obj_bitmap_value(path.index);
 	throw std::runtime_error("unsupported HAM patch test section");
+}
+
+json current_patch_value(const patch_path &path)
+{
+	if (path.field.empty())
+		return current_patch_row_value(path);
+	if (path.section == "robots")
+		return current_robot_field_value(path.index, path.field);
+	if (path.section == "weapons")
+		return current_weapon_field_value(path.index, path.field);
+	return field_value(current_patch_row_value(path), path.field);
 }
 
 void validate_patch_test(size_t op_index, const patch_path &path, const json &expected)
@@ -362,9 +637,205 @@ void apply_wclip(int index, const json &value)
 	Num_wall_anims = (std::max)(Num_wall_anims, index + 1);
 }
 
+void apply_sound_field(int index, const std::string &field, const json &value)
+{
+	if (index < 0 || index >= MAX_SOUNDS)
+		throw std::runtime_error("sound index out of range");
+	ubyte sound = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	if (field == "Sound")
+		Sounds[index] = sound;
+	else if (field == "AltSound")
+		AltSounds[index] = sound;
+	else
+		throw std::runtime_error("unsupported sound HAM patch field");
+}
+
+void apply_eclip_field(int index, const std::string &field, const json &value)
+{
+	if (index < 0 || index >= Num_effects)
+		throw std::runtime_error("eclip index out of range");
+	eclip &effect = Effects[index];
+	if (field == "FrameTime")
+		effect.vc.frame_time = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+	else if (field == "Sound")
+		effect.sound_num = required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1);
+	else
+		throw std::runtime_error("unsupported eclip HAM patch field");
+}
+
+void apply_wclip_field(int index, const std::string &field, const json &value)
+{
+	if (index < 0 || index >= Num_wall_anims)
+		throw std::runtime_error("wclip index out of range");
+	wclip &wall = WallAnims[index];
+	if (field == "PlayTime")
+		wall.play_time = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+	else if (field == "OpenSound")
+		wall.open_sound = static_cast<short>(required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1));
+	else if (field == "CloseSound")
+		wall.close_sound = static_cast<short>(required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1));
+	else
+		throw std::runtime_error("unsupported wclip HAM patch field");
+}
+
+void apply_robot_field(int index, const std::string &field, const json &value)
+{
+	if (index < 0 || index >= N_robot_types)
+		throw std::runtime_error("robot index out of range");
+	robot_info &robot = Robot_info[index];
+	int field_index = 0;
+	int state_index = 0;
+	char axis = 'X';
+	bool offset_field = false;
+	if (parse_gun_point_field(field, field_index, axis))
+		*robot_gun_point_component(robot, field_index, axis) = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+	else if (parse_anim_state_field(field, field_index, state_index, offset_field)) {
+		short field_value = static_cast<short>(required_int_value(value, field.c_str(), -32768, 32767));
+		if (offset_field)
+			robot.anim_states[field_index][state_index].offset = field_value;
+		else
+			robot.anim_states[field_index][state_index].n_joints = field_value;
+	}
+	else if (parse_indexed_field(field, "GunSubmodel", MAX_GUNS, field_index))
+		robot.gun_submodels[field_index] = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (fix *fix_field = robot_fix_array_field(robot, field))
+		*fix_field = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+	else if (parse_indexed_field(field, "RapidfireCount", NDL, field_index))
+		robot.rapidfire_count[field_index] = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (parse_indexed_field(field, "EvadeSpeed", NDL, field_index))
+		robot.evade_speed[field_index] = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Exp1Sound")
+		robot.exp1_sound_num = static_cast<short>(required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1));
+	else if (field == "Exp1Vclip")
+		robot.exp1_vclip_num = static_cast<short>(required_int_value(value, field.c_str(), -1, VCLIP_MAXNUM - 1));
+	else if (field == "Exp2Sound")
+		robot.exp2_sound_num = static_cast<short>(required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1));
+	else if (field == "Exp2Vclip")
+		robot.exp2_vclip_num = static_cast<short>(required_int_value(value, field.c_str(), -1, VCLIP_MAXNUM - 1));
+	else if (field == "WeaponType")
+		robot.weapon_type = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "WeaponType2")
+		robot.weapon_type2 = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "NGuns")
+		robot.n_guns = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, MAX_GUNS));
+	else if (field == "ContainsId")
+		robot.contains_id = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "ContainsCount")
+		robot.contains_count = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "ContainsProb")
+		robot.contains_prob = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "ContainsType")
+		robot.contains_type = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Kamikaze")
+		robot.kamikaze = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "ScoreValue")
+		robot.score_value = static_cast<short>(required_int_value(value, field.c_str(), -32768, 32767));
+	else if (field == "Badass")
+		robot.badass = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "EnergyDrain")
+		robot.energy_drain = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Lighting")
+		robot.lighting = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+	else if (field == "Strength")
+		robot.strength = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+	else if (field == "Mass")
+		robot.mass = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+	else if (field == "Drag")
+		robot.drag = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+	else if (field == "CloakType")
+		robot.cloak_type = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "AttackType")
+		robot.attack_type = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "SeeSound")
+		robot.see_sound = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "AttackSound")
+		robot.attack_sound = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "ClawSound")
+		robot.claw_sound = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "TauntSound")
+		robot.taunt_sound = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "BossFlag")
+		robot.boss_flag = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Companion")
+		robot.companion = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "SmartBlobs")
+		robot.smart_blobs = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "EnergyBlobs")
+		robot.energy_blobs = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Thief")
+		robot.thief = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Pursuit")
+		robot.pursuit = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Lightcast")
+		robot.lightcast = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "DeathRoll")
+		robot.death_roll = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Flags")
+		robot.flags = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "DeathrollSound")
+		robot.deathroll_sound = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Glow")
+		robot.glow = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Behavior")
+		robot.behavior = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Aim")
+		robot.aim = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
+	else if (field == "Always0xabcd")
+		robot.always_0xabcd = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+	else
+		throw std::runtime_error("unsupported robot HAM patch field");
+}
+
+void apply_weapon_field(int index, const std::string &field, const json &value)
+{
+	if (index < 0 || index >= N_weapon_types)
+		throw std::runtime_error("weapon index out of range");
+	weapon_info &weapon = Weapon_info[index];
+	if (field == "FlashSound")
+		weapon.flash_sound = static_cast<short>(required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1));
+	else if (field == "RobotHitSound")
+		weapon.robot_hit_sound = static_cast<short>(required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1));
+	else if (field == "WallHitSound")
+		weapon.wall_hit_sound = static_cast<short>(required_int_value(value, field.c_str(), -1, MAX_SOUNDS - 1));
+	else
+		throw std::runtime_error("unsupported weapon HAM patch field");
+}
+
+void apply_obj_bitmap_field(int index, const std::string &field, const json &value)
+{
+	if (index < 0 || index >= N_ObjBitmaps)
+		throw std::runtime_error("object bitmap index out of range");
+	if (field == "Bitmap")
+		set_bitmap_index(&ObjBitmaps[index], required_int_value(value, field.c_str(), 0, MAX_BITMAP_FILES - 1));
+	else if (field == "Pointer")
+		ObjBitmapPtrs[index] = static_cast<ushort>(required_int_value(value, field.c_str(), 0, MAX_OBJ_BITMAPS - 1));
+	else
+		throw std::runtime_error("unsupported object bitmap HAM patch field");
+}
+
+void apply_patch_field(const patch_path &path, const json &value)
+{
+	if (path.section == "sounds")
+		apply_sound_field(path.index, path.field, value);
+	else if (path.section == "eclips")
+		apply_eclip_field(path.index, path.field, value);
+	else if (path.section == "wclips")
+		apply_wclip_field(path.index, path.field, value);
+	else if (path.section == "robots")
+		apply_robot_field(path.index, path.field, value);
+	else if (path.section == "weapons")
+		apply_weapon_field(path.index, path.field, value);
+	else if (path.section == "objBitmaps")
+		apply_obj_bitmap_field(path.index, path.field, value);
+	else
+		throw std::runtime_error("unsupported HAM patch field section");
+}
+
 void apply_patch_value(const patch_path &path, const json &value)
 {
-	if (path.section == "textures")
+	if (!path.field.empty())
+		apply_patch_field(path, value);
+	else if (path.section == "textures")
 		apply_texture(path.index, value);
 	else if (path.section == "vclips")
 		apply_vclip(path.index, value);
@@ -393,8 +864,8 @@ extern "C" void dxa_metadata_patch_apply_d2_ham(void)
 			if (operation == "test") {
 				patch_path path = parse_patch_path(op.value("path", std::string()));
 				auto value = op.find("value");
-				if (value == op.end() || !value->is_object())
-					throw std::runtime_error("HAM patch test operation is missing value object");
+				if (value == op.end())
+					throw std::runtime_error("HAM patch test operation is missing value");
 				validate_patch_test(op_index, path, *value);
 				tested++;
 			} else if (operation != "add" && operation != "replace")
@@ -409,8 +880,8 @@ extern "C" void dxa_metadata_patch_apply_d2_ham(void)
 				throw std::runtime_error("unsupported HAM patch operation");
 			patch_path path = parse_patch_path(op.value("path", std::string()));
 			auto value = op.find("value");
-			if (value == op.end() || !value->is_object())
-				throw std::runtime_error("HAM patch operation is missing value object");
+			if (value == op.end())
+				throw std::runtime_error("HAM patch operation is missing value");
 			apply_patch_value(path, *value);
 			applied++;
 		}
