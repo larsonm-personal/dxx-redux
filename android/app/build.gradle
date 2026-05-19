@@ -380,4 +380,5 @@ dependencies {
     implementation "com.iqiyi.xcrash:xcrash-android-lib:${toolVersions['XCRASH_VERSION']}"
 
     testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"
+    testImplementation "org.json:json:${toolVersions['ORG_JSON_VERSION']}"
 }

@@ -45,6 +45,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -106,6 +107,7 @@ import java.util.zip.ZipInputStream
 class SetupActivity : ComponentActivity() {
     /** Incremented in onResume so Compose re-checks file status. */
     private val refreshTrigger = mutableIntStateOf(0)
+    private val focusResumeTrigger = mutableIntStateOf(0)
     private val resumeOfferRefreshHandler = Handler(Looper.getMainLooper())
     private val resumeOfferRefreshRunnable = Runnable { refreshTrigger.intValue++ }
 
@@ -175,6 +177,7 @@ class SetupActivity : ComponentActivity() {
     data class ButtonInfo(
         val text: String,
         val enabled: Boolean,
+        val focused: Boolean,
         val centerX: Float,
         val centerY: Float,
         val width: Float,
@@ -213,6 +216,7 @@ class SetupActivity : ComponentActivity() {
 
         data class ClickableNode(
             val enabled: Boolean,
+            val focused: Boolean,
             val bounds: Rect,
         )
 
@@ -239,7 +243,13 @@ class SetupActivity : ComponentActivity() {
                     if (t.isNotEmpty()) textNodes.add(TextNode(t, Rect(bounds)))
                 }
                 if (info.isClickable || info.isCheckable) {
-                    clickableNodes.add(ClickableNode(info.isEnabled, Rect(bounds)))
+                    clickableNodes.add(
+                        ClickableNode(
+                            enabled = info.isEnabled,
+                            focused = info.isFocused || info.isAccessibilityFocused,
+                            bounds = Rect(bounds),
+                        ),
+                    )
                 }
             }
         }
@@ -253,6 +263,7 @@ class SetupActivity : ComponentActivity() {
                 ButtonInfo(
                     text = label,
                     enabled = click.enabled,
+                    focused = click.focused,
                     centerX = (click.bounds.left + click.bounds.right) / 2f,
                     centerY = (click.bounds.top + click.bounds.bottom) / 2f,
                     width = click.bounds.width().toFloat(),
@@ -2232,6 +2243,7 @@ class SetupActivity : ComponentActivity() {
                 val bo = JSONObject()
                 bo.put("text", btn.text)
                 bo.put("enabled", btn.enabled)
+                bo.put("focused", btn.focused)
                 bo.put("x", btn.centerX.toInt())
                 bo.put("y", btn.centerY.toInt())
                 bo.put("w", btn.width.toInt())
@@ -2410,6 +2422,7 @@ class SetupActivity : ComponentActivity() {
                 filesDir = filesDir,
                 gameRunning = gameRunningFlag,
                 refreshTrigger = refreshTrigger.intValue,
+                focusResumeTrigger = focusResumeTrigger.intValue,
                 controllerAxes = controllerAxes,
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration.intValue,
@@ -2601,6 +2614,7 @@ class SetupActivity : ComponentActivity() {
                 .startDiscovery(this, mpCallsign)
         }
         wasLanDiscoveringBeforeLaunch = false
+        focusResumeTrigger.intValue++
         refreshTrigger.intValue++
         schedulePostResumeRefreshes()
         // If the host returns from a game, signal the server to reset the lobby
@@ -3441,6 +3455,7 @@ private fun SetupScreen(
     filesDir: File,
     gameRunning: Boolean,
     refreshTrigger: Int,
+    focusResumeTrigger: Int,
     controllerAxes: FloatArray,
     dpadAxes: FloatArray,
     axisGeneration: Int,
@@ -4025,7 +4040,7 @@ private fun SetupScreen(
             showMultiplayerPage ||
             showAutoselectPage ||
             showMusicPage
-    LaunchedEffect(anySubPageOpen, canLaunch, showResumePanel) {
+    LaunchedEffect(anySubPageOpen, canLaunch, showResumePanel, focusResumeTrigger) {
         if (!anySubPageOpen) {
             withFrameNanos { }
             withFrameNanos { }
@@ -5371,6 +5386,7 @@ private fun SetupScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     ModsSection(
                         filesDir = filesDir,
+                        setDir = setDir,
                         refreshTrigger = refreshTrigger,
                     )
 
@@ -5871,6 +5887,7 @@ private fun SectionHeader(title: String) {
 @Composable
 private fun ModsSection(
     filesDir: File,
+    setDir: File,
     refreshTrigger: Int,
 ) {
     val context = LocalContext.current
@@ -5878,6 +5895,9 @@ private fun ModsSection(
     var mods by remember { mutableStateOf(modManager.listMods()) }
     var expanded by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<String?>(null) }
+    var detailTarget by remember { mutableStateOf<ModManager.ModInfo?>(null) }
+    var detailInfo by remember { mutableStateOf<ModManager.ModDetails?>(null) }
+    var detailLoading by remember { mutableStateOf(false) }
     val modDownloadProgress = remember { mutableStateMapOf<String, Int>() }
     // Cache DXA scan results per filename
     val scanCache = remember { mutableStateMapOf<String, DxaTextureScanner.ScanResult?>() }
@@ -5906,6 +5926,17 @@ private fun ModsSection(
     LaunchedEffect(refreshTrigger) {
         modManager.reload()
         mods = modManager.listMods()
+    }
+
+    LaunchedEffect(detailTarget?.filename, setDir.absolutePath, refreshTrigger, mods) {
+        val target = detailTarget ?: return@LaunchedEffect
+        detailInfo = null
+        detailLoading = true
+        detailInfo =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                modManager.getModDetails(target, setDir)
+            }
+        detailLoading = false
     }
 
     // Scan texture DXAs once when section expands
@@ -5980,6 +6011,7 @@ private fun ModsSection(
                         modManager.moveDown(index)
                         mods = modManager.listMods()
                     },
+                    onDetails = { detailTarget = mod },
                     onDelete = { deleteTarget = mod.filename },
                 )
             }
@@ -6050,6 +6082,10 @@ private fun ModsSection(
                 TextButton(onClick = {
                     modManager.deleteMod(filename)
                     mods = modManager.listMods()
+                    if (detailTarget?.filename == filename) {
+                        detailTarget = null
+                        detailInfo = null
+                    }
                     deleteTarget = null
                 }) { Text("Delete") }
             },
@@ -6058,6 +6094,196 @@ private fun ModsSection(
             },
         )
     }
+
+    detailTarget?.let { mod ->
+        ModDetailsDialog(
+            mod = mod,
+            details = detailInfo,
+            loading = detailLoading,
+            onDismiss = {
+                detailTarget = null
+                detailInfo = null
+            },
+        )
+    }
+}
+
+@Composable
+private fun ModDetailsDialog(
+    mod: ModManager.ModInfo,
+    details: ModManager.ModDetails?,
+    loading: Boolean,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        title = {
+            Text(mod.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        },
+        text = {
+            val scrollState = rememberScrollState()
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp),
+            ) {
+                if (loading || details == null) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("Reading mod archive", fontSize = 12.sp)
+                    }
+                } else {
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(scrollState)
+                                .padding(end = 8.dp),
+                    ) {
+                        DetailRow("Archive", "${details.fileCount} files, ${formatSize(details.archiveSizeBytes)}")
+                        DetailRow("Game", mod.game.uppercase(Locale.US))
+                        DetailRow("State", if (mod.enabled) "Enabled" else "Disabled")
+                        DetailRow("Manifest", details.manifestSchema ?: "Not present")
+
+                        if (details.problems.isNotEmpty()) {
+                            ModDetailSectionTitle("Problems")
+                            details.problems.forEach { problem ->
+                                ModDetailLine(problem, color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+
+                        ModDetailSectionTitle("Files")
+                        if (details.categories.isEmpty()) {
+                            ModDetailLine("No readable archive entries")
+                        } else {
+                            details.categories.forEach { category ->
+                                val sizeText = if (category.sizeBytes > 0) ", ${formatSize(category.sizeBytes)}" else ""
+                                Text(
+                                    "${category.label}: ${category.count} files$sizeText",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                                if (category.examples.isNotEmpty()) {
+                                    Text(
+                                        category.examples.joinToString("; "),
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                        }
+
+                        ModDetailSectionTitle("Patches")
+                        if (details.patches.isEmpty()) {
+                            ModDetailLine("No metadata patches")
+                        } else {
+                            details.patches.forEach { patch ->
+                                Text(
+                                    patch.path,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                                val operationText = patch.operationCount?.let { ", $it ops" } ?: ""
+                                ModDetailLine("Size ${formatSize(patch.sizeBytes)}$operationText")
+                                ModDetailLine(
+                                    "Affects ${patch.affectedFiles.ifEmpty {
+                                        listOf(
+                                            "unknown target",
+                                        )
+                                    }.joinToString(", ")}",
+                                )
+                                if (patch.expectedBaseVersions.isNotEmpty()) {
+                                    ModDetailLine("Expects ${patch.expectedBaseVersions.joinToString(", ")}")
+                                }
+                            }
+                        }
+
+                        ModDetailSectionTitle("Base Files")
+                        if (details.baseRequirements.isEmpty()) {
+                            ModDetailLine("No base-file requirements in manifest")
+                        } else {
+                            details.baseRequirements.forEach { requirement ->
+                                val status =
+                                    when {
+                                        !requirement.required -> "optional"
+                                        requirement.ok -> "match"
+                                        requirement.actualSha256 == null -> "missing"
+                                        else -> "mismatch"
+                                    }
+                                val statusColor =
+                                    if (requirement.ok) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    } else {
+                                        MaterialTheme.colorScheme.error
+                                    }
+                                Text(
+                                    "${requirement.filename}: ${requirement.expectedVersion} ($status)",
+                                    fontSize = 12.sp,
+                                    color = statusColor,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                                if (requirement.reason.isNotBlank()) {
+                                    Text(
+                                        requirement.reason,
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                        }
+
+                        if (details.notes.isNotEmpty()) {
+                            ModDetailSectionTitle("Notes")
+                            details.notes.take(3).forEach { note -> ModDetailLine(note) }
+                        }
+                    }
+                    ScrollArrows(scrollState)
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun ModDetailSectionTitle(text: String) {
+    Text(
+        text,
+        fontSize = 13.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 10.dp, bottom = 2.dp),
+    )
+}
+
+@Composable
+private fun ModDetailLine(
+    text: String,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+) {
+    Text(
+        "- $text",
+        fontSize = 11.sp,
+        color = color,
+        maxLines = 3,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.padding(bottom = 1.dp),
+    )
 }
 
 @Composable
@@ -6211,6 +6437,7 @@ private fun ModRow(
     onToggle: (Boolean) -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
+    onDetails: () -> Unit,
     onDelete: () -> Unit,
 ) {
     Row(
@@ -6226,7 +6453,13 @@ private fun ModRow(
             modifier = Modifier.size(20.dp),
         )
         Spacer(modifier = Modifier.width(6.dp))
-        Column(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .clickable(onClick = onDetails)
+                    .padding(vertical = 2.dp),
+        ) {
             Text(
                 text = mod.displayName,
                 fontSize = 12.sp,
@@ -6258,6 +6491,9 @@ private fun ModRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+        IconButton(onClick = onDetails, modifier = Modifier.size(24.dp)) {
+            Icon(Icons.Filled.Info, "Mod details", modifier = Modifier.size(15.dp))
         }
         // Move up
         if (!isFirst) {

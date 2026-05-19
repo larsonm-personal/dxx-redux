@@ -25,6 +25,12 @@ class ModManager(
     companion object {
         private const val TAG = "DXX-Mods"
         private const val MANIFEST_FILE = "mod_manifest.json"
+        private val BASE_REPLACEMENT_EXTENSIONS =
+            setOf("ham", "hog", "mn2", "msn", "mvl", "pig", "pog", "rdl", "rl2", "s11", "s22", "vham")
+        private val TEXTURE_EXTENSIONS = setOf("dtx", "ktx2", "png", "tga")
+        private val SOUND_REPLACEMENT_EXTENSIONS = setOf("raw", "voc", "wav")
+        private val MUSIC_EXTENSIONS = setOf("flac", "hmp", "m3u", "mid", "mp3", "ogg")
+        private val DOCUMENTATION_EXTENSIONS = setOf("md", "rtf", "txt")
     }
 
     data class ModInfo(
@@ -112,14 +118,73 @@ class ModManager(
         fun toLogMessage(): String = toUserMessage().replace('\n', ' ')
     }
 
+    data class ModFileCategorySummary(
+        val label: String,
+        val count: Int,
+        val sizeBytes: Long,
+        val examples: List<String>,
+    )
+
+    data class ModPatchDetail(
+        val path: String,
+        val sizeBytes: Long,
+        val operationCount: Int?,
+        val affectedFiles: List<String>,
+        val expectedBaseVersions: List<String>,
+    )
+
+    data class ModBaseRequirement(
+        val game: String,
+        val role: String,
+        val filename: String,
+        val expectedSha256: String,
+        val expectedVersion: String,
+        val actualSha256: String?,
+        val actualVersion: String?,
+        val required: Boolean,
+        val reason: String,
+        val patchPaths: List<String>,
+    ) {
+        val ok: Boolean get() = !required || actualSha256 == expectedSha256
+    }
+
+    data class ModDetails(
+        val fileCount: Int,
+        val archiveSizeBytes: Long,
+        val manifestSchema: String?,
+        val notes: List<String>,
+        val categories: List<ModFileCategorySummary>,
+        val patches: List<ModPatchDetail>,
+        val baseRequirements: List<ModBaseRequirement>,
+        val problems: List<String>,
+    )
+
     private data class ActualBaseFile(
         val sha256: String,
         val versionName: String?,
     )
 
+    private data class RawBaseRequirement(
+        val game: String,
+        val role: String,
+        val filename: String,
+        val expectedSha256: String,
+        val expectedVersion: String,
+        val required: Boolean,
+        val reason: String,
+        val patchPaths: List<String>,
+    )
+
     private data class PatchOwner(
         val patchPath: String,
         val modDisplayName: String,
+    )
+
+    private data class CategoryBucket(
+        val label: String,
+        var count: Int = 0,
+        var sizeBytes: Long = 0,
+        val examples: MutableList<String> = mutableListOf(),
     )
 
     private val modsDir get() = File(filesDir, "mods").also { it.mkdirs() }
@@ -349,20 +414,85 @@ class ModManager(
         return ModCompatibilityReport(failures, patchConflicts)
     }
 
+    fun getModDetails(
+        mod: ModInfo,
+        setDir: File,
+    ): ModDetails {
+        val modFile = File(modsDir, mod.filename)
+        if (!modFile.isFile) {
+            return ModDetails(
+                fileCount = 0,
+                archiveSizeBytes = 0,
+                manifestSchema = null,
+                notes = emptyList(),
+                categories = emptyList(),
+                patches = emptyList(),
+                baseRequirements = emptyList(),
+                problems = listOf("Mod archive is missing from storage"),
+            )
+        }
+        val assetEntries = AssetManifest(setDir).load().associateBy { it.filename.lowercase(Locale.US) }
+        return try {
+            ZipFile(modFile).use { zip ->
+                val entries =
+                    zip
+                        .entries()
+                        .asSequence()
+                        .filterNot { it.isDirectory }
+                        .toList()
+                val manifest = readModManifest(zip)
+                val rawRequirements = readBaseRequirements(manifest, game = null)
+                val baseRequirements = attachBaseRequirementStatus(rawRequirements, setDir, assetEntries)
+                val conflicts = collectPatchConflictsForMod(mod)
+                val problems = mutableListOf<String>()
+                if (manifest == null) {
+                    problems += "No manifest metadata; compatibility cannot be preflighted"
+                }
+                for (requirement in baseRequirements.filter { !it.ok }) {
+                    problems += describeBaseRequirementProblem(requirement)
+                }
+                for (conflict in conflicts) {
+                    val otherMods = conflict.modDisplayNames.filter { it != mod.displayName }
+                    problems +=
+                        "Patch conflict: ${conflict.patchPath} also used by ${otherMods.joinToString(", ")}"
+                }
+                ModDetails(
+                    fileCount = entries.size,
+                    archiveSizeBytes = modFile.length(),
+                    manifestSchema = manifest?.optString("schema")?.takeIf { it.isNotBlank() },
+                    notes = readStringArray(manifest?.optJSONArray("notes")),
+                    categories = categorizeModEntries(entries),
+                    patches = readPatchDetails(zip, entries, rawRequirements),
+                    baseRequirements = baseRequirements,
+                    problems = problems,
+                )
+            }
+        } catch (e: Exception) {
+            ModDetails(
+                fileCount = 0,
+                archiveSizeBytes = modFile.length(),
+                manifestSchema = null,
+                notes = emptyList(),
+                categories = emptyList(),
+                patches = emptyList(),
+                baseRequirements = emptyList(),
+                problems = listOf("Could not read DXA archive: ${e.message ?: e.javaClass.simpleName}"),
+            )
+        }
+    }
+
     private fun collectModPatchOwners(
         mod: ModInfo,
         modFile: File,
-        game: String,
+        game: String?,
     ): List<PatchOwner> {
         try {
             ZipFile(modFile).use { zip ->
                 val patchPaths = mutableSetOf<String>()
-                val entry = zip.getEntry("metadata/manifest.json")
-                if (entry != null) {
-                    val manifestText = zip.getInputStream(entry).bufferedReader().use { it.readText() }
-                    val manifest = JSONObject(manifestText)
+                val manifest = readModManifest(zip)
+                if (manifest != null) {
                     val manifestGame = manifest.optString("game", "both")
-                    if (manifestGame == "both" || manifestGame == game) {
+                    if (game == null || manifestGame == "both" || manifestGame == game) {
                         addManifestPatchPaths(manifest, game, patchPaths)
                     }
                 }
@@ -383,15 +513,15 @@ class ModManager(
 
     private fun addManifestPatchPaths(
         manifest: JSONObject,
-        game: String,
+        game: String?,
         patchPaths: MutableSet<String>,
     ) {
         val compatibility = manifest.optJSONObject("compatibility") ?: return
         val requiredFiles = compatibility.optJSONArray("requiredBaseFiles") ?: return
         for (index in 0 until requiredFiles.length()) {
             val required = requiredFiles.optJSONObject(index) ?: continue
-            val requiredGame = required.optString("game", game)
-            if (requiredGame != "both" && requiredGame != game) continue
+            val requiredGame = required.optString("game", game ?: "both")
+            if (game != null && requiredGame != "both" && requiredGame != game) continue
             val paths = required.optJSONArray("patchPaths") ?: continue
             for (pathIndex in 0 until paths.length()) {
                 val patchPath = normalizeDxaPath(paths.optString(pathIndex))
@@ -402,10 +532,11 @@ class ModManager(
 
     private fun isPatchEntry(
         name: String,
-        game: String,
+        game: String?,
     ): Boolean {
         val normalized = normalizeDxaPath(name)
-        return normalized.startsWith("patches/$game/") && normalized.endsWith(".rfc6902.json")
+        if (!normalized.startsWith("patches/") || !normalized.endsWith(".rfc6902.json")) return false
+        return game == null || normalized.startsWith("patches/$game/")
     }
 
     private fun normalizeDxaPath(path: String): String = path.replace('\\', '/').trim('/').lowercase(Locale.US)
@@ -457,6 +588,172 @@ class ModManager(
             Log.w(TAG, "Failed to read DXA compatibility metadata from ${modFile.name}: ${e.message}")
             return emptyList()
         }
+    }
+
+    private fun readModManifest(zip: ZipFile): JSONObject? {
+        val entry = zip.getEntry("metadata/manifest.json") ?: return null
+        val manifestText = zip.getInputStream(entry).bufferedReader().use { it.readText() }
+        return JSONObject(manifestText)
+    }
+
+    private fun readBaseRequirements(
+        manifest: JSONObject?,
+        game: String?,
+    ): List<RawBaseRequirement> {
+        val compatibility = manifest?.optJSONObject("compatibility") ?: return emptyList()
+        val requiredFiles = compatibility.optJSONArray("requiredBaseFiles") ?: return emptyList()
+        val result = mutableListOf<RawBaseRequirement>()
+        for (index in 0 until requiredFiles.length()) {
+            val required = requiredFiles.optJSONObject(index) ?: continue
+            val requiredGame = required.optString("game", game ?: "both")
+            if (game != null && requiredGame != "both" && requiredGame != game) continue
+            val filename = required.optString("filename").lowercase(Locale.US)
+            val expectedSha256 = required.optString("sha256").lowercase(Locale.US)
+            if (filename.isBlank() || expectedSha256.isBlank()) continue
+            result +=
+                RawBaseRequirement(
+                    game = requiredGame,
+                    role = required.optString("role"),
+                    filename = filename,
+                    expectedSha256 = expectedSha256,
+                    expectedVersion = required.optString("version", "required version"),
+                    required = required.optBoolean("required", true),
+                    reason = required.optString("reason"),
+                    patchPaths = readStringArray(required.optJSONArray("patchPaths")).map { normalizeDxaPath(it) },
+                )
+        }
+        return result
+    }
+
+    private fun attachBaseRequirementStatus(
+        requirements: List<RawBaseRequirement>,
+        setDir: File,
+        assetEntries: Map<String, AssetManifest.AssetEntry>,
+    ): List<ModBaseRequirement> =
+        requirements.map { requirement ->
+            val actual = findActualBaseFile(setDir, assetEntries, requirement.filename)
+            ModBaseRequirement(
+                game = requirement.game,
+                role = requirement.role,
+                filename = requirement.filename,
+                expectedSha256 = requirement.expectedSha256,
+                expectedVersion = requirement.expectedVersion,
+                actualSha256 = actual?.sha256,
+                actualVersion = actual?.versionName,
+                required = requirement.required,
+                reason = requirement.reason,
+                patchPaths = requirement.patchPaths,
+            )
+        }
+
+    private fun readStringArray(array: JSONArray?): List<String> {
+        if (array == null) return emptyList()
+        val result = mutableListOf<String>()
+        for (index in 0 until array.length()) {
+            val text = array.optString(index)
+            if (text.isNotBlank()) result += text
+        }
+        return result
+    }
+
+    private fun categorizeModEntries(entries: List<java.util.zip.ZipEntry>): List<ModFileCategorySummary> {
+        val buckets = linkedMapOf<String, CategoryBucket>()
+        for (entry in entries) {
+            val (label, example) = classifyModEntry(entry.name)
+            val bucket = buckets.getOrPut(label) { CategoryBucket(label) }
+            bucket.count++
+            if (entry.size > 0) bucket.sizeBytes += entry.size
+            if (bucket.examples.size < 3 && example !in bucket.examples) bucket.examples += example
+        }
+        return buckets.values.map { bucket ->
+            ModFileCategorySummary(
+                label = bucket.label,
+                count = bucket.count,
+                sizeBytes = bucket.sizeBytes,
+                examples = bucket.examples,
+            )
+        }
+    }
+
+    private fun classifyModEntry(name: String): Pair<String, String> {
+        val normalized = normalizeDxaPath(name)
+        val leaf = normalized.substringAfterLast('/')
+        val ext = leaf.substringAfterLast('.', "")
+        val exampleWithPurpose = "$leaf - ${launcherFileTypeLabel(leaf)}"
+        return when {
+            isPatchEntry(name, game = null) -> "Metadata patches" to normalized
+            normalized.startsWith("metadata/") || normalized.startsWith("patches/") -> "Mod metadata" to normalized
+            ext in BASE_REPLACEMENT_EXTENSIONS -> "Base game file replacements" to exampleWithPurpose
+            ext in TEXTURE_EXTENSIONS -> "Texture replacements" to leaf
+            ext in SOUND_REPLACEMENT_EXTENSIONS -> "Individual sound file replacements" to exampleWithPurpose
+            ext in MUSIC_EXTENSIONS -> "Music files" to exampleWithPurpose
+            ext in DOCUMENTATION_EXTENSIONS -> "Documentation" to leaf
+            else -> "Other files" to leaf
+        }
+    }
+
+    private fun readPatchDetails(
+        zip: ZipFile,
+        entries: List<java.util.zip.ZipEntry>,
+        requirements: List<RawBaseRequirement>,
+    ): List<ModPatchDetail> {
+        val requirementByPatch =
+            requirements
+                .flatMap { requirement -> requirement.patchPaths.map { it to requirement } }
+                .groupBy({ it.first }, { it.second })
+        return entries
+            .filter { isPatchEntry(it.name, game = null) }
+            .sortedBy { normalizeDxaPath(it.name) }
+            .map { entry ->
+                val patchPath = normalizeDxaPath(entry.name)
+                val patchRequirements = requirementByPatch[patchPath].orEmpty()
+                ModPatchDetail(
+                    path = patchPath,
+                    sizeBytes = entry.size.coerceAtLeast(0),
+                    operationCount = readPatchOperationCount(zip, entry),
+                    affectedFiles = patchRequirements.map { it.filename }.distinct(),
+                    expectedBaseVersions =
+                        patchRequirements
+                            .map {
+                                it.expectedVersion.ifBlank {
+                                    "sha256=${KnownVersions.shortHash(
+                                        it.expectedSha256,
+                                    )}"
+                                }
+                            }.distinct(),
+                )
+            }
+    }
+
+    private fun readPatchOperationCount(
+        zip: ZipFile,
+        entry: java.util.zip.ZipEntry,
+    ): Int? =
+        try {
+            val text = zip.getInputStream(entry).bufferedReader().use { it.readText() }
+            JSONArray(text).length()
+        } catch (_: Exception) {
+            null
+        }
+
+    private fun collectPatchConflictsForMod(mod: ModInfo): List<ModPatchConflict> {
+        val owners = mutableListOf<PatchOwner>()
+        for (candidate in mods.filter { it.enabled || it.filename == mod.filename }) {
+            val candidateFile = File(modsDir, candidate.filename)
+            if (!candidateFile.isFile) continue
+            owners += collectModPatchOwners(candidate, candidateFile, game = null)
+        }
+        return owners
+            .groupBy { it.patchPath }
+            .mapValues { (_, patchOwners) -> patchOwners.map { it.modDisplayName }.distinct() }
+            .filterValues { names -> mod.displayName in names && names.size > 1 }
+            .map { (patchPath, names) -> ModPatchConflict(patchPath, names) }
+    }
+
+    private fun describeBaseRequirementProblem(requirement: ModBaseRequirement): String {
+        if (requirement.actualSha256 == null) return "Missing base file: ${requirement.filename}"
+        val actual = requirement.actualVersion ?: "unknown #${KnownVersions.shortHash(requirement.actualSha256)}"
+        return "Base mismatch: ${requirement.filename} expected ${requirement.expectedVersion}, found $actual"
     }
 
     private fun findActualBaseFile(
