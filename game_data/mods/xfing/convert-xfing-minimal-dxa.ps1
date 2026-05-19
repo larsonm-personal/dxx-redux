@@ -86,6 +86,32 @@ function Get-XfingTextureZipPath {
     return $fileName
 }
 
+function Get-XfingPackReadmeText {
+    param([string]$PackName)
+
+    return @"
+# $PackName
+
+Translated to DXA by the Android Redux project
+See the conversion scripts on GitHub
+"@
+}
+
+function Add-XfingDocumentation {
+    param(
+        [string]$StageRoot,
+        [string]$SourceDocPath,
+        [string]$PackName
+    )
+
+    if (-not (Test-Path -LiteralPath $SourceDocPath)) {
+        throw "Missing documentation source: $SourceDocPath"
+    }
+
+    Copy-Item -LiteralPath $SourceDocPath -Destination (Join-Path $StageRoot ([System.IO.Path]::GetFileName($SourceDocPath))) -Force
+    Set-Content -LiteralPath (Join-Path $StageRoot "README.md") -Value (Get-XfingPackReadmeText -PackName $PackName) -Encoding utf8
+}
+
 function New-XfingRequiredBaseFile {
     param(
         [string]$GameName,
@@ -241,6 +267,7 @@ function New-XfingD1Archive {
     $basePigPath = Join-Path $BaselineRoot "DESCENT.PIG"
     $baseHogPath = Join-Path $BaselineRoot "DESCENT.HOG"
     $patchPigPath = Join-Path $Uud1Root "descent.pig"
+    Add-XfingDocumentation -StageRoot $stageRoot -SourceDocPath (Join-Path $Uud1Root "uud1tp.rtf") -PackName "uud1tp"
     foreach ($path in @($basePigPath, $baseHogPath, $patchPigPath)) {
         if (-not (Test-Path -LiteralPath $path)) {
             throw "Missing required input: $path"
@@ -422,6 +449,7 @@ function New-XfingD2Archive {
     $stageRoot = New-XfingStageRoot "d2"
     $metadataRoot = Join-Path $stageRoot "metadata"
     $baseHogPath = Join-Path $BaselineRoot "DESCENT2.HOG"
+    Add-XfingDocumentation -StageRoot $stageRoot -SourceDocPath (Join-Path $Uud2Root "UUD2TP.rtf") -PackName "uud2tp"
     if (-not (Test-Path -LiteralPath $baseHogPath)) {
         throw "Missing baseline HOG: $baseHogPath"
     }

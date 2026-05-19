@@ -39,6 +39,12 @@ if (-not (Test-Path $progressHelperScript)) {
     exit 1
 }
 . $progressHelperScript
+$packLibScript = Join-Path $scriptDir "d2xxl_pack_lib.ps1"
+if (-not (Test-Path $packLibScript)) {
+    Write-Error "Missing helper script: $packLibScript"
+    exit 1
+}
+. $packLibScript
 $repoRoot = (Resolve-Path (Join-Path $scriptDir "..\..\..")).Path
 
 # Auto-locate etc2tool
@@ -78,43 +84,7 @@ if ($Magick) {
     Write-Host "WARNING: ImageMagick not found; 128px packs will use System.Drawing fallback"
 }
 
-# Credits
-$creditsD2 = "Aus-RED-5D, DizzyRox, MetalBeast, Novacron, Theftbot"
-$creditsD1 = "DizzyRox, Novacron, Aus-RED-5"
-
-# Per-pack README content (multi-line, embedded in each .dxa)
-function Get-ReadmeText {
-    param([string]$GameId, [int]$Size, [bool]$Downscaled)
-    $credits = if ($GameId -eq "d2") { $creditsD2 } else { $creditsD1 }
-    $gameName = if ($GameId -eq "d2") { "Descent 2" } else { "Descent 1" }
-    $packName = "${GameId}-hires-${Size}-textures-ktx2"
-    $mobileNote = "Textures are ETC2-compressed in KTX2 containers for mobile/Android"
-    if ($Downscaled) {
-        @"
-# ${packName}
-
-${Size}x${Size} replacement textures for ${gameName}
-
-Downscaled from the 512x512 d2x-xl texture pack using ImageMagick
-with linear-light colorspace conversion, Lanczos resampling, and
-micro-sharpening to preserve detail at reduced resolution
-
-${mobileNote}
-
-Original textures from d2x-xl by ${credits}
-"@
-    } else {
-        @"
-# ${packName}
-
-${Size}x${Size} high-resolution replacement textures for ${gameName}
-
-${mobileNote}
-
-Original textures from d2x-xl by ${credits}
-"@
-    }
-}
+$projectReadme = Get-D2xxlProjectReadmeText -ScriptDir $scriptDir
 
 # Texture size configs: (TexSize=source archive, MaxSize=downscale target, Downscaled flag)
 $texConfigs = @(
@@ -132,11 +102,11 @@ foreach ($game in @("d1", "d2")) {
         $mx = $cfg.MaxSize
         $label = if ($mx -gt 0) { $mx } else { $sz }
         $packStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-        $readme = Get-ReadmeText -GameId $game -Size $label -Downscaled $cfg.Downscaled
+        $readme = Get-D2xxlTextureReadmeText -GameId $game -Size $label -Downscaled $cfg.Downscaled
         # Always pass ImageMagick: strip splitting needs it even without downscaling
         $magickArg = if ($Magick) { $Magick } else { "" }
         Write-Host "--- Textures: $game ${label}x${label} ---"
-        & $texScript -Game $game -TexSize $sz -MaxSize $mx -OutputDir $OutputDir -SevenZip $SevenZip -ReadmeText $readme -Magick $magickArg -Etc2Tool $Etc2Tool
+        & $texScript -Game $game -TexSize $sz -MaxSize $mx -OutputDir $OutputDir -SevenZip $SevenZip -ReadmeText $readme -ProjectReadmeText $projectReadme -Magick $magickArg -Etc2Tool $Etc2Tool
         if ($LASTEXITCODE -ne 0) {
             Write-Host "WARNING: Texture conversion failed for $game $label"
         } else {
@@ -167,6 +137,7 @@ function Get-DxaEtc2Names {
 
 function Add-Etc2ToDxa {
     param(
+        [string]$GameId,
         [string]$DxaPath,
         [string[]]$Etc2Files,
         [string]$Indent = "    "
@@ -178,9 +149,10 @@ function Add-Etc2ToDxa {
     $fileIndex = 0
     foreach ($f in $Etc2Files) {
         $fileIndex++
-        $entryName = [System.IO.Path]::GetFileName($f)
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($f)
         # Restore '#' from safe naming used during conversion
-        $entryName = $entryName -replace '_H_', '#'
+        $baseName = $baseName -replace '_H_', '#'
+        $entryName = Get-D2xxlTextureEntryPath -GameId $GameId -BaseName $baseName
         if ($fileIndex -le 3 -or $fileIndex % 25 -eq 0 -or $fileIndex -eq $Etc2Files.Count) {
             Write-Host "${Indent}[$((Format-ElapsedText $updateStopwatch.Elapsed))] Adding $fileIndex / $($Etc2Files.Count): $entryName"
         }
@@ -356,7 +328,7 @@ function Convert-AndAdd {
 
         if ($etc2Files.Count -gt 0) {
             Write-Host "    Adding $converted textures to $(Split-Path $dxaPath -Leaf)"
-            Add-Etc2ToDxa -DxaPath $dxaPath -Etc2Files $etc2Files -Indent "      "
+            Add-Etc2ToDxa -GameId $GameId -DxaPath $dxaPath -Etc2Files $etc2Files -Indent "      "
         } else {
             Write-Host "    No converted textures for $(Split-Path $dxaPath -Leaf)"
         }
@@ -410,12 +382,15 @@ Write-Host ""
 
 # Sounds: both games
 Write-Host "--- Sounds: d1 + d2 ---"
-$soundStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-& $sndScript -Game both -OutputDir $OutputDir -SevenZip $SevenZip
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "WARNING: Sound conversion failed"
-} else {
-    Write-Host "--- Sounds complete in $(Format-ElapsedText $soundStopwatch.Elapsed) ---"
+foreach ($game in @("d1", "d2")) {
+    $soundStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $soundReadme = Get-D2xxlSoundReadmeText -GameId $game
+    & $sndScript -Game $game -OutputDir $OutputDir -SevenZip $SevenZip -ReadmeText $soundReadme -ProjectReadmeText $projectReadme
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "WARNING: Sound conversion failed for $game"
+    } else {
+        Write-Host "--- Sounds complete: $game in $(Format-ElapsedText $soundStopwatch.Elapsed) ---"
+    }
 }
 
 Write-Host ""

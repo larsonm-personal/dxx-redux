@@ -51,6 +51,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "byteswap.h"
 #include "makesig.h"
 #include "console.h"
+#include "dxa_metadata_patch.h"
 
 //#define NO_DUMP_SOUNDS        1   //if set, dump bitmaps but not sounds
 
@@ -256,6 +257,26 @@ bitmap_index piggy_register_bitmap( grs_bitmap * bmp, char * name, int in_file )
 	return temp;
 }
 
+void piggy_register_virtual_bitmap_index(int bitmap_index)
+{
+	char name[13];
+	grs_bitmap *bm;
+
+	if (bitmap_index < Num_bitmap_files || bitmap_index >= MAX_BITMAP_FILES)
+		return;
+
+	while (Num_bitmap_files <= bitmap_index) {
+		bm = &GameBitmaps[Num_bitmap_files];
+		sprintf(name, "idx%d", Num_bitmap_files);
+		gr_init_bitmap(bm, 0, 0, 0, 64, 64, 64, NULL);
+		bm->bm_flags = BM_FLAG_PAGED_OUT;
+		bm->avg_color = 0;
+		GameBitmapOffset[Num_bitmap_files] = 0;
+		GameBitmapFlags[Num_bitmap_files] = 0;
+		piggy_register_bitmap(bm, name, 1);
+	}
+}
+
 int piggy_register_sound( digi_sound * snd, char * name, int in_file )
 {
 	int i;
@@ -330,6 +351,11 @@ int piggy_find_sound( char * name )
 PHYSFS_file * Piggy_fp = NULL;
 
 char Current_pigfile[FILENAME_LEN] = "";
+
+const char *piggy_current_pigfile(void)
+{
+	return Current_pigfile;
+}
 
 void piggy_close_file()
 {
@@ -493,6 +519,7 @@ void piggy_init_pigfile(char *filename)
 		Assert( (i+1) == Num_bitmap_files );
 		piggy_register_bitmap(bm, temp_name, 1);
 	}
+	dxa_metadata_patch_register_virtual_bitmaps();
 
 #ifdef EDITOR
 	Piggy_bitmap_cache_size = data_size + (data_size/10);   //extra mem for new bitmaps
@@ -617,7 +644,9 @@ void piggy_new_pigfile(char *pigname)
 
 	#ifndef EDITOR
 
-	Assert(N_bitmaps == Num_bitmap_files-1);
+	Assert(N_bitmaps <= Num_bitmap_files-1);
+	Num_bitmap_files = N_bitmaps + 1;
+	dxa_metadata_patch_register_virtual_bitmaps();
 
 	#else
 

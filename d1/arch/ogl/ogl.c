@@ -2907,6 +2907,29 @@ void ogl_loadpngmask(png_data *pdata, grs_bitmap *bm, int texfilt)
 
 #endif /* OGL_MERGE */
 
+#ifdef ANDROID
+static int ogl_make_d1_texture_name(char *out, const char *bitmapname)
+{
+	if (!bitmapname)
+		return 0;
+	sprintf(out, "textures/d1/%s", bitmapname);
+	return 1;
+}
+
+static int ogl_read_texture_with_extensions(char *filename, const char *basename, png_data *pdata)
+{
+	static const char *exts[] = {".png", ".jpg", ".tga"};
+	int ei;
+
+	for (ei = 0; ei < 3; ei++) {
+		sprintf(filename, "%s%s", basename, exts[ei]);
+		if (read_png(filename, pdata))
+			return 1;
+	}
+	return 0;
+}
+#endif
+
 void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 {
 	unsigned char *buf;
@@ -2936,17 +2959,33 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 	if (ogl_allow_png() && bitmapname && !(bm->gltexture && bm->gltexture->is_png)
 	)
 	{
-		char filename[64];
+		char filename[256];
 		png_data pdata;
 		int png_loaded = 0;
 
 #ifdef ANDROID
+		const char *dxa_bitmapname = bitmapname;
+		char prefixed_bitmapname[256];
+		int have_prefixed_bitmapname = ogl_make_d1_texture_name(prefixed_bitmapname, bitmapname);
+
 		/* Try pre-compressed ETC2 first (from .dxa texture packs). */
 		if (!ogl_etc2_broken)
 		{
 			etc2_file_data edata;
-			sprintf(filename, "%s.ktx2", bitmapname);
-			if (read_ktx2_file(filename, &edata)) {
+			int loaded_ktx2 = 0;
+
+			if (have_prefixed_bitmapname) {
+				sprintf(filename, "%s.ktx2", prefixed_bitmapname);
+				loaded_ktx2 = read_ktx2_file(filename, &edata);
+				if (loaded_ktx2)
+					dxa_bitmapname = prefixed_bitmapname;
+			}
+			if (!loaded_ktx2) {
+				sprintf(filename, "%s.ktx2", bitmapname);
+				loaded_ktx2 = read_ktx2_file(filename, &edata);
+				dxa_bitmapname = bitmapname;
+			}
+			if (loaded_ktx2) {
 				/* android port: if bitmap needs transparency but KTX2 has
 				 * no alpha channel (RGB-only ETC2), skip it and fall back
 				 * to the base texture which correctly handles palette
@@ -3094,7 +3133,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 					}
 #ifdef OGL_MERGE
 					if (real_flags & BM_FLAG_SUPER_TRANSPARENT)
-						android_ogl_load_dxa_mask(bitmapname, bm, texfilt);
+						android_ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt);
 #endif
 					return;
 				}
@@ -3104,11 +3143,14 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		skip_ktx2:
 		/* Try multiple extensions -- stb_image handles all formats */
 		{
-			static const char *exts[] = {".png", ".jpg", ".tga"};
-			int ei;
-			for (ei = 0; ei < 3 && !png_loaded; ei++) {
-				sprintf(filename, "%s%s", bitmapname, exts[ei]);
-				png_loaded = read_png(filename, &pdata);
+			if (have_prefixed_bitmapname) {
+				png_loaded = ogl_read_texture_with_extensions(filename, prefixed_bitmapname, &pdata);
+				if (png_loaded)
+					dxa_bitmapname = prefixed_bitmapname;
+			}
+			if (!png_loaded) {
+				png_loaded = ogl_read_texture_with_extensions(filename, bitmapname, &pdata);
+				dxa_bitmapname = bitmapname;
 			}
 		}
 #else
@@ -3142,7 +3184,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				#ifdef OGL_MERGE
 				if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
 #ifdef ANDROID
-					android_ogl_load_dxa_mask(bitmapname, bm, texfilt);
+					android_ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt);
 #else
 					ogl_loadpngmask(&pdata, bm, texfilt);
 #endif

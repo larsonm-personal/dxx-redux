@@ -53,6 +53,8 @@ param(
 
     [string]$ReadmeText = "",
 
+    [string]$ProjectReadmeText = "",
+
     [string]$Magick = "",
 
     [string]$Etc2Tool = ""
@@ -71,6 +73,12 @@ if (-not (Test-Path $progressHelperScript)) {
     exit 1
 }
 . $progressHelperScript
+$packLibScript = Join-Path $scriptDir "d2xxl_pack_lib.ps1"
+if (-not (Test-Path $packLibScript)) {
+    Write-Error "Missing helper script: $packLibScript"
+    exit 1
+}
+. $packLibScript
 
 # Auto-detect etc2tool if not provided
 if (-not $Etc2Tool) {
@@ -566,6 +574,7 @@ function Convert-GameTextures {
         [string]$OutDir,
         [int]$MaxDim,
         [string]$Readme,
+        [string]$ProjectReadme,
         [string]$MagickPath,
         [string]$Etc2ToolPath
     )
@@ -655,7 +664,7 @@ function Convert-GameTextures {
         $effectiveUseMagick = $MagickPath -and $effectiveMaxDim -gt 0 -and (Test-Path $MagickPath)
 
         try {
-            $entryName = "$baseName.ktx2"
+            $entryName = Get-D2xxlTextureEntryPath -GameId $GameId -BaseName $baseName
             $tempPng = Join-Path $tempDir "$baseName.png"
             $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
 
@@ -758,7 +767,7 @@ function Convert-GameTextures {
 
             # Add super-transparent mask if present
             if ($tempMaskPng -and (Test-Path $tempMaskPng)) {
-                $maskEntryName = "${baseName}_mask.png"
+                $maskEntryName = Get-D2xxlMaskEntryPath -GameId $GameId -BaseName $baseName
                 $maskEntry = $zip.CreateEntry($maskEntryName, [System.IO.Compression.CompressionLevel]::Optimal)
                 $maskStream = $maskEntry.Open()
                 $maskFileBytes = [System.IO.File]::ReadAllBytes($tempMaskPng)
@@ -785,7 +794,7 @@ function Convert-GameTextures {
         $processed++
         Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $jpg.Name
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jpg.Name)
-        $entryName = "$baseName.ktx2"
+        $entryName = Get-D2xxlTextureEntryPath -GameId $GameId -BaseName $baseName
         $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
 
         # Skip downscaling for HUD/cockpit textures
@@ -830,6 +839,13 @@ function Convert-GameTextures {
         $readmeStream.Write($readmeBytes, 0, $readmeBytes.Length)
         $readmeStream.Close()
     }
+    if ($ProjectReadme) {
+        $projectReadmeEntry = $zip.CreateEntry((Get-D2xxlProjectReadmeEntryName), [System.IO.Compression.CompressionLevel]::Optimal)
+        $projectReadmeStream = $projectReadmeEntry.Open()
+        $projectReadmeBytes = [System.Text.Encoding]::UTF8.GetBytes($ProjectReadme)
+        $projectReadmeStream.Write($projectReadmeBytes, 0, $projectReadmeBytes.Length)
+        $projectReadmeStream.Close()
+    }
 
     $finalizeStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     Write-Host "  Finalizing archive: $dxaName"
@@ -852,7 +868,7 @@ if (-not (Test-Path $SevenZip)) {
 $games = if ($Game -eq "both") { @("d1", "d2") } else { @($Game) }
 
 foreach ($g in $games) {
-    Convert-GameTextures -GameId $g -ArchivePath $archives[$g] -OutDir $OutputDir -MaxDim $MaxSize -Readme $ReadmeText -MagickPath $Magick -Etc2ToolPath $Etc2Tool
+    Convert-GameTextures -GameId $g -ArchivePath $archives[$g] -OutDir $OutputDir -MaxDim $MaxSize -Readme $ReadmeText -ProjectReadme $ProjectReadmeText -MagickPath $Magick -Etc2ToolPath $Etc2Tool
 }
 
 Write-Host ""

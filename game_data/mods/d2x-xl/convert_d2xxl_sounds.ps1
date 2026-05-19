@@ -33,6 +33,10 @@ param(
 
     [string]$OutputDir = "",
 
+    [string]$ReadmeText = "",
+
+    [string]$ProjectReadmeText = "",
+
     [string]$SevenZip = "C:\Program Files\7-Zip\7z.exe"
 )
 
@@ -48,6 +52,12 @@ if (-not (Test-Path $progressHelperScript)) {
     exit 1
 }
 . $progressHelperScript
+$packLibScript = Join-Path $scriptDir "d2xxl_pack_lib.ps1"
+if (-not (Test-Path $packLibScript)) {
+    Write-Error "Missing helper script: $packLibScript"
+    exit 1
+}
+. $packLibScript
 
 $archivePath = Join-Path $scriptDir "d2x-xl\hires-sounds.7z"
 
@@ -182,7 +192,9 @@ function Convert-GameSounds {
     param(
         [string]$GameId,  # "d1" or "d2"
         [string]$ArchivePath,
-        [string]$OutDir
+        [string]$OutDir,
+        [string]$Readme,
+        [string]$ProjectReadme
     )
 
     if (-not (Test-Path $ArchivePath)) {
@@ -266,6 +278,20 @@ function Convert-GameSounds {
     }
 
     $finalizeStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    if ($Readme) {
+        $readmeEntry = $zip.CreateEntry("README.md", [System.IO.Compression.CompressionLevel]::Optimal)
+        $readmeStream = $readmeEntry.Open()
+        $readmeBytes = [System.Text.Encoding]::UTF8.GetBytes($Readme)
+        $readmeStream.Write($readmeBytes, 0, $readmeBytes.Length)
+        $readmeStream.Close()
+    }
+    if ($ProjectReadme) {
+        $projectReadmeEntry = $zip.CreateEntry((Get-D2xxlProjectReadmeEntryName), [System.IO.Compression.CompressionLevel]::Optimal)
+        $projectReadmeStream = $projectReadmeEntry.Open()
+        $projectReadmeBytes = [System.Text.Encoding]::UTF8.GetBytes($ProjectReadme)
+        $projectReadmeStream.Write($projectReadmeBytes, 0, $projectReadmeBytes.Length)
+        $projectReadmeStream.Close()
+    }
     Write-Host "  Finalizing archive: $dxaName"
     $zip.Dispose()
     Write-Host "  Archive finalized in $(Format-ElapsedText $finalizeStopwatch.Elapsed)"
@@ -293,7 +319,7 @@ if (-not (Test-Path $archivePath)) {
 $games = if ($Game -eq "both") { @("d1", "d2") } else { @($Game) }
 
 foreach ($g in $games) {
-    Convert-GameSounds -GameId $g -ArchivePath $archivePath -OutDir $OutputDir
+    Convert-GameSounds -GameId $g -ArchivePath $archivePath -OutDir $OutputDir -Readme $ReadmeText -ProjectReadme $ProjectReadmeText
 }
 
 Write-Host ""

@@ -2980,6 +2980,14 @@ static int ogl_make_d2_texture_set_name(char *out, const char *bitmapname)
 	return 1;
 }
 
+static int ogl_make_d2_texture_name(char *out, const char *bitmapname)
+{
+	if (!bitmapname)
+		return 0;
+	sprintf(out, "textures/d2/%s", bitmapname);
+	return 1;
+}
+
 static int ogl_read_texture_with_extensions(char *filename, const char *basename, png_data *pdata)
 {
 	static const char *exts[] = {".png", ".jpg", ".tga"};
@@ -3069,13 +3077,34 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 #ifdef ANDROID
 		const char *dxa_bitmapname = bitmapname;
 		char texture_set_bitmapname[256];
+		char prefixed_bitmapname[256];
+		int have_texture_set_bitmapname = ogl_make_d2_texture_set_name(texture_set_bitmapname, bitmapname);
+		int have_prefixed_bitmapname = ogl_make_d2_texture_name(prefixed_bitmapname, bitmapname);
 
 		/* Try pre-compressed ETC2 first (from .dxa texture packs). */
 		if (!ogl_etc2_broken)
 		{
 			etc2_file_data edata;
-			sprintf(filename, "%s.ktx2", bitmapname);
-			if (read_ktx2_file(filename, &edata)) {
+			int loaded_ktx2 = 0;
+
+			if (have_texture_set_bitmapname) {
+				sprintf(filename, "%s.ktx2", texture_set_bitmapname);
+				loaded_ktx2 = read_ktx2_file(filename, &edata);
+				if (loaded_ktx2)
+					dxa_bitmapname = texture_set_bitmapname;
+			}
+			if (!loaded_ktx2 && have_prefixed_bitmapname) {
+				sprintf(filename, "%s.ktx2", prefixed_bitmapname);
+				loaded_ktx2 = read_ktx2_file(filename, &edata);
+				if (loaded_ktx2)
+					dxa_bitmapname = prefixed_bitmapname;
+			}
+			if (!loaded_ktx2) {
+				sprintf(filename, "%s.ktx2", bitmapname);
+				loaded_ktx2 = read_ktx2_file(filename, &edata);
+				dxa_bitmapname = bitmapname;
+			}
+			if (loaded_ktx2) {
 				/* android port: if bitmap needs transparency but KTX2 has
 				 * no alpha channel (RGB-only ETC2), skip it and fall back
 				 * to the base texture which correctly handles palette
@@ -3236,10 +3265,15 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		skip_ktx2:
 		/* Try multiple extensions -- stb_image handles all formats */
 		{
-			if (ogl_make_d2_texture_set_name(texture_set_bitmapname, bitmapname)) {
+			if (have_texture_set_bitmapname) {
 				png_loaded = ogl_read_texture_with_extensions(filename, texture_set_bitmapname, &pdata);
 				if (png_loaded)
 					dxa_bitmapname = texture_set_bitmapname;
+			}
+			if (!png_loaded && have_prefixed_bitmapname) {
+				png_loaded = ogl_read_texture_with_extensions(filename, prefixed_bitmapname, &pdata);
+				if (png_loaded)
+					dxa_bitmapname = prefixed_bitmapname;
 			}
 			if (!png_loaded)
 				png_loaded = ogl_read_texture_with_extensions(filename, bitmapname, &pdata);
