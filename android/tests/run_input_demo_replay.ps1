@@ -1030,7 +1030,7 @@ function Get-TextFileLinesWithRetry {
                 $reader = [System.IO.StreamReader]::new($stream)
                 try {
                     $lines = New-Object System.Collections.Generic.List[string]
-                    while (($line = $reader.ReadLine()) -ne $null) {
+                    while ($null -ne ($line = $reader.ReadLine())) {
                         $lines.Add($line)
                     }
                     return $lines.ToArray()

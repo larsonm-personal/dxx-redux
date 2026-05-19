@@ -15,7 +15,10 @@
 param(
     [switch]$Restart,
     [switch]$Wait,
-    [int]$TimeoutSeconds = 120
+    [int]$TimeoutSeconds = 120,
+    [string]$AvdName = "Nexus5X_Light_1",
+    [string]$GpuRenderer = "host",
+    [switch]$ForceRestart
 )
 
 # Prevent inherited ErrorActionPreference=Stop from treating adb stderr as errors
@@ -29,9 +32,23 @@ if (-not (Test-Path $_depBaseFile)) {
 $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
 $ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 $EMULATOR = "$DEP_BASE\android-sdk\emulator\emulator.exe"
-$AVD_NAME = "Nexus5X_Light_1"
+
+function Get-OnlineEmulatorSerials {
+    $devices = (& $ADB devices 2>&1) | Out-String
+    if (-not $devices) {
+        return @()
+    }
+
+    return @(
+        [regex]::Matches($devices, "(emulator-\d+)\s+device") |
+            ForEach-Object { $_.Groups[1].Value } |
+            Sort-Object -Unique
+    )
+}
 
 function Test-EmulatorHealth {
+    param([string]$PreferredSerial)
+
     # Step 0: Check if emulator process is actually running
     # This catches the common crash mode where the emulator process dies
     # but adb still shows a stale "device" entry.
@@ -42,41 +59,47 @@ function Test-EmulatorHealth {
 
     # Step 1: Check if any emulator device is listed
     $devices = (& $ADB devices 2>&1) | Out-String
-    if ($devices -notmatch 'emulator-\d+\s+device') {
+    $onlineSerials = Get-OnlineEmulatorSerials
+    if ($onlineSerials.Count -eq 0) {
         if ($devices -match 'emulator-\d+\s+offline') {
             return @{ Healthy = $false; Reason = "emulator is offline" }
         }
         return @{ Healthy = $false; Reason = "no emulator device found" }
     }
 
+    $serial = if ($PreferredSerial) { $PreferredSerial } else { $onlineSerials | Select-Object -First 1 }
+    if ($PreferredSerial -and $onlineSerials -notcontains $PreferredSerial) {
+        return @{ Healthy = $false; Reason = "preferred emulator $PreferredSerial not online" }
+    }
+
     # Step 2: Check if shell responds (boot_completed property)
     # Use a background job with timeout to detect hangs
     try {
         $job = Start-Job -ScriptBlock {
-            param($adb)
-            & $adb shell getprop sys.boot_completed 2>&1 | Out-String
-        } -ArgumentList $ADB
+            param($adb, $deviceSerial)
+            & $adb -s $deviceSerial shell getprop sys.boot_completed 2>&1 | Out-String
+        } -ArgumentList $ADB, $serial
         $completed = $job | Wait-Job -Timeout 5
         if (-not $completed) {
             Remove-Job $job -Force -ErrorAction SilentlyContinue
-            return @{ Healthy = $false; Reason = "shell unresponsive (getprop timed out - emulator likely frozen)" }
+            return @{ Healthy = $false; Reason = "shell unresponsive on $serial (getprop timed out - emulator likely frozen)" }
         }
         $result = Receive-Job $job
         Remove-Job $job -Force -ErrorAction SilentlyContinue
         if ([string]::IsNullOrWhiteSpace($result) -or $result.Trim() -ne "1") {
-            return @{ Healthy = $false; Reason = "shell unresponsive (boot_completed='$($result.Trim())')" }
+            return @{ Healthy = $false; Reason = "shell unresponsive on $serial (boot_completed='$($result.Trim())')" }
         }
     } catch {
         if ($job) { Remove-Job $job -Force -ErrorAction SilentlyContinue }
-        return @{ Healthy = $false; Reason = "shell command failed: $_" }
+        return @{ Healthy = $false; Reason = "shell command failed on ${serial}: $_" }
     }
 
     # Step 3: Check disk space on /data (warn if <500MB free)
     try {
         $dfJob = Start-Job -ScriptBlock {
-            param($adb)
-            & $adb shell "df /data" 2>&1 | Out-String
-        } -ArgumentList $ADB
+            param($adb, $deviceSerial)
+            & $adb -s $deviceSerial shell "df /data" 2>&1 | Out-String
+        } -ArgumentList $ADB, $serial
         $dfCompleted = $dfJob | Wait-Job -Timeout 5
         if ($dfCompleted) {
             $dfOutput = Receive-Job $dfJob
@@ -91,7 +114,7 @@ function Test-EmulatorHealth {
                     if ([int64]::TryParse($parts[3], [ref]$availKB)) {
                         $availMB = [math]::Floor($availKB / 1024)
                         if ($availMB -lt 500) {
-                            return @{ Healthy = $false; Reason = "low disk space on /data: ${availMB}MB free (need 500MB)" }
+                            return @{ Healthy = $false; Reason = "low disk space on /data for ${serial}: ${availMB}MB free (need 500MB)" }
                         }
                     }
                 }
@@ -104,19 +127,25 @@ function Test-EmulatorHealth {
         # Non-fatal disk space check
     }
 
-    return @{ Healthy = $true; Reason = "ok" }
+    return @{ Healthy = $true; Reason = "ok ($serial)" }
 }
 
 function Stop-Emulator {
-    Write-Host "Cleaning up /data/local/tmp..."
-    try {
-        & $ADB shell "rm -rf /data/local/tmp/*" 2>$null
-    } catch {}
+    $onlineSerials = Get-OnlineEmulatorSerials
+    if ($onlineSerials.Count -gt 0) {
+        Write-Host "Cleaning up /data/local/tmp on online emulators..."
+        foreach ($serial in $onlineSerials) {
+            try {
+                & $ADB -s $serial shell "rm -rf /data/local/tmp/*" 2>$null
+            } catch {}
+        }
+    }
     Write-Host "Killing emulator..."
-    # Try graceful kill (may hang if emulator is frozen, so use a timeout)
-    $job = Start-Job -ScriptBlock { param($a); & $a emu kill 2>&1 } -ArgumentList $ADB
-    $job | Wait-Job -Timeout 3 | Out-Null
-    Remove-Job $job -Force -ErrorAction SilentlyContinue
+    foreach ($serial in $onlineSerials) {
+        $job = Start-Job -ScriptBlock { param($a, $deviceSerial); & $a -s $deviceSerial emu kill 2>&1 } -ArgumentList $ADB, $serial
+        $job | Wait-Job -Timeout 3 | Out-Null
+        Remove-Job $job -Force -ErrorAction SilentlyContinue
+    }
     Start-Sleep -Seconds 1
     # Force-kill emulator processes
     Get-Process | Where-Object { $_.ProcessName -match 'qemu-system|emulator' -and $_.Path -like "*android*" } |
@@ -128,15 +157,19 @@ function Stop-Emulator {
 }
 
 function Start-EmulatorFresh {
-    Write-Host "Starting emulator ($AVD_NAME)..."
-    Start-Process -FilePath $EMULATOR -ArgumentList "-avd", $AVD_NAME, "-no-snapshot-load", "-gpu", "host" -WindowStyle Minimized
+    Write-Host "Starting emulator ($AvdName)..."
+    Start-Process -FilePath $EMULATOR -ArgumentList "-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", $GpuRenderer, "-crash-report-mode", "disabled" -WindowStyle Minimized
 }
 
 function Wait-EmulatorHealthy {
-    param([int]$Timeout = 120)
+    param(
+        [int]$Timeout = 120,
+        [string]$PreferredSerial
+    )
+
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt $Timeout) {
-        $status = Test-EmulatorHealth
+        $status = Test-EmulatorHealth -PreferredSerial $PreferredSerial
         if ($status.Healthy) {
             Write-Host "Emulator healthy after $([int]$sw.Elapsed.TotalSeconds)s"
             return $true
@@ -151,6 +184,22 @@ function Wait-EmulatorHealthy {
 # -- Main --
 $status = Test-EmulatorHealth
 Write-Host "Emulator status: $($status.Reason)"
+
+if ($Restart -and $ForceRestart) {
+    Stop-Emulator
+    Start-EmulatorFresh
+    if ($Wait) {
+        $ok = Wait-EmulatorHealthy -Timeout $TimeoutSeconds
+        if ($ok) {
+            Write-Host "FORCE_RESTARTED_AND_HEALTHY"
+            exit 2
+        }
+        Write-Host "FORCE_RESTART_FAILED"
+        exit 1
+    }
+    Write-Host "FORCE_RESTARTED"
+    exit 2
+}
 
 if ($status.Healthy) {
     if (-not $Wait) {

@@ -125,8 +125,7 @@ if (-not $NoBuild) {
                 Write-Host "ERROR: Build failed" -ForegroundColor Red
                 exit 1
             }
-        }
-        finally {
+        } finally {
             Pop-Location
         }
         Write-Host ""

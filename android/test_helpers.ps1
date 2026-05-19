@@ -31,6 +31,10 @@ $script:ADB = "$script:DEP_BASE\android-sdk\platform-tools\adb.exe"
 $script:PACKAGE = "com.dxxredux.app"
 $script:ACTIVITY = "com.dxxredux.app.SetupActivity"
 $script:DEFAULT_SET_DIR = "files/imported/sets/default"
+$script:PRIMARY_EMULATOR_SERIAL = "emulator-5554"
+$script:SECONDARY_EMULATOR_SERIAL = "emulator-5556"
+$script:PRIMARY_AVD_NAME = "Nexus5X_Light_1"
+$script:SECONDARY_AVD_NAME = "Nexus5X_Light_2"
 
 function Adb {
     param([string[]]$AdbArgs)
@@ -130,7 +134,7 @@ function Invoke-LauncherStartupRecovery {
     Restart-AdbServer
 
     $healthScript = Join-Path $PSScriptRoot "emu_health.ps1"
-    & $healthScript -Restart -Wait -TimeoutSeconds $TimeoutSeconds
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds $TimeoutSeconds -AvdName $script:PRIMARY_AVD_NAME
     $emuExit = $LASTEXITCODE
     if ($emuExit -ne 0 -and $emuExit -ne 2) {
         Write-Status "Launcher recovery failed: emulator restart exit $emuExit" "Red"
@@ -1346,15 +1350,74 @@ function Get-SetupIntrospection {
 $script:EMULATOR_EXE = "$script:DEP_BASE\android-sdk\emulator\emulator.exe"
 $script:REPO_ROOT = Split-Path $PSScriptRoot
 
+function Wait-EmulatorBootComplete {
+    param(
+        [Parameter(Mandatory)][string]$Serial,
+        [int]$TimeoutSeconds = 240
+    )
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+        $boot = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
+        if ($boot -and $boot.Trim() -eq "1") {
+            $packageService = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "cmd", "package", "list", "packages", "android") -Seconds 5
+            if ($packageService -and $packageService -notmatch "Can't find service: package" -and $packageService -match "package:android") {
+                return $true
+            }
+        }
+        Start-Sleep -Seconds 1
+    }
+
+    return $false
+}
+
+function Start-ManagedEmulator {
+    param(
+        [Parameter(Mandatory)][string]$AvdName,
+        [Parameter(Mandatory)][string]$Serial,
+        [int]$AppearTimeoutSeconds = 90,
+        [int]$BootTimeoutSeconds = 240
+    )
+
+    if (-not (Test-Path $script:EMULATOR_EXE)) {
+        Write-Status "FAIL: emulator.exe not found at $script:EMULATOR_EXE" "Red"
+        return $false
+    }
+
+    Write-Status "  Starting $AvdName ($Serial)..." "Yellow"
+    Start-Process -FilePath $script:EMULATOR_EXE -ArgumentList "-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", "host", "-crash-report-mode", "disabled" -WindowStyle Minimized
+
+    $appearStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($appearStopwatch.Elapsed.TotalSeconds -lt $AppearTimeoutSeconds) {
+        if (Test-DeviceOnline -Serial $Serial) {
+            break
+        }
+        Start-Sleep -Seconds 1
+    }
+
+    if (-not (Test-DeviceOnline -Serial $Serial)) {
+        Write-Status "FAIL: $Serial did not appear in adb after ${AppearTimeoutSeconds}s" "Red"
+        return $false
+    }
+
+    Write-Status "  Waiting for $Serial to boot..."
+    if (-not (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $BootTimeoutSeconds)) {
+        Write-Status "FAIL: $Serial did not boot within ${BootTimeoutSeconds}s" "Red"
+        return $false
+    }
+
+    Write-Status "  $Serial booted" "Green"
+    return $true
+}
+
 function Start-SingleEmulator {
     # Start EMU1 (Nexus5X_Light_1) if not already running. Returns $true on success.
-    $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
-    if ($devices -and $devices -match "emulator-\d+\s+device") { return $true }
-    Write-Status "Starting emulator (Nexus5X_Light_1)..." "Yellow"
+    if (Test-DeviceOnline -Serial $script:PRIMARY_EMULATOR_SERIAL) { return $true }
+    Write-Status "Starting emulator ($script:PRIMARY_AVD_NAME)..." "Yellow"
     $healthScript = Join-Path $PSScriptRoot "emu_health.ps1"
-    & $healthScript -Restart -Wait -TimeoutSeconds 180
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME
     $ec = $LASTEXITCODE
-    if ($ec -eq 0 -or $ec -eq 2) { return $true }
+    if (($ec -eq 0 -or $ec -eq 2) -and (Test-DeviceOnline -Serial $script:PRIMARY_EMULATOR_SERIAL)) { return $true }
     Write-Status "FAIL: Could not start emulator" "Red"
     return $false
 }
@@ -1362,41 +1425,8 @@ function Start-SingleEmulator {
 function Start-SecondEmulator {
     # Start EMU2 (Nexus5X_Light_2 on emulator-5556) if not already running.
     # Returns $true on success.
-    $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
-    if ($devices) {
-        $m = [regex]::Matches($devices, "emulator-\d+\s+device")
-        if ($m.Count -ge 2) { return $true }
-    }
-    Write-Status "Starting second emulator (Nexus5X_Light_2)..." "Yellow"
-    if (-not (Test-Path $script:EMULATOR_EXE)) {
-        Write-Status "FAIL: emulator.exe not found at $script:EMULATOR_EXE" "Red"
-        return $false
-    }
-    Start-Process -FilePath $script:EMULATOR_EXE `
-        -ArgumentList "-avd", "Nexus5X_Light_2", "-no-snapshot-save", "-gpu", "host" `
-        -WindowStyle Minimized
-    # Wait for it to appear in adb and boot
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt 180) {
-        Start-Sleep -Seconds 2
-        $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
-        if ($devices) {
-            $m = [regex]::Matches($devices, "emulator-\d+\s+device")
-            if ($m.Count -ge 2) {
-                # Verify boot complete on the second one
-                $serials = [regex]::Matches($devices, "(emulator-\d+)\s+device") |
-                    ForEach-Object { $_.Groups[1].Value } | Sort-Object
-                $emu2 = $serials | Select-Object -Last 1
-                $boot = Adb-Timeout -AdbArgs @("-s", $emu2, "shell", "getprop", "sys.boot_completed") -Seconds 10
-                if ($boot -and $boot.Trim() -eq "1") {
-                    Write-Status "Second emulator ready ($emu2)" "Green"
-                    return $true
-                }
-            }
-        }
-    }
-    Write-Status "FAIL: Second emulator did not boot within 180s" "Red"
-    return $false
+    if (Test-DeviceOnline -Serial $script:SECONDARY_EMULATOR_SERIAL) { return $true }
+    return Start-ManagedEmulator -AvdName $script:SECONDARY_AVD_NAME -Serial $script:SECONDARY_EMULATOR_SERIAL -AppearTimeoutSeconds 120 -BootTimeoutSeconds 240
 }
 
 function Ensure-FirewallRules {

@@ -298,7 +298,15 @@ function Get-OnlineEmulatorSerials {
 function Test-SingleEmulatorFailureNeedsRecovery {
     param([hashtable]$Result)
 
-    if (-not $Result -or $Result.Status -eq "PASS" -or -not $Result.LogFile -or -not (Test-Path $Result.LogFile)) {
+    if (-not $Result -or $Result.Status -eq "PASS") {
+        return $false
+    }
+
+    if ($Result.Status -eq "TIMEOUT") {
+        return $true
+    }
+
+    if (-not $Result.LogFile -or -not (Test-Path $Result.LogFile)) {
         return $false
     }
 
@@ -317,7 +325,7 @@ function Recover-SingleEmulatorEnvironment {
     Restart-AdbServer
 
     $healthScript = Join-Path $scriptDir "emu_health.ps1"
-    & $healthScript -Restart -Wait -TimeoutSeconds 180
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME
     $healthExit = $LASTEXITCODE
     if ($healthExit -ne 0 -and $healthExit -ne 2) {
         Write-Status "Single-emulator recovery failed: emulator restart exit $healthExit" "Red"
@@ -333,6 +341,69 @@ function Recover-SingleEmulatorEnvironment {
     Install-AppAndData -Serial $serial
     $SerialRef.Value = $serial
     Write-Status "Single-emulator recovery complete" "Green"
+    return $true
+}
+
+function Recover-DualEmulatorEnvironment {
+    param(
+        [ref]$PrimarySerialRef,
+        [ref]$SecondarySerialRef
+    )
+
+    Write-Status "Dual-emulator recovery: forcing clean emulator recycle and reprovisioning app/data" "Yellow"
+    Restart-AdbServer
+
+    if ($script:autoServerProc -and -not $script:autoServerProc.HasExited) {
+        try { $script:autoServerProc.Kill() } catch {}
+        try { $script:autoServerProc.WaitForExit(5000) } catch {}
+        $script:autoServerProc = $null
+    }
+
+    $healthScript = Join-Path $scriptDir "emu_health.ps1"
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 240 -AvdName $script:PRIMARY_AVD_NAME
+    $healthExit = $LASTEXITCODE
+    if ($healthExit -ne 0 -and $healthExit -ne 2) {
+        Write-Status "Dual-emulator recovery failed: primary emulator restart exit $healthExit" "Red"
+        return $false
+    }
+
+    if (-not (Start-SecondEmulator)) {
+        Write-Status "Dual-emulator recovery failed: could not start second emulator" "Red"
+        return $false
+    }
+
+    $serials = Get-OnlineEmulatorSerials
+    $primarySerial = if ($serials -contains $script:PRIMARY_EMULATOR_SERIAL) {
+        $script:PRIMARY_EMULATOR_SERIAL
+    } else {
+        $serials | Select-Object -First 1
+    }
+    $secondarySerial = if ($serials -contains $script:SECONDARY_EMULATOR_SERIAL) {
+        $script:SECONDARY_EMULATOR_SERIAL
+    } else {
+        $serials | Select-Object -Last 1
+    }
+
+    if (-not $primarySerial -or -not $secondarySerial -or $primarySerial -eq $secondarySerial) {
+        Write-Status "Dual-emulator recovery failed: online emulator set incomplete after restart" "Red"
+        return $false
+    }
+
+    Install-AppAndData -Serial $primarySerial
+    Install-AppAndData -Serial $secondarySerial
+
+    $PrimarySerialRef.Value = $primarySerial
+    $SecondarySerialRef.Value = $secondarySerial
+
+    if (-not (Test-MatchmakingServer)) {
+        $script:autoServerProc = Start-MatchmakingServer
+        if ($null -eq $script:autoServerProc) {
+            Write-Status "Dual-emulator recovery failed: could not restart matchmaking server" "Red"
+            return $false
+        }
+    }
+
+    Write-Status "Dual-emulator recovery complete" "Green"
     return $true
 }
 
@@ -431,7 +502,7 @@ function Invoke-PrimaryEmulatorPreflight {
 
         if ($attempt -lt 2) {
             Write-Status "Preflight: restarting primary emulator and retrying launcher readiness" "Yellow"
-            & $healthScript -Restart -Wait -TimeoutSeconds 180
+            & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME
             $healthExit = $LASTEXITCODE
             if ($healthExit -ne 0 -and $healthExit -ne 2) {
                 Write-Status "Preflight: emulator restart failed (exit $healthExit)" "Red"
@@ -897,7 +968,14 @@ if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
             Push-GameDataToDevice
             foreach ($test in $tierExtract) {
                 if ($stopEarly) { break }
-                Invoke-SingleTest -Test $test
+                $result = Invoke-SingleTest -Test $test
+                if ($result.Status -ne "PASS") {
+                    Write-Status "Tier 3 recovery: reprovisioning primary emulator after $($result.Name)" "Yellow"
+                    if (-not (Recover-SingleEmulatorEnvironment -SerialRef ([ref]$emu1Serial))) {
+                        Write-Status "Tier 3 recovery failed; stopping remaining extract tests" "Red"
+                        break
+                    }
+                }
             }
         } else {
             foreach ($test in $tierExtract) {
@@ -948,14 +1026,24 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
         $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
         $serials = [regex]::Matches($devices, "(emulator-\d+)\s+device") |
             ForEach-Object { $_.Groups[1].Value } | Sort-Object
+        $emu1Serial = $null
+        $emu2Serial = $null
         if ($serials.Count -ge 2) {
+            $emu1Serial = $serials | Select-Object -First 1
             $emu2Serial = $serials | Select-Object -Last 1
             Install-AppAndData -Serial $emu2Serial
         }
 
         foreach ($test in $tierDualEmu) {
             if ($stopEarly) { break }
-            Invoke-SingleTest -Test $test
+            $result = Invoke-SingleTest -Test $test
+            if ($result.Status -ne "PASS") {
+                Write-Status "Tier 4 recovery: recycling dual-emulator environment after $($result.Name)" "Yellow"
+                if (-not (Recover-DualEmulatorEnvironment -PrimarySerialRef ([ref]$emu1Serial) -SecondarySerialRef ([ref]$emu2Serial))) {
+                    Write-Status "Tier 4 recovery failed; stopping remaining dual-emulator tests" "Red"
+                    break
+                }
+            }
         }
     } else {
         $reason = if (-not $emu1Ok) { "could not start emulator" }
