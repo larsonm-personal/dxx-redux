@@ -921,6 +921,7 @@ int ogl_atotexfilti(char *a,int min)
 		GLstrcmptestr(a,LINEAR_MIPMAP_LINEAR);
 	}
 	Error("unknown/invalid texture filter %s\n",a);
+	return GL_NEAREST;
 }
 
 #ifdef _WIN32

@@ -1307,8 +1307,9 @@ void state_player_rw_to_player(player_rw *pl_rw, player *pl)
 	pl->score                     = pl_rw->score;
 	pl->time_level                = pl_rw->time_level;
 	pl->time_total                = pl_rw->time_total;
-	pl->cloak_time                = pl_rw->cloak_time;
-	pl->invulnerable_time         = pl_rw->invulnerable_time;
+	/* cloak/invulnerability are stored as GameTime64-relative offsets in player_rw */
+	pl->cloak_time                = GameTime64 + pl_rw->cloak_time;
+	pl->invulnerable_time         = GameTime64 + pl_rw->invulnerable_time;
 	pl->net_killed_total          = pl_rw->net_killed_total;
 	pl->net_kills_total           = pl_rw->net_kills_total;
 	pl->num_kills_level           = pl_rw->num_kills_level;

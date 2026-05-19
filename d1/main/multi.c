@@ -758,6 +758,7 @@ int multi_objnum_is_past(int objnum)
 			Error("Protocol handling missing in multi_objnum_is_past\n");
 			break;
 	}
+	return 0;
 }
 
 //
@@ -4418,6 +4419,7 @@ int multi_level_sync(void)
 			Error("Protocol handling missing in multi_level_sync\n");
 			break;
 	}
+	return 0;
 }
 
 void multi_set_robot_ai(void)

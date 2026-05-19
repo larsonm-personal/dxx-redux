@@ -413,6 +413,7 @@ ogl_texture* ogl_get_free_texture(void){
 			ogl_texture_list_cur=0;
 	}
 	Error("OGL: texture list full!\n");
+	return NULL;
 }
 
 void ogl_texture_stats(void)

@@ -235,7 +235,7 @@ void jukebox_load()
 }
 
 // To proceed tru our playlist. Usually used for continous play, but can loop as well.
-void jukebox_hook_next()
+void jukebox_hook_next(void)
 {
 	if (!JukeboxSongs.list || GameCfg.CMLevelMusicTrack[0] == -1) return;
 

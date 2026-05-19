@@ -269,7 +269,7 @@ int songs_haved1_cd()
 	}
 }
 
-void redbook_repeat_func()
+void redbook_repeat_func(void)
 {
 	stop_time();
 	RBAPlayTracks(Redbook_playing, 0, redbook_repeat_func);
@@ -277,7 +277,7 @@ void redbook_repeat_func()
 }
 
 // play a filename as music, depending on filename extension.
-int songs_play_file(char *filename, int repeat, void (*hook_finished_track)())
+int songs_play_file(char *filename, int repeat, void (*hook_finished_track)(void))
 {
 	char *fptr = strrchr(filename, '.');
 
@@ -381,7 +381,7 @@ int songs_play_song( int songnum, int repeat )
 	return Song_playing;
 }
 
-void redbook_first_song_func()
+void redbook_first_song_func(void)
 {
 	stop_time();
 	Song_playing = -1; // Playing Redbook tracks will not modify Song_playing. To repeat we must reset this so songs_play_level_song does not think we want to re-play the same song again.

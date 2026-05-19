@@ -775,6 +775,7 @@ int multi_objnum_is_past(int objnum)
 			Error("Protocol handling missing in multi_objnum_is_past\n");
 			break;
 	}
+	return 0;
 }
 
 //
@@ -4922,6 +4923,7 @@ int multi_level_sync(void)
 			Error("Protocol handling missing in multi_level_sync\n");
 			break;
 	}
+	return 0;
 }
 
 int Goal_blue_segnum,Goal_red_segnum;
@@ -6989,7 +6991,7 @@ int HoardEquipped()
 grs_bitmap Orb_icons[2];
 int Hoard_goal_eclip, Hoard_bm_idx, Hoard_snd_idx;
 
-void free_hoard_data()
+void free_hoard_data(void)
 {
 	int i;
 

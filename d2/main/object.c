@@ -1129,8 +1129,6 @@ void object_set_runtime_state(const object_runtime_state *state)
 			Debris_object_count++;
 		if (Objects[i].type == OBJ_NONE)
 			Unused_object_slots++;
-		else if (Objects[i].signature > object_signature_seed)
-			object_signature_seed = (short)Objects[i].signature;
 	}
 }
 

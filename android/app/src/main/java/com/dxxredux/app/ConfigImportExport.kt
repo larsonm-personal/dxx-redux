@@ -292,7 +292,11 @@ object ConfigImportExport {
         for (key in EXPORTED_PREF_KEYS) {
             if (!json.has(key)) continue
             when (key) {
-                "touch_overlay_enabled", PREF_SHOW_RESUME_OFFER, PREF_GUIDEBOT_HELPER_LINE, PREF_NEAREST_PLAYER_LINE -> {
+                "touch_overlay_enabled",
+                PREF_SHOW_RESUME_OFFER,
+                PREF_GUIDEBOT_HELPER_LINE,
+                PREF_NEAREST_PLAYER_LINE,
+                -> {
                     editor.putBoolean(key, json.getBoolean(key))
                 }
 

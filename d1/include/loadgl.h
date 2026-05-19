@@ -389,9 +389,18 @@
 #define glVertexPointer dglVertexPointer
 #define glViewport dglViewport
 
+#ifdef glMultiTexCoord2fARB
+#undef glMultiTexCoord2fARB
+#endif
 #define glMultiTexCoord2fARB dglMultiTexCoord2fARB
+#ifdef glActiveTextureARB
+#undef glActiveTextureARB
+#endif
 #define glActiveTextureARB dglActiveTextureARB
 #define glMultiTexCoord2fSGIS dglMultiTexCoord2fSGIS
+#ifdef glSelectTextureSGIS
+#undef glSelectTextureSGIS
+#endif
 #define glSelectTextureSGIS dglSelectTextureSGIS
 
 #ifdef _WIN32
