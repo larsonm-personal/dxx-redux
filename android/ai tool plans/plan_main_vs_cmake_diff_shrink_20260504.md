@@ -30,7 +30,7 @@ Plan:
 - [x] update the long-running shrink and input-demo extraction plans with the completed tranche and any remaining branch-diff candidates
 - [x] refresh the current `upstream/main` baseline after the hook-file extraction wave so the next diff-reduction pass is driven by current hotspots instead of the older April OGL-heavy picture
 - [x] re-survey the remaining D1/D2 diff with emphasis on deduplication opportunities, helper-sink overgrowth, and legacy-file cleanup lanes
-- [ ] choose the next dedicated shrink tranche from the ranked survey lanes below
+- [x] choose the next dedicated shrink tranche from the ranked survey lanes below
 
 Completed tranche:
 - moved `input_demo_log_player_bump_probe(...)` into `d1/main/input_demo_hooks.c` and `d2/main/input_demo_hooks.c`
@@ -341,6 +341,10 @@ Progress in Lane B (2026-05-19):
 - started the `playsave.c` launcher-bridge extraction by moving the duplicated
 	Android default-prefs and `.plx` visual-prefs helpers into the new shared
 	`android/app/src/main/cpp/shared/playsave_android_shared.h`
+- extended that same shared `playsave.c` bridge helper to absorb the duplicated
+	keysettings patch write path, while leaving only tiny D1 and D2 layout
+	calculators local so the authoritative per-game file layout still lives next
+	to each game's own serialization code
 - kept the remaining D1/D2 `playsave.c` differences local for now through the
 	game-specific binary pilot-field readers and writers plus D1-only `.plx`
 	cockpit and weapon-order helpers versus D2's binary weapon-order path
@@ -348,7 +352,9 @@ Progress in Lane B (2026-05-19):
 	`android/run-code-quality.ps1 -Fix -Paths ...` pass and Android native Gradle
 	tasks `:app:buildCMakeDebug[arm64-v8a]` plus
 	`:app:buildCMakeDebug[arm64-v8a]-2`; also removed the touched-file unused
-	`PHYSFS_file *file` locals in the netgame profile wrappers
+	`PHYSFS_file *file` locals in the netgame profile wrappers and then reran the
+	same scoped code-quality plus Android native validation after the shared
+	keysettings extraction
 
 ## Lane C -- Networking and coop join flow still offer high-value D1/D2 shrink
 
@@ -376,6 +382,21 @@ Recommended scope for the next networking survey tranche:
 This lane is still one of the highest payoffs for actual upstream merge cost,
 because every saved line comes out of old large engine files that upstream also
 touches.
+
+Progress in Lane C (2026-05-19):
+
+- started a first shared `net_udp.c` autonet extraction by moving the
+	duplicated Android-only `net_udp_auto_join(...)` and
+	`net_udp_auto_host(...)` bodies into
+	`android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.h`
+- kept the remaining D1/D2 split local through a one-line per-game adapter
+	macro that selects which player slot gets the restored host address after a
+	`GAME_INFO` reply during auto-join
+- validated the tranche with a scoped `android/run-code-quality.ps1 -Fix
+	-Paths ...` pass and Android native Gradle tasks
+	`:app:buildCMakeDebug[arm64-v8a]` plus `:app:buildCMakeDebug[arm64-v8a]-2`;
+	the build still reports unrelated pre-existing `net_udp.c` warnings outside
+	the touched autonet block
 
 ## Lane D -- Menu, control, and touch UI work is now a better target than another random D2-only probe cleanup
 

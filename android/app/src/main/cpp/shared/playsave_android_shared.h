@@ -150,4 +150,65 @@ int plx_write_visual_prefs(const char *path, int alpha_effects, int dynlight_col
 	return 1;
 }
 
+static int playsave_android_read_u16le(FILE *f, int *value)
+{
+	unsigned char buf[2];
+
+	if (fread(buf, 1, 2, f) != 2)
+		return 0;
+	*value = buf[0] | (buf[1] << 8);
+	return 1;
+}
+
+static int playsave_android_read_u32le(FILE *f, unsigned int *value)
+{
+	unsigned char buf[4];
+
+	if (fread(buf, 1, 4, f) != 4)
+		return 0;
+	*value = (unsigned) buf[0] | ((unsigned) buf[1] << 8) |
+	         ((unsigned) buf[2] << 16) | ((unsigned) buf[3] << 24);
+	return 1;
+}
+
+static int playsave_android_patch_keysettings_common(FILE *f,
+                                                     long ks_base,
+                                                     long control_type_offset,
+                                                     const ubyte *kb,
+                                                     int kb_len,
+                                                     const ubyte *joy,
+                                                     int joy_len,
+                                                     const ubyte *mouse,
+                                                     int mouse_len,
+                                                     int control_type)
+{
+	if (fseek(f, 0, SEEK_END) != 0 || ftell(f) < control_type_offset + 1)
+		return 0;
+
+	if (fseek(f, ks_base, SEEK_SET) != 0)
+		return 0;
+	fwrite(kb, 1, kb_len < MAX_CONTROLS ? kb_len : MAX_CONTROLS, f);
+
+	if (fseek(f, ks_base + MAX_CONTROLS, SEEK_SET) != 0)
+		return 0;
+	fwrite(joy, 1, joy_len < MAX_CONTROLS ? joy_len : MAX_CONTROLS, f);
+
+	if (mouse != NULL && mouse_len > 0) {
+		if (fseek(f, ks_base + 5 * MAX_CONTROLS, SEEK_SET) != 0)
+			return 0;
+		fwrite(mouse, 1, mouse_len < MAX_CONTROLS ? mouse_len : MAX_CONTROLS, f);
+	}
+
+	if (fseek(f, control_type_offset, SEEK_SET) != 0)
+		return 0;
+	{
+		unsigned char ct = (unsigned char) control_type;
+		fwrite(&ct, 1, 1, f);
+	}
+
+	fflush(f);
+	fsync(fileno(f));
+	return 1;
+}
+
 #endif /* PLAYSAVE_ANDROID_SHARED_H */

@@ -1570,6 +1570,10 @@ int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_n
 }
 
 #ifdef ANDROID
+#define PLAYSAVE_ANDROID_OPTIONS_HEADER "[D1X Options]\n"
+#include "playsave_android_shared.h"
+#undef PLAYSAVE_ANDROID_OPTIONS_HEADER
+
 /*
  * Binary-patch keyboard, joystick, mouse settings and control_type in a
  * D1 .plr file on disk (outside PhysFS).
@@ -1586,74 +1590,53 @@ int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_n
  *
  * Returns 1 on success, 0 on failure.
  */
+static int playsave_android_get_keysettings_layout(FILE *f,
+	long *ks_base,
+	long *control_type_offset)
+{
+	unsigned int id;
+	unsigned int n_highest;
+	int ver;
+
+	if (!playsave_android_read_u32le(f, &id) || id != (unsigned)SAVE_FILE_ID)
+		return 0;
+	if (!playsave_android_read_u16le(f, &ver) || ver != SAVED_GAME_VERSION)
+		return 0;
+
+	if (fseek(f, 8, SEEK_SET) != 0 ||
+	    !playsave_android_read_u32le(f, &n_highest))
+		return 0;
+
+	*ks_base = 20
+		+ (long)n_highest * sizeof(hli)
+		+ sizeof(saved_games)
+		+ 4 * MAX_MESSAGE_LEN;
+	*control_type_offset = *ks_base + 7 * MAX_CONTROLS;
+	return 1;
+}
+
 int plr_patch_keysettings(const char *path,
 			 const ubyte *kb, int kb_len,
 			 const ubyte *joy, int joy_len,
 			 const ubyte *mouse, int mouse_len,
 			 int control_type)
 {
-	unsigned char buf[4];
-	unsigned int id;
-	int ver, n_highest;
 	long ks_base;
+	long control_type_offset;
 	FILE *f;
+	int result;
 
 	f = fopen(path, "r+b");
-	if (!f) return 0;
+	if (!f)
+		return 0;
 
-	/* Read and validate SAVE_FILE_ID (4 bytes LE) */
-	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
-	id = (unsigned)buf[0] | ((unsigned)buf[1]<<8) |
-	     ((unsigned)buf[2]<<16) | ((unsigned)buf[3]<<24);
-	if (id != (unsigned)SAVE_FILE_ID) { fclose(f); return 0; }
-
-	/* Read version (2 bytes LE) — only support current version */
-	if (fread(buf, 1, 2, f) != 2) { fclose(f); return 0; }
-	ver = buf[0] | (buf[1] << 8);
-	if (ver != SAVED_GAME_VERSION) { fclose(f); return 0; }
-
-	/* Read NHighestLevels (4 bytes LE at offset 8, D1 uses int not short) */
-	fseek(f, 8, SEEK_SET);
-	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
-	n_highest = (int)((unsigned)buf[0] | ((unsigned)buf[1]<<8) |
-	                  ((unsigned)buf[2]<<16) | ((unsigned)buf[3]<<24));
-
-	/* KeySettings base = fixed_header(20) + n_highest * sizeof(hli)
-	 *   + sizeof(saved_games) + 4 * MAX_MESSAGE_LEN */
-	ks_base = 20
-	        + (long)n_highest * sizeof(hli)
-	        + sizeof(saved_games)
-	        + 4 * MAX_MESSAGE_LEN;
-
-	/* Verify file is large enough: 7*MC + 1 (control_type) */
-	fseek(f, 0, SEEK_END);
-	if (ftell(f) < ks_base + 7 * MAX_CONTROLS + 1) { fclose(f); return 0; }
-
-	/* Patch KeySettings[0] keyboard */
-	fseek(f, ks_base, SEEK_SET);
-	fwrite(kb, 1, kb_len < MAX_CONTROLS ? kb_len : MAX_CONTROLS, f);
-
-	/* Patch KeySettings[1] joystick */
-	fseek(f, ks_base + MAX_CONTROLS, SEEK_SET);
-	fwrite(joy, 1, joy_len < MAX_CONTROLS ? joy_len : MAX_CONTROLS, f);
-
-	/* Patch KeySettings[2] mouse (at ks_base + 5*MC) */
-	if (mouse != NULL && mouse_len > 0) {
-		fseek(f, ks_base + 5 * MAX_CONTROLS, SEEK_SET);
-		fwrite(mouse, 1, mouse_len < MAX_CONTROLS ? mouse_len : MAX_CONTROLS, f);
-	}
-
-	/* Patch control_type (at ks_base + 7*MC, D1 has 1 less obsolete block than D2) */
-	fseek(f, ks_base + 7 * MAX_CONTROLS, SEEK_SET);
-	{
-		unsigned char ct = (unsigned char)control_type;
-		fwrite(&ct, 1, 1, f);
-	}
-
-	fflush(f);
-	fsync(fileno(f));
+	result = playsave_android_get_keysettings_layout(f, &ks_base,
+		&control_type_offset) &&
+		playsave_android_patch_keysettings_common(f, ks_base,
+			control_type_offset, kb, kb_len, joy, joy_len,
+			mouse, mouse_len, control_type);
 	fclose(f);
-	return 1;
+	return result;
 }
 
 /*
@@ -1848,11 +1831,6 @@ int plx_write_cockpit_mode(const char *path, int cockpit_mode)
 	fclose(f);
 	return 1;
 }
-
-#define PLAYSAVE_ANDROID_OPTIONS_HEADER "[D1X Options]\n"
-#include "playsave_android_shared.h"
-#undef PLAYSAVE_ANDROID_OPTIONS_HEADER
-
 /*
  * Read weapon ordering from a D1 .plx text file.
  * Parses the [weapon reorder] INI section.
