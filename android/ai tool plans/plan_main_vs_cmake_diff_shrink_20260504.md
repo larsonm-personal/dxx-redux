@@ -220,6 +220,40 @@ Progress in this tranche (2026-05-18):
 - kept the remaining split local through tiny adapters for D1 mission-name
 	normalization, D2 replay-label enablement, and the differing
 	`state_restore_all_sub` call signatures
+- extended the shared replay-start helper include again to centralize the
+	post-checkpoint player-config reload, replay-player-config application,
+	order-hash capture, and player plus ship physics diagnostic collection,
+	while keeping only the per-game debug print shape local
+- tightened that same seam further by centralizing the restored-player debug
+	print itself behind a tiny per-game format adapter for D2's extra headlight
+	field, which leaves the checkpoint restore block in each game down to the
+	local control flow plus one shared diag capture/log call pair
+- followed that with a larger `input_demo_start.c` shrink by centralizing the
+	remaining loaded-replay control flow itself in
+	`input_demo_start_shared.h`, including shared replay-path validation/load,
+	shared state-trace plus replay-artifact logging, and the full loaded-replay
+	start path for both new-level and checkpoint starts
+- reduced the remaining D1/D2 split in `input_demo_start.c` to tiny adapters
+	for expected game id plus the existing mission-name and player-config
+	differences, while D2's public `input_demo_load_replay_from_path` and
+	`input_demo_start_loaded_replay` now delegate directly to the same shared
+	body used by D1
+- started sub-tranche 3 in `newdemo.c` by centralizing the duplicated
+	branch-only input-demo recording helper block in
+	`android/app/src/main/cpp/shared/input_demo_newdemo_shared.h`, including the
+	quick-record mission fallback, checkpoint capture, player-config fill,
+	recorder-settings preparation, slug plus path helpers, new-recording trim
+	logic, and the common start plus flush helpers
+- kept the remaining split in that `newdemo.c` tranche behind tiny macros for
+	D1 versus D2 mission identifiers, primary-order span, and D2-only
+	checkpoint escort state, headlight default, and terminal-exit reset hooks
+- followed that with another `input_demo_hooks.c` helper pass by extending
+	`android/app/src/main/cpp/shared/input_demo_hooks_shared.h` to centralize the
+	shared live-object counter, the bulk of `input_demo_capture_current_result`,
+	the collision frame and mode helpers, and the full player-bump probe body
+- kept the remaining D1/D2 hooks split local through tiny adapters for D2's
+	debug gate on collision traces plus D2-only shield, terminal-exit, powerup,
+	and kill-baseline bookkeeping around the shared current-result body
 
 What not to do here:
 

@@ -6,6 +6,49 @@
  * Including files provide the game headers that define the referenced globals and types.
  */
 
+#ifndef INPUT_DEMO_COLLISION_TRACE_ENABLED
+#define INPUT_DEMO_COLLISION_TRACE_ENABLED() 1
+#endif
+
+#ifndef INPUT_DEMO_RESULT_GAME_NAME
+#error INPUT_DEMO_RESULT_GAME_NAME must be defined before including input_demo_hooks_shared.h
+#endif
+
+#ifndef INPUT_DEMO_RESULT_MISSION_ID
+#error INPUT_DEMO_RESULT_MISSION_ID must be defined before including input_demo_hooks_shared.h
+#endif
+
+#ifndef INPUT_DEMO_CAPTURE_CURRENT_RESULT_PREP
+#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_PREP(current_player) ((void)(current_player))
+#endif
+
+#ifndef INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_GAME_TIME
+#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_GAME_TIME(result) ((void)(result))
+#endif
+
+#ifndef INPUT_DEMO_CAPTURE_CURRENT_RESULT_ROBOTS_KILLED
+#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_ROBOTS_KILLED(current_player) ((current_player)->num_robots_level)
+#endif
+
+#ifndef INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_POWERUPS
+#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_POWERUPS(result) ((void)(result))
+#endif
+
+static int input_demo_count_live_objects_of_type(int object_type)
+{
+	int count = 0;
+	int i;
+
+	for (i = 0; i <= Highest_object_index; ++i) {
+		if (Objects[i].type != object_type)
+			continue;
+		if (Objects[i].flags & OF_SHOULD_BE_DEAD)
+			continue;
+		count++;
+	}
+	return count;
+}
+
 static unsigned int input_demo_state_trace_hash_update(unsigned int hash,
 	unsigned int value)
 {
@@ -395,5 +438,192 @@ static void input_demo_capture_object_state_diag(input_demo_state_trace_diag *di
 			diag->segment_object_list_hash, segment_hash);
 	}
 }
+
+void input_demo_capture_current_result(input_demo_result *result)
+{
+	player *current_player = &Players[Player_num];
+	int robots_killed;
+	int i;
+
+	INPUT_DEMO_CAPTURE_CURRENT_RESULT_PREP(current_player);
+	input_demo_result_clear(result);
+	snprintf(result->game, sizeof(result->game), "%s", INPUT_DEMO_RESULT_GAME_NAME);
+	snprintf(result->mission, sizeof(result->mission), "%s", INPUT_DEMO_RESULT_MISSION_ID);
+	result->level = Current_level_num;
+	result->difficulty = Difficulty_level;
+	if (input_demo_replay_is_loaded())
+		result->frame_count = (uint32_t)input_demo_replay_next_frame_index();
+	else if (input_demo_recorder_is_active())
+		result->frame_count = (uint32_t)input_demo_recorder_frame_count();
+	else
+		result->frame_count = 0;
+	result->has_game_time64 = 1;
+	result->game_time64 = GameTime64;
+	INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_GAME_TIME(result);
+
+	result->player0.present = 1;
+	result->player0.energy = f2i(current_player->energy);
+	result->player0.shields = f2i(current_player->shields);
+	result->player0.score = current_player->score;
+	result->player0.lives = current_player->lives;
+	result->player0.laser_level = current_player->laser_level;
+	result->player0.primary_weapon = current_player->primary_weapon;
+	result->player0.secondary_weapon = current_player->secondary_weapon;
+	result->player0.flags = current_player->flags;
+	result->player0.hostages = current_player->hostages_on_board;
+	for (i = 0; i < INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO; ++i)
+		result->player0.primary_ammo[i] =
+			i < MAX_PRIMARY_WEAPONS ? current_player->primary_ammo[i] : 0;
+	for (i = 0; i < INPUT_DEMO_RESULT_MAX_SECONDARY_AMMO; ++i)
+		result->player0.secondary_ammo[i] =
+			i < MAX_SECONDARY_WEAPONS ? current_player->secondary_ammo[i] : 0;
+
+	if (ConsoleObject) {
+		result->position.present = 1;
+		result->position.segment = ConsoleObject->segnum;
+		result->position.x = ConsoleObject->pos.x;
+		result->position.y = ConsoleObject->pos.y;
+		result->position.z = ConsoleObject->pos.z;
+		result->position.has_forward = 1;
+		result->position.fx = ConsoleObject->orient.fvec.x;
+		result->position.fy = ConsoleObject->orient.fvec.y;
+		result->position.fz = ConsoleObject->orient.fvec.z;
+	}
+
+	result->level_summary.present = 1;
+	result->level_summary.robots_alive =
+		input_demo_count_live_objects_of_type(OBJ_ROBOT);
+	robots_killed = INPUT_DEMO_CAPTURE_CURRENT_RESULT_ROBOTS_KILLED(current_player);
+	if (robots_killed < 0)
+		robots_killed = 0;
+	result->level_summary.robots_killed = robots_killed;
+	result->level_summary.hostages_remaining =
+		input_demo_count_live_objects_of_type(OBJ_HOSTAGE);
+	result->level_summary.powerups_remaining =
+		input_demo_count_live_objects_of_type(OBJ_POWERUP);
+	INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_POWERUPS(result);
+	result->level_summary.control_center_destroyed =
+		Control_center_destroyed ? 1 : 0;
+	result->level_summary.endlevel_completed = Endlevel_sequence ? 1 : 0;
+}
+
+int input_demo_trace_collision_pose_active(void)
+{
+	return INPUT_DEMO_COLLISION_TRACE_ENABLED() &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+}
+
+unsigned int input_demo_trace_collision_frame_index(void)
+{
+	if (input_demo_replay_is_loaded())
+		return (unsigned int)input_demo_replay_next_frame_index();
+	if (input_demo_recorder_is_active()) {
+		const uint32_t frame_count = input_demo_recorder_frame_count();
+
+		return frame_count ? (unsigned int)(frame_count - 1) : 0;
+	}
+	return 0;
+}
+
+const char *input_demo_trace_collision_mode_name(void)
+{
+	if (input_demo_replay_is_loaded())
+		return "replay";
+	if (input_demo_recorder_is_active())
+		return "record";
+	return "none";
+}
+
+void input_demo_log_player_bump_probe(const char *step, object *obj0,
+	object *obj1, const vms_vector *relative_velocity,
+	const vms_vector *float_force, fix scale_num, fix scale_den,
+	int damage_flag)
+{
+	const object *player = NULL;
+	const object *other = NULL;
+	const char *mode_name;
+	unsigned int frame_index;
+	vms_vector fix_force = {0, 0, 0};
+	vms_vector force_delta = {0, 0, 0};
+
+	if (!input_demo_trace_collision_pose_active())
+		return;
+	mode_name = input_demo_trace_collision_mode_name();
+	frame_index = input_demo_trace_collision_frame_index();
+
+	if (obj0 == ConsoleObject && obj0 && obj0->type == OBJ_PLAYER &&
+		obj1 && (obj1->type == OBJ_WEAPON || obj1->type == OBJ_ROBOT)) {
+		player = obj0;
+		other = obj1;
+	} else if (obj1 == ConsoleObject && obj1 && obj1->type == OBJ_PLAYER &&
+		obj0 && (obj0->type == OBJ_WEAPON || obj0->type == OBJ_ROBOT)) {
+		player = obj1;
+		other = obj0;
+	}
+	if (!player || !other)
+		return;
+	if (relative_velocity && scale_den) {
+		fix_force.x = fixmuldiv(relative_velocity->x, scale_num, scale_den);
+		fix_force.y = fixmuldiv(relative_velocity->y, scale_num, scale_den);
+		fix_force.z = fixmuldiv(relative_velocity->z, scale_num, scale_den);
+	}
+	if (float_force) {
+		force_delta.x = float_force->x - fix_force.x;
+		force_delta.y = float_force->y - fix_force.y;
+		force_delta.z = float_force->z - fix_force.z;
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d seg=%d pos=(%d,%d,%d) obj1=%d/%d/%d seg=%d pos=(%d,%d,%d) damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
+		mode_name,
+		frame_index,
+		(long long)GameTime64,
+		step,
+		obj0 ? (int)(obj0 - Objects) : -1,
+		obj0 ? obj0->type : -1,
+		obj0 ? obj0->id : -1,
+		obj0 ? obj0->segnum : -1,
+		obj0 ? obj0->pos.x : 0,
+		obj0 ? obj0->pos.y : 0,
+		obj0 ? obj0->pos.z : 0,
+		obj1 ? (int)(obj1 - Objects) : -1,
+		obj1 ? obj1->type : -1,
+		obj1 ? obj1->id : -1,
+		obj1 ? obj1->segnum : -1,
+		obj1 ? obj1->pos.x : 0,
+		obj1 ? obj1->pos.y : 0,
+		obj1 ? obj1->pos.z : 0,
+		damage_flag,
+		relative_velocity ? relative_velocity->x : 0,
+		relative_velocity ? relative_velocity->y : 0,
+		relative_velocity ? relative_velocity->z : 0,
+		scale_num,
+		scale_den,
+		float_force ? float_force->x : 0,
+		float_force ? float_force->y : 0,
+		float_force ? float_force->z : 0,
+		fix_force.x,
+		fix_force.y,
+		fix_force.z,
+		force_delta.x,
+		force_delta.y,
+		force_delta.z,
+		obj0 ? obj0->mtype.phys_info.velocity.x : 0,
+		obj0 ? obj0->mtype.phys_info.velocity.y : 0,
+		obj0 ? obj0->mtype.phys_info.velocity.z : 0,
+		obj1 ? obj1->mtype.phys_info.velocity.x : 0,
+		obj1 ? obj1->mtype.phys_info.velocity.y : 0,
+		obj1 ? obj1->mtype.phys_info.velocity.z : 0,
+		obj0 ? obj0->mtype.phys_info.mass : 0,
+		obj1 ? obj1->mtype.phys_info.mass : 0);
+}
+
+#undef INPUT_DEMO_COLLISION_TRACE_ENABLED
+#undef INPUT_DEMO_RESULT_GAME_NAME
+#undef INPUT_DEMO_RESULT_MISSION_ID
+#undef INPUT_DEMO_CAPTURE_CURRENT_RESULT_PREP
+#undef INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_GAME_TIME
+#undef INPUT_DEMO_CAPTURE_CURRENT_RESULT_ROBOTS_KILLED
+#undef INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_POWERUPS
 
 #endif

@@ -52,7 +52,42 @@ static int input_demo_player_shield_probe_valid = 0;
 static fix input_demo_player_shield_probe_value = 0;
 
 static int input_demo_replay_fire_probe_active(void);
+static void input_demo_note_player_shield_probe_value(fix shields);
+static void input_demo_reset_powerup_live_probe_state(void);
+static void input_demo_note_powerup_live_delta(int current_count);
+void input_demo_trace_player_shield_change(const char *cause, fix shields_before,
+	fix shields_after, const char *extra_json, const char *extra_log);
 
+#define INPUT_DEMO_COLLISION_TRACE_ENABLED() input_demo_debug_is_enabled()
+#define INPUT_DEMO_RESULT_GAME_NAME "d2"
+#define INPUT_DEMO_RESULT_MISSION_ID ((Current_mission && Current_mission_filename) ? Current_mission_filename : "")
+#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_PREP(current_player) \
+	do { \
+		if (input_demo_recorder_is_active() || input_demo_replay_is_loaded()) { \
+			if (!input_demo_player_shield_probe_valid) \
+				input_demo_note_player_shield_probe_value((current_player)->shields); \
+			else if ((current_player)->shields != input_demo_player_shield_probe_value) \
+				input_demo_trace_player_shield_change("unknown_observed", \
+					input_demo_player_shield_probe_value, \
+					(current_player)->shields, \
+					"", \
+					""); \
+		} else { \
+			input_demo_reset_powerup_live_probe_state(); \
+		} \
+	} while (0)
+#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_GAME_TIME(result) \
+	do { \
+		if (input_demo_recorder_is_active()) \
+			(result)->terminal_exit = input_demo_recording_terminal_exit; \
+	} while (0)
+#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_ROBOTS_KILLED(current_player) \
+	(input_demo_result_kills_baseline_valid ? \
+		((current_player)->num_kills_level - input_demo_result_kills_baseline) : 0)
+#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_POWERUPS(result) \
+	do { \
+		input_demo_note_powerup_live_delta((result)->level_summary.powerups_remaining); \
+	} while (0)
 #define INPUT_DEMO_ROBOT_IS_CAMERA_AWAKE(objnum, obj) \
 	(((obj)->ctype.ai_info.SUB_FLAGS & SUB_FLAGS_CAMERA_AWAKE) != 0)
 #include "input_demo_hooks_shared.h"
@@ -506,21 +541,6 @@ static void input_demo_note_powerup_live_delta(int current_count)
 	input_demo_powerup_probe_valid = 1;
 }
 
-static int input_demo_count_live_objects_of_type(int object_type)
-{
-	int count = 0;
-	int i;
-
-	for (i = 0; i <= Highest_object_index; ++i) {
-		if (Objects[i].type != object_type)
-			continue;
-		if (Objects[i].flags & OF_SHOULD_BE_DEAD)
-			continue;
-		count++;
-	}
-	return count;
-}
-
 void input_demo_record_game_frame(void)
 {
 	input_demo_control_state state;
@@ -786,83 +806,6 @@ void input_demo_log_ai_schedule_record_probe(const char *step_label,
 	input_demo_record_frame_event_json(json);
 }
 
-void input_demo_capture_current_result(input_demo_result *result)
-{
-	player *current_player = &Players[Player_num];
-	int robots_killed = 0;
-	int i;
-
-	if (input_demo_recorder_is_active() || input_demo_replay_is_loaded()) {
-		if (!input_demo_player_shield_probe_valid)
-			input_demo_note_player_shield_probe_value(current_player->shields);
-		else if (current_player->shields != input_demo_player_shield_probe_value)
-			input_demo_trace_player_shield_change("unknown_observed",
-				input_demo_player_shield_probe_value,
-				current_player->shields,
-				"",
-				"");
-	} else {
-		input_demo_reset_powerup_live_probe_state();
-	}
-
-	input_demo_result_clear(result);
-	snprintf(result->game, sizeof(result->game), "%s", "d2");
-	if (Current_mission && Current_mission_filename)
-		snprintf(result->mission, sizeof(result->mission), "%s", Current_mission_filename);
-	result->level = Current_level_num;
-	result->difficulty = Difficulty_level;
-	if (input_demo_replay_is_loaded())
-		result->frame_count = (uint32_t)input_demo_replay_next_frame_index();
-	else if (input_demo_recorder_is_active())
-		result->frame_count = (uint32_t)input_demo_recorder_frame_count();
-	else
-		result->frame_count = 0;
-	result->has_game_time64 = 1;
-	result->game_time64 = GameTime64;
-	if (input_demo_recorder_is_active())
-		result->terminal_exit = input_demo_recording_terminal_exit;
-
-	result->player0.present = 1;
-	result->player0.energy = f2i(current_player->energy);
-	result->player0.shields = f2i(current_player->shields);
-	result->player0.score = current_player->score;
-	result->player0.lives = current_player->lives;
-	result->player0.laser_level = current_player->laser_level;
-	result->player0.primary_weapon = current_player->primary_weapon;
-	result->player0.secondary_weapon = current_player->secondary_weapon;
-	result->player0.flags = current_player->flags;
-	result->player0.hostages = current_player->hostages_on_board;
-	for (i = 0; i < INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO; ++i)
-		result->player0.primary_ammo[i] = i < MAX_PRIMARY_WEAPONS ? current_player->primary_ammo[i] : 0;
-	for (i = 0; i < INPUT_DEMO_RESULT_MAX_SECONDARY_AMMO; ++i)
-		result->player0.secondary_ammo[i] = i < MAX_SECONDARY_WEAPONS ? current_player->secondary_ammo[i] : 0;
-
-	if (ConsoleObject) {
-		result->position.present = 1;
-		result->position.segment = ConsoleObject->segnum;
-		result->position.x = ConsoleObject->pos.x;
-		result->position.y = ConsoleObject->pos.y;
-		result->position.z = ConsoleObject->pos.z;
-		result->position.has_forward = 1;
-		result->position.fx = ConsoleObject->orient.fvec.x;
-		result->position.fy = ConsoleObject->orient.fvec.y;
-		result->position.fz = ConsoleObject->orient.fvec.z;
-	}
-
-	result->level_summary.present = 1;
-	result->level_summary.robots_alive = input_demo_count_live_objects_of_type(OBJ_ROBOT);
-	if (input_demo_result_kills_baseline_valid)
-		robots_killed = current_player->num_kills_level - input_demo_result_kills_baseline;
-	if (robots_killed < 0)
-		robots_killed = 0;
-	result->level_summary.robots_killed = robots_killed;
-	result->level_summary.hostages_remaining = input_demo_count_live_objects_of_type(OBJ_HOSTAGE);
-	result->level_summary.powerups_remaining = input_demo_count_live_objects_of_type(OBJ_POWERUP);
-	input_demo_note_powerup_live_delta(result->level_summary.powerups_remaining);
-	result->level_summary.control_center_destroyed = Control_center_destroyed ? 1 : 0;
-	result->level_summary.endlevel_completed = Endlevel_sequence ? 1 : 0;
-}
-
 void input_demo_set_recording_terminal_exit(int terminal_exit)
 {
 	input_demo_recording_terminal_exit = terminal_exit;
@@ -1085,33 +1028,6 @@ int input_demo_replay_ai_skip_probe_active(void)
 int input_demo_replay_collision_probe_active(void)
 {
 	return input_demo_debug_is_enabled() && input_demo_replay_is_loaded();
-}
-
-int input_demo_trace_collision_pose_active(void)
-{
-	return input_demo_debug_is_enabled() &&
-		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
-}
-
-unsigned int input_demo_trace_collision_frame_index(void)
-{
-	if (input_demo_replay_is_loaded())
-		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t frame_count = input_demo_recorder_frame_count();
-
-		return frame_count ? (unsigned int)(frame_count - 1) : 0;
-	}
-	return 0;
-}
-
-const char *input_demo_trace_collision_mode_name(void)
-{
-	if (input_demo_replay_is_loaded())
-		return "replay";
-	if (input_demo_recorder_is_active())
-		return "record";
-	return "none";
 }
 
 int input_demo_replay_spreadfire_probe_active(void)
@@ -1628,95 +1544,6 @@ void input_demo_log_replay_fusion_warmup_probe(object *playerobj,
 		auto_fire_active,
 		fusion_charge,
 		(long long)next_sound_time);
-}
-
-void input_demo_log_player_bump_probe(const char *step, object *obj0, object *obj1, const vms_vector *relative_velocity, const vms_vector *float_force, fix scale_num, fix scale_den, int damage_flag)
-{
-	const object *player = NULL;
-	const object *other = NULL;
-	const char *mode_name = "none";
-	unsigned int frame_index = 0;
-	vms_vector fix_force = {0, 0, 0};
-	vms_vector force_delta = {0, 0, 0};
-
-	if (!input_demo_debug_is_enabled())
-		return;
-	if (input_demo_replay_is_loaded()) {
-		mode_name = "replay";
-		frame_index = (unsigned int)input_demo_replay_next_frame_index();
-	} else if (input_demo_recorder_is_active()) {
-		const uint32_t frame_count = input_demo_recorder_frame_count();
-
-		mode_name = "record";
-		frame_index = frame_count ? (unsigned int)(frame_count - 1) : 0;
-	} else
-		return;
-
-	if (obj0 == ConsoleObject && obj0 && obj0->type == OBJ_PLAYER &&
-		obj1 && (obj1->type == OBJ_WEAPON || obj1->type == OBJ_ROBOT)) {
-		player = obj0;
-		other = obj1;
-	} else if (obj1 == ConsoleObject && obj1 && obj1->type == OBJ_PLAYER &&
-		obj0 && (obj0->type == OBJ_WEAPON || obj0->type == OBJ_ROBOT)) {
-		player = obj1;
-		other = obj0;
-	}
-	if (!player || !other)
-		return;
-	if (relative_velocity && scale_den) {
-		fix_force.x = fixmuldiv(relative_velocity->x, scale_num, scale_den);
-		fix_force.y = fixmuldiv(relative_velocity->y, scale_num, scale_den);
-		fix_force.z = fixmuldiv(relative_velocity->z, scale_num, scale_den);
-	}
-	if (float_force) {
-		force_delta.x = float_force->x - fix_force.x;
-		force_delta.y = float_force->y - fix_force.y;
-		force_delta.z = float_force->z - fix_force.z;
-	}
-
-	con_printf(CON_NORMAL,
-		"Input demo bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d seg=%d pos=(%d,%d,%d) obj1=%d/%d/%d seg=%d pos=(%d,%d,%d) damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
-		mode_name,
-		frame_index,
-		(long long)GameTime64,
-		step,
-		obj0 ? (int)(obj0 - Objects) : -1,
-		obj0 ? obj0->type : -1,
-		obj0 ? obj0->id : -1,
-		obj0 ? obj0->segnum : -1,
-		obj0 ? obj0->pos.x : 0,
-		obj0 ? obj0->pos.y : 0,
-		obj0 ? obj0->pos.z : 0,
-		obj1 ? (int)(obj1 - Objects) : -1,
-		obj1 ? obj1->type : -1,
-		obj1 ? obj1->id : -1,
-		obj1 ? obj1->segnum : -1,
-		obj1 ? obj1->pos.x : 0,
-		obj1 ? obj1->pos.y : 0,
-		obj1 ? obj1->pos.z : 0,
-		damage_flag,
-		relative_velocity ? relative_velocity->x : 0,
-		relative_velocity ? relative_velocity->y : 0,
-		relative_velocity ? relative_velocity->z : 0,
-		scale_num,
-		scale_den,
-		float_force ? float_force->x : 0,
-		float_force ? float_force->y : 0,
-		float_force ? float_force->z : 0,
-		fix_force.x,
-		fix_force.y,
-		fix_force.z,
-		force_delta.x,
-		force_delta.y,
-		force_delta.z,
-		obj0 ? obj0->mtype.phys_info.velocity.x : 0,
-		obj0 ? obj0->mtype.phys_info.velocity.y : 0,
-		obj0 ? obj0->mtype.phys_info.velocity.z : 0,
-		obj1 ? obj1->mtype.phys_info.velocity.x : 0,
-		obj1 ? obj1->mtype.phys_info.velocity.y : 0,
-		obj1 ? obj1->mtype.phys_info.velocity.z : 0,
-		obj0 ? obj0->mtype.phys_info.mass : 0,
-		obj1 ? obj1->mtype.phys_info.mass : 0);
 }
 
 void input_demo_log_score_probe(const char *score_kind, int points, int score_after)
