@@ -313,6 +313,19 @@ Good next tranche candidates inside Lane B:
 3. isolate `playsave.c` launcher bridge bodies into a dedicated shared bridge
 	 file while leaving the authoritative serialization logic local
 
+Progress in Lane B (2026-05-19):
+
+- completed a first `state.c` extraction pass by centralizing the shared
+	Android rewind file adapters, save-to-path and memory-buffer helpers,
+	autosave slot wrapper flow, save-metadata writer, and restore-flight-state
+	repair helper in `android/app/src/main/cpp/shared/state_android_shared.h`
+- kept the remaining D1/D2 `state.c` split local through tiny adapters for the
+	memory rewind filename suffix, Android save-meta game id, restore-call
+	signature, and D2-only secret-slot plus final-boss autosave gating
+- validated the tranche with a scoped `android/run-code-quality.ps1 -Fix
+	-Paths ...` pass and Android native Gradle tasks
+	`:app:buildCMakeDebug[arm64-v8a]` plus `:app:buildCMakeDebug[arm64-v8a]-2`
+
 ## Lane C -- Networking and coop join flow still offer high-value D1/D2 shrink
 
 `net_udp.c` remains in the top 12 files for both games, and `multi.c` still

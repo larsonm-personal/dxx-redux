@@ -138,6 +138,7 @@ extern int Physics_cheat_flag;
 
 int state_save_all_sub(char *filename, char *desc);
 int state_restore_all_sub(char *filename, int secret_restore);
+int copy_file(char *old_file, char *new_file);
 
 int state_runtime_version(void)
 {
@@ -145,89 +146,44 @@ int state_runtime_version(void)
 }
 
 extern int First_secret_visit;
+extern int Final_boss_is_dead;
 
 #ifdef __ANDROID__
-static uint32_t state_time_to_seconds(fix time_value, sbyte hours_value)
-{
-	if (hours_value < 0)
-		hours_value = 0;
-	if (time_value < 0)
-		time_value = 0;
-	return (uint32_t)hours_value * 3600u + (uint32_t)f2i(time_value);
-}
-
-static int g_android_save_meta_kind = ANDROID_SAVE_META_KIND_MANUAL;
-static rewind_memory_buffer *g_state_android_memory_write_buffer = NULL;
-static const rewind_memory_buffer *g_state_android_memory_read_buffer = NULL;
-
-static void state_android_memory_filename(char *filename, size_t filename_size)
-{
-	if (!filename || !filename_size)
-		return;
-	snprintf(filename, filename_size,
-		GameArg.SysUsePlayersDir ? "Players/__rewind__.d2sg" : "__rewind__.d2sg");
-}
-
-static int state_android_is_memory_filename(const char *filename)
-{
-	char expected[PATH_MAX];
-
-	state_android_memory_filename(expected, sizeof(expected));
-	return filename && !strcmp(filename, expected);
-}
-
-static rewind_file *state_android_open_read_buffered(const char *filename)
-{
-	rewind_file *file = (rewind_file *) d_malloc(sizeof(*file));
-	PHYSFS_file *physfs_file;
-
-	if (state_android_is_memory_filename(filename)) {
-		if (!g_state_android_memory_read_buffer) {
-			d_free(file);
-			return NULL;
-		}
-		rewind_file_init_memory_read(file,
-			g_state_android_memory_read_buffer->data,
-			g_state_android_memory_read_buffer->size);
-		return file;
-	}
-	physfs_file = PHYSFSX_openReadBuffered(filename);
-	if (!physfs_file) {
-		d_free(file);
-		return NULL;
-	}
-	rewind_file_init_physfs(file, physfs_file);
-	return file;
-}
-
-static rewind_file *state_android_open_write_buffered(const char *filename)
-{
-	rewind_file *file = (rewind_file *) d_malloc(sizeof(*file));
-	PHYSFS_file *physfs_file;
-
-	if (state_android_is_memory_filename(filename)) {
-		if (!g_state_android_memory_write_buffer) {
-			d_free(file);
-			return NULL;
-		}
-		rewind_file_init_memory_write(file, g_state_android_memory_write_buffer);
-		return file;
-	}
-	physfs_file = PHYSFSX_openWriteBuffered(filename);
-	if (!physfs_file) {
-		d_free(file);
-		return NULL;
-	}
-	rewind_file_init_physfs(file, physfs_file);
-	return file;
-}
-
-static int state_android_close_file(rewind_file *file)
-{
-	int result = rewind_file_close(file);
-	d_free(file);
-	return result;
-}
+#define STATE_ANDROID_MEMORY_FILE_NAME "__rewind__.d2sg"
+#define STATE_ANDROID_SAVE_META_GAME_ID ANDROID_SAVE_META_GAME_D2
+#define STATE_ANDROID_GAME_LABEL "D2"
+#define STATE_ANDROID_RESTORE_FROM_MEMORY_CALL(filename) state_restore_all_sub((filename), 0)
+#define STATE_ANDROID_AUTOSAVE_PRECHECK(slotnum) \
+	do { \
+		if (Current_level_num < 0) { \
+			debug_log(DLOG_GAME, "autosave skipped: D2 secret level is active"); \
+			return 0; \
+		} \
+		if (Final_boss_is_dead) { \
+			debug_log(DLOG_GAME, "autosave skipped: D2 final boss death sequence is active"); \
+			return 0; \
+		} \
+	} while (0)
+#define STATE_ANDROID_AUTOSAVE_PREPARE_SLOT(slotnum) \
+	do { \
+		char state_android_temp_fname[PATH_MAX]; \
+		char state_android_fc; \
+		if ((slotnum) >= 10) \
+			state_android_fc = ((slotnum) - 10) + 'a'; \
+		else \
+			state_android_fc = '0' + (slotnum); \
+		sprintf(state_android_temp_fname, GameArg.SysUsePlayersDir ? "Players/%csecret.sgc" : "%csecret.sgc", state_android_fc); \
+		if (PHYSFSX_exists(state_android_temp_fname, 0)) { \
+			if (!PHYSFS_delete(state_android_temp_fname)) \
+				Error("Cannot delete file <%s>: %s", state_android_temp_fname, PHYSFS_getLastError()); \
+		} \
+		if (PHYSFSX_exists(SECRETC_FILENAME, 0)) { \
+			int copy_result = copy_file(SECRETC_FILENAME, state_android_temp_fname); \
+			Assert(copy_result == 0); \
+			(void)copy_result; \
+		} \
+	} while (0)
+#include "state_android_shared.h"
 
 static PHYSFS_sint64 state_android_physfs_raw_length(struct PHYSFS_File *file)
 {
@@ -320,8 +276,6 @@ static int state_android_physfs_raw_close(struct PHYSFS_File *file)
 	return PHYSFS_close(file);
 }
 #endif
-
-static int g_android_save_blank_thumbnail = 0;
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -1679,36 +1633,6 @@ int state_quick_item = -1;
  * For restoring, dsc should be NULL, in which case empty slots will not be
  * selectable and savagames descriptions will not be editable.
  */
-#ifdef __ANDROID__
-static void state_android_restore_player_flight_state(void)
-{
-	object *obj;
-	int objnum = Players[Player_num].objnum;
-
-	if (objnum < 0 || objnum > Highest_object_index)
-		return;
-
-	Viewer = ConsoleObject = &Objects[objnum];
-	obj = ConsoleObject;
-	if (obj->type == OBJ_GHOST)
-		obj->type = OBJ_PLAYER;
-	if (obj->type != OBJ_PLAYER)
-		return;
-
-	if (Player_is_dead || obj->control_type != CT_FLYING || obj->movement_type != MT_PHYSICS ||
-	    !(obj->mtype.phys_info.flags & PF_USES_THRUST))
-		debug_log(DLOG_GAME,
-			"restore controls repaired: D2 obj=%d ct=%d mt=%d flags=0x%x dead=%d",
-			objnum, obj->control_type, obj->movement_type,
-			obj->mtype.phys_info.flags, Player_is_dead);
-
-	Player_is_dead = 0;
-	obj->control_type = CT_FLYING;
-	obj->movement_type = MT_PHYSICS;
-	obj->mtype.phys_info.flags |= PF_TURNROLL | PF_LEVELLING | PF_WIGGLE | PF_USES_THRUST;
-}
-#endif
-
 int state_get_savegame_filename(char * fname, char * dsc, char * caption, int blind_save)
 {
 	PHYSFS_file * fp;
@@ -1962,106 +1886,6 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 
 	return rval;
 }
-
-#ifdef __ANDROID__
-int state_android_save_to_path(const char *filename, const char *desc, int save_kind, int blank_thumbnail)
-{
-	int result;
-	char save_filename[PATH_MAX];
-	char save_desc[DESC_LENGTH + 1];
-	int prev_kind = g_android_save_meta_kind;
-	int prev_blank = g_android_save_blank_thumbnail;
-
-	if (!filename || !filename[0] || !desc)
-		return 0;
-	memset(save_filename, 0, sizeof(save_filename));
-	memset(save_desc, 0, sizeof(save_desc));
-	strncpy(save_filename, filename, PATH_MAX - 1);
-	strncpy(save_desc, desc, DESC_LENGTH);
-	g_android_save_meta_kind = save_kind;
-	g_android_save_blank_thumbnail = blank_thumbnail ? 1 : 0;
-	result = state_save_all_sub(save_filename, save_desc);
-	g_android_save_meta_kind = prev_kind;
-	g_android_save_blank_thumbnail = prev_blank;
-	return result;
-}
-
-int state_save_to_memory(rewind_memory_buffer *buffer, const char *desc, int save_kind, int blank_thumbnail)
-{
-	int result;
-	char filename[PATH_MAX];
-
-	if (!buffer || !desc)
-		return 0;
-	state_android_memory_filename(filename, sizeof(filename));
-	g_state_android_memory_write_buffer = buffer;
-	result = state_android_save_to_path(filename, desc, save_kind, blank_thumbnail);
-	g_state_android_memory_write_buffer = NULL;
-	return result;
-}
-
-int state_restore_from_memory(const rewind_memory_buffer *buffer)
-{
-	int result;
-	char filename[PATH_MAX];
-
-	if (!buffer || (!buffer->data && buffer->size != 0))
-		return 0;
-	state_android_memory_filename(filename, sizeof(filename));
-	g_state_android_memory_read_buffer = buffer;
-	result = state_restore_all_sub(filename, 0);
-	g_state_android_memory_read_buffer = NULL;
-	return result;
-}
-
-int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
-{
-	int result;
-	char filename[PATH_MAX];
-	char temp_fname[PATH_MAX], fc;
-
-	if (!desc || slotnum < 0 || slotnum >= NUM_SAVES) {
-		debug_log(DLOG_GAME, "autosave skipped: invalid D2 slot request");
-		return 0;
-	}
-	if (Current_level_num < 0) {
-		debug_log(DLOG_GAME, "autosave skipped: D2 secret level is active");
-		return 0;
-	}
-	if (Final_boss_is_dead) {
-		debug_log(DLOG_GAME, "autosave skipped: D2 final boss death sequence is active");
-		return 0;
-	}
-	if (Game_mode & GM_MULTI) {
-		debug_log(DLOG_GAME, "autosave skipped: D2 multiplayer is active");
-		return 0;
-	}
-	android_repair_player_callsign_for_autosave("D2");
-
-	stop_time();
-	memset(filename, 0, sizeof(filename));
-	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.sg%x" : "%s.sg%x",
-		Players[Player_num].callsign, slotnum);
-	if (slotnum >= 10)
-		fc = (slotnum - 10) + 'a';
-	else
-		fc = '0' + slotnum;
-	sprintf(temp_fname, GameArg.SysUsePlayersDir ? "Players/%csecret.sgc" : "%csecret.sgc", fc);
-	if (PHYSFSX_exists(temp_fname, 0)) {
-		if (!PHYSFS_delete(temp_fname))
-			Error("Cannot delete file <%s>: %s", temp_fname, PHYSFS_getLastError());
-	}
-	if (PHYSFSX_exists(SECRETC_FILENAME, 0)) {
-		int copy_result = copy_file(SECRETC_FILENAME, temp_fname);
-		Assert(copy_result == 0);
-		(void)copy_result;
-	}
-	result = state_android_save_to_path(filename, desc, save_kind, 1);
-	if (!result)
-		debug_log(DLOG_GAME, "autosave failed: D2 slot %d", slotnum);
-	return result;
-}
-#endif
 
 extern	fix	Flash_effect;
 extern fix64 Time_flash_last_played;
@@ -2352,31 +2176,7 @@ int state_save_all_sub(char *filename, char *desc)
 	state_write_runtime_state(fp);
 
 #ifdef __ANDROID__
-	if (!rewind_file_is_memory(fp)) {
-		struct PHYSFS_File *physfs_fp = rewind_file_physfs_handle(fp);
-
-		coop_write_save_metadata(physfs_fp);
-		{
-		android_save_meta_write_params android_params;
-		char android_desc[DESC_LENGTH + 1];
-
-		memset(&android_params, 0, sizeof(android_params));
-		memcpy(android_desc, desc, DESC_LENGTH);
-		android_desc[DESC_LENGTH] = '\0';
-		android_params.game_id = ANDROID_SAVE_META_GAME_D2;
-		android_params.save_kind = g_android_save_meta_kind;
-		android_params.callsign = Players[Player_num].callsign;
-		android_params.description = android_desc;
-		android_params.mission_name = mission_filename;
-		android_params.level_num = Current_level_num;
-		android_params.level_name = Current_level_name;
-		android_params.level_seconds = state_time_to_seconds(
-			Players[Player_num].time_level, Players[Player_num].hours_level);
-		android_params.total_seconds = state_time_to_seconds(
-			Players[Player_num].time_total, Players[Player_num].hours_total);
-		android_save_meta_write_physfs(physfs_fp, &android_params);
-		}
-	}
+	state_android_write_save_metadata(fp, desc, mission_filename);
 #endif
 
 	PHYSFS_close(fp);
@@ -2544,7 +2344,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		filename, version, swap, STATE_COMPATIBLE_VERSION, STATE_RUNTIME_VERSION);
 #endif
 
-	if (version < STATE_COMPATIBLE_VERSION)	{
+	if (version < STATE_COMPATIBLE_VERSION) {
 		con_printf(CON_URGENT, "restore: unsupported save version %d in '%s'\n", version, filename);
 #ifdef __ANDROID__
 		debug_log(DLOG_GAME, "restore unsupported version: game=d2 file='%s' version=%d compatible=%d",
@@ -2607,7 +2407,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			memmove(mission, p + 1, strlen(p + 1) + 1);
 	}
 
-	if (!load_mission_by_name( mission ))	{
+	if (!load_mission_by_name( mission ))   {
 		con_printf(CON_URGENT, "restore: unable to load mission '%s' from '%s'\n", mission, filename);
 #ifdef __ANDROID__
 		debug_log(DLOG_GAME, "restore unable to load mission: game=d2 file='%s' mission='%s'",
@@ -2644,6 +2444,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		change_playernum_to(0);
 #endif
 		N_players = 1;
+
 		strcpy( org_callsign, Players[0].callsign );
 		if (!secret_restore) {
 			InitPlayerObject();				//make sure player's object set up
@@ -3293,7 +3094,7 @@ int state_get_game_id(char *filename)
 		version = SWAPINT(version);
 	}
 
-	if (version < STATE_COMPATIBLE_VERSION)	{
+	if (version < STATE_COMPATIBLE_VERSION) {
 		PHYSFS_close(fp);
 		return 0;
 	}

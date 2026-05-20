@@ -131,87 +131,11 @@ char dgss_id[4] = "DGSS";
 uint state_game_id;
 
 #ifdef __ANDROID__
-static uint32_t state_time_to_seconds(fix time_value, sbyte hours_value)
-{
-	if (hours_value < 0)
-		hours_value = 0;
-	if (time_value < 0)
-		time_value = 0;
-	return (uint32_t)hours_value * 3600u + (uint32_t)f2i(time_value);
-}
-
-static int g_android_save_meta_kind = ANDROID_SAVE_META_KIND_MANUAL;
-static rewind_memory_buffer *g_state_android_memory_write_buffer = NULL;
-static const rewind_memory_buffer *g_state_android_memory_read_buffer = NULL;
-
-static void state_android_memory_filename(char *filename, size_t filename_size)
-{
-	if (!filename || !filename_size)
-		return;
-	snprintf(filename, filename_size,
-		GameArg.SysUsePlayersDir ? "Players/__rewind__.d1sg" : "__rewind__.d1sg");
-}
-
-static int state_android_is_memory_filename(const char *filename)
-{
-	char expected[PATH_MAX];
-
-	state_android_memory_filename(expected, sizeof(expected));
-	return filename && !strcmp(filename, expected);
-}
-
-static rewind_file *state_android_open_read_buffered(const char *filename)
-{
-	rewind_file *file = (rewind_file *) d_malloc(sizeof(*file));
-	PHYSFS_file *physfs_file;
-
-	if (state_android_is_memory_filename(filename)) {
-		if (!g_state_android_memory_read_buffer) {
-			d_free(file);
-			return NULL;
-		}
-		rewind_file_init_memory_read(file,
-			g_state_android_memory_read_buffer->data,
-			g_state_android_memory_read_buffer->size);
-		return file;
-	}
-	physfs_file = PHYSFSX_openReadBuffered(filename);
-	if (!physfs_file) {
-		d_free(file);
-		return NULL;
-	}
-	rewind_file_init_physfs(file, physfs_file);
-	return file;
-}
-
-static rewind_file *state_android_open_write_buffered(const char *filename)
-{
-	rewind_file *file = (rewind_file *) d_malloc(sizeof(*file));
-	PHYSFS_file *physfs_file;
-
-	if (state_android_is_memory_filename(filename)) {
-		if (!g_state_android_memory_write_buffer) {
-			d_free(file);
-			return NULL;
-		}
-		rewind_file_init_memory_write(file, g_state_android_memory_write_buffer);
-		return file;
-	}
-	physfs_file = PHYSFSX_openWriteBuffered(filename);
-	if (!physfs_file) {
-		d_free(file);
-		return NULL;
-	}
-	rewind_file_init_physfs(file, physfs_file);
-	return file;
-}
-
-static int state_android_close_file(rewind_file *file)
-{
-	int result = rewind_file_close(file);
-	d_free(file);
-	return result;
-}
+#define STATE_ANDROID_MEMORY_FILE_NAME "__rewind__.d1sg"
+#define STATE_ANDROID_SAVE_META_GAME_ID ANDROID_SAVE_META_GAME_D1
+#define STATE_ANDROID_GAME_LABEL "D1"
+#define STATE_ANDROID_RESTORE_FROM_MEMORY_CALL(filename) state_restore_all_sub((filename))
+#include "state_android_shared.h"
 
 #define PHYSFS_file rewind_file
 #define PHYSFS_read rewind_file_read
@@ -240,8 +164,6 @@ static int state_android_close_file(rewind_file *file)
 #define PHYSFSX_writeU8 rewind_file_write_u8
 #define PHYSFSX_writeVector rewind_file_write_vector
 #endif
-
-static int g_android_save_blank_thumbnail = 0;
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -1613,83 +1535,6 @@ int state_save_all(int blind_save)
 	return rval;
 }
 
-#ifdef __ANDROID__
-int state_android_save_to_path(const char *filename, const char *desc, int save_kind, int blank_thumbnail)
-{
-	int result;
-	char save_filename[PATH_MAX];
-	char save_desc[DESC_LENGTH + 1];
-	int prev_kind = g_android_save_meta_kind;
-	int prev_blank = g_android_save_blank_thumbnail;
-
-	if (!filename || !filename[0] || !desc)
-		return 0;
-	memset(save_filename, 0, sizeof(save_filename));
-	memset(save_desc, 0, sizeof(save_desc));
-	strncpy(save_filename, filename, PATH_MAX - 1);
-	strncpy(save_desc, desc, DESC_LENGTH);
-	g_android_save_meta_kind = save_kind;
-	g_android_save_blank_thumbnail = blank_thumbnail ? 1 : 0;
-	result = state_save_all_sub(save_filename, save_desc);
-	g_android_save_meta_kind = prev_kind;
-	g_android_save_blank_thumbnail = prev_blank;
-	return result;
-}
-
-int state_save_to_memory(rewind_memory_buffer *buffer, const char *desc, int save_kind, int blank_thumbnail)
-{
-	int result;
-	char filename[PATH_MAX];
-
-	if (!buffer || !desc)
-		return 0;
-	state_android_memory_filename(filename, sizeof(filename));
-	g_state_android_memory_write_buffer = buffer;
-	result = state_android_save_to_path(filename, desc, save_kind, blank_thumbnail);
-	g_state_android_memory_write_buffer = NULL;
-	return result;
-}
-
-int state_restore_from_memory(const rewind_memory_buffer *buffer)
-{
-	int result;
-	char filename[PATH_MAX];
-
-	if (!buffer || (!buffer->data && buffer->size != 0))
-		return 0;
-	state_android_memory_filename(filename, sizeof(filename));
-	g_state_android_memory_read_buffer = buffer;
-	result = state_restore_all_sub(filename);
-	g_state_android_memory_read_buffer = NULL;
-	return result;
-}
-
-int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
-{
-	int result;
-	char filename[PATH_MAX];
-
-	if (!desc || slotnum < 0 || slotnum >= NUM_SAVES) {
-		debug_log(DLOG_GAME, "autosave skipped: invalid D1 slot request");
-		return 0;
-	}
-	if (Game_mode & GM_MULTI) {
-		debug_log(DLOG_GAME, "autosave skipped: D1 multiplayer is active");
-		return 0;
-	}
-	android_repair_player_callsign_for_autosave("D1");
-
-	stop_time();
-	memset(filename, 0, sizeof(filename));
-	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.sg%x" : "%s.sg%x",
-		Players[Player_num].callsign, slotnum);
-	result = state_android_save_to_path(filename, desc, save_kind, 1);
-	if (!result)
-		debug_log(DLOG_GAME, "autosave failed: D1 slot %d", slotnum);
-	return result;
-}
-#endif
-
 int state_save_all_sub(char *filename, char *desc)
 {
 	int i, j;
@@ -1879,31 +1724,7 @@ int state_save_all_sub(char *filename, char *desc)
 	state_write_runtime_state(fp);
 
 #ifdef __ANDROID__
-	if (!rewind_file_is_memory(fp)) {
-		struct PHYSFS_File *physfs_fp = rewind_file_physfs_handle(fp);
-
-		coop_write_save_metadata(physfs_fp);
-		{
-		android_save_meta_write_params android_params;
-		char android_desc[DESC_LENGTH + 1];
-
-		memset(&android_params, 0, sizeof(android_params));
-		memcpy(android_desc, desc, DESC_LENGTH);
-		android_desc[DESC_LENGTH] = '\0';
-		android_params.game_id = ANDROID_SAVE_META_GAME_D1;
-		android_params.save_kind = g_android_save_meta_kind;
-		android_params.callsign = Players[Player_num].callsign;
-		android_params.description = android_desc;
-		android_params.mission_name = mission_filename;
-		android_params.level_num = Current_level_num;
-		android_params.level_name = Current_level_name;
-		android_params.level_seconds = state_time_to_seconds(
-			Players[Player_num].time_level, Players[Player_num].hours_level);
-		android_params.total_seconds = state_time_to_seconds(
-			Players[Player_num].time_total, Players[Player_num].hours_total);
-		android_save_meta_write_physfs(physfs_fp, &android_params);
-		}
-	}
+	state_android_write_save_metadata(fp, desc, mission_filename);
 #endif
 
 	PHYSFS_close(fp);
@@ -1962,36 +1783,6 @@ int state_restore_all_path(int in_game, char *filename_override)
 {
 	return state_restore_all_internal(in_game, filename_override);
 }
-
-#ifdef __ANDROID__
-static void state_android_restore_player_flight_state(void)
-{
-	object *obj;
-	int objnum = Players[Player_num].objnum;
-
-	if (objnum < 0 || objnum > Highest_object_index)
-		return;
-
-	Viewer = ConsoleObject = &Objects[objnum];
-	obj = ConsoleObject;
-	if (obj->type == OBJ_GHOST)
-		obj->type = OBJ_PLAYER;
-	if (obj->type != OBJ_PLAYER)
-		return;
-
-	if (Player_is_dead || obj->control_type != CT_FLYING || obj->movement_type != MT_PHYSICS ||
-	    !(obj->mtype.phys_info.flags & PF_USES_THRUST))
-		debug_log(DLOG_GAME,
-			"restore controls repaired: D1 obj=%d ct=%d mt=%d flags=0x%x dead=%d",
-			objnum, obj->control_type, obj->movement_type,
-			obj->mtype.phys_info.flags, Player_is_dead);
-
-	Player_is_dead = 0;
-	obj->control_type = CT_FLYING;
-	obj->movement_type = MT_PHYSICS;
-	obj->mtype.phys_info.flags |= PF_TURNROLL | PF_LEVELLING | PF_WIGGLE | PF_USES_THRUST;
-}
-#endif
 
 int state_restore_all_sub(char *filename)
 {
@@ -2170,33 +1961,7 @@ int state_restore_all_sub(char *filename)
 //Read player info
 
 	StartNewLevelSub(current_level, 1, 0);//use page_in_textures here to fix OGL texture precashing crash -MPM
-	MALLOC(pl_rw, player_rw, 1);
-	PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1);
-	player_rw_swap(pl_rw, swap);
-	state_player_rw_to_player(pl_rw, &Players[Player_num]);
-	d_free(pl_rw);
-	strcpy( Players[Player_num].callsign, org_callsign );
-	if (Game_mode & GM_MULTI_COOP)
-		Players[Player_num].objnum = coop_org_objnum;
 
-// Restore the weapon states
-	PHYSFS_read(fp, &Players[Player_num].primary_weapon, sizeof(sbyte), 1);
-	PHYSFS_read(fp, &Players[Player_num].secondary_weapon, sizeof(sbyte), 1);
-
-	select_weapon(Players[Player_num].primary_weapon, 0, 0, 0);
-	select_weapon(Players[Player_num].secondary_weapon, 1, 0, 0);
-
-// Restore the difficulty level
-	Difficulty_level = PHYSFSX_readSXE32(fp, swap);
-
-// Restore the cheats enabled flag
-	game_disable_cheats(); // disable cheats first
-	cheats.enabled = PHYSFSX_readSXE32(fp, swap);
-	cheats.turbo = PHYSFSX_readSXE32(fp, swap);
-
-	Do_appearance_effect = 0;			// Don't do this for middle o' game stuff.
-
-	ObjectStartLocation = PHYSFS_tell(fp);
 RetryObjectLoading:
 	//Clear out all the objects from the lvl file
 	for (segnum=0; segnum <= Highest_segment_index; segnum++)
@@ -2673,7 +2438,7 @@ int state_get_game_id(char *filename)
 		version = SWAPINT(version);
 	}
 
-	if (version < STATE_COMPATIBLE_VERSION)	{
+	if (version < STATE_COMPATIBLE_VERSION) {
 		PHYSFS_close(fp);
 		return 0;
 	}
