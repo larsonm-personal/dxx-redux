@@ -11,8 +11,6 @@
 
 #include "strutil.h"
 #include "player.h"
-#include "multi.h"
-#include "net_udp.h"
 
 #ifdef __ANDROID__
 void android_net_udp_mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
@@ -71,6 +69,152 @@ int android_net_udp_find_player_by_identity(const char *callsign,
 	}
 #endif
 	return -1;
+}
+
+int android_net_udp_select_welcome_player_slot(int existing_player_num,
+                                               int n_players,
+                                               int max_numplayers,
+                                               int numplayers,
+                                               int game_flags,
+                                               fix64 now,
+                                               const struct player *players,
+                                               const struct netgame_info *netgame,
+                                               int *network_player_added)
+{
+	int i;
+	int oldest_player = -1;
+	int activeplayers = 0;
+	fix64 oldest_time = now;
+
+	if (network_player_added)
+		*network_player_added = 0;
+
+	if (existing_player_num != -1) {
+		if (players[existing_player_num].connected)
+			return ANDROID_NET_UDP_WELCOME_SLOT_ALREADY_CONNECTED;
+		return existing_player_num;
+	}
+
+	if (!(game_flags & NETGAME_FLAG_CLOSED) && (n_players < max_numplayers)) {
+		if (network_player_added)
+			*network_player_added = 1;
+		return n_players;
+	}
+
+	if (game_flags & NETGAME_FLAG_CLOSED)
+		return ANDROID_NET_UDP_WELCOME_SLOT_CLOSED;
+
+	for (i = 0; i < numplayers; i++)
+		if (netgame->players[i].connected)
+			activeplayers++;
+
+	if (activeplayers == max_numplayers)
+		return ANDROID_NET_UDP_WELCOME_SLOT_FULL;
+
+	for (i = 0; i < n_players; i++) {
+		if (!players[i].connected &&
+		    (netgame->players[i].LastPacketTime < oldest_time)) {
+			oldest_time = netgame->players[i].LastPacketTime;
+			oldest_player = i;
+		}
+	}
+
+	if (oldest_player == -1)
+		return ANDROID_NET_UDP_WELCOME_SLOT_FULL;
+
+	if (network_player_added)
+		*network_player_added = 1;
+	return oldest_player;
+}
+
+void android_net_udp_prepare_observer_join(UDP_sequence_packet *sync_player,
+                                           int *udp_sync_obsnum,
+                                           int *network_send_objects,
+                                           int *network_send_objnum,
+                                           fix64 now,
+                                           struct netgame_info *netgame)
+{
+	int obsnum = 0;
+
+	if (!netgame || !sync_player)
+		return;
+
+	netgame->numobservers++;
+	while (netgame->observers[obsnum].connected == 1)
+		obsnum++;
+
+	sync_player->player.connected = OBSERVER_PLAYER_ID;
+	if (udp_sync_obsnum)
+		*udp_sync_obsnum = obsnum;
+	if (network_send_objects)
+		*network_send_objects = 1;
+	if (network_send_objnum)
+		*network_send_objnum = -1;
+
+	netgame->observers[obsnum].LastPacketTime = now;
+	netgame->observers[obsnum].connected = 0;
+	netgame->observers[obsnum].protocol.udp.addr = sync_player->player.protocol.udp.addr;
+	strncpy((char *) &netgame->observers[obsnum].callsign, sync_player->player.callsign, 8);
+}
+
+void android_net_udp_prepare_reconnect_player(int player_num,
+                                              const struct _sockaddr *new_addr,
+                                              int i_am_master,
+                                              struct connection_status *statuses,
+                                              android_net_udp_update_address_fn update_address)
+{
+	if (new_addr && update_address)
+		update_address(player_num, *new_addr);
+
+#ifdef __ANDROID__
+	if (statuses && i_am_master)
+		statuses[player_num].type = CONNT_DIRECT;
+#else
+	(void) i_am_master;
+	(void) statuses;
+#endif
+}
+
+void android_net_udp_begin_welcome_sync(UDP_sequence_packet *sync_player,
+                                        int player_num,
+                                        uint *player_tokens,
+                                        int *network_send_objects,
+                                        int *network_send_objnum,
+                                        fix64 now,
+                                        fix64 *last_packet_time)
+{
+	if (sync_player)
+		sync_player->player.connected = player_num;
+	if (player_tokens)
+		player_tokens[player_num] = sync_player->token;
+	if (network_send_objects)
+		*network_send_objects = 1;
+	if (network_send_objnum)
+		*network_send_objnum = -1;
+	if (last_packet_time)
+		*last_packet_time = now;
+}
+
+int android_net_udp_objnum_is_past(int objnum,
+                                   int player_num,
+                                   int object_owner_value,
+                                   int network_send_objects,
+                                   int network_send_object_mode,
+                                   int network_send_objnum)
+{
+	int obj_mode = !((object_owner_value == -1) || (object_owner_value == player_num));
+
+	if (!network_send_objects)
+		return 0;
+
+	if (obj_mode > network_send_object_mode)
+		return 0;
+	else if (obj_mode < network_send_object_mode)
+		return 1;
+	else if (objnum < network_send_objnum)
+		return 1;
+	else
+		return 0;
 }
 
 int android_net_udp_rebind_for_hosting(int *udp_socket, int *udp_bind_loopback,

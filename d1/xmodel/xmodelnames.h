@@ -1,3 +1,6 @@
+#ifndef DXX_D1_XMODEL_XMODELNAMES_H
+#define DXX_D1_XMODEL_XMODELNAMES_H
+
 enum modelnums {
 	model_mediumhulk = -1,
 	model_mediumlifter = -1,
@@ -150,3 +153,5 @@ short xmodel_xlate[] = {
 	model_botlas4_inner,
 	model_mega
 };
+
+#endif /* DXX_D1_XMODEL_XMODELNAMES_H */

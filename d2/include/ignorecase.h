@@ -1,3 +1,6 @@
+#ifndef DXX_D2_INCLUDE_IGNORECASE_H
+#define DXX_D2_INCLUDE_IGNORECASE_H
+
 /** \file ignorecase.h */
 
 /**
@@ -72,4 +75,6 @@
 int PHYSFSEXT_locateCorrectCase(char *buf);
 
 /* end of ignorecase.h ... */
+
+#endif /* DXX_D2_INCLUDE_IGNORECASE_H */
 

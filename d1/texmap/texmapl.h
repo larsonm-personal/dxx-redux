@@ -1,3 +1,6 @@
+#ifndef DXX_D1_TEXMAP_TEXMAPL_H
+#define DXX_D1_TEXMAP_TEXMAPL_H
+
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -144,4 +147,6 @@ extern fix fix_recip[];
 
 extern void init_interface_vars_to_assembler(void);
 extern int prevmod(int val,int modulus);
+
+#endif /* DXX_D1_TEXMAP_TEXMAPL_H */
 

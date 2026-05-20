@@ -2013,8 +2013,8 @@ net_udp_new_player(UDP_sequence_packet *their)
 void net_udp_welcome_player(UDP_sequence_packet *their)
 {
 	// Add a player to a game already in progress
+	int existing_player_num;
 	int player_num;
-	int i;
 
 	WaitForRefuseAnswer=0;
 
@@ -2062,23 +2062,13 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 	Network_player_added = 0;
 
 	if(their->player.observer) {
-		Netgame.numobservers++;
-
-		int obsnum = 0;
-
-		while (Netgame.observers[obsnum].connected == 1) {
-			obsnum++;
-		}
-
 		UDP_sync_player = *their;
-		UDP_sync_player.player.connected = OBSERVER_PLAYER_ID;
-		UDP_sync_obsnum = obsnum;
-		Network_send_objects = 1;
-		Network_send_objnum = -1;
-		Netgame.observers[obsnum].LastPacketTime = timer_query();
-		Netgame.observers[obsnum].connected = 0; // Not yet connected, see net_udp_send_rejoin_sync
-		Netgame.observers[obsnum].protocol.udp.addr = their->player.protocol.udp.addr;
-		strncpy((char*) &Netgame.observers[obsnum].callsign, (char*) &their->player.callsign, 8);
+		android_net_udp_prepare_observer_join(&UDP_sync_player,
+		                                     &UDP_sync_obsnum,
+		                                     &Network_send_objects,
+		                                     &Network_send_objnum,
+		                                     timer_query(),
+		                                     &Netgame);
 
 		HUD_init_message(HM_MULTI, "%s is now observing.", UDP_sync_player.player.callsign);
 
@@ -2087,85 +2077,45 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 		return;
 	}
 
-	player_num = find_player_by_identity(their->player.callsign,
-	                                     (struct _sockaddr *)&their->player.protocol.udp.addr);
+	existing_player_num = find_player_by_identity(their->player.callsign,
+	                                             (struct _sockaddr *)&their->player.protocol.udp.addr);
+	player_num = android_net_udp_select_welcome_player_slot(existing_player_num,
+	                                                        N_players,
+	                                                        Netgame.max_numplayers,
+	                                                        Netgame.numplayers,
+	                                                        Netgame.game_flags,
+	                                                        timer_query(),
+	                                                        Players,
+	                                                        &Netgame,
+	                                                        &Network_player_added);
 
-	if (player_num == -1)
+	if (player_num == ANDROID_NET_UDP_WELCOME_SLOT_CLOSED)
+	{
+		net_udp_dump_player(their->player.protocol.udp.addr, their->token, DUMP_CLOSED);
+		return;
+	}
+
+	if (player_num == ANDROID_NET_UDP_WELCOME_SLOT_FULL)
+	{
+		net_udp_dump_player(their->player.protocol.udp.addr, their->token, DUMP_FULL);
+		return;
+	}
+
+	if (player_num == ANDROID_NET_UDP_WELCOME_SLOT_ALREADY_CONNECTED)
+	{
+		return;
+	}
+
+	if (existing_player_num == -1)
 	{
 		// Player is new to this game
-
-		if ( !(Netgame.game_flags & NETGAME_FLAG_CLOSED) && (N_players < Netgame.max_numplayers))
-		{
-			// Add player in an open slot, game not full yet
-
-			player_num = N_players;
-			Network_player_added = 1;
-		}
-		else if (Netgame.game_flags & NETGAME_FLAG_CLOSED)
-		{
-			// Slots are open but game is closed
-			net_udp_dump_player(their->player.protocol.udp.addr, their->token, DUMP_CLOSED);
-			return;
-		}
-		else
-		{
-			// Slots are full but game is open, see if anyone is
-			// disconnected and replace the oldest player with this new one
-		
-			int oldest_player = -1;
-			fix64 oldest_time = timer_query();
-			int activeplayers = 0;
-
-			Assert(N_players == Netgame.max_numplayers);
-
-			for (i = 0; i < Netgame.numplayers; i++)
-				if (Netgame.players[i].connected)
-					activeplayers++;
-
-			if (activeplayers == Netgame.max_numplayers)
-			{
-				// Game is full.
-				net_udp_dump_player(their->player.protocol.udp.addr, their->token, DUMP_FULL);
-				return;
-			}
-
-			for (i = 0; i < N_players; i++)
-			{
-				if ( (!Players[i].connected) && (Netgame.players[i].LastPacketTime < oldest_time))
-				{
-					oldest_time = Netgame.players[i].LastPacketTime;
-					oldest_player = i;
-				}
-			}
-
-			if (oldest_player == -1)
-			{
-				// Everyone is still connected 
-				net_udp_dump_player(their->player.protocol.udp.addr, their->token,  DUMP_FULL);
-				return;
-			}
-			else
-			{
-				// Found a slot!
-
-				player_num = oldest_player;
-				Network_player_added = 1;
-			}
-		}
 	}
 	else
 	{
 		// Player is reconnecting
-		
-		if (Players[player_num].connected)
-		{
-			return;
-		}
 
 		if (Newdemo_state == ND_STATE_RECORDING)
 			newdemo_record_multi_reconnect(player_num);
-
-		Network_player_added = 0;
 
 		digi_play_sample(SOUND_HUD_MESSAGE, F1_0);
 
@@ -2178,18 +2128,11 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 
 		net_udp_noloss_clear_mdata_got(player_num);
 
-		// Update stored address -- the reconnecting client likely has a new port
-		update_address_for_player(player_num, their->player.protocol.udp.addr);
-#ifdef __ANDROID__
-		// Reset connection type for the returning player -- it may be stale
-		// CONNT_PROXY from a previous session where this node was a client.
-		// The master always uses CONNT_DIRECT for all connected clients
-		// (engine-level CONNT_PROXY is for routing through an intermediary
-		// player, which is unrelated to the Kotlin LocalhostProxy)
-		if (multi_i_am_master()) {
-			connection_statuses[player_num].type = CONNT_DIRECT;
-		}
-#endif
+		android_net_udp_prepare_reconnect_player(player_num,
+		                                        &their->player.protocol.udp.addr,
+		                                        multi_i_am_master(),
+		                                        connection_statuses,
+		                                        update_address_for_player);
 	}
 
 	Players[player_num].KillGoalCount=0;
@@ -2198,11 +2141,13 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 
 	
 	UDP_sync_player = *their;
-	UDP_sync_player.player.connected = player_num;
-	player_tokens[player_num] = UDP_sync_player.token; 	
-	Network_send_objects = 1;
-	Network_send_objnum = -1;
-	Netgame.players[player_num].LastPacketTime = timer_query();
+	android_net_udp_begin_welcome_sync(&UDP_sync_player,
+	                                   player_num,
+	                                   player_tokens,
+	                                   &Network_send_objects,
+	                                   &Network_send_objnum,
+	                                   timer_query(),
+	                                   &Netgame.players[player_num].LastPacketTime);
 
 	net_udp_send_objects();
 }
@@ -2211,21 +2156,13 @@ int net_udp_objnum_is_past(int objnum)
 {
 	// determine whether or not a given object number has already been sent
 	// to a re-joining player.
-	
-	int player_num = UDP_sync_player.player.connected;
-	int obj_mode = !((object_owner[objnum] == -1) || (object_owner[objnum] == player_num));
 
-	if (!Network_send_objects)
-		return 0; // We're not sending objects to a new player
-
-	if (obj_mode > Network_send_object_mode)
-		return 0;
-	else if (obj_mode < Network_send_object_mode)
-		return 1;
-	else if (objnum < Network_send_objnum)
-		return 1;
-	else
-		return 0;
+	return android_net_udp_objnum_is_past(objnum,
+	                                     UDP_sync_player.player.connected,
+	                                     object_owner[objnum],
+	                                     Network_send_objects,
+	                                     Network_send_object_mode,
+	                                     Network_send_objnum);
 }
 
 void net_udp_send_door_updates(int pnum)

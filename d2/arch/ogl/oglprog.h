@@ -1,3 +1,6 @@
+#ifndef DXX_D2_ARCH_OGL_OGLPROG_H
+#define DXX_D2_ARCH_OGL_OGLPROG_H
+
 #define OGL_APOS 0
 #define OGL_ACOLOR 1
 #define OGL_ATEXCOORD 2
@@ -11,3 +14,5 @@ void ogl_prog_set_matrix(GLfloat *mat);
 void ogl_prog_set_tex2_current_matrix(const GLfloat *mat, int super);
 void ogl_prog_set_tex2_alpha_cutoff(GLfloat cutoff);
 void ogl_prog_set_tex2_debug_mode(GLint mode);
+
+#endif /* DXX_D2_ARCH_OGL_OGLPROG_H */

@@ -1,3 +1,6 @@
+#ifndef DXX_D2_XMODEL_XMODELNAMES_H
+#define DXX_D2_XMODEL_XMODELNAMES_H
+
 enum modelnums {
 	model_mediumhulk = -1,
 	model_mediumlifter = -1,
@@ -310,3 +313,5 @@ short xmodel_xlate[] = {
 	model_earthshakerchild,
 	model_flashmsl
 };
+
+#endif /* DXX_D2_XMODEL_XMODELNAMES_H */

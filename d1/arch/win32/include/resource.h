@@ -1,3 +1,6 @@
+#ifndef DXX_D1_ARCH_WIN32_INCLUDE_RESOURCE_H
+#define DXX_D1_ARCH_WIN32_INCLUDE_RESOURCE_H
+
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
 // Used by d1x-rebirth.rc
@@ -15,3 +18,5 @@
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif
+
+#endif /* DXX_D1_ARCH_WIN32_INCLUDE_RESOURCE_H */

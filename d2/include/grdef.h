@@ -1,3 +1,6 @@
+#ifndef DXX_D2_INCLUDE_GRDEF_H
+#define DXX_D2_INCLUDE_GRDEF_H
+
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -56,3 +59,5 @@ extern unsigned char * gr_video_memory;
 #define COLOR   grd_curcanv->cv_color
 
 void order( int *x1, int *x2 );
+
+#endif /* DXX_D2_INCLUDE_GRDEF_H */

@@ -1,3 +1,6 @@
+#ifndef DXX_D2_TEXMAP_TEXMAPL_H
+#define DXX_D2_TEXMAP_TEXMAPL_H
+
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -85,4 +88,6 @@ extern ubyte tmap_flat_shade_value;
 extern fix fix_recip[];
 
 extern int prevmod(int val,int modulus);
+
+#endif /* DXX_D2_TEXMAP_TEXMAPL_H */
 

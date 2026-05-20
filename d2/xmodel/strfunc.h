@@ -1,3 +1,6 @@
+#ifndef DXX_D2_XMODEL_STRFUNC_H
+#define DXX_D2_XMODEL_STRFUNC_H
+
 #if 0
 __attribute__((optimize("-O3")))
 static char *strupr(char *s) {
@@ -86,3 +89,5 @@ static char *strlwr(char *s) {
 	return s;
 }
 #endif
+
+#endif /* DXX_D2_XMODEL_STRFUNC_H */

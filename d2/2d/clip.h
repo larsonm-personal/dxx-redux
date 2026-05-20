@@ -1,3 +1,6 @@
+#ifndef DXX_D2_2D_CLIP_H
+#define DXX_D2_2D_CLIP_H
+
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -138,3 +141,5 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 		}                                                               \
 	}                                                                   \
 } while(0)
+
+#endif /* DXX_D2_2D_CLIP_H */

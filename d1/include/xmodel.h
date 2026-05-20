@@ -1,3 +1,6 @@
+#ifndef DXX_D1_INCLUDE_XMODEL_H
+#define DXX_D1_INCLUDE_XMODEL_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,3 +24,5 @@ int xmodel_show_if_loaded(int modelnum, vms_vector *pos, vms_matrix *orient, int
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* DXX_D1_INCLUDE_XMODEL_H */

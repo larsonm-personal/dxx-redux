@@ -1,3 +1,6 @@
+#ifndef DXX_D2_INCLUDE_EDITOR_KDEFS_H
+#define DXX_D2_INCLUDE_EDITOR_KDEFS_H
+
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -333,4 +336,6 @@ extern int do_object_dialog();
 
 // In editor\hostage.c
 extern int do_hostage_dialog();
+
+#endif /* DXX_D2_INCLUDE_EDITOR_KDEFS_H */
 

@@ -1,3 +1,6 @@
+#ifndef DXX_D1_MAIN_NET_UDP_H
+#define DXX_D1_MAIN_NET_UDP_H
+
 /*
  *
  * Prototypes for UDP-protocol network management functions.
@@ -197,3 +200,5 @@ typedef struct connection_status {
 extern int Observer_num;
 
 void netgame_set_defaults(void);
+
+#endif /* DXX_D1_MAIN_NET_UDP_H */
