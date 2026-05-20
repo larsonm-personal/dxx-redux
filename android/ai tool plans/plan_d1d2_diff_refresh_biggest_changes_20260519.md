@@ -21,9 +21,13 @@
 	- `android\run_quick_tests.ps1` passed with `Passed: 15  Failed: 0  Timeouts: 0  Skipped: 0`
 	- `android\run-code-quality.ps1 -Fix -Paths @(...)` passed for the four touched files, followed by a final `:app:externalNativeBuildDebug` rerun
 - [completed] update this plan with the exact shrink slice and resulting next-ranked follow-up candidate
+	- second adjacent slice completed: moved the exact `input_demo_delay_replay_frame` body into a shared helper keyed by `input_demo_replay_last_timer_value`, and moved the exact `input_demo_step_replay_frame` wrapper into a shared helper that still delegates local `prepare` and `sync` callbacks
+	- validation for the second slice passed on Android native build, Windows host build, scoped code quality, and the replay-targeted quick-suite coverage (`input_demo_rng_trace_compare`, `input_demo_state_trace_compare`, and both quick regression demo tests all passed)
+	- third adjacent slice completed: moved the shared core of `input_demo_prepare_replay_frame` and `input_demo_advance_replay_frame` into `input_demo_hooks_shared.c`, leaving only tiny D2 hooks for kill-baseline refresh and post-final-frame debug logging
+	- validation for the third slice passed on Android native build, Windows host build, scoped code quality, and a full quick-suite rerun with `Passed: 15  Failed: 0  Timeouts: 0  Skipped: 0`
 
 ## Next Candidate
 
 - stay in `input_demo_hooks.c` for the next pass instead of re-opening a fresh diff survey
-- the next adjacent shared slice is the replay-step scaffolding around `input_demo_delay_replay_frame`, `input_demo_sync_replay_rng_to_current_frame`, `input_demo_prepare_replay_frame`, and `input_demo_step_replay_frame`
-- likely shape: move the common bodies into `input_demo_hooks_shared.c` and keep D2-only kill-baseline or debug-only extras behind small local hooks or `#ifdef DXX_BUILD_DESCENT_II`
+- the next adjacent shared slice is now the core of `input_demo_sync_replay_rng_to_current_frame` and possibly `input_demo_stop_replay`
+- likely shape: keep the D2-only RNG mismatch and stop-result debug logging as tiny local callbacks, then move the common replay stop and RNG restore bodies into `input_demo_hooks_shared.c`

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "args.h"
 #include "ai.h"
 #include "cntrlcen.h"
 #include "console.h"
@@ -10,6 +11,7 @@
 #include "gameseq.h"
 #include "input_demo_control_info.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_fp_env.h"
 #include "input_demo_hooks.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -22,8 +24,14 @@
 #include "newdemo.h"
 #include "object.h"
 #include "player.h"
+#include "timer.h"
 
 #include "input_demo_hooks_shared.h"
+
+extern int ReadControlsReplayFrame(void);
+extern void ReadControlsReplayPostFrame(void);
+extern void GameProcessFrame(void);
+extern int game_is_time_paused(void);
 
 #ifdef DXX_BUILD_DESCENT_II
 extern void input_demo_capture_current_result_prep_d2(player *current_player);
@@ -180,6 +188,115 @@ void input_demo_update_rng_trace_context(void)
 	if (input_demo_replay_is_loaded() &&
 	    input_demo_replay_next_frame_index() < input_demo_replay_frame_count())
 		input_demo_rng_trace_set_context(input_demo_replay_next_frame_index(), GameTime64);
+}
+
+void input_demo_delay_replay_frame_shared(fix frame_time,
+                                          fix64 *replay_last_timer_value)
+{
+	fix64 timer_value;
+	fix64 elapsed;
+
+	if (!GameArg.SysUseNiceFPS)
+		return;
+	if (frame_time <= 0)
+		return;
+	timer_update();
+	timer_value = timer_query();
+	if (!replay_last_timer_value || !*replay_last_timer_value) {
+		if (replay_last_timer_value)
+			*replay_last_timer_value = timer_value;
+		return;
+	}
+	elapsed = timer_value - *replay_last_timer_value;
+	while (elapsed < frame_time) {
+		timer_delay(frame_time - elapsed);
+		timer_update();
+		timer_value = timer_query();
+		elapsed = timer_value - *replay_last_timer_value;
+	}
+	*replay_last_timer_value = timer_value;
+}
+
+int input_demo_prepare_replay_frame_shared(
+    int *logged_state_mismatch,
+    int *logged_state_trace_error,
+    fix64 *replay_last_timer_value,
+    void (*before_prepare_replay_frame)(void),
+    void (*stop_replay)(int))
+{
+	input_demo_replay_frame replay_frame;
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	if (before_prepare_replay_frame)
+		before_prepare_replay_frame();
+	if (input_demo_replay_is_finished()) {
+		if (stop_replay)
+			stop_replay(1);
+		return 0;
+	}
+	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		if (stop_replay)
+			stop_replay(0);
+		return 0;
+	}
+	if (!input_demo_replay_next_frame_index()) {
+		if (logged_state_mismatch)
+			*logged_state_mismatch = 0;
+		if (logged_state_trace_error)
+			*logged_state_trace_error = 0;
+	}
+	input_demo_delay_replay_frame_shared((fix) replay_frame.frame_time,
+	                                     replay_last_timer_value);
+	input_demo_control_info_from_state(&Controls, &replay_frame.state,
+	                                   &replay_frame.pulse);
+	FrameTime = (fix) replay_frame.frame_time;
+	return 1;
+}
+
+int input_demo_step_replay_frame_shared(
+    int (*prepare_replay_frame)(void),
+    int (*sync_replay_rng_to_current_frame)(void))
+{
+	int read_controls_result;
+
+	input_demo_restore_replay_fp_environment();
+	if (!prepare_replay_frame || !prepare_replay_frame())
+		return 0;
+	read_controls_result = ReadControlsReplayFrame();
+	if (!sync_replay_rng_to_current_frame || !sync_replay_rng_to_current_frame())
+		return 0;
+	if (read_controls_result)
+		return 1;
+	if (!game_is_time_paused()) {
+		calc_game_time();
+		GameProcessFrame();
+		ReadControlsReplayPostFrame();
+		input_demo_advance_replay_frame();
+	}
+	return 1;
+}
+
+void input_demo_advance_replay_frame_shared(
+    int (*before_advance_replay_frame)(void),
+    void (*stop_replay)(int))
+{
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return;
+	if (before_advance_replay_frame && !before_advance_replay_frame())
+		return;
+	if (!input_demo_replay_advance_frame(error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		if (stop_replay)
+			stop_replay(0);
+		return;
+	}
+	if (input_demo_replay_is_finished() && stop_replay)
+		stop_replay(1);
 }
 
 void input_demo_write_replay_frame_state_trace_shared(
