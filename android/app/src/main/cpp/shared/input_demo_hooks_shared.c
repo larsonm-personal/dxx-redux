@@ -256,6 +256,72 @@ int input_demo_prepare_replay_frame_shared(
 	return 1;
 }
 
+void input_demo_stop_replay_shared(int write_result,
+                                   fix64 *replay_last_timer_value,
+                                   void (*write_replay_result)(void),
+                                   void (*before_stop_replay)(void))
+{
+	if (replay_last_timer_value)
+		*replay_last_timer_value = 0;
+	if (before_stop_replay && input_demo_replay_is_loaded())
+		before_stop_replay();
+	if (write_result && write_replay_result)
+		write_replay_result();
+	input_demo_replay_unload();
+	if (Game_wind)
+		window_close(Game_wind);
+}
+
+int input_demo_finish_replay_shared(int close_window,
+                                    fix64 *replay_last_timer_value,
+                                    void (*before_write_replay_result)(void),
+                                    void (*write_replay_result)(void))
+{
+	if (replay_last_timer_value)
+		*replay_last_timer_value = 0;
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	if (before_write_replay_result)
+		before_write_replay_result();
+	if (write_replay_result)
+		write_replay_result();
+	input_demo_replay_unload();
+	if (close_window && Game_wind)
+		window_close(Game_wind);
+	return 1;
+}
+
+int input_demo_sync_replay_rng_to_current_frame_shared(
+    void (*before_sync_replay_rng)(const input_demo_replay_frame *replay_frame),
+    void (*stop_replay)(int))
+{
+	input_demo_replay_frame replay_frame;
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		if (stop_replay)
+			stop_replay(0);
+		return 0;
+	}
+	if (before_sync_replay_rng)
+		before_sync_replay_rng(&replay_frame);
+	if (!d_rand_set_state(replay_frame.rng_state)) {
+		con_printf(CON_NORMAL,
+		           "Input demo replay stopped: active RNG backend cannot restore state\n");
+		if (stop_replay)
+			stop_replay(0);
+		return 0;
+	}
+	if (input_demo_rng_trace_is_active() && replay_frame.has_rng_call_count)
+		d_rand_set_call_count(replay_frame.rng_call_count);
+	else
+		d_rand_reset_call_count();
+	return 1;
+}
+
 int input_demo_step_replay_frame_shared(
     int (*prepare_replay_frame)(void),
     int (*sync_replay_rng_to_current_frame)(void))

@@ -196,45 +196,25 @@ static void input_demo_write_replay_result(void)
 
 void input_demo_finish_replay_without_close(void)
 {
-	input_demo_replay_last_timer_value = 0;
-	if (!input_demo_replay_is_loaded())
-		return;
-	input_demo_write_replay_result();
-	input_demo_replay_unload();
+	(void)input_demo_finish_replay_shared(0,
+		&input_demo_replay_last_timer_value,
+		NULL,
+		input_demo_write_replay_result);
 }
 
 static void input_demo_stop_replay(int write_result)
 {
-	input_demo_replay_last_timer_value = 0;
-	if (write_result)
-		input_demo_write_replay_result();
-	input_demo_replay_unload();
-	if (Game_wind)
-		window_close(Game_wind);
+	input_demo_stop_replay_shared(write_result,
+		&input_demo_replay_last_timer_value,
+		input_demo_write_replay_result,
+		NULL);
 }
 
 static int input_demo_sync_replay_rng_to_current_frame(void)
 {
-	input_demo_replay_frame replay_frame;
-	char error[256] = "";
-
-	if (!input_demo_replay_is_loaded())
-		return 0;
-	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error))) {
-		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
-		input_demo_stop_replay(0);
-		return 0;
-	}
-	if (!d_rand_set_state(replay_frame.rng_state)) {
-		con_printf(CON_NORMAL, "Input demo replay stopped: active RNG backend cannot restore state\n");
-		input_demo_stop_replay(0);
-		return 0;
-	}
-	if (input_demo_rng_trace_is_active() && replay_frame.has_rng_call_count)
-		d_rand_set_call_count(replay_frame.rng_call_count);
-	else
-		d_rand_reset_call_count();
-	return 1;
+	return input_demo_sync_replay_rng_to_current_frame_shared(
+		NULL,
+		input_demo_stop_replay);
 }
 
 int input_demo_prepare_replay_frame(void)
@@ -261,12 +241,8 @@ void input_demo_advance_replay_frame(void)
 
 int input_demo_finish_replay_from_mine_exit(void)
 {
-	input_demo_replay_last_timer_value = 0;
-	if (!input_demo_replay_is_loaded())
-		return 0;
-	input_demo_write_replay_result();
-	input_demo_replay_unload();
-	if (Game_wind)
-		window_close(Game_wind);
-	return 1;
+	return input_demo_finish_replay_shared(1,
+		&input_demo_replay_last_timer_value,
+		NULL,
+		input_demo_write_replay_result);
 }

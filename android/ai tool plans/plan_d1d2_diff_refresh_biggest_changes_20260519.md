@@ -25,9 +25,12 @@
 	- validation for the second slice passed on Android native build, Windows host build, scoped code quality, and the replay-targeted quick-suite coverage (`input_demo_rng_trace_compare`, `input_demo_state_trace_compare`, and both quick regression demo tests all passed)
 	- third adjacent slice completed: moved the shared core of `input_demo_prepare_replay_frame` and `input_demo_advance_replay_frame` into `input_demo_hooks_shared.c`, leaving only tiny D2 hooks for kill-baseline refresh and post-final-frame debug logging
 	- validation for the third slice passed on Android native build, Windows host build, scoped code quality, and a full quick-suite rerun with `Passed: 15  Failed: 0  Timeouts: 0  Skipped: 0`
+	- fourth adjacent slice completed: moved the common core of `input_demo_stop_replay` and `input_demo_sync_replay_rng_to_current_frame` into `input_demo_hooks_shared.c`, leaving the D2-only stop-result and RNG-mismatch logging as local callbacks and routing replay-result writing through a per-game callback instead of a shared direct call
+	- fifth adjacent slice completed: moved the shared replay-finalization skeleton used by `input_demo_finish_replay_without_close` and the replay finish-from-exit helpers into `input_demo_finish_replay_shared`, leaving the D2-only level-exit and mine-exit result override setup as tiny local callbacks
+	- validation for the fourth and fifth slices passed on Android native build, Windows host build, scoped code quality, and a full quick-suite rerun with `Passed: 15  Failed: 0  Timeouts: 0  Skipped: 0`; latest report: `temp\test_reports\quick_report_20260519_212134.md`
 
 ## Next Candidate
 
 - stay in `input_demo_hooks.c` for the next pass instead of re-opening a fresh diff survey
-- the next adjacent shared slice is now the core of `input_demo_sync_replay_rng_to_current_frame` and possibly `input_demo_stop_replay`
-- likely shape: keep the D2-only RNG mismatch and stop-result debug logging as tiny local callbacks, then move the common replay stop and RNG restore bodies into `input_demo_hooks_shared.c`
+- the next adjacent shared slice is now the common capture and write baseline inside `input_demo_write_replay_result`
+- likely shape: keep the D2-only replay-result override setup and terminal-exit-subset comparison as local callbacks or optional hooks, then move the shared result-path lookup, result capture, write, and standard compare/log flow into `input_demo_hooks_shared.c`

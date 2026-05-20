@@ -5215,11 +5215,19 @@ static void input_demo_write_replay_result(void)
 	input_demo_replay_compare_terminal_exit_only = 0;
 }
 
+static void input_demo_prepare_finish_replay_from_level_exit(void);
+static void input_demo_prepare_finish_replay_from_mine_exit(void);
+
 int input_demo_finish_replay_from_level_exit(void)
 {
-	input_demo_replay_last_timer_value = 0;
-	if (!input_demo_replay_is_loaded())
-		return 0;
+	return input_demo_finish_replay_shared(1,
+		&input_demo_replay_last_timer_value,
+		input_demo_prepare_finish_replay_from_level_exit,
+		input_demo_write_replay_result);
+}
+
+static void input_demo_prepare_finish_replay_from_level_exit(void)
+{
 	input_demo_replay_result_frame_count_override = input_demo_replay_frame_count();
 	input_demo_replay_result_has_game_time64_override = 1;
 	input_demo_replay_result_game_time64_override = input_demo_replay_final_game_time64();
@@ -5227,95 +5235,82 @@ int input_demo_finish_replay_from_level_exit(void)
 	input_demo_replay_result_terminal_exit_override = INPUT_DEMO_RESULT_TERMINAL_EXIT_LEVEL_EXIT;
 	input_demo_replay_compare_terminal_exit_only = 1;
 	input_demo_debug_log_result_state("level-exit");
-	input_demo_write_replay_result();
-	input_demo_replay_unload();
-	if (Game_wind)
-		window_close(Game_wind);
-	return 1;
 }
 
 int input_demo_finish_replay_from_mine_exit(void)
 {
-	input_demo_replay_last_timer_value = 0;
-	if (!input_demo_replay_is_loaded())
-		return 0;
+	return input_demo_finish_replay_shared(1,
+		&input_demo_replay_last_timer_value,
+		input_demo_prepare_finish_replay_from_mine_exit,
+		input_demo_write_replay_result);
+}
+
+static void input_demo_prepare_finish_replay_from_mine_exit(void)
+{
 	input_demo_replay_result_frame_count_override = input_demo_replay_frame_count();
 	input_demo_replay_result_has_game_time64_override = 1;
 	input_demo_replay_result_game_time64_override = input_demo_replay_final_game_time64();
 	input_demo_replay_result_terminal_exit_override = INPUT_DEMO_RESULT_TERMINAL_EXIT_MINE_EXIT;
 	input_demo_replay_compare_terminal_exit_only = 1;
 	input_demo_debug_log_result_state("mine-exit");
-	input_demo_write_replay_result();
-	input_demo_replay_unload();
-	if (Game_wind)
-		window_close(Game_wind);
-	return 1;
+}
+
+static void input_demo_before_stop_replay(void)
+{
+	input_demo_debug_log_result_state("stop");
 }
 
 static void input_demo_stop_replay(int write_result)
 {
-	input_demo_replay_last_timer_value = 0;
-	if (input_demo_replay_is_loaded())
-		input_demo_debug_log_result_state("stop");
-	if (write_result)
-		input_demo_write_replay_result();
-	input_demo_replay_unload();
-	if (Game_wind)
-		window_close(Game_wind);
+	input_demo_stop_replay_shared(write_result,
+		&input_demo_replay_last_timer_value,
+		input_demo_write_replay_result,
+		input_demo_before_stop_replay);
 }
 
-static int input_demo_sync_replay_rng_to_current_frame(void)
+static void input_demo_before_sync_replay_rng(
+	const input_demo_replay_frame *replay_frame)
 {
-	input_demo_replay_frame replay_frame;
 	unsigned int actual_rng_state = 0;
 	unsigned int actual_rng_call_count = 0;
 	int have_actual_rng_state;
 	int log_mismatch = 0;
-	char error[256] = "";
 
-	if (!input_demo_replay_is_loaded())
-		return 0;
-	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error))) {
-		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
-		input_demo_stop_replay(0);
-		return 0;
-	}
+	if (!replay_frame)
+		return;
 	have_actual_rng_state = d_rand_get_state(&actual_rng_state);
-	if (have_actual_rng_state && actual_rng_state != replay_frame.rng_state)
+	if (have_actual_rng_state && actual_rng_state != replay_frame->rng_state)
 		log_mismatch = 1;
-	if (input_demo_rng_trace_is_active() && replay_frame.has_rng_call_count) {
+	if (input_demo_rng_trace_is_active() && replay_frame->has_rng_call_count) {
 		actual_rng_call_count = d_rand_get_call_count();
-		if (actual_rng_call_count != replay_frame.rng_call_count)
+		if (actual_rng_call_count != replay_frame->rng_call_count)
 			log_mismatch = 1;
 	}
 	if (log_mismatch) {
-		if (input_demo_rng_trace_is_active() && replay_frame.has_rng_call_count)
+		if (input_demo_rng_trace_is_active() && replay_frame->has_rng_call_count)
 			con_printf(CON_NORMAL,
 				"Input demo replay rng state mismatch: frame=%u gt=%lld expected=%u actual=%u expected_calls=%u actual_calls=%u\n",
-				(unsigned int)replay_frame.frame,
+				(unsigned int)replay_frame->frame,
 				(long long)GameTime64,
-				replay_frame.rng_state,
+				replay_frame->rng_state,
 				actual_rng_state,
-				replay_frame.rng_call_count,
+				replay_frame->rng_call_count,
 				actual_rng_call_count);
 		else if (have_actual_rng_state)
 			con_printf(CON_NORMAL,
 				"Input demo replay rng state mismatch: frame=%u gt=%lld expected=%u actual=%u\n",
-				(unsigned int)replay_frame.frame,
+				(unsigned int)replay_frame->frame,
 				(long long)GameTime64,
-				replay_frame.rng_state,
+				replay_frame->rng_state,
 				actual_rng_state);
 	}
-	if (!d_rand_set_state(replay_frame.rng_state)) {
-		con_printf(CON_NORMAL, "Input demo replay stopped: active RNG backend cannot restore state\n");
-		input_demo_stop_replay(0);
-		return 0;
-	}
-	if (input_demo_rng_trace_is_active() && replay_frame.has_rng_call_count)
-		d_rand_set_call_count(replay_frame.rng_call_count);
-	else
-		d_rand_reset_call_count();
-	return 1;
+}
+
+static int input_demo_sync_replay_rng_to_current_frame(void)
+{
+	return input_demo_sync_replay_rng_to_current_frame_shared(
+		input_demo_before_sync_replay_rng,
+		input_demo_stop_replay);
 }
 
 int input_demo_prepare_replay_frame(void)
@@ -5359,9 +5354,8 @@ void input_demo_advance_replay_frame(void)
 
 void input_demo_finish_replay_without_close(void)
 {
-	input_demo_replay_last_timer_value = 0;
-	if (!input_demo_replay_is_loaded())
-		return;
-	input_demo_write_replay_result();
-	input_demo_replay_unload();
+	(void)input_demo_finish_replay_shared(0,
+		&input_demo_replay_last_timer_value,
+		NULL,
+		input_demo_write_replay_result);
 }
