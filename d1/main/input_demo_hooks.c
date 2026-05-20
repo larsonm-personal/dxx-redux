@@ -34,49 +34,6 @@ extern int game_is_time_paused(void);
 
 #include "input_demo_hooks_shared.h"
 
-void input_demo_record_game_frame(void)
-{
-	input_demo_control_state state;
-	input_demo_control_pulse pulse;
-	input_demo_result frame_state;
-	input_demo_state_trace_diag diag;
-	unsigned int rng_call_count;
-	unsigned int rng_state;
-	char error[256] = "";
-
-	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active())
-		return;
-	if (!d_rand_get_state(&rng_state)) {
-		con_printf(CON_NORMAL, "Input demo recording stopped: live recording requires an lcg_state RNG backend\n");
-		input_demo_recorder_cancel();
-		return;
-	}
-	rng_call_count = d_rand_get_call_count();
-	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
-	input_demo_capture_current_result(&frame_state);
-	input_demo_capture_state_trace_diag(&diag);
-	if (!input_demo_recorder_capture_frame((int32_t)FrameTime, &state, &pulse, rng_state, 1, rng_call_count,
-		&frame_state,
-		&diag,
-		error, sizeof(error))) {
-		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
-		input_demo_recorder_cancel();
-	}
-}
-
-void input_demo_update_rng_trace_context(void)
-{
-	if (!input_demo_rng_trace_is_active())
-		return;
-	if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) {
-		input_demo_rng_trace_set_context((uint32_t)input_demo_recorder_frame_count(), GameTime64);
-		return;
-	}
-	if (input_demo_replay_is_loaded() &&
-		input_demo_replay_next_frame_index() < input_demo_replay_frame_count())
-		input_demo_rng_trace_set_context(input_demo_replay_next_frame_index(), GameTime64);
-}
-
 void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
 {
 	if (!diag)
@@ -202,58 +159,6 @@ static int input_demo_replay_logged_state_mismatch = 0;
 static int input_demo_replay_logged_state_trace_error = 0;
 static fix64 input_demo_replay_last_timer_value = 0;
 
-static void input_demo_write_replay_frame_state_trace(const input_demo_replay_frame *replay_frame)
-{
-	input_demo_result actual_state;
-	input_demo_state_trace_diag diag;
-	char error[256] = "";
-
-	if (!replay_frame || !input_demo_state_trace_is_active())
-		return;
-	input_demo_capture_current_result(&actual_state);
-	input_demo_capture_state_trace_diag(&diag);
-	if (input_demo_state_trace_write_frame(replay_frame->frame,
-					  replay_frame->frame_time,
-					  replay_frame->rng_state,
-					  replay_frame->has_rng_call_count,
-					  replay_frame->rng_call_count,
-				  &diag,
-					  &actual_state,
-					  error,
-					  sizeof(error)))
-		return;
-	if (!input_demo_replay_logged_state_trace_error)
-		con_printf(CON_NORMAL, "Input demo replay state trace write failed: %s\n", error);
-	input_demo_replay_logged_state_trace_error = 1;
-	input_demo_state_trace_stop();
-}
-
-static void input_demo_log_replay_frame_state_mismatch(const input_demo_replay_frame *replay_frame)
-{
-	input_demo_result actual_state;
-	char error[256] = "";
-	char expected_json[4096] = "";
-	char actual_json[4096] = "";
-
-	if (!replay_frame || !replay_frame->has_state || input_demo_replay_logged_state_mismatch)
-		return;
-	input_demo_capture_current_result(&actual_state);
-	if (input_demo_result_compare_snapshot(&replay_frame->state_result, &actual_state, error, sizeof(error)))
-		return;
-	input_demo_replay_logged_state_mismatch = 1;
-	if (!input_demo_result_snapshot_to_json_buffer(&replay_frame->state_result, expected_json, sizeof(expected_json)))
-		snprintf(expected_json, sizeof(expected_json), "<snapshot encode failed>");
-	if (!input_demo_result_snapshot_to_json_buffer(&actual_state, actual_json, sizeof(actual_json)))
-		snprintf(actual_json, sizeof(actual_json), "<snapshot encode failed>");
-	con_printf(CON_NORMAL,
-		"Input demo replay frame state mismatch: frame=%u gt=%lld %s\n",
-		(unsigned int)replay_frame->frame,
-		(long long)GameTime64,
-		error);
-	input_demo_debug_printf("Input demo replay expected state: %s\n", expected_json);
-	input_demo_debug_printf("Input demo replay actual state: %s\n", actual_json);
-}
-
 void input_demo_log_current_replay_frame_state_mismatch(void)
 {
 	input_demo_replay_frame replay_frame;
@@ -263,8 +168,12 @@ void input_demo_log_current_replay_frame_state_mismatch(void)
 		return;
 	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error)))
 		return;
-	input_demo_write_replay_frame_state_trace(&replay_frame);
-	input_demo_log_replay_frame_state_mismatch(&replay_frame);
+	input_demo_write_replay_frame_state_trace_shared(
+		&replay_frame,
+		&input_demo_replay_logged_state_trace_error);
+	input_demo_log_replay_frame_state_mismatch_shared(
+		&replay_frame,
+		&input_demo_replay_logged_state_mismatch);
 }
 
 static void input_demo_write_replay_result(void)
