@@ -971,6 +971,10 @@ char dgss_id[4] = "DGSS";
 
 uint state_game_id;
 
+#ifndef __ANDROID__
+static int g_android_save_blank_thumbnail = 0;
+#endif
+
 static int state_thumbnail_has_palette(int version)
 {
 	return version >= STATE_THUMBNAIL_PALETTE_VERSION && version < STATE_THUMBNAIL_RGB_VERSION;

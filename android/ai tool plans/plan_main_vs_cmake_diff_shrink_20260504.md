@@ -325,6 +325,19 @@ Progress in Lane B (2026-05-19):
 - validated the tranche with a scoped `android/run-code-quality.ps1 -Fix
 	-Paths ...` pass and Android native Gradle tasks
 	`:app:buildCMakeDebug[arm64-v8a]` plus `:app:buildCMakeDebug[arm64-v8a]-2`
+- finished relocating `coop_save.{c,h}` out of `d1/` and `d2/` by moving the
+	shared declarations and implementation to
+	`android/app/src/main/cpp/shared/coop/coop_save.{h,c}` and leaving only thin
+	D1/D2 wrappers in the legacy trees
+- kept the D1/D2 `coop_save` differences local through adapter macros for the
+	D2 guidebot metadata fields, durable powerup restore mask, and the more
+	verbose D2 auto-restore logging plus timeout behavior
+- validated that coop-save tranche with `run-windows-build.ps1 -Target both`,
+	a scoped `android/run-code-quality.ps1 -Fix -Paths ...` pass, and Android
+	native Gradle tasks `:app:buildCMakeDebug[arm64-v8a]` plus
+	`:app:buildCMakeDebug[arm64-v8a]-2`; the host pass also caught and drove a
+	local non-Android fallback repair for `g_android_save_blank_thumbnail` in
+	`state.c`
 
 ## Lane C -- Networking and coop join flow still offer high-value D1/D2 shrink
 
