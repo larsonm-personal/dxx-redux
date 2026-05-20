@@ -163,8 +163,10 @@ if(UDP)
         ../../android/app/src/main/cpp/shared/net/net_udp_android.c
 		../../android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.c)
     if(ANDROID)
-		target_sources(dxx-redux-d2 PRIVATE auto_net.c coop_save.c coop_warp.c
-			../../android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.c)
+        target_sources(dxx-redux-d2 PRIVATE auto_net.c
+            ../../android/app/src/main/cpp/shared/coop/coop_save.c
+            ../../android/app/src/main/cpp/shared/coop/coop_warp.c
+            ../../android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.c)
     endif()
 endif()
 

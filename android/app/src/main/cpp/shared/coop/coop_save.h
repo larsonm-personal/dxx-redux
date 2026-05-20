@@ -18,7 +18,11 @@
 #include "pstypes.h"
 #include "fix.h"
 
-#ifndef COOP_SAVE_METADATA_EXTRA_FIELDS
+#ifdef DXX_BUILD_DESCENT_II
+#define COOP_SAVE_METADATA_EXTRA_FIELDS                                         \
+	int8_t escort_owner_player;    /* v2: Escort_owner_player (-1 = unowned) */ \
+	uint8_t buddy_allowed_to_talk; /* v2: Buddy_allowed_to_talk */
+#else
 #define COOP_SAVE_METADATA_EXTRA_FIELDS
 #endif
 

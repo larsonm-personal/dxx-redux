@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <time.h>
 
 #include <physfs.h>
@@ -25,63 +26,122 @@
 #include "gameseq.h"
 #include "mission.h"
 
-#ifdef COOP_SAVE_HAS_ESCORT_STATE
+#ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
 #endif
 
-#ifndef COOP_SAVE_WRITE_METADATA_EXTRA
-#define COOP_SAVE_WRITE_METADATA_EXTRA(meta) ((void) 0)
-#endif
-
-#ifndef COOP_SAVE_AUTO_RESTORE_TIMEOUT_FRAMES
-#define COOP_SAVE_AUTO_RESTORE_TIMEOUT_FRAMES 150
-#endif
-
-#ifndef COOP_SAVE_AUTO_RESTORE_TIMEOUT_BEFORE_ALIVE_CHECK
-#define COOP_SAVE_AUTO_RESTORE_TIMEOUT_BEFORE_ALIVE_CHECK 0
-#endif
-
-#ifndef COOP_SAVE_AUTO_RESTORE_TRACE
-#define COOP_SAVE_AUTO_RESTORE_TRACE(...) ((void) 0)
-#endif
-
-#ifndef COOP_SAVE_LOG_PLAYER_STATUS
-#define COOP_SAVE_LOG_PLAYER_STATUS() ((void) 0)
-#endif
-
-#ifndef COOP_SAVE_AUTO_RESTORE_LOG_NO_SLOT
-#define COOP_SAVE_AUTO_RESTORE_LOG_NO_SLOT() \
-	con_printf(CON_NORMAL, "coop_save: no restore slot selected from lobby\n")
-#endif
-
-#ifndef COOP_SAVE_AUTO_RESTORE_LOG_SLOT_NOT_VIABLE
-#define COOP_SAVE_AUTO_RESTORE_LOG_SLOT_NOT_VIABLE(slot) \
-	con_printf(CON_NORMAL, "coop_save: selected slot %d not viable\n", (slot))
-#endif
-
-#ifndef COOP_SAVE_AUTO_RESTORE_LOG_ARMED
-#define COOP_SAVE_AUTO_RESTORE_LOG_ARMED(slot, gid)                                        \
-	con_printf(CON_NORMAL,                                                                 \
-	           "coop_save: auto-restore armed from lobby-selected slot %d (game_id=%u)\n", \
-	           (slot), (gid))
-#endif
-
-#ifndef COOP_SAVE_AUTO_RESTORE_LOG_TRIGGER
-#define COOP_SAVE_AUTO_RESTORE_LOG_TRIGGER(slot, gid, frame)                     \
-	con_printf(CON_NORMAL,                                                       \
-	           "coop_save: triggering auto-restore from slot %d (game_id=%u)\n", \
-	           (slot), (gid))
-#endif
-
-#ifndef COOP_SAVE_RESTORE_FLAGS_DURABLE
-#error COOP_SAVE_RESTORE_FLAGS_DURABLE must be defined before including shared coop_save.c
-#endif
-
-#ifdef COOP_SAVE_DECLARE_PKILLED_FLAGS
+#ifdef DXX_BUILD_DESCENT_II
 extern sbyte PKilledFlags[MAX_PLAYERS];
 #endif
 
 extern fix ThisLevelTime;
+
+static uint32_t coop_restore_flags_durable(void)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	return PLAYER_FLAGS_QUAD_LASERS | PLAYER_FLAGS_MAP_ALL |
+	       PLAYER_FLAGS_AMMO_RACK | PLAYER_FLAGS_CONVERTER |
+	       PLAYER_FLAGS_AFTERBURNER | PLAYER_FLAGS_HEADLIGHT;
+#else
+	return PLAYER_FLAGS_QUAD_LASERS | PLAYER_FLAGS_MAP_ALL;
+#endif
+}
+
+static int coop_auto_restore_timeout_frames(void)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	return 300;
+#else
+	return 150;
+#endif
+}
+
+static int coop_auto_restore_timeout_before_alive_check(void)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	return 1;
+#else
+	return 0;
+#endif
+}
+
+static void coop_write_metadata_extra(coop_save_metadata *meta)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	meta->escort_owner_player = (int8_t) Escort_owner_player;
+	meta->buddy_allowed_to_talk = Buddy_allowed_to_talk ? 1 : 0;
+#else
+	(void) meta;
+#endif
+}
+
+static void coop_auto_restore_trace(const char *fmt, ...)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	char buf[256];
+	va_list args;
+
+	va_start(args, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, args);
+	va_end(args);
+	COOPLOG("%s", buf);
+#else
+	(void) fmt;
+#endif
+}
+
+static void coop_log_player_status(void)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	int i;
+
+	for (i = 0; i < N_players; i++)
+		COOPLOG("  P%d '%s' connected=%d PKilled=%d",
+		        i, Players[i].callsign, Players[i].connected, PKilledFlags[i]);
+#endif
+}
+
+static void coop_auto_restore_log_no_slot(void)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	COOPLOG("no restore slot file from lobby");
+#else
+	con_printf(CON_NORMAL, "coop_save: no restore slot selected from lobby\n");
+#endif
+}
+
+static void coop_auto_restore_log_slot_not_viable(int slot)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	COOPLOG("selected slot %d not viable", slot);
+#else
+	con_printf(CON_NORMAL, "coop_save: selected slot %d not viable\n", slot);
+#endif
+}
+
+static void coop_auto_restore_log_armed(int slot, uint32_t gid)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	COOPLOG("auto-restore armed from lobby-selected slot %d (game_id=%u)", slot, gid);
+#else
+	con_printf(CON_NORMAL,
+	           "coop_save: auto-restore armed from lobby-selected slot %d (game_id=%u)\n",
+	           slot, gid);
+#endif
+}
+
+static void coop_auto_restore_log_trigger(int slot, uint32_t gid, int frame)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	COOPLOG("triggering auto-restore from slot %d (game_id=%u) at frame %d",
+	        slot, gid, frame);
+#else
+	(void) frame;
+	con_printf(CON_NORMAL,
+	           "coop_save: triggering auto-restore from slot %d (game_id=%u)\n",
+	           slot, gid);
+#endif
+}
 
 /* --- forward declarations for static helpers --- */
 static void coop_write_autosave_history(int slot, int n_connected);
@@ -140,7 +200,7 @@ void coop_write_save_metadata(void *fp)
 	strncpy(meta.mission_name, Netgame.mission_name, 8);
 	meta.mission_name[8] = '\0';
 	meta.difficulty = Netgame.difficulty;
-	COOP_SAVE_WRITE_METADATA_EXTRA(meta);
+	coop_write_metadata_extra(&meta);
 
 	meta.num_active_players = 0;
 	for (i = 0; i < MAX_PLAYERS; i++) {
@@ -339,7 +399,7 @@ void coop_apply_record_to_player(int pnum, const coop_player_record *rec,
 	for (i = 0; i < MAX_SECONDARY_WEAPONS && i < COOP_SAVE_MAX_WEAPONS; i++)
 		p->secondary_ammo[i] = rec->secondary_ammo[i];
 
-	p->flags |= (rec->flags & COOP_SAVE_RESTORE_FLAGS_DURABLE);
+	p->flags |= (rec->flags & coop_restore_flags_durable());
 	if (same_level)
 		p->flags |= (rec->flags & COOP_RESTORE_FLAGS_KEYS);
 
@@ -799,17 +859,17 @@ void coop_arm_auto_restore(void)
 	coop_auto_restore_frames_waited = 0;
 
 	if (!(Game_mode & GM_MULTI_COOP)) {
-		COOP_SAVE_AUTO_RESTORE_TRACE("arm_auto_restore skipped, not coop (mode=0x%x)", Game_mode);
+		coop_auto_restore_trace("arm_auto_restore skipped, not coop (mode=0x%x)", Game_mode);
 		return;
 	}
 	if (!multi_i_am_master()) {
-		COOP_SAVE_AUTO_RESTORE_TRACE("arm_auto_restore skipped, not master");
+		coop_auto_restore_trace("arm_auto_restore skipped, not master");
 		return;
 	}
 
 	slot = coop_read_restore_slot_file();
 	if (slot < 0) {
-		COOP_SAVE_AUTO_RESTORE_LOG_NO_SLOT();
+		coop_auto_restore_log_no_slot();
 		return;
 	}
 
@@ -817,28 +877,31 @@ void coop_arm_auto_restore(void)
 	         GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
 	         Players[Player_num].callsign, slot);
 	gid = state_get_game_id(filename);
-	COOP_SAVE_AUTO_RESTORE_TRACE("try callsign file '%s' game_id=%u", filename, gid);
+	coop_auto_restore_trace("try callsign file '%s' game_id=%u", filename, gid);
 	if (!gid &&
 	    slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
 		snprintf(filename, PATH_MAX,
 		         GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
 		         COOP_AUTOSAVE_CALLSIGN, slot);
 		gid = state_get_game_id(filename);
-		COOP_SAVE_AUTO_RESTORE_TRACE("try autosave file '%s' game_id=%u", filename, gid);
+		coop_auto_restore_trace("try autosave file '%s' game_id=%u", filename, gid);
 	}
 	if (!gid) {
-		COOP_SAVE_AUTO_RESTORE_LOG_SLOT_NOT_VIABLE(slot);
+		coop_auto_restore_log_slot_not_viable(slot);
 		return;
 	}
 
 	coop_auto_restore_slot = slot;
 	coop_auto_restore_game_id = gid;
 	coop_auto_restore_armed = 1;
-	COOP_SAVE_AUTO_RESTORE_LOG_ARMED(slot, gid);
+	coop_auto_restore_log_armed(slot, gid);
 }
 
 void coop_try_auto_restore(void)
 {
+	const int timeout_before_alive_check = coop_auto_restore_timeout_before_alive_check();
+	const int timeout_frames = coop_auto_restore_timeout_frames();
+
 	if (!coop_auto_restore_armed)
 		return;
 
@@ -847,44 +910,39 @@ void coop_try_auto_restore(void)
 		return;
 
 	if (!multi_i_am_master()) {
-		COOP_SAVE_AUTO_RESTORE_TRACE("auto-restore disarm: not master");
+		coop_auto_restore_trace("auto-restore disarm: not master");
 		goto disarm;
 	}
 	if (!(Game_mode & GM_MULTI_COOP)) {
-		COOP_SAVE_AUTO_RESTORE_TRACE("auto-restore disarm: not coop (game_mode=0x%x)", Game_mode);
+		coop_auto_restore_trace("auto-restore disarm: not coop (game_mode=0x%x)", Game_mode);
 		goto disarm;
 	}
 	if (Endlevel_sequence || Control_center_destroyed) {
-		COOP_SAVE_AUTO_RESTORE_TRACE("auto-restore disarm: endlevel=%d CC=%d",
-		                             Endlevel_sequence, Control_center_destroyed);
+		coop_auto_restore_trace("auto-restore disarm: endlevel=%d CC=%d",
+		                        Endlevel_sequence, Control_center_destroyed);
 		goto disarm;
 	}
-#if COOP_SAVE_AUTO_RESTORE_TIMEOUT_BEFORE_ALIVE_CHECK
-	if (coop_auto_restore_frames_waited > COOP_SAVE_AUTO_RESTORE_TIMEOUT_FRAMES) {
-		COOP_SAVE_AUTO_RESTORE_TRACE("auto-restore disarm: timeout at %d frames",
-		                             coop_auto_restore_frames_waited);
-		COOP_SAVE_LOG_PLAYER_STATUS();
+	if (timeout_before_alive_check && coop_auto_restore_frames_waited > timeout_frames) {
+		coop_auto_restore_trace("auto-restore disarm: timeout at %d frames",
+		                        coop_auto_restore_frames_waited);
+		coop_log_player_status();
 		goto disarm;
 	}
-#endif
 	if (!multi_all_players_alive()) {
-#if COOP_SAVE_AUTO_RESTORE_TIMEOUT_BEFORE_ALIVE_CHECK
-		if (coop_auto_restore_frames_waited == 30 ||
-		    coop_auto_restore_frames_waited % 60 == 0) {
-			COOP_SAVE_AUTO_RESTORE_TRACE("auto-restore waiting: not all alive (frame %d)",
-			                             coop_auto_restore_frames_waited);
-			COOP_SAVE_LOG_PLAYER_STATUS();
+		if (timeout_before_alive_check &&
+		    (coop_auto_restore_frames_waited == 30 ||
+		     coop_auto_restore_frames_waited % 60 == 0)) {
+			coop_auto_restore_trace("auto-restore waiting: not all alive (frame %d)",
+			                        coop_auto_restore_frames_waited);
+			coop_log_player_status();
 		}
-#endif
 		return;
 	}
-#if !COOP_SAVE_AUTO_RESTORE_TIMEOUT_BEFORE_ALIVE_CHECK
-	if (coop_auto_restore_frames_waited > COOP_SAVE_AUTO_RESTORE_TIMEOUT_FRAMES)
+	if (!timeout_before_alive_check && coop_auto_restore_frames_waited > timeout_frames)
 		goto disarm;
-#endif
 
-	COOP_SAVE_AUTO_RESTORE_LOG_TRIGGER(coop_auto_restore_slot,
-	                                   coop_auto_restore_game_id, coop_auto_restore_frames_waited);
+	coop_auto_restore_log_trigger(coop_auto_restore_slot,
+	                              coop_auto_restore_game_id, coop_auto_restore_frames_waited);
 
 	coop_auto_restore_armed = 0;
 
