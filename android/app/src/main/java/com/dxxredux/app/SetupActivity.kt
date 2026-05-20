@@ -4207,41 +4207,51 @@ private fun SetupScreen(
                     )
                 }
 
-                resumeCandidate?.let { candidate ->
-                    val resumeThumbnail = remember(resumeOfferKey) { decodeResumeSaveThumbnail(candidate) }
-                    AnimatedVisibility(
-                        visible = showResumePanel,
-                        enter =
-                            slideInVertically(initialOffsetY = { -it / 2 }) +
-                                expandVertically(expandFrom = Alignment.Top) +
-                                fadeIn(),
-                        exit =
-                            slideOutVertically(targetOffsetY = { -it / 2 }) +
-                                shrinkVertically(shrinkTowards = Alignment.Top) +
-                                fadeOut(),
-                    ) {
-                        ResumeSavePanel(
-                            candidate = candidate,
-                            thumbnail = resumeThumbnail,
-                            onLoad = {
-                                selectedGame = candidate.game
-                                gamePrefs.edit().putString("selected_game", candidate.game).apply()
-                                onLaunchGame(candidate.game, candidate)
-                            },
-                            onHide = { dismissedResumeKey = resumeOfferKey },
-                            onStopShowing = {
-                                context
-                                    .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-                                    .edit()
-                                    .putBoolean(PREF_SHOW_RESUME_OFFER, false)
-                                    .apply()
-                                dismissedResumeKey = resumeOfferKey
-                            },
-                        )
+                val resumeThumbnail =
+                    remember(resumeOfferKey) {
+                        resumeCandidate?.let { decodeResumeSaveThumbnail(it) }
                     }
-                    if (showResumePanel) {
-                        Spacer(modifier = Modifier.height(10.dp))
+                val resumePanel: (@Composable () -> Unit)? =
+                    resumeCandidate?.let { candidate ->
+                        {
+                            AnimatedVisibility(
+                                visible = showResumePanel,
+                                enter =
+                                    slideInVertically(initialOffsetY = { -it / 2 }) +
+                                        expandVertically(expandFrom = Alignment.Top) +
+                                        fadeIn(),
+                                exit =
+                                    slideOutVertically(targetOffsetY = { -it / 2 }) +
+                                        shrinkVertically(shrinkTowards = Alignment.Top) +
+                                        fadeOut(),
+                            ) {
+                                ResumeSavePanel(
+                                    candidate = candidate,
+                                    thumbnail = resumeThumbnail,
+                                    onLoad = {
+                                        selectedGame = candidate.game
+                                        gamePrefs.edit().putString("selected_game", candidate.game).apply()
+                                        onLaunchGame(candidate.game, candidate)
+                                    },
+                                    onHide = { dismissedResumeKey = resumeOfferKey },
+                                    onStopShowing = {
+                                        context
+                                            .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+                                            .edit()
+                                            .putBoolean(PREF_SHOW_RESUME_OFFER, false)
+                                            .apply()
+                                        dismissedResumeKey = resumeOfferKey
+                                    },
+                                )
+                            }
+                            if (showResumePanel) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                            }
+                        }
                     }
+
+                if (!isLandscape) {
+                    resumePanel?.invoke()
                 }
 
                 // ── File detail popup ──
@@ -5519,6 +5529,7 @@ private fun SetupScreen(
                                         .verticalScroll(leftScroll)
                                         .padding(end = 8.dp),
                             ) {
+                                resumePanel?.invoke()
                                 filesPane()
                             }
                             ScrollArrows(leftScroll)
@@ -8990,6 +9001,7 @@ private fun DiscImportDialog(
     val extractFocus = remember { FocusRequester() }
     val addAudioFocus = remember { FocusRequester() }
     val doneFocus = remember { FocusRequester() }
+    val scrollState = rememberScrollState()
 
     LaunchedEffect(tracks, processing, dataExtracted, audioRegistered) {
         val hasDataTrack = tracks?.any { it.isData } == true
@@ -9061,418 +9073,437 @@ private fun DiscImportDialog(
 
     AlertDialog(
         onDismissRequest = { if (!processing) onDismiss() },
-        confirmButton = {
-            if (!processing) {
-                TextButton(onClick = onDismiss) { Text("Close") }
-            }
-        },
+        confirmButton = {},
         title = { Text("Import Disc Image", fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Text(cueName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                if (binUris.isNotEmpty()) {
-                    Text(
-                        "BIN: ${binUris.joinToString(", ") { it.first }}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (discLabel != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        "\u2713 Identified: $discLabel",
-                        fontSize = 13.sp,
-                        color = Color(0xFF4CAF50),
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    status,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                // Track listing
-                tracks?.let { trackList ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    trackList.forEach { track ->
-                        val typeStr = if (track.isData) "DATA" else "AUDIO"
-                        val sizeStr = formatSize(track.numSectors.toLong() * 2352)
-                        Text(
-                            "Track ${track.trackNum}: $typeStr ($sizeStr)" +
-                                if (track.title.isNotEmpty()) " - ${track.title}" else "",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                // Action buttons
-                if (tracks != null && !processing) {
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Extract game files from data track
-                    val hasDataTrack = tracks?.any { it.isData } == true
-                    if (hasDataTrack && dataExtracted == 0) {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    processing = true
-                                    status = "Extracting game files..."
-                                    progressBytes = 0L
-                                    progressTotal = 0L
-                                    withContext(Dispatchers.IO) {
-                                        try {
-                                            val dataTrack = tracks!!.first { it.isData }
-                                            // Use first BIN file's fd
-                                            val binUri = binUris[dataTrack.fileIndex].second
-                                            val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
-                                            if (pfd != null) {
-                                                val progress =
-                                                    object : DiscImportBridge.ExtractProgress {
-                                                        override fun onProgress(
-                                                            currentFile: String,
-                                                            bytesDone: Long,
-                                                            bytesTotal: Long,
-                                                        ): Int {
-                                                            val pct =
-                                                                if (bytesTotal > 0L) {
-                                                                    ((bytesDone * 100L) / bytesTotal).toInt()
-                                                                } else {
-                                                                    0
+            Box {
+                Column(modifier = Modifier.verticalScroll(scrollState)) {
+                    // Action buttons
+                    if (tracks != null && !processing) {
+                        // Extract game files from data track
+                        val hasDataTrack = tracks?.any { it.isData } == true
+                        if (hasDataTrack && dataExtracted == 0) {
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        processing = true
+                                        status = "Extracting game files..."
+                                        progressBytes = 0L
+                                        progressTotal = 0L
+                                        withContext(Dispatchers.IO) {
+                                            try {
+                                                val dataTrack = tracks!!.first { it.isData }
+                                                // Use first BIN file's fd
+                                                val binUri = binUris[dataTrack.fileIndex].second
+                                                val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
+                                                if (pfd != null) {
+                                                    val progress =
+                                                        object : DiscImportBridge.ExtractProgress {
+                                                            override fun onProgress(
+                                                                currentFile: String,
+                                                                bytesDone: Long,
+                                                                bytesTotal: Long,
+                                                            ): Int {
+                                                                val pct =
+                                                                    if (bytesTotal > 0L) {
+                                                                        ((bytesDone * 100L) / bytesTotal).toInt()
+                                                                    } else {
+                                                                        0
+                                                                    }
+                                                                mainHandler.post {
+                                                                    status = "Extracting $currentFile ($pct%)"
+                                                                    progressBytes = bytesDone
+                                                                    progressTotal = bytesTotal
                                                                 }
-                                                            mainHandler.post {
-                                                                status = "Extracting $currentFile ($pct%)"
-                                                                progressBytes = bytesDone
-                                                                progressTotal = bytesTotal
+                                                                return 0
                                                             }
-                                                            return 0
                                                         }
-                                                    }
-                                                val isoExtracted: Int
-                                                var macExtracted = 0
-                                                val extracted =
-                                                    pfd.use {
-                                                        isoExtracted =
-                                                            DiscImportBridge.extractIsoFiles(
-                                                                it.fd,
-                                                                dataTrack.startSector,
-                                                                dataTrack.numSectors,
-                                                                setDir.absolutePath,
-                                                                progress,
-                                                            )
-                                                        if (isoExtracted > 0) {
-                                                            isoExtracted
-                                                        } else {
-                                                            mainHandler.post { status = "Trying Mac HFS installer..." }
-                                                            macExtracted =
-                                                                DiscImportBridge.extractMacFiles(
+                                                    val isoExtracted: Int
+                                                    var macExtracted = 0
+                                                    val extracted =
+                                                        pfd.use {
+                                                            isoExtracted =
+                                                                DiscImportBridge.extractIsoFiles(
                                                                     it.fd,
                                                                     dataTrack.startSector,
                                                                     dataTrack.numSectors,
                                                                     setDir.absolutePath,
                                                                     progress,
                                                                 )
-                                                            macExtracted
-                                                        }
-                                                    }
-                                                // SOW decompression: scan for .sow files and extract them
-                                                var sowExtracted = 0
-                                                if (isoExtracted > 0) {
-                                                    val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath)
-                                                    if (sowFiles != null && sowFiles.isNotEmpty()) {
-                                                        withContext(Dispatchers.Main) {
-                                                            status =
-                                                                "Decompressing ${sowFiles.size} .sow archive(s)..."
-                                                        }
-                                                        for (sow in sowFiles) {
-                                                            sowExtracted +=
-                                                                DiscImportBridge
-                                                                    .extractSowFiles(
-                                                                        sow,
+                                                            if (isoExtracted > 0) {
+                                                                isoExtracted
+                                                            } else {
+                                                                mainHandler.post {
+                                                                    status =
+                                                                        "Trying Mac HFS installer..."
+                                                                }
+                                                                macExtracted =
+                                                                    DiscImportBridge.extractMacFiles(
+                                                                        it.fd,
+                                                                        dataTrack.startSector,
+                                                                        dataTrack.numSectors,
                                                                         setDir.absolutePath,
                                                                         progress,
-                                                                    ).coerceAtLeast(0)
+                                                                    )
+                                                                macExtracted
+                                                            }
+                                                        }
+                                                    // SOW decompression: scan for .sow files and extract them
+                                                    var sowExtracted = 0
+                                                    if (isoExtracted > 0) {
+                                                        val sowFiles =
+                                                            DiscImportBridge.scanSowFiles(
+                                                                setDir.absolutePath,
+                                                            )
+                                                        if (sowFiles != null && sowFiles.isNotEmpty()) {
+                                                            withContext(Dispatchers.Main) {
+                                                                status =
+                                                                    "Decompressing ${sowFiles.size} .sow archive(s)..."
+                                                            }
+                                                            for (sow in sowFiles) {
+                                                                sowExtracted +=
+                                                                    DiscImportBridge
+                                                                        .extractSowFiles(
+                                                                            sow,
+                                                                            setDir.absolutePath,
+                                                                            progress,
+                                                                        ).coerceAtLeast(0)
+                                                            }
                                                         }
                                                     }
+                                                    withContext(Dispatchers.Main) {
+                                                        dataExtracted = extracted.coerceAtLeast(0) + sowExtracted
+                                                        status =
+                                                            when {
+                                                                isoExtracted > 0 && sowExtracted > 0 -> {
+                                                                    "Extracted $isoExtracted file(s) + $sowExtracted from .sow archives"
+                                                                }
+
+                                                                isoExtracted > 0 -> {
+                                                                    "Extracted $isoExtracted game file(s)"
+                                                                }
+
+                                                                macExtracted > 0 -> {
+                                                                    "Extracted $macExtracted file(s) from Mac HFS installer"
+                                                                }
+
+                                                                else -> {
+                                                                    "No supported game files found on data track"
+                                                                }
+                                                            }
+                                                    }
+                                                } else {
+                                                    withContext(Dispatchers.Main) {
+                                                        status = "Could not open BIN file"
+                                                    }
                                                 }
+                                            } catch (e: Exception) {
+                                                Log.e("DXX-DiscImport", "Extract failed", e)
                                                 withContext(Dispatchers.Main) {
-                                                    dataExtracted = extracted.coerceAtLeast(0) + sowExtracted
-                                                    status =
-                                                        when {
-                                                            isoExtracted > 0 && sowExtracted > 0 -> {
-                                                                "Extracted $isoExtracted file(s) + $sowExtracted from .sow archives"
-                                                            }
-
-                                                            isoExtracted > 0 -> {
-                                                                "Extracted $isoExtracted game file(s)"
-                                                            }
-
-                                                            macExtracted > 0 -> {
-                                                                "Extracted $macExtracted file(s) from Mac HFS installer"
-                                                            }
-
-                                                            else -> {
-                                                                "No supported game files found on data track"
-                                                            }
-                                                        }
+                                                    status = "Extract error: ${e.message}"
                                                 }
-                                            } else {
-                                                withContext(Dispatchers.Main) {
-                                                    status = "Could not open BIN file"
-                                                }
-                                            }
-                                        } catch (e: Exception) {
-                                            Log.e("DXX-DiscImport", "Extract failed", e)
-                                            withContext(Dispatchers.Main) {
-                                                status = "Extract error: ${e.message}"
                                             }
                                         }
+                                        processing = false
                                     }
-                                    processing = false
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().focusRequester(extractFocus),
-                        ) {
-                            Text("Extract Game Files", fontSize = 13.sp)
+                                },
+                                modifier = Modifier.fillMaxWidth().focusRequester(extractFocus),
+                            ) {
+                                Text("Extract Game Files", fontSize = 13.sp)
+                            }
                         }
-                    }
 
-                    // Register as audio source
-                    val hasAudioTracks = tracks?.any { it.isAudio } == true
-                    if (hasAudioTracks && !audioRegistered) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    processing = true
-                                    status = "Registering audio source\u2026"
-                                    withContext(Dispatchers.IO) {
-                                        try {
-                                            val parsedTracks = tracks!!
-                                            val audioCount = parsedTracks.count { it.isAudio }
-                                            val parsedBinSizes =
-                                                if (binSizes.isNotEmpty()) {
-                                                    binSizes
-                                                } else {
-                                                    binUris.map { (_, uri) ->
-                                                        ImportStorageGuard.queryUriSizeBytes(
-                                                            context.contentResolver,
-                                                            uri,
-                                                        )
-                                                            ?: 0L
-                                                    }
-                                                }
-                                            val multiBinSource = usesMultipleCueFiles(parsedTracks)
-
-                                            if (!multiBinSource && !persistReadPermissionForUri(context, cueUri)) {
-                                                Log.w("DXX-DiscImport", "Could not persist URI for $cueName")
-                                            }
-
-                                            val binNames = mutableListOf<String>()
-                                            var firstBinUri: Uri? = null
-                                            for ((name, uri) in binUris) {
-                                                if (!multiBinSource && !persistReadPermissionForUri(context, uri)) {
-                                                    Log.w("DXX-DiscImport", "Could not persist URI for $name")
-                                                }
-                                                binNames.add(name.lowercase())
-                                                if (firstBinUri == null) firstBinUri = uri
-                                            }
-
-                                            // Try to identify the disc via SAF fd
+                        // Register as audio source
+                        val hasAudioTracks = tracks?.any { it.isAudio } == true
+                        if (hasAudioTracks && !audioRegistered) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        processing = true
+                                        status = "Registering audio source\u2026"
+                                        withContext(Dispatchers.IO) {
                                             try {
-                                                val identifier = DiscIdentifier(context)
-                                                val firstAudio = parsedTracks.first { it.isAudio }
-                                                val binUri = binUris[firstAudio.fileIndex].second
-                                                val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
-                                                if (pfd != null) {
-                                                    val trackBytes = firstAudio.numSectors.toLong() * 2352
-                                                    val trackOffset = firstAudio.startSector.toLong() * 2352
-                                                    val sha1 =
-                                                        pfd.use {
-                                                            java.io.FileInputStream(it.fileDescriptor).use { fis ->
-                                                                fis.skip(trackOffset)
-                                                                DiscIdentifier.sha1Hash(fis, trackBytes)
+                                                val parsedTracks = tracks!!
+                                                val audioCount = parsedTracks.count { it.isAudio }
+                                                val parsedBinSizes =
+                                                    if (binSizes.isNotEmpty()) {
+                                                        binSizes
+                                                    } else {
+                                                        binUris.map { (_, uri) ->
+                                                            ImportStorageGuard.queryUriSizeBytes(
+                                                                context.contentResolver,
+                                                                uri,
+                                                            )
+                                                                ?: 0L
+                                                        }
+                                                    }
+                                                val multiBinSource = usesMultipleCueFiles(parsedTracks)
+
+                                                if (!multiBinSource && !persistReadPermissionForUri(context, cueUri)) {
+                                                    Log.w("DXX-DiscImport", "Could not persist URI for $cueName")
+                                                }
+
+                                                val binNames = mutableListOf<String>()
+                                                var firstBinUri: Uri? = null
+                                                for ((name, uri) in binUris) {
+                                                    if (!multiBinSource && !persistReadPermissionForUri(context, uri)) {
+                                                        Log.w("DXX-DiscImport", "Could not persist URI for $name")
+                                                    }
+                                                    binNames.add(name.lowercase())
+                                                    if (firstBinUri == null) firstBinUri = uri
+                                                }
+
+                                                // Try to identify the disc via SAF fd
+                                                try {
+                                                    val identifier = DiscIdentifier(context)
+                                                    val firstAudio = parsedTracks.first { it.isAudio }
+                                                    val binUri = binUris[firstAudio.fileIndex].second
+                                                    val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
+                                                    if (pfd != null) {
+                                                        val trackBytes = firstAudio.numSectors.toLong() * 2352
+                                                        val trackOffset = firstAudio.startSector.toLong() * 2352
+                                                        val sha1 =
+                                                            pfd.use {
+                                                                java.io.FileInputStream(it.fileDescriptor).use { fis ->
+                                                                    fis.skip(trackOffset)
+                                                                    DiscIdentifier.sha1Hash(fis, trackBytes)
+                                                                }
+                                                            }
+                                                        val match =
+                                                            identifier.identify(
+                                                                mapOf(firstAudio.trackNum to sha1),
+                                                            )
+                                                        if (match.matched) {
+                                                            discLabel = match.label
+                                                            discId = match.disc?.id
+                                                            match.disc?.legacyDiscId?.let {
+                                                                legacyDiscId = java.lang.Long.decode(it)
                                                             }
                                                         }
-                                                    val match = identifier.identify(mapOf(firstAudio.trackNum to sha1))
-                                                    if (match.matched) {
-                                                        discLabel = match.label
-                                                        discId = match.disc?.id
-                                                        match.disc?.legacyDiscId?.let {
-                                                            legacyDiscId = java.lang.Long.decode(it)
-                                                        }
                                                     }
+                                                } catch (e: Exception) {
+                                                    Log.w("DXX-DiscImport", "Disc identification failed", e)
                                                 }
-                                            } catch (e: Exception) {
-                                                Log.w("DXX-DiscImport", "Disc identification failed", e)
-                                            }
 
-                                            val srcManager = AudioSourceManager(filesDir)
-                                            val id = discId ?: "custom-${System.currentTimeMillis()}"
-                                            val sourceFileStem =
-                                                chooseUniqueCdAudioImportStem(
-                                                    preferredStem = File(cueName).nameWithoutExtension,
-                                                    existingFileNames = filesDir.list()?.toSet() ?: emptySet(),
-                                                )
-                                            LauncherDebugLog.log(
-                                                "launcher-cd-import cue=$cueName bins=${binUris.size} mode=${if (multiBinSource) "merged-local" else "saf-in-place"} file_stem=$sourceFileStem",
-                                            )
-                                            val stagedMergedSource =
-                                                if (multiBinSource) {
-                                                    stageMergedSafDiscAudioSource(
-                                                        filesDir = filesDir,
-                                                        context = context,
-                                                        sourceFileStem = sourceFileStem,
-                                                        binUris = binUris,
-                                                        tracks = parsedTracks,
-                                                        binSizes = parsedBinSizes,
-                                                    ) { nextStatus ->
-                                                        withContext(Dispatchers.Main) {
-                                                            status = nextStatus
-                                                        }
-                                                    }
-                                                } else {
-                                                    null
-                                                }
-                                            val destCue =
-                                                stagedMergedSource?.cueFile ?: File(filesDir, "$sourceFileStem.cue")
-                                            if (stagedMergedSource == null) {
-                                                tempCuePath?.let {
-                                                    LauncherFileCopy.copyFileToFile(File(it), destCue)
-                                                }
-                                            }
-                                            val fingerprintTracks = stagedMergedSource?.mergedTracks ?: parsedTracks
-                                            var trackNames = emptyMap<Int, String>()
-                                            try {
-                                                discId?.let { resolvedDiscId ->
-                                                    trackNames =
-                                                        FingerprintBridge.lookupTrackNames(
-                                                            context,
-                                                            resolvedDiscId,
-                                                        )
-                                                    Log.i(
-                                                        "DXX-DiscImport",
-                                                        "Looked up ${trackNames.size} track names for $resolvedDiscId",
+                                                val srcManager = AudioSourceManager(filesDir)
+                                                val id = discId ?: "custom-${System.currentTimeMillis()}"
+                                                val sourceFileStem =
+                                                    chooseUniqueCdAudioImportStem(
+                                                        preferredStem = File(cueName).nameWithoutExtension,
+                                                        existingFileNames = filesDir.list()?.toSet() ?: emptySet(),
                                                     )
-                                                }
-                                                if (trackNames.isEmpty() && stagedMergedSource != null) {
-                                                    withContext(Dispatchers.Main) {
-                                                        status = "Identifying audio tracks…"
-                                                    }
-                                                    trackNames =
-                                                        FingerprintBridge.fingerprintAndMatchDisc(
-                                                            context,
-                                                            stagedMergedSource.binFile.absolutePath,
-                                                            fingerprintTracks,
-                                                        )
-                                                    Log.i(
-                                                        "DXX-DiscImport",
-                                                        "Fingerprinted ${trackNames.size} track names via merged local BIN",
-                                                    )
-                                                } else if (trackNames.isEmpty() && firstBinUri != null) {
-                                                    withContext(Dispatchers.Main) {
-                                                        status = "Identifying audio tracks…"
-                                                    }
-                                                    trackNames =
-                                                        FingerprintBridge.fingerprintAndMatchDisc(
-                                                            context,
-                                                            context.contentResolver,
-                                                            firstBinUri,
-                                                            parsedTracks,
-                                                        )
-                                                    Log.i(
-                                                        "DXX-DiscImport",
-                                                        "Fingerprinted ${trackNames.size} track names via SAF fd",
-                                                    )
-                                                }
-                                            } catch (e: Exception) {
-                                                Log.w("DXX-DiscImport", "Track name identification failed", e)
-                                            }
-
-                                            srcManager.addSource(
-                                                if (stagedMergedSource != null) {
-                                                    AudioSourceManager.AudioSource(
-                                                        id = id,
-                                                        cuePath = stagedMergedSource.cueFile.name,
-                                                        binPaths = listOf(stagedMergedSource.binFile.name.lowercase()),
-                                                        discLabel = discLabel ?: cueName,
-                                                        discId = discId ?: "unknown",
-                                                        trackCount = parsedTracks.size,
-                                                        audioTrackCount = audioCount,
-                                                        legacyDiscId = legacyDiscId,
-                                                        trackNames = trackNames,
-                                                        binContentUri = stagedMergedSource.binFile.absolutePath,
-                                                    )
-                                                } else {
-                                                    AudioSourceManager.AudioSource(
-                                                        id = id,
-                                                        cuePath = destCue.name,
-                                                        binPaths = binNames,
-                                                        discLabel = discLabel ?: cueName,
-                                                        discId = discId ?: "unknown",
-                                                        trackCount = parsedTracks.size,
-                                                        audioTrackCount = audioCount,
-                                                        legacyDiscId = legacyDiscId,
-                                                        trackNames = trackNames,
-                                                        binContentUri = firstBinUri?.toString(),
-                                                        cueContentUri = cueUri.toString(),
-                                                    )
-                                                },
-                                            )
-                                            if (multiBinSource) {
-                                                releaseReadPermissionForUri(context, cueUri)
-                                                for ((_, uri) in binUris) {
-                                                    releaseReadPermissionForUri(context, uri)
-                                                }
                                                 LauncherDebugLog.log(
-                                                    "launcher-cd-import-cleanup cue=$cueName mode=merged-local file_stem=$sourceFileStem released_permissions=true",
+                                                    "launcher-cd-import cue=$cueName bins=${binUris.size} mode=${if (multiBinSource) "merged-local" else "saf-in-place"} file_stem=$sourceFileStem",
                                                 )
-                                            }
+                                                val stagedMergedSource =
+                                                    if (multiBinSource) {
+                                                        stageMergedSafDiscAudioSource(
+                                                            filesDir = filesDir,
+                                                            context = context,
+                                                            sourceFileStem = sourceFileStem,
+                                                            binUris = binUris,
+                                                            tracks = parsedTracks,
+                                                            binSizes = parsedBinSizes,
+                                                        ) { nextStatus ->
+                                                            withContext(Dispatchers.Main) {
+                                                                status = nextStatus
+                                                            }
+                                                        }
+                                                    } else {
+                                                        null
+                                                    }
+                                                val destCue =
+                                                    stagedMergedSource?.cueFile ?: File(filesDir, "$sourceFileStem.cue")
+                                                if (stagedMergedSource == null) {
+                                                    tempCuePath?.let {
+                                                        LauncherFileCopy.copyFileToFile(File(it), destCue)
+                                                    }
+                                                }
+                                                val fingerprintTracks = stagedMergedSource?.mergedTracks ?: parsedTracks
+                                                var trackNames = emptyMap<Int, String>()
+                                                try {
+                                                    discId?.let { resolvedDiscId ->
+                                                        trackNames =
+                                                            FingerprintBridge.lookupTrackNames(
+                                                                context,
+                                                                resolvedDiscId,
+                                                            )
+                                                        Log.i(
+                                                            "DXX-DiscImport",
+                                                            "Looked up ${trackNames.size} track names for $resolvedDiscId",
+                                                        )
+                                                    }
+                                                    if (trackNames.isEmpty() && stagedMergedSource != null) {
+                                                        withContext(Dispatchers.Main) {
+                                                            status = "Identifying audio tracks…"
+                                                        }
+                                                        trackNames =
+                                                            FingerprintBridge.fingerprintAndMatchDisc(
+                                                                context,
+                                                                stagedMergedSource.binFile.absolutePath,
+                                                                fingerprintTracks,
+                                                            )
+                                                        Log.i(
+                                                            "DXX-DiscImport",
+                                                            "Fingerprinted ${trackNames.size} track names via merged local BIN",
+                                                        )
+                                                    } else if (trackNames.isEmpty() && firstBinUri != null) {
+                                                        withContext(Dispatchers.Main) {
+                                                            status = "Identifying audio tracks…"
+                                                        }
+                                                        trackNames =
+                                                            FingerprintBridge.fingerprintAndMatchDisc(
+                                                                context,
+                                                                context.contentResolver,
+                                                                firstBinUri,
+                                                                parsedTracks,
+                                                            )
+                                                        Log.i(
+                                                            "DXX-DiscImport",
+                                                            "Fingerprinted ${trackNames.size} track names via SAF fd",
+                                                        )
+                                                    }
+                                                } catch (e: Exception) {
+                                                    Log.w("DXX-DiscImport", "Track name identification failed", e)
+                                                }
 
-                                            withContext(Dispatchers.Main) {
-                                                audioRegistered = true
-                                                status = "Audio source registered" +
-                                                    if (discLabel != null) " ($discLabel)" else ""
-                                            }
-                                            enableRedbookInConfig(filesDir, context)
-                                        } catch (e: Exception) {
-                                            Log.e("DXX-DiscImport", "Audio registration failed", e)
-                                            withContext(Dispatchers.Main) {
-                                                status = "Error: ${e.message}"
+                                                srcManager.addSource(
+                                                    if (stagedMergedSource != null) {
+                                                        AudioSourceManager.AudioSource(
+                                                            id = id,
+                                                            cuePath = stagedMergedSource.cueFile.name,
+                                                            binPaths =
+                                                                listOf(
+                                                                    stagedMergedSource.binFile.name.lowercase(),
+                                                                ),
+                                                            discLabel = discLabel ?: cueName,
+                                                            discId = discId ?: "unknown",
+                                                            trackCount = parsedTracks.size,
+                                                            audioTrackCount = audioCount,
+                                                            legacyDiscId = legacyDiscId,
+                                                            trackNames = trackNames,
+                                                            binContentUri = stagedMergedSource.binFile.absolutePath,
+                                                        )
+                                                    } else {
+                                                        AudioSourceManager.AudioSource(
+                                                            id = id,
+                                                            cuePath = destCue.name,
+                                                            binPaths = binNames,
+                                                            discLabel = discLabel ?: cueName,
+                                                            discId = discId ?: "unknown",
+                                                            trackCount = parsedTracks.size,
+                                                            audioTrackCount = audioCount,
+                                                            legacyDiscId = legacyDiscId,
+                                                            trackNames = trackNames,
+                                                            binContentUri = firstBinUri?.toString(),
+                                                            cueContentUri = cueUri.toString(),
+                                                        )
+                                                    },
+                                                )
+                                                if (multiBinSource) {
+                                                    releaseReadPermissionForUri(context, cueUri)
+                                                    for ((_, uri) in binUris) {
+                                                        releaseReadPermissionForUri(context, uri)
+                                                    }
+                                                    LauncherDebugLog.log(
+                                                        "launcher-cd-import-cleanup cue=$cueName mode=merged-local file_stem=$sourceFileStem released_permissions=true",
+                                                    )
+                                                }
+
+                                                withContext(Dispatchers.Main) {
+                                                    audioRegistered = true
+                                                    status = "Audio source registered" +
+                                                        if (discLabel != null) " ($discLabel)" else ""
+                                                }
+                                                enableRedbookInConfig(filesDir, context)
+                                            } catch (e: Exception) {
+                                                Log.e("DXX-DiscImport", "Audio registration failed", e)
+                                                withContext(Dispatchers.Main) {
+                                                    status = "Error: ${e.message}"
+                                                }
                                             }
                                         }
+                                        processing = false
                                     }
-                                    processing = false
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().focusRequester(addAudioFocus),
-                        ) {
-                            Text("Add as Audio Source", fontSize = 13.sp)
+                                },
+                                modifier = Modifier.fillMaxWidth().focusRequester(addAudioFocus),
+                            ) {
+                                Text("Add as Audio Source", fontSize = 13.sp)
+                            }
+                        }
+
+                        // Done state
+                        if (dataExtracted > 0 || audioRegistered) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = onImported,
+                                modifier = Modifier.fillMaxWidth().focusRequester(doneFocus),
+                            ) {
+                                Text("Done", fontSize = 13.sp)
+                            }
                         }
                     }
 
-                    // Done state
-                    if (dataExtracted > 0 || audioRegistered) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = onImported,
-                            modifier = Modifier.fillMaxWidth().focusRequester(doneFocus),
-                        ) {
-                            Text("Done", fontSize = 13.sp)
+                    if (!processing) {
+                        if (tracks != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
                         }
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Close", fontSize = 13.sp) }
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
-                }
 
-                if (processing) {
+                    Text(cueName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    if (binUris.isNotEmpty()) {
+                        Text(
+                            "BIN: ${binUris.joinToString(", ") { it.first }}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (discLabel != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "✓ Identified: $discLabel",
+                            fontSize = 13.sp,
+                            color = Color(0xFF4CAF50),
+                        )
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
-                    if (progressTotal > 0L) {
-                        val progress = (progressBytes.toFloat() / progressTotal.toFloat()).coerceIn(0f, 1f)
-                        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
-                    } else {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    Text(
+                        status,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    tracks?.let { trackList ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        trackList.forEach { track ->
+                            val typeStr = if (track.isData) "DATA" else "AUDIO"
+                            val sizeStr = formatSize(track.numSectors.toLong() * 2352)
+                            Text(
+                                "Track ${track.trackNum}: $typeStr ($sizeStr)" +
+                                    if (track.title.isNotEmpty()) " - ${track.title}" else "",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    if (processing) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        if (progressTotal > 0L) {
+                            val progress = (progressBytes.toFloat() / progressTotal.toFloat()).coerceIn(0f, 1f)
+                            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                        } else {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
                     }
                 }
+                ScrollArrows(scrollState)
             }
         },
     )

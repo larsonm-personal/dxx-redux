@@ -2365,6 +2365,7 @@ int listbox_key_command(window *wind, d_event *event, listbox *lb)
 void listbox_create_structure( listbox *lb)
 {
 	int i = 0;
+	int aw = 0;
 
 	gr_set_current_canvas(NULL);
 
@@ -2388,9 +2389,9 @@ void listbox_create_structure( listbox *lb)
 	}
 
 	gr_set_curfont(MEDIUM1_FONT);
-	gr_get_string_size("O", &i, &lb->row_height, &lb->title_height);
+	gr_get_string_size("O", &i, &lb->row_height, &aw);
 	gr_set_curfont(MEDIUM2_FONT);
-	gr_get_string_size("O", &i, &lb->selected_row_height, &lb->title_height);
+	gr_get_string_size("O", &i, &lb->selected_row_height, &aw);
 	if (lb->row_height < LINE_SPACING + FSPACY(1))
 		lb->row_height = LINE_SPACING + FSPACY(1);
 	if (lb->selected_row_height < lb->row_height)
@@ -2712,7 +2713,7 @@ listbox *newmenu_listbox1( char * title, int nitems, char * items[], int allow_a
 	
 	listbox_create_structure(lb);
 
-	wind = window_create(&grd_curscreen->sc_canvas, lb->box_x-BORDERX, lb->box_y-lb->title_height-BORDERY, lb->box_w+2*BORDERX, lb->height+2*BORDERY, (int (*)(window *, d_event *, void *))listbox_handler, lb);
+	wind = window_create(&grd_curscreen->sc_canvas, lb->box_x-BORDERX, lb->box_y-lb->title_height-BORDERY, lb->box_w+2*BORDERX, lb->height+lb->title_height+2*BORDERY, (int (*)(window *, d_event *, void *))listbox_handler, lb);
 	if (!wind)
 	{
 		d_free(lb);
