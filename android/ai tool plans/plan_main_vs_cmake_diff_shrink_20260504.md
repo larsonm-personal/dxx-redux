@@ -207,6 +207,19 @@ Progress in this tranche (2026-05-18):
 - kept the D1 and D2 robot-awake rule as a tiny local macro adapter in each
 	hook file, which preserves the per-game AI detail split while removing the
 	duplicated traversal body
+- completed an initial pass of sub-tranche 2 by centralizing the shared
+	`input_demo_start.c` command-line helpers, metadata validation, replay-player
+	config application, skip-intro state, and replay load plus expected-game
+	check in `android/app/src/main/cpp/shared/input_demo_start_shared.h`
+- kept the remaining D1 and D2 differences local through tiny adapters for the
+	primary-order copy size and D2's optional headlight default restore, while the
+	heavier per-game new-level and checkpoint start flow stays in each file
+- extended that same shared `input_demo_start.c` helper include to centralize
+	replay command-line option parsing, common actual-result plus rng-trace setup,
+	loaded-replay preflight, and the checkpoint temp-file write plus restore path
+- kept the remaining split local through tiny adapters for D1 mission-name
+	normalization, D2 replay-label enablement, and the differing
+	`state_restore_all_sub` call signatures
 
 What not to do here:
 
