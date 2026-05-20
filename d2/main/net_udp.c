@@ -7509,7 +7509,11 @@ void net_udp_android_set_my_port(int my_port)
 
 void net_udp_android_set_bind_loopback(int bind_loopback)
 {
+	#ifdef __ANDROID__
 	udp_bind_loopback = bind_loopback ? 1 : 0;
+	#else
+	(void)bind_loopback;
+	#endif
 }
 
 int net_udp_android_primary_socket(void)
