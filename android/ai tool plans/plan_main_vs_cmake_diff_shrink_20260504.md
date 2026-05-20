@@ -254,6 +254,17 @@ Progress in this tranche (2026-05-18):
 - kept the remaining D1/D2 hooks split local through tiny adapters for D2's
 	debug gate on collision traces plus D2-only shield, terminal-exit, powerup,
 	and kill-baseline bookkeeping around the shared current-result body
+- extended the shared `newdemo.c` helper include again to centralize the full
+	quick-record stop and toggle control flow plus the shared
+	`newdemo_stop_recording` body, including the quick-record sidecar rename path
+	and the normal manual-versus-autorecord filename flow
+- kept the remaining D1/D2 `newdemo.c` split local through tiny adapters for
+	the `newdemo_record_oneframeevent_update` call signature and D2's
+	terminal-exit reset hook, while leaving
+	`newdemo_stop_quick_recording_for_level_exit()` as a minimal D2-local wrapper
+- validated that follow-up `newdemo.c` shrink with `run-windows-build.ps1
+	-Target both` and a scoped `android/run-code-quality.ps1 -Fix -Paths ...`
+	pass on the touched files
 
 What not to do here:
 

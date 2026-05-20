@@ -3151,55 +3151,17 @@ static char input_demo_android_quick_record_mission[PATH_MAX] = "";
 #define INPUT_DEMO_PRIMARY_ORDER_COUNT (MAX_PRIMARY_WEAPONS + 2)
 #define INPUT_DEMO_RECORDER_SETTINGS_GAME INPUT_DEMO_GAME_D1
 #define INPUT_DEMO_RECORDER_SETTINGS_MISSION input_demo_current_mission_id()
+#define INPUT_DEMO_RECORD_ONEFRAMEEVENT_UPDATE() newdemo_record_oneframeevent_update(0)
 #include "input_demo_newdemo_shared.h"
 
 int newdemo_stop_quick_recording(void)
 {
-	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_android_quick_recording)
-		return 0;
-	newdemo_stop_recording(0);
-	return 1;
+	return input_demo_stop_quick_recording_common();
 }
 
 int newdemo_toggle_quick_recording(void)
 {
-	char error[256] = "";
-
-	if (Newdemo_state == ND_STATE_RECORDING) {
-		if (!newdemo_stop_quick_recording()) {
-			con_printf(CON_NORMAL, "Input demo quick toggle ignored: classic demo recording is already active\n");
-			return 0;
-		}
-		return 1;
-	}
-	if (Newdemo_state != ND_STATE_NORMAL)
-		return 0;
-	if (!input_demo_prepare_recorder_settings(NULL, error, sizeof(error))) {
-		con_printf(CON_NORMAL, "Input demo recording skipped: %s\n", error);
-		return 0;
-	}
-	input_demo_android_quick_recording = 1;
-	input_demo_android_quick_record_level = Current_level_num;
-	snprintf(input_demo_android_quick_record_mission,
-	         SDL_arraysize(input_demo_android_quick_record_mission),
-	         "%s",
-	         input_demo_quick_record_mission_name());
-	newdemo_start_recording(1);
-	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active()) {
-		input_demo_clear_quick_recording();
-		if (Newdemo_state == ND_STATE_RECORDING) {
-			PHYSFS_close(outfile);
-			outfile = NULL;
-			Newdemo_state = ND_STATE_NORMAL;
-			Newdemo_is_autorecord = 0;
-			PHYSFS_delete(DEMO_FILENAME);
-			gr_palette_load(gr_palette);
-		}
-		if (Newdemo_state == ND_STATE_NORMAL)
-			con_printf(CON_NORMAL, "Input demo recording did not start\n");
-		return 0;
-	}
-	return 1;
+	return input_demo_toggle_quick_recording_common();
 }
 
 void newdemo_start_recording(int is_autorecord)
@@ -3425,63 +3387,7 @@ int newdemo_prompt_filename(char* filename_buffer, unsigned int filename_buffer_
 
 void newdemo_stop_recording(int is_manual)
 {
-	char demo_name[PATH_MAX] = "";
-	char filename[PATH_MAX] = "";
-	const char *input_demo_name = demo_name;
-	int was_android_quick_recording = input_demo_android_quick_recording;
-	int was_autorecord = Newdemo_is_autorecord;
-
-	if (!nd_record_v_no_space)
-	{
-		newdemo_record_oneframeevent_update(0);
-		newdemo_write_end();
-	}
-
-	PHYSFS_close(outfile);
-	outfile = NULL;
-	Newdemo_state = ND_STATE_NORMAL;
-	Newdemo_is_autorecord = 0;
-	gr_palette_load( gr_palette );
-
-	if (was_android_quick_recording) {
-		char input_demo_path[PATH_MAX] = "";
-
-		input_demo_build_quick_record_name(demo_name, SDL_arraysize(demo_name));
-		input_demo_build_classic_demo_path(filename, SDL_arraysize(filename), INPUT_DEMO_NEW_DIR, demo_name);
-		sprintf_s(input_demo_path, SDL_arraysize(input_demo_path), "%s/%s" INPUT_DEMO_EXTENSION, INPUT_DEMO_NEW_DIR, demo_name);
-		input_demo_clear_quick_recording();
-		maybe_flush_input_demo_recording(demo_name, 1);
-		if (!PHYSFSX_exists(input_demo_path, 0)) {
-			PHYSFS_delete(DEMO_FILENAME);
-			return;
-		}
-		PHYSFS_delete(filename);
-		if (!PHYSFSX_rename(DEMO_FILENAME, filename)) {
-			con_printf(CON_NORMAL, "Input demo classic demo sidecar save failed for %s\n", filename);
-			PHYSFS_delete(DEMO_FILENAME);
-		} else {
-			con_printf(CON_NORMAL, "Input demo classic demo saved to %s\n", filename);
-		}
-		return;
-	}
-	input_demo_clear_quick_recording();
-
-	newdemo_get_default_filename(demo_name, SDL_arraysize(demo_name));
-	// If we're suppressing auto-record UI, don't ask for the name, just use the default.
-	// If the player presses F5 while auto-recording, we do prompt for a name though.
-	if (is_manual || !was_autorecord || !PlayerCfg.AutoDemoHideUi)
-		if (!newdemo_prompt_filename(demo_name, SDL_arraysize(demo_name))) {
-			input_demo_name = INPUT_DEMO_TEMP_NAME;
-			maybe_flush_input_demo_recording(input_demo_name, 0);
-			return;
-		}
-
-	// Add path and extension to the file name
-	sprintf_s(filename, SDL_arraysize(filename), DEMO_DIR "%s" DEMO_EXT, demo_name);
-
-	PHYSFS_delete(filename);
-	PHYSFSX_rename(DEMO_FILENAME, filename);
-	maybe_flush_input_demo_recording(input_demo_name, 0);
+	input_demo_stop_recording_common(is_manual);
 }
 
 //returns the number of demo files on the disk

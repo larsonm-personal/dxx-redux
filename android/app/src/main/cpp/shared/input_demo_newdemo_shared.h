@@ -35,24 +35,37 @@
 #error INPUT_DEMO_RECORDER_SETTINGS_MISSION must be defined before including input_demo_newdemo_shared.h
 #endif
 
+#ifndef INPUT_DEMO_RECORD_ONEFRAMEEVENT_UPDATE
+#error INPUT_DEMO_RECORD_ONEFRAMEEVENT_UPDATE must be defined before including input_demo_newdemo_shared.h
+#endif
+
 #ifndef INPUT_DEMO_CLEAR_QUICK_RECORDING_EXTRA
-#define INPUT_DEMO_CLEAR_QUICK_RECORDING_EXTRA() ((void)0)
+#define INPUT_DEMO_CLEAR_QUICK_RECORDING_EXTRA() ((void) 0)
+#endif
+
+#ifndef INPUT_DEMO_QUICK_RECORDING_START_PREP
+#define INPUT_DEMO_QUICK_RECORDING_START_PREP() ((void) 0)
 #endif
 
 #ifndef INPUT_DEMO_CAPTURE_CHECKPOINT_EXTRA
-#define INPUT_DEMO_CAPTURE_CHECKPOINT_EXTRA(settings) ((void)0)
+#define INPUT_DEMO_CAPTURE_CHECKPOINT_EXTRA(settings) ((void) 0)
 #endif
 
 #ifndef INPUT_DEMO_FILL_EXTRA_PLAYER_CFG
-#define INPUT_DEMO_FILL_EXTRA_PLAYER_CFG(settings) ((void)0)
+#define INPUT_DEMO_FILL_EXTRA_PLAYER_CFG(settings) ((void) 0)
 #endif
+
+void newdemo_start_recording(int is_autorecord);
+void newdemo_write_end(void);
+void newdemo_get_default_filename(char *filename_buffer, unsigned int filename_buffer_length);
+int newdemo_prompt_filename(char *filename_buffer, unsigned int filename_buffer_length);
 
 static const char *input_demo_quick_record_mission_name(void)
 {
 	const char *mission = INPUT_DEMO_QUICK_RECORD_MISSION_EXPR;
 
 	if (!mission || !mission[0] ||
-		!strcmp(mission, INPUT_DEMO_QUICK_RECORD_BUILTIN_MISSION_ID))
+	    !strcmp(mission, INPUT_DEMO_QUICK_RECORD_BUILTIN_MISSION_ID))
 		return INPUT_DEMO_QUICK_RECORD_FALLBACK_MISSION_NAME;
 	return mission;
 }
@@ -75,7 +88,7 @@ static void input_demo_release_recorder_settings(input_demo_recorder_settings *s
 }
 
 static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *settings,
-	                                              char *error, size_t error_size)
+                                                  char *error, size_t error_size)
 {
 	const char *save_name = GameArg.SysUsePlayersDir ? INPUT_DEMO_CHECKPOINT_PLAYERS_NAME : INPUT_DEMO_CHECKPOINT_NAME;
 	char logical_path[PATH_MAX] = "";
@@ -253,7 +266,7 @@ static void input_demo_sanitize_slug(char *result, unsigned int result_size, con
 }
 
 static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *settings,
-	                                            char *error, size_t error_size)
+                                                char *error, size_t error_size)
 {
 	const char *rng_mode;
 	int replay_mode;
@@ -331,9 +344,9 @@ static void input_demo_build_quick_record_name(char *demo_name, unsigned int dem
 }
 
 static void input_demo_build_classic_demo_path(char *relative_path,
-	                                           unsigned int relative_path_size,
-	                                           const char *demo_dir,
-	                                           const char *demo_name)
+                                               unsigned int relative_path_size,
+                                               const char *demo_dir,
+                                               const char *demo_name)
 {
 	sprintf_s(relative_path, relative_path_size, "%s/%s" DEMO_EXT, demo_dir, demo_name);
 }
@@ -421,7 +434,7 @@ static int maybe_start_input_demo_recording(int is_autorecord)
 		return 0;
 	}
 	con_printf(CON_NORMAL, "Input demo recording started for %s level %d\n",
-		INPUT_DEMO_RECORDER_SETTINGS_MISSION, Current_level_num);
+	           INPUT_DEMO_RECORDER_SETTINGS_MISSION, Current_level_num);
 	return 1;
 }
 
@@ -458,6 +471,113 @@ static void maybe_flush_input_demo_recording(const char *demo_name, int use_new_
 	con_printf(CON_NORMAL, "Input demo RNG trace saved to %s\n", trace_path);
 }
 
+static void input_demo_stop_recording_common(int is_manual)
+{
+	char demo_name[PATH_MAX] = "";
+	char filename[PATH_MAX] = "";
+	const char *input_demo_name = demo_name;
+	int was_android_quick_recording = input_demo_android_quick_recording;
+	int was_autorecord = Newdemo_is_autorecord;
+
+	if (!nd_record_v_no_space) {
+		INPUT_DEMO_RECORD_ONEFRAMEEVENT_UPDATE();
+		newdemo_write_end();
+	}
+
+	PHYSFS_close(outfile);
+	outfile = NULL;
+	Newdemo_state = ND_STATE_NORMAL;
+	Newdemo_is_autorecord = 0;
+	gr_palette_load(gr_palette);
+
+	if (was_android_quick_recording) {
+		char input_demo_path[PATH_MAX] = "";
+
+		input_demo_build_quick_record_name(demo_name, SDL_arraysize(demo_name));
+		input_demo_build_classic_demo_path(filename, SDL_arraysize(filename), INPUT_DEMO_NEW_DIR, demo_name);
+		sprintf_s(input_demo_path, SDL_arraysize(input_demo_path), "%s/%s" INPUT_DEMO_EXTENSION, INPUT_DEMO_NEW_DIR, demo_name);
+		input_demo_clear_quick_recording();
+		maybe_flush_input_demo_recording(demo_name, 1);
+		if (!PHYSFSX_exists(input_demo_path, 0)) {
+			PHYSFS_delete(DEMO_FILENAME);
+			return;
+		}
+		PHYSFS_delete(filename);
+		if (!PHYSFSX_rename(DEMO_FILENAME, filename)) {
+			con_printf(CON_NORMAL, "Input demo classic demo sidecar save failed for %s\n", filename);
+			PHYSFS_delete(DEMO_FILENAME);
+		} else {
+			con_printf(CON_NORMAL, "Input demo classic demo saved to %s\n", filename);
+		}
+		return;
+	}
+	input_demo_clear_quick_recording();
+
+	newdemo_get_default_filename(demo_name, SDL_arraysize(demo_name));
+	if (is_manual || !was_autorecord || !PlayerCfg.AutoDemoHideUi)
+		if (!newdemo_prompt_filename(demo_name, SDL_arraysize(demo_name))) {
+			input_demo_name = INPUT_DEMO_TEMP_NAME;
+			maybe_flush_input_demo_recording(input_demo_name, 0);
+			return;
+		}
+
+	sprintf_s(filename, SDL_arraysize(filename), DEMO_DIR "%s" DEMO_EXT, demo_name);
+
+	PHYSFS_delete(filename);
+	PHYSFSX_rename(DEMO_FILENAME, filename);
+	maybe_flush_input_demo_recording(input_demo_name, 0);
+}
+
+static int input_demo_stop_quick_recording_common(void)
+{
+	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_android_quick_recording)
+		return 0;
+	input_demo_stop_recording_common(0);
+	return 1;
+}
+
+static int input_demo_toggle_quick_recording_common(void)
+{
+	char error[256] = "";
+
+	if (Newdemo_state == ND_STATE_RECORDING) {
+		if (!input_demo_stop_quick_recording_common()) {
+			con_printf(CON_NORMAL, "Input demo quick toggle ignored: classic demo recording is already active\n");
+			return 0;
+		}
+		return 1;
+	}
+	if (Newdemo_state != ND_STATE_NORMAL)
+		return 0;
+	if (!input_demo_prepare_recorder_settings(NULL, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo recording skipped: %s\n", error);
+		return 0;
+	}
+	INPUT_DEMO_QUICK_RECORDING_START_PREP();
+	input_demo_android_quick_recording = 1;
+	input_demo_android_quick_record_level = Current_level_num;
+	snprintf(input_demo_android_quick_record_mission,
+	         SDL_arraysize(input_demo_android_quick_record_mission),
+	         "%s",
+	         input_demo_quick_record_mission_name());
+	newdemo_start_recording(1);
+	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active()) {
+		input_demo_clear_quick_recording();
+		if (Newdemo_state == ND_STATE_RECORDING) {
+			PHYSFS_close(outfile);
+			outfile = NULL;
+			Newdemo_state = ND_STATE_NORMAL;
+			Newdemo_is_autorecord = 0;
+			PHYSFS_delete(DEMO_FILENAME);
+			gr_palette_load(gr_palette);
+		}
+		if (Newdemo_state == ND_STATE_NORMAL)
+			con_printf(CON_NORMAL, "Input demo recording did not start\n");
+		return 0;
+	}
+	return 1;
+}
+
 #undef INPUT_DEMO_QUICK_RECORD_MISSION_EXPR
 #undef INPUT_DEMO_QUICK_RECORD_BUILTIN_MISSION_ID
 #undef INPUT_DEMO_QUICK_RECORD_FALLBACK_MISSION_NAME
@@ -465,7 +585,9 @@ static void maybe_flush_input_demo_recording(const char *demo_name, int use_new_
 #undef INPUT_DEMO_PRIMARY_ORDER_COUNT
 #undef INPUT_DEMO_RECORDER_SETTINGS_GAME
 #undef INPUT_DEMO_RECORDER_SETTINGS_MISSION
+#undef INPUT_DEMO_RECORD_ONEFRAMEEVENT_UPDATE
 #undef INPUT_DEMO_CLEAR_QUICK_RECORDING_EXTRA
+#undef INPUT_DEMO_QUICK_RECORDING_START_PREP
 #undef INPUT_DEMO_CAPTURE_CHECKPOINT_EXTRA
 #undef INPUT_DEMO_FILL_EXTRA_PLAYER_CFG
 
