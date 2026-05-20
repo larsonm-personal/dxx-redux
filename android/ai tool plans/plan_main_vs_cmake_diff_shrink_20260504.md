@@ -338,6 +338,17 @@ Progress in Lane B (2026-05-19):
 	`:app:buildCMakeDebug[arm64-v8a]-2`; the host pass also caught and drove a
 	local non-Android fallback repair for `g_android_save_blank_thumbnail` in
 	`state.c`
+- started the `playsave.c` launcher-bridge extraction by moving the duplicated
+	Android default-prefs and `.plx` visual-prefs helpers into the new shared
+	`android/app/src/main/cpp/shared/playsave_android_shared.h`
+- kept the remaining D1/D2 `playsave.c` differences local for now through the
+	game-specific binary pilot-field readers and writers plus D1-only `.plx`
+	cockpit and weapon-order helpers versus D2's binary weapon-order path
+- validated that playsave follow-up with a scoped
+	`android/run-code-quality.ps1 -Fix -Paths ...` pass and Android native Gradle
+	tasks `:app:buildCMakeDebug[arm64-v8a]` plus
+	`:app:buildCMakeDebug[arm64-v8a]-2`; also removed the touched-file unused
+	`PHYSFS_file *file` locals in the netgame profile wrappers
 
 ## Lane C -- Networking and coop join flow still offer high-value D1/D2 shrink
 

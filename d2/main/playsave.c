@@ -1203,10 +1203,10 @@ int write_player_file()
  * Returns 1 on success, 0 on failure.
  */
 int plr_patch_keysettings(const char *path,
-                         const ubyte *kb, int kb_len,
-                         const ubyte *joy, int joy_len,
-                         const ubyte *mouse, int mouse_len,
-                         int control_type)
+			 const ubyte *kb, int kb_len,
+			 const ubyte *joy, int joy_len,
+			 const ubyte *mouse, int mouse_len,
+			 int control_type)
 {
 	unsigned char buf[4];
 	unsigned int id;
@@ -1285,21 +1285,13 @@ int plr_patch_keysettings(const char *path,
 	return 1;
 }
 
-void android_get_default_pilot_prefs(int *cockpit_mode, int *auto_leveling)
-{
-	if (cockpit_mode)
-		*cockpit_mode = CM_FULL_COCKPIT;
-	if (auto_leveling)
-		*auto_leveling = 1;
-}
-
 /*
  * Read cockpit mode and AutoLeveling from a D2 .plr file.
  * Returns 1 on success, 0 on failure.
  */
 int plr_read_cockpit_autolevel(const char *path,
-	                           int *cockpit_mode,
-	                           int *auto_leveling)
+				   int *cockpit_mode,
+				   int *auto_leveling)
 {
 	unsigned char buf[4];
 	unsigned int id;
@@ -1335,8 +1327,8 @@ int plr_read_cockpit_autolevel(const char *path,
  * Returns 1 on success, 0 on failure.
  */
 int plr_patch_cockpit_autolevel(const char *path,
-	                            int cockpit_mode,
-	                            int auto_leveling)
+				    int cockpit_mode,
+				    int auto_leveling)
 {
 	unsigned char buf[4];
 	unsigned int id;
@@ -1373,139 +1365,9 @@ int plr_patch_cockpit_autolevel(const char *path,
 	return 1;
 }
 
-void android_get_default_visual_prefs(int *alpha_effects, int *dynlight_color)
-{
-	if (alpha_effects)
-		*alpha_effects = 0;
-	if (dynlight_color)
-		*dynlight_color = 0;
-}
-
-int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_color)
-{
-	FILE *f = fopen(path, "r");
-	char line[256];
-	int in_graphics = 0;
-	int found = 0;
-
-	if (!f) return 0;
-
-	while (fgets(line, sizeof(line), f)) {
-		if (!in_graphics) {
-			if (!d_strnicmp(line, "[graphics]", 10))
-				in_graphics = 1;
-			continue;
-		}
-		if (!d_strnicmp(line, "[end]", 5))
-			break;
-		if (!d_strnicmp(line, "alphaeffects=", 13)) {
-			if (alpha_effects)
-				*alpha_effects = atoi(line + 13) ? 1 : 0;
-			found = 1;
-			continue;
-		}
-		if (!d_strnicmp(line, "dynlightcolor=", 14)) {
-			if (dynlight_color)
-				*dynlight_color = atoi(line + 14) ? 1 : 0;
-			found = 1;
-		}
-	}
-
-	fclose(f);
-	return found;
-}
-
-int plx_write_visual_prefs(const char *path, int alpha_effects, int dynlight_color)
-{
-	FILE *f = fopen(path, "r");
-	char buf[32768];
-	int buf_len = 0;
-	int in_graphics = 0;
-	int found_graphics = 0;
-	int wrote_alpha = 0;
-	int wrote_dynlight = 0;
-	char tmp[64];
-
-#define PLX_BUF_APPEND(s) do { \
-		int _slen = (int)strlen(s); \
-		if (buf_len + _slen < (int)sizeof(buf)) { \
-			memcpy(buf + buf_len, s, _slen); \
-			buf_len += _slen; \
-		} \
-	} while (0)
-
-#define PLX_APPEND_ALPHA() do { \
-		snprintf(tmp, sizeof(tmp), "alphaeffects=%i\n", alpha_effects ? 1 : 0); \
-		PLX_BUF_APPEND(tmp); \
-		wrote_alpha = 1; \
-	} while (0)
-
-#define PLX_APPEND_DYNLIGHT() do { \
-		snprintf(tmp, sizeof(tmp), "dynlightcolor=%i\n", dynlight_color ? 1 : 0); \
-		PLX_BUF_APPEND(tmp); \
-		wrote_dynlight = 1; \
-	} while (0)
-
-	if (f) {
-		char line[256];
-		while (fgets(line, sizeof(line), f)) {
-			if (!in_graphics && !d_strnicmp(line, "[graphics]", 10)) {
-				found_graphics = 1;
-				in_graphics = 1;
-				PLX_BUF_APPEND(line);
-				continue;
-			}
-			if (in_graphics && !d_strnicmp(line, "[end]", 5)) {
-				if (!wrote_alpha)
-					PLX_APPEND_ALPHA();
-				if (!wrote_dynlight)
-					PLX_APPEND_DYNLIGHT();
-				PLX_BUF_APPEND(line);
-				in_graphics = 0;
-				continue;
-			}
-			if (in_graphics && !d_strnicmp(line, "alphaeffects=", 13)) {
-				PLX_APPEND_ALPHA();
-				continue;
-			}
-			if (in_graphics && !d_strnicmp(line, "dynlightcolor=", 14)) {
-				PLX_APPEND_DYNLIGHT();
-				continue;
-			}
-			PLX_BUF_APPEND(line);
-		}
-		fclose(f);
-	}
-
-	if (in_graphics) {
-		if (!wrote_alpha)
-			PLX_APPEND_ALPHA();
-		if (!wrote_dynlight)
-			PLX_APPEND_DYNLIGHT();
-		PLX_BUF_APPEND("[end]\n");
-	}
-
-	if (!found_graphics) {
-		if (buf_len == 0)
-			PLX_BUF_APPEND("[D2X Options]\n");
-		PLX_BUF_APPEND("[graphics]\n");
-		PLX_APPEND_ALPHA();
-		PLX_APPEND_DYNLIGHT();
-		PLX_BUF_APPEND("[end]\n");
-	}
-
-#undef PLX_BUF_APPEND
-#undef PLX_APPEND_ALPHA
-#undef PLX_APPEND_DYNLIGHT
-
-	f = fopen(path, "w");
-	if (!f) return 0;
-	fwrite(buf, 1, buf_len, f);
-	fflush(f);
-	fsync(fileno(f));
-	fclose(f);
-	return 1;
-}
+#define PLAYSAVE_ANDROID_OPTIONS_HEADER "[D2X Options]\n"
+#include "playsave_android_shared.h"
+#undef PLAYSAVE_ANDROID_OPTIONS_HEADER
 
 /*
  * Compute the file offset past key settings to where weapon ordering starts.
@@ -1622,7 +1484,6 @@ int get_lifetime_checksum (int a,int b)
 void read_netgame_profile(netgame_info *ng)
 {
 	char filename[PATH_MAX];
-	PHYSFS_file *file;
 
 	memset(filename, '\0', PATH_MAX);
 	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%.8s.ngp" : "%.8s.ngp", Players[Player_num].callsign);
@@ -1760,7 +1621,6 @@ int read_netgame_settings_file(const char *filename, netgame_info *ng, int no_na
 void write_netgame_profile(netgame_info *ng)
 {
 	char filename[PATH_MAX];
-	PHYSFS_file *file;
 
 	memset(filename, '\0', PATH_MAX);
 	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%.8s.ngp" : "%.8s.ngp", Players[Player_num].callsign);
