@@ -265,6 +265,22 @@ Progress in this tranche (2026-05-18):
 - validated that follow-up `newdemo.c` shrink with `run-windows-build.ps1
 	-Target both` and a scoped `android/run-code-quality.ps1 -Fix -Paths ...`
 	pass on the touched files
+- completed the architectural follow-up on the Lane A helper extractions by
+	converting `input_demo_start_shared`, `input_demo_hooks_shared`, and
+	`input_demo_newdemo_shared` from implementation-heavy headers into normal
+	declaration headers backed by compiled `.c` translation units under
+	`android/app/src/main/cpp/shared/`
+- replaced the old include-time macro seams with internal
+	`#ifdef DXX_BUILD_DESCENT_II` helpers plus the smallest necessary local
+	accessors for the remaining file-local state, leaving the D1 and D2
+	`input_demo_start.c`, `input_demo_hooks.c`, and `newdemo.c` files with normal
+	header includes only and no shared `.c` inclusion
+- added the three shared input-demo sources to both D1 and D2 CMake source
+	lists, ran `android/stop-stale-formatters.ps1`, a scoped
+	`android/run-code-quality.ps1 -Fix -Paths ...` pass, and Android native
+	Gradle validation via `:app:buildCMakeDebug[arm64-v8a]` plus
+	`:app:buildCMakeDebug[arm64-v8a]-2`; the final build stayed green with only
+	pre-existing D2 `input_demo_hooks.c` warnings outside the extraction seam
 
 What not to do here:
 
@@ -355,6 +371,12 @@ Progress in Lane B (2026-05-19):
 	`PHYSFS_file *file` locals in the netgame profile wrappers and then reran the
 	same scoped code-quality plus Android native validation after the shared
 	keysettings extraction
+- completed the conventional-source follow-up for the earlier persistence
+	helper split by converting `state_android_shared` and
+	`playsave_android_shared` into declaration-only headers plus compiled shared
+	`.c` files, removing the forbidden shared `.c` includes from `d1/d2`
+	`state.c` and `playsave.c` and keeping the remaining D1/D2 differences behind
+	internal `#ifdef DXX_BUILD_DESCENT_II` helpers or tiny local adapters
 
 ## Lane C -- Networking and coop join flow still offer high-value D1/D2 shrink
 
@@ -392,11 +414,24 @@ Progress in Lane C (2026-05-19):
 - kept the remaining D1/D2 split local through a one-line per-game adapter
 	macro that selects which player slot gets the restored host address after a
 	`GAME_INFO` reply during auto-join
+- followed that with a second `net_udp.c` helper extraction by moving the
+	duplicated P2P and proxy helper block from `net_udp_send_p2p_pong(...)`
+	through `net_udp_process_ping(...)` into
+	`android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.h`
+- kept the only remaining D1/D2 split in that block local through a tiny
+	per-game host-player-index adapter for `net_udp_process_ping(...)`, which
+	lets D1 keep host slot `0` while D2 follows `multi_who_is_master()`
 - validated the tranche with a scoped `android/run-code-quality.ps1 -Fix
 	-Paths ...` pass and Android native Gradle tasks
 	`:app:buildCMakeDebug[arm64-v8a]` plus `:app:buildCMakeDebug[arm64-v8a]-2`;
 	the build still reports unrelated pre-existing `net_udp.c` warnings outside
-	the touched autonet block
+	the touched autonet and P2P/proxy blocks
+- completed the conventional-source follow-up for the earlier networking
+	helper split by converting `net_udp_android_autonet_shared` and
+	`net_udp_p2p_proxy_shared` into compiled shared `.c` files, removing the
+	forbidden shared `.c` includes from `d1/d2 main/net_udp.c`, and exposing only
+	the small socket/port/raw-send adapters needed to cross the file-local-state
+	boundary cleanly
 
 ## Lane D -- Menu, control, and touch UI work is now a better target than another random D2-only probe cleanup
 

@@ -135,10 +135,6 @@ static int g_android_save_blank_thumbnail = 0;
 #endif
 
 #ifdef __ANDROID__
-#define STATE_ANDROID_MEMORY_FILE_NAME "__rewind__.d1sg"
-#define STATE_ANDROID_SAVE_META_GAME_ID ANDROID_SAVE_META_GAME_D1
-#define STATE_ANDROID_GAME_LABEL "D1"
-#define STATE_ANDROID_RESTORE_FROM_MEMORY_CALL(filename) state_restore_all_sub((filename))
 #include "state_android_shared.h"
 
 #define PHYSFS_file rewind_file

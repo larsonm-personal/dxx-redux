@@ -3132,27 +3132,12 @@ void newdemo_playback_one_frame()
 	}
 }
 
-#define INPUT_DEMO_RECORD_DIR "input_demo_recordings"
-#define INPUT_DEMO_NEW_DIR INPUT_DEMO_RECORD_DIR "/new"
-#define INPUT_DEMO_EXTENSION ".dximdemo"
-#define INPUT_DEMO_NEW_LIMIT 10
-#define INPUT_DEMO_QUICK_NAME_ATTEMPTS 255
-#define INPUT_DEMO_TEMP_NAME "tmpdemo"
-#define INPUT_DEMO_CHECKPOINT_NAME "inputdemo_start.dgss"
-#define INPUT_DEMO_CHECKPOINT_PLAYERS_NAME "Players/inputdemo_start.dgss"
-
-static int input_demo_android_quick_recording = 0;
-static int input_demo_android_quick_record_level = 0;
-static char input_demo_android_quick_record_mission[PATH_MAX] = "";
-#define INPUT_DEMO_QUICK_RECORD_MISSION_EXPR input_demo_current_mission_id()
-#define INPUT_DEMO_QUICK_RECORD_BUILTIN_MISSION_ID "d1"
-#define INPUT_DEMO_QUICK_RECORD_FALLBACK_MISSION_NAME "descent"
-#define INPUT_DEMO_QUICK_RECORD_NAME_PREFIX "d1"
-#define INPUT_DEMO_PRIMARY_ORDER_COUNT (MAX_PRIMARY_WEAPONS + 2)
-#define INPUT_DEMO_RECORDER_SETTINGS_GAME INPUT_DEMO_GAME_D1
-#define INPUT_DEMO_RECORDER_SETTINGS_MISSION input_demo_current_mission_id()
-#define INPUT_DEMO_RECORD_ONEFRAMEEVENT_UPDATE() newdemo_record_oneframeevent_update(0)
 #include "input_demo_newdemo_shared.h"
+
+int input_demo_newdemo_record_no_space(void)
+{
+	return nd_record_v_no_space;
+}
 
 int newdemo_stop_quick_recording(void)
 {

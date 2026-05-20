@@ -57,41 +57,42 @@ static void input_demo_reset_powerup_live_probe_state(void);
 static void input_demo_note_powerup_live_delta(int current_count);
 void input_demo_trace_player_shield_change(const char *cause, fix shields_before,
 	fix shields_after, const char *extra_json, const char *extra_log);
-
-#define INPUT_DEMO_COLLISION_TRACE_ENABLED() input_demo_debug_is_enabled()
-#define INPUT_DEMO_RESULT_GAME_NAME "d2"
-#define INPUT_DEMO_RESULT_MISSION_ID ((Current_mission && Current_mission_filename) ? Current_mission_filename : "")
-#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_PREP(current_player) \
-	do { \
-		if (input_demo_recorder_is_active() || input_demo_replay_is_loaded()) { \
-			if (!input_demo_player_shield_probe_valid) \
-				input_demo_note_player_shield_probe_value((current_player)->shields); \
-			else if ((current_player)->shields != input_demo_player_shield_probe_value) \
-				input_demo_trace_player_shield_change("unknown_observed", \
-					input_demo_player_shield_probe_value, \
-					(current_player)->shields, \
-					"", \
-					""); \
-		} else { \
-			input_demo_reset_powerup_live_probe_state(); \
-		} \
-	} while (0)
-#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_GAME_TIME(result) \
-	do { \
-		if (input_demo_recorder_is_active()) \
-			(result)->terminal_exit = input_demo_recording_terminal_exit; \
-	} while (0)
-#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_ROBOTS_KILLED(current_player) \
-	(input_demo_result_kills_baseline_valid ? \
-		((current_player)->num_kills_level - input_demo_result_kills_baseline) : 0)
-#define INPUT_DEMO_CAPTURE_CURRENT_RESULT_AFTER_POWERUPS(result) \
-	do { \
-		input_demo_note_powerup_live_delta((result)->level_summary.powerups_remaining); \
-	} while (0)
-#define INPUT_DEMO_ROBOT_IS_CAMERA_AWAKE(objnum, obj) \
-	(((obj)->ctype.ai_info.SUB_FLAGS & SUB_FLAGS_CAMERA_AWAKE) != 0)
 #include "input_demo_hooks_shared.h"
-#undef INPUT_DEMO_ROBOT_IS_CAMERA_AWAKE
+
+void input_demo_capture_current_result_prep_d2(player *current_player)
+{
+	if (input_demo_recorder_is_active() || input_demo_replay_is_loaded()) {
+		if (!input_demo_player_shield_probe_valid)
+			input_demo_note_player_shield_probe_value(current_player->shields);
+		else if (current_player->shields != input_demo_player_shield_probe_value)
+			input_demo_trace_player_shield_change("unknown_observed",
+				input_demo_player_shield_probe_value,
+				current_player->shields,
+				"",
+				"");
+	} else
+		input_demo_reset_powerup_live_probe_state();
+}
+
+void input_demo_capture_current_result_after_game_time_d2(
+	input_demo_result *result)
+{
+	if (input_demo_recorder_is_active())
+		result->terminal_exit = input_demo_recording_terminal_exit;
+}
+
+int input_demo_capture_current_result_robots_killed_d2(player *current_player)
+{
+	if (!input_demo_result_kills_baseline_valid)
+		return 0;
+	return current_player->num_kills_level - input_demo_result_kills_baseline;
+}
+
+void input_demo_capture_current_result_after_powerups_d2(
+	input_demo_result *result)
+{
+	input_demo_note_powerup_live_delta(result->level_summary.powerups_remaining);
+}
 
 static void input_demo_note_player_shield_probe_value(fix shields)
 {
@@ -586,8 +587,6 @@ void input_demo_update_rng_trace_context(void)
 
 void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
 {
-	int i;
-
 	if (!diag)
 		return;
 	memset(diag, 0, sizeof(*diag));

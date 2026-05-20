@@ -1570,9 +1570,7 @@ int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_n
 }
 
 #ifdef ANDROID
-#define PLAYSAVE_ANDROID_OPTIONS_HEADER "[D1X Options]\n"
 #include "playsave_android_shared.h"
-#undef PLAYSAVE_ANDROID_OPTIONS_HEADER
 
 /*
  * Binary-patch keyboard, joystick, mouse settings and control_type in a

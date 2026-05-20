@@ -32,12 +32,7 @@ extern void ReadControlsReplayPostFrame(void);
 extern void GameProcessFrame(void);
 extern int game_is_time_paused(void);
 
-#define INPUT_DEMO_RESULT_GAME_NAME "d1"
-#define INPUT_DEMO_RESULT_MISSION_ID input_demo_current_mission_id()
-#define INPUT_DEMO_ROBOT_IS_CAMERA_AWAKE(objnum, obj) \
-	(Ai_local_info[(objnum)].player_awareness_type > 0)
 #include "input_demo_hooks_shared.h"
-#undef INPUT_DEMO_ROBOT_IS_CAMERA_AWAKE
 
 void input_demo_record_game_frame(void)
 {
@@ -84,8 +79,6 @@ void input_demo_update_rng_trace_context(void)
 
 void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
 {
-	int i;
-
 	if (!diag)
 		return;
 	memset(diag, 0, sizeof(*diag));

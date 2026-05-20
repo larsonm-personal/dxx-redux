@@ -29,21 +29,7 @@
 #define INPUT_DEMO_CRUMB_V(...) ((void)0)
 #endif
 
-#define INPUT_DEMO_PRIMARY_ORDER_COPY_COUNT (MAX_PRIMARY_WEAPONS + 1)
-#define INPUT_DEMO_APPLY_EXTRA_PLAYER_CFG(player_cfg) \
-	do { \
-		if ((player_cfg)->has_headlight_active_default) \
-			PlayerCfg.HeadlightActiveDefault = (player_cfg)->headlight_active_default; \
-	} while (0)
-#define INPUT_DEMO_APPLY_EXTRA_REPLAY_CMDLINE_OPTIONS(options) \
-	do { \
-		g_replay_robot_labels_enabled = (options)->replay_labels_enabled; \
-	} while (0)
-#define INPUT_DEMO_RESTORE_CHECKPOINT_SAVE(path) state_restore_all_sub(path, 0)
-#define INPUT_DEMO_RESTORED_PLAYER_DIAG_EXTRA_FMT " headlight_default=%d"
-#define INPUT_DEMO_RESTORED_PLAYER_DIAG_EXTRA_ARGS , PlayerCfg.HeadlightActiveDefault
 #include "input_demo_start_shared.h"
-#undef INPUT_DEMO_PRIMARY_ORDER_COPY_COUNT
 
 int input_demo_load_replay_from_path(const char *demo_path, char *error, size_t error_size)
 {

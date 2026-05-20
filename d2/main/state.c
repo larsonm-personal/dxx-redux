@@ -149,40 +149,6 @@ extern int First_secret_visit;
 extern int Final_boss_is_dead;
 
 #ifdef __ANDROID__
-#define STATE_ANDROID_MEMORY_FILE_NAME "__rewind__.d2sg"
-#define STATE_ANDROID_SAVE_META_GAME_ID ANDROID_SAVE_META_GAME_D2
-#define STATE_ANDROID_GAME_LABEL "D2"
-#define STATE_ANDROID_RESTORE_FROM_MEMORY_CALL(filename) state_restore_all_sub((filename), 0)
-#define STATE_ANDROID_AUTOSAVE_PRECHECK(slotnum) \
-	do { \
-		if (Current_level_num < 0) { \
-			debug_log(DLOG_GAME, "autosave skipped: D2 secret level is active"); \
-			return 0; \
-		} \
-		if (Final_boss_is_dead) { \
-			debug_log(DLOG_GAME, "autosave skipped: D2 final boss death sequence is active"); \
-			return 0; \
-		} \
-	} while (0)
-#define STATE_ANDROID_AUTOSAVE_PREPARE_SLOT(slotnum) \
-	do { \
-		char state_android_temp_fname[PATH_MAX]; \
-		char state_android_fc; \
-		if ((slotnum) >= 10) \
-			state_android_fc = ((slotnum) - 10) + 'a'; \
-		else \
-			state_android_fc = '0' + (slotnum); \
-		sprintf(state_android_temp_fname, GameArg.SysUsePlayersDir ? "Players/%csecret.sgc" : "%csecret.sgc", state_android_fc); \
-		if (PHYSFSX_exists(state_android_temp_fname, 0)) { \
-			if (!PHYSFS_delete(state_android_temp_fname)) \
-				Error("Cannot delete file <%s>: %s", state_android_temp_fname, PHYSFS_getLastError()); \
-		} \
-		if (PHYSFSX_exists(SECRETC_FILENAME, 0)) { \
-			int copy_result = copy_file(SECRETC_FILENAME, state_android_temp_fname); \
-			Assert(copy_result == 0); \
-			(void)copy_result; \
-		} \
-	} while (0)
 #include "state_android_shared.h"
 
 static PHYSFS_sint64 state_android_physfs_raw_length(struct PHYSFS_File *file)

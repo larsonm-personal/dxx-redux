@@ -1195,9 +1195,7 @@ int write_player_file()
 }
 
 #ifdef ANDROID
-#define PLAYSAVE_ANDROID_OPTIONS_HEADER "[D2X Options]\n"
 #include "playsave_android_shared.h"
-#undef PLAYSAVE_ANDROID_OPTIONS_HEADER
 
 /*
  * Patch the KeySettings and control_type in a single .plr file using stdio.

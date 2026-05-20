@@ -27,17 +27,7 @@
 #define INPUT_DEMO_CRUMB_V(...) ((void)0)
 #endif
 
-#define INPUT_DEMO_FORMAT_REPLAY_MISSION_NAME(replay_mission, mission_name, mission_name_size) \
-	do { \
-		if (!d_stricmp((replay_mission), "d1")) \
-			snprintf((mission_name), (mission_name_size), "%s", D1_MISSION_FILENAME); \
-		else \
-			snprintf((mission_name), (mission_name_size), "%s", (replay_mission)); \
-	} while (0)
-#define INPUT_DEMO_RESTORE_CHECKPOINT_SAVE(path) state_restore_all_sub(path)
-#define INPUT_DEMO_PRIMARY_ORDER_COPY_COUNT (MAX_PRIMARY_WEAPONS + 2)
 #include "input_demo_start_shared.h"
-#undef INPUT_DEMO_PRIMARY_ORDER_COPY_COUNT
 
 static int input_demo_load_replay_from_path(const char *demo_path, char *error,
 	size_t error_size)

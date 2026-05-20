@@ -68,6 +68,9 @@ set(D1X_MAIN_SOURCES
     wall.c
     weapon.c
     ../../android/app/src/main/cpp/shared/input_demo_fp_env.c
+    ../../android/app/src/main/cpp/shared/input_demo_hooks_shared.c
+    ../../android/app/src/main/cpp/shared/input_demo_newdemo_shared.c
+    ../../android/app/src/main/cpp/shared/input_demo_start_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_debug_logging.cpp
     )
 
@@ -78,6 +81,13 @@ else()
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/arch/include ${PROJECT_SOURCE_DIR}/android/app/src/main/cpp/shared)
+target_include_directories(dxx-redux-d1 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+if(ANDROID)
+    target_sources(dxx-redux-d1 PRIVATE
+        ../../android/app/src/main/cpp/shared/state_android_shared.c
+        ../../android/app/src/main/cpp/shared/playsave_android_shared.c)
+endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-codec-deps.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-build-metadata.cmake)
@@ -146,9 +156,11 @@ if(UDP)
     target_include_directories(dxx-redux-d1 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_sources(dxx-redux-d1 PRIVATE
         net_udp.c
-        ../../android/app/src/main/cpp/shared/net/net_udp_android.c)
+        ../../android/app/src/main/cpp/shared/net/net_udp_android.c
+		../../android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.c)
     if(ANDROID)
-        target_sources(dxx-redux-d1 PRIVATE auto_net.c coop_save.c coop_warp.c)
+		target_sources(dxx-redux-d1 PRIVATE auto_net.c coop_save.c coop_warp.c
+			../../android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.c)
     endif()
 endif()
 
