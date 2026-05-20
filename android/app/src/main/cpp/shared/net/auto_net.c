@@ -1,42 +1,37 @@
 /*
  * Auto-join/auto-host globals and main-menu check for Android matchmaking.
- * The actual networking logic (net_udp_auto_join / net_udp_auto_host) lives
- * in net_udp.c where it has access to static networking state.
+ * The actual networking logic lives in net_udp Android shared helpers.
  */
 
 #ifdef __ANDROID__
 
 #include <string.h>
+
 #include "auto_net.h"
+
 #include "console.h"
 #include "player.h"
 #include "playsave.h"
+#include "net_udp_android_autonet_shared.h"
 
 /* --- globals, set by JNI before the main menu opens --- */
 
-int  auto_join_pending = 0;
+int auto_join_pending = 0;
 char auto_join_host_addr[AUTO_NET_ADDR_LEN] = "127.0.0.1";
-int  auto_join_host_port = 42430;
-int  auto_join_my_port   = 42424;
+int auto_join_host_port = 42430;
+int auto_join_my_port = 42424;
 
-int  auto_host_pending     = 0;
-int  auto_host_my_port     = 42424;
+int auto_host_pending = 0;
+int auto_host_my_port = 42424;
 char auto_host_mission[64] = "";
-int  auto_host_mode        = 0;
-int  auto_host_max_players = 4;
-int  auto_host_level_num   = 1;
-int  auto_host_difficulty  = 1;
-int  auto_host_coop_qol    = 1;
-
-char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN] = "";
+int auto_host_mode = 0;
+int auto_host_max_players = 4;
+int auto_host_level_num = 1;
+int auto_host_difficulty = 1;
+int auto_host_coop_qol = 1;
 
 char auto_net_callsign[10] = "";
-
-/* Implemented in net_udp.c - has access to UDP_MyPort and other statics. */
-extern int net_udp_auto_join(const char *host_addr, int host_port, int my_port);
-extern int net_udp_auto_host(int my_port, const char *mission, int mode,
-							 int difficulty, int max_players, int level_num,
-							 int coop_qol);
+char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN] = "";
 
 int auto_create_pilot(void)
 {
@@ -55,6 +50,7 @@ int auto_create_pilot(void)
 #ifdef ANDROID
 	{
 		extern void android_apply_gamepad_defaults(void);
+
 		android_apply_gamepad_defaults();
 	}
 #endif
@@ -80,7 +76,7 @@ int check_auto_net(void)
 		 * This prevents re-entry when the select-players menu closes and
 		 * EVENT_WINDOW_ACTIVATED re-fires on the main menu. */
 		con_printf(CON_NORMAL, "auto_net: starting auto-host on port %d "
-		           "(mission=%s mode=%d diff=%d max=%d lvl=%d qol=%d)\n",
+		                       "(mission=%s mode=%d diff=%d max=%d lvl=%d qol=%d)\n",
 		           auto_host_my_port, auto_host_mission, auto_host_mode,
 		           auto_host_difficulty, auto_host_max_players,
 		           auto_host_level_num, auto_host_coop_qol);

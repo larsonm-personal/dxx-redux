@@ -1,12 +1,12 @@
 /*
  * Auto-join/auto-host support for Android matchmaking integration.
  * The Kotlin launcher sets these globals via JNI before the game reaches
- * the main menu.  menu.c checks them on EVENT_WINDOW_ACTIVATED and
+ * the main menu. menu.c checks them on EVENT_WINDOW_ACTIVATED and
  * triggers the appropriate network action without user interaction.
  */
 
-#ifndef AUTO_NET_H
-#define AUTO_NET_H
+#ifndef DXX_ANDROID_SHARED_NET_AUTO_NET_H
+#define DXX_ANDROID_SHARED_NET_AUTO_NET_H
 
 #ifdef __ANDROID__
 
@@ -44,10 +44,13 @@ extern int auto_host_coop_qol;
 /* Callsign for auto-created pilot (shared by host and join paths).
  * When non-empty and no pilot exists, a pilot with this name is created
  * automatically before the network action starts. */
+extern char auto_net_callsign[10];
+
+/* Client identity UUID (36 chars + null). Set by JNI from
+ * ClientIdentity.getInstallationId() or the server's player_id.
+ * Used for save-file player matching across sessions. */
 #define AUTO_NET_CLIENT_ID_LEN 37
 extern char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN];
-
-extern char auto_net_callsign[10];
 
 /* Auto-create a pilot with auto_net_callsign if no pilot exists.
  * Called from main_menu_handler before check_auto_net(). */
@@ -59,4 +62,5 @@ int auto_create_pilot(void);
 int check_auto_net(void);
 
 #endif /* __ANDROID__ */
-#endif /* AUTO_NET_H */
+
+#endif /* DXX_ANDROID_SHARED_NET_AUTO_NET_H */
