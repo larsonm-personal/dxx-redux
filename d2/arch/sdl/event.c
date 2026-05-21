@@ -39,6 +39,9 @@ void event_poll()
 	
 	// If the front window changes, exit this loop, otherwise unintended behavior can occur
 	// like pressing 'Return' really fast at 'Difficulty Level' causing multiple games to be started
+#ifdef __ANDROID__
+#include "android_log.h"
+#endif
 	while ((wind == window_get_front()) && SDL_PollEvent(&event))
 	{
 		switch(event.type) {

@@ -248,7 +248,11 @@ int player_menu_keycommand( listbox *lb, d_event *event )
 			if (citem > 0)
 			{
 				int x = 1;
+#ifdef ANDROID
+				x = nm_messagebox( NULL, 2, TXT_OK, TXT_NO, "%s %s?", TXT_DELETE_PILOT, items[citem]+((items[citem][0]=='$')?1:0) );
+#else
 				x = nm_messagebox( NULL, 2, TXT_YES, TXT_NO, "%s %s?", TXT_DELETE_PILOT, items[citem]+((items[citem][0]=='$')?1:0) );
+#endif
 				if (x==0)	{
 					char * p;
 					char plxfile[PATH_MAX], efffile[PATH_MAX], ngpfile[PATH_MAX];

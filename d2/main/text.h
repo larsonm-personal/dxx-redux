@@ -463,7 +463,11 @@ static inline char *dxx_gettext(unsigned expr, const char *fmt)
 #define TXT_OFF                 dxx_gettext(438, "Off")
 #define TXT_NOT_IN_SHAREWARE    dxx_gettext(439, "Not available in Demo version")
 #define TXT_GAME_OVER           dxx_gettext(440, "Game Over")
+#ifdef ANDROID
+#define TXT_SELECT_PILOT        ((char *)"Select pilot\nlong hold/press to delete")
+#else
 #define TXT_SELECT_PILOT        dxx_gettext(441, "Select pilot\n<Ctrl-D> deletes")
+#endif
 #define TXT_ENTER_PILOT_NAME    dxx_gettext(442, "Enter your pilot name:")
 #define TXT_PLAYER              dxx_gettext(443, "Player")
 #define TXT_ALREADY_EXISTS      dxx_gettext(444, "already exists!")

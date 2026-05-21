@@ -79,6 +79,12 @@ volatile int g_saveload_menu_active = 0;
  * Kotlin shows a "START GAME" overlay button. */
 volatile int g_host_selecting_players = 0;
 
+static int g_dpad_center_down = 0;
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeJoystickButton(JNIEnv *env, jobject thiz,
+														jint button, jint pressed);
+
 /* Set to 1 while the solo end-of-level score screen is showing.
  * Kotlin shows a "NEXT" overlay button (upper-right). */
 volatile int g_levelcomplete_active = 0;
@@ -539,6 +545,19 @@ Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
                                                   jint action, jint androidKeyCode,
                                                   jint unicodeChar)
 {
+	if (androidKeyCode == AKEYCODE_DPAD_CENTER) {
+		if (action == 0) {
+			if (!g_dpad_center_down) {
+				g_dpad_center_down = 1;
+				Java_com_dxxredux_app_MainActivity_nativeJoystickButton(env, thiz, 0, 1);
+			}
+		} else if (g_dpad_center_down) {
+			g_dpad_center_down = 0;
+			Java_com_dxxredux_app_MainActivity_nativeJoystickButton(env, thiz, 0, 0);
+		}
+		return;
+	}
+
 	SDLKey sym = android_to_sdlk(androidKeyCode);
 	if (androidKeyCode == AKEYCODE_DPAD_CENTER ||
 	    androidKeyCode == AKEYCODE_ENTER ||

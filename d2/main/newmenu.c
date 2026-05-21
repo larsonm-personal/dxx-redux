@@ -71,6 +71,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "android_crash_handler.h"
 #include "android_menu_scale.h"
+#include "android_pilot_listbox_hold.h"
 #endif
 
 
@@ -2231,9 +2232,15 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 					listbox_get_item_bounds(lb, i, &x1, &y1, &x2, &y2);
 					if ( ((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2)) ) {
 						lb->citem = i;
+#ifdef ANDROID
+						android_pilot_listbox_mouse_down(lb, lb->title, lb->nitems, i);
+#endif
 						return 1;
 					}
 				}
+#ifdef ANDROID
+				android_pilot_listbox_hold_clear(lb);
+#endif
 			}
 			else if (event->type == EVENT_MOUSE_BUTTON_UP)
 			{
@@ -2244,6 +2251,17 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 				listbox_get_item_bounds(lb, lb->citem, &x1, &y1, &x2, &y2);
 				if ( ((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2)) )
 				{
+#ifdef ANDROID
+					{
+						int rval;
+						rval = android_pilot_listbox_mouse_up(lb, lb->title,
+						                                    lb->nitems, lb->citem,
+						                                    lb->listbox_callback,
+						                                    lb->userdata);
+						if (rval)
+							return rval;
+					}
+#endif
 					// Tell callback, allow staying in menu
 					event->type = EVENT_NEWMENU_SELECTED;
 					if (lb->listbox_callback && (*lb->listbox_callback)(lb, event, lb->userdata))
@@ -2252,6 +2270,9 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 					window_close(wind);
 					return 1;
 				}
+#ifdef ANDROID
+				android_pilot_listbox_hold_clear(lb);
+#endif
 			}
 			break;
 		}
@@ -2442,6 +2463,9 @@ void listbox_create_structure( listbox *lb)
 	update_scroll_position(lb);
 
 	lb->mouse_state = 0;	//dblclick_flag = 0;
+#ifdef ANDROID
+	android_pilot_listbox_hold_clear(lb);
+#endif
 	lb->swidth = SWIDTH;
 	lb->sheight = SHEIGHT;
 	lb->fntscalex = FNTScaleX;
@@ -2585,8 +2609,12 @@ int listbox_draw(window *wind, listbox *lb)
 
 int listbox_handler(window *wind, d_event *event, listbox *lb)
 {
-	if (event->type == EVENT_WINDOW_CLOSED)
+	if (event->type == EVENT_WINDOW_CLOSED) {
+	#ifdef ANDROID
+		android_pilot_listbox_hold_clear(lb);
+	#endif
 		return 0;
+	}
 
 	if (lb->listbox_callback)
 	{
@@ -2625,7 +2653,15 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 		{
 			int btn = event_joystick_get_button(event);
 			int keycode = -1;
-			if (btn == 0)       keycode = KEY_ENTER;
+			if (btn == 0) {
+				int rval = android_pilot_listbox_joy_button_down(
+					lb, lb->title, lb->nitems, lb->citem, wind,
+					ANDROID_LISTBOX_HOLD_JOY_A,
+					listbox_key_command);
+				if (rval)
+					return rval;
+				keycode = KEY_ENTER;
+			}
 			else if (btn == 1)  keycode = KEY_ESC;
 			else if (btn == 22) keycode = KEY_UP;
 			else if (btn == 23) keycode = KEY_DOWN;
@@ -2637,6 +2673,16 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 				ke.keycode = keycode;
 				return listbox_key_command(wind, (d_event *)&ke, lb);
 			}
+			break;
+		}
+		case EVENT_JOYSTICK_BUTTON_UP:
+		{
+			int btn = event_joystick_get_button(event);
+			if (btn == 0)
+				return android_pilot_listbox_joy_button_up(
+					lb, lb->title, lb->nitems, lb->citem, wind,
+					ANDROID_LISTBOX_HOLD_JOY_A,
+					listbox_key_command, lb->listbox_callback, lb->userdata);
 			break;
 		}
 		case EVENT_JOYSTICK_MOVED:
@@ -2666,6 +2712,15 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 #endif
 
 		case EVENT_IDLE:
+		#ifdef ANDROID
+			{
+				int rval = android_pilot_listbox_hold_poll(
+					lb, lb->title, lb->nitems, lb->citem,
+					lb->listbox_callback, lb->userdata);
+				if (rval)
+					return rval;
+			}
+		#endif
 			timer_delay2(50);
 
 			return listbox_mouse(wind, event, lb, -1);
@@ -2675,6 +2730,11 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 		#ifdef ANDROID
 			{
 				int rval;
+				rval = android_pilot_listbox_hold_poll(
+					lb, lb->title, lb->nitems, lb->citem,
+					lb->listbox_callback, lb->userdata);
+				if (rval)
+					return rval;
 				extern int g_ogl_render_context;
 				int prev_context = g_ogl_render_context;
 				g_ogl_render_context = 0;
