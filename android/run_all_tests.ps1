@@ -264,12 +264,28 @@ foreach ($test in $allTests) {
     }
 }
 
+function Get-TestExecutionOrderKey {
+    param([hashtable]$Test)
+
+    switch ($Test.Name) {
+        "test_quick_record_classic_sidecar_stage" { return "test_quick_record_classic_sidecar_00_stage" }
+        "test_quick_record_classic_sidecar_install" { return "test_quick_record_classic_sidecar_01_install" }
+        default { return $Test.Name }
+    }
+}
+
+function Sort-TestsForExecution {
+    param([object[]]$Tests)
+
+    return @($Tests | Sort-Object @{ Expression = { Get-TestExecutionOrderKey $_ } }, @{ Expression = { $_.Name } })
+}
+
 # Group by infrastructure tier
-$tierNone = @($runnableTests | Where-Object { $_.Requires -eq "none" })
-$tierServer = @($runnableTests | Where-Object { $_.Requires -eq "server" })
-$tierSingleEmu = @($runnableTests | Where-Object { $_.Requires -eq "emulator" })
-$tierDualEmu = @($runnableTests | Where-Object { $_.Requires -eq "two_emulators" })
-$tierExtract = @($runnableTests | Where-Object { $_.Requires -eq "extract" })
+$tierNone = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "none" })
+$tierServer = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "server" })
+$tierSingleEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "emulator" })
+$tierDualEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "two_emulators" })
+$tierExtract = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "extract" })
 
 $selectedRegressionDemoTests = @($runnableTests | Where-Object { $_.BaseName -eq "test_input_demo_regressions" })
 $selectedRegressionDemoModes = @($selectedRegressionDemoTests | ForEach-Object { $_.DemoRunMode } | Where-Object { $_ } | Sort-Object -Unique)

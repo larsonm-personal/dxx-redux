@@ -1798,7 +1798,6 @@ int state_restore_all_sub(char *filename)
 	char id[5];
 	char org_callsign[CALLSIGN_LEN+16];
 	fix tmptime32 = 0;
-	player_rw *pl_rw;
 	int rebirth = 0;
 
 	#ifndef NDEBUG
@@ -1809,25 +1808,13 @@ int state_restore_all_sub(char *filename)
 	fp = PHYSFSX_openReadBuffered(filename);
 	if ( !fp ) {
 		con_printf(CON_URGENT, "restore: could not open '%s'\n", filename);
-#ifdef __ANDROID__
-		debug_log(DLOG_GAME, "restore open failed: game=d1 file='%s' current_callsign='%s' game_mode=%d",
-			filename, Players[Player_num].callsign, Game_mode);
-#endif
 		return 0;
 	}
-#ifdef __ANDROID__
-	debug_log(DLOG_GAME, "restore open: game=d1 file='%s' current_callsign='%s' player_num=%d game_mode=%d",
-		filename, Players[Player_num].callsign, Player_num, Game_mode);
-#endif
 
 //Read id
 	PHYSFS_read(fp, id, sizeof(char) * 4, 1);
 	if ( memcmp( id, dgss_id, 4 )) {
 		con_printf(CON_URGENT, "restore: bad save id in '%s'\n", filename);
-#ifdef __ANDROID__
-		debug_log(DLOG_GAME, "restore bad id: game=d1 file='%s' id='%c%c%c%c'",
-			filename, id[0], id[1], id[2], id[3]);
-#endif
 		PHYSFS_close(fp);
 		return 0;
 	}
@@ -1840,17 +1827,9 @@ int state_restore_all_sub(char *filename)
 		swap = 1;
 		version = SWAPINT(version);
 	}
-#ifdef __ANDROID__
-	debug_log(DLOG_GAME, "restore version: game=d1 file='%s' version=%d swap=%d compatible=%d runtime=%d",
-		filename, version, swap, STATE_COMPATIBLE_VERSION, STATE_RUNTIME_VERSION);
-#endif
 
 	if (version < STATE_COMPATIBLE_VERSION)	{
 		con_printf(CON_URGENT, "restore: unsupported save version %d in '%s'\n", version, filename);
-#ifdef __ANDROID__
-		debug_log(DLOG_GAME, "restore unsupported version: game=d1 file='%s' version=%d compatible=%d",
-			filename, version, STATE_COMPATIBLE_VERSION);
-#endif
 		PHYSFS_close(fp);
 		return 0;
 	}
@@ -1870,10 +1849,6 @@ int state_restore_all_sub(char *filename)
 		{
 			con_printf(CON_URGENT, "restore: coop callsign mismatch '%s' vs '%s'\n",
 				saved_callsign, Players[Player_num].callsign);
-#ifdef __ANDROID__
-			debug_log(DLOG_GAME, "restore coop callsign mismatch: game=d1 file='%s' saved='%s' current='%s'",
-				filename, saved_callsign, Players[Player_num].callsign);
-#endif
 			PHYSFS_close(fp);
 			return 0;
 		}
@@ -1898,9 +1873,6 @@ int state_restore_all_sub(char *filename)
 		PHYSFS_read(fp, mission, 128, 1);
 		if (mission[127]) {
 			con_printf(CON_URGENT, "restore: invalid mission name in '%s'\n", filename);
-#ifdef __ANDROID__
-			debug_log(DLOG_GAME, "restore invalid mission name: game=d1 file='%s'", filename);
-#endif
 			PHYSFS_close(fp);
 			return 0;
 		}
@@ -1910,10 +1882,6 @@ int state_restore_all_sub(char *filename)
 
 	if (!load_mission_by_name( mission ))	{
 		con_printf(CON_URGENT, "restore: unable to load mission '%s' from '%s'\n", mission, filename);
-#ifdef __ANDROID__
-		debug_log(DLOG_GAME, "restore unable to load mission: game=d1 file='%s' mission='%s'",
-			filename, mission);
-#endif
 		nm_messagebox( NULL, 1, "Ok", "Error!\nUnable to load mission\n'%s'\n", mission );
 		PHYSFS_close(fp);
 		return 0;
@@ -1959,8 +1927,33 @@ int state_restore_all_sub(char *filename)
 		window_set_visible(Game_wind, 0);
 
 //Read player info
-
 	StartNewLevelSub(current_level, 1, 0);//use page_in_textures here to fix OGL texture precashing crash -MPM
+
+	{
+		player_rw *pl_rw;
+		MALLOC(pl_rw, player_rw, 1);
+		PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1);
+		player_rw_swap(pl_rw, swap);
+		state_player_rw_to_player(pl_rw, &Players[Player_num]);
+		d_free(pl_rw);
+	}
+	strcpy(Players[Player_num].callsign, org_callsign);
+	if (Game_mode & GM_MULTI_COOP)
+		Players[Player_num].objnum = coop_org_objnum;
+
+	PHYSFS_read(fp, &Players[Player_num].primary_weapon, sizeof(sbyte), 1);
+	PHYSFS_read(fp, &Players[Player_num].secondary_weapon, sizeof(sbyte), 1);
+
+	select_weapon(Players[Player_num].primary_weapon, 0, 0, 0);
+	select_weapon(Players[Player_num].secondary_weapon, 1, 0, 0);
+
+	Difficulty_level = PHYSFSX_readSXE32(fp, swap);
+
+	game_disable_cheats();
+	cheats.enabled = PHYSFSX_readSXE32(fp, swap);
+	cheats.turbo = PHYSFSX_readSXE32(fp, swap);
+
+	Do_appearance_effect = 0;
 
 RetryObjectLoading:
 	//Clear out all the objects from the lvl file
@@ -1972,6 +1965,7 @@ RetryObjectLoading:
 	state_clear_controlcen_runtime_state();
 
 	//Read objects, and pop 'em into their respective segments.
+	ObjectStartLocation = PHYSFS_tell(fp);
 	i = PHYSFSX_readSXE32(fp, swap);
 	Highest_object_index = i-1;
 	if ( !BogusSaturnShit )

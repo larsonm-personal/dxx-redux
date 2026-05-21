@@ -2128,7 +2128,17 @@ class SetupActivity : ComponentActivity() {
             debugPrefs.put("launcher_log_enabled", launcherLogEnabled)
             debugPrefs.put("graphics_debug_logging", graphicsLogEnabled && textureLogEnabled)
             root.put("debug_prefs", debugPrefs)
-            root.put("resume_offer_enabled", prefs.getBoolean(PREF_SHOW_RESUME_OFFER, true))
+
+            val newestResumeCandidate = ResumeSaveBridge.findNewest(dir)
+            val resumeOfferEnabled =
+                prefs.getBoolean(PREF_SHOW_RESUME_OFFER, true) &&
+                    when (newestResumeCandidate?.game) {
+                        "d1" -> d1Ready
+                        "d2", null -> d2Ready
+                        else -> false
+                    } &&
+                    newestResumeCandidate != null
+            root.put("resume_offer_enabled", resumeOfferEnabled)
 
             // D2 section
             val d2 = JSONObject()
@@ -2142,7 +2152,7 @@ class SetupActivity : ComponentActivity() {
             d1.put("files", fileStatusArray(d1Statuses))
             root.put("d1", d1)
 
-            ResumeSaveBridge.findNewest(dir)?.let { root.put("resume_candidate", it.toJson()) }
+            newestResumeCandidate?.let { root.put("resume_candidate", it.toJson()) }
 
             // Active downloads
             if (downloadStates.isNotEmpty()) {
@@ -2694,6 +2704,7 @@ class SetupActivity : ComponentActivity() {
             Log.w("DXX-Setup", "LAUNCHER_CONTINUE: game process still returnable after wait")
         } else {
             requestSetupRefresh()
+            schedulePostResumeRefreshes()
         }
     }
 
@@ -3515,7 +3526,24 @@ private fun SetupScreen(
         context
             .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
             .getBoolean(PREF_SHOW_RESUME_OFFER, true)
-    val newestResumeCandidate = remember(refreshTrigger) { ResumeSaveBridge.findNewest(filesDir) }
+    val newestResumeCandidate by produceState<ResumeSaveBridge.ResumeSaveCandidate?>(
+        initialValue = null,
+        refreshTrigger,
+        focusResumeTrigger,
+        gameRunning,
+        resumeOfferEnabled,
+    ) {
+        value = ResumeSaveBridge.findNewest(filesDir)
+        if (value == null && !gameRunning && resumeOfferEnabled) {
+            repeat(20) {
+                delay(500L)
+                value = ResumeSaveBridge.findNewest(filesDir)
+                if (value != null) {
+                    return@produceState
+                }
+            }
+        }
+    }
     val resumeCandidate =
         newestResumeCandidate?.takeIf { candidate ->
             (candidate.game == "d1" && d1RequiredOk) || (candidate.game != "d1" && d2RequiredOk)
@@ -5521,6 +5549,11 @@ private fun SetupScreen(
                 if (isLandscape) {
                     Row(modifier = Modifier.weight(1f)) {
                         val leftScroll = rememberScrollState()
+                        LaunchedEffect(focusResumeTrigger, showResumePanel) {
+                            if (showResumePanel) {
+                                leftScroll.scrollTo(0)
+                            }
+                        }
                         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                             Column(
                                 modifier =
@@ -5550,6 +5583,11 @@ private fun SetupScreen(
                     }
                 } else {
                     val portraitScroll = rememberScrollState()
+                    LaunchedEffect(focusResumeTrigger, showResumePanel) {
+                        if (showResumePanel) {
+                            portraitScroll.scrollTo(0)
+                        }
+                    }
                     Box(modifier = Modifier.weight(1f)) {
                         Column(
                             modifier =
