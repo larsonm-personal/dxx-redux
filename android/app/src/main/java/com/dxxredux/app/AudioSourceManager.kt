@@ -28,7 +28,7 @@ internal fun resolvePlaylistCuePath(
     source: AudioSourceManager.AudioSource,
     fallback: () -> String,
 ): String {
-    val localCue = File(filesDir, source.cuePath)
+    val localCue = resolveCdAudioSourceFile(filesDir, source.cuePath)
     return if (source.binContentUri?.let(::isLocalCdContentPath) == true && localCue.exists()) {
         localCue.absolutePath
     } else {
@@ -41,26 +41,31 @@ private fun getManagedInternalArtifactFilesForSource(
     source: AudioSourceManager.AudioSource,
 ): List<File> {
     val files = linkedSetOf<File>()
-    val cueFile = File(filesDir, source.cuePath)
-    if (isUnderDirectory(cueFile, filesDir)) {
+    val cueFile = resolveCdAudioSourceFile(filesDir, source.cuePath)
+    if (isManagedCdArtifactFile(cueFile, filesDir)) {
         files.add(cueFile)
     }
 
     val localBinContentPath = source.binContentUri?.takeIf(::isLocalCdContentPath)
     if (localBinContentPath != null) {
         val binFile = File(localBinContentPath)
-        if (isUnderDirectory(binFile, filesDir)) {
+        if (isManagedCdArtifactFile(binFile, filesDir)) {
             files.add(binFile)
         }
     } else if (source.binContentUri == null) {
         source.binPaths
-            .map { File(filesDir, it) }
-            .filter { file -> isUnderDirectory(file, filesDir) }
+            .map { resolveCdAudioSourceFile(filesDir, it) }
+            .filter { file -> isManagedCdArtifactFile(file, filesDir) }
             .forEach(files::add)
     }
 
     return files.toList()
 }
+
+private fun isManagedCdArtifactFile(
+    file: File,
+    filesDir: File,
+): Boolean = isUnderDirectory(file, filesDir) || isGeneratedMergedStorageArtifact(file)
 
 private fun isUnderDirectory(
     file: File,
@@ -116,9 +121,9 @@ class AudioSourceManager(
     data class AudioSource(
         // unique id (e.g., "d2-gog-v1.2")
         val id: String,
-        // path to CUE file (relative to filesDir)
+        // path to CUE file (relative to filesDir, or an absolute local path)
         val cuePath: String,
-        // paths to BIN file(s)
+        // paths to BIN file(s), relative to filesDir or absolute local paths
         val binPaths: List<String>,
         // human-readable disc label
         val discLabel: String,
@@ -206,29 +211,53 @@ class AudioSourceManager(
         getManagedInternalArtifactFilesForSource(filesDir, source)
 
     private fun cleanupEmptyManagedDirs(files: List<File>) {
+        val cleanupRoots =
+            listOf(filesDir, ImportLocationManager(filesDir).getActiveRoot())
+                .map { it.absoluteFile }
         files
             .mapNotNull(File::getParentFile)
             .distinct()
             .forEach { parent ->
                 var current = parent
-                while (current != filesDir && current.isDirectory && (current.list()?.isEmpty() == true)) {
+                while (
+                    current.isDirectory &&
+                    (current.list()?.isEmpty() == true) &&
+                    cleanupRoots.none { sameFile(current, it) } &&
+                    cleanupRoots.any { isUnderDirectory(current, it) }
+                ) {
                     current.delete()
                     current = current.parentFile ?: break
                 }
             }
     }
 
+    private fun sameFile(
+        a: File,
+        b: File,
+    ): Boolean =
+        try {
+            a.canonicalFile == b.canonicalFile
+        } catch (_: Exception) {
+            a.absoluteFile == b.absoluteFile
+        }
+
     private fun pruneOrphanedGeneratedMergedFiles() {
         val referencedPaths = getManagedInternalArtifactPaths()
-        val cueFiles =
-            filesDir.listFiles()?.filter { it.isFile && it.name.endsWith(".cue", ignoreCase = true) } ?: return
-        cueFiles.forEach { cueFile ->
-            if (!isGeneratedMergedCueFile(cueFile)) return@forEach
-            val binFile = File(filesDir, "${cueFile.nameWithoutExtension}.bin")
-            if (!binFile.isFile) return@forEach
-            if (cueFile.absolutePath in referencedPaths || binFile.absolutePath in referencedPaths) return@forEach
-            cueFile.delete()
-            binFile.delete()
+        val scanDirs =
+            listOf(filesDir, generatedCdAudioArtifactsDir(filesDir))
+                .distinctBy { it.absolutePath }
+        scanDirs.forEach { dir ->
+            val cueFiles =
+                dir.listFiles()?.filter { it.isFile && it.name.endsWith(".cue", ignoreCase = true) }
+                    ?: return@forEach
+            cueFiles.forEach { cueFile ->
+                if (!isGeneratedMergedCueFile(cueFile)) return@forEach
+                val binFile = File(cueFile.parentFile, "${cueFile.nameWithoutExtension}.bin")
+                if (!binFile.isFile) return@forEach
+                if (cueFile.absolutePath in referencedPaths || binFile.absolutePath in referencedPaths) return@forEach
+                cueFile.delete()
+                binFile.delete()
+            }
         }
     }
 
@@ -243,9 +272,13 @@ class AudioSourceManager(
         val pruned = mutableListOf<String>()
         val toRemove =
             sources.filter { src ->
-                // SAF sources don't have local files to check
-                if (src.binContentUri != null) return@filter false
-                val allFiles = src.binPaths + src.cuePath
+                if (src.binContentUri != null && !isLocalCdContentPath(src.binContentUri)) return@filter false
+                val allFiles =
+                    if (src.binContentUri?.let(::isLocalCdContentPath) == true) {
+                        listOf(src.binContentUri, src.cuePath)
+                    } else {
+                        src.binPaths + src.cuePath
+                    }
                 allFiles.any { name ->
                     resolveExistingFile(name, activeSetDir) == null
                 }
@@ -385,7 +418,7 @@ class AudioSourceManager(
         src: AudioSource,
         activeSetDir: File?,
     ): String {
-        val localCue = File(filesDir, src.cuePath)
+        val localCue = resolveCdAudioSourceFile(filesDir, src.cuePath)
         if (localCue.exists()) return src.cuePath
 
         val cueFile = resolveExistingFile(src.cuePath, activeSetDir) ?: return src.cuePath
@@ -405,7 +438,7 @@ class AudioSourceManager(
         activeSetDir: File?,
     ): String {
         val resolved = resolveExistingFile(path, activeSetDir) ?: return path
-        return if (resolved.absolutePath.startsWith(filesDir.absolutePath + File.separator)) {
+        return if (isUnderDirectory(resolved, filesDir)) {
             resolved.relativeTo(filesDir).path
         } else {
             resolved.absolutePath

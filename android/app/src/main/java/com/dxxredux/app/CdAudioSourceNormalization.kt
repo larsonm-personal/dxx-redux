@@ -5,10 +5,22 @@ import java.util.Locale
 
 private const val CD_SECTOR_BYTES = 2352L
 internal const val GENERATED_MERGED_CUE_MARKER = "REM DXX-REDUX GENERATED MERGED LOCAL SOURCE"
+internal const val GENERATED_CD_AUDIO_ARTIFACT_DIR = "cd_audio"
 private const val FALLBACK_CD_AUDIO_SOURCE_STEM = "cd_audio_source"
 
 internal fun isLocalCdContentPath(path: String): Boolean =
     path.startsWith("/") || Regex("^[A-Za-z]:[\\\\/]").containsMatchIn(path)
+
+internal fun generatedCdAudioArtifactsDir(filesDir: File): File =
+    File(ImportLocationManager(filesDir).getActiveRoot(), GENERATED_CD_AUDIO_ARTIFACT_DIR).also { it.mkdirs() }
+
+internal fun resolveCdAudioSourceFile(
+    filesDir: File,
+    path: String,
+): File {
+    val direct = File(path)
+    return if (direct.isAbsolute || isLocalCdContentPath(path)) direct.absoluteFile else File(filesDir, path)
+}
 
 internal fun hasSafLinkedCdContent(source: AudioSourceManager.AudioSource): Boolean =
     source.binContentUri?.let { !isLocalCdContentPath(it) } == true ||

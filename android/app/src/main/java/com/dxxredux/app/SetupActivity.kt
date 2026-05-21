@@ -7366,8 +7366,15 @@ private suspend fun stageMergedSafDiscAudioSource(
     onStatus: suspend (String) -> Unit = {},
 ): StagedMergedSafDiscAudioSource {
     val mergedCueTracks = normalizeCueTracksForMergedBin(tracks, binSizes)
-    val destBin = File(filesDir, "$sourceFileStem.bin")
-    val destCue = File(filesDir, "$sourceFileStem.cue")
+    val artifactDir = generatedCdAudioArtifactsDir(filesDir)
+    val destBin = File(artifactDir, "$sourceFileStem.bin")
+    val destCue = File(artifactDir, "$sourceFileStem.cue")
+
+    ImportStorageGuard.requireFreeSpace(
+        artifactDir,
+        binSizes.sum(),
+        "merged CD audio source",
+    )
 
     java.io.FileOutputStream(destBin).use { output ->
         binUris.forEachIndexed { index, (name, uri) ->
@@ -9326,10 +9333,16 @@ private fun DiscImportDialog(
 
                                                 val srcManager = AudioSourceManager(filesDir)
                                                 val id = discId ?: "custom-${System.currentTimeMillis()}"
+                                                val existingAudioFileNames =
+                                                    if (multiBinSource) {
+                                                        generatedCdAudioArtifactsDir(filesDir).list()?.toSet()
+                                                    } else {
+                                                        filesDir.list()?.toSet()
+                                                    } ?: emptySet()
                                                 val sourceFileStem =
                                                     chooseUniqueCdAudioImportStem(
                                                         preferredStem = File(cueName).nameWithoutExtension,
-                                                        existingFileNames = filesDir.list()?.toSet() ?: emptySet(),
+                                                        existingFileNames = existingAudioFileNames,
                                                     )
                                                 LauncherDebugLog.log(
                                                     "launcher-cd-import cue=$cueName bins=${binUris.size} mode=${if (multiBinSource) "merged-local" else "saf-in-place"} file_stem=$sourceFileStem",
@@ -9410,10 +9423,10 @@ private fun DiscImportDialog(
                                                     if (stagedMergedSource != null) {
                                                         AudioSourceManager.AudioSource(
                                                             id = id,
-                                                            cuePath = stagedMergedSource.cueFile.name,
+                                                            cuePath = stagedMergedSource.cueFile.absolutePath,
                                                             binPaths =
                                                                 listOf(
-                                                                    stagedMergedSource.binFile.name.lowercase(),
+                                                                    stagedMergedSource.binFile.absolutePath,
                                                                 ),
                                                             discLabel = discLabel ?: cueName,
                                                             discId = discId ?: "unknown",

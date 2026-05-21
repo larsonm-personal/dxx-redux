@@ -52,6 +52,25 @@ class CdAudioSourceVisibilityTest {
     }
 
     @Test
+    fun resolvesPlaylistCuePathToAbsoluteGeneratedCueOutsideFilesDir() {
+        val testRoot = File("build/test-playlist-cue-import-root").absoluteFile
+        val filesDir = File(testRoot, "files").also { it.mkdirs() }
+        val cdAudioDir = File(testRoot, "external-import/cd_audio").also { it.mkdirs() }
+        val localCue = File(cdAudioDir, "disc.cue")
+        val localBin = File(cdAudioDir, "disc.bin")
+        localCue.writeText("$GENERATED_MERGED_CUE_MARKER\nFILE \"disc.bin\" BINARY\n")
+        localBin.writeText("test")
+        val mergedSource =
+            testSource(
+                id = "merged-import-root",
+                binContentUri = localBin.absolutePath,
+                cuePath = localCue.absolutePath,
+            )
+
+        assertEquals(localCue.absolutePath, resolvePlaylistCuePath(filesDir, mergedSource) { "fallback.cue" })
+    }
+
+    @Test
     fun fallsBackToStagedCuePathForSafPlaylistSources() {
         val filesDir = File("build/test-playlist-cue-fallback").absoluteFile
         filesDir.mkdirs()
@@ -75,10 +94,11 @@ class CdAudioSourceVisibilityTest {
         id: String,
         binContentUri: String? = null,
         cueContentUri: String? = null,
+        cuePath: String = "disc.cue",
     ) =
         AudioSourceManager.AudioSource(
             id = id,
-            cuePath = "disc.cue",
+            cuePath = cuePath,
             binPaths = listOf("disc.bin"),
             discLabel = id,
             discId = "unknown",

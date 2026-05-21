@@ -33,6 +33,36 @@ class AudioSourceManagerArtifactPathsTest {
     }
 
     @Test
+    fun reportsGeneratedMergedArtifactPathsOutsideFilesDir() {
+        val testRoot = File("build/test-audiosrc-artifacts-import-root").absoluteFile
+        val filesDir = File(testRoot, "files").also { it.mkdirs() }
+        val cdAudioDir = File(testRoot, "external-import/cd_audio").also { it.mkdirs() }
+        val cueFile = File(cdAudioDir, "disc.cue")
+        val binFile = File(cdAudioDir, "disc.bin")
+        cueFile.writeText("$GENERATED_MERGED_CUE_MARKER\nFILE \"disc.bin\" BINARY\n")
+        binFile.writeText("test")
+        val sources =
+            listOf(
+                AudioSourceManager.AudioSource(
+                    id = "generated-absolute",
+                    cuePath = cueFile.absolutePath,
+                    binPaths = listOf(binFile.absolutePath),
+                    discLabel = "Generated",
+                    discId = "unknown",
+                    trackCount = 2,
+                    audioTrackCount = 1,
+                    legacyDiscId = 0L,
+                    binContentUri = binFile.absolutePath,
+                ),
+            )
+
+        assertEquals(
+            setOf(cueFile.absolutePath, binFile.absolutePath),
+            getManagedInternalArtifactPaths(filesDir, sources),
+        )
+    }
+
+    @Test
     fun excludesExternalAbsoluteBinPathFromManagedArtifacts() {
         val filesDir = File("build/test-audiosrc-artifacts-ext").absoluteFile
         val sources =

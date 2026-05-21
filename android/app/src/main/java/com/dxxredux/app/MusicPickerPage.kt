@@ -71,7 +71,7 @@ internal fun resolveCdPreviewLocalBinPath(
         }
 
         source.binContentUri == null && source.binPaths.isNotEmpty() -> {
-            File(filesDir, source.binPaths.first()).absolutePath
+            resolveCdAudioSourceFile(filesDir, source.binPaths.first()).absolutePath
         }
 
         else -> {
@@ -782,14 +782,15 @@ private fun CdAudioSection(
             val filesDir = LocalContext.current.filesDir
             val ctx = LocalContext.current
             val removeSource = audioSources.firstOrNull { it.id == removeConfirmId }
-            val isSafSource = removeSource?.binContentUri != null
-            // Check if source files are inside the app data dir
-            val filesInAppDir =
-                !isSafSource &&
-                    removeSource?.let { src ->
-                        src.binPaths.any { File(filesDir, it).exists() } ||
-                            File(filesDir, src.cuePath).exists()
-                    } ?: false
+            val isSafSource = removeSource?.let(::hasSafLinkedCdContent) == true
+            val managedArtifacts =
+                removeSource?.let { src -> getManagedInternalArtifactPaths(filesDir, listOf(src)) } ?: emptySet()
+            val filesInManagedStorage = managedArtifacts.any { File(it).exists() }
+            val generatedFilesInManagedStorage =
+                managedArtifacts.any { path ->
+                    val file = File(path)
+                    file.exists() && isGeneratedMergedStorageArtifact(file)
+                }
             AlertDialog(
                 onDismissRequest = { removeConfirmId = null },
                 title = { Text("Remove source") },
@@ -803,8 +804,12 @@ private fun CdAudioSection(
                                     "Source reference will be removed. Original files on external storage are not affected"
                                 }
 
-                                filesInAppDir -> {
-                                    "Extracted audio files in app storage will be deleted. Re-import from original source to restore"
+                                generatedFilesInManagedStorage -> {
+                                    "Generated audio files in import storage will be deleted. Re-import from original source to restore"
+                                }
+
+                                filesInManagedStorage -> {
+                                    "Local helper or imported audio files will be deleted. Original files outside app storage are not affected"
                                 }
 
                                 else -> {
@@ -826,7 +831,7 @@ private fun CdAudioSection(
                         audioSrcManager.removeSource(src.id, ctx)
                         removeConfirmId = null
                         onSourcesChanged()
-                    }) { Text(if (filesInAppDir) "Delete" else "Remove") }
+                    }) { Text(if (filesInManagedStorage) "Delete" else "Remove") }
                 },
                 dismissButton = {
                     TextButton(onClick = { removeConfirmId = null }) { Text("Cancel") }
@@ -845,14 +850,22 @@ private fun CdAudioSection(
                         Text(src.discLabel, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Text("Audio tracks: ${src.audioTrackCount}", fontSize = 12.sp)
                         Text("Total tracks: ${src.trackCount}", fontSize = 12.sp)
-                        if (src.binContentUri != null) {
+                        if (hasSafLinkedCdContent(src)) {
                             Text("Source: SAF reference (not copied)", fontSize = 12.sp)
                             Text("CUE: ${src.cuePath} (local copy)", fontSize = 12.sp)
                             Text("BIN: ${src.binPaths.joinToString(", ")}", fontSize = 12.sp)
                         } else {
-                            Text("CUE: ${File(filesDir, src.cuePath).absolutePath}", fontSize = 12.sp)
+                            val binPaths =
+                                src.binContentUri
+                                    ?.takeIf(::isLocalCdContentPath)
+                                    ?.let(::listOf)
+                                    ?: src.binPaths.map { resolveCdAudioSourceFile(filesDir, it).absolutePath }
                             Text(
-                                "BIN: ${src.binPaths.joinToString(", ") { File(filesDir, it).absolutePath }}",
+                                "CUE: ${resolveCdAudioSourceFile(filesDir, src.cuePath).absolutePath}",
+                                fontSize = 12.sp,
+                            )
+                            Text(
+                                "BIN: ${binPaths.joinToString(", ")}",
                                 fontSize = 12.sp,
                             )
                         }
@@ -1396,7 +1409,7 @@ private fun CdTrackDetailDialog(
 
     fun togglePlayback() {
         if (!playing) {
-            val cuePath = File(filesDir, source.cuePath).absolutePath
+            val cuePath = resolveCdAudioSourceFile(filesDir, source.cuePath).absolutePath
             val localBinPath = resolveCdPreviewLocalBinPath(filesDir, source)
             val started =
                 if (localBinPath != null) {
