@@ -263,6 +263,51 @@ object FingerprintBridge {
         }
     }
 
+    /**
+     * Fingerprint all audio tracks in a multi-BIN disc using SAF content URIs.
+     * Opens each BIN once and picks the fd referenced by track.fileIndex.
+     */
+    fun fingerprintAndMatchDisc(
+        context: Context,
+        resolver: ContentResolver,
+        binUris: List<Uri>,
+        tracks: List<DiscImportBridge.CueTrack>,
+        onProgress: ((current: Int, total: Int) -> Unit)? = null,
+    ): Map<Int, String> {
+        ensureDbLoaded(context)
+        if (binUris.isEmpty()) return emptyMap()
+        val pfds = mutableListOf<ParcelFileDescriptor>()
+        return try {
+            binUris.forEach { uri ->
+                val pfd = resolver.openFileDescriptor(uri, "r") ?: return emptyMap()
+                pfds.add(pfd)
+            }
+            val names = mutableMapOf<Int, String>()
+            val audioTracks = tracks.filter { it.isAudio }
+            audioTracks.forEachIndexed { idx, track ->
+                onProgress?.invoke(idx + 1, audioTracks.size)
+                val pfd = pfds.getOrNull(track.fileIndex)
+                if (pfd == null) {
+                    Log.w(TAG, "Track ${track.trackNum}: missing BIN for fileIndex=${track.fileIndex}")
+                    return@forEachIndexed
+                }
+                val fp = fingerprintDiscTrackFd(pfd.fd, track.startSector, track.numSectors)
+                if (fp != null) {
+                    val match = matchFingerprint(fp.encoded, fp.durationMs)
+                    if (match != null) {
+                        names[track.trackNum] = match.name
+                        Log.i(TAG, "Track ${track.trackNum}: ${match.name} (${match.confidence})")
+                    }
+                }
+            }
+            names
+        } finally {
+            pfds.forEach { pfd ->
+                pfd.close()
+            }
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────
 
     private fun parseFingerprintResult(raw: String): FingerprintResult? {

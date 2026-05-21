@@ -25,6 +25,10 @@
 int cd_preview_start(const char *bin_path, const char *cue_path,
                      int audio_track_1based, int sample_rate);
 
+int cd_preview_start_multi(const char *const *bin_paths, int num_bins,
+                           const char *cue_path,
+                           int audio_track_1based, int sample_rate);
+
 /*
  * Start preview using a file descriptor for the BIN file instead of
  * a path.  The fd is dup'd internally so the caller may close it.
@@ -32,6 +36,10 @@ int cd_preview_start(const char *bin_path, const char *cue_path,
  */
 int cd_preview_start_fd(int fd, const char *cue_path,
                         int audio_track_1based, int sample_rate);
+
+int cd_preview_start_multi_fd(const int *fds, int num_fds,
+                              const char *cue_path,
+                              int audio_track_1based, int sample_rate);
 
 /* Stop preview and release all resources */
 void cd_preview_stop(void);

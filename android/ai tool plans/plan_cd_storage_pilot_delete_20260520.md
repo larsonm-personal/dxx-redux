@@ -12,14 +12,14 @@
 - Completed the dedup follow-up so the Android-only pilot hold logic now lives in shared Android-owned code and the D1/D2 diff is smaller
 - Completed the pilot-delete follow-up so the confirmation prompt opens as soon as the Android A hold crosses the threshold and Shield/TV DPAD center is routed through the same controller-A hold path
 - Completed the first true multi-BIN groundwork tranche in the persisted source model, playlist writer, and in-game Redbook runtime
-- SAF import registration still stays on the merged-local path for now because preview is still a follow-up slice
+- Completed the preview/import follow-up so multi-BIN SAF disc audio now stays in place end to end, including launcher preview and track-name fingerprinting
 
 ## Findings
 - In-place multi-BIN CD audio is feasible, but it is a medium-sized cross-layer change. The launcher CUE parser already tracks `fileIndex`, but the persisted source model, playlist writer, in-game Redbook player, and preview player are still shaped around one live BIN handle.
-- `SetupActivity.kt` deliberately normalizes multi-BIN SAF disc audio by concatenating all selected BINs into one generated BIN and writing a regenerated CUE. That helper currently writes both generated files directly under `filesDir`, so it ignores the imported-files override volume.
+- `SetupActivity.kt` previously normalized multi-BIN SAF disc audio into one generated BIN/CUE pair. The launcher now keeps multi-BIN SAF imports in place and only copies the small local CUE file into app storage.
 - `AudioSourceManager.kt` has cleanup and playlist helpers that assume generated local artifacts live under `filesDir`. Moving generated audio artifacts to the import root needs matching changes in deletion, orphan pruning, source path resolution, and storage-inspector labeling.
 - `rbaudio_bin.c` parses the playlist `bins` array but only opens the first BIN for a source. Its source CUE parser computes track lengths from one BIN size. True in-place multi-BIN playback needs per-track file indexes and multiple open handles per source.
-- `cd_preview.c`, `CdPreviewBridge.kt`, and `MusicPickerPage.kt` are also single-BIN shaped. Preview support must be extended along with runtime playback or multi-BIN sources will import but not preview correctly.
+- `cd_preview.c`, `CdPreviewBridge.kt`, and `MusicPickerPage.kt` now share the multi-BIN `fileIndex` model used by runtime playback, so preview follows the same CUE file layout as in-game Redbook.
 - Other large internal-storage candidates exist near the same code: `filesDir/tmp` is used for archive, GOG, SOW, and CUE staging; `mods/` and `custom_music/` also live under `filesDir`. Some of these are temporary or existing design choices, but the GOG/SOW temporary staging paths are worth moving to the import root in a later audit because they can be large.
 - File-set game data already honors the override through `ImportLocationManager` and `FileSetManager`. The active set path is written back to small metadata files under `filesDir/d1x-redux` and `filesDir/d2x-redux`, which is appropriate.
 - Pilot deletion is already centralized in `d1/main/menu.c` and `d2/main/menu.c`: `player_menu_keycommand()` handles `KEY_CTRLED + KEY_D`, prompts via `nm_messagebox`, deletes `.plr`, `.eff`, `.ngp`, and saves, then calls `listbox_delete_item()`.
@@ -48,8 +48,9 @@
 	- Completed on 2026-05-21: updated `AudioSourceManager.writePlaylist()` to emit every BIN entry and keep every live SAF file descriptor open for the game session
 	- Completed on 2026-05-21: switched `rbaudio_bin.c` to the shared `cue_parser` path so each combined track records a `file_index` and playback opens/seeks the correct BIN handle
 	- Completed on 2026-05-21: added focused JVM coverage for the new source-model serialization and visibility behavior
-	- Remaining: extend `cd_preview.c`, `CdPreviewBridge.kt`, and `MusicPickerPage.kt` to preview from multiple paths/fds instead of the current single-BIN-only path
-	- Remaining: flip the SAF multi-BIN import registration path in `SetupActivity.kt` away from merged-local staging once preview is ready
+	- Completed on 2026-05-21: extended `cd_preview.c`, `CdPreviewBridge.kt`, `MusicPickerPage.kt`, and the `music_cd_play` debug command so preview can open multiple BIN paths or multiple SAF-backed file descriptors
+	- Completed on 2026-05-21: flipped multi-BIN SAF import registration in `SetupActivity.kt` away from merged-local staging and persisted every BIN content URI on the source
+	- Completed on 2026-05-21: added a multi-URI `FingerprintBridge` path so disc track naming chooses the correct BIN fd by `fileIndex`
 	- Remaining: add a tiny synthetic multi-BIN runtime/preview test with known track boundaries
 8. Pilot deletion tranche
 	- Completed on 2026-05-20

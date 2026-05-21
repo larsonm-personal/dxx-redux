@@ -47,6 +47,13 @@ object CdPreviewBridge {
         sampleRate: Int,
     ): Boolean = nativeStart(binPath, cuePath, audioTrack, sampleRate)
 
+    fun startMulti(
+        binPaths: List<String>,
+        cuePath: String,
+        audioTrack: Int,
+        sampleRate: Int,
+    ): Boolean = nativeStartMulti(binPaths.toTypedArray(), cuePath, audioTrack, sampleRate)
+
     /**
      * Start preview using a file descriptor for the BIN file.
      * The fd is dup'd internally so the caller may close it after this returns.
@@ -57,6 +64,13 @@ object CdPreviewBridge {
         audioTrack: Int,
         sampleRate: Int,
     ): Boolean = nativeStartFd(fd, cuePath, audioTrack, sampleRate)
+
+    fun startMultiFd(
+        fds: IntArray,
+        cuePath: String,
+        audioTrack: Int,
+        sampleRate: Int,
+    ): Boolean = nativeStartMultiFd(fds, cuePath, audioTrack, sampleRate)
 
     fun stop() = nativeStop()
 
@@ -86,8 +100,22 @@ object CdPreviewBridge {
         sampleRate: Int,
     ): Boolean
 
+    @JvmStatic private external fun nativeStartMulti(
+        binPaths: Array<String>,
+        cuePath: String,
+        audioTrack: Int,
+        sampleRate: Int,
+    ): Boolean
+
     @JvmStatic private external fun nativeStartFd(
         fd: Int,
+        cuePath: String,
+        audioTrack: Int,
+        sampleRate: Int,
+    ): Boolean
+
+    @JvmStatic private external fun nativeStartMultiFd(
+        fds: IntArray,
         cuePath: String,
         audioTrack: Int,
         sampleRate: Int,

@@ -69,14 +69,19 @@ internal fun shouldDisplayCdAudioSource(
 internal fun resolveCdPreviewLocalBinPath(
     filesDir: File,
     source: AudioSourceManager.AudioSource,
-): String? =
+): String? = resolveCdPreviewLocalBinPaths(filesDir, source)?.singleOrNull()
+
+internal fun resolveCdPreviewLocalBinPaths(
+    filesDir: File,
+    source: AudioSourceManager.AudioSource,
+): List<String>? =
     when {
-        source.binContentUriList().singleOrNull()?.let(::isLocalCdContentPath) == true -> {
-            source.binContentUriList().single()
+        source.binContentUriList().isNotEmpty() && source.binContentUriList().all(::isLocalCdContentPath) -> {
+            source.binContentUriList()
         }
 
-        source.binContentUriList().isEmpty() && source.binPaths.size == 1 -> {
-            resolveCdAudioSourceFile(filesDir, source.binPaths.first()).absolutePath
+        source.binContentUriList().isEmpty() && source.binPaths.isNotEmpty() -> {
+            source.binPaths.map { resolveCdAudioSourceFile(filesDir, it).absolutePath }
         }
 
         else -> {
@@ -1415,25 +1420,49 @@ private fun CdTrackDetailDialog(
     fun togglePlayback() {
         if (!playing) {
             val cuePath = resolveCdAudioSourceFile(filesDir, source.cuePath).absolutePath
-            val localBinPath = resolveCdPreviewLocalBinPath(filesDir, source)
+            val localBinPaths = resolveCdPreviewLocalBinPaths(filesDir, source)
             val binUris = source.binContentUriList()
             val started =
-                if (localBinPath != null) {
-                    val localStarted = CdPreviewBridge.start(localBinPath, cuePath, audioTrackIdx, sampleRate)
+                if (localBinPaths != null) {
+                    val localStarted =
+                        if (localBinPaths.size == 1) {
+                            CdPreviewBridge.start(localBinPaths.first(), cuePath, audioTrackIdx, sampleRate)
+                        } else {
+                            CdPreviewBridge.startMulti(localBinPaths, cuePath, audioTrackIdx, sampleRate)
+                        }
                     if (!localStarted) {
+                        val localPathList = localBinPaths.joinToString(",")
                         LauncherDebugLog.log(
-                            "launcher-cd-preview-open-fail disc=${source.discLabel} track=$audioTrackIdx reason=local-start-false path=$localBinPath",
+                            "launcher-cd-preview-open-fail disc=${source.discLabel} track=$audioTrackIdx " +
+                                "reason=local-start-false paths=$localPathList",
                         )
                         Toast.makeText(ctx, "Could not open this CD audio track", Toast.LENGTH_LONG).show()
                     }
                     localStarted
-                } else if (binUris.size == 1 && !isLocalCdContentPath(binUris.first())) {
-                    // SAF source: open fd via content resolver
-                    val uri = android.net.Uri.parse(binUris.first())
+                } else if (binUris.isNotEmpty() && binUris.none(::isLocalCdContentPath)) {
+                    val openedPfds = mutableListOf<android.os.ParcelFileDescriptor>()
                     try {
-                        ctx.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
-                            CdPreviewBridge.startFd(pfd.detachFd(), cuePath, audioTrackIdx, sampleRate)
-                        } ?: false
+                        binUris.forEach { uriStr ->
+                            val pfd =
+                                ctx.contentResolver.openFileDescriptor(
+                                    android.net.Uri.parse(uriStr),
+                                    "r",
+                                )
+                            if (pfd == null) {
+                                throw java.io.IOException("Could not open BIN URI: $uriStr")
+                            }
+                            openedPfds.add(pfd)
+                        }
+                        if (openedPfds.size == 1) {
+                            CdPreviewBridge.startFd(openedPfds.first().fd, cuePath, audioTrackIdx, sampleRate)
+                        } else {
+                            CdPreviewBridge.startMultiFd(
+                                openedPfds.map { it.fd }.toIntArray(),
+                                cuePath,
+                                audioTrackIdx,
+                                sampleRate,
+                            )
+                        }
                     } catch (e: SecurityException) {
                         LauncherDebugLog.log(
                             "launcher-cd-preview-open-fail disc=${source.discLabel} track=$audioTrackIdx reason=security",
@@ -1447,21 +1476,22 @@ private fun CdTrackDetailDialog(
                             ).show()
                         false
                     } catch (e: Exception) {
+                        val binUriList = binUris.joinToString(",")
                         LauncherDebugLog.log(
-                            "launcher-cd-preview-open-fail disc=${source.discLabel} track=$audioTrackIdx reason=open-exception uri=$uri",
+                            "launcher-cd-preview-open-fail disc=${source.discLabel} track=$audioTrackIdx " +
+                                "reason=open-exception uris=$binUriList",
                         )
                         Log.e(TAG, "CD preview open failed for ${source.discLabel}", e)
                         Toast.makeText(ctx, "Could not open this CD audio track", Toast.LENGTH_LONG).show()
                         false
+                    } finally {
+                        openedPfds.forEach { pfd ->
+                            try {
+                                pfd.close()
+                            } catch (_: Exception) {
+                            }
+                        }
                     }
-                } else if (source.binPaths.size > 1 || binUris.size > 1) {
-                    Toast
-                        .makeText(
-                            ctx,
-                            "Track preview for multi-BIN sources is not available yet",
-                            Toast.LENGTH_LONG,
-                        ).show()
-                    false
                 } else {
                     Toast.makeText(ctx, "Could not open this CD audio track", Toast.LENGTH_LONG).show()
                     false

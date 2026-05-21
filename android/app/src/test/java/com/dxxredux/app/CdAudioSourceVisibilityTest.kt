@@ -42,8 +42,16 @@ class CdAudioSourceVisibilityTest {
         val filesDir = File("build/test-files")
         val mergedBin = File.createTempFile("merged-disc", ".bin")
         mergedBin.deleteOnExit()
+        val mergedBinB = File.createTempFile("merged-disc-b", ".bin")
+        mergedBinB.deleteOnExit()
 
         val mergedSource = testSource(id = "merged", binContentUri = mergedBin.absolutePath)
+        val multiMergedSource =
+            testSource(
+                id = "multi-merged",
+                binContentUris = listOf(mergedBin.absolutePath, mergedBinB.absolutePath),
+                binPaths = listOf("disc-a.bin", "disc-b.bin"),
+            )
         val relativeSource = testSource(id = "relative")
         val safSource = testSource(id = "saf", binContentUri = "content://good-bin")
         val multiRelativeSource = testSource(id = "multi-relative", binPaths = listOf("disc-a.bin", "disc-b.bin"))
@@ -52,6 +60,14 @@ class CdAudioSourceVisibilityTest {
         assertEquals(File(filesDir, "disc.bin").absolutePath, resolveCdPreviewLocalBinPath(filesDir, relativeSource))
         assertNull(resolveCdPreviewLocalBinPath(filesDir, safSource))
         assertNull(resolveCdPreviewLocalBinPath(filesDir, multiRelativeSource))
+        assertEquals(
+            listOf(mergedBin.absolutePath, mergedBinB.absolutePath),
+            resolveCdPreviewLocalBinPaths(filesDir, multiMergedSource),
+        )
+        assertEquals(
+            listOf(File(filesDir, "disc-a.bin").absolutePath, File(filesDir, "disc-b.bin").absolutePath),
+            resolveCdPreviewLocalBinPaths(filesDir, multiRelativeSource),
+        )
     }
 
     @Test

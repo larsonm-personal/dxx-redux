@@ -1066,10 +1066,48 @@ class SetupActivity : ComponentActivity() {
                                 )
                                 return@Thread
                             }
-                            val binPath = File(filesDir, src.binPaths.first()).absolutePath
-                            val cuePath = File(filesDir, src.cuePath).absolutePath
+                            val cuePath = resolveCdAudioSourceFile(filesDir, src.cuePath).absolutePath
+                            val localBinPaths = resolveCdPreviewLocalBinPaths(filesDir, src)
+                            val safBinUris = src.binContentUriList().filterNot(::isLocalCdContentPath)
                             val sr = CdPreviewBridge.getNativeSampleRate(this@SetupActivity)
-                            val ok = CdPreviewBridge.start(binPath, cuePath, trkIdx, sr)
+                            val ok =
+                                if (localBinPaths != null) {
+                                    if (localBinPaths.size == 1) {
+                                        CdPreviewBridge.start(localBinPaths.first(), cuePath, trkIdx, sr)
+                                    } else {
+                                        CdPreviewBridge.startMulti(localBinPaths, cuePath, trkIdx, sr)
+                                    }
+                                } else if (safBinUris.isNotEmpty()) {
+                                    val openedPfds = mutableListOf<android.os.ParcelFileDescriptor>()
+                                    try {
+                                        safBinUris.forEach { uriStr ->
+                                            val pfd = contentResolver.openFileDescriptor(Uri.parse(uriStr), "r")
+                                            if (pfd == null) {
+                                                throw java.io.IOException("Could not open BIN URI: $uriStr")
+                                            }
+                                            openedPfds.add(pfd)
+                                        }
+                                        if (openedPfds.size == 1) {
+                                            CdPreviewBridge.startFd(openedPfds.first().fd, cuePath, trkIdx, sr)
+                                        } else {
+                                            CdPreviewBridge.startMultiFd(
+                                                openedPfds.map { it.fd }.toIntArray(),
+                                                cuePath,
+                                                trkIdx,
+                                                sr,
+                                            )
+                                        }
+                                    } finally {
+                                        openedPfds.forEach { pfd ->
+                                            try {
+                                                pfd.close()
+                                            } catch (_: Exception) {
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    false
+                                }
                             Log.i("DXX-Setup", "music_cd_play: source=${src.discLabel} track=$trkIdx ok=$ok")
                         }.start()
                     }
@@ -9271,28 +9309,15 @@ private fun DiscImportDialog(
                                             try {
                                                 val parsedTracks = tracks!!
                                                 val audioCount = parsedTracks.count { it.isAudio }
-                                                val parsedBinSizes =
-                                                    if (binSizes.isNotEmpty()) {
-                                                        binSizes
-                                                    } else {
-                                                        binUris.map { (_, uri) ->
-                                                            ImportStorageGuard.queryUriSizeBytes(
-                                                                context.contentResolver,
-                                                                uri,
-                                                            )
-                                                                ?: 0L
-                                                        }
-                                                    }
-                                                val multiBinSource = usesMultipleCueFiles(parsedTracks)
 
-                                                if (!multiBinSource && !persistReadPermissionForUri(context, cueUri)) {
+                                                if (!persistReadPermissionForUri(context, cueUri)) {
                                                     Log.w("DXX-DiscImport", "Could not persist URI for $cueName")
                                                 }
 
                                                 val binNames = mutableListOf<String>()
                                                 var firstBinUri: Uri? = null
                                                 for ((name, uri) in binUris) {
-                                                    if (!multiBinSource && !persistReadPermissionForUri(context, uri)) {
+                                                    if (!persistReadPermissionForUri(context, uri)) {
                                                         Log.w("DXX-DiscImport", "Could not persist URI for $name")
                                                     }
                                                     binNames.add(name.lowercase())
@@ -9333,45 +9358,19 @@ private fun DiscImportDialog(
 
                                                 val srcManager = AudioSourceManager(filesDir)
                                                 val id = discId ?: "custom-${System.currentTimeMillis()}"
-                                                val existingAudioFileNames =
-                                                    if (multiBinSource) {
-                                                        generatedCdAudioArtifactsDir(filesDir).list()?.toSet()
-                                                    } else {
-                                                        filesDir.list()?.toSet()
-                                                    } ?: emptySet()
+                                                val existingAudioFileNames = filesDir.list()?.toSet() ?: emptySet()
                                                 val sourceFileStem =
                                                     chooseUniqueCdAudioImportStem(
                                                         preferredStem = File(cueName).nameWithoutExtension,
                                                         existingFileNames = existingAudioFileNames,
                                                     )
                                                 LauncherDebugLog.log(
-                                                    "launcher-cd-import cue=$cueName bins=${binUris.size} mode=${if (multiBinSource) "merged-local" else "saf-in-place"} file_stem=$sourceFileStem",
+                                                    "launcher-cd-import cue=$cueName bins=${binUris.size} mode=saf-in-place file_stem=$sourceFileStem",
                                                 )
-                                                val stagedMergedSource =
-                                                    if (multiBinSource) {
-                                                        stageMergedSafDiscAudioSource(
-                                                            filesDir = filesDir,
-                                                            context = context,
-                                                            sourceFileStem = sourceFileStem,
-                                                            binUris = binUris,
-                                                            tracks = parsedTracks,
-                                                            binSizes = parsedBinSizes,
-                                                        ) { nextStatus ->
-                                                            withContext(Dispatchers.Main) {
-                                                                status = nextStatus
-                                                            }
-                                                        }
-                                                    } else {
-                                                        null
-                                                    }
-                                                val destCue =
-                                                    stagedMergedSource?.cueFile ?: File(filesDir, "$sourceFileStem.cue")
-                                                if (stagedMergedSource == null) {
-                                                    tempCuePath?.let {
-                                                        LauncherFileCopy.copyFileToFile(File(it), destCue)
-                                                    }
+                                                val destCue = File(filesDir, "$sourceFileStem.cue")
+                                                tempCuePath?.let {
+                                                    LauncherFileCopy.copyFileToFile(File(it), destCue)
                                                 }
-                                                val fingerprintTracks = stagedMergedSource?.mergedTracks ?: parsedTracks
                                                 var trackNames = emptyMap<Int, String>()
                                                 try {
                                                     discId?.let { resolvedDiscId ->
@@ -9385,21 +9384,7 @@ private fun DiscImportDialog(
                                                             "Looked up ${trackNames.size} track names for $resolvedDiscId",
                                                         )
                                                     }
-                                                    if (trackNames.isEmpty() && stagedMergedSource != null) {
-                                                        withContext(Dispatchers.Main) {
-                                                            status = "Identifying audio tracks…"
-                                                        }
-                                                        trackNames =
-                                                            FingerprintBridge.fingerprintAndMatchDisc(
-                                                                context,
-                                                                stagedMergedSource.binFile.absolutePath,
-                                                                fingerprintTracks,
-                                                            )
-                                                        Log.i(
-                                                            "DXX-DiscImport",
-                                                            "Fingerprinted ${trackNames.size} track names via merged local BIN",
-                                                        )
-                                                    } else if (trackNames.isEmpty() && firstBinUri != null) {
+                                                    if (trackNames.isEmpty()) {
                                                         withContext(Dispatchers.Main) {
                                                             status = "Identifying audio tracks…"
                                                         }
@@ -9407,12 +9392,12 @@ private fun DiscImportDialog(
                                                             FingerprintBridge.fingerprintAndMatchDisc(
                                                                 context,
                                                                 context.contentResolver,
-                                                                firstBinUri,
+                                                                binUris.map { it.second },
                                                                 parsedTracks,
                                                             )
                                                         Log.i(
                                                             "DXX-DiscImport",
-                                                            "Fingerprinted ${trackNames.size} track names via SAF fd",
+                                                            "Fingerprinted ${trackNames.size} track names via SAF descriptors",
                                                         )
                                                     }
                                                 } catch (e: Exception) {
@@ -9420,47 +9405,21 @@ private fun DiscImportDialog(
                                                 }
 
                                                 srcManager.addSource(
-                                                    if (stagedMergedSource != null) {
-                                                        AudioSourceManager.AudioSource(
-                                                            id = id,
-                                                            cuePath = stagedMergedSource.cueFile.absolutePath,
-                                                            binPaths =
-                                                                listOf(
-                                                                    stagedMergedSource.binFile.absolutePath,
-                                                                ),
-                                                            discLabel = discLabel ?: cueName,
-                                                            discId = discId ?: "unknown",
-                                                            trackCount = parsedTracks.size,
-                                                            audioTrackCount = audioCount,
-                                                            legacyDiscId = legacyDiscId,
-                                                            trackNames = trackNames,
-                                                            binContentUri = stagedMergedSource.binFile.absolutePath,
-                                                        )
-                                                    } else {
-                                                        AudioSourceManager.AudioSource(
-                                                            id = id,
-                                                            cuePath = destCue.name,
-                                                            binPaths = binNames,
-                                                            discLabel = discLabel ?: cueName,
-                                                            discId = discId ?: "unknown",
-                                                            trackCount = parsedTracks.size,
-                                                            audioTrackCount = audioCount,
-                                                            legacyDiscId = legacyDiscId,
-                                                            trackNames = trackNames,
-                                                            binContentUri = firstBinUri?.toString(),
-                                                            cueContentUri = cueUri.toString(),
-                                                        )
-                                                    },
+                                                    AudioSourceManager.AudioSource(
+                                                        id = id,
+                                                        cuePath = destCue.name,
+                                                        binPaths = binNames,
+                                                        discLabel = discLabel ?: cueName,
+                                                        discId = discId ?: "unknown",
+                                                        trackCount = parsedTracks.size,
+                                                        audioTrackCount = audioCount,
+                                                        legacyDiscId = legacyDiscId,
+                                                        trackNames = trackNames,
+                                                        binContentUri = firstBinUri?.toString(),
+                                                        binContentUris = binUris.map { it.second.toString() },
+                                                        cueContentUri = cueUri.toString(),
+                                                    ),
                                                 )
-                                                if (multiBinSource) {
-                                                    releaseReadPermissionForUri(context, cueUri)
-                                                    for ((_, uri) in binUris) {
-                                                        releaseReadPermissionForUri(context, uri)
-                                                    }
-                                                    LauncherDebugLog.log(
-                                                        "launcher-cd-import-cleanup cue=$cueName mode=merged-local file_stem=$sourceFileStem released_permissions=true",
-                                                    )
-                                                }
 
                                                 withContext(Dispatchers.Main) {
                                                     audioRegistered = true

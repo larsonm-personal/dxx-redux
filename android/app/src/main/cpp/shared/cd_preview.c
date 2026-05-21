@@ -26,6 +26,8 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 
+#include "../extract/cue_parser.h"
+
 #define TAG       "DXX-CdPreview"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
@@ -36,17 +38,12 @@
 #define CD_SAMPLE_RATE    44100
 #define FRAMES_PER_SECTOR (SECTOR_SIZE / 4) /* 588 stereo frames */
 
-#define MAX_CUE_TRACKS 100
-#define NUM_BUFFERS    2
-#define BUF_FRAMES     1024 /* frames per OpenSL buffer */
-
-/* ── CUE track info ──────────────────────────────────────────────────── */
+#define NUM_BUFFERS 2
+#define BUF_FRAMES  1024 /* frames per OpenSL buffer */
 
 typedef struct {
-	int type; /* 0 = data, 1 = audio */
-	int start_sector;
-	int num_sectors;
-} cue_track_t;
+	FILE *fp;
+} preview_bin_handle_t;
 
 /* ── Ring buffer (same lock-free pattern as rbaudio_bin.c) ───────────── */
 
@@ -101,14 +98,16 @@ static unsigned int rb_available(void)
 
 /* ── Playback state ──────────────────────────────────────────────────── */
 
-static FILE *s_bin_fp = NULL;
+static preview_bin_handle_t s_bin_files[CUE_MAX_FILES];
+static int s_num_bin_files = 0;
 static volatile int s_playing = 0;
 static volatile int s_paused = 0;
 
-static int s_start_sector = 0; /* first sector of current track */
-static int s_read_sector = 0;  /* next sector to read */
-static int s_track_end = 0;    /* sector past end */
-static int s_num_sectors = 0;  /* total sectors in track */
+static int s_start_sector = 0;     /* first sector of current track */
+static int s_read_sector = 0;      /* next sector to read */
+static int s_track_end = 0;        /* sector past end */
+static int s_num_sectors = 0;      /* total sectors in track */
+static int s_track_file_index = 0; /* BIN file that owns the current track */
 static int s_output_rate = 48000;
 static float s_volume = 0.8f;
 
@@ -137,65 +136,60 @@ static SLAndroidSimpleBufferQueueItf s_player_bq = NULL;
 static short s_play_bufs[NUM_BUFFERS][BUF_FRAMES * 2];
 static int s_next_buf = 0;
 
-/* ── CUE parser (fopen-based, same logic as rbaudio_bin.c) ───────────── */
+/* ── BIN/CUE helpers ─────────────────────────────────────────────────── */
 
-static int parse_msf(const char *msf)
+static void close_bin_files(void)
 {
-	int m = 0, s = 0, f = 0;
-	if (sscanf(msf, "%d:%d:%d", &m, &s, &f) < 3) return 0;
-	return m * 60 * 75 + s * 75 + f;
+	int i;
+	for (i = 0; i < s_num_bin_files; i++) {
+		if (s_bin_files[i].fp) {
+			fclose(s_bin_files[i].fp);
+			s_bin_files[i].fp = NULL;
+		}
+	}
+	s_num_bin_files = 0;
+	s_track_file_index = 0;
 }
 
-/*
- * Parse CUE file, fill tracks[], return count.
- * Only extracts TRACK type and INDEX 01 positions.
- */
-static int parse_cue(const char *cue_path, cue_track_t *tracks, int max_tracks)
+static FILE *current_track_fp(void)
 {
-	FILE *fp = fopen(cue_path, "r");
-	char line[512];
-	int count = 0, cur = -1;
+	if (s_track_file_index < 0 || s_track_file_index >= s_num_bin_files)
+		return NULL;
+	return s_bin_files[s_track_file_index].fp;
+}
+
+static char *read_cue_text(const char *cue_path)
+{
+	FILE *fp = fopen(cue_path, "rb");
+	char *buf;
+	long size;
 
 	if (!fp) {
 		LOGE("Cannot open CUE: %s", cue_path);
-		return 0;
+		return NULL;
 	}
-
-	while (fgets(line, sizeof(line), fp)) {
-		int tnum;
-		char ttype[32];
-		int idx;
-		char msf[32];
-
-		if (sscanf(line, " TRACK %d %31s", &tnum, ttype) == 2) {
-			if (count < max_tracks) {
-				cur = count;
-				tracks[cur].type = (strstr(ttype, "AUDIO") != NULL) ? 1 : 0;
-				tracks[cur].start_sector = 0;
-				tracks[cur].num_sectors = 0;
-				count++;
-			}
-		} else if (cur >= 0 &&
-		           sscanf(line, " INDEX %d %31s", &idx, msf) == 2 && idx == 1) {
-			tracks[cur].start_sector = parse_msf(msf);
-		}
+	if (fseek(fp, 0, SEEK_END) != 0) {
+		fclose(fp);
+		return NULL;
+	}
+	size = ftell(fp);
+	if (size < 0 || fseek(fp, 0, SEEK_SET) != 0) {
+		fclose(fp);
+		return NULL;
+	}
+	buf = (char *) malloc((size_t) size + 1);
+	if (!buf) {
+		fclose(fp);
+		return NULL;
+	}
+	if (fread(buf, 1, (size_t) size, fp) != (size_t) size) {
+		free(buf);
+		fclose(fp);
+		return NULL;
 	}
 	fclose(fp);
-	return count;
-}
-
-/* Compute num_sectors for each track from successive start positions */
-static void compute_track_lengths(cue_track_t *tracks, int count, long bin_size)
-{
-	int total_sectors = (int) (bin_size / SECTOR_SIZE);
-	int i;
-	for (i = 0; i < count; i++) {
-		if (i + 1 < count)
-			tracks[i].num_sectors = tracks[i + 1].start_sector - tracks[i].start_sector;
-		else
-			tracks[i].num_sectors = total_sectors - tracks[i].start_sector;
-		if (tracks[i].num_sectors < 0) tracks[i].num_sectors = 0;
-	}
+	buf[size] = '\0';
+	return buf;
 }
 
 /* ── PCM decode + resample (same approach as rbaudio_bin.c) ──────────── */
@@ -217,14 +211,16 @@ static int refill_pcm(void)
 		unsigned char raw[SECTOR_SIZE];
 		long offset;
 		int i;
+		FILE *bin_fp;
 
 		if (s_read_sector >= s_track_end)
 			return frames_read;
 
-		if (!s_bin_fp) break;
+		bin_fp = current_track_fp();
+		if (!bin_fp) break;
 		offset = (long) s_read_sector * SECTOR_SIZE;
-		if (fseek(s_bin_fp, offset, SEEK_SET) != 0) break;
-		if (fread(raw, SECTOR_SIZE, 1, s_bin_fp) != 1) break;
+		if (fseek(bin_fp, offset, SEEK_SET) != 0) break;
+		if (fread(raw, SECTOR_SIZE, 1, bin_fp) != 1) break;
 
 		/* Decode 16-bit LE stereo PCM (same as rbaudio_bin.c) */
 		for (i = 0; i < FRAMES_PER_SECTOR; i++) {
@@ -444,46 +440,87 @@ static void osl_shutdown(void)
 
 /* ── Public API ──────────────────────────────────────────────────────── */
 
-/* Common start logic after s_bin_fp is already open */
+/* Common start logic after all BIN handles are already open */
 static int cd_preview_start_common(const char *cue_path,
                                    int audio_track_1based, int sample_rate)
 {
-	cue_track_t cue_tracks[MAX_CUE_TRACKS];
+	cue_disc_t disc;
+	char *cue_text = NULL;
+	long long bin_sizes[CUE_MAX_FILES];
 	int count, audio_idx, i;
-	long bin_size;
 
-	/* Parse CUE */
-	count = parse_cue(cue_path, cue_tracks, MAX_CUE_TRACKS);
-	if (count <= 0) {
-		LOGE("No tracks in CUE");
-		fclose(s_bin_fp);
-		s_bin_fp = NULL;
+	memset(&disc, 0, sizeof(disc));
+	memset(bin_sizes, 0, sizeof(bin_sizes));
+
+	cue_text = read_cue_text(cue_path);
+	if (!cue_text) {
+		close_bin_files();
 		return 0;
 	}
 
-	/* Get BIN size, compute track lengths */
-	fseek(s_bin_fp, 0, SEEK_END);
-	bin_size = ftell(s_bin_fp);
-	compute_track_lengths(cue_tracks, count, bin_size);
+	count = cue_parse(cue_text, NULL, 0, &disc);
+	if (count <= 0 || disc.num_tracks <= 0) {
+		LOGE("No tracks in CUE");
+		free(cue_text);
+		close_bin_files();
+		return 0;
+	}
+	if (disc.num_files <= 0 || disc.num_files > s_num_bin_files) {
+		LOGE("CUE expects %d BIN files, preview has %d", disc.num_files, s_num_bin_files);
+		free(cue_text);
+		close_bin_files();
+		return 0;
+	}
+
+	for (i = 0; i < disc.num_files; i++) {
+		long size;
+		if (!s_bin_files[i].fp) {
+			free(cue_text);
+			close_bin_files();
+			return 0;
+		}
+		if (fseek(s_bin_files[i].fp, 0, SEEK_END) != 0) {
+			free(cue_text);
+			close_bin_files();
+			return 0;
+		}
+		size = ftell(s_bin_files[i].fp);
+		if (size <= 0 || fseek(s_bin_files[i].fp, 0, SEEK_SET) != 0) {
+			LOGE("Invalid BIN size for file %d", i);
+			free(cue_text);
+			close_bin_files();
+			return 0;
+		}
+		bin_sizes[i] = size;
+	}
+
+	memset(&disc, 0, sizeof(disc));
+	count = cue_parse(cue_text, bin_sizes, s_num_bin_files, &disc);
+	free(cue_text);
+	if (count <= 0 || disc.num_tracks <= 0) {
+		LOGE("Failed to compute track lengths from CUE");
+		close_bin_files();
+		return 0;
+	}
 
 	/* Find the Nth audio track */
 	audio_idx = 0;
-	for (i = 0; i < count; i++) {
-		if (cue_tracks[i].type == 1) {
+	for (i = 0; i < disc.num_tracks; i++) {
+		if (disc.tracks[i].type == CUE_TRACK_AUDIO) {
 			audio_idx++;
 			if (audio_idx == audio_track_1based) break;
 		}
 	}
-	if (i >= count || cue_tracks[i].type != 1) {
-		LOGE("Audio track %d not found (%d total CUE tracks)", audio_track_1based, count);
-		fclose(s_bin_fp);
-		s_bin_fp = NULL;
+	if (i >= disc.num_tracks || disc.tracks[i].type != CUE_TRACK_AUDIO) {
+		LOGE("Audio track %d not found (%d total CUE tracks)", audio_track_1based, disc.num_tracks);
+		close_bin_files();
 		return 0;
 	}
 
-	s_start_sector = cue_tracks[i].start_sector;
+	s_track_file_index = disc.tracks[i].file_index;
+	s_start_sector = disc.tracks[i].start_sector;
 	s_read_sector = s_start_sector;
-	s_num_sectors = cue_tracks[i].num_sectors;
+	s_num_sectors = disc.tracks[i].num_sectors;
 	s_track_end = s_start_sector + s_num_sectors;
 	s_output_rate = sample_rate;
 	s_pcm_len = 0;
@@ -493,15 +530,14 @@ static int cd_preview_start_common(const char *cue_path,
 	s_paused = 0;
 	s_playing = 1;
 
-	LOGI("Starting track %d (audio #%d): sectors %d-%d (%d), rate=%d",
-	     i + 1, audio_track_1based, s_start_sector, s_track_end - 1,
+	LOGI("Starting track %d (audio #%d): file=%d sectors %d-%d (%d), rate=%d",
+	     i + 1, audio_track_1based, s_track_file_index, s_start_sector, s_track_end - 1,
 	     s_num_sectors, sample_rate);
 
 	/* Init OpenSL ES output */
 	if (!osl_init(sample_rate)) {
 		LOGE("OpenSL ES init failed");
-		fclose(s_bin_fp);
-		s_bin_fp = NULL;
+		close_bin_files();
 		s_playing = 0;
 		return 0;
 	}
@@ -512,23 +548,68 @@ static int cd_preview_start_common(const char *cue_path,
 	return 1;
 }
 
+static int open_bin_path_for_preview(const char *bin_path)
+{
+	FILE *fp;
+	if (!bin_path) return 0;
+	fp = fopen(bin_path, "rb");
+	if (!fp) {
+		LOGE("Cannot open BIN: %s", bin_path);
+		return 0;
+	}
+	s_bin_files[s_num_bin_files++].fp = fp;
+	return 1;
+}
+
+static int open_bin_fd_for_preview(int fd)
+{
+	int duped;
+	FILE *fp;
+	if (fd < 0) return 0;
+	duped = dup(fd);
+	if (duped < 0) {
+		LOGE("dup(fd=%d) failed", fd);
+		return 0;
+	}
+	fp = fdopen(duped, "rb");
+	if (!fp) {
+		LOGE("fdopen(fd=%d) failed", duped);
+		close(duped);
+		return 0;
+	}
+	s_bin_files[s_num_bin_files++].fp = fp;
+	return 1;
+}
+
 int cd_preview_start(const char *bin_path, const char *cue_path,
                      int audio_track_1based, int sample_rate)
 {
+	const char *bins[1] = { bin_path };
+	return cd_preview_start_multi(bins, 1, cue_path, audio_track_1based, sample_rate);
+}
+
+int cd_preview_start_multi(const char *const *bin_paths, int num_bins,
+                           const char *cue_path,
+                           int audio_track_1based, int sample_rate)
+{
+	int i;
+
 	/* Stop any existing preview */
 	cd_preview_stop();
 
-	if (!bin_path || !cue_path || audio_track_1based < 1 || sample_rate <= 0) {
-		LOGE("Invalid args: bin=%s cue=%s track=%d rate=%d",
-		     bin_path ? bin_path : "NULL", cue_path ? cue_path : "NULL",
+	if (!bin_paths || num_bins < 1 || num_bins > CUE_MAX_FILES || !cue_path ||
+	    audio_track_1based < 1 || sample_rate <= 0) {
+		LOGE("Invalid args: bins=%d cue=%s track=%d rate=%d",
+		     num_bins, cue_path ? cue_path : "NULL",
 		     audio_track_1based, sample_rate);
 		return 0;
 	}
 
-	s_bin_fp = fopen(bin_path, "rb");
-	if (!s_bin_fp) {
-		LOGE("Cannot open BIN: %s", bin_path);
-		return 0;
+	for (i = 0; i < num_bins; i++) {
+		if (!open_bin_path_for_preview(bin_paths[i])) {
+			close_bin_files();
+			return 0;
+		}
 	}
 
 	return cd_preview_start_common(cue_path, audio_track_1based, sample_rate);
@@ -537,29 +618,32 @@ int cd_preview_start(const char *bin_path, const char *cue_path,
 int cd_preview_start_fd(int fd, const char *cue_path,
                         int audio_track_1based, int sample_rate)
 {
-	int duped;
+	const int fds[1] = { fd };
+	return cd_preview_start_multi_fd(fds, 1, cue_path, audio_track_1based, sample_rate);
+}
+
+int cd_preview_start_multi_fd(const int *fds, int num_fds,
+                              const char *cue_path,
+                              int audio_track_1based, int sample_rate)
+{
+	int i;
 
 	/* Stop any existing preview */
 	cd_preview_stop();
 
-	if (fd < 0 || !cue_path || audio_track_1based < 1 || sample_rate <= 0) {
-		LOGE("Invalid args: fd=%d cue=%s track=%d rate=%d",
-		     fd, cue_path ? cue_path : "NULL",
+	if (!fds || num_fds < 1 || num_fds > CUE_MAX_FILES || !cue_path ||
+	    audio_track_1based < 1 || sample_rate <= 0) {
+		LOGE("Invalid args: fds=%d cue=%s track=%d rate=%d",
+		     num_fds, cue_path ? cue_path : "NULL",
 		     audio_track_1based, sample_rate);
 		return 0;
 	}
 
-	/* dup() so the caller can close their fd independently */
-	duped = dup(fd);
-	if (duped < 0) {
-		LOGE("dup(fd=%d) failed", fd);
-		return 0;
-	}
-	s_bin_fp = fdopen(duped, "rb");
-	if (!s_bin_fp) {
-		LOGE("fdopen(fd=%d) failed", duped);
-		close(duped);
-		return 0;
+	for (i = 0; i < num_fds; i++) {
+		if (!open_bin_fd_for_preview(fds[i])) {
+			close_bin_files();
+			return 0;
+		}
 	}
 
 	return cd_preview_start_common(cue_path, audio_track_1based, sample_rate);
@@ -571,10 +655,7 @@ void cd_preview_stop(void)
 	s_paused = 0;
 	render_thread_stop();
 	osl_shutdown();
-	if (s_bin_fp) {
-		fclose(s_bin_fp);
-		s_bin_fp = NULL;
-	}
+	close_bin_files();
 	rb_reset();
 }
 
