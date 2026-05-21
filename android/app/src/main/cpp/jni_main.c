@@ -933,6 +933,13 @@ Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject 
  *   [19] = aniso_max         (max aniso level supported by GPU)
  *   [30] = merged_wall_mode      (OFF/Alpha/RGB debug view)
  *   [31] = merged_wall_experiment (default/force-legacy-texmerge surfaced mode)
+ *   [32] = swap_time_us          (eglSwapBuffers or swap wrapper time)
+ *   [33] = msaa_resolve_time_us  (MSAA resolve/blit time)
+ *   [34] = gl_error_time_us      (end-frame glGetError drain time)
+ *   [35] = cache_ktx2_read_ms    (KTX2 read/parse time during cache pass)
+ *   [36] = cache_png_read_ms     (PNG/JPG/TGA read/decode time during cache pass)
+ *   [37] = cache_upload_ms       (texture upload time during cache pass)
+ *   [38] = cache_mask_ms         (mask load/upload time during cache pass)
  *
  * android port: video diagnostics overlay
  */
@@ -956,13 +963,20 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	extern int g_gpu_time_us;
 	extern int ogl_color_depth;
 	extern int g_texfilt_level;
+	extern int g_swap_time_us;
+	extern int g_msaa_resolve_time_us;
+	extern int g_gl_error_time_us;
+	extern int g_cache_ktx2_read_ms;
+	extern int g_cache_png_read_ms;
+	extern int g_cache_upload_ms;
+	extern int g_cache_mask_ms;
 	int ogl_get_texture_bytes(void);
 	int android_surface_get_display_width(void);
 	int android_surface_get_display_height(void);
 	extern unsigned int grd_curscreen_w(void);
 	extern unsigned int grd_curscreen_h(void);
 
-	enum { VS_SIZE = 32 };
+	enum { VS_SIZE = 39 };
 	jint buf[VS_SIZE];
 
 	buf[0] = (jint) g_current_fps;
@@ -1016,6 +1030,13 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	buf[30] = 0;
 	buf[31] = 0;
 #endif
+	buf[32] = (jint) g_swap_time_us;
+	buf[33] = (jint) g_msaa_resolve_time_us;
+	buf[34] = (jint) g_gl_error_time_us;
+	buf[35] = (jint) g_cache_ktx2_read_ms;
+	buf[36] = (jint) g_cache_png_read_ms;
+	buf[37] = (jint) g_cache_upload_ms;
+	buf[38] = (jint) g_cache_mask_ms;
 
 	jintArray result = (*env)->NewIntArray(env, VS_SIZE);
 	if (result)

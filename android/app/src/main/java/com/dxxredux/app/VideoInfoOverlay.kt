@@ -64,6 +64,13 @@ class VideoInfoOverlay(
     private var maskDraws = 0
     private var colorDepth = 16
     private var texFiltLevel = 0
+    private var swapTimeUs = 0
+    private var resolveTimeUs = 0
+    private var glErrorTimeUs = 0
+    private var cacheKtxMs = 0
+    private var cachePngMs = 0
+    private var cacheUploadMs = 0
+    private var cacheMaskMs = 0
 
     // Labels toggle button state and hit region
     private var labelsOn = false
@@ -141,6 +148,15 @@ class VideoInfoOverlay(
                         mergedWallMode = stats[30]
                         mergedWallExperimentMode = stats[31]
                     }
+                    if (stats != null && stats.size >= 39) {
+                        swapTimeUs = stats[32]
+                        resolveTimeUs = stats[33]
+                        glErrorTimeUs = stats[34]
+                        cacheKtxMs = stats[35]
+                        cachePngMs = stats[36]
+                        cacheUploadMs = stats[37]
+                        cacheMaskMs = stats[38]
+                    }
                 } catch (_: Exception) {
                     // JNI not ready yet
                 }
@@ -170,6 +186,11 @@ class VideoInfoOverlay(
     fun applyLauncherPrefs(prefs: SharedPreferences) {
         showDebugControls = prefs.getBoolean(PREF_SHOW_VIDEO_INFO_DEBUG_OPTIONS, false)
         invalidate()
+    }
+
+    private fun formatMillisTenths(us: Int): String {
+        if (us <= 0) return "0.0"
+        return "${us / 1000}.${(us % 1000) / 100}"
     }
 
     // Paints
@@ -235,7 +256,7 @@ class VideoInfoOverlay(
 
         val pad = 8f * density
         val lineH = baseTextSize * 1.5f
-        val numLines = if (showDebugControls) 20 else 16
+        val numLines = if (showDebugControls) 22 else 18
         val panelH = pad * 2 + lineH * numLines
         val panelW = baseTextSize * 20f
 
@@ -319,6 +340,15 @@ class VideoInfoOverlay(
         canvas.drawText(gpuText, panelLeft + pad, y, valuePaint)
         y += lineH
 
+        canvas.drawText("Flip:", panelLeft + pad, y, labelPaint)
+        canvas.drawText(
+            "sw ${formatMillisTenths(swapTimeUs)} rs ${formatMillisTenths(resolveTimeUs)} er ${formatMillisTenths(glErrorTimeUs)}",
+            valCol,
+            y,
+            valuePaint,
+        )
+        y += lineH
+
         // Level cache time (color-coded)
         val cachePaint =
             when {
@@ -328,6 +358,10 @@ class VideoInfoOverlay(
             }
         canvas.drawText("Cache:", panelLeft + pad, y, labelPaint)
         canvas.drawText("${cacheTimeMs}ms", valCol, y, cachePaint)
+        y += lineH
+
+        canvas.drawText("Load:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("k${cacheKtxMs} p${cachePngMs} u${cacheUploadMs} m${cacheMaskMs}", valCol, y, valuePaint)
         y += lineH
 
         // Texture memory

@@ -76,13 +76,13 @@ class LoadingProgressOverlayView(
     // border/fill/text are picked from the "prepare for descent" splash colors in D1
     private val borderPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(224, 0x19, 0x1A, 0x17)
+            color = Color.argb(224, 0x32, 0x34, 0x2E)
             style = Paint.Style.STROKE
         }
 
     private val fillPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(192, 0x21, 0x1E, 0x19)
+            color = Color.argb(208, 0x42, 0x3C, 0x32)
             style = Paint.Style.FILL
         }
 
