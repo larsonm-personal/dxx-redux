@@ -8,8 +8,33 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
+import android.view.HapticFeedbackConstants
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+
+internal enum class VideoInfoControllerAction {
+    TEX_FILT,
+    ANISO,
+    MSAA,
+    MERGED_WALL,
+    MERGED_WALL_EXPERIMENT,
+    MERGED_WALL_TAP,
+    LABELS,
+}
+
+internal fun videoInfoControllerActions(showDebugControls: Boolean): List<VideoInfoControllerAction> =
+    buildList {
+        add(VideoInfoControllerAction.TEX_FILT)
+        add(VideoInfoControllerAction.ANISO)
+        add(VideoInfoControllerAction.MSAA)
+        if (showDebugControls) {
+            add(VideoInfoControllerAction.MERGED_WALL)
+            add(VideoInfoControllerAction.MERGED_WALL_EXPERIMENT)
+            add(VideoInfoControllerAction.MERGED_WALL_TAP)
+            add(VideoInfoControllerAction.LABELS)
+        }
+    }
 
 /**
  * In-game overlay showing video/rendering diagnostics.
@@ -85,6 +110,7 @@ class VideoInfoOverlay(
     private var mergedWallExperimentPressed = false
     private var mergedWallTapPressed = false
     private var mergedWallTapFlashUntilMs = 0L
+    private var selectedControllerAction: VideoInfoControllerAction? = null
     private val buttonRect = RectF()
     private val anisoRect = RectF()
     private val msaaRect = RectF()
@@ -167,6 +193,7 @@ class VideoInfoOverlay(
 
     fun show() {
         visibility = VISIBLE
+        selectedControllerAction = activeControllerActions().firstOrNull()
         if (!polling) {
             polling = true
             handler.post(pollRunnable)
@@ -175,6 +202,7 @@ class VideoInfoOverlay(
 
     fun hide() {
         visibility = GONE
+        selectedControllerAction = null
         polling = false
         handler.removeCallbacks(pollRunnable)
     }
@@ -185,6 +213,7 @@ class VideoInfoOverlay(
 
     fun applyLauncherPrefs(prefs: SharedPreferences) {
         showDebugControls = prefs.getBoolean(PREF_SHOW_VIDEO_INFO_DEBUG_OPTIONS, false)
+        ensureControllerSelection()
         invalidate()
     }
 
@@ -239,10 +268,60 @@ class VideoInfoOverlay(
             color = 0x66FFFFFF
             style = Paint.Style.FILL
         }
+    private val btnFocusedPaint =
+        Paint().apply {
+            color = 0x55FFFFFF
+            style = Paint.Style.FILL
+        }
+
+    private fun activeControllerActions(): List<VideoInfoControllerAction> =
+        videoInfoControllerActions(showDebugControls)
+
+    private fun ensureControllerSelection(): VideoInfoControllerAction? {
+        val actions = activeControllerActions()
+        val currentSelection = selectedControllerAction
+        val resolved = if (currentSelection in actions) currentSelection else actions.firstOrNull()
+        selectedControllerAction = resolved
+        return resolved
+    }
+
+    private fun activateControllerAction(action: VideoInfoControllerAction) {
+        when (action) {
+            VideoInfoControllerAction.TEX_FILT -> {
+                cycleTexFilt()
+            }
+
+            VideoInfoControllerAction.ANISO -> {
+                cycleAnisotropy()
+            }
+
+            VideoInfoControllerAction.MSAA -> {
+                cycleMsaa()
+            }
+
+            VideoInfoControllerAction.MERGED_WALL -> {
+                cycleMergedWallMode()
+            }
+
+            VideoInfoControllerAction.MERGED_WALL_EXPERIMENT -> {
+                cycleMergedWallExperiment()
+            }
+
+            VideoInfoControllerAction.MERGED_WALL_TAP -> {
+                triggerMergedWallTap()
+            }
+
+            VideoInfoControllerAction.LABELS -> {
+                labelsOn = !labelsOn
+                debugFlagSetter?.invoke("tex_overlay", if (labelsOn) 1 else 0)
+            }
+        }
+    }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (visibility != VISIBLE) return
+        ensureControllerSelection()
 
         val density = resources.displayMetrics.density
         val w = width.toFloat()
@@ -342,7 +421,9 @@ class VideoInfoOverlay(
 
         canvas.drawText("Flip:", panelLeft + pad, y, labelPaint)
         canvas.drawText(
-            "sw ${formatMillisTenths(swapTimeUs)} rs ${formatMillisTenths(resolveTimeUs)} er ${formatMillisTenths(glErrorTimeUs)}",
+            "sw ${formatMillisTenths(
+                swapTimeUs,
+            )} rs ${formatMillisTenths(resolveTimeUs)} er ${formatMillisTenths(glErrorTimeUs)}",
             valCol,
             y,
             valuePaint,
@@ -361,7 +442,7 @@ class VideoInfoOverlay(
         y += lineH
 
         canvas.drawText("Load:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("k${cacheKtxMs} p${cachePngMs} u${cacheUploadMs} m${cacheMaskMs}", valCol, y, valuePaint)
+        canvas.drawText("k$cacheKtxMs p$cachePngMs u$cacheUploadMs m$cacheMaskMs", valCol, y, valuePaint)
         y += lineH
 
         // Texture memory
@@ -440,7 +521,12 @@ class VideoInfoOverlay(
             panelLeft + panelW - pad * 0.5f,
             y + lineH * 0.3f,
         )
-        val tfBg = if (texFiltPressed) btnPressedPaint else btnNormalPaint
+        val tfBg =
+            when {
+                texFiltPressed -> btnPressedPaint
+                selectedControllerAction == VideoInfoControllerAction.TEX_FILT -> btnFocusedPaint
+                else -> btnNormalPaint
+            }
         canvas.drawRoundRect(texFiltRect, pad * 0.5f, pad * 0.5f, tfBg)
         canvas.drawText(tfText, panelLeft + pad, y, tfPaint)
         y += lineH
@@ -454,7 +540,12 @@ class VideoInfoOverlay(
             panelLeft + panelW - pad * 0.5f,
             y + lineH * 0.3f,
         )
-        val anisoBg = if (anisoPressed) btnPressedPaint else btnNormalPaint
+        val anisoBg =
+            when {
+                anisoPressed -> btnPressedPaint
+                selectedControllerAction == VideoInfoControllerAction.ANISO -> btnFocusedPaint
+                else -> btnNormalPaint
+            }
         canvas.drawRoundRect(anisoRect, pad * 0.5f, pad * 0.5f, anisoBg)
         val maxText = if (anisoMax > 0) " (max ${anisoMax}x)" else ""
         canvas.drawText(anisoText + maxText, panelLeft + pad, y, anisoPaint)
@@ -469,7 +560,12 @@ class VideoInfoOverlay(
             panelLeft + panelW - pad * 0.5f,
             y + lineH * 0.3f,
         )
-        val msaaBg = if (msaaPressed) btnPressedPaint else btnNormalPaint
+        val msaaBg =
+            when {
+                msaaPressed -> btnPressedPaint
+                selectedControllerAction == VideoInfoControllerAction.MSAA -> btnFocusedPaint
+                else -> btnNormalPaint
+            }
         canvas.drawRoundRect(msaaRect, pad * 0.5f, pad * 0.5f, msaaBg)
         val msaaMaxText = if (msaaMax > 0) " (max ${msaaMax}x)" else ""
         canvas.drawText(msaaText + msaaMaxText, panelLeft + pad, y, msaaPaint)
@@ -490,7 +586,12 @@ class VideoInfoOverlay(
                 panelLeft + panelW - pad * 0.5f,
                 y + lineH * 0.3f,
             )
-            val mergedWallBg = if (mergedWallPressed) btnPressedPaint else btnNormalPaint
+            val mergedWallBg =
+                when {
+                    mergedWallPressed -> btnPressedPaint
+                    selectedControllerAction == VideoInfoControllerAction.MERGED_WALL -> btnFocusedPaint
+                    else -> btnNormalPaint
+                }
             canvas.drawRoundRect(mergedWallRect, pad * 0.5f, pad * 0.5f, mergedWallBg)
             canvas.drawText(mergedWallText, panelLeft + pad, y, mergedWallPaint)
             y += lineH
@@ -510,7 +611,12 @@ class VideoInfoOverlay(
                 panelLeft + panelW - pad * 0.5f,
                 y + lineH * 0.3f,
             )
-            val mergedWallExperimentBg = if (mergedWallExperimentPressed) btnPressedPaint else btnNormalPaint
+            val mergedWallExperimentBg =
+                when {
+                    mergedWallExperimentPressed -> btnPressedPaint
+                    selectedControllerAction == VideoInfoControllerAction.MERGED_WALL_EXPERIMENT -> btnFocusedPaint
+                    else -> btnNormalPaint
+                }
             canvas.drawRoundRect(mergedWallExperimentRect, pad * 0.5f, pad * 0.5f, mergedWallExperimentBg)
             canvas.drawText(mergedWallExperimentText, panelLeft + pad, y, mergedWallExperimentPaint)
             y += lineH
@@ -524,7 +630,12 @@ class VideoInfoOverlay(
                 panelLeft + panelW - pad * 0.5f,
                 y + lineH * 0.3f,
             )
-            val mergedWallTapBg = if (mergedWallTapPressed) btnPressedPaint else btnNormalPaint
+            val mergedWallTapBg =
+                when {
+                    mergedWallTapPressed -> btnPressedPaint
+                    selectedControllerAction == VideoInfoControllerAction.MERGED_WALL_TAP -> btnFocusedPaint
+                    else -> btnNormalPaint
+                }
             canvas.drawRoundRect(mergedWallTapRect, pad * 0.5f, pad * 0.5f, mergedWallTapBg)
             canvas.drawText(mergedWallTapText, mergedWallTapRect.left + pad * 0.5f, y, mergedWallTapPaint)
             y += lineH
@@ -538,7 +649,12 @@ class VideoInfoOverlay(
                 panelLeft + panelW - pad * 0.5f,
                 y + lineH * 0.3f,
             )
-            val btnBg = if (buttonPressed) btnPressedPaint else btnNormalPaint
+            val btnBg =
+                when {
+                    buttonPressed -> btnPressedPaint
+                    selectedControllerAction == VideoInfoControllerAction.LABELS -> btnFocusedPaint
+                    else -> btnNormalPaint
+                }
             canvas.drawRoundRect(buttonRect, pad * 0.5f, pad * 0.5f, btnBg)
             canvas.drawText(labelsText, panelLeft + pad, y, labelTogglePaint)
         } else {
@@ -564,36 +680,43 @@ class VideoInfoOverlay(
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 if (inButton) {
+                    selectedControllerAction = VideoInfoControllerAction.LABELS
                     buttonPressed = true
                     invalidate()
                     return true
                 }
                 if (inAniso) {
+                    selectedControllerAction = VideoInfoControllerAction.ANISO
                     anisoPressed = true
                     invalidate()
                     return true
                 }
                 if (inMsaa) {
+                    selectedControllerAction = VideoInfoControllerAction.MSAA
                     msaaPressed = true
                     invalidate()
                     return true
                 }
                 if (inTexFilt) {
+                    selectedControllerAction = VideoInfoControllerAction.TEX_FILT
                     texFiltPressed = true
                     invalidate()
                     return true
                 }
                 if (inMergedWall) {
+                    selectedControllerAction = VideoInfoControllerAction.MERGED_WALL
                     mergedWallPressed = true
                     invalidate()
                     return true
                 }
                 if (inMergedWallExperiment) {
+                    selectedControllerAction = VideoInfoControllerAction.MERGED_WALL_EXPERIMENT
                     mergedWallExperimentPressed = true
                     invalidate()
                     return true
                 }
                 if (inMergedWallTap) {
+                    selectedControllerAction = VideoInfoControllerAction.MERGED_WALL_TAP
                     mergedWallTapPressed = true
                     invalidate()
                     return true
@@ -664,6 +787,69 @@ class VideoInfoOverlay(
             }
         }
         return super.onTouchEvent(event)
+    }
+
+    fun handleControllerKey(
+        keyCode: Int,
+        action: Int,
+    ): Boolean {
+        if (visibility != VISIBLE) return false
+
+        val handledKey =
+            keyCode == KeyEvent.KEYCODE_DPAD_UP ||
+                keyCode == KeyEvent.KEYCODE_DPAD_DOWN ||
+                keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
+                keyCode == KeyEvent.KEYCODE_DPAD_RIGHT ||
+                keyCode == KeyEvent.KEYCODE_BUTTON_A ||
+                keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+                keyCode == KeyEvent.KEYCODE_BUTTON_B ||
+                keyCode == KeyEvent.KEYCODE_BACK ||
+                keyCode == KeyEvent.KEYCODE_ESCAPE
+        if (!handledKey) return false
+        if (action != 0) return true
+
+        when (keyCode) {
+            KeyEvent.KEYCODE_BUTTON_B,
+            KeyEvent.KEYCODE_BACK,
+            KeyEvent.KEYCODE_ESCAPE,
+            -> {
+                hide()
+                return true
+            }
+
+            KeyEvent.KEYCODE_DPAD_UP,
+            KeyEvent.KEYCODE_DPAD_DOWN,
+            KeyEvent.KEYCODE_DPAD_LEFT,
+            KeyEvent.KEYCODE_DPAD_RIGHT,
+            -> {
+                val actions = activeControllerActions()
+                if (actions.isNotEmpty()) {
+                    val currentAction = ensureControllerSelection()
+                    val currentIndex = actions.indexOf(currentAction).let { if (it >= 0) it else 0 }
+                    val nextIndex = moveLinearSelection(currentIndex, actions.size, keyCode)
+                    if (nextIndex != currentIndex) {
+                        selectedControllerAction = actions[nextIndex]
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    }
+                    invalidate()
+                }
+                return true
+            }
+
+            KeyEvent.KEYCODE_BUTTON_A,
+            KeyEvent.KEYCODE_DPAD_CENTER,
+            -> {
+                val actionToRun = ensureControllerSelection()
+                if (actionToRun != null) {
+                    activateControllerAction(actionToRun)
+                    performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    invalidate()
+                }
+                return true
+            }
+        }
+
+        return false
     }
 
     override fun performClick(): Boolean = super.performClick()

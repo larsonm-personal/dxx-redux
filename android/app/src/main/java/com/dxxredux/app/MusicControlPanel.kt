@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
+import android.view.HapticFeedbackConstants
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import org.json.JSONArray
@@ -33,6 +35,7 @@ class MusicControlPanel(
     private var rowHeight = 0f
     private var closeRect = RectF()
     private var titleHeight = 0f
+    private var selectedTrackIndex = -1
 
     // Touch tracking
     private var touchStartY = 0f
@@ -62,6 +65,7 @@ class MusicControlPanel(
             textAlign = Paint.Align.CENTER
         }
     private val highlightPaint = Paint().apply { color = 0x22FFFFFF }
+    private val selectedPaint = Paint().apply { color = 0x33FFFFFF }
     private val scrollHintPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = 0xAAFFFFFF.toInt()
@@ -91,9 +95,35 @@ class MusicControlPanel(
                 val label = if (name.isNotEmpty()) "Track ${idx + 1}: $name" else "Track ${idx + 1}"
                 tracks.add(TrackEntry(idx, label))
             }
+            syncSelectedTrackIndex()
         } catch (_: Exception) {
             // engine not ready or no tracks
         }
+    }
+
+    private fun syncSelectedTrackIndex() {
+        selectedTrackIndex =
+            when {
+                tracks.isEmpty() -> {
+                    -1
+                }
+
+                else -> {
+                    tracks.indexOfFirst { it.index == currentTrack }.takeIf { it >= 0 } ?: 0
+                }
+            }
+    }
+
+    private fun listViewportHeight(): Float = (panelRect.height() - titleHeight - 8f).coerceAtLeast(0f)
+
+    private fun ensureSelectedTrackVisible() {
+        scrollOffset =
+            scrollOffsetToKeepRowVisible(
+                currentOffset = scrollOffset,
+                selectedIndex = selectedTrackIndex,
+                rowHeight = rowHeight,
+                viewportHeight = listViewportHeight(),
+            ).coerceIn(0f, maxScroll())
     }
 
     override fun onSizeChanged(
@@ -154,6 +184,10 @@ class MusicControlPanel(
             val y = listTop + i * rowHeight - scrollOffset
             if (y + rowHeight < listTop || y > listBottom) continue
 
+            if (i == selectedTrackIndex) {
+                canvas.drawRect(panelRect.left + 4f, y, panelRect.right - 4f, y + rowHeight, selectedPaint)
+            }
+
             // Highlight current track row
             if (track.index == currentTrack) {
                 canvas.drawRect(panelRect.left + 4f, y, panelRect.right - 4f, y + rowHeight, highlightPaint)
@@ -184,6 +218,69 @@ class MusicControlPanel(
                 scrollHintPaint,
             )
         }
+    }
+
+    fun handleControllerKey(
+        keyCode: Int,
+        action: Int,
+    ): Boolean {
+        val handledKey =
+            keyCode == KeyEvent.KEYCODE_DPAD_UP ||
+                keyCode == KeyEvent.KEYCODE_DPAD_DOWN ||
+                keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
+                keyCode == KeyEvent.KEYCODE_DPAD_RIGHT ||
+                keyCode == KeyEvent.KEYCODE_BUTTON_A ||
+                keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+                keyCode == KeyEvent.KEYCODE_BUTTON_B ||
+                keyCode == KeyEvent.KEYCODE_BUTTON_Y ||
+                keyCode == KeyEvent.KEYCODE_BACK ||
+                keyCode == KeyEvent.KEYCODE_ESCAPE
+        if (!handledKey) return false
+        if (action != 0) return true
+
+        if (tracks.isNotEmpty() && selectedTrackIndex !in tracks.indices) {
+            syncSelectedTrackIndex()
+        }
+
+        when (keyCode) {
+            KeyEvent.KEYCODE_BUTTON_B,
+            KeyEvent.KEYCODE_BUTTON_Y,
+            KeyEvent.KEYCODE_BACK,
+            KeyEvent.KEYCODE_ESCAPE,
+            -> {
+                onDismiss()
+            }
+
+            KeyEvent.KEYCODE_DPAD_UP,
+            KeyEvent.KEYCODE_DPAD_DOWN,
+            KeyEvent.KEYCODE_DPAD_LEFT,
+            KeyEvent.KEYCODE_DPAD_RIGHT,
+            -> {
+                if (tracks.isNotEmpty()) {
+                    val nextIndex = moveLinearSelection(selectedTrackIndex, tracks.size, keyCode)
+                    if (nextIndex != selectedTrackIndex) {
+                        selectedTrackIndex = nextIndex
+                        ensureSelectedTrackVisible()
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    }
+                    invalidate()
+                }
+            }
+
+            KeyEvent.KEYCODE_BUTTON_A,
+            KeyEvent.KEYCODE_DPAD_CENTER,
+            -> {
+                if (selectedTrackIndex in tracks.indices) {
+                    currentTrack = tracks[selectedTrackIndex].index
+                    onPlayTrack(currentTrack)
+                    ensureSelectedTrackVisible()
+                    performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    invalidate()
+                }
+            }
+        }
+
+        return true
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -227,6 +324,7 @@ class MusicControlPanel(
                 if (py >= listTop && py <= panelRect.bottom) {
                     val idx = ((py - listTop + scrollOffset) / rowHeight).toInt()
                     if (idx in tracks.indices) {
+                        selectedTrackIndex = idx
                         currentTrack = tracks[idx].index
                         onPlayTrack(currentTrack)
                         invalidate()

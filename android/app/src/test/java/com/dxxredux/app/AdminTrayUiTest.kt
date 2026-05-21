@@ -79,11 +79,15 @@ class AdminTrayUiTest {
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL))
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_QUICK_SAVE))
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_OPEN_MENU))
-        assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_MUSIC))
 
         assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_QUICK_SAVE))
         assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_OPEN_MENU))
-        assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_MUSIC))
+    }
+
+    @Test
+    fun musicSubmenuStaysOpenWithoutCheckboxStyling() {
+        assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_MUSIC))
+        assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_MUSIC))
     }
 
     @Test

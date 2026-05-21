@@ -3310,12 +3310,16 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 					ogl_init_texture(bm->gltexture = ogl_get_free_texture(), pdata.width, pdata.height, ((pdata.alpha || bm->bm_flags & BM_FLAG_TRANSPARENT) ? OGL_FLAG_ALPHA : 0));
 				{
 					int upload_failed;
+				#ifdef ANDROID
 					android_perf_clock_now(&stage_start);
+				#endif
 					upload_failed = ogl_loadtexture(pdata.data, 0, 0, bm->gltexture, bm->bm_flags, df,
 						load_texfilt, bitmapname);
+				#ifdef ANDROID
 					android_perf_clock_now(&stage_end);
 					android_cache_profile_add_ms(&g_cache_upload_ms, &stage_start, &stage_end);
 					android_cache_profile_count(&g_cache_upload_count);
+				#endif
 					if (upload_failed) {
 					/* Upload failed (e.g. oversized) -- reinit with bitmap dims so
 					 * the regular path can upload the original data. Set is_png=1
@@ -3492,12 +3496,16 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		}
 
 	}
+	#ifdef ANDROID
 	android_perf_clock_now(&stage_start);
+	#endif
 	ogl_loadtexture(buf, 0, 0, bm->gltexture, bm->bm_flags, 0, load_texfilt,
 		bitmapname);
+	#ifdef ANDROID
 	android_perf_clock_now(&stage_end);
 	android_cache_profile_add_ms(&g_cache_upload_ms, &stage_start, &stage_end);
 	android_cache_profile_count(&g_cache_upload_count);
+	#endif
 #ifdef OGL_MERGE
 	if (bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT) {
 		unsigned char *mask;
@@ -3509,12 +3517,16 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		MALLOC(mask, unsigned char, size);
 		for (int i = 0; i < size; i++)
 			mask[i] = buf[i] == 254 ? 255 : 0;
+		#ifdef ANDROID
 		android_perf_clock_now(&stage_start);
+		#endif
 		ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0,
 			texfilt, NULL);
+		#ifdef ANDROID
 		android_perf_clock_now(&stage_end);
 		android_cache_profile_add_ms(&g_cache_mask_ms, &stage_start, &stage_end);
 		android_cache_profile_count(&g_cache_mask_count);
+		#endif
 		d_free(mask);
 	}
 #endif

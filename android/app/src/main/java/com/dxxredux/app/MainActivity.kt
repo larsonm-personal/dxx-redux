@@ -786,7 +786,12 @@ class MainActivity :
                 }
 
                 TouchOverlayView.ADMIN_VIDEO_INFO -> {
-                    videoInfoOverlay?.toggle()
+                    if (videoInfoOverlay?.visibility == View.VISIBLE) {
+                        videoInfoOverlay?.hide()
+                    } else {
+                        dismissMusicPanel()
+                        videoInfoOverlay?.show()
+                    }
                 }
 
                 TouchOverlayView.ADMIN_AUTOMAP -> {
@@ -2383,7 +2388,17 @@ class MainActivity :
             return
         }
         if (actionId == TouchBindings.META_MENU_CYCLE) {
-            if (pressed) touchOverlay.cycleControllerMenu()
+            if (
+                shouldCloseControllerSettingsStackForMenu(
+                    pressed = pressed,
+                    musicPanelVisible = musicPanel != null,
+                    videoInfoVisible = videoInfoOverlay?.visibility == View.VISIBLE,
+                )
+            ) {
+                closeControllerSettingsStack()
+            } else if (pressed) {
+                touchOverlay.cycleControllerMenu()
+            }
             return
         }
         NativeMetaActions.nativeMetaAction(actionId, if (pressed) 1 else 0)
@@ -2624,13 +2639,7 @@ class MainActivity :
             return true
         }
 
-        // Music admin panel: dismiss on BACK / ESC / B / Y before any other
-        // gamepad handling. The panel itself only handles touch so without
-        // this hook it traps input when opened by the admin tray
-        if (musicPanel != null && isMusicPanelDismissKey(keyCode)) {
-            dismissMusicPanel()
-            return true
-        }
+        if (handleControllerSettingsChildKey(keyCode, 0)) return true
 
         if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT ||
             keyCode == KeyEvent.KEYCODE_BUTTON_START ||
@@ -2720,11 +2729,7 @@ class MainActivity :
             return true
         }
 
-        // Swallow the key-up for music-panel dismiss keys so the event does
-        // not bubble to the game after the panel closed in onKeyDown
-        if (isMusicPanelDismissKey(keyCode)) {
-            return true
-        }
+        if (handleControllerSettingsChildKey(keyCode, 1)) return true
 
         if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT ||
             keyCode == KeyEvent.KEYCODE_BUTTON_START ||
@@ -3034,6 +3039,7 @@ class MainActivity :
     }
 
     private fun showMusicPanel() {
+        videoInfoOverlay?.hide()
         if (musicPanel != null) return // already showing
         val panel =
             MusicControlPanel(this, { track ->
@@ -3056,12 +3062,30 @@ class MainActivity :
         )
     }
 
-    /** True for keys that should dismiss the music admin panel. */
-    private fun isMusicPanelDismissKey(keyCode: Int): Boolean =
-        keyCode == KeyEvent.KEYCODE_BACK ||
-            keyCode == KeyEvent.KEYCODE_ESCAPE ||
-            keyCode == KeyEvent.KEYCODE_BUTTON_B ||
-            keyCode == KeyEvent.KEYCODE_BUTTON_Y
+    private fun handleControllerSettingsChildKey(
+        keyCode: Int,
+        action: Int,
+    ): Boolean {
+        musicPanel?.let { panel ->
+            if (panel.handleControllerKey(keyCode, action)) {
+                return true
+            }
+        }
+
+        videoInfoOverlay?.let { overlay ->
+            if (overlay.handleControllerKey(keyCode, action)) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun closeControllerSettingsStack() {
+        dismissMusicPanel()
+        videoInfoOverlay?.hide()
+        touchOverlay.closeControllerMenu()
+    }
 
     private fun dismissMusicPanel() {
         musicPanel?.let { mp ->

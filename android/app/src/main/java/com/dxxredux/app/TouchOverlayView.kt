@@ -38,6 +38,7 @@ internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
 internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
     when (actionIndex) {
         TouchOverlayView.ADMIN_INCREASE_VIEW,
+        TouchOverlayView.ADMIN_MUSIC,
         TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
         -> false
 
@@ -104,6 +105,65 @@ internal fun nextControllerMenuSurface(
             ControllerMenuSurface.NONE
         }
     }
+
+internal fun moveRemainingActionSelection(
+    currentIndex: Int,
+    actionCount: Int,
+    rowCount: Int,
+    keyCode: Int,
+): Int {
+    if (actionCount <= 0) return -1
+
+    val safeRowCount = rowCount.coerceAtLeast(1)
+    val safeIndex = currentIndex.coerceIn(0, actionCount - 1)
+    val columnCount = (actionCount + safeRowCount - 1) / safeRowCount
+    val currentColumn = safeIndex / safeRowCount
+    val currentRow = safeIndex % safeRowCount
+
+    fun columnLength(column: Int): Int = (actionCount - column * safeRowCount).coerceIn(0, safeRowCount)
+
+    return when (keyCode) {
+        android.view.KeyEvent.KEYCODE_DPAD_UP -> {
+            if (currentRow > 0) {
+                safeIndex - 1
+            } else {
+                safeIndex
+            }
+        }
+
+        android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
+            if (currentRow + 1 < columnLength(currentColumn)) {
+                safeIndex + 1
+            } else {
+                safeIndex
+            }
+        }
+
+        android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
+            if (currentColumn > 0) {
+                val previousColumn = currentColumn - 1
+                val previousColumnStart = previousColumn * safeRowCount
+                previousColumnStart + min(currentRow, columnLength(previousColumn) - 1)
+            } else {
+                safeIndex
+            }
+        }
+
+        android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> {
+            if (currentColumn + 1 < columnCount) {
+                val nextColumn = currentColumn + 1
+                val nextColumnStart = nextColumn * safeRowCount
+                nextColumnStart + min(currentRow, columnLength(nextColumn) - 1)
+            } else {
+                safeIndex
+            }
+        }
+
+        else -> {
+            safeIndex
+        }
+    }
+}
 
 private const val SECONDARY_PROXIMITY_INDEX = 2
 private const val SECONDARY_SMART_MINE_INDEX = 7
@@ -1179,6 +1239,7 @@ class TouchOverlayView
         private var remainingActionSelectedIndex = -1
         private var remainingActionPointerId = -1
         private var remainingActionPressedIndex = -1
+        private var remainingActionRowCount = 1
         private var remainingActionButtonRect = RectF()
         private val remainingActionItemRects = mutableListOf<RectF>()
 
@@ -1388,6 +1449,7 @@ class TouchOverlayView
         private fun recomputeRemainingActionGeometry(weaponState: WeaponState? = weaponStateProvider?.invoke()) {
             remainingActionItemRects.clear()
             remainingActionButtonRect = RectF()
+            remainingActionRowCount = 1
 
             val actions = currentRemainingTouchActions(weaponState)
             val wf = width.toFloat()
@@ -1416,6 +1478,7 @@ class TouchOverlayView
             val maxRows = (((hf - margin * 2f) + gap) / (itemH + gap)).toInt().coerceAtLeast(1)
             val columnCount = ((actions.size + maxRows - 1) / maxRows).coerceAtLeast(1)
             val rowCount = ((actions.size + columnCount - 1) / columnCount).coerceAtLeast(1)
+            remainingActionRowCount = rowCount
             val totalWidth = columnCount * itemW + (columnCount - 1).coerceAtLeast(0) * gap
             val totalHeight = rowCount * itemH + (rowCount - 1).coerceAtLeast(0) * gap
             val top =
@@ -1516,7 +1579,11 @@ class TouchOverlayView
                 }
 
                 ControllerMenuSurface.REMAINING_ACTIONS -> {
-                    if (action != 0) {
+                    val actions = currentRemainingTouchActions()
+                    if (actions.isEmpty()) {
+                        closeRemainingActions()
+                        false
+                    } else if (action != 0) {
                         keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP ||
                             keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN ||
                             keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT ||
@@ -1526,6 +1593,11 @@ class TouchOverlayView
                             keyCode == android.view.KeyEvent.KEYCODE_BUTTON_B ||
                             keyCode == android.view.KeyEvent.KEYCODE_BACK
                     } else {
+                        recomputeRemainingActionGeometry()
+                        if (remainingActionSelectedIndex !in actions.indices) {
+                            remainingActionSelectedIndex = 0
+                        }
+
                         when (keyCode) {
                             android.view.KeyEvent.KEYCODE_BUTTON_B,
                             android.view.KeyEvent.KEYCODE_BACK,
@@ -1538,9 +1610,29 @@ class TouchOverlayView
                             android.view.KeyEvent.KEYCODE_DPAD_DOWN,
                             android.view.KeyEvent.KEYCODE_DPAD_LEFT,
                             android.view.KeyEvent.KEYCODE_DPAD_RIGHT,
+                            -> {
+                                val nextIndex =
+                                    moveRemainingActionSelection(
+                                        currentIndex = remainingActionSelectedIndex,
+                                        actionCount = actions.size,
+                                        rowCount = remainingActionRowCount,
+                                        keyCode = keyCode,
+                                    )
+                                if (nextIndex != remainingActionSelectedIndex) {
+                                    remainingActionSelectedIndex = nextIndex
+                                    performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                }
+                                invalidate()
+                                true
+                            }
+
                             android.view.KeyEvent.KEYCODE_BUTTON_A,
                             android.view.KeyEvent.KEYCODE_DPAD_CENTER,
                             -> {
+                                val selectedIndex = remainingActionSelectedIndex.coerceIn(0, actions.lastIndex)
+                                closeRemainingActions()
+                                triggerRemainingAction(actions[selectedIndex].binding)
+                                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                                 true
                             }
 

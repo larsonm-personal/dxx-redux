@@ -81,10 +81,13 @@ Preferred end state:
 - [x] Recompute geometry before controller navigation so layouts with omitted touch buttons still get valid default positions
 
 ### Phase 3: Fallback settings activator when no settings button exists
-- [ ] Reuse the existing bottom-center admin tray tab as the implicit settings activator when `DiagnosticType.SETTINGS` is absent
-- [ ] Allow that fallback activator path to exist in gamepad-only mode for controller-driven settings access
-- [ ] Do not require layout migrations or a mandatory settings diagnostic in bundled touch JSON
-- [ ] Keep explicit settings diagnostics authoritative when present
+- [x] Reuse the existing bottom-center admin tray tab as the implicit settings activator when `DiagnosticType.SETTINGS` is absent
+- [x] Allow that fallback activator path to exist in gamepad-only mode for controller-driven settings access
+- [x] Do not require layout migrations or a mandatory settings diagnostic in bundled touch JSON
+- [x] Keep explicit settings diagnostics authoritative when present
+
+Status note:
+- confirmed by current `TouchOverlayView` behavior; no additional code change was needed in this tranche
 
 Why this shape:
 - bundled layouts already prove that the settings button is optional
@@ -92,33 +95,33 @@ Why this shape:
 - reusing that tab is smaller and cleaner than introducing a second default-placement system
 
 ### Phase 4: Controller navigation for the extra menu
-- [ ] Add D-pad selection movement for remaining actions in `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt`
-- [ ] A activates the highlighted remaining action
-- [ ] B closes the extra menu
-- [ ] Keep the extra menu as the controller-only path to unbound actions such as automap/headlight/guidebot-style items when they are not on a physical binding
+- [x] Add D-pad selection movement for remaining actions in `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt`
+- [x] A activates the highlighted remaining action
+- [x] B closes the extra menu
+- [x] Keep the extra menu as the controller-only path to unbound actions such as automap/headlight/guidebot-style items when they are not on a physical binding
 
 ### Phase 5: Controller navigation for settings child surfaces
-- [ ] `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt`
+- [x] `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt`
   - add selected-row state
   - D-pad up/down moves and scrolls the list
   - A plays the selected track
   - B closes the panel and returns to admin tray root
-- [ ] `android/app/src/main/java/com/dxxredux/app/VideoInfoOverlay.kt`
+- [x] `android/app/src/main/java/com/dxxredux/app/VideoInfoOverlay.kt`
   - add a stable focus order across its interactive controls
   - D-pad moves focus
   - A activates the current control
   - B closes the overlay and returns to admin tray root
-- [ ] Keep display-only overlays such as net stats and net events as root-level toggles unless a later tranche needs deeper controller control
+- [x] Keep display-only overlays such as net stats and net events as root-level toggles unless a later tranche needs deeper controller control
 
 ### Phase 6: MainActivity routing cleanup
-- [ ] Centralize overlay-controller routing in `android/app/src/main/java/com/dxxredux/app/MainActivity.kt`
-- [ ] When any controller overlay surface is active, consume D-pad/A/B before mixer or native gameplay dispatch
-- [ ] Route priority as:
+- [x] Centralize overlay-controller routing in `android/app/src/main/java/com/dxxredux/app/MainActivity.kt`
+- [x] When any controller overlay surface is active, consume D-pad/A/B before mixer or native gameplay dispatch
+- [x] Route priority as:
   1. settings child surface
   2. admin tray root
   3. remaining-actions root
   4. normal mixer/meta/native dispatch
-- [ ] Define menu-cycle behavior on settings child surfaces as `close the whole settings stack`
+- [x] Define menu-cycle behavior on settings child surfaces as `close the whole settings stack`
 
 ### Phase 7: Tests and validation
 - [x] Add JVM tests for pure helper logic:
@@ -126,9 +129,11 @@ Why this shape:
   - touchless warning predicate
   - default controller asset contains `Menu`
   - remaining-actions/admin-tray helper behavior
-- [ ] Extend `android/app/src/test/java/com/dxxredux/app/AdminTrayUiTest.kt`
-- [ ] Add focused unit coverage for child-surface key handlers where the logic can be kept pure
+- [x] Extend `android/app/src/test/java/com/dxxredux/app/AdminTrayUiTest.kt`
+- [x] Add focused unit coverage for child-surface key handlers where the logic can be kept pure
 - [x] Run targeted Android unit tests and a focused debug build
+- [x] Run `android\run-code-quality.ps1 -Fix`
+- [x] Run `:app:externalNativeBuildDebug`
 - [ ] Manual validation on a touchless emulator or Shield-class device:
   - bind/unbind `Menu` and verify the warning
   - first/second/third press cycle
@@ -159,5 +164,8 @@ Why this shape:
 - [x] Design study and owner/file mapping
 - [x] Phase 1 implementation and validation
 - [x] Phase 2 groundwork implementation and validation
-- [ ] Phase 3 through Phase 6 implementation
+- [x] Phase 3 fallback activator audit and validation
+- [x] Phase 4 extra-menu controller navigation and validation
+- [x] Phase 5 child-surface controller navigation and validation
+- [x] Phase 6 menu-stack behavior and validation
 - [ ] Full manual controller validation
