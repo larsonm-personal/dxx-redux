@@ -23,13 +23,17 @@ internal fun getSafLinkedHelperArtifactPaths(
     sources: List<AudioSourceManager.AudioSource>,
 ): Set<String> = getManagedInternalArtifactPaths(filesDir, sources.filter(::hasSafLinkedCdContent))
 
+internal fun AudioSourceManager.AudioSource.binContentUriList(): List<String> =
+    if (binContentUris.isNotEmpty()) binContentUris else listOfNotNull(binContentUri)
+
 internal fun resolvePlaylistCuePath(
     filesDir: File,
     source: AudioSourceManager.AudioSource,
     fallback: () -> String,
 ): String {
     val localCue = resolveCdAudioSourceFile(filesDir, source.cuePath)
-    return if (source.binContentUri?.let(::isLocalCdContentPath) == true && localCue.exists()) {
+    val binContentUris = source.binContentUriList()
+    return if (binContentUris.isNotEmpty() && binContentUris.all(::isLocalCdContentPath) && localCue.exists()) {
         localCue.absolutePath
     } else {
         fallback()
@@ -46,13 +50,13 @@ private fun getManagedInternalArtifactFilesForSource(
         files.add(cueFile)
     }
 
-    val localBinContentPath = source.binContentUri?.takeIf(::isLocalCdContentPath)
-    if (localBinContentPath != null) {
-        val binFile = File(localBinContentPath)
-        if (isManagedCdArtifactFile(binFile, filesDir)) {
-            files.add(binFile)
-        }
-    } else if (source.binContentUri == null) {
+    val localBinContentPaths = source.binContentUriList().filter(::isLocalCdContentPath)
+    if (localBinContentPaths.isNotEmpty()) {
+        localBinContentPaths
+            .map(::File)
+            .filter { file -> isManagedCdArtifactFile(file, filesDir) }
+            .forEach(files::add)
+    } else if (source.binContentUriList().isEmpty()) {
         source.binPaths
             .map { resolveCdAudioSourceFile(filesDir, it) }
             .filter { file -> isManagedCdArtifactFile(file, filesDir) }
@@ -142,6 +146,8 @@ class AudioSourceManager(
         val trackNames: Map<Int, String> = emptyMap(),
         // SAF content URI for BIN file (when referenced in-place, not copied)
         val binContentUri: String? = null,
+        // SAF content URI(s) for BIN file(s) when referenced in-place, not copied
+        val binContentUris: List<String> = emptyList(),
         // SAF content URI for CUE file (when referenced in-place, not copied)
         val cueContentUri: String? = null,
     )
@@ -191,7 +197,7 @@ class AudioSourceManager(
         context: Context?,
     ) {
         if (context != null) {
-            listOfNotNull(source.binContentUri, source.cueContentUri)
+            (source.binContentUriList() + listOfNotNull(source.cueContentUri))
                 .filterNot(::isLocalCdContentPath)
                 .forEach { uriStr ->
                     releaseReadPermissionForUri(context, Uri.parse(uriStr))
@@ -272,10 +278,11 @@ class AudioSourceManager(
         val pruned = mutableListOf<String>()
         val toRemove =
             sources.filter { src ->
-                if (src.binContentUri != null && !isLocalCdContentPath(src.binContentUri)) return@filter false
+                val binContentUris = src.binContentUriList()
+                if (binContentUris.any { !isLocalCdContentPath(it) }) return@filter false
                 val allFiles =
-                    if (src.binContentUri?.let(::isLocalCdContentPath) == true) {
-                        listOf(src.binContentUri, src.cuePath)
+                    if (binContentUris.isNotEmpty()) {
+                        binContentUris + src.cuePath
                     } else {
                         src.binPaths + src.cuePath
                     }
@@ -339,35 +346,7 @@ class AudioSourceManager(
             val cuePath = resolvePlaylistCuePath(filesDir, src) { stagedCuePath(src, activeSetDir) }
             entry.put("cue", cuePath)
             val bins = JSONArray()
-            if (src.binContentUri != null) {
-                // SAF source (or test filesystem path): open fd and use /proc/self/fd path
-                try {
-                    val pfd =
-                        if (src.binContentUri.startsWith("/")) {
-                            // Test mode: direct filesystem path
-                            ParcelFileDescriptor.open(
-                                File(src.binContentUri),
-                                ParcelFileDescriptor.MODE_READ_ONLY,
-                            )
-                        } else if (resolver != null) {
-                            resolver.openFileDescriptor(Uri.parse(src.binContentUri), "r")
-                        } else {
-                            null
-                        }
-                    if (pfd != null) {
-                        activePfds.add(pfd)
-                        bins.put("/proc/self/fd/${pfd.fd}")
-                    } else {
-                        Log.w(TAG, "Could not open BIN for ${src.discLabel}")
-                        src.binPaths.forEach { bins.put(it) }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "SAF fd open failed for ${src.discLabel}", e)
-                    src.binPaths.forEach { bins.put(it) }
-                }
-            } else {
-                src.binPaths.forEach { bins.put(resolveBinPath(it, activeSetDir)) }
-            }
+            resolvePlaylistBinPaths(src, resolver, activeSetDir).forEach(bins::put)
             entry.put("bins", bins)
             entry.put("label", src.discLabel)
             entry.put("legacy_disc_id", src.legacyDiscId)
@@ -389,6 +368,54 @@ class AudioSourceManager(
         try {
             FileSetManager(filesDir).let { it.getSetDir(it.getActive()) }
         } catch (_: Exception) {
+            null
+        }
+
+    private fun resolvePlaylistBinPaths(
+        src: AudioSource,
+        resolver: ContentResolver?,
+        activeSetDir: File?,
+    ): List<String> {
+        val binContentUris = src.binContentUriList()
+        if (binContentUris.isEmpty()) {
+            return src.binPaths.map { resolveBinPath(it, activeSetDir) }
+        }
+
+        val openedPfds = mutableListOf<ParcelFileDescriptor>()
+        return try {
+            binContentUris
+                .map { uriStr ->
+                    val pfd =
+                        openBinContentUri(uriStr, resolver)
+                            ?: throw IllegalStateException("Could not open BIN content URI: $uriStr")
+                    openedPfds.add(pfd)
+                    "/proc/self/fd/${pfd.fd}"
+                }.also { activePfds.addAll(openedPfds) }
+        } catch (e: Exception) {
+            openedPfds.forEach { pfd ->
+                try {
+                    pfd.close()
+                } catch (_: Exception) {
+                    // already closed
+                }
+            }
+            Log.w(TAG, "BIN fd open failed for ${src.discLabel}", e)
+            src.binPaths.map { resolveBinPath(it, activeSetDir) }
+        }
+    }
+
+    private fun openBinContentUri(
+        uriStr: String,
+        resolver: ContentResolver?,
+    ): ParcelFileDescriptor? =
+        if (isLocalCdContentPath(uriStr)) {
+            ParcelFileDescriptor.open(
+                File(uriStr),
+                ParcelFileDescriptor.MODE_READ_ONLY,
+            )
+        } else if (resolver != null) {
+            resolver.openFileDescriptor(Uri.parse(uriStr), "r")
+        } else {
             null
         }
 
@@ -461,6 +488,13 @@ class AudioSourceManager(
                     .map { i ->
                         val obj = arr.getJSONObject(i)
                         val binArr = obj.getJSONArray("bins")
+                        val legacyBinContentUri = obj.optString("bin_content_uri", "").ifEmpty { null }
+                        val binContentUris =
+                            obj.optJSONArray("bin_content_uris")?.let { uriArr ->
+                                (0 until uriArr.length()).mapNotNull { index ->
+                                    uriArr.optString(index).ifEmpty { null }
+                                }
+                            } ?: legacyBinContentUri?.let(::listOf) ?: emptyList()
                         AudioSource(
                             id = obj.getString("id"),
                             cuePath = obj.getString("cue"),
@@ -476,7 +510,8 @@ class AudioSourceManager(
                                 obj.optJSONObject("track_names")?.let { tn ->
                                     tn.keys().asSequence().associate { k -> k.toInt() to tn.getString(k) }
                                 } ?: emptyMap(),
-                            binContentUri = obj.optString("bin_content_uri", "").ifEmpty { null },
+                            binContentUri = legacyBinContentUri ?: binContentUris.firstOrNull(),
+                            binContentUris = binContentUris,
                             cueContentUri = obj.optString("cue_content_uri", "").ifEmpty { null },
                         )
                     }.toMutableList()
@@ -509,7 +544,13 @@ class AudioSourceManager(
                 src.trackNames.forEach { (k, v) -> tn.put(k.toString(), v) }
                 obj.put("track_names", tn)
             }
-            src.binContentUri?.let { obj.put("bin_content_uri", it) }
+            val binContentUris = src.binContentUriList()
+            if (binContentUris.isNotEmpty()) {
+                val binUriArray = JSONArray()
+                binContentUris.forEach(binUriArray::put)
+                obj.put("bin_content_uris", binUriArray)
+                obj.put("bin_content_uri", binContentUris.first())
+            }
             src.cueContentUri?.let { obj.put("cue_content_uri", it) }
             arr.put(obj)
         }

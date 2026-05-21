@@ -34,12 +34,12 @@
 
 #ifdef ANDROID
 #include "android_texture_debug.h"
-#endif
-
-#ifdef ANDROID
 #include <android/log.h>
 #include <time.h>
 #include "debug_tex_overlay.h"
+#ifdef INTROSPECT_ON
+#include "game_introspect.h"
+#endif
 #include "merged_wall_debug.h"
 #include "ogl_gpu_timer_android.h"
 #include "ogl_texture_android.h"
@@ -2389,28 +2389,29 @@ void gr_flip(void)
 	/* android port: sample framebuffer for introspection (center pixel + 4x4 grid average) */
 #ifdef ANDROID
 	{
-		if (trace_flip)
-			crash_breadcrumb("gr_flip: fb_sample");
-		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
-		android_merged_wall_sample_snapshot_framebuffer(
-			w, h,
-			&g_fb_sample_r, &g_fb_sample_g, &g_fb_sample_b, &g_fb_sample_a,
-			&g_fb_avg_r, &g_fb_avg_g, &g_fb_avg_b, &g_fb_avg_a);
+		int need_fb_sample = g_merged_wall_snapshot_pending;
+#ifdef INTROSPECT_ON
+		if (!need_fb_sample)
+			need_fb_sample = game_introspect_dump_requested();
+#endif
+		/* Avoid unconditional glReadPixels on menu frames. Shield-class drivers
+		 * have shown libglcore crashes here even though only debug consumers need
+		 * these samples. */
+		if (need_fb_sample) {
+			if (trace_flip)
+				crash_breadcrumb("gr_flip: fb_sample");
+			int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
+			android_merged_wall_sample_snapshot_framebuffer(
+				w, h,
+				&g_fb_sample_r, &g_fb_sample_g, &g_fb_sample_b, &g_fb_sample_a,
+				&g_fb_avg_r, &g_fb_avg_g, &g_fb_avg_b, &g_fb_avg_a);
+		}
 	}
 #endif
 
 #ifdef ANDROID
-	if (trace_flip)
-		crash_breadcrumb("gr_flip: swap");
-#endif
-	ogl_swap_buffers_internal();
-
-#ifdef ANDROID
-	if (trace_flip)
-		crash_breadcrumb("gr_flip: clear");
-#endif
-	glClear(GL_COLOR_BUFFER_BIT);
-#ifdef ANDROID
+	/* Prepare the menu viewport for the next frame before swap. Some Android
+	 * drivers are unstable if we keep issuing GL commands after eglSwapBuffers. */
 	g_ogl_render_context = 0; /* reset to menu context for next frame */
 	{
 		extern volatile int g_blit_y_offset;
@@ -2423,6 +2424,15 @@ void gr_flip(void)
 		last_kb_off = koff;
 		g_blit_y_offset = koff;
 	}
+
+	if (trace_flip)
+		crash_breadcrumb("gr_flip: swap");
+#endif
+	ogl_swap_buffers_internal();
+
+
+#ifndef ANDROID
+	glClear(GL_COLOR_BUFFER_BIT);
 #endif
 }
 

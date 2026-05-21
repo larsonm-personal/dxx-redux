@@ -1267,18 +1267,20 @@ private fun StorageInspectorSection(filesDir: File) {
                     val srcMgr = AudioSourceManager(filesDir)
                     for (src in srcMgr.getSources()) {
                         if (!hasSafLinkedCdContent(src)) continue
-                        val safBinUri = src.binContentUri?.takeUnless(::isLocalCdContentPath)
+                        val safBinUris = src.binContentUriList().filterNot(::isLocalCdContentPath)
                         val safCueUri = src.cueContentUri?.takeUnless(::isLocalCdContentPath)
-                        listOfNotNull(safBinUri, safCueUri).forEach(trackedSafUris::add)
-                        val displayUri = safCueUri ?: safBinUri ?: continue
+                        (safBinUris + listOfNotNull(safCueUri)).forEach(trackedSafUris::add)
+                        val displayUri = safCueUri ?: safBinUris.firstOrNull() ?: continue
                         val accessible =
-                            listOfNotNull(
-                                safBinUri?.let { uriStr ->
+                            (
+                                safBinUris.map { uriStr ->
                                     canAccessSafUri(ctx, Uri.parse(uriStr), useFileDescriptor = true)
-                                },
-                                safCueUri?.let { uriStr ->
-                                    canAccessSafUri(ctx, Uri.parse(uriStr))
-                                },
+                                } +
+                                    listOfNotNull(
+                                        safCueUri?.let { uriStr ->
+                                            canAccessSafUri(ctx, Uri.parse(uriStr))
+                                        },
+                                    )
                             ).all { it }
                         entries.add(
                             SafEntry(

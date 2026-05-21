@@ -13,16 +13,28 @@ class CdAudioSourceVisibilityTest {
         localPathFile.deleteOnExit()
         val localPathSource = testSource(id = "local-path", binContentUri = localPathFile.absolutePath)
         val goodSafSource = testSource(id = "good", binContentUri = "content://good-bin", cueContentUri = "content://good-cue")
+        val goodMultiSafSource =
+            testSource(
+                id = "good-multi",
+                binContentUris = listOf("content://good-bin-1", "content://good-bin-2"),
+                cueContentUri = "content://good-cue",
+            )
         val brokenBinSource = testSource(id = "broken-bin", binContentUri = "content://broken-bin", cueContentUri = "content://good-cue")
+        val brokenMultiBinSource =
+            testSource(
+                id = "broken-multi-bin",
+                binContentUris = listOf("content://good-bin", "content://broken-bin"),
+                cueContentUri = "content://good-cue",
+            )
         val brokenCueSource = testSource(id = "broken-cue", binContentUri = "content://good-bin", cueContentUri = "content://broken-cue")
 
         val visibleIds =
-            listOf(localSource, localPathSource, goodSafSource, brokenBinSource, brokenCueSource)
+            listOf(localSource, localPathSource, goodSafSource, goodMultiSafSource, brokenBinSource, brokenMultiBinSource, brokenCueSource)
                 .filter { source ->
                     shouldDisplayCdAudioSource(source) { uri, _ -> !uri.contains("broken") }
                 }.map { it.id }
 
-        assertEquals(listOf("local", "local-path", "good"), visibleIds)
+        assertEquals(listOf("local", "local-path", "good", "good-multi"), visibleIds)
     }
 
     @Test
@@ -34,10 +46,12 @@ class CdAudioSourceVisibilityTest {
         val mergedSource = testSource(id = "merged", binContentUri = mergedBin.absolutePath)
         val relativeSource = testSource(id = "relative")
         val safSource = testSource(id = "saf", binContentUri = "content://good-bin")
+        val multiRelativeSource = testSource(id = "multi-relative", binPaths = listOf("disc-a.bin", "disc-b.bin"))
 
         assertEquals(mergedBin.absolutePath, resolveCdPreviewLocalBinPath(filesDir, mergedSource))
         assertEquals(File(filesDir, "disc.bin").absolutePath, resolveCdPreviewLocalBinPath(filesDir, relativeSource))
         assertNull(resolveCdPreviewLocalBinPath(filesDir, safSource))
+        assertNull(resolveCdPreviewLocalBinPath(filesDir, multiRelativeSource))
     }
 
     @Test
@@ -84,28 +98,33 @@ class CdAudioSourceVisibilityTest {
         val localSource = testSource(id = "local")
         val mergedLocalSource = testSource(id = "merged", binContentUri = File("/tmp/merged.bin").absolutePath)
         val safSource = testSource(id = "saf", binContentUri = "content://good-bin", cueContentUri = "content://good-cue")
+        val multiSafSource = testSource(id = "multi-saf", binContentUris = listOf("content://good-bin-1", "content://good-bin-2"))
 
         assertEquals(false, hasSafLinkedCdContent(localSource))
         assertEquals(false, hasSafLinkedCdContent(mergedLocalSource))
         assertEquals(true, hasSafLinkedCdContent(safSource))
+        assertEquals(true, hasSafLinkedCdContent(multiSafSource))
     }
 
     private fun testSource(
         id: String,
         binContentUri: String? = null,
+        binContentUris: List<String> = emptyList(),
         cueContentUri: String? = null,
         cuePath: String = "disc.cue",
+        binPaths: List<String> = listOf("disc.bin"),
     ) =
         AudioSourceManager.AudioSource(
             id = id,
             cuePath = cuePath,
-            binPaths = listOf("disc.bin"),
+            binPaths = binPaths,
             discLabel = id,
             discId = "unknown",
             trackCount = 10,
             audioTrackCount = 9,
             legacyDiscId = 0L,
             binContentUri = binContentUri,
+            binContentUris = binContentUris,
             cueContentUri = cueContentUri,
         )
 }

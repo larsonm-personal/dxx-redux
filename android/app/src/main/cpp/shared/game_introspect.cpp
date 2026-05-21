@@ -1045,6 +1045,11 @@ extern "C" void game_introspect_request(void)
 	introspect_requested = 1;
 }
 
+extern "C" int game_introspect_dump_requested(void)
+{
+	return introspect_requested;
+}
+
 extern "C" void game_introspect_check_and_dump(void)
 {
 	if (!introspect_requested || !introspect_path[0])

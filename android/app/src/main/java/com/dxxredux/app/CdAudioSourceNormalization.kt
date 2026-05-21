@@ -23,7 +23,7 @@ internal fun resolveCdAudioSourceFile(
 }
 
 internal fun hasSafLinkedCdContent(source: AudioSourceManager.AudioSource): Boolean =
-    source.binContentUri?.let { !isLocalCdContentPath(it) } == true ||
+    source.binContentUriList().any { !isLocalCdContentPath(it) } ||
         source.cueContentUri?.let { !isLocalCdContentPath(it) } == true
 
 internal fun sanitizeCdAudioImportStem(name: String): String {

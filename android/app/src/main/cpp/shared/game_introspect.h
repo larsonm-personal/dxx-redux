@@ -37,6 +37,12 @@ void game_introspect_set_path(const char *path);
 void game_introspect_request(void);
 
 /*
+ * Returns non-zero while an on-demand dump is pending. Render code can use
+ * this to gate expensive debug-only sampling until a real consumer asks.
+ */
+int game_introspect_dump_requested(void);
+
+/*
  * Called from the game thread (e.g. event_process) each frame.
  * If a dump was requested, writes the current state to the file and
  * clears the request flag.  Costs almost nothing when no dump is pending.
@@ -55,6 +61,7 @@ static inline void game_introspect_set_path(const char *path)
 	(void) path;
 }
 static inline void game_introspect_request(void) {}
+static inline int game_introspect_dump_requested(void) { return 0; }
 static inline void game_introspect_check_and_dump(void) {}
 
 #endif /* INTROSPECT_ON */

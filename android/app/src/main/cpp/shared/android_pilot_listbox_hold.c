@@ -133,13 +133,14 @@ static int android_pilot_listbox_trigger_delete(
 	int (*listbox_callback)(listbox *lb, d_event *event, void *userdata),
 	void *userdata, int suppress_release)
 {
-	int rval = android_pilot_listbox_delete_current(lb, listbox_callback, userdata);
+	int rval;
 
-	android_pilot_listbox_reset_active_hold();
 	if (suppress_release) {
 		g_android_pilot_listbox_hold.suppress_release_lb = lb;
 		g_android_pilot_listbox_hold.suppress_release_button = button;
 	}
+	android_pilot_listbox_reset_active_hold();
+	rval = android_pilot_listbox_delete_current(lb, listbox_callback, userdata);
 	return rval ? rval : 1;
 }
 

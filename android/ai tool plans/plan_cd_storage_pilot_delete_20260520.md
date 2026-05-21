@@ -11,7 +11,8 @@
 - Implemented and validated Android pilot long-hold deletion for D1 and D2
 - Completed the dedup follow-up so the Android-only pilot hold logic now lives in shared Android-owned code and the D1/D2 diff is smaller
 - Completed the pilot-delete follow-up so the confirmation prompt opens as soon as the Android A hold crosses the threshold and Shield/TV DPAD center is routed through the same controller-A hold path
-- Full in-place multi-BIN playback remains a planned follow-up tranche
+- Completed the first true multi-BIN groundwork tranche in the persisted source model, playlist writer, and in-game Redbook runtime
+- SAF import registration still stays on the merged-local path for now because preview is still a follow-up slice
 
 ## Findings
 - In-place multi-BIN CD audio is feasible, but it is a medium-sized cross-layer change. The launcher CUE parser already tracks `fileIndex`, but the persisted source model, playlist writer, in-game Redbook player, and preview player are still shaped around one live BIN handle.
@@ -43,12 +44,13 @@
 	- Consider whether `mods/` and `custom_music/` should be moved under the same import root or left for a later migration because those affect active mod/music paths and UI expectations
 	- Keep small metadata, configs, manifests, saves, and debug logs in `filesDir`
 7. Deferred feature tranche: true in-place multi-BIN CD audio
-	- Extend `AudioSource` to preserve one URI/path per BIN instead of one `binContentUri`
-	- Write playlist entries with all local paths or all `/proc/self/fd/<n>` paths and keep all SAF descriptors alive for the game session
-	- Replace or extend the runtime CUE parsing in `rbaudio_bin.c` so each track records a file index and sector offset within that file
-	- Open multiple BIN handles per source and read audio from the correct handle for each track
-	- Extend `cd_preview.c`, `CdPreviewBridge.kt`, and `MusicPickerPage.kt` to preview from multiple paths/fds
-	- Add tests using a tiny synthetic multi-BIN cue with known track boundaries
+	- Completed on 2026-05-21: extended `AudioSource` persistence so a source can carry multiple BIN content URIs while keeping the old single-URI field readable
+	- Completed on 2026-05-21: updated `AudioSourceManager.writePlaylist()` to emit every BIN entry and keep every live SAF file descriptor open for the game session
+	- Completed on 2026-05-21: switched `rbaudio_bin.c` to the shared `cue_parser` path so each combined track records a `file_index` and playback opens/seeks the correct BIN handle
+	- Completed on 2026-05-21: added focused JVM coverage for the new source-model serialization and visibility behavior
+	- Remaining: extend `cd_preview.c`, `CdPreviewBridge.kt`, and `MusicPickerPage.kt` to preview from multiple paths/fds instead of the current single-BIN-only path
+	- Remaining: flip the SAF multi-BIN import registration path in `SetupActivity.kt` away from merged-local staging once preview is ready
+	- Remaining: add a tiny synthetic multi-BIN runtime/preview test with known track boundaries
 8. Pilot deletion tranche
 	- Completed on 2026-05-20
 	- Added Android-only pilot list text in `d1/main/text.h` and `d2/main/text.h`, preserving `<Ctrl-D> deletes` on desktop
@@ -70,6 +72,11 @@
 	- Narrowed `android/game_scripts/test_pilot_long_hold_delete_unified.json5` to a focused threshold regression because the automation harness does not reliably interact with the nested confirmation prompt buttons
 
 ## Validation Targets
+- Completed: `android\stop-stale-formatters.ps1` reported no stale formatter tasks before the 2026-05-21 scoped cleanup pass
+- Completed: scoped `android\run-code-quality.ps1 -Fix -Paths ...` passed for the 2026-05-21 multi-BIN groundwork files
+- Completed: `cd android; .\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.CdAudioSourceVisibilityTest --tests com.dxxredux.app.AudioSourceManagerArtifactPathsTest --tests com.dxxredux.app.AudioSourceManagerPersistenceTest` passed
+- Completed: `cd android; .\gradlew.bat :app:externalNativeBuildDebug` passed after the multi-BIN runtime changes
+- Completed: `cd android; .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --tests com.dxxredux.app.CdAudioSourceVisibilityTest --tests com.dxxredux.app.AudioSourceManagerArtifactPathsTest --tests com.dxxredux.app.AudioSourceManagerPersistenceTest` passed after the scoped formatter pass
 - Completed: `android\stop-stale-formatters.ps1` reported no stale formatter tasks
 - Completed: scoped `android\run-code-quality.ps1 -Fix -Paths ...` passed on modified main Kotlin files; the repo ktlint wrapper does not scan `app/src/test`
 - Completed: focused JVM tests for `AudioSourceManagerArtifactPathsTest` and `CdAudioSourceVisibilityTest` passed

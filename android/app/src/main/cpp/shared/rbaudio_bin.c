@@ -33,6 +33,7 @@
 #include "timer.h"
 #include "ignorecase.h"
 #include "track_names.h"
+#include "../extract/cue_parser.h"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -51,6 +52,7 @@
 #define FRAMES_PER_SECTOR (SECTOR_SIZE / 4) /* 588 stereo frames */
 #define MAX_TRACKS        100
 #define MAX_SOURCES       8
+#define MAX_SOURCE_BINS   CUE_MAX_FILES
 
 /* Known Descent II disc ID — returned by RBAGetDiscID() so that
  * songs_haved2_cd() recognises the GOG image as an original D2 CD. */
@@ -65,6 +67,13 @@ typedef struct {
 	FILE *sf;        /* set when using stdio  */
 } bin_handle_t;
 
+static int path_is_local(const char *path)
+{
+	return path && (path[0] == '/' ||
+	                (isalpha((unsigned char) path[0]) && path[1] == ':' &&
+	                 (path[2] == '\\' || path[2] == '/')));
+}
+
 static int bh_valid(const bin_handle_t *h)
 {
 	return h->pf || h->sf;
@@ -74,7 +83,7 @@ static void bh_open(bin_handle_t *h, const char *path)
 {
 	h->pf = NULL;
 	h->sf = NULL;
-	if (path[0] == '/') {
+	if (path_is_local(path)) {
 		h->sf = fopen(path, "rb");
 	} else {
 		char buf[256];
@@ -128,7 +137,8 @@ static void bh_close(bin_handle_t *h)
 
 /* One BIN/CUE audio source (disc image) */
 typedef struct {
-	bin_handle_t bin_file;
+	bin_handle_t bin_files[MAX_SOURCE_BINS];
+	int num_bins;
 	int first_combined; /* first 1-based combined track number */
 	int audio_count;    /* number of audio tracks in this source */
 	char disc_label[64];
@@ -143,6 +153,7 @@ typedef struct {
 	int start_sector;
 	int num_sectors;
 	int source_index; /* index into s_sources[] */
+	int file_index;   /* index into source bin_files[] */
 	char name[64];    /* track name from CUE/database */
 } combined_track_t;
 
@@ -260,17 +271,90 @@ static int parse_msf(const char *msf)
 	return m * 60 * 75 + s * 75 + f;
 }
 
+static void close_source_bins(audio_source_t *src)
+{
+	int i;
+	for (i = 0; i < src->num_bins; i++)
+		bh_close(&src->bin_files[i]);
+	src->num_bins = 0;
+}
+
 /* Get the bin handle for a given combined track */
 static bin_handle_t *get_track_handle(int combined_track_1based)
 {
 	int src_idx;
+	int file_idx;
 	if (combined_track_1based < 1 || combined_track_1based > s_num_tracks)
 		return NULL;
 	src_idx = s_tracks[combined_track_1based - 1].source_index;
-	if (src_idx >= 0 && src_idx < s_num_sources)
-		return &s_sources[src_idx].bin_file;
+	file_idx = s_tracks[combined_track_1based - 1].file_index;
+	if (src_idx >= 0 && src_idx < s_num_sources) {
+		audio_source_t *src = &s_sources[src_idx];
+		if (file_idx >= 0 && file_idx < src->num_bins)
+			return &src->bin_files[file_idx];
+		if (src->num_bins > 0)
+			return &src->bin_files[0];
+	}
 	/* Legacy single-source fallback */
 	return &s_gog_handle;
+}
+
+static char *read_text_file_any(const char *path)
+{
+	PHYSFS_File *pf = NULL;
+	FILE *sf = NULL;
+	PHYSFS_sint64 size;
+	char *buf;
+
+	if (path_is_local(path)) {
+		sf = fopen(path, "rb");
+		if (!sf) return NULL;
+		if (fseek(sf, 0, SEEK_END) != 0) {
+			fclose(sf);
+			return NULL;
+		}
+		size = (PHYSFS_sint64) ftell(sf);
+		if (size < 0 || fseek(sf, 0, SEEK_SET) != 0) {
+			fclose(sf);
+			return NULL;
+		}
+	} else {
+		pf = open_ci(path);
+		if (!pf) return NULL;
+		size = PHYSFS_fileLength(pf);
+		if (size < 0) {
+			PHYSFS_close(pf);
+			return NULL;
+		}
+	}
+
+	buf = (char *) malloc((size_t) size + 1);
+	if (!buf) {
+		if (sf)
+			fclose(sf);
+		else if (pf)
+			PHYSFS_close(pf);
+		return NULL;
+	}
+
+	if (sf) {
+		if (fread(buf, 1, (size_t) size, sf) != (size_t) size) {
+			free(buf);
+			fclose(sf);
+			return NULL;
+		}
+		fclose(sf);
+	} else {
+		if (PHYSFS_read(pf, buf, 1, (PHYSFS_uint32) size) != size) {
+			free(buf);
+			PHYSFS_close(pf);
+			return NULL;
+		}
+		PHYSFS_close(pf);
+	}
+
+	buf[size] = '\0';
+	return buf;
 }
 
 /* ── Minimal JSON helpers for audio_playlist.json ────────────────────── */
@@ -377,140 +461,90 @@ static void pj_skip_value(const char **pp)
  * associate tracks with. Returns the number of tracks parsed, or 0 on
  * failure.
  */
-static int parse_source_cue(const char *cue_name, const char *bin_name,
-                            int source_idx)
+static int parse_source_cue(const char *cue_name, const char *const *bin_names,
+                            int num_bins, int source_idx)
 {
-	PHYSFS_File *f;
-	FILE *sf;
-	PHYSFS_sint64 file_size;
-	const char *cue_real_dir;
-	int use_stdio;
-	int cur_track = -1;
+	char *cue_text;
+	cue_disc_t disc;
+	long long bin_sizes[CUE_MAX_FILES];
 	int base = s_num_tracks; /* where this source's tracks start */
-	int i, total_sectors, count;
+	int i, count;
 
-	f = NULL;
-	sf = NULL;
-	use_stdio = cue_name[0] == '/';
-	if (use_stdio) {
-		cue_real_dir = cue_name;
-		sf = fopen(cue_name, "rb");
-	} else {
-		cue_real_dir = PHYSFS_getRealDir(cue_name);
-		f = open_ci(cue_name);
-	}
+	memset(&disc, 0, sizeof(disc));
+	memset(bin_sizes, 0, sizeof(bin_sizes));
+	close_source_bins(&s_sources[source_idx]);
 
-	RBA_DIAG("parse_source_cue src=%d cue=%s mode=%s cue_real_dir=%s bin=%s",
-	         source_idx, cue_name, use_stdio ? "stdio" : "physfs",
-	         cue_real_dir ? cue_real_dir : "(null)", bin_name);
+	RBA_DIAG("parse_source_cue src=%d cue=%s bins=%d mode=%s",
+	         source_idx, cue_name, num_bins,
+	         path_is_local(cue_name) ? "stdio" : "physfs");
 
-	if (!f && !sf) {
+	cue_text = read_text_file_any(cue_name);
+	if (!cue_text) {
 		RBA_LOG("parse_source_cue: cannot open %s", cue_name);
-		RBA_DIAG("parse_source_cue open failed src=%d cue=%s mode=%s err=%s",
-		         source_idx, cue_name, use_stdio ? "stdio" : "physfs",
-		         use_stdio ? "(stdio open failed)" : PHYSFS_getLastError());
 		return 0;
 	}
 
-	for (;;) {
-		char line[512];
-		int li = 0;
-		int got_line = 0;
-		while (li < (int) sizeof(line) - 1) {
-			char c;
-			if (use_stdio) {
-				int ch = fgetc(sf);
-				if (ch == EOF) break;
-				c = (char) ch;
-			} else {
-				if (PHYSFS_eof(f)) break;
-				if (PHYSFS_read(f, &c, 1, 1) != 1) break;
-			}
-			got_line = 1;
-			if (c == '\n') break;
-			if (c != '\r') line[li++] = c;
-		}
-		if (!got_line) break;
-		line[li] = '\0';
-
-		/* TRACK nn TYPE */
-		{
-			int tnum;
-			char ttype[32];
-			if (sscanf(line, " TRACK %d %31s", &tnum, ttype) == 2) {
-				if (tnum >= 1 && tnum <= MAX_TRACKS && s_num_tracks < MAX_TRACKS) {
-					cur_track = s_num_tracks;
-					s_tracks[cur_track].type =
-					    (strstr(ttype, "AUDIO") != NULL) ? 1 : 0;
-					s_tracks[cur_track].source_index = source_idx;
-					s_tracks[cur_track].name[0] = '\0';
-					s_num_tracks++;
-				}
-				continue;
-			}
-		}
-		/* TITLE "..." */
-		{
-			char *p = line;
-			while (*p == ' ' || *p == '\t') p++;
-			if (strncasecmp(p, "TITLE", 5) == 0 && cur_track >= 0) {
-				char *q = strchr(p, '"');
-				if (q) {
-					q++;
-					char *end = strchr(q, '"');
-					if (end) {
-						int len = (int) (end - q);
-						if (len > 63) len = 63;
-						memcpy(s_tracks[cur_track].name, q, len);
-						s_tracks[cur_track].name[len] = '\0';
-					}
-				}
-				continue;
-			}
-		}
-		/* INDEX 01 MM:SS:FF */
-		{
-			int idx;
-			char msf[32];
-			if (cur_track >= 0 &&
-			    sscanf(line, " INDEX %d %31s", &idx, msf) == 2 && idx == 1) {
-				s_tracks[cur_track].start_sector = parse_msf(msf);
-			}
-		}
+	count = cue_parse(cue_text, NULL, 0, &disc);
+	if (count <= 0 || disc.num_tracks <= 0) {
+		RBA_LOG("parse_source_cue: failed to parse %s", cue_name);
+		free(cue_text);
+		return 0;
 	}
-	if (sf)
-		fclose(sf);
-	else
-		PHYSFS_close(f);
-
-	count = s_num_tracks - base;
-	if (count <= 0) return 0;
-
-	/* Open the BIN file */
-	bh_open(&s_sources[source_idx].bin_file, bin_name);
-	if (!bh_valid(&s_sources[source_idx].bin_file)) {
-		RBA_LOG("parse_source_cue: cannot open BIN %s", bin_name);
-		s_num_tracks = base; /* roll back */
+	if (disc.num_files <= 0 || disc.num_files > MAX_SOURCE_BINS || disc.num_files > num_bins) {
+		RBA_LOG("parse_source_cue: cue expects %d BIN files, playlist has %d",
+		        disc.num_files, num_bins);
+		free(cue_text);
+		return 0;
+	}
+	if (base + disc.num_tracks > MAX_TRACKS) {
+		RBA_LOG("parse_source_cue: too many tracks in %s", cue_name);
+		free(cue_text);
 		return 0;
 	}
 
-	/* Compute track lengths from successive start positions */
-	file_size = bh_length(&s_sources[source_idx].bin_file);
-	if (file_size <= 0) {
-		RBA_LOG("parse_source_cue: BIN file %s has invalid size %lld", bin_name, (long long) file_size);
-		bh_close(&s_sources[source_idx].bin_file);
-		s_num_tracks = base;
+	for (i = 0; i < disc.num_files; i++) {
+		long long file_size;
+		bh_open(&s_sources[source_idx].bin_files[i], bin_names[i]);
+		if (!bh_valid(&s_sources[source_idx].bin_files[i])) {
+			RBA_LOG("parse_source_cue: cannot open BIN %s", bin_names[i]);
+			close_source_bins(&s_sources[source_idx]);
+			free(cue_text);
+			return 0;
+		}
+		file_size = (long long) bh_length(&s_sources[source_idx].bin_files[i]);
+		if (file_size <= 0) {
+			RBA_LOG("parse_source_cue: BIN file %s has invalid size %lld",
+			        bin_names[i], file_size);
+			close_source_bins(&s_sources[source_idx]);
+			free(cue_text);
+			return 0;
+		}
+		bin_sizes[i] = file_size;
+		s_sources[source_idx].num_bins = i + 1;
+	}
+
+	memset(&disc, 0, sizeof(disc));
+	count = cue_parse(cue_text, bin_sizes, s_sources[source_idx].num_bins, &disc);
+	free(cue_text);
+	if (count <= 0 || disc.num_tracks <= 0) {
+		RBA_LOG("parse_source_cue: failed to compute track lengths for %s", cue_name);
+		close_source_bins(&s_sources[source_idx]);
 		return 0;
 	}
-	total_sectors = (int) (file_size / SECTOR_SIZE);
 
-	for (i = base; i < s_num_tracks; i++) {
-		int ns;
-		if (i + 1 < s_num_tracks)
-			ns = s_tracks[i + 1].start_sector - s_tracks[i].start_sector;
-		else
-			ns = total_sectors - s_tracks[i].start_sector;
-		s_tracks[i].num_sectors = (ns > 0) ? ns : 0;
+	for (i = 0; i < disc.num_tracks; i++) {
+		const cue_track_info_t *track = &disc.tracks[i];
+		combined_track_t *out = &s_tracks[s_num_tracks++];
+		out->type = (track->type == CUE_TRACK_AUDIO) ? 1 : 0;
+		out->start_sector = track->start_sector;
+		out->num_sectors = track->num_sectors;
+		out->source_index = source_idx;
+		out->file_index = track->file_index;
+		out->name[0] = '\0';
+		if (track->title[0]) {
+			strncpy(out->name, track->title, sizeof(out->name) - 1);
+			out->name[sizeof(out->name) - 1] = '\0';
+		}
 	}
 
 	/* Set source first_combined (1-based) and audio count */
@@ -522,24 +556,22 @@ static int parse_source_cue(const char *cue_name, const char *bin_name,
 		s_sources[source_idx].audio_count = ac;
 	}
 
-	RBA_LOG("Source %d (%s): %d tracks (%d audio) from %s",
+	RBA_LOG("Source %d (%s): %d tracks (%d audio) from %d BIN files",
 	        source_idx, s_sources[source_idx].disc_label,
-	        count, s_sources[source_idx].audio_count, bin_name);
-	RBA_DIAG("source %d label=%s tracks=%d audio=%d bin=%s bin_bytes=%lld first_combined=%d",
-	         source_idx, s_sources[source_idx].disc_label,
-	         count, s_sources[source_idx].audio_count, bin_name,
-	         (long long) file_size, s_sources[source_idx].first_combined);
+	        disc.num_tracks, s_sources[source_idx].audio_count,
+	        s_sources[source_idx].num_bins);
 	for (i = base; i < s_num_tracks; i++) {
-		RBA_DIAG("track %d type=%s start=%d len=%d src=%d name=%s",
+		RBA_DIAG("track %d type=%s start=%d len=%d src=%d file=%d name=%s",
 		         i + 1,
 		         s_tracks[i].type ? "audio" : "data",
 		         s_tracks[i].start_sector,
 		         s_tracks[i].num_sectors,
 		         s_tracks[i].source_index,
+		         s_tracks[i].file_index,
 		         s_tracks[i].name[0] ? s_tracks[i].name : "(none)");
 	}
 
-	return count;
+	return disc.num_tracks;
 }
 
 /*
@@ -600,7 +632,9 @@ static int parse_audio_playlist(void)
 
 	while (s_num_sources < MAX_SOURCES) {
 		char cue_name[256] = { 0 };
-		char bin_name[256] = { 0 };
+		char bin_names[CUE_MAX_FILES][256];
+		const char *bin_ptrs[CUE_MAX_FILES];
+		int num_bins = 0;
 		char label[64] = { 0 };
 		long legacy_id = 0;
 		char key[64];
@@ -609,6 +643,8 @@ static int parse_audio_playlist(void)
 		int tn_has_names = 0;
 
 		memset(tn_names, 0, sizeof(tn_names));
+		memset(bin_names, 0, sizeof(bin_names));
+		memset(bin_ptrs, 0, sizeof(bin_ptrs));
 
 		p = pj_skip_ws(p);
 		if (*p == ']') break;
@@ -636,14 +672,28 @@ static int parse_audio_playlist(void)
 			if (strcmp(key, "cue") == 0) {
 				pj_string(&p, cue_name, sizeof(cue_name));
 			} else if (strcmp(key, "bins") == 0) {
-				/* Array of bin filenames -- take the first one */
+				/* Array of bin filenames -- preserve all entries for multi-BIN CUEs */
 				if (*p == '[') {
 					p++;
-					p = pj_skip_ws(p);
-					if (*p == '"')
-						pj_string(&p, bin_name, sizeof(bin_name));
-					/* Skip rest of array */
-					while (*p && *p != ']') p++;
+					while (*p && *p != ']') {
+						char bin_entry[256] = { 0 };
+						p = pj_skip_ws(p);
+						if (*p == ',') {
+							p++;
+							continue;
+						}
+						if (*p == ']') break;
+						if (*p == '"' && pj_string(&p, bin_entry, sizeof(bin_entry))) {
+							if (num_bins < CUE_MAX_FILES) {
+								strncpy(bin_names[num_bins], bin_entry, sizeof(bin_names[num_bins]) - 1);
+								bin_names[num_bins][sizeof(bin_names[num_bins]) - 1] = '\0';
+								bin_ptrs[num_bins] = bin_names[num_bins];
+								num_bins++;
+							}
+						} else {
+							pj_skip_value(&p);
+						}
+					}
 					if (*p == ']') p++;
 				}
 			} else if (strcmp(key, "label") == 0) {
@@ -683,18 +733,25 @@ static int parse_audio_playlist(void)
 		}
 		if (*p == '}') p++; /* skip '}' */
 
-		if (cue_name[0] && bin_name[0]) {
+		if (cue_name[0] && num_bins > 0) {
 			int src = s_num_sources;
 			int base = s_num_tracks;
-			RBA_DIAG("playlist source=%d label=%s cue=%s bin=%s legacy_disc_id=%ld",
-			         src, label[0] ? label : "Unknown", cue_name, bin_name, legacy_id);
+			int parsed;
+			RBA_DIAG("playlist source=%d label=%s cue=%s bins=%d first_bin=%s legacy_disc_id=%ld",
+			         src, label[0] ? label : "Unknown", cue_name, num_bins,
+			         bin_names[0][0] ? bin_names[0] : "(none)", legacy_id);
 			memset(&s_sources[src], 0, sizeof(s_sources[src]));
 			strncpy(s_sources[src].disc_label, label[0] ? label : "Unknown",
 			        sizeof(s_sources[src].disc_label) - 1);
 			s_sources[src].legacy_disc_id = (unsigned long) legacy_id;
 			s_num_sources++;
 
-			parse_source_cue(cue_name, bin_name, src);
+			parsed = parse_source_cue(cue_name, bin_ptrs, num_bins, src);
+			if (parsed <= 0) {
+				memset(&s_sources[src], 0, sizeof(s_sources[src]));
+				s_num_sources--;
+				continue;
+			}
 
 			/* Apply fingerprint-matched track names (override CUE titles) */
 			if (tn_has_names) {
@@ -767,6 +824,7 @@ static int parse_cue_file(void)
 						s_num_tracks = tnum;
 					s_tracks[tnum - 1].type = (strstr(ttype, "AUDIO") != NULL) ? 1 : 0;
 					s_tracks[tnum - 1].source_index = 0;
+					s_tracks[tnum - 1].file_index = 0;
 				}
 				continue;
 			}
@@ -819,7 +877,8 @@ static int parse_cue_file(void)
 	/* Set up single legacy source */
 	s_num_sources = 1;
 	memset(&s_sources[0], 0, sizeof(s_sources[0]));
-	s_sources[0].bin_file = s_gog_handle;
+	s_sources[0].bin_files[0] = s_gog_handle;
+	s_sources[0].num_bins = 1;
 	/* Clear s_gog_handle so only s_sources[0] owns the handle */
 	s_gog_handle.pf = NULL;
 	s_gog_handle.sf = NULL;
@@ -836,7 +895,7 @@ static int parse_cue_file(void)
 	}
 
 	/* Compute track lengths from successive start positions */
-	file_size = bh_length(&s_gog_handle);
+	file_size = bh_length(&s_sources[0].bin_files[0]);
 	total_sectors = (int) (file_size / SECTOR_SIZE);
 
 	for (i = 0; i < s_num_tracks; i++) {
@@ -1094,7 +1153,7 @@ void RBAExit(void)
 	render_thread_stop();
 	/* Close all source BIN files */
 	for (i = 0; i < s_num_sources; i++) {
-		bh_close(&s_sources[i].bin_file);
+		close_source_bins(&s_sources[i]);
 	}
 	bh_close(&s_gog_handle);
 	s_initialised = 0;
