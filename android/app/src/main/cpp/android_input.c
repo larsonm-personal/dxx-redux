@@ -83,7 +83,7 @@ static int g_dpad_center_down = 0;
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeJoystickButton(JNIEnv *env, jobject thiz,
-														jint button, jint pressed);
+                                                        jint button, jint pressed);
 
 /* Set to 1 while the solo end-of-level score screen is showing.
  * Kotlin shows a "NEXT" overlay button (upper-right). */

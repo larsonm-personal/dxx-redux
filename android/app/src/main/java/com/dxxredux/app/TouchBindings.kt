@@ -122,6 +122,7 @@ object TouchBindings {
     const val META_GYRO_TOGGLE = 1033
     const val META_DEMO_RECORD_TOGGLE = 1034
     const val META_REWIND = 1035
+    const val META_MENU_CYCLE = 1036
 
     /** Labels for meta actions, used in Extra button pickers. */
     val META_BUTTON_LABELS: Map<Int, String> =
@@ -129,6 +130,7 @@ object TouchBindings {
             META_QUICK_SAVE to "Quick Save",
             META_QUICK_LOAD to "Quick Load",
             META_GAME_MENU to "Game Menu (ESC)",
+            META_MENU_CYCLE to "Menu",
             META_GUIDE_BOT_MENU to "Guide Bot Menu",
             META_GUIDE_FIND_ENERGY to "GB: Find Energy",
             META_GUIDE_FIND_REACTOR to "GB: Find Reactor",

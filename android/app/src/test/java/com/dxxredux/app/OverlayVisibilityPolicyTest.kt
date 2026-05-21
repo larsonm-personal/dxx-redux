@@ -6,45 +6,6 @@ import org.junit.Test
 
 class OverlayVisibilityPolicyTest {
     @Test
-    fun controllerTrayShortcutsApplyOnTouchDevicesWhenOverlayIsActive() {
-        assertTrue(
-            shouldUseControllerSettingsTrayShortcuts(
-                gamepadOnlyMode = false,
-                touchOverlayActive = true,
-                automapActive = false,
-                adminTrayOpen = false,
-                adminTrayPausedGame = false,
-            ),
-        )
-    }
-
-    @Test
-    fun controllerTrayShortcutsStayOffWhenTouchOverlayIsUnavailable() {
-        assertFalse(
-            shouldUseControllerSettingsTrayShortcuts(
-                gamepadOnlyMode = false,
-                touchOverlayActive = false,
-                automapActive = false,
-                adminTrayOpen = false,
-                adminTrayPausedGame = false,
-            ),
-        )
-    }
-
-    @Test
-    fun controllerTrayShortcutsDoNotTreatAutomapAsGameplayTrayAvailability() {
-        assertFalse(
-            shouldUseControllerSettingsTrayShortcuts(
-                gamepadOnlyMode = false,
-                touchOverlayActive = true,
-                automapActive = true,
-                adminTrayOpen = false,
-                adminTrayPausedGame = false,
-            ),
-        )
-    }
-
-    @Test
     fun trayVisibilityIncludesCloseGraceWhilePauseIsUnwinding() {
         assertTrue(
             settingsTrayVisibleForOverlay(

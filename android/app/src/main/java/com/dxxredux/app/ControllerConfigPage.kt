@@ -263,6 +263,9 @@ internal fun loadDefaultBindings(context: Context): Map<String, String> =
         emptyMap()
     }
 
+internal fun hasControllerMenuBinding(bindings: Map<String, String>): Boolean =
+    bindings.values.any { TouchBindings.metaActionIdForLabel(it) == TouchBindings.META_MENU_CYCLE }
+
 // Default axis-to-button activation threshold (percentage, 5-95)
 const val DEFAULT_AXIS_THRESHOLD = 30
 const val DEFAULT_STICK_DEAD_ZONE = 10
@@ -2000,6 +2003,12 @@ fun ControllerConfigPage(
     }
 
     val infoAndButtons: @Composable ColumnScope.() -> Unit = {
+        val touchlessAndroid =
+            remember(context) {
+                !context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)
+            }
+        val missingMenuBinding = touchlessAndroid && !hasControllerMenuBinding(bindings)
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -2024,6 +2033,15 @@ fun ControllerConfigPage(
                 fontSize = 10.sp,
                 color = Color(0xFFEF5350),
                 maxLines = 3,
+            )
+        }
+
+        if (missingMenuBinding) {
+            Text(
+                text = "No menu button",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFF44336),
             )
         }
 

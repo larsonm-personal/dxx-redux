@@ -69,7 +69,7 @@ static int android_pilot_listbox_hold_elapsed(void)
 }
 
 static int android_pilot_listbox_suppressed_release_matches(listbox *lb,
-	                                                        int button)
+                                                            int button)
 {
 	return g_android_pilot_listbox_hold.suppress_release_lb == lb &&
 	       g_android_pilot_listbox_hold.suppress_release_button == button;
@@ -110,7 +110,7 @@ static int android_pilot_listbox_send_enter(
 }
 
 static int android_pilot_listbox_start_hold(listbox *lb, const char *title,
-	                                        int nitems, int item, int button)
+                                            int nitems, int item, int button)
 {
 	if (android_pilot_listbox_suppressed_release_matches(lb, button))
 		android_pilot_listbox_reset_suppressed_release();
@@ -129,9 +129,9 @@ static int android_pilot_listbox_start_hold(listbox *lb, const char *title,
 }
 
 static int android_pilot_listbox_trigger_delete(
-	listbox *lb, int button,
-	int (*listbox_callback)(listbox *lb, d_event *event, void *userdata),
-	void *userdata, int suppress_release)
+    listbox *lb, int button,
+    int (*listbox_callback)(listbox *lb, d_event *event, void *userdata),
+    void *userdata, int suppress_release)
 {
 	int rval;
 
@@ -157,9 +157,9 @@ void android_pilot_listbox_hold_clear(listbox *lb)
 }
 
 int android_pilot_listbox_hold_poll(
-	listbox *lb, const char *title, int nitems, int item,
-	int (*listbox_callback)(listbox *lb, d_event *event, void *userdata),
-	void *userdata)
+    listbox *lb, const char *title, int nitems, int item,
+    int (*listbox_callback)(listbox *lb, d_event *event, void *userdata),
+    void *userdata)
 {
 	if (g_android_pilot_listbox_hold.lb != lb)
 		return 0;
@@ -182,7 +182,7 @@ void android_pilot_listbox_mouse_down(listbox *lb, const char *title, int nitems
                                       int item)
 {
 	if (!android_pilot_listbox_start_hold(lb, title, nitems, item,
-	                                     ANDROID_LISTBOX_HOLD_MOUSE))
+	                                      ANDROID_LISTBOX_HOLD_MOUSE))
 		android_pilot_listbox_hold_clear(lb);
 }
 
@@ -198,7 +198,7 @@ int android_pilot_listbox_mouse_up(
 	}
 
 	if (!android_pilot_listbox_hold_matches(lb, title, nitems, item,
-	                                       ANDROID_LISTBOX_HOLD_MOUSE)) {
+	                                        ANDROID_LISTBOX_HOLD_MOUSE)) {
 		if (g_android_pilot_listbox_hold.lb == lb &&
 		    g_android_pilot_listbox_hold.button == ANDROID_LISTBOX_HOLD_MOUSE)
 			android_pilot_listbox_reset_active_hold();

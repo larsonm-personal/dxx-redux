@@ -77,6 +77,34 @@ internal fun adminTrayVisibleActions(
     return actions
 }
 
+internal enum class ControllerMenuSurface {
+    NONE,
+    REMAINING_ACTIONS,
+    ADMIN_TRAY,
+}
+
+internal fun nextControllerMenuSurface(
+    current: ControllerMenuSurface,
+    hasRemainingActions: Boolean,
+): ControllerMenuSurface =
+    when (current) {
+        ControllerMenuSurface.NONE -> {
+            if (hasRemainingActions) {
+                ControllerMenuSurface.REMAINING_ACTIONS
+            } else {
+                ControllerMenuSurface.ADMIN_TRAY
+            }
+        }
+
+        ControllerMenuSurface.REMAINING_ACTIONS -> {
+            ControllerMenuSurface.ADMIN_TRAY
+        }
+
+        ControllerMenuSurface.ADMIN_TRAY -> {
+            ControllerMenuSurface.NONE
+        }
+    }
+
 private const val SECONDARY_PROXIMITY_INDEX = 2
 private const val SECONDARY_SMART_MINE_INDEX = 7
 
@@ -1148,6 +1176,7 @@ class TouchOverlayView
         private val adminTrayRects = mutableListOf<RectF>()
         private var adminTrayTabRect = RectF()
         private var remainingActionOpen = false
+        private var remainingActionSelectedIndex = -1
         private var remainingActionPointerId = -1
         private var remainingActionPressedIndex = -1
         private var remainingActionButtonRect = RectF()
@@ -1430,10 +1459,102 @@ class TouchOverlayView
 
         private fun closeRemainingActions() {
             remainingActionOpen = false
+            remainingActionSelectedIndex = -1
             remainingActionPointerId = -1
             remainingActionPressedIndex = -1
             invalidate()
         }
+
+        private fun openRemainingActions(fromGamepad: Boolean = false) {
+            val actions = currentRemainingTouchActions()
+            if (actions.isEmpty()) {
+                closeRemainingActions()
+                return
+            }
+            closeAdminTray()
+            remainingActionOpen = true
+            remainingActionSelectedIndex = if (fromGamepad) 0 else -1
+            remainingActionPointerId = -1
+            remainingActionPressedIndex = -1
+            invalidate()
+        }
+
+        private fun currentControllerMenuSurface(): ControllerMenuSurface =
+            when {
+                adminTrayOpen -> ControllerMenuSurface.ADMIN_TRAY
+                remainingActionOpen -> ControllerMenuSurface.REMAINING_ACTIONS
+                else -> ControllerMenuSurface.NONE
+            }
+
+        fun isControllerMenuOpen(): Boolean = currentControllerMenuSurface() != ControllerMenuSurface.NONE
+
+        fun cycleControllerMenu() {
+            when (
+                nextControllerMenuSurface(
+                    currentControllerMenuSurface(),
+                    currentRemainingTouchActions().isNotEmpty(),
+                )
+            ) {
+                ControllerMenuSurface.NONE -> closeControllerMenu()
+                ControllerMenuSurface.REMAINING_ACTIONS -> openRemainingActions(fromGamepad = true)
+                ControllerMenuSurface.ADMIN_TRAY -> openAdminTray(fromGamepad = true)
+            }
+        }
+
+        fun closeControllerMenu() {
+            closeRemainingActions()
+            closeAdminTray()
+        }
+
+        fun handleControllerMenuKey(
+            keyCode: Int,
+            action: Int,
+        ): Boolean =
+            when (currentControllerMenuSurface()) {
+                ControllerMenuSurface.ADMIN_TRAY -> {
+                    handleAdminTrayGamepadKey(keyCode, action)
+                }
+
+                ControllerMenuSurface.REMAINING_ACTIONS -> {
+                    if (action != 0) {
+                        keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP ||
+                            keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN ||
+                            keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT ||
+                            keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT ||
+                            keyCode == android.view.KeyEvent.KEYCODE_BUTTON_A ||
+                            keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER ||
+                            keyCode == android.view.KeyEvent.KEYCODE_BUTTON_B ||
+                            keyCode == android.view.KeyEvent.KEYCODE_BACK
+                    } else {
+                        when (keyCode) {
+                            android.view.KeyEvent.KEYCODE_BUTTON_B,
+                            android.view.KeyEvent.KEYCODE_BACK,
+                            -> {
+                                closeRemainingActions()
+                                true
+                            }
+
+                            android.view.KeyEvent.KEYCODE_DPAD_UP,
+                            android.view.KeyEvent.KEYCODE_DPAD_DOWN,
+                            android.view.KeyEvent.KEYCODE_DPAD_LEFT,
+                            android.view.KeyEvent.KEYCODE_DPAD_RIGHT,
+                            android.view.KeyEvent.KEYCODE_BUTTON_A,
+                            android.view.KeyEvent.KEYCODE_DPAD_CENTER,
+                            -> {
+                                true
+                            }
+
+                            else -> {
+                                false
+                            }
+                        }
+                    }
+                }
+
+                ControllerMenuSurface.NONE -> {
+                    false
+                }
+            }
 
         private fun triggerRemainingAction(binding: Int) {
             val sourceTag = "touch:remaining:$binding"
@@ -1505,8 +1626,21 @@ class TouchOverlayView
                 }
             actions.forEachIndexed { index, action ->
                 val rect = remainingActionItemRects[index]
-                val bg = if (remainingActionPressedIndex == index) paintBtnPressed else paintBtnIdle
-                bg.alpha = ((if (remainingActionPressedIndex == index) 0x99 else 0x55) * eff).toInt()
+                val isPressed = remainingActionPressedIndex == index
+                val isSelected = remainingActionSelectedIndex == index
+                val bg = if (isPressed || isSelected) paintBtnPressed else paintBtnIdle
+                bg.alpha =
+                    (
+                        (
+                            if (isPressed) {
+                                0x99
+                            } else if (isSelected) {
+                                0x77
+                            } else {
+                                0x55
+                            }
+                        ) * eff
+                    ).toInt()
                 val corner = rect.height() * 0.3f
                 canvas.drawRoundRect(rect, corner, corner, bg)
                 paintRing.alpha = (0x66 * eff).toInt()
@@ -1538,6 +1672,7 @@ class TouchOverlayView
                     if (remainingActionOpen) {
                         val pressedIndex = remainingActionItemRects.indexOfFirst { it.contains(px, py) }
                         if (pressedIndex >= 0) {
+                            remainingActionSelectedIndex = pressedIndex
                             remainingActionPointerId = pid
                             remainingActionPressedIndex = pressedIndex
                             invalidate()
@@ -1562,10 +1697,7 @@ class TouchOverlayView
                         remainingActionPressedIndex == -2 &&
                         remainingActionButtonRect.contains(px, py)
                     ) {
-                        remainingActionOpen = true
-                        remainingActionPointerId = -1
-                        remainingActionPressedIndex = -1
-                        invalidate()
+                        openRemainingActions()
                         return true
                     }
                     if (remainingActionOpen && remainingActionPressedIndex in actions.indices) {

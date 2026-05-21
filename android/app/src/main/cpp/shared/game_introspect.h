@@ -61,7 +61,10 @@ static inline void game_introspect_set_path(const char *path)
 	(void) path;
 }
 static inline void game_introspect_request(void) {}
-static inline int game_introspect_dump_requested(void) { return 0; }
+static inline int game_introspect_dump_requested(void)
+{
+	return 0;
+}
 static inline void game_introspect_check_and_dump(void) {}
 
 #endif /* INTROSPECT_ON */

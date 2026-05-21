@@ -137,14 +137,6 @@ internal fun imeNativeSpecialKeyCode(keyCode: Int): Int? =
         else -> null
     }
 
-internal fun shouldUseControllerSettingsTrayShortcuts(
-    gamepadOnlyMode: Boolean,
-    touchOverlayActive: Boolean,
-    automapActive: Boolean,
-    adminTrayOpen: Boolean,
-    adminTrayPausedGame: Boolean,
-): Boolean = gamepadOnlyMode || adminTrayOpen || adminTrayPausedGame || (touchOverlayActive && !automapActive)
-
 internal fun shouldDispatchGamepadButtonDown(
     isInGame: Boolean,
     repeatCount: Int,
@@ -505,6 +497,16 @@ class MainActivity :
     private var automapPinchMidX = 0f // last midpoint X between two fingers
     private var automapPinchMidY = 0f // last midpoint Y between two fingers
 
+    private fun applyTvPerfTestPrefs(prefs: android.content.SharedPreferences) {
+        prefs
+            .edit()
+            .putBoolean(PREF_SHOW_VIDEO_INFO_DEBUG_OPTIONS, false)
+            .putBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false)
+            .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.GRAPHICS), false)
+            .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.TEXTURE), false)
+            .commit()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -515,6 +517,15 @@ class MainActivity :
         }
         consumeTransientLaunchToken()
         clearTransientLaunchExtrasFromIntent(intent)
+
+        val lacksTouchscreen =
+            !packageManager.hasSystemFeature(
+                android.content.pm.PackageManager.FEATURE_TOUCHSCREEN,
+            )
+        if (BuildConfig.DEBUG && lacksTouchscreen) {
+            // android port work: seed a clean no-UI perf test profile for TV builds
+            applyTvPerfTestPrefs(getSharedPreferences("dxx_prefs", MODE_PRIVATE))
+        }
 
         CrashLog.install(this)
         // Append to the main-process log file if a path was passed, otherwise create new
@@ -530,10 +541,7 @@ class MainActivity :
         val game = intent.getStringExtra("game") ?: "d2"
         gameVariantId = game
         writeGameActivityState(this, gameVariantId)
-        gamepadOnlyMode =
-            !packageManager.hasSystemFeature(
-                android.content.pm.PackageManager.FEATURE_TOUCHSCREEN,
-            )
+        gamepadOnlyMode = lacksTouchscreen
         val libName = if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2"
         System.loadLibrary(libName)
         Log.i("MainActivity", "Loaded native library: $libName")
@@ -1412,6 +1420,10 @@ class MainActivity :
     private fun applyGraphicsDebugPrefs(prefs: android.content.SharedPreferences) {
         videoInfoOverlay?.applyLauncherPrefs(prefs)
         try {
+            if (BuildConfig.DEBUG && gamepadOnlyMode) {
+                nativeSetDebugFlag("merged_wall_mode", 0)
+                videoInfoOverlay?.show()
+            }
             nativeSetDebugFlag(
                 "merged_wall_experiment",
                 if (prefs.getBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false)) {
@@ -2370,6 +2382,10 @@ class MainActivity :
             if (pressed) toggleGyroInGame()
             return
         }
+        if (actionId == TouchBindings.META_MENU_CYCLE) {
+            if (pressed) touchOverlay.cycleControllerMenu()
+            return
+        }
         NativeMetaActions.nativeMetaAction(actionId, if (pressed) 1 else 0)
     }
 
@@ -2616,52 +2632,22 @@ class MainActivity :
             return true
         }
 
-        val controllerSettingsTrayShortcuts =
-            shouldUseControllerSettingsTrayShortcuts(
-                gamepadOnlyMode = gamepadOnlyMode,
-                touchOverlayActive = touchOverlay.isActive,
-                automapActive = touchOverlay.automapActive,
-                adminTrayOpen = touchOverlay.isAdminTrayOpen(),
-                adminTrayPausedGame = adminTrayPausedGame,
-            )
-
         if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT ||
             keyCode == KeyEvent.KEYCODE_BUTTON_START ||
             keyCode == KeyEvent.KEYCODE_BACK
         ) {
             logSelectRouting(
-                "down kc=$keyCode src=${event.source} shortcuts=$controllerSettingsTrayShortcuts " +
+                "down kc=$keyCode src=${event.source} menuOpen=${touchOverlay.isControllerMenuOpen()} " +
                     "tray=${touchOverlay.isAdminTrayOpen()} overlay=${touchOverlay.isActive} " +
                     "automap=${touchOverlay.automapActive} inGame=${nativeIsInGame()} focus=${gameSurfaceView.hasFocus()}",
             )
-        }
-
-        // When the touch settings tray is reachable from controller input,
-        // Select opens it and Start opens the engine's game menu.
-        if (controllerSettingsTrayShortcuts) {
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT) {
-                logSelectRouting("down select -> openAdminTray")
-                touchOverlay.openAdminTray(fromGamepad = true)
-                return true
-            }
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_START) {
-                logSelectRouting("down start -> openGameMenu")
-                if (touchOverlay.isAdminTrayOpen()) {
-                    touchOverlay.closeAdminTray()
-                }
-                openGameMenuSafely()
-                return true
-            }
         }
 
         if (keyCode == KeyEvent.KEYCODE_BACK && isControllerSource(event.source)) {
             logSelectRouting("down back-controller -> fallthrough nativeKeyEvent")
         }
 
-        // Route D-pad/A/B to the admin tray while it is open.
-        if (touchOverlay.isAdminTrayOpen()) {
-            if (touchOverlay.handleAdminTrayGamepadKey(keyCode, 0)) return true
-        }
+        if (touchOverlay.handleControllerMenuKey(keyCode, 0)) return true
 
         // Gamepad face / shoulder buttons -> mixer or meta action
         val joyBtn = gamepadButtonIndex(keyCode)
@@ -2740,40 +2726,17 @@ class MainActivity :
             return true
         }
 
-        val controllerSettingsTrayShortcuts =
-            shouldUseControllerSettingsTrayShortcuts(
-                gamepadOnlyMode = gamepadOnlyMode,
-                touchOverlayActive = touchOverlay.isActive,
-                automapActive = touchOverlay.automapActive,
-                adminTrayOpen = touchOverlay.isAdminTrayOpen(),
-                adminTrayPausedGame = adminTrayPausedGame,
-            )
-
         if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT ||
             keyCode == KeyEvent.KEYCODE_BUTTON_START ||
             keyCode == KeyEvent.KEYCODE_BACK
         ) {
             logSelectRouting(
-                "up kc=$keyCode src=${event.source} shortcuts=$controllerSettingsTrayShortcuts " +
+                "up kc=$keyCode src=${event.source} menuOpen=${touchOverlay.isControllerMenuOpen()} " +
                     "tray=${touchOverlay.isAdminTrayOpen()} overlay=${touchOverlay.isActive} inGame=${nativeIsInGame()}",
             )
         }
 
-        // Consume controller events while the admin tray is open.
-        if (touchOverlay.isAdminTrayOpen()) {
-            if (touchOverlay.handleAdminTrayGamepadKey(keyCode, 1)) return true
-        }
-
-        // Consume Start/Select up events when they are routed as tray shortcuts.
-        if (controllerSettingsTrayShortcuts &&
-            (
-                keyCode == KeyEvent.KEYCODE_BUTTON_START ||
-                    keyCode == KeyEvent.KEYCODE_BUTTON_SELECT
-            )
-        ) {
-            logSelectRouting("up shortcut kc=$keyCode consumed")
-            return true
-        }
+        if (touchOverlay.handleControllerMenuKey(keyCode, 1)) return true
 
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
