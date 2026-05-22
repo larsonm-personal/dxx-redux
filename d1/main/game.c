@@ -87,6 +87,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multibot.h"
 #ifdef __ANDROID__
 #include "android_crash_handler.h"
+#include "android_profile.h"
 #include "android_rewind.h"
 #include "coop_save.h"
 #endif
@@ -1118,9 +1119,18 @@ int game_handler(window *wind, d_event *event, void *data)
 			return ReadControls(event);
 
 		case EVENT_WINDOW_DRAW:
+		{
+			#ifdef __ANDROID__
+			static unsigned int android_profile_frame_id = 0;
+			android_profile_frame_begin("d1", ++android_profile_frame_id);
+			#endif
 			if (input_demo_replay_is_loaded()) {
-				if (!input_demo_step_replay_frame())
+				if (!input_demo_step_replay_frame()) {
+					#ifdef __ANDROID__
+					android_profile_frame_end();
+					#endif
 					return 1;
+				}
 			} else {
 				calc_frame_time();
 				if (!time_paused)
@@ -1141,9 +1151,16 @@ int game_handler(window *wind, d_event *event, void *data)
 				}
 				game_render_frame();
 			}
+			#ifdef __ANDROID__
+			android_profile_frame_end();
+			#endif
 			break;
+		}
 
 		case EVENT_WINDOW_CLOSE:
+			#ifdef __ANDROID__
+			android_profile_flush();
+			#endif
 			digi_stop_digi_sounds();
 			input_demo_replay_unload();
 

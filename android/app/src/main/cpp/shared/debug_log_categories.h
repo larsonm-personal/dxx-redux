@@ -13,6 +13,7 @@
 #define DLOG_TEXTURE  2
 #define DLOG_GAME     3
 #define DLOG_LAUNCHER 4
-#define DLOG_COUNT    5
+#define DLOG_PROFILING 5
+#define DLOG_COUNT    6
 
 #endif /* DEBUG_LOG_CATEGORIES_H */

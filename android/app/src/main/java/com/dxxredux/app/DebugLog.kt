@@ -139,6 +139,31 @@ object DebugLog {
         }
     }
 
+    fun logBatch(
+        category: Int,
+        payload: String,
+    ) {
+        synchronized(lock) {
+            writer ?: return
+            if (category < 0 || category >= DebugLogCategory.COUNT) return
+            if (!enabledCategories[category]) return
+            try {
+                val tag = DebugLogCategory.labels[category].uppercase()
+                var wroteAny = false
+                payload.lineSequence().forEach { line ->
+                    if (line.isEmpty()) return@forEach
+                    writeLineNoFlush(tag, line)
+                    wroteAny = true
+                }
+                if (wroteAny) {
+                    writer?.flush()
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to write log batch", e)
+            }
+        }
+    }
+
     fun listLogFiles(context: Context): List<File> {
         val dir = File(context.filesDir, DIR_NAME)
         if (!dir.isDirectory) return emptyList()
@@ -274,11 +299,18 @@ object DebugLog {
         tag: String,
         message: String,
     ) {
+        writeLineNoFlush(tag, message)
+        writer?.flush()
+    }
+
+    private fun writeLineNoFlush(
+        tag: String,
+        message: String,
+    ) {
         val w = writer ?: return
         val ts = tsFormat.format(Date())
         w.write("$ts [$tag] ${message.trimEnd()}")
         w.newLine()
-        w.flush()
     }
 
     private fun closeLog() {

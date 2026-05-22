@@ -28,7 +28,68 @@ static const char *category_tags[DLOG_COUNT] = {
 	"TEXTURE",
 	"GAME",
 	"LAUNCHER",
+	"PROFILING",
 };
+
+static int debug_log_get_env(JNIEnv **env_out)
+{
+	JNIEnv *env;
+	int attached;
+
+	if (!g_jvm || !g_activity) {
+		*env_out = NULL;
+		return -1;
+	}
+
+	attached = 0;
+	if ((*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
+		if ((*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL) != JNI_OK) {
+			*env_out = NULL;
+			return -1;
+		}
+		attached = 1;
+	}
+
+	*env_out = env;
+	return attached;
+}
+
+static void debug_log_call_java_method(const char *method_name, int category,
+	                                   const char *message)
+{
+	JNIEnv *env;
+	jclass cls;
+	jmethodID mid;
+	jstring jmsg;
+	int attached;
+
+	if (!message || !message[0])
+		return;
+
+	attached = debug_log_get_env(&env);
+	if (attached < 0)
+		return;
+
+	cls = (*env)->GetObjectClass(env, g_activity);
+	if (!cls) {
+		if (attached)
+			(*g_jvm)->DetachCurrentThread(g_jvm);
+		return;
+	}
+
+	mid = (*env)->GetMethodID(env, cls, method_name, "(ILjava/lang/String;)V");
+	if (mid) {
+		jmsg = (*env)->NewStringUTF(env, message);
+		if (jmsg) {
+			(*env)->CallVoidMethod(env, g_activity, mid, (jint) category, jmsg);
+			(*env)->DeleteLocalRef(env, jmsg);
+		}
+	}
+
+	(*env)->DeleteLocalRef(env, cls);
+	if (attached)
+		(*g_jvm)->DetachCurrentThread(g_jvm);
+}
 
 void debug_log_set_enabled(int category, int on)
 {
@@ -52,29 +113,17 @@ void debug_log(int category, const char *fmt, ...)
 	/* Also print to logcat for immediate visibility */
 	__android_log_print(ANDROID_LOG_DEBUG, "DXX-DLOG",
 	                    "[%s] %s", category_tags[category], buf);
+	debug_log_call_java_method("debugLogFromNative", category, buf);
+}
 
-	if (!g_jvm || !g_activity)
+void debug_log_batch(int category, const char *payload)
+{
+	if (category < 0 || category >= DLOG_COUNT)
+		return;
+	if (!debug_log_enabled[category])
 		return;
 
-	JNIEnv *env;
-	int attached = 0;
-	if ((*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
-		if ((*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL) != JNI_OK)
-			return;
-		attached = 1;
-	}
-
-	jclass cls = (*env)->GetObjectClass(env, g_activity);
-	jmethodID mid = (*env)->GetMethodID(env, cls, "debugLogFromNative",
-	                                    "(ILjava/lang/String;)V");
-	if (mid) {
-		jstring jmsg = (*env)->NewStringUTF(env, buf);
-		(*env)->CallVoidMethod(env, g_activity, mid, (jint) category, jmsg);
-		(*env)->DeleteLocalRef(env, jmsg);
-	}
-
-	(*env)->DeleteLocalRef(env, cls);
-	if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
+	debug_log_call_java_method("debugLogBatchFromNative", category, payload);
 }
 
 #endif /* ANDROID */

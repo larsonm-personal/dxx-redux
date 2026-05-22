@@ -874,6 +874,7 @@ class SetupActivity : ComponentActivity() {
                             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.TEXTURE), enabled)
                             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.GAME), enabled)
                             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.LAUNCHER), enabled)
+                            .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.PROFILING), false)
                             .commit()
                         Log.i("DXX-Setup", "write_probe_debug_prefs: enabled=$enabled")
                         requestSetupRefresh()
@@ -2150,6 +2151,7 @@ class SetupActivity : ComponentActivity() {
             val textureLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.TEXTURE), false)
             val gameLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.GAME), false)
             val launcherLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.LAUNCHER), false)
+            val profilingLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.PROFILING), false)
             val debugPrefs = JSONObject()
             debugPrefs.put(
                 "show_video_info_debug_options",
@@ -2164,6 +2166,7 @@ class SetupActivity : ComponentActivity() {
             debugPrefs.put("texture_log_enabled", textureLogEnabled)
             debugPrefs.put("game_log_enabled", gameLogEnabled)
             debugPrefs.put("launcher_log_enabled", launcherLogEnabled)
+            debugPrefs.put("profiling_log_enabled", profilingLogEnabled)
             debugPrefs.put("graphics_debug_logging", graphicsLogEnabled && textureLogEnabled)
             root.put("debug_prefs", debugPrefs)
 

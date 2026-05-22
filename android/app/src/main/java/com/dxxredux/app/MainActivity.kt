@@ -507,6 +507,7 @@ class MainActivity :
             .putBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false)
             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.GRAPHICS), false)
             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.TEXTURE), false)
+            .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.PROFILING), false)
             .commit()
     }
 
@@ -3245,6 +3246,14 @@ class MainActivity :
             com.dxxredux.app.multiplayer.MatchmakingStateHolder
                 .appendLog(message)
         }
+    }
+
+    @Suppress("unused")
+    fun debugLogBatchFromNative(
+        category: Int,
+        payload: String,
+    ) {
+        DebugLog.logBatch(category, payload)
     }
 
     // ── Hidden keyboard proxy with InputConnection for soft keyboard ──

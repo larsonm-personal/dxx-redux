@@ -557,6 +557,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind_policy.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_profile.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
@@ -681,6 +682,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind_policy.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_profile.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
