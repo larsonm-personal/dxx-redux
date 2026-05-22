@@ -54,9 +54,12 @@ internal fun shouldShowTouchOverlay(
     playerDead: Boolean,
     endlevel: Boolean,
     automap: Boolean,
+    controllerMenuOpen: Boolean,
     settingsTrayVisible: Boolean,
 ): Boolean {
-    val gameplayOverlay = overlayEnabled && !playerDead && !endlevel && (inGame || settingsTrayVisible)
+    val gameplayOverlayVisible = overlayEnabled && !playerDead && !endlevel && inGame
+    val controllerOwnedOverlayVisible = controllerMenuOpen || settingsTrayVisible
+    val gameplayOverlay = gameplayOverlayVisible || controllerOwnedOverlayVisible
     return gameplayOverlay || automap
 }
 
@@ -1636,6 +1639,7 @@ class MainActivity :
                                     adminTrayPausedGame = adminTrayPausedGame,
                                     adminTrayCloseGraceActive = isAdminTrayCloseGraceActive(nowMs),
                                 )
+                            val controllerMenuOpen = touchOverlay.isControllerMenuOpen()
                             // During death or endlevel, show skip/continue button instead of controls
                             val showCutsceneButton = playerDead || endlevel || skippable
                             // Keep the overlay visible while the settings tray owns, or is still
@@ -1647,11 +1651,18 @@ class MainActivity :
                                     playerDead = playerDead,
                                     endlevel = endlevel,
                                     automap = automap,
+                                    controllerMenuOpen = controllerMenuOpen,
                                     settingsTrayVisible = settingsTrayVisible,
                                 )
                             val wasActive = touchOverlay.isActive
                             touchOverlay.isActive = shouldShow
                             touchOverlay.automapActive = automap
+                            if (!overlayEnabled && controllerMenuOpen && shouldShow && !wasActive) {
+                                logSelectRouting(
+                                    "forcing touch overlay visible for controller menu " +
+                                        "menuOpen=$controllerMenuOpen trayVisible=$settingsTrayVisible",
+                                )
+                            }
                             // Show/hide skip button for cutscenes, death, save/load, or level complete
                             val levelComplete =
                                 try {
@@ -2388,6 +2399,12 @@ class MainActivity :
             return
         }
         if (actionId == TouchBindings.META_MENU_CYCLE) {
+            logSelectRouting(
+                "meta menu pressed=$pressed active=${touchOverlay.isActive} " +
+                    "menuOpen=${touchOverlay.isControllerMenuOpen()} tray=${touchOverlay.isAdminTrayOpen()} " +
+                    "overlayEnabled=$overlayEnabled music=${musicPanel != null} " +
+                    "video=${videoInfoOverlay?.visibility == View.VISIBLE}",
+            )
             if (
                 shouldCloseControllerSettingsStackForMenu(
                     pressed = pressed,

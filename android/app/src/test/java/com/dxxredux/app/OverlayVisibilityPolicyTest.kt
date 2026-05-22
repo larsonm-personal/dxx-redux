@@ -114,6 +114,37 @@ class OverlayVisibilityPolicyTest {
                 playerDead = false,
                 endlevel = false,
                 automap = false,
+                controllerMenuOpen = false,
+                settingsTrayVisible = true,
+            ),
+        )
+    }
+
+    @Test
+    fun controllerMenuKeepsOverlayVisibleWhenLauncherOverlayIsDisabled() {
+        assertTrue(
+            shouldShowTouchOverlay(
+                inGame = true,
+                overlayEnabled = false,
+                playerDead = false,
+                endlevel = false,
+                automap = false,
+                controllerMenuOpen = true,
+                settingsTrayVisible = false,
+            ),
+        )
+    }
+
+    @Test
+    fun settingsTrayKeepsOverlayVisibleWhenLauncherOverlayIsDisabled() {
+        assertTrue(
+            shouldShowTouchOverlay(
+                inGame = false,
+                overlayEnabled = false,
+                playerDead = false,
+                endlevel = false,
+                automap = false,
+                controllerMenuOpen = false,
                 settingsTrayVisible = true,
             ),
         )
@@ -128,6 +159,7 @@ class OverlayVisibilityPolicyTest {
                 playerDead = false,
                 endlevel = false,
                 automap = false,
+                controllerMenuOpen = false,
                 settingsTrayVisible = false,
             ),
         )
