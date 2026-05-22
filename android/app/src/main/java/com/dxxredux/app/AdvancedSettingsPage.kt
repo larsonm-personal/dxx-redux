@@ -237,7 +237,8 @@ fun AdvancedSettingsPage(
                             text = {
                                 Text(
                                     "This will remove imported game data from every file set and delete all mods.\n\n" +
-                                        "Files added via file picker (leave-in-place) will be unlinked but not deleted from their original location.\n\n" +
+                                        "Files added via file picker (leave-in-place) will be unlinked " +
+                                        "but not deleted from their original location.\n\n" +
                                         "Pilot files, saved games, and control settings will be kept.\n\n" +
                                         "The app will restart after clearing data",
                                     fontSize = 13.sp,
@@ -248,11 +249,12 @@ fun AdvancedSettingsPage(
                                     val setsCleared = fileSetManager.clearAllGameDataPreservingPlayers()
                                     val modsCleared = ModManager(ctx.filesDir).clearAllMods()
                                     showClearGameDataDialog = false
-                                    Toast.makeText(
-                                        ctx,
-                                        "Cleared game data from $setsCleared set(s) and removed $modsCleared mod(s)",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
+                                    Toast
+                                        .makeText(
+                                            ctx,
+                                            "Cleared game data from $setsCleared set(s) and removed $modsCleared mod(s)",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
                                     android.os.Process.killProcess(android.os.Process.myPid())
                                 }) {
                                     Text("Clear & Restart", color = Color(0xFFF44336))

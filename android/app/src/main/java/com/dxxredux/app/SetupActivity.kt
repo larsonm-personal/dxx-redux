@@ -7320,6 +7320,53 @@ private fun extractSowArchives(
     return sowExtracted
 }
 
+internal fun hoistNestedImportedGameFiles(setDir: File): Int {
+    if (!setDir.isDirectory) return 0
+
+    val rootFiles =
+        (setDir.listFiles() ?: emptyArray())
+            .filter { it.isFile }
+            .associateBy { it.name.lowercase() }
+            .toMutableMap()
+    var hoisted = 0
+
+    setDir
+        .walkTopDown()
+        .filter { it.isFile && it.parentFile != setDir }
+        .forEach { file ->
+            val lowercaseName = file.name.lowercase()
+            if (lowercaseName !in ALL_GAME_FILENAMES || file.length() <= 1L) return@forEach
+
+            val existing = rootFiles[lowercaseName]
+            if (existing != null && existing.absolutePath == file.absolutePath) return@forEach
+            if (existing != null && existing.length() >= file.length()) {
+                file.delete()
+                return@forEach
+            }
+
+            existing?.delete()
+            val dest = File(setDir, file.name)
+            if (file.renameTo(dest)) {
+                rootFiles[lowercaseName] = dest
+                hoisted++
+            }
+        }
+
+    setDir
+        .walkBottomUp()
+        .filter { it.isDirectory && it != setDir }
+        .forEach { dir ->
+            if ((dir.listFiles()?.isEmpty() ?: false)) dir.delete()
+        }
+
+    if (hoisted > 0) {
+        runCatching {
+            Log.i("DXX-DiscImport", "Hoisted $hoisted nested game file(s) into ${setDir.absolutePath}")
+        }
+    }
+    return hoisted
+}
+
 private fun registerDiscAudioSourceFromPath(
     srcManager: AudioSourceManager,
     filesDir: File,
@@ -7487,6 +7534,9 @@ private fun importDiscImageFromPath(
     if (isoExtracted > 0) {
         sowExtracted = extractSowArchives(setDir)
     }
+    if (isoExtracted > 0 || macExtracted > 0) {
+        hoistNestedImportedGameFiles(setDir)
+    }
 
     val extracted = if (isoExtracted > 0) isoExtracted else macExtracted.coerceAtLeast(0)
     if (includeAudio && extracted > 0 && tracks.any { it.isAudio }) {
@@ -7521,6 +7571,9 @@ private fun importIsoImageFromPath(
 
     val isoExtracted = DiscImportBridge.extractIsoImageFiles(isoFile.absolutePath, setDir.absolutePath, null)
     val sowExtracted = if (isoExtracted > 0) extractSowArchives(setDir) else 0
+    if (isoExtracted > 0) {
+        hoistNestedImportedGameFiles(setDir)
+    }
 
     Log.i(
         "DXX-DiscImport",
@@ -9257,6 +9310,9 @@ private fun DiscImportDialog(
                                                             }
                                                         }
                                                     }
+                                                    if (isoExtracted > 0 || macExtracted > 0) {
+                                                        hoistNestedImportedGameFiles(setDir)
+                                                    }
                                                     withContext(Dispatchers.Main) {
                                                         dataExtracted = extracted.coerceAtLeast(0) + sowExtracted
                                                         status =
@@ -9312,10 +9368,6 @@ private fun DiscImportDialog(
                                             try {
                                                 val parsedTracks = tracks!!
                                                 val audioCount = parsedTracks.count { it.isAudio }
-
-                                                if (!persistReadPermissionForUri(context, cueUri)) {
-                                                    Log.w("DXX-DiscImport", "Could not persist URI for $cueName")
-                                                }
 
                                                 val binNames = mutableListOf<String>()
                                                 var firstBinUri: Uri? = null
@@ -9674,6 +9726,9 @@ private fun IsoImportDialog(
                                                 } else {
                                                     0
                                                 }
+                                            if (isoExtracted > 0) {
+                                                hoistNestedImportedGameFiles(setDir)
+                                            }
                                             withContext(Dispatchers.Main) {
                                                 extractedCount = isoExtracted.coerceAtLeast(0) + sowExtracted
                                                 status =
