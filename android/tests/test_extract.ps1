@@ -261,18 +261,38 @@ function Send-SetupCommand {
 function Send-SetupCdImport {
     param(
         [string]$CuePath,
-        [string]$BinPath,
+        [string[]]$BinPaths,
         [bool]$IncludeAudio = $true
     )
+
+    if (-not $BinPaths -or $BinPaths.Count -eq 0) {
+        throw 'Send-SetupCdImport requires at least one BIN/IMG path'
+    }
 
     $args_ = @(
         'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
         '--es', 'command', 'import_cd',
         '--es', 'cue_path', $CuePath,
-        '--es', 'bin_path', $BinPath,
         '--ez', 'include_audio', $(if ($IncludeAudio) { 'true' } else { 'false' })
     )
+    if ($BinPaths.Count -eq 1) {
+        $args_ += @('--es', 'bin_path', $BinPaths[0])
+    } else {
+        $args_ += @('--esa', 'bin_paths', ($BinPaths -join ','))
+    }
     Adb -CmdArgs $args_ | Out-Null
+}
+
+function Get-CueReferencedImagePaths {
+    param([string]$CuePath)
+
+    $paths = @()
+    foreach ($line in Get-Content -LiteralPath $CuePath) {
+        if ($line -match '^\s*FILE\s+"([^"]+)"') {
+            $paths += $matches[1]
+        }
+    }
+    return @($paths)
 }
 
 function Send-SetupIsoImport {
@@ -706,32 +726,77 @@ Write-Status "Canary PASSED - device is clean, game cannot launch" 'Green'
 
 if ($useDirectCdImport) {
     $cueSpec = $spec.source_files | Where-Object { $_.name -match '\.cue$' } | Select-Object -First 1
-    $binSpec = $spec.source_files | Where-Object { $_.name -match '\.bin$' } | Select-Object -First 1
-    if (-not $cueSpec -or -not $binSpec) {
-        Write-Status 'FAIL: import_mode=setup_cd requires .cue and .bin source_files' 'Red'
+    $imageSpecs = @($spec.source_files | Where-Object { $_.name -match '\.(bin|img)$' })
+    if (-not $cueSpec -or $imageSpecs.Count -eq 0) {
+        Write-Status 'FAIL: import_mode=setup_cd requires .cue and at least one .bin/.img source_file' 'Red'
         Exit-Test 1 'fail' 'source_missing'
     }
 
     $localCuePath = Join-Path $specDir $cueSpec.name
-    $localBinPath = Join-Path $specDir $binSpec.name
-    if (-not (Test-Path -LiteralPath $localCuePath) -or -not (Test-Path -LiteralPath $localBinPath)) {
-        Write-Status 'FAIL: Local cue/bin source files are missing for direct import' 'Red'
+    if (-not (Test-Path -LiteralPath $localCuePath)) {
+        Write-Status 'FAIL: Local cue source file is missing for direct import' 'Red'
         Exit-Test 1 'fail' 'source_missing'
+    }
+
+    $availableImagesByName = @{}
+    foreach ($imageSpec in $imageSpecs) {
+        $imageKey = [System.IO.Path]::GetFileName($imageSpec.name).ToLowerInvariant()
+        if (-not $availableImagesByName.ContainsKey($imageKey)) {
+            $availableImagesByName[$imageKey] = [System.Collections.ArrayList]::new()
+        }
+        [void]$availableImagesByName[$imageKey].Add($imageSpec)
+    }
+
+    $referencedImagePaths = @(Get-CueReferencedImagePaths -CuePath $localCuePath)
+    $orderedImages = @()
+    $missingImages = @()
+    foreach ($referencedImagePath in $referencedImagePaths) {
+        $imageKey = [System.IO.Path]::GetFileName($referencedImagePath).ToLowerInvariant()
+        $queue = $availableImagesByName[$imageKey]
+        if ($queue -and $queue.Count -gt 0) {
+            $orderedImages += [pscustomobject]@{ CuePath = ($referencedImagePath -replace '\\', '/'); Spec = $queue[0] }
+            $queue.RemoveAt(0)
+        } else {
+            $missingImages += $referencedImagePath
+        }
+    }
+    if ($referencedImagePaths.Count -eq 0) {
+        $orderedImages = $imageSpecs | ForEach-Object {
+            [pscustomobject]@{ CuePath = ([System.IO.Path]::GetFileName($_.name)); Spec = $_ }
+        }
+    }
+    if ($missingImages.Count -gt 0) {
+        Write-Status "FAIL: Local direct-import image set is missing CUE-referenced files: $($missingImages -join ', ')" 'Red'
+        Exit-Test 1 'fail' 'source_missing'
+    }
+
+    $localImages = @()
+    foreach ($orderedImage in $orderedImages) {
+        $localImagePath = Join-Path $specDir $orderedImage.Spec.name
+        if (-not (Test-Path -LiteralPath $localImagePath)) {
+            Write-Status "FAIL: Local image source file is missing for direct import: $($orderedImage.Spec.name)" 'Red'
+            Exit-Test 1 'fail' 'source_missing'
+        }
+        $localImages += [pscustomobject]@{ CuePath = $orderedImage.CuePath; LocalPath = $localImagePath }
     }
 
     $deviceDirName = ($sourceName -replace '[^A-Za-z0-9._-]', '_')
     $appSourceRelDir = "files/tmp_import/$deviceDirName"
-    $appCueRelPath = "$appSourceRelDir/source.cue"
-    $appBinRelPath = "$appSourceRelDir/source.bin"
+    $appCueRelPath = "$appSourceRelDir/$([System.IO.Path]::GetFileName($cueSpec.name))"
     $deviceCuePath = "/data/user/0/$PACKAGE/$appCueRelPath"
-    $deviceBinPath = "/data/user/0/$PACKAGE/$appBinRelPath"
 
     Write-Status "Staging CD source files for direct import..."
     Ensure-AppPrivateFile -LocalPath $localCuePath -RemoteRelativePath $appCueRelPath -TimeoutSeconds 120
-    Ensure-AppPrivateFile -LocalPath $localBinPath -RemoteRelativePath $appBinRelPath -TimeoutSeconds 1800
+
+    $deviceImagePaths = @()
+    foreach ($localImage in $localImages) {
+        $appImageRelPath = "$appSourceRelDir/$($localImage.CuePath)"
+        Ensure-AppPrivateFile -LocalPath $localImage.LocalPath -RemoteRelativePath $appImageRelPath -TimeoutSeconds 1800
+        $deviceImagePaths += "/data/user/0/$PACKAGE/$appImageRelPath"
+    }
 
     Write-Status "Triggering setup-command CD import..."
-    Send-SetupCdImport -CuePath $deviceCuePath -BinPath $deviceBinPath -IncludeAudio $true
+    Send-SetupCdImport -CuePath $deviceCuePath -BinPaths $deviceImagePaths -IncludeAudio $true
 
     $importReady = $false
     $importTimeoutSeconds = 300

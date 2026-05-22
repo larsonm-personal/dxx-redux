@@ -231,6 +231,50 @@ object FingerprintBridge {
     }
 
     /**
+     * Fingerprint all audio tracks in a multi-file local disc image.
+     * Opens each referenced image once and picks the fd referenced by track.fileIndex.
+     */
+    fun fingerprintAndMatchDisc(
+        context: Context,
+        binPaths: List<String>,
+        tracks: List<DiscImportBridge.CueTrack>,
+        onProgress: ((current: Int, total: Int) -> Unit)? = null,
+    ): Map<Int, String> {
+        ensureDbLoaded(context)
+        if (binPaths.isEmpty()) return emptyMap()
+        val pfds = mutableListOf<ParcelFileDescriptor>()
+        return try {
+            binPaths.forEach { binPath ->
+                val pfd = ParcelFileDescriptor.open(File(binPath), ParcelFileDescriptor.MODE_READ_ONLY)
+                pfds.add(pfd)
+            }
+            val names = mutableMapOf<Int, String>()
+            val audioTracks = tracks.filter { it.isAudio }
+            audioTracks.forEachIndexed { idx, track ->
+                onProgress?.invoke(idx + 1, audioTracks.size)
+                val pfd = pfds.getOrNull(track.fileIndex)
+                if (pfd == null) {
+                    Log.w(TAG, "Track ${track.trackNum}: missing local image for fileIndex=${track.fileIndex}")
+                    return@forEachIndexed
+                }
+                val fp = fingerprintDiscTrackFd(pfd.fd, track.startSector, track.numSectors)
+                if (fp != null) {
+                    val match = matchFingerprint(fp.encoded, fp.durationMs)
+                    if (match != null) {
+                        names[track.trackNum] = match.name
+                        Log.i(TAG, "Track ${track.trackNum}: ${match.name} (${match.confidence})")
+                    }
+                }
+            }
+            names
+        } finally {
+            pfds.forEach { pfd ->
+                pfd.close()
+            }
+        }
+    }
+
+    /**
      * Fingerprint all audio tracks in a disc using a SAF content URI.
      * Opens the BIN file via ContentResolver and uses the fd for each track.
      */

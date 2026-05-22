@@ -135,6 +135,7 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --es path /sdcard/setup_descent2.exe
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_sow --es path /sdcard/descent2.sow
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_cd --es cue_path /sdcard/disc.cue --es bin_path /sdcard/disc.bin
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_cd --es cue_path /sdcard/disc.cue --esa bin_paths /sdcard/track01.bin,/sdcard/track02.img
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_iso --es iso_path /sdcard/disc.iso
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
@@ -940,7 +941,13 @@ class SetupActivity : ComponentActivity() {
 
                     "import_cd" -> {
                         val cuePath = intent.getStringExtra("cue_path") ?: return
-                        val binPath = intent.getStringExtra("bin_path") ?: return
+                        val binPaths =
+                            intent
+                                .getStringArrayExtra("bin_paths")
+                                ?.filter { it.isNotBlank() }
+                                ?.takeIf { it.isNotEmpty() }
+                                ?: listOfNotNull(intent.getStringExtra("bin_path")?.takeIf { it.isNotBlank() })
+                        if (binPaths.isEmpty()) return
                         val audio = intent.getBooleanExtra("include_audio", true)
                         Thread {
                             val fsm = FileSetManager(filesDir)
@@ -951,12 +958,12 @@ class SetupActivity : ComponentActivity() {
                                     setDir = setDir,
                                     context = this@SetupActivity,
                                     cuePath = cuePath,
-                                    binPath = binPath,
+                                    binPaths = binPaths,
                                     includeAudio = audio,
                                 )
                             Log.i(
                                 "DXX-Setup",
-                                "import_cd cue='$cuePath' bin='$binPath' -> $count file(s) to ${setDir.name} (audio=$audio)",
+                                "import_cd cue='$cuePath' images=${binPaths.size} -> $count file(s) to ${setDir.name} (audio=$audio)",
                             )
                             requestSetupRefresh()
                         }.start()
@@ -1119,30 +1126,67 @@ class SetupActivity : ComponentActivity() {
                     }
 
                     "add_audio_source" -> {
-                        // Test automation: register a BIN/CUE audio source.
-                        // bin_path: absolute filesystem path to the BIN file
+                        // Test automation: register a disc-image audio source.
+                        // bin_path/bin_paths: absolute filesystem path(s) to the image file(s)
                         // cue_name: filename of the CUE file (in filesDir)
                         // label: human-readable disc label
-                        val binPath = intent.getStringExtra("bin_path") ?: return
+                        val binPaths =
+                            intent
+                                .getStringArrayExtra("bin_paths")
+                                ?.filter { it.isNotBlank() }
+                                ?.takeIf { it.isNotEmpty() }
+                                ?: listOfNotNull(intent.getStringExtra("bin_path")?.takeIf { it.isNotBlank() })
+                        if (binPaths.isEmpty()) return
                         val cueName = intent.getStringExtra("cue_name") ?: return
                         val label = intent.getStringExtra("label") ?: "Test Disc"
                         val id = intent.getStringExtra("id") ?: "test-${System.currentTimeMillis()}"
+                        val orderedBinPaths =
+                            if (binPaths.size > 1) {
+                                val cueFile = resolveCdAudioSourceFile(filesDir, cueName)
+                                if (cueFile.isFile) {
+                                    val orderedImages = orderCueEntries(cueFile, binPaths) { it }
+                                    if (orderedImages.missingNames.isEmpty()) {
+                                        if (orderedImages.extraNames.isNotEmpty()) {
+                                            val ignoredImagesSummary =
+                                                summarizeDiscImageNames(orderedImages.extraNames)
+                                            Log.i(
+                                                "DXX-Setup",
+                                                "add_audio_source: ignoring extra image files for $cueName: $ignoredImagesSummary",
+                                            )
+                                        }
+                                        orderedImages.orderedEntries
+                                    } else {
+                                        Log.w(
+                                            "DXX-Setup",
+                                            "add_audio_source: ${buildMissingDiscImageSelectionMessage(
+                                                orderedImages.missingNames,
+                                            )}",
+                                        )
+                                        binPaths
+                                    }
+                                } else {
+                                    binPaths
+                                }
+                            } else {
+                                binPaths
+                            }
                         val srcManager = AudioSourceManager(filesDir)
                         srcManager.addSource(
                             AudioSourceManager.AudioSource(
                                 id = id,
                                 cuePath = cueName,
-                                binPaths = listOf(cueName.replace(".cue", ".bin")),
+                                binPaths = orderedBinPaths.map { File(it).name.lowercase() },
                                 discLabel = label,
                                 discId = id,
                                 trackCount = 0,
                                 audioTrackCount = 0,
                                 legacyDiscId = 0,
-                                binContentUri = binPath,
+                                binContentUri = orderedBinPaths.first(),
+                                binContentUris = orderedBinPaths,
                             ),
                         )
                         enableRedbookInConfig(filesDir, this@SetupActivity)
-                        Log.i("DXX-Setup", "add_audio_source: id=$id bin=$binPath cue=$cueName")
+                        Log.i("DXX-Setup", "add_audio_source: id=$id images=${orderedBinPaths.size} cue=$cueName")
                     }
 
                     "clear_audio_sources" -> {
@@ -3818,7 +3862,7 @@ private fun SetupScreen(
                             gogDiscUri = name to uri
                         }
 
-                        lname.endsWith(".bin") -> {
+                        lname.endsWith(".bin") || lname.endsWith(".img") -> {
                             binUris.add(name to uri)
                         }
 
@@ -3895,13 +3939,13 @@ private fun SetupScreen(
                 for (b in binUris) warnings.add("${b.first} requires a matching CUE file")
             }
             if (cueUris.isNotEmpty() && binUris.isEmpty()) {
-                for (c in cueUris) warnings.add("${c.first} requires a matching BIN file")
+                for (c in cueUris) warnings.add("${c.first} requires matching disc image files (.bin/.img)")
             }
             if (isoUris.size > 1) {
                 warnings.add("Only one ISO image can be imported at a time")
             }
             if (isoUris.isNotEmpty() && cueUris.isNotEmpty() && binUris.isNotEmpty()) {
-                warnings.add("Select either a standalone ISO or a CUE/BIN set")
+                warnings.add("Select either a standalone ISO or a CUE/image set")
             }
             for (f in unhandledFiles) {
                 warnings.add("$f: file type not recognized")
@@ -5007,7 +5051,7 @@ private fun SetupScreen(
                     Text(
                         text =
                             "${importChooserConfig.helpText}. Supports .hog, .ham, .pig files, .zip/.7z archives," +
-                                " .cue/.bin disc images, .sow archives, and GOG installers.",
+                                " .cue disc images with .bin/.img tracks, .sow archives, and GOG installers.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -6797,7 +6841,7 @@ private fun MusicInfoSection(
         Text(
             text =
                 "MIDI audio is supported from game files. " +
-                    "Redbook audio from BIN/CUE disc images is supported.",
+                    "Redbook audio from CUE disc images with .bin/.img tracks is supported.",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp),
@@ -7412,14 +7456,125 @@ internal fun hoistNestedImportedGameFiles(setDir: File): Int {
     return hoisted
 }
 
+private val CUE_FILE_LINE_REGEX = Regex("^\\s*FILE\\s+\"([^\"]+)\"", RegexOption.IGNORE_CASE)
+
+private data class OrderedCueEntries<T>(
+    val orderedEntries: List<T>,
+    val missingNames: List<String>,
+    val extraNames: List<String> = emptyList(),
+)
+
+private fun summarizeDiscImageNames(
+    names: List<String>,
+    limit: Int = 3,
+): String {
+    val uniqueNames = names.map { File(it).name }.distinct()
+    if (uniqueNames.isEmpty()) return ""
+    val shownNames = uniqueNames.take(limit)
+    val remainingCount = uniqueNames.size - shownNames.size
+    return if (remainingCount > 0) {
+        "${shownNames.joinToString(", ")}, and $remainingCount more"
+    } else {
+        shownNames.joinToString(", ")
+    }
+}
+
+private fun buildMissingDiscImageSelectionMessage(missingNames: List<String>): String {
+    val noun = if (missingNames.size == 1) "file" else "files"
+    return "Missing CUE-referenced image $noun: ${summarizeDiscImageNames(missingNames)}. " +
+        "Select the .cue and every referenced .bin/.img file"
+}
+
+private fun buildDiscImageTrackSummary(
+    dataTrackCount: Int,
+    audioTrackCount: Int,
+    imageCount: Int,
+    extraNames: List<String> = emptyList(),
+): String {
+    val imageNoun = if (imageCount == 1) "image file" else "image files"
+    val ignoredSuffix =
+        if (extraNames.isEmpty()) {
+            ""
+        } else {
+            val noun = if (extraNames.size == 1) "file" else "files"
+            " Ignoring extra selected image $noun: ${summarizeDiscImageNames(extraNames)}"
+        }
+    return "Found $dataTrackCount data + $audioTrackCount audio track(s) across $imageCount $imageNoun" +
+        ignoredSuffix
+}
+
+private fun parseCueReferencedFilenames(cueFile: File): List<String> {
+    if (!cueFile.isFile) return emptyList()
+    return runCatching {
+        cueFile.useLines { lines ->
+            lines
+                .mapNotNull { line ->
+                    CUE_FILE_LINE_REGEX
+                        .find(line)
+                        ?.groupValues
+                        ?.getOrNull(1)
+                        ?.let { File(it).name }
+                }.toList()
+        }
+    }.getOrElse {
+        Log.w("DXX-DiscImport", "Failed to read CUE file order for ${cueFile.absolutePath}", it)
+        emptyList()
+    }
+}
+
+private fun <T> orderCueEntries(
+    cueFile: File,
+    entries: List<T>,
+    nameOf: (T) -> String,
+): OrderedCueEntries<T> {
+    val referencedNames = parseCueReferencedFilenames(cueFile)
+    if (referencedNames.isEmpty()) {
+        return OrderedCueEntries(entries, emptyList(), emptyList())
+    }
+
+    val entriesByName = mutableMapOf<String, java.util.ArrayDeque<T>>()
+    for (entry in entries) {
+        val key = File(nameOf(entry)).name.lowercase()
+        entriesByName.getOrPut(key) { java.util.ArrayDeque() }.addLast(entry)
+    }
+
+    val orderedEntries = mutableListOf<T>()
+    val missingNames = mutableListOf<String>()
+    for (referencedName in referencedNames) {
+        val queue = entriesByName[referencedName.lowercase()]
+        if (queue == null || queue.isEmpty()) {
+            missingNames.add(referencedName)
+            continue
+        }
+        orderedEntries.add(queue.removeFirst())
+    }
+
+    val extraNames =
+        entriesByName.values
+            .flatMap { queue -> queue.map { entry -> File(nameOf(entry)).name } }
+            .distinct()
+
+    return OrderedCueEntries(
+        orderedEntries = if (orderedEntries.isEmpty()) entries else orderedEntries,
+        missingNames = missingNames.distinct(),
+        extraNames = extraNames,
+    )
+}
+
 private fun registerDiscAudioSourceFromPath(
     srcManager: AudioSourceManager,
     filesDir: File,
     context: Context,
     cuePath: String,
-    binPath: String,
+    binPaths: List<String>,
     tracks: List<DiscImportBridge.CueTrack>,
 ) {
+    val orderedBinFiles = binPaths.map(::File)
+    if (orderedBinFiles.isEmpty()) {
+        Log.w("DXX-DiscImport", "registerDiscAudioSourceFromPath: no disc image files for $cuePath")
+        return
+    }
+
     var discLabel: String? = null
     var discId: String? = null
     var legacyDiscId = 0L
@@ -7431,15 +7586,23 @@ private fun registerDiscAudioSourceFromPath(
             val identifier = DiscIdentifier(context)
             val trackOffset = firstAudio.startSector.toLong() * 2352L
             val trackBytes = firstAudio.numSectors.toLong() * 2352L
-            File(binPath).inputStream().use { input ->
-                input.channel.position(trackOffset)
-                val sha1 = DiscIdentifier.sha1Hash(input, trackBytes)
-                val match = identifier.identify(mapOf(firstAudio.trackNum to sha1))
-                if (match.matched) {
-                    discLabel = match.label
-                    discId = match.disc?.id
-                    match.disc?.legacyDiscId?.let {
-                        legacyDiscId = java.lang.Long.decode(it)
+            val audioBinFile = orderedBinFiles.getOrNull(firstAudio.fileIndex)
+            if (audioBinFile == null) {
+                Log.w(
+                    "DXX-DiscImport",
+                    "Disc identification missing fileIndex=${firstAudio.fileIndex} for $cuePath",
+                )
+            } else {
+                audioBinFile.inputStream().use { input ->
+                    input.channel.position(trackOffset)
+                    val sha1 = DiscIdentifier.sha1Hash(input, trackBytes)
+                    val match = identifier.identify(mapOf(firstAudio.trackNum to sha1))
+                    if (match.matched) {
+                        discLabel = match.label
+                        discId = match.disc?.id
+                        match.disc?.legacyDiscId?.let {
+                            legacyDiscId = java.lang.Long.decode(it)
+                        }
                     }
                 }
             }
@@ -7453,7 +7616,14 @@ private fun registerDiscAudioSourceFromPath(
             trackNames.putAll(FingerprintBridge.lookupTrackNames(context, resolvedDiscId))
         }
         if (trackNames.isEmpty() && tracks.any { it.isAudio }) {
-            trackNames.putAll(FingerprintBridge.fingerprintAndMatchDisc(context, binPath, tracks))
+            val contentPaths = orderedBinFiles.map { it.absolutePath }
+            val matchedTrackNames =
+                if (contentPaths.size == 1) {
+                    FingerprintBridge.fingerprintAndMatchDisc(context, contentPaths.first(), tracks)
+                } else {
+                    FingerprintBridge.fingerprintAndMatchDisc(context, contentPaths, tracks)
+                }
+            trackNames.putAll(matchedTrackNames)
         }
     } catch (e: Exception) {
         Log.w("DXX-DiscImport", "Track name identification failed for $cuePath", e)
@@ -7471,14 +7641,15 @@ private fun registerDiscAudioSourceFromPath(
         AudioSourceManager.AudioSource(
             id = id,
             cuePath = destCue.name,
-            binPaths = listOf(File(binPath).name.lowercase()),
+            binPaths = orderedBinFiles.map { it.name.lowercase() },
             discLabel = discLabel ?: File(cuePath).nameWithoutExtension,
             discId = discId ?: "unknown",
             trackCount = tracks.size,
             audioTrackCount = tracks.count { it.isAudio },
             legacyDiscId = legacyDiscId,
             trackNames = trackNames,
-            binContentUri = binPath,
+            binContentUri = orderedBinFiles.first().absolutePath,
+            binContentUris = orderedBinFiles.map { it.absolutePath },
         ),
     )
 }
@@ -7528,35 +7699,62 @@ private fun importDiscImageFromPath(
     setDir: File,
     context: Context,
     cuePath: String,
-    binPath: String,
+    binPaths: List<String>,
     includeAudio: Boolean,
 ): Int {
     val cueFile = File(cuePath)
-    val binFile = File(binPath)
+    val imageFiles = binPaths.map(::File)
 
-    if (!cueFile.isFile || !binFile.isFile) {
-        Log.w("DXX-DiscImport", "importDiscImageFromPath: missing cue/bin ($cuePath, $binPath)")
+    if (!cueFile.isFile || imageFiles.isEmpty() || imageFiles.any { !it.isFile }) {
+        Log.w(
+            "DXX-DiscImport",
+            "importDiscImageFromPath: missing cue/image files ($cuePath, ${binPaths.joinToString()})",
+        )
         return -1
     }
 
-    val tracks = DiscImportBridge.parseCue(cueFile.absolutePath, longArrayOf(binFile.length()))
+    val orderedImages = orderCueEntries(cueFile, imageFiles) { it.name }
+    if (orderedImages.missingNames.isNotEmpty()) {
+        Log.w(
+            "DXX-DiscImport",
+            "importDiscImageFromPath: ${buildMissingDiscImageSelectionMessage(orderedImages.missingNames)}",
+        )
+        return -1
+    }
+    if (orderedImages.extraNames.isNotEmpty()) {
+        Log.i(
+            "DXX-DiscImport",
+            "importDiscImageFromPath: ignoring extra image files for $cuePath: ${summarizeDiscImageNames(
+                orderedImages.extraNames,
+            )}",
+        )
+    }
+    val orderedImageFiles = orderedImages.orderedEntries
+
+    val tracks = DiscImportBridge.parseCue(cueFile.absolutePath, orderedImageFiles.map { it.length() }.toLongArray())
     if (tracks.isNullOrEmpty()) {
         Log.w("DXX-DiscImport", "importDiscImageFromPath: parseCue failed for $cuePath")
         return -1
     }
 
     val dataTrack = tracks.firstOrNull { it.isData }
-    if (dataTrack == null || dataTrack.fileIndex != 0) {
+    if (dataTrack == null) {
+        Log.w("DXX-DiscImport", "importDiscImageFromPath: no data track for $cuePath")
+        return -1
+    }
+
+    val dataImageFile = orderedImageFiles.getOrNull(dataTrack.fileIndex)
+    if (dataImageFile == null) {
         Log.w(
             "DXX-DiscImport",
-            "importDiscImageFromPath: unsupported data track mapping for $cuePath (fileIndex=${dataTrack?.fileIndex})",
+            "importDiscImageFromPath: missing data image for $cuePath (fileIndex=${dataTrack.fileIndex})",
         )
         return -1
     }
 
     val isoExtracted =
         DiscImportBridge.extractIsoFiles(
-            binFile.absolutePath,
+            dataImageFile.absolutePath,
             dataTrack.startSector,
             dataTrack.numSectors,
             setDir.absolutePath,
@@ -7567,7 +7765,7 @@ private fun importDiscImageFromPath(
             0
         } else {
             DiscImportBridge.extractMacFiles(
-                binFile.absolutePath,
+                dataImageFile.absolutePath,
                 dataTrack.startSector,
                 dataTrack.numSectors,
                 setDir.absolutePath,
@@ -7587,7 +7785,7 @@ private fun importDiscImageFromPath(
             filesDir = filesDir,
             context = context,
             cuePath = cueFile.absolutePath,
-            binPath = binFile.absolutePath,
+            binPaths = orderedImageFiles.map { it.absolutePath },
             tracks = tracks,
         )
         enableRedbookInConfig(filesDir, context)
@@ -7595,7 +7793,7 @@ private fun importDiscImageFromPath(
 
     Log.i(
         "DXX-DiscImport",
-        "importDiscImageFromPath: cue=$cuePath iso=$isoExtracted mac=$macExtracted sow=$sowExtracted audio=$includeAudio",
+        "importDiscImageFromPath: cue=$cuePath images=${orderedImageFiles.size} iso=$isoExtracted mac=$macExtracted sow=$sowExtracted audio=$includeAudio",
     )
     return extracted + sowExtracted
 }
@@ -9177,6 +9375,7 @@ private fun DiscImportDialog(
     var legacyDiscId by remember { mutableStateOf(0L) }
     // Temp CUE path for native parsing
     var tempCuePath by remember { mutableStateOf<String?>(null) }
+    var orderedBinUris by remember { mutableStateOf(binUris) }
     val extractFocus = remember { FocusRequester() }
     val addAudioFocus = remember { FocusRequester() }
     val doneFocus = remember { FocusRequester() }
@@ -9205,9 +9404,18 @@ private fun DiscImportDialog(
                 tempCuePath = tmpCue.absolutePath
                 Log.i("DXX-DiscImport", "CUE copied to ${tmpCue.absolutePath} (${tmpCue.length()} bytes)")
 
-                // Get BIN sizes
+                val orderedImages = orderCueEntries(tmpCue, binUris) { it.first }
+                if (orderedImages.missingNames.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        status = buildMissingDiscImageSelectionMessage(orderedImages.missingNames)
+                    }
+                    return@withContext
+                }
+                val selectedBinUris = orderedImages.orderedEntries
+
+                // Get disc image sizes in CUE FILE order
                 val parsedBinSizes =
-                    binUris
+                    selectedBinUris
                         .map { (name, uri) ->
                             val size =
                                 context.contentResolver
@@ -9218,13 +9426,14 @@ private fun DiscImportDialog(
                                         null,
                                         null,
                                     )?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L } ?: 0L
-                            Log.i("DXX-DiscImport", "BIN '$name' size=$size")
+                            Log.i("DXX-DiscImport", "Disc image '$name' size=$size")
                             size
                         }
 
                 if (parsedBinSizes.isEmpty()) {
                     withContext(Dispatchers.Main) {
-                        status = "No BIN files selected \u2014 please select both .cue and .bin files"
+                        status =
+                            "No disc image files selected \u2014 please select the .cue and all referenced .bin/.img files"
                     }
                     return@withContext
                 }
@@ -9233,14 +9442,21 @@ private fun DiscImportDialog(
                 val parsed = DiscImportBridge.parseCue(tmpCue.absolutePath, parsedBinSizes.toLongArray())
                 Log.i("DXX-DiscImport", "parseCue returned ${parsed?.size ?: "null"} tracks")
                 withContext(Dispatchers.Main) {
+                    orderedBinUris = selectedBinUris
                     binSizes = parsedBinSizes
                     tracks = parsed
                     if (parsed != null) {
                         val dataCount = parsed.count { it.isData }
                         val audioCount = parsed.count { it.isAudio }
-                        status = "Found $dataCount data + $audioCount audio track(s)"
+                        status =
+                            buildDiscImageTrackSummary(
+                                dataTrackCount = dataCount,
+                                audioTrackCount = audioCount,
+                                imageCount = selectedBinUris.size,
+                                extraNames = orderedImages.extraNames,
+                            )
                     } else {
-                        status = "Failed to parse CUE file"
+                        status = "Failed to parse CUE file. Check that every referenced .bin/.img file was selected"
                     }
                 }
             } catch (e: Exception) {
@@ -9253,7 +9469,7 @@ private fun DiscImportDialog(
     AlertDialog(
         onDismissRequest = { if (!processing) onDismiss() },
         confirmButton = {},
-        title = { Text("Import Disc Image", fontWeight = FontWeight.Bold) },
+        title = { Text("Import Disc Image Set", fontWeight = FontWeight.Bold) },
         text = {
             Box {
                 Column(modifier = Modifier.verticalScroll(scrollState)) {
@@ -9272,8 +9488,7 @@ private fun DiscImportDialog(
                                         withContext(Dispatchers.IO) {
                                             try {
                                                 val dataTrack = tracks!!.first { it.isData }
-                                                // Use first BIN file's fd
-                                                val binUri = binUris[dataTrack.fileIndex].second
+                                                val binUri = orderedBinUris[dataTrack.fileIndex].second
                                                 val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
                                                 if (pfd != null) {
                                                     val progress =
@@ -9363,7 +9578,7 @@ private fun DiscImportDialog(
                                                     }
                                                 } else {
                                                     withContext(Dispatchers.Main) {
-                                                        status = "Could not open BIN file"
+                                                        status = "Could not open disc image file"
                                                     }
                                                 }
                                             } catch (e: Exception) {
@@ -9398,7 +9613,7 @@ private fun DiscImportDialog(
 
                                                 val binNames = mutableListOf<String>()
                                                 var firstBinUri: Uri? = null
-                                                for ((name, uri) in binUris) {
+                                                for ((name, uri) in orderedBinUris) {
                                                     if (!persistReadPermissionForUri(context, uri)) {
                                                         Log.w("DXX-DiscImport", "Could not persist URI for $name")
                                                     }
@@ -9410,7 +9625,7 @@ private fun DiscImportDialog(
                                                 try {
                                                     val identifier = DiscIdentifier(context)
                                                     val firstAudio = parsedTracks.first { it.isAudio }
-                                                    val binUri = binUris[firstAudio.fileIndex].second
+                                                    val binUri = orderedBinUris[firstAudio.fileIndex].second
                                                     val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
                                                     if (pfd != null) {
                                                         val trackBytes = firstAudio.numSectors.toLong() * 2352
@@ -9447,7 +9662,7 @@ private fun DiscImportDialog(
                                                         existingFileNames = existingAudioFileNames,
                                                     )
                                                 LauncherDebugLog.log(
-                                                    "launcher-cd-import cue=$cueName bins=${binUris.size} mode=saf-in-place file_stem=$sourceFileStem",
+                                                    "launcher-cd-import cue=$cueName bins=${orderedBinUris.size} mode=saf-in-place file_stem=$sourceFileStem",
                                                 )
                                                 val destCue = File(filesDir, "$sourceFileStem.cue")
                                                 tempCuePath?.let {
@@ -9474,7 +9689,7 @@ private fun DiscImportDialog(
                                                             FingerprintBridge.fingerprintAndMatchDisc(
                                                                 context,
                                                                 context.contentResolver,
-                                                                binUris.map { it.second },
+                                                                orderedBinUris.map { it.second },
                                                                 parsedTracks,
                                                             )
                                                         Log.i(
@@ -9498,7 +9713,7 @@ private fun DiscImportDialog(
                                                         legacyDiscId = legacyDiscId,
                                                         trackNames = trackNames,
                                                         binContentUri = firstBinUri?.toString(),
-                                                        binContentUris = binUris.map { it.second.toString() },
+                                                        binContentUris = orderedBinUris.map { it.second.toString() },
                                                         cueContentUri = cueUri.toString(),
                                                     ),
                                                 )
