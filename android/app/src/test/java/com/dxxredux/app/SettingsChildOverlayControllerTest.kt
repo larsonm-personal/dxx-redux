@@ -49,11 +49,21 @@ class SettingsChildOverlayControllerTest {
     }
 
     @Test
-    fun shouldCloseControllerSettingsStackForMenu_requiresPressedChildSurface() {
+    fun shouldCloseControllerSettingsStackForMenu_requiresPressedSettingsSurface() {
         assertEquals(
             true,
             shouldCloseControllerSettingsStackForMenu(
                 pressed = true,
+                settingsRootVisible = true,
+                musicPanelVisible = false,
+                videoInfoVisible = false,
+            ),
+        )
+        assertEquals(
+            true,
+            shouldCloseControllerSettingsStackForMenu(
+                pressed = true,
+                settingsRootVisible = false,
                 musicPanelVisible = true,
                 videoInfoVisible = false,
             ),
@@ -62,6 +72,7 @@ class SettingsChildOverlayControllerTest {
             true,
             shouldCloseControllerSettingsStackForMenu(
                 pressed = true,
+                settingsRootVisible = false,
                 musicPanelVisible = false,
                 videoInfoVisible = true,
             ),
@@ -70,6 +81,7 @@ class SettingsChildOverlayControllerTest {
             false,
             shouldCloseControllerSettingsStackForMenu(
                 pressed = false,
+                settingsRootVisible = true,
                 musicPanelVisible = true,
                 videoInfoVisible = true,
             ),
@@ -78,6 +90,7 @@ class SettingsChildOverlayControllerTest {
             false,
             shouldCloseControllerSettingsStackForMenu(
                 pressed = true,
+                settingsRootVisible = false,
                 musicPanelVisible = false,
                 videoInfoVisible = false,
             ),

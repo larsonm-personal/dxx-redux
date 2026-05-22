@@ -2408,6 +2408,7 @@ class MainActivity :
             if (
                 shouldCloseControllerSettingsStackForMenu(
                     pressed = pressed,
+                    settingsRootVisible = touchOverlay.isAdminTrayOpen(),
                     musicPanelVisible = musicPanel != null,
                     videoInfoVisible = videoInfoOverlay?.visibility == View.VISIBLE,
                 )

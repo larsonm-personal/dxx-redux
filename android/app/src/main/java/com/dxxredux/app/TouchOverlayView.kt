@@ -78,6 +78,8 @@ internal fun adminTrayVisibleActions(
     return actions
 }
 
+private const val CONTROLLER_MENU_FOCUS_COLOR = 0xFF00CC66.toInt()
+
 internal enum class ControllerMenuSurface {
     NONE,
     REMAINING_ACTIONS,
@@ -1716,6 +1718,12 @@ class TouchOverlayView
                     textAlign = Paint.Align.LEFT
                     alpha = (0xCC * eff).toInt()
                 }
+            val selectionPaint =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.STROKE
+                    color = CONTROLLER_MENU_FOCUS_COLOR
+                    strokeWidth = maxOf(3f, remainingActionButtonRect.height() * 0.05f)
+                }
             actions.forEachIndexed { index, action ->
                 val rect = remainingActionItemRects[index]
                 val isPressed = remainingActionPressedIndex == index
@@ -1737,6 +1745,9 @@ class TouchOverlayView
                 canvas.drawRoundRect(rect, corner, corner, bg)
                 paintRing.alpha = (0x66 * eff).toInt()
                 canvas.drawRoundRect(rect, corner, corner, paintRing)
+                if (isSelected) {
+                    canvas.drawRoundRect(rect, corner, corner, selectionPaint)
+                }
                 canvas.drawText(
                     action.label,
                     rect.left + rect.height() * 0.35f,
@@ -4154,7 +4165,7 @@ class TouchOverlayView
             val selectPaint =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     style = Paint.Style.STROKE
-                    color = 0xFF00CCFF.toInt()
+                    color = CONTROLLER_MENU_FOCUS_COLOR
                     strokeWidth = 3f
                 }
 

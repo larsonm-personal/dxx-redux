@@ -58,6 +58,7 @@ internal fun scrollOffsetToKeepRowVisible(
 
 internal fun shouldCloseControllerSettingsStackForMenu(
     pressed: Boolean,
+    settingsRootVisible: Boolean,
     musicPanelVisible: Boolean,
     videoInfoVisible: Boolean,
-): Boolean = pressed && (musicPanelVisible || videoInfoVisible)
+): Boolean = pressed && (settingsRootVisible || musicPanelVisible || videoInfoVisible)

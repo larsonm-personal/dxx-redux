@@ -142,6 +142,13 @@ Why this shape:
   - D-pad/A/B in music panel
   - D-pad/A/B in video info overlay
 
+### Phase 8: Close-path and focus polish
+- [x] Treat the settings root tray as a close-on-`Menu` surface so the cycle stays `game -> more -> settings -> game`
+- [x] Keep `B` as the explicit close action for both the More menu and the settings root tray
+- [x] Keep D-pad plus `A`/`B` routed to overlay navigation before gameplay dispatch while either root menu is open
+- [x] Draw green controller-focus outlines for both the More menu and the settings root tray
+- [x] Extend the focused JVM helper coverage for the settings-root close case
+
 ## Likely File Set
 - `android/app/src/main/java/com/dxxredux/app/TouchBindings.kt`
 - `android/app/src/main/java/com/dxxredux/app/ControllerConfigPage.kt`
@@ -168,4 +175,5 @@ Why this shape:
 - [x] Phase 4 extra-menu controller navigation and validation
 - [x] Phase 5 child-surface controller navigation and validation
 - [x] Phase 6 menu-stack behavior and validation
+- [x] Phase 8 close-path and focus polish
 - [ ] Full manual controller validation
