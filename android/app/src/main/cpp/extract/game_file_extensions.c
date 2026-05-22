@@ -27,18 +27,9 @@ const char *dxx_android_gog_audio_extensions[] = {
 	NULL
 };
 
-/*
- * Disc image extractors operate on extension suffixes without the leading '.'.
- * Keep these here so JNI and desktop helper tools do not drift apart.
- */
-const char *dxx_android_disc_extract_extensions[] = {
-	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl",
-	"dxa", "cfg", "txt", "256", NULL
-};
-
-/* Mac HFS/STI archives also carry mission and demo files */
+/* Mac HFS/STI archives still use extension filtering during extraction */
 const char *dxx_android_mac_disc_extract_extensions[] = {
-	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl",
+	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl", "sow",
 	"dxa", "cfg", "txt", "256", "msn", "dem", NULL
 };
 

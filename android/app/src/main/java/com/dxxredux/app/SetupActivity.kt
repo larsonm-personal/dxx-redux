@@ -7320,9 +7320,31 @@ private fun extractSowArchives(
     val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath) ?: return 0
     var sowExtracted = 0
     for (sow in sowFiles) {
-        sowExtracted += DiscImportBridge.extractSowFiles(sow, setDir.absolutePath, progress).coerceAtLeast(0)
+        val outputDir = File(sow).parentFile?.absolutePath ?: setDir.absolutePath
+        sowExtracted += DiscImportBridge.extractSowFiles(sow, outputDir, progress).coerceAtLeast(0)
     }
     return sowExtracted
+}
+
+private fun postProcessImportedDiscFiles(
+    setDir: File,
+    progress: DiscImportBridge.ExtractProgress? = null,
+): Int {
+    val sowExtracted = extractSowArchives(setDir, progress)
+    hoistNestedImportedGameFiles(setDir)
+    return sowExtracted
+}
+
+private fun buildDiscExtractSummary(
+    primaryCount: Int,
+    primaryLabel: String,
+    sowExtracted: Int,
+): String {
+    val parts = mutableListOf("$primaryCount $primaryLabel")
+    if (sowExtracted > 0) {
+        parts += "$sowExtracted from .sow archives"
+    }
+    return "Extracted ${parts.joinToString(" + ")}"
 }
 
 private fun moveImportedGameFileToRoot(
@@ -7554,11 +7576,8 @@ private fun importDiscImageFromPath(
         }
 
     var sowExtracted = 0
-    if (isoExtracted > 0) {
-        sowExtracted = extractSowArchives(setDir)
-    }
     if (isoExtracted > 0 || macExtracted > 0) {
-        hoistNestedImportedGameFiles(setDir)
+        sowExtracted = postProcessImportedDiscFiles(setDir)
     }
 
     val extracted = if (isoExtracted > 0) isoExtracted else macExtracted.coerceAtLeast(0)
@@ -7593,10 +7612,7 @@ private fun importIsoImageFromPath(
     }
 
     val isoExtracted = DiscImportBridge.extractIsoImageFiles(isoFile.absolutePath, setDir.absolutePath, null)
-    val sowExtracted = if (isoExtracted > 0) extractSowArchives(setDir) else 0
-    if (isoExtracted > 0) {
-        hoistNestedImportedGameFiles(setDir)
-    }
+    val sowExtracted = if (isoExtracted > 0) postProcessImportedDiscFiles(setDir) else 0
 
     Log.i(
         "DXX-DiscImport",
@@ -9311,46 +9327,30 @@ private fun DiscImportDialog(
                                                                 macExtracted
                                                             }
                                                         }
-                                                    // SOW decompression: scan for .sow files and extract them
                                                     var sowExtracted = 0
-                                                    if (isoExtracted > 0) {
-                                                        val sowFiles =
-                                                            DiscImportBridge.scanSowFiles(
-                                                                setDir.absolutePath,
-                                                            )
-                                                        if (sowFiles != null && sowFiles.isNotEmpty()) {
-                                                            withContext(Dispatchers.Main) {
-                                                                status =
-                                                                    "Decompressing ${sowFiles.size} .sow archive(s)..."
-                                                            }
-                                                            for (sow in sowFiles) {
-                                                                sowExtracted +=
-                                                                    DiscImportBridge
-                                                                        .extractSowFiles(
-                                                                            sow,
-                                                                            setDir.absolutePath,
-                                                                            progress,
-                                                                        ).coerceAtLeast(0)
-                                                            }
-                                                        }
-                                                    }
                                                     if (isoExtracted > 0 || macExtracted > 0) {
-                                                        hoistNestedImportedGameFiles(setDir)
+                                                        sowExtracted = postProcessImportedDiscFiles(setDir, progress)
                                                     }
                                                     withContext(Dispatchers.Main) {
-                                                        dataExtracted = extracted.coerceAtLeast(0) + sowExtracted
+                                                        val primaryExtracted = extracted.coerceAtLeast(0)
+                                                        dataExtracted =
+                                                            primaryExtracted + sowExtracted
                                                         status =
                                                             when {
-                                                                isoExtracted > 0 && sowExtracted > 0 -> {
-                                                                    "Extracted $isoExtracted file(s) + $sowExtracted from .sow archives"
-                                                                }
-
                                                                 isoExtracted > 0 -> {
-                                                                    "Extracted $isoExtracted game file(s)"
+                                                                    buildDiscExtractSummary(
+                                                                        isoExtracted,
+                                                                        "disc file(s)",
+                                                                        sowExtracted,
+                                                                    )
                                                                 }
 
                                                                 macExtracted > 0 -> {
-                                                                    "Extracted $macExtracted file(s) from Mac HFS installer"
+                                                                    buildDiscExtractSummary(
+                                                                        macExtracted,
+                                                                        "file(s) from Mac HFS installer",
+                                                                        sowExtracted,
+                                                                    )
                                                                 }
 
                                                                 else -> {
@@ -9751,23 +9751,21 @@ private fun IsoImportDialog(
                                                 }
                                             val sowExtracted =
                                                 if (isoExtracted > 0) {
-                                                    extractSowArchives(setDir, progress)
+                                                    postProcessImportedDiscFiles(setDir, progress)
                                                 } else {
                                                     0
                                                 }
-                                            if (isoExtracted > 0) {
-                                                hoistNestedImportedGameFiles(setDir)
-                                            }
                                             withContext(Dispatchers.Main) {
-                                                extractedCount = isoExtracted.coerceAtLeast(0) + sowExtracted
+                                                extractedCount =
+                                                    isoExtracted.coerceAtLeast(0) + sowExtracted
                                                 status =
                                                     when {
-                                                        isoExtracted > 0 && sowExtracted > 0 -> {
-                                                            "Extracted $isoExtracted file(s) + $sowExtracted from .sow archives"
-                                                        }
-
                                                         isoExtracted > 0 -> {
-                                                            "Extracted $isoExtracted game file(s)"
+                                                            buildDiscExtractSummary(
+                                                                isoExtracted,
+                                                                "disc file(s)",
+                                                                sowExtracted,
+                                                            )
                                                         }
 
                                                         else -> {

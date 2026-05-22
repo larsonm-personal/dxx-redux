@@ -17,7 +17,6 @@
 #include "hfs_reader.h"
 #include "iso9660_reader.h"
 #include "mac_hfs_extract.h"
-#include "sti2_extract.h"
 #include "sow_extract.h"
 #include "game_file_extensions.h"
 
@@ -346,7 +345,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 	init_extract_ctx(env, progress, &ctx);
 
 	int extracted = iso_extract_files(binFd, trackStart, trackSectors,
-	                                  &list, out_dir, dxx_android_disc_extract_extensions,
+	                                  &list, out_dir, NULL,
 	                                  progress ? extract_progress_cb : NULL,
 	                                  &ctx);
 
@@ -383,7 +382,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
 	}
 
 	init_extract_ctx(env, progress, &ctx);
-	extracted = iso_extract_image_files(isoFd, &list, out_dir, dxx_android_disc_extract_extensions,
+	extracted = iso_extract_image_files(isoFd, &list, out_dir, NULL,
 	                                    progress ? extract_progress_cb : NULL,
 	                                    &ctx);
 
@@ -465,7 +464,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
 	extract_ctx_t ctx;
 	init_extract_ctx(env, progress, &ctx);
 
-	int extracted = sow_extract(sow, out_dir, dxx_android_disc_extract_extensions,
+	int extracted = sow_extract(sow, out_dir, NULL,
 	                            progress ? extract_progress_cb : NULL, &ctx);
 	LOGI("SOW extracted %d files from %s", extracted, sow);
 

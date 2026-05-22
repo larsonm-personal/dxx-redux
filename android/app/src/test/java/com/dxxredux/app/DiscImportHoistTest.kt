@@ -38,4 +38,19 @@ class DiscImportHoistTest {
         assertTrue(missionFile.exists())
         assertTrue(nestedDir.exists())
     }
+
+    @Test
+    fun replacesSmallerRootGameFilesWithLargerNestedCopies() {
+        val setDir = createTempDirectory("disc-import-replace").toFile()
+        File(setDir, "DESCENT2.HOG").writeBytes(byteArrayOf(1))
+        val nestedDir = File(setDir, "d2data").apply { mkdirs() }
+        val nestedFile = File(nestedDir, "descent2.hog").apply { writeBytes(byteArrayOf(1, 2, 3, 4)) }
+
+        val hoisted = hoistNestedImportedGameFiles(setDir)
+
+        assertEquals(1, hoisted)
+        assertFalse(nestedFile.exists())
+        assertEquals(4, File(setDir, "DESCENT2.HOG").length())
+        assertFalse(nestedDir.exists())
+    }
 }

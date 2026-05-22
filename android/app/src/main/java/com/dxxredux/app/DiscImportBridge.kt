@@ -271,11 +271,10 @@ object DiscImportBridge {
     }
 
     /**
-     * Extract game files from a .sow (ARJ) archive.
-     * Internal archive paths are flattened to just filenames.
+     * Extract files from a .sow (ARJ) archive.
      *
      * @param sowPath   Path to the .sow file
-     * @param outputDir Directory to extract game files into
+     * @param outputDir Directory to extract files into
      * @param progress  Optional progress callback
      * @return Number of files extracted, or -1 on error
      */
