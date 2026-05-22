@@ -149,6 +149,17 @@ Why this shape:
 - [x] Draw green controller-focus outlines for both the More menu and the settings root tray
 - [x] Extend the focused JVM helper coverage for the settings-root close case
 
+### Manual follow-up 2026-05-21
+- [x] Investigate the touchless follow-up where focus outlines appeared but controller D-pad still did not move overlay focus and `Menu` could not close the settings tray
+- [x] Fix HAT-based D-pad routing so controller D-pad motion reaches overlay handlers before native/game dispatch
+- [x] Fix button-meta routing so a bound `Menu` button is not swallowed by the admin tray before `META_MENU_CYCLE` dispatch
+- [x] Re-run focused JVM validation with JDK 21 after the routing fix
+
+Validated result:
+- `MainActivity.dispatchDpad(...)` now checks controller settings children and `TouchOverlayView.handleControllerMenuKey(...)` before forwarding HAT D-pad events to native joystick/menu paths
+- `MainActivity.onKeyDown()` / `onKeyUp()` now allow a bound `META_MENU_CYCLE` gamepad button to bypass overlay swallowing so the cycle can close the settings tray as designed
+- Focused JVM validation passed with `android\\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ControllerMenuCycleTest --tests com.dxxredux.app.AdminTrayUiTest --tests com.dxxredux.app.SettingsChildOverlayControllerTest` after setting `JAVA_HOME=C:\\local\\jdk-21`
+
 ## Likely File Set
 - `android/app/src/main/java/com/dxxredux/app/TouchBindings.kt`
 - `android/app/src/main/java/com/dxxredux/app/ControllerConfigPage.kt`

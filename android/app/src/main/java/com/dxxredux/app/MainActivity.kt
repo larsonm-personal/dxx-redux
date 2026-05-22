@@ -2439,6 +2439,12 @@ class MainActivity :
         keyCode: Int,
         action: Int,
     ) {
+        if (handleControllerSettingsChildKey(keyCode, action)) {
+            return
+        }
+        if (touchOverlay.handleControllerMenuKey(keyCode, action)) {
+            return
+        }
         val pressed = action == 0
         val metaId = dpadMetaBindings[keyCode]
         logGamepadInput(
@@ -2490,6 +2496,18 @@ class MainActivity :
             KeyEvent.KEYCODE_BUTTON_THUMBR -> 9
             else -> -1
         }
+
+    private fun handleOverlayBypassMetaKey(
+        keyCode: Int,
+        action: Int,
+    ): Boolean {
+        val joyBtn = gamepadButtonIndex(keyCode)
+        if (joyBtn < 0) return false
+        val metaId = buttonMetaBindings[joyBtn] ?: return false
+        if (metaId != TouchBindings.META_MENU_CYCLE) return false
+        dispatchMetaAction(metaId, action == 0)
+        return true
+    }
 
     private fun isControllerSource(source: Int): Boolean =
         source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
@@ -2657,6 +2675,8 @@ class MainActivity :
             return true
         }
 
+        if (handleOverlayBypassMetaKey(keyCode, 0)) return true
+
         if (handleControllerSettingsChildKey(keyCode, 0)) return true
 
         if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT ||
@@ -2746,6 +2766,8 @@ class MainActivity :
         ) {
             return true
         }
+
+        if (handleOverlayBypassMetaKey(keyCode, 1)) return true
 
         if (handleControllerSettingsChildKey(keyCode, 1)) return true
 
