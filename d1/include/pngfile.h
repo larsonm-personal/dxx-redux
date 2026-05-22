@@ -33,6 +33,7 @@ typedef struct _etc2_file_data {
 } etc2_file_data;
 
 extern int read_ktx2_file(const char *filename, etc2_file_data *edata);
+extern void clear_texture_lookup_cache(void);
 #endif
 
 #endif

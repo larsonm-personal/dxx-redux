@@ -5,15 +5,46 @@
 - [x] Survey current logging, frame, graphics, texture, storage, and overlay paths
 - [x] Draft implementation plan for a low-volume profiling category
 - [x] Add the profiling category and sampled log sink
-- [x] Add initial native frame wickets
-- [ ] Add texture, storage, and syscall wickets
-- [ ] Add Kotlin overlay timing
-- [ ] Add parser tooling and validate on Shield
+- [x] Add coarse native frame buckets and existing GL timing carry-through
+- [x] Add thresholded texture and storage profiling wickets
+- [x] Add texture-burst summaries for level-start and reload storms
+- [x] Add deep texture lookup slot and extension profiling
+- [x] Add Kotlin overlay timing summaries
+- [x] Add parser tooling
+- [x] Add exact-filename negative cache for replacement lookup misses
+- [x] Clear the lookup cache when replacement search roots change
+- [x] Revalidate focused arm64 build after the cache change
+- [ ] Validate on Shield and extend bucket depth from real captures
 
 Validation so far:
 
 - `cd android; .\gradlew.bat assembleDebug`
 - `cd android; .\gradlew.bat testDebugUnitTest`
+- `cd android; .\gradlew.bat ':app:buildCMakeDebug[arm64-v8a]' ':app:buildCMakeDebug[arm64-v8a]-2'`
+- `.\android\summarize-profiling-log.ps1 -Path temp\profile_sample.log`
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\cpp\shared\android_profile.c','android\summarize-profiling-log.ps1')`
+
+Current-tree revalidation:
+
+- 2026-05-21: reran the focused arm64 CMake build and `summarize-profiling-log.ps1` after follow-up `android_profile.c` edits; both passed
+- 2026-05-21: ran `android\run-code-quality.ps1 -Fix -Paths @('android/app/src/main/cpp/shared/pngfile_stb.c','android/app/src/main/cpp/jni_main.c','android/app/src/main/java/com/dxxredux/app/ModManager.kt','android/app/src/main/java/com/dxxredux/app/FileSetManager.kt','android/app/src/main/java/com/dxxredux/app/NativeTextureLookupCache.kt','d1/include/pngfile.h','d2/include/pngfile.h','d1/arch/ogl/ogl.c','d2/arch/ogl/ogl.c')`; all scoped checks passed
+- 2026-05-21: reran `cd android; .\gradlew.bat :app:compileDebugKotlin ':app:buildCMakeDebug[arm64-v8a]' ':app:buildCMakeDebug[arm64-v8a]-2'` after the cache change and formatter pass; build passed
+
+Real-capture findings from `android\temp_game_logs\debuglog_with_profiling.txt`:
+
+- steady-state sampled frames were pacing-dominated at about 39 ms, with about 30 to 32 ms in `wait`, about 8 to 9 ms in `render`, under 1 ms in `sim`, and low swap/GPU/UI cost during gameplay
+- the worst outlier was sample 1 frame 1 at about 1.96 s, dominated by `render`, and it coincided with a large stock-texture load storm on the first in-game frame
+- slow stock texture loads were dominated by replacement lookup/read time rather than upload, commonly about 15 to 20 ms in the KTX2 path, about 48 to 52 ms in the PNG path, and about 1 ms uploading
+- `type=storage` stayed empty because the current SAF `pread` hook did not cover the replacement lookup/open-miss work that dominated these stock fallbacks
+- `type=texture_burst` underreported long storms in this capture because active bursts were only finalized on idle, disable, or explicit flush; a follow-up native fix now also finalizes them at sample boundaries, so the next Shield capture should emit usable burst summaries
+- follow-up native logging now splits texture lookup cost by KTX2 slot and PNG slot/extension so the next Shield capture can distinguish set/pref/base misses from per-extension fallback cost
+
+Real-capture findings from `android\temp_game_logs\debuglog_with_profiling_v2.txt`:
+
+- all instrumented replacement probes missed, including every KTX2 set/pref/base candidate and every PNG/JPG/TGA set/pref/base candidate
+- roughly 96.7 percent of sampled texture load time was spent in replacement lookup, with upload around 2.2 percent and mask work negligible
+- the miss cost was spread almost evenly across set, pref, and base probes and across png, jpg, and tga extension probes, which points to repeated negative lookup overhead rather than one bad asset path
+- the next tranche should therefore optimize the miss path directly instead of adding more broad render profiling
 
 ## Goal
 
@@ -261,9 +292,11 @@ Storage/syscall buckets:
 
 Texture reporting rules:
 
-- Do not log every texture as a line during cache. Aggregate totals and emit one summary line per cache pass or sample window
+- Do not log every texture as a line during cache. Aggregate totals and emit one summary line per cache pass, sample window, or burst
 - Keep a fixed top-N slow texture table, likely 8 entries, storing texture name, path type, total time, read time, decode time, upload time, and result path such as ktx2, png, stock, mask
 - Emit detailed per-texture lines only for textures over a threshold such as 10 ms, and only while `DLOG_PROFILING` is enabled
+- Keep burst accounting for every texture load, not just thresholded slow loads, so level-start and reload storms stay visible even when many moderate loads add up
+- Count the first-ETC2 verification sync inside upload time, because `ogl_cache_level_textures()` resets `r_hires_loaded` and the `glFinish` plus `glReadPixels` self-test can recur on each level cache pass
 - Include runtime page-ins separately from startup cache pass, since runtime page-in stalls are the most likely way slow storage becomes bad gameplay
 
 ## Kotlin overlay wickets

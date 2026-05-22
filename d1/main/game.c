@@ -90,6 +90,12 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_profile.h"
 #include "android_rewind.h"
 #include "coop_save.h"
+#ifdef OGL
+extern int g_swap_time_us;
+extern int g_msaa_resolve_time_us;
+extern int g_gl_error_time_us;
+extern int g_gpu_time_us;
+#endif
 #endif
 #include "fvi.h"
 #include "playsave.h"
@@ -205,32 +211,61 @@ void init_cockpit()
 		PlayerCfg.CurrentCockpitMode = CM_FULL_SCREEN;
 	}
 #endif
-
+				int replay_ok;
+				#ifdef __ANDROID__
+				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_REPLAY);
+				#endif
+				replay_ok = input_demo_step_replay_frame();
+				#ifdef __ANDROID__
+				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_REPLAY);
+				#endif
+				if (!replay_ok) {
 	if (is_observer() && !can_draw_observer_cockpit())
 		PlayerCfg.CurrentCockpitMode = CM_FULL_SCREEN;
 
 	gr_set_current_canvas(NULL);
+				}
 
+				#ifdef __ANDROID__
+				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_WAIT);
+				#endif
 	switch( PlayerCfg.CurrentCockpitMode ) {
+				#ifdef __ANDROID__
+				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_WAIT);
+				#endif
 		case CM_FULL_COCKPIT:
 			game_init_render_sub_buffers(0, 0, SWIDTH, (SHEIGHT*2)/3);
 			break;
 
+					android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_SIM);
 		case CM_REAR_VIEW:
 		{
 			int x1 = 0, y1 = 0, x2 = SWIDTH, y2 = (SHEIGHT*2)/3;
+					#ifdef __ANDROID__
+					android_profile_bucket_end(ANDROID_PROFILE_BUCKET_SIM);
+					#endif
 			grs_bitmap *bm;
 
 			PIGGY_PAGE_IN(cockpit_bitmap[PlayerCfg.CurrentCockpitMode]);
 			bm = &GameBitmaps[cockpit_bitmap[PlayerCfg.CurrentCockpitMode].index];
 			gr_bitblt_find_transparent_area(bm, &x1, &y1, &x2, &y2);
+				#ifdef __ANDROID__
+				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_RENDER);
+				#endif
 			game_init_render_sub_buffers(x1*((float)SWIDTH/bm->bm_w), y1*((float)SHEIGHT/bm->bm_h), (x2-x1+1)*((float)SWIDTH/bm->bm_w), (y2-y1+2)*((float)SHEIGHT/bm->bm_h));
 			break;
 		}
 		case CM_FULL_SCREEN:
 			game_init_render_sub_buffers(0, 0, SWIDTH, SHEIGHT);
+				#ifdef __ANDROID__
+				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_RENDER);
+				#endif
 			break;
 
+			#ifdef OGL
+			android_profile_set_gl_frame_metrics(g_swap_time_us, g_gpu_time_us,
+			                                   g_msaa_resolve_time_us, g_gl_error_time_us);
+			#endif
 		case CM_STATUS_BAR:
 			game_init_render_sub_buffers( 0, 0, SWIDTH, (HIRESMODE?(SHEIGHT*2)/2.6:(SHEIGHT*2)/2.72) );
 			break;

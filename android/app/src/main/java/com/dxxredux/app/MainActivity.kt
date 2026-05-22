@@ -447,6 +447,12 @@ class MainActivity :
     private lateinit var overlayContainer: LinearLayout
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
+    private var overlayPollProfileWindowStartMs = 0L
+    private var overlayPollProfileCount = 0
+    private var overlayPollProfileTotalUs = 0L
+    private var overlayPollProfileMaxUs = 0L
+    private var overlayPollProfileSlowCount = 0
+    private var overlayPollProfileErrorCount = 0
     private var musicPanel: MusicControlPanel? = null
     private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
     private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
@@ -509,6 +515,57 @@ class MainActivity :
             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.TEXTURE), false)
             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.PROFILING), false)
             .commit()
+    }
+
+    private fun resetOverlayPollProfileWindow() {
+        overlayPollProfileWindowStartMs = 0L
+        overlayPollProfileCount = 0
+        overlayPollProfileTotalUs = 0L
+        overlayPollProfileMaxUs = 0L
+        overlayPollProfileSlowCount = 0
+        overlayPollProfileErrorCount = 0
+    }
+
+    private fun recordOverlayPollProfile(
+        durationUs: Long,
+        inGame: Boolean,
+        automap: Boolean,
+        overlayVisible: Boolean,
+        netEventsVisible: Boolean,
+        videoInfoVisible: Boolean,
+        hadError: Boolean,
+    ) {
+        val nowMs = android.os.SystemClock.uptimeMillis()
+        if (overlayPollProfileWindowStartMs == 0L) {
+            overlayPollProfileWindowStartMs = nowMs
+        }
+        overlayPollProfileCount += 1
+        overlayPollProfileTotalUs += durationUs
+        if (durationUs > overlayPollProfileMaxUs) {
+            overlayPollProfileMaxUs = durationUs
+        }
+        if (durationUs >= 4_000L) {
+            overlayPollProfileSlowCount += 1
+        }
+        if (hadError) {
+            overlayPollProfileErrorCount += 1
+        }
+        if (nowMs - overlayPollProfileWindowStartMs < 1_000L) {
+            return
+        }
+        if (DebugLog.isCategoryEnabled(this, DebugLogCategory.PROFILING)) {
+            val avgUs =
+                if (overlayPollProfileCount > 0) {
+                    overlayPollProfileTotalUs / overlayPollProfileCount
+                } else {
+                    0L
+                }
+            DebugLog.log(
+                DebugLogCategory.PROFILING,
+                "prof_v=1 type=ui_poll window_ms=${nowMs - overlayPollProfileWindowStartMs} polls=$overlayPollProfileCount avg_us=$avgUs max_us=$overlayPollProfileMaxUs slow_polls=$overlayPollProfileSlowCount errors=$overlayPollProfileErrorCount in_game=$inGame automap=$automap overlay=$overlayVisible net_events=$netEventsVisible video_info=$videoInfoVisible",
+            )
+        }
+        resetOverlayPollProfileWindow()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -1594,15 +1651,21 @@ class MainActivity :
         val pollRunnable =
             object : Runnable {
                 override fun run() {
+                    val pollStartNs = android.os.SystemClock.elapsedRealtimeNanos()
+                    var profileInGame = false
+                    var profileAutomap = false
+                    var profileHadError = false
                     if (gameStarted) {
                         try {
                             val inGame = nativeIsInGame()
+                            profileInGame = inGame
                             val automap =
                                 try {
                                     nativeIsAutomapActive()
                                 } catch (_: Exception) {
                                     false
                                 }
+                            profileAutomap = automap
                             val skippable =
                                 try {
                                     nativeIsSkippableScreen()
@@ -1747,6 +1810,7 @@ class MainActivity :
                                 }
                             }
                         } catch (_: Exception) {
+                            profileHadError = true
                             touchOverlay.isActive = false
                             touchOverlay.automapActive = false
                             skipButton.visibility = View.GONE
@@ -1775,6 +1839,15 @@ class MainActivity :
                         warpButtonOverlay?.stopPolling()
                         netEventsManualToggle = false
                     }
+                    recordOverlayPollProfile(
+                        durationUs = (android.os.SystemClock.elapsedRealtimeNanos() - pollStartNs) / 1_000L,
+                        inGame = profileInGame,
+                        automap = profileAutomap,
+                        overlayVisible = touchOverlay.isActive,
+                        netEventsVisible = netEventsOverlay?.visibility == View.VISIBLE,
+                        videoInfoVisible = videoInfoOverlay?.visibility == View.VISIBLE,
+                        hadError = profileHadError,
+                    )
                     overlayPoller.postDelayed(this, 100)
                 }
             }

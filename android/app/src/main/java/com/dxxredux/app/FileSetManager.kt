@@ -137,6 +137,7 @@ class FileSetManager(
         saveConfig(config)
         val dir = File(setsDir, name)
         if (dir.exists()) dir.deleteRecursively()
+        NativeTextureLookupCache.clear()
     }
 
     /**
@@ -175,6 +176,7 @@ class FileSetManager(
             dir.mkdirs()
             File(dir, ".active_set_path").writeText(path)
         }
+        NativeTextureLookupCache.clear()
     }
 
     private fun validateSetName(name: String) {
@@ -396,7 +398,98 @@ class FileSetManager(
         val dir = File(setsDir, name)
         if (dir.exists()) dir.deleteRecursively()
         dir.mkdirs()
+        NativeTextureLookupCache.clear()
         Log.i(TAG, "Cleared set '$name'")
+    }
+
+    /**
+     * Clear imported game data from every set while preserving pilot files,
+     * saved games, and control/config files that live outside set storage.
+     * Non-default sets that no longer contain preserved player data are
+     * removed from the set list.
+     */
+    fun clearAllGameDataPreservingPlayers(): Int {
+        val currentSets = listSets()
+        val retainedSets = mutableListOf<FileSetInfo>()
+        var activeSetName = getActive()
+
+        for (set in currentSets) {
+            val setDir = File(setsDir, set.name)
+            val hasPlayerData = clearSetDirectoryPreservingPlayers(setDir)
+            val keepSet = set.name == DEFAULT_SET || hasPlayerData
+
+            if (keepSet) {
+                if (set.name != DEFAULT_SET) retainedSets += set
+            } else {
+                if (activeSetName == set.name) activeSetName = DEFAULT_SET
+                if (setDir.exists()) setDir.deleteRecursively()
+            }
+        }
+
+        clearRootGameDataArtifacts()
+
+        val config = loadConfig()
+        val newSets = JSONArray()
+        for (set in retainedSets) {
+            newSets.put(
+                JSONObject().apply {
+                    put("name", set.name)
+                    put("createdAt", set.createdAt)
+                    if (set.source != null) put("source", set.source)
+                },
+            )
+        }
+        config.put("sets", newSets)
+        config.put("active", activeSetName.ifEmpty { DEFAULT_SET })
+        saveConfig(config)
+        writeActiveSetPath()
+        NativeTextureLookupCache.clear()
+        Log.i(TAG, "Cleared game data from ${currentSets.size} set(s)")
+        return currentSets.size
+    }
+
+    private fun clearSetDirectoryPreservingPlayers(dir: File): Boolean {
+        if (!dir.exists()) return false
+
+        var hasPlayerData = false
+        val files = dir.listFiles() ?: return false
+        for (file in files) {
+            if (file.isDirectory) {
+                if (clearSetDirectoryPreservingPlayers(file)) {
+                    hasPlayerData = true
+                } else if (file.exists()) {
+                    file.deleteRecursively()
+                }
+                continue
+            }
+
+            if (file.extension.lowercase() in PILOT_FILE_EXTENSIONS) {
+                hasPlayerData = true
+            } else {
+                file.delete()
+            }
+        }
+        return hasPlayerData
+    }
+
+    private fun clearRootGameDataArtifacts() {
+        val files = filesDir.listFiles() ?: return
+        for (file in files) {
+            if (file.isDirectory) {
+                if (file.name.lowercase() in GAME_DATA_DIRS) {
+                    file.deleteRecursively()
+                }
+                continue
+            }
+
+            val name = file.name.lowercase()
+            if (file.extension.lowercase() in GAME_DATA_EXTENSIONS ||
+                name == ".asset_manifest.json" ||
+                name == ".saf_manifest.json"
+            ) {
+                file.delete()
+            }
+        }
     }
 
     companion object {

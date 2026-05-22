@@ -22,6 +22,7 @@
 #include "console_ringbuf.h"
 #include "debug_tex_overlay.h"
 #endif
+#include "pngfile.h"
 #include "android_log.h"
 #include "android_crash_handler.h"
 
@@ -437,6 +438,26 @@ Java_com_dxxredux_app_MainActivity_nativeSetIntrospectPath(JNIEnv *env, jobject 
 	game_introspect_set_path(path);
 	(*env)->ReleaseStringUTFChars(env, jpath, path);
 }
+
+#ifndef DXX_BUILD_DESCENT_II
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_NativeTextureLookupCache_nativeClearD1(JNIEnv *env, jclass clazz)
+{
+	(void) env;
+	(void) clazz;
+	clear_texture_lookup_cache();
+}
+#endif
+
+#ifdef DXX_BUILD_DESCENT_II
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_NativeTextureLookupCache_nativeClearD2(JNIEnv *env, jclass clazz)
+{
+	(void) env;
+	(void) clazz;
+	clear_texture_lookup_cache();
+}
+#endif
 
 /* ── Automation: load and run a JSON script of input steps ────────── */
 JNIEXPORT void JNICALL

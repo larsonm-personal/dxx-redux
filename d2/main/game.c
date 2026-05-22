@@ -90,6 +90,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_profile.h"
 #include "android_rewind.h"
 #include "coop_save.h"
+#ifdef OGL
+extern int g_swap_time_us;
+extern int g_msaa_resolve_time_us;
+extern int g_gl_error_time_us;
+extern int g_gpu_time_us;
+#endif
 #endif
 #include "fvi.h"
 #include "ai.h"
@@ -1309,7 +1315,15 @@ int game_handler(window *wind, d_event *event, void *data)
 			#endif
 			if (input_demo_replay_is_loaded()) {
 				if (!input_demo_replay_manual_paused || input_demo_replay_manual_step) {
-					if (!input_demo_step_replay_frame()) {
+					int replay_ok;
+					#ifdef __ANDROID__
+					android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_REPLAY);
+					#endif
+					replay_ok = input_demo_step_replay_frame();
+					#ifdef __ANDROID__
+					android_profile_bucket_end(ANDROID_PROFILE_BUCKET_REPLAY);
+					#endif
+					if (!replay_ok) {
 						#ifdef __ANDROID__
 						android_profile_frame_end();
 						#endif
@@ -1320,26 +1334,46 @@ int game_handler(window *wind, d_event *event, void *data)
 			} else {
 				input_demo_replay_manual_paused = 0;
 				input_demo_replay_manual_step = 0;
+				#ifdef __ANDROID__
+				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_WAIT);
+				#endif
 				calc_frame_time();
+				#ifdef __ANDROID__
+				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_WAIT);
+				#endif
 				if (!time_paused)
 				{
 					#ifdef __ANDROID__
 					android_rewind_maybe_capture_frame();
+					android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_SIM);
 					#endif
 					calc_game_time();
 					GameProcessFrame();
+					#ifdef __ANDROID__
+					android_profile_bucket_end(ANDROID_PROFILE_BUCKET_SIM);
+					#endif
 				}
 			}
 
 			if (!Automap_active)		// efficiency hack
 			{
+				#ifdef __ANDROID__
+				android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_RENDER);
+				#endif
 				if (force_cockpit_redraw) {			//screen need redrawing?
 					init_cockpit();
 					force_cockpit_redraw=0;
 				}
 				game_render_frame();
+				#ifdef __ANDROID__
+				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_RENDER);
+				#endif
 			}
 			#ifdef __ANDROID__
+			#ifdef OGL
+			android_profile_set_gl_frame_metrics(g_swap_time_us, g_gpu_time_us,
+			                                   g_msaa_resolve_time_us, g_gl_error_time_us);
+			#endif
 			android_profile_frame_end();
 			#endif
 			break;

@@ -260,6 +260,22 @@ class ModManager(
         Log.i(TAG, "Deleted mod: $filename")
     }
 
+    fun clearAllMods(): Int {
+        val removedMods = (modsDir.listFiles() ?: emptyArray()).count { it.isFile && it.name != MANIFEST_FILE }
+
+        if (modsDir.exists()) modsDir.deleteRecursively()
+        for (gameDir in arrayOf("d1x-redux", "d2x-redux")) {
+            val dir = File(filesDir, gameDir)
+            File(dir, ".active_mod_paths").delete()
+            File(dir, GENERATED_PATCH_DIR).deleteRecursively()
+        }
+
+        mods = mutableListOf()
+        NativeTextureLookupCache.clear()
+        Log.i(TAG, "Cleared all mods")
+        return removedMods
+    }
+
     /** Import a .dxa file from a SAF URI. Streams to avoid loading into memory. */
     fun importMod(
         uri: Uri,
@@ -423,6 +439,7 @@ class ModManager(
             }
         }
         logInfo("Wrote ${enabled.size} mod paths for $game to ${pathFile.absolutePath}")
+        NativeTextureLookupCache.clear()
     }
 
     fun checkEnabledModCompatibility(

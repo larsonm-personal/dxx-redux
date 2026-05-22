@@ -55,7 +55,7 @@ static int debug_log_get_env(JNIEnv **env_out)
 }
 
 static void debug_log_call_java_method(const char *method_name, int category,
-	                                   const char *message)
+                                       const char *message)
 {
 	JNIEnv *env;
 	jclass cls;

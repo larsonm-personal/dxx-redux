@@ -23,7 +23,10 @@
 #include <strings.h> /* strcasecmp */
 #include <unistd.h>
 #include <errno.h>
+#include <time.h>
 #include <android/log.h>
+
+#include "android_profile.h"
 
 #define LOG_TAG   "DXX-SAF-Archiver"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -51,8 +54,15 @@ typedef struct {
 	int fd;
 	PHYSFS_sint64 pos; /* virtual seek position, independent per handle */
 	PHYSFS_sint64 len; /* cached file length */
+	char *filename;    /* logical filename inside the SAF manifest */
 	char *uri;         /* content URI string (for error messages) */
 } SafIoData;
+
+static long long saf_elapsed_us(const struct timespec *start, const struct timespec *end)
+{
+	return ((long long) end->tv_sec - (long long) start->tv_sec) * 1000000LL +
+	       ((long long) end->tv_nsec - (long long) start->tv_nsec) / 1000LL;
+}
 
 /* ────────────────────────────────────────────────────────────────────
  * Minimal JSON parser for .saf_manifest.json
@@ -301,15 +311,21 @@ static SafEntry *find_entry(SafArchive *arch, const char *name)
 static PHYSFS_sint64 safio_read(PHYSFS_Io *io, void *buf, PHYSFS_uint64 n)
 {
 	SafIoData *d = (SafIoData *) io->opaque;
+	struct timespec read_start, read_end;
+	const PHYSFS_uint64 read_offset = (PHYSFS_uint64) d->pos;
 	PHYSFS_uint64 remaining = (PHYSFS_uint64) (d->len - d->pos);
 	if (n > remaining) n = remaining;
 	if (n == 0) return 0;
 
+	clock_gettime(CLOCK_MONOTONIC, &read_start);
 	ssize_t got = pread(d->fd, buf, (size_t) n, (off_t) d->pos);
+	clock_gettime(CLOCK_MONOTONIC, &read_end);
 	if (got < 0) {
 		LOGE("safio_read: pread failed, errno=%d (uri=%s)", errno, d->uri);
 		return -1;
 	}
+	android_profile_storage_op(d->filename, "pread", read_offset,
+	                           (unsigned long long) got, saf_elapsed_us(&read_start, &read_end));
 	d->pos += got;
 	return (PHYSFS_sint64) got;
 }
@@ -349,6 +365,7 @@ static void safio_destroy(PHYSFS_Io *io)
 	SafIoData *d = (SafIoData *) io->opaque;
 	if (d) {
 		close(d->fd);
+		free(d->filename);
 		free(d->uri);
 		free(d);
 	}
@@ -377,11 +394,19 @@ static PHYSFS_Io *safio_duplicate(PHYSFS_Io *io)
 	data->fd = newfd;
 	data->pos = 0;
 	data->len = orig->len;
+	data->filename = orig->filename ? strdup(orig->filename) : NULL;
 	data->uri = strdup(orig->uri);
+	if (orig->filename && !data->filename) {
+		close(newfd);
+		free(data->uri);
+		free(data);
+		return NULL;
+	}
 
 	PHYSFS_Io *newio = (PHYSFS_Io *) malloc(sizeof(PHYSFS_Io));
 	if (!newio) {
 		close(newfd);
+		free(data->filename);
 		free(data->uri);
 		free(data);
 		return NULL;
@@ -398,7 +423,8 @@ static int safio_flush(PHYSFS_Io *io)
 }
 
 /* Create a PHYSFS_Io from a native fd */
-static PHYSFS_Io *create_saf_io(int fd, PHYSFS_sint64 len, const char *uri)
+static PHYSFS_Io *create_saf_io(int fd, PHYSFS_sint64 len, const char *filename,
+                                const char *uri)
 {
 	SafIoData *data = (SafIoData *) malloc(sizeof(SafIoData));
 	if (!data) {
@@ -408,11 +434,24 @@ static PHYSFS_Io *create_saf_io(int fd, PHYSFS_sint64 len, const char *uri)
 	data->fd = fd;
 	data->pos = 0;
 	data->len = len;
+	data->filename = filename ? strdup(filename) : NULL;
 	data->uri = strdup(uri);
+	if (filename && !data->filename) {
+		close(fd);
+		free(data);
+		return NULL;
+	}
+	if (!data->uri) {
+		close(fd);
+		free(data->filename);
+		free(data);
+		return NULL;
+	}
 
 	PHYSFS_Io *io = (PHYSFS_Io *) malloc(sizeof(PHYSFS_Io));
 	if (!io) {
 		close(fd);
+		free(data->filename);
 		free(data->uri);
 		free(data);
 		return NULL;
@@ -510,19 +549,23 @@ static PHYSFS_Io *SAF_openRead(void *opaque, const char *fnm)
 {
 	SafArchive *arch = (SafArchive *) opaque;
 	SafEntry *entry = find_entry(arch, fnm);
+	struct timespec open_start, open_end;
 	if (!entry) {
 		PHYSFS_setErrorCode(PHYSFS_ERR_NOT_FOUND);
 		return NULL;
 	}
 
+	clock_gettime(CLOCK_MONOTONIC, &open_start);
 	int fd = saf_open_file(entry->content_uri);
+	clock_gettime(CLOCK_MONOTONIC, &open_end);
 	if (fd < 0) {
 		LOGE("SAF_openRead: saf_open_file failed for %s", fnm);
 		PHYSFS_setErrorCode(PHYSFS_ERR_OS_ERROR);
 		return NULL;
 	}
+	android_profile_storage_op(fnm, "open", 0, 0, saf_elapsed_us(&open_start, &open_end));
 
-	return create_saf_io(fd, entry->size_bytes, entry->content_uri);
+	return create_saf_io(fd, entry->size_bytes, fnm, entry->content_uri);
 }
 
 static PHYSFS_Io *SAF_openWrite(void *opaque, const char *fnm)

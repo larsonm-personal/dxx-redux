@@ -28,6 +28,92 @@
 #define STBI_NO_GIF
 #include "stb_image.h"
 
+#define TEXTURE_LOOKUP_MISS_CACHE_SIZE      16384u
+#define TEXTURE_LOOKUP_MISS_CACHE_MAX_COUNT ((TEXTURE_LOOKUP_MISS_CACHE_SIZE * 3u) / 4u)
+
+static char *g_texture_lookup_miss_cache[TEXTURE_LOOKUP_MISS_CACHE_SIZE];
+static unsigned int g_texture_lookup_miss_cache_count = 0;
+
+static unsigned int texture_lookup_miss_cache_hash(const char *filename)
+{
+	unsigned int hash = 2166136261u;
+
+	while (*filename) {
+		hash ^= (unsigned char) *filename++;
+		hash *= 16777619u;
+	}
+	return hash;
+}
+
+void clear_texture_lookup_cache(void)
+{
+	unsigned int i;
+
+	for (i = 0; i < TEXTURE_LOOKUP_MISS_CACHE_SIZE; i++) {
+		free(g_texture_lookup_miss_cache[i]);
+		g_texture_lookup_miss_cache[i] = NULL;
+	}
+	g_texture_lookup_miss_cache_count = 0;
+}
+
+static int texture_lookup_miss_cache_contains(const char *filename)
+{
+	unsigned int index;
+	unsigned int probe;
+
+	if (!filename || !filename[0])
+		return 0;
+
+	index = texture_lookup_miss_cache_hash(filename) & (TEXTURE_LOOKUP_MISS_CACHE_SIZE - 1u);
+	for (probe = 0; probe < TEXTURE_LOOKUP_MISS_CACHE_SIZE; probe++) {
+		const char *entry = g_texture_lookup_miss_cache[index];
+
+		if (!entry)
+			return 0;
+		if (!strcmp(entry, filename))
+			return 1;
+		index = (index + 1u) & (TEXTURE_LOOKUP_MISS_CACHE_SIZE - 1u);
+	}
+	return 0;
+}
+
+static void texture_lookup_miss_cache_add(const char *filename)
+{
+	unsigned int index;
+	unsigned int probe;
+	size_t len;
+	char *copy;
+
+	if (!filename || !filename[0])
+		return;
+
+	if (g_texture_lookup_miss_cache_count >= TEXTURE_LOOKUP_MISS_CACHE_MAX_COUNT)
+		clear_texture_lookup_cache();
+
+	index = texture_lookup_miss_cache_hash(filename) & (TEXTURE_LOOKUP_MISS_CACHE_SIZE - 1u);
+	for (probe = 0; probe < TEXTURE_LOOKUP_MISS_CACHE_SIZE; probe++) {
+		char *entry = g_texture_lookup_miss_cache[index];
+
+		if (!entry)
+			break;
+		if (!strcmp(entry, filename))
+			return;
+		index = (index + 1u) & (TEXTURE_LOOKUP_MISS_CACHE_SIZE - 1u);
+	}
+	if (probe >= TEXTURE_LOOKUP_MISS_CACHE_SIZE) {
+		clear_texture_lookup_cache();
+		index = texture_lookup_miss_cache_hash(filename) & (TEXTURE_LOOKUP_MISS_CACHE_SIZE - 1u);
+	}
+
+	len = strlen(filename) + 1u;
+	copy = (char *) malloc(len);
+	if (!copy)
+		return;
+	memcpy(copy, filename, len);
+	g_texture_lookup_miss_cache[index] = copy;
+	g_texture_lookup_miss_cache_count++;
+}
+
 int read_png(const char *filename, png_data *pdata)
 {
 	PHYSFS_File *fp;
@@ -38,10 +124,14 @@ int read_png(const char *filename, png_data *pdata)
 
 	if (!filename || !pdata)
 		return 0;
+	if (texture_lookup_miss_cache_contains(filename))
+		return 0;
 
 	fp = PHYSFS_openRead(filename);
-	if (!fp)
+	if (!fp) {
+		texture_lookup_miss_cache_add(filename);
 		return 0;
+	}
 
 	fsize = PHYSFS_fileLength(fp);
 	if (fsize <= 0 || fsize > 256 * 1024 * 1024) { /* sanity: 256 MB max */
@@ -108,10 +198,14 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 
 	if (!filename || !edata)
 		return 0;
+	if (texture_lookup_miss_cache_contains(filename))
+		return 0;
 
 	fp = PHYSFS_openRead(filename);
-	if (!fp)
+	if (!fp) {
+		texture_lookup_miss_cache_add(filename);
 		return 0;
+	}
 
 	fsize = PHYSFS_fileLength(fp);
 	if (fsize < 80 || fsize > 64 * 1024 * 1024) {

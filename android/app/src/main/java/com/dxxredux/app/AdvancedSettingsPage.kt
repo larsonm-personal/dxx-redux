@@ -220,6 +220,52 @@ fun AdvancedSettingsPage(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    // Clear All Game Data
+                    var showClearGameDataDialog by remember { mutableStateOf(false) }
+                    OutlinedButton(
+                        onClick = { showClearGameDataDialog = true },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.height(36.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
+                    ) {
+                        Text("Clear All Game Data", fontSize = 12.sp)
+                    }
+                    if (showClearGameDataDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showClearGameDataDialog = false },
+                            title = { Text("Clear All Game Data") },
+                            text = {
+                                Text(
+                                    "This will remove imported game data from every file set and delete all mods.\n\n" +
+                                        "Files added via file picker (leave-in-place) will be unlinked but not deleted from their original location.\n\n" +
+                                        "Pilot files, saved games, and control settings will be kept.\n\n" +
+                                        "The app will restart after clearing data",
+                                    fontSize = 13.sp,
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    val setsCleared = fileSetManager.clearAllGameDataPreservingPlayers()
+                                    val modsCleared = ModManager(ctx.filesDir).clearAllMods()
+                                    showClearGameDataDialog = false
+                                    Toast.makeText(
+                                        ctx,
+                                        "Cleared game data from $setsCleared set(s) and removed $modsCleared mod(s)",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                    android.os.Process.killProcess(android.os.Process.myPid())
+                                }) {
+                                    Text("Clear & Restart", color = Color(0xFFF44336))
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showClearGameDataDialog = false }) { Text("Cancel") }
+                            },
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     // Delete All Player Files
                     var showDeletePilotsDialog by remember { mutableStateOf(false) }
                     OutlinedButton(

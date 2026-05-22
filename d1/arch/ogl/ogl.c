@@ -46,6 +46,7 @@
 #include "android_loading_progress.h"
 #include "android_crash_handler.h"
 #include "android_log.h"
+#include "android_profile.h"
 #include "gles3_shim.h"
 #endif
 
@@ -390,6 +391,9 @@ void ogl_init_texture_list_internal(void){
 	ogl_texture_list_cur=0;
 	for (i=0;i<OGL_TEXTURE_LIST_SIZE;i++)
 		ogl_reset_texture(&ogl_texture_list[i]);
+#if defined(ANDROID)
+	clear_texture_lookup_cache();
+#endif
 #if defined(ANDROID) && defined(OGL_MERGE)
 	android_merged_wall_cached_texmerge_clear_cache();
 #endif
@@ -412,6 +416,10 @@ void ogl_smash_texture_list_internal(void){
 		d_free(disk_va);
 		disk_va = NULL;
 	}
+
+#if defined(ANDROID)
+	clear_texture_lookup_cache();
+#endif
 
 #if defined(ANDROID) && defined(OGL_MERGE)
 	android_merged_wall_cached_texmerge_clear_cache();
@@ -999,6 +1007,10 @@ void ogl_draw_vertex_reticle(int cross,int primary,int secondary,int color,int a
 		{0.125, 0.54, 0.125, 0.6, 0.125, 0.54, 0.125, 0.6, 0.125, 1.0, 0.125, 1.0, 0.125, 1.0, 0.125, 1.0}
 	};
 	
+
+#if defined(ANDROID)
+	clear_texture_lookup_cache();
+#endif
 	ret_rgba[0] = PAL2Tr(color);
 	ret_dark_rgba[0] = ret_rgba[0]/2;
 	ret_rgba[1] = PAL2Tg(color);
@@ -3026,14 +3038,49 @@ static int ogl_make_d1_texture_name(char *out, const char *bitmapname)
 	return 1;
 }
 
-static int ogl_read_texture_with_extensions(char *filename, const char *basename, png_data *pdata)
+static void android_profile_texture_lookup_note_ktx2(struct android_profile_texture_lookup_metrics *lookup,
+	int slot, long long elapsed_us, int loaded)
+{
+	if (!lookup)
+		return;
+
+	lookup->ktx2_attempts++;
+	if (slot >= 0 && slot < ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_COUNT)
+		lookup->ktx2_slot_us[slot] += elapsed_us;
+	if (loaded)
+		lookup->ktx2_hit_slot = slot;
+}
+
+static int ogl_read_texture_with_extensions(char *filename, const char *basename, png_data *pdata,
+	struct android_profile_texture_lookup_metrics *lookup, int slot)
 {
 	static const char *exts[] = {".png", ".jpg", ".tga"};
 	int ei;
 
+	if (lookup)
+		lookup->png_attempts++;
+
 	for (ei = 0; ei < 3; ei++) {
+		struct timespec stage_start, stage_end;
+		int loaded;
+		long long elapsed_us;
+
 		sprintf(filename, "%s%s", basename, exts[ei]);
-		if (read_png(filename, pdata))
+		android_perf_clock_now(&stage_start);
+		loaded = read_png(filename, pdata);
+		android_perf_clock_now(&stage_end);
+		elapsed_us = android_perf_elapsed_us(&stage_start, &stage_end);
+		if (lookup) {
+			if (slot >= 0 && slot < ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_COUNT)
+				lookup->png_slot_us[slot] += elapsed_us;
+			if (ei < ANDROID_PROFILE_TEXTURE_LOOKUP_EXT_COUNT)
+				lookup->png_ext_us[ei] += elapsed_us;
+			if (loaded) {
+				lookup->png_hit_slot = slot;
+				lookup->png_hit_ext = ei;
+			}
+		}
+		if (loaded)
 			return 1;
 	}
 	return 0;
@@ -3047,6 +3094,17 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 
 #ifdef ANDROID
 	struct timespec stage_start, stage_end;
+	struct timespec texture_total_start, texture_total_end;
+	struct android_profile_texture_lookup_metrics lookup_metrics = {0};
+	long long profile_ktx2_read_us = 0;
+	long long profile_png_read_us = 0;
+	long long profile_upload_us = 0;
+	long long profile_mask_us = 0;
+	const char *profile_source = "stock";
+	lookup_metrics.ktx2_hit_slot = ANDROID_PROFILE_TEXTURE_LOOKUP_NONE;
+	lookup_metrics.png_hit_slot = ANDROID_PROFILE_TEXTURE_LOOKUP_NONE;
+	lookup_metrics.png_hit_ext = ANDROID_PROFILE_TEXTURE_LOOKUP_NONE;
+	android_perf_clock_now(&texture_total_start);
 	/* AF requires mipmap filtering to have any effect on real hardware.
 	 * If AF is on but texfilt is too low, upgrade to trilinear */
 	if (ogl_aniso_level > 0 && texfilt < 2)
@@ -3084,12 +3142,18 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		{
 			etc2_file_data edata;
 			int loaded_ktx2 = 0;
+			long long lookup_elapsed_us;
 
 			if (have_prefixed_bitmapname) {
 				sprintf(filename, "%s.ktx2", prefixed_bitmapname);
 				android_perf_clock_now(&stage_start);
 				loaded_ktx2 = read_ktx2_file(filename, &edata);
 				android_perf_clock_now(&stage_end);
+				lookup_elapsed_us = android_perf_elapsed_us(&stage_start, &stage_end);
+				profile_ktx2_read_us += lookup_elapsed_us;
+				android_profile_texture_lookup_note_ktx2(&lookup_metrics,
+					ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_PREFIX,
+					lookup_elapsed_us, loaded_ktx2);
 				android_cache_profile_add_ms(&g_cache_ktx2_read_ms, &stage_start, &stage_end);
 				if (loaded_ktx2) {
 					android_cache_profile_count(&g_cache_ktx2_hits);
@@ -3101,6 +3165,11 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				android_perf_clock_now(&stage_start);
 				loaded_ktx2 = read_ktx2_file(filename, &edata);
 				android_perf_clock_now(&stage_end);
+				lookup_elapsed_us = android_perf_elapsed_us(&stage_start, &stage_end);
+				profile_ktx2_read_us += lookup_elapsed_us;
+				android_profile_texture_lookup_note_ktx2(&lookup_metrics,
+					ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_BASE,
+					lookup_elapsed_us, loaded_ktx2);
 				android_cache_profile_add_ms(&g_cache_ktx2_read_ms, &stage_start, &stage_end);
 				if (loaded_ktx2)
 					android_cache_profile_count(&g_cache_ktx2_hits);
@@ -3181,6 +3250,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						tex_set_size(bm->gltexture);
 						r_texcount++;
 						android_perf_clock_now(&stage_end);
+						profile_upload_us += android_perf_elapsed_us(&stage_start, &stage_end);
 						android_cache_profile_add_ms(&g_cache_upload_ms, &stage_start, &stage_end);
 						android_cache_profile_count(&g_cache_upload_count);
 						ok = 1;
@@ -3197,6 +3267,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 					 * ETC2 texture and readback the center pixel via FBO.
 					 * Confirms whether the GPU actually decodes non-black. */
 					if (r_hires_loaded == 1) {
+						android_perf_clock_now(&stage_start);
 						GLuint fbo = 0, rbo = 0;
 						glGenFramebuffers(1, &fbo);
 						glGenRenderbuffers(1, &rbo);
@@ -3255,16 +3326,26 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 						}
+						android_perf_clock_now(&stage_end);
+						profile_upload_us += android_perf_elapsed_us(&stage_start, &stage_end);
 					}
 #ifdef OGL_MERGE
 					if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
 						android_perf_clock_now(&stage_start);
 						android_ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt);
 						android_perf_clock_now(&stage_end);
+						profile_mask_us += android_perf_elapsed_us(&stage_start, &stage_end);
 						android_cache_profile_add_ms(&g_cache_mask_ms, &stage_start, &stage_end);
 						android_cache_profile_count(&g_cache_mask_count);
 					}
 #endif
+					profile_source = "ktx2";
+					android_perf_clock_now(&texture_total_end);
+					android_profile_texture_load("d1", bitmapname, profile_source,
+						edata.orig_width, edata.orig_height, bm->bm_flags,
+						android_perf_elapsed_us(&texture_total_start, &texture_total_end),
+						profile_ktx2_read_us, profile_png_read_us,
+						profile_upload_us, profile_mask_us, &lookup_metrics);
 					return;
 				}
 				/* Decode/upload failed -- fall through to try PNG */
@@ -3275,8 +3356,10 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		{
 			if (have_prefixed_bitmapname) {
 				android_perf_clock_now(&stage_start);
-				png_loaded = ogl_read_texture_with_extensions(filename, prefixed_bitmapname, &pdata);
+				png_loaded = ogl_read_texture_with_extensions(filename, prefixed_bitmapname, &pdata,
+					&lookup_metrics, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_PREFIX);
 				android_perf_clock_now(&stage_end);
+				profile_png_read_us += android_perf_elapsed_us(&stage_start, &stage_end);
 				android_cache_profile_add_ms(&g_cache_png_read_ms, &stage_start, &stage_end);
 				if (png_loaded) {
 					android_cache_profile_count(&g_cache_png_hits);
@@ -3285,8 +3368,10 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 			}
 			if (!png_loaded) {
 				android_perf_clock_now(&stage_start);
-				png_loaded = ogl_read_texture_with_extensions(filename, bitmapname, &pdata);
+				png_loaded = ogl_read_texture_with_extensions(filename, bitmapname, &pdata,
+					&lookup_metrics, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_BASE);
 				android_perf_clock_now(&stage_end);
+				profile_png_read_us += android_perf_elapsed_us(&stage_start, &stage_end);
 				android_cache_profile_add_ms(&g_cache_png_read_ms, &stage_start, &stage_end);
 				if (png_loaded)
 					android_cache_profile_count(&g_cache_png_hits);
@@ -3317,6 +3402,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						load_texfilt, bitmapname);
 				#ifdef ANDROID
 					android_perf_clock_now(&stage_end);
+					profile_upload_us += android_perf_elapsed_us(&stage_start, &stage_end);
 					android_cache_profile_add_ms(&g_cache_upload_ms, &stage_start, &stage_end);
 					android_cache_profile_count(&g_cache_upload_count);
 				#endif
@@ -3338,6 +3424,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 					android_perf_clock_now(&stage_start);
 					android_ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt);
 					android_perf_clock_now(&stage_end);
+					profile_mask_us += android_perf_elapsed_us(&stage_start, &stage_end);
 					android_cache_profile_add_ms(&g_cache_mask_ms, &stage_start, &stage_end);
 					android_cache_profile_count(&g_cache_mask_count);
 #else
@@ -3351,6 +3438,13 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				bm->gltexture->is_png = 1;
 #ifdef ANDROID
 				r_hires_loaded++;
+				profile_source = "png";
+				android_perf_clock_now(&texture_total_end);
+				android_profile_texture_load("d1", bitmapname, profile_source,
+					pdata.width, pdata.height, bm->bm_flags,
+					android_perf_elapsed_us(&texture_total_start, &texture_total_end),
+					profile_ktx2_read_us, profile_png_read_us,
+					profile_upload_us, profile_mask_us, &lookup_metrics);
 #endif
 				return;
 				}
@@ -3503,6 +3597,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		bitmapname);
 	#ifdef ANDROID
 	android_perf_clock_now(&stage_end);
+	profile_upload_us += android_perf_elapsed_us(&stage_start, &stage_end);
 	android_cache_profile_add_ms(&g_cache_upload_ms, &stage_start, &stage_end);
 	android_cache_profile_count(&g_cache_upload_count);
 	#endif
@@ -3524,12 +3619,21 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 			texfilt, NULL);
 		#ifdef ANDROID
 		android_perf_clock_now(&stage_end);
+		profile_mask_us += android_perf_elapsed_us(&stage_start, &stage_end);
 		android_cache_profile_add_ms(&g_cache_mask_ms, &stage_start, &stage_end);
 		android_cache_profile_count(&g_cache_mask_count);
 		#endif
 		d_free(mask);
 	}
 #endif
+	#ifdef ANDROID
+	android_perf_clock_now(&texture_total_end);
+	android_profile_texture_load("d1", bitmapname, "stock",
+		bm->bm_w, bm->bm_h, bm->bm_flags,
+		android_perf_elapsed_us(&texture_total_start, &texture_total_end),
+		profile_ktx2_read_us, profile_png_read_us,
+		profile_upload_us, profile_mask_us, &lookup_metrics);
+	#endif
 }
 
 
