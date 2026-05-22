@@ -1147,8 +1147,11 @@ class SetupActivity : ComponentActivity() {
 
                     "clear_audio_sources" -> {
                         val srcManager = AudioSourceManager(filesDir)
-                        srcManager.clearAll()
-                        File(filesDir, "audio_playlist.json").delete()
+                        val retainedSafUris =
+                            CustomAudioSetManager(filesDir)
+                                .getSets()
+                                .flatMap { it.referencedUris.values }
+                        srcManager.clearAll(this@SetupActivity, retainedSafUris)
                         Log.i("DXX-Setup", "clear_audio_sources: cleared all")
                     }
 
@@ -4395,6 +4398,7 @@ private fun SetupScreen(
                         filesDir = filesDir,
                         setDir = setDir,
                         context = context,
+                        onChanged = onRefresh,
                         onImported = {
                             discImportCueUri = null
                             discImportCueName = null
@@ -4417,6 +4421,7 @@ private fun SetupScreen(
                         isoUri = isoImportUri!!,
                         setDir = setDir,
                         context = context,
+                        onChanged = onRefresh,
                         onImported = {
                             isoImportUri = null
                             isoImportName = null
@@ -7320,6 +7325,20 @@ private fun extractSowArchives(
     return sowExtracted
 }
 
+private fun moveImportedGameFileToRoot(
+    source: File,
+    dest: File,
+): Boolean {
+    if (source.renameTo(dest)) return true
+    return try {
+        source.copyTo(dest, overwrite = true)
+        source.delete()
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
 internal fun hoistNestedImportedGameFiles(setDir: File): Int {
     if (!setDir.isDirectory) return 0
 
@@ -7346,9 +7365,13 @@ internal fun hoistNestedImportedGameFiles(setDir: File): Int {
 
             existing?.delete()
             val dest = File(setDir, file.name)
-            if (file.renameTo(dest)) {
+            if (moveImportedGameFileToRoot(file, dest)) {
                 rootFiles[lowercaseName] = dest
                 hoisted++
+            } else {
+                runCatching {
+                    Log.w("DXX-DiscImport", "Could not hoist ${file.absolutePath} to ${dest.absolutePath}")
+                }
             }
         }
 
@@ -9119,6 +9142,7 @@ private fun DiscImportDialog(
     filesDir: File,
     setDir: File,
     context: Context,
+    onChanged: () -> Unit,
     onImported: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -9333,6 +9357,9 @@ private fun DiscImportDialog(
                                                                     "No supported game files found on data track"
                                                                 }
                                                             }
+                                                        if (dataExtracted > 0) {
+                                                            onChanged()
+                                                        }
                                                     }
                                                 } else {
                                                     withContext(Dispatchers.Main) {
@@ -9480,6 +9507,7 @@ private fun DiscImportDialog(
                                                     audioRegistered = true
                                                     status = "Audio source registered" +
                                                         if (discLabel != null) " ($discLabel)" else ""
+                                                    onChanged()
                                                 }
                                                 enableRedbookInConfig(filesDir, context)
                                             } catch (e: Exception) {
@@ -9580,6 +9608,7 @@ private fun IsoImportDialog(
     isoUri: Uri,
     setDir: File,
     context: Context,
+    onChanged: () -> Unit,
     onImported: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -9745,6 +9774,9 @@ private fun IsoImportDialog(
                                                             "No supported game files found in ISO image"
                                                         }
                                                     }
+                                                if (extractedCount > 0) {
+                                                    onChanged()
+                                                }
                                             }
                                         } else {
                                             withContext(Dispatchers.Main) {

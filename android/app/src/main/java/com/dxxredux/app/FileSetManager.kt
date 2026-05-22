@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import android.content.Context
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
@@ -408,13 +409,18 @@ class FileSetManager(
      * Non-default sets that no longer contain preserved player data are
      * removed from the set list.
      */
-    fun clearAllGameDataPreservingPlayers(): Int {
+    fun clearAllGameDataPreservingPlayers(
+        context: Context? = null,
+        retainedTrackedUris: Collection<String> = emptyList(),
+    ): Int {
         val currentSets = listSets()
         val retainedSets = mutableListOf<FileSetInfo>()
+        val removedSafUris = mutableListOf<String>()
         var activeSetName = getActive()
 
         for (set in currentSets) {
             val setDir = File(setsDir, set.name)
+            removedSafUris += SafManifest.forDir(setDir).read().map { it.contentUri }
             val hasPlayerData = clearSetDirectoryPreservingPlayers(setDir)
             val keepSet = set.name == DEFAULT_SET || hasPlayerData
 
@@ -444,6 +450,9 @@ class FileSetManager(
         saveConfig(config)
         writeActiveSetPath()
         NativeTextureLookupCache.clear()
+        context?.let {
+            revokeUnusedPersistedReadPermissions(it, removedSafUris, retainedTrackedUris)
+        }
         Log.i(TAG, "Cleared game data from ${currentSets.size} set(s)")
         return currentSets.size
     }

@@ -187,9 +187,24 @@ class AudioSourceManager(
 
     fun getManagedInternalArtifactPaths(): Set<String> = getManagedInternalArtifactPaths(filesDir, sources)
 
-    fun clearAll() {
+    fun clearAll(
+        context: Context? = null,
+        retainedTrackedUris: Collection<String> = emptyList(),
+    ) {
+        val removedTrackedUris =
+            sources.flatMap { source ->
+                source.binContentUriList().filterNot(::isLocalCdContentPath) +
+                    listOfNotNull(source.cueContentUri?.takeUnless(::isLocalCdContentPath))
+            }
+        closeActivePfds()
+        sources.forEach { source -> releaseSourceResources(source, null) }
         sources.clear()
-        save()
+        pruneOrphanedGeneratedMergedFiles()
+        File(filesDir, SOURCES_FILE).delete()
+        File(filesDir, PLAYLIST_FILE).delete()
+        context?.let {
+            revokeUnusedPersistedReadPermissions(it, removedTrackedUris, retainedTrackedUris)
+        }
     }
 
     private fun releaseSourceResources(

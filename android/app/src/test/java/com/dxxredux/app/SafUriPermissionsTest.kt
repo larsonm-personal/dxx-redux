@@ -34,4 +34,43 @@ class SafUriPermissionsTest {
         assertTrue(isPersistedPermissionCoveredByTrackedUris(permissionUri, listOf(trackedUri)))
         assertFalse(isPersistedPermissionCoveredByTrackedUris(permissionUri, emptyList()))
     }
+
+    @Test
+    fun collectsOnlyPersistedPermissionsUnusedByRetainedUris() {
+        val removedTrackedUri =
+            "content://com.android.externalstorage.documents/tree/6634-3535%3AInf%20abyss/document/6634-3535%3AInf%20abyss%2FDESCENT2.HOG"
+        val retainedTrackedUri =
+            "content://com.android.externalstorage.documents/tree/6634-3535%3ACustom%20Music/document/6634-3535%3ACustom%20Music%2Ftrack01.ogg"
+        val persistedPermissions =
+            listOf(
+                "content://com.android.externalstorage.documents/tree/6634-3535%3AInf%20abyss",
+                "content://com.android.externalstorage.documents/tree/6634-3535%3ACustom%20Music",
+            )
+
+        assertEquals(
+            setOf("content://com.android.externalstorage.documents/tree/6634-3535%3AInf%20abyss"),
+            collectPersistedPermissionUrisToRelease(
+                persistedPermissionUris = persistedPermissions,
+                removedTrackedUris = listOf(removedTrackedUri),
+                retainedTrackedUris = listOf(retainedTrackedUri),
+            ),
+        )
+    }
+
+    @Test
+    fun keepsSharedPersistedPermissionWhenStillTrackedElsewhere() {
+        val sharedTreePermission = "content://com.android.externalstorage.documents/tree/6634-3535%3AInf%20abyss"
+        val removedTrackedUri =
+            "content://com.android.externalstorage.documents/tree/6634-3535%3AInf%20abyss/document/6634-3535%3AInf%20abyss%2FDESCENT2.HOG"
+        val retainedTrackedUri =
+            "content://com.android.externalstorage.documents/tree/6634-3535%3AInf%20abyss/document/6634-3535%3AInf%20abyss%2FDESCENT_II_ABYSS%20(Track%201).bin"
+
+        assertTrue(
+            collectPersistedPermissionUrisToRelease(
+                persistedPermissionUris = listOf(sharedTreePermission),
+                removedTrackedUris = listOf(removedTrackedUri),
+                retainedTrackedUris = listOf(retainedTrackedUri),
+            ).isEmpty(),
+        )
+    }
 }

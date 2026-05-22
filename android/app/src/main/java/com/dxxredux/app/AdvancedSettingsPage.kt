@@ -246,13 +246,27 @@ fun AdvancedSettingsPage(
                             },
                             confirmButton = {
                                 TextButton(onClick = {
-                                    val setsCleared = fileSetManager.clearAllGameDataPreservingPlayers()
+                                    val retainedSafUris =
+                                        CustomAudioSetManager(ctx.filesDir)
+                                            .getSets()
+                                            .flatMap { it.referencedUris.values }
+                                    val audioSourceManager = AudioSourceManager(ctx.filesDir)
+                                    val audioCleared = audioSourceManager.getSources().size
+                                    val setsCleared =
+                                        fileSetManager.clearAllGameDataPreservingPlayers(
+                                            context = ctx,
+                                            retainedTrackedUris = retainedSafUris,
+                                        )
+                                    audioSourceManager.clearAll(
+                                        context = ctx,
+                                        retainedTrackedUris = retainedSafUris,
+                                    )
                                     val modsCleared = ModManager(ctx.filesDir).clearAllMods()
                                     showClearGameDataDialog = false
                                     Toast
                                         .makeText(
                                             ctx,
-                                            "Cleared game data from $setsCleared set(s) and removed $modsCleared mod(s)",
+                                            "Cleared $setsCleared set(s), removed $modsCleared mod(s), cleared $audioCleared CD source(s)",
                                             Toast.LENGTH_SHORT,
                                         ).show()
                                     android.os.Process.killProcess(android.os.Process.myPid())

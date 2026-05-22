@@ -85,3 +85,40 @@ internal fun isPersistedPermissionCoveredByTrackedUris(
     trackedUris.any { trackedUri ->
         trackedUri == permissionUri || deriveOwningTreeUriString(trackedUri) == permissionUri
     }
+
+internal fun collectPersistedPermissionUrisToRelease(
+    persistedPermissionUris: Collection<String>,
+    removedTrackedUris: Collection<String>,
+    retainedTrackedUris: Collection<String> = emptyList(),
+): Set<String> =
+    persistedPermissionUris
+        .filter { permissionUri ->
+            isPersistedPermissionCoveredByTrackedUris(permissionUri, removedTrackedUris) &&
+                !isPersistedPermissionCoveredByTrackedUris(permissionUri, retainedTrackedUris)
+        }.toCollection(linkedSetOf())
+
+internal fun revokeUnusedPersistedReadPermissions(
+    context: Context,
+    removedTrackedUris: Collection<String>,
+    retainedTrackedUris: Collection<String> = emptyList(),
+) {
+    if (removedTrackedUris.isEmpty()) return
+
+    val resolver = context.contentResolver
+    val permissionUrisToRelease =
+        collectPersistedPermissionUrisToRelease(
+            persistedPermissionUris = resolver.persistedUriPermissions.map { it.uri.toString() },
+            removedTrackedUris = removedTrackedUris,
+            retainedTrackedUris = retainedTrackedUris,
+        )
+
+    permissionUrisToRelease.forEach { permissionUri ->
+        try {
+            resolver.releasePersistableUriPermission(
+                Uri.parse(permissionUri),
+                Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+        } catch (_: SecurityException) {
+        }
+    }
+}
