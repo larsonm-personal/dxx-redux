@@ -25,6 +25,26 @@ object AndroidGameFileExtensions {
             "inst",
         )
 
+    val discExtractExtensions =
+        setOf(
+            "hog",
+            "pig",
+            "ham",
+            "s11",
+            "s22",
+            "dem",
+            "mvl",
+            "msn",
+            "mn2",
+            "rdl",
+            "rl2",
+            "sow",
+            "dxa",
+            "pog",
+            "hxm",
+            "dtx",
+        )
+
     private val gogAudioExtensions = setOf("gog", "inst")
 
     fun hasGameExtension(name: String): Boolean = extensionOf(name) in gameExtensions

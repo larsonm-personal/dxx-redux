@@ -329,6 +329,13 @@ function Send-SetupIsoImport {
     Adb -CmdArgs $args_ | Out-Null
 }
 
+function Quote-ShArg {
+    param([string]$Value)
+
+    $replacement = "'`"'`"'"
+    return "'" + ($Value -replace "'", $replacement) + "'"
+}
+
 function Ensure-AppPrivateFile {
     param(
         [string]$LocalPath,
@@ -338,7 +345,8 @@ function Ensure-AppPrivateFile {
 
     $RemoteRelativePath = $RemoteRelativePath -replace '\\', '/'
     $localItem = Get-Item -LiteralPath $LocalPath
-    $remoteSize = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'stat', '-c', '%s', $RemoteRelativePath)
+    $remoteQuoted = Quote-ShArg $RemoteRelativePath
+    $remoteSize = Adb-RunAs "stat -c %s $remoteQuoted 2>/dev/null"
     if ($remoteSize -match '^\d+$' -and [long]$remoteSize -eq $localItem.Length) {
         Write-Status "  Reusing staged source: $RemoteRelativePath" 'Gray'
         return
@@ -347,27 +355,16 @@ function Ensure-AppPrivateFile {
     $stagingName = [System.IO.Path]::GetFileName($RemoteRelativePath)
     $stagingPath = "/data/local/tmp/$stagingName"
     $remoteDir = (Split-Path $RemoteRelativePath -Parent) -replace '\\', '/'
+    $stagingQuoted = Quote-ShArg $stagingPath
+    $remoteDirQuoted = Quote-ShArg $remoteDir
     Write-Status "  Pushing $(Split-Path $LocalPath -Leaf) -> $RemoteRelativePath" 'Gray'
     Adb -CmdArgs @('push', $LocalPath, $stagingPath) -Timeout $TimeoutSeconds | Out-Null
     Adb -CmdArgs @('shell', 'chmod', '644', $stagingPath) | Out-Null
-    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'mkdir', '-p', $remoteDir) | Out-Null
-
-    $psi = [System.Diagnostics.ProcessStartInfo]::new()
-    $psi.FileName = $ADB
-    $psi.Arguments = "shell run-as $PACKAGE sh -c 'cat $stagingPath > $RemoteRelativePath'"
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $proc = [System.Diagnostics.Process]::Start($psi)
-    $null = $proc.StandardError.ReadToEndAsync()
-    $null = $proc.StandardOutput.ReadToEnd()
-    $proc.WaitForExit(($TimeoutSeconds * 1000)) | Out-Null
-    if (-not $proc.HasExited) { try { $proc.Kill() } catch {} }
-    $proc.Dispose()
+    Adb-RunAs "mkdir -p $remoteDirQuoted" | Out-Null
+    Adb-RunAs "cat $stagingQuoted > $remoteQuoted" | Out-Null
     Adb -CmdArgs @('shell', 'rm', '-f', $stagingPath) | Out-Null
 
-    $remoteSize = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'stat', '-c', '%s', $RemoteRelativePath)
+    $remoteSize = Adb-RunAs "stat -c %s $remoteQuoted 2>/dev/null"
     if ($remoteSize -notmatch '^\d+$' -or [long]$remoteSize -ne $localItem.Length) {
         throw "App-private staging failed for $RemoteRelativePath"
     }

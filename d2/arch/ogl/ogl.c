@@ -51,6 +51,9 @@
 #include "android_log.h"
 #include "android_profile.h"
 #include "gles3_shim.h"
+#include <physfs.h>
+
+static void android_clear_texture_replacement_path_cache(void);
 #endif
 
 #include "3d.h"
@@ -396,6 +399,7 @@ void ogl_init_texture_list_internal(void){
 		ogl_reset_texture(&ogl_texture_list[i]);
 #if defined(ANDROID)
 	clear_texture_lookup_cache();
+	android_clear_texture_replacement_path_cache();
 #endif
 #if defined(ANDROID) && defined(OGL_MERGE)
 	android_merged_wall_cached_texmerge_clear_cache();
@@ -422,6 +426,7 @@ void ogl_smash_texture_list_internal(void){
 
 #if defined(ANDROID)
 	clear_texture_lookup_cache();
+	android_clear_texture_replacement_path_cache();
 #endif
 
 #if defined(ANDROID) && defined(OGL_MERGE)
@@ -466,6 +471,7 @@ void ogl_smash_png_textures(void){
 
 #if defined(ANDROID)
 	clear_texture_lookup_cache();
+	android_clear_texture_replacement_path_cache();
 #endif
 
 #if defined(ANDROID) && defined(OGL_MERGE)
@@ -3063,6 +3069,20 @@ void ogl_loadpngmask(png_data *pdata, grs_bitmap *bm, int texfilt)
 }
 
 #ifdef ANDROID
+static int g_android_d2_texture_root_present = -1;
+
+static void android_clear_texture_replacement_path_cache(void)
+{
+	g_android_d2_texture_root_present = -1;
+}
+
+static int android_have_d2_texture_root(void)
+{
+	if (g_android_d2_texture_root_present < 0)
+		g_android_d2_texture_root_present = PHYSFS_exists("textures/d2") ? 1 : 0;
+	return g_android_d2_texture_root_present;
+}
+
 static const char *ogl_d2_texture_set_from_pigfile(const char *pigfile)
 {
 	const char *name;
@@ -3250,8 +3270,9 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		const char *dxa_bitmapname = bitmapname;
 		char texture_set_bitmapname[256];
 		char prefixed_bitmapname[256];
-		int have_texture_set_bitmapname = ogl_make_d2_texture_set_name(texture_set_bitmapname, bitmapname);
-		int have_prefixed_bitmapname = ogl_make_d2_texture_name(prefixed_bitmapname, bitmapname);
+		int have_d2_texture_root = android_have_d2_texture_root();
+		int have_texture_set_bitmapname = have_d2_texture_root && ogl_make_d2_texture_set_name(texture_set_bitmapname, bitmapname);
+		int have_prefixed_bitmapname = have_d2_texture_root && ogl_make_d2_texture_name(prefixed_bitmapname, bitmapname);
 
 		/* Try pre-compressed ETC2 first (from .dxa texture packs). */
 		if (!ogl_etc2_broken)

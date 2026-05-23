@@ -49,6 +49,55 @@ private data class StorageFileEntry(
     val size: Long,
 )
 
+private data class StorageFileScanResult(
+    val entries: List<StorageFileEntry>,
+    val totalSize: Long,
+)
+
+private const val STORAGE_FILE_PAGE_SIZE = 200
+
+private fun scanStorageFiles(filesDir: File): StorageFileScanResult {
+    val importRoot = ImportLocationManager(filesDir).getActiveRoot()
+    val helperArtifacts = getSafLinkedHelperArtifactPaths(filesDir, AudioSourceManager(filesDir).getSources())
+    val entries = mutableListOf<StorageFileEntry>()
+
+    fun addTree(
+        root: File,
+        location: String,
+        importedRoot: Boolean,
+    ) {
+        if (!root.exists()) return
+        root
+            .walkTopDown()
+            .filter { it.isFile }
+            .filterNot { location == "internal" && it.absolutePath in helperArtifacts }
+            .forEach { file ->
+                val rel = file.relativeTo(root).path
+                entries.add(
+                    StorageFileEntry(
+                        file = file,
+                        location = location,
+                        relativePath = rel,
+                        absolutePath = file.absolutePath,
+                        purpose = launcherStorageFilePurpose(file, rel, importedRoot),
+                        size = file.length(),
+                    ),
+                )
+            }
+    }
+
+    addTree(filesDir, "internal", false)
+    if (!isUnderDirectory(importRoot, filesDir)) {
+        addTree(importRoot, "external", true)
+    }
+
+    val distinctEntries = entries.distinctBy { it.absolutePath }
+    return StorageFileScanResult(
+        entries = distinctEntries,
+        totalSize = distinctEntries.sumOf { it.size },
+    )
+}
+
 @Composable
 fun AdvancedSettingsPage(
     filesDir: File,
@@ -1088,45 +1137,12 @@ private fun StorageInspectorSection(filesDir: File) {
         var refreshFiles by remember { mutableIntStateOf(0) }
         var selectedEntry by remember { mutableStateOf<StorageFileEntry?>(null) }
         var deleteEntry by remember { mutableStateOf<StorageFileEntry?>(null) }
-        val allFiles =
-            remember(refreshFiles) {
-                val importRoot = ImportLocationManager(filesDir).getActiveRoot()
-                val helperArtifacts =
-                    getSafLinkedHelperArtifactPaths(filesDir, AudioSourceManager(filesDir).getSources())
-                val entries = mutableListOf<StorageFileEntry>()
-
-                fun addTree(
-                    root: File,
-                    location: String,
-                    importedRoot: Boolean,
-                ) {
-                    if (!root.exists()) return
-                    root
-                        .walkTopDown()
-                        .filter { it.isFile }
-                        .filterNot { location == "internal" && it.absolutePath in helperArtifacts }
-                        .forEach { f ->
-                            val rel = f.relativeTo(root).path
-                            entries.add(
-                                StorageFileEntry(
-                                    file = f,
-                                    location = location,
-                                    relativePath = rel,
-                                    absolutePath = f.absolutePath,
-                                    purpose = launcherStorageFilePurpose(f, rel, importedRoot),
-                                    size = f.length(),
-                                ),
-                            )
-                        }
-                }
-
-                addTree(filesDir, "internal", false)
-                if (!isUnderDirectory(importRoot, filesDir)) {
-                    addTree(importRoot, "external", true)
-                }
-                entries.distinctBy { it.absolutePath }
-            }
         var sortBySize by remember { mutableStateOf(false) }
+        var displayLimit by remember(refreshFiles) { mutableIntStateOf(STORAGE_FILE_PAGE_SIZE) }
+        val scanResult by produceState<StorageFileScanResult?>(initialValue = null, refreshFiles) {
+            value = withContext(Dispatchers.IO) { scanStorageFiles(filesDir) }
+        }
+        val allFiles = scanResult?.entries ?: emptyList()
         val fileEntries =
             remember(allFiles, sortBySize) {
                 if (sortBySize) {
@@ -1135,78 +1151,129 @@ private fun StorageInspectorSection(filesDir: File) {
                     allFiles.sortedWith(compareBy<StorageFileEntry> { it.location }.thenBy { it.relativePath })
                 }
             }
-        val totalSize = remember(allFiles) { allFiles.sumOf { it.size } }
+        val visibleEntries =
+            remember(fileEntries, displayLimit) { fileEntries.take(displayLimit.coerceAtMost(fileEntries.size)) }
+        val hiddenCount = fileEntries.size - visibleEntries.size
+        val totalSize = scanResult?.totalSize ?: 0L
 
         AlertDialog(
             onDismissRequest = { showFilesDialog = false },
-            title = { Text("App Storage Files (${fileEntries.size})") },
+            title = {
+                Text(
+                    if (scanResult == null) {
+                        "App Storage Files"
+                    } else {
+                        "App Storage Files (${fileEntries.size})"
+                    },
+                )
+            },
             text = {
-                Column {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                if (scanResult == null) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(
-                            "Total: ${formatSize(totalSize)}",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        OutlinedButton(
-                            onClick = { sortBySize = false },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                            modifier = Modifier.height(28.dp),
-                            border =
-                                if (!sortBySize) {
-                                    androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                                } else {
-                                    null
-                                },
-                        ) { Text("Name", fontSize = 10.sp) }
-                        OutlinedButton(
-                            onClick = { sortBySize = true },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                            modifier = Modifier.height(28.dp),
-                            border =
-                                if (sortBySize) {
-                                    androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                                } else {
-                                    null
-                                },
-                        ) { Text("Size", fontSize = 10.sp) }
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("Scanning app storage…", fontSize = 12.sp)
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                        items(fileEntries) { entry ->
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .clickable { selectedEntry = entry }
-                                        .focusable()
-                                        .padding(vertical = 5.dp, horizontal = 4.dp),
+                } else {
+                    Column {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "Total: ${formatSize(totalSize)}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            OutlinedButton(
+                                onClick = { sortBySize = false },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(28.dp),
+                                border =
+                                    if (!sortBySize) {
+                                        androidx.compose.foundation.BorderStroke(
+                                            2.dp,
+                                            MaterialTheme.colorScheme.primary,
+                                        )
+                                    } else {
+                                        null
+                                    },
+                            ) { Text("Name", fontSize = 10.sp) }
+                            OutlinedButton(
+                                onClick = { sortBySize = true },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(28.dp),
+                                border =
+                                    if (sortBySize) {
+                                        androidx.compose.foundation.BorderStroke(
+                                            2.dp,
+                                            MaterialTheme.colorScheme.primary,
+                                        )
+                                    } else {
+                                        null
+                                    },
+                            ) { Text("Size", fontSize = 10.sp) }
+                        }
+                        if (hiddenCount > 0) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Text(
-                                        entry.file.name,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF2E7D32),
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    Text(formatSize(entry.size), fontSize = 10.sp)
-                                }
                                 Text(
-                                    entry.purpose,
-                                    fontSize = 10.sp,
+                                    "Showing ${visibleEntries.size} of ${fileEntries.size} files",
+                                    fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(entry.location, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                    Text(entry.relativePath, fontSize = 10.sp)
+                                TextButton(
+                                    onClick = {
+                                        displayLimit =
+                                            (displayLimit + STORAGE_FILE_PAGE_SIZE).coerceAtMost(fileEntries.size)
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                ) {
+                                    Text("Show More", fontSize = 10.sp)
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                            items(visibleEntries, key = { it.absolutePath }) { entry ->
+                                Column(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .clickable { selectedEntry = entry }
+                                            .focusable()
+                                            .padding(vertical = 5.dp, horizontal = 4.dp),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                    ) {
+                                        Text(
+                                            entry.file.name,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF2E7D32),
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        Text(formatSize(entry.size), fontSize = 10.sp)
+                                    }
+                                    Text(
+                                        entry.purpose,
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(entry.location, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Text(entry.relativePath, fontSize = 10.sp)
+                                    }
                                 }
                             }
                         }

@@ -12,6 +12,7 @@ extern "C" {
  */
 
 extern const char *dxx_android_game_file_extensions[];
+extern const char *dxx_android_disc_extract_extensions[];
 extern const char *dxx_android_gog_audio_extensions[];
 extern const char *dxx_android_mac_disc_extract_extensions[];
 

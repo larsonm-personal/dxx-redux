@@ -3658,10 +3658,10 @@ private fun SetupScreen(
             dismissedResumeKey != resumeOfferKey
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
 
-    // ── Startup: prune stale entries, then hash new/changed files ──
+    // ── Startup and refresh audit: prune stale entries, then hash new/changed files ──
     var prunedSourceNames by remember { mutableStateOf<List<String>>(emptyList()) }
     var prunedDataFiles by remember { mutableStateOf<List<String>>(emptyList()) }
-    LaunchedEffect(activeSetName) {
+    LaunchedEffect(activeSetName, refreshTrigger) {
         if (LauncherDebugLog.isEnabled(context)) {
             launcherDumpFileTable(
                 reason = "startup-before-prune",
@@ -6757,14 +6757,11 @@ private fun MusicInfoSection(
     hasMidiSource: Boolean = false,
     onEditMusic: () -> Unit = {},
 ) {
-    val audioSrcManager = remember { AudioSourceManager(filesDir) }
-    var audioSources by remember { mutableStateOf(audioSrcManager.getSources()) }
+    val audioSrcManager = remember(refreshTrigger) { AudioSourceManager(filesDir) }
+    var audioSources by remember(refreshTrigger) { mutableStateOf(audioSrcManager.getSources()) }
     val hasCdAudio = audioSources.isNotEmpty()
     var expanded by remember { mutableStateOf(false) }
     var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
-
-    // Re-read sources when refreshTrigger changes
-    LaunchedEffect(refreshTrigger) { audioSources = audioSrcManager.getSources() }
 
     // Read current music mode from prefs for display
     val context = LocalContext.current
@@ -9733,9 +9730,9 @@ private fun DiscImportDialog(
                                                     audioRegistered = true
                                                     status = "Audio source registered" +
                                                         if (discLabel != null) " ($discLabel)" else ""
+                                                    enableRedbookInConfig(filesDir, context)
                                                     onChanged()
                                                 }
-                                                enableRedbookInConfig(filesDir, context)
                                             } catch (e: Exception) {
                                                 Log.e("DXX-DiscImport", "Audio registration failed", e)
                                                 withContext(Dispatchers.Main) {

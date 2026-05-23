@@ -345,7 +345,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 	init_extract_ctx(env, progress, &ctx);
 
 	int extracted = iso_extract_files(binFd, trackStart, trackSectors,
-	                                  &list, out_dir, NULL,
+	                                  &list, out_dir, dxx_android_disc_extract_extensions,
 	                                  progress ? extract_progress_cb : NULL,
 	                                  &ctx);
 
@@ -382,7 +382,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
 	}
 
 	init_extract_ctx(env, progress, &ctx);
-	extracted = iso_extract_image_files(isoFd, &list, out_dir, NULL,
+	extracted = iso_extract_image_files(isoFd, &list, out_dir, dxx_android_disc_extract_extensions,
 	                                    progress ? extract_progress_cb : NULL,
 	                                    &ctx);
 

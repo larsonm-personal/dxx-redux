@@ -21,6 +21,19 @@ const char *dxx_android_game_file_extensions[] = {
 	NULL
 };
 
+/*
+ * ISO/BIN data-track extraction should keep gameplay-relevant content while
+ * skipping installer/runtime trees such as winsetup and directx.
+ * These entries omit the leading '.' because iso9660_reader.c compares against
+ * the raw extension text after the dot.
+ */
+const char *dxx_android_disc_extract_extensions[] = {
+	"hog", "pig", "ham", "s11", "s22", "dem",
+	"mvl", "msn", "mn2", "rdl", "rl2",
+	"sow", "dxa", "pog", "hxm", "dtx",
+	NULL
+};
+
 /* GOG CD-audio pair files live inside the broader game-file list above */
 const char *dxx_android_gog_audio_extensions[] = {
 	".gog", ".inst",
