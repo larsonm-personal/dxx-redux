@@ -162,6 +162,7 @@ $testTimeouts = @{
     "test_autosave_resume_unified"        = 300
     "test_autosave_resume_missing_pilot_unified" = 300
     "test_axis_mapping"                   = 240
+    "test_dpad_triggers"                 = 240
     "test_engine_prefs_unified"           = 240
     "test_extract"                        = 240
     "test_gog_installer_d1_unified"       = 420
