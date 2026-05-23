@@ -1,5 +1,5 @@
 #!/bin/bash
-# get_jdk.sh - Download and install OpenJDK if not present.
+# get_jdk.sh - Download and install OpenJDK if missing or out of date.
 # Reads version/URL from tool_versions.conf.
 set -e
 
@@ -12,9 +12,29 @@ INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/$JDK_DIR_NAME"
 
-if [ -d "$DEST" ] && { [ -x "$DEST/bin/java" ] || [ -x "$DEST/bin/java.exe" ]; }; then
-    echo "JDK $JDK_MAJOR already installed at $DEST"
-    exit 0
+get_installed_jdk_version() {
+    local release_file="$1/release"
+
+    if [ ! -f "$release_file" ]; then
+        return 1
+    fi
+
+    sed -n 's/^JAVA_VERSION="\(.*\)"$/\1/p' "$release_file" | tr -d '\r' | head -n1
+}
+
+if [ -d "$DEST" ]; then
+    INSTALLED_VERSION="$(get_installed_jdk_version "$DEST" || true)"
+    if { [ -x "$DEST/bin/java" ] || [ -x "$DEST/bin/java.exe" ]; } && [ "$INSTALLED_VERSION" = "$JDK_VERSION" ]; then
+        echo "JDK $JDK_MAJOR already installed at $DEST ($INSTALLED_VERSION)"
+        exit 0
+    fi
+
+    if [ -n "$INSTALLED_VERSION" ]; then
+        echo "JDK $JDK_MAJOR at $DEST is $INSTALLED_VERSION, expected $JDK_VERSION; reinstalling"
+    else
+        echo "JDK $JDK_MAJOR at $DEST is incomplete or has unknown version, expected $JDK_VERSION; reinstalling"
+    fi
+    rm -rf "$DEST"
 fi
 
 URL="$JDK_URL"
