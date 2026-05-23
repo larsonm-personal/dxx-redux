@@ -71,9 +71,6 @@ internal fun adminTrayVisibleActions(
         actions.add(2, TouchOverlayView.ADMIN_NET_STATS)
         actions.add(5, TouchOverlayView.ADMIN_NET_EVENTS)
     }
-    if (gamepadOnlyMode || !hasTouchAutomapButton) {
-        actions.add(TouchOverlayView.ADMIN_AUTOMAP)
-    }
     if (gamepadOnlyMode) {
         if (isMultiplayerGame) actions.add(TouchOverlayView.ADMIN_WARP)
         actions.add(TouchOverlayView.ADMIN_MUSIC)
@@ -83,6 +80,7 @@ internal fun adminTrayVisibleActions(
 }
 
 private const val CONTROLLER_MENU_FOCUS_COLOR = 0xFF00CC66.toInt()
+private const val CONTROLLER_MENU_ADVANCE_WINDOW_MS = 2500L
 
 internal enum class ControllerMenuSurface {
     NONE,
@@ -93,6 +91,7 @@ internal enum class ControllerMenuSurface {
 internal fun nextControllerMenuSurface(
     current: ControllerMenuSurface,
     hasRemainingActions: Boolean,
+    canAdvanceFromRemainingActions: Boolean = true,
 ): ControllerMenuSurface =
     when (current) {
         ControllerMenuSurface.NONE -> {
@@ -104,13 +103,23 @@ internal fun nextControllerMenuSurface(
         }
 
         ControllerMenuSurface.REMAINING_ACTIONS -> {
-            ControllerMenuSurface.ADMIN_TRAY
+            if (hasRemainingActions && canAdvanceFromRemainingActions) {
+                ControllerMenuSurface.ADMIN_TRAY
+            } else {
+                ControllerMenuSurface.NONE
+            }
         }
 
         ControllerMenuSurface.ADMIN_TRAY -> {
             ControllerMenuSurface.NONE
         }
     }
+
+internal fun remainingActionsCanAdvanceToAdminTray(
+    actionTakenSinceOpen: Boolean,
+    openDurationMs: Long,
+    advanceWindowMs: Long = CONTROLLER_MENU_ADVANCE_WINDOW_MS,
+): Boolean = !actionTakenSinceOpen && openDurationMs <= advanceWindowMs
 
 internal fun moveRemainingActionSelection(
     currentIndex: Int,
@@ -1259,6 +1268,8 @@ class TouchOverlayView
         private var remainingActionPressedIndex = -1
         private var remainingActionHeldBinding = -1
         private var remainingActionRowCount = 1
+        private var remainingActionOpenedAtMs = 0L
+        private var remainingActionUsedSinceOpen = false
         private var remainingActionButtonRect = RectF()
         private val remainingActionItemRects = mutableListOf<RectF>()
 
@@ -1546,6 +1557,8 @@ class TouchOverlayView
             remainingActionSelectedIndex = -1
             remainingActionPointerId = -1
             remainingActionPressedIndex = -1
+            remainingActionOpenedAtMs = 0L
+            remainingActionUsedSinceOpen = false
             invalidate()
         }
 
@@ -1569,8 +1582,16 @@ class TouchOverlayView
             remainingActionSelectedIndex = if (fromGamepad) 0 else -1
             remainingActionPointerId = -1
             remainingActionPressedIndex = -1
+            remainingActionOpenedAtMs = android.os.SystemClock.uptimeMillis()
+            remainingActionUsedSinceOpen = false
             invalidate()
         }
+
+        private fun canAdvanceFromRemainingActions(nowMs: Long = android.os.SystemClock.uptimeMillis()): Boolean =
+            remainingActionsCanAdvanceToAdminTray(
+                actionTakenSinceOpen = remainingActionUsedSinceOpen,
+                openDurationMs = (nowMs - remainingActionOpenedAtMs).coerceAtLeast(0L),
+            )
 
         private fun currentControllerMenuSurface(): ControllerMenuSurface =
             when {
@@ -1582,10 +1603,12 @@ class TouchOverlayView
         fun isControllerMenuOpen(): Boolean = currentControllerMenuSurface() != ControllerMenuSurface.NONE
 
         fun cycleControllerMenu() {
+            val hasRemainingActions = currentRemainingTouchActions().isNotEmpty()
             when (
                 nextControllerMenuSurface(
                     currentControllerMenuSurface(),
-                    currentRemainingTouchActions().isNotEmpty(),
+                    hasRemainingActions = hasRemainingActions,
+                    canAdvanceFromRemainingActions = canAdvanceFromRemainingActions(),
                 )
             ) {
                 ControllerMenuSurface.NONE -> closeControllerMenu()
@@ -1679,6 +1702,7 @@ class TouchOverlayView
                                 val selectedIndex = remainingActionSelectedIndex.coerceIn(0, actions.lastIndex)
                                 val selectedBinding = actions[selectedIndex].binding
                                 if (remainingActionUsesHeldActivation(selectedBinding)) {
+                                    remainingActionUsedSinceOpen = true
                                     if (remainingActionHeldBinding != selectedBinding) {
                                         releaseRemainingHeldActionIfNeeded()
                                         pressLayoutButtonBinding(
@@ -1730,6 +1754,8 @@ class TouchOverlayView
                 remainingActionOpen = false
                 remainingActionPointerId = -1
                 remainingActionPressedIndex = -1
+                remainingActionOpenedAtMs = 0L
+                remainingActionUsedSinceOpen = false
                 remainingActionButtonRect = RectF()
                 remainingActionItemRects.clear()
                 return

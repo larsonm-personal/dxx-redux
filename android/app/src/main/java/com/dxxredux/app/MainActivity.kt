@@ -829,7 +829,7 @@ class MainActivity :
                 }
 
                 TouchOverlayView.ADMIN_OPEN_MENU -> {
-                    openGameMenuSafely()
+                    openGameMenuFromControllerSettings()
                 }
 
                 TouchOverlayView.ADMIN_NET_STATS -> {
@@ -1631,6 +1631,14 @@ class MainActivity :
                 false
             }
         if (opened) adminTrayPausedGame = false
+    }
+
+    private fun openGameMenuFromControllerSettings() {
+        closeControllerSettingsStack()
+        touchOverlay.postDelayed(
+            { openGameMenuSafely() },
+            220L,
+        )
     }
 
     private fun openGameMenuSafely() {

@@ -2611,7 +2611,7 @@ private fun ButtonFunctionPickerDialog(
                         )
                         Spacer(Modifier.height(8.dp))
                     }
-                    if (isAxisFunc && axisExponent != null && onAxisExponentChange != null) {
+                    if (axisExponent != null && onAxisExponentChange != null) {
                         Text(
                             "Response: ${"%.1f".format(axisExponent)}",
                             fontSize = 12.sp,

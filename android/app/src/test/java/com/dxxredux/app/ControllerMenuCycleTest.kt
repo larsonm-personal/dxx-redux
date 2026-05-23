@@ -24,10 +24,44 @@ class ControllerMenuCycleTest {
     }
 
     @Test
+    fun nextControllerMenuSurface_closesRemainingWhenAdvanceWindowIsBlocked() {
+        assertEquals(
+            ControllerMenuSurface.NONE,
+            nextControllerMenuSurface(
+                ControllerMenuSurface.REMAINING_ACTIONS,
+                hasRemainingActions = true,
+                canAdvanceFromRemainingActions = false,
+            ),
+        )
+    }
+
+    @Test
     fun nextControllerMenuSurface_skipsRemainingWhenNoActionsExist() {
         assertEquals(
             ControllerMenuSurface.ADMIN_TRAY,
             nextControllerMenuSurface(ControllerMenuSurface.NONE, hasRemainingActions = false),
+        )
+    }
+
+    @Test
+    fun remainingActionsAdvanceToAdminTrayOnlyWhileFreshAndUnused() {
+        assertTrue(
+            remainingActionsCanAdvanceToAdminTray(
+                actionTakenSinceOpen = false,
+                openDurationMs = 2500L,
+            ),
+        )
+        assertFalse(
+            remainingActionsCanAdvanceToAdminTray(
+                actionTakenSinceOpen = true,
+                openDurationMs = 100L,
+            ),
+        )
+        assertFalse(
+            remainingActionsCanAdvanceToAdminTray(
+                actionTakenSinceOpen = false,
+                openDurationMs = 2501L,
+            ),
         )
     }
 
