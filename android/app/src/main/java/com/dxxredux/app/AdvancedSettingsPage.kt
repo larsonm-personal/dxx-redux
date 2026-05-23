@@ -47,7 +47,11 @@ private data class StorageFileEntry(
     val absolutePath: String,
     val purpose: String,
     val size: Long,
-)
+    val helperSymlinkTargetName: String? = null,
+) {
+    val isHelperSymlink: Boolean
+        get() = helperSymlinkTargetName != null
+}
 
 private data class StorageFileScanResult(
     val entries: List<StorageFileEntry>,
@@ -55,6 +59,67 @@ private data class StorageFileScanResult(
 )
 
 private const val STORAGE_FILE_PAGE_SIZE = 200
+
+private fun annotateStorageHelperSymlinks(entries: List<StorageFileEntry>): List<StorageFileEntry> {
+    val helperTargets = mutableMapOf<String, String>()
+
+    entries
+        .groupBy { entry -> entry.location to entry.relativePath.lowercase(Locale.US) }
+        .values
+        .forEach { group ->
+            if (group.size < 2) return@forEach
+            val primary =
+                group
+                    .filter { it.size > 1L }
+                    .maxWithOrNull(compareBy<StorageFileEntry> { it.size }.thenBy { it.relativePath })
+                    ?: return@forEach
+
+            group
+                .filter { it.absolutePath != primary.absolutePath && it.size <= 1L }
+                .forEach { helperTargets[it.absolutePath] = primary.file.name }
+        }
+
+    return entries.map { entry ->
+        entry.copy(helperSymlinkTargetName = helperTargets[entry.absolutePath])
+    }
+}
+
+private fun storageFileNameComparator(): Comparator<StorageFileEntry> =
+    compareBy<StorageFileEntry> { it.location }
+        .thenBy { it.relativePath.lowercase(Locale.US) }
+        .thenBy { if (it.isHelperSymlink) 1 else 0 }
+        .thenBy { it.relativePath }
+
+private fun buildCdSourceSafLabel(source: AudioSourceManager.AudioSource): String {
+    val safBinCount = source.binContentUriList().count { !isLocalCdContentPath(it) }
+    val hasSafCue = source.cueContentUri?.let { !isLocalCdContentPath(it) } == true
+    val summary =
+        when {
+            hasSafCue && safBinCount > 0 -> {
+                val noun = if (safBinCount == 1) "bin file" else "bin files"
+                "cue + $safBinCount $noun"
+            }
+
+            hasSafCue -> {
+                "cue"
+            }
+
+            safBinCount > 0 -> {
+                val noun = if (safBinCount == 1) "bin file" else "bin files"
+                "$safBinCount $noun"
+            }
+
+            else -> {
+                null
+            }
+        }
+
+    return if (summary != null) {
+        "CD Source: ${source.discLabel} ($summary)"
+    } else {
+        "CD Source: ${source.discLabel}"
+    }
+}
 
 private fun scanStorageFiles(filesDir: File): StorageFileScanResult {
     val importRoot = ImportLocationManager(filesDir).getActiveRoot()
@@ -92,9 +157,10 @@ private fun scanStorageFiles(filesDir: File): StorageFileScanResult {
     }
 
     val distinctEntries = entries.distinctBy { it.absolutePath }
+    val annotatedEntries = annotateStorageHelperSymlinks(distinctEntries)
     return StorageFileScanResult(
-        entries = distinctEntries,
-        totalSize = distinctEntries.sumOf { it.size },
+        entries = annotatedEntries,
+        totalSize = annotatedEntries.sumOf { it.size },
     )
 }
 
@@ -1148,7 +1214,7 @@ private fun StorageInspectorSection(filesDir: File) {
                 if (sortBySize) {
                     allFiles.sortedByDescending { it.size }
                 } else {
-                    allFiles.sortedWith(compareBy<StorageFileEntry> { it.location }.thenBy { it.relativePath })
+                    allFiles.sortedWith(storageFileNameComparator())
                 }
             }
         val visibleEntries =
@@ -1265,6 +1331,14 @@ private fun StorageInspectorSection(filesDir: File) {
                                         )
                                         Text(formatSize(entry.size), fontSize = 10.sp)
                                     }
+                                    entry.helperSymlinkTargetName?.let { targetName ->
+                                        Text(
+                                            "helper symlink for $targetName",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
                                     Text(
                                         entry.purpose,
                                         fontSize = 10.sp,
@@ -1293,6 +1367,12 @@ private fun StorageInspectorSection(filesDir: File) {
                     Column {
                         Text("Location: ${entry.location}", fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(4.dp))
+                        entry.helperSymlinkTargetName?.let { targetName ->
+                            Text("Type: helper symlink", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Companion file: $targetName", fontSize = 12.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
                         Text("Purpose: ${entry.purpose}", fontSize = 12.sp)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text("Size: ${formatSize(entry.size)}", fontSize = 12.sp)
@@ -1413,7 +1493,7 @@ private fun StorageInspectorSection(filesDir: File) {
                             ).all { it }
                         entries.add(
                             SafEntry(
-                                label = "CD Source: ${src.discLabel}",
+                                label = buildCdSourceSafLabel(src),
                                 uri = displayUri,
                                 accessible = accessible,
                                 cdSourceId = src.id,

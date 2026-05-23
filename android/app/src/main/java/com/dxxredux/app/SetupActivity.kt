@@ -9388,14 +9388,23 @@ private fun DiscImportDialog(
     val addAudioFocus = remember { FocusRequester() }
     val doneFocus = remember { FocusRequester() }
     val scrollState = rememberScrollState()
+    val inputModeManager = LocalInputModeManager.current
 
     LaunchedEffect(tracks, processing, dataExtracted, audioRegistered) {
-        val hasDataTrack = tracks?.any { it.isData } == true
-        val hasAudioTracks = tracks?.any { it.isAudio } == true
-        when {
-            dataExtracted > 0 || audioRegistered -> doneFocus.requestFocus()
-            !processing && hasDataTrack && dataExtracted == 0 -> extractFocus.requestFocus()
-            !processing && hasAudioTracks && !audioRegistered -> addAudioFocus.requestFocus()
+        val hasPendingData = !processing && tracks?.any { it.isData } == true && dataExtracted == 0
+        val hasPendingAudio = !processing && tracks?.any { it.isAudio } == true && !audioRegistered
+        val nextFocusRequester =
+            when {
+                hasPendingData -> extractFocus
+                hasPendingAudio -> addAudioFocus
+                !processing && tracks != null -> doneFocus
+                else -> null
+            }
+
+        if (nextFocusRequester != null) {
+            inputModeManager.requestInputMode(InputMode.Keyboard)
+            withFrameNanos { }
+            nextFocusRequester.requestFocus()
         }
     }
 

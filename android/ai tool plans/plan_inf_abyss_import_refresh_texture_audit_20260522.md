@@ -13,6 +13,9 @@
 - [x] Move app storage inspector scanning off the UI thread and cap initial rendering
 - [x] Reduce dead Android replacement-directory texture probes in d1 and d2
 - [x] Build a shared in-memory PhysFS texture file index for replacement lookups
+- [x] Prefer the remaining unfinished action over Done in the disc-import controller focus order
+- [x] Show cue plus bin-count summaries for SAF-linked CD sources
+- [x] Label 1-byte case-variant helper symlinks in App Storage Files and sort them next to their companion files
 - [ ] Add follow-up runtime coverage for direct Infinite Abyss import and storage inspector behavior
 
 ## Notes
@@ -47,5 +50,7 @@
 - Done: `AdvancedSettingsPage.kt` now scans app/import storage on `Dispatchers.IO`, shows a loading state, uses stable list keys, and renders file rows incrementally via `Show More` instead of dumping the full recursive tree into one dialog pass
 - Done: `d1/arch/ogl/ogl.c` and `d2/arch/ogl/ogl.c` now cache whether `textures/d1` or `textures/d2` exists and skip those dead replacement-directory probes when the roots are absent, reducing miss overhead on stock installs
 - Done: `android/app/src/main/cpp/shared/pngfile_stb.c` now builds one in-memory PhysFS index of `*.ktx2`, `*.png`, `*.jpg`, and `*.tga` files after each cache clear and resolves candidate texture paths against that index before calling `PHYSFS_openRead()`. That turns most replacement lookups into hash probes plus at most one file open for a real hit, instead of repeated expensive PhysFS misses across every variant/extension pair
+- Done: `SetupActivity.kt` now keeps controller focus on the remaining unfinished disc-import action and only falls back to `Done` once no other action remains; the dialog also requests keyboard input mode before moving focus so controller highlight follows the new target reliably
+- Done: `AdvancedSettingsPage.kt` now shows cue/bin-count summaries for SAF-linked CD sources, detects 1-byte case-variant helper symlink stubs by pairing them with their larger case-insensitive companion file, labels them in both the file list and details view, and keeps them adjacent in name sort order
 - Validation: `:app:compileDebugKotlin`, `:app:externalNativeBuildDebug`, and the scoped `android/run-code-quality.ps1 -Fix` pass all succeeded after the edits
 - Validation gap: the direct Infinite Abyss emulator smoke remains blocked by a broader `android/tests/test_extract.ps1` app-private staging issue for setup-command source files. The helper was partially hardened for quoted paths, but the runtime copy path still needs a dedicated fix before that test can cover multitrack direct imports reliably
