@@ -25,6 +25,12 @@ a. also, the select button (on android tv) should cycle between opening the "mor
 [fixed] android TV doesn't use the gamepad for the on-screen keyboard. only "a" works as a button press to select the current character, d-pad or sticks don't move around chars
 
 # nice to haves
+single axis exponential - please add this to the single axis editor the same as it was done for the analog stick editor
+remove automap button from settings menu. it should be in the unbound controls menu (if unbound)
+if an action is taken in the unbound settings menu (such as activating energy -> shield) and the menu is still open, another settings button push should close the menu
+if the unbound settings menu is open for >2.5 seconds, another settings button push should close it (not go to the 2nd settings menu) 
+so the only way to get to the 2nd menu is two presses quicker than 2.5 seconds with no action taken on unbound
+game menu action from the settings menu does nothing. it should close the settings menu (overlay) and immediately open the game (esc) menu
 [ ] exponential for analog controls. I'd like a slider next to the deadband slider for analog sticks and also single axis analog editing windows. it should control exponential control (fine/de-sensitized control at low deflection and large control at high deflection) along the same lines as we have with the touch analog sticks. the rnge should be from 1 (no exponent) to N, have N be the same as whatever we have for touch sticks
 [ ] the unbound actions menu should consider controller buttons also instead of just touch buttons. currently I have rewind bound to a button and it's in the menu
 [ ] quick save and quick load are really just “open save and load menus” and they should be called save and load

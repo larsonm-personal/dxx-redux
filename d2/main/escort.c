@@ -68,7 +68,14 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef __ANDROID__
 #include <android/log.h>
+#include "android_menu_scale.h"
 #define ESCORT_DIAG(fmt, ...) __android_log_print(ANDROID_LOG_INFO, "DXX-ESCORT", fmt, ##__VA_ARGS__)
+#define ANDROID_JOY_BUTTON_A 0
+#define ANDROID_JOY_BUTTON_B 1
+#define ANDROID_DPAD_UP_BUTTON 22
+#define ANDROID_DPAD_DOWN_BUTTON 23
+#define ANDROID_DPAD_LEFT_BUTTON 24
+#define ANDROID_DPAD_RIGHT_BUTTON 25
 #else
 #define ESCORT_DIAG(fmt, ...) ((void)0)
 #endif
@@ -79,7 +86,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 extern void multi_send_stolen_items();
 void say_escort_goal(int goal_num);
-void show_escort_menu(char *msg);
+struct escort_menu;
+static void show_escort_menu(struct escort_menu *menu);
 extern fix64 Buddy_last_seen_player, Buddy_last_player_path_created;
 
 
@@ -1925,18 +1933,85 @@ void drop_stolen_items(object *objp)
 }
 
 // --------------------------------------------------------------------------------------------------------------
+#define ESCORT_MENU_ITEM_COUNT 11
+
 typedef struct escort_menu
 {
-	char	msg[300];
+	char	goal_str[32];
+	char	message_action[16];
+	int	selected_item;
+	int	multiplayer_passthrough;
 } escort_menu;
 
-int escort_menu_keycommand(window *wind, d_event *event, escort_menu *menu)
+static int escort_menu_key_for_item(int item)
 {
-	int	key;
+	switch (item) {
+		case 0: return KEY_0;
+		case 1: return KEY_1;
+		case 2: return KEY_2;
+		case 3: return KEY_3;
+		case 4: return KEY_4;
+		case 5: return KEY_5;
+		case 6: return KEY_6;
+		case 7: return KEY_7;
+		case 8: return KEY_8;
+		case 9: return KEY_9;
+		case 10: return KEY_T;
+		default: return KEY_ESC;
+	}
+}
+
+static void escort_menu_item_text(escort_menu *menu, int item, char *buf, size_t bufsz)
+{
+	switch (item) {
+		case 0:
+			snprintf(buf, bufsz, "0.  Next Goal: %s", menu->goal_str);
+			break;
+		case 1:
+			snprintf(buf, bufsz, "1.  Find Energy Powerup");
+			break;
+		case 2:
+			snprintf(buf, bufsz, "2.  Find Energy Center");
+			break;
+		case 3:
+			snprintf(buf, bufsz, "3.  Find Shield Powerup");
+			break;
+		case 4:
+			snprintf(buf, bufsz, "4.  Find Any Powerup");
+			break;
+		case 5:
+			snprintf(buf, bufsz, "5.  Find a Robot");
+			break;
+		case 6:
+			snprintf(buf, bufsz, "6.  Find a Hostage");
+			break;
+		case 7:
+			snprintf(buf, bufsz, "7.  Stay Away From Me");
+			break;
+		case 8:
+			snprintf(buf, bufsz, "8.  Find My Powerups");
+			break;
+		case 9:
+			snprintf(buf, bufsz, "9.  Find the exit");
+			break;
+		case 10:
+			snprintf(buf, bufsz, "T.  %s Messages", menu->message_action);
+			break;
+		default:
+			buf[0] = '\0';
+			break;
+	}
+}
+
+static void escort_menu_move_selection(escort_menu *menu, int delta)
+{
+	menu->selected_item = (menu->selected_item + delta + ESCORT_MENU_ITEM_COUNT) % ESCORT_MENU_ITEM_COUNT;
+}
+
+static int escort_menu_activate_key(window *wind, int key)
+{
 	char error[256] = "";
-	
-	key = event_key_get(event);
-	
+
 	switch (key) {
 		case KEY_0:
 		case KEY_1:
@@ -1958,38 +2033,107 @@ int escort_menu_keycommand(window *wind, d_event *event, escort_menu *menu)
 			Last_buddy_key = -1;
 			window_close(wind);
 			return 1;
-			
-		case KEY_ESC:
-		case KEY_ENTER:
-			window_close(wind);
-			return 1;
-			
+
 		case KEY_T: {
 			char	msg[32];
 			int	temp;
-			
+
 			temp = !Buddy_messages_suppressed;
-			
+
 			if (temp)
 				strcpy(msg, "suppressed");
 			else
 				strcpy(msg, "enabled");
-			
+
 			Buddy_messages_suppressed = 1;
 			buddy_message("Messages %s.", msg);
-			
+
 			Buddy_messages_suppressed = temp;
-			
+
 			window_close(wind);
 			return 1;
 		}
-			
+
 		default:
 			break;
 	}
-	
+
 	return 0;
 }
+
+int escort_menu_keycommand(window *wind, d_event *event, escort_menu *menu)
+{
+	int	key;
+
+	key = event_key_get(event);
+
+	switch (key) {
+		case KEY_0:
+		case KEY_1:
+		case KEY_2:
+		case KEY_3:
+		case KEY_4:
+		case KEY_5:
+		case KEY_6:
+		case KEY_7:
+		case KEY_8:
+		case KEY_9:
+		case KEY_T:
+			return escort_menu_activate_key(wind, key);
+
+		case KEY_UP:
+			escort_menu_move_selection(menu, -1);
+			return 1;
+
+		case KEY_DOWN:
+			escort_menu_move_selection(menu, 1);
+			return 1;
+
+		case KEY_ENTER:
+			return escort_menu_activate_key(wind, escort_menu_key_for_item(menu->selected_item));
+
+		case KEY_ESC:
+		case KEY_F4 + KEY_SHIFTED:
+			window_close(wind);
+			return 1;
+
+		default:
+			break;
+	}
+
+	return 0;
+}
+
+#ifdef __ANDROID__
+static int escort_menu_joystick_button_down(window *wind, d_event *event, escort_menu *menu)
+{
+	switch (event_joystick_get_button(event)) {
+		case ANDROID_DPAD_UP_BUTTON:
+			escort_menu_move_selection(menu, -1);
+			return 1;
+
+		case ANDROID_DPAD_DOWN_BUTTON:
+			escort_menu_move_selection(menu, 1);
+			return 1;
+
+		case ANDROID_DPAD_LEFT_BUTTON:
+		case ANDROID_DPAD_RIGHT_BUTTON:
+			return 1;
+
+		case ANDROID_JOY_BUTTON_A:
+			return escort_menu_activate_key(wind, escort_menu_key_for_item(menu->selected_item));
+
+		case ANDROID_JOY_BUTTON_B:
+			window_close(wind);
+			return 1;
+
+		default:
+			break;
+	}
+
+	return 0;
+}
+#endif
 
 int escort_menu_handler(window *wind, d_event *event, escort_menu *menu)
 {
@@ -2001,16 +2145,27 @@ int escort_menu_handler(window *wind, d_event *event, escort_menu *menu)
 			
 		case EVENT_KEY_COMMAND:
 			return escort_menu_keycommand(wind, event, menu);
+
+#ifdef __ANDROID__
+		case EVENT_JOYSTICK_BUTTON_DOWN:
+			return escort_menu_joystick_button_down(wind, event, menu);
+#endif
 			
 		case EVENT_IDLE:
+			if (menu->multiplayer_passthrough)
+				return 0;
 			timer_delay2(50);
 			break;
 			
 		case EVENT_WINDOW_DRAW:
-			show_escort_menu(menu->msg);		//TXT_PAUSE);
+			show_escort_menu(menu);
 			break;
 			
 		case EVENT_WINDOW_CLOSE:
+		#ifdef __ANDROID__
+			android_menu_scale_clear();
+		#endif
+			d_free(menu);
 			return 0;	// continue closing
 			break;
 			
@@ -2026,7 +2181,6 @@ void do_escort_menu(void)
 {
 	int	i;
 	int	next_goal;
-	char	goal_str[32], tstr[32];
 	escort_menu *menu;
 	window *wind;
 
@@ -2075,6 +2229,8 @@ void do_escort_menu(void)
 	MALLOC(menu, escort_menu, 1);
 	if (!menu)
 		return;
+	menu->selected_item = 0;
+	menu->multiplayer_passthrough = (Game_mode & GM_MULTI) != 0;
 	
 	// Just make it the full screen size and let show_escort_menu figure it out
 	wind = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, (int (*)(window *, d_event *, void *))escort_menu_handler, menu);
@@ -2083,6 +2239,8 @@ void do_escort_menu(void)
 		d_free(menu);
 		return;
 	}
+	if (menu->multiplayer_passthrough)
+		window_set_modal(wind, 0);
 	
 	//	This prevents the buddy from coming back if you've told him to scram.
 	//	If we don't set next_goal, we get garbage there.
@@ -2099,27 +2257,27 @@ void do_escort_menu(void)
 	#ifndef NDEBUG
 		case ESCORT_GOAL_UNSPECIFIED:
 			Int3();
-			sprintf(goal_str, "ERROR");
+			sprintf(menu->goal_str, "ERROR");
 			break;
 	#endif
 			
 		case ESCORT_GOAL_BLUE_KEY:
-			sprintf(goal_str, "blue key");
+			sprintf(menu->goal_str, "blue key");
 			break;
 		case ESCORT_GOAL_GOLD_KEY:
-			sprintf(goal_str, "yellow key");
+			sprintf(menu->goal_str, "yellow key");
 			break;
 		case ESCORT_GOAL_RED_KEY:
-			sprintf(goal_str, "red key");
+			sprintf(menu->goal_str, "red key");
 			break;
 		case ESCORT_GOAL_CONTROLCEN:
-			sprintf(goal_str, "reactor");
+			sprintf(menu->goal_str, "reactor");
 			break;
 		case ESCORT_GOAL_BOSS:
-			sprintf(goal_str, "boss");
+			sprintf(menu->goal_str, "boss");
 			break;
 		case ESCORT_GOAL_EXIT:
-			sprintf(goal_str, "exit");
+			sprintf(menu->goal_str, "exit");
 			break;
 		case ESCORT_GOAL_MARKER1:
 		case ESCORT_GOAL_MARKER2:
@@ -2130,54 +2288,107 @@ void do_escort_menu(void)
 		case ESCORT_GOAL_MARKER7:
 		case ESCORT_GOAL_MARKER8:
 		case ESCORT_GOAL_MARKER9:
-			sprintf(goal_str, "marker %i", next_goal-ESCORT_GOAL_MARKER1+1);
+			sprintf(menu->goal_str, "marker %i", next_goal-ESCORT_GOAL_MARKER1+1);
 			break;
 
 	}
 			
 	if (!Buddy_messages_suppressed)
-		sprintf(tstr, "Suppress");
+		sprintf(menu->message_action, "Suppress");
 	else
-		sprintf(tstr, "Enable");
-
-	sprintf(menu->msg,	"Select Guide-Bot Command:\n\n\n"
-						"0.  Next Goal: %s" CC_LSPACING_S "3\n\n"
-						"\x84.  Find Energy Powerup" CC_LSPACING_S "3\n\n"
-						"2.  Find Energy Center" CC_LSPACING_S "3\n\n"
-						"3.  Find Shield Powerup" CC_LSPACING_S "3\n\n"
-						"4.  Find Any Powerup" CC_LSPACING_S "3\n\n"
-						"5.  Find a Robot" CC_LSPACING_S "3\n\n"
-						"6.  Find a Hostage" CC_LSPACING_S "3\n\n"
-						"7.  Stay Away From Me" CC_LSPACING_S "3\n\n"
-						"8.  Find My Powerups" CC_LSPACING_S "3\n\n"
-						"9.  Find the exit\n\n"
-						"T.  %s Messages"
-						// -- "9.	Find the exit" CC_LSPACING_S "3\n"
-				, goal_str, tstr);
+		sprintf(menu->message_action, "Enable");
 }
 
 //	-------------------------------------------------------------------------------
 //	Show the Buddy menu!
-void show_escort_menu(char *msg)
+static void escort_menu_draw_contents(escort_menu *menu, const char *title,
+	char rows[ESCORT_MENU_ITEM_COUNT][80], int x, int y, int content_w,
+	int title_h)
+{
+	int i, item_y;
+
+	gr_set_fontcolor(BM_XRGB(0, 28, 0), -1);
+	gr_ustring(x, y, title);
+	item_y = y + title_h + LINE_SPACING;
+	for (i = 0; i < ESCORT_MENU_ITEM_COUNT; i++) {
+		if (i == menu->selected_item) {
+			gr_setcolor(BM_XRGB(0, 28, 0));
+			gr_rect(x - FSPACX(2), item_y - FSPACY(1), x + content_w + FSPACX(2), item_y + LINE_SPACING - FSPACY(1));
+			gr_set_fontcolor(BM_XRGB(0, 0, 0), -1);
+		} else {
+			gr_set_fontcolor(BM_XRGB(0, 28, 0), -1);
+		}
+		gr_ustring(x, item_y, rows[i]);
+		item_y += LINE_SPACING;
+	}
+}
+
+#ifdef __ANDROID__
+static int escort_menu_draw_scaled(escort_menu *menu, const char *title,
+	char rows[ESCORT_MENU_ITEM_COUNT][80], int source_x, int source_y,
+	int box_w, int box_h, int content_w, int title_h)
+{
+	android_menu_scale_result menu_scale;
+	grs_bitmap source_bitmap;
+	grs_canvas source_canvas;
+	grs_canvas *save_canvas = grd_curcanv;
+
+	if (!android_menu_scale_compute_cropped(source_x, source_y, box_w, box_h,
+		SWIDTH, SHEIGHT, BORDERX, BORDERY, &menu_scale))
+		return 0;
+
+	gr_init_bitmap_alloc(&source_bitmap, BM_LINEAR, 0, 0, box_w, box_h, box_w);
+	gr_init_canvas(&source_canvas, source_bitmap.bm_data, BM_LINEAR, box_w, box_h);
+	gr_set_current_canvas(&source_canvas);
+	nm_draw_background(0, 0, box_w, box_h);
+	escort_menu_draw_contents(menu, title, rows, BORDERX, BORDERY, content_w, title_h);
+	gr_set_current_canvas(save_canvas);
+	android_menu_scale_blit_bitmap(&source_bitmap, &menu_scale, 0);
+	android_menu_scale_publish(&menu_scale);
+	gr_free_bitmap_data(&source_bitmap);
+	return 1;
+}
+#endif
+
+static void show_escort_menu(escort_menu *menu)
 {	
-	int	w,h,aw;
-	int	x,y;
+	char rows[ESCORT_MENU_ITEM_COUNT][80];
+	const char *title = "Select Guide-Bot Command:";
+	int i, w, h, aw, title_w, title_h, content_w, content_h;
+	int x, y, box_w, box_h;
 
 
 	gr_set_current_canvas(NULL);
 
 	gr_set_curfont( GAME_FONT );
 
-	gr_get_string_size(msg,&w,&h,&aw);
+	gr_get_string_size(title, &title_w, &title_h, &aw);
+	content_w = title_w;
+	for (i = 0; i < ESCORT_MENU_ITEM_COUNT; i++) {
+		escort_menu_item_text(menu, i, rows[i], sizeof(rows[i]));
+		gr_get_string_size(rows[i], &w, &h, &aw);
+		if (w > content_w)
+			content_w = w;
+	}
+	content_h = title_h + LINE_SPACING * (ESCORT_MENU_ITEM_COUNT + 2);
+	box_w = content_w + BORDERX * 2;
+	box_h = content_h + BORDERY * 2;
 
-	x = (SWIDTH-w)/2;
-	y = (SHEIGHT-h)/2;
+	x = (SWIDTH - box_w) / 2 + BORDERX;
+	y = (SHEIGHT - box_h) / 2 + BORDERY;
 
-	gr_set_fontcolor( BM_XRGB(0, 28, 0), -1 );
+#ifdef __ANDROID__
+	if (!escort_menu_draw_scaled(menu, title, rows, x - BORDERX, y - BORDERY,
+		box_w, box_h, content_w, title_h))
+		android_menu_scale_clear();
+	else {
+		reset_cockpit();
+		return;
+	}
+#endif
 
-	nm_draw_background(x-BORDERX,y-BORDERY,x+w+BORDERX,y+h+BORDERY);
-
-	gr_ustring( x, y, msg );
+	nm_draw_background(x - BORDERX, y - BORDERY, x + content_w + BORDERX, y + content_h + BORDERY);
+	escort_menu_draw_contents(menu, title, rows, x, y, content_w, title_h);
 
 	reset_cockpit();
 }

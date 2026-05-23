@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import android.view.KeyEvent
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -27,5 +28,49 @@ class GamepadButtonDispatchPolicyTest {
     fun menuUpAlwaysReleases() {
         assertTrue(shouldDispatchGamepadButtonUp(isInGame = false, edgeDispatchAllowed = false))
         assertTrue(shouldDispatchGamepadButtonUp(isInGame = false, edgeDispatchAllowed = true))
+    }
+
+    @Test
+    fun controllerBRoutesToNativeBackWhenNativeMenuIsFront() {
+        assertTrue(
+            shouldRouteControllerBToNativeBack(
+                keyCode = KeyEvent.KEYCODE_BUTTON_B,
+                isControllerEvent = true,
+                nativeMenuFront = true,
+                controllerMenuOpen = false,
+                adminTrayOpen = false,
+            ),
+        )
+    }
+
+    @Test
+    fun controllerBDoesNotOverrideGameplayOrOverlayMenus() {
+        assertFalse(
+            shouldRouteControllerBToNativeBack(
+                keyCode = KeyEvent.KEYCODE_BUTTON_B,
+                isControllerEvent = true,
+                nativeMenuFront = false,
+                controllerMenuOpen = false,
+                adminTrayOpen = false,
+            ),
+        )
+        assertFalse(
+            shouldRouteControllerBToNativeBack(
+                keyCode = KeyEvent.KEYCODE_BUTTON_B,
+                isControllerEvent = true,
+                nativeMenuFront = true,
+                controllerMenuOpen = true,
+                adminTrayOpen = false,
+            ),
+        )
+        assertFalse(
+            shouldRouteControllerBToNativeBack(
+                keyCode = KeyEvent.KEYCODE_BUTTON_B,
+                isControllerEvent = true,
+                nativeMenuFront = true,
+                controllerMenuOpen = false,
+                adminTrayOpen = true,
+            ),
+        )
     }
 }

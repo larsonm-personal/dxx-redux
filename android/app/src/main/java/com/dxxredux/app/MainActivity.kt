@@ -151,6 +151,19 @@ internal fun shouldDispatchGamepadButtonUp(
     edgeDispatchAllowed: Boolean,
 ): Boolean = if (isInGame) edgeDispatchAllowed else true
 
+internal fun shouldRouteControllerBToNativeBack(
+    keyCode: Int,
+    isControllerEvent: Boolean,
+    nativeMenuFront: Boolean,
+    controllerMenuOpen: Boolean,
+    adminTrayOpen: Boolean,
+): Boolean =
+    isControllerEvent &&
+        keyCode == KeyEvent.KEYCODE_BUTTON_B &&
+        nativeMenuFront &&
+        !controllerMenuOpen &&
+        !adminTrayOpen
+
 class MainActivity :
     Activity(),
     SurfaceHolder.Callback {
@@ -1634,14 +1647,18 @@ class MainActivity :
     }
 
     private fun openGameMenuFromControllerSettings() {
+        val pauseWindowOwnedByTray = adminTrayPausedGame
+        if (pauseWindowOwnedByTray) adminTrayPausedGame = false
         closeControllerSettingsStack()
-        touchOverlay.postDelayed(
-            { openGameMenuSafely() },
-            220L,
-        )
+        if (!openGameMenuSafely() && pauseWindowOwnedByTray) {
+            try {
+                nativeClosePauseIfFront()
+            } catch (_: Exception) {
+            }
+        }
     }
 
-    private fun openGameMenuSafely() {
+    private fun openGameMenuSafely(): Boolean {
         if (adminTrayPausedGame) {
             try {
                 nativeClosePauseIfFront()
@@ -1655,10 +1672,11 @@ class MainActivity :
             } catch (_: Exception) {
                 false
             }
-        if (!opened) {
-            nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
-            nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
-        }
+        if (opened) return true
+
+        nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
+        nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
+        return false
     }
 
     private fun startOverlayPolling() {
@@ -2799,12 +2817,25 @@ class MainActivity :
             logSelectRouting("down back-controller -> fallthrough nativeKeyEvent")
         }
 
+        val inGame = nativeIsInGame()
+        if (
+            shouldRouteControllerBToNativeBack(
+                keyCode = keyCode,
+                isControllerEvent = isControllerSource(event.source),
+                nativeMenuFront = gameStarted && !inGame,
+                controllerMenuOpen = touchOverlay.isControllerMenuOpen(),
+                adminTrayOpen = touchOverlay.isAdminTrayOpen(),
+            )
+        ) {
+            nativeKeyEvent(0, KeyEvent.KEYCODE_BACK, 0)
+            return true
+        }
+
         if (touchOverlay.handleControllerMenuKey(keyCode, 0)) return true
 
         // Gamepad face / shoulder buttons -> mixer or meta action
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
-            val inGame = nativeIsInGame()
             if (!shouldDispatchGamepadButtonDown(
                     inGame,
                     event.repeatCount,
@@ -2886,11 +2917,24 @@ class MainActivity :
             )
         }
 
+        val inGame = nativeIsInGame()
+        if (
+            shouldRouteControllerBToNativeBack(
+                keyCode = keyCode,
+                isControllerEvent = isControllerSource(event.source),
+                nativeMenuFront = gameStarted && !inGame,
+                controllerMenuOpen = touchOverlay.isControllerMenuOpen(),
+                adminTrayOpen = touchOverlay.isAdminTrayOpen(),
+            )
+        ) {
+            nativeKeyEvent(1, KeyEvent.KEYCODE_BACK, 0)
+            return true
+        }
+
         if (touchOverlay.handleControllerMenuKey(keyCode, 1)) return true
 
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
-            val inGame = nativeIsInGame()
             if (!shouldDispatchGamepadButtonUp(inGame, gamepadButtonEdgeTracker.shouldDispatchUp(keyCode))) {
                 return true
             }

@@ -248,6 +248,7 @@ extern int netplayerinfo_on;
 #ifdef __ANDROID__
 extern volatile int g_android_open_save_menu;
 extern volatile int g_android_open_load_menu;
+extern volatile int g_android_open_game_menu;
 extern volatile int g_android_autosave_request_kind;
 
 static void android_clear_saveload_requests(void)
@@ -258,13 +259,18 @@ static void android_clear_saveload_requests(void)
 
 static int android_handle_pause_saveload_request(window *wind)
 {
-	if (!g_android_open_save_menu && !g_android_open_load_menu)
+	if (!g_android_open_save_menu && !g_android_open_load_menu && !g_android_open_game_menu)
 	{
 		if (g_android_autosave_request_kind) {
 			window_close(wind);
 			return 1;
 		}
 		return 0;
+	}
+
+	if (g_android_open_game_menu) {
+		window_close(wind);
+		return 1;
 	}
 
 	if (g_android_open_save_menu) {
@@ -310,6 +316,15 @@ static int android_handle_ingame_saveload_request(void)
 		}
 
 		return saved;
+	}
+
+	if (g_android_open_game_menu) {
+		g_android_open_game_menu = 0;
+		if (Game_wind && Screen_mode == SCREEN_GAME && window_get_front() == Game_wind) {
+			HandleSystemKey(KEY_ESC);
+			return 1;
+		}
+		return 0;
 	}
 
 	if (g_android_open_save_menu) {

@@ -93,6 +93,7 @@ volatile int g_levelcomplete_active = 0;
  * The game thread consumes these in d1/d2 gamecntl.c. */
 volatile int g_android_open_save_menu = 0;
 volatile int g_android_open_load_menu = 0;
+volatile int g_android_open_game_menu = 0;
 
 /* Set on the UI thread when Android lifecycle or launcher actions request
  * an autosave.  The game thread consumes this in d1/d2 gamecntl.c. */
@@ -818,10 +819,16 @@ Java_com_dxxredux_app_MainActivity_nativeOpenLoadMenuIfSafe(JNIEnv *env, jobject
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOpenGameMenuIfSafe(JNIEnv *env, jobject thiz)
 {
-	if (!Game_wind || Screen_mode != SCREEN_GAME || window_get_front() != Game_wind)
+	window *front;
+
+	if (!Game_wind || Screen_mode != SCREEN_GAME)
 		return JNI_FALSE;
 
-	inject_key_tap(SDLK_ESCAPE);
+	front = window_get_front();
+	if (front != Game_wind && !is_pause_window_front())
+		return JNI_FALSE;
+
+	g_android_open_game_menu = 1;
 	return JNI_TRUE;
 }
 
