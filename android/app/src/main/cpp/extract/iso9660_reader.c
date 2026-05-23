@@ -216,6 +216,13 @@ static int ext_matches(const char *filename, const char **extensions)
 	return 0;
 }
 
+/* D2 Windows CD installers carry a zero/ subtree of 1-byte placeholders.
+ * These are installer cruft, not useful extracted content. */
+static int should_skip_iso_directory(const char *clean_name)
+{
+	return clean_name && strcasecmp(clean_name, "zero") == 0;
+}
+
 /* ── Directory tree walker ───────────────────────────────────────────── */
 
 #define MAX_DIR_DEPTH 16
@@ -296,6 +303,12 @@ static int walk_directory(const iso_reader_source_t *src,
 				snprintf(full_path, sizeof(full_path), "%s", clean_name);
 
 			if (flags & DR_FLAG_DIRECTORY) {
+				if (should_skip_iso_directory(clean_name)) {
+					ISO_LOG("Skipping installer cruft directory %s", full_path);
+					pos += rec_len;
+					bytes_read += rec_len;
+					continue;
+				}
 				/* Recurse into subdirectory */
 				if (out->num_files < ISO_MAX_FILES) {
 					iso_file_entry_t *e = &out->files[out->num_files];

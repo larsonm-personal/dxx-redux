@@ -16,6 +16,9 @@
 - [x] Prefer the remaining unfinished action over Done in the disc-import controller focus order
 - [x] Show cue plus bin-count summaries for SAF-linked CD sources
 - [x] Label 1-byte case-variant helper symlinks in App Storage Files and sort them next to their companion files
+- [x] Audit the recurring `d2data/zero` 1-byte placeholder subtree across committed PC-side regression fixtures
+- [x] Filter the `zero` installer-cruft subtree from ISO listing and extraction when importing affected D2 Windows CD images
+- [x] Add focused extract tests proving `zero` subtree contents stay out of the ISO listing and extracted output
 - [ ] Add follow-up runtime coverage for direct Infinite Abyss import and storage inspector behavior
 
 ## Notes
@@ -32,6 +35,7 @@
 - Storage location: the active set path in the log is `/storage/6634-3535/Android/data/com.dxxredux.app/files/imported/sets/default`, and PhysFS puts that SD-card path first in the game search path. Slow removable storage makes every missing replacement-texture probe expensive
 - Infinite Abyss over-extraction: local extracted `data_tracks` has 476 files, 368 under `winsetup`. The junk is only about 15.6 MiB, but it creates hundreds of irrelevant entries and slows import/UI inspection. Native Android ISO extraction currently passes a null extension filter, so it writes everything from the ISO data track
 - App storage files crash risk: `AdvancedSettingsPage` builds the full recursive storage file list synchronously during composition, calls `length()` for every file, and then renders every row in a dialog. On a slow SD-backed import root with hundreds of files, this can block the UI thread or overload Compose/accessibility
+- `d2data/zero` investigation: the committed PC-side regression fixtures for `Descent II (USA) (v1.1)`, `Descent II (USA) (Rerelease)`, `Descent II (Europe) (v1.1)`, `Descent II Infinite Abyss`, and both `Descent I and II - The Definitive Collection` Disc 2 variants all contain the same 44 1-byte placeholder files under `d2data/zero`; a legacy `game_data/d2 1.1 data tracks from cd image tool/ZERO` folder has the same set in uppercase. No corresponding `zero`/1-byte pattern showed up under `game_data/gog installers`
 
 ## Proposed Fix Plan
 
@@ -52,5 +56,8 @@
 - Done: `android/app/src/main/cpp/shared/pngfile_stb.c` now builds one in-memory PhysFS index of `*.ktx2`, `*.png`, `*.jpg`, and `*.tga` files after each cache clear and resolves candidate texture paths against that index before calling `PHYSFS_openRead()`. That turns most replacement lookups into hash probes plus at most one file open for a real hit, instead of repeated expensive PhysFS misses across every variant/extension pair
 - Done: `SetupActivity.kt` now keeps controller focus on the remaining unfinished disc-import action and only falls back to `Done` once no other action remains; the dialog also requests keyboard input mode before moving focus so controller highlight follows the new target reliably
 - Done: `AdvancedSettingsPage.kt` now shows cue/bin-count summaries for SAF-linked CD sources, detects 1-byte case-variant helper symlink stubs by pairing them with their larger case-insensitive companion file, labels them in both the file list and details view, and keeps them adjacent in name sort order
+- Done: `android/app/src/main/cpp/extract/iso9660_reader.c` now skips ISO directories named `zero`, which removes the repeated D2 Windows-CD 1-byte placeholder subtree from both the ISO listing and extracted output before the launcher or post-processing sees it
+- Done: `android/app/src/main/cpp/extract/test_cue_iso.c` now has a focused regression that builds an ISO with a `ZERO/` subdirectory, verifies its contents are absent from `iso_list_files()`, and verifies extraction only writes the visible file outside that subtree
 - Validation: `:app:compileDebugKotlin`, `:app:externalNativeBuildDebug`, and the scoped `android/run-code-quality.ps1 -Fix` pass all succeeded after the edits
+- Validation: `android/tests/build/Release/test_cue_iso.exe` now passes the new `iso_list_and_extract_skip_zero_dir` case; the suite still has one pre-existing unrelated failure in `file_valid_single_data` because the test binary cannot find `valid_single_data.cue` from its current working directory
 - Validation gap: the direct Infinite Abyss emulator smoke remains blocked by a broader `android/tests/test_extract.ps1` app-private staging issue for setup-command source files. The helper was partially hardened for quoted paths, but the runtime copy path still needs a dedicated fix before that test can cover multitrack direct imports reliably

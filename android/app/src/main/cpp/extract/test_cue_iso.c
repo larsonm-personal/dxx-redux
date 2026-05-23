@@ -99,6 +99,51 @@ static void lba_to_msf(int lba, int *m, int *s, int *f)
 	*m = abs_lba / (75 * 60);
 }
 
+static int append_iso_dir_record(unsigned char *buf, int pos,
+                                 const char *name,
+                                 unsigned char special_name,
+                                 int use_special_name,
+                                 unsigned int extent_lba,
+                                 unsigned int data_size,
+                                 int is_dir)
+{
+	int name_len = use_special_name ? 1 : (int) strlen(name);
+	int rec_len = 33 + name_len;
+	unsigned char *rec;
+
+	if (rec_len % 2) rec_len++;
+	rec = buf + pos;
+	memset(rec, 0, (size_t) rec_len);
+
+	rec[0] = (unsigned char) rec_len;
+	rec[2] = (unsigned char) (extent_lba & 0xFF);
+	rec[3] = (unsigned char) ((extent_lba >> 8) & 0xFF);
+	rec[4] = (unsigned char) ((extent_lba >> 16) & 0xFF);
+	rec[5] = (unsigned char) ((extent_lba >> 24) & 0xFF);
+	rec[6] = (unsigned char) ((extent_lba >> 24) & 0xFF);
+	rec[7] = (unsigned char) ((extent_lba >> 16) & 0xFF);
+	rec[8] = (unsigned char) ((extent_lba >> 8) & 0xFF);
+	rec[9] = (unsigned char) (extent_lba & 0xFF);
+	rec[10] = (unsigned char) (data_size & 0xFF);
+	rec[11] = (unsigned char) ((data_size >> 8) & 0xFF);
+	rec[12] = (unsigned char) ((data_size >> 16) & 0xFF);
+	rec[13] = (unsigned char) ((data_size >> 24) & 0xFF);
+	rec[14] = (unsigned char) ((data_size >> 24) & 0xFF);
+	rec[15] = (unsigned char) ((data_size >> 16) & 0xFF);
+	rec[16] = (unsigned char) ((data_size >> 8) & 0xFF);
+	rec[17] = (unsigned char) (data_size & 0xFF);
+	rec[25] = is_dir ? 0x02 : 0;
+	rec[28] = 1;
+	rec[31] = 1;
+	rec[32] = (unsigned char) name_len;
+	if (use_special_name)
+		rec[33] = special_name;
+	else
+		memcpy(rec + 33, name, (size_t) name_len);
+
+	return pos + rec_len;
+}
+
 /* ── Minimal ISO 9660 image builder ──────────────────────────────────── */
 
 /*
@@ -286,6 +331,84 @@ static unsigned char *build_minimal_iso_image(const char *file_name,
 
 	free(raw);
 	*out_sectors = sectors;
+	return img;
+}
+
+static unsigned char *build_iso_with_zero_subdir(const char *root_file_name,
+                                                 const unsigned char *root_file_data,
+                                                 int root_file_len,
+                                                 const char *hidden_file_name,
+                                                 const unsigned char *hidden_file_data,
+                                                 int hidden_file_len,
+                                                 int *out_sectors)
+{
+	int total = 22;
+	unsigned char *img = (unsigned char *) calloc((size_t) total, SECTOR_SIZE);
+	unsigned char user[USER_DATA_SIZE];
+	int m, s, f;
+
+	for (int i = 0; i < 16; i++) {
+		lba_to_msf(i, &m, &s, &f);
+		build_mode1_sector(img + i * SECTOR_SIZE, m, s, f, NULL);
+	}
+
+	memset(user, 0, sizeof(user));
+	user[0] = 1;
+	memcpy(user + 1, "CD001", 5);
+	user[6] = 1;
+	memcpy(user + 40, "ZERO_FILTER_TEST", 16);
+	user[156] = 34;
+	user[158] = 18;
+	user[165] = 18;
+	user[167] = 8;
+	user[172] = 0x08;
+	user[181] = 0x02;
+	user[184] = 1;
+	user[187] = 1;
+	user[188] = 1;
+	user[189] = 0x00;
+	lba_to_msf(16, &m, &s, &f);
+	build_mode1_sector(img + 16 * SECTOR_SIZE, m, s, f, user);
+
+	memset(user, 0, sizeof(user));
+	user[0] = 255;
+	memcpy(user + 1, "CD001", 5);
+	user[6] = 1;
+	lba_to_msf(17, &m, &s, &f);
+	build_mode1_sector(img + 17 * SECTOR_SIZE, m, s, f, user);
+
+	memset(user, 0, sizeof(user));
+	int pos = 0;
+	pos = append_iso_dir_record(user, pos, NULL, 0x00, 1, 18, USER_DATA_SIZE, 1);
+	pos = append_iso_dir_record(user, pos, NULL, 0x01, 1, 18, USER_DATA_SIZE, 1);
+	pos = append_iso_dir_record(user, pos, root_file_name, 0, 0, 19, (unsigned int) root_file_len, 0);
+	pos = append_iso_dir_record(user, pos, "ZERO", 0, 0, 20, USER_DATA_SIZE, 1);
+	(void) pos;
+	lba_to_msf(18, &m, &s, &f);
+	build_mode1_sector(img + 18 * SECTOR_SIZE, m, s, f, user);
+
+	memset(user, 0, sizeof(user));
+	if (root_file_data && root_file_len > 0 && root_file_len <= USER_DATA_SIZE)
+		memcpy(user, root_file_data, (size_t) root_file_len);
+	lba_to_msf(19, &m, &s, &f);
+	build_mode1_sector(img + 19 * SECTOR_SIZE, m, s, f, user);
+
+	memset(user, 0, sizeof(user));
+	pos = 0;
+	pos = append_iso_dir_record(user, pos, NULL, 0x00, 1, 20, USER_DATA_SIZE, 1);
+	pos = append_iso_dir_record(user, pos, NULL, 0x01, 1, 18, USER_DATA_SIZE, 1);
+	pos = append_iso_dir_record(user, pos, hidden_file_name, 0, 0, 21, (unsigned int) hidden_file_len, 0);
+	(void) pos;
+	lba_to_msf(20, &m, &s, &f);
+	build_mode1_sector(img + 20 * SECTOR_SIZE, m, s, f, user);
+
+	memset(user, 0, sizeof(user));
+	if (hidden_file_data && hidden_file_len > 0 && hidden_file_len <= USER_DATA_SIZE)
+		memcpy(user, hidden_file_data, (size_t) hidden_file_len);
+	lba_to_msf(21, &m, &s, &f);
+	build_mode1_sector(img + 21 * SECTOR_SIZE, m, s, f, user);
+
+	*out_sectors = total;
 	return img;
 }
 
@@ -1626,6 +1749,101 @@ static void test_iso_ext_filter(void)
 	}
 }
 
+static void test_iso_zero_dir_filter(void)
+{
+	TEST(iso_list_and_extract_skip_zero_dir);
+	{
+		int sectors;
+		const char *visible_content = "visible payload";
+		const char *hidden_content = "hidden payload";
+		unsigned char *img = build_iso_with_zero_subdir(
+		    "VISIBLE.HOG",
+		    (const unsigned char *) visible_content,
+		    (int) strlen(visible_content),
+		    "HIDDEN.HOG",
+		    (const unsigned char *) hidden_content,
+		    (int) strlen(hidden_content),
+		    &sectors);
+		char path[512];
+		snprintf(path, sizeof(path), "%s/zero_dir_test.bin", TEST_DIR);
+		FILE *f = fopen(path, "wb");
+		if (!f) {
+			FAIL("cannot create zero-dir test BIN");
+			free(img);
+			return;
+		}
+		fwrite(img, SECTOR_SIZE, sectors, f);
+		fclose(f);
+		free(img);
+
+		int fd = open_bin(path);
+		if (fd < 0) {
+			FAIL("cannot open zero-dir test BIN");
+			return;
+		}
+
+		iso_file_list_t list;
+		if (iso_list_files(fd, 0, sectors, &list) < 0) {
+			FAIL("iso_list_files failed");
+			close_fd(fd);
+			return;
+		}
+
+		int found_visible = 0;
+		for (int i = 0; i < list.num_files; i++) {
+			const char *listed_path = list.files[i].path;
+			if (strcmp(listed_path, "visible.hog") == 0)
+				found_visible = 1;
+			if (strcmp(listed_path, "zero") == 0 ||
+			    strstr(listed_path, "zero/") == listed_path ||
+			    strstr(listed_path, "/zero/") != NULL) {
+				FAIL("zero subtree should be skipped from listing");
+				close_fd(fd);
+				return;
+			}
+		}
+		if (!found_visible) {
+			FAIL("visible.hog missing from listing");
+			close_fd(fd);
+			return;
+		}
+
+		char out_dir[512];
+		char visible_path[512];
+		char hidden_path[512];
+		snprintf(out_dir, sizeof(out_dir), "%s/zero_dir_out", TEST_DIR);
+		snprintf(visible_path, sizeof(visible_path), "%s/visible.hog", out_dir);
+		snprintf(hidden_path, sizeof(hidden_path), "%s/zero/hidden.hog", out_dir);
+		remove(visible_path);
+		remove(hidden_path);
+		mkdir_p(out_dir);
+
+		static const char *hog_only[] = { "hog", NULL };
+		int extracted = iso_extract_files(fd, 0, sectors, &list, out_dir,
+		                                  hog_only, NULL, NULL);
+		close_fd(fd);
+		if (extracted != 1) {
+			FAIL("should extract only the visible file");
+			return;
+		}
+
+		FILE *visible = fopen(visible_path, "rb");
+		if (!visible) {
+			FAIL("visible extracted file missing");
+			return;
+		}
+		fclose(visible);
+
+		FILE *hidden = fopen(hidden_path, "rb");
+		if (hidden) {
+			fclose(hidden);
+			FAIL("zero subtree file should not be extracted");
+			return;
+		}
+		PASS();
+	}
+}
+
 /* ── Test: Full round-trip integration ───────────────────────────────── */
 
 static void test_integration_round_trip(void)
@@ -1805,6 +2023,7 @@ int main(int argc, char *argv[])
 	test_iso_name_cleaning();
 	test_iso_invalid_pvd();
 	test_iso_ext_filter();
+	test_iso_zero_dir_filter();
 
 	printf("\n--- Integration Tests ---\n");
 	test_integration_round_trip();
