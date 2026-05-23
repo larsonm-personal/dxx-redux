@@ -20,9 +20,11 @@
 - `TouchOverlayView.kt` now treats `Energy->Shield` as the only held remaining action in the controller-only extra menu. A-down presses the binding, A-up releases it, and the menu stays open instead of collapsing immediately
 - `d2/main/lighting.c` now shows `No headlight boost` when the headlight toggle is triggered without owning the headlight pickup
 - `game_introspect.cpp` now emits `redbook.init_status` and `redbook.num_audio_tracks`, backed by new status reporting in `rbaudio_bin.c`
+- `rbaudio_bin.c` now treats SAF-backed `/proc/self/fd/<n>` BIN entries as duplicated native fds and uses `fstat` for size lookup instead of reopening the proc path like a normal file
+- `songs.c` in both `d1/` and `d2/` now JSON-escapes track names, and `jni_music_control.c` uses a larger heap buffer for `nativeGetTrackList()` so the in-game panel is less likely to collapse to `[]` on malformed or truncated JSON
 - A local attempt to bring up the emulator through `android\Run-Emulator.ps1` did not yield a usable device in this turn because the helper hit a separate Kotlin daemon temp-backup failure during its APK build path
 
 ## Validation targets
 - Completed: `cd android; .\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ControllerMenuCycleTest --console=plain`
-- Completed: `cd android; .\gradlew.bat :app:externalNativeBuildDebug --console=plain`
+- Completed twice after the Redbook follow-up edits: `cd android; .\gradlew.bat :app:externalNativeBuildDebug --console=plain`
 - Remaining on-device follow-up: launch the game with an imported multi-BIN source, then inspect `redbook.init_status`, `redbook.num_tracks`, and `redbook.num_audio_tracks` through the existing introspection path

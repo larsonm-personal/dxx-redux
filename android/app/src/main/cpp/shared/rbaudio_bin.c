@@ -21,6 +21,11 @@
 #include <ctype.h>
 #include <stdarg.h>
 
+#ifdef ANDROID
+#include <unistd.h>
+#include <sys/stat.h>
+#endif
+
 #include <SDL.h>
 #include <SDL_mixer.h>
 #include <physfs.h>
@@ -68,6 +73,17 @@ typedef struct {
 	FILE *sf;        /* set when using stdio  */
 } bin_handle_t;
 
+#ifdef ANDROID
+static int path_get_proc_self_fd(const char *path)
+{
+	int fd = -1;
+	if (!path) return -1;
+	if (sscanf(path, "/proc/self/fd/%d", &fd) == 1 && fd >= 0)
+		return fd;
+	return -1;
+}
+#endif
+
 static int path_is_local(const char *path)
 {
 	return path && (path[0] == '/' ||
@@ -84,6 +100,21 @@ static void bh_open(bin_handle_t *h, const char *path)
 {
 	h->pf = NULL;
 	h->sf = NULL;
+	#ifdef ANDROID
+	{
+		int proc_fd = path_get_proc_self_fd(path);
+		if (proc_fd >= 0) {
+			int dup_fd = dup(proc_fd);
+			if (dup_fd >= 0) {
+				h->sf = fdopen(dup_fd, "rb");
+				if (!h->sf)
+					close(dup_fd);
+			}
+			if (h->sf)
+				return;
+		}
+	}
+	#endif
 	if (path_is_local(path)) {
 		h->sf = fopen(path, "rb");
 	} else {
@@ -99,6 +130,14 @@ static PHYSFS_sint64 bh_length(const bin_handle_t *h)
 {
 	if (h->pf) return PHYSFS_fileLength(h->pf);
 	if (h->sf) {
+		#ifdef ANDROID
+		int fd = fileno(h->sf);
+		if (fd >= 0) {
+			struct stat st;
+			if (fstat(fd, &st) == 0 && st.st_size > 0)
+				return (PHYSFS_sint64) st.st_size;
+		}
+		#endif
 		long cur = ftell(h->sf);
 		fseek(h->sf, 0, SEEK_END);
 		long len = ftell(h->sf);

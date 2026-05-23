@@ -716,6 +716,62 @@ int songs_get_track_info(int *out_type, int *out_track, int *out_total,
 	}
 }
 
+static void songs_json_escape(const char *src, char *dst, int dst_size)
+{
+	int pos = 0;
+	unsigned char ch;
+
+	if (!dst || dst_size <= 0)
+		return;
+
+	if (!src)
+		src = "";
+
+	while ((ch = (unsigned char) *src++) != '\0' && pos < dst_size - 1)
+	{
+		switch (ch)
+		{
+			case '\\':
+			case '"':
+				if (pos >= dst_size - 2)
+					goto done;
+				dst[pos++] = '\\';
+				dst[pos++] = (char) ch;
+				break;
+
+			case '\n':
+				if (pos >= dst_size - 2)
+					goto done;
+				dst[pos++] = '\\';
+				dst[pos++] = 'n';
+				break;
+
+			case '\r':
+				if (pos >= dst_size - 2)
+					goto done;
+				dst[pos++] = '\\';
+				dst[pos++] = 'r';
+				break;
+
+			case '\t':
+				if (pos >= dst_size - 2)
+					goto done;
+				dst[pos++] = '\\';
+				dst[pos++] = 't';
+				break;
+
+			default:
+				if (ch < 0x20)
+					ch = ' ';
+				dst[pos++] = (char) ch;
+				break;
+		}
+	}
+
+done:
+	dst[pos] = '\0';
+}
+
 /*
  * Build a JSON array of playable tracks for the track picker.
  * Writes into caller-supplied buffer.  Returns 0 on success.
@@ -734,12 +790,15 @@ int songs_get_track_list(char *buf, int buf_size)
 			int n = Num_bim_songs - SONG_FIRST_LEVEL_SONG;
 			for (i = 0; i < n && pos < buf_size - 2; i++)
 			{
+				char escaped_name[256];
 				if (i > 0)
 					pos += snprintf(buf + pos, buf_size - pos, ",");
+				songs_json_escape(BIMSongs[SONG_FIRST_LEVEL_SONG + i].filename,
+				                  escaped_name, sizeof(escaped_name));
 				pos += snprintf(buf + pos, buf_size - pos,
 					"{\"index\":%d,\"name\":\"%s\"}",
 					SONG_FIRST_LEVEL_SONG + i,
-					BIMSongs[SONG_FIRST_LEVEL_SONG + i].filename);
+					escaped_name);
 			}
 			break;
 		}
@@ -748,14 +807,17 @@ int songs_get_track_list(char *buf, int buf_size)
 			int total = RBAGetNumberOfTracks();
 			for (i = 1; i <= total && pos < buf_size - 2; i++)
 			{
+				char escaped_name[256];
+				const char *name;
 				if (!RBAIsAudioTrack(i))
 					continue;
-				const char *name = RBAGetTrackName(i);
+				name = RBAGetTrackName(i);
 				if (pos > 1)
 					pos += snprintf(buf + pos, buf_size - pos, ",");
+				songs_json_escape(name ? name : "", escaped_name, sizeof(escaped_name));
 				pos += snprintf(buf + pos, buf_size - pos,
 					"{\"index\":%d,\"name\":\"%s\"}",
-					i, name ? name : "");
+					i, escaped_name);
 			}
 			break;
 		}
@@ -765,12 +827,14 @@ int songs_get_track_list(char *buf, int buf_size)
 			int n = jukebox_numtracks();
 			for (i = 0; i < n && pos < buf_size - 2; i++)
 			{
+				char escaped_name[256];
 				const char *name = jukebox_get_track_name(i);
 				if (i > 0)
 					pos += snprintf(buf + pos, buf_size - pos, ",");
+				songs_json_escape(name ? name : "", escaped_name, sizeof(escaped_name));
 				pos += snprintf(buf + pos, buf_size - pos,
 					"{\"index\":%d,\"name\":\"%s\"}",
-					i, name ? name : "");
+					i, escaped_name);
 			}
 			break;
 		}

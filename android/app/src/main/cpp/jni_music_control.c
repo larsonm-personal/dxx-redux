@@ -7,6 +7,7 @@
  */
 
 #include <jni.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <android/log.h>
@@ -108,7 +109,13 @@ JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetTrackList(
     JNIEnv *env, jobject thiz)
 {
-	char buf[4096];
-	songs_get_track_list(buf, sizeof(buf));
-	return (*env)->NewStringUTF(env, buf);
+	char *buf = (char *) malloc(32768);
+	jstring result;
+	(void) thiz;
+	if (!buf)
+		return (*env)->NewStringUTF(env, "[]");
+	songs_get_track_list(buf, 32768);
+	result = (*env)->NewStringUTF(env, buf);
+	free(buf);
+	return result;
 }
