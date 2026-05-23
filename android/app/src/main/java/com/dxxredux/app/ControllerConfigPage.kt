@@ -457,11 +457,31 @@ private val D1_COL2_MAP =
         45 to 47,
     )
 
-private data class JoyPairsResult(
+internal data class JoyPairsResult(
     val indices: IntArray,
     val values: IntArray,
     val combiners: List<Triple<Int, Int, Int>>,
 )
+
+private const val D1_JOY_SETTINGS_SIZE = 50
+private const val D2_JOY_SETTINGS_SIZE = 56
+
+internal fun buildJoySettingsArray(result: JoyPairsResult, variant: String): ByteArray {
+    val size = if (variant == "d1") D1_JOY_SETTINGS_SIZE else D2_JOY_SETTINGS_SIZE
+    val settings = ByteArray(size) { 0xFF.toByte() }
+
+    // Invert slots default to 0; all other slots default to 0xFF.
+    for (invertIndex in AXIS_KC_INDEX.values.map { it + 1 }) {
+        if (invertIndex < size) settings[invertIndex] = 0
+    }
+
+    for (i in result.indices.indices) {
+        val index = result.indices[i]
+        if (index in 0 until size) settings[index] = (result.values[i] and 0xFF).toByte()
+    }
+
+    return settings
+}
 
 // ── Config file I/O ─────────────────────────────────────────────────────────
 
@@ -469,13 +489,13 @@ private const val CONFIG_FILENAME = "controller_config.json"
 
 // Bump when the config format changes to force regeneration from defaults.
 // SetupActivity.writeDefaultControllerConfig checks this on startup.
-internal const val CONTROLLER_CONFIG_VERSION = 2
+internal const val CONTROLLER_CONFIG_VERSION = 4
 
 /**
  * Collect (kc_index, value) pairs for joystick settings from human-readable
  * bindings using the given game variant's kconfig index mapping.
  */
-private fun buildJoyPairs(
+internal fun buildJoyPairs(
     bindings: Map<String, String>,
     inverts: Set<String>,
     variant: String,
@@ -662,8 +682,8 @@ internal fun saveConfig(
     // D1 but index 50 in D2).
     val d1Result = buildJoyPairs(bindings, inverts, "d1")
     val d2Result = buildJoyPairs(bindings, inverts, "d2")
-    val d1JoySettings = NativePilotPatcher.nativeBuildJoySettings(d1Result.indices, d1Result.values)
-    val d2JoySettings = NativePilotPatcher.nativeBuildJoySettings(d2Result.indices, d2Result.values)
+    val d1JoySettings = buildJoySettingsArray(d1Result, "d1")
+    val d2JoySettings = buildJoySettingsArray(d2Result, "d2")
     val joySettings = if (gameVariant == "d1") d1JoySettings else d2JoySettings
 
     // Debug: log button slots (kc indices 0-12) to help diagnose trigger conflicts
