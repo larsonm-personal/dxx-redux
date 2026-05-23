@@ -30,19 +30,165 @@
 
 #define TEXTURE_LOOKUP_MISS_CACHE_SIZE      16384u
 #define TEXTURE_LOOKUP_MISS_CACHE_MAX_COUNT ((TEXTURE_LOOKUP_MISS_CACHE_SIZE * 3u) / 4u)
+#define TEXTURE_LOOKUP_FILE_INDEX_SIZE      65536u
+#define TEXTURE_LOOKUP_FILE_INDEX_MAX_COUNT ((TEXTURE_LOOKUP_FILE_INDEX_SIZE * 3u) / 4u)
 
 static char *g_texture_lookup_miss_cache[TEXTURE_LOOKUP_MISS_CACHE_SIZE];
 static unsigned int g_texture_lookup_miss_cache_count = 0;
+static char *g_texture_lookup_file_index[TEXTURE_LOOKUP_FILE_INDEX_SIZE];
+static unsigned int g_texture_lookup_file_index_count = 0;
+static int g_texture_lookup_file_index_ready = 0;
+
+static unsigned char texture_lookup_ascii_fold(unsigned char c)
+{
+	if (c == '\\')
+		return '/';
+	if (c >= 'A' && c <= 'Z')
+		return (unsigned char) (c - 'A' + 'a');
+	return c;
+}
 
 static unsigned int texture_lookup_miss_cache_hash(const char *filename)
 {
 	unsigned int hash = 2166136261u;
 
 	while (*filename) {
-		hash ^= (unsigned char) *filename++;
+		hash ^= texture_lookup_ascii_fold((unsigned char) *filename++);
 		hash *= 16777619u;
 	}
 	return hash;
+}
+
+static int texture_lookup_path_equals_ci(const char *left, const char *right)
+{
+	for (;;) {
+		unsigned char left_c = texture_lookup_ascii_fold((unsigned char) *left++);
+		unsigned char right_c = texture_lookup_ascii_fold((unsigned char) *right++);
+
+		if (left_c != right_c)
+			return 0;
+		if (!left_c)
+			return 1;
+	}
+}
+
+static int texture_lookup_is_indexed_extension(const char *filename)
+{
+	const char *dot = strrchr(filename, '.');
+
+	if (!dot)
+		return 0;
+
+	return texture_lookup_path_equals_ci(dot, ".ktx2") ||
+	       texture_lookup_path_equals_ci(dot, ".png") ||
+	       texture_lookup_path_equals_ci(dot, ".jpg") ||
+	       texture_lookup_path_equals_ci(dot, ".tga");
+}
+
+static void texture_lookup_file_index_add(const char *filename)
+{
+	unsigned int index;
+	unsigned int probe;
+	char *copy;
+	size_t len;
+
+	if (!filename || !filename[0] || !texture_lookup_is_indexed_extension(filename))
+		return;
+	if (g_texture_lookup_file_index_count >= TEXTURE_LOOKUP_FILE_INDEX_MAX_COUNT)
+		return;
+
+	index = texture_lookup_miss_cache_hash(filename) & (TEXTURE_LOOKUP_FILE_INDEX_SIZE - 1u);
+	for (probe = 0; probe < TEXTURE_LOOKUP_FILE_INDEX_SIZE; probe++) {
+		char *entry = g_texture_lookup_file_index[index];
+
+		if (!entry)
+			break;
+		if (texture_lookup_path_equals_ci(entry, filename))
+			return;
+		index = (index + 1u) & (TEXTURE_LOOKUP_FILE_INDEX_SIZE - 1u);
+	}
+	if (probe >= TEXTURE_LOOKUP_FILE_INDEX_SIZE)
+		return;
+
+	len = strlen(filename) + 1u;
+	copy = (char *) malloc(len);
+	if (!copy)
+		return;
+	memcpy(copy, filename, len);
+	g_texture_lookup_file_index[index] = copy;
+	g_texture_lookup_file_index_count++;
+}
+
+static void texture_lookup_build_file_index_recursive(const char *path)
+{
+	char **list;
+	char **entry;
+
+	list = PHYSFS_enumerateFiles(path && path[0] ? path : "");
+	if (!list)
+		return;
+
+	for (entry = list; *entry; entry++) {
+		const char *leaf = *entry;
+		PHYSFS_Stat statbuf;
+		char *child_path;
+		size_t path_len = path && path[0] ? strlen(path) : 0u;
+		size_t leaf_len = strlen(leaf);
+		size_t child_len = path_len ? (path_len + 1u + leaf_len + 1u) : (leaf_len + 1u);
+
+		child_path = (char *) malloc(child_len);
+		if (!child_path)
+			continue;
+
+		if (path_len)
+			snprintf(child_path, child_len, "%s/%s", path, leaf);
+		else
+			memcpy(child_path, leaf, child_len);
+
+		if (PHYSFS_stat(child_path, &statbuf)) {
+			if (statbuf.filetype == PHYSFS_FILETYPE_DIRECTORY)
+				texture_lookup_build_file_index_recursive(child_path);
+			else if (statbuf.filetype == PHYSFS_FILETYPE_REGULAR)
+				texture_lookup_file_index_add(child_path);
+		}
+
+		free(child_path);
+	}
+
+	PHYSFS_freeList(list);
+}
+
+static void texture_lookup_ensure_file_index(void)
+{
+	if (g_texture_lookup_file_index_ready)
+		return;
+
+	g_texture_lookup_file_index_ready = 1;
+	texture_lookup_build_file_index_recursive("");
+}
+
+static const char *texture_lookup_resolve_indexed_path(const char *filename)
+{
+	unsigned int index;
+	unsigned int probe;
+
+	if (!filename || !filename[0])
+		return NULL;
+	if (!texture_lookup_is_indexed_extension(filename))
+		return filename;
+
+	texture_lookup_ensure_file_index();
+	index = texture_lookup_miss_cache_hash(filename) & (TEXTURE_LOOKUP_FILE_INDEX_SIZE - 1u);
+	for (probe = 0; probe < TEXTURE_LOOKUP_FILE_INDEX_SIZE; probe++) {
+		const char *entry = g_texture_lookup_file_index[index];
+
+		if (!entry)
+			return NULL;
+		if (texture_lookup_path_equals_ci(entry, filename))
+			return entry;
+		index = (index + 1u) & (TEXTURE_LOOKUP_FILE_INDEX_SIZE - 1u);
+	}
+	return NULL;
 }
 
 void clear_texture_lookup_cache(void)
@@ -53,7 +199,13 @@ void clear_texture_lookup_cache(void)
 		free(g_texture_lookup_miss_cache[i]);
 		g_texture_lookup_miss_cache[i] = NULL;
 	}
+	for (i = 0; i < TEXTURE_LOOKUP_FILE_INDEX_SIZE; i++) {
+		free(g_texture_lookup_file_index[i]);
+		g_texture_lookup_file_index[i] = NULL;
+	}
 	g_texture_lookup_miss_cache_count = 0;
+	g_texture_lookup_file_index_count = 0;
+	g_texture_lookup_file_index_ready = 0;
 }
 
 static int texture_lookup_miss_cache_contains(const char *filename)
@@ -121,15 +273,22 @@ int read_png(const char *filename, png_data *pdata)
 	unsigned char *fbuf;
 	int w, h, channels;
 	unsigned char *pixels;
+	const char *resolved_filename;
 
 	if (!filename || !pdata)
 		return 0;
-	if (texture_lookup_miss_cache_contains(filename))
+	resolved_filename = texture_lookup_resolve_indexed_path(filename);
+	if (!resolved_filename)
+		return 0;
+	if (texture_lookup_miss_cache_contains(filename) ||
+	    (resolved_filename != filename && texture_lookup_miss_cache_contains(resolved_filename)))
 		return 0;
 
-	fp = PHYSFS_openRead(filename);
+	fp = PHYSFS_openRead(resolved_filename);
 	if (!fp) {
 		texture_lookup_miss_cache_add(filename);
+		if (resolved_filename != filename)
+			texture_lookup_miss_cache_add(resolved_filename);
 		return 0;
 	}
 
@@ -195,15 +354,22 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 	PHYSFS_File *fp;
 	PHYSFS_sint64 fsize;
 	unsigned char *fbuf;
+	const char *resolved_filename;
 
 	if (!filename || !edata)
 		return 0;
-	if (texture_lookup_miss_cache_contains(filename))
+	resolved_filename = texture_lookup_resolve_indexed_path(filename);
+	if (!resolved_filename)
+		return 0;
+	if (texture_lookup_miss_cache_contains(filename) ||
+	    (resolved_filename != filename && texture_lookup_miss_cache_contains(resolved_filename)))
 		return 0;
 
-	fp = PHYSFS_openRead(filename);
+	fp = PHYSFS_openRead(resolved_filename);
 	if (!fp) {
 		texture_lookup_miss_cache_add(filename);
+		if (resolved_filename != filename)
+			texture_lookup_miss_cache_add(resolved_filename);
 		return 0;
 	}
 
