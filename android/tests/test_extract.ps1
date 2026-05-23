@@ -1103,7 +1103,7 @@ Send-SetupCommand 'switch_set' -Name $TEST_SET
 Start-Sleep -Seconds 1
 
 # Launch the game (pass game type from spec so the correct .so is loaded)
-$launchGame = if ($spec.game -match 'd1') { 'd1' } else { 'd2' }
+$launchGame = $gameKey
 Send-SetupCommand 'launch' -Game $launchGame
 # Poll for game process to appear (replaces fixed sleep)
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
