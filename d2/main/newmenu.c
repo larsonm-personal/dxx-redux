@@ -111,6 +111,14 @@ grs_bitmap nm_background, nm_background1;
 grs_bitmap *nm_background_sub = NULL;
 #ifdef ANDROID
 static ubyte nm_background1_palette[768];  // saved palette from the background PCX
+
+static int android_tap_outside_game_menu(newmenu *menu, int mx, int my)
+{
+	if (!menu || !menu->subtitle || strcmp(menu->subtitle, "Game Menu") != 0)
+		return 0;
+	return mx < menu->x - BORDERX || mx > menu->x + menu->w + BORDERX ||
+		my < menu->y - BORDERY || my > menu->y + menu->h + BORDERY;
+}
 #endif
 
 newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * item, int (*subfunction)(newmenu *menu, d_event *event, void *userdata), void *userdata, int citem, char * filename, int TinyMode, int TabsFlag );
@@ -879,6 +887,18 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 					}
 				}
 			}
+
+		#ifdef ANDROID
+			if ((event->type == EVENT_MOUSE_BUTTON_UP) && !menu->drag_happened)
+			{
+				mouse_get_pos(&mx, &my, &mz);
+				if (android_tap_outside_game_menu(menu, mx, my)) {
+					window_close(menu->wind);
+					gr_set_current_canvas(save_canvas);
+					return 1;
+				}
+			}
+		#endif
 
 			if ((event->type == EVENT_MOUSE_BUTTON_UP) && !menu->all_text && !menu->drag_happened && (menu->citem != -1) && (menu->items[menu->citem].type == NM_TYPE_MENU) )
 			{

@@ -363,18 +363,25 @@ Java_com_dxxredux_app_MainActivity_nativeQuit(JNIEnv *env, jobject thiz)
 #include "player.h"
 #include "weapon.h"
 
+#ifdef DXX_BUILD_DESCENT_II
+extern ubyte Primary_last_was_super[MAX_PRIMARY_WEAPONS];
+extern ubyte Secondary_last_was_super[MAX_SECONDARY_WEAPONS];
+#endif
+
 /* Shared constant: PLAYER_FLAGS_AMMO_RACK = 128 (duplicated in WeaponState.kt, D2 only) */
 /* Array layout: [0]=priFlags, [1]=secFlags, [2]=playerFlags,
  *   [3..12]=priAmmo, [13..22]=secAmmo, [23..32]=priMax, [33..42]=secMax,
- *   [43]=currentPrimary, [44]=currentSecondary, [45]=currentBomb
- * Indices 43-45 duplicated in WeaponState.kt */
+ *   [43]=currentPrimary, [44]=currentSecondary, [45]=currentBomb,
+ *   [46]=laserLevel, [47..51]=primaryLastWasSuper[0..4],
+ *   [52..56]=secondaryLastWasSuper[0..4]
+ * Indices 43-56 duplicated in WeaponState.kt */
 
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thiz)
 {
 	extern int Player_num;
 
-	enum { WS_SIZE = 46 };
+	enum { WS_PRIMARY_PAIR_SLOTS = 5, WS_SECONDARY_PAIR_SLOTS = 5, WS_SIZE = 57 };
 	jint buf[WS_SIZE];
 	memset(buf, 0, sizeof(buf));
 
@@ -402,6 +409,13 @@ Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thi
 	buf[43] = (jint) Players[Player_num].primary_weapon;
 	buf[44] = (jint) Players[Player_num].secondary_weapon;
 	buf[45] = (jint) which_bomb();
+	buf[46] = (jint) Players[Player_num].laser_level;
+#ifdef DXX_BUILD_DESCENT_II
+	for (i = 0; i < WS_PRIMARY_PAIR_SLOTS && i < MAX_PRIMARY_WEAPONS; i++)
+		buf[47 + i] = (jint) Primary_last_was_super[i];
+	for (i = 0; i < WS_SECONDARY_PAIR_SLOTS && i < MAX_SECONDARY_WEAPONS; i++)
+		buf[47 + WS_PRIMARY_PAIR_SLOTS + i] = (jint) Secondary_last_was_super[i];
+#endif
 
 	jintArray result = (*env)->NewIntArray(env, WS_SIZE);
 	if (result)

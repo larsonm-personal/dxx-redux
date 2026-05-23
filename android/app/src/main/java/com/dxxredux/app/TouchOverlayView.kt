@@ -182,6 +182,8 @@ internal fun moveRemainingActionSelection(
 
 private const val SECONDARY_PROXIMITY_INDEX = 2
 private const val SECONDARY_SMART_MINE_INDEX = 7
+private const val WEAPON_WHEEL_SLOT_COUNT = 5
+private const val D2_SUPER_WEAPON_OFFSET = 5
 
 private val d1PrimarySelectionNames =
     listOf(
@@ -229,6 +231,52 @@ private val d2SecondarySelectionNames =
         "Earthshaker",
     )
 
+private val d1PrimaryWheelSelectionNames =
+    listOf(
+        "Laser",
+        "Vulcan",
+        "Spreadfire",
+        "Plasma",
+        "Fusion",
+    )
+
+private val d2PrimaryWheelSelectionNames =
+    listOf(
+        "Laser",
+        "Vulcan",
+        "Spreadfire",
+        "Plasma",
+        "Fusion",
+        "Laser",
+        "Gauss",
+        "Helix",
+        "Phoenix",
+        "Omega",
+    )
+
+private val d1SecondaryWheelSelectionNames =
+    listOf(
+        "Concussion",
+        "Homing",
+        "Proximity",
+        "Smart",
+        "Mega",
+    )
+
+private val d2SecondaryWheelSelectionNames =
+    listOf(
+        "Concussion",
+        "Homing",
+        "Proximity",
+        "Smart",
+        "Mega",
+        "Flash",
+        "Guided",
+        "Smart\nMine",
+        "Mercury",
+        "Earthshaker",
+    )
+
 private fun buttonUsesBindingIndicator(
     button: ButtonControl,
     binding: Int,
@@ -255,6 +303,155 @@ private fun currentBombName(
             else -> null
         }
     }
+
+private fun defaultWeaponWheelSlotLabel(
+    gameVariant: String,
+    isPrimary: Boolean,
+    slotIndex: Int,
+): String {
+    val names =
+        when {
+            isPrimary && gameVariant == "d1" -> d1PrimaryWheelSelectionNames
+            isPrimary -> d2PrimaryWheelSelectionNames
+            gameVariant == "d1" -> d1SecondaryWheelSelectionNames
+            else -> d2SecondaryWheelSelectionNames
+        }
+    return names.getOrElse(slotIndex) {
+        if (isPrimary) {
+            "Laser"
+        } else {
+            "Concussion"
+        }
+    }
+}
+
+private fun laserWheelLabel(weaponState: WeaponState?): String {
+    val level = weaponState?.laserLevel?.plus(1)?.coerceAtLeast(1)
+    return if (level != null) {
+        "Laser\nlvl $level"
+    } else {
+        "Laser"
+    }
+}
+
+private fun currentWeaponWheelSlotIndex(
+    gameVariant: String,
+    currentWeapon: Int,
+): Int? =
+    when {
+        currentWeapon in 0 until WEAPON_WHEEL_SLOT_COUNT -> currentWeapon
+        gameVariant == "d2" &&
+            currentWeapon in D2_SUPER_WEAPON_OFFSET until D2_SUPER_WEAPON_OFFSET + WEAPON_WHEEL_SLOT_COUNT -> {
+            currentWeapon - D2_SUPER_WEAPON_OFFSET
+        }
+
+        else -> null
+    }
+
+private fun resolvePairedWheelWeaponIndex(
+    slotIndex: Int,
+    currentWeapon: Int,
+    lastWasSuper: Boolean,
+    baseSelectable: Boolean,
+    superSelectable: Boolean,
+    baseOwned: Boolean,
+    superOwned: Boolean,
+): Int? {
+    if (currentWeapon == slotIndex || currentWeapon == slotIndex + D2_SUPER_WEAPON_OFFSET) {
+        return currentWeapon
+    }
+
+    fun isSelectable(index: Int) = if (index == slotIndex) baseSelectable else superSelectable
+
+    fun isOwned(index: Int) = if (index == slotIndex) baseOwned else superOwned
+
+    var preferredIndex =
+        if (lastWasSuper) {
+            slotIndex + D2_SUPER_WEAPON_OFFSET
+        } else {
+            slotIndex
+        }
+    if (isSelectable(preferredIndex)) {
+        return preferredIndex
+    }
+
+    preferredIndex =
+        if (preferredIndex == slotIndex) {
+            slotIndex + D2_SUPER_WEAPON_OFFSET
+        } else {
+            slotIndex
+        }
+    if (isSelectable(preferredIndex)) {
+        return preferredIndex
+    }
+    if (isOwned(preferredIndex)) {
+        return preferredIndex
+    }
+
+    preferredIndex =
+        if (preferredIndex == slotIndex) {
+            slotIndex + D2_SUPER_WEAPON_OFFSET
+        } else {
+            slotIndex
+        }
+    return preferredIndex.takeIf(::isOwned)
+}
+
+internal fun weaponWheelSlotLabel(
+    gameVariant: String,
+    weaponState: WeaponState?,
+    isPrimary: Boolean,
+    slotIndex: Int,
+): String {
+    val fallback = defaultWeaponWheelSlotLabel(gameVariant, isPrimary, slotIndex)
+    if (slotIndex !in 0 until WEAPON_WHEEL_SLOT_COUNT) {
+        return fallback
+    }
+    if (isPrimary && slotIndex == 0) {
+        return laserWheelLabel(weaponState)
+    }
+    if (weaponState == null || gameVariant != "d2") {
+        return fallback
+    }
+
+    val resolvedIndex =
+        if (isPrimary) {
+            resolvePairedWheelWeaponIndex(
+                slotIndex = slotIndex,
+                currentWeapon = weaponState.currentPrimary,
+                lastWasSuper = weaponState.primarySlotPrefersSuper(slotIndex),
+                baseSelectable = weaponState.hasPrimary(slotIndex),
+                superSelectable = weaponState.hasPrimary(slotIndex + D2_SUPER_WEAPON_OFFSET),
+                baseOwned = weaponState.hasPrimary(slotIndex),
+                superOwned = weaponState.hasPrimary(slotIndex + D2_SUPER_WEAPON_OFFSET),
+            )
+        } else {
+            resolvePairedWheelWeaponIndex(
+                slotIndex = slotIndex,
+                currentWeapon = weaponState.currentSecondary,
+                lastWasSuper = weaponState.secondarySlotPrefersSuper(slotIndex),
+                baseSelectable = weaponState.hasSecondary(slotIndex) && weaponState.secondarySlotHasAmmo(slotIndex),
+                superSelectable =
+                    weaponState.hasSecondary(slotIndex + D2_SUPER_WEAPON_OFFSET) &&
+                        weaponState.secondarySlotHasAmmo(slotIndex + D2_SUPER_WEAPON_OFFSET),
+                baseOwned = weaponState.hasSecondary(slotIndex),
+                superOwned = weaponState.hasSecondary(slotIndex + D2_SUPER_WEAPON_OFFSET),
+            )
+        } ?: return fallback
+
+    val names = if (isPrimary) d2PrimaryWheelSelectionNames else d2SecondaryWheelSelectionNames
+    return names.getOrNull(resolvedIndex) ?: fallback
+}
+
+internal fun weaponWheelCurrentLabel(
+    gameVariant: String,
+    weaponState: WeaponState?,
+    isPrimary: Boolean,
+): String? {
+    val currentWeapon = if (isPrimary) weaponState?.currentPrimary else weaponState?.currentSecondary
+    val slotIndex = currentWeapon?.let { currentWeaponWheelSlotIndex(gameVariant, it) } ?: return null
+    return weaponWheelSlotLabel(gameVariant, weaponState, isPrimary, slotIndex)
+}
 
 private fun currentPrimaryName(
     gameVariant: String,
@@ -1975,10 +2172,8 @@ class TouchOverlayView
                 }
                 if (!rm.isOpen && ws != null && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
                     val isPrimary = rm.control.id == "PriWpn"
-                    val curIdx = if (isPrimary) ws.currentPrimary else ws.currentSecondary
-                    rm.quiescentLabel = rm.control.segments
-                        .firstOrNull { it.weaponIndex == curIdx || it.weaponIndex == curIdx - 5 }
-                        ?.label ?: rm.control.id.take(4)
+                    rm.quiescentLabel =
+                        weaponWheelCurrentLabel(gameVariant, ws, isPrimary) ?: rm.control.id.take(4)
                 }
                 if (!rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
             }
@@ -2390,13 +2585,14 @@ class TouchOverlayView
                 canvas.drawCircle(state.triggerX, state.triggerY, state.triggerRadius, paintRing)
                 paintBtnLabel.alpha = (0xAA * eff).toInt()
                 val label = state.quiescentLabel.ifEmpty { state.control.id.take(4) }
-                paintBtnLabel.textSize = state.triggerRadius * (if (label.length > 5) 0.4f else 0.6f)
-                canvas.drawText(
-                    label,
-                    state.triggerX,
-                    state.triggerY + paintBtnLabel.textSize * 0.35f,
-                    paintBtnLabel,
-                )
+                paintBtnLabel.textSize =
+                    state.triggerRadius *
+                        when {
+                            '\n' in label -> 0.28f
+                            label.length > 5 -> 0.4f
+                            else -> 0.6f
+                        }
+                drawCenteredTextBlock(canvas, label, state.triggerX, state.triggerY, paintBtnLabel)
                 return
             }
 
@@ -2442,15 +2638,25 @@ class TouchOverlayView
                 } else {
                     paintBtnLabel.textSize = r * 0.11f
                 }
-                canvas.drawText(segs[i].label, lx, ly + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+                drawCenteredTextBlock(canvas, segs[i].label, lx, ly, paintBtnLabel)
                 if (active) paintBtnLabel.typeface = Typeface.DEFAULT
                 paintBtnLabel.textSize = centerR * 0.45f
-                canvas.drawText(
-                    state.control.centerLabel,
-                    cx,
-                    cy + paintBtnLabel.textSize * 0.35f,
-                    paintBtnLabel,
-                )
+                drawCenteredTextBlock(canvas, state.control.centerLabel, cx, cy, paintBtnLabel)
+            }
+        }
+
+        private fun drawCenteredTextBlock(
+            canvas: Canvas,
+            text: String,
+            centerX: Float,
+            centerY: Float,
+            paint: Paint,
+        ) {
+            val lines = text.split('\n')
+            val lineStep = paint.textSize * 0.92f
+            val firstBaseline = centerY - lineStep * (lines.size - 1) / 2f + paint.textSize * 0.35f
+            lines.forEachIndexed { index, line ->
+                canvas.drawText(line, centerX, firstBaseline + index * lineStep, paint)
             }
         }
 
@@ -2472,11 +2678,14 @@ class TouchOverlayView
             if (n <= 1) {
                 val label =
                     if (n == 1) {
-                        segs[0].label
+                        segs[0].weaponIndex
+                            .takeIf { it >= 0 }
+                            ?.let { weaponWheelSlotLabel(gameVariant, ws, isPrimary, it) }
+                            ?: segs[0].label
                     } else if (isPrimary) {
-                        "Laser"
+                        laserWheelLabel(ws)
                     } else {
-                        "Concsn"
+                        defaultWeaponWheelSlotLabel(gameVariant, false, 0)
                     }
                 val bubbleR = state.radius * 0.3f
                 paintRadialSeg.color = 0x88334455.toInt()
@@ -2484,8 +2693,8 @@ class TouchOverlayView
                 paintRing.alpha = (0x66 * eff).toInt()
                 canvas.drawCircle(cx, cy, bubbleR, paintRing)
                 paintBtnLabel.alpha = (0xCC * eff).toInt()
-                paintBtnLabel.textSize = bubbleR * 0.35f
-                canvas.drawText(label, cx, cy - paintBtnLabel.textSize * 0.3f, paintBtnLabel)
+                paintBtnLabel.textSize = bubbleR * if ('\n' in label) 0.26f else 0.35f
+                drawCenteredTextBlock(canvas, label, cx, cy - paintBtnLabel.textSize * 0.2f, paintBtnLabel)
                 canvas.drawText("only", cx, cy + paintBtnLabel.textSize * 1.0f, paintBtnLabel)
                 return
             }
@@ -2516,14 +2725,19 @@ class TouchOverlayView
                 val midRad = Math.toRadians(centerAngle.toDouble())
                 val lx = cx + cos(midRad).toFloat() * segR * 0.55f
                 val ly = cy + sin(midRad).toFloat() * segR * 0.55f
+                val label =
+                    segs[i].weaponIndex
+                        .takeIf { it >= 0 }
+                        ?.let { weaponWheelSlotLabel(gameVariant, ws, isPrimary, it) }
+                        ?: segs[i].label
                 paintBtnLabel.alpha = ((if (active) 0xFF else 0xAA) * eff).toInt()
                 if (active) {
-                    paintBtnLabel.textSize = r * 0.22f
+                    paintBtnLabel.textSize = r * if ('\n' in label || label.length > 8) 0.18f else 0.22f
                     paintBtnLabel.typeface = Typeface.DEFAULT_BOLD
                 } else {
-                    paintBtnLabel.textSize = r * 0.11f
+                    paintBtnLabel.textSize = r * if ('\n' in label || label.length > 8) 0.085f else 0.11f
                 }
-                canvas.drawText(segs[i].label, lx, ly + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+                drawCenteredTextBlock(canvas, label, lx, ly, paintBtnLabel)
                 if (active) paintBtnLabel.typeface = Typeface.DEFAULT
 
                 // Ammo display for secondary weapons and vulcan

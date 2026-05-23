@@ -515,6 +515,61 @@ int songs_is_playing()
  * Android port addition.
  */
 
+static void redbook_resume_programmed_song(void)
+{
+	int programmed_song = Song_playing;
+
+	if (GameCfg.MusicType != MUSIC_TYPE_REDBOOK || programmed_song < 0)
+		return;
+
+	stop_time();
+	Song_playing = -1;
+	if (programmed_song >= SONG_FIRST_LEVEL_SONG)
+		songs_play_level_song(programmed_song - SONG_FIRST_LEVEL_SONG + 1, 0);
+	else
+		songs_play_song(programmed_song, 1);
+	start_time();
+}
+
+static int redbook_play_track_with_resume(int track)
+{
+	if (!RBAEnabled() || !RBAIsAudioTrack(track))
+		return 0;
+	if (RBAPlayTracks(track, track, redbook_resume_programmed_song))
+	{
+		track_overlay_notify(track, 0, RBAGetDiscID());
+		return 1;
+	}
+	return 0;
+}
+
+static int redbook_find_adjacent_audio_track(int direction)
+{
+	int total_tracks, current_track, i;
+
+	if (!RBAEnabled())
+		return 0;
+	total_tracks = RBAGetNumberOfTracks();
+	if (total_tracks <= 0)
+		return 0;
+	current_track = RBAGetTrackNum();
+	if (current_track < 1 || current_track > total_tracks)
+		current_track = 1;
+
+	for (i = 1; i <= total_tracks; i++)
+	{
+		int track = current_track + direction * i;
+		while (track < 1)
+			track += total_tracks;
+		while (track > total_tracks)
+			track -= total_tracks;
+		if (RBAIsAudioTrack(track))
+			return track;
+	}
+
+	return 0;
+}
+
 int songs_next_track(void)
 {
 	int n_level_songs;
@@ -543,10 +598,10 @@ int songs_next_track(void)
 
 		case MUSIC_TYPE_REDBOOK:
 		{
-			int track = RBANextTrack();
-			if (track > 0)
-				track_overlay_notify(track, 0, RBAGetDiscID());
-			return track;
+			int track = redbook_find_adjacent_audio_track(1);
+			if (track > 0 && redbook_play_track_with_resume(track))
+				return track;
+			return 0;
 		}
 
 #ifdef USE_SDLMIXER
@@ -591,10 +646,10 @@ int songs_prev_track(void)
 
 		case MUSIC_TYPE_REDBOOK:
 		{
-			int track = RBAPrevTrack();
-			if (track > 0)
-				track_overlay_notify(track, 0, RBAGetDiscID());
-			return track;
+			int track = redbook_find_adjacent_audio_track(-1);
+			if (track > 0 && redbook_play_track_with_resume(track))
+				return track;
+			return 0;
 		}
 
 #ifdef USE_SDLMIXER
@@ -627,7 +682,7 @@ int songs_play_specific_track(int track)
 			return 0;
 
 		case MUSIC_TYPE_REDBOOK:
-			return RBAPlaySpecificTrack(track);
+			return redbook_play_track_with_resume(track);
 
 #ifdef USE_SDLMIXER
 		case MUSIC_TYPE_CUSTOM:
