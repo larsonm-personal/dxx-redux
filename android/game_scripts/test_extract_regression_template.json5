@@ -12,6 +12,9 @@
     {"_info": {"_standalone": false}},
     {"action": "log", "message": "=== Extraction regression test ==="},
 
+    // Demo and title-screen variants can still be in the launch intro here.
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+
     // Handle either the direct pilot-name prompt or the create/select pilot list.
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "select", "text": "Ok", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000},

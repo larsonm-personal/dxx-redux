@@ -174,6 +174,28 @@ function Get-GameIntrospection {
     catch { return [PSCustomObject]@{ screen_mode = 'loading'; menu = $null; in_game = $false } }
 }
 
+function Send-IntroSkipTap {
+    param($GameIntrospection)
+
+    $displayWidth = 1280
+    $displayHeight = 720
+    if ($GameIntrospection -and $GameIntrospection.resolution) {
+        if ($GameIntrospection.resolution.display_width) { $displayWidth = [int]$GameIntrospection.resolution.display_width }
+        if ($GameIntrospection.resolution.display_height) { $displayHeight = [int]$GameIntrospection.resolution.display_height }
+    }
+
+    $heightOverWidth = if ($displayWidth -gt 0) { [double]$displayHeight / [double]$displayWidth } else { 1.0 }
+    $pillLeft = 1.0 - (0.245 * $heightOverWidth)
+    $tapNormX = ($pillLeft + 1.0) / 2.0
+    $tapNormY = (0.019 + 0.075) / 2.0
+    $tapX = [int][math]::Round(($displayWidth - 1) * $tapNormX)
+    $tapY = [int][math]::Round(($displayHeight - 1) * $tapNormY)
+    $tapX = [math]::Max(0, [math]::Min($displayWidth - 1, $tapX))
+    $tapY = [math]::Max(0, [math]::Min($displayHeight - 1, $tapY))
+
+    Adb -CmdArgs @('shell', 'input', 'tap', "$tapX", "$tapY") | Out-Null
+}
+
 function Get-ExtractAutomationScriptText {
     param([string]$MissionName, [string]$LevelName)
 
@@ -249,12 +271,13 @@ function Invoke-GameAutomationScript {
 }
 
 function Send-SetupCommand {
-    param([string]$Command, [string]$Name, [string]$Path, [string]$Game)
+    param([string]$Command, [string]$Name, [string]$Path, [string]$Game, [string[]]$Extras = @())
     $args_ = @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
         '--es', 'command', $Command)
     if ($Name) { $args_ += @('--es', 'name', $Name) }
     if ($Path) { $args_ += @('--es', 'path', $Path) }
     if ($Game) { $args_ += @('--es', 'game', $Game) }
+    if ($Extras.Count -gt 0) { $args_ += $Extras }
     Adb -CmdArgs $args_ | Out-Null
 }
 
@@ -613,6 +636,10 @@ if (-not (Wait-SetupReady)) {
     Write-Status 'FAIL: SetupActivity not responding' 'Red'
     Exit-Test 1 'fail' 'setup_timeout'
 }
+
+# Keep extract runs deterministic regardless of previous launcher tests.
+Send-SetupCommand 'write_bool_pref' -Extras @('--es', 'key', 'skip_intro_movie', '--ez', 'value', 'false')
+Start-Sleep -Milliseconds 250
 
 # Create test set if it doesn't exist, then switch to it
 Send-SetupCommand 'create_set' -Name $TEST_SET
@@ -1034,6 +1061,14 @@ if ($SkipLaunch) {
     Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
 
+if ($spec.disc_id -eq 'descent-ii-usa-3-level-interactive-preview') {
+    Write-Status 'SKIP (file-only): D2 preview demo launch remains unsupported on Android; files verified' 'Yellow'
+    if (-not $KeepFiles) {
+        Send-SetupCommand 'clear_set' -Name $TEST_SET
+    }
+    Exit-Test 0 'skip' 'android_launch_unsupported' -TestMode 'file_only' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
+}
+
 # Skip launch if the game says it can't launch (missing required files)
 if (-not $state.can_launch) {
     Write-Status "SKIP (can_launch=false): $($spec.classification) - $pushCount files pushed but game reports not launchable" 'Yellow'
@@ -1085,40 +1120,47 @@ while ($sw.Elapsed.TotalSeconds -lt 30) {
 
 Write-Status "Checking game state..."
 
-# Wait for game to reach main menu (up to 45s)
-# D1 starts in demo/title mode (screen_mode=game) -- press Escape to reach menu.
-# D2 goes directly to "Select pilot" menu.
+# Wait for game startup to reach the front menu. Demo/title paths can surface
+# `intro_active=true` first and need a controller-style confirm to advance.
 $menuReached = $false
-$escPressed = 0
-for ($i = 0; $i -lt 15; $i++) {
+$startupInputAttempts = 0
+$startupTimeoutSeconds = if ($spec.classification -eq 'd2_demo') { 90 } else { 30 }
+$startupPollCount = [int][math]::Ceiling($startupTimeoutSeconds / 2.0)
+for ($i = 0; $i -lt $startupPollCount; $i++) {
     $gi = Get-GameIntrospection
+    $introActive = $gi.intro_active -eq $true
     if ($gi.screen_mode -eq 'menu' -and $gi.menu) {
         $menuReached = $true
         break
     }
     # Check if the game process is still alive (detect early crashes)
     if ($gi.screen_mode -eq 'loading') {
-        $procCheck = Adb -CmdArgs @('shell', 'pidof', $PACKAGE)
+        $procCheck = Adb -CmdArgs @('shell', 'pidof', "${PACKAGE}:game")
         if (-not $procCheck -or $procCheck -notmatch '^\d+') {
             Write-Status "FAIL: Game process died (crashed on startup?)" 'Red'
             Write-Status "  Classification: $($spec.classification), game: $($spec.game)" 'Yellow'
             Exit-Test 1 'fail' 'crash' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
         }
     }
-    # Not at menu yet -- press Escape then Enter to dismiss title/demo/movie screens
-    if ($i -ge 2 -and $escPressed -lt 5) {
+    if ($introActive -and $startupInputAttempts -lt 5) {
+        Write-Status '  Intro active, tapping skip-intro region...' 'Gray'
+        Send-IntroSkipTap -GameIntrospection $gi
+        $startupInputAttempts++
+    }
+    # If startup is still completely opaque, prod the legacy title path.
+    elseif ($i -ge 2 -and $startupInputAttempts -lt 5) {
         Write-Status "  Not at menu (screen_mode=$($gi.screen_mode)), pressing keys..." 'Gray'
         Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
         Start-Sleep -Milliseconds 500
         Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
-        $escPressed++
+        $startupInputAttempts++
     }
     Start-Sleep -Seconds 2
 }
 
 if (-not $menuReached) {
-    Write-Status "FAIL: Game did not reach menu state within 30s" 'Red'
-    Write-Status "  screen_mode=$($gi.screen_mode), menu present=$($null -ne $gi.menu)" 'Yellow'
+    Write-Status "FAIL: Game did not reach menu state within ${startupTimeoutSeconds}s" 'Red'
+    Write-Status "  screen_mode=$($gi.screen_mode), menu present=$($null -ne $gi.menu), intro_active=$($gi.intro_active)" 'Yellow'
     Exit-Test 1 'fail' 'launch_timeout' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
 

@@ -650,12 +650,11 @@ class SetupActivity : ComponentActivity() {
 
     private fun hasLaunchDataForGame(game: String): Boolean {
         val fsm = FileSetManager(filesDir)
-        val setDir = fsm.getSetDir(fsm.getActive())
-        val hogFile = if (game == "d1") "descent.hog" else "descent2.hog"
-
-        return setDir.listFiles()?.any {
-            it.name.equals(hogFile, ignoreCase = true)
-        } == true
+        val activeSet = fsm.getActive()
+        val setDir = fsm.getSetDir(activeSet)
+        val manifest = AssetManifest(setDir)
+        val safManifest = fsm.safManifestForSet(activeSet)
+        return launchDataReadyForGame(game, setDir, manifest, safManifest)
     }
 
     private fun launchInputDemoReplay(demo: StagedInputDemo) {
@@ -2937,6 +2936,18 @@ private fun findFile(
 ): String? {
     val files = dir.listFiles() ?: return null
     return files.firstOrNull { it.name.equals(name, ignoreCase = true) }?.name
+}
+
+internal fun launchDataReadyForGame(
+    game: String,
+    setDir: File,
+    manifest: AssetManifest,
+    safManifest: SafManifest,
+): Boolean {
+    val fileList = if (game == "d1") D1_FILES else detectD2FileList(setDir, safManifest)
+    return checkFiles(setDir, fileList, manifest, safManifest)
+        .filter { it.info.required }
+        .all { it.found }
 }
 
 private fun checkFiles(
