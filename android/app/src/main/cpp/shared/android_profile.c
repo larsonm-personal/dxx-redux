@@ -284,8 +284,8 @@ static void android_profile_note_texture_burst(const char *game,
                                                long long ktx2_read_us,
                                                long long png_read_us,
                                                long long upload_us,
-						  long long mask_us,
-						  const struct android_profile_texture_lookup_metrics *lookup)
+                                               long long mask_us,
+                                               const struct android_profile_texture_lookup_metrics *lookup)
 {
 	int i;
 	const char *source_name = (source && source[0]) ? source : "unknown";
@@ -581,8 +581,8 @@ void android_profile_texture_load(const char *game, const char *name,
                                   long long ktx2_read_us,
                                   long long png_read_us,
                                   long long upload_us,
-						  long long mask_us,
-						  const struct android_profile_texture_lookup_metrics *lookup)
+                                  long long mask_us,
+                                  const struct android_profile_texture_lookup_metrics *lookup)
 {
 	const char *game_name = (game && game[0]) ? game : g_android_profile_game;
 	const char *texture_name = (name && name[0]) ? name : "unknown";

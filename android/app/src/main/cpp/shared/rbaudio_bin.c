@@ -100,7 +100,7 @@ static void bh_open(bin_handle_t *h, const char *path)
 {
 	h->pf = NULL;
 	h->sf = NULL;
-	#ifdef ANDROID
+#ifdef ANDROID
 	{
 		int proc_fd = path_get_proc_self_fd(path);
 		if (proc_fd >= 0) {
@@ -114,7 +114,7 @@ static void bh_open(bin_handle_t *h, const char *path)
 				return;
 		}
 	}
-	#endif
+#endif
 	if (path_is_local(path)) {
 		h->sf = fopen(path, "rb");
 	} else {
@@ -130,14 +130,14 @@ static PHYSFS_sint64 bh_length(const bin_handle_t *h)
 {
 	if (h->pf) return PHYSFS_fileLength(h->pf);
 	if (h->sf) {
-		#ifdef ANDROID
+#ifdef ANDROID
 		int fd = fileno(h->sf);
 		if (fd >= 0) {
 			struct stat st;
 			if (fstat(fd, &st) == 0 && st.st_size > 0)
 				return (PHYSFS_sint64) st.st_size;
 		}
-		#endif
+#endif
 		long cur = ftell(h->sf);
 		fseek(h->sf, 0, SEEK_END);
 		long len = ftell(h->sf);

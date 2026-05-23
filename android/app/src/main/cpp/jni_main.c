@@ -381,7 +381,9 @@ Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thi
 {
 	extern int Player_num;
 
-	enum { WS_PRIMARY_PAIR_SLOTS = 5, WS_SECONDARY_PAIR_SLOTS = 5, WS_SIZE = 57 };
+	enum { WS_PRIMARY_PAIR_SLOTS = 5,
+		   WS_SECONDARY_PAIR_SLOTS = 5,
+		   WS_SIZE = 57 };
 	jint buf[WS_SIZE];
 	memset(buf, 0, sizeof(buf));
 

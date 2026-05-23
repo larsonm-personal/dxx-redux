@@ -339,13 +339,18 @@ private fun currentWeaponWheelSlotIndex(
     currentWeapon: Int,
 ): Int? =
     when {
-        currentWeapon in 0 until WEAPON_WHEEL_SLOT_COUNT -> currentWeapon
+        currentWeapon in 0 until WEAPON_WHEEL_SLOT_COUNT -> {
+            currentWeapon
+        }
+
         gameVariant == "d2" &&
             currentWeapon in D2_SUPER_WEAPON_OFFSET until D2_SUPER_WEAPON_OFFSET + WEAPON_WHEEL_SLOT_COUNT -> {
             currentWeapon - D2_SUPER_WEAPON_OFFSET
         }
 
-        else -> null
+        else -> {
+            null
+        }
     }
 
 private fun resolvePairedWheelWeaponIndex(
@@ -2587,11 +2592,11 @@ class TouchOverlayView
                 val label = state.quiescentLabel.ifEmpty { state.control.id.take(4) }
                 paintBtnLabel.textSize =
                     state.triggerRadius *
-                        when {
-                            '\n' in label -> 0.28f
-                            label.length > 5 -> 0.4f
-                            else -> 0.6f
-                        }
+                    when {
+                        '\n' in label -> 0.28f
+                        label.length > 5 -> 0.4f
+                        else -> 0.6f
+                    }
                 drawCenteredTextBlock(canvas, label, state.triggerX, state.triggerY, paintBtnLabel)
                 return
             }
@@ -2678,9 +2683,12 @@ class TouchOverlayView
             if (n <= 1) {
                 val label =
                     if (n == 1) {
-                        segs[0].weaponIndex
+                        segs[0]
+                            .weaponIndex
                             .takeIf { it >= 0 }
-                            ?.let { weaponWheelSlotLabel(gameVariant, ws, isPrimary, it) }
+                            ?.let {
+                                weaponWheelSlotLabel(gameVariant, ws, isPrimary, it)
+                            }
                             ?: segs[0].label
                     } else if (isPrimary) {
                         laserWheelLabel(ws)
@@ -2726,9 +2734,12 @@ class TouchOverlayView
                 val lx = cx + cos(midRad).toFloat() * segR * 0.55f
                 val ly = cy + sin(midRad).toFloat() * segR * 0.55f
                 val label =
-                    segs[i].weaponIndex
+                    segs[i]
+                        .weaponIndex
                         .takeIf { it >= 0 }
-                        ?.let { weaponWheelSlotLabel(gameVariant, ws, isPrimary, it) }
+                        ?.let {
+                            weaponWheelSlotLabel(gameVariant, ws, isPrimary, it)
+                        }
                         ?: segs[i].label
                 paintBtnLabel.alpha = ((if (active) 0xFF else 0xAA) * eff).toInt()
                 if (active) {

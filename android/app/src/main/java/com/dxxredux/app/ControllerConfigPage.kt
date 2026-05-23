@@ -466,7 +466,10 @@ internal data class JoyPairsResult(
 private const val D1_JOY_SETTINGS_SIZE = 50
 private const val D2_JOY_SETTINGS_SIZE = 56
 
-internal fun buildJoySettingsArray(result: JoyPairsResult, variant: String): ByteArray {
+internal fun buildJoySettingsArray(
+    result: JoyPairsResult,
+    variant: String,
+): ByteArray {
     val size = if (variant == "d1") D1_JOY_SETTINGS_SIZE else D2_JOY_SETTINGS_SIZE
     val settings = ByteArray(size) { 0xFF.toByte() }
 
