@@ -479,12 +479,15 @@ class MainActivity :
     // Controller meta-action bindings: SDL button index -> meta action ID
     private var buttonMetaBindings = mapOf<Int, Int>()
 
+    private var controllerBoundActions = emptySet<Int>()
+
     // D-pad meta-action bindings: DPAD keycode → meta action ID
     private var dpadMetaBindings = mapOf<Int, Int>()
 
     // Half-axis combiners: (virtualAxis, posSourceAxis, negSourceAxis)
     // Loaded from controller_config.json; used in onGenericMotionEvent()
     private var halfAxisCombiners = emptyList<Triple<Int, Int, Int>>()
+    private var controllerAxisExponents = defaultControllerAxisExponents()
     private val rawAxisValues = FloatArray(6) // LX, LY, RX, RY, LT, RT
 
     // Input mixer: combines button/axis from touch, controller, gyro
@@ -761,6 +764,10 @@ class MainActivity :
         }
         touchOverlay.gameVariant = game
         touchOverlay.isMultiplayerGameProvider = { isMultiplayerGame }
+        touchOverlay.hasPendingMultiplayerLaunchProvider = {
+            com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value.gameLaunchInfo != null
+        }
+        touchOverlay.controllerBoundActionBindingsProvider = { controllerBoundActions }
         touchOverlay.gamepadOnlyMode = gamepadOnlyMode
         touchOverlay.isEscortOwnerProvider = {
             try {
@@ -2380,6 +2387,17 @@ class MainActivity :
         if (!file.exists()) return
         try {
             val json = JSONObject(file.readText())
+            if (json.has("bindings")) {
+                val bindingsObj = json.getJSONObject("bindings")
+                val bindings = mutableMapOf<String, String>()
+                for (key in bindingsObj.keys()) bindings[key] = bindingsObj.getString(key)
+                controllerBoundActions = controllerConfigBoundActionBindings(bindings)
+            }
+            json.optJSONObject("axis_exponents")?.let { exponentsObj ->
+                val loaded = mutableMapOf<String, Float>()
+                for (key in exponentsObj.keys()) loaded[key] = exponentsObj.getDouble(key).toFloat()
+                controllerAxisExponents = clampedControllerAxisExponents(loaded)
+            }
             if (json.has("meta_bindings")) {
                 val meta = json.getJSONObject("meta_bindings")
                 val btnMap = mutableMapOf<Int, Int>()
@@ -2669,6 +2687,11 @@ class MainActivity :
             else -> 0
         }
 
+    private fun controllerAxisValue(
+        axisKey: String,
+        value: Float,
+    ): Float = applyControllerAxisExponent(value, controllerAxisExponents[axisKey] ?: DEFAULT_CONTROLLER_AXIS_EXPONENT)
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (gameSurfaceView.keyboardActive) {
             when (event.keyCode) {
@@ -2909,18 +2932,22 @@ class MainActivity :
                 hatYState = if (hatY != 0) hatY else stickY
                 return super.onGenericMotionEvent(event)
             }
-            inputMixer.setAxis(0, "ctrl", event.getAxisValue(MotionEvent.AXIS_X))
-            inputMixer.setAxis(1, "ctrl", event.getAxisValue(MotionEvent.AXIS_Y))
-            inputMixer.setAxis(2, "ctrl", event.getAxisValue(MotionEvent.AXIS_Z))
-            inputMixer.setAxis(3, "ctrl", event.getAxisValue(MotionEvent.AXIS_RZ))
-            val lt = event.getAxisValue(MotionEvent.AXIS_LTRIGGER)
-            val rt = event.getAxisValue(MotionEvent.AXIS_RTRIGGER)
+            val lx = controllerAxisValue("LS_X", event.getAxisValue(MotionEvent.AXIS_X))
+            val ly = controllerAxisValue("LS_Y", event.getAxisValue(MotionEvent.AXIS_Y))
+            val rx = controllerAxisValue("RS_X", event.getAxisValue(MotionEvent.AXIS_Z))
+            val ry = controllerAxisValue("RS_Y", event.getAxisValue(MotionEvent.AXIS_RZ))
+            val lt = controllerAxisValue("LT", event.getAxisValue(MotionEvent.AXIS_LTRIGGER))
+            val rt = controllerAxisValue("RT", event.getAxisValue(MotionEvent.AXIS_RTRIGGER))
+            inputMixer.setAxis(0, "ctrl", lx)
+            inputMixer.setAxis(1, "ctrl", ly)
+            inputMixer.setAxis(2, "ctrl", rx)
+            inputMixer.setAxis(3, "ctrl", ry)
             inputMixer.setAxis(4, "ctrl", lt)
             inputMixer.setAxis(5, "ctrl", rt)
-            rawAxisValues[0] = event.getAxisValue(MotionEvent.AXIS_X)
-            rawAxisValues[1] = event.getAxisValue(MotionEvent.AXIS_Y)
-            rawAxisValues[2] = event.getAxisValue(MotionEvent.AXIS_Z)
-            rawAxisValues[3] = event.getAxisValue(MotionEvent.AXIS_RZ)
+            rawAxisValues[0] = lx
+            rawAxisValues[1] = ly
+            rawAxisValues[2] = rx
+            rawAxisValues[3] = ry
             rawAxisValues[4] = lt
             rawAxisValues[5] = rt
             // Compute half-axis combiner virtual axes

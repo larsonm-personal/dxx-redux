@@ -269,6 +269,7 @@ internal fun hasControllerMenuBinding(bindings: Map<String, String>): Boolean =
 // Default axis-to-button activation threshold (percentage, 5-95)
 const val DEFAULT_AXIS_THRESHOLD = 30
 const val DEFAULT_STICK_DEAD_ZONE = 10
+const val DEFAULT_CONTROLLER_AXIS_EXPONENT = 1.0f
 
 // Axis IDs that support per-axis thresholds
 private val THRESHOLD_AXES = listOf("LS_X", "LS_Y", "RS_X", "RS_Y", "LT", "RT")
@@ -296,6 +297,29 @@ private fun thresholdForDialog(
 
 // Build a default thresholds map with per-axis defaults.
 private fun defaultThresholds(): Map<String, Int> = THRESHOLD_AXES.associateWith(::defaultThresholdForAxis)
+
+internal fun clampControllerAxisExponent(value: Float): Float =
+    if (value.isFinite()) {
+        value.coerceIn(TouchBindings.MIN_EXPONENT, TouchBindings.MAX_EXPONENT)
+    } else {
+        DEFAULT_CONTROLLER_AXIS_EXPONENT
+    }
+
+internal fun defaultControllerAxisExponents(): Map<String, Float> =
+    THRESHOLD_AXES.associateWith { DEFAULT_CONTROLLER_AXIS_EXPONENT }
+
+internal fun clampedControllerAxisExponents(values: Map<String, Float>): Map<String, Float> {
+    val result = defaultControllerAxisExponents().toMutableMap()
+    for ((axis, value) in values) {
+        if (axis in result) result[axis] = clampControllerAxisExponent(value)
+    }
+    return result
+}
+
+internal fun applyControllerAxisExponent(
+    value: Float,
+    exponent: Float,
+): Float = applyResponseCurve(value, ResponseCurve.EXPONENTIAL, clampControllerAxisExponent(exponent))
 
 private fun moveActionButtonSelection(
     currentIndex: Int,
@@ -631,6 +655,7 @@ internal fun saveConfig(
     inverts: Set<String>,
     gameVariant: String = "d2",
     thresholds: Map<String, Int> = defaultThresholds(),
+    axisExponents: Map<String, Float> = defaultControllerAxisExponents(),
 ) {
     // Build byte arrays for BOTH D1 and D2 since the config file is shared
     // and kconfig indices differ between games (e.g. Automap is index 27 in
@@ -724,6 +749,12 @@ internal fun saveConfig(
     for ((axis, pct) in thresholds) thresholdsObj.put(axis, pct)
     json.put("thresholds", thresholdsObj)
 
+    val exponentsObj = JSONObject()
+    for ((axis, exponent) in clampedControllerAxisExponents(axisExponents)) {
+        exponentsObj.put(axis, exponent.toDouble())
+    }
+    json.put("axis_exponents", exponentsObj)
+
     // Half-axis combiner config: [[virtualAxis, posSource, negSource], ...]
     // Read by MainActivity to compute virtual axis values from trigger pairs.
     if (combiners.isNotEmpty()) {
@@ -782,6 +813,7 @@ private data class LoadedConfig(
     val bindings: Map<String, String>,
     val inverts: Set<String>,
     val thresholds: Map<String, Int>,
+    val axisExponents: Map<String, Float>,
 )
 
 private fun loadConfig(context: Context): LoadedConfig? {
@@ -807,7 +839,15 @@ private fun loadConfig(context: Context): LoadedConfig? {
             if (key in thresholds) thresholds[key] = tObj.getInt(key).coerceIn(5, 95)
         }
     }
-    return LoadedConfig(bindings, invertedControls, thresholds)
+
+    val axisExponents = defaultControllerAxisExponents().toMutableMap()
+    if (json.has("axis_exponents")) {
+        val eObj = json.getJSONObject("axis_exponents")
+        for (key in eObj.keys()) {
+            if (key in axisExponents) axisExponents[key] = clampControllerAxisExponent(eObj.getDouble(key).toFloat())
+        }
+    }
+    return LoadedConfig(bindings, invertedControls, thresholds, axisExponents)
 }
 
 // ── Assignment logic ────────────────────────────────────────────────────────
@@ -955,6 +995,7 @@ fun ControllerConfigPage(
     val bindings = remember { mutableStateMapOf<String, String>() }
     val inverts = remember { mutableStateListOf<String>() } // inverted axis control IDs
     val thresholds = remember { mutableStateMapOf<String, Int>() }
+    val axisExponents = remember { mutableStateMapOf<String, Float>() }
     var initialized by remember { mutableStateOf(false) }
     if (!initialized) {
         val saved = loadConfig(context)
@@ -962,9 +1003,11 @@ fun ControllerConfigPage(
             bindings.putAll(saved.bindings)
             inverts.addAll(saved.inverts)
             thresholds.putAll(saved.thresholds)
+            axisExponents.putAll(saved.axisExponents)
         } else {
             bindings.putAll(loadDefaultBindings(context))
             thresholds.putAll(defaultThresholds())
+            axisExponents.putAll(defaultControllerAxisExponents())
         }
         initialized = true
     }
@@ -988,6 +1031,8 @@ fun ControllerConfigPage(
                 inverts.addAll(reloaded.inverts)
                 thresholds.clear()
                 thresholds.putAll(reloaded.thresholds)
+                axisExponents.clear()
+                axisExponents.putAll(reloaded.axisExponents)
             }
         }
 
@@ -1147,13 +1192,13 @@ fun ControllerConfigPage(
     }
 
     fun saveSelection() {
-        saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap())
+        saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap(), axisExponents.toMap())
         Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
         onBack()
     }
 
     fun exportSelection() {
-        saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap())
+        saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap(), axisExponents.toMap())
         if (!ConfigImportExport.exportControllerConfig(context)) {
             Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
         }
@@ -2308,6 +2353,8 @@ fun ControllerConfigPage(
             axisValue = axisVal,
             threshold = axisKey?.let { thresholdForDialog(it, buttonMode = true, thresholds) },
             onThresholdChange = axisKey?.let { key -> { v: Int -> thresholds[key] = v } },
+            axisExponent = axisKey?.let { axisExponents[it] ?: DEFAULT_CONTROLLER_AXIS_EXPONENT },
+            onAxisExponentChange = axisKey?.let { key -> { v: Float -> axisExponents[key] = v } },
             axisFunctions = if (isTrigger) TRIGGER_HALF_AXIS_OPTIONS else emptyList(),
             onDialogGenericMotionEvent = onDialogGenericMotionEvent,
             onDialogViewChanged = onDialogViewChanged,
@@ -2358,6 +2405,10 @@ fun ControllerConfigPage(
             yThreshold = thresholdForDialog(yKey, yIsButtonMode, thresholds),
             onXThresholdChange = { v -> thresholds[xKey] = v },
             onYThresholdChange = { v -> thresholds[yKey] = v },
+            xExponent = axisExponents[xKey] ?: DEFAULT_CONTROLLER_AXIS_EXPONENT,
+            yExponent = axisExponents[yKey] ?: DEFAULT_CONTROLLER_AXIS_EXPONENT,
+            onXExponentChange = { v -> axisExponents[xKey] = v },
+            onYExponentChange = { v -> axisExponents[yKey] = v },
             onDialogGenericMotionEvent = onDialogGenericMotionEvent,
             onDialogViewChanged = onDialogViewChanged,
             onConfirm = { result ->
@@ -2507,6 +2558,8 @@ private fun ButtonFunctionPickerDialog(
     axisValue: Float? = null,
     threshold: Int? = null,
     onThresholdChange: ((Int) -> Unit)? = null,
+    axisExponent: Float? = null,
+    onAxisExponentChange: ((Float) -> Unit)? = null,
     axisFunctions: List<String> = emptyList(),
     onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
     onDialogViewChanged: (View?) -> Unit = {},
@@ -2554,6 +2607,21 @@ private fun ButtonFunctionPickerDialog(
                             onValueChange = { onThresholdChange?.invoke(it.roundToInt()) },
                             valueRange = thresholdRange,
                             steps = thresholdSteps,
+                            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    if (isAxisFunc && axisExponent != null && onAxisExponentChange != null) {
+                        Text(
+                            "Response: ${"%.1f".format(axisExponent)}",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Slider(
+                            value = axisExponent,
+                            onValueChange = { onAxisExponentChange(clampControllerAxisExponent(it)) },
+                            valueRange = TouchBindings.MIN_EXPONENT..TouchBindings.MAX_EXPONENT,
+                            steps = 5,
                             modifier = Modifier.fillMaxWidth().tvFocusBorder(),
                         )
                         Spacer(Modifier.height(8.dp))
@@ -2706,6 +2774,10 @@ private fun StickPickerDialog(
     yThreshold: Int = DEFAULT_AXIS_THRESHOLD,
     onXThresholdChange: ((Int) -> Unit)? = null,
     onYThresholdChange: ((Int) -> Unit)? = null,
+    xExponent: Float = DEFAULT_CONTROLLER_AXIS_EXPONENT,
+    yExponent: Float = DEFAULT_CONTROLLER_AXIS_EXPONENT,
+    onXExponentChange: ((Float) -> Unit)? = null,
+    onYExponentChange: ((Float) -> Unit)? = null,
     onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
     onDialogViewChanged: (View?) -> Unit = {},
     onConfirm: (StickPickerResult) -> Unit,
@@ -2757,6 +2829,26 @@ private fun StickPickerDialog(
         )
     }
 
+    @Composable
+    fun AxisExponentEditor(
+        exponent: Float,
+        onExponentChange: ((Float) -> Unit)?,
+    ) {
+        onExponentChange ?: return
+        Text(
+            "Response: ${"%.1f".format(exponent)}",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Slider(
+            value = exponent,
+            onValueChange = { onExponentChange(clampControllerAxisExponent(it)) },
+            valueRange = TouchBindings.MIN_EXPONENT..TouchBindings.MAX_EXPONENT,
+            steps = 5,
+            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+        )
+    }
+
     LaunchedEffect(xButtonMode) {
         onXThresholdChange ?: return@LaunchedEffect
         if (xButtonMode && xThreshold == DEFAULT_STICK_DEAD_ZONE) {
@@ -2799,6 +2891,10 @@ private fun StickPickerDialog(
                         axisValue = xAxisValue,
                         onThresholdChange = onXThresholdChange,
                     )
+                    if (!xButtonMode) {
+                        Spacer(Modifier.height(6.dp))
+                        AxisExponentEditor(xExponent, onXExponentChange)
+                    }
                     Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
@@ -2863,6 +2959,10 @@ private fun StickPickerDialog(
                         axisValue = yAxisValue,
                         onThresholdChange = onYThresholdChange,
                     )
+                    if (!yButtonMode) {
+                        Spacer(Modifier.height(6.dp))
+                        AxisExponentEditor(yExponent, onYExponentChange)
+                    }
                     Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(

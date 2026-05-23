@@ -133,6 +133,38 @@ class RemainingKeyTouchActionsTest {
     }
 
     @Test
+    fun controllerBoundActionsAreFilteredOut() {
+        val bindings =
+            remainingKeyTouchActions(
+                TouchLayout(name = "Empty"),
+                gameVariant = "d2",
+                extraBoundBindings = setOf(TouchBindings.META_REWIND, TouchBindings.BTN_HEADLIGHT),
+            ).map { it.binding }
+
+        assertTrue(TouchBindings.META_REWIND !in bindings)
+        assertTrue(TouchBindings.BTN_HEADLIGHT !in bindings)
+        assertTrue(TouchBindings.BTN_AUTOMAP in bindings)
+    }
+
+    @Test
+    fun controllerConfigBindingLabelsMapToActionBindings() {
+        val bindings =
+            controllerConfigBoundActionBindings(
+                mapOf(
+                    "A" to "Rewind",
+                    "B" to "Headlight",
+                    "RS_X" to "Turn L/R",
+                    "X" to "Energy->Shield",
+                ),
+            )
+
+        assertTrue(TouchBindings.META_REWIND in bindings)
+        assertTrue(TouchBindings.BTN_HEADLIGHT in bindings)
+        assertTrue(TouchBindings.BTN_ENERGY_SHIELD in bindings)
+        assertTrue(TouchBindings.AXIS_RIGHT_X !in bindings)
+    }
+
+    @Test
     fun weaponRadialsFilterDirectWeaponActions() {
         val layout =
             TouchLayout(

@@ -637,6 +637,63 @@ void ogl_apply_anisotropy_all(void)
 	    "anisotropy: applied level %.0f to %d/%d mipmapped textures", level, count, total);
 }
 
+static void ogl_msaa_destroy_fbo(void);
+
+static int ogl_android_effective_texfilt(int texfilt)
+{
+	/* AF requires mipmap filtering to have any effect on real hardware.
+	 * If AF is on but texfilt is too low, upgrade to trilinear */
+	if (ogl_aniso_level > 0 && texfilt < 2)
+		return 2;
+	return texfilt;
+}
+
+static void ogl_android_apply_pending_runtime_options(void)
+{
+	android_merged_wall_consume_experiment_pending_apply();
+	if (g_aniso_pending_apply) {
+		g_aniso_pending_apply = 0;
+		__sync_synchronize(); /* ensure we read values written before flag */
+		if (ogl_aniso_level > 0) {
+			/* AF on: generate mipmaps in-place for textures that lack them
+			 * (needed for AF to have any effect). Skip font textures
+			 * (NOCOLOR) -- they never need mipmaps */
+			int upgraded = 0;
+			for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
+				if (ogl_texture_list[i].handle > 0 && !ogl_texture_list[i].has_mipmaps
+				    && !(ogl_texture_list[i].flags & OGL_FLAG_NOCOLOR)) {
+					glBindTexture(GL_TEXTURE_2D, ogl_texture_list[i].handle);
+					glGenerateMipmap(GL_TEXTURE_2D);
+					ogl_texture_list[i].has_mipmaps = 1;
+					upgraded++;
+				}
+			}
+			ogl_last_bound_tex = 0;
+			if (upgraded)
+				con_printf(CON_DEBUG, "anisotropy: generated mipmaps for %d textures", upgraded);
+		}
+		/* AF off: mipmaps are harmless, just update the aniso parameter.
+		 * ogl_bindbmtex will use the correct filter at bind time */
+		ogl_apply_anisotropy_all();
+	}
+	if (g_texfilt_pending_apply) {
+		struct android_ogl_texture_texfilt_state texfilt_state = {
+			{ ogl_texture_list, OGL_TEXTURE_LIST_SIZE },
+			&ogl_last_bound_tex,
+			&g_texfilt_pending_apply,
+			&g_texfilt_level,
+			&GameCfg.TexFilt
+		};
+
+		android_ogl_apply_texfilt_all(&texfilt_state);
+	}
+	g_texfilt_level = GameCfg.TexFilt;
+	if (g_msaa_pending_apply) {
+		g_msaa_pending_apply = 0;
+		ogl_msaa_destroy_fbo(); /* recreate on next check below */
+	}
+}
+
 /* android port: MSAA via FBO -- create/destroy/resolve helpers */
 static void ogl_msaa_destroy_fbo(void)
 {
@@ -779,6 +836,7 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 		return NULL;
 
 	tex_flags = OGL_FLAG_ALPHA;
+	const int load_texfilt = ogl_android_effective_texfilt(GameCfg.TexFilt);
 	entry->texture = ogl_get_free_texture();
 	const struct android_ogl_texture_runtime_state tex_runtime_state = {
 		{ &ogl_last_bound_tex, &r_texbinds, &r_texbind_reuse },
@@ -786,11 +844,11 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 	};
 	ogl_init_texture(entry->texture, width, height, tex_flags);
 	android_merged_wall_cached_texmerge_setup_output_texture(entry->texture,
-		width, height, tex_flags, GameCfg.TexFilt, &tex_runtime_state);
+		width, height, tex_flags, load_texfilt, &tex_runtime_state);
 	tex_set_size(entry->texture);
 	r_texcount++;
 	if (!android_merged_wall_cached_texmerge_finalize_entry(entry, bmbot,
-		bmovl, orient, width, height, GameCfg.TexFilt, ogl_aniso_level,
+		bmovl, orient, width, height, load_texfilt, ogl_aniso_level,
 		ogl_maxanisotropy, bmbot->bm_flags & (~BM_FLAG_RLE),
 		bmbot->avg_color, &tex_runtime_state, out_slot, ogl_freetexture))
 		return NULL;
@@ -2233,48 +2291,7 @@ void ogl_start_frame(void){
 	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
 	r_shader_switches=0;r_mask_draws=0;
 	g_ogl_render_context = 1; /* 3D world */
-	android_merged_wall_consume_experiment_pending_apply();
-	if (g_aniso_pending_apply) {
-		g_aniso_pending_apply = 0;
-		__sync_synchronize(); /* ensure we read values written before flag */
-		if (ogl_aniso_level > 0) {
-			/* AF on: generate mipmaps in-place for textures that lack them
-			 * (needed for AF to have any effect). Skip font textures
-			 * (NOCOLOR) -- they never need mipmaps */
-			int upgraded = 0;
-			for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
-				if (ogl_texture_list[i].handle > 0 && !ogl_texture_list[i].has_mipmaps
-				    && !(ogl_texture_list[i].flags & OGL_FLAG_NOCOLOR)) {
-					glBindTexture(GL_TEXTURE_2D, ogl_texture_list[i].handle);
-					glGenerateMipmap(GL_TEXTURE_2D);
-					ogl_texture_list[i].has_mipmaps = 1;
-					upgraded++;
-				}
-			}
-			ogl_last_bound_tex = 0;
-			if (upgraded)
-				con_printf(CON_DEBUG, "anisotropy: generated mipmaps for %d textures", upgraded);
-		}
-		/* AF off: mipmaps are harmless, just update the aniso parameter.
-		 * ogl_bindbmtex will use the correct filter at bind time */
-		ogl_apply_anisotropy_all();
-	}
-	if (g_texfilt_pending_apply) {
-		struct android_ogl_texture_texfilt_state texfilt_state = {
-			{ ogl_texture_list, OGL_TEXTURE_LIST_SIZE },
-			&ogl_last_bound_tex,
-			&g_texfilt_pending_apply,
-			&g_texfilt_level,
-			&GameCfg.TexFilt
-		};
-
-		android_ogl_apply_texfilt_all(&texfilt_state);
-	}
-	g_texfilt_level = GameCfg.TexFilt;
-	if (g_msaa_pending_apply) {
-		g_msaa_pending_apply = 0;
-		ogl_msaa_destroy_fbo(); /* recreate on next check below */
-	}
+	ogl_android_apply_pending_runtime_options();
 	/* Bind MSAA FBO if enabled; create/resize as needed.
 	 * Only the outermost active 3D pass binds here. ogl_end_frame balances
 	 * the depth counter, so later cockpit subviews in the same game frame can
@@ -2512,6 +2529,7 @@ void gr_flip(void)
 				&g_fb_avg_r, &g_fb_avg_g, &g_fb_avg_b, &g_fb_avg_a);
 		}
 	}
+	ogl_android_apply_pending_runtime_options();
 #endif
 
 #ifdef ANDROID
@@ -3125,11 +3143,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 	lookup_metrics.png_hit_slot = ANDROID_PROFILE_TEXTURE_LOOKUP_NONE;
 	lookup_metrics.png_hit_ext = ANDROID_PROFILE_TEXTURE_LOOKUP_NONE;
 	android_perf_clock_now(&texture_total_start);
-	/* AF requires mipmap filtering to have any effect on real hardware.
-	 * If AF is on but texfilt is too low, upgrade to trilinear */
-	if (ogl_aniso_level > 0 && texfilt < 2)
-		texfilt = 2;
-	int load_texfilt = texfilt;
+	int load_texfilt = ogl_android_effective_texfilt(texfilt);
 #else
 	int load_texfilt = texfilt;
 #endif

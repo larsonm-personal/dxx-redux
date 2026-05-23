@@ -15,13 +15,30 @@ class AdminTrayUiTest {
     fun touchModeAddsAutomapWhenTouchButtonMissing() {
         val actions = adminTrayVisibleActions(gamepadOnlyMode = false, hasTouchAutomapButton = false)
 
-        assertEquals(10, actions.size)
+        assertEquals(8, actions.size)
         assertEquals(TouchOverlayView.ADMIN_AUTOMAP, actions.last())
     }
 
     @Test
-    fun gamepadOnlyModeIncludesMigratedControllerActions() {
+    fun singlePlayerGamepadOnlyModeHidesNetworkAndHeadlightActions() {
         val actions = adminTrayVisibleActions(gamepadOnlyMode = true, hasTouchAutomapButton = true)
+
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_NET_STATS))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_NET_EVENTS))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_HEADLIGHT))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_WARP))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_ACCEPT_JOIN))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_MUSIC))
+    }
+
+    @Test
+    fun multiplayerGamepadOnlyModeIncludesNetworkControllerActions() {
+        val actions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = true,
+                hasTouchAutomapButton = true,
+                isMultiplayerGame = true,
+            )
 
         assertEquals(
             listOf(
@@ -35,13 +52,27 @@ class AdminTrayUiTest {
                 TouchOverlayView.ADMIN_QUICK_SAVE,
                 TouchOverlayView.ADMIN_VIDEO_INFO,
                 TouchOverlayView.ADMIN_AUTOMAP,
-                TouchOverlayView.ADMIN_HEADLIGHT,
                 TouchOverlayView.ADMIN_WARP,
                 TouchOverlayView.ADMIN_MUSIC,
                 TouchOverlayView.ADMIN_ACCEPT_JOIN,
             ),
             actions,
         )
+    }
+
+    @Test
+    fun pendingLaunchKeepsNetworkActionsVisibleWithoutWarp() {
+        val actions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = true,
+                hasTouchAutomapButton = true,
+                hasPendingLaunchInfo = true,
+            )
+
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_NET_STATS))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_NET_EVENTS))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_ACCEPT_JOIN))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_WARP))
     }
 
     @Test

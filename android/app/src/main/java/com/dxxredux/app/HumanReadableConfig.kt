@@ -551,6 +551,7 @@ object HumanReadableConfig {
         bindings: Map<String, String>,
         inverts: Set<String>,
         thresholds: Map<String, Int> = emptyMap(),
+        axisExponents: Map<String, Float> = emptyMap(),
     ): JSONObject {
         val j = JSONObject()
         j.put("type", "controller_config")
@@ -564,6 +565,11 @@ object HumanReadableConfig {
             for ((k, v) in thresholds) tObj.put(k, v)
             j.put("thresholds", tObj)
         }
+        if (axisExponents.isNotEmpty()) {
+            val eObj = JSONObject()
+            for ((k, v) in axisExponents) eObj.put(k, v.toDouble())
+            j.put("axis_exponents", eObj)
+        }
         return j
     }
 
@@ -571,6 +577,7 @@ object HumanReadableConfig {
         val bindings: Map<String, String>,
         val inverts: Set<String>,
         val thresholds: Map<String, Int>,
+        val axisExponents: Map<String, Float>,
     )
 
     fun humanJsonToControllerConfig(json: JSONObject): ParseResult<ControllerConfigData> {
@@ -597,7 +604,14 @@ object HumanReadableConfig {
             if (tObj != null) {
                 for (key in tObj.keys()) thresholds[key] = tObj.getInt(key).coerceIn(5, 95)
             }
-            return ParseResult(ControllerConfigData(bindings, inverts, thresholds), warnings)
+            val axisExponents = mutableMapOf<String, Float>()
+            val eObj = json.optJSONObject("axis_exponents")
+            if (eObj != null) {
+                for (key in eObj.keys()) {
+                    axisExponents[key] = clampControllerAxisExponent(eObj.getDouble(key).toFloat())
+                }
+            }
+            return ParseResult(ControllerConfigData(bindings, inverts, thresholds, axisExponents), warnings)
         } catch (e: Exception) {
             warnings.add("Controller config parse failed: ${e.message}")
             Log.e(TAG, "Controller config parse failed", e)

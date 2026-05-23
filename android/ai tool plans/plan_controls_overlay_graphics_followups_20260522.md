@@ -13,8 +13,15 @@
 3. [done] Map merged texture upload/filtering path and identify why AF may not apply there
 4. [done] Record per-issue implementation plan, risks, tests, and suggested order
 
+## Implementation status
+- [done] Issues 2, 3, 4, and 5 landed in Kotlin overlay/controller code: controller-bound remaining actions are filtered, admin tray labels are `Save` and `Load`, headlight is removed from the admin tray, and single-player hides multiplayer-only tray actions.
+- [done] Issue 1 landed in Kotlin controller config/runtime code: controller axis exponents are saved in `controller_config.json`, exposed in the picker UI, preserved through import/export, and applied to physical controller axis input before `InputMixer`.
+- [done] Issues 6 and 7 landed in native OGL code for both D1 and D2: pending AF/MSAA/texfilt application now runs from a shared helper used by both `ogl_start_frame()` and `gr_flip()`, and cached merged textures now use the same AF-driven texfilt upgrade path as normal texture loads.
+- [done] Focused validation completed: `AdminTrayUiTest`, `RemainingKeyTouchActionsTest`, `ControllerAxisExponentTest`, and `:app:externalNativeBuildDebug` all passed after the implementation.
+- [partial] Remaining follow-up is manual/on-device verification for paused AF/MSAA updates and merged-wall AF visuals.
+
 ## Notes
-- This is an initial planning pass only. No code changes for the seven follow-up issues have been made here.
+- This file started as a planning pass and now also tracks implementation status for the selected follow-up issues.
 - Main Kotlin owners:
 	- `TouchOverlayView.kt`: remaining/unbound action menu, admin tray action list, labels, held activation, and drawing
 	- `ControllerConfigPage.kt`: controller config UI, `controller_config.json` save/load, thresholds/deadzones

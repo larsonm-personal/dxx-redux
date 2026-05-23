@@ -53,27 +53,31 @@ internal fun adminTrayActionEnabled(
 internal fun adminTrayVisibleActions(
     gamepadOnlyMode: Boolean,
     hasTouchAutomapButton: Boolean,
+    isMultiplayerGame: Boolean = false,
+    hasPendingLaunchInfo: Boolean = false,
 ): List<Int> {
+    val showNetworkActions = isMultiplayerGame || hasPendingLaunchInfo
     val actions =
         mutableListOf(
             TouchOverlayView.ADMIN_INCREASE_VIEW,
             TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
-            TouchOverlayView.ADMIN_NET_STATS,
             TouchOverlayView.ADMIN_QUICK_LOAD,
             TouchOverlayView.ADMIN_OPEN_MENU,
-            TouchOverlayView.ADMIN_NET_EVENTS,
             TouchOverlayView.ADMIN_EXIT_LAUNCHER,
             TouchOverlayView.ADMIN_QUICK_SAVE,
             TouchOverlayView.ADMIN_VIDEO_INFO,
         )
+    if (showNetworkActions) {
+        actions.add(2, TouchOverlayView.ADMIN_NET_STATS)
+        actions.add(5, TouchOverlayView.ADMIN_NET_EVENTS)
+    }
     if (gamepadOnlyMode || !hasTouchAutomapButton) {
         actions.add(TouchOverlayView.ADMIN_AUTOMAP)
     }
     if (gamepadOnlyMode) {
-        actions.add(TouchOverlayView.ADMIN_HEADLIGHT)
-        actions.add(TouchOverlayView.ADMIN_WARP)
+        if (isMultiplayerGame) actions.add(TouchOverlayView.ADMIN_WARP)
         actions.add(TouchOverlayView.ADMIN_MUSIC)
-        actions.add(TouchOverlayView.ADMIN_ACCEPT_JOIN)
+        if (showNetworkActions) actions.add(TouchOverlayView.ADMIN_ACCEPT_JOIN)
     }
     return actions
 }
@@ -437,6 +441,9 @@ internal fun touchLayoutBoundActionBindings(layout: TouchLayout): Set<Int> {
     return bindings
 }
 
+internal fun controllerConfigBoundActionBindings(bindings: Map<String, String>): Set<Int> =
+    bindings.values.mapNotNull { TouchBindings.nameToBinding(it) }.toSet()
+
 private fun remainingCandidateBindings(
     layout: TouchLayout,
     isMultiplayerGame: Boolean,
@@ -481,16 +488,16 @@ internal fun remainingActionLabel(
         }
     }
 
-internal fun remainingActionUsesHeldActivation(binding: Int): Boolean =
-    binding == TouchBindings.BTN_ENERGY_SHIELD
+internal fun remainingActionUsesHeldActivation(binding: Int): Boolean = binding == TouchBindings.BTN_ENERGY_SHIELD
 
 internal fun remainingKeyTouchActions(
     layout: TouchLayout,
     gameVariant: String,
     isMultiplayerGame: Boolean = false,
     weaponState: WeaponState? = null,
+    extraBoundBindings: Set<Int> = emptySet(),
 ): List<RemainingTouchAction> {
-    val boundBindings = touchLayoutBoundActionBindings(layout)
+    val boundBindings = touchLayoutBoundActionBindings(layout) + extraBoundBindings
     return remainingCandidateBindings(layout, isMultiplayerGame)
         .filter { binding ->
             gameVariant != "d1" ||
@@ -614,6 +621,12 @@ class TouchOverlayView
 
         /** Returns true while this activity is running a multiplayer session. */
         var isMultiplayerGameProvider: (() -> Boolean)? = null
+
+        /** Returns true during multiplayer launch handoff before the game session starts. */
+        var hasPendingMultiplayerLaunchProvider: (() -> Boolean)? = null
+
+        /** Returns action bindings already covered by physical controller config. */
+        var controllerBoundActionBindingsProvider: (() -> Set<Int>)? = null
 
         /** Returns true if local player owns the Guide-Bot in coop. Set by MainActivity. */
         var isEscortOwnerProvider: (() -> Boolean)? = null
@@ -1450,6 +1463,7 @@ class TouchOverlayView
                 gameVariant = gameVariant,
                 isMultiplayerGame = isMultiplayerGameProvider?.invoke() == true,
                 weaponState = weaponState,
+                extraBoundBindings = controllerBoundActionBindingsProvider?.invoke() ?: emptySet(),
             )
 
         private fun recomputeRemainingActionGeometry(weaponState: WeaponState? = weaponStateProvider?.invoke()) {
@@ -1667,7 +1681,10 @@ class TouchOverlayView
                                 if (remainingActionUsesHeldActivation(selectedBinding)) {
                                     if (remainingActionHeldBinding != selectedBinding) {
                                         releaseRemainingHeldActionIfNeeded()
-                                        pressLayoutButtonBinding(selectedBinding, remainingActionHoldSourceTag(selectedBinding))
+                                        pressLayoutButtonBinding(
+                                            selectedBinding,
+                                            remainingActionHoldSourceTag(selectedBinding),
+                                        )
                                         remainingActionHeldBinding = selectedBinding
                                     }
                                     invalidate()
@@ -4054,11 +4071,11 @@ class TouchOverlayView
                 }
 
                 ADMIN_QUICK_SAVE -> {
-                    "Quick Save"
+                    "Save"
                 }
 
                 ADMIN_QUICK_LOAD -> {
-                    "Quick Load"
+                    "Load"
                 }
 
                 ADMIN_OPEN_MENU -> {
@@ -4138,6 +4155,8 @@ class TouchOverlayView
             adminTrayVisibleActions(
                 gamepadOnlyMode = gamepadOnlyMode,
                 hasTouchAutomapButton = layout.buttons.any { it.binding == TouchBindings.BTN_AUTOMAP },
+                isMultiplayerGame = isMultiplayerGameProvider?.invoke() == true,
+                hasPendingLaunchInfo = hasPendingMultiplayerLaunchProvider?.invoke() == true,
             )
 
         private fun adminTrayItemCount(): Int = currentAdminTrayActions().size

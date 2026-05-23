@@ -66,6 +66,7 @@ object ConfigImportExport {
                 parsed.bindings,
                 parsed.inverts,
                 parsed.thresholds,
+                parsed.axisExponents,
             )
         return shareJson(context, json, "controller_config.json", "Share Controller Config")
     }
@@ -89,6 +90,7 @@ object ConfigImportExport {
                     parsed.bindings,
                     parsed.inverts,
                     parsed.thresholds,
+                    parsed.axisExponents,
                 ),
             )
         }
@@ -211,7 +213,7 @@ object ConfigImportExport {
             val msg = result.warnings.joinToString("; ")
             return "Controller config import failed: $msg"
         }
-        // Write as a simple bindings+inverts+thresholds JSON that loadConfig() can read
+        // Write a simple JSON that loadConfig() can read
         val outJson = JSONObject()
         outJson.put("version", 1)
         val bindingsObj = JSONObject()
@@ -224,6 +226,11 @@ object ConfigImportExport {
             val tObj = JSONObject()
             for ((k, v) in result.value.thresholds) tObj.put(k, v)
             outJson.put("thresholds", tObj)
+        }
+        if (result.value.axisExponents.isNotEmpty()) {
+            val eObj = JSONObject()
+            for ((k, v) in result.value.axisExponents) eObj.put(k, v.toDouble())
+            outJson.put("axis_exponents", eObj)
         }
         File(context.filesDir, "controller_config.json").writeText(outJson.toString(2))
         val warnings =
@@ -453,12 +460,14 @@ object ConfigImportExport {
         val bindings: Map<String, String>,
         val inverts: Set<String>,
         val thresholds: Map<String, Int>,
+        val axisExponents: Map<String, Float>,
     )
 
     private fun parseControllerFields(saved: JSONObject): ControllerFields {
         val bindings = mutableMapOf<String, String>()
         val inverts = mutableSetOf<String>()
         val thresholds = mutableMapOf<String, Int>()
+        val axisExponents = mutableMapOf<String, Float>()
         if (saved.has("bindings")) {
             val obj = saved.getJSONObject("bindings")
             for (key in obj.keys()) bindings[key] = obj.getString(key)
@@ -471,7 +480,11 @@ object ConfigImportExport {
         if (tObj != null) {
             for (key in tObj.keys()) thresholds[key] = tObj.getInt(key)
         }
-        return ControllerFields(bindings, inverts, thresholds)
+        val eObj = saved.optJSONObject("axis_exponents")
+        if (eObj != null) {
+            for (key in eObj.keys()) axisExponents[key] = eObj.getDouble(key).toFloat()
+        }
+        return ControllerFields(bindings, inverts, thresholds, axisExponents)
     }
 
     private fun shareJson(
