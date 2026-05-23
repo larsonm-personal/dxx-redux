@@ -77,8 +77,10 @@ extern "C" int android_surface_get_display_height(void);
 extern "C" {
 int RBAEnabled(void);
 int RBAGetNumberOfTracks(void);
+int RBAGetNumAudioTracks(void);
 int RBAGetTrackNum(void);
 int RBAPeekPlayStatus(void);
+const char *RBAGetInitStatus(void);
 extern int g_startup_title_song_requested;
 }
 
@@ -801,12 +803,16 @@ extern "C" char *game_introspect_get_state(void)
 
 	/* -- Redbook audio ---------------------------------------------- */
 	{
-		json rb = { { "enabled", false } };
+		json rb = {
+			{ "enabled", false },
+			{ "init_status", std::string(RBAGetInitStatus() ? RBAGetInitStatus() : "") }
+		};
 		int enabled = RBAEnabled();
 		if (enabled) {
 			rb["enabled"] = true;
 			int status = RBAPeekPlayStatus();
 			rb["num_tracks"] = RBAGetNumberOfTracks();
+			rb["num_audio_tracks"] = RBAGetNumAudioTracks();
 			rb["current_track"] = RBAGetTrackNum();
 			rb["play_status"] = (status == 1) ? "playing" : (status == -1) ? "paused"
 			                                                               : "stopped";

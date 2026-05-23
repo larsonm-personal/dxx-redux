@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 #include <SDL.h>
 #include <SDL_mixer.h>
@@ -161,11 +162,20 @@ static combined_track_t s_tracks[MAX_TRACKS];
 static int s_num_tracks = 0;
 static audio_source_t s_sources[MAX_SOURCES];
 static int s_num_sources = 0;
+static char s_init_status[160] = "not initialized";
 
 /* Legacy single-source file handle (used when no audio_playlist.json) */
 static bin_handle_t s_gog_handle = { NULL, NULL };
 static int s_initialised = 0;
 static int s_output_rate = 48000;
+
+static void rba_set_status(const char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(s_init_status, sizeof(s_init_status), fmt, args);
+	va_end(args);
+}
 
 /* ── Playback state ──────────────────────────────────────────────────── */
 
@@ -481,23 +491,27 @@ static int parse_source_cue(const char *cue_name, const char *const *bin_names,
 	cue_text = read_text_file_any(cue_name);
 	if (!cue_text) {
 		RBA_LOG("parse_source_cue: cannot open %s", cue_name);
+		rba_set_status("cue open failed: %s", cue_name);
 		return 0;
 	}
 
 	count = cue_parse(cue_text, NULL, 0, &disc);
 	if (count <= 0 || disc.num_tracks <= 0) {
 		RBA_LOG("parse_source_cue: failed to parse %s", cue_name);
+		rba_set_status("cue parse failed: %s", cue_name);
 		free(cue_text);
 		return 0;
 	}
 	if (disc.num_files <= 0 || disc.num_files > MAX_SOURCE_BINS || disc.num_files > num_bins) {
 		RBA_LOG("parse_source_cue: cue expects %d BIN files, playlist has %d",
 		        disc.num_files, num_bins);
+		rba_set_status("cue/bin mismatch: cue=%d playlist=%d", disc.num_files, num_bins);
 		free(cue_text);
 		return 0;
 	}
 	if (base + disc.num_tracks > MAX_TRACKS) {
 		RBA_LOG("parse_source_cue: too many tracks in %s", cue_name);
+		rba_set_status("too many cue tracks: %s", cue_name);
 		free(cue_text);
 		return 0;
 	}
@@ -507,6 +521,7 @@ static int parse_source_cue(const char *cue_name, const char *const *bin_names,
 		bh_open(&s_sources[source_idx].bin_files[i], bin_names[i]);
 		if (!bh_valid(&s_sources[source_idx].bin_files[i])) {
 			RBA_LOG("parse_source_cue: cannot open BIN %s", bin_names[i]);
+			rba_set_status("bin open failed: %s", bin_names[i]);
 			close_source_bins(&s_sources[source_idx]);
 			free(cue_text);
 			return 0;
@@ -515,6 +530,7 @@ static int parse_source_cue(const char *cue_name, const char *const *bin_names,
 		if (file_size <= 0) {
 			RBA_LOG("parse_source_cue: BIN file %s has invalid size %lld",
 			        bin_names[i], file_size);
+			rba_set_status("bin size invalid: %s", bin_names[i]);
 			close_source_bins(&s_sources[source_idx]);
 			free(cue_text);
 			return 0;
@@ -528,6 +544,7 @@ static int parse_source_cue(const char *cue_name, const char *const *bin_names,
 	free(cue_text);
 	if (count <= 0 || disc.num_tracks <= 0) {
 		RBA_LOG("parse_source_cue: failed to compute track lengths for %s", cue_name);
+		rba_set_status("cue track lengths failed: %s", cue_name);
 		close_source_bins(&s_sources[source_idx]);
 		return 0;
 	}
@@ -560,6 +577,8 @@ static int parse_source_cue(const char *cue_name, const char *const *bin_names,
 	        source_idx, s_sources[source_idx].disc_label,
 	        disc.num_tracks, s_sources[source_idx].audio_count,
 	        s_sources[source_idx].num_bins);
+	rba_set_status("playlist source ok: %d tracks, %d audio", disc.num_tracks,
+	               s_sources[source_idx].audio_count);
 	for (i = base; i < s_num_tracks; i++) {
 		RBA_DIAG("track %d type=%s start=%d len=%d src=%d file=%d name=%s",
 		         i + 1,
@@ -588,20 +607,26 @@ static int parse_audio_playlist(void)
 	int total;
 
 	f = PHYSFS_openRead("audio_playlist.json");
-	if (!f) return 0;
+	if (!f) {
+		rba_set_status("audio_playlist.json missing");
+		return 0;
+	}
 
 	fsize = PHYSFS_fileLength(f);
 	if (fsize <= 0 || fsize > 64 * 1024) {
+		rba_set_status("audio_playlist.json invalid size: %lld", (long long) fsize);
 		PHYSFS_close(f);
 		return 0;
 	}
 
 	json = (char *) malloc((size_t) fsize + 1);
 	if (!json) {
+		rba_set_status("audio_playlist.json alloc failed");
 		PHYSFS_close(f);
 		return 0;
 	}
 	if (PHYSFS_read(f, json, 1, (PHYSFS_uint32) fsize) != fsize) {
+		rba_set_status("audio_playlist.json read failed");
 		free(json);
 		PHYSFS_close(f);
 		return 0;
@@ -617,6 +642,7 @@ static int parse_audio_playlist(void)
 	/* Find "sources" array */
 	p = strstr(json, "\"sources\"");
 	if (!p) {
+		rba_set_status("audio_playlist.json missing sources");
 		free(json);
 		return 0;
 	}
@@ -625,6 +651,7 @@ static int parse_audio_playlist(void)
 	if (*p == ':') p++;
 	p = pj_skip_ws(p);
 	if (*p != '[') {
+		rba_set_status("audio_playlist.json malformed sources");
 		free(json);
 		return 0;
 	}
@@ -780,6 +807,10 @@ static int parse_audio_playlist(void)
 	}
 
 	total = s_num_tracks;
+	if (total > 0)
+		rba_set_status("playlist loaded: %d sources, %d tracks", s_num_sources, total);
+	else
+		rba_set_status("playlist had no usable tracks");
 	RBA_LOG("audio_playlist.json: %d sources, %d total tracks",
 	        s_num_sources, total);
 	return total;
@@ -795,6 +826,7 @@ static int parse_cue_file(void)
 	f = open_ci("descent_ii.inst");
 	if (!f) {
 		RBA_LOG("Could not open CUE file (descent_ii.inst)");
+		rba_set_status("legacy cue missing: descent_ii.inst");
 		return 0;
 	}
 
@@ -871,6 +903,7 @@ static int parse_cue_file(void)
 	if (!bh_valid(&s_gog_handle)) {
 		RBA_LOG("Could not open BIN file (descent_ii.gog)");
 		s_num_tracks = 0;
+		rba_set_status("legacy BIN missing: descent_ii.gog");
 		return 0;
 	}
 
@@ -910,6 +943,7 @@ static int parse_cue_file(void)
 		        i + 1, s_tracks[i].type ? "audio" : "data",
 		        s_tracks[i].start_sector, s_tracks[i].num_sectors);
 	}
+	rba_set_status("legacy cue loaded: %d tracks", s_num_tracks);
 
 	return s_num_tracks;
 }
@@ -1118,6 +1152,7 @@ static void rba_music_callback(void *udata, Uint8 *stream, int len)
 void RBAInit(void)
 {
 	if (s_initialised) return;
+	rba_set_status("initializing redbook");
 
 	/* Query SDL mixer output rate */
 	{
@@ -1135,6 +1170,7 @@ void RBAInit(void)
 		RBA_LOG("Loaded multi-source playlist");
 	} else if (parse_cue_file() < 2) {
 		RBA_LOG("No usable tracks found in CUE/BIN");
+		rba_set_status("no usable tracks found");
 		s_num_tracks = 0;
 		if (bh_valid(&s_gog_handle)) {
 			bh_close(&s_gog_handle);
@@ -1143,6 +1179,7 @@ void RBAInit(void)
 	}
 
 	s_initialised = 1;
+	rba_set_status("ready: %d tracks, %d audio", s_num_tracks, RBAGetNumAudioTracks());
 	RBAList();
 }
 
@@ -1477,4 +1514,9 @@ int RBAIsAudioTrack(int track)
 	if (!s_initialised || track < 1 || track > s_num_tracks)
 		return 0;
 	return s_tracks[track - 1].type == 1 ? 1 : 0;
+}
+
+const char *RBAGetInitStatus(void)
+{
+	return s_init_status;
 }

@@ -481,6 +481,9 @@ internal fun remainingActionLabel(
         }
     }
 
+internal fun remainingActionUsesHeldActivation(binding: Int): Boolean =
+    binding == TouchBindings.BTN_ENERGY_SHIELD
+
 internal fun remainingKeyTouchActions(
     layout: TouchLayout,
     gameVariant: String,
@@ -1241,6 +1244,7 @@ class TouchOverlayView
         private var remainingActionSelectedIndex = -1
         private var remainingActionPointerId = -1
         private var remainingActionPressedIndex = -1
+        private var remainingActionHeldBinding = -1
         private var remainingActionRowCount = 1
         private var remainingActionButtonRect = RectF()
         private val remainingActionItemRects = mutableListOf<RectF>()
@@ -1523,11 +1527,21 @@ class TouchOverlayView
         }
 
         private fun closeRemainingActions() {
+            releaseRemainingHeldActionIfNeeded()
             remainingActionOpen = false
             remainingActionSelectedIndex = -1
             remainingActionPointerId = -1
             remainingActionPressedIndex = -1
             invalidate()
+        }
+
+        private fun remainingActionHoldSourceTag(binding: Int): String = "touch:remaining:hold:$binding"
+
+        private fun releaseRemainingHeldActionIfNeeded() {
+            if (remainingActionHeldBinding < 0) return
+            val binding = remainingActionHeldBinding
+            remainingActionHeldBinding = -1
+            releaseLayoutButtonBinding(binding, true, remainingActionHoldSourceTag(binding))
         }
 
         private fun openRemainingActions(fromGamepad: Boolean = false) {
@@ -1586,14 +1600,31 @@ class TouchOverlayView
                         closeRemainingActions()
                         false
                     } else if (action != 0) {
-                        keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP ||
-                            keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN ||
-                            keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT ||
-                            keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT ||
-                            keyCode == android.view.KeyEvent.KEYCODE_BUTTON_A ||
-                            keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER ||
-                            keyCode == android.view.KeyEvent.KEYCODE_BUTTON_B ||
-                            keyCode == android.view.KeyEvent.KEYCODE_BACK
+                        when (keyCode) {
+                            android.view.KeyEvent.KEYCODE_BUTTON_A,
+                            android.view.KeyEvent.KEYCODE_DPAD_CENTER,
+                            -> {
+                                if (remainingActionHeldBinding >= 0) {
+                                    releaseRemainingHeldActionIfNeeded()
+                                    invalidate()
+                                }
+                                true
+                            }
+
+                            android.view.KeyEvent.KEYCODE_DPAD_UP,
+                            android.view.KeyEvent.KEYCODE_DPAD_DOWN,
+                            android.view.KeyEvent.KEYCODE_DPAD_LEFT,
+                            android.view.KeyEvent.KEYCODE_DPAD_RIGHT,
+                            android.view.KeyEvent.KEYCODE_BUTTON_B,
+                            android.view.KeyEvent.KEYCODE_BACK,
+                            -> {
+                                true
+                            }
+
+                            else -> {
+                                false
+                            }
+                        }
                     } else {
                         recomputeRemainingActionGeometry()
                         if (remainingActionSelectedIndex !in actions.indices) {
@@ -1632,8 +1663,18 @@ class TouchOverlayView
                             android.view.KeyEvent.KEYCODE_DPAD_CENTER,
                             -> {
                                 val selectedIndex = remainingActionSelectedIndex.coerceIn(0, actions.lastIndex)
-                                closeRemainingActions()
-                                triggerRemainingAction(actions[selectedIndex].binding)
+                                val selectedBinding = actions[selectedIndex].binding
+                                if (remainingActionUsesHeldActivation(selectedBinding)) {
+                                    if (remainingActionHeldBinding != selectedBinding) {
+                                        releaseRemainingHeldActionIfNeeded()
+                                        pressLayoutButtonBinding(selectedBinding, remainingActionHoldSourceTag(selectedBinding))
+                                        remainingActionHeldBinding = selectedBinding
+                                    }
+                                    invalidate()
+                                } else {
+                                    closeRemainingActions()
+                                    triggerRemainingAction(selectedBinding)
+                                }
                                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                                 true
                             }

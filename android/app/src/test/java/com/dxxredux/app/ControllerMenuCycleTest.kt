@@ -97,4 +97,11 @@ class ControllerMenuCycleTest {
             ),
         )
     }
+
+    @Test
+    fun onlyEnergyShieldUsesHeldRemainingActionActivation() {
+        assertTrue(remainingActionUsesHeldActivation(TouchBindings.BTN_ENERGY_SHIELD))
+        assertFalse(remainingActionUsesHeldActivation(TouchBindings.BTN_HEADLIGHT))
+        assertFalse(remainingActionUsesHeldActivation(TouchBindings.BTN_AUTOMAP))
+    }
 }

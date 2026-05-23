@@ -25,6 +25,13 @@ a. also, the select button (on android tv) should cycle between opening the "mor
 [fixed] android TV doesn't use the gamepad for the on-screen keyboard. only "a" works as a button press to select the current character, d-pad or sticks don't move around chars
 
 # nice to haves
+[ ] exponential for analog controls. I'd like a slider next to the deadband slider for analog sticks and also single axis analog editing windows. it should control exponential control (fine/de-sensitized control at low deflection and large control at high deflection) along the same lines as we have with the touch analog sticks. the rnge should be from 1 (no exponent) to N, have N be the same as whatever we have for touch sticks
+[ ] the unbound actions menu should consider controller buttons also instead of just touch buttons. currently I have rewind bound to a button and it's in the menu
+[ ] quick save and quick load are really just “open save and load menus” and they should be called save and load
+[ ] headlight shouldn't be in the overlay settings menu since it's already set up to be in the unbound settings menu
+[ ] warp and accept buttons shouldn't be in the settings menu for single player. same for net stats and net events, those are grayed out but instead just don't show them for single player
+[ ] af and msaa settings seem to have no effect when changed in-level. texture filtering clearly has an effect. this is on shield where the settings can only be edited while paused. once unpaused, I can see af working 
+[ ] af only works on textures that aren't merged, it looks like
 [fixed] "import disc image" needs the buttons "extract game files" and "add as audio source" (or "done" - depends on mode) at the top, above the text filename, description, found N tracks, track list, etc.
 [fixed] "import disc image" needs "extract game files" and "add as audio source" to be selectable with the d-pad, currently "close" traps the d-pad cursor on open
 [fixed] "import disc image" needs scroll indicator icons as was done in other menus

@@ -41,6 +41,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fvi.h"
 #include "robot.h"
 #include "multi.h"
+#include "hudmsg.h"
 #include "palette.h"
 #include "bm.h"
 #include "rle.h"
@@ -532,6 +533,8 @@ void toggle_headlight_active()
 		if (Game_mode & GM_MULTI)
 			multi_send_flags(Player_num);
 #endif
+	} else {
+		HUD_init_message_literal(HM_DEFAULT, "No headlight");
 	}
 }
 
