@@ -6,6 +6,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/platform.sh"
 
 DEST="$SCRIPT_DIR/../../app/src/main/assets/gm.sf2"
 
@@ -26,7 +27,7 @@ mkdir -p "$(dirname "$DEST")"
 TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" sf2-XXXXXX)"
 
 echo "Downloading TimGM6mb.sf2 (v${SOUNDFONT_VERSION})..."
-curl -fSL --progress-bar -o "$TMPFILE" "$SOUNDFONT_URL"
+download_file "$TMPFILE" "$SOUNDFONT_URL"
 
 # --- Verify hash ---
 ACTUAL=$(sha256sum "$TMPFILE" | awk '{print $1}')

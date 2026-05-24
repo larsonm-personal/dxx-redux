@@ -83,6 +83,7 @@ android/gradle/
 .kotlin/
 
 temp/
+app/
 
 # generated at build time (dev defaults or release values from build-aab scripts)
 android/app/src/main/java/com/dxxredux/app/BuildInfo.kt

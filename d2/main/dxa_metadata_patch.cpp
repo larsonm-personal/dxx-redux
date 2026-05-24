@@ -78,11 +78,11 @@ void read_bitmap_frames(bitmap_index *frames, int count, const json &value)
 	}
 }
 
-void read_short_frames(short *frames, int count, const json &value)
+void read_wclip_frames(wclip &wall, const json &value)
 {
 	if (!value.is_array())
 		throw std::runtime_error("frames field is not an array");
-	for (int i = 0; i < count; i++) {
+	for (int i = 0; i < MAX_CLIP_FRAMES; i++) {
 		int frame = 0;
 		if (i < static_cast<int>(value.size())) {
 			if (!value[i].is_number_integer())
@@ -91,7 +91,7 @@ void read_short_frames(short *frames, int count, const json &value)
 		}
 		if (frame < 0 || frame >= MAX_TEXTURES)
 			throw std::runtime_error("wall frame out of range");
-		frames[i] = static_cast<short>(frame);
+		wall.frames[i] = static_cast<short>(frame);
 	}
 }
 
@@ -168,12 +168,18 @@ json bitmap_frames_json(const bitmap_index *frames, int count)
 	return result;
 }
 
-json short_frames_json(const short *frames, int count)
+json wclip_frames_json(const wclip &wall)
 {
 	json result = json::array();
-	for (int i = 0; i < count; i++)
-		result.push_back(frames[i]);
+	for (int i = 0; i < MAX_CLIP_FRAMES; i++)
+		result.push_back(wall.frames[i]);
 	return result;
+}
+
+template <typename T>
+T packed_value_copy(T value)
+{
+	return value;
 }
 
 std::string fixed_string(const char *text, size_t max_size)
@@ -190,17 +196,17 @@ json current_texture_value(int index)
 		throw std::runtime_error("texture test path is outside the current HAM texture table");
 	return json{
 		{"Index", index},
-		{"Bitmap", Textures[index].index},
-		{"Flags", TmapInfo[index].flags},
-		{"Pad0", TmapInfo[index].pad[0]},
-		{"Pad1", TmapInfo[index].pad[1]},
-		{"Pad2", TmapInfo[index].pad[2]},
-		{"Lighting", TmapInfo[index].lighting},
-		{"Damage", TmapInfo[index].damage},
-		{"Eclip", TmapInfo[index].eclip_num},
-		{"Destroyed", TmapInfo[index].destroyed},
-		{"SlideU", TmapInfo[index].slide_u},
-		{"SlideV", TmapInfo[index].slide_v},
+		{"Bitmap", packed_value_copy(Textures[index].index)},
+		{"Flags", packed_value_copy(TmapInfo[index].flags)},
+		{"Pad0", packed_value_copy(TmapInfo[index].pad[0])},
+		{"Pad1", packed_value_copy(TmapInfo[index].pad[1])},
+		{"Pad2", packed_value_copy(TmapInfo[index].pad[2])},
+		{"Lighting", packed_value_copy(TmapInfo[index].lighting)},
+		{"Damage", packed_value_copy(TmapInfo[index].damage)},
+		{"Eclip", packed_value_copy(TmapInfo[index].eclip_num)},
+		{"Destroyed", packed_value_copy(TmapInfo[index].destroyed)},
+		{"SlideU", packed_value_copy(TmapInfo[index].slide_u)},
+		{"SlideV", packed_value_copy(TmapInfo[index].slide_v)},
 	};
 }
 
@@ -211,13 +217,13 @@ json current_vclip_value(int index)
 	vclip &clip = Vclip[index];
 	return json{
 		{"Index", index},
-		{"PlayTime", clip.play_time},
-		{"NumFrames", clip.num_frames},
-		{"FrameTime", clip.frame_time},
-		{"Flags", clip.flags},
-		{"Sound", clip.sound_num},
+		{"PlayTime", packed_value_copy(clip.play_time)},
+		{"NumFrames", packed_value_copy(clip.num_frames)},
+		{"FrameTime", packed_value_copy(clip.frame_time)},
+		{"Flags", packed_value_copy(clip.flags)},
+		{"Sound", packed_value_copy(clip.sound_num)},
 		{"Frames", bitmap_frames_json(clip.frames, VCLIP_MAX_FRAMES)},
-		{"Light", clip.light_value},
+		{"Light", packed_value_copy(clip.light_value)},
 	};
 }
 
@@ -228,26 +234,26 @@ json current_eclip_value(int index)
 	eclip &effect = Effects[index];
 	return json{
 		{"Index", index},
-		{"PlayTime", effect.vc.play_time},
-		{"NumFrames", effect.vc.num_frames},
-		{"FrameTime", effect.vc.frame_time},
-		{"VclipFlags", effect.vc.flags},
-		{"VclipSound", effect.vc.sound_num},
+		{"PlayTime", packed_value_copy(effect.vc.play_time)},
+		{"NumFrames", packed_value_copy(effect.vc.num_frames)},
+		{"FrameTime", packed_value_copy(effect.vc.frame_time)},
+		{"VclipFlags", packed_value_copy(effect.vc.flags)},
+		{"VclipSound", packed_value_copy(effect.vc.sound_num)},
 		{"Frames", bitmap_frames_json(effect.vc.frames, VCLIP_MAX_FRAMES)},
-		{"Light", effect.vc.light_value},
-		{"TimeLeft", effect.time_left},
-		{"FrameCount", effect.frame_count},
-		{"ChangingWall", effect.changing_wall_texture},
-		{"ChangingObject", effect.changing_object_texture},
-		{"Flags", effect.flags},
-		{"CritClip", effect.crit_clip},
-		{"DestBm", effect.dest_bm_num},
-		{"DestVclip", effect.dest_vclip},
-		{"DestEclip", effect.dest_eclip},
-		{"DestSize", effect.dest_size},
-		{"Sound", effect.sound_num},
-		{"Seg", effect.segnum},
-		{"Side", effect.sidenum},
+		{"Light", packed_value_copy(effect.vc.light_value)},
+		{"TimeLeft", packed_value_copy(effect.time_left)},
+		{"FrameCount", packed_value_copy(effect.frame_count)},
+		{"ChangingWall", packed_value_copy(effect.changing_wall_texture)},
+		{"ChangingObject", packed_value_copy(effect.changing_object_texture)},
+		{"Flags", packed_value_copy(effect.flags)},
+		{"CritClip", packed_value_copy(effect.crit_clip)},
+		{"DestBm", packed_value_copy(effect.dest_bm_num)},
+		{"DestVclip", packed_value_copy(effect.dest_vclip)},
+		{"DestEclip", packed_value_copy(effect.dest_eclip)},
+		{"DestSize", packed_value_copy(effect.dest_size)},
+		{"Sound", packed_value_copy(effect.sound_num)},
+		{"Seg", packed_value_copy(effect.segnum)},
+		{"Side", packed_value_copy(effect.sidenum)},
 	};
 }
 
@@ -258,14 +264,14 @@ json current_wclip_value(int index)
 	wclip &wall = WallAnims[index];
 	return json{
 		{"Index", index},
-		{"PlayTime", wall.play_time},
-		{"NumFrames", wall.num_frames},
-		{"Frames", short_frames_json(wall.frames, MAX_CLIP_FRAMES)},
-		{"OpenSound", wall.open_sound},
-		{"CloseSound", wall.close_sound},
-		{"Flags", wall.flags},
+		{"PlayTime", packed_value_copy(wall.play_time)},
+		{"NumFrames", packed_value_copy(wall.num_frames)},
+		{"Frames", wclip_frames_json(wall)},
+		{"OpenSound", packed_value_copy(wall.open_sound)},
+		{"CloseSound", packed_value_copy(wall.close_sound)},
+		{"Flags", packed_value_copy(wall.flags)},
 		{"Filename", fixed_string(wall.filename, sizeof(wall.filename))},
-		{"Pad", wall.pad},
+		{"Pad", packed_value_copy(wall.pad)},
 	};
 }
 
@@ -286,7 +292,7 @@ json current_obj_bitmap_value(int index)
 		throw std::runtime_error("object bitmap test path is outside the current HAM object bitmap table");
 	return json{
 		{"Index", index},
-		{"Bitmap", ObjBitmaps[index].index},
+		{"Bitmap", packed_value_copy(ObjBitmaps[index].index)},
 		{"Pointer", ObjBitmapPtrs[index]},
 	};
 }
@@ -358,31 +364,67 @@ bool parse_anim_state_field(const std::string &field, int &gun, int &state, bool
 	return true;
 }
 
-fix *robot_gun_point_component(robot_info &robot, int gun, char axis)
+fix robot_gun_point_value(const robot_info &robot, int gun, char axis)
 {
 	if (axis == 'X')
-		return &robot.gun_points[gun].x;
+		return robot.gun_points[gun].x;
 	if (axis == 'Y')
-		return &robot.gun_points[gun].y;
-	return &robot.gun_points[gun].z;
+		return robot.gun_points[gun].y;
+	return robot.gun_points[gun].z;
 }
 
-fix *robot_fix_array_field(robot_info &robot, const std::string &field)
+void set_robot_gun_point_value(robot_info &robot, int gun, char axis, fix value)
+{
+	if (axis == 'X')
+		robot.gun_points[gun].x = value;
+	else if (axis == 'Y')
+		robot.gun_points[gun].y = value;
+	else
+		robot.gun_points[gun].z = value;
+}
+
+bool read_robot_fix_array_field(const robot_info &robot, const std::string &field,
+	fix &value)
 {
 	int index = 0;
 	if (parse_indexed_field(field, "FieldOfView", NDL, index))
-		return &robot.field_of_view[index];
-	if (parse_indexed_field(field, "FiringWait2", NDL, index))
-		return &robot.firing_wait2[index];
-	if (parse_indexed_field(field, "FiringWait", NDL, index))
-		return &robot.firing_wait[index];
-	if (parse_indexed_field(field, "TurnTime", NDL, index))
-		return &robot.turn_time[index];
-	if (parse_indexed_field(field, "MaxSpeed", NDL, index))
-		return &robot.max_speed[index];
-	if (parse_indexed_field(field, "CircleDistance", NDL, index))
-		return &robot.circle_distance[index];
-	return nullptr;
+		value = robot.field_of_view[index];
+	else if (parse_indexed_field(field, "FiringWait2", NDL, index))
+		value = robot.firing_wait2[index];
+	else if (parse_indexed_field(field, "FiringWait", NDL, index))
+		value = robot.firing_wait[index];
+	else if (parse_indexed_field(field, "TurnTime", NDL, index))
+		value = robot.turn_time[index];
+	else if (parse_indexed_field(field, "MaxSpeed", NDL, index))
+		value = robot.max_speed[index];
+	else if (parse_indexed_field(field, "CircleDistance", NDL, index))
+		value = robot.circle_distance[index];
+	else
+		return false;
+	return true;
+}
+
+bool apply_robot_fix_array_field(robot_info &robot, const std::string &field,
+	const json &value)
+{
+	int index = 0;
+	fix field_value = required_int_value(value, field.c_str(), -0x40000000,
+		0x40000000);
+	if (parse_indexed_field(field, "FieldOfView", NDL, index))
+		robot.field_of_view[index] = field_value;
+	else if (parse_indexed_field(field, "FiringWait2", NDL, index))
+		robot.firing_wait2[index] = field_value;
+	else if (parse_indexed_field(field, "FiringWait", NDL, index))
+		robot.firing_wait[index] = field_value;
+	else if (parse_indexed_field(field, "TurnTime", NDL, index))
+		robot.turn_time[index] = field_value;
+	else if (parse_indexed_field(field, "MaxSpeed", NDL, index))
+		robot.max_speed[index] = field_value;
+	else if (parse_indexed_field(field, "CircleDistance", NDL, index))
+		robot.circle_distance[index] = field_value;
+	else
+		return false;
+	return true;
 }
 
 json current_robot_field_value(int index, const std::string &field)
@@ -394,26 +436,27 @@ json current_robot_field_value(int index, const std::string &field)
 	int state_index = 0;
 	char axis = 'X';
 	bool offset_field = false;
+	fix fix_field_value = 0;
 	if (parse_gun_point_field(field, field_index, axis))
-		return *robot_gun_point_component(robot, field_index, axis);
+		return robot_gun_point_value(robot, field_index, axis);
 	if (parse_anim_state_field(field, field_index, state_index, offset_field))
-		return offset_field ? robot.anim_states[field_index][state_index].offset : robot.anim_states[field_index][state_index].n_joints;
+		return packed_value_copy(offset_field ? robot.anim_states[field_index][state_index].offset : robot.anim_states[field_index][state_index].n_joints);
 	if (parse_indexed_field(field, "GunSubmodel", MAX_GUNS, field_index))
 		return static_cast<int>(robot.gun_submodels[field_index]);
-	if (fix *fix_field = robot_fix_array_field(robot, field))
-		return *fix_field;
+	if (read_robot_fix_array_field(robot, field, fix_field_value))
+		return fix_field_value;
 	if (parse_indexed_field(field, "RapidfireCount", NDL, field_index))
 		return static_cast<int>(static_cast<ubyte>(robot.rapidfire_count[field_index]));
 	if (parse_indexed_field(field, "EvadeSpeed", NDL, field_index))
 		return static_cast<int>(static_cast<ubyte>(robot.evade_speed[field_index]));
 	if (field == "Exp1Sound")
-		return robot.exp1_sound_num;
+		return packed_value_copy(robot.exp1_sound_num);
 	if (field == "Exp1Vclip")
-		return robot.exp1_vclip_num;
+		return packed_value_copy(robot.exp1_vclip_num);
 	if (field == "Exp2Sound")
-		return robot.exp2_sound_num;
+		return packed_value_copy(robot.exp2_sound_num);
 	if (field == "Exp2Vclip")
-		return robot.exp2_vclip_num;
+		return packed_value_copy(robot.exp2_vclip_num);
 	if (field == "WeaponType")
 		return static_cast<int>(static_cast<ubyte>(robot.weapon_type));
 	if (field == "WeaponType2")
@@ -431,19 +474,19 @@ json current_robot_field_value(int index, const std::string &field)
 	if (field == "Kamikaze")
 		return static_cast<int>(static_cast<ubyte>(robot.kamikaze));
 	if (field == "ScoreValue")
-		return robot.score_value;
+		return packed_value_copy(robot.score_value);
 	if (field == "Badass")
 		return static_cast<int>(static_cast<ubyte>(robot.badass));
 	if (field == "EnergyDrain")
 		return static_cast<int>(static_cast<ubyte>(robot.energy_drain));
 	if (field == "Lighting")
-		return robot.lighting;
+		return packed_value_copy(robot.lighting);
 	if (field == "Strength")
-		return robot.strength;
+		return packed_value_copy(robot.strength);
 	if (field == "Mass")
-		return robot.mass;
+		return packed_value_copy(robot.mass);
 	if (field == "Drag")
-		return robot.drag;
+		return packed_value_copy(robot.drag);
 	if (field == "CloakType")
 		return static_cast<int>(static_cast<ubyte>(robot.cloak_type));
 	if (field == "AttackType")
@@ -483,7 +526,7 @@ json current_robot_field_value(int index, const std::string &field)
 	if (field == "Aim")
 		return static_cast<int>(robot.aim);
 	if (field == "Always0xabcd")
-		return robot.always_0xabcd;
+		return packed_value_copy(robot.always_0xabcd);
 	throw std::runtime_error("unsupported robot HAM patch field");
 }
 
@@ -493,11 +536,11 @@ json current_weapon_field_value(int index, const std::string &field)
 		throw std::runtime_error("weapon test path is outside the current HAM weapon table");
 	weapon_info &weapon = Weapon_info[index];
 	if (field == "FlashSound")
-		return weapon.flash_sound;
+		return packed_value_copy(weapon.flash_sound);
 	if (field == "RobotHitSound")
-		return weapon.robot_hit_sound;
+		return packed_value_copy(weapon.robot_hit_sound);
 	if (field == "WallHitSound")
-		return weapon.wall_hit_sound;
+		return packed_value_copy(weapon.wall_hit_sound);
 	throw std::runtime_error("unsupported weapon HAM patch field");
 }
 
@@ -626,7 +669,7 @@ void apply_wclip(int index, const json &value)
 	wclip &wall = WallAnims[index];
 	wall.play_time = required_int(value, "PlayTime", -0x40000000, 0x40000000);
 	wall.num_frames = static_cast<short>(required_int(value, "NumFrames", -1, MAX_CLIP_FRAMES));
-	read_short_frames(wall.frames, MAX_CLIP_FRAMES, value.at("Frames"));
+	read_wclip_frames(wall, value.at("Frames"));
 	wall.open_sound = static_cast<short>(required_int(value, "OpenSound", -1, MAX_SOUNDS - 1));
 	wall.close_sound = static_cast<short>(required_int(value, "CloseSound", -1, MAX_SOUNDS - 1));
 	wall.flags = static_cast<short>(required_int(value, "Flags", -32768, 32767));
@@ -688,7 +731,8 @@ void apply_robot_field(int index, const std::string &field, const json &value)
 	char axis = 'X';
 	bool offset_field = false;
 	if (parse_gun_point_field(field, field_index, axis))
-		*robot_gun_point_component(robot, field_index, axis) = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+		set_robot_gun_point_value(robot, field_index, axis,
+			required_int_value(value, field.c_str(), -0x40000000, 0x40000000));
 	else if (parse_anim_state_field(field, field_index, state_index, offset_field)) {
 		short field_value = static_cast<short>(required_int_value(value, field.c_str(), -32768, 32767));
 		if (offset_field)
@@ -698,8 +742,8 @@ void apply_robot_field(int index, const std::string &field, const json &value)
 	}
 	else if (parse_indexed_field(field, "GunSubmodel", MAX_GUNS, field_index))
 		robot.gun_submodels[field_index] = static_cast<ubyte>(required_int_value(value, field.c_str(), 0, 255));
-	else if (fix *fix_field = robot_fix_array_field(robot, field))
-		*fix_field = required_int_value(value, field.c_str(), -0x40000000, 0x40000000);
+	else if (apply_robot_fix_array_field(robot, field, value))
+		;
 	else if (parse_indexed_field(field, "RapidfireCount", NDL, field_index))
 		robot.rapidfire_count[field_index] = static_cast<sbyte>(required_int_value(value, field.c_str(), 0, 255));
 	else if (parse_indexed_field(field, "EvadeSpeed", NDL, field_index))

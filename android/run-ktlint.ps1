@@ -11,6 +11,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot
+$platformHelper = Join-Path $PSScriptRoot "get_deps/Get-DepPlatform.ps1"
+. $platformHelper
 
 function Get-ScopedFiles {
     param(
@@ -53,12 +55,12 @@ function Get-ScopedFiles {
 }
 
 # --- Locate dependencies ---
-$depBaseFile = Join-Path $repoRoot "dependency_base.txt"
-if (-not (Test-Path $depBaseFile)) {
+$DEP_BASE = Get-DependencyBase -RepoRoot $repoRoot
+if (-not $DEP_BASE) {
+    $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
     Write-Error "dependency_base.txt not found at $depBaseFile"
     exit 1
 }
-$DEP_BASE = (Get-Content $depBaseFile -First 1).Trim()
 
 # Load versions from tool_versions.conf
 $confFile = Join-Path $PSScriptRoot "get_deps\tool_versions.conf"
@@ -78,11 +80,9 @@ if (-not (Test-Path $ktlintJar)) {
 
 # Find java
 $java = $null
-$jdkDir = Join-Path $DEP_BASE "jdk-$jdkMajor"
-$candidate = Join-Path $jdkDir "bin\java.exe"
-if (Test-Path $candidate) {
-    $java = $candidate
-} else {
+$jdkBinDir = Join-Path (Join-Path $DEP_BASE "jdk-$jdkMajor") "bin"
+$java = Get-PlatformToolPath -BaseDir $jdkBinDir -ToolName "java"
+if (-not $java) {
     $inPath = Get-Command "java" -ErrorAction SilentlyContinue
     if ($inPath) {
         $java = $inPath.Source

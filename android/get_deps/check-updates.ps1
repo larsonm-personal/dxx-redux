@@ -28,9 +28,13 @@ $scriptDir = $PSScriptRoot
 $androidDir = Split-Path $scriptDir -Parent
 $repoRoot = Split-Path $androidDir -Parent
 $confFile = Join-Path $scriptDir "tool_versions.conf"
+$platformHelper = Join-Path $scriptDir "Get-DepPlatform.ps1"
+. $platformHelper
+$script:hostPlatform = Get-HostPlatform
+$script:checkUpdatesInvocation = Get-CheckUpdatesInvocation
 $runningInVsCodeTerminal = $env:TERM_PROGRAM -eq "vscode"
 if (-not $RunNotePath) {
-    $RunNotePath = Join-Path $androidDir "temp\check-updates.last-run.txt"
+    $RunNotePath = Join-Path $androidDir "temp/check-updates.last-run.txt"
 }
 
 if ($TargetSelection -or $InstallSelection) {
@@ -49,7 +53,7 @@ function Write-RunNote($status, $extraLines = @()) {
     } else {
         "Interactive prompt"
     }
-    $commandParts = @("pwsh -File .\check-updates.ps1")
+    $commandParts = @("pwsh -File $script:checkUpdatesInvocation")
     if ($TargetSelection) {
         $commandParts += "-TargetSelection $TargetSelection"
     }
@@ -86,9 +90,9 @@ function Write-RunNote($status, $extraLines = @()) {
 
 Write-RunNote "started" @(
     "reason=record the exact invocation before network work begins so crashes leave a durable breadcrumb",
-    "recommended_safe_command=pwsh -File .\check-updates.ps1 -NoPrompt",
-    "recommended_target_command=pwsh -File .\check-updates.ps1 -TargetSelection 1,2,3",
-    "recommended_install_command=pwsh -File .\check-updates.ps1 -InstallSelection 1,2,3"
+    "recommended_safe_command=pwsh -File $script:checkUpdatesInvocation -NoPrompt",
+    "recommended_target_command=pwsh -File $script:checkUpdatesInvocation -TargetSelection 1,2,3",
+    "recommended_install_command=pwsh -File $script:checkUpdatesInvocation -InstallSelection 1,2,3"
 )
 
 # -- Load tool_versions.conf --------------------------------------------------
@@ -141,11 +145,7 @@ function Load-Conf {
 }
 
 function Load-DependencyBase {
-    $dependencyBaseFile = Join-Path $repoRoot "dependency_base.txt"
-    if (Test-Path -LiteralPath $dependencyBaseFile) {
-        return (Get-Content -LiteralPath $dependencyBaseFile -First 1).Trim()
-    }
-    return $null
+    return Get-DependencyBase -RepoRoot $repoRoot -CreateIfMissing
 }
 
 function Refresh-ConfContext {
@@ -370,13 +370,156 @@ function Get-JavaVersionFromExecutable($path) {
 }
 
 function Get-PowerShell7InstalledVersion {
-    $command = Get-Command pwsh -ErrorAction SilentlyContinue | Select-Object -First 1
+    $command = @(
+        Get-Command pwsh -ErrorAction SilentlyContinue | Select-Object -First 1
+        Get-Command pwsh-preview -ErrorAction SilentlyContinue | Select-Object -First 1
+    ) | Where-Object { $_ } | Select-Object -First 1
     if (-not $command) { return $null }
     try {
         return Normalize-CommandOutput (& $command.Source -NoProfile -Command '$PSVersionTable.PSVersion.ToString()')
     } catch {
         return $null
     }
+}
+
+function Get-JdkInstalledVersion {
+    $releaseFile = Join-Path (Join-Path $dependency_base "jdk-$JDK_MAJOR") "release"
+    $value = Get-PropertyValueFromFile $releaseFile "JAVA_VERSION"
+    if ($value) {
+        return $value.Trim([char]34)
+    }
+    return $null
+}
+
+function Get-BuildToolsInstalledVersion {
+    return Get-LatestInstalledDirectoryVersion (Join-Path (Join-Path $dependency_base "android-sdk") "build-tools") "*" "^(.+)$"
+}
+
+function Get-SdkCmdlineToolsInstalledBuildId {
+    $binDir = Join-Path (Join-Path (Join-Path (Join-Path $dependency_base "android-sdk") "cmdline-tools") "latest") "bin"
+    $sdkManagerPath = Get-PlatformToolPath -BaseDir $binDir -ToolName "sdkmanager" -UseBatch
+    if ($sdkManagerPath) {
+        return Get-SdkCommandLineToolsBuildId $SDK_CMDLINE_TOOLS_URL
+    }
+    return $null
+}
+
+function Get-CmakeInstalledVersion {
+    return Get-LatestInstalledDirectoryVersion (Join-Path (Join-Path $dependency_base "android-sdk") "cmake") "*" "^(.+)$"
+}
+
+function Get-SoundfontInstalledVersion {
+    $soundfontPath = Join-Path (Join-Path $repo_root "app/src/main/assets") "gm.sf2"
+    return Get-VerifiedFileVersion $soundfontPath $SOUNDFONT_SHA256 $SOUNDFONT_VERSION
+}
+
+function Get-ChromaprintInstalledVersion {
+    $version = Get-LatestInstalledDirectoryVersion $dependency_base "fpcalc-*" "^fpcalc-(.+)$"
+    if ($version) {
+        return "v$version"
+    }
+    return $null
+}
+
+function Get-UnarInstalledVersion {
+    $unarPath = Get-PlatformToolPath -BaseDir (Join-Path $dependency_base $UNAR_DIR_NAME) -ToolName "unar"
+    return Get-ExecutableVersionFromRegex $unarPath @("-v") "v?([0-9]+\.[0-9]+\.[0-9]+)" "v"
+}
+
+function Get-ImageMagickInstalledVersion {
+    $localVersion = Get-LatestInstalledDirectoryVersion $dependency_base "imagemagick-*" "^imagemagick-(.+)$"
+    if ($localVersion) {
+        return $localVersion
+    }
+
+    $magickPath = Get-PlatformToolPath -ToolName "magick"
+    if (-not $magickPath) {
+        return $null
+    }
+
+    try {
+        $firstLine = Normalize-CommandOutput (& $magickPath --version 2>&1)
+        if ($firstLine -match 'ImageMagick\s+([0-9]+\.[0-9]+\.[0-9]+-\d+)') {
+            return $Matches[1]
+        }
+    } catch {}
+
+    return $null
+}
+
+function Get-SevenZipInstalledVersion {
+    $localVersion = Get-LatestInstalledDirectoryVersion $dependency_base "7z-*" "^7z-(.+)$"
+    if ($localVersion) {
+        return $localVersion
+    }
+
+    $sevenZipPath = Get-ToolPathFromPath -CommandNames @("7zz", "7z", "7za")
+    return Get-SevenZipVersionFromExecutable $sevenZipPath
+}
+
+function Get-SdkCommandLineToolsUrlForPlatform($buildId) {
+    $token = Get-SdkCmdlineToolsOsToken
+    if (-not $token) {
+        $token = "win"
+    }
+    return "https://dl.google.com/android/repository/commandlinetools-$token-$buildId`_latest.zip"
+}
+
+function Get-NdkUrlForPlatform($version) {
+    $token = Get-NdkArchiveOsToken
+    if (-not $token) {
+        $token = "windows"
+    }
+    return "https://dl.google.com/android/repository/android-ndk-$version-$token.zip"
+}
+
+function Get-JdkUrlForPlatform($majorVersion) {
+    $token = Get-AdoptiumOsToken
+    if (-not $token) {
+        $token = "windows"
+    }
+    return "https://api.adoptium.net/v3/binary/latest/$majorVersion/ga/$token/x64/jdk/hotspot/normal/eclipse?project=jdk"
+}
+
+function Get-CmakeUrlForPlatform($version) {
+    switch ($script:hostPlatform) {
+        "Linux" { return "https://github.com/Kitware/CMake/releases/download/v$version/cmake-$version-linux-x86_64.tar.gz" }
+        "MacOS" { return "https://github.com/Kitware/CMake/releases/download/v$version/cmake-$version-macos-universal.tar.gz" }
+        default { return "https://github.com/Kitware/CMake/releases/download/v$version/cmake-$version-windows-x86_64.zip" }
+    }
+}
+
+function Get-ShellcheckUrlForPlatform($version) {
+    switch ($script:hostPlatform) {
+        "Linux" { return "https://github.com/koalaman/shellcheck/releases/download/v$version/shellcheck-v$version.linux.x86_64.tar.xz" }
+        "MacOS" { return "https://github.com/koalaman/shellcheck/releases/download/v$version/shellcheck-v$version.darwin.x86_64.tar.xz" }
+        default { return "https://github.com/koalaman/shellcheck/releases/download/v$version/shellcheck-v$version.zip" }
+    }
+}
+
+function Get-ShfmtUrlForPlatform($version) {
+    switch ($script:hostPlatform) {
+        "Linux" { return "https://github.com/mvdan/sh/releases/download/v$version/shfmt_v${version}_linux_amd64" }
+        "MacOS" { return "https://github.com/mvdan/sh/releases/download/v$version/shfmt_v${version}_darwin_amd64" }
+        default { return "https://github.com/mvdan/sh/releases/download/v$version/shfmt_v${version}_windows_amd64.exe" }
+    }
+}
+
+function Get-ChromaprintFpcalcUrlForPlatform($tag) {
+    $plainVersion = $tag -replace '^v', ''
+    switch ($script:hostPlatform) {
+        "Linux" { return "https://github.com/acoustid/chromaprint/releases/download/$tag/chromaprint-fpcalc-$plainVersion-linux-x86_64.tar.gz" }
+        "MacOS" { return "https://github.com/acoustid/chromaprint/releases/download/$tag/chromaprint-fpcalc-$plainVersion-macos-x86_64.tar.gz" }
+        default { return "https://github.com/acoustid/chromaprint/releases/download/$tag/chromaprint-fpcalc-$plainVersion-windows-x86_64.zip" }
+    }
+}
+
+function Get-GradleVerificationCommand {
+    if ($script:hostPlatform -eq "Windows") {
+        return "cd ..; .\\gradlew.bat assembleDebug"
+    }
+
+    return "cd ..; ./gradlew assembleDebug"
 }
 
 function Get-SevenZipVersionFromExecutable($path) {
@@ -526,7 +669,7 @@ function Get-LatestAndroidPackageVersion($packagePrefix) {
 }
 
 function Get-SdkCommandLineToolsBuildId($url) {
-    if ($url -match 'commandlinetools-win-(\d+)_latest\.zip') {
+    if ($url -match 'commandlinetools-(?:win|linux|mac)-(\d+)_latest\.zip') {
         return $Matches[1]
     }
     return $null
@@ -536,14 +679,14 @@ function Get-LatestSdkCommandLineToolsInfo {
     $content = Get-AndroidRepositoryContent
     if (-not $content) { return $null }
 
-    $buildIds = [regex]::Matches($content, 'commandlinetools-win-(\d+)_latest\.zip') |
+    $buildIds = [regex]::Matches($content, 'commandlinetools-(?:win|linux|mac)-(\d+)_latest\.zip') |
         ForEach-Object { $_.Groups[1].Value }
     $latestBuild = Select-LatestVersion $buildIds -IncludePrerelease
     if (-not $latestBuild) { return $null }
 
     return @{
         Build = $latestBuild
-        Url = "https://dl.google.com/android/repository/commandlinetools-win-$latestBuild`_latest.zip"
+        Url = Get-SdkCommandLineToolsUrlForPlatform $latestBuild
     }
 }
 
@@ -770,8 +913,8 @@ function Get-LatestNDKVersion {
     try {
         $page = (Invoke-WebRequest -Uri "https://developer.android.com/ndk/downloads" `
                 -UseBasicParsing -TimeoutSec 15).Content
-        # Look for "android-ndk-r<VER>-windows.zip" pattern
-        if ($page -match 'android-ndk-(r\d+[a-z]?)-windows\.zip') {
+        # Look for "android-ndk-r<VER>-<platform>.zip" pattern
+        if ($page -match 'android-ndk-(r\d+[a-z]?)-(?:windows|linux|darwin)\.zip') {
             return $Matches[1]
         }
     } catch {}
@@ -781,9 +924,13 @@ function Get-LatestNDKVersion {
 function Get-LatestJDKVersion {
     # Check Adoptium (Eclipse Temurin) for latest JDK 17 and 21
     $versions = @()
+    $osToken = Get-AdoptiumOsToken
+    if (-not $osToken) {
+        $osToken = "windows"
+    }
     foreach ($major in @(17, 21)) {
         try {
-            $url = "https://api.adoptium.net/v3/info/release_versions?architecture=x64&heap_size=normal&image_type=jdk&os=windows&page=0&page_size=1&project=jdk&release_type=ga&sort_method=DEFAULT&sort_order=DESC&vendor=eclipse&version=%5B${major}%2C$($major+1)%29"
+            $url = "https://api.adoptium.net/v3/info/release_versions?architecture=x64&heap_size=normal&image_type=jdk&os=$osToken&page=0&page_size=1&project=jdk&release_type=ga&sort_method=DEFAULT&sort_order=DESC&vendor=eclipse&version=%5B${major}%2C$($major+1)%29"
             $json = (Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10).Content | ConvertFrom-Json
             if ($json.versions.Count -gt 0) {
                 $v = $json.versions[0]
@@ -823,13 +970,27 @@ function Get-LatestClangFormatInfo {
     $html = Get-GitHubExpandedAssetsHtml "muttleyxd/clang-tools-static-binaries" $tag
     if (-not $html) { return $null }
 
+    $assetPattern = 'clang-format-(\d+)_windows-amd64\.exe'
+    $assetTemplate = 'clang-format-{0}_windows-amd64.exe'
+    switch ($script:hostPlatform) {
+        "Linux" {
+            $assetPattern = 'clang-format-(\d+)_linux-amd64'
+            $assetTemplate = 'clang-format-{0}_linux-amd64'
+        }
+        "MacOS" {
+            $assetPattern = 'clang-format-(\d+)_macosx-amd64'
+            $assetTemplate = 'clang-format-{0}_macosx-amd64'
+        }
+    }
+
     $bestAsset = $null
-    foreach ($match in [regex]::Matches($html, 'clang-format-(\d+)_windows-amd64\.exe')) {
+    foreach ($match in [regex]::Matches($html, $assetPattern)) {
         $assetVersion = $match.Groups[1].Value
+        $assetName = [string]::Format($assetTemplate, $assetVersion)
         $candidate = @{
             Version = $assetVersion
             Tag = $tag
-            Url = "https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/$tag/clang-format-$assetVersion`_windows-amd64.exe"
+            Url = "https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/$tag/$assetName"
         }
 
         if (-not $bestAsset) {
@@ -989,7 +1150,10 @@ $deps = @(
     @{ Name = "unar"; ConfKey = "UNAR_VERSION";
         Current = $conf["UNAR_VERSION"];
         Latest = $conf["UNAR_VERSION"];
-        SuppressTargetUpdate = $true
+        SuppressTargetUpdate = $true;
+        LinuxManualOnly = $script:hostPlatform -eq "Linux";
+        DriftLabel = "manual-linux";
+        ManualInstallHint = "On Ubuntu install the host package with sudo apt install unar"
     },
 
     @{ Name = "kotlinx-serialization-json"; ConfKey = "KOTLINX_SERIALIZATION_VERSION";
@@ -1061,12 +1225,20 @@ $deps = @(
 
     @{ Name = "ImageMagick"; ConfKey = "IMAGEMAGICK_VERSION";
         Current = $conf["IMAGEMAGICK_VERSION"];
-        Latest = Get-LatestImageMagickVersion
+        Latest = Get-LatestImageMagickVersion;
+        SuppressTargetUpdate = $script:hostPlatform -eq "Linux";
+        LinuxManualOnly = $script:hostPlatform -eq "Linux";
+        DriftLabel = "manual-linux";
+        ManualInstallHint = "Install ImageMagick from your distro so magick is on PATH"
     },
 
     @{ Name = "7-Zip"; ConfKey = "SEVENZIP_VERSION";
         Current = $conf["SEVENZIP_VERSION"];
-        Latest = Get-LatestSevenZipVersion
+        Latest = Get-LatestSevenZipVersion;
+        SuppressTargetUpdate = $script:hostPlatform -eq "Linux";
+        LinuxManualOnly = $script:hostPlatform -eq "Linux";
+        DriftLabel = "manual-linux";
+        ManualInstallHint = "Install a host 7z binary such as p7zip-full or 7zip"
     },
 
     @{ Name = "PowerShell 7"; ConfKey = "POWERSHELL_VERSION";
@@ -1074,7 +1246,7 @@ $deps = @(
         Latest = if ($latestPowerShell) { $latestPowerShell["Version"] } else { $null };
         ReleaseTag = if ($latestPowerShell) { $latestPowerShell["Tag"] } else { $null };
         DriftLabel = "host-managed";
-        ManualInstallHint = "Download the configured PowerShell package and update PATH or your local pwsh install"
+        ManualInstallHint = if ($script:hostPlatform -eq "Linux") { "Run android/get_deps/get_powershell_ubuntu.sh to install the pinned PowerShell build on Ubuntu" } else { "Download the configured PowerShell package and update PATH or your local pwsh install" }
     }
 )
 
@@ -1123,7 +1295,7 @@ foreach ($dep in $deps) {
         }
 
         $installCmdKey = "${baseKey}_INSTALL_CMD"
-        if ($conf.ContainsKey($installCmdKey)) {
+        if ($conf.ContainsKey($installCmdKey) -and -not ($script:hostPlatform -eq "Linux" -and $dep.ContainsKey("LinuxManualOnly") -and $dep.LinuxManualOnly)) {
             $dep["InstallCmdKey"] = $installCmdKey
         }
     }
@@ -1267,6 +1439,23 @@ if ([string]::IsNullOrWhiteSpace($targetInput) -and [string]::IsNullOrWhiteSpace
 $selectedTarget = Resolve-Selection $targetInput $targetUpgradeable
 $selectedInstall = Resolve-Selection $installInput $installOutOfSync
 
+function Get-InstallPriority($depName) {
+    switch -Wildcard ($depName) {
+        "JDK*" { return 0 }
+        "Android SDK cmdline-tools" { return 1 }
+        "Build Tools" { return 2 }
+        "Android NDK" { return 3 }
+        default { return 100 }
+    }
+}
+
+if ($selectedInstall.Count -gt 0) {
+    $selectedInstall = @(
+        $selectedInstall |
+            Sort-Object @{ Expression = { Get-InstallPriority $_.Dep.Name } }, @{ Expression = { $_.Index } }
+    )
+}
+
 if ($selectedTarget.Count -eq 0 -and $selectedInstall.Count -eq 0) {
     Write-Host "No valid selections"
     Write-RunNote "finished" @(
@@ -1292,7 +1481,7 @@ function Update-Conf($key, $value) {
 }
 
 function Update-GradleWrapper($version) {
-    $path = "$androidDir\gradle\wrapper\gradle-wrapper.properties"
+    $path = Join-Path (Join-Path (Join-Path $androidDir "gradle") "wrapper") "gradle-wrapper.properties"
     $content = Get-Content $path -Raw
     $content = $content -replace "gradle-[0-9.]+-bin\.zip", "gradle-$version-bin.zip"
     Set-Content $path $content -NoNewline
@@ -1319,7 +1508,7 @@ foreach ($item in $selectedTarget) {
         "Android NDK" {
             # Update NDK_VERSION and NDK_URL in conf
             Update-Conf "NDK_VERSION" $new
-            $ndkUrl = "https://dl.google.com/android/repository/android-ndk-$new-windows.zip"
+            $ndkUrl = Get-NdkUrlForPlatform $new
             Update-Conf "NDK_URL" $ndkUrl
             if ($dep.ContainsKey("LatestFullVersion") -and $dep.LatestFullVersion) {
                 Update-Conf "NDK_FULL_VERSION" $dep.LatestFullVersion
@@ -1333,7 +1522,7 @@ foreach ($item in $selectedTarget) {
             Write-Host "    Run finalize.sh to install the new build tools via sdkmanager"
         }
         "CMake" {
-            $cmakeUrl = "https://github.com/Kitware/CMake/releases/download/v$new/cmake-$new-windows-x86_64.zip"
+            $cmakeUrl = Get-CmakeUrlForPlatform $new
             Update-Conf "CMAKE_URL" $cmakeUrl
             Write-Host "    Run get_cmake.sh and finalize.sh to install the updated CMake packages"
         }
@@ -1345,11 +1534,12 @@ foreach ($item in $selectedTarget) {
                 # Upgrading major version (e.g. 17 -> 21)
                 Update-Conf "JDK_MAJOR" $dep.JDKMajor
                 Update-Conf "JDK_VERSION" $new
-                $url = "https://api.adoptium.net/v3/binary/latest/$($dep.JDKMajor)/ga/windows/x64/jdk/hotspot/normal/eclipse?project=jdk"
+                $url = Get-JdkUrlForPlatform $dep.JDKMajor
                 Update-Conf "JDK_URL" $url
                 Write-Host "    NOTE: Run get_jdk.sh to download JDK $($dep.JDKMajor)"
             } else {
                 Update-Conf "JDK_VERSION" $new
+                Update-Conf "JDK_URL" (Get-JdkUrlForPlatform $currentJDKMajor)
                 Write-Host "    NOTE: Run get_jdk.sh to download the updated JDK"
             }
         }
@@ -1369,11 +1559,11 @@ foreach ($item in $selectedTarget) {
             }
         }
         "shellcheck" {
-            $shellcheckUrl = "https://github.com/koalaman/shellcheck/releases/download/v$new/shellcheck-v$new.zip"
+            $shellcheckUrl = Get-ShellcheckUrlForPlatform $new
             Update-Conf "SHELLCHECK_URL" $shellcheckUrl
         }
         "shfmt" {
-            $shfmtUrl = "https://github.com/mvdan/sh/releases/download/v$new/shfmt_v${new}_windows_amd64.exe"
+            $shfmtUrl = Get-ShfmtUrlForPlatform $new
             Update-Conf "SHFMT_URL" $shfmtUrl
         }
         "ktlint" {
@@ -1384,7 +1574,7 @@ foreach ($item in $selectedTarget) {
         "Chromaprint" {
             $plainVersion = $new -replace '^v', ''
             Update-Conf "CHROMAPRINT_URL" "https://github.com/acoustid/chromaprint/archive/refs/tags/$new.tar.gz"
-            Update-Conf "FPCALC_URL" "https://github.com/acoustid/chromaprint/releases/download/$new/chromaprint-fpcalc-$plainVersion-windows-x86_64.zip"
+            Update-Conf "FPCALC_URL" (Get-ChromaprintFpcalcUrlForPlatform $new)
             Update-Conf "FPCALC_DIR_NAME" "fpcalc-$plainVersion"
         }
         "minimp3" {
@@ -1406,8 +1596,14 @@ foreach ($item in $selectedTarget) {
             Update-Conf "SEVENZIP_DIR_NAME" "7z-$new"
         }
         "PowerShell 7" {
-            Update-Conf "POWERSHELL_URL" "https://github.com/PowerShell/PowerShell/releases/download/v$new/PowerShell-$new-win-x64.zip"
-            Write-Host "    NOTE: PowerShell is a host tool; download and update PATH or your local tool install after fetching the new package"
+            if ($script:hostPlatform -eq "Windows") {
+                Update-Conf "POWERSHELL_URL" "https://github.com/PowerShell/PowerShell/releases/download/v$new/PowerShell-$new-win-x64.zip"
+            }
+            if ($script:hostPlatform -eq "Linux") {
+                Write-Host "    NOTE: PowerShell is a host tool; run get_powershell_ubuntu.sh or update your pwsh package"
+            } else {
+                Write-Host "    NOTE: PowerShell is a host tool; download and update PATH or your local tool install after fetching the new package"
+            }
         }
     }
 }
@@ -1450,7 +1646,7 @@ Write-Host "IMPORTANT NOTES:"
 Write-Host "  - Kotlin and Compose Compiler must be compatible"
 Write-Host "    See https://developer.android.com/jetpack/androidx/releases/compose-kotlin"
 Write-Host "  - For NDK/JDK/SDK changes, re-run the get_deps install scripts"
-Write-Host "  - Run a test build:  cd ..; .\gradlew.bat assembleDebug"
+Write-Host "  - Run a test build:  $(Get-GradleVerificationCommand)"
 Write-Host ""
 Write-RunNote "finished" @(
     "result=applied_changes",

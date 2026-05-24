@@ -1408,7 +1408,7 @@ void input_demo_log_replay_player_shot_probe(object *obj, int laser_type,
 	d_rand_get_state(&sim_state);
 	snprintf(probe, sizeof(probe),
 		"shooter_obj=%d laser_type=%d gun=%d spreadr=%d spreadu=%d delay=%d harmless=%d sound=%d sim_calls=%u sim_state=%u shot=(%d,%d,%d) f=(%d,%d,%d) r=(%d,%d,%d) u=(%d,%d,%d)",
-		obj - Objects,
+		(int)(obj - Objects),
 		laser_type,
 		gun_num,
 		spreadr,

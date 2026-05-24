@@ -116,7 +116,10 @@ static int init_headless_runtime(int argc, char *argv[], int console_output_mode
 	PHYSFSX_addArchiveContent();
 	gamedata_init();
 	texmerge_init(10);
-	piggy_init_pigfile("groupa.pig");
+	{
+		char groupa_pig[] = "groupa.pig";
+		piggy_init_pigfile(groupa_pig);
+	}
 	screen_w = (int) SM_W(Game_screen_mode);
 	screen_h = (int) SM_H(Game_screen_mode);
 	if (!grd_curscreen) {

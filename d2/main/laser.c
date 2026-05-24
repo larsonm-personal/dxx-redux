@@ -1648,7 +1648,7 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 
 		snprintf(probe, sizeof(probe),
 			"shooter=%d laser_type=%d gun=%d harmless=%d sound=%d pos=(%d,%d,%d) dir=(%d,%d,%d)",
-			obj - Objects,
+			(int)(obj - Objects),
 			laser_type,
 			gun_num,
 			harmless,

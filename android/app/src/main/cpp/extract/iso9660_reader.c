@@ -223,6 +223,27 @@ static int should_skip_iso_directory(const char *clean_name)
 	return clean_name && strcasecmp(clean_name, "zero") == 0;
 }
 
+static int join_iso_path(char *out, size_t out_size, const char *prefix,
+	const char *name)
+{
+	size_t name_len = strlen(name);
+
+	if (!prefix[0]) {
+		if (name_len >= out_size)
+			return -1;
+		memcpy(out, name, name_len + 1);
+		return 0;
+	}
+
+	size_t prefix_len = strlen(prefix);
+	if (prefix_len + 1 + name_len >= out_size)
+		return -1;
+	memcpy(out, prefix, prefix_len);
+	out[prefix_len] = '/';
+	memcpy(out + prefix_len + 1, name, name_len + 1);
+	return 0;
+}
+
 /* ── Directory tree walker ───────────────────────────────────────────── */
 
 #define MAX_DIR_DEPTH 16
@@ -297,10 +318,13 @@ static int walk_directory(const iso_reader_source_t *src,
 			clean_iso_name(raw_name, name_len, clean_name, sizeof(clean_name));
 
 			/* Build full path */
-			if (prefix[0])
-				snprintf(full_path, sizeof(full_path), "%s/%s", prefix, clean_name);
-			else
-				snprintf(full_path, sizeof(full_path), "%s", clean_name);
+			if (join_iso_path(full_path, sizeof(full_path), prefix, clean_name) < 0) {
+				ISO_LOG("Skipping overlong ISO path prefix=%s name=%s", prefix,
+				        clean_name);
+				pos += rec_len;
+				bytes_read += rec_len;
+				continue;
+			}
 
 			if (flags & DR_FLAG_DIRECTORY) {
 				if (should_skip_iso_directory(clean_name)) {

@@ -11,6 +11,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot
+$platformHelper = Join-Path $PSScriptRoot "get_deps/Get-DepPlatform.ps1"
+. $platformHelper
 
 function Get-ScopedFiles {
     param(
@@ -53,12 +55,12 @@ function Get-ScopedFiles {
 }
 
 # --- Locate clang-format ---
-$depBaseFile = Join-Path $repoRoot "dependency_base.txt"
-if (-not (Test-Path $depBaseFile)) {
+$DEP_BASE = Get-DependencyBase -RepoRoot $repoRoot
+if (-not $DEP_BASE) {
+    $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
     Write-Error "dependency_base.txt not found at $depBaseFile"
     exit 1
 }
-$DEP_BASE = (Get-Content $depBaseFile -First 1).Trim()
 
 # Load version from tool_versions.conf
 $confFile = Join-Path $PSScriptRoot "get_deps\tool_versions.conf"
@@ -70,11 +72,8 @@ foreach ($line in Get-Content $confFile) {
 }
 
 $clangFormat = $null
-# Try dep base install
-$candidate = Join-Path $DEP_BASE "clang-format-$cfVersion\clang-format.exe"
-if (Test-Path $candidate) {
-    $clangFormat = $candidate
-}
+$installDir = Join-Path $DEP_BASE "clang-format-$cfVersion"
+$clangFormat = Get-PlatformToolPath -BaseDir $installDir -ToolName "clang-format"
 # Fallback: PATH
 if (-not $clangFormat) {
     $inPath = Get-Command "clang-format" -ErrorAction SilentlyContinue

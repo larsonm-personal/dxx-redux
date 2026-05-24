@@ -11,7 +11,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-$depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
+. (Join-Path $PSScriptRoot "Get-DepPlatform.ps1")
+$depBase = Get-DependencyBase -RepoRoot $repoRoot -CreateIfMissing
 
 # Parse version info from tool_versions.conf
 $conf = @{}
@@ -26,6 +27,19 @@ $url = $conf["SEVENZIP_URL"]
 $dirName = $conf["SEVENZIP_DIR_NAME"]
 $installDir = Join-Path $depBase $dirName
 $sevenZa = Join-Path $installDir "7za.exe"
+$hostPlatform = Get-HostPlatform
+
+if ($hostPlatform -ne "Windows") {
+    foreach ($commandName in @("7zz", "7z", "7za")) {
+        $existing = Get-Command $commandName -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($existing) {
+            Write-Host "Using host $commandName: $($existing.Source)"
+            return $existing.Source
+        }
+    }
+
+    Write-Error "No host 7z binary found on PATH. Install p7zip-full or 7zip and re-run"
+}
 
 if ((Test-Path $sevenZa) -and -not $Force) {
     Write-Host "7za.exe already present: $sevenZa"

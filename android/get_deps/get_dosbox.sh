@@ -21,7 +21,7 @@ fi
 # Query GitHub API for the win64 MinGW zip asset URL
 TAG="dosbox-x-v${DOSBOX_VERSION}"
 echo "Finding DOSBox-X $DOSBOX_VERSION download URL (tag: $TAG)..."
-RELEASE_JSON=$(curl -sL "https://api.github.com/repos/joncampbell123/dosbox-x/releases/tags/$TAG")
+RELEASE_JSON=$(download_text "https://api.github.com/repos/joncampbell123/dosbox-x/releases/tags/$TAG" "Accept: application/vnd.github+json" "User-Agent: dxx-redux-get-dosbox")
 
 ASSET_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url": *"[^"]*mingw-win64[^"]*\.zip"' | head -1 | sed 's/"browser_download_url": *"//;s/"$//')
 
@@ -36,7 +36,7 @@ echo "Download URL: $ASSET_URL"
 TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" dosbox-XXXXXX.zip)"
 
 echo "Downloading DOSBox-X $DOSBOX_VERSION..."
-curl -fSL --progress-bar -o "$TMPFILE" "$ASSET_URL"
+download_file "$TMPFILE" "$ASSET_URL"
 
 # Helper: convert a POSIX path to a Windows path for powershell.exe
 to_win_path() {

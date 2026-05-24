@@ -199,9 +199,12 @@ static void input_demo_clear_quick_recording(void)
 
 static void input_demo_release_recorder_settings(input_demo_recorder_settings *settings)
 {
+	void *checkpoint_data;
+
 	if (!settings || !settings->checkpoint_data)
 		return;
-	mem_free((void *) settings->checkpoint_data);
+	checkpoint_data = (void *) settings->checkpoint_data;
+	d_free(checkpoint_data);
 	settings->checkpoint_data = NULL;
 	settings->checkpoint_size = 0;
 }

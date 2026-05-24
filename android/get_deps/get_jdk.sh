@@ -5,6 +5,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/platform.sh"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
 
 JDK_DIR_NAME="jdk-$JDK_MAJOR"
@@ -18,14 +19,24 @@ if [ -d "$DEST" ] && { [ -x "$DEST/bin/java" ] || [ -x "$DEST/bin/java.exe" ]; }
 fi
 
 URL="$JDK_URL"
-TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" jdk-XXXXXX.zip)"
+ARCHIVE_KIND="zip"
+if DERIVED_URL="$(get_jdk_download_url "$JDK_MAJOR" 2>/dev/null)"; then
+    URL="$DERIVED_URL"
+fi
+case "$(get_host_os)" in
+linux | macos) ARCHIVE_KIND="tar.gz" ;;
+esac
+TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" jdk-XXXXXX)"
 
 echo "Downloading OpenJDK $JDK_VERSION..."
-curl -fSL --progress-bar -o "$TMPFILE" "$URL"
+download_file "$TMPFILE" "$URL"
 
 echo "Extracting to $DEST..."
-# The zip contains a folder like jdk-21.0.10+7/ at the top level
-unzip -q -o "$TMPFILE" -d "$INSTALL_DIR"
+if [ "$ARCHIVE_KIND" = "zip" ]; then
+    unzip -q -o "$TMPFILE" -d "$INSTALL_DIR"
+else
+    tar -xzf "$TMPFILE" -C "$INSTALL_DIR"
+fi
 # Rename the extracted folder (may include build number like +7) to the canonical name.
 # Use a bash glob instead of find(1) -- on Windows, find.exe is a text-search tool.
 if [ ! -d "$DEST" ]; then

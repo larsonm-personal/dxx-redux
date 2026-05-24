@@ -7,8 +7,9 @@
 #   On Windows: bundles an embedded Python under python/ and installs
 #               cmakelang into it, with cmake-format.exe / cmake-lint.exe
 #               in python/Scripts/.
-#   On Linux/macOS: creates a venv under venv/ using the host python3,
-#                   with cmake-format / cmake-lint in venv/bin/.
+#   On Linux/macOS: creates a venv under venv/ using the host python3 when
+#                   available, else a pinned virtualenv.pyz fallback, with
+#                   cmake-format / cmake-lint in venv/bin/.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -51,7 +52,7 @@ if _is_windows_target; then
     echo "Downloading Python $PYTHON_EMBED_VERSION embeddable..."
     echo "  URL: $PYTHON_EMBED_URL"
     PY_ZIP="$(mktemp -p "${TMPDIR:-/tmp}" python-embed-XXXXXX.zip)"
-    curl -fSL --progress-bar -o "$PY_ZIP" "$PYTHON_EMBED_URL"
+    download_file "$PY_ZIP" "$PYTHON_EMBED_URL"
     rm -rf "$DEST/python"
     mkdir -p "$DEST/python"
     unzip -q "$PY_ZIP" -d "$DEST/python"
@@ -74,7 +75,7 @@ EOF
 
     echo "Bootstrapping pip..."
     GET_PIP="$(mktemp -p "${TMPDIR:-/tmp}" get-pip-XXXXXX.py)"
-    curl -fSL --progress-bar -o "$GET_PIP" https://bootstrap.pypa.io/get-pip.py
+    download_file "$GET_PIP" https://bootstrap.pypa.io/get-pip.py
     "$PY_EXE" "$GET_PIP" --no-warn-script-location --disable-pip-version-check
     rm -f "$GET_PIP"
 else
@@ -83,8 +84,17 @@ else
         echo "python3 not found on PATH; install Python 3.8+ and re-run"
         exit 1
     fi
+    rm -rf "$DEST/venv"
     echo "Creating venv at $DEST/venv ..."
-    python3 -m venv "$DEST/venv"
+    if python3 -c 'import venv, ensurepip' >/dev/null 2>&1; then
+        python3 -m venv "$DEST/venv"
+    else
+        VENV_PYZ="$(mktemp -p "${TMPDIR:-/tmp}" virtualenv-XXXXXX.pyz)"
+        echo "python3 venv support missing, bootstrapping virtualenv $VIRTUALENV_VERSION..."
+        download_file "$VENV_PYZ" "$VIRTUALENV_PYZ_URL"
+        python3 "$VENV_PYZ" "$DEST/venv"
+        rm -f "$VENV_PYZ"
+    fi
 fi
 
 echo "Installing cmakelang $CMAKELANG_VERSION..."

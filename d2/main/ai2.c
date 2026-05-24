@@ -791,8 +791,8 @@ void do_ai_robot_hit_attack(object *robot, object *playerobj, vms_vector *collis
 						Players[Player_num].energy -= robptr->energy_drain * F1_0;
 						if (Players[Player_num].energy < 0)
 							Players[Player_num].energy = 0;
-						snprintf(extra_json, sizeof(extra_json), ",\"robot_obj\":%d,\"robot_id\":%d,\"robot_signature\":%d,\"drain\":%d", robot - Objects, robot->id, robot->signature, robptr->energy_drain);
-						snprintf(extra_log, sizeof(extra_log), " robot_obj=%d robot_id=%d robot_signature=%d drain=%d", robot - Objects, robot->id, robot->signature, robptr->energy_drain);
+						snprintf(extra_json, sizeof(extra_json), ",\"robot_obj\":%d,\"robot_id\":%d,\"robot_signature\":%d,\"drain\":%d", (int)(robot - Objects), robot->id, robot->signature, robptr->energy_drain);
+						snprintf(extra_log, sizeof(extra_log), " robot_obj=%d robot_id=%d robot_signature=%d drain=%d", (int)(robot - Objects), robot->id, robot->signature, robptr->energy_drain);
 						input_demo_trace_energy_change("robot_drain", energy_before, Players[Player_num].energy, extra_json, extra_log);
 						// -- unused, use claw_sound in bitmaps.tbl -- digi_link_sound_to_pos( SOUND_ROBOT_SUCKED_PLAYER, playerobj->segnum, 0, collision_point, 0, F1_0 );
 					}

@@ -11,6 +11,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot
+$platformHelper = Join-Path $PSScriptRoot "get_deps/Get-DepPlatform.ps1"
+. $platformHelper
 
 function Get-ScopedFiles {
     param(
@@ -54,12 +56,12 @@ function Get-ScopedFiles {
 }
 
 # --- Locate shellcheck ---
-$depBaseFile = Join-Path $repoRoot "dependency_base.txt"
-if (-not (Test-Path $depBaseFile)) {
+$DEP_BASE = Get-DependencyBase -RepoRoot $repoRoot
+if (-not $DEP_BASE) {
+    $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
     Write-Error "dependency_base.txt not found at $depBaseFile"
     exit 1
 }
-$DEP_BASE = (Get-Content $depBaseFile -First 1).Trim()
 
 $confFile = Join-Path $PSScriptRoot "get_deps\tool_versions.conf"
 $scVersion = $null
@@ -70,10 +72,8 @@ foreach ($line in Get-Content $confFile) {
 }
 
 $shellcheck = $null
-$candidate = Join-Path $DEP_BASE "shellcheck-$scVersion\shellcheck.exe"
-if (Test-Path $candidate) {
-    $shellcheck = $candidate
-}
+$installDir = Join-Path $DEP_BASE "shellcheck-$scVersion"
+$shellcheck = Get-PlatformToolPath -BaseDir $installDir -ToolName "shellcheck"
 if (-not $shellcheck) {
     $inPath = Get-Command "shellcheck" -ErrorAction SilentlyContinue
     if ($inPath) { $shellcheck = $inPath.Source }

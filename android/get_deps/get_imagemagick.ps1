@@ -9,7 +9,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-$depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
+. (Join-Path $PSScriptRoot "Get-DepPlatform.ps1")
+$depBase = Get-DependencyBase -RepoRoot $repoRoot -CreateIfMissing
 
 # Parse version info from tool_versions.conf
 $conf = @{}
@@ -24,6 +25,17 @@ $url = $conf["IMAGEMAGICK_URL"]
 $dirName = $conf["IMAGEMAGICK_DIR_NAME"]
 $installDir = Join-Path $depBase $dirName
 $magick = Join-Path $installDir "magick.exe"
+$hostPlatform = Get-HostPlatform
+
+if ($hostPlatform -ne "Windows") {
+    $hostMagick = Get-Command magick -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($hostMagick) {
+        Write-Host "Using host magick: $($hostMagick.Source)"
+        return $hostMagick.Source
+    }
+
+    Write-Error "ImageMagick is not installed on this host. Install a distro package that provides magick and re-run"
+}
 
 if ((Test-Path $magick) -and -not $Force) {
     Write-Host "magick.exe already present: $magick"

@@ -7,6 +7,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/platform.sh"
 
 WRAPPER_DIR="$SCRIPT_DIR/../gradle/wrapper"
 WRAPPER_JAR="$WRAPPER_DIR/gradle-wrapper.jar"
@@ -40,7 +41,7 @@ URL="https://raw.githubusercontent.com/gradle/gradle/v${GRADLE_VERSION}/gradle/w
 
 echo "Downloading gradle-wrapper.jar for Gradle $GRADLE_VERSION..."
 echo "  URL: $URL"
-curl -fSL --progress-bar -o "$WRAPPER_JAR" "$URL"
+download_file "$WRAPPER_JAR" "$URL"
 
 echo "gradle-wrapper.jar installed at $WRAPPER_JAR"
 if [ -z "$GET_ALL_RUNNING" ]; then

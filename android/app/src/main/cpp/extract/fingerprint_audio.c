@@ -62,6 +62,20 @@ static int cmp_strings(const void *a, const void *b)
 	return strcmp((const char *) a, (const char *) b);
 }
 
+static int join_path(char *out, size_t out_size, const char *dir,
+	const char *name)
+{
+	size_t dir_len = strlen(dir);
+	size_t name_len = strlen(name);
+
+	if (dir_len + 1 + name_len >= out_size)
+		return -1;
+	memcpy(out, dir, dir_len);
+	out[dir_len] = PATH_SEP;
+	memcpy(out + dir_len + 1, name, name_len + 1);
+	return 0;
+}
+
 static int collect_audio_files(const char *dir)
 {
 	s_file_count = 0;
@@ -120,6 +134,7 @@ int main(int argc, char *argv[])
 	char full_path[MAX_PATH_LEN];
 	int errors = 0;
 	int i;
+	int printed = 0;
 
 	if (argc < 2) {
 		fprintf(stderr, "Usage: fingerprint_audio <directory>\n");
@@ -139,19 +154,24 @@ int main(int argc, char *argv[])
 	printf("[\n");
 	for (i = 0; i < count; i++) {
 		char escaped[MAX_PATH_LEN * 2];
-		snprintf(full_path, sizeof(full_path), "%s%c%s", dir, PATH_SEP, s_filenames[i]);
 		json_escape(s_filenames[i], escaped, sizeof(escaped));
 
 		fprintf(stderr, "  [%d/%d] %s ...", i + 1, count, s_filenames[i]);
+		if (join_path(full_path, sizeof(full_path), dir, s_filenames[i]) < 0) {
+			fprintf(stderr, " PATH TOO LONG\n");
+			errors++;
+			continue;
+		}
 
 		fingerprint_result_t fp = { 0 };
 		int rc = fingerprint_from_audio_file(full_path, &fp);
 
 		if (rc == 0 && fp.encoded) {
+			if (printed > 0)
+				printf(",\n");
 			printf("  {\"filename\": \"%s\", \"chromaprint\": \"%s\", \"duration_ms\": %d}",
 			       escaped, fp.encoded, fp.duration_ms);
-			if (i < count - 1) printf(",");
-			printf("\n");
+			printed++;
 			fprintf(stderr, " %dms\n", fp.duration_ms);
 		} else {
 			fprintf(stderr, " FAILED\n");
@@ -159,6 +179,8 @@ int main(int argc, char *argv[])
 		}
 		fingerprint_free(&fp);
 	}
+	if (printed > 0)
+		printf("\n");
 	printf("]\n");
 
 	fprintf(stderr, "\nDone: %d files, %d errors\n", count, errors);

@@ -32,7 +32,7 @@ if _is_windows_target; then
     echo "  URL: $URL"
     mkdir -p "$DEST"
     TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" shellcheck-XXXXXX.zip)"
-    curl -fSL --progress-bar -o "$TMPFILE" "$URL"
+    download_file "$TMPFILE" "$URL"
     TMPDIR2="$(mktemp -d -p "${TMPDIR:-/tmp}" shellcheck-extract-XXXXXX)"
     unzip -q "$TMPFILE" -d "$TMPDIR2"
     mv "$TMPDIR2/shellcheck.exe" "$DEST/shellcheck.exe"
@@ -43,7 +43,7 @@ elif [ "$(uname -s)" = "Darwin" ]; then
     echo "  URL: $URL"
     mkdir -p "$DEST"
     TMPFILE="$(mktemp shellcheck-XXXXXX.tar.xz)"
-    curl -fSL --progress-bar -o "$TMPFILE" "$URL"
+    download_file "$TMPFILE" "$URL"
     tar -xJf "$TMPFILE" -C "$DEST" --strip-components=1 "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
     rm -f "$TMPFILE"
 else
@@ -52,7 +52,7 @@ else
     echo "  URL: $URL"
     mkdir -p "$DEST"
     TMPFILE="$(mktemp shellcheck-XXXXXX.tar.xz)"
-    curl -fSL --progress-bar -o "$TMPFILE" "$URL"
+    download_file "$TMPFILE" "$URL"
     tar -xJf "$TMPFILE" -C "$DEST" --strip-components=1 "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
     rm -f "$TMPFILE"
 fi

@@ -8,7 +8,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-$depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
+. (Join-Path $PSScriptRoot "Get-DepPlatform.ps1")
+$depBase = Get-DependencyBase -RepoRoot $repoRoot -CreateIfMissing
 
 # Parse version info from tool_versions.conf
 $conf = @{}
@@ -21,10 +22,19 @@ Get-Content "$PSScriptRoot/tool_versions.conf" | ForEach-Object {
 $url = $conf["FPCALC_URL"]
 $dirName = $conf["FPCALC_DIR_NAME"]
 $installDir = Join-Path $depBase $dirName
-$fpcalc = Join-Path $installDir "fpcalc.exe"
+$plainVersion = if ($dirName -match '^fpcalc-(.+)$') { $Matches[1] } else { ($conf["CHROMAPRINT_VERSION"] -replace '^v', '') }
+$hostPlatform = Get-HostPlatform
+$fpcalcName = Get-PlatformExecutableName -ToolName "fpcalc"
+$fpcalc = Join-Path $installDir $fpcalcName
+
+if ($hostPlatform -eq "Linux") {
+    $url = "https://github.com/acoustid/chromaprint/releases/download/v$plainVersion/chromaprint-fpcalc-$plainVersion-linux-x86_64.tar.gz"
+} elseif ($hostPlatform -eq "MacOS") {
+    $url = "https://github.com/acoustid/chromaprint/releases/download/v$plainVersion/chromaprint-fpcalc-$plainVersion-macos-x86_64.tar.gz"
+}
 
 if ((Test-Path $fpcalc) -and -not $Force) {
-    Write-Host "fpcalc.exe already present: $fpcalc"
+    Write-Host "$fpcalcName already present: $fpcalc"
     return $fpcalc
 }
 
@@ -34,22 +44,25 @@ if (-not (Test-Path $installDir)) {
     New-Item -ItemType Directory -Path $installDir -Force | Out-Null
 }
 
-$tmpZip = Join-Path $installDir "fpcalc-download.zip"
+$tmpArchive = Join-Path $installDir "fpcalc-download.tmp"
 try {
-    Invoke-WebRequest -Uri $url -OutFile $tmpZip -UseBasicParsing
-    Expand-Archive -Path $tmpZip -DestinationPath $installDir -Force
-    # The zip extracts into a subfolder; find fpcalc.exe and move up
-    $nested = Get-ChildItem -Path $installDir -Recurse -Filter "fpcalc.exe" | Select-Object -First 1
+    Invoke-WebRequest -Uri $url -OutFile $tmpArchive -UseBasicParsing
+    if ($hostPlatform -eq "Windows") {
+        Expand-Archive -Path $tmpArchive -DestinationPath $installDir -Force
+    } else {
+        tar -xzf $tmpArchive -C $installDir
+    }
+    $nested = Get-ChildItem -Path $installDir -Recurse -File | Where-Object { $_.Name -eq $fpcalcName } | Select-Object -First 1
     if ($nested -and ($nested.DirectoryName -ne $installDir)) {
         Move-Item -Path $nested.FullName -Destination $fpcalc -Force
     }
 } finally {
-    Remove-Item $tmpZip -ErrorAction SilentlyContinue
+    Remove-Item $tmpArchive -ErrorAction SilentlyContinue
 }
 
 if (-not (Test-Path $fpcalc)) {
-    Write-Error "fpcalc.exe not found after extraction at: $fpcalc"
+    Write-Error "$fpcalcName not found after extraction at: $fpcalc"
 }
 
-Write-Host "fpcalc.exe installed: $fpcalc"
+Write-Host "$fpcalcName installed: $fpcalc"
 return $fpcalc

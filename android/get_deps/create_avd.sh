@@ -6,6 +6,8 @@ set -e
 AVD_NAME="Nexus5X_Light_1"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/platform.sh"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
 
 INSTALL_DIR="$LOCAL_DIR"
@@ -40,9 +42,9 @@ else
     export ANDROID_SDK_ROOT="$SDK_DIR"
 fi
 
-IMAGE="system-images;android-34;google_apis;x86_64"
+IMAGE="system-images;android-${EMULATOR_API_LEVEL:-34};google_apis;x86_64"
 
-echo "Creating AVD '$AVD_NAME' (Nexus 5X, API 34, x86_64)..."
+echo "Creating AVD '$AVD_NAME' (Nexus 5X, API ${EMULATOR_API_LEVEL:-34}, x86_64)..."
 echo "no" | "$AVDMANAGER" create avd \
     --name "$AVD_NAME" \
     --package "$IMAGE" \

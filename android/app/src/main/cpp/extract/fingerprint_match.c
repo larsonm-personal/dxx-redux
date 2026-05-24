@@ -251,7 +251,7 @@ static int load_db(const char *data, int len)
 			uint32_t *raw = NULL;
 			int raw_len = 0, alg = 0;
 			if (chromaprint_decode_fingerprint(fp_b64, (int) strlen(fp_b64),
-			                                   (void **) &raw, &raw_len, &alg, 1) == 1 &&
+			                                   &raw, &raw_len, &alg, 1) == 1 &&
 			    raw) {
 				entry_t *e = &s_entries[s_count];
 				e->raw_fp = (uint32_t *) malloc((size_t) raw_len * sizeof(uint32_t));

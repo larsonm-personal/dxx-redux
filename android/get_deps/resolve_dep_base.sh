@@ -8,6 +8,8 @@ _resolve_dep_base() {
     # Find the repo root by looking for dependency_base.txt
     local script_dir
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    # shellcheck disable=SC1091
+    source "$script_dir/platform.sh"
     local repo_root="$script_dir"
     # Walk up until we find dependency_base.txt (max 5 levels)
     for _ in 1 2 3 4 5; do
@@ -20,7 +22,7 @@ _resolve_dep_base() {
     if [ ! -f "$repo_root/dependency_base.txt" ]; then
         echo "ERROR: dependency_base.txt not found" >&2
         echo "Create it in the repo root with a single line containing the path to your" >&2
-        echo "dependency directory (e.g. C:\\local)." >&2
+        echo "dependency directory (e.g. $(get_default_dependency_base))." >&2
         return 1 2>/dev/null || exit 1
     fi
 
@@ -57,6 +59,7 @@ _resolve_dep_base() {
         LOCAL_DIR="$raw"
     fi
 
+    mkdir -p "$LOCAL_DIR"
     export LOCAL_DIR
 }
 

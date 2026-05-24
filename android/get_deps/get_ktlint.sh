@@ -24,7 +24,7 @@ echo "  URL: $URL"
 mkdir -p "$DEST"
 TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" ktlint-XXXXXX)"
 
-curl -fSL --progress-bar -o "$TMPFILE" "$URL"
+download_file "$TMPFILE" "$URL"
 mv "$TMPFILE" "$DEST/ktlint.jar"
 
 echo "ktlint $KTLINT_VERSION installed at $DEST/ktlint.jar"

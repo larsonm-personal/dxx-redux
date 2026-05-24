@@ -5,6 +5,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/platform.sh"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
 
 INSTALL_DIR="$LOCAL_DIR"
@@ -17,10 +18,13 @@ if [ -f "$DEST/build/cmake/android.toolchain.cmake" ]; then
 fi
 
 URL="$NDK_URL"
+if DERIVED_URL="$(get_ndk_download_url "$NDK_VERSION" 2>/dev/null)"; then
+    URL="$DERIVED_URL"
+fi
 TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" ndk-XXXXXX.zip)"
 
 echo "Downloading Android NDK $NDK_VERSION (~1.1 GB)..."
-curl -fSL --progress-bar -o "$TMPFILE" "$URL"
+download_file "$TMPFILE" "$URL"
 
 echo "Extracting to $INSTALL_DIR..."
 unzip -q -o "$TMPFILE" -d "$INSTALL_DIR"

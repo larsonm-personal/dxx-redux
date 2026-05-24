@@ -1006,7 +1006,7 @@ static void test_iso_extraction(void)
 
 		/* Verify extracted content */
 		char check_path[512];
-		snprintf(check_path, sizeof(check_path), "%s/test.hog", out_dir);
+		snprintf(check_path, sizeof(check_path), "%s/extracted/test.hog", TEST_DIR);
 		FILE *check = fopen(check_path, "rb");
 		if (!check) {
 			FAIL("extracted file not found");
@@ -1071,7 +1071,7 @@ static void test_iso_extraction(void)
 		}
 
 		char check_path[512];
-		snprintf(check_path, sizeof(check_path), "%s/image.hog", out_dir);
+		snprintf(check_path, sizeof(check_path), "%s/extracted_iso_image/image.hog", TEST_DIR);
 		FILE *check = fopen(check_path, "rb");
 		if (!check) {
 			FAIL("ISO image extracted file not found");
@@ -1812,8 +1812,8 @@ static void test_iso_zero_dir_filter(void)
 		char visible_path[512];
 		char hidden_path[512];
 		snprintf(out_dir, sizeof(out_dir), "%s/zero_dir_out", TEST_DIR);
-		snprintf(visible_path, sizeof(visible_path), "%s/visible.hog", out_dir);
-		snprintf(hidden_path, sizeof(hidden_path), "%s/zero/hidden.hog", out_dir);
+		snprintf(visible_path, sizeof(visible_path), "%s/zero_dir_out/visible.hog", TEST_DIR);
+		snprintf(hidden_path, sizeof(hidden_path), "%s/zero_dir_out/zero/hidden.hog", TEST_DIR);
 		remove(visible_path);
 		remove(hidden_path);
 		mkdir_p(out_dir);
@@ -1937,7 +1937,7 @@ static void test_integration_round_trip(void)
 
 		/* Verify content */
 		char check[512];
-		snprintf(check, sizeof(check), "%s/descent2.hog", out_dir);
+		snprintf(check, sizeof(check), "%s/roundtrip_out/descent2.hog", TEST_DIR);
 		FILE *f = fopen(check, "rb");
 		if (!f) {
 			FAIL("extracted file missing");

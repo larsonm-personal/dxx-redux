@@ -58,6 +58,10 @@ Building in msys2 / Linux
 
   `cd d1`
 
+  Or stay at the repo root and use the helper script:
+
+  `./run-linux-build.sh --target d1`
+
 - Set the build options
 
   `cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo`

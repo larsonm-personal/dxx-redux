@@ -6,6 +6,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/platform.sh"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
 
 INSTALL_DIR="$LOCAL_DIR"
@@ -18,10 +19,15 @@ if [ -x "$DEST/cmdline-tools/latest/bin/sdkmanager" ] || [ -f "$DEST/cmdline-too
 fi
 
 URL="$SDK_CMDLINE_TOOLS_URL"
+if BUILD_ID="$(get_sdk_cmdline_tools_build_id "$SDK_CMDLINE_TOOLS_URL" 2>/dev/null)"; then
+    if DERIVED_URL="$(get_sdk_cmdline_tools_url "$BUILD_ID" 2>/dev/null)"; then
+        URL="$DERIVED_URL"
+    fi
+fi
 TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" sdk-XXXXXX.zip)"
 
 echo "Downloading Android SDK command-line tools..."
-curl -fSL --progress-bar -o "$TMPFILE" "$URL"
+download_file "$TMPFILE" "$URL"
 
 echo "Extracting to $DEST..."
 mkdir -p "$DEST"

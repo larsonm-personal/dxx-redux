@@ -46,7 +46,7 @@ echo "  URL: $URL"
 
 mkdir -p "$DEST"
 TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" clang-format-XXXXXX)"
-curl -fSL --progress-bar -o "$TMPFILE" "$URL"
+download_file "$TMPFILE" "$URL"
 mv "$TMPFILE" "$DEST/$DEST_NAME"
 chmod +x "$DEST/$DEST_NAME"
 
@@ -63,7 +63,7 @@ if _is_windows_target; then
         echo "  Downloading VC++ Redistributable from:"
         echo "    $VC_REDIST_URL"
 
-        curl -fSL --progress-bar -o "$VC_TMP" "$VC_REDIST_URL"
+        download_file "$VC_TMP" "$VC_REDIST_URL"
 
         echo "  Running installer silently..."
         cmd.exe /C "$VC_TMP /install /quiet /norestart" || {
