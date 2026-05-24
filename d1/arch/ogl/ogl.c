@@ -130,6 +130,7 @@ static GLuint ogl_msaa_fbo = 0, ogl_msaa_color_rbo = 0, ogl_msaa_depth_rbo = 0;
 static int ogl_msaa_w = 0, ogl_msaa_h = 0;
 int g_msaa_fbo_bound = 0;       /* 1 while rendering to MSAA FBO */
 static int g_msaa_frame_depth = 0; /* nesting depth: >0 = sub-window render */
+static int ogl_android_effective_texfilt(int texfilt);
 /* android port: GPU timer via EXT_disjoint_timer_query */
 #define GL_TIME_ELAPSED_EXT  0x88BF
 #define GL_GPU_DISJOINT_EXT  0x8FBB
@@ -551,54 +552,57 @@ void ogl_bindbmtex(grs_bitmap *bm){
 	}
 	OGL_BINDTEXTURE(bm->gltexture->handle);
 #ifdef ANDROID
-	/* Selective filtering: menu and HUD draws can force nearest on texture
-	 * objects that are also reused by filtered world draws, so restore the
-	 * appropriate state whenever the render context changes.
-	 *
-	 * Font/text textures (OGL_FLAG_NOCOLOR) never have mipmaps and always use
-	 * MenuTexFilt. Fullscreen menu and loading art can also arrive without
-	 * mipmaps on Android, notably through the ETC2/KTX path, so handle both
-	 * mipmapped and non-mipmapped texture objects here. */
-	if (GameCfg.TexFilt > 0) {
-		if (bm->gltexture->flags & OGL_FLAG_NOCOLOR) {
-			/* Font texture: filter controlled by MenuTexFilt in all contexts */
-			if (GameCfg.MenuTexFilt) {
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	{
+		int effective_texfilt = ogl_android_effective_texfilt(GameCfg.TexFilt);
+		/* Selective filtering: menu and HUD draws can force nearest on texture
+		 * objects that are also reused by filtered world draws, so restore the
+		 * appropriate state whenever the render context changes.
+		 *
+		 * Font/text textures (OGL_FLAG_NOCOLOR) never have mipmaps and always use
+		 * MenuTexFilt. Fullscreen menu and loading art can also arrive without
+		 * mipmaps on Android, notably through the ETC2/KTX path, so handle both
+		 * mipmapped and non-mipmapped texture objects here. */
+		if (effective_texfilt > 0) {
+			if (bm->gltexture->flags & OGL_FLAG_NOCOLOR) {
+				/* Font texture: filter controlled by MenuTexFilt in all contexts */
+				if (GameCfg.MenuTexFilt) {
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				} else {
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				}
+			} else if (bm->gltexture->has_mipmaps) {
+				/* World/HUD texture with mipmaps */
+				int use_nearest = 0;
+				if (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
+					use_nearest = 1;
+				else if (g_ogl_render_context == 2 && !GameCfg.HudTexFilt)
+					use_nearest = 1;
+				if (use_nearest) {
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				} else {
+					GLenum min_f = effective_texfilt >= 2
+						? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				}
 			} else {
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			}
-		} else if (bm->gltexture->has_mipmaps) {
-			/* World/HUD texture with mipmaps */
-			int use_nearest = 0;
-			if (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
-				use_nearest = 1;
-			else if (g_ogl_render_context == 2 && !GameCfg.HudTexFilt)
-				use_nearest = 1;
-			if (use_nearest) {
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			} else {
-				GLenum min_f = GameCfg.TexFilt >= 2
-					? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			}
-		} else {
-			/* Non-font texture without mipmaps: restore linear filtering when the
-			 * current context allows it, otherwise force nearest for menu/HUD. */
-			int use_nearest = 0;
-			if (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
-				use_nearest = 1;
-			else if (g_ogl_render_context == 2 && !GameCfg.HudTexFilt)
-				use_nearest = 1;
-			if (use_nearest) {
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			} else {
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				/* Non-font texture without mipmaps: restore linear filtering when the
+				 * current context allows it, otherwise force nearest for menu/HUD. */
+				int use_nearest = 0;
+				if (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
+					use_nearest = 1;
+				else if (g_ogl_render_context == 2 && !GameCfg.HudTexFilt)
+					use_nearest = 1;
+				if (use_nearest) {
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				} else {
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				}
 			}
 		}
 	}
@@ -635,6 +639,9 @@ void ogl_apply_anisotropy_all(void)
 	ogl_last_bound_tex = 0; /* invalidate bind cache */
 	__android_log_print(ANDROID_LOG_INFO, "DXX",
 	    "anisotropy: applied level %.0f to %d/%d mipmapped textures", level, count, total);
+	debug_log(DLOG_GRAPHICS,
+		"anisotropy parameter: level=%.0f applied=%d total=%d",
+		level, count, total);
 }
 
 static void ogl_msaa_destroy_fbo(void);
@@ -648,35 +655,63 @@ static int ogl_android_effective_texfilt(int texfilt)
 	return texfilt;
 }
 
-static void ogl_android_apply_pending_runtime_options(void)
+static int ogl_android_apply_texture_filter(ogl_texture *texture, int texfilt, int *generated)
+{
+	if (!texture || texture->handle <= 0)
+		return 0;
+	if (texture->flags & OGL_FLAG_NOCOLOR)
+		return 0;
+	glBindTexture(GL_TEXTURE_2D, texture->handle);
+	if (texfilt > 0) {
+		GLenum min_f = texfilt >= 2
+			? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
+		if (!texture->has_mipmaps) {
+			glGenerateMipmap(GL_TEXTURE_2D);
+			texture->has_mipmaps = 1;
+			if (generated)
+				(*generated)++;
+		}
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	} else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
+	return 1;
+}
+
+static int ogl_android_apply_texture_filters_all(int texfilt, int *generated)
+{
+	int i, updated = 0;
+	if (generated)
+		*generated = 0;
+	for (i = 0; i < OGL_TEXTURE_LIST_SIZE; i++)
+		updated += ogl_android_apply_texture_filter(&ogl_texture_list[i], texfilt, generated);
+	if (updated)
+		ogl_last_bound_tex = 0;
+	return updated;
+}
+
+static void ogl_android_apply_pending_runtime_options(const char *source)
 {
 	android_merged_wall_consume_experiment_pending_apply();
 	if (g_aniso_pending_apply) {
+		int generated = 0;
+		int effective_texfilt;
+		int filter_updated;
 		g_aniso_pending_apply = 0;
 		__sync_synchronize(); /* ensure we read values written before flag */
-		if (ogl_aniso_level > 0) {
-			/* AF on: generate mipmaps in-place for textures that lack them
-			 * (needed for AF to have any effect). Skip font textures
-			 * (NOCOLOR) -- they never need mipmaps */
-			int upgraded = 0;
-			for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
-				if (ogl_texture_list[i].handle > 0 && !ogl_texture_list[i].has_mipmaps
-				    && !(ogl_texture_list[i].flags & OGL_FLAG_NOCOLOR)) {
-					glBindTexture(GL_TEXTURE_2D, ogl_texture_list[i].handle);
-					glGenerateMipmap(GL_TEXTURE_2D);
-					ogl_texture_list[i].has_mipmaps = 1;
-					upgraded++;
-				}
-			}
-			ogl_last_bound_tex = 0;
-			if (upgraded)
-				con_printf(CON_DEBUG, "anisotropy: generated mipmaps for %d textures", upgraded);
-		}
-		/* AF off: mipmaps are harmless, just update the aniso parameter.
-		 * ogl_bindbmtex will use the correct filter at bind time */
+		effective_texfilt = ogl_android_effective_texfilt(GameCfg.TexFilt);
+		filter_updated = ogl_android_apply_texture_filters_all(effective_texfilt, &generated);
+		debug_log(DLOG_GRAPHICS,
+			"graphics apply[%s]: aniso=%d effective_texfilt=%d filters=%d mipmaps=%d",
+			source ? source : "unknown", ogl_aniso_level, effective_texfilt,
+			filter_updated, generated);
 		ogl_apply_anisotropy_all();
 	}
 	if (g_texfilt_pending_apply) {
+		int requested_texfilt = g_texfilt_level;
+		int effective_texfilt;
 		struct android_ogl_texture_texfilt_state texfilt_state = {
 			{ ogl_texture_list, OGL_TEXTURE_LIST_SIZE },
 			&ogl_last_bound_tex,
@@ -685,10 +720,27 @@ static void ogl_android_apply_pending_runtime_options(void)
 			&GameCfg.TexFilt
 		};
 
+		debug_log(DLOG_GRAPHICS,
+			"graphics apply[%s]: tex_filt request=%d aniso=%d",
+			source ? source : "unknown", requested_texfilt, ogl_aniso_level);
 		android_ogl_apply_texfilt_all(&texfilt_state);
+		effective_texfilt = ogl_android_effective_texfilt(GameCfg.TexFilt);
+		if (effective_texfilt != GameCfg.TexFilt) {
+			int generated = 0;
+			int filter_updated = ogl_android_apply_texture_filters_all(effective_texfilt, &generated);
+			debug_log(DLOG_GRAPHICS,
+				"graphics apply[%s]: tex_filt effective=%d filters=%d mipmaps=%d",
+				source ? source : "unknown", effective_texfilt,
+				filter_updated, generated);
+		}
 	}
 	g_texfilt_level = GameCfg.TexFilt;
 	if (g_msaa_pending_apply) {
+		debug_log(DLOG_GRAPHICS,
+			"graphics apply[%s]: msaa=%d destroy_fbo=%d bound=%d depth=%d size=%dx%d",
+			source ? source : "unknown", ogl_msaa_samples,
+			ogl_msaa_fbo ? 1 : 0, g_msaa_fbo_bound, g_msaa_frame_depth,
+			ogl_msaa_w, ogl_msaa_h);
 		g_msaa_pending_apply = 0;
 		ogl_msaa_destroy_fbo(); /* recreate on next check below */
 	}
@@ -697,6 +749,12 @@ static void ogl_android_apply_pending_runtime_options(void)
 /* android port: MSAA via FBO -- create/destroy/resolve helpers */
 static void ogl_msaa_destroy_fbo(void)
 {
+	if (ogl_msaa_fbo || ogl_msaa_color_rbo || ogl_msaa_depth_rbo)
+		debug_log(DLOG_GRAPHICS,
+			"MSAA FBO destroy: fbo=%u color=%u depth=%u size=%dx%d bound=%d frame_depth=%d",
+			(unsigned)ogl_msaa_fbo, (unsigned)ogl_msaa_color_rbo,
+			(unsigned)ogl_msaa_depth_rbo, ogl_msaa_w, ogl_msaa_h,
+			g_msaa_fbo_bound, g_msaa_frame_depth);
 	if (ogl_msaa_fbo) {
 		glDeleteFramebuffers(1, &ogl_msaa_fbo);
 		ogl_msaa_fbo = 0;
@@ -715,12 +773,19 @@ static void ogl_msaa_destroy_fbo(void)
 
 static int ogl_msaa_create_fbo(int samples, int w, int h)
 {
+	debug_log(DLOG_GRAPHICS,
+		"MSAA FBO create request: samples=%d max=%d size=%dx%d",
+		samples, ogl_msaa_max_samples, w, h);
 	ogl_msaa_destroy_fbo();
 
 	/* Clamp to hardware max -- exceeding it can crash some drivers */
 	if (ogl_msaa_max_samples > 0 && samples > ogl_msaa_max_samples)
 		samples = ogl_msaa_max_samples;
-	if (samples < 2) return 0;
+	if (samples < 2) {
+		debug_log(DLOG_GRAPHICS,
+			"MSAA FBO create skipped: clamped_samples=%d", samples);
+		return 0;
+	}
 
 	/* Query default framebuffer bit depths to match format for glBlitFramebuffer.
 	 * GLES 3.0 requires identical formats for multisample resolve */
@@ -764,6 +829,9 @@ static int ogl_msaa_create_fbo(int samples, int w, int h)
 		__android_log_print(ANDROID_LOG_ERROR, "DXX",
 		    "MSAA FBO incomplete: status=0x%x samples=%d %dx%d fmt=0x%x",
 		    status, samples, w, h, color_fmt);
+		debug_log(DLOG_GRAPHICS,
+			"MSAA FBO incomplete: status=0x%x samples=%d size=%dx%d fmt=0x%x",
+			status, samples, w, h, color_fmt);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		ogl_msaa_destroy_fbo();
 		return 0;
@@ -774,6 +842,9 @@ static int ogl_msaa_create_fbo(int samples, int w, int h)
 	ogl_msaa_h = h;
 	__android_log_print(ANDROID_LOG_INFO, "DXX",
 	    "MSAA FBO created: %dx samples, %dx%d fmt=0x%x", samples, w, h, color_fmt);
+	debug_log(DLOG_GRAPHICS,
+		"MSAA FBO created: samples=%d size=%dx%d fmt=0x%x",
+		samples, w, h, color_fmt);
 	return 1;
 }
 #endif
@@ -2291,7 +2362,7 @@ void ogl_start_frame(void){
 	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
 	r_shader_switches=0;r_mask_draws=0;
 	g_ogl_render_context = 1; /* 3D world */
-	ogl_android_apply_pending_runtime_options();
+	ogl_android_apply_pending_runtime_options("start_frame");
 	/* Bind MSAA FBO if enabled; create/resize as needed.
 	 * Only the outermost active 3D pass binds here. ogl_end_frame balances
 	 * the depth counter, so later cockpit subviews in the same game frame can
@@ -2529,7 +2600,7 @@ void gr_flip(void)
 				&g_fb_avg_r, &g_fb_avg_g, &g_fb_avg_b, &g_fb_avg_a);
 		}
 	}
-	ogl_android_apply_pending_runtime_options();
+	ogl_android_apply_pending_runtime_options("gr_flip");
 #endif
 
 #ifdef ANDROID

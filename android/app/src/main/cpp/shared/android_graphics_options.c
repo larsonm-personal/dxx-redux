@@ -9,6 +9,7 @@
 #include "physfs.h"
 
 #include "android_graphics_options.h"
+#include "android_log.h"
 #include "config.h"
 #include "palette.h"
 #include "playsave.h"
@@ -210,6 +211,9 @@ void android_graphics_set_aniso_level(int value, int persist)
 
 	if (value < 0)
 		value = 0;
+	debug_log(DLOG_GRAPHICS,
+	          "graphics option request: aniso_level=%d persist=%d",
+	          value, persist);
 	GameCfg.AnisoLevel = value;
 	ogl_aniso_level = value;
 	__sync_synchronize();
@@ -224,6 +228,9 @@ void android_graphics_set_msaa_level(int value, int persist)
 
 	if (value < 0)
 		value = 0;
+	debug_log(DLOG_GRAPHICS,
+	          "graphics option request: msaa_level=%d persist=%d",
+	          value, persist);
 	GameCfg.MsaaLevel = value;
 	ogl_msaa_samples = value;
 	__sync_synchronize();
@@ -237,6 +244,9 @@ void android_graphics_set_texfilt(int value, int persist)
 	extern volatile int g_texfilt_pending_apply;
 
 	value = clamp_texfilt(value);
+	debug_log(DLOG_GRAPHICS,
+	          "graphics option request: tex_filt=%d persist=%d",
+	          value, persist);
 	GameCfg.TexFilt = value;
 	g_texfilt_level = value;
 	__sync_synchronize();
