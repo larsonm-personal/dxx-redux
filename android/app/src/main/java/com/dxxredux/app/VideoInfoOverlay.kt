@@ -273,6 +273,23 @@ class VideoInfoOverlay(
             color = 0x55FFFFFF
             style = Paint.Style.FILL
         }
+    private val btnFocusOutlinePaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFF00E676u.toInt()
+            style = Paint.Style.STROKE
+            strokeWidth = 3f
+        }
+
+    private fun drawFocusOutline(
+        canvas: Canvas,
+        rect: RectF,
+        radius: Float,
+        focused: Boolean,
+    ) {
+        if (focused) {
+            canvas.drawRoundRect(rect, radius, radius, btnFocusOutlinePaint)
+        }
+    }
 
     private fun activeControllerActions(): List<VideoInfoControllerAction> =
         videoInfoControllerActions(showDebugControls)
@@ -528,6 +545,12 @@ class VideoInfoOverlay(
                 else -> btnNormalPaint
             }
         canvas.drawRoundRect(texFiltRect, pad * 0.5f, pad * 0.5f, tfBg)
+        drawFocusOutline(
+            canvas,
+            texFiltRect,
+            pad * 0.5f,
+            selectedControllerAction == VideoInfoControllerAction.TEX_FILT,
+        )
         canvas.drawText(tfText, panelLeft + pad, y, tfPaint)
         y += lineH
 
@@ -547,6 +570,12 @@ class VideoInfoOverlay(
                 else -> btnNormalPaint
             }
         canvas.drawRoundRect(anisoRect, pad * 0.5f, pad * 0.5f, anisoBg)
+        drawFocusOutline(
+            canvas,
+            anisoRect,
+            pad * 0.5f,
+            selectedControllerAction == VideoInfoControllerAction.ANISO,
+        )
         val maxText = if (anisoMax > 0) " (max ${anisoMax}x)" else ""
         canvas.drawText(anisoText + maxText, panelLeft + pad, y, anisoPaint)
         y += lineH
@@ -567,6 +596,12 @@ class VideoInfoOverlay(
                 else -> btnNormalPaint
             }
         canvas.drawRoundRect(msaaRect, pad * 0.5f, pad * 0.5f, msaaBg)
+        drawFocusOutline(
+            canvas,
+            msaaRect,
+            pad * 0.5f,
+            selectedControllerAction == VideoInfoControllerAction.MSAA,
+        )
         val msaaMaxText = if (msaaMax > 0) " (max ${msaaMax}x)" else ""
         canvas.drawText(msaaText + msaaMaxText, panelLeft + pad, y, msaaPaint)
         y += lineH

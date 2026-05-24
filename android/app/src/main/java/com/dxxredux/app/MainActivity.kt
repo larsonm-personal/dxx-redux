@@ -238,6 +238,8 @@ class MainActivity :
         value: Int,
     )
 
+    external fun nativeGetGammaLevel(): Int
+
     external fun nativeSetCoopIndicatorOptions(
         showNearestPlayerLine: Boolean,
         showGuidebotLine: Boolean,
@@ -808,6 +810,20 @@ class MainActivity :
         }
         touchOverlay.adminTrayOpenedCallback = { syncAdminTrayPause(open = true) }
         touchOverlay.adminTrayClosedCallback = { syncAdminTrayPause(open = false) }
+        touchOverlay.adminTrayBrightnessProvider = {
+            try {
+                nativeGetGammaLevel()
+            } catch (_: Exception) {
+                0
+            }
+        }
+        touchOverlay.adminTrayBrightnessSetter = { value ->
+            try {
+                nativeSetGraphicsOption("gamma_level", value)
+            } catch (_: Exception) {
+                // JNI not ready yet
+            }
+        }
         touchOverlay.adminTrayToggleStateProvider = { action ->
             when (action) {
                 TouchOverlayView.ADMIN_NET_STATS -> netStatsOverlay?.visibility == View.VISIBLE
@@ -1531,6 +1547,7 @@ class MainActivity :
 
         fun cfgInt(key: String): Int? = readConfigValueForGame(filesDir, gameVariantId, key)?.toIntOrNull()
         try {
+            cfgInt("GammaLevel")?.let { nativeSetGraphicsOption("gamma_level", it) }
             cfgInt("TexFilt")?.let { nativeSetGraphicsOption("tex_filt", it) }
             cfgInt("MenuTexFilt")?.let { nativeSetGraphicsOption("menu_tex_filt", it) }
             cfgInt("HudTexFilt")?.let { nativeSetGraphicsOption("hud_tex_filt", it) }

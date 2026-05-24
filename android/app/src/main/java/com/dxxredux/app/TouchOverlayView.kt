@@ -22,6 +22,7 @@ import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlin.math.sin
 
@@ -35,15 +36,35 @@ internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
         else -> false
     }
 
-internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
+internal fun adminTrayUsesSlider(actionIndex: Int): Boolean =
     when (actionIndex) {
-        TouchOverlayView.ADMIN_INCREASE_VIEW,
-        TouchOverlayView.ADMIN_MUSIC,
-        TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
-        -> false
-
-        else -> !adminTrayUsesCheckbox(actionIndex)
+        TouchOverlayView.ADMIN_BRIGHTNESS -> true
+        else -> false
     }
+
+internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
+    if (adminTrayUsesSlider(actionIndex)) {
+        false
+    } else {
+        when (actionIndex) {
+            TouchOverlayView.ADMIN_INCREASE_VIEW,
+            TouchOverlayView.ADMIN_MUSIC,
+            TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
+            -> false
+
+            else -> !adminTrayUsesCheckbox(actionIndex)
+        }
+    }
+
+internal fun clampAdminTrayBrightness(value: Int): Int = value.coerceIn(0, 16)
+
+internal fun stepAdminTrayBrightness(
+    value: Int,
+    delta: Int,
+): Int = clampAdminTrayBrightness(value + delta)
+
+internal fun adminTrayBrightnessFromFraction(fraction: Float): Int =
+    clampAdminTrayBrightness((fraction.coerceIn(0f, 1f) * 16f).roundToInt())
 
 internal fun adminTrayActionEnabled(
     actionIndex: Int,
@@ -66,6 +87,7 @@ internal fun adminTrayVisibleActions(
             TouchOverlayView.ADMIN_EXIT_LAUNCHER,
             TouchOverlayView.ADMIN_QUICK_SAVE,
             TouchOverlayView.ADMIN_VIDEO_INFO,
+            TouchOverlayView.ADMIN_BRIGHTNESS,
         )
     if (showNetworkActions) {
         actions.add(2, TouchOverlayView.ADMIN_NET_STATS)
@@ -79,7 +101,7 @@ internal fun adminTrayVisibleActions(
     return actions
 }
 
-private const val CONTROLLER_MENU_FOCUS_COLOR = 0xFF00CC66.toInt()
+private const val CONTROLLER_MENU_FOCUS_COLOR = 0xFF00E676.toInt()
 private const val CONTROLLER_MENU_ADVANCE_WINDOW_MS = 2500L
 
 internal enum class ControllerMenuSurface {
@@ -1347,6 +1369,7 @@ class TouchOverlayView
             const val ADMIN_WARP = 11
             const val ADMIN_MUSIC = 12
             const val ADMIN_ACCEPT_JOIN = 13
+            const val ADMIN_BRIGHTNESS = 14
 
             // Cockpit mode constants (match C CM_* defines)
             private const val CM_FULL_COCKPIT = 0
@@ -1389,6 +1412,11 @@ class TouchOverlayView
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
                 color = 0x1A4CAF50 // Material Green at ~10% opacity
+            }
+        private val paintBtnSliderActive =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0x3300E676
             }
         private val paintBtnIdleDisabled =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -1464,6 +1492,9 @@ class TouchOverlayView
         private var adminTrayPointerId = -1
         private val adminTrayRects = mutableListOf<RectF>()
         private var adminTrayTabRect = RectF()
+        private var adminTrayBrightnessTouchActive = false
+        private var adminTrayBrightnessActive = false
+        private var adminTrayBrightnessValue = 0
         private var remainingActionOpen = false
         private var remainingActionSelectedIndex = -1
         private var remainingActionPointerId = -1
@@ -1493,6 +1524,8 @@ class TouchOverlayView
         // Provider for dynamic labels (auto-leveling state, cockpit mode)
         var adminTrayAutoLevelingProvider: (() -> Boolean)? = null
         var adminTrayCockpitModeProvider: (() -> Int)? = null
+        var adminTrayBrightnessProvider: (() -> Int)? = null
+        var adminTrayBrightnessSetter: ((Int) -> Unit)? = null
         var adminTrayToggleStateProvider: ((Int) -> Boolean)? = null
         var adminTrayEnabledStateProvider: ((Int) -> Boolean)? = null
 
@@ -4349,6 +4382,10 @@ class TouchOverlayView
                     "Video Info"
                 }
 
+                ADMIN_BRIGHTNESS -> {
+                    "Brightness"
+                }
+
                 ADMIN_AUTOMAP -> {
                     "Automap"
                 }
@@ -4412,6 +4449,94 @@ class TouchOverlayView
 
         private fun adminTrayItemCount(): Int = currentAdminTrayActions().size
 
+        private fun currentAdminTrayBrightnessValue(): Int {
+            if (!adminTrayBrightnessTouchActive && !adminTrayBrightnessActive) {
+                adminTrayBrightnessValue =
+                    clampAdminTrayBrightness(adminTrayBrightnessProvider?.invoke() ?: adminTrayBrightnessValue)
+            }
+            return adminTrayBrightnessValue
+        }
+
+        private fun setAdminTrayBrightness(value: Int): Boolean {
+            val clamped = clampAdminTrayBrightness(value)
+            if (clamped == adminTrayBrightnessValue) return false
+            adminTrayBrightnessValue = clamped
+            adminTrayBrightnessSetter?.invoke(clamped)
+            invalidate()
+            return true
+        }
+
+        private fun setAdminTrayBrightnessFromTouch(
+            rect: RectF,
+            x: Float,
+        ): Boolean {
+            if (rect.width() <= 0f) return false
+            return setAdminTrayBrightness(adminTrayBrightnessFromFraction((x - rect.left) / rect.width()))
+        }
+
+        private fun drawAdminTrayBrightnessCell(
+            canvas: Canvas,
+            rect: RectF,
+            value: Int,
+            enabled: Boolean,
+            textPaint: Paint,
+        ) {
+            val titlePaint =
+                Paint(textPaint).apply {
+                    textAlign = Paint.Align.LEFT
+                    alpha = if (enabled) 0xDD else 0x66
+                    textSize = textPaint.textSize * 0.9f
+                }
+            val valuePaint =
+                Paint(textPaint).apply {
+                    textAlign = Paint.Align.RIGHT
+                    alpha = if (enabled) 0xDD else 0x66
+                    textSize = textPaint.textSize * 0.9f
+                }
+            val trackPaint =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = if (enabled) 0x66FFFFFF else 0x334A4A4A
+                }
+            val fillPaint =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = if (enabled) 0xAA00E676.toInt() else 0x665E5E5E
+                }
+            val thumbPaint =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = if (enabled) 0xEEFFFFFF.toInt() else 0x886E6E6E.toInt()
+                }
+
+            val titleY = rect.top + rect.height() * 0.33f
+            val labelPad = rect.width() * 0.08f
+            canvas.drawText("Brightness", rect.left + labelPad, titleY, titlePaint)
+            canvas.drawText("$value/16", rect.right - labelPad, titleY, valuePaint)
+
+            val trackLeft = rect.left + rect.width() * 0.08f
+            val trackRight = rect.right - rect.width() * 0.08f
+            val trackTop = rect.bottom - rect.height() * 0.32f
+            val trackBottom = rect.bottom - rect.height() * 0.18f
+            val trackRect = RectF(trackLeft, trackTop, trackRight, trackBottom)
+            val thumbX = trackLeft + trackRect.width() * (value / 16f)
+            val thumbRadius = rect.height() * 0.12f
+
+            canvas.drawRoundRect(trackRect, trackRect.height() / 2f, trackRect.height() / 2f, trackPaint)
+            if (thumbX > trackLeft) {
+                canvas.drawRoundRect(
+                    trackLeft,
+                    trackTop,
+                    thumbX,
+                    trackBottom,
+                    trackRect.height() / 2f,
+                    trackRect.height() / 2f,
+                    fillPaint,
+                )
+            }
+            canvas.drawCircle(thumbX, trackRect.centerY(), thumbRadius, thumbPaint)
+        }
+
         private fun drawAdminTrayPanel(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
@@ -4436,6 +4561,7 @@ class TouchOverlayView
                     textSize = (cellH * 0.3f).coerceAtMost(w * 0.03f)
                     textAlign = Paint.Align.CENTER
                 }
+            val brightnessValue = currentAdminTrayBrightnessValue()
 
             // Panel background
             val panelBg =
@@ -4511,16 +4637,21 @@ class TouchOverlayView
 
                 val enabled = adminTrayActionEnabled(action, adminTrayEnabledStateProvider)
                 val checked = adminTrayToggleStateProvider?.invoke(action) == true
+                val brightnessEditing = action == ADMIN_BRIGHTNESS && adminTrayBrightnessActive
 
                 val bg =
                     if (!enabled) {
                         if (checked && adminTrayUsesCheckbox(action)) {
+                            paintBtnLatchedDisabled
+                        } else if (brightnessEditing) {
                             paintBtnLatchedDisabled
                         } else if (i == adminTrayPressedIndex) {
                             paintBtnPressedDisabled
                         } else {
                             paintBtnIdleDisabled
                         }
+                    } else if (brightnessEditing) {
+                        paintBtnSliderActive
                     } else if (i == adminTrayPressedIndex) {
                         paintBtnPressed
                     } else if (checked && adminTrayUsesCheckbox(action)) {
@@ -4528,7 +4659,12 @@ class TouchOverlayView
                     } else {
                         paintBtnIdle
                     }
-                bg.alpha = if (i == adminTrayPressedIndex) 0xAA else 0x55
+                bg.alpha =
+                    when {
+                        brightnessEditing -> 0x99
+                        i == adminTrayPressedIndex -> 0xAA
+                        else -> 0x55
+                    }
                 canvas.drawRect(rect, bg)
 
                 // D-pad selection highlight
@@ -4547,7 +4683,9 @@ class TouchOverlayView
                 }
 
                 textPaint.alpha = if (enabled) 0xDD else 0x66
-                if (adminTrayUsesCheckbox(action)) {
+                if (action == ADMIN_BRIGHTNESS) {
+                    drawAdminTrayBrightnessCell(canvas, rect, brightnessValue, enabled, textPaint)
+                } else if (adminTrayUsesCheckbox(action)) {
                     val checkboxSize = min(cellH * 0.26f, cellW * 0.18f)
                     val checkboxLeft = rect.left + cellW * 0.12f
                     val checkboxTop = rect.centerY() - checkboxSize / 2f
@@ -4651,6 +4789,12 @@ class TouchOverlayView
                 return
             }
             adminTrayOpen = true
+            adminTrayBrightnessActive = false
+            adminTrayBrightnessTouchActive = false
+            adminTrayBrightnessValue =
+                clampAdminTrayBrightness(
+                    adminTrayBrightnessProvider?.invoke() ?: adminTrayBrightnessValue,
+                )
             if (fromGamepad || gamepadOnlyMode) {
                 adminTraySelectedIndex = defaultAdminTraySelectedIndex()
             } else {
@@ -4662,6 +4806,11 @@ class TouchOverlayView
 
         fun closeAdminTray() {
             if (!adminTrayOpen && adminTraySlide <= 0f) return
+            adminTrayBrightnessActive = false
+            adminTrayBrightnessTouchActive = false
+            adminTrayPressedIndex = -1
+            adminTrayPointerId = -1
+            adminTrayDragging = false
             animateAdminTray(false)
         }
 
@@ -4684,6 +4833,59 @@ class TouchOverlayView
             val count = visibleActions.size
             if (count > 0 && adminTraySelectedIndex !in 0 until count) {
                 adminTraySelectedIndex = defaultAdminTraySelectedIndex().coerceIn(0, count - 1)
+            }
+            val selectedAction =
+                if (adminTraySelectedIndex in 0 until count) {
+                    visibleActions[adminTraySelectedIndex]
+                } else {
+                    -1
+                }
+            if (adminTrayBrightnessActive) {
+                when (keyCode) {
+                    android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
+                        if (selectedAction == ADMIN_BRIGHTNESS &&
+                            setAdminTrayBrightness(
+                                stepAdminTrayBrightness(adminTrayBrightnessValue, -1),
+                            )
+                        ) {
+                            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        }
+                        return true
+                    }
+
+                    android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                        if (selectedAction == ADMIN_BRIGHTNESS &&
+                            setAdminTrayBrightness(
+                                stepAdminTrayBrightness(adminTrayBrightnessValue, 1),
+                            )
+                        ) {
+                            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        }
+                        return true
+                    }
+
+                    android.view.KeyEvent.KEYCODE_BUTTON_A,
+                    android.view.KeyEvent.KEYCODE_DPAD_CENTER,
+                    -> {
+                        adminTrayBrightnessActive = false
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        invalidate()
+                        return true
+                    }
+
+                    android.view.KeyEvent.KEYCODE_BUTTON_B,
+                    android.view.KeyEvent.KEYCODE_BACK,
+                    -> {
+                        closeAdminTray()
+                        return true
+                    }
+
+                    android.view.KeyEvent.KEYCODE_DPAD_UP,
+                    android.view.KeyEvent.KEYCODE_DPAD_DOWN,
+                    -> {
+                        return true
+                    }
+                }
             }
             when (keyCode) {
                 android.view.KeyEvent.KEYCODE_DPAD_UP -> {
@@ -4723,6 +4925,12 @@ class TouchOverlayView
                 android.view.KeyEvent.KEYCODE_BUTTON_A,
                 android.view.KeyEvent.KEYCODE_DPAD_CENTER,
                 -> {
+                    if (selectedAction == ADMIN_BRIGHTNESS) {
+                        adminTrayBrightnessActive = !adminTrayBrightnessActive
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        invalidate()
+                        return true
+                    }
                     if (adminTraySelectedIndex in 0 until count &&
                         adminTrayActionEnabled(visibleActions[adminTraySelectedIndex], adminTrayEnabledStateProvider)
                     ) {
@@ -4753,16 +4961,23 @@ class TouchOverlayView
             val idx = event.actionIndex
             val px = event.getX(idx)
             val py = event.getY(idx)
+            val actions = currentAdminTrayActions()
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     adminTrayPointerId = event.getPointerId(idx)
                     adminTrayDragStartY = py
                     adminTrayDragging = false
+                    adminTrayBrightnessTouchActive = false
+                    adminTrayBrightnessActive = false
                     // Check grid buttons
                     for (i in adminTrayRects.indices) {
                         if (adminTrayRects[i].contains(px, py)) {
                             adminTrayPressedIndex = i
+                            if (i < actions.size && actions[i] == ADMIN_BRIGHTNESS) {
+                                adminTrayBrightnessTouchActive = true
+                                setAdminTrayBrightnessFromTouch(adminTrayRects[i], px)
+                            }
                             invalidate()
                             return true
                         }
@@ -4782,6 +4997,13 @@ class TouchOverlayView
                     if (adminTrayPointerId < 0) return true
                     val pi = event.findPointerIndex(adminTrayPointerId)
                     if (pi < 0) return true
+                    if (adminTrayBrightnessTouchActive) {
+                        val rectIndex = adminTrayPressedIndex
+                        if (rectIndex in adminTrayRects.indices) {
+                            setAdminTrayBrightnessFromTouch(adminTrayRects[rectIndex], event.getX(pi))
+                        }
+                        return true
+                    }
                     val cy = event.getY(pi)
                     val dy = cy - adminTrayDragStartY
                     // Start drag after small threshold
@@ -4812,6 +5034,11 @@ class TouchOverlayView
                             } else {
                                 closeAdminTray()
                             }
+                        } else if (adminTrayBrightnessTouchActive) {
+                            if (adminTrayPressedIndex in adminTrayRects.indices) {
+                                setAdminTrayBrightnessFromTouch(adminTrayRects[adminTrayPressedIndex], px)
+                            }
+                            invalidate()
                         } else if (adminTrayPressedIndex >= 0 &&
                             adminTrayPressedIndex < adminTrayRects.size &&
                             adminTrayRects[adminTrayPressedIndex].contains(px, py) &&
@@ -4830,6 +5057,7 @@ class TouchOverlayView
                         adminTrayPressedIndex = -1
                         adminTrayPointerId = -1
                         adminTrayDragging = false
+                        adminTrayBrightnessTouchActive = false
                     }
                     return true
                 }
@@ -4845,6 +5073,7 @@ class TouchOverlayView
                     adminTrayPressedIndex = -1
                     adminTrayPointerId = -1
                     adminTrayDragging = false
+                    adminTrayBrightnessTouchActive = false
                     invalidate()
                     return true
                 }
