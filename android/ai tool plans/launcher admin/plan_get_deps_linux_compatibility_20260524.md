@@ -41,6 +41,8 @@ Completed in this tranche:
 - Fixed Linux tool lookup in `run-clang-format.ps1`, `run-ktlint.ps1`, `run-shellcheck.ps1`, and `run-shfmt.ps1`
 - Verified `pwsh -File ./android/get_deps/check-updates.ps1 -InstallSelection a` completes on Ubuntu 26.04 and leaves the installable Linux rows up-to-date
 - Ran `pwsh -File ./android/run-code-quality.ps1 --fix` to completion after the Linux runner fixes
+- Resolved later merge conflicts in `check-updates.ps1` and `tool_versions.conf` by keeping the logged web-request visibility improvements together with the Linux-aware NDK/JDK update queries and host-aware ImageMagick version detection
+- Revalidated the merged `check-updates.ps1` and `tool_versions.conf` with conflict-marker scans plus a clean PowerShell parse
 
 Still pending:
 

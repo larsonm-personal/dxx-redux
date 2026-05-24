@@ -323,6 +323,35 @@ function Invoke-ConfiguredActionCommand($commandKey) {
     & ([ScriptBlock]::Create($command))
 }
 
+function Write-RequestLoadLine($uri) {
+    if (-not $uri) { return }
+    Write-Host ("loading {0}..." -f $uri)
+}
+
+function Invoke-LoggedWebRequest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Uri,
+
+        [int]$TimeoutSec = 15,
+
+        [hashtable]$Headers
+    )
+
+    Write-RequestLoadLine $Uri
+
+    $requestParams = @{
+        Uri = $Uri
+        UseBasicParsing = $true
+        TimeoutSec = $TimeoutSec
+    }
+    if ($Headers) {
+        $requestParams["Headers"] = $Headers
+    }
+
+    Invoke-WebRequest @requestParams
+}
+
 function Get-InstalledIfPathExists($path, $version) {
     if ($path -and (Test-Path -LiteralPath $path)) {
         return $version
@@ -635,7 +664,7 @@ function Get-LatestMavenVersion($group, $artifact) {
             "https://repo1.maven.org/maven2")) {
         $url = "$repo/$groupPath/$artifact/maven-metadata.xml"
         try {
-            $xml = [xml](Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10).Content
+            $xml = [xml](Invoke-LoggedWebRequest -Uri $url -TimeoutSec 10).Content
             $versions = @($xml.metadata.versioning.versions.version | ForEach-Object { [string]$_ })
             $ver = Select-LatestVersion $versions
             if ($ver) { return $ver }
@@ -652,8 +681,8 @@ function Get-LatestMavenVersion($group, $artifact) {
 function Get-AndroidRepositoryContent {
     if ($script:AndroidRepositoryContent) { return $script:AndroidRepositoryContent }
     try {
-        $script:AndroidRepositoryContent = (Invoke-WebRequest -Uri "https://dl.google.com/android/repository/repository2-1.xml" `
-                -UseBasicParsing -TimeoutSec 15).Content
+        $script:AndroidRepositoryContent = (Invoke-LoggedWebRequest -Uri "https://dl.google.com/android/repository/repository2-1.xml" `
+                -TimeoutSec 15).Content
         return $script:AndroidRepositoryContent
     } catch { return $null }
 }
@@ -701,8 +730,8 @@ function Get-GitHubLatestRelease($repo) {
             "Accept" = "application/vnd.github+json"
             "User-Agent" = "dxx-redux-check-updates"
         }
-        $json = (Invoke-WebRequest -Uri "https://api.github.com/repos/$repo/releases/latest" `
-                -UseBasicParsing -TimeoutSec 15 -Headers $headers).Content | ConvertFrom-Json
+        $json = (Invoke-LoggedWebRequest -Uri "https://api.github.com/repos/$repo/releases/latest" `
+                -TimeoutSec 15 -Headers $headers).Content | ConvertFrom-Json
         $script:GitHubReleaseCache[$repo] = $json
         return $json
     } catch { return $null }
@@ -719,8 +748,8 @@ function Get-GitHubReleases($repo) {
             "Accept" = "application/vnd.github+json"
             "User-Agent" = "dxx-redux-check-updates"
         }
-        $json = (Invoke-WebRequest -Uri "https://api.github.com/repos/$repo/releases?per_page=30" `
-                -UseBasicParsing -TimeoutSec 15 -Headers $headers).Content | ConvertFrom-Json
+        $json = (Invoke-LoggedWebRequest -Uri "https://api.github.com/repos/$repo/releases?per_page=30" `
+                -TimeoutSec 15 -Headers $headers).Content | ConvertFrom-Json
         $script:GitHubReleasesCache[$repo] = @($json)
         return $script:GitHubReleasesCache[$repo]
     } catch { return @() }
@@ -737,8 +766,8 @@ function Get-GitHubRepoInfo($repo) {
             "Accept" = "application/vnd.github+json"
             "User-Agent" = "dxx-redux-check-updates"
         }
-        $json = (Invoke-WebRequest -Uri "https://api.github.com/repos/$repo" `
-                -UseBasicParsing -TimeoutSec 15 -Headers $headers).Content | ConvertFrom-Json
+        $json = (Invoke-LoggedWebRequest -Uri "https://api.github.com/repos/$repo" `
+                -TimeoutSec 15 -Headers $headers).Content | ConvertFrom-Json
         $script:GitHubRepoCache[$repo] = $json
         return $json
     } catch { return $null }
@@ -813,8 +842,8 @@ function Get-WebResponseUri($response) {
 
 function Get-GitHubLatestReleaseInfoFromWeb($repo, $trimPrefix = "") {
     try {
-        $response = Invoke-WebRequest -Uri "https://github.com/$repo/releases/latest" `
-            -UseBasicParsing -TimeoutSec 15
+        $response = Invoke-LoggedWebRequest -Uri "https://github.com/$repo/releases/latest" `
+            -TimeoutSec 15
         $finalUri = Get-WebResponseUri $response
         if (-not $finalUri -or $finalUri -notmatch '/releases/tag/([^/?#]+)') {
             return $null
@@ -881,8 +910,8 @@ function Get-GitHubExpandedAssetsHtml($repo, $tag) {
     }
 
     try {
-        $html = (Invoke-WebRequest -Uri "https://github.com/$repo/releases/expanded_assets/$tag" `
-                -UseBasicParsing -TimeoutSec 15).Content
+        $html = (Invoke-LoggedWebRequest -Uri "https://github.com/$repo/releases/expanded_assets/$tag" `
+            -TimeoutSec 15).Content
         $script:GitHubAssetsCache[$cacheKey] = $html
         return $html
     } catch {
@@ -902,8 +931,8 @@ function Get-ShortCommit($commit) {
 
 function Get-LatestGradleVersion {
     try {
-        $json = (Invoke-WebRequest -Uri "https://services.gradle.org/versions/current" `
-                -UseBasicParsing -TimeoutSec 10).Content | ConvertFrom-Json
+        $json = (Invoke-LoggedWebRequest -Uri "https://services.gradle.org/versions/current" `
+                -TimeoutSec 10).Content | ConvertFrom-Json
         return $json.version
     } catch { return $null }
 }
@@ -911,10 +940,10 @@ function Get-LatestGradleVersion {
 function Get-LatestNDKVersion {
     # Scrape the NDK download page for the latest version tag
     try {
-        $page = (Invoke-WebRequest -Uri "https://developer.android.com/ndk/downloads" `
-                -UseBasicParsing -TimeoutSec 15).Content
-        # Look for "android-ndk-r<VER>-<platform>.zip" pattern
-        if ($page -match 'android-ndk-(r\d+[a-z]?)-(?:windows|linux|darwin)\.zip') {
+		$page = (Invoke-LoggedWebRequest -Uri "https://developer.android.com/ndk/downloads" `
+			-TimeoutSec 15).Content
+		# Look for "android-ndk-r<VER>-<platform>.zip" pattern
+		if ($page -match 'android-ndk-(r\d+[a-z]?)-(?:windows|linux|darwin)\.zip') {
             return $Matches[1]
         }
     } catch {}
@@ -930,8 +959,8 @@ function Get-LatestJDKVersion {
     }
     foreach ($major in @(17, 21)) {
         try {
-            $url = "https://api.adoptium.net/v3/info/release_versions?architecture=x64&heap_size=normal&image_type=jdk&os=$osToken&page=0&page_size=1&project=jdk&release_type=ga&sort_method=DEFAULT&sort_order=DESC&vendor=eclipse&version=%5B${major}%2C$($major+1)%29"
-            $json = (Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10).Content | ConvertFrom-Json
+			$url = "https://api.adoptium.net/v3/info/release_versions?architecture=x64&heap_size=normal&image_type=jdk&os=$osToken&page=0&page_size=1&project=jdk&release_type=ga&sort_method=DEFAULT&sort_order=DESC&vendor=eclipse&version=%5B${major}%2C$($major+1)%29"
+			$json = (Invoke-LoggedWebRequest -Uri $url -TimeoutSec 10).Content | ConvertFrom-Json
             if ($json.versions.Count -gt 0) {
                 $v = $json.versions[0]
                 $semver = "$($v.major).$($v.minor).$($v.security)"
@@ -1008,8 +1037,8 @@ function Get-LatestClangFormatInfo {
 
 function Get-LatestImageMagickVersion {
     try {
-        $page = (Invoke-WebRequest -Uri "https://imagemagick.org/archive/binaries/" `
-                -UseBasicParsing -TimeoutSec 15).Content
+        $page = (Invoke-LoggedWebRequest -Uri "https://imagemagick.org/archive/binaries/" `
+                -TimeoutSec 15).Content
         $versions = [regex]::Matches($page, 'ImageMagick-((\d+\.\d+\.\d+-\d+))-portable-Q16-HDRI-x64\.7z') |
             ForEach-Object { $_.Groups[1].Value }
         return Select-LatestVersion $versions -IncludePrerelease
@@ -1018,8 +1047,8 @@ function Get-LatestImageMagickVersion {
 
 function Get-LatestSevenZipVersion {
     try {
-        $page = (Invoke-WebRequest -Uri "https://www.7-zip.org/download.html" `
-                -UseBasicParsing -TimeoutSec 15).Content
+        $page = (Invoke-LoggedWebRequest -Uri "https://www.7-zip.org/download.html" `
+                -TimeoutSec 15).Content
         $versions = [regex]::Matches($page, '7z(\d+)-extra\.7z') |
             ForEach-Object { $_.Groups[1].Value }
         return Select-LatestVersion $versions -IncludePrerelease
@@ -1028,8 +1057,8 @@ function Get-LatestSevenZipVersion {
 
 function Get-LatestPyPIVersion($package) {
     try {
-        $json = (Invoke-WebRequest -Uri "https://pypi.org/pypi/$package/json" `
-                -UseBasicParsing -TimeoutSec 15).Content | ConvertFrom-Json
+        $json = (Invoke-LoggedWebRequest -Uri "https://pypi.org/pypi/$package/json" `
+                -TimeoutSec 15).Content | ConvertFrom-Json
         return [string]$json.info.version
     } catch { return $null }
 }

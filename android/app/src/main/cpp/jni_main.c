@@ -630,6 +630,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 
 /* ── Graphics options: set MSAA/AF from Kotlin (all builds) ────── */
 #include "config.h"
+#include "palette.h"
 #include "shared/android_graphics_options.h"
 #include "shared/coop_indicator_lines.h"
 JNIEXPORT void JNICALL
@@ -642,6 +643,14 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 	if (!android_graphics_set_option(name, (int) value, persist))
 		LOGE("nativeSetGraphicsOption: unknown option '%s'", name);
 	(*env)->ReleaseStringUTFChars(env, jname, name);
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetGammaLevel(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	return (jint) gr_palette_get_gamma();
 }
 
 JNIEXPORT void JNICALL

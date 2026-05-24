@@ -15,8 +15,9 @@ class AdminTrayUiTest {
     fun touchModeKeepsAutomapOutWhenTouchButtonIsMissing() {
         val actions = adminTrayVisibleActions(gamepadOnlyMode = false, hasTouchAutomapButton = false)
 
-        assertEquals(7, actions.size)
+        assertEquals(8, actions.size)
         assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
     }
 
     @Test
@@ -29,6 +30,7 @@ class AdminTrayUiTest {
         assertFalse(actions.contains(TouchOverlayView.ADMIN_WARP))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_ACCEPT_JOIN))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_MUSIC))
     }
 
@@ -52,6 +54,7 @@ class AdminTrayUiTest {
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER,
                 TouchOverlayView.ADMIN_QUICK_SAVE,
                 TouchOverlayView.ADMIN_VIDEO_INFO,
+                TouchOverlayView.ADMIN_BRIGHTNESS,
                 TouchOverlayView.ADMIN_WARP,
                 TouchOverlayView.ADMIN_MUSIC,
                 TouchOverlayView.ADMIN_ACCEPT_JOIN,
@@ -72,6 +75,7 @@ class AdminTrayUiTest {
         assertTrue(actions.contains(TouchOverlayView.ADMIN_NET_STATS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_NET_EVENTS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_ACCEPT_JOIN))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_WARP))
     }
 
@@ -118,7 +122,31 @@ class AdminTrayUiTest {
     @Test
     fun musicSubmenuStaysOpenWithoutCheckboxStyling() {
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_MUSIC))
+        assertFalse(adminTrayUsesSlider(TouchOverlayView.ADMIN_MUSIC))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_MUSIC))
+    }
+
+    @Test
+    fun brightnessUsesSliderSemanticsAndStaysOpen() {
+        assertTrue(adminTrayUsesSlider(TouchOverlayView.ADMIN_BRIGHTNESS))
+        assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_BRIGHTNESS))
+        assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_BRIGHTNESS))
+    }
+
+    @Test
+    fun brightnessHelpersClampAndStepWithinEngineRange() {
+        assertEquals(0, clampAdminTrayBrightness(-4))
+        assertEquals(16, clampAdminTrayBrightness(20))
+        assertEquals(10, stepAdminTrayBrightness(9, 1))
+        assertEquals(0, stepAdminTrayBrightness(0, -1))
+        assertEquals(16, stepAdminTrayBrightness(16, 1))
+    }
+
+    @Test
+    fun brightnessFractionMapsAcrossFullSliderWidth() {
+        assertEquals(0, adminTrayBrightnessFromFraction(0f))
+        assertEquals(8, adminTrayBrightnessFromFraction(0.5f))
+        assertEquals(16, adminTrayBrightnessFromFraction(1f))
     }
 
     @Test

@@ -9,6 +9,7 @@ int android_graphics_set_option(const char *name, int value, int persist);
 void android_graphics_set_aniso_level(int value, int persist);
 void android_graphics_set_msaa_level(int value, int persist);
 void android_graphics_set_texfilt(int value, int persist);
+void android_graphics_set_gamma_level(int value, int persist);
 void android_graphics_set_menu_texfilt(int value, int persist);
 void android_graphics_set_hud_texfilt(int value, int persist);
 void android_graphics_set_classic_depth(int value, int persist);

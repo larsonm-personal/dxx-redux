@@ -10,6 +10,7 @@
 
 #include "android_graphics_options.h"
 #include "config.h"
+#include "palette.h"
 #include "playsave.h"
 
 static int clamp_bool(int value)
@@ -23,6 +24,15 @@ static int clamp_texfilt(int value)
 		return 0;
 	if (value > 2)
 		return 2;
+	return value;
+}
+
+static int clamp_gamma(int value)
+{
+	if (value < 0)
+		return 0;
+	if (value > 16)
+		return 16;
 	return value;
 }
 
@@ -234,6 +244,13 @@ void android_graphics_set_texfilt(int value, int persist)
 	persist_config_if_needed(persist, "TexFilt", GameCfg.TexFilt, 1, 1);
 }
 
+void android_graphics_set_gamma_level(int value, int persist)
+{
+	gr_palette_set_gamma(clamp_gamma(value));
+	GameCfg.GammaLevel = gr_palette_get_gamma();
+	persist_config_if_needed(persist, "GammaLevel", GameCfg.GammaLevel, 1, 1);
+}
+
 void android_graphics_set_menu_texfilt(int value, int persist)
 {
 	GameCfg.MenuTexFilt = clamp_bool(value);
@@ -287,6 +304,8 @@ int android_graphics_set_option(const char *name, int value, int persist)
 		android_graphics_set_msaa_level(value, persist);
 	else if (!strcmp(name, "tex_filt"))
 		android_graphics_set_texfilt(value, persist);
+	else if (!strcmp(name, "gamma_level"))
+		android_graphics_set_gamma_level(value, persist);
 	else if (!strcmp(name, "menu_tex_filt"))
 		android_graphics_set_menu_texfilt(value, persist);
 	else if (!strcmp(name, "hud_tex_filt"))
