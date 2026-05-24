@@ -29,7 +29,7 @@
         "android/.kotlin/": true,
         "android/build/": true,
         "server/target/": true,
-        "tools/etc2tool/build/": true,
+        "android/tools/etc2tool/build/": true,
         "build/": true,
         "buildd2/": true,
         "d2/build/": true,

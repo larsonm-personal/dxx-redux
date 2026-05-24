@@ -16,7 +16,7 @@ $inScopeGlobs = @(
     "android\app\src\main\cpp\CMakeLists.txt",
     "android\app\src\main\cpp\extract\CMakeLists.txt",
     "cmake\*.cmake",
-    "tools\etc2tool\CMakeLists.txt"
+    "android\tools\etc2tool\CMakeLists.txt"
 )
 
 function Resolve-InScopeFiles {

@@ -50,11 +50,11 @@ $repoRoot = (Resolve-Path (Join-Path $scriptDir "..\..\..")).Path
 
 # Auto-locate etc2tool
 if (-not $Etc2Tool) {
-    $candidate = Join-Path $repoRoot "tools\etc2tool\build\Release\etc2tool.exe"
+    $candidate = Join-Path $repoRoot "android\tools\etc2tool\build\Release\etc2tool.exe"
     if (Test-Path $candidate) { $Etc2Tool = $candidate }
 }
 if (-not $Etc2Tool -or -not (Test-Path $Etc2Tool)) {
-    Write-Error "etc2tool not found. Build it first: cd tools/etc2tool && cmake -B build && cmake --build build --config Release"
+    Write-Error "etc2tool not found. Build it first: cd android/tools/etc2tool && cmake -B build && cmake --build build --config Release"
     exit 1
 }
 Write-Host "etc2tool: $Etc2Tool"

@@ -140,9 +140,9 @@ function Show-NatMenu {
 
 function Setup-DockerNat {
     param([string]$NatA, [string]$NatB)
-    $composeDir = Join-Path $REPO_ROOT "docker\nat-testbed"
+    $composeDir = Join-Path $REPO_ROOT "android\docker\nat-testbed"
     if (-not (Test-Path (Join-Path $composeDir "docker-compose.yml"))) {
-        Write-Status "FAIL: docker/nat-testbed/docker-compose.yml not found" "Red"
+        Write-Status "FAIL: android/docker/nat-testbed/docker-compose.yml not found" "Red"
         return $false
     }
 
@@ -419,7 +419,7 @@ Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAN
 if ($script:dockerNatActive) {
     Write-Status ""
     Write-Status '  # View Docker NAT logs:' "Gray"
-    Write-Status "  docker compose -f docker\nat-testbed\docker-compose.yml logs -f" "Gray"
+    Write-Status "  docker compose -f android\docker\nat-testbed\docker-compose.yml logs -f" "Gray"
     Write-Status '  # Switch NAT mode (re-run from menu):' "Gray"
     Write-Status "  .\android\tests\test_dual_emu.ps1 -NoBuild -NoData" "Gray"
 }

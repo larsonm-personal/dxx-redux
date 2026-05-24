@@ -60,7 +60,7 @@
 - `android\run-code-quality.ps1 --fix` is file-mutating and can take several minutes. do not treat it as done until the process has fully exited in its terminal
 - before starting another cleanup or validation pass after any timeout, interrupted agent run, or "file is newer" popup, list stale formatter tasks with `android\stop-stale-formatters.ps1` and kill them with `android\stop-stale-formatters.ps1 -Kill` if needed
 - `android\run-code-quality.ps1` now uses `android\temp\run-code-quality.lock.json` to fail fast if another cleanup pass is still active. if that lock is stale, kill the old formatter task and rerun instead of forcing saves over newer edits
-- cmake files added by this branch (android/, cmake/, tools/etc2tool/) are formatted with cmake-format and linted with cmake-lint (cheshirekow/cmakelang). run individually with `android\run-cmake-format.ps1` (auto-format) or `android\run-cmake-lint.ps1` (lint only). both are also included in the full `run-code-quality.ps1` pass. upstream files in d1/ and d2/ are excluded. config: `.cmake-format.yaml` at repo root
+- cmake files added by this branch (android/, cmake/, android/tools/etc2tool/) are formatted with cmake-format and linted with cmake-lint (cheshirekow/cmakelang). run individually with `android\run-cmake-format.ps1` (auto-format) or `android\run-cmake-lint.ps1` (lint only). both are also included in the full `run-code-quality.ps1` pass. upstream files in d1/ and d2/ are excluded. config: `.cmake-format.yaml` at repo root
 
 ## building
 - standard cmake commands (`mkdir build`, `cd build`, `cmake ..`, `cmake --build .`)

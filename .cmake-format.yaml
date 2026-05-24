@@ -1,6 +1,6 @@
 # cmake-format / cmake-lint configuration for the dxx-redux cmake branch.
 # Applies only to cmake files added by this branch (android/, cmake/,
-# tools/etc2tool/), never to upstream files in d1/ or d2/.
+# android/tools/etc2tool/), never to upstream files in d1/ or d2/.
 # Tool: cheshirekow/cmakelang.
 parse:
   additional_commands: {}

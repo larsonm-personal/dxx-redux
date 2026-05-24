@@ -369,7 +369,7 @@ Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAN
 if ($script:dockerNatActive) {
     Write-Status ""
     Write-Status '  # View Docker NAT logs:' "Gray"
-    Write-Status "  docker compose -f docker\nat-testbed\docker-compose.yml logs -f" "Gray"
+    Write-Status "  docker compose -f android\docker\nat-testbed\docker-compose.yml logs -f" "Gray"
     Write-Status '  # Switch NAT mode (re-run from menu):' "Gray"
     Write-Status "  .\android\tests\test_dual_emu.ps1 -NoBuild -NoData" "Gray"
 }

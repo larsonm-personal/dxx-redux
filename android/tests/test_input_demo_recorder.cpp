@@ -331,6 +331,7 @@ static int expect_record_and_flush_checkpoint(void)
 {
 	const char *dir = "test_input_demo_recorder_checkpoint_fixture";
 	const std::string demo_path = std::string(dir) + "/recorded_checkpoint.dximdemo";
+	const std::string trace_path = demo_path + INPUT_DEMO_RNG_TRACE_SUFFIX;
 	const unsigned char checkpoint_data[] = { 'D', 'G', 'S', 'S', 24, 0, 0, 0 };
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
@@ -378,6 +379,7 @@ static int expect_record_and_flush_checkpoint(void)
 	}
 	if (!read_text_file(demo_path.c_str(), &text)) {
 		remove(demo_path.c_str());
+		remove(trace_path.c_str());
 		remove_test_dir(dir);
 		return report_failure("could not read checkpoint recorder demo file");
 	}
@@ -392,15 +394,18 @@ static int expect_record_and_flush_checkpoint(void)
 		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
 	if (text != expected) {
 		remove(demo_path.c_str());
+		remove(trace_path.c_str());
 		remove_test_dir(dir);
 		return report_failure_string(std::string("unexpected checkpoint recorder demo file: ") + text);
 	}
 	if (!input_demo_file_read(demo_path.c_str(), &parsed, &read_error)) {
 		remove(demo_path.c_str());
+		remove(trace_path.c_str());
 		remove_test_dir(dir);
 		return report_failure_string(std::string("checkpoint recorder demo read failed: ") + read_error);
 	}
 	remove(demo_path.c_str());
+	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	if (parsed.metadata.start_mode != "save_checkpoint" || !parsed.has_checkpoint ||
 		!parsed.metadata.has_player_cfg || parsed.metadata.player_cfg.primary_order_count == 0 ||

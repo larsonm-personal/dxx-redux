@@ -16,7 +16,7 @@
     conventions that differ from the DXX engine's PIGfile bitmap names.
     See Rename-D2xxlTextures for the full list of fixups.
 
-    Requires: 7-Zip (7z.exe), etc2tool (from tools/etc2tool/)
+    Requires: 7-Zip (7z.exe), etc2tool (from android/tools/etc2tool/)
     Optional: ImageMagick (for high-quality downscaling)
 
 .PARAMETER Game
@@ -37,7 +37,7 @@
     Path to 7z.exe. Default: "C:\Program Files\7-Zip\7z.exe"
 
 .PARAMETER Etc2Tool
-    Path to etc2tool.exe. Default: auto-detect from tools/etc2tool/build/Release/
+    Path to etc2tool.exe. Default: auto-detect from android/tools/etc2tool/build/Release/
 #>
 param(
     [ValidateSet("d1", "d2", "both")]
@@ -84,11 +84,11 @@ if (-not (Test-Path $packLibScript)) {
 # Auto-detect etc2tool if not provided
 if (-not $Etc2Tool) {
     $repoRoot = (Resolve-Path (Join-Path $scriptDir "..\..\..")).Path
-    $candidate = Join-Path $repoRoot "tools\etc2tool\build\Release\etc2tool.exe"
+    $candidate = Join-Path $repoRoot "android\tools\etc2tool\build\Release\etc2tool.exe"
     if (Test-Path $candidate) { $Etc2Tool = $candidate }
 }
 if (-not $Etc2Tool -or -not (Test-Path $Etc2Tool)) {
-    Write-Error "etc2tool not found. Build it first: cd tools/etc2tool && cmake -B build && cmake --build build --config Release"
+    Write-Error "etc2tool not found. Build it first: cd android/tools/etc2tool && cmake -B build && cmake --build build --config Release"
     exit 1
 }
 

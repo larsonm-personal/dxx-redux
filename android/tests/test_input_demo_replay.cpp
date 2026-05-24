@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "input_demo_rng_trace.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 
@@ -375,6 +376,7 @@ static int expect_replay_loader(void)
 {
 	const char *dir = "test_input_demo_replay_fixture";
 	const std::string demo_path = std::string(dir) + "/replay.dximdemo";
+	const std::string trace_path = demo_path + INPUT_DEMO_RNG_TRACE_SUFFIX;
 	const std::string actual_result_path = demo_path + ".actual.json";
 	input_demo_replay_frame frame;
 	input_demo_replay_direct_command_event direct_command_event;
@@ -487,6 +489,7 @@ static int expect_replay_loader(void)
 		return report_failure_string(std::string("replay embedded result compare failed: ") + error);
 	input_demo_replay_unload();
 	remove(demo_path.c_str());
+	remove(trace_path.c_str());
 	remove(actual_result_path.c_str());
 	remove_test_dir(dir);
 	return 0;
@@ -496,6 +499,7 @@ static int expect_checkpoint_replay_loader(void)
 {
 	const char *dir = "test_input_demo_replay_checkpoint_fixture";
 	const std::string demo_path = std::string(dir) + "/checkpoint_replay.dximdemo";
+	const std::string trace_path = demo_path + INPUT_DEMO_RNG_TRACE_SUFFIX;
 	const std::string actual_result_path = demo_path + ".actual.json";
 	input_demo_replay_frame frame;
 	input_demo_player_cfg player_cfg;
@@ -584,6 +588,7 @@ static int expect_checkpoint_replay_loader(void)
 		return report_failure_string(std::string("checkpoint replay result compare failed: ") + error);
 	input_demo_replay_unload();
 	remove(demo_path.c_str());
+	remove(trace_path.c_str());
 	remove(actual_result_path.c_str());
 	remove_test_dir(dir);
 	return 0;

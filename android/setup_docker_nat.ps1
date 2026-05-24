@@ -25,7 +25,7 @@ Set-StrictMode -Version Latest
 $REPO_ROOT = Split-Path $PSScriptRoot
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
 $ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
-$COMPOSE_DIR = Join-Path $REPO_ROOT "docker\nat-testbed"
+$COMPOSE_DIR = Join-Path $REPO_ROOT "android\docker\nat-testbed"
 
 $EMU1 = "emulator-5554"
 $EMU2 = "emulator-5556"
@@ -159,6 +159,6 @@ Write-Status "  adb -s $EMU1 logcat -s StunClient MatchmakingService" "Gray"
 Write-Status "  adb -s $EMU2 logcat -s StunClient MatchmakingService" "Gray"
 Write-Status ""
 Write-Status "To view NAT proxy logs:" "Gray"
-Write-Status "  docker compose -f docker/nat-testbed/docker-compose.yml logs -f" "Gray"
+Write-Status "  docker compose -f android/docker/nat-testbed/docker-compose.yml logs -f" "Gray"
 Write-Status ""
 Write-Status "To tear down: .\teardown_docker_nat.ps1" "Gray"

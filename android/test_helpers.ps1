@@ -1510,9 +1510,9 @@ function Start-DockerNat {
         [string]$NatA = "full-cone",
         [string]$NatB = "symmetric"
     )
-    $composeDir = Join-Path $script:REPO_ROOT "docker\nat-testbed"
+    $composeDir = Join-Path $script:REPO_ROOT "android\docker\nat-testbed"
     if (-not (Test-Path (Join-Path $composeDir "docker-compose.yml"))) {
-        Write-Status "SKIP: docker/nat-testbed/docker-compose.yml not found" "Yellow"
+        Write-Status "SKIP: android/docker/nat-testbed/docker-compose.yml not found" "Yellow"
         return $false
     }
     $null = docker version --format '{{.Server.Version}}' 2>&1
@@ -1540,7 +1540,7 @@ function Start-DockerNat {
 }
 
 function Stop-DockerNat {
-    $composeDir = Join-Path $script:REPO_ROOT "docker\nat-testbed"
+    $composeDir = Join-Path $script:REPO_ROOT "android\docker\nat-testbed"
     $composeFile = Join-Path $composeDir "docker-compose.yml"
     if (Test-Path $composeFile) {
         docker compose -f $composeFile down 2>&1 | Out-Null
