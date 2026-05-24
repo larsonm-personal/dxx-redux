@@ -332,6 +332,7 @@ if ($manifestCheck -match "descent2.ham") {
 # -- Step 7: Launch the game -------------------------------------------
 Write-Host ""
 Write-Progress-Flush "Step 7: Launching game..." Yellow
+Adb shell "run-as $PACKAGE rm -f files/introspect.json" | Out-Null
 Adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch" | Out-Null
 
 # Wait for the game process to be up and the native engine to start
