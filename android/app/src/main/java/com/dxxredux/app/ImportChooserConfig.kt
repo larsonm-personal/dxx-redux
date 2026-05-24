@@ -13,7 +13,7 @@ fun importChooserConfigForDevice(isAndroidTv: Boolean): ImportChooserConfig =
         )
     } else {
         ImportChooserConfig(
-            directPickLabel = "Pick Multiple Files",
-            helpText = "Pick multiple files or a folder containing the files to import",
+            directPickLabel = "Pick One or More Files",
+            helpText = "Pick one or more files or a folder containing the files to import",
         )
     }

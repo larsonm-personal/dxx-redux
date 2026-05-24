@@ -26,6 +26,21 @@ Make demo installer archives a first-class import source for Android and PC-side
 - [x] Plan the PC helper transition from external StuffIt tools to the in-tree extractor
 - [x] Run formatting and focused native/helper validation
 
+## Follow-up: Demo Runtime Issues
+- [x] Investigate D2 DOS demo crash at briefing sound start in `mixdigi_convert_sound`
+- [x] Add intelligible version recognition for the `desc14sw.exe` `descent.pig` hash
+- [x] Fix D1 Mac demo mission detection so menus and level range use demo behavior
+- [x] Fix D1 Mac demo missing briefing/level resource paths or fail safely with the right mission data
+- [ ] Add focused validation for the runtime fixes
+
+## Follow-up: Additional BinHex and Classic SIT Demo Packages
+- [x] Hash and inventory the newly downloaded `.hqx` and classic `.sit` demo packages
+- [x] Extract the new packages and record final game data hashes in the README
+- [x] Extend Android import routing for BinHex-wrapped StuffIt packages
+- [x] Extend native StuffIt extraction for the classic `SIT!` package variant
+- [x] Add focused tests or oracle coverage for the new package IDs and extraction paths
+- [x] Review the previous runtime bug fixes for correctness risks
+
 ## Notes
 - Keep game-engine source changes out of this tranche unless needed for hash recognition
 - Do not fix the existing demo download URL in this pass
@@ -42,3 +57,10 @@ Make demo installer archives a first-class import source for Android and PC-side
 - `stuffit_extract.c` is labeled as derived primarily from XADMaster's `XADStuffIt5Parser`, with corpus/oracle cross-check references
 - `mac_stuffit_oracles.json` is produced by `extract_mac_demos.ps1 -WriteOracle`; `stuffit_demo_oracle_tests` requires the in-tree extractor to match those sizes and SHA-256 hashes
 - `hash_assets.ps1` now scans `game_data/demo installers/*_extracted` and can reproduce the D2 Mac demo `descent2.s11` version alias from the shared D2 v1.2 hash
+- Initial crash evidence: D2 DOS demo tombstone enters `mixdigi_convert_sound` from `new_briefing_screen`; D1 Mac demo crash files report missing `missions/level01.rdl` and missing `pluto01.pcx`
+- Host validation in this tranche: `run-windows-build.ps1 -Target d1`, `run-windows-build.ps1 -Target d2`, and extractor `stuffit_corpus_tests` + `stuffit_demo_oracle_tests` pass in `temp/extract_build`
+- Added support for `descent2preview.sit`, `descent2preview.sit_.hqx`, `Descent_demo.HQX`, and `descent_demo.sit_.hqx`; BinHex wrappers are decoded to their data fork before native StuffIt extraction
+- Native StuffIt extraction now accepts classic `SIT!` archives through the existing StuffIt-family header scanner, while SIT5 support remains unchanged
+- The new D2 preview classic SIT and its BinHex wrapper extract to the same D2 Demo (Mac) game data hashes as the existing Mac preview support; the two D1 BinHex downloads extract to the two already-recognized D1 Demo (Mac) HOG variants
+- Focused validation in this tranche: `:app:testDebugUnitTest --tests com.dxxredux.app.BinHexDecoderTest --tests com.dxxredux.app.DemoInstallerPackagesTest`, `stuffit_corpus_tests`, `stuffit_demo_oracle_tests`, `sti2_tests`, `run-windows-build.ps1 -Target d1`, and `run-windows-build.ps1 -Target d2`
+- Review of the previous runtime fixes did not find a concrete correctness bug; remaining risk is runtime behavior on device for the D1 Mac demo and D2 DOS demo paths, so the focused runtime-validation item remains open

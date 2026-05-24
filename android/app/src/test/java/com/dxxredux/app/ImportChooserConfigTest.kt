@@ -8,9 +8,9 @@ class ImportChooserConfigTest {
     fun usesMultipleFileLabelOnPhone() {
         val config = importChooserConfigForDevice(isAndroidTv = false)
 
-        assertEquals("Pick Multiple Files", config.directPickLabel)
+        assertEquals("Pick One or More Files", config.directPickLabel)
         assertEquals(
-            "Pick multiple files or a folder containing the files to import",
+            "Pick one or more files or a folder containing the files to import",
             config.helpText,
         )
     }

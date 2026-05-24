@@ -48,6 +48,38 @@
           "size": 31932
         }
       ]
+    },
+    {
+      "archive": "descent2preview.sit",
+      "oracle_tool": "unar",
+      "oracle_source": "game_data/extract_mac_demos.ps1 -WriteOracle",
+      "files": [
+        {
+          "file": "d2demo.ham",
+          "sha256": "b3d94652282859e188f9530b63d77b37289ac973bce402025d10021eaffc7a92",
+          "size": 1307598
+        },
+        {
+          "file": "D2DEMO.HOG",
+          "sha256": "e39285e4346f3066cf4ad745abcf3dc4bdf142df7c0395a42b26ae291282696b",
+          "size": 4292746
+        },
+        {
+          "file": "d2demo.pig",
+          "sha256": "88e834d13f15bfe502e32570a44302326e6486f685cb95e12b3b81d0a14b8642",
+          "size": 4929684
+        },
+        {
+          "file": "DESCENT2.S11",
+          "sha256": "d444c6f93476f8941936164d2981387a26b0a25e3f9d5e930ef96bfbb86c1e68",
+          "size": 2602492
+        },
+        {
+          "file": "EXIT.HAM",
+          "sha256": "c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7",
+          "size": 31932
+        }
+      ]
     }
   ]
 }

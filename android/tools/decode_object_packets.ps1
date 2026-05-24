@@ -154,9 +154,9 @@ function Decode-Packet {
             break
         }
 
-        $localObjnum = Get-LEInt32 $Data $loc;       $loc += 4
-        $owner = [sbyte]$Data[$loc];                  $loc += 1
-        $remoteObjnum = Get-LEInt32 $Data $loc;       $loc += 4
+        $localObjnum = Get-LEInt32 $Data $loc; $loc += 4
+        $owner = [sbyte]$Data[$loc]; $loc += 1
+        $remoteObjnum = Get-LEInt32 $Data $loc; $loc += 4
 
         $entry = [ordered]@{ EntryIdx = $i }
 
@@ -166,8 +166,7 @@ function Decode-Packet {
             $parsed++
             [void]$result.Objects.Add($entry)
             continue
-        }
-        elseif ($localObjnum -eq -2) {
+        } elseif ($localObjnum -eq -2) {
             $entry.Marker = "END"
             $entry.PlayerNum = $owner
             $entry.TotalObjCount = $remoteObjnum
@@ -258,10 +257,10 @@ function Get-PktDumpLines {
     foreach ($line in $LogText -split "`n") {
         if ($line -match $pattern) {
             [void]$results.Add(@{
-                Direction   = $Matches[1]
-                DeclaredLen = [int]$Matches[2]
-                HexData     = $Matches[3]
-            })
+                    Direction   = $Matches[1]
+                    DeclaredLen = [int]$Matches[2]
+                    HexData     = $Matches[3]
+                })
         }
     }
     return $results
@@ -312,8 +311,7 @@ function Show-Diff {
         foreach ($obj in $missing) {
             Write-Host (Format-ObjectEntry $obj)
         }
-    }
-    else {
+    } else {
         Write-Host "`nNo objects lost" -ForegroundColor Green
     }
 
@@ -376,8 +374,7 @@ for ($idx = 0; $idx -lt $entries.Count; $idx++) {
 
     if ($e.Direction -eq "TX") {
         [void]$txPackets.Add($pkt)
-    }
-    else {
+    } else {
         [void]$rxPackets.Add($pkt)
     }
 
@@ -392,8 +389,7 @@ for ($idx = 0; $idx -lt $entries.Count; $idx++) {
 
 if ($Diff -and $txPackets.Count -gt 0 -and $rxPackets.Count -gt 0) {
     Show-Diff $txPackets $rxPackets
-}
-elseif ($Diff) {
+} elseif ($Diff) {
     Write-Host "Need both TX and RX packets for diff mode"
     foreach ($pkt in ($txPackets + $rxPackets)) {
         Write-Host (Format-Packet $pkt)
@@ -406,11 +402,11 @@ Write-Host "`n=== Summary ===" -ForegroundColor Cyan
 Write-Host "TX packets: $($txPackets.Count)"
 Write-Host "RX packets: $($rxPackets.Count)"
 $txObjCount = ($txPackets | ForEach-Object {
-    ($_.Objects | Where-Object { -not $_.Contains("Marker") -and -not ($_.Contains("BodyTruncated") -and $_.BodyTruncated) }).Count
-} | Measure-Object -Sum).Sum
+        ($_.Objects | Where-Object { -not $_.Contains("Marker") -and -not ($_.Contains("BodyTruncated") -and $_.BodyTruncated) }).Count
+    } | Measure-Object -Sum).Sum
 $rxObjCount = ($rxPackets | ForEach-Object {
-    ($_.Objects | Where-Object { -not $_.Contains("Marker") -and -not ($_.Contains("BodyTruncated") -and $_.BodyTruncated) }).Count
-} | Measure-Object -Sum).Sum
+        ($_.Objects | Where-Object { -not $_.Contains("Marker") -and -not ($_.Contains("BodyTruncated") -and $_.BodyTruncated) }).Count
+    } | Measure-Object -Sum).Sum
 $rxTrunc = @($rxPackets | Where-Object { $_.Truncated }).Count
 Write-Host "TX objects: $txObjCount"
 Write-Host "RX objects: $rxObjCount ($rxTrunc packets truncated)"

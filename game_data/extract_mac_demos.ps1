@@ -51,11 +51,37 @@ $Installers = @(
         Archive = "Descent Shareware.sit"
         NestedInstaller = $null
         ExpectFiles = @("descent.hog", "descent.pig")
+        Oracle = $true
+    },
+    @{
+        Archive = "Descent_demo.HQX"
+        NestedInstaller = $null
+        ExpectFiles = @("descent.hog", "descent.pig")
+        Oracle = $false
+    },
+    @{
+        Archive = "descent_demo.sit_.hqx"
+        NestedInstaller = $null
+        ExpectFiles = @("descent.hog", "descent.pig")
+        Oracle = $false
     },
     @{
         Archive = "Descent II Preview.sit"
         NestedInstaller = "Install Descent II Preview"
         ExpectFiles = @("d2demo.hog", "d2demo.ham", "d2demo.pig", "descent2.s11", "exit.ham")
+        Oracle = $true
+    },
+    @{
+        Archive = "descent2preview.sit"
+        NestedInstaller = $null
+        ExpectFiles = @("d2demo.hog", "d2demo.ham", "d2demo.pig", "descent2.s11", "exit.ham")
+        Oracle = $true
+    },
+    @{
+        Archive = "descent2preview.sit_.hqx"
+        NestedInstaller = $null
+        ExpectFiles = @("d2demo.hog", "d2demo.ham", "d2demo.pig", "descent2.s11", "exit.ham")
+        Oracle = $false
     }
 )
 
@@ -144,7 +170,7 @@ foreach ($inst in $Installers) {
             $sizeKB = [math]::Round($f.Length / 1024)
             Write-Host ("    {0} [{1} KB]" -f $f.Name, $sizeKB)
         }
-        if ($WriteOracle) {
+        if ($WriteOracle -and $inst.Oracle) {
             $OracleArchives += [PSCustomObject]@{
                 archive       = $archiveName
                 oracle_tool   = "unar"

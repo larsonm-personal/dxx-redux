@@ -3505,7 +3505,13 @@ private suspend fun matchDemoInstallerPackage(
 ): DemoInstallerPackages.PackageInfo? {
     DemoInstallerPackages.matchByName(filename)?.let { return it }
     val lowerName = filename.lowercase()
-    if (!lowerName.endsWith(".zip") && !lowerName.endsWith(".exe") && !lowerName.endsWith(".sit")) return null
+    if (!lowerName.endsWith(".zip") &&
+        !lowerName.endsWith(".exe") &&
+        !lowerName.endsWith(".sit") &&
+        !lowerName.endsWith(".hqx")
+    ) {
+        return null
+    }
     val sha256 = computeContentSha256(context, uri) ?: return null
     val matched = DemoInstallerPackages.matchBySha256(sha256) ?: return null
     Log.i("DXX-Setup", "Matched demo installer by hash: $filename -> ${matched.filename}")
@@ -3556,6 +3562,7 @@ private suspend fun extractStuffitContents(
         workDir.mkdirs()
         val tmpArchive = File(workDir, ".tmp_sit_import")
         val results = mutableListOf<ExtractedFile>()
+        val isBinHex = archiveName?.lowercase()?.endsWith(".hqx") == true
         val expectedDemoFiles =
             archiveName
                 ?.let { DemoInstallerPackages.matchByName(it) }
@@ -3575,9 +3582,22 @@ private suspend fun extractStuffitContents(
                 ImportStorageGuard.queryUriSizeBytes(context.contentResolver, archiveUri) ?: 0L,
                 "stage StuffIt archive",
             )
-            copyUriToFileWithProgress(context, archiveUri, tmpArchive) { copied, total ->
+            if (isBinHex) {
+                val total = ImportStorageGuard.queryUriSizeBytes(context.contentResolver, archiveUri) ?: 0L
                 kotlinx.coroutines.withContext(Dispatchers.Main) {
-                    onProgress("Copying archive", copied, total)
+                    onProgress("Decoding BinHex archive", 0L, total)
+                }
+                context.contentResolver.openInputStream(archiveUri)?.use { input ->
+                    BinHexDecoder.decodeDataFork(input, tmpArchive)
+                } ?: return@withContext ZipExtractionResult(results, false, "Unable to open BinHex archive")
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    onProgress("Decoding BinHex archive", total, total)
+                }
+            } else {
+                copyUriToFileWithProgress(context, archiveUri, tmpArchive) { copied, total ->
+                    kotlinx.coroutines.withContext(Dispatchers.Main) {
+                        onProgress("Copying archive", copied, total)
+                    }
                 }
             }
             kotlinx.coroutines.withContext(Dispatchers.Main) {
@@ -4043,7 +4063,10 @@ private fun SetupScreen(
                             zipUris.add(demoPackage.filename to uri)
                         }
 
-                        lname.endsWith(".zip") || lname.endsWith(".7z") || lname.endsWith(".sit") -> {
+                        lname.endsWith(".zip") ||
+                            lname.endsWith(".7z") ||
+                            lname.endsWith(".sit") ||
+                            lname.endsWith(".hqx") -> {
                             zipUris.add(name to uri)
                         }
 
@@ -4235,7 +4258,7 @@ private fun SetupScreen(
                                 zipProgressBytes = copied
                                 zipProgressTotal = total
                             }
-                        } else if (arcLower.endsWith(".sit")) {
+                        } else if (arcLower.endsWith(".sit") || arcLower.endsWith(".hqx")) {
                             extractStuffitContents(
                                 context,
                                 arcUri,

@@ -409,6 +409,12 @@ int stuffit_extract(const char *sit_path, const char *output_dir,
 	if (!sit_path || !output_dir) return -1;
 	if (read_file_to_buffer(sit_path, &archive_data, &archive_size) < 0) return -1;
 	if (sit5_list_entries(archive_data, archive_size, &list) < 0) {
+		if (sti2_is_archive(archive_data, archive_size)) {
+			extracted = sti2_extract_matching(archive_data, archive_size, extensions,
+			                                  output_dir, progress, user_data);
+			free(archive_data);
+			return extracted;
+		}
 		free(archive_data);
 		return -1;
 	}

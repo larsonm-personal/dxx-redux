@@ -480,6 +480,7 @@ int main(int argc, char *argv[])
 	switch (PHYSFSX_fsize("descent.hog"))
 	{
 		case D1_MAC_SHARE_MISSION_HOGSIZE:
+		case D1_MAC_SHARE_MISSION_HOGSIZE2:
 		case D1_MAC_MISSION_HOGSIZE:
 			MacHog = 1;	// used for fonts and the Automap
 			break;

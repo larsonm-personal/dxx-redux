@@ -34,8 +34,14 @@ $VersionMap = @{
     # extracted/ subfolders
     "d1 mac extracted"                  = "D1 Demo (Mac)"
     "Descent Shareware_extracted"       = "D1 Demo (Mac)"
+    "Descent_demo_extracted"            = "D1 Demo (Mac)"
+    "descent_demo.sit__extracted"       = "D1 Demo (Mac)"
     "d2_mac_demo"                       = "D2 Demo (Mac)"
     "Descent II Preview_extracted"      = "D2 Demo (Mac)"
+    "descent2preview_extracted"         = "D2 Demo (Mac)"
+    "descent2preview.sit__extracted"    = "D2 Demo (Mac)"
+    "desc14sw_extracted"                = "D1 Demo v1.4"
+    "desc14sw_direct_sow_extracted"     = "D1 Demo v1.4"
     "descent 1 demo 1-4_extracted"      = "D1 Demo v1.4"
     "descent 2 demo 1-0_extracted"      = "D2 Demo v1.0"
     "VERTIGO"                           = "D2 Vertigo Series"
@@ -310,6 +316,22 @@ foreach ($alias in $aliases) {
                 Write-Host "  + $af ($($alias.To)) [alias of $($alias.From)]"
             }
         }
+    }
+}
+
+# Android imports desc14sw.exe by expanding the nested SOW archives directly
+# The resulting PIG is larger than the DOSBox-installed file but contains the
+# same playable D1 demo data and should identify with the same version label
+$directImportEntries = @(
+    @{ File = "descent.pig"; Sha256 = "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"; Version = "D1 Demo v1.4" }
+)
+foreach ($entry in $directImportEntries) {
+    $key = "$($entry.File)|$($entry.Sha256)"
+    if (-not $existingSet.ContainsKey($key)) {
+        $newEntries += [PSCustomObject]@{ file = $entry.File; sha256 = $entry.Sha256; version = $entry.Version }
+        $existingSet[$key] = $entry.Version
+        $added++
+        Write-Host "  + $($entry.File) ($($entry.Version)) [direct import]"
     }
 }
 

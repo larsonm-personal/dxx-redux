@@ -40,6 +40,7 @@
 #define MIX_DIGI_DEBUG 0
 #define MIX_OUTPUT_FORMAT	AUDIO_S16
 #define MIX_OUTPUT_CHANNELS	2
+#define MAX_DIGI_SAMPLE_BYTES	(16 * 1024 * 1024)
 
 #define MAX_SOUND_SLOTS 64
 #ifdef ANDROID
@@ -157,20 +158,40 @@ void mixdigi_convert_sound(int i)
 	Uint16 out_format;
 	int out_channels;
 
-	Mix_QuerySpec(&out_freq, &out_format, &out_channels);
-
 	if (SoundChunks[i].abuf) return; //proceed only if not converted yet
+	if (!data || dlen == 0 || dlen > MAX_DIGI_SAMPLE_BYTES)
+	{
+		if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG, "skipping invalid sound %d length %u\n", i, dlen);
+		return;
+	}
+	if (!Mix_QuerySpec(&out_freq, &out_format, &out_channels)) return;
 
-	if (data)
 	{
 		int src_rate = GameSounds[i].freq;
+		int cvt_ret;
+		size_t converted_len;
+		if (src_rate <= 0)
+			src_rate = SAMPLE_RATE_11K;
 		if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG,"converting %d (%d)\n", i, dlen);
-		SDL_BuildAudioCVT(&cvt, AUDIO_U8, 1, src_rate, out_format, out_channels, out_freq);
+		cvt_ret = SDL_BuildAudioCVT(&cvt, AUDIO_U8, 1, src_rate, out_format, out_channels, out_freq);
+		if (cvt_ret < 0 || cvt.len_mult <= 0)
+		{
+			con_printf(CON_DEBUG, "conversion setup of %d failed\n", i);
+			return;
+		}
 
-		cvt.buf = malloc(dlen * cvt.len_mult);
+		converted_len = (size_t)dlen * (size_t)cvt.len_mult;
+		cvt.buf = malloc(converted_len);
+		if (!cvt.buf)
+			return;
 		cvt.len = dlen;
 		memcpy(cvt.buf, data, dlen);
-		if (SDL_ConvertAudio(&cvt)) con_printf(CON_DEBUG,"conversion of %d failed\n", i);
+		if (SDL_ConvertAudio(&cvt))
+		{
+			free(cvt.buf);
+			con_printf(CON_DEBUG,"conversion of %d failed\n", i);
+			return;
+		}
 
 		SoundChunks[i].abuf = cvt.buf;
 		SoundChunks[i].alen = cvt.len_cvt;

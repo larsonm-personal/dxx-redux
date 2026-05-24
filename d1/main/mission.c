@@ -113,6 +113,7 @@ int load_mission_d1(void)
 	
 			break;
 		case D1_MAC_SHARE_MISSION_HOGSIZE:
+		case D1_MAC_SHARE_MISSION_HOGSIZE2:
 			N_secret_levels = 0;
 	
 			Last_level = 3;
@@ -333,6 +334,7 @@ void add_d1_builtin_mission_to_list(mle *mission)
 	case D1_SHAREWARE_MISSION_HOGSIZE:
 	case D1_SHAREWARE_10_MISSION_HOGSIZE:
 	case D1_MAC_SHARE_MISSION_HOGSIZE:
+	case D1_MAC_SHARE_MISSION_HOGSIZE2:
 		mission->filename = d_strdup(D1_MISSION_FILENAME);
 		strcpy(mission->mission_name, D1_SHAREWARE_MISSION_NAME);
 		mission->anarchy_only_flag = 0;

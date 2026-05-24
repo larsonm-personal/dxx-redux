@@ -115,7 +115,14 @@ void digi_reset() { fptr_reset(); }
 void digi_set_channel_volume(int channel, int volume) { fptr_set_channel_volume(channel, volume); }
 void digi_set_channel_pan(int channel, int pan) { fptr_set_channel_pan(channel, pan); }
 
-int  digi_start_sound(short soundnum, fix volume, int pan, int looping, int loop_start, int loop_end, int soundobj) { return fptr_start_sound(soundnum, volume, pan, looping, loop_start, loop_end, soundobj); }
+int  digi_start_sound(short soundnum, fix volume, int pan, int looping, int loop_start, int loop_end, int soundobj)
+{
+	if (!fptr_start_sound || soundnum < 0 || soundnum >= MAX_SOUND_FILES)
+		return -1;
+	if (GameSounds[soundnum].data == NULL || GameSounds[soundnum].data == (void *)-1 || GameSounds[soundnum].length <= 0)
+		return -1;
+	return fptr_start_sound(soundnum, volume, pan, looping, loop_start, loop_end, soundobj);
+}
 void digi_stop_sound(int channel) { fptr_stop_sound(channel); }
 void digi_end_sound(int channel) { fptr_end_sound(channel); }
 

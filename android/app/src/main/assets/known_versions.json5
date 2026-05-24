@@ -42,6 +42,7 @@
     // -- D1 Demo v1.4 --
     { "file": "descent.hog", "sha256": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab", "version": "D1 Demo v1.4" },
     { "file": "descent.pig", "sha256": "710f1c1bafc4c2fcb9623ebe701e2fff34c21b5d3d3e0fe164c1162615971a54", "version": "D1 Demo v1.4" },
+    { "file": "descent.pig", "sha256": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac", "version": "D1 Demo v1.4" },
 
     // -- D2 Demo v1.0 --
     { "file": "d2demo.dem", "sha256": "8c6e2d43ba88166d17759d90e3817edd0c3ef0a33861ef35a51a8cd4db89c892", "version": "D2 Demo v1.0" },

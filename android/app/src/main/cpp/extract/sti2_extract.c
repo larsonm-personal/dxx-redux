@@ -1948,6 +1948,9 @@ int sti2_is_archive(const unsigned char *archive_data, size_t archive_size)
 		return 0;
 	if (be32(archive_data + 10) != STI2_HEADER_SIGNATURE)
 		return 0;
+	if (archive_data[0] == 'S' && archive_data[1] == 'I' &&
+	    archive_data[2] == 'T' && archive_data[3] == '!')
+		return 1;
 	if (archive_data[0] != 'S' || archive_data[1] != 'T')
 		return 0;
 	if (archive_data[2] == 'i' && (archive_data[3] == 'n' || (archive_data[3] >= '0' && archive_data[3] <= '9')))
