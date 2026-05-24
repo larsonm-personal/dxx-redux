@@ -60,6 +60,13 @@ int sow_extract(const char *sow_path, const char *output_dir,
                 const char **extensions,
                 sow_progress_fn progress, void *user_data);
 
+/* Variant for installer split archives where repeated filenames are
+ * continuation chunks.  Callers must clear stale targets before appending. */
+int sow_extract_with_mode(const char *sow_path, const char *output_dir,
+                          const char **extensions,
+                          sow_progress_fn progress, void *user_data,
+                          int append_existing);
+
 #ifdef __cplusplus
 }
 #endif

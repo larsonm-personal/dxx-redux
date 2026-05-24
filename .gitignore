@@ -83,7 +83,9 @@ android/gradle/
 .kotlin/
 
 temp/
-app/
+
+# Keep android/app source and test files visible; only ignore a root scratch app dir.
+/app/
 
 # generated at build time (dev defaults or release values from build-aab scripts)
 android/app/src/main/java/com/dxxredux/app/BuildInfo.kt
@@ -96,6 +98,7 @@ game_data/**
 !game_data/**/
 !game_data/**/*_regression.json5
 !game_data/**/track_fingerprints.json
+!game_data/demo installers/README.md
 !game_data/mods/README.md
 !game_data/mods/.gitignore
 !game_data/mods/d2x-xl/.gitignore

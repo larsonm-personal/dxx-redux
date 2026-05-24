@@ -36,6 +36,111 @@ internal fun videoInfoControllerActions(showDebugControls: Boolean): List<VideoI
         }
     }
 
+internal data class VideoInfoOverlayLayout(
+    val outerPad: Float,
+    val panelPad: Float,
+    val panelHeight: Float,
+    val panelCornerRadius: Float,
+    val buttonCornerRadius: Float,
+    val focusStrokeWidth: Float,
+    val infoTextSize: Float,
+    val titleTextSize: Float,
+    val buttonTextSize: Float,
+    val infoLineHeight: Float,
+    val buttonLineHeight: Float,
+)
+
+internal fun computeVideoInfoOverlayLayout(
+    height: Int,
+    density: Float,
+    baseTextSize: Float,
+    actionRows: Int,
+): VideoInfoOverlayLayout {
+    val safeHeight = height.coerceAtLeast(1).toFloat()
+    val safeDensity = density.coerceAtLeast(0.1f)
+    val safeTextSize = baseTextSize.coerceAtLeast(1f)
+    val safeActionRows = actionRows.coerceAtLeast(0)
+    val basePad = VIDEO_INFO_PAD_DP * safeDensity
+    val baseLineHeight = safeTextSize * VIDEO_INFO_LINE_HEIGHT_SCALE
+
+    fun screenHeightFor(
+        infoScale: Float,
+        buttonScale: Float,
+        padScale: Float,
+    ): Float =
+        basePad * 4f * padScale +
+            VIDEO_INFO_INFO_ROW_COUNT * baseLineHeight * infoScale +
+            safeActionRows * baseLineHeight * buttonScale
+
+    val fullButtonAndPadHeight = screenHeightFor(0f, 1f, 1f)
+    val infoScaleForFit =
+        (
+            (safeHeight - fullButtonAndPadHeight) /
+                (VIDEO_INFO_INFO_ROW_COUNT * baseLineHeight)
+        ).coerceAtMost(1f)
+
+    var infoScale: Float
+    var buttonScale = 1f
+    var padScale = 1f
+    if (infoScaleForFit >= VIDEO_INFO_SOFT_INFO_SCALE) {
+        infoScale = infoScaleForFit
+    } else {
+        infoScale = VIDEO_INFO_SOFT_INFO_SCALE
+        val buttonHeight = safeActionRows * baseLineHeight
+        val softInfoAndFullPadHeight = screenHeightFor(infoScale, 0f, 1f)
+        val buttonScaleForFit =
+            if (buttonHeight > 0f) {
+                ((safeHeight - softInfoAndFullPadHeight) / buttonHeight).coerceAtMost(1f)
+            } else {
+                1f
+            }
+
+        if (buttonScaleForFit >= VIDEO_INFO_SOFT_BUTTON_SCALE) {
+            buttonScale = buttonScaleForFit
+        } else {
+            val softHeight = screenHeightFor(VIDEO_INFO_SOFT_INFO_SCALE, VIDEO_INFO_SOFT_BUTTON_SCALE, 1f)
+            val emergencyScale = (safeHeight / softHeight).coerceAtMost(1f)
+            infoScale = VIDEO_INFO_SOFT_INFO_SCALE * emergencyScale
+            buttonScale = VIDEO_INFO_SOFT_BUTTON_SCALE * emergencyScale
+            padScale = emergencyScale
+        }
+    }
+
+    infoScale = infoScale.coerceAtLeast(0f)
+    buttonScale = buttonScale.coerceAtLeast(0f)
+    padScale = padScale.coerceAtLeast(0f)
+
+    val panelPad = basePad * padScale
+    val outerPad = basePad * padScale
+    val infoTextSize = safeTextSize * infoScale
+    val buttonTextSize = safeTextSize * buttonScale
+    val infoLineHeight = baseLineHeight * infoScale
+    val buttonLineHeight = baseLineHeight * buttonScale
+    return VideoInfoOverlayLayout(
+        outerPad = outerPad,
+        panelPad = panelPad,
+        panelHeight =
+            panelPad * 2f +
+                VIDEO_INFO_INFO_ROW_COUNT * infoLineHeight +
+                safeActionRows * buttonLineHeight,
+        panelCornerRadius = panelPad,
+        buttonCornerRadius = panelPad * 0.5f,
+        focusStrokeWidth = (3f * padScale).coerceAtLeast(1f),
+        infoTextSize = infoTextSize,
+        titleTextSize = infoTextSize * VIDEO_INFO_TITLE_TEXT_SCALE,
+        buttonTextSize = buttonTextSize,
+        infoLineHeight = infoLineHeight,
+        buttonLineHeight = buttonLineHeight,
+    )
+}
+
+private const val VIDEO_INFO_INFO_ROW_COUNT = 15
+private const val VIDEO_INFO_PAD_DP = 8f
+private const val VIDEO_INFO_LINE_HEIGHT_SCALE = 1.5f
+private const val VIDEO_INFO_TITLE_TEXT_SCALE = 1.1f
+private const val VIDEO_INFO_SOFT_INFO_SCALE = 0.6f
+private const val VIDEO_INFO_SOFT_BUTTON_SCALE = 0.8f
+
 /**
  * In-game overlay showing video/rendering diagnostics.
  *
@@ -291,6 +396,33 @@ class VideoInfoOverlay(
         }
     }
 
+    private fun applyTextSizes(
+        textSize: Float,
+        titleTextSize: Float,
+    ) {
+        titlePaint.textSize = titleTextSize
+        labelPaint.textSize = textSize
+        valuePaint.textSize = textSize
+        fpsGoodPaint.textSize = textSize
+        fpsWarnPaint.textSize = textSize
+        fpsBadPaint.textSize = textSize
+    }
+
+    private fun setButtonBounds(
+        rect: RectF,
+        panelLeft: Float,
+        panelWidth: Float,
+        baselineY: Float,
+        layout: VideoInfoOverlayLayout,
+    ) {
+        rect.set(
+            panelLeft + layout.panelPad * 0.5f,
+            baselineY - layout.buttonTextSize,
+            panelLeft + panelWidth - layout.panelPad * 0.5f,
+            baselineY + layout.buttonLineHeight * 0.3f,
+        )
+    }
+
     private fun activeControllerActions(): List<VideoInfoControllerAction> =
         videoInfoControllerActions(showDebugControls)
 
@@ -338,45 +470,36 @@ class VideoInfoOverlay(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (visibility != VISIBLE) return
+        if (width <= 0 || height <= 0) return
         ensureControllerSelection()
 
         val density = resources.displayMetrics.density
-        val w = width.toFloat()
-        val baseTextSize = (11f * density).coerceAtMost(w * 0.014f)
-        titlePaint.textSize = baseTextSize * 1.1f
-        labelPaint.textSize = baseTextSize
-        valuePaint.textSize = baseTextSize
-        fpsGoodPaint.textSize = baseTextSize
-        fpsWarnPaint.textSize = baseTextSize
-        fpsBadPaint.textSize = baseTextSize
+        val viewWidth = width.toFloat()
+        val baseTextSize = (11f * density).coerceAtMost(viewWidth * 0.014f)
+        val layout = computeVideoInfoOverlayLayout(height, density, baseTextSize, activeControllerActions().size)
+        applyTextSizes(layout.infoTextSize, layout.titleTextSize)
+        btnFocusOutlinePaint.strokeWidth = layout.focusStrokeWidth
 
-        val pad = 8f * density
-        val lineH = baseTextSize * 1.5f
-        val numLines = if (showDebugControls) 22 else 18
-        val panelH = pad * 2 + lineH * numLines
-        val panelW = baseTextSize * 20f
+        val panelWidth = maxOf(layout.infoTextSize, layout.buttonTextSize) * 20f
+        val panelLeft = viewWidth - panelWidth - layout.outerPad
+        val panelTop = layout.outerPad
 
-        // Position: top-right corner
-        val panelLeft = w - panelW - pad
-        val panelTop = pad
+        panelBounds.set(panelLeft, panelTop, panelLeft + panelWidth, panelTop + layout.panelHeight)
+        canvas.drawRoundRect(panelBounds, layout.panelCornerRadius, layout.panelCornerRadius, bgPaint)
 
-        // Background
-        panelBounds.set(panelLeft, panelTop, panelLeft + panelW, panelTop + panelH)
-        canvas.drawRoundRect(panelBounds, pad, pad, bgPaint)
-
-        val valCol = panelLeft + pad + baseTextSize * 5f
-        var y = panelTop + pad + titlePaint.textSize
+        val valueColumn = panelLeft + layout.panelPad + layout.infoTextSize * 5f
+        var baselineY = panelTop + layout.panelPad + titlePaint.textSize
 
         // Title + FPS on same line
-        canvas.drawText("VIDEO", panelLeft + pad, y, titlePaint)
+        canvas.drawText("VIDEO", panelLeft + layout.panelPad, baselineY, titlePaint)
         val fpsPaint =
             when {
                 fps >= 23 -> fpsGoodPaint
                 fps >= 18 -> fpsWarnPaint
                 else -> fpsBadPaint
             }
-        canvas.drawText("${fps}fps", panelLeft + pad + baseTextSize * 5f, y, fpsPaint)
-        y += lineH
+        canvas.drawText("${fps}fps", valueColumn, baselineY, fpsPaint)
+        baselineY += layout.infoLineHeight
 
         // Frame time avg / max (integer ms)
         val avgMs = frameTimeAvg / 1000
@@ -387,17 +510,17 @@ class VideoInfoOverlay(
                 frameTimeAvg <= 55000 -> fpsWarnPaint
                 else -> fpsBadPaint
             }
-        canvas.drawText("frame", panelLeft + pad, y, labelPaint)
-        canvas.drawText("${avgMs}ms avg / ${maxMs}ms max", valCol, y, frameTimePaint)
-        y += lineH
+        canvas.drawText("frame", panelLeft + layout.panelPad, baselineY, labelPaint)
+        canvas.drawText("${avgMs}ms avg / ${maxMs}ms max", valueColumn, baselineY, frameTimePaint)
+        baselineY += layout.infoLineHeight
 
         // Frame budget load bar (40ms = 100% at 25fps)
         run {
-            val barLeft = panelLeft + pad
-            val barRight = panelLeft + panelW - pad
-            val barTop = y - baseTextSize * 0.6f
-            val barBot = y + lineH * 0.1f
-            val barW = barRight - barLeft
+            val barLeft = panelLeft + layout.panelPad
+            val barRight = panelLeft + panelWidth - layout.panelPad
+            val barTop = baselineY - layout.infoTextSize * 0.6f
+            val barBot = baselineY + layout.infoLineHeight * 0.1f
+            val barWidth = barRight - barLeft
             val pctFill = (frameTimeAvg / 40000f).coerceIn(0f, 1.5f) / 1.5f
             val barColor =
                 when {
@@ -416,9 +539,9 @@ class VideoInfoOverlay(
                     style = Paint.Style.FILL
                 }
             canvas.drawRoundRect(barLeft, barTop, barRight, barBot, 2f, 2f, barBg)
-            canvas.drawRoundRect(barLeft, barTop, barLeft + barW * pctFill, barBot, 2f, 2f, barFg)
+            canvas.drawRoundRect(barLeft, barTop, barLeft + barWidth * pctFill, barBot, 2f, 2f, barFg)
         }
-        y += lineH
+        baselineY += layout.infoLineHeight
 
         // GPU time (moved up near load metrics)
         val gpuText =
@@ -433,19 +556,19 @@ class VideoInfoOverlay(
             } else {
                 "GPU: n/a"
             }
-        canvas.drawText(gpuText, panelLeft + pad, y, valuePaint)
-        y += lineH
+        canvas.drawText(gpuText, panelLeft + layout.panelPad, baselineY, valuePaint)
+        baselineY += layout.infoLineHeight
 
-        canvas.drawText("Flip:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("Flip:", panelLeft + layout.panelPad, baselineY, labelPaint)
         canvas.drawText(
             "sw ${formatMillisTenths(
                 swapTimeUs,
             )} rs ${formatMillisTenths(resolveTimeUs)} er ${formatMillisTenths(glErrorTimeUs)}",
-            valCol,
-            y,
+            valueColumn,
+            baselineY,
             valuePaint,
         )
-        y += lineH
+        baselineY += layout.infoLineHeight
 
         // Level cache time (color-coded)
         val cachePaint =
@@ -454,74 +577,76 @@ class VideoInfoOverlay(
                 cacheTimeMs <= 2000 -> fpsWarnPaint
                 else -> fpsBadPaint
             }
-        canvas.drawText("Cache:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("${cacheTimeMs}ms", valCol, y, cachePaint)
-        y += lineH
+        canvas.drawText("Cache:", panelLeft + layout.panelPad, baselineY, labelPaint)
+        canvas.drawText("${cacheTimeMs}ms", valueColumn, baselineY, cachePaint)
+        baselineY += layout.infoLineHeight
 
-        canvas.drawText("Load:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("k$cacheKtxMs p$cachePngMs u$cacheUploadMs m$cacheMaskMs", valCol, y, valuePaint)
-        y += lineH
+        canvas.drawText("Load:", panelLeft + layout.panelPad, baselineY, labelPaint)
+        canvas.drawText("k$cacheKtxMs p$cachePngMs u$cacheUploadMs m$cacheMaskMs", valueColumn, baselineY, valuePaint)
+        baselineY += layout.infoLineHeight
 
         // Texture memory
         val texMb = texMemoryKb / 1024
-        canvas.drawText("Tex:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("${texMb}MB", valCol, y, valuePaint)
-        y += lineH
+        canvas.drawText("Tex:", panelLeft + layout.panelPad, baselineY, labelPaint)
+        canvas.drawText("${texMb}MB", valueColumn, baselineY, valuePaint)
+        baselineY += layout.infoLineHeight
 
         // Hi-res textures
         val pct = if (totalLoaded > 0) (hiresCount * 100 / totalLoaded) else 0
-        canvas.drawText("Hires:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("Hires:", panelLeft + layout.panelPad, baselineY, labelPaint)
         canvas.drawText(
             "$hiresCount/$totalLoaded ($pct%)",
-            valCol,
-            y,
+            valueColumn,
+            baselineY,
             valuePaint,
         )
-        y += lineH
+        baselineY += layout.infoLineHeight
 
         // Max hires texture resolution
-        canvas.drawText("Max:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("Max:", panelLeft + layout.panelPad, baselineY, labelPaint)
         val resText = if (hiresCount > 0) "%dx%d".format(maxHiresW, maxHiresH) else "n/a"
-        canvas.drawText(resText, valCol, y, valuePaint)
-        y += lineH
+        canvas.drawText(resText, valueColumn, baselineY, valuePaint)
+        baselineY += layout.infoLineHeight
 
         // GL texture cap
-        canvas.drawText("GL cap:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("${glMaxTexSize}px", valCol, y, valuePaint)
-        y += lineH
+        canvas.drawText("GL cap:", panelLeft + layout.panelPad, baselineY, labelPaint)
+        canvas.drawText("${glMaxTexSize}px", valueColumn, baselineY, valuePaint)
+        baselineY += layout.infoLineHeight
 
         // Render resolution
-        canvas.drawText("Render:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("Render:", panelLeft + layout.panelPad, baselineY, labelPaint)
         canvas.drawText(
             "${renderW}x$renderH / ${displayW}x$displayH",
-            valCol,
-            y,
+            valueColumn,
+            baselineY,
             valuePaint,
         )
-        y += lineH
+        baselineY += layout.infoLineHeight
 
         // Texture binds per frame
         val bindTotal = texBinds + texBindReuse
         val hitPct = if (bindTotal > 0) (texBindReuse * 100 / bindTotal) else 0
-        canvas.drawText("Binds:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("$texBinds ($hitPct% cache)", valCol, y, valuePaint)
-        y += lineH
+        canvas.drawText("Binds:", panelLeft + layout.panelPad, baselineY, labelPaint)
+        canvas.drawText("$texBinds ($hitPct% cache)", valueColumn, baselineY, valuePaint)
+        baselineY += layout.infoLineHeight
 
         // Draw polygons + shader/mask stats
-        canvas.drawText("Polys:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("Polys:", panelLeft + layout.panelPad, baselineY, labelPaint)
         canvas.drawText(
             "$drawPolys  shd:$shaderSwitches  mask:$maskDraws",
-            valCol,
-            y,
+            valueColumn,
+            baselineY,
             valuePaint,
         )
-        y += lineH
+        baselineY += layout.infoLineHeight
 
         // Color depth
         val cdLabel = if (colorDepth >= 24) "RGB888" else "RGB565"
-        canvas.drawText("Color:", panelLeft + pad, y, labelPaint)
-        canvas.drawText(cdLabel, valCol, y, valuePaint)
-        y += lineH
+        canvas.drawText("Color:", panelLeft + layout.panelPad, baselineY, labelPaint)
+        canvas.drawText(cdLabel, valueColumn, baselineY, valuePaint)
+        baselineY += layout.infoLineHeight
+
+        applyTextSizes(layout.buttonTextSize, layout.buttonTextSize)
 
         // Texture filtering cycle button
         val tfLabel =
@@ -532,79 +657,64 @@ class VideoInfoOverlay(
             }
         val tfText = "TexFilt: $tfLabel"
         val tfPaint = if (texFiltLevel > 0) fpsGoodPaint else fpsWarnPaint
-        texFiltRect.set(
-            panelLeft + pad * 0.5f,
-            y - baseTextSize,
-            panelLeft + panelW - pad * 0.5f,
-            y + lineH * 0.3f,
-        )
+        setButtonBounds(texFiltRect, panelLeft, panelWidth, baselineY, layout)
         val tfBg =
             when {
                 texFiltPressed -> btnPressedPaint
                 selectedControllerAction == VideoInfoControllerAction.TEX_FILT -> btnFocusedPaint
                 else -> btnNormalPaint
             }
-        canvas.drawRoundRect(texFiltRect, pad * 0.5f, pad * 0.5f, tfBg)
+        canvas.drawRoundRect(texFiltRect, layout.buttonCornerRadius, layout.buttonCornerRadius, tfBg)
         drawFocusOutline(
             canvas,
             texFiltRect,
-            pad * 0.5f,
+            layout.buttonCornerRadius,
             selectedControllerAction == VideoInfoControllerAction.TEX_FILT,
         )
-        canvas.drawText(tfText, panelLeft + pad, y, tfPaint)
-        y += lineH
+        canvas.drawText(tfText, panelLeft + layout.panelPad, baselineY, tfPaint)
+        baselineY += layout.buttonLineHeight
 
         // Anisotropic filtering cycle button
         val anisoText = if (anisoLevel > 0) "AF: ${anisoLevel}x" else "AF: OFF"
         val anisoPaint = if (anisoLevel > 0) fpsGoodPaint else fpsWarnPaint
-        anisoRect.set(
-            panelLeft + pad * 0.5f,
-            y - baseTextSize,
-            panelLeft + panelW - pad * 0.5f,
-            y + lineH * 0.3f,
-        )
+        setButtonBounds(anisoRect, panelLeft, panelWidth, baselineY, layout)
         val anisoBg =
             when {
                 anisoPressed -> btnPressedPaint
                 selectedControllerAction == VideoInfoControllerAction.ANISO -> btnFocusedPaint
                 else -> btnNormalPaint
             }
-        canvas.drawRoundRect(anisoRect, pad * 0.5f, pad * 0.5f, anisoBg)
+        canvas.drawRoundRect(anisoRect, layout.buttonCornerRadius, layout.buttonCornerRadius, anisoBg)
         drawFocusOutline(
             canvas,
             anisoRect,
-            pad * 0.5f,
+            layout.buttonCornerRadius,
             selectedControllerAction == VideoInfoControllerAction.ANISO,
         )
         val maxText = if (anisoMax > 0) " (max ${anisoMax}x)" else ""
-        canvas.drawText(anisoText + maxText, panelLeft + pad, y, anisoPaint)
-        y += lineH
+        canvas.drawText(anisoText + maxText, panelLeft + layout.panelPad, baselineY, anisoPaint)
+        baselineY += layout.buttonLineHeight
 
         // MSAA cycle button
         val msaaText = if (msaaLevel > 0) "MSAA: ${msaaLevel}x" else "MSAA: OFF"
         val msaaPaint = if (msaaLevel > 0) fpsGoodPaint else fpsWarnPaint
-        msaaRect.set(
-            panelLeft + pad * 0.5f,
-            y - baseTextSize,
-            panelLeft + panelW - pad * 0.5f,
-            y + lineH * 0.3f,
-        )
+        setButtonBounds(msaaRect, panelLeft, panelWidth, baselineY, layout)
         val msaaBg =
             when {
                 msaaPressed -> btnPressedPaint
                 selectedControllerAction == VideoInfoControllerAction.MSAA -> btnFocusedPaint
                 else -> btnNormalPaint
             }
-        canvas.drawRoundRect(msaaRect, pad * 0.5f, pad * 0.5f, msaaBg)
+        canvas.drawRoundRect(msaaRect, layout.buttonCornerRadius, layout.buttonCornerRadius, msaaBg)
         drawFocusOutline(
             canvas,
             msaaRect,
-            pad * 0.5f,
+            layout.buttonCornerRadius,
             selectedControllerAction == VideoInfoControllerAction.MSAA,
         )
         val msaaMaxText = if (msaaMax > 0) " (max ${msaaMax}x)" else ""
-        canvas.drawText(msaaText + msaaMaxText, panelLeft + pad, y, msaaPaint)
-        y += lineH
+        canvas.drawText(msaaText + msaaMaxText, panelLeft + layout.panelPad, baselineY, msaaPaint)
+        baselineY += layout.buttonLineHeight
 
         if (showDebugControls) {
             // Merged-wall overlay debug cycle button
@@ -615,21 +725,16 @@ class VideoInfoOverlay(
                     else -> "overlay: OFF"
                 }
             val mergedWallPaint = if (mergedWallMode == 0) fpsWarnPaint else fpsGoodPaint
-            mergedWallRect.set(
-                panelLeft + pad * 0.5f,
-                y - baseTextSize,
-                panelLeft + panelW - pad * 0.5f,
-                y + lineH * 0.3f,
-            )
+            setButtonBounds(mergedWallRect, panelLeft, panelWidth, baselineY, layout)
             val mergedWallBg =
                 when {
                     mergedWallPressed -> btnPressedPaint
                     selectedControllerAction == VideoInfoControllerAction.MERGED_WALL -> btnFocusedPaint
                     else -> btnNormalPaint
                 }
-            canvas.drawRoundRect(mergedWallRect, pad * 0.5f, pad * 0.5f, mergedWallBg)
-            canvas.drawText(mergedWallText, panelLeft + pad, y, mergedWallPaint)
-            y += lineH
+            canvas.drawRoundRect(mergedWallRect, layout.buttonCornerRadius, layout.buttonCornerRadius, mergedWallBg)
+            canvas.drawText(mergedWallText, panelLeft + layout.panelPad, baselineY, mergedWallPaint)
+            baselineY += layout.buttonLineHeight
 
             // Surface the small set of explicit merged-wall experiment modes.
             val mergedWallExperimentText =
@@ -640,58 +745,53 @@ class VideoInfoOverlay(
                     else -> "mwall exp: Compat $mergedWallExperimentMode"
                 }
             val mergedWallExperimentPaint = if (mergedWallExperimentMode == 0) fpsWarnPaint else fpsGoodPaint
-            mergedWallExperimentRect.set(
-                panelLeft + pad * 0.5f,
-                y - baseTextSize,
-                panelLeft + panelW - pad * 0.5f,
-                y + lineH * 0.3f,
-            )
+            setButtonBounds(mergedWallExperimentRect, panelLeft, panelWidth, baselineY, layout)
             val mergedWallExperimentBg =
                 when {
                     mergedWallExperimentPressed -> btnPressedPaint
                     selectedControllerAction == VideoInfoControllerAction.MERGED_WALL_EXPERIMENT -> btnFocusedPaint
                     else -> btnNormalPaint
                 }
-            canvas.drawRoundRect(mergedWallExperimentRect, pad * 0.5f, pad * 0.5f, mergedWallExperimentBg)
-            canvas.drawText(mergedWallExperimentText, panelLeft + pad, y, mergedWallExperimentPaint)
-            y += lineH
+            canvas.drawRoundRect(
+                mergedWallExperimentRect,
+                layout.buttonCornerRadius,
+                layout.buttonCornerRadius,
+                mergedWallExperimentBg,
+            )
+            canvas.drawText(mergedWallExperimentText, panelLeft + layout.panelPad, baselineY, mergedWallExperimentPaint)
+            baselineY += layout.buttonLineHeight
 
             val tapActive = android.os.SystemClock.uptimeMillis() < mergedWallTapFlashUntilMs
             val mergedWallTapText = if (tapActive) "mwall tap: Sent" else "mwall tap: Tap"
             val mergedWallTapPaint = if (tapActive) fpsGoodPaint else valuePaint
-            mergedWallTapRect.set(
-                panelLeft + pad * 0.5f,
-                y - baseTextSize,
-                panelLeft + panelW - pad * 0.5f,
-                y + lineH * 0.3f,
-            )
+            setButtonBounds(mergedWallTapRect, panelLeft, panelWidth, baselineY, layout)
             val mergedWallTapBg =
                 when {
                     mergedWallTapPressed -> btnPressedPaint
                     selectedControllerAction == VideoInfoControllerAction.MERGED_WALL_TAP -> btnFocusedPaint
                     else -> btnNormalPaint
                 }
-            canvas.drawRoundRect(mergedWallTapRect, pad * 0.5f, pad * 0.5f, mergedWallTapBg)
-            canvas.drawText(mergedWallTapText, mergedWallTapRect.left + pad * 0.5f, y, mergedWallTapPaint)
-            y += lineH
+            canvas.drawRoundRect(
+                mergedWallTapRect,
+                layout.buttonCornerRadius,
+                layout.buttonCornerRadius,
+                mergedWallTapBg,
+            )
+            canvas.drawText(mergedWallTapText, panelLeft + layout.panelPad, baselineY, mergedWallTapPaint)
+            baselineY += layout.buttonLineHeight
 
             // Labels toggle button
             val labelsText = if (labelsOn) "Labels: ON" else "Labels: OFF"
             val labelTogglePaint = if (labelsOn) fpsGoodPaint else fpsWarnPaint
-            buttonRect.set(
-                panelLeft + pad * 0.5f,
-                y - baseTextSize,
-                panelLeft + panelW - pad * 0.5f,
-                y + lineH * 0.3f,
-            )
+            setButtonBounds(buttonRect, panelLeft, panelWidth, baselineY, layout)
             val btnBg =
                 when {
                     buttonPressed -> btnPressedPaint
                     selectedControllerAction == VideoInfoControllerAction.LABELS -> btnFocusedPaint
                     else -> btnNormalPaint
                 }
-            canvas.drawRoundRect(buttonRect, pad * 0.5f, pad * 0.5f, btnBg)
-            canvas.drawText(labelsText, panelLeft + pad, y, labelTogglePaint)
+            canvas.drawRoundRect(buttonRect, layout.buttonCornerRadius, layout.buttonCornerRadius, btnBg)
+            canvas.drawText(labelsText, panelLeft + layout.panelPad, baselineY, labelTogglePaint)
         } else {
             mergedWallRect.setEmpty()
             mergedWallExperimentRect.setEmpty()

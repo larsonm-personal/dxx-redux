@@ -449,7 +449,8 @@ Java_com_dxxredux_app_DiscImportBridge_nativeScanSowFiles(
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
     JNIEnv *env, jclass clazz,
-    jstring sowPath, jstring outputDir, jobject progress)
+    jstring sowPath, jstring outputDir, jobject progress,
+    jboolean appendExisting)
 {
 	const char *sow = (*env)->GetStringUTFChars(env, sowPath, NULL);
 	if (!sow) return -1;
@@ -464,9 +465,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
 	extract_ctx_t ctx;
 	init_extract_ctx(env, progress, &ctx);
 
-	int extracted = sow_extract(sow, out_dir, NULL,
-	                            progress ? extract_progress_cb : NULL, &ctx);
-	LOGI("SOW extracted %d files from %s", extracted, sow);
+	int extracted = sow_extract_with_mode(sow, out_dir, NULL,
+	                                      progress ? extract_progress_cb : NULL,
+	                                      &ctx, appendExisting == JNI_TRUE);
+	LOGI("SOW extracted %d files from %s (append=%s)", extracted, sow,
+	     appendExisting == JNI_TRUE ? "true" : "false");
 
 	(*env)->ReleaseStringUTFChars(env, sowPath, sow);
 	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);

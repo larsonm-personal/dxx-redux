@@ -282,7 +282,8 @@ object DiscImportBridge {
         sowPath: String,
         outputDir: String,
         progress: ExtractProgress? = null,
-    ): Int = nativeExtractSowFiles(sowPath, outputDir, progress)
+        appendExisting: Boolean = false,
+    ): Int = nativeExtractSowFiles(sowPath, outputDir, progress, appendExisting)
 
     // ── Native methods ────────────────────────────────────────────
 
@@ -332,5 +333,6 @@ object DiscImportBridge {
         sowPath: String,
         outputDir: String,
         progress: ExtractProgress?,
+        appendExisting: Boolean,
     ): Int
 }

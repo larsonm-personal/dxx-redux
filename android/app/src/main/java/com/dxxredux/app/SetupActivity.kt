@@ -95,7 +95,6 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.zip.ZipInputStream
 
 /**
  * Pre-game setup screen built with Jetpack Compose.
@@ -3070,6 +3069,7 @@ private val D2_DEMO_FILES =
         GameFileInfo("d2demo.hog", "Demo game data", required = true),
         GameFileInfo("d2demo.ham", "Demo models & objects", required = true),
         GameFileInfo("d2demo.pig", "Demo textures", required = true),
+        GameFileInfo("d2demo.dem", "Demo playback", required = false),
     )
 
 /**
@@ -3359,16 +3359,30 @@ private suspend fun extractZipContents(
     context: Context,
     zipUri: Uri,
     tmpDir: File,
+    archiveName: String? = null,
     onProgress: suspend (String, Long, Long) -> Unit,
 ): ZipExtractionResult =
     kotlinx.coroutines.withContext(Dispatchers.IO) {
         tmpDir.mkdirs()
         val results = mutableListOf<ExtractedFile>()
+        val sowFiles = mutableListOf<File>()
         var foundAudio = false
         val audioExts = setOf("mp3", "ogg", "flac")
+        val expectedDemoFiles =
+            archiveName
+                ?.let { DemoInstallerPackages.matchByName(it) }
+                ?.expectedFiles
+                ?.toSet()
+
+        fun shouldKeepGameFile(name: String): Boolean =
+            if (expectedDemoFiles != null) {
+                name in expectedDemoFiles
+            } else {
+                name in ALL_GAME_FILENAMES
+            }
         try {
             context.contentResolver.openInputStream(zipUri)?.use { raw ->
-                ZipInputStream(raw).use { zis ->
+                openZipInputStreamSkippingPreamble(raw).use { zis ->
                     var entry = zis.nextEntry
                     while (entry != null) {
                         val name = entry.name.substringAfterLast('/').lowercase()
@@ -3376,7 +3390,7 @@ private suspend fun extractZipContents(
                             val ext = name.substringAfterLast('.', "")
                             if (ext in audioExts) foundAudio = true
                         }
-                        if (!entry.isDirectory && name in ALL_GAME_FILENAMES) {
+                        if (!entry.isDirectory && (shouldKeepGameFile(name) || name.endsWith(".sow"))) {
                             val totalBytes = entry.size.takeIf { it > 0L } ?: 0L
                             kotlinx.coroutines.withContext(Dispatchers.Main) {
                                 onProgress(name, 0L, totalBytes)
@@ -3410,11 +3424,63 @@ private suspend fun extractZipContents(
                                 onProgress(name, size, totalBytes)
                             }
                             val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
-                            results.add(ExtractedFile(name, tmpFile, sha256, size))
-                            Log.i("DXX-Setup", "Extracted from ZIP: $name ($size bytes, sha256=${sha256.take(16)}...)")
+                            if (name.endsWith(".sow")) {
+                                sowFiles.add(tmpFile)
+                                Log.i("DXX-Setup", "Extracted SOW from archive: $name ($size bytes)")
+                            } else {
+                                results.add(ExtractedFile(name, tmpFile, sha256, size))
+                                Log.i(
+                                    "DXX-Setup",
+                                    "Extracted from ZIP: $name ($size bytes, sha256=${sha256.take(16)}...)",
+                                )
+                            }
                         }
                         zis.closeEntry()
                         entry = zis.nextEntry
+                    }
+                }
+            }
+            if (sowFiles.isNotEmpty()) {
+                val existingNames = results.map { it.name }.toMutableSet()
+                val tempFiles = tmpDir.listFiles()?.filter { it.isFile } ?: emptyList()
+                for (file in tempFiles) {
+                    val lowerName = file.name.lowercase()
+                    if (shouldKeepGameFile(lowerName) && lowerName !in existingNames) file.delete()
+                }
+                for (sowFile in sowFiles.sortedBy { it.name.lowercase() }) {
+                    kotlinx.coroutines.withContext(Dispatchers.Main) {
+                        onProgress(sowFile.name, 0L, sowFile.length())
+                    }
+                    val count =
+                        DiscImportBridge.extractSowFiles(
+                            sowFile.absolutePath,
+                            tmpDir.absolutePath,
+                            null,
+                            appendExisting = true,
+                        )
+                    if (count < 0) {
+                        return@withContext ZipExtractionResult(
+                            results,
+                            foundAudio,
+                            "SOW extraction failed for ${sowFile.name}",
+                        )
+                    }
+                    Log.i("DXX-Setup", "Extracted $count file(s) from nested SOW ${sowFile.name}")
+                }
+                val extractedFiles = tmpDir.listFiles()?.filter { it.isFile } ?: emptyList()
+                for (file in extractedFiles.sortedBy { it.name.lowercase() }) {
+                    val lowerName = file.name.lowercase()
+                    if (!shouldKeepGameFile(lowerName) || lowerName in existingNames || file.length() <= 1L) continue
+                    val sha256 = AssetManifest.computeSha256(file)
+                    if (sha256 != null) {
+                        results.add(ExtractedFile(lowerName, file, sha256, file.length()))
+                        existingNames.add(lowerName)
+                        Log.i(
+                            "DXX-Setup",
+                            "Extracted from nested SOW: $lowerName (${file.length()} bytes, sha256=${sha256.take(
+                                16,
+                            )}...)",
+                        )
                     }
                 }
             }
@@ -3428,6 +3494,42 @@ private suspend fun extractZipContents(
             return@withContext ZipExtractionResult(results, foundAudio, "ZIP extraction failed: ${e.message}")
         }
         ZipExtractionResult(results, foundAudio)
+    }
+
+private suspend fun matchDemoInstallerPackage(
+    context: Context,
+    filename: String,
+    uri: Uri,
+): DemoInstallerPackages.PackageInfo? {
+    DemoInstallerPackages.matchByName(filename)?.let { return it }
+    val lowerName = filename.lowercase()
+    if (!lowerName.endsWith(".zip") && !lowerName.endsWith(".exe")) return null
+    val sha256 = computeContentSha256(context, uri) ?: return null
+    val matched = DemoInstallerPackages.matchBySha256(sha256) ?: return null
+    Log.i("DXX-Setup", "Matched demo installer by hash: $filename -> ${matched.filename}")
+    return matched
+}
+
+private suspend fun computeContentSha256(
+    context: Context,
+    uri: Uri,
+): String? =
+    withContext(Dispatchers.IO) {
+        try {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            val buffer = ByteArray(8192)
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                while (true) {
+                    val n = input.read(buffer)
+                    if (n <= 0) break
+                    digest.update(buffer, 0, n)
+                }
+            } ?: return@withContext null
+            digest.digest().joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            Log.w("DXX-Setup", "Failed to hash picked archive $uri", e)
+            null
+        }
     }
 
 /**
@@ -3852,7 +3954,12 @@ private fun SetupScreen(
                 val name = getDisplayName(context, uri)
                 if (name != null) {
                     val lname = name.lowercase()
+                    val demoPackage = matchDemoInstallerPackage(context, name, uri)
                     when {
+                        demoPackage != null -> {
+                            zipUris.add(demoPackage.filename to uri)
+                        }
+
                         lname.endsWith(".zip") || lname.endsWith(".7z") -> {
                             zipUris.add(name to uri)
                         }
@@ -4045,7 +4152,7 @@ private fun SetupScreen(
                                 zipProgressTotal = total
                             }
                         } else {
-                            extractZipContents(context, arcUri, tmpDir) { name, copied, total ->
+                            extractZipContents(context, arcUri, tmpDir, archiveName = arcName) { name, copied, total ->
                                 zipProgressFile = "$arcName: $name"
                                 zipProgressBytes = copied
                                 zipProgressTotal = total

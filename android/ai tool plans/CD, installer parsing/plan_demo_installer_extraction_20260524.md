@@ -1,0 +1,25 @@
+# Demo Installer Extraction Plan
+
+## Goal
+Make demo installer archives a first-class import source for Android and PC-side tooling. The Android launcher should accept known Descent 1 and Descent 2 demo ZIP or EXE packages, extract the contained game data files, record hashes in the existing asset manifest, and identify demo file versions through the normal hash/version display path.
+
+## Phases
+- [x] Inventory `game_data/demo installers` payloads and document installer contents
+- [x] Locate existing PC-side extraction helpers and reuse or align with them where practical
+- [x] Define a shared demo package model for known filenames, package hashes, output files, and game identity
+- [x] Add Android extraction support for demo ZIP and EXE packages using existing archive readers where possible
+- [x] Add hash/version recognition for extracted demo game data files
+- [x] Connect demo package import to the Setup UI without depending on the broken download URL
+- [x] Add focused unit or integration coverage for package detection and ZIP extraction
+- [x] Run formatting and relevant tests, then mark completed work in this plan
+
+## Notes
+- Keep game-engine source changes out of this tranche unless needed for hash recognition
+- Do not fix the existing demo download URL in this pass
+- Prefer one extraction path for PC and Android semantics even if the host scripts and Android implementation use different archive backends
+- Added `game_data/demo installers/README.md` with package hashes, contents, reference extracted files, and extraction flow
+- Android now routes known demo ZIP and self-extracting EXE packages through ZIP/SOW extraction instead of the GOG installer dialog, using package hashes when filenames are renamed
+- Nested demo `.sow` chunks are extracted in sorted append mode so multi-part installer files like D2 demo HAM/PIG reconstruct to the DOSBox reference hashes
+- Existing hash recognition in `known_versions.json5` already covers D1 Demo v1.4, D1 Demo (Mac), D2 Demo v1.0, and `d2demo.dem`; D2 demo setup now tracks `d2demo.dem` as optional
+- Validation completed with focused JVM tests and scoped `run-code-quality.ps1 -Fix` on touched Kotlin files. A full unscoped quality pass still reports unrelated pre-existing PowerShell formatting in `android/tools/decode_object_packets.ps1`
+- Follow-up remains for actual game-engine runtime issues when launching/playing from demo data

@@ -25,6 +25,7 @@ a. also, the select button (on android tv) should cycle between opening the "mor
 [fixed] android TV doesn't use the gamepad for the on-screen keyboard. only "a" works as a button press to select the current character, d-pad or sticks don't move around chars
 
 # nice to haves
+[ ] better and less annoying d1+d2 demo install helpers. ideally, .exe processing so the actual original demos can be used
 single axis exponential - please add this to the single axis editor the same as it was done for the analog stick editor
 remove automap button from settings menu. it should be in the unbound controls menu (if unbound)
 if an action is taken in the unbound settings menu (such as activating energy -> shield) and the menu is still open, another settings button push should close the menu

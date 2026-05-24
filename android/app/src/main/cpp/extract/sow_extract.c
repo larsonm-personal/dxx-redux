@@ -625,9 +625,10 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 
 /* ── Main extraction function ──────────────────────────────────────── */
 
-int sow_extract(const char *sow_path, const char *output_dir,
-                const char **extensions,
-                sow_progress_fn progress, void *user_data)
+static int sow_extract_impl(const char *sow_path, const char *output_dir,
+                            const char **extensions,
+                            sow_progress_fn progress, void *user_data,
+                            int append_existing)
 {
 	if (!sow_path || !output_dir) return -1;
 
@@ -733,7 +734,7 @@ int sow_extract(const char *sow_path, const char *output_dir,
 		}
 
 		/* Write output file */
-		FILE *outf = fopen(out_path, "wb");
+		FILE *outf = fopen(out_path, append_existing ? "ab" : "wb");
 		if (outf) {
 			fwrite(out_data, 1, out_size, outf);
 			fclose(outf);
@@ -747,4 +748,21 @@ int sow_extract(const char *sow_path, const char *output_dir,
 
 	fclose(fp);
 	return extracted;
+}
+
+int sow_extract(const char *sow_path, const char *output_dir,
+                const char **extensions,
+                sow_progress_fn progress, void *user_data)
+{
+	return sow_extract_impl(sow_path, output_dir, extensions, progress,
+	                        user_data, 0);
+}
+
+int sow_extract_with_mode(const char *sow_path, const char *output_dir,
+                          const char **extensions,
+                          sow_progress_fn progress, void *user_data,
+                          int append_existing)
+{
+	return sow_extract_impl(sow_path, output_dir, extensions, progress,
+	                        user_data, append_existing);
 }
