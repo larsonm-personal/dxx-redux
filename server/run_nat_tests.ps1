@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # Run NAT simulator integration tests
 # Usage: .\run_nat_tests.ps1
 

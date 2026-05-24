@@ -1,4 +1,5 @@
-﻿# build-aab.ps1 -- Build an AAB with all ABIs and copy to build-outputs/
+#!/usr/bin/env pwsh
+# build-aab.ps1 -- Build an AAB with all ABIs and copy to build-outputs/
 # Usage: .\build-aab.ps1 [[-BuildType] <string>]
 #        .\build-aab.ps1 -BuildType "2"     # Release (for Play Console)
 

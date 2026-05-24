@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # fingerprint_music_packs.ps1 -- Extract music archives, fingerprint tracks,
 # and look up names on AcoustID.
 #

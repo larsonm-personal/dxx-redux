@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # test_launcher_dpad.ps1 -- Verify D-pad/keyboard navigation in the launcher
 # Usage: .\android\tests\test_launcher_dpad.ps1
 # Requires: emulator running, app installed, game data available

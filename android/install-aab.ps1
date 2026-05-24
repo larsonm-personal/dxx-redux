@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # install-aab.ps1 -- Convert the most recent .aab to a universal APK and install via adb
 # Usage: .\install-aab.ps1 [-Aab <path>]
 #   If -Aab is omitted, uses the newest .aab in build-outputs/ or app/build/outputs/bundle/

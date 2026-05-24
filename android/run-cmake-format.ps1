@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # run-cmake-format.ps1 -- Run cmake-format (cheshirekow/cmakelang) on cmake files
 # added by this branch. Skips upstream d1/ and d2/ CMakeLists.txt files.
 # Usage:

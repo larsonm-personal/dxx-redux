@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Collects crash diagnostics after reproducing a game crash.

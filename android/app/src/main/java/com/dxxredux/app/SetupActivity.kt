@@ -1,4 +1,4 @@
-﻿package com.dxxredux.app
+package com.dxxredux.app
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -113,7 +113,7 @@ class SetupActivity : ComponentActivity() {
     private val resumeOfferRefreshHandler = Handler(Looper.getMainLooper())
     private val resumeOfferRefreshRunnable = Runnable { refreshTrigger.intValue++ }
 
-    // ── Setup-screen introspection ──────────────────────────────────────
+    // -- Setup-screen introspection --------------------------------------
     //   adb shell am broadcast -a com.dxxredux.SETUP_INTROSPECT
     //   adb shell run-as com.dxxredux.app cat files/setup_introspect.json
     private val introspectReceiver =
@@ -126,7 +126,7 @@ class SetupActivity : ComponentActivity() {
             }
         }
 
-    // ── Setup-screen command API ────────────────────────────────────────
+    // -- Setup-screen command API ----------------------------------------
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch --es game d1
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command create_set --es name "my set"
@@ -169,7 +169,7 @@ class SetupActivity : ComponentActivity() {
     /** True if LAN discovery was active before game launch; used to auto-resume on return */
     private var wasLanDiscoveringBeforeLaunch = false
 
-    // ── Launcher script automation (debug builds only) ──────────────────
+    // -- Launcher script automation (debug builds only) ------------------
     //   adb shell am broadcast -a com.dxxredux.SETUP_AUTOMATE \
     //     --es script files/test.json5
     // Scripts can alternate between launcher and game phases via
@@ -1205,7 +1205,7 @@ class SetupActivity : ComponentActivity() {
             }
         }
 
-    // ── Multiplayer command API (test automation) ────────────────────────
+    // -- Multiplayer command API (test automation) ------------------------
     //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command connect
     //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command disconnect
     //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command create_lobby --es game d2 --es mission "counterstrike!" --es mode anarchy
@@ -1465,7 +1465,7 @@ class SetupActivity : ComponentActivity() {
             }
         }
 
-    // ── Host migration receiver ────────────────────────────────────────
+    // -- Host migration receiver ----------------------------------------
     // When the game process detects host departure in coop and elects this
     // client as new master, it writes host_migration.json via PhysFS and
     // sends a HOST_MIGRATION broadcast.  Read that file and start LAN
@@ -1541,7 +1541,7 @@ class SetupActivity : ComponentActivity() {
     /** Active download progress visible to introspection. */
     internal val downloadStates = mutableMapOf<String, Int>()
 
-    // ── Controller live-state ───────────────────────────────────────────
+    // -- Controller live-state -------------------------------------------
 
     /** Axis values observable by Compose (LX, LY, RX, RY, LT, RT). */
     internal val controllerAxes = FloatArray(6)
@@ -1836,7 +1836,7 @@ class SetupActivity : ComponentActivity() {
         }
     }
 
-    // ── kc_joystick[] metadata for controller introspection ────────
+    // -- kc_joystick[] metadata for controller introspection --------
     // IMPORTANT: Mirrors kc_joystick[NUM_JOYSTICK_CONTROLS] in d2/main/kconfig.c.
     // Update both locations together when the joystick control layout changes.
     private data class KcMeta(
@@ -2821,7 +2821,7 @@ class SetupActivity : ComponentActivity() {
     }
 }
 
-// ── Data model ──────────────────────────────────────────────────────────────
+// -- Data model --------------------------------------------------------------
 
 private data class GameFileInfo(
     val filename: String,
@@ -2927,7 +2927,7 @@ private fun launcherDumpFileTable(
     launcherDumpStatusList("launcher-d1-status", d1Statuses)
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// -- Helpers -----------------------------------------------------------------
 
 /** Case-insensitive file lookup (Android ext4 is case-sensitive). */
 private fun findFile(
@@ -3007,11 +3007,11 @@ private fun descriptionForFile(filename: String): String {
 /** Describe a file's type based on its extension. */
 private fun describeExtension(filename: String): String = launcherExtensionDescription(filename)
 
-// ── File definitions ────────────────────────────────────────────────────────
+// -- File definitions --------------------------------------------------------
 
 private val D2_FILES =
     listOf(
-        // Required – core engine files
+        // Required - core engine files
         GameFileInfo(
             "descent2.hog",
             "Main game data",
@@ -3036,13 +3036,13 @@ private val D2_FILES =
             required = true,
             alternatives = listOf("descent2.s11"),
         ),
-        // Required – level texture packs
+        // Required - level texture packs
         GameFileInfo("alien1.pig", "Alien 1 level textures", required = true),
         GameFileInfo("alien2.pig", "Alien 2 level textures", required = true),
         GameFileInfo("fire.pig", "Fire level textures", required = true),
         GameFileInfo("ice.pig", "Ice level textures", required = true),
         GameFileInfo("water.pig", "Water level textures", required = true),
-        // Optional – movies & extras
+        // Optional - movies & extras
         GameFileInfo(
             "intro-h.mvl",
             "Intro movie",
@@ -3124,7 +3124,7 @@ private val RECOMMENDED_MODS =
         ),
     )
 
-// ── Demo downloads ──────────────────────────────────────────────────────────
+// -- Demo downloads ----------------------------------------------------------
 
 private data class DemoPackage(
     val name: String,
@@ -3146,7 +3146,7 @@ private val DEMO_DOWNLOADS =
         ),
     )
 
-// ── SAF directory scanning ───────────────────────────────────────────────────
+// -- SAF directory scanning ---------------------------------------------------
 
 /** All filenames we care about (D2 + D2 Demo + D1), lowercase for matching. */
 private val ALL_GAME_FILENAMES: Set<String> by lazy {
@@ -3313,7 +3313,7 @@ private fun importFile(
             "import ${source.name}",
         )
         LauncherFileCopy.copyUriToFile(context, source.uri, destFile, source.name, onProgress)
-        Log.i("DXX-Setup", "Imported ${source.name} → $canonicalName (${destFile.length()} bytes)")
+        Log.i("DXX-Setup", "Imported ${source.name} -> $canonicalName (${destFile.length()} bytes)")
         true
     } catch (e: InsufficientStorageException) {
         Log.e("DXX-Setup", "Not enough space to import ${source.name}", e)
@@ -3560,7 +3560,7 @@ private suspend fun copyUriToFileWithProgress(
     onProgress(copiedBytes, totalBytes)
 }
 
-// ── Composables ─────────────────────────────────────────────────────────────
+// -- Composables -------------------------------------------------------------
 
 @Composable
 private fun SetupScreen(
@@ -3609,7 +3609,7 @@ private fun SetupScreen(
     val d2Statuses = remember(refreshTrigger, activeSetName) { checkFiles(setDir, d2FileList, manifest, safManifest) }
     val d1Statuses = remember(refreshTrigger, activeSetName) { checkFiles(setDir, D1_FILES, manifest, safManifest) }
 
-    // ── Hashing progress state ──────────────────────────────
+    // -- Hashing progress state ------------------------------
     var hashingFile by remember { mutableStateOf<String?>(null) }
     var hashingFileIndex by remember { mutableIntStateOf(0) }
     var hashingTotalFiles by remember { mutableIntStateOf(0) }
@@ -3658,7 +3658,7 @@ private fun SetupScreen(
             dismissedResumeKey != resumeOfferKey
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
 
-    // ── Startup and refresh audit: prune stale entries, then hash new/changed files ──
+    // -- Startup and refresh audit: prune stale entries, then hash new/changed files --
     var prunedSourceNames by remember { mutableStateOf<List<String>>(emptyList()) }
     var prunedDataFiles by remember { mutableStateOf<List<String>>(emptyList()) }
     LaunchedEffect(activeSetName, refreshTrigger) {
@@ -3746,18 +3746,18 @@ private fun SetupScreen(
         d2Statuses.filter { it.info.required }.none { it.found } &&
             d1Statuses.filter { it.info.required }.none { it.found }
 
-    // Download state: filename → progress (0..100, -1 = error, -2 = complete)
+    // Download state: filename -> progress (0..100, -1 = error, -2 = complete)
     val downloadProgress = remember { mutableStateMapOf<String, Int>() }
     val scope = rememberCoroutineScope()
 
-    // ── File detail popup state ─────────────────────────────
+    // -- File detail popup state -----------------------------
     var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
     var detailIsD2 by remember { mutableStateOf(true) }
 
-    // ── Set management dialog state ─────────────────────────
+    // -- Set management dialog state -------------------------
     var showSetDialog by remember { mutableStateOf(false) }
 
-    // ── Game selection state ────────────────────────────────
+    // -- Game selection state --------------------------------
     val gamePrefs = remember { context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE) }
     var selectedGame by remember {
         val saved = gamePrefs.getString("selected_game", null)
@@ -3781,12 +3781,12 @@ private fun SetupScreen(
     var scanning by remember { mutableStateOf(false) }
     var importStatus by remember { mutableStateOf("") }
 
-    // ── Demo download state ─────────────────────────────────
+    // -- Demo download state ---------------------------------
     var demoDownloading by remember { mutableStateOf<String?>(null) } // package name or null
     var demoDownloadProgress by remember { mutableIntStateOf(0) }
     var demoDownloadError by remember { mutableStateOf<String?>(null) }
 
-    // ── ZIP extraction state ────────────────────────────
+    // -- ZIP extraction state ----------------------------
     var zipExtracted by remember { mutableStateOf<List<ExtractedFile>?>(null) }
     var zipPackageName by remember { mutableStateOf<String?>(null) }
     var zipExtracting by remember { mutableStateOf(false) }
@@ -3795,24 +3795,24 @@ private fun SetupScreen(
     var zipProgressTotal by remember { mutableLongStateOf(0L) }
     var zipHadAudioFiles by remember { mutableStateOf(false) }
 
-    // ── BIN/CUE disc import state ───────────────────────
+    // -- BIN/CUE disc import state -----------------------
     var discImportCueName by remember { mutableStateOf<String?>(null) }
     var discImportCueUri by remember { mutableStateOf<Uri?>(null) }
     var discImportBins by remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
 
-    // ── ISO disc import state ───────────────────────────
+    // -- ISO disc import state ---------------------------
     var isoImportName by remember { mutableStateOf<String?>(null) }
     var isoImportUri by remember { mutableStateOf<Uri?>(null) }
 
-    // ── GOG installer import state ──────────────────────
+    // -- GOG installer import state ----------------------
     var gogImportUri by remember { mutableStateOf<Uri?>(null) }
     var gogImportName by remember { mutableStateOf<String?>(null) }
 
-    // ── SOW archive import state ────────────────────────
+    // -- SOW archive import state ------------------------
     var sowImportUri by remember { mutableStateOf<Uri?>(null) }
     var sowImportName by remember { mutableStateOf<String?>(null) }
 
-    // ── Audio file auto-import state ────────────────────
+    // -- Audio file auto-import state --------------------
     var audioImportUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var audioImporting by remember { mutableStateOf(false) }
     var audioImportLabel by remember { mutableStateOf("") }
@@ -3821,10 +3821,10 @@ private fun SetupScreen(
     var zipArchiveUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     val audioCustomMgr = remember { CustomAudioSetManager(filesDir) }
 
-    // ── DXA mod import state ────────────────────────────
+    // -- DXA mod import state ----------------------------
     val dxaImportUris = remember { mutableListOf<Pair<String, Uri>>() }
 
-    // ── Config JSON import state ────────────────────────
+    // -- Config JSON import state ------------------------
     var configImportUri by remember { mutableStateOf<Uri?>(null) }
     var configImportName by remember { mutableStateOf<String?>(null) }
 
@@ -4146,11 +4146,11 @@ private fun SetupScreen(
             startDirectoryImport(treeUri)
         }
 
-    // ── Initial focus for D-pad/keyboard navigation ─────
+    // -- Initial focus for D-pad/keyboard navigation -----
     val initialFocus = remember { FocusRequester() }
     val inputModeManager = LocalInputModeManager.current
 
-    // ── Page navigation state ────────────────────────────
+    // -- Page navigation state ----------------------------
     var showControllerPage by remember { mutableStateOf(false) }
     var showTouchEditorPage by remember { mutableStateOf(false) }
     var showAdvancedPage by remember { mutableStateOf(false) }
@@ -4279,7 +4279,7 @@ private fun SetupScreen(
                         .safeDrawingPadding()
                         .padding(if (isLandscape) 8.dp else 16.dp),
             ) {
-                // ── Title + About ────────────────────────────
+                // -- Title + About ----------------------------
                 var showAbout by remember { mutableStateOf(false) }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -4381,14 +4381,14 @@ private fun SetupScreen(
                     resumePanel?.invoke()
                 }
 
-                // ── File detail popup ──
+                // -- File detail popup --
                 detailStatus?.let { status ->
                     FileDetailDialog(
                         status = status,
                         onDismiss = { detailStatus = null },
                         onDelete =
                             when {
-                                // SAF leave-in-place file — unlink from SAF manifest
+                                // SAF leave-in-place file - unlink from SAF manifest
                                 status.safUri != null -> {
                                     {
                                         safManifest.remove(status.info.filename)
@@ -4397,7 +4397,7 @@ private fun SetupScreen(
                                     }
                                 }
 
-                                // File on disk with manifest entry — delete file + manifest entry
+                                // File on disk with manifest entry - delete file + manifest entry
                                 status.found && status.manifestEntry != null -> {
                                     {
                                         val entry = status.manifestEntry
@@ -4413,7 +4413,7 @@ private fun SetupScreen(
                                     }
                                 }
 
-                                // External import but missing from disk — forget the manifest entry
+                                // External import but missing from disk - forget the manifest entry
                                 status.manifestEntry?.isExternal == true -> {
                                     {
                                         manifest.remove(status.manifestEntry.filename)
@@ -4429,7 +4429,7 @@ private fun SetupScreen(
                     )
                 }
 
-                // ── Set management dialog ──
+                // -- Set management dialog --
                 if (showSetDialog) {
                     SetManagementDialog(
                         fileSetManager = fileSetManager,
@@ -4444,7 +4444,7 @@ private fun SetupScreen(
                     )
                 }
 
-                // ── BIN/CUE disc import dialog ──
+                // -- BIN/CUE disc import dialog --
                 if (discImportCueUri != null) {
                     DiscImportDialog(
                         cueName = discImportCueName ?: "unknown.cue",
@@ -4469,7 +4469,7 @@ private fun SetupScreen(
                     )
                 }
 
-                // ── ISO disc import dialog ──
+                // -- ISO disc import dialog --
                 if (isoImportUri != null) {
                     IsoImportDialog(
                         isoName = isoImportName ?: "unknown.iso",
@@ -4490,7 +4490,7 @@ private fun SetupScreen(
                     )
                 }
 
-                // ── GOG installer import dialog ──
+                // -- GOG installer import dialog --
                 if (gogImportUri != null) {
                     GogImportDialog(
                         installerName = gogImportName ?: "installer",
@@ -4511,7 +4511,7 @@ private fun SetupScreen(
                     )
                 }
 
-                // ── SOW archive import dialog ──
+                // -- SOW archive import dialog --
                 if (sowImportUri != null) {
                     SowImportDialog(
                         sowName = sowImportName ?: "archive.sow",
@@ -4531,7 +4531,7 @@ private fun SetupScreen(
                     )
                 }
 
-                // ── Config JSON import dialog ──
+                // -- Config JSON import dialog --
                 if (configImportUri != null) {
                     val configImportFocus = remember { FocusRequester() }
                     LaunchedEffect(configImportUri) {
@@ -4569,7 +4569,7 @@ private fun SetupScreen(
                     )
                 }
 
-                // ── Audio file auto-import dialog ──
+                // -- Audio file auto-import dialog --
                 if (audioImportUris.isNotEmpty()) {
                     AddToSetDialog(
                         existingSets = audioCustomMgr.getSets(),
@@ -4614,10 +4614,10 @@ private fun SetupScreen(
                     )
                 }
 
-                // ── Shared composable blocks ──
+                // -- Shared composable blocks --
 
                 val filesPane: @Composable ColumnScope.() -> Unit = {
-                    // ── Stale temp cleanup notification ────────
+                    // -- Stale temp cleanup notification --------
                     if (cleanedTmpFiles.isNotEmpty()) {
                         Row(
                             modifier =
@@ -4699,7 +4699,7 @@ private fun SetupScreen(
                         }
                     }
 
-                    // ── Pruned audio sources notification ────────
+                    // -- Pruned audio sources notification --------
                     if (prunedSourceNames.isNotEmpty()) {
                         Row(
                             modifier =
@@ -4737,7 +4737,7 @@ private fun SetupScreen(
                         }
                     }
 
-                    // ── Pruned game data notification ───────────
+                    // -- Pruned game data notification -----------
                     if (prunedDataFiles.isNotEmpty()) {
                         Row(
                             modifier =
@@ -4775,7 +4775,7 @@ private fun SetupScreen(
                         }
                     }
 
-                    // ── Active set indicator ──────────────────────
+                    // -- Active set indicator ----------------------
                     Row(
                         modifier =
                             Modifier
@@ -4804,12 +4804,12 @@ private fun SetupScreen(
                         }
                     }
 
-                    // ── Missing-files help ──────────────────────
+                    // -- Missing-files help ----------------------
                     if (!canLaunch && !gameRunning) {
                         MissingFilesHelp()
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // ── Demo download offers ──────────────────
+                        // -- Demo download offers ------------------
                         for (demo in DEMO_DOWNLOADS) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
@@ -4945,7 +4945,7 @@ private fun SetupScreen(
                         }
                     }
 
-                    // ── Hashing progress bar ──
+                    // -- Hashing progress bar --
                     if (isHashing) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -4986,7 +4986,7 @@ private fun SetupScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    // ── Import files button ──
+                    // -- Import files button --
                     if (showImportChooser) {
                         val importChoiceFocus = remember(androidTvDevice) { FocusRequester() }
                         LaunchedEffect(showImportChooser, androidTvDevice) {
@@ -5068,7 +5068,7 @@ private fun SetupScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // ── Scan results / import card ──────────────
+                    // -- Scan results / import card --------------
                     if (scanResults != null) {
                         val found = scanResults!!
                         val importAllFocus = remember(found) { FocusRequester() }
@@ -5224,7 +5224,7 @@ private fun SetupScreen(
                         )
                     }
 
-                    // ── ZIP extraction progress ─────────────────
+                    // -- ZIP extraction progress -----------------
                     if (zipExtracting) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -5274,7 +5274,7 @@ private fun SetupScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    // ── ZIP results card ───────────────────────
+                    // -- ZIP results card -----------------------
                     if (zipExtracted != null) {
                         val extracted = zipExtracted!!
                         val zipImportFocus = remember(extracted) { FocusRequester() }
@@ -5422,7 +5422,7 @@ private fun SetupScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    // ── File sections ────────────────────
+                    // -- File sections --------------------
                     var d2Expanded by remember { mutableStateOf(false) }
                     var d1Expanded by remember { mutableStateOf(false) }
 
@@ -5561,7 +5561,7 @@ private fun SetupScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // ── Game selection toggle ────────────────
+                    // -- Game selection toggle ----------------
                     if (d1RequiredOk && d2RequiredOk) {
                         Text("Select Game", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -5645,7 +5645,7 @@ private fun SetupScreen(
                     }
                 }
 
-                // ── Layout: landscape = side-by-side, portrait = stacked ──
+                // -- Layout: landscape = side-by-side, portrait = stacked --
 
                 if (isLandscape) {
                     Row(modifier = Modifier.weight(1f)) {
@@ -7921,7 +7921,7 @@ private fun ControllerSection(
         }
     }
 
-    // ── Header ──
+    // -- Header --
     Row(
         modifier =
             Modifier
@@ -7961,7 +7961,7 @@ private fun ControllerSection(
         modifier = Modifier.padding(bottom = 4.dp),
     )
 
-    // ── Touch overlay toggle ──
+    // -- Touch overlay toggle --
     val defaultOverlay = !hasController
     var touchOverlay by remember {
         mutableStateOf(prefs.getBoolean("touch_overlay_enabled", defaultOverlay))
@@ -7989,7 +7989,7 @@ private fun ControllerSection(
         )
     }
 
-    // ── In-game orientation lock ──
+    // -- In-game orientation lock --
     var orientLandscape by remember {
         mutableStateOf(prefs.getString("game_orientation", "landscape") == "landscape")
     }
@@ -8036,7 +8036,7 @@ private fun ControllerSection(
         }
     }
 
-    // ── Define Controls button ──
+    // -- Define Controls button --
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(
             onClick = onDefineControls,
@@ -8068,7 +8068,7 @@ private fun ControllerSection(
         }
     }
 
-    // ── Weapon Autoselect / Game Preferences / Graphics / Advanced ──
+    // -- Weapon Autoselect / Game Preferences / Graphics / Advanced --
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(
             onClick = onEditAutoselect,
@@ -8305,7 +8305,7 @@ private fun DownloadableFileRow(
 
         when (progress) {
             null -> {
-                // Not started — show download button
+                // Not started - show download button
                 Button(
                     onClick = onDownload,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
@@ -8316,7 +8316,7 @@ private fun DownloadableFileRow(
             }
 
             in 0..100 -> {
-                // Downloading — show progress
+                // Downloading - show progress
                 Text(
                     text = "$progress%",
                     fontSize = 12.sp,
@@ -8556,7 +8556,7 @@ private fun SetManagementDialog(
     )
 }
 
-// ── Download helper ─────────────────────────────────────────────────────────
+// -- Download helper ---------------------------------------------------------
 
 private suspend fun downloadFile(
     url: String,
@@ -8602,7 +8602,7 @@ private suspend fun downloadFile(
                 }
             }
 
-            // Rename .tmp → final
+            // Rename .tmp -> final
             val destFile = File(destDir, filename)
             tmpFile.renameTo(destFile)
             Log.i("DXX-Setup", "Downloaded $filename ($downloaded bytes)")
@@ -8619,7 +8619,7 @@ private suspend fun downloadFile(
     }
 }
 
-// ── GOG installer import dialog ───────────────────────────────────────────
+// -- GOG installer import dialog -------------------------------------------
 
 /**
  * Dialog for importing a GOG installer (.exe InnoSetup or .pkg Mac).
@@ -8782,7 +8782,7 @@ private fun GogImportDialog(
         title = { Text("Import GOG Installer", fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                // ── Scrollable area: file listing and status ──
+                // -- Scrollable area: file listing and status --
                 Column(
                     modifier =
                         Modifier
@@ -8853,7 +8853,7 @@ private fun GogImportDialog(
                     }
                 }
 
-                // ── Fixed area: checkbox, buttons, progress ──
+                // -- Fixed area: checkbox, buttons, progress --
                 fileList?.let { files ->
                     val audioFiles = files.filter { GogImportBridge.isAudioFile(it.name) }
                     if (audioFiles.isNotEmpty() ||
@@ -9162,7 +9162,7 @@ private fun GogImportDialog(
     )
 }
 
-// ── SOW archive import dialog ─────────────────────────────────────────────
+// -- SOW archive import dialog ---------------------------------------------
 
 @Composable
 private fun SowImportDialog(
@@ -9344,7 +9344,7 @@ private fun SowImportDialog(
     )
 }
 
-// ── BIN/CUE disc import dialog ────────────────────────────────────────────
+// -- BIN/CUE disc import dialog --------------------------------------------
 
 /**
  * Dialog for importing a BIN/CUE disc image.
@@ -9700,7 +9700,7 @@ private fun DiscImportDialog(
                                                     }
                                                     if (trackNames.isEmpty()) {
                                                         withContext(Dispatchers.Main) {
-                                                            status = "Identifying audio tracks…"
+                                                            status = "Identifying audio tracks..."
                                                         }
                                                         trackNames =
                                                             FingerprintBridge.fingerprintAndMatchDisc(
@@ -9792,7 +9792,7 @@ private fun DiscImportDialog(
                     if (discLabel != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            "✓ Identified: $discLabel",
+                            "Identified: $discLabel",
                             fontSize = 13.sp,
                             color = Color(0xFF4CAF50),
                         )

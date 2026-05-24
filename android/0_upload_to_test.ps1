@@ -1,4 +1,5 @@
-﻿# upload_to_test.ps1 -- Automated AAB build, sign, and Play Store upload
+#!/usr/bin/env pwsh
+# upload_to_test.ps1 -- Automated AAB build, sign, and Play Store upload
 #
 # Computes versionCode = commitCount*10 + rev, where rev auto-increments
 # if the target track already has a version from the same commit count.

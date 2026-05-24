@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # fingerprint_disc_tracks.ps1 -- Build fingerprint_cd.exe and run it on all CD images.
 #
 # For each subfolder in game_data/CD images/:

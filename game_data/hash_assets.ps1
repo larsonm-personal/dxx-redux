@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # hash_assets.ps1 -- Hash game asset files and update known_versions.json5
 #
 # Scans game_data_to_copy_to_emulator/, game_data/extracted/, and

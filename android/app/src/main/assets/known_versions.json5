@@ -1,4 +1,4 @@
-﻿// Known game asset versions - SHA-256 hashes
+// Known game asset versions - SHA-256 hashes
 // Maintained by game_data/hash_assets.ps1
 //
 // Each entry: { file, sha256, version }

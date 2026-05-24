@@ -1,4 +1,5 @@
-﻿# run-psscriptanalyzer.ps1 -- Run PSScriptAnalyzer on PowerShell scripts.
+#!/usr/bin/env pwsh
+# run-psscriptanalyzer.ps1 -- Run PSScriptAnalyzer on PowerShell scripts.
 # Usage:
 #   .\run-psscriptanalyzer.ps1          # auto-fix + format (default)
 #   .\run-psscriptanalyzer.ps1 --check  # report issues, exit 1 if any

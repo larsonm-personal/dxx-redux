@@ -1,4 +1,5 @@
-﻿# gather-warnings.ps1 -- Build the Android project and capture compiler warnings.
+#!/usr/bin/env pwsh
+# gather-warnings.ps1 -- Build the Android project and capture compiler warnings.
 # Writes all warnings to temp/warnings-YYYY-MM-DD.log.
 #
 # Usage:

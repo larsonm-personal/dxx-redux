@@ -1,4 +1,5 @@
-﻿# run-clang-format.ps1 -- Run clang-format on android/ C/C++ code only.
+#!/usr/bin/env pwsh
+# run-clang-format.ps1 -- Run clang-format on android/ C/C++ code only.
 # Usage:
 #   .\run-clang-format.ps1          # format in-place
 #   .\run-clang-format.ps1 --check  # dry-run, exit 1 if changes needed

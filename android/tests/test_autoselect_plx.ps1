@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 # test_autoselect_plx.ps1 -- Integration test for weapon autoselect file handling.
 #
 # Verifies:

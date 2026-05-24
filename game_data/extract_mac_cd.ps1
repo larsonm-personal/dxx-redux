@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # extract_mac_cd.ps1 -- Legacy reference extractor for a Mac (HFS) CD image.
 #
 # Pipeline:

@@ -1,4 +1,5 @@
-﻿# Build and run CUE parser + ISO reader tests (Windows).
+#!/usr/bin/env pwsh
+# Build and run CUE parser + ISO reader tests (Windows).
 #
 # Usage:  .\test_cue_iso.ps1
 #

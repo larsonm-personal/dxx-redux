@@ -1,4 +1,5 @@
-﻿# test_fpcalc_and_acoustid.ps1 -- Validate our fingerprint pipeline against
+#!/usr/bin/env pwsh
+# test_fpcalc_and_acoustid.ps1 -- Validate our fingerprint pipeline against
 # fpcalc (reference chromaprint CLI) and AcoustID (online lookup service).
 #
 # Tests:

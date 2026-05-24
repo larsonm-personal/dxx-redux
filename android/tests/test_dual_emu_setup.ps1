@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 # test_dual_emu_setup.ps1 -- Launch two Android emulators with full
 # multiplayer infrastructure ready for manual testing.
 #

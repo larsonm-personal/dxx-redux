@@ -1,4 +1,5 @@
-﻿<#
+#!/usr/bin/env pwsh
+<#
 .SYNOPSIS
     WebSocket test bot that connects to the matchmaking server as a second player.
     Use this alongside the emulator to test two-client interactions.

@@ -1,4 +1,5 @@
-﻿# run-shellcheck.ps1 -- Run shellcheck on bash scripts in android/.
+#!/usr/bin/env pwsh
+# run-shellcheck.ps1 -- Run shellcheck on bash scripts in android/.
 # Usage:
 #   .\run-shellcheck.ps1          # report issues (shellcheck has no auto-fix)
 #   .\run-shellcheck.ps1 --check  # same -- check mode for consistency with other tools

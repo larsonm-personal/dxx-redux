@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # get_imagemagick.ps1 -- Download portable ImageMagick if not present.
 # Returns the path to magick.exe. Uses $DEP_BASE from dependency_base.txt.
 # Requires 7-Zip (7za.exe) for extraction -- will auto-fetch via get_7zip.ps1.

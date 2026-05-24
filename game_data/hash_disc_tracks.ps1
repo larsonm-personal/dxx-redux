@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # hash_disc_tracks.ps1 -- Collect track hashes from all CD images and update known_discs.json5.
 #
 # Reads track_hashes.json from each subfolder in game_data/CD images/,

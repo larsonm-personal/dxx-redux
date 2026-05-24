@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # update_known_discs_fingerprints.ps1 -- Merge chromaprint fingerprints into known_discs.json5.
 #
 # Reads track_fingerprints.json from each CD image folder, matches tracks to

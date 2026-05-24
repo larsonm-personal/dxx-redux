@@ -1,4 +1,5 @@
-﻿# run-ktlint.ps1 -- Run ktlint on Kotlin source files.
+#!/usr/bin/env pwsh
+# run-ktlint.ps1 -- Run ktlint on Kotlin source files.
 # Usage:
 #   .\run-ktlint.ps1          # auto-fix formatting (default)
 #   .\run-ktlint.ps1 --check  # report issues, exit 1 if any

@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # extract_all_gog.ps1 -- Build extract_gog.exe and run it on all GOG installers.
 #
 # For each .exe/.pkg in game_data/gog installers/:

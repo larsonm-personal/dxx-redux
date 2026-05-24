@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # generate_source_manifest.ps1 - Generate game_data/SOURCE_FILES.txt
 #
 # Lists all original (non-derived) source files in game_data/ with SHA-256 hashes.

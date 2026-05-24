@@ -1,4 +1,5 @@
-﻿# udp_relay.ps1 -- UDP relay to bridge two Android emulators for MP testing.
+#!/usr/bin/env pwsh
+# udp_relay.ps1 -- UDP relay to bridge two Android emulators for MP testing.
 #
 # Pure PowerShell/.NET reimplementation of udp_relay.py. No Python dependency.
 #

@@ -1,4 +1,5 @@
-﻿# test_lan_discovery.ps1 -- LAN lobby discovery test bot
+#!/usr/bin/env pwsh
+# test_lan_discovery.ps1 -- LAN lobby discovery test bot
 # Sends ANNOUNCE packets on UDP port 42400 so the Android app can discover them.
 # Also listens for JOIN/LEAVE/READY packets from clients.
 #

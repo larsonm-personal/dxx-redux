@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 # test_env.ps1 -- Shared environment setup for test scripts.
 #
 # Dot-source this to resolve JAVA_HOME, cmake, cargo, and other tool paths.

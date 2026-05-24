@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # Produce a summary of the d1/ and d2/ diff vs a base branch.
 # Default base is upstream/main. Writes sorted numstat and summary to temp/.
 #

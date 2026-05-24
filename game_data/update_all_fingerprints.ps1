@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # update_all_fingerprints.ps1 -- Run the full fingerprint + database pipeline.
 #
 # Steps:

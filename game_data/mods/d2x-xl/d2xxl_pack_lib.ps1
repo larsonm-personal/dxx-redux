@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 $script:D2xxlProjectReadmeEntryName = "README.dxx-redux.md"
 
 function Get-D2xxlGameName {

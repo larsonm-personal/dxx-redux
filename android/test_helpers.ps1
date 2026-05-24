@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 # test_helpers.ps1 -- Shared helper functions for Android emulator test scripts.
 #
 # Usage (dot-source from another script):

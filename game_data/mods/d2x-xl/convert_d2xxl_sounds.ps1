@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Converts d2x-xl high-res WAV sound packs into .dxa (ZIP) files

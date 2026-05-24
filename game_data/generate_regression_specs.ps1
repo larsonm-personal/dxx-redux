@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Generates extract_regression.json5 specs for each CD image, ISO image, and GOG installer.

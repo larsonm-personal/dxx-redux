@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
 Decode UPID_OBJECT_DATA packet hex dumps from DXX multiplayer PKTDUMP logs

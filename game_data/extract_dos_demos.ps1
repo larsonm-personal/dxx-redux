@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # extract_dos_demos.ps1 -- Extract game files from DOS shareware demo installers using DOSBox-X.
 #
 # For each zip in game_data\demo installers\, this script:

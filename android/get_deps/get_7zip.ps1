@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # get_7zip.ps1 -- Download 7-Zip standalone console (7za.exe) if not present.
 # Returns the path to 7za.exe. Uses $DEP_BASE from dependency_base.txt.
 #

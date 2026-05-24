@@ -42,6 +42,7 @@
 - don't use emdashes anywhere, but especially not in scripts
 - in printlines/comments, don't end self-contained sentences, especially those that already end with a newline, with a period. for example, `Write-Host "No lobbies to join"` instead of `Write-Host "No lobbies to join.`
 - keep to printable ascii wherever possible
+- avoid utf8-with-bom files; use plain ascii or utf8 without bom
 - always create a plan as step 1 of any block of work. plan files go here: android\ai tool plans\
   - when a given tranche of work is done, always mark the finished parts in the plan file so the next phase can start at the right place
   - attempt to categorize the plan file into an existing subdir, or propose a new subdir

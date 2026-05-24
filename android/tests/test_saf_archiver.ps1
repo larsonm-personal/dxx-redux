@@ -1,4 +1,5 @@
-﻿<#
+#!/usr/bin/env pwsh
+<#
 .SYNOPSIS
     Tests the SAF leave-in-place PhysFS archiver on an Android emulator.
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # stop-stale-formatters.ps1 -- List or kill stale file-mutating formatter tasks
 # Usage:
 #   .\stop-stale-formatters.ps1        # list matching processes

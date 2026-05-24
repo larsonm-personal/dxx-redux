@@ -1,4 +1,5 @@
-﻿# run-shfmt.ps1 -- Run shfmt on bash scripts in android/.
+#!/usr/bin/env pwsh
+# run-shfmt.ps1 -- Run shfmt on bash scripts in android/.
 # Usage:
 #   .\run-shfmt.ps1          # format in-place (default)
 #   .\run-shfmt.ps1 --check  # dry-run, exit 1 if changes needed

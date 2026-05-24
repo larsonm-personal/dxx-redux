@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # update_known_discs_albums.ps1 -- Merge per-album chromaprint_info.json5 files
 # into the overall known_discs.json5 database.
 #

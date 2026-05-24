@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 function Get-HostPlatform {
     if ($IsWindows) { return "Windows" }
     if ($IsLinux) { return "Linux" }

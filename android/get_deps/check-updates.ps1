@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # check-updates.ps1 -- Check for newer versions of Android build dependencies
 # and offer to upgrade them. Updates tool_versions.conf and related metadata in place.
 #

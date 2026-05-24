@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # get_fpcalc.ps1 -- Download fpcalc (chromaprint CLI) if not present.
 # Returns the path to fpcalc.exe. Uses $DEP_BASE from dependency_base.txt.
 

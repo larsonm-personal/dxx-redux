@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Shared progress and extraction helpers for d2x-xl conversion scripts.

@@ -1,4 +1,5 @@
-﻿param(
+#!/usr/bin/env pwsh
+param(
     [ValidateSet("d1", "d2", "both")]
     [string]$Game = "both",
 

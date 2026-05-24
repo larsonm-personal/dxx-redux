@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Converts all d2x-xl texture and sound packs into .dxa mod files.

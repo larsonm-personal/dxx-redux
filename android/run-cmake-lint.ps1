@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # run-cmake-lint.ps1 -- Run cmake-lint (cheshirekow/cmakelang) on cmake files
 # added by this branch. Skips upstream d1/ and d2/ CMakeLists.txt files.
 # Usage:

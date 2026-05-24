@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 $ErrorActionPreference = "Stop"
 
 Add-Type -AssemblyName System.IO.Compression

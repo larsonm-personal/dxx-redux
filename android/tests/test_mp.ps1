@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 # test_mp.ps1 -- Two-player multiplayer integration test.
 #
 # Orchestrates two Android emulator instances and a matchmaking server to:

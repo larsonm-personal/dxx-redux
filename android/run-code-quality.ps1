@@ -1,6 +1,7 @@
+#!/usr/bin/env pwsh
 # run-code-quality.ps1 -- Run all code quality checks.
 # Tools: clang-format (C/C++), ktlint (Kotlin), PSScriptAnalyzer (PowerShell),
-#        shellcheck (bash lint), shfmt (bash format),
+#        UTF-8 BOM lint, shellcheck (bash lint), shfmt (bash format),
 #        cmake-format / cmake-lint (cheshirekow/cmakelang).
 # Usage:
 #   .\run-code-quality.ps1          # check only (exit 1 if issues)
@@ -98,6 +99,149 @@ function Get-GitDirtyPaths {
     }
 
     return @($dirty | Sort-Object -Unique)
+}
+
+function Get-CodeQualityFiles {
+    param(
+        [string[]]$TargetPaths
+    )
+
+    $results = @()
+    if ($TargetPaths.Count -gt 0) {
+        foreach ($targetPath in $TargetPaths) {
+            $item = Get-Item -LiteralPath $targetPath -ErrorAction SilentlyContinue
+            if (-not $item) {
+                continue
+            }
+
+            if ($item.PSIsContainer) {
+                $results += Get-ChildItem -LiteralPath $item.FullName -File -Recurse -ErrorAction SilentlyContinue |
+                    ForEach-Object { $_.FullName }
+            } else {
+                $results += $item.FullName
+            }
+        }
+
+        return @($results | Sort-Object -Unique)
+    }
+
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if (-not $git) {
+        return @()
+    }
+
+    $trackedFiles = & $git.Source -C $repoRoot ls-files 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return @()
+    }
+
+    foreach ($trackedFile in $trackedFiles) {
+        if ([string]::IsNullOrWhiteSpace($trackedFile)) {
+            continue
+        }
+
+        $fullPath = Join-Path $repoRoot $trackedFile
+        if (Test-Path -LiteralPath $fullPath -PathType Leaf) {
+            $results += [System.IO.Path]::GetFullPath($fullPath)
+        }
+    }
+
+    return @($results | Sort-Object -Unique)
+}
+
+function Test-Utf8BomFile {
+    param(
+        [string]$Path
+    )
+
+    try {
+        $bytes = [System.IO.File]::ReadAllBytes($Path)
+    } catch {
+        Write-Warning "Skipping unreadable file: $Path"
+        return $false
+    }
+
+    return $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+}
+
+function Remove-Utf8Bom {
+    param(
+        [string]$Path
+    )
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -lt 3) {
+        return $false
+    }
+
+    if (-not ($bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)) {
+        return $false
+    }
+
+    $replacement = if ($bytes.Length -eq 3) { [byte[]]@() } else { [byte[]]$bytes[3..($bytes.Length - 1)] }
+    [System.IO.File]::WriteAllBytes($Path, $replacement)
+    return $true
+}
+
+function Invoke-Utf8BomLint {
+    param(
+        [string[]]$TargetPaths,
+        [switch]$Fix
+    )
+
+    $files = Get-CodeQualityFiles $TargetPaths
+    $offenders = @()
+    $fixed = @()
+
+    foreach ($file in $files) {
+        if (-not (Test-Utf8BomFile $file)) {
+            continue
+        }
+
+        $relativePath = Get-RepoRelativePath $file
+        if ($Fix) {
+            if (Remove-Utf8Bom $file) {
+                $fixed += $relativePath
+            } else {
+                $offenders += $relativePath
+            }
+            continue
+        }
+
+        $offenders += $relativePath
+    }
+
+    if ($Fix) {
+        if ($fixed.Count -gt 0) {
+            Write-Host "Removed UTF-8 BOM from:"
+            foreach ($fixedPath in $fixed) {
+                Write-Host "  $fixedPath"
+            }
+        } else {
+            Write-Host "No UTF-8 BOM files found"
+        }
+
+        if ($offenders.Count -eq 0) {
+            return $true
+        }
+
+        Write-Host "Could not remove UTF-8 BOM from:"
+        foreach ($offender in $offenders) {
+            Write-Host "  $offender"
+        }
+        return $false
+    }
+
+    if ($offenders.Count -eq 0) {
+        Write-Host "No UTF-8 BOM files found"
+        return $true
+    }
+
+    Write-Host "UTF-8 BOM is not allowed in tracked or scoped files"
+    foreach ($offender in $offenders) {
+        Write-Host "  $offender"
+    }
+    return $false
 }
 
 function Write-CodeQualityLock {
@@ -265,6 +409,14 @@ try {
     }
     Write-Host ""
 
+    # --- UTF-8 BOM lint ---
+    Write-CodeQualityLock -Stage 'utf8-bom'
+    Write-Host "--- UTF-8 BOM lint ---"
+    if (-not (Invoke-Utf8BomLint -TargetPaths $resolvedPaths -Fix:$Fix)) {
+        $failed += "utf8-bom"
+    }
+    Write-Host ""
+
     # --- shellcheck ---
     Write-CodeQualityLock -Stage 'shellcheck'
     Write-Host "--- Bash lint (shellcheck) ---"
@@ -320,7 +472,7 @@ try {
     } else {
         Write-Host "Failed checks: $($failed -join ', ')"
         if (-not $Fix) {
-            Write-Host "Run with --fix to auto-format"
+            Write-Host "Run with --fix to auto-format and strip UTF-8 BOMs"
         }
         $exitCode = 1
     }

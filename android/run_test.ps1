@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 # run_test.ps1 -- Run an automation test script on the Android emulator with health checks.
 #
 # Usage:

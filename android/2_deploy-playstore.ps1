@@ -1,4 +1,5 @@
-﻿# deploy-playstore.ps1 -- Upload AAB to Google Play via the Developer API
+#!/usr/bin/env pwsh
+# deploy-playstore.ps1 -- Upload AAB to Google Play via the Developer API
 #
 # Usage:
 #   .\deploy-playstore.ps1                              # auto-finds latest AAB in build-outputs/

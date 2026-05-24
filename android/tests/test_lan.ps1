@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 # test_lan.ps1 -- Two-player LAN multiplayer integration test.
 #
 # Uses the lan_launch MP_COMMAND to bypass the launcher lobby UI entirely,

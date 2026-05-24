@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 param(
     [ValidateSet("both", "d1", "d2")]
     [string]$Target = "both",

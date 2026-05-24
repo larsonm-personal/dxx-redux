@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 # gather-warnings-msvc.ps1 -- Build d1 and d2 with MSVC and capture warnings.
 # Writes all warnings to temp/warnings-msvc-YYYY-MM-DD.log.
 #

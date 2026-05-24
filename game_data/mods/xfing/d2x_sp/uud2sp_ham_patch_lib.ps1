@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 $ErrorActionPreference = "Stop"
 
 . (Join-Path $PSScriptRoot "..\xfing_minimal_dxa_lib.ps1")
