@@ -17,7 +17,15 @@ The Android launcher follows these models:
 5. For Mac packages, stage the `.sit` file and extract it with `DiscImportBridge.extractStuffitFiles()`, including any nested STi installer
 6. Hash the final game data files and import them through the normal asset manifest path
 
-The PC-side helpers are `game_data/extract_dos_demos.ps1` and `game_data/extract_mac_demos.ps1`. The DOS helper uses DOSBox-X to run the DOS installers and produce reference extracted trees. The Mac helper uses the pinned `unar` tool to extract StuffIt and nested STi payloads. `game_data/hash_assets.ps1` then records extracted file hashes in `android/app/src/main/assets/known_versions.json5`.
+The PC-side helpers are `game_data/extract_dos_demos.ps1` and `game_data/extract_mac_demos.ps1`. The DOS helper uses DOSBox-X to run the DOS installers and produce reference extracted trees. The Mac helper uses the pinned `unar` tool to extract StuffIt and nested STi payloads. Run the Mac helper with `-WriteOracle` to refresh `mac_stuffit_oracles.json`, which records the external-tool oracle hashes used by the native regression test. `game_data/hash_assets.ps1` records extracted file hashes in `android/app/src/main/assets/known_versions.json5`, including helper outputs under `game_data/demo installers/*_extracted`.
+
+## PC-Side StuffIt Transition Plan
+
+1. Keep `extract_mac_demos.ps1 -WriteOracle` as the external-tool oracle refresh path while the in-tree StuffIt parser is still being hardened.
+2. Build and run `test_stuffit_demo_oracles` to require that `stuffit_extract.c` produces the same sizes and SHA-256 hashes as the oracle file for each available `.sit` installer.
+3. Add a small host CLI wrapper around `stuffit_extract.c` for PC helper use, reusing the same `dxx_android_mac_disc_extract_extensions` filter as Android.
+4. Add `-UseInTree` to `extract_mac_demos.ps1`, compare its output against `mac_stuffit_oracles.json`, then make it the default once the oracle test has covered the supported installer set.
+5. Keep the external `unar` path only as `-WriteOracle` or remove it after the in-tree path is the maintained source of extracted demo files.
 
 ## Packages
 
@@ -35,42 +43,42 @@ The PC-side helpers are `game_data/extract_dos_demos.ps1` and `game_data/extract
 
 `descent 1 demo 1-4_extracted`:
 
-| File | SHA-256 | Size |
-| --- | --- | --- |
-| `DESCENT.HOG` | `26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab` | 2339773 |
-| `DESCENT.PIG` | `710f1c1bafc4c2fcb9623ebe701e2fff34c21b5d3d3e0fe164c1162615971a54` | 2509799 |
+| File | SHA-256 | Size | Known version |
+| --- | --- | --- | --- |
+| `DESCENT.HOG` | `26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab` | 2339773 | D1 Demo v1.4 |
+| `DESCENT.PIG` | `710f1c1bafc4c2fcb9623ebe701e2fff34c21b5d3d3e0fe164c1162615971a54` | 2509799 | D1 Demo v1.4 |
 
 `d1 mac extracted`:
 
-| File | SHA-256 | Size |
-| --- | --- | --- |
-| `descent.hog` | `b70528d0c9daeb8137f05a5a699d0bf884058398a6ab4a97307807a1c0cee9be` | 3370339 |
-| `descent.pig` | `b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905` | 2714487 |
+| File | SHA-256 | Size | Known version |
+| --- | --- | --- | --- |
+| `descent.hog` | `b70528d0c9daeb8137f05a5a699d0bf884058398a6ab4a97307807a1c0cee9be` | 3370339 | D1 Demo (Mac) |
+| `descent.pig` | `b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905` | 2714487 | D1 Demo (Mac) |
 
 `Descent Shareware_extracted`:
 
-| File | SHA-256 | Size |
-| --- | --- | --- |
-| `descent.hog` | `7af6bbd6aa5e356cae406ea43ab8b47b69d27bd555b513d884c68ccafe9aaf42` | 3387843 |
-| `descent.pig` | `b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905` | 2714487 |
+| File | SHA-256 | Size | Known version |
+| --- | --- | --- | --- |
+| `descent.hog` | `7af6bbd6aa5e356cae406ea43ab8b47b69d27bd555b513d884c68ccafe9aaf42` | 3387843 | D1 Demo (Mac) |
+| `descent.pig` | `b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905` | 2714487 | D1 Demo (Mac) |
 
 `descent 2 demo 1-0_extracted`:
 
-| File | SHA-256 | Size |
-| --- | --- | --- |
-| `D2DEMO.DEM` | `8c6e2d43ba88166d17759d90e3817edd0c3ef0a33861ef35a51a8cd4db89c892` | 355173 |
-| `D2DEMO.HAM` | `747ccf2494916892061e13601cd8695c35e46f2a99062fff3e3f298da94b9be6` | 1961015 |
-| `D2DEMO.HOG` | `b6bf5514b7f2c25ff516c46e9d49eef5862b10667a95365631e7a64a10adc47e` | 2292566 |
-| `D2DEMO.PIG` | `368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989` | 2800295 |
+| File | SHA-256 | Size | Known version |
+| --- | --- | --- | --- |
+| `D2DEMO.DEM` | `8c6e2d43ba88166d17759d90e3817edd0c3ef0a33861ef35a51a8cd4db89c892` | 355173 | D2 Demo v1.0 |
+| `D2DEMO.HAM` | `747ccf2494916892061e13601cd8695c35e46f2a99062fff3e3f298da94b9be6` | 1961015 | D2 Demo v1.0 |
+| `D2DEMO.HOG` | `b6bf5514b7f2c25ff516c46e9d49eef5862b10667a95365631e7a64a10adc47e` | 2292566 | D2 Demo v1.0 |
+| `D2DEMO.PIG` | `368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989` | 2800295 | D2 Demo v1.0 |
 
 `Descent II Preview_extracted`:
 
-| File | SHA-256 | Size |
-| --- | --- | --- |
-| `d2demo.ham` | `b3d94652282859e188f9530b63d77b37289ac973bce402025d10021eaffc7a92` | 1307598 |
-| `D2DEMO.HOG` | `e39285e4346f3066cf4ad745abcf3dc4bdf142df7c0395a42b26ae291282696b` | 4292746 |
-| `d2demo.pig` | `88e834d13f15bfe502e32570a44302326e6486f685cb95e12b3b81d0a14b8642` | 4929684 |
-| `DESCENT2.S11` | `d444c6f93476f8941936164d2981387a26b0a25e3f9d5e930ef96bfbb86c1e68` | 2602492 |
-| `EXIT.HAM` | `c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7` | 31932 |
+| File | SHA-256 | Size | Known version |
+| --- | --- | --- | --- |
+| `d2demo.ham` | `b3d94652282859e188f9530b63d77b37289ac973bce402025d10021eaffc7a92` | 1307598 | D2 Demo (Mac) |
+| `D2DEMO.HOG` | `e39285e4346f3066cf4ad745abcf3dc4bdf142df7c0395a42b26ae291282696b` | 4292746 | D2 Demo (Mac) |
+| `d2demo.pig` | `88e834d13f15bfe502e32570a44302326e6486f685cb95e12b3b81d0a14b8642` | 4929684 | D2 Demo (Mac) |
+| `DESCENT2.S11` | `d444c6f93476f8941936164d2981387a26b0a25e3f9d5e930ef96bfbb86c1e68` | 2602492 | D2 Demo (Mac), byte-identical to D2 v1.2 |
+| `EXIT.HAM` | `c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7` | 31932 | D2 Demo (Mac) |
 
 The Android launcher imports lowercase canonical filenames. Version labels are resolved by SHA-256 through `known_versions.json5`, so copied or renamed demo files still identify as demo data when their content hash matches a known entry.

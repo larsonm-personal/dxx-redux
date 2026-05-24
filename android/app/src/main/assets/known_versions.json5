@@ -36,6 +36,7 @@
     { "file": "d2demo.ham", "sha256": "b3d94652282859e188f9530b63d77b37289ac973bce402025d10021eaffc7a92", "version": "D2 Demo (Mac)" },
     { "file": "d2demo.hog", "sha256": "e39285e4346f3066cf4ad745abcf3dc4bdf142df7c0395a42b26ae291282696b", "version": "D2 Demo (Mac)" },
     { "file": "d2demo.pig", "sha256": "88e834d13f15bfe502e32570a44302326e6486f685cb95e12b3b81d0a14b8642", "version": "D2 Demo (Mac)" },
+    { "file": "descent2.s11", "sha256": "d444c6f93476f8941936164d2981387a26b0a25e3f9d5e930ef96bfbb86c1e68", "version": "D2 Demo (Mac)" },
     { "file": "exit.ham", "sha256": "c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7", "version": "D2 Demo (Mac)" },
 
     // -- D1 Demo v1.4 --

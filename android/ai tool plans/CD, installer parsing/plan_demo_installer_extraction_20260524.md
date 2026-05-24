@@ -19,6 +19,13 @@ Make demo installer archives a first-class import source for Android and PC-side
 - [x] Update docs and tests for the new package hashes and extraction modes
 - [x] Run formatting and focused validation for the updated import paths
 
+## Follow-up: StuffIt Attribution, Hashes, and Oracles
+- [x] Label `stuffit_extract.c` with the main open source references used for the SIT5 parser
+- [x] Audit README extracted-file hash rows against `known_versions.json5` and document any shared-version hashes
+- [x] Add repeatable oracle validation for the two real Mac `.sit` installers, using PC-side extraction hashes as the expected output
+- [x] Plan the PC helper transition from external StuffIt tools to the in-tree extractor
+- [x] Run formatting and focused native/helper validation
+
 ## Notes
 - Keep game-engine source changes out of this tranche unless needed for hash recognition
 - Do not fix the existing demo download URL in this pass
@@ -32,3 +39,6 @@ Make demo installer archives a first-class import source for Android and PC-side
 - Mac StuffIt support now covers direct D1 game data and the nested D2 STi installer path, including StuffIt methods 14 and 15 in the native extractor
 - Mac helper validation and native `test_stuffit_direct` both reproduce the documented D1 and D2 Mac demo output hashes
 - The existing StuffIt corpus test was updated to treat methods 14 and 15 as supported and passes against the committed manifests
+- `stuffit_extract.c` is labeled as derived primarily from XADMaster's `XADStuffIt5Parser`, with corpus/oracle cross-check references
+- `mac_stuffit_oracles.json` is produced by `extract_mac_demos.ps1 -WriteOracle`; `stuffit_demo_oracle_tests` requires the in-tree extractor to match those sizes and SHA-256 hashes
+- `hash_assets.ps1` now scans `game_data/demo installers/*_extracted` and can reproduce the D2 Mac demo `descent2.s11` version alias from the shared D2 v1.2 hash

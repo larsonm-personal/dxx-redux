@@ -135,6 +135,15 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_direct.c ${CMAKE_CURRENT_SOURCE_DIR}/stuffit_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c)
 target_include_directories(test_stuffit_direct PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+set(DEMO_INSTALLER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/demo installers")
+set(MAC_STUFFIT_ORACLE_FILE "${DEMO_INSTALLER_DIR}/mac_stuffit_oracles.json")
+add_test(
+    NAME stuffit_demo_oracle_tests
+    COMMAND
+        ${CMAKE_COMMAND} -DTEST_STUFFIT_DIRECT=$<TARGET_FILE:test_stuffit_direct>
+        "-DDEMO_INSTALLER_DIR=${DEMO_INSTALLER_DIR}" "-DORACLE_FILE=${MAC_STUFFIT_ORACLE_FILE}"
+        -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/stuffit_demo_oracle_tests -P
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_demo_oracles.cmake)
 
 # ── extract_gog ─────────────────────────────────────────────────────
 add_executable(

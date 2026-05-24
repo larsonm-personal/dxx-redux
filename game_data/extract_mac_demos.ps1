@@ -2,9 +2,10 @@
 # extract_mac_demos.ps1 -- Extract game files from Mac StuffIt demo installers.
 #
 # Requires The Unarchiver CLI installed via android\get_deps\get_unar.sh.
-# Usage: .\extract_mac_demos.ps1 [-Force]
+# Usage: .\extract_mac_demos.ps1 [-Force] [-WriteOracle]
 param(
-    [switch]$Force
+    [switch]$Force,
+    [switch]$WriteOracle
 )
 
 Set-StrictMode -Version Latest
@@ -13,6 +14,8 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = $PSScriptRoot
 $RepoRoot = Split-Path $ScriptDir
 $DemoDir = Join-Path $ScriptDir "demo installers"
+$OracleFile = Join-Path $DemoDir "mac_stuffit_oracles.json"
+$OracleArchives = @()
 
 function Get-ToolConfigValue {
     param(
@@ -88,7 +91,7 @@ foreach ($inst in $Installers) {
         continue
     }
 
-    if ((Test-Path -LiteralPath $outputDir) -and -not $Force) {
+    if ((Test-Path -LiteralPath $outputDir) -and -not $Force -and -not $WriteOracle) {
         $existing = Get-GameFiles -RootPath $outputDir
         if ($existing.Count -gt 0) {
             Write-Host ("$baseName already extracted, {0} game files. Use -Force to redo" -f $existing.Count)
@@ -133,15 +136,36 @@ foreach ($inst in $Installers) {
         $missing = @($inst.ExpectFiles | Where-Object { -not $foundNames.ContainsKey($_.ToLowerInvariant()) })
         if ($missing.Count -gt 0) { Write-Warning "  Missing expected files: $($missing -join ', ')" }
         New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
+        $oracleFiles = @()
         foreach ($f in $found) {
             Copy-Item -LiteralPath $f.FullName -Destination (Join-Path $outputDir $f.Name) -Force
+            $sha256 = (Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            $oracleFiles += [PSCustomObject]@{ file = $f.Name; sha256 = $sha256; size = $f.Length }
             $sizeKB = [math]::Round($f.Length / 1024)
             Write-Host ("    {0} [{1} KB]" -f $f.Name, $sizeKB)
+        }
+        if ($WriteOracle) {
+            $OracleArchives += [PSCustomObject]@{
+                archive       = $archiveName
+                oracle_tool   = "unar"
+                oracle_source = "game_data/extract_mac_demos.ps1 -WriteOracle"
+                files         = @($oracleFiles)
+            }
         }
         Write-Host ("  Extracted {0} files -> {1}" -f $found.Count, $outputDir) -ForegroundColor Green
     }
 
     Remove-Item -LiteralPath $tempBase -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+if ($WriteOracle) {
+    if ($OracleArchives.Count -eq 0) {
+        Write-Warning "No oracle archives were extracted, leaving $OracleFile unchanged"
+    } else {
+        $oracle = [PSCustomObject]@{ archives = @($OracleArchives) }
+        $oracle | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $OracleFile -NoNewline -Encoding utf8
+        Write-Host "Wrote StuffIt oracle hashes -> $OracleFile" -ForegroundColor Green
+    }
 }
 
 Write-Host ""

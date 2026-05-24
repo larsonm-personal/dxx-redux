@@ -1,3 +1,16 @@
+/*
+ * stuffit_extract.c - StuffIt 5 archive extraction for game data.
+ *
+ * The SIT5 container parser in this file is derived primarily from
+ * XADMaster's StuffIt 5 support, especially XADStuffIt5Parser in The
+ * Unarchiver, which is distributed under LGPL-2.1. The nested STi handoff
+ * uses the STi parser and decompressors in sti2_extract.c. Behavior is
+ * cross-checked against ssokolow/stuffit-test-files and the PC-side unar
+ * oracle hashes for the Descent demo installers.
+ * https://github.com/ashang/unar
+ * https://github.com/ssokolow/stuffit-test-files
+ */
+
 #include "stuffit_extract.h"
 
 #include <stdio.h>

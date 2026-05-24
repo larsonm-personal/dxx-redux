@@ -101,6 +101,7 @@ game_data/**
 !game_data/extract_dos_demos.ps1
 !game_data/extract_mac_demos.ps1
 !game_data/demo installers/README.md
+!game_data/demo installers/mac_stuffit_oracles.json
 !game_data/mods/README.md
 !game_data/mods/.gitignore
 !game_data/mods/d2x-xl/.gitignore

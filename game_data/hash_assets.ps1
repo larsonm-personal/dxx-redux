@@ -2,8 +2,9 @@
 # hash_assets.ps1 -- Hash game asset files and update known_versions.json5
 #
 # Scans game_data_to_copy_to_emulator/, game_data/extracted/, and
-# game_data/CD images/*/data_tracks/ for game assets, computes SHA-256,
-# and merges into known_versions.json5.
+# game_data/CD images/*/data_tracks/ for game assets. It also scans
+# game_data/demo installers/*_extracted/ for demo helper outputs. Computes
+# SHA-256 and merges into known_versions.json5.
 #
 # Version labels use game release versions (D1 v1.0, D2 v1.2, etc.)
 # rather than disc names. Files < 2 bytes are skipped (extraction stubs).
@@ -14,12 +15,13 @@ param([switch]$Force)
 
 $ErrorActionPreference = "Stop"
 
-$ScriptDir  = $PSScriptRoot
-$RepoRoot   = Split-Path $ScriptDir
-$Json5File  = Join-Path $RepoRoot "android\app\src\main\assets\known_versions.json5"
+$ScriptDir = $PSScriptRoot
+$RepoRoot = Split-Path $ScriptDir
+$Json5File = Join-Path $RepoRoot "android\app\src\main\assets\known_versions.json5"
 $ExtractDir = Join-Path $ScriptDir "extracted"
-$CdImgDir   = Join-Path $ScriptDir "CD images"
-$GogDir     = Join-Path $RepoRoot "game_data_to_copy_to_emulator"
+$CdImgDir = Join-Path $ScriptDir "CD images"
+$DemoDir = Join-Path $ScriptDir "demo installers"
+$GogDir = Join-Path $RepoRoot "game_data_to_copy_to_emulator"
 
 $GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".dem", ".gog", ".inst")
 $MinFileSize = 2  # Skip 1-byte extraction stubs
@@ -31,7 +33,9 @@ $MinFileSize = 2  # Skip 1-byte extraction stubs
 $VersionMap = @{
     # extracted/ subfolders
     "d1 mac extracted"                  = "D1 Demo (Mac)"
+    "Descent Shareware_extracted"       = "D1 Demo (Mac)"
     "d2_mac_demo"                       = "D2 Demo (Mac)"
+    "Descent II Preview_extracted"      = "D2 Demo (Mac)"
     "descent 1 demo 1-4_extracted"      = "D1 Demo v1.4"
     "descent 2 demo 1-0_extracted"      = "D2 Demo v1.0"
     "VERTIGO"                           = "D2 Vertigo Series"
@@ -89,16 +93,16 @@ function Get-GogVersion([string]$filename) {
 
 # -- JSON5 helpers ----------------------------------------------------
 
-function Strip-Json5Comments([string]$text) {
+function ConvertFrom-Json5WithComments([string]$text) {
     $sb = [System.Text.StringBuilder]::new($text.Length)
     $i = 0
     while ($i -lt $text.Length) {
-        if ($i + 1 -lt $text.Length -and $text[$i] -eq '/' -and $text[$i+1] -eq '/') {
+        if ($i + 1 -lt $text.Length -and $text[$i] -eq '/' -and $text[$i + 1] -eq '/') {
             $i += 2
             while ($i -lt $text.Length -and $text[$i] -ne "`n") { $i++ }
-        } elseif ($i + 1 -lt $text.Length -and $text[$i] -eq '/' -and $text[$i+1] -eq '*') {
+        } elseif ($i + 1 -lt $text.Length -and $text[$i] -eq '/' -and $text[$i + 1] -eq '*') {
             $i += 2
-            while ($i + 1 -lt $text.Length -and -not ($text[$i] -eq '*' -and $text[$i+1] -eq '/')) { $i++ }
+            while ($i + 1 -lt $text.Length -and -not ($text[$i] -eq '*' -and $text[$i + 1] -eq '/')) { $i++ }
             $i += 2
         } else {
             [void]$sb.Append($text[$i])
@@ -111,7 +115,7 @@ function Strip-Json5Comments([string]$text) {
 function Read-Json5Versions([string]$path) {
     if (-not (Test-Path $path)) { return @() }
     $raw = Get-Content -Raw $path
-    $clean = Strip-Json5Comments $raw
+    $clean = ConvertFrom-Json5WithComments $raw
     $obj = $clean | ConvertFrom-Json
     return @($obj.versions)
 }
@@ -142,7 +146,6 @@ function Write-Json5Versions([string]$path, $versions) {
         for ($ei = 0; $ei -lt $entries.Count; $ei++) {
             $e = $entries[$ei]
             $comma = if ($gi -eq $groupKeys.Count - 1 -and $ei -eq $entries.Count - 1) { "" } else { "," }
-            $fileField = ($e.file).PadRight(20, ' ')
             $lines += "    { `"file`": `"$($e.file)`", `"sha256`": `"$($e.sha256)`", `"version`": `"$($e.version)`" }$comma"
         }
         if ($gi -lt $groupKeys.Count - 1) { $lines += "" }
@@ -221,6 +224,22 @@ if (Test-Path $ExtractDir) {
     Write-Host "  Found $($files.Count) game asset files"
 }
 
+# Scan demo installers/*_extracted/ helper outputs
+if (Test-Path $DemoDir) {
+    $demoExtractDirs = Get-ChildItem -LiteralPath $DemoDir -Directory -Filter "*_extracted" -ErrorAction SilentlyContinue
+    foreach ($demoInfo in $demoExtractDirs) {
+        Write-Host "Scanning demo extraction: $($demoInfo.Name)..."
+        $files = Get-GameAssetFiles $demoInfo.FullName
+        $kept = 0
+        foreach ($f in $files) {
+            if ($f.Length -lt $MinFileSize) { continue }
+            $allFiles += @{ File = $f; FolderName = $demoInfo.Name; Source = "demo" }
+            $kept++
+        }
+        Write-Host "  Found $($files.Count) files, kept $kept (skipped $($files.Count - $kept) stubs)"
+    }
+}
+
 # Scan CD images/*/data_tracks/
 if (Test-Path $CdImgDir) {
     $dtDirs = Get-ChildItem -Path $CdImgDir -Directory | ForEach-Object {
@@ -276,13 +295,14 @@ $aliases = @(
     # D1: GOG v1.4a and Definitive Collection v1.5 share the same descent.hog/pig
     @{ From = "D1 v1.4a"; To = "D1 v1.5"; Files = @("descent.hog", "descent.pig") },
     # D2: GOG v1.2 and retail v1.1 CDs share the same descent2.ham/hog
-    @{ From = "D2 v1.2"; To = "D2 v1.1"; Files = @("descent2.ham", "descent2.hog") }
+    @{ From = "D2 v1.2"; To = "D2 v1.1"; Files = @("descent2.ham", "descent2.hog") },
+    # D2 Mac demo carries the same sound bank hash as D2 v1.2
+    @{ From = "D2 v1.2"; To = "D2 Demo (Mac)"; Files = @("descent2.s11") }
 )
 foreach ($alias in $aliases) {
     foreach ($af in $alias.Files) {
         $match = $newEntries + @($existing) | Where-Object { $_.file -eq $af -and $_.version -eq $alias.From } | Select-Object -First 1
         if ($match) {
-            $aKey = "$af|$($match.sha256)|$($alias.To)"
             $check = $newEntries + @($existing) | Where-Object { $_.file -eq $af -and $_.version -eq $alias.To }
             if (-not $check) {
                 $newEntries += [PSCustomObject]@{ file = $af; sha256 = $match.sha256; version = $alias.To }
