@@ -224,7 +224,7 @@ static int should_skip_iso_directory(const char *clean_name)
 }
 
 static int join_iso_path(char *out, size_t out_size, const char *prefix,
-	const char *name)
+                         const char *name)
 {
 	size_t name_len = strlen(name);
 

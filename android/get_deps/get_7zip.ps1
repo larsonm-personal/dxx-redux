@@ -34,7 +34,7 @@ if ($hostPlatform -ne "Windows") {
     foreach ($commandName in @("7zz", "7z", "7za")) {
         $existing = Get-Command $commandName -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($existing) {
-            Write-Host "Using host $commandName: $($existing.Source)"
+            Write-Host "Using host ${commandName}: $($existing.Source)"
             return $existing.Source
         }
     }

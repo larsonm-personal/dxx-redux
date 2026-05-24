@@ -63,7 +63,7 @@ static int cmp_strings(const void *a, const void *b)
 }
 
 static int join_path(char *out, size_t out_size, const char *dir,
-	const char *name)
+                     const char *name)
 {
 	size_t dir_len = strlen(dir);
 	size_t name_len = strlen(name);

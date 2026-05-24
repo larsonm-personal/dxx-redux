@@ -912,7 +912,7 @@ function Get-GitHubExpandedAssetsHtml($repo, $tag) {
 
     try {
         $html = (Invoke-LoggedWebRequest -Uri "https://github.com/$repo/releases/expanded_assets/$tag" `
-            -TimeoutSec 15).Content
+                -TimeoutSec 15).Content
         $script:GitHubAssetsCache[$cacheKey] = $html
         return $html
     } catch {
@@ -941,10 +941,10 @@ function Get-LatestGradleVersion {
 function Get-LatestNDKVersion {
     # Scrape the NDK download page for the latest version tag
     try {
-		$page = (Invoke-LoggedWebRequest -Uri "https://developer.android.com/ndk/downloads" `
-			-TimeoutSec 15).Content
-		# Look for "android-ndk-r<VER>-<platform>.zip" pattern
-		if ($page -match 'android-ndk-(r\d+[a-z]?)-(?:windows|linux|darwin)\.zip') {
+        $page = (Invoke-LoggedWebRequest -Uri "https://developer.android.com/ndk/downloads" `
+                -TimeoutSec 15).Content
+        # Look for "android-ndk-r<VER>-<platform>.zip" pattern
+        if ($page -match 'android-ndk-(r\d+[a-z]?)-(?:windows|linux|darwin)\.zip') {
             return $Matches[1]
         }
     } catch {}
@@ -960,8 +960,8 @@ function Get-LatestJDKVersion {
     }
     foreach ($major in @(17, 21)) {
         try {
-			$url = "https://api.adoptium.net/v3/info/release_versions?architecture=x64&heap_size=normal&image_type=jdk&os=$osToken&page=0&page_size=1&project=jdk&release_type=ga&sort_method=DEFAULT&sort_order=DESC&vendor=eclipse&version=%5B${major}%2C$($major+1)%29"
-			$json = (Invoke-LoggedWebRequest -Uri $url -TimeoutSec 10).Content | ConvertFrom-Json
+            $url = "https://api.adoptium.net/v3/info/release_versions?architecture=x64&heap_size=normal&image_type=jdk&os=$osToken&page=0&page_size=1&project=jdk&release_type=ga&sort_method=DEFAULT&sort_order=DESC&vendor=eclipse&version=%5B${major}%2C$($major+1)%29"
+            $json = (Invoke-LoggedWebRequest -Uri $url -TimeoutSec 10).Content | ConvertFrom-Json
             if ($json.versions.Count -gt 0) {
                 $v = $json.versions[0]
                 $semver = "$($v.major).$($v.minor).$($v.security)"
