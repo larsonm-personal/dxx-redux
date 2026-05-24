@@ -820,6 +820,11 @@ static int run_manifest_listing_test(void)
 	return 1;
 }
 
+static int is_supported_stuffit_method(unsigned int method)
+{
+	return method == 0u || method == 13u || method == 14u || method == 15u;
+}
+
 static int run_manifest_supported_hash_test(void)
 {
 	int archive_index;
@@ -851,7 +856,7 @@ static int run_manifest_supported_hash_test(void)
 				FAIL("manifest data entry missing from listing");
 				return 0;
 			}
-			if (!(list.entries[index].data_method == 0u || list.entries[index].data_method == 13u))
+			if (!is_supported_stuffit_method(list.entries[index].data_method))
 				continue;
 			if (!manifest.entries[i].sha256[0]) {
 				FAIL("supported manifest entry missing hash");
@@ -911,7 +916,7 @@ static int run_manifest_unsupported_test(void)
 				FAIL("manifest data entry missing from listing");
 				return 0;
 			}
-			if (list.entries[index].data_method == 0u || list.entries[index].data_method == 13u)
+			if (is_supported_stuffit_method(list.entries[index].data_method))
 				continue;
 			unsupported_count++;
 			sanitize_name(manifest.entries[i].path, temp_name, sizeof(temp_name));
@@ -925,10 +930,6 @@ static int run_manifest_unsupported_test(void)
 			}
 			remove(actual_path);
 		}
-	}
-	if (unsupported_count == 0) {
-		FAIL("no unsupported entries checked");
-		return 0;
 	}
 	PASS();
 	return 1;

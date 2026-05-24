@@ -257,6 +257,15 @@ object DiscImportBridge {
         }
     }
 
+    /**
+     * Extract game files from a classic StuffIt archive, including nested STi installers.
+     */
+    fun extractStuffitFiles(
+        sitPath: String,
+        outputDir: String,
+        progress: ExtractProgress? = null,
+    ): Int = nativeExtractStuffitFiles(sitPath, outputDir, progress)
+
     // ── SOW (ARJ) archive operations ──────────────────────────────
 
     /**
@@ -323,6 +332,12 @@ object DiscImportBridge {
         binFd: Int,
         trackStart: Int,
         trackSectors: Int,
+        outputDir: String,
+        progress: ExtractProgress?,
+    ): Int
+
+    private external fun nativeExtractStuffitFiles(
+        sitPath: String,
         outputDir: String,
         progress: ExtractProgress?,
     ): Int

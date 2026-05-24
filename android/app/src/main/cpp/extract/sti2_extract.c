@@ -1,14 +1,16 @@
 /*
  * sti2_extract.c - STi2 installer archive listing and extraction.
  *
- * The method 13 decompressor in this file is derived primarily from
- * XADMaster's StuffIt support, especially XADStuffIt13Handle and
+ * The method 13, method 14, and method 15 decompressors in this file are
+ * derived primarily from XADMaster's StuffIt support, especially
+ * XADStuffIt13Handle, XADStuffIt14Handle, XADStuffItArsenicHandle, BWT, and
  * XADPrefixCode, which are distributed under LGPL-2.1.
  * https://github.com/ashang/unar
  */
 
 #include <errno.h>
 #include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -119,6 +121,58 @@ typedef struct {
 	sti2_code_t offset_code;
 	sti2_code_t *current_code;
 } sti2_method13_decoder_t;
+
+typedef struct {
+	const unsigned char *data;
+	size_t size;
+	size_t byte_pos;
+	int bit_pos;
+} sti2_msb_bit_reader_t;
+
+typedef struct {
+	int symbol;
+	int frequency;
+} sti2_arithmetic_symbol_t;
+
+typedef struct {
+	int total_frequency;
+	int increment;
+	int frequency_limit;
+	int num_symbols;
+	sti2_arithmetic_symbol_t symbols[128];
+} sti2_arithmetic_model_t;
+
+typedef struct {
+	sti2_msb_bit_reader_t *input;
+	int range;
+	int code;
+} sti2_arithmetic_decoder_t;
+
+typedef struct {
+	int table[256];
+} sti2_mtf_state_t;
+
+typedef struct {
+	sti2_arithmetic_model_t initial_model;
+	sti2_arithmetic_model_t selector_model;
+	sti2_arithmetic_model_t mtf_model[7];
+	sti2_arithmetic_decoder_t decoder;
+	sti2_mtf_state_t mtf;
+	int block_bits;
+	int block_size;
+	unsigned char *block;
+	uint32_t *transform;
+	int end_of_blocks;
+	int num_bytes;
+	int byte_count;
+	int transform_index;
+	int randomized;
+	int rand_count;
+	int rand_index;
+	int repeat;
+	int count;
+	int last;
+} sti2_method15_decoder_t;
 
 // clang-format off
 static const unsigned char first_code_lengths_1[STI2_METHOD13_SYMBOLS] ={ 4, 5, 7, 8, 8, 9, 9, 9, 9, 7, 9, 9, 9, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 9, 9, 10, 10, 9, 10, 9, 9, 5, 9, 9, 9, 9, 10, 9, 9, 9, 9, 9, 9, 9, 9, 7, 9, 9, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 9, 9, 8, 8, 9, 9, 9, 9, 9, 9, 9, 7, 8, 9, 7, 9, 9, 7, 7, 9, 9, 9, 9, 10, 9, 10, 10, 10, 9, 9, 9, 5, 9, 8, 7, 5, 9, 8, 8, 7, 9, 9, 8, 8, 5, 5, 7, 10, 5, 8, 5, 8, 9, 9, 9, 9, 9, 10, 9, 9, 10, 9, 9, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 9, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 9, 10, 10, 10, 9, 10, 9, 5, 6, 5, 5, 8, 9, 9, 9, 9, 9, 9, 10, 10, 10, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 10, 9, 9, 9, 10, 9, 10, 9, 10, 9, 10, 9, 10, 10, 10, 9, 10, 9, 10, 10, 9, 9, 9, 6, 9, 9, 10, 9, 5,  };
@@ -895,6 +949,933 @@ static int decompress_method13(const unsigned char *data, size_t comp_size,
 	return (int) out_pos;
 }
 
+#define STI2_METHOD14_WINDOW 0x40000u
+
+typedef struct {
+	sti2_bit_reader_t br;
+	unsigned char code[308];
+	unsigned char code_copy[308];
+	unsigned short freq[308];
+	unsigned int buff[308];
+	unsigned char var1[52];
+	unsigned short var2[52];
+	unsigned short var3[75 * 2];
+	unsigned char var4[76];
+	unsigned int var5[75];
+	unsigned short var7[308 * 2];
+	unsigned char window[STI2_METHOD14_WINDOW];
+} sti2_method14_decoder_t;
+
+static void br_byte_boundary(sti2_bit_reader_t *br)
+{
+	br_skip(br, br->bit_count & 7);
+}
+
+static void method14_update(unsigned short first, unsigned short last,
+                            unsigned char *code, unsigned short *freq)
+{
+	unsigned short i;
+	unsigned short j;
+
+	while (last - first > 1) {
+		i = first;
+		j = last;
+		do {
+			while (++i < last && code[first] > code[i]);
+			while (--j > first && code[first] < code[j]);
+			if (j > i) {
+				unsigned short t16;
+				unsigned char t8;
+
+				t8 = code[i];
+				code[i] = code[j];
+				code[j] = t8;
+				t16 = freq[i];
+				freq[i] = freq[j];
+				freq[j] = t16;
+			}
+		} while (j > i);
+		if (first != j) {
+			unsigned short t16;
+			unsigned char t8;
+
+			t8 = code[first];
+			code[first] = code[j];
+			code[j] = t8;
+			t16 = freq[first];
+			freq[first] = freq[j];
+			freq[j] = t16;
+			i = j + 1;
+			if (last - i <= j - first) {
+				method14_update(i, last, code, freq);
+				last = j;
+			} else {
+				method14_update(first, j, code, freq);
+				first = i;
+			}
+		} else {
+			first++;
+		}
+	}
+}
+
+static int method14_read_tree(sti2_method14_decoder_t *decoder,
+                              unsigned short code_size,
+                              unsigned short *result)
+{
+	unsigned int size;
+	unsigned int i;
+	unsigned int j;
+	unsigned int k;
+	unsigned int l;
+	unsigned int m;
+	unsigned int n;
+	unsigned int o;
+	int zero_marker;
+
+	k = br_get(&decoder->br, 1);
+	j = br_get(&decoder->br, 2) + 2;
+	o = br_get(&decoder->br, 3) + 1;
+	size = 1u << j;
+	m = size - 1u;
+	zero_marker = k ? (int) m - 1 : -1;
+	if (br_get(&decoder->br, 2) & 1u) {
+		if (method14_read_tree(decoder, (unsigned short) size, decoder->freq) < 0)
+			return -1;
+		for (i = 0; i < code_size;) {
+			l = 0;
+			do {
+				if (l + 1u >= size * 2u) return -1;
+				l = decoder->freq[l + br_get(&decoder->br, 1)];
+				n = size << 1;
+			} while (n > l);
+			l -= n;
+			if (zero_marker != (int) l) {
+				if (l == m) {
+					l = 0;
+					do {
+						if (l + 1u >= size * 2u) return -1;
+						l = decoder->freq[l + br_get(&decoder->br, 1)];
+						n = size << 1;
+					} while (n > l);
+					l += 3u - n;
+					while (l--) {
+						if (i == 0 || i >= code_size) return -1;
+						decoder->code[i] = decoder->code[i - 1];
+						i++;
+					}
+				} else {
+					decoder->code[i++] = (unsigned char) (l + o);
+				}
+			} else {
+				decoder->code[i++] = 0;
+			}
+		}
+	} else {
+		for (i = 0; i < code_size;) {
+			l = br_get(&decoder->br, (int) j);
+			if (zero_marker != (int) l) {
+				if (l == m) {
+					l = br_get(&decoder->br, (int) j) + 3u;
+					while (l--) {
+						if (i == 0 || i >= code_size) return -1;
+						decoder->code[i] = decoder->code[i - 1];
+						i++;
+					}
+				} else {
+					decoder->code[i++] = (unsigned char) (l + o);
+				}
+			} else {
+				decoder->code[i++] = 0;
+			}
+		}
+	}
+
+	for (i = 0; i < code_size; i++) {
+		decoder->code_copy[i] = decoder->code[i];
+		decoder->freq[i] = (unsigned short) i;
+	}
+	method14_update(0, code_size, decoder->code_copy, decoder->freq);
+	for (i = 0; i < code_size && !decoder->code_copy[i]; i++);
+	for (j = 0; i < code_size; i++, j++) {
+		if (i)
+			j <<= decoder->code_copy[i] - decoder->code_copy[i - 1];
+		k = decoder->code_copy[i];
+		m = 0;
+		for (l = j; k--; l >>= 1)
+			m = (m << 1) | (l & 1u);
+		decoder->buff[decoder->freq[i]] = m;
+	}
+	memset(result, 0, sizeof(*result) * code_size * 2u);
+	j = 2;
+	for (i = 0; i < code_size; i++) {
+		l = 0;
+		m = decoder->buff[i];
+		for (k = 0; k < decoder->code[i]; k++) {
+			l += (m & 1u);
+			if (decoder->code[i] - 1u <= k) {
+				result[l] = (unsigned short) (code_size * 2u + i);
+			} else {
+				if (!result[l]) {
+					if (j + 1u >= code_size * 2u) return -1;
+					result[l] = (unsigned short) j;
+					j += 2;
+				}
+				l = result[l];
+			}
+			m >>= 1;
+		}
+	}
+	br_byte_boundary(&decoder->br);
+	return 0;
+}
+
+static int method14_decode_symbol(sti2_method14_decoder_t *decoder,
+                                  const unsigned short *tree,
+                                  unsigned int leaf_base,
+                                  unsigned int *out_symbol)
+{
+	unsigned int i = 0;
+
+	while (i < leaf_base) {
+		unsigned int next = tree[i + br_get(&decoder->br, 1)];
+
+		if (next == 0)
+			return -1;
+		i = next;
+	}
+	*out_symbol = i - leaf_base;
+	return 0;
+}
+
+static int decompress_method14(const unsigned char *data, size_t comp_size,
+                               unsigned char *out, unsigned int out_size)
+{
+	sti2_method14_decoder_t *decoder;
+	unsigned int blocks;
+	unsigned int window_pos = 0;
+	unsigned int out_pos = 0;
+	unsigned int i;
+	unsigned int k;
+	unsigned int l;
+	unsigned int n;
+	int status = -1;
+
+	if (!data || (!out && out_size != 0)) return -1;
+	decoder = (sti2_method14_decoder_t *) calloc(1, sizeof(*decoder));
+	if (!decoder) return -1;
+	br_init(&decoder->br, data, comp_size);
+	for (i = k = 0; i < 52; i++) {
+		decoder->var2[i] = (unsigned short) k;
+		decoder->var1[i] = (unsigned char) ((i >= 4) ? ((i - 4) >> 2) : 0);
+		k += 1u << decoder->var1[i];
+	}
+	for (i = 0, k = 1; i < 75; i++) {
+		decoder->var5[i] = k;
+		decoder->var4[i] = (unsigned char) ((i >= 3) ? ((i - 3) >> 2) : 0);
+		k += 1u << decoder->var4[i];
+	}
+	blocks = br_get(&decoder->br, 16);
+	while (blocks-- && out_pos < out_size) {
+		br_get(&decoder->br, 16);
+		br_get(&decoder->br, 16);
+		n = br_get(&decoder->br, 16);
+		n |= br_get(&decoder->br, 16) << 16;
+		if (method14_read_tree(decoder, 308, decoder->var7) < 0 ||
+		    method14_read_tree(decoder, 75, decoder->var3) < 0)
+			goto cleanup;
+		while (n && out_pos < out_size) {
+			if (method14_decode_symbol(decoder, decoder->var7, 616, &i) < 0)
+				goto cleanup;
+			if (i < 0x100u) {
+				decoder->window[window_pos++] = (unsigned char) i;
+				window_pos &= STI2_METHOD14_WINDOW - 1u;
+				out[out_pos++] = (unsigned char) i;
+				n--;
+			} else {
+				i -= 0x100u;
+				if (i >= 52u) goto cleanup;
+				k = decoder->var2[i] + 4u;
+				if (decoder->var1[i])
+					k += br_get(&decoder->br, decoder->var1[i]);
+				if (method14_decode_symbol(decoder, decoder->var3, 150, &i) < 0 || i >= 75u)
+					goto cleanup;
+				l = decoder->var5[i];
+				if (decoder->var4[i])
+					l += br_get(&decoder->br, decoder->var4[i]);
+				if (k > n) goto cleanup;
+				n -= k;
+				l = window_pos + STI2_METHOD14_WINDOW - l;
+				while (k-- && out_pos < out_size) {
+					unsigned char byte;
+
+					l &= STI2_METHOD14_WINDOW - 1u;
+					byte = decoder->window[l++];
+					decoder->window[window_pos++] = byte;
+					window_pos &= STI2_METHOD14_WINDOW - 1u;
+					out[out_pos++] = byte;
+				}
+			}
+		}
+		br_byte_boundary(&decoder->br);
+	}
+	status = (out_pos == out_size) ? (int) out_pos : -1;
+
+cleanup:
+	free(decoder);
+	return status;
+}
+
+#define STI2_METHOD15_NUM_BITS       26
+#define STI2_METHOD15_ONE            (1 << (STI2_METHOD15_NUM_BITS - 1))
+#define STI2_METHOD15_HALF           (1 << (STI2_METHOD15_NUM_BITS - 2))
+#define STI2_METHOD15_MAX_BLOCK_BITS 24
+
+static const uint16_t method15_randomization_table[256] = {
+	0xee,
+	0x56,
+	0xf8,
+	0xc3,
+	0x9d,
+	0x9f,
+	0xae,
+	0x2c,
+	0xad,
+	0xcd,
+	0x24,
+	0x9d,
+	0xa6,
+	0x101,
+	0x18,
+	0xb9,
+	0xa1,
+	0x82,
+	0x75,
+	0xe9,
+	0x9f,
+	0x55,
+	0x66,
+	0x6a,
+	0x86,
+	0x71,
+	0xdc,
+	0x84,
+	0x56,
+	0x96,
+	0x56,
+	0xa1,
+	0x84,
+	0x78,
+	0xb7,
+	0x32,
+	0x6a,
+	0x3,
+	0xe3,
+	0x2,
+	0x11,
+	0x101,
+	0x8,
+	0x44,
+	0x83,
+	0x100,
+	0x43,
+	0xe3,
+	0x1c,
+	0xf0,
+	0x86,
+	0x6a,
+	0x6b,
+	0xf,
+	0x3,
+	0x2d,
+	0x86,
+	0x17,
+	0x7b,
+	0x10,
+	0xf6,
+	0x80,
+	0x78,
+	0x7a,
+	0xa1,
+	0xe1,
+	0xef,
+	0x8c,
+	0xf6,
+	0x87,
+	0x4b,
+	0xa7,
+	0xe2,
+	0x77,
+	0xfa,
+	0xb8,
+	0x81,
+	0xee,
+	0x77,
+	0xc0,
+	0x9d,
+	0x29,
+	0x20,
+	0x27,
+	0x71,
+	0x12,
+	0xe0,
+	0x6b,
+	0xd1,
+	0x7c,
+	0xa,
+	0x89,
+	0x7d,
+	0x87,
+	0xc4,
+	0x101,
+	0xc1,
+	0x31,
+	0xaf,
+	0x38,
+	0x3,
+	0x68,
+	0x1b,
+	0x76,
+	0x79,
+	0x3f,
+	0xdb,
+	0xc7,
+	0x1b,
+	0x36,
+	0x7b,
+	0xe2,
+	0x63,
+	0x81,
+	0xee,
+	0xc,
+	0x63,
+	0x8b,
+	0x78,
+	0x38,
+	0x97,
+	0x9b,
+	0xd7,
+	0x8f,
+	0xdd,
+	0xf2,
+	0xa3,
+	0x77,
+	0x8c,
+	0xc3,
+	0x39,
+	0x20,
+	0xb3,
+	0x12,
+	0x11,
+	0xe,
+	0x17,
+	0x42,
+	0x80,
+	0x2c,
+	0xc4,
+	0x92,
+	0x59,
+	0xc8,
+	0xdb,
+	0x40,
+	0x76,
+	0x64,
+	0xb4,
+	0x55,
+	0x1a,
+	0x9e,
+	0xfe,
+	0x5f,
+	0x6,
+	0x3c,
+	0x41,
+	0xef,
+	0xd4,
+	0xaa,
+	0x98,
+	0x29,
+	0xcd,
+	0x1f,
+	0x2,
+	0xa8,
+	0x87,
+	0xd2,
+	0xa0,
+	0x93,
+	0x98,
+	0xef,
+	0xc,
+	0x43,
+	0xed,
+	0x9d,
+	0xc2,
+	0xeb,
+	0x81,
+	0xe9,
+	0x64,
+	0x23,
+	0x68,
+	0x1e,
+	0x25,
+	0x57,
+	0xde,
+	0x9a,
+	0xcf,
+	0x7f,
+	0xe5,
+	0xba,
+	0x41,
+	0xea,
+	0xea,
+	0x36,
+	0x1a,
+	0x28,
+	0x79,
+	0x20,
+	0x5e,
+	0x18,
+	0x4e,
+	0x7c,
+	0x8e,
+	0x58,
+	0x7a,
+	0xef,
+	0x91,
+	0x2,
+	0x93,
+	0xbb,
+	0x56,
+	0xa1,
+	0x49,
+	0x1b,
+	0x79,
+	0x92,
+	0xf3,
+	0x58,
+	0x4f,
+	0x52,
+	0x9c,
+	0x2,
+	0x77,
+	0xaf,
+	0x2a,
+	0x8f,
+	0x49,
+	0xd0,
+	0x99,
+	0x4d,
+	0x98,
+	0x101,
+	0x60,
+	0x93,
+	0x100,
+	0x75,
+	0x31,
+	0xce,
+	0x49,
+	0x20,
+	0x56,
+	0x57,
+	0xe2,
+	0xf5,
+	0x26,
+	0x2b,
+	0x8a,
+	0xbf,
+	0xde,
+	0xd0,
+	0x83,
+	0x34,
+	0xf4,
+	0x17,
+};
+
+static void msb_br_init(sti2_msb_bit_reader_t *br, const unsigned char *data, size_t size)
+{
+	memset(br, 0, sizeof(*br));
+	br->data = data;
+	br->size = size;
+}
+
+static int msb_br_get_bit(sti2_msb_bit_reader_t *br)
+{
+	int bit;
+
+	if (br->byte_pos >= br->size)
+		return 0;
+	bit = (br->data[br->byte_pos] >> (7 - br->bit_pos)) & 1;
+	br->bit_pos++;
+	if (br->bit_pos == 8) {
+		br->bit_pos = 0;
+		br->byte_pos++;
+	}
+	return bit;
+}
+
+static int msb_br_get_bits(sti2_msb_bit_reader_t *br, int bits)
+{
+	int value = 0;
+	int i;
+
+	for (i = 0; i < bits; i++)
+		value = (value << 1) | msb_br_get_bit(br);
+	return value;
+}
+
+static void method15_reset_arithmetic_model(sti2_arithmetic_model_t *model)
+{
+	int i;
+
+	model->total_frequency = model->increment * model->num_symbols;
+	for (i = 0; i < model->num_symbols; i++)
+		model->symbols[i].frequency = model->increment;
+}
+
+static int method15_init_arithmetic_model(sti2_arithmetic_model_t *model,
+                                          int first_symbol, int last_symbol,
+                                          int increment, int frequency_limit)
+{
+	int i;
+
+	if (!model || first_symbol > last_symbol || last_symbol - first_symbol + 1 > 128)
+		return -1;
+	memset(model, 0, sizeof(*model));
+	model->increment = increment;
+	model->frequency_limit = frequency_limit;
+	model->num_symbols = last_symbol - first_symbol + 1;
+	for (i = 0; i < model->num_symbols; i++)
+		model->symbols[i].symbol = i + first_symbol;
+	method15_reset_arithmetic_model(model);
+	return 0;
+}
+
+static void method15_increase_frequency(sti2_arithmetic_model_t *model, int sym_index)
+{
+	int i;
+
+	model->symbols[sym_index].frequency += model->increment;
+	model->total_frequency += model->increment;
+	if (model->total_frequency > model->frequency_limit) {
+		model->total_frequency = 0;
+		for (i = 0; i < model->num_symbols; i++) {
+			model->symbols[i].frequency++;
+			model->symbols[i].frequency >>= 1;
+			model->total_frequency += model->symbols[i].frequency;
+		}
+	}
+}
+
+static void method15_init_arithmetic_decoder(sti2_arithmetic_decoder_t *decoder,
+                                             sti2_msb_bit_reader_t *input)
+{
+	decoder->input = input;
+	decoder->range = STI2_METHOD15_ONE;
+	decoder->code = msb_br_get_bits(input, STI2_METHOD15_NUM_BITS);
+}
+
+static int method15_read_next_code(sti2_arithmetic_decoder_t *decoder,
+                                   int sym_low, int sym_size, int sym_total)
+{
+	int renorm_factor;
+	int low_incr;
+
+	if (sym_total <= 0 || sym_size <= 0)
+		return -1;
+	renorm_factor = decoder->range / sym_total;
+	if (renorm_factor <= 0)
+		return -1;
+	low_incr = renorm_factor * sym_low;
+	decoder->code -= low_incr;
+	if (sym_low + sym_size == sym_total)
+		decoder->range -= low_incr;
+	else
+		decoder->range = sym_size * renorm_factor;
+	while (decoder->range <= STI2_METHOD15_HALF) {
+		decoder->range <<= 1;
+		decoder->code = (decoder->code << 1) | msb_br_get_bit(decoder->input);
+	}
+	return 0;
+}
+
+static int method15_next_symbol(sti2_arithmetic_decoder_t *decoder,
+                                sti2_arithmetic_model_t *model)
+{
+	int divisor;
+	int frequency;
+	int cumulative = 0;
+	int n;
+
+	if (!decoder || !model || model->total_frequency <= 0)
+		return -1;
+	divisor = decoder->range / model->total_frequency;
+	if (divisor <= 0)
+		return -1;
+	frequency = decoder->code / divisor;
+	if (frequency < 0)
+		return -1;
+	for (n = 0; n < model->num_symbols - 1; n++) {
+		if (cumulative + model->symbols[n].frequency > frequency)
+			break;
+		cumulative += model->symbols[n].frequency;
+	}
+	if (method15_read_next_code(decoder, cumulative,
+	                            model->symbols[n].frequency,
+	                            model->total_frequency) < 0)
+		return -1;
+	method15_increase_frequency(model, n);
+	return model->symbols[n].symbol;
+}
+
+static int method15_next_bit_string(sti2_arithmetic_decoder_t *decoder,
+                                    sti2_arithmetic_model_t *model,
+                                    int bits, int *out_value)
+{
+	unsigned int result = 0;
+	int i;
+
+	if (!out_value || bits < 0 || bits > 32)
+		return -1;
+	for (i = 0; i < bits; i++) {
+		int symbol = method15_next_symbol(decoder, model);
+
+		if (symbol < 0)
+			return -1;
+		if (symbol)
+			result |= 1u << i;
+	}
+	*out_value = (int) result;
+	return 0;
+}
+
+static void method15_reset_mtf(sti2_mtf_state_t *mtf)
+{
+	int i;
+
+	for (i = 0; i < 256; i++)
+		mtf->table[i] = i;
+}
+
+static int method15_decode_mtf(sti2_mtf_state_t *mtf, int symbol)
+{
+	int result;
+	int i;
+
+	if (symbol < 0 || symbol > 255)
+		return -1;
+	result = mtf->table[symbol];
+	for (i = symbol; i > 0; i--)
+		mtf->table[i] = mtf->table[i - 1];
+	mtf->table[0] = result;
+	return result;
+}
+
+static void method15_calculate_inverse_bwt(uint32_t *transform,
+                                           const unsigned char *block,
+                                           int block_len)
+{
+	int counts[256] = { 0 };
+	int cumulative_counts[256];
+	int total = 0;
+	int i;
+
+	for (i = 0; i < block_len; i++)
+		counts[block[i]]++;
+	for (i = 0; i < 256; i++) {
+		cumulative_counts[i] = total;
+		total += counts[i];
+		counts[i] = 0;
+	}
+	for (i = 0; i < block_len; i++) {
+		transform[cumulative_counts[block[i]] + counts[block[i]]] = (uint32_t) i;
+		counts[block[i]]++;
+	}
+}
+
+static int method15_read_block(sti2_method15_decoder_t *state)
+{
+	int end_marker;
+	int i;
+	uint32_t *new_transform;
+
+	method15_reset_mtf(&state->mtf);
+	state->randomized = method15_next_symbol(&state->decoder, &state->initial_model);
+	if (state->randomized < 0)
+		return -1;
+	if (method15_next_bit_string(&state->decoder, &state->initial_model,
+	                             state->block_bits, &state->transform_index) < 0)
+		return -1;
+	state->num_bytes = 0;
+	for (;;) {
+		int sel = method15_next_symbol(&state->decoder, &state->selector_model);
+		int symbol;
+
+		if (sel < 0)
+			return -1;
+		if (sel == 0 || sel == 1) {
+			int zero_state = 1;
+			int zero_count = 0;
+			int fill;
+
+			while (sel < 2) {
+				if (zero_state > state->block_size)
+					return -1;
+				zero_count += (sel == 0) ? zero_state : 2 * zero_state;
+				if (zero_count < 0 || zero_count > state->block_size)
+					return -1;
+				zero_state *= 2;
+				sel = method15_next_symbol(&state->decoder, &state->selector_model);
+				if (sel < 0)
+					return -1;
+			}
+			if (state->num_bytes + zero_count > state->block_size)
+				return -1;
+			fill = method15_decode_mtf(&state->mtf, 0);
+			if (fill < 0)
+				return -1;
+			memset(&state->block[state->num_bytes], fill, (size_t) zero_count);
+			state->num_bytes += zero_count;
+		}
+
+		if (sel == 10)
+			break;
+		if (sel == 2)
+			symbol = 1;
+		else if (sel >= 3 && sel <= 9)
+			symbol = method15_next_symbol(&state->decoder, &state->mtf_model[sel - 3]);
+		else
+			return -1;
+		if (symbol < 0 || state->num_bytes >= state->block_size)
+			return -1;
+		symbol = method15_decode_mtf(&state->mtf, symbol);
+		if (symbol < 0)
+			return -1;
+		state->block[state->num_bytes++] = (unsigned char) symbol;
+	}
+	if (state->num_bytes <= 0 || state->transform_index >= state->num_bytes)
+		return -1;
+	method15_reset_arithmetic_model(&state->selector_model);
+	for (i = 0; i < 7; i++)
+		method15_reset_arithmetic_model(&state->mtf_model[i]);
+	end_marker = method15_next_symbol(&state->decoder, &state->initial_model);
+	if (end_marker < 0)
+		return -1;
+	if (end_marker) {
+		int ignored_crc;
+
+		if (method15_next_bit_string(&state->decoder, &state->initial_model, 32, &ignored_crc) < 0)
+			return -1;
+		state->end_of_blocks = 1;
+	}
+	new_transform = (uint32_t *) malloc(sizeof(*new_transform) * (size_t) state->num_bytes);
+	if (!new_transform)
+		return -1;
+	free(state->transform);
+	state->transform = new_transform;
+	method15_calculate_inverse_bwt(state->transform, state->block, state->num_bytes);
+	return 0;
+}
+
+static int method15_init_decoder(sti2_method15_decoder_t *state,
+                                 sti2_msb_bit_reader_t *br)
+{
+	int marker;
+
+	memset(state, 0, sizeof(*state));
+	method15_init_arithmetic_decoder(&state->decoder, br);
+	if (method15_init_arithmetic_model(&state->initial_model, 0, 1, 1, 256) < 0 ||
+	    method15_init_arithmetic_model(&state->selector_model, 0, 10, 8, 1024) < 0 ||
+	    method15_init_arithmetic_model(&state->mtf_model[0], 2, 3, 8, 1024) < 0 ||
+	    method15_init_arithmetic_model(&state->mtf_model[1], 4, 7, 4, 1024) < 0 ||
+	    method15_init_arithmetic_model(&state->mtf_model[2], 8, 15, 4, 1024) < 0 ||
+	    method15_init_arithmetic_model(&state->mtf_model[3], 16, 31, 4, 1024) < 0 ||
+	    method15_init_arithmetic_model(&state->mtf_model[4], 32, 63, 2, 1024) < 0 ||
+	    method15_init_arithmetic_model(&state->mtf_model[5], 64, 127, 2, 1024) < 0 ||
+	    method15_init_arithmetic_model(&state->mtf_model[6], 128, 255, 1, 1024) < 0)
+		return -1;
+	if (method15_next_bit_string(&state->decoder, &state->initial_model, 8, &marker) < 0 || marker != 'A')
+		return -1;
+	if (method15_next_bit_string(&state->decoder, &state->initial_model, 8, &marker) < 0 || marker != 's')
+		return -1;
+	if (method15_next_bit_string(&state->decoder, &state->initial_model, 4, &state->block_bits) < 0)
+		return -1;
+	state->block_bits += 9;
+	if (state->block_bits < 9 || state->block_bits > STI2_METHOD15_MAX_BLOCK_BITS)
+		return -1;
+	state->block_size = 1 << state->block_bits;
+	state->block = (unsigned char *) malloc((size_t) state->block_size);
+	if (!state->block)
+		return -1;
+	state->end_of_blocks = method15_next_symbol(&state->decoder, &state->initial_model);
+	if (state->end_of_blocks < 0)
+		return -1;
+	return 0;
+}
+
+static int decompress_method15(const unsigned char *data, size_t comp_size,
+                               unsigned char *out, unsigned int out_size)
+{
+	sti2_msb_bit_reader_t br;
+	sti2_method15_decoder_t state;
+	unsigned int out_pos = 0;
+	int status = -1;
+
+	if (!data || (!out && out_size != 0))
+		return -1;
+	msb_br_init(&br, data, comp_size);
+	if (method15_init_decoder(&state, &br) < 0)
+		goto cleanup;
+	while (out_pos < out_size) {
+		int out_byte;
+
+		if (state.repeat) {
+			state.repeat--;
+			out_byte = state.last;
+		} else {
+		retry_byte:
+			if (state.byte_count >= state.num_bytes) {
+				if (state.end_of_blocks)
+					goto cleanup;
+				if (method15_read_block(&state) < 0)
+					goto cleanup;
+				state.byte_count = 0;
+				state.count = 0;
+				state.last = 0;
+				state.rand_index = 0;
+				state.rand_count = method15_randomization_table[0];
+			}
+			state.transform_index = (int) state.transform[state.transform_index];
+			out_byte = state.block[state.transform_index];
+			if (state.randomized && state.rand_count == state.byte_count) {
+				out_byte ^= 1;
+				state.rand_index = (state.rand_index + 1) & 255;
+				state.rand_count += method15_randomization_table[state.rand_index];
+			}
+			state.byte_count++;
+			if (state.count == 4) {
+				state.count = 0;
+				if (out_byte == 0)
+					goto retry_byte;
+				state.repeat = out_byte - 1;
+				out_byte = state.last;
+			} else {
+				if (out_byte == state.last)
+					state.count++;
+				else {
+					state.count = 1;
+					state.last = out_byte;
+				}
+			}
+		}
+		out[out_pos++] = (unsigned char) out_byte;
+	}
+	status = (int) out_pos;
+
+cleanup:
+	free(state.block);
+	free(state.transform);
+	return status;
+}
+
 static int extract_entry_data(const unsigned char *archive_data, size_t archive_size,
                               const sti2_entry_t *entry, unsigned char **out_data,
                               unsigned int *out_size)
@@ -929,6 +1910,22 @@ static int extract_entry_data(const unsigned char *archive_data, size_t archive_
 
 		case 13:
 			if (decompress_method13(src, entry->compressed_size,
+			                        dst, entry->uncompressed_size) < 0) {
+				free(dst);
+				return -1;
+			}
+			break;
+
+		case 14:
+			if (decompress_method14(src, entry->compressed_size,
+			                        dst, entry->uncompressed_size) < 0) {
+				free(dst);
+				return -1;
+			}
+			break;
+
+		case 15:
+			if (decompress_method15(src, entry->compressed_size,
 			                        dst, entry->uncompressed_size) < 0) {
 				free(dst);
 				return -1;

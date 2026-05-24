@@ -3070,6 +3070,8 @@ private val D2_DEMO_FILES =
         GameFileInfo("d2demo.ham", "Demo models & objects", required = true),
         GameFileInfo("d2demo.pig", "Demo textures", required = true),
         GameFileInfo("d2demo.dem", "Demo playback", required = false),
+        GameFileInfo("descent2.s11", "Mac demo sound effects", required = false),
+        GameFileInfo("exit.ham", "Mac demo exit data", required = false),
     )
 
 /**
@@ -3503,7 +3505,7 @@ private suspend fun matchDemoInstallerPackage(
 ): DemoInstallerPackages.PackageInfo? {
     DemoInstallerPackages.matchByName(filename)?.let { return it }
     val lowerName = filename.lowercase()
-    if (!lowerName.endsWith(".zip") && !lowerName.endsWith(".exe")) return null
+    if (!lowerName.endsWith(".zip") && !lowerName.endsWith(".exe") && !lowerName.endsWith(".sit")) return null
     val sha256 = computeContentSha256(context, uri) ?: return null
     val matched = DemoInstallerPackages.matchBySha256(sha256) ?: return null
     Log.i("DXX-Setup", "Matched demo installer by hash: $filename -> ${matched.filename}")
@@ -3530,6 +3532,87 @@ private suspend fun computeContentSha256(
             Log.w("DXX-Setup", "Failed to hash picked archive $uri", e)
             null
         }
+    }
+
+/**
+ * Extract game files from a classic StuffIt archive. Known Mac demo installers
+ * may contain direct game data or a nested STi installer data fork.
+ */
+private suspend fun extractStuffitContents(
+    context: Context,
+    archiveUri: Uri,
+    tmpDir: File,
+    archiveName: String? = null,
+    onProgress: suspend (String, Long, Long) -> Unit,
+): ZipExtractionResult =
+    kotlinx.coroutines.withContext(Dispatchers.IO) {
+        tmpDir.mkdirs()
+        val safeName =
+            (archiveName ?: "archive")
+                .lowercase()
+                .replace(Regex("[^a-z0-9._-]"), "_")
+        val workDir = File(tmpDir, ".sit_$safeName")
+        if (workDir.exists()) workDir.deleteRecursively()
+        workDir.mkdirs()
+        val tmpArchive = File(workDir, ".tmp_sit_import")
+        val results = mutableListOf<ExtractedFile>()
+        val expectedDemoFiles =
+            archiveName
+                ?.let { DemoInstallerPackages.matchByName(it) }
+                ?.expectedFiles
+                ?.toSet()
+
+        fun shouldKeepGameFile(name: String): Boolean =
+            if (expectedDemoFiles != null) {
+                name in expectedDemoFiles
+            } else {
+                name in ALL_GAME_FILENAMES
+            }
+
+        try {
+            ImportStorageGuard.requireFreeSpace(
+                workDir,
+                ImportStorageGuard.queryUriSizeBytes(context.contentResolver, archiveUri) ?: 0L,
+                "stage StuffIt archive",
+            )
+            copyUriToFileWithProgress(context, archiveUri, tmpArchive) { copied, total ->
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    onProgress("Copying archive", copied, total)
+                }
+            }
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                onProgress("Extracting StuffIt archive", 0L, tmpArchive.length())
+            }
+            val count = DiscImportBridge.extractStuffitFiles(tmpArchive.absolutePath, workDir.absolutePath, null)
+            if (count < 0) {
+                return@withContext ZipExtractionResult(results, false, "StuffIt extraction failed")
+            }
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                onProgress("Extracting StuffIt archive", tmpArchive.length(), tmpArchive.length())
+            }
+            val extractedFiles = workDir.listFiles()?.filter { it.isFile } ?: emptyList()
+            for (file in extractedFiles.sortedBy { it.name.lowercase() }) {
+                val lowerName = file.name.lowercase()
+                if (!shouldKeepGameFile(lowerName) || file.length() <= 1L) continue
+                val sha256 = AssetManifest.computeSha256(file)
+                if (sha256 != null) {
+                    results.add(ExtractedFile(lowerName, file, sha256, file.length()))
+                    Log.i(
+                        "DXX-Setup",
+                        "Extracted from StuffIt: $lowerName (${file.length()} bytes, sha256=${sha256.take(16)}...)",
+                    )
+                }
+            }
+        } catch (e: InsufficientStorageException) {
+            Log.e("DXX-Setup", "StuffIt extraction ran out of space", e)
+            ImportStorageGuard.recordFailure(context.filesDir, "StuffIt extraction failed", e)
+            return@withContext ZipExtractionResult(results, false, e.message)
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "StuffIt extraction failed", e)
+            ImportStorageGuard.recordFailure(context.filesDir, "StuffIt extraction failed", e)
+            return@withContext ZipExtractionResult(results, false, "StuffIt extraction failed: ${e.message}")
+        }
+        ZipExtractionResult(results, false)
     }
 
 /**
@@ -3960,7 +4043,7 @@ private fun SetupScreen(
                             zipUris.add(demoPackage.filename to uri)
                         }
 
-                        lname.endsWith(".zip") || lname.endsWith(".7z") -> {
+                        lname.endsWith(".zip") || lname.endsWith(".7z") || lname.endsWith(".sit") -> {
                             zipUris.add(name to uri)
                         }
 
@@ -4144,9 +4227,21 @@ private fun SetupScreen(
                 var anyAudio = false
                 val archiveErrors = mutableListOf<String>()
                 for ((arcName, arcUri) in zipUris) {
+                    val arcLower = arcName.lowercase()
                     val result =
-                        if (arcName.lowercase().endsWith(".7z")) {
+                        if (arcLower.endsWith(".7z")) {
                             extract7zContents(context, arcUri, tmpDir) { name, copied, total ->
+                                zipProgressFile = "$arcName: $name"
+                                zipProgressBytes = copied
+                                zipProgressTotal = total
+                            }
+                        } else if (arcLower.endsWith(".sit")) {
+                            extractStuffitContents(
+                                context,
+                                arcUri,
+                                tmpDir,
+                                archiveName = arcName,
+                            ) { name, copied, total ->
                                 zipProgressFile = "$arcName: $name"
                                 zipProgressBytes = copied
                                 zipProgressTotal = total
@@ -5502,7 +5597,7 @@ private fun SetupScreen(
                                                     }
                                                     hashingFile = null
                                                     importStatus =
-                                                        "Imported $imported of ${extracted.size} files from ZIP."
+                                                        "Imported $imported of ${extracted.size} files from archive."
                                                     zipExtracted = null
                                                     zipPackageName = null
                                                     cleanupTmpDir(filesDir)

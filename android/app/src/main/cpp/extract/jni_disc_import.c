@@ -18,6 +18,7 @@
 #include "iso9660_reader.h"
 #include "mac_hfs_extract.h"
 #include "sow_extract.h"
+#include "stuffit_extract.h"
 #include "game_file_extensions.h"
 
 #define TAG       "DXX-DiscImport"
@@ -472,6 +473,33 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
 	     appendExisting == JNI_TRUE ? "true" : "false");
 
 	(*env)->ReleaseStringUTFChars(env, sowPath, sow);
+	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	return extracted;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_DiscImportBridge_nativeExtractStuffitFiles(
+    JNIEnv *env, jclass clazz,
+    jstring sitPath, jstring outputDir, jobject progress)
+{
+	const char *sit = (*env)->GetStringUTFChars(env, sitPath, NULL);
+	if (!sit) return -1;
+
+	const char *out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
+	if (!out_dir) {
+		(*env)->ReleaseStringUTFChars(env, sitPath, sit);
+		return -1;
+	}
+
+	extract_ctx_t ctx;
+	init_extract_ctx(env, progress, &ctx);
+
+	int extracted = stuffit_extract(sit, out_dir,
+	                                dxx_android_mac_disc_extract_extensions,
+	                                progress ? extract_progress_cb : NULL, &ctx);
+	LOGI("StuffIt extracted %d files from %s", extracted, sit);
+
+	(*env)->ReleaseStringUTFChars(env, sitPath, sit);
 	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
 	return extracted;
 }

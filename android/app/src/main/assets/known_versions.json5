@@ -28,6 +28,7 @@
     { "file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe", "version": "D1 v1.4a" },
 
     // -- D1 Demo (Mac) --
+    { "file": "descent.hog", "sha256": "7af6bbd6aa5e356cae406ea43ab8b47b69d27bd555b513d884c68ccafe9aaf42", "version": "D1 Demo (Mac)" },
     { "file": "descent.hog", "sha256": "b70528d0c9daeb8137f05a5a699d0bf884058398a6ab4a97307807a1c0cee9be", "version": "D1 Demo (Mac)" },
     { "file": "descent.pig", "sha256": "b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905", "version": "D1 Demo (Mac)" },
 

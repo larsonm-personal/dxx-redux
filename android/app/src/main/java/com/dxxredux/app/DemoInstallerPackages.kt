@@ -37,6 +37,14 @@ object DemoInstallerPackages {
                 expectedFiles = listOf("descent.hog", "descent.pig"),
             ),
             PackageInfo(
+                filename = "Descent Shareware.sit",
+                sha256 = "f45c338df4bc4ceda38e6541f14b8dc93b543fd07d90a2c5d5118d2001c12ad2",
+                label = "D1 Demo (Mac)",
+                game = "d1",
+                extraction = "StuffIt archive with direct game data files",
+                expectedFiles = listOf("descent.hog", "descent.pig"),
+            ),
+            PackageInfo(
                 filename = "descent 2 demo 1-0.zip",
                 sha256 = "a7c31eae6dfd22e1f6a4c0b9fb2dfb2e25197831bc43c3e9d65734c7fa446c4d",
                 label = "D2 Demo v1.0",
@@ -51,6 +59,14 @@ object DemoInstallerPackages {
                 game = "d2",
                 extraction = "ZIP with SOW archives",
                 expectedFiles = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig", "d2demo.dem"),
+            ),
+            PackageInfo(
+                filename = "Descent II Preview.sit",
+                sha256 = "4b5b7739b9da59472bcdca92f23957f90247bedd84ef8bded57d37d5d229f6d6",
+                label = "D2 Demo (Mac)",
+                game = "d2",
+                extraction = "StuffIt archive with nested STi installer",
+                expectedFiles = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig", "descent2.s11", "exit.ham"),
             ),
         )
 

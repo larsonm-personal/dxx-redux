@@ -13,6 +13,12 @@ Make demo installer archives a first-class import source for Android and PC-side
 - [x] Add focused unit or integration coverage for package detection and ZIP extraction
 - [x] Run formatting and relevant tests, then mark completed work in this plan
 
+## Follow-up: Mac StuffIt Demo Installers
+- [x] Inventory `Descent II Preview.sit` and `Descent Shareware.sit` contents and extracted hashes
+- [x] Add known package entries for the Mac StuffIt installers and route `.sit` imports through StuffIt extraction
+- [x] Update docs and tests for the new package hashes and extraction modes
+- [x] Run formatting and focused validation for the updated import paths
+
 ## Notes
 - Keep game-engine source changes out of this tranche unless needed for hash recognition
 - Do not fix the existing demo download URL in this pass
@@ -23,3 +29,6 @@ Make demo installer archives a first-class import source for Android and PC-side
 - Existing hash recognition in `known_versions.json5` already covers D1 Demo v1.4, D1 Demo (Mac), D2 Demo v1.0, and `d2demo.dem`; D2 demo setup now tracks `d2demo.dem` as optional
 - Validation completed with focused JVM tests and scoped `run-code-quality.ps1 -Fix` on touched Kotlin files. A full unscoped quality pass still reports unrelated pre-existing PowerShell formatting in `android/tools/decode_object_packets.ps1`
 - Follow-up remains for actual game-engine runtime issues when launching/playing from demo data
+- Mac StuffIt support now covers direct D1 game data and the nested D2 STi installer path, including StuffIt methods 14 and 15 in the native extractor
+- Mac helper validation and native `test_stuffit_direct` both reproduce the documented D1 and D2 Mac demo output hashes
+- The existing StuffIt corpus test was updated to treat methods 14 and 15 as supported and passes against the committed manifests

@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
 # extract_dos_demos.ps1 -- Extract game files from DOS shareware demo installers using DOSBox-X.
 #
-# For each zip in game_data\demo installers\, this script:
-#   1. Extracts the zip to a temp directory
+# For each ZIP-compatible archive in game_data\demo installers\, this script:
+#   1. Extracts the archive to a temp directory
 #   2. Runs the DOS INSTALL.EXE inside DOSBox-X with automated keystrokes
 #   3. Copies the resulting game files (.HOG, .PIG, etc.) to an _extracted\ folder
 #
@@ -14,9 +14,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
 $ScriptDir = $PSScriptRoot
-$RepoRoot  = Split-Path $ScriptDir
-$DemoDir   = Join-Path $ScriptDir "demo installers"
+$RepoRoot = Split-Path $ScriptDir
+$DemoDir = Join-Path $ScriptDir "demo installers"
 
 # --- Load DOSBox path from tool_versions.conf ---
 $confFile = Join-Path (Join-Path (Join-Path $RepoRoot "android") "get_deps") "tool_versions.conf"
@@ -44,7 +46,7 @@ $DosboxDir = Split-Path $DosboxExe
 
 # --- Game file extensions to extract ---
 $GameExtensions = @("*.hog", "*.pig", "*.ham", "*.mvl", "*.s11", "*.s22",
-                     "*.dem", "*.256", "*.clr", "*.sng", "*.bnk", "*.txt")
+    "*.dem", "*.256", "*.clr", "*.sng", "*.bnk", "*.txt")
 
 # --- Per-installer configurations ---
 # Each entry: zip name, installer exe, expected game files to poll for, and stdin bytes.
@@ -53,12 +55,19 @@ $GameExtensions = @("*.hog", "*.pig", "*.ham", "*.mvl", "*.s11", "*.s22",
 # (the installers launch post-install sound card config that we don't need).
 $Installers = @(
     @{
+        Zip       = "desc14sw.exe"
+        Exe       = "INSTALL.EXE"
+        StdinKeys = @([char]13, [char]10, [char]67, [char]13, [char]10) +
+        (1..50 | ForEach-Object { [char]13; [char]10 })
+        ExpectFiles = @("DESCENT.HOG", "DESCENT.PIG")
+    },
+    @{
         Zip       = "descent 1 demo 1-4.zip"
         Exe       = "INSTALL.EXE"
         # Stdin sequence: Enter (welcome), C (drive letter), Enter, then many Enters
         # for remaining prompts including post-install sound card config
         StdinKeys = @([char]13, [char]10, [char]67, [char]13, [char]10) +
-                    (1..50 | ForEach-Object { [char]13; [char]10 })
+        (1..50 | ForEach-Object { [char]13; [char]10 })
         ExpectFiles = @("DESCENT.HOG", "DESCENT.PIG")
     },
     @{
@@ -67,7 +76,14 @@ $Installers = @(
         # Stdin sequence: Enter (welcome), C (drive letter), Enter, then many Enters
         # for remaining prompts including post-install sound card detection/config
         StdinKeys = @([char]13, [char]10, [char]67, [char]13, [char]10) +
-                    (1..50 | ForEach-Object { [char]13; [char]10 })
+        (1..50 | ForEach-Object { [char]13; [char]10 })
+        ExpectFiles = @("D2DEMO.HOG", "D2DEMO.PIG", "D2DEMO.HAM")
+    },
+    @{
+        Zip       = "d2demo10.zip"
+        Exe       = "INSTALL.EXE"
+        StdinKeys = @([char]13, [char]10, [char]67, [char]13, [char]10) +
+        (1..50 | ForEach-Object { [char]13; [char]10 })
         ExpectFiles = @("D2DEMO.HOG", "D2DEMO.PIG", "D2DEMO.HAM")
     }
 )
@@ -75,9 +91,30 @@ $Installers = @(
 $TimeoutSec = 120
 $PollIntervalMs = 2000
 
+function Expand-ZipCompatibleArchive {
+    param(
+        [Parameter(Mandatory = $true)][string]$ArchivePath,
+        [Parameter(Mandatory = $true)][string]$DestinationPath
+    )
+
+    New-Item -ItemType Directory -Force -Path $DestinationPath | Out-Null
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
+    try {
+        foreach ($entry in $archive.Entries) {
+            if ([string]::IsNullOrWhiteSpace($entry.Name)) { continue }
+            $target = Join-Path $DestinationPath $entry.FullName
+            $targetDir = Split-Path $target -Parent
+            if ($targetDir) { New-Item -ItemType Directory -Force -Path $targetDir | Out-Null }
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $target, $true)
+        }
+    } finally {
+        $archive.Dispose()
+    }
+}
+
 foreach ($inst in $Installers) {
-    $zipName  = $inst.Zip
-    $zipPath  = Join-Path $DemoDir $zipName
+    $zipName = $inst.Zip
+    $zipPath = Join-Path $DemoDir $zipName
     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($zipName)
     $outputDir = Join-Path $DemoDir "${baseName}_extracted"
 
@@ -89,7 +126,7 @@ foreach ($inst in $Installers) {
     # Skip if already extracted (unless -Force)
     if ((Test-Path $outputDir) -and -not $Force) {
         $existing = Get-ChildItem $outputDir -File -ErrorAction SilentlyContinue |
-                    Where-Object { $_.Extension -match '\.(hog|pig|ham|mvl)$' }
+            Where-Object { $_.Extension -match '\.(hog|pig|ham|mvl)$' }
         if ($existing.Count -gt 0) {
             Write-Host ("$baseName already extracted, {0} game files. Use -Force to redo" -f $existing.Count)
             continue
@@ -100,7 +137,7 @@ foreach ($inst in $Installers) {
 
     # Create temp dirs (no spaces in path for DOSBox compatibility)
     $safeName = $baseName -replace '[^a-zA-Z0-9_-]', '_'
-    $tempBase  = Join-Path $env:TEMP "dxx_dosbox_$safeName"
+    $tempBase = Join-Path $env:TEMP "dxx_dosbox_$safeName"
     $sourceDir = Join-Path $tempBase "src"    # extracted zip (DOSBox D:)
     $targetDir = Join-Path $tempBase "dst"    # DOSBox C: -- installer writes here
 
@@ -110,8 +147,8 @@ foreach ($inst in $Installers) {
     New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
 
     # Extract zip
-    Write-Host "  Extracting $zipName..."
-    Expand-Archive -Path $zipPath -DestinationPath $sourceDir -Force
+    Write-Host "  Extracting $zipName"
+    Expand-ZipCompatibleArchive -ArchivePath $zipPath -DestinationPath $sourceDir
 
     # Find INSTALL.EXE (might be in root or subdirectory)
     $installerExe = Get-ChildItem $sourceDir -Recurse -Filter $inst.Exe -File | Select-Object -First 1
@@ -134,8 +171,8 @@ foreach ($inst in $Installers) {
     [System.IO.File]::WriteAllText($batchPath, $batchContent, [System.Text.Encoding]::ASCII)
 
     # Build DOSBox-X config (stdin redirect via batch file)
-    $targetFwd = $targetDir -replace '\\','/'
-    $installerFwd = $installerDir -replace '\\','/'
+    $targetFwd = $targetDir -replace '\\', '/'
+    $installerFwd = $installerDir -replace '\\', '/'
 
     $confLines = @(
         "[sdl]"
@@ -163,9 +200,9 @@ foreach ($inst in $Installers) {
     # Run DOSBox-X and poll for game files
     Write-Host ("  Running {0} in DOSBox-X (polling for game files, max {1}s)..." -f $inst.Exe, $TimeoutSec)
     $proc = Start-Process -FilePath $DosboxExe `
-                          -ArgumentList "-conf", "`"$confPath`"", "-exit", "-fastlaunch", "-nopromptfolder" `
-                          -WorkingDirectory $DosboxDir `
-                          -PassThru -WindowStyle Minimized
+        -ArgumentList "-conf", "`"$confPath`"", "-exit", "-fastlaunch", "-nopromptfolder" `
+        -WorkingDirectory $DosboxDir `
+        -PassThru -WindowStyle Minimized
 
     # Poll: wait for expected game files to appear and stabilize on the target drive
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
@@ -179,7 +216,7 @@ foreach ($inst in $Installers) {
         $currentSizes = @{}
         foreach ($expect in $inst.ExpectFiles) {
             $m = Get-ChildItem $targetDir -Recurse -Filter $expect -File -ErrorAction SilentlyContinue |
-                 Select-Object -First 1
+                Select-Object -First 1
             if (-not $m) { $allPresent = $false; break }
             $currentSizes[$expect] = $m.Length
         }

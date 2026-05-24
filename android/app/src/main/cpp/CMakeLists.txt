@@ -526,6 +526,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/mac_hfs_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/extract/stuffit_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/game_file_extensions.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
@@ -651,6 +652,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/mac_hfs_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/extract/stuffit_extract.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/game_file_extensions.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c

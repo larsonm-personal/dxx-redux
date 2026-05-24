@@ -10,7 +10,9 @@ class DemoInstallerPackagesTest {
     @Test
     fun recognizesKnownDemoArchivesByName() {
         assertTrue(DemoInstallerPackages.isKnownArchiveName("DESC14SW.EXE"))
+        assertTrue(DemoInstallerPackages.isKnownArchiveName("Descent Shareware.sit"))
         assertTrue(DemoInstallerPackages.isKnownArchiveName("descent 2 demo 1-0.zip"))
+        assertTrue(DemoInstallerPackages.isKnownArchiveName("Descent II Preview.sit"))
         assertFalse(DemoInstallerPackages.isKnownArchiveName("setup_descent_2_1.1.exe"))
     }
 
@@ -22,5 +24,22 @@ class DemoInstallerPackagesTest {
         assertNotNull(pkg)
         assertEquals("descent 2 demo 1-0.zip", pkg!!.filename)
         assertEquals(listOf("d2demo.hog", "d2demo.ham", "d2demo.pig", "d2demo.dem"), pkg.expectedFiles)
+    }
+
+    @Test
+    fun matchesMacDemoStuffitArchivesByHash() {
+        val d1Pkg = DemoInstallerPackages.matchBySha256(
+            "f45c338df4bc4ceda38e6541f14b8dc93b543fd07d90a2c5d5118d2001c12ad2",
+        )
+        assertNotNull(d1Pkg)
+        assertEquals("Descent Shareware.sit", d1Pkg!!.filename)
+        assertEquals(listOf("descent.hog", "descent.pig"), d1Pkg.expectedFiles)
+
+        val d2Pkg = DemoInstallerPackages.matchBySha256(
+            "4b5b7739b9da59472bcdca92f23957f90247bedd84ef8bded57d37d5d229f6d6",
+        )
+        assertNotNull(d2Pkg)
+        assertEquals("Descent II Preview.sit", d2Pkg!!.filename)
+        assertEquals(listOf("d2demo.hog", "d2demo.ham", "d2demo.pig", "descent2.s11", "exit.ham"), d2Pkg.expectedFiles)
     }
 }

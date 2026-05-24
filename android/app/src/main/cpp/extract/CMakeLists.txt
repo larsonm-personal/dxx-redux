@@ -75,6 +75,7 @@ set(EXTRACT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/mac_hfs_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/stuffit_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
 
 # ── test_cue_iso ─────────────────────────────────────────────────────
@@ -128,6 +129,12 @@ add_test(NAME sti2_tests COMMAND test_sti2)
 set_tests_properties(sti2_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME stuffit_corpus_tests COMMAND test_stuffit_corpus)
 set_tests_properties(stuffit_corpus_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(
+    test_stuffit_direct
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_direct.c ${CMAKE_CURRENT_SOURCE_DIR}/stuffit_extract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c)
+target_include_directories(test_stuffit_direct PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ── extract_gog ─────────────────────────────────────────────────────
 add_executable(
