@@ -68,7 +68,7 @@ function Get-GameConfig {
     switch ($Name) {
         'd1' {
             return @{
-                Exe = Join-Path $repoRoot 'buildd1\main\dxx-redux-d1.exe'
+                Exe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd1'
                 Mission = 'd1'
                 TitleArg = '-notitles'
                 RequiredFiles = @('DESCENT.HOG', 'DESCENT.PIG')
@@ -76,7 +76,7 @@ function Get-GameConfig {
         }
         'd2' {
             return @{
-                Exe = Join-Path $repoRoot 'buildd2\main\dxx-redux-d2.exe'
+                Exe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd2'
                 Mission = 'd2'
                 TitleArg = '-nomovies'
                 RequiredFiles = @('DESCENT2.HOG', 'DESCENT2.HAM', 'GROUPA.PIG')

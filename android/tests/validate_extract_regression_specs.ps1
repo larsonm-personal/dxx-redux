@@ -22,12 +22,16 @@ function Add-Failure($specPath, $message) {
 
 function Get-CueReferencedFiles($cuePath) {
     $references = New-Object System.Collections.Generic.List[string]
-    foreach ($line in [System.IO.File]::ReadLines($cuePath)) {
-        if ($line -match '^\s*FILE\s+"([^"]+)"') {
-            $references.Add($matches[1]) | Out-Null
-        } elseif ($line -match '^\s*FILE\s+(\S+)') {
-            $references.Add($matches[1]) | Out-Null
+    try {
+        foreach ($line in [System.IO.File]::ReadLines($cuePath)) {
+            if ($line -match '^\s*FILE\s+"([^"]+)"') {
+                $references.Add($matches[1]) | Out-Null
+            } elseif ($line -match '^\s*FILE\s+(\S+)') {
+                $references.Add($matches[1]) | Out-Null
+            }
         }
+    } catch {
+        throw "cannot read CUE '$cuePath': $($_.Exception.Message)"
     }
     return $references
 }
@@ -83,7 +87,14 @@ foreach ($specFile in $specPaths) {
             continue
         }
 
-        foreach ($referenced in (Get-CueReferencedFiles $cuePath)) {
+        try {
+            $referencedFiles = Get-CueReferencedFiles $cuePath
+        } catch {
+            Add-Failure $specFile.FullName $_
+            continue
+        }
+
+        foreach ($referenced in $referencedFiles) {
             $referencedName = [System.IO.Path]::GetFileName($referenced)
             $referencedPath = Join-Path $specDir $referenced
             if (-not (Test-Path -LiteralPath $referencedPath -PathType Leaf)) {

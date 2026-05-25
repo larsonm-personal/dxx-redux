@@ -34,6 +34,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1')
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'test_host_platform.ps1')
 
 # Sentinel output to diagnose empty-log issues when run from run_all_tests
 [Console]::Out.Flush()
@@ -66,7 +67,7 @@ if (-not (Test-Path $_depBaseFile)) {
     exit 1
 }
 $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
-$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
+$ADB = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir 'platform-tools' -ToolName 'adb' -EnvironmentVariable 'ADB'
 
 $GAME_EXTENSIONS = @('.pig', '.hog', '.ham', '.mvl', '.s11', '.s22', '.mn2',
     '.msn', '.dxa', '.pog', '.rl2', '.dtx', '.sow',

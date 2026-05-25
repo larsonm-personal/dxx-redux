@@ -30,6 +30,7 @@ $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
 $ScriptDir = Split-Path -Parent -Path $PSCommandPath
 $RepoRoot = Split-Path -Parent -Path $ScriptDir
+. (Join-Path $ScriptDir "test_host_platform.ps1")
 
 # -- Resolve environment from dependency_base.txt ----------------------------
 $depBaseFile = Join-Path $RepoRoot "dependency_base.txt"
@@ -67,15 +68,15 @@ Write-Host "JAVA_HOME=$env:JAVA_HOME"
 Write-Host "ANDROID_HOME=$env:ANDROID_HOME"
 Write-Host ""
 
-$ADB = Join-Path $env:ANDROID_HOME "platform-tools\adb.exe"
-$EMULATOR = Join-Path $env:ANDROID_HOME "emulator\emulator.exe"
+$ADB = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
+$EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulator" -ToolName "emulator"
 
 if (-not (Test-Path $EMULATOR)) {
     Write-Host "ERROR: Emulator not found at $EMULATOR" -ForegroundColor Red
     exit 1
 }
 
-$APK = Join-Path $ScriptDir "app\build\outputs\apk\debug\app-debug.apk"
+$APK = Join-RegressionPath $ScriptDir "app" "build" "outputs" "apk" "debug" "app-debug.apk"
 
 # -- 1. Build APK (auto-rebuild if stale) ------------------------------------
 if (-not $NoBuild) {
@@ -93,7 +94,7 @@ if (-not $NoBuild) {
             (Join-Path $ScriptDir "build.gradle"),
             (Join-Path $ScriptDir "settings.gradle"),
             (Join-Path $ScriptDir "gradle.properties"),
-            (Join-Path $ScriptDir "app\build.gradle")
+            (Join-RegressionPath $ScriptDir "app" "build.gradle")
         )
         $newerFiles = foreach ($dir in $srcDirs) {
             if (Test-Path $dir) {
@@ -118,9 +119,10 @@ if (-not $NoBuild) {
 
     if ($needsBuild) {
         Write-Host "=== Building APK ==="
+        $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $ScriptDir
         Push-Location $ScriptDir
         try {
-            & ".\gradlew.bat" assembleDebug --no-daemon 2>&1 | ForEach-Object { Write-Host $_ }
+            & $gradleWrapper assembleDebug --no-daemon 2>&1 | ForEach-Object { Write-Host $_ }
             if ($LASTEXITCODE -ne 0) {
                 Write-Host "ERROR: Build failed" -ForegroundColor Red
                 exit 1
@@ -180,7 +182,14 @@ $running = & $ADB devices 2>$null | Select-String "emulator-"
 if ($running) {
     Write-Host "Emulator already running"
 } else {
-    Start-Process -FilePath $EMULATOR -ArgumentList "-avd", $AVD_NAME, "-no-snapshot", "-gpu", "host" -WindowStyle Normal
+    $emulatorStart = @{
+        FilePath     = $EMULATOR
+        ArgumentList = @("-avd", $AVD_NAME, "-no-snapshot", "-gpu", "host")
+    }
+    if (Test-RegressionWindowsHost) {
+        $emulatorStart.WindowStyle = "Normal"
+    }
+    Start-Process @emulatorStart
     Write-Host "Emulator started. Waiting for boot..."
 }
 

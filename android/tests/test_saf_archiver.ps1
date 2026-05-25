@@ -42,23 +42,16 @@ function Write-Progress-Flush {
 
 # -- Paths --------------------------------------------------------------
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-# Handle running from repo root or android/ dir
-if (!(Test-Path "$repoRoot\android")) {
-    $repoRoot = Split-Path -Parent $PSScriptRoot
-    if (!(Test-Path "$repoRoot\android")) {
-        $repoRoot = (Get-Location).Path
-    }
-}
-$androidDir = "$repoRoot\android"
-$apkPath = "$androidDir\app\build\outputs\apk\debug\app-debug.apk"
-$scriptSource = "$androidDir\game_scripts\test_saf_basic.json5"
+$androidDir = Join-RegressionPath $repoRoot "android"
+$apkPath = Join-RegressionPath $androidDir "app" "build" "outputs" "apk" "debug" "app-debug.apk"
+$scriptSource = Join-RegressionPath $androidDir "game_scripts" "test_saf_basic.json5"
 $_depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
     Write-Host "FAIL: dependency_base.txt not found at $_depBaseFile" -ForegroundColor Red
     exit 1
 }
 $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
-$adb = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
+$adb = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 
 $PACKAGE = "com.dxxredux.app"
 $TEST_FILE = "descent2.ham"
@@ -81,7 +74,7 @@ function Adb {
     & $adb @AdbArgs 2>&1
 }
 
-function Adb-WithTimeout {
+function Invoke-AdbWithTimeout {
     # Run an adb command with a timeout; returns $null if it hangs
     param([int]$Seconds = 10, [string[]]$AdbArgs)
     # Inject -s $Serial when a target device is known
@@ -105,6 +98,7 @@ function Adb-WithTimeout {
             try { $proc.Kill() } catch {}
             return $null
         }
+        $null = $stderrTask.GetAwaiter().GetResult()
         return $stdoutTask.GetAwaiter().GetResult()
     } catch {
         return $null
@@ -158,9 +152,10 @@ if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
 if (!$NoBuild) {
     Write-Host ""
     Write-Host "Step 1: Building debug APK..." -ForegroundColor Yellow
+    $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $androidDir
     Push-Location $androidDir
     try {
-        & .\gradlew.bat assembleDebug --console=plain 2>&1 |
+        & $gradleWrapper assembleDebug --console=plain 2>&1 |
             Where-Object { $_ -match "BUILD |FAIL|error:" } |
             ForEach-Object { Write-Host "  $_" }
         if ($LASTEXITCODE -ne 0) {
@@ -178,7 +173,7 @@ if (!$NoBuild) {
 # -- Step 2: Stop the game if running -----------------------------------
 Write-Host ""
 Write-Host "Step 2: Stopping game..." -ForegroundColor Yellow
-$stopResult = Adb-WithTimeout -Seconds 10 -AdbArgs "shell", "am force-stop $PACKAGE"
+$stopResult = Invoke-AdbWithTimeout -Seconds 10 -AdbArgs "shell", "am force-stop $PACKAGE"
 if ($null -eq $stopResult) {
     Write-Host "  [WARN] force-stop timed out, continuing anyway" -ForegroundColor Yellow
 }
@@ -235,16 +230,16 @@ Write-Host "  File size: $fileSize bytes"
 # Note: /sdcard/ is not accessible from native code due to scoped storage.
 # Use /data/local/tmp/ which is world-readable on emulators.
 Adb shell "mkdir -p $SAF_DIR" | Out-Null
-$localGameData = "$repoRoot\game_data_to_copy_to_emulator\data\$($TEST_FILE.ToUpper())"
+$localGameData = Join-RegressionPath $repoRoot "game_data_to_copy_to_emulator" "data" ($TEST_FILE.ToUpper())
 if (-not (Test-Path $localGameData)) {
     # Fallback: check extracted game data directories
-    $localGameData = "$repoRoot\game_data\extracted\VERTIGO\$($TEST_FILE.ToUpper())"
+    $localGameData = Join-RegressionPath $repoRoot "game_data" "extracted" "VERTIGO" ($TEST_FILE.ToUpper())
 }
 if (Test-Path $localGameData) {
     Adb push $localGameData "$SAF_DIR/$TEST_FILE" | Out-Null
 } else {
     # Fallback: pull from device and push to new location
-    $tmpLocal = "$env:TEMP\$TEST_FILE"
+    $tmpLocal = Join-Path ([System.IO.Path]::GetTempPath()) $TEST_FILE
     Adb shell "run-as $PACKAGE cat $GAME_DATA_DIR/$TEST_FILE" | Set-Content -Path $tmpLocal -AsByteStream
     Adb push $tmpLocal "$SAF_DIR/$TEST_FILE" | Out-Null
     Remove-Item $tmpLocal -ErrorAction SilentlyContinue
@@ -312,7 +307,7 @@ $manifestJson = @"
 
 # Write manifest via adb push + run-as cp
 $manifestTmp = "/data/local/tmp/.saf_manifest.json"
-$localManifestTmp = "$env:TEMP\saf_manifest_test.json"
+$localManifestTmp = Join-Path ([System.IO.Path]::GetTempPath()) "saf_manifest_test.json"
 $manifestJson | Set-Content -Path $localManifestTmp -NoNewline -Encoding UTF8
 Adb push $localManifestTmp $manifestTmp | Out-Null
 Adb shell "run-as $PACKAGE cp $manifestTmp $GAME_DATA_DIR/.saf_manifest.json" | Out-Null
@@ -449,7 +444,7 @@ if (!$NoCleanup) {
     Write-Host "Step 9: Cleaning up..." -ForegroundColor Yellow
 
     # Stop the game
-    Adb-WithTimeout -Seconds 10 -AdbArgs "shell", "am force-stop $PACKAGE" | Out-Null
+    Invoke-AdbWithTimeout -Seconds 10 -AdbArgs "shell", "am force-stop $PACKAGE" | Out-Null
     Start-Sleep -Seconds 1
 
     # Restore the file to app's files dir

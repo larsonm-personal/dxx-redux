@@ -14,7 +14,8 @@ $ErrorActionPreference = 'Stop'
 $androidDir = Split-Path $PSScriptRoot
 Push-Location $androidDir
 try {
-    & .\gradlew.bat :app:testDebugUnitTest --console=plain --no-daemon
+    $gradleScript = Resolve-RegressionGradleWrapper -AndroidDir $androidDir
+    & $gradleScript :app:testDebugUnitTest --console=plain --no-daemon
     exit $LASTEXITCODE
 } finally {
     Pop-Location

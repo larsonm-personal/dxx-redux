@@ -19,6 +19,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path (Join-Path $repoRoot "android") "test_host_platform.ps1")
 Set-Location $repoRoot
 
 $testsPassed = 0
@@ -36,14 +37,17 @@ function Test-Fail($name, $detail) {
 
 # ── Locate tools ────────────────────────────────────────────────────
 
-$fpAudio = "android/tests/build/Release/fingerprint_audio.exe"
-if (-not (Test-Path $fpAudio)) {
-    Write-Error "fingerprint_audio.exe not found. Run: cmake --build android/tests/build --config Release"
+$fpAudio = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $repoRoot "android" "tests" "build" "Release") -BaseName "fingerprint_audio"
+if (-not $fpAudio) {
+    $fpAudio = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $repoRoot "android" "tests" "build") -BaseName "fingerprint_audio"
+}
+if (-not $fpAudio) {
+    Write-Error "fingerprint_audio not found. Run: cmake --build android/tests/build --config Release"
 }
 
 $depBase = (Get-Content "dependency_base.txt" -First 1).Trim()
-$fpcalcExe = Join-Path $depBase "fpcalc-1.5.1/fpcalc.exe"
-if (-not (Test-Path $fpcalcExe)) {
+$fpcalcExe = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $depBase "fpcalc-1.5.1") -BaseName "fpcalc"
+if (-not $fpcalcExe -or -not (Test-Path $fpcalcExe)) {
     Write-Host "Downloading fpcalc..."
     $fpcalcExe = & android/get_deps/get_fpcalc.ps1
 }
@@ -97,7 +101,7 @@ foreach ($line in ($fpcalcEncOut -split "`n")) {
 }
 
 # Run our tool on the directory, parse JSON output
-$tempDir = Join-Path $env:TEMP "fpcalc_test_$(Get-Random)"
+$tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "fpcalc_test_$(Get-Random)"
 New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 Copy-Item $testMp3 $tempDir
 $savedPref = $ErrorActionPreference

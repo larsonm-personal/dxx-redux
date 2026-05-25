@@ -24,8 +24,7 @@ Set-StrictMode -Version Latest
 . "$PSScriptRoot\..\test_helpers.ps1"
 
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
-$DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
-$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
+$ADB = $script:ADB
 $PACKAGE = "com.dxxredux.app"
 $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
@@ -39,7 +38,7 @@ if ($emus.Count -lt 2) {
 $EMU1 = "emulator-$($emus[0].Groups[1].Value)"
 $EMU2 = "emulator-$($emus[1].Groups[1].Value)"
 
-$script:LogFile = Join-Path $REPO_ROOT "temp\lan_discovery_test_log.txt"
+$script:LogFile = Join-RegressionPath $REPO_ROOT "temp" "lan_discovery_test_log.txt"
 try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -ErrorAction SilentlyContinue } } catch { }
 "" | Set-Content -Path $script:LogFile -Encoding utf8 -ErrorAction SilentlyContinue
 

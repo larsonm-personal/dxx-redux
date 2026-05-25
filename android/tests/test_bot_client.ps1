@@ -45,6 +45,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$repoRoot = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path (Join-Path $repoRoot "android") "test_host_platform.ps1")
 
 # --- Check/start matchmaking server ---
 $serverHost = ([Uri]$ServerUrl).Host
@@ -62,28 +64,25 @@ function Test-ServerReachable {
 
 if (-not (Test-ServerReachable)) {
     # Always auto-start server when not reachable
-    $repoRoot = Split-Path (Split-Path $PSScriptRoot)
     $serverDir = Join-Path $repoRoot "server"
-    $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
-    if (-not (Test-Path $serverBin)) {
-        $serverBin = Join-Path $serverDir "target\debug\dxx-matchmaking.exe"
-    }
-    if (-not (Test-Path $serverBin)) {
+    $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
+    if (-not $serverBin) { $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "debug") -BaseName "dxx-matchmaking" }
+    if (-not $serverBin -or -not (Test-Path $serverBin)) {
         Write-Host "Building matchmaking server..." -ForegroundColor Yellow
         Push-Location $serverDir
         & cargo build --release 2>&1 | Out-Null
         Pop-Location
-        $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+        $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
     }
-    if (Test-Path $serverBin) {
-        $botServerLog = Join-Path $REPO_ROOT "temp\bot_server.log"
-        $botServerErr = Join-Path $REPO_ROOT "temp\bot_server_err.log"
+    if ($serverBin -and (Test-Path $serverBin)) {
+        $botServerLog = Join-RegressionPath $repoRoot "temp" "bot_server.log"
+        $botServerErr = Join-RegressionPath $repoRoot "temp" "bot_server_err.log"
         # Launch server binary directly -- do NOT wrap in pwsh.
         # PowerShell's internal pipe handling deadlocks when stderr fills.
         $botEnvVars = @{
             SKIP_GPGS_VERIFY = "true"
             RUST_LOG         = "info"
-            LOG_DIR          = (Join-Path $REPO_ROOT "temp")
+            LOG_DIR          = (Join-Path $repoRoot "temp")
         }
         foreach ($kv in $botEnvVars.GetEnumerator()) {
             [System.Environment]::SetEnvironmentVariable($kv.Key, $kv.Value, "Process")
@@ -182,7 +181,7 @@ function Send-AndReceive {
 # Drain all pending messages (non-blocking), return them as an array.
 # WARNING: timeout-based drain will abort the WebSocket if it fires. Only use
 # this when you're done with the connection or will reconnect.
-function Drain-Messages {
+function Receive-PendingMessages {
     param([System.Net.WebSockets.ClientWebSocket]$Ws)
     $msgs = @()
     while ($true) {

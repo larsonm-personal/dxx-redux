@@ -69,7 +69,7 @@ Ensure-EmulatorHealthy
 # -- Step 2: Install APK if requested ------------------------
 
 if ($Install) {
-    $apk = "$PSScriptRoot\app\build\outputs\apk\debug\app-debug.apk"
+    $apk = Join-RegressionPath $PSScriptRoot "app" "build" "outputs" "apk" "debug" "app-debug.apk"
     if (-not (Test-Path $apk)) {
         Write-Status "FAIL: APK not found at $apk" "Red"
         exit 1
@@ -83,7 +83,7 @@ if ($Install) {
 
 # -- Step 3: Determine which game(s) to run -------------------
 
-$scriptPath = Join-Path "$PSScriptRoot\game_scripts" $ScriptName
+$scriptPath = Join-RegressionPath $PSScriptRoot "game_scripts" $ScriptName
 $gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
 
 if (-not (Get-ScriptStandalone -ScriptPath $scriptPath)) {

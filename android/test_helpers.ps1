@@ -18,8 +18,9 @@
 #   Write-Status               -- timestamped colored output
 #   Start-GameWithRetry        -- full launch flow: SetupActivity -> verify -> game -> verify
 
-# Source shared environment setup (JAVA_HOME, cmake, cargo)
-. "$PSScriptRoot\test_env.ps1"
+# Source shared environment setup (JAVA_HOME, cmake, cargo) and host helpers
+. (Join-Path $PSScriptRoot "test_env.ps1")
+. (Join-Path $PSScriptRoot "test_host_platform.ps1")
 
 $_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
@@ -27,7 +28,8 @@ if (-not (Test-Path $_depBaseFile)) {
     exit 1
 }
 $script:DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
-$script:ADB = "$script:DEP_BASE\android-sdk\platform-tools\adb.exe"
+$script:REPO_ROOT = Split-Path $PSScriptRoot
+$script:ADB = Resolve-RegressionAndroidSdkTool -DepBase $script:DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 $script:PACKAGE = "com.dxxredux.app"
 $script:ACTIVITY = "com.dxxredux.app.SetupActivity"
 $script:DEFAULT_SET_DIR = "files/imported/sets/default"
@@ -79,8 +81,8 @@ function Adb-Timeout {
 
 function Test-EmulatorHealthy {
     # Check if emulator process is running, adb sees it, and shell responds.
-    $emuProc = Get-Process | Where-Object {
-        $_.ProcessName -match 'qemu-system|emulator' -and $_.Path -like "*android*"
+    $emuProc = Get-Process -ErrorAction SilentlyContinue | Where-Object {
+        $_.ProcessName -match 'qemu-system|emulator' -and (-not $_.Path -or $_.Path -match 'android|emulator')
     }
     if (-not $emuProc) { return $false }
     $devices = Adb -AdbArgs "devices"
@@ -341,7 +343,7 @@ function Start-SetupActivity {
 function Setup-EmulatorRedir {
     # Send an emulator console redir command (e.g. "add udp:42500:42424").
     param([int]$ConsolePort, [string]$RedirSpec)
-    $tokenPath = Join-Path $env:USERPROFILE ".emulator_console_auth_token"
+    $tokenPath = Join-Path (Get-RegressionHomeDirectory) ".emulator_console_auth_token"
     if (-not (Test-Path $tokenPath)) {
         Write-Status "  WARNING: No emulator auth token at $tokenPath" "Yellow"
         return "ERROR: no auth token"
@@ -375,8 +377,7 @@ function Install-AppAndData {
     # Uses Resolve-GameDataDeps (SHA256 index) so it works even when
     # game_data_to_copy_to_emulator/data/ is empty.
     param([Parameter(Mandatory)][string]$Serial)
-    $repoRoot = Split-Path $PSScriptRoot
-    $apk = Join-Path $repoRoot "android\app\build\outputs\apk\debug\app-debug.apk"
+    $apk = Join-RegressionPath $script:REPO_ROOT "android" "app" "build" "outputs" "apk" "debug" "app-debug.apk"
     if (Test-Path $apk) {
         Write-Status "  Installing APK on $Serial..."
         Adb-Dev-Timeout -Serial $Serial -AdbArgs @("install", "-r", $apk) -Seconds 180 | Out-Null
@@ -407,7 +408,7 @@ function Start-EmulatorIfNeeded {
     }
     $avd = $AvdMap[$Serial]
     if (-not $avd) { Write-Status "FAIL: Unknown AVD for $Serial" "Red"; exit 1 }
-    $emulatorExe = "$script:DEP_BASE\android-sdk\emulator\emulator.exe"
+    $emulatorExe = Resolve-RegressionAndroidSdkTool -DepBase $script:DEP_BASE -Subdir "emulator" -ToolName "emulator"
     Write-Status "  Starting $avd ($Serial)..." "Yellow"
     Start-Process $emulatorExe -ArgumentList "-avd", $avd, "-no-snapshot-save", "-gpu", "host"
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
@@ -482,11 +483,19 @@ function Read-GameDataIndex {
     # Parse game_data/game_data_index.txt into a hashtable: sha256 -> full path.
     # Cached in $script:GameDataIndex after first call.
     if ($script:GameDataIndex) { return $script:GameDataIndex }
-    $repoRoot = Split-Path $PSScriptRoot
-    $indexFile = Join-Path $repoRoot "game_data\game_data_index.txt"
+    $repoRoot = $script:REPO_ROOT
+    $indexFile = Join-RegressionPath $repoRoot "game_data" "game_data_index.txt"
     if (-not (Test-Path $indexFile)) {
-        Write-Status "WARN: game_data_index.txt not found -- run generate_game_data_index.ps1" "Yellow"
-        return $null
+        $generator = Join-RegressionPath $repoRoot "game_data" "generate_game_data_index.ps1"
+        if (Test-Path -LiteralPath $generator) {
+            Write-Status "game_data_index.txt not found -- generating it now" "Yellow"
+            $pwsh = Get-RegressionCurrentPwshPath
+            & $pwsh -NoProfile -ExecutionPolicy Bypass -File $generator | ForEach-Object { Write-Status "  $_" "DarkGray" }
+        }
+        if (-not (Test-Path $indexFile)) {
+            Write-Status "WARN: game_data_index.txt not found -- run generate_game_data_index.ps1" "Yellow"
+            return $null
+        }
     }
     $ht = @{}
     foreach ($line in (Get-Content $indexFile)) {
@@ -662,7 +671,7 @@ function Ensure-GameDataOnDevice {
     # If missing, find them locally and push them. Returns $true on success.
     param([ValidateSet("d1", "d2")][string]$Game = "d2")
 
-    $repoRoot = Split-Path $PSScriptRoot
+    $repoRoot = $script:REPO_ROOT
     $setDir = $script:DEFAULT_SET_DIR
 
     # Required files per game (lowercase). Must match SetupActivity.kt D2_FILES/D1_FILES.
@@ -684,10 +693,10 @@ function Ensure-GameDataOnDevice {
 
     # Search paths for local game files (order = preference)
     $searchDirs = @(
-        (Join-Path $repoRoot "game_data_to_copy_to_emulator\temp"),
-        (Join-Path $repoRoot "game_data_to_copy_to_emulator\data"),
-        (Join-Path $repoRoot "game_data\extracted\VERTIGO"),
-        (Join-Path $repoRoot "game_data\extracted\d1 mac extracted")
+        (Join-RegressionPath $repoRoot "game_data_to_copy_to_emulator" "temp"),
+        (Join-RegressionPath $repoRoot "game_data_to_copy_to_emulator" "data"),
+        (Join-RegressionPath $repoRoot "game_data" "extracted" "VERTIGO"),
+        (Join-RegressionPath $repoRoot "game_data" "extracted" "d1 mac extracted")
     )
 
     # Ensure set dir exists
@@ -801,7 +810,7 @@ function Send-AutomationScript {
         [string]$ScriptDir = $PSScriptRoot,
         [switch]$PushOnly
     )
-    $scriptPath = Join-Path $ScriptDir "game_scripts\$ScriptName"
+    $scriptPath = Join-RegressionPath $ScriptDir "game_scripts" $ScriptName
     if (-not (Test-Path $scriptPath)) {
         Write-Status "FAIL: Script not found: $scriptPath" "Red"
         return $false
@@ -1347,8 +1356,7 @@ function Get-SetupIntrospection {
 # ── Infrastructure management ────────────────────────────────────────────
 # Used by run_all_tests.ps1 to automatically bring up/tear down test infra.
 
-$script:EMULATOR_EXE = "$script:DEP_BASE\android-sdk\emulator\emulator.exe"
-$script:REPO_ROOT = Split-Path $PSScriptRoot
+$script:EMULATOR_EXE = Resolve-RegressionAndroidSdkTool -DepBase $script:DEP_BASE -Subdir "emulator" -ToolName "emulator"
 
 function Wait-EmulatorBootComplete {
     param(
@@ -1380,12 +1388,19 @@ function Start-ManagedEmulator {
     )
 
     if (-not (Test-Path $script:EMULATOR_EXE)) {
-        Write-Status "FAIL: emulator.exe not found at $script:EMULATOR_EXE" "Red"
+        Write-Status "FAIL: emulator not found at $script:EMULATOR_EXE" "Red"
         return $false
     }
 
     Write-Status "  Starting $AvdName ($Serial)..." "Yellow"
-    Start-Process -FilePath $script:EMULATOR_EXE -ArgumentList "-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", "host", "-crash-report-mode", "disabled" -WindowStyle Minimized
+    $startArgs = @{
+        FilePath = $script:EMULATOR_EXE
+        ArgumentList = @("-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", "host", "-crash-report-mode", "disabled")
+    }
+    if (Test-RegressionWindowsHost) {
+        $startArgs.WindowStyle = "Minimized"
+    }
+    Start-Process @startArgs
 
     $appearStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     while ($appearStopwatch.Elapsed.TotalSeconds -lt $AppearTimeoutSeconds) {
@@ -1432,6 +1447,10 @@ function Start-SecondEmulator {
 function Ensure-FirewallRules {
     # Check if Windows Firewall rules exist for test server/relay ports.
     # If missing, warn and offer a one-liner the user can run as admin.
+    if (-not (Test-RegressionWindowsHost)) {
+        return
+    }
+
     $rules = @(
         @{ Name = "DXX-Redux Matchmaking (TCP-in 9000)"; Protocol = "TCP"; Port = 9000 },
         @{ Name = "DXX-Redux UDP Relay (UDP-in 42600)"; Protocol = "UDP"; Port = 42600 },
@@ -1457,18 +1476,16 @@ function Start-MatchmakingServer {
     # or $null on failure. Caller is responsible for stopping it.
     Ensure-FirewallRules
     $serverDir = Join-Path $script:REPO_ROOT "server"
-    $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
-    if (-not (Test-Path $serverBin)) {
-        $serverBin = Join-Path $serverDir "target\debug\dxx-matchmaking.exe"
-    }
-    if (-not (Test-Path $serverBin)) {
+    $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
+    if (-not $serverBin) { $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "debug") -BaseName "dxx-matchmaking" }
+    if (-not $serverBin -or -not (Test-Path $serverBin)) {
         Write-Status "Building matchmaking server..." "Yellow"
         Push-Location $serverDir
         & cargo build --release 2>&1 | Out-Null
         Pop-Location
-        $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+        $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
     }
-    if (-not (Test-Path $serverBin)) {
+    if (-not $serverBin -or -not (Test-Path $serverBin)) {
         Write-Status "FAIL: matchmaking server binary not found" "Red"
         return $null
     }
@@ -1510,7 +1527,7 @@ function Start-DockerNat {
         [string]$NatA = "full-cone",
         [string]$NatB = "symmetric"
     )
-    $composeDir = Join-Path $script:REPO_ROOT "android\docker\nat-testbed"
+    $composeDir = Join-RegressionPath $script:REPO_ROOT "android" "docker" "nat-testbed"
     if (-not (Test-Path (Join-Path $composeDir "docker-compose.yml"))) {
         Write-Status "SKIP: android/docker/nat-testbed/docker-compose.yml not found" "Yellow"
         return $false
@@ -1540,7 +1557,7 @@ function Start-DockerNat {
 }
 
 function Stop-DockerNat {
-    $composeDir = Join-Path $script:REPO_ROOT "android\docker\nat-testbed"
+    $composeDir = Join-RegressionPath $script:REPO_ROOT "android" "docker" "nat-testbed"
     $composeFile = Join-Path $composeDir "docker-compose.yml"
     if (Test-Path $composeFile) {
         docker compose -f $composeFile down 2>&1 | Out-Null
@@ -1550,7 +1567,7 @@ function Stop-DockerNat {
 function Install-ApkOnDevice {
     # Install the debug APK on a specific emulator serial, or default.
     param([string]$Serial)
-    $apk = Join-Path $PSScriptRoot "app\build\outputs\apk\debug\app-debug.apk"
+    $apk = Join-RegressionPath $PSScriptRoot "app" "build" "outputs" "apk" "debug" "app-debug.apk"
     if (-not (Test-Path $apk)) {
         Write-Status "WARN: No APK at $apk" "Yellow"
         return $false
@@ -1577,8 +1594,10 @@ function Push-GameDataToDevice {
     $hasData = (Test-Path (Join-Path $gameDataDir "data")) -or (Test-Path (Join-Path $gameDataDir "download"))
     if (-not $hasData) { return }
     $bashExe = "bash"
-    $gitBash = "$script:DEP_BASE\git\bin\bash.exe"
-    if (Test-Path $gitBash) { $bashExe = $gitBash }
+    if (Test-RegressionWindowsHost) {
+        $gitBash = Join-RegressionPath $script:DEP_BASE "git" "bin" "bash.exe"
+        if (Test-Path $gitBash) { $bashExe = $gitBash }
+    }
     $prevSerial = $env:ANDROID_SERIAL
     if ($Serial) { $env:ANDROID_SERIAL = $Serial }
     $env:CALLED_FROM_SCRIPT = "1"

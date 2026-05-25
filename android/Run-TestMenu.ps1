@@ -23,7 +23,7 @@ $GameScriptsDir = Join-Path -Path $ScriptDir -ChildPath "game_scripts"
 $TestsDir = Join-Path -Path $ScriptDir -ChildPath "tests"
 $runTestScript = Join-Path -Path $ScriptDir -ChildPath "run_test.ps1"
 
-. "$ScriptDir\test_helpers.ps1"
+. (Join-Path $ScriptDir "test_helpers.ps1")
 
 function Read-NumberedChoice {
     param(
@@ -111,8 +111,11 @@ Write-Host "[*] Selected: $($selected.Name)  $($selected.Tag)" -ForegroundColor 
 if (-not $NoBuild) {
     Write-Host ""
     Write-Status "Building fresh APK..."
-    $env:JAVA_HOME = "C:\local\jdk-21"
-    & "$ScriptDir\gradlew.bat" assembleDebug --no-daemon 2>&1 | ForEach-Object { Write-Host $_ }
+    if ((Test-RegressionWindowsHost) -and (Test-Path "C:\local\jdk-21")) {
+        $env:JAVA_HOME = "C:\local\jdk-21"
+    }
+    $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $ScriptDir
+    & $gradleWrapper assembleDebug --no-daemon 2>&1 | ForEach-Object { Write-Host $_ }
     if ($LASTEXITCODE -ne 0) {
         Write-Status "Build failed" "Red"
         exit 1
