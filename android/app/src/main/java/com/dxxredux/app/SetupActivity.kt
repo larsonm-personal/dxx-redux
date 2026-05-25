@@ -523,9 +523,15 @@ class SetupActivity : ComponentActivity() {
                             val setDir = fsm.getSetDir(fsm.getActive())
                             val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null, audio)
                             val srcManager = AudioSourceManager(filesDir)
-                            if (audio && count > 0 && findGogPair(setDir) != null) {
+                            if (audio && count > 0 &&
+                                registerGogAudioSource(
+                                    srcManager,
+                                    filesDir,
+                                    setDir,
+                                    this@SetupActivity,
+                                )
+                            ) {
                                 enableRedbookInConfig(filesDir, this@SetupActivity)
-                                registerGogAudioSource(srcManager, filesDir, setDir, this@SetupActivity)
                             }
                             Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
                             requestSetupRefresh()

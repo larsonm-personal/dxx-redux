@@ -6,11 +6,50 @@ import android.util.Log
 import java.io.File
 import java.util.Locale
 
-internal fun findGogPair(dir: File): String? {
+internal data class GogAudioPair(
+    val baseName: String,
+    val gogFileName: String,
+    val instFileName: String,
+)
+
+private const val D2_GOG_AUDIO_SOURCE_ID = "d2-gog-v1.2"
+private const val D2_GOG_LEGACY_DISC_ID = 0x7d0ff809L
+private const val D2_GOG_CUE_TEXT =
+    "  TRACK 01 MODE1/2352\n" +
+        "    INDEX 01 00:00:00\n" +
+        "  TRACK 02 AUDIO\n" +
+        "    INDEX 01 14:18:48\n" +
+        "  TRACK 03 AUDIO\n" +
+        "    INDEX 01 15:04:48\n" +
+        "  TRACK 04 AUDIO\n" +
+        "    INDEX 01 20:05:48\n" +
+        "  TRACK 05 AUDIO\n" +
+        "    INDEX 01 23:47:48\n" +
+        "  TRACK 06 AUDIO\n" +
+        "    INDEX 01 27:22:48\n" +
+        "  TRACK 07 AUDIO\n" +
+        "    INDEX 01 29:42:48\n" +
+        "  TRACK 08 AUDIO\n" +
+        "    INDEX 01 34:09:48\n" +
+        "  TRACK 09 AUDIO\n" +
+        "    INDEX 01 37:50:48\n"
+
+internal fun findGogPair(dir: File): GogAudioPair? {
     val files = dir.list() ?: return null
-    val gogFile = files.firstOrNull { it.equals("descent_ii.gog", ignoreCase = true) } ?: return null
-    files.firstOrNull { it.equals("descent_ii.inst", ignoreCase = true) } ?: return null
-    return gogFile.substringBeforeLast('.')
+    val gogByBase =
+        files
+            .filter { it.endsWith(".gog", ignoreCase = true) }
+            .associateBy { it.substringBeforeLast('.').lowercase(Locale.US) }
+    val instByBase =
+        files
+            .filter { it.endsWith(".inst", ignoreCase = true) }
+            .associateBy { it.substringBeforeLast('.').lowercase(Locale.US) }
+    val pairedBases = (gogByBase.keys intersect instByBase.keys)
+    val base =
+        pairedBases.firstOrNull { it == "descent_ii" } ?: pairedBases.sorted().firstOrNull() ?: return null
+    val gogName = gogByBase[base] ?: return null
+    val instName = instByBase[base] ?: return null
+    return GogAudioPair(gogName.substringBeforeLast('.'), gogName, instName)
 }
 
 private fun findGogAudioBaseNames(
@@ -77,31 +116,74 @@ internal fun registerGogAudioSource(
     filesDir: File,
     setDir: File,
     context: Context? = null,
-) {
-    val base = findGogPair(setDir) ?: return
+): Boolean {
+    val source = buildGogAudioSource(filesDir, setDir, context) ?: return false
+    srcManager.addSource(source)
+    return true
+}
+
+internal fun buildGogAudioSource(
+    filesDir: File,
+    setDir: File,
+    context: Context? = null,
+): AudioSourceManager.AudioSource? {
+    ensureKnownGogCueFile(setDir)
+    val pair = findGogPair(setDir) ?: return null
     val relDir = setDir.toRelativeString(filesDir)
-    val relBase = if (relDir.isEmpty()) base else "$relDir${File.separator}$base"
+    val relCue = if (relDir.isEmpty()) pair.instFileName else "$relDir${File.separator}${pair.instFileName}"
+    val relBin = if (relDir.isEmpty()) pair.gogFileName else "$relDir${File.separator}${pair.gogFileName}"
+    val trackCounts = countCueTracks(File(setDir, pair.instFileName))
+    val sourceId =
+        if (isKnownD2GogPair(pair)) {
+            D2_GOG_AUDIO_SOURCE_ID
+        } else {
+            "gog-${sanitizeCdAudioImportStem(pair.baseName)}"
+        }
+    val discLabel = if (sourceId == D2_GOG_AUDIO_SOURCE_ID) "Descent II (GOG)" else pair.baseName
     val trackNames =
         context?.let {
             try {
-                FingerprintBridge.lookupTrackNames(it, "d2-gog-v1.2")
+                FingerprintBridge.lookupTrackNames(it, sourceId)
             } catch (e: Exception) {
                 emptyMap()
             }
         } ?: emptyMap()
-    srcManager.addSource(
-        AudioSourceManager.AudioSource(
-            id = "d2-gog-v1.2",
-            cuePath = "$relBase.inst",
-            binPaths = listOf("$relBase.gog"),
-            discLabel = "Descent II (GOG)",
-            discId = "d2-gog-v1.2",
-            trackCount = 9,
-            audioTrackCount = 8,
-            legacyDiscId = 0x7d0ff809L,
-            trackNames = trackNames,
-        ),
+    return AudioSourceManager.AudioSource(
+        id = sourceId,
+        cuePath = relCue,
+        binPaths = listOf(relBin),
+        discLabel = discLabel,
+        discId = sourceId,
+        trackCount = trackCounts.first,
+        audioTrackCount = trackCounts.second,
+        legacyDiscId = if (sourceId == D2_GOG_AUDIO_SOURCE_ID) D2_GOG_LEGACY_DISC_ID else 0L,
+        trackNames = trackNames,
     )
+}
+
+private fun ensureKnownGogCueFile(setDir: File) {
+    val files = setDir.list() ?: return
+    if (files.any { it.endsWith(".inst", ignoreCase = true) }) return
+
+    val gogName = files.firstOrNull { it.equals("DESCENT_II.gog", ignoreCase = true) } ?: return
+    val cueFile = File(setDir, "${File(gogName).nameWithoutExtension}.inst")
+    cueFile.writeText("FILE \"$gogName\" BINARY\n$D2_GOG_CUE_TEXT")
+}
+
+private fun isKnownD2GogPair(pair: GogAudioPair): Boolean = pair.baseName.equals("DESCENT_II", ignoreCase = true)
+
+private fun countCueTracks(cueFile: File): Pair<Int, Int> {
+    var tracks = 0
+    var audio = 0
+    if (!cueFile.isFile) return 0 to 0
+    cueFile.forEachLine { line ->
+        val parts = line.trim().split(Regex("\\s+"), limit = 3)
+        if (parts.size >= 3 && parts[0].equals("TRACK", ignoreCase = true)) {
+            tracks++
+            if (parts[2].equals("AUDIO", ignoreCase = true)) audio++
+        }
+    }
+    return tracks to audio
 }
 
 internal fun extractSowArchives(

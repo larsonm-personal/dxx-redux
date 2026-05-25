@@ -1,4 +1,4 @@
-﻿function Read-Json5File($path) {
+function Read-Json5File($path) {
     $rawText = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)
     if ($rawText.Length -gt 0 -and $rawText[0] -eq [char]0xFEFF) {
         $rawText = $rawText.Substring(1)
