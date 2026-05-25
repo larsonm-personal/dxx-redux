@@ -1276,7 +1276,7 @@ $deps = @(
         Latest = if ($latestPowerShell) { $latestPowerShell["Version"] } else { $null };
         ReleaseTag = if ($latestPowerShell) { $latestPowerShell["Tag"] } else { $null };
         DriftLabel = "host-managed";
-        ManualInstallHint = if ($script:hostPlatform -eq "Linux") { "Run android/get_deps/get_powershell_ubuntu.sh to install the pinned PowerShell build on Ubuntu" } else { "Download the configured PowerShell package and update PATH or your local pwsh install" }
+        ManualInstallHint = if ($script:hostPlatform -eq "Linux") { "Run android/get_deps/get_powershell.sh to install the pinned PowerShell build on Linux" } else { "Download the configured PowerShell package and update PATH or your local pwsh install" }
     }
 )
 
@@ -1630,7 +1630,7 @@ foreach ($item in $selectedTarget) {
                 Update-Conf "POWERSHELL_URL" "https://github.com/PowerShell/PowerShell/releases/download/v$new/PowerShell-$new-win-x64.zip"
             }
             if ($script:hostPlatform -eq "Linux") {
-                Write-Host "    NOTE: PowerShell is a host tool; run get_powershell_ubuntu.sh or update your pwsh package"
+                Write-Host "    NOTE: PowerShell is a host tool; run get_powershell.sh or update your pwsh package"
             } else {
                 Write-Host "    NOTE: PowerShell is a host tool; download and update PATH or your local tool install after fetching the new package"
             }

@@ -12,8 +12,13 @@ source "$SCRIPT_DIR/platform.sh"
 WRAPPER_DIR="$SCRIPT_DIR/../gradle/wrapper"
 WRAPPER_JAR="$WRAPPER_DIR/gradle-wrapper.jar"
 WRAPPER_PROPS="$WRAPPER_DIR/gradle-wrapper.properties"
+GRADLEW="$SCRIPT_DIR/../gradlew"
 
 mkdir -p "$WRAPPER_DIR"
+
+if [ -f "$GRADLEW" ] && [ "$(get_host_os)" != "windows" ]; then
+    chmod +x "$GRADLEW"
+fi
 
 # Always regenerate properties so the version stays in sync with tool_versions.conf
 cat >"$WRAPPER_PROPS" <<EOF
@@ -29,9 +34,9 @@ echo "Generated $WRAPPER_PROPS (Gradle $GRADLE_VERSION)"
 
 if [ -f "$WRAPPER_JAR" ]; then
     echo "gradle-wrapper.jar already present"
-    if [ -z "$GET_ALL_RUNNING" ]; then
+    if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
         echo ""
-        echo "Press any key to exit..."
+        echo "Press any key to exit"
         read -r -n1 -s
     fi
     exit 0
@@ -44,8 +49,8 @@ echo "  URL: $URL"
 download_file "$WRAPPER_JAR" "$URL"
 
 echo "gradle-wrapper.jar installed at $WRAPPER_JAR"
-if [ -z "$GET_ALL_RUNNING" ]; then
+if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
     echo ""
-    echo "Press any key to exit..."
+    echo "Press any key to exit"
     read -r -n1 -s
 fi

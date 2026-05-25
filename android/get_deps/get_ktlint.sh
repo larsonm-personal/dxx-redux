@@ -37,8 +37,8 @@ else
     echo "  (JDK not found at $JDK_DIR -- install JDK first to verify)"
 fi
 
-if [ -z "$GET_ALL_RUNNING" ]; then
+if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
     echo ""
-    echo "Press any key to exit..."
+    echo "Press any key to exit"
     read -r -n1 -s
 fi

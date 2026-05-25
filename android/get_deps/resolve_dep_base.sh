@@ -5,25 +5,17 @@
 #    or: source "$(dirname "$0")/get_deps/resolve_dep_base.sh"  (from android/)
 
 _resolve_dep_base() {
-    # Find the repo root by looking for dependency_base.txt
     local script_dir
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     # shellcheck disable=SC1091
     source "$script_dir/platform.sh"
-    local repo_root="$script_dir"
-    # Walk up until we find dependency_base.txt (max 5 levels)
-    for _ in 1 2 3 4 5; do
-        if [ -f "$repo_root/dependency_base.txt" ]; then
-            break
-        fi
-        repo_root="$(dirname "$repo_root")"
-    done
+    local repo_root
+    repo_root="$(cd "$script_dir/../.." && pwd)"
 
     if [ ! -f "$repo_root/dependency_base.txt" ]; then
-        echo "ERROR: dependency_base.txt not found" >&2
-        echo "Create it in the repo root with a single line containing the path to your" >&2
-        echo "dependency directory (e.g. $(get_default_dependency_base))." >&2
-        return 1 2>/dev/null || exit 1
+        local default_base="${DXX_DEPENDENCY_BASE:-$(get_default_dependency_base)}"
+        printf '%s\n' "$default_base" >"$repo_root/dependency_base.txt"
+        echo "Created dependency_base.txt with $default_base"
     fi
 
     # Read the first line, trim whitespace and carriage returns

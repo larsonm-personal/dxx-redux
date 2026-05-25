@@ -49,8 +49,8 @@ else
 fi
 
 echo "Emulator and system image ready"
-if [ -z "$GET_ALL_RUNNING" ]; then
+if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
     echo ""
-    echo "Press any key to exit..."
+    echo "Press any key to exit"
     read -r -n1 -s
 fi

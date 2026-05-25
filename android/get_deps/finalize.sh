@@ -30,7 +30,7 @@ if [ -z "$JAVA_HOME" ]; then
 fi
 
 echo "Accepting SDK licenses..."
-yes | "$SDKMANAGER" --licenses 2>/dev/null || true
+yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
 
 echo "Installing platform packages..."
 PACKAGES="platforms;android-$COMPILE_SDK build-tools;$BUILD_TOOLS_VERSION platform-tools cmake;$CMAKE_VERSION"
@@ -42,8 +42,8 @@ fi
 $SDKMANAGER $PACKAGES
 
 echo "Done. SDK is ready"
-if [ -z "$GET_ALL_RUNNING" ]; then
+if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
     echo ""
-    echo "Press any key to exit..."
+    echo "Press any key to exit"
     read -r -n1 -s
 fi

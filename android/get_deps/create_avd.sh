@@ -1,6 +1,6 @@
 #!/bin/bash
-# create_avd.sh - Create a Pixel 6 AVD (API 34, x86_64) if it doesn't exist.
-# Run get_emulator.sh first to install the emulator and system image.
+# create_avd.sh - Create a Nexus 5X AVD if it doesn't exist
+# Run get_emulator.sh first to install the emulator and system image
 set -e
 
 AVD_NAME="Nexus5X_Light_1"
@@ -31,7 +31,7 @@ if [ -z "$JAVA_HOME" ]; then
     fi
 fi
 
-# avdmanager.bat needs Windows-style paths; Git Bash's /c/local/... won't work.
+# avdmanager.bat needs Windows-style paths; Git Bash's /c/local/... won't work
 if command -v cygpath >/dev/null 2>&1; then
     ANDROID_HOME="$(cygpath -w "$SDK_DIR")"
     export ANDROID_HOME
@@ -43,8 +43,14 @@ else
 fi
 
 IMAGE="system-images;android-${EMULATOR_API_LEVEL:-34};google_apis;x86_64"
+AVD_DIR="$HOME/.android/avd/${AVD_NAME}.avd"
 
-echo "Creating AVD '$AVD_NAME' (Nexus 5X, API ${EMULATOR_API_LEVEL:-34}, x86_64)..."
+if [ -f "$AVD_DIR/config.ini" ]; then
+    echo "AVD '$AVD_NAME' already exists at $AVD_DIR"
+    exit 0
+fi
+
+echo "Creating AVD '$AVD_NAME' (Nexus 5X, API ${EMULATOR_API_LEVEL:-34}, x86_64)"
 echo "no" | "$AVDMANAGER" create avd \
     --name "$AVD_NAME" \
     --package "$IMAGE" \
@@ -52,7 +58,6 @@ echo "no" | "$AVDMANAGER" create avd \
     --force
 
 # Apply lightweight hardware settings (low RAM, low res, minimal sensors)
-AVD_DIR="$HOME/.android/avd/${AVD_NAME}.avd"
 if [ -f "$AVD_DIR/config.ini" ]; then
     cat >>"$AVD_DIR/config.ini" <<'EOF'
 hw.ramSize=1536
@@ -82,13 +87,13 @@ hw.sdCard=yes
 sdcard.size=4096M
 showDeviceFrame=no
 EOF
-    echo "Applied lightweight hardware config (1536 MB RAM, 1280x720, minimal sensors)."
+    echo "Applied lightweight hardware config (1536 MB RAM, 1280x720, minimal sensors)"
 fi
 
 echo "AVD '$AVD_NAME' created"
-echo "Launch with: run_emulator.sh"
-if [ -z "$GET_ALL_RUNNING" ]; then
+echo "From the repo root, launch with: pwsh android/Run-Emulator.ps1"
+if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
     echo ""
-    echo "Press any key to exit..."
+    echo "Press any key to exit"
     read -r -n1 -s
 fi

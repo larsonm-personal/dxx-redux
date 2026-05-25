@@ -1,5 +1,6 @@
-# windows build dependencies
+# android build dependencies
 * see auto-download scripts in `android/get_deps/`
+* for a fresh Ubuntu VM, see `android/get_deps/README-ubuntu.md`
 * create `dependency_base.txt` in the repo root with the path to your dependency directory (e.g. `C:\local`)
 * android NDK (gets automatically found under `<dependency_base>/android-ndk.../`)
 * android SDK command line tools (`<dependency_base>/android-sdk.../`)

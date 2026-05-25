@@ -18,7 +18,7 @@ _find_newest() {
 }
 
 # --- JDK ---
-if [ -z "$JAVA_HOME" ]; then
+if [ -z "${JAVA_HOME:-}" ]; then
     _jdk=$(_find_newest "jdk-")
     if [ -n "$_jdk" ]; then
         export JAVA_HOME="$_jdk"
@@ -28,7 +28,7 @@ if [ -z "$JAVA_HOME" ]; then
 fi
 
 # --- Android SDK ---
-if [ -z "$ANDROID_HOME" ]; then
+if [ -z "${ANDROID_HOME:-}" ]; then
     _sdk=$(_find_newest "android-sdk")
     if [ -n "$_sdk" ]; then
         export ANDROID_HOME="$_sdk"
@@ -39,7 +39,7 @@ if [ -z "$ANDROID_HOME" ]; then
 fi
 
 # --- Android NDK ---
-if [ -z "$ANDROID_NDK_ROOT" ]; then
+if [ -z "${ANDROID_NDK_ROOT:-}" ]; then
     _ndk=$(_find_newest "android-ndk-")
     if [ -n "$_ndk" ]; then
         export ANDROID_NDK_ROOT="$_ndk"
@@ -48,6 +48,6 @@ if [ -z "$ANDROID_NDK_ROOT" ]; then
     fi
 fi
 
-echo "JAVA_HOME=$JAVA_HOME"
-echo "ANDROID_HOME=$ANDROID_HOME"
-echo "ANDROID_NDK_ROOT=$ANDROID_NDK_ROOT"
+echo "JAVA_HOME=${JAVA_HOME:-}"
+echo "ANDROID_HOME=${ANDROID_HOME:-}"
+echo "ANDROID_NDK_ROOT=${ANDROID_NDK_ROOT:-}"

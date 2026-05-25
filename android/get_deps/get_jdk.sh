@@ -71,8 +71,8 @@ fi
 rm -f "$TMPFILE"
 echo "JDK $JDK_MAJOR installed at $DEST"
 "$DEST/bin/java" -version 2>&1 | head -1
-if [ -z "$GET_ALL_RUNNING" ]; then
+if [ -z "${GET_ALL_RUNNING:-}" ] && [ -t 0 ]; then
     echo ""
-    echo "Press any key to exit..."
+    echo "Press any key to exit"
     read -r -n1 -s
 fi
