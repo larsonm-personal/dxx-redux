@@ -1,35 +1,36 @@
 // Auto-generated regression spec for: Descent (USA)
-// Generated: 2026-03-09 19:32:57
+// Generated: 2026-05-24 17:34:36
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-usa",
-    "source_files":  [
-                         {
-                             "sha256":  "144f9ad71b60060ce1a02844026a8549da47505a86ba32a994e944f1d9381259",
-                             "name":  "Descent (USA).cue"
-                         },
-                         {
-                             "sha256":  "a433ed3712493649fb59c1361daf70d4a1776c706ff9a653e08c2ea93f0eab62",
-                             "name":  "Descent (USA).bin"
-                         }
-                     ],
-    "game":  "d1",
-    "classification":  "d1_full",
-    "expected_mission":  "Descent: First Strike",
-    "expected_level1":  "Lunar Outpost",
-    "expected_files":  [
-                           "descent.hog",
-                           "descent.pig"
-                       ],
-    "audio_tracks":  0,
-    "total_extracted":  7
-,
-    "last_test_result": {
-        "status": "pass",
-        "failure_step": null,
-        "level_reached": "Lunar Outpost",
-        "files_verified": 2,
-        "classification_confirmed": true,
-        "test_mode": "full"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-usa",
+  "source_files": [
+    {
+      "name": "Descent (USA).cue",
+      "sha256": "144f9ad71b60060ce1a02844026a8549da47505a86ba32a994e944f1d9381259"
+    },
+    {
+      "name": "Descent (USA).bin",
+      "sha256": "a433ed3712493649fb59c1361daf70d4a1776c706ff9a653e08c2ea93f0eab62"
     }
+  ],
+  "game": "d1",
+  "classification": "d1_full",
+  "expected_mission": "Descent: First Strike",
+  "expected_level1": "Lunar Outpost",
+  "expected_files": [
+    "descent.hog",
+    "descent.pig"
+  ],
+  "audio_tracks": 0,
+  "total_extracted": 7,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": null,
+    "level_reached": "Lunar Outpost",
+    "files_verified": 2,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }

@@ -1,32 +1,37 @@
 // Auto-generated regression spec for: Descent-II-Destination-Quartzon_Win_EN_ISO-Version
-// Generated: 2026-03-09 19:33:36
+// Generated: 2026-05-24 17:34:46
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-ii-destination-quartzonwineniso-version",
-    "source_files":  [
-                         {
-                             "sha256":  "7942a311a2bf2c5fecf1e1a0a1b5bc6ddea39dd6bdea41e339d5f40fde7a0825",
-                             "name":  "D2_DQ.cue"
-                         }
-                     ],
-    "game":  "d2",
-    "classification":  "d2_oem",
-    "expected_mission":  "D2 Destination:Quartzon",
-    "expected_level1":  "Drec Sphere",
-    "expected_files":  [
-                           "descent2.ham",
-                           "descent2.hog",
-                           "groupa.pig"
-                       ],
-    "audio_tracks":  12,
-    "total_extracted":  14
-,
-    "last_test_result": {
-        "status": "skip",
-        "failure_step": "not_ready",
-        "level_reached": null,
-        "files_verified": 3,
-        "classification_confirmed": false,
-        "test_mode": "file_only"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-ii-destination-quartzonwineniso-version",
+  "source_files": [
+    {
+      "name": "D2_DQ.cue",
+      "sha256": "7942a311a2bf2c5fecf1e1a0a1b5bc6ddea39dd6bdea41e339d5f40fde7a0825"
+    },
+    {
+      "name": "D2_DQ.img",
+      "sha256": "26b3f104f43b9743745eaa379c704701107a7243c4e5b2673f74ef7681f1789c"
     }
+  ],
+  "game": "d2",
+  "classification": "d2_oem",
+  "expected_mission": "D2 Destination:Quartzon",
+  "expected_level1": "Drec Sphere",
+  "expected_files": [
+    "descent2.ham",
+    "descent2.hog",
+    "groupa.pig"
+  ],
+  "audio_tracks": 12,
+  "total_extracted": 14,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "skip",
+    "failure_step": "not_ready",
+    "level_reached": null,
+    "files_verified": 3,
+    "classification_confirmed": false,
+    "test_mode": "file_only"
+  }
 }

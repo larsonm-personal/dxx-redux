@@ -1,56 +1,57 @@
 // Auto-generated regression spec for: Descent II - Destination Quartzon 3D (Europe)
-// Generated: 2026-03-09 19:33:17
+// Generated: 2026-05-24 17:34:41
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-ii-destination-quartzon-3d-europe",
-    "source_files":  [
-                         {
-                             "sha256":  "bb23c7573501b7ec63b6c9fd7978cd090273613f3931f000d6b002d622fa10b7",
-                             "name":  "Descent II - Destination Quartzon 3D (Europe).cue"
-                         },
-                         {
-                             "sha256":  "7c8940f0f731befbe16b100f66d2e2737f423fc82bf98e7394e2c943a8239842",
-                             "name":  "Descent II - Destination Quartzon 3D (Europe) (Track 1).bin"
-                         },
-                         {
-                             "sha256":  "32737fc24bf0013df78ee5bd56815e602cfb3f26f4237808b292f58ece2f1b82",
-                             "name":  "Descent II - Destination Quartzon 3D (Europe) (Track 2).bin"
-                         },
-                         {
-                             "sha256":  "59fd2e1d632583b7b1cfd01dae1d16983457a050f30ae58fc3ae697c9dabf880",
-                             "name":  "Descent II - Destination Quartzon 3D (Europe) (Track 3).bin"
-                         },
-                         {
-                             "sha256":  "850bf49a9c41bcdecd49d97791d45502679e2e52201c464fa01c6f71efc3701d",
-                             "name":  "Descent II - Destination Quartzon 3D (Europe) (Track 4).bin"
-                         },
-                         {
-                             "sha256":  "66fdc9d51ba46d2e518427b3437fd60a41bd862a195bc23e098e14fe3955c006",
-                             "name":  "Descent II - Destination Quartzon 3D (Europe) (Track 5).bin"
-                         },
-                         {
-                             "sha256":  "eadd799b02f82906000647792d24e97f3ed843282c4d1d4a1abc488d79e26e37",
-                             "name":  "Descent II - Destination Quartzon 3D (Europe) (Track 6).bin"
-                         }
-                     ],
-    "game":  "d2",
-    "classification":  "d2_oem",
-    "expected_mission":  "D2 Destination:Quartzon",
-    "expected_level1":  "Drec Sphere",
-    "expected_files":  [
-                           "descent2.ham",
-                           "descent2.hog",
-                           "groupa.pig"
-                       ],
-    "audio_tracks":  5,
-    "total_extracted":  12
-,
-    "last_test_result": {
-        "status": "skip",
-        "failure_step": "not_ready",
-        "level_reached": null,
-        "files_verified": 3,
-        "classification_confirmed": false,
-        "test_mode": "file_only"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-ii-destination-quartzon-3d-europe",
+  "source_files": [
+    {
+      "name": "Descent II - Destination Quartzon 3D (Europe).cue",
+      "sha256": "bb23c7573501b7ec63b6c9fd7978cd090273613f3931f000d6b002d622fa10b7"
+    },
+    {
+      "name": "Descent II - Destination Quartzon 3D (Europe) (Track 1).bin",
+      "sha256": "7c8940f0f731befbe16b100f66d2e2737f423fc82bf98e7394e2c943a8239842"
+    },
+    {
+      "name": "Descent II - Destination Quartzon 3D (Europe) (Track 2).bin",
+      "sha256": "32737fc24bf0013df78ee5bd56815e602cfb3f26f4237808b292f58ece2f1b82"
+    },
+    {
+      "name": "Descent II - Destination Quartzon 3D (Europe) (Track 3).bin",
+      "sha256": "59fd2e1d632583b7b1cfd01dae1d16983457a050f30ae58fc3ae697c9dabf880"
+    },
+    {
+      "name": "Descent II - Destination Quartzon 3D (Europe) (Track 4).bin",
+      "sha256": "850bf49a9c41bcdecd49d97791d45502679e2e52201c464fa01c6f71efc3701d"
+    },
+    {
+      "name": "Descent II - Destination Quartzon 3D (Europe) (Track 5).bin",
+      "sha256": "66fdc9d51ba46d2e518427b3437fd60a41bd862a195bc23e098e14fe3955c006"
+    },
+    {
+      "name": "Descent II - Destination Quartzon 3D (Europe) (Track 6).bin",
+      "sha256": "eadd799b02f82906000647792d24e97f3ed843282c4d1d4a1abc488d79e26e37"
     }
+  ],
+  "game": "d2",
+  "classification": "d2_oem",
+  "expected_mission": "D2 Destination:Quartzon",
+  "expected_level1": "Drec Sphere",
+  "expected_files": [
+    "descent2.ham",
+    "descent2.hog",
+    "groupa.pig"
+  ],
+  "audio_tracks": 5,
+  "total_extracted": 12,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "skip",
+    "failure_step": "not_ready",
+    "level_reached": null,
+    "files_verified": 3,
+    "classification_confirmed": false,
+    "test_mode": "file_only"
+  }
 }

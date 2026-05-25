@@ -1,70 +1,71 @@
 // Auto-generated regression spec for: Descent I and II - The Definitive Collection (USA) (Disc 2)
-// Generated: 2026-03-09 19:33:06
+// Generated: 2026-05-24 17:34:38
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-i-and-ii-the-definitive-collection-usa-disc-2",
-    "source_files":  [
-                         {
-                             "sha256":  "4e0f066223eef1bc85385abace5ebba3467b5d248c50ef9efba48571a86a1de5",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 2).cue"
-                         },
-                         {
-                             "sha256":  "a47ba66a0db2be6f5b99ae41b79233fb230dc17e94e6d3cf73065f1a382c61fb",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 1).bin"
-                         },
-                         {
-                             "sha256":  "3358be1cb2040f9f9a8f7414559f02cf2fb4d2a3919b527fa8f3ae9785dcdfff",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 2).bin"
-                         },
-                         {
-                             "sha256":  "112582e1acb9c3de0eb10224ebe36b958a67d1dd64a614ce347f181187578e8b",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 3).bin"
-                         },
-                         {
-                             "sha256":  "b7a2433632dc18b634a562611aaf6c22688f394420e82cececc8f21a6cf82f54",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 4).bin"
-                         },
-                         {
-                             "sha256":  "e2e15dfc1bd050550dfd800afc4f3b3072f879200740c69ec40da1c0d16ff4fb",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 5).bin"
-                         },
-                         {
-                             "sha256":  "93d9985eb3615b663b461ea65db16408e078352d9f8659c0922048bea64216bb",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 6).bin"
-                         },
-                         {
-                             "sha256":  "606fc80895f723cfc1dd5ffaf2767ab191379149319e474650c3cdb8a8630a96",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 7).bin"
-                         },
-                         {
-                             "sha256":  "3f7552e4291b0accc8aed8e5c51503c4138593b355d387cde51c73c9859742ae",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 8).bin"
-                         },
-                         {
-                             "sha256":  "b795c5940a64c7dd8fc52922fa028515d330ef697fb0a98b4c3d02d3e42bf148",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 9).bin"
-                         }
-                     ],
-    "game":  "d1d2",
-    "classification":  "d2_full",
-    "expected_mission":  "Descent 2: Counterstrike!",
-    "expected_level1":  "Ahayweh Gate",
-    "expected_files":  [
-                           "descent2.ham",
-                           "descent2.hog",
-                           "descent2.s11",
-                           "descent2.s22",
-                           "groupa.pig"
-                       ],
-    "audio_tracks":  8,
-    "total_extracted":  22
-,
-    "last_test_result": {
-        "status": "pass",
-        "failure_step": null,
-        "level_reached": "Ahayweh Gate",
-        "files_verified": 5,
-        "classification_confirmed": true,
-        "test_mode": "full"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-i-and-ii-the-definitive-collection-usa-disc-2",
+  "source_files": [
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 2).cue",
+      "sha256": "4e0f066223eef1bc85385abace5ebba3467b5d248c50ef9efba48571a86a1de5"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 1).bin",
+      "sha256": "a47ba66a0db2be6f5b99ae41b79233fb230dc17e94e6d3cf73065f1a382c61fb"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 2).bin",
+      "sha256": "3358be1cb2040f9f9a8f7414559f02cf2fb4d2a3919b527fa8f3ae9785dcdfff"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 3).bin",
+      "sha256": "112582e1acb9c3de0eb10224ebe36b958a67d1dd64a614ce347f181187578e8b"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 4).bin",
+      "sha256": "b7a2433632dc18b634a562611aaf6c22688f394420e82cececc8f21a6cf82f54"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 5).bin",
+      "sha256": "e2e15dfc1bd050550dfd800afc4f3b3072f879200740c69ec40da1c0d16ff4fb"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 6).bin",
+      "sha256": "93d9985eb3615b663b461ea65db16408e078352d9f8659c0922048bea64216bb"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 7).bin",
+      "sha256": "606fc80895f723cfc1dd5ffaf2767ab191379149319e474650c3cdb8a8630a96"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 8).bin",
+      "sha256": "3f7552e4291b0accc8aed8e5c51503c4138593b355d387cde51c73c9859742ae"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 9).bin",
+      "sha256": "b795c5940a64c7dd8fc52922fa028515d330ef697fb0a98b4c3d02d3e42bf148"
     }
+  ],
+  "game": "d1d2",
+  "classification": "d2_full",
+  "expected_mission": "Descent 2: Counterstrike!",
+  "expected_level1": "Ahayweh Gate",
+  "expected_files": [
+    "descent2.ham",
+    "descent2.hog",
+    "descent2.s11",
+    "descent2.s22",
+    "groupa.pig"
+  ],
+  "audio_tracks": 8,
+  "total_extracted": 22,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": null,
+    "level_reached": "Ahayweh Gate",
+    "files_verified": 5,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }

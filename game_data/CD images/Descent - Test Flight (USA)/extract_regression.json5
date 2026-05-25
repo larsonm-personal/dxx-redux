@@ -1,35 +1,36 @@
 // Auto-generated regression spec for: Descent - Test Flight (USA)
-// Generated: 2026-03-09 19:32:56
-// NOTE: This is a pre-release demo disc with incompatible pig format (28 KB
-// vs ~4.5 MB). The D1 Redux engine cannot load these files. File-only test.
+// Generated: 2026-05-24 17:34:36
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-test-flight-usa",
-    "source_files":  [
-                         {
-                             "sha256":  "80c652a5a45e22894da2b57f040102253fc1fd951ab54c0bd4ca7ec59773e46e",
-                             "name":  "Descent - Test Flight (USA).cue"
-                         },
-                         {
-                             "sha256":  "e4bac85d0fdd33e14e89720353ab306a935c7b7400a63a3e85fce2ac8cb46078",
-                             "name":  "Descent - Test Flight (USA).bin"
-                         }
-                     ],
-    "game":  "d1",
-    "classification":  "d1_prerelease_demo",
-    "expected_files":  [
-                           "descent.hog",
-                           "descent.pig"
-                       ],
-    "audio_tracks":  0,
-    "total_extracted":  5
-,
-    "last_test_result": {
-        "status": "pass",
-        "failure_step": null,
-        "level_reached": null,
-        "files_verified": 2,
-        "classification_confirmed": true,
-        "test_mode": "file_only"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-test-flight-usa",
+  "source_files": [
+    {
+      "name": "Descent - Test Flight (USA).cue",
+      "sha256": "80c652a5a45e22894da2b57f040102253fc1fd951ab54c0bd4ca7ec59773e46e"
+    },
+    {
+      "name": "Descent - Test Flight (USA).bin",
+      "sha256": "e4bac85d0fdd33e14e89720353ab306a935c7b7400a63a3e85fce2ac8cb46078"
     }
+  ],
+  "game": "d1",
+  "classification": "d1_demo",
+  "expected_mission": "Descent Demo",
+  "expected_level1": "Lunar Outpost",
+  "expected_files": [
+    "descent.hog",
+    "descent.pig"
+  ],
+  "audio_tracks": 0,
+  "total_extracted": 5,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": null,
+    "level_reached": null,
+    "files_verified": 2,
+    "classification_confirmed": true,
+    "test_mode": "file_only"
+  }
 }

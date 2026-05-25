@@ -27,8 +27,8 @@ a. also, the select button (on android tv) should cycle between opening the "mor
 [fixed] android TV doesn't use the gamepad for the on-screen keyboard. only "a" works as a button press to select the current character, d-pad or sticks don't move around chars
 
 # after reset
-[ ] clean up and finalize the demo installer work. this work was done with a lesser model, I'd like you to take a fresh look at it and continue
-[ ] support the new demo installer packages downloaded after the initial work was done:
+[x] clean up and finalize the demo installer work. this work was done with a lesser model, I'd like you to take a fresh look at it and continue
+[x] support the new demo installer packages downloaded after the initial work was done:
 "C:\local\dxx-redux\game_data\demo installers\descent2preview.sit_.hqx"
 "C:\local\dxx-redux\game_data\demo installers\Descent_demo.HQX"
 "C:\local\dxx-redux\game_data\demo installers\descent2preview.sit"
@@ -42,6 +42,7 @@ a. also, the select button (on android tv) should cycle between opening the "mor
 * my goal is to be able to extract the zip file created from this process and have it contain everything needed to run all regression tests or demos
 
 # nice to haves
+[ ] I'd like a deeper audit of the android extract paths vs. the PC-side extract paths because my goal is that all PC-side supported CDs are also supported on android. there was some recent work done to make the mac CDs work, and to be able to get a clean install from the infinite abyss CD. some of the other CDs will have different kinds of installers. please go through each of the CDs and see if the existing code will do them. you will find some of the history of this work in the android\ai tool plans\CD, installer parsing\ dir
 [ ] better and less annoying d1+d2 demo install helpers. ideally, .exe processing so the actual original demos can be used
 single axis exponential - please add this to the single axis editor the same as it was done for the analog stick editor
 remove automap button from settings menu. it should be in the unbound controls menu (if unbound)
@@ -49,20 +50,20 @@ if an action is taken in the unbound settings menu (such as activating energy ->
 if the unbound settings menu is open for >2.5 seconds, another settings button push should close it (not go to the 2nd settings menu) 
 so the only way to get to the 2nd menu is two presses quicker than 2.5 seconds with no action taken on unbound
 game menu action from the settings menu does nothing. it should close the settings menu (overlay) and immediately open the game (esc) menu
-[ ] exponential for analog controls. I'd like a slider next to the deadband slider for analog sticks and also single axis analog editing windows. it should control exponential control (fine/de-sensitized control at low deflection and large control at high deflection) along the same lines as we have with the touch analog sticks. the rnge should be from 1 (no exponent) to N, have N be the same as whatever we have for touch sticks
-[ ] the unbound actions menu should consider controller buttons also instead of just touch buttons. currently I have rewind bound to a button and it's in the menu
-[ ] quick save and quick load are really just “open save and load menus” and they should be called save and load
-[ ] headlight shouldn't be in the overlay settings menu since it's already set up to be in the unbound settings menu
-[ ] warp and accept buttons shouldn't be in the settings menu for single player. same for net stats and net events, those are grayed out but instead just don't show them for single player
+[x] exponential for analog controls. I'd like a slider next to the deadband slider for analog sticks and also single axis analog editing windows. it should control exponential control (fine/de-sensitized control at low deflection and large control at high deflection) along the same lines as we have with the touch analog sticks. the rnge should be from 1 (no exponent) to N, have N be the same as whatever we have for touch sticks
+[x] the unbound actions menu should consider controller buttons also instead of just touch buttons. currently I have rewind bound to a button and it's in the menu
+[x] quick save and quick load are really just “open save and load menus” and they should be called save and load
+[x] headlight shouldn't be in the overlay settings menu since it's already set up to be in the unbound settings menu
+[x] warp and accept buttons shouldn't be in the settings menu for single player. same for net stats and net events, those are grayed out but instead just don't show them for single player
 [ ] af and msaa settings seem to have no effect when changed in-level. texture filtering clearly has an effect. this is on shield where the settings can only be edited while paused. once unpaused, I can see af working. actually, af does have an effect, but it isn't updated live while paused. texture filtering *is* updated live while paused. I'd like all of them to update live if possible
-[ ] af only works on textures that aren't merged, it looks like. this may be new for shield or it may be broken ever since we had the big af merge with the original game settings push a couple weeks ago
+[fixed] af only works on textures that aren't merged, it looks like. this may be new for shield or it may be broken ever since we had the big af merge with the original game settings push a couple weeks ago
 [fixed] "import disc image" needs the buttons "extract game files" and "add as audio source" (or "done" - depends on mode) at the top, above the text filename, description, found N tracks, track list, etc.
 [fixed] "import disc image" needs "extract game files" and "add as audio source" to be selectable with the d-pad, currently "close" traps the d-pad cursor on open
 [fixed] "import disc image" needs scroll indicator icons as was done in other menus
 [needs testing] "fire secondary" when bound to a controller button fires all remaining ammo when tapped momentarily. not reproduced by `android/game_scripts/test_fire_secondary.json5` on a fresh D2 default binding, so keep this open only if a config-specific repro still exists
 [fixed] the "resume last save" popup needs to be only on the left side column when in landscape layouts
 [fixed] "select pilot" menu has the heading ("select pilot") drawn over by the list of pilots (the list starting with "<create new>")
-[ ] controller binding: support a binding to a "menu" action. *if on a touchless (android tv-type) android, flag when it isn't bound with bold red warning: no menu button*. this button should 1. open the "extra" menu and on a 2nd press, close the "extra" menu and open the in-game settings overlay menu (the one with video settings etc.). a third press should close the settings overlay menu. both of these menus, when open, should take controller d-pad focus and "a" and "b" button focus. the "a" button should select and "b" button either close the menu or exit a submenu back to the top menu if there was a submenu open. the goal is to support accessing all menu items in a controller-only way, and especially to support things that aren't bound
+[done] controller binding: support a binding to a "menu" action. *if on a touchless (android tv-type) android, flag when it isn't bound with bold red warning: no menu button*. this button should 1. open the "extra" menu and on a 2nd press, close the "extra" menu and open the in-game settings overlay menu (the one with video settings etc.). a third press should close the settings overlay menu. both of these menus, when open, should take controller d-pad focus and "a" and "b" button focus. the "a" button should select and "b" button either close the menu or exit a submenu back to the top menu if there was a submenu open. the goal is to support accessing all menu items in a controller-only way, and especially to support things that aren't bound
 [done] guidebot submenu when not bound (to a touch button, or other button). this should also be a button binding option. it should capture d-pad and "a"/"b" when open. if bound to a button, a 2nd press of the guidebot menu button should close the menu
 [ ] some kind of randomizer support, like this, or integrate the code as an option if available: https://descentbb.net/viewtopic.php?t=24628
 [ ] need a full re-run of existing tests and cleanup and de-flaking

@@ -1,35 +1,36 @@
 // Auto-generated regression spec for: Descent (Europe)
-// Generated: 2026-03-09 19:32:56
+// Generated: 2026-05-24 17:34:36
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-europe",
-    "source_files":  [
-                         {
-                             "sha256":  "c28d5de67da9c76015e4de3118bc222398fde8a0a1187468c02a52a25a7c4fd8",
-                             "name":  "Descent (Europe).cue"
-                         },
-                         {
-                             "sha256":  "967a1bf5ec32d655767169f25a140488257599fae58ebbe870667e4b1f409d82",
-                             "name":  "Descent (Europe).bin"
-                         }
-                     ],
-    "game":  "d1",
-    "classification":  "d1_full",
-    "expected_mission":  "Descent: First Strike",
-    "expected_level1":  "Lunar Outpost",
-    "expected_files":  [
-                           "descent.hog",
-                           "descent.pig"
-                       ],
-    "audio_tracks":  0,
-    "total_extracted":  7
-,
-    "last_test_result": {
-        "status": "pass",
-        "failure_step": null,
-        "level_reached": "Lunar Outpost",
-        "files_verified": 2,
-        "classification_confirmed": true,
-        "test_mode": "full"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-europe",
+  "source_files": [
+    {
+      "name": "Descent (Europe).cue",
+      "sha256": "c28d5de67da9c76015e4de3118bc222398fde8a0a1187468c02a52a25a7c4fd8"
+    },
+    {
+      "name": "Descent (Europe).bin",
+      "sha256": "967a1bf5ec32d655767169f25a140488257599fae58ebbe870667e4b1f409d82"
     }
+  ],
+  "game": "d1",
+  "classification": "d1_full",
+  "expected_mission": "Descent: First Strike",
+  "expected_level1": "Lunar Outpost",
+  "expected_files": [
+    "descent.hog",
+    "descent.pig"
+  ],
+  "audio_tracks": 0,
+  "total_extracted": 7,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": null,
+    "level_reached": "Lunar Outpost",
+    "files_verified": 2,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }

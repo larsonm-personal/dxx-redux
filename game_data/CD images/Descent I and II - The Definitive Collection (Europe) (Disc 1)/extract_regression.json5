@@ -1,35 +1,36 @@
 // Auto-generated regression spec for: Descent I and II - The Definitive Collection (Europe) (Disc 1)
-// Generated: 2026-03-09 19:32:57
+// Generated: 2026-05-24 17:34:36
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-i-and-ii-the-definitive-collection-europe-disc-1",
-    "source_files":  [
-                         {
-                             "sha256":  "186d05fce68be69db2170632502ed4f3072339ba8bfa562e66af6d1ff07554b0",
-                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 1).cue"
-                         },
-                         {
-                             "sha256":  "c8c4a05642f438298e13f7da870ba54c8367450325a6e9c9ca7be2cf247663df",
-                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 1).bin"
-                         }
-                     ],
-    "game":  "d1d2",
-    "classification":  "d1_full",
-    "expected_mission":  "Descent: First Strike",
-    "expected_level1":  "Lunar Outpost",
-    "expected_files":  [
-                           "descent.hog",
-                           "descent.pig"
-                       ],
-    "audio_tracks":  0,
-    "total_extracted":  32
-,
-    "last_test_result": {
-        "status": "pass",
-        "failure_step": null,
-        "level_reached": "Lunar Outpost",
-        "files_verified": 2,
-        "classification_confirmed": true,
-        "test_mode": "full"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-i-and-ii-the-definitive-collection-europe-disc-1",
+  "source_files": [
+    {
+      "name": "Descent I and II - The Definitive Collection (Europe) (Disc 1).cue",
+      "sha256": "186d05fce68be69db2170632502ed4f3072339ba8bfa562e66af6d1ff07554b0"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (Europe) (Disc 1).bin",
+      "sha256": "c8c4a05642f438298e13f7da870ba54c8367450325a6e9c9ca7be2cf247663df"
     }
+  ],
+  "game": "d1d2",
+  "classification": "d1_full",
+  "expected_mission": "Descent: First Strike",
+  "expected_level1": "Lunar Outpost",
+  "expected_files": [
+    "descent.hog",
+    "descent.pig"
+  ],
+  "audio_tracks": 0,
+  "total_extracted": 32,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": null,
+    "level_reached": "Lunar Outpost",
+    "files_verified": 2,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }

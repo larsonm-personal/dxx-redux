@@ -1,0 +1,31 @@
+// Auto-generated regression spec for: d2 mac
+// Generated: 2026-05-24 17:34:35
+{
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "d2-mac",
+  "source_files": [
+    {
+      "name": "Descent_II.cue",
+      "sha256": "18097bcd761d522d50094c7469d3e42f17c1ca0a3e20079428fb8b171b18ea37"
+    },
+    {
+      "name": "Descent_II.bin",
+      "sha256": "5d81093276b55a34a52b76560aa8c3454b7fc0b87cbc79a357fdd86c2e528376"
+    }
+  ],
+  "game": "d2",
+  "classification": "d2_full",
+  "expected_mission": "Descent 2: Counterstrike!",
+  "expected_level1": "Ahayweh Gate",
+  "expected_files": [
+    "descent2.ham",
+    "descent2.hog",
+    "descent2.s11",
+    "descent2.s22",
+    "groupa.pig"
+  ],
+  "audio_tracks": 15,
+  "total_extracted": 17,
+  "import_mode": "setup_cd"
+}

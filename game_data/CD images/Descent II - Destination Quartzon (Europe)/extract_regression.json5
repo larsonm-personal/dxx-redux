@@ -1,84 +1,85 @@
 // Auto-generated regression spec for: Descent II - Destination Quartzon (Europe)
-// Generated: 2026-03-09 19:33:10
+// Generated: 2026-05-24 17:34:39
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-ii-destination-quartzon-europe",
-    "source_files":  [
-                         {
-                             "sha256":  "0b5f4b4910bb57abf2ea4e56f8f4a5aeed25ec72d15bbc8e38bc9c3d811a862c",
-                             "name":  "Descent II - Destination Quartzon (Europe).cue"
-                         },
-                         {
-                             "sha256":  "a512e1435cfe279d22f7a25187f065d636b87355274794ca179195a3db1dda2a",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 01).bin"
-                         },
-                         {
-                             "sha256":  "7e05f0e8c56ba0d39b11805a6742d4fdb8f0e22b76bdd998d3f785a8054f59b3",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 02).bin"
-                         },
-                         {
-                             "sha256":  "bd3971652dfbcee4e1967789663e3630a100695afbdf085693379bd07421d237",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 03).bin"
-                         },
-                         {
-                             "sha256":  "61a28663864802497bbb0c62699e55310c069c7503cc0fd118306b7ed29062ad",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 04).bin"
-                         },
-                         {
-                             "sha256":  "f570c544a0f94d3b7f653d6059176cd8233f957aa7ab667696c5a7703d0079a5",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 05).bin"
-                         },
-                         {
-                             "sha256":  "2c65770f09ad4610badea0c1d2a3cc96311bd9bd3a26cf0d08bfc6b00267b6ad",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 06).bin"
-                         },
-                         {
-                             "sha256":  "626f6abff044f9c16db2f6729a5340ee3287db7caba6214acf59a27795f645df",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 07).bin"
-                         },
-                         {
-                             "sha256":  "69a17262d0cfb0ec17a28333c6fef17f7672e03812bd32df7960d2145c9eba08",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 08).bin"
-                         },
-                         {
-                             "sha256":  "4798f7fe86188a1ede76f31a9f89b6e757f3dac1b8a122649a9b89a0e680d0f5",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 09).bin"
-                         },
-                         {
-                             "sha256":  "9df66fe21477f1f0cb6e3d5d5bca6203b93a0f7988bfdd6fc15f7a364cc2b3a8",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 10).bin"
-                         },
-                         {
-                             "sha256":  "5604f96449d0357e48335f8f9c9559ece9660e64ecf8c85c8c468d9feaebdbb2",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 11).bin"
-                         },
-                         {
-                             "sha256":  "62d69daa34f35f8065c34486aa6da4825958ade8896f29d55a7058656a0470d6",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 12).bin"
-                         },
-                         {
-                             "sha256":  "eb83dd598db020e400ca5a60783ec47494c81c719b9b3edc34c44c9ae3be1846",
-                             "name":  "Descent II - Destination Quartzon (Europe) (Track 13).bin"
-                         }
-                     ],
-    "game":  "d2",
-    "classification":  "d2_oem",
-    "expected_mission":  "D2 Destination:Quartzon",
-    "expected_level1":  "Drec Sphere",
-    "expected_files":  [
-                           "descent2.ham",
-                           "descent2.hog",
-                           "groupa.pig"
-                       ],
-    "audio_tracks":  12,
-    "total_extracted":  14
-,
-    "last_test_result": {
-        "status": "skip",
-        "failure_step": "not_ready",
-        "level_reached": null,
-        "files_verified": 3,
-        "classification_confirmed": false,
-        "test_mode": "file_only"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-ii-destination-quartzon-europe",
+  "source_files": [
+    {
+      "name": "Descent II - Destination Quartzon (Europe).cue",
+      "sha256": "0b5f4b4910bb57abf2ea4e56f8f4a5aeed25ec72d15bbc8e38bc9c3d811a862c"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 01).bin",
+      "sha256": "a512e1435cfe279d22f7a25187f065d636b87355274794ca179195a3db1dda2a"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 02).bin",
+      "sha256": "7e05f0e8c56ba0d39b11805a6742d4fdb8f0e22b76bdd998d3f785a8054f59b3"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 03).bin",
+      "sha256": "bd3971652dfbcee4e1967789663e3630a100695afbdf085693379bd07421d237"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 04).bin",
+      "sha256": "61a28663864802497bbb0c62699e55310c069c7503cc0fd118306b7ed29062ad"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 05).bin",
+      "sha256": "f570c544a0f94d3b7f653d6059176cd8233f957aa7ab667696c5a7703d0079a5"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 06).bin",
+      "sha256": "2c65770f09ad4610badea0c1d2a3cc96311bd9bd3a26cf0d08bfc6b00267b6ad"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 07).bin",
+      "sha256": "626f6abff044f9c16db2f6729a5340ee3287db7caba6214acf59a27795f645df"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 08).bin",
+      "sha256": "69a17262d0cfb0ec17a28333c6fef17f7672e03812bd32df7960d2145c9eba08"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 09).bin",
+      "sha256": "4798f7fe86188a1ede76f31a9f89b6e757f3dac1b8a122649a9b89a0e680d0f5"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 10).bin",
+      "sha256": "9df66fe21477f1f0cb6e3d5d5bca6203b93a0f7988bfdd6fc15f7a364cc2b3a8"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 11).bin",
+      "sha256": "5604f96449d0357e48335f8f9c9559ece9660e64ecf8c85c8c468d9feaebdbb2"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 12).bin",
+      "sha256": "62d69daa34f35f8065c34486aa6da4825958ade8896f29d55a7058656a0470d6"
+    },
+    {
+      "name": "Descent II - Destination Quartzon (Europe) (Track 13).bin",
+      "sha256": "eb83dd598db020e400ca5a60783ec47494c81c719b9b3edc34c44c9ae3be1846"
     }
+  ],
+  "game": "d2",
+  "classification": "d2_oem",
+  "expected_mission": "D2 Destination:Quartzon",
+  "expected_level1": "Drec Sphere",
+  "expected_files": [
+    "descent2.ham",
+    "descent2.hog",
+    "groupa.pig"
+  ],
+  "audio_tracks": 12,
+  "total_extracted": 14,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "skip",
+    "failure_step": "not_ready",
+    "level_reached": null,
+    "files_verified": 3,
+    "classification_confirmed": false,
+    "test_mode": "file_only"
+  }
 }

@@ -1,30 +1,27 @@
 // Auto-generated regression spec for: descent_enUS_1_0_35122.pkg
-// Generated: 2026-03-09 19:33:39
+// Generated: 2026-05-24 17:34:47
 {
-    "source_type":  "gog",
-    "source_files":  [
-                         {
-                             "sha256":  "d0720e12b95cfaee95e133ae08249ef05fcec17c6e9ca362bd54d8efb96f2293",
-                             "name":  "descent_enUS_1_0_35122.pkg"
-                         }
-                     ],
-    "game":  "d1",
-    "classification":  "d1_full",
-    "expected_mission":  "Descent: First Strike",
-    "expected_level1":  "Lunar Outpost",
-    "expected_files":  [
-                           "DESCENT.HOG",
-                           "DESCENT.PIG"
-                       ],
-    "audio_tracks":  0,
-    "total_extracted":  7
-,
-    "last_test_result": {
-        "status": "fail",
-        "failure_step": "crash",
-        "level_reached": null,
-        "files_verified": 2,
-        "classification_confirmed": true,
-        "test_mode": "full"
-    }
+  "source_type": "gog",
+  "source_files": {
+    "name": "descent_enUS_1_0_35122.pkg",
+    "sha256": "d0720e12b95cfaee95e133ae08249ef05fcec17c6e9ca362bd54d8efb96f2293"
+  },
+  "game": "d1",
+  "classification": "d1_full",
+  "expected_mission": "Descent: First Strike",
+  "expected_level1": "Lunar Outpost",
+  "expected_files": [
+    "DESCENT.HOG",
+    "DESCENT.PIG"
+  ],
+  "audio_tracks": 0,
+  "total_extracted": 7,
+  "last_test_result": {
+    "status": "fail",
+    "failure_step": "crash",
+    "level_reached": null,
+    "files_verified": 2,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }

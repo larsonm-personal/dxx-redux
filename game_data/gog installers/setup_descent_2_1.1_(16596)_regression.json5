@@ -1,33 +1,30 @@
 // Auto-generated regression spec for: setup_descent_2_1.1_(16596).exe
-// Generated: 2026-03-09 19:33:39
+// Generated: 2026-05-24 17:34:47
 {
-    "source_type":  "gog",
-    "source_files":  [
-                         {
-                             "sha256":  "58ccb37ecd54c73b0ddbde8d9051a0a6498911fbe66cd025179da681e13559cd",
-                             "name":  "setup_descent_2_1.1_(16596).exe"
-                         }
-                     ],
-    "game":  "d2",
-    "classification":  "d2_full",
-    "expected_mission":  "Descent 2: Counterstrike!",
-    "expected_level1":  "Ahayweh Gate",
-    "expected_files":  [
-                           "DESCENT2.HAM",
-                           "DESCENT2.HOG",
-                           "DESCENT2.S11",
-                           "DESCENT2.S22",
-                           "GROUPA.PIG"
-                       ],
-    "audio_tracks":  8,
-    "total_extracted":  21
-,
-    "last_test_result": {
-        "status": "pass",
-        "failure_step": null,
-        "level_reached": "Ahayweh Gate",
-        "files_verified": 5,
-        "classification_confirmed": true,
-        "test_mode": "full"
-    }
+  "source_type": "gog",
+  "source_files": {
+    "name": "setup_descent_2_1.1_(16596).exe",
+    "sha256": "58ccb37ecd54c73b0ddbde8d9051a0a6498911fbe66cd025179da681e13559cd"
+  },
+  "game": "d2",
+  "classification": "d2_full",
+  "expected_mission": "Descent 2: Counterstrike!",
+  "expected_level1": "Ahayweh Gate",
+  "expected_files": [
+    "DESCENT2.HAM",
+    "DESCENT2.HOG",
+    "DESCENT2.S11",
+    "DESCENT2.S22",
+    "GROUPA.PIG"
+  ],
+  "audio_tracks": 8,
+  "total_extracted": 21,
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": null,
+    "level_reached": "Ahayweh Gate",
+    "files_verified": 5,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }

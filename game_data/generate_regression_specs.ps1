@@ -15,16 +15,46 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent  # dxx-redux root
 $gameDataDir = $PSScriptRoot              # game_data/
 $knownDiscsPath = Join-Path $root 'android\app\src\main\assets\known_discs.json5'
+$regressionSpecHelpersPath = Join-Path $root 'android\tests\extract_regression_spec_helpers.ps1'
+. $regressionSpecHelpersPath
+
+function Get-CueImageFiles($path) {
+    $files = @()
+    foreach ($filter in @('*.bin', '*.img')) {
+        $files += Get-ChildItem -LiteralPath $path -Filter $filter -File
+    }
+    return $files | Sort-Object Name
+}
+
+function Get-ExistingLastTestResult($path) {
+    if (-not (Test-Path -LiteralPath $path)) {
+        return $null
+    }
+
+    try {
+        $existingSpec = Read-Json5File $path
+        return $existingSpec.last_test_result
+    } catch {
+        Write-Host "  WARN $([System.IO.Path]::GetFileName((Split-Path $path -Parent))): could not preserve last_test_result: $($_.Exception.Message)" -ForegroundColor Yellow
+        return $null
+    }
+}
+
+function Resolve-GameForSpec($game, $classification) {
+    if ($game -and $game -ne 'unknown') {
+        return $game
+    }
+    if ($classification.type -match '^d1') {
+        return 'd1'
+    }
+    if ($classification.type -match '^d2') {
+        return 'd2'
+    }
+    return 'unknown'
+}
 
 # --- Parse known_discs.json5 ---
-$rawText = [System.IO.File]::ReadAllText($knownDiscsPath, [System.Text.Encoding]::UTF8)
-# Strip BOM if present
-if ($rawText[0] -eq [char]0xFEFF) { $rawText = $rawText.Substring(1) }
-# Strip // comments
-$rawText = [regex]::Replace($rawText, '//.*', '')
-# Strip trailing commas before } or ]
-$rawText = [regex]::Replace($rawText, ',\s*([}\]])', '$1')
-$knownDiscs = ($rawText | ConvertFrom-Json).discs
+$knownDiscs = (Read-Json5File $knownDiscsPath).discs
 
 # Build SHA1->disc lookup (keyed by data track 1 SHA1)
 $sha1ToDisc = @{}
@@ -185,6 +215,7 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
         $skipped++
         continue
     }
+    $lastTestResult = Get-ExistingLastTestResult $specPath
 
     $hashFile = Join-Path $dir.FullName 'track_hashes.json'
     $dataTracksDir = Join-Path $dir.FullName 'data_tracks'
@@ -206,9 +237,9 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
             $hash = (Get-FileHash -LiteralPath $cue.FullName -Algorithm SHA256).Hash.ToLower()
             $sourceFiles += @{ name = $cue.Name; sha256 = $hash }
         }
-        foreach ($bin in (Get-ChildItem $dir.FullName -Filter '*.bin' -File | Sort-Object Name)) {
-            $hash = (Get-FileHash -LiteralPath $bin.FullName -Algorithm SHA256).Hash.ToLower()
-            $sourceFiles += @{ name = $bin.Name; sha256 = $hash }
+        foreach ($image in (Get-CueImageFiles $dir.FullName)) {
+            $hash = (Get-FileHash -LiteralPath $image.FullName -Algorithm SHA256).Hash.ToLower()
+            $sourceFiles += @{ name = $image.Name; sha256 = $hash }
         }
     } else {
         foreach ($iso in $isoFiles) {
@@ -248,6 +279,7 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
 
     # Classify
     $classification = Get-DiscClassification $discId $game $extractedFiles
+    $resolvedGame = Resolve-GameForSpec $game $classification
 
     # Build spec
     $spec = [ordered]@{
@@ -255,7 +287,7 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
         disc_image_type = $discImageType
         disc_id = $discId
         source_files = $sourceFiles
-        game = if ($game) { $game } else { 'unknown' }
+        game = $resolvedGame
         classification = $classification.type
         expected_mission = $classification.mission
         expected_level1 = $classification.level1
@@ -265,14 +297,18 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     }
     if ($discImageType -eq 'iso') {
         $spec.import_mode = 'setup_iso'
-    } elseif ($discId -eq 'descent-mac-macplay') {
+    } elseif ($discImageType -eq 'cue_bin') {
         $spec.import_mode = 'setup_cd'
     }
+    if ($null -ne $lastTestResult) {
+        $spec.last_test_result = $lastTestResult
+    }
 
-    # Write as json5 (just JSON with a comment header)
-    $json = ($spec | ConvertTo-Json -Depth 4) -replace "`r`n", "`n"
-    $content = "// Auto-generated regression spec for: $($dir.Name)`n// Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')`n$json"
-    [System.IO.File]::WriteAllText($specPath, $content, [System.Text.Encoding]::UTF8)
+    Write-CanonicalRegressionSpec `
+        -path $specPath `
+        -spec $spec `
+        -sourceName $dir.Name `
+        -generated (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
     $specCount++
     $status = if ($classification.type -eq 'unknown') { 'UNKNOWN' } elseif (-not $classification.mission) { 'NO-LAUNCH' } else { 'OK' }
     Write-Host "  $status $($dir.Name) -> $($classification.type)" -ForegroundColor $(if ($status -eq 'OK') { 'Green' } elseif ($status -eq 'NO-LAUNCH') { 'DarkYellow' } else { 'Red' })
@@ -310,6 +346,7 @@ foreach ($gog in $gogInstallers) {
         $skipped++
         continue
     }
+    $lastTestResult = Get-ExistingLastTestResult $specPath
 
     # Hash installer
     $hash = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash.ToLower()
@@ -343,10 +380,15 @@ foreach ($gog in $gogInstallers) {
         audio_tracks = $audioTracks
         total_extracted = $extractedCount
     }
+    if ($null -ne $lastTestResult) {
+        $spec.last_test_result = $lastTestResult
+    }
 
-    $json = ($spec | ConvertTo-Json -Depth 4) -replace "`r`n", "`n"
-    $content = "// Auto-generated regression spec for: $($gog.file)`n// Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')`n$json"
-    [System.IO.File]::WriteAllText($specPath, $content, [System.Text.Encoding]::UTF8)
+    Write-CanonicalRegressionSpec `
+        -path $specPath `
+        -spec $spec `
+        -sourceName $gog.file `
+        -generated (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
     $specCount++
     Write-Host "  OK $($gog.file) -> $($gog.type)" -ForegroundColor Green
 }

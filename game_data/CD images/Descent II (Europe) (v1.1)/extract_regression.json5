@@ -1,70 +1,71 @@
 // Auto-generated regression spec for: Descent II (Europe) (v1.1)
-// Generated: 2026-03-09 19:33:25
+// Generated: 2026-05-24 17:34:43
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-ii-usa-v11",
-    "source_files":  [
-                         {
-                             "sha256":  "5e0f7bc1229148077983c326d8242a162ebcb8c4bfae168cada812d49581e62d",
-                             "name":  "Descent II (Europe) (v1.1).cue"
-                         },
-                         {
-                             "sha256":  "971ebca0be8e5e241b6fe189aa55557c7f38a9da7e9b396fa77530087ba537c4",
-                             "name":  "Descent II (Europe) (v1.1) (Track 1).bin"
-                         },
-                         {
-                             "sha256":  "93b1a4d60714a542fa103308e7214508774523b2a9fae7de405d273d6266e46a",
-                             "name":  "Descent II (Europe) (v1.1) (Track 2).bin"
-                         },
-                         {
-                             "sha256":  "7d632b6a00e47963852fcfbce5973c633b0a95d483fe3fed0739bd01c8b66d3d",
-                             "name":  "Descent II (Europe) (v1.1) (Track 3).bin"
-                         },
-                         {
-                             "sha256":  "228481a81979660a42f5e151f02c515915b6a3d8e285f495b8ca497dd8c38efc",
-                             "name":  "Descent II (Europe) (v1.1) (Track 4).bin"
-                         },
-                         {
-                             "sha256":  "8b9372d4f02895af717b71ac03062da165e0536a30342eed37d7e536c798d44e",
-                             "name":  "Descent II (Europe) (v1.1) (Track 5).bin"
-                         },
-                         {
-                             "sha256":  "88b51415a20c3f7c0f42e2099be288de58c85e02e1b0d4b99d74e994aae28e67",
-                             "name":  "Descent II (Europe) (v1.1) (Track 6).bin"
-                         },
-                         {
-                             "sha256":  "b945f32d76477e3103f1ef05641e777a1660dddf3c4b0f9347f11b7f8712cd4a",
-                             "name":  "Descent II (Europe) (v1.1) (Track 7).bin"
-                         },
-                         {
-                             "sha256":  "f37af8bd93fa2f44bb9255fa1e2ad7a2314280e01237abc789fd773e0bcf5760",
-                             "name":  "Descent II (Europe) (v1.1) (Track 8).bin"
-                         },
-                         {
-                             "sha256":  "cb0a8f34fc30938b57c93736addff506230ecec26b3d924ea9a98fa3778052bd",
-                             "name":  "Descent II (Europe) (v1.1) (Track 9).bin"
-                         }
-                     ],
-    "game":  "d2",
-    "classification":  "d2_full",
-    "expected_mission":  "Descent 2: Counterstrike!",
-    "expected_level1":  "Ahayweh Gate",
-    "expected_files":  [
-                           "descent2.ham",
-                           "descent2.hog",
-                           "descent2.s11",
-                           "descent2.s22",
-                           "groupa.pig"
-                       ],
-    "audio_tracks":  8,
-    "total_extracted":  22
-,
-    "last_test_result": {
-        "status": "pass",
-        "failure_step": null,
-        "level_reached": "Ahayweh Gate",
-        "files_verified": 5,
-        "classification_confirmed": true,
-        "test_mode": "full"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-ii-infinite-abyss",
+  "source_files": [
+    {
+      "name": "Descent II (Europe) (v1.1).cue",
+      "sha256": "5e0f7bc1229148077983c326d8242a162ebcb8c4bfae168cada812d49581e62d"
+    },
+    {
+      "name": "Descent II (Europe) (v1.1) (Track 1).bin",
+      "sha256": "971ebca0be8e5e241b6fe189aa55557c7f38a9da7e9b396fa77530087ba537c4"
+    },
+    {
+      "name": "Descent II (Europe) (v1.1) (Track 2).bin",
+      "sha256": "93b1a4d60714a542fa103308e7214508774523b2a9fae7de405d273d6266e46a"
+    },
+    {
+      "name": "Descent II (Europe) (v1.1) (Track 3).bin",
+      "sha256": "7d632b6a00e47963852fcfbce5973c633b0a95d483fe3fed0739bd01c8b66d3d"
+    },
+    {
+      "name": "Descent II (Europe) (v1.1) (Track 4).bin",
+      "sha256": "228481a81979660a42f5e151f02c515915b6a3d8e285f495b8ca497dd8c38efc"
+    },
+    {
+      "name": "Descent II (Europe) (v1.1) (Track 5).bin",
+      "sha256": "8b9372d4f02895af717b71ac03062da165e0536a30342eed37d7e536c798d44e"
+    },
+    {
+      "name": "Descent II (Europe) (v1.1) (Track 6).bin",
+      "sha256": "88b51415a20c3f7c0f42e2099be288de58c85e02e1b0d4b99d74e994aae28e67"
+    },
+    {
+      "name": "Descent II (Europe) (v1.1) (Track 7).bin",
+      "sha256": "b945f32d76477e3103f1ef05641e777a1660dddf3c4b0f9347f11b7f8712cd4a"
+    },
+    {
+      "name": "Descent II (Europe) (v1.1) (Track 8).bin",
+      "sha256": "f37af8bd93fa2f44bb9255fa1e2ad7a2314280e01237abc789fd773e0bcf5760"
+    },
+    {
+      "name": "Descent II (Europe) (v1.1) (Track 9).bin",
+      "sha256": "cb0a8f34fc30938b57c93736addff506230ecec26b3d924ea9a98fa3778052bd"
     }
+  ],
+  "game": "d2",
+  "classification": "d2_full",
+  "expected_mission": "Descent 2: Counterstrike!",
+  "expected_level1": "Ahayweh Gate",
+  "expected_files": [
+    "descent2.ham",
+    "descent2.hog",
+    "descent2.s11",
+    "descent2.s22",
+    "groupa.pig"
+  ],
+  "audio_tracks": 8,
+  "total_extracted": 22,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": null,
+    "level_reached": "Ahayweh Gate",
+    "files_verified": 5,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }

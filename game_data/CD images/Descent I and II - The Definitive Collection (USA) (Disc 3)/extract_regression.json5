@@ -1,65 +1,66 @@
 // Auto-generated regression spec for: Descent I and II - The Definitive Collection (USA) (Disc 3)
-// Generated: 2026-03-09 19:33:08
+// Generated: 2026-05-24 17:34:38
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-i-and-ii-the-definitive-collection-usa-disc-3",
-    "source_files":  [
-                         {
-                             "sha256":  "ffbbdbb14edf7f1b8471681f22ac5300c6a581e6204b5615a07fb833387954bc",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 3).cue"
-                         },
-                         {
-                             "sha256":  "3605a2077aaefc99b4c192c7e12f90e0f6023f0fd43c4b1d927ce9997cbbe8e8",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 1).bin"
-                         },
-                         {
-                             "sha256":  "98b509a4dbab270f34ebec26fbdc121247706e8e21f5c5c0eb3f9477ba66e395",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 2).bin"
-                         },
-                         {
-                             "sha256":  "52a5d296bd0296f0936b274be678e66e58d3b5347c31f21e02cc0ce2303d030b",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 3).bin"
-                         },
-                         {
-                             "sha256":  "6fa4c75c0e6d540acc3b3c85e1b7c3f510f8c496e7a3eba54154a903a47db6d2",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 4).bin"
-                         },
-                         {
-                             "sha256":  "386c9bc3dbaa2b594478c769a783c7610226a466ab43343d620428f9c5569583",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 5).bin"
-                         },
-                         {
-                             "sha256":  "e9c47d6c473a3c6ebb35508abe9a2e1be06c7748375acbe422ffcf820ea2755c",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 6).bin"
-                         },
-                         {
-                             "sha256":  "a2395b0eda0e95ab40bb6907e613fbde1d2a77814e98dd6ca021b045563af875",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 7).bin"
-                         },
-                         {
-                             "sha256":  "115662d09b61d5cc0031e354b5196ff037b0171eb023840996415167845e49c9",
-                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 8).bin"
-                         }
-                     ],
-    "game":  "d1d2",
-    "classification":  "d2_vertigo",
-    "expected_mission":  "D2: Vertigo!",
-    "expected_level1":  "Styx Level 1",
-    "expected_files":  [
-                           "d2x.hog",
-                           "d2x.mn2",
-                           "descent2.ham",
-                           "descent2.hog"
-                       ],
-    "audio_tracks":  7,
-    "total_extracted":  11
-,
-    "last_test_result": {
-        "status": "skip",
-        "failure_step": "not_ready",
-        "level_reached": null,
-        "files_verified": 4,
-        "classification_confirmed": false,
-        "test_mode": "file_only"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-i-and-ii-the-definitive-collection-usa-disc-3",
+  "source_files": [
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 3).cue",
+      "sha256": "ffbbdbb14edf7f1b8471681f22ac5300c6a581e6204b5615a07fb833387954bc"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 1).bin",
+      "sha256": "3605a2077aaefc99b4c192c7e12f90e0f6023f0fd43c4b1d927ce9997cbbe8e8"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 2).bin",
+      "sha256": "98b509a4dbab270f34ebec26fbdc121247706e8e21f5c5c0eb3f9477ba66e395"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 3).bin",
+      "sha256": "52a5d296bd0296f0936b274be678e66e58d3b5347c31f21e02cc0ce2303d030b"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 4).bin",
+      "sha256": "6fa4c75c0e6d540acc3b3c85e1b7c3f510f8c496e7a3eba54154a903a47db6d2"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 5).bin",
+      "sha256": "386c9bc3dbaa2b594478c769a783c7610226a466ab43343d620428f9c5569583"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 6).bin",
+      "sha256": "e9c47d6c473a3c6ebb35508abe9a2e1be06c7748375acbe422ffcf820ea2755c"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 7).bin",
+      "sha256": "a2395b0eda0e95ab40bb6907e613fbde1d2a77814e98dd6ca021b045563af875"
+    },
+    {
+      "name": "Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 8).bin",
+      "sha256": "115662d09b61d5cc0031e354b5196ff037b0171eb023840996415167845e49c9"
     }
+  ],
+  "game": "d1d2",
+  "classification": "d2_vertigo",
+  "expected_mission": "D2: Vertigo!",
+  "expected_level1": "Styx Level 1",
+  "expected_files": [
+    "d2x.hog",
+    "d2x.mn2",
+    "descent2.ham",
+    "descent2.hog"
+  ],
+  "audio_tracks": 7,
+  "total_extracted": 11,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "skip",
+    "failure_step": "not_ready",
+    "level_reached": null,
+    "files_verified": 4,
+    "classification_confirmed": false,
+    "test_mode": "file_only"
+  }
 }

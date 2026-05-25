@@ -33,6 +33,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1')
 
 # Sentinel output to diagnose empty-log issues when run from run_all_tests
 [Console]::Out.Flush()
@@ -134,10 +135,7 @@ Register-EngineEvent PowerShell.Exiting -Action { Invoke-Cleanup } | Out-Null
 function Read-Json5 {
     # Parse JSON5 file (strip // comments and trailing commas)
     param([string]$Path)
-    $raw = Get-Content $Path -Raw
-    $raw = [regex]::Replace($raw, '//.*', '')
-    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
-    return ($raw | ConvertFrom-Json)
+    return Read-Json5File $Path
 }
 
 function Get-SetupIntrospection {
@@ -429,35 +427,16 @@ $script:testMode = 'full'
 function Write-TestResult {
     # Persist last_test_result into the spec json5 file.
     if (-not $SpecPath -or -not (Test-Path $SpecPath)) { return }
-    $text = Get-Content $SpecPath -Raw
 
-    # Remove existing last_test_result block (with optional leading comma/whitespace)
-    $text = [regex]::Replace($text, ',?\s*"last_test_result"\s*:\s*\{[^}]*\}', '')
-
-    # Build replacement block
-    $fs = if ($script:testFailureStep) { "`"$($script:testFailureStep)`"" } else { 'null' }
-    $lv = if ($script:testLevel) { "`"$($script:testLevel)`"" } else { 'null' }
-    $cc = if ($script:testClassConfirmed) { 'true' } else { 'false' }
-    $resultBlock = @"
-,
-    "last_test_result": {
-        "status": "$($script:testStatus)",
-        "failure_step": $fs,
-        "level_reached": $lv,
-        "files_verified": $($script:testFilesVerified),
-        "classification_confirmed": $cc,
-        "test_mode": "$($script:testMode)"
+    $lastTestResult = [ordered]@{
+        status = $script:testStatus
+        failure_step = $script:testFailureStep
+        level_reached = $script:testLevel
+        files_verified = $script:testFilesVerified
+        classification_confirmed = $script:testClassConfirmed
+        test_mode = $script:testMode
     }
-"@
-
-    # Insert before final }
-    $text = $text.TrimEnd()
-    if ($text.EndsWith('}')) {
-        $text = $text.Substring(0, $text.Length - 1).TrimEnd() + "`n$resultBlock`n}`n"
-    }
-    # Normalize to LF before writing (here-strings and ConvertTo-Json use CRLF on Windows)
-    $text = $text -replace "`r`n", "`n"
-    [System.IO.File]::WriteAllText($SpecPath, $text, [System.Text.UTF8Encoding]::new($false))
+    Set-RegressionSpecLastTestResult $SpecPath $lastTestResult
 }
 
 function Exit-Test {

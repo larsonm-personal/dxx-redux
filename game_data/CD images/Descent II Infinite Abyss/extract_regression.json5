@@ -1,48 +1,48 @@
-// Auto-generated regression spec for: Descent II (USA) (v1.1)
-// Generated: 2026-05-24 17:34:45
+// Auto-generated regression spec for: Descent II Infinite Abyss
+// Generated: 2026-05-24 17:34:46
 {
   "source_type": "cd",
   "disc_image_type": "cue_bin",
   "disc_id": "descent-ii-infinite-abyss",
   "source_files": [
     {
-      "name": "Descent II (USA) (v1.1).cue",
-      "sha256": "7e3150173456277490adb336b031f12819853d91e9770ab4272a2c234bb5876e"
+      "name": "DESCENT_II_ABYSS.cue",
+      "sha256": "85fb52a3a95b7bfc193ad3b9f5ccf5e02665da1f749e6c59c3d66c53e1c3836f"
     },
     {
-      "name": "Descent II (USA) (v1.1) (Track 1).bin",
+      "name": "DESCENT_II_ABYSS (Track 1).bin",
       "sha256": "971ebca0be8e5e241b6fe189aa55557c7f38a9da7e9b396fa77530087ba537c4"
     },
     {
-      "name": "Descent II (USA) (v1.1) (Track 2).bin",
+      "name": "DESCENT_II_ABYSS (Track 2).bin",
       "sha256": "711c00730838f85b202b2b15e2ce4a68dc68781ffa97bcb8da4f62c968b29f77"
     },
     {
-      "name": "Descent II (USA) (v1.1) (Track 3).bin",
+      "name": "DESCENT_II_ABYSS (Track 3).bin",
       "sha256": "b7e6c0ed6bd455418c9119da7c864b1e702491ff8c4e077c2617c836090e88a5"
     },
     {
-      "name": "Descent II (USA) (v1.1) (Track 4).bin",
+      "name": "DESCENT_II_ABYSS (Track 4).bin",
       "sha256": "baeac8ecadb5297a56871392889623a3a0949fb70b34cef596386b3b68ba4af8"
     },
     {
-      "name": "Descent II (USA) (v1.1) (Track 5).bin",
+      "name": "DESCENT_II_ABYSS (Track 5).bin",
       "sha256": "9c50b9d8fa076950a466767fb6859b571d53cb8427ed24d352f7f38ac9e2db8e"
     },
     {
-      "name": "Descent II (USA) (v1.1) (Track 6).bin",
+      "name": "DESCENT_II_ABYSS (Track 6).bin",
       "sha256": "8c083f4f3beb94e8e59ba42361a09f14e814a701ff2d0438237214fa4b8b41ce"
     },
     {
-      "name": "Descent II (USA) (v1.1) (Track 7).bin",
+      "name": "DESCENT_II_ABYSS (Track 7).bin",
       "sha256": "6bf5ac12f86b8143650f2309d2f73bccb9db9c84601dc1e7f924a3942f83a70e"
     },
     {
-      "name": "Descent II (USA) (v1.1) (Track 8).bin",
+      "name": "DESCENT_II_ABYSS (Track 8).bin",
       "sha256": "0540c44cf47e2ac8282a4a9d9a5cc912cc2ec16bbe9921a03f424897debd6545"
     },
     {
-      "name": "Descent II (USA) (v1.1) (Track 9).bin",
+      "name": "DESCENT_II_ABYSS (Track 9).bin",
       "sha256": "055ec8be93860b9dc139d57f827528d4a0d251725810c779185c2901633cc611"
     }
   ],
@@ -59,13 +59,5 @@
   ],
   "audio_tracks": 8,
   "total_extracted": 22,
-  "import_mode": "setup_cd",
-  "last_test_result": {
-    "status": "pass",
-    "failure_step": null,
-    "level_reached": "Ahayweh Gate",
-    "files_verified": 5,
-    "classification_confirmed": true,
-    "test_mode": "full"
-  }
+  "import_mode": "setup_cd"
 }

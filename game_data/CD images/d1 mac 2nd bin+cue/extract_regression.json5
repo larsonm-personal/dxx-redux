@@ -1,0 +1,28 @@
+// Auto-generated regression spec for: d1 mac 2nd bin+cue
+// Generated: 2026-05-24 17:34:34
+{
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "d1-mac-2nd-bincue",
+  "source_files": [
+    {
+      "name": "Descent [Mac].CUE",
+      "sha256": "0717b611f4ea8da1140d7ad9a53605ffaf62362148e81e7a91705e78bb8de9b0"
+    },
+    {
+      "name": "Descent [Mac].BIN",
+      "sha256": "3f921a15abc3dc656d98408096d344414e434dca52f1a7e124fd310987716030"
+    }
+  ],
+  "game": "d1",
+  "classification": "d1_full",
+  "expected_mission": "Descent: First Strike",
+  "expected_level1": "Lunar Outpost",
+  "expected_files": [
+    "descent.hog",
+    "descent.pig"
+  ],
+  "audio_tracks": 13,
+  "total_extracted": 7,
+  "import_mode": "setup_cd"
+}

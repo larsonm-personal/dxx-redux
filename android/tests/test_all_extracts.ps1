@@ -45,6 +45,7 @@ $TEST_SCRIPT = Join-Path $SCRIPT_DIR 'test_extract.ps1'
 Write-Host "test_all_extracts.ps1 starting"
 
 . "$PSScriptRoot\..\test_helpers.ps1"
+. (Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1')
 
 # -- Discover specs -------------------------------------------
 
@@ -94,10 +95,7 @@ Write-Host ""
 
 function Read-Json5 {
     param([string]$Path)
-    $raw = Get-Content $Path -Raw
-    $raw = [regex]::Replace($raw, '//.*', '')
-    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
-    return ($raw | ConvertFrom-Json)
+    return Read-Json5File $Path
 }
 
 # -- Run tests ------------------------------------------------

@@ -1,70 +1,71 @@
 // Auto-generated regression spec for: Descent II (USA) (Rerelease)
-// Generated: 2026-03-09 19:33:33
+// Generated: 2026-05-24 17:34:45
 {
-    "source_type":  "cd",
-    "disc_id":  "descent-ii-usa-rerelease",
-    "source_files":  [
-                         {
-                             "sha256":  "d96cbe614c2868043c15813276beb9f1255f1e8e7d653be37bbcfedd6b91f48d",
-                             "name":  "Descent II (USA) (Rerelease).cue"
-                         },
-                         {
-                             "sha256":  "17c981808c217da113fd5d08ecb14466a0ac4a0af8985b68ae956aaff01cc845",
-                             "name":  "Descent II (USA) (Rerelease) (Track 1).bin"
-                         },
-                         {
-                             "sha256":  "167823a00e058a021a26bbbbc034d7c67f5f6d76e7aaa6d79a2b2ad3b107d6a4",
-                             "name":  "Descent II (USA) (Rerelease) (Track 2).bin"
-                         },
-                         {
-                             "sha256":  "29577ad40b167ea276abd606e19a4f93b42a2e79dbe0848188c3fafbf749c203",
-                             "name":  "Descent II (USA) (Rerelease) (Track 3).bin"
-                         },
-                         {
-                             "sha256":  "294de6f3e6628519024575fe576b60a7378e422c75251fd8c01f8e492d4ab867",
-                             "name":  "Descent II (USA) (Rerelease) (Track 4).bin"
-                         },
-                         {
-                             "sha256":  "1b7abb2f6bc4a244ae5a63f61489ba0d3d03853318fdf71111fe87fec440d265",
-                             "name":  "Descent II (USA) (Rerelease) (Track 5).bin"
-                         },
-                         {
-                             "sha256":  "9a58a6ea2bbfa7a5262f42a3a23aa8e3198474e46e1a67fb3b9e291893341753",
-                             "name":  "Descent II (USA) (Rerelease) (Track 6).bin"
-                         },
-                         {
-                             "sha256":  "60763d457b935add076d7bb4b4046c4e29910c04d2fd721dc8c409535ede662f",
-                             "name":  "Descent II (USA) (Rerelease) (Track 7).bin"
-                         },
-                         {
-                             "sha256":  "1f33506dcfdd424eef39698b22563947a556616181420ac799592363f7e06b45",
-                             "name":  "Descent II (USA) (Rerelease) (Track 8).bin"
-                         },
-                         {
-                             "sha256":  "1ece7f898a8eb77e6a213701ee051217e63aa17b9e51d9a537915efdc298104d",
-                             "name":  "Descent II (USA) (Rerelease) (Track 9).bin"
-                         }
-                     ],
-    "game":  "d2",
-    "classification":  "d2_full",
-    "expected_mission":  "Descent 2: Counterstrike!",
-    "expected_level1":  "Ahayweh Gate",
-    "expected_files":  [
-                           "descent2.ham",
-                           "descent2.hog",
-                           "descent2.s11",
-                           "descent2.s22",
-                           "groupa.pig"
-                       ],
-    "audio_tracks":  8,
-    "total_extracted":  22
-,
-    "last_test_result": {
-        "status": "pass",
-        "failure_step": null,
-        "level_reached": "Ahayweh Gate",
-        "files_verified": 5,
-        "classification_confirmed": true,
-        "test_mode": "full"
+  "source_type": "cd",
+  "disc_image_type": "cue_bin",
+  "disc_id": "descent-ii-usa-rerelease",
+  "source_files": [
+    {
+      "name": "Descent II (USA) (Rerelease).cue",
+      "sha256": "d96cbe614c2868043c15813276beb9f1255f1e8e7d653be37bbcfedd6b91f48d"
+    },
+    {
+      "name": "Descent II (USA) (Rerelease) (Track 1).bin",
+      "sha256": "17c981808c217da113fd5d08ecb14466a0ac4a0af8985b68ae956aaff01cc845"
+    },
+    {
+      "name": "Descent II (USA) (Rerelease) (Track 2).bin",
+      "sha256": "167823a00e058a021a26bbbbc034d7c67f5f6d76e7aaa6d79a2b2ad3b107d6a4"
+    },
+    {
+      "name": "Descent II (USA) (Rerelease) (Track 3).bin",
+      "sha256": "29577ad40b167ea276abd606e19a4f93b42a2e79dbe0848188c3fafbf749c203"
+    },
+    {
+      "name": "Descent II (USA) (Rerelease) (Track 4).bin",
+      "sha256": "294de6f3e6628519024575fe576b60a7378e422c75251fd8c01f8e492d4ab867"
+    },
+    {
+      "name": "Descent II (USA) (Rerelease) (Track 5).bin",
+      "sha256": "1b7abb2f6bc4a244ae5a63f61489ba0d3d03853318fdf71111fe87fec440d265"
+    },
+    {
+      "name": "Descent II (USA) (Rerelease) (Track 6).bin",
+      "sha256": "9a58a6ea2bbfa7a5262f42a3a23aa8e3198474e46e1a67fb3b9e291893341753"
+    },
+    {
+      "name": "Descent II (USA) (Rerelease) (Track 7).bin",
+      "sha256": "60763d457b935add076d7bb4b4046c4e29910c04d2fd721dc8c409535ede662f"
+    },
+    {
+      "name": "Descent II (USA) (Rerelease) (Track 8).bin",
+      "sha256": "1f33506dcfdd424eef39698b22563947a556616181420ac799592363f7e06b45"
+    },
+    {
+      "name": "Descent II (USA) (Rerelease) (Track 9).bin",
+      "sha256": "1ece7f898a8eb77e6a213701ee051217e63aa17b9e51d9a537915efdc298104d"
     }
+  ],
+  "game": "d2",
+  "classification": "d2_full",
+  "expected_mission": "Descent 2: Counterstrike!",
+  "expected_level1": "Ahayweh Gate",
+  "expected_files": [
+    "descent2.ham",
+    "descent2.hog",
+    "descent2.s11",
+    "descent2.s22",
+    "groupa.pig"
+  ],
+  "audio_tracks": 8,
+  "total_extracted": 22,
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": null,
+    "level_reached": "Ahayweh Gate",
+    "files_verified": 5,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }
