@@ -92,18 +92,23 @@ Expected payoff:
 ## Tranche 3 - Split controller and touch editor pages
 
 Files:
-- `ControllerConfigPage.kt`: 3,284 lines.
+- `ControllerConfigPage.kt`: originally 3,284 lines, now 2,565 lines after the model/store split.
 - `TouchEditorPage.kt`: 3,250 lines.
 
 These are both coherent features, but each has clear section boundaries and would be much easier to work on as several files.
 
 Controller config recommended splits:
-1. `ControllerConfigModel.kt`: control lists, KC index maps, controller config version, joy settings constants, default bindings, thresholds, and exponent math.
-2. `ControllerConfigStore.kt`: load/save/import/export config persistence and `buildJoyPairs`/`buildJoySettingsArray` if they remain pure serialization helpers.
+1. `ControllerConfigModel.kt`: control lists, KC index maps, controller config version, joy settings constants, default bindings, thresholds, and exponent math. Completed 2026-05-24.
+2. `ControllerConfigStore.kt`: load/save/import/export config persistence and `buildJoyPairs`/`buildJoySettingsArray` if they remain pure serialization helpers. Completed 2026-05-24.
 3. `ControllerAssignment.kt`: assignment and conflict resolution helpers.
 4. `ControllerPreviewCanvas.kt`: `DrawScope` drawing helpers for sticks, D-pad, buttons, triggers, and labels.
 5. `ControllerPickerDialogs.kt`: button, stick, axis, D-pad, threshold, and generic motion bridge dialogs.
 6. Leave `ControllerConfigPage.kt` as state orchestration and layout composition.
+
+Controller config progress as of 2026-05-24:
+- Completed model/store split with `ControllerConfigModel.kt` and `ControllerConfigStore.kt`.
+- `ControllerConfigPage.kt` plus the two extracted files totals 3,267 lines, about 17 fewer than the original page.
+- Remaining controller config opportunities are assignment/conflict helpers, preview canvas drawing, and picker dialogs.
 
 Touch editor recommended splits:
 1. `TouchEditorGeometry.kt`: floating-zone edge encode/decode, selection resolution, hit testing, movement, collision detection, and sizing math.
