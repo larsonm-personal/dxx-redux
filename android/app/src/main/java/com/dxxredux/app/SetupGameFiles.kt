@@ -289,8 +289,11 @@ internal val RECOMMENDED_MODS =
     )
 
 internal data class DemoPackage(
+    val game: String,
     val name: String,
     val url: String,
+    val downloadFilename: String,
+    val archiveName: String,
     val description: String,
     val sizeBytes: Long,
     val files: List<String>,
@@ -299,13 +302,47 @@ internal data class DemoPackage(
 internal val DEMO_DOWNLOADS =
     listOf(
         DemoPackage(
+            game = "d2",
             name = "D2 Demo",
-            url = "https://dxx-redux.com/dl/d2demo.zip",
-            description = "Official Descent 2 Demo (3 levels)",
-            sizeBytes = 5_500_000L,
-            files = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig"),
+            url =
+                "https://github.com/larsonm-personal/dxx-redux/releases/download/" +
+                    "demo_installers/Descent.II.Preview.sit",
+            downloadFilename = "Descent.II.Preview.sit",
+            archiveName = "Descent II Preview.sit",
+            description = "Descent 2 Mac preview demo",
+            sizeBytes = 7_753_518L,
+            files = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig", "descent2.s11", "exit.ham"),
+        ),
+        DemoPackage(
+            game = "d1",
+            name = "D1 Demo",
+            url =
+                "https://github.com/larsonm-personal/dxx-redux/releases/download/" +
+                    "demo_installers/Descent.Shareware.sit",
+            downloadFilename = "Descent.Shareware.sit",
+            archiveName = "Descent Shareware.sit",
+            description = "Descent 1 Mac shareware demo",
+            sizeBytes = 4_735_288L,
+            files = listOf("descent.hog", "descent.pig"),
         ),
     )
+
+internal fun visibleDemoInstallerOffers(
+    showDemoInstallerOffer: Boolean,
+    d1Ready: Boolean,
+    d2Ready: Boolean,
+): List<DemoPackage> =
+    if (!showDemoInstallerOffer) {
+        emptyList()
+    } else {
+        DEMO_DOWNLOADS.filter { demo ->
+            when (demo.game) {
+                "d1" -> !d1Ready
+                "d2" -> !d2Ready
+                else -> false
+            }
+        }
+    }
 
 internal val ALL_GAME_FILENAMES: Set<String> by lazy {
     (D2_FILES + D2_DEMO_FILES + D1_FILES)

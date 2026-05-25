@@ -46,6 +46,7 @@ internal const val PREF_SKIP_INTRO_MOVIE = "skip_intro_movie"
 internal const val PREF_REWIND_SUPPORT_ENABLED = "rewind_support_enabled"
 internal const val PREF_REWIND_TARGET_SECONDS = "rewind_target_seconds"
 internal const val PREF_SHOW_RESUME_OFFER = "show_resume_offer"
+internal const val PREF_SHOW_DEMO_INSTALLER_OFFER = "show_demo_installer_offer"
 
 // Keep in sync with android_rewind_policy.h.
 internal const val DEFAULT_REWIND_TARGET_SECONDS = 10
@@ -107,6 +108,9 @@ fun EnginePreferencesPage(
     }
     var showResumeOffer by remember {
         mutableStateOf(prefs.getBoolean(PREF_SHOW_RESUME_OFFER, true))
+    }
+    var showDemoInstallerOffer by remember {
+        mutableStateOf(prefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true))
     }
 
     val hasChanges = cockpitMode != savedCockpitMode || autoLeveling != savedAutoLeveling
@@ -290,6 +294,33 @@ fun EnginePreferencesPage(
                         Text("Skip intro movie on launch", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(
                             "Skips the D1/D2 startup intro sequence, but leaves other movies skippable by tap",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = showDemoInstallerOffer,
+                        onCheckedChange = { checked ->
+                            showDemoInstallerOffer = checked
+                            prefs.edit().putBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, checked).apply()
+                        },
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            "Show D1/D2 demo installer offer on launch",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "When game data is missing, offer to install the hosted Mac demo packages",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

@@ -212,6 +212,8 @@ int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int
 	Assert(GameSounds[soundnum].data != (void *)-1);
 
 	mixdigi_convert_sound(soundnum);
+	if (!SoundChunks[soundnum].abuf || SoundChunks[soundnum].alen == 0)
+		return -1;
 
 	if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG,"digi_start_sound %d, volume %d, pan %d (start=%d, end=%d)\n", soundnum, mix_vol, mix_pan, loop_start, loop_end);
 

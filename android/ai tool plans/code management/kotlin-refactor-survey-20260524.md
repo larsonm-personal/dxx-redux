@@ -53,9 +53,9 @@ Validation focus:
 - Manual import spot checks for GOG, SOW, CUE/BIN, ISO, and folder import after the import-helper split.
 
 Progress as of 2026-05-24:
-- Completed steps 1 through 4 with `SetupGameFiles.kt`, `SetupFileImport.kt`, `SetupConfigFiles.kt`, and `SetupDiscImport.kt`.
-- `SetupActivity.kt` is down to 8144 lines after those splits.
-- Remaining highest-payoff SetupActivity splits are resume panel, section composables, import dialogs, and automation API.
+- Completed steps 1 through 7 with `SetupGameFiles.kt`, `SetupFileImport.kt`, `SetupConfigFiles.kt`, `SetupDiscImport.kt`, `SetupResumePanel.kt`, `SetupSections.kt`, and `SetupDialogs.kt`.
+- `SetupActivity.kt` is down to 5079 lines after those splits.
+- Remaining highest-payoff SetupActivity split is the automation API. `ControllerSection` can also move, but it is smaller and less urgent than the automation block.
 
 Expected payoff:
 - Removes the 10k-line hotspot.
