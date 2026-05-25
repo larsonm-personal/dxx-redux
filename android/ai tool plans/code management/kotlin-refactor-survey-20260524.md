@@ -22,7 +22,7 @@ Survey Android Kotlin sources and produce a prioritized work list for splitting 
 - Keep JNI declarations that native code calls by exact class/method name in place unless the native registration path is updated in the same tranche.
 - For Compose pages, first extract top-level composables and pure helpers. Avoid creating state-holder abstractions until the file already has clear child components.
 - For custom `View` classes, extract pure policy helpers first, then consider small controller classes for self-contained overlay modes.
-- Run `android\run-code-quality.ps1 --fix` after code movement tranches, after first checking stale formatters as documented in repo instructions.
+- Run `android\run-code-quality.ps1 -Fix` after code movement tranches, after first checking stale formatters as documented in repo instructions.
 - Suggested quick JVM validation after each Kotlin tranche: `Push-Location android; .\gradlew.bat :app:testDebugUnitTest; Pop-Location`.
 - Add or extend focused tests when a refactor changes behavior boundaries, especially input routing, config serialization, import handling, and networking.
 
@@ -51,6 +51,11 @@ Validation focus:
 - Existing JVM tests around launch readiness, import location migration, disc import hoisting, audio-source visibility, and mod details.
 - One launcher automation smoke test after the receiver/accessibility split.
 - Manual import spot checks for GOG, SOW, CUE/BIN, ISO, and folder import after the import-helper split.
+
+Progress as of 2026-05-24:
+- Completed steps 1 through 4 with `SetupGameFiles.kt`, `SetupFileImport.kt`, `SetupConfigFiles.kt`, and `SetupDiscImport.kt`.
+- `SetupActivity.kt` is down to 8144 lines after those splits.
+- Remaining highest-payoff SetupActivity splits are resume panel, section composables, import dialogs, and automation API.
 
 Expected payoff:
 - Removes the 10k-line hotspot.

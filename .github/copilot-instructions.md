@@ -64,6 +64,7 @@
 
 ## building
 - standard cmake commands (`mkdir build`, `cd build`, `cmake ..`, `cmake --build .`)
+- before running Android Gradle tasks on Windows, force JDK 21 in the session: `$env:JAVA_HOME='C:\local\jdk-21'; $env:Path="$env:JAVA_HOME\bin;$env:Path"`
 - see .github\workflows\package-msvc.yml for specific cmake commands
 - for Windows host-build verification, run `run-windows-build.ps1` from repo root instead of calling existing `buildd1`/`buildd2` directories directly. it imports the MSVC environment and finds cmake/ninja for you
 - sometimes on windows cl.exe becomes a zombie. kill it before starting cmake builds
