@@ -1,0 +1,79 @@
+#!/usr/bin/env pwsh
+<#
+.SYNOPSIS
+    Builds and runs native host CTest suites for D1 and D2.
+
+.EXAMPLE
+    .\test_native_host_unit_tests.ps1
+    .\test_native_host_unit_tests.ps1 -Game d2
+#>
+
+param(
+    [ValidateSet('both', 'd1', 'd2')]
+    [string]$Game = 'both',
+    [string]$Configuration = 'Release'
+)
+
+$ErrorActionPreference = 'Stop'
+
+. "$PSScriptRoot\..\test_env.ps1"
+
+$repoRoot = Split-Path (Split-Path $PSScriptRoot)
+$games = if ($Game -eq 'both') { @('d1', 'd2') } else { @($Game) }
+
+function Invoke-HostBuild {
+    param([string]$GameName)
+
+    if ($IsWindows -or $env:OS -eq 'Windows_NT') {
+        $buildScript = Join-Path $repoRoot 'run-windows-build.ps1'
+        if (-not (Test-Path -LiteralPath $buildScript)) {
+            throw "Host build script not found: $buildScript"
+        }
+        & $buildScript -Target $GameName
+        if ($LASTEXITCODE -ne 0) {
+            throw "Host build failed for $GameName with exit code $LASTEXITCODE"
+        }
+        return
+    }
+
+    $buildScript = Join-Path $repoRoot 'run-linux-build.sh'
+    if (-not (Test-Path -LiteralPath $buildScript)) {
+        throw "Host build script not found: $buildScript"
+    }
+    & bash $buildScript --target $GameName
+    if ($LASTEXITCODE -ne 0) {
+        throw "Host build failed for $GameName with exit code $LASTEXITCODE"
+    }
+}
+
+function Invoke-NativeCTest {
+    param([string]$GameName)
+
+    $buildDirName = if ($GameName -eq 'd1') { 'buildd1' } else { 'buildd2' }
+    $buildDir = Join-Path $repoRoot $buildDirName
+    $testDir = Join-Path $buildDir 'maths'
+    if (-not (Test-Path -LiteralPath (Join-Path $testDir 'CTestTestfile.cmake'))) {
+        throw "CTest metadata not found for $GameName in $testDir"
+    }
+
+    Write-Host ""
+    Write-Host "Running native CTest suite for $GameName"
+    Push-Location $testDir
+    try {
+        ctest -C $Configuration --output-on-failure
+        if ($LASTEXITCODE -ne 0) {
+            throw "CTest failed for $GameName with exit code $LASTEXITCODE"
+        }
+    } finally {
+        Pop-Location
+    }
+}
+
+foreach ($gameName in $games) {
+    Write-Host "Building native host target $gameName"
+    Invoke-HostBuild -GameName $gameName
+    Invoke-NativeCTest -GameName $gameName
+}
+
+Write-Host ""
+Write-Host "Native host unit tests passed"

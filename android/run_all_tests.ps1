@@ -172,8 +172,11 @@ $testTimeouts = @{
     "test_input_demo_regressions"         = 900
     "test_input_demo_regressions_graphics" = 900
     "test_saf_archiver"                   = 360
-    "test_all_extracts"                   = 300
+    "test_all_extracts"                   = 7200
+    "test_native_host_unit_tests"         = 1200
     "test_mp"                             = 240
+    "test_server_integration"             = 600
+    "test_validate_extract_regression_specs" = 60
 }
 $extractTests = @(
     "test_all_extracts",
@@ -189,18 +192,22 @@ $noInfraTests = @(
     "test_input_demo_regressions",
     "test_input_demo_regressions_graphics",
     "test_input_demo_runtime_smoke",
+    "test_native_host_unit_tests",
     "test_server_integration",
     "test_input_demo_state_trace_compare",
-    "test_input_demo_rng_trace_compare"
+    "test_input_demo_rng_trace_compare",
+    "test_validate_extract_regression_specs"
 )
 
 $allTests = @()
+$nonStandaloneSkipped = @()
 
 # json5 game-automation scripts (run via run_test.ps1)
 $gameScriptsDir = Join-Path $scriptDir "game_scripts"
 $json5Files = @(Get-ChildItem -Path $gameScriptsDir -Filter "test_*.json5" -File -ErrorAction SilentlyContinue | Sort-Object Name)
 foreach ($t in $json5Files) {
     if (-not (Get-ScriptStandalone -ScriptPath $t.FullName)) {
+        $nonStandaloneSkipped += @{ Name = $t.BaseName; Reason = "script _standalone=false"; Type = "json5" }
         continue  # skip template scripts that need a caller
     }
     $name = $t.BaseName
@@ -234,7 +241,7 @@ foreach ($t in $ps1Files) {
         $timeoutSeconds = $testTimeouts[$baseName]
     }
 
-    $allTests += @{
+    $entry = @{
         Name = $name
         BaseName = $baseName
         Type = "ps1"
@@ -247,6 +254,10 @@ foreach ($t in $ps1Files) {
             ""
         }
     }
+    if ($name -eq "test_all_extracts") {
+        $entry.Arguments = @("-All")
+    }
+    $allTests += $entry
 }
 
 # Apply filter
@@ -278,7 +289,7 @@ function Get-TestExecutionOrderKey {
 function Sort-TestsForExecution {
     param([object[]]$Tests)
 
-    return @($Tests | Sort-Object @{ Expression = { Get-TestExecutionOrderKey $_ } }, @{ Expression = { $_.Name } })
+    return , @($Tests | Sort-Object @{ Expression = { Get-TestExecutionOrderKey $_ } }, @{ Expression = { $_.Name } })
 }
 
 # Group by infrastructure tier
@@ -620,7 +631,7 @@ Write-Host "========================================================" -Foregroun
 Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Tests found: $($allTests.Count) total, $($runnableTests.Count) runnable, $($manualSkipped.Count) manual-skipped" -ForegroundColor White
+Write-Host "Tests found: $($allTests.Count) total, $($runnableTests.Count) runnable, $($manualSkipped.Count) manual-skipped, $($nonStandaloneSkipped.Count) non-standalone skipped" -ForegroundColor White
 Write-Host "  Tier 0 (no infra):       $($tierNone.Count)"
 Write-Host "  Tier 1 (server only):    $($tierServer.Count)"
 Write-Host "  Tier 2 (single emu):     $($tierSingleEmu.Count)"
@@ -868,7 +879,7 @@ if ($tierNone.Count -gt 0 -and -not $stopEarly) {
     Write-Host "== Tier 0: No-infrastructure tests ==" -ForegroundColor Cyan
     foreach ($test in $tierNone) {
         if ($stopEarly) { break }
-        Invoke-SingleTest -Test $test
+        Invoke-SingleTest -Test $test | Out-Null
     }
 }
 
@@ -888,7 +899,7 @@ if ($tierServer.Count -gt 0 -and -not $stopEarly) {
     if ($serverOk) {
         foreach ($test in $tierServer) {
             if ($stopEarly) { break }
-            Invoke-SingleTest -Test $test
+            Invoke-SingleTest -Test $test | Out-Null
         }
     } else {
         foreach ($test in $tierServer) {
@@ -1076,7 +1087,7 @@ $totalSw.Stop()
 $totalElapsed = $totalSw.Elapsed.ToString("hh\:mm\:ss")
 
 # Merge manual + infra skips
-$allSkipped = @($manualSkipped) + @($infraSkipped)
+$allSkipped = @($manualSkipped) + @($nonStandaloneSkipped) + @($infraSkipped)
 
 # -- Generate report --
 

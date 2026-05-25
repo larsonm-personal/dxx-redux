@@ -110,6 +110,22 @@ if(NOT ANDROID)
     target_include_directories(test_input_demo_replay PRIVATE ../../android/app/src/main/cpp/shared)
     dxx_input_demo_apply_codec_deps(test_input_demo_replay)
     dxx_input_demo_apply_build_metadata(test_input_demo_replay)
+
+    enable_testing()
+    foreach(test_target IN ITEMS
+            test_rng_seed_resume
+            test_deterministic_math
+            test_android_save_meta
+            test_android_rewind_policy
+            test_input_demo_rng_mode
+            test_input_demo_controls
+            test_input_demo_fixture
+            test_input_demo_recorder
+            test_input_demo_result
+            test_input_demo_replay)
+        add_test(NAME ${test_target} COMMAND ${test_target})
+        set_tests_properties(${test_target} PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    endforeach()
 endif()
 
 include_directories(../include ../arch/include ../main)

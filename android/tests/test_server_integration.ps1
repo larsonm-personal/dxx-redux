@@ -1,6 +1,5 @@
 #!/usr/bin/env pwsh
-# test_server_integration.ps1 -- Runs the Rust matchmaking server's
-# integration test suite (cargo test --test integration).
+# test_server_integration.ps1 -- Runs the Rust matchmaking server test suite.
 #
 # Usage: .\android\tests\test_server_integration.ps1
 # Requires: cargo (Rust toolchain), PowerShell 5.1+
@@ -32,25 +31,25 @@ try {
     Pop-Location
 }
 
-# Run the server integration tests that cover the C2/C3 flows
+# Run the full server test domain, including integration, NAT simulator, and
+# any module unit tests added later.
 Write-Host ""
-Write-Host "Running server integration tests (C2/C3 flows)..."
+Write-Host "Running server tests..."
 Push-Location $serverDir
 try {
-    # Run just the new C2/C3 tests plus existing ones
-    $testOut = cargo test --test integration 2>&1
+    $testOut = cargo test 2>&1
     $testExitCode = $LASTEXITCODE
     $testOut | ForEach-Object { Write-Host $_ }
     if ($testExitCode -ne 0) {
         Write-Host ""
-        Write-Host "FAIL: Server integration tests failed"
+        Write-Host "FAIL: Server tests failed"
         exit 1
     }
     Write-Host ""
-    Write-Host "PASS: All server integration tests passed"
+    Write-Host "PASS: All server tests passed"
 } finally {
     Pop-Location
 }
 
 Write-Host ""
-Write-Host "=== Server Integration Test PASSED ==="
+Write-Host "=== Server Test Suite PASSED ==="

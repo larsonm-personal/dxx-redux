@@ -3,7 +3,7 @@
 # Usage: .\run_nat_tests.ps1
 
 $ErrorActionPreference = "Stop"
-Push-Location $PSScriptRoot\server
+Push-Location $PSScriptRoot
 
 Write-Host "Running NAT simulator tests..." -ForegroundColor Cyan
 cargo test --test nat_sim_tests -- --nocapture 2>&1
