@@ -1,4 +1,6 @@
 #!/usr/bin/env pwsh
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'test_host_platform.ps1')
+
 function Get-InputDemoRelativeRepoPath {
     param(
         [string]$RepoRoot,
@@ -32,13 +34,13 @@ function Get-InputDemoExecutablePath {
 
     switch ($GameName) {
         'd1' {
-            return Join-Path $RepoRoot 'buildd1\main\dxx-redux-d1.exe'
+            return Join-RegressionPath $RepoRoot 'buildd1' 'main' ((Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d1')[0])
         }
         'd2' {
             if ($PreferHeadlessConsole) {
-                return Join-Path $RepoRoot 'buildd2\main\dxx-redux-d2-headless.exe'
+                return Join-RegressionPath $RepoRoot 'buildd2' 'main' ((Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2-headless')[0])
             }
-            return Join-Path $RepoRoot 'buildd2\main\dxx-redux-d2.exe'
+            return Join-RegressionPath $RepoRoot 'buildd2' 'main' ((Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2')[0])
         }
     }
 
@@ -79,7 +81,7 @@ function Get-InputDemoFreshnessSourceRoots {
         (Join-Path $RepoRoot $GameName),
         (Join-Path $RepoRoot 'common'),
         (Join-Path $RepoRoot 'arch'),
-        (Join-Path $RepoRoot 'android\app\src\main\cpp\shared')
+        (Join-RegressionPath $RepoRoot 'android' 'app' 'src' 'main' 'cpp' 'shared')
     )
 
     return $roots | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -Unique
@@ -123,9 +125,24 @@ function Invoke-InputDemoHostBuild {
         [string]$GameName
     )
 
-    $buildScript = Join-Path $RepoRoot 'run-windows-build.ps1'
     $buildTarget = Get-InputDemoBuildTarget -GameName $GameName
     $originalLocation = Get-Location
+
+    if (-not (Test-RegressionWindowsHost)) {
+        $buildScript = Join-RegressionPath $RepoRoot 'run-linux-build.sh'
+        if (-not (Test-Path -LiteralPath $buildScript)) {
+            throw "Host build script not found: $buildScript"
+        }
+
+        Write-Host "Build guardrail: rebuilding Linux host target $buildTarget"
+        & bash $buildScript --target $buildTarget
+        if ($LASTEXITCODE -ne 0) {
+            throw "Host build failed with exit code $LASTEXITCODE"
+        }
+        return
+    }
+
+    $buildScript = Join-Path $RepoRoot 'run-windows-build.ps1'
 
     if (-not (Test-Path -LiteralPath $buildScript)) {
         throw "Host build script not found: $buildScript"
@@ -190,7 +207,7 @@ function Get-InputDemoExecutableFreshnessIssue {
     return @{
         Missing = $false
         SourceRelative = $sourceRelative
-        Message = "$Description is older than source files`nExe: $ExecutablePath`nExe time (utc): $($exeItem.LastWriteTimeUtc)`nNewest source: $sourceRelative`nSource time (utc): $($sourceStamp.TimestampUtc)`nRun: .\\run-windows-build.ps1 -Target $GameName"
+        Message = "$Description is older than source files`nExe: $ExecutablePath`nExe time (utc): $($exeItem.LastWriteTimeUtc)`nNewest source: $sourceRelative`nSource time (utc): $($sourceStamp.TimestampUtc)`nRun: $(if (Test-RegressionWindowsHost) { '.\\run-windows-build.ps1 -Target ' + $GameName } else { './run-linux-build.sh --target ' + $GameName })"
     }
 }
 

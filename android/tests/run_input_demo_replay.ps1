@@ -293,12 +293,12 @@ function Get-GameConfig {
         'd1' {
             return @{
                 Name = 'd1'
-                Exe = Join-Path $repoRoot 'buildd1\main\dxx-redux-d1.exe'
+                Exe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd1'
                 TitleArg = '-notitles'
                 RequiredFiles = @('DESCENT.HOG', 'DESCENT.PIG')
                 DefaultDataDirs = @(
-                    (Join-Path $repoRoot 'game_data\extracted\d1 mac extracted'),
-                    (Join-Path $repoRoot 'game_data_to_copy_to_emulator\temp')
+                    (Join-RegressionPath $repoRoot 'game_data' 'extracted' 'd1 mac extracted'),
+                    (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'temp')
                 )
                 MaxFps = 200
             }
@@ -306,12 +306,12 @@ function Get-GameConfig {
         'd2' {
             return @{
                 Name = 'd2'
-                Exe = Join-Path $repoRoot 'buildd2\main\dxx-redux-d2.exe'
+                Exe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd2'
                 TitleArg = '-nomovies'
                 RequiredFiles = @('DESCENT2.HOG', 'DESCENT2.HAM', 'GROUPA.PIG')
                 DefaultDataDirs = @(
-                    (Join-Path $repoRoot 'game_data_to_copy_to_emulator\temp'),
-                    (Join-Path $repoRoot 'game_data\extracted\descent 2 demo 1-0_extracted')
+                    (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'temp'),
+                    (Join-RegressionPath $repoRoot 'game_data' 'extracted' 'descent 2 demo 1-0_extracted')
                 )
                 MaxFps = 1000
             }
@@ -326,7 +326,7 @@ function Get-HeadlessConsoleExe {
 
     switch ($GameName) {
         'd2' {
-            return Join-Path $repoRoot 'buildd2\main\dxx-redux-d2-headless.exe'
+            return Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd2' -PreferHeadlessConsole
         }
     }
 

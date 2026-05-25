@@ -654,9 +654,10 @@ if ($runnableTests.Count -eq 0) {
 $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
 if ($needsApk) {
     Write-Host "== Building debug APK ==" -ForegroundColor Cyan
+    $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $scriptDir
     Push-Location $scriptDir
     try {
-        & .\gradlew.bat assembleDebug --console=plain 2>&1 |
+        & $gradleWrapper assembleDebug --console=plain 2>&1 |
             Where-Object { $_ -match "BUILD |FAIL|error:" } |
             ForEach-Object { Write-Host "  $_" }
         if ($LASTEXITCODE -ne 0) {

@@ -16,6 +16,7 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
     # Find repo root from this file's location (android/test_env.ps1 -> repo root)
     $_envScriptDir = $PSScriptRoot
     if (-not $_envScriptDir) { $_envScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path }
+    . (Join-Path $_envScriptDir "test_host_platform.ps1")
     $_envRepoRoot = Split-Path $_envScriptDir
 
     $_depBaseFile = Join-Path $_envRepoRoot "dependency_base.txt"
@@ -29,7 +30,7 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
         $found = $false
         # 1. Check DEP_BASE\jdk-* (project convention)
         if ($script:_ENV_DEP_BASE) {
-            $jdk = Get-ChildItem "$($script:_ENV_DEP_BASE)\jdk-*" -Directory -ErrorAction SilentlyContinue |
+            $jdk = Get-ChildItem (Join-RegressionPath $script:_ENV_DEP_BASE "jdk-*") -Directory -ErrorAction SilentlyContinue |
                 Sort-Object Name -Descending | Select-Object -First 1
             if ($jdk) {
                 $env:JAVA_HOME = $jdk.FullName
@@ -37,15 +38,15 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
             }
         }
         # 2. Check Android Studio bundled JBR
-        if (-not $found) {
-            $studioJbr = "$env:ProgramFiles\Android\Android Studio\jbr"
-            if (Test-Path "$studioJbr\bin\java.exe") {
+        if (-not $found -and (Test-RegressionWindowsHost)) {
+            $studioJbr = Join-RegressionPath $env:ProgramFiles "Android" "Android Studio" "jbr"
+            if (Test-Path (Join-RegressionPath $studioJbr "bin" "java.exe")) {
                 $env:JAVA_HOME = $studioJbr
                 $found = $true
             }
         }
         # 3. Check registry (Oracle/Adoptium)
-        if (-not $found) {
+        if (-not $found -and (Test-RegressionWindowsHost)) {
             foreach ($regPath in @(
                     "HKLM:\SOFTWARE\JavaSoft\JDK",
                     "HKLM:\SOFTWARE\Eclipse Adoptium\JDK"
@@ -55,7 +56,7 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
                         Sort-Object PSChildName -Descending | Select-Object -First 1
                     if ($ver) {
                         $javaHome = (Get-ItemProperty $ver.PSPath -ErrorAction SilentlyContinue).JavaHome
-                        if ($javaHome -and (Test-Path "$javaHome\bin\java.exe")) {
+                        if ($javaHome -and (Test-Path (Join-RegressionPath $javaHome "bin" "java.exe"))) {
                             $env:JAVA_HOME = $javaHome
                             $found = $true
                             break
@@ -69,23 +70,26 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
     # -- CMAKE -------------------------------------------------------------------
 
     if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
-        # Search common Windows locations
-        $cmakeCandidates = @(
-            "$env:ProgramFiles\CMake\bin",
-            "${env:ProgramFiles(x86)}\CMake\bin",
-            "$env:ProgramFiles\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin",
-            "$env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin",
-            "$env:ProgramFiles\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
-        )
+        $cmakeCandidates = @()
+        if (Test-RegressionWindowsHost) {
+            $cmakeCandidates += @(
+                (Join-RegressionPath $env:ProgramFiles "CMake" "bin"),
+                (Join-RegressionPath ${env:ProgramFiles(x86)} "CMake" "bin"),
+                (Join-RegressionPath $env:ProgramFiles "Microsoft Visual Studio" "2022" "Community" "Common7" "IDE" "CommonExtensions" "Microsoft" "CMake" "CMake" "bin"),
+                (Join-RegressionPath $env:ProgramFiles "Microsoft Visual Studio" "2022" "Professional" "Common7" "IDE" "CommonExtensions" "Microsoft" "CMake" "CMake" "bin"),
+                (Join-RegressionPath $env:ProgramFiles "Microsoft Visual Studio" "2022" "BuildTools" "Common7" "IDE" "CommonExtensions" "Microsoft" "CMake" "CMake" "bin")
+            )
+        }
         # Also check Android SDK cmake (multiple versions, pick newest)
         if ($script:_ENV_DEP_BASE) {
-            $sdkCmake = Get-ChildItem "$($script:_ENV_DEP_BASE)\android-sdk\cmake\*\bin" -Directory -ErrorAction SilentlyContinue |
+            $sdkCmake = Get-ChildItem (Join-RegressionPath $script:_ENV_DEP_BASE "android-sdk" "cmake" "*" "bin") -Directory -ErrorAction SilentlyContinue |
                 Sort-Object FullName -Descending | Select-Object -First 1
             if ($sdkCmake) { $cmakeCandidates = @($sdkCmake.FullName) + $cmakeCandidates }
         }
+        $cmakeName = (Get-RegressionHostExecutableNames -BaseName "cmake")[0]
         foreach ($dir in $cmakeCandidates) {
-            if (Test-Path "$dir\cmake.exe") {
-                $env:PATH = "$dir;$env:PATH"
+            if ($dir -and (Test-Path (Join-RegressionPath $dir $cmakeName))) {
+                $env:PATH = "$dir$([System.IO.Path]::PathSeparator)$env:PATH"
                 break
             }
         }
@@ -94,9 +98,10 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
     # -- CARGO -------------------------------------------------------------------
 
     if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
-        $cargoDir = "$env:USERPROFILE\.cargo\bin"
-        if (Test-Path "$cargoDir\cargo.exe") {
-            $env:PATH = "$cargoDir;$env:PATH"
+        $cargoDir = Join-RegressionPath (Get-RegressionHomeDirectory) ".cargo" "bin"
+        $cargoName = (Get-RegressionHostExecutableNames -BaseName "cargo")[0]
+        if (Test-Path (Join-RegressionPath $cargoDir $cargoName)) {
+            $env:PATH = "$cargoDir$([System.IO.Path]::PathSeparator)$env:PATH"
         }
     }
 }

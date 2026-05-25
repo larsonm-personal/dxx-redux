@@ -24,29 +24,6 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 $wrapper = Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'
 
-# Prompt user for run mode if not specified
-if (-not $RunMode) {
-    Write-Host ''
-    Write-Host 'Select demo run mode:' -ForegroundColor Cyan
-    Write-Host '  1) Headless (default, faster)' -ForegroundColor White
-    Write-Host '  2) Graphics (full game binary)' -ForegroundColor White
-    Write-Host ''
-    $choice = Read-Host 'Enter choice [1]'
-    if (-not $choice) {
-        $choice = '1'
-    }
-    switch ($choice) {
-        '1' { $RunMode = 'headless' }
-        '2' { $RunMode = 'graphics' }
-        default {
-            Write-Host 'Invalid choice' -ForegroundColor Red
-            exit 1
-        }
-    }
-    Write-Host "Using: $RunMode mode" -ForegroundColor Green
-    Write-Host ''
-}
-
 function Get-RegressionBuildGames {
     param(
         [object[]]$Demos,
@@ -84,13 +61,37 @@ if ($demos.Count -eq 0) {
     throw "No .dximdemo files found under $resolvedDemoRoot"
 }
 
+# Prompt user for run mode if not specified; list-only mode exits before this
+# so noninteractive inventory checks do not hang
+if (-not $RunMode) {
+    Write-Host ''
+    Write-Host 'Select demo run mode:' -ForegroundColor Cyan
+    Write-Host '  1) Headless (default, faster)' -ForegroundColor White
+    Write-Host '  2) Graphics (full game binary)' -ForegroundColor White
+    Write-Host ''
+    $choice = Read-Host 'Enter choice [1]'
+    if (-not $choice) {
+        $choice = '1'
+    }
+    switch ($choice) {
+        '1' { $RunMode = 'headless' }
+        '2' { $RunMode = 'graphics' }
+        default {
+            Write-Host 'Invalid choice' -ForegroundColor Red
+            exit 1
+        }
+    }
+    Write-Host "Using: $RunMode mode" -ForegroundColor Green
+    Write-Host ''
+}
+
 $buildGames = Get-RegressionBuildGames -Demos $demos -RequestedGame $Game
 foreach ($buildGame in $buildGames) {
     $preferHeadless = $RunMode -eq 'headless'
     Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $buildGame -PreferHeadlessConsole:$preferHeadless
 }
 
-$pwsh = (Get-Process -Id $PID).Path
+$pwsh = Get-RegressionCurrentPwshPath
 $failures = New-Object System.Collections.Generic.List[string]
 $batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 

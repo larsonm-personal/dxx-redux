@@ -15,13 +15,14 @@ $ScriptDir = $PSScriptRoot
 $RepoRoot  = Split-Path $ScriptDir
 $OutFile   = Join-Path $ScriptDir "game_data_index.txt"
 
-$GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".gog", ".inst", ".exe", ".dxa")
+$GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".gog", ".inst", ".exe", ".pkg", ".dxa")
 
 # Search directories in priority order (first match per hash wins)
 $SearchDirs = @(
     (Join-Path $RepoRoot "game_data_to_copy_to_emulator\temp"),
     (Join-Path $RepoRoot "game_data_to_copy_to_emulator\data"),
     (Join-Path $RepoRoot "game_data\gog installers"),
+    (Join-Path $RepoRoot "game_data\demo installers"),
     (Join-Path $RepoRoot "game_data\extracted\VERTIGO"),
     (Join-Path $RepoRoot "game_data\extracted\d1 mac extracted"),
     (Join-Path $RepoRoot "game_data\extracted\d2_mac_demo"),
