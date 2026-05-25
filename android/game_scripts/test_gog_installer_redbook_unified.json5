@@ -19,8 +19,8 @@
 // The Mac package seems to wrap the DOS build via DOSBox-style tooling rather
 // than ship original Mac-specific assets, which should keep the exe/pkg test
 // paths mostly unified when the D1 and D2 cases live side by side. For D2,
-// the Mac .pkg still lacks the matching DESCENT_II.inst cue file, so the audio
-// preview and redbook checks remain Windows-installer-only.
+// the Mac .pkg carries DESCENT_II.gog without the tiny cue sidecar; the
+// launcher synthesizes that cue so preview and redbook checks stay unified.
 //
 // Prerequisites (handled by PS1 wrapper):
 //   - Selected D2 installer pushed to ${INSTALLER_DEVICE_PATH}
@@ -43,8 +43,8 @@
                     "d2_mac_pkg": {
                         "INSTALLER_DEVICE_PATH": "/data/local/tmp/descent_2_enUS_1_0_51877.pkg",
                         "INSTALLER_LABEL": "D2 Mac GOG .pkg",
-                        "AUDIO_CHECKS_WHEN": "skip",
-                        "IMPORT_ONLY_NOTE_WHEN": "d2"
+                        "AUDIO_CHECKS_WHEN": "d2",
+                        "IMPORT_ONLY_NOTE_WHEN": "skip"
                     }
                 }
             }
@@ -91,7 +91,7 @@
     }},
 
     {"action": "log", "when": "${AUDIO_CHECKS_WHEN}", "message": "Audio source verified: disc_id + track names"},
-    {"action": "log", "when": "${IMPORT_ONLY_NOTE_WHEN}", "message": "Mac pkg variant omits DESCENT_II.inst, so redbook-specific checks are skipped after install"},
+    {"action": "log", "when": "${IMPORT_ONLY_NOTE_WHEN}", "message": "Installer variant completed without redbook-specific checks"},
 
     // ── Phase 2: MIDI preview verification ──────────────────────
 
@@ -179,7 +179,7 @@
         "redbook.play_status": "playing"
     }},
     {"action": "log", "when": "${AUDIO_CHECKS_WHEN}", "message": "Redbook playing on level 1 -- checking overlays"},
-    {"action": "log", "when": "${IMPORT_ONLY_NOTE_WHEN}", "message": "Level 1 loaded from Mac pkg path -- checking non-redbook overlays only"},
+    {"action": "log", "when": "${IMPORT_ONLY_NOTE_WHEN}", "message": "Level 1 loaded from import-only path"},
 
     // Verify overlay ring buffer
     {"action": "assert_overlay", "field": "level", "value": "Level 1"},

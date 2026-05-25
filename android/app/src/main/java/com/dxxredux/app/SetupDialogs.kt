@@ -692,19 +692,18 @@ internal fun GogImportDialog(
                                             }
                                         val srcManager = AudioSourceManager(filesDir)
                                         val hasGog =
-                                            if (includeAudio) {
-                                                findGogPair(setDir) != null
+                                            if (includeAudio && count > 0) {
+                                                registerGogAudioSource(
+                                                    srcManager,
+                                                    filesDir,
+                                                    setDir,
+                                                    context,
+                                                )
                                             } else {
                                                 false
                                             }
                                         if (hasGog) {
                                             enableRedbookInConfig(filesDir, context)
-                                            registerGogAudioSource(
-                                                srcManager,
-                                                filesDir,
-                                                setDir,
-                                                context,
-                                            )
                                         }
                                         val filesAfter = setDir.list()?.toSet() ?: emptySet()
                                         val newFiles = (filesAfter - filesBefore).sorted()
