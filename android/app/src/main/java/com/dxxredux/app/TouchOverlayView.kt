@@ -26,779 +26,14 @@ import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlin.math.sin
 
-internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
-    when (actionIndex) {
-        TouchOverlayView.ADMIN_NET_EVENTS,
-        TouchOverlayView.ADMIN_NET_STATS,
-        TouchOverlayView.ADMIN_VIDEO_INFO,
-        -> true
-
-        else -> false
-    }
-
-internal fun adminTrayUsesSlider(actionIndex: Int): Boolean =
-    when (actionIndex) {
-        TouchOverlayView.ADMIN_BRIGHTNESS -> true
-        else -> false
-    }
-
-internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
-    if (adminTrayUsesSlider(actionIndex)) {
-        false
-    } else {
-        when (actionIndex) {
-            TouchOverlayView.ADMIN_INCREASE_VIEW,
-            TouchOverlayView.ADMIN_MUSIC,
-            TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
-            -> false
-
-            else -> !adminTrayUsesCheckbox(actionIndex)
-        }
-    }
-
-internal fun clampAdminTrayBrightness(value: Int): Int = value.coerceIn(0, 16)
-
-internal fun stepAdminTrayBrightness(
-    value: Int,
-    delta: Int,
-): Int = clampAdminTrayBrightness(value + delta)
-
-internal fun adminTrayBrightnessFromFraction(fraction: Float): Int =
-    clampAdminTrayBrightness((fraction.coerceIn(0f, 1f) * 16f).roundToInt())
-
-internal fun adminTrayActionEnabled(
-    actionIndex: Int,
-    enabledProvider: ((Int) -> Boolean)? = null,
-): Boolean = enabledProvider?.invoke(actionIndex) != false
-
-internal fun adminTrayVisibleActions(
-    gamepadOnlyMode: Boolean,
-    hasTouchAutomapButton: Boolean,
-    isMultiplayerGame: Boolean = false,
-    hasPendingLaunchInfo: Boolean = false,
-): List<Int> {
-    val showNetworkActions = isMultiplayerGame || hasPendingLaunchInfo
-    val actions =
-        mutableListOf(
-            TouchOverlayView.ADMIN_INCREASE_VIEW,
-            TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
-            TouchOverlayView.ADMIN_QUICK_LOAD,
-            TouchOverlayView.ADMIN_OPEN_MENU,
-            TouchOverlayView.ADMIN_EXIT_LAUNCHER,
-            TouchOverlayView.ADMIN_QUICK_SAVE,
-            TouchOverlayView.ADMIN_VIDEO_INFO,
-            TouchOverlayView.ADMIN_BRIGHTNESS,
-        )
-    if (showNetworkActions) {
-        actions.add(2, TouchOverlayView.ADMIN_NET_STATS)
-        actions.add(5, TouchOverlayView.ADMIN_NET_EVENTS)
-    }
-    if (gamepadOnlyMode) {
-        if (isMultiplayerGame) actions.add(TouchOverlayView.ADMIN_WARP)
-        actions.add(TouchOverlayView.ADMIN_MUSIC)
-        if (showNetworkActions) actions.add(TouchOverlayView.ADMIN_ACCEPT_JOIN)
-    }
-    return actions
-}
-
-private const val CONTROLLER_MENU_FOCUS_COLOR = 0xFF00E676.toInt()
-private const val CONTROLLER_MENU_ADVANCE_WINDOW_MS = 2500L
-
-internal enum class ControllerMenuSurface {
-    NONE,
-    REMAINING_ACTIONS,
-    ADMIN_TRAY,
-}
-
-internal fun nextControllerMenuSurface(
-    current: ControllerMenuSurface,
-    hasRemainingActions: Boolean,
-    canAdvanceFromRemainingActions: Boolean = true,
-): ControllerMenuSurface =
-    when (current) {
-        ControllerMenuSurface.NONE -> {
-            if (hasRemainingActions) {
-                ControllerMenuSurface.REMAINING_ACTIONS
-            } else {
-                ControllerMenuSurface.ADMIN_TRAY
-            }
-        }
-
-        ControllerMenuSurface.REMAINING_ACTIONS -> {
-            if (hasRemainingActions && canAdvanceFromRemainingActions) {
-                ControllerMenuSurface.ADMIN_TRAY
-            } else {
-                ControllerMenuSurface.NONE
-            }
-        }
-
-        ControllerMenuSurface.ADMIN_TRAY -> {
-            ControllerMenuSurface.NONE
-        }
-    }
-
-internal fun remainingActionsCanAdvanceToAdminTray(
-    actionTakenSinceOpen: Boolean,
-    openDurationMs: Long,
-    advanceWindowMs: Long = CONTROLLER_MENU_ADVANCE_WINDOW_MS,
-): Boolean = !actionTakenSinceOpen && openDurationMs <= advanceWindowMs
-
-internal fun moveRemainingActionSelection(
-    currentIndex: Int,
-    actionCount: Int,
-    rowCount: Int,
-    keyCode: Int,
-): Int {
-    if (actionCount <= 0) return -1
-
-    val safeRowCount = rowCount.coerceAtLeast(1)
-    val safeIndex = currentIndex.coerceIn(0, actionCount - 1)
-    val columnCount = (actionCount + safeRowCount - 1) / safeRowCount
-    val currentColumn = safeIndex / safeRowCount
-    val currentRow = safeIndex % safeRowCount
-
-    fun columnLength(column: Int): Int = (actionCount - column * safeRowCount).coerceIn(0, safeRowCount)
-
-    return when (keyCode) {
-        android.view.KeyEvent.KEYCODE_DPAD_UP -> {
-            if (currentRow > 0) {
-                safeIndex - 1
-            } else {
-                safeIndex
-            }
-        }
-
-        android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
-            if (currentRow + 1 < columnLength(currentColumn)) {
-                safeIndex + 1
-            } else {
-                safeIndex
-            }
-        }
-
-        android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
-            if (currentColumn > 0) {
-                val previousColumn = currentColumn - 1
-                val previousColumnStart = previousColumn * safeRowCount
-                previousColumnStart + min(currentRow, columnLength(previousColumn) - 1)
-            } else {
-                safeIndex
-            }
-        }
-
-        android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> {
-            if (currentColumn + 1 < columnCount) {
-                val nextColumn = currentColumn + 1
-                val nextColumnStart = nextColumn * safeRowCount
-                nextColumnStart + min(currentRow, columnLength(nextColumn) - 1)
-            } else {
-                safeIndex
-            }
-        }
-
-        else -> {
-            safeIndex
-        }
-    }
-}
-
-private const val SECONDARY_PROXIMITY_INDEX = 2
-private const val SECONDARY_SMART_MINE_INDEX = 7
-private const val WEAPON_WHEEL_SLOT_COUNT = 5
-private const val D2_SUPER_WEAPON_OFFSET = 5
-
-private val d1PrimarySelectionNames =
-    listOf(
-        "Laser",
-        "Vulcan",
-        "Spreadfire",
-        "Plasma",
-        "Fusion",
-    )
-
-private val d2PrimarySelectionNames =
-    listOf(
-        "Laser",
-        "Vulcan",
-        "Spreadfire",
-        "Plasma",
-        "Fusion",
-        "Super Laser",
-        "Gauss",
-        "Helix",
-        "Phoenix",
-        "Omega",
-    )
-
-private val d1SecondarySelectionNames =
-    listOf(
-        "Concussion",
-        "Homing",
-        "Proximity Bomb",
-        "Smart Missile",
-        "Mega Missile",
-    )
-
-private val d2SecondarySelectionNames =
-    listOf(
-        "Concussion",
-        "Homing",
-        "Proximity Bomb",
-        "Smart Missile",
-        "Mega Missile",
-        "Flash Missile",
-        "Guided Missile",
-        "Smart Mine",
-        "Mercury Missile",
-        "Earthshaker",
-    )
-
-private val d1PrimaryWheelSelectionNames =
-    listOf(
-        "Laser",
-        "Vulcan",
-        "Spreadfire",
-        "Plasma",
-        "Fusion",
-    )
-
-private val d2PrimaryWheelSelectionNames =
-    listOf(
-        "Laser",
-        "Vulcan",
-        "Spreadfire",
-        "Plasma",
-        "Fusion",
-        "Laser",
-        "Gauss",
-        "Helix",
-        "Phoenix",
-        "Omega",
-    )
-
-private val d1SecondaryWheelSelectionNames =
-    listOf(
-        "Concussion",
-        "Homing",
-        "Proximity",
-        "Smart",
-        "Mega",
-    )
-
-private val d2SecondaryWheelSelectionNames =
-    listOf(
-        "Concussion",
-        "Homing",
-        "Proximity",
-        "Smart",
-        "Mega",
-        "Flash",
-        "Guided",
-        "Smart\nMine",
-        "Mercury",
-        "Earthshaker",
-    )
-
-private fun buttonUsesBindingIndicator(
-    button: ButtonControl,
-    binding: Int,
-): Boolean =
-    button.binding == binding ||
-        (button.longPressEnabled && button.longPressBinding == binding)
-
-internal fun buttonUsesGyroToggleIndicator(button: ButtonControl): Boolean =
-    buttonUsesBindingIndicator(button, TouchBindings.META_GYRO_TOGGLE)
-
-internal fun buttonUsesHeadlightIndicator(button: ButtonControl): Boolean =
-    buttonUsesBindingIndicator(button, TouchBindings.BTN_HEADLIGHT)
-
-private fun currentBombName(
-    gameVariant: String,
-    weaponState: WeaponState?,
-): String? =
-    if (gameVariant != "d2" || weaponState == null) {
-        null
-    } else {
-        when (weaponState.currentBomb) {
-            SECONDARY_PROXIMITY_INDEX -> "Proximity Bomb"
-            SECONDARY_SMART_MINE_INDEX -> "Smart Mine"
-            else -> null
-        }
-    }
-
-private fun defaultWeaponWheelSlotLabel(
-    gameVariant: String,
-    isPrimary: Boolean,
-    slotIndex: Int,
-): String {
-    val names =
-        when {
-            isPrimary && gameVariant == "d1" -> d1PrimaryWheelSelectionNames
-            isPrimary -> d2PrimaryWheelSelectionNames
-            gameVariant == "d1" -> d1SecondaryWheelSelectionNames
-            else -> d2SecondaryWheelSelectionNames
-        }
-    return names.getOrElse(slotIndex) {
-        if (isPrimary) {
-            "Laser"
-        } else {
-            "Concussion"
-        }
-    }
-}
-
-private fun laserWheelLabel(weaponState: WeaponState?): String {
-    val level = weaponState?.laserLevel?.plus(1)?.coerceAtLeast(1)
-    return if (level != null) {
-        "Laser\nlvl $level"
-    } else {
-        "Laser"
-    }
-}
-
-private fun currentWeaponWheelSlotIndex(
-    gameVariant: String,
-    currentWeapon: Int,
-): Int? =
-    when {
-        currentWeapon in 0 until WEAPON_WHEEL_SLOT_COUNT -> {
-            currentWeapon
-        }
-
-        gameVariant == "d2" &&
-            currentWeapon in D2_SUPER_WEAPON_OFFSET until D2_SUPER_WEAPON_OFFSET + WEAPON_WHEEL_SLOT_COUNT -> {
-            currentWeapon - D2_SUPER_WEAPON_OFFSET
-        }
-
-        else -> {
-            null
-        }
-    }
-
-private fun resolvePairedWheelWeaponIndex(
-    slotIndex: Int,
-    currentWeapon: Int,
-    lastWasSuper: Boolean,
-    baseSelectable: Boolean,
-    superSelectable: Boolean,
-    baseOwned: Boolean,
-    superOwned: Boolean,
-): Int? {
-    if (currentWeapon == slotIndex || currentWeapon == slotIndex + D2_SUPER_WEAPON_OFFSET) {
-        return currentWeapon
-    }
-
-    fun isSelectable(index: Int) = if (index == slotIndex) baseSelectable else superSelectable
-
-    fun isOwned(index: Int) = if (index == slotIndex) baseOwned else superOwned
-
-    var preferredIndex =
-        if (lastWasSuper) {
-            slotIndex + D2_SUPER_WEAPON_OFFSET
-        } else {
-            slotIndex
-        }
-    if (isSelectable(preferredIndex)) {
-        return preferredIndex
-    }
-
-    preferredIndex =
-        if (preferredIndex == slotIndex) {
-            slotIndex + D2_SUPER_WEAPON_OFFSET
-        } else {
-            slotIndex
-        }
-    if (isSelectable(preferredIndex)) {
-        return preferredIndex
-    }
-    if (isOwned(preferredIndex)) {
-        return preferredIndex
-    }
-
-    preferredIndex =
-        if (preferredIndex == slotIndex) {
-            slotIndex + D2_SUPER_WEAPON_OFFSET
-        } else {
-            slotIndex
-        }
-    return preferredIndex.takeIf(::isOwned)
-}
-
-internal fun weaponWheelSlotLabel(
-    gameVariant: String,
-    weaponState: WeaponState?,
-    isPrimary: Boolean,
-    slotIndex: Int,
-): String {
-    val fallback = defaultWeaponWheelSlotLabel(gameVariant, isPrimary, slotIndex)
-    if (slotIndex !in 0 until WEAPON_WHEEL_SLOT_COUNT) {
-        return fallback
-    }
-    if (isPrimary && slotIndex == 0) {
-        return laserWheelLabel(weaponState)
-    }
-    if (weaponState == null || gameVariant != "d2") {
-        return fallback
-    }
-
-    val resolvedIndex =
-        if (isPrimary) {
-            resolvePairedWheelWeaponIndex(
-                slotIndex = slotIndex,
-                currentWeapon = weaponState.currentPrimary,
-                lastWasSuper = weaponState.primarySlotPrefersSuper(slotIndex),
-                baseSelectable = weaponState.hasPrimary(slotIndex),
-                superSelectable = weaponState.hasPrimary(slotIndex + D2_SUPER_WEAPON_OFFSET),
-                baseOwned = weaponState.hasPrimary(slotIndex),
-                superOwned = weaponState.hasPrimary(slotIndex + D2_SUPER_WEAPON_OFFSET),
-            )
-        } else {
-            resolvePairedWheelWeaponIndex(
-                slotIndex = slotIndex,
-                currentWeapon = weaponState.currentSecondary,
-                lastWasSuper = weaponState.secondarySlotPrefersSuper(slotIndex),
-                baseSelectable = weaponState.hasSecondary(slotIndex) && weaponState.secondarySlotHasAmmo(slotIndex),
-                superSelectable =
-                    weaponState.hasSecondary(slotIndex + D2_SUPER_WEAPON_OFFSET) &&
-                        weaponState.secondarySlotHasAmmo(slotIndex + D2_SUPER_WEAPON_OFFSET),
-                baseOwned = weaponState.hasSecondary(slotIndex),
-                superOwned = weaponState.hasSecondary(slotIndex + D2_SUPER_WEAPON_OFFSET),
-            )
-        } ?: return fallback
-
-    val names = if (isPrimary) d2PrimaryWheelSelectionNames else d2SecondaryWheelSelectionNames
-    return names.getOrNull(resolvedIndex) ?: fallback
-}
-
-internal fun weaponWheelCurrentLabel(
-    gameVariant: String,
-    weaponState: WeaponState?,
-    isPrimary: Boolean,
-): String? {
-    val currentWeapon = if (isPrimary) weaponState?.currentPrimary else weaponState?.currentSecondary
-    val slotIndex = currentWeapon?.let { currentWeaponWheelSlotIndex(gameVariant, it) } ?: return null
-    return weaponWheelSlotLabel(gameVariant, weaponState, isPrimary, slotIndex)
-}
-
-private fun currentPrimaryName(
-    gameVariant: String,
-    weaponState: WeaponState?,
-): String? {
-    val currentPrimary = weaponState?.currentPrimary ?: return null
-    val names = if (gameVariant == "d1") d1PrimarySelectionNames else d2PrimarySelectionNames
-    return names.getOrNull(currentPrimary)
-}
-
-private fun currentSecondaryName(
-    gameVariant: String,
-    weaponState: WeaponState?,
-): String? {
-    val currentSecondary = weaponState?.currentSecondary ?: return null
-    val names = if (gameVariant == "d1") d1SecondarySelectionNames else d2SecondarySelectionNames
-    return names.getOrNull(currentSecondary)
-}
-
-internal fun buttonDisplayLabel(
-    button: ButtonControl,
-    gameVariant: String,
-    weaponState: WeaponState?,
-): String {
-    val action =
-        when (button.binding) {
-            TouchBindings.BTN_DROP_BOMB -> "Drop"
-
-            TouchBindings.BTN_TOGGLE_BOMB,
-            TouchBindings.BTN_CYCLE_PRIMARY,
-            TouchBindings.BTN_CYCLE_SECONDARY,
-            -> "Cycle"
-
-            TouchBindings.BTN_FIRE_PRIMARY,
-            TouchBindings.BTN_FIRE_SECONDARY,
-            -> "Fire"
-
-            else -> null
-        }
-    val selection =
-        when (button.binding) {
-            TouchBindings.BTN_DROP_BOMB,
-            TouchBindings.BTN_TOGGLE_BOMB,
-            -> currentBombName(gameVariant, weaponState)
-
-            TouchBindings.BTN_FIRE_PRIMARY,
-            TouchBindings.BTN_CYCLE_PRIMARY,
-            -> currentPrimaryName(gameVariant, weaponState)
-
-            TouchBindings.BTN_FIRE_SECONDARY,
-            TouchBindings.BTN_CYCLE_SECONDARY,
-            -> currentSecondaryName(gameVariant, weaponState)
-
-            else -> null
-        }
-
-    return if (action != null && selection != null) "$action\n$selection" else button.label
-}
-
-internal fun buttonHasActiveIndicatorState(
-    button: ButtonControl,
-    gameVariant: String,
-    weaponState: WeaponState?,
-    gyroConfigured: Boolean,
-    gyroActiveInGame: Boolean,
-): Boolean {
-    val gyroActive = buttonUsesGyroToggleIndicator(button) && gyroConfigured && gyroActiveInGame
-    val headlightActive =
-        buttonUsesHeadlightIndicator(button) &&
-            gameVariant == "d2" &&
-            weaponState?.isHeadlightOn == true
-    return gyroActive || headlightActive
-}
-
-internal fun dragZoneButtonLatchAllowed(
-    gameVariant: String,
-    binding: Int,
-    pointerId: Int,
-    toggle: Boolean,
-): Boolean {
-    if (gameVariant == "d1" && binding in TouchBindings.D2_ONLY_BUTTONS) return false
-    if (pointerId >= 0 || toggle) return false
-    return when (binding) {
-        TouchBindings.BTN_CHEATS_MENU,
-        TouchBindings.BTN_GYRO_RECENTER,
-        TouchBindings.BTN_AUTOMAP,
-        -> false
-
-        else -> true
-    }
-}
-
-internal fun buttonExtendsDragZoneStart(
-    zoneLeft: Float,
-    zoneTop: Float,
-    zoneRight: Float,
-    zoneBottom: Float,
-    buttonCenterX: Float,
-    buttonCenterY: Float,
-    buttonRadius: Float,
-    touchX: Float,
-    touchY: Float,
-): Boolean =
-    buttonCenterX in zoneLeft..zoneRight &&
-        buttonCenterY in zoneTop..zoneBottom &&
-        hypot(touchX - buttonCenterX, touchY - buttonCenterY) <= buttonRadius * 1.3f
-
-internal data class RemainingTouchAction(
-    val binding: Int,
-    val label: String,
-)
-
-private val remainingBaseActionBindings =
-    listOf(
-        TouchBindings.BTN_AUTOMAP,
-        TouchBindings.BTN_FIRE_FLARE,
-        TouchBindings.BTN_DROP_BOMB,
-        TouchBindings.BTN_HEADLIGHT,
-        TouchBindings.BTN_TOGGLE_BOMB,
-        TouchBindings.BTN_ENERGY_SHIELD,
-        TouchBindings.META_DROP_MARKER,
-        TouchBindings.META_DEMO_RECORD_TOGGLE,
-        TouchBindings.META_REWIND,
-    )
-
-private val remainingMultiplayerActionBindings =
-    listOf(
-        TouchBindings.META_MULTIPLAYER_HUD,
-        TouchBindings.META_DROP_FLAG,
-    )
-
-private val remainingPrimaryWeaponBindings =
-    listOf(
-        TouchBindings.META_WEAPON_1,
-        TouchBindings.META_WEAPON_2,
-        TouchBindings.META_WEAPON_3,
-        TouchBindings.META_WEAPON_4,
-        TouchBindings.META_WEAPON_5,
-    )
-
-private val remainingSecondaryWeaponBindings =
-    listOf(
-        TouchBindings.META_WEAPON_6,
-        TouchBindings.META_WEAPON_7,
-        TouchBindings.META_WEAPON_8,
-        TouchBindings.META_WEAPON_9,
-        TouchBindings.META_WEAPON_10,
-    )
-
-private val remainingGuideBindings =
-    listOf(
-        TouchBindings.META_GUIDE_BOT_MENU,
-        TouchBindings.META_GUIDE_RELEASE_CONTROL,
-    )
-
-internal fun touchLayoutBoundActionBindings(layout: TouchLayout): Set<Int> {
-    val bindings = linkedSetOf<Int>()
-
-    layout.buttons.forEach { button ->
-        bindings.add(button.binding)
-        if (button.longPressEnabled && button.longPressBinding >= 0) {
-            bindings.add(button.longPressBinding)
-        }
-    }
-    layout.sticks.forEach { stick ->
-        if (stick.buttonMode) {
-            bindings.add(stick.negXBinding)
-            bindings.add(stick.posXBinding)
-            bindings.add(stick.negYBinding)
-            bindings.add(stick.posYBinding)
-        }
-        if (stick.doubleTapBinding >= 0) {
-            bindings.add(stick.doubleTapBinding)
-        }
-    }
-    layout.radialMenus.forEach { radial ->
-        radial.segments.forEach { segment ->
-            if (segment.bindingType == "action" || TouchBindings.isMetaAction(segment.binding)) {
-                bindings.add(segment.binding)
-            }
-        }
-        if (radial.centerBinding >= 0) {
-            bindings.add(radial.centerBinding)
-        }
-    }
-    layout.dpads.forEach { dpad ->
-        bindings.add(dpad.upBinding)
-        bindings.add(dpad.downBinding)
-        bindings.add(dpad.leftBinding)
-        bindings.add(dpad.rightBinding)
-    }
-
-    return bindings
-}
-
-internal fun controllerConfigBoundActionBindings(bindings: Map<String, String>): Set<Int> =
-    bindings.values.mapNotNull { TouchBindings.nameToBinding(it) }.toSet()
-
-private fun remainingCandidateBindings(
-    layout: TouchLayout,
-    isMultiplayerGame: Boolean,
-): List<Int> =
-    buildList {
-        val hasPrimaryWheel = layout.radialMenus.any { it.id == "PriWpn" }
-        val hasSecondaryWheel = layout.radialMenus.any { it.id == "SecWpn" }
-
-        addAll(remainingBaseActionBindings)
-        if (layout.gyro.enabled) add(TouchBindings.META_GYRO_TOGGLE)
-        if (isMultiplayerGame) addAll(remainingMultiplayerActionBindings)
-        if (!hasPrimaryWheel) {
-            add(TouchBindings.BTN_CYCLE_PRIMARY)
-            addAll(remainingPrimaryWeaponBindings)
-        }
-        if (!hasSecondaryWheel) {
-            add(TouchBindings.BTN_CYCLE_SECONDARY)
-            addAll(remainingSecondaryWeaponBindings)
-        }
-        if (layout.radialMenus.none { it.id == "Guide" }) addAll(remainingGuideBindings)
-    }
-
-internal fun remainingActionLabel(
-    binding: Int,
-    gameVariant: String,
-    weaponState: WeaponState? = null,
-): String =
-    when (binding) {
-        TouchBindings.BTN_TOGGLE_BOMB -> {
-            val currentBomb = currentBombName(gameVariant, weaponState)
-            if (currentBomb != null) {
-                "Toggle Bomb [current: $currentBomb]"
-            } else {
-                TouchBindings.ALL_BUTTON_LABELS[binding]
-                    ?: TouchBindings.bindingToName(binding).removePrefix("Meta: ")
-            }
-        }
-
-        else -> {
-            TouchBindings.ALL_BUTTON_LABELS[binding]
-                ?: TouchBindings.bindingToName(binding).removePrefix("Meta: ")
-        }
-    }
-
-internal fun remainingActionUsesHeldActivation(binding: Int): Boolean = binding == TouchBindings.BTN_ENERGY_SHIELD
-
-internal fun remainingKeyTouchActions(
-    layout: TouchLayout,
-    gameVariant: String,
-    isMultiplayerGame: Boolean = false,
-    weaponState: WeaponState? = null,
-    extraBoundBindings: Set<Int> = emptySet(),
-): List<RemainingTouchAction> {
-    val boundBindings = touchLayoutBoundActionBindings(layout) + extraBoundBindings
-    return remainingCandidateBindings(layout, isMultiplayerGame)
-        .filter { binding ->
-            gameVariant != "d1" ||
-                (binding !in TouchBindings.D2_ONLY_BUTTONS && binding !in TouchBindings.D2_ONLY_META_ACTIONS)
-        }.filter { it !in boundBindings }
-        .distinct()
-        .map { RemainingTouchAction(it, remainingActionLabel(it, gameVariant, weaponState)) }
-}
-
-private const val MOUSE_HISTORY_WINDOW_MS = 16f
-private const val MOUSE_HISTORY_DECAY_PER_WINDOW = 0.75f
-private const val MOUSE_NO_ACCEL_DISTANCE_PER_WINDOW = 8f
-private const val MOUSE_EXCESS_DISTANCE_REFERENCE = 18f
-private const val MOUSE_DISTANCE_FALLBACK_START = 24f
-private const val MOUSE_DISTANCE_FALLBACK_WEIGHT = 0.2f
-
-internal data class MouseAccelerationHistory(
-    val recentDistancePx: Float,
-    val recentGracePx: Float,
-)
-
-internal fun updateMouseAccelerationHistory(
-    previousDistancePx: Float,
-    previousGracePx: Float,
-    stepDistancePx: Float,
-    dtMs: Long,
-): MouseAccelerationHistory {
-    val windowCount = (dtMs.coerceAtLeast(1L).toFloat() / MOUSE_HISTORY_WINDOW_MS).coerceIn(1f, 6f)
-    val decay = MOUSE_HISTORY_DECAY_PER_WINDOW.pow(windowCount)
-    return MouseAccelerationHistory(
-        recentDistancePx = previousDistancePx * decay + stepDistancePx,
-        recentGracePx = previousGracePx * decay + MOUSE_NO_ACCEL_DISTANCE_PER_WINDOW * windowCount,
-    )
-}
-
-internal fun mouseAccelerationMultiplier(
-    enabled: Boolean,
-    maxMultiplier: Float,
-    recentDistancePx: Float,
-    recentGracePx: Float,
-    distancePx: Float,
-    viewportHeightPx: Float,
-): Float {
-    if (!enabled) return 1f
-    val clampedMax = maxMultiplier.coerceAtLeast(1f)
-    val historyRatio =
-        ((recentDistancePx - recentGracePx).coerceAtLeast(0f) / MOUSE_EXCESS_DISTANCE_REFERENCE).coerceIn(0f, 1f)
-    val distanceRatio =
-        if (viewportHeightPx > 1f) {
-            ((distancePx - MOUSE_DISTANCE_FALLBACK_START).coerceAtLeast(0f) / (viewportHeightPx * 0.5f)).coerceIn(
-                0f,
-                1f,
-            ) * MOUSE_DISTANCE_FALLBACK_WEIGHT
-        } else {
-            0f
-        }
-    val ratio = maxOf(historyRatio, distanceRatio)
-    return 1f + (clampedMax - 1f) * ratio
-}
-
 /**
  * Semi-transparent touch overlay drawn on top of the game SurfaceView.
  *
- * Left side  – virtual analog stick (yaw / pitch)
- * Right side – two fire buttons (primary = button 0, secondary = button 1)
+ * Left side  - virtual analog stick (yaw / pitch)
+ * Right side - two fire buttons (primary = button 0, secondary = button 1)
  *
- * axis values  → [axisCallback]   → InputMixer → nativeJoystickAxis()
- * button press → InputMixer.setButton() → nativeJoystickButton()
+ * axis values  -> [axisCallback]   -> InputMixer -> nativeJoystickAxis()
+ * button press -> InputMixer.setButton() -> nativeJoystickButton()
  *
  * The overlay only draws/responds when [isActive] is true
  * (controlled by the in-game state polling in MainActivity).
@@ -846,7 +81,7 @@ class TouchOverlayView
         /** Called with a cheat code string to inject each char via nativeTextInput. */
         var cheatCodeCallback: ((String) -> Unit)? = null
 
-        /** "d1" or "d2" — determines which cheat list to show. Set by MainActivity. */
+        /** "d1" or "d2" - determines which cheat list to show. Set by MainActivity. */
         var gameVariant: String = "d2"
 
         private var gyroConfigured = false
@@ -881,7 +116,7 @@ class TouchOverlayView
          *  vertical/sideways are fractions of screen dimension. */
         var automapInputCallback: ((Float, Float, Float, Float, Float, Float) -> Unit)? = null
 
-        /** Optional gyro manager — set by MainActivity to enable TOUCH_STICK activation. */
+        /** Optional gyro manager - set by MainActivity to enable TOUCH_STICK activation. */
         var gyroManager: GyroInputManager? = null
 
         /** Update gyro diagnostic values (called from sensor thread). */
@@ -911,10 +146,10 @@ class TouchOverlayView
                 }
             }
 
-        // ── Layout state ──────────────────────────────────────
+        // -- Layout state --------------------------------------
         private var layout: TouchLayout = TouchLayoutRepository.defaultLayout()
 
-        // ── Computed control states ──────────────────────────────
+        // -- Computed control states ------------------------------
         private class StickState(
             val control: AnalogStickControl,
         ) {
@@ -1203,7 +438,7 @@ class TouchOverlayView
 
         @Volatile private var diagGyroRoll = 0f
 
-        // ── Mouse-mode drag buffer tick ─────────────────────────
+        // -- Mouse-mode drag buffer tick -------------------------
         private val mainHandler = Handler(Looper.getMainLooper())
 
         private val mouseDrainHandler = mainHandler
@@ -1288,16 +523,16 @@ class TouchOverlayView
             startMouseDrain()
         }
 
-        // ── MAP button geometry (kept for automap overlay compat) ──
+        // -- MAP button geometry (kept for automap overlay compat) --
         private var mapBtnCenterX = 0f
         private var mapBtnCenterY = 0f
         private var mapBtnRadius = 0f
 
-        // ── Non-layout pointer tracking ─────────────────────────
+        // -- Non-layout pointer tracking -------------------------
         private val passthroughPointers = mutableSetOf<Int>()
         private var mapBtnPointerId = -1 // used by automap overlay
 
-        // ── Automap gesture state (pointers not on stick/buttons) ──
+        // -- Automap gesture state (pointers not on stick/buttons) --
 
         /** Set to true by the activity when the automap is displayed. */
         var automapActive = false
@@ -1326,7 +561,7 @@ class TouchOverlayView
         /** Current track label text, set by the activity. */
         var trackLabel: String = ""
 
-        // ── Automap overlay button geometry (computed in onSizeChanged) ──
+        // -- Automap overlay button geometry (computed in onSizeChanged) --
         private var automapBtnSize = 0f // button width/height
         private var automapBtnY = 0f // top of buttons
         private var automapBtnSpacing = 0f // gap between buttons
@@ -1334,7 +569,7 @@ class TouchOverlayView
         private var automapBtnPressed = -1 // index of currently pressed button, -1=none
         private var automapBtnPointerId = -1
 
-        // ── Paint objects ───────────────────────────────────────
+        // -- Paint objects ---------------------------------------
         companion object {
             private const val RADIAL_CENTER = -2
 
@@ -1462,7 +697,7 @@ class TouchOverlayView
                 textAlign = Paint.Align.CENTER
             }
 
-        // ── Diagnostic overlay paints ───────────────────────────
+        // -- Diagnostic overlay paints ---------------------------
         private val paintDiagBg =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
@@ -1476,14 +711,14 @@ class TouchOverlayView
                 typeface = android.graphics.Typeface.MONOSPACE
             }
 
-        // ── Cheats overlay state ────────────────────────────────
+        // -- Cheats overlay state --------------------------------
         private var cheatsOverlayOpen = false
         private var cheatsOverlayPressedIndex = -1 // which cheat button is being pressed
         private var cheatsOverlayPointerId = -1
         private val cheatsOverlayRects = mutableListOf<RectF>() // computed per-draw
         private var cheatsCloseRect = RectF()
 
-        // ── Admin tray state ────────────────────────────────────
+        // -- Admin tray state ------------------------------------
         // Visible bottom-center tab that opens a settings panel.
         // Items: Increase View, Decrease View, Toggle Auto-Leveling,
         //        Quick Save (Alt+F2), Quick Load (Alt+F3), Open Game Menu (ESC)
@@ -2166,7 +1401,7 @@ class TouchOverlayView
             }
         }
 
-        // ── Drawing ─────────────────────────────────────────────
+        // -- Drawing ---------------------------------------------
         override fun onDraw(canvas: Canvas) {
             if (!isActive) return
 
@@ -2178,22 +1413,22 @@ class TouchOverlayView
             val gAlpha = layout.globalOpacity
             val ws = weaponStateProvider?.invoke()
 
-            // ── Layout sticks ───────────────────────────────────
+            // -- Layout sticks -----------------------------------
             for (s in stickStates) drawStick(canvas, s, gAlpha)
 
-            // ── Layout buttons ──────────────────────────────────
+            // -- Layout buttons ----------------------------------
             for (b in buttonStates) {
                 if (gameVariant == "d1" && b.control.binding in TouchBindings.D2_ONLY_BUTTONS) continue
                 drawButton(canvas, b, gAlpha, ws)
             }
 
-            // ── Layout sliders ──────────────────────────────────
+            // -- Layout sliders ----------------------------------
             for (sl in sliderStates) drawSlider(canvas, sl, gAlpha)
 
-            // ── Axis regions ────────────────────────────────────
+            // -- Axis regions ------------------------------------
             for (ar in axisRegionStates) drawAxisRegion(canvas, ar, gAlpha)
 
-            // ── Radial menus (triggers, then open wheels on top) ──
+            // -- Radial menus (triggers, then open wheels on top) --
             // Poll weapon state to update quiescent labels
             for (rm in radialStates) {
                 if (rm.control.id == "Guide" && gameVariant == "d1") {
@@ -2225,7 +1460,7 @@ class TouchOverlayView
                 }
             }
 
-            // ── Diagnostic overlays ─────────────────────────────
+            // -- Diagnostic overlays -----------------------------
             val adminTrayPanelRect = if (adminTrayOpen) computeAdminTrayPanelRect() else null
             for (d in diagnosticStates) {
                 if (d.control.type == DiagnosticType.SETTINGS &&
@@ -2239,10 +1474,10 @@ class TouchOverlayView
 
             drawRemainingActions(canvas, ws)
 
-            // ── Cheats overlay (drawn last, on top of everything) ──
+            // -- Cheats overlay (drawn last, on top of everything) --
             if (cheatsOverlayOpen) drawCheatsOverlay(canvas)
 
-            // ── Admin tray tab (visible) or panel (when open) ───
+            // -- Admin tray tab (visible) or panel (when open) ---
             // Hide default tab when a settings diagnostic is configured (it replaces the tab)
             // In gamepad-only mode, no tab is drawn (Start button opens the tray)
             val hasSettingsDiag = diagnosticStates.any { it.control.type == DiagnosticType.SETTINGS }
@@ -2605,7 +1840,7 @@ class TouchOverlayView
             }
         }
 
-        /** Shared radial menu drawing — handles both trigger icon and open wheel. */
+        /** Shared radial menu drawing - handles both trigger icon and open wheel. */
         private fun drawRadialMenu(
             canvas: Canvas,
             state: RadialMenuState,
@@ -2634,7 +1869,7 @@ class TouchOverlayView
                 return
             }
 
-            // Open wheel — draw pie segments parameterized by segment count
+            // Open wheel - draw pie segments parameterized by segment count
             val cx = state.triggerX
             val cy = state.triggerY
             val segs = state.control.segments
@@ -2657,7 +1892,7 @@ class TouchOverlayView
                 radialPath.arcTo(RectF(cx - segR, cy - segR, cx + segR, cy + segR), startDeg, segAngle)
                 radialPath.close()
 
-                // Fill — active segment is darker and more opaque
+                // Fill - active segment is darker and more opaque
                 paintRadialSeg.color = if (active) 0x88334455.toInt() else 0x44888888
                 canvas.drawPath(radialPath, paintRadialSeg)
 
@@ -2698,7 +1933,7 @@ class TouchOverlayView
             }
         }
 
-        /** Weapon wheel drawing — counter-clockwise from bottom, with ammo display. */
+        /** Weapon wheel drawing - counter-clockwise from bottom, with ammo display. */
         private fun drawWeaponWheel(
             canvas: Canvas,
             state: RadialMenuState,
@@ -2748,7 +1983,7 @@ class TouchOverlayView
             for (i in 0 until n) {
                 val active = state.activeSegment == i
                 val segR = if (active) expandR else r
-                // Counter-clockwise from bottom: segment i starts at 90° - (i+0.5)*segAngle
+                // Counter-clockwise from bottom: segment i starts at 90deg - (i+0.5)*segAngle
                 val startDeg = 90f - (i + 0.5f) * segAngle
 
                 radialPath.reset()
@@ -2761,7 +1996,7 @@ class TouchOverlayView
                 paintRing.alpha = (0x44 * eff).toInt()
                 canvas.drawPath(radialPath, paintRing)
 
-                // Label at segment center angle = 90° - i * segAngle
+                // Label at segment center angle = 90deg - i * segAngle
                 val centerAngle = 90f - i * segAngle
                 val midRad = Math.toRadians(centerAngle.toDouble())
                 val lx = cx + cos(midRad).toFloat() * segR * 0.55f
@@ -2848,7 +2083,7 @@ class TouchOverlayView
             canvas.drawCircle(cx, cy, centerR, paintRing)
         }
 
-        /** Green → Yellow → Red based on ammo fill percentage. */
+        /** Green -> Yellow -> Red based on ammo fill percentage. */
         private fun ammoColor(
             pct: Float,
             eff: Float,
@@ -2897,10 +2132,10 @@ class TouchOverlayView
             )
         }
 
-        // ── Touch handling ──────────────────────────────────────
+        // -- Touch handling --------------------------------------
         // When the overlay is active we consume ALL touches so that nothing
         // leaks through to the game SurfaceView (where it would be
-        // interpreted as a mouse click → fire primary).
+        // interpreted as a mouse click -> fire primary).
         override fun onTouchEvent(event: MotionEvent): Boolean {
             if (!isActive) return false
 
@@ -3148,7 +2383,7 @@ class TouchOverlayView
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    // Check for pointer stealing: stick → axis region
+                    // Check for pointer stealing: stick -> axis region
                     for (s in stickStates) {
                         if (s.pointerId < 0) continue
                         val si = event.findPointerIndex(s.pointerId)
@@ -3183,7 +2418,7 @@ class TouchOverlayView
                         }
                     }
 
-                    // Check for pointer stealing: axis region → stick (return to source)
+                    // Check for pointer stealing: axis region -> stick (return to source)
                     for (ar in axisRegionStates) {
                         if (ar.pointerId < 0) continue
                         val ai = event.findPointerIndex(ar.pointerId)
@@ -3393,7 +2628,7 @@ class TouchOverlayView
                         }
                     }
 
-                    // Not on a button → track as automap gesture
+                    // Not on a button -> track as automap gesture
                     automapPointers[pid] = PointF(px, py)
                     if (automapPointers.size == 2) {
                         automapPinchDist = automapFingerDist(event)
@@ -3741,7 +2976,7 @@ class TouchOverlayView
             for (s in stickStates) if (s.pointerId >= 0) resetStick(s)
         }
 
-        // ── Slider helpers ──────────────────────────────────────
+        // -- Slider helpers --------------------------------------
 
         private fun updateSliderFromTouch(
             sl: SliderState,
@@ -3777,7 +3012,7 @@ class TouchOverlayView
             for (sl in sliderStates) if (sl.pointerId >= 0) releaseSlider(sl)
         }
 
-        // ── Axis region helpers ─────────────────────────────────
+        // -- Axis region helpers ---------------------------------
 
         private fun updateAxisRegionFromTouch(
             ar: AxisRegionState,
@@ -3840,7 +3075,7 @@ class TouchOverlayView
             for (b in buttonStates) releaseLayoutButton(b, fired)
         }
 
-        // ── Radial menu helpers ─────────────────────────────────
+        // -- Radial menu helpers ---------------------------------
 
         private fun updateRadialSelection(
             rm: RadialMenuState,
@@ -3866,12 +3101,12 @@ class TouchOverlayView
                     val segAngle = 360f / n
 
                     if (rm.isWeaponWheel) {
-                        // Counter-clockwise from bottom (90°)
+                        // Counter-clockwise from bottom (90deg)
                         var offset = 90f + segAngle / 2f - angle
                         offset = ((offset % 360f) + 360f) % 360f
                         (offset / segAngle).toInt().coerceIn(0, n - 1)
                     } else {
-                        // Clockwise from top (-90°)
+                        // Clockwise from top (-90deg)
                         var adjusted = angle + 90f
                         if (adjusted < 0) adjusted += 360f
                         (adjusted / segAngle).toInt().coerceIn(0, n - 1)
@@ -3947,7 +3182,7 @@ class TouchOverlayView
             when (keycode) {
                 in 7..16 -> '0'.code + keycode - 7
 
-                // KEYCODE_0(7)..KEYCODE_9(16) → '0'..'9'
+                // KEYCODE_0(7)..KEYCODE_9(16) -> '0'..'9'
                 else -> 0
             }
 
@@ -4118,9 +3353,9 @@ class TouchOverlayView
             }
         }
 
-        // ── Automap gesture helpers ─────────────────────────────
+        // -- Automap gesture helpers -----------------------------
 
-        /** Process MOVE events for automap pointers (drag → pan/tilt, pinch → thrust+rotate). */
+        /** Process MOVE events for automap pointers (drag -> pan/tilt, pinch -> thrust+rotate). */
         private fun handleAutomapMove(event: MotionEvent) {
             val w = width.toFloat()
             val h = height.toFloat()
@@ -4135,12 +3370,12 @@ class TouchOverlayView
                     val dy = event.getY(idx) - prev.y
                     prev.set(event.getX(idx), event.getY(idx))
                     if (dx != 0f || dy != 0f) {
-                        // Single finger → pan / tilt
+                        // Single finger -> pan / tilt
                         automapInputCallback?.invoke(dx / w, dy / h, 0f, 0f, 0f, 0f)
                     }
                 }
             } else if (automapPointers.size >= 2) {
-                // Two+ fingers → pinch = zoom + rotate + slide
+                // Two+ fingers -> pinch = zoom + rotate + slide
                 for ((pid, pt) in automapPointers) {
                     val idx = event.findPointerIndex(pid)
                     if (idx >= 0) pt.set(event.getX(idx), event.getY(idx))
@@ -4208,7 +3443,7 @@ class TouchOverlayView
             )
         }
 
-        // ── Cheats overlay ──────────────────────────────────────
+        // -- Cheats overlay --------------------------------------
 
         private fun drawCheatsOverlay(canvas: Canvas) {
             val w = width.toFloat()
@@ -4333,7 +3568,7 @@ class TouchOverlayView
             return true // consume all events while overlay is open
         }
 
-        // ── Admin tray ──────────────────────────────────────────
+        // -- Admin tray ------------------------------------------
 
         private fun adminTrayLabel(index: Int): String =
             when (index) {

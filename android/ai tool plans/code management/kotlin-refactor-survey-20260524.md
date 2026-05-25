@@ -45,7 +45,7 @@ Recommended extraction order:
 5. `SetupResumePanel.kt`: resume candidate thumbnail decode, display formatting, `ResumeSavePanel`, and resume path/callsign helpers.
 6. `SetupSections.kt`: `GameSectionHeader`, `SectionHeader`, `ModsSection`, `DemosSection`, `MusicInfoSection`, `FileStatusRow`, `DownloadableFileRow`, `MissingFilesHelp`, and small row/detail composables.
 7. `SetupDialogs.kt`: `FileDetailDialog`, `SetManagementDialog`, `GogImportDialog`, `SowImportDialog`, `DiscImportDialog`, and `IsoImportDialog`. If this file grows too large, split import dialogs by type.
-8. `SetupAutomationApi.kt`: setup command receiver, multiplayer command receiver, accessibility node scanning/click helpers, setup introspection JSON, and automation-specific clear/patch helpers. This is higher risk because it touches test automation, so do it after the pure helpers and UI sections are extracted.
+8. `SetupAutomationApi.kt`: accessibility node scanning/click helpers, setup/controller/multiplayer introspection JSON, and automation-specific clear/patch helpers. Keep receiver fields in `SetupActivity.kt` unless a later tranche adds a small callback/controller object for the private launch state they close over.
 
 Validation focus:
 - Existing JVM tests around launch readiness, import location migration, disc import hoisting, audio-source visibility, and mod details.
@@ -53,9 +53,9 @@ Validation focus:
 - Manual import spot checks for GOG, SOW, CUE/BIN, ISO, and folder import after the import-helper split.
 
 Progress as of 2026-05-24:
-- Completed steps 1 through 7 with `SetupGameFiles.kt`, `SetupFileImport.kt`, `SetupConfigFiles.kt`, `SetupDiscImport.kt`, `SetupResumePanel.kt`, `SetupSections.kt`, and `SetupDialogs.kt`.
-- `SetupActivity.kt` is down to 5079 lines after those splits.
-- Remaining highest-payoff SetupActivity split is the automation API. `ControllerSection` can also move, but it is smaller and less urgent than the automation block.
+- Completed steps 1 through 8 with `SetupGameFiles.kt`, `SetupFileImport.kt`, `SetupConfigFiles.kt`, `SetupDiscImport.kt`, `SetupResumePanel.kt`, `SetupSections.kt`, `SetupDialogs.kt`, and the low-risk automation helper split in `SetupAutomationApi.kt`.
+- `SetupActivity.kt` is down to 4178 lines after those splits.
+- Remaining SetupActivity opportunities are smaller: `ControllerSection` can move, and the setup/multiplayer receiver fields could be wrapped later if the callback shape is worth the extra abstraction.
 
 Expected payoff:
 - Removes the 10k-line hotspot.
@@ -64,7 +64,7 @@ Expected payoff:
 
 ## Tranche 2 - Split TouchOverlayView.kt by overlay modes
 
-Current size: 4,591 lines. This is mostly one real feature, but it contains several independent overlay modes and a useful set of pure policies above the view class.
+Original size: 4,591 lines. Current `TouchOverlayView.kt` size after the helper split is 3,912 lines. This is mostly one real feature, but it contains several independent overlay modes and a useful set of pure policies above the view class.
 
 Recommended extraction order:
 1. `AdminTrayPolicy.kt`: top-level admin tray action policy helpers such as visible actions, checkbox/slider/action behavior, brightness clamping/stepping, controller menu cycling, and selection movement.
@@ -74,6 +74,11 @@ Recommended extraction order:
 5. `TouchOverlayState.kt`: small state holder classes for sticks, buttons, radial menus, sliders, diagnostics, and axis regions if they can move without creating an awkward public API.
 6. `AdminTrayOverlayController`: later and higher risk. Own tray geometry, drawing, touch handling, and gamepad navigation. This can remove the largest self-contained block from the view class.
 7. `RemainingActionsOverlayController`, `CheatsOverlayController`, and `AutomapOverlayController`: later controller-class extractions if the first policy/helper splits are stable.
+
+Progress as of 2026-05-24:
+- Completed steps 1 through 4 with `AdminTrayPolicy.kt`, `WeaponWheelLabels.kt`, `RemainingTouchActions.kt`, and `TouchMouseAcceleration.kt`.
+- The helper split kept total line count stable: `TouchOverlayView.kt` plus the four helper files is 4,599 lines, about 8 more than the original file.
+- Remaining TouchOverlayView opportunities are `TouchOverlayState.kt` and later controller-class extractions for admin tray, remaining actions, cheats, and automap overlays.
 
 Validation focus:
 - Existing unit tests: remaining key touch actions, overlay visibility policy, controller menu cycle, weapon wheel label, mouse mode tuning, and touch overlay drag-zone policy.
