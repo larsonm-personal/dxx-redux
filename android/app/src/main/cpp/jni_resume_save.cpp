@@ -144,6 +144,8 @@ static const char *save_kind_name(uint8_t save_kind)
 			return "auto_minimize";
 		case ANDROID_SAVE_META_KIND_AUTO_EXIT:
 			return "auto_exit";
+		case ANDROID_SAVE_META_KIND_AUTO_PROGRESS:
+			return "auto_progress";
 		default:
 			return "manual";
 	}
@@ -186,6 +188,49 @@ static bool is_sentinel_callsign(const std::string &callsign)
 	return strcasecmp(callsign.c_str(), "coopsave") == 0;
 }
 
+static bool read_resume_candidate(const std::string &path,
+                                  android_save_meta_candidate *out)
+{
+	android_save_meta_disk meta;
+	std::string callsign;
+
+	if (!out || !android_save_meta_read_path(path.c_str(), &meta))
+		return false;
+	if (meta.wall_clock_unix_seconds == 0)
+		meta.wall_clock_unix_seconds = file_mtime_seconds(path.c_str());
+	callsign = sanitize_text(meta.callsign);
+	if (callsign.empty()) {
+		callsign = callsign_from_path(path.c_str());
+		copy_meta_text(meta.callsign, sizeof(meta.callsign), callsign);
+	}
+	if (callsign.empty() || is_sentinel_callsign(callsign))
+		return false;
+	memset(out, 0, sizeof(*out));
+	strncpy(out->path, path.c_str(), sizeof(out->path) - 1);
+	out->meta = meta;
+	return true;
+}
+
+static bool candidate_is_newer(const android_save_meta_candidate &candidate,
+                               const android_save_meta_candidate &best)
+{
+	return candidate.meta.wall_clock_unix_seconds > best.meta.wall_clock_unix_seconds ||
+	       (candidate.meta.wall_clock_unix_seconds == best.meta.wall_clock_unix_seconds &&
+	        strcmp(candidate.path, best.path) < 0);
+}
+
+static bool candidate_is_higher_progress(const android_save_meta_candidate &candidate,
+                                         const android_save_meta_candidate &best)
+{
+	if (candidate.meta.level_num != best.meta.level_num)
+		return candidate.meta.level_num > best.meta.level_num;
+	if (candidate.meta.total_seconds != best.meta.total_seconds)
+		return candidate.meta.total_seconds > best.meta.total_seconds;
+	if (candidate.meta.level_seconds != best.meta.level_seconds)
+		return candidate.meta.level_seconds > best.meta.level_seconds;
+	return candidate_is_newer(candidate, best);
+}
+
 static bool select_newest_resume_save(const std::vector<std::string> &paths,
                                       android_save_meta_candidate *out)
 {
@@ -196,31 +241,12 @@ static bool select_newest_resume_save(const std::vector<std::string> &paths,
 		return false;
 	memset(&best, 0, sizeof(best));
 	for (const auto &path : paths) {
-		android_save_meta_disk meta;
-		std::string callsign;
-		bool has_meta;
+		android_save_meta_candidate candidate;
 
-		has_meta = android_save_meta_read_path(path.c_str(), &meta) != 0;
-		if (!has_meta)
+		if (!read_resume_candidate(path, &candidate))
 			continue;
-		if (meta.wall_clock_unix_seconds == 0)
-			meta.wall_clock_unix_seconds = file_mtime_seconds(path.c_str());
-		callsign = sanitize_text(meta.callsign);
-		if (callsign.empty()) {
-			callsign = callsign_from_path(path.c_str());
-			copy_meta_text(meta.callsign, sizeof(meta.callsign), callsign);
-		}
-		if (callsign.empty())
-			continue;
-		if (is_sentinel_callsign(callsign))
-			continue;
-		if (!found ||
-		    meta.wall_clock_unix_seconds > best.meta.wall_clock_unix_seconds ||
-		    (meta.wall_clock_unix_seconds == best.meta.wall_clock_unix_seconds &&
-		     path < best.path)) {
-			memset(&best, 0, sizeof(best));
-			strncpy(best.path, path.c_str(), sizeof(best.path) - 1);
-			best.meta = meta;
+		if (!found || candidate_is_newer(candidate, best)) {
+			best = candidate;
 			found = true;
 		}
 	}
@@ -228,6 +254,62 @@ static bool select_newest_resume_save(const std::vector<std::string> &paths,
 		return false;
 	*out = best;
 	return true;
+}
+
+static bool select_resume_save_by_kind(const std::vector<std::string> &paths,
+                                       int save_kind,
+                                       int use_progress_order,
+                                       android_save_meta_candidate *out)
+{
+	android_save_meta_candidate best;
+	bool found = false;
+
+	if (!out)
+		return false;
+	memset(&best, 0, sizeof(best));
+	for (const auto &path : paths) {
+		android_save_meta_candidate candidate;
+
+		if (!read_resume_candidate(path, &candidate))
+			continue;
+		if (candidate.meta.save_kind != save_kind)
+			continue;
+		if (!found ||
+		    (use_progress_order && candidate_is_higher_progress(candidate, best)) ||
+		    (!use_progress_order && candidate_is_newer(candidate, best))) {
+			best = candidate;
+			found = true;
+		}
+	}
+	if (!found)
+		return false;
+	*out = best;
+	return true;
+}
+
+static json resume_candidate_json(const char *files_dir,
+                                  const android_save_meta_candidate &candidate)
+{
+	json out;
+
+	out["path"] = candidate.path;
+	out["relative_path"] = relative_to_files_dir(files_dir, candidate.path);
+	out["game"] = game_name(candidate.meta.game_id);
+	out["save_kind"] = save_kind_name(candidate.meta.save_kind);
+	out["save_time_unix_seconds"] = candidate.meta.wall_clock_unix_seconds;
+	out["callsign"] = sanitize_text(candidate.meta.callsign);
+	out["description"] = sanitize_text(candidate.meta.description);
+	out["mission_name"] = sanitize_text(candidate.meta.mission_name);
+	out["level_num"] = candidate.meta.level_num;
+	out["level_name"] = sanitize_text(candidate.meta.level_name);
+	out["level_seconds"] = candidate.meta.level_seconds;
+	out["total_seconds"] = candidate.meta.total_seconds;
+	out["slot"] = slot_from_path(candidate.path);
+	out["has_thumbnail"] = candidate.meta.thumbnail_format == ANDROID_SAVE_META_THUMB_RGB6;
+	out["thumbnail_width"] = candidate.meta.thumbnail_width;
+	out["thumbnail_height"] = candidate.meta.thumbnail_height;
+	out["metadata_backed"] = android_save_meta_is_valid(&candidate.meta) != 0;
+	return out;
 }
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -238,7 +320,6 @@ Java_com_dxxredux_app_ResumeSaveBridge_nativeFindNewestSave(JNIEnv *env,
 	android_save_meta_candidate candidate;
 	const char *files_dir;
 	json out;
-	std::string relative_path;
 	std::vector<std::string> paths;
 
 	if (!jfilesDir)
@@ -259,26 +340,56 @@ Java_com_dxxredux_app_ResumeSaveBridge_nativeFindNewestSave(JNIEnv *env,
 		return NULL;
 	}
 
-	relative_path = relative_to_files_dir(files_dir, candidate.path);
+	out = resume_candidate_json(files_dir, candidate);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 
-	out["path"] = candidate.path;
-	out["relative_path"] = relative_path;
-	out["game"] = game_name(candidate.meta.game_id);
-	out["save_kind"] = save_kind_name(candidate.meta.save_kind);
-	out["save_time_unix_seconds"] = candidate.meta.wall_clock_unix_seconds;
-	out["callsign"] = sanitize_text(candidate.meta.callsign);
-	out["description"] = sanitize_text(candidate.meta.description);
-	out["mission_name"] = sanitize_text(candidate.meta.mission_name);
-	out["level_num"] = candidate.meta.level_num;
-	out["level_name"] = sanitize_text(candidate.meta.level_name);
-	out["level_seconds"] = candidate.meta.level_seconds;
-	out["total_seconds"] = candidate.meta.total_seconds;
-	out["slot"] = slot_from_path(candidate.path);
-	out["has_thumbnail"] = candidate.meta.thumbnail_format == ANDROID_SAVE_META_THUMB_RGB6;
-	out["thumbnail_width"] = candidate.meta.thumbnail_width;
-	out["thumbnail_height"] = candidate.meta.thumbnail_height;
-	out["metadata_backed"] = android_save_meta_is_valid(&candidate.meta) != 0;
+	std::string dumped = out.dump();
+	return env->NewStringUTF(dumped.c_str());
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_ResumeSaveBridge_nativeFindSaveOptions(JNIEnv *env,
+                                                             jobject /* thiz */,
+                                                             jstring jfilesDir)
+{
+	android_save_meta_candidate candidate;
+	const char *files_dir;
+	json out;
+	std::vector<std::string> paths;
+	bool found = false;
+
+	if (!jfilesDir)
+		return NULL;
+	files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	if (!files_dir)
+		return NULL;
+
+	collect_save_paths(files_dir, "d1x-redux", &paths);
+	collect_save_paths(files_dir, "d2x-redux", &paths);
+	if (paths.empty()) {
+		env->ReleaseStringUTFChars(jfilesDir, files_dir);
+		return NULL;
+	}
+
+	if (select_newest_resume_save(paths, &candidate)) {
+		out["latest_overall"] = resume_candidate_json(files_dir, candidate);
+		found = true;
+	}
+	if (select_resume_save_by_kind(paths, ANDROID_SAVE_META_KIND_AUTO_PROGRESS, 1, &candidate)) {
+		out["highest_progress"] = resume_candidate_json(files_dir, candidate);
+		found = true;
+	}
+	if (select_resume_save_by_kind(paths, ANDROID_SAVE_META_KIND_AUTO_EXIT, 0, &candidate)) {
+		out["last_exit"] = resume_candidate_json(files_dir, candidate);
+		found = true;
+	}
+	if (select_resume_save_by_kind(paths, ANDROID_SAVE_META_KIND_AUTO_MINIMIZE, 0, &candidate)) {
+		out["last_minimize"] = resume_candidate_json(files_dir, candidate);
+		found = true;
+	}
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+	if (!found)
+		return NULL;
 
 	std::string dumped = out.dump();
 	return env->NewStringUTF(dumped.c_str());

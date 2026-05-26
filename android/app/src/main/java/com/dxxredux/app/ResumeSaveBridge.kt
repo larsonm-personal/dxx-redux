@@ -53,6 +53,13 @@ object ResumeSaveBridge {
             }
     }
 
+    data class ResumeSaveOptions(
+        val latestOverall: ResumeSaveCandidate?,
+        val highestProgress: ResumeSaveCandidate?,
+        val lastExit: ResumeSaveCandidate?,
+        val lastMinimize: ResumeSaveCandidate?,
+    )
+
     fun findNewest(filesDir: File): ResumeSaveCandidate? = findNewest(filesDir.absolutePath)
 
     fun findNewest(filesDir: String): ResumeSaveCandidate? {
@@ -65,47 +72,84 @@ object ResumeSaveBridge {
             } ?: return null
 
         return try {
-            val obj = JSONObject(raw)
-            val path = obj.optString("path")
-            val hasThumbnail = obj.optBoolean("has_thumbnail")
-            val thumbnailRgb6 =
-                if (hasThumbnail && path.isNotBlank()) {
-                    try {
-                        nativeReadThumbnailRgb6(path)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to read resume-save thumbnail", e)
-                        null
-                    }
-                } else {
-                    null
-                }
-            ResumeSaveCandidate(
-                path = path,
-                relativePath = obj.optString("relative_path"),
-                game = obj.optString("game"),
-                saveKind = obj.optString("save_kind"),
-                saveTimeUnixSeconds = obj.optLong("save_time_unix_seconds"),
-                callsign = obj.optString("callsign"),
-                description = obj.optString("description"),
-                missionName = obj.optString("mission_name"),
-                levelNum = obj.optInt("level_num"),
-                levelName = obj.optString("level_name"),
-                levelSeconds = obj.optLong("level_seconds"),
-                totalSeconds = obj.optLong("total_seconds"),
-                slot = obj.optInt("slot", -1),
-                hasThumbnail = hasThumbnail,
-                thumbnailWidth = obj.optInt("thumbnail_width"),
-                thumbnailHeight = obj.optInt("thumbnail_height"),
-                metadataBacked = obj.optBoolean("metadata_backed"),
-                thumbnailRgb6 = thumbnailRgb6,
-            )
+            parseCandidate(JSONObject(raw))
         } catch (e: Exception) {
             Log.w(TAG, "Failed to parse native resume-save JSON", e)
             null
         }
     }
 
+    fun findOptions(filesDir: File): ResumeSaveOptions? = findOptions(filesDir.absolutePath)
+
+    fun findOptions(filesDir: String): ResumeSaveOptions? {
+        val raw =
+            try {
+                nativeFindSaveOptions(filesDir)
+            } catch (e: UnsatisfiedLinkError) {
+                Log.w(TAG, "Resume-save bridge unavailable", e)
+                null
+            } ?: return null
+
+        return try {
+            val obj = JSONObject(raw)
+            ResumeSaveOptions(
+                latestOverall = obj.optCandidate("latest_overall"),
+                highestProgress = obj.optCandidate("highest_progress"),
+                lastExit = obj.optCandidate("last_exit"),
+                lastMinimize = obj.optCandidate("last_minimize"),
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse native resume-save options JSON", e)
+            null
+        }
+    }
+
+    private fun JSONObject.optCandidate(name: String): ResumeSaveCandidate? =
+        if (has(name) && !isNull(name)) {
+            parseCandidate(getJSONObject(name))
+        } else {
+            null
+        }
+
+    private fun parseCandidate(obj: JSONObject): ResumeSaveCandidate {
+        val path = obj.optString("path")
+        val hasThumbnail = obj.optBoolean("has_thumbnail")
+        val thumbnailRgb6 =
+            if (hasThumbnail && path.isNotBlank()) {
+                try {
+                    nativeReadThumbnailRgb6(path)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to read resume-save thumbnail", e)
+                    null
+                }
+            } else {
+                null
+            }
+        return ResumeSaveCandidate(
+            path = path,
+            relativePath = obj.optString("relative_path"),
+            game = obj.optString("game"),
+            saveKind = obj.optString("save_kind"),
+            saveTimeUnixSeconds = obj.optLong("save_time_unix_seconds"),
+            callsign = obj.optString("callsign"),
+            description = obj.optString("description"),
+            missionName = obj.optString("mission_name"),
+            levelNum = obj.optInt("level_num"),
+            levelName = obj.optString("level_name"),
+            levelSeconds = obj.optLong("level_seconds"),
+            totalSeconds = obj.optLong("total_seconds"),
+            slot = obj.optInt("slot", -1),
+            hasThumbnail = hasThumbnail,
+            thumbnailWidth = obj.optInt("thumbnail_width"),
+            thumbnailHeight = obj.optInt("thumbnail_height"),
+            metadataBacked = obj.optBoolean("metadata_backed"),
+            thumbnailRgb6 = thumbnailRgb6,
+        )
+    }
+
     private external fun nativeFindNewestSave(filesDir: String): String?
+
+    private external fun nativeFindSaveOptions(filesDir: String): String?
 
     private external fun nativeReadThumbnailRgb6(savePath: String): ByteArray?
 }

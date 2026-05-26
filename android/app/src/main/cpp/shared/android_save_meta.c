@@ -4,6 +4,37 @@
 #include <string.h>
 #include <time.h>
 
+static uint8_t g_cached_thumbnail_rgb6[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
+static int g_cached_thumbnail_valid = 0;
+
+void android_save_meta_clear_cached_thumbnail(void)
+{
+	g_cached_thumbnail_valid = 0;
+}
+
+void android_save_meta_set_cached_thumbnail_rgb6(const uint8_t *rgb6,
+                                                 uint16_t width,
+                                                 uint16_t height)
+{
+	if (!rgb6 ||
+	    width != ANDROID_SAVE_META_THUMB_W ||
+	    height != ANDROID_SAVE_META_THUMB_H) {
+		android_save_meta_clear_cached_thumbnail();
+		return;
+	}
+	memcpy(g_cached_thumbnail_rgb6, rgb6, sizeof(g_cached_thumbnail_rgb6));
+	g_cached_thumbnail_valid = 1;
+}
+
+void android_save_meta_apply_cached_thumbnail(android_save_meta_write_params *params)
+{
+	if (!params || !g_cached_thumbnail_valid)
+		return;
+	params->thumbnail_rgb6 = g_cached_thumbnail_rgb6;
+	params->thumbnail_width = ANDROID_SAVE_META_THUMB_W;
+	params->thumbnail_height = ANDROID_SAVE_META_THUMB_H;
+}
+
 static void android_save_meta_copy_string(char *dst, int dst_size, const char *src)
 {
 	if (!dst || dst_size <= 0)
@@ -40,7 +71,7 @@ int android_save_meta_build(android_save_meta_disk *out,
 	if (params->game_id != ANDROID_SAVE_META_GAME_D1 &&
 	    params->game_id != ANDROID_SAVE_META_GAME_D2)
 		return 0;
-	if (params->save_kind > ANDROID_SAVE_META_KIND_AUTO_EXIT)
+	if (params->save_kind > ANDROID_SAVE_META_KIND_AUTO_PROGRESS)
 		return 0;
 
 	memset(out, 0, sizeof(*out));
@@ -82,7 +113,7 @@ int android_save_meta_is_valid(const android_save_meta_disk *meta)
 	if (meta->game_id != ANDROID_SAVE_META_GAME_D1 &&
 	    meta->game_id != ANDROID_SAVE_META_GAME_D2)
 		return 0;
-	if (meta->save_kind > ANDROID_SAVE_META_KIND_AUTO_EXIT)
+	if (meta->save_kind > ANDROID_SAVE_META_KIND_AUTO_PROGRESS)
 		return 0;
 	if (meta->thumbnail_format == ANDROID_SAVE_META_THUMB_NONE)
 		return 1;

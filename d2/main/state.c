@@ -1010,6 +1010,9 @@ static grs_bitmap *state_read_thumbnail(PHYSFS_file *fp, int version)
 static void state_write_blank_thumbnail(PHYSFS_file *fp)
 {
 	ubyte *zero = d_malloc(THUMBNAIL_RGB_BYTES);
+#ifdef __ANDROID__
+	android_save_meta_clear_cached_thumbnail();
+#endif
 	if (!zero)
 		return;
 	memset(zero, 0, THUMBNAIL_RGB_BYTES);
@@ -1941,7 +1944,15 @@ int state_save_all_sub(char *filename, char *desc)
 			rgb[dst + 1] = buf[4*i + 1] / 4;
 			rgb[dst + 2] = buf[4*i + 2] / 4;
 		}
-		PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1);
+		if (PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1) == 1) {
+#ifdef __ANDROID__
+			android_save_meta_set_cached_thumbnail_rgb6(rgb, THUMBNAIL_W, THUMBNAIL_H);
+#endif
+		} else {
+#ifdef __ANDROID__
+			android_save_meta_clear_cached_thumbnail();
+#endif
+		}
 		d_free(rgb);
 		d_free(buf);
 #else
@@ -1954,7 +1965,15 @@ int state_save_all_sub(char *filename, char *desc)
 					rgb[i*3 + 1] = gr_palette[idx*3 + 1];
 					rgb[i*3 + 2] = gr_palette[idx*3 + 2];
 				}
-				PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1);
+				if (PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1) == 1) {
+#ifdef __ANDROID__
+					android_save_meta_set_cached_thumbnail_rgb6(rgb, THUMBNAIL_W, THUMBNAIL_H);
+#endif
+				} else {
+#ifdef __ANDROID__
+					android_save_meta_clear_cached_thumbnail();
+#endif
+				}
 				d_free(rgb);
 			} else {
 				state_write_blank_thumbnail(fp);

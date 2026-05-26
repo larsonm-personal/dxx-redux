@@ -754,6 +754,9 @@ static grs_bitmap *state_read_thumbnail(PHYSFS_file *fp, int version)
 static void state_write_blank_thumbnail(PHYSFS_file *fp)
 {
 	ubyte *zero = d_malloc(THUMBNAIL_RGB_BYTES);
+#ifdef __ANDROID__
+	android_save_meta_clear_cached_thumbnail();
+#endif
 	if (!zero)
 		return;
 	memset(zero, 0, THUMBNAIL_RGB_BYTES);
@@ -821,7 +824,15 @@ static void state_write_current_frame_thumbnail(PHYSFS_file *fp)
 	}
 #endif
 
-	PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1);
+	if (PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1) == 1) {
+#ifdef __ANDROID__
+		android_save_meta_set_cached_thumbnail_rgb6(rgb, THUMBNAIL_W, THUMBNAIL_H);
+#endif
+	} else {
+#ifdef __ANDROID__
+		android_save_meta_clear_cached_thumbnail();
+#endif
+	}
 	d_free(rgb);
 
 	gr_set_current_canvas(cnv_save);
@@ -2504,4 +2515,3 @@ int state_get_save_file_callsign(char *filename, char *callsign, int callsign_si
 	return callsign[0] != '\0';
 }
 #endif
-

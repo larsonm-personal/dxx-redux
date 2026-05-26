@@ -66,7 +66,7 @@ extern "C" void android_automation_joystick_button(int button, int pressed);
 
 static void automation_enter_launcher(void)
 {
-	const int slotnum = N_SAVE_SLOTS - 2;
+	const int slotnum = ANDROID_SAVE_META_SLOT_AUTO_EXIT;
 	int saved = 0;
 	SDL_Event ev;
 

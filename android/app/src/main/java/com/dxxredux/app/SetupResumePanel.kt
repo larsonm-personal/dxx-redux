@@ -17,8 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -26,7 +26,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -46,6 +51,7 @@ private fun resumeSaveKindLabel(saveKind: String): String =
     when (saveKind) {
         "auto_minimize" -> "Auto-save on minimize"
         "auto_exit" -> "Auto-save on exit"
+        "auto_progress" -> "Highest progress save"
         else -> "Manual save"
     }
 
@@ -98,12 +104,15 @@ internal fun decodeResumeSaveThumbnail(candidate: ResumeSaveBridge.ResumeSaveCan
 @Composable
 internal fun ResumeSavePanel(
     candidate: ResumeSaveBridge.ResumeSaveCandidate,
+    options: ResumeSaveBridge.ResumeSaveOptions?,
     thumbnail: Bitmap?,
     onLoad: () -> Unit,
+    onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
     onHide: () -> Unit,
     onStopShowing: () -> Unit,
 ) {
     val panelColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.94f)
+    var showChooser by remember { mutableStateOf(false) }
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         colors =
@@ -146,6 +155,12 @@ internal fun ResumeSavePanel(
                     }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
+                TextButton(
+                    onClick = onStopShowing,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
+                ) {
+                    Text("Stop Showing This", fontSize = 7.sp, maxLines = 1)
+                }
                 Text(
                     "Resume Recent Save",
                     modifier = Modifier.weight(1f),
@@ -189,27 +204,88 @@ internal fun ResumeSavePanel(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(
-                    onClick = onStopShowing,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = panelColor,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
-                ) {
-                    Text("Stop Showing This", fontSize = 9.sp, maxLines = 1)
-                }
-                Button(
                     onClick = onLoad,
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                 ) {
                     Text("Load Last Save", fontSize = 9.sp, maxLines = 1)
                 }
+                Button(
+                    onClick = { showChooser = true },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                    enabled = options.hasChooseCandidates(),
+                ) {
+                    Text("Choose Save", fontSize = 9.sp, maxLines = 1)
+                }
             }
         }
     }
+
+    if (showChooser && options != null) {
+        ResumeSaveChoiceDialog(
+            options = options,
+            onDismiss = { showChooser = false },
+            onLoadCandidate = {
+                showChooser = false
+                onLoadCandidate(it)
+            },
+        )
+    }
+}
+
+private fun ResumeSaveBridge.ResumeSaveOptions?.hasChooseCandidates(): Boolean =
+    this?.let { it.highestProgress != null || it.lastExit != null || it.lastMinimize != null } == true
+
+@Composable
+private fun ResumeSaveChoiceDialog(
+    options: ResumeSaveBridge.ResumeSaveOptions,
+    onDismiss: () -> Unit,
+    onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
+) {
+    val choices =
+        listOfNotNull(
+            options.highestProgress?.let { "Highest Progress" to it },
+            options.lastExit?.let { "Last Exit Save" to it },
+            options.lastMinimize?.let { "Last Minimize Save" to it },
+        )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        title = { Text("Choose Save") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                choices.forEach { (label, choice) ->
+                    Button(
+                        onClick = { onLoadCandidate(choice) },
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.Start,
+                        ) {
+                            Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                resumeChoiceLine(choice),
+                                fontSize = 9.sp,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+    )
 }
 
 internal fun resolveResumeSaveLaunchPath(
@@ -271,6 +347,19 @@ private fun resumePanelSecondaryLine(candidate: ResumeSaveBridge.ResumeSaveCandi
         append(formatResumeDuration(candidate.totalSeconds))
         append(" total")
     }
+
+private fun resumeChoiceLine(candidate: ResumeSaveBridge.ResumeSaveCandidate): String {
+    val callsign = resolveResumeSaveLaunchCallsign(candidate) ?: "unknown pilot"
+    return buildString {
+        append(resumeGameDisplayName(candidate.game))
+        append(" | ")
+        append(callsign)
+        append(" | ")
+        append(("${candidate.levelNum} ${candidate.levelName}").trim())
+        append(" | ")
+        append(formatResumeSaveTime(candidate.saveTimeUnixSeconds))
+    }
+}
 
 internal fun resumeCandidateLogSummary(candidate: ResumeSaveBridge.ResumeSaveCandidate?): String {
     if (candidate == null) return "none"

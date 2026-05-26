@@ -1934,28 +1934,38 @@ private fun SetupScreen(
         context
             .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
             .getBoolean(PREF_SHOW_RESUME_OFFER, true)
-    val newestResumeCandidate by produceState<ResumeSaveBridge.ResumeSaveCandidate?>(
+    val resumeSaveOptions by produceState<ResumeSaveBridge.ResumeSaveOptions?>(
         initialValue = null,
         refreshTrigger,
         focusResumeTrigger,
         gameRunning,
         resumeOfferEnabled,
     ) {
-        value = ResumeSaveBridge.findNewest(filesDir)
+        value = ResumeSaveBridge.findOptions(filesDir)
         if (value == null && !gameRunning && resumeOfferEnabled) {
             repeat(20) {
                 delay(500L)
-                value = ResumeSaveBridge.findNewest(filesDir)
+                value = ResumeSaveBridge.findOptions(filesDir)
                 if (value != null) {
                     return@produceState
                 }
             }
         }
     }
-    val resumeCandidate =
-        newestResumeCandidate?.takeIf { candidate ->
-            (candidate.game == "d1" && d1RequiredOk) || (candidate.game != "d1" && d2RequiredOk)
+
+    fun resumeCandidateReady(candidate: ResumeSaveBridge.ResumeSaveCandidate?): Boolean =
+        candidate != null && ((candidate.game == "d1" && d1RequiredOk) || (candidate.game != "d1" && d2RequiredOk))
+    val availableResumeOptions =
+        resumeSaveOptions?.let { options ->
+            ResumeSaveBridge.ResumeSaveOptions(
+                latestOverall = options.latestOverall?.takeIf { resumeCandidateReady(it) },
+                highestProgress = options.highestProgress?.takeIf { resumeCandidateReady(it) },
+                lastExit = options.lastExit?.takeIf { resumeCandidateReady(it) },
+                lastMinimize = options.lastMinimize?.takeIf { resumeCandidateReady(it) },
+            )
         }
+    val resumeCandidate =
+        availableResumeOptions?.latestOverall
     val resumeOfferKey = resumeCandidate?.let { "${it.path}|${it.saveTimeUnixSeconds}" }
     var dismissedResumeKey by remember { mutableStateOf<String?>(null) }
     val showResumePanel =
@@ -2693,11 +2703,17 @@ private fun SetupScreen(
                             ) {
                                 ResumeSavePanel(
                                     candidate = candidate,
+                                    options = availableResumeOptions,
                                     thumbnail = resumeThumbnail,
                                     onLoad = {
                                         selectedGame = candidate.game
                                         gamePrefs.edit().putString("selected_game", candidate.game).apply()
                                         onLaunchGame(candidate.game, candidate)
+                                    },
+                                    onLoadCandidate = { selectedCandidate ->
+                                        selectedGame = selectedCandidate.game
+                                        gamePrefs.edit().putString("selected_game", selectedCandidate.game).apply()
+                                        onLaunchGame(selectedCandidate.game, selectedCandidate)
                                     },
                                     onHide = { dismissedResumeKey = resumeOfferKey },
                                     onStopShowing = {

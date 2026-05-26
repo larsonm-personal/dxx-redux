@@ -24,7 +24,14 @@ enum {
 enum {
 	ANDROID_SAVE_META_KIND_MANUAL = 0,
 	ANDROID_SAVE_META_KIND_AUTO_MINIMIZE = 1,
-	ANDROID_SAVE_META_KIND_AUTO_EXIT = 2
+	ANDROID_SAVE_META_KIND_AUTO_EXIT = 2,
+	ANDROID_SAVE_META_KIND_AUTO_PROGRESS = 3
+};
+
+enum {
+	ANDROID_SAVE_META_SLOT_AUTO_PROGRESS = 7,
+	ANDROID_SAVE_META_SLOT_AUTO_EXIT = 8,
+	ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE = 9
 };
 
 enum {
@@ -90,5 +97,10 @@ int android_save_meta_read_physfs(PHYSFS_file *fp, PHYSFS_sint64 file_len,
                                   android_save_meta_disk *out);
 int android_save_meta_select_newest(const char *const *paths, int path_count,
                                     android_save_meta_candidate *out);
+void android_save_meta_clear_cached_thumbnail(void);
+void android_save_meta_set_cached_thumbnail_rgb6(const uint8_t *rgb6,
+                                                 uint16_t width,
+                                                 uint16_t height);
+void android_save_meta_apply_cached_thumbnail(android_save_meta_write_params *params);
 
 #endif
