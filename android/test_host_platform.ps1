@@ -136,4 +136,58 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         }
         return (Join-RegressionPath $AndroidDir $wrapperNames[0])
     }
+
+    function Resolve-RegressionCommandPath {
+        param([Parameter(Mandatory)][string]$CommandText)
+
+        if ([string]::IsNullOrWhiteSpace($CommandText) -or $CommandText.EndsWith("-NOTFOUND")) {
+            return $null
+        }
+
+        $command = $CommandText.Trim('"')
+        if ([System.IO.Path]::IsPathRooted($command)) {
+            if (Test-Path -LiteralPath $command -PathType Leaf) {
+                return (Resolve-Path -LiteralPath $command).Path
+            }
+            return $null
+        }
+
+        $found = Get-Command $command -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($found) {
+            return $found.Source
+        }
+        return $null
+    }
+
+    function Reset-RegressionCMakeBuildIfMissingTool {
+        param([Parameter(Mandatory)][string]$BuildDir)
+
+        $cachePath = Join-RegressionPath $BuildDir "CMakeCache.txt"
+        if (-not (Test-Path -LiteralPath $cachePath -PathType Leaf)) {
+            return $false
+        }
+
+        $missing = @()
+        foreach ($line in (Get-Content -LiteralPath $cachePath -ErrorAction SilentlyContinue)) {
+            if ($line -notmatch '^(CMAKE_(C|CXX)_COMPILER|CMAKE_MAKE_PROGRAM):[^=]*=(.+)$') {
+                continue
+            }
+
+            $toolPath = $Matches[3].Trim()
+            if (-not (Resolve-RegressionCommandPath -CommandText $toolPath)) {
+                $missing += "$($Matches[1])=$toolPath"
+            }
+        }
+
+        if ($missing.Count -eq 0) {
+            return $false
+        }
+
+        Write-Host "CMake cache references missing tool(s); deleting stale build dir" -ForegroundColor Yellow
+        foreach ($entry in $missing) {
+            Write-Host "  $entry" -ForegroundColor Yellow
+        }
+        Remove-Item -Recurse -Force -Confirm:$false -LiteralPath $BuildDir
+        return $true
+    }
 }

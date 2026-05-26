@@ -107,6 +107,17 @@ function Test-DockerAvailable {
     } catch { return $false }
 }
 
+function Test-AnyCommandAvailable {
+    param([string[]]$Names)
+
+    foreach ($name in $Names) {
+        if (Get-Command $name -ErrorAction SilentlyContinue) {
+            return $true
+        }
+    }
+    return $false
+}
+
 function Get-RegressionDemoCount {
     $demoRoot = Join-Path $scriptDir "regression_demos"
     if (-not (Test-Path -LiteralPath $demoRoot)) {
@@ -303,6 +314,68 @@ $selectedRegressionDemoTests = @($runnableTests | Where-Object { $_.BaseName -eq
 $selectedRegressionDemoModes = @($selectedRegressionDemoTests | ForEach-Object { $_.DemoRunMode } | Where-Object { $_ } | Sort-Object -Unique)
 $regressionDemoCount = Get-RegressionDemoCount
 $selectedRegressionDemoReplayCount = $regressionDemoCount * $selectedRegressionDemoTests.Count
+
+function Test-HostToolPrerequisites {
+    if (Test-RegressionWindowsHost) {
+        return $true
+    }
+
+    $hostToolTests = @(
+        "test_cue_iso",
+        "test_fpcalc_and_acoustid",
+        "test_input_demo_determinism_matrix",
+        "test_input_demo_regressions",
+        "test_input_demo_regressions_graphics",
+        "test_input_demo_runtime_smoke",
+        "test_native_host_unit_tests",
+        "test_server_integration"
+    )
+    $needsNativeHostTools = @($runnableTests | Where-Object {
+            $_.Name -in $hostToolTests -or
+            $_.BaseName -in $hostToolTests -or
+            $_.Requires -in @("server", "two_emulators")
+        }).Count -gt 0
+
+    if (-not $needsNativeHostTools) {
+        return $true
+    }
+
+    $missing = @()
+    foreach ($tool in @("cc", "c++", "make", "cmake", "ctest", "cargo", "rustc")) {
+        if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
+            $missing += $tool
+        }
+    }
+    if (-not (Test-AnyCommandAvailable -Names @("ninja", "ninja-build"))) {
+        $missing += "ninja"
+    }
+    if (-not (Test-AnyCommandAvailable -Names @("pkg-config", "pkgconf"))) {
+        $missing += "pkg-config"
+    }
+    $pkgConfig = Get-Command pkg-config -ErrorAction SilentlyContinue
+    if (-not $pkgConfig) {
+        $pkgConfig = Get-Command pkgconf -ErrorAction SilentlyContinue
+    }
+    if ($pkgConfig) {
+        foreach ($module in @("physfs", "sdl", "SDL_mixer", "libpng", "glew")) {
+            & $pkgConfig.Source --exists $module 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                $missing += "pkg-config:$module"
+            }
+        }
+    }
+
+    if ($missing.Count -eq 0) {
+        return $true
+    }
+
+    Write-Host ""
+    Write-Host "FAIL: Selected tests need Linux host build tools that are not on PATH" -ForegroundColor Red
+    Write-Host "Missing: $($missing -join ', ')" -ForegroundColor Red
+    Write-Host "Run from a terminal with sudo:" -ForegroundColor Yellow
+    Write-Host "  ./android/get_deps/get_linux_build_prereqs.sh" -ForegroundColor Yellow
+    return $false
+}
 
 function Restart-AdbServer {
     Write-Status "Restarting ADB server..." "DarkGray"
@@ -649,6 +722,10 @@ if ($runnableTests.Count -eq 0) {
     exit 0
 }
 
+if (-not (Test-HostToolPrerequisites)) {
+    exit 1
+}
+
 # -- Build APK if any emulator tests will run --
 
 $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
@@ -993,6 +1070,7 @@ if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
         }
 
         if ($emu1Ok) {
+            $emu1Serial = Get-OnlineEmulatorSerials | Select-Object -First 1
             Install-ApkOnDevice | Out-Null
             Push-GameDataToDevice
             foreach ($test in $tierExtract) {

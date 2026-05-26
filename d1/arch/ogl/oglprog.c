@@ -13,7 +13,7 @@ GLint ogl_tex2_debug_mode = -1;
 #ifdef ANDROID
 #define OGL_TEX2_FLOAT_PRECISION "precision highp float;"
 #else
-#define OGL_TEX2_FLOAT_PRECISION "precision mediump float;"
+#define OGL_TEX2_FLOAT_PRECISION ""
 #endif
 
 GLfloat ogl_mat_ortho[16] = {

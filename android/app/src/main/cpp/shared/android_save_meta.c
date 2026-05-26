@@ -63,6 +63,35 @@ static int android_save_meta_path_precedes(const char *lhs, const char *rhs)
 	return strcmp(lhs, rhs) < 0;
 }
 
+static int android_save_meta_kind_priority(uint8_t save_kind)
+{
+	switch (save_kind) {
+		case ANDROID_SAVE_META_KIND_AUTO_EXIT:
+			return 4;
+		case ANDROID_SAVE_META_KIND_AUTO_MINIMIZE:
+			return 3;
+		case ANDROID_SAVE_META_KIND_AUTO_PROGRESS:
+			return 2;
+		default:
+			return 1;
+	}
+}
+
+static int android_save_meta_is_newer(const char *path,
+                                      const android_save_meta_disk *meta,
+                                      const android_save_meta_candidate *best)
+{
+	int priority, best_priority;
+
+	if (meta->wall_clock_unix_seconds != best->meta.wall_clock_unix_seconds)
+		return meta->wall_clock_unix_seconds > best->meta.wall_clock_unix_seconds;
+	priority = android_save_meta_kind_priority(meta->save_kind);
+	best_priority = android_save_meta_kind_priority(best->meta.save_kind);
+	if (priority != best_priority)
+		return priority > best_priority;
+	return android_save_meta_path_precedes(path, best->path);
+}
+
 int android_save_meta_build(android_save_meta_disk *out,
                             const android_save_meta_write_params *params)
 {
@@ -238,10 +267,7 @@ int android_save_meta_select_newest(const char *const *paths, int path_count,
 
 		if (!android_save_meta_read_path(paths[i], &meta))
 			continue;
-		if (!found ||
-		    meta.wall_clock_unix_seconds > best.meta.wall_clock_unix_seconds ||
-		    (meta.wall_clock_unix_seconds == best.meta.wall_clock_unix_seconds &&
-		     android_save_meta_path_precedes(paths[i], best.path))) {
+		if (!found || android_save_meta_is_newer(paths[i], &meta, &best)) {
 			memset(&best, 0, sizeof(best));
 			strncpy(best.path, paths[i], sizeof(best.path) - 1);
 			best.meta = meta;

@@ -29,7 +29,7 @@ Usage: ./get_all.sh [options]
 Download and install the Android build dependencies under dependency_base.txt
 
 Options:
-  --skip-host-prereqs  Do not install small Linux host packages
+  --skip-host-prereqs  Do not install Linux host packages
   --skip-powershell    Do not install PowerShell when pwsh is missing
   --skip-avd           Install emulator packages but do not create an AVD
   --no-prompt          Do not wait for a key before exiting
@@ -89,7 +89,7 @@ run_step() {
 }
 
 if [ "$(get_host_os)" = "linux" ] && [ "$SKIP_HOST_PREREQS" -eq 0 ]; then
-    run_step "Linux host prerequisites" bash "$SCRIPT_DIR/get_linux_android_prereqs.sh"
+    run_step "Linux host prerequisites" bash "$SCRIPT_DIR/get_linux_build_prereqs.sh"
 fi
 
 if ! command -v pwsh >/dev/null 2>&1 && [ "$SKIP_POWERSHELL" -eq 0 ]; then

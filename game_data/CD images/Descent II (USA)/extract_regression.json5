@@ -77,11 +77,11 @@
   "total_extracted": 22,
   "import_mode": "setup_cd",
   "last_test_result": {
-    "status": "pass",
-    "failure_step": null,
-    "level_reached": "Ahayweh Gate",
-    "files_verified": 5,
-    "classification_confirmed": true,
+    "status": "fail",
+    "failure_step": "file_push_failed",
+    "level_reached": null,
+    "files_verified": 0,
+    "classification_confirmed": false,
     "test_mode": "full"
   }
 }

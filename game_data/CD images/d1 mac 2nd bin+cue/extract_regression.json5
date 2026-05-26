@@ -24,5 +24,13 @@
   ],
   "audio_tracks": 13,
   "total_extracted": 7,
-  "import_mode": "setup_cd"
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "fail",
+    "failure_step": "launch_timeout",
+    "level_reached": null,
+    "files_verified": 2,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }

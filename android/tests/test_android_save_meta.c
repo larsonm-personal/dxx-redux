@@ -41,12 +41,13 @@ int main(void)
 {
 	android_save_meta_disk d1_meta;
 	android_save_meta_disk d2_meta;
+	android_save_meta_disk progress_meta;
 	android_save_meta_disk parsed;
 	android_save_meta_candidate newest;
 	android_save_meta_write_params params;
 	uint8_t thumb_a[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
 	uint8_t thumb_b[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
-	const char *paths[4];
+	const char *paths[5];
 	FILE *corrupt;
 	int failures = 0;
 
@@ -91,6 +92,12 @@ int main(void)
 		return report_failure("failed to write D1 test file");
 	if (!write_file_with_meta("test_android_save_meta_d2.sav", &d2_meta))
 		return report_failure("failed to write D2 test file");
+	progress_meta = d2_meta;
+	progress_meta.save_kind = ANDROID_SAVE_META_KIND_AUTO_PROGRESS;
+	memset(progress_meta.description, 0, sizeof(progress_meta.description));
+	strncpy(progress_meta.description, "AUTO SAVE", sizeof(progress_meta.description) - 1);
+	if (!write_file_with_meta("test_android_save_meta_progress.sav", &progress_meta))
+		return report_failure("failed to write progress test file");
 	if (!write_file_with_meta("test_android_save_meta_missing.sav", NULL))
 		return report_failure("failed to write missing-metadata file");
 
@@ -125,7 +132,8 @@ int main(void)
 	paths[1] = "test_android_save_meta_d1.sav";
 	paths[2] = "test_android_save_meta_corrupt.sav";
 	paths[3] = "test_android_save_meta_d2.sav";
-	if (!android_save_meta_select_newest(paths, 4, &newest))
+	paths[4] = "test_android_save_meta_progress.sav";
+	if (!android_save_meta_select_newest(paths, 5, &newest))
 		failures += report_failure("failed to select newest metadata-backed save");
 	else {
 		failures += expect_string("newest path", "test_android_save_meta_d2.sav", newest.path);
@@ -138,6 +146,7 @@ int main(void)
 
 	remove("test_android_save_meta_d1.sav");
 	remove("test_android_save_meta_d2.sav");
+	remove("test_android_save_meta_progress.sav");
 	remove("test_android_save_meta_missing.sav");
 	remove("test_android_save_meta_corrupt.sav");
 

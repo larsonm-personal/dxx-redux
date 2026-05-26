@@ -58,6 +58,27 @@ $TEST_FILE = "descent2.ham"
 $SAF_DIR = "/data/local/tmp/test_saf"
 $TIMEOUT_SEC = 60
 
+function Resolve-LocalSafTestFile {
+    $dep = Get-StandardGameDataDeps | Where-Object { $_.file -eq $TEST_FILE } | Select-Object -First 1
+    if ($dep) {
+        $idx = Read-GameDataIndex
+        if ($idx -and $idx.ContainsKey($dep.sha256) -and (Test-Path -LiteralPath $idx[$dep.sha256])) {
+            return $idx[$dep.sha256]
+        }
+    }
+
+    $candidates = @(
+        (Join-RegressionPath $repoRoot "game_data_to_copy_to_emulator" "data" ($TEST_FILE.ToUpper())),
+        (Join-RegressionPath $repoRoot "game_data" "extracted" "VERTIGO" ($TEST_FILE.ToUpper()))
+    )
+    foreach ($candidate in $candidates) {
+        if (Test-Path -LiteralPath $candidate) {
+            return $candidate
+        }
+    }
+    return $null
+}
+
 if (!(Test-Path $adb)) {
     Write-Host "FAIL: adb not found at $adb" -ForegroundColor Red
     exit 1
@@ -226,23 +247,16 @@ if (-not $sizeOutput -or $sizeOutput -match 'No such file') {
 $fileSize = [long]($sizeOutput.ToString().Trim())
 Write-Host "  File size: $fileSize bytes"
 
-# Create target directory and push the file from local game_data/
+# Create target directory and push the file from local game_data.
 # Note: /sdcard/ is not accessible from native code due to scoped storage.
 # Use /data/local/tmp/ which is world-readable on emulators.
 Adb shell "mkdir -p $SAF_DIR" | Out-Null
-$localGameData = Join-RegressionPath $repoRoot "game_data_to_copy_to_emulator" "data" ($TEST_FILE.ToUpper())
-if (-not (Test-Path $localGameData)) {
-    # Fallback: check extracted game data directories
-    $localGameData = Join-RegressionPath $repoRoot "game_data" "extracted" "VERTIGO" ($TEST_FILE.ToUpper())
-}
-if (Test-Path $localGameData) {
+$localGameData = Resolve-LocalSafTestFile
+if ($localGameData) {
     Adb push $localGameData "$SAF_DIR/$TEST_FILE" | Out-Null
 } else {
-    # Fallback: pull from device and push to new location
-    $tmpLocal = Join-Path ([System.IO.Path]::GetTempPath()) $TEST_FILE
-    Adb shell "run-as $PACKAGE cat $GAME_DATA_DIR/$TEST_FILE" | Set-Content -Path $tmpLocal -AsByteStream
-    Adb push $tmpLocal "$SAF_DIR/$TEST_FILE" | Out-Null
-    Remove-Item $tmpLocal -ErrorAction SilentlyContinue
+    # Fallback: copy on-device without piping binary data through PowerShell text streams.
+    Adb shell "run-as $PACKAGE cat $GAME_DATA_DIR/$TEST_FILE > $SAF_DIR/$TEST_FILE" | Out-Null
 }
 Adb shell "chmod 644 $SAF_DIR/$TEST_FILE" | Out-Null
 Start-Sleep -Seconds 1
@@ -448,9 +462,9 @@ if (!$NoCleanup) {
     Start-Sleep -Seconds 1
 
     # Restore the file to app's files dir
-    # Note: run-as can't read /data/local/tmp/, so re-push from local game_data
+    # Note: run-as can't read /data/local/tmp/ on every image, so re-push from local game_data.
     $restoreTmp = "/data/local/tmp/$TEST_FILE"
-    if (Test-Path $localGameData) {
+    if ($localGameData -and (Test-Path -LiteralPath $localGameData)) {
         Adb push $localGameData $restoreTmp | Out-Null
     }
     Adb shell "run-as $PACKAGE cp $restoreTmp $GAME_DATA_DIR/$TEST_FILE" | Out-Null

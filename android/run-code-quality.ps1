@@ -289,8 +289,12 @@ function Test-ActiveProcess {
         return $false
     }
 
-    $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction SilentlyContinue
-    return $null -ne $proc
+    if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
+        $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction SilentlyContinue
+        return $null -ne $proc
+    }
+
+    return $null -ne (Get-Process -Id $ProcessId -ErrorAction SilentlyContinue)
 }
 
 function Remove-CodeQualityLock {

@@ -258,8 +258,8 @@ internal fun hoistNestedImportedGameFiles(setDir: File): Int {
                 return@forEach
             }
 
+            val dest = existing ?: File(setDir, file.name)
             existing?.delete()
-            val dest = File(setDir, file.name)
             if (moveImportedGameFileToRoot(file, dest)) {
                 rootFiles[lowercaseName] = dest
                 hoisted++

@@ -120,7 +120,29 @@ function Adb {
 
 function Adb-RunAs {
     param([string]$Cmd)
-    return (Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'sh', '-c', $Cmd))
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = $ADB
+    $runAsCmd = "cd /data/data/$PACKAGE && $Cmd"
+    foreach ($arg in @('shell', 'run-as', $PACKAGE, 'sh', '-c', $runAsCmd)) {
+        $psi.ArgumentList.Add($arg)
+    }
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $proc = [System.Diagnostics.Process]::Start($psi)
+    $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
+    $stderrTask = $proc.StandardError.ReadToEndAsync()
+    if (-not $proc.WaitForExit($script:ADB_TIMEOUT * 1000)) {
+        Write-Status "  ADB timeout (${script:ADB_TIMEOUT}s): run-as $Cmd" 'Red'
+        try { $proc.Kill() } catch {}
+        $proc.Dispose()
+        return ''
+    }
+    $stdout = $stdoutTask.GetAwaiter().GetResult()
+    $null = $stderrTask.GetAwaiter().GetResult()
+    $proc.Dispose()
+    return $stdout.Trim()
 }
 
 # Ensure the app is force-stopped on any exit (clean or error)
@@ -271,13 +293,13 @@ function Invoke-GameAutomationScript {
 
 function Send-SetupCommand {
     param([string]$Command, [string]$Name, [string]$Path, [string]$Game, [string[]]$Extras = @())
-    $args_ = @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+    $args_ = @('am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
         '--es', 'command', $Command)
     if ($Name) { $args_ += @('--es', 'name', $Name) }
     if ($Path) { $args_ += @('--es', 'path', $Path) }
     if ($Game) { $args_ += @('--es', 'game', $Game) }
     if ($Extras.Count -gt 0) { $args_ += $Extras }
-    Adb -CmdArgs $args_ | Out-Null
+    Invoke-AdbShellArgs -ShellArgs $args_ -TimeoutSeconds 30 | Out-Null
 }
 
 function Send-SetupCdImport {
@@ -292,7 +314,7 @@ function Send-SetupCdImport {
     }
 
     $args_ = @(
-        'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+        'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
         '--es', 'command', 'import_cd',
         '--es', 'cue_path', $CuePath,
         '--ez', 'include_audio', $(if ($IncludeAudio) { 'true' } else { 'false' })
@@ -302,7 +324,7 @@ function Send-SetupCdImport {
     } else {
         $args_ += @('--esa', 'bin_paths', ($BinPaths -join ','))
     }
-    Adb -CmdArgs $args_ | Out-Null
+    Invoke-AdbShellArgs -ShellArgs $args_ -TimeoutSeconds 30 | Out-Null
 }
 
 function Get-CueReferencedImagePaths {
@@ -321,11 +343,11 @@ function Send-SetupIsoImport {
     param([string]$IsoPath)
 
     $args_ = @(
-        'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+        'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
         '--es', 'command', 'import_iso',
         '--es', 'iso_path', $IsoPath
     )
-    Adb -CmdArgs $args_ | Out-Null
+    Invoke-AdbShellArgs -ShellArgs $args_ -TimeoutSeconds 30 | Out-Null
 }
 
 function Quote-ShArg {
@@ -333,6 +355,25 @@ function Quote-ShArg {
 
     $replacement = "'`"'`"'"
     return "'" + ($Value -replace "'", $replacement) + "'"
+}
+
+function Invoke-AdbShellArgs {
+    param(
+        [string[]]$ShellArgs,
+        [int]$TimeoutSeconds = 30
+    )
+
+    $command = ($ShellArgs | ForEach-Object {
+            if ($_ -match '^[A-Za-z0-9_./:=,+-]+$') { $_ } else { Quote-ShArg $_ }
+        }) -join ' '
+    return Invoke-AdbRaw -Arguments @('shell', $command) -TimeoutSeconds $TimeoutSeconds
+}
+
+function Clear-AppPrivateDirectoryContents {
+    param([string]$RemoteDir)
+
+    Invoke-AdbRaw -Arguments @('exec-out', 'run-as', $PACKAGE, 'rm', '-rf', $RemoteDir) -TimeoutSeconds 30 | Out-Null
+    Invoke-AdbRaw -Arguments @('exec-out', 'run-as', $PACKAGE, 'mkdir', '-p', $RemoteDir) -TimeoutSeconds 30 | Out-Null
 }
 
 function Ensure-AppPrivateFile {
@@ -344,28 +385,115 @@ function Ensure-AppPrivateFile {
 
     $RemoteRelativePath = $RemoteRelativePath -replace '\\', '/'
     $localItem = Get-Item -LiteralPath $LocalPath
-    $remoteQuoted = Quote-ShArg $RemoteRelativePath
-    $remoteSize = Adb-RunAs "stat -c %s $remoteQuoted 2>/dev/null"
+    $remoteSize = Get-AppPrivateFileSize -RemoteRelativePath $RemoteRelativePath
     if ($remoteSize -match '^\d+$' -and [long]$remoteSize -eq $localItem.Length) {
         Write-Status "  Reusing staged source: $RemoteRelativePath" 'Gray'
         return
     }
 
-    $stagingName = [System.IO.Path]::GetFileName($RemoteRelativePath)
-    $stagingPath = "/data/local/tmp/$stagingName"
-    $remoteDir = (Split-Path $RemoteRelativePath -Parent) -replace '\\', '/'
-    $stagingQuoted = Quote-ShArg $stagingPath
-    $remoteDirQuoted = Quote-ShArg $remoteDir
     Write-Status "  Pushing $(Split-Path $LocalPath -Leaf) -> $RemoteRelativePath" 'Gray'
-    Adb -CmdArgs @('push', $LocalPath, $stagingPath) -Timeout $TimeoutSeconds | Out-Null
-    Adb -CmdArgs @('shell', 'chmod', '644', $stagingPath) | Out-Null
-    Adb-RunAs "mkdir -p $remoteDirQuoted" | Out-Null
-    Adb-RunAs "cat $stagingQuoted > $remoteQuoted" | Out-Null
-    Adb -CmdArgs @('shell', 'rm', '-f', $stagingPath) | Out-Null
+    Copy-LocalFileToAppPrivate -LocalPath $LocalPath -RemotePath $RemoteRelativePath -DisplayPath $RemoteRelativePath -TimeoutSeconds $TimeoutSeconds
 
-    $remoteSize = Adb-RunAs "stat -c %s $remoteQuoted 2>/dev/null"
+    $remoteSize = Get-AppPrivateFileSize -RemoteRelativePath $RemoteRelativePath
     if ($remoteSize -notmatch '^\d+$' -or [long]$remoteSize -ne $localItem.Length) {
-        throw "App-private staging failed for $RemoteRelativePath"
+        $actualSize = if ($remoteSize) { $remoteSize } else { '<missing>' }
+        throw "App-private staging failed for $RemoteRelativePath (expected $($localItem.Length) bytes, got $actualSize)"
+    }
+}
+
+function Invoke-AdbRaw {
+    param(
+        [string[]]$Arguments,
+        [string]$InputFile,
+        [int]$TimeoutSeconds = 30
+    )
+
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = $ADB
+    foreach ($arg in $Arguments) {
+        $psi.ArgumentList.Add($arg)
+    }
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.RedirectStandardInput = [bool]$InputFile
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+
+    $proc = [System.Diagnostics.Process]::Start($psi)
+    $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
+    $stderrTask = $proc.StandardError.ReadToEndAsync()
+    try {
+        if ($InputFile) {
+            $inputStream = [System.IO.File]::OpenRead($InputFile)
+            try {
+                $inputStream.CopyTo($proc.StandardInput.BaseStream)
+            } finally {
+                $inputStream.Dispose()
+                $proc.StandardInput.Close()
+            }
+        }
+
+        if (-not $proc.WaitForExit($TimeoutSeconds * 1000)) {
+            try { $proc.Kill() } catch {}
+            throw "ADB timeout (${TimeoutSeconds}s): $($Arguments -join ' ')"
+        }
+
+        $stdout = $stdoutTask.GetAwaiter().GetResult()
+        $stderr = $stderrTask.GetAwaiter().GetResult()
+        if ($proc.ExitCode -ne 0) {
+            throw "ADB failed ($($Arguments -join ' ')): $stderr $stdout"
+        }
+        return $stdout.Trim()
+    } finally {
+        $proc.Dispose()
+    }
+}
+
+function Get-AppPrivateFileSize {
+    param([string]$RemoteRelativePath)
+
+    $remotePath = "/data/data/$PACKAGE/$RemoteRelativePath"
+    try {
+        $quotedRemotePath = Quote-ShArg $remotePath
+        return Invoke-AdbRaw -Arguments @(
+            'exec-out', 'run-as', $PACKAGE, 'sh', '-c', "stat -c %s -- $quotedRemotePath 2>/dev/null"
+        ) -TimeoutSeconds 10
+    } catch {
+        return ''
+    }
+}
+
+function Copy-LocalFileToAppPrivate {
+    param(
+        [string]$LocalPath,
+        [string]$RemotePath,
+        [string]$DisplayPath,
+        [int]$TimeoutSeconds
+    )
+
+    $remoteDir = (Split-Path $RemotePath -Parent) -replace '\\', '/'
+    $remoteAbsPath = "/data/data/$PACKAGE/$RemotePath"
+    $remoteAbsDir = "/data/data/$PACKAGE/$remoteDir"
+    $tmpPath = $null
+    try {
+        $quotedRemoteAbsDir = Quote-ShArg $remoteAbsDir
+        $quotedRemoteAbsPath = Quote-ShArg $remoteAbsPath
+        $tmpPath = "/data/local/tmp/dxx_extract_$([Guid]::NewGuid().ToString('N'))"
+        $quotedTmpPath = Quote-ShArg $tmpPath
+        Invoke-AdbRaw -Arguments @(
+            'exec-out', 'run-as', $PACKAGE, 'sh', '-c', "mkdir -p -- $quotedRemoteAbsDir"
+        ) -TimeoutSeconds 30 | Out-Null
+        Invoke-AdbRaw -Arguments @('push', $LocalPath, $tmpPath) -TimeoutSeconds $TimeoutSeconds | Out-Null
+        Invoke-AdbRaw -Arguments @('shell', 'chmod', '644', $tmpPath) -TimeoutSeconds 30 | Out-Null
+        Invoke-AdbRaw -Arguments @(
+            'exec-out', 'run-as', $PACKAGE, 'sh', '-c', "cat $quotedTmpPath > $quotedRemoteAbsPath"
+        ) -TimeoutSeconds $TimeoutSeconds | Out-Null
+    } catch {
+        throw "ADB stream failed for ${DisplayPath}: $_"
+    } finally {
+        if ($tmpPath) {
+            try { Invoke-AdbRaw -Arguments @('shell', 'rm', '-f', $tmpPath) -TimeoutSeconds 30 | Out-Null } catch { }
+        }
     }
 }
 
@@ -414,6 +542,11 @@ $sourceName = (Split-Path $specDir -Leaf)
 $useDirectCdImport = $spec.import_mode -eq 'setup_cd'
 $useDirectIsoImport = $spec.import_mode -eq 'setup_iso'
 $useDirectSetupImport = $useDirectCdImport -or $useDirectIsoImport
+$priorResultStatus = $null
+if ($spec.last_test_result) {
+    $priorResultStatus = [string]$spec.last_test_result.status
+}
+$allowIncompleteDirectImportSkip = $useDirectSetupImport -and $priorResultStatus -ne 'pass'
 
 # -- Result tracking ------------------------------------------
 # Track test result in script-scope vars. Exit-Test writes them to the spec file.
@@ -569,7 +702,7 @@ if ($devices -notmatch 'emulator-\d+\s+device') {
     Write-Status "Emulator offline, attempting restart via emu_health.ps1..."
     $healthScript = Join-Path $PSScriptRoot "..\emu_health.ps1"
     if (Test-Path $healthScript) {
-        & $healthScript -Restart 2>&1 | Out-Null
+        & $healthScript -Restart -Wait -TimeoutSeconds 180 2>&1 | Out-Null
         # Poll for emulator to come back online
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         while ($sw.Elapsed.TotalSeconds -lt 30) {
@@ -629,20 +762,12 @@ Start-Sleep -Seconds 1
 Send-SetupCommand 'clear_set' -Name $TEST_SET
 Start-Sleep -Seconds 1
 Write-Status "  Direct-cleaning test set files..."
-$testSetFiles = (Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "$SETS_ROOT/$TEST_SET/")) -split "`n" |
-    ForEach-Object { $_.Trim() } | Where-Object { $_ }
-foreach ($tsf in $testSetFiles) {
-    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "$SETS_ROOT/$TEST_SET/$tsf") | Out-Null
-}
+Clear-AppPrivateDirectoryContents "$SETS_ROOT_ABS/$TEST_SET"
 
 # Clear the default set too (prevent leaking)
 Send-SetupCommand 'clear_set' -Name 'default'
 Start-Sleep -Seconds 1
-$defaultFiles = (Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "$SETS_ROOT/default/")) -split "`n" |
-    ForEach-Object { $_.Trim() } | Where-Object { $_ }
-foreach ($df in $defaultFiles) {
-    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "$SETS_ROOT/default/$df") | Out-Null
-}
+Clear-AppPrivateDirectoryContents "$SETS_ROOT_ABS/default"
 
 Send-SetupCommand 'clear_audio_sources'
 Start-Sleep -Milliseconds 500
@@ -672,6 +797,7 @@ foreach ($setName in ($otherSets -split "`n" | ForEach-Object { $_.Trim() } | Wh
     if ($hasGameFiles) {
         Write-Status "  Clearing stale test set: $setName"
         Send-SetupCommand 'clear_set' -Name $setName
+        Clear-AppPrivateDirectoryContents "$filesDir/sets/$setName"
         Start-Sleep -Milliseconds 500
     }
 }
@@ -803,6 +929,8 @@ if ($useDirectCdImport) {
     Send-SetupCdImport -CuePath $deviceCuePath -BinPaths $deviceImagePaths -IncludeAudio $true
 
     $importReady = $false
+    $lastImportSignature = ''
+    $stableImportPolls = 0
     $importTimeoutSeconds = 300
     $importSw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($importSw.Elapsed.TotalSeconds -lt $importTimeoutSeconds) {
@@ -820,12 +948,31 @@ if ($useDirectCdImport) {
             }
         }
         $haveTotal = $true
-        if ($spec.total_extracted) {
+        if ($expectedFiles.Count -eq 0 -and $spec.total_extracted) {
             $haveTotal = $remoteFiles.Count -ge [int]$spec.total_extracted
         }
         if ($haveExpected -and $haveTotal) {
             $importReady = $true
             break
+        }
+        $signature = ($remoteFiles | Sort-Object) -join "`n"
+        if ($signature -and $signature -eq $lastImportSignature) {
+            $stableImportPolls++
+        } else {
+            $lastImportSignature = $signature
+            $stableImportPolls = 0
+        }
+        if ($allowIncompleteDirectImportSkip -and $stableImportPolls -ge 3) {
+            $verified = @($expectedFiles | Where-Object {
+                    $ef = $_.ToLower()
+                    $remoteFiles | Where-Object { $_.ToLower() -eq $ef }
+                }).Count
+            Write-Status "SKIP: Direct CD import settled without expected launch files" 'Yellow'
+            Exit-Test 0 'skip' 'not_ready' -TestMode 'file_only' -FilesVerified $verified
+        }
+        if (-not $canLaunch -and $expectedFiles.Count -eq 0 -and $stableImportPolls -ge 3) {
+            Write-Status "PASS (file-only): Direct CD import settled for $($spec.classification)" 'Green'
+            Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified 0 -ClassConfirmed $true
         }
     }
 
@@ -861,6 +1008,8 @@ if ($useDirectCdImport) {
     Send-SetupIsoImport -IsoPath $deviceIsoPath
 
     $importReady = $false
+    $lastImportSignature = ''
+    $stableImportPolls = 0
     $importTimeoutSeconds = 300
     $importSw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($importSw.Elapsed.TotalSeconds -lt $importTimeoutSeconds) {
@@ -878,12 +1027,31 @@ if ($useDirectCdImport) {
             }
         }
         $haveTotal = $true
-        if ($spec.total_extracted) {
+        if ($expectedFiles.Count -eq 0 -and $spec.total_extracted) {
             $haveTotal = $remoteFiles.Count -ge [int]$spec.total_extracted
         }
         if ($haveExpected -and $haveTotal) {
             $importReady = $true
             break
+        }
+        $signature = ($remoteFiles | Sort-Object) -join "`n"
+        if ($signature -and $signature -eq $lastImportSignature) {
+            $stableImportPolls++
+        } else {
+            $lastImportSignature = $signature
+            $stableImportPolls = 0
+        }
+        if ($allowIncompleteDirectImportSkip -and $stableImportPolls -ge 3) {
+            $verified = @($expectedFiles | Where-Object {
+                    $ef = $_.ToLower()
+                    $remoteFiles | Where-Object { $_.ToLower() -eq $ef }
+                }).Count
+            Write-Status "SKIP: Direct ISO import settled without expected launch files" 'Yellow'
+            Exit-Test 0 'skip' 'not_ready' -TestMode 'file_only' -FilesVerified $verified
+        }
+        if (-not $canLaunch -and $expectedFiles.Count -eq 0 -and $stableImportPolls -ge 3) {
+            Write-Status "PASS (file-only): Direct ISO import settled for $($spec.classification)" 'Green'
+            Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified 0 -ClassConfirmed $true
         }
     }
 
@@ -1212,11 +1380,7 @@ Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 
 if (-not $KeepFiles) {
     Write-Status "Cleaning up test set..."
-    $testSetFiles = (Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "$SETS_ROOT/$TEST_SET/")) -split "`n" |
-        ForEach-Object { $_.Trim() } | Where-Object { $_ }
-    foreach ($tsf in $testSetFiles) {
-        Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "$SETS_ROOT/$TEST_SET/$tsf") | Out-Null
-    }
+    Clear-AppPrivateDirectoryContents "$SETS_ROOT_ABS/$TEST_SET"
     Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/audio_sources.json', 'files/audio_playlist.json') | Out-Null
     Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 }

@@ -212,7 +212,7 @@ foreach ($fixture in $fixtures) {
         $firstMismatch = Get-FirstMismatchLine -LogPath $logPath
         $firstStage = Get-StageFromMismatchLine -MismatchLine $firstMismatch
 
-        $results.Add([ordered]@{
+        $results.Add([pscustomobject][ordered]@{
                 fixture = $fixture.DemoRelative
                 game = $fixture.Game
                 variant = $variant.Name
@@ -275,7 +275,7 @@ foreach ($fixture in $fixtures) {
 }
 
 $csvPath = Join-Path $runDir 'matrix_results.csv'
-$results | Export-Csv -LiteralPath $csvPath -NoTypeInformation -Encoding ascii
+$results | Export-Csv -LiteralPath $csvPath -Encoding ascii
 
 Write-Host ''
 Write-Host ('Wrote matrix results: {0}' -f (Get-RelativeRepoPath -Path $csvPath))

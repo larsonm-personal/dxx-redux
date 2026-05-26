@@ -410,7 +410,17 @@ function Start-EmulatorIfNeeded {
     if (-not $avd) { Write-Status "FAIL: Unknown AVD for $Serial" "Red"; exit 1 }
     $emulatorExe = Resolve-RegressionAndroidSdkTool -DepBase $script:DEP_BASE -Subdir "emulator" -ToolName "emulator"
     Write-Status "  Starting $avd ($Serial)..." "Yellow"
-    Start-Process $emulatorExe -ArgumentList "-avd", $avd, "-no-snapshot-save", "-gpu", "host"
+    $startArgs = @{
+        FilePath = $emulatorExe
+        ArgumentList = @("-avd", $avd, "-no-snapshot-save", "-gpu", "host")
+    }
+    if (-not (Test-RegressionWindowsHost)) {
+        $logDir = Join-RegressionPath $script:REPO_ROOT "temp"
+        New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+        $startArgs.RedirectStandardOutput = Join-Path $logDir "emulator_${avd}.out.log"
+        $startArgs.RedirectStandardError = Join-Path $logDir "emulator_${avd}.err.log"
+    }
+    Start-Process @startArgs
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 60 -and -not (Test-DeviceOnline -Serial $Serial)) {
         Start-Sleep -Seconds 1
@@ -485,28 +495,47 @@ function Read-GameDataIndex {
     if ($script:GameDataIndex) { return $script:GameDataIndex }
     $repoRoot = $script:REPO_ROOT
     $indexFile = Join-RegressionPath $repoRoot "game_data" "game_data_index.txt"
-    if (-not (Test-Path $indexFile)) {
-        $generator = Join-RegressionPath $repoRoot "game_data" "generate_game_data_index.ps1"
-        if (Test-Path -LiteralPath $generator) {
-            Write-Status "game_data_index.txt not found -- generating it now" "Yellow"
-            $pwsh = Get-RegressionCurrentPwshPath
-            & $pwsh -NoProfile -ExecutionPolicy Bypass -File $generator | ForEach-Object { Write-Status "  $_" "DarkGray" }
+    $generator = Join-RegressionPath $repoRoot "game_data" "generate_game_data_index.ps1"
+
+    for ($attempt = 0; $attempt -lt 2; $attempt++) {
+        if (-not (Test-Path $indexFile)) {
+            if (Test-Path -LiteralPath $generator) {
+                Write-Status "game_data_index.txt not found -- generating it now" "Yellow"
+                $pwsh = Get-RegressionCurrentPwshPath
+                & $pwsh -NoProfile -ExecutionPolicy Bypass -File $generator | ForEach-Object { Write-Status "  $_" "DarkGray" }
+            }
         }
+
         if (-not (Test-Path $indexFile)) {
             Write-Status "WARN: game_data_index.txt not found -- run generate_game_data_index.ps1" "Yellow"
             return $null
         }
-    }
-    $ht = @{}
-    foreach ($line in (Get-Content $indexFile)) {
-        if ($line -match '^\s*#' -or $line -match '^\s*$') { continue }
-        $parts = $line -split '\s{2}', 2
-        if ($parts.Count -eq 2) {
-            $ht[$parts[0]] = Join-Path $repoRoot $parts[1]
+
+        $ht = @{}
+        $staleCount = 0
+        foreach ($line in (Get-Content $indexFile)) {
+            if ($line -match '^\s*#' -or $line -match '^\s*$') { continue }
+            $parts = $line -split '\s{2}', 2
+            if ($parts.Count -eq 2) {
+                $resolvedPath = Join-Path $repoRoot $parts[1]
+                $ht[$parts[0]] = $resolvedPath
+                if (-not (Test-Path -LiteralPath $resolvedPath)) {
+                    $staleCount++
+                }
+            }
         }
+
+        if ($staleCount -eq 0 -or -not (Test-Path -LiteralPath $generator) -or $attempt -eq 1) {
+            $script:GameDataIndex = $ht
+            return $ht
+        }
+
+        Write-Status "game_data_index.txt has $staleCount stale path(s) -- regenerating it now" "Yellow"
+        $pwsh = Get-RegressionCurrentPwshPath
+        & $pwsh -NoProfile -ExecutionPolicy Bypass -File $generator | ForEach-Object { Write-Status "  $_" "DarkGray" }
     }
-    $script:GameDataIndex = $ht
-    return $ht
+
+    return $null
 }
 
 function Get-ScriptDeps {
@@ -1399,6 +1428,11 @@ function Start-ManagedEmulator {
     }
     if (Test-RegressionWindowsHost) {
         $startArgs.WindowStyle = "Minimized"
+    } else {
+        $logDir = Join-RegressionPath $script:REPO_ROOT "temp"
+        New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+        $startArgs.RedirectStandardOutput = Join-Path $logDir "emulator_${AvdName}.out.log"
+        $startArgs.RedirectStandardError = Join-Path $logDir "emulator_${AvdName}.err.log"
     }
     Start-Process @startArgs
 

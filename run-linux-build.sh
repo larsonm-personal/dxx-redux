@@ -83,8 +83,8 @@ show_linux_hint() {
         source /etc/os-release
         if [[ "${ID:-}" == "ubuntu" || "${ID:-}" == "debian" || " ${ID_LIKE:-} " == *" ubuntu "* || " ${ID_LIKE:-} " == *" debian "* ]]; then
             echo ""
-            echo "Hint: install the native desktop build prerequisites from README.md"
-            echo "  sudo apt install build-essential git cmake libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev libpng-dev libglew-dev pkgconf"
+            echo "Hint: install the native desktop build prerequisites"
+            echo "  ./android/get_deps/get_linux_build_prereqs.sh"
         fi
     fi
 }

@@ -9,8 +9,8 @@
 # Prerequisites:
 #   - android/tests/build/Release/fingerprint_audio.exe (cmake build)
 #   - fpcalc.exe via android/get_deps/get_fpcalc.ps1
-#   - D2 redbook MP3 in game_data/music/D2 infinite abyss redbook mp3/
-#     or game_data/music/D2 redbook mp3 rips/
+#   - D2 redbook MP3 files in game_data/music/D2 infinite abyss redbook mp3/
+#     or game_data/music/D2 redbook mp3 rips/; skips when only metadata is present
 #   - AcoustID API key in android/acoustid_config.json5
 
 param(
@@ -46,7 +46,13 @@ if (-not $fpAudio) {
 }
 
 $depBase = (Get-Content "dependency_base.txt" -First 1).Trim()
-$fpcalcExe = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $depBase "fpcalc-1.5.1") -BaseName "fpcalc"
+$fpcalcExe = $null
+$fpcalcDirs = Get-ChildItem (Join-RegressionPath $depBase "fpcalc-*") -Directory -ErrorAction SilentlyContinue |
+    Sort-Object Name -Descending
+foreach ($fpcalcDir in $fpcalcDirs) {
+    $fpcalcExe = Resolve-RegressionBuildTool -Directory $fpcalcDir.FullName -BaseName "fpcalc"
+    if ($fpcalcExe) { break }
+}
 if (-not $fpcalcExe -or -not (Test-Path $fpcalcExe)) {
     Write-Host "Downloading fpcalc..."
     $fpcalcExe = & android/get_deps/get_fpcalc.ps1
@@ -57,20 +63,23 @@ if (-not $fpcalcExe -or -not (Test-Path $fpcalcExe)) {
 # Prefer "D2 infinite abyss redbook mp3" (known to have AcoustID entries),
 # fall back to "D2 redbook mp3 rips" if not available
 $redbookDir = $null
+$testTrack = $null
 foreach ($candidate in @(
         "game_data/music/D2 infinite abyss redbook mp3",
         "game_data/music/D2 redbook mp3 rips"
     )) {
-    if (Test-Path $candidate) { $redbookDir = $candidate; break }
-}
-if (-not $redbookDir) {
-    Write-Error "No D2 redbook MP3 directory found"
+    if (-not (Test-Path $candidate)) { continue }
+    $candidateTrack = Get-ChildItem $candidate -Filter "*.mp3" | Select-Object -First 1
+    if ($candidateTrack) {
+        $redbookDir = $candidate
+        $testTrack = $candidateTrack
+        break
+    }
 }
 
-# Use the first D2 redbook MP3 track
-$testTrack = Get-ChildItem $redbookDir -Filter "*.mp3" | Select-Object -First 1
 if (-not $testTrack) {
-    Write-Error "No MP3 files found in $redbookDir"
+    Write-Warning "No D2 redbook MP3 files found; skipping fpcalc/AcoustID audio test"
+    exit 0
 }
 $testMp3 = $testTrack.FullName
 Write-Host "Test track: $($testTrack.Name) (from $redbookDir)"

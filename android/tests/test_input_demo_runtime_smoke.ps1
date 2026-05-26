@@ -11,9 +11,6 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
-if (-not $DataDir) {
-    $DataDir = Join-Path $repoRoot 'game_data_to_copy_to_emulator\temp'
-}
 
 $outRoot = Join-Path $repoRoot 'temp\input_demo_runtime_smoke'
 
@@ -72,6 +69,14 @@ function Get-GameConfig {
                 Mission = 'd1'
                 TitleArg = '-notitles'
                 RequiredFiles = @('DESCENT.HOG', 'DESCENT.PIG')
+                RequiredHashes = @(
+                    @{ File = 'DESCENT.HOG'; Sha256 = '83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052' },
+                    @{ File = 'DESCENT.PIG'; Sha256 = '093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe' }
+                )
+                DefaultDataDirs = @(
+                    (Join-RegressionPath $repoRoot 'game_data' 'extracted' 'd1 mac extracted'),
+                    (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'temp')
+                )
             }
         }
         'd2' {
@@ -80,11 +85,112 @@ function Get-GameConfig {
                 Mission = 'd2'
                 TitleArg = '-nomovies'
                 RequiredFiles = @('DESCENT2.HOG', 'DESCENT2.HAM', 'GROUPA.PIG')
+                RequiredHashes = @(
+                    @{ File = 'DESCENT2.HOG'; Sha256 = 'f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703' },
+                    @{ File = 'DESCENT2.HAM'; Sha256 = '5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d' },
+                    @{ File = 'GROUPA.PIG'; Sha256 = 'facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b' }
+                )
+                DefaultDataDirs = @(
+                    (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'temp'),
+                    (Join-RegressionPath $repoRoot 'game_data' 'extracted' 'descent 2 demo 1-0_extracted')
+                )
             }
         }
     }
 
     throw "Unsupported game: $Name"
+}
+
+function Read-GameDataHashIndex {
+    $indexFile = Join-RegressionPath $repoRoot 'game_data' 'game_data_index.txt'
+    $generator = Join-RegressionPath $repoRoot 'game_data' 'generate_game_data_index.ps1'
+
+    if (-not (Test-Path -LiteralPath $indexFile) -and (Test-Path -LiteralPath $generator)) {
+        $pwsh = Get-RegressionCurrentPwshPath
+        & $pwsh -NoProfile -ExecutionPolicy Bypass -File $generator | Out-Null
+    }
+    if (-not (Test-Path -LiteralPath $indexFile)) {
+        return $null
+    }
+
+    $index = @{}
+    foreach ($line in [System.IO.File]::ReadLines($indexFile)) {
+        if ($line -match '^\s*(#|$)') {
+            continue
+        }
+        $parts = $line -split '\s{2}', 2
+        if ($parts.Count -ne 2) {
+            continue
+        }
+        $path = Join-Path $repoRoot $parts[1]
+        if (Test-Path -LiteralPath $path -PathType Leaf) {
+            $index[$parts[0].ToLowerInvariant()] = (Resolve-Path -LiteralPath $path).Path
+        }
+    }
+    return $index
+}
+
+function Get-IndexedDataDirCandidate {
+    param([hashtable]$Config)
+
+    $index = Read-GameDataHashIndex
+    if (-not $index) {
+        return $null
+    }
+
+    $dirs = @()
+    foreach ($entry in $Config.RequiredHashes) {
+        $path = $index[$entry.Sha256.ToLowerInvariant()]
+        if (-not $path) {
+            return $null
+        }
+        $dirs += (Split-Path -Parent $path)
+    }
+
+    $uniqueDirs = @($dirs | Select-Object -Unique)
+    if ($uniqueDirs.Count -eq 1) {
+        return $uniqueDirs[0]
+    }
+    return $null
+}
+
+function Test-DataDirMatchesGame {
+    param(
+        [string]$Path,
+        [hashtable]$Config
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return $false
+    }
+    foreach ($requiredFile in $Config.RequiredFiles) {
+        if (-not (Test-Path -LiteralPath (Join-Path $Path $requiredFile))) {
+            return $false
+        }
+    }
+    return $true
+}
+
+function Resolve-SmokeDataDir {
+    param([hashtable]$Config)
+
+    $candidates = @()
+    if ($DataDir) {
+        $candidates += $DataDir
+    }
+    $indexed = Get-IndexedDataDirCandidate -Config $Config
+    if ($indexed) {
+        $candidates += $indexed
+    }
+    $candidates += $Config.DefaultDataDirs
+
+    foreach ($candidate in ($candidates | Select-Object -Unique)) {
+        if (Test-DataDirMatchesGame -Path $candidate -Config $Config) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+
+    throw "Could not find a valid game data directory for smoke test"
 }
 
 function New-Fixture {
@@ -141,6 +247,7 @@ function Invoke-ReplaySmoke {
     param([string]$GameName)
 
     $config = Get-GameConfig $GameName
+    $resolvedDataDir = Resolve-SmokeDataDir -Config $config
     $fixtureDir = Join-Path $outRoot $GameName
     $demoPath = Join-Path $fixtureDir 'smoke.dximdemo'
     $actualResultDir = Join-Path $outRoot "results\$GameName"
@@ -151,16 +258,6 @@ function Invoke-ReplaySmoke {
     if (-not (Test-Path $config.Exe)) {
         throw "Built executable not found: $($config.Exe)"
     }
-    if (-not (Test-Path $DataDir)) {
-        throw "Game data directory not found: $DataDir"
-    }
-    foreach ($requiredFile in $config.RequiredFiles) {
-        $requiredPath = Join-Path $DataDir $requiredFile
-        if (-not (Test-Path -LiteralPath $requiredPath)) {
-            throw "Missing required game data file for ${GameName}: $($requiredPath)"
-        }
-    }
-
     New-Fixture -GameName $GameName -Config $config -FixtureDir $fixtureDir
     $sandboxExe = New-LaunchSandbox -GameName $GameName -Config $config
     New-Item -ItemType Directory -Path $actualResultDir -Force | Out-Null
@@ -168,7 +265,7 @@ function Invoke-ReplaySmoke {
         Remove-Item -LiteralPath $actualResultPath -Force
     }
     $launchArgs = @(
-        '-hogdir', $DataDir,
+        '-hogdir', $resolvedDataDir,
         '-window',
         $config.TitleArg,
         '-nomusic',
@@ -178,7 +275,7 @@ function Invoke-ReplaySmoke {
         '-inputdemo-state-log', $actualStatePath,
         '-inputdemo-rng-trace', $actualRngTracePath
     )
-    Write-Host "SMOKE $GameName sandbox=$sandboxExe data=$DataDir fixture=$fixtureDir"
+    Write-Host "SMOKE $GameName sandbox=$sandboxExe data=$resolvedDataDir fixture=$fixtureDir"
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
     $startInfo.FileName = $sandboxExe
     $startInfo.WorkingDirectory = $fixtureDir

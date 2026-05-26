@@ -188,6 +188,11 @@ if ($running) {
     }
     if (Test-RegressionWindowsHost) {
         $emulatorStart.WindowStyle = "Normal"
+    } else {
+        $logDir = Join-Path $RepoRoot "temp"
+        New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+        $emulatorStart.RedirectStandardOutput = Join-Path $logDir "emulator_${AVD_NAME}.out.log"
+        $emulatorStart.RedirectStandardError = Join-Path $logDir "emulator_${AVD_NAME}.err.log"
     }
     Start-Process @emulatorStart
     Write-Host "Emulator started. Waiting for boot..."

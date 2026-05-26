@@ -27,5 +27,13 @@
   ],
   "audio_tracks": 15,
   "total_extracted": 17,
-  "import_mode": "setup_cd"
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "skip",
+    "failure_step": "not_ready",
+    "level_reached": null,
+    "files_verified": 1,
+    "classification_confirmed": false,
+    "test_mode": "file_only"
+  }
 }

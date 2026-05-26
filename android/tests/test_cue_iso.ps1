@@ -14,6 +14,7 @@ $srcDir = "$PSScriptRoot\..\app\src\main\cpp\extract"
 $buildDir = "$PSScriptRoot\build"
 
 # Configure + build
+$null = Reset-RegressionCMakeBuildIfMissingTool -BuildDir $buildDir
 if (-not (Test-Path "$buildDir\CMakeCache.txt")) {
     Write-Host "Configuring cmake..."
     cmake -S $srcDir -B $buildDir

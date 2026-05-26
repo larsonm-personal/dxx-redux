@@ -95,6 +95,10 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
         }
     }
 
+    if (-not $env:CMAKE_GENERATOR -and (Get-Command ninja -ErrorAction SilentlyContinue)) {
+        $env:CMAKE_GENERATOR = "Ninja"
+    }
+
     # -- CARGO -------------------------------------------------------------------
 
     if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {

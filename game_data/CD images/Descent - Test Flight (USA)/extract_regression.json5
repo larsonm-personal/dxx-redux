@@ -26,11 +26,11 @@
   "total_extracted": 5,
   "import_mode": "setup_cd",
   "last_test_result": {
-    "status": "pass",
-    "failure_step": null,
+    "status": "fail",
+    "failure_step": "launch_timeout",
     "level_reached": null,
     "files_verified": 2,
     "classification_confirmed": true,
-    "test_mode": "file_only"
+    "test_mode": "full"
   }
 }

@@ -214,9 +214,28 @@ static bool read_resume_candidate(const std::string &path,
 static bool candidate_is_newer(const android_save_meta_candidate &candidate,
                                const android_save_meta_candidate &best)
 {
-	return candidate.meta.wall_clock_unix_seconds > best.meta.wall_clock_unix_seconds ||
-	       (candidate.meta.wall_clock_unix_seconds == best.meta.wall_clock_unix_seconds &&
-	        strcmp(candidate.path, best.path) < 0);
+	auto save_kind_priority = [](uint8_t save_kind) {
+		switch (save_kind) {
+			case ANDROID_SAVE_META_KIND_AUTO_EXIT:
+				return 4;
+			case ANDROID_SAVE_META_KIND_AUTO_MINIMIZE:
+				return 3;
+			case ANDROID_SAVE_META_KIND_AUTO_PROGRESS:
+				return 2;
+			default:
+				return 1;
+		}
+	};
+	int candidate_priority;
+	int best_priority;
+
+	if (candidate.meta.wall_clock_unix_seconds != best.meta.wall_clock_unix_seconds)
+		return candidate.meta.wall_clock_unix_seconds > best.meta.wall_clock_unix_seconds;
+	candidate_priority = save_kind_priority(candidate.meta.save_kind);
+	best_priority = save_kind_priority(best.meta.save_kind);
+	if (candidate_priority != best_priority)
+		return candidate_priority > best_priority;
+	return strcmp(candidate.path, best.path) < 0;
 }
 
 static bool candidate_is_higher_progress(const android_save_meta_candidate &candidate,

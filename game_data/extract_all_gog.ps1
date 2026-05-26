@@ -25,9 +25,18 @@ $RepoRoot     = Split-Path $ScriptDir
 $SrcDir       = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
 $BuildDir     = Join-Path $RepoRoot "android\tests\build"
 $GogDir       = Join-Path $ScriptDir "gog installers"
-$ExeName      = "extract_gog.exe"
-$ExePath      = Join-Path $BuildDir "Release\$ExeName"
+$ExePath      = $null
 $KnownVerFile = Join-Path $RepoRoot "android\app\src\main\assets\known_versions.json5"
+
+function Resolve-ExtractTool {
+    param([string]$ToolName)
+
+    foreach ($dir in @((Join-Path $BuildDir "Release"), $BuildDir)) {
+        $tool = Resolve-RegressionBuildTool -Directory $dir -BaseName $ToolName
+        if ($tool) { return $tool }
+    }
+    return (Join-Path (Join-Path $BuildDir "Release") "$ToolName.exe")
+}
 
 # -- Build ----------------------------------------------------------------
 
@@ -35,6 +44,7 @@ if (-not $SkipBuild) {
     # Kill zombie cl.exe
     Get-Process cl -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 
+    $null = Reset-RegressionCMakeBuildIfMissingTool -BuildDir $BuildDir
     if (-not (Test-Path "$BuildDir\CMakeCache.txt")) {
         Write-Host "Configuring cmake..."
         cmake -S $SrcDir -B $BuildDir
@@ -43,11 +53,16 @@ if (-not $SkipBuild) {
     Write-Host "Building extract_gog..."
     cmake --build $BuildDir --config Release --target extract_gog
     if ($LASTEXITCODE -ne 0) { throw "Build failed" }
+    $ExePath = Resolve-ExtractTool -ToolName "extract_gog"
     Write-Host "Build OK: $ExePath"
 }
 
+if (-not $ExePath) {
+    $ExePath = Resolve-ExtractTool -ToolName "extract_gog"
+}
+
 if (-not (Test-Path $ExePath)) {
-    Write-Error "extract_gog.exe not found at $ExePath. Run without -SkipBuild"
+    Write-Error "extract_gog not found at $ExePath. Run without -SkipBuild"
     exit 1
 }
 

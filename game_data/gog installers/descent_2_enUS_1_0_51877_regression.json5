@@ -21,7 +21,7 @@
   "total_extracted": 15,
   "last_test_result": {
     "status": "pass",
-    "failure_step": null,
+    "failure_step": "",
     "level_reached": "Ahayweh Gate",
     "files_verified": 5,
     "classification_confirmed": true,

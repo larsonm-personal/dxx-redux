@@ -9,10 +9,11 @@ param([switch]$Force)
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path $PSScriptRoot "Get-DepPlatform.ps1")
 $depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
-$sdkDir = "$depBase\android-sdk"
-$avdManager = "$sdkDir\cmdline-tools\latest\bin\avdmanager.bat"
-$javaHome = "$depBase\jdk-21"
+$sdkDir = Join-Path $depBase "android-sdk"
+$avdManager = Get-PlatformToolPath -BaseDir (Join-Path (Join-Path (Join-Path $sdkDir "cmdline-tools") "latest") "bin") -ToolName "avdmanager" -UseBatch
+$javaHome = Join-Path $depBase "jdk-21"
 
 if (-not (Test-Path $avdManager)) {
     Write-Error "avdmanager not found at $avdManager"
@@ -58,8 +59,8 @@ foreach ($avd in $avds) {
     $ErrorActionPreference = "Stop"
 
     # Patch config.ini with lightweight settings
-    $avdDir = "$env:USERPROFILE\.android\avd\${name}.avd"
-    $configFile = "$avdDir\config.ini"
+    $avdDir = Join-Path (Join-Path (Join-Path (Get-HomeDirectory) ".android") "avd") "${name}.avd"
+    $configFile = Join-Path $avdDir "config.ini"
     if (-not (Test-Path $configFile)) {
         Write-Error "config.ini not found at $configFile"
         continue

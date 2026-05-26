@@ -296,6 +296,10 @@ function Get-GameConfig {
                 Exe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd1'
                 TitleArg = '-notitles'
                 RequiredFiles = @('DESCENT.HOG', 'DESCENT.PIG')
+                RequiredHashes = @(
+                    @{ File = 'DESCENT.HOG'; Sha256 = '83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052' },
+                    @{ File = 'DESCENT.PIG'; Sha256 = '093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe' }
+                )
                 DefaultDataDirs = @(
                     (Join-RegressionPath $repoRoot 'game_data' 'extracted' 'd1 mac extracted'),
                     (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'temp')
@@ -309,6 +313,11 @@ function Get-GameConfig {
                 Exe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd2'
                 TitleArg = '-nomovies'
                 RequiredFiles = @('DESCENT2.HOG', 'DESCENT2.HAM', 'GROUPA.PIG')
+                RequiredHashes = @(
+                    @{ File = 'DESCENT2.HOG'; Sha256 = 'f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703' },
+                    @{ File = 'DESCENT2.HAM'; Sha256 = '5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d' },
+                    @{ File = 'GROUPA.PIG'; Sha256 = 'facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b' }
+                )
                 DefaultDataDirs = @(
                     (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'temp'),
                     (Join-RegressionPath $repoRoot 'game_data' 'extracted' 'descent 2 demo 1-0_extracted')
@@ -319,6 +328,63 @@ function Get-GameConfig {
     }
 
     throw "Unsupported game: $Name"
+}
+
+function Read-GameDataHashIndex {
+    $indexFile = Join-RegressionPath $repoRoot 'game_data' 'game_data_index.txt'
+    $generator = Join-RegressionPath $repoRoot 'game_data' 'generate_game_data_index.ps1'
+
+    if (-not (Test-Path -LiteralPath $indexFile) -and (Test-Path -LiteralPath $generator)) {
+        $pwsh = Get-RegressionCurrentPwshPath
+        & $pwsh -NoProfile -ExecutionPolicy Bypass -File $generator | Out-Null
+    }
+    if (-not (Test-Path -LiteralPath $indexFile)) {
+        return $null
+    }
+
+    $index = @{}
+    foreach ($line in [System.IO.File]::ReadLines($indexFile)) {
+        if ($line -match '^\s*(#|$)') {
+            continue
+        }
+        $parts = $line -split '\s{2}', 2
+        if ($parts.Count -ne 2) {
+            continue
+        }
+        $path = Join-Path $repoRoot $parts[1]
+        if (Test-Path -LiteralPath $path -PathType Leaf) {
+            $index[$parts[0].ToLowerInvariant()] = (Resolve-Path -LiteralPath $path).Path
+        }
+    }
+    return $index
+}
+
+function Get-IndexedDataDirCandidates {
+    param([hashtable]$Config)
+
+    if (-not $Config.ContainsKey('RequiredHashes')) {
+        return @()
+    }
+
+    $index = Read-GameDataHashIndex
+    if (-not $index) {
+        return @()
+    }
+
+    $dirs = @()
+    foreach ($entry in $Config.RequiredHashes) {
+        $path = $index[$entry.Sha256.ToLowerInvariant()]
+        if (-not $path) {
+            return @()
+        }
+        $dirs += (Split-Path -Parent $path)
+    }
+
+    $uniqueDirs = @($dirs | Select-Object -Unique)
+    if ($uniqueDirs.Count -eq 1) {
+        return $uniqueDirs
+    }
+    return @()
 }
 
 function Get-HeadlessConsoleExe {
@@ -376,6 +442,7 @@ function Resolve-DataDir {
     if ($RequestedDataDir) {
         $candidates += $RequestedDataDir
     }
+    $candidates += Get-IndexedDataDirCandidates -Config $Config
     $candidates += $Config.DefaultDataDirs
 
     foreach ($candidate in ($candidates | Select-Object -Unique)) {

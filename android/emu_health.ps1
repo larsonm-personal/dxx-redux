@@ -30,8 +30,9 @@ if (-not (Test-Path $_depBaseFile)) {
     exit 1
 }
 $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
-$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
-$EMULATOR = "$DEP_BASE\android-sdk\emulator\emulator.exe"
+. (Join-Path $PSScriptRoot "test_host_platform.ps1")
+$ADB = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb"
+$EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulator" -ToolName "emulator"
 
 function Get-OnlineEmulatorSerials {
     $devices = (& $ADB devices 2>&1) | Out-String
@@ -158,7 +159,19 @@ function Stop-Emulator {
 
 function Start-EmulatorFresh {
     Write-Host "Starting emulator ($AvdName)..."
-    Start-Process -FilePath $EMULATOR -ArgumentList "-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", $GpuRenderer, "-crash-report-mode", "disabled" -WindowStyle Minimized
+    $startArgs = @{
+        FilePath = $EMULATOR
+        ArgumentList = @("-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", $GpuRenderer, "-crash-report-mode", "disabled")
+    }
+    if (Test-RegressionWindowsHost) {
+        $startArgs.WindowStyle = "Minimized"
+    } else {
+        $logDir = Join-Path (Split-Path $PSScriptRoot) "temp"
+        New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+        $startArgs.RedirectStandardOutput = Join-Path $logDir "emulator_${AvdName}.out.log"
+        $startArgs.RedirectStandardError = Join-Path $logDir "emulator_${AvdName}.err.log"
+    }
+    Start-Process @startArgs
 }
 
 function Wait-EmulatorHealthy {
