@@ -210,6 +210,42 @@ static int state_android_physfs_raw_close(struct PHYSFS_File *file)
 #define PHYSFSX_writeVector rewind_file_write_vector
 #endif
 
+#ifdef __ANDROID__
+static int state_android_read_coop_metadata_trailer(PHYSFS_file *fp,
+	coop_save_metadata *meta)
+{
+	struct PHYSFS_File *physfs_fp;
+	PHYSFS_sint64 saved_pos;
+	PHYSFS_sint64 file_len;
+	PHYSFS_sint64 coop_meta_start;
+	android_save_meta_disk android_meta;
+	int have_android_meta;
+	int have_coop_meta = 0;
+
+	if (!fp || !meta || rewind_file_is_memory(fp))
+		return 0;
+
+	physfs_fp = rewind_file_physfs_handle(fp);
+	if (!physfs_fp)
+		return 0;
+
+	saved_pos = PHYSFS_tell(fp);
+	file_len = PHYSFS_fileLength(fp);
+	have_android_meta = android_save_meta_read_physfs(physfs_fp, file_len,
+		&android_meta);
+
+	coop_meta_start = file_len - (PHYSFS_sint64)sizeof(coop_save_metadata);
+	if (have_android_meta)
+		coop_meta_start -= (PHYSFS_sint64)sizeof(android_meta);
+	if (coop_meta_start >= 0)
+		have_coop_meta = coop_read_save_metadata(physfs_fp, coop_meta_start,
+			meta);
+
+	PHYSFS_seek(fp, saved_pos);
+	return have_coop_meta;
+}
+#endif
+
 #ifndef __ANDROID__
 static PHYSFS_sint64 state_android_physfs_raw_length(struct PHYSFS_File *file)
 {
@@ -2800,12 +2836,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		{
 			coop_save_metadata meta_early;
 			int have_meta = 0;
-			struct PHYSFS_File *physfs_fp = rewind_file_physfs_handle(fp);
-			PHYSFS_sint64 saved_pos = PHYSFS_tell(fp);
-			PHYSFS_sint64 meta_start = PHYSFS_fileLength(fp) - (PHYSFS_sint64)sizeof(coop_save_metadata);
-			if (physfs_fp && meta_start > saved_pos)
-				have_meta = coop_read_save_metadata(physfs_fp, meta_start, &meta_early);
-			PHYSFS_seek(fp, saved_pos);
+			have_meta = state_android_read_coop_metadata_trailer(fp,
+				&meta_early);
 
 			for (i = 0; i < MAX_PLAYERS; i++)
 			{

@@ -6,7 +6,7 @@
 - If no clear cause is found, propose targeted logging to reproduce from the same save file
 
 ## Plan
-- [ ] Read save/restore flow for network games and guidebot/buddy state
-- [ ] Trace guidebot AI state synchronization in cooperative multiplayer
-- [ ] Look for saved state, random state, object ordering, or ownership gaps specific to restored games
-- [ ] Summarize likely causes and practical logging probes
+- [x] Read save/restore flow for network games and guidebot/buddy state
+- [x] Trace guidebot AI state synchronization in cooperative multiplayer
+- [x] Look for saved state, random state, object ordering, or ownership gaps specific to restored games
+- [x] Summarize likely causes and practical logging probes

@@ -64,6 +64,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef NETWORK
 #include "multi.h"
+#include "multibot.h"
 #endif
 
 #ifdef __ANDROID__
@@ -1001,6 +1002,28 @@ void escort_get_input_demo_checkpoint_thief_state(input_demo_checkpoint_thief_st
 	thief_state->last_thief_hit_time = Last_thief_hit_time;
 }
 
+#ifdef NETWORK
+static void escort_validate_owner_after_restore(void)
+{
+	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+	if ((Escort_owner_player < -1) || (Escort_owner_player >= MAX_PLAYERS) ||
+	    ((Escort_owner_player >= 0) &&
+	     (Players[Escort_owner_player].connected != CONNECT_PLAYING)))
+		Escort_owner_player = -1;
+}
+
+static void escort_restore_companion_robot_control(void)
+{
+	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+	escort_validate_owner_after_restore();
+	if (Buddy_objnum == -1)
+		return;
+	multi_restore_companion_robot_control(Buddy_objnum, Escort_owner_player);
+}
+#endif
+
 void escort_rebuild_runtime_state_after_restore(void)
 {
 	ai_local *ailp = NULL;
@@ -1077,6 +1100,9 @@ void escort_rebuild_runtime_state_after_restore(void)
 			Last_buddy_message_time, Last_come_back_message_time,
 			Buddy_last_missile_time, Re_init_thief_time,
 			Last_thief_hit_time);
+#ifdef NETWORK
+		escort_restore_companion_robot_control();
+#endif
 		return;
 	}
 
@@ -1085,6 +1111,9 @@ void escort_rebuild_runtime_state_after_restore(void)
 
 	raw_time_player_seen = ailp->time_player_seen;
 	raw_escort_last_path_created = Escort_last_path_created;
+#ifdef NETWORK
+	escort_validate_owner_after_restore();
+#endif
 	Buddy_allowed_to_talk = 0;
 	ok_for_buddy_to_talk();
 	Buddy_last_seen_player = ailp->time_player_seen;
@@ -1104,6 +1133,9 @@ void escort_rebuild_runtime_state_after_restore(void)
 		Buddy_last_player_path_created = 0;
 
 	Last_come_back_message_time = Buddy_last_player_path_created;
+#ifdef NETWORK
+	escort_restore_companion_robot_control();
+#endif
 	input_demo_log_escort_restore_normalization(buddy_objp, ailp, raw_time_player_seen, raw_escort_last_path_created);
 	input_demo_log_escort_restore_state(buddy_objp, ailp);
 }

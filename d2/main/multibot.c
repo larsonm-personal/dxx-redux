@@ -212,6 +212,65 @@ multi_strip_robots(int playernum)
 }
 
 void
+multi_restore_companion_robot_control(int objnum, int owner_pnum)
+{
+	int i;
+	int slot = -1;
+
+	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+	if ((objnum < 0) || (objnum > Highest_object_index))
+		return;
+	if ((Objects[objnum].type != OBJ_ROBOT) ||
+	    !Robot_info[Objects[objnum].id].companion)
+		return;
+
+	for (i = 0; i < MAX_ROBOTS_CONTROLLED; i++)
+		if (robot_controlled[i] == objnum) {
+			robot_controlled[i] = -1;
+			robot_send_pending[i] = 0;
+			robot_fired[i] = 0;
+		}
+
+	if ((owner_pnum < 0) || (owner_pnum >= MAX_PLAYERS) ||
+	    (Players[owner_pnum].connected != CONNECT_PLAYING)) {
+		Objects[objnum].ctype.ai_info.REMOTE_OWNER = -1;
+		Objects[objnum].ctype.ai_info.REMOTE_SLOT_NUM = 0;
+		return;
+	}
+
+	Objects[objnum].ctype.ai_info.REMOTE_OWNER = (sbyte)owner_pnum;
+	if (owner_pnum != Player_num) {
+		Objects[objnum].ctype.ai_info.REMOTE_SLOT_NUM = 0;
+		return;
+	}
+
+	for (i = 0; i < MAX_ROBOTS_CONTROLLED; i++)
+		if ((robot_controlled[i] == -1) ||
+		    (Objects[robot_controlled[i]].type != OBJ_ROBOT)) {
+			slot = i;
+			break;
+		}
+	if (slot == -1)
+		slot = 0;
+
+	if ((robot_controlled[slot] != -1) && (robot_controlled[slot] != objnum) &&
+	    (Objects[robot_controlled[slot]].type == OBJ_ROBOT)) {
+		Objects[robot_controlled[slot]].ctype.ai_info.REMOTE_OWNER = -1;
+		Objects[robot_controlled[slot]].ctype.ai_info.REMOTE_SLOT_NUM = 0;
+	}
+
+	robot_controlled[slot] = objnum;
+	robot_agitation[slot] = 100;
+	robot_fired[slot] = 0;
+	robot_send_pending[slot] = 2;
+	robot_controlled_time[slot] = GameTime64;
+	robot_last_send_time[slot] = GameTime64;
+	robot_last_message_time[slot] = GameTime64;
+	Objects[objnum].ctype.ai_info.REMOTE_SLOT_NUM = slot;
+}
+
+void
 multi_dump_robots(void)
 {
 	// Dump robot control info for debug purposes
