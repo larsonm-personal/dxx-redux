@@ -19,6 +19,10 @@
 #include "android_meta_actions.h"
 #include "android_crash_handler.h"
 #include "android_save_meta.h"
+#include "game.h"
+#include "inferno.h"
+#include "screens.h"
+#include "window.h"
 
 volatile int android_force_quit = 0;
 volatile int android_escort_release_pending = 0;
@@ -31,6 +35,9 @@ extern volatile int g_android_autosave_request_kind;
 
 /* Maximum number of SDL keys in a single meta action sequence */
 #define MAX_SEQ 4
+
+extern int (*window_get_callback(window *wind))(window *, d_event *, void *);
+extern int pause_handler(window *wind, d_event *event, char *msg);
 
 typedef struct {
 	int action_id;
@@ -109,6 +116,36 @@ static void inject_sdl_key(SDLKey sym, int down)
 	SDL_PushEvent(&ev);
 }
 
+static int android_front_window_can_consume_exit_autosave(void)
+{
+	window *front;
+	int (*callback)(window *, d_event *, void *);
+
+	if (!Game_wind || Screen_mode != SCREEN_GAME || (Game_mode & GM_MULTI))
+		return 0;
+
+	front = window_get_front();
+	if (front == Game_wind)
+		return 1;
+	if (!front)
+		return 0;
+
+	callback = window_get_callback(front);
+	return callback == (int (*)(window *, d_event *, void *)) pause_handler;
+}
+
+static void android_push_force_quit_event(const char *reason)
+{
+	SDL_Event ev;
+
+	g_android_autosave_request_kind = 0;
+	android_force_quit = 1;
+	memset(&ev, 0, sizeof(ev));
+	ev.type = SDL_QUIT;
+	SDL_PushEvent(&ev);
+	LOGI("meta_action_dispatch: pushed force quit (%s)", reason);
+}
+
 int meta_action_dispatch(int action_id, int pressed)
 {
 	const meta_action_entry_t *entry = NULL;
@@ -138,14 +175,18 @@ int meta_action_dispatch(int action_id, int pressed)
 		return 0;
 	}
 
-	/* Special case: return to launcher.  Queue an autosave request for
-	 * the game thread to consume, then let it push SDL_QUIT after the
-	 * save succeeds or is skipped. */
+	/* Special case: return to launcher.  Queue an autosave first only when
+	 * the front window has Android handling for that request.  Other screens
+	 * such as movies and multiplayer waits need an immediate SDL_QUIT. */
 	if (action_id == META_RETURN_TO_LAUNCHER) {
 		if (pressed) {
-			if (g_android_autosave_request_kind < ANDROID_SAVE_META_KIND_AUTO_EXIT)
-				g_android_autosave_request_kind = ANDROID_SAVE_META_KIND_AUTO_EXIT;
-			LOGI("meta_action_dispatch: queued exit autosave request");
+			if (android_front_window_can_consume_exit_autosave()) {
+				if (g_android_autosave_request_kind < ANDROID_SAVE_META_KIND_AUTO_EXIT)
+					g_android_autosave_request_kind = ANDROID_SAVE_META_KIND_AUTO_EXIT;
+				LOGI("meta_action_dispatch: queued exit autosave request");
+			} else {
+				android_push_force_quit_event("autosave unavailable");
+			}
 		}
 		return 0;
 	}
