@@ -58,6 +58,7 @@ $scriptDir = Split-Path -Parent $PSCommandPath
 $repoRoot = Split-Path $scriptDir
 
 . "$scriptDir\test_helpers.ps1"
+. (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
 
 # -- Report directory --
 
@@ -94,9 +95,7 @@ function Test-MatchmakingServer {
 }
 
 function Test-GameDataAvailable {
-    $gameDataDir = Join-Path $repoRoot "game_data"
-    $specs = Get-ChildItem -Path $gameDataDir -Recurse -Filter "extract_regression.json5" -ErrorAction SilentlyContinue
-    return ($specs -and $specs.Count -gt 0)
+    return (Ensure-ExtractRegressionOracles -RepoRoot $repoRoot -Context "Full test suite extract tier")
 }
 
 function Test-DockerAvailable {

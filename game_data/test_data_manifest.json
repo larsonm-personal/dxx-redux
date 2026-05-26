@@ -2,8 +2,8 @@
   "schema": 1,
   "generated_by": "game_data/manage_data.ps1",
   "base_path": "dxx-redux",
-  "file_count": 242,
-  "total_size": 14873995396,
+  "file_count": 264,
+  "total_size": 15022362825,
   "files": [
     {
       "path": "game_data/CD images/d1 mac 2nd bin+cue/Descent [Mac].BIN",
@@ -1698,6 +1698,160 @@
       "size": 563071744,
       "sha256": "58ccb37ecd54c73b0ddbde8d9051a0a6498911fbe66cd025179da681e13559cd",
       "kind": "gog_installer"
+    },
+    {
+      "path": "game_data/music/D2 infinite abyss redbook mp3/01 Title.mp3",
+      "name": "01 Title.mp3",
+      "size": 1963890,
+      "sha256": "2e9d50f81e0f081fb8f708b3732a0133803a14f08bfa2fbade5894f2e16da774",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 infinite abyss redbook mp3/02 Cold Reality (Extended Remix).mp3",
+      "name": "02 Cold Reality (Extended Remix).mp3",
+      "size": 12164382,
+      "sha256": "fec6ea24fd9a82ae7d05b3136abebf6fb4fb3889c52c4d58f3b0638836e2607d",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 infinite abyss redbook mp3/03 Crawl (Extended Remix).mp3",
+      "name": "03 Crawl (Extended Remix).mp3",
+      "size": 9004546,
+      "sha256": "ddb2b1d616a1c2827bf3518b640b8baf90120eff8cc04a91e51237929ea76cf6",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 infinite abyss redbook mp3/04 Gunner Down (Extended Remix).mp3",
+      "name": "04 Gunner Down (Extended Remix).mp3",
+      "size": 8724426,
+      "sha256": "e9dd057fed7a1d1f02f9eb5cb6b81c70bc2a06b828346ec45c67eabdab51ce4e",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 infinite abyss redbook mp3/05 Ratzez (Short Remix).mp3",
+      "name": "05 Ratzez (Short Remix).mp3",
+      "size": 5724640,
+      "sha256": "cc24f78e89252bb0905f32293e67a5fcb027ae6008ed3b5f0fcb045172ba8406",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 infinite abyss redbook mp3/06 Techno Industry (Extended Remix).mp3",
+      "name": "06 Techno Industry (Extended Remix).mp3",
+      "size": 10804925,
+      "sha256": "3933e0a1c9f6bce46ff2954c9804bb8c973084ebb989dd664425dc4121a1a805",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 infinite abyss redbook mp3/07 Are You Descent (Extended Remix).mp3",
+      "name": "07 Are You Descent (Extended Remix).mp3",
+      "size": 8964854,
+      "sha256": "da7088d789d82e5ecd06d0f6cd22a948d276ae725c1d77582149ae12152a975d",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 infinite abyss redbook mp3/08 Robot Jungle (Extended Remix).mp3",
+      "name": "08 Robot Jungle (Extended Remix).mp3",
+      "size": 10964789,
+      "sha256": "fe798dbbb74ca76806e0de340f3111122226f849bf237e557ae7fcffc4217006",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/01 Base Return.mp3",
+      "name": "01 Base Return.mp3",
+      "size": 3488247,
+      "sha256": "8aefc15ff81ad547aece282900dc9f4bafc22286a6cd1fc8be766698ebddb2c2",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/02 Title.mp3",
+      "name": "02 Title.mp3",
+      "size": 1786071,
+      "sha256": "376fc359795b22e48865c5c273149a6fedac26b3e5cd24bcbf967208a54fb55c",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/03 Crawl.mp3",
+      "name": "03 Crawl.mp3",
+      "size": 6422283,
+      "sha256": "25162529733fb49f581efa2b868a255d880fff43972978f1cfbbb5343785fe30",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/04 Glut.mp3",
+      "name": "04 Glut.mp3",
+      "size": 4769320,
+      "sha256": "880203f51bccba929c6ea5e941012a2934a8cc400221b573a5e0fdde926b78f6",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/05 Gunner Down.mp3",
+      "name": "05 Gunner Down.mp3",
+      "size": 6142262,
+      "sha256": "fc6567d8d48a9b6fa12c144e21f0a40ee094976b139f4d29289e129d15a7a248",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/06 Cold Reality.mp3",
+      "name": "06 Cold Reality.mp3",
+      "size": 7468346,
+      "sha256": "6225df463d935920f98e50dca4c0e2d601de10f00ea22b9e12b5a0f6de5c597e",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/07 Ratzez.mp3",
+      "name": "07 Ratzez.mp3",
+      "size": 6097390,
+      "sha256": "97373cb2c0c8160de6b2381a892e6aa009e23ecea651e49610bc7886988b00dd",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/08 Crush.mp3",
+      "name": "08 Crush.mp3",
+      "size": 8293695,
+      "sha256": "3c016a21c870fd4517ce630110143e1844b0334e90865a457af5ed0b6c2e0c31",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/09 The Well (Mark 2).mp3",
+      "name": "09 The Well (Mark 2).mp3",
+      "size": 6966687,
+      "sha256": "0d43300ceb331e05252c45ef934267db6ada73b9636befbfdb3a31313e5d1898",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/10 Haunted (Instrumental Remix).mp3",
+      "name": "10 Haunted (Instrumental Remix).mp3",
+      "size": 6778644,
+      "sha256": "efdec606659ddb980a76ec41b0d7d9d8053d645fac3b025e7dde4efe10800d39",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/11 Are You Descent.mp3",
+      "name": "11 Are You Descent.mp3",
+      "size": 6662616,
+      "sha256": "4fbbf0c97f891dd78a268aa193b3812486c2c07de20e10b8f2eedb542d47f9ca",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/12 Techno Industry.mp3",
+      "name": "12 Techno Industry.mp3",
+      "size": 5680426,
+      "sha256": "79587fe0341dc0029cf49f4b01fa7fd983ab5b16b62089fea2f89709036a1177",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/13 Robot Jungle.mp3",
+      "name": "13 Robot Jungle.mp3",
+      "size": 7025204,
+      "sha256": "b8bde0ff2f5991b67774cef942b8135bd10879ac707de1dc80ebd1d307214166",
+      "kind": "d2_redbook_mp3"
+    },
+    {
+      "path": "game_data/music/D2 redbook mp3 rips/14 Final Mission.mp3",
+      "name": "14 Final Mission.mp3",
+      "size": 2469786,
+      "sha256": "40cf8bff579906225d33d2eecc60bb095337cec881cc8f00a2f54ae5fb9f382f",
+      "kind": "d2_redbook_mp3"
     }
   ]
 }

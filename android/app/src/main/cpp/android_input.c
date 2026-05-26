@@ -78,6 +78,7 @@ volatile int g_saveload_menu_active = 0;
 /* Set to 1 while the host is on the "select players" screen.
  * Kotlin shows a "START GAME" overlay button. */
 volatile int g_host_selecting_players = 0;
+volatile int g_host_start_game_requested = 0;
 
 static int g_dpad_center_down = 0;
 
@@ -954,6 +955,14 @@ JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeIsHostSelectingPlayers(JNIEnv *env, jobject thiz)
 {
 	return g_host_selecting_players ? JNI_TRUE : JNI_FALSE;
+}
+
+extern volatile int g_host_start_game_requested;
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeStartSelectedPlayers(JNIEnv *env, jobject thiz)
+{
+	g_host_start_game_requested = 1;
 }
 
 /*

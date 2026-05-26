@@ -47,6 +47,10 @@ Write-Host "test_all_extracts.ps1 starting"
 . "$PSScriptRoot\..\test_helpers.ps1"
 . (Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1')
 
+if (-not (Ensure-ExtractRegressionOracles -RepoRoot $REPO_ROOT -Context "test_all_extracts.ps1")) {
+    exit 1
+}
+
 # -- Discover specs -------------------------------------------
 
 if ($SpecPaths -and $SpecPaths.Count -gt 0) {

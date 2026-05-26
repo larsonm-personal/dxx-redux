@@ -4,14 +4,14 @@
 
 811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233  game_data_to_copy_to_emulator/temp/ALIEN1.PIG
 75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055  game_data_to_copy_to_emulator/temp/ALIEN2.PIG
+a09a7bab7cad3c1e08169e269c6c8f1ed63d9891dc9687924b9ee70de496c87f  game_data_to_copy_to_emulator/temp/DESCENT_II.gog
+839d528316009f104cf864cf09d8954943d206ee3b527266da4a7661da190dcb  game_data_to_copy_to_emulator/temp/DESCENT_II.inst
 83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052  game_data_to_copy_to_emulator/temp/DESCENT.HOG
 093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe  game_data_to_copy_to_emulator/temp/DESCENT.PIG
 5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d  game_data_to_copy_to_emulator/temp/DESCENT2.HAM
 f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703  game_data_to_copy_to_emulator/temp/DESCENT2.HOG
 d444c6f93476f8941936164d2981387a26b0a25e3f9d5e930ef96bfbb86c1e68  game_data_to_copy_to_emulator/temp/DESCENT2.S11
 4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728  game_data_to_copy_to_emulator/temp/DESCENT2.S22
-a09a7bab7cad3c1e08169e269c6c8f1ed63d9891dc9687924b9ee70de496c87f  game_data_to_copy_to_emulator/temp/DESCENT_II.gog
-839d528316009f104cf864cf09d8954943d206ee3b527266da4a7661da190dcb  game_data_to_copy_to_emulator/temp/DESCENT_II.inst
 26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156  game_data_to_copy_to_emulator/temp/FIRE.PIG
 facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b  game_data_to_copy_to_emulator/temp/GROUPA.PIG
 ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1  game_data_to_copy_to_emulator/temp/ICE.PIG
@@ -20,41 +20,292 @@ e00a016f6064cbb96b791597d9bd1fe70b3cf2e573778cc3136e3814634fddd0  game_data_to_c
 f491f078308a310b53bb46477b916f9de4cce9358a77b733e31b1bce86135b0a  game_data_to_copy_to_emulator/temp/ROBOTS-H.MVL
 601c0374f3f2c86c77621315bdd371c0c86abf956b5e50bf6673747df71990f1  game_data_to_copy_to_emulator/temp/ROBOTS-L.MVL
 de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1  game_data_to_copy_to_emulator/temp/WATER.PIG
+0c5fb0684443c0b9c4dbb2769db65b8460bdad4ca80d58a943396fd07c001ba4  game_data/CD images/d1 mac 2nd bin+cue/data_tracks/CHAOS.HOG
+d0ab72fda672ac9d751d24899f96ac14eb1720386cf2b0226a5add71543c4339  game_data/CD images/d1 mac 2nd bin+cue/data_tracks/descent.hog
+9eb232c9da830309b2d3a1de75713f6155c62215cd867f4570536180af31f299  game_data/CD images/d1 mac 2nd bin+cue/data_tracks/descent.pig
+5657656735ad2650c415357f6859b7a3006775115c1450ec366863ac173aa9ca  game_data/CD images/d2 mac/data_tracks/alien1.pig
+4610fd4548f0fbbd2fea71daa278f787026f0009ea1239ca5ae8111f9104dd2c  game_data/CD images/d2 mac/data_tracks/alien2.pig
+f56f833e1026a35e8a8755987a93d5a0eb5bb12b40b8f190b9e7621ff24cead8  game_data/CD images/d2 mac/data_tracks/D2-2PLYR.HOG
+dea17a0c9efb8f37fceb72e03dff208e07e0abc45368f221b61493487f33fd38  game_data/CD images/d2 mac/data_tracks/D2-2PLYR.MN2
+98acbdbc5d0180160337bac1ce28f3a30688378715fe89a45297b0ed6341b4cf  game_data/CD images/d2 mac/data_tracks/D2CHAOS.HOG
+5b56046cdfca6dd7ac1f0a2f1b2b914736808150e925cf7c60d6f0f0699c4c3a  game_data/CD images/d2 mac/data_tracks/D2CHAOS.MN2
+84f782533e42cce7a7cee91d0d17fa5783b5e32967e458be52aad1abf364d490  game_data/CD images/d2 mac/data_tracks/DESCENT2.HOG
+8473b99e25c647e824d635a686fc591bbe6bd8cdb319a38b3b0f7f2f1fa09d64  game_data/CD images/d2 mac/data_tracks/fire.pig
+88e834d13f15bfe502e32570a44302326e6486f685cb95e12b3b81d0a14b8642  game_data/CD images/d2 mac/data_tracks/groupa.pig
+88aca81872345807a7d04e18d438b2558dd4413a048861ec860000153667d4d1  game_data/CD images/d2 mac/data_tracks/ice.pig
+48ded925e18380111585e98b43af247c261d8b87ab3d60f33b35e80bec4d77e7  game_data/CD images/d2 mac/data_tracks/intro.mvl
+93d7a1be80ef5699261ad343255d20d88e83dfba9ecb5867e6268ebe7d4dca7e  game_data/CD images/d2 mac/data_tracks/other.mvl
+d7ade09d45c486f06415677cb7fcf519eac5796740431a8fec3878d5b0725f16  game_data/CD images/d2 mac/data_tracks/robots.mvl
+edc9fa76645e07e22786959aa6d5419a3c5d3d72ed2160dce5a3e59908de2ee9  game_data/CD images/d2 mac/data_tracks/water.pig
+73b56dd54c1b4a2344e4bea3cb5376fc3df9a1ac964c79dd7b44e27af4bb7bd5  game_data/CD images/Descent (Europe)/data_tracks/install.exe
+661b486f859461d11d89a9998e292084d1017fb69514413bddcf3da26f138ca2  game_data/CD images/Descent (Europe)/data_tracks/descent/descent.hog
+e9d79c427a1d6f57048a1e776a7c3c1e3c17e8b596f0597926dc437e395548b7  game_data/CD images/Descent (Europe)/data_tracks/descent/descent.pig
+be65143a69d954ea17c2a61644560f12e3ea316d1acc60cb919fb40e26999840  game_data/CD images/Descent (Europe)/data_tracks/descent/descentr.exe
+97703b7454aa606f076bb7940acdff94981e64d1f0ed89fb0d94f5dd34376482  game_data/CD images/Descent (Europe)/data_tracks/descent/pcxview.exe
+24de6aef837022df0653232a321d22b48d98aa7ab3730a788b601dd58af4c86f  game_data/CD images/Descent (Europe)/data_tracks/descent/setup.exe
+6bee71376f1dfd28322ef9a6d1843c1a0b21ee674703e5757f96bd2f0de90e04  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/d2demo/trailer.exe
+ef078b6cd023d193851eb9143a3ec06b886560e5a71a972e7f803cf74d601b4f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/comdelux.hog
+922c4fe29476d471161314d1d63e4f506b16edf53fe432c41b04097177221f8f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/corr11.hog
+1764ce5bc1b6a108f2587668b2fe9a80e67192c4e11854c0c337542e5aa95d66  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/demonbrg.hog
+2c9acbeab9bcb2fe9dbba2525d91d7a51b434bfd171b187c06e701925c01a31a  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descentr.exe
+8dd54b74c7ab96c4151132a8ab4a97f0e087533ec30b062c299e050e60dcaa07  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/dethpost.hog
+6d77a020e343be51815fbccaee6e86acfa235ab20daaaafa1d4597a8e7e9f128  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/duality.hog
+ea9c76571c233b23439684b8d8a0503b18f12c853ee255ac098050917301e3fd  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/eregcard.exe
+9d5b8596df0d20a4d3e3413eaefa79220142477076dc015669ea8779bc2a9f9d  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/erthstrk.hog
+55cc9299944473d764f7f9550bcb3e128ad047980a90d4d5df766b864e8916c2  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/fbomega.hog
+0ea2472bf314a8890e36ae20ae918d054f64374ba277d2a504ce707d74114c15  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/humil2.hog
+fc63d4d1fba57af9e014b65dbaf6351ad73d384e6d44a9700fce1218e17be3ed  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/lunapost.hog
+22fb19197fc336eec1de106fe8fa9ca00ae9cad3571acd4e4ff78061fcb4a312  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/mag4.hog
+841c96c3b9e3598f78bc98ff1a15d6bb3f8bbaf2b4b61c850d1708ddfe3fc0af  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/obsrv13.hog
+b3e928b33c98d94352b9242f95f33bb3a4b4f80b9391e276dc4eae1103f5ae1d  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/serenity.hog
+f5b5f6d2be0816b97e8f03f04c5ba5536bab6647275dd19e7be7ea60351a16b0  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/setup.exe
+aafccc2838bb24ec4da8e839db36a8dc325e4ebcea8a33067e19bb8015510f98  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/super_s.hog
+145d5ff9b07f721b229a560f1f911759aa447df8a5d1beeb0704165d7c1b59e9  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/terminus.hog
+141bbd0b539909994e424580d486106e5119a7d00aef06784e6151841cd9de4e  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/tranquil.hog
+7483c30d22b03dc2185c9526e006c27777875a813e2f3f63e27e76cb0e12a5ec  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/x1.hog
+4f96b9a273bb11efaca3ea3338ccc33165ee49fd505d710504b1edf2a1165242  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/advance.hog
+508e69371770a77fd634a4ace2279814948c365faf1cf2f8d0d4b2669c8fb98a  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/alexand.hog
+96a344cb4c84b05122018df315b3d56c661117245535e35a93d879e0ee11a174  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/alien.hog
+81b281316aad6b7f41a7b7b7acc20d2564ab1dc5783e9826fee69dee347ec249  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/alphac.hog
+884b14075c7d1f3bc18d830d29a2a810afa7a37c8e1f9771da3a263c08136d6c  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/ast6.hog
+08ec0bcf1e6f55fba6b7a5d941e9b9388048c6c42ed96d9b0b2bf400cfa1346a  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/aurora.hog
+ee09117c3e1b26e8aee60c6bb6bdcc8aef7b8edab0af7daaf000b4ce3ca825dd  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/barium.hog
+8c8856bfbed09129f2352e909f1ac949f50e87c375c0727d97a79d6b938f4a8d  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/bdrome10.hog
+e4df5f902304b561a264c29d3b5a359b7baa8495aa390e296c0c766eedbb676a  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/boli.hog
+a362f21405cde040bb4d30460f2bc44427e30dd0680a0b29bad43d306f56eb3e  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/brattica.hog
+78e193e1aaf00235940081aaf5376ce03a82c5e340982f65717c43f6841fc1e1  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/brbeta.hog
+39742916247d1a50fb7066597d6c2752740d4ffecf860562c80532baeac35283  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/brdecon.hog
+4e31d8a1b1b323713167a06d447af13f4ccdbbe9fc0f73baa78b58309d06d24b  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/brequip.hog
+e899cd51968608bd550bc58bac50901522a5f08dde3f1fe12cbd2e900cd4ab37  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/brinsane.hog
+b0302bab52c4c8b969a751e81652bd61682317491ebb7374ac21597a7320b97c  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/brspiral.hog
+b0a05890d5164a991fa969bd329f346a740e48804363fcd6004fe1ad0f49fc56  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/brtrade.hog
+48d4c8a152be75c601c8a965663584484fd21b0c97938ec68f6b3452ebbc7d5a  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/catacomb.hog
+036acb4ed4493e5a3eef9257449ed45d7c97b398a051ec8dd4a1d06bbb3849cf  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/cd.hog
+65e46ad3b411617af87ed0a0197f3fb3b5b483f7bf140b6d93660f0afa8cd199  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/cod.hog
+5840a542087fc34dbdee15d0d555c5ad84dba0fde4838df8fbcb81696393fd82  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/corkscrw.hog
+3f26fe32d6cf79f2c6ffac51db3bd23048b99c10b1130d4ce1cd787f5736f4d1  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/cube.hog
+cefd531f1b55efbf44b353b9ca992c8fcdf4d5892469f55a26a7af2a05a7698f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/cubik.hog
+f238d7b42b05f11e724a26dc4b999727a17c348bdf41675e07d3ed8bf31d3017  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/deathmat.hog
+58ebc915eabd4b70eed07d41ce0dbf1c73ddc2e1c742e5d60501505b5e5c0c3f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/deepfrst.hog
+92db187bb512dccda3092196cbaaf330c2f4597e1966062df1945cf8f0d31bd2  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/diamond.hog
+f4c592ef5f601e5780d3760f9a1546b1b04404b2680716236c8f4a1ae9efdf2b  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/dlow.exe
+173aaad38dcfba636cf3ddc69764390d7484372d2df363427382391ad732ba5f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/drkzone2.hog
+7b754960f3cd0b08b02c4ae6ea73d89f46df3fa40c65f77ad0f62717c93461a1  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/dsntcity.hog
+b5034d0c27d63b8aaa1cf78eed3ff919f0ca2f198121c436b903b7ba176ecda0  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/fork.hog
+56b47f4250b0931d52224863f3050eae1e62eec0d653179d18860a7c1382db71  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/gamerelm.hog
+b3bf533c2322167f69ef4bcf849f845da1a2eefb616fe3ae32f841b42375a989  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/harmless.hog
+eaf8a5488f0d137bff21fbea5b3b3c2fd14541394e373918da53ff6e9656f906  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/hd.hog
+33273bbeff5af3e86d119ca1161fa24daf230945a37bd391ef3f301ccbe1b85f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/hypractv.hog
+a9233c1208ef998a18750baff073b315580fd5e0f6974a49d72f43cfcc74bb9f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/iceout.hog
+a8a7f8b3496c2c003926d0754e4f9ea6e4e18977dcd24b34f820a732895264a0  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/icesewer.hog
+f64d4694b749cb993f67f9bb2eb3a5a23ae1902ee55deed8c208a4c917ef360f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/kicker.hog
+755191d62e1565b223e073610fb18cc8dedc91101a33170841cb9cf661dd3484  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/lava4dtc.hog
+c4f8893d402cf35c22602546c6e4a20997d9333674e615e98a367fb98dec2c15  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/lupis.hog
+9015b32b6714cf525ad5e07f0a97c9bd40ddc07ede892c26e157ec0ff4807da7  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/lupis2.hog
+264e1d1a3328f7e561d135338347d8a97c2c8071f252a424971246f3bd4bcb10  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/lupis3.hog
+cee69c1928aab16f2bd968faa4e42d5ec3aacfe28d58e3f6c39bb6a4f4d37b4f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/lupis4.hog
+ce192a7f1094317e46c156426e35b28ddbe8d9cb8e86d7b8287d16bcd5692733  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/lupis5.hog
+084402bea34c4260457a785c0cb9fed5347c5803e25fcc0d39a63ab2532cb3b7  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/lupis6.hog
+b57f7d91e1c66f6690edb3f85fda5e78f2771f27c99c9d75ea3e755f9c363973  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/lupis7.hog
+3e06087a3279c6c2e5b9991a38304181f7b269922f7198fa1da88387b2699314  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/magicbox.hog
+40594fd5298a028f87bcc0b42ddc470b2ef7e01478d1a6b0c7164d1bec12a81c  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/mars.hog
+4981c0e190658de689d238982c9c03c7cab672d5d62ea6ab4d6db26caf2155ba  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/meridian.hog
+6edc4c1408115d59e8bcea6c8114e16278b8851f2d99549b73f406938a2eceed  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/muni2.hog
+c7c3e94897180ca5ef4db2d04775cc0dba384430abd2c787488576e31ee75002  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/nexus.hog
+526aae44e949756c93c17beb3ccaa6eaeb40ae04be941845e3b4ba44bfc6250e  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/panic.hog
+8c3ff1f5787e1141a41daa0fd6f269b5b71d636c27a9ea629dbd2452c4f1cc41  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/paradox.hog
+9aed2a3d814f1e39e4f64023a49e50682fbfb983057907819bdb745fce396914  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/pcx.exe
+40e201e2d46138ea9be9aa4f55b701c34730d9ba5ff27a212c356bc3e0791472  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/pit.hog
+cd451ae6de459ae1e88b2959b9de19bfb50429466caa2b8efcefd02935223606  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/ratrace.hog
+b95a4e087795e855d3f80417b3f59c92744a464b54b72faa8eb8572bc1661d59  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/resq.hog
+eb3d54602aa4037333ccea5aca923d3b17c6940651640db9cc5d517c37d0682f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/rndabout.hog
+33a4b8eac2ed8b75dab8856f948f15980c4bdf82a1600fc16464d401221a4c7d  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/slimod12.hog
+f31076880ed824f45618fd18176cb9c7f559483ece321282377a763ac6acf379  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/spooge.hog
+e08b51ff40e3fe821ad6f5fda80c28713e604c21fd1b55453f6f9719103f8674  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/stick.hog
+157c7448f11bd7ec71f09894a40a2aede1590ca98af00407c025b2999dee20d5  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/sub.hog
+ad2e27945222f96f5f8a07b96710ed35abe64524aeea62e5bbe93c6e8f68b16f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/tcamp.hog
+eaa9adc22e5bab98d71f2e86f68be7e8ea829e1ccd264de4b6552ff6bc1cb32a  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/teamdeth.hog
+036c87902b07d6a418b6cf417bf84d876becfee7e397ffdeeceba751a165788f  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/temple2.hog
+7f98e2ab404aacba1be0fed3b6457c38bb9e1ad9e3568a4526be940a6a042cf6  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/tolstoy1.hog
+5fc0b5f643850e426b1881d2e98ed8c9856360d757ff43138dcf7b583fdc1147  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/tolstoy2.hog
+32eb4e1d723d90d2a8654f09d7cbac13b00d3fcd9b598be4f66ae3c1936b00e9  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/top.hog
+b5839a0c217bac2714f4e0a565b118027b724bdfe262d238d1578a09e323ae1c  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/tribyss.hog
+bb091853c9776ed91034cd093a4ab688dc40e88fc0a35e338ccae760682761a2  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/twyrm.hog
+0c7164aca0f2fe671288e39894ef6091137590e79972f32da6472cfca68d833e  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/vanguard.hog
+e1a59e20b0addbb00ee544246d432a07e4f60249d41ae1d14c59c9f3b009a018  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/dlotw/votd.hog
+d528d594fd6962d43956a0c565f19150b1554314da2f83898a97fb4a5669be25  game_data/CD images/Descent - Destination Saturn (USA)/data_tracks/descent/descent.exe
+d6f734444e2291c8b362bec5df198bf1a0ffc055702695446531b9c039995059  game_data/CD images/Descent - Destination Saturn (USA)/data_tracks/descent/descent.hog
+7ba97c8be98dc1a104a353fc673b3146058803438ebc7718e2d3104424617070  game_data/CD images/Descent - Destination Saturn (USA)/data_tracks/descent/descent.pig
+da616db927e39a336e693f902bc8d98fb7fbc0c92f18b805965c03c825668727  game_data/CD images/Descent - Destination Saturn (USA)/data_tracks/descent/install.exe
+7ecac6fa121737638fbf21eeeb5fc4e106019206d4487e3f3a0603e9dfff82d6  game_data/CD images/Descent - Destination Saturn (USA)/data_tracks/descent/manual.exe
+ca8f3cdf8aed705977299411a6b40ef8353e45e7d67aaf38be72166de59504fa  game_data/CD images/Descent - Destination Saturn (USA)/data_tracks/descent/saturn.hog
+855b73f97657a7a9e345a828ea6e49203d7f9928aee00285860cea42e8e646fc  game_data/CD images/Descent - Destination Saturn (USA)/data_tracks/descent/setup.exe
+57234d7f4eb3276a10db5a59984f05a43c20efdb232b50c5a91a2a224e932bbf  game_data/CD images/Descent - Test Flight (USA)/data_tracks/4GWBIND.EXE
+f431e61ea1f9614ecf3afcd518bad753ce621bb3807064bbe452fc7a5e7d831c  game_data/CD images/Descent - Test Flight (USA)/data_tracks/4GWPRO.EXE
+40c5754bb1e4cc0b0e176d50154568cb754d689df434511e0d8bdc1053f4de4a  game_data/CD images/Descent - Test Flight (USA)/data_tracks/DESCENT.HOG
+4a7b57482030ca18aa50accfaee6ee20ff24c077fb1b5adcffcf2fbb8dc91c21  game_data/CD images/Descent - Test Flight (USA)/data_tracks/DESCENT.PIG
+65cf14ced8f617070ccd0c7f45deb9090f418002aba4bf401b03059491ab67f6  game_data/CD images/Descent - Test Flight (USA)/data_tracks/EREGCARD.EXE
+19dd9bcdb64fb133b426980a2a9f4cc799017c4c4bdc1fd4046a007a97885639  game_data/CD images/Descent - Test Flight (USA)/data_tracks/install.exe
+832c7067c1f14e16126129e4de338325602d1c84828eb41a5182d1aed52f76f9  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/data_tracks/bootme/bootme.exe
+a4261dd5d1816a9938726b2346553b3a7eabc501ce98dde5bae9ee7363ac5ef9  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/data_tracks/demos/swiv/_isdel.exe
+0b1bd89e6b2f555a6acbe90cc4e51f71f7b91feb6b9578e7adc252573b5d2cd7  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/data_tracks/demos/swiv/setup.exe
+08040fa452d784273e754a979d7b9fee01ac8d53f88bf3bf43f49ed560fe58e7  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/data_tracks/demos/swiv/setupdx.exe
+be8a33be3ac8ef8559eb2bbd76c2973af7f8fec0bbc9467b9fd702f35da6885c  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/data_tracks/demos/swiv/directx/ddhelp.exe
+b7f69a8340348629888074bce9685c790a1f2cff2f1a0759830ddd5294dd1605  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/data_tracks/demos/swiv/directx/dxsetup.exe
+1989b1fa08c4cc9e924a5aafdcd44c9274fbb4cf49e2197b3a6b31e449024bed  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/data_tracks/demos/swiv/directx/drvsnec/display/bin/necgmmut.exe
+7ba999f727dce78d136be08fdca9c00d55e9a7775d185edef1b283d584fbd044  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/data_tracks/demos/w95vfury/cstsovfd.exe
+9889db11d76aa4acc920e84c113601f06ba0b8f6ca5f6233d3682849374c8b57  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/data_tracks/demos/waterwld/install.exe
+c530d1df6a5193b48c3c6d322ad3ca22fad24ee125bb4f285512e5c7e65adb08  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/data_tracks/descent/eregcard.exe
+6ff94f07c0cd967c5a50907740ea2f404265286ab6bbea9235bbe21ad77df0c8  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/install.exe
+e144188f356309c57e32dfc2886867bf6fa078905687d5fabe9d1f5bc8bd5d05  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/autorun/autorun.exe
+ecd80b6644a279f3f6242cbd7c679d608753d5b8c1ed1b595a458b102c843ec8  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/controls/avgrd2.exe
+cea8e7885330b09fadafc25c28c22149cf6403c0d687239ddf33d90c75e6f3e5  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/D2-2PLYR.MN2
+9f1166d1f0635f62a21b4bd3109b58e290566a9c907b63039e01f227b8e4aa57  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/D2CHAOS.MN2
+241fb5da5d29a43a99164d789ea7809ab8a589ac2e3439e61e7de5a64bfd8cc6  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/D2VIRGE.EXE
+83f01ec0ab182847205b62351af1b44c2fdfd0eed7ca112946c21b25dda094d6  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/DESCENT2.EXE
+879b3bc5d972a41702334ec2f9c6b2e47809341b0575a6f06fd54a713e625102  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/DESCENTW.EXE
+58e0e1ce5de8eb9ba5b111097e37bdb504ff3951d0fee04b12c859ad76f0679c  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/intro-l.mvl
+e5e576898a9945348842447a93999e5dc8b719dca4506eb56e5caa40b5812a88  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/other-l.mvl
+ea5507ecfe39729484d17c4d5d20105fae23709ab9af4afcd3d4465cde8b5051  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/PCXVIEW.EXE
+32ab59ede39ee6f958292d7760e9a70e1eac4a26ee1e9384f05c447755d20c8d  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/regcard.exe
+946b70d0508be0c6628c33c20692cd24a2a247a4240cd8ccf83f8002022df9a0  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/setup.exe
+8668823915a88037170a7826fe27dc08ccf9dce87a30bf1a779361f02192f4cf  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/wmvetest.exe
+394f175f0fc4e6bd41d3862d1c5bf8dcdb3e7af3993920410b2cea6509e471d3  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2voodoo/d2voodoo/d2voodoo.exe
+c7d50e07c3119ce6fa5cf5b420222df5d3de870063b88c82353cf233cd265924  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/verite/verite/d2verite.exe
+b526045cdf964674851fe70b54c1b486a78647be1aecb66bccc61d0a56eba183  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/_isdel.exe
+c7720215a1d9de7020474eeb2dc403b585b9ce9eab1fb67fdb81abc73f91b5c4  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/checknt.exe
+32eaac6b076427a62a23fbcb59ec7d704317d16f46a362918f80ba4cda9ec491  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/dsetup.exe
+c6845d6797acc087333e31ec31e012d17e0c057d0c3b6ed3786bb5aaf23d8265  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/resume.exe
+31f32ee2a78aa13935e577fec5990377cb5525a9a7ca088e65b502cfede2c018  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/setup.exe
+cf26eb8666f596cd4ca8c1d719ddd400bab57cc57d1d2addb9fb62afecf2379f  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/setup.pkg
+82cce1c91d57422c42ca70661af3648a705e6094ecc33f34d7e8488eca23a1f7  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/uninst.exe
+3f7c25032c69b513692eba532566e5e63ae86f9175b53d1476188bba6c2e871e  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/winarj.exe
+50549f9a7306f5afed7e835d5130e6cfb3bcf743330ab6ce76e7d12a1cc24717  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/wmvetest.exe
+7c8e38b95816ab94c6a59cb0d3606b8495ab15f19d02e7a762e6975c0e3cd8f7  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/directx/directx/ddhelp.exe
+03c64fdc6cb801e209f63888351ff6636807fbfb36599c8176bf1304d497a378  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/directx/directx/dxsetup.exe
+bc30325344d3645032a5ca98282ca34bbb6071f3bbe0b3c1253a59cf7d840e7a  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/winsetup/directx/directx/dxsetupj.exe
+eede804afd5f96b96900eeaa9b844ae79f6d7577afd8c4a0bcc41c32998b2354  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/install.exe
+3835d5eba8af7f6be25859e2ff5be669eaccb909b9d1a0d830358116246119c1  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/autorun/autorun.exe
+a19d668d36621c272381645d06255ff5c7b929768cb2ba0a8cb238527710e157  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/dmb2/setup.exe
+ac24b9fe9dbe7738b3d8893f5459107c233e9e3b431dbdefa9da835b3332c03f  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/dmb2/tutorial.hog
+3f09e23a75082311f367e4faaa47d177b72d4d1b84075e92517cf94c84e66abf  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/dmb2/tutorial.mn2
+8bf26d2c34377de465d30629920d7e01279a0414fe3eec568bb3b3bf000b8d1b  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/dmb2/unstall.exe
+2b5c1f1d3c20cebbbe3d109c0ab3f3bc916c70d5b45ec4292c1d5bda54deaa42  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/vertigo/d2x-h.mvl
+8701b8878b7d72a642199c52d73dfffda095f81e2efdaab0baa98403cabe583e  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/vertigo/d2x-l.mvl
+97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/vertigo/d2x.hog
+42d1c04c96f4dad7e8d03a6fdf342ac9ccd22672c0db5886f965638bd325764d  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/vertigo/d2x.mn2
+03174b81cc6988a741a68795b123cb69d3f6a640e452cd0d34152e157f7cf7cd  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/vertigo/descent2.exe
+dcdc777daaa02a56cbba885c18d242414525e900644f7b9bca990ce0f2b734ae  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/vertigo/hoard.ham
+56a94a44c333e5216766b395aba6242170386212ef2cd12ce5fdfb4897252ec5  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/vertigo/setup.exe
+04864cbeefcf304a89dff96232e768400b9426bad7dc0e08e7bdb971780a3cee  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/vertigo/missions/panic.hog
+059c02d1632c3b706b464b1a14e5a2d7b7711e18c1be579e884158703a25ab88  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/data_tracks/vertigo/missions/panic.mn2
+43d01d5a6ab6abeda73add5d2806b76fadd843bd3b607707839936ef9ba8ce03  game_data/CD images/Descent II (Europe)/data_tracks/autorun/autorun.exe
+978d3464b46aa2ad0530d8c4a110d9d16635c0e8ccf1d25e6a4da84f7243a230  game_data/CD images/Descent II (Europe)/data_tracks/autorun/finishit.exe
+dd81a40a0dcad932bb91df0768956fdc4bfb8338d360608951aa4e71a02bf7c9  game_data/CD images/Descent II (Europe)/data_tracks/d2data/DESCENT2.EXE
+7a288b4a68c08806b759c89457e2ee81e20a40360e1ff55de710feddd45e1597  game_data/CD images/Descent II (Europe)/data_tracks/d2data/DESCENT2.HAM
+ae087258466a66b248dc5d0460d97f990fac1d20ea1b12798eb1b519efa5747a  game_data/CD images/Descent II (Europe)/data_tracks/d2data/DESCENT2.HOG
+e6acd539c8c71357662c650907b922323fcbd2d75dff27336440efff3a334aed  game_data/CD images/Descent II (Europe)/data_tracks/d2data/setup.exe
+d32779ad2653ee86cf979e801568593240109c027f5345d07afd85fc01a01af8  game_data/CD images/Descent II (USA)/data_tracks/d2data/setup.exe
+7ea2a5e27f914f519fb896dc654a0c28ebcb771d8e41719259711ca9fba2a187  game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/data_tracks/install.exe
+05e74e8d72915471feacca32511f29823468fe3ee92b8560dfb75eea737e2ab9  game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/data_tracks/manual/man.exe
+e9321b6de4c8dfc45959b8a05aa146daa71968615c433671717ed25910fec11e  game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/data_tracks/sowstuff/D2DEMO.HAM
+ccdf88722d90ea4a7ebb40f75fddb71b4c6a68b2a0bee10e82b4fcf887973478  game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/data_tracks/sowstuff/D2DEMO.HOG
+c2d8d4cc97b9b8a04866d149ce72aa426707e02faf9054bb0ca8826b57ca9a64  game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/data_tracks/sowstuff/D2DEMO.PIG
+0d7d9e472344b4eb5daf6516ee955b16d19b3e428ecf3c9d174e2e72d4dee932  game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/data_tracks/sowstuff/EREGCARD.EXE
+c53528fcc6cf6a32458188ffefeff42a8c17b1fbb35007f3a8cdb5f4e700712e  game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/data_tracks/sowstuff/PCXVIEW.EXE
+c99560287475637ec0546a943916ff1e5e763a9874eaf0dbf7cabeb3beae620c  game_data/CD images/Descent II (USA) (Rerelease)/data_tracks/manual/ar16e30.exe
+47aa72d2dd4a746bc63fc5171d8f475c7691f317f8b1e5007832fa7100c10923  game_data/CD images/Descent II (USA) (Rerelease)/data_tracks/manual/ar32e30.exe
+fe1c95167177e59992b4ea6efeea6de85521d382608f9a8c4378c588feb4785d  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/install.exe
+77ebf1c618d48227582b8d02ac51e070d5fb423756c0a4f07ad3d2a4894da8cc  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/autorun/autorun.exe
+daa019fe9c0e7151b657ed4c6b2c08d584f15bd2364578b617f072e7bf123a8a  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/autorun/finishit.exe
+5c4654ca37088fdb75bf443d786227eba171bf9f154e2405a11c2edc3be26162  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/d2data/DESCENT2.EXE
+6c25bc481e22ef1d2a33b0973a125e04b64aaba6c39d274b2b46b6fa4f7a39c9  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/d2data/DESCENT2.HOG
+dd9f4f342533f99570475b62e53231a468de2e3d83e4fc31e80c27d3a7d6b49c  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/d2data/dos4gw.exe
+a2b0c0baee1a77ec6f22084fa7c7a50a4a872abeb1ecd96b11ac3f714b5bf275  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/d2data/intro-h.mvl
+b8870b3f7427ed41c9abbe8bd4b3db4338568f4edcf8f58adc7d5ad5e39ae877  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/d2data/other-h.mvl
+eaa22a7abe443a2dbfe2d1038f4c2607545237d042f31a9ffc3b40a0c37b22a4  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/d2data/other-l.mvl
+0de53092acfcfa1e77199eb10e97991c8d75e96f05665bfb5e87718607eba62e  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/d2data/robots-h.mvl
+620786afda309ad2da9d1e4ed767eb730af6dd7b757ecd8a7660967128043a3f  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/d2data/robots-l.mvl
+a392107da51d299f65a1ca02579f77c8819a796115f7b0d1cb9d7851e71cfdf6  game_data/CD images/Descent II - Destination Quartzon (Europe)/data_tracks/d2data/setup.exe
+c9e5577ac5e49c0d03d51c207dca0121b20df894b5fe41cbc4c574a4d35b0a0c  game_data/CD images/Descent II - Destination Quartzon (USA) (Diamond OEM)/data_tracks/autorun/finishit.exe
+261f01e2aad5d32c615ca8ccb57f589f240cbd60b0b50f536a1746356fb94526  game_data/CD images/Descent II - Destination Quartzon (USA) (Diamond OEM)/data_tracks/d2data/DESCENT2.EXE
+26f016bfbded217a908c03dd671988b8627946a7e02c79f4dd7163c86725476b  game_data/CD images/Descent II - Destination Quartzon (USA) (Diamond OEM)/data_tracks/d2data/setup.exe
+5f293368f46ddf9930243830812968d1b9e5536f4c782ad033769515d894419b  game_data/CD images/Descent II - Destination Quartzon 3D (Europe)/data_tracks/d2data/DESCENT2.EXE
+c2505a4691cde116fd95a6908c2c23a59615b5d57007d764c671a88cf8903364  game_data/CD images/Descent II - Destination Quartzon 3D (Europe)/data_tracks/d2data/DESCENT2.HOG
+d7f2344e1dd12a3b922f9d2cc3fcb4aab52e8fa9e37b5ecf1233fe392b4af568  game_data/CD images/Descent II - Destination Quartzon 3D (Europe)/data_tracks/d2data/intro-h.mvl
+9f7cd8da7b3d6787668aaac957e2c34e80cd48d0509e317172d62c83c3f9a678  game_data/CD images/Descent II - Destination Quartzon 3D (Europe)/data_tracks/d2data/oem-h.mvl
+99cd54d24a9a9a25d325f3a8ebd155c7aba9a9b3e2db18e409e015480d69c6c8  game_data/CD images/Descent II - Destination Quartzon 3D (Europe)/data_tracks/d2data/other-h.mvl
+6aa6deb04807bf51f2137f434448e5ae98e20216d5df720b852c95c5b1b86191  game_data/CD images/Descent II - Destination Quartzon 3D (Europe)/data_tracks/d2data/setup.exe
+b8512cd642fe955db469d178ec870567b7074911ecbcfb85fe0a780df53375b2  game_data/CD images/Descent II - The Vertigo Series (USA)/data_tracks/demos/ss/install.exe
+02edaf0655d3b9ce029909746936d32b45a89f370f3f93e520bbda3362639787  game_data/CD images/Descent II - The Vertigo Series (USA)/data_tracks/demos/whiplash/install.exe
+bb9a4f0f3beb2c2294175d3bbecbcff3846fb72d880b7956245d79ff3172b899  game_data/CD images/Descent II - The Vertigo Series (USA)/data_tracks/demos/whiplash/loadpats.exe
+7b3b771f096013d9e1f0e5e36c5cbfc1d1bfa44c8e9fe12896771da6d0569399  game_data/CD images/Descent II - The Vertigo Series (USA)/data_tracks/demos/whiplash/process.exe
+f28c0317b6e4d3550f2b72692336fc51ef4a0e15361e979e6e71125baa282eeb  game_data/CD images/Descent II - The Vertigo Series (USA)/data_tracks/demos/whiplash/whip.exe
+4e1c4c5336002c1278376254af5621c89b1107acbec5b89b9e50617db384192e  game_data/CD images/Dimensions for Descent (USA)/data_tracks/install.exe
+84367394a3b8448518d0f358bc2c9df9a49ea4c5cc61a4550a079ef8d2a03230  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/4d.hog
+98ed4ea021517b5e85159e7ac8d8ed10a2b7d1a8fac179020a1b3b0d7be44089  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/battle.hog
+8765663120008637efb72c054cb544a4ac0ce977d79df55d3ef7b91ceb71780f  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/bdrome10.hog
+6d3db7e1c105e646f7a2f1471c26da1128eb2f2b2cc27a2462d8f4b4f9dc75ec  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/chaosii.hog
+ce2d1d934e3d4a84312b000698c0db475996c50090c86acf8e394268ab2d173f  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/class1.hog
+c87c064157b64fd91a6fb77b70f3fb36549192a187c04720b2b14e9072ccb678  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/coral1b.hog
+4f1f5b0454cc9b74e6187da42889bebda97a60bc7d6dbef6943a2353b7602dc4  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/lava.hog
+624e4c808b2e4afbc4a2c2cbcc4a4fb607bce05f1c36449a9f9a6c0faed7d28c  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/lava4d.hog
+adbaa5681027a3fe5b868f29628316b4b639988cd2a6980e28b3bcdd2e30488d  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/megadeth.hog
+c14031f1ab69d87da277c5e8da3c0167d0dffbadc1a26fb847be1f61f1efadba  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/meridian.hog
+51ea727131e2665e457e9ae5fbdb38e6f05fd12478f0f4450d4e4f0cef22cdfe  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/munition.hog
+0e89e1c3477b6e4283f35ab53673f3ec6677fba0e173df48aa145c3f88d4a7e0  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/nailed.hog
+a1683353ff96bada2ad0102510a66d20e3f541f93e9db55de4b16bbcf7d89c6b  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/rough.hog
+de2ed53df187171ddb5ebc0a284a165add2cd8c188500acd04a03b99d2c3cc1b  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/rubicon.hog
+1ca80b98de5fbd28658a25a89ac741f36cfc5a77ac301dfb80fd67089f089649  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/scartrek.hog
+27b9175067a732bba987e7bd5e3308cb5ddc5a5300712d17f2e7adfbc297edc1  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/sweeney.hog
+d9cd6541b954a3706e9b111e01c4a93758fb03acab6026b29f858e6adf90f4c3  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/tcamp.hog
+b4f02cfb553087cebaf5cf037fb26039f5303a27d5623b0dd1372b90c44b2c50  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/turners.hog
+89b1d3f5b95661880a7be57d0a7820ae2fbc4d5c751d313d361e462d138075fd  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/viper.hog
+50b5615751dcd5c0eca2c4902b106e79caa8401447f47898de468c230256f918  game_data/CD images/Dimensions for Descent (USA)/data_tracks/levels/wild_3.hog
+7bca2841369dac46b043c95fb29830fb2115318f9e33ccd40fe046732ee91bfd  game_data/gog installers/descent_2_enUS_1_0_51877.pkg
+d0720e12b95cfaee95e133ae08249ef05fcec17c6e9ca362bd54d8efb96f2293  game_data/gog installers/descent_enUS_1_0_35122.pkg
 cd754293de928f73a3772630a85d274b22940c857b1aab80078afa962a5492a7  game_data/gog installers/setup_descent_1.4a_(16596).exe
 58ccb37ecd54c73b0ddbde8d9051a0a6498911fbe66cd025179da681e13559cd  game_data/gog installers/setup_descent_2_1.1_(16596).exe
-0c5fb0684443c0b9c4dbb2769db65b8460bdad4ca80d58a943396fd07c001ba4  game_data/gog installers/descent_enUS_1_0_35122/extracted/CHAOS.HOG
-f56f833e1026a35e8a8755987a93d5a0eb5bb12b40b8f190b9e7621ff24cead8  game_data/gog installers/setup_descent_2_1.1_(16596)/extracted/d2-2plyr.hog
-cea8e7885330b09fadafc25c28c22149cf6403c0d687239ddf33d90c75e6f3e5  game_data/gog installers/setup_descent_2_1.1_(16596)/extracted/d2-2plyr.mn2
-98acbdbc5d0180160337bac1ce28f3a30688378715fe89a45297b0ed6341b4cf  game_data/gog installers/setup_descent_2_1.1_(16596)/extracted/d2chaos.hog
-9f1166d1f0635f62a21b4bd3109b58e290566a9c907b63039e01f227b8e4aa57  game_data/gog installers/setup_descent_2_1.1_(16596)/extracted/d2chaos.mn2
-2b5c1f1d3c20cebbbe3d109c0ab3f3bc916c70d5b45ec4292c1d5bda54deaa42  game_data/extracted/VERTIGO/D2X-H.MVL
-8701b8878b7d72a642199c52d73dfffda095f81e2efdaab0baa98403cabe583e  game_data/extracted/VERTIGO/D2X-L.MVL
-03174b81cc6988a741a68795b123cb69d3f6a640e452cd0d34152e157f7cf7cd  game_data/extracted/VERTIGO/DESCENT2.EXE
-dcdc777daaa02a56cbba885c18d242414525e900644f7b9bca990ce0f2b734ae  game_data/extracted/VERTIGO/HOARD.HAM
-56a94a44c333e5216766b395aba6242170386212ef2cd12ce5fdfb4897252ec5  game_data/extracted/VERTIGO/SETUP.EXE
-97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6  game_data/extracted/VERTIGO/MISSIONS/D2X.HOG
-42d1c04c96f4dad7e8d03a6fdf342ac9ccd22672c0db5886f965638bd325764d  game_data/extracted/VERTIGO/MISSIONS/D2X.MN2
-04864cbeefcf304a89dff96232e768400b9426bad7dc0e08e7bdb971780a3cee  game_data/extracted/VERTIGO/MISSIONS/PANIC.HOG
-059c02d1632c3b706b464b1a14e5a2d7b7711e18c1be579e884158703a25ab88  game_data/extracted/VERTIGO/MISSIONS/PANIC.MN2
-b70528d0c9daeb8137f05a5a699d0bf884058398a6ab4a97307807a1c0cee9be  game_data/extracted/d1 mac extracted/descent.hog
-b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905  game_data/extracted/d1 mac extracted/descent.pig
-b3d94652282859e188f9530b63d77b37289ac973bce402025d10021eaffc7a92  game_data/extracted/d2_mac_demo/d2demo.ham
-e39285e4346f3066cf4ad745abcf3dc4bdf142df7c0395a42b26ae291282696b  game_data/extracted/d2_mac_demo/D2DEMO.HOG
-88e834d13f15bfe502e32570a44302326e6486f685cb95e12b3b81d0a14b8642  game_data/extracted/d2_mac_demo/d2demo.pig
-c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7  game_data/extracted/d2_mac_demo/EXIT.HAM
-26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab  game_data/extracted/descent 1 demo 1-4_extracted/DESCENT.HOG
-710f1c1bafc4c2fcb9623ebe701e2fff34c21b5d3d3e0fe164c1162615971a54  game_data/extracted/descent 1 demo 1-4_extracted/DESCENT.PIG
-747ccf2494916892061e13601cd8695c35e46f2a99062fff3e3f298da94b9be6  game_data/extracted/descent 2 demo 1-0_extracted/D2DEMO.HAM
-b6bf5514b7f2c25ff516c46e9d49eef5862b10667a95365631e7a64a10adc47e  game_data/extracted/descent 2 demo 1-0_extracted/D2DEMO.HOG
-368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989  game_data/extracted/descent 2 demo 1-0_extracted/D2DEMO.PIG
-b30a164fa9c6dff05eda6d50f777777df843968d32053f5cc9453fe89d5bed19  game_data/mods/d1xr-hires.dxa
-3ef1bf1dbcb1be8c3dde121ed53b0fec8a22340320937735073353fd0a1a990c  game_data/mods/d1xr-mac-demo-sounds.dxa
-e4ad2e34aca77af8e8c894bcd01743a65a61135da3629ee7e509d80d84568953  game_data/mods/d2xxl-hires-sounds-d1.dxa
-56123e2b5a5a942f7ebe9926024ce507aa28166b153fb22b5c79aaa299d75171  game_data/mods/d2xxl-hires-sounds-d2.dxa
-d75d98706baaf19034fa0f465254162a46d097760b229b460f5dd7cd321409f4  game_data/mods/d2xxl-hires-textures-d1-128.dxa
-67aaab56cb5f56e25f9f8515b57cc62ed6685f0a5b6d11d90c48b6dba287be67  game_data/mods/d2xxl-hires-textures-d1-256.dxa
-a9e678e06e1225874b99c4d6f5f18a5314bbb7fbb3a49ca552c93c0d3e558600  game_data/mods/d2xxl-hires-textures-d1-512.dxa
-65b0da223b64e95f72904070e0a72ca81f9cb65912e92be3c6243546996f81ad  game_data/mods/d2xxl-hires-textures-d2-128.dxa
-b5b885f2331970a906ca8d467a45d76048789554299db477d7531d8a1dfb2676  game_data/mods/d2xxl-hires-textures-d2-256.dxa
-1bcc51fd896d3cbc2f0a0a58eb58260484088633dbb361eeab3da9e88b3d608c  game_data/mods/d2xxl-hires-textures-d2-512.dxa
-e39ddb2c87929c019d2e68e76b685eadb6f30335afd5c779e55bec8dc0886540  game_data/mods/d2xxl-hires-textures-d2-64.dxa
+3dadb7fbc01efce2904d0908c55d9a9cf1f402e83bf771970552efaca15efcb0  game_data/demo installers/desc14sw.exe
+b70528d0c9daeb8137f05a5a699d0bf884058398a6ab4a97307807a1c0cee9be  game_data/demo installers/d1 mac extracted/descent.hog
+b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905  game_data/demo installers/d1 mac extracted/descent.pig
+26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab  game_data/demo installers/descent 1 demo 1-4_extracted/DESCENT.HOG
+710f1c1bafc4c2fcb9623ebe701e2fff34c21b5d3d3e0fe164c1162615971a54  game_data/demo installers/descent 1 demo 1-4_extracted/DESCENT.PIG
+747ccf2494916892061e13601cd8695c35e46f2a99062fff3e3f298da94b9be6  game_data/demo installers/descent 2 demo 1-0_extracted/D2DEMO.HAM
+b6bf5514b7f2c25ff516c46e9d49eef5862b10667a95365631e7a64a10adc47e  game_data/demo installers/descent 2 demo 1-0_extracted/D2DEMO.HOG
+368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989  game_data/demo installers/descent 2 demo 1-0_extracted/D2DEMO.PIG
+b3d94652282859e188f9530b63d77b37289ac973bce402025d10021eaffc7a92  game_data/demo installers/Descent II Preview_extracted/d2demo.ham
+e39285e4346f3066cf4ad745abcf3dc4bdf142df7c0395a42b26ae291282696b  game_data/demo installers/Descent II Preview_extracted/D2DEMO.HOG
+c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7  game_data/demo installers/Descent II Preview_extracted/EXIT.HAM
+7af6bbd6aa5e356cae406ea43ab8b47b69d27bd555b513d884c68ccafe9aaf42  game_data/demo installers/Descent Shareware_extracted/descent.hog
+ff6c5c333da533197188f9d0d7ff175979c1c09c7daf405cc4ec5ba77f30dab1  game_data/mods/d2x-xl/d1-hires-128-textures-ktx2.dxa
+90d678c3f96c407cc8b7320d638b7db57d8585488becd3b39cd26b24c8f0ef9b  game_data/mods/d2x-xl/d1-hires-256-textures-ktx2.dxa
+7dcd5ea8184decc4a7af9339c5aff7fc3828e751bff19939be73275a578587f3  game_data/mods/d2x-xl/d1-hires-512-textures-ktx2.dxa
+959b8969e249013f33597bd02c35a78fdfa1c6c63bb12e66226120ab3ad54c22  game_data/mods/d2x-xl/d1-hires-sounds.dxa
+b30a164fa9c6dff05eda6d50f777777df843968d32053f5cc9453fe89d5bed19  game_data/mods/d2x-xl/d1xr-hires.dxa
+3ef1bf1dbcb1be8c3dde121ed53b0fec8a22340320937735073353fd0a1a990c  game_data/mods/d2x-xl/d1xr-mac-demo-sounds.dxa
+55e3bdd20eb339322413db68c6cc04c610dcda32a5484ea036c058d55fe3f895  game_data/mods/d2x-xl/d2-hires-128-textures-ktx2.dxa
+91a66ee07304116b2a3e45dc5ec3b8fe6892f6568202407c5f032c90c4b2cccd  game_data/mods/d2x-xl/d2-hires-256-textures-ktx2.dxa
+497bdc14023334c86cf2439e0704da56e4d06ac4442c4fe7911eb678344ddb4e  game_data/mods/d2x-xl/d2-hires-512-textures-ktx2.dxa
+8a46ac26e8442a75ba1807692d44ea1b280bd3bd5b3f52e01c553a2c7892df4d  game_data/mods/d2x-xl/d2-hires-sounds.dxa
+c441429715c0f39d98adfa309d5e6fbec0395ea9251d6df5e3468265d3149a37  game_data/mods/d2x-xl/d2xxl-hires-textures-d2-64.dxa
+d5a9b61f53ecc327bc25837f717516c9c1260a9e750452900481cb8d905b2569  game_data/mods/xfing/d2x_sp/UUD2SP1_4.dxa
+ee6fa78618aa78b28ee87c10f6cf0aee7648398207a3314ed62208f3f9172dbf  game_data/mods/xfing/d2x_sp/UUD2SP1_4.no_ham.dxa
+7e04801eee46b9e11698a716cf71a7f7c5b04d170ddf1427cfd947c47bd6e2a6  game_data/mods/xfing/d2x_sp/tmp/uud2sp_ham_patch_dxa/stage/descent2.s11
+55cc8428c3a9305cf05e066a5b1f4029ceb2c818c2860a074e79e58b424b8c2a  game_data/mods/xfing/d2x_sp/tmp/uud2sp_ham_patch_dxa/stage/descent2.s22
+c719957b7f0e2104c87d85ea2597b4775bab9ed8d6b6292f079dc299b0a74dcd  game_data/mods/xfing/d2x_sp/uud2sp/descent2.ham
+46a03bdc4ef35e189fdf5df6d1773d2d134216d83f0d371832577fb1fa14c30f  game_data/mods/xfing/dxx_tp/d2tp_sp_combined/ALIEN1.PIG
+604afc898bae63c7e94ad19c1574bd03e1a2792a2e12a683a033a2edbb5e695e  game_data/mods/xfing/dxx_tp/d2tp_sp_combined/ALIEN2.PIG
+a3ddbae754cbd9dcd2c4916dfb258f8a865f44a04e3ce983d66bb487878ad32d  game_data/mods/xfing/dxx_tp/d2tp_sp_combined/DESCENT.PIG
+836beb5efd2c4547cdc8abe87287f618414ea7d9ab6086bfc796b2673721e13f  game_data/mods/xfing/dxx_tp/d2tp_sp_combined/FIRE.PIG
+9f88c53a4fa8f5d075d3f7d78817a73b8b1cf486604fc07a9821a05421746b65  game_data/mods/xfing/dxx_tp/d2tp_sp_combined/GROUPA.PIG
+c8a4a7467880f56dfed9ba9c48e1c4ec2849a22d53dd6ca4d0482e6f8e57b842  game_data/mods/xfing/dxx_tp/d2tp_sp_combined/ICE.PIG
+6d7c4551d16e6649c106a204dd6a0ea4f5abffe49e8ed6b6241c7a02e86f9df5  game_data/mods/xfing/dxx_tp/d2tp_sp_combined/pogtest.hog
+37bf12152082815152a4d54fc9bcf712685d2c2bb68e95c5f5da0ee72927cbbc  game_data/mods/xfing/dxx_tp/d2tp_sp_combined/pogtest.mn2
+8c0e693d8a7f646c184894846f9647821de9ba047bc65639fb6b5b437d6cea14  game_data/mods/xfing/dxx_tp/d2tp_sp_combined/UUD2T&SP1_4.dxa
+144d51aa40039552076060e775cb94c75965631b225009ba5bd059f0940e9af1  game_data/mods/xfing/dxx_tp/d2tp_sp_combined/WATER.PIG
+ee6eeec33c03ad6fcd3896fdf84b41ecb7e70e9d6fc81845649d72f2f7e1970a  game_data/mods/xfing/dxx_tp/tmp/plain_texture_dxa/uud1tp-textures.dxa
+d3cca4d9e7b4f413f3fbb9de5d6b24cc7233f7202d1097bfc4ddc723487ab457  game_data/mods/xfing/dxx_tp/tmp/plain_texture_dxa/uud2tp-textures.dxa
+a8573da8fb3ab0b0e5ff952bbc290a964f7b9eb29cbb99301083934e0154d339  game_data/mods/xfing/dxx_tp/tmp/plain_texture_dxa/work/d2/DESCENT2.HAM
+af6de50ccc0c3195c0364d8fed55556235c091f5d5cad0f6226f74b4362fec47  game_data/mods/xfing/dxx_tp/uud1tp/descent.pig
+f371a912a918cfdaa06a0072be20513ae11cbed0131050c1ed7f0fd37d7e09d7  game_data/mods/xfing/dxx_tp/uud2tp/uud2tp.dxa

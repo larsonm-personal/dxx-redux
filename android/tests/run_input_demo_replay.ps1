@@ -25,6 +25,7 @@ param(
     [string]$StateLogPath,
     [switch]$TraceState,
     [switch]$CompareStateTrace,
+    [switch]$ResolveDataDirOnly,
     [string]$RngLogPath,
     [switch]$TraceRng,
     [switch]$CompareRngTrace,
@@ -298,6 +299,7 @@ function Get-GameConfig {
                 RequiredFiles = @('DESCENT.HOG', 'DESCENT.PIG')
                 DefaultDataDirs = @(
                     (Join-RegressionPath $repoRoot 'game_data' 'extracted' 'd1 mac extracted'),
+                    (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'data'),
                     (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'temp')
                 )
                 MaxFps = 200
@@ -310,6 +312,7 @@ function Get-GameConfig {
                 TitleArg = '-nomovies'
                 RequiredFiles = @('DESCENT2.HOG', 'DESCENT2.HAM', 'GROUPA.PIG')
                 DefaultDataDirs = @(
+                    (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'data'),
                     (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'temp'),
                     (Join-RegressionPath $repoRoot 'game_data' 'extracted' 'descent 2 demo 1-0_extracted')
                 )
@@ -319,6 +322,44 @@ function Get-GameConfig {
     }
 
     throw "Unsupported game: $Name"
+}
+
+function Get-CaseInsensitiveChildFile {
+    param(
+        [string]$Directory,
+        [string]$Name
+    )
+
+    if (-not (Test-Path -LiteralPath $Directory -PathType Container)) {
+        return $null
+    }
+    return Get-ChildItem -LiteralPath $Directory -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name.Equals($Name, [System.StringComparison]::OrdinalIgnoreCase) } |
+        Select-Object -First 1
+}
+
+function Get-DiscoveredDataDirCandidates {
+    param([hashtable]$Config)
+
+    $firstRequired = $Config.RequiredFiles[0]
+    $roots = @(
+        (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator'),
+        (Join-RegressionPath $repoRoot 'game_data' 'extracted'),
+        (Join-RegressionPath $repoRoot 'game_data' 'CD images'),
+        (Join-RegressionPath $repoRoot 'game_data' 'gog installers')
+    ) | Where-Object { Test-Path -LiteralPath $_ -PathType Container } | Select-Object -Unique
+
+    $dirs = New-Object System.Collections.Generic.List[string]
+    foreach ($root in $roots) {
+        Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name.Equals($firstRequired, [System.StringComparison]::OrdinalIgnoreCase) } |
+            ForEach-Object {
+                if (-not $dirs.Contains($_.DirectoryName)) {
+                    $dirs.Add($_.DirectoryName)
+                }
+            }
+    }
+    return @($dirs | Sort-Object)
 }
 
 function Get-HeadlessConsoleExe {
@@ -358,8 +399,7 @@ function Test-DataDirMatchesGame {
         return $false
     }
     foreach ($requiredFile in $Config.RequiredFiles) {
-        $requiredPath = Join-Path $Path $requiredFile
-        if (-not (Test-Path -LiteralPath $requiredPath)) {
+        if (-not (Get-CaseInsensitiveChildFile -Directory $Path -Name $requiredFile)) {
             return $false
         }
     }
@@ -384,12 +424,18 @@ function Resolve-DataDir {
         }
     }
 
+    $candidates += Get-DiscoveredDataDirCandidates -Config $Config
+    foreach ($candidate in ($candidates | Select-Object -Unique)) {
+        if (Test-DataDirMatchesGame -Path $candidate -Config $Config) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+
     $missingSummary = foreach ($candidate in ($candidates | Select-Object -Unique)) {
         if (Test-Path -LiteralPath $candidate) {
             $missing = @()
             foreach ($requiredFile in $Config.RequiredFiles) {
-                $requiredPath = Join-Path $candidate $requiredFile
-                if (-not (Test-Path -LiteralPath $requiredPath)) {
+                if (-not (Get-CaseInsensitiveChildFile -Directory $candidate -Name $requiredFile)) {
                     $missing += $requiredFile
                 }
             }
@@ -1166,6 +1212,10 @@ $header = Get-DemoHeader -Path $resolvedDemoPath
 $resolvedGame = Resolve-DemoGame -Header $header -RequestedGame $Game
 $config = Get-GameConfig -Name $resolvedGame
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
+if ($ResolveDataDirOnly) {
+    Write-Host "Resolved $resolvedGame data dir: $resolvedDataDir"
+    exit 0
+}
 $runnerPromptDefaults = Get-RunnerPromptDefaults -RequestedRunner $Runner -RequestedMode $Mode -RequestedProfile $RenderProfile
 $renderProfileSelection = Get-RenderProfile -RequestedProfile $runnerPromptDefaults.RenderProfile -RequestedMode $runnerPromptDefaults.Mode
 $launchMode = Get-LaunchMode -RequestedMode $runnerPromptDefaults.Mode -Path $resolvedDemoPath -Config $config

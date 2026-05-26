@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 
 param(
-    [ValidateSet("Menu", "Regenerate", "Verify", "Export")]
+    [ValidateSet("Menu", "List", "Regenerate", "Verify", "Check", "Export")]
     [string]$Action = "Menu",
 
     [string]$ManifestPath,
@@ -23,6 +23,11 @@ if (-not $ZipPath) {
 $CdExtensions = @(".bin", ".cue", ".iso", ".img", ".ccd", ".sub")
 $GogExtensions = @(".exe", ".pkg")
 $DemoExtensions = @(".exe", ".zip", ".sit", ".hqx")
+$MusicExtensions = @(".mp3")
+$MusicTestRoots = @(
+    "game_data/music/D2 infinite abyss redbook mp3/",
+    "game_data/music/D2 redbook mp3 rips/"
+)
 $ExcludedPathParts = @("extracted", "data_tracks")
 
 function ConvertTo-RepoRelativePath {
@@ -67,6 +72,11 @@ function Test-SourceDataFile {
     if ($relative.StartsWith("game_data/demo installers/", [System.StringComparison]::OrdinalIgnoreCase)) {
         return $DemoExtensions -contains $extension
     }
+    foreach ($musicRoot in $MusicTestRoots) {
+        if ($relative.StartsWith($musicRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $MusicExtensions -contains $extension
+        }
+    }
     return $false
 }
 
@@ -80,6 +90,11 @@ function Get-TestDataKind {
     }
     if ($RelativePath.StartsWith("game_data/demo installers/", [System.StringComparison]::OrdinalIgnoreCase)) {
         return "demo_installer"
+    }
+    foreach ($musicRoot in $MusicTestRoots) {
+        if ($RelativePath.StartsWith($musicRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return "d2_redbook_mp3"
+        }
     }
     return "unknown"
 }
@@ -100,6 +115,16 @@ function Read-TestDataManifest {
         throw "Manifest not found: $ManifestPath"
     }
     return Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+}
+
+function Show-TestDataManifest {
+    $manifest = Read-TestDataManifest
+    $manifestFiles = @($manifest.files)
+    Write-Host "Manifest: $ManifestPath"
+    Write-Host "Files: $($manifestFiles.Count), total size: $([math]::Round([Int64]$manifest.total_size / 1GB, 2)) GB"
+    foreach ($entry in $manifestFiles) {
+        Write-Host "$($entry.kind) $($entry.size) $($entry.sha256) $($entry.path)"
+    }
 }
 
 function Write-TestDataManifest {
@@ -256,23 +281,27 @@ function Show-Menu {
         Write-Host ""
         Write-Host "Game data manager"
         Write-Host "1. Regenerate the test data JSON manifest"
-        Write-Host "2. Verify name, size, and hash of all test data"
-        Write-Host "3. Export listed test data to a zip file"
-        Write-Host "4. Exit"
+        Write-Host "2. List the manifest entries"
+        Write-Host "3. Verify name, size, and hash of all test data"
+        Write-Host "4. Export listed test data to a zip file"
+        Write-Host "5. Exit"
         $choice = Read-Host "Select an option"
         switch ($choice) {
             "1" { Write-TestDataManifest; return }
-            "2" { if (-not (Compare-TestDataManifest)) { exit 1 }; return }
-            "3" { Export-TestDataZip; return }
-            "4" { return }
-            default { Write-Host "Select 1, 2, 3, or 4" -ForegroundColor Yellow }
+            "2" { Show-TestDataManifest; return }
+            "3" { if (-not (Compare-TestDataManifest)) { exit 1 }; return }
+            "4" { Export-TestDataZip; return }
+            "5" { return }
+            default { Write-Host "Select 1, 2, 3, 4, or 5" -ForegroundColor Yellow }
         }
     }
 }
 
 switch ($Action) {
     "Menu" { Show-Menu }
+    "List" { Show-TestDataManifest }
     "Regenerate" { Write-TestDataManifest }
     "Verify" { if (-not (Compare-TestDataManifest)) { exit 1 } }
+    "Check" { if (-not (Compare-TestDataManifest)) { exit 1 } }
     "Export" { Export-TestDataZip }
 }

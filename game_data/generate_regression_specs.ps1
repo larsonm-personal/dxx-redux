@@ -14,8 +14,9 @@ param([switch]$Force)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent  # dxx-redux root
 $gameDataDir = $PSScriptRoot              # game_data/
-$knownDiscsPath = Join-Path $root 'android\app\src\main\assets\known_discs.json5'
-$regressionSpecHelpersPath = Join-Path $root 'android\tests\extract_regression_spec_helpers.ps1'
+$androidDir = Join-Path $root 'android'
+$knownDiscsPath = Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $androidDir 'app') 'src') 'main') 'assets') 'known_discs.json5'
+$regressionSpecHelpersPath = Join-Path (Join-Path $androidDir 'tests') 'extract_regression_spec_helpers.ps1'
 . $regressionSpecHelpersPath
 
 function Get-CueImageFiles($path) {
