@@ -70,6 +70,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef ANDROID
 #include "android_crash_handler.h"
+#include "android_log.h"
 #include "android_menu_scale.h"
 #include "android_pilot_listbox_hold.h"
 #endif
@@ -2235,9 +2236,54 @@ static void listbox_get_item_bounds(listbox *lb, int item_index,
 	*y2 = *y1 + row_height;
 }
 
+#ifdef ANDROID
+static int android_listbox_is_pilot_select(listbox *lb)
+{
+	return lb && lb->title && !strcmp(lb->title, TXT_SELECT_PILOT);
+}
+
+static int android_listbox_item_at_point(listbox *lb, int mx, int my)
+{
+	int rel_y, item;
+	int slop_y = FSPACY(6);
+	int x1 = lb->box_x - BORDERX;
+	int x2 = lb->box_x + lb->box_w + BORDERX;
+
+	if (mx < x1 || mx > x2)
+		return -1;
+	rel_y = my - lb->box_y;
+	if (rel_y < 0 && rel_y >= -slop_y)
+		rel_y = 0;
+	if (rel_y >= lb->height && rel_y < lb->height + slop_y)
+		rel_y = lb->height - 1;
+	if (rel_y < 0 || rel_y >= lb->height)
+		return -1;
+	item = lb->first_item + rel_y / LINE_SPACING;
+	return item < lb->nitems ? item : -1;
+}
+
+static void android_log_pilot_listbox_touch(listbox *lb, const char *phase,
+                                            int mx, int my, int item)
+{
+	static int diag_count;
+	android_menu_scale_result scale;
+
+	if (!android_listbox_is_pilot_select(lb) || diag_count >= 80)
+		return;
+	diag_count++;
+	android_menu_scale_get_state(&scale);
+	debug_log(DLOG_GAME,
+	          "[pilot-listbox-touch] %s mx=%d my=%d item=%d citem=%d first=%d n=%d box=(%d,%d %dx%d) scale=%d src=(%d,%d %dx%d) dst=(%d,%d %dx%d)\n",
+	          phase, mx, my, item, lb->citem, lb->first_item, lb->nitems,
+	          lb->box_x, lb->box_y, lb->box_w, lb->height, scale.active,
+	          scale.src.x, scale.src.y, scale.src.w, scale.src.h,
+	          scale.dst.x, scale.dst.y, scale.dst.w, scale.dst.h);
+}
+#endif
+
 int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 {
-	int i, mx, my, mz, x1, x2, y1, y2;
+	int i = -1, mx, my, mz, x1, x2, y1, y2;
 
 	switch (button)
 	{
@@ -2246,6 +2292,19 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 			if (lb->mouse_state)
 			{
 				mouse_get_pos(&mx, &my, &mz);
+#ifdef ANDROID
+				if (android_listbox_is_pilot_select(lb)) {
+					i = android_listbox_item_at_point(lb, mx, my);
+					android_log_pilot_listbox_touch(lb, "down", mx, my, i);
+					if (i >= 0) {
+						lb->citem = i;
+						android_pilot_listbox_mouse_down(lb, lb->title, lb->nitems, i);
+						return 1;
+					}
+					android_pilot_listbox_hold_clear(lb);
+					return 0;
+				}
+#endif
 				for (i=lb->first_item; i<lb->first_item+LB_ITEMS_ON_SCREEN; i++ )	{
 					if (i >= lb->nitems)
 						break;
@@ -2268,8 +2327,25 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 					return 0;
 
 				mouse_get_pos(&mx, &my, &mz);
-				listbox_get_item_bounds(lb, lb->citem, &x1, &y1, &x2, &y2);
-				if ( ((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2)) )
+#ifdef ANDROID
+				if (android_listbox_is_pilot_select(lb)) {
+					i = android_listbox_item_at_point(lb, mx, my);
+					android_log_pilot_listbox_touch(lb, "up", mx, my, i);
+					if (i != lb->citem) {
+						android_pilot_listbox_hold_clear(lb);
+						return 0;
+					}
+					x1 = x2 = y1 = y2 = 0;
+				} else
+#endif
+				{
+					listbox_get_item_bounds(lb, lb->citem, &x1, &y1, &x2, &y2);
+				}
+				if (
+#ifdef ANDROID
+				    (android_listbox_is_pilot_select(lb) && i == lb->citem) ||
+#endif
+				    (((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2))) )
 				{
 #ifdef ANDROID
 					{
