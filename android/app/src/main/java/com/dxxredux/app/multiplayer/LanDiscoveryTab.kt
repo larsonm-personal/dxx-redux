@@ -11,6 +11,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -246,6 +248,7 @@ private fun LanDiscoveryView(
         )
     }
     var permissionPermanentlyDenied by remember { mutableStateOf(false) }
+    val localIpLabel = remember { getLocalIpLabel() }
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
@@ -309,6 +312,37 @@ private fun LanDiscoveryView(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
     ) {
+        if (!isLandscape && !isHosting) {
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (localIpLabel != null) {
+                        Text(
+                            localIpLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                    OutlinedButton(
+                        onClick = { showJoinByIpDialog = true },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                        modifier = Modifier.height(32.dp),
+                    ) {
+                        Text("Join by IP", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
         if (!permissionGranted) {
             item {
                 // Permission request card
@@ -463,12 +497,6 @@ private fun LanDiscoveryView(
                         ) {
                             Text("Stop Scanning")
                         }
-                    }
-                    OutlinedButton(
-                        onClick = { showJoinByIpDialog = true },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text("Join by IP")
                     }
                 }
             }

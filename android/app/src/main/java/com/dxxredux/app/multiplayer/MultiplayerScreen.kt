@@ -37,7 +37,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dxxredux.app.lobby.LobbyService
@@ -865,18 +864,7 @@ private fun LanContent(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("LAN Games", style = MaterialTheme.typography.headlineMedium)
-                if (localIpLabel != null) {
-                    Text(
-                        localIpLabel,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                } else {
-                    Spacer(Modifier.weight(1f))
-                }
+                Spacer(Modifier.weight(1f))
                 OutlinedButton(
                     onClick = {
                         MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
