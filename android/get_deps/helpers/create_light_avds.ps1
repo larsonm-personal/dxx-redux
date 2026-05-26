@@ -8,7 +8,7 @@
 param([switch]$Force)
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Split-Path (Split-Path $PSScriptRoot)
+$repoRoot = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 . (Join-Path $PSScriptRoot "Get-DepPlatform.ps1")
 $depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
 $sdkDir = Join-Path $depBase "android-sdk"

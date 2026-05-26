@@ -12,7 +12,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot
-$platformHelper = Join-Path $PSScriptRoot "get_deps/Get-DepPlatform.ps1"
+$platformHelper = Join-Path $PSScriptRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
 function Get-ScopedFiles {
@@ -83,7 +83,7 @@ if (-not $clangFormat) {
     }
 }
 if (-not $clangFormat) {
-    Write-Error "clang-format not found. Run android/get_deps/get_clang_format.sh to install"
+    Write-Error "clang-format not found. Run android/get_deps/helpers/get_clang_format.sh to install"
     exit 1
 }
 Write-Host "Using: $clangFormat"

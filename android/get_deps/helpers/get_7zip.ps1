@@ -11,13 +11,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Split-Path (Split-Path $PSScriptRoot)
+$repoRoot = Split-Path (Split-Path (Split-Path $PSScriptRoot))
 . (Join-Path $PSScriptRoot "Get-DepPlatform.ps1")
 $depBase = Get-DependencyBase -RepoRoot $repoRoot -CreateIfMissing
 
 # Parse version info from tool_versions.conf
 $conf = @{}
-Get-Content "$PSScriptRoot/tool_versions.conf" | ForEach-Object {
+Get-Content "$PSScriptRoot/../tool_versions.conf" | ForEach-Object {
     if ($_ -match '^([A-Z_]+)=(.+)$') {
         $conf[$Matches[1]] = $Matches[2]
     }

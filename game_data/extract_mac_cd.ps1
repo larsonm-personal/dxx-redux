@@ -14,7 +14,7 @@
 #
 # Prerequisites:
 #   - Python 3 with 'machfs' package: pip install machfs
-#   - unar: android/get_deps/get_unar.sh (or manually install)
+#   - unar: android/get_deps/helpers/get_unar.sh (or manually install)
 #
 # Usage:
 #   .\extract_mac_cd.ps1 -CdFolder "game_data\CD images\Descent - Mac macplay"
@@ -40,7 +40,7 @@ if (-not (Test-Path $UnarExe)) {
     # Try cargo-installed stuffit path, or system PATH
     $UnarExe = (Get-Command unar.exe -ErrorAction SilentlyContinue).Source
     if (-not $UnarExe) {
-        Write-Error "unar.exe not found. Run android/get_deps/get_unar.sh first"
+        Write-Error "unar.exe not found. Run android/get_deps/helpers/get_unar.sh first"
         exit 1
     }
 }

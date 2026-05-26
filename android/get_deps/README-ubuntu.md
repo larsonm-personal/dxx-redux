@@ -12,7 +12,7 @@ source android/set_vars.sh
 If your shell cannot prompt for sudo, install the host prerequisites first from a terminal:
 
 ```bash
-./android/get_deps/get_linux_build_prereqs.sh
+./android/get_deps/helpers/get_linux_build_prereqs.sh
 ```
 
 To use a different dependency directory:

@@ -78,7 +78,7 @@ if (-not $cmakeLint) {
     if ($inPath) { $cmakeLint = $inPath.Source }
 }
 if (-not $cmakeLint) {
-    Write-Error "cmake-lint not found. Run android/get_deps/get_cmake_format.sh to install"
+    Write-Error "cmake-lint not found. Run android/get_deps/helpers/get_cmake_format.sh to install"
     exit 1
 }
 Write-Host "Using: $cmakeLint"

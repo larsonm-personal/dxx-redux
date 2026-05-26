@@ -12,7 +12,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot
-$platformHelper = Join-Path $PSScriptRoot "get_deps/Get-DepPlatform.ps1"
+$platformHelper = Join-Path $PSScriptRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
 function Get-ScopedFiles {
@@ -80,7 +80,7 @@ if (-not $shfmt) {
     if ($inPath) { $shfmt = $inPath.Source }
 }
 if (-not $shfmt) {
-    Write-Error "shfmt not found. Run android/get_deps/get_shfmt.sh to install"
+    Write-Error "shfmt not found. Run android/get_deps/helpers/get_shfmt.sh to install"
     exit 1
 }
 Write-Host "Using: $shfmt"

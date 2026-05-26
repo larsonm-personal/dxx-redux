@@ -39,7 +39,7 @@ if (-not (Test-Path $_depBaseFile)) {
 $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
 $DosboxExe = "$DEP_BASE\$dosboxDirName\dosbox-x.exe"
 if (-not (Test-Path $DosboxExe)) {
-    Write-Error "DOSBox-X not found at $DosboxExe`nRun:  bash android/get_deps/get_dosbox.sh"
+    Write-Error "DOSBox-X not found at $DosboxExe`nRun:  bash android/get_deps/helpers/get_dosbox.sh"
     exit 1
 }
 $DosboxDir = Split-Path $DosboxExe

@@ -372,7 +372,7 @@ function Test-HostToolPrerequisites {
     Write-Host "FAIL: Selected tests need Linux host build tools that are not on PATH" -ForegroundColor Red
     Write-Host "Missing: $($missing -join ', ')" -ForegroundColor Red
     Write-Host "Run from a terminal with sudo:" -ForegroundColor Yellow
-    Write-Host "  ./android/get_deps/get_linux_build_prereqs.sh" -ForegroundColor Yellow
+    Write-Host "  ./android/get_deps/helpers/get_linux_build_prereqs.sh" -ForegroundColor Yellow
     return $false
 }
 

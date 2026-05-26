@@ -50,9 +50,9 @@ function Get-7zaPath {
     $onPath = Get-Command 7z -ErrorAction SilentlyContinue
     if ($onPath) { return $onPath.Source }
     # Try to download
-    $result = & "$repoRoot/android/get_deps/get_7zip.ps1"
+    $result = & "$repoRoot/android/get_deps/helpers/get_7zip.ps1"
     if ($result -and (Test-Path $result)) { return $result }
-    Write-Error "7za.exe not found. Run android/get_deps/get_7zip.ps1 or install 7-Zip"
+    Write-Error "7za.exe not found. Run android/get_deps/helpers/get_7zip.ps1 or install 7-Zip"
 }
 
 $7za = Get-7zaPath

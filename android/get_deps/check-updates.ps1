@@ -29,7 +29,7 @@ $scriptDir = $PSScriptRoot
 $androidDir = Split-Path $scriptDir -Parent
 $repoRoot = Split-Path $androidDir -Parent
 $confFile = Join-Path $scriptDir "tool_versions.conf"
-$platformHelper = Join-Path $scriptDir "Get-DepPlatform.ps1"
+$platformHelper = Join-Path (Join-Path $scriptDir "helpers") "Get-DepPlatform.ps1"
 . $platformHelper
 $script:hostPlatform = Get-HostPlatform
 $script:checkUpdatesInvocation = Get-CheckUpdatesInvocation
@@ -439,7 +439,7 @@ function Get-CmakeInstalledVersion {
 }
 
 function Get-SoundfontInstalledVersion {
-    $soundfontPath = Join-Path (Join-Path $repo_root "app/src/main/assets") "gm.sf2"
+    $soundfontPath = Join-Path (Join-Path $android_dir "app/src/main/assets") "gm.sf2"
     return Get-VerifiedFileVersion $soundfontPath $SOUNDFONT_SHA256 $SOUNDFONT_VERSION
 }
 
@@ -1276,7 +1276,7 @@ $deps = @(
         Latest = if ($latestPowerShell) { $latestPowerShell["Version"] } else { $null };
         ReleaseTag = if ($latestPowerShell) { $latestPowerShell["Tag"] } else { $null };
         DriftLabel = "host-managed";
-        ManualInstallHint = if ($script:hostPlatform -eq "Linux") { "Run android/get_deps/get_powershell.sh to install the pinned PowerShell build on Linux" } else { "Download the configured PowerShell package and update PATH or your local pwsh install" }
+        ManualInstallHint = if ($script:hostPlatform -eq "Linux") { "Run android/get_deps/helpers/get_powershell.sh to install the pinned PowerShell build on Linux" } else { "Download the configured PowerShell package and update PATH or your local pwsh install" }
     }
 )
 
@@ -1545,19 +1545,19 @@ foreach ($item in $selectedTarget) {
             } else {
                 Write-Host "    NOTE: Update NDK_FULL_VERSION in tool_versions.conf after install if this lookup fails"
             }
-            Write-Host "    Run: get_ndk.sh to download the updated NDK"
+            Write-Host "    Run: helpers/get_ndk.sh to download the updated NDK"
         }
         "Build Tools" {
             Update-Conf "BUILD_TOOLS_VERSION" $new
-            Write-Host "    Run finalize.sh to install the new build tools via sdkmanager"
+            Write-Host "    Run helpers/finalize.sh to install the new build tools via sdkmanager"
         }
         "CMake" {
             $cmakeUrl = Get-CmakeUrlForPlatform $new
             Update-Conf "CMAKE_URL" $cmakeUrl
-            Write-Host "    Run get_cmake.sh and finalize.sh to install the updated CMake packages"
+            Write-Host "    Run helpers/get_cmake.sh and helpers/finalize.sh to install the updated CMake packages"
         }
         "Android SDK cmdline-tools" {
-            Write-Host "    Run get_sdk.sh to download the updated Android SDK command-line tools"
+            Write-Host "    Run helpers/get_sdk.sh to download the updated Android SDK command-line tools"
         }
         "JDK*" {
             if ($dep.JDKMajor) {
@@ -1566,11 +1566,11 @@ foreach ($item in $selectedTarget) {
                 Update-Conf "JDK_VERSION" $new
                 $url = Get-JdkUrlForPlatform $dep.JDKMajor
                 Update-Conf "JDK_URL" $url
-                Write-Host "    NOTE: Run get_jdk.sh to download JDK $($dep.JDKMajor)"
+                Write-Host "    NOTE: Run helpers/get_jdk.sh to download JDK $($dep.JDKMajor)"
             } else {
                 Update-Conf "JDK_VERSION" $new
                 Update-Conf "JDK_URL" (Get-JdkUrlForPlatform $currentJDKMajor)
-                Write-Host "    NOTE: Run get_jdk.sh to download the updated JDK"
+                Write-Host "    NOTE: Run helpers/get_jdk.sh to download the updated JDK"
             }
         }
         "GM Soundfont" {
@@ -1578,7 +1578,7 @@ foreach ($item in $selectedTarget) {
             $sfUrl = "https://github.com/arbruijn/TimGM6mb/releases/download/v$new/TimGM6mb.sf2"
             Update-Conf "SOUNDFONT_URL" $sfUrl
             Write-Host "    NOTE: Update SOUNDFONT_SHA256 in tool_versions.conf after downloading"
-            Write-Host "    Run: get_soundfont.sh (it will fail on hash mismatch until you update the hash)"
+            Write-Host "    Run: helpers/get_soundfont.sh (it will fail on hash mismatch until you update the hash)"
         }
         "clang-format" {
             if ($dep.ReleaseTag) {
@@ -1630,7 +1630,7 @@ foreach ($item in $selectedTarget) {
                 Update-Conf "POWERSHELL_URL" "https://github.com/PowerShell/PowerShell/releases/download/v$new/PowerShell-$new-win-x64.zip"
             }
             if ($script:hostPlatform -eq "Linux") {
-                Write-Host "    NOTE: PowerShell is a host tool; run get_powershell.sh or update your pwsh package"
+                Write-Host "    NOTE: PowerShell is a host tool; run helpers/get_powershell.sh or update your pwsh package"
             } else {
                 Write-Host "    NOTE: PowerShell is a host tool; download and update PATH or your local tool install after fetching the new package"
             }

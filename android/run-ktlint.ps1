@@ -12,7 +12,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot
-$platformHelper = Join-Path $PSScriptRoot "get_deps/Get-DepPlatform.ps1"
+$platformHelper = Join-Path $PSScriptRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
 function Get-ScopedFiles {
@@ -75,7 +75,7 @@ foreach ($line in Get-Content $confFile) {
 # Find ktlint jar
 $ktlintJar = Join-Path $DEP_BASE "ktlint-$ktlintVersion\ktlint.jar"
 if (-not (Test-Path $ktlintJar)) {
-    Write-Error "ktlint not found at $ktlintJar. Run android/get_deps/get_ktlint.sh to install"
+    Write-Error "ktlint not found at $ktlintJar. Run android/get_deps/helpers/get_ktlint.sh to install"
     exit 1
 }
 
@@ -90,7 +90,7 @@ if (-not $java) {
     }
 }
 if (-not $java) {
-    Write-Error "java not found. Install JDK or run android/get_deps/get_jdk.sh"
+    Write-Error "java not found. Install JDK or run android/get_deps/helpers/get_jdk.sh"
     exit 1
 }
 

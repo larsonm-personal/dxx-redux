@@ -8,7 +8,7 @@
 #
 # Prerequisites:
 #   - android/tests/build/Release/fingerprint_audio.exe (cmake build)
-#   - fpcalc.exe via android/get_deps/get_fpcalc.ps1
+#   - fpcalc.exe via android/get_deps/helpers/get_fpcalc.ps1
 #   - D2 redbook MP3 files in game_data/music/D2 infinite abyss redbook mp3/
 #     or game_data/music/D2 redbook mp3 rips/; skips when only metadata is present
 #   - AcoustID API key in android/acoustid_config.json5
@@ -55,7 +55,7 @@ foreach ($fpcalcDir in $fpcalcDirs) {
 }
 if (-not $fpcalcExe -or -not (Test-Path $fpcalcExe)) {
     Write-Host "Downloading fpcalc..."
-    $fpcalcExe = & android/get_deps/get_fpcalc.ps1
+    $fpcalcExe = & android/get_deps/helpers/get_fpcalc.ps1
 }
 
 # ── Find a D2 redbook track to test with ────────────────────────────

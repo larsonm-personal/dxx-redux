@@ -83,7 +83,7 @@ if (-not $cmakeFormat) {
     if ($inPath) { $cmakeFormat = $inPath.Source }
 }
 if (-not $cmakeFormat) {
-    Write-Error "cmake-format not found. Run android/get_deps/get_cmake_format.sh to install"
+    Write-Error "cmake-format not found. Run android/get_deps/helpers/get_cmake_format.sh to install"
     exit 1
 }
 Write-Host "Using: $cmakeFormat"

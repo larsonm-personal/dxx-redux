@@ -13,8 +13,9 @@ wait_for_key() {
 trap wait_for_key EXIT
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+HELPER_DIR="$SCRIPT_DIR/helpers"
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR/platform.sh"
+source "$HELPER_DIR/platform.sh"
 export GET_ALL_RUNNING=1 # tell sub-scripts to skip their own wait-for-key
 
 SKIP_HOST_PREREQS=0
@@ -89,12 +90,12 @@ run_step() {
 }
 
 if [ "$(get_host_os)" = "linux" ] && [ "$SKIP_HOST_PREREQS" -eq 0 ]; then
-    run_step "Linux host prerequisites" bash "$SCRIPT_DIR/get_linux_build_prereqs.sh"
+    run_step "Linux host prerequisites" bash "$HELPER_DIR/get_linux_build_prereqs.sh"
 fi
 
 if ! command -v pwsh >/dev/null 2>&1 && [ "$SKIP_POWERSHELL" -eq 0 ]; then
     if [ "$(get_host_os)" = "linux" ]; then
-        run_step "PowerShell" bash "$SCRIPT_DIR/get_powershell.sh"
+        run_step "PowerShell" bash "$HELPER_DIR/get_powershell.sh"
     else
         echo "PowerShell is not on PATH; install pwsh manually for PowerShell helper scripts"
     fi
@@ -102,36 +103,36 @@ elif command -v pwsh >/dev/null 2>&1; then
     echo "PowerShell already available: $(command -v pwsh)"
 fi
 
-run_step "JDK" bash "$SCRIPT_DIR/get_jdk.sh"
+run_step "JDK" bash "$HELPER_DIR/get_jdk.sh"
 
-run_step "Android SDK" bash "$SCRIPT_DIR/get_sdk.sh"
+run_step "Android SDK" bash "$HELPER_DIR/get_sdk.sh"
 
-run_step "Android NDK" bash "$SCRIPT_DIR/get_ndk.sh"
+run_step "Android NDK" bash "$HELPER_DIR/get_ndk.sh"
 
 # Export JAVA_HOME / ANDROID_HOME / ANDROID_NDK_ROOT so remaining steps
 # (finalize, emulator, avd) inherit them without re-detecting
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/../set_vars.sh"
 
-run_step "Gradle wrapper" bash "$SCRIPT_DIR/get_gradle_wrapper.sh"
+run_step "Gradle wrapper" bash "$HELPER_DIR/get_gradle_wrapper.sh"
 
-run_step "Finalize licenses and platform packages" bash "$SCRIPT_DIR/finalize.sh"
+run_step "Finalize licenses and platform packages" bash "$HELPER_DIR/finalize.sh"
 
-run_step "Emulator and system image" bash "$SCRIPT_DIR/get_emulator.sh"
+run_step "Emulator and system image" bash "$HELPER_DIR/get_emulator.sh"
 
 if [ "$SKIP_AVD" -eq 0 ]; then
-    run_step "Create AVD" bash "$SCRIPT_DIR/create_avd.sh"
+    run_step "Create AVD" bash "$HELPER_DIR/create_avd.sh"
 fi
 
-run_step "clang-format" bash "$SCRIPT_DIR/get_clang_format.sh"
+run_step "clang-format" bash "$HELPER_DIR/get_clang_format.sh"
 
-run_step "shellcheck" bash "$SCRIPT_DIR/get_shellcheck.sh"
+run_step "shellcheck" bash "$HELPER_DIR/get_shellcheck.sh"
 
-run_step "shfmt" bash "$SCRIPT_DIR/get_shfmt.sh"
+run_step "shfmt" bash "$HELPER_DIR/get_shfmt.sh"
 
-run_step "ktlint" bash "$SCRIPT_DIR/get_ktlint.sh"
+run_step "ktlint" bash "$HELPER_DIR/get_ktlint.sh"
 
-run_step "cmake-format / cmake-lint" bash "$SCRIPT_DIR/get_cmake_format.sh"
+run_step "cmake-format / cmake-lint" bash "$HELPER_DIR/get_cmake_format.sh"
 
 echo ""
 echo "=== All dependencies installed. ==="

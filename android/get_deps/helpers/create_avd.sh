@@ -6,7 +6,7 @@ set -e
 AVD_NAME="Nexus5X_Light_1"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/../tool_versions.conf"
 source "$SCRIPT_DIR/platform.sh"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
 
@@ -25,9 +25,9 @@ fi
 
 # Need JAVA_HOME
 if [ -z "$JAVA_HOME" ]; then
-    SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-    if [ -f "$SCRIPT_DIR/set_vars.sh" ]; then
-        source "$SCRIPT_DIR/set_vars.sh"
+    ANDROID_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+    if [ -f "$ANDROID_DIR/set_vars.sh" ]; then
+        source "$ANDROID_DIR/set_vars.sh"
     fi
 fi
 

@@ -4,7 +4,7 @@
 
 # Resolve LOCAL_DIR from dependency_base.txt
 _SET_VARS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$_SET_VARS_DIR/get_deps/resolve_dep_base.sh"
+source "$_SET_VARS_DIR/get_deps/helpers/resolve_dep_base.sh"
 
 # Find newest folder matching a prefix.
 # Uses a bash glob (expands in ascending order) instead of ls|sort -rV,

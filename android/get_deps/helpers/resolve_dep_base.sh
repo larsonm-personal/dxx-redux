@@ -1,8 +1,8 @@
 #!/bin/bash
 # resolve_dep_base.sh - Source this to set LOCAL_DIR from dependency_base.txt.
 # Converts the Windows path in dependency_base.txt to a bash-compatible path.
-# Usage: source "$(dirname "$0")/resolve_dep_base.sh"  (from get_deps/)
-#    or: source "$(dirname "$0")/get_deps/resolve_dep_base.sh"  (from android/)
+# Usage: source "$(dirname "$0")/resolve_dep_base.sh"  (from get_deps/helpers/)
+#    or: source "$(dirname "$0")/get_deps/helpers/resolve_dep_base.sh"  (from android/)
 
 _resolve_dep_base() {
     local script_dir
@@ -10,7 +10,7 @@ _resolve_dep_base() {
     # shellcheck disable=SC1091
     source "$script_dir/platform.sh"
     local repo_root
-    repo_root="$(cd "$script_dir/../.." && pwd)"
+    repo_root="$(cd "$script_dir/../../.." && pwd)"
 
     if [ ! -f "$repo_root/dependency_base.txt" ]; then
         local default_base="${DXX_DEPENDENCY_BASE:-$(get_default_dependency_base)}"

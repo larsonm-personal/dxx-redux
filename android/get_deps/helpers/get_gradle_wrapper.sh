@@ -6,13 +6,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/../tool_versions.conf"
 source "$SCRIPT_DIR/platform.sh"
 
-WRAPPER_DIR="$SCRIPT_DIR/../gradle/wrapper"
+WRAPPER_DIR="$SCRIPT_DIR/../../gradle/wrapper"
 WRAPPER_JAR="$WRAPPER_DIR/gradle-wrapper.jar"
 WRAPPER_PROPS="$WRAPPER_DIR/gradle-wrapper.properties"
-GRADLEW="$SCRIPT_DIR/../gradlew"
+GRADLEW="$SCRIPT_DIR/../../gradlew"
 
 mkdir -p "$WRAPPER_DIR"
 

@@ -14,7 +14,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/../tool_versions.conf"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/resolve_dep_base.sh"
 

@@ -40,7 +40,7 @@ if (-not (Test-Path -LiteralPath $_depBaseFile)) {
 $DEP_BASE = (Get-Content -LiteralPath $_depBaseFile -First 1).Trim()
 $UnarExe = Join-Path (Join-Path $DEP_BASE $unarDirName) "unar.exe"
 if (-not (Test-Path -LiteralPath $UnarExe)) {
-    Write-Error "unar not found at $UnarExe`nRun: bash android/get_deps/get_unar.sh"
+    Write-Error "unar not found at $UnarExe`nRun: bash android/get_deps/helpers/get_unar.sh"
     exit 1
 }
 
