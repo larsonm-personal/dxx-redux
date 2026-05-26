@@ -77,11 +77,11 @@
   "total_extracted": 22,
   "import_mode": "setup_cd",
   "last_test_result": {
-    "status": "fail",
-    "failure_step": "file_push_failed",
+    "status": "skip",
+    "failure_step": "not_ready",
     "level_reached": null,
     "files_verified": 0,
     "classification_confirmed": false,
-    "test_mode": "full"
+    "test_mode": "file_only"
   }
 }

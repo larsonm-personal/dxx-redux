@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
-import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.min
@@ -17,7 +16,7 @@ import kotlin.math.min
 class StartGameButtonView(
     context: Context,
 ) : View(context) {
-    var keyCallback: ((action: Int, keyCode: Int, unicode: Int) -> Unit)? = null
+    var startCallback: (() -> Unit)? = null
 
     private val bgPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -89,7 +88,7 @@ class StartGameButtonView(
 
             MotionEvent.ACTION_UP -> {
                 if (pressed && inside) {
-                    injectEnter()
+                    startCallback?.invoke()
                 }
                 pressed = false
                 invalidate()
@@ -101,10 +100,5 @@ class StartGameButtonView(
             }
         }
         return pressed
-    }
-
-    private fun injectEnter() {
-        keyCallback?.invoke(0, KeyEvent.KEYCODE_ENTER, '\r'.code)
-        keyCallback?.invoke(1, KeyEvent.KEYCODE_ENTER, 0)
     }
 }

@@ -4023,6 +4023,17 @@ int net_udp_start_poll( newmenu *menu, d_event *event, void *userdata )
    }
 
 #ifdef __ANDROID__
+	{
+		extern volatile int g_host_start_game_requested;
+		if (g_host_start_game_requested) {
+			g_host_start_game_requested = 0;
+			MPDIAG("start overlay: closing select_players\n");
+			newmenu_set_rval(menu, nitems - 1);
+			window_close(newmenu_get_window(menu));
+			return 0;
+		}
+	}
+
 	/* Auto-start: when launched via auto_host and all expected players
 	 * have joined, close the select-players menu automatically.
 	 * Uses net_auto_start_when_full (set in net_udp_select_players)
@@ -5389,6 +5400,8 @@ GetPlayersAgain:
 	 * causing the 'client briefly disconnects/reconnects' symptom. */
 	{
 		extern volatile int g_host_selecting_players;
+		extern volatile int g_host_start_game_requested;
+		g_host_start_game_requested = 0;
 		g_host_selecting_players = 1;
 		if (auto_host_pending) {
 			net_auto_start_when_full = 1;
@@ -5402,7 +5415,9 @@ GetPlayersAgain:
 #ifdef __ANDROID__
 	{
 		extern volatile int g_host_selecting_players;
+		extern volatile int g_host_start_game_requested;
 		g_host_selecting_players = 0;
+		g_host_start_game_requested = 0;
 		net_auto_start_when_full = 0;
 	}
 #endif
@@ -5594,7 +5609,7 @@ int net_udp_wait_for_sync(void)
 	while (choice > -1)
 	{
 		timer_update();
-		choice=newmenu_do( NULL, TXT_WAIT, 2, m, net_udp_sync_poll, NULL );
+		choice=newmenu_do2( NULL, TXT_WAIT, 2, m, net_udp_sync_poll, NULL, 0, Menu_pcx_name );
 	}
 
 	con_printf(CON_DEBUG, "wait_for_sync: exited loop, Network_status=%d\n", Network_status);
@@ -5698,7 +5713,7 @@ int net_udp_wait_for_requests(void)
 #endif
 
 menu:
-	choice = newmenu_do(NULL, TXT_WAIT, 1, m, net_udp_request_poll, NULL);	
+	choice = newmenu_do2(NULL, TXT_WAIT, 1, m, net_udp_request_poll, NULL, 0, Menu_pcx_name);	
 
 	if (choice == -1)
 	{

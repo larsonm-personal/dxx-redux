@@ -18,5 +18,13 @@
   ],
   "audio_tracks": 0,
   "total_extracted": 233,
-  "import_mode": "setup_iso"
+  "import_mode": "setup_iso",
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": "",
+    "level_reached": "Lunar Outpost",
+    "files_verified": 2,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }

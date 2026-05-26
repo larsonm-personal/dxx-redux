@@ -26,9 +26,9 @@
   "total_extracted": 32,
   "import_mode": "setup_cd",
   "last_test_result": {
-    "status": "fail",
-    "failure_step": "crash",
-    "level_reached": null,
+    "status": "pass",
+    "failure_step": "",
+    "level_reached": "Lunar Outpost",
     "files_verified": 2,
     "classification_confirmed": true,
     "test_mode": "full"

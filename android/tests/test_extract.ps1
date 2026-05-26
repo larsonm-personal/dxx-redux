@@ -44,12 +44,30 @@ Write-Host "test_extract.ps1 starting (PSScriptRoot=$PSScriptRoot)"
 if (-not $SpecPath) {
     $gameDataDir = Join-Path (Split-Path (Split-Path $PSScriptRoot)) "game_data"
     $specs = Get-ChildItem -Path $gameDataDir -Recurse -Filter "extract_regression.json5" -ErrorAction SilentlyContinue
+    if (-not $specs -or $specs.Count -eq 0) {
+        $repoRootForOracles = Split-Path (Split-Path $PSScriptRoot)
+        if (Ensure-ExtractRegressionOracles -RepoRoot $repoRootForOracles -Context "test_extract.ps1") {
+            $specs = Get-ChildItem -Path $gameDataDir -Recurse -Filter "extract_regression.json5" -ErrorAction SilentlyContinue
+        }
+    }
     if ($specs -and $specs.Count -gt 0) {
         $SpecPath = $specs[0].FullName
         Write-Host "Auto-selected spec: $SpecPath" -ForegroundColor Cyan
     } else {
         Write-Host "FAIL: No SpecPath provided and no extract_regression.json5 found under $gameDataDir" -ForegroundColor Red
         exit 1
+    }
+}
+
+if ($SpecPath -and -not (Test-Path -LiteralPath $SpecPath -PathType Leaf)) {
+    $repoRootForOracles = Split-Path (Split-Path $PSScriptRoot)
+    if ((Split-Path $SpecPath -Leaf) -eq 'extract_regression.json5' -and
+        (Test-Path -LiteralPath (Split-Path $SpecPath -Parent) -PathType Container) -and
+        (Ensure-ExtractRegressionOracles -RepoRoot $repoRootForOracles -Context "test_extract.ps1")) {
+        if (-not (Test-Path -LiteralPath $SpecPath -PathType Leaf)) {
+            Write-Host "FAIL: Spec file still not found after oracle regeneration: $SpecPath" -ForegroundColor Red
+            exit 1
+        }
     }
 }
 

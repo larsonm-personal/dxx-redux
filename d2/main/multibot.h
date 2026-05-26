@@ -52,6 +52,7 @@ void multi_dump_robots(void);
 
 void multi_strip_robots(int playernum);
 void multi_check_robot_timeout(void);
+void multi_restore_companion_robot_control(int objnum, int owner_pnum);
 
 void multi_robot_request_change(object *robot, int playernum);
 

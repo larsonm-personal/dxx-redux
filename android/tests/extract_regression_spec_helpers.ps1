@@ -189,3 +189,138 @@ function Set-RegressionSpecLastTestResult($path, $lastTestResult) {
     }
     Write-CanonicalRegressionSpec -path $path -spec $spec
 }
+
+function Get-ExtractRegressionOracleStatus {
+    param([string]$RepoRoot)
+
+    $cdRoot = Join-Path (Join-Path $RepoRoot 'game_data') 'CD images'
+    $sourceDirs = @()
+    $specPaths = @()
+    $missingSpecDirs = @()
+
+    if (Test-Path -LiteralPath $cdRoot) {
+        $sourceDirs = @(Get-ChildItem -LiteralPath $cdRoot -Directory -ErrorAction SilentlyContinue |
+            Where-Object {
+                @(Get-ChildItem -LiteralPath $_.FullName -File -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Extension.ToLowerInvariant() -in @('.cue', '.iso') }).Count -gt 0
+            } |
+            Sort-Object FullName)
+        $specPaths = @(Get-ChildItem -LiteralPath $cdRoot -Recurse -Filter 'extract_regression.json5' -File -ErrorAction SilentlyContinue |
+            Sort-Object FullName)
+        foreach ($dir in $sourceDirs) {
+            $specPath = Join-Path $dir.FullName 'extract_regression.json5'
+            if (-not (Test-Path -LiteralPath $specPath -PathType Leaf)) {
+                $missingSpecDirs += $dir.FullName
+            }
+        }
+    }
+
+    return [pscustomobject]@{
+        CdRoot = $cdRoot
+        SourceDirs = $sourceDirs
+        SpecPaths = $specPaths
+        MissingSpecDirs = $missingSpecDirs
+        HasSources = $sourceDirs.Count -gt 0
+        HasSpecs = $specPaths.Count -gt 0
+        Ready = ($sourceDirs.Count -gt 0) -and ($missingSpecDirs.Count -eq 0) -and ($specPaths.Count -gt 0)
+    }
+}
+
+function Get-ExtractRegressionPwshPath {
+    try {
+        $current = Get-Process -Id $PID -ErrorAction Stop
+        if ($current.Path) {
+            return $current.Path
+        }
+    } catch {}
+
+    $pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($pwsh) {
+        return $pwsh.Source
+    }
+    return 'pwsh'
+}
+
+function Invoke-ExtractRegressionOracleRecovery {
+    param(
+        [string]$RepoRoot,
+        [switch]$Force
+    )
+
+    $pwsh = Get-ExtractRegressionPwshPath
+    $gameDataDir = Join-Path $RepoRoot 'game_data'
+    $extractScript = Join-Path $gameDataDir 'extract_all_cds.ps1'
+    $generateScript = Join-Path $gameDataDir 'generate_regression_specs.ps1'
+    if (-not (Test-Path -LiteralPath $extractScript -PathType Leaf)) {
+        throw "CD extraction helper not found: $extractScript"
+    }
+    if (-not (Test-Path -LiteralPath $generateScript -PathType Leaf)) {
+        throw "Regression spec generator not found: $generateScript"
+    }
+
+    $extractArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $extractScript)
+    if ($Force) {
+        $extractArgs += '-Force'
+    }
+    & $pwsh @extractArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "extract_all_cds.ps1 failed with exit code $LASTEXITCODE"
+    }
+
+    $generateArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $generateScript)
+    if ($Force) {
+        $generateArgs += '-Force'
+    }
+    & $pwsh @generateArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "generate_regression_specs.ps1 failed with exit code $LASTEXITCODE"
+    }
+}
+
+function Ensure-ExtractRegressionOracles {
+    param(
+        [string]$RepoRoot,
+        [string]$Context = 'CD extract regression tests',
+        [switch]$NoPrompt
+    )
+
+    $status = Get-ExtractRegressionOracleStatus -RepoRoot $RepoRoot
+    if ($status.Ready) {
+        return $true
+    }
+
+    if (-not $status.HasSources) {
+        Write-Host "FAIL: $Context needs CD image source files under $($status.CdRoot)" -ForegroundColor Red
+        return $false
+    }
+
+    Write-Host "CD extraction regression oracles are missing or incomplete" -ForegroundColor Yellow
+    Write-Host "  Source CD folders: $($status.SourceDirs.Count)" -ForegroundColor Yellow
+    Write-Host "  Existing extract_regression.json5 files: $($status.SpecPaths.Count)" -ForegroundColor Yellow
+    Write-Host "  Missing specs: $($status.MissingSpecDirs.Count)" -ForegroundColor Yellow
+    foreach ($dir in ($status.MissingSpecDirs | Select-Object -First 8)) {
+        Write-Host "    $dir" -ForegroundColor Yellow
+    }
+    if ($status.MissingSpecDirs.Count -gt 8) {
+        Write-Host "    ... $($status.MissingSpecDirs.Count - 8) more" -ForegroundColor Yellow
+    }
+    Write-Host "Recovery will run game_data/extract_all_cds.ps1 and game_data/generate_regression_specs.ps1" -ForegroundColor Cyan
+
+    if ($NoPrompt) {
+        return $false
+    }
+
+    $answer = Read-Host 'Regenerate CD extraction oracles now? [y/N]'
+    if ($answer -notmatch '^(y|yes)$') {
+        Write-Host 'Skipping oracle regeneration' -ForegroundColor Yellow
+        return $false
+    }
+
+    Invoke-ExtractRegressionOracleRecovery -RepoRoot $RepoRoot
+    $status = Get-ExtractRegressionOracleStatus -RepoRoot $RepoRoot
+    if (-not $status.Ready) {
+        Write-Host "FAIL: CD extraction oracles are still incomplete after regeneration" -ForegroundColor Red
+        return $false
+    }
+    return $true
+}

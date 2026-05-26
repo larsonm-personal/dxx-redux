@@ -177,11 +177,22 @@ void MovieShowFrame(ubyte *buf, int dstx, int dsty, int bufw, int bufh, int sw, 
 {
 	grs_bitmap source_bm;
 	static ubyte old_pal[768];
+	int fullscreen_movie = (dstx == -1 && dsty == -1);
 	float scale = 1.0;
+
+#ifdef OGL
+	glDisable (GL_BLEND);
+#endif
+
+	if (fullscreen_movie)
+		gr_clear_canvas(0);
 
 	if (memcmp(old_pal,gr_palette,768))
 	{
 		memcpy(old_pal,gr_palette,768);
+#ifdef OGL
+		glEnable (GL_BLEND);
+#endif
 		return;
 	}
 	memcpy(old_pal,gr_palette,768);
@@ -193,7 +204,7 @@ void MovieShowFrame(ubyte *buf, int dstx, int dsty, int bufw, int bufh, int sw, 
 	source_bm.bm_flags = 0;
 	source_bm.bm_data = buf;
 
-	if (dstx == -1 && dsty == -1) // Fullscreen movie so set scale to fit the actual screen size
+	if (fullscreen_movie) // Fullscreen movie so set scale to fit the actual screen size
 	{
 		if (((float)SWIDTH/SHEIGHT) < ((float)sw/bufh))
 			scale = ((float)SWIDTH/sw);
@@ -214,8 +225,6 @@ void MovieShowFrame(ubyte *buf, int dstx, int dsty, int bufw, int bufh, int sw, 
 		dsty = (SHEIGHT/2)-((bufh*scale)/2);
 
 #ifdef OGL
-	glDisable (GL_BLEND);
-
 	ogl_ubitblt_i(
 		bufw*scale, bufh*scale,
 		dstx, dsty,

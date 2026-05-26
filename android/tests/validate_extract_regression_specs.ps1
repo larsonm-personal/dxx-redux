@@ -14,6 +14,11 @@ param(
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1')
 $failures = New-Object System.Collections.Generic.List[string]
+$repoRoot = Split-Path (Split-Path $PSScriptRoot)
+
+if (-not (Ensure-ExtractRegressionOracles -RepoRoot $repoRoot -Context "CD regression spec validation")) {
+    exit 1
+}
 
 function Add-Failure($specPath, $message) {
     $relative = Resolve-Path -LiteralPath $specPath -Relative

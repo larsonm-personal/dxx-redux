@@ -59,7 +59,7 @@
     "status": "skip",
     "failure_step": "not_ready",
     "level_reached": null,
-    "files_verified": 4,
+    "files_verified": 3,
     "classification_confirmed": false,
     "test_mode": "file_only"
   }

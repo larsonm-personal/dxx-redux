@@ -26,19 +26,24 @@ $RepoRoot   = Split-Path $ScriptDir
 # Resolve cmake and other tool paths
 . "$RepoRoot\android\test_env.ps1"
 
-$SrcDir     = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
-$BuildDir   = Join-Path $RepoRoot "android\tests\build"
+$SrcDir     = Join-RegressionPath $RepoRoot "android" "app" "src" "main" "cpp" "extract"
+$BuildDir   = Join-RegressionPath $RepoRoot "android" "tests" "build"
 $CdImgDir   = Join-Path $ScriptDir "CD images"
-$ExePath    = $null
 
-function Resolve-ExtractTool {
-    param([string]$ToolName)
-
-    foreach ($dir in @((Join-Path $BuildDir "Release"), $BuildDir)) {
-        $tool = Resolve-RegressionBuildTool -Directory $dir -BaseName $ToolName
-        if ($tool) { return $tool }
+function Resolve-ExtractCdTool {
+    foreach ($dir in @(
+            (Join-RegressionPath $BuildDir "Release"),
+            $BuildDir
+        )) {
+        if (-not (Test-Path -LiteralPath $dir -PathType Container)) {
+            continue
+        }
+        $tool = Resolve-RegressionBuildTool -Directory $dir -BaseName "extract_cd"
+        if ($tool) {
+            return $tool
+        }
     }
-    return (Join-Path (Join-Path $BuildDir "Release") "$ToolName.exe")
+    return $null
 }
 
 # -- Build ------------------------------------------------------------
@@ -52,18 +57,14 @@ if (-not $SkipBuild) {
     Write-Host "Building extract_cd..."
     cmake --build $BuildDir --config Release --target extract_cd
     if ($LASTEXITCODE -ne 0) { throw "Build failed" }
-    $ExePath = Resolve-ExtractTool -ToolName "extract_cd"
-    Write-Host "Build OK: $ExePath"
 }
 
+$ExePath = Resolve-ExtractCdTool
 if (-not $ExePath) {
-    $ExePath = Resolve-ExtractTool -ToolName "extract_cd"
-}
-
-if (-not (Test-Path $ExePath)) {
-    Write-Error "extract_cd not found at $ExePath. Run without -SkipBuild"
+    Write-Error "extract_cd not found under $BuildDir. Run without -SkipBuild"
     exit 1
 }
+Write-Host "Using extract_cd: $ExePath"
 
 # -- Process CD images ------------------------------------------------
 

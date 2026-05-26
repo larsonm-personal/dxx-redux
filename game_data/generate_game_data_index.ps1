@@ -17,18 +17,32 @@ $OutFile   = Join-Path $ScriptDir "game_data_index.txt"
 
 $GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".gog", ".inst", ".exe", ".pkg", ".dxa")
 
+function Join-RepoPath {
+    param(
+        [Parameter(Mandatory = $true, ValueFromRemainingArguments = $true)]
+        [string[]]$Segments
+    )
+
+    $path = $RepoRoot
+    foreach ($segment in $Segments) {
+        $path = Join-Path $path $segment
+    }
+    return $path
+}
+
 # Search directories in priority order (first match per hash wins)
 $SearchDirs = @(
-    (Join-Path $RepoRoot "game_data_to_copy_to_emulator\temp"),
-    (Join-Path $RepoRoot "game_data_to_copy_to_emulator\data"),
-    (Join-Path $RepoRoot "game_data\gog installers"),
-    (Join-Path $RepoRoot "game_data\demo installers"),
-    (Join-Path $RepoRoot "game_data\extracted\VERTIGO"),
-    (Join-Path $RepoRoot "game_data\extracted\d1 mac extracted"),
-    (Join-Path $RepoRoot "game_data\extracted\d2_mac_demo"),
-    (Join-Path $RepoRoot "game_data\extracted\descent 1 demo 1-4_extracted"),
-    (Join-Path $RepoRoot "game_data\extracted\descent 2 demo 1-0_extracted"),
-    (Join-Path $RepoRoot "game_data\mods")
+    (Join-RepoPath "game_data_to_copy_to_emulator" "temp"),
+    (Join-RepoPath "game_data_to_copy_to_emulator" "data"),
+    (Join-RepoPath "game_data" "CD images"),
+    (Join-RepoPath "game_data" "gog installers"),
+    (Join-RepoPath "game_data" "demo installers"),
+    (Join-RepoPath "game_data" "extracted" "VERTIGO"),
+    (Join-RepoPath "game_data" "extracted" "d1 mac extracted"),
+    (Join-RepoPath "game_data" "extracted" "d2_mac_demo"),
+    (Join-RepoPath "game_data" "extracted" "descent 1 demo 1-4_extracted"),
+    (Join-RepoPath "game_data" "extracted" "descent 2 demo 1-0_extracted"),
+    (Join-RepoPath "game_data" "mods")
 )
 
 # hash -> relative path (first seen wins)

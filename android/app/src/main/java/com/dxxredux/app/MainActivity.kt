@@ -283,6 +283,8 @@ class MainActivity :
 
     external fun nativeIsHostSelectingPlayers(): Boolean
 
+    external fun nativeStartSelectedPlayers()
+
     external fun nativeIsLevelCompleteActive(): Boolean
 
     /** Returns the callsign of a player requesting to join, or "" if none. */
@@ -1026,7 +1028,12 @@ class MainActivity :
         // "START GAME" button for host player selection screen (hidden by default)
         startGameButton =
             StartGameButtonView(this).apply {
-                keyCallback = { action, keyCode, unicode -> nativeKeyEvent(action, keyCode, unicode) }
+                startCallback = {
+                    try {
+                        nativeStartSelectedPlayers()
+                    } catch (_: Exception) {
+                    }
+                }
                 visibility = View.GONE
             }
 
