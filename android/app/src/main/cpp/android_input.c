@@ -118,7 +118,9 @@ static int g_touch_active = 0; /* is a finger currently down? */
 static int g_input_count = 0;  /* debug counter */
 static int g_intro_skip_touch_pressed = 0;
 static int g_touch_down_suppressed = 0;
-static unsigned short g_suppressed_joy_buttons = 0;
+static unsigned char g_joy_buttons_down[256];
+static unsigned char g_suppressed_joy_buttons[256];
+static int g_cutscene_release_gate = 0;
 static volatile fix64 g_cutscene_tap_suppress_until = 0;
 volatile int g_cutscene_tap_suppress_arms = 0;
 volatile int g_cutscene_tap_suppress_hits = 0;
@@ -135,6 +137,8 @@ Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
                                                   jint unicodeChar);
 static void inject_key_tap(SDLKey sym);
 static int android_cutscene_tap_suppressed(void);
+static int android_any_joy_button_down(void);
+static void android_update_cutscene_release_gate(void);
 
 static int g_levelcomplete_touch_state = 0;
 
@@ -201,16 +205,40 @@ static void android_persist_skip_intro_pref(JNIEnv *env, jobject thiz)
 
 static int android_cutscene_tap_suppressed(void)
 {
-	return g_cutscene_tap_suppress_until && timer_query() < g_cutscene_tap_suppress_until;
+	android_update_cutscene_release_gate();
+	return g_cutscene_release_gate ||
+	       (g_cutscene_tap_suppress_until && timer_query() < g_cutscene_tap_suppress_until);
+}
+
+static int android_any_joy_button_down(void)
+{
+	int i;
+	for (i = 0; i < (int) sizeof(g_joy_buttons_down); i++)
+		if (g_joy_buttons_down[i])
+			return 1;
+	return 0;
+}
+
+static void android_update_cutscene_release_gate(void)
+{
+	if (!g_cutscene_release_gate)
+		return;
+	if (g_touch_active || android_any_joy_button_down())
+		return;
+	g_cutscene_release_gate = 0;
+	debug_log(DLOG_GAME, "[cutscene-input] release gate cleared\n");
 }
 
 void android_arm_cutscene_tap_suppress(void)
 {
 	g_cutscene_tap_suppress_until = timer_query() + CUTSCENE_TAP_SUPPRESS_WINDOW;
+	g_cutscene_release_gate = g_touch_active || android_any_joy_button_down();
 	g_touch_down_suppressed = 0;
-	g_suppressed_joy_buttons = 0;
+	memset(g_suppressed_joy_buttons, 0, sizeof(g_suppressed_joy_buttons));
 	g_cutscene_tap_suppress_arms++;
 	g_cutscene_tap_suppress_hits = 0;
+	debug_log(DLOG_GAME, "[cutscene-input] armed gate=%d touch=%d joy_down=%d\n",
+	          g_cutscene_release_gate, g_touch_active, android_any_joy_button_down());
 }
 
 int android_cutscene_tap_suppress_active(void)
@@ -262,6 +290,7 @@ static void android_push_touch_action(int action, int gameX, int gameY)
 			if (android_cutscene_tap_suppressed()) {
 				g_last_touch_x = gameX;
 				g_last_touch_y = gameY;
+				g_touch_active = 1;
 				g_touch_down_suppressed = 1;
 				g_cutscene_tap_suppress_hits++;
 				return;
@@ -316,10 +345,13 @@ static void android_push_touch_action(int action, int gameX, int gameY)
 		case 2: /* ACTION_UP */
 			if (g_touch_down_suppressed) {
 				g_touch_down_suppressed = 0;
+				g_touch_active = 0;
+				android_update_cutscene_release_gate();
 				return;
 			}
 
 			g_touch_active = 0;
+			android_update_cutscene_release_gate();
 
 			ev.type = SDL_MOUSEBUTTONUP;
 			ev.button.button = SDL_BUTTON_LEFT;
@@ -420,6 +452,19 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 	if (gameY >= screenH) gameY = screenH - 1;
 
 	remap_touch(&gameX, &gameY);
+	if (g_menu_scale_active && (action == 0 || action == 2)) {
+		static int touch_menu_diag_count;
+		if (touch_menu_diag_count < 80) {
+			touch_menu_diag_count++;
+			debug_log(DLOG_GAME,
+			          "[touch-menu] action=%d norm=(%.4f,%.4f) game=(%d,%d) screen=%dx%d scale src=(%d,%d %dx%d) dst=(%d,%d %dx%d) blit_y=%d\n",
+			          action, normX, normY, gameX, gameY, screenW, screenH,
+			          g_menu_scale_src_x, g_menu_scale_src_y,
+			          g_menu_scale_src_w, g_menu_scale_src_h,
+			          g_menu_scale_dst_x, g_menu_scale_dst_y,
+			          g_menu_scale_dst_w, g_menu_scale_dst_h, g_blit_y_offset);
+		}
+	}
 
 	android_push_touch_action(action, gameX, gameY);
 }
@@ -1122,18 +1167,24 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickButton(JNIEnv *env, jobject thi
                                                         jint button, jint pressed)
 {
 	SDL_Event ev;
-	const unsigned short button_mask = (button >= 0 && button < 16) ? (unsigned short) (1u << button) : 0;
+	const int button_index = (button >= 0 && button < (jint) sizeof(g_joy_buttons_down)) ? button : -1;
 	memset(&ev, 0, sizeof(ev));
 
-	if (button_mask) {
+	if (button_index >= 0) {
 		if (pressed) {
+			g_joy_buttons_down[button_index] = 1;
 			if (android_cutscene_tap_suppressed()) {
-				g_suppressed_joy_buttons |= button_mask;
+				g_suppressed_joy_buttons[button_index] = 1;
+				g_cutscene_tap_suppress_hits++;
 				return;
 			}
-		} else if (g_suppressed_joy_buttons & button_mask) {
-			g_suppressed_joy_buttons &= (unsigned short) ~button_mask;
-			return;
+		} else {
+			g_joy_buttons_down[button_index] = 0;
+			android_update_cutscene_release_gate();
+			if (g_suppressed_joy_buttons[button_index]) {
+				g_suppressed_joy_buttons[button_index] = 0;
+				return;
+			}
 		}
 	}
 
