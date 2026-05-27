@@ -44,6 +44,14 @@ try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -Error
 
 $found = $false
 
+function Get-LogcatLines {
+    param([string]$Serial, [string[]]$Tags)
+
+    $raw = Adb-Dev-Timeout -Serial $Serial -AdbArgs (@("logcat", "-d", "-s") + $Tags) -Seconds 5
+    if (-not $raw) { return @() }
+    return @($raw -split "`r?`n" | Where-Object { $_ })
+}
+
 try {
     Write-Status "=== LAN Lobby Discovery Test ===" "White"
 
@@ -58,12 +66,11 @@ try {
 
     # Force-stop and restart apps
     foreach ($emu in @($EMU1, $EMU2)) {
-        Adb-Dev -Serial $emu -AdbArgs @("shell", "am", "force-stop", $PACKAGE) | Out-Null
-        Start-Sleep 1
-        Adb-Dev -Serial $emu -AdbArgs @("logcat", "-c") | Out-Null
-        Adb-Dev -Serial $emu -AdbArgs @("shell", "am", "start", "-n", "$PACKAGE/$ACTIVITY") | Out-Null
+        if (-not (Start-SetupActivity -Serial $emu)) {
+            Write-Status "FAIL: SetupActivity did not become ready on $emu" "Red"
+            exit 1
+        }
     }
-    Start-Sleep 6
 
     # Check wlan0 IPs
     $emu1Ip = (Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "ip", "addr", "show", "wlan0") -Seconds 5 |
@@ -86,6 +93,24 @@ try {
         "--ei", "max_players", "4"
     )
 
+    $hostReady = Wait-ForCondition -Description "LAN lobby host" -TimeoutSec 15 -PollMs 1000 -Condition {
+        Send-MpCommand -Serial $EMU1 -Command "lan_discover_status"
+        Start-Sleep -Milliseconds 300
+        $hostLines = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*")
+        $hostStatus = $hostLines | Where-Object { $_ -match 'lan_discover_status:' } | Select-Object -Last 1
+        if ($hostStatus) {
+            Write-Status "  [host] $hostStatus" "Gray"
+            return ($hostStatus -match 'hosting=true')
+        }
+        return $false
+    }
+    if (-not $hostReady) {
+        Write-Status "FAIL: LAN lobby host did not start on $EMU1" "Red"
+        Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*", "LobbyService:*") |
+            Select-Object -Last 30 | ForEach-Object { Write-Status "  $_" "Gray" }
+        exit 1
+    }
+
     # Start discovery on EMU2
     Write-Status "Starting LAN discovery on $EMU2..."
     Send-MpCommand -Serial $EMU2 -Command "lan_discover" -Extras @(
@@ -100,7 +125,7 @@ try {
         $pollN++
         Send-MpCommand -Serial $EMU2 -Command "lan_discover_status"
         Start-Sleep 1
-        $lines = Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @("logcat", "-d", "-s", "DXX-MP:*") -Seconds 5
+        $lines = Get-LogcatLines -Serial $EMU2 -Tags @("DXX-MP:*")
         $statusLine = $lines | Where-Object { $_ -match 'lan_discover_status:' } | Select-Object -Last 1
         if ($statusLine) {
             Write-Status "  [poll $pollN] $statusLine" "Gray"
@@ -119,11 +144,14 @@ try {
     } else {
         Write-Status ""
         Write-Status "=== LAN LOBBY DISCOVERY TEST FAILED ===" "Red"
+        Write-Status "EMU1 DXX-MP logs:" "Gray"
+        Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
+            Select-Object -Last 20 | ForEach-Object { Write-Status "  $_" "Gray" }
         Write-Status "EMU1 LobbyService logs:" "Gray"
-        Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("logcat", "-d", "-s", "LobbyService:*") -Seconds 5 |
+        Get-LogcatLines -Serial $EMU1 -Tags @("LobbyService:*") |
             Select-Object -Last 10 | ForEach-Object { Write-Status "  $_" "Gray" }
         Write-Status "EMU2 LobbyService logs:" "Gray"
-        Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @("logcat", "-d", "-s", "LobbyService:*") -Seconds 5 |
+        Get-LogcatLines -Serial $EMU2 -Tags @("LobbyService:*") |
             Select-Object -Last 10 | ForEach-Object { Write-Status "  $_" "Gray" }
         exit 1
     }

@@ -119,10 +119,46 @@ internal fun launchDataReadyForGame(
     manifest: AssetManifest,
     safManifest: SafManifest,
 ): Boolean {
+    if (game == "d1" && isD1TestFlightSet(setDir, manifest, safManifest)) return false
     val fileList = if (game == "d1") D1_FILES else detectD2FileList(setDir, safManifest)
     return checkFiles(setDir, fileList, manifest, safManifest)
         .filter { it.info.required }
         .all { it.found }
+}
+
+// Duplicates known_versions.json5 so readiness can reject this old demo before native launch.
+private const val D1_TEST_FLIGHT_HOG_SHA256 =
+    "40c5754bb1e4cc0b0e176d50154568cb754d689df434511e0d8bdc1053f4de4a"
+private const val D1_TEST_FLIGHT_PIG_SHA256 =
+    "4a7b57482030ca18aa50accfaee6ee20ff24c077fb1b5adcffcf2fbb8dc91c21"
+private const val D1_TEST_FLIGHT_HOG_SIZE = 1626232L
+private const val D1_TEST_FLIGHT_PIG_SIZE = 28518L
+
+internal fun isD1TestFlightSet(
+    setDir: File,
+    manifest: AssetManifest,
+    safManifest: SafManifest,
+): Boolean {
+    val hogEntry = manifest.getEntry("descent.hog")
+    val pigEntry = manifest.getEntry("descent.pig")
+    if (hogEntry?.sha256 == D1_TEST_FLIGHT_HOG_SHA256 &&
+        pigEntry?.sha256 == D1_TEST_FLIGHT_PIG_SHA256
+    ) {
+        return true
+    }
+
+    val safEntries = safManifest.read()
+    return fileSizeForLaunchCheck(setDir, safEntries, "descent.hog") == D1_TEST_FLIGHT_HOG_SIZE &&
+        fileSizeForLaunchCheck(setDir, safEntries, "descent.pig") == D1_TEST_FLIGHT_PIG_SIZE
+}
+
+private fun fileSizeForLaunchCheck(
+    setDir: File,
+    safEntries: List<SafManifest.SafFileEntry>,
+    filename: String,
+): Long? {
+    findFile(setDir, filename)?.let { return File(setDir, it).length() }
+    return safEntries.firstOrNull { it.filename.equals(filename, ignoreCase = true) }?.sizeBytes
 }
 
 internal fun checkFiles(

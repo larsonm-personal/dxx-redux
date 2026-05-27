@@ -47,6 +47,10 @@ param(
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\..\test_helpers.ps1"
 
+if (-not $env:ANDROID_SERIAL) {
+    $env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL
+}
+
 $SCRIPT_NAME = 'test_gog_installer_redbook_unified.json5'
 
 $installerVariants = @{

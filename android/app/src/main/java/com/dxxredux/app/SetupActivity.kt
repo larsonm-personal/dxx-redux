@@ -1925,8 +1925,14 @@ private fun SetupScreen(
     var hashingProgress by remember { mutableFloatStateOf(0f) }
     val isHashing = hashingFile != null
 
-    val d2RequiredOk = d2Statuses.filter { it.info.required }.all { it.found }
-    val d1RequiredOk = d1Statuses.filter { it.info.required }.all { it.found }
+    val d2RequiredOk =
+        remember(refreshTrigger, activeSetName) {
+            launchDataReadyForGame("d2", setDir, manifest, safManifest)
+        }
+    val d1RequiredOk =
+        remember(refreshTrigger, activeSetName) {
+            launchDataReadyForGame("d1", setDir, manifest, safManifest)
+        }
     val canLaunch = d2RequiredOk || d1RequiredOk
 
     val context = androidx.compose.ui.platform.LocalContext.current

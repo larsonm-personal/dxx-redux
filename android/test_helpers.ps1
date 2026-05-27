@@ -382,17 +382,26 @@ function Install-AppAndData {
         Write-Status "  Installing APK on $Serial..."
         Adb-Dev-Timeout -Serial $Serial -AdbArgs @("install", "-r", $apk) -Seconds 180 | Out-Null
     }
-    # Set ANDROID_SERIAL so Adb/Adb-Timeout target the right device
-    $prevSerial = $env:ANDROID_SERIAL
-    $env:ANDROID_SERIAL = $Serial
-    Write-Status "  Pushing game data to $Serial..."
-    $deps = Get-StandardGameDataDeps
-    $ok = Resolve-GameDataDeps -Deps $deps
+    $ok = Ensure-StandardGameDataOnDevice -Serial $Serial
     if (-not $ok) {
         Write-Status "  WARN: Could not push game data to $Serial" "Yellow"
     }
-    if ($prevSerial) { $env:ANDROID_SERIAL = $prevSerial }
-    else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
+    return $ok
+}
+
+function Ensure-StandardGameDataOnDevice {
+    param([Parameter(Mandatory)][string]$Serial)
+
+    # Set ANDROID_SERIAL so Adb/Adb-Timeout target the right device
+    $prevSerial = $env:ANDROID_SERIAL
+    $env:ANDROID_SERIAL = $Serial
+    try {
+        Write-Status "  Ensuring standard game data on $Serial..."
+        return (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))
+    } finally {
+        if ($prevSerial) { $env:ANDROID_SERIAL = $prevSerial }
+        else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
+    }
 }
 
 function Start-EmulatorIfNeeded {
@@ -408,38 +417,10 @@ function Start-EmulatorIfNeeded {
     }
     $avd = $AvdMap[$Serial]
     if (-not $avd) { Write-Status "FAIL: Unknown AVD for $Serial" "Red"; exit 1 }
-    $emulatorExe = Resolve-RegressionAndroidSdkTool -DepBase $script:DEP_BASE -Subdir "emulator" -ToolName "emulator"
-    Write-Status "  Starting $avd ($Serial)..." "Yellow"
-    $startArgs = @{
-        FilePath = $emulatorExe
-        ArgumentList = @("-avd", $avd, "-no-snapshot-save", "-gpu", "host")
+    if (-not (Start-ManagedEmulator -AvdName $avd -Serial $Serial -AppearTimeoutSeconds 90 -BootTimeoutSeconds 240)) {
+        exit 1
     }
-    if (-not (Test-RegressionWindowsHost)) {
-        $logDir = Join-RegressionPath $script:REPO_ROOT "temp"
-        New-Item -ItemType Directory -Force -Path $logDir | Out-Null
-        $startArgs.RedirectStandardOutput = Join-Path $logDir "emulator_${avd}.out.log"
-        $startArgs.RedirectStandardError = Join-Path $logDir "emulator_${avd}.err.log"
-    }
-    Start-Process @startArgs
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt 60 -and -not (Test-DeviceOnline -Serial $Serial)) {
-        Start-Sleep -Seconds 1
-    }
-    if (-not (Test-DeviceOnline -Serial $Serial)) {
-        Write-Status "FAIL: $Serial did not appear in adb after 60s" "Red"; exit 1
-    }
-    Write-Status "  Waiting for $Serial to boot..."
-    $sw2 = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw2.Elapsed.TotalSeconds -lt 240) {
-        $r = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
-        if ($r -and $r.Trim() -eq "1") {
-            Write-Status "  $Serial booted" "Green"
-            Install-AppAndData -Serial $Serial
-            return
-        }
-        Start-Sleep -Seconds 1
-    }
-    Write-Status "FAIL: $Serial did not boot within 240s" "Red"; exit 1
+    Install-AppAndData -Serial $Serial | Out-Null
 }
 
 function Reset-GameState {
@@ -1387,6 +1368,103 @@ function Get-SetupIntrospection {
 
 $script:EMULATOR_EXE = Resolve-RegressionAndroidSdkTool -DepBase $script:DEP_BASE -Subdir "emulator" -ToolName "emulator"
 
+function Get-ManagedEmulatorLaunchLogPaths {
+    param([string]$AvdName)
+
+    $logDir = Join-RegressionPath $script:REPO_ROOT "temp"
+    New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+    $safeAvdName = $AvdName -replace '[^A-Za-z0-9_.-]', '_'
+    return @{
+        Stdout = Join-Path $logDir "emulator_${safeAvdName}.out.log"
+        Stderr = Join-Path $logDir "emulator_${safeAvdName}.err.log"
+    }
+}
+
+function Write-ManagedEmulatorLogTail {
+    param([string]$AvdName)
+
+    $logs = Get-ManagedEmulatorLaunchLogPaths -AvdName $AvdName
+    foreach ($entry in @(
+            @{ Label = "stderr"; Path = $logs.Stderr },
+            @{ Label = "stdout"; Path = $logs.Stdout }
+        )) {
+        if (-not (Test-Path -LiteralPath $entry.Path)) {
+            continue
+        }
+
+        $content = @(Get-Content -LiteralPath $entry.Path -Tail 20 -ErrorAction SilentlyContinue)
+        if ($content.Count -eq 0) {
+            continue
+        }
+
+        Write-Status "  Emulator $($entry.Label) tail ($($entry.Path))" "DarkGray"
+        foreach ($line in $content) {
+            Write-Status "    $line" "DarkGray"
+        }
+    }
+}
+
+function Start-ManagedEmulatorProcess {
+    param(
+        [Parameter(Mandatory)][string]$AvdName,
+        [string]$GpuRenderer = "host",
+        [switch]$Headless
+    )
+
+    $logs = Get-ManagedEmulatorLaunchLogPaths -AvdName $AvdName
+    Remove-Item -LiteralPath $logs.Stdout, $logs.Stderr -ErrorAction SilentlyContinue
+    $arguments = @("-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", $GpuRenderer, "-crash-report-mode", "disabled")
+    if ($Headless) {
+        $arguments += "-no-window"
+    }
+
+    $startArgs = @{
+        FilePath = $script:EMULATOR_EXE
+        ArgumentList = $arguments
+        RedirectStandardOutput = $logs.Stdout
+        RedirectStandardError = $logs.Stderr
+    }
+    if ((Test-RegressionWindowsHost) -and -not $Headless) {
+        $startArgs.WindowStyle = "Minimized"
+    }
+
+    try {
+        Start-Process @startArgs
+        return $true
+    } catch {
+        Write-Status "FAIL: could not start ${AvdName}: $_" "Red"
+        return $false
+    }
+}
+
+function Invoke-StaleEmulatorCleanupHelper {
+    $cleanupScript = Join-Path $PSScriptRoot "kill-stale-emulators.ps1"
+    if (-not (Test-Path -LiteralPath $cleanupScript)) {
+        return
+    }
+
+    & $cleanupScript -Kill | ForEach-Object { Write-Status "  $_" "DarkGray" }
+}
+
+function Test-EmulatorAccelerationAvailable {
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $output = (& $script:EMULATOR_EXE -accel-check 2>&1) | Out-String
+    $exitCode = $LASTEXITCODE
+    $ErrorActionPreference = $previousErrorActionPreference
+
+    if ($exitCode -eq 0) {
+        return $true
+    }
+
+    Write-Status "FAIL: Android emulator CPU acceleration is unavailable" "Red"
+    foreach ($line in ($output -split "`n" | Where-Object { $_.Trim() })) {
+        Write-Status "  $($line.TrimEnd())" "Red"
+    }
+    Write-Status "Install or enable Windows Hypervisor Platform or Android Emulator Hypervisor Driver, then rerun" "Yellow"
+    return $false
+}
+
 function Wait-EmulatorBootComplete {
     param(
         [Parameter(Mandatory)][string]$Serial,
@@ -1420,43 +1498,50 @@ function Start-ManagedEmulator {
         Write-Status "FAIL: emulator not found at $script:EMULATOR_EXE" "Red"
         return $false
     }
-
-    Write-Status "  Starting $AvdName ($Serial)..." "Yellow"
-    $startArgs = @{
-        FilePath = $script:EMULATOR_EXE
-        ArgumentList = @("-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", "host", "-crash-report-mode", "disabled")
+    if (-not (Test-EmulatorAccelerationAvailable)) {
+        return $false
     }
-    if (Test-RegressionWindowsHost) {
-        $startArgs.WindowStyle = "Minimized"
-    } else {
-        $logDir = Join-RegressionPath $script:REPO_ROOT "temp"
-        New-Item -ItemType Directory -Force -Path $logDir | Out-Null
-        $startArgs.RedirectStandardOutput = Join-Path $logDir "emulator_${AvdName}.out.log"
-        $startArgs.RedirectStandardError = Join-Path $logDir "emulator_${AvdName}.err.log"
-    }
-    Start-Process @startArgs
 
-    $appearStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($appearStopwatch.Elapsed.TotalSeconds -lt $AppearTimeoutSeconds) {
-        if (Test-DeviceOnline -Serial $Serial) {
-            break
+    $launches = @(
+        @{ GpuRenderer = "host"; Headless = $false; Label = "host gpu" },
+        @{ GpuRenderer = "swiftshader_indirect"; Headless = $true; Label = "swiftshader_indirect no-window" }
+    )
+
+    foreach ($launch in $launches) {
+        Write-Status "  Starting $AvdName ($Serial, $($launch.Label))..." "Yellow"
+        if (-not (Start-ManagedEmulatorProcess -AvdName $AvdName -GpuRenderer $launch.GpuRenderer -Headless:$launch.Headless)) {
+            Write-ManagedEmulatorLogTail -AvdName $AvdName
+            continue
         }
-        Start-Sleep -Seconds 1
+
+        $appearStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        while ($appearStopwatch.Elapsed.TotalSeconds -lt $AppearTimeoutSeconds) {
+            if (Test-DeviceOnline -Serial $Serial) {
+                break
+            }
+            Start-Sleep -Seconds 1
+        }
+
+        if (-not (Test-DeviceOnline -Serial $Serial)) {
+            Write-Status "  $Serial did not appear in adb after ${AppearTimeoutSeconds}s" "Yellow"
+            Write-ManagedEmulatorLogTail -AvdName $AvdName
+            Invoke-StaleEmulatorCleanupHelper
+            continue
+        }
+
+        Write-Status "  Waiting for $Serial to boot..."
+        if (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $BootTimeoutSeconds) {
+            Write-Status "  $Serial booted" "Green"
+            return $true
+        }
+
+        Write-Status "  $Serial did not boot within ${BootTimeoutSeconds}s" "Yellow"
+        Write-ManagedEmulatorLogTail -AvdName $AvdName
+        Invoke-StaleEmulatorCleanupHelper
     }
 
-    if (-not (Test-DeviceOnline -Serial $Serial)) {
-        Write-Status "FAIL: $Serial did not appear in adb after ${AppearTimeoutSeconds}s" "Red"
-        return $false
-    }
-
-    Write-Status "  Waiting for $Serial to boot..."
-    if (-not (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $BootTimeoutSeconds)) {
-        Write-Status "FAIL: $Serial did not boot within ${BootTimeoutSeconds}s" "Red"
-        return $false
-    }
-
-    Write-Status "  $Serial booted" "Green"
-    return $true
+    Write-Status "FAIL: $Serial did not start from $AvdName" "Red"
+    return $false
 }
 
 function Start-SingleEmulator {

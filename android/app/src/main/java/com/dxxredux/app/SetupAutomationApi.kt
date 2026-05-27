@@ -686,8 +686,8 @@ internal fun SetupActivity.writeIntrospectJson() {
         val d2FileList = detectD2FileList(setDir, safManifest)
         val d2Statuses = checkFiles(setDir, d2FileList, manifest, safManifest)
         val d1Statuses = checkFiles(setDir, D1_FILES, manifest, safManifest)
-        val d2Ready = d2Statuses.filter { it.info.required }.all { it.found }
-        val d1Ready = d1Statuses.filter { it.info.required }.all { it.found }
+        val d2Ready = launchDataReadyForGame("d2", setDir, manifest, safManifest)
+        val d1Ready = launchDataReadyForGame("d1", setDir, manifest, safManifest)
 
         val root = JSONObject()
         root.put("screen", "setup")

@@ -384,6 +384,22 @@ function Restart-AdbServer {
     Start-Sleep -Seconds 2
 }
 
+function Invoke-AutomaticStaleEmulatorCleanup {
+    $cleanupScript = Join-Path $scriptDir "kill-stale-emulators.ps1"
+    if (-not (Test-Path -LiteralPath $cleanupScript)) {
+        return
+    }
+
+    Write-Status "Checking for stale emulator background state..." "DarkGray"
+    & $cleanupScript -Kill
+    $cleanupExit = $LASTEXITCODE
+    if ($cleanupExit -eq 2) {
+        Write-Status "Stale emulator state was cleaned before preflight" "Yellow"
+    } elseif ($cleanupExit -ne 0) {
+        Write-Status "Stale emulator cleanup did not complete cleanly (exit $cleanupExit), continuing with normal recovery" "Yellow"
+    }
+}
+
 function Get-OnlineEmulatorSerials {
     $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
     if (-not $devices) {
@@ -422,6 +438,7 @@ function Recover-SingleEmulatorEnvironment {
     param([ref]$SerialRef)
 
     Write-Status "Single-emulator recovery: restarting primary emulator and reprovisioning app/data" "Yellow"
+    Invoke-AutomaticStaleEmulatorCleanup
     Restart-AdbServer
 
     $healthScript = Join-Path $scriptDir "emu_health.ps1"
@@ -451,6 +468,7 @@ function Recover-DualEmulatorEnvironment {
     )
 
     Write-Status "Dual-emulator recovery: forcing clean emulator recycle and reprovisioning app/data" "Yellow"
+    Invoke-AutomaticStaleEmulatorCleanup
     Restart-AdbServer
 
     if ($script:autoServerProc -and -not $script:autoServerProc.HasExited) {
@@ -660,6 +678,11 @@ function Invoke-SuitePreflight {
     }
 
     if ($needsPrimaryEmulator) {
+        if (-not (Test-EmulatorAccelerationAvailable)) {
+            Write-Host "FAIL: Suite preflight cannot start an emulator without CPU acceleration" -ForegroundColor Red
+            return $false
+        }
+        Invoke-AutomaticStaleEmulatorCleanup
         Restart-AdbServer
         $preflightEmu1 = Invoke-PrimaryEmulatorPreflight -RequireStandardGameData:$needsStandardGameData
         if (-not $preflightEmu1) {
@@ -729,6 +752,11 @@ if (-not (Test-HostToolPrerequisites)) {
 
 $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
 if ($needsApk) {
+    if (-not (Test-EmulatorAccelerationAvailable)) {
+        Write-Host "FAIL: Selected tests require Android emulator CPU acceleration" -ForegroundColor Red
+        exit 1
+    }
+
     Write-Host "== Building debug APK ==" -ForegroundColor Cyan
     $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $scriptDir
     Push-Location $scriptDir

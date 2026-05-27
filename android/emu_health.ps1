@@ -33,6 +33,8 @@ $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
 . (Join-Path $PSScriptRoot "test_host_platform.ps1")
 $ADB = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb"
 $EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulator" -ToolName "emulator"
+$script:LastEmulatorLaunch = $null
+$script:LastEmulatorHealthReason = ""
 
 function Get-OnlineEmulatorSerials {
     $devices = (& $ADB devices 2>&1) | Out-String
@@ -47,13 +49,100 @@ function Get-OnlineEmulatorSerials {
     )
 }
 
+function Get-EmulatorProcessRecords {
+    param([switch]$IncludeCrashHandlers)
+
+    if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
+        $namePattern = if ($IncludeCrashHandlers) {
+            '^(emulator|qemu-system.*|crashpad_handler)\.exe$'
+        } else {
+            '^(emulator|qemu-system.*)\.exe$'
+        }
+
+        return @(
+            Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+                Where-Object {
+                    ($_.Name -match $namePattern) -and
+                    (
+                        $_.CommandLine -match '\s-avd\s' -or
+                        $_.CommandLine -match 'qemu-system' -or
+                        ($IncludeCrashHandlers -and $_.CommandLine -match 'AndroidEmulator|android-sdk|[\\/]emulator[\\/]')
+                    )
+                } |
+                Select-Object ProcessId, Name, CommandLine
+        )
+    }
+
+    return @(
+        Get-Process -ErrorAction SilentlyContinue |
+            Where-Object { $_.ProcessName -match 'emulator|qemu-system' } |
+            Select-Object @{ Name = 'ProcessId'; Expression = { $_.Id } }, @{ Name = 'Name'; Expression = { $_.ProcessName } }
+    )
+}
+
+function Get-EmulatorLaunchLogPaths {
+    param([string]$LaunchAvdName)
+
+    $logDir = Join-Path (Split-Path $PSScriptRoot) "temp"
+    New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+    $safeAvdName = $LaunchAvdName -replace '[^A-Za-z0-9_.-]', '_'
+    return @{
+        Stdout = Join-Path $logDir "emulator_${safeAvdName}.out.log"
+        Stderr = Join-Path $logDir "emulator_${safeAvdName}.err.log"
+    }
+}
+
+function Write-EmulatorLaunchLogTail {
+    if (-not $script:LastEmulatorLaunch) {
+        return
+    }
+
+    foreach ($entry in @(
+            @{ Label = "stderr"; Path = $script:LastEmulatorLaunch.Stderr },
+            @{ Label = "stdout"; Path = $script:LastEmulatorLaunch.Stdout }
+        )) {
+        if (-not (Test-Path -LiteralPath $entry.Path)) {
+            continue
+        }
+
+        $content = @(Get-Content -LiteralPath $entry.Path -Tail 25 -ErrorAction SilentlyContinue)
+        if ($content.Count -eq 0) {
+            continue
+        }
+
+        Write-Host "Emulator $($entry.Label) tail ($($entry.Path))"
+        foreach ($line in $content) {
+            Write-Host "  $line"
+        }
+    }
+}
+
+function Test-EmulatorAccelerationAvailable {
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $output = (& $EMULATOR -accel-check 2>&1) | Out-String
+    $exitCode = $LASTEXITCODE
+    $ErrorActionPreference = $previousErrorActionPreference
+
+    if ($exitCode -eq 0) {
+        return $true
+    }
+
+    Write-Host "ERROR: Android emulator CPU acceleration is unavailable"
+    foreach ($line in ($output -split "`n" | Where-Object { $_.Trim() })) {
+        Write-Host "  $($line.TrimEnd())"
+    }
+    Write-Host "Install or enable Windows Hypervisor Platform or Android Emulator Hypervisor Driver, then rerun"
+    return $false
+}
+
 function Test-EmulatorHealth {
     param([string]$PreferredSerial)
 
     # Step 0: Check if emulator process is actually running
     # This catches the common crash mode where the emulator process dies
     # but adb still shows a stale "device" entry.
-    $emuProc = Get-Process | Where-Object { $_.ProcessName -match 'qemu-system|emulator' -and $_.Path -like "*android*" }
+    $emuProc = @(Get-EmulatorProcessRecords)
     if (-not $emuProc) {
         return @{ Healthy = $false; Reason = "emulator process not running (crashed)" }
     }
@@ -149,8 +238,10 @@ function Stop-Emulator {
     }
     Start-Sleep -Seconds 1
     # Force-kill emulator processes
-    Get-Process | Where-Object { $_.ProcessName -match 'qemu-system|emulator' -and $_.Path -like "*android*" } |
-        Stop-Process -Force -ErrorAction SilentlyContinue
+    $emuProcs = @(Get-EmulatorProcessRecords -IncludeCrashHandlers)
+    foreach ($proc in $emuProcs) {
+        Stop-Process -Id $proc.ProcessId -Force -ErrorAction SilentlyContinue
+    }
     Start-Sleep -Seconds 1
     # Kill adb server to clear stale device entries
     try { & $ADB kill-server 2>&1 | Out-Null } catch {}
@@ -158,39 +249,112 @@ function Stop-Emulator {
 }
 
 function Start-EmulatorFresh {
-    Write-Host "Starting emulator ($AvdName)..."
+    param(
+        [string]$Renderer = $GpuRenderer,
+        [switch]$Headless
+    )
+
+    $headlessText = if ($Headless) { ", no-window" } else { "" }
+    Write-Host "Starting emulator ($AvdName, gpu=$Renderer$headlessText)..."
+    $logs = Get-EmulatorLaunchLogPaths -LaunchAvdName $AvdName
+    Remove-Item -LiteralPath $logs.Stdout, $logs.Stderr -ErrorAction SilentlyContinue
+
+    $arguments = @("-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", $Renderer, "-crash-report-mode", "disabled")
+    if ($Headless) {
+        $arguments += "-no-window"
+    }
+
     $startArgs = @{
         FilePath = $EMULATOR
-        ArgumentList = @("-avd", $AvdName, "-no-snapshot-load", "-no-snapshot-save", "-gpu", $GpuRenderer, "-crash-report-mode", "disabled")
+        ArgumentList = $arguments
+        RedirectStandardOutput = $logs.Stdout
+        RedirectStandardError = $logs.Stderr
     }
-    if (Test-RegressionWindowsHost) {
+    if ((Test-RegressionWindowsHost) -and -not $Headless) {
         $startArgs.WindowStyle = "Minimized"
-    } else {
-        $logDir = Join-Path (Split-Path $PSScriptRoot) "temp"
-        New-Item -ItemType Directory -Force -Path $logDir | Out-Null
-        $startArgs.RedirectStandardOutput = Join-Path $logDir "emulator_${AvdName}.out.log"
-        $startArgs.RedirectStandardError = Join-Path $logDir "emulator_${AvdName}.err.log"
     }
-    Start-Process @startArgs
+
+    $script:LastEmulatorLaunch = @{
+        AvdName = $AvdName
+        Renderer = $Renderer
+        Headless = [bool]$Headless
+        Stdout = $logs.Stdout
+        Stderr = $logs.Stderr
+    }
+
+    try {
+        Start-Process @startArgs
+        return $true
+    } catch {
+        Write-Host "ERROR: Failed to start emulator process: $_"
+        return $false
+    }
 }
 
 function Wait-EmulatorHealthy {
     param(
         [int]$Timeout = 120,
-        [string]$PreferredSerial
+        [string]$PreferredSerial,
+        [switch]$FastFailOnCrash,
+        [int]$CrashGraceSeconds = 12
     )
 
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt $Timeout) {
         $status = Test-EmulatorHealth -PreferredSerial $PreferredSerial
+        $script:LastEmulatorHealthReason = $status.Reason
         if ($status.Healthy) {
             Write-Host "Emulator healthy after $([int]$sw.Elapsed.TotalSeconds)s"
             return $true
         }
         Write-Host "  waiting... ($($status.Reason))"
+        if ($FastFailOnCrash -and
+            $sw.Elapsed.TotalSeconds -ge $CrashGraceSeconds -and
+            $status.Reason -eq "emulator process not running (crashed)") {
+            Write-Host "ERROR: Emulator process exited during startup"
+            return $false
+        }
         Start-Sleep -Seconds 2
     }
     Write-Host "ERROR: Emulator not healthy after ${Timeout}s"
+    return $false
+}
+
+function Restart-EmulatorForHealth {
+    param(
+        [int]$Timeout = 120,
+        [switch]$WaitForHealth
+    )
+
+    if (-not (Test-EmulatorAccelerationAvailable)) {
+        return $false
+    }
+
+    Stop-Emulator
+    if (-not (Start-EmulatorFresh -Renderer $GpuRenderer)) {
+        return $false
+    }
+    if (-not $WaitForHealth) {
+        return $true
+    }
+
+    if (Wait-EmulatorHealthy -Timeout $Timeout -FastFailOnCrash) {
+        return $true
+    }
+
+    Write-Host "Primary emulator launch did not become healthy"
+    Write-EmulatorLaunchLogTail
+    Write-Host "Retrying emulator launch with swiftshader_indirect and no-window"
+    Stop-Emulator
+    if (-not (Start-EmulatorFresh -Renderer "swiftshader_indirect" -Headless)) {
+        return $false
+    }
+
+    if (Wait-EmulatorHealthy -Timeout $Timeout) {
+        return $true
+    }
+
+    Write-EmulatorLaunchLogTail
     return $false
 }
 
@@ -199,19 +363,21 @@ $status = Test-EmulatorHealth
 Write-Host "Emulator status: $($status.Reason)"
 
 if ($Restart -and $ForceRestart) {
-    Stop-Emulator
-    Start-EmulatorFresh
+    $started = Restart-EmulatorForHealth -Timeout $TimeoutSeconds -WaitForHealth:$Wait
     if ($Wait) {
-        $ok = Wait-EmulatorHealthy -Timeout $TimeoutSeconds
-        if ($ok) {
+        if ($started) {
             Write-Host "FORCE_RESTARTED_AND_HEALTHY"
             exit 2
         }
         Write-Host "FORCE_RESTART_FAILED"
         exit 1
     }
-    Write-Host "FORCE_RESTARTED"
-    exit 2
+    if ($started) {
+        Write-Host "FORCE_RESTARTED"
+        exit 2
+    }
+    Write-Host "FORCE_RESTART_FAILED"
+    exit 1
 }
 
 if ($status.Healthy) {
@@ -226,11 +392,9 @@ if ($status.Healthy) {
 
 # Unhealthy
 if ($Restart) {
-    Stop-Emulator
-    Start-EmulatorFresh
+    $started = Restart-EmulatorForHealth -Timeout $TimeoutSeconds -WaitForHealth:$Wait
     if ($Wait) {
-        $ok = Wait-EmulatorHealthy -Timeout $TimeoutSeconds
-        if ($ok) {
+        if ($started) {
             Write-Host "RESTARTED_AND_HEALTHY"
             exit 2
         } else {
@@ -238,8 +402,12 @@ if ($Restart) {
             exit 1
         }
     } else {
-        Write-Host "RESTARTED"
-        exit 2
+        if ($started) {
+            Write-Host "RESTARTED"
+            exit 2
+        }
+        Write-Host "RESTART_FAILED"
+        exit 1
     }
 } elseif ($Wait) {
     $ok = Wait-EmulatorHealthy -Timeout $TimeoutSeconds

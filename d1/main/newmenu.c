@@ -1007,6 +1007,9 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 
 int newmenu_key_command(window *wind, d_event *event, newmenu *menu)
 {
+	if (!menu || !menu->items || menu->citem < 0 || menu->citem >= menu->nitems)
+		return 0;
+
 	newmenu_item *item = &menu->items[menu->citem];
 	int k = event_key_get(event);
 	int old_choice, i;
@@ -1014,6 +1017,7 @@ int newmenu_key_command(window *wind, d_event *event, newmenu *menu)
 	int changed = 0;
 	int rval = 1;
 
+#ifndef ANDROID
 	if (keyd_pressed[KEY_NUMLOCK])
 	{
 		switch( k )
@@ -1031,6 +1035,7 @@ int newmenu_key_command(window *wind, d_event *event, newmenu *menu)
 			case KEY_PADPERIOD: k = KEY_PERIOD; break;
 		}
 	}
+#endif
 
 	old_choice = menu->citem;
 
@@ -1569,8 +1574,11 @@ static void newmenu_draw_contents(newmenu *menu)
 {
 	int th = 0, ty, sx, sy;
 	int i;
-	int scroll_line_spacing = newmenu_get_scroll_line_spacing(menu);
+	int scroll_line_spacing;
 	int string_width, string_height, average_width;
+
+	gr_set_curfont(menu->tiny_mode?GAME_FONT:MEDIUM1_FONT);
+	scroll_line_spacing = newmenu_get_scroll_line_spacing(menu);
 
 	ty = BORDERY;
 
@@ -1758,11 +1766,7 @@ int newmenu_draw(window *wind, newmenu *menu)
 				// dragging over a text-input item would pop the keyboard, shift
 				// the blit offset, and cause selection oscillation.
 				if (!keyboard_shown && !menu->mouse_state) {
-					int numeric = 0;
-					const char *p = Newmenu_allowed_chars;
-					if (p && p[0] == '0' && p[1] == '9' && p[2] == '\0')
-						numeric = 1;
-					android_show_keyboard(numeric, visible_y);
+					android_show_keyboard(0, visible_y);
 				} else if (keyboard_shown && !current_item) {
 					android_hide_keyboard();
 				}

@@ -76,6 +76,7 @@ if ($SpecPath -and -not (Test-Path -LiteralPath $SpecPath -PathType Leaf)) {
 $PACKAGE = 'com.dxxredux.app'
 $ACTIVITY = 'com.dxxredux.app.SetupActivity'
 $TEST_SET = 'regression_test'
+$env:ANDROID_SERIAL = if ($env:ANDROID_SERIAL) { $env:ANDROID_SERIAL } else { 'emulator-5554' }
 $SETS_ROOT = 'files/imported/sets'
 $SETS_ROOT_ABS = "/data/data/$PACKAGE/$SETS_ROOT"
 
@@ -236,13 +237,31 @@ function Send-IntroSkipTap {
 }
 
 function Get-ExtractAutomationScriptText {
-    param([string]$MissionName, [string]$LevelName)
+    param([string]$MissionName, [string]$LevelName, [string]$Game, [string]$TestSet)
 
     $templatePath = Join-Path (Split-Path $PSScriptRoot) 'game_scripts\test_extract_regression_template.json5'
     $text = Get-Content -LiteralPath $templatePath -Raw
     $text = $text.Replace('"MISSION_NAME"', (ConvertTo-Json ([string]$MissionName) -Compress))
     $text = $text.Replace('"LEVEL_NAME"', (ConvertTo-Json ([string]$LevelName) -Compress))
-    return $text -replace "`r`n", "`n"
+    $body = ($text -replace "`r`n", "`n").Trim()
+    $start = $body.IndexOf('[')
+    $end = $body.LastIndexOf(']')
+    if ($start -ge 0 -and $end -gt $start) {
+        $body = $body.Substring($start + 1, $end - $start - 1).Trim()
+    }
+    $body = [regex]::Replace($body, '(?m)^\s*\{"action":\s*"skip_intro"[^\r\n]*(?:\r?\n)?', '')
+    $gameJson = ConvertTo-Json ([string]$Game) -Compress
+    $setJson = ConvertTo-Json ([string]$TestSet) -Compress
+    return @"
+[
+    {"_info": {"_standalone": false}},
+    {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "switch_set", "args": {"name": $setJson}, "post_delay_ms": 500},
+    {"action": "setup_command", "command": "write_bool_pref", "args": {"key": "skip_intro_movie", "value": true}, "post_delay_ms": 250},
+    {"action": "enter_game", "game": $gameJson},
+$body
+]
+"@ -replace "`r`n", "`n"
 }
 
 function Write-GameAutomationDiagnostics {
@@ -255,9 +274,9 @@ function Write-GameAutomationDiagnostics {
         }
     }
 
-    $autoLogcat = Adb -CmdArgs @('logcat', '-d', '-s', 'DXX-Automate:*')
+    $autoLogcat = Adb -CmdArgs @('logcat', '-d', '-s', 'DXX-Automate:*', 'DXX-LauncherScript:*', 'DXX-Setup:*')
     if ($autoLogcat) {
-        Write-Status '--- logcat DXX-Automate (last 20 lines) ---' 'Yellow'
+        Write-Status '--- automation logcat (last 20 lines) ---' 'Yellow'
         $logcatLines = $autoLogcat -split "`r?`n" | Where-Object { $_ }
         foreach ($line in ($logcatLines | Select-Object -Last 20)) {
             Write-Status "  $line" 'Yellow'
@@ -290,8 +309,8 @@ function Invoke-GameAutomationScript {
         Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/automation_result.json') | Out-Null
         Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/automation_log.jsonl') | Out-Null
 
-        Write-Status "Sending automation broadcast for: $scriptName" 'Cyan'
-        Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.AUTOMATE', '--es', 'script', $scriptName) | Out-Null
+        Write-Status "Sending setup automation broadcast for: $scriptName" 'Cyan'
+        Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_AUTOMATE', '--es', 'script', $scriptName) | Out-Null
 
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
@@ -392,6 +411,15 @@ function Clear-AppPrivateDirectoryContents {
 
     Invoke-AdbRaw -Arguments @('exec-out', 'run-as', $PACKAGE, 'rm', '-rf', $RemoteDir) -TimeoutSeconds 30 | Out-Null
     Invoke-AdbRaw -Arguments @('exec-out', 'run-as', $PACKAGE, 'mkdir', '-p', $RemoteDir) -TimeoutSeconds 30 | Out-Null
+}
+
+function Clear-DirectImportScratch {
+    try {
+        Invoke-AdbRaw -Arguments @('shell', 'sh', '-c', 'rm -f /data/local/tmp/dxx_extract_*') -TimeoutSeconds 30 | Out-Null
+    } catch { }
+    try {
+        Clear-AppPrivateDirectoryContents "/data/data/$PACKAGE/files/tmp_import"
+    } catch { }
 }
 
 function Ensure-AppPrivateFile {
@@ -608,6 +636,7 @@ function Exit-Test {
     $script:testClassConfirmed = $ClassConfirmed
     if ($TestMode) { $script:testMode = $TestMode }
     Write-TestResult
+    Clear-DirectImportScratch
     Invoke-Cleanup
     exit $Code
 }
@@ -793,6 +822,8 @@ Start-Sleep -Milliseconds 500
 # Clean filesDir root of any game files (belt-and-suspenders for legacy setups)
 Write-Status "Cleaning filesDir root of game files..."
 $filesDir = "/data/data/$PACKAGE/files"
+Write-Status "  Cleaning direct-import scratch..."
+Clear-DirectImportScratch
 $rootListing = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "$filesDir/")
 foreach ($rf in ($rootListing -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ })) {
     try { $ext = [System.IO.Path]::GetExtension($rf).ToLower() } catch { continue }
@@ -1001,6 +1032,7 @@ if ($useDirectCdImport) {
 
     $pushCount = @($state.set_files | Where-Object { $_ }).Count
     Write-Status "Direct import completed with $pushCount file(s) visible in '$TEST_SET'" 'Green'
+    Clear-DirectImportScratch
 } elseif ($useDirectIsoImport) {
     $isoSpec = $spec.source_files | Where-Object { $_.name -match '\.iso$' } | Select-Object -First 1
     if (-not $isoSpec) {
@@ -1080,6 +1112,7 @@ if ($useDirectCdImport) {
 
     $pushCount = @($state.set_files | Where-Object { $_ }).Count
     Write-Status "Direct import completed with $pushCount file(s) visible in '$TEST_SET'" 'Green'
+    Clear-DirectImportScratch
 } else {
     Write-Status "Pushing $($filesToPush.Count) files to set '$TEST_SET'..."
     $pushErrors = 0
@@ -1241,9 +1274,9 @@ if (-not $state.can_launch) {
     Exit-Test 0 'skip' 'not_ready' -TestMode 'file_only' -FilesVerified $expectedFiles.Count
 }
 
-# -- Step 8: Launch game --------------------------------------
+# -- Step 8: Launch game and verify with automation ------------
 
-Write-Status "Launching game from set '$TEST_SET'..."
+Write-Status "Launching game from set '$TEST_SET' with automation..."
 
 # Force stop to ensure clean launch
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
@@ -1264,78 +1297,11 @@ if (-not (Wait-SetupReady)) {
     Exit-Test 1 'fail' 'setup_timeout'
 }
 
-# Make sure we're still on the right set
-Send-SetupCommand 'switch_set' -Name $TEST_SET
-Start-Sleep -Seconds 1
-
-# Launch the game (pass game type from spec so the correct .so is loaded)
+# Launch through the launcher automation path. It passes the script on the
+# MainActivity launch intent, which avoids races with post-launch broadcasts.
 $launchGame = $gameKey
-Send-SetupCommand 'launch' -Game $launchGame
-# Poll for game process to appear (replaces fixed sleep)
-$sw = [System.Diagnostics.Stopwatch]::StartNew()
-while ($sw.Elapsed.TotalSeconds -lt 30) {
-    $gPid = Adb -CmdArgs @('shell', 'pidof', "${PACKAGE}:game")
-    if ($gPid -and $gPid -match '^\d+') { break }
-    Start-Sleep -Milliseconds 500
-}
-
-# -- Step 9: Verify in-game state -----------------------------
-
-Write-Status "Checking game state..."
-
-# Wait for game startup to reach the front menu. Demo/title paths can surface
-# `intro_active=true` first and need a controller-style confirm to advance.
-$menuReached = $false
-$startupInputAttempts = 0
-$startupTimeoutSeconds = if ($spec.classification -eq 'd2_demo') { 90 } else { 30 }
-$startupPollCount = [int][math]::Ceiling($startupTimeoutSeconds / 2.0)
-for ($i = 0; $i -lt $startupPollCount; $i++) {
-    $gi = Get-GameIntrospection
-    $introActive = $gi.intro_active -eq $true
-    if ($gi.screen_mode -eq 'menu' -and $gi.menu) {
-        $menuReached = $true
-        break
-    }
-    # Check if the game process is still alive (detect early crashes)
-    if ($gi.screen_mode -eq 'loading') {
-        $procCheck = Adb -CmdArgs @('shell', 'pidof', "${PACKAGE}:game")
-        if (-not $procCheck -or $procCheck -notmatch '^\d+') {
-            Write-Status "FAIL: Game process died (crashed on startup?)" 'Red'
-            Write-Status "  Classification: $($spec.classification), game: $($spec.game)" 'Yellow'
-            Exit-Test 1 'fail' 'crash' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
-        }
-    }
-    if ($introActive -and $startupInputAttempts -lt 5) {
-        Write-Status '  Intro active, tapping skip-intro region...' 'Gray'
-        Send-IntroSkipTap -GameIntrospection $gi
-        $startupInputAttempts++
-    }
-    # If startup is still completely opaque, prod the legacy title path.
-    elseif ($i -ge 2 -and $startupInputAttempts -lt 5) {
-        Write-Status "  Not at menu (screen_mode=$($gi.screen_mode)), pressing keys..." 'Gray'
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
-        Start-Sleep -Milliseconds 500
-        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
-        $startupInputAttempts++
-    }
-    Start-Sleep -Seconds 2
-}
-
-if (-not $menuReached) {
-    Write-Status "FAIL: Game did not reach menu state within ${startupTimeoutSeconds}s" 'Red'
-    Write-Status "  screen_mode=$($gi.screen_mode), menu present=$($null -ne $gi.menu), intro_active=$($gi.intro_active)" 'Yellow'
-    Exit-Test 1 'fail' 'launch_timeout' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
-}
-
-Write-Status "Game reached menu: '$($gi.menu.title)'" 'Green'
-
-# Navigate to new game with the in-game automation engine. This uses the
-# same front-menu key path as the maintained JSON5 tests instead of brittle
-# shell keyevents, which do not reliably drive the pilot prompt on Android.
-Write-Status 'Navigating to game (automation)...'
-
-$automationScript = Get-ExtractAutomationScriptText -MissionName $spec.expected_mission -LevelName $spec.expected_level1
-$automationResult = Invoke-GameAutomationScript -ScriptText $automationScript -TimeoutSeconds 120
+$automationScript = Get-ExtractAutomationScriptText -MissionName $spec.expected_mission -LevelName $spec.expected_level1 -Game $launchGame -TestSet $TEST_SET
+$automationResult = Invoke-GameAutomationScript -ScriptText $automationScript -TimeoutSeconds 180
 if (-not $automationResult) {
     Write-Status 'FAIL: Automation timed out before producing automation_result.json' 'Red'
     Write-GameAutomationDiagnostics
