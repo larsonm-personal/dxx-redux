@@ -23,7 +23,7 @@ $ScriptDir = $PSScriptRoot
 $RepoRoot  = Split-Path $ScriptDir
 
 # Resolve cmake and other tool paths
-. "$RepoRoot\android\test_env.ps1"
+. "$RepoRoot\android\helpers\test_env.ps1"
 
 $SrcDir    = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
 $BuildDir  = Join-Path $RepoRoot "android\tests\build"

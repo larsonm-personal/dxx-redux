@@ -8,7 +8,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$RepoRoot = Split-Path $PSScriptRoot -Parent
+$AndroidRoot = Split-Path $PSScriptRoot -Parent
+$RepoRoot = Split-Path $AndroidRoot -Parent
 $ManifestSchemaVersion = 2
 $UnarPackageUrl = 'https://cdn.theunarchiver.com/downloads/unarWindows.zip'
 $UnarPackageSha256 = '61a6b299606282f72f51c278801eac11d3dccfac83e2d68bccce33539912e0dd'
@@ -67,7 +68,7 @@ function Resolve-CorpusBuildDir {
 function Find-DefaultCorpusBuildDir {
     $candidates = @(
         (Join-Path $RepoRoot 'temp\stuffit-test-files'),
-        (Join-Path $PSScriptRoot 'tests\build\_deps\stuffit_test_files-src'),
+        (Join-Path $AndroidRoot 'tests\build\_deps\stuffit_test_files-src'),
         (Join-Path $RepoRoot 'android\tests\build\_deps\stuffit_test_files-src')
     )
 
@@ -287,7 +288,7 @@ $corpusBuildDir = if ($CorpusDir) {
 }
 
 if ([string]::IsNullOrWhiteSpace($OutputDir)) {
-    $OutputDir = Join-Path $PSScriptRoot 'app\src\main\cpp\extract\test\data\stuffit_manifests'
+    $OutputDir = Join-Path $AndroidRoot 'app\src\main\cpp\extract\test\data\stuffit_manifests'
 }
 
 $tools = Resolve-ToolPaths -CandidateToolDir $ToolDir

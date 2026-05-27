@@ -21,7 +21,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $ADB = $script:ADB

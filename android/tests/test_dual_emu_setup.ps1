@@ -24,8 +24,8 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 # Source shared env setup (JAVA_HOME, cmake, cargo) and test helpers
-. "$PSScriptRoot\..\test_env.ps1"
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_env.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()

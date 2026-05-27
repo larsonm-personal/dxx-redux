@@ -13,7 +13,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Split-Path $PSScriptRoot
+$androidRoot = Split-Path $PSScriptRoot
+$repoRoot = Split-Path $androidRoot
 
 # Ensure temp/ exists
 $tempDir = Join-Path $repoRoot "temp"

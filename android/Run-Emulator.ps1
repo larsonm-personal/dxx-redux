@@ -30,7 +30,8 @@ $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
 $ScriptDir = Split-Path -Parent -Path $PSCommandPath
 $RepoRoot = Split-Path -Parent -Path $ScriptDir
-. (Join-Path $ScriptDir "test_host_platform.ps1")
+$HelpersDir = Join-Path $ScriptDir "helpers"
+. (Join-Path $HelpersDir "test_host_platform.ps1")
 
 # -- Resolve environment from dependency_base.txt ----------------------------
 $depBaseFile = Join-Path $RepoRoot "dependency_base.txt"
@@ -274,7 +275,7 @@ if ($LASTEXITCODE -eq 0) {
 
 # -- 5. Push game data -------------------------------------------------------
 if (-not $NoData) {
-    $pushScript = Join-Path $ScriptDir "push_game_data.sh"
+    $pushScript = Join-Path $HelpersDir "push_game_data.sh"
     $gameDataDir = Join-Path $RepoRoot "game_data_to_copy_to_emulator"
     if ((Test-Path $pushScript) -and (Test-Path $gameDataDir)) {
         $dataDir = Join-Path $gameDataDir "data"

@@ -38,7 +38,7 @@ function Write-Progress-Flush {
 }
 
 # -- Shared env setup (JAVA_HOME, cmake, cargo) ----------------------------
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 # -- Paths --------------------------------------------------------------
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -135,7 +135,7 @@ $script:Serial = $null
 $devices = (Adb devices) -join "`n"
 if ($devices -notmatch "emulator.*device") {
     Write-Host "Emulator not found -- attempting start..." -ForegroundColor Yellow
-    $healthScript = Join-Path $androidDir "emu_health.ps1"
+    $healthScript = Join-Path (Join-Path $androidDir "helpers") "emu_health.ps1"
     & $healthScript -Restart -Wait -TimeoutSeconds 120
     if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 2) {
         Write-Host "FAIL: Could not start emulator (exit $LASTEXITCODE)" -ForegroundColor Red

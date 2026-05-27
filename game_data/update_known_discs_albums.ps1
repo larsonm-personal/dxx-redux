@@ -45,7 +45,7 @@ $matchExe = Join-Path $buildDir "Release/fingerprint_match.exe"
 
 if (-not (Test-Path $matchExe)) {
     Write-Host "Building fingerprint_match.exe..."
-    . "$repoRoot\android\test_env.ps1"
+    . "$repoRoot\android\helpers\test_env.ps1"
     if (-not (Test-Path $buildDir)) { New-Item -ItemType Directory -Path $buildDir | Out-Null }
     Push-Location $buildDir
     & cmake "$repoRoot/android/app/src/main/cpp/extract" -DCMAKE_BUILD_TYPE=Release 2>&1 | Out-Null

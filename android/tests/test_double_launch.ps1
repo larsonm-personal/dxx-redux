@@ -16,7 +16,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 Ensure-EmulatorHealthy
 if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {

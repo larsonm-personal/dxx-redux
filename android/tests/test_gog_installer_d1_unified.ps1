@@ -45,7 +45,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 $SCRIPT_NAME = 'test_gog_installer_d1_unified.json5'
 
@@ -136,7 +136,7 @@ if (-not $check) {
 
 # -- Run unified test via run_test.ps1 --------------------------
 
-$runTest = Join-Path (Split-Path $PSScriptRoot) "run_test.ps1"
+$runTest = Join-Path (Join-Path (Split-Path $PSScriptRoot) "helpers") "run_test.ps1"
 & $runTest -ScriptName $SCRIPT_NAME -TimeoutSeconds $TimeoutSeconds -Game d1 -Params @{
     INSTALLER_VARIANT = $InstallerVariant
 }

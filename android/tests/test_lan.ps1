@@ -31,7 +31,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 # -- Constants --
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
@@ -170,7 +170,7 @@ try {
         Write-Status "  EMU2 redir cleanup: $r2del" "Gray"
 
         # Start UDP relay
-        $relayScript = Join-Path $PSScriptRoot "..\udp_relay.ps1"
+        $relayScript = Join-Path $PSScriptRoot "..\helpers\udp_relay.ps1"
         if (-not (Test-Path $relayScript)) {
             Write-Status "FAIL: udp_relay.ps1 not found at $relayScript" "Red"; exit 1
         }

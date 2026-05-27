@@ -17,7 +17,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Split-Path $PSScriptRoot
+$androidRoot = Split-Path $PSScriptRoot
+$repoRoot = Split-Path $androidRoot
 
 # Ensure temp/ exists
 $tempDir = Join-Path $repoRoot "temp"
@@ -44,9 +45,9 @@ if (-not $env:JAVA_HOME -and (Test-Path $depBaseFile)) {
 Write-Host "Running assembleDebug to gather warnings..."
 Write-Host "Log file: $logFile"
 
-Push-Location $PSScriptRoot
+Push-Location $androidRoot
 try {
-    $gradlew = Join-Path $PSScriptRoot "gradlew.bat"
+    $gradlew = Join-Path $androidRoot "gradlew.bat"
     if (-not (Test-Path $gradlew)) {
         Write-Error "gradlew.bat not found at $gradlew"
         exit 1

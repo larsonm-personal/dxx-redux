@@ -39,6 +39,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $PSCommandPath
+$helpersDir = Join-Path $scriptDir "helpers"
 $repoRoot = Split-Path $scriptDir
 
 if (-not $ReportDir) {
@@ -48,7 +49,7 @@ New-Item -Path $ReportDir -ItemType Directory -Force -ErrorAction SilentlyContin
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $reportFile = Join-Path $ReportDir "quick_report_$timestamp.md"
-$runTestScript = Join-Path $scriptDir "run_test.ps1"
+$runTestScript = Join-Path $helpersDir "run_test.ps1"
 
 function New-QuickDemoSubset {
     param([string]$DestinationRoot)

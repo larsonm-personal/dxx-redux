@@ -1,6 +1,6 @@
 # .clang-format -- format rules for android/ C/C++ code.
 # Derived from the prevailing style in d1/ and d2/ source code.
-# Run via: android/run-clang-format.ps1
+# Run via: android/helpers/run-clang-format.ps1
 
 BasedOnStyle: LLVM
 IndentWidth: 4

@@ -28,7 +28,7 @@ try {
     Write-Host ""
 
     # Load shared auth helpers
-    . "$PSScriptRoot\playstore-auth.ps1"
+    . "$PSScriptRoot\helpers\playstore-auth.ps1"
 
     # ---------------------------------------------------------------
     #  Query the target track to determine version code with rev

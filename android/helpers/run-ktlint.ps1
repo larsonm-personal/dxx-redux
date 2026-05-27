@@ -11,8 +11,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Split-Path $PSScriptRoot
-$platformHelper = Join-Path $PSScriptRoot "get_deps/helpers/Get-DepPlatform.ps1"
+$androidRoot = Split-Path $PSScriptRoot
+$repoRoot = Split-Path $androidRoot
+$platformHelper = Join-Path $androidRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
 function Get-ScopedFiles {
@@ -64,7 +65,7 @@ if (-not $DEP_BASE) {
 }
 
 # Load versions from tool_versions.conf
-$confFile = Join-Path $PSScriptRoot "get_deps\tool_versions.conf"
+$confFile = Join-Path $androidRoot "get_deps\tool_versions.conf"
 $ktlintVersion = $null
 $jdkMajor = $null
 foreach ($line in Get-Content $confFile) {
@@ -98,7 +99,7 @@ Write-Host "Using java: $java"
 Write-Host "Using ktlint: $ktlintJar"
 
 # --- Gather Kotlin files ---
-$ktDir = Join-Path $PSScriptRoot "app\src\main\java"
+$ktDir = Join-Path $androidRoot "app\src\main\java"
 $files = Get-ScopedFiles -RootPath $ktDir -InputPaths $Paths -ValidExtensions @('.kt')
 
 if ($files.Count -eq 0) {

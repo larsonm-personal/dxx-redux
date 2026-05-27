@@ -4,7 +4,7 @@
 //           resolution is NOT 640x480.
 // Phase 2: Write descent.cfg with 640x480 -- verify game applies it.
 //
-// Run via: android/run_test.ps1 test_resolution_unified.json5
+// Run via: android/helpers/run_test.ps1 test_resolution_unified.json5
 [
     {"_info": {
         "games": ["d2"],

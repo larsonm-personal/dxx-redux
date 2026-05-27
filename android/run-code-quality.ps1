@@ -15,6 +15,7 @@ param(
 
 $ErrorActionPreference = "Continue"
 $scriptDir = $PSScriptRoot
+$helpersDir = Join-Path $scriptDir "helpers"
 $repoRoot = Split-Path $scriptDir
 $failed = @()
 $lockDir = Join-Path $scriptDir "temp"
@@ -351,7 +352,7 @@ if (Test-Path -LiteralPath $lockFile) {
         Write-Host "Lock file: $lockFile"
         Write-Host "Active PID: $($lockInfo.pid)"
         Write-Host "Started: $($lockInfo.started)"
-        Write-Host "Wait for it to finish or run android\\stop-stale-formatters.ps1 -Kill"
+        Write-Host "Wait for it to finish or run android\\helpers\\stop-stale-formatters.ps1 -Kill"
         exit 1
     }
 
@@ -375,10 +376,10 @@ try {
     Write-CodeQualityLock -Stage 'clang-format'
     Write-Host "--- C/C++ (clang-format) ---"
     if ($Fix) {
-        & "$scriptDir\run-clang-format.ps1" @toolParams
+        & "$helpersDir\run-clang-format.ps1" @toolParams
     } else {
         $checkParams = @{ Check = $true } + $toolParams
-        & "$scriptDir\run-clang-format.ps1" @checkParams
+        & "$helpersDir\run-clang-format.ps1" @checkParams
     }
     if ($LASTEXITCODE -ne 0) {
         $failed += "clang-format"
@@ -389,10 +390,10 @@ try {
     Write-CodeQualityLock -Stage 'ktlint'
     Write-Host "--- Kotlin (ktlint) ---"
     if ($Fix) {
-        & "$scriptDir\run-ktlint.ps1" @toolParams
+        & "$helpersDir\run-ktlint.ps1" @toolParams
     } else {
         $checkParams = @{ Check = $true } + $toolParams
-        & "$scriptDir\run-ktlint.ps1" @checkParams
+        & "$helpersDir\run-ktlint.ps1" @checkParams
     }
     if ($LASTEXITCODE -ne 0) {
         $failed += "ktlint"
@@ -403,10 +404,10 @@ try {
     Write-CodeQualityLock -Stage 'psscriptanalyzer'
     Write-Host "--- PowerShell (PSScriptAnalyzer) ---"
     if ($Fix) {
-        & "$scriptDir\run-psscriptanalyzer.ps1" @toolParams
+        & "$helpersDir\run-psscriptanalyzer.ps1" @toolParams
     } else {
         $checkParams = @{ Check = $true } + $toolParams
-        & "$scriptDir\run-psscriptanalyzer.ps1" @checkParams
+        & "$helpersDir\run-psscriptanalyzer.ps1" @checkParams
     }
     if ($LASTEXITCODE -ne 0) {
         $failed += "psscriptanalyzer"
@@ -425,7 +426,7 @@ try {
     Write-CodeQualityLock -Stage 'shellcheck'
     Write-Host "--- Bash lint (shellcheck) ---"
     # shellcheck has no auto-fix; always runs in report mode
-    & "$scriptDir\run-shellcheck.ps1" @toolParams
+    & "$helpersDir\run-shellcheck.ps1" @toolParams
     if ($LASTEXITCODE -ne 0) {
         $failed += "shellcheck"
     }
@@ -435,10 +436,10 @@ try {
     Write-CodeQualityLock -Stage 'shfmt'
     Write-Host "--- Bash format (shfmt) ---"
     if ($Fix) {
-        & "$scriptDir\run-shfmt.ps1" @toolParams
+        & "$helpersDir\run-shfmt.ps1" @toolParams
     } else {
         $checkParams = @{ Check = $true } + $toolParams
-        & "$scriptDir\run-shfmt.ps1" @checkParams
+        & "$helpersDir\run-shfmt.ps1" @checkParams
     }
     if ($LASTEXITCODE -ne 0) {
         $failed += "shfmt"
@@ -449,10 +450,10 @@ try {
     Write-CodeQualityLock -Stage 'cmake-format'
     Write-Host "--- CMake format (cmake-format) ---"
     if ($Fix) {
-        & "$scriptDir\run-cmake-format.ps1" @toolParams
+        & "$helpersDir\run-cmake-format.ps1" @toolParams
     } else {
         $checkParams = @{ Check = $true } + $toolParams
-        & "$scriptDir\run-cmake-format.ps1" @checkParams
+        & "$helpersDir\run-cmake-format.ps1" @checkParams
     }
     if ($LASTEXITCODE -ne 0) {
         $failed += "cmake-format"
@@ -463,7 +464,7 @@ try {
     Write-CodeQualityLock -Stage 'cmake-lint'
     Write-Host "--- CMake lint (cmake-lint) ---"
     # cmake-lint has no auto-fix; always runs in report mode
-    & "$scriptDir\run-cmake-lint.ps1" @toolParams
+    & "$helpersDir\run-cmake-lint.ps1" @toolParams
     if ($LASTEXITCODE -ne 0) {
         $failed += "cmake-lint"
     }

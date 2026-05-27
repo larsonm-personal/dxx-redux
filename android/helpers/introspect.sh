@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # introspect.sh - grab game/setup state from a running DXX-Redux Android emulator
 # Usage:
-#   ./android/introspect.sh            # pretty-print full game state
-#   ./android/introspect.sh raw        # raw JSON (no formatting)
-#   ./android/introspect.sh menu       # show only the menu section
-#   ./android/introspect.sh player     # show only the player section
-#   ./android/introspect.sh position   # show only the position section
-#   ./android/introspect.sh console    # show recent con_printf output (ring buffer)
-#   ./android/introspect.sh setup      # dump SetupActivity state (files, readiness, downloads)
-#   ./android/introspect.sh setup raw  # raw JSON from SetupActivity
-#   ./android/introspect.sh autolog    # dump automation step log (automation_log.jsonl)
-#   ./android/introspect.sh autoresult # dump automation result (automation_result.json)
+#   ./android/helpers/introspect.sh            # pretty-print full game state
+#   ./android/helpers/introspect.sh raw        # raw JSON (no formatting)
+#   ./android/helpers/introspect.sh menu       # show only the menu section
+#   ./android/helpers/introspect.sh player     # show only the player section
+#   ./android/helpers/introspect.sh position   # show only the position section
+#   ./android/helpers/introspect.sh console    # show recent con_printf output (ring buffer)
+#   ./android/helpers/introspect.sh setup      # dump SetupActivity state (files, readiness, downloads)
+#   ./android/helpers/introspect.sh setup raw  # raw JSON from SetupActivity
+#   ./android/helpers/introspect.sh autolog    # dump automation step log (automation_log.jsonl)
+#   ./android/helpers/introspect.sh autoresult # dump automation result (automation_result.json)
 
 set -euo pipefail
 

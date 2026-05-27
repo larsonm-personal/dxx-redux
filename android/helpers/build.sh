@@ -4,7 +4,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+ANDROID_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ANDROID_DIR"
 
 # Set JAVA_HOME / ANDROID_HOME / ANDROID_NDK_ROOT
 source "$SCRIPT_DIR/set_vars.sh"

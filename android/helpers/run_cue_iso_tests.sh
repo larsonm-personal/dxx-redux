@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Build and run CUE parser + ISO reader tests (Linux/Mac).
 #
-# Usage:  ./run_cue_iso_tests.sh
+# Usage:  ./android/helpers/run_cue_iso_tests.sh
 #
 # Uses CMake to build test executables in android/tests/build/.
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SRC_DIR="$SCRIPT_DIR/app/src/main/cpp/extract"
-BUILD_DIR="$SCRIPT_DIR/tests/build"
+ANDROID_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SRC_DIR="$ANDROID_DIR/app/src/main/cpp/extract"
+BUILD_DIR="$ANDROID_DIR/tests/build"
 
 # Configure + build
 if [ ! -f "$BUILD_DIR/CMakeCache.txt" ]; then

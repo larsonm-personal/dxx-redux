@@ -16,7 +16,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-. "$PSScriptRoot\..\test_env.ps1"
+. "$PSScriptRoot\..\helpers\test_env.ps1"
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $games = if ($Game -eq 'both') { @('d1', 'd2') } else { @($Game) }

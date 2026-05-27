@@ -46,7 +46,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-. (Join-Path (Join-Path $repoRoot "android") "test_host_platform.ps1")
+. (Join-Path (Join-Path (Join-Path $repoRoot "android") "helpers") "test_host_platform.ps1")
 
 # --- Check/start matchmaking server ---
 $serverHost = ([Uri]$ServerUrl).Host

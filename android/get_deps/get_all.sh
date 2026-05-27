@@ -112,7 +112,7 @@ run_step "Android NDK" bash "$HELPER_DIR/get_ndk.sh"
 # Export JAVA_HOME / ANDROID_HOME / ANDROID_NDK_ROOT so remaining steps
 # (finalize, emulator, avd) inherit them without re-detecting
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR/../set_vars.sh"
+source "$SCRIPT_DIR/../helpers/set_vars.sh"
 
 run_step "Gradle wrapper" bash "$HELPER_DIR/get_gradle_wrapper.sh"
 
@@ -136,5 +136,5 @@ run_step "cmake-format / cmake-lint" bash "$HELPER_DIR/get_cmake_format.sh"
 
 echo ""
 echo "=== All dependencies installed. ==="
-echo "From the repo root, source android/set_vars.sh to set JAVA_HOME / ANDROID_HOME / ANDROID_NDK_ROOT"
+echo "From the repo root, source android/helpers/set_vars.sh to set JAVA_HOME / ANDROID_HOME / ANDROID_NDK_ROOT"
 echo "Run pwsh android/Run-Emulator.ps1 to build, launch emulator, and test"

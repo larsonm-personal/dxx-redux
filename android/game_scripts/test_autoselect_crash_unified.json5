@@ -7,7 +7,7 @@
 // Phase 2: (Launcher) Patch .plr via write_autoselect (same as launcher save)
 // Phase 3: (Game) Relaunch, select existing pilot, navigate nested menus
 //
-// Run via: android/run_test.ps1 test_autoselect_crash_unified.json5
+// Run via: android/helpers/run_test.ps1 test_autoselect_crash_unified.json5
 [
     {"_info": {
         "games": ["d2"],

@@ -3,10 +3,10 @@
 # run_automation.sh - Push and execute automation test scripts on Android.
 #
 # Usage:
-#   ./android/run_automation.sh [script.json5]          # run a single test
-#   ./android/run_automation.sh                         # run default test
-#   ./android/run_automation.sh --all                   # run all game_scripts/test_*.json5
-#   ./android/run_automation.sh --watch script.json     # run + keep tailing logcat
+#   ./android/helpers/run_automation.sh [script.json5]          # run a single test
+#   ./android/helpers/run_automation.sh                         # run default test
+#   ./android/helpers/run_automation.sh --all                   # run all game_scripts/test_*.json5
+#   ./android/helpers/run_automation.sh --watch script.json     # run + keep tailing logcat
 #
 # The script is pushed to the app's files directory, then a broadcast
 # triggers the native automation engine to load and execute it.
@@ -18,6 +18,7 @@ set -euo pipefail
 
 PACKAGE="com.dxxredux.app"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ANDROID_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Find adb: honour $ADB, then PATH, then common Windows SDK locations
 if [[ -n "${ADB:-}" ]]; then
@@ -34,7 +35,7 @@ else
     echo "ERROR: adb not found. Set ADB= or add it to PATH" >&2
     exit 1
 fi
-GAME_SCRIPTS_DIR="$SCRIPT_DIR/game_scripts"
+GAME_SCRIPTS_DIR="$ANDROID_DIR/game_scripts"
 DEFAULT_SCRIPT="$GAME_SCRIPTS_DIR/test_launch_to_automap.json5"
 TIMEOUT_SEC=120 # max time to wait for a single test
 

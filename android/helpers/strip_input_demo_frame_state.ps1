@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if (-not $Path) {
-    $Path = Join-Path $PSScriptRoot 'temp_game_logs'
+    $Path = Join-Path (Split-Path $PSScriptRoot) 'temp_game_logs'
 }
 
 function Resolve-AbsolutePath {
@@ -23,7 +23,7 @@ function Resolve-AbsolutePath {
 function Get-RelativeDisplayPath {
     param([string]$Value)
 
-    $repoRoot = Split-Path $PSScriptRoot
+    $repoRoot = Split-Path (Split-Path $PSScriptRoot)
     $absoluteValue = [System.IO.Path]::GetFullPath($Value)
     $absoluteRepoRoot = [System.IO.Path]::GetFullPath($repoRoot)
 

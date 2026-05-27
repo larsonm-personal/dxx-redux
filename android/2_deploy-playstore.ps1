@@ -90,7 +90,7 @@ Write-Host ""
 #  JWT / OAuth2 authentication (shared helper)
 # ===================================================================
 
-. "$PSScriptRoot\playstore-auth.ps1"
+. "$PSScriptRoot\helpers\playstore-auth.ps1"
 
 Write-Host "Authenticating..."
 $token = Get-PlayStoreAccessToken $creds

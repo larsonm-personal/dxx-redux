@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
 # stop-stale-formatters.ps1 -- List or kill stale file-mutating formatter tasks
 # Usage:
-#   .\stop-stale-formatters.ps1        # list matching processes
-#   .\stop-stale-formatters.ps1 -Kill  # kill matching process trees
+#   .\android\helpers\stop-stale-formatters.ps1        # list matching processes
+#   .\android\helpers\stop-stale-formatters.ps1 -Kill  # kill matching process trees
 
 param(
     [switch]$Kill

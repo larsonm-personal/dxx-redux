@@ -103,7 +103,7 @@ function Get-RequiredGameDataHash {
     $hashes = [ordered]@{}
 
     $powerShellSources = @(
-        (Join-RepoPath "android" "test_helpers.ps1"),
+        (Join-RepoPath "android" "helpers" "test_helpers.ps1"),
         (Join-RepoPath "android" "tests" "run_input_demo_replay.ps1"),
         (Join-RepoPath "android" "tests" "test_input_demo_runtime_smoke.ps1")
     )

@@ -33,8 +33,8 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 # Source shared env setup (JAVA_HOME, cmake, cargo)
-. "$PSScriptRoot\..\test_env.ps1"
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_env.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 # -- Constants --
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)

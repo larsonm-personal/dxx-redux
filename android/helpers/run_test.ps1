@@ -2,9 +2,9 @@
 # run_test.ps1 -- Run an automation test script on the Android emulator with health checks.
 #
 # Usage:
-#   .\run_test.ps1 test_death.json5
-#   .\run_test.ps1 test_death.json5 -Install   # also install APK first
-#   .\run_test.ps1 test_axis_mapping.json5 -Game d1  # force a specific game
+#   .\android\helpers\run_test.ps1 test_death.json5
+#   .\android\helpers\run_test.ps1 test_death.json5 -Install   # also install APK first
+#   .\android\helpers\run_test.ps1 test_axis_mapping.json5 -Game d1  # force a specific game
 #
 # The script will:
 #   1. Verify emulator is healthy (restart if needed)
@@ -25,7 +25,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-. "$PSScriptRoot\test_helpers.ps1"
+$helpersDir = Split-Path -Parent $PSCommandPath
+$scriptDir = Split-Path -Parent $helpersDir
+. (Join-Path $helpersDir "test_helpers.ps1")
 
 function Push-TestScriptToDevice {
     param(
@@ -69,7 +71,7 @@ Ensure-EmulatorHealthy
 # -- Step 2: Install APK if requested ------------------------
 
 if ($Install) {
-    $apk = Join-RegressionPath $PSScriptRoot "app" "build" "outputs" "apk" "debug" "app-debug.apk"
+    $apk = Join-RegressionPath $scriptDir "app" "build" "outputs" "apk" "debug" "app-debug.apk"
     if (-not (Test-Path $apk)) {
         Write-Status "FAIL: APK not found at $apk" "Red"
         exit 1
@@ -83,7 +85,7 @@ if ($Install) {
 
 # -- Step 3: Determine which game(s) to run -------------------
 
-$scriptPath = Join-RegressionPath $PSScriptRoot "game_scripts" $ScriptName
+$scriptPath = Join-RegressionPath $scriptDir "game_scripts" $ScriptName
 $gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
 
 if (-not (Get-ScriptStandalone -ScriptPath $scriptPath)) {

@@ -22,8 +22,8 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 # Source shared env setup and helpers
-. "$PSScriptRoot\..\test_env.ps1"
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_env.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $ANDROID_DIR = Join-Path $REPO_ROOT "android"

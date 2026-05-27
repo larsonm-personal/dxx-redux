@@ -24,8 +24,8 @@ fi
 # Need JAVA_HOME for sdkmanager
 if [ -z "$JAVA_HOME" ]; then
     ANDROID_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-    if [ -f "$ANDROID_DIR/set_vars.sh" ]; then
-        source "$ANDROID_DIR/set_vars.sh"
+    if [ -f "$ANDROID_DIR/helpers/set_vars.sh" ]; then
+        source "$ANDROID_DIR/helpers/set_vars.sh"
     fi
 fi
 

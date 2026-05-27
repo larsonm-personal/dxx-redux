@@ -34,7 +34,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1')
-. (Join-Path (Split-Path $PSScriptRoot -Parent) 'test_host_platform.ps1')
+. (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'test_host_platform.ps1')
 
 # Sentinel output to diagnose empty-log issues when run from run_all_tests
 [Console]::Out.Flush()
@@ -747,7 +747,7 @@ Write-Status "Checking emulator..."
 $devices = Adb -CmdArgs 'devices'
 if ($devices -notmatch 'emulator-\d+\s+device') {
     Write-Status "Emulator offline, attempting restart via emu_health.ps1..."
-    $healthScript = Join-Path $PSScriptRoot "..\emu_health.ps1"
+    $healthScript = Join-Path $PSScriptRoot "..\helpers\emu_health.ps1"
     if (Test-Path $healthScript) {
         & $healthScript -Restart -Wait -TimeoutSeconds 180 2>&1 | Out-Null
         # Poll for emulator to come back online

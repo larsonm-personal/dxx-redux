@@ -55,9 +55,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $PSCommandPath
+$helpersDir = Join-Path $scriptDir "helpers"
 $repoRoot = Split-Path $scriptDir
 
-. "$scriptDir\test_helpers.ps1"
+. "$helpersDir\test_helpers.ps1"
 . (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
 
 # -- Report directory --
@@ -385,7 +386,7 @@ function Restart-AdbServer {
 }
 
 function Invoke-AutomaticStaleEmulatorCleanup {
-    $cleanupScript = Join-Path $scriptDir "kill-stale-emulators.ps1"
+    $cleanupScript = Join-Path $helpersDir "kill-stale-emulators.ps1"
     if (-not (Test-Path -LiteralPath $cleanupScript)) {
         return
     }
@@ -441,7 +442,7 @@ function Recover-SingleEmulatorEnvironment {
     Invoke-AutomaticStaleEmulatorCleanup
     Restart-AdbServer
 
-    $healthScript = Join-Path $scriptDir "emu_health.ps1"
+    $healthScript = Join-Path $helpersDir "emu_health.ps1"
     & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME
     $healthExit = $LASTEXITCODE
     if ($healthExit -ne 0 -and $healthExit -ne 2) {
@@ -477,7 +478,7 @@ function Recover-DualEmulatorEnvironment {
         $script:autoServerProc = $null
     }
 
-    $healthScript = Join-Path $scriptDir "emu_health.ps1"
+    $healthScript = Join-Path $helpersDir "emu_health.ps1"
     & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 240 -AvdName $script:PRIMARY_AVD_NAME
     $healthExit = $LASTEXITCODE
     if ($healthExit -ne 0 -and $healthExit -ne 2) {
@@ -594,7 +595,7 @@ function Invoke-SetupActivityPreflight {
 function Invoke-PrimaryEmulatorPreflight {
     param([switch]$RequireStandardGameData)
 
-    $healthScript = Join-Path $scriptDir "emu_health.ps1"
+    $healthScript = Join-Path $helpersDir "emu_health.ps1"
 
     for ($attempt = 1; $attempt -le 2; $attempt++) {
         if (-not (Test-SingleEmulator)) {
@@ -781,7 +782,7 @@ if (-not (Invoke-SuitePreflight)) {
 
 # -- Execution helpers --
 
-$runTestScript = Join-Path $scriptDir "run_test.ps1"
+$runTestScript = Join-Path $helpersDir "run_test.ps1"
 $results = @()
 $passCount = 0
 $failCount = 0

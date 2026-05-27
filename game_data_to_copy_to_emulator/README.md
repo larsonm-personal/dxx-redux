@@ -1,6 +1,6 @@
 # Game Data for Emulator Testing
 
-Place files here for `push_game_data.sh` to push to the Android emulator.
+Place files here for `android/helpers/push_game_data.sh` to push to the Android emulator.
 
 ## Subfolders
 

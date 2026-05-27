@@ -45,7 +45,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 if (-not $env:ANDROID_SERIAL) {
     $env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL
@@ -140,7 +140,7 @@ if (-not $check) {
 
 # -- Run unified test via run_test.ps1 --------------------------
 
-$runTest = Join-Path (Split-Path $PSScriptRoot) "run_test.ps1"
+$runTest = Join-Path (Join-Path (Split-Path $PSScriptRoot) "helpers") "run_test.ps1"
 & $runTest -ScriptName $SCRIPT_NAME -TimeoutSeconds $TimeoutSeconds -Game d2 -Params @{
     INSTALLER_VARIANT = $InstallerVariant
 }

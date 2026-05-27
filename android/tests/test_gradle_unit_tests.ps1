@@ -9,7 +9,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-. "$PSScriptRoot\..\test_env.ps1"
+. "$PSScriptRoot\..\helpers\test_env.ps1"
 
 $androidDir = Split-Path $PSScriptRoot
 Push-Location $androidDir

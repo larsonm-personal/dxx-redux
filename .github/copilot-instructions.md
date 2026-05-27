@@ -58,9 +58,9 @@
 - new code should be as free of compiler warnings as possible. -werror isn't enabled, but do a 2nd pass to remove warnings when building to check
 - new code should have formatting linters run on it: `android\run-code-quality.ps1 --fix`
 - `android\run-code-quality.ps1 --fix` is file-mutating and can take several minutes. do not treat it as done until the process has fully exited in its terminal
-- before starting another cleanup or validation pass after any timeout, interrupted agent run, or "file is newer" popup, list stale formatter tasks with `android\stop-stale-formatters.ps1` and kill them with `android\stop-stale-formatters.ps1 -Kill` if needed
+- before starting another cleanup or validation pass after any timeout, interrupted agent run, or "file is newer" popup, list stale formatter tasks with `android\helpers\stop-stale-formatters.ps1` and kill them with `android\helpers\stop-stale-formatters.ps1 -Kill` if needed
 - `android\run-code-quality.ps1` now uses `android\temp\run-code-quality.lock.json` to fail fast if another cleanup pass is still active. if that lock is stale, kill the old formatter task and rerun instead of forcing saves over newer edits
-- cmake files added by this branch (android/, cmake/, android/tools/etc2tool/) are formatted with cmake-format and linted with cmake-lint (cheshirekow/cmakelang). run individually with `android\run-cmake-format.ps1` (auto-format) or `android\run-cmake-lint.ps1` (lint only). both are also included in the full `run-code-quality.ps1` pass. upstream files in d1/ and d2/ are excluded. config: `.cmake-format.yaml` at repo root
+- cmake files added by this branch (android/, cmake/, android/tools/etc2tool/) are formatted with cmake-format and linted with cmake-lint (cheshirekow/cmakelang). run individually with `android\helpers\run-cmake-format.ps1` (auto-format) or `android\helpers\run-cmake-lint.ps1` (lint only). both are also included in the full `run-code-quality.ps1` pass. upstream files in d1/ and d2/ are excluded. config: `.cmake-format.yaml` at repo root
 
 ## building
 - standard cmake commands (`mkdir build`, `cd build`, `cmake ..`, `cmake --build .`)
@@ -102,7 +102,7 @@
 ```powershell
 # clear logcat first, then pipe output to a file to avoid terminal buffer issues
 cd d:\local\dxx-redux
-adb logcat -c; .\android\run_test.ps1 -ScriptName test_launch_to_automap.json5 -Game d2 2>&1 | Out-File temp\test_output.txt -Encoding utf8; Write-Output "EXIT: $LASTEXITCODE"
+adb logcat -c; .\android\helpers\run_test.ps1 -ScriptName test_launch_to_automap.json5 -Game d2 2>&1 | Out-File temp\test_output.txt -Encoding utf8; Write-Output "EXIT: $LASTEXITCODE"
 # then read the tail of the output file
 Get-Content temp\test_output.txt | Select-Object -Last 30
 ```
@@ -132,16 +132,16 @@ adb shell am broadcast -a com.dxxredux.INTROSPECT && sleep 1 && adb shell run-as
 
 Or use the helper script:
 ```bash
-./android/introspect.sh          # dump + pretty-print (requires python3 or jq)
-./android/introspect.sh raw      # dump without formatting
-./android/introspect.sh menu     # show only the menu section
-./android/introspect.sh player   # show only the player section
-./android/introspect.sh position # show only the position section
-./android/introspect.sh console  # show recent con_printf output (ring buffer, last 50 lines)
-./android/introspect.sh setup    # dump SetupActivity state (files, readiness, downloads)
-./android/introspect.sh setup raw # raw SetupActivity JSON
-./android/introspect.sh autolog    # dump automation step log (automation_log.jsonl)
-./android/introspect.sh autoresult # dump automation result (automation_result.json)
+./android/helpers/introspect.sh          # dump + pretty-print (requires python3 or jq)
+./android/helpers/introspect.sh raw      # dump without formatting
+./android/helpers/introspect.sh menu     # show only the menu section
+./android/helpers/introspect.sh player   # show only the player section
+./android/helpers/introspect.sh position # show only the position section
+./android/helpers/introspect.sh console  # show recent con_printf output (ring buffer, last 50 lines)
+./android/helpers/introspect.sh setup    # dump SetupActivity state (files, readiness, downloads)
+./android/helpers/introspect.sh setup raw # raw SetupActivity JSON
+./android/helpers/introspect.sh autolog    # dump automation step log (automation_log.jsonl)
+./android/helpers/introspect.sh autoresult # dump automation result (automation_result.json)
 ```
 
 ### setup-screen introspection
@@ -198,7 +198,7 @@ The automation system writes durable files alongside logcat. These survive logca
 - `files/automation_result.json` -- written on PASS/FAIL: `{result, steps_completed, total_steps, reason?, elapsed_ms}`
 - `files/automation_log.jsonl` -- one JSON line per step event: `{seq, step, total, action, status, elapsed_ms, detail}`
 - Read directly: `adb shell run-as com.dxxredux.app cat files/automation_result.json`
-- Or via helper: `./android/introspect.sh autoresult` / `./android/introspect.sh autolog`
+- Or via helper: `./android/helpers/introspect.sh autoresult` / `./android/helpers/introspect.sh autolog`
 - On test timeout/failure, the runner automatically dumps `automation_log.jsonl` and debug log files for diagnostics
 
 ### extending the API

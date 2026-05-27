@@ -2,10 +2,10 @@
 # emu_health.ps1 -- Check Android emulator health and optionally restart it.
 #
 # Usage:
-#   .\emu_health.ps1              # Check health, print status
-#   .\emu_health.ps1 -Restart     # Kill and restart if unhealthy
-#   .\emu_health.ps1 -Wait        # Block until emulator is fully healthy
-#   .\emu_health.ps1 -Restart -Wait  # Restart if unhealthy, then wait until ready
+#   .\android\helpers\emu_health.ps1              # Check health, print status
+#   .\android\helpers\emu_health.ps1 -Restart     # Kill and restart if unhealthy
+#   .\android\helpers\emu_health.ps1 -Wait        # Block until emulator is fully healthy
+#   .\android\helpers\emu_health.ps1 -Restart -Wait  # Restart if unhealthy, then wait until ready
 #
 # Exit codes:
 #   0 = healthy
@@ -24,7 +24,9 @@ param(
 # Prevent inherited ErrorActionPreference=Stop from treating adb stderr as errors
 $ErrorActionPreference = 'Continue'
 
-$_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
+$androidRoot = Split-Path $PSScriptRoot
+$repoRoot = Split-Path $androidRoot
+$_depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
     Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
     exit 1
@@ -83,7 +85,7 @@ function Get-EmulatorProcessRecords {
 function Get-EmulatorLaunchLogPaths {
     param([string]$LaunchAvdName)
 
-    $logDir = Join-Path (Split-Path $PSScriptRoot) "temp"
+    $logDir = Join-Path $repoRoot "temp"
     New-Item -ItemType Directory -Force -Path $logDir | Out-Null
     $safeAvdName = $LaunchAvdName -replace '[^A-Za-z0-9_.-]', '_'
     return @{

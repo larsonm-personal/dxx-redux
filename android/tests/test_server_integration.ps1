@@ -10,7 +10,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-. "$PSScriptRoot\..\test_env.ps1"
+. "$PSScriptRoot\..\helpers\test_env.ps1"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = (Resolve-Path "$scriptDir\..\..").Path
 $serverDir = Join-Path $repoRoot "server"

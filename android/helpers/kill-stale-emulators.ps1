@@ -16,7 +16,9 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-$_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
+$androidRoot = Split-Path $PSScriptRoot
+$repoRoot = Split-Path $androidRoot
+$_depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
     Write-Host "dependency_base.txt not found at $_depBaseFile" -ForegroundColor Red
     exit 1

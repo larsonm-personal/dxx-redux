@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-. (Join-Path (Split-Path $PSScriptRoot -Parent) 'test_host_platform.ps1')
+. (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'test_host_platform.ps1')
 
 function Get-InputDemoRelativeRepoPath {
     param(

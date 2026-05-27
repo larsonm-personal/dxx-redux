@@ -1,9 +1,9 @@
 #!/usr/bin/env pwsh
-# run-shfmt.ps1 -- Run shfmt on bash scripts in android/.
+# run-clang-format.ps1 -- Run clang-format on android/ C/C++ code only.
 # Usage:
-#   .\run-shfmt.ps1          # format in-place (default)
-#   .\run-shfmt.ps1 --check  # dry-run, exit 1 if changes needed
-#   .\run-shfmt.ps1 -Paths path\to\file path\to\dir
+#   .\run-clang-format.ps1          # format in-place
+#   .\run-clang-format.ps1 --check  # dry-run, exit 1 if changes needed
+#   .\run-clang-format.ps1 -Paths path\to\file path\to\dir
 
 param(
     [switch]$Check,
@@ -11,8 +11,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Split-Path $PSScriptRoot
-$platformHelper = Join-Path $PSScriptRoot "get_deps/helpers/Get-DepPlatform.ps1"
+$androidRoot = Split-Path $PSScriptRoot
+$repoRoot = Split-Path $androidRoot
+$platformHelper = Join-Path $androidRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
 function Get-ScopedFiles {
@@ -51,12 +52,11 @@ function Get-ScopedFiles {
 
     return @($results | Where-Object {
             $_.FullName.StartsWith($RootPath, [System.StringComparison]::OrdinalIgnoreCase) -and
-            ($ValidExtensions -contains $_.Extension.ToLowerInvariant()) -and
-            $_.FullName -notmatch '[\\/](build|build-outputs|\.cxx)[\\/]'
+            ($ValidExtensions -contains $_.Extension.ToLowerInvariant())
         } | Sort-Object FullName -Unique)
 }
 
-# --- Locate shfmt ---
+# --- Locate clang-format ---
 $DEP_BASE = Get-DependencyBase -RepoRoot $repoRoot
 if (-not $DEP_BASE) {
     $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
@@ -64,48 +64,59 @@ if (-not $DEP_BASE) {
     exit 1
 }
 
-$confFile = Join-Path $PSScriptRoot "get_deps\tool_versions.conf"
-$sfVersion = $null
+# Load version from tool_versions.conf
+$confFile = Join-Path $androidRoot "get_deps\tool_versions.conf"
+$cfVersion = $null
 foreach ($line in Get-Content $confFile) {
-    if ($line -match '^SHFMT_VERSION=(.+)$') {
-        $sfVersion = $Matches[1]
+    if ($line -match '^CLANG_FORMAT_VERSION=(.+)$') {
+        $cfVersion = $Matches[1]
     }
 }
 
-$shfmt = $null
-$installDir = Join-Path $DEP_BASE "shfmt-$sfVersion"
-$shfmt = Get-PlatformToolPath -BaseDir $installDir -ToolName "shfmt"
-if (-not $shfmt) {
-    $inPath = Get-Command "shfmt" -ErrorAction SilentlyContinue
-    if ($inPath) { $shfmt = $inPath.Source }
+$clangFormat = $null
+$installDir = Join-Path $DEP_BASE "clang-format-$cfVersion"
+$clangFormat = Get-PlatformToolPath -BaseDir $installDir -ToolName "clang-format"
+# Fallback: PATH
+if (-not $clangFormat) {
+    $inPath = Get-Command "clang-format" -ErrorAction SilentlyContinue
+    if ($inPath) {
+        $clangFormat = $inPath.Source
+    }
 }
-if (-not $shfmt) {
-    Write-Error "shfmt not found. Run android/get_deps/helpers/get_shfmt.sh to install"
+if (-not $clangFormat) {
+    Write-Error "clang-format not found. Run android/get_deps/helpers/get_clang_format.sh to install"
     exit 1
 }
-Write-Host "Using: $shfmt"
-& $shfmt --version
+Write-Host "Using: $clangFormat"
+& $clangFormat --version
 
-# --- Gather .sh files ---
-$files = Get-ScopedFiles -RootPath $PSScriptRoot -InputPaths $Paths -ValidExtensions @('.sh')
+# --- Gather files ---
+$cppDir = Join-Path $androidRoot "app\src\main\cpp"
+
+# SDL patch files to exclude (these track upstream SDL)
+$excludes = @(
+    "SDL_androidaudio.c",
+    "SDL_androidaudio.h",
+    "SDL_config_android.h"
+)
+
+$files = Get-ScopedFiles -RootPath $cppDir -InputPaths $Paths -ValidExtensions @('.c', '.cpp', '.h') |
+    Where-Object { $excludes -notcontains $_.Name }
 
 if ($files.Count -eq 0) {
-    Write-Host "No shell scripts found"
+    Write-Host "No files found to format"
     exit 0
 }
 
-Write-Host "Found $($files.Count) shell scripts"
+Write-Host "Found $($files.Count) files to check"
 
 # --- Run ---
-# shfmt flags: -i 4 (indent=4, matches .editorconfig), -bn (binary ops start of line)
-$shfmtArgs = @("-i", "4", "-bn")
-
 if ($Check) {
     $dirty = @()
     $savedPref = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     foreach ($f in $files) {
-        & $shfmt @shfmtArgs -d "$($f.FullName)" 2>&1 | Out-Null
+        & $clangFormat --dry-run --Werror --style=file "$($f.FullName)" 2>$null
         if ($LASTEXITCODE -ne 0) {
             $dirty += $f.FullName
         }
@@ -120,10 +131,10 @@ if ($Check) {
         }
         exit 1
     }
-    Write-Host "All shell scripts are correctly formatted"
+    Write-Host "All files are correctly formatted"
 } else {
     foreach ($f in $files) {
-        & $shfmt @shfmtArgs -w "$($f.FullName)"
+        & $clangFormat -i --style=file "$($f.FullName)"
     }
-    Write-Host "shfmt format pass complete"
+    Write-Host "Formatted $($files.Count) files"
 }

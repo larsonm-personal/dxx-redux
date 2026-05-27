@@ -19,11 +19,12 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent -Path $PSCommandPath
+$HelpersDir = Join-Path -Path $ScriptDir -ChildPath "helpers"
 $GameScriptsDir = Join-Path -Path $ScriptDir -ChildPath "game_scripts"
 $TestsDir = Join-Path -Path $ScriptDir -ChildPath "tests"
-$runTestScript = Join-Path -Path $ScriptDir -ChildPath "run_test.ps1"
+$runTestScript = Join-Path -Path $HelpersDir -ChildPath "run_test.ps1"
 
-. (Join-Path $ScriptDir "test_helpers.ps1")
+. (Join-Path $HelpersDir "test_helpers.ps1")
 
 function Read-NumberedChoice {
     param(

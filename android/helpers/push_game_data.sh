@@ -19,7 +19,8 @@ if [ "${CALLED_FROM_SCRIPT:-0}" != "1" ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ANDROID_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$ANDROID_DIR/.." && pwd)"
 GAME_DATA_DIR="$REPO_ROOT/game_data_to_copy_to_emulator"
 PACKAGE="com.dxxredux.app"
 

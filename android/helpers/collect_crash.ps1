@@ -15,7 +15,8 @@
     # Then reproduce the crash in the emulator, then press Enter.
 #>
 $ErrorActionPreference = "Continue"
-$reportDir = Join-Path $PSScriptRoot "..\temp\crash_report"
+$repoRoot = Split-Path (Split-Path $PSScriptRoot)
+$reportDir = Join-Path $repoRoot "temp\crash_report"
 if (Test-Path $reportDir) { Remove-Item $reportDir -Recurse -Force }
 New-Item -ItemType Directory -Path $reportDir -Force | Out-Null
 

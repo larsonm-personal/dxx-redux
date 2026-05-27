@@ -9,7 +9,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 function Fail($msg) { Write-Error "FAIL: $msg"; exit 1 }
 function Info($msg) { Write-Host $msg }

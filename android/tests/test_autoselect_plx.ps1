@@ -10,7 +10,7 @@
 #   .\android\tests\test_autoselect_plx.ps1
 
 $ErrorActionPreference = "Stop"
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 $pass = 0
 $fail = 0

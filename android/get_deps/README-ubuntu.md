@@ -4,7 +4,7 @@ From the repo root:
 
 ```bash
 ./android/get_deps/get_all.sh
-source android/set_vars.sh
+source android/helpers/set_vars.sh
 ```
 
 `get_all.sh` installs Linux host prerequisites, installs PowerShell if `pwsh` is missing, creates `dependency_base.txt` with the platform default if needed, then downloads the pinned JDK, Android SDK, NDK, emulator image, Gradle wrapper, and formatter tools. The Linux prerequisite step includes the system C/C++ build toolchain, CMake, Ninja, pkg-config, Cargo, Rust, and the native desktop libraries used by the host regression tests.

@@ -7,7 +7,7 @@
 // Phase 2: (Game) Select pilot, introspect at main menu
 // Phase 3: (Launcher) Compare launcher vs game joystick_controls
 //
-// Run via: android/run_test.ps1 test_controller_compare_unified.json5
+// Run via: android/helpers/run_test.ps1 test_controller_compare_unified.json5
 [
     {"_info": {
         "games": ["d1", "d2"],

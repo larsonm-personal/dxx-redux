@@ -11,7 +11,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Split-Path $PSScriptRoot
+$androidRoot = Split-Path $PSScriptRoot
+$repoRoot = Split-Path $androidRoot
 
 function Get-ScopedFiles {
     param(
@@ -61,7 +62,7 @@ if (-not (Get-Module PSScriptAnalyzer -ListAvailable)) {
 }
 Import-Module PSScriptAnalyzer
 
-$settingsFile = Join-Path $PSScriptRoot "PSScriptAnalyzerSettings.psd1"
+$settingsFile = Join-Path $androidRoot "PSScriptAnalyzerSettings.psd1"
 if (-not (Test-Path $settingsFile)) {
     Write-Error "Settings file not found: $settingsFile"
     exit 1
@@ -69,7 +70,7 @@ if (-not (Test-Path $settingsFile)) {
 
 # --- Gather .ps1 files ---
 # Exclude build outputs, gradle wrapper, and NDK cmake cache
-$files = Get-ScopedFiles -RootPath $PSScriptRoot -InputPaths $Paths -ValidExtensions @('.ps1')
+$files = Get-ScopedFiles -RootPath $androidRoot -InputPaths $Paths -ValidExtensions @('.ps1')
 
 if ($files.Count -eq 0) {
     Write-Host "No PowerShell files found"

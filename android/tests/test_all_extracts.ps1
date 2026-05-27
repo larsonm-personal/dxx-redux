@@ -44,7 +44,7 @@ $TEST_SCRIPT = Join-Path $SCRIPT_DIR 'test_extract.ps1'
 
 Write-Host "test_all_extracts.ps1 starting"
 
-. "$PSScriptRoot\..\test_helpers.ps1"
+. "$PSScriptRoot\..\helpers\test_helpers.ps1"
 . (Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1')
 
 if (-not $env:ANDROID_SERIAL) {

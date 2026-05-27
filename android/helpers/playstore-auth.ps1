@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 # playstore-auth.ps1 -- Shared Play Store API authentication helpers
 # Dot-source this from scripts that need Play Store API access:
-#   . "$PSScriptRoot\playstore-auth.ps1"
+#   . "$PSScriptRoot\helpers\playstore-auth.ps1"
 
 function ConvertTo-Base64Url([byte[]]$bytes) {
     [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')

@@ -23,7 +23,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 
 # Resolve cmake and other tool paths
-. "$repoRoot\android\test_env.ps1"
+. "$repoRoot\android\helpers\test_env.ps1"
 
 $musicDir = Join-Path $PSScriptRoot "music"
 $depBase = (Get-Content "$repoRoot/dependency_base.txt" -Raw).Trim()

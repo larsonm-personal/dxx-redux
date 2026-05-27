@@ -8,7 +8,8 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$REPO_ROOT = Split-Path $PSScriptRoot
+$ANDROID_ROOT = Split-Path $PSScriptRoot
+$REPO_ROOT = Split-Path $ANDROID_ROOT
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
 $ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 $COMPOSE_DIR = Join-Path $REPO_ROOT "android\docker\nat-testbed"

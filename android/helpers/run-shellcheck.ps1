@@ -11,8 +11,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Split-Path $PSScriptRoot
-$platformHelper = Join-Path $PSScriptRoot "get_deps/helpers/Get-DepPlatform.ps1"
+$androidRoot = Split-Path $PSScriptRoot
+$repoRoot = Split-Path $androidRoot
+$platformHelper = Join-Path $androidRoot "get_deps/helpers/Get-DepPlatform.ps1"
 . $platformHelper
 
 function Get-ScopedFiles {
@@ -64,7 +65,7 @@ if (-not $DEP_BASE) {
     exit 1
 }
 
-$confFile = Join-Path $PSScriptRoot "get_deps\tool_versions.conf"
+$confFile = Join-Path $androidRoot "get_deps\tool_versions.conf"
 $scVersion = $null
 foreach ($line in Get-Content $confFile) {
     if ($line -match '^SHELLCHECK_VERSION=(.+)$') {
@@ -87,7 +88,7 @@ Write-Host "Using: $shellcheck"
 & $shellcheck --version | Select-Object -First 2
 
 # --- Gather .sh files ---
-$files = Get-ScopedFiles -RootPath $PSScriptRoot -InputPaths $Paths -ValidExtensions @('.sh')
+$files = Get-ScopedFiles -RootPath $androidRoot -InputPaths $Paths -ValidExtensions @('.sh')
 
 if ($files.Count -eq 0) {
     Write-Host "No shell scripts found"

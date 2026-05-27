@@ -200,13 +200,13 @@ function Get-ExtractRegressionOracleStatus {
 
     if (Test-Path -LiteralPath $cdRoot) {
         $sourceDirs = @(Get-ChildItem -LiteralPath $cdRoot -Directory -ErrorAction SilentlyContinue |
-            Where-Object {
-                @(Get-ChildItem -LiteralPath $_.FullName -File -ErrorAction SilentlyContinue |
-                    Where-Object { $_.Extension.ToLowerInvariant() -in @('.cue', '.iso') }).Count -gt 0
-            } |
-            Sort-Object FullName)
+                Where-Object {
+                    @(Get-ChildItem -LiteralPath $_.FullName -File -ErrorAction SilentlyContinue |
+                            Where-Object { $_.Extension.ToLowerInvariant() -in @('.cue', '.iso') }).Count -gt 0
+                    } |
+                    Sort-Object FullName)
         $specPaths = @(Get-ChildItem -LiteralPath $cdRoot -Recurse -Filter 'extract_regression.json5' -File -ErrorAction SilentlyContinue |
-            Sort-Object FullName)
+                Sort-Object FullName)
         foreach ($dir in $sourceDirs) {
             $specPath = Join-Path $dir.FullName 'extract_regression.json5'
             if (-not (Test-Path -LiteralPath $specPath -PathType Leaf)) {

@@ -5,19 +5,20 @@
 # Safe to source multiple times (idempotent).
 #
 # Usage:
-#   . "$PSScriptRoot\test_env.ps1"          # from android/
-#   . "$PSScriptRoot\..\test_env.ps1"       # from android/tests/
+#   . "$PSScriptRoot\helpers\test_env.ps1"  # from android/
+#   . "$PSScriptRoot\..\helpers\test_env.ps1" # from android/tests/
 
 # -- Resolve repo root + DEP_BASE if not already set -------------------------
 
 if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoaded) {
     $script:_testEnvLoaded = $true
 
-    # Find repo root from this file's location (android/test_env.ps1 -> repo root)
+    # Find repo root from this file's location (android/helpers/test_env.ps1 -> repo root)
     $_envScriptDir = $PSScriptRoot
     if (-not $_envScriptDir) { $_envScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path }
     . (Join-Path $_envScriptDir "test_host_platform.ps1")
-    $_envRepoRoot = Split-Path $_envScriptDir
+    $_envAndroidRoot = Split-Path $_envScriptDir
+    $_envRepoRoot = Split-Path $_envAndroidRoot
 
     $_depBaseFile = Join-Path $_envRepoRoot "dependency_base.txt"
     if (Test-Path $_depBaseFile) {

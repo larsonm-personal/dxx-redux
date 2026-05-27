@@ -2,7 +2,7 @@
 # test_helpers.ps1 -- Shared helper functions for Android emulator test scripts.
 #
 # Usage (dot-source from another script):
-#   . "$PSScriptRoot\test_helpers.ps1"
+#   . "$PSScriptRoot\helpers\test_helpers.ps1"
 #
 # Provides:
 #   $ADB, $PACKAGE, $ACTIVITY  -- standard paths/constants
@@ -22,13 +22,14 @@
 . (Join-Path $PSScriptRoot "test_env.ps1")
 . (Join-Path $PSScriptRoot "test_host_platform.ps1")
 
-$_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
+$script:ANDROID_ROOT = Split-Path $PSScriptRoot
+$script:REPO_ROOT = Split-Path $script:ANDROID_ROOT
+$_depBaseFile = Join-Path $script:REPO_ROOT "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
     Write-Host "FAIL: dependency_base.txt not found at $_depBaseFile" -ForegroundColor Red
     exit 1
 }
 $script:DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
-$script:REPO_ROOT = Split-Path $PSScriptRoot
 $script:ADB = Resolve-RegressionAndroidSdkTool -DepBase $script:DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 $script:PACKAGE = "com.dxxredux.app"
 $script:ACTIVITY = "com.dxxredux.app.SetupActivity"
@@ -817,7 +818,7 @@ function Send-AutomationScript {
     param(
         [Parameter(Mandatory = $true, Position = 0)]
         [string]$ScriptName,
-        [string]$ScriptDir = $PSScriptRoot,
+        [string]$ScriptDir = $script:ANDROID_ROOT,
         [switch]$PushOnly
     )
     $scriptPath = Join-RegressionPath $ScriptDir "game_scripts" $ScriptName
@@ -1686,7 +1687,7 @@ function Stop-DockerNat {
 function Install-ApkOnDevice {
     # Install the debug APK on a specific emulator serial, or default.
     param([string]$Serial)
-    $apk = Join-RegressionPath $PSScriptRoot "app" "build" "outputs" "apk" "debug" "app-debug.apk"
+    $apk = Join-RegressionPath $script:ANDROID_ROOT "app" "build" "outputs" "apk" "debug" "app-debug.apk"
     if (-not (Test-Path $apk)) {
         Write-Status "WARN: No APK at $apk" "Yellow"
         return $false
