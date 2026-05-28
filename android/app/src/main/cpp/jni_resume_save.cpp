@@ -324,7 +324,10 @@ static json resume_candidate_json(const char *files_dir,
 	out["level_seconds"] = candidate.meta.level_seconds;
 	out["total_seconds"] = candidate.meta.total_seconds;
 	out["slot"] = slot_from_path(candidate.path);
-	out["has_thumbnail"] = candidate.meta.thumbnail_format == ANDROID_SAVE_META_THUMB_RGB6;
+	out["has_thumbnail"] =
+	    candidate.meta.thumbnail_format == ANDROID_SAVE_META_THUMB_RGB6 &&
+	    candidate.meta.thumbnail_width == ANDROID_SAVE_META_THUMB_W &&
+	    candidate.meta.thumbnail_height == ANDROID_SAVE_META_THUMB_H;
 	out["thumbnail_width"] = candidate.meta.thumbnail_width;
 	out["thumbnail_height"] = candidate.meta.thumbnail_height;
 	out["metadata_backed"] = android_save_meta_is_valid(&candidate.meta) != 0;

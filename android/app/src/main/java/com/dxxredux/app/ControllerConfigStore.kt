@@ -11,6 +11,63 @@ internal data class JoyPairsResult(
     val combiners: List<Triple<Int, Int, Int>>,
 )
 
+internal data class ControllerConfigState(
+    val bindings: Map<String, String> = emptyMap(),
+    val inverts: Set<String> = emptySet(),
+    val thresholds: Map<String, Int> = defaultThresholds(),
+    val axisExponents: Map<String, Float> = defaultControllerAxisExponents(),
+)
+
+internal fun controllerConfigStateFromHumanData(data: HumanReadableConfig.ControllerConfigData): ControllerConfigState {
+    val thresholds = defaultThresholds().toMutableMap()
+    for ((controlId, threshold) in data.thresholds) {
+        if (controlId in thresholds) thresholds[controlId] = threshold.coerceIn(5, 95)
+    }
+    val axisExponents = clampedControllerAxisExponents(data.axisExponents)
+    return ControllerConfigState(data.bindings, data.inverts, thresholds, axisExponents)
+}
+
+internal fun controllerConfigStateFromHumanJson(
+    json: JSONObject,
+): HumanReadableConfig.ParseResult<ControllerConfigState> {
+    val parsed = HumanReadableConfig.humanJsonToControllerConfig(json)
+    return HumanReadableConfig.ParseResult(parsed.value?.let(::controllerConfigStateFromHumanData), parsed.warnings)
+}
+
+internal fun controllerConfigStateToHumanJson(config: ControllerConfigState): JSONObject =
+    HumanReadableConfig.controllerConfigToHumanJson(
+        config.bindings,
+        config.inverts,
+        config.thresholds,
+        config.axisExponents,
+    )
+
+internal fun readActiveControllerConfig(context: Context): ControllerConfigState? {
+    val file = File(context.filesDir, CONFIG_FILENAME)
+    if (!file.exists()) return null
+    return try {
+        controllerConfigStateFromHumanJson(JSONObject(file.readText())).value
+    } catch (_: Exception) {
+        null
+    }
+}
+
+internal fun loadDefaultControllerConfig(context: Context): ControllerConfigState =
+    try {
+        val json =
+            JSONObject(
+                context.assets.open("configs/controller/default.json").bufferedReader().use { reader ->
+                    reader.readText()
+                },
+            )
+        val parsed = controllerConfigStateFromHumanJson(json)
+        parsed.warnings.forEach { android.util.Log.w("ControllerConfig", it) }
+        parsed.value ?: ControllerConfigState()
+    } catch (exception: Exception) {
+        android.util.Log.e("ControllerConfig", "Failed to load default controller config", exception)
+        ControllerConfigState()
+    }
+
 private const val D1_JOY_SETTINGS_SIZE = 50
 private const val D2_JOY_SETTINGS_SIZE = 56
 
@@ -415,6 +472,21 @@ internal fun saveConfig(
     )
 }
 
+internal fun saveConfig(
+    context: Context,
+    config: ControllerConfigState,
+    gameVariant: String = "d2",
+) {
+    saveConfig(
+        context,
+        config.bindings,
+        config.inverts,
+        gameVariant,
+        config.thresholds,
+        config.axisExponents,
+    )
+}
+
 internal data class LoadedConfig(
     val bindings: Map<String, String>,
     val inverts: Set<String>,
@@ -423,35 +495,6 @@ internal data class LoadedConfig(
 )
 
 internal fun loadConfig(context: Context): LoadedConfig? {
-    val file = File(context.filesDir, CONFIG_FILENAME)
-    if (!file.exists()) return null
-    val json = JSONObject(file.readText())
-    if (!json.has("bindings")) return null
-
-    val bindingsObj = json.getJSONObject("bindings")
-    val bindings = mutableMapOf<String, String>()
-    for (key in bindingsObj.keys()) bindings[key] = bindingsObj.getString(key)
-
-    val invertedControls = mutableSetOf<String>()
-    if (json.has("inverts")) {
-        val arr = json.getJSONArray("inverts")
-        for (i in 0 until arr.length()) invertedControls.add(arr.getString(i))
-    }
-
-    val thresholds = defaultThresholds().toMutableMap()
-    if (json.has("thresholds")) {
-        val tObj = json.getJSONObject("thresholds")
-        for (key in tObj.keys()) {
-            if (key in thresholds) thresholds[key] = tObj.getInt(key).coerceIn(5, 95)
-        }
-    }
-
-    val axisExponents = defaultControllerAxisExponents().toMutableMap()
-    if (json.has("axis_exponents")) {
-        val eObj = json.getJSONObject("axis_exponents")
-        for (key in eObj.keys()) {
-            if (key in axisExponents) axisExponents[key] = clampControllerAxisExponent(eObj.getDouble(key).toFloat())
-        }
-    }
-    return LoadedConfig(bindings, invertedControls, thresholds, axisExponents)
+    val config = readActiveControllerConfig(context) ?: return null
+    return LoadedConfig(config.bindings, config.inverts, config.thresholds, config.axisExponents)
 }

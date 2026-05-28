@@ -87,6 +87,8 @@ private val PICKER_FONT_SIZE = 13.sp
 private const val NAV_INPUT_THRESHOLD = 0.5f
 private const val FRESH_AXIS_SAMPLE_POLL_MS = 50L
 private const val FRESH_AXIS_SAMPLE_POLLS = 4
+private const val ACTION_BUTTON_COLUMNS = 2
+private const val ACTION_BUTTON_ROWS = 3
 private val actionButtonHighlightShape = RoundedCornerShape(6.dp)
 
 private fun moveActionButtonSelection(
@@ -94,13 +96,14 @@ private fun moveActionButtonSelection(
     navX: Int,
     navY: Int,
 ): Int {
-    var col = currentIndex % 2
-    var row = currentIndex / 2
-    if (navX < 0) col = 0
-    if (navX > 0) col = 1
-    if (navY < 0) row = 0
-    if (navY > 0) row = 1
-    return row * 2 + col
+    val boundedIndex = currentIndex.coerceIn(0, ACTION_BUTTON_COLUMNS * ACTION_BUTTON_ROWS - 1)
+    var column = boundedIndex % ACTION_BUTTON_COLUMNS
+    var row = boundedIndex / ACTION_BUTTON_COLUMNS
+    if (navX < 0) column = 0
+    if (navX > 0) column = ACTION_BUTTON_COLUMNS - 1
+    if (navY < 0) row = (row - 1).coerceAtLeast(0)
+    if (navY > 0) row = (row + 1).coerceAtMost(ACTION_BUTTON_ROWS - 1)
+    return row * ACTION_BUTTON_COLUMNS + column
 }
 
 private fun actionButtonModifier(selected: Boolean): Modifier =
@@ -208,6 +211,7 @@ fun ControllerConfigPage(
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     gameVariant: String = "d2",
+    controllerNavigationActive: Boolean = false,
     onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
     onDialogViewChanged: (View?) -> Unit = {},
     onPickerOpenChanged: (Boolean) -> Unit = {},
@@ -219,6 +223,17 @@ fun ControllerConfigPage(
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val hasTouchscreen =
+        remember(context) {
+            context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)
+        }
+    val actionButtonHighlightVisible =
+        shouldShowControllerFocusHighlight(
+            hasTouchscreen = hasTouchscreen,
+            controllerNavigationActive = controllerNavigationActive,
+        )
+    var controllerSlots by remember { mutableStateOf(ControllerConfigSlotRepository.load(context)) }
+    val activeSlotName = controllerSlots.activeSlot.name
 
     // Bindings state: control ID → function label
     val bindings = remember { mutableStateMapOf<String, String>() }
@@ -226,18 +241,28 @@ fun ControllerConfigPage(
     val thresholds = remember { mutableStateMapOf<String, Int>() }
     val axisExponents = remember { mutableStateMapOf<String, Float>() }
     var initialized by remember { mutableStateOf(false) }
+
+    fun loadControllerConfigState(config: ControllerConfigState) {
+        bindings.clear()
+        bindings.putAll(config.bindings)
+        inverts.clear()
+        inverts.addAll(config.inverts)
+        thresholds.clear()
+        thresholds.putAll(config.thresholds)
+        axisExponents.clear()
+        axisExponents.putAll(config.axisExponents)
+    }
+
+    fun currentControllerConfigState(): ControllerConfigState =
+        ControllerConfigState(
+            bindings = bindings.toMap(),
+            inverts = inverts.toSet(),
+            thresholds = thresholds.toMap(),
+            axisExponents = axisExponents.toMap(),
+        )
+
     if (!initialized) {
-        val saved = loadConfig(context)
-        if (saved != null) {
-            bindings.putAll(saved.bindings)
-            inverts.addAll(saved.inverts)
-            thresholds.putAll(saved.thresholds)
-            axisExponents.putAll(saved.axisExponents)
-        } else {
-            bindings.putAll(loadDefaultBindings(context))
-            thresholds.putAll(defaultThresholds())
-            axisExponents.putAll(defaultControllerAxisExponents())
-        }
+        loadControllerConfigState(controllerSlots.activeSlot.value)
         initialized = true
     }
 
@@ -251,18 +276,8 @@ fun ControllerConfigPage(
             if (uri == null) return@rememberLauncherForActivityResult
             val msg = ConfigImportExport.importFromUri(context, uri)
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-            // Reload the imported config
-            val reloaded = loadConfig(context)
-            if (reloaded != null) {
-                bindings.clear()
-                bindings.putAll(reloaded.bindings)
-                inverts.clear()
-                inverts.addAll(reloaded.inverts)
-                thresholds.clear()
-                thresholds.putAll(reloaded.thresholds)
-                axisExponents.clear()
-                axisExponents.putAll(reloaded.axisExponents)
-            }
+            controllerSlots = ControllerConfigSlotRepository.load(context)
+            loadControllerConfigState(controllerSlots.activeSlot.value)
         }
 
     // Touch/dialog state
@@ -271,6 +286,8 @@ fun ControllerConfigPage(
     var showButtonPicker by remember { mutableStateOf(false) }
     var showStickPicker by remember { mutableStateOf(false) }
     var showDpadPicker by remember { mutableStateOf(false) }
+    var showSlotDialog by remember { mutableStateOf(false) }
+    var showControllerPresetPicker by remember { mutableStateOf(false) }
     var selectedActionButtonIndex by remember { mutableIntStateOf(0) }
     var suppressActionButtonARelease by remember { mutableStateOf(false) }
     var staleAxisIndices by remember { mutableStateOf(emptySet<Int>()) }
@@ -421,13 +438,23 @@ fun ControllerConfigPage(
     }
 
     fun saveSelection() {
-        saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap(), axisExponents.toMap())
+        controllerSlots =
+            ControllerConfigSlotRepository.saveActiveConfig(
+                context,
+                currentControllerConfigState(),
+                gameVariant,
+            )
         Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
         onBack()
     }
 
     fun exportSelection() {
-        saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap(), axisExponents.toMap())
+        controllerSlots =
+            ControllerConfigSlotRepository.saveActiveConfig(
+                context,
+                currentControllerConfigState(),
+                gameVariant,
+            )
         if (!ConfigImportExport.exportControllerConfig(context)) {
             Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
         }
@@ -440,10 +467,12 @@ fun ControllerConfigPage(
     val runSelectedActionState by rememberUpdatedState(
         newValue = {
             when (selectedActionButtonIndex) {
-                0 -> cancelSelection()
-                1 -> saveSelection()
+                0 -> showSlotDialog = true
+                1 -> showControllerPresetPicker = true
                 2 -> exportSelection()
-                else -> importSelection()
+                3 -> importSelection()
+                4 -> cancelSelection()
+                else -> saveSelection()
             }
         },
     )
@@ -1279,7 +1308,7 @@ fun ControllerConfigPage(
     val infoAndButtons: @Composable ColumnScope.() -> Unit = {
         val touchlessAndroid =
             remember(context) {
-                !context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)
+                !hasTouchscreen
             }
         val missingMenuBinding = touchlessAndroid && !hasControllerMenuBinding(bindings)
 
@@ -1382,7 +1411,6 @@ fun ControllerConfigPage(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // ── Save & Cancel buttons ──
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1390,14 +1418,99 @@ fun ControllerConfigPage(
             OutlinedButton(
                 onClick = {
                     selectedActionButtonIndex = 0
-                    cancelSelection()
+                    showSlotDialog = true
+                },
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .height(36.dp)
+                        .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex == 0))
+                        .focusProperties { canFocus = false },
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
+            ) {
+                Text("Choose Slot", fontSize = 12.sp)
+            }
+            OutlinedButton(
+                onClick = {
+                    selectedActionButtonIndex = 1
+                    showControllerPresetPicker = true
+                },
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .height(36.dp)
+                        .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex == 1))
+                        .focusProperties { canFocus = false },
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
+            ) {
+                Text("Apply Preset", fontSize = 12.sp)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // ── Export / Import buttons ──
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = {
+                    selectedActionButtonIndex = 2
+                    exportSelection()
                 },
                 modifier =
                     Modifier
                         .weight(
                             1f,
                         ).height(38.dp)
-                        .then(actionButtonModifier(selectedActionButtonIndex == 0))
+                        .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex == 2))
+                        .focusProperties {
+                            canFocus =
+                                false
+                        },
+            ) {
+                Text("Export", fontSize = 12.sp)
+            }
+            OutlinedButton(
+                onClick = {
+                    selectedActionButtonIndex = 3
+                    importSelection()
+                },
+                modifier =
+                    Modifier
+                        .weight(
+                            1f,
+                        ).height(38.dp)
+                        .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex == 3))
+                        .focusProperties {
+                            canFocus =
+                                false
+                        },
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
+            ) {
+                Text("Import", fontSize = 12.sp)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // ── Save & Cancel buttons ──
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = {
+                    selectedActionButtonIndex = 4
+                    cancelSelection()
+                },
+                modifier =
+                    Modifier
+                        .weight(
+                            1f,
+                        ).height(36.dp)
+                        .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex == 4))
                         .focusProperties {
                             canFocus =
                                 false
@@ -1407,15 +1520,15 @@ fun ControllerConfigPage(
             }
             Button(
                 onClick = {
-                    selectedActionButtonIndex = 1
+                    selectedActionButtonIndex = 5
                     saveSelection()
                 },
                 modifier =
                     Modifier
                         .weight(
                             1f,
-                        ).height(38.dp)
-                        .then(actionButtonModifier(selectedActionButtonIndex == 1))
+                        ).height(36.dp)
+                        .then(actionButtonModifier(actionButtonHighlightVisible && selectedActionButtonIndex == 5))
                         .focusProperties {
                             canFocus =
                                 false
@@ -1439,53 +1552,6 @@ fun ControllerConfigPage(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // ── Export / Import buttons ──
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = {
-                    selectedActionButtonIndex = 2
-                    exportSelection()
-                },
-                modifier =
-                    Modifier
-                        .weight(
-                            1f,
-                        ).height(36.dp)
-                        .then(actionButtonModifier(selectedActionButtonIndex == 2))
-                        .focusProperties {
-                            canFocus =
-                                false
-                        },
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
-            ) {
-                Text("Export", fontSize = 12.sp)
-            }
-            OutlinedButton(
-                onClick = {
-                    selectedActionButtonIndex = 3
-                    importSelection()
-                },
-                modifier =
-                    Modifier
-                        .weight(
-                            1f,
-                        ).height(36.dp)
-                        .then(actionButtonModifier(selectedActionButtonIndex == 3))
-                        .focusProperties {
-                            canFocus =
-                                false
-                        },
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
-            ) {
-                Text("Import", fontSize = 12.sp)
-            }
-        }
     }
 
     // ── Layout ──
@@ -1504,6 +1570,12 @@ fun ControllerConfigPage(
             ) {
                 Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(end = 8.dp)) {
                     controllerCanvas(Modifier.fillMaxHeight())
+                    Text(
+                        text = "slot: $activeSlotName",
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 val rightScroll = rememberScrollState()
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
@@ -1527,7 +1599,15 @@ fun ControllerConfigPage(
                         .safeDrawingPadding()
                         .padding(12.dp),
             ) {
-                controllerCanvas(Modifier.weight(1f))
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    controllerCanvas(Modifier.fillMaxSize())
+                    Text(
+                        text = "slot: $activeSlotName",
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Spacer(modifier = Modifier.height(6.dp))
                 infoAndButtons()
             }
@@ -1535,6 +1615,64 @@ fun ControllerConfigPage(
     }
 
     // ── Dialogs ──
+
+    if (showSlotDialog) {
+        ConfigSlotDialog(
+            title = "Controller Slots",
+            slotNames = controllerSlots.slots.map { slot -> slot.name },
+            activeIndex = controllerSlots.safeActiveIndex,
+            onSelectSlot = { slotIndex ->
+                controllerSlots = ControllerConfigSlotRepository.selectSlot(context, slotIndex, gameVariant)
+                loadControllerConfigState(controllerSlots.activeSlot.value)
+            },
+            onRenameActiveSlot = { name ->
+                controllerSlots = ControllerConfigSlotRepository.renameActiveSlot(context, name)
+            },
+            onNewSlot = { name ->
+                controllerSlots = ControllerConfigSlotRepository.addDefaultSlot(context, name, gameVariant)
+                loadControllerConfigState(controllerSlots.activeSlot.value)
+            },
+            onDuplicateActiveSlot = { name ->
+                controllerSlots =
+                    ControllerConfigSlotRepository.duplicateActiveSlot(
+                        context,
+                        name,
+                        currentControllerConfigState(),
+                        gameVariant,
+                    )
+                loadControllerConfigState(controllerSlots.activeSlot.value)
+            },
+            onDeleteActiveSlot = {
+                controllerSlots = ControllerConfigSlotRepository.deleteActiveSlot(context, gameVariant)
+                loadControllerConfigState(controllerSlots.activeSlot.value)
+            },
+            onDismiss = { showSlotDialog = false },
+        )
+    }
+
+    if (showControllerPresetPicker) {
+        AlertDialog(
+            onDismissRequest = { showControllerPresetPicker = false },
+            title = { Text("Apply Preset") },
+            text = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            loadControllerConfigState(loadDefaultControllerConfig(context))
+                            showControllerPresetPicker = false
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Default Controller", fontSize = 14.sp)
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showControllerPresetPicker = false }) { Text("Cancel") }
+            },
+        )
+    }
 
     val assignedButtonFuncs =
         bindings.entries

@@ -319,6 +319,8 @@ fun AdvancedSettingsPage(
                                 TextButton(onClick = {
                                     File(ctx.filesDir, "controller_config.json").delete()
                                     File(ctx.filesDir, "touch_layout.json").delete()
+                                    ControllerConfigSlotRepository.clear(ctx)
+                                    TouchLayoutSlotRepository.clear(ctx)
                                     NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d2")
                                     NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d1")
                                     showResetDialog = false

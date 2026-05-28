@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ResumeSavePanelTest {
@@ -15,6 +16,31 @@ class ResumeSavePanelTest {
     @Test
     fun headerTextOrderPutsResumeTitleBeforeStopShowingButton() {
         assertEquals(listOf("Resume Recent Save", "Stop Showing This"), resumePanelHeaderTextOrder())
+    }
+
+    @Test
+    fun launcherThumbnailDimensionsAreDoubleInGameThumbnailSize() {
+        assertEquals(200, RESUME_SAVE_THUMBNAIL_WIDTH)
+        assertEquals(100, RESUME_SAVE_THUMBNAIL_HEIGHT)
+        assertEquals(60_000, RESUME_SAVE_THUMBNAIL_RGB6_BYTES)
+    }
+
+    @Test
+    fun decodeThumbnailRejectsOldSizeMetadata() {
+        val oldThumbnailRgb6 = ByteArray(100 * 50 * 3) { 1 }
+
+        assertNull(
+            decodeResumeSaveThumbnail(
+                candidate(
+                    "auto_exit",
+                    slot = 8,
+                    hasThumbnail = true,
+                    thumbnailWidth = 100,
+                    thumbnailHeight = 50,
+                    thumbnailRgb6 = oldThumbnailRgb6,
+                ),
+            ),
+        )
     }
 
     @Test
@@ -62,6 +88,10 @@ class ResumeSavePanelTest {
     private fun candidate(
         saveKind: String,
         slot: Int,
+        hasThumbnail: Boolean = false,
+        thumbnailWidth: Int = 0,
+        thumbnailHeight: Int = 0,
+        thumbnailRgb6: ByteArray? = null,
     ) = ResumeSaveBridge.ResumeSaveCandidate(
         path = "/data/user/0/com.dxxredux.app/files/d2x-redux/Players/test.sg$slot",
         relativePath = "d2x-redux/Players/test.sg$slot",
@@ -76,10 +106,10 @@ class ResumeSavePanelTest {
         levelSeconds = 120L,
         totalSeconds = 240L,
         slot = slot,
-        hasThumbnail = false,
-        thumbnailWidth = 0,
-        thumbnailHeight = 0,
+        hasThumbnail = hasThumbnail,
+        thumbnailWidth = thumbnailWidth,
+        thumbnailHeight = thumbnailHeight,
         metadataBacked = true,
-        thumbnailRgb6 = null,
+        thumbnailRgb6 = thumbnailRgb6,
     )
 }

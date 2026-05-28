@@ -113,9 +113,9 @@ object ResumeSaveBridge {
 
     private fun parseCandidate(obj: JSONObject): ResumeSaveCandidate {
         val path = obj.optString("path")
-        val hasThumbnail = obj.optBoolean("has_thumbnail")
+        val nativeHasThumbnail = obj.optBoolean("has_thumbnail")
         val thumbnailRgb6 =
-            if (hasThumbnail && path.isNotBlank()) {
+            if (nativeHasThumbnail && path.isNotBlank()) {
                 try {
                     nativeReadThumbnailRgb6(path)
                 } catch (e: Exception) {
@@ -139,7 +139,7 @@ object ResumeSaveBridge {
             levelSeconds = obj.optLong("level_seconds"),
             totalSeconds = obj.optLong("total_seconds"),
             slot = obj.optInt("slot", -1),
-            hasThumbnail = hasThumbnail,
+            hasThumbnail = nativeHasThumbnail && thumbnailRgb6 != null,
             thumbnailWidth = obj.optInt("thumbnail_width"),
             thumbnailHeight = obj.optInt("thumbnail_height"),
             metadataBacked = obj.optBoolean("metadata_backed"),

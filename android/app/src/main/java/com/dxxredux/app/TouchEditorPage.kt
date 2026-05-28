@@ -35,6 +35,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
@@ -200,7 +201,9 @@ fun TouchEditorPage(
 ) {
     BackHandler(onBack = onBack)
     val context = LocalContext.current
-    var layout by remember { mutableStateOf(TouchLayoutRepository.load(context)) }
+    var touchSlots by remember { mutableStateOf(TouchLayoutSlotRepository.load(context)) }
+    var layout by remember { mutableStateOf(touchSlots.activeSlot.value) }
+    val activeSlotName = touchSlots.activeSlot.name
     var selectedType by remember { mutableStateOf<String?>(null) }
     var selectedIndex by remember { mutableIntStateOf(-1) }
     var dirty by remember { mutableStateOf(false) }
@@ -279,6 +282,7 @@ fun TouchEditorPage(
     }
 
     // Dialogs
+    var showSlotDialog by remember { mutableStateOf(false) }
     var showPresetPicker by remember { mutableStateOf(false) }
     var showAddControl by remember { mutableStateOf(false) }
     var showGlobalSettings by remember { mutableStateOf(false) }
@@ -296,7 +300,8 @@ fun TouchEditorPage(
             val msg = ConfigImportExport.importFromUri(context, uri)
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
             // Reload after import
-            layout = TouchLayoutRepository.load(context)
+            touchSlots = TouchLayoutSlotRepository.load(context)
+            layout = touchSlots.activeSlot.value
             dirty = false
         }
 
@@ -316,7 +321,7 @@ fun TouchEditorPage(
                 )
             pendingRef.value = null
         }
-        TouchLayoutRepository.save(context, layout)
+        touchSlots = TouchLayoutSlotRepository.saveActiveLayout(context, layout)
         dirty = false
     }
 
@@ -342,6 +347,14 @@ fun TouchEditorPage(
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                Text(
+                    text = "slot: $activeSlotName",
+                    modifier = Modifier.widthIn(max = 96.dp).padding(end = 4.dp),
+                    fontSize = 9.sp,
+                    color = Color(0x99FFFFFF.toInt()),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 TextButton(onClick = {
                     if (dirty) save()
                     onBack()
@@ -349,6 +362,9 @@ fun TouchEditorPage(
                     Text("Close Editor", fontSize = 12.sp, color = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
+                TextButton(onClick = { showSlotDialog = true }) {
+                    Text("Slots", fontSize = 12.sp)
+                }
                 TextButton(onClick = { showPresetPicker = true }) {
                     Text("Presets", fontSize = 12.sp)
                 }
@@ -613,97 +629,140 @@ fun TouchEditorPage(
         val selTypeRef = rememberUpdatedState(selectedType)
         val selIdxRef = rememberUpdatedState(selectedIndex)
 
-        Canvas(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onTap = { offset ->
-                                val hits = hitTestAll(layoutRef.value, offset, canvasWidth, canvasHeight)
-                                if (hits.isEmpty()) {
-                                    selectedType = null
-                                    selectedIndex = -1
-                                    cycleHits = emptyList()
-                                } else if (hits.size == 1) {
-                                    selectedType = hits[0].first
-                                    selectedIndex = hits[0].second
-                                    cycleHits = hits
-                                    cycleIndex = 0
-                                } else {
-                                    // Multiple controls stacked: cycle through them
-                                    val nearPrev =
-                                        lastTapOffset != Offset.Unspecified &&
-                                            (offset - lastTapOffset).getDistance() < 30f
-                                    val sameList = nearPrev && cycleHits == hits
-                                    val current = Pair(selectedType, selectedIndex)
-                                    val nextIdx =
-                                        if (sameList) {
-                                            // Advance to next that isn't the current selection
-                                            val start = (cycleIndex + 1) % hits.size
-                                            if (hits[start] != current) {
-                                                start
+        Box(modifier = Modifier.fillMaxSize()) {
+            Canvas(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = { offset ->
+                                    val hits = hitTestAll(layoutRef.value, offset, canvasWidth, canvasHeight)
+                                    if (hits.isEmpty()) {
+                                        selectedType = null
+                                        selectedIndex = -1
+                                        cycleHits = emptyList()
+                                    } else if (hits.size == 1) {
+                                        selectedType = hits[0].first
+                                        selectedIndex = hits[0].second
+                                        cycleHits = hits
+                                        cycleIndex = 0
+                                    } else {
+                                        // Multiple controls stacked: cycle through them
+                                        val nearPrev =
+                                            lastTapOffset != Offset.Unspecified &&
+                                                (offset - lastTapOffset).getDistance() < 30f
+                                        val sameList = nearPrev && cycleHits == hits
+                                        val current = Pair(selectedType, selectedIndex)
+                                        val nextIdx =
+                                            if (sameList) {
+                                                // Advance to next that isn't the current selection
+                                                val start = (cycleIndex + 1) % hits.size
+                                                if (hits[start] != current) {
+                                                    start
+                                                } else {
+                                                    (start + 1) % hits.size
+                                                }
                                             } else {
-                                                (start + 1) % hits.size
+                                                // New tap location: if current is in hits, pick next; else first
+                                                val curPos = hits.indexOf(current)
+                                                if (curPos >= 0) (curPos + 1) % hits.size else 0
                                             }
-                                        } else {
-                                            // New tap location: if current is in hits, pick next; else first
-                                            val curPos = hits.indexOf(current)
-                                            if (curPos >= 0) (curPos + 1) % hits.size else 0
-                                        }
-                                    cycleHits = hits
-                                    cycleIndex = nextIdx
-                                    selectedType = hits[nextIdx].first
-                                    selectedIndex = hits[nextIdx].second
-                                }
-                                lastTapOffset = offset
-
-                                // In the editor, tapping a gyro recenter button triggers recenter
-                                if (selectedType == "button" && selectedIndex >= 0) {
-                                    val btn = layoutRef.value.buttons.getOrNull(selectedIndex)
-                                    if (btn?.binding == TouchBindings.BTN_GYRO_RECENTER) {
-                                        editorGyroManager?.calibrate()
+                                        cycleHits = hits
+                                        cycleIndex = nextIdx
+                                        selectedType = hits[nextIdx].first
+                                        selectedIndex = hits[nextIdx].second
                                     }
+                                    lastTapOffset = offset
+
+                                    // In the editor, tapping a gyro recenter button triggers recenter
+                                    if (selectedType == "button" && selectedIndex >= 0) {
+                                        val btn = layoutRef.value.buttons.getOrNull(selectedIndex)
+                                        if (btn?.binding == TouchBindings.BTN_GYRO_RECENTER) {
+                                            editorGyroManager?.calibrate()
+                                        }
+                                    }
+                                },
+                                onLongPress = { offset ->
+                                    val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
+                                    if (hit != null) {
+                                        // Long-press on control → select & expand bottom sheet
+                                        selectedType = hit.first
+                                        selectedIndex = hit.second
+                                        coroutineScope.launch { sheetState.bottomSheetState.expand() }
+                                    } else {
+                                        // Long-press on empty space → add control at that position
+                                        longPressPos = offset
+                                        showAddControl = true
+                                    }
+                                },
+                            )
+                        }.pointerInput(Unit) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                val st = selTypeRef.value
+                                val si = selIdxRef.value
+                                if (st != null && si >= 0) {
+                                    val lay = layoutRef.value
+                                    val dxPct = (dragAmount.x / canvasWidth) * 100f
+                                    val dyPct = (dragAmount.y / canvasHeight) * 100f
+                                    layout = moveControl(lay, st, si, dxPct, dyPct)
+                                    dirty = true
                                 }
-                            },
-                            onLongPress = { offset ->
-                                val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
-                                if (hit != null) {
-                                    // Long-press on control → select & expand bottom sheet
-                                    selectedType = hit.first
-                                    selectedIndex = hit.second
-                                    coroutineScope.launch { sheetState.bottomSheetState.expand() }
-                                } else {
-                                    // Long-press on empty space → add control at that position
-                                    longPressPos = offset
-                                    showAddControl = true
-                                }
-                            },
-                        )
-                    }.pointerInput(Unit) {
-                        detectDragGestures { change, dragAmount ->
-                            change.consume()
-                            val st = selTypeRef.value
-                            val si = selIdxRef.value
-                            if (st != null && si >= 0) {
-                                val lay = layoutRef.value
-                                val dxPct = (dragAmount.x / canvasWidth) * 100f
-                                val dyPct = (dragAmount.y / canvasHeight) * 100f
-                                layout = moveControl(lay, st, si, dxPct, dyPct)
-                                dirty = true
                             }
-                        }
-                    },
-        ) {
-            canvasWidth = size.width
-            canvasHeight = size.height
-            drawGrid(this)
-            drawAllControls(this, layout, selectedType, selectedIndex, textMeasurer, gyroYaw, gyroPitch, gyroRoll)
+                        },
+            ) {
+                canvasWidth = size.width
+                canvasHeight = size.height
+                drawGrid(this)
+                drawAllControls(this, layout, selectedType, selectedIndex, textMeasurer, gyroYaw, gyroPitch, gyroRoll)
+            }
         }
     }
 
     // ── Dialogs ──────────────────────────────────────────────────────────────
+    if (showSlotDialog) {
+        ConfigSlotDialog(
+            title = "Touch Slots",
+            slotNames = touchSlots.slots.map { slot -> slot.name },
+            activeIndex = touchSlots.safeActiveIndex,
+            onSelectSlot = { slotIndex ->
+                if (dirty) save()
+                touchSlots = TouchLayoutSlotRepository.selectSlot(context, slotIndex)
+                layout = touchSlots.activeSlot.value
+                selectedType = null
+                selectedIndex = -1
+                dirty = false
+            },
+            onRenameActiveSlot = { name ->
+                touchSlots = TouchLayoutSlotRepository.renameActiveSlot(context, name)
+            },
+            onNewSlot = { name ->
+                if (dirty) save()
+                touchSlots = TouchLayoutSlotRepository.addDefaultSlot(context, name)
+                layout = touchSlots.activeSlot.value
+                selectedType = null
+                selectedIndex = -1
+                dirty = false
+            },
+            onDuplicateActiveSlot = { name ->
+                touchSlots = TouchLayoutSlotRepository.duplicateActiveSlot(context, name, layout)
+                layout = touchSlots.activeSlot.value
+                selectedType = null
+                selectedIndex = -1
+                dirty = false
+            },
+            onDeleteActiveSlot = {
+                touchSlots = TouchLayoutSlotRepository.deleteActiveSlot(context)
+                layout = touchSlots.activeSlot.value
+                selectedType = null
+                selectedIndex = -1
+                dirty = false
+            },
+            onDismiss = { showSlotDialog = false },
+        )
+    }
     if (showPresetPicker) {
         PresetPickerDialog(
             onDismiss = { showPresetPicker = false },

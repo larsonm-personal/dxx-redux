@@ -61,6 +61,11 @@ internal fun shouldSeedLauncherControllerFocus(
     controllerNavigationActive: Boolean,
 ): Boolean = isAndroidTv || controllerNavigationActive
 
+internal fun shouldShowControllerFocusHighlight(
+    hasTouchscreen: Boolean,
+    controllerNavigationActive: Boolean,
+): Boolean = !hasTouchscreen || controllerNavigationActive
+
 /** Adds the shared bright TV focus border to any composable. */
 fun Modifier.tvFocusBorder(): Modifier =
     composed {

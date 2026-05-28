@@ -2583,6 +2583,7 @@ private fun SetupScreen(
                 axisGeneration = axisGeneration,
                 pressedButtons = pressedButtons,
                 gameVariant = selectedGame,
+                controllerNavigationActive = controllerNavigationActive,
                 onDialogGenericMotionEvent = { view, event -> activity.handleControllerMotion(view, event) },
                 onDialogViewChanged = { activity.controllerConfigDialogView = it },
                 onPickerOpenChanged = { activity.controllerConfigDialogOpen = it },

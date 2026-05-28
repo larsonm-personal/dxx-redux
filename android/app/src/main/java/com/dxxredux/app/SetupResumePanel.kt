@@ -58,6 +58,12 @@ import java.util.Locale
 
 private fun resumeGameDisplayName(game: String): String = if (game == "d1") "Descent 1" else "Descent 2"
 
+// Keep these in sync with ANDROID_SAVE_META_THUMB_* in android_save_meta.h.
+internal const val RESUME_SAVE_THUMBNAIL_WIDTH = 200
+internal const val RESUME_SAVE_THUMBNAIL_HEIGHT = 100
+internal const val RESUME_SAVE_THUMBNAIL_RGB6_BYTES =
+    RESUME_SAVE_THUMBNAIL_WIDTH * RESUME_SAVE_THUMBNAIL_HEIGHT * 3
+
 internal fun resumeSaveRgb6ChannelToRgb8(channel: Int): Int {
     val rgb6 = channel.coerceIn(0, 63)
     return (rgb6 shl 2) or (rgb6 shr 4)
@@ -97,7 +103,14 @@ internal fun decodeResumeSaveThumbnail(candidate: ResumeSaveBridge.ResumeSaveCan
     val expectedBytes = pixelCount * 3
     var hasVisiblePixel = false
 
-    if (width <= 0 || height <= 0 || rgb.size < expectedBytes) return null
+    if (
+        width != RESUME_SAVE_THUMBNAIL_WIDTH ||
+        height != RESUME_SAVE_THUMBNAIL_HEIGHT ||
+        rgb.size != RESUME_SAVE_THUMBNAIL_RGB6_BYTES ||
+        expectedBytes != RESUME_SAVE_THUMBNAIL_RGB6_BYTES
+    ) {
+        return null
+    }
     for (index in 0 until expectedBytes) {
         if (rgb[index].toInt() != 0) {
             hasVisiblePixel = true

@@ -15,7 +15,7 @@ object ConfigImportExport {
     private const val AUTHORITY = "com.dxxredux.app.fileprovider"
     private const val EXPORT_DIR = "config_exports"
     private const val MIME_JSON = "application/json"
-    private const val COMBINED_CONFIG_VERSION = 2
+    private const val COMBINED_CONFIG_VERSION = 3
 
     // SharedPreferences keys that should be included in config export.
     // Excludes debug/session/device-specific keys like selected_game, host_*, debug_log_*.
@@ -48,27 +48,15 @@ object ConfigImportExport {
 
     /** Export current touch layout as human-readable JSON via share sheet. */
     fun exportTouchLayout(context: Context): Boolean {
-        val layout = TouchLayoutRepository.load(context)
+        val layout = TouchLayoutSlotRepository.load(context).activeSlot.value
         val json = HumanReadableConfig.touchLayoutToHumanJson(layout)
         return shareJson(context, json, "touch_layout.json", "Share Touch Layout")
     }
 
     /** Export current controller config as human-readable JSON via share sheet. */
     fun exportControllerConfig(context: Context): Boolean {
-        val file = File(context.filesDir, "controller_config.json")
-        if (!file.exists()) {
-            Log.w(TAG, "No controller config to export")
-            return false
-        }
-        val saved = JSONObject(file.readText())
-        val parsed = parseControllerFields(saved)
-        val json =
-            HumanReadableConfig.controllerConfigToHumanJson(
-                parsed.bindings,
-                parsed.inverts,
-                parsed.thresholds,
-                parsed.axisExponents,
-            )
+        val config = ControllerConfigSlotRepository.load(context).activeSlot.value
+        val json = controllerConfigStateToHumanJson(config)
         return shareJson(context, json, "controller_config.json", "Share Controller Config")
     }
 
@@ -78,23 +66,13 @@ object ConfigImportExport {
         combined.put("type", "combined_config")
         combined.put("version", COMBINED_CONFIG_VERSION)
 
-        val layout = TouchLayoutRepository.load(context)
-        combined.put("touch_layout", HumanReadableConfig.touchLayoutToHumanJson(layout))
+        val touchSlots = TouchLayoutSlotRepository.load(context)
+        combined.put("touch_layout_slots", TouchLayoutSlotRepository.toExportJsonArray(touchSlots))
+        combined.put("active_touch_layout_slot", touchSlots.safeActiveIndex)
 
-        val ctrlFile = File(context.filesDir, "controller_config.json")
-        if (ctrlFile.exists()) {
-            val saved = JSONObject(ctrlFile.readText())
-            val parsed = parseControllerFields(saved)
-            combined.put(
-                "controller_config",
-                HumanReadableConfig.controllerConfigToHumanJson(
-                    parsed.bindings,
-                    parsed.inverts,
-                    parsed.thresholds,
-                    parsed.axisExponents,
-                ),
-            )
-        }
+        val controllerSlots = ControllerConfigSlotRepository.load(context)
+        combined.put("controller_config_slots", ControllerConfigSlotRepository.toExportJsonArray(controllerSlots))
+        combined.put("active_controller_config_slot", controllerSlots.safeActiveIndex)
 
         // Autoselect weapon ordering for both games
         val filesDir = context.filesDir.absolutePath
@@ -195,7 +173,7 @@ object ConfigImportExport {
             val msg = result.warnings.joinToString("; ")
             return "Touch layout import failed: $msg"
         }
-        TouchLayoutRepository.save(context, result.value)
+        TouchLayoutSlotRepository.saveActiveLayout(context, result.value)
         val warnings =
             if (result.warnings.isNotEmpty()) {
                 "\nWarnings: ${result.warnings.joinToString("; ")}"
@@ -214,26 +192,7 @@ object ConfigImportExport {
             val msg = result.warnings.joinToString("; ")
             return "Controller config import failed: $msg"
         }
-        // Write a simple JSON that loadConfig() can read
-        val outJson = JSONObject()
-        outJson.put("version", 1)
-        val bindingsObj = JSONObject()
-        for ((k, v) in result.value.bindings) bindingsObj.put(k, v)
-        outJson.put("bindings", bindingsObj)
-        val invertsArr = org.json.JSONArray()
-        for (inv in result.value.inverts) invertsArr.put(inv)
-        outJson.put("inverts", invertsArr)
-        if (result.value.thresholds.isNotEmpty()) {
-            val tObj = JSONObject()
-            for ((k, v) in result.value.thresholds) tObj.put(k, v)
-            outJson.put("thresholds", tObj)
-        }
-        if (result.value.axisExponents.isNotEmpty()) {
-            val eObj = JSONObject()
-            for ((k, v) in result.value.axisExponents) eObj.put(k, v.toDouble())
-            outJson.put("axis_exponents", eObj)
-        }
-        File(context.filesDir, "controller_config.json").writeText(outJson.toString(2))
+        ControllerConfigSlotRepository.saveActiveConfig(context, controllerConfigStateFromHumanData(result.value))
         val warnings =
             if (result.warnings.isNotEmpty()) {
                 "\nWarnings: ${result.warnings.joinToString("; ")}"
@@ -248,10 +207,34 @@ object ConfigImportExport {
         json: JSONObject,
     ): String {
         val results = mutableListOf<String>()
-        if (json.has("touch_layout")) {
+        if (json.has("touch_layout_slots")) {
+            val imported =
+                TouchLayoutSlotRepository.fromExportJsonArray(
+                    json.getJSONArray("touch_layout_slots"),
+                    json.optInt("active_touch_layout_slot", 0),
+                )
+            if (imported != null) {
+                val saved = TouchLayoutSlotRepository.replaceSlots(context, imported)
+                results.add("Touch layout slots: imported ${saved.slots.size} slot(s)")
+            } else {
+                results.add("Touch layout slots import failed")
+            }
+        } else if (json.has("touch_layout")) {
             results.add(importTouchLayout(context, json.getJSONObject("touch_layout")))
         }
-        if (json.has("controller_config")) {
+        if (json.has("controller_config_slots")) {
+            val imported =
+                ControllerConfigSlotRepository.fromExportJsonArray(
+                    json.getJSONArray("controller_config_slots"),
+                    json.optInt("active_controller_config_slot", 0),
+                )
+            if (imported != null) {
+                val saved = ControllerConfigSlotRepository.replaceSlots(context, imported)
+                results.add("Controller config slots: imported ${saved.slots.size} slot(s)")
+            } else {
+                results.add("Controller config slots import failed")
+            }
+        } else if (json.has("controller_config")) {
             results.add(importControllerConfig(context, json.getJSONObject("controller_config")))
         }
         // Autoselect ordering
@@ -462,37 +445,6 @@ object ConfigImportExport {
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
-
-    private data class ControllerFields(
-        val bindings: Map<String, String>,
-        val inverts: Set<String>,
-        val thresholds: Map<String, Int>,
-        val axisExponents: Map<String, Float>,
-    )
-
-    private fun parseControllerFields(saved: JSONObject): ControllerFields {
-        val bindings = mutableMapOf<String, String>()
-        val inverts = mutableSetOf<String>()
-        val thresholds = mutableMapOf<String, Int>()
-        val axisExponents = mutableMapOf<String, Float>()
-        if (saved.has("bindings")) {
-            val obj = saved.getJSONObject("bindings")
-            for (key in obj.keys()) bindings[key] = obj.getString(key)
-        }
-        if (saved.has("inverts")) {
-            val arr = saved.getJSONArray("inverts")
-            for (i in 0 until arr.length()) inverts.add(arr.getString(i))
-        }
-        val tObj = saved.optJSONObject("thresholds")
-        if (tObj != null) {
-            for (key in tObj.keys()) thresholds[key] = tObj.getInt(key)
-        }
-        val eObj = saved.optJSONObject("axis_exponents")
-        if (eObj != null) {
-            for (key in eObj.keys()) axisExponents[key] = eObj.getDouble(key).toFloat()
-        }
-        return ControllerFields(bindings, inverts, thresholds, axisExponents)
-    }
 
     private fun shareJson(
         context: Context,

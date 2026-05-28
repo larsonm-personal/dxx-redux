@@ -42,6 +42,7 @@ int main(void)
 	android_save_meta_disk d1_meta;
 	android_save_meta_disk d2_meta;
 	android_save_meta_disk progress_meta;
+	android_save_meta_disk wrong_thumb_meta;
 	android_save_meta_disk parsed;
 	android_save_meta_candidate newest;
 	android_save_meta_write_params params;
@@ -53,6 +54,8 @@ int main(void)
 
 	memset(thumb_a, 7, sizeof(thumb_a));
 	memset(thumb_b, 19, sizeof(thumb_b));
+	if (ANDROID_SAVE_META_THUMB_W != 200 || ANDROID_SAVE_META_THUMB_H != 100)
+		failures += report_failure("launcher metadata thumbnail is not 200x100");
 
 	memset(&params, 0, sizeof(params));
 	params.game_id = ANDROID_SAVE_META_GAME_D1;
@@ -70,6 +73,12 @@ int main(void)
 	params.thumbnail_height = ANDROID_SAVE_META_THUMB_H;
 	if (!android_save_meta_build(&d1_meta, &params))
 		return report_failure("failed to build D1 metadata");
+	params.thumbnail_width = ANDROID_SAVE_META_THUMB_W / 2;
+	params.thumbnail_height = ANDROID_SAVE_META_THUMB_H / 2;
+	if (!android_save_meta_build(&wrong_thumb_meta, &params))
+		return report_failure("failed to build wrong-size thumbnail metadata");
+	if (wrong_thumb_meta.thumbnail_format != ANDROID_SAVE_META_THUMB_NONE)
+		failures += report_failure("wrong-size thumbnail was embedded in metadata");
 
 	memset(&params, 0, sizeof(params));
 	params.game_id = ANDROID_SAVE_META_GAME_D2;
@@ -127,6 +136,11 @@ int main(void)
 		failures += report_failure("thumbnail format missing on D1 trailer");
 	if (parsed.thumbnail_rgb6[0] != 7)
 		failures += report_failure("thumbnail payload did not round-trip");
+	wrong_thumb_meta = d1_meta;
+	wrong_thumb_meta.thumbnail_width = ANDROID_SAVE_META_THUMB_W / 2;
+	wrong_thumb_meta.thumbnail_height = ANDROID_SAVE_META_THUMB_H / 2;
+	if (android_save_meta_is_valid(&wrong_thumb_meta))
+		failures += report_failure("wrong-size RGB thumbnail metadata was accepted");
 
 	paths[0] = "test_android_save_meta_missing.sav";
 	paths[1] = "test_android_save_meta_d1.sav";

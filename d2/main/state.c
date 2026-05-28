@@ -1056,6 +1056,75 @@ static void state_write_blank_thumbnail(PHYSFS_file *fp)
 	d_free(zero);
 }
 
+#ifdef __ANDROID__
+static void state_android_cache_launcher_thumbnail(void)
+{
+	grs_canvas *launcher_canvas = gr_create_canvas(ANDROID_SAVE_META_THUMB_W, ANDROID_SAVE_META_THUMB_H);
+	grs_canvas *saved_canvas;
+	ubyte *rgb;
+	int pixel_count = ANDROID_SAVE_META_THUMB_W * ANDROID_SAVE_META_THUMB_H;
+	int thumbnail_ready = 0;
+
+	if (!launcher_canvas) {
+		android_save_meta_clear_cached_thumbnail();
+		return;
+	}
+	saved_canvas = grd_curcanv;
+	gr_set_current_canvas(launcher_canvas);
+	render_frame(0, 0);
+
+	rgb = d_malloc(ANDROID_SAVE_META_THUMB_RGB6_BYTES);
+	if (rgb) {
+#ifdef OGL
+		ubyte *rgba = d_malloc(pixel_count * 4);
+		if (rgba) {
+			int row = ANDROID_SAVE_META_THUMB_H;
+			int pixel;
+#ifndef OGLES
+			GLint gl_draw_buffer;
+			glGetIntegerv(GL_DRAW_BUFFER, &gl_draw_buffer);
+			glReadBuffer(gl_draw_buffer);
+#endif
+			ogl_prepare_framebuffer_readback();
+			glReadPixels(0, SHEIGHT - ANDROID_SAVE_META_THUMB_H,
+			             ANDROID_SAVE_META_THUMB_W, ANDROID_SAVE_META_THUMB_H,
+			             GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+			for (pixel = 0; pixel < pixel_count; pixel++) {
+				int column = pixel % ANDROID_SAVE_META_THUMB_W;
+				int dst;
+				if (!column)
+					row--;
+				dst = (ANDROID_SAVE_META_THUMB_W * row + column) * 3;
+				rgb[dst]     = rgba[4*pixel]     / 4;
+				rgb[dst + 1] = rgba[4*pixel + 1] / 4;
+				rgb[dst + 2] = rgba[4*pixel + 2] / 4;
+			}
+			thumbnail_ready = 1;
+			d_free(rgba);
+		}
+#else
+		int pixel;
+		for (pixel = 0; pixel < pixel_count; pixel++) {
+			ubyte idx = launcher_canvas->cv_bitmap.bm_data[pixel];
+			rgb[pixel*3]     = gr_palette[idx*3];
+			rgb[pixel*3 + 1] = gr_palette[idx*3 + 1];
+			rgb[pixel*3 + 2] = gr_palette[idx*3 + 2];
+		}
+		thumbnail_ready = 1;
+#endif
+	}
+
+	if (thumbnail_ready)
+		android_save_meta_set_cached_thumbnail_rgb6(rgb, ANDROID_SAVE_META_THUMB_W, ANDROID_SAVE_META_THUMB_H);
+	else
+		android_save_meta_clear_cached_thumbnail();
+	if (rgb)
+		d_free(rgb);
+	gr_set_current_canvas(saved_canvas);
+	gr_free_canvas(launcher_canvas);
+}
+#endif
+
 // Following functions convert object to object_rw and back to be written to/read from Savegames. Mostly object differs to object_rw in terms of timer values (fix/fix64). as we reset GameTime64 for writing so it can fit into fix it's not necessary to increment savegame version. But if we once store something else into object which might be useful after restoring, it might be handy to increment Savegame version and actually store these new infos.
 // turn object to object_rw to be saved to Savegame.
 void state_object_to_object_rw(object *obj, object_rw *obj_rw)
@@ -1906,6 +1975,9 @@ int state_save_all_sub(char *filename, char *desc)
 	PHYSFS_file *fp;
 	grs_canvas * cnv;
 	char mission_filename[9];
+#ifdef __ANDROID__
+	int wrote_launcher_thumbnail = 0;
+#endif
 #if defined(OGL) && !defined(OGLES)
 	GLint gl_draw_buffer;
 #endif
@@ -1982,7 +2054,7 @@ int state_save_all_sub(char *filename, char *desc)
 		}
 		if (PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1) == 1) {
 #ifdef __ANDROID__
-			android_save_meta_set_cached_thumbnail_rgb6(rgb, THUMBNAIL_W, THUMBNAIL_H);
+			wrote_launcher_thumbnail = 1;
 #endif
 		} else {
 #ifdef __ANDROID__
@@ -2003,7 +2075,7 @@ int state_save_all_sub(char *filename, char *desc)
 				}
 				if (PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1) == 1) {
 #ifdef __ANDROID__
-					android_save_meta_set_cached_thumbnail_rgb6(rgb, THUMBNAIL_W, THUMBNAIL_H);
+					wrote_launcher_thumbnail = 1;
 #endif
 				} else {
 #ifdef __ANDROID__
@@ -2019,6 +2091,10 @@ int state_save_all_sub(char *filename, char *desc)
 
 		gr_set_current_canvas(cnv_save);
 		gr_free_canvas( cnv );
+#ifdef __ANDROID__
+		if (wrote_launcher_thumbnail)
+			state_android_cache_launcher_thumbnail();
+#endif
 	}
 	else
 	{

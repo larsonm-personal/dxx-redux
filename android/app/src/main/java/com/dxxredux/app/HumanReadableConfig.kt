@@ -626,6 +626,9 @@ object HumanReadableConfig {
         val type = json.optString("type", "")
         if (type.isNotEmpty()) return type
         // Infer from structure
+        if (json.has("touch_layout_slots") || json.has("controller_config_slots")) {
+            return "combined_config"
+        }
         if (json.has("sticks") || json.has("buttons") || json.has("radialMenus")) {
             return "touch_layout"
         }

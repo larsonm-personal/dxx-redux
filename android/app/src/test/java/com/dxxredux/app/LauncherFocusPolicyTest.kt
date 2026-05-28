@@ -34,4 +34,34 @@ class LauncherFocusPolicyTest {
             ),
         )
     }
+
+    @Test
+    fun phoneTouchModeDoesNotShowControllerHighlight() {
+        assertFalse(
+            shouldShowControllerFocusHighlight(
+                hasTouchscreen = true,
+                controllerNavigationActive = false,
+            ),
+        )
+    }
+
+    @Test
+    fun phoneControllerNavigationShowsControllerHighlight() {
+        assertTrue(
+            shouldShowControllerFocusHighlight(
+                hasTouchscreen = true,
+                controllerNavigationActive = true,
+            ),
+        )
+    }
+
+    @Test
+    fun touchlessDeviceShowsControllerHighlightImmediately() {
+        assertTrue(
+            shouldShowControllerFocusHighlight(
+                hasTouchscreen = false,
+                controllerNavigationActive = false,
+            ),
+        )
+    }
 }
