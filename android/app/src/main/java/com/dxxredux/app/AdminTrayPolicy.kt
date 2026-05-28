@@ -53,6 +53,7 @@ internal fun adminTrayVisibleActions(
     hasTouchAutomapButton: Boolean,
     isMultiplayerGame: Boolean = false,
     hasPendingLaunchInfo: Boolean = false,
+    hasGuidebotAbdicateAction: Boolean = false,
 ): List<Int> {
     val showNetworkActions = isMultiplayerGame || hasPendingLaunchInfo
     val actions =
@@ -69,6 +70,9 @@ internal fun adminTrayVisibleActions(
     if (showNetworkActions) {
         actions.add(2, TouchOverlayView.ADMIN_NET_STATS)
         actions.add(5, TouchOverlayView.ADMIN_NET_EVENTS)
+    }
+    if (isMultiplayerGame && hasGuidebotAbdicateAction) {
+        actions.add(6, TouchOverlayView.ADMIN_ABDICATE_GUIDEBOT)
     }
     if (gamepadOnlyMode) {
         if (isMultiplayerGame) actions.add(TouchOverlayView.ADMIN_WARP)

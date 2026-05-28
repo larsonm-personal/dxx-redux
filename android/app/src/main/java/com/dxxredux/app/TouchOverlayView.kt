@@ -605,6 +605,7 @@ class TouchOverlayView
             const val ADMIN_MUSIC = 12
             const val ADMIN_ACCEPT_JOIN = 13
             const val ADMIN_BRIGHTNESS = 14
+            const val ADMIN_ABDICATE_GUIDEBOT = 15
 
             // Cockpit mode constants (match C CM_* defines)
             private const val CM_FULL_COCKPIT = 0
@@ -770,6 +771,7 @@ class TouchOverlayView
         // Providers for dynamic gamepad-only labels
         var adminTrayWarpLabelProvider: (() -> String)? = null
         var adminTrayAcceptLabelProvider: (() -> String)? = null
+        internal var remainingAdminActionsProvider: (() -> List<RemainingTouchAction>)? = null
 
         // D-pad selection index (-1 = no selection, used in gamepad mode)
         private var adminTraySelectedIndex = -1
@@ -939,12 +941,17 @@ class TouchOverlayView
         private fun currentRemainingTouchActions(
             weaponState: WeaponState? = weaponStateProvider?.invoke(),
         ): List<RemainingTouchAction> =
-            remainingKeyTouchActions(
-                layout = layout,
-                gameVariant = gameVariant,
-                isMultiplayerGame = isMultiplayerGameProvider?.invoke() == true,
-                weaponState = weaponState,
-                extraBoundBindings = controllerBoundActionBindingsProvider?.invoke() ?: emptySet(),
+            remainingActionsWithControllerAdminActions(
+                keyActions =
+                    remainingKeyTouchActions(
+                        layout = layout,
+                        gameVariant = gameVariant,
+                        isMultiplayerGame = isMultiplayerGameProvider?.invoke() == true,
+                        weaponState = weaponState,
+                        extraBoundBindings = controllerBoundActionBindingsProvider?.invoke() ?: emptySet(),
+                    ),
+                gamepadOnlyMode = gamepadOnlyMode,
+                controllerAdminActions = remainingAdminActionsProvider?.invoke() ?: emptyList(),
             )
 
         private fun recomputeRemainingActionGeometry(weaponState: WeaponState? = weaponStateProvider?.invoke()) {
@@ -1170,8 +1177,11 @@ class TouchOverlayView
                             android.view.KeyEvent.KEYCODE_DPAD_CENTER,
                             -> {
                                 val selectedIndex = remainingActionSelectedIndex.coerceIn(0, actions.lastIndex)
-                                val selectedBinding = actions[selectedIndex].binding
-                                if (remainingActionUsesHeldActivation(selectedBinding)) {
+                                val selectedAction = actions[selectedIndex]
+                                val selectedBinding = selectedAction.binding
+                                if (selectedAction.adminAction == null &&
+                                    remainingActionUsesHeldActivation(selectedBinding)
+                                ) {
                                     remainingActionUsedSinceOpen = true
                                     if (remainingActionHeldBinding != selectedBinding) {
                                         releaseRemainingHeldActionIfNeeded()
@@ -1184,7 +1194,7 @@ class TouchOverlayView
                                     invalidate()
                                 } else {
                                     closeRemainingActions()
-                                    triggerRemainingAction(selectedBinding)
+                                    triggerRemainingAction(selectedAction)
                                 }
                                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                                 true
@@ -1202,7 +1212,14 @@ class TouchOverlayView
                 }
             }
 
-        private fun triggerRemainingAction(binding: Int) {
+        private fun triggerRemainingAction(action: RemainingTouchAction) {
+            val adminAction = action.adminAction
+            if (adminAction != null) {
+                adminTrayCallback?.invoke(adminAction)
+                return
+            }
+
+            val binding = action.binding
             val sourceTag = "touch:remaining:$binding"
             pressLayoutButtonBinding(binding, sourceTag)
             mainHandler.postDelayed(
@@ -1362,7 +1379,7 @@ class TouchOverlayView
                         val fired = remainingActionItemRects[pressedIndex].contains(px, py)
                         closeRemainingActions()
                         if (fired) {
-                            triggerRemainingAction(actions[pressedIndex].binding)
+                            triggerRemainingAction(actions[pressedIndex])
                             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                         }
                         return true
@@ -3641,6 +3658,10 @@ class TouchOverlayView
                     adminTrayAcceptLabelProvider?.invoke() ?: "Accept: --"
                 }
 
+                ADMIN_ABDICATE_GUIDEBOT -> {
+                    "Abdicate Guidebot"
+                }
+
                 else -> {
                     ""
                 }
@@ -3680,6 +3701,7 @@ class TouchOverlayView
                 hasTouchAutomapButton = layout.buttons.any { it.binding == TouchBindings.BTN_AUTOMAP },
                 isMultiplayerGame = isMultiplayerGameProvider?.invoke() == true,
                 hasPendingLaunchInfo = hasPendingMultiplayerLaunchProvider?.invoke() == true,
+                hasGuidebotAbdicateAction = gameVariant == "d2",
             )
 
         private fun adminTrayItemCount(): Int = currentAdminTrayActions().size

@@ -65,6 +65,34 @@ class RemainingKeyTouchActionsTest {
     }
 
     @Test
+    fun controllerAdminActionsArePrependedOnlyForGamepadOnlyMode() {
+        val keyActions = remainingKeyTouchActions(TouchLayout(name = "Empty"), gameVariant = "d2")
+        val controllerAdminActions =
+            listOf(
+                RemainingTouchAction(label = "Warp: Ace", adminAction = TouchOverlayView.ADMIN_WARP),
+                RemainingTouchAction(label = "Accept: Blaze", adminAction = TouchOverlayView.ADMIN_ACCEPT_JOIN),
+            )
+
+        val gamepadActions =
+            remainingActionsWithControllerAdminActions(
+                keyActions = keyActions,
+                gamepadOnlyMode = true,
+                controllerAdminActions = controllerAdminActions,
+            )
+        val touchActions =
+            remainingActionsWithControllerAdminActions(
+                keyActions = keyActions,
+                gamepadOnlyMode = false,
+                controllerAdminActions = controllerAdminActions,
+            )
+
+        assertEquals(TouchOverlayView.ADMIN_WARP, gamepadActions[0].adminAction)
+        assertEquals(TouchOverlayView.ADMIN_ACCEPT_JOIN, gamepadActions[1].adminAction)
+        assertEquals(TouchBindings.BTN_AUTOMAP, gamepadActions[2].binding)
+        assertEquals(keyActions, touchActions)
+    }
+
+    @Test
     fun d1LayoutExcludesD2OnlyActions() {
         val actions = remainingKeyTouchActions(TouchLayout(name = "Empty"), gameVariant = "d1")
         val bindings = actions.map { it.binding }

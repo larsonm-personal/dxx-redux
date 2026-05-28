@@ -838,9 +838,25 @@ class MainActivity :
         }
         touchOverlay.adminTrayEnabledStateProvider = { action ->
             when (action) {
-                TouchOverlayView.ADMIN_NET_STATS -> isNetStatsControlEnabled()
-                TouchOverlayView.ADMIN_NET_EVENTS -> isNetEventsControlEnabled()
-                else -> true
+                TouchOverlayView.ADMIN_NET_STATS -> {
+                    isNetStatsControlEnabled()
+                }
+
+                TouchOverlayView.ADMIN_NET_EVENTS -> {
+                    isNetEventsControlEnabled()
+                }
+
+                TouchOverlayView.ADMIN_ABDICATE_GUIDEBOT -> {
+                    try {
+                        nativeIsEscortOwner() && nativeIsBuddyReleased()
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
+
+                else -> {
+                    true
+                }
             }
         }
         touchOverlay.adminTrayCallback = { action ->
@@ -922,6 +938,13 @@ class MainActivity :
                     } catch (_: Exception) {
                     }
                 }
+
+                TouchOverlayView.ADMIN_ABDICATE_GUIDEBOT -> {
+                    try {
+                        dispatchMetaAction(TouchBindings.META_GUIDE_RELEASE_CONTROL, true)
+                    } catch (_: Exception) {
+                    }
+                }
             }
         }
         touchOverlay.adminTrayAutoLevelingProvider = {
@@ -958,6 +981,35 @@ class MainActivity :
                     if (cs.isNotEmpty()) "Accept: $cs" else "Accept: --"
                 } catch (_: Exception) {
                     "Accept: --"
+                }
+            }
+            touchOverlay.remainingAdminActionsProvider = {
+                buildList {
+                    try {
+                        val st = nativeGetCoopWarpStatus()
+                        if (st.isNotEmpty() && st[0] != 0) {
+                            val name = nativeGetCoopWarpTargetName()
+                            add(
+                                RemainingTouchAction(
+                                    label = if (name.isNotEmpty()) "Warp: $name" else "Warp",
+                                    adminAction = TouchOverlayView.ADMIN_WARP,
+                                ),
+                            )
+                        }
+                    } catch (_: Exception) {
+                    }
+                    try {
+                        val cs = nativeGetJoinRequest()
+                        if (cs.isNotEmpty()) {
+                            add(
+                                RemainingTouchAction(
+                                    label = "Accept: $cs",
+                                    adminAction = TouchOverlayView.ADMIN_ACCEPT_JOIN,
+                                ),
+                            )
+                        }
+                    } catch (_: Exception) {
+                    }
                 }
             }
         }
@@ -1116,16 +1168,13 @@ class MainActivity :
                 FrameLayout.LayoutParams.MATCH_PARENT,
             ),
         )
-        // In gamepad-only mode, accept/warp are handled via admin tray items
-        if (!gamepadOnlyMode) {
-            frame.addView(
-                acceptJoinButton,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                ),
-            )
-        }
+        frame.addView(
+            acceptJoinButton,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
         frame.addView(overlayContainer, overlayLp)
 
         // Network stats overlay (hidden by default, toggled via admin tray)
@@ -1286,15 +1335,13 @@ class MainActivity :
                 }
             }
         warpButtonOverlay = warpOverlay
-        if (!gamepadOnlyMode) {
-            frame.addView(
-                warpOverlay,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                ),
-            )
-        }
+        frame.addView(
+            warpOverlay,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
 
         val progressOverlay = LoadingProgressOverlayView(this)
         loadingProgressOverlay = progressOverlay
@@ -1844,9 +1891,8 @@ class MainActivity :
                                 } catch (_: Exception) {
                                     ""
                                 }
-                            if (joinCallsign.isNotEmpty()) {
-                                acceptJoinButton.visibility = View.GONE
-                            }
+                            acceptJoinButton.callsign = joinCallsign
+                            acceptJoinButton.visibility = if (joinCallsign.isNotEmpty()) View.VISIBLE else View.GONE
                             // Auto-show/hide network events overlay during MP phases
                             val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
                             val netEventsEnabled =

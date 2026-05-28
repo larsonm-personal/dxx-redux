@@ -41,6 +41,7 @@ class AdminTrayUiTest {
                 gamepadOnlyMode = true,
                 hasTouchAutomapButton = true,
                 isMultiplayerGame = true,
+                hasGuidebotAbdicateAction = true,
             )
 
         assertEquals(
@@ -51,6 +52,7 @@ class AdminTrayUiTest {
                 TouchOverlayView.ADMIN_QUICK_LOAD,
                 TouchOverlayView.ADMIN_OPEN_MENU,
                 TouchOverlayView.ADMIN_NET_EVENTS,
+                TouchOverlayView.ADMIN_ABDICATE_GUIDEBOT,
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER,
                 TouchOverlayView.ADMIN_QUICK_SAVE,
                 TouchOverlayView.ADMIN_VIDEO_INFO,
@@ -60,6 +62,40 @@ class AdminTrayUiTest {
                 TouchOverlayView.ADMIN_ACCEPT_JOIN,
             ),
             actions,
+        )
+    }
+
+    @Test
+    fun multiplayerTouchModeIncludesGuidebotAbdicationWhenSupported() {
+        val actions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                isMultiplayerGame = true,
+                hasGuidebotAbdicateAction = true,
+            )
+
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_ABDICATE_GUIDEBOT))
+        assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_ABDICATE_GUIDEBOT))
+    }
+
+    @Test
+    fun guidebotAbdicationIsHiddenOutsideSupportedMultiplayer() {
+        assertFalse(
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                isMultiplayerGame = false,
+                hasGuidebotAbdicateAction = true,
+            ).contains(TouchOverlayView.ADMIN_ABDICATE_GUIDEBOT),
+        )
+        assertFalse(
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                isMultiplayerGame = true,
+                hasGuidebotAbdicateAction = false,
+            ).contains(TouchOverlayView.ADMIN_ABDICATE_GUIDEBOT),
         )
     }
 

@@ -1,8 +1,9 @@
 package com.dxxredux.app
 
 internal data class RemainingTouchAction(
-    val binding: Int,
     val label: String,
+    val binding: Int = -1,
+    val adminAction: Int? = null,
 )
 
 private val remainingBaseActionBindings =
@@ -151,5 +152,16 @@ internal fun remainingKeyTouchActions(
                 (binding !in TouchBindings.D2_ONLY_BUTTONS && binding !in TouchBindings.D2_ONLY_META_ACTIONS)
         }.filter { it !in boundBindings }
         .distinct()
-        .map { RemainingTouchAction(it, remainingActionLabel(it, gameVariant, weaponState)) }
+        .map { RemainingTouchAction(remainingActionLabel(it, gameVariant, weaponState), binding = it) }
 }
+
+internal fun remainingActionsWithControllerAdminActions(
+    keyActions: List<RemainingTouchAction>,
+    gamepadOnlyMode: Boolean,
+    controllerAdminActions: List<RemainingTouchAction>,
+): List<RemainingTouchAction> =
+    if (gamepadOnlyMode && controllerAdminActions.isNotEmpty()) {
+        controllerAdminActions + keyActions
+    } else {
+        keyActions
+    }

@@ -2561,23 +2561,24 @@ void escort_transfer_ownership_on_disconnect(int gone_pnum)
 
 void escort_release_control(void)
 {
-	int candidates[MAX_PLAYERS];
-	int n = 0;
-	int i, new_owner;
+	int offset, candidate;
+	int new_owner = -1;
 
 	if (Escort_owner_player != Player_num)
 		return;
 	if (!(Game_mode & GM_MULTI_COOP))
 		return;
 
-	for (i = 0; i < N_players; i++) {
-		if (i != Player_num && Players[i].connected == CONNECT_PLAYING)
-			candidates[n++] = i;
+	for (offset = 1; offset < N_players; offset++) {
+		candidate = (Player_num + offset) % N_players;
+		if (Players[candidate].connected == CONNECT_PLAYING) {
+			new_owner = candidate;
+			break;
+		}
 	}
-	if (n == 0)
+	if (new_owner < 0)
 		return;
 
-	new_owner = candidates[d_rand() % n];
 	Escort_owner_player = new_owner;
 	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index)
 		Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (sbyte)new_owner;
