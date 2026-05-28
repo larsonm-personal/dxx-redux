@@ -418,6 +418,7 @@ class MainActivity :
         levelNum: Int,
         difficulty: Int,
         coopQol: Boolean,
+        fullDeathSpew: Boolean,
     )
 
     external fun nativeGetCurrentTrackInfo(): String
@@ -669,7 +670,8 @@ class MainActivity :
             val levelNum = intent.getIntExtra("mp_level_num", 1)
             val difficulty = intent.getIntExtra("mp_difficulty", 1)
             val coopQol = intent.getBooleanExtra("mp_coop_qol", true)
-            nativeSetAutoHost(myPort, mission, mode, maxPlayers, levelNum, difficulty, coopQol)
+            val fullDeathSpew = intent.getBooleanExtra("mp_full_death_spew", true)
+            nativeSetAutoHost(myPort, mission, mode, maxPlayers, levelNum, difficulty, coopQol, fullDeathSpew)
         }
 
         // Start foreground service during multiplayer to prevent process kill

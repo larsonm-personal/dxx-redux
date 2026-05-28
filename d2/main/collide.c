@@ -2313,6 +2313,24 @@ void drop_player_eggs(object *playerobj) {
 	drop_player_eggs_remote(playerobj, 0); 
 }
 
+static void drop_player_death_mines(object *playerobj, int weapon_id, int mine_count, int use_fallback)
+{
+	while (mine_count-- > 0) {
+		int newseg;
+		vms_vector randvec, tvec;
+
+		make_random_vector(&randvec);
+		vm_vec_add(&tvec, &playerobj->pos, &randvec);
+		newseg = find_point_seg(&tvec, playerobj->segnum);
+		if ((newseg == -1) && use_fallback) {
+			tvec = playerobj->pos;
+			newseg = playerobj->segnum;
+		}
+		if (newseg != -1)
+			Laser_create_new(&randvec, &tvec, newseg, playerobj - Objects, weapon_id, 0);
+	}
+}
+
 void drop_player_eggs_remote(object *playerobj, ubyte remote)
 {
 	if ((playerobj->type == OBJ_PLAYER) || (playerobj->type == OBJ_GHOST)) {
@@ -2320,7 +2338,6 @@ void drop_player_eggs_remote(object *playerobj, ubyte remote)
 		int	pnum = playerobj->id;
 		int	objnum;
 		int	vulcan_ammo=0;
-		vms_vector	randvec;
 
 		// -- Items_destroyed = 0;
 
@@ -2337,35 +2354,26 @@ void drop_player_eggs_remote(object *playerobj, ubyte remote)
 		//	If the player had smart mines, maybe arm one of them.
 		rthresh = 30000;
 		// SIM RNG: this decides whether a real armed smart mine spawns on death
-		while ((Players[playerobj->id].secondary_ammo[SMART_MINE_INDEX]%4==1) && (d_rand() < rthresh)) {
-			int			newseg;
-			vms_vector	tvec;
-
-			make_random_vector(&randvec);
-			rthresh /= 2;
-			vm_vec_add(&tvec, &playerobj->pos, &randvec);
-			newseg = find_point_seg(&tvec, playerobj->segnum);
-			if (newseg != -1)
-				Laser_create_new(&randvec, &tvec, newseg, playerobj-Objects, SUPERPROX_ID, 0);
-	  	}
+		if ((Game_mode & GM_MULTI) && Netgame.FullDeathSpew)
+			drop_player_death_mines(playerobj, SUPERPROX_ID, Players[playerobj->id].secondary_ammo[SMART_MINE_INDEX] % 4, 1);
+		else
+			while ((Players[playerobj->id].secondary_ammo[SMART_MINE_INDEX]%4==1) && (d_rand() < rthresh)) {
+				drop_player_death_mines(playerobj, SUPERPROX_ID, 1, 0);
+				rthresh /= 2;
+			}
 
 		//	If the player had proximity bombs, maybe arm one of them.
 
 		if ((Game_mode & GM_MULTI) && !(Game_mode & GM_HOARD))
 		{
 			rthresh = 30000;
-			while ((Players[playerobj->id].secondary_ammo[PROXIMITY_INDEX]%4==1) && (d_rand() < rthresh)) {
-				int			newseg;
-				vms_vector	tvec;
-
-				make_random_vector(&randvec);
-				rthresh /= 2;
-				vm_vec_add(&tvec, &playerobj->pos, &randvec);
-				newseg = find_point_seg(&tvec, playerobj->segnum);
-				if (newseg != -1)
-					Laser_create_new(&randvec, &tvec, newseg, playerobj-Objects, PROXIMITY_ID, 0);
-
-			}
+			if (Netgame.FullDeathSpew)
+				drop_player_death_mines(playerobj, PROXIMITY_ID, Players[playerobj->id].secondary_ammo[PROXIMITY_INDEX] % 4, 1);
+			else
+				while ((Players[playerobj->id].secondary_ammo[PROXIMITY_INDEX]%4==1) && (d_rand() < rthresh)) {
+					drop_player_death_mines(playerobj, PROXIMITY_ID, 1, 0);
+					rthresh /= 2;
+				}
 		}
 
 		//	If the player dies and he has powerful lasers, create the powerups here.

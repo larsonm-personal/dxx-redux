@@ -271,6 +271,7 @@ private fun LanDiscoveryView(
     var hostedDifficulty by remember { mutableStateOf(1) }
     var hostedLevelNum by remember { mutableStateOf(1) }
     var hostedCoopQol by remember { mutableStateOf(true) }
+    var hostedFullDeathSpew by remember { mutableStateOf(true) }
     val recentIps = remember { mutableStateOf(LanIpsPrefs.load(context)) }
     var permissionGranted by remember {
         mutableStateOf(
@@ -603,7 +604,14 @@ private fun LanDiscoveryView(
                     )
                 }
                 Button(
-                    onClick = { LobbyService.startGame(hostedDifficulty, hostedLevelNum, coopQol = hostedCoopQol) },
+                    onClick = {
+                        LobbyService.startGame(
+                            hostedDifficulty,
+                            hostedLevelNum,
+                            coopQol = hostedCoopQol,
+                            fullDeathSpew = hostedFullDeathSpew,
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = hostedPlayers.size >= 2,
                 ) {
@@ -674,7 +682,7 @@ private fun LanDiscoveryView(
         CreateGameDialog(
             title = "Host LAN Game",
             confirmLabel = "Host",
-            onCreate = { game, mission, mode, maxPlayers, difficulty, levelNum, coopQol ->
+            onCreate = { game, mission, mode, maxPlayers, difficulty, levelNum, coopQol, fullDeathSpew ->
                 showHostDialog = false
                 hostedGame = game
                 hostedMode = mode
@@ -682,6 +690,7 @@ private fun LanDiscoveryView(
                 hostedDifficulty = difficulty
                 hostedLevelNum = levelNum
                 hostedCoopQol = coopQol
+                hostedFullDeathSpew = fullDeathSpew
                 LobbyService.hostLobby(callsign, game, mission ?: "", mode, maxPlayers)
             },
             onDismiss = { showHostDialog = false },

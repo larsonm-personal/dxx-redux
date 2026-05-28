@@ -40,6 +40,8 @@ extern int auto_host_level_num;
 extern int auto_host_difficulty;
 /* Host-side coop QoL default (0/1). */
 extern int auto_host_coop_qol;
+/* Host-side full death spew default (0/1) */
+extern int auto_host_full_death_spew;
 
 /* Callsign for auto-created pilot (shared by host and join paths).
  * When non-empty and no pilot exists, a pilot with this name is created

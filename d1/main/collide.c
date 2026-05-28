@@ -1223,6 +1223,25 @@ void drop_player_eggs(object *playerobj) {
 	drop_player_eggs_remote(playerobj, 0); 
 }
 
+#ifdef NETWORK
+static void drop_player_death_mines(object *playerobj, int weapon_id, int mine_count)
+{
+	while (mine_count-- > 0) {
+		int newseg;
+		vms_vector randvec, tvec;
+
+		make_random_vector(&randvec);
+		vm_vec_add(&tvec, &playerobj->pos, &randvec);
+		newseg = find_point_seg(&tvec, playerobj->segnum);
+		if (newseg == -1) {
+			tvec = playerobj->pos;
+			newseg = playerobj->segnum;
+		}
+		Laser_create_new(&randvec, &tvec, newseg, playerobj - Objects, weapon_id, 0);
+	}
+}
+#endif
+
 void drop_player_eggs_remote(object *playerobj, ubyte remote)
 {
 	if ((playerobj->type == OBJ_PLAYER) || (playerobj->type == OBJ_GHOST)) {
@@ -1282,6 +1301,10 @@ void drop_player_eggs_remote(object *playerobj, ubyte remote)
 		//	Drop the secondary weapons
 		//	Note, proximity weapon only comes in packets of 4.  So drop n/2, but a max of 3 (handled inside maybe_drop..)  Make sense?
 
+#ifdef NETWORK
+		if ((Game_mode & GM_MULTI) && Netgame.FullDeathSpew)
+			drop_player_death_mines(playerobj, PROXIMITY_ID, Players[playerobj->id].secondary_ammo[PROXIMITY_INDEX] % 4);
+#endif
 			maybe_drop_secondary_weapon_egg(playerobj, PROXIMITY_INDEX, (Players[playerobj->id].secondary_ammo[PROXIMITY_INDEX])/4);
 
 		maybe_drop_secondary_weapon_egg(playerobj, SMART_INDEX, Players[playerobj->id].secondary_ammo[SMART_INDEX]);

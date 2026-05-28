@@ -1078,6 +1078,11 @@ object MatchmakingService {
                                     ?.jsonPrimitive
                                     ?.content
                                     ?.toBooleanStrictOrNull() ?: true,
+                            fullDeathSpew =
+                                gs.gameInfo["full_death_spew"]
+                                    ?.jsonPrimitive
+                                    ?.content
+                                    ?.toBooleanStrictOrNull() ?: true,
                         )
                     state.update { it.copy(gameLaunchInfo = launchInfo) }
                     // Host sends periodic game state updates to the matchmaking server

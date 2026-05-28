@@ -1558,6 +1558,8 @@ int read_netgame_settings_file(const char *filename, netgame_info *ng, int no_na
 				ng->SecondaryDupFactor = strtol(value, NULL, 10);
 			else if (!strcmp(token, "SecondaryCapFactor"))
 				ng->SecondaryCapFactor = strtol(value, NULL, 10);
+			else if (!strcmp(token, "FullDeathSpew"))
+				ng->FullDeathSpew = strtol(value, NULL, 10);
 			else if (!strcmp(token, "obs_delay"))
 				ng->obs_delay = strtol(value, NULL, 10);
 			else if (!strcmp(token, "obs_min"))
@@ -1640,6 +1642,7 @@ int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_n
 	PHYSFSX_printf(file, "PrimaryDupFactor=%i\n", ng->PrimaryDupFactor);
 	PHYSFSX_printf(file, "SecondaryDupFactor=%i\n", ng->SecondaryDupFactor);
 	PHYSFSX_printf(file, "SecondaryCapFactor=%i\n", ng->SecondaryCapFactor);
+	PHYSFSX_printf(file, "FullDeathSpew=%i\n", ng->FullDeathSpew);
 	PHYSFSX_printf(file, "obs_delay=%i\n", ng->obs_delay);
 	PHYSFSX_printf(file, "obs_min=%i\n", ng->obs_min);
 	PHYSFSX_printf(file, "HomingUpdateRate=%i\n", ng->HomingUpdateRate);

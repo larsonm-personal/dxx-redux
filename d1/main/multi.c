@@ -2764,14 +2764,16 @@ void multi_disconnect_player(int pnum)
 							"  \"difficulty\": %d,\n"
 							"  \"level_num\": %d,\n"
 							"  \"max_players\": %d,\n"
-							"  \"coop_qol\": %s\n"
+							"  \"coop_qol\": %s,\n"
+							"  \"full_death_spew\": %s\n"
 							"}\n",
 							Players[Player_num].callsign,
 							Netgame.mission_name,
 							Netgame.difficulty,
 							Current_level_num,
 							Netgame.max_numplayers,
-							(Netgame.game_flags & NETGAME_FLAG_COOP_QOL) ? "true" : "false");
+							(Netgame.game_flags & NETGAME_FLAG_COOP_QOL) ? "true" : "false",
+							Netgame.FullDeathSpew ? "true" : "false");
 						PHYSFS_write(mfp, mbuf, mlen, 1);
 						PHYSFS_close(mfp);
 					}

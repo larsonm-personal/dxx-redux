@@ -58,6 +58,7 @@ internal fun CreateGameDialog(
         difficulty: Int,
         levelNum: Int,
         coopQol: Boolean,
+        fullDeathSpew: Boolean,
     ) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -70,6 +71,7 @@ internal fun CreateGameDialog(
     var difficulty by remember { mutableStateOf(defaults.difficulty) }
     var levelNumText by remember { mutableStateOf(defaults.levelNum.toString()) }
     var coopQol by remember { mutableStateOf(defaults.coopQol) }
+    var fullDeathSpew by remember { mutableStateOf(defaults.fullDeathSpew) }
     var textEntryActive by remember { mutableStateOf(false) }
     val dialogFocus = remember { FocusRequester() }
     val dismissOrEndTextEntry =
@@ -193,6 +195,20 @@ internal fun CreateGameDialog(
                             }
                         }
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Switch(
+                            checked = fullDeathSpew,
+                            onCheckedChange = { fullDeathSpew = it },
+                        )
+                        Text(
+                            "100% death spew",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
                     // Difficulty dropdown
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -304,12 +320,13 @@ internal fun CreateGameDialog(
                             levelNum = levelNum,
                             maxPlayers = maxPlayers,
                             coopQol = coopQol,
+                            fullDeathSpew = fullDeathSpew,
                         ),
                     )
                     // slot = -1 for checkpoint entries (no save file to load)
                     val restoreSlot = selectedSave?.slot?.takeIf { it >= 0 }
                     writeCoopRestoreSlot(context.filesDir, game, restoreSlot)
-                    onCreate(game, mission, mode, maxPlayers, difficulty, levelNum, coopQol)
+                    onCreate(game, mission, mode, maxPlayers, difficulty, levelNum, coopQol, fullDeathSpew)
                 },
                 enabled = mission != null && maxPlayers in 2..8 && levelNum >= 1,
             ) {

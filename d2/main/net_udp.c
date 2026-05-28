@@ -3192,6 +3192,7 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 		buf[len] = Netgame.AllowCustomModelsTextures; len++;
 		buf[len] = Netgame.ReducedFlash; len++;
 		buf[len] = Netgame.DisableGaussSplash; len++;
+		buf[len] = Netgame.FullDeathSpew; len++;
 		buf[len] = Netgame.team_color[0];						len++;
 		buf[len] = Netgame.team_color[1];						len++;
 		buf[len] = Netgame.RebalancedWeapons; len++;
@@ -3451,6 +3452,7 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		Netgame.AllowCustomModelsTextures = data[len]; len++;
 		Netgame.ReducedFlash = data[len]; len++;
 		Netgame.DisableGaussSplash = data[len]; len++;
+		Netgame.FullDeathSpew = data[len]; len++;
 		Netgame.team_color[0] = data[len];						len++;
 		Netgame.team_color[1] = data[len];						len++;
 		Netgame.RebalancedWeapons = data[len]; len++;
@@ -4070,6 +4072,7 @@ static int opt_homing_update_rate;
 static int opt_remote_hit_spark;
 static int opt_allow_custom_models_textures;
 static int opt_reduced_flash;
+static int opt_full_death_spew;
 static int opt_disable_gauss_splash;
 #ifdef __ANDROID__
 static int opt_coop_qol;
@@ -4107,9 +4110,9 @@ void net_udp_more_game_options ()
 	char HomingUpdateRateText[80];
 	
 #ifdef USE_TRACKER
-	newmenu_item m[51];
+	newmenu_item m[52];
 #else
-	newmenu_item m[50];
+	newmenu_item m[51];
 #endif
 
 	snprintf(packstring,sizeof(char)*4,"%d",Netgame.PacketsPerSec);
@@ -4143,6 +4146,9 @@ void net_udp_more_game_options ()
 	opt_secondary_cap=opt;
 	sprintf( SecCapText, "Cap Secondaries: %s", Netgame.SecondaryCapFactor == 0 ? "Uncapped" : (Netgame.SecondaryCapFactor == 1 ? "Max Six" : "Max Two"));
 	m[opt].type = NM_TYPE_SLIDER; m[opt].value=Netgame.SecondaryCapFactor; m[opt].text= SecCapText; m[opt].min_value=0; m[opt].max_value=2; opt++;
+
+	opt_full_death_spew = opt;
+	m[opt].type = NM_TYPE_CHECK; m[opt].text = "100% death spew"; m[opt].value = Netgame.FullDeathSpew; opt++;
 
 	opt_setpower = opt;
 	m[opt].type = NM_TYPE_MENU;  m[opt].text = "Set Objects allowed..."; opt++;
@@ -4349,6 +4355,7 @@ menu:
 	Netgame.AllowCustomModelsTextures = m[opt_allow_custom_models_textures].value;
 	Netgame.ReducedFlash = m[opt_reduced_flash].value;
 	Netgame.DisableGaussSplash = m[opt_disable_gauss_splash].value;
+	Netgame.FullDeathSpew = m[opt_full_death_spew].value;
 	Netgame.RebalancedWeapons = m[opt_rw].value;
 	Netgame.NewSpawnAlgorithm = m[opt_spawn_algorithm].value;
 }
@@ -4669,8 +4676,13 @@ void netgame_set_defaults()
 	Netgame.AllowCustomModelsTextures = 0;
 	Netgame.ReducedFlash = 0;
 	Netgame.DisableGaussSplash = 0;
+	Netgame.FullDeathSpew = 0;
 	Netgame.RebalancedWeapons = 0;
 	Netgame.NewSpawnAlgorithm = 0;
+
+#ifdef __ANDROID__
+	Netgame.FullDeathSpew = 1;  /* android port: multiplayer QoL on by default */
+#endif
 
 #ifdef USE_TRACKER
 	Netgame.Tracker = 1;

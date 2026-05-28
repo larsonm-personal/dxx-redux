@@ -39,6 +39,11 @@ a. also, the select button (on android tv) should cycle between opening the "mor
 [fixed] android TV doesn't use the gamepad for the on-screen keyboard. only "a" works as a button press to select the current character, d-pad or sticks don't move around chars
 
 # after reset
+[ ] in multiplayer, when on a non-touch device (controller only), whenever the "warp to" or "accept" (allow joining player) touch overlay buttons are shown:
+1. ensure they're shown, even if the regular touch overlay is hidden. this may already be the case, I haven't tested
+2. add a copy of them to the unbound actions menu. ensure they are inserted into the list at the position that's the first selection when the menu is opened (I forget if this is top or bottom)
+[ ] multiplayer item in quick menu: abdicate guidebot. put this in the game settings menu (the one with save/load), and only show when multiplayer is active. when chosen, it will give the guidebot to the next player in line (there's already a mechanism for this somewhere)
+[ ] possible multiplayer bug: the thief bot doesn't always drop every stolen item, if it's stolen from more than one player (I think, this is just from observations - can you check?) can you see if it's the case that only the owning player's items are dropped, maybe? if so, I'd like a fix. I'd also like its drops to be 100% when multiplayer QoL is enabled, same as the individual player death drop chance modifier
 [x] clean up and finalize the demo installer work. this work was done with a lesser model, I'd like you to take a fresh look at it and continue
 [x] support the new demo installer packages downloaded after the initial work was done:
 "C:\local\dxx-redux\game_data\demo installers\descent2preview.sit_.hqx"

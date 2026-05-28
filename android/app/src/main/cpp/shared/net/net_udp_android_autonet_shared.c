@@ -168,7 +168,8 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
  * Returns 1 on success, 0 on failure.
  */
 int net_udp_auto_host(int my_port, const char *mission, int mode,
-                      int difficulty, int max_players, int level_num, int coop_qol)
+                      int difficulty, int max_players, int level_num,
+                      int coop_qol, int full_death_spew)
 {
 	multi_protocol = MULTI_PROTO_UDP;
 	net_udp_init();
@@ -195,6 +196,7 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 		Netgame.game_flags |= NETGAME_FLAG_COOP_QOL;
 	else
 		Netgame.game_flags &= ~NETGAME_FLAG_COOP_QOL;
+	Netgame.FullDeathSpew = full_death_spew ? 1 : 0;
 	Netgame.RefusePlayers = 1; /* android port: require host approval for mid-game joins */
 	strcpy(Netgame.mission_name, Current_mission_filename);
 	strcpy(Netgame.mission_title, Current_mission_longname);

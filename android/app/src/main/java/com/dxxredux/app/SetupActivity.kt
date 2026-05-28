@@ -866,12 +866,14 @@ class SetupActivity : ComponentActivity() {
                         val mode = intent.getStringExtra("mode") ?: "anarchy"
                         val maxPlayers = intent.getIntExtra("max_players", 4)
                         val coopQol = intent.getBooleanExtra("coop_qol", true)
+                        val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
                         val gameInfo =
                             JsonObject(
                                 mapOf(
                                     "mission" to JsonPrimitive(mission),
                                     "mode" to JsonPrimitive(mode),
                                     "coop_qol" to JsonPrimitive(coopQol),
+                                    "full_death_spew" to JsonPrimitive(fullDeathSpew),
                                 ),
                             )
                         MatchmakingService.createLobby(game, maxPlayers, gameInfo)
@@ -954,6 +956,7 @@ class SetupActivity : ComponentActivity() {
                         val levelNum = intent.getIntExtra("level_num", 1)
                         val difficulty = intent.getIntExtra("difficulty", 1)
                         val coopQol = intent.getBooleanExtra("coop_qol", true)
+                        val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
                         val hostAddr = intent.getStringExtra("host_addr")
                         val hostPort = intent.getIntExtra("host_port", NetworkConstants.ENGINE_PORT)
                         intent.getStringExtra("callsign")?.let { mpCallsign = it }
@@ -973,6 +976,7 @@ class SetupActivity : ComponentActivity() {
                                 lanHostPort = hostPort,
                                 isLan = true,
                                 coopQol = coopQol,
+                                fullDeathSpew = fullDeathSpew,
                             )
                         Log.i(
                             "DXX-MP",
@@ -1134,6 +1138,7 @@ class SetupActivity : ComponentActivity() {
                     val levelNum = json["level_num"]?.jsonPrimitive?.int ?: 1
                     val maxPlayers = json["max_players"]?.jsonPrimitive?.int ?: 4
                     val coopQol = json["coop_qol"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: true
+                    val fullDeathSpew = json["full_death_spew"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: true
                     Log.i(
                         "DXX-MP",
                         "Host migration: proxy on :$proxyPort, LAN broadcast as $callsign ($game/$mission lvl=$levelNum)",
@@ -1143,7 +1148,13 @@ class SetupActivity : ComponentActivity() {
                     com.dxxredux.app.lobby.LobbyService
                         .hostLobby(callsign, game, mission, mode, maxPlayers)
                     com.dxxredux.app.lobby.LobbyService
-                        .startGame(difficulty, levelNum, coopQol = coopQol, hostPort = proxyPort)
+                        .startGame(
+                            difficulty,
+                            levelNum,
+                            coopQol = coopQol,
+                            fullDeathSpew = fullDeathSpew,
+                            hostPort = proxyPort,
+                        )
                     // Clean up the migration file
                     file.delete()
                 } catch (e: Exception) {
@@ -1456,6 +1467,7 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_level_num", info.levelNum)
             mpIntent.putExtra("mp_difficulty", info.difficulty)
             mpIntent.putExtra("mp_coop_qol", info.coopQol)
+            mpIntent.putExtra("mp_full_death_spew", info.fullDeathSpew)
         } else {
             mpIntent.putExtra("mp_mode", "join")
             if (info.lanHostAddr != null) {

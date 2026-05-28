@@ -403,6 +403,7 @@ object ConfigImportExport {
             put("level_num", prefs.getInt("host_level_num", 1))
             put("max_players", prefs.getInt("host_max_players", 4))
             put("coop_qol", prefs.getBoolean("host_coop_qol", true))
+            put("full_death_spew", prefs.getBoolean("host_full_death_spew", true))
             put(
                 "mission_d1",
                 prefs.getString("host_mission_d1", HostGameDefaults.defaultMissionForGame("d1")) ?: "",
@@ -442,6 +443,10 @@ object ConfigImportExport {
         }
         if (json.has("coop_qol")) {
             editor.putBoolean("host_coop_qol", json.getBoolean("coop_qol"))
+            count++
+        }
+        if (json.has("full_death_spew")) {
+            editor.putBoolean("host_full_death_spew", json.getBoolean("full_death_spew"))
             count++
         }
         if (json.has("mission_d1")) {

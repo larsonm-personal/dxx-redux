@@ -885,6 +885,7 @@ object LobbyService {
         difficulty: Int,
         levelNum: Int,
         coopQol: Boolean = true,
+        fullDeathSpew: Boolean = true,
         hostPort: Int = NetworkConstants.ENGINE_PORT,
     ) {
         if (!_isHosting.value) return
@@ -905,6 +906,7 @@ object LobbyService {
                 levelNum = levelNum,
                 maxPlayers = hostedMaxPlayers,
                 coopQol = coopQol,
+                fullDeathSpew = fullDeathSpew,
             )
         // Mark game started (rejects further JOINs) but keep announcing
         // so in-game lobbies remain discoverable on LAN
@@ -951,6 +953,7 @@ object LobbyService {
                     peers = emptyList(),
                     isLan = true,
                     coopQol = coopQol,
+                    fullDeathSpew = fullDeathSpew,
                 )
             NetLog.log("LAN", "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
             Log.i(TAG, "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
@@ -985,6 +988,7 @@ object LobbyService {
         val levelNum = json.optInt("level_num", 1)
         val maxPlayers = json.optInt("max_players", 4)
         val coopQol = json.optBoolean("coop_qol", true)
+        val fullDeathSpew = json.optBoolean("full_death_spew", true)
         NetLog.log("LAN", "START received: $game/$mission lvl=$levelNum diff=$difficulty from $senderAddr")
         Log.i(TAG, "START received for lobby $lobbyId: $game/$mission at $senderAddr:$hostPort")
 
@@ -1016,6 +1020,7 @@ object LobbyService {
                 lanHostPort = hostPort,
                 isLan = true,
                 coopQol = coopQol,
+                fullDeathSpew = fullDeathSpew,
             )
         NetLog.log("LAN", "Launch event emitted for joiner: game=$game host=$senderAddr")
     }

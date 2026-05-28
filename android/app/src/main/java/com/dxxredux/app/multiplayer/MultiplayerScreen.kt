@@ -461,7 +461,7 @@ private fun ServerBrowserContent(
         CreateGameDialog(
             title = "Create Lobby",
             confirmLabel = "Create",
-            onCreate = { game, mission, mode, maxPlayers, difficulty, levelNum, coopQol ->
+            onCreate = { game, mission, mode, maxPlayers, difficulty, levelNum, coopQol, fullDeathSpew ->
                 showCreateDialog = false
                 val gameInfo =
                     JsonObject(
@@ -472,6 +472,7 @@ private fun ServerBrowserContent(
                             "difficulty" to JsonPrimitive(difficulty),
                             "level_num" to JsonPrimitive(levelNum),
                             "coop_qol" to JsonPrimitive(coopQol),
+                            "full_death_spew" to JsonPrimitive(fullDeathSpew),
                         ),
                     )
                 MatchmakingService.createLobby(game, maxPlayers, gameInfo)
