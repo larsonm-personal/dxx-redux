@@ -45,6 +45,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -132,6 +134,9 @@ private fun LanJoinedLobbyView(
     val isHosting by LobbyService.isHosting.collectAsState()
     val chatMessages by LobbyService.chatMessages.collectAsState()
     val info = joinedLobby ?: return
+    val readyFocus = remember { FocusRequester() }
+
+    RequestControllerInitialFocus(readyFocus)
 
     // Consume LAN launch events
     LaunchedEffect(lanLaunchEvent) {
@@ -220,6 +225,7 @@ private fun LanJoinedLobbyView(
             messages = chatMessages,
             onSend = { LobbyService.sendChat(callsign, it) },
             modifier = Modifier.weight(0.5f),
+            textEntryFallbackFocusRequester = readyFocus,
         )
 
         Spacer(Modifier.height(8.dp))
@@ -230,7 +236,10 @@ private fun LanJoinedLobbyView(
             onClick = {
                 LobbyService.setReady(info.lobbyId, info.hostAddr, callsign, !myReady)
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .focusRequester(readyFocus),
         ) {
             Text(if (myReady) "Unready" else "Ready")
         }
@@ -252,6 +261,7 @@ private fun LanDiscoveryView(
     val lanLaunchEvent by LobbyService.lanLaunchEvent.collectAsState()
     val diagnostics by LobbyService.diagnostics.collectAsState()
     val broadcastFailing by LobbyService.broadcastFailing.collectAsState()
+    val actionFocus = remember { FocusRequester() }
 
     var showHostDialog by remember { mutableStateOf(false) }
     var showJoinByIpDialog by remember { mutableStateOf(false) }
@@ -276,6 +286,11 @@ private fun LanDiscoveryView(
     }
     var permissionPermanentlyDenied by remember { mutableStateOf(false) }
     val localIpLabel = remember { getLocalIpLabel() }
+    val focusTarget = lanDiscoveryInitialFocusTarget(permissionGranted)
+    val permissionActionHasInitialFocus = focusTarget == LanDiscoveryInitialFocusTarget.PERMISSION_ACTION
+    val lanActionHasInitialFocus = focusTarget == LanDiscoveryInitialFocusTarget.PRIMARY_ACTION
+
+    RequestControllerInitialFocus(actionFocus, listOf(focusTarget, isHosting, isDiscovering))
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
@@ -395,6 +410,7 @@ private fun LanDiscoveryView(
                                         )
                                     context.startActivity(intent)
                                 },
+                                modifier = Modifier.focusRequester(actionFocus),
                             ) {
                                 Text("Open Settings")
                             }
@@ -407,6 +423,7 @@ private fun LanDiscoveryView(
                                         )
                                     }
                                 },
+                                modifier = Modifier.focusRequester(actionFocus),
                             ) {
                                 Text("Grant Permission")
                             }
@@ -426,7 +443,10 @@ private fun LanDiscoveryView(
                 ) {
                     OutlinedButton(
                         onClick = { LobbyService.stopHosting() },
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .then(if (lanActionHasInitialFocus) Modifier.focusRequester(actionFocus) else Modifier),
                     ) {
                         Text("Stop Hosting")
                     }
@@ -446,7 +466,10 @@ private fun LanDiscoveryView(
                                 )
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .then(if (lanActionHasInitialFocus) Modifier.focusRequester(actionFocus) else Modifier),
                     ) {
                         Text("Host LAN Game")
                     }
@@ -498,7 +521,10 @@ private fun LanDiscoveryView(
                                 )
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .then(if (lanActionHasInitialFocus) Modifier.focusRequester(actionFocus) else Modifier),
                     ) {
                         Text("Host LAN Game")
                     }
@@ -880,10 +906,16 @@ private fun JoinByIpDialog(
 ) {
     var hostIp by remember { mutableStateOf(getDefaultIpPrefix()) }
     var selectedGame by remember { mutableStateOf("d2") }
+    var textEntryActive by remember { mutableStateOf(false) }
+    val dismissFocus = remember { FocusRequester() }
     val isValidIp = isValidIpAddress(hostIp)
+    val dismissOrEndTextEntry =
+        rememberControllerTextEntryDismiss(textEntryActive, dismissFocus, { textEntryActive = it }, onDismiss)
+
+    RequestControllerInitialFocus(dismissFocus)
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = dismissOrEndTextEntry,
         title = { Text("Join by IP") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -898,7 +930,10 @@ private fun JoinByIpDialog(
                     placeholder = { Text("192.168.1.100") },
                     singleLine = true,
                     isError = hostIp.isNotBlank() && !isValidIp,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .controllerTextEntryFocus { textEntryActive = it },
                 )
                 RecentSuggestions(recentIps) { hostIp = it }
                 Row(
@@ -925,7 +960,7 @@ private fun JoinByIpDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(dismissFocus)) { Text("Cancel") }
         },
     )
 }

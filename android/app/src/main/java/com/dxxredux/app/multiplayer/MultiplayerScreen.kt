@@ -103,12 +103,16 @@ private fun ServerBrowserContent(
 ) {
     val context = LocalContext.current
     val initialFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { initialFocus.requestFocus() }
     val recentUrls = remember { mutableStateOf(RecentAddressPrefs.SERVER_URLS.load(context)) }
     var serverUrl by remember { mutableStateOf(recentUrls.value.firstOrNull() ?: state.serverUrl) }
     var callsign by remember { mutableStateOf(state.callsign) }
     var showCreateDialog by remember { mutableStateOf(false) }
+    var textEntryActive by remember { mutableStateOf(false) }
     val activeGames = state.serverStatus?.activeGameList.orEmpty()
+    val focusTarget = multiplayerBrowserInitialFocusTarget(state.status)
+
+    RequestControllerInitialFocus(initialFocus, focusTarget)
+    ControllerTextEntryBackHandler(textEntryActive, initialFocus) { textEntryActive = it }
 
     // Auto-refresh lobby list every 5 seconds while connected
     if (state.status == ConnectionStatus.CONNECTED) {
@@ -134,7 +138,7 @@ private fun ServerBrowserContent(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Multiplayer", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.weight(1f))
-            OutlinedButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus)) { Text("Back") }
+            OutlinedButton(onClick = onBack) { Text("Back") }
         }
         Spacer(Modifier.height(8.dp))
 
@@ -175,7 +179,10 @@ private fun ServerBrowserContent(
                     onValueChange = { serverUrl = it },
                     label = { Text("Matchmaking Server URL") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .controllerTextEntryFocus { textEntryActive = it },
                 )
                 RecentSuggestions(recentUrls.value) { serverUrl = it }
                 Spacer(Modifier.height(4.dp))
@@ -184,7 +191,10 @@ private fun ServerBrowserContent(
                     onValueChange = { callsign = it.take(CallsignPrefs.MAX_LEN) },
                     label = { Text("Callsign") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .controllerTextEntryFocus { textEntryActive = it },
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -201,7 +211,15 @@ private fun ServerBrowserContent(
                         Text("Connect")
                     }
                     if (isConnecting) {
-                        OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
+                        OutlinedButton(
+                            onClick = { MatchmakingService.disconnect() },
+                            modifier =
+                                if (focusTarget == MultiplayerBrowserInitialFocusTarget.CANCEL_CONNECT) {
+                                    Modifier.focusRequester(initialFocus)
+                                } else {
+                                    Modifier
+                                },
+                        ) {
                             Text("Cancel")
                         }
                     }
@@ -212,6 +230,12 @@ private fun ServerBrowserContent(
                             MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
                         },
                         enabled = !isConnecting,
+                        modifier =
+                            if (focusTarget == MultiplayerBrowserInitialFocusTarget.LAN) {
+                                Modifier.focusRequester(initialFocus)
+                            } else {
+                                Modifier
+                            },
                     ) {
                         Text("LAN")
                     }
@@ -227,7 +251,10 @@ private fun ServerBrowserContent(
                         onValueChange = { serverUrl = it },
                         label = { Text("Server URL") },
                         singleLine = true,
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .controllerTextEntryFocus { textEntryActive = it },
                     )
                     Button(
                         onClick = {
@@ -241,7 +268,15 @@ private fun ServerBrowserContent(
                         Text("Connect")
                     }
                     if (isConnecting) {
-                        OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
+                        OutlinedButton(
+                            onClick = { MatchmakingService.disconnect() },
+                            modifier =
+                                if (focusTarget == MultiplayerBrowserInitialFocusTarget.CANCEL_CONNECT) {
+                                    Modifier.focusRequester(initialFocus)
+                                } else {
+                                    Modifier
+                                },
+                        ) {
                             Text("Cancel")
                         }
                     }
@@ -257,7 +292,10 @@ private fun ServerBrowserContent(
                         onValueChange = { callsign = it.take(CallsignPrefs.MAX_LEN) },
                         label = { Text("Callsign") },
                         singleLine = true,
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .controllerTextEntryFocus { textEntryActive = it },
                     )
                     Button(
                         onClick = {
@@ -266,6 +304,12 @@ private fun ServerBrowserContent(
                             MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
                         },
                         enabled = !isConnecting,
+                        modifier =
+                            if (focusTarget == MultiplayerBrowserInitialFocusTarget.LAN) {
+                                Modifier.focusRequester(initialFocus)
+                            } else {
+                                Modifier
+                            },
                     ) {
                         Text("LAN")
                     }
@@ -277,7 +321,15 @@ private fun ServerBrowserContent(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Button(onClick = { MatchmakingService.requestLobbyList() }) {
+                Button(
+                    onClick = { MatchmakingService.requestLobbyList() },
+                    modifier =
+                        if (focusTarget == MultiplayerBrowserInitialFocusTarget.REFRESH_LOBBIES) {
+                            Modifier.focusRequester(initialFocus)
+                        } else {
+                            Modifier
+                        },
+                ) {
                     Text("Refresh Lobbies")
                 }
                 Button(onClick = { showCreateDialog = true }) {
@@ -594,8 +646,13 @@ private fun LobbyCodeDialog(
     onDismiss: () -> Unit,
 ) {
     var code by remember { mutableStateOf("") }
+    var textEntryActive by remember { mutableStateOf(false) }
+    val dismissFocus = remember { FocusRequester() }
+    val dismissOrEndTextEntry =
+        rememberControllerTextEntryDismiss(textEntryActive, dismissFocus, { textEntryActive = it }, onDismiss)
+    RequestControllerInitialFocus(dismissFocus)
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = dismissOrEndTextEntry,
         title = { Text("Enter Lobby Code") },
         text = {
             OutlinedTextField(
@@ -603,7 +660,10 @@ private fun LobbyCodeDialog(
                 onValueChange = { code = it },
                 label = { Text("Code") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .controllerTextEntryFocus { textEntryActive = it },
             )
         },
         confirmButton = {
@@ -612,7 +672,7 @@ private fun LobbyCodeDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(dismissFocus)) { Text("Cancel") }
         },
     )
 }
@@ -825,9 +885,7 @@ private fun LanContent(
 ) {
     val isLandscape =
         LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-    val lanFocus = remember { FocusRequester() }
     val localIpLabel = remember { getLocalIpLabel() }
-    LaunchedEffect(Unit) { lanFocus.requestFocus() }
     Column(
         modifier =
             Modifier
@@ -846,7 +904,6 @@ private fun LanContent(
                     onClick = {
                         MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
                     },
-                    modifier = Modifier.focusRequester(lanFocus),
                 ) { Text("Back") }
             }
             localIpLabel?.let {
@@ -869,7 +926,6 @@ private fun LanContent(
                     onClick = {
                         MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
                     },
-                    modifier = Modifier.focusRequester(lanFocus),
                 ) { Text("Back") }
             }
         }
@@ -885,7 +941,7 @@ private fun FriendsContent(
     onBack: () -> Unit,
 ) {
     val friendsFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { friendsFocus.requestFocus() }
+    RequestControllerInitialFocus(friendsFocus)
     Column(
         modifier =
             Modifier
@@ -900,7 +956,6 @@ private fun FriendsContent(
                 onClick = {
                     MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
                 },
-                modifier = Modifier.focusRequester(friendsFocus),
             ) { Text("Back to Lobbies") }
             Spacer(Modifier.width(8.dp))
             OutlinedButton(onClick = onBack) { Text("Back") }
@@ -910,6 +965,7 @@ private fun FriendsContent(
         FriendsTab(
             friends = state.friends,
             pendingRequests = state.pendingFriendRequests,
+            initialFocusRequester = friendsFocus,
         )
     }
 }

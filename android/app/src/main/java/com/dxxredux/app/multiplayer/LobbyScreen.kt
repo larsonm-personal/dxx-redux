@@ -42,7 +42,7 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
     val lobby = state.currentLobby ?: return
     val myId = state.playerId
     val lobbyFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { lobbyFocus.requestFocus() }
+    RequestControllerInitialFocus(lobbyFocus)
 
     // Launch the game when gameLaunchInfo becomes available
     val launchInfo = state.gameLaunchInfo
@@ -65,7 +65,6 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
             Spacer(Modifier.weight(1f))
             OutlinedButton(
                 onClick = { MatchmakingService.leaveLobby() },
-                modifier = Modifier.focusRequester(lobbyFocus),
             ) {
                 Text("Leave")
             }
@@ -127,7 +126,7 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
         ) {
             Button(
                 onClick = { MatchmakingService.setReady(!myReady) },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).focusRequester(lobbyFocus),
                 colors =
                     if (myReady) {
                         ButtonDefaults.buttonColors(
@@ -172,6 +171,7 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
             messages = state.chatMessages,
             onSend = { MatchmakingService.sendLobbyChat(it) },
             modifier = Modifier.weight(0.3f),
+            textEntryFallbackFocusRequester = lobbyFocus,
         )
 
         Spacer(Modifier.height(8.dp))

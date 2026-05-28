@@ -21,6 +21,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.dxxredux.app.FileSetManager
@@ -192,6 +194,13 @@ private fun MissionPickerDialog(
     onDismiss: () -> Unit,
 ) {
     var filter by remember { mutableStateOf("") }
+    var textEntryActive by remember { mutableStateOf(false) }
+    val dismissFocus = remember { FocusRequester() }
+    val dismissOrEndTextEntry =
+        rememberControllerTextEntryDismiss(textEntryActive, dismissFocus, { textEntryActive = it }, onDismiss)
+
+    RequestControllerInitialFocus(dismissFocus)
+
     val filtered =
         remember(filter, missions) {
             if (filter.isBlank()) {
@@ -205,7 +214,7 @@ private fun MissionPickerDialog(
         }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = dismissOrEndTextEntry,
         title = { Text("Select Mission") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -215,7 +224,10 @@ private fun MissionPickerDialog(
                         onValueChange = { filter = it },
                         placeholder = { Text("Search...") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .controllerTextEntryFocus { textEntryActive = it },
                     )
                 }
                 LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
@@ -252,7 +264,7 @@ private fun MissionPickerDialog(
         },
         confirmButton = {},
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(dismissFocus)) { Text("Cancel") }
         },
     )
 }

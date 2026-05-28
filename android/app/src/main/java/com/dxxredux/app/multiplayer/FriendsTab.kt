@@ -27,12 +27,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun FriendsTab(
     friends: List<FriendInfo>,
     pendingRequests: List<FriendRequestReceivedMsg>,
+    initialFocusRequester: FocusRequester? = null,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -43,7 +46,10 @@ fun FriendsTab(
         ) {
             Text("Friends", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.weight(1f))
-            Button(onClick = { showAddDialog = true }) { Text("Add Friend") }
+            Button(
+                onClick = { showAddDialog = true },
+                modifier = initialFocusRequester?.let { Modifier.focusRequester(it) } ?: Modifier,
+            ) { Text("Add Friend") }
         }
         Spacer(Modifier.height(8.dp))
 
@@ -234,8 +240,15 @@ private fun AddFriendDialog(
     onDismiss: () -> Unit,
 ) {
     var callsign by remember { mutableStateOf("") }
+    var textEntryActive by remember { mutableStateOf(false) }
+    val dismissFocus = remember { FocusRequester() }
+    val dismissOrEndTextEntry =
+        rememberControllerTextEntryDismiss(textEntryActive, dismissFocus, { textEntryActive = it }, onDismiss)
+
+    RequestControllerInitialFocus(dismissFocus)
+
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = dismissOrEndTextEntry,
         title = { Text("Add Friend") },
         text = {
             OutlinedTextField(
@@ -243,7 +256,10 @@ private fun AddFriendDialog(
                 onValueChange = { callsign = it },
                 label = { Text("Callsign") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .controllerTextEntryFocus { textEntryActive = it },
             )
         },
         confirmButton = {
@@ -255,7 +271,7 @@ private fun AddFriendDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(dismissFocus)) { Text("Cancel") }
         },
     )
 }

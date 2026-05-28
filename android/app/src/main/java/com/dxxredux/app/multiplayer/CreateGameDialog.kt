@@ -35,6 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +70,12 @@ internal fun CreateGameDialog(
     var difficulty by remember { mutableStateOf(defaults.difficulty) }
     var levelNumText by remember { mutableStateOf(defaults.levelNum.toString()) }
     var coopQol by remember { mutableStateOf(defaults.coopQol) }
+    var textEntryActive by remember { mutableStateOf(false) }
+    val dialogFocus = remember { FocusRequester() }
+    val dismissOrEndTextEntry =
+        rememberControllerTextEntryDismiss(textEntryActive, dialogFocus, { textEntryActive = it }, onDismiss)
+
+    RequestControllerInitialFocus(dialogFocus)
 
     // Coop auto-saves and progress
     val coopSaves =
@@ -109,14 +117,14 @@ internal fun CreateGameDialog(
     val difficultyNames = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = dismissOrEndTextEntry,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(title, modifier = Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(dialogFocus)) { Text("Cancel") }
             }
         },
         text = {
@@ -219,14 +227,20 @@ internal fun CreateGameDialog(
                             onValueChange = { levelNumText = it.filter { c -> c.isDigit() } },
                             label = { Text("Level") },
                             singleLine = true,
-                            modifier = Modifier.weight(1f),
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .controllerTextEntryFocus { textEntryActive = it },
                         )
                         OutlinedTextField(
                             value = maxPlayersText,
                             onValueChange = { maxPlayersText = it.filter { c -> c.isDigit() } },
                             label = { Text("Max Players") },
                             singleLine = true,
-                            modifier = Modifier.weight(1f),
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .controllerTextEntryFocus { textEntryActive = it },
                         )
                     }
                     if (coopSaves.isNotEmpty()) {
