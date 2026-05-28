@@ -5,6 +5,14 @@ import org.junit.Test
 
 class ResumeSavePanelTest {
     @Test
+    fun rgb6ThumbnailChannelsExpandToFullEightBitRange() {
+        assertEquals(0, resumeSaveRgb6ChannelToRgb8(0))
+        assertEquals(125, resumeSaveRgb6ChannelToRgb8(31))
+        assertEquals(255, resumeSaveRgb6ChannelToRgb8(63))
+        assertEquals(255, resumeSaveRgb6ChannelToRgb8(255))
+    }
+
+    @Test
     fun headerTextOrderPutsResumeTitleBeforeStopShowingButton() {
         assertEquals(listOf("Resume Recent Save", "Stop Showing This"), resumePanelHeaderTextOrder())
     }

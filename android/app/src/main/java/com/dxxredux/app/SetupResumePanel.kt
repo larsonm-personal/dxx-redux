@@ -58,6 +58,11 @@ import java.util.Locale
 
 private fun resumeGameDisplayName(game: String): String = if (game == "d1") "Descent 1" else "Descent 2"
 
+internal fun resumeSaveRgb6ChannelToRgb8(channel: Int): Int {
+    val rgb6 = channel.coerceIn(0, 63)
+    return (rgb6 shl 2) or (rgb6 shr 4)
+}
+
 private fun resumeSaveKindLabel(saveKind: String): String =
     when (saveKind) {
         "auto_minimize" -> "Auto-save on minimize"
@@ -104,9 +109,9 @@ internal fun decodeResumeSaveThumbnail(candidate: ResumeSaveBridge.ResumeSaveCan
     val pixels = IntArray(pixelCount)
     var src = 0
     for (index in 0 until pixelCount) {
-        val red = rgb[src++].toInt() and 0xFF
-        val green = rgb[src++].toInt() and 0xFF
-        val blue = rgb[src++].toInt() and 0xFF
+        val red = resumeSaveRgb6ChannelToRgb8(rgb[src++].toInt() and 0xFF)
+        val green = resumeSaveRgb6ChannelToRgb8(rgb[src++].toInt() and 0xFF)
+        val blue = resumeSaveRgb6ChannelToRgb8(rgb[src++].toInt() and 0xFF)
         pixels[index] = (0xFF shl 24) or (red shl 16) or (green shl 8) or blue
     }
     return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
