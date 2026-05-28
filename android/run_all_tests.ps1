@@ -37,6 +37,12 @@
 .PARAMETER SkipDocker
     Skip Docker NAT tests even if Docker is available.
 
+.PARAMETER FullExtracts
+    Run every CD extraction regression spec. By default, run_all_tests samples one spec using a git-commit seed.
+
+.PARAMETER ExtractSampleCount
+    Number of CD extraction specs to sample when -FullExtracts is not set.
+
 .EXAMPLE
     .\run_all_tests.ps1
     .\run_all_tests.ps1 -Filter "test_death*"
@@ -50,7 +56,9 @@ param(
     [switch]$StopOnFail,
     [string]$ReportDir,
     [int]$TestTimeoutSeconds = 120,
-    [switch]$SkipDocker
+    [switch]$SkipDocker,
+    [switch]$FullExtracts,
+    [int]$ExtractSampleCount = 1
 )
 
 $ErrorActionPreference = "Stop"
@@ -151,6 +159,25 @@ function Test-MatchesRequestedFilter {
     return ($Test.Name -like $RequestedFilter -or $Test.BaseName -like $RequestedFilter)
 }
 
+function Get-GitCommitSeed {
+    try {
+        $commit = git -C $repoRoot rev-parse --verify HEAD 2>$null
+        if ($LASTEXITCODE -eq 0 -and $commit) {
+            $commitText = ($commit | Select-Object -First 1).Trim()
+            $prefix = $commitText.Substring(0, [Math]::Min(8, $commitText.Length))
+            return [int]([Convert]::ToUInt32($prefix, 16) -band 0x7fffffff)
+        }
+    } catch {}
+    return 1
+}
+
+$extractSampleSeed = Get-GitCommitSeed
+if (-not $FullExtracts -and $ExtractSampleCount -lt 1) {
+    Write-Host "FAIL: -ExtractSampleCount must be at least 1 unless -FullExtracts is set" -ForegroundColor Red
+    exit 1
+}
+$testAllExtractsTimeout = if ($FullExtracts) { 7200 } else { [Math]::Max(600, 300 * $ExtractSampleCount) }
+
 # -- Test catalog --
 
 # Tests always skipped in unattended mode
@@ -183,7 +210,7 @@ $testTimeouts = @{
     "test_input_demo_regressions"         = 900
     "test_input_demo_regressions_graphics" = 900
     "test_saf_archiver"                   = 360
-    "test_all_extracts"                   = 7200
+    "test_all_extracts"                   = $testAllExtractsTimeout
     "test_native_host_unit_tests"         = 1200
     "test_mp"                             = 240
     "test_server_integration"             = 600
@@ -266,7 +293,11 @@ foreach ($t in $ps1Files) {
         }
     }
     if ($name -eq "test_all_extracts") {
-        $entry.Arguments = @("-All")
+        if ($FullExtracts) {
+            $entry.Arguments = @("-All")
+        } else {
+            $entry.Arguments = @("-SampleCount", $ExtractSampleCount.ToString(), "-Seed", $extractSampleSeed.ToString())
+        }
     }
     $allTests += $entry
 }

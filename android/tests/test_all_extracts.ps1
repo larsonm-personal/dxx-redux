@@ -19,12 +19,22 @@
 .PARAMETER All
   Run all specs instead of picking one at random.
 
+.PARAMETER SampleCount
+  Run this many randomly ordered specs. Defaults to 1 unless -All, -SpecPaths, or -Filter is given.
+
+.PARAMETER Seed
+  Integer seed for repeatable random selection.
+
+.PARAMETER RandomOrder
+  Shuffle the selected specs before running them. Use with -All to run every spec in seeded order.
+
 .PARAMETER SpecPaths
   Explicit list of spec file paths to run (overrides auto-discovery).
 
 .EXAMPLE
   .\test_all_extracts.ps1                          # one random spec
   .\test_all_extracts.ps1 -All                     # all specs
+    .\test_all_extracts.ps1 -SampleCount 2 -Seed 123 # repeatable sample
   .\test_all_extracts.ps1 -Filter "Descent II*"    # D2 CDs only
   .\test_all_extracts.ps1 -SkipLaunch              # file-only
 #>
@@ -32,6 +42,9 @@ param(
     [string]$Filter,
     [switch]$SkipLaunch,
     [switch]$All,
+    [int]$SampleCount = 0,
+    [int]$Seed = 0,
+    [switch]$RandomOrder,
     [int]$MaxFailures = 0,
     [string[]]$SpecPaths
 )
@@ -82,13 +95,57 @@ if ($specs.Count -eq 0) {
     exit 1
 }
 
-# Unless -All or -SpecPaths or -Filter given, pick one spec at random
-if (-not $All -and -not $SpecPaths -and -not $Filter -and $specs.Count -gt 1) {
-    $pick = $specs | Get-Random
-    $pickName = Split-Path (Split-Path $pick -Parent) -Leaf
-    Write-Host "Randomly selected: $pickName" -ForegroundColor Yellow
-    Write-Host "  (use -All to run all $($specs.Count) specs)" -ForegroundColor DarkGray
-    $specs = @($pick)
+if ($SampleCount -lt 0) {
+    Write-Host "FAIL: -SampleCount must be zero or greater" -ForegroundColor Red
+    exit 1
+}
+if ($All -and $SampleCount -gt 0) {
+    Write-Host "FAIL: -All and -SampleCount cannot be used together" -ForegroundColor Red
+    exit 1
+}
+
+function Get-ShuffledSpecs {
+    param(
+        [string[]]$Items,
+        [int]$ShuffleSeed,
+        [bool]$HasSeed
+    )
+
+    $shuffled = @($Items)
+    $random = if ($HasSeed) { [System.Random]::new($ShuffleSeed) } else { [System.Random]::new() }
+    for ($i = $shuffled.Count - 1; $i -gt 0; $i--) {
+        $j = $random.Next($i + 1)
+        $tmp = $shuffled[$i]
+        $shuffled[$i] = $shuffled[$j]
+        $shuffled[$j] = $tmp
+    }
+    return , $shuffled
+}
+
+$seedSpecified = $PSBoundParameters.ContainsKey('Seed')
+$effectiveSampleCount = 0
+if (-not $All) {
+    if ($SampleCount -gt 0) {
+        $effectiveSampleCount = $SampleCount
+    } elseif (-not $SpecPaths -and -not $Filter -and $specs.Count -gt 1) {
+        $effectiveSampleCount = 1
+    }
+}
+
+$availableSpecCount = $specs.Count
+if ($effectiveSampleCount -gt 0 -or $RandomOrder) {
+    $specs = Get-ShuffledSpecs -Items $specs -ShuffleSeed $Seed -HasSeed $seedSpecified
+}
+if ($effectiveSampleCount -gt 0 -and $specs.Count -gt $effectiveSampleCount) {
+    $specs = @($specs | Select-Object -First $effectiveSampleCount)
+}
+if ($effectiveSampleCount -gt 0) {
+    $seedText = if ($seedSpecified) { ", seed $Seed" } else { "" }
+    Write-Host "Selected extraction sample: $($specs.Count)/$availableSpecCount spec(s)$seedText" -ForegroundColor Yellow
+    Write-Host "  (use -All to run all $availableSpecCount specs)" -ForegroundColor DarkGray
+} elseif ($RandomOrder) {
+    $seedText = if ($seedSpecified) { " with seed $Seed" } else { "" }
+    Write-Host "Randomized extraction order for $availableSpecCount spec(s)$seedText" -ForegroundColor Yellow
 }
 
 Write-Host ""

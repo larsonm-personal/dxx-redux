@@ -54,6 +54,7 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -90,6 +91,7 @@ class SetupActivity : ComponentActivity() {
     /** Incremented in onResume so Compose re-checks file status. */
     private val refreshTrigger = mutableIntStateOf(0)
     private val focusResumeTrigger = mutableIntStateOf(0)
+    private val launcherControllerNavigationActive = mutableStateOf(false)
     private val resumeOfferRefreshHandler = Handler(Looper.getMainLooper())
     private val resumeOfferRefreshRunnable = Runnable { refreshTrigger.intValue++ }
 
@@ -1298,6 +1300,7 @@ class SetupActivity : ComponentActivity() {
                     newLeftStickY != 0 -> newLeftStickY
                     else -> newRightStickY
                 }
+            if (newNavX != 0 || newNavY != 0) launcherControllerNavigationActive.value = true
             val navTarget = if (controllerConfigDialogOpen) controllerConfigDialogView else null
             synthesizeDpadTransition(
                 navTarget,
@@ -1324,6 +1327,13 @@ class SetupActivity : ComponentActivity() {
         }
 
         return true
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            launcherControllerNavigationActive.value = false
+        }
+        return super.dispatchTouchEvent(event)
     }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
@@ -1355,6 +1365,7 @@ class SetupActivity : ComponentActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val name = gamepadButtonName(event.keyCode)
         if (name != null) {
+            if (event.action == KeyEvent.ACTION_DOWN) launcherControllerNavigationActive.value = true
             if (event.action == KeyEvent.ACTION_DOWN) {
                 if (name !in pressedButtons) pressedButtons.add(name)
             } else if (event.action == KeyEvent.ACTION_UP) {
@@ -1570,6 +1581,7 @@ class SetupActivity : ComponentActivity() {
                 gameRunning = gameRunningFlag,
                 refreshTrigger = refreshTrigger.intValue,
                 focusResumeTrigger = focusResumeTrigger.intValue,
+                controllerNavigationActive = launcherControllerNavigationActive.value,
                 controllerAxes = controllerAxes,
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration.intValue,
@@ -1877,6 +1889,7 @@ private fun SetupScreen(
     gameRunning: Boolean,
     refreshTrigger: Int,
     focusResumeTrigger: Int,
+    controllerNavigationActive: Boolean,
     controllerAxes: FloatArray,
     dpadAxes: FloatArray,
     axisGeneration: Int,
@@ -2159,6 +2172,7 @@ private fun SetupScreen(
     var configImportName by remember { mutableStateOf<String?>(null) }
 
     val androidTvDevice = remember(context) { context.isAndroidTv() }
+    val shouldSeedLauncherFocus = shouldSeedLauncherControllerFocus(androidTvDevice, controllerNavigationActive)
     val importChooserConfig = remember(androidTvDevice) { importChooserConfigForDevice(androidTvDevice) }
     var showImportChooser by remember { mutableStateOf(false) }
 
@@ -2498,6 +2512,7 @@ private fun SetupScreen(
 
     // -- Initial focus for D-pad/keyboard navigation -----
     val initialFocus = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
     val inputModeManager = LocalInputModeManager.current
 
     // -- Page navigation state ----------------------------
@@ -2525,16 +2540,20 @@ private fun SetupScreen(
         showDemoInstallerOffer = gamePrefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true)
         showEnginePrefsPage = false
     }
-    LaunchedEffect(anySubPageOpen, canLaunch, showResumePanel, focusResumeTrigger) {
+    LaunchedEffect(anySubPageOpen, canLaunch, showResumePanel, focusResumeTrigger, shouldSeedLauncherFocus) {
         if (!anySubPageOpen) {
-            inputModeManager.requestInputMode(InputMode.Keyboard)
-            withFrameNanos { }
-            withFrameNanos { }
-            initialFocus.requestFocus()
-            delay(300)
-            inputModeManager.requestInputMode(InputMode.Keyboard)
-            withFrameNanos { }
-            initialFocus.requestFocus()
+            if (shouldSeedLauncherFocus) {
+                inputModeManager.requestInputMode(InputMode.Keyboard)
+                withFrameNanos { }
+                withFrameNanos { }
+                initialFocus.requestFocus()
+                delay(300)
+                inputModeManager.requestInputMode(InputMode.Keyboard)
+                withFrameNanos { }
+                initialFocus.requestFocus()
+            } else {
+                focusManager.clearFocus(force = true)
+            }
         }
     }
 
@@ -3302,7 +3321,12 @@ private fun SetupScreen(
                                                         hashingFile = null
                                                         cleanupTmpDir(filesDir)
                                                         selectedGame = demo.game
-                                                        gamePrefs.edit().putString("selected_game", demo.game).apply()
+                                                        gamePrefs
+                                                            .edit()
+                                                            .putString(
+                                                                "selected_game",
+                                                                demo.game,
+                                                            ).apply()
                                                         demoDownloading = null
                                                         importStatus = "Installed ${demo.name}: $imported files"
                                                         onRefresh()
@@ -3345,7 +3369,9 @@ private fun SetupScreen(
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = "Hashing: $hashingFile ($hashingFileIndex/$hashingTotalFiles)",
+                                    text =
+                                        "Hashing: $hashingFile " +
+                                            "($hashingFileIndex/$hashingTotalFiles)",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -3939,7 +3965,7 @@ private fun SetupScreen(
                         pressedButtons = pressedButtons,
                         prefs = prefs,
                         selectedGame = selectedGame,
-                        initialFocusRequester = initialFocus,
+                        initialFocusRequester = if (shouldSeedLauncherFocus) initialFocus else null,
                         onDefineControls = { showControllerPage = true },
                         onEditTouchLayout = { showTouchEditorPage = true },
                         onAdvancedSettings = { showAdvancedPage = true },

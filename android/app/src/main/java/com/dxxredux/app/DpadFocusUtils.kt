@@ -56,6 +56,11 @@ val tvFocusBorderColor = Color(0xFF00E676)
 private val tvFocusBorderShape = RoundedCornerShape(6.dp)
 private val tvFocusBorderWidth = 3.dp
 
+internal fun shouldSeedLauncherControllerFocus(
+    isAndroidTv: Boolean,
+    controllerNavigationActive: Boolean,
+): Boolean = isAndroidTv || controllerNavigationActive
+
 /** Adds the shared bright TV focus border to any composable. */
 fun Modifier.tvFocusBorder(): Modifier =
     composed {

@@ -3,10 +3,10 @@
 # Default base is upstream/main. Writes sorted numstat and summary to temp/.
 #
 # Usage:
-#   .\android\diff_vs_upstream.ps1
-#   .\android\diff_vs_upstream.ps1 -Base origin/main
-#   .\android\diff_vs_upstream.ps1 -Top 30
-#   .\android\diff_vs_upstream.ps1 -ShowContent   # also dumps top-N full diffs
+#   .\android\helpers\diff_vs_upstream.ps1
+#   .\android\helpers\diff_vs_upstream.ps1 -Base origin/main
+#   .\android\helpers\diff_vs_upstream.ps1 -Top 30
+#   .\android\helpers\diff_vs_upstream.ps1 -ShowContent   # also dumps top-N full diffs
 
 [CmdletBinding()]
 param(

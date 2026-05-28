@@ -45,6 +45,7 @@ object LobbyService {
     private const val JOINED_HOST_TIMEOUT_MS = 15_000L
     private const val JOIN_RETRY_COUNT = 3
     private const val JOIN_RETRY_DELAY_MS = 1000L
+    private const val BROADCAST_FAILURE_WARNING_THRESHOLD = 3
 
     // -- Public state --
 
@@ -101,6 +102,42 @@ object LobbyService {
         _lanLaunchEvent.value = null
     }
 
+    fun notifyAppBackgrounded() {
+        if (!_isDiscovering.value) return
+        appBackgrounded = true
+        socketRefreshNeededOnResume = true
+        NetLog.log("LAN", "App backgrounded with LAN discovery active")
+    }
+
+    fun notifyAppResumed(
+        context: Context,
+        callsign: String,
+    ) {
+        val wasBackgrounded = appBackgrounded || socketRefreshNeededOnResume
+        appBackgrounded = false
+        socketRefreshNeededOnResume = false
+        if (!_isDiscovering.value) return
+
+        hostCallsign = callsign
+        resetTransientBroadcastFailure()
+        val socketUnavailable = isSocketUnavailable()
+        if (!shouldRefreshLanDiscoveryAfterResume(_isDiscovering.value, wasBackgrounded, socketUnavailable)) return
+
+        NetLog.log(
+            "LAN",
+            "App resumed, refreshing LAN discovery socket " +
+                "(wasBackgrounded=$wasBackgrounded, socketUnavailable=$socketUnavailable)",
+        )
+        try {
+            openSocket(context)
+            if (_isHosting.value) restartAnnounceLoop()
+        } catch (e: Exception) {
+            socketRefreshNeededOnResume = true
+            _diagnostics.value = "LAN discovery resume failed: ${e.message ?: e.javaClass.simpleName}"
+            Log.w(TAG, "Failed to refresh LAN discovery after resume: ${e.message}", e)
+        }
+    }
+
     // -- Internal state --
 
     private var scope: CoroutineScope? = null
@@ -112,6 +149,10 @@ object LobbyService {
     private var joinRetryJob: Job? = null
 
     @Volatile private var lastHostSeenMs: Long = 0L
+
+    @Volatile private var appBackgrounded = false
+
+    @Volatile private var socketRefreshNeededOnResume = false
 
     // Keyed by lobbyId
     private val lobbies = ConcurrentHashMap<String, DiscoveredLobby>()
@@ -175,6 +216,8 @@ object LobbyService {
         _diagnostics.value = ""
         _broadcastFailing.value = false
         consecutiveBroadcastFailures = 0
+        appBackgrounded = false
+        socketRefreshNeededOnResume = false
         hostedHostPort = NetworkConstants.ENGINE_PORT
         closeSocket()
         NetLog.log("LAN", "Discovery stopped")
@@ -206,14 +249,7 @@ object LobbyService {
         _isHosting.value = true
         gameStarted = false
 
-        announceJob?.cancel()
-        announceJob =
-            scope?.launch(Dispatchers.IO) {
-                while (isActive && _isHosting.value) {
-                    broadcastAnnounce()
-                    delay(NetworkConstants.LAN_ANNOUNCE_INTERVAL_MS)
-                }
-            }
+        restartAnnounceLoop()
         NetLog.log("LAN", "Hosting lobby $hostedLobbyId ($game, $mission, $mode, max=$maxPlayers)")
         Log.i(TAG, "Hosting LAN lobby $hostedLobbyId ($game, $mission, $mode)")
     }
@@ -932,13 +968,7 @@ object LobbyService {
         inGameLevelNum = -1
         // Restart lobby announces if we're still hosting
         if (_isHosting.value && _isDiscovering.value) {
-            announceJob =
-                scope?.launch(Dispatchers.IO) {
-                    while (isActive && _isHosting.value) {
-                        broadcastAnnounce()
-                        delay(NetworkConstants.LAN_ANNOUNCE_INTERVAL_MS)
-                    }
-                }
+            restartAnnounceLoop()
         }
     }
 
@@ -1089,6 +1119,12 @@ object LobbyService {
     @Volatile private var consecutiveBroadcastFailures: Int = 0
 
     private fun sendBroadcast(data: ByteArray) {
+        val activeSocket = socket
+        if (activeSocket == null || activeSocket.isClosed) {
+            NetLog.log("LAN", "Broadcast send deferred: socket unavailable")
+            noteBroadcastFailure()
+            return
+        }
         val addresses = getBroadcastAddresses()
         var anySuccess = false
         for (addr in addresses) {
@@ -1100,7 +1136,7 @@ object LobbyService {
                         addr,
                         NetworkConstants.LAN_LOBBY_PORT,
                     )
-                socket?.send(packet)
+                activeSocket.send(packet)
                 anySuccess = true
                 val txCount = packetsSent.incrementAndGet()
                 Log.d(
@@ -1113,14 +1149,27 @@ object LobbyService {
             }
         }
         if (anySuccess) {
-            consecutiveBroadcastFailures = 0
-            _broadcastFailing.value = false
+            noteBroadcastSuccess()
         } else {
-            consecutiveBroadcastFailures++
-            if (consecutiveBroadcastFailures == 3) {
-                _diagnostics.value = "Broadcasts failing -- check Wi-Fi and Nearby Devices permission"
-                _broadcastFailing.value = true
-            }
+            noteBroadcastFailure()
+        }
+    }
+
+    private fun noteBroadcastSuccess() {
+        consecutiveBroadcastFailures = 0
+        _broadcastFailing.value = false
+        _diagnostics.value = lanDiagnosticAfterBroadcastRecovery(_diagnostics.value)
+    }
+
+    private fun noteBroadcastFailure() {
+        if (!shouldShowBroadcastFailureWarning(appBackgrounded)) {
+            socketRefreshNeededOnResume = true
+            return
+        }
+        consecutiveBroadcastFailures++
+        if (consecutiveBroadcastFailures == BROADCAST_FAILURE_WARNING_THRESHOLD) {
+            _diagnostics.value = LAN_BROADCAST_FAILURE_DIAGNOSTIC
+            _broadcastFailing.value = true
         }
     }
 
@@ -1156,6 +1205,11 @@ object LobbyService {
         address: String,
     ) {
         try {
+            val activeSocket = socket
+            if (activeSocket == null || activeSocket.isClosed) {
+                NetLog.log("LAN", "Send deferred to $address: socket unavailable")
+                return
+            }
             val addr = InetAddress.getByName(address)
             val packet =
                 DatagramPacket(
@@ -1164,7 +1218,7 @@ object LobbyService {
                     addr,
                     NetworkConstants.LAN_LOBBY_PORT,
                 )
-            socket?.send(packet)
+            activeSocket.send(packet)
             val txCount = packetsSent.incrementAndGet()
             Log.d(TAG, "sendTo: ${data.size}B -> $address:${NetworkConstants.LAN_LOBBY_PORT} (total=$txCount)")
         } catch (e: Exception) {
@@ -1174,6 +1228,7 @@ object LobbyService {
     }
 
     private fun pruneStaleLobbies() {
+        if (appBackgrounded) return
         val now = System.currentTimeMillis()
         val removed = lobbies.entries.removeAll { (now - it.value.lastSeenMs) > LOBBY_EXPIRY_MS }
         if (removed) publishLobbies()
@@ -1226,5 +1281,27 @@ object LobbyService {
             NetLog.log("LAN", "Failed to enumerate addresses: ${e.message}")
             Log.w(TAG, "Failed to enumerate local addresses: ${e.message}")
         }
+    }
+
+    private fun restartAnnounceLoop() {
+        announceJob?.cancel()
+        announceJob =
+            scope?.launch(Dispatchers.IO) {
+                while (isActive && _isHosting.value) {
+                    broadcastAnnounce()
+                    delay(NetworkConstants.LAN_ANNOUNCE_INTERVAL_MS)
+                }
+            }
+    }
+
+    private fun resetTransientBroadcastFailure() {
+        consecutiveBroadcastFailures = 0
+        _broadcastFailing.value = false
+        _diagnostics.value = lanDiagnosticAfterBroadcastRecovery(_diagnostics.value)
+    }
+
+    private fun isSocketUnavailable(): Boolean {
+        val activeSocket = socket
+        return activeSocket == null || activeSocket.isClosed || !activeSocket.isBound
     }
 }

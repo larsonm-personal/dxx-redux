@@ -2,6 +2,8 @@ package com.dxxredux.app.multiplayer
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -39,18 +41,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import com.dxxredux.app.BuildInfo
 import com.dxxredux.app.lobby.LobbyService
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +68,13 @@ private val LanIpsPrefs = RecentAddressPrefs.LAN_IPS
 /** Once-per-process default IP prefix derived from the device's own IPv4 address. */
 private var defaultIpPrefix: String? = null
 private var defaultIpPrefixInitialized = false
+
+private fun Context.findLifecycleOwner(): LifecycleOwner? =
+    when (this) {
+        is LifecycleOwner -> this
+        is ContextWrapper -> baseContext.findLifecycleOwner()
+        else -> null
+    }
 
 private fun getDefaultIpPrefix(): String {
     if (!defaultIpPrefixInitialized) {
@@ -86,6 +96,23 @@ fun LanDiscoveryTab(
     onLaunchGame: (GameLaunchInfo) -> Unit,
 ) {
     val joinedLobby by LobbyService.joinedLobby.collectAsState()
+    val context = LocalContext.current
+    val lifecycleOwner = remember(context) { context.findLifecycleOwner() }
+    val currentCallsign by rememberUpdatedState(callsign)
+
+    DisposableEffect(lifecycleOwner, context) {
+        val owner = lifecycleOwner ?: return@DisposableEffect onDispose {}
+        val observer =
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_PAUSE -> LobbyService.notifyAppBackgrounded()
+                    Lifecycle.Event.ON_RESUME -> LobbyService.notifyAppResumed(context, currentCallsign)
+                    else -> Unit
+                }
+            }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
 
     if (joinedLobby != null) {
         LanJoinedLobbyView(callsign, onLaunchGame)
@@ -283,9 +310,9 @@ private fun LanDiscoveryView(
     }
 
     // Re-check permission when returning from Settings
-    @Suppress("DEPRECATION")
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
+    val lifecycleOwner = remember(context) { context.findLifecycleOwner() }
+    DisposableEffect(lifecycleOwner, context) {
+        val owner = lifecycleOwner ?: return@DisposableEffect onDispose {}
         val observer =
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_RESUME && Build.VERSION.SDK_INT >= 33) {
@@ -298,8 +325,8 @@ private fun LanDiscoveryView(
                     if (granted) permissionPermanentlyDenied = false
                 }
             }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
     }
 
     // Consume LAN launch events (from host Start or joiner receiving START)

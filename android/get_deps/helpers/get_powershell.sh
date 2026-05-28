@@ -50,11 +50,11 @@ find_github_powershell_asset_url() {
     local api_url="https://api.github.com/repos/PowerShell/PowerShell/releases/tags/$tag"
     local release_json
     release_json="$(download_text "$api_url" 'Accept: application/vnd.github+json' 'User-Agent: dxx-redux-get-powershell')"
-    echo "$release_json" |
-        grep -o '"browser_download_url": *"[^"]*"' |
-        sed 's/"browser_download_url": *"//;s/"$//' |
-        grep -E "$asset_pattern" |
-        head -1
+    echo "$release_json" \
+        | grep -o '"browser_download_url": *"[^"]*"' \
+        | sed 's/"browser_download_url": *"//;s/"$//' \
+        | grep -E "$asset_pattern" \
+        | head -1
 }
 
 install_deb() {

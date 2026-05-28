@@ -11,7 +11,7 @@
     - git commit hash
     All output goes to temp\crash_report\.
 .EXAMPLE
-    .\android\collect_crash.ps1
+    .\android\helpers\collect_crash.ps1
     # Then reproduce the crash in the emulator, then press Enter.
 #>
 $ErrorActionPreference = "Continue"
