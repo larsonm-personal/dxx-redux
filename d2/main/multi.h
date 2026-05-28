@@ -60,7 +60,7 @@ extern int multi_protocol; // set and determinate used protocol
 #define MULTI_PROTO_UDP 1 // UDP protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
-#define MULTI_PROTO_VERSION 30008 // Redux 1.2 + full death spew
+#define MULTI_PROTO_VERSION 30009 // Redux 1.2 + full death spew + thief stolen index
 
 // PROTOCOL VARIABLES AND DEFINES - END
 
@@ -120,7 +120,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_MARKER               , 55)	\
 	VALUE(MULTI_DROP_WEAPON          , 12)	\
 	VALUE(MULTI_GUIDED               , 3+sizeof(shortpos))	\
-	VALUE(MULTI_STOLEN_ITEMS         , 11)	\
+	VALUE(MULTI_STOLEN_ITEMS         , 12)	\
 	VALUE(MULTI_WALL_STATUS          , 6)	/* send to new players */	\
 	VALUE(MULTI_SEISMIC              , 9)	\
 	VALUE(MULTI_LIGHT                , 18)	\

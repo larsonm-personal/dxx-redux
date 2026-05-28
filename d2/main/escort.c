@@ -136,6 +136,67 @@ int	Escort_owner_player = -1;
 
 fix64	Last_buddy_message_time;
 
+#define STOLEN_ITEM_NONE 255
+#define STOLEN_ITEM_PROXIMITY_MINE 254
+#define STOLEN_ITEM_SMART_MINE 253
+
+static int thief_full_drop_enabled(void)
+{
+#ifdef NETWORK
+	return (Game_mode & GM_MULTI) && Netgame.FullDeathSpew;
+#else
+	return 0;
+#endif
+}
+
+static int thief_find_stolen_item_slot(void)
+{
+	int i;
+
+	if (!thief_full_drop_enabled())
+		return Stolen_item_index;
+
+	for (i=0; i<MAX_STOLEN_ITEMS; i++) {
+		int slot = (Stolen_item_index+i) % MAX_STOLEN_ITEMS;
+		if (Stolen_items[slot] == STOLEN_ITEM_NONE)
+			return slot;
+	}
+	for (i=0; i<MAX_STOLEN_ITEMS; i++) {
+		int slot = (Stolen_item_index+i) % MAX_STOLEN_ITEMS;
+		if ((Stolen_items[slot] == POW_SHIELD_BOOST) || (Stolen_items[slot] == POW_ENERGY))
+			return slot;
+	}
+
+	return -1;
+}
+
+static int thief_store_stolen_item(ubyte item)
+{
+	int slot = thief_find_stolen_item_slot();
+
+	if (slot < 0)
+		return 0;
+
+	Stolen_items[slot] = item;
+	Stolen_item_index = slot;
+	return 1;
+}
+
+static void thief_drop_stolen_mine(object *objp, int weapon_id)
+{
+	int newseg;
+	vms_vector randvec, tvec;
+
+	make_random_vector(&randvec);
+	vm_vec_add(&tvec, &objp->pos, &randvec);
+	newseg = find_point_seg(&tvec, objp->segnum);
+	if (newseg == -1) {
+		tvec = objp->pos;
+		newseg = objp->segnum;
+	}
+	Laser_create_new(&randvec, &tvec, newseg, objp - Objects, weapon_id, 0);
+}
+
 void init_buddy_for_level(void)
 {
 	int	i;
@@ -1707,7 +1768,6 @@ int maybe_steal_flag_item(int player_num, int flagval)
 		// SIM RNG: this decides whether the thief removes a real flag-backed inventory item
 		if (d_rand() < THIEF_PROBABILITY) {
 			int	powerup_index=-1;
-			Players[player_num].flags &= (~flagval);
 			switch (flagval) {
 				case PLAYER_FLAGS_INVULNERABLE:
 					powerup_index = POW_INVULNERABILITY;
@@ -1740,11 +1800,14 @@ int maybe_steal_flag_item(int player_num, int flagval)
 				case PLAYER_FLAGS_HEADLIGHT:
 					powerup_index = POW_HEADLIGHT;
 					thief_message("Headlight stolen!");
-				   Players[Player_num].flags &= ~PLAYER_FLAGS_HEADLIGHT_ON;
 					break;
 			}
 			Assert(powerup_index != -1);
-			Stolen_items[Stolen_item_index] = powerup_index;
+			if (!thief_store_stolen_item((ubyte)powerup_index))
+				return 0;
+			Players[player_num].flags &= (~flagval);
+			if (flagval == PLAYER_FLAGS_HEADLIGHT)
+				Players[player_num].flags &= ~PLAYER_FLAGS_HEADLIGHT_ON;
 
 			digi_play_sample_once(SOUND_WEAPON_STOLEN, F1_0);
 			return 1;
@@ -1760,15 +1823,25 @@ int maybe_steal_secondary_weapon(int player_num, int weapon_num)
 	if ((Players[player_num].secondary_weapon_flags & HAS_FLAG(weapon_num)) && Players[player_num].secondary_ammo[weapon_num])
 		// SIM RNG: these rolls decide whether the thief removes real secondary inventory
 		if (d_rand() < THIEF_PROBABILITY) {
-			if (weapon_num == PROXIMITY_INDEX)
+			int stolen_item = -1;
+
+			if ((weapon_num == PROXIMITY_INDEX) && !thief_full_drop_enabled())
 				if (d_rand() > 8192)		//	Come in groups of 4, only add 1/4 of time.
 					return 0;
-			Players[player_num].secondary_ammo[weapon_num]--;
 
-			//	Smart mines and proxbombs don't get dropped because they only come in 4 packs.
-			if ((weapon_num != PROXIMITY_INDEX) && (weapon_num != SMART_MINE_INDEX)) {
-				Stolen_items[Stolen_item_index] = Secondary_weapon_to_powerup[weapon_num];
+			if (thief_full_drop_enabled()) {
+				if (weapon_num == PROXIMITY_INDEX)
+					stolen_item = STOLEN_ITEM_PROXIMITY_MINE;
+				else if (weapon_num == SMART_MINE_INDEX)
+					stolen_item = STOLEN_ITEM_SMART_MINE;
 			}
+			if ((weapon_num != PROXIMITY_INDEX) && (weapon_num != SMART_MINE_INDEX))
+				stolen_item = Secondary_weapon_to_powerup[weapon_num];
+
+			if ((stolen_item != -1) && !thief_store_stolen_item((ubyte)stolen_item))
+				return 0;
+
+			Players[player_num].secondary_ammo[weapon_num]--;
 
 			thief_message("%s stolen!", SECONDARY_WEAPON_NAMES(weapon_num));		//	Danger! Danger! Use of literal!  Danger!
 			if (Players[Player_num].secondary_ammo[weapon_num] == 0)
@@ -1790,19 +1863,24 @@ int maybe_steal_primary_weapon(int player_num, int weapon_num)
 		if (d_rand() < THIEF_PROBABILITY) {
 			if (weapon_num == 0) {
 				if (Players[player_num].laser_level > 0) {
+					ubyte stolen_item;
+
 					if (Players[player_num].laser_level > 3) {
-						Stolen_items[Stolen_item_index] = POW_SUPER_LASER;
+						stolen_item = POW_SUPER_LASER;
 					} else {
-						Stolen_items[Stolen_item_index] = Primary_weapon_to_powerup[weapon_num];
+						stolen_item = Primary_weapon_to_powerup[weapon_num];
 					}
+					if (!thief_store_stolen_item(stolen_item))
+						return 0;
 					thief_message("%s level decreased!", PRIMARY_WEAPON_NAMES(weapon_num));		//	Danger! Danger! Use of literal!  Danger!
 					Players[player_num].laser_level--;
 					digi_play_sample_once(SOUND_WEAPON_STOLEN, F1_0);
 					return 1;
 				}
 			} else if (Players[player_num].primary_weapon_flags & (1 << weapon_num)) {
+				if (!thief_store_stolen_item(Primary_weapon_to_powerup[weapon_num]))
+					return 0;
 				Players[player_num].primary_weapon_flags &= ~(1 << weapon_num);
-				Stolen_items[Stolen_item_index] = Primary_weapon_to_powerup[weapon_num];
 
 				thief_message("%s stolen!", PRIMARY_WEAPON_NAMES(weapon_num));		//	Danger! Danger! Use of literal!  Danger!
 				auto_select_weapon(0);
@@ -1957,10 +2035,15 @@ void drop_stolen_items(object *objp)
 	int	i;
 
 	for (i=0; i<MAX_STOLEN_ITEMS; i++) {
-		if (Stolen_items[i] != 255)
+		if (Stolen_items[i] == STOLEN_ITEM_PROXIMITY_MINE)
+			thief_drop_stolen_mine(objp, PROXIMITY_ID);
+		else if (Stolen_items[i] == STOLEN_ITEM_SMART_MINE)
+			thief_drop_stolen_mine(objp, SUPERPROX_ID);
+		else if (Stolen_items[i] != STOLEN_ITEM_NONE)
 			drop_powerup(OBJ_POWERUP, Stolen_items[i], 1, &objp->mtype.phys_info.velocity, &objp->pos, objp->segnum);
-		Stolen_items[i] = 255;
+		Stolen_items[i] = STOLEN_ITEM_NONE;
 	}
+	Stolen_item_index = 0;
 
 }
 

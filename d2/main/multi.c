@@ -5256,6 +5256,7 @@ void multi_send_stolen_items ()
 		multibuf[i+1]=Stolen_items[i];
 		count++;      // So I like to break my stuff into smaller chunks, so what?
 	}
+	multibuf[count++] = (ubyte)Stolen_item_index;
 	multi_send_data(multibuf, count, 2);
 }
 
@@ -5267,6 +5268,9 @@ void multi_do_stolen_items (const ubyte *buf)
 	{
 		Stolen_items[i]=buf[i+1];
 	}
+	Stolen_item_index = buf[MAX_STOLEN_ITEMS+1];
+	if ((Stolen_item_index < 0) || (Stolen_item_index >= MAX_STOLEN_ITEMS))
+		Stolen_item_index = 0;
 }
 
 void multi_send_wall_status (int wallnum,ubyte type,ubyte flags,ubyte state)
