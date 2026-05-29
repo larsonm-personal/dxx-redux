@@ -412,15 +412,15 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 		return 0;
 	}
 	android_repair_player_callsign_for_autosave(state_android_game_label());
+	if (save_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ||
+	    save_kind == ANDROID_SAVE_META_KIND_AUTO_MINIMIZE)
+		state_android_save_highest_progress_if_needed();
 
 	stop_time();
 	memset(filename, 0, sizeof(filename));
 	state_android_save_filename_for_slot(filename, sizeof(filename), slotnum);
 	state_android_autosave_prepare_slot(slotnum);
 	result = state_android_save_to_path(filename, desc, save_kind, 0);
-	if (result && (save_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ||
-	               save_kind == ANDROID_SAVE_META_KIND_AUTO_MINIMIZE))
-		state_android_save_highest_progress_if_needed();
 	if (!result)
 		debug_log(DLOG_GAME, "autosave failed: %s slot %d",
 		          state_android_game_label(), slotnum);

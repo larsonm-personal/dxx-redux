@@ -43,6 +43,7 @@ internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.Button
 
     data class TextNode(
         val text: String,
+        val focused: Boolean,
         val bounds: Rect,
     )
 
@@ -67,14 +68,15 @@ internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.Button
         val bounds = Rect()
         info.getBoundsInScreen(bounds)
         if (bounds.width() > 0 && bounds.height() > 0) {
+            val focused = info.isFocused || info.isAccessibilityFocused
             info.text?.toString()?.let { t ->
-                if (t.isNotEmpty()) textNodes.add(TextNode(t, Rect(bounds)))
+                if (t.isNotEmpty()) textNodes.add(TextNode(t, focused, Rect(bounds)))
             }
             if (info.isClickable || info.isCheckable) {
                 clickableNodes.add(
                     ClickableNode(
                         enabled = info.isEnabled,
-                        focused = info.isFocused || info.isAccessibilityFocused,
+                        focused = focused,
                         bounds = Rect(bounds),
                     ),
                 )
@@ -90,7 +92,7 @@ internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.Button
             SetupActivity.ButtonInfo(
                 text = label,
                 enabled = click.enabled,
-                focused = click.focused,
+                focused = click.focused || contained.any { it.focused },
                 centerX = (click.bounds.left + click.bounds.right) / 2f,
                 centerY = (click.bounds.top + click.bounds.bottom) / 2f,
                 width = click.bounds.width().toFloat(),

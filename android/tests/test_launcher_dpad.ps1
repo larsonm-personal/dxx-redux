@@ -150,17 +150,21 @@ function SendKey($code) {
     & $script:ADB shell input keyevent $code 2>$null
 }
 
+function EnableLauncherDpadMode {
+    SendKey 103  # BUTTON_R1 enters controller-navigation mode without moving focus
+}
+
 function SendSetupCommand {
     param(
         [Parameter(Mandatory = $true)][string]$Command,
         [string[]]$Extras = @()
     )
 
-    $args = @(
+    $broadcastCommand = @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
         "--es", "command", $Command
     ) + $Extras
-    Adb -AdbArgs $args | Out-Null
+    Adb -AdbArgs $broadcastCommand | Out-Null
 }
 
 # --- Setup ---
@@ -209,6 +213,7 @@ Info "  PASS: Main page has expected buttons"
 # --- Test 2: DPAD_CENTER activates Define Controls (initial focus target) ---
 Info "Test 2: DPAD_CENTER on initial focus (Define Controls)..."
 $buttons = Wait-ForMainPageDpadReady
+EnableLauncherDpadMode
 Wait-ForSetupButtonFocus -Text "Define Controls"
 & $script:ADB logcat -c
 SendKey 23  # DPAD_CENTER

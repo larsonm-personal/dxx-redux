@@ -961,24 +961,6 @@ static const char *describe_window_handler(window *wind)
 	return "unknown";
 }
 
-static bool close_front_fullscreen_window(void)
-{
-	window *front = window_get_front();
-	if (!front)
-		return false;
-
-#ifdef DXX_BUILD_DESCENT_II
-	int (*cb)(window *, d_event *, void *) = window_get_callback(front);
-	if (cb == (int (*)(window *, d_event *, void *)) title_handler ||
-	    cb == (int (*)(window *, d_event *, void *)) briefing_handler) {
-		LOGI("skip_briefing: closing %s window directly", describe_window_handler(front));
-		window_close(front);
-		return true;
-	}
-#endif
-	return false;
-}
-
 static void average_three_vectors(vms_vector *dest, const vms_vector *a, const vms_vector *b, const vms_vector *c)
 {
 	dest->x = (a->x + b->x + c->x) / 3;
@@ -2113,9 +2095,7 @@ extern "C" void game_automate_tick(void)
 					LOGI("skip_briefing: dismissing non-game window (Game_wind=%s front=%s)",
 					     Game_wind ? "exists" : "NULL",
 					     describe_window_handler(front));
-					if (Game_wind == NULL && close_front_fullscreen_window()) {
-						/* closed directly */
-					} else if (!select_dispatch_front_menu_key(KEY_ESC, "escape")) {
+					if (!select_dispatch_front_menu_key(KEY_ESC, "escape")) {
 						if (Game_wind == NULL)
 							inject_mouse_tap();
 						else

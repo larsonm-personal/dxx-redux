@@ -147,6 +147,7 @@ int joy_axis_handler(SDL_JoyAxisEvent *jae)
 	int touch_source = 0;
 	d_event_joystick_moved event;
 	static int joy_axis_diag_count[JOY_MAX_AXES];
+	int axis_value;
 
 #ifdef ANDROID
 	/* Android: virtual joystick, axis_map[] is not populated. Identity
@@ -157,13 +158,20 @@ int joy_axis_handler(SDL_JoyAxisEvent *jae)
 	axis = SDL_Joysticks[jae->which].axis_map[jae->axis];
 #endif
 
+	axis_value = jae->value/256;
 	// inaccurate stick is inaccurate. SDL might send SDL_JoyAxisEvent even if the value is the same as before.
-	if (Joystick.axis_value[axis] == jae->value/256)
+#ifdef ANDROID
+	/* Held virtual axes need repeated nonzero events because kconfig.c scales them by the current FrameTime. */
+	if (Joystick.axis_value[axis] == axis_value && axis_value == 0)
 		return 0;
+#else
+	if (Joystick.axis_value[axis] == axis_value)
+		return 0;
+#endif
 
 	event.type = EVENT_JOYSTICK_MOVED;
 	event.axis = axis;
-	event.value = Joystick.axis_value[axis] = jae->value/256;
+	event.value = Joystick.axis_value[axis] = axis_value;
 	event.touch_source = touch_source;
 	#ifdef ANDROID
 	if (axis >= 0 && axis < JOY_MAX_AXES && (axis == 2 || axis == 3) && jae->value != 0) {
