@@ -3,6 +3,7 @@ package com.dxxredux.app
 import android.app.Activity
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -30,7 +31,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontStyle
@@ -193,7 +197,7 @@ private fun addFloatingZoneEdgeHits(
  * Full-screen touch layout editor.
  * Displays controls on a canvas; tap to select, drag to move, bottom panel for properties.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TouchEditorPage(
     gameVariant: String = "d2",
@@ -330,22 +334,41 @@ fun TouchEditorPage(
             bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded),
         )
     val coroutineScope = rememberCoroutineScope()
+    val isPortrait = LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT
+    val density = LocalDensity.current
+    var toolbarHeightPx by remember { mutableIntStateOf(0) }
+    val measuredToolbarPeekHeight =
+        if (toolbarHeightPx > 0) {
+            with(density) { toolbarHeightPx.toDp() }
+        } else {
+            0.dp
+        }
+    val toolbarPeekHeight =
+        if (measuredToolbarPeekHeight > 48.dp) {
+            measuredToolbarPeekHeight
+        } else if (isPortrait) {
+            108.dp
+        } else {
+            48.dp
+        }
 
     BottomSheetScaffold(
         scaffoldState = sheetState,
-        sheetPeekHeight = 48.dp,
+        sheetPeekHeight = toolbarPeekHeight,
         sheetContainerColor = Color(0xFF262626),
         sheetContentColor = Color.White,
         sheetDragHandle = null,
         containerColor = cBackground,
         sheetContent = {
             // ── Toolbar row (always visible as peek content) ──
-            Row(
+            FlowRow(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .onSizeChanged { toolbarHeightPx = it.height },
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = "slot: $activeSlotName",
@@ -361,7 +384,6 @@ fun TouchEditorPage(
                 }) {
                     Text("Close Editor", fontSize = 12.sp, color = Color.White)
                 }
-                Spacer(Modifier.weight(1f))
                 TextButton(onClick = { showSlotDialog = true }) {
                     Text("Slots", fontSize = 12.sp)
                 }

@@ -49,6 +49,16 @@
 - android/gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ConfigSlotRepositoryTest --tests com.dxxredux.app.LauncherFocusPolicyTest --tests com.dxxredux.app.ControllerConfigSerializationTest
 - android/gradlew.bat :app:assembleDebug
 
+## Touch Toolbar Wrap Follow-up
+- [x] Let the portrait touch editor bottom-sheet toolbar wrap onto multiple rows
+- [x] Size the touch editor bottom-sheet peek height to the wrapped toolbar height
+- [x] Re-run formatting and Android validation
+
+## Touch Toolbar Wrap Validation
+- android/run-code-quality.ps1 -Fix
+- android/run-code-quality.ps1
+- android/gradlew.bat :app:assembleDebug
+
 ## Notes
 - Do not edit android/outstanding_bugs.md
 - Keep existing single-config files readable as default slot inputs
