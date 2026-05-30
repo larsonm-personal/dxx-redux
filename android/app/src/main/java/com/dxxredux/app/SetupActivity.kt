@@ -63,6 +63,7 @@ import androidx.core.view.WindowCompat
 import com.dxxredux.app.multiplayer.GameLaunchInfo
 import com.dxxredux.app.multiplayer.MatchmakingService
 import com.dxxredux.app.multiplayer.MatchmakingStateHolder
+import com.dxxredux.app.multiplayer.MultiplayerResumePrefs
 import com.dxxredux.app.multiplayer.NetworkConstants
 import com.dxxredux.app.multiplayer.PlayGamesAuth
 import kotlinx.coroutines.Dispatchers
@@ -867,6 +868,7 @@ class SetupActivity : ComponentActivity() {
                         val maxPlayers = intent.getIntExtra("max_players", 4)
                         val coopQol = intent.getBooleanExtra("coop_qol", true)
                         val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
+                        val clientsCanRequestRewind = intent.getBooleanExtra("clients_can_request_rewind", false)
                         val gameInfo =
                             JsonObject(
                                 mapOf(
@@ -874,6 +876,7 @@ class SetupActivity : ComponentActivity() {
                                     "mode" to JsonPrimitive(mode),
                                     "coop_qol" to JsonPrimitive(coopQol),
                                     "full_death_spew" to JsonPrimitive(fullDeathSpew),
+                                    "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
                                 ),
                             )
                         MatchmakingService.createLobby(game, maxPlayers, gameInfo)
@@ -957,6 +960,7 @@ class SetupActivity : ComponentActivity() {
                         val difficulty = intent.getIntExtra("difficulty", 1)
                         val coopQol = intent.getBooleanExtra("coop_qol", true)
                         val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
+                        val clientsCanRequestRewind = intent.getBooleanExtra("clients_can_request_rewind", false)
                         val hostAddr = intent.getStringExtra("host_addr")
                         val hostPort = intent.getIntExtra("host_port", NetworkConstants.ENGINE_PORT)
                         intent.getStringExtra("callsign")?.let { mpCallsign = it }
@@ -977,6 +981,7 @@ class SetupActivity : ComponentActivity() {
                                 isLan = true,
                                 coopQol = coopQol,
                                 fullDeathSpew = fullDeathSpew,
+                                clientsCanRequestRewind = clientsCanRequestRewind,
                             )
                         Log.i(
                             "DXX-MP",
@@ -1153,6 +1158,7 @@ class SetupActivity : ComponentActivity() {
                             levelNum,
                             coopQol = coopQol,
                             fullDeathSpew = fullDeathSpew,
+                            clientsCanRequestRewind = false,
                             hostPort = proxyPort,
                         )
                     // Clean up the migration file
@@ -1468,6 +1474,7 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_difficulty", info.difficulty)
             mpIntent.putExtra("mp_coop_qol", info.coopQol)
             mpIntent.putExtra("mp_full_death_spew", info.fullDeathSpew)
+            mpIntent.putExtra("mp_clients_can_request_rewind", info.clientsCanRequestRewind)
         } else {
             mpIntent.putExtra("mp_mode", "join")
             if (info.lanHostAddr != null) {
@@ -1492,6 +1499,7 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
         }
         if (info.isLan) mpIntent.putExtra("mp_is_lan", true)
+        MultiplayerResumePrefs.saveLaunch(this, info, mpCallsign, MatchmakingStateHolder.state.value)
         // Clear gameLaunchInfo after consumption to prevent stale re-launches
         MatchmakingStateHolder.update { it.copy(gameLaunchInfo = null) }
         startActivity(mpIntent)

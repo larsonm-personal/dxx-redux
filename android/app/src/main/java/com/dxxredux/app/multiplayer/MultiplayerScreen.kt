@@ -108,6 +108,11 @@ private fun ServerBrowserContent(
     var callsign by remember { mutableStateOf(state.callsign) }
     var showCreateDialog by remember { mutableStateOf(false) }
     var textEntryActive by remember { mutableStateOf(false) }
+    var dismissResumeOffer by remember { mutableStateOf(false) }
+    var pendingOnlineResume by remember { mutableStateOf<MultiplayerResumeRecord?>(null) }
+    var onlineResumeListRequested by remember { mutableStateOf(false) }
+    var resumeStatus by remember { mutableStateOf<String?>(null) }
+    val resumeRecord = remember { MultiplayerResumePrefs.load(context) }
     val activeGames = state.serverStatus?.activeGameList.orEmpty()
     val focusTarget = multiplayerBrowserInitialFocusTarget(state.status)
 
@@ -123,9 +128,57 @@ private fun ServerBrowserContent(
             }
         }
     }
-
     val isLandscape =
         LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+    fun createOnlineResumeLobby(record: MultiplayerResumeRecord) {
+        HostGameDefaults.save(context, record.toHostDefaults())
+        writeCoopRestoreSlot(context.filesDir, record.game, record.coopRestoreSlot)
+        MatchmakingService.createLobby(record.game, record.maxPlayers, record.toGameInfoJson())
+    }
+
+    fun beginOnlineResume(record: MultiplayerResumeRecord) {
+        val savedServerUrl = record.serverUrl ?: return
+        callsign = record.localCallsign
+        serverUrl = savedServerUrl
+        CallsignPrefs.save(context, record.localCallsign)
+        RecentAddressPrefs.SERVER_URLS.add(context, savedServerUrl)
+        recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
+        pendingOnlineResume = record
+        onlineResumeListRequested = false
+        resumeStatus = if (record.isHostOnlineCoop()) "Connecting to last server" else "Looking for last online host"
+        if (state.status != ConnectionStatus.CONNECTED || state.serverUrl.trim() != savedServerUrl.trim()) {
+            MatchmakingService.connect(savedServerUrl, record.localCallsign)
+        }
+    }
+
+    LaunchedEffect(pendingOnlineResume, state.status, state.lobbies) {
+        val record = pendingOnlineResume ?: return@LaunchedEffect
+        if (state.status != ConnectionStatus.CONNECTED) return@LaunchedEffect
+        if (record.isHostOnlineCoop()) {
+            pendingOnlineResume = null
+            resumeStatus = null
+            createOnlineResumeLobby(record)
+            return@LaunchedEffect
+        }
+        if (record.isClientOnlineCoop()) {
+            if (!onlineResumeListRequested) {
+                onlineResumeListRequested = true
+                MatchmakingService.requestLobbyList()
+            }
+            val codedMatch = state.lobbies.firstOrNull { record.matchesOnlineLobby(it) && it.hasCode }
+            val match = state.lobbies.firstOrNull { record.matchesOnlineLobby(it) && it.joinable && !it.hasCode }
+            if (match != null) {
+                pendingOnlineResume = null
+                resumeStatus = null
+                MatchmakingService.joinLobby(match.lobbyId)
+            } else if (codedMatch != null) {
+                resumeStatus = "Last lobby requires a code"
+            } else {
+                resumeStatus = "Looking for last online host"
+            }
+        }
+    }
 
     Column(
         modifier =
@@ -141,6 +194,48 @@ private fun ServerBrowserContent(
             OutlinedButton(onClick = onBack) { Text("Back") }
         }
         Spacer(Modifier.height(8.dp))
+
+        val offerRecord =
+            resumeRecord?.takeIf {
+                it.isHostLanCoop() || it.isClientLanCoop() || it.isHostOnlineCoop() || it.isClientOnlineCoop()
+            }
+        if (!dismissResumeOffer && offerRecord != null) {
+            MultiplayerResumeOfferCard(
+                record = offerRecord,
+                primaryLabel =
+                    when {
+                        offerRecord.isHostLanCoop() -> "Open LAN Resume"
+                        offerRecord.isClientLanCoop() -> "Open LAN Search"
+                        offerRecord.isHostOnlineCoop() -> "Host Last Online"
+                        else -> "Find Online Host"
+                    },
+                onPrimary = {
+                    if (offerRecord.transport == "lan") {
+                        if (offerRecord.isHostLanCoop()) {
+                            HostGameDefaults.save(context, offerRecord.toHostDefaults())
+                            writeCoopRestoreSlot(context.filesDir, offerRecord.game, offerRecord.coopRestoreSlot)
+                        }
+                        callsign = offerRecord.localCallsign
+                        CallsignPrefs.save(context, offerRecord.localCallsign)
+                        MatchmakingStateHolder.update {
+                            it.copy(callsign = offerRecord.localCallsign, nav = MultiplayerNav.LAN)
+                        }
+                    } else {
+                        beginOnlineResume(offerRecord)
+                    }
+                },
+                onDismiss = { dismissResumeOffer = true },
+            )
+            resumeStatus?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
 
         // -- Connection bar --
         Row(
@@ -461,7 +556,17 @@ private fun ServerBrowserContent(
         CreateGameDialog(
             title = "Create Lobby",
             confirmLabel = "Create",
-            onCreate = { game, mission, mode, maxPlayers, difficulty, levelNum, coopQol, fullDeathSpew ->
+            onCreate = {
+                game,
+                mission,
+                mode,
+                maxPlayers,
+                difficulty,
+                levelNum,
+                coopQol,
+                fullDeathSpew,
+                clientsCanRequestRewind,
+                ->
                 showCreateDialog = false
                 val gameInfo =
                     JsonObject(
@@ -473,6 +578,7 @@ private fun ServerBrowserContent(
                             "level_num" to JsonPrimitive(levelNum),
                             "coop_qol" to JsonPrimitive(coopQol),
                             "full_death_spew" to JsonPrimitive(fullDeathSpew),
+                            "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
                         ),
                     )
                 MatchmakingService.createLobby(game, maxPlayers, gameInfo)

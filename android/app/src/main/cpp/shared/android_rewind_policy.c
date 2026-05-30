@@ -36,6 +36,15 @@ android_rewind_request_access android_rewind_classify_request_context(
 	return ANDROID_REWIND_REQUEST_ALLOW;
 }
 
+int android_rewind_is_client_request_allowed(int is_multiplayer,
+                                             int is_coop,
+                                             int is_host,
+                                             int clients_can_request,
+                                             int requester_valid)
+{
+	return is_multiplayer && is_coop && is_host && clients_can_request && requester_valid;
+}
+
 int android_rewind_sanitize_target_seconds(int target_seconds)
 {
 	switch (target_seconds) {

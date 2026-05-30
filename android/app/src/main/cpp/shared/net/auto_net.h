@@ -42,6 +42,8 @@ extern int auto_host_difficulty;
 extern int auto_host_coop_qol;
 /* Host-side full death spew default (0/1) */
 extern int auto_host_full_death_spew;
+/* Host-side client rewind request permission default (0/1). */
+extern int auto_host_clients_can_request_rewind;
 
 /* Callsign for auto-created pilot (shared by host and join paths).
  * When non-empty and no pilot exists, a pilot with this name is created

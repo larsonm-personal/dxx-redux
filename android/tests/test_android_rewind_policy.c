@@ -108,6 +108,22 @@ int main(void)
 		ANDROID_REWIND_REQUEST_BLOCKED,
 		android_rewind_classify_request_context(1, 1, 1, 1, 0, 1));
 	failures += expect_index(
+		"host can accept valid client rewind request when enabled",
+		1,
+		android_rewind_is_client_request_allowed(1, 1, 1, 1, 1));
+	failures += expect_index(
+		"disabled host rejects client rewind request",
+		0,
+		android_rewind_is_client_request_allowed(1, 1, 1, 0, 1));
+	failures += expect_index(
+		"non-host rejects client rewind request",
+		0,
+		android_rewind_is_client_request_allowed(1, 1, 0, 1, 1));
+	failures += expect_index(
+		"invalid requester rejects client rewind request",
+		0,
+		android_rewind_is_client_request_allowed(1, 1, 1, 1, 0));
+	failures += expect_index(
 		"keep short rewind target",
 		ANDROID_REWIND_TARGET_SECONDS_SHORT,
 		android_rewind_sanitize_target_seconds(ANDROID_REWIND_TARGET_SECONDS_SHORT));

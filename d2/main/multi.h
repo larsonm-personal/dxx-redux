@@ -60,7 +60,7 @@ extern int multi_protocol; // set and determinate used protocol
 #define MULTI_PROTO_UDP 1 // UDP protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
-#define MULTI_PROTO_VERSION 30009 // Redux 1.2 + full death spew + thief stolen index
+#define MULTI_PROTO_VERSION 30010 // Redux 1.2 + full death spew + thief stolen index + Android rewind request packets
 
 // PROTOCOL VARIABLES AND DEFINES - END
 
@@ -150,6 +150,8 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_COOP_PEER_STATUS     , 8)   \
 	VALUE(MULTI_ESCORT_OWNER         , 3)   \
 	VALUE(MULTI_COOP_RESTORE_INV     , 78)  \
+	VALUE(MULTI_REWIND_REQUEST       , 3)   \
+	VALUE(MULTI_REWIND_RESULT        , 4)   \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 
@@ -448,6 +450,11 @@ extern int Multi_master_playernum;  // android port: dynamic master for host mig
 int multi_i_am_master(void);
 int multi_who_is_master(void);
 void change_playernum_to(int new_pnum);
+#ifdef __ANDROID__
+void multi_send_rewind_request(void);
+void multi_do_rewind_request(const ubyte *buf);
+void multi_do_rewind_result(const ubyte *buf);
+#endif
 
 // Multiplayer powerup capping
 extern void multi_powcap_count_powerups_in_mine(void);

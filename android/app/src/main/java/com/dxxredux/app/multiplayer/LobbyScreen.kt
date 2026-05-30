@@ -319,6 +319,7 @@ private fun CoopSaveOffer(
     // Write/delete coop_restore_slot.txt based on current selection
     LaunchedEffect(useRestore, bestMatch) {
         writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
+        MultiplayerResumePrefs.saveRestoreSelection(context, game, if (useRestore) bestMatch else null)
     }
 
     val mins = bestMatch.levelTimeSeconds / 60

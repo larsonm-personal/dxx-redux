@@ -354,9 +354,15 @@ static int android_handle_ingame_saveload_request(void)
 		int rewind_result;
 
 		android_rewind_pending = 0;
-		rewind_result = android_rewind_request(NULL);
-		if (rewind_result == ANDROID_REWIND_STATUS_NOT_HOST)
+		if ((Game_mode & GM_MULTI_COOP) && !multi_i_am_master()) {
+			multi_send_rewind_request();
 			return 1;
+		}
+		rewind_result = android_rewind_request(NULL);
+		if (rewind_result == ANDROID_REWIND_STATUS_NOT_HOST) {
+			multi_send_rewind_request();
+			return 1;
+		}
 		if (rewind_result == ANDROID_REWIND_STATUS_BLOCKED_MULTIPLAYER) {
 			HUD_init_message_literal(HM_DEFAULT, "Rewind is unavailable in current multiplayer state");
 			return 1;

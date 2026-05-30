@@ -43,6 +43,7 @@ typedef struct android_rewind_snapshot {
 
 typedef struct android_rewind_session {
 	int enabled;
+	int clients_can_request;
 	int target_seconds;
 	int has_level_identity;
 	int level_num;
@@ -58,6 +59,7 @@ typedef struct android_rewind_session {
 
 static android_rewind_session g_android_rewind_session = {
 	1,
+	0,
 	ANDROID_REWIND_TARGET_SECONDS_DEFAULT,
 	0,
 	0,
@@ -280,9 +282,19 @@ void android_rewind_set_target_seconds(int target_seconds)
 	g_android_rewind_session.target_seconds = android_rewind_sanitize_target_seconds(target_seconds);
 }
 
+void android_rewind_set_clients_can_request(int enabled)
+{
+	g_android_rewind_session.clients_can_request = enabled ? 1 : 0;
+}
+
 int android_rewind_is_enabled(void)
 {
 	return g_android_rewind_session.enabled ? 1 : 0;
+}
+
+int android_rewind_clients_can_request(void)
+{
+	return g_android_rewind_session.clients_can_request ? 1 : 0;
 }
 
 void android_rewind_reset_level(void)

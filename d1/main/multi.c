@@ -65,6 +65,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "args.h"
 #ifdef __ANDROID__
+#include "android_rewind.h"
+#include "android_rewind_policy.h"
 #include "coop_save.h"
 #include "coop_warp.h"
 #include "coop_indicator_lines.h"
@@ -2742,6 +2744,8 @@ void multi_disconnect_player(int pnum)
 			}
 			if (new_master >= 0) {
 				Multi_master_playernum = new_master;
+				android_rewind_reset_level();
+				android_rewind_set_clients_can_request(0);
 				con_printf(CON_NORMAL, "host migration: player %d is now master\n", new_master);
 				if (new_master == Player_num) {
 					PHYSFS_file *mfp;
@@ -5560,6 +5564,10 @@ multi_process_data(const ubyte *buf, int len)
 			coop_do_peer_status(buf); break;
 		case MULTI_COOP_RESTORE_INV:
 			coop_do_restore_inventory(buf); break;
+		case MULTI_REWIND_REQUEST:
+			multi_do_rewind_request(buf); break;
+		case MULTI_REWIND_RESULT:
+			multi_do_rewind_result(buf); break;
 #endif
 		default:
 			Int3();
@@ -6007,6 +6015,101 @@ void coop_do_peer_status(const ubyte *buf)
 		return;
 	Coop_kill_stats[pnum].robots_killed = GET_INTEL_SHORT(buf + 2);
 	Coop_kill_stats[pnum].score_earned = GET_INTEL_INT(buf + 4);
+}
+
+static int multi_rewind_requester_valid(int pnum)
+{
+	return pnum >= 0 && pnum < N_players &&
+	       (Players[pnum].connected == CONNECT_PLAYING ||
+	        Players[pnum].connected == CONNECT_WAITING);
+}
+
+static void multi_send_rewind_result(int requester, int status, int rewound_seconds)
+{
+	if (requester < 0 || requester >= N_players)
+		return;
+	multibuf[0] = MULTI_REWIND_RESULT;
+	multibuf[1] = (ubyte)requester;
+	multibuf[2] = (ubyte)status;
+	multibuf[3] = (ubyte)((rewound_seconds < 0) ? 0 : ((rewound_seconds > 255) ? 255 : rewound_seconds));
+	multi_send_data_direct(multibuf, 4, requester, 2);
+}
+
+void multi_send_rewind_request(void)
+{
+	static ubyte request_id = 0;
+
+	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+	if (multi_i_am_master())
+		return;
+	multibuf[0] = MULTI_REWIND_REQUEST;
+	multibuf[1] = (ubyte)Player_num;
+	multibuf[2] = ++request_id;
+	multi_send_data_direct(multibuf, 3, multi_who_is_master(), 2);
+	HUD_init_message_literal(HM_DEFAULT, "Rewind requested");
+}
+
+void multi_do_rewind_request(const ubyte *buf)
+{
+	static fix64 next_request_time[MAX_PLAYERS] = {0};
+	int requester = buf[1];
+	int rewound_seconds = 0;
+	int status;
+	int requester_valid = multi_rewind_requester_valid(requester);
+
+	if (!multi_i_am_master())
+		return;
+	if (!(Game_mode & GM_MULTI_COOP)) {
+		if (requester_valid)
+			multi_send_rewind_result(requester, ANDROID_REWIND_STATUS_BLOCKED_MULTIPLAYER, 0);
+		return;
+	}
+	if (!android_rewind_is_client_request_allowed(1, 1, 1,
+	                                             android_rewind_clients_can_request(),
+	                                             requester_valid)) {
+		if (requester_valid)
+			multi_send_rewind_result(requester,
+			                         android_rewind_clients_can_request() ?
+			                         ANDROID_REWIND_STATUS_BLOCKED_MULTIPLAYER :
+			                         ANDROID_REWIND_STATUS_DISABLED,
+			                         0);
+		return;
+	}
+	if (GameTime64 < next_request_time[requester]) {
+		multi_send_rewind_result(requester, ANDROID_REWIND_STATUS_BLOCKED_MULTIPLAYER, 0);
+		return;
+	}
+	next_request_time[requester] = GameTime64 + F1_0;
+	status = android_rewind_request(&rewound_seconds);
+	multi_send_rewind_result(requester, status, rewound_seconds);
+}
+
+void multi_do_rewind_result(const ubyte *buf)
+{
+	int requester = buf[1];
+	int status = buf[2];
+	int rewound_seconds = buf[3];
+
+	if (requester != Player_num)
+		return;
+	switch (status) {
+		case ANDROID_REWIND_STATUS_RESTORED:
+			HUD_init_message(HM_DEFAULT, "Host rewound %d seconds", rewound_seconds);
+			break;
+		case ANDROID_REWIND_STATUS_DISABLED:
+			HUD_init_message_literal(HM_DEFAULT, "Rewind requests disabled");
+			break;
+		case ANDROID_REWIND_STATUS_NO_POINT:
+			HUD_init_message_literal(HM_DEFAULT, "Host has no rewind point yet");
+			break;
+		case ANDROID_REWIND_STATUS_BLOCKED_MULTIPLAYER:
+			HUD_init_message_literal(HM_DEFAULT, "Rewind request denied");
+			break;
+		default:
+			HUD_init_message_literal(HM_DEFAULT, "Host rewind failed");
+			break;
+	}
 }
 
 void coop_send_restore_inventory(int pnum)

@@ -59,6 +59,7 @@ internal fun CreateGameDialog(
         levelNum: Int,
         coopQol: Boolean,
         fullDeathSpew: Boolean,
+        clientsCanRequestRewind: Boolean,
     ) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -72,6 +73,7 @@ internal fun CreateGameDialog(
     var levelNumText by remember { mutableStateOf(defaults.levelNum.toString()) }
     var coopQol by remember { mutableStateOf(defaults.coopQol) }
     var fullDeathSpew by remember { mutableStateOf(defaults.fullDeathSpew) }
+    var clientsCanRequestRewind by remember { mutableStateOf(defaults.clientsCanRequestRewind) }
     var textEntryActive by remember { mutableStateOf(false) }
     val dialogFocus = remember { FocusRequester() }
     val dismissOrEndTextEntry =
@@ -189,6 +191,27 @@ internal fun CreateGameDialog(
                                 )
                                 Text(
                                     "Host-side coop helper features for this session",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Switch(
+                                checked = clientsCanRequestRewind,
+                                onCheckedChange = { clientsCanRequestRewind = it },
+                            )
+                            Column {
+                                Text(
+                                    "Allow client rewind requests",
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                                Text(
+                                    "Clients can ask this host to use its rewind buffer",
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -321,12 +344,24 @@ internal fun CreateGameDialog(
                             maxPlayers = maxPlayers,
                             coopQol = coopQol,
                             fullDeathSpew = fullDeathSpew,
+                            clientsCanRequestRewind = clientsCanRequestRewind,
                         ),
                     )
                     // slot = -1 for checkpoint entries (no save file to load)
                     val restoreSlot = selectedSave?.slot?.takeIf { it >= 0 }
                     writeCoopRestoreSlot(context.filesDir, game, restoreSlot)
-                    onCreate(game, mission, mode, maxPlayers, difficulty, levelNum, coopQol, fullDeathSpew)
+                    MultiplayerResumePrefs.saveRestoreSelection(context, game, selectedSave)
+                    onCreate(
+                        game,
+                        mission,
+                        mode,
+                        maxPlayers,
+                        difficulty,
+                        levelNum,
+                        coopQol,
+                        fullDeathSpew,
+                        clientsCanRequestRewind,
+                    )
                 },
                 enabled = mission != null && maxPlayers in 2..8 && levelNum >= 1,
             ) {

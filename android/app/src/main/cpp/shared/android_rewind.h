@@ -18,7 +18,9 @@ typedef enum android_rewind_status {
 
 void android_rewind_set_enabled(int enabled);
 void android_rewind_set_target_seconds(int target_seconds);
+void android_rewind_set_clients_can_request(int enabled);
 int android_rewind_is_enabled(void);
+int android_rewind_clients_can_request(void);
 void android_rewind_reset_level(void);
 void android_rewind_maybe_capture_frame(void);
 int android_rewind_request(int *rewound_seconds);

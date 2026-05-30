@@ -28,6 +28,7 @@ const val MSG_KICK = "KICK" // host kicks a player from the lobby
 data class LanPlayer(
     val callsign: String,
     val address: String,
+    val clientId: String? = null,
     val ready: Boolean = false,
     val lastSeenMs: Long = System.currentTimeMillis(),
 )
@@ -50,6 +51,7 @@ data class LanLobbyAnnounce(
     // Game engine port the host is listening on (default ENGINE_PORT;
     // HOST_PROXY_PORT after host migration with proxy)
     val hostPort: Int = com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT,
+    val hostClientId: String? = null,
 )
 
 /** Build a JSON ANNOUNCE packet for broadcasting. */
@@ -65,6 +67,7 @@ fun buildAnnounce(
     difficulty: Int = -1,
     levelNum: Int = -1,
     hostPort: Int = com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT,
+    hostClientId: String? = null,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_ANNOUNCE)
@@ -80,6 +83,7 @@ fun buildAnnounce(
     if (difficulty >= 0) json.put("difficulty", difficulty)
     if (levelNum >= 0) json.put("level_num", levelNum)
     if (hostPort != com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT) json.put("host_port", hostPort)
+    if (!hostClientId.isNullOrBlank()) json.put("host_client_id", hostClientId)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
@@ -87,11 +91,13 @@ fun buildAnnounce(
 fun buildJoin(
     lobbyId: String,
     callsign: String,
+    clientId: String? = null,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_JOIN)
     json.put("lobby_id", lobbyId)
     json.put("callsign", callsign)
+    if (!clientId.isNullOrBlank()) json.put("client_id", clientId)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
@@ -102,6 +108,8 @@ fun buildJoinAck(
     mission: String,
     mode: String,
     maxPlayers: Int,
+    hostCallsign: String? = null,
+    hostClientId: String? = null,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_JOIN_ACK)
@@ -111,6 +119,8 @@ fun buildJoinAck(
     json.put("mode", mode)
     json.put("max_players", maxPlayers)
     json.put("build", BuildInfo.GIT_COMMIT_COUNT)
+    if (!hostCallsign.isNullOrBlank()) json.put("host_callsign", hostCallsign)
+    if (!hostClientId.isNullOrBlank()) json.put("host_client_id", hostClientId)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
@@ -165,6 +175,7 @@ fun buildPlayerList(
         val pj = JSONObject()
         pj.put("callsign", p.callsign)
         pj.put("address", p.address)
+        if (!p.clientId.isNullOrBlank()) pj.put("client_id", p.clientId)
         pj.put("ready", p.ready)
         arr.put(pj)
     }
@@ -185,6 +196,7 @@ fun buildStart(
     maxPlayers: Int = 4,
     coopQol: Boolean = true,
     fullDeathSpew: Boolean = true,
+    clientsCanRequestRewind: Boolean = false,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_START)
@@ -199,6 +211,7 @@ fun buildStart(
     json.put("max_players", maxPlayers)
     json.put("coop_qol", coopQol)
     json.put("full_death_spew", fullDeathSpew)
+    json.put("clients_can_request_rewind", clientsCanRequestRewind)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

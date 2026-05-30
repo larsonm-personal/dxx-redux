@@ -3,6 +3,7 @@ package com.dxxredux.app.lobby
 import android.content.Context
 import android.net.wifi.WifiManager
 import android.util.Log
+import com.dxxredux.app.multiplayer.ClientIdentity
 import com.dxxredux.app.multiplayer.NetLog
 import com.dxxredux.app.multiplayer.NetworkConstants
 import kotlinx.coroutines.CancellationException
@@ -79,6 +80,8 @@ object LobbyService {
         val mode: String,
         val maxPlayers: Int,
         val hostBuild: String = "",
+        val hostCallsign: String? = null,
+        val hostClientId: String? = null,
     )
 
     private val _joinedLobby = MutableStateFlow<JoinedLobbyInfo?>(null)
@@ -170,6 +173,8 @@ object LobbyService {
 
     @Volatile private var hostCallsign: String = "Host"
 
+    @Volatile private var localClientId: String? = null
+
     @Volatile private var gameStarted: Boolean = false
 
     @Volatile private var inGameDifficulty: Int = -1
@@ -189,6 +194,7 @@ object LobbyService {
     ) {
         if (_isDiscovering.value) return
         hostCallsign = callsign
+        localClientId = ClientIdentity.getInstallationId(context)
         openSocket(context)
         _isDiscovering.value = true
         NetLog.log("LAN", "Discovery started on port ${NetworkConstants.LAN_LOBBY_PORT}, callsign=$callsign")
@@ -219,6 +225,7 @@ object LobbyService {
         appBackgrounded = false
         socketRefreshNeededOnResume = false
         hostedHostPort = NetworkConstants.ENGINE_PORT
+        localClientId = null
         closeSocket()
         NetLog.log("LAN", "Discovery stopped")
         Log.i(TAG, "LAN discovery stopped")
@@ -244,7 +251,7 @@ object LobbyService {
         hostedMaxPlayers = maxPlayers
         _hostedLobbyPlayers.value =
             listOf(
-                LanPlayer(callsign = callsign, address = "127.0.0.1", ready = true),
+                LanPlayer(callsign = callsign, address = "127.0.0.1", clientId = localClientId, ready = true),
             )
         _isHosting.value = true
         gameStarted = false
@@ -278,7 +285,7 @@ object LobbyService {
         joinRetryJob?.cancel()
         joinRetryJob =
             scope?.launch(Dispatchers.IO) {
-                val data = buildJoin(lobbyId, callsign)
+                val data = buildJoin(lobbyId, callsign, localClientId)
                 for (attempt in 1..JOIN_RETRY_COUNT) {
                     if (_joinedLobby.value != null) {
                         Log.i(TAG, "joinLobby: already joined, stopping retries")
@@ -304,6 +311,7 @@ object LobbyService {
     fun joinLobbyByIp(
         hostAddress: String,
         callsign: String,
+        acceptLobby: (LanLobbyAnnounce) -> Boolean = { true },
     ) {
         NetLog.log("LAN", "Querying lobby at $hostAddress")
         Log.i(TAG, "joinLobbyByIp: querying $hostAddress")
@@ -318,17 +326,21 @@ object LobbyService {
                     // Check if we discovered a lobby from this host
                     val lobby =
                         _discoveredLobbies.value.find {
-                            it.announce.hostAddress == hostAddress
+                            it.announce.hostAddress == hostAddress && acceptLobby(it.announce)
                         }
                     if (lobby != null) {
                         Log.i(TAG, "joinLobbyByIp: discovered lobby ${lobby.announce.lobbyId}, joining")
                         _diagnostics.value = ""
-                        joinLobby(lobby.announce.lobbyId, hostAddress, callsign)
+                        if (lobby.announce.status == "in_game") {
+                            emitInGameJoinLaunch(lobby.announce)
+                        } else {
+                            joinLobby(lobby.announce.lobbyId, hostAddress, callsign)
+                        }
                         return@launch
                     }
                 }
-                _diagnostics.value = "No lobby found at $hostAddress"
-                Log.w(TAG, "joinLobbyByIp: no ANNOUNCE from $hostAddress after $JOIN_RETRY_COUNT attempts")
+                _diagnostics.value = "No matching lobby found at $hostAddress"
+                Log.w(TAG, "joinLobbyByIp: no matching ANNOUNCE from $hostAddress after $JOIN_RETRY_COUNT attempts")
             }
     }
 
@@ -341,6 +353,7 @@ object LobbyService {
         hostAddress: String,
         callsign: String,
         timeoutMs: Long = 1000L,
+        acceptLobby: (LanLobbyAnnounce) -> Boolean = { true },
     ): Boolean {
         Log.i(TAG, "tryJoinLobbyByIp: probing $hostAddress (timeout=${timeoutMs}ms)")
         val query = buildQuery()
@@ -348,10 +361,18 @@ object LobbyService {
         // Poll for an ANNOUNCE response at 100ms intervals
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
-            val lobby = _discoveredLobbies.value.find { it.announce.hostAddress == hostAddress }
+            val lobby =
+                _discoveredLobbies.value.find {
+                    it.announce.hostAddress == hostAddress &&
+                        acceptLobby(it.announce)
+                }
             if (lobby != null) {
                 Log.i(TAG, "tryJoinLobbyByIp: found lobby ${lobby.announce.lobbyId}, joining")
-                joinLobby(lobby.announce.lobbyId, hostAddress, callsign)
+                if (lobby.announce.status == "in_game") {
+                    emitInGameJoinLaunch(lobby.announce)
+                } else {
+                    joinLobby(lobby.announce.lobbyId, hostAddress, callsign)
+                }
                 return true
             }
             delay(100)
@@ -672,6 +693,7 @@ object LobbyService {
                 difficulty = json.optInt("difficulty", -1),
                 levelNum = json.optInt("level_num", -1),
                 hostPort = json.optInt("host_port", NetworkConstants.ENGINE_PORT),
+                hostClientId = json.optString("host_client_id", "").takeIf { it.isNotBlank() },
             )
         lobbies[lobbyId] = DiscoveredLobby(announce = announce)
         publishLobbies()
@@ -701,6 +723,8 @@ object LobbyService {
                     hostedMission,
                     hostedMode,
                     hostedMaxPlayers,
+                    hostCallsign,
+                    localClientId,
                 ),
                 senderAddr,
             )
@@ -742,7 +766,15 @@ object LobbyService {
                         }
                     }
                 sendTo(
-                    buildJoinAck(lobbyId, hostedGame, hostedMission, hostedMode, hostedMaxPlayers),
+                    buildJoinAck(
+                        lobbyId,
+                        hostedGame,
+                        hostedMission,
+                        hostedMode,
+                        hostedMaxPlayers,
+                        hostCallsign,
+                        localClientId,
+                    ),
                     senderAddr,
                 )
                 return
@@ -758,10 +790,24 @@ object LobbyService {
             }
         }
 
-        val updated = current + LanPlayer(callsign = callsign, address = senderAddr)
+        val updated =
+            current +
+                LanPlayer(
+                    callsign = callsign,
+                    address = senderAddr,
+                    clientId = json.optString("client_id", "").takeIf { it.isNotBlank() },
+                )
         _hostedLobbyPlayers.value = updated
         sendTo(
-            buildJoinAck(lobbyId, hostedGame, hostedMission, hostedMode, hostedMaxPlayers),
+            buildJoinAck(
+                lobbyId,
+                hostedGame,
+                hostedMission,
+                hostedMode,
+                hostedMaxPlayers,
+                hostCallsign,
+                localClientId,
+            ),
             senderAddr,
         )
         broadcastPlayerList()
@@ -819,6 +865,7 @@ object LobbyService {
                 LanPlayer(
                     callsign = pj.optString("callsign", ""),
                     address = pj.optString("address", ""),
+                    clientId = pj.optString("client_id", "").takeIf { it.isNotBlank() },
                     ready = pj.optBoolean("ready", false),
                 )
             }
@@ -857,6 +904,8 @@ object LobbyService {
                 mode = json.optString("mode", "coop"),
                 maxPlayers = json.optInt("max_players", 4),
                 hostBuild = json.optString("build", ""),
+                hostCallsign = json.optString("host_callsign", "").takeIf { it.isNotBlank() },
+                hostClientId = json.optString("host_client_id", "").takeIf { it.isNotBlank() },
             )
         NetLog.log("LAN", "JOIN_ACK received for lobby $lobbyId from $senderAddr")
         Log.i(TAG, "JOIN_ACK received for lobby $lobbyId from $senderAddr")
@@ -886,6 +935,7 @@ object LobbyService {
         levelNum: Int,
         coopQol: Boolean = true,
         fullDeathSpew: Boolean = true,
+        clientsCanRequestRewind: Boolean = false,
         hostPort: Int = NetworkConstants.ENGINE_PORT,
     ) {
         if (!_isHosting.value) return
@@ -907,6 +957,7 @@ object LobbyService {
                 maxPlayers = hostedMaxPlayers,
                 coopQol = coopQol,
                 fullDeathSpew = fullDeathSpew,
+                clientsCanRequestRewind = clientsCanRequestRewind,
             )
         // Mark game started (rejects further JOINs) but keep announcing
         // so in-game lobbies remain discoverable on LAN
@@ -952,8 +1003,11 @@ object LobbyService {
                     isHost = true,
                     peers = emptyList(),
                     isLan = true,
+                    hostCallsign = hostCallsign,
+                    hostClientId = localClientId,
                     coopQol = coopQol,
                     fullDeathSpew = fullDeathSpew,
+                    clientsCanRequestRewind = clientsCanRequestRewind,
                 )
             NetLog.log("LAN", "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
             Log.i(TAG, "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
@@ -989,6 +1043,7 @@ object LobbyService {
         val maxPlayers = json.optInt("max_players", 4)
         val coopQol = json.optBoolean("coop_qol", true)
         val fullDeathSpew = json.optBoolean("full_death_spew", true)
+        val clientsCanRequestRewind = json.optBoolean("clients_can_request_rewind", false)
         NetLog.log("LAN", "START received: $game/$mission lvl=$levelNum diff=$difficulty from $senderAddr")
         Log.i(TAG, "START received for lobby $lobbyId: $game/$mission at $senderAddr:$hostPort")
 
@@ -1019,10 +1074,37 @@ object LobbyService {
                 lanHostAddr = senderAddr,
                 lanHostPort = hostPort,
                 isLan = true,
+                hostCallsign = joinedInfo.hostCallsign,
+                hostClientId = joinedInfo.hostClientId,
                 coopQol = coopQol,
                 fullDeathSpew = fullDeathSpew,
+                clientsCanRequestRewind = clientsCanRequestRewind,
             )
         NetLog.log("LAN", "Launch event emitted for joiner: game=$game host=$senderAddr")
+    }
+
+    private fun emitInGameJoinLaunch(announce: LanLobbyAnnounce) {
+        _lanLaunchEvent.value =
+            com.dxxredux.app.multiplayer.GameLaunchInfo(
+                game = announce.game,
+                mission = announce.mission,
+                mode = announce.mode,
+                difficulty = announce.difficulty.takeIf { it >= 0 } ?: 1,
+                levelNum = announce.levelNum.takeIf { it >= 1 } ?: 1,
+                maxPlayers = announce.maxPlayers,
+                yourSlot = 1,
+                isHost = false,
+                peers = emptyList(),
+                lanHostAddr = announce.hostAddress,
+                lanHostPort = announce.hostPort,
+                isLan = true,
+                hostCallsign = announce.callsign,
+                hostClientId = announce.hostClientId,
+            )
+        NetLog.log(
+            "LAN",
+            "Launch event emitted for in-game LAN join: game=${announce.game} host=${announce.hostAddress}",
+        )
     }
 
     private fun handlePing(
@@ -1049,6 +1131,11 @@ object LobbyService {
                 mode = hostedMode,
                 playerCount = _hostedLobbyPlayers.value.size,
                 maxPlayers = hostedMaxPlayers,
+                status = if (gameStarted) "in_game" else "lobby",
+                difficulty = inGameDifficulty,
+                levelNum = inGameLevelNum,
+                hostPort = hostedHostPort,
+                hostClientId = localClientId,
             )
         sendTo(data, senderAddr)
         Log.i(TAG, "handleQuery: sent ANNOUNCE to $senderAddr for lobby $lid")
@@ -1111,6 +1198,7 @@ object LobbyService {
                 difficulty = inGameDifficulty,
                 levelNum = inGameLevelNum,
                 hostPort = hostedHostPort,
+                hostClientId = localClientId,
             )
         sendBroadcast(data)
     }

@@ -16,6 +16,23 @@ Primary target: two players who habitually play LAN coop together and want one o
 - [x] Note implications for future multiplayer rewind support
 - [x] Propose phased implementation and tests
 
+## Implementation Status
+
+- [x] First slice: add `MultiplayerResumePrefs` with versioned JSON persistence
+- [x] First slice: persist a resume record when multiplayer launch begins
+- [x] First slice: persist host coop restore/fresh selection when save-offer UI writes `coop_restore_slot.txt`
+- [x] First slice: show a first-entry resume offer on the multiplayer page for saved LAN coop host sessions
+- [x] First slice: add a LAN-tab action that rehosts the saved LAN coop settings and restore slot
+- [x] First slice: add focused JVM tests for the resume record codec and host-LAN-coop candidate predicate
+- [x] Second slice: enrich LAN protocol with stable host/client identity for ANNOUNCE, JOIN, JOIN_ACK, and PLAYER_LIST
+- [x] Second slice: save LAN host identity into launch resume records for hosted, joined, and in-game join paths
+- [x] Second slice: add a client LAN coop resume offer that queries the previous host IP and only joins or launches a matching host identity or legacy host/session match
+- [x] Second slice: add focused JVM tests for client LAN resume predicates and protocol identity packet fields
+- [x] Later slice: implement online quick resume
+- [x] Later slice: implement native multiplayer rewind request routing and host permission
+
+Current validation for the later slices: scoped code quality passed, focused JVM resume/protocol tests passed, Android D1/D2 native CMake debug targets passed, and D1/D2 host C rewind policy tests passed. Two-emulator runtime validation for online resume and client-request rewind is still a follow-up.
+
 ## Current Implementation
 
 ### Launcher Entry And Multiplayer UI
@@ -49,13 +66,17 @@ Primary target: two players who habitually play LAN coop together and want one o
 - `android/app/src/main/java/com/dxxredux/app/lobby/LobbyProtocol.kt`
 	- ANNOUNCE includes lobby id, callsign, game, mission, mode, player count, max players, build, status, difficulty, level, host port
 	- QUERY exists, so the requested "ping previous server IP" can reuse existing protocol behavior
-	- Missing: stable host identity, session fingerprint, and selected restore slot are not in LAN protocol
+	- ANNOUNCE now includes `host_client_id` when available, so clients can distinguish the previous host from another device on the same address
+	- JOIN carries the joiner's `client_id`, JOIN_ACK carries `host_callsign` and `host_client_id`, and PLAYER_LIST includes player `client_id` values
+	- Still missing: session fingerprint and selected restore slot are not in LAN protocol
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt`
 	- `LanDiscoveryView` shows Host LAN Game, Start/Stop Scanning, Join by IP, discovered lobbies
 	- Direct IP join first probes for a lobby, then falls back to direct engine join with generic launch info
 	- Direct fallback defaults to coop, level 1, difficulty 1, empty mission, and no save restore context
 	- `LanLobbyCard` supports Join In-Game for lobbies announcing `status = in_game`
 	- `LanCoopSaveOffer` can auto-select a matching coop save while hosting
+	- The LAN resume offer can rehost the last LAN coop session or query the last host IP as a client
+	- Client LAN quick resume does not use the generic direct-engine fallback; it joins only a matching announced host, or launches through a matching in-game announce
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/RecentAddressPrefs.kt`
 	- Persists recent LAN IPs and matchmaking server URLs, max 5 each
 	- This is only address history, not resumable session history
@@ -69,7 +90,8 @@ Primary target: two players who habitually play LAN coop together and want one o
 	- `startGame()` requests game start
 	- `GameStarting` creates `GameLaunchInfo` and stores it in state for `LobbyScreen`
 	- `lastLobbyId` exists only for in-memory websocket reconnect after a transient disconnect
-	- Missing: durable last server, durable last lobby, host identity, or known-party resume record
+	- Online quick resume now reuses the durable resume record: hosts reconnect and recreate the lobby with saved game info, clients reconnect, refresh lobbies, and join a matching previous lobby or host/session
+	- Still missing: server-side stable host identity beyond the current lobby/player ids and any deeper server-supported resume semantics
 - `android/app/src/main/java/com/dxxredux/app/multiplayer/LobbyScreen.kt`
 	- Consumes `gameLaunchInfo` and calls `onLaunchGame`
 	- Host-only `CoopSaveOffer` picks the best matching save by lobby callsigns and writes `coop_restore_slot.txt`
@@ -137,7 +159,9 @@ Primary target: two players who habitually play LAN coop together and want one o
 	- Restarts LAN discovery and in-game announcing for the migrated host
 - `android/app/src/main/cpp/shared/android_rewind.c` and `android_rewind_policy.c`
 	- Rewind captures in single-player or coop-host-only contexts
-	- Non-host coop requests report `Not host`
+	- Non-host coop controls are routed to the current host via mirrored D1/D2 `MULTI_REWIND_REQUEST` packets
+	- Hosts validate requester state, current coop host state, the per-session permission, and a basic rate limit before calling `android_rewind_request()`
+	- Requesters receive `MULTI_REWIND_RESULT` HUD feedback for restored, disabled, no-point, denied, and failed results
 	- Non-coop multiplayer is blocked
 	- Coop restore uses `multi_prepare_restore_sync()` before memory restore and resends score after host restore
 - `android/app/src/main/cpp/shared/android_meta_actions.c`
@@ -180,9 +204,14 @@ Needed durable state:
 
 For LAN quick resume, IP alone is not enough. DHCP can assign the previous host IP to another device, and a direct IP fallback can launch a generic join to the wrong kind of game.
 
-Useful missing protocol fields:
+Protocol fields now implemented:
 
 - `host_client_id` in ANNOUNCE and JOIN_ACK
+- `client_id` in JOIN and PLAYER_LIST
+- `host_callsign` in JOIN_ACK
+
+Useful fields still missing:
+
 - optional `session_fingerprint`, derived from game, mission, mode, level, difficulty, host id, and maybe selected save slot/timestamp
 - optional `restore_slot` or `restore_save_timestamp` in ANNOUNCE for display and matching only
 
@@ -386,7 +415,7 @@ Host setting path:
 3. Pass the value to native auto-host setup for D1 and D2
 4. Store the value in an Android-specific netgame flag or native global owned by the host session
 5. Include the value in LAN/matchmaking lobby display metadata if useful
-6. Include the value in `host_migration.json` so a migrated host continues the same policy
+6. Reset the value after host migration so a newly migrated host starts with client requests disabled
 7. Persist the value in `MultiplayerResumePrefs` so quick resume recreates the previous host policy
 
 Control path:
@@ -423,7 +452,7 @@ Host migration path:
 1. When `Multi_master_playernum` changes in D1/D2, reset Android rewind history on the new host
 2. Existing non-host devices should have no useful capture history because capture is blocked while not host, but reset explicitly anyway
 3. After migration, the new host starts capturing from the next valid coop frame using its own host rewind settings
-4. Keep client-request permission from the migrated session if available in `host_migration.json`
+4. Reset client-request permission to disabled after host migration
 5. If the migrated host has rewind disabled locally, requests should fail as disabled even if client requests are allowed
 
 ## Work Items

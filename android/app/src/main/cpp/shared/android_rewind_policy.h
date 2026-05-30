@@ -44,6 +44,12 @@ android_rewind_request_access android_rewind_classify_request_context(
     int host_is_observer,
     int has_duplicate_callsigns);
 
+int android_rewind_is_client_request_allowed(int is_multiplayer,
+                                             int is_coop,
+                                             int is_host,
+                                             int clients_can_request,
+                                             int requester_valid);
+
 /* Rewind snapshots are captured at frame boundaries before time and input-demo
  * recording advance, so the kept demo timeline is the current recorder count. */
 uint32_t android_rewind_demo_timeline_frame_count(uint32_t recorder_frame_count);

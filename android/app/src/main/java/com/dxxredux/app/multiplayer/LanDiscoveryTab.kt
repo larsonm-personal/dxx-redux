@@ -262,16 +262,22 @@ private fun LanDiscoveryView(
     val diagnostics by LobbyService.diagnostics.collectAsState()
     val broadcastFailing by LobbyService.broadcastFailing.collectAsState()
     val actionFocus = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
 
     var showHostDialog by remember { mutableStateOf(false) }
     var showJoinByIpDialog by remember { mutableStateOf(false) }
-    var hostedGame by remember { mutableStateOf("d2") }
-    var hostedMode by remember { mutableStateOf("coop") }
-    var hostedMission by remember { mutableStateOf<String?>(null) }
-    var hostedDifficulty by remember { mutableStateOf(1) }
-    var hostedLevelNum by remember { mutableStateOf(1) }
-    var hostedCoopQol by remember { mutableStateOf(true) }
-    var hostedFullDeathSpew by remember { mutableStateOf(true) }
+    val hostDefaults = remember { HostGameDefaults.load(context) }
+    var hostedGame by remember { mutableStateOf(hostDefaults.game) }
+    var hostedMode by remember { mutableStateOf(hostDefaults.mode) }
+    var hostedMission by remember { mutableStateOf(hostDefaults.mission) }
+    var hostedDifficulty by remember { mutableStateOf(hostDefaults.difficulty) }
+    var hostedLevelNum by remember { mutableStateOf(hostDefaults.levelNum) }
+    var hostedCoopQol by remember { mutableStateOf(hostDefaults.coopQol) }
+    var hostedFullDeathSpew by remember { mutableStateOf(hostDefaults.fullDeathSpew) }
+    var hostedClientsCanRequestRewind by remember { mutableStateOf(hostDefaults.clientsCanRequestRewind) }
+    var dismissResumeOffer by remember { mutableStateOf(false) }
+    var resumeStatus by remember { mutableStateOf<String?>(null) }
+    val resumeRecord = remember { MultiplayerResumePrefs.load(context) }
     val recentIps = remember { mutableStateOf(LanIpsPrefs.load(context)) }
     var permissionGranted by remember {
         mutableStateOf(
@@ -314,6 +320,46 @@ private fun LanDiscoveryView(
                 }
             }
         }
+
+    fun hostResume(record: MultiplayerResumeRecord) {
+        val hostCallsign = record.localCallsign
+        HostGameDefaults.save(context, record.toHostDefaults())
+        writeCoopRestoreSlot(context.filesDir, record.game, record.coopRestoreSlot)
+        CallsignPrefs.save(context, hostCallsign)
+        MatchmakingStateHolder.update { it.copy(callsign = hostCallsign) }
+        hostedGame = record.game
+        hostedMode = record.mode
+        hostedMission = record.mission
+        hostedDifficulty = record.difficulty
+        hostedLevelNum = record.levelNum
+        hostedCoopQol = record.coopQol
+        hostedFullDeathSpew = record.fullDeathSpew
+        hostedClientsCanRequestRewind = record.clientsCanRequestRewind
+        if (!LobbyService.isDiscovering.value) {
+            LobbyService.startDiscovery(context, hostCallsign)
+        }
+        LobbyService.hostLobby(hostCallsign, record.game, record.mission, record.mode, record.maxPlayers)
+    }
+
+    fun clientResume(record: MultiplayerResumeRecord) {
+        val hostAddr = record.lanHostAddr ?: return
+        val resumeCallsign = record.localCallsign
+        CallsignPrefs.save(context, resumeCallsign)
+        MatchmakingStateHolder.update { it.copy(callsign = resumeCallsign) }
+        if (!LobbyService.isDiscovering.value) {
+            LobbyService.startDiscovery(context, resumeCallsign)
+        }
+        resumeStatus = "Looking for last host"
+        coroutineScope.launch(Dispatchers.IO) {
+            val foundLobby =
+                LobbyService.tryJoinLobbyByIp(hostAddr, resumeCallsign, timeoutMs = 1500L) { announce ->
+                    record.matchesLanResumeHost(announce)
+                }
+            withContext(Dispatchers.Main) {
+                resumeStatus = if (foundLobby) null else "Last host not found"
+            }
+        }
+    }
 
     // Start/stop discovery with lifecycle
     DisposableEffect(permissionGranted) {
@@ -436,6 +482,33 @@ private fun LanDiscoveryView(
         }
 
         // -- Action buttons --
+        val offerRecord = resumeRecord?.takeIf { it.isHostLanCoop() || it.isClientLanCoop() }
+        if (!dismissResumeOffer && offerRecord != null && !isHosting) {
+            item {
+                MultiplayerResumeOfferCard(
+                    record = offerRecord,
+                    primaryLabel = if (offerRecord.isHostLanCoop()) "Host Last Coop" else "Find Last Host",
+                    onPrimary = {
+                        if (permissionGranted || Build.VERSION.SDK_INT < 33) {
+                            if (offerRecord.isHostLanCoop()) hostResume(offerRecord) else clientResume(offerRecord)
+                        } else {
+                            permissionLauncher.launch(Manifest.permission.NEARBY_WIFI_DEVICES)
+                        }
+                    },
+                    onDismiss = { dismissResumeOffer = true },
+                )
+                resumeStatus?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
         item {
             if (isHosting) {
                 Row(
@@ -610,6 +683,7 @@ private fun LanDiscoveryView(
                             hostedLevelNum,
                             coopQol = hostedCoopQol,
                             fullDeathSpew = hostedFullDeathSpew,
+                            clientsCanRequestRewind = hostedClientsCanRequestRewind,
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -682,7 +756,17 @@ private fun LanDiscoveryView(
         CreateGameDialog(
             title = "Host LAN Game",
             confirmLabel = "Host",
-            onCreate = { game, mission, mode, maxPlayers, difficulty, levelNum, coopQol, fullDeathSpew ->
+            onCreate = {
+                game,
+                mission,
+                mode,
+                maxPlayers,
+                difficulty,
+                levelNum,
+                coopQol,
+                fullDeathSpew,
+                clientsCanRequestRewind,
+                ->
                 showHostDialog = false
                 hostedGame = game
                 hostedMode = mode
@@ -691,6 +775,7 @@ private fun LanDiscoveryView(
                 hostedLevelNum = levelNum
                 hostedCoopQol = coopQol
                 hostedFullDeathSpew = fullDeathSpew
+                hostedClientsCanRequestRewind = clientsCanRequestRewind
                 LobbyService.hostLobby(callsign, game, mission ?: "", mode, maxPlayers)
             },
             onDismiss = { showHostDialog = false },
@@ -698,7 +783,6 @@ private fun LanDiscoveryView(
     }
 
     if (showJoinByIpDialog) {
-        val coroutineScope = rememberCoroutineScope()
         JoinByIpDialog(
             recentIps = recentIps.value,
             onJoin = { hostAddr, game ->
@@ -797,6 +881,8 @@ private fun LanLobbyCard(
                                 lanHostAddr = lobby.announce.hostAddress,
                                 lanHostPort = lobby.announce.hostPort,
                                 isLan = true,
+                                hostCallsign = lobby.announce.callsign,
+                                hostClientId = lobby.announce.hostClientId,
                             ),
                         )
                     },
@@ -867,6 +953,7 @@ private fun LanCoopSaveOffer(
 
     LaunchedEffect(useRestore, bestMatch) {
         writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
+        MultiplayerResumePrefs.saveRestoreSelection(context, game, if (useRestore) bestMatch else null)
     }
 
     val mins = bestMatch.levelTimeSeconds / 60

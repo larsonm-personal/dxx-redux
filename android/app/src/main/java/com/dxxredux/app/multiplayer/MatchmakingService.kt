@@ -1083,6 +1083,11 @@ object MatchmakingService {
                                     ?.jsonPrimitive
                                     ?.content
                                     ?.toBooleanStrictOrNull() ?: true,
+                            clientsCanRequestRewind =
+                                gs.gameInfo["clients_can_request_rewind"]
+                                    ?.jsonPrimitive
+                                    ?.content
+                                    ?.toBooleanStrictOrNull() ?: false,
                         )
                     state.update { it.copy(gameLaunchInfo = launchInfo) }
                     // Host sends periodic game state updates to the matchmaking server

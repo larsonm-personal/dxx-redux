@@ -419,6 +419,7 @@ class MainActivity :
         difficulty: Int,
         coopQol: Boolean,
         fullDeathSpew: Boolean,
+        clientsCanRequestRewind: Boolean,
     )
 
     external fun nativeGetCurrentTrackInfo(): String
@@ -671,7 +672,18 @@ class MainActivity :
             val difficulty = intent.getIntExtra("mp_difficulty", 1)
             val coopQol = intent.getBooleanExtra("mp_coop_qol", true)
             val fullDeathSpew = intent.getBooleanExtra("mp_full_death_spew", true)
-            nativeSetAutoHost(myPort, mission, mode, maxPlayers, levelNum, difficulty, coopQol, fullDeathSpew)
+            val clientsCanRequestRewind = intent.getBooleanExtra("mp_clients_can_request_rewind", false)
+            nativeSetAutoHost(
+                myPort,
+                mission,
+                mode,
+                maxPlayers,
+                levelNum,
+                difficulty,
+                coopQol,
+                fullDeathSpew,
+                clientsCanRequestRewind,
+            )
         }
 
         // Start foreground service during multiplayer to prevent process kill
