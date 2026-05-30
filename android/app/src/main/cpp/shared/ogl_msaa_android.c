@@ -1,11 +1,20 @@
 #ifdef ANDROID
 
 #include <android/log.h>
+#include <stdio.h>
 
 #include "ogl_init.h"
 #include "ogl_msaa_android.h"
 
-void android_ogl_msaa_destroy_fbo(struct android_ogl_msaa_state *state)
+static void android_ogl_msaa_log(android_ogl_msaa_log_message_fn log_message,
+                                 void *log_user_data,
+                                 const char *message)
+{
+	if (log_message)
+		log_message(message, log_user_data);
+}
+
+void android_ogl_msaa_destroy_fbo(struct android_ogl_msaa_state *state, int *bound)
 {
 	if (!state)
 		return;
@@ -23,25 +32,34 @@ void android_ogl_msaa_destroy_fbo(struct android_ogl_msaa_state *state)
 	}
 	state->w = 0;
 	state->h = 0;
+	if (bound)
+		*bound = 0;
 }
 
 int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
+                                int *bound,
                                 int max_samples,
                                 int samples,
                                 int w,
-                                int h)
+                                int h,
+                                android_ogl_msaa_log_message_fn log_message,
+                                void *log_user_data)
 {
 	GLenum color_fmt;
+	char logbuf[160];
 
 	if (!state)
 		return 0;
 
-	android_ogl_msaa_destroy_fbo(state);
+	android_ogl_msaa_destroy_fbo(state, bound);
 
 	if (max_samples > 0 && samples > max_samples)
 		samples = max_samples;
-	if (samples < 2)
+	if (samples < 2) {
+		snprintf(logbuf, sizeof(logbuf), "MSAA FBO create skipped: clamped_samples=%d", samples);
+		android_ogl_msaa_log(log_message, log_user_data, logbuf);
 		return 0;
+	}
 
 	{
 		GLint rb = 0, gb = 0, bb = 0, ab = 0;
@@ -85,8 +103,12 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
 			__android_log_print(ANDROID_LOG_ERROR, "DXX",
 			                    "MSAA FBO incomplete: status=0x%x samples=%d %dx%d fmt=0x%x",
 			                    status, samples, w, h, color_fmt);
+			snprintf(logbuf, sizeof(logbuf),
+			         "MSAA FBO incomplete: status=0x%x samples=%d size=%dx%d fmt=0x%x",
+			         status, samples, w, h, color_fmt);
+			android_ogl_msaa_log(log_message, log_user_data, logbuf);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			android_ogl_msaa_destroy_fbo(state);
+			android_ogl_msaa_destroy_fbo(state, bound);
 			return 0;
 		}
 	}
@@ -96,6 +118,9 @@ int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
 	state->h = h;
 	__android_log_print(ANDROID_LOG_INFO, "DXX",
 	                    "MSAA FBO created: %dx samples, %dx%d fmt=0x%x", samples, w, h, color_fmt);
+	snprintf(logbuf, sizeof(logbuf), "MSAA FBO created: samples=%d size=%dx%d fmt=0x%x",
+	         samples, w, h, color_fmt);
+	android_ogl_msaa_log(log_message, log_user_data, logbuf);
 	return 1;
 }
 

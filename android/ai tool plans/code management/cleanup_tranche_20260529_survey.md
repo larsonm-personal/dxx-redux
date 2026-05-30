@@ -67,12 +67,14 @@
 
 6. D1/D2 high-churn shared-helper extraction survey
 	- Evidence: diff report still shows paired large deltas in OGL, state, and UDP networking
-	- Completed survey only: refreshed `android/helpers/diff_vs_upstream.ps1 -Top 20` into `temp/cleanup_candidate6_diff_vs_upstream_20260530.txt`; paired OGL and UDP files remain near the top of D1/D2 churn
-	- Best future extraction candidate: finish moving duplicated Android MSAA FBO lifecycle helpers from `d1/arch/ogl/ogl.c` and `d2/arch/ogl/ogl.c` into existing `android/app/src/main/cpp/shared/ogl_msaa_android.c` and `ogl_msaa_android.h`
-	- Evidence: both games still have near-identical local `ogl_msaa_destroy_fbo()` and `ogl_msaa_create_fbo()` bodies, while shared `android_ogl_msaa_destroy_fbo()` and `android_ogl_msaa_create_fbo()` already exist and are already wired into Android CMake
+	- Completed survey: refreshed `android/helpers/diff_vs_upstream.ps1 -Top 20` into `temp/cleanup_candidate6_diff_vs_upstream_20260530.txt`; paired OGL and UDP files remain near the top of D1/D2 churn
+	- Completed implementation: moved duplicated Android MSAA FBO create/destroy lifecycle logic from `d1/arch/ogl/ogl.c` and `d2/arch/ogl/ogl.c` into existing `android/app/src/main/cpp/shared/ogl_msaa_android.c` and `ogl_msaa_android.h`
+	- Scope done: D1/D2 now keep thin wrappers for debug logging and local state aliases while shared code owns allocation, format selection, incomplete-FBO cleanup, dimension reset, and `g_msaa_fbo_bound` reset
+	- Test support done: added MSAA introspection fields and `android/game_scripts/test_msaa_fbo_smoke_d2.json5`
 	- Secondary candidate: a small Android UDP bind-address helper around the duplicated `udp_bind_loopback ? "127.0.0.1" : NULL` block in `udp_open_socket()`, but payoff is smaller because most Android UDP helpers are already centralized
-	- Recommended validation for a future implementation: before/after `android/helpers/diff_vs_upstream.ps1 -Top 20`, scoped code quality for touched OGL/shared files, Windows host build for both games, Android native build, and D1/D2 graphics smoke with MSAA enabled
-	- Risk: medium-high for MSAA render correctness; do not edit this without an MSAA-specific runtime smoke path
+	- Validation passed: diagnostics clean, scoped code quality passed for touched shared files and the smoke script, focused `git diff --check` had only CRLF normalization warnings for the existing shared MSAA files, `run-windows-build.ps1 -Target both` passed with existing `weapon.c` C4715 warnings, Gradle Android arm64 D1/D2 native CMake tasks passed, `android/Run-Emulator.ps1` rebuilt/installed the debug APK including x86_64, and `android/helpers/run_test.ps1 -ScriptName test_msaa_fbo_smoke_d2.json5 -Game d2` passed
+	- Runtime validation note: logcat/debug logs showed `MSAA FBO create request`, `MSAA FBO created: samples=2 size=640x480`, and later `gr_flip` entries with `msaa=1`
+	- Risk after validation: medium-low; D1 wrapper was compile-validated but runtime smoke was D2 only
 
 7. Run-quick-tests stale historical estimate cleanup
 	- Evidence: `android/run_quick_tests.ps1` still names `report_20260518_223317.md` as a hardcoded historical estimate source
@@ -89,8 +91,8 @@
 - Completed candidate 4: replaced the fixed listener/send sleeps in `android/tests/test_lan_broadcast.ps1` with receiver-output polling and added the native no-Python UDP fallback in `android/tests/udp_test_tool_android.csrc`; focused suite validation passed through the fallback path on the emulator image
 - Completed candidate 7: removed the stale quick-test report provenance and validated the fixed-baseline estimate output with a no-infra budget check
 - Completed candidate 5: consolidated the unattended input-demo regression wrappers without touching replay semantics; both headless and graphics one-demo validations passed
-- Completed candidate 6 survey: recommended MSAA FBO helper extraction as the best future D1/D2 shared-helper cleanup and left source untouched for now
-- Next likely slice: another focused test wait cleanup with a runnable readiness signal, or a dedicated MSAA helper extraction tranche with graphics smoke coverage
+- Completed candidate 6: extracted Android MSAA FBO lifecycle into the shared helper, added MSAA introspection and a D2 MSAA smoke script, and validated with host/native builds plus runtime FBO-create logs
+- Next likely slice: another focused test wait cleanup with a runnable readiness signal, or the smaller Android UDP bind-address helper noted above
 
 ## Survey Artifacts
 - `temp/cleanup_survey_diff_vs_upstream_20260529.txt`

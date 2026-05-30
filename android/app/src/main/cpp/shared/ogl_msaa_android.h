@@ -11,12 +11,17 @@ struct android_ogl_msaa_state {
 	int h;
 };
 
-void android_ogl_msaa_destroy_fbo(struct android_ogl_msaa_state *state);
+typedef void (*android_ogl_msaa_log_message_fn)(const char *message, void *user_data);
+
+void android_ogl_msaa_destroy_fbo(struct android_ogl_msaa_state *state, int *bound);
 int android_ogl_msaa_create_fbo(struct android_ogl_msaa_state *state,
+                                int *bound,
                                 int max_samples,
                                 int samples,
                                 int w,
-                                int h);
+                                int h,
+                                android_ogl_msaa_log_message_fn log_message,
+                                void *log_user_data);
 
 #endif
 

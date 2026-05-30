@@ -884,6 +884,9 @@ extern "C" char *game_introspect_get_state(void)
 		j["cockpit_mode"] = (int) PlayerCfg.PreferredCockpitMode;
 		j["current_cockpit_mode"] = (int) PlayerCfg.CurrentCockpitMode;
 		j["auto_leveling"] = (bool) PlayerCfg.AutoLeveling;
+		j["msaa_samples"] = ogl_msaa_samples;
+		j["msaa_max_samples"] = ogl_msaa_max_samples;
+		j["msaa_fbo_bound"] = (bool) g_msaa_fbo_bound;
 		{
 			auto &rja = j["raw_joy_axis"];
 			for (int a = 0; a < 8; a++)

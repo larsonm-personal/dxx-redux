@@ -51,6 +51,7 @@
 #include "android_log.h"
 #include "android_profile.h"
 #include "gles3_shim.h"
+#include "ogl_msaa_android.h"
 #include <physfs.h>
 
 static void android_clear_texture_replacement_path_cache(void);
@@ -129,8 +130,12 @@ int ogl_max_texture_size = 1024;
 int ogl_msaa_samples = 0;       /* desired sample count: 0/2/4 */
 int ogl_msaa_max_samples = 0;   /* queried from GL_MAX_SAMPLES */
 volatile int g_msaa_pending_apply = 0;
-static GLuint ogl_msaa_fbo = 0, ogl_msaa_color_rbo = 0, ogl_msaa_depth_rbo = 0;
-static int ogl_msaa_w = 0, ogl_msaa_h = 0;
+static struct android_ogl_msaa_state ogl_msaa_state;
+#define ogl_msaa_fbo ogl_msaa_state.fbo
+#define ogl_msaa_color_rbo ogl_msaa_state.color_rbo
+#define ogl_msaa_depth_rbo ogl_msaa_state.depth_rbo
+#define ogl_msaa_w ogl_msaa_state.w
+#define ogl_msaa_h ogl_msaa_state.h
 int g_msaa_fbo_bound = 0;       /* 1 while rendering to MSAA FBO */
 static int g_msaa_frame_depth = 0; /* nesting depth: >0 = sub-window render */
 static int ogl_android_effective_texfilt(int texfilt);
@@ -765,6 +770,12 @@ static void ogl_android_apply_pending_runtime_options(const char *source)
 
 /* android port: MSAA via FBO -- create/destroy/resolve helpers */
 
+static void ogl_msaa_log_message(const char *message, void *user_data)
+{
+	(void)user_data;
+	debug_log(DLOG_GRAPHICS, "%s", message);
+}
+
 static void ogl_msaa_destroy_fbo(void)
 {
 	if (ogl_msaa_fbo || ogl_msaa_color_rbo || ogl_msaa_depth_rbo)
@@ -773,20 +784,7 @@ static void ogl_msaa_destroy_fbo(void)
 			(unsigned)ogl_msaa_fbo, (unsigned)ogl_msaa_color_rbo,
 			(unsigned)ogl_msaa_depth_rbo, ogl_msaa_w, ogl_msaa_h,
 			g_msaa_fbo_bound, g_msaa_frame_depth);
-	if (ogl_msaa_fbo) {
-		glDeleteFramebuffers(1, &ogl_msaa_fbo);
-		ogl_msaa_fbo = 0;
-	}
-	if (ogl_msaa_color_rbo) {
-		glDeleteRenderbuffers(1, &ogl_msaa_color_rbo);
-		ogl_msaa_color_rbo = 0;
-	}
-	if (ogl_msaa_depth_rbo) {
-		glDeleteRenderbuffers(1, &ogl_msaa_depth_rbo);
-		ogl_msaa_depth_rbo = 0;
-	}
-	ogl_msaa_w = ogl_msaa_h = 0;
-	g_msaa_fbo_bound = 0;
+	android_ogl_msaa_destroy_fbo(&ogl_msaa_state, &g_msaa_fbo_bound);
 }
 
 static int ogl_msaa_create_fbo(int samples, int w, int h)
@@ -794,76 +792,9 @@ static int ogl_msaa_create_fbo(int samples, int w, int h)
 	debug_log(DLOG_GRAPHICS,
 		"MSAA FBO create request: samples=%d max=%d size=%dx%d",
 		samples, ogl_msaa_max_samples, w, h);
-	ogl_msaa_destroy_fbo();
-
-	/* Clamp to hardware max -- exceeding it can crash some drivers */
-	if (ogl_msaa_max_samples > 0 && samples > ogl_msaa_max_samples)
-		samples = ogl_msaa_max_samples;
-	if (samples < 2) {
-		debug_log(DLOG_GRAPHICS,
-			"MSAA FBO create skipped: clamped_samples=%d", samples);
-		return 0;
-	}
-
-	/* Query default framebuffer bit depths to match format for glBlitFramebuffer.
-	 * GLES 3.0 requires identical formats for multisample resolve */
-	GLenum color_fmt;
-	{
-		GLint rb = 0, gb = 0, bb = 0, ab = 0;
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glGetIntegerv(GL_RED_BITS, &rb);
-		glGetIntegerv(GL_GREEN_BITS, &gb);
-		glGetIntegerv(GL_BLUE_BITS, &bb);
-		glGetIntegerv(GL_ALPHA_BITS, &ab);
-		if (rb <= 5 && gb <= 6 && bb <= 5 && ab == 0)
-			color_fmt = 0x8D62; /* GL_RGB565 */
-		else if (ab > 0)
-			color_fmt = GL_RGBA8;
-		else
-			color_fmt = GL_RGB8;
-		__android_log_print(ANDROID_LOG_INFO, "DXX",
-		    "MSAA: default FB bits r=%d g=%d b=%d a=%d -> fmt=0x%x",
-		    rb, gb, bb, ab, color_fmt);
-	}
-
-	glGenFramebuffers(1, &ogl_msaa_fbo);
-	glGenRenderbuffers(1, &ogl_msaa_color_rbo);
-	glGenRenderbuffers(1, &ogl_msaa_depth_rbo);
-
-	glBindRenderbuffer(GL_RENDERBUFFER, ogl_msaa_color_rbo);
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, color_fmt, w, h);
-
-	glBindRenderbuffer(GL_RENDERBUFFER, ogl_msaa_depth_rbo);
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT16, w, h);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, ogl_msaa_fbo);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-	    GL_RENDERBUFFER, ogl_msaa_color_rbo);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-	    GL_RENDERBUFFER, ogl_msaa_depth_rbo);
-
-	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (status != GL_FRAMEBUFFER_COMPLETE) {
-		__android_log_print(ANDROID_LOG_ERROR, "DXX",
-		    "MSAA FBO incomplete: status=0x%x samples=%d %dx%d fmt=0x%x",
-		    status, samples, w, h, color_fmt);
-		debug_log(DLOG_GRAPHICS,
-			"MSAA FBO incomplete: status=0x%x samples=%d size=%dx%d fmt=0x%x",
-			status, samples, w, h, color_fmt);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		ogl_msaa_destroy_fbo();
-		return 0;
-	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	ogl_msaa_w = w;
-	ogl_msaa_h = h;
-	__android_log_print(ANDROID_LOG_INFO, "DXX",
-	    "MSAA FBO created: %dx samples, %dx%d fmt=0x%x", samples, w, h, color_fmt);
-	debug_log(DLOG_GRAPHICS,
-		"MSAA FBO created: samples=%d size=%dx%d fmt=0x%x",
-		samples, w, h, color_fmt);
-	return 1;
+	return android_ogl_msaa_create_fbo(&ogl_msaa_state, &g_msaa_fbo_bound,
+		ogl_msaa_max_samples, samples, w, h,
+		ogl_msaa_log_message, NULL);
 }
 #endif
 
