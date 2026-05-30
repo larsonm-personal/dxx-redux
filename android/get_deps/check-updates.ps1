@@ -1517,6 +1517,30 @@ function Update-GradleWrapper($version) {
     Set-Content $path $content -NoNewline
 }
 
+$script:executedInstallCommands = @{}
+
+function Invoke-InstallSyncForDependency($dep, $target) {
+    $installCmdKey = $dep.InstallCmdKey
+    if (-not $installCmdKey) {
+        Write-Host "  Skipping $($dep.Name) install sync: no install command configured"
+        return
+    }
+
+    $installCmd = Get-ConfValue $installCmdKey
+    if (-not $installCmd) {
+        Write-Host "  Skipping $($dep.Name) install sync: no install command configured"
+        return
+    }
+    if ($script:executedInstallCommands.ContainsKey($installCmd)) {
+        Write-Host "  Skipping duplicate install command for $($dep.Name)"
+        return
+    }
+
+    Write-Host "  Syncing installed $($dep.Name) to target $target ..."
+    Invoke-ConfiguredActionCommand $installCmdKey
+    $script:executedInstallCommands[$installCmd] = $true
+}
+
 foreach ($item in $selectedTarget) {
     $dep = $item.Dep
     $name = $dep.Name
@@ -1626,11 +1650,13 @@ foreach ($item in $selectedTarget) {
             Update-Conf "SEVENZIP_DIR_NAME" "7z-$new"
         }
         "PowerShell 7" {
-            if ($script:hostPlatform -eq "Windows") {
-                Update-Conf "POWERSHELL_URL" "https://github.com/PowerShell/PowerShell/releases/download/v$new/PowerShell-$new-win-x64.zip"
-            }
+            Update-Conf "POWERSHELL_URL" "https://github.com/PowerShell/PowerShell/releases/download/v$new/PowerShell-$new-win-x64.zip"
             if ($script:hostPlatform -eq "Linux") {
-                Write-Host "    NOTE: PowerShell is a host tool; run helpers/get_powershell.sh or update your pwsh package"
+                if ($dep.ContainsKey("InstallCmdKey")) {
+                    Invoke-InstallSyncForDependency $dep $new
+                } else {
+                    Write-Host "    NOTE: PowerShell is a host tool; run helpers/get_powershell.sh or update your pwsh package"
+                }
             } else {
                 Write-Host "    NOTE: PowerShell is a host tool; download and update PATH or your local tool install after fetching the new package"
             }
@@ -1642,26 +1668,11 @@ if ($selectedTarget.Count -gt 0) {
     Refresh-ConfContext
 }
 
-$executedInstallCommands = @{}
 foreach ($item in $selectedInstall) {
     $dep = $item.Dep
-    $name = $dep.Name
-    $installCmdKey = $dep.InstallCmdKey
-    $installCmd = Get-ConfValue $installCmdKey
     $target = if ($conf.ContainsKey($dep.ConfKey)) { $conf[$dep.ConfKey] } else { $dep.Current }
 
-    if (-not $installCmd) {
-        Write-Host "  Skipping $name install sync: no install command configured"
-        continue
-    }
-    if ($executedInstallCommands.ContainsKey($installCmd)) {
-        Write-Host "  Skipping duplicate install command for $name"
-        continue
-    }
-
-    Write-Host "  Syncing installed $name to target $target ..."
-    Invoke-ConfiguredActionCommand $installCmdKey
-    $executedInstallCommands[$installCmd] = $true
+    Invoke-InstallSyncForDependency $dep $target
 }
 
 Write-Host ""

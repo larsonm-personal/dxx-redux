@@ -35,13 +35,25 @@ ensure_pwsh_command() {
     return 1
 }
 
-get_installed_pwsh_version() {
-    if ! command -v pwsh >/dev/null 2>&1; then
-        return 1
+get_installed_pwsh_command() {
+    if command -v pwsh >/dev/null 2>&1; then
+        command -v pwsh
+        return 0
     fi
 
+    if command -v pwsh-preview >/dev/null 2>&1; then
+        command -v pwsh-preview
+        return 0
+    fi
+
+    return 1
+}
+
+get_pwsh_version() {
+    local pwsh_command="$1"
+
     # shellcheck disable=SC2016
-    pwsh -NoProfile -NonInteractive -Command '$PSVersionTable.PSVersion.ToString()' 2>/dev/null
+    "$pwsh_command" -NoProfile -NonInteractive -Command '$PSVersionTable.PSVersion.ToString()' 2>/dev/null
 }
 
 find_github_powershell_asset_url() {
@@ -130,9 +142,14 @@ install_tarball() {
     fi
 }
 
-if existing_version="$(get_installed_pwsh_version)"; then
-    echo "Using existing pwsh $existing_version"
-    exit 0
+if existing_command="$(get_installed_pwsh_command)" && existing_version="$(get_pwsh_version "$existing_command")"; then
+    if [ "$existing_version" = "$POWERSHELL_VERSION" ]; then
+        echo "Using existing pwsh $existing_version"
+        ensure_pwsh_command >/dev/null
+        exit 0
+    fi
+
+    echo "Existing pwsh is $existing_version; installing pinned PowerShell $POWERSHELL_VERSION"
 fi
 
 if [ "$(get_host_os)" != "linux" ]; then
