@@ -4,8 +4,8 @@
     Run a small fast smoke suite that should fit within about 3 minutes
 
 .DESCRIPTION
-    Runs a curated subset of host and single-emulator tests selected from
-    `temp\test_reports\report_20260518_223317.md`
+    Runs a curated subset of host and single-emulator tests with fixed
+    historical durations stored beside each test entry
 
     The quick suite keeps to about 3 minutes while including one committed
     regression demo in both headless and graphics replay modes. It
@@ -294,13 +294,14 @@ function Invoke-QuickTest {
 
 $historicalTotalSeconds = [int](($quickTests | Measure-Object -Property HistoricalSeconds -Sum).Sum)
 $historicalTotal = Format-SecondsAsClock -Seconds $historicalTotalSeconds
+$historicalEstimateSource = "fixed per-test baselines"
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  DXX-Redux Quick Test Suite" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Tests selected: $($quickTests.Count)" -ForegroundColor White
-Write-Host "Historical estimate: $historicalTotal from report_20260518_223317.md" -ForegroundColor White
+Write-Host "Historical estimate: $historicalTotal from $historicalEstimateSource" -ForegroundColor White
 Write-Host "Budget: $(Format-SecondsAsClock -Seconds $MaxTotalSeconds)" -ForegroundColor White
 Write-Host ""
 
@@ -363,7 +364,7 @@ $md += "- Timeouts: $timeoutCount"
 $md += "- Skipped: $($skipped.Count)"
 $md += "- Total time: $totalElapsed"
 $md += "- Budget: $(Format-SecondsAsClock -Seconds $MaxTotalSeconds)"
-$md += "- Historical estimate: $historicalTotal"
+$md += "- Historical estimate: $historicalTotal from $historicalEstimateSource"
 $md += ""
 $md += "## Selected Tests"
 $md += ""

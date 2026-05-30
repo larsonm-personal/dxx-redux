@@ -50,100 +50,11 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fuelcen.h"
 #include "cntrlcen.h"
 #include "gameseg.h"
-#include "input_demo_replay.h"
-#include "input_demo_recorder.h"
+#include "input_demo_debug_logging.h"
 
 #define EXPLOSION_SCALE fl2f(2.5)		//explosion is the obj size times this  
 
 //--unused-- ubyte	Frame_processed[MAX_OBJECTS];
-
-static int input_demo_trace_explosion_probe_active(void)
-{
-	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
-}
-
-static unsigned int input_demo_trace_explosion_frame_index(void)
-{
-	if (input_demo_replay_is_loaded())
-		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const unsigned int frame_count = (unsigned int)input_demo_recorder_frame_count();
-
-		return frame_count ? frame_count - 1 : 0;
-	}
-	return 0;
-}
-
-static const char *input_demo_trace_explosion_mode_name(void)
-{
-	if (input_demo_replay_is_loaded())
-		return "replay";
-	if (input_demo_recorder_is_active())
-		return "record";
-	return "none";
-}
-
-static int input_demo_exploding_robot_probe_active(object *obj)
-{
-	if (!input_demo_trace_explosion_probe_active() ||
-		!ConsoleObject ||
-		!obj ||
-		obj->type != OBJ_ROBOT)
-		return 0;
-
-	if (obj->segnum == ConsoleObject->segnum)
-		return 1;
-
-	return vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos) < obj->size + ConsoleObject->size + F1_0 * 20;
-}
-
-static void input_demo_log_exploding_object_probe(const char *step, object *obj, fix delay_time, int spawned_objnum)
-{
-	fix player_dist;
-
-	if (!input_demo_exploding_robot_probe_active(obj))
-		return;
-
-	player_dist = vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos);
-	con_printf(CON_NORMAL,
-		"Input demo exploding object probe: mode=%s frame=%u gt=%lld step=%s obj=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) shields=%d size=%d life=%d flags=0x%x ctype=%d mtype=%d rtype=%d delay=%d spawned=%d player_seg=%d player_dist=%d player_pos=(%d,%d,%d) player_vel=(%d,%d,%d) player_shields=%d\n",
-		input_demo_trace_explosion_mode_name(),
-		input_demo_trace_explosion_frame_index(),
-		(long long)GameTime64,
-		step,
-		obj - Objects,
-		obj->type,
-		obj->id,
-		obj->signature,
-		obj->segnum,
-		obj->pos.x,
-		obj->pos.y,
-		obj->pos.z,
-		obj->last_pos.x,
-		obj->last_pos.y,
-		obj->last_pos.z,
-		obj->mtype.phys_info.velocity.x,
-		obj->mtype.phys_info.velocity.y,
-		obj->mtype.phys_info.velocity.z,
-		obj->shields,
-		obj->size,
-		obj->lifeleft,
-		obj->flags,
-		obj->control_type,
-		obj->movement_type,
-		obj->render_type,
-		delay_time,
-		spawned_objnum,
-		ConsoleObject->segnum,
-		player_dist,
-		ConsoleObject->pos.x,
-		ConsoleObject->pos.y,
-		ConsoleObject->pos.z,
-		ConsoleObject->mtype.phys_info.velocity.x,
-		ConsoleObject->mtype.phys_info.velocity.y,
-		ConsoleObject->mtype.phys_info.velocity.z,
-		Players[Player_num].shields);
-}
 
 object *object_create_explosion_sub(object *objp, short segnum, vms_vector * position, fix size, int vclip_type, fix maxdamage, fix maxdistance, fix maxforce, int parent )
 {
@@ -1216,11 +1127,11 @@ void maybe_delete_object(object *del_obj)
 void explode_object(object *hitobj,fix delay_time)
 {
 	if (hitobj->flags & OF_EXPLODING) {
-		input_demo_log_exploding_object_probe("explode_object_skip_already", hitobj, delay_time, -1);
+		input_demo_debug_log_exploding_object_probe("explode_object_skip_already", hitobj, delay_time, -1);
 		return;
 	}
 
-	input_demo_log_exploding_object_probe("explode_object_entry", hitobj, delay_time, -1);
+	input_demo_debug_log_exploding_object_probe("explode_object_entry", hitobj, delay_time, -1);
 
 	if (delay_time) {		//wait a little while before creating explosion
 		int objnum;
@@ -1232,7 +1143,7 @@ void explode_object(object *hitobj,fix delay_time)
 						CT_EXPLOSION,MT_NONE,RT_NONE);
 	
 		if (objnum < 0 ) {
-			input_demo_log_exploding_object_probe("explode_object_delay_create_failed", hitobj, delay_time, -1);
+			input_demo_debug_log_exploding_object_probe("explode_object_delay_create_failed", hitobj, delay_time, -1);
 			maybe_delete_object(hitobj);		//no explosion, die instantly
 			Int3();
 			return;
@@ -1250,7 +1161,7 @@ void explode_object(object *hitobj,fix delay_time)
 #endif
 		obj->ctype.expl_info.delete_time = -1;
 		obj->ctype.expl_info.spawn_time = 0;
-		input_demo_log_exploding_object_probe("explode_object_delay_placeholder", hitobj, delay_time, objnum);
+		input_demo_debug_log_exploding_object_probe("explode_object_delay_placeholder", hitobj, delay_time, objnum);
 
 	}
 	else {
@@ -1262,7 +1173,7 @@ void explode_object(object *hitobj,fix delay_time)
 		expl_obj = object_create_explosion(hitobj->segnum, &hitobj->pos, fixmul(hitobj->size,EXPLOSION_SCALE), vclip_num );
 	
 		if (! expl_obj) {
-			input_demo_log_exploding_object_probe("explode_object_immediate_create_failed", hitobj, delay_time, -1);
+			input_demo_debug_log_exploding_object_probe("explode_object_immediate_create_failed", hitobj, delay_time, -1);
 			maybe_delete_object(hitobj);		//no explosion, die instantly
 			return;
 		}
@@ -1278,14 +1189,14 @@ void explode_object(object *hitobj,fix delay_time)
 		if (hitobj->render_type==RT_POLYOBJ && hitobj->type!=OBJ_DEBRIS)
 			explode_model(hitobj);
 
-		input_demo_log_exploding_object_probe("explode_object_immediate_fireball", hitobj, delay_time, expl_obj - Objects);
+		input_demo_debug_log_exploding_object_probe("explode_object_immediate_fireball", hitobj, delay_time, expl_obj - Objects);
 
 		maybe_delete_object(hitobj);
 	}
 
 	hitobj->flags |= OF_EXPLODING;		//say that this is blowing up
 	hitobj->control_type = CT_NONE;		//become inert while exploding
-	input_demo_log_exploding_object_probe("explode_object_marked", hitobj, delay_time, -1);
+	input_demo_debug_log_exploding_object_probe("explode_object_marked", hitobj, delay_time, -1);
 
 }
 

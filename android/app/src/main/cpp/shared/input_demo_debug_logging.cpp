@@ -6,9 +6,19 @@
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 
-#if INPUT_DEMO_DEBUG_LOGGING_AVAILABLE
+extern "C" {
+#include "console.h"
+#include "fix.h"
+#include "game.h"
+#include "object.h"
+#include "player.h"
+#include "vecmat.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "input_demo_hooks.h"
+#endif
+}
 
-extern "C" void con_printf(int level, const char *fmt, ...);
+#if INPUT_DEMO_DEBUG_LOGGING_AVAILABLE
 
 static int g_input_demo_debug_enabled = 0;
 
@@ -93,6 +103,35 @@ unsigned int input_demo_debug_frame_index(void)
 
 		return frame_count ? (unsigned int) (frame_count - 1) : 0;
 	}
+	return 0;
+}
+
+static int input_demo_debug_exploding_object_near_player(object *obj)
+{
+	if (!obj || !ConsoleObject)
+		return 0;
+
+	if (obj->segnum == ConsoleObject->segnum)
+		return 1;
+
+	return vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos) <
+	       obj->size + ConsoleObject->size + F1_0 * 20;
+}
+
+static int input_demo_debug_exploding_object_probe_active(object *obj)
+{
+	if (!input_demo_debug_activity_probe_active() || !obj || !ConsoleObject)
+		return 0;
+
+	if (obj->type == OBJ_ROBOT)
+		return input_demo_debug_exploding_object_near_player(obj);
+
+#ifdef DXX_BUILD_DESCENT_II
+	if (obj->type == OBJ_CLUTTER || obj->type == OBJ_CNTRLCEN ||
+	    obj->type == OBJ_PLAYER)
+		return input_demo_debug_exploding_object_near_player(obj);
+#endif
+
 	return 0;
 }
 
@@ -233,11 +272,85 @@ void input_demo_debug_log_fvi_weapon_robot_check(int p0, int p1, int thisobjnum,
 
 void input_demo_debug_log_exploding_object_probe(const char *step, void *obj, int delay_time, int spawned_objnum)
 {
-	(void) obj;
-	(void) delay_time;
-	(void) spawned_objnum;
-	if (step)
-		input_demo_debug_printf("Input demo exploding: step=%s\n", step);
+	object *source_obj = (object *) obj;
+	fix player_dist;
+	const char *step_label = step ? step : "";
+
+	if (!input_demo_debug_exploding_object_probe_active(source_obj))
+		return;
+
+	player_dist = vm_vec_dist_quick(&source_obj->pos, &ConsoleObject->pos);
+
+#ifdef DXX_BUILD_DESCENT_II
+	{
+		char probe[512];
+		object *spawned_obj = NULL;
+
+		if (spawned_objnum >= 0 && spawned_objnum <= Highest_object_index)
+			spawned_obj = &Objects[spawned_objnum];
+
+		snprintf(probe, sizeof(probe),
+		         "step=%s source=%d/%d/%d/%d/%d flags=0x%x shields=%d life=%d delay=%d spawned=%d/%d/%d/%d/%d player_seg=%d player_dist=%d",
+		         step_label,
+		         (int) (source_obj - Objects),
+		         source_obj->signature,
+		         source_obj->type,
+		         source_obj->id,
+		         source_obj->segnum,
+		         source_obj->flags,
+		         source_obj->shields,
+		         source_obj->lifeleft,
+		         delay_time,
+		         spawned_obj ? (int) (spawned_obj - Objects) : spawned_objnum,
+		         spawned_obj ? spawned_obj->signature : -1,
+		         spawned_obj ? spawned_obj->type : -1,
+		         spawned_obj ? spawned_obj->id : -1,
+		         spawned_obj ? spawned_obj->segnum : -1,
+		         ConsoleObject->segnum,
+		         player_dist);
+		input_demo_append_replay_probe_message("explode_object", spawned_obj ? spawned_obj : source_obj,
+		                                       probe);
+	}
+#endif
+
+	con_printf(CON_NORMAL,
+	           "Input demo exploding object probe: mode=%s frame=%u gt=%lld step=%s obj=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) shields=%d size=%d life=%d flags=0x%x ctype=%d mtype=%d rtype=%d delay=%d spawned=%d player_seg=%d player_dist=%d player_pos=(%d,%d,%d) player_vel=(%d,%d,%d) player_shields=%d\n",
+	           input_demo_debug_activity_mode_name(),
+	           input_demo_debug_frame_index(),
+	           (long long) GameTime64,
+	           step_label,
+	           (int) (source_obj - Objects),
+	           source_obj->type,
+	           source_obj->id,
+	           source_obj->signature,
+	           source_obj->segnum,
+	           source_obj->pos.x,
+	           source_obj->pos.y,
+	           source_obj->pos.z,
+	           source_obj->last_pos.x,
+	           source_obj->last_pos.y,
+	           source_obj->last_pos.z,
+	           source_obj->mtype.phys_info.velocity.x,
+	           source_obj->mtype.phys_info.velocity.y,
+	           source_obj->mtype.phys_info.velocity.z,
+	           source_obj->shields,
+	           source_obj->size,
+	           source_obj->lifeleft,
+	           source_obj->flags,
+	           source_obj->control_type,
+	           source_obj->movement_type,
+	           source_obj->render_type,
+	           delay_time,
+	           spawned_objnum,
+	           ConsoleObject->segnum,
+	           player_dist,
+	           ConsoleObject->pos.x,
+	           ConsoleObject->pos.y,
+	           ConsoleObject->pos.z,
+	           ConsoleObject->mtype.phys_info.velocity.x,
+	           ConsoleObject->mtype.phys_info.velocity.y,
+	           ConsoleObject->mtype.phys_info.velocity.z,
+	           Players[Player_num].shields);
 }
 
 #endif

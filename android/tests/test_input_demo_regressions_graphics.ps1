@@ -22,18 +22,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$forwardedParams = @{
-    Game = $Game
-    Mode = 'accelerated'
-    RunMode = 'graphics'
-    TimeoutSeconds = $TimeoutSeconds
+$forwardedParams = @{}
+foreach ($key in $PSBoundParameters.Keys) {
+    $forwardedParams[$key] = $PSBoundParameters[$key]
 }
-if ($DemoRoot) {
-    $forwardedParams.DemoRoot = $DemoRoot
-}
-if ($StopOnFirstFailure) {
-    $forwardedParams.StopOnFirstFailure = $true
-}
+$forwardedParams.RunMode = 'graphics'
 
-& "$PSScriptRoot\run_input_demo_regressions.ps1" @forwardedParams
+& "$PSScriptRoot\test_input_demo_regressions.ps1" @forwardedParams
 exit $LASTEXITCODE

@@ -64,6 +64,8 @@ d*x-rebirth
 /*/out/install
 
 build*/
+!android/ai tool plans/build, release, packaging/
+!android/ai tool plans/build, release, packaging/**
 
 # Android #
 ###########

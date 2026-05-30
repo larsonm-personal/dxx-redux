@@ -56,16 +56,16 @@ Run only the probes needed for the current tranche. Useful defaults:
 git status --short
 
 # Track D1/D2 branch delta before and after a diff-shrink tranche
-.\android\diff_vs_upstream.ps1 -Top 20
+.\android\helpers\diff_vs_upstream.ps1 -Top 20
 
 # Check for stale file-mutating formatter tasks before any cleanup rerun
-.\android\stop-stale-formatters.ps1
+.\android\helpers\stop-stale-formatters.ps1
 ```
 
 If `stop-stale-formatters.ps1` reports an active stale formatter after a timeout, interruption, or file-newer prompt, kill it before starting another formatter pass:
 
 ```powershell
-.\android\stop-stale-formatters.ps1 -Kill
+.\android\helpers\stop-stale-formatters.ps1 -Kill
 ```
 
 Do not start two cleanup or formatter passes in parallel. `android/run-code-quality.ps1` uses `android/temp/run-code-quality.lock.json`; treat a live lock as real unless the owning process is gone.
@@ -145,10 +145,10 @@ MPDIAG_SYNC_COUNT(poll_count);
 
 ## D1/D2 diff minimization
 
-Use [android/diff_vs_upstream.ps1](../../diff_vs_upstream.ps1) to choose and measure tranches:
+Use [android/helpers/diff_vs_upstream.ps1](../../helpers/diff_vs_upstream.ps1) to choose and measure tranches:
 
 ```powershell
-.\android\diff_vs_upstream.ps1 -Top 20
+.\android\helpers\diff_vs_upstream.ps1 -Top 20
 ```
 
 Good first targets are files with large Android-only helper bodies in both games, especially when the bodies are near-duplicates. Prior plans found high-value categories like:
@@ -294,7 +294,7 @@ Pick the smallest ladder that covers the tranche. A typical cleanup ladder is:
 
 ```powershell
 # 1. Formatter/linter pass after edits
-.\android\stop-stale-formatters.ps1
+.\android\helpers\stop-stale-formatters.ps1
 .\android\run-code-quality.ps1 -Fix -Paths path\to\touched\file path\to\touched\dir
 
 # 2. Android build and JVM unit tests for launcher/native integration
@@ -307,7 +307,7 @@ Pick the smallest ladder that covers the tranche. A typical cleanup ladder is:
 .\android\run_all_tests.ps1 -Filter changed_area_or_test_name -StopOnFail
 
 # 5. D1/D2 diff metric after diff-shrink tranches
-.\android\diff_vs_upstream.ps1 -Top 20
+.\android\helpers\diff_vs_upstream.ps1 -Top 20
 ```
 
 If a command times out or the editor reports that a file is newer, stop and check stale formatter tasks before rerunning anything mutating.

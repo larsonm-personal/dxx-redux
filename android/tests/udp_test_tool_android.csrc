@@ -1,0 +1,103 @@
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <unistd.h>
+
+static int recv_mode(const char *port_text, const char *timeout_text)
+{
+	int fd = socket(AF_INET, SOCK_DGRAM, 0);
+	int reuse = 1;
+	struct sockaddr_in addr;
+	struct timeval timeout;
+	char buffer[1024];
+	struct sockaddr_in from;
+	socklen_t from_len = sizeof(from);
+	ssize_t received;
+
+	if (fd < 0) {
+		perror("socket");
+		return 1;
+	}
+
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	addr.sin_port = htons((unsigned short) atoi(port_text));
+	if (bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+		perror("bind");
+		close(fd);
+		return 1;
+	}
+
+	timeout.tv_sec = atoi(timeout_text);
+	timeout.tv_usec = 0;
+	setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+	printf("READY\n");
+	fflush(stdout);
+
+	received = recvfrom(fd, buffer, sizeof(buffer) - 1, 0, (struct sockaddr *) &from, &from_len);
+	if (received < 0) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			printf("TIMEOUT: no data received\n");
+		else
+			perror("recvfrom");
+		close(fd);
+		return 0;
+	}
+
+	buffer[received] = 0;
+	printf("RECEIVED: %s from %s:%u\n", buffer, inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+	close(fd);
+	return 0;
+}
+
+static int send_mode(const char *message, const char *addr_text, const char *port_text)
+{
+	int fd = socket(AF_INET, SOCK_DGRAM, 0);
+	int broadcast = 1;
+	struct sockaddr_in addr;
+	ssize_t sent;
+
+	if (fd < 0) {
+		perror("socket");
+		return 1;
+	}
+
+	setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons((unsigned short) atoi(port_text));
+	if (inet_pton(AF_INET, addr_text, &addr.sin_addr) != 1) {
+		fprintf(stderr, "bad addr\n");
+		close(fd);
+		return 1;
+	}
+
+	sent = sendto(fd, message, strlen(message), 0, (struct sockaddr *) &addr, sizeof(addr));
+	if (sent < 0) {
+		perror("sendto");
+		close(fd);
+		return 1;
+	}
+
+	printf("SENT: %s to %s:%s\n", message, addr_text, port_text);
+	close(fd);
+	return 0;
+}
+
+int main(int argc, char **argv)
+{
+	if (argc == 4 && strcmp(argv[1], "recv") == 0)
+		return recv_mode(argv[2], argv[3]);
+	if (argc == 5 && strcmp(argv[1], "send") == 0)
+		return send_mode(argv[2], argv[3], argv[4]);
+
+	fprintf(stderr, "usage: udp_test_tool recv PORT TIMEOUT_SECONDS | udp_test_tool send MSG ADDR PORT\n");
+	return 1;
+}
