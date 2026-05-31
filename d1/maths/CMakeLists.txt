@@ -6,6 +6,9 @@ add_library(${DXX_TARGET_PREFIX}maths STATIC
     vecmat.c
     )
 
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/platform-math.cmake)
+dxx_link_platform_math(${DXX_TARGET_PREFIX}maths)
+
 if(NOT ANDROID)
     if(NOT TARGET nlohmann_json::nlohmann_json)
         include(FetchContent)

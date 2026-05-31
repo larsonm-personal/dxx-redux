@@ -10,8 +10,9 @@ Set-StrictMode -Version Latest
 
 $ANDROID_ROOT = Split-Path $PSScriptRoot
 $REPO_ROOT = Split-Path $ANDROID_ROOT
+. (Join-Path $ANDROID_ROOT "helpers" "test_host_platform.ps1")
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
-$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
+$ADB = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 $COMPOSE_DIR = Join-Path $REPO_ROOT "android\docker\nat-testbed"
 
 $EMU1 = "emulator-5554"

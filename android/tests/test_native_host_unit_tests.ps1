@@ -24,26 +24,7 @@ $games = if ($Game -eq 'both') { @('d1', 'd2') } else { @($Game) }
 function Invoke-HostBuild {
     param([string]$GameName)
 
-    if ($IsWindows -or $env:OS -eq 'Windows_NT') {
-        $buildScript = Join-Path $repoRoot 'run-windows-build.ps1'
-        if (-not (Test-Path -LiteralPath $buildScript)) {
-            throw "Host build script not found: $buildScript"
-        }
-        & $buildScript -Target $GameName
-        if ($LASTEXITCODE -ne 0) {
-            throw "Host build failed for $GameName with exit code $LASTEXITCODE"
-        }
-        return
-    }
-
-    $buildScript = Join-Path $repoRoot 'run-linux-build.sh'
-    if (-not (Test-Path -LiteralPath $buildScript)) {
-        throw "Host build script not found: $buildScript"
-    }
-    & bash $buildScript --target $GameName
-    if ($LASTEXITCODE -ne 0) {
-        throw "Host build failed for $GameName with exit code $LASTEXITCODE"
-    }
+    Invoke-RegressionHostBuild -RepoRoot $repoRoot -Target $GameName -Label $GameName
 }
 
 function Invoke-NativeCTest {

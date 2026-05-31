@@ -39,11 +39,11 @@ Set-StrictMode -Version Latest
 # -- Constants --
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
-$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
+$ADB = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 $PACKAGE = "com.dxxredux.app"
 $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
-$EMULATOR = "$DEP_BASE\android-sdk\emulator\emulator.exe"
+$EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulator" -ToolName "emulator"
 $EMU1 = "emulator-5554"  # Player 1 (host)
 $EMU2 = "emulator-5556"  # Player 2 (joiner)
 $AVD_MAP = @{ $EMU1 = "Nexus5X_Light_1"; $EMU2 = "Nexus5X_Light_2" }
@@ -228,15 +228,16 @@ try {
 
     Write-Status "Starting matchmaking server..."
     $serverDir = Join-Path $REPO_ROOT "server"
-    $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+    $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
 
     # Build if binary doesn't exist
-    if (-not (Test-Path $serverBin)) {
+    if (-not $serverBin) {
         Write-Status "Server binary not found, building..."
         Push-Location $serverDir
         $buildOut = & cargo build --release 2>&1 | Out-String
         Pop-Location
-        if (-not (Test-Path $serverBin)) {
+        $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
+        if (-not $serverBin) {
             Write-Status "FAIL: Server build failed" "Red"
             Write-Status $buildOut "Yellow"
             exit 1
@@ -265,8 +266,7 @@ try {
         $tlsKey = Join-Path $tlsDir "server.key"
         if (-not (Test-Path $tlsCert) -or -not (Test-Path $tlsKey)) {
             Write-Status "  Generating self-signed TLS certificate..."
-            $opensslExe = "openssl"
-            if (Test-Path "$DEP_BASE\git\usr\bin\openssl.exe") { $opensslExe = "$DEP_BASE\git\usr\bin\openssl.exe" }
+            $opensslExe = Resolve-RegressionOpenSslTool -DepBase $DEP_BASE
             & $opensslExe req -x509 -newkey rsa:2048 -keyout $tlsKey -out $tlsCert `
                 -days 365 -nodes -subj "/CN=localhost" 2>&1 | Out-Null
         }

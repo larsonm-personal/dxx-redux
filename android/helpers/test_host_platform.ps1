@@ -119,6 +119,36 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         return $null
     }
 
+    function Resolve-RegressionOpenSslTool {
+        param([string]$DepBase)
+
+        $envValue = [Environment]::GetEnvironmentVariable("OPENSSL")
+        if ($envValue -and (Test-Path -LiteralPath $envValue -PathType Leaf)) {
+            return (Resolve-Path -LiteralPath $envValue).Path
+        }
+
+        foreach ($toolName in (Get-RegressionHostExecutableNames -BaseName "openssl")) {
+            $command = Get-Command $toolName -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($command) {
+                return $command.Source
+            }
+        }
+
+        if ($DepBase) {
+            foreach ($candidate in @(
+                    (Join-RegressionPath $DepBase "git" "usr" "bin" "openssl.exe"),
+                    (Join-RegressionPath $DepBase "openssl" "bin" "openssl.exe"),
+                    (Join-RegressionPath $DepBase "openssl" "bin" "openssl")
+                )) {
+                if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                    return (Resolve-Path -LiteralPath $candidate).Path
+                }
+            }
+        }
+
+        return "openssl"
+    }
+
     function Resolve-RegressionGradleWrapper {
         param([Parameter(Mandatory)][string]$AndroidDir)
 
@@ -135,6 +165,65 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
             }
         }
         return (Join-RegressionPath $AndroidDir $wrapperNames[0])
+    }
+
+    function Invoke-RegressionHostBuild {
+        param(
+            [Parameter(Mandatory)][string]$RepoRoot,
+            [Parameter(Mandatory)][string]$Target,
+            [string]$Label = $Target
+        )
+
+        $originalLocation = Get-Location
+        if (Test-RegressionWindowsHost) {
+            $buildScript = Join-RegressionPath $RepoRoot "run-windows-build.ps1"
+            if (-not (Test-Path -LiteralPath $buildScript -PathType Leaf)) {
+                throw "Host build script not found: $buildScript"
+            }
+
+            try {
+                & $buildScript -Target $Target
+                if ($LASTEXITCODE -eq 0) {
+                    return
+                }
+            } catch {
+                $message = [string]$_
+                if ($message -notmatch 'Supported values:\s*([A-Za-z0-9_,\s-]+)') {
+                    throw
+                }
+
+                $supportedArchList = @($matches[1].Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+                if ($supportedArchList.Count -eq 0) {
+                    throw
+                }
+
+                $fallbackArch = $supportedArchList[0]
+                Write-Host "Build guardrail: retrying host build with -VcVarsArch $fallbackArch"
+                & $buildScript -Target $Target -VcVarsArch $fallbackArch
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Host build failed for $Label with exit code $LASTEXITCODE (fallback arch: $fallbackArch)"
+                }
+                return
+            } finally {
+                Set-Location -LiteralPath $originalLocation.Path
+            }
+
+            throw "Host build failed for $Label with exit code $LASTEXITCODE"
+        }
+
+        $buildScript = Join-RegressionPath $RepoRoot "run-linux-build.sh"
+        if (-not (Test-Path -LiteralPath $buildScript -PathType Leaf)) {
+            throw "Host build script not found: $buildScript"
+        }
+        $bash = Get-Command bash -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $bash) {
+            throw "bash was not found on PATH"
+        }
+
+        & $bash.Source $buildScript --target $Target
+        if ($LASTEXITCODE -ne 0) {
+            throw "Host build failed for $Label with exit code $LASTEXITCODE"
+        }
     }
 
     function Resolve-RegressionCommandPath {

@@ -153,6 +153,7 @@ if [[ "${ID:-}" == "ubuntu" || "${ID:-}" == "debian" || " ${ID_LIKE:-} " == *" u
     )
     install_with_privilege apt update
     install_with_privilege apt install -y "${packages[@]}"
+    "$SCRIPT_DIR/get_rust.sh"
     exit 0
 fi
 
@@ -187,6 +188,7 @@ if [[ "${ID:-}" == "fedora" || " ${ID_LIKE:-} " == *" fedora "* || " ${ID_LIKE:-
         zlib-devel
     )
     install_with_privilege dnf install -y "${packages[@]}"
+    "$SCRIPT_DIR/get_rust.sh"
     exit 0
 fi
 
@@ -217,6 +219,7 @@ if [[ "${ID:-}" == "arch" || " ${ID_LIKE:-} " == *" arch "* ]]; then
         zlib
     )
     install_with_privilege pacman -S --needed --noconfirm "${packages[@]}"
+    "$SCRIPT_DIR/get_rust.sh"
     exit 0
 fi
 

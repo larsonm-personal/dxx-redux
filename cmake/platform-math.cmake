@@ -1,0 +1,5 @@
+function(dxx_link_platform_math target_name)
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(${target_name} PUBLIC m)
+    endif()
+endfunction()

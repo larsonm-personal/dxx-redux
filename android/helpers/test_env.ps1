@@ -102,10 +102,11 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
 
     # -- CARGO -------------------------------------------------------------------
 
-    if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
-        $cargoDir = Join-RegressionPath (Get-RegressionHomeDirectory) ".cargo" "bin"
-        $cargoName = (Get-RegressionHostExecutableNames -BaseName "cargo")[0]
-        if (Test-Path (Join-RegressionPath $cargoDir $cargoName)) {
+    $cargoDir = Join-RegressionPath (Get-RegressionHomeDirectory) ".cargo" "bin"
+    $cargoName = (Get-RegressionHostExecutableNames -BaseName "cargo")[0]
+    if (Test-Path (Join-RegressionPath $cargoDir $cargoName)) {
+        $pathParts = @($env:PATH -split [regex]::Escape([System.IO.Path]::PathSeparator) | Where-Object { $_ })
+        if (-not ($pathParts | Where-Object { $_ -eq $cargoDir })) {
             $env:PATH = "$cargoDir$([System.IO.Path]::PathSeparator)$env:PATH"
         }
     }

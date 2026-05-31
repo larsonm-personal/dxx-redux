@@ -11,6 +11,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
+. (Join-Path $PSScriptRoot 'input_demo_game_data.ps1')
 
 $outRoot = Join-Path $repoRoot 'temp\input_demo_runtime_smoke'
 
@@ -66,6 +67,7 @@ function Get-GameConfig {
         'd1' {
             return @{
                 Exe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd1'
+                Name = 'd1'
                 Mission = 'd1'
                 TitleArg = '-notitles'
                 RequiredFiles = @('DESCENT.HOG', 'DESCENT.PIG')
@@ -82,6 +84,7 @@ function Get-GameConfig {
         'd2' {
             return @{
                 Exe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd2'
+                Name = 'd2'
                 Mission = 'd2'
                 TitleArg = '-nomovies'
                 RequiredFiles = @('DESCENT2.HOG', 'DESCENT2.HAM', 'GROUPA.PIG')
@@ -101,96 +104,14 @@ function Get-GameConfig {
     throw "Unsupported game: $Name"
 }
 
-function Read-GameDataHashIndex {
-    $indexFile = Join-RegressionPath $repoRoot 'game_data' 'game_data_index.txt'
-    $generator = Join-RegressionPath $repoRoot 'game_data' 'generate_game_data_index.ps1'
-
-    if (-not (Test-Path -LiteralPath $indexFile) -and (Test-Path -LiteralPath $generator)) {
-        $pwsh = Get-RegressionCurrentPwshPath
-        & $pwsh -NoProfile -ExecutionPolicy Bypass -File $generator | Out-Null
-    }
-    if (-not (Test-Path -LiteralPath $indexFile)) {
-        return $null
-    }
-
-    $index = @{}
-    foreach ($line in [System.IO.File]::ReadLines($indexFile)) {
-        if ($line -match '^\s*(#|$)') {
-            continue
-        }
-        $parts = $line -split '\s{2}', 2
-        if ($parts.Count -ne 2) {
-            continue
-        }
-        $path = Join-Path $repoRoot $parts[1]
-        if (Test-Path -LiteralPath $path -PathType Leaf) {
-            $index[$parts[0].ToLowerInvariant()] = (Resolve-Path -LiteralPath $path).Path
-        }
-    }
-    return $index
-}
-
-function Get-IndexedDataDirCandidate {
-    param([hashtable]$Config)
-
-    $index = Read-GameDataHashIndex
-    if (-not $index) {
-        return $null
-    }
-
-    $dirs = @()
-    foreach ($entry in $Config.RequiredHashes) {
-        $path = $index[$entry.Sha256.ToLowerInvariant()]
-        if (-not $path) {
-            return $null
-        }
-        $dirs += (Split-Path -Parent $path)
-    }
-
-    $uniqueDirs = @($dirs | Select-Object -Unique)
-    if ($uniqueDirs.Count -eq 1) {
-        return $uniqueDirs[0]
-    }
-    return $null
-}
-
-function Test-DataDirMatchesGame {
-    param(
-        [string]$Path,
-        [hashtable]$Config
-    )
-
-    if (-not (Test-Path -LiteralPath $Path)) {
-        return $false
-    }
-    foreach ($requiredFile in $Config.RequiredFiles) {
-        if (-not (Test-Path -LiteralPath (Join-Path $Path $requiredFile))) {
-            return $false
-        }
-    }
-    return $true
-}
-
 function Resolve-SmokeDataDir {
     param([hashtable]$Config)
 
-    $candidates = @()
-    if ($DataDir) {
-        $candidates += $DataDir
-    }
-    $indexed = Get-IndexedDataDirCandidate -Config $Config
-    if ($indexed) {
-        $candidates += $indexed
-    }
-    $candidates += $Config.DefaultDataDirs
-
-    foreach ($candidate in ($candidates | Select-Object -Unique)) {
-        if (Test-DataDirMatchesGame -Path $candidate -Config $Config) {
-            return (Resolve-Path -LiteralPath $candidate).Path
-        }
-    }
-
-    throw "Could not find a valid game data directory for smoke test"
+    return Resolve-InputDemoDataDir `
+        -RepoRoot $repoRoot `
+        -Config $Config `
+        -RequestedDataDir $DataDir `
+        -Purpose 'runtime smoke test'
 }
 
 function New-Fixture {

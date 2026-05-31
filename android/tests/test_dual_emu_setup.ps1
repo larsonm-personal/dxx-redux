@@ -29,8 +29,8 @@ Set-StrictMode -Version Latest
 
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
-$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
-$EMULATOR = "$DEP_BASE\android-sdk\emulator\emulator.exe"
+$ADB = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
+$EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulator" -ToolName "emulator"
 $PACKAGE = "com.dxxredux.app"
 $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
@@ -207,14 +207,15 @@ if (-not $NoServer) {
     Write-Status "--- Starting matchmaking server ---" "White"
 
     $serverDir = Join-Path $REPO_ROOT "server"
-    $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+    $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
 
-    if (-not $NoBuild -or -not (Test-Path $serverBin)) {
+    if (-not $NoBuild -or -not $serverBin) {
         Write-Status "  Building matchmaking server..."
         Push-Location $serverDir
         $buildOut = & cargo build --release 2>&1 | Out-String
         Pop-Location
-        if (-not (Test-Path $serverBin)) {
+        $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
+        if (-not $serverBin) {
             Write-Status "FAIL: Server build failed" "Red"
             Write-Status ($buildOut | Select-Object -Last 10) "Yellow"
             exit 1
@@ -230,8 +231,7 @@ if (-not $NoServer) {
     $tlsKey = Join-Path $tlsDir "server.key"
     if (-not (Test-Path $tlsCert) -or -not (Test-Path $tlsKey)) {
         Write-Status "  Generating self-signed TLS certificate..."
-        $opensslExe = "openssl"
-        if (Test-Path "$DEP_BASE\git\usr\bin\openssl.exe") { $opensslExe = "$DEP_BASE\git\usr\bin\openssl.exe" }
+        $opensslExe = Resolve-RegressionOpenSslTool -DepBase $DEP_BASE
         & $opensslExe req -x509 -newkey rsa:2048 -keyout $tlsKey -out $tlsCert `
             -days 365 -nodes -subj "/CN=localhost" 2>&1 | Out-Null
         if (-not (Test-Path $tlsCert) -or -not (Test-Path $tlsKey)) {

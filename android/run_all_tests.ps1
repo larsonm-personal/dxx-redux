@@ -137,6 +137,44 @@ function Get-RegressionDemoCount {
     ).Count
 }
 
+function Test-InputDemoCorpusAvailable {
+    $demoRoot = Join-Path $scriptDir "regression_demos"
+    if (-not (Test-Path -LiteralPath $demoRoot -PathType Container)) {
+        return $false
+    }
+
+    return @(Get-ChildItem -LiteralPath $demoRoot -Recurse -Filter "*.dximdemo" -File -ErrorAction SilentlyContinue).Count -gt 0
+}
+
+function Test-InputDemoDeterminismFixturesAvailable {
+    $fixtureListPath = Join-Path $scriptDir "tests/input_demo_determinism_fixtures.txt"
+    if (-not (Test-Path -LiteralPath $fixtureListPath -PathType Leaf)) {
+        return $false
+    }
+
+    foreach ($line in [System.IO.File]::ReadLines($fixtureListPath)) {
+        $trimmed = $line.Trim()
+        if (-not $trimmed -or $trimmed.StartsWith("#")) {
+            continue
+        }
+        $parts = $trimmed -split '\|', 2
+        if ($parts.Count -ne 2) {
+            return $false
+        }
+        $path = $parts[1].Trim()
+        $resolvedPath = if ([System.IO.Path]::IsPathRooted($path)) {
+            [System.IO.Path]::GetFullPath($path)
+        } else {
+            [System.IO.Path]::GetFullPath((Join-Path $repoRoot $path))
+        }
+        if (-not (Test-Path -LiteralPath $resolvedPath -PathType Leaf)) {
+            return $false
+        }
+    }
+
+    return $true
+}
+
 function Get-TestBaseName {
     param([string]$TestName)
 
@@ -318,6 +356,21 @@ foreach ($test in $allTests) {
         $runnableTests += $test
     }
 }
+
+$fixtureSkipped = @()
+$inputDemoCorpusAvailable = Test-InputDemoCorpusAvailable
+$inputDemoDeterminismFixturesAvailable = Test-InputDemoDeterminismFixturesAvailable
+$runnableTests = @($runnableTests | Where-Object {
+        $keep = $true
+        if ($_.Name -in @("test_input_demo_regressions", "test_input_demo_regressions_graphics") -and -not $inputDemoCorpusAvailable) {
+            $fixtureSkipped += @{ Name = $_.Name; Reason = "no input-demo regression fixtures"; Type = $_.Type }
+            $keep = $false
+        } elseif ($_.Name -eq "test_input_demo_determinism_matrix" -and -not $inputDemoDeterminismFixturesAvailable) {
+            $fixtureSkipped += @{ Name = $_.Name; Reason = "input-demo determinism fixtures unavailable"; Type = $_.Type }
+            $keep = $false
+        }
+        $keep
+    })
 
 function Get-TestExecutionOrderKey {
     param([hashtable]$Test)
@@ -646,7 +699,11 @@ function Invoke-PrimaryEmulatorPreflight {
             return $null
         }
 
-        Install-AppAndData -Serial $serial
+        $appDataOk = Install-AppAndData -Serial $serial
+        if ($RequireStandardGameData -and -not $appDataOk) {
+            Write-Status "Preflight: standard game data provisioning failed on $serial" "Red"
+            return $null
+        }
         if (Invoke-SetupActivityPreflight -Serial $serial -RequireStandardGameData:$RequireStandardGameData) {
             return $serial
         }
@@ -684,7 +741,11 @@ function Invoke-SecondaryEmulatorPreflight {
     }
 
     $serial = $serials | Select-Object -Last 1
-    Install-AppAndData -Serial $serial
+    $appDataOk = Install-AppAndData -Serial $serial
+    if ($RequireStandardGameData -and -not $appDataOk) {
+        Write-Status "Preflight: standard game data provisioning failed on $serial" "Red"
+        return $null
+    }
     if (-not (Invoke-SetupActivityPreflight -Serial $serial -RequireStandardGameData:$RequireStandardGameData)) {
         return $null
     }
@@ -774,17 +835,16 @@ Write-Host ""
 
 if ($runnableTests.Count -eq 0) {
     Write-Host "No runnable tests found" -ForegroundColor Yellow
-    exit 0
 }
 
-if (-not (Test-HostToolPrerequisites)) {
+if ($runnableTests.Count -gt 0 -and -not (Test-HostToolPrerequisites)) {
     exit 1
 }
 
 # -- Build APK if any emulator tests will run --
 
 $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
-if ($needsApk) {
+if ($runnableTests.Count -gt 0 -and $needsApk) {
     if (-not (Test-EmulatorAccelerationAvailable)) {
         Write-Host "FAIL: Selected tests require Android emulator CPU acceleration" -ForegroundColor Red
         exit 1
@@ -808,7 +868,7 @@ if ($needsApk) {
     Write-Host ""
 }
 
-if (-not (Invoke-SuitePreflight)) {
+if ($runnableTests.Count -gt 0 -and -not (Invoke-SuitePreflight)) {
     exit 1
 }
 
@@ -819,7 +879,7 @@ $results = @()
 $passCount = 0
 $failCount = 0
 $timeoutCount = 0
-$infraSkipped = @()
+$infraSkipped = @($fixtureSkipped)
 $stopEarly = $false
 $totalSw = [System.Diagnostics.Stopwatch]::StartNew()
 

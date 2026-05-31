@@ -126,55 +126,8 @@ function Invoke-InputDemoHostBuild {
     )
 
     $buildTarget = Get-InputDemoBuildTarget -GameName $GameName
-    $originalLocation = Get-Location
-
-    if (-not (Test-RegressionWindowsHost)) {
-        $buildScript = Join-RegressionPath $RepoRoot 'run-linux-build.sh'
-        if (-not (Test-Path -LiteralPath $buildScript)) {
-            throw "Host build script not found: $buildScript"
-        }
-
-        Write-Host "Build guardrail: rebuilding Linux host target $buildTarget"
-        & bash $buildScript --target $buildTarget
-        if ($LASTEXITCODE -ne 0) {
-            throw "Host build failed with exit code $LASTEXITCODE"
-        }
-        return
-    }
-
-    $buildScript = Join-Path $RepoRoot 'run-windows-build.ps1'
-
-    if (-not (Test-Path -LiteralPath $buildScript)) {
-        throw "Host build script not found: $buildScript"
-    }
-
     Write-Host "Build guardrail: rebuilding host target $buildTarget"
-    try {
-        & $buildScript -Target $buildTarget
-        if ($LASTEXITCODE -ne 0) {
-            throw "Host build failed with exit code $LASTEXITCODE"
-        }
-        return
-    } catch {
-        $message = [string]$_
-        if ($message -notmatch 'Supported values:\s*([A-Za-z0-9_,\s-]+)') {
-            throw
-        }
-
-        $supportedArchList = @($matches[1].Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
-        if ($supportedArchList.Count -eq 0) {
-            throw
-        }
-
-        $fallbackArch = $supportedArchList[0]
-        Write-Host "Build guardrail: retrying host build with -VcVarsArch $fallbackArch"
-        & $buildScript -Target $buildTarget -VcVarsArch $fallbackArch
-        if ($LASTEXITCODE -ne 0) {
-            throw "Host build failed with exit code $LASTEXITCODE (fallback arch: $fallbackArch)"
-        }
-    } finally {
-        Set-Location -LiteralPath $originalLocation.Path
-    }
+    Invoke-RegressionHostBuild -RepoRoot $RepoRoot -Target $buildTarget -Label $GameName
 }
 
 function Get-InputDemoExecutableFreshnessIssue {

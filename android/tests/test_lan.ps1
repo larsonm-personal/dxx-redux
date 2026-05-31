@@ -36,11 +36,11 @@ Set-StrictMode -Version Latest
 # -- Constants --
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
-$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
+$ADB = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 $PACKAGE = "com.dxxredux.app"
 $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
-$EMULATOR = "$DEP_BASE\android-sdk\emulator\emulator.exe"
+$EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulator" -ToolName "emulator"
 $EMU1 = "emulator-5554"  # Player 1 (host)
 $EMU2 = "emulator-5556"  # Player 2 (joiner)
 $AVD_MAP = @{ $EMU1 = "Nexus5X_Light_1"; $EMU2 = "Nexus5X_Light_2" }

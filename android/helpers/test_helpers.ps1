@@ -520,6 +520,102 @@ function Read-GameDataIndex {
     return $null
 }
 
+function Test-GameDataDepsResolvedByIndex {
+    param(
+        [Parameter(Mandatory = $true)][array]$Deps,
+        [Parameter(Mandatory = $true)][hashtable]$Index
+    )
+
+    foreach ($dep in $Deps) {
+        if (-not $Index.ContainsKey($dep.sha256)) {
+            return $false
+        }
+        $path = $Index[$dep.sha256]
+        if (-not $path -or -not (Test-Path -LiteralPath $path)) {
+            return $false
+        }
+    }
+    return $true
+}
+
+function Invoke-GameDataExtractionScript {
+    param([Parameter(Mandatory = $true)][string]$ScriptPath)
+
+    if (-not (Test-Path -LiteralPath $ScriptPath -PathType Leaf)) {
+        return $false
+    }
+
+    $pwsh = Get-RegressionCurrentPwshPath
+    Write-Status "  Running $([System.IO.Path]::GetFileName($ScriptPath)) to materialize extracted game data..." "Yellow"
+    & $pwsh -NoProfile -ExecutionPolicy Bypass -File $ScriptPath |
+        ForEach-Object { Write-Status "    $_" "DarkGray" }
+    return ($LASTEXITCODE -eq 0)
+}
+
+function Update-GameDataIndex {
+    $generator = Join-RegressionPath $script:REPO_ROOT "game_data" "generate_game_data_index.ps1"
+    if (-not (Test-Path -LiteralPath $generator -PathType Leaf)) {
+        return $false
+    }
+
+    $pwsh = Get-RegressionCurrentPwshPath
+    & $pwsh -NoProfile -ExecutionPolicy Bypass -File $generator |
+        ForEach-Object { Write-Status "  $_" "DarkGray" }
+    $script:GameDataIndex = $null
+    return ($LASTEXITCODE -eq 0)
+}
+
+function Try-ExtractLocalGameDataSources {
+    param([Parameter(Mandatory = $true)][array]$Deps)
+
+    if ($env:DXX_SKIP_AUTO_EXTRACT_GAME_DATA -eq "1") {
+        return $false
+    }
+
+    $repoRoot = $script:REPO_ROOT
+    $gameDataDir = Join-RegressionPath $repoRoot "game_data"
+    $generator = Join-RegressionPath $gameDataDir "generate_game_data_index.ps1"
+    if (-not (Test-Path -LiteralPath $generator -PathType Leaf)) {
+        return $false
+    }
+
+    $extractors = @(
+        @{
+            Script = Join-RegressionPath $gameDataDir "extract_all_gog.ps1"
+            SourceDir = Join-RegressionPath $gameDataDir "gog installers"
+        },
+        @{
+            Script = Join-RegressionPath $gameDataDir "extract_all_cds.ps1"
+            SourceDir = Join-RegressionPath $gameDataDir "CD images"
+        }
+    )
+
+    $ranAny = $false
+    foreach ($extractor in $extractors) {
+        if (-not (Test-Path -LiteralPath $extractor.SourceDir -PathType Container)) {
+            continue
+        }
+        $sourceCount = @(Get-ChildItem -LiteralPath $extractor.SourceDir -File -Recurse -ErrorAction SilentlyContinue).Count
+        if ($sourceCount -eq 0) {
+            continue
+        }
+
+        if (-not (Invoke-GameDataExtractionScript -ScriptPath $extractor.Script)) {
+            Write-Status "  WARN: $([System.IO.Path]::GetFileName($extractor.Script)) did not complete cleanly" "Yellow"
+        }
+        $ranAny = $true
+
+        Update-GameDataIndex | Out-Null
+        $script:GameDataIndex = $null
+        $idx = Read-GameDataIndex
+        if ($idx -and (Test-GameDataDepsResolvedByIndex -Deps $Deps -Index $idx)) {
+            return $true
+        }
+    }
+
+    return $ranAny
+}
+
 function Get-ScriptDeps {
     # Read a .json5 test script and return the _deps array from its _info element.
     # Returns array of dep objects ({file, sha256, target?}) or $null.
@@ -559,6 +655,19 @@ function Resolve-GameDataDeps {
     if (-not $idx) {
         Write-Status "FAIL: No game data index available" "Red"
         return $false
+    }
+
+    if (-not (Test-GameDataDepsResolvedByIndex -Deps $Deps -Index $idx)) {
+        Write-Status "Required game data is not indexed yet; checking local installers/images for extractable files" "Yellow"
+        Update-GameDataIndex | Out-Null
+        $idx = Read-GameDataIndex
+    }
+
+    if (-not (Test-GameDataDepsResolvedByIndex -Deps $Deps -Index $idx)) {
+        if (Try-ExtractLocalGameDataSources -Deps $Deps) {
+            $script:GameDataIndex = $null
+            $idx = Read-GameDataIndex
+        }
     }
 
     $defaultTarget = $script:DEFAULT_SET_DIR
@@ -1601,8 +1710,32 @@ function Start-MatchmakingServer {
     if (-not $serverBin -or -not (Test-Path $serverBin)) {
         Write-Status "Building matchmaking server..." "Yellow"
         Push-Location $serverDir
-        & cargo build --release 2>&1 | Out-Null
+        $buildOut = & cargo build --release 2>&1
+        $buildExitCode = $LASTEXITCODE
         Pop-Location
+        if ($buildExitCode -ne 0 -and ($buildOut -match "lock file version 4 requires" -or $buildOut -match "rustc [0-9.]+ is not supported")) {
+            $rustHelper = Join-RegressionPath $script:REPO_ROOT "android" "get_deps" "helpers" "get_rust.sh"
+            if (Test-Path -LiteralPath $rustHelper -PathType Leaf) {
+                Write-Status "Cargo is too old for server/Cargo.lock; installing/updating rustup stable..." "Yellow"
+                $bash = Get-Command bash -ErrorAction SilentlyContinue
+                if ($bash) {
+                    & $bash.Source $rustHelper | ForEach-Object { Write-Status "  $_" "DarkGray" }
+                    $cargoDir = Join-RegressionPath (Get-RegressionHomeDirectory) ".cargo" "bin"
+                    if (Test-Path -LiteralPath (Join-RegressionPath $cargoDir "cargo")) {
+                        $env:PATH = "$cargoDir$([System.IO.Path]::PathSeparator)$env:PATH"
+                    }
+                    Push-Location $serverDir
+                    $buildOut = & cargo build --release 2>&1
+                    $buildExitCode = $LASTEXITCODE
+                    Pop-Location
+                }
+            }
+        }
+        if ($buildExitCode -ne 0) {
+            Write-Status "FAIL: matchmaking server build failed" "Red"
+            $buildOut | Select-Object -Last 40 | ForEach-Object { Write-Status "  $_" "Red" }
+            return $null
+        }
         $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
     }
     if (-not $serverBin -or -not (Test-Path $serverBin)) {
