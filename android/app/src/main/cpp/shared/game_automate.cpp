@@ -58,6 +58,7 @@ extern "C" {
 #include "endlevel.h"
 #include "gameseq.h"
 #include "object.h"
+#include "collide.h"
 }
 
 #ifdef ANDROID
@@ -2439,6 +2440,14 @@ extern "C" void game_automate_tick(void)
 						break;
 					}
 				}
+			} else if (s.field == "damage_player") {
+				if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+					stop_script_fail("damage_player: game is not running");
+					break;
+				}
+				const double shields = std::stod(s.value);
+				const fix damage = (fix) (shields * F1_0);
+				apply_damage_to_player(ConsoleObject, ConsoleObject, damage, 0);
 			} else if (s.field == "merged_wall_snapshot") {
 				int request_mode = (int) strtol(s.value.c_str(), NULL, 10);
 

@@ -149,6 +149,133 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         return "openssl"
     }
 
+    function Test-RegressionTcpPortListening {
+        param(
+            [string]$Address = "127.0.0.1",
+            [Parameter(Mandatory)][int]$Port
+        )
+
+        $client = $null
+        try {
+            $client = [System.Net.Sockets.TcpClient]::new()
+            $connect = $client.BeginConnect($Address, $Port, $null, $null)
+            if (-not $connect.AsyncWaitHandle.WaitOne(500)) {
+                return $false
+            }
+            $client.EndConnect($connect)
+            return $true
+        } catch {
+            return $false
+        } finally {
+            if ($client) {
+                try { $client.Close() } catch {}
+            }
+        }
+    }
+
+    function Get-RegressionPortOwningProcessIds {
+        param(
+            [Parameter(Mandatory)][int]$Port,
+            [ValidateSet("TCP", "UDP")][string]$Protocol = "TCP"
+        )
+
+        $pids = @()
+        if (Test-RegressionWindowsHost) {
+            if ($Protocol -eq "TCP") {
+                $cmd = Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue
+                if ($cmd) {
+                    $pids += Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
+                        ForEach-Object { $_.OwningProcess }
+                }
+            } else {
+                $cmd = Get-Command Get-NetUDPEndpoint -ErrorAction SilentlyContinue
+                if ($cmd) {
+                    $pids += Get-NetUDPEndpoint -LocalPort $Port -ErrorAction SilentlyContinue |
+                        ForEach-Object { $_.OwningProcess }
+                }
+            }
+        } else {
+            $ss = Get-Command ss -ErrorAction SilentlyContinue
+            if ($ss) {
+                $stateFlag = if ($Protocol -eq "TCP") { "-ltnp" } else { "-lunp" }
+                $filter = "sport = :$Port"
+                $output = & $ss.Source -H $stateFlag $filter 2>$null
+                foreach ($line in $output) {
+                    foreach ($match in [regex]::Matches($line, 'pid=(\d+)')) {
+                        $pids += [int]$match.Groups[1].Value
+                    }
+                }
+            }
+
+            if ($pids.Count -eq 0) {
+                $lsof = Get-Command lsof -ErrorAction SilentlyContinue
+                if ($lsof) {
+                    $args = if ($Protocol -eq "TCP") {
+                        @("-tiTCP:$Port", "-sTCP:LISTEN")
+                    } else {
+                        @("-tiUDP:$Port")
+                    }
+                    $output = & $lsof.Source @args 2>$null
+                    foreach ($line in $output) {
+                        if ($line -match '^\d+$') {
+                            $pids += [int]$line
+                        }
+                    }
+                }
+            }
+        }
+
+        return @($pids | Where-Object { $_ -and $_ -ne $PID } | Select-Object -Unique)
+    }
+
+    function Stop-RegressionProcessesListeningOnPorts {
+        param(
+            [Parameter(Mandatory)][int[]]$Ports,
+            [int]$WaitSeconds = 10
+        )
+
+        $killedPids = @{}
+        foreach ($port in $Ports) {
+            foreach ($protocol in @("TCP", "UDP")) {
+                foreach ($ownerPid in (Get-RegressionPortOwningProcessIds -Port $port -Protocol $protocol)) {
+                    if ($killedPids.ContainsKey($ownerPid)) {
+                        continue
+                    }
+                    Write-Status "Killing existing $protocol process on port $port (PID $ownerPid)..."
+                    try {
+                        Stop-Process -Id $ownerPid -Force -ErrorAction SilentlyContinue
+                        $killedPids[$ownerPid] = $true
+                    } catch {}
+                }
+            }
+        }
+
+        if ($killedPids.Count -eq 0) {
+            return
+        }
+
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt $WaitSeconds) {
+            $busy = $false
+            foreach ($port in $Ports) {
+                if (Test-RegressionTcpPortListening -Port $port) {
+                    $busy = $true
+                    break
+                }
+                if ((Get-RegressionPortOwningProcessIds -Port $port -Protocol UDP).Count -gt 0) {
+                    $busy = $true
+                    break
+                }
+            }
+            if (-not $busy) {
+                return
+            }
+            Start-Sleep -Seconds 1
+        }
+
+        Write-Status "WARNING: One or more server ports are still in use after ${WaitSeconds}s" "Yellow"
+    }
+
     function Resolve-RegressionGradleWrapper {
         param([Parameter(Mandatory)][string]$AndroidDir)
 

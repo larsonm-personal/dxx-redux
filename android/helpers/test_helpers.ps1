@@ -1478,6 +1478,63 @@ function Get-SetupIntrospection {
 
 $script:EMULATOR_EXE = Resolve-RegressionAndroidSdkTool -DepBase $script:DEP_BASE -Subdir "emulator" -ToolName "emulator"
 
+function Get-ManagedAvdNames {
+    if (-not (Test-Path -LiteralPath $script:EMULATOR_EXE -PathType Leaf)) {
+        return @()
+    }
+
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $output = & $script:EMULATOR_EXE -list-avds 2>&1
+    $ErrorActionPreference = $previousErrorActionPreference
+
+    return @(
+        $output |
+            ForEach-Object { "$_".Trim() } |
+            Where-Object { $_ } |
+            Sort-Object -Unique
+    )
+}
+
+function Test-ManagedAvdExists {
+    param([Parameter(Mandatory)][string]$AvdName)
+
+    return (@(Get-ManagedAvdNames) -contains $AvdName)
+}
+
+function Ensure-ManagedAvdExists {
+    param([Parameter(Mandatory)][string]$AvdName)
+
+    if (Test-ManagedAvdExists -AvdName $AvdName) {
+        return $true
+    }
+
+    $createScript = Join-RegressionPath $script:REPO_ROOT "android" "get_deps" "helpers" "create_light_avds.ps1"
+    if (-not (Test-Path -LiteralPath $createScript -PathType Leaf)) {
+        Write-Status "FAIL: AVD '$AvdName' is missing and create_light_avds.ps1 was not found at $createScript" "Red"
+        return $false
+    }
+
+    Write-Status "AVD '$AvdName' is missing -- creating lightweight test AVDs..." "Yellow"
+    $pwsh = Get-RegressionCurrentPwshPath
+    & $pwsh -NoProfile -ExecutionPolicy Bypass -File $createScript |
+        ForEach-Object { Write-Status "  $_" "DarkGray" }
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Status "FAIL: create_light_avds.ps1 failed with exit code $LASTEXITCODE" "Red"
+        return $false
+    }
+
+    if (-not (Test-ManagedAvdExists -AvdName $AvdName)) {
+        $available = @(Get-ManagedAvdNames)
+        $availableText = if ($available.Count -gt 0) { $available -join ", " } else { "(none)" }
+        Write-Status "FAIL: AVD '$AvdName' still missing after creation. Available AVDs: $availableText" "Red"
+        return $false
+    }
+
+    return $true
+}
+
 function Get-ManagedEmulatorLaunchLogPaths {
     param([string]$AvdName)
 
@@ -1606,6 +1663,9 @@ function Start-ManagedEmulator {
 
     if (-not (Test-Path $script:EMULATOR_EXE)) {
         Write-Status "FAIL: emulator not found at $script:EMULATOR_EXE" "Red"
+        return $false
+    }
+    if (-not (Ensure-ManagedAvdExists -AvdName $AvdName)) {
         return $false
     }
     if (-not (Test-EmulatorAccelerationAvailable)) {

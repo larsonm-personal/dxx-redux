@@ -189,42 +189,7 @@ try {
     # Kill any existing server on the ports we need (9000, 8080, 9001).
     # run_all_tests.ps1 may have started its own server for the tier.
     $serverPorts = @(9000, 8080, 9001)
-    $killedPids = @{}
-    foreach ($port in $serverPorts) {
-        $conn = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue |
-            Select-Object -First 1
-        if ($conn -and -not $killedPids.ContainsKey($conn.OwningProcess)) {
-            Write-Status "Killing existing process on port $port (PID $($conn.OwningProcess))..."
-            Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
-            $killedPids[$conn.OwningProcess] = $true
-        }
-    }
-    # Also check UDP listeners (relay port 9001 is UDP)
-    foreach ($port in $serverPorts) {
-        $udp = Get-NetUDPEndpoint -LocalPort $port -ErrorAction SilentlyContinue |
-            Select-Object -First 1
-        if ($udp -and -not $killedPids.ContainsKey($udp.OwningProcess)) {
-            Write-Status "Killing UDP process on port $port (PID $($udp.OwningProcess))..."
-            Stop-Process -Id $udp.OwningProcess -Force -ErrorAction SilentlyContinue
-            $killedPids[$udp.OwningProcess] = $true
-        }
-    }
-    if ($killedPids.Count -gt 0) {
-        # Wait for ports to actually be free (TIME_WAIT can hold them)
-        $waitSw = [System.Diagnostics.Stopwatch]::StartNew()
-        while ($waitSw.Elapsed.TotalSeconds -lt 10) {
-            $stillBusy = $false
-            foreach ($port in $serverPorts) {
-                $tcp = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
-                if ($tcp) { $stillBusy = $true; break }
-            }
-            if (-not $stillBusy) { break }
-            Start-Sleep -Seconds 1
-        }
-        if ($stillBusy) {
-            Write-Status "WARNING: Ports still in use after 10s wait" "Yellow"
-        }
-    }
+    Stop-RegressionProcessesListeningOnPorts -Ports $serverPorts -WaitSeconds 10
 
     Write-Status "Starting matchmaking server..."
     $serverDir = Join-Path $REPO_ROOT "server"
@@ -287,8 +252,7 @@ try {
 
     # Wait for server to be ready (both WS and relay ports)
     $serverReady = Wait-ForCondition -Description "Server listening on port 9000" -TimeoutSec 15 -PollMs 1000 -Condition {
-        $conn = Get-NetTCPConnection -LocalPort 9000 -State Listen -ErrorAction SilentlyContinue
-        return $null -ne $conn
+        return Test-RegressionTcpPortListening -Port 9000
     }
     if (-not $serverReady) {
         Write-Status "FAIL: Server didn't start" "Red"

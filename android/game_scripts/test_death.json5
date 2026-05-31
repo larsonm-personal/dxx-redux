@@ -1,7 +1,7 @@
-// TEST: Death on a dangerous level (Insane difficulty)
-// Verifies player_dead introspection field by starting on a hostile level.
+// TEST: Death state via the normal engine damage path
+// Verifies player_dead introspection after launching a real level.
 //   D1: Level 11 of "First Strike" -- instant threat
-//   D2: Level 12 of "Counterstrike" -- mid-game with aggressive enemies
+//   D2: Level 24 of "Counterstrike" -- mid-game level that loads quickly
 //
 // Uses _info.vars for game-specific mission name, level number, and
 // level input keys. Steps with "when" are only run for that game.
@@ -82,7 +82,11 @@
     {"action": "assert", "expect": {"in_game": "true", "current_level_num": "${LEVEL}"}},
     {"action": "introspect"},
 
-    // Wait for death (generous timeout -- spawn kill time varies by run)
+    // Drive the normal damage/death path explicitly. Relying only on enemy
+    // placement made D2 level 24 flaky on slower/fresh emulator runs.
+    {"action": "set_debug", "field": "damage_player", "value": "250", "post_delay_ms": 100},
+
+    // Wait for death animation state
     {"action": "wait_for", "field": "player_dead", "value": "true", "timeout_ms": 60000},
     {"action": "assert", "expect": {"player_dead": "true"}},
     {"action": "introspect"},

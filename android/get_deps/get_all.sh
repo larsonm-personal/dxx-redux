@@ -121,7 +121,11 @@ run_step "Finalize licenses and platform packages" bash "$HELPER_DIR/finalize.sh
 run_step "Emulator and system image" bash "$HELPER_DIR/get_emulator.sh"
 
 if [ "$SKIP_AVD" -eq 0 ]; then
-    run_step "Create AVD" bash "$HELPER_DIR/create_avd.sh"
+    if command -v pwsh >/dev/null 2>&1; then
+        run_step "Create test AVDs" pwsh -NoProfile -ExecutionPolicy Bypass -File "$HELPER_DIR/create_light_avds.ps1"
+    else
+        run_step "Create AVD" bash "$HELPER_DIR/create_avd.sh"
+    fi
 fi
 
 run_step "clang-format" bash "$HELPER_DIR/get_clang_format.sh"

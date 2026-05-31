@@ -15,7 +15,7 @@
             4. Single-emulator tests (json5 automation + ps1 emulator tests)
             5. Extract regressions (single emulator + source import checks)
             6. Second emulator started, APK installed, game data pushed
-            7. Matchmaking server started for the dual-emulator tier
+            7. Matchmaking server started for dual-emulator tests that request it
             8. Two-emulator tests (multiplayer and LAN)
             9. Cleanup in reverse order
 
@@ -231,6 +231,7 @@ $manualTests = @(
 # Infrastructure requirement classification
 $twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery")
 $serverTests = @("test_bot_client")
+$tierServerManagedDualEmuTests = @()
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
@@ -253,6 +254,7 @@ $testTimeouts = @{
     "test_all_extracts"                   = $testAllExtractsTimeout
     "test_native_host_unit_tests"         = 1200
     "test_mp"                             = 240
+    "test_lan"                            = 240
     "test_server_integration"             = 600
     "test_validate_extract_regression_specs" = 60
 }
@@ -341,6 +343,7 @@ foreach ($t in $ps1Files) {
         Type = "ps1"
         Path = $t.FullName
         Requires = $req
+        NeedsTierServer = ($name -in $tierServerManagedDualEmuTests)
         TimeoutSeconds = $timeoutSeconds
         DemoRunMode = if ($baseName -eq "test_input_demo_regressions") {
             if ($name -eq "test_input_demo_regressions_graphics") { "graphics" } else { "headless" }
@@ -567,7 +570,8 @@ function Recover-SingleEmulatorEnvironment {
 function Recover-DualEmulatorEnvironment {
     param(
         [ref]$PrimarySerialRef,
-        [ref]$SecondarySerialRef
+        [ref]$SecondarySerialRef,
+        [switch]$EnsureServer
     )
 
     Write-Status "Dual-emulator recovery: forcing clean emulator recycle and reprovisioning app/data" "Yellow"
@@ -616,7 +620,7 @@ function Recover-DualEmulatorEnvironment {
     $PrimarySerialRef.Value = $primarySerial
     $SecondarySerialRef.Value = $secondarySerial
 
-    if (-not (Test-MatchmakingServer)) {
+    if ($EnsureServer -and -not (Test-MatchmakingServer)) {
         $script:autoServerProc = Start-MatchmakingServer
         if ($null -eq $script:autoServerProc) {
             Write-Status "Dual-emulator recovery failed: could not restart matchmaking server" "Red"
@@ -1234,6 +1238,7 @@ if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
 if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
     Write-Host ""
     Write-Host "== Tier 4: Dual-emulator tests ==" -ForegroundColor Cyan
+    $tier4NeedsServer = @($tierDualEmu | Where-Object { $_.NeedsTierServer }).Count -gt 0
 
     # Ensure first emulator is running (may already be from earlier tiers)
     if (-not (Test-SingleEmulator)) {
@@ -1254,13 +1259,14 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
         }
     }
 
-    # Ensure matchmaking server
-    $serverOk = $false
+    # Some dual-emulator tests own their server lifecycle; only provision a
+    # tier-wide server for tests that explicitly request one.
+    $serverOk = -not $tier4NeedsServer
     if ($emu2Ok) {
-        if (-not (Test-MatchmakingServer)) {
+        if ($tier4NeedsServer -and -not (Test-MatchmakingServer)) {
             $script:autoServerProc = Start-MatchmakingServer
             $serverOk = ($null -ne $script:autoServerProc)
-        } else {
+        } elseif ($tier4NeedsServer) {
             $serverOk = $true
         }
     }
@@ -1283,7 +1289,7 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
             $result = Invoke-SingleTest -Test $test
             if ($result.Status -ne "PASS") {
                 Write-Status "Tier 4 recovery: recycling dual-emulator environment after $($result.Name)" "Yellow"
-                if (-not (Recover-DualEmulatorEnvironment -PrimarySerialRef ([ref]$emu1Serial) -SecondarySerialRef ([ref]$emu2Serial))) {
+                if (-not (Recover-DualEmulatorEnvironment -PrimarySerialRef ([ref]$emu1Serial) -SecondarySerialRef ([ref]$emu2Serial) -EnsureServer:$tier4NeedsServer)) {
                     Write-Status "Tier 4 recovery failed; stopping remaining dual-emulator tests" "Red"
                     break
                 }
@@ -1382,7 +1388,7 @@ if ($script:startedDocker) {
 }
 
 # Note: we do NOT stop emulators or matchmaking servers -- they're useful for
-# by-hand testing after the run. Each MP test kills/restarts the server as
-# needed in its own Phase 1.
+# by-hand testing after the run. Tests that own a server lifecycle clean it up
+# themselves.
 
 if ($failCount -gt 0) { exit 1 } else { exit 0 }

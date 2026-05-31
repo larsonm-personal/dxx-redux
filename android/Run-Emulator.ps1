@@ -163,7 +163,7 @@ if ($Rebuild) {
         Get-Process -Name "qemu-system*", "emulator*" -ErrorAction SilentlyContinue | Stop-Process -Force
         Start-Sleep -Seconds 2
     }
-    $createScript = Join-Path $ScriptDir "get_deps\create_light_avds.ps1"
+    $createScript = Join-Path $ScriptDir "get_deps\helpers\create_light_avds.ps1"
     if (Test-Path $createScript) {
         & $createScript -Force
         if ($LASTEXITCODE -ne 0) {
