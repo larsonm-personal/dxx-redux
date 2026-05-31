@@ -792,6 +792,18 @@ try {
         }
     }
 
+} catch {
+    Write-Status "EXCEPTION: $($_.Exception.Message)" "Red"
+    $where = $_.InvocationInfo
+    if ($where) {
+        Write-Status "  at $($where.ScriptName):$($where.ScriptLineNumber)" "Red"
+        if ($where.Line) {
+            Write-Status "  line: $($where.Line.Trim())" "Red"
+        }
+    }
+    if ($_.ScriptStackTrace) {
+        Write-Status "  stack: $($_.ScriptStackTrace)" "Gray"
+    }
 } finally {
     if (-not $testPassed) {
         Cleanup

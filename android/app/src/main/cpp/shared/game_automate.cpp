@@ -94,6 +94,10 @@ static void automation_enter_launcher(void)
 #define SCREEN_MOVIE 99
 #endif
 
+#ifndef ANDROID_TOUCH_AXIS_FLAG
+#define ANDROID_TOUCH_AXIS_FLAG 0x80
+#endif
+
 /* Automap_active is defined in automap.c; we just need the extern. */
 extern "C" int Automap_active;
 extern "C" int Current_level_num;
@@ -317,6 +321,7 @@ struct auto_step {
 	bool optional = false;              /* STEP_SELECT: skip instead of fail on timeout */
 	int axis_id = -1;                   /* STEP_SEND_AXIS: axis number (0-5) */
 	float axis_value = 0.0f;            /* STEP_SEND_AXIS: value (-1.0 to 1.0) */
+	bool axis_touch_source = false;     /* STEP_SEND_AXIS: mark as touch/virtual source */
 	int button_id = -1;                 /* STEP_SEND_BUTTON: button index */
 	int button_held = 0;                /* STEP_SEND_BUTTON: 1 = hold (no release) */
 	int button_pressed = 1;             /* STEP_SEND_BUTTON: 0 = release only */
@@ -354,6 +359,7 @@ static int g_select_phase = 0; /* 0=init, 1=navigating, 2=enter sent */
 static int g_select_delta = 0; /* remaining navigation steps (+down, -up) */
 static int g_held_axis_active[8] = { 0 };
 static float g_held_axis_value[8] = { 0.0f };
+static int g_held_axis_touch_source[8] = { 0 };
 
 static char g_automate_dir[512] = "";
 static char g_pending_script[512] = "";
@@ -618,7 +624,7 @@ static void inject_key_combo(const std::string &modifier, const std::string &key
 
 static int g_inject_axis_logged; /* suppress repeated logs for re-injection */
 
-static void inject_axis(int axis, float value)
+static void inject_axis(int axis, float value, bool touch_source)
 {
 	/* Clamp to SDL range: -32768..32767 */
 	int ival = (int) (value * 32767.0f);
@@ -629,11 +635,15 @@ static void inject_axis(int axis, float value)
 	memset(&ev, 0, sizeof(ev));
 	ev.type = SDL_JOYAXISMOTION;
 	ev.jaxis.which = 0;
+#ifdef ANDROID
+	ev.jaxis.axis = (Uint8) (axis | (touch_source ? ANDROID_TOUCH_AXIS_FLAG : 0));
+#else
 	ev.jaxis.axis = (Uint8) axis;
+#endif
 	ev.jaxis.value = (Sint16) ival;
 	SDL_PushEvent(&ev);
 	if (!g_inject_axis_logged) {
-		LOGI("Injecting axis %d = %.3f (raw %d)", axis, value, ival);
+		LOGI("Injecting axis %d = %.3f (raw %d, touch=%d)", axis, value, ival, touch_source ? 1 : 0);
 		g_inject_axis_logged = 1;
 	}
 }
@@ -645,10 +655,11 @@ static void clear_held_axes(void)
 	for (axis = 0; axis < 8; ++axis) {
 		g_held_axis_active[axis] = 0;
 		g_held_axis_value[axis] = 0.0f;
+		g_held_axis_touch_source[axis] = 0;
 	}
 }
 
-static void set_held_axis(int axis, float value)
+static void set_held_axis(int axis, float value, bool touch_source)
 {
 	if (axis < 0 || axis >= 8)
 		return;
@@ -656,9 +667,11 @@ static void set_held_axis(int axis, float value)
 	if (value > -0.0001f && value < 0.0001f) {
 		g_held_axis_active[axis] = 0;
 		g_held_axis_value[axis] = 0.0f;
+		g_held_axis_touch_source[axis] = 0;
 	} else {
 		g_held_axis_active[axis] = 1;
 		g_held_axis_value[axis] = value;
+		g_held_axis_touch_source[axis] = touch_source ? 1 : 0;
 	}
 }
 
@@ -668,7 +681,7 @@ static void inject_held_axes(void)
 
 	for (axis = 0; axis < 8; ++axis)
 		if (g_held_axis_active[axis])
-			inject_axis(axis, g_held_axis_value[axis]);
+			inject_axis(axis, g_held_axis_value[axis], g_held_axis_touch_source[axis] != 0);
 }
 
 /* -- Button injection ------------------------------------------------- */
@@ -1421,6 +1434,7 @@ static int parse_script(const char *json_text)
 			s.optional = step_json.value("optional", false);
 			s.axis_id = step_json.value("axis", -1);
 			s.axis_value = step_json.value("axis_value", 0.0f);
+			s.axis_touch_source = step_json.value("touch_source", false);
 			s.button_id = step_json.value("button", -1);
 			s.button_held = step_json.value("held", 0);
 			s.button_pressed = step_json.value("pressed", 1);
@@ -1994,8 +2008,8 @@ extern "C" void game_automate_tick(void)
 
 		case STEP_SEND_AXIS:
 			if (g_key_phase == 0 && s.axis_id >= 0 && s.axis_id < 8) {
-				set_held_axis(s.axis_id, s.axis_value);
-				inject_axis(s.axis_id, s.axis_value);
+				set_held_axis(s.axis_id, s.axis_value, s.axis_touch_source);
+				inject_axis(s.axis_id, s.axis_value, s.axis_touch_source);
 				g_key_phase = 1;
 				g_step_start = now;
 			} else if (g_key_phase == 1) {

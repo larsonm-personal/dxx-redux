@@ -243,36 +243,38 @@
 
     // -- Phase 5: Virtual axis tests (Bank=6, Slide U/D=7) --
     // These axes are used by gyro "roll" mode. They are registered
-    // in joy.c as virtual axes with no physical D-pad buttons.
+    // in joy.c as virtual touch axes with no physical D-pad buttons,
+    // so mark the injected events as touch-sourced to use the same
+    // zero-deadzone path as runtime touch/gyro input.
 
     // 5a: Axis 6 (Bank) should cause banking
     {"action": "log", "message": "Phase 5a: Sending axis 6 (Bank L/R) = 0.5"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "post_delay_ms": 300},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "bank_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 5a: PASS -- axis 6 drives banking"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "post_delay_ms": 100},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 100},
 
     // 5b: Axis 7 (Slide U/D) should cause vertical thrust
     {"action": "log", "message": "Phase 5b: Sending axis 7 (Slide U/D) = 0.5"},
-    {"action": "send_axis", "axis": 7, "axis_value": 0.5, "post_delay_ms": 300},
+    {"action": "send_axis", "axis": 7, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "slide_ud_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 5b: PASS -- axis 7 drives slide U/D"},
-    {"action": "send_axis", "axis": 7, "axis_value": 0.0, "post_delay_ms": 100},
+    {"action": "send_axis", "axis": 7, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 100},
 
     // 5c: Axis 6 should NOT drive heading or pitch
     {"action": "log", "message": "Phase 5c: Verify axis 6 does NOT drive heading or pitch"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "post_delay_ms": 300},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "heading_time": "0",
         "pitch_time":   "0",
         "bank_time":    {"ne": 0}
     }},
     {"action": "log", "message": "Phase 5c: PASS -- axis 6 only drives bank"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "post_delay_ms": 100},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 100},
 
     // -- Phase 6: Trigger analog axis tests (LT=4, RT=5) --
     // With the AXIS_CONTROLS addition of LT/RT, the controller config

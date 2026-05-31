@@ -237,7 +237,7 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         $killedPids = @{}
         foreach ($port in $Ports) {
             foreach ($protocol in @("TCP", "UDP")) {
-                foreach ($ownerPid in (Get-RegressionPortOwningProcessIds -Port $port -Protocol $protocol)) {
+                foreach ($ownerPid in @(Get-RegressionPortOwningProcessIds -Port $port -Protocol $protocol)) {
                     if ($killedPids.ContainsKey($ownerPid)) {
                         continue
                     }
@@ -262,7 +262,8 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
                     $busy = $true
                     break
                 }
-                if ((Get-RegressionPortOwningProcessIds -Port $port -Protocol UDP).Count -gt 0) {
+                $udpOwners = @(Get-RegressionPortOwningProcessIds -Port $port -Protocol UDP)
+                if ($udpOwners.Count -gt 0) {
                     $busy = $true
                     break
                 }
