@@ -249,6 +249,7 @@ $testTimeouts = @{
     "test_input_demo_regressions"         = 900
     "test_input_demo_regressions_graphics" = 900
     "test_saf_archiver"                   = 360
+    "test_saf_redbook"                    = 420
     "test_all_extracts"                   = $testAllExtractsTimeout
     "test_native_host_unit_tests"         = 1200
     "test_mp"                             = 240
@@ -278,12 +279,30 @@ $noInfraTests = @(
 
 $allTests = @()
 $nonStandaloneSkipped = @()
+$testsDir = Join-Path $scriptDir "tests"
+$ps1Files = @(Get-ChildItem -Path $testsDir -Filter "test_*.ps1" -File -ErrorAction SilentlyContinue | Sort-Object Name)
+$ps1TestNames = @{}
+foreach ($ps1File in $ps1Files) {
+    $ps1TestNames[$ps1File.BaseName] = $true
+}
+$supportScriptOwners = @{
+    "test_extract_regression_template" = "test_extract"
+    "test_lan_mp" = "test_lan"
+}
 
 # json5 game-automation scripts (run via run_test.ps1)
 $gameScriptsDir = Join-Path $scriptDir "game_scripts"
 $json5Files = @(Get-ChildItem -Path $gameScriptsDir -Filter "test_*.json5" -File -ErrorAction SilentlyContinue | Sort-Object Name)
 foreach ($t in $json5Files) {
     if (-not (Get-ScriptStandalone -ScriptPath $t.FullName)) {
+        $owner = if ($supportScriptOwners.ContainsKey($t.BaseName)) {
+            $supportScriptOwners[$t.BaseName]
+        } else {
+            $t.BaseName
+        }
+        if ($ps1TestNames.ContainsKey($owner)) {
+            continue
+        }
         $nonStandaloneSkipped += @{ Name = $t.BaseName; Reason = "script _standalone=false"; Type = "json5" }
         continue  # skip template scripts that need a caller
     }
@@ -299,8 +318,6 @@ foreach ($t in $json5Files) {
 }
 
 # ps1 integration tests
-$testsDir = Join-Path $scriptDir "tests"
-$ps1Files = @(Get-ChildItem -Path $testsDir -Filter "test_*.ps1" -File -ErrorAction SilentlyContinue | Sort-Object Name)
 foreach ($t in $ps1Files) {
     $name = $t.BaseName
     $baseName = Get-TestBaseName -TestName $name
