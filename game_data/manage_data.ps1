@@ -29,6 +29,8 @@ $MusicTestRoots = @(
     "game_data/music/D2 redbook mp3 rips/"
 )
 $ExcludedPathParts = @("extracted", "data_tracks")
+$RegressionDemoRoot = Join-Path $RepoRoot "android\regression_demos"
+$RegressionDemoExportSuffixes = @(".dximdemo", ".dem", ".rngtrace.jsonl")
 
 function ConvertTo-RepoRelativePath {
     param([string]$Path)
@@ -102,6 +104,23 @@ function Get-TestDataKind {
 function Get-TestDataFiles {
     Get-ChildItem -LiteralPath $ScriptDir -File -Recurse -Force |
         Where-Object { Test-SourceDataFile $_ } |
+        Sort-Object { ConvertTo-RepoRelativePath $_.FullName }
+}
+
+function Get-RegressionDemoExportFiles {
+    if (-not (Test-Path -LiteralPath $RegressionDemoRoot -PathType Container)) {
+        return @()
+    }
+
+    Get-ChildItem -LiteralPath $RegressionDemoRoot -File -Recurse -Force |
+        Where-Object {
+            foreach ($suffix in $RegressionDemoExportSuffixes) {
+                if ($_.Name.EndsWith($suffix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                    return $true
+                }
+            }
+            return $false
+        } |
         Sort-Object { ConvertTo-RepoRelativePath $_.FullName }
 }
 
@@ -235,6 +254,8 @@ function Compare-TestDataManifest {
 function Export-TestDataZip {
     $manifest = Read-TestDataManifest
     $manifestFiles = @($manifest.files)
+    $regressionDemoFiles = @(Get-RegressionDemoExportFiles)
+    $totalExportFiles = $manifestFiles.Count + $regressionDemoFiles.Count
     $zipFullPath = [System.IO.Path]::GetFullPath($ZipPath)
     $zipDir = Split-Path $zipFullPath
     if ($zipDir -and -not (Test-Path -LiteralPath $zipDir)) {
@@ -248,6 +269,7 @@ function Export-TestDataZip {
     $zip = [System.IO.Compression.ZipFile]::Open($zipFullPath, [System.IO.Compression.ZipArchiveMode]::Create)
     try {
         $index = 0
+        $exportedPaths = @{}
         foreach ($entry in $manifestFiles) {
             $index++
             $fullPath = ConvertTo-FullPath $entry.path
@@ -262,18 +284,37 @@ function Export-TestDataZip {
             if ($hash -ne $entry.sha256) {
                 throw "Cannot export file with hash mismatch: $($entry.path)"
             }
-            Write-Host "  [$index/$($manifestFiles.Count)] $($entry.path)"
+            if ($exportedPaths.ContainsKey($entry.path)) {
+                throw "Duplicate export path: $($entry.path)"
+            }
+            $exportedPaths[$entry.path] = $true
+            Write-Host "  [$index/$totalExportFiles] $($entry.path)"
             [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
                 $zip,
                 $fullPath,
                 $entry.path,
                 [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
         }
+
+        foreach ($file in $regressionDemoFiles) {
+            $index++
+            $relative = ConvertTo-RepoRelativePath $file.FullName
+            if ($exportedPaths.ContainsKey($relative)) {
+                throw "Duplicate export path: $relative"
+            }
+            $exportedPaths[$relative] = $true
+            Write-Host "  [$index/$totalExportFiles] $relative"
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $zip,
+                $file.FullName,
+                $relative,
+                [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        }
     } finally {
         $zip.Dispose()
     }
 
-    Write-Host "Exported $($manifestFiles.Count) files to $zipFullPath"
+    Write-Host "Exported $totalExportFiles files to $zipFullPath"
 }
 
 function Show-Menu {

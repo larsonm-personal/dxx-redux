@@ -59,5 +59,13 @@
   ],
   "audio_tracks": 8,
   "total_extracted": 22,
-  "import_mode": "setup_cd"
+  "import_mode": "setup_cd",
+  "last_test_result": {
+    "status": "pass",
+    "failure_step": "",
+    "level_reached": "Ahayweh Gate",
+    "files_verified": 5,
+    "classification_confirmed": true,
+    "test_mode": "full"
+  }
 }
