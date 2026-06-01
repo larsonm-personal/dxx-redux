@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -102,7 +103,10 @@ private fun ServerBrowserContent(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    val initialFocus = remember { FocusRequester() }
+    val connectFocus = remember { FocusRequester() }
+    val cancelFocus = remember { FocusRequester() }
+    val refreshFocus = remember { FocusRequester() }
+    val lanFocus = remember { FocusRequester() }
     val recentUrls = remember { mutableStateOf(RecentAddressPrefs.SERVER_URLS.load(context)) }
     var serverUrl by remember { mutableStateOf(recentUrls.value.firstOrNull() ?: state.serverUrl) }
     var callsign by remember { mutableStateOf(state.callsign) }
@@ -115,8 +119,14 @@ private fun ServerBrowserContent(
     val resumeRecord = remember { MultiplayerResumePrefs.load(context) }
     val activeGames = state.serverStatus?.activeGameList.orEmpty()
     val focusTarget = multiplayerBrowserInitialFocusTarget(state.status)
+    val initialFocus =
+        when (focusTarget) {
+            MultiplayerBrowserInitialFocusTarget.CONNECT -> connectFocus
+            MultiplayerBrowserInitialFocusTarget.CANCEL_CONNECT -> cancelFocus
+            MultiplayerBrowserInitialFocusTarget.REFRESH_LOBBIES -> refreshFocus
+        }
 
-    RequestControllerInitialFocus(initialFocus, focusTarget)
+    RequestControllerInitialFocus(initialFocus, focusTarget, revealFocusOnRequest = false)
     ControllerTextEntryBackHandler(textEntryActive, initialFocus) { textEntryActive = it }
 
     // Auto-refresh lobby list every 5 seconds while connected
@@ -184,6 +194,7 @@ private fun ServerBrowserContent(
         modifier =
             Modifier
                 .fillMaxSize()
+                .showControllerFocusOnDpad()
                 .safeDrawingPadding()
                 .padding(16.dp),
     ) {
@@ -301,7 +312,11 @@ private fun ServerBrowserContent(
                             MatchmakingService.connect(serverUrl, callsign)
                         },
                         enabled = !isConnecting,
-                        modifier = Modifier.weight(1f),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .focusRequester(connectFocus)
+                                .focusProperties { right = lanFocus },
                     ) {
                         Text("Connect")
                     }
@@ -310,7 +325,7 @@ private fun ServerBrowserContent(
                             onClick = { MatchmakingService.disconnect() },
                             modifier =
                                 if (focusTarget == MultiplayerBrowserInitialFocusTarget.CANCEL_CONNECT) {
-                                    Modifier.focusRequester(initialFocus)
+                                    Modifier.focusRequester(cancelFocus)
                                 } else {
                                     Modifier
                                 },
@@ -326,11 +341,9 @@ private fun ServerBrowserContent(
                         },
                         enabled = !isConnecting,
                         modifier =
-                            if (focusTarget == MultiplayerBrowserInitialFocusTarget.LAN) {
-                                Modifier.focusRequester(initialFocus)
-                            } else {
-                                Modifier
-                            },
+                            Modifier
+                                .focusRequester(lanFocus)
+                                .focusProperties { left = connectFocus },
                     ) {
                         Text("LAN")
                     }
@@ -359,6 +372,10 @@ private fun ServerBrowserContent(
                             MatchmakingService.connect(serverUrl, callsign)
                         },
                         enabled = !isConnecting,
+                        modifier =
+                            Modifier
+                                .focusRequester(connectFocus)
+                                .focusProperties { right = lanFocus },
                     ) {
                         Text("Connect")
                     }
@@ -367,7 +384,7 @@ private fun ServerBrowserContent(
                             onClick = { MatchmakingService.disconnect() },
                             modifier =
                                 if (focusTarget == MultiplayerBrowserInitialFocusTarget.CANCEL_CONNECT) {
-                                    Modifier.focusRequester(initialFocus)
+                                    Modifier.focusRequester(cancelFocus)
                                 } else {
                                     Modifier
                                 },
@@ -400,11 +417,9 @@ private fun ServerBrowserContent(
                         },
                         enabled = !isConnecting,
                         modifier =
-                            if (focusTarget == MultiplayerBrowserInitialFocusTarget.LAN) {
-                                Modifier.focusRequester(initialFocus)
-                            } else {
-                                Modifier
-                            },
+                            Modifier
+                                .focusRequester(lanFocus)
+                                .focusProperties { left = connectFocus },
                     ) {
                         Text("LAN")
                     }
@@ -420,7 +435,7 @@ private fun ServerBrowserContent(
                     onClick = { MatchmakingService.requestLobbyList() },
                     modifier =
                         if (focusTarget == MultiplayerBrowserInitialFocusTarget.REFRESH_LOBBIES) {
-                            Modifier.focusRequester(initialFocus)
+                            Modifier.focusRequester(refreshFocus)
                         } else {
                             Modifier
                         },
@@ -1048,11 +1063,12 @@ private fun FriendsContent(
     onBack: () -> Unit,
 ) {
     val friendsFocus = remember { FocusRequester() }
-    RequestControllerInitialFocus(friendsFocus)
+    RequestControllerInitialFocus(friendsFocus, revealFocusOnRequest = false)
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
+                .showControllerFocusOnDpad()
                 .safeDrawingPadding()
                 .padding(16.dp),
     ) {

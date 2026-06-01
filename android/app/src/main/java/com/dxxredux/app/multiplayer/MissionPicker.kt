@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -161,19 +162,18 @@ fun MissionPickerField(
 
     var showPicker by remember { mutableStateOf(false) }
 
-    OutlinedTextField(
-        value = displayText,
-        onValueChange = {},
-        readOnly = true,
-        label = { Text("Mission") },
-        placeholder = { Text("Tap to select") },
-        singleLine = true,
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable { showPicker = true },
-        enabled = false, // makes the whole field tappable via the clickable modifier
-    )
+    OutlinedButton(
+        onClick = { showPicker = true },
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text("Mission", style = MaterialTheme.typography.labelSmall)
+            Text(displayText.ifBlank { "Tap to select" }, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
 
     if (showPicker) {
         MissionPickerDialog(

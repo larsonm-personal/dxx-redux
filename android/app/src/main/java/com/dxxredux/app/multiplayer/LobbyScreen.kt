@@ -42,7 +42,7 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
     val lobby = state.currentLobby ?: return
     val myId = state.playerId
     val lobbyFocus = remember { FocusRequester() }
-    RequestControllerInitialFocus(lobbyFocus)
+    RequestControllerInitialFocus(lobbyFocus, revealFocusOnRequest = false)
 
     // Launch the game when gameLaunchInfo becomes available
     val launchInfo = state.gameLaunchInfo
@@ -56,6 +56,7 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
         modifier =
             Modifier
                 .fillMaxSize()
+                .showControllerFocusOnDpad()
                 .safeDrawingPadding()
                 .padding(16.dp),
     ) {
@@ -310,10 +311,19 @@ private fun CoopSaveOffer(
     // Initialize from existing restore slot (written by CreateGameDialog)
     val existingSlot = remember(game) { readCoopRestoreSlot(filesDir, game) }
     var useRestore by remember { mutableStateOf(existingSlot != null) }
+    var lastActivatedFocusTarget by remember { mutableStateOf<CoopSaveFocusTarget?>(null) }
+    val restoreFocus = remember { FocusRequester() }
+    val freshFocus = remember { FocusRequester() }
 
     // When the best match changes (players join/leave), re-select if no slot was set
     LaunchedEffect(bestMatch) {
         if (existingSlot == null) useRestore = true
+    }
+    LaunchedEffect(useRestore, lastActivatedFocusTarget) {
+        when (lastActivatedFocusTarget ?: return@LaunchedEffect) {
+            CoopSaveFocusTarget.RESTORE -> restoreFocus.requestFocusSafely()
+            CoopSaveFocusTarget.START_FRESH -> freshFocus.requestFocusSafely()
+        }
     }
 
     // Write/delete coop_restore_slot.txt based on current selection
@@ -344,19 +354,43 @@ private fun CoopSaveOffer(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (useRestore) {
-                    Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                    Button(
+                        onClick = { lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .focusRequester(restoreFocus),
+                    ) {
                         Text("Restore", fontSize = 12.sp)
                     }
                     OutlinedButton(
-                        onClick = { useRestore = false },
-                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH
+                            useRestore = false
+                        },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .focusRequester(freshFocus),
                     ) { Text("Start fresh", fontSize = 12.sp) }
                 } else {
                     OutlinedButton(
-                        onClick = { useRestore = true },
-                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE
+                            useRestore = true
+                        },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .focusRequester(restoreFocus),
                     ) { Text("Restore", fontSize = 12.sp) }
-                    Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                    Button(
+                        onClick = { lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .focusRequester(freshFocus),
+                    ) {
                         Text("Start fresh", fontSize = 12.sp)
                     }
                 }

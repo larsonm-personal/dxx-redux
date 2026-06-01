@@ -11,12 +11,17 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import kotlinx.coroutines.delay
 
 internal enum class MultiplayerBrowserInitialFocusTarget {
-    LAN,
+    CONNECT,
     CANCEL_CONNECT,
     REFRESH_LOBBIES,
 }
@@ -28,7 +33,7 @@ internal enum class LanDiscoveryInitialFocusTarget {
 
 internal fun multiplayerBrowserInitialFocusTarget(status: ConnectionStatus): MultiplayerBrowserInitialFocusTarget =
     when (status) {
-        ConnectionStatus.DISCONNECTED -> MultiplayerBrowserInitialFocusTarget.LAN
+        ConnectionStatus.DISCONNECTED -> MultiplayerBrowserInitialFocusTarget.CONNECT
 
         ConnectionStatus.CONNECTING,
         ConnectionStatus.AUTHENTICATING,
@@ -47,20 +52,41 @@ internal fun lanDiscoveryInitialFocusTarget(permissionGranted: Boolean): LanDisc
 
 internal fun controllerBackShouldExitTextEntry(textEntryActive: Boolean): Boolean = textEntryActive
 
+internal enum class CoopSaveFocusTarget {
+    RESTORE,
+    START_FRESH,
+}
+
+internal fun selectedCoopSaveFocusTarget(useRestore: Boolean): CoopSaveFocusTarget =
+    if (useRestore) CoopSaveFocusTarget.RESTORE else CoopSaveFocusTarget.START_FRESH
+
 @Composable
 internal fun RequestControllerInitialFocus(
     focusRequester: FocusRequester,
     key: Any? = Unit,
+    revealFocusOnRequest: Boolean = true,
 ) {
     val inputModeManager = LocalInputModeManager.current
-    LaunchedEffect(focusRequester, key) {
-        inputModeManager.requestInputMode(InputMode.Keyboard)
+    LaunchedEffect(focusRequester, key, revealFocusOnRequest) {
+        inputModeManager.requestInputMode(if (revealFocusOnRequest) InputMode.Keyboard else InputMode.Touch)
         withFrameNanos { }
         focusRequester.requestFocusSafely()
+        if (!revealFocusOnRequest) return@LaunchedEffect
         delay(300)
         inputModeManager.requestInputMode(InputMode.Keyboard)
         withFrameNanos { }
         focusRequester.requestFocusSafely()
+    }
+}
+
+@Composable
+internal fun Modifier.showControllerFocusOnDpad(): Modifier {
+    val inputModeManager = LocalInputModeManager.current
+    return onPreviewKeyEvent {
+        if (it.type == KeyEventType.KeyDown && it.key.isControllerFocusRevealKey()) {
+            inputModeManager.requestInputMode(InputMode.Keyboard)
+        }
+        false
     }
 }
 
@@ -124,6 +150,12 @@ private fun endControllerTextEntry(
     fallbackFocusRequester.requestFocusSafely()
 }
 
-private fun FocusRequester.requestFocusSafely() {
+internal fun FocusRequester.requestFocusSafely() {
     runCatching { requestFocus() }
 }
+
+private fun Key.isControllerFocusRevealKey(): Boolean =
+    this == Key.DirectionLeft ||
+        this == Key.DirectionRight ||
+        this == Key.DirectionUp ||
+        this == Key.DirectionDown

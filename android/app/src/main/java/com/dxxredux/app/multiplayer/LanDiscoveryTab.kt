@@ -136,7 +136,7 @@ private fun LanJoinedLobbyView(
     val info = joinedLobby ?: return
     val readyFocus = remember { FocusRequester() }
 
-    RequestControllerInitialFocus(readyFocus)
+    RequestControllerInitialFocus(readyFocus, revealFocusOnRequest = false)
 
     // Consume LAN launch events
     LaunchedEffect(lanLaunchEvent) {
@@ -145,7 +145,12 @@ private fun LanJoinedLobbyView(
         onLaunchGame(launchInfo)
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .showControllerFocusOnDpad(),
+    ) {
         // Header
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("LAN Lobby", style = MaterialTheme.typography.titleSmall)
@@ -297,7 +302,7 @@ private fun LanDiscoveryView(
     val permissionActionHasInitialFocus = focusTarget == LanDiscoveryInitialFocusTarget.PERMISSION_ACTION
     val lanActionHasInitialFocus = focusTarget == LanDiscoveryInitialFocusTarget.PRIMARY_ACTION
 
-    RequestControllerInitialFocus(actionFocus, listOf(focusTarget, isHosting, isDiscovering))
+    RequestControllerInitialFocus(actionFocus, focusTarget, revealFocusOnRequest = false)
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
@@ -399,7 +404,10 @@ private fun LanDiscoveryView(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .showControllerFocusOnDpad(),
     ) {
         if (!isLandscape && !isHosting) {
             item {
@@ -948,8 +956,17 @@ private fun LanCoopSaveOffer(
         } ?: return
 
     var useRestore by remember { mutableStateOf(true) }
+    var lastActivatedFocusTarget by remember { mutableStateOf<CoopSaveFocusTarget?>(null) }
+    val restoreFocus = remember { FocusRequester() }
+    val freshFocus = remember { FocusRequester() }
 
     LaunchedEffect(bestMatch) { useRestore = true }
+    LaunchedEffect(useRestore, lastActivatedFocusTarget) {
+        when (lastActivatedFocusTarget ?: return@LaunchedEffect) {
+            CoopSaveFocusTarget.RESTORE -> restoreFocus.requestFocusSafely()
+            CoopSaveFocusTarget.START_FRESH -> freshFocus.requestFocusSafely()
+        }
+    }
 
     LaunchedEffect(useRestore, bestMatch) {
         writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
@@ -972,19 +989,43 @@ private fun LanCoopSaveOffer(
             Text("Save found: $label", style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (useRestore) {
-                    Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                    Button(
+                        onClick = { lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .focusRequester(restoreFocus),
+                    ) {
                         Text("Restore", fontSize = 12.sp)
                     }
                     OutlinedButton(
-                        onClick = { useRestore = false },
-                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH
+                            useRestore = false
+                        },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .focusRequester(freshFocus),
                     ) { Text("Start fresh", fontSize = 12.sp) }
                 } else {
                     OutlinedButton(
-                        onClick = { useRestore = true },
-                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE
+                            useRestore = true
+                        },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .focusRequester(restoreFocus),
                     ) { Text("Restore", fontSize = 12.sp) }
-                    Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                    Button(
+                        onClick = { lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .focusRequester(freshFocus),
+                    ) {
                         Text("Start fresh", fontSize = 12.sp)
                     }
                 }

@@ -79,7 +79,7 @@ internal fun CreateGameDialog(
     val dismissOrEndTextEntry =
         rememberControllerTextEntryDismiss(textEntryActive, dialogFocus, { textEntryActive = it }, onDismiss)
 
-    RequestControllerInitialFocus(dialogFocus)
+    RequestControllerInitialFocus(dialogFocus, revealFocusOnRequest = false)
 
     // Coop auto-saves and progress
     val coopSaves =
@@ -136,7 +136,10 @@ internal fun CreateGameDialog(
             Box {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.verticalScroll(scrollState),
+                    modifier =
+                        Modifier
+                            .showControllerFocusOnDpad()
+                            .verticalScroll(scrollState),
                 ) {
                     // Game selector
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

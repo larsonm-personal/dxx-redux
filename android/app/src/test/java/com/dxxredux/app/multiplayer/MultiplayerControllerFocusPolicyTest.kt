@@ -7,9 +7,9 @@ import org.junit.Test
 
 class MultiplayerControllerFocusPolicyTest {
     @Test
-    fun disconnectedBrowserStartsOnLan() {
+    fun disconnectedBrowserStartsOnConnect() {
         assertEquals(
-            MultiplayerBrowserInitialFocusTarget.LAN,
+            MultiplayerBrowserInitialFocusTarget.CONNECT,
             multiplayerBrowserInitialFocusTarget(ConnectionStatus.DISCONNECTED),
         )
     }
@@ -52,5 +52,11 @@ class MultiplayerControllerFocusPolicyTest {
     fun controllerBackConsumesOnlyActiveTextEntry() {
         assertTrue(controllerBackShouldExitTextEntry(textEntryActive = true))
         assertFalse(controllerBackShouldExitTextEntry(textEntryActive = false))
+    }
+
+    @Test
+    fun coopSaveFocusTracksSelectedControl() {
+        assertEquals(CoopSaveFocusTarget.RESTORE, selectedCoopSaveFocusTarget(useRestore = true))
+        assertEquals(CoopSaveFocusTarget.START_FRESH, selectedCoopSaveFocusTarget(useRestore = false))
     }
 }
