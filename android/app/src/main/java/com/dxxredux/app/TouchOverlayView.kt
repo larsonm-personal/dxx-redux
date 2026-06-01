@@ -216,6 +216,7 @@ class TouchOverlayView
             var activeSegment = -1 // -1 = none, RADIAL_CENTER = center, 0..n-1 = segment
             var isOpen = false
             var quiescentLabel: String = "" // current weapon name for closed state
+            var quiescentAmmoStatus: WeaponAmmoStatus? = null
 
             // Weapon wheel state
             var isWeaponWheel = false
@@ -1462,8 +1463,11 @@ class TouchOverlayView
                 }
                 if (!rm.isOpen && ws != null && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
                     val isPrimary = rm.control.id == "PriWpn"
-                    rm.quiescentLabel =
-                        weaponWheelCurrentLabel(gameVariant, ws, isPrimary) ?: rm.control.id.take(4)
+                    val presentation = weaponWheelCurrentPresentation(gameVariant, ws, isPrimary)
+                    rm.quiescentLabel = presentation?.label ?: rm.control.id.take(4)
+                    rm.quiescentAmmoStatus = presentation?.ammoStatus
+                } else if (!rm.isOpen && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
+                    rm.quiescentAmmoStatus = null
                 }
                 if (!rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
             }
@@ -1875,14 +1879,30 @@ class TouchOverlayView
                 canvas.drawCircle(state.triggerX, state.triggerY, state.triggerRadius, paintRing)
                 paintBtnLabel.alpha = (0xAA * eff).toInt()
                 val label = state.quiescentLabel.ifEmpty { state.control.id.take(4) }
+                val ammoStatus = state.quiescentAmmoStatus
+                val displayLabel =
+                    if (ammoStatus?.countText != null) {
+                        "$label\n${ammoStatus.countText}"
+                    } else {
+                        label
+                    }
                 paintBtnLabel.textSize =
                     state.triggerRadius *
                     when {
-                        '\n' in label -> 0.28f
-                        label.length > 5 -> 0.4f
+                        '\n' in displayLabel -> 0.28f
+                        displayLabel.length > 5 -> 0.4f
                         else -> 0.6f
                     }
-                drawCenteredTextBlock(canvas, label, state.triggerX, state.triggerY, paintBtnLabel)
+                drawCenteredTextBlock(canvas, displayLabel, state.triggerX, state.triggerY, paintBtnLabel)
+                if (ammoStatus != null) {
+                    paintRadialSeg.color = ammoStatusColorArgb(ammoStatus.color, (0xDD * eff).toInt())
+                    canvas.drawCircle(
+                        state.triggerX + state.triggerRadius * 0.48f,
+                        state.triggerY + state.triggerRadius * 0.48f,
+                        state.triggerRadius * 0.12f,
+                        paintRadialSeg,
+                    )
+                }
                 return
             }
 
@@ -2018,14 +2038,14 @@ class TouchOverlayView
                 val midRad = Math.toRadians(centerAngle.toDouble())
                 val lx = cx + cos(midRad).toFloat() * segR * 0.55f
                 val ly = cy + sin(midRad).toFloat() * segR * 0.55f
-                val label =
+                val presentation =
                     segs[i]
                         .weaponIndex
                         .takeIf { it >= 0 }
                         ?.let {
-                            weaponWheelSlotLabel(gameVariant, ws, isPrimary, it)
+                            weaponWheelSlotPresentation(gameVariant, ws, isPrimary, it)
                         }
-                        ?: segs[i].label
+                val label = presentation?.label ?: segs[i].label
                 paintBtnLabel.alpha = ((if (active) 0xFF else 0xAA) * eff).toInt()
                 if (active) {
                     paintBtnLabel.textSize = r * if ('\n' in label || label.length > 8) 0.18f else 0.22f
@@ -2036,59 +2056,22 @@ class TouchOverlayView
                 drawCenteredTextBlock(canvas, label, lx, ly, paintBtnLabel)
                 if (active) paintBtnLabel.typeface = Typeface.DEFAULT
 
-                // Ammo display for secondary weapons and vulcan
-                val seg = segs[i]
-                val wpnIdx = seg.weaponIndex
-                if (ws != null && wpnIdx >= 0) {
-                    val ammoCount: Int
-                    val ammoMax: Int
-                    val isVulcan: Boolean
-
-                    if (isPrimary) {
-                        isVulcan = wpnIdx == 1 // VULCAN_INDEX
-                        if (isVulcan) {
-                            ammoCount = ws.primaryAmmo[wpnIdx]
-                            ammoMax = ws.primaryAmmoMax[wpnIdx]
-                        } else {
-                            ammoCount = 0
-                            ammoMax = 0
-                        }
-                    } else {
-                        isVulcan = false
-                        // Show base weapon ammo; if only super variant owned, show its ammo
-                        if (ws.hasSecondary(wpnIdx)) {
-                            ammoCount = ws.secondaryAmmo[wpnIdx]
-                            ammoMax = ws.secondaryAmmoMax[wpnIdx]
-                        } else {
-                            ammoCount = ws.secondaryAmmo[wpnIdx + 5]
-                            ammoMax = ws.secondaryAmmoMax[wpnIdx + 5]
-                        }
-                    }
-
-                    if (ammoMax > 0) {
-                        val pct = (ammoCount.toFloat() / ammoMax).coerceIn(0f, 1f)
-                        // Ammo text below label
-                        val ammoText = if (isVulcan) "${(pct * 100).toInt()}%" else "\u00D7$ammoCount"
+                val ammoStatus = presentation?.ammoStatus
+                if (ammoStatus != null) {
+                    ammoStatus.countText?.let { countText ->
                         paintBtnLabel.textSize = r * 0.09f
-                        canvas.drawText(ammoText, lx, ly + r * 0.16f, paintBtnLabel)
-
-                        // Small pie chart
-                        val pieR = r * 0.06f
-                        val pieCx = lx
-                        val pieCy = ly + r * 0.26f
-                        paintRadialSeg.color = 0x44666666
-                        canvas.drawCircle(pieCx, pieCy, pieR, paintRadialSeg)
-                        paintRadialSeg.color = ammoColor(pct, eff)
-                        if (pct > 0f) {
-                            canvas.drawArc(
-                                RectF(pieCx - pieR, pieCy - pieR, pieCx + pieR, pieCy + pieR),
-                                -90f,
-                                360f * pct,
-                                true,
-                                paintRadialSeg,
-                            )
-                        }
+                        canvas.drawText(countText, lx, ly + r * 0.16f, paintBtnLabel)
                     }
+
+                    val dotR = r * 0.055f
+                    val dotCy =
+                        if (ammoStatus.countText != null) {
+                            ly + r * 0.26f
+                        } else {
+                            ly + r * 0.18f
+                        }
+                    paintRadialSeg.color = ammoStatusColorArgb(ammoStatus.color, (0xCC * eff).toInt())
+                    canvas.drawCircle(lx, dotCy, dotR, paintRadialSeg)
                 }
             }
 
@@ -2098,17 +2081,6 @@ class TouchOverlayView
             canvas.drawCircle(cx, cy, centerR, paintRadialSeg)
             paintRing.alpha = (0x66 * eff).toInt()
             canvas.drawCircle(cx, cy, centerR, paintRing)
-        }
-
-        /** Green -> Yellow -> Red based on ammo fill percentage. */
-        private fun ammoColor(
-            pct: Float,
-            eff: Float,
-        ): Int {
-            val alpha = (0xCC * eff).toInt().coerceIn(0, 255)
-            val r = ((1f - pct) * 255).toInt().coerceIn(0, 255)
-            val g = (pct * 200).toInt().coerceIn(0, 255)
-            return (alpha shl 24) or (r shl 16) or (g shl 8)
         }
 
         private fun drawAutomapOverlay(canvas: Canvas) {

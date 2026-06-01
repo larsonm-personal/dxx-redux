@@ -156,6 +156,11 @@ internal fun laserWheelLabel(weaponState: WeaponState?): String {
     }
 }
 
+internal data class WeaponWheelPresentation(
+    val label: String,
+    val ammoStatus: WeaponAmmoStatus?,
+)
+
 private fun currentWeaponWheelSlotIndex(
     gameVariant: String,
     currentWeapon: Int,
@@ -185,6 +190,17 @@ private fun resolvePairedWheelWeaponIndex(
     superOwned: Boolean,
 ): Int? {
     if (currentWeapon == slotIndex || currentWeapon == slotIndex + D2_SUPER_WEAPON_OFFSET) {
+        val alternateIndex =
+            if (currentWeapon == slotIndex) {
+                slotIndex + D2_SUPER_WEAPON_OFFSET
+            } else {
+                slotIndex
+            }
+        if (alternateIndex == slotIndex) {
+            if (baseSelectable || baseOwned) return alternateIndex
+        } else if (superSelectable || superOwned) {
+            return alternateIndex
+        }
         return currentWeapon
     }
 
@@ -224,60 +240,114 @@ private fun resolvePairedWheelWeaponIndex(
     return preferredIndex.takeIf(::isOwned)
 }
 
+internal fun weaponWheelSlotWeaponIndex(
+    gameVariant: String,
+    weaponState: WeaponState?,
+    isPrimary: Boolean,
+    slotIndex: Int,
+): Int? {
+    if (slotIndex !in 0 until WEAPON_WHEEL_SLOT_COUNT) {
+        return null
+    }
+    if (weaponState == null || gameVariant != "d2") {
+        return slotIndex
+    }
+
+    return if (isPrimary) {
+        resolvePairedWheelWeaponIndex(
+            slotIndex = slotIndex,
+            currentWeapon = weaponState.currentPrimary,
+            lastWasSuper = weaponState.primarySlotPrefersSuper(slotIndex),
+            baseSelectable = weaponState.hasPrimary(slotIndex),
+            superSelectable = weaponState.hasPrimary(slotIndex + D2_SUPER_WEAPON_OFFSET),
+            baseOwned = weaponState.hasPrimary(slotIndex),
+            superOwned = weaponState.hasPrimary(slotIndex + D2_SUPER_WEAPON_OFFSET),
+        )
+    } else {
+        resolvePairedWheelWeaponIndex(
+            slotIndex = slotIndex,
+            currentWeapon = weaponState.currentSecondary,
+            lastWasSuper = weaponState.secondarySlotPrefersSuper(slotIndex),
+            baseSelectable = weaponState.hasSecondary(slotIndex) && weaponState.secondarySlotHasAmmo(slotIndex),
+            superSelectable =
+                weaponState.hasSecondary(slotIndex + D2_SUPER_WEAPON_OFFSET) &&
+                    weaponState.secondarySlotHasAmmo(slotIndex + D2_SUPER_WEAPON_OFFSET),
+            baseOwned = weaponState.hasSecondary(slotIndex),
+            superOwned = weaponState.hasSecondary(slotIndex + D2_SUPER_WEAPON_OFFSET),
+        )
+    }
+}
+
+internal fun weaponWheelSlotPresentation(
+    gameVariant: String,
+    weaponState: WeaponState?,
+    isPrimary: Boolean,
+    slotIndex: Int,
+): WeaponWheelPresentation {
+    val fallback = defaultWeaponWheelSlotLabel(gameVariant, isPrimary, slotIndex)
+    if (slotIndex !in 0 until WEAPON_WHEEL_SLOT_COUNT) {
+        return WeaponWheelPresentation(fallback, null)
+    }
+    if (isPrimary && slotIndex == 0) {
+        return WeaponWheelPresentation(
+            laserWheelLabel(weaponState),
+            weaponState?.let { weaponAmmoStatus(gameVariant, it, true, slotIndex) },
+        )
+    }
+
+    val resolvedIndex = weaponWheelSlotWeaponIndex(gameVariant, weaponState, isPrimary, slotIndex)
+    val names =
+        when {
+            isPrimary && gameVariant == "d2" -> d2PrimaryWheelSelectionNames
+            isPrimary -> d1PrimaryWheelSelectionNames
+            gameVariant == "d2" -> d2SecondaryWheelSelectionNames
+            else -> d1SecondaryWheelSelectionNames
+        }
+    val label = resolvedIndex?.let { names.getOrNull(it) } ?: fallback
+    val ammoStatus =
+        if (weaponState != null && resolvedIndex != null) {
+            weaponAmmoStatus(gameVariant, weaponState, isPrimary, resolvedIndex)
+        } else {
+            null
+        }
+    return WeaponWheelPresentation(label, ammoStatus)
+}
+
 internal fun weaponWheelSlotLabel(
     gameVariant: String,
     weaponState: WeaponState?,
     isPrimary: Boolean,
     slotIndex: Int,
-): String {
-    val fallback = defaultWeaponWheelSlotLabel(gameVariant, isPrimary, slotIndex)
-    if (slotIndex !in 0 until WEAPON_WHEEL_SLOT_COUNT) {
-        return fallback
-    }
-    if (isPrimary && slotIndex == 0) {
-        return laserWheelLabel(weaponState)
-    }
-    if (weaponState == null || gameVariant != "d2") {
-        return fallback
-    }
-
-    val resolvedIndex =
-        if (isPrimary) {
-            resolvePairedWheelWeaponIndex(
-                slotIndex = slotIndex,
-                currentWeapon = weaponState.currentPrimary,
-                lastWasSuper = weaponState.primarySlotPrefersSuper(slotIndex),
-                baseSelectable = weaponState.hasPrimary(slotIndex),
-                superSelectable = weaponState.hasPrimary(slotIndex + D2_SUPER_WEAPON_OFFSET),
-                baseOwned = weaponState.hasPrimary(slotIndex),
-                superOwned = weaponState.hasPrimary(slotIndex + D2_SUPER_WEAPON_OFFSET),
-            )
-        } else {
-            resolvePairedWheelWeaponIndex(
-                slotIndex = slotIndex,
-                currentWeapon = weaponState.currentSecondary,
-                lastWasSuper = weaponState.secondarySlotPrefersSuper(slotIndex),
-                baseSelectable = weaponState.hasSecondary(slotIndex) && weaponState.secondarySlotHasAmmo(slotIndex),
-                superSelectable =
-                    weaponState.hasSecondary(slotIndex + D2_SUPER_WEAPON_OFFSET) &&
-                        weaponState.secondarySlotHasAmmo(slotIndex + D2_SUPER_WEAPON_OFFSET),
-                baseOwned = weaponState.hasSecondary(slotIndex),
-                superOwned = weaponState.hasSecondary(slotIndex + D2_SUPER_WEAPON_OFFSET),
-            )
-        } ?: return fallback
-
-    val names = if (isPrimary) d2PrimaryWheelSelectionNames else d2SecondaryWheelSelectionNames
-    return names.getOrNull(resolvedIndex) ?: fallback
-}
+): String = weaponWheelSlotPresentation(gameVariant, weaponState, isPrimary, slotIndex).label
 
 internal fun weaponWheelCurrentLabel(
     gameVariant: String,
     weaponState: WeaponState?,
     isPrimary: Boolean,
-): String? {
-    val currentWeapon = if (isPrimary) weaponState?.currentPrimary else weaponState?.currentSecondary
-    val slotIndex = currentWeapon?.let { currentWeaponWheelSlotIndex(gameVariant, it) } ?: return null
-    return weaponWheelSlotLabel(gameVariant, weaponState, isPrimary, slotIndex)
+): String? = weaponWheelCurrentPresentation(gameVariant, weaponState, isPrimary)?.label
+
+internal fun weaponWheelCurrentPresentation(
+    gameVariant: String,
+    weaponState: WeaponState?,
+    isPrimary: Boolean,
+): WeaponWheelPresentation? {
+    val ws = weaponState ?: return null
+    val currentIndex = if (isPrimary) ws.currentPrimary else ws.currentSecondary
+    val currentSlot = currentWeaponWheelSlotIndex(gameVariant, currentIndex) ?: return null
+    val names =
+        when {
+            isPrimary && gameVariant == "d1" -> d1PrimaryWheelSelectionNames
+            isPrimary -> d2PrimaryWheelSelectionNames
+            gameVariant == "d1" -> d1SecondaryWheelSelectionNames
+            else -> d2SecondaryWheelSelectionNames
+        }
+    val label =
+        if (isPrimary && currentSlot == 0) {
+            laserWheelLabel(ws)
+        } else {
+            names.getOrNull(currentIndex) ?: return null
+        }
+    return WeaponWheelPresentation(label, weaponAmmoStatus(gameVariant, ws, isPrimary, currentIndex))
 }
 
 private fun currentPrimaryName(
