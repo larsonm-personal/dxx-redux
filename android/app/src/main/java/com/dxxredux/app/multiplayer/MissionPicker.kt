@@ -12,10 +12,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +25,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.dxxredux.app.FileSetManager
+import com.dxxredux.app.dpadTextFieldNavigation
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
@@ -227,6 +226,7 @@ private fun MissionPickerDialog(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
+                                .dpadTextFieldNavigation(up = dismissFocus)
                                 .controllerTextEntryFocus { textEntryActive = it },
                     )
                 }

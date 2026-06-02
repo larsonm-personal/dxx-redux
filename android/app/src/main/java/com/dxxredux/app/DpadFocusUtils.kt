@@ -94,6 +94,31 @@ internal fun FocusRequester.requestFocusSafely() {
     runCatching { requestFocus() }
 }
 
+fun Modifier.dpadTextFieldNavigation(
+    up: FocusRequester? = null,
+    down: FocusRequester? = null,
+): Modifier =
+    composed {
+        val focusManager = LocalFocusManager.current
+        val inputModeManager = LocalInputModeManager.current
+        onPreviewKeyEvent { event ->
+            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+            val direction =
+                when (event.key) {
+                    Key.DirectionUp -> FocusDirection.Up
+                    Key.DirectionDown -> FocusDirection.Down
+                    else -> null
+                } ?: return@onPreviewKeyEvent false
+            inputModeManager.requestInputMode(InputMode.Keyboard)
+            when (direction) {
+                FocusDirection.Up -> up?.requestFocusSafely() ?: focusManager.moveFocus(direction)
+                FocusDirection.Down -> down?.requestFocusSafely() ?: focusManager.moveFocus(direction)
+                else -> focusManager.moveFocus(direction)
+            }
+            true
+        }
+    }
+
 /** Adds the shared bright TV focus border to any composable. */
 fun Modifier.tvFocusBorder(): Modifier =
     composed {

@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented and verified.
+Follow-up in progress for weapon autoselect D-pad reorder viewport tracking.
 
 ## Goals
 
@@ -25,3 +25,20 @@ Implemented and verified.
 - [x] Run focused compile/tests and code quality.
 - [x] Make required-file detail dialogs default to Close instead of Forget.
 - [x] Re-run focused compile/tests and code quality after follow-up.
+- [x] Add green outlines to weapon autoselect controls and list selections.
+- [x] Add green outlines to Advanced Settings log-file name rows.
+- [x] Fix MIDI preview upward navigation when the progress slider is disabled.
+- [x] Rework multiplayer outlines with a shared focus-visible control modifier.
+- [x] Re-run focused compile/tests and code quality after this follow-up.
+- [x] Fix multiplayer text-field D-pad escape paths on the main screen and Join
+      by IP dialog.
+- [x] Fix Host LAN Game dialog traversal from Cancel down into mission selection.
+- [x] Rework Advanced Settings log-file row highlighting so the focused filename
+      itself visibly receives the green outline.
+- [x] Re-run focused compile/tests and code quality after this follow-up.
+- [x] Add shared app-level text-field D-pad navigation helper.
+- [x] Apply it to remaining launcher and multiplayer text-entry fields, including
+      Host LAN Game level/max players.
+- [x] Re-run focused compile/tests and code quality after this follow-up.
+- [x] Keep grabbed weapon autoselect items visible while D-pad reordering.
+- [ ] Re-run focused compile/tests and code quality after this follow-up.

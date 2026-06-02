@@ -24,15 +24,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -58,6 +55,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.dxxredux.app.BuildInfo
 import com.dxxredux.app.lobby.LobbyService
+import com.dxxredux.app.tvFocusBorder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -1045,6 +1043,8 @@ private fun JoinByIpDialog(
     var selectedGame by remember { mutableStateOf("d2") }
     var textEntryActive by remember { mutableStateOf(false) }
     val dismissFocus = remember { FocusRequester() }
+    val hostIpFocus = remember { FocusRequester() }
+    val gameFocus = remember { FocusRequester() }
     val isValidIp = isValidIpAddress(hostIp)
     val dismissOrEndTextEntry =
         rememberControllerTextEntryDismiss(textEntryActive, dismissFocus, { textEntryActive = it }, onDismiss)
@@ -1070,6 +1070,8 @@ private fun JoinByIpDialog(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .focusRequester(hostIpFocus)
+                            .controllerTextFieldDpadExit(up = dismissFocus, down = gameFocus)
                             .controllerTextEntryFocus { textEntryActive = it },
                 )
                 RecentSuggestions(recentIps) { hostIp = it }
@@ -1078,11 +1080,15 @@ private fun JoinByIpDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("Game:", style = MaterialTheme.typography.bodyMedium)
-                    listOf("d1" to "Descent 1", "d2" to "Descent 2").forEach { (key, label) ->
+                    listOf("d1" to "Descent 1", "d2" to "Descent 2").forEachIndexed { index, (key, label) ->
                         FilterChip(
                             selected = selectedGame == key,
                             onClick = { selectedGame = key },
                             label = { Text(label) },
+                            modifier =
+                                Modifier
+                                    .then(if (index == 0) Modifier.focusRequester(gameFocus) else Modifier)
+                                    .tvFocusBorder(),
                         )
                     }
                 }

@@ -504,23 +504,27 @@ private fun DebugLoggingSection() {
             ) {
                 Column(
                     modifier =
-                        Modifier.weight(1f).clickable {
-                            scope.launch {
-                                try {
-                                    val uri =
-                                        withContext(Dispatchers.IO) {
-                                            copyFileToCache(ctx, file, "file_view") { progress ->
-                                                mainHandler.post { transferProgress = progress }
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .tvFocusBorder()
+                            .clickable {
+                                scope.launch {
+                                    try {
+                                        val uri =
+                                            withContext(Dispatchers.IO) {
+                                                copyFileToCache(ctx, file, "file_view") { progress ->
+                                                    mainHandler.post { transferProgress = progress }
+                                                }
                                             }
-                                        }
-                                    transferProgress = null
-                                    openTextFile(ctx, uri)
-                                } catch (e: Exception) {
-                                    transferProgress = null
-                                    Toast.makeText(ctx, "Open failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        transferProgress = null
+                                        openTextFile(ctx, uri)
+                                    } catch (e: Exception) {
+                                        transferProgress = null
+                                        Toast.makeText(ctx, "Open failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
                                 }
-                            }
-                        },
+                            }.padding(horizontal = 4.dp, vertical = 2.dp),
                 ) {
                     Text(file.name, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                     val sizeKb = file.length() / 1024
@@ -1081,6 +1085,7 @@ private fun RecordedInputDemosSection(
                         onValueChange = { installName = it },
                         singleLine = true,
                         label = { Text("Installed filename") },
+                        modifier = Modifier.dpadTextFieldNavigation(),
                     )
                 }
             },

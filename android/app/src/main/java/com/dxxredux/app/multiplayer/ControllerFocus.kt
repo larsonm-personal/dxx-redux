@@ -24,6 +24,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
+import com.dxxredux.app.dpadTextFieldNavigation
 import kotlinx.coroutines.delay
 
 internal enum class MultiplayerBrowserInitialFocusTarget {
@@ -163,6 +164,11 @@ internal fun rememberControllerTextEntryDismiss(
 
 internal fun Modifier.controllerTextEntryFocus(onTextEntryActiveChange: (Boolean) -> Unit): Modifier =
     onFocusChanged { onTextEntryActiveChange(it.isFocused) }
+
+internal fun Modifier.controllerTextFieldDpadExit(
+    up: FocusRequester? = null,
+    down: FocusRequester? = null,
+): Modifier = dpadTextFieldNavigation(up = up, down = down)
 
 private fun endControllerTextEntry(
     focusManager: FocusManager,

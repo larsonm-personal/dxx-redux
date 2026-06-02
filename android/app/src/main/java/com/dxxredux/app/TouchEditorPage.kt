@@ -3090,7 +3090,7 @@ private fun LabelEditor(
                 }
             },
             singleLine = true,
-            modifier = Modifier.height(48.dp).fillMaxWidth(),
+            modifier = Modifier.height(48.dp).fillMaxWidth().dpadTextFieldNavigation(),
             textStyle = TextStyle(fontSize = 12.sp, color = Color.White),
         )
     }

@@ -16,17 +16,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,10 +33,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.dpadTextFieldNavigation
+import com.dxxredux.app.tvFocusBorder
 
 /**
  * Shared dialog for creating a game/lobby, used by both LAN hosting and
@@ -76,6 +76,7 @@ internal fun CreateGameDialog(
     var clientsCanRequestRewind by remember { mutableStateOf(defaults.clientsCanRequestRewind) }
     var textEntryActive by remember { mutableStateOf(false) }
     val dialogFocus = remember { FocusRequester() }
+    val missionFocus = remember { FocusRequester() }
     val dismissOrEndTextEntry =
         rememberControllerTextEntryDismiss(textEntryActive, dialogFocus, { textEntryActive = it }, onDismiss)
 
@@ -128,7 +129,15 @@ internal fun CreateGameDialog(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(title, modifier = Modifier.weight(1f))
-                TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(dialogFocus)) { Text("Cancel") }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier =
+                        Modifier
+                            .focusRequester(dialogFocus)
+                            .focusProperties { down = missionFocus },
+                ) {
+                    Text("Cancel")
+                }
             }
         },
         text = {
@@ -164,6 +173,7 @@ internal fun CreateGameDialog(
                         selectedFilename = mission,
                         game = game,
                         onSelect = { mission = it },
+                        modifier = Modifier.focusRequester(missionFocus),
                     )
                     // Mode selector
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -186,6 +196,7 @@ internal fun CreateGameDialog(
                             Switch(
                                 checked = coopQol,
                                 onCheckedChange = { coopQol = it },
+                                modifier = Modifier.tvFocusBorder(),
                             )
                             Column {
                                 Text(
@@ -207,6 +218,7 @@ internal fun CreateGameDialog(
                             Switch(
                                 checked = clientsCanRequestRewind,
                                 onCheckedChange = { clientsCanRequestRewind = it },
+                                modifier = Modifier.tvFocusBorder(),
                             )
                             Column {
                                 Text(
@@ -229,6 +241,7 @@ internal fun CreateGameDialog(
                         Switch(
                             checked = fullDeathSpew,
                             onCheckedChange = { fullDeathSpew = it },
+                            modifier = Modifier.tvFocusBorder(),
                         )
                         Text(
                             "100% death spew",
@@ -272,6 +285,7 @@ internal fun CreateGameDialog(
                             modifier =
                                 Modifier
                                     .weight(1f)
+                                    .dpadTextFieldNavigation()
                                     .controllerTextEntryFocus { textEntryActive = it },
                         )
                         OutlinedTextField(
@@ -282,6 +296,7 @@ internal fun CreateGameDialog(
                             modifier =
                                 Modifier
                                     .weight(1f)
+                                    .dpadTextFieldNavigation()
                                     .controllerTextEntryFocus { textEntryActive = it },
                         )
                     }

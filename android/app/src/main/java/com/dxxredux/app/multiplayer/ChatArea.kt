@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -24,6 +23,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.dpadTextFieldNavigation
 
 /** Chat area with message list and input field, shared between LAN and matchmaking lobbies. */
 @Composable
@@ -78,6 +78,7 @@ internal fun ChatArea(
                 modifier =
                     Modifier
                         .weight(1f)
+                        .dpadTextFieldNavigation(down = sendFocus)
                         .controllerTextEntryFocus { textEntryActive = it },
             )
             Spacer(Modifier.width(4.dp))

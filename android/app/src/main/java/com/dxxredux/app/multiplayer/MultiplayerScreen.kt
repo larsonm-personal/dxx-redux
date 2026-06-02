@@ -15,14 +15,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -107,6 +104,8 @@ private fun ServerBrowserContent(
     val cancelFocus = remember { FocusRequester() }
     val refreshFocus = remember { FocusRequester() }
     val lanFocus = remember { FocusRequester() }
+    val serverUrlFocus = remember { FocusRequester() }
+    val callsignFocus = remember { FocusRequester() }
     val recentUrls = remember { mutableStateOf(RecentAddressPrefs.SERVER_URLS.load(context)) }
     var serverUrl by remember { mutableStateOf(recentUrls.value.firstOrNull() ?: state.serverUrl) }
     var callsign by remember { mutableStateOf(state.callsign) }
@@ -288,6 +287,9 @@ private fun ServerBrowserContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .focusRequester(serverUrlFocus)
+                            .focusProperties { down = callsignFocus }
+                            .controllerTextFieldDpadExit(down = callsignFocus)
                             .controllerTextEntryFocus { textEntryActive = it },
                 )
                 RecentSuggestions(recentUrls.value) { serverUrl = it }
@@ -300,6 +302,11 @@ private fun ServerBrowserContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .focusRequester(callsignFocus)
+                            .focusProperties {
+                                up = serverUrlFocus
+                                down = connectFocus
+                            }.controllerTextFieldDpadExit(up = serverUrlFocus, down = connectFocus)
                             .controllerTextEntryFocus { textEntryActive = it },
                 )
                 Spacer(Modifier.height(8.dp))
@@ -316,7 +323,10 @@ private fun ServerBrowserContent(
                             Modifier
                                 .weight(1f)
                                 .focusRequester(connectFocus)
-                                .focusProperties { right = lanFocus },
+                                .focusProperties {
+                                    up = callsignFocus
+                                    right = lanFocus
+                                },
                     ) {
                         Text("Connect")
                     }
@@ -325,7 +335,9 @@ private fun ServerBrowserContent(
                             onClick = { MatchmakingService.disconnect() },
                             modifier =
                                 if (focusTarget == MultiplayerBrowserInitialFocusTarget.CANCEL_CONNECT) {
-                                    Modifier.focusRequester(cancelFocus)
+                                    Modifier
+                                        .focusRequester(cancelFocus)
+                                        .focusProperties { up = callsignFocus }
                                 } else {
                                     Modifier
                                 },
@@ -343,7 +355,10 @@ private fun ServerBrowserContent(
                         modifier =
                             Modifier
                                 .focusRequester(lanFocus)
-                                .focusProperties { left = connectFocus },
+                                .focusProperties {
+                                    up = callsignFocus
+                                    left = connectFocus
+                                },
                     ) {
                         Text("LAN")
                     }
@@ -362,6 +377,9 @@ private fun ServerBrowserContent(
                         modifier =
                             Modifier
                                 .weight(1f)
+                                .focusRequester(serverUrlFocus)
+                                .focusProperties { down = callsignFocus }
+                                .controllerTextFieldDpadExit(down = callsignFocus)
                                 .controllerTextEntryFocus { textEntryActive = it },
                     )
                     Button(
@@ -375,7 +393,10 @@ private fun ServerBrowserContent(
                         modifier =
                             Modifier
                                 .focusRequester(connectFocus)
-                                .focusProperties { right = lanFocus },
+                                .focusProperties {
+                                    up = callsignFocus
+                                    right = lanFocus
+                                },
                     ) {
                         Text("Connect")
                     }
@@ -384,7 +405,9 @@ private fun ServerBrowserContent(
                             onClick = { MatchmakingService.disconnect() },
                             modifier =
                                 if (focusTarget == MultiplayerBrowserInitialFocusTarget.CANCEL_CONNECT) {
-                                    Modifier.focusRequester(cancelFocus)
+                                    Modifier
+                                        .focusRequester(cancelFocus)
+                                        .focusProperties { up = callsignFocus }
                                 } else {
                                     Modifier
                                 },
@@ -407,6 +430,11 @@ private fun ServerBrowserContent(
                         modifier =
                             Modifier
                                 .weight(1f)
+                                .focusRequester(callsignFocus)
+                                .focusProperties {
+                                    up = serverUrlFocus
+                                    down = connectFocus
+                                }.controllerTextFieldDpadExit(up = serverUrlFocus, down = connectFocus)
                                 .controllerTextEntryFocus { textEntryActive = it },
                     )
                     Button(
@@ -419,7 +447,10 @@ private fun ServerBrowserContent(
                         modifier =
                             Modifier
                                 .focusRequester(lanFocus)
-                                .focusProperties { left = connectFocus },
+                                .focusProperties {
+                                    up = callsignFocus
+                                    left = connectFocus
+                                },
                     ) {
                         Text("LAN")
                     }
@@ -785,6 +816,7 @@ private fun LobbyCodeDialog(
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        .controllerTextFieldDpadExit(up = dismissFocus)
                         .controllerTextEntryFocus { textEntryActive = it },
             )
         },

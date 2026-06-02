@@ -411,7 +411,7 @@ fun AddToSetDialog(
                         onValueChange = { newName = it },
                         singleLine = true,
                         label = { Text("Set name") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().dpadTextFieldNavigation(),
                     )
                 }
                 // Copy checkbox -- only for raw audio; archives always extract
@@ -623,6 +623,7 @@ private fun MidiTrackPreviewDialog(
     var positionMs by remember { mutableIntStateOf(0) }
     var durationMs by remember { mutableIntStateOf(0) }
     var seeking by remember { mutableStateOf(false) }
+    val playFocus = remember { FocusRequester() }
     val sliderFocus = remember { FocusRequester() }
     val closeFocus = remember { FocusRequester() }
     var loadError by remember { mutableStateOf<String?>(null) }
@@ -708,7 +709,10 @@ private fun MidiTrackPreviewDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    TextButton(onClick = { togglePlayback() }) {
+                    TextButton(
+                        onClick = { togglePlayback() },
+                        modifier = Modifier.focusRequester(playFocus).tvFocusBorder(),
+                    ) {
                         val label =
                             if (!playing) {
                                 "Play"
@@ -719,11 +723,14 @@ private fun MidiTrackPreviewDialog(
                         Text(label, fontSize = 13.sp)
                     }
                     if (playing) {
-                        TextButton(onClick = {
-                            MidiPreviewBridge.stop()
-                            playing = false
-                            positionMs = 0
-                        }) {
+                        TextButton(
+                            onClick = {
+                                MidiPreviewBridge.stop()
+                                playing = false
+                                positionMs = 0
+                            },
+                            modifier = Modifier.tvFocusBorder(),
+                        ) {
                             Text("Stop", fontSize = 13.sp)
                         }
                     }
@@ -743,13 +750,14 @@ private fun MidiTrackPreviewDialog(
                         }
                         seeking = false
                     },
-                    enabled = durationMs > 0,
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .focusRequester(sliderFocus)
-                            .focusProperties { down = closeFocus }
-                            .tvFocusBorder()
+                            .focusProperties {
+                                up = playFocus
+                                down = closeFocus
+                            }.tvFocusBorder()
                             .then(verticalDpadFocusEscape()),
                 )
                 if (durationMs > 0) {

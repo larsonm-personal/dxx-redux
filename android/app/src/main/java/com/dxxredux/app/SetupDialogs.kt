@@ -114,7 +114,7 @@ internal fun SetManagementDialog(
                         },
                         label = { Text("Set name") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().dpadTextFieldNavigation(),
                         isError = errorMessage != null,
                         supportingText = errorMessage?.let { { Text(it) } },
                     )

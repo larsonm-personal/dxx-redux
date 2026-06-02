@@ -171,6 +171,7 @@ internal fun ConfigSlotDialog(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
+                                .dpadTextFieldNavigation()
                                 .onFocusChanged { focusState ->
                                     if (renameFieldHadFocus && !focusState.isFocused) {
                                         submitRename()
@@ -248,7 +249,7 @@ internal fun ConfigSlotDialog(
                         onValueChange = { promptName = it.take(CONFIG_SLOT_NAME_MAX_LENGTH) },
                         singleLine = true,
                         label = { Text("Slot name", fontSize = 11.sp) },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().dpadTextFieldNavigation(),
                     )
                     Spacer(Modifier.height(4.dp))
                     Text("Maximum $CONFIG_SLOT_NAME_MAX_LENGTH characters", fontSize = 10.sp)

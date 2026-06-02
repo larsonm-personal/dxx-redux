@@ -48,6 +48,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +72,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
@@ -185,7 +187,7 @@ fun AutoselectEditorPage(
                         }
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
+                        IconButton(onClick = onBack, modifier = Modifier.tvFocusBorder()) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                         }
                     },
@@ -221,7 +223,7 @@ fun AutoselectEditorPage(
                     OutlinedButton(
                         onClick = { activeGame = "d1" },
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 1.dp),
-                        modifier = Modifier.weight(1f).focusRequester(initialFocus),
+                        modifier = Modifier.weight(1f).focusRequester(initialFocus).tvFocusBorder(),
                         border =
                             if (activeGame == "d1") {
                                 androidx.compose.foundation.BorderStroke(
@@ -240,7 +242,7 @@ fun AutoselectEditorPage(
                     OutlinedButton(
                         onClick = { activeGame = "d2" },
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 1.dp),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).tvFocusBorder(),
                         border =
                             if (activeGame == "d2") {
                                 androidx.compose.foundation.BorderStroke(
@@ -329,7 +331,7 @@ fun AutoselectEditorPage(
                             secondaryOrder.addAll(secondaryNameMap.keys)
                             checkChanges()
                         },
-                        modifier = Modifier.weight(1f).height(28.dp),
+                        modifier = Modifier.weight(1f).height(28.dp).tvFocusBorder(),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     ) {
                         Text("Reset to Defaults", fontSize = 12.sp)
@@ -350,7 +352,7 @@ fun AutoselectEditorPage(
                             statusMessage = "Saved to $count pilot file(s)"
                         },
                         enabled = hasChanges,
-                        modifier = Modifier.weight(1f).height(28.dp),
+                        modifier = Modifier.weight(1f).height(28.dp).tvFocusBorder(),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     ) {
                         Text("Save", fontSize = 12.sp)
@@ -383,6 +385,7 @@ private fun DragReorderList(
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
+    val dpadReorderScrollScope = rememberCoroutineScope()
     val itemHeightDp = 40.dp
     val itemHeightPx =
         with(androidx.compose.ui.platform.LocalDensity.current) {
@@ -399,6 +402,17 @@ private fun DragReorderList(
     var focusedIndex by remember { mutableIntStateOf(-1) }
     // FocusRequesters so we can move focus after a reorder
     val focusRequesters = remember(items.size) { List(items.size) { FocusRequester() } }
+
+    fun scrollMovedItemIntoView(targetIndex: Int) {
+        val anchor =
+            autoselectMovedItemScrollAnchor(
+                targetIndex = targetIndex,
+                visibleIndices = listState.layoutInfo.visibleItemsInfo.map { it.index },
+            ) ?: return
+        dpadReorderScrollScope.launch {
+            listState.scrollToItem(anchor)
+        }
+    }
 
     // Auto-scroll while dragging near viewport edges.
     LaunchedEffect(draggedValue) {
@@ -463,7 +477,8 @@ private fun DragReorderList(
                                 } else {
                                     Modifier
                                 },
-                            ).onFocusChanged { state ->
+                            ).tvFocusBorder()
+                            .onFocusChanged { state ->
                                 if (state.isFocused) focusedIndex = index
                             }.onKeyEvent { keyEvent ->
                                 if (keyEvent.type != KeyEventType.KeyDown) return@onKeyEvent false
@@ -489,6 +504,7 @@ private fun DragReorderList(
                                         onReorder(grabbedIndex, target)
                                         val newReq = focusRequesters.getOrNull(target)
                                         grabbedIndex = target
+                                        scrollMovedItemIntoView(target)
                                         // Move focus to follow the item
                                         newReq?.requestFocus()
                                     }
@@ -605,6 +621,21 @@ private fun DragReorderList(
             }
         }
         LazyListScrollArrows(listState)
+    }
+}
+
+internal fun autoselectMovedItemScrollAnchor(
+    targetIndex: Int,
+    visibleIndices: List<Int>,
+): Int? {
+    if (visibleIndices.isEmpty()) return targetIndex
+    val firstVisible = visibleIndices.minOrNull() ?: return targetIndex
+    val lastVisible = visibleIndices.maxOrNull() ?: return targetIndex
+    val visibleCount = lastVisible - firstVisible + 1
+    return when {
+        targetIndex < firstVisible -> targetIndex
+        targetIndex > lastVisible -> (targetIndex - visibleCount + 1).coerceAtLeast(0)
+        else -> null
     }
 }
 
