@@ -647,6 +647,19 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 	(*env)->ReleaseStringUTFChars(env, jname, name);
 }
 
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetRoundedCornerTextInsets(JNIEnv *env, jobject thiz,
+                                                                    jint surface_width,
+                                                                    jint left_px,
+                                                                    jint right_px)
+{
+	(void) env;
+	(void) thiz;
+	android_graphics_set_rounded_corner_text_insets((int) surface_width,
+	                                                (int) left_px,
+	                                                (int) right_px);
+}
+
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetGammaLevel(JNIEnv *env, jobject thiz)
 {

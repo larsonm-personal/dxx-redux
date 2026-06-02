@@ -125,6 +125,13 @@ fun GraphicsSettingsPage(
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
+                        // -- Rounded corner HUD text inset --
+                        CornerTextInsetSection(filesDir = filesDir)
+
+                        Spacer(modifier = Modifier.height(3.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(3.dp))
+
                         // -- Original game visual options --
                         OriginalVisualOptionsSection(
                             gameVariant = gameVariant,
@@ -371,6 +378,28 @@ private fun SelectiveFilterSection(filesDir: File) {
             modifier = Modifier.padding(start = 8.dp),
         )
     }
+}
+
+@Composable
+private fun CornerTextInsetSection(filesDir: File) {
+    val ctx = LocalContext.current
+    val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
+    var cornerTextInset by remember {
+        mutableStateOf((readConfigValue(filesDir, "CornerTextInset") ?: "1") != "0")
+    }
+
+    Text("Display Corners", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+    Spacer(modifier = Modifier.height(2.dp))
+    DebugOptionRow(
+        checked = cornerTextInset,
+        title = "Move text in to avoid rounded corners",
+        detail = "Moves corner HUD text horizontally inward",
+        onCheckedChange = {
+            cornerTextInset = it
+            updateAllConfigFiles(filesDir, listOf("CornerTextInset" to if (it) "1" else "0"))
+            bumpGraphicsSettingsGeneration(prefs)
+        },
+    )
 }
 
 @Composable

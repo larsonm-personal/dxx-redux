@@ -39,6 +39,9 @@ static int clamp_gamma(int value)
 
 static int g_android_default_alpha_effects;
 static int g_android_default_dynlight_color;
+static int g_corner_text_surface_width_px;
+static int g_corner_text_left_inset_px;
+static int g_corner_text_right_inset_px;
 
 void android_graphics_apply_pilot_defaults(void)
 {
@@ -273,6 +276,12 @@ void android_graphics_set_hud_texfilt(int value, int persist)
 	persist_config_if_needed(persist, "HudTexFilt", GameCfg.HudTexFilt, 1, 1);
 }
 
+void android_graphics_set_corner_text_inset(int value, int persist)
+{
+	GameCfg.CornerTextInset = clamp_bool(value);
+	persist_config_if_needed(persist, "CornerTextInset", GameCfg.CornerTextInset, 1, 1);
+}
+
 void android_graphics_set_classic_depth(int value, int persist)
 {
 	GameCfg.ClassicDepth = clamp_bool(value);
@@ -304,6 +313,33 @@ void android_graphics_set_movie_texfilt(int value, int persist)
 #endif
 }
 
+void android_graphics_set_rounded_corner_text_insets(int surface_width, int left_px, int right_px)
+{
+	g_corner_text_surface_width_px = surface_width > 0 ? surface_width : 0;
+	g_corner_text_left_inset_px = left_px > 0 ? left_px : 0;
+	g_corner_text_right_inset_px = right_px > 0 ? right_px : 0;
+}
+
+static int android_graphics_scale_corner_text_inset(int canvas_width, int inset_px)
+{
+	if (!GameCfg.CornerTextInset || canvas_width <= 0)
+		return 0;
+	if (inset_px <= 0 || g_corner_text_surface_width_px <= 0)
+		return canvas_width / 20;
+	return (inset_px * canvas_width + g_corner_text_surface_width_px / 2) /
+	       g_corner_text_surface_width_px;
+}
+
+int android_graphics_get_corner_text_left_inset(int canvas_width)
+{
+	return android_graphics_scale_corner_text_inset(canvas_width, g_corner_text_left_inset_px);
+}
+
+int android_graphics_get_corner_text_right_inset(int canvas_width)
+{
+	return android_graphics_scale_corner_text_inset(canvas_width, g_corner_text_right_inset_px);
+}
+
 int android_graphics_set_option(const char *name, int value, int persist)
 {
 	if (!name)
@@ -320,6 +356,8 @@ int android_graphics_set_option(const char *name, int value, int persist)
 		android_graphics_set_menu_texfilt(value, persist);
 	else if (!strcmp(name, "hud_tex_filt"))
 		android_graphics_set_hud_texfilt(value, persist);
+	else if (!strcmp(name, "corner_text_inset"))
+		android_graphics_set_corner_text_inset(value, persist);
 	else if (!strcmp(name, "classic_depth"))
 		android_graphics_set_classic_depth(value, persist);
 	else if (!strcmp(name, "alpha_effects"))

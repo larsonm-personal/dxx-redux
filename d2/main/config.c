@@ -66,6 +66,7 @@ static const char TexFiltStr[] ="TexFilt";
 static const char MovieTexFiltStr[] ="MovieTexFilt";
 static const char MenuTexFiltStr[] ="MenuTexFilt";
 static const char HudTexFiltStr[] ="HudTexFilt";
+static const char CornerTextInsetStr[] ="CornerTextInset";
 static const char MovieSubtitlesStr[] ="MovieSubtitles";
 static const char VSyncStr[] ="VSync";
 static const char MultisampleStr[] ="Multisample";
@@ -153,6 +154,7 @@ int ReadConfigFile()
 	GameCfg.MovieTexFilt = 0;
 	GameCfg.MenuTexFilt = 0;
 	GameCfg.HudTexFilt = 1;
+	GameCfg.CornerTextInset = 1;
 	GameCfg.MovieSubtitles = 0;
 	GameCfg.VSync = 0;
 	GameCfg.Multisample = 0;
@@ -276,6 +278,8 @@ int ReadConfigFile()
 				GameCfg.MenuTexFilt = strtol(value, NULL, 10);
 			else if (!strcmp(token, HudTexFiltStr))
 				GameCfg.HudTexFilt = strtol(value, NULL, 10);
+			else if (!strcmp(token, CornerTextInsetStr))
+				GameCfg.CornerTextInset = strtol(value, NULL, 10);
 			else if (!strcmp(token, MovieSubtitlesStr))
 				GameCfg.MovieSubtitles = strtol(value, NULL, 10);
 			else if (!strcmp(token, VSyncStr))
@@ -371,6 +375,7 @@ int WriteConfigFile()
 	PHYSFSX_printf(infile, "%s=%i\n", MovieTexFiltStr, GameCfg.MovieTexFilt);
 	PHYSFSX_printf(infile, "%s=%i\n", MenuTexFiltStr, GameCfg.MenuTexFilt);
 	PHYSFSX_printf(infile, "%s=%i\n", HudTexFiltStr, GameCfg.HudTexFilt);
+	PHYSFSX_printf(infile, "%s=%i\n", CornerTextInsetStr, GameCfg.CornerTextInset);
 	PHYSFSX_printf(infile, "%s=%i\n", MovieSubtitlesStr, GameCfg.MovieSubtitles);
 	PHYSFSX_printf(infile, "%s=%i\n", VSyncStr, GameCfg.VSync);
 	PHYSFSX_printf(infile, "%s=%i\n", MultisampleStr, GameCfg.Multisample);

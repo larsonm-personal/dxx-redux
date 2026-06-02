@@ -1748,6 +1748,7 @@ class SetupActivity : ComponentActivity() {
                 "AspectY" to "$aspectY",
                 "ResolutionX" to "$resW",
                 "ResolutionY" to "$resH",
+                "CornerTextInset" to "1",
             ),
         )
 

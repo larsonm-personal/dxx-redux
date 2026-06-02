@@ -47,6 +47,7 @@ typedef struct Cfg
 	int MovieTexFilt;
 	int MenuTexFilt;  /* 0=nearest (default), 1=use world TexFilt */
 	int HudTexFilt;   /* 0=nearest, 1=use world TexFilt (default) */
+	int CornerTextInset; /* 0=draw corner HUD text at edges, 1=inset horizontally */
 	int MovieSubtitles;
 	int VSync;
 	int Multisample;

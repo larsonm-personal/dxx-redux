@@ -65,6 +65,7 @@ static const char WindowModeStr[] ="WindowMode";
 static const char TexFiltStr[] ="TexFilt";
 static const char MenuTexFiltStr[] ="MenuTexFilt";
 static const char HudTexFiltStr[] ="HudTexFilt";
+static const char CornerTextInsetStr[] ="CornerTextInset";
 static const char VSyncStr[] ="VSync";
 static const char MultisampleStr[] ="Multisample";
 static const char AnisoLevelStr[] ="AnisoLevel";
@@ -136,6 +137,7 @@ int ReadConfigFile()
 	GameCfg.TexFilt = 0;
 	GameCfg.MenuTexFilt = 0;
 	GameCfg.HudTexFilt = 1;
+	GameCfg.CornerTextInset = 1;
 	GameCfg.VSync = 0;
 	GameCfg.Multisample = 0;
 	GameCfg.AnisoLevel = 0;
@@ -257,6 +259,8 @@ int ReadConfigFile()
 				GameCfg.MenuTexFilt = strtol(value, NULL, 10);
 			else if (!strcmp(token, HudTexFiltStr))
 				GameCfg.HudTexFilt = strtol(value, NULL, 10);
+			else if (!strcmp(token, CornerTextInsetStr))
+				GameCfg.CornerTextInset = strtol(value, NULL, 10);
 			else if (!strcmp(token, VSyncStr))
 				GameCfg.VSync = strtol(value, NULL, 10);
 			else if (!strcmp(token, MultisampleStr))
@@ -349,6 +353,7 @@ int WriteConfigFile()
 	PHYSFSX_printf(infile, "%s=%i\n", TexFiltStr, GameCfg.TexFilt);
 	PHYSFSX_printf(infile, "%s=%i\n", MenuTexFiltStr, GameCfg.MenuTexFilt);
 	PHYSFSX_printf(infile, "%s=%i\n", HudTexFiltStr, GameCfg.HudTexFilt);
+	PHYSFSX_printf(infile, "%s=%i\n", CornerTextInsetStr, GameCfg.CornerTextInset);
 	PHYSFSX_printf(infile, "%s=%i\n", VSyncStr, GameCfg.VSync);
 	PHYSFSX_printf(infile, "%s=%i\n", MultisampleStr, GameCfg.Multisample);
 	PHYSFSX_printf(infile, "%s=%i\n", AnisoLevelStr, GameCfg.AnisoLevel);

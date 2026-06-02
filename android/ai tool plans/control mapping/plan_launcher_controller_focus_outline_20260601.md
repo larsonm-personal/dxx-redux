@@ -2,7 +2,8 @@
 
 ## Status
 
-Follow-up in progress for weapon autoselect D-pad reorder viewport tracking.
+Implemented and verified, including weapon autoselect D-pad reorder viewport
+tracking.
 
 ## Goals
 
@@ -41,4 +42,4 @@ Follow-up in progress for weapon autoselect D-pad reorder viewport tracking.
       Host LAN Game level/max players.
 - [x] Re-run focused compile/tests and code quality after this follow-up.
 - [x] Keep grabbed weapon autoselect items visible while D-pad reordering.
-- [ ] Re-run focused compile/tests and code quality after this follow-up.
+- [x] Re-run focused compile/tests and code quality after this follow-up.

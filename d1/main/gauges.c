@@ -55,6 +55,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "net_udp.h"
 #include "scores.h"
+#ifdef ANDROID
+#include "android_graphics_options.h"
+#endif
 #include <math.h>
 
 //bitmap numbers for gauges
@@ -717,6 +720,29 @@ int get_pnum_for_hud()
 		return Player_num;
 }
 
+static int hud_corner_text_canvas_width(void)
+{
+	return grd_curcanv ? grd_curcanv->cv_bitmap.bm_w : 0;
+}
+
+static int hud_corner_text_left_inset(void)
+{
+#ifdef ANDROID
+	return android_graphics_get_corner_text_left_inset(hud_corner_text_canvas_width());
+#else
+	return 0;
+#endif
+}
+
+static int hud_corner_text_right_inset(void)
+{
+#ifdef ANDROID
+	return android_graphics_get_corner_text_right_inset(hud_corner_text_canvas_width());
+#else
+	return 0;
+#endif
+}
+
 void hud_show_score()
 {
 	char	score_str[20];
@@ -741,7 +767,7 @@ void hud_show_score()
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1);
 
-	gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), FSPACY(1), score_str);
+	gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset()-w-FSPACX(1), FSPACY(1), score_str);
 }
 
 void hud_show_timer_count()
@@ -806,7 +832,7 @@ void hud_show_score_added()
 
 		gr_get_string_size(score_str, &w, &h, &aw );
 		gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
-		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), LINE_SPACING+FSPACY(1), score_str);
+		gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset()-w-FSPACX(1), LINE_SPACING+FSPACY(1), score_str);
 	} else {
 		score_time = 0;
 		score_display = 0;
@@ -997,12 +1023,13 @@ void hud_show_energy(void)
 	int pnum = get_pnum_for_hud();
 
 	if (PlayerCfg.HudMode<2) {
+		int x = FSPACX(1) + hud_corner_text_left_inset();
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 		if (Game_mode & GM_MULTI)
-			 gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+			 gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
 		else
-			 gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-LINE_SPACING),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+			 gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-LINE_SPACING),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
 	}
 
 	if (Newdemo_state==ND_STATE_RECORDING )
@@ -1140,8 +1167,9 @@ void hud_show_weapons(void)
 		y -= LINE_SPACING*4;
 
 	if (PlayerCfg.HudMode==1){
-		hud_show_weapons_mode(0,0,grd_curcanv->cv_bitmap.bm_w,y-(LINE_SPACING*2));
-		hud_show_weapons_mode(1,0,grd_curcanv->cv_bitmap.bm_w,y-LINE_SPACING);
+		int right_edge = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset();
+		hud_show_weapons_mode(0,0,right_edge,y-(LINE_SPACING*2));
+		hud_show_weapons_mode(1,0,right_edge,y-LINE_SPACING);
 	}
 	else if (PlayerCfg.HudMode==2){
 		int x1,x2;
@@ -1163,6 +1191,7 @@ void hud_show_weapons(void)
 		const char *disp_primary_weapon_name;
 		char    weapon_str[32];
 		int	w, h, aw;
+		int right_edge = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset();
 
 		switch (Players[pnum].primary_weapon) {
 			case 0:
@@ -1192,13 +1221,13 @@ void hud_show_weapons(void)
 		}
 
 		gr_get_string_size(disp_primary_weapon_name, &w, &h, &aw );
-		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), y-(LINE_SPACING*2), disp_primary_weapon_name);//originally y-8
+		gr_string(right_edge-w-FSPACX(1), y-(LINE_SPACING*2), disp_primary_weapon_name);//originally y-8
 
 		snprintf(weapon_str, sizeof(weapon_str), "%s %d",SECONDARY_WEAPON_NAMES_VERY_SHORT(Players[pnum].secondary_weapon),Players[pnum].secondary_ammo[Players[pnum].secondary_weapon]);
 		gr_get_string_size(weapon_str, &w, &h, &aw );
-		gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(1), y-LINE_SPACING, weapon_str);
+		gr_string(right_edge-w-FSPACX(1), y-LINE_SPACING, weapon_str);
 
-		show_bomb_count(grd_curcanv->cv_bitmap.bm_w-FSPACX(1), y-(LINE_SPACING*3),-1,1, 1);
+		show_bomb_count(right_edge-FSPACX(1), y-(LINE_SPACING*3),-1,1, 1);
 	}
 
 	if (Players[pnum].primary_weapon == VULCAN_INDEX)
@@ -1251,18 +1280,19 @@ void hud_show_shield(void)
 	int pnum = get_pnum_for_hud();
 
 	if (PlayerCfg.HudMode<2) {
+		int x = FSPACX(1) + hud_corner_text_left_inset();
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 		if ( Players[pnum].shields >= 0 )	{
 			if (Game_mode & GM_MULTI)
-				gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
+				gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
 			else
-				gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
+				gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
 		} else {
 			if (Game_mode & GM_MULTI)
-				gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: 0", TXT_SHIELD );
+				gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: 0", TXT_SHIELD );
 			else
-				gr_printf(FSPACX(1), (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: 0", TXT_SHIELD );
+				gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: 0", TXT_SHIELD );
 		}
 	}
 
@@ -1284,6 +1314,7 @@ void hud_show_lives()
 		x = HUD_SCALE_X(7);
 	else
 		x = FSPACX(2);
+	x += hud_corner_text_left_inset();
 
 	if (Game_mode & GM_MULTI) {
 		gr_set_curfont( GAME_FONT );

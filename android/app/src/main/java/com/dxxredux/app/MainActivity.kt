@@ -24,6 +24,7 @@ import android.view.Gravity
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.RoundedCorner
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -44,6 +45,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.dxxredux.app.multiplayer.MatchmakingService
 import org.json.JSONObject
 import java.io.File
+import kotlin.math.roundToInt
 
 internal const val EXTRA_TRANSIENT_LAUNCH_TOKEN = "transient_launch_token"
 private const val PREF_LAST_CONSUMED_TRANSIENT_LAUNCH_TOKEN = "last_consumed_transient_launch_token"
@@ -236,6 +238,12 @@ class MainActivity :
     external fun nativeSetGraphicsOption(
         name: String,
         value: Int,
+    )
+
+    external fun nativeSetRoundedCornerTextInsets(
+        surfaceWidth: Int,
+        leftPx: Int,
+        rightPx: Int,
     )
 
     external fun nativeGetGammaLevel(): Int
@@ -1366,6 +1374,10 @@ class MainActivity :
         )
 
         setContentView(frame)
+        frame.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateRoundedCornerTextInsets()
+        }
+        updateRoundedCornerTextInsets()
 
         // Hide system bars after content view is set
         hideSystemBars()
@@ -1450,6 +1462,7 @@ class MainActivity :
     // ── SurfaceHolder.Callback ──────────────────────────────
     override fun surfaceCreated(holder: SurfaceHolder) {
         nativeSetSurface(holder.surface)
+        updateRoundedCornerTextInsets()
 
         // Start the engine only once, after the surface is ready
         if (!gameStarted) {
@@ -1497,6 +1510,7 @@ class MainActivity :
         height: Int,
     ) {
         nativeSetSurface(holder.surface)
+        updateRoundedCornerTextInsets()
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
@@ -1575,6 +1589,7 @@ class MainActivity :
         applyDemoRecordingPref()
         applyGraphicsDebugPrefs(prefs)
         applyGraphicsSettingsPrefs(prefs)
+        updateRoundedCornerTextInsets()
         // Start polling in-game state to show/hide overlay
         startOverlayPolling()
     }
@@ -1619,6 +1634,7 @@ class MainActivity :
             cfgInt("TexFilt")?.let { nativeSetGraphicsOption("tex_filt", it) }
             cfgInt("MenuTexFilt")?.let { nativeSetGraphicsOption("menu_tex_filt", it) }
             cfgInt("HudTexFilt")?.let { nativeSetGraphicsOption("hud_tex_filt", it) }
+            cfgInt("CornerTextInset")?.let { nativeSetGraphicsOption("corner_text_inset", it) }
             cfgInt("AnisoLevel")?.let { nativeSetGraphicsOption("aniso_level", it) }
             cfgInt("MsaaLevel")?.let { nativeSetGraphicsOption("msaa_level", it) }
             cfgInt("ClassicDepth")?.let { nativeSetGraphicsOption("classic_depth", it) }
@@ -1635,6 +1651,59 @@ class MainActivity :
                     if (prefs.getBoolean(PREF_GRAPHICS_DYNLIGHT_COLOR, false)) 1 else 0,
                 )
             }
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
+    }
+
+    @Suppress("NewApi")
+    private fun roundedCornerLeftInsetPx(corner: RoundedCorner?): Int {
+        if (corner == null || corner.radius <= 0) return 0
+        return maxOf(corner.radius, corner.center.x)
+    }
+
+    @Suppress("NewApi")
+    private fun roundedCornerRightInsetPx(
+        width: Int,
+        corner: RoundedCorner?,
+    ): Int {
+        if (corner == null || corner.radius <= 0) return 0
+        return maxOf(corner.radius, width - corner.center.x)
+    }
+
+    private fun updateRoundedCornerTextInsets() {
+        val decorView = window.decorView
+        val width =
+            when {
+                ::gameSurfaceView.isInitialized && gameSurfaceView.width > 0 -> gameSurfaceView.width
+                decorView.width > 0 -> decorView.width
+                else -> 0
+            }
+        if (width <= 0) {
+            decorView.post { updateRoundedCornerTextInsets() }
+            return
+        }
+
+        val fallback = (width * 0.05f).roundToInt().coerceAtLeast(1)
+        var left = 0
+        var right = 0
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val insets = decorView.rootWindowInsets
+            left =
+                maxOf(
+                    roundedCornerLeftInsetPx(insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)),
+                    roundedCornerLeftInsetPx(insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT)),
+                )
+            right =
+                maxOf(
+                    roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT)),
+                    roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT)),
+                )
+        }
+        if (left <= 0) left = fallback
+        if (right <= 0) right = fallback
+        try {
+            nativeSetRoundedCornerTextInsets(width, left, right)
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }

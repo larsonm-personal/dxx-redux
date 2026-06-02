@@ -47,6 +47,17 @@ class GraphicsConfigHelpersTest {
     }
 
     @Test
+    fun cornerTextInset_writesRootAndBothGameConfigs() {
+        val filesDir = filesDirWithConfigs()
+
+        updateAllConfigFiles(filesDir, listOf("CornerTextInset" to "0"))
+
+        assertEquals("0", readConfigValueForGame(filesDir, "d1", "CornerTextInset"))
+        assertEquals("0", readConfigValueForGame(filesDir, "d2", "CornerTextInset"))
+        assertTrue(cfgText(filesDir, "descent.cfg").contains("CornerTextInset=0"))
+    }
+
+    @Test
     fun updateConfigFilesForGame_writesRootAndSelectedGameOnly() {
         val filesDir = filesDirWithConfigs()
 
