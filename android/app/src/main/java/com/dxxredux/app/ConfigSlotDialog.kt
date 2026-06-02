@@ -25,6 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -237,6 +239,13 @@ internal fun ConfigSlotDialog(
 
     val pendingPromptMode = promptMode
     if (pendingPromptMode != null) {
+        val promptFieldFocus = remember(pendingPromptMode) { FocusRequester() }
+        val okFocus = remember(pendingPromptMode) { FocusRequester() }
+        val cancelFocus = remember(pendingPromptMode) { FocusRequester() }
+        val promptHasName = promptName.trim().isNotEmpty()
+        LaunchedEffect(pendingPromptMode) {
+            promptFieldFocus.requestFocusSafely()
+        }
         AlertDialog(
             onDismissRequest = { promptMode = null },
             title = {
@@ -249,7 +258,14 @@ internal fun ConfigSlotDialog(
                         onValueChange = { promptName = it.take(CONFIG_SLOT_NAME_MAX_LENGTH) },
                         singleLine = true,
                         label = { Text("Slot name", fontSize = 11.sp) },
-                        modifier = Modifier.fillMaxWidth().dpadTextFieldNavigation(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRequester(promptFieldFocus)
+                                .dpadTextFieldNavigation(
+                                    up = cancelFocus,
+                                    down = if (promptHasName) okFocus else cancelFocus,
+                                ),
                     )
                     Spacer(Modifier.height(4.dp))
                     Text("Maximum $CONFIG_SLOT_NAME_MAX_LENGTH characters", fontSize = 10.sp)
@@ -265,14 +281,19 @@ internal fun ConfigSlotDialog(
                         }
                         promptMode = null
                     },
-                    enabled = promptName.trim().isNotEmpty(),
+                    enabled = promptHasName,
+                    modifier = Modifier.focusRequester(okFocus).tvFocusBorder(),
                     contentPadding = slotTextButtonPadding,
                 ) {
                     Text("OK", fontSize = slotButtonTextSize)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { promptMode = null }, contentPadding = slotTextButtonPadding) {
+                TextButton(
+                    onClick = { promptMode = null },
+                    modifier = Modifier.focusRequester(cancelFocus).tvFocusBorder(),
+                    contentPadding = slotTextButtonPadding,
+                ) {
                     Text("Cancel", fontSize = slotButtonTextSize)
                 }
             },

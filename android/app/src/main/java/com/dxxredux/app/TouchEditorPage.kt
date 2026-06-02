@@ -25,16 +25,25 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontStyle
@@ -68,6 +77,22 @@ private const val SELECTED_TYPE_STICK_ZONE_EDGE = "stickZoneEdge"
 private const val SELECTED_TYPE_AXIS_REGION_EDGE = "axisRegionEdge"
 private const val SELECTED_TYPE_MORE_ACTIONS = "moreActions"
 private const val MIN_RESIZABLE_ZONE_SIZE_PCT = 2f
+private const val TOUCH_EDITOR_TOOLBAR_ACTION_COUNT = 9
+private const val TOUCH_EDITOR_TOOLBAR_SAVE_INDEX = 8
+
+internal fun nextTouchEditorToolbarFocusIndex(
+    currentIndex: Int,
+    saveEnabled: Boolean,
+    direction: Int,
+): Int {
+    if (direction == 0) return currentIndex.coerceIn(0, TOUCH_EDITOR_TOOLBAR_ACTION_COUNT - 1)
+    var index = currentIndex.coerceIn(0, TOUCH_EDITOR_TOOLBAR_ACTION_COUNT - 1)
+    repeat(TOUCH_EDITOR_TOOLBAR_ACTION_COUNT - 1) {
+        index = (index + direction + TOUCH_EDITOR_TOOLBAR_ACTION_COUNT) % TOUCH_EDITOR_TOOLBAR_ACTION_COUNT
+        if (saveEnabled || index != TOUCH_EDITOR_TOOLBAR_SAVE_INDEX) return index
+    }
+    return currentIndex.coerceIn(0, TOUCH_EDITOR_TOOLBAR_ACTION_COUNT - 1)
+}
 
 internal enum class FloatingZoneEdge {
     LEFT,
@@ -351,6 +376,35 @@ fun TouchEditorPage(
         } else {
             48.dp
         }
+    val toolbarFocusRequesters = remember { List(TOUCH_EDITOR_TOOLBAR_ACTION_COUNT) { FocusRequester() } }
+    RequestLauncherControllerFocus(toolbarFocusRequesters[0], true)
+
+    fun moveToolbarFocus(
+        fromIndex: Int,
+        direction: Int,
+    ): Boolean {
+        val nextIndex = nextTouchEditorToolbarFocusIndex(fromIndex, dirty, direction)
+        if (nextIndex == fromIndex) return false
+        toolbarFocusRequesters[nextIndex].requestFocusSafely()
+        return true
+    }
+
+    fun toolbarButtonModifier(index: Int): Modifier =
+        Modifier
+            .focusRequester(toolbarFocusRequesters[index])
+            .onPreviewKeyEvent { event ->
+                val direction =
+                    when (event.key) {
+                        Key.DirectionLeft -> -1
+                        Key.DirectionRight -> 1
+                        else -> 0
+                    }
+                if (direction == 0) return@onPreviewKeyEvent false
+                if (event.type == KeyEventType.KeyDown) {
+                    moveToolbarFocus(index, direction)
+                }
+                true
+            }.tvFocusBorder()
 
     BottomSheetScaffold(
         scaffoldState = sheetState,
@@ -381,22 +435,25 @@ fun TouchEditorPage(
                 TextButton(onClick = {
                     if (dirty) save()
                     onBack()
-                }) {
+                }, modifier = toolbarButtonModifier(0)) {
                     Text("Close Editor", fontSize = 12.sp, color = Color.White)
                 }
-                TextButton(onClick = { showSlotDialog = true }) {
+                TextButton(onClick = { showSlotDialog = true }, modifier = toolbarButtonModifier(1)) {
                     Text("Slots", fontSize = 12.sp)
                 }
-                TextButton(onClick = { showPresetPicker = true }) {
+                TextButton(onClick = { showPresetPicker = true }, modifier = toolbarButtonModifier(2)) {
                     Text("Presets", fontSize = 12.sp)
                 }
-                TextButton(onClick = { showGlobalSettings = true }) {
+                TextButton(onClick = { showGlobalSettings = true }, modifier = toolbarButtonModifier(3)) {
                     Text("Global", fontSize = 12.sp)
                 }
-                TextButton(onClick = { showGyroSettings = true }) {
+                TextButton(onClick = { showGyroSettings = true }, modifier = toolbarButtonModifier(4)) {
                     Text("Gyro", fontSize = 12.sp)
                 }
-                IconButton(onClick = { showAddControl = true }, modifier = Modifier.size(36.dp)) {
+                IconButton(
+                    onClick = { showAddControl = true },
+                    modifier = toolbarButtonModifier(5).size(36.dp),
+                ) {
                     Icon(Icons.Default.Add, "Add control", tint = Color.White)
                 }
                 TextButton(onClick = {
@@ -404,15 +461,15 @@ fun TouchEditorPage(
                     if (!ConfigImportExport.exportTouchLayout(context)) {
                         Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
                     }
-                }) {
+                }, modifier = toolbarButtonModifier(6)) {
                     Text("Export", fontSize = 12.sp, color = Color.White)
                 }
                 TextButton(onClick = {
                     importPickerLauncher.launch(arrayOf("application/json", "*/*"))
-                }) {
+                }, modifier = toolbarButtonModifier(7)) {
                     Text("Import", fontSize = 12.sp, color = Color.White)
                 }
-                TextButton(onClick = { save() }, enabled = dirty) {
+                TextButton(onClick = { save() }, enabled = dirty, modifier = toolbarButtonModifier(8)) {
                     Text(
                         "Save",
                         fontSize = 12.sp,
@@ -3106,6 +3163,10 @@ private fun PresetPickerDialog(
     onSelect: (TouchLayout) -> Unit,
 ) {
     val context = LocalContext.current
+    val presets = remember(context) { TouchLayoutRepository.allPresets(context) }
+    val firstPresetFocus = remember { FocusRequester() }
+    val cancelFocus = remember { FocusRequester() }
+    RequestLauncherControllerFocus(if (presets.isNotEmpty()) firstPresetFocus else cancelFocus, true, presets.size)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Load Preset") },
@@ -3117,10 +3178,14 @@ private fun PresetPickerDialog(
                     color = Color(0xFFFF9800),
                 )
                 Spacer(Modifier.height(12.dp))
-                TouchLayoutRepository.allPresets(context).forEach { preset ->
+                presets.forEachIndexed { index, preset ->
                     TextButton(
                         onClick = { onSelect(preset) },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .then(if (index == 0) Modifier.focusRequester(firstPresetFocus) else Modifier)
+                                .tvFocusBorder(),
                     ) {
                         Text(preset.name, fontSize = 14.sp)
                     }
@@ -3129,7 +3194,9 @@ private fun PresetPickerDialog(
         },
         confirmButton = {},
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(cancelFocus).tvFocusBorder()) {
+                Text("Cancel")
+            }
         },
     )
 }
@@ -3200,6 +3267,10 @@ private fun GlobalSettingsDialog(
     onDismiss: () -> Unit,
     onUpdate: (TouchLayout) -> Unit,
 ) {
+    val focusManager = LocalFocusManager.current
+    val sliderFocus = remember { FocusRequester() }
+    val okFocus = remember { FocusRequester() }
+    RequestLauncherControllerFocus(sliderFocus, true, layout.globalOpacity)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Global Settings") },
@@ -3214,11 +3285,30 @@ private fun GlobalSettingsDialog(
                     value = layout.globalOpacity,
                     onValueChange = { onUpdate(layout.copy(globalOpacity = it)) },
                     valueRange = TouchBindings.MIN_GLOBAL_OPACITY..TouchBindings.MAX_GLOBAL_OPACITY,
+                    modifier =
+                        Modifier
+                            .focusRequester(sliderFocus)
+                            .onPreviewKeyEvent { event ->
+                                val isVertical =
+                                    event.key == Key.DirectionUp ||
+                                        event.key == Key.DirectionDown
+                                if (!isVertical) return@onPreviewKeyEvent false
+                                if (event.type == KeyEventType.KeyDown) {
+                                    if (event.key == Key.DirectionDown) {
+                                        okFocus.requestFocusSafely()
+                                    } else {
+                                        focusManager.moveFocus(FocusDirection.Up)
+                                    }
+                                }
+                                true
+                            }.tvFocusBorder(),
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("OK") }
+            TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(okFocus).tvFocusBorder()) {
+                Text("OK")
+            }
         },
         dismissButton = {},
     )

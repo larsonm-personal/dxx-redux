@@ -49,6 +49,13 @@ class SettingsChildOverlayControllerTest {
     }
 
     @Test
+    fun nextTouchEditorToolbarFocusIndex_skipsDisabledSaveSlot() {
+        assertEquals(0, nextTouchEditorToolbarFocusIndex(7, saveEnabled = false, direction = 1))
+        assertEquals(7, nextTouchEditorToolbarFocusIndex(0, saveEnabled = false, direction = -1))
+        assertEquals(8, nextTouchEditorToolbarFocusIndex(7, saveEnabled = true, direction = 1))
+    }
+
+    @Test
     fun shouldCloseControllerSettingsStackForMenu_requiresPressedSettingsSurface() {
         assertEquals(
             true,
