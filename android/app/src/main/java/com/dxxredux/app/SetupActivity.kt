@@ -432,15 +432,19 @@ class SetupActivity : ComponentActivity() {
                     "write_engine_prefs" -> {
                         val cockpitMode = intent.getIntExtra("cockpit_mode", 0)
                         val autoLeveling = intent.getBooleanExtra("auto_leveling", true)
+                        val showRobotHostageCounts = intent.getBooleanExtra("show_robot_hostage_counts", false)
                         val n =
                             NativePilotPreferences.writeEnginePrefsToAll(
                                 filesDir.absolutePath,
                                 cockpitMode,
                                 autoLeveling,
+                                showRobotHostageCounts,
                             )
                         Log.i(
                             "DXX-Setup",
-                            "write_engine_prefs: patched $n file(s) (cockpit_mode=$cockpitMode auto_leveling=$autoLeveling)",
+                            "write_engine_prefs: patched $n file(s) " +
+                                "(cockpit_mode=$cockpitMode auto_leveling=$autoLeveling " +
+                                "show_counts=$showRobotHostageCounts)",
                         )
                     }
 

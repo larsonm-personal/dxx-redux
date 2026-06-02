@@ -136,6 +136,7 @@ typedef struct player_config
 	ubyte ObsHideEnergyWeaponMuzzle[NUM_OBS_MODES];
 	ubyte NoChatSound;
 	ubyte ClassicAutoselectWeapon;
+	ubyte ShowRobotHostageCounts;
 } __pack__ player_config;
 
 extern struct player_config PlayerCfg;
@@ -172,10 +173,13 @@ int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_n
 #ifdef ANDROID
 void android_get_default_pilot_prefs(int *cockpit_mode, int *auto_leveling);
 void android_get_default_visual_prefs(int *alpha_effects, int *dynlight_color);
+void android_get_default_hud_count_prefs(int *show_counts);
 int plr_read_autoleveling(const char *path, int *auto_leveling);
 int plr_patch_autoleveling(const char *path, int auto_leveling);
 int plx_read_cockpit_mode(const char *path, int *cockpit_mode);
 int plx_write_cockpit_mode(const char *path, int cockpit_mode);
+int plx_read_robot_hostage_counts(const char *path, int *show_counts);
+int plx_write_robot_hostage_counts(const char *path, int show_counts);
 int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_color);
 int plx_write_visual_prefs(const char *path, int alpha_effects, int dynlight_color);
 int plr_patch_keysettings(const char *path,

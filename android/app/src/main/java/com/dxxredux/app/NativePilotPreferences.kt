@@ -11,6 +11,7 @@ object NativePilotPreferences {
         val hasPilotFile: Boolean,
         val cockpitMode: Int,
         val autoLeveling: Boolean,
+        val showRobotHostageCounts: Boolean,
     )
 
     data class VisualPrefs(
@@ -32,12 +33,14 @@ object NativePilotPreferences {
         filesDir: String,
         cockpitMode: Int,
         autoLeveling: Boolean,
+        showRobotHostageCounts: Boolean,
     ): Int
 
     @JvmStatic external fun nativeWriteEnginePrefsD2(
         filesDir: String,
         cockpitMode: Int,
         autoLeveling: Boolean,
+        showRobotHostageCounts: Boolean,
     ): Int
 
     @JvmStatic external fun nativeReadVisualPrefsD1(filesDir: String): IntArray
@@ -61,6 +64,7 @@ object NativePilotPreferences {
             hasPilotFile = raw.size >= 1 && raw[0] != 0,
             cockpitMode = if (raw.size >= 2) raw[1] else 0,
             autoLeveling = raw.size >= 3 && raw[2] != 0,
+            showRobotHostageCounts = raw.size >= 4 && raw[3] != 0,
         )
 
     private fun decodeVisualPrefs(raw: IntArray): VisualPrefs =
@@ -90,20 +94,22 @@ object NativePilotPreferences {
         filesDir: String,
         cockpitMode: Int,
         autoLeveling: Boolean,
+        showRobotHostageCounts: Boolean,
     ): Int =
         if (game == "d1") {
-            nativeWriteEnginePrefsD1(filesDir, cockpitMode, autoLeveling)
+            nativeWriteEnginePrefsD1(filesDir, cockpitMode, autoLeveling, showRobotHostageCounts)
         } else {
-            nativeWriteEnginePrefsD2(filesDir, cockpitMode, autoLeveling)
+            nativeWriteEnginePrefsD2(filesDir, cockpitMode, autoLeveling, showRobotHostageCounts)
         }
 
     fun writeEnginePrefsToAll(
         filesDir: String,
         cockpitMode: Int,
         autoLeveling: Boolean,
+        showRobotHostageCounts: Boolean,
     ): Int =
-        nativeWriteEnginePrefsD1(filesDir, cockpitMode, autoLeveling) +
-            nativeWriteEnginePrefsD2(filesDir, cockpitMode, autoLeveling)
+        nativeWriteEnginePrefsD1(filesDir, cockpitMode, autoLeveling, showRobotHostageCounts) +
+            nativeWriteEnginePrefsD2(filesDir, cockpitMode, autoLeveling, showRobotHostageCounts)
 
     fun readVisualPrefs(
         game: String,

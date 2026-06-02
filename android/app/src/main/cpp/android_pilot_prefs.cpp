@@ -126,16 +126,23 @@ static int for_each_pilot(const char *files_dir,
 static void read_engine_prefs(const char *files_dir,
                               int *has_pilot,
                               int *cockpit_mode,
-                              int *auto_leveling)
+                              int *auto_leveling,
+                              int *show_counts)
 {
 	android_get_default_pilot_prefs(cockpit_mode, auto_leveling);
+	android_get_default_hud_count_prefs(show_counts);
 	*has_pilot = 0;
 
 #ifdef DXX_BUILD_DESCENT_II
 	char pilot_path[512];
+	char plx_path[512];
 	if (find_first_pilot(files_dir, "d2x-redux", ".plr", pilot_path, sizeof(pilot_path))) {
 		*has_pilot = 1;
 		(void) plr_read_cockpit_autolevel(pilot_path, cockpit_mode, auto_leveling);
+	}
+	if (find_first_pilot(files_dir, "d2x-redux", ".plx", plx_path, sizeof(plx_path))) {
+		*has_pilot = 1;
+		(void) plx_read_robot_hostage_counts(plx_path, show_counts);
 	}
 #else
 	char cockpit_path[512] = { 0 };
@@ -154,8 +161,10 @@ static void read_engine_prefs(const char *files_dir,
 	}
 
 	*has_pilot = found_cockpit || found_auto;
-	if (found_cockpit)
+	if (found_cockpit) {
 		(void) plx_read_cockpit_mode(cockpit_path, cockpit_mode);
+		(void) plx_read_robot_hostage_counts(cockpit_path, show_counts);
+	}
 	if (found_auto)
 		(void) plr_read_autoleveling(auto_path, auto_leveling);
 #endif
@@ -183,6 +192,7 @@ static void read_visual_prefs(const char *files_dir,
 struct write_ctx {
 	int cockpit_mode;
 	int auto_leveling;
+	int show_counts;
 };
 
 struct visual_write_ctx {
@@ -202,11 +212,19 @@ static int write_visitor(const char *path, void *ctx)
 	struct write_ctx *wc = (struct write_ctx *) ctx;
 	return plr_patch_cockpit_autolevel(path, wc->cockpit_mode, wc->auto_leveling);
 }
+
+static int write_hud_counts_visitor(const char *path, void *ctx)
+{
+	struct write_ctx *wc = (struct write_ctx *) ctx;
+	return plx_write_robot_hostage_counts(path, wc->show_counts);
+}
 #else
 static int write_cockpit_visitor(const char *path, void *ctx)
 {
 	struct write_ctx *wc = (struct write_ctx *) ctx;
-	return plx_write_cockpit_mode(path, wc->cockpit_mode);
+	int cockpit_result = plx_write_cockpit_mode(path, wc->cockpit_mode);
+	int counts_result = plx_write_robot_hostage_counts(path, wc->show_counts);
+	return cockpit_result || counts_result;
 }
 
 static int write_autolevel_visitor(const char *path, void *ctx)
@@ -223,19 +241,22 @@ JNI_FUNC(nativeReadEnginePrefs)(JNIEnv *env, jclass, jstring jfilesDir)
 	int has_pilot = 0;
 	int cockpit_mode = 0;
 	int auto_leveling = 1;
-	jint raw[3];
+	int show_counts = 0;
+	jint raw[4];
 	jintArray result;
 
-	read_engine_prefs(files_dir, &has_pilot, &cockpit_mode, &auto_leveling);
-	LOGI("nativeReadEnginePrefs: has_pilot=%d cockpit=%d autolevel=%d", has_pilot, cockpit_mode, auto_leveling);
+	read_engine_prefs(files_dir, &has_pilot, &cockpit_mode, &auto_leveling, &show_counts);
+	LOGI("nativeReadEnginePrefs: has_pilot=%d cockpit=%d autolevel=%d counts=%d",
+	     has_pilot, cockpit_mode, auto_leveling, show_counts);
 
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 
 	raw[0] = (jint) has_pilot;
 	raw[1] = (jint) cockpit_mode;
 	raw[2] = (jint) (auto_leveling ? 1 : 0);
-	result = env->NewIntArray(3);
-	env->SetIntArrayRegion(result, 0, 3, raw);
+	raw[3] = (jint) (show_counts ? 1 : 0);
+	result = env->NewIntArray(4);
+	env->SetIntArrayRegion(result, 0, 4, raw);
 	return result;
 }
 
@@ -244,7 +265,8 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
                                  jclass,
                                  jstring jfilesDir,
                                  jint cockpitMode,
-                                 jboolean autoLeveling)
+                                 jboolean autoLeveling,
+                                 jboolean showRobotHostageCounts)
 {
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
 	struct write_ctx wc;
@@ -252,9 +274,14 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
 
 	wc.cockpit_mode = (int) cockpitMode;
 	wc.auto_leveling = autoLeveling ? 1 : 0;
+	wc.show_counts = showRobotHostageCounts ? 1 : 0;
 
 #ifdef DXX_BUILD_DESCENT_II
-	total = for_each_pilot(files_dir, "d2x-redux", ".plr", write_visitor, &wc);
+	{
+		int plr_total = for_each_pilot(files_dir, "d2x-redux", ".plr", write_visitor, &wc);
+		int plx_total = for_each_pilot(files_dir, "d2x-redux", ".plx", write_hud_counts_visitor, &wc);
+		total = (plr_total > plx_total) ? plr_total : plx_total;
+	}
 #else
 	{
 		int plx_total = for_each_pilot(files_dir, "d1x-redux", ".plx", write_cockpit_visitor, &wc);
@@ -263,7 +290,8 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
 	}
 #endif
 
-	LOGI("nativeWriteEnginePrefs: cockpit=%d autolevel=%d patched=%d", wc.cockpit_mode, wc.auto_leveling, total);
+	LOGI("nativeWriteEnginePrefs: cockpit=%d autolevel=%d counts=%d patched=%d",
+	     wc.cockpit_mode, wc.auto_leveling, wc.show_counts, total);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 	return (jint) total;
 }

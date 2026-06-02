@@ -339,6 +339,7 @@ object ConfigImportExport {
                     JSONObject().apply {
                         put("cockpit_mode", prefs.cockpitMode)
                         put("auto_leveling", prefs.autoLeveling)
+                        put("show_robot_hostage_counts", prefs.showRobotHostageCounts)
                     },
                 )
             } catch (_: Exception) {
@@ -363,6 +364,7 @@ object ConfigImportExport {
                         context.filesDir.absolutePath,
                         obj.getInt("cockpit_mode"),
                         obj.getBoolean("auto_leveling"),
+                        obj.optBoolean("show_robot_hostage_counts", false),
                     )
                 results.add(
                     if (count > 0) {

@@ -86,6 +86,8 @@ fun EnginePreferencesPage(
     var savedCockpitMode by remember { mutableIntStateOf(CM_FULL_COCKPIT) }
     var autoLeveling by remember { mutableStateOf(true) }
     var savedAutoLeveling by remember { mutableStateOf(true) }
+    var showRobotHostageCounts by remember { mutableStateOf(false) }
+    var savedShowRobotHostageCounts by remember { mutableStateOf(false) }
     var statusMessage by remember { mutableStateOf("") }
     var hasPilotFile by remember { mutableStateOf(false) }
     var showGuidebotLine by remember {
@@ -114,7 +116,10 @@ fun EnginePreferencesPage(
         mutableStateOf(prefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true))
     }
 
-    val hasChanges = cockpitMode != savedCockpitMode || autoLeveling != savedAutoLeveling
+    val hasChanges =
+        cockpitMode != savedCockpitMode ||
+            autoLeveling != savedAutoLeveling ||
+            showRobotHostageCounts != savedShowRobotHostageCounts
 
     fun loadPrefs() {
         val data = NativePilotPreferences.readEnginePrefsForAll(gameVariant, filesDir.absolutePath)
@@ -122,6 +127,8 @@ fun EnginePreferencesPage(
         savedCockpitMode = data.cockpitMode
         autoLeveling = data.autoLeveling
         savedAutoLeveling = data.autoLeveling
+        showRobotHostageCounts = data.showRobotHostageCounts
+        savedShowRobotHostageCounts = data.showRobotHostageCounts
         hasPilotFile = data.hasPilotFile
         statusMessage = if (data.hasPilotFile) "" else "No pilot files found - showing defaults"
     }
@@ -213,12 +220,34 @@ fun EnginePreferencesPage(
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = showRobotHostageCounts,
+                        onCheckedChange = { showRobotHostageCounts = it },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Robot and hostage counts", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Shows level robot progress and hostage status below the score line",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     OutlinedButton(
                         onClick = {
                             cockpitMode = CM_FULL_COCKPIT
                             autoLeveling = true
+                            showRobotHostageCounts = false
                         },
                         modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
                     ) {
@@ -231,10 +260,12 @@ fun EnginePreferencesPage(
                                     filesDir.absolutePath,
                                     cockpitMode,
                                     autoLeveling,
+                                    showRobotHostageCounts,
                                 )
                             if (count > 0) {
                                 savedCockpitMode = cockpitMode
                                 savedAutoLeveling = autoLeveling
+                                savedShowRobotHostageCounts = showRobotHostageCounts
                                 hasPilotFile = true
                                 statusMessage = "Saved to $count pilot file(s) across both games"
                             } else {

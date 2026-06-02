@@ -37,6 +37,117 @@ void android_get_default_visual_prefs(int *alpha_effects, int *dynlight_color)
 		*dynlight_color = 0;
 }
 
+void android_get_default_hud_count_prefs(int *show_counts)
+{
+	if (show_counts)
+		*show_counts = 0;
+}
+
+int plx_read_robot_hostage_counts(const char *path, int *show_counts)
+{
+	FILE *f = fopen(path, "r");
+	char line[256];
+	int in_cockpit = 0;
+
+	if (!f) return 0;
+
+	while (fgets(line, sizeof(line), f)) {
+		if (!in_cockpit) {
+			if (!d_strnicmp(line, "[cockpit]", 9))
+				in_cockpit = 1;
+			continue;
+		}
+		if (!d_strnicmp(line, "[end]", 5))
+			break;
+		if (!d_strnicmp(line, "robothostagecounts=", 19)) {
+			if (show_counts)
+				*show_counts = atoi(line + 19) ? 1 : 0;
+			fclose(f);
+			return 1;
+		}
+	}
+
+	fclose(f);
+	return 0;
+}
+
+int plx_write_robot_hostage_counts(const char *path, int show_counts)
+{
+	FILE *f = fopen(path, "r");
+	char buf[32768];
+	int buf_len = 0;
+	int in_cockpit = 0;
+	int found_cockpit = 0;
+	int wrote_counts = 0;
+	char tmp[64];
+
+#define PLAYSAVE_BUF_APPEND(s)                             \
+	do {                                                   \
+		int playsave_slen = (int) strlen(s);               \
+		if (buf_len + playsave_slen < (int) sizeof(buf)) { \
+			memcpy(buf + buf_len, s, playsave_slen);       \
+			buf_len += playsave_slen;                      \
+		}                                                  \
+	} while (0)
+
+#define PLAYSAVE_APPEND_COUNTS()                                                    \
+	do {                                                                            \
+		snprintf(tmp, sizeof(tmp), "robothostagecounts=%i\n", show_counts ? 1 : 0); \
+		PLAYSAVE_BUF_APPEND(tmp);                                                   \
+		wrote_counts = 1;                                                           \
+	} while (0)
+
+	if (f) {
+		char line[256];
+		while (fgets(line, sizeof(line), f)) {
+			if (!in_cockpit && !d_strnicmp(line, "[cockpit]", 9)) {
+				found_cockpit = 1;
+				in_cockpit = 1;
+				PLAYSAVE_BUF_APPEND(line);
+				continue;
+			}
+			if (in_cockpit && !d_strnicmp(line, "[end]", 5)) {
+				if (!wrote_counts)
+					PLAYSAVE_APPEND_COUNTS();
+				PLAYSAVE_BUF_APPEND(line);
+				in_cockpit = 0;
+				continue;
+			}
+			if (in_cockpit && !d_strnicmp(line, "robothostagecounts=", 19)) {
+				PLAYSAVE_APPEND_COUNTS();
+				continue;
+			}
+			PLAYSAVE_BUF_APPEND(line);
+		}
+		fclose(f);
+	}
+
+	if (in_cockpit) {
+		if (!wrote_counts)
+			PLAYSAVE_APPEND_COUNTS();
+		PLAYSAVE_BUF_APPEND("[end]\n");
+	}
+
+	if (!found_cockpit) {
+		if (buf_len == 0)
+			PLAYSAVE_BUF_APPEND(playsave_android_options_header());
+		PLAYSAVE_BUF_APPEND("[cockpit]\n");
+		PLAYSAVE_APPEND_COUNTS();
+		PLAYSAVE_BUF_APPEND("[end]\n");
+	}
+
+#undef PLAYSAVE_BUF_APPEND
+#undef PLAYSAVE_APPEND_COUNTS
+
+	f = fopen(path, "w");
+	if (!f) return 0;
+	fwrite(buf, 1, buf_len, f);
+	fflush(f);
+	fsync(fileno(f));
+	fclose(f);
+	return 1;
+}
+
 int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_color)
 {
 	FILE *f = fopen(path, "r");

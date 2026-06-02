@@ -153,6 +153,7 @@ int new_player_config()
 	}
 	PlayerCfg.NoChatSound = 0;
 	PlayerCfg.ClassicAutoselectWeapon = 0;
+	PlayerCfg.ShowRobotHostageCounts = 0;
 
 	// Default taunt macros
 	#ifdef NETWORK
@@ -392,6 +393,8 @@ int read_player_d1x(char *filename)
 					PlayerCfg.CurrentCockpitMode = PlayerCfg.PreferredCockpitMode = atoi(line);
 				else if(!strcmp(word,"HUD"))
 					PlayerCfg.HudMode = atoi(line);
+				else if(!strcmp(word,"ROBOTHOSTAGECOUNTS"))
+					PlayerCfg.ShowRobotHostageCounts = atoi(line) ? 1 : 0;
 				else if(!strcmp(word,"RETTYPE"))
 					PlayerCfg.ReticleType = atoi(line);
 				else if(!strcmp(word,"RETRGBA"))
@@ -896,6 +899,7 @@ int write_player_d1x(char *filename)
 		PHYSFSX_printf(fout,"[cockpit]\n");
 		PHYSFSX_printf(fout,"mode=%i\n",PlayerCfg.PreferredCockpitMode);
 		PHYSFSX_printf(fout,"hud=%i\n",PlayerCfg.HudMode);
+		PHYSFSX_printf(fout,"robothostagecounts=%i\n",PlayerCfg.ShowRobotHostageCounts);
 		PHYSFSX_printf(fout,"rettype=%i\n",PlayerCfg.ReticleType);
 		PHYSFSX_printf(fout,"retrgba=%i,%i,%i,%i\n",PlayerCfg.ReticleRGBA[0],PlayerCfg.ReticleRGBA[1],PlayerCfg.ReticleRGBA[2],PlayerCfg.ReticleRGBA[3]);
 		PHYSFSX_printf(fout,"retsize=%i\n",PlayerCfg.ReticleSize);
