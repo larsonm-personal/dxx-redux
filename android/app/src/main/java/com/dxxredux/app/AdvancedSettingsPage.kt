@@ -11,7 +11,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -169,6 +168,7 @@ fun AdvancedSettingsPage(
     filesDir: File,
     fileSetManager: FileSetManager,
     isGameReady: (String) -> Boolean,
+    controllerFocusActive: Boolean = true,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -177,7 +177,7 @@ fun AdvancedSettingsPage(
     val ctx = LocalContext.current
     val scrollState = rememberScrollState()
     val initialFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { initialFocus.requestFocus() }
+    RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -196,7 +196,7 @@ fun AdvancedSettingsPage(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus)) {
+                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus).tvFocusBorder()) {
                     Text("< Back", fontSize = 14.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -488,6 +488,7 @@ private fun DebugLoggingSection() {
                     categoryStates[cat] = on
                     logFiles = DebugLog.listLogFiles(ctx)
                 },
+                modifier = Modifier.tvFocusBorder(),
             )
         }
     }
@@ -1317,7 +1318,7 @@ private fun StorageInspectorSection(filesDir: File) {
                                         Modifier
                                             .fillMaxWidth()
                                             .clickable { selectedEntry = entry }
-                                            .focusable()
+                                            .tvFocusable()
                                             .padding(vertical = 5.dp, horizontal = 4.dp),
                                 ) {
                                     Row(
@@ -1536,7 +1537,7 @@ private fun StorageInspectorSection(filesDir: File) {
                                     Modifier
                                         .fillMaxWidth()
                                         .clickable { selectedSafEntry = entry }
-                                        .focusable()
+                                        .tvFocusable()
                                         .padding(vertical = 4.dp),
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {

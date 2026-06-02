@@ -149,7 +149,7 @@ private fun LanJoinedLobbyView(
         modifier =
             Modifier
                 .fillMaxSize()
-                .showControllerFocusOnDpad(),
+                .showControllerFocusOnDpad(readyFocus),
     ) {
         // Header
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -407,7 +407,7 @@ private fun LanDiscoveryView(
         modifier =
             Modifier
                 .fillMaxSize()
-                .showControllerFocusOnDpad(),
+                .showControllerFocusOnDpad(actionFocus, focusTarget),
     ) {
         if (!isLandscape && !isHosting) {
             item {

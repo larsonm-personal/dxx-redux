@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import androidx.compose.ui.focus.FocusRequester
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -63,5 +64,10 @@ class LauncherFocusPolicyTest {
                 controllerNavigationActive = false,
             ),
         )
+    }
+
+    @Test
+    fun unattachedFocusRequesterCanBeRequestedSafely() {
+        FocusRequester().requestFocusSafely()
     }
 }

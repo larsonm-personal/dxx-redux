@@ -138,7 +138,7 @@ internal fun CreateGameDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier =
                         Modifier
-                            .showControllerFocusOnDpad()
+                            .showControllerFocusOnDpad(dialogFocus)
                             .verticalScroll(scrollState),
                 ) {
                     // Game selector

@@ -56,7 +56,7 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
         modifier =
             Modifier
                 .fillMaxSize()
-                .showControllerFocusOnDpad()
+                .showControllerFocusOnDpad(lobbyFocus)
                 .safeDrawingPadding()
                 .padding(16.dp),
     ) {

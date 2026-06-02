@@ -16,6 +16,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -702,7 +704,7 @@ private fun ModRow(
         Checkbox(
             checked = mod.enabled,
             onCheckedChange = onToggle,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(20.dp).tvFocusBorder(),
         )
         Spacer(modifier = Modifier.width(6.dp))
         Column(
@@ -947,7 +949,7 @@ internal fun MusicInfoSection(
                             audioSrcManager.setEnabled(src.id, checked)
                             audioSources = audioSrcManager.getSources()
                         },
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(20.dp).tvFocusBorder(),
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -1043,29 +1045,34 @@ internal fun FileDetailDialog(
     val isMissing = !status.found && entry != null
     val isExternal = entry?.isExternal == true
     var confirmingDelete by remember { mutableStateOf(false) }
+    val closeFocus = remember { FocusRequester() }
+    RequestLauncherControllerFocus(closeFocus, true, name)
 
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.focusRequester(closeFocus).tvFocusBorder(),
+            ) { Text("Close") }
         },
         dismissButton =
             if (onDelete != null) {
                 {
                     if (status.safUri != null) {
-                        TextButton(onClick = onDelete) {
+                        TextButton(onClick = onDelete, modifier = Modifier.tvFocusBorder()) {
                             Text("Unlink", color = MaterialTheme.colorScheme.error)
                         }
                     } else if (isExternal) {
-                        TextButton(onClick = onDelete) {
+                        TextButton(onClick = onDelete, modifier = Modifier.tvFocusBorder()) {
                             Text("Forget", color = MaterialTheme.colorScheme.error)
                         }
                     } else if (!confirmingDelete) {
-                        TextButton(onClick = { confirmingDelete = true }) {
+                        TextButton(onClick = { confirmingDelete = true }, modifier = Modifier.tvFocusBorder()) {
                             Text("Delete from data folder?", color = MaterialTheme.colorScheme.error)
                         }
                     } else {
-                        TextButton(onClick = onDelete) {
+                        TextButton(onClick = onDelete, modifier = Modifier.tvFocusBorder()) {
                             Text("Are you sure? Delete", color = MaterialTheme.colorScheme.error)
                         }
                     }

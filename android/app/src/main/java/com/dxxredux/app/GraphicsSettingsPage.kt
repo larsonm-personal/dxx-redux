@@ -31,6 +31,7 @@ internal const val PREF_GRAPHICS_DYNLIGHT_COLOR = "graphics_dynlight_color"
 fun GraphicsSettingsPage(
     gameVariant: String,
     filesDir: File,
+    controllerFocusActive: Boolean = true,
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
@@ -39,7 +40,7 @@ fun GraphicsSettingsPage(
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     val scrollState = rememberScrollState()
     val initialFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { initialFocus.requestFocus() }
+    RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -57,7 +58,7 @@ fun GraphicsSettingsPage(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus)) {
+                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus).tvFocusBorder()) {
                     Text("< Back", fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -181,6 +182,7 @@ private fun ResolutionSection(
                     updateDescentCfgResolution(filesDir, value)
                     bumpGraphicsSettingsGeneration(prefs)
                 },
+                modifier = Modifier.tvFocusBorder(),
             )
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
@@ -211,6 +213,7 @@ private fun TexFilterSection(filesDir: File) {
                     updateAllConfigFiles(filesDir, listOf("TexFilt" to value))
                     bumpGraphicsSettingsGeneration(prefs)
                 },
+                modifier = Modifier.tvFocusBorder(),
             )
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
@@ -241,6 +244,7 @@ private fun ColorDepthSection(filesDir: File) {
                     updateAllConfigFiles(filesDir, listOf("ColorDepth" to value))
                     bumpGraphicsSettingsGeneration(prefs)
                 },
+                modifier = Modifier.tvFocusBorder(),
             )
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
@@ -277,6 +281,7 @@ private fun MsaaSection(filesDir: File) {
                     updateAllConfigFiles(filesDir, listOf("MsaaLevel" to value.toString()))
                     bumpGraphicsSettingsGeneration(prefs)
                 },
+                modifier = Modifier.tvFocusBorder(),
             )
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
@@ -305,6 +310,7 @@ private fun AnisoSection(filesDir: File) {
                     updateAllConfigFiles(filesDir, listOf("AnisoLevel" to value.toString()))
                     bumpGraphicsSettingsGeneration(prefs)
                 },
+                modifier = Modifier.tvFocusBorder(),
             )
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
@@ -337,7 +343,7 @@ private fun SelectiveFilterSection(filesDir: File) {
                 updateAllConfigFiles(filesDir, listOf("MenuTexFilt" to if (it) "1" else "0"))
                 bumpGraphicsSettingsGeneration(prefs)
             },
-            modifier = Modifier.height(24.dp),
+            modifier = Modifier.height(24.dp).tvFocusBorder(),
         )
         Text(
             text = "Menus / briefings / videos / text / reticle",
@@ -357,7 +363,7 @@ private fun SelectiveFilterSection(filesDir: File) {
                 updateAllConfigFiles(filesDir, listOf("HudTexFilt" to if (it) "1" else "0"))
                 bumpGraphicsSettingsGeneration(prefs)
             },
-            modifier = Modifier.height(24.dp),
+            modifier = Modifier.height(24.dp).tvFocusBorder(),
         )
         Text(
             text = "Ship HUD / gauges",
@@ -538,7 +544,7 @@ private fun DebugOptionRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             enabled = enabled,
-            modifier = Modifier.height(24.dp),
+            modifier = Modifier.height(24.dp).tvFocusBorder(),
         )
         Column(modifier = Modifier.padding(start = 8.dp)) {
             Text(text = title, fontSize = 10.sp)

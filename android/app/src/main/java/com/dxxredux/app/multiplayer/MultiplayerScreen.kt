@@ -194,7 +194,7 @@ private fun ServerBrowserContent(
         modifier =
             Modifier
                 .fillMaxSize()
-                .showControllerFocusOnDpad()
+                .showControllerFocusOnDpad(initialFocus, focusTarget)
                 .safeDrawingPadding()
                 .padding(16.dp),
     ) {
@@ -1068,7 +1068,7 @@ private fun FriendsContent(
         modifier =
             Modifier
                 .fillMaxSize()
-                .showControllerFocusOnDpad()
+                .showControllerFocusOnDpad(friendsFocus)
                 .safeDrawingPadding()
                 .padding(16.dp),
     ) {

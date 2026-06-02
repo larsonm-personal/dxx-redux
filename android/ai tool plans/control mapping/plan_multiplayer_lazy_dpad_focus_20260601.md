@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented.
+Implemented after second pass.
 
 ## Goals
 
@@ -20,3 +20,8 @@ Implemented.
 - [x] Implement browser, host, and LAN view fixes using the shared policy.
 - [x] Add or update tests for the default focus and no-focus-snap behavior.
 - [x] Run focused Android unit tests and code quality for touched files if practical.
+- [x] Replace input-mode-only lazy focus with a hidden page focus receiver that
+      catches the first D-pad key, reveals keyboard focus, then moves from the
+      logical default selection.
+- [x] Re-run focused tests and code quality.
+- [ ] Run an emulator/device smoke test when `adb` is available in the shell.

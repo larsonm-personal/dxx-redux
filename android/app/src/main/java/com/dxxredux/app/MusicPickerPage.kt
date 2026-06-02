@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -108,6 +109,7 @@ private fun isPlaceholderName(name: String): Boolean = name == "[unknown] - [unt
 @Composable
 fun MusicPickerPage(
     filesDir: File,
+    controllerFocusActive: Boolean = true,
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
@@ -117,7 +119,7 @@ fun MusicPickerPage(
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
     val initialFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { initialFocus.requestFocus() }
+    RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
 
     var musicMode by remember {
         mutableStateOf(prefs.getString("music_mode", MUSIC_MODE_CD) ?: MUSIC_MODE_CD)
@@ -175,7 +177,7 @@ fun MusicPickerPage(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus)) {
+                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus).tvFocusBorder()) {
                     Text("< Back", fontSize = 14.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -421,7 +423,7 @@ fun AddToSetDialog(
                         Checkbox(
                             checked = copyToStorage,
                             onCheckedChange = { copyToStorage = it },
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(20.dp).tvFocusBorder(),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Copy files to app storage", fontSize = 13.sp)
@@ -621,6 +623,8 @@ private fun MidiTrackPreviewDialog(
     var positionMs by remember { mutableIntStateOf(0) }
     var durationMs by remember { mutableIntStateOf(0) }
     var seeking by remember { mutableStateOf(false) }
+    val sliderFocus = remember { FocusRequester() }
+    val closeFocus = remember { FocusRequester() }
     var loadError by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(Unit) {
@@ -675,6 +679,7 @@ private fun MidiTrackPreviewDialog(
     }
 
     AlertDialog(
+        modifier = Modifier.repeatVerticalDpadFocus(closeFocus),
         onDismissRequest = onDismiss,
         title = { Text("MIDI Preview", fontSize = 16.sp) },
         text = {
@@ -739,7 +744,13 @@ private fun MidiTrackPreviewDialog(
                         seeking = false
                     },
                     enabled = durationMs > 0,
-                    modifier = Modifier.fillMaxWidth().then(verticalDpadFocusEscape()),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .focusRequester(sliderFocus)
+                            .focusProperties { down = closeFocus }
+                            .tvFocusBorder()
+                            .then(verticalDpadFocusEscape()),
                 )
                 if (durationMs > 0) {
                     Row(
@@ -753,7 +764,10 @@ private fun MidiTrackPreviewDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.focusRequester(closeFocus).focusProperties { up = sliderFocus }.tvFocusBorder(),
+            ) { Text("Close") }
         },
     )
 }
@@ -962,7 +976,7 @@ private fun AudioSourceRow(
         Checkbox(
             checked = src.enabled,
             onCheckedChange = onToggle,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(20.dp).tvFocusBorder(),
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
@@ -1136,7 +1150,7 @@ private fun AudioFilesSection(
                     customMgr.setEnabled(set.id, checked)
                     onSetsChanged()
                 },
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(20.dp).tvFocusBorder(),
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
@@ -1395,6 +1409,8 @@ private fun CdTrackDetailDialog(
     var positionMs by remember { mutableIntStateOf(0) }
     var durationMs by remember { mutableIntStateOf(0) }
     var seeking by remember { mutableStateOf(false) }
+    val sliderFocus = remember { FocusRequester() }
+    val closeFocus = remember { FocusRequester() }
 
     // Stop preview when dialog is dismissed
     DisposableEffect(Unit) {
@@ -1513,6 +1529,7 @@ private fun CdTrackDetailDialog(
     }
 
     AlertDialog(
+        modifier = Modifier.repeatVerticalDpadFocus(closeFocus),
         onDismissRequest = onDismiss,
         title = { Text("Track Preview", fontSize = 16.sp) },
         text = {
@@ -1580,7 +1597,13 @@ private fun CdTrackDetailDialog(
                         seeking = false
                     },
                     enabled = durationMs > 0,
-                    modifier = Modifier.fillMaxWidth().then(verticalDpadFocusEscape()),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .focusRequester(sliderFocus)
+                            .focusProperties { down = closeFocus }
+                            .tvFocusBorder()
+                            .then(verticalDpadFocusEscape()),
                 )
                 if (durationMs > 0) {
                     Row(
@@ -1594,7 +1617,10 @@ private fun CdTrackDetailDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.focusRequester(closeFocus).focusProperties { up = sliderFocus }.tvFocusBorder(),
+            ) { Text("Close") }
         },
     )
 }
@@ -1613,6 +1639,8 @@ private fun AudioFileDetailDialog(
     var positionMs by remember { mutableIntStateOf(0) }
     var durationMs by remember { mutableIntStateOf(0) }
     var seeking by remember { mutableStateOf(false) }
+    val sliderFocus = remember { FocusRequester() }
+    val closeFocus = remember { FocusRequester() }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -1662,6 +1690,7 @@ private fun AudioFileDetailDialog(
     }
 
     AlertDialog(
+        modifier = Modifier.repeatVerticalDpadFocus(closeFocus),
         onDismissRequest = onDismiss,
         title = { Text("Track Info", fontSize = 16.sp) },
         text = {
@@ -1736,7 +1765,13 @@ private fun AudioFileDetailDialog(
                             seeking = false
                         },
                         enabled = durationMs > 0,
-                        modifier = Modifier.fillMaxWidth().then(verticalDpadFocusEscape()),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRequester(sliderFocus)
+                                .focusProperties { down = closeFocus }
+                                .tvFocusBorder()
+                                .then(verticalDpadFocusEscape()),
                     )
                     if (durationMs > 0) {
                         Row(
@@ -1751,7 +1786,10 @@ private fun AudioFileDetailDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.focusRequester(closeFocus).focusProperties { up = sliderFocus }.tvFocusBorder(),
+            ) { Text("Close") }
         },
     )
 }

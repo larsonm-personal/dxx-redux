@@ -3,11 +3,17 @@ package com.dxxredux.app.multiplayer
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
@@ -68,10 +74,10 @@ internal fun RequestControllerInitialFocus(
 ) {
     val inputModeManager = LocalInputModeManager.current
     LaunchedEffect(focusRequester, key, revealFocusOnRequest) {
-        inputModeManager.requestInputMode(if (revealFocusOnRequest) InputMode.Keyboard else InputMode.Touch)
+        if (!revealFocusOnRequest) return@LaunchedEffect
+        inputModeManager.requestInputMode(InputMode.Keyboard)
         withFrameNanos { }
         focusRequester.requestFocusSafely()
-        if (!revealFocusOnRequest) return@LaunchedEffect
         delay(300)
         inputModeManager.requestInputMode(InputMode.Keyboard)
         withFrameNanos { }
@@ -80,14 +86,34 @@ internal fun RequestControllerInitialFocus(
 }
 
 @Composable
-internal fun Modifier.showControllerFocusOnDpad(): Modifier {
+internal fun Modifier.showControllerFocusOnDpad(
+    initialFocusRequester: FocusRequester,
+    key: Any? = Unit,
+): Modifier {
+    val pageFocusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
     val inputModeManager = LocalInputModeManager.current
-    return onPreviewKeyEvent {
-        if (it.type == KeyEventType.KeyDown && it.key.isControllerFocusRevealKey()) {
-            inputModeManager.requestInputMode(InputMode.Keyboard)
-        }
-        false
+    var pageTargetFocused by remember { mutableStateOf(false) }
+    LaunchedEffect(pageFocusRequester, key) {
+        inputModeManager.requestInputMode(InputMode.Keyboard)
+        withFrameNanos { }
+        pageFocusRequester.requestFocusSafely()
     }
+    return focusRequester(pageFocusRequester)
+        .onFocusChanged { pageTargetFocused = it.isFocused }
+        .focusTarget()
+        .onPreviewKeyEvent {
+            if (pageTargetFocused && it.type == KeyEventType.KeyDown) {
+                val direction = it.key.controllerFocusDirection()
+                if (direction != null) {
+                    inputModeManager.requestInputMode(InputMode.Keyboard)
+                    initialFocusRequester.requestFocusSafely()
+                    focusManager.moveFocus(direction)
+                    return@onPreviewKeyEvent true
+                }
+            }
+            false
+        }
 }
 
 @Composable
@@ -154,8 +180,11 @@ internal fun FocusRequester.requestFocusSafely() {
     runCatching { requestFocus() }
 }
 
-private fun Key.isControllerFocusRevealKey(): Boolean =
-    this == Key.DirectionLeft ||
-        this == Key.DirectionRight ||
-        this == Key.DirectionUp ||
-        this == Key.DirectionDown
+private fun Key.controllerFocusDirection(): FocusDirection? =
+    when (this) {
+        Key.DirectionLeft -> FocusDirection.Left
+        Key.DirectionRight -> FocusDirection.Right
+        Key.DirectionUp -> FocusDirection.Up
+        Key.DirectionDown -> FocusDirection.Down
+        else -> null
+    }

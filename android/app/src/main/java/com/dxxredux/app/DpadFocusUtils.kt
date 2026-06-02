@@ -3,25 +3,30 @@ package com.dxxredux.app
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -65,6 +70,29 @@ internal fun shouldShowControllerFocusHighlight(
     hasTouchscreen: Boolean,
     controllerNavigationActive: Boolean,
 ): Boolean = !hasTouchscreen || controllerNavigationActive
+
+@Composable
+internal fun RequestLauncherControllerFocus(
+    focusRequester: FocusRequester,
+    controllerFocusActive: Boolean,
+    key: Any? = Unit,
+) {
+    val inputModeManager = LocalInputModeManager.current
+    LaunchedEffect(focusRequester, controllerFocusActive, key) {
+        if (!controllerFocusActive) return@LaunchedEffect
+        inputModeManager.requestInputMode(InputMode.Keyboard)
+        withFrameNanos { }
+        focusRequester.requestFocusSafely()
+        delay(300)
+        inputModeManager.requestInputMode(InputMode.Keyboard)
+        withFrameNanos { }
+        focusRequester.requestFocusSafely()
+    }
+}
+
+internal fun FocusRequester.requestFocusSafely() {
+    runCatching { requestFocus() }
+}
 
 /** Adds the shared bright TV focus border to any composable. */
 fun Modifier.tvFocusBorder(): Modifier =

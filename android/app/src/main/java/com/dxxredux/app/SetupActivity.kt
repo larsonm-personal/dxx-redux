@@ -2613,6 +2613,7 @@ private fun SetupScreen(
                 filesDir = filesDir,
                 fileSetManager = fileSetManager,
                 isGameReady = { game -> if (game == "d1") d1RequiredOk else d2RequiredOk },
+                controllerFocusActive = shouldSeedLauncherFocus,
                 onPlayInputDemo = onPlayInputDemo,
                 onBack = { showAdvancedPage = false },
             )
@@ -2623,6 +2624,7 @@ private fun SetupScreen(
             GraphicsSettingsPage(
                 gameVariant = selectedGame,
                 filesDir = filesDir,
+                controllerFocusActive = shouldSeedLauncherFocus,
                 onBack = { showGraphicsPage = false },
             )
             return@MaterialTheme
@@ -2632,6 +2634,7 @@ private fun SetupScreen(
             EnginePreferencesPage(
                 gameVariant = selectedGame,
                 filesDir = filesDir,
+                controllerFocusActive = shouldSeedLauncherFocus,
                 onBack = { closeEnginePrefsPage() },
             )
             return@MaterialTheme
@@ -2657,6 +2660,7 @@ private fun SetupScreen(
             BackHandler { showMusicPage = false }
             MusicPickerPage(
                 filesDir = filesDir,
+                controllerFocusActive = shouldSeedLauncherFocus,
                 onBack = { showMusicPage = false },
             )
             return@MaterialTheme
@@ -4009,7 +4013,7 @@ private fun SetupScreen(
                                     gamePrefs.edit().putString("selected_game", "d1").apply()
                                 },
                                 label = { Text("Descent 1") },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.weight(1f).tvFocusBorder(),
                             )
                             FilterChip(
                                 selected = selectedGame == "d2",
@@ -4018,7 +4022,7 @@ private fun SetupScreen(
                                     gamePrefs.edit().putString("selected_game", "d2").apply()
                                 },
                                 label = { Text("Descent 2") },
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.weight(1f).tvFocusBorder(),
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -4268,7 +4272,7 @@ private fun ControllerSection(
                 touchOverlay = checked
                 prefs.edit().putBoolean("touch_overlay_enabled", checked).apply()
             },
-            modifier = Modifier.height(24.dp),
+            modifier = Modifier.height(24.dp).tvFocusBorder(),
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(

@@ -70,6 +70,7 @@ private val COCKPIT_MODE_OPTIONS =
 fun EnginePreferencesPage(
     gameVariant: String,
     filesDir: File,
+    controllerFocusActive: Boolean = true,
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
@@ -125,10 +126,8 @@ fun EnginePreferencesPage(
         statusMessage = if (data.hasPilotFile) "" else "No pilot files found - showing defaults"
     }
 
-    LaunchedEffect(Unit) {
-        initialFocus.requestFocus()
-        loadPrefs()
-    }
+    RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
+    LaunchedEffect(Unit) { loadPrefs() }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -146,7 +145,7 @@ fun EnginePreferencesPage(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus)) {
+                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus).tvFocusBorder()) {
                     Text("< Back", fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -184,6 +183,7 @@ fun EnginePreferencesPage(
                         RadioButton(
                             selected = cockpitMode == value,
                             onClick = { cockpitMode = value },
+                            modifier = Modifier.tvFocusBorder(),
                         )
                         Text(label, fontSize = 10.sp)
                     }
@@ -197,6 +197,7 @@ fun EnginePreferencesPage(
                     Switch(
                         checked = autoLeveling,
                         onCheckedChange = { autoLeveling = it },
+                        modifier = Modifier.tvFocusBorder(),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
@@ -219,7 +220,7 @@ fun EnginePreferencesPage(
                             cockpitMode = CM_FULL_COCKPIT
                             autoLeveling = true
                         },
-                        modifier = Modifier.weight(1f).height(32.dp),
+                        modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
                     ) {
                         Text("Reset to Defaults", fontSize = 12.sp)
                     }
@@ -241,7 +242,7 @@ fun EnginePreferencesPage(
                             }
                         },
                         enabled = hasChanges,
-                        modifier = Modifier.weight(1f).height(32.dp),
+                        modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
                     ) {
                         Text("Save", fontSize = 12.sp)
                     }
@@ -288,6 +289,7 @@ fun EnginePreferencesPage(
                             skipIntroMovie = checked
                             prefs.edit().putBoolean(PREF_SKIP_INTRO_MOVIE, checked).commit()
                         },
+                        modifier = Modifier.tvFocusBorder(),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
@@ -311,6 +313,7 @@ fun EnginePreferencesPage(
                             showDemoInstallerOffer = checked
                             prefs.edit().putBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, checked).apply()
                         },
+                        modifier = Modifier.tvFocusBorder(),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
@@ -350,6 +353,7 @@ fun EnginePreferencesPage(
                             rewindSupportEnabled = checked
                             prefs.edit().putBoolean(PREF_REWIND_SUPPORT_ENABLED, checked).apply()
                         },
+                        modifier = Modifier.tvFocusBorder(),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
@@ -382,6 +386,7 @@ fun EnginePreferencesPage(
                                     rewindTargetSeconds = seconds
                                     prefs.edit().putInt(PREF_REWIND_TARGET_SECONDS, seconds).apply()
                                 },
+                                modifier = Modifier.tvFocusBorder(),
                             )
                             Text("$seconds seconds", fontSize = 10.sp)
                         }
@@ -411,6 +416,7 @@ fun EnginePreferencesPage(
                             showResumeOffer = checked
                             prefs.edit().putBoolean(PREF_SHOW_RESUME_OFFER, checked).apply()
                         },
+                        modifier = Modifier.tvFocusBorder(),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
@@ -446,6 +452,7 @@ fun EnginePreferencesPage(
                             showGuidebotLine = checked
                             prefs.edit().putBoolean(PREF_GUIDEBOT_HELPER_LINE, checked).apply()
                         },
+                        modifier = Modifier.tvFocusBorder(),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
@@ -469,6 +476,7 @@ fun EnginePreferencesPage(
                             showNearestPlayerLine = checked
                             prefs.edit().putBoolean(PREF_NEAREST_PLAYER_LINE, checked).apply()
                         },
+                        modifier = Modifier.tvFocusBorder(),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
