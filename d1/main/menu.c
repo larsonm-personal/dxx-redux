@@ -1444,8 +1444,10 @@ void graphics_config()
 	}
 
 #ifdef OGL
+#ifndef ANDROID
 	gr_set_attributes();
 	gr_set_mode(Game_screen_mode);
+#endif
 #endif
 }
 
