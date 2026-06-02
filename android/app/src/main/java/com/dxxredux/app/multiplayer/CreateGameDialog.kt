@@ -77,6 +77,10 @@ internal fun CreateGameDialog(
     var textEntryActive by remember { mutableStateOf(false) }
     val dialogFocus = remember { FocusRequester() }
     val missionFocus = remember { FocusRequester() }
+    val difficultyFocus = remember { FocusRequester() }
+    val levelFocus = remember { FocusRequester() }
+    val maxPlayersFocus = remember { FocusRequester() }
+    val createFocus = remember { FocusRequester() }
     val dismissOrEndTextEntry =
         rememberControllerTextEntryDismiss(textEntryActive, dialogFocus, { textEntryActive = it }, onDismiss)
 
@@ -256,7 +260,13 @@ internal fun CreateGameDialog(
                         Text("Difficulty", style = MaterialTheme.typography.labelMedium)
                         Box {
                             var diffExpanded by remember { mutableStateOf(false) }
-                            OutlinedButton(onClick = { diffExpanded = true }) {
+                            OutlinedButton(
+                                onClick = { diffExpanded = true },
+                                modifier =
+                                    Modifier
+                                        .focusRequester(difficultyFocus)
+                                        .focusProperties { down = levelFocus },
+                            ) {
                                 Text(difficultyNames[difficulty])
                             }
                             DropdownMenu(
@@ -285,7 +295,12 @@ internal fun CreateGameDialog(
                             modifier =
                                 Modifier
                                     .weight(1f)
-                                    .dpadTextFieldNavigation()
+                                    .focusRequester(levelFocus)
+                                    .focusProperties {
+                                        up = difficultyFocus
+                                        right = maxPlayersFocus
+                                        down = createFocus
+                                    }.dpadTextFieldNavigation(up = difficultyFocus, down = createFocus)
                                     .controllerTextEntryFocus { textEntryActive = it },
                         )
                         OutlinedTextField(
@@ -296,7 +311,12 @@ internal fun CreateGameDialog(
                             modifier =
                                 Modifier
                                     .weight(1f)
-                                    .dpadTextFieldNavigation()
+                                    .focusRequester(maxPlayersFocus)
+                                    .focusProperties {
+                                        up = difficultyFocus
+                                        left = levelFocus
+                                        down = createFocus
+                                    }.dpadTextFieldNavigation(up = difficultyFocus, down = createFocus)
                                     .controllerTextEntryFocus { textEntryActive = it },
                         )
                     }
@@ -382,6 +402,7 @@ internal fun CreateGameDialog(
                     )
                 },
                 enabled = mission != null && maxPlayers in 2..8 && levelNum >= 1,
+                modifier = Modifier.focusRequester(createFocus),
             ) {
                 Text(confirmLabel)
             }
