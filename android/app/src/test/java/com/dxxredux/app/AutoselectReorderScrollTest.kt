@@ -19,4 +19,21 @@ class AutoselectReorderScrollTest {
     fun movedItemBelowViewportKeepsItemAtBottom() {
         assertEquals(3, autoselectMovedItemScrollAnchor(targetIndex = 6, visibleIndices = listOf(2, 3, 4, 5)))
     }
+
+    @Test
+    fun grabbedItemMovesByDirectionWithinList() {
+        assertEquals(3, autoselectGrabbedItemMoveTarget(grabbedIndex = 2, itemCount = 5, direction = 1))
+        assertEquals(1, autoselectGrabbedItemMoveTarget(grabbedIndex = 2, itemCount = 5, direction = -1))
+    }
+
+    @Test
+    fun grabbedItemStaysInsideListAtEdges() {
+        assertEquals(0, autoselectGrabbedItemMoveTarget(grabbedIndex = 0, itemCount = 5, direction = -1))
+        assertEquals(4, autoselectGrabbedItemMoveTarget(grabbedIndex = 4, itemCount = 5, direction = 1))
+    }
+
+    @Test
+    fun grabbedItemMoveTargetIgnoresMissingGrab() {
+        assertNull(autoselectGrabbedItemMoveTarget(grabbedIndex = -1, itemCount = 5, direction = 1))
+    }
 }

@@ -61,6 +61,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontStyle
@@ -163,7 +164,7 @@ fun AutoselectEditorPage(
         android.content.res.Configuration.ORIENTATION_LANDSCAPE ==
             androidx.compose.ui.platform.LocalConfiguration.current.orientation
     val initialFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { initialFocus.requestFocus() }
+    RequestLauncherControllerFocus(initialFocus, true, activeGame)
 
     MaterialTheme(colorScheme = darkColorScheme()) {
         Scaffold(
@@ -398,8 +399,6 @@ private fun DragReorderList(
 
     // D-pad grab-and-move: index of the grabbed item, or -1
     var grabbedIndex by remember { mutableIntStateOf(-1) }
-    // Track which index is focused for key handling
-    var focusedIndex by remember { mutableIntStateOf(-1) }
     // FocusRequesters so we can move focus after a reorder
     val focusRequesters = remember(items.size) { List(items.size) { FocusRequester() } }
 
@@ -412,6 +411,24 @@ private fun DragReorderList(
         dpadReorderScrollScope.launch {
             listState.scrollToItem(anchor)
         }
+    }
+
+    fun moveGrabbedItem(direction: Int): Boolean {
+        if (grabbedIndex < 0) return false
+        val target =
+            autoselectGrabbedItemMoveTarget(
+                grabbedIndex = grabbedIndex,
+                itemCount = items.size,
+                direction = direction,
+            ) ?: return true
+        if (target != grabbedIndex) {
+            onReorder(grabbedIndex, target)
+            val newReq = focusRequesters.getOrNull(target)
+            grabbedIndex = target
+            scrollMovedItemIntoView(target)
+            newReq?.requestFocusSafely()
+        }
+        return true
     }
 
     // Auto-scroll while dragging near viewport edges.
@@ -441,7 +458,19 @@ private fun DragReorderList(
     Box(modifier = modifier) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .onPreviewKeyEvent { event ->
+                        if (grabbedIndex < 0) return@onPreviewKeyEvent false
+                        when (event.key) {
+                            Key.DirectionLeft,
+                            Key.DirectionRight,
+                            -> true
+
+                            else -> false
+                        }
+                    }.repeatVerticalDpadFocus(onMove = ::moveGrabbedItem),
             userScrollEnabled = draggedValue == null,
         ) {
             itemsIndexed(items, key = { _, value -> value }) { index, value ->
@@ -478,9 +507,7 @@ private fun DragReorderList(
                                     Modifier
                                 },
                             ).tvFocusBorder()
-                            .onFocusChanged { state ->
-                                if (state.isFocused) focusedIndex = index
-                            }.onKeyEvent { keyEvent ->
+                            .onKeyEvent { keyEvent ->
                                 if (keyEvent.type != KeyEventType.KeyDown) return@onKeyEvent false
                                 val k = keyEvent.key
                                 if (k == Key.DirectionCenter || k == Key.Enter) {
@@ -490,23 +517,6 @@ private fun DragReorderList(
                                     } else {
                                         // Drop
                                         grabbedIndex = -1
-                                    }
-                                    return@onKeyEvent true
-                                }
-                                if (grabbedIndex >= 0) {
-                                    val target =
-                                        when (k) {
-                                            Key.DirectionUp -> (grabbedIndex - 1).coerceAtLeast(0)
-                                            Key.DirectionDown -> (grabbedIndex + 1).coerceAtMost(items.size - 1)
-                                            else -> return@onKeyEvent false
-                                        }
-                                    if (target != grabbedIndex) {
-                                        onReorder(grabbedIndex, target)
-                                        val newReq = focusRequesters.getOrNull(target)
-                                        grabbedIndex = target
-                                        scrollMovedItemIntoView(target)
-                                        // Move focus to follow the item
-                                        newReq?.requestFocus()
                                     }
                                     return@onKeyEvent true
                                 }
@@ -622,6 +632,15 @@ private fun DragReorderList(
         }
         LazyListScrollArrows(listState)
     }
+}
+
+internal fun autoselectGrabbedItemMoveTarget(
+    grabbedIndex: Int,
+    itemCount: Int,
+    direction: Int,
+): Int? {
+    if (grabbedIndex < 0 || itemCount <= 0) return null
+    return (grabbedIndex + direction).coerceIn(0, itemCount - 1)
 }
 
 internal fun autoselectMovedItemScrollAnchor(

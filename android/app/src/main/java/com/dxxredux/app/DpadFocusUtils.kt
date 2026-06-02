@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -153,10 +154,14 @@ fun Modifier.tvFocusable(): Modifier =
             ).focusable()
     }
 
-fun Modifier.repeatVerticalDpadFocus(downFocusRequester: FocusRequester? = null): Modifier =
+fun Modifier.repeatVerticalDpadFocus(
+    downFocusRequester: FocusRequester? = null,
+    onMove: ((direction: Int) -> Boolean)? = null,
+): Modifier =
     composed {
         val focusManager = LocalFocusManager.current
         val coroutineScope = rememberCoroutineScope()
+        val currentOnMove by rememberUpdatedState(onMove)
         var heldDirection by remember { mutableIntStateOf(0) }
         var repeatJob by remember { mutableStateOf<Job?>(null) }
 
@@ -167,11 +172,12 @@ fun Modifier.repeatVerticalDpadFocus(downFocusRequester: FocusRequester? = null)
         }
 
         fun moveFocus(direction: Int) {
+            if (currentOnMove?.invoke(direction) == true) return
             if (direction < 0) {
                 focusManager.moveFocus(FocusDirection.Up)
             } else {
                 val moved = focusManager.moveFocus(FocusDirection.Down)
-                if (!moved) downFocusRequester?.requestFocus()
+                if (!moved) downFocusRequester?.requestFocusSafely()
             }
         }
 

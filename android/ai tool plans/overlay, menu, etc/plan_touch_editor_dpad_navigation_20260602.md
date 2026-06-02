@@ -11,7 +11,7 @@ Make the touch overlay settings editor usable from a controller-only device:
 1. [done] Map existing touch editor focus and dialog behavior.
 2. [done] Add explicit focus requesters and key routing for the bottom tray and dialogs.
 3. [done] Add or update focused unit tests for navigation helpers where practical.
-4. [in progress] Run Android unit tests or the narrowest available Gradle check.
+4. [done] Run Android unit tests or the narrowest available Gradle check.
 
 ## Notes
 - Bottom tray focus now starts on Close Editor and left or right moves between tray actions, skipping disabled Save.
