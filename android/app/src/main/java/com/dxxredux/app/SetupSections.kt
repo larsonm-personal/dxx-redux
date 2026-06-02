@@ -1045,7 +1045,32 @@ internal fun FileDetailDialog(
     val isMissing = !status.found && entry != null
     val isExternal = entry?.isExternal == true
     var confirmingDelete by remember { mutableStateOf(false) }
+    var confirmingForget by remember { mutableStateOf(false) }
     val closeFocus = remember { FocusRequester() }
+    val okFocus = remember { FocusRequester() }
+
+    if (confirmingForget) {
+        RequestLauncherControllerFocus(okFocus, true, "forget-$name")
+        AlertDialog(
+            onDismissRequest = { confirmingForget = false },
+            title = { Text("Forget File") },
+            text = { Text("Forget $name? This removes the launcher record. The original file is not deleted") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmingForget = false
+                        onDelete?.invoke()
+                    },
+                    modifier = Modifier.focusRequester(okFocus).tvFocusBorder(),
+                ) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmingForget = false }) { Text("Cancel") }
+            },
+        )
+        return
+    }
+
     RequestLauncherControllerFocus(closeFocus, true, name)
 
     AlertDialog(
@@ -1064,7 +1089,7 @@ internal fun FileDetailDialog(
                             Text("Unlink", color = MaterialTheme.colorScheme.error)
                         }
                     } else if (isExternal) {
-                        TextButton(onClick = onDelete, modifier = Modifier.tvFocusBorder()) {
+                        TextButton(onClick = { confirmingForget = true }, modifier = Modifier.tvFocusBorder()) {
                             Text("Forget", color = MaterialTheme.colorScheme.error)
                         }
                     } else if (!confirmingDelete) {
