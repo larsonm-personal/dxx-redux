@@ -13,6 +13,23 @@ param(
 $ErrorActionPreference = "Stop"
 $androidRoot = Split-Path $PSScriptRoot
 $repoRoot = Split-Path $androidRoot
+$confFile = Join-Path $androidRoot "get_deps\tool_versions.conf"
+
+function Get-ToolVersionSetting {
+    param([Parameter(Mandatory)][string]$Name)
+
+    if (-not (Test-Path -LiteralPath $confFile -PathType Leaf)) {
+        return $null
+    }
+
+    foreach ($line in Get-Content -LiteralPath $confFile) {
+        if ($line -match "^$([regex]::Escape($Name))=(.+)$") {
+            return $Matches[1].Trim()
+        }
+    }
+
+    return $null
+}
 
 function Get-ScopedFiles {
     param(
@@ -56,11 +73,33 @@ function Get-ScopedFiles {
 }
 
 # --- Ensure PSScriptAnalyzer is available ---
-if (-not (Get-Module PSScriptAnalyzer -ListAvailable)) {
-    Write-Error "PSScriptAnalyzer not installed. Run: Install-Module PSScriptAnalyzer -Scope CurrentUser -Force"
+$analyzerVersion = Get-ToolVersionSetting -Name "PSSCRIPTANALYZER_VERSION"
+if (-not $analyzerVersion) {
+    Write-Error "PSSCRIPTANALYZER_VERSION not found in $confFile"
     exit 1
 }
-Import-Module PSScriptAnalyzer
+$analyzerModule = Get-Module PSScriptAnalyzer -ListAvailable |
+    Where-Object { $_.Version -eq [version]$analyzerVersion } |
+    Sort-Object Version -Descending |
+    Select-Object -First 1
+if (-not $analyzerModule) {
+    Write-Host "PSScriptAnalyzer $analyzerVersion not found; installing for current user..."
+    try {
+        Install-Module PSScriptAnalyzer -Scope CurrentUser -RequiredVersion $analyzerVersion -Repository PSGallery -Force -AllowClobber -AcceptLicense -ErrorAction Stop
+    } catch {
+        Write-Error "PSScriptAnalyzer install failed. Run: Install-Module PSScriptAnalyzer -Scope CurrentUser -RequiredVersion $analyzerVersion -Force"
+        exit 1
+    }
+    $analyzerModule = Get-Module PSScriptAnalyzer -ListAvailable |
+        Where-Object { $_.Version -eq [version]$analyzerVersion } |
+        Sort-Object Version -Descending |
+        Select-Object -First 1
+}
+if (-not $analyzerModule) {
+    Write-Error "PSScriptAnalyzer $analyzerVersion not available after install"
+    exit 1
+}
+Import-Module PSScriptAnalyzer -RequiredVersion $analyzerVersion
 
 $settingsFile = Join-Path $androidRoot "PSScriptAnalyzerSettings.psd1"
 if (-not (Test-Path $settingsFile)) {

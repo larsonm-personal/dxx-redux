@@ -67,6 +67,16 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
             }
         }
     }
+    if ($env:JAVA_HOME) {
+        $javaBin = Join-RegressionPath $env:JAVA_HOME "bin"
+        $javaName = (Get-RegressionHostExecutableNames -BaseName "java")[0]
+        if (Test-Path (Join-RegressionPath $javaBin $javaName)) {
+            $pathParts = @($env:PATH -split [regex]::Escape([System.IO.Path]::PathSeparator) | Where-Object { $_ })
+            if (-not ($pathParts | Where-Object { $_ -eq $javaBin })) {
+                $env:PATH = "$javaBin$([System.IO.Path]::PathSeparator)$env:PATH"
+            }
+        }
+    }
 
     # -- CMAKE -------------------------------------------------------------------
 

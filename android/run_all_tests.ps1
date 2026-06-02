@@ -876,7 +876,7 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {
     Push-Location $scriptDir
     try {
         & $gradleWrapper assembleDebug --console=plain 2>&1 |
-            Where-Object { $_ -match "BUILD |FAIL|error:" } |
+            Where-Object { $_ -match "^(> Task|BUILD |FAIL|error:|Execution failed|What went wrong|Exception)" } |
             ForEach-Object { Write-Host "  $_" }
         if ($LASTEXITCODE -ne 0) {
             Write-Host "FAIL: APK build failed" -ForegroundColor Red
