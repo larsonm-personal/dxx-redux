@@ -57,6 +57,7 @@ object ResumeSaveBridge {
         val latestOverall: ResumeSaveCandidate?,
         val highestProgress: ResumeSaveCandidate?,
         val lastExit: ResumeSaveCandidate?,
+        val lastAbort: ResumeSaveCandidate?,
         val lastMinimize: ResumeSaveCandidate?,
     )
 
@@ -96,6 +97,7 @@ object ResumeSaveBridge {
                 latestOverall = obj.optCandidate("latest_overall"),
                 highestProgress = obj.optCandidate("highest_progress"),
                 lastExit = obj.optCandidate("last_exit"),
+                lastAbort = obj.optCandidate("last_abort"),
                 lastMinimize = obj.optCandidate("last_minimize"),
             )
         } catch (e: Exception) {

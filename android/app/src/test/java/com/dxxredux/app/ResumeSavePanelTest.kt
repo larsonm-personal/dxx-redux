@@ -48,6 +48,7 @@ class ResumeSavePanelTest {
         val latest = candidate("auto_exit", slot = 8)
         val highest = candidate("auto_progress", slot = 7)
         val exit = candidate("auto_exit", slot = 8)
+        val abort = candidate("auto_abort", slot = 6)
         val minimize = candidate("auto_minimize", slot = 9)
 
         val rows =
@@ -56,15 +57,16 @@ class ResumeSavePanelTest {
                     latestOverall = latest,
                     highestProgress = highest,
                     lastExit = exit,
+                    lastAbort = abort,
                     lastMinimize = minimize,
                 ),
             )
 
         assertEquals(
-            listOf("Highest Progress", "Last Exit Save", "Last Minimize Save"),
+            listOf("Highest Progress", "Last Exit Save", "Last Abort Save", "Last Minimize Save"),
             rows.map { it.label },
         )
-        assertEquals(listOf(highest, exit, minimize), rows.map { it.candidate })
+        assertEquals(listOf(highest, exit, abort, minimize), rows.map { it.candidate })
     }
 
     @Test
@@ -77,6 +79,7 @@ class ResumeSavePanelTest {
                     latestOverall = minimize,
                     highestProgress = null,
                     lastExit = null,
+                    lastAbort = null,
                     lastMinimize = minimize,
                 ),
             )

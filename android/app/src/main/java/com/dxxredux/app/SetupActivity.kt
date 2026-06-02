@@ -2001,6 +2001,7 @@ private fun SetupScreen(
                 latestOverall = options.latestOverall?.takeIf { resumeCandidateReady(it) },
                 highestProgress = options.highestProgress?.takeIf { resumeCandidateReady(it) },
                 lastExit = options.lastExit?.takeIf { resumeCandidateReady(it) },
+                lastAbort = options.lastAbort?.takeIf { resumeCandidateReady(it) },
                 lastMinimize = options.lastMinimize?.takeIf { resumeCandidateReady(it) },
             )
         }

@@ -41,6 +41,7 @@ int main(void)
 {
 	android_save_meta_disk d1_meta;
 	android_save_meta_disk d2_meta;
+	android_save_meta_disk abort_meta;
 	android_save_meta_disk progress_meta;
 	android_save_meta_disk wrong_thumb_meta;
 	android_save_meta_disk parsed;
@@ -48,7 +49,7 @@ int main(void)
 	android_save_meta_write_params params;
 	uint8_t thumb_a[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
 	uint8_t thumb_b[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
-	const char *paths[5];
+	const char *paths[6];
 	FILE *corrupt;
 	int failures = 0;
 
@@ -96,11 +97,17 @@ int main(void)
 	params.thumbnail_height = ANDROID_SAVE_META_THUMB_H;
 	if (!android_save_meta_build(&d2_meta, &params))
 		return report_failure("failed to build D2 metadata");
+	abort_meta = d2_meta;
+	abort_meta.save_kind = ANDROID_SAVE_META_KIND_AUTO_ABORT;
+	memset(abort_meta.description, 0, sizeof(abort_meta.description));
+	strncpy(abort_meta.description, "AUTO ABORT", sizeof(abort_meta.description) - 1);
 
 	if (!write_file_with_meta("test_android_save_meta_d1.sav", &d1_meta))
 		return report_failure("failed to write D1 test file");
 	if (!write_file_with_meta("test_android_save_meta_d2.sav", &d2_meta))
 		return report_failure("failed to write D2 test file");
+	if (!write_file_with_meta("test_android_save_meta_abort.sav", &abort_meta))
+		return report_failure("failed to write abort test file");
 	progress_meta = d2_meta;
 	progress_meta.save_kind = ANDROID_SAVE_META_KIND_AUTO_PROGRESS;
 	memset(progress_meta.description, 0, sizeof(progress_meta.description));
@@ -147,12 +154,13 @@ int main(void)
 	paths[2] = "test_android_save_meta_corrupt.sav";
 	paths[3] = "test_android_save_meta_d2.sav";
 	paths[4] = "test_android_save_meta_progress.sav";
-	if (!android_save_meta_select_newest(paths, 5, &newest))
+	paths[5] = "test_android_save_meta_abort.sav";
+	if (!android_save_meta_select_newest(paths, 6, &newest))
 		failures += report_failure("failed to select newest metadata-backed save");
 	else {
-		failures += expect_string("newest path", "test_android_save_meta_d2.sav", newest.path);
+		failures += expect_string("newest path", "test_android_save_meta_abort.sav", newest.path);
 		failures += expect_string("newest callsign", "zen", newest.meta.callsign);
-		if (newest.meta.save_kind != ANDROID_SAVE_META_KIND_AUTO_EXIT)
+		if (newest.meta.save_kind != ANDROID_SAVE_META_KIND_AUTO_ABORT)
 			failures += report_failure("newest candidate kept the wrong save kind");
 		if (newest.meta.total_seconds != 2222)
 			failures += report_failure("newest candidate kept the wrong total seconds");
@@ -160,6 +168,7 @@ int main(void)
 
 	remove("test_android_save_meta_d1.sav");
 	remove("test_android_save_meta_d2.sav");
+	remove("test_android_save_meta_abort.sav");
 	remove("test_android_save_meta_progress.sav");
 	remove("test_android_save_meta_missing.sav");
 	remove("test_android_save_meta_corrupt.sav");

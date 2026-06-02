@@ -146,6 +146,8 @@ static const char *save_kind_name(uint8_t save_kind)
 			return "auto_exit";
 		case ANDROID_SAVE_META_KIND_AUTO_PROGRESS:
 			return "auto_progress";
+		case ANDROID_SAVE_META_KIND_AUTO_ABORT:
+			return "auto_abort";
 		default:
 			return "manual";
 	}
@@ -216,6 +218,8 @@ static bool candidate_is_newer(const android_save_meta_candidate &candidate,
 {
 	auto save_kind_priority = [](uint8_t save_kind) {
 		switch (save_kind) {
+			case ANDROID_SAVE_META_KIND_AUTO_ABORT:
+				return 5;
 			case ANDROID_SAVE_META_KIND_AUTO_EXIT:
 				return 4;
 			case ANDROID_SAVE_META_KIND_AUTO_MINIMIZE:
@@ -403,6 +407,10 @@ Java_com_dxxredux_app_ResumeSaveBridge_nativeFindSaveOptions(JNIEnv *env,
 	}
 	if (select_resume_save_by_kind(paths, ANDROID_SAVE_META_KIND_AUTO_EXIT, 0, &candidate)) {
 		out["last_exit"] = resume_candidate_json(files_dir, candidate);
+		found = true;
+	}
+	if (select_resume_save_by_kind(paths, ANDROID_SAVE_META_KIND_AUTO_ABORT, 0, &candidate)) {
+		out["last_abort"] = resume_candidate_json(files_dir, candidate);
 		found = true;
 	}
 	if (select_resume_save_by_kind(paths, ANDROID_SAVE_META_KIND_AUTO_MINIMIZE, 0, &candidate)) {

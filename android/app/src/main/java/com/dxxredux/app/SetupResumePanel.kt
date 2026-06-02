@@ -74,6 +74,7 @@ private fun resumeSaveKindLabel(saveKind: String): String =
         "auto_minimize" -> "Auto-save on minimize"
         "auto_exit" -> "Auto-save on exit"
         "auto_progress" -> "Highest progress save"
+        "auto_abort" -> "Abort save"
         else -> "Manual save"
     }
 
@@ -258,7 +259,9 @@ internal fun ResumeSavePanel(
 }
 
 private fun ResumeSaveBridge.ResumeSaveOptions?.hasChooseCandidates(): Boolean =
-    this?.let { it.highestProgress != null || it.lastExit != null || it.lastMinimize != null } == true
+    this?.let {
+        it.highestProgress != null || it.lastExit != null || it.lastAbort != null || it.lastMinimize != null
+    } == true
 
 internal data class ResumeSaveChoiceRow(
     val label: String,
@@ -269,6 +272,7 @@ internal fun resumeSaveChoiceRows(options: ResumeSaveBridge.ResumeSaveOptions): 
     listOfNotNull(
         options.highestProgress?.let { ResumeSaveChoiceRow("Highest Progress", it) },
         options.lastExit?.let { ResumeSaveChoiceRow("Last Exit Save", it) },
+        options.lastAbort?.let { ResumeSaveChoiceRow("Last Abort Save", it) },
         options.lastMinimize?.let { ResumeSaveChoiceRow("Last Minimize Save", it) },
     )
 

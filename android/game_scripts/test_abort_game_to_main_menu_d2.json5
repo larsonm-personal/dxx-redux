@@ -64,14 +64,14 @@
         "current_level_num": "0"
     }},
 
-    {"action": "log", "message": "=== Main menu verified -- entering launcher to inspect exit autosave ==="},
+    {"action": "log", "message": "=== Main menu verified -- entering launcher to inspect abort autosave ==="},
     {"action": "enter_launcher"},
     {"action": "wait_for", "field": "resume_offer_enabled", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {
         "resume_offer_enabled": "true",
         "resume_candidate.game": "d2",
-        "resume_candidate.save_kind": "auto_exit",
-        "resume_candidate.description": "AUTO EXIT",
+        "resume_candidate.save_kind": "auto_abort",
+        "resume_candidate.description": "AUTO ABORT",
         "resume_candidate.level_num": "1"
     }},
     {"action": "assert_button", "text": "Load Last Save", "enabled": true},
