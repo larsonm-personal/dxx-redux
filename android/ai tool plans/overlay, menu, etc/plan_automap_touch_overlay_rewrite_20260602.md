@@ -237,6 +237,10 @@ Implementation completed in this tranche:
 6. Added `AUTOMAP_TRANSLATION_SCALE` in both `d1/main/automap.c` and `d2/main/automap.c`, applied only to automap translation fields while leaving look/bank timing unscaled
 7. Added `AutomapTouchPolicyTest.kt` for trimmed button visibility, recenter, marker clamping, and marker action dispatch mapping
 
+Tuning update:
+
+- Reduced Android automap translation scale from 6 to 4, roughly a 30 percent reduction in translation speed
+
 Validation completed:
 
 - `android\run-code-quality.ps1 -Fix`

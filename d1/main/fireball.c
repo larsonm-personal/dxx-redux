@@ -982,6 +982,9 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 					return objnum;
 				}
 
+				Players[Player_num].num_robots_level++;
+				Players[Player_num].num_robots_total++;
+
 #ifdef NETWORK
 				if (Game_mode & GM_MULTI)
 				{
