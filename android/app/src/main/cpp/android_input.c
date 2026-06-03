@@ -20,7 +20,6 @@
 #include "android_log.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
-#include "fix.h"
 #include "gr.h"
 #include "joy.h"
 #include "timer.h"
@@ -33,18 +32,7 @@ extern int Automap_active;
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
-/* ── Automap touch input accumulator ────────────────────────
- *
- * Written from the UI thread (nativeAutomapInput), read + zeroed by the
- * game thread in automap_apply_input().  Simple volatile is fine here:
- * both sides are single-writer and a lost frame of input is negligible.
- */
-volatile fix g_automap_heading = 0;
-volatile fix g_automap_pitch = 0;
-volatile fix g_automap_thrust = 0;
-volatile fix g_automap_bank = 0;
-volatile fix g_automap_vertical = 0;
-volatile fix g_automap_sideways = 0;
+/* Requested by Kotlin when automap recenter is selected from touch UI. */
 volatile int g_automap_center = 0;
 
 /* ── Skippable-screen flag (movies, briefings) ──────────────
@@ -1221,30 +1209,11 @@ void android_automation_joystick_button(int button, int pressed)
 /* ── Automap touch controls ─────────────────────────────────
  *
  * nativeIsAutomapActive() — returns true when the 3-D automap is displayed.
- * nativeAutomapInput()    — accumulates heading/pitch/thrust deltas that
- *                           automap_apply_input() reads each frame.
  */
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeIsAutomapActive(JNIEnv *env, jobject thiz)
 {
 	return Automap_active ? JNI_TRUE : JNI_FALSE;
-}
-
-JNIEXPORT void JNICALL
-Java_com_dxxredux_app_MainActivity_nativeAutomapInput(JNIEnv *env, jobject thiz,
-                                                      jfloat heading, jfloat pitch, jfloat thrust,
-                                                      jfloat bank, jfloat vertical, jfloat sideways)
-{
-	/* Values are fractions of screen dimension.  Convert to fix-point
-	 * and accumulate so nothing is lost between game frames.
-	 * The scale factors are tuned so a full-screen drag ≈ 90° rotation
-	 * and a full-screen pinch gives rapid traversal. */
-	g_automap_heading += (fix) (heading * 80000.0f);
-	g_automap_pitch += (fix) (pitch * 80000.0f);
-	g_automap_thrust += (fix) (thrust * 600.0f);
-	g_automap_bank += (fix) (bank * 80000.0f);
-	g_automap_vertical += (fix) (vertical * 80000.0f);
-	g_automap_sideways += (fix) (sideways * 80000.0f);
 }
 
 /*

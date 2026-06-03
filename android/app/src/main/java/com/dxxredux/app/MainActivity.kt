@@ -10,7 +10,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
-import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.net.Uri
@@ -304,15 +303,6 @@ class MainActivity :
     /** Accept the pending join request (equivalent to pressing F6). */
     external fun nativeAcceptJoinRequest()
 
-    external fun nativeAutomapInput(
-        heading: Float,
-        pitch: Float,
-        thrust: Float,
-        bank: Float = 0f,
-        vertical: Float = 0f,
-        sideways: Float = 0f,
-    )
-
     external fun nativeAutomapCenter()
 
     external fun nativeAutomapSelectMarker(idx: Int)
@@ -531,13 +521,6 @@ class MainActivity :
     private lateinit var edgeFlingDetector: android.view.GestureDetector
     private var edgeSwipeTracking = false
     private var edgeSwipeStartX = 0f
-
-    // ── Automap gesture state (drag = pan/tilt, pinch = thrust/rotate/translate) ──
-    private val automapPointers = mutableMapOf<Int, PointF>() // pointerId → last position
-    private var automapPinchDist = 0f // last distance between two fingers
-    private var automapPinchAngle = 0f // last angle between two fingers (radians)
-    private var automapPinchMidX = 0f // last midpoint X between two fingers
-    private var automapPinchMidY = 0f // last midpoint Y between two fingers
 
     private fun applyTvPerfTestPrefs(prefs: android.content.SharedPreferences) {
         prefs
@@ -968,6 +951,22 @@ class MainActivity :
                     } catch (_: Exception) {
                     }
                 }
+
+                TouchOverlayView.ADMIN_AUTOMAP_RECENTER -> {
+                    try {
+                        nativeAutomapCenter()
+                    } catch (_: Exception) {
+                    }
+                }
+
+                else -> {
+                    automapMarkerAdminActionIndex(action)?.let { idx ->
+                        try {
+                            nativeAutomapSelectMarker(idx)
+                        } catch (_: Exception) {
+                        }
+                    }
+                }
             }
         }
         touchOverlay.adminTrayAutoLevelingProvider = {
@@ -1036,6 +1035,20 @@ class MainActivity :
                 }
             }
         }
+        touchOverlay.automapActionsProvider = {
+            val includeMarkers = game != "d1"
+            val markerCount =
+                if (includeMarkers) {
+                    try {
+                        nativeGetMarkerCount()
+                    } catch (_: Throwable) {
+                        0
+                    }
+                } else {
+                    0
+                }
+            automapTouchActions(markerCount, includeMarkers)
+        }
         touchOverlay.weaponStateProvider = {
             try {
                 WeaponState.fromArray(nativeGetWeaponState())
@@ -1043,23 +1056,6 @@ class MainActivity :
                 null
             }
         }
-        touchOverlay.automapInputCallback = { heading, pitch, thrust, bank, vertical, sideways ->
-            nativeAutomapInput(heading, pitch, thrust, bank, vertical, sideways)
-        }
-        touchOverlay.automapCenterCallback = { nativeAutomapCenter() }
-        touchOverlay.automapMarkerCallback = { idx -> nativeAutomapSelectMarker(idx) }
-        touchOverlay.markerCountProvider =
-            if (game == "d1") {
-                { 0 } // D1 has no markers
-            } else {
-                {
-                    try {
-                        nativeGetMarkerCount()
-                    } catch (_: Throwable) {
-                        0
-                    }
-                }
-            }
         touchOverlay.mapButtonCallback = { toggleAutomap() }
         touchOverlay.prevTrackCallback = {
             nativePrevTrack()
@@ -2245,19 +2241,6 @@ class MainActivity :
             return true
         }
 
-        // ── Automap gesture handling (when overlay is off) ────
-        // When the automap is showing, all non-edge touches become
-        // pan/tilt (drag) or forward/reverse (pinch).
-        if (gameStarted) {
-            try {
-                if (nativeIsAutomapActive()) {
-                    return handleAutomapTouch(event, view.width.toFloat(), view.height.toFloat())
-                }
-            } catch (_: Exception) {
-                // engine not ready
-            }
-        }
-
         // ── Normal game touch handling ──────────────────────
         // Map touch to normalised 0.0–1.0 coordinates.  The native side
         // converts to engine resolution via grd_curscreen, so Kotlin
@@ -2406,166 +2389,6 @@ class MainActivity :
         touchOverlay.automapActive = !touchOverlay.automapActive
         nativeKeyEvent(0, KeyEvent.KEYCODE_TAB, '\t'.code)
         nativeKeyEvent(1, KeyEvent.KEYCODE_TAB, 0)
-    }
-
-    // ── Automap touch gestures ──────────────────────────────
-    //  1-finger drag         →  pan / tilt  (heading_time, pitch_time)
-    //  double-tap then drag  →  translate x/y (sideways_thrust, vertical_thrust)
-    //  2-finger pinch        →  zoom (forward_thrust) + rotate (bank_time)
-    //  2-finger pan          →  translate x/y (sideways_thrust, vertical_thrust)
-    //
-    // Called from handleTouch (overlay off) and from the overlay's
-    // unmatched-touch callback (overlay on).
-
-    /**
-     * Feed a raw MotionEvent into the automap gesture tracker.
-     * [screenW] / [screenH] are the view dimensions for normalisation.
-     * Returns true if the event was consumed.
-     */
-    fun handleAutomapTouch(
-        event: MotionEvent,
-        screenW: Float,
-        screenH: Float,
-    ): Boolean {
-        if (screenW <= 0f || screenH <= 0f) return false
-
-        when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                val idx = event.actionIndex
-                val pid = event.getPointerId(idx)
-                val px = event.getX(idx)
-                val py = event.getY(idx)
-                automapPointers[pid] = PointF(px, py)
-
-                // When a second finger lands, initialise pinch distance + angle
-                if (automapPointers.size == 2) {
-                    automapPinchDist = automapFingerDistance(event)
-                    automapPinchAngle = automapFingerAngle(event)
-                    val mid = automapFingerMidpoint(event)
-                    automapPinchMidX = mid.x
-                    automapPinchMidY = mid.y
-                }
-            }
-
-            MotionEvent.ACTION_MOVE -> {
-                if (automapPointers.size == 1) {
-                    val pid = automapPointers.keys.first()
-                    val idx = event.findPointerIndex(pid)
-                    if (idx >= 0) {
-                        val prev = automapPointers[pid]!!
-                        val dx = event.getX(idx) - prev.x
-                        val dy = event.getY(idx) - prev.y
-                        prev.set(event.getX(idx), event.getY(idx))
-
-                        // Single-finger drag → pan / tilt
-                        val heading = dx / screenW
-                        val pitch = dy / screenH
-                        if (heading != 0f || pitch != 0f) {
-                            nativeAutomapInput(heading, pitch, 0f)
-                        }
-                    }
-                } else if (automapPointers.size >= 2) {
-                    // Pinch → zoom + rotate + translate
-                    val dist = automapFingerDistance(event)
-                    val angle = automapFingerAngle(event)
-                    val mid = automapFingerMidpoint(event)
-
-                    if (automapPinchDist > 0f) {
-                        val delta = dist - automapPinchDist
-                        val thrust = delta / screenW * 60f * 3f
-
-                        var dAngle = angle - automapPinchAngle
-                        while (dAngle > Math.PI.toFloat()) dAngle -= (2 * Math.PI).toFloat()
-                        while (dAngle < -Math.PI.toFloat()) dAngle += (2 * Math.PI).toFloat()
-                        val bank = dAngle / Math.PI.toFloat() * 3f
-
-                        val sideways = -(mid.x - automapPinchMidX) / screenW
-                        val vertical = (mid.y - automapPinchMidY) / screenH
-
-                        if (thrust != 0f || bank != 0f || sideways != 0f || vertical != 0f) {
-                            nativeAutomapInput(0f, 0f, thrust, bank, vertical, sideways)
-                        }
-                    }
-                    automapPinchDist = dist
-                    automapPinchAngle = angle
-                    automapPinchMidX = mid.x
-                    automapPinchMidY = mid.y
-
-                    for ((pid, pt) in automapPointers) {
-                        val idx = event.findPointerIndex(pid)
-                        if (idx >= 0) pt.set(event.getX(idx), event.getY(idx))
-                    }
-                }
-            }
-
-            MotionEvent.ACTION_POINTER_UP -> {
-                val idx = event.actionIndex
-                val pid = event.getPointerId(idx)
-                automapPointers.remove(pid)
-                if (automapPointers.size >= 2) {
-                    automapPinchDist = automapFingerDistance(event)
-                    automapPinchAngle = automapFingerAngle(event)
-                    val mid = automapFingerMidpoint(event)
-                    automapPinchMidX = mid.x
-                    automapPinchMidY = mid.y
-                } else {
-                    automapPinchDist = 0f
-                    automapPinchAngle = 0f
-                    automapPinchMidX = 0f
-                    automapPinchMidY = 0f
-                    for ((id, pt) in automapPointers) {
-                        val i = event.findPointerIndex(id)
-                        if (i >= 0) pt.set(event.getX(i), event.getY(i))
-                    }
-                }
-            }
-
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                automapPointers.clear()
-                automapPinchDist = 0f
-                automapPinchAngle = 0f
-                automapPinchMidX = 0f
-                automapPinchMidY = 0f
-            }
-        }
-        return true
-    }
-
-    /** Euclidean distance between the first two tracked automap fingers. */
-    private fun automapFingerDistance(event: MotionEvent): Float {
-        val ids = automapPointers.keys.toList()
-        if (ids.size < 2) return 0f
-        val i0 = event.findPointerIndex(ids[0])
-        val i1 = event.findPointerIndex(ids[1])
-        if (i0 < 0 || i1 < 0) return 0f
-        val dx = event.getX(i0) - event.getX(i1)
-        val dy = event.getY(i0) - event.getY(i1)
-        return kotlin.math.hypot(dx, dy)
-    }
-
-    /** Angle (radians) from the first tracked finger to the second. */
-    private fun automapFingerAngle(event: MotionEvent): Float {
-        val ids = automapPointers.keys.toList()
-        if (ids.size < 2) return 0f
-        val i0 = event.findPointerIndex(ids[0])
-        val i1 = event.findPointerIndex(ids[1])
-        if (i0 < 0 || i1 < 0) return 0f
-        val dx = event.getX(i1) - event.getX(i0)
-        val dy = event.getY(i1) - event.getY(i0)
-        return kotlin.math.atan2(dy, dx)
-    }
-
-    /** Midpoint between the first two tracked automap fingers. */
-    private fun automapFingerMidpoint(event: MotionEvent): PointF {
-        val ids = automapPointers.keys.toList()
-        if (ids.size < 2) return PointF(0f, 0f)
-        val i0 = event.findPointerIndex(ids[0])
-        val i1 = event.findPointerIndex(ids[1])
-        if (i0 < 0 || i1 < 0) return PointF(0f, 0f)
-        return PointF(
-            (event.getX(i0) + event.getX(i1)) / 2f,
-            (event.getY(i0) + event.getY(i1)) / 2f,
-        )
     }
 
     /** Load controller meta-action bindings from controller_config.json. */

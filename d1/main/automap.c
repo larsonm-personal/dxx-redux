@@ -179,6 +179,11 @@ ubyte Automap_visited[MAX_SEGMENTS];
 #define SLIDE_SPEED 			(350)
 #define ZOOM_SPEED_FACTOR		(500)	//(1500)
 #define ROT_SPEED_DIVISOR		(115000)
+#ifdef ANDROID
+#define AUTOMAP_TRANSLATION_SCALE	(6)
+#else
+#define AUTOMAP_TRANSLATION_SCALE	(1)
+#endif
 
 // Function Prototypes
 void adjust_segment_limit(automap *am, int SegmentLimit);
@@ -252,30 +257,20 @@ void name_frame(automap *am)
 static void automap_apply_input(automap *am)
 {
 	vms_matrix tempm;
+	fix forward_thrust_time, vertical_thrust_time, sideways_thrust_time;
 
 #ifdef ANDROID
-	/* Merge touch-injected automap controls.
-	 * Written by nativeAutomapInput() on the UI thread, read + zeroed here. */
+	/* Merge Android touch UI requests that are not normal movement axes. */
 	{
-		extern volatile fix g_automap_heading, g_automap_pitch, g_automap_thrust;
-		extern volatile fix g_automap_bank, g_automap_vertical, g_automap_sideways;
 		extern volatile int g_automap_center;
-		fix th = g_automap_heading;   g_automap_heading  = 0;
-		fix tp = g_automap_pitch;     g_automap_pitch    = 0;
-		fix tt = g_automap_thrust;    g_automap_thrust   = 0;
-		fix tb = g_automap_bank;      g_automap_bank     = 0;
-		fix tv = g_automap_vertical;  g_automap_vertical = 0;
-		fix ts = g_automap_sideways;  g_automap_sideways = 0;
 		int center = g_automap_center; g_automap_center = 0;
-		am->controls.heading_time        += th;
-		am->controls.pitch_time          += tp;
-		am->controls.forward_thrust_time += tt;
-		am->controls.bank_time           += tb;
-		am->controls.vertical_thrust_time  += tv;
-		am->controls.sideways_thrust_time  += ts;
 		if (center) am->controls.fire_primary_count++;
 	}
 #endif
+
+	forward_thrust_time = am->controls.forward_thrust_time * AUTOMAP_TRANSLATION_SCALE;
+	vertical_thrust_time = am->controls.vertical_thrust_time * AUTOMAP_TRANSLATION_SCALE;
+	sideways_thrust_time = am->controls.sideways_thrust_time * AUTOMAP_TRANSLATION_SCALE;
 
 	if (PlayerCfg.AutomapFreeFlight)
 	{
@@ -302,11 +297,11 @@ static void automap_apply_input(automap *am)
 			check_and_fix_matrix(&am->viewMatrix);
 		}
 		
-		if ( am->controls.forward_thrust_time || am->controls.vertical_thrust_time || am->controls.sideways_thrust_time )
+		if ( forward_thrust_time || vertical_thrust_time || sideways_thrust_time )
 		{
-			vm_vec_scale_add2( &am->view_position, &am->viewMatrix.fvec, am->controls.forward_thrust_time*ZOOM_SPEED_FACTOR );
-			vm_vec_scale_add2( &am->view_position, &am->viewMatrix.uvec, am->controls.vertical_thrust_time*SLIDE_SPEED );
-			vm_vec_scale_add2( &am->view_position, &am->viewMatrix.rvec, am->controls.sideways_thrust_time*SLIDE_SPEED );
+			vm_vec_scale_add2( &am->view_position, &am->viewMatrix.fvec, forward_thrust_time*ZOOM_SPEED_FACTOR );
+			vm_vec_scale_add2( &am->view_position, &am->viewMatrix.uvec, vertical_thrust_time*SLIDE_SPEED );
+			vm_vec_scale_add2( &am->view_position, &am->viewMatrix.rvec, sideways_thrust_time*SLIDE_SPEED );
 			
 			// Crude wrapping check
 			if (am->view_position.x >  F1_0*32000) am->view_position.x =  F1_0*32000;
@@ -330,12 +325,12 @@ static void automap_apply_input(automap *am)
 			am->controls.fire_primary_count = 0;
 		}
 
-		am->viewDist -= am->controls.forward_thrust_time*ZOOM_SPEED_FACTOR;
+		am->viewDist -= forward_thrust_time*ZOOM_SPEED_FACTOR;
 		am->tangles.p += fixdiv( am->controls.pitch_time, ROT_SPEED_DIVISOR );
 		am->tangles.h  += fixdiv( am->controls.heading_time, ROT_SPEED_DIVISOR );
 		am->tangles.b  += fixdiv( am->controls.bank_time, ROT_SPEED_DIVISOR*2 );
 
-		if ( am->controls.vertical_thrust_time || am->controls.sideways_thrust_time )
+		if ( vertical_thrust_time || sideways_thrust_time )
 		{
 			vms_angvec      tangles1;
 			vms_vector      old_vt;
@@ -344,8 +339,8 @@ static void automap_apply_input(automap *am)
 			tangles1 = am->tangles;
 			vm_angles_2_matrix(&tempm,&tangles1);
 			vm_matrix_x_matrix(&am->viewMatrix,&Objects[Players[Player_num].objnum].orient,&tempm);
-			vm_vec_scale_add2( &am->view_target, &am->viewMatrix.uvec, am->controls.vertical_thrust_time*SLIDE_SPEED );
-			vm_vec_scale_add2( &am->view_target, &am->viewMatrix.rvec, am->controls.sideways_thrust_time*SLIDE_SPEED );
+			vm_vec_scale_add2( &am->view_target, &am->viewMatrix.uvec, vertical_thrust_time*SLIDE_SPEED );
+			vm_vec_scale_add2( &am->view_target, &am->viewMatrix.rvec, sideways_thrust_time*SLIDE_SPEED );
 			if ( vm_vec_dist_quick( &am->view_target, &Objects[Players[Player_num].objnum].pos) > i2f(1000) )
 				am->view_target = old_vt;
 		}

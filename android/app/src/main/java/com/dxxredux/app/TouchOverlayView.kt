@@ -111,11 +111,6 @@ class TouchOverlayView
         /** Called when a tap lands outside all overlay controls (pass-through for "press any key" screens). */
         var tapPassthroughCallback: (() -> Unit)? = null
 
-        /** Called with (heading, pitch, thrust, bank, vertical, sideways) when automap gestures are detected.
-         *  heading/pitch/bank are fractions of screen dimension; thrust is fraction of screen width;
-         *  vertical/sideways are fractions of screen dimension. */
-        var automapInputCallback: ((Float, Float, Float, Float, Float, Float) -> Unit)? = null
-
         /** Optional gyro manager - set by MainActivity to enable TOUCH_STICK activation. */
         var gyroManager: GyroInputManager? = null
 
@@ -304,12 +299,13 @@ class TouchOverlayView
         private fun buttonLongPressTag(b: ButtonState): String = "${buttonSourceTag(b)}:long"
 
         private fun canLatchButtonIntoDragZone(b: ButtonState): Boolean =
-            dragZoneButtonLatchAllowed(
-                gameVariant = gameVariant,
-                binding = b.control.binding,
-                pointerId = b.pointerId,
-                toggle = b.control.toggle,
-            )
+            buttonVisibleInCurrentMode(b) &&
+                dragZoneButtonLatchAllowed(
+                    gameVariant = gameVariant,
+                    binding = b.control.binding,
+                    pointerId = b.pointerId,
+                    toggle = b.control.toggle,
+                )
 
         private fun pressLayoutButton(
             b: ButtonState,
@@ -358,6 +354,7 @@ class TouchOverlayView
             py: Float,
         ) {
             for (b in buttonStates) {
+                if (!buttonVisibleInCurrentMode(b)) continue
                 if (!canLatchButtonIntoDragZone(b)) continue
                 if (hypot(px - b.centerX, py - b.centerY) <= b.radius * 1.3f) {
                     pressLayoutButton(b, pointerId)
@@ -378,6 +375,7 @@ class TouchOverlayView
             py: Float,
         ): ButtonState? {
             for (b in buttonStates) {
+                if (!buttonVisibleInCurrentMode(b)) continue
                 if (!canLatchButtonIntoDragZone(b)) continue
                 if (
                     buttonExtendsDragZoneStart(
@@ -524,51 +522,24 @@ class TouchOverlayView
             startMouseDrain()
         }
 
-        // -- MAP button geometry (kept for automap overlay compat) --
-        private var mapBtnCenterX = 0f
-        private var mapBtnCenterY = 0f
-        private var mapBtnRadius = 0f
-
         // -- Non-layout pointer tracking -------------------------
         private val passthroughPointers = mutableSetOf<Int>()
-        private var mapBtnPointerId = -1 // used by automap overlay
 
-        // -- Automap gesture state (pointers not on stick/buttons) --
+        // -- Automap mode filtering ------------------------------
 
         /** Set to true by the activity when the automap is displayed. */
         var automapActive = false
             set(value) {
                 if (field != value) {
                     field = value
+                    if (value) releaseControlsHiddenInAutomap()
                     if (width > 0 && height > 0) computeGeometry(width, height)
                     invalidate()
                 }
             }
-        private val automapPointers = mutableMapOf<Int, PointF>()
-        private var automapPinchDist = 0f
-        private var automapPinchAngle = 0f
-        private var automapPinchMidX = 0f
-        private var automapPinchMidY = 0f
-
-        /** Called when the automap center button is tapped. */
-        var automapCenterCallback: (() -> Unit)? = null
-
-        /** Called with marker index (0-based) when a marker button is tapped. */
-        var automapMarkerCallback: ((Int) -> Unit)? = null
-
-        /** Called to query how many markers currently exist. */
-        var markerCountProvider: (() -> Int)? = null
 
         /** Current track label text, set by the activity. */
         var trackLabel: String = ""
-
-        // -- Automap overlay button geometry (computed in onSizeChanged) --
-        private var automapBtnSize = 0f // button width/height
-        private var automapBtnY = 0f // top of buttons
-        private var automapBtnSpacing = 0f // gap between buttons
-        private val automapBtnRects = mutableListOf<RectF>() // [0]=center, [1..n]=markers
-        private var automapBtnPressed = -1 // index of currently pressed button, -1=none
-        private var automapBtnPointerId = -1
 
         // -- Paint objects ---------------------------------------
         companion object {
@@ -607,6 +578,8 @@ class TouchOverlayView
             const val ADMIN_ACCEPT_JOIN = 13
             const val ADMIN_BRIGHTNESS = 14
             const val ADMIN_ABDICATE_GUIDEBOT = 15
+            const val ADMIN_AUTOMAP_RECENTER = 16
+            const val ADMIN_AUTOMAP_MARKER_BASE = 100
 
             // Cockpit mode constants (match C CM_* defines)
             private const val CM_FULL_COCKPIT = 0
@@ -674,28 +647,6 @@ class TouchOverlayView
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
                 color = -0x55000001
-                textAlign = Paint.Align.CENTER
-            }
-        private val paintAutomapHelpText =
-            Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.FILL
-                color = 0xAAFFFFFF.toInt()
-                textAlign = Paint.Align.CENTER
-            }
-        private val paintAutomapBtnBg =
-            Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.FILL
-                color = 0x44FFFFFF
-            }
-        private val paintAutomapBtnBgPressed =
-            Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.FILL
-                color = 0x88FFFFFF.toInt()
-            }
-        private val paintAutomapBtnText =
-            Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.FILL
-                color = 0xDDFFFFFF.toInt()
                 textAlign = Paint.Align.CENTER
             }
 
@@ -773,6 +724,7 @@ class TouchOverlayView
         var adminTrayWarpLabelProvider: (() -> String)? = null
         var adminTrayAcceptLabelProvider: (() -> String)? = null
         internal var remainingAdminActionsProvider: (() -> List<RemainingTouchAction>)? = null
+        internal var automapActionsProvider: (() -> List<RemainingTouchAction>)? = null
 
         // D-pad selection index (-1 = no selection, used in gamepad mode)
         private var adminTraySelectedIndex = -1
@@ -855,19 +807,11 @@ class TouchOverlayView
                 }
             }
 
-            // Compute button geometry from layout; track MAP button for automap compat
-            mapBtnRadius = base * 0.035f
-            mapBtnCenterX = wf - wf * 0.05f - mapBtnRadius
-            mapBtnCenterY = base * 0.05f + mapBtnRadius
+            // Compute button geometry from layout
             for (b in buttonStates) {
                 b.radius = defaultBtnRadius * b.control.sizeMult
                 b.centerX = wf * b.control.xPct / 100f
                 b.centerY = hf * b.control.yPct / 100f
-                if (b.control.binding == TouchBindings.BTN_AUTOMAP && !automapActive) {
-                    mapBtnCenterX = b.centerX
-                    mapBtnCenterY = b.centerY
-                    mapBtnRadius = b.radius
-                }
             }
 
             // Compute radial menu geometry from layout
@@ -885,14 +829,6 @@ class TouchOverlayView
                 sl.trackLen = base * 0.12f * sl.control.sizeMult
                 sl.thumbR = base * 0.018f * sl.control.sizeMult
             }
-
-            // Automap overlay geometry
-            automapBtnSize = base * 0.09f
-            automapBtnSpacing = base * 0.02f
-            automapBtnY = hf * 0.03f
-            paintAutomapBtnText.textSize = automapBtnSize * 0.28f
-            paintAutomapHelpText.textSize = base * 0.04f
-            recomputeAutomapBtnRects()
 
             // Compute diagnostic overlay geometry
             val diagTextSize = base * 0.025f * 1f // base text size
@@ -941,8 +877,9 @@ class TouchOverlayView
 
         private fun currentRemainingTouchActions(
             weaponState: WeaponState? = weaponStateProvider?.invoke(),
-        ): List<RemainingTouchAction> =
-            remainingActionsWithControllerAdminActions(
+        ): List<RemainingTouchAction> {
+            if (automapActive) return automapActionsProvider?.invoke() ?: emptyList()
+            return remainingActionsWithControllerAdminActions(
                 keyActions =
                     remainingKeyTouchActions(
                         layout = layout,
@@ -954,6 +891,7 @@ class TouchOverlayView
                 gamepadOnlyMode = gamepadOnlyMode,
                 controllerAdminActions = remainingAdminActionsProvider?.invoke() ?: emptyList(),
             )
+        }
 
         private fun recomputeRemainingActionGeometry(weaponState: WeaponState? = weaponStateProvider?.invoke()) {
             remainingActionItemRects.clear()
@@ -1274,7 +1212,7 @@ class TouchOverlayView
                     alpha = (0xAA * eff).toInt()
                 }
             canvas.drawText(
-                "More",
+                if (automapActive) "Map" else "More",
                 remainingActionButtonRect.centerX(),
                 remainingActionButtonRect.centerY() + buttonText.textSize * 0.35f,
                 buttonText,
@@ -1408,35 +1346,66 @@ class TouchOverlayView
             return remainingActionOpen
         }
 
-        /** Recompute automap button rectangles based on current marker count. */
-        private fun recomputeAutomapBtnRects() {
-            val count = 1 + (markerCountProvider?.invoke() ?: 0) // center + markers
-            automapBtnRects.clear()
-            var x = automapBtnSpacing
-            for (i in 0 until count) {
-                automapBtnRects.add(RectF(x, automapBtnY, x + automapBtnSize, automapBtnY + automapBtnSize))
-                x += automapBtnSize + automapBtnSpacing
+        private fun buttonVisibleInCurrentMode(b: ButtonState): Boolean {
+            if (gameVariant == "d1" && b.control.binding in TouchBindings.D2_ONLY_BUTTONS) return false
+            return !automapActive || automapTouchButtonVisible(b.control.binding)
+        }
+
+        private fun diagnosticVisibleInCurrentMode(d: DiagnosticState): Boolean =
+            !automapActive || d.control.type == DiagnosticType.SETTINGS
+
+        private fun stickVisibleInCurrentMode(s: StickState): Boolean {
+            if (!automapActive || !s.control.buttonMode) return true
+            return listOf(
+                s.control.negXBinding,
+                s.control.posXBinding,
+                s.control.negYBinding,
+                s.control.posYBinding,
+            ).any(::automapTouchButtonVisible)
+        }
+
+        private fun stickBindingVisibleInCurrentMode(binding: Int): Boolean =
+            !automapActive || automapTouchButtonVisible(binding)
+
+        private fun releaseControlsHiddenInAutomap() {
+            passthroughPointers.clear()
+            for (b in buttonStates) {
+                if (!automapTouchButtonVisible(b.control.binding)) releaseLayoutButton(b, false)
             }
+            for (s in stickStates) {
+                if (s.control.buttonMode) {
+                    resetStick(s)
+                } else if (s.dtLatched && !stickBindingVisibleInCurrentMode(s.control.doubleTapBinding)) {
+                    val binding = s.control.doubleTapBinding
+                    s.dtLatched = false
+                    if (binding >= 0) {
+                        val tag = "touch:dtap${stickStates.indexOf(s)}"
+                        setDoubleTapLatch(binding, false, tag)
+                    }
+                }
+            }
+            releaseAllRadialMenus(false)
+            releaseAllMusicDiagnostics(false)
+            closeRemainingActions()
+            cheatsOverlayOpen = false
         }
 
         // -- Drawing ---------------------------------------------
         override fun onDraw(canvas: Canvas) {
             if (!isActive) return
 
-            if (automapActive) {
-                drawAutomapOverlay(canvas)
-                return
-            }
-
             val gAlpha = layout.globalOpacity
             val ws = weaponStateProvider?.invoke()
 
             // -- Layout sticks -----------------------------------
-            for (s in stickStates) drawStick(canvas, s, gAlpha)
+            for (s in stickStates) {
+                if (!stickVisibleInCurrentMode(s)) continue
+                drawStick(canvas, s, gAlpha)
+            }
 
             // -- Layout buttons ----------------------------------
             for (b in buttonStates) {
-                if (gameVariant == "d1" && b.control.binding in TouchBindings.D2_ONLY_BUTTONS) continue
+                if (!buttonVisibleInCurrentMode(b)) continue
                 drawButton(canvas, b, gAlpha, ws)
             }
 
@@ -1448,35 +1417,37 @@ class TouchOverlayView
 
             // -- Radial menus (triggers, then open wheels on top) --
             // Poll weapon state to update quiescent labels
-            for (rm in radialStates) {
-                if (rm.control.id == "Guide" && gameVariant == "d1") {
-                    continue
-                }
-                if (rm.control.id == "Guide") {
-                    val released = isBuddyReleasedProvider?.invoke() != false
-                    if (!released) {
-                        rm.quiescentLabel = "Locked"
-                    } else if (isEscortOwnerProvider?.invoke() == false) {
-                        val owner = escortOwnerCallsignProvider?.invoke().orEmpty()
-                        rm.quiescentLabel = if (owner.isNotEmpty()) owner else "Guide"
+            if (!automapActive) {
+                for (rm in radialStates) {
+                    if (rm.control.id == "Guide" && gameVariant == "d1") {
+                        continue
                     }
+                    if (rm.control.id == "Guide") {
+                        val released = isBuddyReleasedProvider?.invoke() != false
+                        if (!released) {
+                            rm.quiescentLabel = "Locked"
+                        } else if (isEscortOwnerProvider?.invoke() == false) {
+                            val owner = escortOwnerCallsignProvider?.invoke().orEmpty()
+                            rm.quiescentLabel = if (owner.isNotEmpty()) owner else "Guide"
+                        }
+                    }
+                    if (!rm.isOpen && ws != null && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
+                        val isPrimary = rm.control.id == "PriWpn"
+                        val presentation = weaponWheelCurrentPresentation(gameVariant, ws, isPrimary)
+                        rm.quiescentLabel = presentation?.label ?: rm.control.id.take(4)
+                        rm.quiescentAmmoStatus = presentation?.ammoStatus
+                    } else if (!rm.isOpen && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
+                        rm.quiescentAmmoStatus = null
+                    }
+                    if (!rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
                 }
-                if (!rm.isOpen && ws != null && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
-                    val isPrimary = rm.control.id == "PriWpn"
-                    val presentation = weaponWheelCurrentPresentation(gameVariant, ws, isPrimary)
-                    rm.quiescentLabel = presentation?.label ?: rm.control.id.take(4)
-                    rm.quiescentAmmoStatus = presentation?.ammoStatus
-                } else if (!rm.isOpen && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
-                    rm.quiescentAmmoStatus = null
-                }
-                if (!rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
-            }
-            for (rm in radialStates) {
-                if (rm.isOpen) {
-                    if (rm.isWeaponWheel) {
-                        drawWeaponWheel(canvas, rm, gAlpha)
-                    } else {
-                        drawRadialMenu(canvas, rm, gAlpha)
+                for (rm in radialStates) {
+                    if (rm.isOpen) {
+                        if (rm.isWeaponWheel) {
+                            drawWeaponWheel(canvas, rm, gAlpha)
+                        } else {
+                            drawRadialMenu(canvas, rm, gAlpha)
+                        }
                     }
                 }
             }
@@ -1484,6 +1455,7 @@ class TouchOverlayView
             // -- Diagnostic overlays -----------------------------
             val adminTrayPanelRect = if (adminTrayOpen) computeAdminTrayPanelRect() else null
             for (d in diagnosticStates) {
+                if (!diagnosticVisibleInCurrentMode(d)) continue
                 if (d.control.type == DiagnosticType.SETTINGS &&
                     adminTrayPanelRect != null &&
                     settingsDiagnosticOccludedByTray(d, adminTrayPanelRect)
@@ -1496,7 +1468,7 @@ class TouchOverlayView
             drawRemainingActions(canvas, ws)
 
             // -- Cheats overlay (drawn last, on top of everything) --
-            if (cheatsOverlayOpen) drawCheatsOverlay(canvas)
+            if (!automapActive && cheatsOverlayOpen) drawCheatsOverlay(canvas)
 
             // -- Admin tray tab (visible) or panel (when open) ---
             // Hide default tab when a settings diagnostic is configured (it replaces the tab)
@@ -2083,44 +2055,6 @@ class TouchOverlayView
             canvas.drawCircle(cx, cy, centerR, paintRing)
         }
 
-        private fun drawAutomapOverlay(canvas: Canvas) {
-            recomputeAutomapBtnRects()
-            val cornerR = automapBtnSize * 0.15f
-
-            for ((i, rect) in automapBtnRects.withIndex()) {
-                val bg = if (i == automapBtnPressed) paintAutomapBtnBgPressed else paintAutomapBtnBg
-                canvas.drawRoundRect(rect, cornerR, cornerR, bg)
-                canvas.drawRoundRect(rect, cornerR, cornerR, paintRing)
-
-                val cx = rect.centerX()
-                val cy = rect.centerY()
-                if (i == 0) {
-                    canvas.drawText("center", cx, cy + paintAutomapBtnText.textSize * 0.35f, paintAutomapBtnText)
-                } else {
-                    canvas.drawText("marker $i", cx, cy + paintAutomapBtnText.textSize * 0.35f, paintAutomapBtnText)
-                }
-            }
-
-            // MAP button (top-right, enlarged to match automap overlay buttons)
-            val mapR = maxOf(mapBtnRadius, automapBtnSize)
-            val fillMap = if (mapBtnPointerId >= 0) paintBtnPressed else paintBtnIdle
-            canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapR, fillMap)
-            canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapR, paintRing)
-            val savedSize = paintBtnLabel.textSize
-            paintBtnLabel.textSize = mapR * 0.65f
-            canvas.drawText("MAP", mapBtnCenterX, mapBtnCenterY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
-            paintBtnLabel.textSize = savedSize
-
-            // Help text at bottom center
-            val helpY = height - height * 0.04f
-            canvas.drawText(
-                "Touch to spin  \u2022  Pinch to zoom  \u2022  Two-finger drag to slide",
-                width / 2f,
-                helpY,
-                paintAutomapHelpText,
-            )
-        }
-
         // -- Touch handling --------------------------------------
         // When the overlay is active we consume ALL touches so that nothing
         // leaks through to the game SurfaceView (where it would be
@@ -2128,11 +2062,8 @@ class TouchOverlayView
         override fun onTouchEvent(event: MotionEvent): Boolean {
             if (!isActive) return false
 
-            // When automap is active, use dedicated automap touch handler
-            if (automapActive) return handleAutomapOverlayTouch(event)
-
             // When cheats overlay is open, it consumes all touches
-            if (cheatsOverlayOpen) return handleCheatsOverlayTouch(event)
+            if (!automapActive && cheatsOverlayOpen) return handleCheatsOverlayTouch(event)
 
             // When admin tray panel is open, a visible settings button may close it;
             // otherwise the tray consumes all touches.
@@ -2180,6 +2111,7 @@ class TouchOverlayView
                     // Try layout sticks
                     for (s in stickStates) {
                         if (handled) break
+                        if (!stickVisibleInCurrentMode(s)) continue
                         if (s.pointerId >= 0) continue
                         if (s.control.mouseMode) {
                             // Mouse mode: use floating zone bounds for hit detection
@@ -2255,7 +2187,7 @@ class TouchOverlayView
                     // Try layout buttons
                     if (!handled) {
                         for (b in buttonStates) {
-                            if (gameVariant == "d1" && b.control.binding in TouchBindings.D2_ONLY_BUTTONS) continue
+                            if (!buttonVisibleInCurrentMode(b)) continue
                             if (b.pointerId >= 0) continue
                             if (hypot(px - b.centerX, py - b.centerY) <= b.radius * 1.3f) {
                                 pressLayoutButton(b, pid)
@@ -2266,7 +2198,7 @@ class TouchOverlayView
                     }
 
                     // Try radial menu triggers
-                    if (!handled) {
+                    if (!automapActive && !handled) {
                         for (rm in radialStates) {
                             if (rm.pointerId >= 0) continue
                             // D1 has no Guide-Bot; block if buddy not released
@@ -2329,7 +2261,7 @@ class TouchOverlayView
                     }
 
                     // Try music controls (layout-driven via MUSIC diagnostics)
-                    if (!handled && trackLabel.isNotEmpty()) {
+                    if (!automapActive && !handled && trackLabel.isNotEmpty()) {
                         for (d in diagnosticStates) {
                             if (d.control.type != DiagnosticType.MUSIC) continue
                             val r = d.musicBtnR
@@ -2368,7 +2300,7 @@ class TouchOverlayView
                         handled = true
                     }
 
-                    if (!handled) passthroughPointers.add(pid)
+                    if (!handled && !automapActive) passthroughPointers.add(pid)
                 }
 
                 MotionEvent.ACTION_MOVE -> {
@@ -2504,10 +2436,12 @@ class TouchOverlayView
                         }
                     }
 
-                    for (rm in radialStates) {
-                        if (rm.pointerId >= 0 && rm.isOpen) {
-                            val i = event.findPointerIndex(rm.pointerId)
-                            if (i >= 0) updateRadialSelection(rm, event.getX(i), event.getY(i))
+                    if (!automapActive) {
+                        for (rm in radialStates) {
+                            if (rm.pointerId >= 0 && rm.isOpen) {
+                                val i = event.findPointerIndex(rm.pointerId)
+                                if (i >= 0) updateRadialSelection(rm, event.getX(i), event.getY(i))
+                            }
                         }
                     }
                     for (sl in sliderStates) {
@@ -2527,10 +2461,10 @@ class TouchOverlayView
                     passthroughPointers.clear()
                     resetAllSticks()
                     releaseAllLayoutButtons(fired)
-                    releaseAllRadialMenus(fired)
+                    releaseAllRadialMenus(!automapActive && fired)
                     releaseAllSliders()
                     releaseAllAxisRegions()
-                    releaseAllMusicDiagnostics(fired)
+                    releaseAllMusicDiagnostics(!automapActive && fired)
                     releaseAllMenuDiagnostics(fired)
                 }
 
@@ -2546,12 +2480,12 @@ class TouchOverlayView
                         }
                         for (b in buttonStates) {
                             if (b.pointerId == pid) {
-                                releaseLayoutButton(b, true)
+                                releaseLayoutButton(b, buttonVisibleInCurrentMode(b))
                             }
                         }
                         for (rm in radialStates) {
                             if (rm.pointerId == pid) {
-                                releaseRadialMenu(rm, true)
+                                releaseRadialMenu(rm, !automapActive)
                             }
                         }
                         for (sl in sliderStates) {
@@ -2567,9 +2501,9 @@ class TouchOverlayView
                         for (d in diagnosticStates) {
                             if (d.control.type != DiagnosticType.MUSIC) continue
                             when (pid) {
-                                d.musicPrevPid -> releaseMusicPrev(d, true)
-                                d.musicNextPid -> releaseMusicNext(d, true)
-                                d.musicLabelPid -> releaseMusicLabel(d, true)
+                                d.musicPrevPid -> releaseMusicPrev(d, !automapActive)
+                                d.musicNextPid -> releaseMusicNext(d, !automapActive)
+                                d.musicLabelPid -> releaseMusicLabel(d, !automapActive)
                             }
                         }
                         for (d in diagnosticStates) {
@@ -2582,115 +2516,6 @@ class TouchOverlayView
                 }
             }
             return true // always consume when active
-        }
-
-        /** Handle touches in automap overlay mode: buttons at top + gesture passthrough. */
-        private fun handleAutomapOverlayTouch(event: MotionEvent): Boolean {
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                    val idx = event.actionIndex
-                    val px = event.getX(idx)
-                    val py = event.getY(idx)
-                    val pid = event.getPointerId(idx)
-
-                    // Check MAP button (top-right, enlarged to match automap buttons)
-                    if (mapBtnPointerId < 0) {
-                        val mapR = maxOf(mapBtnRadius, automapBtnSize)
-                        val dx = px - mapBtnCenterX
-                        val dy = py - mapBtnCenterY
-                        if (dx * dx + dy * dy <= mapR * mapR * 4) {
-                            mapBtnPointerId = pid
-                            invalidate()
-                            return true
-                        }
-                    }
-
-                    // Check automap buttons
-                    if (automapBtnPointerId < 0) {
-                        for ((i, rect) in automapBtnRects.withIndex()) {
-                            if (rect.contains(px, py)) {
-                                automapBtnPointerId = pid
-                                automapBtnPressed = i
-                                invalidate()
-                                return true
-                            }
-                        }
-                    }
-
-                    // Not on a button -> track as automap gesture
-                    automapPointers[pid] = PointF(px, py)
-                    if (automapPointers.size == 2) {
-                        automapPinchDist = automapFingerDist(event)
-                        automapPinchAngle = automapFingerAngle(event)
-                        val mid = automapFingerMidpoint(event)
-                        automapPinchMidX = mid.x
-                        automapPinchMidY = mid.y
-                    }
-                }
-
-                MotionEvent.ACTION_MOVE -> {
-                    if (automapPointers.isNotEmpty()) {
-                        handleAutomapMove(event)
-                    }
-                }
-
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    // Fire MAP button if it was pressed
-                    releaseMapButton(event.actionMasked == MotionEvent.ACTION_UP)
-                    // Fire automap button if one was pressed
-                    if (automapBtnPressed >= 0 && event.actionMasked == MotionEvent.ACTION_UP) {
-                        fireAutomapButton(automapBtnPressed)
-                    }
-                    automapBtnPressed = -1
-                    automapBtnPointerId = -1
-                    automapPointers.clear()
-                    automapPinchDist = 0f
-                    automapPinchAngle = 0f
-                    automapPinchMidX = 0f
-                    automapPinchMidY = 0f
-                    invalidate()
-                }
-
-                MotionEvent.ACTION_POINTER_UP -> {
-                    val idx = event.actionIndex
-                    val pid = event.getPointerId(idx)
-                    if (pid == mapBtnPointerId) {
-                        releaseMapButton(true)
-                    } else if (pid == automapBtnPointerId) {
-                        fireAutomapButton(automapBtnPressed)
-                        automapBtnPressed = -1
-                        automapBtnPointerId = -1
-                        invalidate()
-                    } else {
-                        automapPointers.remove(pid)
-                        if (automapPointers.size >= 2) {
-                            automapPinchDist = automapFingerDist(event)
-                            automapPinchAngle = automapFingerAngle(event)
-                            val mid = automapFingerMidpoint(event)
-                            automapPinchMidX = mid.x
-                            automapPinchMidY = mid.y
-                        } else {
-                            automapPinchDist = 0f
-                            automapPinchAngle = 0f
-                            automapPinchMidX = 0f
-                            automapPinchMidY = 0f
-                            for ((id, pt) in automapPointers) {
-                                val i = event.findPointerIndex(id)
-                                if (i >= 0) pt.set(event.getX(i), event.getY(i))
-                            }
-                        }
-                    }
-                }
-            }
-            return true
-        }
-
-        private fun fireAutomapButton(index: Int) {
-            if (index == 0) {
-                automapCenterCallback?.invoke()
-            } else {
-                automapMarkerCallback?.invoke(index - 1)
-            }
         }
 
         private fun updateStickFromMouseDrag(
@@ -2833,6 +2658,7 @@ class TouchOverlayView
         private fun handleDoubleTap(s: StickState) {
             val binding = s.control.doubleTapBinding
             if (binding < 0) return
+            if (!stickBindingVisibleInCurrentMode(binding)) return
             val tag = "touch:dtap${stickStates.indexOf(s)}"
             when (s.control.doubleTapMode) {
                 DoubleTapMode.REPEAT_FIRE -> {
@@ -2892,6 +2718,17 @@ class TouchOverlayView
             sourceTag: String,
             updateState: (Boolean) -> Unit,
         ) {
+            if (!stickBindingVisibleInCurrentMode(binding)) {
+                if (wasPressed) {
+                    updateState(false)
+                    if (TouchBindings.isMetaAction(binding)) {
+                        metaActionCallback?.invoke(binding, false)
+                    } else {
+                        dispatchTouchButton(binding, false, sourceTag)
+                    }
+                }
+                return
+            }
             if (nowPressed == wasPressed) return
             updateState(nowPressed)
             if (TouchBindings.isMetaAction(binding)) {
@@ -3332,104 +3169,6 @@ class TouchOverlayView
                 }
             }
             return false
-        }
-
-        private fun releaseMapButton(fired: Boolean) {
-            if (mapBtnPointerId >= 0) {
-                mapBtnPointerId = -1
-                invalidate()
-                if (fired) mapButtonCallback?.invoke()
-            }
-        }
-
-        // -- Automap gesture helpers -----------------------------
-
-        /** Process MOVE events for automap pointers (drag -> pan/tilt, pinch -> thrust+rotate). */
-        private fun handleAutomapMove(event: MotionEvent) {
-            val w = width.toFloat()
-            val h = height.toFloat()
-            if (w <= 0f || h <= 0f) return
-
-            if (automapPointers.size == 1) {
-                val pid = automapPointers.keys.first()
-                val idx = event.findPointerIndex(pid)
-                if (idx >= 0) {
-                    val prev = automapPointers[pid]!!
-                    val dx = event.getX(idx) - prev.x
-                    val dy = event.getY(idx) - prev.y
-                    prev.set(event.getX(idx), event.getY(idx))
-                    if (dx != 0f || dy != 0f) {
-                        // Single finger -> pan / tilt
-                        automapInputCallback?.invoke(dx / w, dy / h, 0f, 0f, 0f, 0f)
-                    }
-                }
-            } else if (automapPointers.size >= 2) {
-                // Two+ fingers -> pinch = zoom + rotate + slide
-                for ((pid, pt) in automapPointers) {
-                    val idx = event.findPointerIndex(pid)
-                    if (idx >= 0) pt.set(event.getX(idx), event.getY(idx))
-                }
-                val dist = automapFingerDist(event)
-                val angle = automapFingerAngle(event)
-                val mid = automapFingerMidpoint(event)
-                if (automapPinchDist > 0f) {
-                    val delta = dist - automapPinchDist
-                    val thrust = delta / w * 20f
-
-                    var dAngle = angle - automapPinchAngle
-                    while (dAngle > Math.PI.toFloat()) dAngle -= (2 * Math.PI).toFloat()
-                    while (dAngle < -Math.PI.toFloat()) dAngle += (2 * Math.PI).toFloat()
-                    val bank = dAngle / Math.PI.toFloat()
-
-                    val sideways = (mid.x - automapPinchMidX) / w
-                    val vertical = -(mid.y - automapPinchMidY) / h
-
-                    if (thrust != 0f || bank != 0f || sideways != 0f || vertical != 0f) {
-                        automapInputCallback?.invoke(0f, 0f, thrust, bank, vertical, sideways)
-                    }
-                }
-                automapPinchDist = dist
-                automapPinchAngle = angle
-                automapPinchMidX = mid.x
-                automapPinchMidY = mid.y
-            }
-        }
-
-        /** Euclidean distance between the first two automap pointers. */
-        private fun automapFingerDist(event: MotionEvent): Float {
-            val ids = automapPointers.keys.toList()
-            if (ids.size < 2) return 0f
-            val i0 = event.findPointerIndex(ids[0])
-            val i1 = event.findPointerIndex(ids[1])
-            if (i0 < 0 || i1 < 0) return 0f
-            val dx = event.getX(i0) - event.getX(i1)
-            val dy = event.getY(i0) - event.getY(i1)
-            return hypot(dx, dy)
-        }
-
-        /** Angle (radians) from the first automap pointer to the second. */
-        private fun automapFingerAngle(event: MotionEvent): Float {
-            val ids = automapPointers.keys.toList()
-            if (ids.size < 2) return 0f
-            val i0 = event.findPointerIndex(ids[0])
-            val i1 = event.findPointerIndex(ids[1])
-            if (i0 < 0 || i1 < 0) return 0f
-            val dx = event.getX(i1) - event.getX(i0)
-            val dy = event.getY(i1) - event.getY(i0)
-            return atan2(dy, dx)
-        }
-
-        /** Midpoint between the first two automap pointers. */
-        private fun automapFingerMidpoint(event: MotionEvent): PointF {
-            val ids = automapPointers.keys.toList()
-            if (ids.size < 2) return PointF(0f, 0f)
-            val i0 = event.findPointerIndex(ids[0])
-            val i1 = event.findPointerIndex(ids[1])
-            if (i0 < 0 || i1 < 0) return PointF(0f, 0f)
-            return PointF(
-                (event.getX(i0) + event.getX(i1)) / 2f,
-                (event.getY(i0) + event.getY(i1)) / 2f,
-            )
         }
 
         // -- Cheats overlay --------------------------------------
