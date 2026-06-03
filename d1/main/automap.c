@@ -180,7 +180,7 @@ ubyte Automap_visited[MAX_SEGMENTS];
 #define ZOOM_SPEED_FACTOR		(500)	//(1500)
 #define ROT_SPEED_DIVISOR		(115000)
 #ifdef ANDROID
-#define AUTOMAP_TRANSLATION_SCALE	(6)
+#define AUTOMAP_TRANSLATION_SCALE	(4)
 #else
 #define AUTOMAP_TRANSLATION_SCALE	(1)
 #endif
