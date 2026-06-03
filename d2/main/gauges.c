@@ -858,6 +858,13 @@ static void hud_draw_hostage_counts(int y, int lost, int onboard, int total)
 	gr_string(x + label_w + lost_w, y, suffix);
 }
 
+static int hud_score_added_active(void)
+{
+	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
+		return 0;
+	return score_display != 0 && score_time > 0;
+}
+
 void hud_show_robot_hostage_counts()
 {
 	char robot_str[32];
@@ -872,7 +879,7 @@ void hud_show_robot_hostage_counts()
 
 	gr_set_curfont(GAME_FONT);
 
-	if (score_time)
+	if (hud_score_added_active())
 		yline++;
 #ifdef NETWORK
 	if ((Game_mode & GM_NETWORK) && Netgame.PlayTimeAllowed && !Control_center_destroyed)
@@ -932,8 +939,10 @@ void hud_show_score_added()
 	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
 		return;
 
-	if (score_display == 0)
+	if (score_display == 0) {
+		score_time = 0;
 		return;
+	}
 
 	gr_set_curfont( GAME_FONT );
 
