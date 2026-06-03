@@ -207,6 +207,17 @@ For "Netgame Info" rules:
 - Ran targeted code quality with `android/run-code-quality.ps1 -Fix -Paths ...`; all checks passed.
 - Ran `./android/gradlew.bat -p android :app:assembleDebug` with JDK 21 after formatting; build passed.
 - Could not run the emulator automation script in this shell because no Android device was attached and repo instructions say not to start the emulator from PowerShell.
+- 2026-06-03: Added Android-only wrapping for tiny menus whose items are all `NM_TYPE_TEXT`.
+- Wrapped help rows become private menu-owned text rows, with tabbed key/action rows rendered as a first line plus indented continuation lines as needed.
+- Kept the original caller-owned item array available to close callbacks so existing `free_help()` ownership still works.
+- Reduced Android wrapped tiny text panels to 12 visible rows so the scaler can zoom the panel more and let extra help lines scroll.
+- Added `menu.android_wrapped_text` and `menu.android_original_num_items` introspection fields for screenshot-free verification.
+- Ran scoped code quality and a post-format Android debug build with JDK 21; both passed.
+- 2026-06-03: Added Android-specific `NETGAMES` browser formatting.
+- Kept one selectable menu row per netgame so join selection indexes still map to the original game slots.
+- Replaced the desktop tabbed multi-column rows with compact Android summaries and shorter control header text.
+- Capped Android `NETGAMES` tiny panels at 12 visible rows so the scaler can zoom more while preserving scroll behavior.
+- Ran scoped code quality and a post-format Android debug build with JDK 21; both passed.
 
 ## Recommended Next Implementation Slice
 

@@ -103,11 +103,16 @@ struct newmenu
 	int				drag_happened;	// Set when a drag-scroll actually occurred (suppresses tap activation)
 	int				*rval;			// Pointer to return value (for polling newmenus)
 	void			*userdata;		// For whatever - like with window system
+#ifdef ANDROID
+	newmenu_item	*android_original_items;
+	int				android_original_nitems;
+#endif
 };
 grs_bitmap nm_background, nm_background1;
 grs_bitmap *nm_background_sub = NULL;
 #ifdef ANDROID
 static ubyte nm_background1_palette[768];  // saved palette from the background PCX
+enum { ANDROID_TINY_TEXT_MAX_VISIBLE = 12 };
 
 static int android_tap_outside_game_menu(newmenu *menu, int mx, int my)
 {
@@ -115,6 +120,181 @@ static int android_tap_outside_game_menu(newmenu *menu, int mx, int my)
 		return 0;
 	return mx < menu->x - BORDERX || mx > menu->x + menu->w + BORDERX ||
 		my < menu->y - BORDERY || my > menu->y + menu->h + BORDERY;
+}
+
+static void android_newmenu_trim_copy(char *dst, size_t dst_size,
+                                      const char *src, size_t src_len)
+{
+	while (src_len > 0 && isspace((unsigned char)*src)) {
+		src++;
+		src_len--;
+	}
+	while (src_len > 0 && isspace((unsigned char)src[src_len - 1]))
+		src_len--;
+	if (src_len >= dst_size)
+		src_len = dst_size - 1;
+	memcpy(dst, src, src_len);
+	dst[src_len] = 0;
+}
+
+static int android_newmenu_text_width(const char *text)
+{
+	int w, h, aw;
+	gr_get_string_size(text, &w, &h, &aw);
+	return w;
+}
+
+static int android_newmenu_append_wrapped_line(newmenu_item **items, int *count,
+                                               int *capacity, const char *text)
+{
+	newmenu_item *grown;
+
+	if (*count >= *capacity) {
+		*capacity *= 2;
+		grown = (newmenu_item *)d_realloc(*items, sizeof(newmenu_item) * *capacity);
+		if (!grown)
+			return 0;
+		*items = grown;
+	}
+
+	memset(&(*items)[*count], 0, sizeof(newmenu_item));
+	(*items)[*count].type = NM_TYPE_TEXT;
+	(*items)[*count].text = d_strdup((char *)text);
+	if (!(*items)[*count].text)
+		return 0;
+	(*count)++;
+	return 1;
+}
+
+static int android_newmenu_wrap_words(newmenu_item **items, int *count,
+                                      int *capacity, const char *first_prefix,
+                                      const char *next_prefix, const char *text,
+                                      int wrap_width)
+{
+	const char *p = text;
+	const char *prefix = first_prefix;
+	char line[NM_MAX_TEXT_LEN + 1];
+	char candidate[NM_MAX_TEXT_LEN + 1];
+	char word[NM_MAX_TEXT_LEN + 1];
+
+	if (!text || !*text)
+		return android_newmenu_append_wrapped_line(items, count, capacity, first_prefix);
+
+	snprintf(line, sizeof(line), "%s", prefix);
+	while (*p) {
+		size_t len = 0;
+		while (*p && isspace((unsigned char)*p))
+			p++;
+		while (p[len] && !isspace((unsigned char)p[len]) && len < sizeof(word) - 1) {
+			word[len] = p[len];
+			len++;
+		}
+		word[len] = 0;
+		p += len;
+		if (!word[0])
+			break;
+
+		snprintf(candidate, sizeof(candidate), "%s%s%s", line,
+		         strlen(line) > strlen(prefix) ? " " : "", word);
+		if (android_newmenu_text_width(candidate) <= wrap_width ||
+		    strlen(line) == strlen(prefix)) {
+			snprintf(line, sizeof(line), "%s", candidate);
+		} else {
+			if (!android_newmenu_append_wrapped_line(items, count, capacity, line))
+				return 0;
+			prefix = next_prefix;
+			snprintf(line, sizeof(line), "%s%s", prefix, word);
+		}
+	}
+
+	return android_newmenu_append_wrapped_line(items, count, capacity, line);
+}
+
+static int android_newmenu_wrap_text_item(newmenu_item **items, int *count,
+                                          int *capacity, const char *text,
+                                          int wrap_width)
+{
+	char key[NM_MAX_TEXT_LEN + 1];
+	char body[NM_MAX_TEXT_LEN + 1];
+	char first_prefix[NM_MAX_TEXT_LEN + 1];
+	const char *tab;
+
+	if (!text || !*text)
+		return android_newmenu_append_wrapped_line(items, count, capacity, "");
+
+	tab = strchr(text, '\t');
+	if (!tab)
+		return android_newmenu_wrap_words(items, count, capacity, "", "  ",
+		                                  text, wrap_width);
+
+	android_newmenu_trim_copy(key, sizeof(key), text, tab - text);
+	android_newmenu_trim_copy(body, sizeof(body), tab + 1, strlen(tab + 1));
+	if (!body[0])
+		return android_newmenu_append_wrapped_line(items, count, capacity, key);
+
+	snprintf(first_prefix, sizeof(first_prefix), "%s  ", key);
+	return android_newmenu_wrap_words(items, count, capacity, first_prefix,
+	                                  "    ", body, wrap_width);
+}
+
+static void android_newmenu_free_wrapped_items(newmenu *menu)
+{
+	int i;
+
+	if (!menu || !menu->android_original_items)
+		return;
+
+	for (i = 0; i < menu->nitems; i++)
+		d_free(menu->items[i].text);
+	d_free(menu->items);
+	menu->items = menu->android_original_items;
+	menu->nitems = menu->android_original_nitems;
+	menu->android_original_items = NULL;
+	menu->android_original_nitems = 0;
+}
+
+static void android_newmenu_expand_tiny_text(newmenu *menu)
+{
+	int i, count = 0, capacity, wrap_width;
+	newmenu_item *wrapped;
+
+	if (!menu || !menu->tiny_mode || menu->nitems <= 0 || menu->filename)
+		return;
+	if (menu->title && !strcmp(menu->title, "NETGAMES")) {
+		menu->tabs_flag = 0;
+		menu->max_on_menu = ANDROID_TINY_TEXT_MAX_VISIBLE;
+	}
+	for (i = 0; i < menu->nitems; i++)
+		if (menu->items[i].type != NM_TYPE_TEXT)
+			return;
+
+	wrap_width = (SWIDTH * 65) / 100;
+	if (wrap_width < FSPACX(150))
+		wrap_width = FSPACX(150);
+	capacity = menu->nitems * 2 + 8;
+	wrapped = (newmenu_item *)d_malloc(sizeof(newmenu_item) * capacity);
+	if (!wrapped)
+		return;
+
+	for (i = 0; i < menu->nitems; i++)
+		if (!android_newmenu_wrap_text_item(&wrapped, &count, &capacity,
+		                                    menu->items[i].text, wrap_width)) {
+			newmenu temp;
+			memset(&temp, 0, sizeof(temp));
+			temp.items = wrapped;
+			temp.nitems = count;
+			temp.android_original_items = menu->items;
+			android_newmenu_free_wrapped_items(&temp);
+			return;
+		}
+
+	menu->android_original_items = menu->items;
+	menu->android_original_nitems = menu->nitems;
+	menu->items = wrapped;
+	menu->nitems = count;
+	menu->tabs_flag = 0;
+	menu->max_on_menu = ANDROID_TINY_TEXT_MAX_VISIBLE;
+	menu->max_displayable = count;
 }
 #endif
 
@@ -619,6 +799,24 @@ int newmenu_get_scroll_offset(newmenu *menu)
 int newmenu_get_is_scroll_box(newmenu *menu)
 {
 	return menu->is_scroll_box;
+}
+
+int newmenu_get_android_wrapped_text(newmenu *menu)
+{
+#ifdef ANDROID
+	return menu->android_original_items != NULL;
+#else
+	return 0;
+#endif
+}
+
+int newmenu_get_android_original_nitems(newmenu *menu)
+{
+#ifdef ANDROID
+	return menu->android_original_items ? menu->android_original_nitems : menu->nitems;
+#else
+	return menu->nitems;
+#endif
 }
 #endif
 
@@ -1867,7 +2065,25 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 
 	if (menu->subfunction)
 	{
-		int rval = (*menu->subfunction)(menu, event, menu->userdata);
+		int rval;
+#ifdef ANDROID
+		newmenu_item *wrapped_items = NULL;
+		int wrapped_nitems = 0;
+
+		if (event->type == EVENT_WINDOW_CLOSE && menu->android_original_items) {
+			wrapped_items = menu->items;
+			wrapped_nitems = menu->nitems;
+			menu->items = menu->android_original_items;
+			menu->nitems = menu->android_original_nitems;
+		}
+#endif
+		rval = (*menu->subfunction)(menu, event, menu->userdata);
+#ifdef ANDROID
+		if (wrapped_items) {
+			menu->items = wrapped_items;
+			menu->nitems = wrapped_nitems;
+		}
+#endif
 
 		if (!window_exists(wind))
 			return 1;	// some subfunction closed the window: bail!
@@ -2051,6 +2267,7 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 				extern void android_hide_keyboard(void);
 				android_hide_keyboard();
 				android_menu_scale_clear();
+				android_newmenu_free_wrapped_items(menu);
 			}
 #endif
 			d_free(menu);
@@ -2105,6 +2322,10 @@ newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * 
 
 	menu->max_displayable=nitems;
 
+#ifdef ANDROID
+	android_newmenu_expand_tiny_text(menu);
+#endif
+
 	//set_screen_mode(SCREEN_MENU);	//hafta set the screen mode here or fonts might get changed/freed up if screen res changes
 
 	newmenu_create_structure(menu);
@@ -2114,6 +2335,9 @@ newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * 
 		wind = window_create(&grd_curscreen->sc_canvas, menu->x, menu->y, menu->w, menu->h, (int (*)(window *, d_event *, void *))newmenu_handler, menu);
 	if (!wind)
 	{
+#ifdef ANDROID
+		android_newmenu_free_wrapped_items(menu);
+#endif
 		d_free(menu);
 
 		return NULL;

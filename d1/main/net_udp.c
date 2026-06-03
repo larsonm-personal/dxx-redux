@@ -1511,7 +1511,11 @@ int net_udp_list_join_poll( newmenu *menu, d_event *event, direct_join *dj )
 
 		if ((i+(NLPage*UDP_NETGAMES_PPAGE)) >= num_active_udp_games)
 		{
+#ifdef __ANDROID__
+			snprintf(menus[i+4].text, sizeof(char)*74, "%d.",(i+(NLPage*UDP_NETGAMES_PPAGE))+1);
+#else
 			snprintf(menus[i+4].text, sizeof(char)*74, "%d.                                                                      ",(i+(NLPage*UDP_NETGAMES_PPAGE))+1);
+#endif
 			continue;
 		}
 
@@ -1577,7 +1581,11 @@ int net_udp_list_join_poll( newmenu *menu, d_event *event, direct_join *dj )
 			snprintf(status, sizeof(status), "BETWEEN ");
 		
 		unsigned gamemode = Active_udp_games[(i+(NLPage*UDP_NETGAMES_PPAGE))].gamemode;
+#ifdef __ANDROID__
+		snprintf (menus[i+4].text,sizeof(char)*74,"%d. %s %s %d/%d %s L%s %s",(i+(NLPage*UDP_NETGAMES_PPAGE))+1,GameName,(gamemode < sizeof(GMNamesShrt) / sizeof(GMNamesShrt[0])) ? GMNamesShrt[gamemode] : "INVALID",nplayers, Active_udp_games[(i+(NLPage*UDP_NETGAMES_PPAGE))].max_numplayers,MissName,levelname,status);
+#else
 		snprintf (menus[i+4].text,sizeof(char)*74,"%d.\t%s \t%s \t  %d/%d \t%s \t %s \t%s",(i+(NLPage*UDP_NETGAMES_PPAGE))+1,GameName,(gamemode < sizeof(GMNamesShrt) / sizeof(GMNamesShrt[0])) ? GMNamesShrt[gamemode] : "INVALID",nplayers, Active_udp_games[(i+(NLPage*UDP_NETGAMES_PPAGE))].max_numplayers,MissName,levelname,status);
+#endif
 			
 		Assert(strlen(menus[i+4].text) < 75);
 	}
@@ -1642,21 +1650,37 @@ void net_udp_list_join_game()
 
 	m[0].text = ljtext;
 	m[0].type = NM_TYPE_TEXT;
+#ifdef __ANDROID__
+	snprintf( m[0].text, sizeof(char)*74, "F4/F5/F6: scan all/LAN/tracker games." );
+#else
 	snprintf( m[0].text, sizeof(char)*74, "\tF4/F5/F6: (Re)Scan for all/LAN/Tracker Games." );
+#endif
 	m[1].text = ljtext + 74*1;
 	m[1].type = NM_TYPE_TEXT;
+#ifdef __ANDROID__
+	snprintf( m[1].text, sizeof(char)*74, "PgUp/PgDn: pages." );
+#else
 	snprintf( m[1].text, sizeof(char)*74, "\tPgUp/PgDn: Flip Pages." );
+#endif
 	m[2].text = ljtext + 74*2;
 	m[2].type = NM_TYPE_TEXT;
 	snprintf( m[2].text, sizeof(char)*74, " " );
 	m[3].text = ljtext + 74*3;
 	m[3].type = NM_TYPE_TEXT;
+#ifdef __ANDROID__
+	snprintf (m[3].text, sizeof(char)*74, "Game  Mode  Players  Mission  Level  Status");
+#else
 	snprintf (m[3].text, sizeof(char)*74, "\tGAME \tMODE \t#PLYRS \tMISSION \tLEV \tSTATUS");
+#endif
 
 	for (i = 0; i < UDP_NETGAMES_PPAGE; i++) {
 		m[i+4].text = ljtext + 74 * (i+4);
 		m[i+4].type = NM_TYPE_MENU;
+#ifdef __ANDROID__
+		snprintf(m[i+4].text,sizeof(char)*74,"%d.", i+1);
+#else
 		snprintf(m[i+4].text,sizeof(char)*74,"%d.                                                                      ", i+1);
+#endif
 	}
 
 	num_active_udp_changed = 1;
