@@ -1659,12 +1659,92 @@ static void android_menu_scale_blit_source_region(grs_bitmap *bitmap,
 	gr_free_bitmap_data(&cropped);
 }
 
+static int android_menu_scale_round_coord(int value, float scale)
+{
+	return (int) (value * scale + 0.5f);
+}
+
+static void android_newmenu_scale_items(newmenu_item *dst, const newmenu_item *src,
+                                        int count, float scale)
+{
+	int i;
+
+	for (i = 0; i < count; i++) {
+		dst[i] = src[i];
+		dst[i].x = android_menu_scale_round_coord(src[i].x, scale);
+		dst[i].y = android_menu_scale_round_coord(src[i].y, scale);
+		dst[i].w = android_menu_scale_round_coord(src[i].w, scale);
+		dst[i].h = android_menu_scale_round_coord(src[i].h, scale);
+		dst[i].right_offset = android_menu_scale_round_coord(src[i].right_offset, scale);
+	}
+}
+
+static void android_newmenu_draw_direct_contents(newmenu *menu,
+                                                 android_menu_scale_result *result)
+{
+	grs_bitmap overlay_bitmap;
+	grs_canvas overlay_canvas, menu_canvas;
+	grs_canvas *save_canvas = grd_curcanv;
+	android_menu_scale_draw_state draw_state;
+	newmenu menu_copy;
+	newmenu_item *items_copy;
+	float scale;
+	int menu_x, menu_y;
+
+	if (!menu || !result || !result->active || result->dst.w <= 0 || result->dst.h <= 0)
+		return;
+
+	scale = result->scale;
+	if (scale <= 1.0f)
+		return;
+
+	items_copy = d_malloc(sizeof(newmenu_item) * menu->nitems);
+	if (!items_copy)
+		return;
+
+	menu_copy = *menu;
+	android_newmenu_scale_items(items_copy, menu->items, menu->nitems, scale);
+	menu_copy.items = items_copy;
+	menu_copy.w = android_menu_scale_round_coord(menu->w, scale);
+	menu_copy.h = android_menu_scale_round_coord(menu->h, scale);
+	menu_copy.scroll_line_spacing = android_menu_scale_round_coord(
+		newmenu_get_scroll_line_spacing(menu), scale);
+
+	gr_init_bitmap_alloc(&overlay_bitmap, BM_LINEAR, 0, 0, result->dst.w,
+	                     result->dst.h, result->dst.w);
+	memset(overlay_bitmap.bm_data, TRANSPARENCY_COLOR, result->dst.w * result->dst.h);
+	gr_init_canvas(&overlay_canvas, overlay_bitmap.bm_data, BM_LINEAR,
+	               result->dst.w, result->dst.h);
+
+	if (android_menu_scale_begin_scaled_draw(scale, &draw_state)) {
+		gr_set_current_canvas(&overlay_canvas);
+		menu_x = android_menu_scale_round_coord(menu->x - result->src.x, scale);
+		menu_y = android_menu_scale_round_coord(menu->y - result->src.y, scale);
+		gr_init_sub_canvas(&menu_canvas, &overlay_canvas, menu_x, menu_y,
+		                   menu_copy.w, menu_copy.h);
+		gr_set_current_canvas(&menu_canvas);
+		newmenu_draw_contents(&menu_copy);
+		android_menu_scale_end_scaled_draw(&draw_state);
+
+		result->direct_render = 1;
+		result->render_w = result->dst.w;
+		result->render_h = result->dst.h;
+		result->render_scale = scale;
+	}
+
+	gr_set_current_canvas(save_canvas);
+	android_menu_scale_blit_bitmap(&overlay_bitmap, result, 1);
+	gr_set_current_canvas(save_canvas);
+	gr_free_bitmap_data(&overlay_bitmap);
+	d_free(items_copy);
+}
+
 static void android_newmenu_draw_scaled(newmenu *menu,
-                                        const android_menu_scale_result *result)
+                                        android_menu_scale_result *result)
 {
 	int masked = menu->filename != NULL;
 	grs_bitmap source_bitmap;
-	grs_canvas source_canvas, menu_canvas;
+	grs_canvas source_canvas;
 	grs_canvas *save_canvas = grd_curcanv;
 
 	if (menu->filename != NULL) {
@@ -1680,12 +1760,9 @@ static void android_newmenu_draw_scaled(newmenu *menu,
 	if (menu->filename == NULL)
 		nm_draw_background(menu->x-(menu->is_scroll_box?FSPACX(5):0),menu->y,menu->x+menu->w,menu->y+menu->h);
 
-	gr_init_sub_canvas(&menu_canvas, &source_canvas, menu->x, menu->y, menu->w, menu->h);
-	gr_set_current_canvas(&menu_canvas);
-	newmenu_draw_contents(menu);
-
 	gr_set_current_canvas(save_canvas);
 	android_menu_scale_blit_source_region(&source_bitmap, result, masked);
+	android_newmenu_draw_direct_contents(menu, result);
 	gr_set_current_canvas(save_canvas);
 	gr_free_bitmap_data(&source_bitmap);
 }
@@ -2637,18 +2714,47 @@ static void listbox_draw_contents(listbox *lb)
 
 #ifdef ANDROID
 static void android_listbox_draw_scaled(listbox *lb,
-                                        const android_menu_scale_result *result)
+                                        android_menu_scale_result *result)
 {
 	grs_bitmap source_bitmap;
 	grs_canvas source_canvas;
 	grs_canvas *save_canvas = grd_curcanv;
+	android_menu_scale_draw_state draw_state;
+	listbox lb_copy;
+	float scale;
 
-	gr_init_bitmap_alloc(&source_bitmap, BM_LINEAR, 0, 0, SWIDTH, SHEIGHT, SWIDTH);
-	gr_init_canvas(&source_canvas, source_bitmap.bm_data, BM_LINEAR, SWIDTH, SHEIGHT);
-	gr_set_current_canvas(&source_canvas);
-	listbox_draw_contents(lb);
+	if (!lb || !result || !result->active || result->dst.w <= 0 || result->dst.h <= 0)
+		return;
+
+	scale = result->scale;
+	gr_init_bitmap_alloc(&source_bitmap, BM_LINEAR, 0, 0, result->dst.w,
+	                     result->dst.h, result->dst.w);
+	memset(source_bitmap.bm_data, 0, result->dst.w * result->dst.h);
+	gr_init_canvas(&source_canvas, source_bitmap.bm_data, BM_LINEAR,
+	               result->dst.w, result->dst.h);
+	lb_copy = *lb;
+
+	if (android_menu_scale_begin_scaled_draw(scale, &draw_state)) {
+		lb_copy.box_x = android_menu_scale_round_coord(lb->box_x - result->src.x, scale);
+		lb_copy.box_y = android_menu_scale_round_coord(lb->box_y - result->src.y, scale);
+		lb_copy.box_w = android_menu_scale_round_coord(lb->box_w, scale);
+		lb_copy.height = android_menu_scale_round_coord(lb->height, scale);
+		lb_copy.title_height = android_menu_scale_round_coord(lb->title_height, scale);
+		lb_copy.row_height = android_menu_scale_round_coord(lb->row_height, scale);
+		lb_copy.selected_row_height = android_menu_scale_round_coord(lb->selected_row_height, scale);
+
+		gr_set_current_canvas(&source_canvas);
+		listbox_draw_contents(&lb_copy);
+		android_menu_scale_end_scaled_draw(&draw_state);
+
+		result->direct_render = 1;
+		result->render_w = result->dst.w;
+		result->render_h = result->dst.h;
+		result->render_scale = scale;
+	}
+
 	gr_set_current_canvas(save_canvas);
-	android_menu_scale_blit_source_region(&source_bitmap, result, 0);
+	android_menu_scale_blit_bitmap(&source_bitmap, result, 0);
 	gr_set_current_canvas(save_canvas);
 	gr_free_bitmap_data(&source_bitmap);
 }

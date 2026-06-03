@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include "gamefont.h"
+
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -53,6 +55,9 @@ static int compute_destination(android_menu_scale_result *result, int screen_w,
 	result->dst.x = (screen_w - result->dst.w) / 2;
 	result->dst.y = (screen_h - result->dst.h) / 2;
 	result->scale = scale;
+	result->render_w = result->src.w;
+	result->render_h = result->src.h;
+	result->render_scale = 1.0f;
 	result->active = 1;
 	return 1;
 }
@@ -182,6 +187,34 @@ int android_menu_scale_get_state(android_menu_scale_result *result)
 	result->dst.w = g_menu_scale_dst_w;
 	result->dst.h = g_menu_scale_dst_h;
 	return 1;
+}
+
+int android_menu_scale_begin_scaled_draw(float scale, android_menu_scale_draw_state *state)
+{
+	if (!state || !grd_curscreen || scale <= 1.0f)
+		return 0;
+
+	state->screen_w = grd_curscreen->sc_w;
+	state->screen_h = grd_curscreen->sc_h;
+	state->fnt_scale_x = FNTScaleX;
+	state->fnt_scale_y = FNTScaleY;
+
+	grd_curscreen->sc_w = (unsigned int) (state->screen_w * scale + 0.5f);
+	grd_curscreen->sc_h = (unsigned int) (state->screen_h * scale + 0.5f);
+	FNTScaleX = state->fnt_scale_x * scale;
+	FNTScaleY = state->fnt_scale_y * scale;
+	return 1;
+}
+
+void android_menu_scale_end_scaled_draw(const android_menu_scale_draw_state *state)
+{
+	if (!state || !grd_curscreen)
+		return;
+
+	grd_curscreen->sc_w = state->screen_w;
+	grd_curscreen->sc_h = state->screen_h;
+	FNTScaleX = state->fnt_scale_x;
+	FNTScaleY = state->fnt_scale_y;
 }
 
 void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,

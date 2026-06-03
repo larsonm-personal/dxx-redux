@@ -568,49 +568,52 @@ static void kconfig_draw_contents(kc_menu *menu, grs_canvas *canvas)
 }
 
 #ifdef ANDROID
-static void android_kconfig_blit_source_region(grs_bitmap *bitmap,
-                                               const android_menu_scale_result *result)
+static int android_kconfig_scale_coord(int value, float scale)
 {
-	int row;
-	grs_bitmap cropped;
-
-	if (!bitmap || !result || !result->active)
-		return;
-
-	gr_init_bitmap_alloc(&cropped, BM_LINEAR, 0, 0, result->src.w,
-	                     result->src.h, result->src.w);
-	for (row = 0; row < result->src.h; row++)
-		memcpy(cropped.bm_data + row * result->src.w,
-		       bitmap->bm_data + (result->src.y + row) * bitmap->bm_rowsize +
-		       result->src.x,
-		       result->src.w);
-	android_menu_scale_blit_bitmap(&cropped, result, 0);
-	gr_free_bitmap_data(&cropped);
+	return (int) (value * scale + 0.5f);
 }
 
 static void android_kconfig_draw_scaled(kc_menu *menu,
-                                        const android_menu_scale_result *result,
-                                        int w, int h)
+                                        android_menu_scale_result *result)
 {
 	grs_bitmap source_bitmap;
 	grs_canvas source_canvas, menu_canvas;
 	grs_canvas *window_canvas = window_get_canvas(menu->wind);
 	grs_canvas *save_canvas = grd_curcanv;
+	android_menu_scale_draw_state draw_state;
+	float scale;
 
-	gr_init_bitmap_alloc(&source_bitmap, BM_LINEAR, 0, 0, SWIDTH, SHEIGHT, SWIDTH);
-	gr_init_canvas(&source_canvas, source_bitmap.bm_data, BM_LINEAR, SWIDTH, SHEIGHT);
-	gr_set_current_canvas(&source_canvas);
-	nm_draw_background(((SWIDTH-w)/2)-BORDERX,((SHEIGHT-h)/2)-BORDERY,((SWIDTH-w)/2)+w+BORDERX,((SHEIGHT-h)/2)+h+BORDERY);
-	if (window_canvas) {
-		gr_init_sub_canvas(&menu_canvas, &source_canvas,
-		                   window_canvas->cv_bitmap.bm_x,
-		                   window_canvas->cv_bitmap.bm_y,
-		                   window_canvas->cv_bitmap.bm_w,
-		                   window_canvas->cv_bitmap.bm_h);
-		kconfig_draw_contents(menu, &menu_canvas);
+	if (!result || !result->active || result->dst.w <= 0 || result->dst.h <= 0)
+		return;
+
+	scale = result->scale;
+	gr_init_bitmap_alloc(&source_bitmap, BM_LINEAR, 0, 0, result->dst.w,
+	                     result->dst.h, result->dst.w);
+	memset(source_bitmap.bm_data, 0, result->dst.w * result->dst.h);
+	gr_init_canvas(&source_canvas, source_bitmap.bm_data, BM_LINEAR,
+	               result->dst.w, result->dst.h);
+
+	if (android_menu_scale_begin_scaled_draw(scale, &draw_state)) {
+		gr_set_current_canvas(&source_canvas);
+		nm_draw_background(0, 0, result->dst.w, result->dst.h);
+		if (window_canvas) {
+			gr_init_sub_canvas(&menu_canvas, &source_canvas,
+			                   android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_x - result->src.x, scale),
+			                   android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_y - result->src.y, scale),
+			                   android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_w, scale),
+			                   android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_h, scale));
+			kconfig_draw_contents(menu, &menu_canvas);
+		}
+		android_menu_scale_end_scaled_draw(&draw_state);
+
+		result->direct_render = 1;
+		result->render_w = result->dst.w;
+		result->render_h = result->dst.h;
+		result->render_scale = scale;
 	}
+
 	gr_set_current_canvas(save_canvas);
-	android_kconfig_blit_source_region(&source_bitmap, result);
+	android_menu_scale_blit_bitmap(&source_bitmap, result, 0);
 	gr_set_current_canvas(save_canvas);
 	gr_free_bitmap_data(&source_bitmap);
 }
@@ -631,7 +634,7 @@ void kconfig_draw(kc_menu *menu)
 		if (android_menu_scale_compute_kconfig(source_x, source_y, source_w,
 		                                      source_h, SWIDTH, SHEIGHT,
 		                                      &menu_scale)) {
-			android_kconfig_draw_scaled(menu, &menu_scale, w, h);
+			android_kconfig_draw_scaled(menu, &menu_scale);
 			android_menu_scale_publish(&menu_scale);
 			return;
 		} else {

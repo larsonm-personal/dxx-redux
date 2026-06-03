@@ -930,8 +930,12 @@ extern "C" char *game_introspect_get_state(void)
 
 		json scale;
 		scale["active"] = have_menu_scale && menu_scale.active;
+		scale["direct_render"] = have_menu_scale && menu_scale.direct_render;
 		scale["target_fill"] = android_menu_scale_get_target_fill();
 		scale["scale"] = menu_scale.scale;
+		scale["render_scale"] = menu_scale.render_scale;
+		scale["render_w"] = menu_scale.render_w;
+		scale["render_h"] = menu_scale.render_h;
 		scale["crop_left"] = menu_scale.crop_left;
 		scale["crop_top"] = menu_scale.crop_top;
 		scale["box"] = { { "x", menu_scale.box.x }, { "y", menu_scale.box.y }, { "w", menu_scale.box.w }, { "h", menu_scale.box.h } };
