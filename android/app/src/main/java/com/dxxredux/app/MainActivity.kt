@@ -1703,7 +1703,8 @@ class MainActivity :
             topLeft = roundedCornerLeftInsetPx(insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT))
             bottomLeft = roundedCornerLeftInsetPx(insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT))
             topRight = roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT))
-            bottomRight = roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT))
+            bottomRight =
+                roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT))
         }
         if (topLeft <= 0) topLeft = fallback
         if (bottomLeft <= 0) bottomLeft = fallback
