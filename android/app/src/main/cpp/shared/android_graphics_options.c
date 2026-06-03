@@ -37,11 +37,23 @@ static int clamp_gamma(int value)
 	return value;
 }
 
+static int clamp_corner_text_inset(int value)
+{
+	if (value < 0)
+		return 0;
+	if (value > 2)
+		return 2;
+	return value;
+}
+
 static int g_android_default_alpha_effects;
 static int g_android_default_dynlight_color;
 static int g_corner_text_surface_width_px;
-static int g_corner_text_left_inset_px;
-static int g_corner_text_right_inset_px;
+static int g_corner_text_surface_height_px;
+static int g_corner_text_top_left_px;
+static int g_corner_text_bottom_left_px;
+static int g_corner_text_top_right_px;
+static int g_corner_text_bottom_right_px;
 
 void android_graphics_apply_pilot_defaults(void)
 {
@@ -278,7 +290,7 @@ void android_graphics_set_hud_texfilt(int value, int persist)
 
 void android_graphics_set_corner_text_inset(int value, int persist)
 {
-	GameCfg.CornerTextInset = clamp_bool(value);
+	GameCfg.CornerTextInset = clamp_corner_text_inset(value);
 	persist_config_if_needed(persist, "CornerTextInset", GameCfg.CornerTextInset, 1, 1);
 }
 
@@ -313,31 +325,120 @@ void android_graphics_set_movie_texfilt(int value, int persist)
 #endif
 }
 
-void android_graphics_set_rounded_corner_text_insets(int surface_width, int left_px, int right_px)
+void android_graphics_set_rounded_corner_text_insets(int surface_width, int surface_height,
+                                                     int top_left_px, int bottom_left_px,
+                                                     int top_right_px, int bottom_right_px)
 {
 	g_corner_text_surface_width_px = surface_width > 0 ? surface_width : 0;
-	g_corner_text_left_inset_px = left_px > 0 ? left_px : 0;
-	g_corner_text_right_inset_px = right_px > 0 ? right_px : 0;
+	g_corner_text_surface_height_px = surface_height > 0 ? surface_height : 0;
+	g_corner_text_top_left_px = top_left_px > 0 ? top_left_px : 0;
+	g_corner_text_bottom_left_px = bottom_left_px > 0 ? bottom_left_px : 0;
+	g_corner_text_top_right_px = top_right_px > 0 ? top_right_px : 0;
+	g_corner_text_bottom_right_px = bottom_right_px > 0 ? bottom_right_px : 0;
 }
 
-static int android_graphics_scale_corner_text_inset(int canvas_width, int inset_px)
+static int isqrt_int64(long long value)
 {
-	if (!GameCfg.CornerTextInset || canvas_width <= 0)
-		return 0;
+	long long root = 0;
+	long long bit = 1LL << 62;
+
+	while (bit > value)
+		bit >>= 2;
+	while (bit) {
+		if (value >= root + bit) {
+			value -= root + bit;
+			root = (root >> 1) + bit;
+		} else {
+			root >>= 1;
+		}
+		bit >>= 2;
+	}
+	return (int) root;
+}
+
+static int scale_corner_text_x(int canvas_width, int inset_px)
+{
+	if (inset_px <= 0 && g_corner_text_surface_width_px > 0)
+		inset_px = g_corner_text_surface_width_px / 20;
 	if (inset_px <= 0 || g_corner_text_surface_width_px <= 0)
 		return canvas_width / 20;
 	return (inset_px * canvas_width + g_corner_text_surface_width_px / 2) /
 	       g_corner_text_surface_width_px;
 }
 
-int android_graphics_get_corner_text_left_inset(int canvas_width)
+static int scale_corner_text_y(int canvas_width, int canvas_height, int inset_px)
 {
-	return android_graphics_scale_corner_text_inset(canvas_width, g_corner_text_left_inset_px);
+	if (inset_px <= 0 && g_corner_text_surface_width_px > 0)
+		inset_px = g_corner_text_surface_width_px / 20;
+	if (inset_px <= 0 || g_corner_text_surface_height_px <= 0)
+		return canvas_width / 20;
+	return (inset_px * canvas_height + g_corner_text_surface_height_px / 2) /
+	       g_corner_text_surface_height_px;
 }
 
-int android_graphics_get_corner_text_right_inset(int canvas_width)
+static int rounded_corner_inset_for_depth(int x_edge, int y_radius, int depth)
 {
-	return android_graphics_scale_corner_text_inset(canvas_width, g_corner_text_right_inset_px);
+	int root;
+	long long dy;
+	long long inside;
+
+	if (x_edge <= 0 || y_radius <= 0)
+		return 0;
+	if (depth <= 0)
+		return x_edge;
+	if (depth >= y_radius)
+		return 0;
+
+	dy = y_radius - depth;
+	inside = (long long) y_radius * y_radius - dy * dy;
+	root = isqrt_int64(inside);
+	return (x_edge * (y_radius - root) + y_radius / 2) / y_radius;
+}
+
+static int android_graphics_scale_corner_text_inset(int canvas_width, int canvas_height,
+                                                    int y, int h, int top_px, int bottom_px)
+{
+	int top_x;
+	int top_y;
+	int bottom_x;
+	int bottom_y;
+	int bottom_depth;
+	int full_inset;
+
+	int scaled;
+
+	if (GameCfg.CornerTextInset <= 0 || canvas_width <= 0 || canvas_height <= 0)
+		return 0;
+	if (h <= 0)
+		h = 1;
+
+	top_x = scale_corner_text_x(canvas_width, top_px);
+	top_y = scale_corner_text_y(canvas_width, canvas_height, top_px);
+	bottom_x = scale_corner_text_x(canvas_width, bottom_px);
+	bottom_y = scale_corner_text_y(canvas_width, canvas_height, bottom_px);
+	bottom_depth = canvas_height - (y + h);
+	full_inset = rounded_corner_inset_for_depth(top_x, top_y, y);
+	scaled = rounded_corner_inset_for_depth(bottom_x, bottom_y, bottom_depth);
+	if (scaled > full_inset)
+		full_inset = scaled;
+
+	if (GameCfg.CornerTextInset == 1)
+		return (full_inset + 1) / 2;
+	return full_inset;
+}
+
+int android_graphics_get_corner_text_left_inset(int canvas_width, int canvas_height, int y, int h)
+{
+	return android_graphics_scale_corner_text_inset(canvas_width, canvas_height, y, h,
+	                                                g_corner_text_top_left_px,
+	                                                g_corner_text_bottom_left_px);
+}
+
+int android_graphics_get_corner_text_right_inset(int canvas_width, int canvas_height, int y, int h)
+{
+	return android_graphics_scale_corner_text_inset(canvas_width, canvas_height, y, h,
+	                                                g_corner_text_top_right_px,
+	                                                g_corner_text_bottom_right_px);
 }
 
 int android_graphics_set_option(const char *name, int value, int persist)

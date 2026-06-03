@@ -650,14 +650,20 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetRoundedCornerTextInsets(JNIEnv *env, jobject thiz,
                                                                     jint surface_width,
-                                                                    jint left_px,
-                                                                    jint right_px)
+                                                                    jint surface_height,
+                                                                    jint top_left_px,
+                                                                    jint bottom_left_px,
+                                                                    jint top_right_px,
+                                                                    jint bottom_right_px)
 {
 	(void) env;
 	(void) thiz;
 	android_graphics_set_rounded_corner_text_insets((int) surface_width,
-	                                                (int) left_px,
-	                                                (int) right_px);
+	                                                (int) surface_height,
+	                                                (int) top_left_px,
+	                                                (int) bottom_left_px,
+	                                                (int) top_right_px,
+	                                                (int) bottom_right_px);
 }
 
 JNIEXPORT jint JNICALL

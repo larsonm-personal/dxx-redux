@@ -26,6 +26,9 @@ import java.io.File
 internal const val PREF_GRAPHICS_SETTINGS_GENERATION = "graphics_settings_generation"
 internal const val PREF_GRAPHICS_ALPHA_EFFECTS = "graphics_alpha_effects"
 internal const val PREF_GRAPHICS_DYNLIGHT_COLOR = "graphics_dynlight_color"
+private const val CORNER_TEXT_INSET_OFF = 0
+private const val CORNER_TEXT_INSET_HALF = 1
+private const val CORNER_TEXT_INSET_FULL = 2
 
 @Composable
 fun GraphicsSettingsPage(
@@ -384,22 +387,37 @@ private fun SelectiveFilterSection(filesDir: File) {
 private fun CornerTextInsetSection(filesDir: File) {
     val ctx = LocalContext.current
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
-    var cornerTextInset by remember {
-        mutableStateOf((readConfigValue(filesDir, "CornerTextInset") ?: "1") != "0")
+    val options =
+        listOf(
+            "Off" to CORNER_TEXT_INSET_OFF,
+            "Avoid rounded corners (half)" to CORNER_TEXT_INSET_HALF,
+            "Avoid rounded corners (full)" to CORNER_TEXT_INSET_FULL,
+        )
+    var cornerTextInsetMode by remember {
+        val cur = (readConfigValue(filesDir, "CornerTextInset") ?: "1").toIntOrNull() ?: CORNER_TEXT_INSET_HALF
+        mutableIntStateOf(if (options.any { it.second == cur }) cur else CORNER_TEXT_INSET_HALF)
     }
 
     Text("Display Corners", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-    Spacer(modifier = Modifier.height(2.dp))
-    DebugOptionRow(
-        checked = cornerTextInset,
-        title = "Move text in to avoid rounded corners",
-        detail = "Moves corner HUD text horizontally inward",
-        onCheckedChange = {
-            cornerTextInset = it
-            updateAllConfigFiles(filesDir, listOf("CornerTextInset" to if (it) "1" else "0"))
-            bumpGraphicsSettingsGeneration(prefs)
-        },
-    )
+    Spacer(modifier = Modifier.height(1.dp))
+    Text("Move text in to avoid rounded corners", fontSize = 10.sp)
+    options.forEach { (label, value) ->
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
+        ) {
+            RadioButton(
+                selected = cornerTextInsetMode == value,
+                onClick = {
+                    cornerTextInsetMode = value
+                    updateAllConfigFiles(filesDir, listOf("CornerTextInset" to value.toString()))
+                    bumpGraphicsSettingsGeneration(prefs)
+                },
+                modifier = Modifier.tvFocusBorder(),
+            )
+            Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
+        }
+    }
 }
 
 @Composable

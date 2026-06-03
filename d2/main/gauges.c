@@ -736,19 +736,26 @@ static int hud_corner_text_canvas_width(void)
 	return grd_curcanv ? grd_curcanv->cv_bitmap.bm_w : 0;
 }
 
-static int hud_corner_text_left_inset(void)
+static int hud_corner_text_canvas_height(void)
+{
+	return grd_curcanv ? grd_curcanv->cv_bitmap.bm_h : 0;
+}
+
+static int hud_corner_text_left_inset(int y, int h)
 {
 #ifdef ANDROID
-	return android_graphics_get_corner_text_left_inset(hud_corner_text_canvas_width());
+	return android_graphics_get_corner_text_left_inset(hud_corner_text_canvas_width(),
+	                                                   hud_corner_text_canvas_height(), y, h);
 #else
 	return 0;
 #endif
 }
 
-static int hud_corner_text_right_inset(void)
+static int hud_corner_text_right_inset(int y, int h)
 {
 #ifdef ANDROID
-	return android_graphics_get_corner_text_right_inset(hud_corner_text_canvas_width());
+	return android_graphics_get_corner_text_right_inset(hud_corner_text_canvas_width(),
+	                                                    hud_corner_text_canvas_height(), y, h);
 #else
 	return 0;
 #endif
@@ -778,7 +785,7 @@ void hud_show_score()
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1);
 
-	gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset()-w-FSPACX(1), FSPACY(1), score_str);
+	gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset(FSPACY(1), h)-w-FSPACX(1), FSPACY(1), score_str);
 }
 
 static void hud_draw_right_text(int y, const char *text)
@@ -789,7 +796,7 @@ static void hud_draw_right_text(int y, const char *text)
 	if (Color_0_31_0 == -1)
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1);
-	gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset()-w-FSPACX(1), y, text);
+	gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset(y, h)-w-FSPACX(1), y, text);
 }
 
 static int hud_count_robot_kills(int pnum)
@@ -840,7 +847,7 @@ static void hud_draw_hostage_counts(int y, int lost, int onboard, int total)
 	gr_get_string_size(label, &label_w, &label_h, &label_aw);
 	gr_get_string_size(lost_str, &lost_w, &lost_h, &lost_aw);
 
-	x = grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset()-full_w-FSPACX(1);
+	x = grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset(y, full_h)-full_w-FSPACX(1);
 	if (Color_0_31_0 == -1)
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1);
@@ -911,7 +918,7 @@ void hud_show_timer_count()
 		gr_set_fontcolor(Color_0_31_0, -1);
 
 		if (i>-1 && !Control_center_destroyed)
-			gr_string(grd_curcanv->cv_bitmap.bm_w-w-FSPACX(12), LINE_SPACING+FSPACY(1), score_str);
+			gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset(LINE_SPACING+FSPACY(1), h)-w-FSPACX(12), LINE_SPACING+FSPACY(1), score_str);
 	}
 #endif
 }
@@ -946,7 +953,7 @@ void hud_show_score_added()
 
 		gr_get_string_size(score_str, &w, &h, &aw );
 		gr_set_fontcolor(BM_XRGB(0, color, 0),-1 );
-		gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset()-w-FSPACX(1), LINE_SPACING+FSPACY(1), score_str);
+		gr_string(grd_curcanv->cv_bitmap.bm_w-hud_corner_text_right_inset(LINE_SPACING+FSPACY(1), h)-w-FSPACX(1), LINE_SPACING+FSPACY(1), score_str);
 	} else {
 		score_time = 0;
 		score_display = 0;
@@ -1121,15 +1128,18 @@ void hud_show_keys(void)
 	blue=&GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_BLUE) ];
 	yellow=&GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_YELLOW) ];
 	red=&GameBitmaps[ GET_GAUGE_INDEX(KEY_ICON_RED) ];
+	{
+		int x = FSPACX(2) + hud_corner_text_left_inset(y, HUD_SCALE_Y_AR(blue->bm_h));
 
-	if (Players[pnum].flags & PLAYER_FLAGS_BLUE_KEY)
-		hud_bitblt_free(FSPACX(2),y,HUD_SCALE_X_AR(blue->bm_w),HUD_SCALE_Y_AR(blue->bm_h),blue);
+		if (Players[pnum].flags & PLAYER_FLAGS_BLUE_KEY)
+			hud_bitblt_free(x,y,HUD_SCALE_X_AR(blue->bm_w),HUD_SCALE_Y_AR(blue->bm_h),blue);
 
-	if (Players[pnum].flags & PLAYER_FLAGS_GOLD_KEY)
-		hud_bitblt_free(FSPACX(2)+HUD_SCALE_X_AR(blue->bm_w+3),y,HUD_SCALE_X_AR(yellow->bm_w),HUD_SCALE_Y_AR(yellow->bm_h),yellow);
+		if (Players[pnum].flags & PLAYER_FLAGS_GOLD_KEY)
+			hud_bitblt_free(x+HUD_SCALE_X_AR(blue->bm_w+3),y,HUD_SCALE_X_AR(yellow->bm_w),HUD_SCALE_Y_AR(yellow->bm_h),yellow);
 
-	if (Players[pnum].flags & PLAYER_FLAGS_RED_KEY)
-		hud_bitblt_free(FSPACX(2)+HUD_SCALE_X_AR(blue->bm_w+yellow->bm_w+6),y,HUD_SCALE_X_AR(red->bm_w),HUD_SCALE_Y_AR(red->bm_h),red);
+		if (Players[pnum].flags & PLAYER_FLAGS_RED_KEY)
+			hud_bitblt_free(x+HUD_SCALE_X_AR(blue->bm_w+yellow->bm_w+6),y,HUD_SCALE_X_AR(red->bm_w),HUD_SCALE_Y_AR(red->bm_h),red);
+	}
 
 }
 
@@ -1204,13 +1214,11 @@ void hud_show_energy(void)
 	int pnum = get_pnum_for_hud();
 
 	if (PlayerCfg.HudMode<2) {
-		int x = FSPACX(1) + hud_corner_text_left_inset();
+		int y = (Game_mode & GM_MULTI) ? (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)) : (grd_curcanv->cv_bitmap.bm_h-LINE_SPACING);
+		int x = FSPACX(1) + hud_corner_text_left_inset(y, LINE_SPACING);
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
-		if (Game_mode & GM_MULTI)
-		     gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*5)),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
-		else
-		     gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-LINE_SPACING),"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
+		gr_printf(x, y,"%s: %i", TXT_ENERGY, f2ir(Players[pnum].energy));
 	}
 
 	if (Newdemo_state == ND_STATE_RECORDING)
@@ -1220,6 +1228,8 @@ void hud_show_energy(void)
 void hud_show_afterburner(void)
 {
 	int y;
+	int text_y;
+	int x;
 	int pnum = get_pnum_for_hud();
 
 	if (! (Players[pnum].flags & PLAYER_FLAGS_AFTERBURNER))
@@ -1229,8 +1239,10 @@ void hud_show_afterburner(void)
 	gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 
 	y = (Game_mode & GM_MULTI)?(-7*LINE_SPACING):(-3*LINE_SPACING);
+	text_y = grd_curcanv->cv_bitmap.bm_h+y;
+	x = FSPACX(1) + hud_corner_text_left_inset(text_y, LINE_SPACING);
 
-	gr_printf(FSPACX(1), grd_curcanv->cv_bitmap.bm_h+y, "burn: %d%%" , fixmul(Players[pnum].afterburner_charge,100));
+	gr_printf(x, text_y, "burn: %d%%" , fixmul(Players[pnum].afterburner_charge,100));
 
 	if (Newdemo_state==ND_STATE_RECORDING )
 		newdemo_record_player_afterburner(Players[pnum].afterburner_charge);
@@ -1479,9 +1491,10 @@ void hud_show_weapons(void)
 		y -= LINE_SPACING*4;
 
 	if (PlayerCfg.HudMode==1){
-		int right_edge = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset();
-		hud_show_weapons_mode(0,0,right_edge,y-(LINE_SPACING*4));
-		hud_show_weapons_mode(1,0,right_edge,y-(LINE_SPACING*2));
+		int line_y = y-(LINE_SPACING*4);
+		hud_show_weapons_mode(0,0,grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset(line_y, LINE_SPACING),line_y);
+		line_y = y-(LINE_SPACING*2);
+		hud_show_weapons_mode(1,0,grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset(line_y, LINE_SPACING),line_y);
 	}
 	else if (PlayerCfg.HudMode==2){
 		int x1,x2;
@@ -1501,7 +1514,8 @@ void hud_show_weapons(void)
 	else
 	{
 		const char *disp_primary_weapon_name;
-		int right_edge = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset();
+		int right_edge;
+		int line_y;
 		weapon_name = PRIMARY_WEAPON_NAMES_SHORT(Players[pnum].primary_weapon);
 
 		switch (Players[pnum].primary_weapon) {
@@ -1542,15 +1556,21 @@ void hud_show_weapons(void)
 		}
 
 		gr_get_string_size(disp_primary_weapon_name, &w, &h, &aw );
-		gr_string(right_edge-w-FSPACX(1), y-(LINE_SPACING*2), disp_primary_weapon_name);
+		line_y = y-(LINE_SPACING*2);
+		right_edge = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset(line_y, h);
+		gr_string(right_edge-w-FSPACX(1), line_y, disp_primary_weapon_name);
 
 		weapon_name = SECONDARY_WEAPON_NAMES_VERY_SHORT(Players[pnum].secondary_weapon);
 
 		sprintf(weapon_str, "%s %d",weapon_name,Players[pnum].secondary_ammo[Players[pnum].secondary_weapon]);
 		gr_get_string_size(weapon_str, &w, &h, &aw );
-		gr_string(right_edge-w-FSPACX(1), y-LINE_SPACING, weapon_str);
+		line_y = y-LINE_SPACING;
+		right_edge = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset(line_y, h);
+		gr_string(right_edge-w-FSPACX(1), line_y, weapon_str);
 
-		show_bomb_count(right_edge-FSPACX(1), y-(LINE_SPACING*3),-1,1,1);
+		line_y = y-(LINE_SPACING*3);
+		right_edge = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset(line_y, LINE_SPACING);
+		show_bomb_count(right_edge-FSPACX(1), line_y,-1,1,1);
 	}
 }
 
@@ -1596,20 +1616,15 @@ void hud_show_shield(void)
 	int pnum = get_pnum_for_hud();
 
 	if (PlayerCfg.HudMode<2) {
-		int x = FSPACX(1) + hud_corner_text_left_inset();
+		int y = (Game_mode & GM_MULTI) ? (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)) : (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2));
+		int x = FSPACX(1) + hud_corner_text_left_inset(y, LINE_SPACING);
 		gr_set_curfont( GAME_FONT );
 		gr_set_fontcolor(BM_XRGB(0,31,0),-1 );
 
 		if ( Players[pnum].shields >= 0 )	{
-			if (Game_mode & GM_MULTI)
-			     gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
-			else
-			     gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
+			gr_printf(x, y,"%s: %i", TXT_SHIELD, f2ir(Players[pnum].shields));
 		} else {
-			if (Game_mode & GM_MULTI)
-			     gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*6)),"%s: 0", TXT_SHIELD );
-			else
-			     gr_printf(x, (grd_curcanv->cv_bitmap.bm_h-(LINE_SPACING*2)),"%s: 0", TXT_SHIELD );
+			gr_printf(x, y,"%s: 0", TXT_SHIELD );
 		}
 	}
 
@@ -1631,7 +1646,7 @@ void hud_show_lives()
 		x = HUD_SCALE_X(7);
 	else
 		x = FSPACX(2);
-	x += hud_corner_text_left_inset();
+	x += hud_corner_text_left_inset(FSPACY(1), LINE_SPACING);
 
 	if (Game_mode & GM_MULTI) {
 		gr_set_curfont( GAME_FONT );
@@ -1703,8 +1718,11 @@ extern int Piggy_bitmap_cache_next;
 
 void show_time()
 {
+	char time_str[16];
 	int secs = f2i(Players[Player_num].time_level) % 60;
 	int mins = f2i(Players[Player_num].time_level) / 60;
+	int w, h, aw;
+	int y = GHEIGHT-(LINE_SPACING*11);
 
 	gr_set_curfont( GAME_FONT );
 
@@ -1712,7 +1730,9 @@ void show_time()
 		Color_0_31_0 = BM_XRGB(0,31,0);
 	gr_set_fontcolor(Color_0_31_0, -1 );
 
-	gr_printf(SWIDTH-FSPACX(30),GHEIGHT-(LINE_SPACING*11),"%d:%02d", mins, secs);
+	snprintf(time_str, sizeof(time_str), "%d:%02d", mins, secs);
+	gr_get_string_size(time_str, &w, &h, &aw);
+	gr_string(SWIDTH-hud_corner_text_right_inset(y, h)-FSPACX(30),y,time_str);
 }
 #endif
 

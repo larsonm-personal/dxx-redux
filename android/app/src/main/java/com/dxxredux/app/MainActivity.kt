@@ -242,8 +242,11 @@ class MainActivity :
 
     external fun nativeSetRoundedCornerTextInsets(
         surfaceWidth: Int,
-        leftPx: Int,
-        rightPx: Int,
+        surfaceHeight: Int,
+        topLeftPx: Int,
+        bottomLeftPx: Int,
+        topRightPx: Int,
+        bottomRightPx: Int,
     )
 
     external fun nativeGetGammaLevel(): Int
@@ -1679,31 +1682,35 @@ class MainActivity :
                 decorView.width > 0 -> decorView.width
                 else -> 0
             }
-        if (width <= 0) {
+        val height =
+            when {
+                ::gameSurfaceView.isInitialized && gameSurfaceView.height > 0 -> gameSurfaceView.height
+                decorView.height > 0 -> decorView.height
+                else -> 0
+            }
+        if (width <= 0 || height <= 0) {
             decorView.post { updateRoundedCornerTextInsets() }
             return
         }
 
         val fallback = (width * 0.05f).roundToInt().coerceAtLeast(1)
-        var left = 0
-        var right = 0
+        var topLeft = 0
+        var bottomLeft = 0
+        var topRight = 0
+        var bottomRight = 0
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val insets = decorView.rootWindowInsets
-            left =
-                maxOf(
-                    roundedCornerLeftInsetPx(insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)),
-                    roundedCornerLeftInsetPx(insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT)),
-                )
-            right =
-                maxOf(
-                    roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT)),
-                    roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT)),
-                )
+            topLeft = roundedCornerLeftInsetPx(insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT))
+            bottomLeft = roundedCornerLeftInsetPx(insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT))
+            topRight = roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT))
+            bottomRight = roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT))
         }
-        if (left <= 0) left = fallback
-        if (right <= 0) right = fallback
+        if (topLeft <= 0) topLeft = fallback
+        if (bottomLeft <= 0) bottomLeft = fallback
+        if (topRight <= 0) topRight = fallback
+        if (bottomRight <= 0) bottomRight = fallback
         try {
-            nativeSetRoundedCornerTextInsets(width, left, right)
+            nativeSetRoundedCornerTextInsets(width, height, topLeft, bottomLeft, topRight, bottomRight)
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }

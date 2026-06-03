@@ -18,9 +18,11 @@ void android_graphics_set_alpha_effects(int value, int persist);
 void android_graphics_set_dynlight_color(int value, int persist);
 void android_graphics_set_movie_texfilt(int value, int persist);
 void android_graphics_apply_pilot_defaults(void);
-void android_graphics_set_rounded_corner_text_insets(int surface_width, int left_px, int right_px);
-int android_graphics_get_corner_text_left_inset(int canvas_width);
-int android_graphics_get_corner_text_right_inset(int canvas_width);
+void android_graphics_set_rounded_corner_text_insets(int surface_width, int surface_height,
+                                                     int top_left_px, int bottom_left_px,
+                                                     int top_right_px, int bottom_right_px);
+int android_graphics_get_corner_text_left_inset(int canvas_width, int canvas_height, int y, int h);
+int android_graphics_get_corner_text_right_inset(int canvas_width, int canvas_height, int y, int h);
 
 #ifdef __cplusplus
 }
