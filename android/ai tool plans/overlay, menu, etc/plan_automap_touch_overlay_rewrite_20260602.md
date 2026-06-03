@@ -17,7 +17,7 @@ Phase 1:
 Phase 2:
 
 - Re-add marker controls through the touch overlay menu
-- Make "jump to marker" and "recenter" active only while automap is open, as menu options
+- Make "set marker", "jump to marker", and "recenter" active only while automap is open, as menu options
 
 ## Current Code Shape
 
@@ -152,7 +152,8 @@ Be careful with overlay-disabled settings:
 Add new admin or remaining-action IDs for:
 
 - Automap recenter
-- Jump to marker 1 through 10, D2 only
+- Set marker 1 through 9, D2 only
+- Jump to marker 1 through 9, D2 only
 
 Preferred location:
 
@@ -164,18 +165,20 @@ Add a provider similar to current warp/join dynamic actions:
 - `automapActionsProvider`
 - Only returns actions when `automapActive == true`
 - D1 returns recenter only
-- D2 returns recenter plus existing marker count actions
+- D2 returns recenter plus set and jump marker slot actions
 
 ### 2. Wire callbacks
 
 Use existing native hooks where possible:
 
 - Recenter: `nativeAutomapCenter()`
+- Set marker: `nativeAutomapSetMarker(idx)`
 - Jump to marker: `nativeAutomapSelectMarker(idx)`
 
 For labels:
 
 - `Recenter Map`
+- `Set Marker 1`, `Set Marker 2`, etc.
 - `Jump to Marker 1`, `Jump to Marker 2`, etc.
 
 If the user specifically wants marker message text in labels later, add a D2 native provider for marker labels. Do not duplicate marker message parsing in Kotlin.
@@ -200,7 +203,7 @@ Unit tests:
 - Add remaining-actions tests:
   - automap actions absent when automap inactive
   - recenter present when automap active
-  - marker actions present only for D2 and only up to marker count
+  - marker actions present only for D2
   - D1 does not expose marker jump actions
 
 Integration or automation test:
@@ -233,7 +236,7 @@ Implementation completed in this tranche:
 2. Changed `TouchOverlayView.kt` so automap mode uses the normal overlay path with filtered buttons, normal movement axes, the map button, and menu/settings entry points
 3. Removed the hard-coded automap overlay drawing and touch gesture path from `TouchOverlayView.kt`
 4. Removed the surface-level automap gesture fallback and `nativeAutomapInput()` plumbing from `MainActivity.kt` and `android_input.c`
-5. Routed recenter and D2 marker jump through automap-only remaining actions
+5. Routed recenter and D2 marker set/jump through automap-only remaining actions
 6. Added `AUTOMAP_TRANSLATION_SCALE` in both `d1/main/automap.c` and `d2/main/automap.c`, applied only to automap translation fields while leaving look/bank timing unscaled
 7. Added `AutomapTouchPolicyTest.kt` for trimmed button visibility, recenter, marker clamping, and marker action dispatch mapping
 
@@ -241,10 +244,37 @@ Tuning update:
 
 - Reduced Android automap translation scale from 6 to 4, roughly a 30 percent reduction in translation speed
 
+Marker update:
+
+- Added D2 automap menu actions for setting marker slots 1 through 9
+- Changed marker jump requests to snap the automap view to the marker position when that slot exists
+- Moved D2 marker slots into second-level automap menu pages:
+  - `Set Marker` -> `Set Marker 1` through `Set Marker 9`
+  - `Jump to Marker` -> `Jump to Marker 1` through `Jump to Marker 9`
+- Hid admin tray actions that do not work correctly while automap is open:
+  - `Game Menu`
+  - `Load`
+  - `Save`
+  - `Exit`
+- Added `Close Map` to the automap unbound-actions menu
+- Restored the native automap PCX frame on Android by priming the GL render target before drawing the background and map lines
+
 Validation completed:
 
 - `android\run-code-quality.ps1 -Fix`
 - `.\gradlew.bat --no-daemon --console=plain :app:assembleDebug`
 - `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests com.dxxredux.app.AutomapTouchPolicyTest`
+
+Latest marker update validation:
+
+- `android\run-code-quality.ps1 -Fix`
+- `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests com.dxxredux.app.AutomapTouchPolicyTest`
+- `.\gradlew.bat --no-daemon --console=plain :app:assembleDebug`
+
+Latest automap frame validation:
+
+- `android\run-code-quality.ps1 -Fix`
+- `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests com.dxxredux.app.AutomapTouchPolicyTest`
+- `.\gradlew.bat --no-daemon --console=plain :app:assembleDebug`
 
 Note: an earlier focused Gradle test run produced a passing XML result but the process did not unwind cleanly before the tool timeout. The no-daemon rerun above completed successfully.

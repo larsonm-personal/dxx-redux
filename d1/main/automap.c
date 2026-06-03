@@ -364,6 +364,15 @@ void draw_automap(automap *am)
 	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
 		am->leave_mode = 1;
 
+#ifdef ANDROID
+	/* Android's GL path may render automap lines through an MSAA target.
+	 * Prime that target before drawing the PCX frame so the later 3D pass
+	 * preserves the frame instead of resolving a black color buffer. */
+	gr_set_current_canvas(NULL);
+	g3_start_frame();
+	g3_end_frame();
+#endif
+
 	gr_set_current_canvas(NULL);
 	show_fullscr(&am->automap_background);
 	gr_set_curfont(HUGE_FONT);

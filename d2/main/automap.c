@@ -479,6 +479,49 @@ void name_frame(automap *am)
 	gr_printf(grd_curcanv->cv_bitmap.bm_w-wr-(SWIDTH/64),(SHEIGHT/48),"%s", name_level_right);
 }
 
+#ifdef ANDROID
+static void automap_apply_android_marker_requests(automap *am)
+{
+	extern volatile int g_automap_set_marker;
+	extern volatile int g_automap_go_marker;
+	int set_marker = g_automap_set_marker; g_automap_set_marker = -1;
+	int go_marker = g_automap_go_marker; g_automap_go_marker = -1;
+
+	if (set_marker >= 0 && set_marker < MAX_DROP_SINGLE)
+	{
+		int marker_num = (Player_num*2)+set_marker;
+		if (marker_num >= 0 && marker_num < NUM_MARKERS)
+		{
+			char error[256] = "";
+			sprintf(MarkerMessage[marker_num], "Marker %d", set_marker+1);
+			if (input_demo_recorder_is_active() &&
+			    !input_demo_recorder_stage_direct_command_drop_marker(set_marker,
+			                                                       MarkerMessage[marker_num],
+			                                                       error, sizeof(error)) &&
+			    error[0])
+				con_printf(CON_NORMAL, "Input demo recorder marker event failed: %s\n", error);
+			DropMarker(set_marker);
+			LastMarkerDropped = (ubyte)set_marker;
+			go_marker = set_marker;
+		}
+	}
+
+	if (go_marker >= 0 && go_marker < MAX_DROP_SINGLE)
+	{
+		int marker_num = (Player_num*2)+go_marker;
+		if (marker_num >= 0 && marker_num < NUM_MARKERS && MarkerObject[marker_num] != -1)
+		{
+			vms_vector marker_pos = Objects[MarkerObject[marker_num]].pos;
+			HighlightMarker = go_marker;
+			if (PlayerCfg.AutomapFreeFlight)
+				vm_vec_scale_add(&am->view_position, &marker_pos, &am->viewMatrix.fvec, -ZOOM_DEFAULT);
+			else
+				am->view_target = marker_pos;
+		}
+	}
+}
+#endif
+
 static void automap_apply_input(automap *am)
 {
 	vms_matrix tempm;
@@ -491,6 +534,7 @@ static void automap_apply_input(automap *am)
 		int center = g_automap_center; g_automap_center = 0;
 		if (center) am->controls.fire_primary_count++;
 	}
+	automap_apply_android_marker_requests(am);
 #endif
 
 	forward_thrust_time = am->controls.forward_thrust_time * AUTOMAP_TRANSLATION_SCALE;
@@ -596,6 +640,15 @@ void draw_automap(automap *am)
 
 	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
 		am->leave_mode = 1;
+
+#ifdef ANDROID
+	/* Android's GL path may render automap lines through an MSAA target.
+	 * Prime that target before drawing the PCX frame so the later 3D pass
+	 * preserves the frame instead of resolving a black color buffer. */
+	gr_set_current_canvas(NULL);
+	g3_start_frame();
+	g3_end_frame();
+#endif
 
 	gr_set_current_canvas(NULL);
 	show_fullscr(&am->automap_background);

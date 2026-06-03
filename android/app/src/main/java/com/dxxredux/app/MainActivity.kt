@@ -305,9 +305,9 @@ class MainActivity :
 
     external fun nativeAutomapCenter()
 
-    external fun nativeAutomapSelectMarker(idx: Int)
+    external fun nativeAutomapSetMarker(idx: Int)
 
-    external fun nativeGetMarkerCount(): Int
+    external fun nativeAutomapSelectMarker(idx: Int)
 
     external fun nativeGetGameWidth(): Int
 
@@ -960,7 +960,12 @@ class MainActivity :
                 }
 
                 else -> {
-                    automapMarkerAdminActionIndex(action)?.let { idx ->
+                    automapSetMarkerAdminActionIndex(action)?.let { idx ->
+                        try {
+                            nativeAutomapSetMarker(idx)
+                        } catch (_: Exception) {
+                        }
+                    } ?: automapMarkerAdminActionIndex(action)?.let { idx ->
                         try {
                             nativeAutomapSelectMarker(idx)
                         } catch (_: Exception) {
@@ -1035,19 +1040,9 @@ class MainActivity :
                 }
             }
         }
-        touchOverlay.automapActionsProvider = {
+        touchOverlay.automapActionsProvider = { markerMenuMode ->
             val includeMarkers = game != "d1"
-            val markerCount =
-                if (includeMarkers) {
-                    try {
-                        nativeGetMarkerCount()
-                    } catch (_: Throwable) {
-                        0
-                    }
-                } else {
-                    0
-                }
-            automapTouchActions(markerCount, includeMarkers)
+            automapTouchActions(includeMarkers, markerMenuMode)
         }
         touchOverlay.weaponStateProvider = {
             try {

@@ -80,6 +80,23 @@ class AdminTrayUiTest {
     }
 
     @Test
+    fun automapModeHidesActionsThatOpenBrokenMenus() {
+        val actions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                automapActive = true,
+            )
+
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_OPEN_MENU))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_QUICK_LOAD))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_QUICK_SAVE))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_EXIT_LAUNCHER))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_INCREASE_VIEW))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
+    }
+
+    @Test
     fun guidebotAbdicationIsHiddenOutsideSupportedMultiplayer() {
         assertFalse(
             adminTrayVisibleActions(

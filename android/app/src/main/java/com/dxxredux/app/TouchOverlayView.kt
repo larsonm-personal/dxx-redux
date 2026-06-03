@@ -579,7 +579,11 @@ class TouchOverlayView
             const val ADMIN_BRIGHTNESS = 14
             const val ADMIN_ABDICATE_GUIDEBOT = 15
             const val ADMIN_AUTOMAP_RECENTER = 16
+            const val ADMIN_AUTOMAP_SET_MARKER_MENU = 17
+            const val ADMIN_AUTOMAP_JUMP_MARKER_MENU = 18
+            const val ADMIN_AUTOMAP_MARKER_MENU_ROOT = 19
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
+            const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 
             // Cockpit mode constants (match C CM_* defines)
             private const val CM_FULL_COCKPIT = 0
@@ -691,6 +695,7 @@ class TouchOverlayView
         private var remainingActionRowCount = 1
         private var remainingActionOpenedAtMs = 0L
         private var remainingActionUsedSinceOpen = false
+        private var automapMarkerMenuMode = AutomapMarkerMenuMode.ROOT
         private var remainingActionButtonRect = RectF()
         private val remainingActionItemRects = mutableListOf<RectF>()
 
@@ -724,7 +729,7 @@ class TouchOverlayView
         var adminTrayWarpLabelProvider: (() -> String)? = null
         var adminTrayAcceptLabelProvider: (() -> String)? = null
         internal var remainingAdminActionsProvider: (() -> List<RemainingTouchAction>)? = null
-        internal var automapActionsProvider: (() -> List<RemainingTouchAction>)? = null
+        internal var automapActionsProvider: ((AutomapMarkerMenuMode) -> List<RemainingTouchAction>)? = null
 
         // D-pad selection index (-1 = no selection, used in gamepad mode)
         private var adminTraySelectedIndex = -1
@@ -878,7 +883,7 @@ class TouchOverlayView
         private fun currentRemainingTouchActions(
             weaponState: WeaponState? = weaponStateProvider?.invoke(),
         ): List<RemainingTouchAction> {
-            if (automapActive) return automapActionsProvider?.invoke() ?: emptyList()
+            if (automapActive) return automapActionsProvider?.invoke(automapMarkerMenuMode) ?: emptyList()
             return remainingActionsWithControllerAdminActions(
                 keyActions =
                     remainingKeyTouchActions(
@@ -975,6 +980,7 @@ class TouchOverlayView
             remainingActionPressedIndex = -1
             remainingActionOpenedAtMs = 0L
             remainingActionUsedSinceOpen = false
+            automapMarkerMenuMode = AutomapMarkerMenuMode.ROOT
             invalidate()
         }
 
@@ -1132,8 +1138,10 @@ class TouchOverlayView
                                     }
                                     invalidate()
                                 } else {
-                                    closeRemainingActions()
-                                    triggerRemainingAction(selectedAction)
+                                    if (!navigateAutomapMarkerMenu(selectedAction)) {
+                                        closeRemainingActions()
+                                        triggerRemainingAction(selectedAction)
+                                    }
                                 }
                                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                                 true
@@ -1165,6 +1173,30 @@ class TouchOverlayView
                 { releaseLayoutButtonBinding(binding, true, sourceTag) },
                 DOUBLE_TAP_RELEASE_DELAY_MS,
             )
+        }
+
+        private fun navigateAutomapMarkerMenu(action: RemainingTouchAction): Boolean {
+            if (!automapActive) return false
+            val nextMode =
+                when (action.adminAction) {
+                    ADMIN_AUTOMAP_SET_MARKER_MENU -> AutomapMarkerMenuMode.SET
+                    ADMIN_AUTOMAP_JUMP_MARKER_MENU -> AutomapMarkerMenuMode.JUMP
+                    ADMIN_AUTOMAP_MARKER_MENU_ROOT -> AutomapMarkerMenuMode.ROOT
+                    else -> return false
+                }
+            automapMarkerMenuMode = nextMode
+            remainingActionSelectedIndex =
+                if (remainingActionSelectedIndex >= 0) {
+                    if (nextMode == AutomapMarkerMenuMode.ROOT) 0 else 2
+                } else {
+                    -1
+                }
+            remainingActionPointerId = -1
+            remainingActionPressedIndex = -1
+            remainingActionUsedSinceOpen = true
+            recomputeRemainingActionGeometry()
+            invalidate()
+            return true
         }
 
         private fun drawRemainingActions(
@@ -1316,10 +1348,15 @@ class TouchOverlayView
                     if (remainingActionOpen && remainingActionPressedIndex in actions.indices) {
                         val pressedIndex = remainingActionPressedIndex
                         val fired = remainingActionItemRects[pressedIndex].contains(px, py)
-                        closeRemainingActions()
                         if (fired) {
-                            triggerRemainingAction(actions[pressedIndex])
+                            val action = actions[pressedIndex]
+                            if (!navigateAutomapMarkerMenu(action)) {
+                                closeRemainingActions()
+                                triggerRemainingAction(action)
+                            }
                             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        } else {
+                            closeRemainingActions()
                         }
                         return true
                     }
@@ -3413,6 +3450,7 @@ class TouchOverlayView
                 isMultiplayerGame = isMultiplayerGameProvider?.invoke() == true,
                 hasPendingLaunchInfo = hasPendingMultiplayerLaunchProvider?.invoke() == true,
                 hasGuidebotAbdicateAction = gameVariant == "d2",
+                automapActive = automapActive,
             )
 
         private fun adminTrayItemCount(): Int = currentAdminTrayActions().size

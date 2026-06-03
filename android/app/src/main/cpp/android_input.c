@@ -34,6 +34,8 @@ extern int Automap_active;
 
 /* Requested by Kotlin when automap recenter is selected from touch UI. */
 volatile int g_automap_center = 0;
+volatile int g_automap_set_marker = -1;
+volatile int g_automap_go_marker = -1;
 
 /* ── Skippable-screen flag (movies, briefings) ──────────────
  * Set to 1 by the game thread while inside a skippable event loop
@@ -1226,49 +1228,26 @@ Java_com_dxxredux_app_MainActivity_nativeAutomapCenter(JNIEnv *env, jobject thiz
 }
 
 /*
- * nativeAutomapSelectMarker(idx) — inject key 1-9 to highlight a marker
+ * nativeAutomapSetMarker(idx) — request that automap sets a D2 marker slot.
+ */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeAutomapSetMarker(JNIEnv *env, jobject thiz,
+                                                          jint idx)
+{
+	if (idx < 0 || idx > 8) return;
+	g_automap_set_marker = idx;
+}
+
+/*
+ * nativeAutomapSelectMarker(idx) — request that automap jumps to a D2 marker slot.
  */
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeAutomapSelectMarker(JNIEnv *env, jobject thiz,
                                                              jint idx)
 {
-	if (idx < 0 || idx > 9) return;
-	SDLKey sym = (idx == 9) ? SDLK_0 : (SDLKey) (SDLK_1 + idx);
-
-	SDL_Event ev;
-	memset(&ev, 0, sizeof(ev));
-	ev.type = SDL_KEYDOWN;
-	ev.key.state = SDL_PRESSED;
-	ev.key.keysym.sym = sym;
-	ev.key.keysym.mod = KMOD_NONE;
-	ev.key.keysym.unicode = 0;
-	SDL_PushEvent(&ev);
-
-	memset(&ev, 0, sizeof(ev));
-	ev.type = SDL_KEYUP;
-	ev.key.state = SDL_RELEASED;
-	ev.key.keysym.sym = sym;
-	ev.key.keysym.mod = KMOD_NONE;
-	SDL_PushEvent(&ev);
+	if (idx < 0 || idx > 8) return;
+	g_automap_go_marker = idx;
 }
-
-/*
- * nativeGetMarkerCount() — returns number of placed markers (0-9 in single player)
- * D2 only — MarkerObject doesn't exist in D1.
- */
-#ifdef DXX_BUILD_DESCENT_II
-extern int MarkerObject[];
-JNIEXPORT jint JNICALL
-Java_com_dxxredux_app_MainActivity_nativeGetMarkerCount(JNIEnv *env, jobject thiz)
-{
-	int count = 0;
-	for (int i = 0; i < 10; i++) {
-		if (MarkerObject[i] != -1) count++;
-		else break; /* markers are placed sequentially */
-	}
-	return count;
-}
-#endif
 
 /* ── C→Java keyboard callbacks ──────────────────────────────
  *
