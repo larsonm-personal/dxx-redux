@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
@@ -399,8 +400,39 @@ private fun DragReorderList(
 
     // D-pad grab-and-move: index of the grabbed item, or -1
     var grabbedIndex by remember { mutableIntStateOf(-1) }
+    var grabbedOriginalIndex by remember { mutableIntStateOf(-1) }
+    var grabbedOriginalValue by remember { mutableStateOf<Int?>(null) }
     // FocusRequesters so we can move focus after a reorder
     val focusRequesters = remember(items.size) { List(items.size) { FocusRequester() } }
+
+    fun clearGrabbedItem() {
+        grabbedIndex = -1
+        grabbedOriginalIndex = -1
+        grabbedOriginalValue = null
+    }
+
+    fun grabItem(index: Int) {
+        grabbedIndex = index
+        grabbedOriginalIndex = index
+        grabbedOriginalValue = items.getOrNull(index)
+    }
+
+    fun cancelGrabbedMove() {
+        val target = autoselectCancelMoveTarget(grabbedIndex, grabbedOriginalIndex, items.size)
+        val value = grabbedOriginalValue
+        if (target != null && value != null) {
+            val current = items.indexOf(value)
+            if (current >= 0 && current != target) {
+                onReorder(current, target)
+            }
+            focusRequesters.getOrNull(target)?.requestFocusSafely()
+        }
+        clearGrabbedItem()
+    }
+
+    BackHandler(enabled = grabbedIndex >= 0) {
+        cancelGrabbedMove()
+    }
 
     fun scrollMovedItemIntoView(targetIndex: Int) {
         val anchor =
@@ -464,11 +496,24 @@ private fun DragReorderList(
                     .onPreviewKeyEvent { event ->
                         if (grabbedIndex < 0) return@onPreviewKeyEvent false
                         when (event.key) {
+                            Key.Back,
+                            Key.Escape,
+                            -> {
+                                if (event.type == KeyEventType.KeyDown) {
+                                    cancelGrabbedMove()
+                                }
+                                true
+                            }
+
                             Key.DirectionLeft,
                             Key.DirectionRight,
-                            -> true
+                            -> {
+                                true
+                            }
 
-                            else -> false
+                            else -> {
+                                false
+                            }
                         }
                     }.repeatVerticalDpadFocus(onMove = ::moveGrabbedItem),
             userScrollEnabled = draggedValue == null,
@@ -512,11 +557,9 @@ private fun DragReorderList(
                                 val k = keyEvent.key
                                 if (k == Key.DirectionCenter || k == Key.Enter) {
                                     if (grabbedIndex < 0) {
-                                        // Grab this item
-                                        grabbedIndex = index
+                                        grabItem(index)
                                     } else {
-                                        // Drop
-                                        grabbedIndex = -1
+                                        clearGrabbedItem()
                                     }
                                     return@onKeyEvent true
                                 }
@@ -641,6 +684,15 @@ internal fun autoselectGrabbedItemMoveTarget(
 ): Int? {
     if (grabbedIndex < 0 || itemCount <= 0) return null
     return (grabbedIndex + direction).coerceIn(0, itemCount - 1)
+}
+
+internal fun autoselectCancelMoveTarget(
+    grabbedIndex: Int,
+    originalIndex: Int,
+    itemCount: Int,
+): Int? {
+    if (grabbedIndex < 0 || originalIndex < 0 || itemCount <= 0) return null
+    return originalIndex.coerceIn(0, itemCount - 1)
 }
 
 internal fun autoselectMovedItemScrollAnchor(

@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,6 +43,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -147,6 +151,8 @@ internal fun ResumeSavePanel(
     val headerTextOrder = resumePanelHeaderTextOrder()
     var showChooser by remember { mutableStateOf(false) }
     var previewThumbnail by remember { mutableStateOf<Bitmap?>(null) }
+    val loadFocus = remember { FocusRequester() }
+    RequestLauncherControllerFocus(loadFocus, true, candidate.path)
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         colors =
@@ -181,7 +187,7 @@ internal fun ResumeSavePanel(
                 )
                 Button(
                     onClick = onStopShowing,
-                    modifier = Modifier.height(24.dp),
+                    modifier = Modifier.height(24.dp).tvFocusBorder(),
                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
                 ) {
                     Text(headerTextOrder[1], fontSize = 7.sp, maxLines = 1)
@@ -222,14 +228,14 @@ internal fun ResumeSavePanel(
             ) {
                 Button(
                     onClick = onLoad,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).focusRequester(loadFocus).tvFocusBorder(),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                 ) {
                     Text("Load Last Save", fontSize = 9.sp, maxLines = 1)
                 }
                 Button(
                     onClick = { showChooser = true },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).tvFocusBorder(),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                     enabled = options.hasChooseCandidates(),
                 ) {
@@ -284,6 +290,7 @@ private fun ResumeSaveChoiceDialog(
 ) {
     val choices = remember(options) { resumeSaveChoiceRows(options) }
     var previewThumbnail by remember { mutableStateOf<Bitmap?>(null) }
+    val scrollState = rememberScrollState()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -294,50 +301,59 @@ private fun ResumeSaveChoiceDialog(
         },
         title = { Text("Choose Save") },
         text = {
-            Column(
+            Box(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                        .heightIn(max = 420.dp),
             ) {
-                choices.forEach { choiceRow ->
-                    val choice = choiceRow.candidate
-                    val choiceThumbnail =
-                        remember(choice.path, choice.saveTimeUnixSeconds, choice.thumbnailRgb6) {
-                            decodeResumeSaveThumbnail(choice)
-                        }
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        ResumeSaveThumbnailFrame(
-                            thumbnail = choiceThumbnail,
-                            modifier = Modifier.size(width = 150.dp, height = 75.dp),
-                            contentDescription = "${choiceRow.label} thumbnail",
-                            placeholderFontSize = 9.sp,
-                            onOpen = { previewThumbnail = it },
-                        )
-                    }
-                    Button(
-                        onClick = { onLoadCandidate(choice) },
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                    ) {
-                        Column(
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(scrollState)
+                            .padding(end = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    choices.forEach { choiceRow ->
+                        val choice = choiceRow.candidate
+                        val choiceThumbnail =
+                            remember(choice.path, choice.saveTimeUnixSeconds, choice.thumbnailRgb6) {
+                                decodeResumeSaveThumbnail(choice)
+                            }
+                        Box(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.Start,
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Text(choiceRow.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                            Text(
-                                resumeChoiceLine(choice),
-                                fontSize = 9.sp,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
+                            ResumeSaveThumbnailFrame(
+                                thumbnail = choiceThumbnail,
+                                modifier = Modifier.size(width = 150.dp, height = 75.dp),
+                                contentDescription = "${choiceRow.label} thumbnail",
+                                placeholderFontSize = 9.sp,
+                                onOpen = { previewThumbnail = it },
                             )
+                        }
+                        Button(
+                            onClick = { onLoadCandidate(choice) },
+                            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.Start,
+                            ) {
+                                Text(choiceRow.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    resumeChoiceLine(choice),
+                                    fontSize = 9.sp,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
                 }
+                SharedScrollArrows(scrollState)
             }
         },
     )
@@ -361,10 +377,12 @@ private fun ResumeSaveThumbnailFrame(
     val shape = RoundedCornerShape(4.dp)
     val openModifier =
         if (thumbnail != null) {
-            Modifier.clickable(
-                onClickLabel = "Open save thumbnail preview",
-                onClick = { onOpen(thumbnail) },
-            )
+            Modifier
+                .clickable(
+                    onClickLabel = "Open save thumbnail preview",
+                    onClick = { onOpen(thumbnail) },
+                ).tvFocusBorder()
+                .focusable()
         } else {
             Modifier
         }

@@ -645,23 +645,27 @@ private fun CrashReportsSection() {
             ) {
                 Column(
                     modifier =
-                        Modifier.weight(1f).clickable {
-                            scope.launch {
-                                try {
-                                    val uri =
-                                        withContext(Dispatchers.IO) {
-                                            copyFileToCache(ctx, file, "file_view") { progress ->
-                                                mainHandler.post { transferProgress = progress }
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .tvFocusBorder()
+                            .clickable {
+                                scope.launch {
+                                    try {
+                                        val uri =
+                                            withContext(Dispatchers.IO) {
+                                                copyFileToCache(ctx, file, "file_view") { progress ->
+                                                    mainHandler.post { transferProgress = progress }
+                                                }
                                             }
-                                        }
-                                    transferProgress = null
-                                    openTextFile(ctx, uri)
-                                } catch (e: Exception) {
-                                    transferProgress = null
-                                    Toast.makeText(ctx, "Open failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        transferProgress = null
+                                        openTextFile(ctx, uri)
+                                    } catch (e: Exception) {
+                                        transferProgress = null
+                                        Toast.makeText(ctx, "Open failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
                                 }
-                            }
-                        },
+                            }.padding(horizontal = 4.dp, vertical = 2.dp),
                 ) {
                     Text(file.name, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                     val sizeKb = file.length() / 1024
@@ -838,7 +842,7 @@ private fun RecordedInputDemosSection(
     for (demo in demos) {
         val gameReady = isGameReady(demo.game)
         Column(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).tvFocusable(),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1368,6 +1372,8 @@ private fun StorageInspectorSection(filesDir: File) {
         )
 
         selectedEntry?.let { entry ->
+            val closeFocus = remember { FocusRequester() }
+            RequestLauncherControllerFocus(closeFocus, true, entry.absolutePath)
             AlertDialog(
                 onDismissRequest = { selectedEntry = null },
                 title = { Text(entry.file.name) },
@@ -1390,10 +1396,15 @@ private fun StorageInspectorSection(filesDir: File) {
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { selectedEntry = null }) { Text("Close") }
+                    TextButton(
+                        onClick = { selectedEntry = null },
+                        modifier = Modifier.focusRequester(closeFocus).tvFocusBorder(),
+                    ) { Text("Close") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { deleteEntry = entry }) { Text("Delete") }
+                    TextButton(onClick = { deleteEntry = entry }, modifier = Modifier.tvFocusBorder()) {
+                        Text("Delete")
+                    }
                 },
             )
         }

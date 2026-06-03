@@ -36,4 +36,16 @@ class AutoselectReorderScrollTest {
     fun grabbedItemMoveTargetIgnoresMissingGrab() {
         assertNull(autoselectGrabbedItemMoveTarget(grabbedIndex = -1, itemCount = 5, direction = 1))
     }
+
+    @Test
+    fun cancelMoveReturnsGrabbedItemToOriginalIndex() {
+        assertEquals(1, autoselectCancelMoveTarget(grabbedIndex = 3, originalIndex = 1, itemCount = 5))
+        assertEquals(4, autoselectCancelMoveTarget(grabbedIndex = 3, originalIndex = 9, itemCount = 5))
+    }
+
+    @Test
+    fun cancelMoveTargetIgnoresMissingGrab() {
+        assertNull(autoselectCancelMoveTarget(grabbedIndex = -1, originalIndex = 1, itemCount = 5))
+        assertNull(autoselectCancelMoveTarget(grabbedIndex = 3, originalIndex = -1, itemCount = 5))
+    }
 }
