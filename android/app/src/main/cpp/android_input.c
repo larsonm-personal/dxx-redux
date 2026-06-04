@@ -253,22 +253,90 @@ int g_menu_scale_src_w = 0, g_menu_scale_src_h = 0;
 int g_menu_scale_dst_x = 0, g_menu_scale_dst_y = 0;
 int g_menu_scale_dst_w = 0, g_menu_scale_dst_h = 0;
 
-static void remap_touch(int *gx, int *gy)
-{
-	if (!g_menu_scale_active || g_menu_scale_dst_w <= 0 || g_menu_scale_dst_h <= 0)
-		return;
+static int g_menu_scale_touch_locked = 0;
+static int g_menu_scale_touch_src_x = 0, g_menu_scale_touch_src_y = 0;
+static int g_menu_scale_touch_src_w = 0, g_menu_scale_touch_src_h = 0;
+static int g_menu_scale_touch_dst_x = 0, g_menu_scale_touch_dst_y = 0;
+static int g_menu_scale_touch_dst_w = 0, g_menu_scale_touch_dst_h = 0;
 
-	int tx = *gx, ty = *gy;
-	/* If the touch is within the enlarged (destination) rect, map it
-	 * back to the original (source) rect so the menu code sees the
-	 * correct item coordinates. */
-	if (tx >= g_menu_scale_dst_x && tx < g_menu_scale_dst_x + g_menu_scale_dst_w &&
-	    ty >= g_menu_scale_dst_y && ty < g_menu_scale_dst_y + g_menu_scale_dst_h) {
-		*gx = g_menu_scale_src_x + (tx - g_menu_scale_dst_x) * g_menu_scale_src_w / g_menu_scale_dst_w;
-		*gy = g_menu_scale_src_y + (ty - g_menu_scale_dst_y) * g_menu_scale_src_h / g_menu_scale_dst_h;
+static int menu_scale_rect_contains(int x, int y, int rx, int ry, int rw, int rh)
+{
+	return rw > 0 && rh > 0 && x >= rx && x < rx + rw && y >= ry && y < ry + rh;
+}
+
+static void menu_scale_touch_store_rect(void)
+{
+	g_menu_scale_touch_src_x = g_menu_scale_src_x;
+	g_menu_scale_touch_src_y = g_menu_scale_src_y;
+	g_menu_scale_touch_src_w = g_menu_scale_src_w;
+	g_menu_scale_touch_src_h = g_menu_scale_src_h;
+	g_menu_scale_touch_dst_x = g_menu_scale_dst_x;
+	g_menu_scale_touch_dst_y = g_menu_scale_dst_y;
+	g_menu_scale_touch_dst_w = g_menu_scale_dst_w;
+	g_menu_scale_touch_dst_h = g_menu_scale_dst_h;
+}
+
+static int remap_touch_from_rect(int *gx, int *gy,
+                                 int sx, int sy, int sw, int sh,
+                                 int dx, int dy, int dw, int dh)
+{
+	int tx;
+	int ty;
+	if (sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0)
+		return 0;
+
+	tx = *gx;
+	ty = *gy;
+	*gx = sx + (tx - dx) * sw / dw;
+	*gy = sy + (ty - dy) * sh / dh;
+	return 1;
+}
+
+static int remap_touch(int action, int *gx, int *gy)
+{
+	int remapped = 0;
+
+	if (action == 0)
+		g_menu_scale_touch_locked = 0;
+
+	/* Keep one touch sequence in one coordinate space.  A scaled menu can
+	 * redraw or a finger can drift just past the destination edge between
+	 * DOWN/MOVE/UP; switching back to raw screen coords mid-sequence makes
+	 * the release hit-test land above or below the visible menu row. */
+	if (g_menu_scale_touch_locked) {
+		remapped = remap_touch_from_rect(gx, gy,
+		                                 g_menu_scale_touch_src_x,
+		                                 g_menu_scale_touch_src_y,
+		                                 g_menu_scale_touch_src_w,
+		                                 g_menu_scale_touch_src_h,
+		                                 g_menu_scale_touch_dst_x,
+		                                 g_menu_scale_touch_dst_y,
+		                                 g_menu_scale_touch_dst_w,
+		                                 g_menu_scale_touch_dst_h);
+	} else if (g_menu_scale_active &&
+	           menu_scale_rect_contains(*gx, *gy,
+	                                    g_menu_scale_dst_x,
+	                                    g_menu_scale_dst_y,
+	                                    g_menu_scale_dst_w,
+	                                    g_menu_scale_dst_h)) {
+		menu_scale_touch_store_rect();
+		g_menu_scale_touch_locked = 1;
+		remapped = remap_touch_from_rect(gx, gy,
+		                                 g_menu_scale_touch_src_x,
+		                                 g_menu_scale_touch_src_y,
+		                                 g_menu_scale_touch_src_w,
+		                                 g_menu_scale_touch_src_h,
+		                                 g_menu_scale_touch_dst_x,
+		                                 g_menu_scale_touch_dst_y,
+		                                 g_menu_scale_touch_dst_w,
+		                                 g_menu_scale_touch_dst_h);
 	}
-	/* Touches outside the enlarged rect pass through — they'll hit
+
+	/* Touches outside the enlarged rect pass through. They'll hit
 	 * background area and the menu will ignore them. */
+	if (action == 2)
+		g_menu_scale_touch_locked = 0;
+	return remapped;
 }
 
 static void android_push_touch_action(int action, int gameX, int gameY)
@@ -344,6 +412,18 @@ static void android_push_touch_action(int action, int gameX, int gameY)
 			g_touch_active = 0;
 			android_update_cutscene_release_gate();
 
+			/* The SDL mouse button handler uses Mouse.x/y, not the x/y stored
+			 * on the button event, so position the cursor at the release point
+			 * before menu hit testing runs. */
+			ev.type = SDL_MOUSEMOTION;
+			ev.motion.x = (Uint16) gameX;
+			ev.motion.y = (Uint16) gameY;
+			ev.motion.xrel = 0;
+			ev.motion.yrel = 0;
+			ev.motion.state = SDL_BUTTON(SDL_BUTTON_LEFT);
+			SDL_PushEvent(&ev);
+
+			memset(&ev, 0, sizeof(ev));
 			ev.type = SDL_MOUSEBUTTONUP;
 			ev.button.button = SDL_BUTTON_LEFT;
 			ev.button.state = SDL_RELEASED;
@@ -442,14 +522,15 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 	gameY += g_blit_y_offset;
 	if (gameY >= screenH) gameY = screenH - 1;
 
-	remap_touch(&gameX, &gameY);
+	const int menu_touch_remapped = remap_touch(action, &gameX, &gameY);
 	if (g_menu_scale_active && (action == 0 || action == 2)) {
 		static int touch_menu_diag_count;
 		if (touch_menu_diag_count < 80) {
 			touch_menu_diag_count++;
 			debug_log(DLOG_GAME,
-			          "[touch-menu] action=%d norm=(%.4f,%.4f) game=(%d,%d) screen=%dx%d scale src=(%d,%d %dx%d) dst=(%d,%d %dx%d) blit_y=%d\n",
+			          "[touch-menu] action=%d norm=(%.4f,%.4f) game=(%d,%d) screen=%dx%d remap=%d scale src=(%d,%d %dx%d) dst=(%d,%d %dx%d) blit_y=%d\n",
 			          action, normX, normY, gameX, gameY, screenW, screenH,
+			          menu_touch_remapped,
 			          g_menu_scale_src_x, g_menu_scale_src_y,
 			          g_menu_scale_src_w, g_menu_scale_src_h,
 			          g_menu_scale_dst_x, g_menu_scale_dst_y,

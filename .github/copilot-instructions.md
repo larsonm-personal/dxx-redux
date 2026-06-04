@@ -95,7 +95,9 @@
 
 ## running integration tests from an AI tool session
 ### emulator
-- the emulator should already be running. check with `adb devices`. if it's not listed, start it with `android\run_emulator.sh` or the emulator GUI -- don't try to start it from powershell
+- check for a running device with `adb devices`. if `adb` is not on PATH on Windows, try `C:\local\android-sdk\platform-tools\adb.exe`
+- if no emulator is listed, start and provision one with the helper scripts. on Windows PowerShell, run `.\android\Run-Emulator.ps1` from the repo root, or `.\Run-Emulator.ps1` from the `android` directory. use `-NoBuild` when the current APK is already built. on bash-capable hosts, use `android\run_emulator.sh`
+- `Run-Emulator.ps1` can install the APK, push/provision game data, and launch the app. it may continue tailing logcat after setup; for AI tool sessions, pipe output to a temp file and verify `adb devices` after the helper has done the setup work
 - if `adb devices` shows "offline" or "unauthorized", kill and restart the emulator
 
 ### running a test

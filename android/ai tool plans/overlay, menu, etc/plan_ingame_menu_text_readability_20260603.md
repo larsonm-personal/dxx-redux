@@ -1,6 +1,6 @@
 # In-Game Menu Text Readability Plan
 
-Status: implementation in progress
+Status: current implementation slice complete
 
 Created: 2026-06-03
 
@@ -218,10 +218,33 @@ For "Netgame Info" rules:
 - Replaced the desktop tabbed multi-column rows with compact Android summaries and shorter control header text.
 - Capped Android `NETGAMES` tiny panels at 12 visible rows so the scaler can zoom more while preserving scroll behavior.
 - Ran scoped code quality and a post-format Android debug build with JDK 21; both passed.
+- 2026-06-03: Second crack after live testing reported no visible change.
+- Made Android readable tiny menus intentionally more obvious: use `MEDIUM1_FONT`, cap visible rows at 9, and wrap all-text tiny menus at 48 percent of engine width with indented continuation lines.
+- Marked Android `NETGAMES` as a readable tiny menu even though it does not fully word-wrap, so it uses the larger tiny-menu font path and reduced row count.
+- Raised the Android kconfig/control-editing max scale from 2.5 to 3.5 so keyboard and other control editing views can grow more visibly.
+- Added `menu.android_readable_tiny` introspection alongside the older `menu.android_wrapped_text` field.
+- Ran scoped code quality and an Android debug APK build with JDK 21; both passed.
+- 2026-06-03: Added and ran `test_readable_tiny_help_d2.json5` on `emulator-5554`.
+- Used `android/Run-Emulator.ps1 -NoBuild` to start/provision the emulator after discovering `adb` was available at `C:\local\android-sdk\platform-tools\adb.exe` even though it was not on PATH.
+- The focused adb test passed and confirmed the in-level F1 keys menu reports `menu.android_readable_tiny: true`, `menu.android_original_num_items: 22`, `menu.num_items: 31`, `menu_scale.direct_render: true`, and `menu_scale.render_scale` around 1.34.
+- 2026-06-03: Fixed the remaining micro-scale left-side marker in the Android readable tiny menu.
+- Identified the tiny artifact as the scroll up/down marker, which was still drawn with the legacy tiny menu font even after body rows moved to the readable Android font path.
+- Added shared body and scroll marker font helpers in both D1 and D2 `newmenu.c`, so readable tiny menus draw their rows and scroll markers with `MEDIUM1_FONT`.
+- Updated scroll marker touch hitbox measurement to use the same font as drawing.
+- Ran scoped code quality, rebuilt the Android debug APK with JDK 21, reran `test_readable_tiny_help_d2.json5` on `emulator-5554`, and visually checked `temp/keys_scroll_marker.png`; the left marker is now large instead of micro-scale.
+
+## Second-Crack Live-Test Expectations
+
+- In-level help/key text menus should visibly use larger body text than before.
+- Long key/action rows should split into multiple rows, with continuation lines indented under the action text.
+- The help/key text panel should show fewer rows at once and rely more on scrolling.
+- The in-game "Find Net Games" browser should show larger row text and fewer rows at once.
+- Keyboard and other controls editing views should occupy more of the phone screen than before.
+- Introspection while one of these menus is open should show `menu.android_readable_tiny: true`; wrapped help menus should also show `menu.android_original_num_items` lower than `menu.num_items`.
 
 ## Recommended Next Implementation Slice
 
-1. Add introspection fields for current menu scale source/destination/render/display ratios.
-2. Prototype high-resolution scratch rendering for Android scaled `newmenu`, `listbox`, and `kconfig`.
-3. Update `test_menu_scale_d2.json5` to assert the new scratch/source quality fields.
-4. Only after quality improves, implement Android-only text wrapping for `newmenu_dotiny()` help menus.
+1. If the second-crack build still looks unchanged, verify the installed APK is new by checking `build_info` through setup/game introspection.
+2. If `menu.android_readable_tiny` is false on the target menu, trace the menu creation path and title/type filters.
+3. If `menu.android_readable_tiny` is true but pixels still look unchanged, inspect the draw path scale fields and compare `menu_scale.render_w/render_h` against the displayed destination size.
+4. If control editing still needs more room, replace the fixed kconfig table with an Android scrollable row list.

@@ -106,13 +106,14 @@ struct newmenu
 #ifdef ANDROID
 	newmenu_item	*android_original_items;
 	int				android_original_nitems;
+	int				android_readable_tiny;
 #endif
 };
 grs_bitmap nm_background, nm_background1;
 grs_bitmap *nm_background_sub = NULL;
 #ifdef ANDROID
 static ubyte nm_background1_palette[768];  // saved palette from the background PCX
-enum { ANDROID_TINY_TEXT_MAX_VISIBLE = 12 };
+enum { ANDROID_TINY_TEXT_MAX_VISIBLE = 9 };
 
 static int android_tap_outside_game_menu(newmenu *menu, int mx, int my)
 {
@@ -142,6 +143,11 @@ static int android_newmenu_text_width(const char *text)
 	int w, h, aw;
 	gr_get_string_size(text, &w, &h, &aw);
 	return w;
+}
+
+static int android_newmenu_uses_readable_tiny(newmenu *menu)
+{
+	return menu && menu->tiny_mode && menu->android_readable_tiny;
 }
 
 static int android_newmenu_append_wrapped_line(newmenu_item **items, int *count,
@@ -261,6 +267,7 @@ static void android_newmenu_expand_tiny_text(newmenu *menu)
 	if (!menu || !menu->tiny_mode || menu->nitems <= 0 || menu->filename)
 		return;
 	if (menu->title && !strcmp(menu->title, "NETGAMES")) {
+		menu->android_readable_tiny = 1;
 		menu->tabs_flag = 0;
 		menu->max_on_menu = ANDROID_TINY_TEXT_MAX_VISIBLE;
 	}
@@ -268,9 +275,11 @@ static void android_newmenu_expand_tiny_text(newmenu *menu)
 		if (menu->items[i].type != NM_TYPE_TEXT)
 			return;
 
-	wrap_width = (SWIDTH * 65) / 100;
-	if (wrap_width < FSPACX(150))
-		wrap_width = FSPACX(150);
+	menu->android_readable_tiny = 1;
+	gr_set_curfont(MEDIUM1_FONT);
+	wrap_width = (SWIDTH * 48) / 100;
+	if (wrap_width < FSPACX(95))
+		wrap_width = FSPACX(95);
 	capacity = menu->nitems * 2 + 8;
 	wrapped = (newmenu_item *)d_malloc(sizeof(newmenu_item) * capacity);
 	if (!wrapped)
@@ -296,7 +305,23 @@ static void android_newmenu_expand_tiny_text(newmenu *menu)
 	menu->max_on_menu = ANDROID_TINY_TEXT_MAX_VISIBLE;
 	menu->max_displayable = count;
 }
+#else
+static int android_newmenu_uses_readable_tiny(newmenu *menu)
+{
+	(void)menu;
+	return 0;
+}
 #endif
+
+static grs_font *newmenu_get_body_font(newmenu *menu)
+{
+	return android_newmenu_uses_readable_tiny(menu) ? MEDIUM1_FONT : (menu && menu->tiny_mode ? GAME_FONT : MEDIUM1_FONT);
+}
+
+static grs_font *newmenu_get_scroll_marker_font(newmenu *menu)
+{
+	return android_newmenu_uses_readable_tiny(menu) ? MEDIUM1_FONT : (menu && menu->tiny_mode ? GAME_FONT : MEDIUM2_FONT);
+}
 
 newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * item, int (*subfunction)(newmenu *menu, d_event *event, void *userdata), void *userdata, int citem, char * filename, int TinyMode, int TabsFlag );
 
@@ -804,7 +829,7 @@ int newmenu_get_is_scroll_box(newmenu *menu)
 int newmenu_get_android_wrapped_text(newmenu *menu)
 {
 #ifdef ANDROID
-	return menu->android_original_items != NULL;
+	return menu->android_readable_tiny;
 #else
 	return 0;
 #endif
@@ -995,6 +1020,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 					}
 
 					if (menu->scroll_offset != 0) {
+						gr_set_curfont(newmenu_get_scroll_marker_font(menu));
 						gr_get_string_size(UP_ARROW_MARKER, &arrow_width, &arrow_height, &aw);
 						x1 = grd_curcanv->cv_bitmap.bm_x+BORDERX-FSPACX(12);
 						y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[menu->scroll_offset].y-(newmenu_get_scroll_line_spacing(menu)*menu->scroll_offset);
@@ -1005,6 +1031,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 						}
 					}
 					if (menu->scroll_offset+menu->max_displayable<menu->nitems) {
+						gr_set_curfont(newmenu_get_scroll_marker_font(menu));
 						gr_get_string_size(DOWN_ARROW_MARKER, &arrow_width, &arrow_height, &aw);
 						x1 = grd_curcanv->cv_bitmap.bm_x+BORDERX-FSPACX(12);
 						y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[menu->scroll_offset+menu->max_displayable-1].y-(newmenu_get_scroll_line_spacing(menu)*menu->scroll_offset);
@@ -1566,7 +1593,7 @@ void newmenu_create_structure( newmenu *menu )
 
 	th += FSPACY(5);		//put some space between titles & body
 
-	gr_set_curfont(menu->tiny_mode?GAME_FONT:MEDIUM1_FONT);
+	gr_set_curfont(newmenu_get_body_font(menu));
 	menu->scroll_line_spacing = (int)LINE_SPACING;
 
 	menu->w = aw = 0;
@@ -1775,7 +1802,7 @@ static void newmenu_draw_contents(newmenu *menu)
 	int scroll_line_spacing;
 	int string_width, string_height, average_width;
 
-	gr_set_curfont(menu->tiny_mode?GAME_FONT:MEDIUM1_FONT);
+	gr_set_curfont(newmenu_get_body_font(menu));
 	scroll_line_spacing = newmenu_get_scroll_line_spacing(menu);
 
 	ty = BORDERY;
@@ -1795,7 +1822,7 @@ static void newmenu_draw_contents(newmenu *menu)
 		gr_string( 0x8000, ty+th, menu->subtitle );
 	}
 
-	gr_set_curfont(menu->tiny_mode?GAME_FONT:MEDIUM1_FONT);
+	gr_set_curfont(newmenu_get_body_font(menu));
 
 	// Redraw everything...
 	for (i=menu->scroll_offset; i<menu->max_displayable+menu->scroll_offset; i++ )
@@ -1807,7 +1834,7 @@ static void newmenu_draw_contents(newmenu *menu)
 	if (menu->is_scroll_box)
 	{
 		menu->last_scroll_check=menu->scroll_offset;
-		gr_set_curfont(menu->tiny_mode?GAME_FONT:MEDIUM2_FONT);
+		gr_set_curfont(newmenu_get_scroll_marker_font(menu));
 
 		sy=menu->items[menu->scroll_offset].y-(scroll_line_spacing*menu->scroll_offset);
 		sx=BORDERX-FSPACX(12);

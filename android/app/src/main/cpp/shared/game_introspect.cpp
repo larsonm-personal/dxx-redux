@@ -226,6 +226,7 @@ static json serialize_newmenu(void *data)
 		{ "subtitle", subtitle ? subtitle : "" },
 		{ "selected_index", citem },
 		{ "num_items", nitems },
+		{ "android_readable_tiny", (bool) newmenu_get_android_wrapped_text(menu) },
 		{ "android_wrapped_text", (bool) newmenu_get_android_wrapped_text(menu) },
 		{ "android_original_num_items", newmenu_get_android_original_nitems(menu) },
 		{ "scroll_offset", newmenu_get_scroll_offset(menu) },

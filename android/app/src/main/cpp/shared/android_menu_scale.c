@@ -11,7 +11,7 @@
 /* Single tuning point for Android menu fill */
 static const float k_target_fill = 0.85f;
 static const float k_min_scale = 1.05f;
-static const float k_kconfig_max_scale = 2.5f;
+static const float k_kconfig_max_scale = 3.5f;
 static const int k_crop_pad = 15;
 
 extern int g_menu_scale_active;
