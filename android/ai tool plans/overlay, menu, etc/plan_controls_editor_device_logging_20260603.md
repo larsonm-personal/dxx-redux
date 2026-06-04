@@ -103,3 +103,20 @@ Status: physical Android viewport regression repaired and validated on emulator
 - Added `test_pause_menu_viewport_d2.json5` to cover the generic in-level pause menu path that regressed on device.
 - Installed the fresh debug APK on the emulator and reran `test_pause_menu_viewport_d2.json5`; it passed and its final introspection console showed `source=menu-scale` logging `viewport=(0,0 1280x720) screen=1280x720`, confirming the generic pause menu no longer uses the physical `1920x1080` viewport on emulator.
 - Reran `test_kconfig_keyboard_stage_d2.json5` against the same fresh install; it passed with controls-editor `source=menu-scale-region` logging `viewport=(0,0 1280x720) screen=1280x720`.
+
+## Fourth Device Log Follow-up
+- Device build `15021` confirms the pause-menu regression is repaired: generic `menu-scale` and controls-editor `menu-scale-region` both report logical `viewport=(0,0 1170x540) screen=1170x540`.
+- Touch logs also stay at `screen=1170x540` with active scaled-menu remapping, and the user reports tap regions plus drag scrolling are significantly better. Treat the current stable touch rect locking and logical screen-size mapping as protected behavior.
+- The controls editor still reports a healthy centered region (`dst=(88,40 994x459)`, `render=994x593`, `scale=1.48`) and expected bitmap contents, so the remaining unreadable device text is likely inside the controls-editor text payload rather than global viewport placement.
+- Found duplicated unsafe binding-label formatting in D1/D2 kconfig: `strncpy(..., 10)` copied into 10-byte buffers and then used as a C string, so 10-character labels could read past the intended label into stack data.
+- Replaced the duplicated binding label formatting with a bounded helper in both D1 and D2. It preserves the old 10-character visible cap but always null-terminates and uses `snprintf` for fallback joystick labels.
+- This pass intentionally does not change menu scale rectangles, scroll math, published `g_menu_scale_*` values, or touch remapping.
+- Found the likely root cause of unchanged micro text: for BM_LINEAR offscreen canvases, non-color fonts used scaled measurement and spacing but the actual software glyph drawers still emitted raw 1x bitpacked glyphs.
+- Added an Android-only BM_LINEAR non-color font path in D1/D2 that expands each bitpacked glyph into an 8-bit bitmap, scales it to the active `FNTScaleX/Y`, and then blits it masked or opaque according to the existing font background mode.
+- Expected verification signal: kconfig geometry should stay the same, while `[kconfig-bitmap]` hashes and text-color pixel counts should change because glyph pixels now occupy the scaled area.
+
+## Fourth Follow-up Verification
+- `android\run-code-quality.ps1 -Fix` passed after rerun with a longer timeout.
+- `.\android\gradlew.bat -p android :app:assembleDebug` passed with JDK 21.
+- `test_kconfig_keyboard_stage_d2.json5` passed on the emulator. The controls editor kept the expected `menu-scale-region` geometry, and the final kconfig bitmap hash/color counts changed from the earlier build, confirming the offscreen text payload is different.
+- `test_pause_menu_viewport_d2.json5` passed on the emulator, preserving the fixed generic pause-menu viewport path.

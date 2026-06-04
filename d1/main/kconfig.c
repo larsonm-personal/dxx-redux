@@ -317,6 +317,53 @@ void kc_change_joyaxis( kc_menu *menu, d_event *event, kc_item * item );
 void kc_change_mouseaxis( kc_menu *menu, d_event *event, kc_item * item );
 void kc_change_invert( kc_menu *menu, kc_item * item );
 
+#define KC_BINDING_TEXT_CHARS 10
+#define KC_BINDING_TEXT_BUF_SIZE (KC_BINDING_TEXT_CHARS + 1)
+
+static void kc_get_binding_text(char *btext, size_t btext_size, const kc_item *item)
+{
+	const char *source = "";
+
+	if (!btext || btext_size < 1)
+		return;
+	btext[0] = '\0';
+	if (!item || item->value == 255)
+		return;
+
+	switch (item->type) {
+		case BT_KEY:
+			source = key_properties[item->value].key_text;
+			break;
+		case BT_MOUSE_BUTTON:
+			source = mousebutton_text[item->value];
+			break;
+		case BT_MOUSE_AXIS:
+			source = mouseaxis_text[item->value];
+			break;
+		case BT_JOY_BUTTON:
+			if (joybutton_text[item->value])
+				source = joybutton_text[item->value];
+			else {
+				snprintf(btext, btext_size, "BTN%2d", item->value + 1);
+				return;
+			}
+			break;
+		case BT_JOY_AXIS:
+			if (joyaxis_text[item->value])
+				source = joyaxis_text[item->value];
+			else {
+				snprintf(btext, btext_size, "AXIS%2d", item->value + 1);
+				return;
+			}
+			break;
+		case BT_INVERT:
+			source = invert_text[item->value];
+			break;
+	}
+	if (source)
+		snprintf(btext, btext_size, "%.*s", KC_BINDING_TEXT_CHARS, source);
+}
+
 #ifdef TABLE_CREATION
 int find_item_at( kc_item * items, int nitems, int x, int y )
 {
@@ -421,34 +468,9 @@ int find_next_item_left( kc_item * items, int nitems, int citem )
 int get_item_height(kc_item *item)
 {
 	int w, h, aw;
-	char btext[10];
+	char btext[KC_BINDING_TEXT_BUF_SIZE];
 
-	if (item->value==255) {
-		strcpy(btext, "");
-	} else {
-		switch( item->type )	{
-			case BT_KEY:
-				strncpy( btext, key_properties[item->value].key_text, 10 ); break;
-			case BT_MOUSE_BUTTON:
-				strncpy( btext, mousebutton_text[item->value], 10); break;
-			case BT_MOUSE_AXIS:
-				strncpy( btext, mouseaxis_text[item->value], 10 ); break;
-			case BT_JOY_BUTTON:
-				if (joybutton_text[item->value])
-					strncpy(btext, joybutton_text[item->value], 10);
-				else
-					sprintf(btext, "BTN%2d", item->value + 1);
-				break;
-			case BT_JOY_AXIS:
-				if (joyaxis_text[item->value])
-					strncpy(btext, joyaxis_text[item->value], 10);
-				else
-					sprintf(btext, "AXIS%2d", item->value + 1);
-				break;
-			case BT_INVERT:
-				strncpy( btext, invert_text[item->value], 10 ); break;
-		}
-	}
+	kc_get_binding_text(btext, sizeof(btext), item);
 	gr_get_string_size(btext, &w, &h, &aw  );
 
 	return h;
@@ -1201,7 +1223,7 @@ void kconfig_sub(kc_item * items,int nitems, char *title)
 void kc_drawitem( kc_item *item, int is_current )
 {
 	int x, w, h, aw;
-	char btext[10];
+	char btext[KC_BINDING_TEXT_BUF_SIZE];
 
 	if (is_current)
 		gr_set_fontcolor( BM_XRGB(20,20,29), -1 );
@@ -1210,32 +1232,7 @@ void kc_drawitem( kc_item *item, int is_current )
 
 	gr_string( FSPACX(item->x), FSPACY(item->y), item->text );
 
-	if (item->value==255) {
-		strcpy( btext, "" );
-	} else {
-		switch( item->type )	{
-			case BT_KEY:
-				strncpy( btext, key_properties[item->value].key_text, 10 ); break;
-			case BT_MOUSE_BUTTON:
-				strncpy( btext, mousebutton_text[item->value], 10 ); break;
-			case BT_MOUSE_AXIS:
-				strncpy( btext, mouseaxis_text[item->value], 10 ); break;
-			case BT_JOY_BUTTON:
-				if (joybutton_text[item->value])
-					strncpy(btext, joybutton_text[item->value], 10);
-				else
-					sprintf(btext, "BTN%2d", item->value + 1);
-				break;
-			case BT_JOY_AXIS:
-				if (joyaxis_text[item->value])
-					strncpy(btext, joyaxis_text[item->value], 10);
-				else
-					sprintf(btext, "AXIS%2d", item->value + 1);
-				break;
-			case BT_INVERT:
-				strncpy( btext, invert_text[item->value], 10 ); break;
-		}
-	}
+	kc_get_binding_text(btext, sizeof(btext), item);
 	gr_get_string_size(btext, &w, &h, &aw  );
 
 	if (is_current)
