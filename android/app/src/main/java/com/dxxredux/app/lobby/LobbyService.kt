@@ -184,6 +184,8 @@ object LobbyService {
     // Host proxy port override (non-zero after host migration with proxy)
     @Volatile private var hostedHostPort: Int = NetworkConstants.ENGINE_PORT
 
+    @Volatile private var hostedRestrictNonCoopFovToBase: Boolean = false
+
     /**
      * Start discovery mode. Acquires multicast lock, opens the UDP socket,
      * and begins listening for ANNOUNCE packets.
@@ -225,6 +227,7 @@ object LobbyService {
         appBackgrounded = false
         socketRefreshNeededOnResume = false
         hostedHostPort = NetworkConstants.ENGINE_PORT
+        hostedRestrictNonCoopFovToBase = false
         localClientId = null
         closeSocket()
         NetLog.log("LAN", "Discovery stopped")
@@ -268,6 +271,7 @@ object LobbyService {
         announceJob?.cancel()
         announceJob = null
         hostedLobbyId = null
+        hostedRestrictNonCoopFovToBase = false
         _hostedLobbyPlayers.value = emptyList()
         _chatMessages.value = emptyList()
         Log.i(TAG, "Stopped hosting LAN lobby")
@@ -694,6 +698,7 @@ object LobbyService {
                 levelNum = json.optInt("level_num", -1),
                 hostPort = json.optInt("host_port", NetworkConstants.ENGINE_PORT),
                 hostClientId = json.optString("host_client_id", "").takeIf { it.isNotBlank() },
+                restrictNonCoopFovToBase = json.optBoolean("restrict_noncoop_fov_to_base", false),
             )
         lobbies[lobbyId] = DiscoveredLobby(announce = announce)
         publishLobbies()
@@ -936,12 +941,14 @@ object LobbyService {
         coopQol: Boolean = true,
         fullDeathSpew: Boolean = true,
         clientsCanRequestRewind: Boolean = false,
+        restrictNonCoopFovToBase: Boolean = false,
         hostPort: Int = NetworkConstants.ENGINE_PORT,
     ) {
         if (!_isHosting.value) return
         val lid = hostedLobbyId ?: return
         val players = _hostedLobbyPlayers.value
         hostedHostPort = hostPort
+        hostedRestrictNonCoopFovToBase = restrictNonCoopFovToBase
 
         // Send START to every joiner (redundant sends for reliability)
         val data =
@@ -958,6 +965,7 @@ object LobbyService {
                 coopQol = coopQol,
                 fullDeathSpew = fullDeathSpew,
                 clientsCanRequestRewind = clientsCanRequestRewind,
+                restrictNonCoopFovToBase = restrictNonCoopFovToBase,
             )
         // Mark game started (rejects further JOINs) but keep announcing
         // so in-game lobbies remain discoverable on LAN
@@ -1008,6 +1016,7 @@ object LobbyService {
                     coopQol = coopQol,
                     fullDeathSpew = fullDeathSpew,
                     clientsCanRequestRewind = clientsCanRequestRewind,
+                    restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                 )
             NetLog.log("LAN", "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
             Log.i(TAG, "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
@@ -1044,6 +1053,7 @@ object LobbyService {
         val coopQol = json.optBoolean("coop_qol", true)
         val fullDeathSpew = json.optBoolean("full_death_spew", true)
         val clientsCanRequestRewind = json.optBoolean("clients_can_request_rewind", false)
+        val restrictNonCoopFovToBase = json.optBoolean("restrict_noncoop_fov_to_base", false)
         NetLog.log("LAN", "START received: $game/$mission lvl=$levelNum diff=$difficulty from $senderAddr")
         Log.i(TAG, "START received for lobby $lobbyId: $game/$mission at $senderAddr:$hostPort")
 
@@ -1079,6 +1089,7 @@ object LobbyService {
                 coopQol = coopQol,
                 fullDeathSpew = fullDeathSpew,
                 clientsCanRequestRewind = clientsCanRequestRewind,
+                restrictNonCoopFovToBase = restrictNonCoopFovToBase,
             )
         NetLog.log("LAN", "Launch event emitted for joiner: game=$game host=$senderAddr")
     }
@@ -1100,6 +1111,7 @@ object LobbyService {
                 isLan = true,
                 hostCallsign = announce.callsign,
                 hostClientId = announce.hostClientId,
+                restrictNonCoopFovToBase = announce.restrictNonCoopFovToBase,
             )
         NetLog.log(
             "LAN",
@@ -1136,6 +1148,7 @@ object LobbyService {
                 levelNum = inGameLevelNum,
                 hostPort = hostedHostPort,
                 hostClientId = localClientId,
+                restrictNonCoopFovToBase = hostedRestrictNonCoopFovToBase,
             )
         sendTo(data, senderAddr)
         Log.i(TAG, "handleQuery: sent ANNOUNCE to $senderAddr for lobby $lid")
@@ -1199,6 +1212,7 @@ object LobbyService {
                 levelNum = inGameLevelNum,
                 hostPort = hostedHostPort,
                 hostClientId = localClientId,
+                restrictNonCoopFovToBase = hostedRestrictNonCoopFovToBase,
             )
         sendBroadcast(data)
     }

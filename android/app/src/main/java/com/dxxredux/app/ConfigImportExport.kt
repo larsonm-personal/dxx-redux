@@ -40,6 +40,7 @@ object ConfigImportExport {
             "AnisoLevel",
             "MenuTexFilt",
             "HudTexFilt",
+            "MainViewFov",
             "CornerTextInset",
             "ClassicDepth",
             "MovieTexFilt",

@@ -52,6 +52,7 @@ data class LanLobbyAnnounce(
     // HOST_PROXY_PORT after host migration with proxy)
     val hostPort: Int = com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT,
     val hostClientId: String? = null,
+    val restrictNonCoopFovToBase: Boolean = false,
 )
 
 /** Build a JSON ANNOUNCE packet for broadcasting. */
@@ -68,6 +69,7 @@ fun buildAnnounce(
     levelNum: Int = -1,
     hostPort: Int = com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT,
     hostClientId: String? = null,
+    restrictNonCoopFovToBase: Boolean = false,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_ANNOUNCE)
@@ -84,6 +86,7 @@ fun buildAnnounce(
     if (levelNum >= 0) json.put("level_num", levelNum)
     if (hostPort != com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT) json.put("host_port", hostPort)
     if (!hostClientId.isNullOrBlank()) json.put("host_client_id", hostClientId)
+    json.put("restrict_noncoop_fov_to_base", restrictNonCoopFovToBase)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
@@ -197,6 +200,7 @@ fun buildStart(
     coopQol: Boolean = true,
     fullDeathSpew: Boolean = true,
     clientsCanRequestRewind: Boolean = false,
+    restrictNonCoopFovToBase: Boolean = false,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_START)
@@ -212,6 +216,7 @@ fun buildStart(
     json.put("coop_qol", coopQol)
     json.put("full_death_spew", fullDeathSpew)
     json.put("clients_can_request_rewind", clientsCanRequestRewind)
+    json.put("restrict_noncoop_fov_to_base", restrictNonCoopFovToBase)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

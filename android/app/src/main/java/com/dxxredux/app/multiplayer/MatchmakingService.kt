@@ -1088,6 +1088,11 @@ object MatchmakingService {
                                     ?.jsonPrimitive
                                     ?.content
                                     ?.toBooleanStrictOrNull() ?: false,
+                            restrictNonCoopFovToBase =
+                                gs.gameInfo["restrict_noncoop_fov_to_base"]
+                                    ?.jsonPrimitive
+                                    ?.content
+                                    ?.toBooleanStrictOrNull() ?: false,
                         )
                     state.update { it.copy(gameLaunchInfo = launchInfo) }
                     // Host sends periodic game state updates to the matchmaking server

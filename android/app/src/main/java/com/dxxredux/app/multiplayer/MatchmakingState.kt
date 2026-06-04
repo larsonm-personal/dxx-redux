@@ -92,6 +92,7 @@ data class GameLaunchInfo(
     val coopQol: Boolean = true,
     val fullDeathSpew: Boolean = true,
     val clientsCanRequestRewind: Boolean = false,
+    val restrictNonCoopFovToBase: Boolean = false,
 )
 
 data class MatchmakingState(
@@ -187,6 +188,7 @@ object HostGameDefaults {
         val coopQol: Boolean = true,
         val fullDeathSpew: Boolean = true,
         val clientsCanRequestRewind: Boolean = false,
+        val restrictNonCoopFovToBase: Boolean = false,
     )
 
     fun load(context: Context): Defaults {
@@ -202,6 +204,7 @@ object HostGameDefaults {
             coopQol = prefs.getBoolean("host_coop_qol", true),
             fullDeathSpew = prefs.getBoolean("host_full_death_spew", true),
             clientsCanRequestRewind = prefs.getBoolean("host_clients_can_request_rewind", false),
+            restrictNonCoopFovToBase = prefs.getBoolean("host_restrict_noncoop_fov_to_base", false),
         )
     }
 
@@ -221,6 +224,7 @@ object HostGameDefaults {
             .putBoolean("host_coop_qol", d.coopQol)
             .putBoolean("host_full_death_spew", d.fullDeathSpew)
             .putBoolean("host_clients_can_request_rewind", d.clientsCanRequestRewind)
+            .putBoolean("host_restrict_noncoop_fov_to_base", d.restrictNonCoopFovToBase)
             .apply()
     }
 }

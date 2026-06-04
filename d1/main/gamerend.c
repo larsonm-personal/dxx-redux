@@ -476,7 +476,11 @@ void game_render_frame_mono(int flip)
 
 	gr_set_current_canvas(&Screen_3d_window);
 	
+#if defined(ANDROID) || defined(__ANDROID__)
+	android_render_frame_main_view(0);
+#else
 	render_frame(0);
+#endif
 
 	update_cockpits();
 

@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.io.File
+import kotlin.math.roundToInt
 
 internal const val PREF_GRAPHICS_SETTINGS_GENERATION = "graphics_settings_generation"
 internal const val PREF_GRAPHICS_ALPHA_EFFECTS = "graphics_alpha_effects"
@@ -88,6 +89,13 @@ fun GraphicsSettingsPage(
                     ) {
                         // -- Render Resolution --
                         ResolutionSection(filesDir = filesDir, prefs = prefs)
+
+                        Spacer(modifier = Modifier.height(3.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(3.dp))
+
+                        // -- Main View FOV --
+                        MainViewFovSection(filesDir = filesDir)
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
@@ -161,6 +169,55 @@ fun GraphicsSettingsPage(
 private fun bumpGraphicsSettingsGeneration(prefs: SharedPreferences) {
     val next = prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L) + 1L
     prefs.edit().putLong(PREF_GRAPHICS_SETTINGS_GENERATION, next).apply()
+}
+
+private val MAIN_VIEW_FOV_OPTIONS =
+    listOf(
+        "Base" to 0,
+        "100 deg" to 100,
+        "110 deg" to 110,
+        "120 deg" to 120,
+    )
+
+@Composable
+private fun MainViewFovSection(filesDir: File) {
+    val ctx = LocalContext.current
+    val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
+    var selectedIndex by remember {
+        val cur = (readConfigValue(filesDir, "MainViewFov") ?: "0").toIntOrNull() ?: 0
+        mutableIntStateOf(MAIN_VIEW_FOV_OPTIONS.indexOfFirst { it.second == cur }.takeIf { it >= 0 } ?: 0)
+    }
+    val selected = MAIN_VIEW_FOV_OPTIONS[selectedIndex]
+
+    Text("In-Game FOV", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+    Spacer(modifier = Modifier.height(1.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Slider(
+            value = selectedIndex.toFloat(),
+            onValueChange = { value ->
+                val nextIndex = value.roundToInt().coerceIn(0, MAIN_VIEW_FOV_OPTIONS.lastIndex)
+                if (nextIndex != selectedIndex) {
+                    selectedIndex = nextIndex
+                    updateAllConfigFiles(
+                        filesDir,
+                        listOf("MainViewFov" to MAIN_VIEW_FOV_OPTIONS[nextIndex].second.toString()),
+                    )
+                    bumpGraphicsSettingsGeneration(prefs)
+                }
+            },
+            valueRange = 0f..MAIN_VIEW_FOV_OPTIONS.lastIndex.toFloat(),
+            steps = MAIN_VIEW_FOV_OPTIONS.size - 2,
+            modifier = Modifier.weight(1f).tvFocusBorder(),
+        )
+        Text(
+            text = selected.first,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+    }
 }
 
 @Composable

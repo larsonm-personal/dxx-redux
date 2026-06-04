@@ -13,6 +13,7 @@
 #include "config.h"
 #include "palette.h"
 #include "playsave.h"
+#include "render.h"
 
 static int clamp_bool(int value)
 {
@@ -44,6 +45,13 @@ static int clamp_corner_text_inset(int value)
 	if (value > 2)
 		return 2;
 	return value;
+}
+
+static int clamp_main_view_fov(int value)
+{
+	if (value == 100 || value == 110 || value == 120)
+		return value;
+	return 0;
 }
 
 static int g_android_default_alpha_effects;
@@ -288,6 +296,25 @@ void android_graphics_set_hud_texfilt(int value, int persist)
 	persist_config_if_needed(persist, "HudTexFilt", GameCfg.HudTexFilt, 1, 1);
 }
 
+void android_graphics_set_main_view_fov(int value, int persist)
+{
+	GameCfg.MainViewFov = clamp_main_view_fov(value);
+	android_render_set_main_view_fov(GameCfg.MainViewFov);
+	debug_log(DLOG_GRAPHICS,
+	          "graphics option request: main_view_fov=%d persist=%d",
+	          GameCfg.MainViewFov, persist);
+	persist_config_if_needed(persist, "MainViewFov", GameCfg.MainViewFov, 1, 1);
+}
+
+void android_graphics_set_main_view_fov_locked(int value, int persist)
+{
+	(void) persist;
+	android_render_set_main_view_fov_locked(value);
+	debug_log(DLOG_GRAPHICS,
+	          "graphics option request: main_view_fov_locked=%d",
+	          value ? 1 : 0);
+}
+
 void android_graphics_set_corner_text_inset(int value, int persist)
 {
 	GameCfg.CornerTextInset = clamp_corner_text_inset(value);
@@ -457,6 +484,10 @@ int android_graphics_set_option(const char *name, int value, int persist)
 		android_graphics_set_menu_texfilt(value, persist);
 	else if (!strcmp(name, "hud_tex_filt"))
 		android_graphics_set_hud_texfilt(value, persist);
+	else if (!strcmp(name, "main_view_fov"))
+		android_graphics_set_main_view_fov(value, persist);
+	else if (!strcmp(name, "main_view_fov_locked"))
+		android_graphics_set_main_view_fov_locked(value, persist);
 	else if (!strcmp(name, "corner_text_inset"))
 		android_graphics_set_corner_text_inset(value, persist);
 	else if (!strcmp(name, "classic_depth"))

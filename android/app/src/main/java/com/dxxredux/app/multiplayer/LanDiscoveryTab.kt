@@ -278,6 +278,7 @@ private fun LanDiscoveryView(
     var hostedCoopQol by remember { mutableStateOf(hostDefaults.coopQol) }
     var hostedFullDeathSpew by remember { mutableStateOf(hostDefaults.fullDeathSpew) }
     var hostedClientsCanRequestRewind by remember { mutableStateOf(hostDefaults.clientsCanRequestRewind) }
+    var hostedRestrictNonCoopFovToBase by remember { mutableStateOf(hostDefaults.restrictNonCoopFovToBase) }
     var dismissResumeOffer by remember { mutableStateOf(false) }
     var resumeStatus by remember { mutableStateOf<String?>(null) }
     val resumeRecord = remember { MultiplayerResumePrefs.load(context) }
@@ -338,6 +339,7 @@ private fun LanDiscoveryView(
         hostedCoopQol = record.coopQol
         hostedFullDeathSpew = record.fullDeathSpew
         hostedClientsCanRequestRewind = record.clientsCanRequestRewind
+        hostedRestrictNonCoopFovToBase = record.restrictNonCoopFovToBase
         if (!LobbyService.isDiscovering.value) {
             LobbyService.startDiscovery(context, hostCallsign)
         }
@@ -690,6 +692,7 @@ private fun LanDiscoveryView(
                             coopQol = hostedCoopQol,
                             fullDeathSpew = hostedFullDeathSpew,
                             clientsCanRequestRewind = hostedClientsCanRequestRewind,
+                            restrictNonCoopFovToBase = hostedRestrictNonCoopFovToBase,
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -772,6 +775,7 @@ private fun LanDiscoveryView(
                 coopQol,
                 fullDeathSpew,
                 clientsCanRequestRewind,
+                restrictNonCoopFovToBase,
                 ->
                 showHostDialog = false
                 hostedGame = game
@@ -782,6 +786,7 @@ private fun LanDiscoveryView(
                 hostedCoopQol = coopQol
                 hostedFullDeathSpew = fullDeathSpew
                 hostedClientsCanRequestRewind = clientsCanRequestRewind
+                hostedRestrictNonCoopFovToBase = restrictNonCoopFovToBase
                 LobbyService.hostLobby(callsign, game, mission ?: "", mode, maxPlayers)
             },
             onDismiss = { showHostDialog = false },

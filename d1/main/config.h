@@ -46,6 +46,7 @@ typedef struct Cfg
 	int TexFilt;
 	int MenuTexFilt;  /* 0=nearest (default), 1=use world TexFilt */
 	int HudTexFilt;   /* 0=nearest, 1=use world TexFilt (default) */
+	int MainViewFov;  /* 0=base, otherwise snapped degrees for Android main view */
 	int CornerTextInset; /* 0=off, 1=half rounded-corner inset, 2=full inset */
 	int VSync;
 	int Multisample;

@@ -141,6 +141,98 @@ int	N_render_segs;
 
 fix Render_zoom = 0x9000;					//the player's zoom factor
 
+#if defined(ANDROID) || defined(__ANDROID__)
+static int Android_main_view_fov_degrees;
+static int Android_main_view_fov_locked_to_base;
+static int Android_visual_only_render_pass;
+static fix Android_render_zoom_override;
+static short Android_base_render_list[MAX_RENDER_SEGS];
+
+static int android_render_clamp_main_view_fov(int fov_degrees)
+{
+	if (fov_degrees == 100 || fov_degrees == 110 || fov_degrees == 120)
+		return fov_degrees;
+	return 0;
+}
+
+static fix android_render_main_view_zoom(void)
+{
+	switch (android_render_main_view_fov_effective()) {
+		case 100:
+			return 43940;
+		case 110:
+			return 52658;
+		case 120:
+			return 63858;
+		default:
+			return Render_zoom;
+	}
+}
+
+static fix android_render_active_zoom(void)
+{
+	return Android_render_zoom_override ? Android_render_zoom_override : Render_zoom;
+}
+
+void android_render_set_main_view_fov(int fov_degrees)
+{
+	Android_main_view_fov_degrees = android_render_clamp_main_view_fov(fov_degrees);
+}
+
+int android_render_get_main_view_fov(void)
+{
+	return Android_main_view_fov_degrees;
+}
+
+void android_render_set_main_view_fov_locked(int locked_to_base)
+{
+	Android_main_view_fov_locked_to_base = locked_to_base ? 1 : 0;
+}
+
+int android_render_main_view_fov_effective(void)
+{
+	return Android_main_view_fov_locked_to_base ? 0 : Android_main_view_fov_degrees;
+}
+
+void android_render_frame_main_view(fix eye_offset, int window_num)
+{
+	int base_n_render_segs;
+	size_t base_render_list_bytes;
+	int base_num_objects;
+	short base_rendered_objects[MAX_RENDERED_OBJECTS];
+
+	if (Endlevel_sequence || !android_render_main_view_fov_effective()) {
+		render_frame(eye_offset, window_num);
+		return;
+	}
+
+	render_frame(eye_offset, window_num);
+	base_n_render_segs = N_render_segs;
+	base_render_list_bytes = base_n_render_segs > 0 ?
+		sizeof(Android_base_render_list[0]) * base_n_render_segs : 0;
+	if (base_render_list_bytes)
+		memcpy(Android_base_render_list, Render_list, base_render_list_bytes);
+	base_num_objects = Window_rendered_data[window_num].num_objects;
+	if (base_num_objects > 0)
+		memcpy(base_rendered_objects, Window_rendered_data[window_num].rendered_objects,
+		       sizeof(base_rendered_objects[0]) * base_num_objects);
+
+	Android_visual_only_render_pass = 1;
+	Android_render_zoom_override = android_render_main_view_zoom();
+	render_frame(eye_offset, window_num);
+	Android_render_zoom_override = 0;
+	Android_visual_only_render_pass = 0;
+
+	N_render_segs = base_n_render_segs;
+	if (base_render_list_bytes)
+		memcpy(Render_list, Android_base_render_list, base_render_list_bytes);
+	Window_rendered_data[window_num].num_objects = base_num_objects;
+	if (base_num_objects > 0)
+		memcpy(Window_rendered_data[window_num].rendered_objects, base_rendered_objects,
+		       sizeof(base_rendered_objects[0]) * base_num_objects);
+}
+#endif
+
 #ifndef NDEBUG
 ubyte object_rendered[MAX_OBJECTS];
 #endif
@@ -886,7 +978,11 @@ void do_render_object(int objnum, int window_num)
 	//	Added by MK on 09/07/94 (at about 5:28 pm, CDT, on a beautiful, sunny late summer day!) so
 	//	that the guided missile system will know what objects to look at.
 	//	I didn't know we had guided missiles before the release of D1. --MK
-	if ((Objects[objnum].type == OBJ_ROBOT) || (Objects[objnum].type == OBJ_PLAYER)) {
+	if (
+#if defined(ANDROID) || defined(__ANDROID__)
+		!Android_visual_only_render_pass &&
+#endif
+		((Objects[objnum].type == OBJ_ROBOT) || (Objects[objnum].type == OBJ_PLAYER))) {
 		//Assert(Window_rendered_data[window_num].rendered_objects < MAX_RENDERED_OBJECTS);
 		//	This peculiar piece of code makes us keep track of the most recently rendered objects, which
 		//	are probably the higher priority objects, without overflowing the buffer
@@ -897,7 +993,11 @@ void do_render_object(int objnum, int window_num)
 		Window_rendered_data[window_num].rendered_objects[Window_rendered_data[window_num].num_objects++] = objnum;
 	}
 
-	if (input_demo_render_probe_active() && obj->type == OBJ_ROBOT)
+	if (input_demo_render_probe_active()
+#if defined(ANDROID) || defined(__ANDROID__)
+		&& !Android_visual_only_render_pass
+#endif
+		&& obj->type == OBJ_ROBOT)
 		input_demo_render_probe_drawn_frame[objnum] = input_demo_debug_frame_index();
 
 	if ((count++ > MAX_OBJECTS) || (obj->next == objnum)) {
@@ -1043,7 +1143,11 @@ void render_segment(int segnum, int window_num)
 
 	if (! cc.uand) {		//all off screen?
 
-      if (Viewer->type!=OBJ_ROBOT)
+      if (Viewer->type!=OBJ_ROBOT
+#if defined(ANDROID) || defined(__ANDROID__)
+		  && !Android_visual_only_render_pass
+#endif
+		  )
   	   	Automap_visited[segnum]=1;
 
 		for (sn=0; sn<MAX_SIDES_PER_SEGMENT; sn++)
@@ -1988,7 +2092,11 @@ void render_frame(fix eye_offset, int window_num)
 		return;
 	}
 
-	if ( Newdemo_state == ND_STATE_RECORDING && eye_offset >= 0 )	{
+	if (
+#if defined(ANDROID) || defined(__ANDROID__)
+		!Android_visual_only_render_pass &&
+#endif
+		Newdemo_state == ND_STATE_RECORDING && eye_offset >= 0 )	{
      
       if (RenderingType==0)
    		newdemo_record_start_frame(FrameTime );
@@ -2027,7 +2135,13 @@ void render_frame(fix eye_offset, int window_num)
 		Player_head_angles.h = 0x7fff;
 		vm_angles_2_matrix(&headm,&Player_head_angles);
 		vm_matrix_x_matrix(&viewm,&Viewer->orient,&headm);
-		g3_set_view_matrix(&Viewer_eye,&viewm,Render_zoom);
+		g3_set_view_matrix(&Viewer_eye,&viewm,
+#if defined(ANDROID) || defined(__ANDROID__)
+				   android_render_active_zoom()
+#else
+				   Render_zoom
+#endif
+				   );
 	} else	{
 #ifdef JOHN_ZOOM
 		if (keyd_pressed[KEY_RSHIFT] )	{
@@ -2037,9 +2151,21 @@ void render_frame(fix eye_offset, int window_num)
 			Zoom_factor -= FrameTime*4;
 			if (Zoom_factor < F1_0 ) Zoom_factor = F1_0;
 		}
-		g3_set_view_matrix(&Viewer_eye,&Viewer->orient,fixdiv(Render_zoom,Zoom_factor));
+		g3_set_view_matrix(&Viewer_eye,&Viewer->orient,fixdiv(
+#if defined(ANDROID) || defined(__ANDROID__)
+				   android_render_active_zoom()
 #else
-		g3_set_view_matrix(&Viewer_eye,&Viewer->orient,Render_zoom);
+				   Render_zoom
+#endif
+				   ,Zoom_factor));
+#else
+		g3_set_view_matrix(&Viewer_eye,&Viewer->orient,
+#if defined(ANDROID) || defined(__ANDROID__)
+				   android_render_active_zoom()
+#else
+				   Render_zoom
+#endif
+				   );
 #endif
 	}
 
@@ -2349,7 +2475,10 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	int		nn;
 
 	//	Initialize number of objects (actually, robots!) rendered this frame.
-	Window_rendered_data[window_num].num_objects = 0;
+#if defined(ANDROID) || defined(__ANDROID__)
+	if (!Android_visual_only_render_pass)
+#endif
+		Window_rendered_data[window_num].num_objects = 0;
 
 	#ifndef NDEBUG
 	for (i=0;i<=Highest_object_index;i++)
@@ -2535,7 +2664,11 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 
 				if (! cc.uand) {		//all off screen?
 
-				  if (Viewer->type!=OBJ_ROBOT)
+				  if (Viewer->type!=OBJ_ROBOT
+#if defined(ANDROID) || defined(__ANDROID__)
+					  && !Android_visual_only_render_pass
+#endif
+					  )
 					Automap_visited[segnum]=1;
 
 					for (sn=0; sn<MAX_SIDES_PER_SEGMENT; sn++)
@@ -2646,7 +2779,11 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 
 				if (! cc.uand) {		//all off screen?
 
-				  if (Viewer->type!=OBJ_ROBOT)
+				  if (Viewer->type!=OBJ_ROBOT
+#if defined(ANDROID) || defined(__ANDROID__)
+					  && !Android_visual_only_render_pass
+#endif
+					  )
 					Automap_visited[segnum]=1;
 
 					for (sn=0; sn<MAX_SIDES_PER_SEGMENT; sn++)

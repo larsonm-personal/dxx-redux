@@ -881,7 +881,11 @@ void game_render_frame_mono(int flip)
 			return;
 		}
 		update_rendered_data(0, Viewer, Rear_view, 0);
+#if defined(ANDROID) || defined(__ANDROID__)
+		android_render_frame_main_view(0, 0);
+#else
 		render_frame(0, 0);
+#endif
 	}
 
 	gr_set_current_canvas(&Screen_3d_window);

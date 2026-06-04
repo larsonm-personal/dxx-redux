@@ -657,6 +657,13 @@ class MainActivity :
                     .getInstallationId(this),
             )
         }
+        try {
+            val restrictNonCoopFovToBase =
+                mpMode == "join" && intent.getBooleanExtra("mp_restrict_noncoop_fov_to_base", false)
+            nativeSetGraphicsOption("main_view_fov_locked", if (restrictNonCoopFovToBase) 1 else 0)
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
         if (mpMode == "join") {
             val hostAddr = intent.getStringExtra("mp_host_addr") ?: "127.0.0.1"
             val hostPort = intent.getIntExtra("mp_host_port", 42430)
@@ -1636,6 +1643,7 @@ class MainActivity :
             cfgInt("TexFilt")?.let { nativeSetGraphicsOption("tex_filt", it) }
             cfgInt("MenuTexFilt")?.let { nativeSetGraphicsOption("menu_tex_filt", it) }
             cfgInt("HudTexFilt")?.let { nativeSetGraphicsOption("hud_tex_filt", it) }
+            cfgInt("MainViewFov")?.let { nativeSetGraphicsOption("main_view_fov", it) }
             cfgInt("CornerTextInset")?.let { nativeSetGraphicsOption("corner_text_inset", it) }
             cfgInt("AnisoLevel")?.let { nativeSetGraphicsOption("aniso_level", it) }
             cfgInt("MsaaLevel")?.let { nativeSetGraphicsOption("msaa_level", it) }

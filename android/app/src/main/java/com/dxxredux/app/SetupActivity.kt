@@ -874,6 +874,8 @@ class SetupActivity : ComponentActivity() {
                         val coopQol = intent.getBooleanExtra("coop_qol", true)
                         val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
                         val clientsCanRequestRewind = intent.getBooleanExtra("clients_can_request_rewind", false)
+                        val restrictNonCoopFovToBase =
+                            intent.getBooleanExtra("restrict_noncoop_fov_to_base", false)
                         val gameInfo =
                             JsonObject(
                                 mapOf(
@@ -882,6 +884,7 @@ class SetupActivity : ComponentActivity() {
                                     "coop_qol" to JsonPrimitive(coopQol),
                                     "full_death_spew" to JsonPrimitive(fullDeathSpew),
                                     "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
+                                    "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
                                 ),
                             )
                         MatchmakingService.createLobby(game, maxPlayers, gameInfo)
@@ -966,6 +969,8 @@ class SetupActivity : ComponentActivity() {
                         val coopQol = intent.getBooleanExtra("coop_qol", true)
                         val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
                         val clientsCanRequestRewind = intent.getBooleanExtra("clients_can_request_rewind", false)
+                        val restrictNonCoopFovToBase =
+                            intent.getBooleanExtra("restrict_noncoop_fov_to_base", false)
                         val hostAddr = intent.getStringExtra("host_addr")
                         val hostPort = intent.getIntExtra("host_port", NetworkConstants.ENGINE_PORT)
                         intent.getStringExtra("callsign")?.let { mpCallsign = it }
@@ -987,6 +992,7 @@ class SetupActivity : ComponentActivity() {
                                 coopQol = coopQol,
                                 fullDeathSpew = fullDeathSpew,
                                 clientsCanRequestRewind = clientsCanRequestRewind,
+                                restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                             )
                         Log.i(
                             "DXX-MP",
@@ -1149,6 +1155,8 @@ class SetupActivity : ComponentActivity() {
                     val maxPlayers = json["max_players"]?.jsonPrimitive?.int ?: 4
                     val coopQol = json["coop_qol"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: true
                     val fullDeathSpew = json["full_death_spew"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: true
+                    val restrictNonCoopFovToBase =
+                        json["restrict_noncoop_fov_to_base"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false
                     Log.i(
                         "DXX-MP",
                         "Host migration: proxy on :$proxyPort, LAN broadcast as $callsign ($game/$mission lvl=$levelNum)",
@@ -1164,6 +1172,7 @@ class SetupActivity : ComponentActivity() {
                             coopQol = coopQol,
                             fullDeathSpew = fullDeathSpew,
                             clientsCanRequestRewind = false,
+                            restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                             hostPort = proxyPort,
                         )
                     // Clean up the migration file
@@ -1503,6 +1512,7 @@ class SetupActivity : ComponentActivity() {
             }
             mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
         }
+        mpIntent.putExtra("mp_restrict_noncoop_fov_to_base", info.restrictNonCoopFovToBase && info.mode != "coop")
         if (info.isLan) mpIntent.putExtra("mp_is_lan", true)
         MultiplayerResumePrefs.saveLaunch(this, info, mpCallsign, MatchmakingStateHolder.state.value)
         // Clear gameLaunchInfo after consumption to prevent stale re-launches

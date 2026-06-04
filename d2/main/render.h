@@ -45,6 +45,13 @@ extern int Max_debris_objects; // How many debris objects to create
 extern int Clear_window;    // 1 = Clear whole background window, 2 = clear view portals into rest of world, 0 = no clear
 
 void render_frame(fix eye_offset, int window_num);  //draws the world into the current canvas
+#if defined(ANDROID) || defined(__ANDROID__)
+void android_render_frame_main_view(fix eye_offset, int window_num);
+void android_render_set_main_view_fov(int fov_degrees);
+int android_render_get_main_view_fov(void);
+void android_render_set_main_view_fov_locked(int locked_to_base);
+int android_render_main_view_fov_effective(void);
+#endif
 void render_warn_robots_about_player_fire(void);
 
 // cycle the flashing light for when mine destroyed

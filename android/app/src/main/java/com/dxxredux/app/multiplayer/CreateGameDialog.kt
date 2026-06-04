@@ -60,6 +60,7 @@ internal fun CreateGameDialog(
         coopQol: Boolean,
         fullDeathSpew: Boolean,
         clientsCanRequestRewind: Boolean,
+        restrictNonCoopFovToBase: Boolean,
     ) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -74,6 +75,7 @@ internal fun CreateGameDialog(
     var coopQol by remember { mutableStateOf(defaults.coopQol) }
     var fullDeathSpew by remember { mutableStateOf(defaults.fullDeathSpew) }
     var clientsCanRequestRewind by remember { mutableStateOf(defaults.clientsCanRequestRewind) }
+    var restrictNonCoopFovToBase by remember { mutableStateOf(defaults.restrictNonCoopFovToBase) }
     var textEntryActive by remember { mutableStateOf(false) }
     val dialogFocus = remember { FocusRequester() }
     val missionFocus = remember { FocusRequester() }
@@ -237,6 +239,30 @@ internal fun CreateGameDialog(
                             }
                         }
                     }
+                    if (mode != "coop") {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Switch(
+                                checked = restrictNonCoopFovToBase,
+                                onCheckedChange = { restrictNonCoopFovToBase = it },
+                                modifier = Modifier.tvFocusBorder(),
+                            )
+                            Column {
+                                Text(
+                                    "Restrict client FOV to base",
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                                Text(
+                                    "Clients use base FOV for this non-coop session",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -383,6 +409,7 @@ internal fun CreateGameDialog(
                             coopQol = coopQol,
                             fullDeathSpew = fullDeathSpew,
                             clientsCanRequestRewind = clientsCanRequestRewind,
+                            restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                         ),
                     )
                     // slot = -1 for checkpoint entries (no save file to load)
@@ -399,6 +426,7 @@ internal fun CreateGameDialog(
                         coopQol,
                         fullDeathSpew,
                         clientsCanRequestRewind,
+                        restrictNonCoopFovToBase,
                     )
                 },
                 enabled = mission != null && maxPlayers in 2..8 && levelNum >= 1,

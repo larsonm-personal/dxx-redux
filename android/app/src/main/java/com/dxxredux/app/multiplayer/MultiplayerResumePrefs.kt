@@ -40,6 +40,7 @@ internal data class MultiplayerResumeRecord(
     val restoreWasSelected: Boolean = false,
     val hostMigrated: Boolean = false,
     val clientsCanRequestRewind: Boolean = false,
+    val restrictNonCoopFovToBase: Boolean = false,
 )
 
 internal fun MultiplayerResumeRecord.isHostLanCoop(): Boolean = role == "host" && transport == "lan" && mode == "coop"
@@ -79,6 +80,7 @@ internal fun MultiplayerResumeRecord.toHostDefaults(): HostGameDefaults.Defaults
         coopQol = coopQol,
         fullDeathSpew = fullDeathSpew,
         clientsCanRequestRewind = clientsCanRequestRewind,
+        restrictNonCoopFovToBase = restrictNonCoopFovToBase,
     )
 
 internal fun MultiplayerResumeRecord.toGameInfoJson(): JsonObject =
@@ -92,6 +94,7 @@ internal fun MultiplayerResumeRecord.toGameInfoJson(): JsonObject =
             "coop_qol" to JsonPrimitive(coopQol),
             "full_death_spew" to JsonPrimitive(fullDeathSpew),
             "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
+            "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
         ),
     )
 
@@ -137,6 +140,7 @@ internal fun encodeMultiplayerResumeRecord(record: MultiplayerResumeRecord): Str
         .put("restore_was_selected", record.restoreWasSelected)
         .put("host_migrated", record.hostMigrated)
         .put("clients_can_request_rewind", record.clientsCanRequestRewind)
+        .put("restrict_noncoop_fov_to_base", record.restrictNonCoopFovToBase)
         .toString()
 
 internal fun decodeMultiplayerResumeRecord(raw: String?): MultiplayerResumeRecord? {
@@ -181,6 +185,7 @@ internal fun decodeMultiplayerResumeRecord(raw: String?): MultiplayerResumeRecor
             restoreWasSelected = json.optBoolean("restore_was_selected", false),
             hostMigrated = json.optBoolean("host_migrated", false),
             clientsCanRequestRewind = json.optBoolean("clients_can_request_rewind", false),
+            restrictNonCoopFovToBase = json.optBoolean("restrict_noncoop_fov_to_base", false),
         )
     } catch (_: Exception) {
         null
@@ -249,6 +254,7 @@ internal object MultiplayerResumePrefs {
                 coopQol = info.coopQol,
                 fullDeathSpew = info.fullDeathSpew,
                 clientsCanRequestRewind = info.clientsCanRequestRewind,
+                restrictNonCoopFovToBase = info.restrictNonCoopFovToBase,
                 localCallsign = localCallsign,
                 localClientId = localClientId,
                 hostCallsign = if (info.isHost) localCallsign else info.hostCallsign ?: hostPlayer?.callsign,

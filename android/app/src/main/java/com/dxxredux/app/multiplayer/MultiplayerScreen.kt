@@ -612,6 +612,7 @@ private fun ServerBrowserContent(
                 coopQol,
                 fullDeathSpew,
                 clientsCanRequestRewind,
+                restrictNonCoopFovToBase,
                 ->
                 showCreateDialog = false
                 val gameInfo =
@@ -625,6 +626,7 @@ private fun ServerBrowserContent(
                             "coop_qol" to JsonPrimitive(coopQol),
                             "full_death_spew" to JsonPrimitive(fullDeathSpew),
                             "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
+                            "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
                         ),
                     )
                 MatchmakingService.createLobby(game, maxPlayers, gameInfo)
