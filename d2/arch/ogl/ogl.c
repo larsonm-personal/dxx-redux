@@ -198,15 +198,85 @@ static void android_cache_profile_count(int *counter)
 		(*counter)++;
 }
 
+static int android_ogl_scale_axis(int value, int logical_extent, int physical_extent)
+{
+	long long scaled;
+
+	if (logical_extent <= 0 || physical_extent <= 0)
+		return value;
+	scaled = (long long)value * physical_extent;
+	if (scaled >= 0)
+		scaled += logical_extent / 2;
+	else
+		scaled -= logical_extent / 2;
+	return (int)(scaled / logical_extent);
+}
+
+static void android_ogl_get_drawable_size(int logical_w, int logical_h, int *drawable_w, int *drawable_h)
+{
+	/* Android setBuffersGeometry keeps the EGL drawable at game resolution.
+	 * The Java SurfaceView can be larger, but using that for GL viewport
+	 * pushes centered menus off the actual drawable on some devices. */
+	if (drawable_w)
+		*drawable_w = logical_w;
+	if (drawable_h)
+		*drawable_h = logical_h;
+}
+
+void ogl_android_viewport(int x, int y, int w, int h)
+{
+	static int last_x = -1, last_y = -1;
+	static int last_physical_x = -1, last_physical_y = -1;
+	static int last_physical_w = -1, last_physical_h = -1;
+	int logical_screen_w = grd_curscreen ? grd_curscreen->sc_w : w;
+	int logical_screen_h = grd_curscreen ? grd_curscreen->sc_h : h;
+	int canvas_h = grd_curscreen ? grd_curscreen->sc_canvas.cv_bitmap.bm_h : logical_screen_h;
+	int drawable_screen_w, drawable_screen_h;
+	int koff = android_get_keyboard_y_offset(canvas_h);
+	int viewport_y = canvas_h - y - h + koff;
+	int drawable_x, drawable_y, drawable_w, drawable_h;
+
+	android_ogl_get_drawable_size(logical_screen_w, logical_screen_h,
+	                              &drawable_screen_w, &drawable_screen_h);
+	drawable_x = android_ogl_scale_axis(x, logical_screen_w, drawable_screen_w);
+	drawable_y = android_ogl_scale_axis(viewport_y, logical_screen_h, drawable_screen_h);
+	drawable_w = android_ogl_scale_axis(w, logical_screen_w, drawable_screen_w);
+	drawable_h = android_ogl_scale_axis(h, logical_screen_h, drawable_screen_h);
+	if (drawable_w <= 0 && w > 0)
+		drawable_w = 1;
+	if (drawable_h <= 0 && h > 0)
+		drawable_h = 1;
+
+	if (x != last_x || y != last_y || w != last_width || h != last_height ||
+	    koff != last_kb_off || drawable_x != last_physical_x ||
+	    drawable_y != last_physical_y || drawable_w != last_physical_w ||
+	    drawable_h != last_physical_h) {
+		glViewport(drawable_x, drawable_y, drawable_w, drawable_h);
+		last_x = x;
+		last_y = y;
+		last_width = w;
+		last_height = h;
+		last_kb_off = koff;
+		last_physical_x = drawable_x;
+		last_physical_y = drawable_y;
+		last_physical_w = drawable_w;
+		last_physical_h = drawable_h;
+	}
+}
+
 static void android_fill_keyboard_gap(int screen_w, int screen_h, int gap_h)
 {
+	int drawable_w, drawable_h, drawable_gap_h;
+
 	if (gap_h <= 0)
 		return;
 	if (gap_h > screen_h)
 		gap_h = screen_h;
+	android_ogl_get_drawable_size(screen_w, screen_h, &drawable_w, &drawable_h);
+	drawable_gap_h = android_ogl_scale_axis(gap_h, screen_h, drawable_h);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glEnable(GL_SCISSOR_TEST);
-	glScissor(0, 0, screen_w, gap_h);
+	glScissor(0, 0, drawable_w, drawable_gap_h);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glDisable(GL_SCISSOR_TEST);
 }
@@ -2328,7 +2398,9 @@ void ogl_start_frame(void){
 	 * the depth counter, so later cockpit subviews in the same game frame can
 	 * rebind safely before the final resolve in gr_flip. */
 	if (ogl_msaa_samples > 0 && g_msaa_frame_depth == 0) {
-		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
+		int w, h;
+		android_ogl_get_drawable_size(grd_curscreen->sc_w, grd_curscreen->sc_h,
+		                              &w, &h);
 		if (!ogl_msaa_fbo || ogl_msaa_w != w || ogl_msaa_h != h)
 			ogl_msaa_create_fbo(ogl_msaa_samples, w, h);
 		if (ogl_msaa_fbo) {
@@ -2429,8 +2501,7 @@ void ogl_end_frame(void){
 		g_msaa_frame_depth--;
 	{
 		extern volatile int g_blit_y_offset;
-		int direct_off = android_get_keyboard_y_offset(grd_curscreen->sc_canvas.cv_bitmap.bm_h);
-		g_blit_y_offset = direct_off;
+		g_blit_y_offset = last_kb_off;
 	}
 #endif
 	glMatrixMode(GL_PROJECTION);
@@ -2466,7 +2537,9 @@ void ogl_prepare_framebuffer_readback(void)
 	g_msaa_resolve_time_us = 0;
 	if (g_msaa_fbo_bound && g_msaa_frame_depth == 0) {
 		struct timespec resolve_start, resolve_end;
-		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
+		int w, h;
+		android_ogl_get_drawable_size(grd_curscreen->sc_w, grd_curscreen->sc_h,
+		                              &w, &h);
 		android_perf_clock_now(&resolve_start);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, ogl_msaa_fbo);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -2501,8 +2574,7 @@ void ogl_android_prepare_overlay_blit(const char *source)
 	int prev_last_height = last_height;
 	int w = grd_curscreen ? grd_curscreen->sc_w : 0;
 	int h = grd_curscreen ? grd_curscreen->sc_h : 0;
-	int canvas_h = grd_curscreen ? grd_curscreen->sc_canvas.cv_bitmap.bm_h : h;
-	int koff = android_get_keyboard_y_offset(canvas_h);
+	int koff = 0;
 	GLint fb = 0;
 	GLint viewport[4] = {0, 0, 0, 0};
 
@@ -2515,10 +2587,8 @@ void ogl_android_prepare_overlay_blit(const char *source)
 
 	if (w > 0 && h > 0) {
 		extern volatile int g_blit_y_offset;
-		glViewport(0, canvas_h - h + koff, w, h);
-		last_width = w;
-		last_height = h;
-		last_kb_off = koff;
+		ogl_android_viewport(0, 0, w, h);
+		koff = last_kb_off;
 		g_blit_y_offset = koff;
 	}
 
@@ -2611,7 +2681,9 @@ void gr_flip(void)
 		if (need_fb_sample) {
 			if (trace_flip)
 				crash_breadcrumb("gr_flip: fb_sample");
-			int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
+			int w, h;
+			android_ogl_get_drawable_size(grd_curscreen->sc_w, grd_curscreen->sc_h,
+			                              &w, &h);
 			android_merged_wall_sample_snapshot_framebuffer(
 				w, h,
 				&g_fb_sample_r, &g_fb_sample_g, &g_fb_sample_b, &g_fb_sample_a,
@@ -2630,15 +2702,11 @@ void gr_flip(void)
 	 * render without those calls so the offset must be applied here. */
 	{
 		extern volatile int g_blit_y_offset;
-		int koff = android_get_keyboard_y_offset(grd_curscreen->sc_canvas.cv_bitmap.bm_h);
 		int h = grd_curscreen->sc_h;
 		int w = grd_curscreen->sc_w;
-		glViewport(0, grd_curscreen->sc_canvas.cv_bitmap.bm_h - h + koff, w, h);
-		last_width = w;
-		last_height = h;
-		last_kb_off = koff;
-		g_blit_y_offset = koff;
-		android_fill_keyboard_gap(w, h, koff);
+		ogl_android_viewport(0, 0, w, h);
+		g_blit_y_offset = last_kb_off;
+		android_fill_keyboard_gap(w, h, last_kb_off);
 	}
 
 	if (trace_flip)

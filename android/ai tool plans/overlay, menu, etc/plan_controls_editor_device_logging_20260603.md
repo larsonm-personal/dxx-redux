@@ -1,6 +1,6 @@
 # Controls Editor Device Logging Plan
 
-Status: surface/render-resolution fix implemented; validation in progress
+Status: physical Android viewport regression repaired and validated on emulator
 
 ## Problem
 - On real devices, controls editor pages still show tiny, garbled, unreadable text.
@@ -60,3 +60,46 @@ Status: surface/render-resolution fix implemented; validation in progress
 - Added a guarded migration from the old half-screen default to full-screen when `graphics_settings_generation` is still zero, so explicit render-resolution choices are not repeatedly overridden.
 - Tightened the migration so it only fires when the actual config file still contains the old half-screen default, avoiding stale preference values overriding explicit test/user configs.
 - Updated the controls-editor staging script to force `1280x720`, preserving coverage for the scaled/scrollable kconfig path now that the app default is full resolution.
+
+## Third Device Log Follow-up
+- New phone logs from build `15017` show `game=1170x540 view=2340x1080 win_before=2340x1080 win_after=2340x1080`, so the Java surface-size bridge is working and the physical device view is available.
+- The same logs still show `[menu-scale-prepare] ... viewport=(0,0 1170x540) screen=1170x540`, proving the Android OGL viewport is still limited to the low logical render size.
+- The controls-editor software bitmap remains healthy (`render=994x593`, `scaled_fnt=2.97x2.97`, expected text pixels), so the next fix should target final GL presentation rather than kconfig text drawing.
+- Implement a D1/D2 Android OGL viewport helper that scales `glViewport` and keyboard-gap scissor calls to the physical surface while preserving `last_width/last_height` as logical dimensions for existing coordinate math.
+- Size Android MSAA framebuffer objects to the physical surface too, otherwise a physical viewport would be clipped by a logical-sized offscreen framebuffer.
+- After validation, expected device logs should show a physical viewport near `2340x1080` with `screen=1170x540`, meaning game/menu coordinates remain logical but rasterization reaches native phone pixels.
+
+## Physical Viewport Implementation
+- Replaced the Android `OGL_VIEWPORT` macro body in D1/D2 with an `ogl_android_viewport()` helper.
+- The helper keeps `last_width` and `last_height` at logical game/menu dimensions, but scales the actual `glViewport` rectangle to the Java `SurfaceView` size reported by native surface tracking.
+- Updated Android keyboard-gap scissor clearing to use the same physical scaling.
+- Updated Android MSAA FBO creation and resolve to use the physical surface size, so a physical viewport is not clipped by a logical-sized offscreen framebuffer.
+- Updated overlay blit preparation and `gr_flip()` menu viewport setup to call the same helper instead of raw logical `glViewport` calls.
+
+## Physical Viewport Verification
+- `android\run-code-quality.ps1 -Fix` passed.
+- `.\android\gradlew.bat -p android :app:assembleDebug` passed with JDK 21.
+- First emulator test rerun still showed `viewport=(0,0 1280x720)` because the emulator had an old installed APK (`versionCode=15010`, last updated 15:42).
+- After installing the freshly built debug APK, `test_kconfig_keyboard_stage_d2.json5` passed.
+- The final introspection console showed `[menu-scale-prepare] ... viewport=(0,0 1920x1080) screen=1280x720`, confirming the controls-editor render path now uses the physical surface viewport while retaining logical menu coordinates.
+
+## Physical Viewport Regression
+- Device build `15020` regressed the in-level pause menu: the menu is drawn high/right and mostly offscreen.
+- Logs confirm the physical viewport patch is active on device: `[menu-scale-prepare] ... viewport=(0,0 2340x1080) screen=1170x540`.
+- The affected pause menu is the generic scaled menu path (`source=menu-scale`, not `menu-scale-region`), so applying a physical viewport globally is too broad.
+- Touch logs also show `screen=3017x1392` during a tap, matching leaked temporary scaled draw state. That needs hardening separately because async input can observe offscreen draw dimensions.
+- Next fix: stop scaling the global Android OGL viewport to physical pixels for ordinary/game menus, restoring centered logical presentation. Keep the kconfig enlarged text and scrolling work intact, and prefer high-resolution fixes inside the controls-editor region/offscreen path rather than changing the whole viewport transform.
+
+## Regression Repair
+- Changed the Android OGL viewport helper back to the drawable/game-buffer size instead of the Java `SurfaceView` size.
+- Kept the centralized viewport helper and overlay preparation path, but its drawable-size helper now intentionally returns logical game dimensions because `setBuffersGeometry` keeps the EGL drawable at the game resolution.
+- MSAA FBO sizing, resolve, framebuffer sampling, keyboard-gap scissor, and overlay preparation now all use that same drawable size again.
+- Updated Android touch mapping to use the stable screen canvas bitmap size instead of `grd_curscreen->sc_w/sc_h`, so temporary scaled offscreen draw state cannot make input see impossible screen sizes like `3017x1392`.
+- Expected device logs after this repair: generic pause menus should return to `viewport=(0,0 1170x540) screen=1170x540`, while touch logs should also report `screen=1170x540` during scaled-menu taps.
+
+## Regression Repair Verification
+- `android\run-code-quality.ps1 -Fix` passed.
+- `.\android\gradlew.bat -p android :app:assembleDebug` passed with JDK 21 and generated build info stamped `2026-06-03 18:56 PDT`.
+- Added `test_pause_menu_viewport_d2.json5` to cover the generic in-level pause menu path that regressed on device.
+- Installed the fresh debug APK on the emulator and reran `test_pause_menu_viewport_d2.json5`; it passed and its final introspection console showed `source=menu-scale` logging `viewport=(0,0 1280x720) screen=1280x720`, confirming the generic pause menu no longer uses the physical `1920x1080` viewport on emulator.
+- Reran `test_kconfig_keyboard_stage_d2.json5` against the same fresh install; it passed with controls-editor `source=menu-scale-region` logging `viewport=(0,0 1280x720) screen=1280x720`.

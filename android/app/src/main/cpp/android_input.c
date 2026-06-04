@@ -133,6 +133,25 @@ static void android_update_cutscene_release_gate(void);
 
 static int g_levelcomplete_touch_state = 0;
 
+static void android_get_touch_screen_size(int *screen_w, int *screen_h)
+{
+	int w = 640;
+	int h = 480;
+
+	if (grd_curscreen) {
+		w = grd_curscreen->sc_canvas.cv_bitmap.bm_w;
+		h = grd_curscreen->sc_canvas.cv_bitmap.bm_h;
+		if (w <= 0 || h <= 0) {
+			w = grd_curscreen->sc_w;
+			h = grd_curscreen->sc_h;
+		}
+	}
+	if (screen_w)
+		*screen_w = w;
+	if (screen_h)
+		*screen_h = h;
+}
+
 void android_automation_joystick_button(int button, int pressed);
 
 static int android_handle_delayed_escape_touch(int action, int active,
@@ -448,10 +467,12 @@ void android_test_inject_touch_tap(void)
 		return;
 	}
 
-	int screenW = grd_curscreen ? grd_curscreen->sc_w : 640;
-	int screenH = grd_curscreen ? grd_curscreen->sc_h : 480;
-	int gameX = screenW > 2 ? screenW / 2 : 1;
-	int gameY = screenH > 2 ? screenH / 2 : 1;
+	int screenW, screenH;
+	int gameX, gameY;
+
+	android_get_touch_screen_size(&screenW, &screenH);
+	gameX = screenW > 2 ? screenW / 2 : 1;
+	gameY = screenH > 2 ? screenH / 2 : 1;
 
 	if (gameX < 0) gameX = 0;
 	if (gameX >= screenW) gameX = screenW - 1;
@@ -470,8 +491,8 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 	 * This avoids any mismatch between the Kotlin-side GAME_W/H
 	 * (from SharedPreferences) and the real engine resolution
 	 * (from descent.cfg via grd_curscreen). */
-	int screenW = grd_curscreen ? grd_curscreen->sc_w : 640;
-	int screenH = grd_curscreen ? grd_curscreen->sc_h : 480;
+	int screenW, screenH;
+	android_get_touch_screen_size(&screenW, &screenH);
 	if (g_intro_active) {
 		const int inside_intro_skip = android_intro_skip_touch_inside(normX, normY, screenW, screenH);
 		switch (action) {

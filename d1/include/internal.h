@@ -37,13 +37,8 @@ extern int last_width,last_height;
 #ifdef ANDROID
 extern int android_get_keyboard_y_offset(int canvas_h);
 extern int last_kb_off;
-#define OGL_VIEWPORT(x,y,w,h){ \
-	int _koff = android_get_keyboard_y_offset(grd_curscreen->sc_canvas.cv_bitmap.bm_h); \
-	if (w!=last_width || h!=last_height || _koff!=last_kb_off){ \
-		glViewport(x,grd_curscreen->sc_canvas.cv_bitmap.bm_h-y-h+_koff,w,h); \
-		last_width=w;last_height=h;last_kb_off=_koff; \
-	} \
-}
+void ogl_android_viewport(int x, int y, int w, int h);
+#define OGL_VIEWPORT(x,y,w,h) ogl_android_viewport(x,y,w,h)
 #else
 #define OGL_VIEWPORT(x,y,w,h){if (w!=last_width || h!=last_height){glViewport(x,grd_curscreen->sc_canvas.cv_bitmap.bm_h-y-h,w,h);last_width=w;last_height=h;}}
 #endif

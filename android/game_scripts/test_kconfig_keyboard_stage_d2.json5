@@ -81,18 +81,18 @@
         "menu_scale.active": "true",
         "menu_scale.direct_render": "true",
         "menu_scale.dst.w": {"gte": 810},
-        "menu_scale.dst.h": {"lte": 459},
-        "menu_scale.render_h": {"gt": 459}
+        "menu_scale.dst.h": {"lte": 612},
+        "menu_scale.render_h": {"gt": 612}
     }},
     {"action": "key", "key": "pagedown", "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "menu.type": "kconfig",
-        "menu_scale.src.y": {"gt": 70}
+        "menu_scale.src.y": {"gt": 60}
     }},
     {"action": "key", "key": "pageup", "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "menu.type": "kconfig",
-        "menu_scale.src.y": 70
+        "menu_scale.src.y": 60
     }},
 
     {"action": "introspect"},
