@@ -117,17 +117,19 @@ int android_menu_scale_compute_cropped(int source_x, int source_y, int source_w,
 }
 
 int android_menu_scale_compute_kconfig(int source_x, int source_y, int source_w,
-                                       int source_h, int screen_w, int screen_h, android_menu_scale_result *result)
+                                       int source_h, int screen_w, int screen_h, int *scroll_y,
+                                       android_menu_scale_result *result)
 {
-	float scale_x, scale_y, scale;
+	float scale;
+	int full_dst_w;
+	int full_dst_h;
+	int viewport_h;
 
 	clear_result(result);
 	if (!result || source_w <= 0 || source_h <= 0 || screen_w <= 0 || screen_h <= 0)
 		return 0;
 
-	scale_x = k_target_fill * screen_w / source_w;
-	scale_y = k_target_fill * screen_h / source_h;
-	scale = scale_x < scale_y ? scale_x : scale_y;
+	scale = k_target_fill * screen_w / source_w;
 	if (scale > k_kconfig_max_scale)
 		scale = k_kconfig_max_scale;
 	if (scale <= k_min_scale)
@@ -141,6 +143,47 @@ int android_menu_scale_compute_kconfig(int source_x, int source_y, int source_w,
 		return 0;
 
 	result->src = result->box;
+	full_dst_w = (int) (result->box.w * scale);
+	full_dst_h = (int) (result->box.h * scale);
+	if (full_dst_w <= 0 || full_dst_h <= 0)
+		return 0;
+
+	viewport_h = (int) (k_target_fill * screen_h);
+	if (viewport_h <= 0 || viewport_h > screen_h)
+		viewport_h = screen_h;
+
+	if (full_dst_h > viewport_h) {
+		int max_scroll;
+		int current_scroll = scroll_y ? *scroll_y : 0;
+
+		result->src.h = (int) (viewport_h / scale);
+		if (result->src.h <= 0)
+			return 0;
+		if (result->src.h > result->box.h)
+			result->src.h = result->box.h;
+		max_scroll = result->box.h - result->src.h;
+		if (current_scroll < 0)
+			current_scroll = 0;
+		if (current_scroll > max_scroll)
+			current_scroll = max_scroll;
+		if (scroll_y)
+			*scroll_y = current_scroll;
+
+		result->src.y = result->box.y + current_scroll;
+		result->dst.x = (screen_w - full_dst_w) / 2;
+		result->dst.y = (screen_h - viewport_h) / 2;
+		result->dst.w = full_dst_w;
+		result->dst.h = viewport_h;
+		result->scale = scale;
+		result->render_w = full_dst_w;
+		result->render_h = full_dst_h;
+		result->render_scale = scale;
+		result->active = 1;
+		return 1;
+	}
+
+	if (scroll_y)
+		*scroll_y = 0;
 	return compute_destination(result, screen_w, screen_h, scale);
 }
 
@@ -263,5 +306,47 @@ void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
 			gr_bitmap_scale_to(bitmap, &sub->cv_bitmap);
 		gr_free_sub_canvas(sub);
 	}
+#endif
+}
+
+void android_menu_scale_blit_bitmap_region(grs_bitmap *bitmap,
+                                           const android_menu_scale_result *result,
+                                           int source_y)
+{
+	int copy_h;
+
+	if (!bitmap || !result || !result->active)
+		return;
+	if (result->dst.w <= 0 || result->dst.h <= 0 || source_y < 0)
+		return;
+	if (source_y >= bitmap->bm_h)
+		return;
+
+	copy_h = result->dst.h;
+	if (source_y + copy_h > bitmap->bm_h)
+		copy_h = bitmap->bm_h - source_y;
+	if (copy_h <= 0)
+		return;
+
+#ifdef OGL
+	{
+		grs_bitmap *target_bitmap = &grd_curscreen->sc_canvas.cv_bitmap;
+		if (target_bitmap && target_bitmap->bm_type == BM_OGL)
+			ogl_ubitblt_i(result->dst.w, copy_h, result->dst.x,
+			              result->dst.y, result->dst.w, copy_h,
+			              0, source_y, bitmap, target_bitmap, 1);
+		else {
+			grs_canvas *save_canvas = grd_curcanv;
+			gr_set_current_canvas(NULL);
+			gr_bm_ubitblt(result->dst.w, copy_h, result->dst.x,
+			              result->dst.y, 0, source_y, bitmap,
+			              &grd_curscreen->sc_canvas.cv_bitmap);
+			gr_set_current_canvas(save_canvas);
+		}
+	}
+#else
+	gr_bm_ubitblt(result->dst.w, copy_h, result->dst.x,
+	              result->dst.y, 0, source_y, bitmap,
+	              &grd_curscreen->sc_canvas.cv_bitmap);
 #endif
 }

@@ -40,7 +40,8 @@ int android_menu_scale_compute_cropped(int source_x, int source_y, int source_w,
                                        int source_h, int screen_w, int screen_h, int border_x, int border_y,
                                        android_menu_scale_result *result);
 int android_menu_scale_compute_kconfig(int source_x, int source_y, int source_w,
-                                       int source_h, int screen_w, int screen_h, android_menu_scale_result *result);
+                                       int source_h, int screen_w, int screen_h, int *scroll_y,
+                                       android_menu_scale_result *result);
 void android_menu_scale_publish(const android_menu_scale_result *result);
 void android_menu_scale_clear(void);
 int android_menu_scale_get_state(android_menu_scale_result *result);
@@ -48,6 +49,9 @@ int android_menu_scale_begin_scaled_draw(float scale, android_menu_scale_draw_st
 void android_menu_scale_end_scaled_draw(const android_menu_scale_draw_state *state);
 void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
                                     const android_menu_scale_result *result, int masked);
+void android_menu_scale_blit_bitmap_region(grs_bitmap *bitmap,
+                                           const android_menu_scale_result *result,
+                                           int source_y);
 
 #ifdef __cplusplus
 }
