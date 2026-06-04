@@ -1,4 +1,4 @@
-// TEST: Stage D2 in-game Controls menu for touch coordinate debugging
+// TEST: Stage D2 in-game Controls menu at bottom scroll position
 [
     {"_info": {
         "games": ["d2"],

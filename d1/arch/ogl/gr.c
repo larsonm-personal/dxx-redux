@@ -152,24 +152,8 @@ static void ogl_android_recreate_egl_surface(void)
 
 	/* Match format and create new surface */
 	EGLint format;
-	{
-		int view_w, view_h, win_before_w, win_before_h, win_after_w, win_after_h, geo_ret;
-		extern int android_surface_get_display_width(void);
-		extern int android_surface_get_display_height(void);
-		eglGetConfigAttrib(eglDisplay, eglConfig, EGL_NATIVE_VISUAL_ID, &format);
-		view_w = android_surface_get_display_width();
-		view_h = android_surface_get_display_height();
-		win_before_w = ANativeWindow_getWidth(win);
-		win_before_h = ANativeWindow_getHeight(win);
-		geo_ret = ANativeWindow_setBuffersGeometry(win, grd_curscreen->sc_w, grd_curscreen->sc_h, format);
-		win_after_w = ANativeWindow_getWidth(win);
-		win_after_h = ANativeWindow_getHeight(win);
-		con_printf(CON_NORMAL,
-		           "[android-egl] recreate game=%dx%d view=%dx%d win_before=%dx%d win_after=%dx%d ret=%d\n",
-		           grd_curscreen->sc_w, grd_curscreen->sc_h,
-		           view_w, view_h, win_before_w, win_before_h,
-		           win_after_w, win_after_h, geo_ret);
-	}
+	eglGetConfigAttrib(eglDisplay, eglConfig, EGL_NATIVE_VISUAL_ID, &format);
+	ANativeWindow_setBuffersGeometry(win, grd_curscreen->sc_w, grd_curscreen->sc_h, format);
 
 	EGLint winAttribs[] = { EGL_RENDER_BUFFER, EGL_BACK_BUFFER, EGL_NONE, EGL_NONE };
 	eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, (EGLNativeWindowType)win, winAttribs);
@@ -516,21 +500,8 @@ int ogl_init_window(int x, int y)
 			 * the game resolution.  The Android compositor scales the
 			 * buffer to fill the physical display automatically. */
 			EGLint format;
-			int view_w, view_h, win_before_w, win_before_h, win_after_w, win_after_h, geo_ret;
-			extern int android_surface_get_display_width(void);
-			extern int android_surface_get_display_height(void);
 			eglGetConfigAttrib(eglDisplay, eglConfig, EGL_NATIVE_VISUAL_ID, &format);
-			view_w = android_surface_get_display_width();
-			view_h = android_surface_get_display_height();
-			win_before_w = ANativeWindow_getWidth(win);
-			win_before_h = ANativeWindow_getHeight(win);
-			geo_ret = ANativeWindow_setBuffersGeometry(win, x, y, format);
-			win_after_w = ANativeWindow_getWidth(win);
-			win_after_h = ANativeWindow_getHeight(win);
-			con_printf(CON_NORMAL,
-			           "[android-egl] init game=%dx%d view=%dx%d win_before=%dx%d win_after=%dx%d ret=%d\n",
-			           x, y, view_w, view_h, win_before_w,
-			           win_before_h, win_after_w, win_after_h, geo_ret);
+			ANativeWindow_setBuffersGeometry(win, x, y, format);
 
 			eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, (EGLNativeWindowType)win, winAttribs);
 		}

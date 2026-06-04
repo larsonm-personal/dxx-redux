@@ -1,4 +1,4 @@
-// TEST: Stage D2 in-game controls editor pages for readability debugging
+// TEST: Stage D2 in-game controls editor pages for readability regression coverage
 [
     {"_info": {
         "games": ["d2"],

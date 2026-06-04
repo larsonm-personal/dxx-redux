@@ -543,21 +543,7 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 	gameY += g_blit_y_offset;
 	if (gameY >= screenH) gameY = screenH - 1;
 
-	const int menu_touch_remapped = remap_touch(action, &gameX, &gameY);
-	if (g_menu_scale_active && (action == 0 || action == 2)) {
-		static int touch_menu_diag_count;
-		if (touch_menu_diag_count < 80) {
-			touch_menu_diag_count++;
-			debug_log(DLOG_GAME,
-			          "[touch-menu] action=%d norm=(%.4f,%.4f) game=(%d,%d) screen=%dx%d remap=%d scale src=(%d,%d %dx%d) dst=(%d,%d %dx%d) blit_y=%d\n",
-			          action, normX, normY, gameX, gameY, screenW, screenH,
-			          menu_touch_remapped,
-			          g_menu_scale_src_x, g_menu_scale_src_y,
-			          g_menu_scale_src_w, g_menu_scale_src_h,
-			          g_menu_scale_dst_x, g_menu_scale_dst_y,
-			          g_menu_scale_dst_w, g_menu_scale_dst_h, g_blit_y_offset);
-		}
-	}
+	remap_touch(action, &gameX, &gameY);
 
 	android_push_touch_action(action, gameX, gameY);
 }

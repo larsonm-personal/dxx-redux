@@ -287,7 +287,7 @@ void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
 			scaled.bm_flags |= BM_FLAG_TRANSPARENT;
 		if (target_bitmap && target_bitmap->bm_type == BM_OGL) {
 #ifdef ANDROID
-			ogl_android_prepare_overlay_blit("menu-scale");
+			ogl_android_prepare_overlay_blit();
 #endif
 			ogl_ubitblt_i(result->dst.w, result->dst.h, result->dst.x,
 			              result->dst.y, result->dst.w, result->dst.h,
@@ -318,7 +318,6 @@ void android_menu_scale_blit_bitmap_region(grs_bitmap *bitmap,
                                            const android_menu_scale_result *result,
                                            int source_y)
 {
-	static int diag_count;
 	int copy_h;
 
 	if (!bitmap || !result || !result->active)
@@ -339,27 +338,8 @@ void android_menu_scale_blit_bitmap_region(grs_bitmap *bitmap,
 		grs_bitmap *target_bitmap = &grd_curscreen->sc_canvas.cv_bitmap;
 		if (target_bitmap && target_bitmap->bm_type == BM_OGL) {
 #ifdef ANDROID
-			ogl_android_prepare_overlay_blit("menu-scale-region");
+			ogl_android_prepare_overlay_blit();
 #endif
-			if (diag_count < 16) {
-				int first_tile_w = result->dst.w < k_blit_tile_size ? result->dst.w : k_blit_tile_size;
-				int first_tile_h = copy_h < k_blit_tile_size ? copy_h : k_blit_tile_size;
-				int tile_cols = (result->dst.w + k_blit_tile_size - 1) / k_blit_tile_size;
-				int tile_rows = (copy_h + k_blit_tile_size - 1) / k_blit_tile_size;
-
-				diag_count++;
-				con_printf(CON_NORMAL,
-				           "[menu-scale-blit] ogl region bitmap=%dx%d rowsize=%d source_y=%d copy=%dx%d dst=(%d,%d %dx%d) src=(%d,%d %dx%d) render=%dx%d tile=%d tiles=%dx%d first=%dx%d pow2=%dx%d max_tex=%d\n",
-				           bitmap->bm_w, bitmap->bm_h, bitmap->bm_rowsize,
-				           source_y, result->dst.w, copy_h, result->dst.x,
-				           result->dst.y, result->dst.w, result->dst.h,
-				           result->src.x, result->src.y, result->src.w,
-				           result->src.h, result->render_w, result->render_h,
-				           k_blit_tile_size, tile_cols, tile_rows,
-				           first_tile_w, first_tile_h, pow2ize(first_tile_w),
-				           pow2ize(first_tile_h), ogl_max_texture_size);
-			}
-
 			int tile_y;
 
 			for (tile_y = 0; tile_y < copy_h; tile_y += k_blit_tile_size) {

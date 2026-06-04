@@ -2562,21 +2562,13 @@ void ogl_prepare_framebuffer_readback(void)
 }
 
 #ifdef ANDROID
-void ogl_android_prepare_overlay_blit(const char *source)
+void ogl_android_prepare_overlay_blit(void)
 {
-	static int diag_count_general;
-	static int diag_count_region;
-	int is_region = source && strstr(source, "region");
-	int *diag_count = is_region ? &diag_count_region : &diag_count_general;
 	int before_bound = g_msaa_fbo_bound;
 	int before_depth = g_msaa_frame_depth;
-	int prev_last_width = last_width;
-	int prev_last_height = last_height;
 	int w = grd_curscreen ? grd_curscreen->sc_w : 0;
 	int h = grd_curscreen ? grd_curscreen->sc_h : 0;
 	int koff = 0;
-	GLint fb = 0;
-	GLint viewport[4] = {0, 0, 0, 0};
 
 	if (before_bound && before_depth == 0)
 		ogl_prepare_framebuffer_readback();
@@ -2601,19 +2593,6 @@ void ogl_android_prepare_overlay_blit(const char *source)
 #ifdef OGL_MERGE
 	ogl_prog_set_matrix(ogl_mat_ortho);
 #endif
-
-	if (*diag_count < 16) {
-		(*diag_count)++;
-		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fb);
-		glGetIntegerv(GL_VIEWPORT, viewport);
-		con_printf(CON_NORMAL,
-		           "[menu-scale-prepare] source=%s msaa_bound=%d frame_depth=%d fb=%d viewport=(%d,%d %dx%d) screen=%dx%d prev_last=%dx%d koff=%d\n",
-		           source ? source : "unknown", before_bound,
-		           before_depth, (int)fb, (int)viewport[0],
-		           (int)viewport[1], (int)viewport[2],
-		           (int)viewport[3], w, h, prev_last_width,
-		           prev_last_height, koff);
-	}
 }
 #endif
 

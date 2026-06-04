@@ -120,3 +120,16 @@ Status: physical Android viewport regression repaired and validated on emulator
 - `.\android\gradlew.bat -p android :app:assembleDebug` passed with JDK 21.
 - `test_kconfig_keyboard_stage_d2.json5` passed on the emulator. The controls editor kept the expected `menu-scale-region` geometry, and the final kconfig bitmap hash/color counts changed from the earlier build, confirming the offscreen text payload is different.
 - `test_pause_menu_viewport_d2.json5` passed on the emulator, preserving the fixed generic pause-menu viewport path.
+
+## Cleanup Plan
+- Keep `test_kconfig_keyboard_stage_d2.json5` and `test_pause_menu_viewport_d2.json5`; they now protect the readable controls editor, scroll behavior, and repaired pause-menu viewport.
+- Remove temporary controls-editor bitmap statistics and scale-state logs from D1/D2 kconfig.
+- Remove temporary menu-scale overlay preparation/blit logs now that viewport and tiling are stable.
+- Remove temporary touch remap logs and EGL surface-size logs that were only needed for device diagnosis.
+- Rebuild and rerun the same kconfig and pause-menu tests after cleanup.
+
+## Cleanup Status
+- Removed the temporary kconfig bitmap/stat logs from D1/D2 while keeping the high-resolution scaled glyph path and scrollable render path intact.
+- Removed the temporary menu-scale prepare/blit logs and simplified `ogl_android_prepare_overlay_blit()` back to behavior-only state setup.
+- Removed temporary touch-remap and EGL surface-size logs while preserving the stable menu touch rect mapping and logical viewport repair.
+- Kept the controls-bottom, controls-editor, and pause-menu scripts as regression coverage rather than throwaway test code.
