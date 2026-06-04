@@ -489,6 +489,7 @@ class MainActivity :
     private var adminTrayPausedGame = false
     private var adminTrayCloseGraceUntilMs = 0L
     private var isMultiplayerGame = false
+    private var mainViewFovLockedToBase = false
     private var imeNavigationDispatchDepth = 0
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
@@ -658,9 +659,9 @@ class MainActivity :
             )
         }
         try {
-            val restrictNonCoopFovToBase =
+            mainViewFovLockedToBase =
                 mpMode == "join" && intent.getBooleanExtra("mp_restrict_noncoop_fov_to_base", false)
-            nativeSetGraphicsOption("main_view_fov_locked", if (restrictNonCoopFovToBase) 1 else 0)
+            nativeSetGraphicsOption("main_view_fov_locked", if (mainViewFovLockedToBase) 1 else 0)
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }
@@ -846,6 +847,25 @@ class MainActivity :
                 // JNI not ready yet
             }
         }
+        touchOverlay.adminTrayFovProvider = {
+            val stored = readConfigValueForGame(filesDir, gameVariantId, "MainViewFov")?.toIntOrNull() ?: 0
+            when (stored) {
+                100, 110, 120 -> stored
+                else -> 0
+            }
+        }
+        touchOverlay.adminTrayFovSetter = { value ->
+            val fov =
+                when (value) {
+                    100, 110, 120 -> value
+                    else -> 0
+                }
+            try {
+                nativeSetGraphicsOption("main_view_fov", fov)
+            } catch (_: Exception) {
+                updateAllConfigFiles(filesDir, listOf("MainViewFov" to fov.toString()))
+            }
+        }
         touchOverlay.adminTrayToggleStateProvider = { action ->
             when (action) {
                 TouchOverlayView.ADMIN_NET_STATS -> netStatsOverlay?.visibility == View.VISIBLE
@@ -870,6 +890,10 @@ class MainActivity :
                     } catch (_: Exception) {
                         false
                     }
+                }
+
+                TouchOverlayView.ADMIN_FOV -> {
+                    !mainViewFovLockedToBase
                 }
 
                 else -> {

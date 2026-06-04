@@ -641,8 +641,8 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 {
 	const char *name = (*env)->GetStringUTFChars(env, jname, NULL);
 	int persist = strcmp(name, "alpha_effects") &&
-		strcmp(name, "dynlight_color") &&
-		strcmp(name, "main_view_fov_locked");
+	              strcmp(name, "dynlight_color") &&
+	              strcmp(name, "main_view_fov_locked");
 	LOGI("graphics option: %s=%d", name, (int) value);
 	if (!android_graphics_set_option(name, (int) value, persist))
 		LOGE("nativeSetGraphicsOption: unknown option '%s'", name);

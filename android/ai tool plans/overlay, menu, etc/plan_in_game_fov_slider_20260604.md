@@ -8,6 +8,7 @@
 - [x] Surveyed multiplayer host option persistence and launch plumbing.
 - [x] Implemented the FOV setting.
 - [x] Added practical validation notes.
+- [x] Added the same FOV slider to the in-game admin tray overlay.
 
 ## Current FOV System
 
@@ -169,6 +170,8 @@ Host behavior:
 
 - Added `MainViewFov` to D1 and D2 `descent.cfg` structs, read/write paths, Android runtime sync, live native graphics options, and Android config export/import.
 - Added a Graphics page slider with snapped values: `Base`, `100 deg`, `110 deg`, and `120 deg`.
+- Added an in-game admin tray FOV slider with the same snapped values. It reads the same persisted `MainViewFov` preference and live-applies through the same `main_view_fov` native graphics option while the engine is running.
+- The admin tray FOV slider is disabled when a joined non-coop multiplayer session has locked clients to base FOV.
 - Added Android-only D1/D2 render helpers for the main player view:
   - Base FOV path still calls the original `render_frame`.
   - Wider FOV path renders a base pass first for gameplay-visible rendered-object lists and demo recording, then renders a visual-only wider pass.
@@ -181,7 +184,7 @@ Host behavior:
 ## Validation Notes
 
 - `git diff --check -- . ':!android/outstanding_bugs.md'` passed. Git reported line-ending normalization warnings on existing CRLF files only.
-- Attempted `android/gradlew.bat :app:assembleDebug`, but Gradle stopped before compilation because the local shell is using Java 8 and the Android build requires Java 17 or newer.
+- `android/gradlew.bat :app:assembleDebug` passed after setting `JAVA_HOME=C:\local\jdk-21`. The native build still reports pre-existing warnings, but the APK assembled successfully.
 
 ## Open Decisions
 

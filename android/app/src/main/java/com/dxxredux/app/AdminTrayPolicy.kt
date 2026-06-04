@@ -15,7 +15,10 @@ internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
 
 internal fun adminTrayUsesSlider(actionIndex: Int): Boolean =
     when (actionIndex) {
-        TouchOverlayView.ADMIN_BRIGHTNESS -> true
+        TouchOverlayView.ADMIN_BRIGHTNESS,
+        TouchOverlayView.ADMIN_FOV,
+        -> true
+
         else -> false
     }
 
@@ -43,6 +46,28 @@ internal fun stepAdminTrayBrightness(
 internal fun adminTrayBrightnessFromFraction(fraction: Float): Int =
     clampAdminTrayBrightness((fraction.coerceIn(0f, 1f) * 16f).roundToInt())
 
+private val ADMIN_TRAY_FOV_VALUES = intArrayOf(0, 100, 110, 120)
+
+internal fun clampAdminTrayFov(value: Int): Int = if (value in ADMIN_TRAY_FOV_VALUES) value else 0
+
+internal fun adminTrayFovIndex(value: Int): Int =
+    ADMIN_TRAY_FOV_VALUES.indexOf(clampAdminTrayFov(value)).coerceAtLeast(0)
+
+internal fun stepAdminTrayFov(
+    value: Int,
+    delta: Int,
+): Int = ADMIN_TRAY_FOV_VALUES[(adminTrayFovIndex(value) + delta).coerceIn(0, ADMIN_TRAY_FOV_VALUES.lastIndex)]
+
+internal fun adminTrayFovFromFraction(fraction: Float): Int =
+    ADMIN_TRAY_FOV_VALUES[
+        (fraction.coerceIn(0f, 1f) * ADMIN_TRAY_FOV_VALUES.lastIndex).roundToInt(),
+    ]
+
+internal fun adminTrayFovLabel(value: Int): String {
+    val fov = clampAdminTrayFov(value)
+    return if (fov == 0) "Base" else "$fov deg"
+}
+
 internal fun adminTrayActionEnabled(
     actionIndex: Int,
     enabledProvider: ((Int) -> Boolean)? = null,
@@ -67,6 +92,7 @@ internal fun adminTrayVisibleActions(
             TouchOverlayView.ADMIN_QUICK_SAVE,
             TouchOverlayView.ADMIN_VIDEO_INFO,
             TouchOverlayView.ADMIN_BRIGHTNESS,
+            TouchOverlayView.ADMIN_FOV,
         )
     if (showNetworkActions) {
         actions.add(2, TouchOverlayView.ADMIN_NET_STATS)
