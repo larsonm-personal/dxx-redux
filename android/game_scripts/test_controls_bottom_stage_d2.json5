@@ -21,6 +21,10 @@
     {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "write_config", "file": "descent.cfg",
+     "content": "AspectX=9\nAspectY=16\nResolutionX=1280\nResolutionY=720\nCornerTextInset=1\n"},
+    {"action": "write_config", "file": "d2x-redux/descent.cfg",
+     "content": "AspectX=9\nAspectY=16\nResolutionX=1280\nResolutionY=720\nCornerTextInset=1\n"},
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
@@ -42,7 +46,10 @@
         "menu_subtitle": "Controls",
         "menu.is_scroll_box": "true",
         "menu.scroll_offset": {"gt": 0},
-        "menu_scale.active": "true"
+        "menu.selected_index": "21",
+        "menu.items[19].text": "GAME SYSTEM KEYS",
+        "menu.items[20].text": "NETGAME SYSTEM KEYS",
+        "menu.items[21].text": "DEMO SYSTEM KEYS"
     }},
     {"action": "introspect"},
     {"action": "log", "message": "=== STAGED: D2 Controls menu at bottom ==="}

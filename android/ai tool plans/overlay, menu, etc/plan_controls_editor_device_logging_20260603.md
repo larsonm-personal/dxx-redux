@@ -133,3 +133,10 @@ Status: physical Android viewport regression repaired and validated on emulator
 - Removed the temporary menu-scale prepare/blit logs and simplified `ogl_android_prepare_overlay_blit()` back to behavior-only state setup.
 - Removed temporary touch-remap and EGL surface-size logs while preserving the stable menu touch rect mapping and logical viewport repair.
 - Kept the controls-bottom, controls-editor, and pause-menu scripts as regression coverage rather than throwaway test code.
+
+## Cleanup Verification
+- `android\run-code-quality.ps1 -Fix` passed after cleanup.
+- `.\android\gradlew.bat -p android :app:assembleDebug` passed with JDK 21.
+- `test_kconfig_keyboard_stage_d2.json5` passed after installing the fresh debug APK.
+- `test_pause_menu_viewport_d2.json5` passed on the same installed build.
+- `test_controls_bottom_stage_d2.json5` now forces the same stable `1280x720` test render config and asserts the bottom Controls menu rows directly; it passed after the update.
