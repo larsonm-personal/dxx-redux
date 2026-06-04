@@ -189,6 +189,11 @@ class MainActivity :
 
     external fun nativeSetSurface(surface: Surface?)
 
+    external fun nativeSetSurfaceSize(
+        width: Int,
+        height: Int,
+    )
+
     external fun nativeTouchEvent(
         action: Int,
         normX: Float,
@@ -1455,6 +1460,7 @@ class MainActivity :
 
     // ── SurfaceHolder.Callback ──────────────────────────────
     override fun surfaceCreated(holder: SurfaceHolder) {
+        nativeSetSurfaceSize(holder.surfaceFrame.width(), holder.surfaceFrame.height())
         nativeSetSurface(holder.surface)
         updateRoundedCornerTextInsets()
 
@@ -1503,11 +1509,13 @@ class MainActivity :
         width: Int,
         height: Int,
     ) {
+        nativeSetSurfaceSize(width, height)
         nativeSetSurface(holder.surface)
         updateRoundedCornerTextInsets()
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
+        nativeSetSurfaceSize(0, 0)
         nativeSetSurface(null)
     }
 

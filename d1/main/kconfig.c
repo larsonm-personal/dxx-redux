@@ -601,9 +601,81 @@ static void android_kconfig_scroll_by(kc_menu *menu, int delta_y)
 		menu->android_scroll_y = 0;
 }
 
+static void android_kconfig_log_bitmap_stats(const char *phase,
+                                             const grs_bitmap *bitmap,
+                                             const android_menu_scale_result *result,
+                                             int source_y)
+{
+	int hist[256];
+	int top_color[5] = { 0, 0, 0, 0, 0 };
+	int top_count[5] = { 0, 0, 0, 0, 0 };
+	int label_color = BM_XRGB(28,28,28);
+	int normal_color = BM_XRGB(20,20,29);
+	int selected_color = BM_XRGB(15,15,24);
+	int box_color = BM_XRGB(21,0,24);
+	int yellow_color = BM_XRGB(31,27,6);
+	unsigned int hash = 2166136261U;
+	int copy_w, copy_h;
+	int x, y, i;
+
+	if (!bitmap || !result || source_y < 0 || source_y >= bitmap->bm_h)
+		return;
+
+	copy_w = result->dst.w;
+	copy_h = result->dst.h;
+	if (copy_w > bitmap->bm_w)
+		copy_w = bitmap->bm_w;
+	if (source_y + copy_h > bitmap->bm_h)
+		copy_h = bitmap->bm_h - source_y;
+	if (copy_w <= 0 || copy_h <= 0)
+		return;
+
+	memset(hist, 0, sizeof(hist));
+	for (y = 0; y < copy_h; y++) {
+		const ubyte *row = bitmap->bm_data + (source_y + y) * bitmap->bm_rowsize;
+
+		for (x = 0; x < copy_w; x++) {
+			ubyte c = row[x];
+
+			hist[c]++;
+			hash ^= c;
+			hash *= 16777619U;
+		}
+	}
+
+	for (i = 0; i < 256; i++) {
+		int slot;
+
+		for (slot = 0; slot < 5; slot++) {
+			if (hist[i] > top_count[slot]) {
+				int move;
+
+				for (move = 4; move > slot; move--) {
+					top_count[move] = top_count[move - 1];
+					top_color[move] = top_color[move - 1];
+				}
+				top_count[slot] = hist[i];
+				top_color[slot] = i;
+				break;
+			}
+		}
+	}
+
+	con_printf(CON_NORMAL,
+	           "[kconfig-bitmap] %s src_y=%d area=%dx%d hash=%08x label=%d:%d normal=%d:%d selected=%d:%d box=%d:%d yellow=%d:%d top=%d:%d,%d:%d,%d:%d,%d:%d,%d:%d\n",
+	           phase, source_y, copy_w, copy_h, hash,
+	           label_color, hist[label_color], normal_color,
+	           hist[normal_color], selected_color, hist[selected_color],
+	           box_color, hist[box_color], yellow_color, hist[yellow_color],
+	           top_color[0], top_count[0], top_color[1], top_count[1],
+	           top_color[2], top_count[2], top_color[3], top_count[3],
+	           top_color[4], top_count[4]);
+}
+
 static void android_kconfig_draw_scaled(kc_menu *menu,
                                         android_menu_scale_result *result)
 {
+	static int diag_count;
 	grs_bitmap render_bitmap;
 	grs_canvas scaled_canvas, menu_canvas;
 	grs_canvas *window_canvas = window_get_canvas(menu->wind);
@@ -611,9 +683,30 @@ static void android_kconfig_draw_scaled(kc_menu *menu,
 	android_menu_scale_draw_state draw_state;
 	float scale;
 	int bitmap_y;
+	int should_diag;
 
 	if (!result || !result->active || result->render_w <= 0 || result->render_h <= 0)
 		return;
+
+	should_diag = diag_count < 16;
+	if (should_diag) {
+		diag_count++;
+		con_printf(CON_NORMAL,
+		           "[kconfig-scale] screen=%dx%d box=(%d,%d %dx%d) src=(%d,%d %dx%d) dst=(%d,%d %dx%d) render=%dx%d scale=%.2f fnt=%.2fx%.2f font=%dx%d scroll=%d nitems=%d window=(%d,%d %dx%d)\n",
+		           SWIDTH, SHEIGHT, result->box.x, result->box.y,
+		           result->box.w, result->box.h, result->src.x,
+		           result->src.y, result->src.w, result->src.h,
+		           result->dst.x, result->dst.y, result->dst.w,
+		           result->dst.h, result->render_w, result->render_h,
+		           result->scale, FNTScaleX, FNTScaleY,
+		           GAME_FONT ? GAME_FONT->ft_w : -1,
+		           GAME_FONT ? GAME_FONT->ft_h : -1,
+		           menu->android_scroll_y, menu->nitems,
+		           window_canvas ? window_canvas->cv_bitmap.bm_x : -1,
+		           window_canvas ? window_canvas->cv_bitmap.bm_y : -1,
+		           window_canvas ? window_canvas->cv_bitmap.bm_w : -1,
+		           window_canvas ? window_canvas->cv_bitmap.bm_h : -1);
+	}
 
 	scale = result->scale;
 	gr_init_bitmap_alloc(&render_bitmap, BM_LINEAR, 0, 0, result->render_w,
@@ -626,11 +719,18 @@ static void android_kconfig_draw_scaled(kc_menu *menu,
 		gr_set_current_canvas(&scaled_canvas);
 		nm_draw_background(0, 0, result->render_w, result->render_h);
 		if (window_canvas) {
+			int menu_x = android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_x - result->box.x, scale);
+			int menu_y = android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_y - result->box.y, scale);
+			int menu_w = android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_w, scale);
+			int menu_h = android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_h, scale);
+
+			if (should_diag)
+				con_printf(CON_NORMAL,
+				           "[kconfig-drawstate] scaled_screen=%dx%d scaled_fnt=%.2fx%.2f menu_canvas=(%d,%d %dx%d)\n",
+				           SWIDTH, SHEIGHT, FNTScaleX, FNTScaleY,
+				           menu_x, menu_y, menu_w, menu_h);
 			gr_init_sub_canvas(&menu_canvas, &scaled_canvas,
-			                   android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_x - result->box.x, scale),
-			                   android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_y - result->box.y, scale),
-			                   android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_w, scale),
-			                   android_kconfig_scale_coord(window_canvas->cv_bitmap.bm_h, scale));
+			                   menu_x, menu_y, menu_w, menu_h);
 			kconfig_draw_contents(menu, &menu_canvas);
 		}
 		android_menu_scale_end_scaled_draw(&draw_state);
@@ -641,6 +741,9 @@ static void android_kconfig_draw_scaled(kc_menu *menu,
 
 	gr_set_current_canvas(save_canvas);
 	bitmap_y = android_kconfig_scroll_bitmap_y(result);
+	if (should_diag)
+		android_kconfig_log_bitmap_stats("post-draw", &render_bitmap, result,
+		                                 bitmap_y);
 	android_menu_scale_blit_bitmap_region(&render_bitmap, result, bitmap_y);
 	gr_set_current_canvas(save_canvas);
 	gr_free_bitmap_data(&render_bitmap);

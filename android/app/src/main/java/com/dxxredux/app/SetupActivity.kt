@@ -341,6 +341,7 @@ class SetupActivity : ComponentActivity() {
         AudioSourceManager(filesDir).writePlaylist(contentResolver)
         modManager.writeEnabledModPaths(game)
         writeInitialGameConfig()
+        migrateLegacyHalfRenderResolution()
         writeMusicConfigForLaunch()
         return null
     }
@@ -1739,9 +1740,11 @@ class SetupActivity : ComponentActivity() {
 
         Log.i("DXX-Setup", "First launch: writing descent.cfg with aspect ${aspectY}x$aspectX (from ${w}x$h)")
 
-        // Default render resolution: 1/2 screen (rounded to even)
-        val resW = (w / 2 + 1) and 0x7FFFFFFE
-        val resH = (h / 2 + 1) and 0x7FFFFFFE
+        // Default render resolution: full screen (rounded to even). The old
+        // half-screen default made small in-game menu text unreadable on high
+        // DPI phones after Android compositor scaling.
+        val resW = (w + 1) and 0x7FFFFFFE
+        val resH = (h + 1) and 0x7FFFFFFE
 
         // Write to all config paths (root + game subdirs) so the game finds
         // the resolution in whichever PHYSFS search path it checks first
@@ -1762,6 +1765,30 @@ class SetupActivity : ComponentActivity() {
             .putString("render_resolution", "${resW}x$resH")
             .apply()
         Log.i("DXX-Setup", "First launch: default resolution ${resW}x$resH")
+    }
+
+    private fun migrateLegacyHalfRenderResolution() {
+        val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+        if (prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L) != 0L) return
+
+        val options = computeResolutionOptions(this)
+        val full = options.getOrNull(0)?.first ?: return
+        val half = options.getOrNull(1)?.first ?: return
+        if (full == half) return
+
+        val stored = prefs.getString("render_resolution", null)
+        val cfg =
+            readConfigValue(filesDir, "ResolutionX")
+                ?.let { w -> readConfigValue(filesDir, "ResolutionY")?.let { h -> "${w}x$h" } }
+        if (cfg != half || (stored != null && stored != half)) return
+
+        updateDescentCfgResolution(filesDir, full)
+        prefs
+            .edit()
+            .putString("render_resolution", full)
+            .putBoolean("render_resolution_default_full_migrated", true)
+            .apply()
+        Log.i("DXX-Setup", "Migrated legacy default render resolution from $half to $full")
     }
 
     /**

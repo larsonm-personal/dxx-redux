@@ -19,6 +19,25 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Get-UploadedBuildStamp {
+    $buildInfoPath = Join-Path $PSScriptRoot "app\src\main\java\com\dxxredux\app\BuildInfo.kt"
+    if (-not (Test-Path $buildInfoPath)) {
+        return "<missing BuildInfo.kt>"
+    }
+
+    $content = Get-Content $buildInfoPath -Raw
+    $dateMatch = [regex]::Match($content, 'const val BUILD_DATE = "([^"]+)"')
+    $timeMatch = [regex]::Match($content, 'const val BUILD_TIME = "([^"]+)"')
+
+    if (-not $dateMatch.Success) {
+        return "<missing BUILD_DATE>"
+    }
+    if (-not $timeMatch.Success) {
+        return $dateMatch.Groups[1].Value
+    }
+    return "$($dateMatch.Groups[1].Value) $($timeMatch.Groups[1].Value)"
+}
+
 Push-Location $PSScriptRoot
 try {
     Write-Host ""
@@ -107,9 +126,11 @@ try {
     }
 
     if ($BuildOnly) {
+        $buildStamp = Get-UploadedBuildStamp
         Write-Host ""
         Write-Host "================================"
         Write-Host "Build-only run completed successfully"
+        Write-Host "Build stamp: $buildStamp"
         Write-Host "================================"
         Write-Host ""
         return
@@ -125,8 +146,10 @@ try {
     }
 
     Write-Host ""
+    $buildStamp = Get-UploadedBuildStamp
     Write-Host "================================"
     Write-Host "Build and upload completed successfully!"
+    Write-Host "Uploaded build stamp: $buildStamp"
     Write-Host "================================"
     Write-Host ""
 

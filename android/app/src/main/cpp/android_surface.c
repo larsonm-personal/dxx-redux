@@ -35,8 +35,22 @@ static int g_last_geo_w = 0, g_last_geo_h = 0;
 static volatile int g_app_paused = 0;
 static volatile int g_egl_surface_stale = 0;
 static int g_had_surface = 0;
+static int g_surface_view_w = 0;
+static int g_surface_view_h = 0;
 
 /* ── JNI entry points called from Kotlin ────────────────────── */
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetSurfaceSize(JNIEnv *env, jobject thiz, jint width, jint height)
+{
+	(void) env;
+	(void) thiz;
+	pthread_mutex_lock(&g_surface_mutex);
+	g_surface_view_w = width > 0 ? width : 0;
+	g_surface_view_h = height > 0 ? height : 0;
+	LOGI("SurfaceView size %dx%d", g_surface_view_w, g_surface_view_h);
+	pthread_mutex_unlock(&g_surface_mutex);
+}
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetSurface(JNIEnv *env, jobject thiz, jobject surface)
@@ -59,9 +73,10 @@ Java_com_dxxredux_app_MainActivity_nativeSetSurface(JNIEnv *env, jobject thiz, j
 				LOGI("ANativeWindow re-acquired — EGL surface marked stale");
 			}
 			g_had_surface = 1;
-			LOGI("ANativeWindow acquired (%dx%d)",
+			LOGI("ANativeWindow acquired (%dx%d), view=%dx%d",
 			     ANativeWindow_getWidth(g_native_window),
-			     ANativeWindow_getHeight(g_native_window));
+			     ANativeWindow_getHeight(g_native_window),
+			     g_surface_view_w, g_surface_view_h);
 		} else {
 			g_surface_ready = 0;
 			LOGE("Failed to get ANativeWindow from surface");
@@ -225,11 +240,15 @@ ANativeWindow *android_surface_get_native_window(void)
 
 int android_surface_get_display_width(void)
 {
+	if (g_surface_view_w > 0)
+		return g_surface_view_w;
 	return g_native_window ? ANativeWindow_getWidth(g_native_window) : 0;
 }
 
 int android_surface_get_display_height(void)
 {
+	if (g_surface_view_h > 0)
+		return g_surface_view_h;
 	return g_native_window ? ANativeWindow_getHeight(g_native_window) : 0;
 }
 
