@@ -36,6 +36,17 @@ static int      g_play_count        = 0;   /* total bqPlayerCallback calls   */
 static int      g_enqueue_fail      = 0;   /* Enqueue failures               */
 static int      g_audio_freq        = 0;   /* stored sample rate for stats   */
 static int      g_audio_buf_frames  = 0;   /* samples per buffer             */
+static int      g_perf_mode_result  = -1;
+static int      g_sfx_pending       = 0;
+static int      g_sfx_start_ms      = 0;
+static int      g_sfx_start_cb      = 0;
+static int      g_sfx_soundnum      = -1;
+static int      g_sfx_channel       = -1;
+static int      g_sfx_last_delay_ms = -1;
+static int      g_sfx_last_soundnum = -1;
+static int      g_sfx_last_channel  = -1;
+static int      g_sfx_last_cb_delta = -1;
+static int      g_sfx_probe_count   = 0;
 
 /* ── Native audio properties (set from JNI before audio init) ─ */
 int g_android_native_sample_rate  = 0;   /* 0 = not yet queried */
@@ -47,6 +58,15 @@ static void ANDROIDAUD_WaitAudio(_THIS);
 static void ANDROIDAUD_PlayAudio(_THIS);
 static Uint8 *ANDROIDAUD_GetAudioBuf(_THIS);
 static void ANDROIDAUD_CloseAudio(_THIS);
+
+void androidaud_note_sfx_start(int soundnum, int channel)
+{
+    g_sfx_soundnum = soundnum;
+    g_sfx_channel = channel;
+    g_sfx_start_cb = g_play_count;
+    g_sfx_start_ms = (int)SDL_GetTicks();
+    g_sfx_pending = 1;
+}
 
 /* ── Bootstrap ─────────────────────────────────────────────── */
 
@@ -122,6 +142,21 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
 
     h->next_buf = (buf_idx + 1) % NUM_BUFFERS;
     g_play_count++;
+
+    if (g_sfx_pending) {
+        int now_ms = (int)SDL_GetTicks();
+        g_sfx_last_delay_ms = now_ms - g_sfx_start_ms;
+        g_sfx_last_soundnum = g_sfx_soundnum;
+        g_sfx_last_channel = g_sfx_channel;
+        g_sfx_last_cb_delta = g_play_count - g_sfx_start_cb;
+        g_sfx_pending = 0;
+        g_sfx_probe_count++;
+        if (g_sfx_probe_count <= 64 || (g_sfx_probe_count % 32) == 0) {
+            LOGI("sfx latency probe: sound=%d channel=%d delay_ms=%d callbacks=%d buf_idx=%d play_count=%d",
+                 g_sfx_last_soundnum, g_sfx_last_channel, g_sfx_last_delay_ms,
+                 g_sfx_last_cb_delta, buf_idx, g_play_count);
+        }
+    }
 
     /* Log stats every ~2 seconds */
     if (g_audio_buf_frames > 0 && g_audio_freq > 0) {
@@ -210,7 +245,7 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     };
     SLDataSink audioSnk = { &loc_outmix, NULL };
 
-    /* Request NONE performance mode (API 26+, optional) */
+    /* Request low latency performance mode when Android exposes it. */
     const SLInterfaceID ids[2] = { SL_IID_BUFFERQUEUE, SL_IID_ANDROIDCONFIGURATION };
     const SLboolean     req[2] = { SL_BOOLEAN_TRUE,    SL_BOOLEAN_FALSE };
 
@@ -220,16 +255,20 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
         LOGE("CreateAudioPlayer failed: %d", (int)result);
         return -1;
     }
-    /* Set NONE performance mode before Realize (API 26+) */
+    /* Set latency performance mode before Realize (API 26+). */
     {
         SLAndroidConfigurationItf cfg;
         if ((*h->playerObject)->GetInterface(h->playerObject,
                 SL_IID_ANDROIDCONFIGURATION, &cfg) == SL_RESULT_SUCCESS) {
-            SLuint32 perfMode = SL_ANDROID_PERFORMANCE_NONE;
-            (*cfg)->SetConfiguration(cfg,
+            SLuint32 perfMode = SL_ANDROID_PERFORMANCE_LATENCY;
+            g_perf_mode_result = (*cfg)->SetConfiguration(cfg,
                 SL_ANDROID_KEY_PERFORMANCE_MODE,
                 &perfMode, sizeof(perfMode));
-            LOGI("OpenSL ES: performance mode set to NONE");
+            LOGI("OpenSL ES: requested LATENCY performance mode result=%d",
+                 g_perf_mode_result);
+        } else {
+            g_perf_mode_result = -2;
+            LOGI("OpenSL ES: Android configuration interface unavailable");
         }
     }
 
@@ -265,6 +304,11 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     g_audio_buf_frames = spec->samples;
     g_play_count = 0;
     g_enqueue_fail = 0;
+    g_sfx_pending = 0;
+    g_sfx_last_delay_ms = -1;
+    g_sfx_last_soundnum = -1;
+    g_sfx_last_channel = -1;
+    g_sfx_last_cb_delta = -1;
 
     return 0;
 }
@@ -323,5 +367,12 @@ int androidaud_get_play_count(void)      { return g_play_count; }
 int androidaud_get_enqueue_fail(void)    { return g_enqueue_fail; }
 int androidaud_get_audio_freq(void)      { return g_audio_freq; }
 int androidaud_get_audio_buf_frames(void) { return g_audio_buf_frames; }
+int androidaud_get_native_buffer_frames(void) { return g_android_native_buffer_frames; }
+int androidaud_get_perf_mode_result(void) { return g_perf_mode_result; }
+int androidaud_get_sfx_last_delay_ms(void) { return g_sfx_last_delay_ms; }
+int androidaud_get_sfx_last_soundnum(void) { return g_sfx_last_soundnum; }
+int androidaud_get_sfx_last_channel(void) { return g_sfx_last_channel; }
+int androidaud_get_sfx_last_cb_delta(void) { return g_sfx_last_cb_delta; }
+int androidaud_get_sfx_probe_count(void) { return g_sfx_probe_count; }
 
 #endif /* SDL_AUDIO_DRIVER_ANDROID */

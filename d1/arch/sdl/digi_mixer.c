@@ -19,6 +19,7 @@
 #ifdef ANDROID
 #include <android/log.h>
 #define MIXLOG(...) __android_log_print(ANDROID_LOG_DEBUG, "digi_mixer_d1", __VA_ARGS__)
+extern void androidaud_note_sfx_start(int soundnum, int channel);
 #else
 #define MIXLOG(...) do {} while(0)
 #endif
@@ -227,6 +228,9 @@ int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int
 		Mix_SetDistance(channel, 0);
 	else
 		Mix_SetDistance(channel, 255-mix_vol);
+#ifdef ANDROID
+	androidaud_note_sfx_start(soundnum, channel);
+#endif
 	channels[channel] = 1;
 	Mix_ChannelFinished(digi_mixer_free_channel);
 

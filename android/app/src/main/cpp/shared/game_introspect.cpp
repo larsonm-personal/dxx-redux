@@ -114,6 +114,13 @@ int androidaud_get_play_count(void);
 int androidaud_get_enqueue_fail(void);
 int androidaud_get_audio_freq(void);
 int androidaud_get_audio_buf_frames(void);
+int androidaud_get_native_buffer_frames(void);
+int androidaud_get_perf_mode_result(void);
+int androidaud_get_sfx_last_delay_ms(void);
+int androidaud_get_sfx_last_soundnum(void);
+int androidaud_get_sfx_last_channel(void);
+int androidaud_get_sfx_last_cb_delta(void);
+int androidaud_get_sfx_probe_count(void);
 }
 
 #include <SDL_mixer.h>
@@ -781,7 +788,14 @@ extern "C" char *game_introspect_get_state(void)
 			{ "osl_play_count", androidaud_get_play_count() },
 			{ "osl_enqueue_fail", androidaud_get_enqueue_fail() },
 			{ "osl_freq", androidaud_get_audio_freq() },
-			{ "osl_buf_frames", androidaud_get_audio_buf_frames() }
+			{ "osl_buf_frames", androidaud_get_audio_buf_frames() },
+			{ "osl_native_buf_frames", androidaud_get_native_buffer_frames() },
+			{ "osl_perf_mode_result", androidaud_get_perf_mode_result() },
+			{ "sfx_last_delay_ms", androidaud_get_sfx_last_delay_ms() },
+			{ "sfx_last_soundnum", androidaud_get_sfx_last_soundnum() },
+			{ "sfx_last_channel", androidaud_get_sfx_last_channel() },
+			{ "sfx_last_cb_delta", androidaud_get_sfx_last_cb_delta() },
+			{ "sfx_probe_count", androidaud_get_sfx_probe_count() }
 		};
 		j["audio"] = std::move(audio);
 	}
