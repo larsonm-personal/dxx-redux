@@ -731,6 +731,8 @@ void StartNewGame(int start_level)
 
 	N_players = 1;
 
+	difficulty_reset_history();
+
 	StartNewLevel(start_level);
 
 	Players[Player_num].starting_level = start_level;		// Mark where they started

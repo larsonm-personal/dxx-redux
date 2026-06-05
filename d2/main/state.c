@@ -83,7 +83,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "config.h"
 #endif
 
-#define STATE_VERSION 27
+#define STATE_VERSION 28
 #define STATE_COMPATIBLE_VERSION 20
 #define STATE_RUNTIME_VERSION 23
 #define STATE_FIDELITY_VERSION 23
@@ -120,6 +120,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 25- Save AI path allocator timing and player path cursors for replay checkpoints
 // 26- Save object signature seed for deterministic post-checkpoint object creation
 // 27- Save FX RNG state and call count for deterministic checkpoint replay
+// 28- Save difficulty change history for mid-level difficulty edits
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -2136,6 +2137,9 @@ int state_save_all_sub(char *filename, char *desc)
 
 // Save the difficulty level
 	PHYSFS_write(fp, &Difficulty_level, sizeof(int), 1);
+	PHYSFS_write(fp, &Difficulty_level_changed, sizeof(int), 1);
+	PHYSFS_write(fp, &Difficulty_level_min_seen, sizeof(int), 1);
+	PHYSFS_write(fp, &Difficulty_level_max_seen, sizeof(int), 1);
 
 // Save cheats enabled
 	PHYSFS_write(fp, &cheats.enabled, sizeof(int), 1);
@@ -2615,6 +2619,14 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 // Restore the difficulty level
 	Difficulty_level = PHYSFSX_readSXE32(fp, swap);
+	if (version >= 28) {
+		int difficulty_changed = PHYSFSX_readSXE32(fp, swap);
+		int difficulty_min = PHYSFSX_readSXE32(fp, swap);
+		int difficulty_max = PHYSFSX_readSXE32(fp, swap);
+		difficulty_restore_history(difficulty_changed, difficulty_min, difficulty_max);
+	} else {
+		difficulty_restore_history(0, Difficulty_level, Difficulty_level);
+	}
 
 // Restore the cheats enabled flag
 	game_disable_cheats(); // disable cheats first

@@ -223,6 +223,114 @@ void transfer_energy_to_shield()
 void update_vcr_state();
 void do_weapon_n_item_stuff(void);
 
+static int difficulty_clamp(int difficulty)
+{
+	if (difficulty < 0)
+		return 0;
+	if (difficulty >= NDL)
+		return NDL - 1;
+	return difficulty;
+}
+
+void difficulty_reset_history(void)
+{
+	Difficulty_level_changed = 0;
+	Difficulty_level_min_seen = difficulty_clamp(Difficulty_level);
+	Difficulty_level_max_seen = Difficulty_level_min_seen;
+}
+
+void difficulty_include_current(void)
+{
+	int difficulty = difficulty_clamp(Difficulty_level);
+	if (Difficulty_level_min_seen < 0 || Difficulty_level_min_seen >= NDL)
+		Difficulty_level_min_seen = difficulty;
+	if (Difficulty_level_max_seen < 0 || Difficulty_level_max_seen >= NDL)
+		Difficulty_level_max_seen = difficulty;
+	if (difficulty < Difficulty_level_min_seen)
+		Difficulty_level_min_seen = difficulty;
+	if (difficulty > Difficulty_level_max_seen)
+		Difficulty_level_max_seen = difficulty;
+}
+
+void difficulty_restore_history(int changed, int min_level, int max_level)
+{
+	min_level = difficulty_clamp(min_level);
+	max_level = difficulty_clamp(max_level);
+	if (min_level > max_level) {
+		min_level = difficulty_clamp(Difficulty_level);
+		max_level = min_level;
+		changed = 0;
+	}
+	Difficulty_level_changed = changed ? 1 : 0;
+	Difficulty_level_min_seen = min_level;
+	Difficulty_level_max_seen = max_level;
+	difficulty_include_current();
+}
+
+int difficulty_can_show_live(void)
+{
+	if (!Game_wind || Screen_mode != SCREEN_GAME)
+		return 0;
+	if (Newdemo_state == ND_STATE_PLAYBACK || input_demo_replay_is_loaded())
+		return 0;
+	if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP))
+		return 0;
+	return 1;
+}
+
+int difficulty_can_change_live(void)
+{
+	if (!difficulty_can_show_live())
+		return 0;
+	if ((Game_mode & GM_MULTI_COOP) && !multi_i_am_master())
+		return 0;
+	return 1;
+}
+
+int difficulty_change_to(int difficulty, int flags)
+{
+	int old_difficulty = Difficulty_level;
+	char error[128] = "";
+
+	if (difficulty < 0 || difficulty >= NDL)
+		return 0;
+	if (!(flags & (DIFFICULTY_CHANGE_FROM_NETWORK | DIFFICULTY_CHANGE_FROM_REPLAY)) &&
+	    !difficulty_can_change_live())
+		return 0;
+	if ((flags & DIFFICULTY_CHANGE_FROM_NETWORK) &&
+	    ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP)))
+		return 0;
+	if (difficulty == old_difficulty)
+		return 1;
+
+	Difficulty_level = difficulty;
+	if (Game_mode & GM_MULTI)
+		Netgame.difficulty = (ubyte)difficulty;
+	if (!(flags & DIFFICULTY_CHANGE_FROM_REPLAY)) {
+		PlayerCfg.DefaultDifficulty = difficulty;
+		write_player_file();
+	}
+
+	Difficulty_level_changed = 1;
+	difficulty_include_current();
+
+	if ((flags & DIFFICULTY_CHANGE_RECORD_DEMO) &&
+	    Newdemo_state == ND_STATE_RECORDING &&
+	    input_demo_recorder_is_active()) {
+		input_demo_recorder_stage_direct_command_change_difficulty(
+		    difficulty, error, sizeof(error));
+	}
+
+	if ((Game_mode & GM_MULTI_COOP) &&
+	    !(flags & (DIFFICULTY_CHANGE_FROM_NETWORK | DIFFICULTY_CHANGE_FROM_REPLAY))) {
+		multi_send_difficulty(difficulty);
+	}
+
+	HUD_init_message(HM_DEFAULT, "Difficulty changed to %s",
+	                 MENU_DIFFICULTY_TEXT(difficulty));
+	return 1;
+}
+
 
 // Control Functions
 
@@ -418,6 +526,7 @@ extern int netplayerinfo_on;
 extern volatile int g_android_open_save_menu;
 extern volatile int g_android_open_load_menu;
 extern volatile int g_android_open_game_menu;
+extern volatile int g_android_difficulty_request;
 extern volatile int g_android_autosave_request_kind;
 
 static void android_clear_saveload_requests(void)
@@ -428,6 +537,11 @@ static void android_clear_saveload_requests(void)
 
 static int android_handle_pause_saveload_request(window *wind)
 {
+	if (g_android_difficulty_request >= 0) {
+		window_close(wind);
+		return 1;
+	}
+
 	if (!g_android_open_save_menu && !g_android_open_load_menu && !g_android_open_game_menu)
 	{
 		if (g_android_autosave_request_kind) {
@@ -486,6 +600,12 @@ static int android_handle_ingame_saveload_request(void)
 		}
 
 		return saved;
+	}
+
+	if (g_android_difficulty_request >= 0) {
+		int difficulty = g_android_difficulty_request;
+		g_android_difficulty_request = -1;
+		return difficulty_change_to(difficulty, DIFFICULTY_CHANGE_RECORD_DEMO);
 	}
 
 	if (g_android_open_game_menu) {
@@ -1355,6 +1475,10 @@ static int input_demo_replay_apply_direct_commands(void)
 				escort_release_control();
 				break;
 			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT:
+				break;
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY:
+				if (!difficulty_change_to(event.value0, DIFFICULTY_CHANGE_FROM_REPLAY))
+					return input_demo_abort_replay_direct_commands("change difficulty replay event failed");
 				break;
 			default:
 				return input_demo_abort_replay_direct_commands("unknown direct command replay event");

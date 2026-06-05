@@ -111,6 +111,7 @@ void multi_do_msgsend_state(const ubyte *buf);
 void multi_send_msgsend_state(int state);
 void multi_send_gmode_update();
 void multi_do_gmode_update(const ubyte *buf);
+void multi_do_difficulty(const ubyte *buf);
 
 //
 // Local macros and prototypes
@@ -879,6 +880,8 @@ multi_new_game(void)
 
 	for (i = 0; i < MAX_PLAYERS; i++)
 		init_player_stats_game(i);
+
+	difficulty_reset_history();
 
 	memset(kill_matrix, 0, MAX_PLAYERS*MAX_PLAYERS*2); // Clear kill matrix
 
@@ -3457,6 +3460,31 @@ void multi_send_fire(int laser_gun, int laser_level, int laser_flags, int laser_
 
 	//multi_send_data(multibuf, 8, 1);
 	multi_send_data(multibuf, 20, 1);
+}
+
+void multi_send_difficulty(int difficulty)
+{
+	if (!(Game_mode & GM_MULTI_COOP) || !multi_i_am_master())
+		return;
+	if (difficulty < 0 || difficulty >= NDL)
+		return;
+
+	multibuf[0] = (char)MULTI_DIFFICULTY;
+	multibuf[1] = (char)Player_num;
+	multibuf[2] = (char)difficulty;
+	multi_send_data(multibuf, 3, 2);
+}
+
+void multi_do_difficulty(const ubyte *buf)
+{
+	int sender = buf[1];
+	int difficulty = buf[2];
+
+	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+	if (sender != multi_who_is_master())
+		return;
+	difficulty_change_to(difficulty, DIFFICULTY_CHANGE_FROM_NETWORK);
 }
 
 void
@@ -7386,6 +7414,8 @@ multi_process_data(const ubyte *buf, int len)
 		case MULTI_REWIND_RESULT:
 			multi_do_rewind_result(buf); break;
 #endif
+		case MULTI_DIFFICULTY:
+			if (!Endlevel_sequence) multi_do_difficulty(buf); break;
 		case MULTI_ESCORT_OWNER:
 			if (!Endlevel_sequence) multi_do_escort_owner(buf); break;
 		default:

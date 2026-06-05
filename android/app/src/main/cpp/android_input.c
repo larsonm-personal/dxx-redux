@@ -85,6 +85,7 @@ volatile int g_levelcomplete_active = 0;
 volatile int g_android_open_save_menu = 0;
 volatile int g_android_open_load_menu = 0;
 volatile int g_android_open_game_menu = 0;
+volatile int g_android_difficulty_request = -1;
 
 /* Set on the UI thread when Android lifecycle or launcher actions request
  * an autosave.  The game thread consumes this in d1/d2 gamecntl.c. */
@@ -1528,6 +1529,36 @@ JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetCockpitMode(JNIEnv *env, jobject thiz)
 {
 	return PlayerCfg.PreferredCockpitMode;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetDifficulty(JNIEnv *env, jobject thiz)
+{
+	return Difficulty_level;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeCanShowDifficultyChange(JNIEnv *env, jobject thiz)
+{
+	return difficulty_can_show_live() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeCanChangeDifficulty(JNIEnv *env, jobject thiz)
+{
+	return difficulty_can_change_live() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetDifficulty(JNIEnv *env, jobject thiz,
+                                                       jint difficulty)
+{
+	if (difficulty < 0 || difficulty >= NDL)
+		return JNI_FALSE;
+	if (!difficulty_can_change_live())
+		return JNI_FALSE;
+	g_android_difficulty_request = difficulty;
+	return JNI_TRUE;
 }
 
 #endif /* ANDROID */

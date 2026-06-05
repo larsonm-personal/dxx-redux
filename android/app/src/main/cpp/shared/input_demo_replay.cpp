@@ -178,6 +178,16 @@ static bool parse_direct_command_event_json(const std::string &json_text,
 		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT;
 		return true;
 	}
+	if (command == "change_difficulty") {
+		it = parsed.find("difficulty");
+		if (it == parsed.end() || !it->is_number_integer())
+			return fail(error, "change difficulty event is missing difficulty");
+		event->value0 = it->get<int32_t>();
+		if (event->value0 < 0 || event->value0 > 4)
+			return fail(error, "change difficulty event difficulty is out of range");
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY;
+		return true;
+	}
 	return fail(error, std::string("unknown direct command event command: ") + command);
 }
 

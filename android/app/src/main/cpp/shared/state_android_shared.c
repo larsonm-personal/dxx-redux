@@ -301,6 +301,9 @@ void state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	    Players[Player_num].time_level, Players[Player_num].hours_level);
 	android_params.total_seconds = state_time_to_seconds(
 	    Players[Player_num].time_total, Players[Player_num].hours_total);
+	android_params.difficulty_changed = Difficulty_level_changed ? 1 : 0;
+	android_params.difficulty_min = Difficulty_level_min_seen;
+	android_params.difficulty_max = Difficulty_level_max_seen;
 	android_save_meta_apply_cached_thumbnail(&android_params);
 	android_save_meta_write_physfs(physfs_fp, &android_params);
 }

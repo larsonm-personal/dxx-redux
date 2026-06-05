@@ -28,7 +28,7 @@
 
 /* --- constants --- */
 #define COOP_SAVE_META_TAG          0x434F4F50 /* "COOP" */
-#define COOP_SAVE_META_VER          3
+#define COOP_SAVE_META_VER          4
 #define COOP_MAX_REMEMBERED_PLAYERS 16
 #define COOP_CLIENT_ID_LEN          36         /* UUID without null */
 #define COOP_SAVE_MAX_WEAPONS       10         /* max(d1=5, d2=10) */
@@ -76,6 +76,9 @@ typedef struct coop_save_metadata {
 	COOP_SAVE_METADATA_EXTRA_FIELDS
 	coop_player_record active_players[8]; /* MAX_PLAYERS */
 	coop_player_record absent_players[COOP_MAX_REMEMBERED_PLAYERS];
+	uint8_t difficulty_changed; /* v4 */
+	uint8_t difficulty_min;     /* v4 */
+	uint8_t difficulty_max;     /* v4 */
 } coop_save_metadata;
 
 /* --- helpers (implemented in coop_save.c) --- */

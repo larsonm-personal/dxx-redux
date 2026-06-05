@@ -24,6 +24,9 @@ object ResumeSaveBridge {
         val levelName: String,
         val levelSeconds: Long,
         val totalSeconds: Long,
+        val difficultyChanged: Boolean,
+        val difficultyMin: Int,
+        val difficultyMax: Int,
         val slot: Int,
         val hasThumbnail: Boolean,
         val thumbnailWidth: Int,
@@ -45,6 +48,9 @@ object ResumeSaveBridge {
                 put("level_name", levelName)
                 put("level_seconds", levelSeconds)
                 put("total_seconds", totalSeconds)
+                put("difficulty_changed", difficultyChanged)
+                put("difficulty_min", difficultyMin)
+                put("difficulty_max", difficultyMax)
                 put("slot", slot)
                 put("has_thumbnail", hasThumbnail)
                 put("thumbnail_width", thumbnailWidth)
@@ -140,6 +146,9 @@ object ResumeSaveBridge {
             levelName = obj.optString("level_name"),
             levelSeconds = obj.optLong("level_seconds"),
             totalSeconds = obj.optLong("total_seconds"),
+            difficultyChanged = obj.optBoolean("difficulty_changed"),
+            difficultyMin = obj.optInt("difficulty_min"),
+            difficultyMax = obj.optInt("difficulty_max"),
             slot = obj.optInt("slot", -1),
             hasThumbnail = nativeHasThumbnail && thumbnailRgb6 != null,
             thumbnailWidth = obj.optInt("thumbnail_width"),

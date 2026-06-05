@@ -856,6 +856,8 @@ void StartNewGame(int start_level)
 
 	N_players = 1;
 
+	difficulty_reset_history();
+
 	if (start_level < 0)
 		StartNewLevelSecret(start_level, 0);
 	else

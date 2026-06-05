@@ -120,6 +120,18 @@ void game_set_d_tick_state(const game_d_tick_state *state);
 int do_flythrough(struct object *obj,int first_time);
 
 extern int Difficulty_level;    // Difficulty level in 0..NDL-1, 0 = easiest, NDL-1 = hardest
+extern int Difficulty_level_changed;
+extern int Difficulty_level_min_seen;
+extern int Difficulty_level_max_seen;
+void difficulty_reset_history(void);
+void difficulty_include_current(void);
+void difficulty_restore_history(int changed, int min_level, int max_level);
+int difficulty_can_show_live(void);
+int difficulty_can_change_live(void);
+int difficulty_change_to(int difficulty, int flags);
+#define DIFFICULTY_CHANGE_FROM_NETWORK 1
+#define DIFFICULTY_CHANGE_FROM_REPLAY  2
+#define DIFFICULTY_CHANGE_RECORD_DEMO  4
 extern int Global_laser_firing_count;
 extern int Global_missile_firing_count;
 extern int Render_depth;

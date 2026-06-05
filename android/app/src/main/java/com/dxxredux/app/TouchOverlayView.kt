@@ -583,6 +583,7 @@ class TouchOverlayView
             const val ADMIN_AUTOMAP_JUMP_MARKER_MENU = 18
             const val ADMIN_AUTOMAP_MARKER_MENU_ROOT = 19
             const val ADMIN_FOV = 20
+            const val ADMIN_DIFFICULTY = 21
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
             const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 
@@ -691,6 +692,11 @@ class TouchOverlayView
         private var adminTrayFovTouchActive = false
         private var adminTrayFovActive = false
         private var adminTrayFovValue = 0
+        private var adminTrayDifficultyMenuOpen = false
+        private var adminTrayDifficultySelectedIndex = 0
+        private var adminTrayDifficultyPressedIndex = -1
+        private val adminTrayDifficultyRects = mutableListOf<RectF>()
+        private var adminTrayDifficultyPanelRect = RectF()
         private var remainingActionOpen = false
         private var remainingActionSelectedIndex = -1
         private var remainingActionPointerId = -1
@@ -725,6 +731,9 @@ class TouchOverlayView
         var adminTrayBrightnessSetter: ((Int) -> Unit)? = null
         var adminTrayFovProvider: (() -> Int)? = null
         var adminTrayFovSetter: ((Int) -> Unit)? = null
+        var adminTrayCanShowDifficultyProvider: (() -> Boolean)? = null
+        var adminTrayDifficultyProvider: (() -> Int)? = null
+        var adminTrayDifficultySetter: ((Int) -> Boolean)? = null
         var adminTrayToggleStateProvider: ((Int) -> Boolean)? = null
         var adminTrayEnabledStateProvider: ((Int) -> Boolean)? = null
 
@@ -1519,6 +1528,7 @@ class TouchOverlayView
             val hasSettingsDiag = diagnosticStates.any { it.control.type == DiagnosticType.SETTINGS }
             if (adminTrayOpen) {
                 drawAdminTrayPanel(canvas)
+                if (adminTrayDifficultyMenuOpen) drawAdminTrayDifficultyMenu(canvas)
             } else if (!gamepadOnlyMode && !cheatsOverlayOpen && !hasSettingsDiag) {
                 drawAdminTrayTab(canvas)
             }
@@ -3396,6 +3406,10 @@ class TouchOverlayView
                     "FOV"
                 }
 
+                ADMIN_DIFFICULTY -> {
+                    "Change Difficulty"
+                }
+
                 ADMIN_AUTOMAP -> {
                     "Automap"
                 }
@@ -3461,6 +3475,7 @@ class TouchOverlayView
                 hasPendingLaunchInfo = hasPendingMultiplayerLaunchProvider?.invoke() == true,
                 hasGuidebotAbdicateAction = gameVariant == "d2",
                 automapActive = automapActive,
+                canShowDifficultyChange = adminTrayCanShowDifficultyProvider?.invoke() == true,
             )
 
         private fun adminTrayItemCount(): Int = currentAdminTrayActions().size
@@ -3479,6 +3494,9 @@ class TouchOverlayView
             }
             return adminTrayFovValue
         }
+
+        private fun currentAdminTrayDifficultyValue(): Int =
+            clampAdminTrayDifficulty(adminTrayDifficultyProvider?.invoke() ?: adminTrayDifficultySelectedIndex)
 
         private fun setAdminTrayBrightness(value: Int): Boolean {
             val clamped = clampAdminTrayBrightness(value)
@@ -3531,6 +3549,31 @@ class TouchOverlayView
         private fun clearAdminTraySliderState() {
             setAdminTraySliderActive(ADMIN_BRIGHTNESS, false)
             setAdminTraySliderTouchActive(ADMIN_BRIGHTNESS, false)
+            setAdminTraySliderActive(ADMIN_FOV, false)
+            setAdminTraySliderTouchActive(ADMIN_FOV, false)
+        }
+
+        private fun openAdminTrayDifficultyMenu() {
+            clearAdminTraySliderState()
+            adminTrayDifficultyMenuOpen = true
+            adminTrayDifficultySelectedIndex = currentAdminTrayDifficultyValue()
+            adminTrayDifficultyPressedIndex = -1
+            invalidate()
+        }
+
+        private fun closeAdminTrayDifficultyMenu() {
+            adminTrayDifficultyMenuOpen = false
+            adminTrayDifficultyPressedIndex = -1
+            invalidate()
+        }
+
+        private fun selectAdminTrayDifficulty(difficulty: Int): Boolean {
+            val clamped = clampAdminTrayDifficulty(difficulty)
+            val applied = adminTrayDifficultySetter?.invoke(clamped) == true
+            adminTrayDifficultySelectedIndex = clamped
+            closeAdminTrayDifficultyMenu()
+            invalidate()
+            return applied
         }
 
         private fun resetAdminTraySlidersFromProviders() {
@@ -3638,6 +3681,86 @@ class TouchOverlayView
                 )
             }
             canvas.drawCircle(thumbX, trackRect.centerY(), thumbRadius, thumbPaint)
+        }
+
+        private fun drawAdminTrayDifficultyMenu(canvas: Canvas) {
+            val w = width.toFloat()
+            val h = height.toFloat()
+            val rowH = (h * 0.07f).coerceAtLeast(44f)
+            val titleH = rowH * 0.8f
+            val panelW = (w * 0.42f).coerceAtLeast(260f).coerceAtMost(w * 0.86f)
+            val panelH = titleH + rowH * ADMIN_TRAY_DIFFICULTY_NAMES.size
+            val left = (w - panelW) / 2f
+            val top = (h - panelH) / 2f
+            val cornerR = panelW * 0.02f
+            val current = currentAdminTrayDifficultyValue()
+
+            adminTrayDifficultyPanelRect = RectF(left, top, left + panelW, top + panelH)
+            adminTrayDifficultyRects.clear()
+
+            val panelBg =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = 0xEE202020.toInt()
+                }
+            canvas.drawRoundRect(adminTrayDifficultyPanelRect, cornerR, cornerR, panelBg)
+            paintRing.alpha = 0x88
+            canvas.drawRoundRect(adminTrayDifficultyPanelRect, cornerR, cornerR, paintRing)
+
+            val titlePaint =
+                Paint(paintBtnLabel).apply {
+                    textSize = (titleH * 0.36f).coerceAtMost(w * 0.032f)
+                    textAlign = Paint.Align.CENTER
+                    alpha = 0xCC
+                }
+            canvas.drawText(
+                "Change Difficulty",
+                adminTrayDifficultyPanelRect.centerX(),
+                top + titleH * 0.58f,
+                titlePaint,
+            )
+
+            val rowText =
+                Paint(paintBtnLabel).apply {
+                    textSize = (rowH * 0.36f).coerceAtMost(w * 0.034f)
+                    textAlign = Paint.Align.CENTER
+                }
+            val rowBg =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = 0x33FFFFFF
+                }
+            val selectedStroke =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.STROKE
+                    color = CONTROLLER_MENU_FOCUS_COLOR
+                    strokeWidth = 3f
+                }
+            val currentFill =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = 0x3300E676
+                }
+            val divider = Paint().apply { color = 0x22FFFFFF }
+
+            for (i in ADMIN_TRAY_DIFFICULTY_NAMES.indices) {
+                val rowTop = top + titleH + rowH * i
+                val rect = RectF(left, rowTop, left + panelW, rowTop + rowH)
+                adminTrayDifficultyRects.add(rect)
+                rowBg.alpha = if (i == adminTrayDifficultyPressedIndex) 0x77 else 0x33
+                canvas.drawRect(rect, rowBg)
+                if (i == current) canvas.drawRect(rect, currentFill)
+                if (i == adminTrayDifficultySelectedIndex) canvas.drawRect(rect, selectedStroke)
+                if (i > 0) canvas.drawRect(rect.left, rect.top, rect.right, rect.top + 1f, divider)
+                rowText.alpha = if (i == current) 0xFF else 0xDD
+                rowText.color = if (i == current) CONTROLLER_MENU_FOCUS_COLOR else -0x55000001
+                canvas.drawText(
+                    ADMIN_TRAY_DIFFICULTY_NAMES[i],
+                    rect.centerX(),
+                    rect.centerY() + rowText.textSize * 0.35f,
+                    rowText,
+                )
+            }
         }
 
         private fun drawAdminTrayPanel(canvas: Canvas) {
@@ -3924,6 +4047,7 @@ class TouchOverlayView
 
         fun closeAdminTray() {
             if (!adminTrayOpen && adminTraySlide <= 0f) return
+            closeAdminTrayDifficultyMenu()
             clearAdminTraySliderState()
             adminTrayPressedIndex = -1
             adminTrayPointerId = -1
@@ -3945,6 +4069,40 @@ class TouchOverlayView
         ): Boolean {
             if (!adminTrayOpen) return false
             if (action != 0) return true // consume up events but only act on down
+            if (adminTrayDifficultyMenuOpen) {
+                when (keyCode) {
+                    android.view.KeyEvent.KEYCODE_DPAD_UP -> {
+                        adminTrayDifficultySelectedIndex =
+                            (adminTrayDifficultySelectedIndex - 1).coerceAtLeast(0)
+                        invalidate()
+                        return true
+                    }
+
+                    android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        adminTrayDifficultySelectedIndex =
+                            (adminTrayDifficultySelectedIndex + 1)
+                                .coerceAtMost(ADMIN_TRAY_DIFFICULTY_NAMES.lastIndex)
+                        invalidate()
+                        return true
+                    }
+
+                    android.view.KeyEvent.KEYCODE_BUTTON_A,
+                    android.view.KeyEvent.KEYCODE_DPAD_CENTER,
+                    -> {
+                        selectAdminTrayDifficulty(adminTrayDifficultySelectedIndex)
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        return true
+                    }
+
+                    android.view.KeyEvent.KEYCODE_BUTTON_B,
+                    android.view.KeyEvent.KEYCODE_BACK,
+                    -> {
+                        closeAdminTrayDifficultyMenu()
+                        return true
+                    }
+                }
+                return true
+            }
             val cols = 3
             val visibleActions = currentAdminTrayActions()
             val count = visibleActions.size
@@ -4045,6 +4203,13 @@ class TouchOverlayView
                 android.view.KeyEvent.KEYCODE_BUTTON_A,
                 android.view.KeyEvent.KEYCODE_DPAD_CENTER,
                 -> {
+                    if (selectedAction == ADMIN_DIFFICULTY &&
+                        adminTrayActionEnabled(selectedAction, adminTrayEnabledStateProvider)
+                    ) {
+                        openAdminTrayDifficultyMenu()
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        return true
+                    }
                     if (adminTrayUsesSlider(selectedAction) &&
                         adminTrayActionEnabled(selectedAction, adminTrayEnabledStateProvider)
                     ) {
@@ -4087,6 +4252,21 @@ class TouchOverlayView
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    if (adminTrayDifficultyMenuOpen) {
+                        adminTrayDifficultyPressedIndex = -1
+                        for (i in adminTrayDifficultyRects.indices) {
+                            if (adminTrayDifficultyRects[i].contains(px, py)) {
+                                adminTrayDifficultyPressedIndex = i
+                                adminTrayDifficultySelectedIndex = i
+                                invalidate()
+                                return true
+                            }
+                        }
+                        if (!adminTrayDifficultyPanelRect.contains(px, py)) {
+                            closeAdminTrayDifficultyMenu()
+                        }
+                        return true
+                    }
                     adminTrayPointerId = event.getPointerId(idx)
                     adminTrayDragStartY = py
                     adminTrayDragging = false
@@ -4151,6 +4331,19 @@ class TouchOverlayView
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                    if (adminTrayDifficultyMenuOpen) {
+                        val pressed = adminTrayDifficultyPressedIndex
+                        if (pressed in adminTrayDifficultyRects.indices &&
+                            adminTrayDifficultyRects[pressed].contains(px, py)
+                        ) {
+                            selectAdminTrayDifficulty(pressed)
+                            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        } else if (!adminTrayDifficultyPanelRect.contains(px, py)) {
+                            closeAdminTrayDifficultyMenu()
+                        }
+                        adminTrayDifficultyPressedIndex = -1
+                        return true
+                    }
                     if (event.getPointerId(idx) == adminTrayPointerId) {
                         if (adminTrayDragging) {
                             // If dragged past 30% threshold, close; otherwise snap open
@@ -4175,7 +4368,11 @@ class TouchOverlayView
                         ) {
                             val pressedAction = currentAdminTrayActions()[adminTrayPressedIndex]
                             if (adminTrayActionEnabled(pressedAction, adminTrayEnabledStateProvider)) {
-                                adminTrayCallback?.invoke(pressedAction)
+                                if (pressedAction == ADMIN_DIFFICULTY) {
+                                    openAdminTrayDifficultyMenu()
+                                } else {
+                                    adminTrayCallback?.invoke(pressedAction)
+                                }
                                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                                 if (adminTrayClosesAfterActivate(pressedAction)) {
                                     closeAdminTray()
@@ -4192,6 +4389,11 @@ class TouchOverlayView
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
+                    if (adminTrayDifficultyMenuOpen) {
+                        adminTrayDifficultyPressedIndex = -1
+                        invalidate()
+                        return true
+                    }
                     if (adminTrayDragging) {
                         if (adminTraySlide > 0.7f) {
                             animateAdminTray(true)

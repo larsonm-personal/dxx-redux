@@ -341,6 +341,14 @@ class MainActivity :
 
     external fun nativeGetCockpitMode(): Int
 
+    external fun nativeGetDifficulty(): Int
+
+    external fun nativeCanShowDifficultyChange(): Boolean
+
+    external fun nativeCanChangeDifficulty(): Boolean
+
+    external fun nativeSetDifficulty(difficulty: Int): Boolean
+
     external fun nativeOpenSinglePlayerPauseIfSafe(): Boolean
 
     external fun nativeClosePauseIfFront(): Boolean
@@ -866,6 +874,27 @@ class MainActivity :
                 updateAllConfigFiles(filesDir, listOf("MainViewFov" to fov.toString()))
             }
         }
+        touchOverlay.adminTrayCanShowDifficultyProvider = {
+            try {
+                nativeCanShowDifficultyChange()
+            } catch (_: Exception) {
+                false
+            }
+        }
+        touchOverlay.adminTrayDifficultyProvider = {
+            try {
+                nativeGetDifficulty()
+            } catch (_: Exception) {
+                0
+            }
+        }
+        touchOverlay.adminTrayDifficultySetter = { difficulty ->
+            try {
+                nativeSetDifficulty(difficulty)
+            } catch (_: Exception) {
+                false
+            }
+        }
         touchOverlay.adminTrayToggleStateProvider = { action ->
             when (action) {
                 TouchOverlayView.ADMIN_NET_STATS -> netStatsOverlay?.visibility == View.VISIBLE
@@ -894,6 +923,14 @@ class MainActivity :
 
                 TouchOverlayView.ADMIN_FOV -> {
                     !mainViewFovLockedToBase
+                }
+
+                TouchOverlayView.ADMIN_DIFFICULTY -> {
+                    try {
+                        nativeCanChangeDifficulty()
+                    } catch (_: Exception) {
+                        false
+                    }
                 }
 
                 else -> {

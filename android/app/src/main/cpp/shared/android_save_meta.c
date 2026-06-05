@@ -79,6 +79,11 @@ static int android_save_meta_kind_priority(uint8_t save_kind)
 	}
 }
 
+static uint8_t android_save_meta_clamp_difficulty(uint8_t difficulty)
+{
+	return difficulty <= 4 ? difficulty : 4;
+}
+
 static int android_save_meta_is_newer(const char *path,
                                       const android_save_meta_disk *meta,
                                       const android_save_meta_candidate *best)
@@ -116,6 +121,14 @@ int android_save_meta_build(android_save_meta_disk *out,
 	out->level_num = params->level_num;
 	out->level_seconds = params->level_seconds;
 	out->total_seconds = params->total_seconds;
+	out->difficulty_changed = params->difficulty_changed ? 1 : 0;
+	out->difficulty_min = android_save_meta_clamp_difficulty(params->difficulty_min);
+	out->difficulty_max = android_save_meta_clamp_difficulty(params->difficulty_max);
+	if (out->difficulty_min > out->difficulty_max) {
+		out->difficulty_changed = 0;
+		out->difficulty_min = 0;
+		out->difficulty_max = 0;
+	}
 	if (params->thumbnail_rgb6 &&
 	    params->thumbnail_width == ANDROID_SAVE_META_THUMB_W &&
 	    params->thumbnail_height == ANDROID_SAVE_META_THUMB_H) {
@@ -145,6 +158,11 @@ int android_save_meta_is_valid(const android_save_meta_disk *meta)
 	    meta->game_id != ANDROID_SAVE_META_GAME_D2)
 		return 0;
 	if (meta->save_kind > ANDROID_SAVE_META_KIND_AUTO_ABORT)
+		return 0;
+	if (meta->difficulty_changed > 1)
+		return 0;
+	if (meta->difficulty_min > 4 || meta->difficulty_max > 4 ||
+	    meta->difficulty_min > meta->difficulty_max)
 		return 0;
 	if (meta->thumbnail_format == ANDROID_SAVE_META_THUMB_NONE)
 		return 1;

@@ -28,6 +28,7 @@ internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
     } else {
         when (actionIndex) {
             TouchOverlayView.ADMIN_INCREASE_VIEW,
+            TouchOverlayView.ADMIN_DIFFICULTY,
             TouchOverlayView.ADMIN_MUSIC,
             TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
             -> false
@@ -47,6 +48,8 @@ internal fun adminTrayBrightnessFromFraction(fraction: Float): Int =
     clampAdminTrayBrightness((fraction.coerceIn(0f, 1f) * 16f).roundToInt())
 
 private val ADMIN_TRAY_FOV_VALUES = intArrayOf(0, 100, 110, 120)
+internal val ADMIN_TRAY_DIFFICULTY_NAMES =
+    arrayOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
 
 internal fun clampAdminTrayFov(value: Int): Int = if (value in ADMIN_TRAY_FOV_VALUES) value else 0
 
@@ -68,6 +71,10 @@ internal fun adminTrayFovLabel(value: Int): String {
     return if (fov == 0) "Base" else "$fov deg"
 }
 
+internal fun clampAdminTrayDifficulty(value: Int): Int = value.coerceIn(0, ADMIN_TRAY_DIFFICULTY_NAMES.lastIndex)
+
+internal fun adminTrayDifficultyLabel(value: Int): String = ADMIN_TRAY_DIFFICULTY_NAMES[clampAdminTrayDifficulty(value)]
+
 internal fun adminTrayActionEnabled(
     actionIndex: Int,
     enabledProvider: ((Int) -> Boolean)? = null,
@@ -80,6 +87,7 @@ internal fun adminTrayVisibleActions(
     hasPendingLaunchInfo: Boolean = false,
     hasGuidebotAbdicateAction: Boolean = false,
     automapActive: Boolean = false,
+    canShowDifficultyChange: Boolean = false,
 ): List<Int> {
     val showNetworkActions = isMultiplayerGame || hasPendingLaunchInfo
     val actions =
@@ -94,6 +102,9 @@ internal fun adminTrayVisibleActions(
             TouchOverlayView.ADMIN_BRIGHTNESS,
             TouchOverlayView.ADMIN_FOV,
         )
+    if (canShowDifficultyChange) {
+        actions.add(TouchOverlayView.ADMIN_DIFFICULTY)
+    }
     if (showNetworkActions) {
         actions.add(2, TouchOverlayView.ADMIN_NET_STATS)
         actions.add(5, TouchOverlayView.ADMIN_NET_EVENTS)

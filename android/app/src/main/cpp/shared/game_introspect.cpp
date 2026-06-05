@@ -548,6 +548,9 @@ extern "C" char *game_introspect_get_state(void)
 	j["cutscene_tap_suppress_arms"] = (int) g_cutscene_tap_suppress_arms;
 	j["cutscene_tap_suppress_hits"] = (int) g_cutscene_tap_suppress_hits;
 	j["difficulty"] = Difficulty_level;
+	j["difficulty_changed"] = Difficulty_level_changed != 0;
+	j["difficulty_min"] = Difficulty_level_min_seen;
+	j["difficulty_max"] = Difficulty_level_max_seen;
 	j["current_level_num"] = Current_level_num;
 	j["current_level_name"] = Current_level_name;
 

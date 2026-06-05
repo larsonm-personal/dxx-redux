@@ -5,7 +5,7 @@
 #include <physfs.h>
 
 #define ANDROID_SAVE_META_TAG     0x44584153u /* "DXAS" */
-#define ANDROID_SAVE_META_VERSION 2
+#define ANDROID_SAVE_META_VERSION 3
 
 #define ANDROID_SAVE_META_CALLSIGN_LEN     8
 #define ANDROID_SAVE_META_DESC_LEN         20
@@ -52,6 +52,9 @@ typedef struct android_save_meta_write_params {
 	const char *level_name;
 	uint32_t level_seconds;
 	uint32_t total_seconds;
+	uint8_t difficulty_changed;
+	uint8_t difficulty_min;
+	uint8_t difficulty_max;
 	const uint8_t *thumbnail_rgb6;
 	uint16_t thumbnail_width;
 	uint16_t thumbnail_height;
@@ -79,6 +82,10 @@ typedef struct android_save_meta_disk {
 	char level_name[ANDROID_SAVE_META_LEVEL_NAME_LEN];
 	uint32_t level_seconds;
 	uint32_t total_seconds;
+	uint8_t difficulty_changed;
+	uint8_t difficulty_min;
+	uint8_t difficulty_max;
+	uint8_t reserved1;
 	uint8_t thumbnail_rgb6[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
 	android_save_meta_footer footer;
 } android_save_meta_disk;

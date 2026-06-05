@@ -327,6 +327,9 @@ static json resume_candidate_json(const char *files_dir,
 	out["level_name"] = sanitize_text(candidate.meta.level_name);
 	out["level_seconds"] = candidate.meta.level_seconds;
 	out["total_seconds"] = candidate.meta.total_seconds;
+	out["difficulty_changed"] = candidate.meta.difficulty_changed != 0;
+	out["difficulty_min"] = candidate.meta.difficulty_min;
+	out["difficulty_max"] = candidate.meta.difficulty_max;
 	out["slot"] = slot_from_path(candidate.path);
 	out["has_thumbnail"] =
 	    candidate.meta.thumbnail_format == ANDROID_SAVE_META_THUMB_RGB6 &&

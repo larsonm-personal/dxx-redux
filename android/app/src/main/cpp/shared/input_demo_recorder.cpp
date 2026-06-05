@@ -658,6 +658,20 @@ int input_demo_recorder_stage_direct_command_death_abort(char *error,
 	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
 }
 
+int input_demo_recorder_stage_direct_command_change_difficulty(int difficulty,
+                                                               char *error,
+                                                               size_t error_size)
+{
+	ordered_json event = ordered_json::object();
+
+	if (difficulty < 0 || difficulty > 4)
+		return input_demo_recorder_copy_error("difficulty direct command is out of range", error, error_size);
+	event["kind"] = "direct_command";
+	event["command"] = "change_difficulty";
+	event["difficulty"] = difficulty;
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
 int input_demo_recorder_flush_with_result(const char *demo_path,
                                           const input_demo_result *result,
                                           char *error, size_t error_size)

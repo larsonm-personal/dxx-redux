@@ -93,4 +93,7 @@ fix64	Next_missile_fire_time;			//	Time at which player can next fire his select
 #define DEFAULT_DIFFICULTY		1
 
 int	Difficulty_level=DEFAULT_DIFFICULTY;	//	Difficulty level in 0..NDL-1, 0 = easiest, NDL-1 = hardest
+int	Difficulty_level_changed=0;
+int	Difficulty_level_min_seen=DEFAULT_DIFFICULTY;
+int	Difficulty_level_max_seen=DEFAULT_DIFFICULTY;
 

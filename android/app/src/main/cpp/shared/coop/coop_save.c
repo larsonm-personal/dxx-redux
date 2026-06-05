@@ -200,6 +200,9 @@ void coop_write_save_metadata(void *fp)
 	strncpy(meta.mission_name, Netgame.mission_name, 8);
 	meta.mission_name[8] = '\0';
 	meta.difficulty = Netgame.difficulty;
+	meta.difficulty_changed = Difficulty_level_changed ? 1 : 0;
+	meta.difficulty_min = (uint8_t) Difficulty_level_min_seen;
+	meta.difficulty_max = (uint8_t) Difficulty_level_max_seen;
 	coop_write_metadata_extra(&meta);
 
 	meta.num_active_players = 0;
@@ -226,15 +229,15 @@ int coop_read_save_metadata(void *fp, PHYSFS_sint64 expected_end,
                             coop_save_metadata *meta)
 {
 	uint32_t tag;
-	PHYSFS_sint64 cur;
+	PHYSFS_sint64 file_len, bytes_to_read, rest_len;
 
 	/* The metadata trailer starts right after the existing save data */
 	if (PHYSFS_seek((PHYSFS_file *) fp, expected_end) == 0)
 		return 0;
 
 	/* Check if there's enough data for at least the tag */
-	cur = PHYSFS_fileLength((PHYSFS_file *) fp);
-	if (cur < expected_end + (PHYSFS_sint64) sizeof(uint32_t))
+	file_len = PHYSFS_fileLength((PHYSFS_file *) fp);
+	if (file_len < expected_end + (PHYSFS_sint64) sizeof(uint32_t))
 		return 0;
 
 	if (PHYSFS_read((PHYSFS_file *) fp, &tag, sizeof(tag), 1) != 1)
@@ -245,8 +248,13 @@ int coop_read_save_metadata(void *fp, PHYSFS_sint64 expected_end,
 	/* Read the rest of the struct (skip the tag we already read) */
 	memset(meta, 0, sizeof(*meta));
 	meta->tag = tag;
-	if (PHYSFS_read((PHYSFS_file *) fp, ((char *) meta) + sizeof(uint32_t),
-	                sizeof(*meta) - sizeof(uint32_t), 1) != 1) {
+	rest_len = file_len - expected_end - (PHYSFS_sint64) sizeof(uint32_t);
+	bytes_to_read = (PHYSFS_sint64) sizeof(*meta) - (PHYSFS_sint64) sizeof(uint32_t);
+	if (rest_len < bytes_to_read)
+		bytes_to_read = rest_len;
+	if (bytes_to_read <= 0 ||
+	    PHYSFS_read((PHYSFS_file *) fp, ((char *) meta) + sizeof(uint32_t),
+	                (uint) bytes_to_read, 1) != 1) {
 		con_printf(CON_URGENT, "coop_save: truncated metadata trailer\n");
 		return 0;
 	}
@@ -256,6 +264,19 @@ int coop_read_save_metadata(void *fp, PHYSFS_sint64 expected_end,
 	    meta->num_absent_players > COOP_MAX_REMEMBERED_PLAYERS) {
 		con_printf(CON_URGENT, "coop_save: invalid metadata (ver=%d, active=%d, absent=%d)\n",
 		           meta->version, meta->num_active_players, meta->num_absent_players);
+		return 0;
+	}
+	if (meta->version < 4) {
+		meta->difficulty_changed = 0;
+		meta->difficulty_min = meta->difficulty;
+		meta->difficulty_max = meta->difficulty;
+	}
+	if (meta->difficulty_changed > 1 || meta->difficulty > 4 ||
+	    meta->difficulty_min > 4 ||
+	    meta->difficulty_max > 4 || meta->difficulty_min > meta->difficulty_max) {
+		con_printf(CON_URGENT, "coop_save: invalid difficulty metadata (difficulty=%d, changed=%d, min=%d, max=%d)\n",
+		           meta->difficulty, meta->difficulty_changed,
+		           meta->difficulty_min, meta->difficulty_max);
 		return 0;
 	}
 
@@ -509,13 +530,18 @@ static void coop_write_autosave_history(int slot, int n_connected)
 		                "    \"timestamp\": %u,\n"
 		                "    \"level_time_seconds\": %d,\n"
 		                "    \"num_players\": %d,\n"
+		                "    \"difficulty_changed\": %d,\n"
+		                "    \"difficulty_min\": %d,\n"
+		                "    \"difficulty_max\": %d,\n"
 		                "    \"total_score\": %d,\n"
 		                "    \"callsigns\": [%s],\n"
 		                "    \"client_ids\": [%s]\n"
 		                "  }\n",
 		                slot, Current_mission_filename, Current_level_num,
-		                now, f2i(ThisLevelTime), n, total_score,
-		                callsigns_json, client_ids_json);
+		                now, f2i(ThisLevelTime), n,
+		                Difficulty_level_changed ? 1 : 0,
+		                Difficulty_level_min_seen, Difficulty_level_max_seen,
+		                total_score, callsigns_json, client_ids_json);
 	}
 
 	{
@@ -782,6 +808,9 @@ void coop_write_progress_json(void)
 	         "  \"last_completed_level\": %d,\n"
 	         "  \"timestamp\": %u,\n"
 	         "  \"difficulty\": %d,\n"
+	         "  \"difficulty_changed\": %d,\n"
+	         "  \"difficulty_min\": %d,\n"
+	         "  \"difficulty_max\": %d,\n"
 	         "  \"num_players\": %d,\n"
 	         "  \"players\": [%s],\n"
 	         "  \"client_ids\": [%s]\n"
@@ -790,6 +819,9 @@ void coop_write_progress_json(void)
 	         Current_level_num,
 	         (unsigned) time(NULL),
 	         Difficulty_level,
+	         Difficulty_level_changed ? 1 : 0,
+	         Difficulty_level_min_seen,
+	         Difficulty_level_max_seen,
 	         n,
 	         players,
 	         client_ids);

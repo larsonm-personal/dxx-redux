@@ -80,7 +80,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 12
+#define STATE_VERSION 13
 #define STATE_COMPATIBLE_VERSION 6
 #define STATE_RUNTIME_VERSION 8
 #define STATE_FIDELITY_VERSION 8
@@ -104,6 +104,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 10- Save AI path allocator timing and player path cursors for replay checkpoints
 // 11- Save object signature seed for deterministic post-checkpoint object creation
 // 12- Save FX RNG state and call count for deterministic checkpoint replay
+// 13- Save difficulty change history for mid-level difficulty edits
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -163,6 +164,42 @@ static int g_android_save_blank_thumbnail = 0;
 #define PHYSFSX_writeFix rewind_file_write_fix
 #define PHYSFSX_writeU8 rewind_file_write_u8
 #define PHYSFSX_writeVector rewind_file_write_vector
+#endif
+
+#ifdef __ANDROID__
+static int state_android_read_coop_metadata_trailer(PHYSFS_file *fp,
+	coop_save_metadata *meta)
+{
+	struct PHYSFS_File *physfs_fp;
+	PHYSFS_sint64 saved_pos;
+	PHYSFS_sint64 file_len;
+	PHYSFS_sint64 coop_meta_start;
+	android_save_meta_disk android_meta;
+	int have_android_meta;
+	int have_coop_meta = 0;
+
+	if (!fp || !meta || rewind_file_is_memory(fp))
+		return 0;
+
+	physfs_fp = rewind_file_physfs_handle(fp);
+	if (!physfs_fp)
+		return 0;
+
+	saved_pos = PHYSFS_tell(fp);
+	file_len = PHYSFS_fileLength(fp);
+	have_android_meta = android_save_meta_read_physfs(physfs_fp, file_len,
+		&android_meta);
+
+	coop_meta_start = file_len - (PHYSFS_sint64)sizeof(coop_save_metadata);
+	if (have_android_meta)
+		coop_meta_start -= (PHYSFS_sint64)sizeof(android_meta);
+	if (coop_meta_start >= 0)
+		have_coop_meta = coop_read_save_metadata(physfs_fp, coop_meta_start,
+			meta);
+
+	PHYSFS_seek(fp, saved_pos);
+	return have_coop_meta;
+}
 #endif
 
 static fix state_time_to_delta_fix(fix64 time_value)
@@ -1573,6 +1610,11 @@ int state_save_old_game(int slotnum, char * sg_name, player_rw * sg_player,
 // Save the difficulty level
 	temp_int = sg_difficulty_level;
 	PHYSFS_write(fp, &temp_int, sizeof(int), 1);
+	temp_int = 0;
+	PHYSFS_write(fp, &temp_int, sizeof(int), 1);
+	temp_int = sg_difficulty_level;
+	PHYSFS_write(fp, &temp_int, sizeof(int), 1);
+	PHYSFS_write(fp, &temp_int, sizeof(int), 1);
 
 // Save the cheats.enabled
 	temp_int = 0;
@@ -1699,6 +1741,9 @@ int state_save_all_sub(char *filename, char *desc)
 
 // Save the difficulty level
 	PHYSFS_write(fp, &Difficulty_level, sizeof(int), 1);
+	PHYSFS_write(fp, &Difficulty_level_changed, sizeof(int), 1);
+	PHYSFS_write(fp, &Difficulty_level_min_seen, sizeof(int), 1);
+	PHYSFS_write(fp, &Difficulty_level_max_seen, sizeof(int), 1);
 
 // Save cheats enabled
 	PHYSFS_write(fp, &cheats.enabled, sizeof(int), 1);
@@ -2035,6 +2080,14 @@ int state_restore_all_sub(char *filename)
 	select_weapon(Players[Player_num].secondary_weapon, 1, 0, 0);
 
 	Difficulty_level = PHYSFSX_readSXE32(fp, swap);
+	if (version >= 13) {
+		int difficulty_changed = PHYSFSX_readSXE32(fp, swap);
+		int difficulty_min = PHYSFSX_readSXE32(fp, swap);
+		int difficulty_max = PHYSFSX_readSXE32(fp, swap);
+		difficulty_restore_history(difficulty_changed, difficulty_min, difficulty_max);
+	} else {
+		difficulty_restore_history(0, Difficulty_level, Difficulty_level);
+	}
 
 	game_disable_cheats();
 	cheats.enabled = PHYSFSX_readSXE32(fp, swap);
@@ -2254,12 +2307,8 @@ RetryObjectLoading:
 		{
 			coop_save_metadata meta_early;
 			int have_meta = 0;
-			struct PHYSFS_File *physfs_fp = rewind_file_physfs_handle(fp);
-			PHYSFS_sint64 saved_pos = PHYSFS_tell(fp);
-			PHYSFS_sint64 meta_start = PHYSFS_fileLength(fp) - (PHYSFS_sint64)sizeof(coop_save_metadata);
-			if (physfs_fp && meta_start > saved_pos)
-				have_meta = coop_read_save_metadata(physfs_fp, meta_start, &meta_early);
-			PHYSFS_seek(fp, saved_pos);
+			have_meta = state_android_read_coop_metadata_trailer(fp,
+				&meta_early);
 
 			for (i = 0; i < MAX_PLAYERS; i++)
 			{
