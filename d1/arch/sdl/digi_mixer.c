@@ -59,7 +59,7 @@ extern int androidaud_get_initial_queued_buffers(void);
 
 #define MAX_SOUND_SLOTS 64
 #ifdef ANDROID
-#define SOUND_BUFFER_SIZE 512
+#define SOUND_BUFFER_SIZE 256
 extern int g_android_native_sample_rate;
 #define DIGI_MIXER_OUTPUT_RATE (g_android_native_sample_rate > 0 ? g_android_native_sample_rate : SAMPLE_RATE_48K)
 #else

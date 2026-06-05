@@ -120,3 +120,30 @@ Survey Android app causes of delayed Descent 2 sound effects and identify the mo
 - Export logs from the launcher Advanced tab
 - Send `[audio] init:`, `[audio] sfx start:`, and `[audio] sfx latency:` lines
 - If music regresses, include whether the exported `[audio] sfx latency:` lines show `cb_overruns` increasing
+
+## Tranche 5
+- [x] Read exported phone logs from the 512-frame mixer build
+- [x] Confirm the 512-frame mixer buffer took effect on device
+- [x] Confirm callback overrun counters stayed clean
+- [x] Compare measured app-side SFX latency against prior 1024-frame logs
+- [x] Reduce the Android SDL_mixer buffer from 512 frames to 256 frames for the next controlled test
+- [x] Build-check the Android native code
+- [x] Run Android code quality formatting/linting
+- [x] Provide phone test instructions focused on 256-frame buffer stability
+
+### Exported Log Reading
+- The phone ran the 512-frame build: `buf_frames=512`, `initial_queue_buffers=1`
+- SFX app-side timing improved again: 208 probes, min 0 ms, average 4.9 ms, median 5 ms, p90 10 ms, p95 10 ms, max 12 ms
+- Callback health stayed clean: `cb_overruns=0`, max callback time 976 us
+- Sample leading silence remained tiny: 130 start logs, average 1.2 ms, median 1 ms, p90 5 ms, max 5 ms
+- The next test uses 256 frames, about 5.3 ms at 48000 Hz, which is closer to the phone native 144-frame buffer while still staying above it
+
+### Test Instructions
+- Install a fresh debug build from this tranche
+- Turn on exportable Game Logs
+- Confirm the exported `[audio] init:` line shows `buf_frames=256`, `initial_queue_buffers=1`, and `cb_overruns=0`
+- Let level music play for at least 120 seconds before judging SFX, listening for new pops, skips, crackle, or dropouts
+- Collect several pickups and fire/impact weapons; note whether SFX feel unchanged, slightly improved, clearly improved, or worse than 512
+- Export logs from the launcher Advanced tab
+- Send `[audio] init:`, `[audio] sfx start:`, and `[audio] sfx latency:` lines
+- If music regresses, include whether the exported `[audio] sfx latency:` lines show `cb_overruns` increasing
