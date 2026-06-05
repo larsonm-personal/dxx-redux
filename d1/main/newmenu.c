@@ -392,6 +392,7 @@ void nm_draw_background1(char * filename)
 void nm_draw_background(int x1, int y1, int x2, int y2 )
 {
 	int w,h,init_sub=0;
+	int canvas_w, canvas_h;
 	static float BGScaleX=1,BGScaleY=1;
 	grs_canvas *tmp,*old;
 
@@ -410,16 +411,20 @@ void nm_draw_background(int x1, int y1, int x2, int y2 )
 		init_sub=1;
 	}
 
+	canvas_w = grd_curcanv ? grd_curcanv->cv_bitmap.bm_w : SWIDTH;
+	canvas_h = grd_curcanv ? grd_curcanv->cv_bitmap.bm_h : SHEIGHT;
 	if ( x1 < 0 ) x1 = 0;
 	if ( y1 < 0 ) y1 = 0;
-	if ( x2 > SWIDTH - 1) x2 = SWIDTH - 1;
-	if ( y2 > SHEIGHT - 1) y2 = SHEIGHT - 1;
+	if ( x2 > canvas_w - 1) x2 = canvas_w - 1;
+	if ( y2 > canvas_h - 1) y2 = canvas_h - 1;
 
 	w = x2-x1;
 	h = y2-y1;
+	if (w <= 0 || h <= 0)
+		return;
 
-	if (w > SWIDTH) w = SWIDTH;
-	if (h > SHEIGHT) h = SHEIGHT;
+	if (w > canvas_w) w = canvas_w;
+	if (h > canvas_h) h = canvas_h;
 
 	old=grd_curcanv;
 	tmp=gr_create_sub_canvas(old,x1,y1,w,h);

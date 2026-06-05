@@ -37,6 +37,14 @@ Remaining useful follow-up:
 - Add a focused automation or input-demo regression that changes difficulty mid-level, replays it, and checks final difficulty plus the HUD/console message.
 - Run a two-emulator coop smoke test to confirm host-to-client difficulty propagation and matching history fields on both peers.
 
+Crash follow-up 2026-06-04:
+
+- User reported a D2 launch crash in the newest build.
+- Tombstone symbolicates to `d2/2d/bitblt.c:570` via `show_fullscr(&nm_background)` in `d2/main/newmenu.c:446`, while `android_listbox_draw_scaled()` is drawing a startup listbox.
+- Suspected cause: `nm_draw_background()` clamps to the virtual screen size (`SWIDTH`/`SHEIGHT`) even when the current canvas is a smaller Android scaled/offscreen canvas, which lets `gr_bitmap_scale_to()` write past the offscreen bitmap.
+- Fixed: `nm_draw_background()` now clamps to the current canvas bitmap dimensions in D1 and D2 before creating its sub-canvas.
+- Validated: rebuilt `:app:assembleDebug` and ran `test_menu_scale_d2.json5 -Game d2 -Install`; the test passed and D2 reached the menu with menu scaling active.
+
 ## Core Engine Facts
 
 - D1 and D2 both define `NDL` as 5 in `d1/main/game.h` and `d2/main/game.h`.
