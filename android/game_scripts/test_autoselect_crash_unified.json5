@@ -89,6 +89,44 @@
     {"action": "log", "message": "Path 2: Options -> Primary ordering"},
     {"action": "select", "text": "Options", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Primary autoselect ordering...", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "menu.title": "Reorder Primary",
+        "menu.selected_index": "0",
+        "menu.items[0].value": "8",
+        "menu.items[1].value": "9"
+    }},
+    {"action": "send_button", "button": 0, "held": 1},
+    {"action": "wait_ms", "ms": 700},
+    {"action": "send_button", "button": 23, "post_delay_ms": 100},
+    {"action": "assert", "expect": {
+        "menu.title": "Reorder Primary",
+        "menu.selected_index": "1",
+        "menu.items[0].value": "9",
+        "menu.items[1].value": "8"
+    }},
+    {"action": "send_button", "button": 0, "pressed": 0},
+    {"action": "send_button", "button": 22, "post_delay_ms": 100},
+    {"action": "assert", "expect": {
+        "menu.title": "Reorder Primary",
+        "menu.selected_index": "0",
+        "menu.items[0].value": "8",
+        "menu.items[1].value": "9"
+    }},
+    {"action": "send_button", "button": 1, "post_delay_ms": 100},
+    {"action": "send_button", "button": 23, "post_delay_ms": 100},
+    {"action": "assert", "expect": {
+        "menu.title": "Reorder Primary",
+        "menu.selected_index": "1",
+        "menu.items[0].value": "8",
+        "menu.items[1].value": "9"
+    }},
+    {"action": "send_button", "button": 0, "post_delay_ms": 50},
+    {"action": "assert", "expect": {
+        "menu.title": "Reorder Primary",
+        "menu.selected_index": "1",
+        "menu.items[0].value": "8",
+        "menu.items[1].value": "9"
+    }},
     {"action": "key", "key": "escape", "post_delay_ms": 100},
     {"action": "key", "key": "escape", "post_delay_ms": 100},
     {"action": "introspect"},

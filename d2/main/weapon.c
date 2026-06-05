@@ -738,7 +738,13 @@ void ReorderPrimary ()
 			m[i].text=(char *)PRIMARY_WEAPON_NAMES(PlayerCfg.PrimaryOrder[i]);
 		m[i].value=PlayerCfg.PrimaryOrder[i];
 	}
-	i = newmenu_doreorder("Reorder Primary","Shift+Up/Down arrow to move item", i, m, NULL, NULL);
+	i = newmenu_doreorder("Reorder Primary",
+#ifdef ANDROID
+	                      "Long-press item or hold A to move",
+#else
+	                      "Shift+Up/Down arrow to move item",
+#endif
+	                      i, m, NULL, NULL);
 
 	for (i=0;i<MAX_PRIMARY_WEAPONS+1;i++)
 		PlayerCfg.PrimaryOrder[i]=m[i].value;
@@ -758,7 +764,13 @@ void ReorderSecondary ()
 			m[i].text=(char *)SECONDARY_WEAPON_NAMES(PlayerCfg.SecondaryOrder[i]);
 		m[i].value=PlayerCfg.SecondaryOrder[i];
 	}
-	i = newmenu_doreorder("Reorder Secondary","Shift+Up/Down arrow to move item", i, m, NULL, NULL);
+	i = newmenu_doreorder("Reorder Secondary",
+#ifdef ANDROID
+	                      "Long-press item or hold A to move",
+#else
+	                      "Shift+Up/Down arrow to move item",
+#endif
+	                      i, m, NULL, NULL);
 	for (i=0;i<MAX_SECONDARY_WEAPONS+1;i++)
 		PlayerCfg.SecondaryOrder[i]=m[i].value;
 }

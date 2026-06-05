@@ -48,4 +48,38 @@ class AutoselectReorderScrollTest {
         assertNull(autoselectCancelMoveTarget(grabbedIndex = -1, originalIndex = 1, itemCount = 5))
         assertNull(autoselectCancelMoveTarget(grabbedIndex = 3, originalIndex = -1, itemCount = 5))
     }
+
+    @Test
+    fun pendingSaveIncludesPilotMismatch() {
+        val primary = listOf(1, 2, 255)
+        val secondary = listOf(4, 255)
+
+        assertEquals(
+            true,
+            autoselectHasPendingSave(
+                primaryOrder = primary,
+                secondaryOrder = secondary,
+                savedPrimary = primary,
+                savedSecondary = secondary,
+                hasMismatchedPilots = true,
+            ),
+        )
+    }
+
+    @Test
+    fun pendingSaveInactiveWhenOrdersMatchAndPilotsMatch() {
+        val primary = listOf(1, 2, 255)
+        val secondary = listOf(4, 255)
+
+        assertEquals(
+            false,
+            autoselectHasPendingSave(
+                primaryOrder = primary,
+                secondaryOrder = secondary,
+                savedPrimary = primary,
+                savedSecondary = secondary,
+                hasMismatchedPilots = false,
+            ),
+        )
+    }
 }

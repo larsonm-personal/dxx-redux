@@ -15,6 +15,7 @@
 #include <jni.h>
 #include <cstring>
 #include <dirent.h>
+#include <sys/stat.h>
 #include <android/log.h>
 
 /* Use built-in English strings so text.h macros return literals
@@ -63,31 +64,6 @@ extern "C" {
 
 /* -- pilot file scanning ----------------------------------------- */
 
-static int find_first_pilot(const char *files_dir, const char *subdir,
-                            const char *ext, char *path_out, size_t path_size)
-{
-	char dir_path[512];
-	const char *subdirs[] = { "", "/Players" };
-	size_t ext_len = strlen(ext);
-
-	for (int d = 0; d < 2; d++) {
-		snprintf(dir_path, sizeof(dir_path), "%s/%s%s", files_dir, subdir, subdirs[d]);
-		DIR *dp = opendir(dir_path);
-		if (!dp) continue;
-		struct dirent *ent;
-		while ((ent = readdir(dp)) != NULL) {
-			size_t nlen = strlen(ent->d_name);
-			if (nlen > ext_len && strcasecmp(ent->d_name + nlen - ext_len, ext) == 0) {
-				snprintf(path_out, path_size, "%s/%s", dir_path, ent->d_name);
-				closedir(dp);
-				return 1;
-			}
-		}
-		closedir(dp);
-	}
-	return 0;
-}
-
 typedef int (*pilot_visitor_fn)(const char *path, void *ctx);
 
 static int for_each_pilot(const char *files_dir, const char *subdir,
@@ -114,6 +90,82 @@ static int for_each_pilot(const char *files_dir, const char *subdir,
 		closedir(dp);
 	}
 	return total;
+}
+
+struct read_summary_ctx {
+	int valid_count;
+	int mismatch;
+	int have_reference;
+	time_t newest_mtime;
+	char newest_path[512];
+	ubyte reference_primary[MAX_ORDER_LEN];
+	ubyte reference_secondary[MAX_ORDER_LEN];
+	ubyte newest_primary[MAX_ORDER_LEN];
+	ubyte newest_secondary[MAX_ORDER_LEN];
+};
+
+static int order_matches(const ubyte *a, const ubyte *b, int len)
+{
+	return memcmp(a, b, (size_t) len) == 0;
+}
+
+static int order_pair_matches(const ubyte *primary_a, const ubyte *secondary_a,
+                              const ubyte *primary_b, const ubyte *secondary_b)
+{
+	return order_matches(primary_a, primary_b, PRIM_ORDER_LEN) &&
+	       order_matches(secondary_a, secondary_b, SEC_ORDER_LEN);
+}
+
+#ifdef DXX_BUILD_DESCENT_II
+static int read_weapon_order_file(const char *path, ubyte *primary, ubyte *secondary)
+{
+	return plr_read_weapon_order(path, primary, PRIM_ORDER_LEN,
+	                             secondary, SEC_ORDER_LEN);
+}
+#else
+static int read_weapon_order_file(const char *path, ubyte *primary, ubyte *secondary)
+{
+	return plx_read_weapon_order(path, primary, PRIM_ORDER_LEN,
+	                             secondary, SEC_ORDER_LEN);
+}
+#endif
+
+static int read_summary_visitor(const char *path, void *ctx)
+{
+	struct read_summary_ctx *rc = (struct read_summary_ctx *) ctx;
+	ubyte primary[MAX_ORDER_LEN], secondary[MAX_ORDER_LEN];
+	if (!read_weapon_order_file(path, primary, secondary))
+		return 0;
+
+	if (!rc->have_reference) {
+		memcpy(rc->reference_primary, primary, PRIM_ORDER_LEN);
+		memcpy(rc->reference_secondary, secondary, SEC_ORDER_LEN);
+		rc->have_reference = 1;
+	} else if (!order_pair_matches(rc->reference_primary, rc->reference_secondary,
+	                               primary, secondary)) {
+		rc->mismatch = 1;
+	}
+
+	struct stat st;
+	time_t mtime = 0;
+	if (stat(path, &st) == 0)
+		mtime = st.st_mtime;
+	if (rc->valid_count == 0 || mtime > rc->newest_mtime) {
+		rc->newest_mtime = mtime;
+		snprintf(rc->newest_path, sizeof(rc->newest_path), "%s", path);
+		memcpy(rc->newest_primary, primary, PRIM_ORDER_LEN);
+		memcpy(rc->newest_secondary, secondary, SEC_ORDER_LEN);
+	}
+
+	rc->valid_count++;
+	return 1;
+}
+
+static int read_autoselect_summary(const char *files_dir, const char *subdir,
+                                   const char *ext, struct read_summary_ctx *ctx)
+{
+	memset(ctx, 0, sizeof(*ctx));
+	return for_each_pilot(files_dir, subdir, ext, read_summary_visitor, ctx);
 }
 
 /* -- write visitor context --------------------------------------- */
@@ -157,37 +209,60 @@ JNI_FUNC(nativeReadAutoselect)(
 	const char *ext = ".plx";
 #endif
 
-	char pilot_path[512];
-	if (!find_first_pilot(files_dir, subdir, ext, pilot_path, sizeof(pilot_path))) {
+	struct read_summary_ctx summary;
+	if (!read_autoselect_summary(files_dir, subdir, ext, &summary)) {
 		LOGI("nativeReadAutoselect: no pilot file found in %s/%s", files_dir, subdir);
 		env->ReleaseStringUTFChars(jfilesDir, files_dir);
 		return env->NewIntArray(0);
 	}
 
-	ubyte primary[MAX_ORDER_LEN], secondary[MAX_ORDER_LEN];
-	int ok;
-#ifdef DXX_BUILD_DESCENT_II
-	ok = plr_read_weapon_order(pilot_path, primary, PRIM_ORDER_LEN,
-	                           secondary, SEC_ORDER_LEN);
-#else
-	ok = plx_read_weapon_order(pilot_path, primary, PRIM_ORDER_LEN,
-	                           secondary, SEC_ORDER_LEN);
-#endif
-
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
-
-	if (!ok) {
-		LOGE("nativeReadAutoselect: failed to read from %s", pilot_path);
-		return env->NewIntArray(0);
-	}
-
-	LOGI("nativeReadAutoselect: read from %s", pilot_path);
+	LOGI("nativeReadAutoselect: read newest from %s", summary.newest_path);
 
 	int total = PRIM_ORDER_LEN + SEC_ORDER_LEN;
 	jintArray result = env->NewIntArray(total);
 	jint flat[MAX_ORDER_LEN * 2];
-	for (int i = 0; i < PRIM_ORDER_LEN; i++) flat[i] = primary[i];
-	for (int i = 0; i < SEC_ORDER_LEN; i++) flat[PRIM_ORDER_LEN + i] = secondary[i];
+	for (int i = 0; i < PRIM_ORDER_LEN; i++) flat[i] = summary.newest_primary[i];
+	for (int i = 0; i < SEC_ORDER_LEN; i++) flat[PRIM_ORDER_LEN + i] = summary.newest_secondary[i];
+	env->SetIntArrayRegion(result, 0, total, flat);
+	return result;
+}
+
+extern "C" JNIEXPORT jintArray JNICALL
+JNI_FUNC(nativeReadAutoselectSummary)(
+    JNIEnv *env, jclass, jstring jfilesDir)
+{
+	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+
+#ifdef DXX_BUILD_DESCENT_II
+	const char *subdir = "d2x-redux";
+	const char *ext = ".plr";
+#else
+	const char *subdir = "d1x-redux";
+	const char *ext = ".plx";
+#endif
+
+	struct read_summary_ctx summary;
+	if (!read_autoselect_summary(files_dir, subdir, ext, &summary)) {
+		LOGI("nativeReadAutoselectSummary: no pilot file found in %s/%s", files_dir, subdir);
+		env->ReleaseStringUTFChars(jfilesDir, files_dir);
+		return env->NewIntArray(0);
+	}
+
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+	LOGI("nativeReadAutoselectSummary: read newest from %s (%d valid, mismatch=%d)",
+	     summary.newest_path, summary.valid_count, summary.mismatch);
+
+	int order_total = PRIM_ORDER_LEN + SEC_ORDER_LEN;
+	int total = 4 + order_total;
+	jintArray result = env->NewIntArray(total);
+	jint flat[4 + MAX_ORDER_LEN * 2];
+	flat[0] = summary.valid_count;
+	flat[1] = summary.mismatch;
+	flat[2] = PRIM_ORDER_LEN;
+	flat[3] = SEC_ORDER_LEN;
+	for (int i = 0; i < PRIM_ORDER_LEN; i++) flat[4 + i] = summary.newest_primary[i];
+	for (int i = 0; i < SEC_ORDER_LEN; i++) flat[4 + PRIM_ORDER_LEN + i] = summary.newest_secondary[i];
 	env->SetIntArrayRegion(result, 0, total, flat);
 	return result;
 }

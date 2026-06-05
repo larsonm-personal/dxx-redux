@@ -113,6 +113,7 @@ fun AutoselectEditorPage(
 
     var statusMessage by remember { mutableStateOf("") }
     var hasChanges by remember { mutableStateOf(false) }
+    var hasMismatchedPilots by remember { mutableStateOf(false) }
 
     fun weaponName(
         index: Int,
@@ -127,28 +128,35 @@ fun AutoselectEditorPage(
         val secEntries = NativeAutoselectPatcher.getSecondaryWeaponEntries(activeGame)
         primaryNameMap = NativeAutoselectPatcher.parseWeaponEntries(primEntries)
         secondaryNameMap = NativeAutoselectPatcher.parseWeaponEntries(secEntries)
-        val primLen = primaryNameMap.size
-        val secLen = secondaryNameMap.size
 
-        val data = NativeAutoselectPatcher.readAutoselect(activeGame, filesDir)
-        if (data.isEmpty()) {
+        val summary = NativeAutoselectPatcher.readAutoselectSummary(activeGame, filesDir)
+        if (summary == null) {
             // No pilot files -- use defaults (map keys are in default order)
             primaryOrder.clear()
             primaryOrder.addAll(primaryNameMap.keys)
             secondaryOrder.clear()
             secondaryOrder.addAll(secondaryNameMap.keys)
             statusMessage = "No pilot files found - showing defaults"
+            hasMismatchedPilots = false
         } else {
             primaryOrder.clear()
+            primaryOrder.addAll(summary.primary.toList())
             secondaryOrder.clear()
-            for (i in 0 until primLen) primaryOrder.add(data[i])
-            for (i in 0 until secLen) secondaryOrder.add(data[primLen + i])
+            secondaryOrder.addAll(summary.secondary.toList())
             statusMessage = ""
+            hasMismatchedPilots = summary.hasMismatchedPilots
         }
 
         savedPrimary = primaryOrder.toList()
         savedSecondary = secondaryOrder.toList()
-        hasChanges = false
+        hasChanges =
+            autoselectHasPendingSave(
+                primaryOrder = primaryOrder,
+                secondaryOrder = secondaryOrder,
+                savedPrimary = savedPrimary,
+                savedSecondary = savedSecondary,
+                hasMismatchedPilots = hasMismatchedPilots,
+            )
     }
 
     LaunchedEffect(activeGame) {
@@ -157,8 +165,14 @@ fun AutoselectEditorPage(
 
     // Check for changes whenever ordering updates
     fun checkChanges() {
-        hasChanges = primaryOrder.toList() != savedPrimary ||
-            secondaryOrder.toList() != savedSecondary
+        hasChanges =
+            autoselectHasPendingSave(
+                primaryOrder = primaryOrder,
+                secondaryOrder = secondaryOrder,
+                savedPrimary = savedPrimary,
+                savedSecondary = savedSecondary,
+                hasMismatchedPilots = hasMismatchedPilots,
+            )
     }
 
     val isLandscape =
@@ -270,6 +284,14 @@ fun AutoselectEditorPage(
                         modifier = Modifier.padding(bottom = 4.dp),
                     )
                 }
+                if (hasMismatchedPilots) {
+                    Text(
+                        "Pilot files have mismatched weapon ordering. Save to apply this ordering to all pilots.",
+                        color = MaterialTheme.colorScheme.tertiary,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                }
 
                 // Two weapon lists side by side in landscape, stacked in portrait
                 Row(
@@ -350,6 +372,7 @@ fun AutoselectEditorPage(
                                 )
                             savedPrimary = primaryOrder.toList()
                             savedSecondary = secondaryOrder.toList()
+                            hasMismatchedPilots = false
                             hasChanges = false
                             statusMessage = "Saved to $count pilot file(s)"
                         },
@@ -709,6 +732,17 @@ internal fun autoselectMovedItemScrollAnchor(
         else -> null
     }
 }
+
+internal fun autoselectHasPendingSave(
+    primaryOrder: List<Int>,
+    secondaryOrder: List<Int>,
+    savedPrimary: List<Int>,
+    savedSecondary: List<Int>,
+    hasMismatchedPilots: Boolean,
+): Boolean =
+    hasMismatchedPilots ||
+        primaryOrder != savedPrimary ||
+        secondaryOrder != savedSecondary
 
 @Composable
 private fun BoxScope.LazyListScrollArrows(listState: LazyListState) {

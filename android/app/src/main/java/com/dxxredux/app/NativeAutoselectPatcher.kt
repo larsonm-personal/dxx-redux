@@ -13,6 +13,13 @@ package com.dxxredux.app
 object NativeAutoselectPatcher {
     const val SEPARATOR = 255
 
+    data class AutoselectSummary(
+        val primary: IntArray,
+        val secondary: IntArray,
+        val pilotCount: Int,
+        val hasMismatchedPilots: Boolean,
+    )
+
     init {
         System.loadLibrary("dxx-redux-d1")
         System.loadLibrary("dxx-redux-d2")
@@ -20,6 +27,8 @@ object NativeAutoselectPatcher {
 
     // -- D1 native methods (bound to libdxx-redux-d1.so) --
     @JvmStatic external fun nativeReadAutoselectD1(filesDir: String): IntArray
+
+    @JvmStatic external fun nativeReadAutoselectSummaryD1(filesDir: String): IntArray
 
     @JvmStatic external fun nativeWriteAutoselectD1(
         filesDir: String,
@@ -33,6 +42,8 @@ object NativeAutoselectPatcher {
 
     // -- D2 native methods (bound to libdxx-redux-d2.so) --
     @JvmStatic external fun nativeReadAutoselectD2(filesDir: String): IntArray
+
+    @JvmStatic external fun nativeReadAutoselectSummaryD2(filesDir: String): IntArray
 
     @JvmStatic external fun nativeWriteAutoselectD2(
         filesDir: String,
@@ -49,6 +60,27 @@ object NativeAutoselectPatcher {
         game: String,
         filesDir: String,
     ): IntArray = if (game == "d1") nativeReadAutoselectD1(filesDir) else nativeReadAutoselectD2(filesDir)
+
+    fun readAutoselectSummary(
+        game: String,
+        filesDir: String,
+    ): AutoselectSummary? {
+        val data =
+            if (game == "d1") {
+                nativeReadAutoselectSummaryD1(filesDir)
+            } else {
+                nativeReadAutoselectSummaryD2(filesDir)
+            }
+        if (data.size < 4) return null
+        val pilotCount = data[0]
+        val hasMismatchedPilots = data[1] != 0
+        val primLen = data[2]
+        val secLen = data[3]
+        if (primLen <= 0 || secLen <= 0 || data.size < 4 + primLen + secLen) return null
+        val primary = data.copyOfRange(4, 4 + primLen)
+        val secondary = data.copyOfRange(4 + primLen, 4 + primLen + secLen)
+        return AutoselectSummary(primary, secondary, pilotCount, hasMismatchedPilots)
+    }
 
     fun writeAutoselect(
         game: String,
