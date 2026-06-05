@@ -40,3 +40,55 @@ Survey Android app causes of delayed Descent 2 sound effects and identify the mo
 - Dump introspection after firing a few effects and inspect `audio.sfx_last_delay_ms`, `audio.sfx_last_cb_delta`, `audio.osl_buf_frames`, `audio.osl_native_buf_frames`, and `audio.osl_perf_mode_result`
 - Also check logcat for `DXX-Audio` lines containing `sfx latency probe`
 - If music regresses, revert only the OpenSL performance mode change first; this tranche did not reduce the 2048 frame SDL_mixer buffer
+
+## Tranche 2
+- [x] Read exported phone logs from the first diagnostic build
+- [x] Interpret the SFX callback timing against mixer and native buffer sizes
+- [x] Keep the 2048 frame mixer buffer for now, but reduce the OpenSL startup queue from two buffers to one
+- [x] Add exportable queue and estimated app latency fields to game logs and introspection
+- [x] Build-check the Android native code
+- [x] Run Android code quality formatting/linting
+- [x] Provide phone test instructions focused on latency improvement and music regressions
+
+### Exported Log Reading
+- The phone accepted OpenSL latency mode: `perf_mode_result=0`
+- The device native output buffer is small: `native_buf_frames=144` at 48000 Hz, about 3 ms
+- The app mixer buffer remains 2048 frames, about 43 ms
+- The first callback after SFX start was usually quick: powerup-like sound `71` showed 7 ms around shield and energy pickups in the exported log
+- Because the old OpenSL startup path queued two 2048-frame buffers, a sound mixed in the next callback could still sit behind about one full app buffer before reaching the platform output
+
+### Test Instructions
+- Install a fresh debug build from this tranche and launch Descent 2 on the real phone
+- Turn on exportable Game Logs in the launcher debug settings
+- On game start, confirm the exported log later contains `[audio] init:` with `initial_queue_buffers=1`
+- Let music play for at least 60 seconds before collecting pickups; listen specifically for new popping, skipping, crackle, or short dropouts
+- In gameplay, collect several shield/energy/weapon pickups and compare their timing to the HUD messages and visual pickup moment
+- Export the debug logs from the launcher Advanced tab
+- Send the exported Game Logs lines containing `[audio] init:` and `[audio] sfx latency:`
+- Subjectively note whether SFX feel unchanged, slightly improved, clearly improved, or worse, and whether music regressed
+
+## Tranche 3
+- [x] Read exported phone logs from the one-buffer OpenSL queue build
+- [x] Confirm the queue-depth change took effect on device
+- [x] Compare measured app-side SFX latency against the reported 300 ms subjective delay
+- [x] Reduce the Android SDL_mixer buffer from 2048 frames to 1024 frames for a controlled next test
+- [x] Add direct exportable `[audio] sfx start:` logs with sample leading-silence timing
+- [ ] Build-check the Android native code
+- [ ] Run Android code quality formatting/linting
+- [ ] Provide phone test instructions focused on 1024-frame buffer stability
+
+### Exported Log Reading
+- The phone ran the one-buffer queue build: `initial_queue_buffers=1`
+- All exported probes reported `queue_ms=0`, so the extra OpenSL app queue was removed
+- SFX app-side timing was low: 133 probes, min 1 ms, average 22.3 ms, median 19 ms, p95 39 ms, max 48 ms
+- If audible pickup delay remains around 300 ms, the remaining delay is not explained by the currently measured game-to-callback path
+- The next test halves the mixer callback interval from about 43 ms to about 21 ms while keeping the music path otherwise unchanged
+
+### Test Instructions
+- Install a fresh debug build from this tranche
+- Turn on exportable Game Logs
+- Confirm the exported `[audio] init:` line shows `buf_frames=1024` and `initial_queue_buffers=1`
+- Let level music play for at least 90 seconds before judging SFX, listening for new pops, skips, crackle, or dropouts
+- Collect several pickups and fire/impact weapons; note whether SFX feel unchanged, slightly improved, clearly improved, or worse
+- Export logs from the launcher Advanced tab
+- Send `[audio] init:`, `[audio] sfx start:`, and `[audio] sfx latency:` lines

@@ -120,7 +120,10 @@ int androidaud_get_sfx_last_delay_ms(void);
 int androidaud_get_sfx_last_soundnum(void);
 int androidaud_get_sfx_last_channel(void);
 int androidaud_get_sfx_last_cb_delta(void);
+int androidaud_get_sfx_last_queue_delay_ms(void);
+int androidaud_get_sfx_last_estimated_output_ms(void);
 int androidaud_get_sfx_probe_count(void);
+int androidaud_get_initial_queued_buffers(void);
 }
 
 #include <SDL_mixer.h>
@@ -795,7 +798,10 @@ extern "C" char *game_introspect_get_state(void)
 			{ "sfx_last_soundnum", androidaud_get_sfx_last_soundnum() },
 			{ "sfx_last_channel", androidaud_get_sfx_last_channel() },
 			{ "sfx_last_cb_delta", androidaud_get_sfx_last_cb_delta() },
-			{ "sfx_probe_count", androidaud_get_sfx_probe_count() }
+			{ "sfx_last_queue_ms", androidaud_get_sfx_last_queue_delay_ms() },
+			{ "sfx_last_est_app_ms", androidaud_get_sfx_last_estimated_output_ms() },
+			{ "sfx_probe_count", androidaud_get_sfx_probe_count() },
+			{ "osl_initial_queued_buffers", androidaud_get_initial_queued_buffers() }
 		};
 		j["audio"] = std::move(audio);
 	}

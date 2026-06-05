@@ -46,6 +46,8 @@ static int      g_sfx_last_delay_ms = -1;
 static int      g_sfx_last_soundnum = -1;
 static int      g_sfx_last_channel  = -1;
 static int      g_sfx_last_cb_delta = -1;
+static int      g_sfx_last_queue_delay_ms = -1;
+static int      g_sfx_last_estimated_output_ms = -1;
 static int      g_sfx_probe_count   = 0;
 
 /* ── Native audio properties (set from JNI before audio init) ─ */
@@ -66,6 +68,30 @@ void androidaud_note_sfx_start(int soundnum, int channel)
     g_sfx_start_cb = g_play_count;
     g_sfx_start_ms = (int)SDL_GetTicks();
     g_sfx_pending = 1;
+}
+
+static int androidaud_buffer_ms(void)
+{
+    if (g_audio_freq <= 0 || g_audio_buf_frames <= 0) {
+        return -1;
+    }
+    return (g_audio_buf_frames * 1000 + g_audio_freq - 1) / g_audio_freq;
+}
+
+static int androidaud_queue_delay_ms(void)
+{
+    int buffer_ms = androidaud_buffer_ms();
+    int queued_buffers = INITIAL_QUEUED_BUFFERS;
+
+    if (buffer_ms < 0) {
+        return -1;
+    }
+    if (queued_buffers < 1) {
+        queued_buffers = 1;
+    } else if (queued_buffers > NUM_BUFFERS) {
+        queued_buffers = NUM_BUFFERS;
+    }
+    return (queued_buffers - 1) * buffer_ms;
 }
 
 /* ── Bootstrap ─────────────────────────────────────────────── */
@@ -149,11 +175,17 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
         g_sfx_last_soundnum = g_sfx_soundnum;
         g_sfx_last_channel = g_sfx_channel;
         g_sfx_last_cb_delta = g_play_count - g_sfx_start_cb;
+        g_sfx_last_queue_delay_ms = androidaud_queue_delay_ms();
+        g_sfx_last_estimated_output_ms = g_sfx_last_delay_ms;
+        if (g_sfx_last_queue_delay_ms > 0) {
+            g_sfx_last_estimated_output_ms += g_sfx_last_queue_delay_ms;
+        }
         g_sfx_pending = 0;
         g_sfx_probe_count++;
         if (g_sfx_probe_count <= 64 || (g_sfx_probe_count % 32) == 0) {
-            LOGI("sfx latency probe: sound=%d channel=%d delay_ms=%d callbacks=%d buf_idx=%d play_count=%d",
+            LOGI("sfx latency probe: sound=%d channel=%d delay_ms=%d queue_ms=%d est_app_ms=%d callbacks=%d buf_idx=%d play_count=%d",
                  g_sfx_last_soundnum, g_sfx_last_channel, g_sfx_last_delay_ms,
+                 g_sfx_last_queue_delay_ms, g_sfx_last_estimated_output_ms,
                  g_sfx_last_cb_delta, buf_idx, g_play_count);
         }
     }
@@ -201,6 +233,18 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
         SDL_memset(h->playbuf[i], 0, h->playlen);
     }
     h->next_buf = 0;
+    g_audio_freq = spec->freq;
+    g_audio_buf_frames = spec->samples;
+    g_play_count = 0;
+    g_enqueue_fail = 0;
+    g_sfx_pending = 0;
+    g_sfx_last_delay_ms = -1;
+    g_sfx_last_soundnum = -1;
+    g_sfx_last_channel = -1;
+    g_sfx_last_cb_delta = -1;
+    g_sfx_last_queue_delay_ms = -1;
+    g_sfx_last_estimated_output_ms = -1;
+    g_sfx_probe_count = 0;
 
     /* ── Create OpenSL ES engine ─────────────────────────── */
     result = slCreateEngine(&h->engineObject, 0, NULL, 0, NULL, NULL);
@@ -287,28 +331,24 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     /* Start playback */
     (*h->playerPlay)->SetPlayState(h->playerPlay, SL_PLAYSTATE_PLAYING);
 
-    /* Pre-enqueue all buffers (silence) to start the callback chain.
+    /* Pre-enqueue silence to start the callback chain.
      * As each buffer finishes, bqPlayerCallback fires, mixes real audio
      * into the freed buffer, and re-enqueues it. */
-    for (int i = 0; i < NUM_BUFFERS; i++) {
+    int initial_buffers = INITIAL_QUEUED_BUFFERS;
+    if (initial_buffers < 1) {
+        initial_buffers = 1;
+    } else if (initial_buffers > NUM_BUFFERS) {
+        initial_buffers = NUM_BUFFERS;
+    }
+    for (int i = 0; i < initial_buffers; i++) {
         (*h->playerBufferQueue)->Enqueue(h->playerBufferQueue,
                                          h->playbuf[i], h->playlen);
     }
 
     LOGI("OpenSL ES audio ready (callback-driven): %d Hz, %d ch, "
-         "%u samples/frame, playbuf=%u bytes, num_buffers=%d",
+         "%u samples/frame, playbuf=%u bytes, num_buffers=%d, initial_buffers=%d",
          spec->freq, spec->channels, spec->samples, h->playlen,
-         NUM_BUFFERS);
-
-    g_audio_freq = spec->freq;
-    g_audio_buf_frames = spec->samples;
-    g_play_count = 0;
-    g_enqueue_fail = 0;
-    g_sfx_pending = 0;
-    g_sfx_last_delay_ms = -1;
-    g_sfx_last_soundnum = -1;
-    g_sfx_last_channel = -1;
-    g_sfx_last_cb_delta = -1;
+         NUM_BUFFERS, initial_buffers);
 
     return 0;
 }
@@ -373,6 +413,9 @@ int androidaud_get_sfx_last_delay_ms(void) { return g_sfx_last_delay_ms; }
 int androidaud_get_sfx_last_soundnum(void) { return g_sfx_last_soundnum; }
 int androidaud_get_sfx_last_channel(void) { return g_sfx_last_channel; }
 int androidaud_get_sfx_last_cb_delta(void) { return g_sfx_last_cb_delta; }
+int androidaud_get_sfx_last_queue_delay_ms(void) { return g_sfx_last_queue_delay_ms; }
+int androidaud_get_sfx_last_estimated_output_ms(void) { return g_sfx_last_estimated_output_ms; }
 int androidaud_get_sfx_probe_count(void) { return g_sfx_probe_count; }
+int androidaud_get_initial_queued_buffers(void) { return INITIAL_QUEUED_BUFFERS; }
 
 #endif /* SDL_AUDIO_DRIVER_ANDROID */

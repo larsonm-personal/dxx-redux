@@ -14,6 +14,7 @@
 #define _THIS	SDL_AudioDevice *this
 
 #define NUM_BUFFERS 2
+#define INITIAL_QUEUED_BUFFERS 1
 
 struct SDL_PrivateAudioData {
     /* OpenSL ES objects */
