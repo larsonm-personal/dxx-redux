@@ -50,35 +50,34 @@ class AutoselectReorderScrollTest {
     }
 
     @Test
-    fun pendingSaveIncludesPilotMismatch() {
-        val primary = listOf(1, 2, 255)
-        val secondary = listOf(4, 255)
-
+    fun pendingSaveIncludesD1Mismatch() {
         assertEquals(
             true,
             autoselectHasPendingSave(
-                primaryOrder = primary,
-                secondaryOrder = secondary,
-                savedPrimary = primary,
-                savedSecondary = secondary,
-                hasMismatchedPilots = true,
+                d1MismatchCount = 1,
+                d2MismatchCount = 0,
             ),
         )
     }
 
     @Test
-    fun pendingSaveInactiveWhenOrdersMatchAndPilotsMatch() {
-        val primary = listOf(1, 2, 255)
-        val secondary = listOf(4, 255)
+    fun pendingSaveIncludesD2Mismatch() {
+        assertEquals(
+            true,
+            autoselectHasPendingSave(
+                d1MismatchCount = 0,
+                d2MismatchCount = 1,
+            ),
+        )
+    }
 
+    @Test
+    fun pendingSaveInactiveWithoutAnyMismatch() {
         assertEquals(
             false,
             autoselectHasPendingSave(
-                primaryOrder = primary,
-                secondaryOrder = secondary,
-                savedPrimary = primary,
-                savedSecondary = secondary,
-                hasMismatchedPilots = false,
+                d1MismatchCount = 0,
+                d2MismatchCount = 0,
             ),
         )
     }

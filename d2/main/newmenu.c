@@ -71,6 +71,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "android_crash_handler.h"
 #include "android_log.h"
+#include "android_menu_reorder.h"
 #include "android_menu_scale.h"
 #include "android_pilot_listbox_hold.h"
 #endif
@@ -81,10 +82,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define MESSAGEBOX_TEXT_SIZE 2176  // How many characters in messagebox
 #define MAX_TEXT_WIDTH FSPACX(120) // How many pixels wide a input box can be
 #define LB_ITEMS_ON_SCREEN 8
-#ifdef ANDROID
-#define ANDROID_REORDER_HOLD_TIME (F1_0*2/5)
-#endif
-
 struct newmenu
 {
 	window			*wind;
@@ -114,11 +111,7 @@ struct newmenu
 	newmenu_item	*android_original_items;
 	int				android_original_nitems;
 	int				android_readable_tiny;
-	int				reorder_grabbed;
-	int				reorder_button_down;
-	fix64			reorder_button_time;
-	int				reorder_touch_candidate;
-	fix64			reorder_touch_time;
+	android_menu_reorder_state reorder;
 #endif
 };
 grs_bitmap nm_background, nm_background1;
@@ -1030,36 +1023,28 @@ static int newmenu_reorder_item_at_pos(newmenu *menu, int mx, int my)
 
 static void newmenu_reorder_drop(newmenu *menu)
 {
-	menu->reorder_grabbed = 0;
-	menu->reorder_button_down = 0;
-	menu->reorder_touch_candidate = -1;
+	android_menu_reorder_drop(&menu->reorder);
 }
 
 static int newmenu_reorder_grab(newmenu *menu)
 {
 	if (!menu->reorderitems || menu->citem < 0 || menu->citem >= menu->nitems)
 		return 0;
-	menu->reorder_grabbed = 1;
-	menu->reorder_button_down = 0;
-	menu->reorder_touch_candidate = menu->citem;
+	android_menu_reorder_mark_grabbed(&menu->reorder, menu->citem);
 	newmenu_reorder_ensure_visible(menu);
 	return 1;
 }
 
-static int newmenu_reorder_hold_ready(fix64 start_time)
-{
-	return start_time && timer_query() - start_time >= ANDROID_REORDER_HOLD_TIME;
-}
-
 static int newmenu_reorder_poll(newmenu *menu)
 {
-	if (!menu->reorderitems || menu->reorder_grabbed)
+	fix64 now;
+	if (!menu->reorderitems || menu->reorder.grabbed)
 		return 0;
-	if (menu->reorder_button_down && newmenu_reorder_hold_ready(menu->reorder_button_time))
+	now = timer_query();
+	if (android_menu_reorder_button_ready(&menu->reorder, now))
 		return newmenu_reorder_grab(menu);
-	if (menu->mouse_state && menu->reorder_touch_candidate >= 0 &&
-	    newmenu_reorder_hold_ready(menu->reorder_touch_time)) {
-		menu->citem = menu->reorder_touch_candidate;
+	if (android_menu_reorder_touch_ready(&menu->reorder, menu->mouse_state, now)) {
+		menu->citem = menu->reorder.touch_candidate;
 		return newmenu_reorder_grab(menu);
 	}
 	return 0;
@@ -1087,8 +1072,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 					i = newmenu_reorder_item_at_pos(menu, mx, my);
 					if (i >= 0) {
 						menu->citem = i;
-						menu->reorder_touch_candidate = i;
-						menu->reorder_touch_time = timer_query();
+						android_menu_reorder_start_touch(&menu->reorder, i, timer_query());
 						menu->drag_happened = 0;
 						gr_set_current_canvas(save_canvas);
 						return 1;
@@ -1954,7 +1938,7 @@ static void newmenu_draw_contents(newmenu *menu)
 	{
 		draw_item( &menu->items[i], (i==menu->citem && !menu->all_text),
 #ifdef ANDROID
-		           (menu->reorderitems && menu->reorder_grabbed && i == menu->citem),
+		           (menu->reorderitems && menu->reorder.grabbed && i == menu->citem),
 #else
 		           0,
 #endif
@@ -2312,19 +2296,17 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 			int keycode = -1;
 			if (menu->reorderitems) {
 				if (btn == 0) {
-					if (menu->reorder_grabbed)
+					if (menu->reorder.grabbed)
 						newmenu_reorder_drop(menu);
-					else {
-						menu->reorder_button_down = 1;
-						menu->reorder_button_time = timer_query();
-					}
+					else
+						android_menu_reorder_start_button(&menu->reorder, timer_query());
 					return 1;
 				}
-				if (btn == 1 && menu->reorder_grabbed) {
+				if (btn == 1 && menu->reorder.grabbed) {
 					newmenu_reorder_drop(menu);
 					return 1;
 				}
-				if (menu->reorder_grabbed) {
+				if (menu->reorder.grabbed) {
 					if (btn == 22)
 						newmenu_reorder_move(menu, -1);
 					else if (btn == 23)
@@ -2351,7 +2333,7 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 		{
 			int btn = event_joystick_get_button(event);
 			if (menu->reorderitems && btn == 0) {
-				menu->reorder_button_down = 0;
+				android_menu_reorder_stop_button(&menu->reorder);
 				return 1;
 			}
 			break;
@@ -2367,7 +2349,7 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 					stick_dir[axis] = dir;
 					if (dir) {
 						int keycode;
-						if (menu->reorderitems && menu->reorder_grabbed) {
+						if (menu->reorderitems && menu->reorder.grabbed) {
 							if (axis == 1 || axis == 3)
 								newmenu_reorder_move(menu, dir < 0 ? -1 : 1);
 							return 1;
@@ -2389,16 +2371,16 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 
 #ifdef ANDROID
 		case EVENT_MOUSE_MOVED:
-			if (menu->mouse_state && menu->reorderitems && menu->reorder_touch_candidate >= 0) {
+			if (menu->mouse_state && menu->reorderitems && menu->reorder.touch_candidate >= 0) {
 				int mx, my, mz, target;
 				grs_canvas *menu_canvas = window_get_canvas(wind);
 				grs_canvas *save_canvas = grd_curcanv;
 				gr_set_current_canvas(menu_canvas);
 
 				mouse_get_pos(&mx, &my, &mz);
-				if (!menu->reorder_grabbed)
+				if (!menu->reorder.grabbed)
 					newmenu_reorder_poll(menu);
-				if (menu->reorder_grabbed) {
+				if (menu->reorder.grabbed) {
 					target = newmenu_reorder_item_at_pos(menu, mx, my);
 					while (target >= 0 && menu->citem < target && newmenu_reorder_move(menu, 1))
 						;
@@ -2544,11 +2526,7 @@ newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * 
 	menu->rval = NULL;		// Default to not returning a value - respond to EVENT_NEWMENU_SELECTED instead
 	menu->userdata = userdata;
 #ifdef ANDROID
-	menu->reorder_grabbed = 0;
-	menu->reorder_button_down = 0;
-	menu->reorder_button_time = 0;
-	menu->reorder_touch_candidate = -1;
-	menu->reorder_touch_time = 0;
+	android_menu_reorder_init(&menu->reorder);
 #endif
 
 	newmenu_free_background();

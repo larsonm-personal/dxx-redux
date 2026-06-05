@@ -20,6 +20,11 @@ object NativeAutoselectPatcher {
         val hasMismatchedPilots: Boolean,
     )
 
+    data class AutoselectMismatchCount(
+        val pilotCount: Int,
+        val mismatchCount: Int,
+    )
+
     init {
         System.loadLibrary("dxx-redux-d1")
         System.loadLibrary("dxx-redux-d2")
@@ -36,6 +41,12 @@ object NativeAutoselectPatcher {
         secondaryOrder: IntArray,
     ): Int
 
+    @JvmStatic external fun nativeCountAutoselectMismatchesD1(
+        filesDir: String,
+        primaryOrder: IntArray,
+        secondaryOrder: IntArray,
+    ): IntArray
+
     @JvmStatic external fun nativeGetPrimaryWeaponEntriesD1(): Array<String>
 
     @JvmStatic external fun nativeGetSecondaryWeaponEntriesD1(): Array<String>
@@ -50,6 +61,12 @@ object NativeAutoselectPatcher {
         primaryOrder: IntArray,
         secondaryOrder: IntArray,
     ): Int
+
+    @JvmStatic external fun nativeCountAutoselectMismatchesD2(
+        filesDir: String,
+        primaryOrder: IntArray,
+        secondaryOrder: IntArray,
+    ): IntArray
 
     @JvmStatic external fun nativeGetPrimaryWeaponEntriesD2(): Array<String>
 
@@ -93,6 +110,22 @@ object NativeAutoselectPatcher {
         } else {
             nativeWriteAutoselectD2(filesDir, primary, secondary)
         }
+
+    fun countAutoselectMismatches(
+        game: String,
+        filesDir: String,
+        primary: IntArray,
+        secondary: IntArray,
+    ): AutoselectMismatchCount {
+        val data =
+            if (game == "d1") {
+                nativeCountAutoselectMismatchesD1(filesDir, primary, secondary)
+            } else {
+                nativeCountAutoselectMismatchesD2(filesDir, primary, secondary)
+            }
+        if (data.size < 2) return AutoselectMismatchCount(0, 0)
+        return AutoselectMismatchCount(data[0], data[1])
+    }
 
     fun getPrimaryWeaponEntries(game: String): Array<String> =
         if (game == "d1") nativeGetPrimaryWeaponEntriesD1() else nativeGetPrimaryWeaponEntriesD2()

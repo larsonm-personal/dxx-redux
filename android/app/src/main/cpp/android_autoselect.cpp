@@ -177,6 +177,26 @@ struct write_ctx {
 	int sec_len;
 };
 
+struct mismatch_count_ctx {
+	const ubyte *primary;
+	const ubyte *secondary;
+	int valid_count;
+	int mismatch_count;
+};
+
+static int mismatch_count_visitor(const char *path, void *ctx)
+{
+	struct mismatch_count_ctx *mc = (struct mismatch_count_ctx *) ctx;
+	ubyte primary[MAX_ORDER_LEN], secondary[MAX_ORDER_LEN];
+	if (!read_weapon_order_file(path, primary, secondary))
+		return 0;
+
+	mc->valid_count++;
+	if (!order_pair_matches(mc->primary, mc->secondary, primary, secondary))
+		mc->mismatch_count++;
+	return 1;
+}
+
 #ifdef DXX_BUILD_DESCENT_II
 static int write_visitor(const char *path, void *ctx)
 {
@@ -302,6 +322,52 @@ JNI_FUNC(nativeWriteAutoselect)(
 	LOGI("nativeWriteAutoselect: patched %d file(s) in %s/%s", total, files_dir, subdir);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 	return (jint) total;
+}
+
+extern "C" JNIEXPORT jintArray JNICALL
+JNI_FUNC(nativeCountAutoselectMismatches)(
+    JNIEnv *env, jclass, jstring jfilesDir,
+    jintArray jprimary, jintArray jsecondary)
+{
+	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+
+#ifdef DXX_BUILD_DESCENT_II
+	const char *subdir = "d2x-redux";
+	const char *ext = ".plr";
+#else
+	const char *subdir = "d1x-redux";
+	const char *ext = ".plx";
+#endif
+
+	jint *jprim = env->GetIntArrayElements(jprimary, NULL);
+	jint *jsec = env->GetIntArrayElements(jsecondary, NULL);
+	int jprim_len = env->GetArrayLength(jprimary);
+	int jsec_len = env->GetArrayLength(jsecondary);
+
+	ubyte primary[MAX_ORDER_LEN], secondary[MAX_ORDER_LEN];
+	memset(primary, 0, sizeof(primary));
+	memset(secondary, 0, sizeof(secondary));
+	for (int i = 0; i < PRIM_ORDER_LEN && i < jprim_len; i++)
+		primary[i] = (ubyte) (jprim[i] & 0xFF);
+	for (int i = 0; i < SEC_ORDER_LEN && i < jsec_len; i++)
+		secondary[i] = (ubyte) (jsec[i] & 0xFF);
+
+	env->ReleaseIntArrayElements(jprimary, jprim, JNI_ABORT);
+	env->ReleaseIntArrayElements(jsecondary, jsec, JNI_ABORT);
+
+	struct mismatch_count_ctx mc = { primary, secondary, 0, 0 };
+	for_each_pilot(files_dir, subdir, ext, mismatch_count_visitor, &mc);
+
+	LOGI("nativeCountAutoselectMismatches: %d mismatch(es) across %d pilot file(s) in %s/%s",
+	     mc.mismatch_count, mc.valid_count, files_dir, subdir);
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+
+	jint flat[2];
+	flat[0] = mc.valid_count;
+	flat[1] = mc.mismatch_count;
+	jintArray result = env->NewIntArray(2);
+	env->SetIntArrayRegion(result, 0, 2, flat);
+	return result;
 }
 
 /*
