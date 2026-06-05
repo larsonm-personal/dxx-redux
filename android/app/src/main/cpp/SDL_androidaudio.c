@@ -11,8 +11,9 @@
 
 #if SDL_AUDIO_DRIVER_ANDROID
 
-#include <string.h>
 #include <android/log.h>
+#include <string.h>
+#include <time.h>
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 
@@ -36,6 +37,9 @@ static int      g_play_count        = 0;   /* total bqPlayerCallback calls   */
 static int      g_enqueue_fail      = 0;   /* Enqueue failures               */
 static int      g_audio_freq        = 0;   /* stored sample rate for stats   */
 static int      g_audio_buf_frames  = 0;   /* samples per buffer             */
+static int      g_callback_last_us  = 0;
+static int      g_callback_max_us   = 0;
+static int      g_callback_overrun_count = 0;
 static int      g_perf_mode_result  = -1;
 static int      g_sfx_pending       = 0;
 static int      g_sfx_start_ms      = 0;
@@ -94,6 +98,13 @@ static int androidaud_queue_delay_ms(void)
     return (queued_buffers - 1) * buffer_ms;
 }
 
+static long long androidaud_now_us(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ((long long)ts.tv_sec * 1000000LL) + (ts.tv_nsec / 1000);
+}
+
 /* ── Bootstrap ─────────────────────────────────────────────── */
 
 static int ANDROIDAUD_Available(void)
@@ -150,6 +161,7 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     struct SDL_PrivateAudioData *h = audio->hidden;
     int buf_idx = h->next_buf;
     Uint8 *buf = (Uint8 *)h->playbuf[buf_idx];
+    long long callback_start_us = androidaud_now_us();
 
     /* Fill with silence */
     SDL_memset(buf, 0, h->playlen);
@@ -168,6 +180,20 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
 
     h->next_buf = (buf_idx + 1) % NUM_BUFFERS;
     g_play_count++;
+    {
+        int elapsed_us = (int)(androidaud_now_us() - callback_start_us);
+        int buffer_us = 0;
+        g_callback_last_us = elapsed_us;
+        if (elapsed_us > g_callback_max_us) {
+            g_callback_max_us = elapsed_us;
+        }
+        if (g_audio_freq > 0 && g_audio_buf_frames > 0) {
+            buffer_us = (g_audio_buf_frames * 1000000) / g_audio_freq;
+            if (elapsed_us > buffer_us) {
+                g_callback_overrun_count++;
+            }
+        }
+    }
 
     if (g_sfx_pending) {
         int now_ms = (int)SDL_GetTicks();
@@ -235,6 +261,9 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     h->next_buf = 0;
     g_audio_freq = spec->freq;
     g_audio_buf_frames = spec->samples;
+    g_callback_last_us = 0;
+    g_callback_max_us = 0;
+    g_callback_overrun_count = 0;
     g_play_count = 0;
     g_enqueue_fail = 0;
     g_sfx_pending = 0;
@@ -407,6 +436,9 @@ int androidaud_get_play_count(void)      { return g_play_count; }
 int androidaud_get_enqueue_fail(void)    { return g_enqueue_fail; }
 int androidaud_get_audio_freq(void)      { return g_audio_freq; }
 int androidaud_get_audio_buf_frames(void) { return g_audio_buf_frames; }
+int androidaud_get_callback_last_us(void) { return g_callback_last_us; }
+int androidaud_get_callback_max_us(void) { return g_callback_max_us; }
+int androidaud_get_callback_overrun_count(void) { return g_callback_overrun_count; }
 int androidaud_get_native_buffer_frames(void) { return g_android_native_buffer_frames; }
 int androidaud_get_perf_mode_result(void) { return g_perf_mode_result; }
 int androidaud_get_sfx_last_delay_ms(void) { return g_sfx_last_delay_ms; }

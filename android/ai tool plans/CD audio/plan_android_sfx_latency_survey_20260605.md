@@ -73,9 +73,9 @@ Survey Android app causes of delayed Descent 2 sound effects and identify the mo
 - [x] Compare measured app-side SFX latency against the reported 300 ms subjective delay
 - [x] Reduce the Android SDL_mixer buffer from 2048 frames to 1024 frames for a controlled next test
 - [x] Add direct exportable `[audio] sfx start:` logs with sample leading-silence timing
-- [ ] Build-check the Android native code
-- [ ] Run Android code quality formatting/linting
-- [ ] Provide phone test instructions focused on 1024-frame buffer stability
+- [x] Build-check the Android native code
+- [x] Run Android code quality formatting/linting
+- [x] Provide phone test instructions focused on 1024-frame buffer stability
 
 ### Exported Log Reading
 - The phone ran the one-buffer queue build: `initial_queue_buffers=1`
@@ -92,3 +92,31 @@ Survey Android app causes of delayed Descent 2 sound effects and identify the mo
 - Collect several pickups and fire/impact weapons; note whether SFX feel unchanged, slightly improved, clearly improved, or worse
 - Export logs from the launcher Advanced tab
 - Send `[audio] init:`, `[audio] sfx start:`, and `[audio] sfx latency:` lines
+
+## Tranche 4
+- [x] Read exported phone logs from the 1024-frame mixer build
+- [x] Confirm the 1024-frame mixer buffer took effect on device
+- [x] Compare measured app-side SFX latency against prior 2048-frame logs
+- [x] Confirm sample leading silence is not the likely 300 ms delay source
+- [x] Reduce the Android SDL_mixer buffer from 1024 frames to 512 frames for the next controlled test
+- [x] Add exported callback health counters so music popping/skipping can be correlated with callback overruns
+- [x] Build-check the Android native code
+- [x] Run Android code quality formatting/linting
+- [x] Provide phone test instructions focused on 512-frame buffer stability
+
+### Exported Log Reading
+- The phone ran the 1024-frame build: `buf_frames=1024`, `initial_queue_buffers=1`
+- SFX app-side timing improved again: 264 probes, min 0 ms, average 9.5 ms, median 10 ms, p95 22 ms, max 32 ms
+- Sample leading silence is tiny: 134 start logs, average 2.4 ms, median 2 ms, p90 5 ms, max 9 ms
+- Pickup-like sounds stayed low; examples include sound `71` at 1, 2, 6, and 13 ms, and sound `125` mostly 0 to 22 ms
+- The next test uses 512 frames, about 10.7 ms at 48000 Hz, while logging callback max time and overrun count
+
+### Test Instructions
+- Install a fresh debug build from this tranche
+- Turn on exportable Game Logs
+- Confirm the exported `[audio] init:` line shows `buf_frames=512`, `initial_queue_buffers=1`, and `cb_overruns=0`
+- Let level music play for at least 120 seconds before judging SFX, listening for new pops, skips, crackle, or dropouts
+- Collect several pickups and fire/impact weapons; note whether SFX feel unchanged, slightly improved, clearly improved, or worse than 1024
+- Export logs from the launcher Advanced tab
+- Send `[audio] init:`, `[audio] sfx start:`, and `[audio] sfx latency:` lines
+- If music regresses, include whether the exported `[audio] sfx latency:` lines show `cb_overruns` increasing
