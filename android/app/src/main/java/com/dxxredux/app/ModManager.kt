@@ -26,6 +26,7 @@ class ModManager(
         private const val TAG = "DXX-Mods"
         private const val MANIFEST_FILE = "mod_manifest.json"
         private const val GENERATED_PATCH_DIR = ".generated_mod_patches"
+        private const val GENERATED_MISSION_ZIP_DIR = ".generated_mission_zips"
         const val MOD_KIND_DXA = "dxa"
         const val MOD_KIND_MISSION_ZIP = SectorgameMissionZip.KIND
         private val BASE_REPLACEMENT_EXTENSIONS =
@@ -469,7 +470,9 @@ class ModManager(
         val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
         val pathFile = File(File(filesDir, gameDir), ".active_mod_paths")
         val generatedPatchDir = generatedPatchDir(game)
+        val generatedMissionZipDir = generatedMissionZipDir(game)
         generatedPatchDir.deleteRecursively()
+        generatedMissionZipDir.deleteRecursively()
         pathFile.parentFile?.mkdirs()
         if (enabled.isEmpty()) {
             pathFile.delete()
@@ -479,7 +482,7 @@ class ModManager(
             for (mod in enabled) {
                 val modFile = File(modsDir, mod.filename)
                 if (modFile.exists() && modFile.length() > 0) {
-                    validPaths.add(activeModPathLine(mod, modFile))
+                    validPaths.addAll(activeModPathLines(game, mod, modFile))
                 } else {
                     Log.e(TAG, "Mod file missing or empty: ${modFile.absolutePath} (${mod.displayName})")
                 }
@@ -495,15 +498,33 @@ class ModManager(
         NativeTextureLookupCache.clear()
     }
 
-    private fun activeModPathLine(
+    private fun activeModPathLines(
+        game: String,
         mod: ModInfo,
         modFile: File,
-    ): String =
+    ): List<String> =
         if (mod.kind == MOD_KIND_MISSION_ZIP) {
-            "${modFile.absolutePath}\tmissions"
+            generatedMissionZipPathLines(game, mod, modFile)
         } else {
-            modFile.absolutePath
+            listOf(modFile.absolutePath)
         }
+
+    private fun generatedMissionZipPathLines(
+        game: String,
+        mod: ModInfo,
+        modFile: File,
+    ): List<String> {
+        val scan = SectorgameMissionZip.inspect(modFile) ?: return emptyList()
+        val stageDir = File(generatedMissionZipDir(game), safeGeneratedDirName(mod.filename))
+        if (!extractMissionZipForLaunch(modFile, stageDir)) return emptyList()
+        return buildList {
+            add("${stageDir.absolutePath}\tmissions")
+            for (constituent in scan.constituents.filter { it.role == "mod_archive" }) {
+                val archive = File(stageDir, constituent.path.replace('/', File.separatorChar))
+                if (archive.isFile) add(archive.absolutePath)
+            }
+        }
+    }
 
     fun checkEnabledModCompatibility(
         game: String,
@@ -819,6 +840,43 @@ class ModManager(
         val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
         return File(File(filesDir, gameDir), GENERATED_PATCH_DIR)
     }
+
+    private fun generatedMissionZipDir(game: String): File {
+        val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
+        return File(File(filesDir, gameDir), GENERATED_MISSION_ZIP_DIR)
+    }
+
+    private fun extractMissionZipForLaunch(
+        modFile: File,
+        stageDir: File,
+    ): Boolean =
+        try {
+            val stageRoot = stageDir.canonicalFile
+            stageRoot.mkdirs()
+            ZipFile(modFile).use { zip ->
+                val entries = zip.entries()
+                while (entries.hasMoreElements()) {
+                    val entry = entries.nextElement()
+                    if (entry.isDirectory) continue
+                    val normalized = entry.name.replace('\\', '/').trim('/')
+                    if (normalized.isBlank()) continue
+                    val output = File(stageRoot, normalized.replace('/', File.separatorChar)).canonicalFile
+                    if (!output.path.startsWith(stageRoot.path + File.separator)) continue
+                    output.parentFile?.mkdirs()
+                    zip.getInputStream(entry).use { input ->
+                        FileOutputStream(output).use { outputStream ->
+                            input.copyTo(outputStream)
+                        }
+                    }
+                }
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Could not stage mission zip ${modFile.absolutePath}: ${e.message ?: e.javaClass.simpleName}")
+            false
+        }
+
+    private fun safeGeneratedDirName(filename: String): String = filename.replace(Regex("[^a-zA-Z0-9._-]"), "_")
 
     private fun writeGeneratedPatchOverrides(
         game: String,

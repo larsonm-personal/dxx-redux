@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -437,10 +438,15 @@ private fun ModDetailsDialog(
                         ModDetailSectionTitle("Files")
                         if (details.missionZip != null) {
                             details.missionZip.constituents.forEach { constituent ->
-                                TextButton(
+                                OutlinedButton(
                                     onClick = { constituentTarget = constituent },
-                                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 2.dp),
-                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.small,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 4.dp),
                                 ) {
                                     Column(modifier = Modifier.fillMaxWidth()) {
                                         Text(

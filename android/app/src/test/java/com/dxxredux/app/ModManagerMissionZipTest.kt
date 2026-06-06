@@ -51,8 +51,15 @@ class ModManagerMissionZipTest {
         ModManager(filesDir).writeEnabledModPaths("d2")
 
         val pathFile = File(filesDir, "d2x-redux/.active_mod_paths")
-        val line = pathFile.readLines().single()
-        assertTrue(line.endsWith("Uneasy4.zip\tmissions"))
+        val lines = pathFile.readLines()
+        assertEquals(2, lines.size)
+        assertTrue(lines[0].endsWith(".generated_mission_zips${File.separator}Uneasy4.zip\tmissions"))
+        assertTrue(lines[1].endsWith(".generated_mission_zips${File.separator}Uneasy4.zip${File.separator}Uneasy4.dxa"))
+
+        val stageDir = File(filesDir, "d2x-redux/.generated_mission_zips/Uneasy4.zip")
+        assertTrue(File(stageDir, "Uneasy4.mn2").isFile)
+        assertTrue(File(stageDir, "Uneasy4.hog").isFile)
+        assertTrue(File(stageDir, "Uneasy4.dxa").isFile)
     }
 
     private fun createMissionZip(): File {
