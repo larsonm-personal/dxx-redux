@@ -1497,7 +1497,7 @@ int android_is_keyboard_shown(void)
 	return g_keyboard_requested;
 }
 
-void android_show_keyboard(int numeric, int field_y)
+void android_show_keyboard(int numeric, int field_y, const char *initial_text)
 {
 	if (!g_jvm || !g_activity) return;
 
@@ -1512,10 +1512,12 @@ void android_show_keyboard(int numeric, int field_y)
 	}
 
 	jclass cls = (*env)->GetObjectClass(env, g_activity);
-	jmethodID mid = (*env)->GetMethodID(env, cls, "showKeyboard", "(I)V");
+	jmethodID mid = (*env)->GetMethodID(env, cls, "showKeyboard", "(ILjava/lang/String;)V");
 	if (mid) {
+		jstring text = (*env)->NewStringUTF(env, initial_text ? initial_text : "");
 		/* Android InputType: TYPE_CLASS_TEXT=1, TYPE_CLASS_NUMBER=2 */
-		(*env)->CallVoidMethod(env, g_activity, mid, numeric ? 2 : 1);
+		(*env)->CallVoidMethod(env, g_activity, mid, numeric ? 2 : 1, text);
+		(*env)->DeleteLocalRef(env, text);
 	}
 
 	if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);

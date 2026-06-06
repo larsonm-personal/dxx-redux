@@ -3229,7 +3229,10 @@ class MainActivity :
     }
 
     @Suppress("unused") // Called from native code
-    fun showKeyboard(inputType: Int) {
+    fun showKeyboard(
+        inputType: Int,
+        initialText: String?,
+    ) {
         runOnUiThread {
             gameSurfaceView.currentInputType =
                 when (inputType) {
@@ -3237,8 +3240,9 @@ class MainActivity :
                     else -> InputType.TYPE_CLASS_TEXT
                 }
             keyboardInputView.currentInputType = gameSurfaceView.currentInputType
-            keyboardInputView.setText("")
-            keyboardInputView.setSelection(0)
+            val text = initialText.orEmpty()
+            keyboardInputView.setText(text)
+            keyboardInputView.setSelection(text.length)
             hatXState = 0
             hatYState = 0
             gameSurfaceView.keyboardActive = true
@@ -3508,6 +3512,9 @@ class MainActivity :
             outAttrs.inputType = buildKeyboardEditorInputType(currentInputType)
             outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE or
                 EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            val selection = text?.length ?: 0
+            outAttrs.initialSelStart = selection
+            outAttrs.initialSelEnd = selection
             return GameInputConnection(this)
         }
     }
@@ -3527,6 +3534,8 @@ class MainActivity :
             outAttrs.inputType = buildKeyboardEditorInputType(currentInputType)
             outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE or
                 EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            outAttrs.initialSelStart = 0
+            outAttrs.initialSelEnd = 0
             return GameInputConnection(this)
         }
     }

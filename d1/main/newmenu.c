@@ -2234,7 +2234,7 @@ int newmenu_draw(window *wind, newmenu *menu)
 			android_update_keyboard_field_y(visible_y);
 
 			if (front_menu) {
-				extern void android_show_keyboard(int numeric, int field_y);
+				extern void android_show_keyboard(int numeric, int field_y, const char *initial_text);
 				extern void android_hide_keyboard(void);
 				extern int android_is_keyboard_shown(void);
 				int keyboard_shown = android_is_keyboard_shown();
@@ -2242,7 +2242,7 @@ int newmenu_draw(window *wind, newmenu *menu)
 				// dragging over a text-input item would pop the keyboard, shift
 				// the blit offset, and cause selection oscillation.
 				if (!keyboard_shown && !menu->mouse_state) {
-					android_show_keyboard(0, visible_y);
+					android_show_keyboard(0, visible_y, current_item->text ? current_item->text : "");
 				} else if (keyboard_shown && !current_item) {
 					android_hide_keyboard();
 				}

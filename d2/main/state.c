@@ -1775,6 +1775,11 @@ int state_get_savegame_filename(char * fname, char * dsc, char * caption, int bl
 			PHYSFS_close(fp);
 		} 
 		if (!valid) {
+#ifdef __ANDROID__
+			if (dsc != NULL)
+				snprintf(desc[i], sizeof(desc[i]), "level %d", Current_level_num);
+			else
+#endif
 			strcpy( desc[i], TXT_EMPTY );
 			//rpad_string( desc[i], DESC_LENGTH-1 );
 			if (dsc == NULL) m[i+1].type = NM_TYPE_TEXT;
