@@ -1217,6 +1217,98 @@ int read_player_file()
 	return -1;
 }
 
+#ifdef ANDROID
+int plr_is_selectable(const char *filename)
+{
+	PHYSFS_file *file;
+	PHYSFS_sint64 file_size;
+	int id, player_file_size, shareware_file = -1, d1x_extra = 0;
+	int saved_game_version, player_struct_version, n_highest;
+	long min_size;
+
+	if (!filename || !PHYSFSX_exists(filename, 0))
+		return 0;
+
+	file = PHYSFSX_openReadBuffered(filename);
+	if (!file)
+		return 0;
+
+	file_size = PHYSFS_fileLength(file);
+	if (file_size < 20) {
+		PHYSFS_close(file);
+		return 0;
+	}
+
+	player_file_size = (int)file_size;
+	PHYSFS_readSLE32(file, &id);
+	saved_game_version = PHYSFSX_readShort(file);
+	player_struct_version = PHYSFSX_readShort(file);
+	n_highest = PHYSFSX_readInt(file);
+	if (id != SAVE_FILE_ID ||
+	    saved_game_version < COMPATIBLE_SAVED_GAME_VERSION ||
+	    player_struct_version < COMPATIBLE_PLAYER_STRUCT_VERSION ||
+	    n_highest < 0 || n_highest > MAX_MISSIONS) {
+		PHYSFS_close(file);
+		return 0;
+	}
+
+	switch (saved_game_version) {
+		case 4:
+			shareware_file = 1;
+			break;
+		case 5:
+		case 6:
+			shareware_file = 0;
+			break;
+		case 7:
+			if ((player_file_size - (sizeof(hli) * n_highest)) ==
+			    (2212 - sizeof(saved_games)))
+				shareware_file = 1;
+			if ((player_file_size - (sizeof(hli) * n_highest)) ==
+			    (2252 - sizeof(saved_games)))
+				shareware_file = 0;
+			break;
+		case 8:
+			if ((player_file_size - (sizeof(hli) * n_highest)) == 2212)
+				shareware_file = 1;
+			if ((player_file_size - (sizeof(hli) * n_highest)) == 2252)
+				shareware_file = 0;
+			if ((player_file_size - (sizeof(hli) * n_highest)) ==
+			    (2212 + 2 * sizeof(int))) {
+				shareware_file = 1;
+				d1x_extra = 2 * sizeof(int);
+			}
+			if ((player_file_size - (sizeof(hli) * n_highest)) ==
+			    (2252 + 2 * sizeof(int))) {
+				shareware_file = 0;
+				d1x_extra = 2 * sizeof(int);
+			}
+			break;
+	}
+
+	if (shareware_file == -1) {
+		PHYSFS_close(file);
+		return 0;
+	}
+
+	min_size = 20 + d1x_extra;
+	if (saved_game_version > 5)
+		min_size += (long)n_highest * sizeof(hli);
+	if (saved_game_version != 7)
+		min_size += sizeof(saved_games);
+	min_size += 4 * (shareware_file ? 25 : 35);
+	min_size += sizeof(PlayerCfg.KeySettings[0]);
+	min_size += sizeof(PlayerCfg.KeySettings[1]);
+	min_size += sizeof(ubyte) * MAX_CONTROLS * 3;
+	min_size += sizeof(PlayerCfg.KeySettings[2]);
+	min_size += sizeof(ubyte) * MAX_CONTROLS;
+	min_size += 2;
+
+	PHYSFS_close(file);
+	return file_size >= min_size;
+}
+#endif
+
 //finds entry for this level in table.  if not found, returns ptr to 
 //empty entry.  If no empty entries, takes over last one 
 int find_hli_entry()

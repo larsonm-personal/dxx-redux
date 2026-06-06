@@ -58,6 +58,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "songs.h"
 #ifdef ANDROID
 #include "coop_save.h"
+#include "android_log.h"
 #endif
 #ifdef USE_SDLMIXER
 #include "jukebox.h" // for jukebox_exts
@@ -408,12 +409,23 @@ int RegisterPlayer()
 	for (f = list; *f != NULL; f++)
 	{
 		char *p;
+#ifdef ANDROID
+		char filename[PATH_MAX];
+#endif
 
 		if (strlen(*f) > FILENAME_LEN-1 || strlen(*f) < 5) // sorry guys, can only have up to eight chars for the player name
 		{
 			NumItems--;
 			continue;
 		}
+#ifdef ANDROID
+		snprintf(filename, sizeof(filename), GameArg.SysUsePlayersDir ? "Players/%s" : "%s", *f);
+		if (!plr_is_selectable(filename)) {
+			debug_log(DLOG_GAME, "pilot select hidden: game=d1 file='%s'\n", filename);
+			NumItems--;
+			continue;
+		}
+#endif
 		m[i++] = *f;
 		p = strchr(*f, '.');
 		if (p)

@@ -1013,6 +1013,83 @@ int read_player_file()
 }
 
 
+#ifdef ANDROID
+int plr_is_selectable(const char *filename)
+{
+	PHYSFS_file *file;
+	PHYSFS_sint64 file_size;
+	int id, n_highest;
+	short player_file_version;
+	int fixed_header = 18;
+	int swap = 0;
+	long min_size;
+
+	if (!filename || !PHYSFSX_exists(filename, 0))
+		return 0;
+
+	file = PHYSFSX_openReadBuffered(filename);
+	if (!file)
+		return 0;
+
+	file_size = PHYSFS_fileLength(file);
+	if (file_size < 20) {
+		PHYSFS_close(file);
+		return 0;
+	}
+
+	PHYSFS_readSLE32(file, &id);
+	player_file_version = PHYSFSX_readShort(file);
+	if (player_file_version > 255)
+		swap = 1;
+	if (swap)
+		player_file_version = SWAPSHORT(player_file_version);
+
+	if (id != SAVE_FILE_ID ||
+	    player_file_version < COMPATIBLE_PLAYER_FILE_VERSION) {
+		PHYSFS_close(file);
+		return 0;
+	}
+
+	if (player_file_version >= 19)
+		fixed_header = 19;
+	if (PHYSFS_seek(file, fixed_header) == 0) {
+		PHYSFS_close(file);
+		return 0;
+	}
+	n_highest = PHYSFSX_readShort(file);
+	if (swap)
+		n_highest = SWAPSHORT(n_highest);
+	if (n_highest < 0 || n_highest > MAX_MISSIONS) {
+		PHYSFS_close(file);
+		return 0;
+	}
+
+	min_size = fixed_header + 2 + (long)n_highest * sizeof(hli);
+	min_size += 4 * MAX_MESSAGE_LEN;
+	min_size += sizeof(PlayerCfg.KeySettings[0]);
+	min_size += sizeof(PlayerCfg.KeySettings[1]);
+	min_size += sizeof(ubyte) * MAX_CONTROLS * 3;
+	min_size += sizeof(PlayerCfg.KeySettings[2]);
+	min_size += sizeof(ubyte) * MAX_CONTROLS;
+	if (player_file_version >= 20)
+		min_size += sizeof(ubyte) * MAX_CONTROLS;
+	min_size += 1;
+	if (player_file_version >= 21)
+		min_size += 1;
+	min_size += 1;
+	min_size += 11 * 2;
+	if (player_file_version >= 16)
+		min_size += 2 * sizeof(PHYSFS_sint32);
+	if (player_file_version >= 22)
+		min_size += 2 * sizeof(PHYSFS_sint32);
+	if (player_file_version >= 23)
+		min_size += sizeof(PHYSFS_sint32);
+
+	PHYSFS_close(file);
+	return file_size >= min_size;
+}
+#endif
+
 //finds entry for this level in table.  if not found, returns ptr to 
 //empty entry.  If no empty entries, takes over last one 
 int find_hli_entry()

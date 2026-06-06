@@ -1041,6 +1041,66 @@ static int newmenu_reorder_poll(newmenu *menu)
 	}
 	return 0;
 }
+
+static const char *android_mouse_event_phase(d_event *event)
+{
+	if (!event)
+		return "unknown";
+	if (event->type == EVENT_MOUSE_BUTTON_DOWN)
+		return "down";
+	if (event->type == EVENT_MOUSE_BUTTON_UP)
+		return "up";
+	return "other";
+}
+
+static int android_newmenu_item_at_point(newmenu *menu, int mx, int my,
+                                         int *rx1, int *ry1, int *rx2,
+                                         int *ry2)
+{
+	int i, x1, y1, x2, y2;
+
+	for (i = menu->scroll_offset; i < menu->max_on_menu + menu->scroll_offset; i++) {
+		if (i >= menu->nitems)
+			break;
+		newmenu_get_item_bounds(menu, i, &x1, &y1, &x2, &y2);
+		if ((mx > x1) && (mx < x2) && (my > y1) && (my < y2)) {
+			if (rx1) *rx1 = x1;
+			if (ry1) *ry1 = y1;
+			if (rx2) *rx2 = x2;
+			if (ry2) *ry2 = y2;
+			return i;
+		}
+	}
+	return -1;
+}
+
+static void android_log_newmenu_touch(newmenu *menu, d_event *event,
+                                      int mx, int my)
+{
+	static int diag_count;
+	android_menu_scale_result scale;
+	int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+	int hit, type = -1;
+	const char *text = "";
+
+	if (!menu || diag_count >= 160)
+		return;
+	diag_count++;
+	hit = android_newmenu_item_at_point(menu, mx, my, &x1, &y1, &x2, &y2);
+	if (hit >= 0 && hit < menu->nitems) {
+		type = menu->items[hit].type;
+		text = menu->items[hit].text ? menu->items[hit].text : "";
+	}
+	android_menu_scale_get_state(&scale);
+	debug_log(DLOG_GAME,
+	          "[newmenu-touch] phase=%s mx=%d my=%d hit=%d citem=%d n=%d scroll=%d max=%d bounds=(%d,%d %dx%d) type=%d title='%s' subtitle='%s' item='%s' scale=%d src=(%d,%d %dx%d) dst=(%d,%d %dx%d)\n",
+	          android_mouse_event_phase(event), mx, my, hit, menu->citem,
+	          menu->nitems, menu->scroll_offset, menu->max_on_menu, x1, y1,
+	          x2 - x1, y2 - y1, type, menu->title ? menu->title : "",
+	          menu->subtitle ? menu->subtitle : "", text, scale.active,
+	          scale.src.x, scale.src.y, scale.src.w, scale.src.h,
+	          scale.dst.x, scale.dst.y, scale.dst.w, scale.dst.h);
+}
 #endif
 
 int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
@@ -1055,6 +1115,14 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 			gr_set_current_canvas(menu_canvas);
 
 			old_choice = menu->citem;
+
+#ifdef ANDROID
+			if (event->type == EVENT_MOUSE_BUTTON_DOWN ||
+			    event->type == EVENT_MOUSE_BUTTON_UP) {
+				mouse_get_pos(&mx, &my, &mz);
+				android_log_newmenu_touch(menu, event, mx, my);
+			}
+#endif
 
 			if ((event->type == EVENT_MOUSE_BUTTON_DOWN) && !menu->all_text)
 			{
@@ -2723,6 +2791,26 @@ static int android_listbox_is_pilot_select(listbox *lb)
 	return lb && lb->title && !strcmp(lb->title, TXT_SELECT_PILOT);
 }
 
+static void android_listbox_publish_scale_rect(listbox *lb)
+{
+	android_menu_scale_result menu_scale;
+	int source_x, source_y, source_w, source_h;
+
+	if (!lb)
+		return;
+	source_x = lb->box_x - BORDERX;
+	source_y = lb->box_y - lb->title_height - BORDERY;
+	source_w = lb->box_w + 2 * BORDERX;
+	source_h = lb->height + lb->title_height + 2 * BORDERY;
+
+	if (android_menu_scale_compute_cropped(source_x, source_y, source_w, source_h,
+	                                      SWIDTH, SHEIGHT, BORDERX, BORDERY,
+	                                      &menu_scale))
+		android_menu_scale_publish(&menu_scale);
+	else
+		android_menu_scale_clear();
+}
+
 static int android_listbox_item_at_point(listbox *lb, int mx, int my)
 {
 	int rel_y, item;
@@ -2743,20 +2831,27 @@ static int android_listbox_item_at_point(listbox *lb, int mx, int my)
 	return item < lb->nitems ? item : -1;
 }
 
-static void android_log_pilot_listbox_touch(listbox *lb, const char *phase,
-                                            int mx, int my, int item)
+static void android_log_listbox_touch(listbox *lb, const char *phase,
+                                      int mx, int my, int item)
 {
 	static int diag_count;
 	android_menu_scale_result scale;
+	int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+	const char *text = "";
 
-	if (!android_listbox_is_pilot_select(lb) || diag_count >= 80)
+	if (!lb || diag_count >= 160)
 		return;
 	diag_count++;
+	if (item >= 0 && item < lb->nitems) {
+		listbox_get_item_bounds(lb, item, &x1, &y1, &x2, &y2);
+		text = lb->item[item] ? lb->item[item] : "";
+	}
 	android_menu_scale_get_state(&scale);
 	debug_log(DLOG_GAME,
-	          "[pilot-listbox-touch] %s mx=%d my=%d item=%d citem=%d first=%d n=%d box=(%d,%d %dx%d) scale=%d src=(%d,%d %dx%d) dst=(%d,%d %dx%d)\n",
+	          "[listbox-touch] %s mx=%d my=%d item=%d citem=%d first=%d n=%d box=(%d,%d %dx%d) bounds=(%d,%d %dx%d) title='%s' text='%s' scale=%d src=(%d,%d %dx%d) dst=(%d,%d %dx%d)\n",
 	          phase, mx, my, item, lb->citem, lb->first_item, lb->nitems,
-	          lb->box_x, lb->box_y, lb->box_w, lb->height, scale.active,
+	          lb->box_x, lb->box_y, lb->box_w, lb->height, x1, y1, x2 - x1,
+	          y2 - y1, lb->title ? lb->title : "", text, scale.active,
 	          scale.src.x, scale.src.y, scale.src.w, scale.src.h,
 	          scale.dst.x, scale.dst.y, scale.dst.w, scale.dst.h);
 }
@@ -2776,7 +2871,7 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 #ifdef ANDROID
 				if (android_listbox_is_pilot_select(lb)) {
 					i = android_listbox_item_at_point(lb, mx, my);
-					android_log_pilot_listbox_touch(lb, "down", mx, my, i);
+					android_log_listbox_touch(lb, "down", mx, my, i);
 					if (i >= 0) {
 						lb->citem = i;
 						android_pilot_listbox_mouse_down(lb, lb->title, lb->nitems, i);
@@ -2785,6 +2880,10 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 					android_pilot_listbox_hold_clear(lb);
 					return 0;
 				}
+#endif
+#ifdef ANDROID
+				android_log_listbox_touch(lb, "down", mx, my,
+				                          android_listbox_item_at_point(lb, mx, my));
 #endif
 				for (i=lb->first_item; i<lb->first_item+LB_ITEMS_ON_SCREEN; i++ )	{
 					if (i >= lb->nitems)
@@ -2811,7 +2910,7 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 #ifdef ANDROID
 				if (android_listbox_is_pilot_select(lb)) {
 					i = android_listbox_item_at_point(lb, mx, my);
-					android_log_pilot_listbox_touch(lb, "up", mx, my, i);
+					android_log_listbox_touch(lb, "up", mx, my, i);
 					if (i != lb->citem) {
 						android_pilot_listbox_hold_clear(lb);
 						return 0;
@@ -2820,6 +2919,10 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 				} else
 #endif
 				{
+#ifdef ANDROID
+					android_log_listbox_touch(lb, "up", mx, my,
+					                          android_listbox_item_at_point(lb, mx, my));
+#endif
 					listbox_get_item_bounds(lb, lb->citem, &x1, &y1, &x2, &y2);
 				}
 				if (
@@ -3042,6 +3145,7 @@ void listbox_create_structure( listbox *lb)
 	lb->mouse_state = 0;	//dblclick_flag = 0;
 #ifdef ANDROID
 	android_pilot_listbox_hold_clear(lb);
+	android_listbox_publish_scale_rect(lb);
 #endif
 	lb->swidth = SWIDTH;
 	lb->sheight = SHEIGHT;

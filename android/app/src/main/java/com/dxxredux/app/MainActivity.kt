@@ -44,6 +44,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.dxxredux.app.multiplayer.MatchmakingService
 import org.json.JSONObject
 import java.io.File
+import java.util.Locale
 import kotlin.math.roundToInt
 
 internal const val EXTRA_TRANSIENT_LAUNCH_TOKEN = "transient_launch_token"
@@ -506,6 +507,7 @@ class MainActivity :
     private var isActivityResumed = false
     private var gameVariantId = "d2" // "d1" or "d2", set in onCreate
     private var lastAppliedGraphicsSettingsGeneration = -1L
+    private var touchDiagLogCount = 0
 
     // True when no touchscreen is available (Android TV / gamepad-only)
     private var gamepadOnlyMode = false
@@ -2332,9 +2334,38 @@ class MainActivity :
                 else -> return false
             }
 
+        if (touchDiagLogCount < 160 && action != 1) {
+            touchDiagLogCount++
+            val loc = IntArray(2)
+            view.getLocationOnScreen(loc)
+            val surfaceFrame = gameSurfaceView.holder.surfaceFrame
+            val decor = window.decorView
+            DebugLog.log(
+                DebugLogCategory.GAME,
+                "[touch-java] action=${touchDiagActionName(action)} " +
+                    "view=${view.width}x${view.height}@${loc[0]},${loc[1]} " +
+                    "surfaceFrame=${surfaceFrame.left},${surfaceFrame.top}," +
+                    "${surfaceFrame.width()}x${surfaceFrame.height()} " +
+                    "decor=${decor.width}x${decor.height} " +
+                    "x=${event.x.roundToInt()} y=${event.y.roundToInt()} " +
+                    "raw=${event.rawX.roundToInt()},${event.rawY.roundToInt()} " +
+                    "norm=${String.format(Locale.US, "%.4f", normX)}," +
+                    "${String.format(Locale.US, "%.4f", normY)} " +
+                    "pointer=${event.getPointerId(event.actionIndex)}",
+            )
+        }
+
         nativeTouchEvent(action, normX, normY)
         return true
     }
+
+    private fun touchDiagActionName(action: Int): String =
+        when (action) {
+            0 -> "down"
+            1 -> "move"
+            2 -> "up"
+            else -> action.toString()
+        }
 
     // ── Keyboard & Gamepad buttons ────────────────────────────
 

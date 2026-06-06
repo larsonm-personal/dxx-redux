@@ -147,6 +147,10 @@ int new_player_config();
 
 int read_player_file();
 
+#ifdef ANDROID
+int plr_is_selectable(const char *filename);
+#endif
+
 // set a new highest level for player for this mission
 void set_highest_level(int levelnum);
 

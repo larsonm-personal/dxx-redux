@@ -278,6 +278,19 @@ static int g_menu_scale_touch_src_x = 0, g_menu_scale_touch_src_y = 0;
 static int g_menu_scale_touch_src_w = 0, g_menu_scale_touch_src_h = 0;
 static int g_menu_scale_touch_dst_x = 0, g_menu_scale_touch_dst_y = 0;
 static int g_menu_scale_touch_dst_w = 0, g_menu_scale_touch_dst_h = 0;
+static int g_touch_diag_seq = 0;
+static int g_touch_diag_count = 0;
+static int g_touch_push_diag_count = 0;
+
+static const char *touch_diag_action_name(int action)
+{
+	switch (action) {
+		case 0: return "down";
+		case 1: return "move";
+		case 2: return "up";
+		default: return "unknown";
+	}
+}
 
 static int menu_scale_rect_contains(int x, int y, int rx, int ry, int rw, int rh)
 {
@@ -367,6 +380,12 @@ static void android_push_touch_action(int action, int gameX, int gameY)
 	switch (action) {
 		case 0: /* ACTION_DOWN */
 			if (android_cutscene_tap_suppressed()) {
+				if (g_touch_push_diag_count < 160) {
+					g_touch_push_diag_count++;
+					debug_log(DLOG_GAME,
+					          "[touch-push] seq=%d action=down suppressed=cutscene x=%d y=%d\n",
+					          g_touch_diag_seq, gameX, gameY);
+				}
 				g_last_touch_x = gameX;
 				g_last_touch_y = gameY;
 				g_touch_active = 1;
@@ -401,6 +420,12 @@ static void android_push_touch_action(int action, int gameX, int gameY)
 
 			if (++g_input_count <= 5)
 				LOGI("touch DOWN at (%d,%d)", gameX, gameY);
+			if (g_touch_push_diag_count < 160) {
+				g_touch_push_diag_count++;
+				debug_log(DLOG_GAME,
+				          "[touch-push] seq=%d action=down motion=%d,%d button=%d,%d active=%d\n",
+				          g_touch_diag_seq, gameX, gameY, gameX, gameY, g_touch_active);
+			}
 			break;
 
 		case 1: /* ACTION_MOVE */ {
@@ -423,6 +448,12 @@ static void android_push_touch_action(int action, int gameX, int gameY)
 
 		case 2: /* ACTION_UP */
 			if (g_touch_down_suppressed) {
+				if (g_touch_push_diag_count < 160) {
+					g_touch_push_diag_count++;
+					debug_log(DLOG_GAME,
+					          "[touch-push] seq=%d action=up suppressed=cutscene x=%d y=%d\n",
+					          g_touch_diag_seq, gameX, gameY);
+				}
 				g_touch_down_suppressed = 0;
 				g_touch_active = 0;
 				android_update_cutscene_release_gate();
@@ -453,6 +484,12 @@ static void android_push_touch_action(int action, int gameX, int gameY)
 
 			if (g_input_count <= 5)
 				LOGI("touch UP   at (%d,%d)", gameX, gameY);
+			if (g_touch_push_diag_count < 160) {
+				g_touch_push_diag_count++;
+				debug_log(DLOG_GAME,
+				          "[touch-push] seq=%d action=up motion=%d,%d button=%d,%d active=%d\n",
+				          g_touch_diag_seq, gameX, gameY, gameX, gameY, g_touch_active);
+			}
 			break;
 	}
 }
@@ -533,18 +570,40 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 
 	jint gameX = (jint) (normX * screenW);
 	jint gameY = (jint) (normY * screenH);
+	jint rawGameX;
+	jint rawGameY;
+	jint keyboardGameY;
+	int remapped;
+
 	if (gameX < 0) gameX = 0;
 	if (gameX >= screenW) gameX = screenW - 1;
 	if (gameY < 0) gameY = 0;
 	if (gameY >= screenH) gameY = screenH - 1;
+	rawGameX = gameX;
+	rawGameY = gameY;
 
 	/* Compensate for keyboard blit offset: the rendered canvas is
 	 * shifted upward by g_blit_y_offset pixels, so screen-space
 	 * touches need to be mapped back to canvas-space. */
 	gameY += g_blit_y_offset;
 	if (gameY >= screenH) gameY = screenH - 1;
+	keyboardGameY = gameY;
 
-	remap_touch(action, &gameX, &gameY);
+	if (action == 0)
+		g_touch_diag_seq++;
+	remapped = remap_touch(action, &gameX, &gameY);
+	if (g_touch_diag_count < 160 && action != 1) {
+		g_touch_diag_count++;
+		debug_log(DLOG_GAME,
+		          "[touch-native] seq=%d action=%s norm=%.4f,%.4f screen=%dx%d raw=%d,%d kb_y=%d kb_off=%d final=%d,%d remap=%d scale=%d lock=%d src=(%d,%d %dx%d) dst=(%d,%d %dx%d)\n",
+		          g_touch_diag_seq, touch_diag_action_name(action), (double) normX,
+		          (double) normY, screenW, screenH, rawGameX, rawGameY,
+		          keyboardGameY, (int) g_blit_y_offset, gameX, gameY, remapped,
+		          g_menu_scale_active, g_menu_scale_touch_locked,
+		          g_menu_scale_src_x, g_menu_scale_src_y, g_menu_scale_src_w,
+		          g_menu_scale_src_h, g_menu_scale_dst_x, g_menu_scale_dst_y,
+		          g_menu_scale_dst_w, g_menu_scale_dst_h);
+	}
 
 	android_push_touch_action(action, gameX, gameY);
 }
