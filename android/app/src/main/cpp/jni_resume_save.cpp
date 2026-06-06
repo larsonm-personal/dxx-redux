@@ -148,6 +148,8 @@ static const char *save_kind_name(uint8_t save_kind)
 			return "auto_progress";
 		case ANDROID_SAVE_META_KIND_AUTO_ABORT:
 			return "auto_abort";
+		case ANDROID_SAVE_META_KIND_AUTO_PERIODIC:
+			return "auto_periodic";
 		default:
 			return "manual";
 	}
@@ -219,12 +221,14 @@ static bool candidate_is_newer(const android_save_meta_candidate &candidate,
 	auto save_kind_priority = [](uint8_t save_kind) {
 		switch (save_kind) {
 			case ANDROID_SAVE_META_KIND_AUTO_ABORT:
-				return 5;
+				return 6;
 			case ANDROID_SAVE_META_KIND_AUTO_EXIT:
-				return 4;
+				return 5;
 			case ANDROID_SAVE_META_KIND_AUTO_MINIMIZE:
-				return 3;
+				return 4;
 			case ANDROID_SAVE_META_KIND_AUTO_PROGRESS:
+				return 3;
+			case ANDROID_SAVE_META_KIND_AUTO_PERIODIC:
 				return 2;
 			default:
 				return 1;

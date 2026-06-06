@@ -67,12 +67,14 @@ static int android_save_meta_kind_priority(uint8_t save_kind)
 {
 	switch (save_kind) {
 		case ANDROID_SAVE_META_KIND_AUTO_ABORT:
-			return 5;
+			return 6;
 		case ANDROID_SAVE_META_KIND_AUTO_EXIT:
-			return 4;
+			return 5;
 		case ANDROID_SAVE_META_KIND_AUTO_MINIMIZE:
-			return 3;
+			return 4;
 		case ANDROID_SAVE_META_KIND_AUTO_PROGRESS:
+			return 3;
+		case ANDROID_SAVE_META_KIND_AUTO_PERIODIC:
 			return 2;
 		default:
 			return 1;
@@ -107,7 +109,7 @@ int android_save_meta_build(android_save_meta_disk *out,
 	if (params->game_id != ANDROID_SAVE_META_GAME_D1 &&
 	    params->game_id != ANDROID_SAVE_META_GAME_D2)
 		return 0;
-	if (params->save_kind > ANDROID_SAVE_META_KIND_AUTO_ABORT)
+	if (params->save_kind > ANDROID_SAVE_META_KIND_AUTO_PERIODIC)
 		return 0;
 
 	memset(out, 0, sizeof(*out));
@@ -157,7 +159,7 @@ int android_save_meta_is_valid(const android_save_meta_disk *meta)
 	if (meta->game_id != ANDROID_SAVE_META_GAME_D1 &&
 	    meta->game_id != ANDROID_SAVE_META_GAME_D2)
 		return 0;
-	if (meta->save_kind > ANDROID_SAVE_META_KIND_AUTO_ABORT)
+	if (meta->save_kind > ANDROID_SAVE_META_KIND_AUTO_PERIODIC)
 		return 0;
 	if (meta->difficulty_changed > 1)
 		return 0;

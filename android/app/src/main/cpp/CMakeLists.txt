@@ -563,6 +563,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/coop_indicator_lines.c
@@ -689,6 +690,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/coop_indicator_lines.c

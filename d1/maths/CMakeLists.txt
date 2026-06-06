@@ -43,6 +43,11 @@ if(NOT ANDROID)
     target_link_libraries(test_android_save_meta PRIVATE ${DXX_TARGET_PREFIX}maths ${PHYSFS_LIBRARY})
     target_include_directories(test_android_save_meta PRIVATE ../../android/app/src/main/cpp/shared ${PHYSFS_INCLUDE_DIR})
 
+    add_executable(test_android_save_set
+        ../../android/tests/test_android_save_set.c
+        ../../android/app/src/main/cpp/shared/android_save_set.c)
+    target_include_directories(test_android_save_set PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_android_rewind_policy
         ../../android/tests/test_android_rewind_policy.c
         ../../android/app/src/main/cpp/shared/android_rewind_policy.c)
@@ -119,6 +124,7 @@ if(NOT ANDROID)
             test_rng_seed_resume
             test_deterministic_math
             test_android_save_meta
+            test_android_save_set
             test_android_rewind_policy
             test_input_demo_rng_mode
             test_input_demo_controls

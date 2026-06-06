@@ -43,13 +43,14 @@ int main(void)
 	android_save_meta_disk d2_meta;
 	android_save_meta_disk abort_meta;
 	android_save_meta_disk progress_meta;
+	android_save_meta_disk periodic_meta;
 	android_save_meta_disk wrong_thumb_meta;
 	android_save_meta_disk parsed;
 	android_save_meta_candidate newest;
 	android_save_meta_write_params params;
 	uint8_t thumb_a[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
 	uint8_t thumb_b[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
-	const char *paths[6];
+	const char *paths[7];
 	FILE *corrupt;
 	int failures = 0;
 
@@ -114,6 +115,12 @@ int main(void)
 	strncpy(progress_meta.description, "AUTO SAVE", sizeof(progress_meta.description) - 1);
 	if (!write_file_with_meta("test_android_save_meta_progress.sav", &progress_meta))
 		return report_failure("failed to write progress test file");
+	periodic_meta = d2_meta;
+	periodic_meta.save_kind = ANDROID_SAVE_META_KIND_AUTO_PERIODIC;
+	memset(periodic_meta.description, 0, sizeof(periodic_meta.description));
+	strncpy(periodic_meta.description, "AUTO 5MIN", sizeof(periodic_meta.description) - 1);
+	if (!write_file_with_meta("test_android_save_meta_periodic.sav", &periodic_meta))
+		return report_failure("failed to write periodic test file");
 	if (!write_file_with_meta("test_android_save_meta_missing.sav", NULL))
 		return report_failure("failed to write missing-metadata file");
 
@@ -155,7 +162,8 @@ int main(void)
 	paths[3] = "test_android_save_meta_d2.sav";
 	paths[4] = "test_android_save_meta_progress.sav";
 	paths[5] = "test_android_save_meta_abort.sav";
-	if (!android_save_meta_select_newest(paths, 6, &newest))
+	paths[6] = "test_android_save_meta_periodic.sav";
+	if (!android_save_meta_select_newest(paths, 7, &newest))
 		failures += report_failure("failed to select newest metadata-backed save");
 	else {
 		failures += expect_string("newest path", "test_android_save_meta_abort.sav", newest.path);
@@ -170,6 +178,7 @@ int main(void)
 	remove("test_android_save_meta_d2.sav");
 	remove("test_android_save_meta_abort.sav");
 	remove("test_android_save_meta_progress.sav");
+	remove("test_android_save_meta_periodic.sav");
 	remove("test_android_save_meta_missing.sav");
 	remove("test_android_save_meta_corrupt.sav");
 

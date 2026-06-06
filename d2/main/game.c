@@ -1733,6 +1733,8 @@ void GameProcessFrame(void)
 	input_demo_debug_log_player_motion_state("exit");
 
 #ifdef __ANDROID__
+	state_android_maybe_periodic_autosave();
+
 	/* Periodic coop autosave -- host only, every 30 seconds of level time */
 	{
 		static fix64 last_coop_autosave_time = 0;

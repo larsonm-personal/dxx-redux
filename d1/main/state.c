@@ -1462,7 +1462,12 @@ int state_get_savegame_filename(char * fname, char * dsc, char * caption, int bl
 	m[0].type = NM_TYPE_TEXT; m[0].text = "\n\n\n\n";
 	for (i=0;i<NUM_SAVES; i++ )	{
 		sc_bmp[i] = NULL;
+#ifdef __ANDROID__
+		state_android_build_save_filename(filename[i], PATH_MAX, i,
+			(Game_mode & GM_MULTI_COOP) ? 1 : 0, dsc != NULL);
+#else
 		snprintf( filename[i], PATH_MAX, GameArg.SysUsePlayersDir? "Players/%s.%sg%x" : "%s.%sg%x", Players[Player_num].callsign, (Game_mode & GM_MULTI_COOP)?"m":"s", i );
+#endif
 		valid = 0;
 		fp = PHYSFSX_openReadBuffered(filename[i]);
 #ifdef __ANDROID__
@@ -1470,8 +1475,7 @@ int state_get_savegame_filename(char * fname, char * dsc, char * caption, int bl
 		 * player's callsign so they survive callsign changes */
 		if (!fp && (Game_mode & GM_MULTI_COOP) &&
 		    i >= COOP_AUTOSAVE_SLOT_FIRST && i < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
-			snprintf(filename[i], PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.mg%x" : "%s.mg%x",
-				COOP_AUTOSAVE_CALLSIGN, i);
+			state_android_build_coop_autosave_filename(filename[i], PATH_MAX, i);
 			fp = PHYSFSX_openReadBuffered(filename[i]);
 		}
 #endif

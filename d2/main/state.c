@@ -1736,7 +1736,12 @@ int state_get_savegame_filename(char * fname, char * dsc, char * caption, int bl
 	m[0].type = NM_TYPE_TEXT; m[0].text = "\n\n\n\n";
 	for (i=0;i<NUM_SAVES; i++ )	{
 		sc_bmp[i] = NULL;
+#ifdef __ANDROID__
+		state_android_build_save_filename(filename[i], PATH_MAX, i,
+			(Game_mode & GM_MULTI_COOP) ? 1 : 0, dsc != NULL);
+#else
 		snprintf( filename[i], PATH_MAX, GameArg.SysUsePlayersDir? "Players/%s.%sg%x" : "%s.%sg%x", Players[Player_num].callsign, (Game_mode & GM_MULTI_COOP)?"m":"s", i );
+#endif
 		valid = 0;
 		fp = PHYSFSX_openReadBuffered(filename[i]);
 #ifdef __ANDROID__
@@ -1744,8 +1749,7 @@ int state_get_savegame_filename(char * fname, char * dsc, char * caption, int bl
 		 * player's callsign so they survive callsign changes */
 		if (!fp && (Game_mode & GM_MULTI_COOP) &&
 		    i >= COOP_AUTOSAVE_SLOT_FIRST && i < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
-			snprintf(filename[i], PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.mg%x" : "%s.mg%x",
-				COOP_AUTOSAVE_CALLSIGN, i);
+			state_android_build_coop_autosave_filename(filename[i], PATH_MAX, i);
 			fp = PHYSFSX_openReadBuffered(filename[i]);
 		}
 #endif
@@ -1955,7 +1959,11 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 			else
 				fc = '0' + filenum;
 
+#ifdef __ANDROID__
+			state_android_build_secret_filename(temp_fname, PATH_MAX, filenum);
+#else
 			sprintf(temp_fname, GameArg.SysUsePlayersDir? "Players/%csecret.sgc" : "%csecret.sgc", fc);
+#endif
 
 			if (PHYSFSX_exists(temp_fname,0))
 			{
@@ -1965,6 +1973,9 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 
 			if (PHYSFSX_exists(SECRETC_FILENAME,0))
 			{
+#ifdef __ANDROID__
+				state_android_ensure_parent_dirs_for_path(temp_fname);
+#endif
 				rval = copy_file(SECRETC_FILENAME, temp_fname);
 				Assert(rval == 0);	//	Oops, error copying secret.sgc to temp_fname!
 				(void)rval;
@@ -2364,8 +2375,12 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 				fc = (filenum-10) + 'a';
 			else
 				fc = '0' + filenum;
-			
+
+#ifdef __ANDROID__
+			state_android_build_secret_filename(temp_fname, PATH_MAX, filenum);
+#else
 			snprintf(temp_fname, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%csecret.sgc" : "%csecret.sgc", fc);
+#endif
 
 			if (PHYSFSX_exists(temp_fname,0))
 			{

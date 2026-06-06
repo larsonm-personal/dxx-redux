@@ -18,6 +18,7 @@
 #include "android_resume_pilot.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
+#include "android_save_set.h"
 #include "coop_save.h"
 #include "android_log.h"
 #include "state_android_shared.h"
@@ -34,7 +35,9 @@ extern int Player_is_dead;
 
 enum {
 	STATE_ANDROID_DESC_LENGTH = 20,
-	STATE_ANDROID_NUM_SAVES = 10
+	STATE_ANDROID_NUM_SAVES = 10,
+	STATE_ANDROID_PERIODIC_AUTOSAVE_SECONDS = 300,
+	STATE_ANDROID_PERIODIC_AUTOSAVE_RETRY_SECONDS = 10
 };
 
 static const char *state_android_memory_file_name(void)
@@ -64,14 +67,149 @@ static const char *state_android_game_label(void)
 #endif
 }
 
-static void state_android_save_filename_for_slot(char *filename, size_t filename_size,
-                                                 int slotnum)
+static const char *state_android_current_scope(int coop)
 {
-	if (!filename || !filename_size)
+	return coop ? "coop" : "single";
+}
+
+static int state_android_last_save_set_path(char *filename, size_t filename_size,
+                                            int coop)
+{
+	return snprintf(filename, filename_size, "%s/last_%s.txt",
+	                GameArg.SysUsePlayersDir ? ANDROID_SAVE_SET_ROOT_PLAYERS
+	                                         : ANDROID_SAVE_SET_ROOT_LOCAL,
+	                state_android_current_scope(coop)) < (int) filename_size;
+}
+
+void state_android_ensure_parent_dirs_for_path(const char *filename)
+{
+	char path[PATH_MAX];
+	char *p;
+
+	if (!filename || !filename[0])
 		return;
-	snprintf(filename, filename_size,
-	         GameArg.SysUsePlayersDir ? "Players/%s.sg%x" : "%s.sg%x",
-	         Players[Player_num].callsign, slotnum);
+	snprintf(path, sizeof(path), "%s", filename);
+	for (p = path; *p; p++) {
+		if (*p != '/')
+			continue;
+		*p = '\0';
+		if (path[0])
+			PHYSFS_mkdir(path);
+		*p = '/';
+	}
+}
+
+static int state_android_read_last_save_set(int coop, char *pilot,
+                                            size_t pilot_size, char *mission,
+                                            size_t mission_size)
+{
+	char filename[PATH_MAX];
+	char buf[128];
+	PHYSFS_file *fp;
+	PHYSFS_sint64 len;
+	char *newline;
+
+	if (!pilot || !pilot_size || !mission || !mission_size)
+		return 0;
+	if (!state_android_last_save_set_path(filename, sizeof(filename), coop))
+		return 0;
+	fp = PHYSFS_openRead(filename);
+	if (!fp)
+		return 0;
+	len = PHYSFS_fileLength(fp);
+	if (len <= 0 || len >= (PHYSFS_sint64) sizeof(buf)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	if (PHYSFS_readBytes(fp, buf, (PHYSFS_uint64) len) != len) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	PHYSFS_close(fp);
+	buf[len] = '\0';
+	newline = strchr(buf, '\n');
+	if (!newline)
+		return 0;
+	*newline = '\0';
+	snprintf(pilot, pilot_size, "%s", buf);
+	snprintf(mission, mission_size, "%s", newline + 1);
+	newline = strchr(mission, '\n');
+	if (newline)
+		*newline = '\0';
+	return pilot[0] && mission[0];
+}
+
+static void state_android_write_last_save_set(int coop, const char *pilot,
+                                              const char *mission)
+{
+	char filename[PATH_MAX];
+	char buf[128];
+	PHYSFS_file *fp;
+	int len;
+
+	if (!pilot || !pilot[0] || !mission || !mission[0])
+		return;
+	if (!state_android_last_save_set_path(filename, sizeof(filename), coop))
+		return;
+	state_android_ensure_parent_dirs_for_path(filename);
+	len = snprintf(buf, sizeof(buf), "%s\n%s\n", pilot, mission);
+	if (len <= 0 || len >= (int) sizeof(buf))
+		return;
+	fp = PHYSFS_openWrite(filename);
+	if (!fp)
+		return;
+	PHYSFS_writeBytes(fp, buf, (PHYSFS_uint64) len);
+	PHYSFS_close(fp);
+}
+
+int state_android_build_save_filename(char *filename, size_t filename_size,
+                                      int slotnum, int coop, int for_save)
+{
+	char pilot[CALLSIGN_LEN + 1];
+	char mission[16];
+
+	if (!filename || !filename_size)
+		return 0;
+	memset(pilot, 0, sizeof(pilot));
+	memset(mission, 0, sizeof(mission));
+	if (!for_save && !coop &&
+	    state_android_read_last_save_set(coop, pilot, sizeof(pilot), mission,
+	                                     sizeof(mission))) {
+		return android_save_set_build_slot_path(
+		    filename, filename_size, GameArg.SysUsePlayersDir,
+		    state_android_current_scope(coop), pilot, mission, slotnum, coop);
+	}
+	snprintf(pilot, sizeof(pilot), "%s", Players[Player_num].callsign);
+	snprintf(mission, sizeof(mission), "%s", Current_mission_filename);
+	return android_save_set_build_slot_path(
+	    filename, filename_size, GameArg.SysUsePlayersDir,
+	    state_android_current_scope(coop), pilot, mission, slotnum, coop);
+}
+
+int state_android_build_coop_autosave_filename(char *filename,
+                                               size_t filename_size,
+                                               int slotnum)
+{
+	return android_save_set_build_slot_path(
+	    filename, filename_size, GameArg.SysUsePlayersDir, "coop",
+	    ANDROID_SAVE_SET_COOP_CALLSIGN, Current_mission_filename, slotnum, 1);
+}
+
+int state_android_build_secret_filename(char *filename, size_t filename_size,
+                                        int slotnum)
+{
+	return android_save_set_build_secret_path(
+	    filename, filename_size, GameArg.SysUsePlayersDir,
+	    Players[Player_num].callsign, Current_mission_filename, slotnum);
+}
+
+int state_android_build_coop_sidecar_filename(char *filename,
+                                              size_t filename_size,
+                                              const char *sidecar_name)
+{
+	return android_save_set_build_sidecar_path(
+	    filename, filename_size, GameArg.SysUsePlayersDir, "coop",
+	    ANDROID_SAVE_SET_COOP_CALLSIGN, Current_mission_filename, sidecar_name);
 }
 
 static int state_android_restore_from_memory_call(const char *filename)
@@ -103,22 +241,19 @@ static void state_android_autosave_prepare_slot(int slotnum)
 {
 #ifdef DXX_BUILD_DESCENT_II
 	char state_android_temp_fname[PATH_MAX];
-	char state_android_fc;
 
-	if (slotnum >= 10)
-		state_android_fc = (slotnum - 10) + 'a';
-	else
-		state_android_fc = '0' + slotnum;
-	sprintf(state_android_temp_fname,
-	        GameArg.SysUsePlayersDir ? "Players/%csecret.sgc" : "%csecret.sgc",
-	        state_android_fc);
+	if (!state_android_build_secret_filename(
+	        state_android_temp_fname, sizeof(state_android_temp_fname), slotnum))
+		return;
 	if (PHYSFSX_exists(state_android_temp_fname, 0)) {
 		if (!PHYSFS_delete(state_android_temp_fname))
 			Error("Cannot delete file <%s>: %s", state_android_temp_fname,
 			      PHYSFS_getLastError());
 	}
 	if (PHYSFSX_exists(SECRETC_FILENAME, 0)) {
-		int copy_result = copy_file(SECRETC_FILENAME, state_android_temp_fname);
+		int copy_result;
+		state_android_ensure_parent_dirs_for_path(state_android_temp_fname);
+		copy_result = copy_file(SECRETC_FILENAME, state_android_temp_fname);
 		Assert(copy_result == 0);
 		(void) copy_result;
 	}
@@ -141,6 +276,20 @@ static rewind_memory_buffer *g_state_android_memory_write_buffer = NULL;
 static const rewind_memory_buffer *g_state_android_memory_read_buffer = NULL;
 int g_android_save_blank_thumbnail = 0;
 
+typedef struct state_android_periodic_autosave_state {
+	int initialized;
+	int level_num;
+	int next_slot;
+	fix64 next_save_time;
+	fix64 last_game_time;
+	char callsign[CALLSIGN_LEN + 1];
+	char mission[ANDROID_SAVE_META_MISSION_LEN + 1];
+} state_android_periodic_autosave_state;
+
+static state_android_periodic_autosave_state g_state_android_periodic_autosave = {
+	0, 0, ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A, 0, 0, "", ""
+};
+
 static void state_android_current_mission_name(char *mission_name,
                                                size_t mission_name_size)
 {
@@ -148,6 +297,51 @@ static void state_android_current_mission_name(char *mission_name,
 		return;
 	memset(mission_name, 0, mission_name_size);
 	strncpy(mission_name, Current_mission_filename, mission_name_size - 1);
+}
+
+static fix64 state_android_periodic_interval(void)
+{
+	return (fix64) F1_0 * STATE_ANDROID_PERIODIC_AUTOSAVE_SECONDS;
+}
+
+static fix64 state_android_periodic_retry_interval(void)
+{
+	return (fix64) F1_0 * STATE_ANDROID_PERIODIC_AUTOSAVE_RETRY_SECONDS;
+}
+
+static void state_android_periodic_autosave_reset(fix64 now,
+                                                  const char *callsign,
+                                                  const char *mission)
+{
+	state_android_periodic_autosave_state *state =
+	    &g_state_android_periodic_autosave;
+
+	memset(state, 0, sizeof(*state));
+	state->initialized = 1;
+	state->level_num = Current_level_num;
+	state->next_slot = ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A;
+	state->next_save_time = now + state_android_periodic_interval();
+	state->last_game_time = now;
+	strncpy(state->callsign, callsign, sizeof(state->callsign) - 1);
+	strncpy(state->mission, mission, sizeof(state->mission) - 1);
+}
+
+static int state_android_periodic_context_changed(fix64 now,
+                                                  const char *callsign,
+                                                  const char *mission)
+{
+	const state_android_periodic_autosave_state *state =
+	    &g_state_android_periodic_autosave;
+
+	if (!state->initialized)
+		return 1;
+	if (state->level_num != Current_level_num)
+		return 1;
+	if (strcmp(state->callsign, callsign))
+		return 1;
+	if (strcmp(state->mission, mission))
+		return 1;
+	return now < state->last_game_time;
 }
 
 static int state_android_read_save_meta_for_slot(int slotnum,
@@ -159,7 +353,7 @@ static int state_android_read_save_meta_for_slot(int slotnum,
 
 	if (!meta)
 		return 0;
-	state_android_save_filename_for_slot(filename, sizeof(filename), slotnum);
+	state_android_build_save_filename(filename, sizeof(filename), slotnum, 0, 1);
 	fp = PHYSFSX_openReadBuffered(filename);
 	if (!fp)
 		return 0;
@@ -260,6 +454,7 @@ rewind_file *state_android_open_write_buffered(const char *filename)
 		rewind_file_init_memory_write(file, g_state_android_memory_write_buffer);
 		return file;
 	}
+	state_android_ensure_parent_dirs_for_path(filename);
 	physfs_file = PHYSFSX_openWriteBuffered(filename);
 	if (!physfs_file) {
 		d_free(file);
@@ -306,6 +501,9 @@ void state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	android_params.difficulty_max = Difficulty_level_max_seen;
 	android_save_meta_apply_cached_thumbnail(&android_params);
 	android_save_meta_write_physfs(physfs_fp, &android_params);
+	state_android_write_last_save_set(
+	    (Game_mode & GM_MULTI_COOP) ? 1 : 0, Players[Player_num].callsign,
+	    mission_filename);
 }
 
 int state_android_save_to_path(const char *filename, const char *desc,
@@ -355,8 +553,9 @@ static void state_android_save_highest_progress_if_needed(void)
 	}
 
 	stop_time();
-	state_android_save_filename_for_slot(filename, sizeof(filename),
-	                                     ANDROID_SAVE_META_SLOT_AUTO_PROGRESS);
+	state_android_build_save_filename(filename, sizeof(filename),
+	                                  ANDROID_SAVE_META_SLOT_AUTO_PROGRESS, 0,
+	                                  1);
 	state_android_autosave_prepare_slot(ANDROID_SAVE_META_SLOT_AUTO_PROGRESS);
 	result = state_android_save_to_path(filename, "AUTO BEST",
 	                                    ANDROID_SAVE_META_KIND_AUTO_PROGRESS, 0);
@@ -421,13 +620,62 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 
 	stop_time();
 	memset(filename, 0, sizeof(filename));
-	state_android_save_filename_for_slot(filename, sizeof(filename), slotnum);
+	state_android_build_save_filename(filename, sizeof(filename), slotnum, 0, 1);
 	state_android_autosave_prepare_slot(slotnum);
 	result = state_android_save_to_path(filename, desc, save_kind, 0);
 	if (!result)
 		debug_log(DLOG_GAME, "autosave failed: %s slot %d",
 		          state_android_game_label(), slotnum);
 	return result;
+}
+
+void state_android_maybe_periodic_autosave(void)
+{
+	state_android_periodic_autosave_state *state =
+	    &g_state_android_periodic_autosave;
+	char callsign[CALLSIGN_LEN + 1];
+	char mission[ANDROID_SAVE_META_MISSION_LEN + 1];
+	int slotnum;
+	int result;
+
+	if ((Game_mode & GM_MULTI) || Current_level_num <= 0) {
+		state->initialized = 0;
+		return;
+	}
+	memset(callsign, 0, sizeof(callsign));
+	memset(mission, 0, sizeof(mission));
+	strncpy(callsign, Players[Player_num].callsign, sizeof(callsign) - 1);
+	state_android_current_mission_name(mission, sizeof(mission));
+	if (state_android_periodic_context_changed(GameTime64, callsign, mission)) {
+		state_android_periodic_autosave_reset(GameTime64, callsign, mission);
+		return;
+	}
+	if (Player_is_dead) {
+		state->next_save_time =
+		    GameTime64 + state_android_periodic_retry_interval();
+		state->last_game_time = GameTime64;
+		return;
+	}
+	if (GameTime64 < state->next_save_time) {
+		state->last_game_time = GameTime64;
+		return;
+	}
+
+	slotnum = state->next_slot;
+	state->next_slot =
+	    slotnum == ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A
+	        ? ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_B
+	        : ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A;
+	state->next_save_time = GameTime64 + state_android_periodic_interval();
+	state->last_game_time = GameTime64;
+	result = state_android_save_to_slot(
+	    slotnum, "AUTO 5MIN", ANDROID_SAVE_META_KIND_AUTO_PERIODIC);
+	if (result)
+		debug_log(DLOG_GAME, "autosave periodic saved: %s slot %d",
+		          state_android_game_label(), slotnum);
+	else
+		debug_log(DLOG_GAME, "autosave periodic failed: %s slot %d",
+		          state_android_game_label(), slotnum);
 }
 
 void state_android_restore_player_flight_state(void)

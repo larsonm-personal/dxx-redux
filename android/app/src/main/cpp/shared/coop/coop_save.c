@@ -17,6 +17,7 @@
 #include "config.h"
 #include "console.h"
 #include "../android_log.h"
+#include "../state_android_shared.h"
 #include "weapon.h"
 #include "state.h"
 #include "args.h"
@@ -145,8 +146,10 @@ static void coop_auto_restore_log_trigger(int slot, uint32_t gid, int frame)
 
 /* --- forward declarations for static helpers --- */
 static void coop_write_autosave_history(int slot, int n_connected);
+static void coop_write_text_file(const char *filename, const char *buf);
 static void coop_append_other_slots(char *buf, int *off, int buf_size,
                                     const char *old_json, int exclude_slot);
+static void coop_write_progress_inventory_file(const char *filename);
 
 /* --- absent player tracking --- */
 
@@ -456,9 +459,7 @@ int coop_autosave(void)
 	       (coop_autosave_next_slot % COOP_AUTOSAVE_SLOT_COUNT);
 	coop_autosave_next_slot++;
 
-	snprintf(filename, PATH_MAX,
-	         GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
-	         COOP_AUTOSAVE_CALLSIGN, slot);
+	state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
 	snprintf(desc, sizeof(desc), "Auto L%d %dp %dpts",
 	         Current_level_num, N_players, Players[Player_num].score);
 
@@ -487,8 +488,9 @@ int coop_autosave(void)
 
 static void coop_write_autosave_history(int slot, int n_connected)
 {
-	PHYSFS_file *fp;
 	char buf[2048];
+	char scoped_history[PATH_MAX];
+	char scoped_info[PATH_MAX];
 	int off = 0;
 	int i;
 	unsigned now = (unsigned) time(NULL);
@@ -549,7 +551,11 @@ static void coop_write_autosave_history(int slot, int n_connected)
 		char old_buf[2048];
 		PHYSFS_sint64 old_len;
 
-		old_fp = PHYSFS_openRead("coop_autosave_history.json");
+		if (!state_android_build_coop_sidecar_filename(
+		        scoped_history, sizeof(scoped_history),
+		        "coop_autosave_history.json"))
+			scoped_history[0] = '\0';
+		old_fp = scoped_history[0] ? PHYSFS_openRead(scoped_history) : NULL;
 		if (old_fp) {
 			old_len = PHYSFS_fileLength(old_fp);
 			if (old_len > 0 && old_len < (PHYSFS_sint64) sizeof(old_buf) - 1) {
@@ -563,14 +569,11 @@ static void coop_write_autosave_history(int slot, int n_connected)
 
 	off += snprintf(buf + off, sizeof(buf) - off, "]\n");
 
-	fp = PHYSFS_openWrite("coop_autosave_history.json");
-	if (fp) {
-		PHYSFS_write(fp, buf, strlen(buf), 1);
-		PHYSFS_close(fp);
-	}
+	if (scoped_history[0])
+		coop_write_text_file(scoped_history, buf);
+	coop_write_text_file("coop_autosave_history.json", buf);
 
 	{
-		PHYSFS_file *jfp;
 		char jbuf[256];
 
 		snprintf(jbuf, sizeof(jbuf),
@@ -583,12 +586,25 @@ static void coop_write_autosave_history(int slot, int n_connected)
 		         Current_mission_filename,
 		         Current_level_num, now, n_connected);
 
-		jfp = PHYSFS_openWrite("coop_autosave_info.json");
-		if (jfp) {
-			PHYSFS_write(jfp, jbuf, strlen(jbuf), 1);
-			PHYSFS_close(jfp);
-		}
+		if (state_android_build_coop_sidecar_filename(
+		        scoped_info, sizeof(scoped_info), "coop_autosave_info.json"))
+			coop_write_text_file(scoped_info, jbuf);
+		coop_write_text_file("coop_autosave_info.json", jbuf);
 	}
+}
+
+static void coop_write_text_file(const char *filename, const char *buf)
+{
+	PHYSFS_file *fp;
+
+	if (!filename || !filename[0] || !buf)
+		return;
+	state_android_ensure_parent_dirs_for_path(filename);
+	fp = PHYSFS_openWrite(filename);
+	if (!fp)
+		return;
+	PHYSFS_write(fp, buf, strlen(buf), 1);
+	PHYSFS_close(fp);
 }
 
 static void coop_append_other_slots(char *buf, int *off, int buf_size,
@@ -643,6 +659,17 @@ static void coop_append_other_slots(char *buf, int *off, int buf_size,
 
 static void coop_write_progress_inventory(void)
 {
+	char scoped_inventory[PATH_MAX];
+
+	if (state_android_build_coop_sidecar_filename(
+	        scoped_inventory, sizeof(scoped_inventory),
+	        "coop_progress_inventory.bin"))
+		coop_write_progress_inventory_file(scoped_inventory);
+	coop_write_progress_inventory_file("coop_progress_inventory.bin");
+}
+
+static void coop_write_progress_inventory_file(const char *filename)
+{
 	PHYSFS_file *fp;
 	coop_player_record rec;
 	uint32_t tag = COOP_PROGRESS_INV_TAG;
@@ -652,7 +679,8 @@ static void coop_write_progress_inventory(void)
 	char mission[9];
 	int i;
 
-	fp = PHYSFS_openWrite("coop_progress_inventory.bin");
+	state_android_ensure_parent_dirs_for_path(filename);
+	fp = PHYSFS_openWrite(filename);
 	if (!fp) {
 		con_printf(CON_URGENT, "coop_save: failed to write progress inventory\n");
 		return;
@@ -688,6 +716,7 @@ static int coop_progress_restore_attempted = 0;
 int coop_load_progress_inventory(void)
 {
 	PHYSFS_file *fp;
+	char scoped_inventory[PATH_MAX];
 	uint32_t tag;
 	uint16_t ver;
 	char mission[9];
@@ -708,7 +737,13 @@ int coop_load_progress_inventory(void)
 	if (!multi_i_am_master())
 		return 0;
 
-	fp = PHYSFS_openRead("coop_progress_inventory.bin");
+	fp = NULL;
+	if (state_android_build_coop_sidecar_filename(
+	        scoped_inventory, sizeof(scoped_inventory),
+	        "coop_progress_inventory.bin"))
+		fp = PHYSFS_openRead(scoped_inventory);
+	if (!fp)
+		fp = PHYSFS_openRead("coop_progress_inventory.bin");
 	if (!fp)
 		return 0;
 
@@ -776,8 +811,8 @@ int coop_load_progress_inventory(void)
 
 void coop_write_progress_json(void)
 {
-	PHYSFS_file *fp;
 	char buf[1024];
+	char scoped_progress[PATH_MAX];
 	char players[256];
 	char client_ids[512];
 	int i, n, p_off, c_off;
@@ -826,13 +861,10 @@ void coop_write_progress_json(void)
 	         players,
 	         client_ids);
 
-	fp = PHYSFS_openWrite("coop_progress.json");
-	if (!fp) {
-		con_printf(CON_URGENT, "coop_save: failed to write coop_progress.json\n");
-		return;
-	}
-	PHYSFS_write(fp, buf, strlen(buf), 1);
-	PHYSFS_close(fp);
+	if (state_android_build_coop_sidecar_filename(
+	        scoped_progress, sizeof(scoped_progress), "coop_progress.json"))
+		coop_write_text_file(scoped_progress, buf);
+	coop_write_text_file("coop_progress.json", buf);
 
 	con_printf(CON_NORMAL, "coop_save: wrote coop_progress.json (L%d, %d players)\n",
 	           Current_level_num, n);
@@ -905,16 +937,12 @@ void coop_arm_auto_restore(void)
 		return;
 	}
 
-	snprintf(filename, PATH_MAX,
-	         GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
-	         Players[Player_num].callsign, slot);
+	state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
 	gid = state_get_game_id(filename);
 	coop_auto_restore_trace("try callsign file '%s' game_id=%u", filename, gid);
 	if (!gid &&
 	    slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
-		snprintf(filename, PATH_MAX,
-		         GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
-		         COOP_AUTOSAVE_CALLSIGN, slot);
+		state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
 		gid = state_get_game_id(filename);
 		coop_auto_restore_trace("try autosave file '%s' game_id=%u", filename, gid);
 	}
