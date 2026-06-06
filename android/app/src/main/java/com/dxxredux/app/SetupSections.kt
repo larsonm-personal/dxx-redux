@@ -427,6 +427,20 @@ private fun ModDetailsDialog(
                             if (missionZip.mission.levelNames.isNotEmpty()) {
                                 ModDetailLine(missionZip.mission.levelNames.joinToString(", "))
                             }
+                            if (missionZip.mission.secretLevelNames.isNotEmpty()) {
+                                DetailRow(
+                                    "Secret levels",
+                                    missionZip.mission.secretLevelNames.size
+                                        .toString(),
+                                )
+                                ModDetailLine(missionZip.mission.secretLevelNames.joinToString(", "))
+                            }
+                            if (missionZip.mission.assetReferences.isNotEmpty()) {
+                                ModDetailSectionTitle("Referenced assets")
+                                missionZip.mission.assetReferences.forEach { (label, value) ->
+                                    ModDetailLine("$label: $value")
+                                }
+                            }
                         }
 
                         if (details.problems.isNotEmpty()) {
@@ -438,33 +452,42 @@ private fun ModDetailsDialog(
 
                         ModDetailSectionTitle("Files")
                         if (details.missionZip != null) {
-                            details.missionZip.constituents.forEach { constituent ->
-                                OutlinedButton(
-                                    onClick = { constituentTarget = constituent },
-                                    shape = MaterialTheme.shapes.small,
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(bottom = 4.dp),
-                                ) {
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        Text(
-                                            constituent.name,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                        )
-                                        Text(
-                                            "${missionZipRoleLabel(constituent.role)}, ${
-                                                setupSectionFormatSize(
-                                                    constituent.sizeBytes,
-                                                )
-                                            }",
-                                            fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
+                            val fileListScrollState = rememberScrollState()
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 260.dp)
+                                        .verticalScroll(fileListScrollState),
+                            ) {
+                                details.missionZip.constituents.forEach { constituent ->
+                                    OutlinedButton(
+                                        onClick = { constituentTarget = constituent },
+                                        shape = MaterialTheme.shapes.small,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(bottom = 4.dp),
+                                    ) {
+                                        Column(modifier = Modifier.fillMaxWidth()) {
+                                            Text(
+                                                constituent.name,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                            )
+                                            Text(
+                                                "${missionZipRoleLabel(constituent.role)}, ${
+                                                    setupSectionFormatSize(
+                                                        constituent.sizeBytes,
+                                                    )
+                                                }",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -1273,6 +1296,13 @@ internal fun FileDetailDialog(
                         if (mission.levelNames.isNotEmpty()) {
                             DetailRow("Level names", mission.levelNames.joinToString(", "))
                         }
+                        if (mission.secretLevelNames.isNotEmpty()) {
+                            DetailRow("Secret levels", mission.secretLevelNames.size.toString())
+                            DetailRow("Secret level names", mission.secretLevelNames.joinToString(", "))
+                        }
+                        mission.assetReferences.forEach { (label, value) ->
+                            DetailRow(label, value)
+                        }
                     }
                     FileMetadataDetails(fileMetadata)
 
@@ -1379,14 +1409,23 @@ private fun FileMetadataDetails(metadata: GameFileMetadata.Summary?) {
     }
     if (metadata.examples.isNotEmpty()) {
         ModDetailSectionTitle("Examples")
-        metadata.examples.forEach { entry ->
-            val sizeText =
-                if (entry.sizeBytes > 0) {
-                    ", ${setupSectionFormatSize(entry.sizeBytes)}"
-                } else {
-                    ""
-                }
-            ModDetailLine("${entry.name}: ${entry.role}$sizeText")
+        val exampleScrollState = rememberScrollState()
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 150.dp)
+                    .verticalScroll(exampleScrollState),
+        ) {
+            metadata.examples.forEach { entry ->
+                val sizeText =
+                    if (entry.sizeBytes > 0) {
+                        ", ${setupSectionFormatSize(entry.sizeBytes)}"
+                    } else {
+                        ""
+                    }
+                ModDetailLine("${entry.name}: ${entry.role}$sizeText")
+            }
         }
     }
     metadata.notes.forEach { note -> ModDetailLine(note) }

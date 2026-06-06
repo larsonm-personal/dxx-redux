@@ -37,8 +37,12 @@ class GameFileFormatsTest {
                 type = normal
                 num_levels = 1
                 Uneasy4.rl2
+                num_secrets = 1
+                Uneasy4s.rl2,1
                 author = Blarget 2 and Nightsurfer
                 editor = Inferno 1.0.22
+                briefing = uneasy.tex
+                !ham = robots.ham
                 """.trimIndent(),
             )
 
@@ -49,6 +53,10 @@ class GameFileFormatsTest {
         assertEquals("Inferno 1.0.22", mission.editor)
         assertEquals(1, mission.declaredLevelCount)
         assertEquals(listOf("Uneasy4.rl2"), mission.levelNames)
+        assertEquals(1, mission.declaredSecretLevelCount)
+        assertEquals(listOf("Uneasy4s.rl2"), mission.secretLevelNames)
+        assertEquals(listOf(1), mission.secretLevelOrigins)
+        assertEquals(mapOf("Briefing" to "uneasy.tex", "HAM" to "robots.ham"), mission.assetReferences)
         assertEquals(GameFileFormats.GAME_D2, mission.game)
     }
 

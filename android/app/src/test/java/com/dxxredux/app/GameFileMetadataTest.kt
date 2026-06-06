@@ -84,7 +84,7 @@ class GameFileMetadataTest {
         pig.deleteOnExit()
         pig.writeBytes(
             createD2Pig(
-                BitmapHeader("rbot010", 64, 64, flags = 8),
+                BitmapHeader("rbot010", 64, 64, dflags = 64 + 4, flags = 8),
                 BitmapHeader("door001", 128, 64, flags = 1),
             ),
         )
@@ -97,7 +97,51 @@ class GameFileMetadataTest {
         assertEquals("D2", summary.game)
         assertEquals("2", summary.detailRows.first { it.first == "Bitmaps" }.second)
         assertEquals("1", summary.detailRows.first { it.first == "RLE bitmaps" }.second)
+        assertEquals("1", summary.detailRows.first { it.first == "Animated groups" }.second)
         assertTrue(summary.examples.any { it.name == "rbot010" && it.role == "64x64 bitmap" })
+    }
+
+    @Test
+    fun summarizesPogTextureOverrides() {
+        val pog = File.createTempFile("Uneasy4", ".pog")
+        pog.deleteOnExit()
+        pog.writeBytes(
+            createPog(
+                42 to BitmapHeader("door001", 128, 64, flags = 1),
+                57 to BitmapHeader("lava001", 64, 64, flags = 8),
+            ),
+        )
+
+        val summary = GameFileMetadata.summarizeLocalFile(pog)
+
+        assertNotNull(summary)
+        summary!!
+        assertEquals("POG", summary.format)
+        assertEquals("Texture override pack", summary.scope)
+        assertEquals("D2", summary.game)
+        assertEquals("2", summary.detailRows.first { it.first == "Overrides" }.second)
+        assertEquals("42-57", summary.detailRows.first { it.first == "Override range" }.second)
+        assertTrue(summary.examples.any { it.name == "door001" && it.role == "override 42 (128x64)" })
+    }
+
+    @Test
+    fun capsLargeArchiveExampleLists() {
+        val hog = File.createTempFile("large", ".hog")
+        hog.deleteOnExit()
+        hog.writeBytes(
+            createHog(
+                *(1..12)
+                    .map { index -> "level${index.toString().padStart(2, '0')}.rl2" to ByteArray(index) }
+                    .toTypedArray(),
+            ),
+        )
+
+        val summary = GameFileMetadata.summarizeLocalFile(hog)
+
+        assertNotNull(summary)
+        summary!!
+        assertEquals(8, summary.examples.size)
+        assertTrue(summary.notes.contains("Showing first 8 of 12 entries"))
     }
 
     @Test
@@ -121,6 +165,7 @@ class GameFileMetadataTest {
         val name: String,
         val width: Int,
         val height: Int,
+        val dflags: Int = 0,
         val flags: Int,
     )
 
@@ -154,7 +199,7 @@ class GameFileMetadataTest {
         out.write(leInt(bitmaps.size))
         bitmaps.forEachIndexed { index, bitmap ->
             out.write(fixedName(bitmap.name, 8))
-            out.write(0)
+            out.write(bitmap.dflags)
             out.write(bitmap.width and 0xff)
             out.write(bitmap.height and 0xff)
             out.write(((bitmap.width shr 8) and 0x0f) or ((bitmap.height shr 4) and 0xf0))
@@ -177,7 +222,7 @@ class GameFileMetadataTest {
         out.write(leInt(1))
         out.write(leInt(soundCount))
         out.write(fixedName(bitmap.name, 8))
-        out.write(0)
+        out.write(bitmap.dflags)
         out.write(bitmap.width and 0xff)
         out.write(bitmap.height and 0xff)
         out.write(bitmap.flags)
@@ -188,6 +233,28 @@ class GameFileMetadataTest {
             out.write(leInt(16))
             out.write(leInt(16))
             out.write(leInt(0))
+        }
+        out.write(ByteArray(64))
+        return out.toByteArray()
+    }
+
+    private fun createPog(vararg bitmaps: Pair<Int, BitmapHeader>): ByteArray {
+        val out = ByteArrayOutputStream()
+        out.write("DPOG".toByteArray(Charsets.US_ASCII))
+        out.write(leInt(1))
+        out.write(leInt(bitmaps.size))
+        bitmaps.forEach { (index, _) ->
+            out.write(leShort(index))
+        }
+        bitmaps.forEachIndexed { offset, (_, bitmap) ->
+            out.write(fixedName(bitmap.name, 8))
+            out.write(bitmap.dflags)
+            out.write(bitmap.width and 0xff)
+            out.write(bitmap.height and 0xff)
+            out.write(((bitmap.width shr 8) and 0x0f) or ((bitmap.height shr 4) and 0xf0))
+            out.write(bitmap.flags)
+            out.write(0)
+            out.write(leInt(offset * 16))
         }
         out.write(ByteArray(64))
         return out.toByteArray()
@@ -209,5 +276,11 @@ class GameFileMetadataTest {
             ((value shr 8) and 0xff).toByte(),
             ((value shr 16) and 0xff).toByte(),
             ((value shr 24) and 0xff).toByte(),
+        )
+
+    private fun leShort(value: Int): ByteArray =
+        byteArrayOf(
+            (value and 0xff).toByte(),
+            ((value shr 8) and 0xff).toByte(),
         )
 }

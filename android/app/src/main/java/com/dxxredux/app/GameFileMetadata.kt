@@ -10,12 +10,17 @@ import java.util.zip.ZipInputStream
 internal object GameFileMetadata {
     private const val MAX_ENTRY_BYTES = 64L * 1024L * 1024L
     private const val MAX_PIG_BYTES = 64L * 1024L * 1024L
+    private const val MAX_POG_BYTES = 64L * 1024L * 1024L
     private const val MAX_EXAMPLES = 8
     private const val PIG_ID = "PPIG"
     private const val PIG_VERSION = 2
+    private const val POG_ID = "DPOG"
+    private const val POG_VERSION = 1
     private const val D1_BITMAP_HEADER_SIZE = 17
     private const val D2_BITMAP_HEADER_SIZE = 18
     private const val SOUND_HEADER_SIZE = 20
+    private const val DBM_FLAG_ABM = 64
+    private const val DBM_NUM_FRAMES = 63
 
     data class EntrySummary(
         val name: String,
@@ -46,6 +51,7 @@ internal object GameFileMetadata {
             "hog" -> file.inputStream().use { summarizeHog(file.name, file.length(), it) }
             "dxa" -> summarizeZipFile(file, "DXA", "Mod archive")
             "pig" -> summarizePig(file.name, file.length()) { file.inputStream() }
+            "pog" -> summarizePog(file.name, file.length()) { file.inputStream() }
             else -> null
         }
     }
@@ -64,6 +70,7 @@ internal object GameFileMetadata {
                     "hog" -> summarizeHog(displayName, size, input)
                     "dxa" -> summarizeZipStream(displayName, input, "DXA", "Mod archive")
                     "pig" -> summarizePig(displayName, size) { zip.getInputStream(entry) }
+                    "pog" -> summarizePog(displayName, size) { zip.getInputStream(entry) }
                     "mn2", "msn" -> summarizeMissionDescriptor(displayName, input)
                     else -> null
                 }
@@ -84,6 +91,16 @@ internal object GameFileMetadata {
                 mission.editor?.let { add("Editor" to it) }
                 add("Levels" to mission.levelNames.size.toString())
                 if (mission.levelNames.isNotEmpty()) add("Level names" to mission.levelNames.joinToString(", "))
+                if (mission.secretLevelNames.isNotEmpty()) {
+                    add("Secret levels" to mission.secretLevelNames.size.toString())
+                    add("Secret level names" to mission.secretLevelNames.joinToString(", "))
+                }
+                if (mission.assetReferences.isNotEmpty()) {
+                    add(
+                        "Referenced assets" to
+                            mission.assetReferences.entries.joinToString(", ") { "${it.key}: ${it.value}" },
+                    )
+                }
             }
         return Summary(
             format = "Mission descriptor",
@@ -135,6 +152,7 @@ internal object GameFileMetadata {
         val rows =
             listOf(
                 "Entries" to entries.size.toString(),
+                "Embedded data" to entries.sumOf { it.sizeBytes }.toString(),
                 "Contents" to roleRollup(entries),
             )
         return Summary(
@@ -229,6 +247,59 @@ internal object GameFileMetadata {
         }?.copy(format = "PIG", scope = "Texture and sound data")
     }
 
+    private fun summarizePog(
+        name: String,
+        sizeBytes: Long,
+        openInput: () -> InputStream,
+    ): Summary? {
+        if (sizeBytes > MAX_POG_BYTES) {
+            return problemSummary("POG", "Texture override pack", "D2", "POG is too large to summarize")
+        }
+        val bytes = openInput().use { it.readBytesCapped(MAX_POG_BYTES.toInt()) }
+        if (bytes.size < 12 || bytes.copyOfRange(0, 4).toString(Charsets.US_ASCII) != POG_ID) {
+            return problemSummary("POG", "Texture override pack", "D2", "Invalid POG magic")
+        }
+        val version = leInt(bytes, 4)
+        if (version != POG_VERSION) {
+            return problemSummary("POG", "Texture override pack", "D2", "Unsupported POG version $version")
+        }
+        val bitmapCount = leInt(bytes, 8)
+        if (!validCount(bitmapCount)) {
+            return problemSummary("POG", "Texture override pack", "D2", "Invalid bitmap count")
+        }
+        val indexStart = 12
+        val headerStart = indexStart + bitmapCount * 2
+        val dataStart = headerStart + bitmapCount * D2_BITMAP_HEADER_SIZE
+        if (dataStart > bytes.size) {
+            return problemSummary("POG", "Texture override pack", "D2", "Truncated POG headers")
+        }
+        val indices = (0 until bitmapCount).map { leShort(bytes, indexStart + it * 2) }
+        val bitmaps = readBitmapHeaders(bytes, headerStart, bitmapCount, D2_BITMAP_HEADER_SIZE, true)
+        val examples =
+            bitmaps.take(MAX_EXAMPLES).mapIndexed { index, bitmap ->
+                EntrySummary(
+                    bitmap.name,
+                    0,
+                    "override ${indices[index]} (${bitmap.width}x${bitmap.height})",
+                )
+            }
+        val rows =
+            buildList {
+                add("Overrides" to bitmapCount.toString())
+                add("Texture data" to (bytes.size - dataStart).coerceAtLeast(0).toString())
+                if (indices.isNotEmpty()) add("Override range" to "${indices.min()}-${indices.max()}")
+            }
+        return Summary(
+            format = "POG",
+            scope = "Texture override pack",
+            game = "D2",
+            detailRows = rows,
+            categories = listOf(CategorySummary("Texture override", bitmapCount, 0)),
+            examples = examples,
+            notes = cappedNote(bitmapCount, "overrides"),
+        )
+    }
+
     private fun summarizeD2Pig(bytes: ByteArray): Summary? {
         val version = leInt(bytes, 4)
         if (version != PIG_VERSION) {
@@ -285,6 +356,7 @@ internal object GameFileMetadata {
         val width: Int,
         val height: Int,
         val flags: Int,
+        val animatedFrames: Int,
     )
 
     private fun readBitmapHeaders(
@@ -310,7 +382,13 @@ internal object GameFileMetadata {
                         if (dflags and 128 != 0) 256 else 0
                 }
             val height = if (d2) heightBase + ((whExtra and 0xf0) shl 4) else heightBase
-            BitmapHeader(name, width, height, flags)
+            BitmapHeader(
+                name = name,
+                width = width,
+                height = height,
+                flags = flags,
+                animatedFrames = if (dflags and DBM_FLAG_ABM != 0) dflags and DBM_NUM_FRAMES else 0,
+            )
         }
 
     private fun pigSummary(
@@ -325,12 +403,14 @@ internal object GameFileMetadata {
         val transparent = bitmaps.count { it.flags and 1 != 0 }
         val superTransparent = bitmaps.count { it.flags and 2 != 0 }
         val noLighting = bitmaps.count { it.flags and 4 != 0 }
+        val animated = bitmaps.count { it.animatedFrames > 0 }
         val rows =
             buildList {
                 add("Bitmaps" to bitmapCount.toString())
                 if (soundCount > 0) add("Sounds" to soundCount.toString())
                 add("Data bytes" to dataBytes.toString())
                 add("RLE bitmaps" to rle.toString())
+                if (animated > 0) add("Animated groups" to animated.toString())
                 if (transparent > 0) add("Transparent" to transparent.toString())
                 if (superTransparent > 0) add("Super transparent" to superTransparent.toString())
                 if (noLighting > 0) add("No lighting" to noLighting.toString())
@@ -482,4 +562,11 @@ internal object GameFileMetadata {
             ((bytes[offset + 1].toInt() and 0xff) shl 8) or
             ((bytes[offset + 2].toInt() and 0xff) shl 16) or
             ((bytes[offset + 3].toInt() and 0xff) shl 24)
+
+    private fun leShort(
+        bytes: ByteArray,
+        offset: Int,
+    ): Int =
+        (bytes[offset].toInt() and 0xff) or
+            ((bytes[offset + 1].toInt() and 0xff) shl 8)
 }

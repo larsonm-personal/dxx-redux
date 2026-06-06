@@ -22,7 +22,11 @@ object GameFileFormats {
         val author: String?,
         val editor: String?,
         val levelNames: List<String>,
+        val secretLevelNames: List<String>,
+        val secretLevelOrigins: List<Int>,
         val declaredLevelCount: Int?,
+        val declaredSecretLevelCount: Int?,
+        val assetReferences: Map<String, String>,
         val game: String,
     ) {
         val displayName: String
@@ -307,7 +311,7 @@ object GameFileFormats {
 
     fun isMissionDescriptor(filename: String): Boolean = extensionOf(filename) in setOf("mn2", "msn")
 
-    fun isMetadataInspectable(filename: String): Boolean = extensionOf(filename) in setOf("hog", "dxa", "pig")
+    fun isMetadataInspectable(filename: String): Boolean = extensionOf(filename) in setOf("hog", "dxa", "pig", "pog")
 
     fun isLevelFile(filename: String): Boolean = gameForLevel(filename) != null
 
@@ -379,9 +383,14 @@ object GameFileFormats {
         text: String,
     ): MissionDescriptor {
         val values = linkedMapOf<String, String>()
+        val assetReferences = linkedMapOf<String, String>()
         val levels = mutableListOf<String>()
+        val secrets = mutableListOf<String>()
+        val secretOrigins = mutableListOf<Int>()
         var remainingLevels = 0
+        var remainingSecrets = 0
         var declaredLevelCount: Int? = null
+        var declaredSecretLevelCount: Int? = null
         for (rawLine in text.lineSequence()) {
             val line = rawLine.trim()
             if (line.isBlank() || line.startsWith(";") || line.startsWith("#")) continue
@@ -391,14 +400,35 @@ object GameFileFormats {
                 remainingLevels--
                 continue
             }
+            if (remainingSecrets > 0 && '=' !in line) {
+                val secret = line.substringBefore(',').trim()
+                val origin = line.substringAfter(',', "").trim().toIntOrNull()
+                if (secret.isNotBlank()) {
+                    secrets += secret
+                    origin?.let { secretOrigins += it }
+                }
+                remainingSecrets--
+                continue
+            }
             val eq = line.indexOf('=')
             if (eq < 0) continue
             val key = line.substring(0, eq).trim().lowercase(Locale.US)
-            val value = line.substring(eq + 1).trim()
+            val value = cleanMissionValue(line.substring(eq + 1))
             values[key] = value
-            if (key == "num_levels") {
-                declaredLevelCount = value.toIntOrNull()?.coerceAtLeast(0)
-                remainingLevels = declaredLevelCount ?: 0
+            when (key) {
+                "num_levels" -> {
+                    declaredLevelCount = value.toIntOrNull()?.coerceAtLeast(0)
+                    remainingLevels = declaredLevelCount ?: 0
+                }
+
+                "num_secrets" -> {
+                    declaredSecretLevelCount = value.toIntOrNull()?.coerceAtLeast(0)
+                    remainingSecrets = declaredSecretLevelCount ?: 0
+                }
+
+                "briefing", "ending", "!ham", "ham", "hxm", "pig", "hog" -> {
+                    if (value.isNotBlank()) assetReferences[assetReferenceLabel(key)] = value
+                }
             }
         }
         return MissionDescriptor(
@@ -408,7 +438,11 @@ object GameFileFormats {
             author = values["author"],
             editor = values["editor"],
             levelNames = levels,
+            secretLevelNames = secrets,
+            secretLevelOrigins = secretOrigins,
             declaredLevelCount = declaredLevelCount,
+            declaredSecretLevelCount = declaredSecretLevelCount,
+            assetReferences = assetReferences,
             game = detectMissionGame(path, levels),
         )
     }
@@ -432,6 +466,19 @@ object GameFileFormats {
     ): String? = keys.firstNotNullOfOrNull { values[it]?.takeIf { value -> value.isNotBlank() } }
 
     private fun normalizePath(path: String): String = path.replace('\\', '/').trim('/')
+
+    private fun cleanMissionValue(value: String): String = value.substringBefore(';').trim()
+
+    private fun assetReferenceLabel(key: String): String =
+        when (key) {
+            "briefing" -> "Briefing"
+            "ending" -> "Ending"
+            "!ham", "ham" -> "HAM"
+            "hxm" -> "HXM"
+            "pig" -> "PIG"
+            "hog" -> "HOG"
+            else -> key.uppercase(Locale.US)
+        }
 
     private fun lowerFirst(text: String): String =
         if (text.isEmpty()) text else text.substring(0, 1).lowercase(Locale.US) + text.substring(1)
