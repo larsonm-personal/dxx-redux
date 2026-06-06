@@ -291,6 +291,8 @@ class MainActivity :
 
     external fun nativeSetDemoRecordPerFrameState(enabled: Boolean)
 
+    external fun nativeIsDemoRecordingActive(): Boolean
+
     external fun nativeIsSaveLoadMenuActive(): Boolean
 
     external fun nativeIsPlayerDead(): Boolean
@@ -1961,6 +1963,12 @@ class MainActivity :
                                 } catch (_: Exception) {
                                     false
                                 }
+                            val demoRecording =
+                                try {
+                                    nativeIsDemoRecordingActive()
+                                } catch (_: Exception) {
+                                    false
+                                }
                             val nowMs = android.os.SystemClock.uptimeMillis()
                             val settingsTrayVisible =
                                 settingsTrayVisibleForOverlay(
@@ -1986,6 +1994,7 @@ class MainActivity :
                             val wasActive = touchOverlay.isActive
                             touchOverlay.isActive = shouldShow
                             touchOverlay.automapActive = automap
+                            touchOverlay.updateDemoRecordingState(demoRecording)
                             if (!overlayEnabled && controllerMenuOpen && shouldShow && !wasActive) {
                                 logSelectRouting(
                                     "forcing touch overlay visible for controller menu " +
@@ -2077,6 +2086,7 @@ class MainActivity :
                             profileHadError = true
                             touchOverlay.isActive = false
                             touchOverlay.automapActive = false
+                            touchOverlay.updateDemoRecordingState(false)
                             skipButton.visibility = View.GONE
                             exitButton.visibility = View.VISIBLE
                             startGameButton.visibility = View.GONE
@@ -2093,6 +2103,7 @@ class MainActivity :
                         }
                         touchOverlay.isActive = false
                         touchOverlay.automapActive = false
+                        touchOverlay.updateDemoRecordingState(false)
                         skipButton.visibility = View.GONE
                         startGameButton.visibility = View.GONE
                         acceptJoinButton.visibility = View.GONE

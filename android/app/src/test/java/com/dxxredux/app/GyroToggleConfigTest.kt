@@ -135,6 +135,7 @@ class GyroToggleConfigTest {
                 weaponState = null,
                 gyroConfigured = true,
                 gyroActiveInGame = true,
+                demoRecordingActive = false,
             ),
         )
         assertFalse(
@@ -144,6 +145,7 @@ class GyroToggleConfigTest {
                 weaponState = null,
                 gyroConfigured = false,
                 gyroActiveInGame = true,
+                demoRecordingActive = false,
             ),
         )
         assertTrue(
@@ -153,6 +155,7 @@ class GyroToggleConfigTest {
                 weaponState = weaponState(playerFlags = WeaponState.PLAYER_FLAGS_HEADLIGHT_ON),
                 gyroConfigured = false,
                 gyroActiveInGame = false,
+                demoRecordingActive = false,
             ),
         )
         assertFalse(
@@ -162,6 +165,17 @@ class GyroToggleConfigTest {
                 weaponState = weaponState(),
                 gyroConfigured = false,
                 gyroActiveInGame = false,
+                demoRecordingActive = false,
+            ),
+        )
+        assertFalse(
+            buttonHasActiveIndicatorState(
+                button = demoButton,
+                gameVariant = "d2",
+                weaponState = null,
+                gyroConfigured = false,
+                gyroActiveInGame = false,
+                demoRecordingActive = false,
             ),
         )
         assertTrue(
@@ -171,6 +185,7 @@ class GyroToggleConfigTest {
                 weaponState = null,
                 gyroConfigured = false,
                 gyroActiveInGame = false,
+                demoRecordingActive = true,
             ),
         )
         assertTrue(
@@ -180,6 +195,7 @@ class GyroToggleConfigTest {
                 weaponState = null,
                 gyroConfigured = false,
                 gyroActiveInGame = false,
+                demoRecordingActive = true,
             ),
         )
     }

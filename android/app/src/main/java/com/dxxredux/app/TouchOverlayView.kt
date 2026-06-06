@@ -86,6 +86,13 @@ class TouchOverlayView
 
         private var gyroConfigured = false
         private var gyroActiveInGame = false
+        private var demoRecordingActive = false
+
+        fun updateDemoRecordingState(active: Boolean) {
+            if (demoRecordingActive == active) return
+            demoRecordingActive = active
+            invalidate()
+        }
 
         /** Returns true while this activity is running a multiplayer session. */
         var isMultiplayerGameProvider: (() -> Boolean)? = null
@@ -1593,6 +1600,7 @@ class TouchOverlayView
                         weaponState = weaponState,
                         gyroConfigured = gyroConfigured,
                         gyroActiveInGame = gyroActiveInGame,
+                        demoRecordingActive = demoRecordingActive,
                     )
             val disabledGyroButton = buttonUsesGyroToggleIndicator(b.control) && !gyroConfigured
             val fill =

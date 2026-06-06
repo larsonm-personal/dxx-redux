@@ -21,6 +21,7 @@
 #include "android_rewind.h"
 #include "android_save_meta.h"
 #include "gr.h"
+#include "input_demo_recorder.h"
 #include "joy.h"
 #include "timer.h"
 #include "window.h"
@@ -1065,6 +1066,12 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetDemoRecordPerFrameState(JNIEnv *env, jobject thiz, jboolean enabled)
 {
 	g_demo_record_per_frame_state = enabled ? 1 : 0;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsDemoRecordingActive(JNIEnv *env, jobject thiz)
+{
+	return input_demo_recorder_is_active() ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT void JNICALL

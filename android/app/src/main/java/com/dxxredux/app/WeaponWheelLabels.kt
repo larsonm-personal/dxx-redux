@@ -107,14 +107,14 @@ private fun buttonUsesBindingIndicator(
         (button.longPressEnabled && button.longPressBinding == binding)
 
 private enum class ActiveHighlightMode {
-    CONFIGURED,
+    DEMO_RECORDING,
     GYRO_ACTIVE,
     D2_HEADLIGHT_ON,
 }
 
 private val activeHighlightBindings =
     linkedMapOf(
-        TouchBindings.META_DEMO_RECORD_TOGGLE to ActiveHighlightMode.CONFIGURED,
+        TouchBindings.META_DEMO_RECORD_TOGGLE to ActiveHighlightMode.DEMO_RECORDING,
         TouchBindings.META_GYRO_TOGGLE to ActiveHighlightMode.GYRO_ACTIVE,
         TouchBindings.BTN_HEADLIGHT to ActiveHighlightMode.D2_HEADLIGHT_ON,
     )
@@ -435,14 +435,17 @@ internal fun buttonHasActiveIndicatorState(
     weaponState: WeaponState?,
     gyroConfigured: Boolean,
     gyroActiveInGame: Boolean,
+    demoRecordingActive: Boolean,
 ): Boolean {
-    val configuredActive = buttonUsesActiveHighlightMode(button, ActiveHighlightMode.CONFIGURED)
+    val demoActive =
+        buttonUsesActiveHighlightMode(button, ActiveHighlightMode.DEMO_RECORDING) &&
+            demoRecordingActive
     val gyroActive = buttonUsesGyroToggleIndicator(button) && gyroConfigured && gyroActiveInGame
     val headlightActive =
         buttonUsesHeadlightIndicator(button) &&
             gameVariant == "d2" &&
             weaponState?.isHeadlightOn == true
-    return configuredActive || gyroActive || headlightActive
+    return demoActive || gyroActive || headlightActive
 }
 
 internal fun dragZoneButtonLatchAllowed(
