@@ -26,6 +26,8 @@ class ModManager(
         private const val TAG = "DXX-Mods"
         private const val MANIFEST_FILE = "mod_manifest.json"
         private const val GENERATED_PATCH_DIR = ".generated_mod_patches"
+        const val MOD_KIND_DXA = "dxa"
+        const val MOD_KIND_MISSION_ZIP = SectorgameMissionZip.KIND
         private val BASE_REPLACEMENT_EXTENSIONS =
             setOf("ham", "hog", "mn2", "msn", "mvl", "pig", "pog", "rdl", "rl2", "s11", "s22", "vham")
         private val TEXTURE_EXTENSIONS = setOf("dtx", "ktx2", "png", "tga")
@@ -42,6 +44,10 @@ class ModManager(
         val sizeBytes: Long,
         val game: String, // "d1", "d2", or "both"
         val order: Int,
+        val kind: String = MOD_KIND_DXA,
+        val category: String? = null,
+        val missionTitle: String? = null,
+        val importMode: String? = null,
     )
 
     data class ModCompatibilityFailure(
@@ -165,6 +171,7 @@ class ModManager(
         val patches: List<ModPatchDetail>,
         val baseRequirements: List<ModBaseRequirement>,
         val problems: List<String>,
+        val missionZip: SectorgameMissionZip.ScanResult? = null,
     )
 
     private data class ActualBaseFile(
@@ -368,6 +375,52 @@ class ModManager(
         Log.i(TAG, "Registered downloaded mod: $displayName")
     }
 
+    /** Import a sectorgame-style mission ZIP from a SAF URI. */
+    fun importMissionZip(
+        uri: Uri,
+        displayName: String,
+        contentResolver: ContentResolver,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
+    ): ModInfo? {
+        val scan =
+            contentResolver.openInputStream(uri)?.use { input ->
+                SectorgameMissionZip.inspect(input)
+            } ?: return null
+        val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+        val dest = File(modsDir, safeName)
+        try {
+            val total = ImportStorageGuard.queryUriSizeBytes(contentResolver, uri) ?: 0L
+            ImportStorageGuard.requireFreeSpace(modsDir, total, "import mission zip $displayName")
+            contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(dest).use { output ->
+                    LauncherFileCopy.copyStream(input, output, total, displayName, onProgress)
+                }
+            } ?: return null
+        } catch (e: InsufficientStorageException) {
+            Log.e(TAG, "Not enough space to import mission zip $displayName", e)
+            ImportStorageGuard.recordFailure(filesDir, "Mission ZIP import failed for $displayName", e)
+            dest.delete()
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to import mission zip $displayName", e)
+            ImportStorageGuard.recordFailure(filesDir, "Mission ZIP import failed for $displayName", e)
+            dest.delete()
+            return null
+        }
+        return registerMissionZip(safeName, dest.length(), scan)
+    }
+
+    internal fun importMissionZipFile(
+        source: File,
+        displayName: String = source.name,
+    ): ModInfo? {
+        val scan = SectorgameMissionZip.inspect(source) ?: return null
+        val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+        val dest = File(modsDir, safeName)
+        if (source.absoluteFile != dest.absoluteFile) source.copyTo(dest, overwrite = true)
+        return registerMissionZip(safeName, dest.length(), scan)
+    }
+
     /** Reorder: swap item at [index] with the one above it */
     fun moveUp(index: Int) {
         val sorted = mods.sortedBy { it.order }.toMutableList()
@@ -463,6 +516,33 @@ class ModManager(
         return ModCompatibilityReport(failures, patchConflicts)
     }
 
+    private fun registerMissionZip(
+        filename: String,
+        sizeBytes: Long,
+        scan: SectorgameMissionZip.ScanResult,
+    ): ModInfo {
+        mods.removeAll { it.filename == filename }
+        val maxOrder = mods.maxOfOrNull { it.order } ?: -1
+        val mod =
+            ModInfo(
+                filename = filename,
+                displayName = scan.mission.displayName,
+                enabled = true,
+                addedAt = System.currentTimeMillis(),
+                sizeBytes = sizeBytes,
+                game = scan.game,
+                order = maxOrder + 1,
+                kind = MOD_KIND_MISSION_ZIP,
+                category = scan.category,
+                missionTitle = scan.mission.displayName,
+                importMode = scan.importMode,
+            )
+        mods.add(mod)
+        save()
+        logInfo("Imported mission zip: ${mod.displayName} (${mod.sizeBytes / 1024 / 1024} MB)")
+        return mod
+    }
+
     fun getModDetails(
         mod: ModInfo,
         setDir: File,
@@ -481,6 +561,7 @@ class ModManager(
                 problems = listOf("Mod archive is missing from storage"),
             )
         }
+        if (mod.kind == MOD_KIND_MISSION_ZIP) return getMissionZipDetails(modFile)
         val assetEntries = AssetManifest(setDir).load().associateBy { it.filename.lowercase(Locale.US) }
         return try {
             ZipFile(modFile).use { zip ->
@@ -530,6 +611,49 @@ class ModManager(
             )
         }
     }
+
+    private fun getMissionZipDetails(modFile: File): ModDetails =
+        try {
+            val scan = SectorgameMissionZip.inspect(modFile)
+            if (scan == null) {
+                ModDetails(
+                    archivePath = modFile.absolutePath,
+                    fileCount = 0,
+                    archiveSizeBytes = modFile.length(),
+                    manifestSchema = null,
+                    notes = emptyList(),
+                    categories = emptyList(),
+                    patches = emptyList(),
+                    baseRequirements = emptyList(),
+                    problems = listOf("Could not find a mission descriptor inside this ZIP"),
+                )
+            } else {
+                ModDetails(
+                    archivePath = modFile.absolutePath,
+                    fileCount = scan.constituents.size,
+                    archiveSizeBytes = modFile.length(),
+                    manifestSchema = null,
+                    notes = emptyList(),
+                    categories = missionZipCategories(scan.constituents),
+                    patches = emptyList(),
+                    baseRequirements = emptyList(),
+                    problems = emptyList(),
+                    missionZip = scan,
+                )
+            }
+        } catch (e: Exception) {
+            ModDetails(
+                archivePath = modFile.absolutePath,
+                fileCount = 0,
+                archiveSizeBytes = modFile.length(),
+                manifestSchema = null,
+                notes = emptyList(),
+                categories = emptyList(),
+                patches = emptyList(),
+                baseRequirements = emptyList(),
+                problems = listOf("Could not read mission ZIP: ${e.message ?: e.javaClass.simpleName}"),
+            )
+        }
 
     private fun collectModPatchDocuments(
         mod: ModInfo,
@@ -919,6 +1043,34 @@ class ModManager(
         }
     }
 
+    private fun missionZipCategories(entries: List<SectorgameMissionZip.Constituent>): List<ModFileCategorySummary> {
+        val buckets = linkedMapOf<String, CategoryBucket>()
+        for (entry in entries) {
+            val label =
+                when (entry.role) {
+                    "mission_descriptor" -> "Mission descriptor"
+                    "mission_hog" -> "Mission assets"
+                    "mod_archive" -> "Bundled mod archive"
+                    "documentation" -> "Documentation"
+                    else -> "Other files"
+                }
+            val bucket = buckets.getOrPut(label) { CategoryBucket(label) }
+            bucket.count++
+            bucket.sizeBytes += entry.sizeBytes
+            val example = "${entry.name} - ${launcherFileTypeLabel(entry.name)}"
+            if (bucket.examples.size < 3 && example !in bucket.examples) bucket.examples += example
+        }
+        return buckets.values.map { bucket ->
+            ModFileCategorySummary(
+                label = bucket.label,
+                count = bucket.count,
+                sizeBytes = bucket.sizeBytes,
+                examples = bucket.examples,
+                examplesTruncated = bucket.count > bucket.examples.size,
+            )
+        }
+    }
+
     private fun classifyModEntry(name: String): Pair<String, String> {
         val normalized = normalizeDxaPath(name)
         val leaf = normalized.substringAfterLast('/')
@@ -1093,6 +1245,10 @@ class ModManager(
                             sizeBytes = size,
                             game = obj.optString("game", "both"),
                             order = obj.optInt("order", i),
+                            kind = obj.optString("kind", MOD_KIND_DXA),
+                            category = obj.optString("category").takeIf { it.isNotBlank() },
+                            missionTitle = obj.optString("missionTitle").takeIf { it.isNotBlank() },
+                            importMode = obj.optString("importMode").takeIf { it.isNotBlank() },
                         )
                     }.toMutableList()
         } catch (e: Exception) {
@@ -1113,6 +1269,10 @@ class ModManager(
                     put("sizeBytes", m.sizeBytes)
                     put("game", m.game)
                     put("order", m.order)
+                    put("kind", m.kind)
+                    m.category?.let { put("category", it) }
+                    m.missionTitle?.let { put("missionTitle", it) }
+                    m.importMode?.let { put("importMode", it) }
                 },
             )
         }

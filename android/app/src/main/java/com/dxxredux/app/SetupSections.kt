@@ -348,6 +348,13 @@ private fun ModDetailsDialog(
     loading: Boolean,
     onDismiss: () -> Unit,
 ) {
+    var constituentTarget by remember { mutableStateOf<SectorgameMissionZip.Constituent?>(null) }
+    constituentTarget?.let { constituent ->
+        MissionZipConstituentDialog(
+            constituent = constituent,
+            onDismiss = { constituentTarget = null },
+        )
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -393,7 +400,28 @@ private fun ModDetailsDialog(
                         )
                         DetailRow("Game", mod.game.uppercase(Locale.US))
                         DetailRow("State", if (mod.enabled) "Enabled" else "Disabled")
-                        DetailRow("Manifest", details.manifestSchema ?: "Not present")
+                        DetailRow(
+                            "Manifest",
+                            if (details.missionZip != null) {
+                                "Mission ZIP"
+                            } else {
+                                details.manifestSchema ?: "Not present"
+                            },
+                        )
+
+                        details.missionZip?.let { missionZip ->
+                            DetailRow("Category", missionZip.category.replaceFirstChar { it.uppercase() })
+                            DetailRow("Import mode", missionZip.importMode.replace('_', ' '))
+                            ModDetailSectionTitle("Mission")
+                            DetailRow("Title", missionZip.mission.displayName)
+                            missionZip.mission.type?.let { DetailRow("Type", it) }
+                            missionZip.mission.author?.let { DetailRow("Author", it) }
+                            missionZip.mission.editor?.let { DetailRow("Editor", it) }
+                            DetailRow("Levels", missionZip.mission.levelNames.size.toString())
+                            if (missionZip.mission.levelNames.isNotEmpty()) {
+                                ModDetailLine(missionZip.mission.levelNames.joinToString(", "))
+                            }
+                        }
 
                         if (details.problems.isNotEmpty()) {
                             ModDetailSectionTitle("Problems")
@@ -403,7 +431,33 @@ private fun ModDetailsDialog(
                         }
 
                         ModDetailSectionTitle("Files")
-                        if (details.categories.isEmpty()) {
+                        if (details.missionZip != null) {
+                            details.missionZip.constituents.forEach { constituent ->
+                                TextButton(
+                                    onClick = { constituentTarget = constituent },
+                                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 2.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Column(modifier = Modifier.fillMaxWidth()) {
+                                        Text(
+                                            constituent.name,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Text(
+                                            "${missionZipRoleLabel(constituent.role)}, ${
+                                                setupSectionFormatSize(
+                                                    constituent.sizeBytes,
+                                                )
+                                            }",
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        } else if (details.categories.isEmpty()) {
                             ModDetailLine("No readable archive entries")
                         } else {
                             details.categories.forEach { category ->
@@ -434,67 +488,71 @@ private fun ModDetailsDialog(
                             }
                         }
 
-                        ModDetailSectionTitle("Patches")
-                        if (details.patches.isEmpty()) {
-                            ModDetailLine("No metadata patches")
-                        } else {
-                            details.patches.forEach { patch ->
-                                Text(
-                                    patch.path,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.padding(top = 2.dp),
-                                )
-                                val operationText = patch.operationCount?.let { ", $it ops" } ?: ""
-                                ModDetailLine("Size ${setupSectionFormatSize(patch.sizeBytes)}$operationText")
-                                ModDetailLine(
-                                    "Affects ${patch.affectedFiles.ifEmpty {
-                                        listOf(
-                                            "unknown target",
-                                        )
-                                    }.joinToString(", ")}",
-                                )
-                                if (patch.expectedBaseVersions.isNotEmpty()) {
-                                    ModDetailLine("Expects ${patch.expectedBaseVersions.joinToString(", ")}")
+                        if (details.missionZip == null) {
+                            ModDetailSectionTitle("Patches")
+                            if (details.patches.isEmpty()) {
+                                ModDetailLine("No metadata patches")
+                            } else {
+                                details.patches.forEach { patch ->
+                                    Text(
+                                        patch.path,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(top = 2.dp),
+                                    )
+                                    val operationText = patch.operationCount?.let { ", $it ops" } ?: ""
+                                    ModDetailLine("Size ${setupSectionFormatSize(patch.sizeBytes)}$operationText")
+                                    ModDetailLine(
+                                        "Affects ${patch.affectedFiles.ifEmpty {
+                                            listOf(
+                                                "unknown target",
+                                            )
+                                        }.joinToString(", ")}",
+                                    )
+                                    if (patch.expectedBaseVersions.isNotEmpty()) {
+                                        ModDetailLine("Expects ${patch.expectedBaseVersions.joinToString(", ")}")
+                                    }
                                 }
                             }
                         }
 
-                        ModDetailSectionTitle("Base Files")
-                        if (details.baseRequirements.isEmpty()) {
-                            ModDetailLine("No base-file requirements in manifest")
-                        } else {
-                            details.baseRequirements.forEach { requirement ->
-                                val status =
-                                    when {
-                                        !requirement.required -> "optional"
-                                        requirement.ok -> "match"
-                                        requirement.actualSha256 == null -> "missing"
-                                        else -> "mismatch"
-                                    }
-                                val statusColor =
-                                    if (requirement.ok) {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    } else {
-                                        MaterialTheme.colorScheme.error
-                                    }
-                                Text(
-                                    "${requirement.filename}: ${requirement.expectedVersion} ($status)",
-                                    fontSize = 12.sp,
-                                    color = statusColor,
-                                    modifier = Modifier.padding(top = 2.dp),
-                                )
-                                baseRequirementSha256Lines(requirement).forEach { line ->
-                                    ModDetailLine(line, color = statusColor)
-                                }
-                                if (requirement.reason.isNotBlank()) {
+                        if (details.missionZip == null) {
+                            ModDetailSectionTitle("Base Files")
+                            if (details.baseRequirements.isEmpty()) {
+                                ModDetailLine("No base-file requirements in manifest")
+                            } else {
+                                details.baseRequirements.forEach { requirement ->
+                                    val status =
+                                        when {
+                                            !requirement.required -> "optional"
+                                            requirement.ok -> "match"
+                                            requirement.actualSha256 == null -> "missing"
+                                            else -> "mismatch"
+                                        }
+                                    val statusColor =
+                                        if (requirement.ok) {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        } else {
+                                            MaterialTheme.colorScheme.error
+                                        }
                                     Text(
-                                        requirement.reason,
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(bottom = 1.dp),
+                                        "${requirement.filename}: ${requirement.expectedVersion} ($status)",
+                                        fontSize = 12.sp,
+                                        color = statusColor,
+                                        modifier = Modifier.padding(top = 2.dp),
                                     )
+                                    baseRequirementSha256Lines(requirement).forEach { line ->
+                                        ModDetailLine(line, color = statusColor)
+                                    }
+                                    if (requirement.reason.isNotBlank()) {
+                                        Text(
+                                            requirement.reason,
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(bottom = 1.dp),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -510,6 +568,43 @@ private fun ModDetailsDialog(
         },
     )
 }
+
+@Composable
+private fun MissionZipConstituentDialog(
+    constituent: SectorgameMissionZip.Constituent,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        title = {
+            Text(constituent.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        },
+        text = {
+            Column {
+                DetailRow("Category", launcherFileTypeLabel(constituent.name))
+                DetailRow("Type", describeExtension(constituent.name))
+                DetailRow("Role", missionZipRoleLabel(constituent.role))
+                DetailRow("Path", constituent.path)
+                DetailRow("Size", setupSectionFormatSize(constituent.sizeBytes))
+                if (constituent.compressedSizeBytes > 0) {
+                    DetailRow("Compressed", setupSectionFormatSize(constituent.compressedSizeBytes))
+                }
+            }
+        },
+    )
+}
+
+private fun missionZipRoleLabel(role: String): String =
+    when (role) {
+        "mission_descriptor" -> "Mission descriptor"
+        "mission_hog" -> "Mission assets"
+        "mod_archive" -> "Bundled mod archive"
+        "documentation" -> "Documentation"
+        else -> "Other file"
+    }
 
 @Composable
 private fun ModDetailSectionTitle(text: String) {

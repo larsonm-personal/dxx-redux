@@ -2242,6 +2242,7 @@ private fun SetupScreen(
     suspend fun processPickedUris(uris: List<Uri>) {
         try {
             val dxaImportUris = mutableListOf<Pair<String, Uri>>()
+            val missionZipImportUris = mutableListOf<Pair<String, Uri>>()
             val zipUris = mutableListOf<Pair<String, Uri>>()
             val gameUris = mutableListOf<FoundFile>()
             val cueUris = mutableListOf<Pair<String, Uri>>()
@@ -2265,8 +2266,24 @@ private fun SetupScreen(
                             zipUris.add(demoPackage.filename to uri)
                         }
 
-                        lname.endsWith(".zip") ||
-                            lname.endsWith(".7z") ||
+                        lname.endsWith(".zip") -> {
+                            val missionZip =
+                                try {
+                                    context.contentResolver.openInputStream(uri)?.use { input ->
+                                        SectorgameMissionZip.inspect(input)
+                                    }
+                                } catch (e: Exception) {
+                                    Log.w("DXX-Setup", "Mission ZIP probe failed for $name: ${e.message}")
+                                    null
+                                }
+                            if (missionZip != null) {
+                                missionZipImportUris.add(name to uri)
+                            } else {
+                                zipUris.add(name to uri)
+                            }
+                        }
+
+                        lname.endsWith(".7z") ||
                             lname.endsWith(".sit") ||
                             lname.endsWith(".hqx") -> {
                             zipUris.add(name to uri)
@@ -2436,6 +2453,37 @@ private fun SetupScreen(
                         importStatus = failures.joinToString("; ")
                     } else {
                         importStatus = dxaResults.joinToString("; ")
+                    }
+                    onRefresh()
+                }
+            }
+            if (missionZipImportUris.isNotEmpty()) {
+                val modMgr = ModManager(filesDir)
+                val results = mutableListOf<String>()
+                for ((name, uri) in missionZipImportUris) {
+                    try {
+                        val mod = modMgr.importMissionZip(uri, name, context.contentResolver)
+                        if (mod != null) {
+                            results.add("Imported level pack: ${mod.displayName}")
+                            Log.i("DXX-Setup", "Mission ZIP import ok: $name (${mod.sizeBytes} bytes)")
+                        } else {
+                            results.add("Failed to import $name")
+                            Log.e("DXX-Setup", "Mission ZIP import returned null: $name")
+                        }
+                    } catch (e: Exception) {
+                        results.add("Failed to import $name: ${e.message}")
+                        Log.e("DXX-Setup", "Mission ZIP import exception: $name", e)
+                    }
+                }
+                val failures = results.filter { it.startsWith("Failed") }
+                withContext(Dispatchers.Main) {
+                    if (failures.isNotEmpty()) {
+                        for (f in failures) {
+                            Toast.makeText(context, f, Toast.LENGTH_LONG).show()
+                        }
+                        importStatus = failures.joinToString("; ")
+                    } else {
+                        importStatus = results.joinToString("; ")
                     }
                     onRefresh()
                 }

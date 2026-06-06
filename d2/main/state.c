@@ -1665,8 +1665,17 @@ int state_callback(newmenu *menu, d_event *event, grs_bitmap *sc_bmp[])
 			/* D2 thumbnails are already remapped into the current palette when loaded.
 			 * Upload them with the transient indexed blit path so OGL uses gr_current_pal
 			 * instead of the cached bitmap uploader's default palette. */
-			ogl_ubitblt_i(preview_w, preview_h, preview_x, preview_y,
-				THUMBNAIL_W, THUMBNAIL_H, 0, 0, sc_bmp[citem-1], &grd_curcanv->cv_bitmap, 1);
+			if (grd_curcanv->cv_bitmap.bm_type == BM_OGL) {
+				ogl_ubitblt_i(preview_w, preview_h, preview_x, preview_y,
+					THUMBNAIL_W, THUMBNAIL_H, 0, 0, sc_bmp[citem-1], &grd_curcanv->cv_bitmap, 1);
+			} else {
+				grs_canvas *temp_canv = gr_create_canvas(preview_w, preview_h);
+				if (temp_canv) {
+					gr_bitmap_scale_to(sc_bmp[citem-1], &temp_canv->cv_bitmap);
+					gr_bitmap(preview_x, preview_y, &temp_canv->cv_bitmap);
+					gr_free_canvas(temp_canv);
+				}
+			}
 		#endif
 
 		#ifndef OGL
