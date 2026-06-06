@@ -669,16 +669,31 @@ private fun MissionZipConstituentDialog(
             Text(constituent.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         },
         text = {
-            Column {
-                DetailRow("Category", launcherFileTypeLabel(constituent.name))
-                DetailRow("Type", describeExtension(constituent.name))
-                DetailRow("Role", missionZipRoleLabel(constituent.role))
-                DetailRow("Path", constituent.path)
-                DetailRow("Size", setupSectionFormatSize(constituent.sizeBytes))
-                if (constituent.compressedSizeBytes > 0) {
-                    DetailRow("Compressed", setupSectionFormatSize(constituent.compressedSizeBytes))
+            val scrollState = rememberScrollState()
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp),
+            ) {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(scrollState)
+                            .padding(end = 8.dp, bottom = 4.dp),
+                ) {
+                    DetailRow("Category", launcherFileTypeLabel(constituent.name))
+                    DetailRow("Type", describeExtension(constituent.name))
+                    DetailRow("Role", missionZipRoleLabel(constituent.role))
+                    DetailRow("Path", constituent.path)
+                    DetailRow("Size", setupSectionFormatSize(constituent.sizeBytes))
+                    if (constituent.compressedSizeBytes > 0) {
+                        DetailRow("Compressed", setupSectionFormatSize(constituent.compressedSizeBytes))
+                    }
+                    FileMetadataDetails(metadata)
                 }
-                FileMetadataDetails(metadata)
+                SetupScrollArrows(scrollState)
             }
         },
     )
@@ -1686,7 +1701,7 @@ private fun MetadataContentsBox(
                     Modifier
                         .fillMaxWidth()
                         .verticalScroll(scrollState)
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                        .padding(start = 8.dp, top = 6.dp, end = 8.dp, bottom = 10.dp),
             ) {
                 entries.forEach { entry ->
                     val sizeText =
