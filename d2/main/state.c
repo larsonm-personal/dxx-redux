@@ -2333,17 +2333,33 @@ void set_pos_from_return_segment(void)
 static int state_android_slot_from_direct_restore_path(const char *filename)
 {
 	const char *dot;
+	int slot;
 
-	if (!filename)
+	if (!filename) {
+		debug_log(DLOG_GAME,
+		          "restore direct path slot parse: filename=<null> slot=-1 reason=null");
 		return -1;
+	}
 	dot = strrchr(filename, '.');
-	if (!dot || dot[4] != '\0')
+	if (!dot || dot[4] != '\0') {
+		debug_log(DLOG_GAME,
+		          "restore direct path slot parse: filename='%s' slot=-1 reason=bad_suffix",
+		          filename);
 		return -1;
+	}
 	if ((dot[1] != 's' && dot[1] != 'S' && dot[1] != 'm' && dot[1] != 'M') ||
 	    (dot[2] != 'g' && dot[2] != 'G') ||
-	    dot[3] < '0' || dot[3] > '9')
+	    dot[3] < '0' || dot[3] > '9') {
+		debug_log(DLOG_GAME,
+		          "restore direct path slot parse: filename='%s' slot=-1 reason=not_save_slot",
+		          filename);
 		return -1;
-	return dot[3] - '0';
+	}
+	slot = dot[3] - '0';
+	debug_log(DLOG_GAME,
+	          "restore direct path slot parse: filename='%s' slot=%d",
+	          filename, slot);
+	return slot;
 }
 #endif
 
@@ -2352,34 +2368,73 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 	char filename[PATH_MAX];
 	int	filenum = -1;
 
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME,
+	          "restore all enter: game=d2 in_game=%d secret=%d override='%s' newdemo=%d game_mode=%d level=%d callsign='%s'",
+	          in_game, secret_restore, filename_override ? filename_override : "",
+	          Newdemo_state, Game_mode, Current_level_num,
+	          Players[Player_num].callsign);
+#endif
 	if (in_game && (Current_level_num < 0) && (secret_restore == 0)) {
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME,
+		          "restore all return: game=d2 reason=secret_level_guard level=%d",
+		          Current_level_num);
+#endif
 		HUD_init_message_literal(HM_DEFAULT,  "Can't restore in secret level!" );
 		return 0;
 	}
 
-	if ( Newdemo_state == ND_STATE_RECORDING )
+	if ( Newdemo_state == ND_STATE_RECORDING ) {
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME, "restore all: game=d2 stopping active demo recording");
+#endif
 		newdemo_stop_recording(0);
+	}
 
-	if ( Newdemo_state != ND_STATE_NORMAL )
+	if ( Newdemo_state != ND_STATE_NORMAL ) {
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME,
+		          "restore all return: game=d2 reason=newdemo_state state=%d",
+		          Newdemo_state);
+#endif
 		return 0;
+	}
 
 	if ( Game_mode & GM_MULTI )
 	{
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME,
+		          "restore all return: game=d2 reason=multiplayer mode=%d",
+		          Game_mode);
+#endif
 		if (Game_mode & GM_MULTI_COOP)
 			multi_initiate_restore_game();
 		return 0;
 	}
 
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME, "restore all before stop_time: game=d2");
+#endif
 	stop_time();
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME, "restore all after stop_time: game=d2");
+#endif
 
 	if (filename_override) {
 		strcpy(filename, filename_override);
 #ifdef __ANDROID__
 		filenum = state_android_slot_from_direct_restore_path(filename_override);
+		debug_log(DLOG_GAME,
+		          "restore all filename selected: game=d2 source=override file='%s' slot=%d",
+		          filename, filenum);
 #else
 		filenum = NUM_SAVES+1; // place outside of save slots
 #endif
 	} else if (!(filenum = state_get_restore_file(filename)))	{
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME, "restore all return: game=d2 reason=no_restore_file");
+#endif
 		start_time();
 		return 0;
 	}
@@ -2392,6 +2447,11 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 		int	rval;
 		char	temp_fname[PATH_MAX], fc;
 
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME,
+		          "restore secret companion branch: game=d2 file='%s' slot=%d",
+		          filename, filenum);
+#endif
 		if (filenum != -1) {
 			if (filenum >= 10)
 				fc = (filenum-10) + 'a';
@@ -2399,6 +2459,9 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 				fc = '0' + filenum;
 
 #ifdef __ANDROID__
+			debug_log(DLOG_GAME,
+			          "restore secret companion build begin: game=d2 slot=%d",
+			          filenum);
 			state_android_build_secret_filename(temp_fname, PATH_MAX, filenum);
 			debug_log(DLOG_GAME,
 				"restore secret companion check: game=d2 file='%s' slot=%d companion='%s'",
@@ -2409,12 +2472,40 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 
 			if (PHYSFSX_exists(temp_fname,0))
 			{
+#ifdef __ANDROID__
+				debug_log(DLOG_GAME,
+				          "restore secret companion exists: game=d2 companion='%s'",
+				          temp_fname);
+#endif
 				rval = copy_file(temp_fname, SECRETC_FILENAME);
+#ifdef __ANDROID__
+				debug_log(DLOG_GAME,
+				          "restore secret companion copied: game=d2 companion='%s' result=%d",
+				          temp_fname, rval);
+#endif
 				Assert(rval == 0);	//	Oops, error copying temp_fname to secret.sgc!
 				(void)rval;
-			} else
+			} else {
+#ifdef __ANDROID__
+				debug_log(DLOG_GAME,
+			          "restore secret companion missing: game=d2 companion='%s' delete_secret='%s'",
+				          temp_fname, SECRETC_FILENAME);
+#endif
 				PHYSFS_delete(SECRETC_FILENAME);
+#ifdef __ANDROID__
+				debug_log(DLOG_GAME,
+				          "restore secret companion delete attempted: game=d2 target='%s'",
+				          SECRETC_FILENAME);
+#endif
+			}
 		}
+#ifdef __ANDROID__
+		else {
+			debug_log(DLOG_GAME,
+			          "restore secret companion skipped: game=d2 reason=no_slot file='%s'",
+			          filename);
+		}
+#endif
 	}
 
 	if ( !secret_restore && in_game ) {
@@ -2426,7 +2517,15 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 		}
 	}
 
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME, "restore all before start_time: game=d2 file='%s'", filename);
+#endif
 	start_time();
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME,
+	          "restore all before sub: game=d2 file='%s' secret=%d slot=%d",
+	          filename, secret_restore, filenum);
+#endif
 
 	return state_restore_all_sub(filename, secret_restore);
 }
@@ -2459,11 +2558,20 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	short TempTmapNum[MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 	short TempTmapNum2[MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME,
+	          "restore sub enter: game=d2 file='%s' secret=%d callsign='%s' mode=%d",
+	          filename ? filename : "", secret_restore, Players[Player_num].callsign,
+	          Game_mode);
+#endif
 	#ifndef NDEBUG
 	if (GameArg.SysUsePlayersDir && strncmp(filename, "Players/", 8))
 		Int3();
 	#endif
 
+#ifdef __ANDROID__
+	debug_log(DLOG_GAME, "restore sub before open: game=d2 file='%s'", filename);
+#endif
 	fp = PHYSFSX_openReadBuffered(filename);
 	if ( !fp ) {
 		con_printf(CON_URGENT, "restore: could not open '%s'\n", filename);

@@ -62,6 +62,24 @@ startup resume restore begin: game=d2 path='Players/demo.sg8' callsign='demo'
 
 The process exits before `restore open`, so the crash is inside D2 `state_restore_all()` before `state_restore_all_sub()`. For direct filename restores D2 sets `filenum = NUM_SAVES + 1`, which makes Android secret companion handling look for slot `bsecret.sgc` before restoring a slot 8 save. The next patch derives the real slot number from `.sgN`/`.mgN` direct restore paths and logs the companion decision.
 
+## Build 15340 Diagnostic Step-Back
+
+Build 15340 still exits after:
+
+```text
+startup resume restore begin: game=d2 path='Players/demo.sg8' callsign='demo'
+```
+
+It does not emit `restore secret companion check`, so the previous secret-slot theory is not confirmed. Since a plain restore failure should return to the menu rather than end the process, the remaining likely class is a fatal `Error()`/assert/Android fatal-exit path before or at the beginning of `state_restore_all_sub()`.
+
+Diagnostic targets:
+
+1. D2 `state_restore_all()` entry, early guards, `stop_time()`, filename override handling, and slot derivation.
+2. D2 secret companion pre-restore branch before and after every PHYSFS operation.
+3. D2 `start_time()` and the call into `state_restore_all_sub()`.
+4. D2 `state_restore_all_sub()` entry and read-open attempt.
+5. Android `Error()` fatal path so any controlled exit writes the fatal message to Game Logs, not only the crash sidecar.
+
 ## Validation
 
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ResumeSavePanelTest`
