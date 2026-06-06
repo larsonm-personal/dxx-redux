@@ -29,12 +29,6 @@ class ModManager(
         private const val GENERATED_MISSION_ZIP_DIR = ".generated_mission_zips"
         const val MOD_KIND_DXA = "dxa"
         const val MOD_KIND_MISSION_ZIP = SectorgameMissionZip.KIND
-        private val BASE_REPLACEMENT_EXTENSIONS =
-            setOf("ham", "hog", "mn2", "msn", "mvl", "pig", "pog", "rdl", "rl2", "s11", "s22", "vham")
-        private val TEXTURE_EXTENSIONS = setOf("dtx", "ktx2", "png", "tga")
-        private val SOUND_REPLACEMENT_EXTENSIONS = setOf("raw", "voc", "wav")
-        private val MUSIC_EXTENSIONS = setOf("flac", "hmp", "m3u", "mid", "mp3", "ogg")
-        private val DOCUMENTATION_EXTENSIONS = setOf("md", "rtf", "txt")
     }
 
     data class ModInfo(
@@ -519,7 +513,7 @@ class ModManager(
         if (!extractMissionZipForLaunch(modFile, stageDir)) return emptyList()
         return buildList {
             add(stageDir.absolutePath)
-            for (constituent in scan.constituents.filter { it.role == "mod_archive" }) {
+            for (constituent in scan.constituents.filter { it.role == GameFileFormats.MISSION_ZIP_MOD_ARCHIVE }) {
                 val archive = File(File(stageDir, "missions"), constituent.path.replace('/', File.separatorChar))
                 if (archive.isFile) add(archive.absolutePath)
             }
@@ -1120,11 +1114,8 @@ class ModManager(
         for (entry in entries) {
             val label =
                 when (entry.role) {
-                    "mission_descriptor" -> "Mission descriptor"
-                    "mission_hog" -> "Mission assets"
-                    "mod_archive" -> "Bundled mod archive"
-                    "documentation" -> "Documentation"
-                    else -> "Other files"
+                    GameFileFormats.MISSION_ZIP_OTHER -> "Other files"
+                    else -> GameFileFormats.missionZipRoleLabel(entry.role)
                 }
             val bucket = buckets.getOrPut(label) { CategoryBucket(label) }
             bucket.count++
@@ -1146,16 +1137,14 @@ class ModManager(
     private fun classifyModEntry(name: String): Pair<String, String> {
         val normalized = normalizeDxaPath(name)
         val leaf = normalized.substringAfterLast('/')
-        val ext = leaf.substringAfterLast('.', "")
         val exampleWithPurpose = "$leaf - ${launcherFileTypeLabel(leaf)}"
+        val registryCategory = GameFileFormats.modCategoryLabel(leaf)
         return when {
             isPatchEntry(name, game = null) -> "Metadata patches" to normalized
             normalized.startsWith("metadata/") || normalized.startsWith("patches/") -> "Mod metadata" to normalized
-            ext in BASE_REPLACEMENT_EXTENSIONS -> "Base game file replacements" to exampleWithPurpose
-            ext in TEXTURE_EXTENSIONS -> "Texture replacements" to leaf
-            ext in SOUND_REPLACEMENT_EXTENSIONS -> "Individual sound file replacements" to exampleWithPurpose
-            ext in MUSIC_EXTENSIONS -> "Music files" to exampleWithPurpose
-            ext in DOCUMENTATION_EXTENSIONS -> "Documentation" to leaf
+            GameFileFormats.isTextureReplacement(leaf) -> "Texture replacements" to leaf
+            GameFileFormats.isDocumentation(leaf) -> "Documentation" to leaf
+            registryCategory != null -> registryCategory to exampleWithPurpose
             else -> "Other files" to leaf
         }
     }
@@ -1274,14 +1263,7 @@ class ModManager(
         }
     }
 
-    private fun detectGame(filename: String): String {
-        val lower = filename.lowercase()
-        return when {
-            lower.contains("d1") && !lower.contains("d2") -> "d1"
-            lower.contains("d2") && !lower.contains("d1") -> "d2"
-            else -> "both"
-        }
-    }
+    private fun detectGame(filename: String): String = GameFileFormats.gameHint(filename)
 
     private fun generateDisplayName(filename: String): String =
         stripLauncherDxaSuffix(filename)

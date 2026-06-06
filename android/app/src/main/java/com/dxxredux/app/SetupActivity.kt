@@ -2260,13 +2260,14 @@ private fun SetupScreen(
                 val name = getDisplayName(context, uri)
                 if (name != null) {
                     val lname = name.lowercase()
+                    val ext = GameFileFormats.extensionOf(name)
                     val demoPackage = matchDemoInstallerPackage(context, name, uri)
                     when {
                         demoPackage != null -> {
                             zipUris.add(demoPackage.filename to uri)
                         }
 
-                        lname.endsWith(".zip") -> {
+                        ext == "zip" -> {
                             val missionZip =
                                 try {
                                     context.contentResolver.openInputStream(uri)?.use { input ->
@@ -2283,41 +2284,39 @@ private fun SetupScreen(
                             }
                         }
 
-                        lname.endsWith(".7z") ||
-                            lname.endsWith(".sit") ||
-                            lname.endsWith(".hqx") -> {
+                        ext in setOf("7z", "sit", "hqx") -> {
                             zipUris.add(name to uri)
                         }
 
-                        lname.endsWith(".cue") -> {
+                        ext == "cue" -> {
                             cueUris.add(name to uri)
                         }
 
-                        lname.endsWith(".iso") -> {
+                        ext == "iso" -> {
                             isoUris.add(name to uri)
                         }
 
-                        lname.endsWith(".inst") -> {
+                        ext == "inst" -> {
                             instDiscUri = name to uri
                         }
 
-                        lname.endsWith(".gog") -> {
+                        ext == "gog" -> {
                             gogDiscUri = name to uri
                         }
 
-                        lname.endsWith(".bin") || lname.endsWith(".img") -> {
+                        ext in setOf("bin", "img") -> {
                             binUris.add(name to uri)
                         }
 
-                        lname.endsWith(".exe") || lname.endsWith(".pkg") -> {
+                        ext in setOf("exe", "pkg") -> {
                             gogUri = name to uri
                         }
 
-                        lname.endsWith(".sow") -> {
+                        ext == "sow" -> {
                             sowUri = name to uri
                         }
 
-                        lname.endsWith(".dem") -> {
+                        ext == "dem" -> {
                             gameUris.add(FoundFile(name, uri))
                         }
 
@@ -2333,7 +2332,7 @@ private fun SetupScreen(
                             dxaImportUris.add(name to uri)
                         }
 
-                        lname.endsWith(".json") -> {
+                        ext == "json" -> {
                             if (uris.size == 1) {
                                 try {
                                     val text =

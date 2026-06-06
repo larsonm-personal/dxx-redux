@@ -228,8 +228,7 @@ class FileSetManager(
                     }
                     continue
                 }
-                val ext = file.extension.lowercase()
-                if (ext in GAME_DATA_EXTENSIONS) {
+                if (GameFileFormats.isSetGameData(file.name)) {
                     val dest = File(defaultDir, file.name)
                     if (!dest.exists() && file.renameTo(dest)) movedCount++
                 }
@@ -293,7 +292,7 @@ class FileSetManager(
                 }
                 continue
             }
-            if (file.extension.lowercase() in GAME_DATA_EXTENSIONS) {
+            if (GameFileFormats.isSetGameData(file.name)) {
                 file.delete()
                 swept++
             }
@@ -492,7 +491,7 @@ class FileSetManager(
             }
 
             val name = file.name.lowercase()
-            if (file.extension.lowercase() in GAME_DATA_EXTENSIONS ||
+            if (GameFileFormats.isSetGameData(file.name) ||
                 name == ".asset_manifest.json" ||
                 name == ".saf_manifest.json"
             ) {
@@ -504,23 +503,6 @@ class FileSetManager(
     companion object {
         private const val TAG = "FileSetManager"
         const val DEFAULT_SET = "default"
-
-        /** File extensions (lowercase) that are per-set game data. */
-        private val GAME_DATA_EXTENSIONS =
-            setOf(
-                "pig",
-                "hog",
-                "ham",
-                "mvl",
-                "s11",
-                "s22",
-                "mn2",
-                "msn",
-                "dxa",
-                "pog",
-                "rl2",
-                "dtx",
-            )
 
         /** Subdirectory names (lowercase) that contain per-set game data. */
         private val GAME_DATA_DIRS = setOf("missions")

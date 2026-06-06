@@ -1,55 +1,17 @@
 package com.dxxredux.app
 
 /*
- * Single Kotlin source of truth for extension-based Android game import checks.
- * Keep this aligned with extract/game_file_extensions.c, which serves the same
- * role for the native extractor code.
+ * Compatibility wrapper for Android game import checks.
+ * Kotlin-side game file format knowledge lives in GameFileFormats.
  *
- * This does not replace exact filename sets like ALL_GAME_FILENAMES. Those are
- * a separate concept: known required asset names versus generic game file
- * extensions that should be recognized during import.
+ * Keep GameFileFormats aligned with extract/game_file_extensions.c, which
+ * serves the same role for the native extractor code.
  */
 object AndroidGameFileExtensions {
-    val gameExtensions =
-        setOf(
-            "hog",
-            "pig",
-            "ham",
-            "s11",
-            "s22",
-            "dem",
-            "mvl",
-            "msn",
-            "mn2",
-            "gog",
-            "inst",
-        )
+    val gameExtensions: Set<String> = GameFileFormats.gameImportExtensions
+    val discExtractExtensions: Set<String> = GameFileFormats.discExtractExtensions
 
-    val discExtractExtensions =
-        setOf(
-            "hog",
-            "pig",
-            "ham",
-            "s11",
-            "s22",
-            "dem",
-            "mvl",
-            "msn",
-            "mn2",
-            "rdl",
-            "rl2",
-            "sow",
-            "dxa",
-            "pog",
-            "hxm",
-            "dtx",
-        )
+    fun hasGameExtension(name: String): Boolean = GameFileFormats.hasGameImportExtension(name)
 
-    private val gogAudioExtensions = setOf("gog", "inst")
-
-    fun hasGameExtension(name: String): Boolean = extensionOf(name) in gameExtensions
-
-    fun isGogAudioFile(name: String): Boolean = extensionOf(name) in gogAudioExtensions
-
-    private fun extensionOf(name: String): String = name.substringAfterLast('.', "").lowercase()
+    fun isGogAudioFile(name: String): Boolean = GameFileFormats.isGogAudioFile(name)
 }

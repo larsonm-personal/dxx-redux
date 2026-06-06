@@ -25,10 +25,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.dxxredux.app.FileSetManager
+import com.dxxredux.app.GameFileFormats
 import com.dxxredux.app.dpadTextFieldNavigation
-import java.io.BufferedReader
 import java.io.File
-import java.io.FileReader
 
 /**
  * Scans game data directories for available missions.
@@ -70,14 +69,13 @@ object MissionScanner {
         val seen = builtins.map { it.filename.lowercase() }.toMutableSet()
 
         val dirs = listOf(setDir, File(setDir, "missions"))
-        val extensions = if (game == "d2") setOf("mn2", "msn") else setOf("msn")
 
         for (dir in dirs) {
             val files = dir.listFiles() ?: continue
             for (file in files) {
                 if (!file.isFile) continue
-                val ext = file.extension.lowercase()
-                if (ext !in extensions) continue
+                val descriptorGame = GameFileFormats.gameForDescriptor(file.name) ?: continue
+                if (game != "d2" && descriptorGame != game) continue
                 val basename = file.nameWithoutExtension
                 if (basename.lowercase() in seen) continue
                 seen.add(basename.lowercase())
@@ -92,47 +90,18 @@ object MissionScanner {
     private fun parseMissionFile(
         file: File,
         basename: String,
-    ): MissionInfo? {
-        // Mission file format (plain text):
-        //   name = Display Name   (or xname=, zname= for enhanced missions)
-        //   type = anarchy         (optional)
-        //   num_levels = N         (we stop reading here)
-        return try {
-            BufferedReader(FileReader(file)).use { reader ->
-                var displayName: String? = null
-                var anarchyOnly = false
-                var levelCount = 0
-                val nameRe = Regex("^[xz]?name\\s*=\\s*(.+)", RegexOption.IGNORE_CASE)
-                val typeRe = Regex("^type\\s*=\\s*(\\S+)", RegexOption.IGNORE_CASE)
-                val levelsRe = Regex("^num_levels\\s*=\\s*(\\d+)", RegexOption.IGNORE_CASE)
-
-                for (i in 0 until 10) {
-                    val line = reader.readLine() ?: break
-                    val trimmed = line.trim()
-                    if (displayName == null) {
-                        nameRe.find(trimmed)?.let { displayName = it.groupValues[1].trim() }
-                    }
-                    typeRe.find(trimmed)?.let {
-                        if (it.groupValues[1].equals("anarchy", ignoreCase = true)) {
-                            anarchyOnly = true
-                        }
-                    }
-                    levelsRe.find(trimmed)?.let {
-                        levelCount = it.groupValues[1].toIntOrNull() ?: 0
-                    }
-                    if (levelCount > 0) break
-                }
-                MissionInfo(
-                    filename = basename,
-                    displayName = displayName ?: basename,
-                    levelCount = levelCount,
-                    anarchyOnly = anarchyOnly,
-                )
-            }
+    ): MissionInfo? =
+        try {
+            val descriptor = GameFileFormats.parseMissionDescriptor(file.name, file.readText())
+            MissionInfo(
+                filename = basename,
+                displayName = descriptor.displayName,
+                levelCount = descriptor.declaredLevelCount ?: descriptor.levelNames.size,
+                anarchyOnly = descriptor.type.equals("anarchy", ignoreCase = true),
+            )
         } catch (_: Exception) {
             MissionInfo(filename = basename, displayName = basename)
         }
-    }
 }
 
 /**

@@ -353,6 +353,7 @@ private fun ModDetailsDialog(
     constituentTarget?.let { constituent ->
         MissionZipConstituentDialog(
             constituent = constituent,
+            archivePath = details?.archivePath,
             onDismiss = { constituentTarget = null },
         )
     }
@@ -582,8 +583,15 @@ private fun ModDetailsDialog(
 @Composable
 private fun MissionZipConstituentDialog(
     constituent: SectorgameMissionZip.Constituent,
+    archivePath: String?,
     onDismiss: () -> Unit,
 ) {
+    val metadata =
+        remember(archivePath, constituent.path) {
+            archivePath?.let {
+                GameFileMetadata.summarizeZipConstituent(File(it), constituent.path, constituent.name)
+            }
+        }
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -602,19 +610,13 @@ private fun MissionZipConstituentDialog(
                 if (constituent.compressedSizeBytes > 0) {
                     DetailRow("Compressed", setupSectionFormatSize(constituent.compressedSizeBytes))
                 }
+                FileMetadataDetails(metadata)
             }
         },
     )
 }
 
-private fun missionZipRoleLabel(role: String): String =
-    when (role) {
-        "mission_descriptor" -> "Mission descriptor"
-        "mission_hog" -> "Mission assets"
-        "mod_archive" -> "Bundled mod archive"
-        "documentation" -> "Documentation"
-        else -> "Other file"
-    }
+private fun missionZipRoleLabel(role: String): String = GameFileFormats.missionZipRoleLabel(role)
 
 @Composable
 private fun ModDetailSectionTitle(text: String) {
@@ -1145,15 +1147,30 @@ private fun setupSectionFormatSize(bytes: Long): String =
 internal fun missionDescriptorForStatus(
     status: FileStatus,
     setDir: File,
-): SectorgameMissionZip.MissionDescriptor? {
+): GameFileFormats.MissionDescriptor? {
     val name = status.foundName ?: status.manifestEntry?.filename ?: status.info.filename
-    if (launcherExtensionOf(name) !in setOf("mn2", "msn")) return null
+    if (!GameFileFormats.isMissionDescriptor(name)) return null
     val localName = status.foundName ?: status.manifestEntry?.filename ?: return null
     val actualName = findFile(setDir, localName) ?: localName
     val file = File(setDir, actualName)
     if (!file.isFile) return null
     return runCatching {
-        SectorgameMissionZip.parseMissionDescriptor(name, file.readText())
+        GameFileFormats.parseMissionDescriptor(name, file.readText())
+    }.getOrNull()
+}
+
+internal fun gameFileMetadataForStatus(
+    status: FileStatus,
+    setDir: File,
+): GameFileMetadata.Summary? {
+    val name = status.foundName ?: status.manifestEntry?.filename ?: status.info.filename
+    if (!GameFileFormats.isMetadataInspectable(name)) return null
+    val localName = status.foundName ?: status.manifestEntry?.filename ?: return null
+    val actualName = findFile(setDir, localName) ?: localName
+    val file = File(setDir, actualName)
+    if (!file.isFile) return null
+    return runCatching {
+        GameFileMetadata.summarizeLocalFile(file)
     }.getOrNull()
 }
 
@@ -1170,6 +1187,10 @@ internal fun FileDetailDialog(
     val missionDescriptor =
         remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename) {
             missionDescriptorForStatus(status, setDir)
+        }
+    val fileMetadata =
+        remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename) {
+            gameFileMetadataForStatus(status, setDir)
         }
     val isMissing = !status.found && entry != null
     val isExternal = entry?.isExternal == true
@@ -1253,6 +1274,7 @@ internal fun FileDetailDialog(
                             DetailRow("Level names", mission.levelNames.joinToString(", "))
                         }
                     }
+                    FileMetadataDetails(fileMetadata)
 
                     val statusText =
                         when {
@@ -1331,6 +1353,46 @@ internal fun FileDetailDialog(
             }
         },
     )
+}
+
+@Composable
+private fun FileMetadataDetails(metadata: GameFileMetadata.Summary?) {
+    metadata ?: return
+    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    ModDetailSectionTitle("Contents")
+    DetailRow("Format", metadata.format)
+    DetailRow("Scope", metadata.scope)
+    if (metadata.game != "Unknown") {
+        DetailRow("Game", metadata.game)
+    }
+    metadata.detailRows.forEach { row -> DetailRow(row.first, row.second) }
+    if (metadata.categories.isNotEmpty()) {
+        metadata.categories.take(6).forEach { category ->
+            val sizeText =
+                if (category.sizeBytes > 0) {
+                    ", ${setupSectionFormatSize(category.sizeBytes)}"
+                } else {
+                    ""
+                }
+            ModDetailLine("${category.label}: ${category.count}$sizeText")
+        }
+    }
+    if (metadata.examples.isNotEmpty()) {
+        ModDetailSectionTitle("Examples")
+        metadata.examples.forEach { entry ->
+            val sizeText =
+                if (entry.sizeBytes > 0) {
+                    ", ${setupSectionFormatSize(entry.sizeBytes)}"
+                } else {
+                    ""
+                }
+            ModDetailLine("${entry.name}: ${entry.role}$sizeText")
+        }
+    }
+    metadata.notes.forEach { note -> ModDetailLine(note) }
+    metadata.problems.forEach { problem ->
+        ModDetailLine(problem, color = MaterialTheme.colorScheme.error)
+    }
 }
 
 @Composable

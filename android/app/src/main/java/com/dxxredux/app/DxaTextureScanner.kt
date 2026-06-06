@@ -63,6 +63,7 @@ object DxaTextureScanner {
                     val name = entry.name.lowercase()
                     if (entry.isDirectory) continue
                     if (name.endsWith("_mask.png")) continue
+                    if (!GameFileFormats.isTextureReplacement(name)) continue
                     val dims =
                         when {
                             name.endsWith(".ktx2") -> zip.getInputStream(entry).use { readKtx2Dims(it) }

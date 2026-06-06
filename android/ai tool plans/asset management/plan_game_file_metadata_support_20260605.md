@@ -8,7 +8,7 @@
 - [x] Inspect `game_data/levels/Uneasy4.zip`.
 - [x] Inspect existing launcher mission zip and file detail UI.
 - [x] Inspect existing HOG readers and PIG loader format references.
-- [ ] Implement metadata parsers and UI.
+- [x] Implement metadata parsers and UI.
 
 ## Uneasy4.zip Findings
 - `game_data/levels/Uneasy4.zip` contains three top-level files:
@@ -71,29 +71,29 @@
 - Keep deep engine-specific binary interpretation limited to summaries unless a C helper is clearly safer.
 
 ## Implementation Tranche 1: HOG And DXA Listing
-- [ ] Add a streaming HOG lister usable from both local files and zip child streams.
-- [ ] Recognize HOG magic `DHF`, repeated 13-byte null-padded name, 4-byte little-endian size, then data.
-- [ ] Add guards mirroring native `hog_read_entry()`:
+- [x] Add a streaming HOG lister usable from both local files and zip child streams.
+- [x] Recognize HOG magic `DHF`, repeated 13-byte null-padded name, 4-byte little-endian size, then data.
+- [x] Add guards mirroring native `hog_read_entry()`:
   - max entry size, probably 64 MB unless higher is needed.
   - reject impossible sizes relative to known container size.
   - cap displayed entries with "and N more".
-- [ ] Classify HOG entries by existing `LauncherFileLabels.kt` extensions.
-- [ ] For HOGs with `.rl2`/`.rdl`, show level archive scope and game guess.
-- [ ] For HOGs with `.ied`, surface "Editor file: Inferno" as a hint, not as authoritative metadata.
-- [ ] For `.txb`, show "briefing/text" and optionally leave decoding for a later tranche.
-- [ ] Reuse the same summary in:
+- [x] Classify HOG entries by existing `LauncherFileLabels.kt` extensions.
+- [x] For HOGs with `.rl2`/`.rdl`, show level archive scope and game guess.
+- [x] For HOGs with `.ied`, surface "Editor file: Inferno" as a hint, not as authoritative metadata.
+- [x] For `.txb`, show "briefing/text" and optionally leave decoding for a later tranche.
+- [x] Reuse the same summary in:
   - standalone `FileDetailDialog`.
   - `MissionZipConstituentDialog` for inner HOG children.
-- [ ] Add DXA ZIP listing for mission zip children and standalone DXA details using existing `ZipFile` scan patterns from `ModManager`.
+- [x] Add DXA ZIP listing for mission zip children and standalone DXA details using existing `ZipFile` scan patterns from `ModManager`.
 
 ## Implementation Tranche 2: Mission Zip Deep Details
-- [ ] Extend `SectorgameMissionZip.Constituent` or add a lookup path so the constituent dialog can read the selected child stream from the parent zip.
-- [ ] Show nested summaries for:
+- [x] Extend `SectorgameMissionZip.Constituent` or add a lookup path so the constituent dialog can read the selected child stream from the parent zip.
+- [x] Show nested summaries for:
   - HOG entries in `Uneasy4.hog`.
   - DXA entries in `Uneasy4.dxa`.
   - descriptor details for `Uneasy4.mn2`.
-- [ ] Keep child extraction temporary and bounded; prefer streaming and central-directory reads where possible.
-- [ ] For `Uneasy4.zip`, expected details should show:
+- [x] Keep child extraction temporary and bounded; prefer streaming and central-directory reads where possible.
+- [x] For `Uneasy4.zip`, expected details should show:
   - mission title/author/editor from `.mn2`.
   - HOG contains 1 D2 level, 1 HAM, 1 POG, 1 IED editor file, 1 TXB.
   - DXA contains Ogg audio/music, S22 sound effects, and SNG song list.
@@ -104,15 +104,15 @@
   - D1 Mac PIGs.
   - D2 registered/demo PIGs.
   - D2 Mac group PIGs such as `groupa.pig`, `alien1.pig`, `fire.pig`, `ice.pig`, `water.pig`.
-- [ ] Start with safe top-level summaries:
+- [x] Start with safe top-level summaries:
   - detected variant when known by magic/header/size.
   - bitmap count.
   - sound count when the layout includes sounds.
   - total bitmap data bytes.
   - examples of bitmap names and dimensions.
   - flags rollup: RLE, transparency, super transparency, no lighting.
-- [ ] Use `d1/main/piggy.c` and `d2/main/piggy.c` as the source of truth for layouts and variant handling.
-- [ ] Avoid decoding or displaying image previews in the first tranche.
+- [x] Use `d1/main/piggy.c` and `d2/main/piggy.c` as the source of truth for layouts and variant handling.
+- [x] Avoid decoding or displaying image previews in the first tranche.
 - [ ] If the Kotlin parser becomes too close to engine internals, move PIG parsing into a tiny native metadata helper and document duplicated constants.
 
 ## UI Plan
@@ -132,15 +132,20 @@
 - Use short expandable or capped lists for entries so dialogs stay readable on TV/mobile.
 
 ## Tests
-- [ ] JVM unit test for HOG listing using an in-memory HOG matching `Uneasy4.hog` entries.
-- [ ] JVM unit test for malformed HOG magic/truncated entry/bogus size.
-- [ ] JVM unit test for mission zip child details using an in-memory `Uneasy4`-style zip.
-- [ ] JVM unit test for DXA ZIP summary.
-- [ ] JVM unit tests for representative PIG variants before enabling PIG UI details.
-- [ ] Focused Gradle test run for new parser/detail tests.
+- [x] JVM unit test for HOG listing using an in-memory HOG matching `Uneasy4.hog` entries.
+- [x] JVM unit test for malformed HOG magic/truncated entry/bogus size.
+- [x] JVM unit test for mission zip child details using an in-memory `Uneasy4`-style zip.
+- [x] JVM unit test for DXA ZIP summary.
+- [x] JVM unit tests for representative PIG variants before enabling PIG UI details.
+- [x] Focused Gradle test run for new parser/detail tests.
 
 ## Open Questions
 - Should `.txb` text be decoded in the launcher, or is identifying it as briefing/text enough for the first pass?
 - Should `.ied` be labeled specifically as Inferno editor data based only on extension, or should the parser inspect a signature/header first?
 - Do we want child detail popups to read nested files directly from the original mission zip every time, or cache lightweight summaries in the mod manifest at import time?
 - For PIG, is a Kotlin summary parser acceptable if it mirrors engine constants, or should native metadata helpers own all PIG layout knowledge?
+
+## Implementation Verification
+- `android/run-code-quality.ps1 -Fix -Paths @('android/app/src/main/java/com/dxxredux/app/GameFileMetadata.kt','android/app/src/main/java/com/dxxredux/app/SetupSections.kt','android/app/src/main/java/com/dxxredux/app/LauncherFileLabels.kt','android/app/src/test/java/com/dxxredux/app/GameFileMetadataTest.kt')` passed.
+- `android/gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.GameFileMetadataTest --tests com.dxxredux.app.MissionDescriptorFileDetailsTest --tests com.dxxredux.app.SectorgameMissionZipTest` passed.
+- `android/gradlew.bat :app:assembleDebug` passed.
