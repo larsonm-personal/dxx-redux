@@ -2329,6 +2329,24 @@ void set_pos_from_return_segment(void)
 }
 
 //	-----------------------------------------------------------------------------------
+#ifdef __ANDROID__
+static int state_android_slot_from_direct_restore_path(const char *filename)
+{
+	const char *dot;
+
+	if (!filename)
+		return -1;
+	dot = strrchr(filename, '.');
+	if (!dot || dot[4] != '\0')
+		return -1;
+	if ((dot[1] != 's' && dot[1] != 'S' && dot[1] != 'm' && dot[1] != 'M') ||
+	    (dot[2] != 'g' && dot[2] != 'G') ||
+	    dot[3] < '0' || dot[3] > '9')
+		return -1;
+	return dot[3] - '0';
+}
+#endif
+
 int state_restore_all(int in_game, int secret_restore, char *filename_override)
 {
 	char filename[PATH_MAX];
@@ -2356,7 +2374,11 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 
 	if (filename_override) {
 		strcpy(filename, filename_override);
+#ifdef __ANDROID__
+		filenum = state_android_slot_from_direct_restore_path(filename_override);
+#else
 		filenum = NUM_SAVES+1; // place outside of save slots
+#endif
 	} else if (!(filenum = state_get_restore_file(filename)))	{
 		start_time();
 		return 0;
@@ -2378,6 +2400,9 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 
 #ifdef __ANDROID__
 			state_android_build_secret_filename(temp_fname, PATH_MAX, filenum);
+			debug_log(DLOG_GAME,
+				"restore secret companion check: game=d2 file='%s' slot=%d companion='%s'",
+				filename, filenum, temp_fname);
 #else
 			snprintf(temp_fname, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%csecret.sgc" : "%csecret.sgc", fc);
 #endif

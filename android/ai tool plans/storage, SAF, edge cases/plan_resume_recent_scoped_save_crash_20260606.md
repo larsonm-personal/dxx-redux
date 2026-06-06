@@ -50,8 +50,21 @@ Players/save_sets/single/test/d2/test.sg8
 
 `resolveResumeSaveLaunchPath()` now strips the matching `d1x-redux/` or `d2x-redux/` prefix before writing pending resume launch state or intent extras.
 
+## Follow-Up From Build 15330 Logs
+
+The build 15330 logs show the launcher path is now correct:
+
+```text
+pending resume launch write: game=d2 path=Players/demo.sg8 callsign=demo
+startup resume prep: game=d2 path='Players/demo.sg8' result=ready callsign='demo' source=player_file
+startup resume restore begin: game=d2 path='Players/demo.sg8' callsign='demo'
+```
+
+The process exits before `restore open`, so the crash is inside D2 `state_restore_all()` before `state_restore_all_sub()`. For direct filename restores D2 sets `filenum = NUM_SAVES + 1`, which makes Android secret companion handling look for slot `bsecret.sgc` before restoring a slot 8 save. The next patch derives the real slot number from `.sgN`/`.mgN` direct restore paths and logs the companion decision.
+
 ## Validation
 
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ResumeSavePanelTest`
 - `.\android\run-code-quality.ps1 -Fix`
 - `.\gradlew.bat :app:assembleDebug`
+- `.\android\tests\test_native_host_unit_tests.ps1`
