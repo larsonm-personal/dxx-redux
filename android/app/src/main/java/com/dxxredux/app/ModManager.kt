@@ -479,7 +479,7 @@ class ModManager(
             for (mod in enabled) {
                 val modFile = File(modsDir, mod.filename)
                 if (modFile.exists() && modFile.length() > 0) {
-                    validPaths.add(modFile.absolutePath)
+                    validPaths.add(activeModPathLine(mod, modFile))
                 } else {
                     Log.e(TAG, "Mod file missing or empty: ${modFile.absolutePath} (${mod.displayName})")
                 }
@@ -494,6 +494,16 @@ class ModManager(
         logInfo("Wrote ${enabled.size} mod paths for $game to ${pathFile.absolutePath}")
         NativeTextureLookupCache.clear()
     }
+
+    private fun activeModPathLine(
+        mod: ModInfo,
+        modFile: File,
+    ): String =
+        if (mod.kind == MOD_KIND_MISSION_ZIP) {
+            "${modFile.absolutePath}\tmissions"
+        } else {
+            modFile.absolutePath
+        }
 
     fun checkEnabledModCompatibility(
         game: String,

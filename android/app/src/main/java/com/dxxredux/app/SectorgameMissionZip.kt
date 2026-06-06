@@ -27,7 +27,13 @@ object SectorgameMissionZip {
         val levelNames: List<String>,
         val game: String,
     ) {
-        val displayName: String get() = name?.takeIf { it.isNotBlank() } ?: path.substringAfterLast('/').substringBeforeLast('.')
+        val displayName: String
+            get() =
+                name?.takeIf {
+                    it.isNotBlank()
+                } ?: path
+                    .substringAfterLast('/')
+                    .substringBeforeLast('.')
     }
 
     data class ScanResult(

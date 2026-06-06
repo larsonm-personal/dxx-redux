@@ -39,6 +39,22 @@ class ModManagerMissionZipTest {
         assertTrue(details.categories.any { it.label == "Bundled mod archive" })
     }
 
+    @Test
+    fun missionZipActivePathMountsAtMissions() {
+        val filesDir = File("build/test-mod-manager-mission-zip-active-path").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val imported = ModManager(filesDir).importMissionZipFile(createMissionZip(), "Uneasy4.zip")
+        assertNotNull(imported)
+
+        ModManager(filesDir).writeEnabledModPaths("d2")
+
+        val pathFile = File(filesDir, "d2x-redux/.active_mod_paths")
+        val line = pathFile.readLines().single()
+        assertTrue(line.endsWith("Uneasy4.zip\tmissions"))
+    }
+
     private fun createMissionZip(): File {
         val zipFile = File.createTempFile("sectorgame-manager", ".zip")
         zipFile.deleteOnExit()

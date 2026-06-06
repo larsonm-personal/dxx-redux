@@ -90,13 +90,15 @@
   - for `.hog`, show the same file detail fields used by `FileDetailDialog`, plus HOG contents if an existing or small new HOG lister is available
 
 ## Launch Handoff
-- Do not rely on mounting the outer zip directly. PhysFS would see `Uneasy4.mn2` and `Uneasy4.hog` as files inside the zip, but the mission loader needs the sibling HOG to be mountable by path.
+- Tranche 1 mounts the outer zip directly at the PhysFS `missions` mount point. This makes root archive entries such as `Uneasy4.mn2`, `Uneasy4.hog`, and `Uneasy4.dxa` visible to the existing mission enumeration as `missions/<name>`.
+- Android `.active_mod_paths` now accepts an optional tab-separated mount point. Existing one-column lines keep their original behavior.
+- Enabled `mission_zip` entries are written as `<absolute zip path>\tmissions`.
 - For mission zips under 100 MB:
-  - Add native Android startup support that reads enabled `mission_zip` paths from `.active_mod_paths` or a companion `.active_mission_archives.json`.
-  - Decompress constituents into owned native memory at game startup.
+  - Keep direct zip mounting for the prototype path while validating whether nested `.dxa` content is sufficient for real missions.
+  - If inner archives need special handling later, add startup support that reads enabled `mission_zip` paths from `.active_mod_paths` or a companion `.active_mission_archives.json`.
+  - Decompress constituents into owned native memory at game startup when direct PhysFS mounting is not enough.
   - Present those constituents through PhysFS using `PHYSFS_Io` or a small custom archiver, modeled after the existing SAF archiver.
-  - Mount inner `.dxa` and `.hog` constituents with correct priority before mission enumeration.
-  - Make the `.mn2`/`.msn` appear at the root or `missions/` path expected by the existing mission loader.
+  - Mount inner `.dxa` and `.hog` constituents with correct priority before mission enumeration if the current direct mount cannot expose all needed assets.
 - For mission zips over 100 MB:
   - Offer extraction into the active import root, probably `mods/extracted/<safe-id>/`.
   - Register the top-level mod entry as `extracted_bundle`.
@@ -123,8 +125,15 @@
 - Native or integration smoke test that a small mission zip can be imported, enabled, and appears in D2 mission selection.
 
 ## Implementation Tranche 1
-- [ ] Add Kotlin scanner/parser for sectorgame-style mission zips.
-- [ ] Extend `ModManager` metadata and import/details support for `mission_zip` entries.
-- [ ] Route matching `.zip` imports into the mods list before generic archive extraction.
-- [ ] Add focused JVM tests for scanner and manifest/details behavior.
-- [ ] Run focused Gradle tests and update this plan with results.
+- [x] Add Kotlin scanner/parser for sectorgame-style mission zips.
+- [x] Extend `ModManager` metadata and import/details support for `mission_zip` entries.
+- [x] Route matching `.zip` imports into the mods list before generic archive extraction.
+- [x] Add focused JVM tests for scanner and manifest/details behavior.
+- [x] Fix Android native mod mounting so enabled mission zips are mounted at `missions`.
+- [x] Add regression coverage that `.active_mod_paths` writes `mission_zip` entries with the `missions` mount point.
+- [x] Run focused Gradle tests and update this plan with results.
+
+## Tranche 1 Verification
+- `android/run-code-quality.ps1 -Fix` passed for the touched Kotlin and native files.
+- `./gradlew :app:testDebugUnitTest --tests com.dxxredux.app.SectorgameMissionZipTest --tests com.dxxredux.app.ModManagerMissionZipTest` passed.
+- `./gradlew :app:assembleDebug` passed.

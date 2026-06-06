@@ -120,6 +120,7 @@ void PHYSFSX_init(int argc, char *argv[])
 		{
 			char modpath[512];
 			char mod_lines[64][512];
+			char mod_mounts[64][64];
 			int mod_count = 0;
 			snprintf(modpath, sizeof(modpath), "%sd1x-redux/.active_mod_paths", pref);
 			FILE *mf = fopen(modpath, "r");
@@ -130,14 +131,22 @@ void PHYSFSX_init(int argc, char *argv[])
 					char *nl = strpbrk(line, "\r\n");
 					if (nl) *nl = '\0';
 					if (strlen(line) > 0 && mod_count < (int)(sizeof(mod_lines) / sizeof(mod_lines[0]))) {
+						char *mount = strchr(line, '\t');
+						if (mount) {
+							*mount++ = '\0';
+							snprintf(mod_mounts[mod_count], sizeof(mod_mounts[mod_count]), "%s", mount);
+						} else {
+							mod_mounts[mod_count][0] = '\0';
+						}
 						snprintf(mod_lines[mod_count], sizeof(mod_lines[mod_count]), "%s", line);
 						mod_count++;
 					}
 				}
 				fclose(mf);
 				for (i = mod_count - 1; i >= 0; i--) {
-					if (PHYSFS_mount(mod_lines[i], NULL, 0))
-						con_printf(CON_NORMAL, "PHYSFS: Mounted mod %s\n", mod_lines[i]);
+					const char *mount_point = mod_mounts[i][0] ? mod_mounts[i] : NULL;
+					if (PHYSFS_mount(mod_lines[i], mount_point, 0))
+						con_printf(CON_NORMAL, "PHYSFS: Mounted mod %s%s%s\n", mod_lines[i], mount_point ? " at " : "", mount_point ? mount_point : "");
 					else
 						con_printf(CON_NORMAL, "PHYSFS: Failed to mount mod %s: %s\n", mod_lines[i], PHYSFS_getLastError());
 				}

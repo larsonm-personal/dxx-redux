@@ -417,7 +417,11 @@ private fun ModDetailsDialog(
                             missionZip.mission.type?.let { DetailRow("Type", it) }
                             missionZip.mission.author?.let { DetailRow("Author", it) }
                             missionZip.mission.editor?.let { DetailRow("Editor", it) }
-                            DetailRow("Levels", missionZip.mission.levelNames.size.toString())
+                            DetailRow(
+                                "Levels",
+                                missionZip.mission.levelNames.size
+                                    .toString(),
+                            )
                             if (missionZip.mission.levelNames.isNotEmpty()) {
                                 ModDetailLine(missionZip.mission.levelNames.joinToString(", "))
                             }
