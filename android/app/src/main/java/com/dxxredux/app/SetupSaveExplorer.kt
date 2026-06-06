@@ -168,10 +168,7 @@ internal fun SaveExplorerDialog(
                 }
 
                 SaveExplorerMode.Recent -> {
-                    slots
-                        .orEmpty()
-                        .sortedByDescending { it.saveTimeUnixSeconds }
-                        .take(10)
+                    saveExplorerRecentSlots(slots.orEmpty())
                         .map { SaveExplorerRow(it.slot, it) }
                 }
 
@@ -325,6 +322,46 @@ internal fun SaveExplorerDialog(
             },
         )
     }
+}
+
+internal fun saveExplorerRecentSlots(
+    slots: List<SaveExplorerBridge.SaveExplorerSlot>,
+): List<SaveExplorerBridge.SaveExplorerSlot> =
+    slots
+        .sortedWith(
+            compareByDescending<SaveExplorerBridge.SaveExplorerSlot> { it.saveTimeUnixSeconds }
+                .thenByDescending { saveExplorerKindPriority(it.saveKind) }
+                .thenBy { it.relativePath.ifBlank { it.path } },
+        ).distinctBy { saveExplorerRecentDedupKey(it) }
+        .take(10)
+
+// Keep in sync with android_save_meta_kind_priority in android_save_meta.c.
+private fun saveExplorerKindPriority(kind: String): Int =
+    when (kind) {
+        "auto_abort" -> 6
+        "auto_exit" -> 5
+        "auto_minimize" -> 4
+        "auto_progress" -> 3
+        "auto_periodic" -> 2
+        else -> 1
+    }
+
+private fun saveExplorerRecentDedupKey(slot: SaveExplorerBridge.SaveExplorerSlot): String {
+    if (!slot.saveKind.startsWith("auto_")) {
+        return "file:" + slot.path.ifBlank { slot.relativePath }
+    }
+    return listOf(
+        slot.game,
+        slot.scope.ifBlank { "single" },
+        slot.pilot.ifBlank { slot.callsign }.lowercase(Locale.US),
+        slot.missionKey.ifBlank { slot.missionName }.lowercase(Locale.US),
+        slot.saveTimeUnixSeconds.toString(),
+        slot.levelNum.toString(),
+        slot.levelName.lowercase(Locale.US),
+        slot.levelSeconds.toString(),
+        slot.totalSeconds.toString(),
+        slot.sizeBytes.toString(),
+    ).joinToString("|")
 }
 
 @Composable
