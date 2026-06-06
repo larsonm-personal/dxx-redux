@@ -27,6 +27,7 @@ object ResumeSaveBridge {
         val difficultyChanged: Boolean,
         val difficultyMin: Int,
         val difficultyMax: Int,
+        val musicType: Int,
         val slot: Int,
         val hasThumbnail: Boolean,
         val thumbnailWidth: Int,
@@ -51,6 +52,7 @@ object ResumeSaveBridge {
                 put("difficulty_changed", difficultyChanged)
                 put("difficulty_min", difficultyMin)
                 put("difficulty_max", difficultyMax)
+                put("music_type", musicType)
                 put("slot", slot)
                 put("has_thumbnail", hasThumbnail)
                 put("thumbnail_width", thumbnailWidth)
@@ -156,6 +158,7 @@ object ResumeSaveBridge {
             difficultyChanged = obj.optBoolean("difficulty_changed"),
             difficultyMin = obj.optInt("difficulty_min"),
             difficultyMax = obj.optInt("difficulty_max"),
+            musicType = obj.optInt("music_type", 2).coerceIn(0, 3),
             slot = obj.optInt("slot", -1),
             hasThumbnail = nativeHasThumbnail && thumbnailRgb6 != null,
             thumbnailWidth = obj.optInt("thumbnail_width"),

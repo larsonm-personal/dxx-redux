@@ -5,7 +5,7 @@
 #include <physfs.h>
 
 #define ANDROID_SAVE_META_TAG     0x44584153u /* "DXAS" */
-#define ANDROID_SAVE_META_VERSION 3
+#define ANDROID_SAVE_META_VERSION 4
 
 #define ANDROID_SAVE_META_CALLSIGN_LEN     8
 #define ANDROID_SAVE_META_DESC_LEN         20
@@ -47,6 +47,7 @@ enum {
 typedef struct android_save_meta_write_params {
 	uint8_t game_id;
 	uint8_t save_kind;
+	uint8_t music_type;
 	uint64_t wall_clock_unix_seconds;
 	const char *callsign;
 	const char *description;
@@ -89,6 +90,7 @@ typedef struct android_save_meta_disk {
 	uint8_t difficulty_min;
 	uint8_t difficulty_max;
 	uint8_t reserved1;
+	uint8_t music_type;
 	uint8_t thumbnail_rgb6[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
 	android_save_meta_footer footer;
 } android_save_meta_disk;

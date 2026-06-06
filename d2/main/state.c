@@ -3242,6 +3242,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		android_save_meta_disk android_meta;
 		int have_android_meta = android_save_meta_read_physfs(physfs_fp, file_len, &android_meta);
 		coop_save_metadata coop_meta;
+		if (have_android_meta)
+			state_android_restore_music_type_from_meta(&android_meta);
 		if (coop_read_save_metadata(physfs_fp, pos_after_base, &coop_meta)) {
 			con_printf(CON_DEBUG, "coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);

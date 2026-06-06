@@ -544,5 +544,5 @@ internal fun resumeCandidateLogSummary(candidate: ResumeSaveBridge.ResumeSaveCan
     val launchPath = candidate.relativePath.ifBlank { candidate.path }
     val callsign = candidate.callsign.ifBlank { "-" }
     return "game=${candidate.game} kind=${candidate.saveKind} slot=${candidate.slot} " +
-        "path=$launchPath callsign=$callsign meta=${candidate.metadataBacked}"
+        "path=$launchPath callsign=$callsign music=${candidate.musicType} meta=${candidate.metadataBacked}"
 }

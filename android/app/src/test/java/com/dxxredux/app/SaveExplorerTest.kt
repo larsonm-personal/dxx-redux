@@ -152,6 +152,7 @@ class SaveExplorerTest {
         difficultyChanged = false,
         difficultyMin = 0,
         difficultyMax = 0,
+        musicType = 2,
         slot = slot,
         hasThumbnail = false,
         thumbnailWidth = 0,

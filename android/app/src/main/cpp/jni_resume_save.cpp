@@ -370,6 +370,7 @@ static json resume_candidate_json(const char *files_dir,
 	out["difficulty_changed"] = candidate.meta.difficulty_changed != 0;
 	out["difficulty_min"] = candidate.meta.difficulty_min;
 	out["difficulty_max"] = candidate.meta.difficulty_max;
+	out["music_type"] = candidate.meta.music_type;
 	out["slot"] = slot_from_path(candidate.path);
 	out["has_thumbnail"] =
 	    candidate.meta.thumbnail_format == ANDROID_SAVE_META_THUMB_RGB6 &&
@@ -511,6 +512,7 @@ static json save_explorer_slot_json(const char *files_dir, const std::string &pa
 		out["difficulty_changed"] = meta_valid && meta.difficulty_changed != 0;
 		out["difficulty_min"] = meta_valid ? meta.difficulty_min : 0;
 		out["difficulty_max"] = meta_valid ? meta.difficulty_max : 0;
+		out["music_type"] = meta_valid ? meta.music_type : 2;
 		out["slot"] = slot_from_path(path.c_str());
 		out["has_thumbnail"] =
 		    meta_valid &&

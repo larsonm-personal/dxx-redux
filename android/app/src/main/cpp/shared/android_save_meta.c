@@ -115,6 +115,7 @@ int android_save_meta_build(android_save_meta_disk *out,
 	memset(out, 0, sizeof(*out));
 	out->game_id = params->game_id;
 	out->save_kind = params->save_kind;
+	out->music_type = params->music_type;
 	out->wall_clock_unix_seconds = params->wall_clock_unix_seconds ? params->wall_clock_unix_seconds : (uint64_t) time(NULL);
 	android_save_meta_copy_string(out->callsign, sizeof(out->callsign), params->callsign);
 	android_save_meta_copy_string(out->description, sizeof(out->description), params->description);
@@ -160,6 +161,8 @@ int android_save_meta_is_valid(const android_save_meta_disk *meta)
 	    meta->game_id != ANDROID_SAVE_META_GAME_D2)
 		return 0;
 	if (meta->save_kind > ANDROID_SAVE_META_KIND_AUTO_PERIODIC)
+		return 0;
+	if (meta->music_type > 3)
 		return 0;
 	if (meta->difficulty_changed > 1)
 		return 0;

@@ -8,6 +8,7 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.zip.ZipFile
@@ -28,9 +29,10 @@ class ModManager(
         private const val MANIFEST_FILE = "mod_manifest.json"
         private const val GENERATED_PATCH_DIR = ".generated_mod_patches"
         private const val GENERATED_MISSION_ZIP_DIR = ".generated_mission_zips"
+        private const val GENERATED_MISSION_DIR = "missions"
         const val MOD_KIND_DXA = "dxa"
         const val MOD_KIND_MISSION_ZIP = MissionZip.KIND
-        private val MISSION_MIXER_MUSIC_EXTENSIONS = setOf("flac", "mid", "mp3", "ogg")
+        private val MISSION_MIXER_MUSIC_EXTENSIONS = setOf("flac", "hmp", "mid", "mp3", "ogg")
         private val MISSION_SONG_LIST_FILES = setOf("descent.sng", "dxx-r.sng")
     }
 
@@ -517,7 +519,11 @@ class ModManager(
         return buildList {
             add(stageDir.absolutePath)
             for (constituent in scan.constituents.filter { it.role == GameFileFormats.MISSION_ZIP_MOD_ARCHIVE }) {
-                val archive = File(File(stageDir, "missions"), constituent.path.replace('/', File.separatorChar))
+                val archive =
+                    File(
+                        File(stageDir, GENERATED_MISSION_DIR),
+                        constituent.path.replace('/', File.separatorChar),
+                    )
                 if (archive.isFile) add(archive.absolutePath)
             }
         }
@@ -666,7 +672,7 @@ class ModManager(
                     fileCount = scan.constituents.size,
                     archiveSizeBytes = modFile.length(),
                     manifestSchema = null,
-                    notes = emptyList(),
+                    notes = missionZipFeatureNotes(modFile, scan),
                     categories = missionZipCategories(scan.constituents),
                     patches = emptyList(),
                     baseRequirements = emptyList(),
@@ -686,6 +692,33 @@ class ModManager(
                 baseRequirements = emptyList(),
                 problems = listOf("Could not read mission ZIP: ${e.message ?: e.javaClass.simpleName}"),
             )
+        }
+
+    private fun missionZipFeatureNotes(
+        modFile: File,
+        scan: MissionZip.ScanResult,
+    ): List<String> =
+        buildList {
+            if (scan.constituents.any { launcherExtensionOf(it.name) == "sng" }) {
+                add("Includes a mission song list")
+            }
+            scan.constituents
+                .filter { GameFileFormats.extensionOf(it.name) == "hog" }
+                .forEach { constituent ->
+                    val summary =
+                        GameFileMetadata.summarizeZipConstituent(modFile, constituent.path, constituent.name)
+                            ?: return@forEach
+                    if (summary.categories.isNotEmpty()) {
+                        add(
+                            "${constituent.name} contents: " +
+                                summary.categories
+                                    .take(8)
+                                    .joinToString(", ") { "${it.count} ${it.label.lowercase(Locale.US)}" },
+                        )
+                    }
+                    summary.notes.forEach { add("${constituent.name}: $it") }
+                    summary.problems.forEach { add("${constituent.name}: $it") }
+                }
         }
 
     private fun collectModPatchDocuments(
@@ -854,7 +887,11 @@ class ModManager(
     ): Boolean =
         try {
             val stageRoot = stageDir.canonicalFile
+            if (stageRoot.exists()) stageRoot.deleteRecursively()
             stageRoot.mkdirs()
+            val missionRoot = File(stageRoot, GENERATED_MISSION_DIR)
+            val songLists = mutableListOf<File>()
+            var engineSongListExists = false
             ZipFile(modFile).use { zip ->
                 val entries = zip.entries()
                 while (entries.hasMoreElements()) {
@@ -864,7 +901,7 @@ class ModManager(
                     if (normalized.isBlank()) continue
                     val output =
                         File(
-                            File(stageRoot, "missions"),
+                            missionRoot,
                             normalized.replace('/', File.separatorChar),
                         ).canonicalFile
                     if (!output.path.startsWith(stageRoot.path + File.separator)) continue
@@ -874,7 +911,18 @@ class ModManager(
                             input.copyTo(outputStream)
                         }
                     }
+                    val leaf = launcherLeafNameOf(normalized).lowercase(Locale.US)
+                    if ('/' !in normalized && launcherExtensionOf(leaf) == "sng") {
+                        if (leaf in MISSION_SONG_LIST_FILES) {
+                            engineSongListExists = true
+                        } else {
+                            songLists += output
+                        }
+                    }
                 }
+            }
+            if (!engineSongListExists && songLists.size == 1) {
+                songLists.single().copyTo(File(missionRoot, "descent.sng"), overwrite = true)
             }
             true
         } catch (e: Exception) {
@@ -890,9 +938,27 @@ class ModManager(
                 val entries = outer.entries()
                 while (entries.hasMoreElements()) {
                     val entry = entries.nextElement()
-                    if (entry.isDirectory || launcherExtensionOf(entry.name) != "dxa") continue
-                    outer.getInputStream(entry).use { input ->
-                        if (dxaHasBuiltinMusic(ZipInputStream(input))) return@runCatching true
+                    if (entry.isDirectory) continue
+                    when (launcherExtensionOf(entry.name)) {
+                        "sng" -> {
+                            outer.getInputStream(entry).use { input ->
+                                if (songListReferencesMixerMusic(input.readBytes().toString(Charsets.UTF_8))) {
+                                    return@runCatching true
+                                }
+                            }
+                        }
+
+                        "dxa" -> {
+                            outer.getInputStream(entry).use { input ->
+                                if (dxaHasBuiltinMusic(ZipInputStream(input))) return@runCatching true
+                            }
+                        }
+
+                        "hog" -> {
+                            outer.getInputStream(entry).use { input ->
+                                if (hogHasBuiltinMusic(input)) return@runCatching true
+                            }
+                        }
                     }
                 }
             }
@@ -919,6 +985,59 @@ class ModManager(
             .lineSequence()
             .map { it.trim().substringBefore(' ').substringBefore('\t') }
             .any { launcherExtensionOf(it) in MISSION_MIXER_MUSIC_EXTENSIONS }
+
+    private fun hogHasBuiltinMusic(input: InputStream): Boolean {
+        val magic = input.readNBytesCompat(3)
+        if (magic.toString(Charsets.US_ASCII) != "DHF") return false
+        while (true) {
+            val nameBytes = input.readNBytesCompat(13)
+            if (nameBytes.isEmpty() || nameBytes.size != 13) return false
+            val lenBytes = input.readNBytesCompat(4)
+            if (lenBytes.size != 4) return false
+            val name = hogEntryName(nameBytes)
+            val size = leInt(lenBytes).toLong() and 0xffff_ffffL
+            if (launcherExtensionOf(name) in MISSION_MIXER_MUSIC_EXTENSIONS) return true
+            input.skipFullyCompat(size)
+        }
+    }
+
+    private fun InputStream.readNBytesCompat(count: Int): ByteArray {
+        val out = ByteArray(count)
+        var total = 0
+        while (total < count) {
+            val read = read(out, total, count - total)
+            if (read < 0) break
+            total += read
+        }
+        return if (total == count) out else out.copyOf(total)
+    }
+
+    private fun InputStream.skipFullyCompat(count: Long) {
+        var remaining = count
+        while (remaining > 0) {
+            val skipped = skip(remaining)
+            if (skipped > 0) {
+                remaining -= skipped
+            } else if (read() >= 0) {
+                remaining--
+            } else {
+                return
+            }
+        }
+    }
+
+    private fun hogEntryName(nameBytes: ByteArray): String =
+        nameBytes
+            .takeWhile { it.toInt() != 0 }
+            .toByteArray()
+            .toString(Charsets.US_ASCII)
+            .trim()
+
+    private fun leInt(bytes: ByteArray): Int =
+        (bytes[0].toInt() and 0xff) or
+            ((bytes[1].toInt() and 0xff) shl 8) or
+            ((bytes[2].toInt() and 0xff) shl 16) or
+            ((bytes[3].toInt() and 0xff) shl 24)
 
     private fun launcherLeafNameOf(path: String): String = path.replace('\\', '/').substringAfterLast('/')
 

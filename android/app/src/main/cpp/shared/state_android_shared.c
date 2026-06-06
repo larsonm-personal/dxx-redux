@@ -6,6 +6,8 @@
 
 #include "pstypes.h"
 #include "args.h"
+#include "config.h"
+#include "digi.h"
 #include "dxxerror.h"
 #include "game.h"
 #include "gameseq.h"
@@ -500,6 +502,7 @@ void state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	android_desc[STATE_ANDROID_DESC_LENGTH] = '\0';
 	android_params.game_id = state_android_save_meta_game_id();
 	android_params.save_kind = g_android_save_meta_kind;
+	android_params.music_type = GameCfg.MusicType;
 	android_params.callsign = Players[Player_num].callsign;
 	android_params.description = android_desc;
 	android_params.mission_name = mission_filename;
@@ -517,6 +520,17 @@ void state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	state_android_write_last_save_set(
 	    (Game_mode & GM_MULTI_COOP) ? 1 : 0, Players[Player_num].callsign,
 	    mission_filename);
+}
+
+void state_android_restore_music_type_from_meta(const android_save_meta_disk *meta)
+{
+	if (!meta || meta->music_type > MUSIC_TYPE_CUSTOM)
+		return;
+	if (GameCfg.MusicType == meta->music_type)
+		return;
+	debug_log(DLOG_GAME, "restore applying saved music type: game=%s old=%d new=%d",
+	          state_android_game_label(), GameCfg.MusicType, meta->music_type);
+	GameCfg.MusicType = meta->music_type;
 }
 
 int state_android_save_to_path(const char *filename, const char *desc,

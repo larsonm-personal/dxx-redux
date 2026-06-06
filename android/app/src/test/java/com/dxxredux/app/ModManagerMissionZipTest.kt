@@ -81,6 +81,32 @@ class ModManagerMissionZipTest {
         assertFalse(ModManager(filesDir).hasEnabledMissionZipBuiltinMusic("d1"))
     }
 
+    @Test
+    fun missionZipWithTopLevelHmpSongListStagesDescentSongAlias() {
+        val filesDir = File("build/test-mod-manager-mission-zip-obsidian-music").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val manager = ModManager(filesDir)
+        val imported = manager.importMissionZipFile(createObsidianStyleMissionZip(), "Obsidian.zip")
+        assertNotNull(imported)
+
+        assertTrue(manager.hasEnabledMissionZipBuiltinMusic("d2"))
+        manager.writeEnabledModPaths("d2")
+
+        val stageDir = File(filesDir, "d2x-redux/.generated_mission_zips/Obsidian.zip/missions")
+        assertTrue(File(stageDir, "obsidian.sng").isFile)
+        assertEquals(
+            "descent.hmp\nbriefing.hmp\ngame01.hmp\n",
+            File(stageDir, "descent.sng").readText(),
+        )
+
+        val details = manager.getModDetails(imported!!, File(filesDir, "sets/default"))
+        assertTrue(details.notes.any { it == "Includes a mission song list" })
+        assertTrue(details.notes.any { it.contains("Robot data patch") || it.contains("robot data patch") })
+        assertTrue(details.notes.any { it.contains("Texture override") || it.contains("texture override") })
+    }
+
     private fun createMissionZip(): File {
         val zipFile = File.createTempFile("missionzip-manager", ".zip")
         zipFile.deleteOnExit()
@@ -102,6 +128,34 @@ class ModManagerMissionZipTest {
                 Uneasy4.rl2
                 """.trimIndent().toByteArray(),
             )
+            zip.closeEntry()
+        }
+        return zipFile
+    }
+
+    private fun createObsidianStyleMissionZip(): File {
+        val zipFile = File.createTempFile("missionzip-manager-obsidian", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("obsidian.hog"))
+            zip.write(
+                createHogBytes(
+                    "game01.hmp" to ByteArray(16),
+                    "obsidian.txb" to ByteArray(12),
+                    "objec1.pcx" to ByteArray(20),
+                    "argnentr.hxm" to ByteArray(24),
+                    "argnentr.pog" to createPogBytes(),
+                    "argnentr.rl2" to ByteArray(28),
+                ),
+            )
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("obsidian.mn2"))
+            zip.write("name = Obsidian\nnum_levels = 1\nargnentr.rl2\n".toByteArray())
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("obsidian.sng"))
+            zip.write("descent.hmp\nbriefing.hmp\ngame01.hmp\n".toByteArray())
             zip.closeEntry()
         }
         return zipFile
@@ -150,4 +204,41 @@ class ModManagerMissionZipTest {
             ZipOutputStream(output).use(writeEntries)
             output.toByteArray()
         }
+
+    private fun createHogBytes(vararg entries: Pair<String, ByteArray>): ByteArray =
+        ByteArrayOutputStream().use { output ->
+            output.write("DHF".toByteArray(Charsets.US_ASCII))
+            entries.forEach { (name, data) ->
+                output.write(fixedName(name, 13))
+                output.write(leInt(data.size))
+                output.write(data)
+            }
+            output.toByteArray()
+        }
+
+    private fun createPogBytes(): ByteArray =
+        ByteArrayOutputStream().use { output ->
+            output.write("DPOG".toByteArray(Charsets.US_ASCII))
+            output.write(leInt(1))
+            output.write(leInt(0))
+            output.toByteArray()
+        }
+
+    private fun fixedName(
+        name: String,
+        size: Int,
+    ): ByteArray {
+        val out = ByteArray(size)
+        val bytes = name.toByteArray(Charsets.US_ASCII)
+        bytes.copyInto(out, endIndex = minOf(bytes.size, size))
+        return out
+    }
+
+    private fun leInt(value: Int): ByteArray =
+        byteArrayOf(
+            (value and 0xff).toByte(),
+            ((value shr 8) and 0xff).toByte(),
+            ((value shr 16) and 0xff).toByte(),
+            ((value shr 24) and 0xff).toByte(),
+        )
 }

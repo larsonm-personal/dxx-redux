@@ -130,13 +130,20 @@ internal fun enableRedbookInConfig(
     Log.i("DXX-Setup", "Set music_mode=cd in SharedPreferences")
 }
 
-internal fun SetupActivity.writeMusicConfigForLaunch(game: String? = null) {
+internal fun SetupActivity.writeMusicConfigForLaunch(
+    game: String? = null,
+    musicTypeOverride: Int? = null,
+) {
     val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
     val mode = prefs.getString("music_mode", "cd") ?: "cd"
     val missionZipBuiltinMusic =
-        game != null && mode == "cd" && ModManager(filesDir).hasEnabledMissionZipBuiltinMusic(game)
+        musicTypeOverride == null &&
+            game != null &&
+            mode == "cd" &&
+            ModManager(filesDir).hasEnabledMissionZipBuiltinMusic(game)
     val musicType =
         when {
+            musicTypeOverride != null -> musicTypeOverride.coerceIn(0, 3).toString()
             missionZipBuiltinMusic -> "1"
             mode == "midi" -> "1"
             mode == "cd" -> "2"
@@ -150,9 +157,12 @@ internal fun SetupActivity.writeMusicConfigForLaunch(game: String? = null) {
 
     val settings = mutableListOf("MusicType" to musicType)
 
-    if (!missionZipBuiltinMusic && mode == "cd") {
+    if (
+        musicTypeOverride == 2 ||
+        (!missionZipBuiltinMusic && musicTypeOverride == null && mode == "cd")
+    ) {
         settings.add("OrigTrackOrder" to "1")
-    } else if (mode == "files") {
+    } else if (musicTypeOverride == 3 || (musicTypeOverride == null && mode == "files")) {
         val m3uPath = CustomAudioSetManager(filesDir).writeM3U(this)
         if (m3uPath != null) {
             settings.add("CMLevelMusicPath" to m3uPath)

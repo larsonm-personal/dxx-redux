@@ -207,7 +207,7 @@ class SetupActivity : ComponentActivity() {
         resumeCandidate: ResumeSaveBridge.ResumeSaveCandidate? = null,
     ) {
         val launchGame = resumeCandidate?.game ?: game
-        prepareGameLaunchFiles(launchGame)?.let { report ->
+        prepareGameLaunchFiles(launchGame, resumeCandidate?.musicType)?.let { report ->
             showModCompatibilityFailure(report)
             return
         }
@@ -327,7 +327,10 @@ class SetupActivity : ComponentActivity() {
         return intent
     }
 
-    private fun prepareGameLaunchFiles(game: String): ModManager.ModCompatibilityReport? {
+    private fun prepareGameLaunchFiles(
+        game: String,
+        musicTypeOverride: Int? = null,
+    ): ModManager.ModCompatibilityReport? {
         val fileSetManager = FileSetManager(filesDir)
         val activeSetDir = fileSetManager.getSetDir(fileSetManager.getActive())
         val modManager = ModManager(filesDir)
@@ -342,7 +345,7 @@ class SetupActivity : ComponentActivity() {
         modManager.writeEnabledModPaths(game)
         writeInitialGameConfig()
         migrateLegacyHalfRenderResolution()
-        writeMusicConfigForLaunch(game)
+        writeMusicConfigForLaunch(game, musicTypeOverride)
         return null
     }
 
@@ -1639,7 +1642,7 @@ class SetupActivity : ComponentActivity() {
                             ).show()
                     } else {
                         val launchGame = resumeCandidate?.game ?: game
-                        prepareGameLaunchFiles(launchGame)?.let { report ->
+                        prepareGameLaunchFiles(launchGame, resumeCandidate?.musicType)?.let { report ->
                             modCompatibilityMessage = report.toUserMessage()
                             return@launch
                         }

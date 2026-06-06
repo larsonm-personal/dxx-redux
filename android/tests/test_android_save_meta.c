@@ -62,6 +62,7 @@ int main(void)
 	memset(&params, 0, sizeof(params));
 	params.game_id = ANDROID_SAVE_META_GAME_D1;
 	params.save_kind = ANDROID_SAVE_META_KIND_MANUAL;
+	params.music_type = 1;
 	params.wall_clock_unix_seconds = 100;
 	params.callsign = "ace";
 	params.description = "AUTO SAVE";
@@ -85,6 +86,7 @@ int main(void)
 	memset(&params, 0, sizeof(params));
 	params.game_id = ANDROID_SAVE_META_GAME_D2;
 	params.save_kind = ANDROID_SAVE_META_KIND_AUTO_EXIT;
+	params.music_type = 2;
 	params.wall_clock_unix_seconds = 200;
 	params.callsign = "zen";
 	params.description = "AUTO EXIT";
@@ -146,6 +148,8 @@ int main(void)
 	failures += expect_string("level name", "Lunar Outpost", parsed.level_name);
 	if (parsed.game_id != ANDROID_SAVE_META_GAME_D1)
 		failures += report_failure("parsed wrong game id for D1 trailer");
+	if (parsed.music_type != 1)
+		failures += report_failure("music type did not round-trip");
 	if (parsed.thumbnail_format != ANDROID_SAVE_META_THUMB_RGB6)
 		failures += report_failure("thumbnail format missing on D1 trailer");
 	if (parsed.thumbnail_rgb6[0] != 7)
@@ -172,6 +176,8 @@ int main(void)
 			failures += report_failure("newest candidate kept the wrong save kind");
 		if (newest.meta.total_seconds != 2222)
 			failures += report_failure("newest candidate kept the wrong total seconds");
+		if (newest.meta.music_type != 2)
+			failures += report_failure("newest candidate kept the wrong music type");
 	}
 
 	remove("test_android_save_meta_d1.sav");

@@ -149,6 +149,7 @@ class ResumeSavePanelTest {
         difficultyChanged = false,
         difficultyMin = 0,
         difficultyMax = 0,
+        musicType = 2,
         slot = slot,
         hasThumbnail = hasThumbnail,
         thumbnailWidth = thumbnailWidth,
