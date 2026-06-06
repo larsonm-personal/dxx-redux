@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <cstring>
 #include <dirent.h>
+#include <algorithm>
+#include <cerrno>
 #include <string>
 #include <vector>
 #include <strings.h>
@@ -28,9 +30,43 @@ static bool is_save_slot_name(const char *name)
 	if (len < 4)
 		return false;
 	return name[len - 4] == '.' &&
-	       (name[len - 3] == 's' || name[len - 3] == 'S') &&
+	       (name[len - 3] == 's' || name[len - 3] == 'S' ||
+	        name[len - 3] == 'm' || name[len - 3] == 'M') &&
 	       (name[len - 2] == 'g' || name[len - 2] == 'G') &&
 	       name[len - 1] >= '0' && name[len - 1] <= '9';
+}
+
+static void collect_save_paths_recursive(const char *dir_path,
+                                         int depth,
+                                         std::vector<std::string> *paths)
+{
+	DIR *dp;
+	struct dirent *ent;
+
+	if (!dir_path || !paths || depth > 8)
+		return;
+
+	dp = opendir(dir_path);
+	if (!dp)
+		return;
+	while ((ent = readdir(dp)) != NULL) {
+		char path[ANDROID_SAVE_META_PATH_LEN];
+		struct stat st;
+		int path_wrote;
+
+		if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
+			continue;
+		path_wrote = snprintf(path, sizeof(path), "%s/%s", dir_path, ent->d_name);
+		if (path_wrote <= 0 || path_wrote >= (int) sizeof(path))
+			continue;
+		if (is_save_slot_name(ent->d_name)) {
+			paths->emplace_back(path);
+			continue;
+		}
+		if (stat(path, &st) == 0 && S_ISDIR(st.st_mode))
+			collect_save_paths_recursive(path, depth + 1, paths);
+	}
+	closedir(dp);
 }
 
 static void collect_save_paths(const char *files_dir,
@@ -38,35 +74,14 @@ static void collect_save_paths(const char *files_dir,
                                std::vector<std::string> *paths)
 {
 	char dir_path[ANDROID_SAVE_META_PATH_LEN];
-	const char *subdirs[] = { "", "/Players" };
-	int d;
+	int wrote;
 
 	if (!files_dir || !subdir || !paths)
 		return;
-
-	for (d = 0; d < 2; d++) {
-		DIR *dp;
-		struct dirent *ent;
-		int wrote = snprintf(dir_path, sizeof(dir_path), "%s/%s%s", files_dir, subdir, subdirs[d]);
-
-		if (wrote <= 0 || wrote >= (int) sizeof(dir_path))
-			continue;
-		dp = opendir(dir_path);
-		if (!dp)
-			continue;
-		while ((ent = readdir(dp)) != NULL) {
-			char path[ANDROID_SAVE_META_PATH_LEN];
-			int path_wrote;
-
-			if (!is_save_slot_name(ent->d_name))
-				continue;
-			path_wrote = snprintf(path, sizeof(path), "%s/%s", dir_path, ent->d_name);
-			if (path_wrote <= 0 || path_wrote >= (int) sizeof(path))
-				continue;
-			paths->emplace_back(path);
-		}
-		closedir(dp);
-	}
+	wrote = snprintf(dir_path, sizeof(dir_path), "%s/%s", files_dir, subdir);
+	if (wrote <= 0 || wrote >= (int) sizeof(dir_path))
+		return;
+	collect_save_paths_recursive(dir_path, 0, paths);
 }
 
 static std::string sanitize_text(const char *text)
@@ -125,11 +140,23 @@ static int slot_from_path(const char *path)
 	dot = strrchr(path, '.');
 	if (!dot || !dot[1] || !dot[2] || !dot[3] || dot[4])
 		return -1;
-	if ((dot[1] != 's' && dot[1] != 'S') ||
+	if ((dot[1] != 's' && dot[1] != 'S' && dot[1] != 'm' && dot[1] != 'M') ||
 	    (dot[2] != 'g' && dot[2] != 'G') ||
 	    dot[3] < '0' || dot[3] > '9')
 		return -1;
 	return dot[3] - '0';
+}
+
+static bool save_path_is_coop(const char *path)
+{
+	const char *dot;
+
+	if (!path)
+		return false;
+	dot = strrchr(path, '.');
+	return dot && (dot[1] == 'm' || dot[1] == 'M') &&
+	       (dot[2] == 'g' || dot[2] == 'G') &&
+	       dot[3] >= '0' && dot[3] <= '9' && dot[4] == '\0';
 }
 
 static const char *game_name(uint8_t game_id)
@@ -185,6 +212,15 @@ static uint64_t file_mtime_seconds(const char *path)
 	if (!path || stat(path, &st) != 0)
 		return 0;
 	return (uint64_t) st.st_mtime;
+}
+
+static uint64_t file_size_bytes(const char *path)
+{
+	struct stat st;
+
+	if (!path || stat(path, &st) != 0)
+		return 0;
+	return (uint64_t) st.st_size;
 }
 
 static bool is_sentinel_callsign(const std::string &callsign)
@@ -345,6 +381,181 @@ static json resume_candidate_json(const char *files_dir,
 	return out;
 }
 
+static std::vector<std::string> split_path(const std::string &path)
+{
+	std::vector<std::string> out;
+	size_t start = 0;
+
+	while (start <= path.size()) {
+		size_t slash = path.find('/', start);
+		size_t end = slash == std::string::npos ? path.size() : slash;
+		if (end > start)
+			out.emplace_back(path.substr(start, end - start));
+		if (slash == std::string::npos)
+			break;
+		start = slash + 1;
+	}
+	return out;
+}
+
+static std::string game_name_from_relative(const std::string &relative_path)
+{
+	if (relative_path.rfind("d1x-redux/", 0) == 0 || relative_path == "d1x-redux")
+		return "d1";
+	if (relative_path.rfind("d2x-redux/", 0) == 0 || relative_path == "d2x-redux")
+		return "d2";
+	return std::string();
+}
+
+static void save_set_parts_from_relative(const std::string &relative_path,
+                                         std::string *scope,
+                                         std::string *pilot,
+                                         std::string *mission)
+{
+	std::vector<std::string> parts = split_path(relative_path);
+
+	if (scope)
+		scope->clear();
+	if (pilot)
+		pilot->clear();
+	if (mission)
+		mission->clear();
+	if (parts.size() >= 7 && parts[1] == "Players" && parts[2] == "save_sets" &&
+	    parts[3] == "single") {
+		if (scope)
+			*scope = "single";
+		if (pilot)
+			*pilot = parts[4];
+		if (mission)
+			*mission = parts[5];
+		return;
+	}
+	if (parts.size() >= 6 && parts[1] == "Players" && parts[2] == "save_sets" &&
+	    parts[3] == "coop") {
+		if (scope)
+			*scope = "coop";
+		if (pilot)
+			*pilot = "coopsave";
+		if (mission)
+			*mission = parts[4];
+	}
+}
+
+static bool path_is_under_game_root(const char *files_dir, const char *path)
+{
+	char prefix[ANDROID_SAVE_META_PATH_LEN];
+	int wrote;
+	size_t prefix_len;
+
+	if (!files_dir || !path)
+		return false;
+	for (const char *root : { "d1x-redux", "d2x-redux" }) {
+		wrote = snprintf(prefix, sizeof(prefix), "%s/%s/", files_dir, root);
+		if (wrote <= 0 || wrote >= (int) sizeof(prefix))
+			continue;
+		prefix_len = strlen(prefix);
+		if (strncmp(path, prefix, prefix_len) == 0)
+			return true;
+	}
+	return false;
+}
+
+static json save_explorer_slot_json(const char *files_dir, const std::string &path)
+{
+	android_save_meta_candidate candidate;
+	android_save_meta_disk meta;
+	std::string relative_path = relative_to_files_dir(files_dir, path.c_str());
+	std::string path_game = game_name_from_relative(relative_path);
+	std::string scope;
+	std::string pilot;
+	std::string mission;
+	bool meta_valid = android_save_meta_read_path(path.c_str(), &meta) != 0;
+	bool loadable = read_resume_candidate(path, &candidate);
+	uint64_t modified = file_mtime_seconds(path.c_str());
+	json out;
+
+	save_set_parts_from_relative(relative_path, &scope, &pilot, &mission);
+	if (scope.empty())
+		scope = save_path_is_coop(path.c_str()) ? "coop" : "single";
+	if (pilot.empty())
+		pilot = callsign_from_path(path.c_str());
+	if (meta_valid) {
+		if (meta.wall_clock_unix_seconds == 0)
+			meta.wall_clock_unix_seconds = modified;
+		std::string callsign = sanitize_text(meta.callsign);
+		if (callsign.empty())
+			callsign = callsign_from_path(path.c_str());
+		if (pilot.empty())
+			pilot = callsign;
+		if (mission.empty())
+			mission = sanitize_text(meta.mission_name);
+		if (path_game.empty())
+			path_game = game_name(meta.game_id);
+	}
+
+	if (loadable) {
+		out = resume_candidate_json(files_dir, candidate);
+	} else {
+		out["path"] = path;
+		out["relative_path"] = relative_path;
+		out["game"] = path_game.empty() ? "unknown" : path_game;
+		out["save_kind"] = meta_valid ? save_kind_name(meta.save_kind) : "unknown";
+		out["save_time_unix_seconds"] = meta_valid ? meta.wall_clock_unix_seconds : modified;
+		out["callsign"] = meta_valid ? sanitize_text(meta.callsign) : callsign_from_path(path.c_str());
+		out["description"] = meta_valid ? sanitize_text(meta.description) : callsign_from_path(path.c_str());
+		out["mission_name"] = meta_valid ? sanitize_text(meta.mission_name) : mission;
+		out["level_num"] = meta_valid ? meta.level_num : 0;
+		out["level_name"] = meta_valid ? sanitize_text(meta.level_name) : "";
+		out["level_seconds"] = meta_valid ? meta.level_seconds : 0;
+		out["total_seconds"] = meta_valid ? meta.total_seconds : 0;
+		out["difficulty_changed"] = meta_valid && meta.difficulty_changed != 0;
+		out["difficulty_min"] = meta_valid ? meta.difficulty_min : 0;
+		out["difficulty_max"] = meta_valid ? meta.difficulty_max : 0;
+		out["slot"] = slot_from_path(path.c_str());
+		out["has_thumbnail"] =
+		    meta_valid &&
+		    meta.thumbnail_format == ANDROID_SAVE_META_THUMB_RGB6 &&
+		    meta.thumbnail_width == ANDROID_SAVE_META_THUMB_W &&
+		    meta.thumbnail_height == ANDROID_SAVE_META_THUMB_H;
+		out["thumbnail_width"] = meta_valid ? meta.thumbnail_width : 0;
+		out["thumbnail_height"] = meta_valid ? meta.thumbnail_height : 0;
+		out["metadata_backed"] = meta_valid;
+	}
+	out["scope"] = scope;
+	out["pilot"] = pilot;
+	out["mission_key"] = mission;
+	out["loadable"] = loadable;
+	out["orphan"] = !meta_valid || !loadable;
+	out["orphan_reason"] =
+	    meta_valid ? (loadable ? "" : "not_loadable_from_launcher") : "missing_or_invalid_metadata";
+	out["size_bytes"] = file_size_bytes(path.c_str());
+	out["modified_unix_seconds"] = modified;
+	return out;
+}
+
+static json list_save_explorer_slots(const char *files_dir)
+{
+	std::vector<std::string> paths;
+	std::vector<json> slots;
+	json out;
+
+	collect_save_paths(files_dir, "d1x-redux", &paths);
+	collect_save_paths(files_dir, "d2x-redux", &paths);
+	for (const auto &path : paths)
+		slots.emplace_back(save_explorer_slot_json(files_dir, path));
+	std::sort(slots.begin(), slots.end(), [](const json &a, const json &b) {
+		uint64_t a_time = a.value("save_time_unix_seconds", 0ULL);
+		uint64_t b_time = b.value("save_time_unix_seconds", 0ULL);
+		if (a_time != b_time)
+			return a_time > b_time;
+		return a.value("relative_path", std::string()) < b.value("relative_path", std::string());
+	});
+	out["slots"] = json::array();
+	for (const auto &slot : slots)
+		out["slots"].push_back(slot);
+	return out;
+}
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_ResumeSaveBridge_nativeFindNewestSave(JNIEnv *env,
                                                             jobject /* thiz */,
@@ -428,6 +639,95 @@ Java_com_dxxredux_app_ResumeSaveBridge_nativeFindSaveOptions(JNIEnv *env,
 	if (!found)
 		return NULL;
 
+	std::string dumped = out.dump();
+	return env->NewStringUTF(dumped.c_str());
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_SaveExplorerBridge_nativeListSaveSlots(JNIEnv *env,
+                                                             jobject /* thiz */,
+                                                             jstring jfilesDir)
+{
+	const char *files_dir;
+	json out;
+
+	if (!jfilesDir)
+		return NULL;
+	files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	if (!files_dir)
+		return NULL;
+	out = list_save_explorer_slots(files_dir);
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+
+	std::string dumped = out.dump();
+	return env->NewStringUTF(dumped.c_str());
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_SaveExplorerBridge_nativeDeleteSaveSlot(JNIEnv *env,
+                                                              jobject /* thiz */,
+                                                              jstring jfilesDir,
+                                                              jstring jpath,
+                                                              jlong expectedTimestamp,
+                                                              jint expectedSlot)
+{
+	android_save_meta_disk meta;
+	const char *files_dir;
+	const char *path;
+	uint64_t current_time;
+	int current_slot;
+	bool meta_valid;
+	json out;
+
+	if (!jfilesDir || !jpath) {
+		out["deleted"] = false;
+		out["reason"] = "missing_path";
+		std::string dumped = out.dump();
+		return env->NewStringUTF(dumped.c_str());
+	}
+	files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	if (!files_dir)
+		return NULL;
+	path = env->GetStringUTFChars(jpath, NULL);
+	if (!path) {
+		env->ReleaseStringUTFChars(jfilesDir, files_dir);
+		return NULL;
+	}
+
+	if (!path_is_under_game_root(files_dir, path)) {
+		out["deleted"] = false;
+		out["reason"] = "outside_game_roots";
+		goto done;
+	}
+
+	current_slot = slot_from_path(path);
+	if (expectedSlot >= 0 && current_slot != expectedSlot) {
+		out["deleted"] = false;
+		out["reason"] = "slot_changed";
+		goto done;
+	}
+
+	meta_valid = android_save_meta_read_path(path, &meta) != 0;
+	current_time = meta_valid ? meta.wall_clock_unix_seconds : file_mtime_seconds(path);
+	if (current_time == 0)
+		current_time = file_mtime_seconds(path);
+	if (expectedTimestamp > 0 && current_time != (uint64_t) expectedTimestamp) {
+		out["deleted"] = false;
+		out["reason"] = "timestamp_changed";
+		goto done;
+	}
+
+	if (remove(path) != 0) {
+		out["deleted"] = false;
+		out["reason"] = errno == ENOENT ? "already_deleted" : "delete_failed";
+		goto done;
+	}
+	out["deleted"] = true;
+	out["reason"] = "";
+
+done:
+	env->ReleaseStringUTFChars(jpath, path);
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 	std::string dumped = out.dump();
 	return env->NewStringUTF(dumped.c_str());
 }

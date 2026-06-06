@@ -112,6 +112,18 @@ object ResumeSaveBridge {
         }
     }
 
+    internal fun readThumbnailRgb6(path: String): ByteArray? =
+        if (path.isNotBlank()) {
+            try {
+                nativeReadThumbnailRgb6(path)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to read resume-save thumbnail", e)
+                null
+            }
+        } else {
+            null
+        }
+
     private fun JSONObject.optCandidate(name: String): ResumeSaveCandidate? =
         if (has(name) && !isNull(name)) {
             parseCandidate(getJSONObject(name))
@@ -124,12 +136,7 @@ object ResumeSaveBridge {
         val nativeHasThumbnail = obj.optBoolean("has_thumbnail")
         val thumbnailRgb6 =
             if (nativeHasThumbnail && path.isNotBlank()) {
-                try {
-                    nativeReadThumbnailRgb6(path)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to read resume-save thumbnail", e)
-                    null
-                }
+                readThumbnailRgb6(path)
             } else {
                 null
             }

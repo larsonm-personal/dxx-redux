@@ -180,9 +180,9 @@ Orphan handling:
 2. [x] Single-player manual save/load scoping in D1 and D2.
 3. [x] Android autosave scoping.
 4. [x] Coop autosave/progress scoping.
-5. Native save explorer bridge and scanner tests.
-6. Save explorer all-slots and delete/orphan cleanup support.
-7. Launcher save explorer dialog.
+5. [x] Native save explorer bridge and scanner tests.
+6. [x] Save explorer all-slots and delete/orphan cleanup support.
+7. [x] Launcher save explorer dialog.
 8. Migration/legacy display polish.
 
 ## Implementation Progress
@@ -205,4 +205,21 @@ Validation completed:
 
 Next implementation target:
 
-- Native save explorer bridge and scanner tests, including `All Slots`, `Ten Most Recent`, delete, and orphan reporting.
+- Migration/legacy display polish and on-device verification of the launcher save explorer.
+
+2026-06-06 save explorer tranche:
+
+- Expanded the native resume/save scanner to recurse through game roots and discover scoped save-set files as well as legacy flat saves.
+- Taught the scanner to recognize both `.sgN` and `.mgN` save slots while keeping the existing resume chooser filtered to loadable candidates.
+- Added `SaveExplorerBridge` with native inventory and guarded delete calls.
+- Added launcher `Save Explorer` dialog with `Save Set`, `Ten Recent`, and `All Slots` views.
+- Added game, scope, pilot, and level-set selectors for masked save sets.
+- Added an `Orphans only` filter in `All Slots`.
+- Added per-row delete confirmation for loadable and orphaned save files.
+- Added a main-page `Save Explorer` button next to the active file-set controls.
+
+Validation completed:
+
+- `.\android\run-code-quality.ps1 -Fix`
+- `.\gradlew.bat :app:assembleDebug`
+- `.\android\tests\test_native_host_unit_tests.ps1`

@@ -2152,6 +2152,7 @@ private fun SetupScreen(
 
     // -- Set management dialog state -------------------------
     var showSetDialog by remember { mutableStateOf(false) }
+    var showSaveExplorer by remember { mutableStateOf(false) }
 
     // -- Game selection state --------------------------------
     val gamePrefs = remember { context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE) }
@@ -2876,6 +2877,21 @@ private fun SetupScreen(
                     resumePanel?.invoke()
                 }
 
+                if (showSaveExplorer) {
+                    SaveExplorerDialog(
+                        filesDir = filesDir,
+                        canLaunchGame = { game -> (game == "d1" && d1RequiredOk) || (game != "d1" && d2RequiredOk) },
+                        onLoadCandidate = { selectedCandidate ->
+                            selectedGame = selectedCandidate.game
+                            gamePrefs.edit().putString("selected_game", selectedCandidate.game).apply()
+                            showSaveExplorer = false
+                            onLaunchGame(selectedCandidate.game, selectedCandidate)
+                        },
+                        onChanged = onRefresh,
+                        onDismiss = { showSaveExplorer = false },
+                    )
+                }
+
                 // -- File detail popup --
                 detailStatus?.let { status ->
                     FileDetailDialog(
@@ -3291,6 +3307,13 @@ private fun SetupScreen(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(modifier = Modifier.weight(1f))
+                        TextButton(
+                            onClick = { showSaveExplorer = true },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            modifier = Modifier.height(28.dp),
+                        ) {
+                            Text("Save Explorer", fontSize = 12.sp)
+                        }
                         TextButton(
                             onClick = { showSetDialog = true },
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
