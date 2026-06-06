@@ -208,21 +208,10 @@ int state_android_build_coop_autosave_filename(char *filename,
 int state_android_build_secret_filename(char *filename, size_t filename_size,
                                         int slotnum)
 {
-	const char *mission = state_android_current_mission_filename_or_default();
-	int result;
-
-	debug_log(DLOG_GAME,
-	          "android secret filename build: %s slot=%d pilot='%s' mission='%s' mission_loaded=%d",
-	          state_android_game_label(), slotnum, Players[Player_num].callsign,
-	          mission, Current_mission ? 1 : 0);
-	result = android_save_set_build_secret_path(
+	return android_save_set_build_secret_path(
 	    filename, filename_size, GameArg.SysUsePlayersDir,
-	    Players[Player_num].callsign, mission, slotnum);
-	debug_log(DLOG_GAME,
-	          "android secret filename result: %s slot=%d result=%d file='%s'",
-	          state_android_game_label(), slotnum, result,
-	          result ? filename : "");
-	return result;
+	    Players[Player_num].callsign,
+	    state_android_current_mission_filename_or_default(), slotnum);
 }
 
 int state_android_build_coop_sidecar_filename(char *filename,

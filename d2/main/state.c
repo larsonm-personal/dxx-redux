@@ -2413,13 +2413,7 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 		return 0;
 	}
 
-#ifdef __ANDROID__
-	debug_log(DLOG_GAME, "restore all before stop_time: game=d2");
-#endif
 	stop_time();
-#ifdef __ANDROID__
-	debug_log(DLOG_GAME, "restore all after stop_time: game=d2");
-#endif
 
 	if (filename_override) {
 		strcpy(filename, filename_override);
@@ -2445,13 +2439,9 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 	//	If it doesn't exist, then delete secret.sgc
 	if (!secret_restore) {
 		int	rval;
+		int	has_companion;
 		char	temp_fname[PATH_MAX], fc;
 
-#ifdef __ANDROID__
-		debug_log(DLOG_GAME,
-		          "restore secret companion branch: game=d2 file='%s' slot=%d",
-		          filename, filenum);
-#endif
 		if (filenum != -1) {
 			if (filenum >= 10)
 				fc = (filenum-10) + 'a';
@@ -2459,49 +2449,36 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 				fc = '0' + filenum;
 
 #ifdef __ANDROID__
-			debug_log(DLOG_GAME,
-			          "restore secret companion build begin: game=d2 slot=%d",
-			          filenum);
 			if (!state_android_build_secret_filename(temp_fname, PATH_MAX, filenum)) {
 				debug_log(DLOG_GAME,
 				          "restore secret companion skipped: game=d2 reason=build_failed slot=%d",
 				          filenum);
 				temp_fname[0] = '\0';
 			}
-			debug_log(DLOG_GAME,
-				"restore secret companion check: game=d2 file='%s' slot=%d companion='%s'",
-				filename, filenum, temp_fname);
 #else
 			snprintf(temp_fname, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%csecret.sgc" : "%csecret.sgc", fc);
 #endif
+			has_companion = temp_fname[0] && PHYSFSX_exists(temp_fname,0);
 
-			if (temp_fname[0] && PHYSFSX_exists(temp_fname,0))
-			{
 #ifdef __ANDROID__
-				debug_log(DLOG_GAME,
-				          "restore secret companion exists: game=d2 companion='%s'",
-				          temp_fname);
+			debug_log(DLOG_GAME,
+			          "restore secret companion: game=d2 slot=%d companion='%s' exists=%d mission_loaded=%d",
+			          filenum, temp_fname, has_companion,
+			          Current_mission ? 1 : 0);
 #endif
+			if (has_companion)
+			{
 				rval = copy_file(temp_fname, SECRETC_FILENAME);
 #ifdef __ANDROID__
-				debug_log(DLOG_GAME,
-				          "restore secret companion copied: game=d2 companion='%s' result=%d",
-				          temp_fname, rval);
+				if (rval)
+					debug_log(DLOG_GAME,
+					          "restore secret companion copy failed: game=d2 companion='%s' result=%d",
+					          temp_fname, rval);
 #endif
 				Assert(rval == 0);	//	Oops, error copying temp_fname to secret.sgc!
 				(void)rval;
 			} else {
-#ifdef __ANDROID__
-				debug_log(DLOG_GAME,
-			          "restore secret companion missing: game=d2 companion='%s' delete_secret='%s'",
-				          temp_fname, SECRETC_FILENAME);
-#endif
 				PHYSFS_delete(SECRETC_FILENAME);
-#ifdef __ANDROID__
-				debug_log(DLOG_GAME,
-				          "restore secret companion delete attempted: game=d2 target='%s'",
-				          SECRETC_FILENAME);
-#endif
 			}
 		}
 #ifdef __ANDROID__
@@ -2522,15 +2499,7 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 		}
 	}
 
-#ifdef __ANDROID__
-	debug_log(DLOG_GAME, "restore all before start_time: game=d2 file='%s'", filename);
-#endif
 	start_time();
-#ifdef __ANDROID__
-	debug_log(DLOG_GAME,
-	          "restore all before sub: game=d2 file='%s' secret=%d slot=%d",
-	          filename, secret_restore, filenum);
-#endif
 
 	return state_restore_all_sub(filename, secret_restore);
 }
