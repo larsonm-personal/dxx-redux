@@ -2700,7 +2700,7 @@ struct listbox
 	int citem, first_item;
 	int marquee_maxchars, marquee_charpos, marquee_scrollback;
 	fix64 marquee_lasttime; // to scroll text if string does not fit in box
-	int box_w, height, box_x, box_y, title_height, row_height, selected_row_height;
+	int box_w, height, box_x, box_y, title_height, line_spacing, row_height, selected_row_height;
 	short swidth, sheight; float fntscalex, fntscaley; // with these we check if resolution or fonts have changed so listbox structure can be recreated
 	int mouse_state;
 	void *userdata;
@@ -2776,7 +2776,8 @@ void update_scroll_position(listbox *lb)
 static void listbox_get_item_bounds(listbox *lb, int item_index,
 	                              int *x1, int *y1, int *x2, int *y2)
 {
-	int visible_y = (item_index - lb->first_item) * LINE_SPACING + lb->box_y;
+	int line_spacing = lb->line_spacing > 0 ? lb->line_spacing : (int)LINE_SPACING;
+	int visible_y = (item_index - lb->first_item) * line_spacing + lb->box_y;
 	int row_height = item_index == lb->citem ? lb->selected_row_height : lb->row_height;
 
 	*x1 = lb->box_x;
@@ -2857,10 +2858,10 @@ static void android_log_listbox_touch(listbox *lb, const char *phase,
 	}
 	android_menu_scale_get_state(&scale);
 	debug_log(DLOG_GAME,
-	          "[listbox-touch] %s mx=%d my=%d item=%d citem=%d first=%d n=%d box=(%d,%d %dx%d) bounds=(%d,%d %dx%d) title='%s' text='%s' scale=%d src=(%d,%d %dx%d) dst=(%d,%d %dx%d)\n",
+	          "[listbox-touch] %s mx=%d my=%d item=%d citem=%d first=%d n=%d line=%d box=(%d,%d %dx%d) bounds=(%d,%d %dx%d) title='%s' text='%s' scale=%d src=(%d,%d %dx%d) dst=(%d,%d %dx%d)\n",
 	          phase, mx, my, item, lb->citem, lb->first_item, lb->nitems,
-	          lb->box_x, lb->box_y, lb->box_w, lb->height, x1, y1, x2 - x1,
-	          y2 - y1, lb->title ? lb->title : "", text, scale.active,
+	          lb->line_spacing, lb->box_x, lb->box_y, lb->box_w, lb->height,
+	          x1, y1, x2 - x1, y2 - y1, lb->title ? lb->title : "", text, scale.active,
 	          scale.src.x, scale.src.y, scale.src.w, scale.src.h,
 	          scale.dst.x, scale.dst.y, scale.dst.w, scale.dst.h);
 }
@@ -3108,7 +3109,8 @@ void listbox_create_structure( listbox *lb)
 		if ( w > lb->box_w )
 			lb->box_w = w+FSPACX(10);
 	}
-	lb->height = LINE_SPACING * LB_ITEMS_ON_SCREEN;
+	lb->line_spacing = (int)LINE_SPACING;
+	lb->height = lb->line_spacing * LB_ITEMS_ON_SCREEN;
 
 	{
 		int w, h, aw;
@@ -3122,8 +3124,8 @@ void listbox_create_structure( listbox *lb)
 	gr_get_string_size("O", &i, &lb->row_height, &aw);
 	gr_set_curfont(MEDIUM2_FONT);
 	gr_get_string_size("O", &i, &lb->selected_row_height, &aw);
-	if (lb->row_height < LINE_SPACING + FSPACY(1))
-		lb->row_height = LINE_SPACING + FSPACY(1);
+	if (lb->row_height < lb->line_spacing + FSPACY(1))
+		lb->row_height = lb->line_spacing + FSPACY(1);
 	if (lb->selected_row_height < lb->row_height)
 		lb->selected_row_height = lb->row_height;
 	gr_set_curfont(MEDIUM3_FONT);
@@ -3165,6 +3167,7 @@ void listbox_create_structure( listbox *lb)
 static void listbox_draw_contents(listbox *lb)
 {
 	int i;
+	int line_spacing = lb->line_spacing > 0 ? lb->line_spacing : (int)LINE_SPACING;
 
 	nm_draw_background( lb->box_x-BORDERX,lb->box_y-lb->title_height-BORDERY,lb->box_x+lb->box_w+BORDERX,lb->box_y+lb->height+BORDERY );
 	gr_set_curfont(MEDIUM3_FONT);
@@ -3172,22 +3175,22 @@ static void listbox_draw_contents(listbox *lb)
 
 	gr_setcolor( BM_XRGB( 0,0,0)  );
 	for (i=lb->first_item; i<lb->first_item+LB_ITEMS_ON_SCREEN; i++ )	{
-		int y = (i-lb->first_item)*LINE_SPACING+lb->box_y;
+		int y = (i-lb->first_item)*line_spacing+lb->box_y;
 		if ( i >= lb->nitems )	{
 			gr_setcolor( BM_XRGB(5,5,5));
-			gr_rect( lb->box_x + lb->box_w - FSPACX(1), y-FSPACY(1), lb->box_x + lb->box_w, y + LINE_SPACING);
+			gr_rect( lb->box_x + lb->box_w - FSPACX(1), y-FSPACY(1), lb->box_x + lb->box_w, y + line_spacing);
 			gr_setcolor( BM_XRGB(2,2,2));
-			gr_rect( lb->box_x - FSPACX(1), y - FSPACY(1), lb->box_x, y + LINE_SPACING );
+			gr_rect( lb->box_x - FSPACX(1), y - FSPACY(1), lb->box_x, y + line_spacing );
 			gr_setcolor( BM_XRGB(0,0,0));
-			gr_rect( lb->box_x, y - FSPACY(1), lb->box_x + lb->box_w - FSPACX(1), y + LINE_SPACING);
+			gr_rect( lb->box_x, y - FSPACY(1), lb->box_x + lb->box_w - FSPACX(1), y + line_spacing);
 		} else {
 			gr_set_curfont(( i == lb->citem )?MEDIUM2_FONT:MEDIUM1_FONT);
 			gr_setcolor( BM_XRGB(5,5,5));
-			gr_rect( lb->box_x + lb->box_w - FSPACX(1), y-FSPACY(1), lb->box_x + lb->box_w, y + LINE_SPACING);
+			gr_rect( lb->box_x + lb->box_w - FSPACX(1), y-FSPACY(1), lb->box_x + lb->box_w, y + line_spacing);
 			gr_setcolor( BM_XRGB(2,2,2));
-			gr_rect( lb->box_x - FSPACX(1), y - FSPACY(1), lb->box_x, y + LINE_SPACING );
+			gr_rect( lb->box_x - FSPACX(1), y - FSPACY(1), lb->box_x, y + line_spacing );
 			gr_setcolor( BM_XRGB(0,0,0));
-			gr_rect( lb->box_x, y - FSPACY(1), lb->box_x + lb->box_w - FSPACX(1), y + LINE_SPACING);
+			gr_rect( lb->box_x, y - FSPACY(1), lb->box_x + lb->box_w - FSPACX(1), y + line_spacing);
 
 			if (lb->marquee_maxchars && strlen(lb->item[i]) > lb->marquee_maxchars)
 			{
@@ -3273,6 +3276,7 @@ static void android_listbox_draw_scaled(listbox *lb,
 		lb_copy.box_w = android_menu_scale_round_coord(lb->box_w, scale);
 		lb_copy.height = android_menu_scale_round_coord(lb->height, scale);
 		lb_copy.title_height = android_menu_scale_round_coord(lb->title_height, scale);
+		lb_copy.line_spacing = android_menu_scale_round_coord(lb->line_spacing, scale);
 		lb_copy.row_height = android_menu_scale_round_coord(lb->row_height, scale);
 		lb_copy.selected_row_height = android_menu_scale_round_coord(lb->selected_row_height, scale);
 
