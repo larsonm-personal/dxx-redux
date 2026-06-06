@@ -2462,7 +2462,12 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 			debug_log(DLOG_GAME,
 			          "restore secret companion build begin: game=d2 slot=%d",
 			          filenum);
-			state_android_build_secret_filename(temp_fname, PATH_MAX, filenum);
+			if (!state_android_build_secret_filename(temp_fname, PATH_MAX, filenum)) {
+				debug_log(DLOG_GAME,
+				          "restore secret companion skipped: game=d2 reason=build_failed slot=%d",
+				          filenum);
+				temp_fname[0] = '\0';
+			}
 			debug_log(DLOG_GAME,
 				"restore secret companion check: game=d2 file='%s' slot=%d companion='%s'",
 				filename, filenum, temp_fname);
@@ -2470,7 +2475,7 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 			snprintf(temp_fname, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%csecret.sgc" : "%csecret.sgc", fc);
 #endif
 
-			if (PHYSFSX_exists(temp_fname,0))
+			if (temp_fname[0] && PHYSFSX_exists(temp_fname,0))
 			{
 #ifdef __ANDROID__
 				debug_log(DLOG_GAME,

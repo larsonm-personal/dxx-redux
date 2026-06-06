@@ -56,8 +56,11 @@
 - for the few edits needed in d1/ or d2/, generally they're going to be #idef __ANDROID__. if they're something like a test debug line, or additional log line, make sure to mark it as being related to android port work
 - for d1/ and d2/ edits, take extra care to match existing style in detail. for example, many string constants are in headers. don't add a new string constant in a source file right next to an existing header-included string constant - instead, add a header constant in the same style
 - new code should be as free of compiler warnings as possible. -werror isn't enabled, but do a 2nd pass to remove warnings when building to check
-- new code should have formatting linters run on it: `android\run-code-quality.ps1 --fix`
-- `android\run-code-quality.ps1 --fix` is file-mutating and can take several minutes. do not treat it as done until the process has fully exited in its terminal
+- new code should have formatting linters run on it. prefer a scoped pass over the files or smallest directories touched by the change:
+  `.\android\run-code-quality.ps1 -Fix -Paths path\to\changed-file path\to\changed-dir`
+- pass one mixed `-Paths` list when multiple languages changed. the wrapper filters paths for clang-format, ktlint, PSScriptAnalyzer, UTF-8 BOM lint, shellcheck, shfmt, cmake-format, and cmake-lint, so unrelated stages should cheaply report no matching files
+- use the full unscoped `.\android\run-code-quality.ps1 -Fix` only for broad formatting changes, formatter/linter config or helper changes, release/CI-style validation, or when a scoped pass indicates wider cleanup is needed
+- `android\run-code-quality.ps1 -Fix` is file-mutating and the full unscoped pass can take several minutes. do not treat it as done until the process has fully exited in its terminal
 - before starting another cleanup or validation pass after any timeout, interrupted agent run, or "file is newer" popup, list stale formatter tasks with `android\helpers\stop-stale-formatters.ps1` and kill them with `android\helpers\stop-stale-formatters.ps1 -Kill` if needed
 - `android\run-code-quality.ps1` now uses `android\temp\run-code-quality.lock.json` to fail fast if another cleanup pass is still active. if that lock is stale, kill the old formatter task and rerun instead of forcing saves over newer edits
 - cmake files added by this branch (android/, cmake/, android/tools/etc2tool/) are formatted with cmake-format and linted with cmake-lint (cheshirekow/cmakelang). run individually with `android\helpers\run-cmake-format.ps1` (auto-format) or `android\helpers\run-cmake-lint.ps1` (lint only). both are also included in the full `run-code-quality.ps1` pass. upstream files in d1/ and d2/ are excluded. config: `.cmake-format.yaml` at repo root

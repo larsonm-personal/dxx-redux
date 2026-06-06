@@ -9,6 +9,7 @@
 #include "dxxerror.h"
 #include "game.h"
 #include "gameseq.h"
+#include "mission.h"
 #include "object.h"
 #include "player.h"
 #include "render.h"
@@ -65,6 +66,13 @@ static const char *state_android_game_label(void)
 #else
 	return "D1";
 #endif
+}
+
+static const char *state_android_current_mission_filename_or_default(void)
+{
+	return (Current_mission && Current_mission_filename)
+	           ? Current_mission_filename
+	           : "";
 }
 
 static const char *state_android_current_scope(int coop)
@@ -180,7 +188,8 @@ int state_android_build_save_filename(char *filename, size_t filename_size,
 		    state_android_current_scope(coop), pilot, mission, slotnum, coop);
 	}
 	snprintf(pilot, sizeof(pilot), "%s", Players[Player_num].callsign);
-	snprintf(mission, sizeof(mission), "%s", Current_mission_filename);
+	snprintf(mission, sizeof(mission), "%s",
+	         state_android_current_mission_filename_or_default());
 	return android_save_set_build_slot_path(
 	    filename, filename_size, GameArg.SysUsePlayersDir,
 	    state_android_current_scope(coop), pilot, mission, slotnum, coop);
@@ -192,15 +201,28 @@ int state_android_build_coop_autosave_filename(char *filename,
 {
 	return android_save_set_build_slot_path(
 	    filename, filename_size, GameArg.SysUsePlayersDir, "coop",
-	    ANDROID_SAVE_SET_COOP_CALLSIGN, Current_mission_filename, slotnum, 1);
+	    ANDROID_SAVE_SET_COOP_CALLSIGN,
+	    state_android_current_mission_filename_or_default(), slotnum, 1);
 }
 
 int state_android_build_secret_filename(char *filename, size_t filename_size,
                                         int slotnum)
 {
-	return android_save_set_build_secret_path(
+	const char *mission = state_android_current_mission_filename_or_default();
+	int result;
+
+	debug_log(DLOG_GAME,
+	          "android secret filename build: %s slot=%d pilot='%s' mission='%s' mission_loaded=%d",
+	          state_android_game_label(), slotnum, Players[Player_num].callsign,
+	          mission, Current_mission ? 1 : 0);
+	result = android_save_set_build_secret_path(
 	    filename, filename_size, GameArg.SysUsePlayersDir,
-	    Players[Player_num].callsign, Current_mission_filename, slotnum);
+	    Players[Player_num].callsign, mission, slotnum);
+	debug_log(DLOG_GAME,
+	          "android secret filename result: %s slot=%d result=%d file='%s'",
+	          state_android_game_label(), slotnum, result,
+	          result ? filename : "");
+	return result;
 }
 
 int state_android_build_coop_sidecar_filename(char *filename,
@@ -209,7 +231,8 @@ int state_android_build_coop_sidecar_filename(char *filename,
 {
 	return android_save_set_build_sidecar_path(
 	    filename, filename_size, GameArg.SysUsePlayersDir, "coop",
-	    ANDROID_SAVE_SET_COOP_CALLSIGN, Current_mission_filename, sidecar_name);
+	    ANDROID_SAVE_SET_COOP_CALLSIGN,
+	    state_android_current_mission_filename_or_default(), sidecar_name);
 }
 
 static int state_android_restore_from_memory_call(const char *filename)
@@ -296,7 +319,8 @@ static void state_android_current_mission_name(char *mission_name,
 	if (!mission_name || !mission_name_size)
 		return;
 	memset(mission_name, 0, mission_name_size);
-	strncpy(mission_name, Current_mission_filename, mission_name_size - 1);
+	strncpy(mission_name, state_android_current_mission_filename_or_default(),
+	        mission_name_size - 1);
 }
 
 static fix64 state_android_periodic_interval(void)

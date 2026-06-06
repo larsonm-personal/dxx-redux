@@ -3,6 +3,8 @@
 [x] Patch Android-only resume restore to accept scoped save-set relative paths
 [x] Add/adjust tests for scoped resume launch paths
 [x] Run formatting and targeted validation
+[x] Diagnose build 15350 startup crash inside D2 secret companion path building
+[x] Patch Android save-path builders to tolerate startup restore before mission load
 
 # Resume Recent Scoped Save Crash Plan
 
@@ -79,6 +81,24 @@ Diagnostic targets:
 3. D2 `start_time()` and the call into `state_restore_all_sub()`.
 4. D2 `state_restore_all_sub()` entry and read-open attempt.
 5. Android `Error()` fatal path so any controlled exit writes the fatal message to Game Logs, not only the crash sidecar.
+
+## Build 15350 Finding
+
+Build 15350 reached the new D2 secret companion marker:
+
+```text
+restore secret companion build begin: game=d2 slot=8
+```
+
+but did not reach:
+
+```text
+restore secret companion check
+```
+
+That places the crash inside `state_android_build_secret_filename()`. On D2, `Current_mission_filename` is a macro that expands through `Current_mission->filename`. During launcher startup resume, the game has a pilot and a direct save path, but no mission has been loaded yet, so the scoped secret companion path builder can dereference a null `Current_mission`.
+
+The shared Android state helper now uses a guarded mission filename helper for scoped save, secret, coop autosave, coop sidecar, and active-mission metadata paths. The D2 restore caller also handles a failed secret companion path build without probing an uninitialized buffer.
 
 ## Validation
 

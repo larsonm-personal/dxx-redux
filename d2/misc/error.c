@@ -101,6 +101,7 @@ void Error(const char *fmt,...)
 		}
 	}
 	android_finish_and_exit();
+	_exit(1);
 #else
 	exit(1);
 #endif
