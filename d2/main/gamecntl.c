@@ -380,6 +380,8 @@ int which_bomb()
 void do_weapon_n_item_stuff()
 {
 	int i;
+	static ubyte converter_was_pressed = 0;
+	ubyte converter_pressed;
 	unsigned int sim_state;
 	const int rng_probe = input_demo_replay_is_loaded() && input_demo_debug_is_enabled();
 
@@ -500,8 +502,16 @@ void do_weapon_n_item_stuff()
 		Controls.toggle_bomb_count = 0;
 	}
 
-	if (Controls.energy_to_shield_state && (Players[Player_num].flags & PLAYER_FLAGS_CONVERTER))
-		transfer_energy_to_shield();
+	converter_pressed = Controls.energy_to_shield_state ? 1 : 0;
+	if (converter_pressed) {
+		if (Players[Player_num].flags & PLAYER_FLAGS_CONVERTER)
+			transfer_energy_to_shield();
+		else if (!converter_was_pressed) {
+			digi_play_sample_once(SOUND_BAD_SELECTION, F1_0);
+			HUD_init_message(HM_DEFAULT, "%s %s!", TXT_DONT_HAVE, "Converter");
+		}
+	}
+	converter_was_pressed = converter_pressed;
 }
 
 
