@@ -454,11 +454,16 @@ internal fun resolveResumeSaveLaunchPath(
     filesDir: File,
     candidate: ResumeSaveBridge.ResumeSaveCandidate,
 ): String? {
-    candidate.relativePath.takeIf { it.isNotBlank() }?.let { return it }
+    candidate.relativePath.takeIf { it.isNotBlank() }?.let {
+        return gameRootRelativeSavePath(candidate.game, it)
+    }
     val filesPrefix = filesDir.absolutePath.replace('\\', '/') + "/"
     val absolutePath = candidate.path.replace('\\', '/')
-    absolutePath.takeIf { it.startsWith(filesPrefix) }?.removePrefix(filesPrefix)?.let { return it }
-    return relativeSavePathFromGameAnchor(absolutePath)
+    absolutePath
+        .takeIf { it.startsWith(filesPrefix) }
+        ?.removePrefix(filesPrefix)
+        ?.let { return gameRootRelativeSavePath(candidate.game, it) }
+    return relativeSavePathFromGameAnchor(candidate.game, absolutePath)
 }
 
 internal fun resolveResumeSaveLaunchCallsign(candidate: ResumeSaveBridge.ResumeSaveCandidate): String? {
@@ -467,12 +472,23 @@ internal fun resolveResumeSaveLaunchCallsign(candidate: ResumeSaveBridge.ResumeS
         ?: callsignFromSavePath(candidate.path)
 }
 
-private fun relativeSavePathFromGameAnchor(path: String): String? {
+private fun gameRootRelativeSavePath(
+    game: String,
+    path: String,
+): String {
     val normalized = path.replace('\\', '/')
-    listOf("/d1x-redux/", "/d2x-redux/").forEach { anchor ->
-        val index = normalized.indexOf(anchor)
-        if (index >= 0) return normalized.substring(index + 1)
-    }
+    val root = if (game == "d1") "d1x-redux/" else "d2x-redux/"
+    return normalized.removePrefix(root)
+}
+
+private fun relativeSavePathFromGameAnchor(
+    game: String,
+    path: String,
+): String? {
+    val normalized = path.replace('\\', '/')
+    val anchor = if (game == "d1") "/d1x-redux/" else "/d2x-redux/"
+    val index = normalized.indexOf(anchor)
+    if (index >= 0) return normalized.substring(index + anchor.length)
     return null
 }
 

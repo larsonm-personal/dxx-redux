@@ -3,6 +3,7 @@ package com.dxxredux.app
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.io.File
 
 class ResumeSavePanelTest {
     @Test
@@ -86,6 +87,43 @@ class ResumeSavePanelTest {
 
         assertEquals(listOf("Last Minimize Save"), rows.map { it.label })
         assertEquals(listOf(minimize), rows.map { it.candidate })
+    }
+
+    @Test
+    fun resumeLaunchPathIsRelativeToActiveGameRoot() {
+        val launchPath = resolveResumeSaveLaunchPath(File("/data/user/0/com.dxxredux.app/files"), candidate("auto_exit", 8))
+
+        assertEquals("Players/test.sg8", launchPath)
+    }
+
+    @Test
+    fun scopedResumeLaunchPathIsRelativeToActiveGameRoot() {
+        val launchPath =
+            resolveResumeSaveLaunchPath(
+                File("/data/user/0/com.dxxredux.app/files"),
+                candidate("auto_exit", 8).copy(
+                    path = "/data/user/0/com.dxxredux.app/files/d2x-redux/Players/save_sets/single/test/d2/test.sg8",
+                    relativePath = "d2x-redux/Players/save_sets/single/test/d2/test.sg8",
+                ),
+            )
+
+        assertEquals("Players/save_sets/single/test/d2/test.sg8", launchPath)
+    }
+
+    @Test
+    fun d1ResumeLaunchPathUsesD1Root() {
+        val launchPath =
+            resolveResumeSaveLaunchPath(
+                File("/data/user/0/com.dxxredux.app/files"),
+                candidate("auto_exit", 8).copy(
+                    path = "/data/user/0/com.dxxredux.app/files/d1x-redux/Players/ace.sg8",
+                    relativePath = "d1x-redux/Players/ace.sg8",
+                    game = "d1",
+                    callsign = "ace",
+                ),
+            )
+
+        assertEquals("Players/ace.sg8", launchPath)
     }
 
     private fun candidate(
