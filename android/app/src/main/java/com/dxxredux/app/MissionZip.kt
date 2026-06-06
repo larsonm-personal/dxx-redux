@@ -92,6 +92,36 @@ object MissionZip {
         return buildResult(constituents, missions, constituents.sumOf { it.sizeBytes }, zipStem = null)
     }
 
+    fun isImportCandidate(input: InputStream): Boolean {
+        var hasMissionDescriptor = false
+        var hasMissionAssets = false
+        var hasRebirthChildZip = false
+        openZipInputStreamSkippingPreamble(input).use { zip ->
+            var entry = zip.nextEntry
+            while (entry != null) {
+                if (!entry.isDirectory) {
+                    val name = leafName(entry.name)
+                    val role = GameFileFormats.missionZipRoleForFile(name)
+                    if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) hasMissionDescriptor = true
+                    if (role == GameFileFormats.MISSION_ZIP_HOG ||
+                        role == GameFileFormats.MISSION_ZIP_MOD_ARCHIVE
+                    ) {
+                        hasMissionAssets = true
+                    }
+                    if (GameFileFormats.extensionOf(name) == "zip" &&
+                        name.lowercase(Locale.US).contains("rebirth")
+                    ) {
+                        hasRebirthChildZip = true
+                    }
+                    if (hasRebirthChildZip || (hasMissionDescriptor && hasMissionAssets)) return true
+                }
+                zip.closeEntry()
+                entry = zip.nextEntry
+            }
+        }
+        return (hasMissionDescriptor && hasMissionAssets) || hasRebirthChildZip
+    }
+
     fun readTextFile(
         file: File,
         path: String,

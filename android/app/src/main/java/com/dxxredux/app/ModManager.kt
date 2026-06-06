@@ -382,43 +382,100 @@ class ModManager(
         contentResolver: ContentResolver,
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): ModInfo? {
-        val scan =
-            contentResolver.openInputStream(uri)?.use { input ->
-                MissionZip.inspect(input)
-            } ?: return null
-        val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
-        val dest = File(modsDir, safeName)
+        val temp = File.createTempFile("mission_zip_import_", ".zip", modsDir)
         try {
             val total = ImportStorageGuard.queryUriSizeBytes(contentResolver, uri) ?: 0L
             ImportStorageGuard.requireFreeSpace(modsDir, total, "import mission zip $displayName")
             contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(dest).use { output ->
+                FileOutputStream(temp).use { output ->
                     LauncherFileCopy.copyStream(input, output, total, displayName, onProgress)
                 }
             } ?: return null
+            nestedRebirthChildSize(temp)?.let { childSize ->
+                ImportStorageGuard.requireFreeSpace(modsDir, childSize, "extract mission zip $displayName")
+            }
+            return importMissionZipFile(temp, displayName, moveDirectSource = true)
         } catch (e: InsufficientStorageException) {
             Log.e(TAG, "Not enough space to import mission zip $displayName", e)
             ImportStorageGuard.recordFailure(filesDir, "Mission ZIP import failed for $displayName", e)
-            dest.delete()
             throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to import mission zip $displayName", e)
             ImportStorageGuard.recordFailure(filesDir, "Mission ZIP import failed for $displayName", e)
-            dest.delete()
             return null
+        } finally {
+            temp.delete()
         }
-        return registerMissionZip(safeName, dest.length(), scan)
     }
 
     internal fun importMissionZipFile(
         source: File,
         displayName: String = source.name,
+    ): ModInfo? = importMissionZipFile(source, displayName, moveDirectSource = false)
+
+    private fun importMissionZipFile(
+        source: File,
+        displayName: String,
+        moveDirectSource: Boolean,
     ): ModInfo? {
-        val scan = MissionZip.inspect(source) ?: return null
+        val scan = MissionZip.inspect(source)
+        if (scan == null) return importNestedRebirthMissionZip(source)
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
-        if (source.absoluteFile != dest.absoluteFile) source.copyTo(dest, overwrite = true)
+        if (source.absoluteFile != dest.absoluteFile) {
+            val moved = moveDirectSource && source.renameTo(dest)
+            if (!moved) {
+                source.copyTo(dest, overwrite = true)
+            }
+        }
         return registerMissionZip(safeName, dest.length(), scan)
+    }
+
+    private fun importNestedRebirthMissionZip(source: File): ModInfo? =
+        try {
+            ZipFile(source).use { zip ->
+                val child = selectNestedRebirthZip(zip) ?: return null
+                val safeName = launcherLeafNameOf(child.name).replace(Regex("[^a-zA-Z0-9._-]"), "_")
+                val dest = File(modsDir, safeName)
+                zip.getInputStream(child).use { input ->
+                    FileOutputStream(dest).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                val scan =
+                    MissionZip.inspect(dest)
+                        ?: run {
+                            dest.delete()
+                            return null
+                        }
+                registerMissionZip(safeName, dest.length(), scan)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to import nested Rebirth mission ZIP from ${source.absolutePath}", e)
+            null
+        }
+
+    private fun nestedRebirthChildSize(source: File): Long? =
+        try {
+            ZipFile(source).use { zip ->
+                selectNestedRebirthZip(zip)?.size?.coerceAtLeast(0)
+            }
+        } catch (_: Exception) {
+            null
+        }
+
+    private fun selectNestedRebirthZip(zip: ZipFile): java.util.zip.ZipEntry? {
+        val rebirthChildren = mutableListOf<java.util.zip.ZipEntry>()
+        val entries = zip.entries()
+        while (entries.hasMoreElements()) {
+            val entry = entries.nextElement()
+            if (entry.isDirectory) continue
+            val leaf = launcherLeafNameOf(entry.name)
+            if (GameFileFormats.extensionOf(leaf) == "zip" && leaf.lowercase(Locale.US).contains("rebirth")) {
+                rebirthChildren += entry
+            }
+        }
+        return rebirthChildren.singleOrNull()
     }
 
     /** Reorder: swap item at [index] with the one above it */
@@ -515,14 +572,14 @@ class ModManager(
     ): List<String> {
         val scan = MissionZip.inspect(modFile) ?: return emptyList()
         val stageDir = File(generatedMissionZipDir(game), safeGeneratedDirName(mod.filename))
-        if (!extractMissionZipForLaunch(modFile, stageDir)) return emptyList()
+        if (!extractMissionZipForLaunch(modFile, stageDir, scan)) return emptyList()
         return buildList {
             add(stageDir.absolutePath)
             for (constituent in scan.constituents.filter { it.role == GameFileFormats.MISSION_ZIP_MOD_ARCHIVE }) {
                 val archive =
                     File(
-                        File(stageDir, GENERATED_MISSION_DIR),
-                        constituent.path.replace('/', File.separatorChar),
+                        stageDir,
+                        stagedMissionZipRelativePath(scan, constituent.path).replace('/', File.separatorChar),
                     )
                 if (archive.isFile) add(archive.absolutePath)
             }
@@ -719,6 +776,23 @@ class ModManager(
                     summary.notes.forEach { add("${constituent.name}: $it") }
                     summary.problems.forEach { add("${constituent.name}: $it") }
                 }
+            scan.constituents
+                .filter { GameFileFormats.extensionOf(it.name) == "dxa" }
+                .forEach { constituent ->
+                    val summary =
+                        GameFileMetadata.summarizeZipConstituent(modFile, constituent.path, constituent.name)
+                            ?: return@forEach
+                    if (summary.categories.isNotEmpty()) {
+                        add(
+                            "${constituent.name} contents: " +
+                                summary.categories
+                                    .take(8)
+                                    .joinToString(", ") { "${it.count} ${it.label.lowercase(Locale.US)}" },
+                        )
+                    }
+                    summary.notes.forEach { add("${constituent.name}: $it") }
+                    summary.problems.forEach { add("${constituent.name}: $it") }
+                }
         }
 
     private fun collectModPatchDocuments(
@@ -884,12 +958,12 @@ class ModManager(
     private fun extractMissionZipForLaunch(
         modFile: File,
         stageDir: File,
+        scan: MissionZip.ScanResult,
     ): Boolean =
         try {
             val stageRoot = stageDir.canonicalFile
             if (stageRoot.exists()) stageRoot.deleteRecursively()
             stageRoot.mkdirs()
-            val missionRoot = File(stageRoot, GENERATED_MISSION_DIR)
             val songLists = mutableListOf<File>()
             var engineSongListExists = false
             ZipFile(modFile).use { zip ->
@@ -901,8 +975,8 @@ class ModManager(
                     if (normalized.isBlank()) continue
                     val output =
                         File(
-                            missionRoot,
-                            normalized.replace('/', File.separatorChar),
+                            stageRoot,
+                            stagedMissionZipRelativePath(scan, normalized).replace('/', File.separatorChar),
                         ).canonicalFile
                     if (!output.path.startsWith(stageRoot.path + File.separator)) continue
                     output.parentFile?.mkdirs()
@@ -922,12 +996,34 @@ class ModManager(
                 }
             }
             if (!engineSongListExists && songLists.size == 1) {
-                songLists.single().copyTo(File(missionRoot, "descent.sng"), overwrite = true)
+                songLists.single().copyTo(File(stageRoot, "$GENERATED_MISSION_DIR/descent.sng"), overwrite = true)
             }
             true
         } catch (e: Exception) {
             Log.e(TAG, "Could not stage mission zip ${modFile.absolutePath}: ${e.message ?: e.javaClass.simpleName}")
             false
+        }
+
+    private fun stagedMissionZipRelativePath(
+        scan: MissionZip.ScanResult,
+        path: String,
+    ): String {
+        val normalized = path.replace('\\', '/').trim('/')
+        return if (missionZipUsesRootedLayout(scan)) {
+            normalized
+        } else {
+            "$GENERATED_MISSION_DIR/$normalized"
+        }
+    }
+
+    private fun missionZipUsesRootedLayout(scan: MissionZip.ScanResult): Boolean =
+        scan.constituents.any {
+            val path = it.path.lowercase(Locale.US)
+            path.startsWith("$GENERATED_MISSION_DIR/") &&
+                (
+                    it.role == GameFileFormats.MISSION_ZIP_DESCRIPTOR ||
+                        it.role == GameFileFormats.MISSION_ZIP_HOG
+                )
         }
 
     private fun safeGeneratedDirName(filename: String): String = filename.replace(Regex("[^a-zA-Z0-9._-]"), "_")

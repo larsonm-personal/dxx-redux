@@ -2275,13 +2275,13 @@ private fun SetupScreen(
                             val missionZip =
                                 try {
                                     context.contentResolver.openInputStream(uri)?.use { input ->
-                                        MissionZip.inspect(input)
+                                        MissionZip.isImportCandidate(input)
                                     }
                                 } catch (e: Exception) {
                                     Log.w("DXX-Setup", "Mission ZIP probe failed for $name: ${e.message}")
-                                    null
+                                    false
                                 }
-                            if (missionZip != null) {
+                            if (missionZip == true) {
                                 missionZipImportUris.add(name to uri)
                             } else {
                                 zipUris.add(name to uri)

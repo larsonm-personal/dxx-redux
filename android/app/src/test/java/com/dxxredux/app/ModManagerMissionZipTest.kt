@@ -107,6 +107,54 @@ class ModManagerMissionZipTest {
         assertTrue(details.notes.any { it.contains("Texture override") || it.contains("texture override") })
     }
 
+    @Test
+    fun rebirthMissionZipKeepsExistingMissionsDirectory() {
+        val filesDir = File("build/test-mod-manager-mission-zip-rebirth-layout").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val manager = ModManager(filesDir)
+        val imported = manager.importMissionZipFile(createEnemyWithinStyleMissionZip(), "ewithin-rebirth.zip")
+        assertNotNull(imported)
+
+        manager.writeEnabledModPaths("d2")
+
+        val pathFile = File(filesDir, "d2x-redux/.active_mod_paths")
+        val lines = pathFile.readLines()
+        assertEquals(2, lines.size)
+        assertTrue(lines[0].endsWith(".generated_mission_zips${File.separator}ewithin-rebirth.zip"))
+        assertTrue(
+            lines[1].endsWith(
+                ".generated_mission_zips${File.separator}ewithin-rebirth.zip${File.separator}ewithin.dxa",
+            ),
+        )
+
+        val stageRoot = File(filesDir, "d2x-redux/.generated_mission_zips/ewithin-rebirth.zip")
+        assertTrue(File(stageRoot, "ewithin.dxa").isFile)
+        assertTrue(File(stageRoot, "missions/ewithin.mn2").isFile)
+        assertTrue(File(stageRoot, "missions/ewithin.hog").isFile)
+        assertFalse(File(stageRoot, "missions/missions/ewithin.mn2").exists())
+
+        val details = manager.getModDetails(imported!!, File(filesDir, "sets/default"))
+        assertTrue(details.notes.any { it.startsWith("ewithin.dxa contents:") })
+    }
+
+    @Test
+    fun parentMissionZipImportsRebirthChild() {
+        val filesDir = File("build/test-mod-manager-mission-zip-parent-rebirth").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val imported = ModManager(filesDir).importMissionZipFile(createEnemyWithinParentZip(), "ewithin-versions.zip")
+
+        assertNotNull(imported)
+        imported!!
+        assertEquals("ewithin-rebirth.zip", imported.filename)
+        assertEquals("Descent: The Enemy Within", imported.displayName)
+        assertTrue(File(filesDir, "mods/ewithin-rebirth.zip").isFile)
+        assertFalse(File(filesDir, "mods/ewithin-xl.zip").exists())
+    }
+
     private fun createMissionZip(): File {
         val zipFile = File.createTempFile("missionzip-manager", ".zip")
         zipFile.deleteOnExit()
@@ -131,6 +179,74 @@ class ModManagerMissionZipTest {
             zip.closeEntry()
         }
         return zipFile
+    }
+
+    private fun createEnemyWithinParentZip(): File {
+        val zipFile = File.createTempFile("missionzip-manager-ewithin-parent", ".zip")
+        zipFile.deleteOnExit()
+        val rebirthBytes = createZipBytes { writeEnemyWithinStyleEntries(it) }
+        val xlBytes =
+            createZipBytes {
+                it.putNextEntry(ZipEntry("xl.txt"))
+                it.write("not the package we want".toByteArray())
+                it.closeEntry()
+            }
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("ewithin-xl.zip"))
+            zip.write(xlBytes)
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("ewithin-rebirth.zip"))
+            zip.write(rebirthBytes)
+            zip.closeEntry()
+        }
+        return zipFile
+    }
+
+    private fun createEnemyWithinStyleMissionZip(): File {
+        val zipFile = File.createTempFile("missionzip-manager-ewithin", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip -> writeEnemyWithinStyleEntries(zip) }
+        return zipFile
+    }
+
+    private fun writeEnemyWithinStyleEntries(zip: ZipOutputStream) {
+        zip.putNextEntry(ZipEntry("ewithin.dxa"))
+        zip.write(
+            createZipBytes {
+                it.putNextEntry(ZipEntry("descent.sng"))
+                it.write("briefing.ogg\nendlevel.ogg\nlevel01.ogg\n".toByteArray())
+                it.closeEntry()
+
+                it.putNextEntry(ZipEntry("level01.ogg"))
+                it.write(byteArrayOf(1, 2, 3, 4))
+                it.closeEntry()
+
+                it.putNextEntry(ZipEntry("descent2.ham"))
+                it.write(byteArrayOf(5, 6, 7, 8))
+                it.closeEntry()
+            },
+        )
+        zip.closeEntry()
+
+        zip.putNextEntry(ZipEntry("ewithin.txt"))
+        zip.write("Enemy Within notes".toByteArray())
+        zip.closeEntry()
+
+        zip.putNextEntry(ZipEntry("missions/ewithin.hog"))
+        zip.write(createHogBytes("level01.rl2" to ByteArray(12)))
+        zip.closeEntry()
+
+        zip.putNextEntry(ZipEntry("missions/ewithin.mn2"))
+        zip.write(
+            """
+            name = Descent: The Enemy Within
+            type = normal
+            num_levels = 1
+            level01.rl2
+            """.trimIndent().toByteArray(),
+        )
+        zip.closeEntry()
     }
 
     private fun createObsidianStyleMissionZip(): File {

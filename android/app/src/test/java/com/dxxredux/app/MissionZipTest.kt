@@ -1,8 +1,10 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.io.InputStream
@@ -86,6 +88,36 @@ class MissionZipTest {
         }
 
         assertNull(MissionZip.inspect(zipFile))
+    }
+
+    @Test
+    fun importCandidateRecognizesRebirthChildZip() {
+        val zipFile = File.createTempFile("parent-missionzip", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("ewithin-xl.zip"))
+            zip.write(byteArrayOf(1, 2, 3, 4))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("ewithin-rebirth.zip"))
+            zip.write(byteArrayOf(5, 6, 7, 8))
+            zip.closeEntry()
+        }
+
+        assertTrue(zipFile.inputStream().use { MissionZip.isImportCandidate(it) })
+    }
+
+    @Test
+    fun importCandidateIgnoresPlainZip() {
+        val zipFile = File.createTempFile("plain-candidate", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("readme.txt"))
+            zip.write("hello".toByteArray())
+            zip.closeEntry()
+        }
+
+        assertFalse(zipFile.inputStream().use { MissionZip.isImportCandidate(it) })
     }
 
     @Test
