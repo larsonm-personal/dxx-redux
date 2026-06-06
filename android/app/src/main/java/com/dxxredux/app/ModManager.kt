@@ -518,9 +518,9 @@ class ModManager(
         val stageDir = File(generatedMissionZipDir(game), safeGeneratedDirName(mod.filename))
         if (!extractMissionZipForLaunch(modFile, stageDir)) return emptyList()
         return buildList {
-            add("${stageDir.absolutePath}\tmissions")
+            add(stageDir.absolutePath)
             for (constituent in scan.constituents.filter { it.role == "mod_archive" }) {
-                val archive = File(stageDir, constituent.path.replace('/', File.separatorChar))
+                val archive = File(File(stageDir, "missions"), constituent.path.replace('/', File.separatorChar))
                 if (archive.isFile) add(archive.absolutePath)
             }
         }
@@ -860,7 +860,11 @@ class ModManager(
                     if (entry.isDirectory) continue
                     val normalized = entry.name.replace('\\', '/').trim('/')
                     if (normalized.isBlank()) continue
-                    val output = File(stageRoot, normalized.replace('/', File.separatorChar)).canonicalFile
+                    val output =
+                        File(
+                            File(stageRoot, "missions"),
+                            normalized.replace('/', File.separatorChar),
+                        ).canonicalFile
                     if (!output.path.startsWith(stageRoot.path + File.separator)) continue
                     output.parentFile?.mkdirs()
                     zip.getInputStream(entry).use { input ->

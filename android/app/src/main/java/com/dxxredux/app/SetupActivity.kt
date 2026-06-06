@@ -2881,6 +2881,7 @@ private fun SetupScreen(
                 detailStatus?.let { status ->
                     FileDetailDialog(
                         status = status,
+                        setDir = setDir,
                         onDismiss = { detailStatus = null },
                         onDelete =
                             when {

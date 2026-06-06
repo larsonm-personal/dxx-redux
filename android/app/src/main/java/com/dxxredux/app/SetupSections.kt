@@ -1121,7 +1121,11 @@ internal fun MusicInfoSection(
         }
     }
     detailStatus?.let { status ->
-        FileDetailDialog(status = status, onDismiss = { detailStatus = null })
+        FileDetailDialog(
+            status = status,
+            setDir = setDir,
+            onDismiss = { detailStatus = null },
+        )
     }
 }
 
@@ -1138,15 +1142,35 @@ private fun setupSectionFormatSize(bytes: Long): String =
         else -> "$bytes B"
     }
 
+internal fun missionDescriptorForStatus(
+    status: FileStatus,
+    setDir: File,
+): SectorgameMissionZip.MissionDescriptor? {
+    val name = status.foundName ?: status.manifestEntry?.filename ?: status.info.filename
+    if (launcherExtensionOf(name) !in setOf("mn2", "msn")) return null
+    val localName = status.foundName ?: status.manifestEntry?.filename ?: return null
+    val actualName = findFile(setDir, localName) ?: localName
+    val file = File(setDir, actualName)
+    if (!file.isFile) return null
+    return runCatching {
+        SectorgameMissionZip.parseMissionDescriptor(name, file.readText())
+    }.getOrNull()
+}
+
 @Composable
 internal fun FileDetailDialog(
     status: FileStatus,
+    setDir: File,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
     val entry = status.manifestEntry
     val name = status.foundName ?: status.info.filename
     val description = descriptionForFile(name)
+    val missionDescriptor =
+        remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename) {
+            missionDescriptorForStatus(status, setDir)
+        }
     val isMissing = !status.found && entry != null
     val isExternal = entry?.isExternal == true
     var confirmingDelete by remember { mutableStateOf(false) }
@@ -1219,6 +1243,16 @@ internal fun FileDetailDialog(
                 Column(modifier = Modifier.verticalScroll(scrollState)) {
                     DetailRow("Category", description)
                     DetailRow("Type", describeExtension(name))
+                    missionDescriptor?.let { mission ->
+                        DetailRow("Title", mission.displayName)
+                        mission.type?.let { DetailRow("Mission type", it) }
+                        mission.author?.let { DetailRow("Author", it) }
+                        mission.editor?.let { DetailRow("Editor", it) }
+                        DetailRow("Levels", mission.levelNames.size.toString())
+                        if (mission.levelNames.isNotEmpty()) {
+                            DetailRow("Level names", mission.levelNames.joinToString(", "))
+                        }
+                    }
 
                     val statusText =
                         when {
