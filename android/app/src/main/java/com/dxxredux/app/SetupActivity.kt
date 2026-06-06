@@ -342,7 +342,7 @@ class SetupActivity : ComponentActivity() {
         modManager.writeEnabledModPaths(game)
         writeInitialGameConfig()
         migrateLegacyHalfRenderResolution()
-        writeMusicConfigForLaunch()
+        writeMusicConfigForLaunch(game)
         return null
     }
 

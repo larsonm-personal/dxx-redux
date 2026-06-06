@@ -11,6 +11,7 @@ import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
 
 /**
  * Manages .dxa mod files: import, enable/disable, reorder, delete.
@@ -29,6 +30,8 @@ class ModManager(
         private const val GENERATED_MISSION_ZIP_DIR = ".generated_mission_zips"
         const val MOD_KIND_DXA = "dxa"
         const val MOD_KIND_MISSION_ZIP = MissionZip.KIND
+        private val MISSION_MIXER_MUSIC_EXTENSIONS = setOf("flac", "mid", "mp3", "ogg")
+        private val MISSION_SONG_LIST_FILES = setOf("descent.sng", "dxx-r.sng")
     }
 
     data class ModInfo(
@@ -541,6 +544,11 @@ class ModManager(
         return ModCompatibilityReport(failures, patchConflicts)
     }
 
+    fun hasEnabledMissionZipBuiltinMusic(game: String): Boolean =
+        mods
+            .filter { it.enabled && it.kind == MOD_KIND_MISSION_ZIP && (it.game == game || it.game == "both") }
+            .any { missionZipHasBuiltinMusic(File(modsDir, it.filename)) }
+
     private fun registerMissionZip(
         filename: String,
         sizeBytes: Long,
@@ -875,6 +883,44 @@ class ModManager(
         }
 
     private fun safeGeneratedDirName(filename: String): String = filename.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+
+    private fun missionZipHasBuiltinMusic(modFile: File): Boolean =
+        runCatching {
+            ZipFile(modFile).use { outer ->
+                val entries = outer.entries()
+                while (entries.hasMoreElements()) {
+                    val entry = entries.nextElement()
+                    if (entry.isDirectory || launcherExtensionOf(entry.name) != "dxa") continue
+                    outer.getInputStream(entry).use { input ->
+                        if (dxaHasBuiltinMusic(ZipInputStream(input))) return@runCatching true
+                    }
+                }
+            }
+            false
+        }.getOrDefault(false)
+
+    private fun dxaHasBuiltinMusic(zip: ZipInputStream): Boolean =
+        zip.use {
+            var entry = it.nextEntry
+            while (entry != null) {
+                if (!entry.isDirectory &&
+                    launcherLeafNameOf(entry.name).lowercase(Locale.US) in MISSION_SONG_LIST_FILES
+                ) {
+                    if (songListReferencesMixerMusic(it.readBytes().toString(Charsets.UTF_8))) return true
+                }
+                it.closeEntry()
+                entry = it.nextEntry
+            }
+            false
+        }
+
+    private fun songListReferencesMixerMusic(text: String): Boolean =
+        text
+            .lineSequence()
+            .map { it.trim().substringBefore(' ').substringBefore('\t') }
+            .any { launcherExtensionOf(it) in MISSION_MIXER_MUSIC_EXTENSIONS }
+
+    private fun launcherLeafNameOf(path: String): String = path.replace('\\', '/').substringAfterLast('/')
 
     private fun writeGeneratedPatchOverrides(
         game: String,

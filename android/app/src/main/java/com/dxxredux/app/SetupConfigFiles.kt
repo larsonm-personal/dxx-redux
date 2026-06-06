@@ -130,20 +130,27 @@ internal fun enableRedbookInConfig(
     Log.i("DXX-Setup", "Set music_mode=cd in SharedPreferences")
 }
 
-internal fun SetupActivity.writeMusicConfigForLaunch() {
+internal fun SetupActivity.writeMusicConfigForLaunch(game: String? = null) {
     val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
     val mode = prefs.getString("music_mode", "cd") ?: "cd"
+    val missionZipBuiltinMusic =
+        game != null && mode == "cd" && ModManager(filesDir).hasEnabledMissionZipBuiltinMusic(game)
     val musicType =
-        when (mode) {
-            "midi" -> "1"
-            "cd" -> "2"
-            "files" -> "3"
+        when {
+            missionZipBuiltinMusic -> "1"
+            mode == "midi" -> "1"
+            mode == "cd" -> "2"
+            mode == "files" -> "3"
             else -> "2"
         }
 
+    if (missionZipBuiltinMusic) {
+        Log.i("DXX-Setup", "Using mission zip built-in music for $game launch")
+    }
+
     val settings = mutableListOf("MusicType" to musicType)
 
-    if (mode == "cd") {
+    if (!missionZipBuiltinMusic && mode == "cd") {
         settings.add("OrigTrackOrder" to "1")
     } else if (mode == "files") {
         val m3uPath = CustomAudioSetManager(filesDir).writeM3U(this)
@@ -153,5 +160,9 @@ internal fun SetupActivity.writeMusicConfigForLaunch() {
         }
     }
 
-    updateAllConfigFiles(filesDir, settings)
+    if (game == null) {
+        updateAllConfigFiles(filesDir, settings)
+    } else {
+        updateConfigFilesForGame(filesDir, game, settings)
+    }
 }

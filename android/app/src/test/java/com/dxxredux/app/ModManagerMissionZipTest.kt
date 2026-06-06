@@ -1,9 +1,11 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -66,6 +68,19 @@ class ModManagerMissionZipTest {
         assertTrue(File(stageDir, "Uneasy4.dxa").isFile)
     }
 
+    @Test
+    fun missionZipWithOggSongListRequestsBuiltinMusic() {
+        val filesDir = File("build/test-mod-manager-mission-zip-builtin-music").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val imported = ModManager(filesDir).importMissionZipFile(createMissionZipWithDxaMusic(), "Uneasy4.zip")
+        assertNotNull(imported)
+
+        assertTrue(ModManager(filesDir).hasEnabledMissionZipBuiltinMusic("d2"))
+        assertFalse(ModManager(filesDir).hasEnabledMissionZipBuiltinMusic("d1"))
+    }
+
     private fun createMissionZip(): File {
         val zipFile = File.createTempFile("missionzip-manager", ".zip")
         zipFile.deleteOnExit()
@@ -91,4 +106,48 @@ class ModManagerMissionZipTest {
         }
         return zipFile
     }
+
+    private fun createMissionZipWithDxaMusic(): File {
+        val zipFile = File.createTempFile("missionzip-manager-music", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("Uneasy4.dxa"))
+            zip.write(
+                createZipBytes {
+                    it.putNextEntry(ZipEntry("descent.sng"))
+                    it.write(
+                        """
+                        descent.hmp
+                        briefing.hmp
+                        endlevel.hmp
+                        endgame.hmp
+                        credits.hmp
+                        Uneasy4.ogg
+                        """.trimIndent().toByteArray(),
+                    )
+                    it.closeEntry()
+
+                    it.putNextEntry(ZipEntry("Uneasy4.ogg"))
+                    it.write(byteArrayOf(1, 2, 3, 4))
+                    it.closeEntry()
+                },
+            )
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("Uneasy4.hog"))
+            zip.write(byteArrayOf(5, 6, 7, 8))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("Uneasy4.mn2"))
+            zip.write("name = Uneasy 4\nnum_levels = 1\nUneasy4.rl2\n".toByteArray())
+            zip.closeEntry()
+        }
+        return zipFile
+    }
+
+    private fun createZipBytes(writeEntries: (ZipOutputStream) -> Unit): ByteArray =
+        ByteArrayOutputStream().use { output ->
+            ZipOutputStream(output).use(writeEntries)
+            output.toByteArray()
+        }
 }
