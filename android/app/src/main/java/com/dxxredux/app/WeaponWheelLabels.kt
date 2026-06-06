@@ -106,11 +106,32 @@ private fun buttonUsesBindingIndicator(
     button.binding == binding ||
         (button.longPressEnabled && button.longPressBinding == binding)
 
+private enum class ActiveHighlightMode {
+    CONFIGURED,
+    GYRO_ACTIVE,
+    D2_HEADLIGHT_ON,
+}
+
+private val activeHighlightBindings =
+    linkedMapOf(
+        TouchBindings.META_DEMO_RECORD_TOGGLE to ActiveHighlightMode.CONFIGURED,
+        TouchBindings.META_GYRO_TOGGLE to ActiveHighlightMode.GYRO_ACTIVE,
+        TouchBindings.BTN_HEADLIGHT to ActiveHighlightMode.D2_HEADLIGHT_ON,
+    )
+
+private fun buttonUsesActiveHighlightMode(
+    button: ButtonControl,
+    mode: ActiveHighlightMode,
+): Boolean =
+    activeHighlightBindings.any { (binding, activeMode) ->
+        activeMode == mode && buttonUsesBindingIndicator(button, binding)
+    }
+
 internal fun buttonUsesGyroToggleIndicator(button: ButtonControl): Boolean =
-    buttonUsesBindingIndicator(button, TouchBindings.META_GYRO_TOGGLE)
+    buttonUsesActiveHighlightMode(button, ActiveHighlightMode.GYRO_ACTIVE)
 
 internal fun buttonUsesHeadlightIndicator(button: ButtonControl): Boolean =
-    buttonUsesBindingIndicator(button, TouchBindings.BTN_HEADLIGHT)
+    buttonUsesActiveHighlightMode(button, ActiveHighlightMode.D2_HEADLIGHT_ON)
 
 internal fun currentBombName(
     gameVariant: String,
@@ -415,12 +436,13 @@ internal fun buttonHasActiveIndicatorState(
     gyroConfigured: Boolean,
     gyroActiveInGame: Boolean,
 ): Boolean {
+    val configuredActive = buttonUsesActiveHighlightMode(button, ActiveHighlightMode.CONFIGURED)
     val gyroActive = buttonUsesGyroToggleIndicator(button) && gyroConfigured && gyroActiveInGame
     val headlightActive =
         buttonUsesHeadlightIndicator(button) &&
             gameVariant == "d2" &&
             weaponState?.isHeadlightOn == true
-    return gyroActive || headlightActive
+    return configuredActive || gyroActive || headlightActive
 }
 
 internal fun dragZoneButtonLatchAllowed(

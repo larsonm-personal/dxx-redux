@@ -111,6 +111,22 @@ class GyroToggleConfigTest {
                 yPct = 10f,
                 binding = TouchBindings.BTN_HEADLIGHT,
             )
+        val demoButton =
+            ButtonControl(
+                id = "demo_record",
+                xPct = 20f,
+                yPct = 20f,
+                binding = TouchBindings.META_DEMO_RECORD_TOGGLE,
+            )
+        val longPressDemoButton =
+            ButtonControl(
+                id = "menu",
+                xPct = 30f,
+                yPct = 30f,
+                binding = TouchBindings.META_MENU_CYCLE,
+                longPressEnabled = true,
+                longPressBinding = TouchBindings.META_DEMO_RECORD_TOGGLE,
+            )
 
         assertTrue(
             buttonHasActiveIndicatorState(
@@ -144,6 +160,24 @@ class GyroToggleConfigTest {
                 button = lightButton,
                 gameVariant = "d2",
                 weaponState = weaponState(),
+                gyroConfigured = false,
+                gyroActiveInGame = false,
+            ),
+        )
+        assertTrue(
+            buttonHasActiveIndicatorState(
+                button = demoButton,
+                gameVariant = "d2",
+                weaponState = null,
+                gyroConfigured = false,
+                gyroActiveInGame = false,
+            ),
+        )
+        assertTrue(
+            buttonHasActiveIndicatorState(
+                button = longPressDemoButton,
+                gameVariant = "d2",
+                weaponState = null,
                 gyroConfigured = false,
                 gyroActiveInGame = false,
             ),

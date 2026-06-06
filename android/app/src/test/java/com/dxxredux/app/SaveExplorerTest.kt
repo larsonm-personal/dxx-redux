@@ -5,6 +5,77 @@ import org.junit.Test
 
 class SaveExplorerTest {
     @Test
+    fun saveSetRowsDefaultToMostRecentSavesBeforeEmptySlots() {
+        val newest =
+            slot(
+                path = "/files/d2x-redux/Players/save_sets/single/test/d2/test.sg4",
+                relativePath = "d2x-redux/Players/save_sets/single/test/d2/test.sg4",
+                saveKind = "manual",
+                saveTimeUnixSeconds = 1_700_000_300L,
+                slot = 4,
+            )
+        val middle =
+            newest.copy(
+                path = "/files/d2x-redux/Players/save_sets/single/test/d2/test.sg1",
+                relativePath = "d2x-redux/Players/save_sets/single/test/d2/test.sg1",
+                saveTimeUnixSeconds = 1_700_000_200L,
+                slot = 1,
+            )
+        val oldest =
+            newest.copy(
+                path = "/files/d2x-redux/Players/save_sets/single/test/d2/test.sg7",
+                relativePath = "d2x-redux/Players/save_sets/single/test/d2/test.sg7",
+                saveTimeUnixSeconds = 1_700_000_100L,
+                slot = 7,
+            )
+
+        val rows =
+            saveExplorerSaveSetRows(
+                listOf(oldest, newest, middle),
+                selectedGame = "d2",
+                selectedScope = "single",
+                selectedPilot = "test",
+                selectedMission = "d2",
+            )
+
+        assertEquals(listOf(4, 1, 7, 0, 2, 3, 5, 6, 8, 9), rows.map { it.slotIndex })
+        assertEquals(listOf(newest, middle, oldest), rows.take(3).map { it.slot })
+        assertEquals(List(7) { null }, rows.drop(3).map { it.slot })
+    }
+
+    @Test
+    fun saveSetRowsUseModifiedTimeWhenSaveTimeIsMissing() {
+        val undatedNewer =
+            slot(
+                path = "/files/d2x-redux/Players/save_sets/single/test/d2/test.sg2",
+                relativePath = "d2x-redux/Players/save_sets/single/test/d2/test.sg2",
+                saveKind = "manual",
+                saveTimeUnixSeconds = 0L,
+                modifiedUnixSeconds = 1_700_000_400L,
+                slot = 2,
+            )
+        val datedOlder =
+            undatedNewer.copy(
+                path = "/files/d2x-redux/Players/save_sets/single/test/d2/test.sg3",
+                relativePath = "d2x-redux/Players/save_sets/single/test/d2/test.sg3",
+                saveTimeUnixSeconds = 1_700_000_300L,
+                modifiedUnixSeconds = 1_700_000_300L,
+                slot = 3,
+            )
+
+        val rows =
+            saveExplorerSaveSetRows(
+                listOf(datedOlder, undatedNewer),
+                selectedGame = "d2",
+                selectedScope = "single",
+                selectedPilot = "test",
+                selectedMission = "d2",
+            )
+
+        assertEquals(listOf(2, 3), rows.take(2).map { it.slotIndex })
+    }
+
+    @Test
     fun recentSlotsCollapseAutosavesFromSameSaveMomentBeforeTakingTen() {
         val duplicateMinimize =
             slot(
@@ -60,6 +131,7 @@ class SaveExplorerTest {
         relativePath: String,
         saveKind: String,
         saveTimeUnixSeconds: Long,
+        modifiedUnixSeconds: Long = saveTimeUnixSeconds,
         slot: Int,
     ) = SaveExplorerBridge.SaveExplorerSlot(
         path = path,
@@ -89,7 +161,6 @@ class SaveExplorerTest {
         orphan = false,
         orphanReason = "",
         sizeBytes = 1024L,
-        modifiedUnixSeconds = saveTimeUnixSeconds,
+        modifiedUnixSeconds = modifiedUnixSeconds,
     )
 }
-

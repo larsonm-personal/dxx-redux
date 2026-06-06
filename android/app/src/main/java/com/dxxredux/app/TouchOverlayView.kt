@@ -627,12 +627,12 @@ class TouchOverlayView
         private val paintBtnLatched =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
-                color = 0x1A4CAF50 // Material Green at ~10% opacity
+                color = touchActiveHighlightColor(TOUCH_ACTIVE_BUTTON_ALPHA)
             }
         private val paintBtnSliderActive =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
-                color = 0x3300E676
+                color = touchActiveHighlightColor(TOUCH_ACTIVE_SUBTLE_ALPHA)
             }
         private val paintBtnIdleDisabled =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -1278,7 +1278,7 @@ class TouchOverlayView
             val selectionPaint =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     style = Paint.Style.STROKE
-                    color = CONTROLLER_MENU_FOCUS_COLOR
+                    color = controllerMenuFocusColor
                     strokeWidth = maxOf(3f, remainingActionButtonRect.height() * 0.05f)
                 }
             actions.forEachIndexed { index, action ->
@@ -1605,7 +1605,7 @@ class TouchOverlayView
                 }
             val fillAlpha =
                 if (latched) {
-                    0x44
+                    TOUCH_ACTIVE_BUTTON_ALPHA
                 } else if (pressed) {
                     0x66
                 } else {
@@ -3647,7 +3647,12 @@ class TouchOverlayView
             val fillPaint =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     style = Paint.Style.FILL
-                    color = if (enabled) 0xAA00E676.toInt() else 0x665E5E5E
+                    color =
+                        if (enabled) {
+                            touchActiveHighlightColor(TOUCH_ACTIVE_SLIDER_FILL_ALPHA)
+                        } else {
+                            0x665E5E5E
+                        }
                 }
             val thumbPaint =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -3733,13 +3738,13 @@ class TouchOverlayView
             val selectedStroke =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     style = Paint.Style.STROKE
-                    color = CONTROLLER_MENU_FOCUS_COLOR
+                    color = controllerMenuFocusColor
                     strokeWidth = 3f
                 }
             val currentFill =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     style = Paint.Style.FILL
-                    color = 0x3300E676
+                    color = touchActiveHighlightColor(TOUCH_ACTIVE_SUBTLE_ALPHA)
                 }
             val divider = Paint().apply { color = 0x22FFFFFF }
 
@@ -3753,7 +3758,7 @@ class TouchOverlayView
                 if (i == adminTrayDifficultySelectedIndex) canvas.drawRect(rect, selectedStroke)
                 if (i > 0) canvas.drawRect(rect.left, rect.top, rect.right, rect.top + 1f, divider)
                 rowText.alpha = if (i == current) 0xFF else 0xDD
-                rowText.color = if (i == current) CONTROLLER_MENU_FOCUS_COLOR else -0x55000001
+                rowText.color = if (i == current) controllerMenuFocusColor else -0x55000001
                 canvas.drawText(
                     ADMIN_TRAY_DIFFICULTY_NAMES[i],
                     rect.centerX(),
@@ -3829,7 +3834,7 @@ class TouchOverlayView
             val selectPaint =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     style = Paint.Style.STROKE
-                    color = CONTROLLER_MENU_FOCUS_COLOR
+                    color = controllerMenuFocusColor
                     strokeWidth = 3f
                 }
 
@@ -3847,7 +3852,7 @@ class TouchOverlayView
             val checkboxCheck =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     style = Paint.Style.STROKE
-                    color = 0xFF4CAF50.toInt()
+                    color = touchActiveHighlightColor(TOUCH_ACTIVE_OPAQUE_ALPHA)
                     strokeWidth = 4f
                     strokeCap = Paint.Cap.ROUND
                     strokeJoin = Paint.Join.ROUND
@@ -3888,7 +3893,7 @@ class TouchOverlayView
                     }
                 bg.alpha =
                     when {
-                        sliderEditing -> 0x99
+                        sliderEditing -> TOUCH_ACTIVE_SLIDER_ALPHA
                         i == adminTrayPressedIndex -> 0xAA
                         else -> 0x55
                     }

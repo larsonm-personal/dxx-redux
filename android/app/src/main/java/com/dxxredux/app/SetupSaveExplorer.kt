@@ -71,7 +71,7 @@ private enum class SaveExplorerMode(
     All("All Slots"),
 }
 
-private data class SaveExplorerRow(
+internal data class SaveExplorerRow(
     val slotIndex: Int,
     val slot: SaveExplorerBridge.SaveExplorerSlot?,
 )
@@ -148,23 +148,13 @@ internal fun SaveExplorerDialog(
         remember(slots, mode, selectedGame, selectedScope, selectedPilot, selectedMission, orphanOnly) {
             when (mode) {
                 SaveExplorerMode.SaveSet -> {
-                    val bySlot =
-                        slots
-                            .orEmpty()
-                            .filter {
-                                it.game == selectedGame &&
-                                    it.scope == selectedScope &&
-                                    (
-                                        selectedPilot.isBlank() || it.pilot == selectedPilot ||
-                                            it.callsign == selectedPilot
-                                    ) &&
-                                    (
-                                        selectedMission.isBlank() ||
-                                            it.missionKey == selectedMission ||
-                                            it.missionName == selectedMission
-                                    )
-                            }.associateBy { it.slot }
-                    (0..9).map { SaveExplorerRow(it, bySlot[it]) }
+                    saveExplorerSaveSetRows(
+                        slots.orEmpty(),
+                        selectedGame,
+                        selectedScope,
+                        selectedPilot,
+                        selectedMission,
+                    )
                 }
 
                 SaveExplorerMode.Recent -> {
@@ -324,6 +314,54 @@ internal fun SaveExplorerDialog(
     }
 }
 
+internal fun saveExplorerSaveSetRows(
+    slots: List<SaveExplorerBridge.SaveExplorerSlot>,
+    selectedGame: String,
+    selectedScope: String,
+    selectedPilot: String,
+    selectedMission: String,
+): List<SaveExplorerRow> {
+    val bySlot =
+        slots
+            .filter {
+                it.slot in 0..9 &&
+                    it.game == selectedGame &&
+                    it.scope == selectedScope &&
+                    (
+                        selectedPilot.isBlank() || it.pilot == selectedPilot ||
+                            it.callsign == selectedPilot
+                    ) &&
+                    (
+                        selectedMission.isBlank() ||
+                            it.missionKey == selectedMission ||
+                            it.missionName == selectedMission
+                    )
+            }.groupBy { it.slot }
+            .mapValues { (_, slotSaves) ->
+                slotSaves.maxWithOrNull(
+                    compareBy<SaveExplorerBridge.SaveExplorerSlot> { saveExplorerSortTimestamp(it) }
+                        .thenBy { saveExplorerKindPriority(it.saveKind) }
+                        .thenByDescending { it.modifiedUnixSeconds },
+                )
+            }
+
+    val occupied =
+        bySlot
+            .values
+            .filterNotNull()
+            .sortedWith(
+                compareByDescending<SaveExplorerBridge.SaveExplorerSlot> { saveExplorerSortTimestamp(it) }
+                    .thenByDescending { saveExplorerKindPriority(it.saveKind) }
+                    .thenByDescending { it.modifiedUnixSeconds }
+                    .thenBy { it.slot },
+            ).map { SaveExplorerRow(it.slot, it) }
+    val empty =
+        (0..9)
+            .filter { it !in bySlot }
+            .map { SaveExplorerRow(it, null) }
+    return occupied + empty
+}
+
 internal fun saveExplorerRecentSlots(
     slots: List<SaveExplorerBridge.SaveExplorerSlot>,
 ): List<SaveExplorerBridge.SaveExplorerSlot> =
@@ -334,6 +372,9 @@ internal fun saveExplorerRecentSlots(
                 .thenBy { it.relativePath.ifBlank { it.path } },
         ).distinctBy { saveExplorerRecentDedupKey(it) }
         .take(10)
+
+private fun saveExplorerSortTimestamp(slot: SaveExplorerBridge.SaveExplorerSlot): Long =
+    slot.saveTimeUnixSeconds.takeIf { it > 0L } ?: slot.modifiedUnixSeconds
 
 // Keep in sync with android_save_meta_kind_priority in android_save_meta.c.
 private fun saveExplorerKindPriority(kind: String): Int =

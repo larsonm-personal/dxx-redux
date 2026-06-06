@@ -130,7 +130,6 @@ internal fun adminTrayVisibleActions(
     return actions
 }
 
-internal const val CONTROLLER_MENU_FOCUS_COLOR = 0xFF00E676.toInt()
 private const val CONTROLLER_MENU_ADVANCE_WINDOW_MS = 2500L
 
 internal enum class ControllerMenuSurface {
