@@ -1433,6 +1433,16 @@ static void input_demo_record_direct_command_escort_release_control(void)
 		input_demo_log_direct_command_record_error("escort release", error);
 }
 
+static void input_demo_record_direct_command_guidebot_spawn(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_guidebot_spawn(error, sizeof(error)))
+		input_demo_log_direct_command_record_error("guidebot spawn", error);
+}
+
 static void input_demo_record_direct_command_death_abort(void)
 {
 	char error[256] = "";
@@ -1484,6 +1494,9 @@ static int input_demo_replay_apply_direct_commands(void)
 			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL:
 				escort_release_control();
 				break;
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_SPAWN:
+				escort_spawn_at_player();
+				break;
 			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT:
 				break;
 			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY:
@@ -1530,6 +1543,11 @@ int ReadControlsReplayFrame(void);
 		android_escort_release_pending = 0;
 		input_demo_record_direct_command_escort_release_control();
 		escort_release_control();
+	}
+	if (android_escort_spawn_pending) {
+		android_escort_spawn_pending = 0;
+		input_demo_record_direct_command_guidebot_spawn();
+		escort_spawn_at_player();
 	}
 #endif
 

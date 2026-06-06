@@ -21,6 +21,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -350,11 +351,28 @@ private fun ModDetailsDialog(
     loading: Boolean,
     onDismiss: () -> Unit,
 ) {
+    var textViewTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var constituentTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
+    textViewTarget?.let { constituent ->
+        MissionZipTextDialog(
+            constituent = constituent,
+            archivePath = details?.archivePath,
+            onDismiss = { textViewTarget = null },
+        )
+    }
     constituentTarget?.let { constituent ->
         MissionZipConstituentDialog(
             constituent = constituent,
             archivePath = details?.archivePath,
+            onView =
+                if (GameFileFormats.extensionOf(constituent.name) == "txt") {
+                    {
+                        textViewTarget = constituent
+                        constituentTarget = null
+                    }
+                } else {
+                    null
+                },
             onDismiss = { constituentTarget = null },
         )
     }
@@ -364,7 +382,26 @@ private fun ModDetailsDialog(
             TextButton(onClick = onDismiss) { Text("Close") }
         },
         title = {
-            Text(mod.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    mod.displayName,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    modifier = Modifier.weight(1f),
+                )
+                details?.missionZip?.readme?.let { readme ->
+                    TextButton(
+                        onClick = { textViewTarget = readme },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        modifier = Modifier.height(32.dp),
+                    ) {
+                        Text("View readme", fontSize = 12.sp)
+                    }
+                }
+            }
         },
         text = {
             val scrollState = rememberScrollState()
@@ -608,6 +645,7 @@ private fun ModDetailsDialog(
 private fun MissionZipConstituentDialog(
     constituent: MissionZip.Constituent,
     archivePath: String?,
+    onView: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
     val metadata =
@@ -621,6 +659,12 @@ private fun MissionZipConstituentDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Close") }
         },
+        dismissButton =
+            onView?.let {
+                {
+                    TextButton(onClick = it) { Text("View") }
+                }
+            },
         title = {
             Text(constituent.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         },
@@ -635,6 +679,71 @@ private fun MissionZipConstituentDialog(
                     DetailRow("Compressed", setupSectionFormatSize(constituent.compressedSizeBytes))
                 }
                 FileMetadataDetails(metadata)
+            }
+        },
+    )
+}
+
+@Composable
+private fun MissionZipTextDialog(
+    constituent: MissionZip.Constituent,
+    archivePath: String?,
+    onDismiss: () -> Unit,
+) {
+    val content =
+        remember(archivePath, constituent.path) {
+            archivePath?.let { MissionZip.readTextFile(File(it), constituent.path) }
+                ?: MissionZip.TextFileContent("", truncated = false, problem = "Mission ZIP is missing")
+        }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        title = {
+            Text(constituent.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        },
+        text = {
+            val scrollState = rememberScrollState()
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp),
+            ) {
+                SelectionContainer {
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(scrollState)
+                                .padding(end = 8.dp),
+                    ) {
+                        content.problem?.let { problem ->
+                            Text(
+                                problem,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(bottom = 6.dp),
+                            )
+                        }
+                        if (content.truncated) {
+                            Text(
+                                "Showing first ${setupSectionFormatSize(1024L * 1024L)}",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 6.dp),
+                            )
+                        }
+                        Text(
+                            content.text.ifEmpty { "(empty text file)" },
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+                SetupScrollArrows(scrollState)
             }
         },
     )

@@ -38,6 +38,7 @@ typedef struct input_demo_replay_frame {
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL 6
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT            7
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY      8
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_SPAWN         9
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_TEXT_SIZE              40
 
 typedef struct input_demo_replay_direct_command_event {

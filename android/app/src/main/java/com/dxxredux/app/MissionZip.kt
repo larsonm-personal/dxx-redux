@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import java.io.File
 import java.io.InputStream
+import java.nio.charset.Charset
 import java.util.Locale
 import java.util.zip.ZipFile
 
@@ -25,6 +26,13 @@ object MissionZip {
         val category: String = CATEGORY_LEVELS,
         val totalSizeBytes: Long,
         val importMode: String,
+        val readme: Constituent? = null,
+    )
+
+    data class TextFileContent(
+        val text: String,
+        val truncated: Boolean,
+        val problem: String? = null,
     )
 
     fun inspect(file: File): ScanResult? {
@@ -51,7 +59,7 @@ object MissionZip {
                     missions += parseMissionDescriptor(entry.name, text)
                 }
             }
-            return buildResult(constituents, missions, file.length())
+            return buildResult(constituents, missions, file.length(), file.name.substringBeforeLast('.'))
         }
     }
 
@@ -81,7 +89,37 @@ object MissionZip {
                 entry = zip.nextEntry
             }
         }
-        return buildResult(constituents, missions, constituents.sumOf { it.sizeBytes })
+        return buildResult(constituents, missions, constituents.sumOf { it.sizeBytes }, zipStem = null)
+    }
+
+    fun readTextFile(
+        file: File,
+        path: String,
+        maxBytes: Long = 1024L * 1024L,
+    ): TextFileContent {
+        if (!file.isFile) return TextFileContent("", truncated = false, problem = "Mission ZIP is missing")
+        return try {
+            ZipFile(file).use { zip ->
+                val entry = zip.getEntry(path) ?: return TextFileContent("", false, "Text file is missing")
+                if (!isTextFile(entry.name)) return TextFileContent("", false, "Only .txt files can be viewed")
+                val limit = maxBytes.coerceAtLeast(1L).coerceAtMost((Int.MAX_VALUE - 1).toLong()).toInt()
+                val bytes =
+                    zip.getInputStream(entry).use { input ->
+                        val buffer = ByteArray(limit + 1)
+                        var total = 0
+                        while (total < buffer.size) {
+                            val read = input.read(buffer, total, buffer.size - total)
+                            if (read <= 0) break
+                            total += read
+                        }
+                        buffer.copyOf(total)
+                    }
+                val truncated = bytes.size > limit
+                TextFileContent(decodeText(bytes.copyOf(minOf(bytes.size, limit))), truncated)
+            }
+        } catch (e: Exception) {
+            TextFileContent("", truncated = false, problem = e.message ?: e.javaClass.simpleName)
+        }
     }
 
     fun parseMissionDescriptor(
@@ -93,6 +131,7 @@ object MissionZip {
         constituents: List<Constituent>,
         missions: List<GameFileFormats.MissionDescriptor>,
         totalSizeBytes: Long,
+        zipStem: String?,
     ): ScanResult? {
         val mission = missions.firstOrNull() ?: return null
         val roles = constituents.map { it.role }.toSet()
@@ -103,13 +142,42 @@ object MissionZip {
                 .distinct()
                 .singleOrNull()
                 ?: "both"
+        val sortedConstituents = sortedConstituents(constituents)
         return ScanResult(
-            constituents = constituents.sortedBy { it.path.lowercase(Locale.US) },
+            constituents = sortedConstituents,
             mission = mission,
             game = game,
             totalSizeBytes = totalSizeBytes,
             importMode = if (totalSizeBytes <= SMALL_IN_MEMORY_LIMIT_BYTES) "stored_zip" else "extracted_bundle",
+            readme = chooseReadme(sortedConstituents, zipStem),
         )
+    }
+
+    private fun sortedConstituents(constituents: List<Constituent>): List<Constituent> =
+        constituents.sortedWith(
+            compareBy<Constituent> { if (isTextFile(it.name)) 0 else 1 }
+                .thenBy { it.path.lowercase(Locale.US) },
+        )
+
+    private fun chooseReadme(
+        constituents: List<Constituent>,
+        zipStem: String?,
+    ): Constituent? {
+        val textFiles = constituents.filter { isTextFile(it.name) }
+        if (textFiles.size <= 1) return textFiles.firstOrNull()
+        textFiles.firstOrNull { it.name.equals("README.txt", ignoreCase = true) }?.let { return it }
+        val zipPrefix = zipStem?.takeIf { it.isNotBlank() }?.lowercase(Locale.US)
+        if (zipPrefix != null) {
+            textFiles.firstOrNull { it.name.lowercase(Locale.US).startsWith(zipPrefix) }?.let { return it }
+        }
+        return textFiles.maxByOrNull { it.sizeBytes }
+    }
+
+    private fun isTextFile(path: String): Boolean = GameFileFormats.extensionOf(path) == "txt"
+
+    private fun decodeText(bytes: ByteArray): String {
+        val utf8 = bytes.toString(Charsets.UTF_8)
+        return if ('\uFFFD' in utf8) bytes.toString(Charset.forName("windows-1252")) else utf8
     }
 
     private fun leafName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')

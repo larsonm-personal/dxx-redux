@@ -225,6 +225,81 @@ void init_buddy_for_level(void)
 	Last_buddy_key = -1;
 }
 
+void escort_spawn_at_player(void)
+{
+	object *buddy_objp;
+	int old_buddy_objnum = Buddy_objnum;
+
+	if (Game_mode & GM_MULTI) {
+#ifdef NETWORK
+		if (!(Game_mode & GM_MULTI_COOP)) {
+			HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
+			return;
+		}
+		if (Escort_owner_player != -1 && Escort_owner_player != Player_num) {
+			HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
+			return;
+		}
+#else
+		HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
+		return;
+#endif
+	}
+
+	if (Buddy_objnum < 0 || Buddy_objnum > Highest_object_index ||
+	    Objects[Buddy_objnum].type != OBJ_ROBOT || !Robot_info[Objects[Buddy_objnum].id].companion) {
+		int i;
+		for (i = 0; i <= Highest_object_index; i++)
+			if (Objects[i].type == OBJ_ROBOT && Robot_info[Objects[i].id].companion)
+				break;
+		Buddy_objnum = (i <= Highest_object_index) ? i : -1;
+	}
+
+	if (Buddy_objnum == -1) {
+#ifdef NETWORK
+		if (Game_mode & GM_MULTI_COOP) {
+			HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot present in mine!");
+			return;
+		}
+#endif
+		create_buddy_bot();
+		for (Buddy_objnum = 0; Buddy_objnum <= Highest_object_index; Buddy_objnum++)
+			if (Objects[Buddy_objnum].type == OBJ_ROBOT && Robot_info[Objects[Buddy_objnum].id].companion)
+				break;
+		if (Buddy_objnum > Highest_object_index) {
+			Buddy_objnum = -1;
+			HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot type available");
+			return;
+		}
+	}
+
+	buddy_objp = &Objects[Buddy_objnum];
+	buddy_objp->last_pos = ConsoleObject->pos;
+	buddy_objp->pos = ConsoleObject->pos;
+	buddy_objp->orient = ConsoleObject->orient;
+	obj_relink(Buddy_objnum, ConsoleObject->segnum);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.velocity);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.thrust);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.rotvel);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.rotthrust);
+	init_ai_object(Buddy_objnum, buddy_objp->ctype.ai_info.behavior, -1);
+	Buddy_allowed_to_talk = 1;
+	Buddy_last_seen_player = GameTime64;
+	Buddy_last_player_path_created = GameTime64;
+	Escort_last_path_created = GameTime64;
+	Escort_special_goal = -1;
+	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+	Escort_goal_index = -1;
+#ifdef NETWORK
+	if (Game_mode & GM_MULTI_COOP) {
+		Escort_owner_player = Player_num;
+		buddy_objp->ctype.ai_info.REMOTE_OWNER = (sbyte)Player_num;
+		multi_send_escort_owner(Player_num);
+	}
+#endif
+	HUD_init_message(HM_DEFAULT, old_buddy_objnum == -1 ? "%s deployed" : "%s released", PlayerCfg.GuidebotName);
+}
+
 //	-----------------------------------------------------------------------------
 //	See if segment from curseg through sidenum is reachable.
 //	Return true if it is reachable, else return false.

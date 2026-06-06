@@ -26,6 +26,7 @@
 
 volatile int android_force_quit = 0;
 volatile int android_escort_release_pending = 0;
+volatile int android_escort_spawn_pending = 0;
 volatile int android_demo_record_toggle_pending = 0;
 volatile int android_rewind_pending = 0;
 extern volatile int g_android_autosave_request_kind;
@@ -156,6 +157,12 @@ int meta_action_dispatch(int action_id, int pressed)
 	if (action_id == META_GUIDE_RELEASE_CONTROL) {
 		if (pressed)
 			android_escort_release_pending = 1;
+		return 0;
+	}
+
+	if (action_id == META_GUIDE_SPAWN) {
+		if (pressed)
+			android_escort_spawn_pending = 1;
 		return 0;
 	}
 

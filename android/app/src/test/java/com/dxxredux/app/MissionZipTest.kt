@@ -88,6 +88,71 @@ class MissionZipTest {
         assertNull(MissionZip.inspect(zipFile))
     }
 
+    @Test
+    fun sortsTxtFilesFirstAndUsesSingleTxtAsReadme() {
+        val zipFile = createMissionZipWithDocs("SingleDoc.zip", listOf("notes.txt" to "hello"))
+
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        assertEquals("notes.txt", scan!!.constituents.first().name)
+        assertEquals("notes.txt", scan.readme!!.name)
+        val content = MissionZip.readTextFile(zipFile, scan.readme.path)
+        assertEquals("hello", content.text)
+    }
+
+    @Test
+    fun prefersReadmeTxtWhenMultipleTxtFilesExist() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "Uneasy4.zip",
+                listOf(
+                    "Uneasy4-notes.txt" to "zip prefix",
+                    "README.txt" to "readme",
+                    "large.txt" to "this is larger",
+                ),
+            )
+
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        assertEquals("README.txt", scan!!.readme!!.name)
+    }
+
+    @Test
+    fun prefersZipNameTxtBeforeLargestFallback() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "Uneasy4.zip",
+                listOf(
+                    "Uneasy4-notes.txt" to "zip prefix",
+                    "large.txt" to "this is larger",
+                ),
+            )
+
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        assertEquals("Uneasy4-notes.txt", scan!!.readme!!.name)
+    }
+
+    @Test
+    fun usesLargestTxtWhenNoReadmeOrZipNameMatch() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "NoPrefix.zip",
+                listOf(
+                    "small.txt" to "tiny",
+                    "large.txt" to "this is larger",
+                ),
+            )
+
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        assertEquals("large.txt", scan!!.readme!!.name)
+    }
+
     private fun createMissionZip(
         missionName: String,
         missionText: String,
@@ -108,6 +173,37 @@ class MissionZipTest {
             zip.write(missionText.toByteArray())
             zip.closeEntry()
         }
+        return zipFile
+    }
+
+    private fun createMissionZipWithDocs(
+        filename: String,
+        docs: List<Pair<String, String>>,
+    ): File {
+        val dir = File("build/test-missionzip-readme-rules").absoluteFile
+        dir.mkdirs()
+        val zipFile = File(dir, filename)
+        zipFile.delete()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("Uneasy4.dxa"))
+            zip.write(byteArrayOf(1, 2, 3, 4))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("Uneasy4.hog"))
+            zip.write(byteArrayOf(5, 6, 7, 8))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("Uneasy4.mn2"))
+            zip.write("name = Uneasy 4\nnum_levels = 1\nUneasy4.rl2\n".toByteArray())
+            zip.closeEntry()
+
+            for ((name, text) in docs) {
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(text.toByteArray())
+                zip.closeEntry()
+            }
+        }
+        zipFile.deleteOnExit()
         return zipFile
     }
 }

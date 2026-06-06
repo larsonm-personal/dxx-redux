@@ -68,6 +68,8 @@ int input_demo_recorder_stage_direct_command_drop_flag(char *error,
                                                        size_t error_size);
 int input_demo_recorder_stage_direct_command_escort_release_control(char *error,
                                                                     size_t error_size);
+int input_demo_recorder_stage_direct_command_guidebot_spawn(char *error,
+                                                            size_t error_size);
 int input_demo_recorder_stage_direct_command_death_abort(char *error,
                                                          size_t error_size);
 int input_demo_recorder_stage_direct_command_change_difficulty(int difficulty,

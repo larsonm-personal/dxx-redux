@@ -26,6 +26,14 @@ import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlin.math.sin
 
+internal fun lockedGuideSpawnRingSelected(
+    distancePx: Float,
+    wheelRadiusPx: Float,
+): Boolean =
+    wheelRadiusPx > 0f &&
+        distancePx >= wheelRadiusPx * (2f / 3f) &&
+        distancePx <= wheelRadiusPx * 1.2f
+
 /**
  * Semi-transparent touch overlay drawn on top of the game SurfaceView.
  *
@@ -551,6 +559,7 @@ class TouchOverlayView
         // -- Paint objects ---------------------------------------
         companion object {
             private const val RADIAL_CENTER = -2
+            private const val RADIAL_GUIDE_SPAWN = -3
 
             // Double-tap button release delay -- ensures the press survives at
             // least one game frame so level-triggered controls (fire primary) register
@@ -1942,6 +1951,10 @@ class TouchOverlayView
             // Open wheel - draw pie segments parameterized by segment count
             val cx = state.triggerX
             val cy = state.triggerY
+            if (isLockedGuideWheel(state)) {
+                drawLockedGuideWheel(canvas, state, gAlpha, cx, cy)
+                return
+            }
             val segs = state.control.segments
             val n = segs.size
             if (n == 0) return
@@ -1986,6 +1999,48 @@ class TouchOverlayView
                 paintBtnLabel.textSize = centerR * 0.45f
                 drawCenteredTextBlock(canvas, state.control.centerLabel, cx, cy, paintBtnLabel)
             }
+        }
+
+        private fun isLockedGuideWheel(state: RadialMenuState): Boolean =
+            state.control.id == "Guide" && isBuddyReleasedProvider?.invoke() == false
+
+        private fun drawLockedGuideWheel(
+            canvas: Canvas,
+            state: RadialMenuState,
+            gAlpha: Float,
+            cx: Float,
+            cy: Float,
+        ) {
+            val eff = (gAlpha * state.control.opacity).coerceIn(0f, 1f)
+            val active = state.activeSegment == RADIAL_GUIDE_SPAWN
+            val outerR = state.radius * if (active) 1.15f else 1f
+            val innerR = state.radius * (2f / 3f)
+            val centerR = state.radius * 0.32f
+
+            radialPath.reset()
+            radialPath.addCircle(cx, cy, outerR, Path.Direction.CW)
+            radialPath.addCircle(cx, cy, innerR, Path.Direction.CCW)
+            paintRadialSeg.color = if (active) 0x88334455.toInt() else 0x44888888
+            canvas.drawPath(radialPath, paintRadialSeg)
+
+            paintRing.alpha = ((if (active) 0x88 else 0x55) * eff).toInt()
+            canvas.drawCircle(cx, cy, outerR, paintRing)
+            canvas.drawCircle(cx, cy, innerR, paintRing)
+
+            paintRadialSeg.color = if (active) 0x88445566.toInt() else 0x55444444
+            canvas.drawCircle(cx, cy, centerR, paintRadialSeg)
+            paintRing.alpha = (0x66 * eff).toInt()
+            canvas.drawCircle(cx, cy, centerR, paintRing)
+
+            paintBtnLabel.alpha = ((if (active) 0xFF else 0xAA) * eff).toInt()
+            paintBtnLabel.textSize = state.radius * if (active) 0.18f else 0.12f
+            if (active) paintBtnLabel.typeface = Typeface.DEFAULT_BOLD
+            drawCenteredTextBlock(canvas, "Deploy", cx, cy - (innerR + outerR) * 0.5f, paintBtnLabel)
+            if (active) paintBtnLabel.typeface = Typeface.DEFAULT
+
+            paintBtnLabel.alpha = (0xAA * eff).toInt()
+            paintBtnLabel.textSize = centerR * 0.35f
+            drawCenteredTextBlock(canvas, "Locked", cx, cy, paintBtnLabel)
         }
 
         private fun drawCenteredTextBlock(
@@ -2262,10 +2317,8 @@ class TouchOverlayView
                     if (!automapActive && !handled) {
                         for (rm in radialStates) {
                             if (rm.pointerId >= 0) continue
-                            // D1 has no Guide-Bot; block if buddy not released
-                            if (rm.control.id == "Guide" &&
-                                (gameVariant == "d1" || isBuddyReleasedProvider?.invoke() == false)
-                            ) {
+                            // D1 has no Guide-Bot.  D2 locked Guide opens a deploy ring.
+                            if (rm.control.id == "Guide" && gameVariant == "d1") {
                                 continue
                             }
                             if (hypot(px - rm.triggerX, py - rm.triggerY) <= rm.triggerRadius * 1.3f) {
@@ -2979,7 +3032,9 @@ class TouchOverlayView
 
             val old = rm.activeSegment
             rm.activeSegment =
-                if (n == 0 || (rm.isWeaponWheel && n <= 1)) {
+                if (isLockedGuideWheel(rm)) {
+                    if (lockedGuideSpawnRingSelected(dist, rm.radius)) RADIAL_GUIDE_SPAWN else -1
+                } else if (n == 0 || (rm.isWeaponWheel && n <= 1)) {
                     RADIAL_CENTER
                 } else if (dist < centerR) {
                     RADIAL_CENTER
@@ -3017,6 +3072,10 @@ class TouchOverlayView
                 }
             val binding =
                 when {
+                    rm.activeSegment == RADIAL_GUIDE_SPAWN -> {
+                        TouchBindings.META_GUIDE_SPAWN
+                    }
+
                     seg != null -> {
                         seg.binding
                     }

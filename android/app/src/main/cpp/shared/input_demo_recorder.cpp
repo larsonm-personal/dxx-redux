@@ -648,6 +648,16 @@ int input_demo_recorder_stage_direct_command_escort_release_control(char *error,
 	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
 }
 
+int input_demo_recorder_stage_direct_command_guidebot_spawn(char *error,
+                                                            size_t error_size)
+{
+	ordered_json event = ordered_json::object();
+
+	event["kind"] = "direct_command";
+	event["command"] = "guidebot_spawn";
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
 int input_demo_recorder_stage_direct_command_death_abort(char *error,
                                                          size_t error_size)
 {

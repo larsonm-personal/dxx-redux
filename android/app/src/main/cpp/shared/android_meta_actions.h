@@ -48,6 +48,7 @@
 #define META_GUIDE_RELEASE_CONTROL 1032
 #define META_DEMO_RECORD_TOGGLE    1034
 #define META_REWIND                1035
+#define META_GUIDE_SPAWN           1037
 
 /* Flags for dispatch table entries */
 #define META_FLAG_INSTANT 1 /* inject full press+release on button down, ignore up */
@@ -61,6 +62,10 @@ extern volatile int android_force_quit;
 /* Set on UI thread by META_GUIDE_RELEASE_CONTROL, consumed on game thread
  * in gamecntl.c to call escort_release_control() */
 extern volatile int android_escort_release_pending;
+
+/* Set on UI thread by META_GUIDE_SPAWN, consumed on the game thread in
+ * gamecntl.c to spawn or release the guide-bot at the local player. */
+extern volatile int android_escort_spawn_pending;
 
 /* Set on UI thread by META_DEMO_RECORD_TOGGLE, consumed on the game thread
  * in gamecntl.c to start or stop Android quick input-demo recording. */
