@@ -5,7 +5,7 @@ import java.io.InputStream
 import java.util.Locale
 import java.util.zip.ZipFile
 
-object SectorgameMissionZip {
+object MissionZip {
     const val KIND = "mission_zip"
     const val CATEGORY_LEVELS = "levels"
     const val SMALL_IN_MEMORY_LIMIT_BYTES = 100L * 1024L * 1024L

@@ -9,7 +9,7 @@ import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-class SectorgameMissionZipTest {
+class MissionZipTest {
     @Test
     fun detectsD2MissionZipFromZipFile() {
         val zipFile =
@@ -25,7 +25,7 @@ class SectorgameMissionZipTest {
                 """.trimIndent(),
             )
 
-        val scan = SectorgameMissionZip.inspect(zipFile)
+        val scan = MissionZip.inspect(zipFile)
 
         assertNotNull(scan)
         scan!!
@@ -54,7 +54,7 @@ class SectorgameMissionZipTest {
                 """.trimIndent(),
             )
 
-        val scan = SectorgameMissionZip.inspect(zipFile)
+        val scan = MissionZip.inspect(zipFile)
 
         assertNotNull(scan)
         assertEquals("d1", scan!!.game)
@@ -67,7 +67,7 @@ class SectorgameMissionZipTest {
         val zipFile = createMissionZip("Uneasy4.mn2", "name = Uneasy 4\nnum_levels = 1\nUneasy4.rl2\n")
         val scan =
             zipFile.inputStream().use { input: InputStream ->
-                SectorgameMissionZip.inspect(input)
+                MissionZip.inspect(input)
             }
 
         assertNotNull(scan)
@@ -85,14 +85,14 @@ class SectorgameMissionZipTest {
             zip.closeEntry()
         }
 
-        assertNull(SectorgameMissionZip.inspect(zipFile))
+        assertNull(MissionZip.inspect(zipFile))
     }
 
     private fun createMissionZip(
         missionName: String,
         missionText: String,
     ): File {
-        val zipFile = File.createTempFile("sectorgame", ".zip")
+        val zipFile = File.createTempFile("missionzip", ".zip")
         zipFile.deleteOnExit()
         val stem = missionName.substringBeforeLast('.')
         ZipOutputStream(zipFile.outputStream()).use { zip ->

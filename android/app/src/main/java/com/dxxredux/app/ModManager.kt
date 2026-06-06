@@ -28,7 +28,7 @@ class ModManager(
         private const val GENERATED_PATCH_DIR = ".generated_mod_patches"
         private const val GENERATED_MISSION_ZIP_DIR = ".generated_mission_zips"
         const val MOD_KIND_DXA = "dxa"
-        const val MOD_KIND_MISSION_ZIP = SectorgameMissionZip.KIND
+        const val MOD_KIND_MISSION_ZIP = MissionZip.KIND
     }
 
     data class ModInfo(
@@ -166,7 +166,7 @@ class ModManager(
         val patches: List<ModPatchDetail>,
         val baseRequirements: List<ModBaseRequirement>,
         val problems: List<String>,
-        val missionZip: SectorgameMissionZip.ScanResult? = null,
+        val missionZip: MissionZip.ScanResult? = null,
     )
 
     private data class ActualBaseFile(
@@ -370,7 +370,7 @@ class ModManager(
         Log.i(TAG, "Registered downloaded mod: $displayName")
     }
 
-    /** Import a sectorgame-style mission ZIP from a SAF URI. */
+    /** Import a mission ZIP from a SAF URI. */
     fun importMissionZip(
         uri: Uri,
         displayName: String,
@@ -379,7 +379,7 @@ class ModManager(
     ): ModInfo? {
         val scan =
             contentResolver.openInputStream(uri)?.use { input ->
-                SectorgameMissionZip.inspect(input)
+                MissionZip.inspect(input)
             } ?: return null
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
@@ -409,7 +409,7 @@ class ModManager(
         source: File,
         displayName: String = source.name,
     ): ModInfo? {
-        val scan = SectorgameMissionZip.inspect(source) ?: return null
+        val scan = MissionZip.inspect(source) ?: return null
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
         if (source.absoluteFile != dest.absoluteFile) source.copyTo(dest, overwrite = true)
@@ -508,7 +508,7 @@ class ModManager(
         mod: ModInfo,
         modFile: File,
     ): List<String> {
-        val scan = SectorgameMissionZip.inspect(modFile) ?: return emptyList()
+        val scan = MissionZip.inspect(modFile) ?: return emptyList()
         val stageDir = File(generatedMissionZipDir(game), safeGeneratedDirName(mod.filename))
         if (!extractMissionZipForLaunch(modFile, stageDir)) return emptyList()
         return buildList {
@@ -544,7 +544,7 @@ class ModManager(
     private fun registerMissionZip(
         filename: String,
         sizeBytes: Long,
-        scan: SectorgameMissionZip.ScanResult,
+        scan: MissionZip.ScanResult,
     ): ModInfo {
         mods.removeAll { it.filename == filename }
         val maxOrder = mods.maxOfOrNull { it.order } ?: -1
@@ -639,7 +639,7 @@ class ModManager(
 
     private fun getMissionZipDetails(modFile: File): ModDetails =
         try {
-            val scan = SectorgameMissionZip.inspect(modFile)
+            val scan = MissionZip.inspect(modFile)
             if (scan == null) {
                 ModDetails(
                     archivePath = modFile.absolutePath,
@@ -1109,7 +1109,7 @@ class ModManager(
         }
     }
 
-    private fun missionZipCategories(entries: List<SectorgameMissionZip.Constituent>): List<ModFileCategorySummary> {
+    private fun missionZipCategories(entries: List<MissionZip.Constituent>): List<ModFileCategorySummary> {
         val buckets = linkedMapOf<String, CategoryBucket>()
         for (entry in entries) {
             val label =

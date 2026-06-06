@@ -2271,7 +2271,7 @@ private fun SetupScreen(
                             val missionZip =
                                 try {
                                     context.contentResolver.openInputStream(uri)?.use { input ->
-                                        SectorgameMissionZip.inspect(input)
+                                        MissionZip.inspect(input)
                                     }
                                 } catch (e: Exception) {
                                     Log.w("DXX-Setup", "Mission ZIP probe failed for $name: ${e.message}")

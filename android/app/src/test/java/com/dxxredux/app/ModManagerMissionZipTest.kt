@@ -67,7 +67,7 @@ class ModManagerMissionZipTest {
     }
 
     private fun createMissionZip(): File {
-        val zipFile = File.createTempFile("sectorgame-manager", ".zip")
+        val zipFile = File.createTempFile("missionzip-manager", ".zip")
         zipFile.deleteOnExit()
         ZipOutputStream(zipFile.outputStream()).use { zip ->
             zip.putNextEntry(ZipEntry("Uneasy4.dxa"))

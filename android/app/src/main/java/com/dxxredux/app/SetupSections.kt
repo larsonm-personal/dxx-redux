@@ -349,7 +349,7 @@ private fun ModDetailsDialog(
     loading: Boolean,
     onDismiss: () -> Unit,
 ) {
-    var constituentTarget by remember { mutableStateOf<SectorgameMissionZip.Constituent?>(null) }
+    var constituentTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     constituentTarget?.let { constituent ->
         MissionZipConstituentDialog(
             constituent = constituent,
@@ -582,7 +582,7 @@ private fun ModDetailsDialog(
 
 @Composable
 private fun MissionZipConstituentDialog(
-    constituent: SectorgameMissionZip.Constituent,
+    constituent: MissionZip.Constituent,
     archivePath: String?,
     onDismiss: () -> Unit,
 ) {

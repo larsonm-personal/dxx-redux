@@ -104,8 +104,7 @@ Optional files:
    ---------
    Those can be found on several websites. Add them to the game by copying them to subdirectory
    ‘missions/’. They can also go in subdirectories of 'missions/', unlike with the original version.
-   A good place to find additional mission might be the Descent Mission Archive:
-   https://sectorgame.com/dxma/
+   A good place to find additional missions is the Descent Mission Archive.
 
    Custom Music (MP3, OGG, AIF, etc.):
    -----------------------------------
