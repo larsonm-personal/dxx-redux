@@ -11,7 +11,6 @@ internal object GameFileMetadata {
     private const val MAX_ENTRY_BYTES = 64L * 1024L * 1024L
     private const val MAX_PIG_BYTES = 64L * 1024L * 1024L
     private const val MAX_POG_BYTES = 64L * 1024L * 1024L
-    private const val MAX_EXAMPLES = 8
     private const val PIG_ID = "PPIG"
     private const val PIG_VERSION = 2
     private const val POG_ID = "DPOG"
@@ -40,7 +39,7 @@ internal object GameFileMetadata {
         val game: String,
         val detailRows: List<Pair<String, String>>,
         val categories: List<CategorySummary>,
-        val examples: List<EntrySummary>,
+        val contents: List<EntrySummary>,
         val notes: List<String> = emptyList(),
         val problems: List<String> = emptyList(),
     )
@@ -108,7 +107,7 @@ internal object GameFileMetadata {
             game = gameLabel(mission.game),
             detailRows = rows,
             categories = emptyList(),
-            examples = emptyList(),
+            contents = emptyList(),
         )
     }
 
@@ -166,8 +165,8 @@ internal object GameFileMetadata {
             game = gameLabel(game),
             detailRows = rows,
             categories = categorySummaries(entries),
-            examples = entries.take(MAX_EXAMPLES),
-            notes = inferEntryNotes(entries) + cappedNote(entries.size, "entries"),
+            contents = entries,
+            notes = inferEntryNotes(entries),
             problems = problems,
         )
     }
@@ -227,8 +226,8 @@ internal object GameFileMetadata {
                     "Contents" to roleRollup(entries),
                 ),
             categories = categorySummaries(entries),
-            examples = entries.take(MAX_EXAMPLES),
-            notes = inferEntryNotes(entries) + cappedNote(entries.size, "entries"),
+            contents = entries,
+            notes = inferEntryNotes(entries),
         )
 
     private fun summarizePig(
@@ -275,8 +274,8 @@ internal object GameFileMetadata {
         }
         val indices = (0 until bitmapCount).map { leShort(bytes, indexStart + it * 2) }
         val bitmaps = readBitmapHeaders(bytes, headerStart, bitmapCount, D2_BITMAP_HEADER_SIZE, true)
-        val examples =
-            bitmaps.take(MAX_EXAMPLES).mapIndexed { index, bitmap ->
+        val contents =
+            bitmaps.mapIndexed { index, bitmap ->
                 EntrySummary(
                     bitmap.name,
                     0,
@@ -295,8 +294,7 @@ internal object GameFileMetadata {
             game = "D2",
             detailRows = rows,
             categories = listOf(CategorySummary("Texture override", bitmapCount, 0)),
-            examples = examples,
-            notes = cappedNote(bitmapCount, "overrides"),
+            contents = contents,
         )
     }
 
@@ -415,8 +413,8 @@ internal object GameFileMetadata {
                 if (superTransparent > 0) add("Super transparent" to superTransparent.toString())
                 if (noLighting > 0) add("No lighting" to noLighting.toString())
             }
-        val examples =
-            bitmaps.take(MAX_EXAMPLES).map {
+        val contents =
+            bitmaps.map {
                 EntrySummary(it.name, 0, "${it.width}x${it.height} bitmap")
             }
         return Summary(
@@ -429,8 +427,8 @@ internal object GameFileMetadata {
                     CategorySummary("Bitmap", bitmapCount, 0),
                     if (soundCount > 0) CategorySummary("Sound", soundCount, 0) else null,
                 ),
-            examples = examples,
-            notes = notes + cappedNote(bitmaps.size, "bitmaps"),
+            contents = contents,
+            notes = notes,
         )
     }
 
@@ -488,16 +486,6 @@ internal object GameFileMetadata {
             }
         }
 
-    private fun cappedNote(
-        count: Int,
-        label: String,
-    ): List<String> =
-        if (count > MAX_EXAMPLES) {
-            listOf("Showing first $MAX_EXAMPLES of $count $label")
-        } else {
-            emptyList()
-        }
-
     private fun problemSummary(
         format: String,
         scope: String,
@@ -510,7 +498,7 @@ internal object GameFileMetadata {
             game = game,
             detailRows = emptyList(),
             categories = emptyList(),
-            examples = emptyList(),
+            contents = emptyList(),
             problems = listOf(problem),
         )
 

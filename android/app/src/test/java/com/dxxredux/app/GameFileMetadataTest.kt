@@ -75,7 +75,7 @@ class GameFileMetadataTest {
         assertEquals("D2", summary.game)
         assertTrue(summary.categories.any { it.label == "Audio" })
         assertTrue(summary.categories.any { it.label == "Sound effects" })
-        assertTrue(summary.examples.any { it.name == "descent.sng" })
+        assertTrue(summary.contents.any { it.name == "descent.sng" })
     }
 
     @Test
@@ -98,7 +98,7 @@ class GameFileMetadataTest {
         assertEquals("2", summary.detailRows.first { it.first == "Bitmaps" }.second)
         assertEquals("1", summary.detailRows.first { it.first == "RLE bitmaps" }.second)
         assertEquals("1", summary.detailRows.first { it.first == "Animated groups" }.second)
-        assertTrue(summary.examples.any { it.name == "rbot010" && it.role == "64x64 bitmap" })
+        assertTrue(summary.contents.any { it.name == "rbot010" && it.role == "64x64 bitmap" })
     }
 
     @Test
@@ -121,11 +121,11 @@ class GameFileMetadataTest {
         assertEquals("D2", summary.game)
         assertEquals("2", summary.detailRows.first { it.first == "Overrides" }.second)
         assertEquals("42-57", summary.detailRows.first { it.first == "Override range" }.second)
-        assertTrue(summary.examples.any { it.name == "door001" && it.role == "override 42 (128x64)" })
+        assertTrue(summary.contents.any { it.name == "door001" && it.role == "override 42 (128x64)" })
     }
 
     @Test
-    fun capsLargeArchiveExampleLists() {
+    fun keepsFullArchiveContentsForExplorer() {
         val hog = File.createTempFile("large", ".hog")
         hog.deleteOnExit()
         hog.writeBytes(
@@ -140,8 +140,8 @@ class GameFileMetadataTest {
 
         assertNotNull(summary)
         summary!!
-        assertEquals(8, summary.examples.size)
-        assertTrue(summary.notes.contains("Showing first 8 of 12 entries"))
+        assertEquals(12, summary.contents.size)
+        assertTrue(summary.notes.none { it.startsWith("Showing first ") })
     }
 
     @Test

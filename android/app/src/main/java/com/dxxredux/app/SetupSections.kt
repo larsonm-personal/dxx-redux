@@ -22,6 +22,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -1388,6 +1389,13 @@ internal fun FileDetailDialog(
 @Composable
 private fun FileMetadataDetails(metadata: GameFileMetadata.Summary?) {
     metadata ?: return
+    var showContentsDialog by remember(metadata) { mutableStateOf(false) }
+    if (showContentsDialog) {
+        MetadataContentsDialog(
+            entries = metadata.contents,
+            onDismiss = { showContentsDialog = false },
+        )
+    }
     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
     ModDetailSectionTitle("Contents")
     DetailRow("Format", metadata.format)
@@ -1407,30 +1415,186 @@ private fun FileMetadataDetails(metadata: GameFileMetadata.Summary?) {
             ModDetailLine("${category.label}: ${category.count}$sizeText")
         }
     }
-    if (metadata.examples.isNotEmpty()) {
-        ModDetailSectionTitle("Examples")
-        val exampleScrollState = rememberScrollState()
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 150.dp)
-                    .verticalScroll(exampleScrollState),
-        ) {
-            metadata.examples.forEach { entry ->
-                val sizeText =
-                    if (entry.sizeBytes > 0) {
-                        ", ${setupSectionFormatSize(entry.sizeBytes)}"
-                    } else {
-                        ""
-                    }
-                ModDetailLine("${entry.name}: ${entry.role}$sizeText")
+    if (metadata.contents.isNotEmpty()) {
+        ModDetailSectionTitle("Contents preview")
+        MetadataContentsBox(metadata.contents.take(5), maxHeight = 132.dp)
+        if (metadata.contents.size > 5) {
+            OutlinedButton(
+                onClick = { showContentsDialog = true },
+                shape = MaterialTheme.shapes.small,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+            ) {
+                Text("View entire contents", fontSize = 12.sp)
             }
         }
     }
     metadata.notes.forEach { note -> ModDetailLine(note) }
     metadata.problems.forEach { problem ->
         ModDetailLine(problem, color = MaterialTheme.colorScheme.error)
+    }
+}
+
+@Composable
+private fun MetadataContentsDialog(
+    entries: List<GameFileMetadata.EntrySummary>,
+    onDismiss: () -> Unit,
+) {
+    var sortMode by remember { mutableStateOf(MetadataContentSort.NameAscending) }
+    val sortedEntries =
+        remember(entries, sortMode) {
+            when (sortMode) {
+                MetadataContentSort.NameAscending -> {
+                    entries.sortedBy { it.name.lowercase(Locale.US) }
+                }
+
+                MetadataContentSort.NameDescending -> {
+                    entries.sortedByDescending { it.name.lowercase(Locale.US) }
+                }
+
+                MetadataContentSort.SizeAscending -> {
+                    entries.sortedWith(
+                        compareBy<GameFileMetadata.EntrySummary> { it.sizeBytes }.thenBy {
+                            it.name.lowercase(
+                                Locale.US,
+                            )
+                        },
+                    )
+                }
+
+                MetadataContentSort.SizeDescending -> {
+                    entries.sortedWith(
+                        compareByDescending<GameFileMetadata.EntrySummary> { it.sizeBytes }
+                            .thenBy { it.name.lowercase(Locale.US) },
+                    )
+                }
+
+                MetadataContentSort.Type -> {
+                    entries.sortedWith(
+                        compareBy<GameFileMetadata.EntrySummary> { it.role.lowercase(Locale.US) }
+                            .thenBy { it.name.lowercase(Locale.US) },
+                    )
+                }
+            }
+        }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        title = {
+            Text("Explore contents", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "${entries.size} entries",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
+                MetadataSortControls(sortMode, onSelect = { sortMode = it })
+                MetadataContentsBox(sortedEntries, maxHeight = 360.dp)
+            }
+        },
+    )
+}
+
+@Composable
+private fun MetadataSortControls(
+    selected: MetadataContentSort,
+    onSelect: (MetadataContentSort) -> Unit,
+) {
+    Column(modifier = Modifier.padding(bottom = 6.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            MetadataSortChip(MetadataContentSort.NameAscending, selected, onSelect, Modifier.weight(1f))
+            MetadataSortChip(MetadataContentSort.NameDescending, selected, onSelect, Modifier.weight(1f))
+            MetadataSortChip(MetadataContentSort.Type, selected, onSelect, Modifier.weight(1f))
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            MetadataSortChip(MetadataContentSort.SizeAscending, selected, onSelect, Modifier.weight(1f))
+            MetadataSortChip(MetadataContentSort.SizeDescending, selected, onSelect, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun MetadataSortChip(
+    mode: MetadataContentSort,
+    selected: MetadataContentSort,
+    onSelect: (MetadataContentSort) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FilterChip(
+        selected = mode == selected,
+        onClick = { onSelect(mode) },
+        label = {
+            Text(mode.label, fontSize = 11.sp, maxLines = 1)
+        },
+        modifier = modifier.height(34.dp),
+    )
+}
+
+private enum class MetadataContentSort(
+    val label: String,
+) {
+    NameAscending("Name A-Z"),
+    NameDescending("Name Z-A"),
+    SizeAscending("Size up"),
+    SizeDescending("Size down"),
+    Type("Type"),
+}
+
+@Composable
+private fun MetadataContentsBox(
+    entries: List<GameFileMetadata.EntrySummary>,
+    maxHeight: Dp,
+) {
+    val scrollState = rememberScrollState()
+    Surface(
+        tonalElevation = 1.dp,
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = maxHeight)
+                .padding(bottom = 4.dp),
+    ) {
+        SelectionContainer {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+            ) {
+                entries.forEach { entry ->
+                    val sizeText =
+                        if (entry.sizeBytes > 0) {
+                            " - ${setupSectionFormatSize(entry.sizeBytes)}"
+                        } else {
+                            ""
+                        }
+                    Text(
+                        "${entry.name} - ${entry.role}$sizeText",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 2.dp),
+                    )
+                }
+            }
+        }
     }
 }
 
