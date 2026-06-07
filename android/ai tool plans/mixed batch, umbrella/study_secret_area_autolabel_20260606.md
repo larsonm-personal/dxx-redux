@@ -388,3 +388,8 @@ buildd2\main\dxx-redux-d2-secretareas.exe -hogdir C:\path\to\data -secretarea-js
 10. Add HUD count using the sorted visible numbering.
 11. Add found-secret automap labels.
 12. Add automap reveal cheat labels and secret component edge reveal, keeping reveal separate from found state.
+
+## Follow-Up Automap Polish
+- [x] Hide all `S%d` automap labels unless the Reveal Secrets cheat is active.
+- [x] Use red labels for unfound secrets and green labels for found secrets while Reveal Secrets is active.
+- [x] Draw secret edges yellow only while Reveal Secrets is active, with found secret edges using a brighter yellow than unfound secret edges.

@@ -163,7 +163,10 @@ typedef struct automap
 #define K_WALL_DOOR_GOLD        BM_XRGB(31, 31, 0)
 #define K_WALL_DOOR_RED         BM_XRGB(31, 0, 0)
 #define K_WALL_REVEALED_COLOR   BM_XRGB(0, 0, 25 ) //what you see when you have the full map powerup
-#define K_SECRET_REVEAL_COLOR   BM_XRGB(31, 22, 0)
+#define K_SECRET_REVEAL_UNFOUND_COLOR BM_XRGB(31, 22, 0)
+#define K_SECRET_REVEAL_FOUND_COLOR   BM_XRGB(31, 27, 16)
+#define K_SECRET_LABEL_UNFOUND_COLOR  BM_XRGB(31, 0, 0)
+#define K_SECRET_LABEL_FOUND_COLOR    BM_XRGB(0, 31, 0)
 #define K_HOSTAGE_COLOR         BM_XRGB(0, 31, 0 )
 #define K_FONT_COLOR_20         BM_XRGB(20, 20, 20 )
 #define K_GREEN_31              BM_XRGB(0, 31, 0)
@@ -418,6 +421,8 @@ void draw_secret_area_labels(void)
 	}
 	if (!state || !state->enabled)
 		return;
+	if (!reveal_unfound)
+		return;
 	for (i = 0; i < total; ++i) {
 		const secret_area_entry *secret = &state->secrets[i];
 		int found = state->found[i] != 0;
@@ -425,14 +430,12 @@ void draw_secret_area_labels(void)
 		vms_vector pos;
 		g3s_point point;
 
-		if (!found && !reveal_unfound)
-			continue;
 		snprintf(label, sizeof(label), "S%d", secret->display_index);
 		secret_area_get_automap_label_pos(secret, &pos);
 		g3_rotate_point(&point, &pos);
 		if (g_active_automap)
 			g_active_automap->secret_label_candidate_count++;
-		if (DrawSecretAreaTextLabel(label, found ? BM_XRGB(0, 31, 31) : BM_XRGB(31, 22, 0), &point) &&
+		if (DrawSecretAreaTextLabel(label, found ? K_SECRET_LABEL_FOUND_COLOR : K_SECRET_LABEL_UNFOUND_COLOR, &point) &&
 		    g_active_automap)
 			g_active_automap->secret_label_projected_count++;
 	}
@@ -1584,6 +1587,19 @@ int automap_should_draw_secret_reveal_color(int segnum)
 	return secret_area_get_reveal_unfound() && secret_area_should_draw_segment_edges(segnum);
 }
 
+ubyte automap_secret_reveal_color(int segnum)
+{
+	const secret_area_state *state = secret_area_get_state();
+	int secret_index;
+
+	if (!state || !state->enabled || segnum < 0 || segnum >= SECRET_AREA_MAX_SEGMENTS)
+		return K_SECRET_REVEAL_UNFOUND_COLOR;
+	secret_index = state->segment_to_secret[segnum] - 1;
+	if (secret_index < 0 || secret_index >= secret_area_total(state))
+		return K_SECRET_REVEAL_UNFOUND_COLOR;
+	return state->found[secret_index] ? K_SECRET_REVEAL_FOUND_COLOR : K_SECRET_REVEAL_UNFOUND_COLOR;
+}
+
 void add_segment_edges(automap *am, segment *seg)
 {
 	int 	is_grate, no_fade;
@@ -1689,7 +1705,7 @@ void add_segment_edges(automap *am, segment *seg)
 			Here:
 
 			if (automap_should_draw_secret_reveal_color(segnum)) {
-				color = K_SECRET_REVEAL_COLOR;
+				color = automap_secret_reveal_color(segnum);
 				no_fade = 1;
 			}
 
