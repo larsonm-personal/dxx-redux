@@ -16,6 +16,7 @@
 #include "wall.h"
 
 static secret_area_state Secret_area_state;
+static int Secret_area_reveal_unfound;
 
 static void secret_area_trace(const char *stage)
 {
@@ -182,14 +183,16 @@ static const char *secret_area_powerup_name(void *user, int id)
 {
 	(void) user;
 #ifdef DXX_BUILD_DESCENT_II
-#ifndef DXX_HEADLESS_CONSOLE
+#if !defined(DXX_HEADLESS_CONSOLE) && !defined(ANDROID)
 	if (id >= 0 && id < MAX_POWERUP_TYPES && Powerup_names[id][0])
 		return Powerup_names[id];
 #endif
 	return secret_area_fallback_powerup_name(1, id);
 #else
+#ifndef ANDROID
 	if (id >= 0 && id < MAX_POWERUP_TYPES && Powerup_names[id][0])
 		return Powerup_names[id];
+#endif
 	return secret_area_fallback_powerup_name(0, id);
 #endif
 }
@@ -213,11 +216,81 @@ static int secret_area_side_has_exit_trigger(void *user, int seg, int side)
 #endif
 }
 
+#ifdef DXX_BUILD_DESCENT_II
+static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
+{
+	int i;
+
+	if (trigger_num < 0 || trigger_num >= Num_triggers)
+		return 0;
+	if (Triggers[trigger_num].type != TT_OPEN_DOOR &&
+	    Triggers[trigger_num].type != TT_OPEN_WALL &&
+	    Triggers[trigger_num].type != TT_ILLUSORY_WALL)
+		return 0;
+	for (i = 0; i < Triggers[trigger_num].num_links; ++i)
+		if (Triggers[trigger_num].seg[i] == seg && Triggers[trigger_num].side[i] == side)
+			return 1;
+	return 0;
+}
+#endif
+
+static int secret_area_side_opener_segment_at(int seg, int side, int wanted_index)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	int trigger_num;
+	int wall_num;
+	int found = 0;
+
+	if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
+		return -1;
+	wall_num = Segments[seg].sides[side].wall_num;
+	if (wall_num < 0 || wall_num >= Num_walls)
+		return -1;
+	if (Walls[wall_num].keys != KEY_NONE)
+		return -1;
+	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
+		int source_wall;
+
+		if (!secret_area_trigger_opens_side(trigger_num, seg, side))
+			continue;
+		for (source_wall = 0; source_wall < Num_walls; ++source_wall) {
+			if (Walls[source_wall].trigger != trigger_num)
+				continue;
+			if (found == wanted_index)
+				return Walls[source_wall].segnum;
+			found++;
+		}
+	}
+#else
+	(void) seg;
+	(void) side;
+	(void) wanted_index;
+#endif
+	return -1;
+}
+
+static int secret_area_triggered_side_opener_count(void *user, int seg, int side)
+{
+	int count = 0;
+
+	(void) user;
+	while (secret_area_side_opener_segment_at(seg, side, count) >= 0)
+		count++;
+	return count;
+}
+
+static int secret_area_triggered_side_opener_segment(void *user, int seg, int side, int index)
+{
+	(void) user;
+	return secret_area_side_opener_segment_at(seg, side, index);
+}
+
 void secret_area_rescan_current_level(void)
 {
 	secret_area_scan_view view;
 
 	secret_area_trace("start");
+	Secret_area_reveal_unfound = 0;
 	memset(&view, 0, sizeof(view));
 	view.num_segments = Num_segments;
 	view.num_walls = Num_walls;
@@ -261,6 +334,8 @@ void secret_area_rescan_current_level(void)
 	view.object_contains_count = secret_area_object_contains_count;
 	view.powerup_name = secret_area_powerup_name;
 	view.side_has_exit_trigger = secret_area_side_has_exit_trigger;
+	view.triggered_side_opener_count = secret_area_triggered_side_opener_count;
+	view.triggered_side_opener_segment = secret_area_triggered_side_opener_segment;
 	secret_area_scan_level(&view, &Secret_area_state);
 	secret_area_trace("done");
 }
@@ -274,7 +349,7 @@ int secret_area_note_segment_entered(int segnum)
 {
 	int display_index = secret_area_mark_segment_entered(&Secret_area_state, segnum);
 	if (display_index > 0)
-		HUD_init_message(HM_DEFAULT, "Found secret S%d (%d/%d)", display_index, secret_area_found_count(&Secret_area_state), secret_area_total(&Secret_area_state));
+		HUD_init_message(HM_DEFAULT, "found secret %d (total: %d/%d)", display_index, secret_area_found_count(&Secret_area_state), secret_area_total(&Secret_area_state));
 	return display_index;
 }
 
@@ -289,4 +364,14 @@ void secret_area_restore_saved_found(int saved_total, const unsigned char *found
 void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count)
 {
 	secret_area_restore_found_from_visited(&Secret_area_state, visited, visited_count);
+}
+
+int secret_area_get_reveal_unfound(void)
+{
+	return Secret_area_reveal_unfound;
+}
+
+void secret_area_set_reveal_unfound(int reveal)
+{
+	Secret_area_reveal_unfound = reveal ? 1 : 0;
 }

@@ -15,7 +15,7 @@ class AdminTrayUiTest {
     fun touchModeKeepsAutomapOutWhenTouchButtonIsMissing() {
         val actions = adminTrayVisibleActions(gamepadOnlyMode = false, hasTouchAutomapButton = false)
 
-        assertEquals(8, actions.size)
+        assertEquals(9, actions.size)
         assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
     }
@@ -57,6 +57,7 @@ class AdminTrayUiTest {
                 TouchOverlayView.ADMIN_QUICK_SAVE,
                 TouchOverlayView.ADMIN_VIDEO_INFO,
                 TouchOverlayView.ADMIN_BRIGHTNESS,
+                TouchOverlayView.ADMIN_FOV,
                 TouchOverlayView.ADMIN_WARP,
                 TouchOverlayView.ADMIN_MUSIC,
                 TouchOverlayView.ADMIN_ACCEPT_JOIN,
@@ -94,6 +95,7 @@ class AdminTrayUiTest {
         assertFalse(actions.contains(TouchOverlayView.ADMIN_EXIT_LAUNCHER))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_INCREASE_VIEW))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
     }
 
     @Test
@@ -155,10 +157,12 @@ class AdminTrayUiTest {
     fun overlayTogglesUseCheckboxesAndStayOpen() {
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_NET_STATS))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_NET_EVENTS))
+        assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_VIDEO_INFO))
 
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_NET_STATS))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_NET_EVENTS))
+        assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_VIDEO_INFO))
     }
 

@@ -601,6 +601,7 @@ class TouchOverlayView
             const val ADMIN_FOV = 20
             const val ADMIN_DIFFICULTY = 21
             const val ADMIN_AUTOMAP_NAME_MARKER = 22
+            const val ADMIN_AUTOMAP_SECRET_REVEAL = 23
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
             const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 
@@ -753,6 +754,7 @@ class TouchOverlayView
         var adminTrayDifficultySetter: ((Int) -> Boolean)? = null
         var adminTrayToggleStateProvider: ((Int) -> Boolean)? = null
         var adminTrayEnabledStateProvider: ((Int) -> Boolean)? = null
+        var secretAreaRevealProvider: (() -> Boolean)? = null
 
         // Gamepad-only mode: no touchscreen, admin tray gets extra items + D-pad nav
         var gamepadOnlyMode = false
@@ -3480,6 +3482,10 @@ class TouchOverlayView
 
                 ADMIN_AUTOMAP -> {
                     "Automap"
+                }
+
+                ADMIN_AUTOMAP_SECRET_REVEAL -> {
+                    if (secretAreaRevealProvider?.invoke() == true) "Hide Secrets" else "Reveal Secrets"
                 }
 
                 ADMIN_HEADLIGHT -> {

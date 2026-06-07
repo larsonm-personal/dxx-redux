@@ -7,6 +7,7 @@ internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
     when (actionIndex) {
         TouchOverlayView.ADMIN_NET_EVENTS,
         TouchOverlayView.ADMIN_NET_STATS,
+        TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL,
         TouchOverlayView.ADMIN_VIDEO_INFO,
         -> true
 
@@ -126,6 +127,7 @@ internal fun adminTrayVisibleActions(
                 TouchOverlayView.ADMIN_QUICK_SAVE,
             ),
         )
+        actions.add(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL)
     }
     return actions
 }

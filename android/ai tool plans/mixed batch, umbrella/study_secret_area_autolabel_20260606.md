@@ -25,6 +25,9 @@
 - [x] Add first-entry HUD popup text.
 - [x] Add save/restore found bits.
 - [x] Add automap found labels and reveal-cheat labels.
+- [x] Split secret-area reveal from normal cheat state and add an automap-only touch settings toggle that resets on level change.
+- [x] Updated first-entry popup wording to `found secret N (total: X/Y)` and made found/revealed secret segments draw full automap edges without mutating normal automap visited state.
+- [x] Expanded D2 candidate boundaries to include no-key switch-opened doors, open-wall links, and illusory-wall links when the switch source is ordinary reachable.
 
 ## Findings
 - The engine already has a strong hidden-door signal: `WallAnims[wall.clip_num].flags & WCF_HIDDEN`.
@@ -34,7 +37,7 @@
 - Existing automap visited state is per segment and saved/restored, but it means "seen/rendered", not "player entered".
 - A secret-area counter should therefore track player segment entry, not reuse `Automap_visited` as the source of truth.
 - Generated secret lists should be recomputed from pristine level data at load time. Save files should store only found bits.
-- Base-game validation currently produces conservative totals of 86 D1 secrets and 92 D2 secrets. D1 level 1 produces 2 generated secret areas, matching the corrected expectation that it only has about 1-2 real secret areas.
+- Base-game validation currently produces conservative totals of 86 D1 secrets and 175 D2 secrets. D1 level 1 produces 2 generated secret areas, matching the corrected expectation that it only has about 1-2 real secret areas. D2 level 1 produces 10 generated secret areas after adding switch-opened optional areas.
 - Secret entries now track aggregate powerup summaries with id, readable name, total count, direct count, and contained count. Names prefer the engine `Powerup_names` table where available, with a shared fallback table for narrow host tools.
 
 ## Candidate Algorithm
@@ -42,26 +45,27 @@
 2. Build this graph conservatively. Only add an edge when both segments are valid children of each other or can be confirmed with `find_connect_side()`.
 3. Treat no-wall child connections, unlocked normal doors, blastable walls, open sides, and already-passable illusion walls as ordinary traversable topology.
 4. Treat `WALL_DOOR` sides whose wall clip has `WCF_HIDDEN` as hidden boundaries. Require `KEY_NONE`, not `WALL_DOOR_LOCKED`, a valid child segment, and a valid reverse side for the first pass.
-5. Do not assume trigger-opened `WALL_CLOSED`, one-way, external, malformed, or ambiguous geometry is reachable. If reachability depends on a trigger or a wall state change that the scanner cannot prove, reject the candidate for now.
-6. Find connected components with hidden boundaries removed.
-7. Use `Player_init[Player_num].segnum` as the ordinary start component.
-8. For each hidden boundary from the ordinary component to another component, create a candidate secret area for the far component. Merge duplicate doors into the same component so two entrances to one room count once.
-9. Reject candidates containing:
+5. Treat D2 switch-opened `TT_OPEN_DOOR`, `TT_OPEN_WALL`, and `TT_ILLUSORY_WALL` links as candidate boundaries only when the target wall has `KEY_NONE`, the linked side has a valid child/reverse side, and at least one wall that fires the trigger is ordinary reachable.
+6. Do not assume other trigger-opened, one-way, external, malformed, or ambiguous geometry is reachable. If reachability depends on a trigger or a wall state change that the scanner cannot prove, reject the candidate for now.
+7. Find connected components with secret boundaries removed.
+8. Use `Player_init[Player_num].segnum` as the ordinary start component.
+9. For each hidden or switch-opened boundary from the ordinary component to another component, create a candidate secret area for the far component. Merge duplicate doors into the same component so two entrances to one room count once.
+10. Reject candidates containing:
    - `OBJ_HOSTAGE`
    - direct key powerups: `OBJ_POWERUP` with `POW_KEY_BLUE`, `POW_KEY_RED`, or `POW_KEY_GOLD`
    - contained key drops in robots or other objects, using `contains_type == OBJ_POWERUP` and key `contains_id`
    - reactor/control center segments or objects
    - exit or secret-exit trigger surfaces
-10. Reject candidates that are not reachable from the start in a second "player-reachable with hidden doors allowed" BFS. This pass should allow only the same conservative ordinary edges plus hidden-door crossings that meet the strict hidden-door requirements above.
-11. Record robot counts and robotmaker segments as confidence metadata, not a hard rejection initially. Some real secrets may contain enemies.
-12. Compute ordering metadata for every accepted candidate:
+11. Reject candidates that are not reachable from the start in a second "player-reachable with secret boundaries allowed" BFS. This pass should allow only the same conservative ordinary edges plus hidden-door and switch-opened crossings that meet the strict requirements above.
+12. Record robot counts and robotmaker segments as confidence metadata, not a hard rejection initially. Some real secrets may contain enemies.
+13. Compute ordering metadata for every accepted candidate:
    - `entry_distance`: shortest graph distance from `Player_init[Player_num].segnum` to the ordinary-side segment of any hidden entrance into the candidate.
    - `entry_seg` and `entry_side`: the lowest-segment, lowest-side hidden entrance among entrances at the best distance.
    - `label_pos`: a stable label anchor, preferably the average of candidate segment centers, with a fallback to the center of the closest entry-side/secret-side pair.
-13. Sort accepted candidates by `entry_distance`, then `entry_seg`, then `entry_side`, then lowest member segment. Assign the visible numbers after this sort, so `S1`, `S2`, etc. roughly follow distance from the start of the mine.
-14. Apply the sanity cutoff after filtering and before exposing the feature. If more than `MAX_GENERATED_SECRETS` candidates remain, disable generated secrets for this level.
-15. Create `secret_area_for_segment[MAX_SEGMENTS]`, using 0 for no area and 1..N for the sorted visible secret numbers.
-16. Once per gameplay frame, if `ConsoleObject->segnum` maps to an area, mark `secret_area_found[area] = 1`.
+14. Sort accepted candidates by `entry_distance`, then `entry_seg`, then `entry_side`, then lowest member segment. Assign the visible numbers after this sort, so `S1`, `S2`, etc. roughly follow distance from the start of the mine.
+15. Apply the sanity cutoff after filtering and before exposing the feature. If more than `MAX_GENERATED_SECRETS` candidates remain, disable generated secrets for this level.
+16. Create `secret_area_for_segment[MAX_SEGMENTS]`, using 0 for no area and 1..N for the sorted visible secret numbers.
+17. Once per gameplay frame, if `ConsoleObject->segnum` maps to an area, mark `secret_area_found[area] = 1`.
 
 ## Sanity Cutoff
 - Add a named constant such as `MAX_GENERATED_SECRETS`, defaulting to 30.
@@ -332,7 +336,8 @@ buildd2\main\dxx-redux-d2-secretareas.exe -hogdir C:\path\to\data -secretarea-js
 
 ## Automap Integration
 - Normal automap can remain unchanged for the first counter implementation.
-- A reveal cheat should not mutate `Automap_visited` or found bits.
+- A reveal toggle should not mutate `Automap_visited`, found bits, or the normal cheat state.
+- The Android touch settings tray owns this reveal toggle while automap is open. It should remain active until tapped again, but `secret_area_rescan_current_level()` resets it on level load.
 - The cleanest reveal path is to let automap include segments where `secret_area_for_segment[s] != 0` when the new reveal flag is active, rendering them as special revealed edges.
 - Existing automap `EF_SECRET` handling is useful for secret-door boundaries, but full secret-room reveal probably needs adding the generated component's segment edges to the edge list.
 - Add a `draw_secret_area_labels()` pass after `draw_all_edges()` and before player/object markers.

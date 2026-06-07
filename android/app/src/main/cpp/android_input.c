@@ -23,6 +23,7 @@
 #include "gr.h"
 #include "input_demo_recorder.h"
 #include "joy.h"
+#include "secretarea.h"
 #include "timer.h"
 #include "window.h"
 
@@ -1412,6 +1413,18 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeAutomapNameMarker(JNIEnv *env, jobject thiz)
 {
 	g_automap_name_marker = 1;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSecretAreaRevealActive(JNIEnv *env, jobject thiz)
+{
+	return secret_area_get_reveal_unfound() ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeToggleSecretAreaReveal(JNIEnv *env, jobject thiz)
+{
+	secret_area_set_reveal_unfound(!secret_area_get_reveal_unfound());
 }
 
 /* ── C→Java keyboard callbacks ──────────────────────────────

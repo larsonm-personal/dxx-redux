@@ -319,6 +319,10 @@ class MainActivity :
 
     external fun nativeAutomapNameMarker()
 
+    external fun nativeSecretAreaRevealActive(): Boolean
+
+    external fun nativeToggleSecretAreaReveal()
+
     external fun nativeGetAutomapMarkerState(): IntArray
 
     external fun nativeGetGameWidth(): Int
@@ -905,10 +909,29 @@ class MainActivity :
         }
         touchOverlay.adminTrayToggleStateProvider = { action ->
             when (action) {
-                TouchOverlayView.ADMIN_NET_STATS -> netStatsOverlay?.visibility == View.VISIBLE
-                TouchOverlayView.ADMIN_NET_EVENTS -> netEventsManualToggle
-                TouchOverlayView.ADMIN_VIDEO_INFO -> videoInfoOverlay?.visibility == View.VISIBLE
-                else -> false
+                TouchOverlayView.ADMIN_NET_STATS -> {
+                    netStatsOverlay?.visibility == View.VISIBLE
+                }
+
+                TouchOverlayView.ADMIN_NET_EVENTS -> {
+                    netEventsManualToggle
+                }
+
+                TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL -> {
+                    try {
+                        nativeSecretAreaRevealActive()
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
+
+                TouchOverlayView.ADMIN_VIDEO_INFO -> {
+                    videoInfoOverlay?.visibility == View.VISIBLE
+                }
+
+                else -> {
+                    false
+                }
             }
         }
         touchOverlay.adminTrayEnabledStateProvider = { action ->
@@ -1047,6 +1070,13 @@ class MainActivity :
                     }
                 }
 
+                TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL -> {
+                    try {
+                        nativeToggleSecretAreaReveal()
+                    } catch (_: Exception) {
+                    }
+                }
+
                 else -> {
                     automapSetMarkerAdminActionIndex(action)?.let { idx ->
                         try {
@@ -1137,6 +1167,13 @@ class MainActivity :
                     IntArray(0)
                 }
             automapTouchActions(includeMarkers, markerMenuMode, markerSlots)
+        }
+        touchOverlay.secretAreaRevealProvider = {
+            try {
+                nativeSecretAreaRevealActive()
+            } catch (_: Throwable) {
+                false
+            }
         }
         touchOverlay.weaponStateProvider = {
             try {

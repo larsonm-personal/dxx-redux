@@ -62,6 +62,8 @@ typedef struct secret_area_scan_view {
 	int (*object_contains_count)(void *user, int objnum);
 	const char *(*powerup_name)(void *user, int id);
 	int (*side_has_exit_trigger)(void *user, int seg, int side);
+	int (*triggered_side_opener_count)(void *user, int seg, int side);
+	int (*triggered_side_opener_segment)(void *user, int seg, int side, int index);
 } secret_area_scan_view;
 
 typedef struct secret_area_entrance {

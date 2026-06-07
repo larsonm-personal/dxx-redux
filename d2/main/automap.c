@@ -344,7 +344,7 @@ void draw_secret_area_labels(void)
 {
 	const secret_area_state *state = secret_area_get_state();
 	int total = secret_area_total(state);
-	int reveal_unfound = cheats.fullautomap;
+	int reveal_unfound = secret_area_get_reveal_unfound();
 	int i;
 
 	for (i = 0; i < total; ++i) {
@@ -363,6 +363,20 @@ void draw_secret_area_labels(void)
 		g3_rotate_point(&point, &pos);
 		DrawSecretAreaTextLabel(label, found ? BM_XRGB(0, 31, 31) : BM_XRGB(31, 22, 0), &point);
 	}
+}
+
+int secret_area_should_draw_segment_edges(int segnum)
+{
+	const secret_area_state *state;
+	int secret_index;
+
+	if (segnum < 0 || segnum >= SECRET_AREA_MAX_SEGMENTS)
+		return 0;
+	state = secret_area_get_state();
+	secret_index = state->segment_to_secret[segnum] - 1;
+	if (secret_index < 0 || secret_index >= secret_area_total(state))
+		return 0;
+	return state->found[secret_index] || secret_area_get_reveal_unfound();
 }
 
 void DropMarker (int player_marker_num)
@@ -1629,7 +1643,7 @@ void automap_build_edge_list(automap *am)
 #ifdef EDITOR
 			if (Segments[s].segnum != -1)
 #endif
-				if (Automap_visited[s]) {
+				if (Automap_visited[s] || secret_area_should_draw_segment_edges(s)) {
 					add_segment_edges(am, &Segments[s]);
 				}
 	
@@ -1637,7 +1651,7 @@ void automap_build_edge_list(automap *am)
 #ifdef EDITOR
 			if (Segments[s].segnum != -1)
 #endif
-				if (!Automap_visited[s]) {
+				if (!Automap_visited[s] && !secret_area_should_draw_segment_edges(s)) {
 					add_unknown_segment_edges(am, &Segments[s]);
 				}
 	}

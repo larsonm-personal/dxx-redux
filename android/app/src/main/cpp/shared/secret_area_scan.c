@@ -153,6 +153,47 @@ static int is_hidden_door_edge(const secret_area_scan_view *view, int seg, int s
 	return !side_has_exit_trigger(view, seg, side);
 }
 
+static int side_has_reachable_trigger_opener(const secret_area_scan_view *view, int seg, int side)
+{
+	int count;
+	int i;
+
+	if (!view->triggered_side_opener_count || !view->triggered_side_opener_segment)
+		return 0;
+	count = view->triggered_side_opener_count(view->user, seg, side);
+	for (i = 0; i < count; ++i) {
+		int opener_seg = view->triggered_side_opener_segment(view->user, seg, side, i);
+		if (valid_segment(view, opener_seg) && ordinary_distance[opener_seg] >= 0)
+			return 1;
+	}
+	return 0;
+}
+
+static int is_triggered_secret_edge(const secret_area_scan_view *view, int seg, int side, int child)
+{
+	int wall_num;
+	int reverse_side;
+
+	if (!edge_has_valid_reverse(view, seg, side, child))
+		return 0;
+	wall_num = side_wall_num(view, seg, side);
+	if (valid_wall(view, wall_num) &&
+	    view->wall_keys(view->user, wall_num) == view->wall_key_none &&
+	    side_has_reachable_trigger_opener(view, seg, side))
+		return 1;
+	reverse_side = view->reverse_side(view->user, seg, child);
+	wall_num = side_wall_num(view, child, reverse_side);
+	return valid_wall(view, wall_num) &&
+	       view->wall_keys(view->user, wall_num) == view->wall_key_none &&
+	       side_has_reachable_trigger_opener(view, child, reverse_side);
+}
+
+static int is_secret_boundary_edge(const secret_area_scan_view *view, int seg, int side, int child)
+{
+	return is_hidden_door_edge(view, seg, side, child) ||
+	       is_triggered_secret_edge(view, seg, side, child);
+}
+
 static int is_ordinary_edge(const secret_area_scan_view *view, int seg, int side, int allow_hidden)
 {
 	int child = view->segment_child(view->user, seg, side);
@@ -163,7 +204,7 @@ static int is_ordinary_edge(const secret_area_scan_view *view, int seg, int side
 
 	if (!edge_has_valid_reverse(view, seg, side, child))
 		return 0;
-	if (is_hidden_door_edge(view, seg, side, child))
+	if (is_secret_boundary_edge(view, seg, side, child))
 		return allow_hidden;
 	wall_num = side_wall_num(view, seg, side);
 	if (!valid_wall(view, wall_num))
@@ -299,7 +340,7 @@ static int collect_raw_candidates(const secret_area_scan_view *view)
 			int component;
 			if (!valid_segment(view, child) || ordinary_distance[child] >= 0)
 				continue;
-			if (!is_hidden_door_edge(view, seg, side, child))
+			if (!is_secret_boundary_edge(view, seg, side, child))
 				continue;
 			component = component_id[child];
 			if (component < 0)
