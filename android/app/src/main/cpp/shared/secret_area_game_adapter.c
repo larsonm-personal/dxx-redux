@@ -183,16 +183,8 @@ static const char *secret_area_powerup_name(void *user, int id)
 {
 	(void) user;
 #ifdef DXX_BUILD_DESCENT_II
-#if !defined(DXX_HEADLESS_CONSOLE) && !defined(ANDROID)
-	if (id >= 0 && id < MAX_POWERUP_TYPES && Powerup_names[id][0])
-		return Powerup_names[id];
-#endif
 	return secret_area_fallback_powerup_name(1, id);
 #else
-#ifndef ANDROID
-	if (id >= 0 && id < MAX_POWERUP_TYPES && Powerup_names[id][0])
-		return Powerup_names[id];
-#endif
 	return secret_area_fallback_powerup_name(0, id);
 #endif
 }

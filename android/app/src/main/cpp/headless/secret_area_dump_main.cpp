@@ -364,7 +364,7 @@ static nlohmann::ordered_json build_dump(int *total_secrets)
 	int secret_total = 0;
 
 	root["schema"] = "dxx-secret-area-baseline-v1";
-	root["algorithm_version"] = 1;
+	root["algorithm_version"] = 2;
 	root["max_generated_secrets"] = SECRET_AREA_MAX_GENERATED;
 #ifdef DXX_BUILD_DESCENT_II
 	root["game"] = "d2";

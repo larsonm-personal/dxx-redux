@@ -20,7 +20,7 @@ typedef struct candidate_secret {
 	secret_area_item items[SECRET_AREA_MAX_ITEMS];
 } candidate_secret;
 
-static int ordinary_distance[SECRET_AREA_MAX_SEGMENTS];
+static int progression_distance[SECRET_AREA_MAX_SEGMENTS];
 static int hidden_distance[SECRET_AREA_MAX_SEGMENTS];
 static int component_id[SECRET_AREA_MAX_SEGMENTS];
 static int queue[SECRET_AREA_MAX_SEGMENTS];
@@ -153,6 +153,9 @@ static int is_hidden_door_edge(const secret_area_scan_view *view, int seg, int s
 	return !side_has_exit_trigger(view, seg, side);
 }
 
+#define SECRET_AREA_EDGE_ALLOW_HIDDEN      1
+#define SECRET_AREA_EDGE_ALLOW_PROGRESSION 2
+
 static int side_has_reachable_trigger_opener(const secret_area_scan_view *view, int seg, int side)
 {
 	int count;
@@ -163,7 +166,7 @@ static int side_has_reachable_trigger_opener(const secret_area_scan_view *view, 
 	count = view->triggered_side_opener_count(view->user, seg, side);
 	for (i = 0; i < count; ++i) {
 		int opener_seg = view->triggered_side_opener_segment(view->user, seg, side, i);
-		if (valid_segment(view, opener_seg) && ordinary_distance[opener_seg] >= 0)
+		if (valid_segment(view, opener_seg) && progression_distance[opener_seg] >= 0)
 			return 1;
 	}
 	return 0;
@@ -194,7 +197,7 @@ static int is_secret_boundary_edge(const secret_area_scan_view *view, int seg, i
 	       is_triggered_secret_edge(view, seg, side, child);
 }
 
-static int is_ordinary_edge(const secret_area_scan_view *view, int seg, int side, int allow_hidden)
+static int is_ordinary_edge(const secret_area_scan_view *view, int seg, int side, int flags)
 {
 	int child = view->segment_child(view->user, seg, side);
 	int wall_num;
@@ -205,7 +208,7 @@ static int is_ordinary_edge(const secret_area_scan_view *view, int seg, int side
 	if (!edge_has_valid_reverse(view, seg, side, child))
 		return 0;
 	if (is_secret_boundary_edge(view, seg, side, child))
-		return allow_hidden;
+		return (flags & SECRET_AREA_EDGE_ALLOW_HIDDEN) != 0;
 	wall_num = side_wall_num(view, seg, side);
 	if (!valid_wall(view, wall_num))
 		return !side_has_exit_trigger(view, seg, side);
@@ -216,14 +219,17 @@ static int is_ordinary_edge(const secret_area_scan_view *view, int seg, int side
 		return !side_has_exit_trigger(view, seg, side);
 	if (wall_type == view->wall_type_illusion)
 		return !(wall_flags & view->wall_flag_illusion_off) && !side_has_exit_trigger(view, seg, side);
-	if (wall_type == view->wall_type_door)
+	if (wall_type == view->wall_type_door) {
+		if (flags & SECRET_AREA_EDGE_ALLOW_PROGRESSION)
+			return !side_has_exit_trigger(view, seg, side);
 		return wall_keys == view->wall_key_none &&
 		       !(wall_flags & view->wall_flag_door_locked) &&
 		       !side_has_exit_trigger(view, seg, side);
+	}
 	return 0;
 }
 
-static void bfs_distances(const secret_area_scan_view *view, int *distances, int allow_hidden)
+static void bfs_distances(const secret_area_scan_view *view, int *distances, int flags)
 {
 	int head = 0;
 	int tail = 0;
@@ -242,7 +248,7 @@ static void bfs_distances(const secret_area_scan_view *view, int *distances, int
 			int child = view->segment_child(view->user, seg, side);
 			if (!valid_segment(view, child) || distances[child] >= 0)
 				continue;
-			if (!is_ordinary_edge(view, seg, side, allow_hidden))
+			if (!is_ordinary_edge(view, seg, side, flags))
 				continue;
 			distances[child] = distances[seg] + 1;
 			queue[tail++] = child;
@@ -332,13 +338,13 @@ static int collect_raw_candidates(const secret_area_scan_view *view)
 
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		int side;
-		if (ordinary_distance[seg] < 0)
+		if (progression_distance[seg] < 0)
 			continue;
 		for (side = 0; side < SECRET_AREA_MAX_SIDES; ++side) {
 			int child = view->segment_child(view->user, seg, side);
 			int candidate_index;
 			int component;
-			if (!valid_segment(view, child) || ordinary_distance[child] >= 0)
+			if (!valid_segment(view, child) || progression_distance[child] >= 0)
 				continue;
 			if (!is_secret_boundary_edge(view, seg, side, child))
 				continue;
@@ -359,7 +365,7 @@ static int collect_raw_candidates(const secret_area_scan_view *view)
 				candidate->entry_side = INT_MAX;
 				candidate->lowest_segment = component_lowest_segment[component];
 			}
-			maybe_update_entry(&candidates[candidate_index], ordinary_distance[seg], seg, side);
+			maybe_update_entry(&candidates[candidate_index], progression_distance[seg], seg, side);
 			append_entrance(&candidates[candidate_index], seg, side, child, side_wall_num(view, seg, side));
 		}
 	}
@@ -577,8 +583,8 @@ int secret_area_scan_level(const secret_area_scan_view *view, secret_area_state 
 	max_generated = view->max_generated > 0 ? view->max_generated : SECRET_AREA_MAX_GENERATED;
 	if (max_generated > SECRET_AREA_MAX_GENERATED)
 		max_generated = SECRET_AREA_MAX_GENERATED;
-	bfs_distances(view, ordinary_distance, 0);
-	bfs_distances(view, hidden_distance, 1);
+	bfs_distances(view, progression_distance, SECRET_AREA_EDGE_ALLOW_PROGRESSION);
+	bfs_distances(view, hidden_distance, SECRET_AREA_EDGE_ALLOW_HIDDEN | SECRET_AREA_EDGE_ALLOW_PROGRESSION);
 	component_total = build_components(view);
 	(void) component_total;
 	raw_count = collect_raw_candidates(view);
@@ -588,6 +594,8 @@ int secret_area_scan_level(const secret_area_scan_view *view, secret_area_state 
 		if (!component_hidden_reachable(view, candidate->component))
 			continue;
 		if (component_contains_progress_item(view, candidate))
+			continue;
+		if (candidate->item_count == 0)
 			continue;
 		compute_label_pos(view, candidate);
 		sort_candidate_items(candidate);

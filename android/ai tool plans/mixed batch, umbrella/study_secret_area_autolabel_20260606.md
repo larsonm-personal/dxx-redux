@@ -393,3 +393,15 @@ buildd2\main\dxx-redux-d2-secretareas.exe -hogdir C:\path\to\data -secretarea-js
 - [x] Hide all `S%d` automap labels unless the Reveal Secrets cheat is active.
 - [x] Use red labels for unfound secrets and green labels for found secrets while Reveal Secrets is active.
 - [x] Draw secret edges yellow only while Reveal Secrets is active, with found secret edges using a brighter yellow than unfound secret edges.
+
+## Follow-Up Missed Secret Investigation
+- [x] Increase found-secret reveal edge yellow another halfway step toward white.
+- [x] Investigate why D2 level 1 `door45#0 (162/4/0)` is not generated as a secret candidate: segment 162 is behind ordinary progression/key-door reachability, so the current scanner never sees it as an ordinary-reachable entrance segment.
+- [x] Decide whether the missed D2 level 1 case represents a broader false-negative pattern: yes, secrets behind key-door progression are currently missed; a broad experiment allowing all key-door traversal found the target but increased D2 base-game secrets from 175 to 333, so this needs a narrower heuristic before landing.
+- [x] Re-run scanner/automap regression checks after changes.
+
+## Follow-Up Progression-Gated Secrets
+- [x] Exclude generated secret areas with no powerup items. This removes thief-only and empty hidden pockets from the player-facing count.
+- [x] Treat key/progression doors as reachable for secret generation, while still keeping hidden-door and triggered-secret boundaries out of the normal traversal graph.
+- [x] Keep guidebot selection live-reachability-gated. The generated list may include later progression secrets, but `find secret` still chooses only an unfound secret entrance that the guidebot can currently reach via `create_bfs_list()` and later validates with `create_path_to_segment()`.
+- [x] Regenerate and review the base-game regression JSON after the scanner update. New base-game totals are D1 172 and D2 265, with no zero-item generated secrets. D2 level 1 now includes the `162/4` hidden-door room as `S9`.
