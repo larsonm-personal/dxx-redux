@@ -669,6 +669,7 @@ typedef struct escort_secret_goal_info {
 
 static void escort_clear_secret_goal(void);
 static int escort_find_nearest_unfound_secret_entrance(int start_seg,
+                                                       int skip_display_index,
                                                        escort_secret_goal_info *goal);
 static void escort_report_secret_goal_failure(int goal_index);
 static int escort_goal_command_allowed(void);
@@ -736,12 +737,18 @@ void set_escort_special_goal(int special_key)
 void escort_find_secret_goal(void)
 {
 	escort_secret_goal_info goal;
+	int skip_display_index = -1;
 	int goal_index;
 
 	if (!escort_goal_command_allowed())
 		return;
 
-	goal_index = escort_find_nearest_unfound_secret_entrance(Objects[Buddy_objnum].segnum, &goal);
+	if ((Escort_special_goal == ESCORT_GOAL_SECRET || Escort_goal_object == ESCORT_GOAL_SECRET) &&
+	    Escort_goal_index > 0)
+		skip_display_index = Escort_goal_index;
+	goal_index = escort_find_nearest_unfound_secret_entrance(Objects[Buddy_objnum].segnum, skip_display_index, &goal);
+	if (goal_index == -2 && skip_display_index > 0)
+		goal_index = escort_find_nearest_unfound_secret_entrance(Objects[Buddy_objnum].segnum, -1, &goal);
 	if (goal_index < 0) {
 		escort_report_secret_goal_failure(goal_index);
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
@@ -923,6 +930,7 @@ static int escort_secret_goal_is_better(const escort_secret_goal_info *candidate
 }
 
 static int escort_find_nearest_unfound_secret_entrance(int start_seg,
+                                                       int skip_display_index,
                                                        escort_secret_goal_info *goal)
 {
 	const secret_area_state *state = secret_area_get_state();
@@ -964,6 +972,8 @@ static int escort_find_nearest_unfound_secret_entrance(int start_seg,
 		if (state->found[i])
 			continue;
 		have_unfound = 1;
+		if (secret->display_index == skip_display_index)
+			continue;
 		for (e=0; e<secret->entrance_count; e++) {
 			const secret_area_entrance *entrance = &secret->entrances[e];
 			escort_secret_goal_info candidate;
@@ -1159,7 +1169,7 @@ void escort_create_path_to_goal(object *objp)
 			case ESCORT_GOAL_SECRET: {
 				escort_secret_goal_info secret_goal;
 
-				Escort_goal_index = escort_find_nearest_unfound_secret_entrance(objp->segnum, &secret_goal);
+				Escort_goal_index = escort_find_nearest_unfound_secret_entrance(objp->segnum, -1, &secret_goal);
 				if (Escort_goal_index > -1) {
 					goal_seg = secret_goal.seg;
 					Escort_goal_secret_seg = secret_goal.seg;

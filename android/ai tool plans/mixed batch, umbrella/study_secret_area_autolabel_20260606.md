@@ -405,3 +405,8 @@ buildd2\main\dxx-redux-d2-secretareas.exe -hogdir C:\path\to\data -secretarea-js
 - [x] Treat key/progression doors as reachable for secret generation, while still keeping hidden-door and triggered-secret boundaries out of the normal traversal graph.
 - [x] Keep guidebot selection live-reachability-gated. The generated list may include later progression secrets, but `find secret` still chooses only an unfound secret entrance that the guidebot can currently reach via `create_bfs_list()` and later validates with `create_path_to_segment()`.
 - [x] Regenerate and review the base-game regression JSON after the scanner update. New base-game totals are D1 172 and D2 265, with no zero-item generated secrets. D2 level 1 now includes the `162/4` hidden-door room as `S9`.
+
+## Follow-Up Guidebot Secret Cycling
+- [x] When `find secret` is run while the guidebot is already targeting a secret, skip the current target and choose the next nearest reachable unfound secret.
+- [x] If no other reachable unfound secret exists, keep the current reachable target instead of clearing the task.
+- [x] Verify with formatting, a focused D2 Windows build, and Android native build.
