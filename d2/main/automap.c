@@ -113,6 +113,7 @@ typedef struct automap
 	ushort			old_wiggle; // keep 4 byte aligned
 	int			max_segments_away;
 	int			segment_limit;
+	int			secret_reveal_unfound;
 	
 	// Edge list variables
 	int			num_edges;
@@ -872,6 +873,17 @@ void draw_automap(automap *am)
 
 extern int set_segment_depths(int start_seg, ubyte *segbuf);
 
+void automap_sync_secret_reveal(automap *am)
+{
+	int reveal_unfound = secret_area_get_reveal_unfound();
+
+	if (am->secret_reveal_unfound == reveal_unfound)
+		return;
+	am->secret_reveal_unfound = reveal_unfound;
+	automap_build_edge_list(am);
+	adjust_segment_limit(am, am->segment_limit);
+}
+
 #define MAP_BACKGROUND_FILENAME ((HIRESMODE && PHYSFSX_exists("mapb.pcx",1))?"MAPB.PCX":"MAP.PCX")
 
 int automap_key_command(window *wind, d_event *event, automap *am)
@@ -1043,6 +1055,7 @@ int automap_handler(window *wind, d_event *event, automap *am)
 				AUTOMAP_LOGI("automap_handler: EVENT_WINDOW_DRAW #%d", draw_log_count);
 				draw_log_count++;
 			}
+			automap_sync_secret_reveal(am);
 			automap_apply_input(am);
 			draw_automap(am);
 			break;
@@ -1152,6 +1165,7 @@ void do_automap()
 
 	AUTOMAP_LOGI("Building edge list...");
 	automap_build_edge_list(am);
+	am->secret_reveal_unfound = secret_area_get_reveal_unfound();
 	AUTOMAP_LOGI("Edge list built: num_edges=%d, highest_edge_index=%d", am->num_edges, am->highest_edge_index);
 
 	if ( am->viewDist==0 )

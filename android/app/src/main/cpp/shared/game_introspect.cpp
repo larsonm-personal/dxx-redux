@@ -48,6 +48,10 @@ extern "C" {
 #include "wall.h"
 #include "secretarea.h"
 #include "android_menu_scale.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "ai.h"
+#include "escort.h"
+#endif
 
 /* Android port: hires texture tracking counters from ogl.c */
 extern int r_hires_found;
@@ -402,6 +406,31 @@ static json serialize_secret_areas()
 	result["secrets"] = std::move(secrets);
 	return result;
 }
+
+#ifdef DXX_BUILD_DESCENT_II
+/* -- Serialize Guide-Bot state ---------------------------------------- */
+static json serialize_guidebot()
+{
+	json result;
+
+	result["buddy_objnum"] = Buddy_objnum;
+	result["released"] = (bool) Buddy_allowed_to_talk;
+	result["goal_object"] = Escort_goal_object;
+	result["special_goal"] = Escort_special_goal;
+	result["goal_index"] = Escort_goal_index;
+	result["secret_goal_display_index"] = escort_get_secret_goal_display_index();
+	result["secret_goal_seg"] = escort_get_secret_goal_seg();
+	result["secret_goal_side"] = escort_get_secret_goal_side();
+	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index) {
+		result["segment"] = (int) Objects[Buddy_objnum].segnum;
+		result["object_type"] = (int) Objects[Buddy_objnum].type;
+	} else {
+		result["segment"] = nullptr;
+		result["object_type"] = nullptr;
+	}
+	return result;
+}
+#endif
 
 static const char *merged_wall_snapshot_cover_kind_name(int kind)
 {
@@ -997,6 +1026,9 @@ extern "C" char *game_introspect_get_state(void)
 		j["player"] = serialize_player();
 		j["position"] = serialize_position();
 		j["secret_areas"] = serialize_secret_areas();
+#ifdef DXX_BUILD_DESCENT_II
+		j["guidebot"] = serialize_guidebot();
+#endif
 		j["merged_wall_snapshot"] = serialize_merged_wall_snapshot();
 
 		/* Flat weapon keys for easy assertion */
@@ -1007,6 +1039,9 @@ extern "C" char *game_introspect_get_state(void)
 		j["player"] = nullptr;
 		j["position"] = nullptr;
 		j["secret_areas"] = nullptr;
+#ifdef DXX_BUILD_DESCENT_II
+		j["guidebot"] = nullptr;
+#endif
 		j["merged_wall_snapshot"] = nullptr;
 	}
 

@@ -195,8 +195,9 @@ typedef struct awareness_event {
 #define ESCORT_GOAL_MARKER7     22
 #define ESCORT_GOAL_MARKER8     23
 #define ESCORT_GOAL_MARKER9     24
+#define ESCORT_GOAL_SECRET      25
 
-#define MAX_ESCORT_GOALS        25
+#define MAX_ESCORT_GOALS        26
 
 #define MAX_ESCORT_DISTANCE     (F1_0*80)
 #define MIN_ESCORT_DISTANCE     (F1_0*40)

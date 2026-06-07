@@ -102,6 +102,7 @@ typedef struct automap
 	ushort			old_wiggle; // keep 4 byte aligned
 	int			max_segments_away;
 	int			segment_limit;
+	int			secret_reveal_unfound;
 	
 	// Edge list variables
 	int			num_edges;
@@ -498,6 +499,17 @@ void draw_automap(automap *am)
 
 extern int set_segment_depths(int start_seg, ubyte *segbuf);
 
+void automap_sync_secret_reveal(automap *am)
+{
+	int reveal_unfound = secret_area_get_reveal_unfound();
+
+	if (am->secret_reveal_unfound == reveal_unfound)
+		return;
+	am->secret_reveal_unfound = reveal_unfound;
+	automap_build_edge_list(am);
+	adjust_segment_limit(am, am->segment_limit);
+}
+
 #define MAP_BACKGROUND_FILENAME (((SWIDTH>=640&&SHEIGHT>=480) && PHYSFSX_exists("maph.pcx",1))?"MAPH.PCX":"MAP.PCX")
 
 int automap_key_command(window *wind, d_event *event, automap *am)
@@ -618,6 +630,7 @@ int automap_handler(window *wind, d_event *event, automap *am)
 		}
 			
 		case EVENT_WINDOW_DRAW:
+			automap_sync_secret_reveal(am);
 			automap_apply_input(am);
 			draw_automap(am);
 			break;
@@ -711,6 +724,7 @@ void do_automap()
 	gr_set_current_canvas(NULL);
 
 	automap_build_edge_list(am);
+	am->secret_reveal_unfound = secret_area_get_reveal_unfound();
 
 	if ( am->viewDist==0 )
 		am->viewDist = ZOOM_DEFAULT;

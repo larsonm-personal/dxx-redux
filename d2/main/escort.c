@@ -56,6 +56,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "automap.h"
 #include "laser.h"
 #include "escort.h"
+#include "secretarea.h"
 #include "collide.h"
 #include "maths.h"
 #include "input_demo_hooks.h"
@@ -117,6 +118,7 @@ static const char *const Escort_goal_text[MAX_ESCORT_GOALS] = {
 	"MARKER 7",
 	"MARKER 8",
 	"MARKER 9",
+	"SECRET",
 // -- too much work -- 	"KAMIKAZE  "
 };
 
@@ -126,6 +128,8 @@ ubyte Stolen_items[MAX_STOLEN_ITEMS];
 int	Stolen_item_index;
 fix64	Escort_last_path_created = 0;
 int	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED, Escort_special_goal = -1, Escort_goal_index = -1, Buddy_messages_suppressed = 0;
+static int Escort_goal_secret_seg = -1;
+static int Escort_goal_secret_side = -1;
 fix64	Buddy_sorry_time;
 int	Buddy_objnum, Buddy_allowed_to_talk;
 int	Looking_for_marker;
@@ -208,6 +212,8 @@ void init_buddy_for_level(void)
 	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 	Escort_special_goal = -1;
 	Escort_goal_index = -1;
+	Escort_goal_secret_seg = -1;
+	Escort_goal_secret_side = -1;
 	Buddy_messages_suppressed = 0;
 #ifdef NETWORK
 	Escort_owner_player = -1;
@@ -290,6 +296,8 @@ void escort_spawn_at_player(void)
 	Escort_special_goal = -1;
 	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 	Escort_goal_index = -1;
+	Escort_goal_secret_seg = -1;
+	Escort_goal_secret_side = -1;
 #ifdef NETWORK
 	if (Game_mode & GM_MULTI_COOP) {
 		Escort_owner_player = Player_num;
@@ -488,6 +496,9 @@ void detect_escort_goal_accomplished(int index)
 	if (Escort_special_goal == ESCORT_GOAL_SCRAM)
 		return;
 
+	if (Escort_special_goal == ESCORT_GOAL_SECRET)
+		return;
+
 //	See if goal found was a key.  Need to handle default goals differently.
 //	Note, no buddy_met_goal sound when blow up reactor or exit.  Not great, but ok
 //	since for reactor, noisy, for exit, buddy is disappearing.
@@ -649,29 +660,27 @@ int marker_exists_in_mine(int id)
 	return 0;
 }
 
+typedef struct escort_secret_goal_info {
+	int display_index;
+	int seg;
+	int side;
+	int bfs_rank;
+} escort_secret_goal_info;
+
+static void escort_clear_secret_goal(void);
+static int escort_find_nearest_unfound_secret_entrance(int start_seg,
+                                                       escort_secret_goal_info *goal);
+static void escort_report_secret_goal_failure(int goal_index);
+static int escort_goal_command_allowed(void);
+
 //	-----------------------------------------------------------------------------
 void set_escort_special_goal(int special_key)
 {
 	int marker_key;
 
-	Buddy_messages_suppressed = 0;
-
-	if (!Buddy_allowed_to_talk) {
-		ok_for_buddy_to_talk();
-		if (!Buddy_allowed_to_talk) {
-			int	i;
-
-			for (i=0; i<=Highest_object_index; i++)
-				if ((Objects[i].type == OBJ_ROBOT) && Robot_info[Objects[i].id].companion) {
-					HUD_init_message(HM_DEFAULT, "%s has not been released.",PlayerCfg.GuidebotName);
-					break;
-				}
-			if (i == Highest_object_index+1)
-				HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in mine.");
-
-			return;
-		}
-	}
+	if (!escort_goal_command_allowed())
+		return;
+	escort_clear_secret_goal();
 
 	special_key = special_key & (~KEY_SHIFTED);
 
@@ -724,6 +733,35 @@ void set_escort_special_goal(int special_key)
 	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 }
 
+void escort_find_secret_goal(void)
+{
+	escort_secret_goal_info goal;
+	int goal_index;
+
+	if (!escort_goal_command_allowed())
+		return;
+
+	goal_index = escort_find_nearest_unfound_secret_entrance(Objects[Buddy_objnum].segnum, &goal);
+	if (goal_index < 0) {
+		escort_report_secret_goal_failure(goal_index);
+		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+		Escort_special_goal = -1;
+		Escort_goal_index = goal_index;
+		escort_clear_secret_goal();
+		return;
+	}
+
+	Looking_for_marker = -1;
+	Last_buddy_key = -1;
+	Escort_special_goal = ESCORT_GOAL_SECRET;
+	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+	Escort_goal_index = goal.display_index;
+	Escort_goal_secret_seg = goal.seg;
+	Escort_goal_secret_side = goal.side;
+	Last_buddy_message_time = GameTime64 - 2*F1_0;
+	say_escort_goal(ESCORT_GOAL_SECRET);
+}
+
 void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu)
 {
 	if (from_menu) {
@@ -734,6 +772,11 @@ void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu)
 		return;
 	}
 	set_escort_special_goal(special_key);
+}
+
+void input_demo_apply_recorded_guidebot_find_secret(void)
+{
+	escort_find_secret_goal();
 }
 
 //	-----------------------------------------------------------------------------
@@ -844,6 +887,141 @@ int exists_in_mine(int start_seg, int objtype, int objid, int special)
 	return -1;
 }
 
+static void escort_clear_secret_goal(void)
+{
+	Escort_goal_secret_seg = -1;
+	Escort_goal_secret_side = -1;
+}
+
+int escort_get_secret_goal_display_index(void)
+{
+	return (Escort_goal_object == ESCORT_GOAL_SECRET) ? Escort_goal_index : -1;
+}
+
+int escort_get_secret_goal_seg(void)
+{
+	return (Escort_goal_object == ESCORT_GOAL_SECRET) ? Escort_goal_secret_seg : -1;
+}
+
+int escort_get_secret_goal_side(void)
+{
+	return (Escort_goal_object == ESCORT_GOAL_SECRET) ? Escort_goal_secret_side : -1;
+}
+
+static int escort_secret_goal_is_better(const escort_secret_goal_info *candidate,
+                                        const escort_secret_goal_info *best)
+{
+	if (best->display_index < 0)
+		return 1;
+	if (candidate->bfs_rank != best->bfs_rank)
+		return candidate->bfs_rank < best->bfs_rank;
+	if (candidate->display_index != best->display_index)
+		return candidate->display_index < best->display_index;
+	if (candidate->seg != best->seg)
+		return candidate->seg < best->seg;
+	return candidate->side < best->side;
+}
+
+static int escort_find_nearest_unfound_secret_entrance(int start_seg,
+                                                       escort_secret_goal_info *goal)
+{
+	const secret_area_state *state = secret_area_get_state();
+	escort_secret_goal_info best;
+	short bfs_list[MAX_SEGMENTS];
+	static int bfs_rank[MAX_SEGMENTS];
+	int length;
+	int total;
+	int have_unfound = 0;
+	int i;
+
+	if (goal)
+		memset(goal, 0, sizeof(*goal));
+	if (!state || !state->enabled)
+		return -1;
+	total = secret_area_total(state);
+	if (total <= 0)
+		return -1;
+	if (secret_area_found_count(state) >= total)
+		return -4;
+	if ((start_seg < 0) || (start_seg > Highest_segment_index))
+		return -2;
+
+	for (i=0; i<MAX_SEGMENTS; i++)
+		bfs_rank[i] = -1;
+	create_bfs_list(start_seg, bfs_list, &length, MAX_SEGMENTS);
+	for (i=0; i<length; i++)
+		if ((bfs_list[i] >= 0) && (bfs_list[i] < MAX_SEGMENTS))
+			bfs_rank[bfs_list[i]] = i;
+
+	best.display_index = -1;
+	best.seg = -1;
+	best.side = -1;
+	best.bfs_rank = MAX_SEGMENTS;
+	for (i=0; i<total; i++) {
+		const secret_area_entry *secret = &state->secrets[i];
+		int e;
+
+		if (state->found[i])
+			continue;
+		have_unfound = 1;
+		for (e=0; e<secret->entrance_count; e++) {
+			const secret_area_entrance *entrance = &secret->entrances[e];
+			escort_secret_goal_info candidate;
+
+			if ((entrance->seg < 0) || (entrance->seg > Highest_segment_index) ||
+			    (entrance->seg >= MAX_SEGMENTS) || (bfs_rank[entrance->seg] < 0))
+				continue;
+			candidate.display_index = secret->display_index;
+			candidate.seg = entrance->seg;
+			candidate.side = entrance->side;
+			candidate.bfs_rank = bfs_rank[entrance->seg];
+			if (escort_secret_goal_is_better(&candidate, &best))
+				best = candidate;
+		}
+	}
+
+	if (best.display_index < 0)
+		return have_unfound ? -2 : -4;
+	if (goal)
+		*goal = best;
+	return best.display_index;
+}
+
+static void escort_report_secret_goal_failure(int goal_index)
+{
+	Last_buddy_message_time = 0;
+	if (goal_index == -4)
+		buddy_message("All found.");
+	else if (goal_index == -2)
+		buddy_message("Can't reach any secrets.");
+	else
+		buddy_message("No secrets in mine.");
+}
+
+static int escort_goal_command_allowed(void)
+{
+	Buddy_messages_suppressed = 0;
+
+	if (!Buddy_allowed_to_talk) {
+		ok_for_buddy_to_talk();
+		if (!Buddy_allowed_to_talk) {
+			int	i;
+
+			for (i=0; i<=Highest_object_index; i++)
+				if ((Objects[i].type == OBJ_ROBOT) && Robot_info[Objects[i].id].companion) {
+					HUD_init_message(HM_DEFAULT, "%s has not been released.",PlayerCfg.GuidebotName);
+					break;
+				}
+			if (i == Highest_object_index+1)
+				HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in mine.");
+
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 //	-----------------------------------------------------------------------------
 //	Return true if it happened, else return false.
 int find_exit_segment(void)
@@ -883,6 +1061,12 @@ void say_escort_goal(int goal_num)
 		case ESCORT_GOAL_SCRAM:			buddy_message("Staying away...");			break;
 		case ESCORT_GOAL_BOSS:			buddy_message("Finding BOSS robot");		break;
 		case ESCORT_GOAL_PLAYER_SPEW:	buddy_message("Finding your powerups");	break;
+		case ESCORT_GOAL_SECRET:
+			if (Escort_goal_index > 0)
+				buddy_message("Finding secret %i", Escort_goal_index);
+			else
+				buddy_message("Finding secret");
+			break;
 		case ESCORT_GOAL_MARKER1:
 		case ESCORT_GOAL_MARKER2:
 		case ESCORT_GOAL_MARKER3:
@@ -972,6 +1156,19 @@ void escort_create_path_to_goal(object *objp)
 				Escort_goal_index = exists_in_mine(objp->segnum, -1, -1, ESCORT_GOAL_PLAYER_SPEW);
 				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
 				break;
+			case ESCORT_GOAL_SECRET: {
+				escort_secret_goal_info secret_goal;
+
+				Escort_goal_index = escort_find_nearest_unfound_secret_entrance(objp->segnum, &secret_goal);
+				if (Escort_goal_index > -1) {
+					goal_seg = secret_goal.seg;
+					Escort_goal_secret_seg = secret_goal.seg;
+					Escort_goal_secret_side = secret_goal.side;
+				} else {
+					escort_clear_secret_goal();
+				}
+				break;
+			}
 			case ESCORT_GOAL_SCRAM:
 				goal_seg = -3;		//	Kinda a hack.
 				Escort_goal_index = goal_seg;
@@ -996,7 +1193,10 @@ void escort_create_path_to_goal(object *objp)
 		Escort_goal_index);
 
 	if ((Escort_goal_index < 0) && (Escort_goal_index != -3)) {	//	I apologize for this statement -- MK, 09/22/95
-		if (Escort_goal_index == -1) {
+		if (Escort_goal_object == ESCORT_GOAL_SECRET) {
+			escort_report_secret_goal_failure(Escort_goal_index);
+			Looking_for_marker = -1;
+		} else if (Escort_goal_index == -1) {
 			Last_buddy_message_time = 0;	//	Force this message to get through.
 			buddy_message("No %s in mine.", Escort_goal_text[Escort_goal_object-1]);
 			Looking_for_marker = -1;
@@ -1009,6 +1209,7 @@ void escort_create_path_to_goal(object *objp)
 
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 		Escort_special_goal = -1;
+		escort_clear_secret_goal();
 	} else {
 		if (goal_seg == -3) {
 			// SIM RNG: this changes the live scram path the guidebot follows
@@ -1023,9 +1224,13 @@ void escort_create_path_to_goal(object *objp)
 			if ((aip->path_length > 0) && (Point_segs[aip->hide_index + aip->path_length - 1].segnum != goal_seg)) {
 				fix	dist_to_player;
 				Last_buddy_message_time = 0;	//	Force this message to get through.
-				buddy_message("Can't reach %s.", Escort_goal_text[Escort_goal_object-1]);
+				if (Escort_goal_object == ESCORT_GOAL_SECRET)
+					buddy_message("Can't reach any secrets.");
+				else
+					buddy_message("Can't reach %s.", Escort_goal_text[Escort_goal_object-1]);
 				Looking_for_marker = -1;
 				Escort_goal_object = ESCORT_GOAL_SCRAM;
+				escort_clear_secret_goal();
 				dist_to_player = find_connected_distance(&objp->pos, objp->segnum, &Believed_player_pos, Believed_player_seg, 100, WID_FLY_FLAG);
 				if (dist_to_player > MIN_ESCORT_DISTANCE)
 					create_path_to_player(objp, Max_escort_length, 1);	//	MK!: Last parm used to be 1!

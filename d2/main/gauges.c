@@ -61,6 +61,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "net_udp.h"
 #include "scores.h"
+#include "secretarea.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_hooks.h"
 #include "input_demo_replay.h"
@@ -858,6 +859,19 @@ static void hud_draw_hostage_counts(int y, int lost, int onboard, int total)
 	gr_string(x + label_w + lost_w, y, suffix);
 }
 
+static void hud_draw_secret_counts(int y)
+{
+	char secret_str[32];
+	const secret_area_state *state = secret_area_get_state();
+	int total = secret_area_total(state);
+
+	if (total <= 0)
+		return;
+	snprintf(secret_str, sizeof(secret_str), "secrets: %d/%d",
+	         secret_area_found_count(state), total);
+	hud_draw_right_text(y, secret_str);
+}
+
 static int hud_score_added_active(void)
 {
 	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) )
@@ -896,6 +910,7 @@ void hud_show_robot_hostage_counts()
 		lost_hostages = 0;
 	hud_draw_hostage_counts(FSPACY(1) + LINE_SPACING * (yline + 1),
 	                        lost_hostages, Players[pnum].hostages_on_board, Players[pnum].hostages_level);
+	hud_draw_secret_counts(FSPACY(1) + LINE_SPACING * (yline + 2));
 }
 
 void hud_show_timer_count()

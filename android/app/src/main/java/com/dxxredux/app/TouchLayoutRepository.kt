@@ -18,7 +18,7 @@ import java.io.File
 object TouchLayoutRepository {
     private const val TAG = "TouchLayoutRepository"
     private const val FILENAME = "touch_layout.json"
-    private const val CURRENT_VERSION = 2
+    private const val CURRENT_VERSION = 3
     private const val BUNDLED_DIR = "configs/touch"
     private const val USER_DIR = "configs/touch"
 
@@ -56,8 +56,33 @@ object TouchLayoutRepository {
                         },
                 )
         }
+        if (migrated.version < 3) {
+            migrated =
+                migrated.copy(
+                    version = 3,
+                    radialMenus = migrated.radialMenus.map { migrateGuideWheelSecretSegment(it) },
+                )
+        }
         if (migrated.version >= CURRENT_VERSION) return migrated
         return migrated.copy(version = CURRENT_VERSION)
+    }
+
+    private fun migrateGuideWheelSecretSegment(radial: RadialMenuControl): RadialMenuControl {
+        if (radial.id != "Guide" ||
+            radial.segments.any { it.binding == TouchBindings.META_GUIDE_FIND_SECRET } ||
+            radial.segments.size >= 12
+        ) {
+            return radial
+        }
+        val secretSegment = RadialSegment("Secret", TouchBindings.META_GUIDE_FIND_SECRET)
+        val releaseIndex = radial.segments.indexOfFirst { it.binding == TouchBindings.META_GUIDE_RELEASE_CONTROL }
+        val segments =
+            if (releaseIndex >= 0) {
+                radial.segments.toMutableList().also { it.add(releaseIndex, secretSegment) }
+            } else {
+                radial.segments + secretSegment
+            }
+        return radial.copy(segments = segments)
     }
 
     fun save(

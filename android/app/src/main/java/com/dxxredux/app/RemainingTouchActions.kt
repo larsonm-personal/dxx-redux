@@ -46,6 +46,7 @@ private val remainingSecondaryWeaponBindings =
 private val remainingGuideBindings =
     listOf(
         TouchBindings.META_GUIDE_BOT_MENU,
+        TouchBindings.META_GUIDE_FIND_SECRET,
         TouchBindings.META_GUIDE_RELEASE_CONTROL,
     )
 

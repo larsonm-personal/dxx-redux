@@ -178,6 +178,10 @@ static bool parse_direct_command_event_json(const std::string &json_text,
 		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_SPAWN;
 		return true;
 	}
+	if (command == "guidebot_find_secret") {
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_SECRET;
+		return true;
+	}
 	if (command == "death_abort") {
 		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT;
 		return true;

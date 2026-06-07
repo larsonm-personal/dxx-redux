@@ -28,6 +28,11 @@
 - [x] Split secret-area reveal from normal cheat state and add an automap-only touch settings toggle that resets on level change.
 - [x] Updated first-entry popup wording to `found secret N (total: X/Y)` and made found/revealed secret segments draw full automap edges without mutating normal automap visited state.
 - [x] Expanded D2 candidate boundaries to include no-key switch-opened doors, open-wall links, and illusory-wall links when the switch source is ordinary reachable.
+- [x] Added `secrets: N/M` to the HUD robot/hostage count block when generated secrets are active.
+- [x] Add a D2 Guide-Bot `find secret` command that targets the nearest reachable unfound secret entrance.
+- [x] Add the Android Guide wheel/meta-action wiring for `find secret`.
+- [x] Add introspection/test visibility for the selected Guide-Bot secret target.
+- [x] Build and validate the Guide-Bot secret command.
 
 ## Findings
 - The engine already has a strong hidden-door signal: `WallAnims[wall.clip_num].flags & WCF_HIDDEN`.
