@@ -22,9 +22,9 @@
 - [x] Added PowerShell compare/update harness in `android/tests/test_secret_area_baseline.ps1` and `update_secret_area_baseline.ps1`.
 - [x] Build the new host dump targets and commit `android/test_fixtures/secret_area_base_game_baseline.json`.
 - [x] Added per-secret item summaries to runtime state, introspection, and the base-game regression JSON.
-- [ ] Add first-entry HUD popup text.
-- [ ] Add save/restore found bits.
-- [ ] Add automap found labels and reveal-cheat labels.
+- [x] Add first-entry HUD popup text.
+- [x] Add save/restore found bits.
+- [x] Add automap found labels and reveal-cheat labels.
 
 ## Findings
 - The engine already has a strong hidden-door signal: `WallAnims[wall.clip_num].flags & WCF_HIDDEN`.

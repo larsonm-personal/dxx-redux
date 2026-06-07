@@ -49,6 +49,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gauges.h"
 #include "newdemo.h"
 #include "automap.h"
+#include "secretarea.h"
 #include "piggy.h"
 #include "paging.h"
 #include "titles.h"
@@ -83,7 +84,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "config.h"
 #endif
 
-#define STATE_VERSION 28
+#define STATE_VERSION 29
 #define STATE_COMPATIBLE_VERSION 20
 #define STATE_RUNTIME_VERSION 23
 #define STATE_FIDELITY_VERSION 23
@@ -91,6 +92,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define STATE_AI_PATH_RUNTIME_VERSION 25
 #define STATE_OBJECT_SIGNATURE_RUNTIME_VERSION 26
 #define STATE_FX_RNG_RUNTIME_VERSION 27
+#define STATE_SECRET_AREA_RUNTIME_VERSION 29
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -121,6 +123,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 26- Save object signature seed for deterministic post-checkpoint object creation
 // 27- Save FX RNG state and call count for deterministic checkpoint replay
 // 28- Save difficulty change history for mid-level difficulty edits
+// 29- Save generated secret-area found bits
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -723,6 +726,25 @@ static void state_log_checkpoint_allocator_snapshot(const char *label,
 		message);
 }
 
+static void state_write_secret_area_runtime_state(PHYSFS_file *fp)
+{
+	const secret_area_state *state = secret_area_get_state();
+	unsigned char empty_found[SECRET_AREA_MAX_GENERATED] = {0};
+	int total = secret_area_total(state);
+
+	PHYSFS_write(fp, &total, sizeof(total), 1);
+	PHYSFS_write(fp, state && total > 0 ? state->found : empty_found, sizeof(empty_found[0]), SECRET_AREA_MAX_GENERATED);
+}
+
+static void state_read_secret_area_runtime_state(PHYSFS_file *fp, int swap)
+{
+	unsigned char found[SECRET_AREA_MAX_GENERATED] = {0};
+	int saved_total = PHYSFSX_readSXE32(fp, swap);
+
+	PHYSFS_read(fp, found, sizeof(found[0]), SECRET_AREA_MAX_GENERATED);
+	secret_area_restore_saved_found(saved_total, found, SECRET_AREA_MAX_GENERATED, Automap_visited, Highest_segment_index + 1);
+}
+
 static void state_write_runtime_state(PHYSFS_file *fp)
 {
 	object_runtime_state object_state;
@@ -787,6 +809,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	PHYSFS_write(fp, &ai_path_state.player_following_path_flag, sizeof(ai_path_state.player_following_path_flag), 1);
 	PHYSFS_write(fp, &ai_path_state.player_goal_segment, sizeof(ai_path_state.player_goal_segment), 1);
 	state_write_effect_runtime_state(fp, GameTime64);
+	state_write_secret_area_runtime_state(fp);
 }
 
 static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version)
@@ -858,6 +881,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 		ai_path_state.player_goal_segment = PHYSFSX_readSXE32(fp, swap);
 	}
 	state_read_effect_runtime_state(fp, swap, apply_runtime_state, version, GameTime64);
+	if (version >= STATE_SECRET_AREA_RUNTIME_VERSION)
+		state_read_secret_area_runtime_state(fp, swap);
 
 	if (secret_restore)
 		return;
@@ -2908,6 +2933,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	}
 	else
 		PHYSFS_read(fp, Automap_visited, sizeof(ubyte), MAX_SEGMENTS_ORIGINAL);
+	secret_area_restore_found_from_automap(Automap_visited, Highest_segment_index + 1);
 
 	//	Restore hacked up weapon system stuff.
 	Auto_fire_fusion_cannon_time = 0;

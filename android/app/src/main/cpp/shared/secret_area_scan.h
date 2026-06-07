@@ -110,6 +110,8 @@ typedef struct secret_area_state {
 void secret_area_state_clear(secret_area_state *state);
 int secret_area_scan_level(const secret_area_scan_view *view, secret_area_state *state);
 int secret_area_mark_segment_entered(secret_area_state *state, int seg);
+void secret_area_restore_found(secret_area_state *state, int saved_total, const unsigned char *found, int found_capacity);
+void secret_area_restore_found_from_visited(secret_area_state *state, const unsigned char *visited, int visited_count);
 int secret_area_total(const secret_area_state *state);
 int secret_area_found_count(const secret_area_state *state);
 const char *secret_area_disabled_reason_name(int reason);

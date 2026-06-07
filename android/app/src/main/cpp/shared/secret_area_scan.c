@@ -580,6 +580,54 @@ int secret_area_mark_segment_entered(secret_area_state *state, int seg)
 	return display_index;
 }
 
+static void clear_found_bits(secret_area_state *state)
+{
+	if (!state)
+		return;
+	memset(state->found, 0, sizeof(state->found));
+	state->found_count = 0;
+}
+
+void secret_area_restore_found(secret_area_state *state, int saved_total, const unsigned char *found, int found_capacity)
+{
+	int i;
+	int total = secret_area_total(state);
+
+	clear_found_bits(state);
+	if (!state || !state->enabled || !found || found_capacity <= 0 || saved_total != total)
+		return;
+	if (found_capacity > total)
+		found_capacity = total;
+	for (i = 0; i < found_capacity; ++i) {
+		if (!found[i])
+			continue;
+		state->found[i] = 1;
+		state->found_count++;
+	}
+}
+
+void secret_area_restore_found_from_visited(secret_area_state *state, const unsigned char *visited, int visited_count)
+{
+	int i;
+	int total = secret_area_total(state);
+
+	clear_found_bits(state);
+	if (!state || !state->enabled || !visited || visited_count <= 0)
+		return;
+	for (i = 0; i < total; ++i) {
+		const secret_area_entry *secret = &state->secrets[i];
+		int j;
+		for (j = 0; j < secret->segment_count; ++j) {
+			int seg = secret->segments[j];
+			if (seg >= 0 && seg < visited_count && visited[seg]) {
+				state->found[i] = 1;
+				state->found_count++;
+				break;
+			}
+		}
+	}
+}
+
 int secret_area_total(const secret_area_state *state)
 {
 	if (!state || !state->enabled)

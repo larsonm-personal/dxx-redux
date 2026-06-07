@@ -6,6 +6,7 @@
 
 #include "gameseg.h"
 #include "gameseq.h"
+#include "hudmsg.h"
 #include "object.h"
 #include "player.h"
 #include "powerup.h"
@@ -271,5 +272,21 @@ const secret_area_state *secret_area_get_state(void)
 
 int secret_area_note_segment_entered(int segnum)
 {
-	return secret_area_mark_segment_entered(&Secret_area_state, segnum);
+	int display_index = secret_area_mark_segment_entered(&Secret_area_state, segnum);
+	if (display_index > 0)
+		HUD_init_message(HM_DEFAULT, "Found secret S%d (%d/%d)", display_index, secret_area_found_count(&Secret_area_state), secret_area_total(&Secret_area_state));
+	return display_index;
+}
+
+void secret_area_restore_saved_found(int saved_total, const unsigned char *found, int found_capacity, const unsigned char *visited, int visited_count)
+{
+	if (saved_total == secret_area_total(&Secret_area_state))
+		secret_area_restore_found(&Secret_area_state, saved_total, found, found_capacity);
+	else
+		secret_area_restore_found_from_visited(&Secret_area_state, visited, visited_count);
+}
+
+void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count)
+{
+	secret_area_restore_found_from_visited(&Secret_area_state, visited, visited_count);
 }

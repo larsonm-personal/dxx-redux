@@ -60,6 +60,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "powerup.h"
 #include "switch.h"
 #include "automap.h"
+#include "secretarea.h"
 #include "cntrlcen.h"
 #include "timer.h"
 #include "config.h"
@@ -217,6 +218,7 @@ ubyte Automap_visited[MAX_SEGMENTS];
 // Function Prototypes
 void adjust_segment_limit(automap *am, int SegmentLimit);
 void draw_all_edges(automap *am);
+void draw_secret_area_labels(void);
 void automap_build_edge_list(automap *am);
 void InitMarkerInput();
 int MarkerInputMessage(int key);
@@ -319,6 +321,48 @@ void DrawMarkerTextLabel (int num, const g3s_point *sphere_point)
 	gr_set_fontcolor(BM_XRGB(24,0,0), -1);
 	gr_get_string_size(label, &w, &h, &aw);
 	gr_printf(f2i(label_point.p3_sx)-w/2, f2i(label_point.p3_sy)-h/2, "%s", label);
+}
+
+void DrawSecretAreaTextLabel(const char *label, int color, const g3s_point *sphere_point)
+{
+	int w,h,aw;
+	g3s_point label_point = *sphere_point;
+
+	if (label_point.p3_codes & CC_BEHIND)
+		return;
+	g3_project_point(&label_point);
+	if (!(label_point.p3_flags & PF_PROJECTED))
+		return;
+
+	gr_set_curfont(GAME_FONT);
+	gr_set_fontcolor(color, -1);
+	gr_get_string_size(label, &w, &h, &aw);
+	gr_printf(f2i(label_point.p3_sx)-w/2, f2i(label_point.p3_sy)-h/2, "%s", label);
+}
+
+void draw_secret_area_labels(void)
+{
+	const secret_area_state *state = secret_area_get_state();
+	int total = secret_area_total(state);
+	int reveal_unfound = cheats.fullautomap;
+	int i;
+
+	for (i = 0; i < total; ++i) {
+		const secret_area_entry *secret = &state->secrets[i];
+		int found = state->found[i] != 0;
+		char label[8];
+		vms_vector pos;
+		g3s_point point;
+
+		if (!found && !reveal_unfound)
+			continue;
+		snprintf(label, sizeof(label), "S%d", secret->display_index);
+		pos.x = secret->label_pos[0];
+		pos.y = secret->label_pos[1];
+		pos.z = secret->label_pos[2];
+		g3_rotate_point(&point, &pos);
+		DrawSecretAreaTextLabel(label, found ? BM_XRGB(0, 31, 31) : BM_XRGB(31, 22, 0), &point);
+	}
 }
 
 void DropMarker (int player_marker_num)
@@ -707,6 +751,7 @@ void draw_automap(automap *am)
 
 	if (draw_call_count < 3) AUTOMAP_LOGI("draw_automap: calling draw_all_edges");
 	draw_all_edges(am);
+	draw_secret_area_labels();
 
 	selected_player_rgb = player_rgb; 
 	// Draw player...
