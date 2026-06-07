@@ -360,14 +360,19 @@ static json serialize_secret_areas()
 	result["final_candidate_count"] = state->final_candidate_count;
 	result["found_count"] = secret_area_found_count(state);
 	result["total"] = secret_area_total(state);
+	result["reveal_unfound"] = (bool) secret_area_get_reveal_unfound();
 	json secrets = json::array();
 	if (state->enabled) {
+		int drawable_label_count = 0;
+		int drawable_segment_count = 0;
 		for (int i = 0; i < state->final_candidate_count && i < SECRET_AREA_MAX_GENERATED; i++) {
 			const secret_area_entry *entry = &state->secrets[i];
+			bool drawable = state->found[i] != 0 || secret_area_get_reveal_unfound() != 0;
 			json item;
 			item["id"] = std::string("S") + std::to_string(entry->display_index);
 			item["display_index"] = entry->display_index;
 			item["found"] = state->found[i] != 0;
+			item["drawable"] = drawable;
 			item["entry_distance"] = entry->entry_distance;
 			item["entry_seg"] = entry->entry_seg;
 			item["entry_side"] = entry->entry_side;
@@ -400,8 +405,17 @@ static json serialize_secret_areas()
 				                      { "wall_num", entrance->wall_num } });
 			}
 			item["entrances"] = std::move(entrances);
+			if (drawable) {
+				drawable_label_count++;
+				drawable_segment_count += entry->segment_count;
+			}
 			secrets.push_back(std::move(item));
 		}
+		result["drawable_label_count"] = drawable_label_count;
+		result["drawable_segment_count"] = drawable_segment_count;
+	} else {
+		result["drawable_label_count"] = 0;
+		result["drawable_segment_count"] = 0;
 	}
 	result["secrets"] = std::move(secrets);
 	return result;
@@ -832,7 +846,6 @@ extern "C" char *game_introspect_get_state(void)
 
 	/* -- Automap ------------------------------------------------ */
 	j["automap_active"] = (bool) Automap_active;
-#ifdef DXX_BUILD_DESCENT_II
 	{
 		automap_view_info avi;
 		if (automap_get_view_info(&avi)) {
@@ -848,13 +861,20 @@ extern "C" char *game_introspect_get_state(void)
 				{ "zoom", f2fl(avi.zoom) },
 				{ "tangles_p", avi.tangles.p },
 				{ "tangles_h", avi.tangles.h },
-				{ "tangles_b", avi.tangles.b }
+				{ "tangles_b", avi.tangles.b },
+				{ "secret_reveal_unfound", (bool) avi.secret_reveal_unfound },
+				{ "secret_edge_count", avi.secret_edge_count },
+				{ "secret_visible_edge_count", avi.secret_visible_edge_count },
+				{ "secret_too_far_edge_count", avi.secret_too_far_edge_count },
+				{ "secret_edges_drawn_last_frame", avi.secret_edges_drawn_last_frame },
+				{ "secret_edges_culled_far_dist_last_frame", avi.secret_edges_culled_far_dist_last_frame },
+				{ "secret_label_candidate_count", avi.secret_label_candidate_count },
+				{ "secret_label_projected_count", avi.secret_label_projected_count }
 			};
 		} else {
 			j["automap"] = nullptr;
 		}
 	}
-#endif /* DXX_BUILD_DESCENT_II automap_view_info */
 
 	/* -- Audio diagnostics ----------------------------------------- */
 	{

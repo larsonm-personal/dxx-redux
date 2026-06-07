@@ -33,6 +33,11 @@
 - [x] Add the Android Guide wheel/meta-action wiring for `find secret`.
 - [x] Add introspection/test visibility for the selected Guide-Bot secret target.
 - [x] Build and validate the Guide-Bot secret command.
+- [x] Fixed automap reveal/found secret edges being immediately hidden by the segment distance-limit pass; revealed secret segments now bypass `EF_TOO_FAR` without mutating normal `Automap_visited`.
+- [x] Added secret-area reveal/drawable counts to introspection so future automap reveal tests can assert the toggle changes drawable secret state without screenshots.
+- [x] Fixed automap secret labels being invisible by drawing them after the 3D automap frame, while keeping edge reveal inside the normal 3D pass.
+- [x] Added `test_secret_reveal_automap_d2.json5` to launch D2 level 1, enable reveal in automation, and assert the automap sees/draws secret edges and labels.
+- [x] Make secret-area automap edges draw yellow only while the Reveal Secrets cheat is active; found-only secret edges keep normal automap coloring.
 
 ## Findings
 - The engine already has a strong hidden-door signal: `WallAnims[wall.clip_num].flags & WCF_HIDDEN`.

@@ -114,6 +114,10 @@ typedef struct automap
 	int			max_segments_away;
 	int			segment_limit;
 	int			secret_reveal_unfound;
+	int			secret_edges_drawn_last_frame;
+	int			secret_edges_culled_far_dist_last_frame;
+	int			secret_label_candidate_count;
+	int			secret_label_projected_count;
 	
 	// Edge list variables
 	int			num_edges;
@@ -159,6 +163,7 @@ typedef struct automap
 #define K_WALL_DOOR_GOLD        BM_XRGB(31, 31, 0)
 #define K_WALL_DOOR_RED         BM_XRGB(31, 0, 0)
 #define K_WALL_REVEALED_COLOR   BM_XRGB(0, 0, 25 ) //what you see when you have the full map powerup
+#define K_SECRET_REVEAL_COLOR   BM_XRGB(31, 22, 0)
 #define K_HOSTAGE_COLOR         BM_XRGB(0, 31, 0 )
 #define K_FONT_COLOR_20         BM_XRGB(20, 20, 20 )
 #define K_GREEN_31              BM_XRGB(0, 31, 0)
@@ -166,8 +171,22 @@ typedef struct automap
 int Automap_active = 0;
 static automap *g_active_automap = NULL;
 
+int secret_area_should_draw_segment_edges(int segnum);
+
+static int automap_edge_contains_visible_secret(Edge_info *e)
+{
+	int i;
+
+	for (i = 0; i < e->num_faces; i++)
+		if (secret_area_should_draw_segment_edges(e->segnum[i]))
+			return 1;
+	return 0;
+}
+
 #ifdef INTROSPECT_ON
 int automap_get_view_info(automap_view_info *out) {
+	int i;
+
 	if (!Automap_active || !g_active_automap || !out) return 0;
 	automap *am = g_active_automap;
 	out->view_pos  = am->view_position;
@@ -177,6 +196,25 @@ int automap_get_view_info(automap_view_info *out) {
 	out->zoom      = am->zoom;
 	out->tangles   = am->tangles;
 	out->freeflight = PlayerCfg.AutomapFreeFlight;
+	out->secret_reveal_unfound = am->secret_reveal_unfound;
+	out->secret_edge_count = 0;
+	out->secret_visible_edge_count = 0;
+	out->secret_too_far_edge_count = 0;
+	out->secret_edges_drawn_last_frame = am->secret_edges_drawn_last_frame;
+	out->secret_edges_culled_far_dist_last_frame = am->secret_edges_culled_far_dist_last_frame;
+	out->secret_label_candidate_count = am->secret_label_candidate_count;
+	out->secret_label_projected_count = am->secret_label_projected_count;
+	for (i = 0; i <= am->highest_edge_index; i++) {
+		Edge_info *e = &am->edges[i];
+
+		if (!(e->flags & EF_USED) || !automap_edge_contains_visible_secret(e))
+			continue;
+		out->secret_edge_count++;
+		if (e->flags & EF_TOO_FAR)
+			out->secret_too_far_edge_count++;
+		else
+			out->secret_visible_edge_count++;
+	}
 	return 1;
 }
 #endif
@@ -220,6 +258,7 @@ ubyte Automap_visited[MAX_SEGMENTS];
 void adjust_segment_limit(automap *am, int SegmentLimit);
 void draw_all_edges(automap *am);
 void draw_secret_area_labels(void);
+int secret_area_should_draw_segment_edges(int segnum);
 void automap_build_edge_list(automap *am);
 void InitMarkerInput();
 int MarkerInputMessage(int key);
@@ -324,21 +363,46 @@ void DrawMarkerTextLabel (int num, const g3s_point *sphere_point)
 	gr_printf(f2i(label_point.p3_sx)-w/2, f2i(label_point.p3_sy)-h/2, "%s", label);
 }
 
-void DrawSecretAreaTextLabel(const char *label, int color, const g3s_point *sphere_point)
+int DrawSecretAreaTextLabel(const char *label, int color, const g3s_point *sphere_point)
 {
 	int w,h,aw;
 	g3s_point label_point = *sphere_point;
 
 	if (label_point.p3_codes & CC_BEHIND)
-		return;
+		return 0;
 	g3_project_point(&label_point);
 	if (!(label_point.p3_flags & PF_PROJECTED))
-		return;
+		return 0;
 
 	gr_set_curfont(GAME_FONT);
 	gr_set_fontcolor(color, -1);
 	gr_get_string_size(label, &w, &h, &aw);
 	gr_printf(f2i(label_point.p3_sx)-w/2, f2i(label_point.p3_sy)-h/2, "%s", label);
+	return 1;
+}
+
+void secret_area_get_automap_label_pos(const secret_area_entry *secret, vms_vector *pos)
+{
+	int vertex_list[4];
+
+	if (secret->entry_seg >= 0 && secret->entry_seg <= Highest_segment_index &&
+	    secret->entry_side >= 0 && secret->entry_side < MAX_SIDES_PER_SEGMENT) {
+		get_side_verts(vertex_list, secret->entry_seg, secret->entry_side);
+		pos->x = (Vertices[vertex_list[0]].x + Vertices[vertex_list[1]].x +
+		          Vertices[vertex_list[2]].x + Vertices[vertex_list[3]].x) /
+		         4;
+		pos->y = (Vertices[vertex_list[0]].y + Vertices[vertex_list[1]].y +
+		          Vertices[vertex_list[2]].y + Vertices[vertex_list[3]].y) /
+		         4;
+		pos->z = (Vertices[vertex_list[0]].z + Vertices[vertex_list[1]].z +
+		          Vertices[vertex_list[2]].z + Vertices[vertex_list[3]].z) /
+		         4;
+		return;
+	}
+
+	pos->x = secret->label_pos[0];
+	pos->y = secret->label_pos[1];
+	pos->z = secret->label_pos[2];
 }
 
 void draw_secret_area_labels(void)
@@ -348,6 +412,12 @@ void draw_secret_area_labels(void)
 	int reveal_unfound = secret_area_get_reveal_unfound();
 	int i;
 
+	if (g_active_automap) {
+		g_active_automap->secret_label_candidate_count = 0;
+		g_active_automap->secret_label_projected_count = 0;
+	}
+	if (!state || !state->enabled)
+		return;
 	for (i = 0; i < total; ++i) {
 		const secret_area_entry *secret = &state->secrets[i];
 		int found = state->found[i] != 0;
@@ -358,11 +428,13 @@ void draw_secret_area_labels(void)
 		if (!found && !reveal_unfound)
 			continue;
 		snprintf(label, sizeof(label), "S%d", secret->display_index);
-		pos.x = secret->label_pos[0];
-		pos.y = secret->label_pos[1];
-		pos.z = secret->label_pos[2];
+		secret_area_get_automap_label_pos(secret, &pos);
 		g3_rotate_point(&point, &pos);
-		DrawSecretAreaTextLabel(label, found ? BM_XRGB(0, 31, 31) : BM_XRGB(31, 22, 0), &point);
+		if (g_active_automap)
+			g_active_automap->secret_label_candidate_count++;
+		if (DrawSecretAreaTextLabel(label, found ? BM_XRGB(0, 31, 31) : BM_XRGB(31, 22, 0), &point) &&
+		    g_active_automap)
+			g_active_automap->secret_label_projected_count++;
 	}
 }
 
@@ -374,10 +446,18 @@ int secret_area_should_draw_segment_edges(int segnum)
 	if (segnum < 0 || segnum >= SECRET_AREA_MAX_SEGMENTS)
 		return 0;
 	state = secret_area_get_state();
+	if (!state || !state->enabled)
+		return 0;
 	secret_index = state->segment_to_secret[segnum] - 1;
 	if (secret_index < 0 || secret_index >= secret_area_total(state))
 		return 0;
 	return state->found[secret_index] || secret_area_get_reveal_unfound();
+}
+
+int automap_segment_is_within_limit(int segnum, int SegmentLimit)
+{
+	return Automap_visited[segnum] <= SegmentLimit ||
+	       secret_area_should_draw_segment_edges(segnum);
 }
 
 void DropMarker (int player_marker_num)
@@ -766,7 +846,6 @@ void draw_automap(automap *am)
 
 	if (draw_call_count < 3) AUTOMAP_LOGI("draw_automap: calling draw_all_edges");
 	draw_all_edges(am);
-	draw_secret_area_labels();
 
 	selected_player_rgb = player_rgb; 
 	// Draw player...
@@ -829,6 +908,8 @@ void draw_automap(automap *am)
 	}
 
 	g3_end_frame();
+
+	draw_secret_area_labels();
 
 	name_frame(am);
 
@@ -1238,7 +1319,7 @@ void adjust_segment_limit(automap *am, int SegmentLimit)
 		e = &am->edges[i];
 		e->flags |= EF_TOO_FAR;
 		for (e1=0; e1<e->num_faces; e1++ )	{
-			if ( Automap_visited[e->segnum[e1]] <= SegmentLimit )	{
+			if ( automap_segment_is_within_limit(e->segnum[e1], SegmentLimit) )	{
 				e->flags &= (~EF_TOO_FAR);
 				break;
 			}
@@ -1259,6 +1340,8 @@ void draw_all_edges(automap *am)
 	
 	
 	nbright=0;
+	am->secret_edges_drawn_last_frame = 0;
+	am->secret_edges_culled_far_dist_last_frame = 0;
 
 	for (i=0; i<=am->highest_edge_index; i++ )	{
 		//e = &am->edges[Edge_used_list[i]];
@@ -1306,6 +1389,8 @@ void draw_all_edges(automap *am)
 					else
 						gr_setcolor( gr_fade_table[e->color+256*8] );
 					g3_draw_line( &Segment_points[e->verts[0]], &Segment_points[e->verts[1]] );
+					if (automap_edge_contains_visible_secret(e))
+						am->secret_edges_drawn_last_frame++;
 				} 	else {
 					am->drawingListBright[nbright++] = e-am->edges;
 				}
@@ -1354,7 +1439,11 @@ void draw_all_edges(automap *am)
 		dist = p1->p3_z - min_distance;
 		// Make distance be 1.0 to 0.0, where 0.0 is 10 segments away;
 		if ( dist < 0 ) dist=0;
-		if ( dist >= am->farthest_dist ) continue;
+		if ( dist >= am->farthest_dist ) {
+			if (automap_edge_contains_visible_secret(e))
+				am->secret_edges_culled_far_dist_last_frame++;
+			continue;
+		}
 
 		if ( e->flags & EF_NO_FADE )	{
 			gr_setcolor( e->color );
@@ -1364,6 +1453,8 @@ void draw_all_edges(automap *am)
 			gr_setcolor( gr_fade_table[e->color+color*256] );	
 		}
 		g3_draw_line( p1, p2 );
+		if (automap_edge_contains_visible_secret(e))
+			am->secret_edges_drawn_last_frame++;
 	}
 }
 
@@ -1488,6 +1579,11 @@ void add_one_unknown_edge( automap *am, int va, int vb )
 extern obj_position Player_init[];
 #endif
 
+int automap_should_draw_secret_reveal_color(int segnum)
+{
+	return secret_area_get_reveal_unfound() && secret_area_should_draw_segment_edges(segnum);
+}
+
 void add_segment_edges(automap *am, segment *seg)
 {
 	int 	is_grate, no_fade;
@@ -1591,6 +1687,11 @@ void add_segment_edges(automap *am, segment *seg)
 				color = am->wall_revealed_color;
 
 			Here:
+
+			if (automap_should_draw_secret_reveal_color(segnum)) {
+				color = K_SECRET_REVEAL_COLOR;
+				no_fade = 1;
+			}
 
 			get_side_verts(vertex_list,segnum,sn);
 			add_one_edge( am, vertex_list[0], vertex_list[1], color, sn, segnum, hidden_flag, 0, no_fade );

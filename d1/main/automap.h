@@ -23,6 +23,28 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 extern int Automap_active;
 
+#ifdef INTROSPECT_ON
+#include "vecmat.h"
+typedef struct automap_view_info {
+	vms_vector  view_pos;
+	vms_vector  view_target;
+	vms_matrix  view_matrix;
+	fix         viewDist;
+	fix         zoom;
+	vms_angvec  tangles;
+	int         freeflight;
+	int         secret_reveal_unfound;
+	int         secret_edge_count;
+	int         secret_visible_edge_count;
+	int         secret_too_far_edge_count;
+	int         secret_edges_drawn_last_frame;
+	int         secret_edges_culled_far_dist_last_frame;
+	int         secret_label_candidate_count;
+	int         secret_label_projected_count;
+} automap_view_info;
+int automap_get_view_info(automap_view_info *out);
+#endif
+
 extern void do_automap();
 extern void automap_clear_visited();
 extern ubyte Automap_visited[MAX_SEGMENTS];

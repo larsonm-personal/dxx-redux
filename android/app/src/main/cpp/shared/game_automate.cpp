@@ -59,6 +59,7 @@ extern "C" {
 #include "gameseq.h"
 #include "object.h"
 #include "collide.h"
+#include "secretarea.h"
 }
 
 #ifdef ANDROID
@@ -289,7 +290,8 @@ enum step_type {
 	STEP_TAP_BUTTON,              /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_BUTTON,           /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_CONTROLLER_MATCH, /* launcher-only: no-op in game engine (skip) */
-	STEP_SET_DEBUG                /* set a debug flag (e.g. tex_overlay) */
+	STEP_SET_DEBUG,               /* set a debug flag (e.g. tex_overlay) */
+	STEP_SET_SECRET_REVEAL        /* automation-only: set automap secret reveal */
 };
 
 /* Key-value pair for STEP_ASSERT expectations.
@@ -337,6 +339,7 @@ struct auto_step {
 	int bank = 0;                       /* STEP_POSE_VIEW: exact bank */
 	int heading = 0;                    /* STEP_POSE_VIEW: exact heading */
 	int request_frame = -1;             /* STEP_PROBE_CROSSHAIR: request frame */
+	bool enabled = false;               /* STEP_SET_SECRET_REVEAL */
 	std::string match_label_a;          /* STEP_ASSERT_PROBE_MATCH: first label */
 	std::string match_label_b;          /* STEP_ASSERT_PROBE_MATCH: second label */
 	float hot_xy_tolerance = 0.02f;     /* STEP_ASSERT_PROBE_MATCH: max L-inf distance */
@@ -454,6 +457,7 @@ static const char *step_type_name(step_type t)
 		case STEP_ASSERT_BUTTON: return "assert_button";
 		case STEP_ASSERT_CONTROLLER_MATCH: return "assert_controller_match";
 		case STEP_SET_DEBUG: return "set_debug";
+		case STEP_SET_SECRET_REVEAL: return "set_secret_reveal";
 		default: return "unknown";
 	}
 }
@@ -1417,6 +1421,7 @@ static int parse_script(const char *json_text)
 			else if (action == "assert_button") s.type = STEP_ASSERT_BUTTON;
 			else if (action == "assert_controller_match") s.type = STEP_ASSERT_CONTROLLER_MATCH;
 			else if (action == "set_debug") s.type = STEP_SET_DEBUG;
+			else if (action == "set_secret_reveal") s.type = STEP_SET_SECRET_REVEAL;
 			else {
 				LOGE("Unknown action: %s", action.c_str());
 				continue;
@@ -1449,6 +1454,7 @@ static int parse_script(const char *json_text)
 			s.pitch = step_json.value("pitch", 0);
 			s.bank = step_json.value("bank", 0);
 			s.heading = step_json.value("heading", 0);
+			s.enabled = step_json.value("enabled", false);
 			s.hot_xy_tolerance = step_json.value("hot_xy_tolerance", 0.02f);
 			s.require_hash_match = step_json.value("require_hash_match", 0);
 			s.max_mean_luma_diff = step_json.value("max_mean_luma_diff", 0.0f);
@@ -2488,6 +2494,12 @@ extern "C" void game_automate_tick(void)
 			} else
 				LOGE("set_debug: unknown field '%s'", s.field.c_str());
 			LOGI("set_debug: %s = %s", s.field.c_str(), s.value.c_str());
+			advance_step();
+			break;
+
+		case STEP_SET_SECRET_REVEAL:
+			secret_area_set_reveal_unfound(s.enabled ? 1 : 0);
+			LOGI("set_secret_reveal: enabled=%s", s.enabled ? "true" : "false");
 			advance_step();
 			break;
 	}
