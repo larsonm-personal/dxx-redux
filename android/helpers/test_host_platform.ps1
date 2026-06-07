@@ -59,6 +59,105 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         return "pwsh"
     }
 
+    function Get-RegressionDependencyBase {
+        param([string]$RepoRoot)
+
+        if (-not $RepoRoot) {
+            return $null
+        }
+        $depBaseFile = Join-RegressionPath $RepoRoot "dependency_base.txt"
+        if (-not (Test-Path -LiteralPath $depBaseFile -PathType Leaf)) {
+            return $null
+        }
+
+        $firstLine = Get-Content -LiteralPath $depBaseFile -First 1
+        if (-not $firstLine) {
+            return $null
+        }
+        return $firstLine.Trim()
+    }
+
+    function Get-RegressionAndroidSdkCMakeBinDirs {
+        param([string]$DepBase)
+
+        if (-not $DepBase) {
+            return @()
+        }
+        $sdkCMakeRoot = Join-RegressionPath $DepBase "android-sdk" "cmake"
+        if (-not (Test-Path -LiteralPath $sdkCMakeRoot -PathType Container)) {
+            return @()
+        }
+
+        return @(
+            Get-ChildItem -LiteralPath $sdkCMakeRoot -Directory -ErrorAction SilentlyContinue |
+                Sort-Object Name -Descending |
+                ForEach-Object { Join-RegressionPath $_.FullName "bin" } |
+                Where-Object {
+                    $cmakeName = (Get-RegressionHostExecutableNames -BaseName "cmake")[0]
+                    Test-Path -LiteralPath (Join-RegressionPath $_ $cmakeName) -PathType Leaf
+                }
+        )
+    }
+
+    function Resolve-RegressionCMakePath {
+        param(
+            [string]$RepoRoot,
+            [string]$BuildDir
+        )
+
+        $cmakeName = (Get-RegressionHostExecutableNames -BaseName "cmake")[0]
+        if ($BuildDir) {
+            $cachePath = Join-RegressionPath $BuildDir "CMakeCache.txt"
+            if (Test-Path -LiteralPath $cachePath -PathType Leaf) {
+                $cacheCommand = Select-String -LiteralPath $cachePath -Pattern '^CMAKE_COMMAND:INTERNAL=(.+)$' |
+                    Select-Object -First 1
+                if ($cacheCommand) {
+                    $cachedPath = $cacheCommand.Matches[0].Groups[1].Value
+                    if ($cachedPath -and -not $cachedPath.EndsWith("-NOTFOUND") -and
+                        (Test-Path -LiteralPath $cachedPath -PathType Leaf)) {
+                        return (Resolve-Path -LiteralPath $cachedPath).Path
+                    }
+                }
+            }
+        }
+
+        $command = Get-Command $cmakeName -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($command) {
+            return $command.Source
+        }
+
+        $candidateDirs = @()
+        $candidateDirs += Get-RegressionAndroidSdkCMakeBinDirs (Get-RegressionDependencyBase -RepoRoot $RepoRoot)
+        if (Test-RegressionWindowsHost) {
+            $vsRoots = @(
+                (Join-RegressionPath $env:ProgramFiles "Microsoft Visual Studio"),
+                (Join-RegressionPath ${env:ProgramFiles(x86)} "Microsoft Visual Studio")
+            )
+            foreach ($vsRoot in $vsRoots) {
+                if (-not (Test-Path -LiteralPath $vsRoot -PathType Container)) {
+                    continue
+                }
+                foreach ($yearDir in Get-ChildItem -LiteralPath $vsRoot -Directory -ErrorAction SilentlyContinue) {
+                    foreach ($editionDir in Get-ChildItem -LiteralPath $yearDir.FullName -Directory -ErrorAction SilentlyContinue) {
+                        $candidateDirs += Join-RegressionPath $editionDir.FullName "Common7" "IDE" "CommonExtensions" "Microsoft" "CMake" "CMake" "bin"
+                    }
+                }
+            }
+            $candidateDirs += @(
+                (Join-RegressionPath $env:ProgramFiles "CMake" "bin"),
+                (Join-RegressionPath ${env:ProgramFiles(x86)} "CMake" "bin")
+            )
+        }
+
+        foreach ($dir in ($candidateDirs | Where-Object { $_ } | Select-Object -Unique)) {
+            $candidate = Join-RegressionPath $dir $cmakeName
+            if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                return (Resolve-Path -LiteralPath $candidate).Path
+            }
+        }
+        return $null
+    }
+
     function Resolve-RegressionAndroidSdkTool {
         param(
             [string]$DepBase,

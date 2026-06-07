@@ -55,6 +55,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "digi.h"
 #include "gamesave.h"
 #include "scores.h"
+#include "secretarea.h"
 #include "u_mem.h"
 #include "palette.h"
 #include "morph.h"
@@ -770,6 +771,7 @@ void LoadLevel(int level_num,int page_in_textures)
 		Error("Couldn't load level file <%s>, error = %d",level_name,load_ret);
 
 	Current_level_num=level_num;
+	secret_area_rescan_current_level();
 
 #ifdef ANDROID
 	level_overlay_notify(level_num, Current_level_name);

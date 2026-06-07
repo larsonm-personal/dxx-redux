@@ -83,6 +83,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "cntrlcen.h"
 #include "pcx.h"
 #include "state.h"
+#include "secretarea.h"
 #include "piggy.h"
 #include "multibot.h"
 #ifdef __ANDROID__
@@ -1251,6 +1252,8 @@ void GameProcessFrame(void)
 	input_demo_log_current_replay_frame_state_mismatch();
 	input_demo_record_game_frame();
 	update_player_stats();
+	if (Newdemo_state != ND_STATE_PLAYBACK && ConsoleObject)
+		secret_area_note_segment_entered(ConsoleObject->segnum);
 	diminish_palette_towards_normal();		//	Should leave palette effect up for as long as possible by putting right before render.
 	do_cloak_stuff();
 	do_invulnerable_stuff();

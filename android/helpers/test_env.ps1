@@ -81,28 +81,10 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
     # -- CMAKE -------------------------------------------------------------------
 
     if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
-        $cmakeCandidates = @()
-        if (Test-RegressionWindowsHost) {
-            $cmakeCandidates += @(
-                (Join-RegressionPath $env:ProgramFiles "CMake" "bin"),
-                (Join-RegressionPath ${env:ProgramFiles(x86)} "CMake" "bin"),
-                (Join-RegressionPath $env:ProgramFiles "Microsoft Visual Studio" "2022" "Community" "Common7" "IDE" "CommonExtensions" "Microsoft" "CMake" "CMake" "bin"),
-                (Join-RegressionPath $env:ProgramFiles "Microsoft Visual Studio" "2022" "Professional" "Common7" "IDE" "CommonExtensions" "Microsoft" "CMake" "CMake" "bin"),
-                (Join-RegressionPath $env:ProgramFiles "Microsoft Visual Studio" "2022" "BuildTools" "Common7" "IDE" "CommonExtensions" "Microsoft" "CMake" "CMake" "bin")
-            )
-        }
-        # Also check Android SDK cmake (multiple versions, pick newest)
-        if ($script:_ENV_DEP_BASE) {
-            $sdkCmake = Get-ChildItem (Join-RegressionPath $script:_ENV_DEP_BASE "android-sdk" "cmake" "*" "bin") -Directory -ErrorAction SilentlyContinue |
-                Sort-Object FullName -Descending | Select-Object -First 1
-            if ($sdkCmake) { $cmakeCandidates = @($sdkCmake.FullName) + $cmakeCandidates }
-        }
-        $cmakeName = (Get-RegressionHostExecutableNames -BaseName "cmake")[0]
-        foreach ($dir in $cmakeCandidates) {
-            if ($dir -and (Test-Path (Join-RegressionPath $dir $cmakeName))) {
-                $env:PATH = "$dir$([System.IO.Path]::PathSeparator)$env:PATH"
-                break
-            }
+        $cmakePath = Resolve-RegressionCMakePath -RepoRoot $_envRepoRoot
+        if ($cmakePath) {
+            $cmakeDir = Split-Path -Parent $cmakePath
+            $env:PATH = "$cmakeDir$([System.IO.Path]::PathSeparator)$env:PATH"
         }
     }
 

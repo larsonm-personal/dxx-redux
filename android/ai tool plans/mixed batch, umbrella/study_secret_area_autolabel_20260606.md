@@ -10,6 +10,20 @@
 - [x] Sketch shared D1/D2 ownership, adapter boundaries, and committed base-game JSON regression coverage.
 - [x] Summarize risks, expected false positives/negatives, and a staged implementation plan.
 
+## Implementation Progress
+- [x] Added shared scanner core in `android/app/src/main/cpp/shared/secret_area_scan.c` and `secret_area_scan.h`.
+- [x] Added D1/D2 adapters in `d1/main/secretarea.c` and `d2/main/secretarea.c`.
+- [x] Wired level-load rescans through D1/D2 `LoadLevel()`.
+- [x] Wired per-frame segment entry marking through D1/D2 `GameProcessFrame()`, guarded against demo playback.
+- [x] Added `secret_areas` to Android introspection output for level-loaded game state.
+- [x] Added shared headless base-game JSON dump entrypoint in `android/app/src/main/cpp/headless/secret_area_dump_main.cpp`.
+- [x] Added `dxx-redux-d1-secretareas` and `dxx-redux-d2-secretareas` host target declarations.
+- [x] Added PowerShell compare/update harness in `android/tests/test_secret_area_baseline.ps1` and `update_secret_area_baseline.ps1`.
+- [ ] Build the new host dump targets in a clean configured host tree and commit `android/test_fixtures/secret_area_base_game_baseline.json`.
+- [ ] Add first-entry HUD popup text.
+- [ ] Add save/restore found bits.
+- [ ] Add automap found labels and reveal-cheat labels.
+
 ## Findings
 - The engine already has a strong hidden-door signal: `WallAnims[wall.clip_num].flags & WCF_HIDDEN`.
 - D1 and D2 automap already use this signal to make hidden doors look like normal walls, and mark the edge as `EF_SECRET`.

@@ -55,6 +55,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "digi.h"
 #include "gamesave.h"
 #include "scores.h"
+#include "secretarea.h"
 #include "u_mem.h"
 #include "palette.h"
 #include "morph.h"
@@ -658,8 +659,10 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	level_name = get_level_file(level_num);
 
-	if (!load_level(level_name))
+	if (!load_level(level_name)) {
 		Current_level_num=level_num;
+		secret_area_rescan_current_level();
+	}
 
 	gr_use_palette_table( "palette.256" );
 

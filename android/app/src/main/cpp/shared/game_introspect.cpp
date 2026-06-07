@@ -46,6 +46,7 @@ extern "C" {
 #include "piggy.h"
 #include "textures.h"
 #include "wall.h"
+#include "secretarea.h"
 #include "android_menu_scale.h"
 
 /* Android port: hires texture tracking counters from ogl.c */
@@ -337,6 +338,58 @@ static json serialize_position()
 	};
 	return pos;
 }
+
+/* -- Serialize generated secret areas --------------------------------- */
+static json serialize_secret_areas()
+{
+	const secret_area_state *state = secret_area_get_state();
+	json result;
+
+	if (!state) {
+		result["enabled"] = false;
+		result["disabled_reason"] = "missing_state";
+		return result;
+	}
+	result["enabled"] = (bool) state->enabled;
+	result["disabled_reason"] = secret_area_disabled_reason_name(state->disabled_reason);
+	result["raw_candidate_count"] = state->raw_candidate_count;
+	result["final_candidate_count"] = state->final_candidate_count;
+	result["found_count"] = secret_area_found_count(state);
+	result["total"] = secret_area_total(state);
+	json secrets = json::array();
+	if (state->enabled) {
+		for (int i = 0; i < state->final_candidate_count && i < SECRET_AREA_MAX_GENERATED; i++) {
+			const secret_area_entry *entry = &state->secrets[i];
+			json item;
+			item["id"] = std::string("S") + std::to_string(entry->display_index);
+			item["display_index"] = entry->display_index;
+			item["found"] = state->found[i] != 0;
+			item["entry_distance"] = entry->entry_distance;
+			item["entry_seg"] = entry->entry_seg;
+			item["entry_side"] = entry->entry_side;
+			item["label_pos"] = { entry->label_pos[0], entry->label_pos[1], entry->label_pos[2] };
+			item["robot_count"] = entry->robot_count;
+			item["robotmaker_count"] = entry->robotmaker_count;
+			json segments = json::array();
+			for (int s = 0; s < entry->segment_count; s++)
+				segments.push_back(entry->segments[s]);
+			item["segments"] = std::move(segments);
+			json entrances = json::array();
+			for (int e = 0; e < entry->entrance_count; e++) {
+				const secret_area_entrance *entrance = &entry->entrances[e];
+				entrances.push_back({ { "seg", entrance->seg },
+				                      { "side", entrance->side },
+				                      { "secret_seg", entrance->secret_seg },
+				                      { "wall_num", entrance->wall_num } });
+			}
+			item["entrances"] = std::move(entrances);
+			secrets.push_back(std::move(item));
+		}
+	}
+	result["secrets"] = std::move(secrets);
+	return result;
+}
+
 static const char *merged_wall_snapshot_cover_kind_name(int kind)
 {
 	switch (kind) {
@@ -930,6 +983,7 @@ extern "C" char *game_introspect_get_state(void)
 	if (Current_level_num != 0) {
 		j["player"] = serialize_player();
 		j["position"] = serialize_position();
+		j["secret_areas"] = serialize_secret_areas();
 		j["merged_wall_snapshot"] = serialize_merged_wall_snapshot();
 
 		/* Flat weapon keys for easy assertion */
@@ -939,6 +993,7 @@ extern "C" char *game_introspect_get_state(void)
 	} else {
 		j["player"] = nullptr;
 		j["position"] = nullptr;
+		j["secret_areas"] = nullptr;
 		j["merged_wall_snapshot"] = nullptr;
 	}
 
