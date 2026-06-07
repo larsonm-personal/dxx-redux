@@ -2032,6 +2032,11 @@ int state_restore_all_sub(char *filename)
 
 	if (!load_mission_by_name( mission ))	{
 		con_printf(CON_URGENT, "restore: unable to load mission '%s' from '%s'\n", mission, filename);
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME, "restore unable to load mission: game=d1 file='%s' mission='%s'",
+			filename, mission);
+		state_android_prepare_modal_error_background("restore missing mission");
+#endif
 		nm_messagebox( NULL, 1, "Ok", "Error!\nUnable to load mission\n'%s'\n", mission );
 		PHYSFS_close(fp);
 		return 0;

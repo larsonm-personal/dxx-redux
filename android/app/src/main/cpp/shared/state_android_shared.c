@@ -11,6 +11,7 @@
 #include "dxxerror.h"
 #include "game.h"
 #include "gameseq.h"
+#include "gr.h"
 #include "mission.h"
 #include "object.h"
 #include "player.h"
@@ -531,6 +532,16 @@ void state_android_restore_music_type_from_meta(const android_save_meta_disk *me
 	debug_log(DLOG_GAME, "restore applying saved music type: game=%s old=%d new=%d",
 	          state_android_game_label(), GameCfg.MusicType, meta->music_type);
 	GameCfg.MusicType = meta->music_type;
+}
+
+void state_android_prepare_modal_error_background(const char *reason)
+{
+	if (Game_wind)
+		return;
+	debug_log(DLOG_GAME, "modal error background clear: game=%s reason='%s'",
+	          state_android_game_label(), reason ? reason : "");
+	gr_set_current_canvas(NULL);
+	gr_clear_canvas(BM_XRGB(0, 0, 0));
 }
 
 int state_android_save_to_path(const char *filename, const char *desc,

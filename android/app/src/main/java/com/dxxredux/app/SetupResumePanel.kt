@@ -60,7 +60,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private fun resumeGameDisplayName(game: String): String = if (game == "d1") "Descent 1" else "Descent 2"
+internal fun resumeGameDisplayName(game: String): String = if (game == "d1") "Descent 1" else "Descent 2"
 
 // Keep these in sync with ANDROID_SAVE_META_THUMB_* in android_save_meta.h.
 internal const val RESUME_SAVE_THUMBNAIL_WIDTH = 200
@@ -73,7 +73,7 @@ internal fun resumeSaveRgb6ChannelToRgb8(channel: Int): Int {
     return (rgb6 shl 2) or (rgb6 shr 4)
 }
 
-private fun resumeSaveKindLabel(saveKind: String): String =
+internal fun resumeSaveKindLabel(saveKind: String): String =
     when (saveKind) {
         "auto_minimize" -> "Auto-save on minimize"
         "auto_exit" -> "Auto-save on exit"
@@ -82,13 +82,13 @@ private fun resumeSaveKindLabel(saveKind: String): String =
         else -> "Manual save"
     }
 
-private fun formatResumeSaveTime(unixSeconds: Long): String {
+internal fun formatResumeSaveTime(unixSeconds: Long): String {
     if (unixSeconds <= 0L) return "Unknown"
     val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
     return format.format(Date(unixSeconds * 1000L))
 }
 
-private fun formatResumeDuration(totalSeconds: Long): String {
+internal fun formatResumeDuration(totalSeconds: Long): String {
     if (totalSeconds < 0L) return "Unknown"
     val hours = totalSeconds / 3600L
     val minutes = (totalSeconds % 3600L) / 60L

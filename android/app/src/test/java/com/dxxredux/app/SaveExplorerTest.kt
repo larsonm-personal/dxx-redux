@@ -7,6 +7,12 @@ import org.junit.Test
 
 class SaveExplorerTest {
     @Test
+    fun modeLabelsPutMostRecentFirstAndDefault() {
+        assertEquals(listOf("Most Recent", "Save Set", "All Slots"), saveExplorerModeLabels())
+        assertEquals("Most Recent", saveExplorerDefaultModeLabel())
+    }
+
+    @Test
     fun saveSetRowsDefaultToMostRecentSavesBeforeEmptySlots() {
         val newest =
             slot(
@@ -148,6 +154,30 @@ class SaveExplorerTest {
         assertNull(blockedLegacy.toResumeCandidate())
     }
 
+    @Test
+    fun detailRowsIncludeMissionSetAndResumeMetadata() {
+        val rows =
+            saveExplorerDetailRows(
+                slot(
+                    path = "/files/d2x-redux/Players/save_sets/single/test/obsidian/test.sg8",
+                    relativePath = "d2x-redux/Players/save_sets/single/test/obsidian/test.sg8",
+                    saveKind = "auto_exit",
+                    saveTimeUnixSeconds = 1_700_000_100L,
+                    slot = 8,
+                    missionKey = "obsidian",
+                    missionName = "Obsidian",
+                    levelSeconds = 121L,
+                    totalSeconds = 3661L,
+                ),
+            ).associate { it.label to it.value }
+
+        assertEquals("Descent 2 (d2)", rows["Game"])
+        assertEquals("Obsidian (obsidian)", rows["Level Set"])
+        assertEquals("Auto-save on exit", rows["Save Kind"])
+        assertEquals("2:01", rows["Level Time"])
+        assertEquals("1:01:01", rows["Total Time"])
+    }
+
     private fun slot(
         path: String,
         relativePath: String,
@@ -159,22 +189,26 @@ class SaveExplorerTest {
         loadable: Boolean = true,
         orphan: Boolean = false,
         orphanReason: String = "",
+        missionKey: String = "d2",
+        missionName: String = "Counterstrike!",
+        levelSeconds: Long = 120L,
+        totalSeconds: Long = 240L,
     ) = SaveExplorerBridge.SaveExplorerSlot(
         path = path,
         relativePath = relativePath,
         game = "d2",
         scope = "single",
         pilot = "test",
-        missionKey = "d2",
+        missionKey = missionKey,
         saveKind = saveKind,
         saveTimeUnixSeconds = saveTimeUnixSeconds,
         callsign = "test",
         description = "AUTO SAVE",
-        missionName = "Counterstrike!",
+        missionName = missionName,
         levelNum = 1,
         levelName = "Lunar Outpost",
-        levelSeconds = 120L,
-        totalSeconds = 240L,
+        levelSeconds = levelSeconds,
+        totalSeconds = totalSeconds,
         difficultyChanged = false,
         difficultyMin = 0,
         difficultyMax = 0,

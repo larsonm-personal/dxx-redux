@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,10 +20,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
@@ -66,14 +70,23 @@ import java.util.Locale
 private enum class SaveExplorerMode(
     val label: String,
 ) {
+    Recent("Most Recent"),
     SaveSet("Save Set"),
-    Recent("Ten Recent"),
     All("All Slots"),
 }
+
+internal fun saveExplorerModeLabels(): List<String> = SaveExplorerMode.values().map { it.label }
+
+internal fun saveExplorerDefaultModeLabel(): String = SaveExplorerMode.Recent.label
 
 internal data class SaveExplorerRow(
     val slotIndex: Int,
     val slot: SaveExplorerBridge.SaveExplorerSlot?,
+)
+
+internal data class SaveExplorerDetailRow(
+    val label: String,
+    val value: String,
 )
 
 @Composable
@@ -86,13 +99,14 @@ internal fun SaveExplorerDialog(
 ) {
     val scope = rememberCoroutineScope()
     var refreshKey by remember { mutableIntStateOf(0) }
-    var mode by remember { mutableStateOf(SaveExplorerMode.SaveSet) }
+    var mode by remember { mutableStateOf(SaveExplorerMode.Recent) }
     var selectedGame by remember { mutableStateOf("") }
     var selectedScope by remember { mutableStateOf("single") }
     var selectedPilot by remember { mutableStateOf("") }
     var selectedMission by remember { mutableStateOf("") }
     var orphanOnly by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<SaveExplorerBridge.SaveExplorerSlot?>(null) }
+    var pendingDetails by remember { mutableStateOf<SaveExplorerBridge.SaveExplorerSlot?>(null) }
     var deleteError by remember { mutableStateOf<String?>(null) }
 
     val slotsState =
@@ -245,6 +259,7 @@ internal fun SaveExplorerDialog(
                             SaveExplorerSlotRow(
                                 row = row,
                                 canLaunchGame = canLaunchGame,
+                                onOpenDetails = { pendingDetails = it },
                                 onLoadCandidate = onLoadCandidate,
                                 onDelete = { pendingDelete = it },
                             )
@@ -310,6 +325,13 @@ internal fun SaveExplorerDialog(
                     Text("Cancel")
                 }
             },
+        )
+    }
+
+    pendingDetails?.let { slot ->
+        SaveExplorerDetailsDialog(
+            slot = slot,
+            onDismiss = { pendingDetails = null },
         )
     }
 }
@@ -409,6 +431,7 @@ private fun saveExplorerRecentDedupKey(slot: SaveExplorerBridge.SaveExplorerSlot
 private fun SaveExplorerSlotRow(
     row: SaveExplorerRow,
     canLaunchGame: (String) -> Boolean,
+    onOpenDetails: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
     onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
     onDelete: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
 ) {
@@ -442,29 +465,39 @@ private fun SaveExplorerSlotRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            SaveExplorerThumbnail(thumbnail)
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(
-                    text = if (slot == null) "Slot ${row.slotIndex}: Empty" else saveExplorerPrimaryLine(slot),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = slot?.let { saveExplorerSecondaryLine(it) }.orEmpty(),
-                    fontSize = 9.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (slot?.orphan == true) {
+            Row(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = 36.dp)
+                        .clickable(enabled = slot != null) { slot?.let(onOpenDetails) },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SaveExplorerThumbnail(thumbnail)
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     Text(
-                        text = slot.orphanReason.ifBlank { "orphaned" },
-                        fontSize = 8.sp,
-                        color = MaterialTheme.colorScheme.error,
+                        text = if (slot == null) "Slot ${row.slotIndex}: Empty" else saveExplorerPrimaryLine(slot),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    Text(
+                        text = slot?.let { saveExplorerSecondaryLine(it) }.orEmpty(),
+                        fontSize = 9.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (slot?.orphan == true) {
+                        Text(
+                            text = slot.orphanReason.ifBlank { "orphaned" },
+                            fontSize = 8.sp,
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
             Button(
@@ -484,6 +517,123 @@ private fun SaveExplorerSlotRow(
                 Text("Delete", fontSize = 10.sp)
             }
         }
+    }
+}
+
+@Composable
+private fun SaveExplorerDetailsDialog(
+    slot: SaveExplorerBridge.SaveExplorerSlot,
+    onDismiss: () -> Unit,
+) {
+    val candidateState =
+        produceState<ResumeSaveBridge.ResumeSaveCandidate?>(
+            initialValue = null,
+            slot.path,
+            slot.saveTimeUnixSeconds,
+        ) {
+            value = withContext(Dispatchers.IO) { slot.toResumeCandidate() }
+        }
+    val candidate = candidateState.value
+    val thumbnail =
+        remember(candidate?.path, candidate?.saveTimeUnixSeconds, candidate?.thumbnailRgb6) {
+            candidate?.let { decodeResumeSaveThumbnail(it) }
+        }
+    val detailRows = remember(slot) { saveExplorerDetailRows(slot) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 620.dp)
+                    .padding(14.dp),
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Column(
+                modifier =
+                    Modifier
+                        .padding(14.dp)
+                        .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Save Details",
+                        modifier = Modifier.weight(1f),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    TextButton(onClick = onDismiss) {
+                        Text("Close")
+                    }
+                }
+                SaveExplorerLargeThumbnail(thumbnail)
+                Text(
+                    saveExplorerDetailTitle(slot),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    detailRows.forEach { row ->
+                        SaveExplorerDetailLine(row)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SaveExplorerLargeThumbnail(thumbnail: Bitmap?) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().aspectRatio(2f),
+        shape = RoundedCornerShape(6.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, Color.Black),
+    ) {
+        if (thumbnail != null) {
+            Image(
+                bitmap = thumbnail.asImageBitmap(),
+                contentDescription = "Save screenshot",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds,
+            )
+        } else {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No screenshot", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SaveExplorerDetailLine(row: SaveExplorerDetailRow) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            row.label,
+            modifier = Modifier.width(112.dp),
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            row.value,
+            modifier = Modifier.weight(1f),
+            fontSize = 11.sp,
+        )
     }
 }
 
@@ -575,6 +725,67 @@ private fun saveExplorerIdentityLine(slot: SaveExplorerBridge.SaveExplorerSlot):
     "${slot.game.ifBlank { "unknown" }} / ${slot.scope.ifBlank { "single" }} / " +
         "${slot.pilot.ifBlank { slot.callsign.ifBlank { "unknown" } }} / " +
         "${slot.missionKey.ifBlank { slot.missionName.ifBlank { "unknown" } }} / slot ${slot.slot}"
+
+internal fun saveExplorerDetailRows(slot: SaveExplorerBridge.SaveExplorerSlot): List<SaveExplorerDetailRow> =
+    buildList {
+        add(SaveExplorerDetailRow("Game", "${resumeGameDisplayName(slot.game)} (${slot.game.ifBlank { "unknown" }})"))
+        add(SaveExplorerDetailRow("Level Set", saveExplorerMissionSetLabel(slot)))
+        add(SaveExplorerDetailRow("Scope", if (slot.scope == "coop") "Coop" else "Single-player"))
+        add(SaveExplorerDetailRow("Pilot", slot.pilot.ifBlank { slot.callsign.ifBlank { "Unknown" } }))
+        add(SaveExplorerDetailRow("Description", slot.description.ifBlank { "Save" }))
+        add(SaveExplorerDetailRow("Save Kind", resumeSaveKindLabel(slot.saveKind)))
+        add(SaveExplorerDetailRow("Saved At", formatResumeSaveTime(slot.saveTimeUnixSeconds)))
+        add(SaveExplorerDetailRow("Level", saveExplorerLevelLabel(slot)))
+        add(SaveExplorerDetailRow("Level Time", formatResumeDuration(slot.levelSeconds)))
+        add(SaveExplorerDetailRow("Total Time", formatResumeDuration(slot.totalSeconds)))
+        add(SaveExplorerDetailRow("Difficulty", saveExplorerDifficultyLabel(slot)))
+        add(SaveExplorerDetailRow("Music", saveExplorerMusicTypeLabel(slot.musicType)))
+        add(SaveExplorerDetailRow("Slot", slot.slot.takeIf { it >= 0 }?.toString() ?: "Unknown"))
+        add(SaveExplorerDetailRow("Size", saveExplorerSize(slot.sizeBytes)))
+        add(SaveExplorerDetailRow("Metadata", if (slot.metadataBacked) "Present" else "Missing or incompatible"))
+        if (slot.orphan) {
+            add(SaveExplorerDetailRow("Status", slot.orphanReason.ifBlank { "orphaned" }))
+        }
+        add(SaveExplorerDetailRow("Path", slot.relativePath.ifBlank { slot.path }))
+    }
+
+private fun saveExplorerDetailTitle(slot: SaveExplorerBridge.SaveExplorerSlot): String =
+    "${slot.description.ifBlank { "Save" }} | ${saveExplorerMissionSetLabel(slot)}"
+
+private fun saveExplorerMissionSetLabel(slot: SaveExplorerBridge.SaveExplorerSlot): String {
+    val key = slot.missionKey.ifBlank { "unknown" }
+    val name = slot.missionName
+    return if (name.isBlank() || name == key) key else "$name ($key)"
+}
+
+private fun saveExplorerLevelLabel(slot: SaveExplorerBridge.SaveExplorerSlot): String {
+    val levelName = slot.levelName.ifBlank { slot.missionKey.ifBlank { "Unknown level" } }
+    return if (slot.levelNum != 0) "${slot.levelNum} $levelName" else levelName
+}
+
+private fun saveExplorerDifficultyLabel(slot: SaveExplorerBridge.SaveExplorerSlot): String {
+    if (!slot.difficultyChanged) return "Unchanged"
+    return "${saveExplorerDifficultyName(slot.difficultyMin)} to ${saveExplorerDifficultyName(slot.difficultyMax)}"
+}
+
+private fun saveExplorerDifficultyName(value: Int): String =
+    when (value) {
+        0 -> "Trainee"
+        1 -> "Rookie"
+        2 -> "Hotshot"
+        3 -> "Ace"
+        4 -> "Insane"
+        else -> "Unknown"
+    }
+
+private fun saveExplorerMusicTypeLabel(value: Int): String =
+    when (value) {
+        0 -> "None"
+        1 -> "Built-in"
+        2 -> "MIDI"
+        3 -> "Custom"
+        else -> "Unknown"
+    }
 
 private fun saveExplorerKindLabel(kind: String): String =
     when (kind) {
