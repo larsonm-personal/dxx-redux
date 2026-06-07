@@ -1537,19 +1537,6 @@ int HandleGameKey(int key)
 
 
 int ReadControlsReplayFrame(void);
-#ifdef __ANDROID__
-	/* android port: consume guide-bot release flag set from touch wheel */
-	if (android_escort_release_pending) {
-		android_escort_release_pending = 0;
-		input_demo_record_direct_command_escort_release_control();
-		escort_release_control();
-	}
-	if (android_escort_spawn_pending) {
-		android_escort_spawn_pending = 0;
-		input_demo_record_direct_command_guidebot_spawn();
-		escort_spawn_at_player();
-	}
-#endif
 
 	switch (key) {
 
@@ -2561,10 +2548,24 @@ int ReadControls(d_event *event)
 	if (Newdemo_state == ND_STATE_PLAYBACK)
 		update_vcr_state();
 
-	#ifdef __ANDROID__
-	if (event->type == EVENT_IDLE && android_handle_ingame_saveload_request())
-		return 1;
-	#endif
+#ifdef __ANDROID__
+	if (event->type == EVENT_IDLE) {
+		if (android_escort_release_pending) {
+			android_escort_release_pending = 0;
+			input_demo_record_direct_command_escort_release_control();
+			escort_release_control();
+			return 1;
+		}
+		if (android_escort_spawn_pending) {
+			android_escort_spawn_pending = 0;
+			input_demo_record_direct_command_guidebot_spawn();
+			escort_spawn_at_player();
+			return 1;
+		}
+		if (android_handle_ingame_saveload_request())
+			return 1;
+	}
+#endif
 
 	if (event->type == EVENT_KEY_COMMAND)
 	{
