@@ -106,6 +106,114 @@ static std::string sanitize_text(const char *text)
 	return out;
 }
 
+typedef struct save_header_preview {
+	std::string description;
+	std::string mission;
+	int level_num;
+} save_header_preview;
+
+static uint32_t swap_u32(uint32_t value)
+{
+	return ((value & 0x000000ffu) << 24) | ((value & 0x0000ff00u) << 8) |
+	       ((value & 0x00ff0000u) >> 8) | ((value & 0xff000000u) >> 24);
+}
+
+static bool read_bytes(FILE *f, void *out, size_t len)
+{
+	return len == 0 || (fread(out, 1, len, f) == len);
+}
+
+static bool read_i32(FILE *f, bool swap, int *out)
+{
+	uint32_t raw;
+
+	if (!out || !read_bytes(f, &raw, sizeof(raw)))
+		return false;
+	if (swap)
+		raw = swap_u32(raw);
+	*out = (int) raw;
+	return true;
+}
+
+static long thumbnail_bytes_for_save_header(const std::string &game, int version)
+{
+	const long indexed_bytes = 100L * 50L;
+	const long rgb_bytes = indexed_bytes * 3L;
+	const long palette_bytes = 256L * 3L;
+
+	if (game == "d1") {
+		if (version >= 8)
+			return rgb_bytes;
+		return indexed_bytes;
+	}
+	if (version >= 23)
+		return rgb_bytes;
+	if (version >= 9)
+		return indexed_bytes + palette_bytes;
+	return indexed_bytes;
+}
+
+static bool read_save_header_preview(const char *path,
+                                     const std::string &game,
+                                     save_header_preview *out)
+{
+	FILE *f;
+	char id[4];
+	char desc[21];
+	char mission[129];
+	bool swap;
+	int version;
+	int compatible_version;
+	long thumbnail_bytes;
+
+	if (!path || !out || (game != "d1" && game != "d2"))
+		return false;
+	f = fopen(path, "rb");
+	if (!f)
+		return false;
+	if (!read_bytes(f, id, sizeof(id)) || memcmp(id, "DGSS", sizeof(id)) != 0)
+		goto fail;
+	if (!read_i32(f, false, &version))
+		goto fail;
+	swap = (version & 0xffff0000) != 0;
+	if (swap)
+		version = (int) swap_u32((uint32_t) version);
+	compatible_version = game == "d1" ? 6 : 20;
+	if (version < compatible_version)
+		goto fail;
+	memset(desc, 0, sizeof(desc));
+	if (!read_bytes(f, desc, 20))
+		goto fail;
+	thumbnail_bytes = thumbnail_bytes_for_save_header(game, version);
+	if (fseek(f, thumbnail_bytes + 4, SEEK_CUR) != 0)
+		goto fail;
+	memset(mission, 0, sizeof(mission));
+	if (!read_bytes(f, mission, 9))
+		goto fail;
+	if (mission[8] == 1) {
+		char *p;
+
+		if (!read_bytes(f, mission, 128))
+			goto fail;
+		mission[128] = '\0';
+		p = strrchr(mission, '/');
+		if (p)
+			memmove(mission, p + 1, strlen(p + 1) + 1);
+	} else {
+		mission[8] = '\0';
+	}
+	out->description = sanitize_text(desc);
+	out->mission = sanitize_text(mission);
+	if (!read_i32(f, swap, &out->level_num))
+		out->level_num = 0;
+	fclose(f);
+	return !out->mission.empty();
+
+fail:
+	fclose(f);
+	return false;
+}
+
 static std::string relative_to_files_dir(const char *files_dir, const char *path)
 {
 	size_t prefix_len;
@@ -221,6 +329,45 @@ static uint64_t file_size_bytes(const char *path)
 	if (!path || stat(path, &st) != 0)
 		return 0;
 	return (uint64_t) st.st_size;
+}
+
+static const char *save_meta_read_error(const char *path)
+{
+	FILE *f;
+	long file_len;
+	android_save_meta_footer footer;
+
+	if (!path)
+		return "missing_path";
+	f = fopen(path, "rb");
+	if (!f)
+		return "open_failed";
+	if (fseek(f, 0, SEEK_END) != 0) {
+		fclose(f);
+		return "seek_failed";
+	}
+	file_len = ftell(f);
+	if (file_len < (long) sizeof(footer)) {
+		fclose(f);
+		return "metadata_footer_missing";
+	}
+	if (fseek(f, file_len - (long) sizeof(footer), SEEK_SET) != 0) {
+		fclose(f);
+		return "seek_failed";
+	}
+	if (fread(&footer, sizeof(footer), 1, f) != 1) {
+		fclose(f);
+		return "read_failed";
+	}
+	fclose(f);
+	if (footer.tag != ANDROID_SAVE_META_TAG)
+		return "metadata_footer_missing";
+	if (footer.version != ANDROID_SAVE_META_VERSION)
+		return "metadata_version_mismatch";
+	if (footer.trailer_bytes != sizeof(android_save_meta_disk) ||
+	    file_len < (long) footer.trailer_bytes)
+		return "metadata_size_mismatch";
+	return "metadata_invalid";
 }
 
 static bool is_sentinel_callsign(const std::string &callsign)
@@ -470,9 +617,12 @@ static json save_explorer_slot_json(const char *files_dir, const std::string &pa
 	std::string scope;
 	std::string pilot;
 	std::string mission;
+	save_header_preview preview;
+	bool have_preview;
 	bool meta_valid = android_save_meta_read_path(path.c_str(), &meta) != 0;
 	bool loadable = read_resume_candidate(path, &candidate);
 	uint64_t modified = file_mtime_seconds(path.c_str());
+	const char *meta_error = meta_valid ? "" : save_meta_read_error(path.c_str());
 	json out;
 
 	save_set_parts_from_relative(relative_path, &scope, &pilot, &mission);
@@ -493,9 +643,43 @@ static json save_explorer_slot_json(const char *files_dir, const std::string &pa
 		if (path_game.empty())
 			path_game = game_name(meta.game_id);
 	}
+	have_preview = !meta_valid && read_save_header_preview(path.c_str(), path_game, &preview);
+	if (have_preview && mission.empty())
+		mission = preview.mission;
+	if (!loadable && !meta_valid && scope == "single" && !path_game.empty() &&
+	    !is_sentinel_callsign(pilot.empty() ? callsign_from_path(path.c_str()) : pilot)) {
+		loadable = true;
+	}
 
 	if (loadable) {
-		out = resume_candidate_json(files_dir, candidate);
+		if (meta_valid) {
+			out = resume_candidate_json(files_dir, candidate);
+		} else {
+			out["path"] = path;
+			out["relative_path"] = relative_path;
+			out["game"] = path_game;
+			out["save_kind"] = "unknown";
+			out["save_time_unix_seconds"] = modified;
+			out["callsign"] = callsign_from_path(path.c_str());
+			out["description"] =
+			    have_preview && !preview.description.empty()
+			        ? preview.description
+			        : callsign_from_path(path.c_str());
+			out["mission_name"] = mission;
+			out["level_num"] = have_preview ? preview.level_num : 0;
+			out["level_name"] = "";
+			out["level_seconds"] = 0;
+			out["total_seconds"] = 0;
+			out["difficulty_changed"] = false;
+			out["difficulty_min"] = 0;
+			out["difficulty_max"] = 0;
+			out["music_type"] = 2;
+			out["slot"] = slot_from_path(path.c_str());
+			out["has_thumbnail"] = false;
+			out["thumbnail_width"] = 0;
+			out["thumbnail_height"] = 0;
+			out["metadata_backed"] = false;
+		}
 	} else {
 		out["path"] = path;
 		out["relative_path"] = relative_path;
@@ -529,7 +713,7 @@ static json save_explorer_slot_json(const char *files_dir, const std::string &pa
 	out["loadable"] = loadable;
 	out["orphan"] = !meta_valid || !loadable;
 	out["orphan_reason"] =
-	    meta_valid ? (loadable ? "" : "not_loadable_from_launcher") : "missing_or_invalid_metadata";
+	    meta_valid ? (loadable ? "" : "not_loadable_from_launcher") : meta_error;
 	out["size_bytes"] = file_size_bytes(path.c_str());
 	out["modified_unix_seconds"] = modified;
 	return out;

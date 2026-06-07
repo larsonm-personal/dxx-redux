@@ -24,53 +24,57 @@ class AutomapTouchPolicyTest {
     fun automapActionsExposeRecenterAndMarkerSubmenus() {
         val actions = automapTouchActions(includeMarkers = true)
 
-        assertEquals(4, actions.size)
+        assertEquals(5, actions.size)
         assertEquals(TouchOverlayView.ADMIN_AUTOMAP, actions.first().adminAction)
         assertEquals("Close Map", actions.first().label)
         assertEquals(TouchOverlayView.ADMIN_AUTOMAP_RECENTER, actions[1].adminAction)
         assertEquals("Recenter Map", actions[1].label)
         assertEquals(TouchOverlayView.ADMIN_AUTOMAP_SET_MARKER_MENU, actions[2].adminAction)
-        assertEquals("Set Marker", actions[2].label)
-        assertEquals(TouchOverlayView.ADMIN_AUTOMAP_JUMP_MARKER_MENU, actions[3].adminAction)
-        assertEquals("Jump to Marker", actions[3].label)
+        assertEquals("Drop Marker", actions[2].label)
+        assertEquals(TouchOverlayView.ADMIN_AUTOMAP_NAME_MARKER, actions[3].adminAction)
+        assertEquals("Name Marker", actions[3].label)
+        assertEquals(TouchOverlayView.ADMIN_AUTOMAP_JUMP_MARKER_MENU, actions[4].adminAction)
+        assertEquals("Jump to Marker", actions[4].label)
     }
 
     @Test
-    fun automapSetMarkerSubmenuExposesOnlySetMarkerSlots() {
+    fun automapSetMarkerSubmenuExposesOnlyFreeMarkerSlots() {
         val actions =
             automapTouchActions(
                 includeMarkers = true,
                 markerMenuMode = AutomapMarkerMenuMode.SET,
+                markerSlots = intArrayOf(0, 1, 0, -1, 1, 0, 0, 1, 0),
             )
 
-        assertEquals(11, actions.size)
+        assertEquals(7, actions.size)
         assertEquals(TouchOverlayView.ADMIN_AUTOMAP, actions.first().adminAction)
         assertEquals("Close Map", actions.first().label)
         assertEquals(TouchOverlayView.ADMIN_AUTOMAP_MARKER_MENU_ROOT, actions[1].adminAction)
         assertEquals("Back", actions[1].label)
         assertEquals(TouchOverlayView.ADMIN_AUTOMAP_SET_MARKER_BASE, actions[2].adminAction)
-        assertEquals("Set Marker 1", actions[2].label)
+        assertEquals("Drop Marker 1", actions[2].label)
         assertEquals(TouchOverlayView.ADMIN_AUTOMAP_SET_MARKER_BASE + 8, actions.last().adminAction)
-        assertEquals("Set Marker 9", actions.last().label)
+        assertEquals("Drop Marker 9", actions.last().label)
     }
 
     @Test
-    fun automapJumpMarkerSubmenuExposesOnlyJumpMarkerSlots() {
+    fun automapJumpMarkerSubmenuExposesOnlyPlacedMarkerSlots() {
         val actions =
             automapTouchActions(
                 includeMarkers = true,
                 markerMenuMode = AutomapMarkerMenuMode.JUMP,
+                markerSlots = intArrayOf(0, 1, 0, -1, 1, 0, 0, 1, 0),
             )
 
-        assertEquals(11, actions.size)
+        assertEquals(5, actions.size)
         assertEquals(TouchOverlayView.ADMIN_AUTOMAP, actions.first().adminAction)
         assertEquals("Close Map", actions.first().label)
         assertEquals(TouchOverlayView.ADMIN_AUTOMAP_MARKER_MENU_ROOT, actions[1].adminAction)
         assertEquals("Back", actions[1].label)
-        assertEquals(TouchOverlayView.ADMIN_AUTOMAP_MARKER_BASE, actions[2].adminAction)
-        assertEquals("Jump to Marker 1", actions[2].label)
-        assertEquals(TouchOverlayView.ADMIN_AUTOMAP_MARKER_BASE + 8, actions.last().adminAction)
-        assertEquals("Jump to Marker 9", actions.last().label)
+        assertEquals(TouchOverlayView.ADMIN_AUTOMAP_MARKER_BASE + 1, actions[2].adminAction)
+        assertEquals("Jump to Marker 2", actions[2].label)
+        assertEquals(TouchOverlayView.ADMIN_AUTOMAP_MARKER_BASE + 7, actions.last().adminAction)
+        assertEquals("Jump to Marker 8", actions.last().label)
     }
 
     @Test

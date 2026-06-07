@@ -22,12 +22,17 @@ internal enum class AutomapMarkerMenuMode {
     JUMP,
 }
 
+private const val AUTOMAP_MARKER_SLOT_UNAVAILABLE = -1
+private const val AUTOMAP_MARKER_SLOT_FREE = 0
+private const val AUTOMAP_MARKER_SLOT_PLACED = 1
+
 internal fun automapTouchButtonVisible(binding: Int): Boolean =
     binding == TouchBindings.BTN_AUTOMAP || binding in AUTOMAP_TOUCH_MOVEMENT_BUTTONS
 
 internal fun automapTouchActions(
     includeMarkers: Boolean,
     markerMenuMode: AutomapMarkerMenuMode = AutomapMarkerMenuMode.ROOT,
+    markerSlots: IntArray = IntArray(AUTOMAP_TOUCH_MARKER_SLOT_COUNT) { AUTOMAP_MARKER_SLOT_FREE },
 ): List<RemainingTouchAction> =
     buildList {
         add(
@@ -52,8 +57,14 @@ internal fun automapTouchActions(
             AutomapMarkerMenuMode.ROOT -> {
                 add(
                     RemainingTouchAction(
-                        label = "Set Marker",
+                        label = "Drop Marker",
                         adminAction = TouchOverlayView.ADMIN_AUTOMAP_SET_MARKER_MENU,
+                    ),
+                )
+                add(
+                    RemainingTouchAction(
+                        label = "Name Marker",
+                        adminAction = TouchOverlayView.ADMIN_AUTOMAP_NAME_MARKER,
                     ),
                 )
                 add(
@@ -71,10 +82,10 @@ internal fun automapTouchActions(
                         adminAction = TouchOverlayView.ADMIN_AUTOMAP_MARKER_MENU_ROOT,
                     ),
                 )
-                for (idx in 0 until AUTOMAP_TOUCH_MARKER_SLOT_COUNT) {
+                for (idx in markerSlots.indicesForStatus(AUTOMAP_MARKER_SLOT_FREE)) {
                     add(
                         RemainingTouchAction(
-                            label = "Set Marker ${idx + 1}",
+                            label = "Drop Marker ${idx + 1}",
                             adminAction = TouchOverlayView.ADMIN_AUTOMAP_SET_MARKER_BASE + idx,
                         ),
                     )
@@ -88,7 +99,7 @@ internal fun automapTouchActions(
                         adminAction = TouchOverlayView.ADMIN_AUTOMAP_MARKER_MENU_ROOT,
                     ),
                 )
-                for (idx in 0 until AUTOMAP_TOUCH_MARKER_SLOT_COUNT) {
+                for (idx in markerSlots.indicesForStatus(AUTOMAP_MARKER_SLOT_PLACED)) {
                     add(
                         RemainingTouchAction(
                             label = "Jump to Marker ${idx + 1}",
@@ -98,6 +109,11 @@ internal fun automapTouchActions(
                 }
             }
         }
+    }
+
+private fun IntArray.indicesForStatus(status: Int): List<Int> =
+    (0 until AUTOMAP_TOUCH_MARKER_SLOT_COUNT).filter { idx ->
+        getOrElse(idx) { AUTOMAP_MARKER_SLOT_UNAVAILABLE } == status
     }
 
 internal fun automapMarkerAdminActionIndex(action: Int): Int? {

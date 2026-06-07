@@ -317,6 +317,10 @@ class MainActivity :
 
     external fun nativeAutomapSelectMarker(idx: Int)
 
+    external fun nativeAutomapNameMarker()
+
+    external fun nativeGetAutomapMarkerState(): IntArray
+
     external fun nativeGetGameWidth(): Int
 
     external fun nativeGetGameHeight(): Int
@@ -1036,6 +1040,13 @@ class MainActivity :
                     }
                 }
 
+                TouchOverlayView.ADMIN_AUTOMAP_NAME_MARKER -> {
+                    try {
+                        nativeAutomapNameMarker()
+                    } catch (_: Exception) {
+                    }
+                }
+
                 else -> {
                     automapSetMarkerAdminActionIndex(action)?.let { idx ->
                         try {
@@ -1119,7 +1130,13 @@ class MainActivity :
         }
         touchOverlay.automapActionsProvider = { markerMenuMode ->
             val includeMarkers = game != "d1"
-            automapTouchActions(includeMarkers, markerMenuMode)
+            val markerSlots =
+                try {
+                    nativeGetAutomapMarkerState()
+                } catch (_: Throwable) {
+                    IntArray(0)
+                }
+            automapTouchActions(includeMarkers, markerMenuMode, markerSlots)
         }
         touchOverlay.weaponStateProvider = {
             try {

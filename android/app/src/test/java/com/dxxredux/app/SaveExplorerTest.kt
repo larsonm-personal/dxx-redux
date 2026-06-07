@@ -1,6 +1,8 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SaveExplorerTest {
@@ -126,6 +128,26 @@ class SaveExplorerTest {
         assertEquals(listOf(first, second), saveExplorerRecentSlots(listOf(second, first)))
     }
 
+    @Test
+    fun metadataMissingLoadableSlotsCanStillLaunchByPath() {
+        val loadableLegacy =
+            slot(
+                path = "/files/d2x-redux/Players/test.sg0",
+                relativePath = "d2x-redux/Players/test.sg0",
+                saveKind = "unknown",
+                saveTimeUnixSeconds = 1_700_000_100L,
+                slot = 0,
+                metadataBacked = false,
+                loadable = true,
+                orphan = true,
+                orphanReason = "metadata_footer_missing",
+            )
+        val blockedLegacy = loadableLegacy.copy(loadable = false)
+
+        assertNotNull(loadableLegacy.toResumeCandidate())
+        assertNull(blockedLegacy.toResumeCandidate())
+    }
+
     private fun slot(
         path: String,
         relativePath: String,
@@ -133,6 +155,10 @@ class SaveExplorerTest {
         saveTimeUnixSeconds: Long,
         modifiedUnixSeconds: Long = saveTimeUnixSeconds,
         slot: Int,
+        metadataBacked: Boolean = true,
+        loadable: Boolean = true,
+        orphan: Boolean = false,
+        orphanReason: String = "",
     ) = SaveExplorerBridge.SaveExplorerSlot(
         path = path,
         relativePath = relativePath,
@@ -157,10 +183,10 @@ class SaveExplorerTest {
         hasThumbnail = false,
         thumbnailWidth = 0,
         thumbnailHeight = 0,
-        metadataBacked = true,
-        loadable = true,
-        orphan = false,
-        orphanReason = "",
+        metadataBacked = metadataBacked,
+        loadable = loadable,
+        orphan = orphan,
+        orphanReason = orphanReason,
         sizeBytes = 1024L,
         modifiedUnixSeconds = modifiedUnixSeconds,
     )

@@ -29,7 +29,7 @@ then inside the rebirth zip, go through its contents and come up with a plan for
 [ ] audio sound effects latency needs a holistic look, it's about 1/3 of a second delayed on my very new phone in descent 2. it has been better than this in the past but i dont' think anything important has changed, it may just be inconsistent. I want to minimize it to the greatest extent possible. please survey all possible causes (within the android app)
 [x] when saving a game, suggest the level name like "level [N]" as a pre-filled string, and ensure the android keyboard is able to start with that text such that hitting return accepts it
 [x] reduce automap translation speed by another 30%
-[ ] "jump to marker" in the automap should only show actually-existing markers as jump-to options
+[x] "jump to marker" in the automap should only show actually-existing markers as jump-to options
 - also, "drop marker" should open a sub-menu showing unassigned marker spots, rather than its current behavior which is to present a text entry cursor. I just want to name the markers 1-9. we can have a 2nd quick menu option which is "name marker"
 - "set marker" in the automap should work the same way
 - also, put a text label on top of the marker (similar to how text labels are drawn on debug texture overlays). the text color should be dark red so it shows on top of the green marker

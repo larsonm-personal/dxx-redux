@@ -363,6 +363,10 @@ Java_com_dxxredux_app_MainActivity_nativeQuit(JNIEnv *env, jobject thiz)
  */
 #include "player.h"
 #include "weapon.h"
+#include "game.h"
+#ifdef DXX_BUILD_DESCENT_II
+extern int MarkerObject[];
+#endif
 
 #ifdef DXX_BUILD_DESCENT_II
 extern ubyte Primary_last_was_super[MAX_PRIMARY_WEAPONS];
@@ -424,6 +428,43 @@ Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thi
 	jintArray result = (*env)->NewIntArray(env, WS_SIZE);
 	if (result)
 		(*env)->SetIntArrayRegion(env, result, 0, WS_SIZE, buf);
+	return result;
+}
+
+/* Shared constants duplicated in AutomapTouchPolicy.kt:
+ * -1=unavailable marker slot, 0=free marker slot, 1=placed marker slot.
+ * D2_MARKER_OBJECT_COUNT duplicates NUM_MARKERS from d2/main/automap.h.
+ */
+JNIEXPORT jintArray JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetAutomapMarkerState(JNIEnv *env, jobject thiz)
+{
+	enum { MARKER_STATE_SIZE = 9,
+		   D2_MARKER_OBJECT_COUNT = 16,
+		   MARKER_SLOT_UNAVAILABLE = -1,
+		   MARKER_SLOT_FREE = 0,
+		   MARKER_SLOT_PLACED = 1 };
+	jint buf[MARKER_STATE_SIZE];
+	int i;
+
+	for (i = 0; i < MARKER_STATE_SIZE; i++)
+		buf[i] = MARKER_SLOT_UNAVAILABLE;
+
+#ifdef DXX_BUILD_DESCENT_II
+	{
+		extern int Game_mode;
+		extern int Player_num;
+		int max_slots = (Game_mode & GM_MULTI) ? 2 : MARKER_STATE_SIZE;
+		for (i = 0; i < max_slots; i++) {
+			int marker_num = (Player_num * 2) + i;
+			if (marker_num >= 0 && marker_num < D2_MARKER_OBJECT_COUNT)
+				buf[i] = (MarkerObject[marker_num] == -1) ? MARKER_SLOT_FREE : MARKER_SLOT_PLACED;
+		}
+	}
+#endif
+
+	jintArray result = (*env)->NewIntArray(env, MARKER_STATE_SIZE);
+	if (result)
+		(*env)->SetIntArrayRegion(env, result, 0, MARKER_STATE_SIZE, buf);
 	return result;
 }
 

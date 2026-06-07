@@ -600,6 +600,7 @@ class TouchOverlayView
             const val ADMIN_AUTOMAP_MARKER_MENU_ROOT = 19
             const val ADMIN_FOV = 20
             const val ADMIN_DIFFICULTY = 21
+            const val ADMIN_AUTOMAP_NAME_MARKER = 22
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
             const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 

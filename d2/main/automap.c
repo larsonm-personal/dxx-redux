@@ -218,6 +218,8 @@ ubyte Automap_visited[MAX_SEGMENTS];
 void adjust_segment_limit(automap *am, int SegmentLimit);
 void draw_all_edges(automap *am);
 void automap_build_edge_list(automap *am);
+void InitMarkerInput();
+int MarkerInputMessage(int key);
 // extern
 void check_and_fix_matrix(vms_matrix *m);
 
@@ -231,6 +233,8 @@ float MarkerScale=2.0;
 int	MarkerObject[NUM_MARKERS];
 
 extern vms_vector Matrix_scale; //how the matrix is currently scaled
+extern char Marker_input[40];
+extern ubyte DefiningMarkerMessage;
 
 # define automap_draw_line g3_draw_line
 
@@ -296,6 +300,25 @@ void DrawMarkerNumber (automap *am, int num)
 	
 		automap_draw_line(&FromPoint, &ToPoint);
 	}
+}
+
+void DrawMarkerTextLabel (int num, const g3s_point *sphere_point)
+{
+	char label[2];
+	int w,h,aw;
+	g3s_point label_point = *sphere_point;
+
+	if (label_point.p3_codes & CC_BEHIND)
+		return;
+	g3_project_point(&label_point);
+	if (!(label_point.p3_flags & PF_PROJECTED))
+		return;
+
+	sprintf(label, "%d", num+1);
+	gr_set_curfont(GAME_FONT);
+	gr_set_fontcolor(BM_XRGB(24,0,0), -1);
+	gr_get_string_size(label, &w, &h, &aw);
+	gr_printf(f2i(label_point.p3_sx)-w/2, f2i(label_point.p3_sy)-h/2, "%s", label);
 }
 
 void DropMarker (int player_marker_num)
@@ -377,6 +400,7 @@ void DrawMarkers (automap *am)
 			g3_draw_sphere(&sphere_point,MARKER_SPHERE_SIZE/4);
 
 			DrawMarkerNumber (am, i);
+			DrawMarkerTextLabel(i, &sphere_point);
 		}
 
 	if (cycdir)
@@ -484,16 +508,22 @@ static void automap_apply_android_marker_requests(automap *am)
 {
 	extern volatile int g_automap_set_marker;
 	extern volatile int g_automap_go_marker;
+	extern volatile int g_automap_name_marker;
 	int set_marker = g_automap_set_marker; g_automap_set_marker = -1;
 	int go_marker = g_automap_go_marker; g_automap_go_marker = -1;
+	int name_marker = g_automap_name_marker; g_automap_name_marker = 0;
+	int maxdrop = (Game_mode & GM_MULTI) ? MAX_DROP_MULTI : MAX_DROP_SINGLE;
 
-	if (set_marker >= 0 && set_marker < MAX_DROP_SINGLE)
+	if (name_marker && !DefiningMarkerMessage)
+		InitMarkerInput();
+
+	if (set_marker >= 0 && set_marker < maxdrop)
 	{
 		int marker_num = (Player_num*2)+set_marker;
-		if (marker_num >= 0 && marker_num < NUM_MARKERS)
+		if (marker_num >= 0 && marker_num < NUM_MARKERS && MarkerObject[marker_num] == -1)
 		{
 			char error[256] = "";
-			sprintf(MarkerMessage[marker_num], "Marker %d", set_marker+1);
+			sprintf(MarkerMessage[marker_num], "%d", set_marker+1);
 			if (input_demo_recorder_is_active() &&
 			    !input_demo_recorder_stage_direct_command_drop_marker(set_marker,
 			                                                       MarkerMessage[marker_num],
@@ -506,7 +536,7 @@ static void automap_apply_android_marker_requests(automap *am)
 		}
 	}
 
-	if (go_marker >= 0 && go_marker < MAX_DROP_SINGLE)
+	if (go_marker >= 0 && go_marker < maxdrop)
 	{
 		int marker_num = (Player_num*2)+go_marker;
 		if (marker_num >= 0 && marker_num < NUM_MARKERS && MarkerObject[marker_num] != -1)
@@ -742,11 +772,18 @@ void draw_automap(automap *am)
 
 	name_frame(am);
 
-	if (HighlightMarker>-1 && MarkerMessage[HighlightMarker][0]!=0)
+	if (HighlightMarker>-1 && MarkerMessage[(Player_num*2)+HighlightMarker][0]!=0)
 	{
 		char msg[10+MARKER_MESSAGE_LEN+1];
 		sprintf(msg,"Marker %d: %s",HighlightMarker+1,MarkerMessage[(Player_num*2)+HighlightMarker]);
 		gr_printf((SWIDTH/64),(SHEIGHT/18),"%s", msg);
+	}
+
+	if (DefiningMarkerMessage)
+	{
+		gr_set_curfont(GAME_FONT);
+		gr_set_fontcolor(BM_XRGB(0,63,0),-1);
+		gr_printf(0x8000, (LINE_SPACING*5)+FSPACY(1), "Marker: %s_", Marker_input );
 	}
 
 	if ((PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
@@ -783,6 +820,9 @@ int automap_key_command(window *wind, d_event *event, automap *am)
 	int c = event_key_get(event);
 	int marker_num;
 	char maxdrop;
+
+	if (event->type == EVENT_KEY_COMMAND && DefiningMarkerMessage)
+		return MarkerInputMessage(c);
 
 	switch (c)
 	{

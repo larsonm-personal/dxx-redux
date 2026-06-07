@@ -37,6 +37,7 @@ extern int Automap_active;
 volatile int g_automap_center = 0;
 volatile int g_automap_set_marker = -1;
 volatile int g_automap_go_marker = -1;
+volatile int g_automap_name_marker = 0;
 
 /* ── Skippable-screen flag (movies, briefings) ──────────────
  * Set to 1 by the game thread while inside a skippable event loop
@@ -1402,6 +1403,15 @@ Java_com_dxxredux_app_MainActivity_nativeAutomapSelectMarker(JNIEnv *env, jobjec
 {
 	if (idx < 0 || idx > 8) return;
 	g_automap_go_marker = idx;
+}
+
+/*
+ * nativeAutomapNameMarker() - request the classic marker text entry flow.
+ */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeAutomapNameMarker(JNIEnv *env, jobject thiz)
+{
+	g_automap_name_marker = 1;
 }
 
 /* ── C→Java keyboard callbacks ──────────────────────────────
