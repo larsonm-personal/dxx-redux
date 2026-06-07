@@ -9,6 +9,11 @@ int descent_critical_error = 0;
 unsigned int descent_critical_deverror = 0;
 unsigned int descent_critical_errcode = 0;
 
+#ifndef DXX_BUILD_DESCENT_II
+int HiresGFXAvailable = 0;
+int MacHog = 0;
+#endif
+
 int standard_handler(struct d_event *event)
 {
 	event = event;

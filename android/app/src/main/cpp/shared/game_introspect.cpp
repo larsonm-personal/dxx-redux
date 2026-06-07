@@ -370,6 +370,19 @@ static json serialize_secret_areas()
 			item["label_pos"] = { entry->label_pos[0], entry->label_pos[1], entry->label_pos[2] };
 			item["robot_count"] = entry->robot_count;
 			item["robotmaker_count"] = entry->robotmaker_count;
+			item["item_count"] = entry->item_count;
+			json secret_items = json::array();
+			for (int p = 0; p < entry->item_count; p++) {
+				const secret_area_item *secret_item = &entry->items[p];
+				char fallback[32];
+				snprintf(fallback, sizeof(fallback), "powerup %d", secret_item->id);
+				secret_items.push_back({ { "id", secret_item->id },
+				                         { "name", secret_item->name[0] ? secret_item->name : fallback },
+				                         { "count", secret_item->count },
+				                         { "direct_count", secret_item->direct_count },
+				                         { "contained_count", secret_item->contained_count } });
+			}
+			item["items"] = std::move(secret_items);
 			json segments = json::array();
 			for (int s = 0; s < entry->segment_count; s++)
 				segments.push_back(entry->segments[s]);

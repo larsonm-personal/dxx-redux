@@ -58,7 +58,6 @@ set(D2X_MAIN_SOURCES
     render.c
     robot.c
     scores.c
-    secretarea.c
     segment.c
     slew.c
     songs.c
@@ -71,6 +70,8 @@ set(D2X_MAIN_SOURCES
     vclip.c
     wall.c
     weapon.c
+    ../../android/app/src/main/cpp/shared/secret_area_game_adapter.c
+    ../../android/app/src/main/cpp/shared/secret_area_item_names.c
     ../../android/app/src/main/cpp/shared/secret_area_scan.c
     ../../android/app/src/main/cpp/shared/input_demo_fp_env.c
     ../../android/app/src/main/cpp/shared/input_demo_hooks_shared.c

@@ -1,5 +1,7 @@
 #include "secretarea.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "gameseg.h"
@@ -7,15 +9,28 @@
 #include "object.h"
 #include "player.h"
 #include "powerup.h"
+#include "secret_area_item_names.h"
 #include "segment.h"
 #include "switch.h"
 #include "wall.h"
 
 static secret_area_state Secret_area_state;
 
+static void secret_area_trace(const char *stage)
+{
+	if (getenv("DXX_SECRET_AREA_DUMP_TRACE")) {
+#ifdef DXX_BUILD_DESCENT_II
+		fprintf(stderr, "SECRET-AREA-DUMP TRACE d2_secret_area_%s\n", stage);
+#else
+		fprintf(stderr, "SECRET-AREA-DUMP TRACE d1_secret_area_%s\n", stage);
+#endif
+		fflush(stderr);
+	}
+}
+
 static int secret_area_segment_child(void *user, int seg, int side)
 {
-	(void)user;
+	(void) user;
 	if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
 		return -1;
 	return Segments[seg].children[side];
@@ -23,7 +38,7 @@ static int secret_area_segment_child(void *user, int seg, int side)
 
 static int secret_area_reverse_side(void *user, int seg, int child)
 {
-	(void)user;
+	(void) user;
 	if (seg < 0 || seg >= Num_segments || child < 0 || child >= Num_segments)
 		return -1;
 	return find_connect_side(&Segments[seg], &Segments[child]);
@@ -31,7 +46,7 @@ static int secret_area_reverse_side(void *user, int seg, int child)
 
 static int secret_area_wall_num(void *user, int seg, int side)
 {
-	(void)user;
+	(void) user;
 	if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
 		return -1;
 	return Segments[seg].sides[side].wall_num;
@@ -39,7 +54,7 @@ static int secret_area_wall_num(void *user, int seg, int side)
 
 static int secret_area_wall_type(void *user, int wall_num)
 {
-	(void)user;
+	(void) user;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return WALL_NORMAL;
 	return Walls[wall_num].type;
@@ -47,7 +62,7 @@ static int secret_area_wall_type(void *user, int wall_num)
 
 static int secret_area_wall_flags(void *user, int wall_num)
 {
-	(void)user;
+	(void) user;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return 0;
 	return Walls[wall_num].flags;
@@ -55,7 +70,7 @@ static int secret_area_wall_flags(void *user, int wall_num)
 
 static int secret_area_wall_keys(void *user, int wall_num)
 {
-	(void)user;
+	(void) user;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return KEY_NONE;
 	return Walls[wall_num].keys;
@@ -65,7 +80,7 @@ static int secret_area_wall_clip_flags(void *user, int wall_num)
 {
 	int clip_num;
 
-	(void)user;
+	(void) user;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return 0;
 	clip_num = Walls[wall_num].clip_num;
@@ -76,17 +91,21 @@ static int secret_area_wall_clip_flags(void *user, int wall_num)
 
 static int secret_area_segment_special(void *user, int seg)
 {
-	(void)user;
+	(void) user;
 	if (seg < 0 || seg >= Num_segments)
 		return SEGMENT_IS_NOTHING;
+#ifdef DXX_BUILD_DESCENT_II
 	return Segment2s[seg].special;
+#else
+	return Segments[seg].special;
+#endif
 }
 
 static int secret_area_segment_center(void *user, int seg, int xyz[3])
 {
 	vms_vector center;
 
-	(void)user;
+	(void) user;
 	if (seg < 0 || seg >= Num_segments || !xyz)
 		return 0;
 	compute_segment_center(&center, &Segments[seg]);
@@ -98,13 +117,13 @@ static int secret_area_segment_center(void *user, int seg, int xyz[3])
 
 static int secret_area_object_count(void *user)
 {
-	(void)user;
+	(void) user;
 	return num_objects;
 }
 
 static int secret_area_object_segment(void *user, int objnum)
 {
-	(void)user;
+	(void) user;
 	if (objnum < 0 || objnum >= num_objects)
 		return -1;
 	return Objects[objnum].segnum;
@@ -112,7 +131,7 @@ static int secret_area_object_segment(void *user, int objnum)
 
 static int secret_area_object_type(void *user, int objnum)
 {
-	(void)user;
+	(void) user;
 	if (objnum < 0 || objnum >= num_objects)
 		return OBJ_NONE;
 	return Objects[objnum].type;
@@ -120,7 +139,7 @@ static int secret_area_object_type(void *user, int objnum)
 
 static int secret_area_object_id(void *user, int objnum)
 {
-	(void)user;
+	(void) user;
 	if (objnum < 0 || objnum >= num_objects)
 		return -1;
 	return Objects[objnum].id;
@@ -128,7 +147,7 @@ static int secret_area_object_id(void *user, int objnum)
 
 static int secret_area_object_flags(void *user, int objnum)
 {
-	(void)user;
+	(void) user;
 	if (objnum < 0 || objnum >= num_objects)
 		return 0;
 	return Objects[objnum].flags;
@@ -136,7 +155,7 @@ static int secret_area_object_flags(void *user, int objnum)
 
 static int secret_area_object_contains_type(void *user, int objnum)
 {
-	(void)user;
+	(void) user;
 	if (objnum < 0 || objnum >= num_objects)
 		return OBJ_NONE;
 	return Objects[objnum].contains_type;
@@ -144,33 +163,60 @@ static int secret_area_object_contains_type(void *user, int objnum)
 
 static int secret_area_object_contains_id(void *user, int objnum)
 {
-	(void)user;
+	(void) user;
 	if (objnum < 0 || objnum >= num_objects)
 		return -1;
 	return Objects[objnum].contains_id;
+}
+
+static int secret_area_object_contains_count(void *user, int objnum)
+{
+	(void) user;
+	if (objnum < 0 || objnum >= num_objects)
+		return 0;
+	return Objects[objnum].contains_count;
+}
+
+static const char *secret_area_powerup_name(void *user, int id)
+{
+	(void) user;
+#ifdef DXX_BUILD_DESCENT_II
+#ifndef DXX_HEADLESS_CONSOLE
+	if (id >= 0 && id < MAX_POWERUP_TYPES && Powerup_names[id][0])
+		return Powerup_names[id];
+#endif
+	return secret_area_fallback_powerup_name(1, id);
+#else
+	if (id >= 0 && id < MAX_POWERUP_TYPES && Powerup_names[id][0])
+		return Powerup_names[id];
+	return secret_area_fallback_powerup_name(0, id);
+#endif
 }
 
 static int secret_area_side_has_exit_trigger(void *user, int seg, int side)
 {
 	int wall_num;
 	int trigger_num;
-	int type;
 
-	(void)user;
+	(void) user;
 	wall_num = secret_area_wall_num(NULL, seg, side);
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return 0;
 	trigger_num = Walls[wall_num].trigger;
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
 		return 0;
-	type = Triggers[trigger_num].type;
-	return type == TT_EXIT || type == TT_SECRET_EXIT;
+#ifdef DXX_BUILD_DESCENT_II
+	return Triggers[trigger_num].type == TT_EXIT || Triggers[trigger_num].type == TT_SECRET_EXIT;
+#else
+	return (Triggers[trigger_num].flags & (TRIGGER_EXIT | TRIGGER_SECRET_EXIT)) != 0;
+#endif
 }
 
 void secret_area_rescan_current_level(void)
 {
 	secret_area_scan_view view;
 
+	secret_area_trace("start");
 	memset(&view, 0, sizeof(view));
 	view.num_segments = Num_segments;
 	view.num_walls = Num_walls;
@@ -211,8 +257,11 @@ void secret_area_rescan_current_level(void)
 	view.object_flags = secret_area_object_flags;
 	view.object_contains_type = secret_area_object_contains_type;
 	view.object_contains_id = secret_area_object_contains_id;
+	view.object_contains_count = secret_area_object_contains_count;
+	view.powerup_name = secret_area_powerup_name;
 	view.side_has_exit_trigger = secret_area_side_has_exit_trigger;
 	secret_area_scan_level(&view, &Secret_area_state);
+	secret_area_trace("done");
 }
 
 const secret_area_state *secret_area_get_state(void)

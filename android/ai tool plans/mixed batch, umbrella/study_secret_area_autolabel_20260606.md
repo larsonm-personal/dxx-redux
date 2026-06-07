@@ -13,13 +13,15 @@
 ## Implementation Progress
 - [x] Added shared scanner core in `android/app/src/main/cpp/shared/secret_area_scan.c` and `secret_area_scan.h`.
 - [x] Added D1/D2 adapters in `d1/main/secretarea.c` and `d2/main/secretarea.c`.
+- [x] Deduplicated the D1/D2 adapters into `android/app/src/main/cpp/shared/secret_area_game_adapter.c`.
 - [x] Wired level-load rescans through D1/D2 `LoadLevel()`.
 - [x] Wired per-frame segment entry marking through D1/D2 `GameProcessFrame()`, guarded against demo playback.
 - [x] Added `secret_areas` to Android introspection output for level-loaded game state.
 - [x] Added shared headless base-game JSON dump entrypoint in `android/app/src/main/cpp/headless/secret_area_dump_main.cpp`.
 - [x] Added `dxx-redux-d1-secretareas` and `dxx-redux-d2-secretareas` host target declarations.
 - [x] Added PowerShell compare/update harness in `android/tests/test_secret_area_baseline.ps1` and `update_secret_area_baseline.ps1`.
-- [ ] Build the new host dump targets in a clean configured host tree and commit `android/test_fixtures/secret_area_base_game_baseline.json`.
+- [x] Build the new host dump targets and commit `android/test_fixtures/secret_area_base_game_baseline.json`.
+- [x] Added per-secret item summaries to runtime state, introspection, and the base-game regression JSON.
 - [ ] Add first-entry HUD popup text.
 - [ ] Add save/restore found bits.
 - [ ] Add automap found labels and reveal-cheat labels.
@@ -27,10 +29,13 @@
 ## Findings
 - The engine already has a strong hidden-door signal: `WallAnims[wall.clip_num].flags & WCF_HIDDEN`.
 - D1 and D2 automap already use this signal to make hidden doors look like normal walls, and mark the edge as `EF_SECRET`.
+- The editor segment `special` field is not a secret marker. D1 defines fuel, repair, control center, and robotmaker values; D2 adds blue/red goal values.
 - The segment graph already exposes candidate "behind this wall" regions through `Segments[seg].children[side]`.
 - Existing automap visited state is per segment and saved/restored, but it means "seen/rendered", not "player entered".
 - A secret-area counter should therefore track player segment entry, not reuse `Automap_visited` as the source of truth.
 - Generated secret lists should be recomputed from pristine level data at load time. Save files should store only found bits.
+- Base-game validation currently produces conservative totals of 86 D1 secrets and 92 D2 secrets. D1 level 1 produces 2 generated secret areas, matching the corrected expectation that it only has about 1-2 real secret areas.
+- Secret entries now track aggregate powerup summaries with id, readable name, total count, direct count, and contained count. Names prefer the engine `Powerup_names` table where available, with a shared fallback table for narrow host tools.
 
 ## Candidate Algorithm
 1. After a level file is loaded and before save-game mutations are applied, build a topology graph over segments.

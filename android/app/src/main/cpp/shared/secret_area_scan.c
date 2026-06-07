@@ -16,6 +16,8 @@ typedef struct candidate_secret {
 	secret_area_entrance entrances[SECRET_AREA_MAX_ENTRANCES];
 	int robot_count;
 	int robotmaker_count;
+	int item_count;
+	secret_area_item items[SECRET_AREA_MAX_ITEMS];
 } candidate_secret;
 
 static int ordinary_distance[SECRET_AREA_MAX_SEGMENTS];
@@ -46,6 +48,54 @@ static int is_key_powerup(const secret_area_scan_view *view, int id)
 {
 	return id == view->powerup_key_blue || id == view->powerup_key_red ||
 	       id == view->powerup_key_gold;
+}
+
+static void copy_item_name(secret_area_item *item, const char *name)
+{
+	size_t length;
+
+	if (!item)
+		return;
+	if (!name)
+		name = "";
+	length = strlen(name);
+	if (length >= SECRET_AREA_ITEM_NAME_LEN)
+		length = SECRET_AREA_ITEM_NAME_LEN - 1;
+	memcpy(item->name, name, length);
+	item->name[length] = '\0';
+}
+
+static void add_candidate_item(const secret_area_scan_view *view, candidate_secret *candidate, int id, int count, int contained)
+{
+	int index;
+	secret_area_item *item;
+	const char *name;
+
+	if (!candidate || id < 0 || count <= 0)
+		return;
+	for (index = 0; index < candidate->item_count; ++index) {
+		item = &candidate->items[index];
+		if (item->id != id)
+			continue;
+		item->count += count;
+		if (contained)
+			item->contained_count += count;
+		else
+			item->direct_count += count;
+		return;
+	}
+	if (candidate->item_count >= SECRET_AREA_MAX_ITEMS)
+		return;
+	item = &candidate->items[candidate->item_count++];
+	memset(item, 0, sizeof(*item));
+	item->id = id;
+	item->count = count;
+	if (contained)
+		item->contained_count = count;
+	else
+		item->direct_count = count;
+	name = view && view->powerup_name ? view->powerup_name(view->user, id) : NULL;
+	copy_item_name(item, name);
 }
 
 static int edge_has_valid_reverse(const secret_area_scan_view *view, int seg, int side, int child)
@@ -312,14 +362,21 @@ static int component_contains_progress_item(const secret_area_scan_view *view, c
 			continue;
 		if (type == view->obj_type_hostage || type == view->obj_type_control_center)
 			return 1;
-		if (type == view->obj_type_powerup && is_key_powerup(view, id))
-			return 1;
+		if (type == view->obj_type_powerup) {
+			if (is_key_powerup(view, id))
+				return 1;
+			add_candidate_item(view, candidate, id, 1, 0);
+		}
 		if (type == view->obj_type_robot)
 			candidate->robot_count++;
 		contains_type = view->object_contains_type ? view->object_contains_type(view->user, objnum) : view->obj_type_none;
 		contains_id = view->object_contains_id ? view->object_contains_id(view->user, objnum) : -1;
 		if (contains_type == view->obj_type_powerup && is_key_powerup(view, contains_id))
 			return 1;
+		if (contains_type == view->obj_type_powerup) {
+			int contains_count = view->object_contains_count ? view->object_contains_count(view->user, objnum) : 1;
+			add_candidate_item(view, candidate, contains_id, contains_count, 1);
+		}
 	}
 	return 0;
 }
@@ -397,6 +454,24 @@ static void sort_candidates(candidate_secret *list, int count)
 	}
 }
 
+static void sort_candidate_items(candidate_secret *candidate)
+{
+	int i;
+	int j;
+
+	if (!candidate)
+		return;
+	for (i = 1; i < candidate->item_count; ++i) {
+		secret_area_item tmp = candidate->items[i];
+		j = i - 1;
+		while (j >= 0 && candidate->items[j].id > tmp.id) {
+			candidate->items[j + 1] = candidate->items[j];
+			j--;
+		}
+		candidate->items[j + 1] = tmp;
+	}
+}
+
 static void copy_candidate_to_state(const secret_area_scan_view *view, secret_area_state *state, int index, const candidate_secret *candidate)
 {
 	secret_area_entry *entry = &state->secrets[index];
@@ -415,6 +490,8 @@ static void copy_candidate_to_state(const secret_area_scan_view *view, secret_ar
 	memcpy(entry->entrances, candidate->entrances, sizeof(candidate->entrances));
 	entry->robot_count = candidate->robot_count;
 	entry->robotmaker_count = candidate->robotmaker_count;
+	entry->item_count = candidate->item_count;
+	memcpy(entry->items, candidate->items, sizeof(candidate->items));
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		if (component_id[seg] != candidate->component)
 			continue;
@@ -472,6 +549,7 @@ int secret_area_scan_level(const secret_area_scan_view *view, secret_area_state 
 		if (component_contains_progress_item(view, candidate))
 			continue;
 		compute_label_pos(view, candidate);
+		sort_candidate_items(candidate);
 		candidates[final_count++] = *candidate;
 	}
 	state->final_candidate_count = final_count;

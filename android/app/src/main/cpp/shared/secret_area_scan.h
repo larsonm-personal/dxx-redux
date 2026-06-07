@@ -9,6 +9,8 @@ extern "C" {
 #define SECRET_AREA_MAX_GENERATED 30
 #define SECRET_AREA_MAX_ENTRANCES 16
 #define SECRET_AREA_MAX_SIDES     6
+#define SECRET_AREA_MAX_ITEMS     64
+#define SECRET_AREA_ITEM_NAME_LEN 32
 
 enum secret_area_disabled_reason {
 	SECRET_AREA_DISABLED_NONE = 0,
@@ -57,6 +59,8 @@ typedef struct secret_area_scan_view {
 	int (*object_flags)(void *user, int objnum);
 	int (*object_contains_type)(void *user, int objnum);
 	int (*object_contains_id)(void *user, int objnum);
+	int (*object_contains_count)(void *user, int objnum);
+	const char *(*powerup_name)(void *user, int id);
 	int (*side_has_exit_trigger)(void *user, int seg, int side);
 } secret_area_scan_view;
 
@@ -66,6 +70,14 @@ typedef struct secret_area_entrance {
 	int secret_seg;
 	int wall_num;
 } secret_area_entrance;
+
+typedef struct secret_area_item {
+	int id;
+	int count;
+	int direct_count;
+	int contained_count;
+	char name[SECRET_AREA_ITEM_NAME_LEN];
+} secret_area_item;
 
 typedef struct secret_area_entry {
 	int display_index;
@@ -80,6 +92,8 @@ typedef struct secret_area_entry {
 	secret_area_entrance entrances[SECRET_AREA_MAX_ENTRANCES];
 	int robot_count;
 	int robotmaker_count;
+	int item_count;
+	secret_area_item items[SECRET_AREA_MAX_ITEMS];
 } secret_area_entry;
 
 typedef struct secret_area_state {
@@ -89,8 +103,8 @@ typedef struct secret_area_state {
 	int final_candidate_count;
 	int found_count;
 	int segment_to_secret[SECRET_AREA_MAX_SEGMENTS];
-	unsigned char found[SECRET_AREA_MAX_GENERATED];
 	secret_area_entry secrets[SECRET_AREA_MAX_GENERATED];
+	unsigned char found[SECRET_AREA_MAX_GENERATED];
 } secret_area_state;
 
 void secret_area_state_clear(secret_area_state *state);
