@@ -226,7 +226,26 @@ static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
 }
 #endif
 
-static int secret_area_side_opener_segment_at(int seg, int side, int wanted_index)
+static int secret_area_segment_contains_key_powerup(int seg)
+{
+	int objnum;
+
+	if (seg < 0 || seg >= Num_segments)
+		return 0;
+	for (objnum = 0; objnum < num_objects; ++objnum) {
+		if (Objects[objnum].flags & OF_SHOULD_BE_DEAD)
+			continue;
+		if (Objects[objnum].segnum != seg || Objects[objnum].type != OBJ_POWERUP)
+			continue;
+		if (Objects[objnum].id == POW_KEY_BLUE ||
+		    Objects[objnum].id == POW_KEY_RED ||
+		    Objects[objnum].id == POW_KEY_GOLD)
+			return 1;
+	}
+	return 0;
+}
+
+static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_index)
 {
 #ifdef DXX_BUILD_DESCENT_II
 	int trigger_num;
@@ -249,7 +268,7 @@ static int secret_area_side_opener_segment_at(int seg, int side, int wanted_inde
 			if (Walls[source_wall].trigger != trigger_num)
 				continue;
 			if (found == wanted_index)
-				return Walls[source_wall].segnum;
+				return source_wall;
 			found++;
 		}
 	}
@@ -259,6 +278,15 @@ static int secret_area_side_opener_segment_at(int seg, int side, int wanted_inde
 	(void) wanted_index;
 #endif
 	return -1;
+}
+
+static int secret_area_side_opener_segment_at(int seg, int side, int wanted_index)
+{
+	int source_wall = secret_area_side_opener_source_wall_at(seg, side, wanted_index);
+
+	if (source_wall < 0 || source_wall >= Num_walls)
+		return -1;
+	return Walls[source_wall].segnum;
 }
 
 static int secret_area_triggered_side_opener_count(void *user, int seg, int side)
@@ -275,6 +303,34 @@ static int secret_area_triggered_side_opener_segment(void *user, int seg, int si
 {
 	(void) user;
 	return secret_area_side_opener_segment_at(seg, side, index);
+}
+
+static int secret_area_triggered_side_opener_side(void *user, int seg, int side, int index)
+{
+	int source_wall;
+
+	(void) user;
+	source_wall = secret_area_side_opener_source_wall_at(seg, side, index);
+	if (source_wall < 0 || source_wall >= Num_walls)
+		return -1;
+	return Walls[source_wall].sidenum;
+}
+
+static int secret_area_triggered_side_opener_wall_num(void *user, int seg, int side, int index)
+{
+	(void) user;
+	return secret_area_side_opener_source_wall_at(seg, side, index);
+}
+
+static int secret_area_triggered_side_opener_is_marginal(void *user, int seg, int side, int index)
+{
+	int source_wall;
+
+	(void) user;
+	source_wall = secret_area_side_opener_source_wall_at(seg, side, index);
+	if (source_wall < 0 || source_wall >= Num_walls)
+		return 0;
+	return secret_area_segment_contains_key_powerup(Walls[source_wall].segnum);
 }
 
 void secret_area_rescan_current_level(void)
@@ -328,6 +384,9 @@ void secret_area_rescan_current_level(void)
 	view.side_has_exit_trigger = secret_area_side_has_exit_trigger;
 	view.triggered_side_opener_count = secret_area_triggered_side_opener_count;
 	view.triggered_side_opener_segment = secret_area_triggered_side_opener_segment;
+	view.triggered_side_opener_side = secret_area_triggered_side_opener_side;
+	view.triggered_side_opener_wall_num = secret_area_triggered_side_opener_wall_num;
+	view.triggered_side_opener_is_marginal = secret_area_triggered_side_opener_is_marginal;
 	secret_area_scan_level(&view, &Secret_area_state);
 	secret_area_trace("done");
 }

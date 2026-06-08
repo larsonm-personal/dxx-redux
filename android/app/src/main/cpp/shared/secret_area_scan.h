@@ -64,6 +64,9 @@ typedef struct secret_area_scan_view {
 	int (*side_has_exit_trigger)(void *user, int seg, int side);
 	int (*triggered_side_opener_count)(void *user, int seg, int side);
 	int (*triggered_side_opener_segment)(void *user, int seg, int side, int index);
+	int (*triggered_side_opener_side)(void *user, int seg, int side, int index);
+	int (*triggered_side_opener_wall_num)(void *user, int seg, int side, int index);
+	int (*triggered_side_opener_is_marginal)(void *user, int seg, int side, int index);
 } secret_area_scan_view;
 
 typedef struct secret_area_entrance {

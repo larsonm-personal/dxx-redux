@@ -424,3 +424,97 @@ buildd2\main\dxx-redux-d2-secretareas.exe -hogdir C:\path\to\data -secretarea-js
   - Safer extension for D2 level 2 reactor-path cases: add a scan callback that exposes trigger source walls and all linked target sides, then suppress candidates when the same opener trigger is reachable in the ordinary graph and has no evidence of being an optional secret switch. Ordinary, pass-through illusion trigger surfaces on the main path are a stronger mandatory signal than shootable overlay switches.
   - Avoid a broad "triggered from reachable segment" filter. The scanner intentionally added optional shootable-switch secrets using reachable trigger sources, so that broad rule would delete many real secrets.
   - Keep the filter D2-only at first, because D1 trigger data is flag-based and the current added triggered-secret heuristic only applies to D2.
+
+## Follow-Up Marginal Trigger Filtering Implementation
+- [x] Extend the shared scan view with D2-backed trigger source callbacks for opener segment, side, wall, and marginal-source classification.
+- [x] Filter candidates whose entrances are only accepted through marginal trigger sources. The landed heuristic treats key-segment trigger sources as marginal, and treats pass-through `WALL_OPEN` sources as marginal only when at least two reachable pass-through openers target the same entrance.
+- [x] Regenerate and inspect the base-game secret JSON. D1 remains 172 secrets; D2 drops from 265 to 252. D2 level 2 old `S10` is removed, D2 level 3 old `S6`/`S7` are removed, and the cloak pocket formerly `S10` remains as the new `S8`.
+- [x] Run scoped code quality and the secret-area regression command after updating the baseline.
+
+## Follow-Up Required-Route Trigger Filtering Study
+- [x] Replace or augment the current marginal trigger heuristic with a deterministic required-route mask.
+- [x] Build route masks from spawn to each required key, each key to matching locked doors, and spawn to the reactor with locked doors passable.
+- [x] Mark a trigger source as progression pass-through only when the source side/edge is intersected by one of those route masks.
+- [x] Prefer a scanner-local deterministic segment path helper over calling live AI path APIs directly, because `create_path_points()` depends on object state, random side order, and global `Point_segs`.
+
+### Study Notes
+- The live pathing helpers are useful references, but should not be called by secret generation at level load:
+  - D1/D2 `create_path_points()` traverses with `WALL_IS_DOORWAY()` or `ai_door_is_openable()`, can randomize side order, consumes global path buffers, and uses object/player state.
+  - D2 `create_bfs_list()` is also live-AI-oriented. It asks `segment_is_reachable()`, which delegates to `ai_door_is_openable(NULL, ...)`, so the answer can depend on current door/key/player state.
+  - The scanner should remain deterministic and asset-only, so the route study should be implemented in `android/app/src/main/cpp/shared/secret_area_scan.c` as a small segment BFS and path reconstruction helper.
+- The filter should operate on edges, not just segments:
+  - D2 trigger sources are wall sides. The source is effectively `(Walls[source_wall].segnum, Walls[source_wall].sidenum)`.
+  - A source segment that contains a key is too broad. It can mark optional key-room switches as mandatory even when the required route never crosses that side.
+  - The route mask should therefore be `required_route_side[seg][side]`, with the reverse side marked too when the route crosses into a child segment.
+- Required-route families requested for this first pass:
+  - Spawn to each key segment, but only for key colors that have at least one matching keyed door in the level. A key without a matching locked door is not required progress.
+  - Each key color to its matching door side. If multiple same-color keys exist, choose the shortest successful path from any same-color key to each same-color keyed door, then explicitly mark the keyed door side.
+  - Spawn to reactor, with all keyed doors considered passable. This catches mandatory late-game travel through blue/red/gold doors without needing to solve full key order.
+- Reactor target discovery:
+  - Prefer an `OBJ_CNTRLCEN` object segment, matching how guidebot/reactor logic reasons about the control center.
+  - If no object is present, fall back to segment special `SEGMENT_IS_CONTROLCEN` through the scan view if that is already available.
+  - If no reactor/control-center target is present, skip the reactor route mask rather than disabling secret generation. Boss/variant levels may not have a normal reactor object.
+- Key and door discovery:
+  - Key segments come from live level objects with `OBJ_POWERUP` ids `POW_KEY_BLUE`, `POW_KEY_RED`, and `POW_KEY_GOLD`, ignoring dead objects.
+  - Keyed door sides come from walls whose key mask includes `KEY_BLUE`, `KEY_RED`, or `KEY_GOLD`. Use bit tests, not strict equality, because these constants are flag values even though ordinary levels usually store one key.
+  - Door route marking should mark the wall side itself and, if the reverse side has a wall, the reverse wall side too. Otherwise a trigger mounted on either face can be recognized as route-intersected.
+
+### Route Traversal Policy
+- Add a dedicated route traversal predicate instead of reusing live AI helpers:
+  - Require a valid child and a valid reverse side.
+  - Do not traverse a side that the scanner already considers a secret boundary. A required-route search that walks through secret doors would make optional secrets look mandatory.
+  - No wall is passable.
+  - `WALL_OPEN` is passable.
+  - `WALL_ILLUSION` follows the current scanner behavior: passable when it is not `WALL_ILLUSION_OFF`.
+  - `WALL_DOOR` is passable when `wall_keys == KEY_NONE`, or when `(wall_keys & allowed_key_mask) != 0`.
+  - `WALL_BLASTABLE` should initially follow the existing scanner's ordinary traversal behavior for consistency. This can over-accept ordinary shootable walls as routeable, but changing that now would also alter the existing reachable-secret graph.
+  - Exit triggers are not passable.
+- Use three allowed-key modes:
+  - Spawn to key: no keys allowed.
+  - Key to matching door: the matching key color allowed.
+  - Spawn to reactor: blue, red, and gold allowed.
+
+### Implementation Detail
+- Add scanner-local arrays in `secret_area_scan.c`:
+  - `required_route_side[SECRET_AREA_MAX_SEGMENTS][SECRET_AREA_MAX_SIDES]`
+  - `route_parent_seg[SECRET_AREA_MAX_SEGMENTS]`
+  - `route_parent_side[SECRET_AREA_MAX_SEGMENTS]`
+  - `route_distance[SECRET_AREA_MAX_SEGMENTS]`
+  - `route_queue[SECRET_AREA_MAX_SEGMENTS]`
+- Add `find_required_route_and_mark(view, start_seg, goal_seg, allowed_key_mask)`:
+  - Run deterministic BFS with side order `0..SECRET_AREA_MAX_SIDES-1`.
+  - Store the parent segment and parent side used to enter each child.
+  - Stop at the first goal hit for deterministic shortest-path behavior.
+  - Walk backward from goal to start and mark each parent side in `required_route_side`.
+  - Mark the reverse side by calling `view->reverse_side(user, parent, child)`.
+- Add `mark_required_routes(view)` after `progression_distance` has been built, because the secret-boundary check depends on progression reachability:
+  - Clear the route mask.
+  - Collect key segments by color.
+  - Collect keyed door sides by color.
+  - For each key color with at least one key and at least one matching door, mark spawn-to-key paths.
+  - For each matching keyed door, try all same-color key segments and mark only the shortest successful key-to-door path. Then mark the keyed door side itself.
+  - Find the reactor segment and mark spawn-to-reactor with all keys allowed.
+- Replace the current broad marginal checks with side-intersection checks:
+  - `source_wall_is_progression_pass_through()` should become a simple lookup of `required_route_side[source_seg][source_side]`, after validating the trigger source wall/side.
+  - Remove or stop using the segment-level `segment_contains_key_powerup()` criterion for marginal trigger filtering. The route mask is the conservative replacement.
+  - Keep the existing "all reachable trigger openers are marginal" candidate suppression shape. The difference is that a marginal opener now means "this exact trigger source side lies on a required route".
+
+### Expected Effects
+- D2 level 2 reactor-path hidden walls should be filtered only when their opening triggers are on the spawn-to-reactor route.
+- D2 level 3 blue-key-adjacent cases should be filtered only if the trigger side is crossed by spawn-to-key or key-to-door routing, not simply because the source segment contains the blue key.
+- Optional shootable-switch secrets should survive when the switch is in a reachable but non-required side pocket.
+- Progression-gated secrets remain eligible as secrets. The route mask is only used to reject secret candidates opened by mandatory pass-through triggers; it does not require all generated secrets to be reachable before collecting every key.
+
+### Validation Plan
+- Run the base-game secret regression with baseline output to a temp directory first:
+  - `.\android\tests\test_secret_area_baseline.ps1 -Game both -BuildBeforeRun -RequireAssets -OutputDir temp\secret_area_required_route_probe`
+- Inspect D2 level deltas against the current baseline:
+  - D2 level 2: confirm reactor-path mandatory trigger pockets are removed.
+  - D2 level 3: confirm the exemplar blue-key/blue-route case is removed, while the cloak/optional hidden pocket remains.
+  - D2 level 1: confirm the known shootable-switch secret near `rock313 (24/4/0)` and `door45#0 (162/4/0)` still appear if they contain items.
+- in general, the total secret counts should go down by maybe 1-2 per level, if that. it shouldn't be half as many, based on my play testing
+- If the deltas look right, update the committed baseline:
+  - `.\android\tests\test_secret_area_baseline.ps1 -Game both -BuildBeforeRun -RequireAssets -UpdateBaseline -OutputDir temp\secret_area_required_route_update`
+- Run scoped code quality:
+  - `.\android\run-code-quality.ps1 -Fix -Paths @('android/app/src/main/cpp/shared/secret_area_scan.c', 'android/app/src/main/cpp/shared/secret_area_scan.h', 'android/app/src/main/cpp/shared/secret_area_game_adapter.c', 'android/test_fixtures/secret_area_base_game_baseline.json', 'android/ai tool plans/mixed batch, umbrella/study_secret_area_autolabel_20260606.md')`
+

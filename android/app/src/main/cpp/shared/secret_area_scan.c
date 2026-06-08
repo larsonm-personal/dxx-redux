@@ -124,6 +124,8 @@ static int side_wall_num(const secret_area_scan_view *view, int seg, int side)
 	return view->wall_num(view->user, seg, side);
 }
 
+static int is_ordinary_edge(const secret_area_scan_view *view, int seg, int side, int flags);
+
 static int wall_clip_flags(const secret_area_scan_view *view, int wall_num)
 {
 	if (!valid_wall(view, wall_num) || !view->wall_clip_flags)
@@ -172,6 +174,106 @@ static int side_has_reachable_trigger_opener(const secret_area_scan_view *view, 
 	return 0;
 }
 
+static int segment_contains_key_powerup(const secret_area_scan_view *view, int seg)
+{
+	int obj_count;
+	int objnum;
+
+	if (!valid_segment(view, seg) || !view->object_count)
+		return 0;
+	obj_count = view->object_count(view->user);
+	for (objnum = 0; objnum < obj_count; ++objnum) {
+		int type;
+		int id;
+		if (view->object_flags &&
+		    (view->object_flags(view->user, objnum) & view->obj_flag_should_be_dead))
+			continue;
+		if (view->object_segment(view->user, objnum) != seg)
+			continue;
+		type = view->object_type(view->user, objnum);
+		id = view->object_id(view->user, objnum);
+		if (type == view->obj_type_powerup && is_key_powerup(view, id))
+			return 1;
+	}
+	return 0;
+}
+
+static int source_wall_is_progression_pass_through(const secret_area_scan_view *view, int seg, int side, int index)
+{
+	int source_seg;
+	int source_side;
+	int source_child;
+	int source_wall;
+
+	if (!view->triggered_side_opener_wall_num || !view->triggered_side_opener_side)
+		return 0;
+	source_seg = view->triggered_side_opener_segment(view->user, seg, side, index);
+	source_side = view->triggered_side_opener_side(view->user, seg, side, index);
+	source_wall = view->triggered_side_opener_wall_num(view->user, seg, side, index);
+	if (!valid_segment(view, source_seg) ||
+	    source_side < 0 || source_side >= SECRET_AREA_MAX_SIDES ||
+	    !valid_wall(view, source_wall) ||
+	    view->wall_type(view->user, source_wall) != view->wall_type_open)
+		return 0;
+	source_child = view->segment_child(view->user, source_seg, source_side);
+	return valid_segment(view, source_child) &&
+	       progression_distance[source_child] >= 0 &&
+	       is_ordinary_edge(view, source_seg, source_side, SECRET_AREA_EDGE_ALLOW_PROGRESSION);
+}
+
+static int progression_pass_through_opener_count(const secret_area_scan_view *view, int seg, int side)
+{
+	int count;
+	int i;
+	int pass_through_count = 0;
+
+	if (!view->triggered_side_opener_count)
+		return 0;
+	count = view->triggered_side_opener_count(view->user, seg, side);
+	for (i = 0; i < count; ++i) {
+		int opener_seg = view->triggered_side_opener_segment(view->user, seg, side, i);
+		if (!valid_segment(view, opener_seg) || progression_distance[opener_seg] < 0)
+			continue;
+		if (source_wall_is_progression_pass_through(view, seg, side, i))
+			pass_through_count++;
+	}
+	return pass_through_count;
+}
+
+static int triggered_side_opener_is_marginal(const secret_area_scan_view *view, int seg, int side, int index)
+{
+	int opener_seg;
+
+	opener_seg = view->triggered_side_opener_segment(view->user, seg, side, index);
+	if (segment_contains_key_powerup(view, opener_seg))
+		return 1;
+	if (view->triggered_side_opener_is_marginal &&
+	    view->triggered_side_opener_is_marginal(view->user, seg, side, index))
+		return 1;
+	return progression_pass_through_opener_count(view, seg, side) >= 2 &&
+	       source_wall_is_progression_pass_through(view, seg, side, index);
+}
+
+static int side_has_only_marginal_reachable_trigger_openers(const secret_area_scan_view *view, int seg, int side)
+{
+	int count;
+	int i;
+	int found = 0;
+
+	if (!view->triggered_side_opener_count || !view->triggered_side_opener_segment)
+		return 0;
+	count = view->triggered_side_opener_count(view->user, seg, side);
+	for (i = 0; i < count; ++i) {
+		int opener_seg = view->triggered_side_opener_segment(view->user, seg, side, i);
+		if (!valid_segment(view, opener_seg) || progression_distance[opener_seg] < 0)
+			continue;
+		if (!triggered_side_opener_is_marginal(view, seg, side, i))
+			return 0;
+		found = 1;
+	}
+	return found;
+}
+
 static int is_triggered_secret_edge(const secret_area_scan_view *view, int seg, int side, int child)
 {
 	int wall_num;
@@ -189,6 +291,25 @@ static int is_triggered_secret_edge(const secret_area_scan_view *view, int seg, 
 	return valid_wall(view, wall_num) &&
 	       view->wall_keys(view->user, wall_num) == view->wall_key_none &&
 	       side_has_reachable_trigger_opener(view, child, reverse_side);
+}
+
+static int is_only_marginal_trigger_edge(const secret_area_scan_view *view, int seg, int side, int child)
+{
+	int wall_num;
+	int reverse_side;
+
+	if (!edge_has_valid_reverse(view, seg, side, child))
+		return 0;
+	wall_num = side_wall_num(view, seg, side);
+	if (valid_wall(view, wall_num) &&
+	    view->wall_keys(view->user, wall_num) == view->wall_key_none &&
+	    side_has_only_marginal_reachable_trigger_openers(view, seg, side))
+		return 1;
+	reverse_side = view->reverse_side(view->user, seg, child);
+	wall_num = side_wall_num(view, child, reverse_side);
+	return valid_wall(view, wall_num) &&
+	       view->wall_keys(view->user, wall_num) == view->wall_key_none &&
+	       side_has_only_marginal_reachable_trigger_openers(view, child, reverse_side);
 }
 
 static int is_secret_boundary_edge(const secret_area_scan_view *view, int seg, int side, int child)
@@ -370,6 +491,20 @@ static int collect_raw_candidates(const secret_area_scan_view *view)
 		}
 	}
 	return count;
+}
+
+static int candidate_has_only_marginal_entrances(const secret_area_scan_view *view, const candidate_secret *candidate)
+{
+	int i;
+
+	if (!candidate || candidate->entrance_count <= 0)
+		return 0;
+	for (i = 0; i < candidate->entrance_count; ++i) {
+		const secret_area_entrance *entrance = &candidate->entrances[i];
+		if (!is_only_marginal_trigger_edge(view, entrance->seg, entrance->side, entrance->secret_seg))
+			return 0;
+	}
+	return 1;
 }
 
 static int component_contains_progress_item(const secret_area_scan_view *view, candidate_secret *candidate)
@@ -592,6 +727,8 @@ int secret_area_scan_level(const secret_area_scan_view *view, secret_area_state 
 	for (i = 0; i < raw_count; ++i) {
 		candidate_secret *candidate = &candidates[i];
 		if (!component_hidden_reachable(view, candidate->component))
+			continue;
+		if (candidate_has_only_marginal_entrances(view, candidate))
 			continue;
 		if (component_contains_progress_item(view, candidate))
 			continue;
