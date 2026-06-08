@@ -15,9 +15,10 @@ class AdminTrayUiTest {
     fun touchModeKeepsAutomapOutWhenTouchButtonIsMissing() {
         val actions = adminTrayVisibleActions(gamepadOnlyMode = false, hasTouchAutomapButton = false)
 
-        assertEquals(9, actions.size)
+        assertEquals(10, actions.size)
         assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_CHEATS))
     }
 
     @Test
@@ -30,6 +31,7 @@ class AdminTrayUiTest {
         assertFalse(actions.contains(TouchOverlayView.ADMIN_WARP))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_ACCEPT_JOIN))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_CHEATS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_MUSIC))
     }
@@ -93,6 +95,7 @@ class AdminTrayUiTest {
         assertFalse(actions.contains(TouchOverlayView.ADMIN_QUICK_LOAD))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_QUICK_SAVE))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_EXIT_LAUNCHER))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_CHEATS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_INCREASE_VIEW))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_AUTOMAP_SECRET_REVEAL))
@@ -131,7 +134,29 @@ class AdminTrayUiTest {
         assertTrue(actions.contains(TouchOverlayView.ADMIN_NET_EVENTS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_ACCEPT_JOIN))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_CHEATS))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_WARP))
+    }
+
+    @Test
+    fun cheatsAreSinglePlayerOnlyAndStayInTrayStack() {
+        val singlePlayerActions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+            )
+        val multiplayerActions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                isMultiplayerGame = true,
+            )
+
+        assertTrue(singlePlayerActions.contains(TouchOverlayView.ADMIN_CHEATS))
+        assertFalse(multiplayerActions.contains(TouchOverlayView.ADMIN_CHEATS))
+        assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_CHEATS))
+        assertFalse(adminTrayUsesSlider(TouchOverlayView.ADMIN_CHEATS))
+        assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_CHEATS))
     }
 
     @Test

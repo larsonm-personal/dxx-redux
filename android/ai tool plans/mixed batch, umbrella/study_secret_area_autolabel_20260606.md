@@ -410,3 +410,8 @@ buildd2\main\dxx-redux-d2-secretareas.exe -hogdir C:\path\to\data -secretarea-js
 - [x] When `find secret` is run while the guidebot is already targeting a secret, skip the current target and choose the next nearest reachable unfound secret.
 - [x] If no other reachable unfound secret exists, keep the current reachable target instead of clearing the task.
 - [x] Verify with formatting, a focused D2 Windows build, and Android native build.
+
+## Follow-Up Guide Wheel Reveal Gating
+- [x] Hide the Guide wheel `Secret` slice unless the Reveal Secrets cheat is active.
+- [x] Reflow the remaining Guide wheel slices when `Secret` is hidden, matching the old slice positions.
+- [x] Verify with scoped Kotlin quality checks and Android build.

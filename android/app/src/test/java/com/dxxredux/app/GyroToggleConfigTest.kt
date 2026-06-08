@@ -34,10 +34,60 @@ class GyroToggleConfigTest {
         val migrated = TouchLayoutRepository.migrateForCurrentVersion(legacyLayout)
         val migratedButton = migrated.buttons.single()
 
-        assertEquals(2, migrated.version)
+        assertEquals(4, migrated.version)
         assertTrue(migratedButton.longPressEnabled)
         assertEquals(TouchBindings.META_GYRO_TOGGLE, migratedButton.longPressBinding)
         assertEquals(TouchBindings.DEFAULT_LONG_PRESS_DURATION_MS, migratedButton.longPressDurationMs)
+    }
+
+    @Test
+    fun repositoryMigrationRemovesLegacyCheatsMenuControls() {
+        val legacyLayout =
+            TouchLayout(
+                version = 3,
+                name = "Legacy cheats",
+                buttons =
+                    listOf(
+                        ButtonControl(
+                            id = "cheats",
+                            xPct = 50f,
+                            yPct = 90f,
+                            binding = 100,
+                            label = "Cheats",
+                        ),
+                        ButtonControl(
+                            id = "fire",
+                            xPct = 60f,
+                            yPct = 90f,
+                            binding = TouchBindings.BTN_FIRE_PRIMARY,
+                            longPressEnabled = true,
+                            longPressBinding = 100,
+                        ),
+                    ),
+                radialMenus =
+                    listOf(
+                        RadialMenuControl(
+                            id = "radial",
+                            xPct = 50f,
+                            yPct = 50f,
+                            segments =
+                                listOf(
+                                    RadialSegment("Cheats", 100),
+                                    RadialSegment("Fire", TouchBindings.BTN_FIRE_PRIMARY),
+                                ),
+                            centerBinding = 100,
+                        ),
+                    ),
+            )
+
+        val migrated = TouchLayoutRepository.migrateForCurrentVersion(legacyLayout)
+
+        assertEquals(4, migrated.version)
+        assertEquals(listOf("fire"), migrated.buttons.map { it.id })
+        assertFalse(migrated.buttons.single().longPressEnabled)
+        assertEquals(-1, migrated.buttons.single().longPressBinding)
+        assertEquals(listOf("Fire"), migrated.radialMenus.single().segments.map { it.label })
+        assertEquals(-1, migrated.radialMenus.single().centerBinding)
     }
 
     @Test

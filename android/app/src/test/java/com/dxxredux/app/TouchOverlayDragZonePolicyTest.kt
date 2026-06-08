@@ -54,7 +54,7 @@ class TouchOverlayDragZonePolicyTest {
         assertFalse(
             dragZoneButtonLatchAllowed(
                 gameVariant = "d2",
-                binding = TouchBindings.BTN_CHEATS_MENU,
+                binding = TouchBindings.BTN_GYRO_RECENTER,
                 pointerId = -1,
                 toggle = false,
             ),

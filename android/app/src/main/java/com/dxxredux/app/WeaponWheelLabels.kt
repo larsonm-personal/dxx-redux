@@ -457,7 +457,6 @@ internal fun dragZoneButtonLatchAllowed(
     if (gameVariant == "d1" && binding in TouchBindings.D2_ONLY_BUTTONS) return false
     if (pointerId >= 0 || toggle) return false
     return when (binding) {
-        TouchBindings.BTN_CHEATS_MENU,
         TouchBindings.BTN_GYRO_RECENTER,
         TouchBindings.BTN_AUTOMAP,
         -> false

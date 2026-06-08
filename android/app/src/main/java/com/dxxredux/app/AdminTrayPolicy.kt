@@ -30,6 +30,7 @@ internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
         when (actionIndex) {
             TouchOverlayView.ADMIN_INCREASE_VIEW,
             TouchOverlayView.ADMIN_DIFFICULTY,
+            TouchOverlayView.ADMIN_CHEATS,
             TouchOverlayView.ADMIN_MUSIC,
             TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
             -> false
@@ -105,6 +106,9 @@ internal fun adminTrayVisibleActions(
         )
     if (canShowDifficultyChange) {
         actions.add(TouchOverlayView.ADMIN_DIFFICULTY)
+    }
+    if (!isMultiplayerGame && !hasPendingLaunchInfo && !automapActive) {
+        actions.add(TouchOverlayView.ADMIN_CHEATS)
     }
     if (showNetworkActions) {
         actions.add(2, TouchOverlayView.ADMIN_NET_STATS)

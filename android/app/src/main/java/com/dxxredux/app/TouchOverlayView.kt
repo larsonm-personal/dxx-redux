@@ -91,6 +91,12 @@ class TouchOverlayView
 
         /** "d1" or "d2" - determines which cheat list to show. Set by MainActivity. */
         var gameVariant: String = "d2"
+            set(value) {
+                if (field == value) return
+                field = value
+                adminTrayD1CheatsEnabled = false
+                adminTrayCheatsSelectedIndex = 0
+            }
 
         private var gyroConfigured = false
         private var gyroActiveInGame = false
@@ -328,9 +334,7 @@ class TouchOverlayView
         ) {
             b.pointerId = pointerId
             b.longPressTriggered = false
-            if (b.control.binding == TouchBindings.BTN_CHEATS_MENU ||
-                b.control.binding == TouchBindings.BTN_GYRO_RECENTER
-            ) {
+            if (b.control.binding == TouchBindings.BTN_GYRO_RECENTER) {
                 pressLayoutButtonBinding(b.control.binding, buttonSourceTag(b))
             } else if (b.control.toggle) {
                 b.toggled = !b.toggled
@@ -416,7 +420,6 @@ class TouchOverlayView
             sourceTag: String,
         ) {
             when (binding) {
-                TouchBindings.BTN_CHEATS_MENU -> cheatsOverlayOpen = !cheatsOverlayOpen
                 TouchBindings.BTN_GYRO_RECENTER -> gyroManager?.calibrate()
                 TouchBindings.BTN_AUTOMAP -> Unit
                 else -> dispatchTouchButton(binding, true, sourceTag)
@@ -429,7 +432,6 @@ class TouchOverlayView
             sourceTag: String,
         ) {
             when (binding) {
-                TouchBindings.BTN_CHEATS_MENU,
                 TouchBindings.BTN_GYRO_RECENTER,
                 -> {
                     Unit
@@ -602,6 +604,7 @@ class TouchOverlayView
             const val ADMIN_DIFFICULTY = 21
             const val ADMIN_AUTOMAP_NAME_MARKER = 22
             const val ADMIN_AUTOMAP_SECRET_REVEAL = 23
+            const val ADMIN_CHEATS = 24
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
             const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 
@@ -688,13 +691,6 @@ class TouchOverlayView
                 typeface = android.graphics.Typeface.MONOSPACE
             }
 
-        // -- Cheats overlay state --------------------------------
-        private var cheatsOverlayOpen = false
-        private var cheatsOverlayPressedIndex = -1 // which cheat button is being pressed
-        private var cheatsOverlayPointerId = -1
-        private val cheatsOverlayRects = mutableListOf<RectF>() // computed per-draw
-        private var cheatsCloseRect = RectF()
-
         // -- Admin tray state ------------------------------------
         // Visible bottom-center tab that opens a settings panel.
         // Items: Increase View, Decrease View, Toggle Auto-Leveling,
@@ -715,6 +711,19 @@ class TouchOverlayView
         private var adminTrayDifficultyPressedIndex = -1
         private val adminTrayDifficultyRects = mutableListOf<RectF>()
         private var adminTrayDifficultyPanelRect = RectF()
+        private var adminTrayCheatsMenuOpen = false
+        private var adminTrayCheatsSelectedIndex = 0
+        private var adminTrayCheatsPressedIndex = -1
+        private var adminTrayCheatsPointerId = -1
+        private var adminTrayCheatsScrollY = 0f
+        private var adminTrayCheatsLastY = 0f
+        private var adminTrayCheatsDragStartY = 0f
+        private var adminTrayCheatsDragging = false
+        private var adminTrayD1CheatsEnabled = false
+        private val adminTrayCheatsRects = mutableListOf<RectF>()
+        private var adminTrayCheatsBackRect = RectF()
+        private var adminTrayCheatsPanelRect = RectF()
+        private var adminTrayCheatsScrollRect = RectF()
         private var remainingActionOpen = false
         private var remainingActionSelectedIndex = -1
         private var remainingActionPointerId = -1
@@ -1458,7 +1467,7 @@ class TouchOverlayView
             releaseAllRadialMenus(false)
             releaseAllMusicDiagnostics(false)
             closeRemainingActions()
-            cheatsOverlayOpen = false
+            closeAdminTrayCheatsMenu()
         }
 
         // -- Drawing ---------------------------------------------
@@ -1538,9 +1547,6 @@ class TouchOverlayView
 
             drawRemainingActions(canvas, ws)
 
-            // -- Cheats overlay (drawn last, on top of everything) --
-            if (!automapActive && cheatsOverlayOpen) drawCheatsOverlay(canvas)
-
             // -- Admin tray tab (visible) or panel (when open) ---
             // Hide default tab when a settings diagnostic is configured (it replaces the tab)
             // In gamepad-only mode, no tab is drawn (Start button opens the tray)
@@ -1548,7 +1554,8 @@ class TouchOverlayView
             if (adminTrayOpen) {
                 drawAdminTrayPanel(canvas)
                 if (adminTrayDifficultyMenuOpen) drawAdminTrayDifficultyMenu(canvas)
-            } else if (!gamepadOnlyMode && !cheatsOverlayOpen && !hasSettingsDiag) {
+                if (adminTrayCheatsMenuOpen) drawAdminTrayCheatsMenu(canvas)
+            } else if (!gamepadOnlyMode && !hasSettingsDiag) {
                 drawAdminTrayTab(canvas)
             }
         }
@@ -1958,7 +1965,7 @@ class TouchOverlayView
                 drawLockedGuideWheel(canvas, state, gAlpha, cx, cy)
                 return
             }
-            val segs = state.control.segments
+            val segs = visibleRadialSegments(state)
             val n = segs.size
             if (n == 0) return
 
@@ -2180,9 +2187,6 @@ class TouchOverlayView
         // interpreted as a mouse click -> fire primary).
         override fun onTouchEvent(event: MotionEvent): Boolean {
             if (!isActive) return false
-
-            // When cheats overlay is open, it consumes all touches
-            if (!automapActive && cheatsOverlayOpen) return handleCheatsOverlayTouch(event)
 
             // When admin tray panel is open, a visible settings button may close it;
             // otherwise the tray consumes all touches.
@@ -3030,7 +3034,7 @@ class TouchOverlayView
             val dist = hypot(dx, dy)
             val centerR = rm.radius * 0.22f
 
-            val segs = if (rm.isWeaponWheel) rm.filteredSegments else rm.control.segments
+            val segs = visibleRadialSegments(rm)
             val n = segs.size
 
             val old = rm.activeSegment
@@ -3067,7 +3071,7 @@ class TouchOverlayView
         }
 
         private fun fireRadialSelection(rm: RadialMenuState) {
-            val segs = if (rm.isWeaponWheel) rm.filteredSegments else rm.control.segments
+            val segs = visibleRadialSegments(rm)
             val seg =
                 when {
                     rm.activeSegment >= 0 && rm.activeSegment < segs.size -> segs[rm.activeSegment]
@@ -3125,6 +3129,14 @@ class TouchOverlayView
 
         private fun releaseAllRadialMenus(fired: Boolean) {
             for (rm in radialStates) releaseRadialMenu(rm, fired)
+        }
+
+        private fun visibleRadialSegments(rm: RadialMenuState): List<RadialSegment> {
+            if (rm.isWeaponWheel) return rm.filteredSegments
+            if (rm.control.id != "Guide" || secretAreaRevealProvider?.invoke() == true) {
+                return rm.control.segments
+            }
+            return rm.control.segments.filter { it.binding != TouchBindings.META_GUIDE_FIND_SECRET }
         }
 
         private fun keycodeToUnicode(keycode: Int): Int =
@@ -3294,129 +3306,232 @@ class TouchOverlayView
             return false
         }
 
-        // -- Cheats overlay --------------------------------------
+        // -- Cheats admin tray panel -----------------------------
 
-        private fun drawCheatsOverlay(canvas: Canvas) {
+        private fun currentCheats(): List<TouchBindings.CheatDef> =
+            if (gameVariant == "d1") TouchBindings.CHEATS_D1 else TouchBindings.CHEATS_D2
+
+        private fun adminTrayCheatsMaxScroll(
+            rowH: Float,
+            scrollH: Float,
+        ): Float = (currentCheats().size * rowH - scrollH).coerceAtLeast(0f)
+
+        private fun clampAdminTrayCheatsScroll(
+            rowH: Float,
+            scrollH: Float,
+        ) {
+            adminTrayCheatsScrollY = adminTrayCheatsScrollY.coerceIn(0f, adminTrayCheatsMaxScroll(rowH, scrollH))
+        }
+
+        private fun drawAdminTrayCheatsMenu(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
-            // Dim background
-            canvas.drawColor(0xAA000000.toInt())
+            val rowH = (h * 0.072f).coerceAtLeast(44f)
+            val backH = rowH * 0.9f
+            val panelW = (w * 0.58f).coerceAtLeast(320f).coerceAtMost(w * 0.9f)
+            val panelH = (h * 0.72f).coerceAtMost(backH + rowH * currentCheats().size)
+            val left = (w - panelW) / 2f
+            val top = (h - panelH) / 2f
+            val cornerR = panelW * 0.02f
 
-            val cheats = if (gameVariant == "d1") TouchBindings.CHEATS_D1 else TouchBindings.CHEATS_D2
-            val cols = 4
-            val rows = (cheats.size + cols - 1) / cols
-            val pad = w * 0.02f
-            val closeH = h * 0.08f
-            val gridTop = pad
-            val gridBottom = h - closeH - pad * 2
-            val cellW = (w - pad * (cols + 1)) / cols
-            val cellH = ((gridBottom - gridTop) - pad * (rows - 1)) / rows
+            adminTrayCheatsPanelRect = RectF(left, top, left + panelW, top + panelH)
+            adminTrayCheatsBackRect = RectF(left, top, left + panelW, top + backH)
+            adminTrayCheatsScrollRect = RectF(left, top + backH, left + panelW, top + panelH)
+            adminTrayCheatsRects.clear()
+            clampAdminTrayCheatsScroll(rowH, adminTrayCheatsScrollRect.height())
 
-            cheatsOverlayRects.clear()
-            val textPaint =
-                Paint(paintBtnLabel).apply {
-                    textSize = (cellH * 0.28f).coerceAtMost(w * 0.035f)
-                    textAlign = Paint.Align.CENTER
+            val panelBg =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = 0xEE202020.toInt()
                 }
-
-            for (i in cheats.indices) {
-                val col = i % cols
-                val row = i / cols
-                val left = pad + col * (cellW + pad)
-                val top = gridTop + row * (cellH + pad)
-                val rect = RectF(left, top, left + cellW, top + cellH)
-                cheatsOverlayRects.add(rect)
-
-                val bg = if (i == cheatsOverlayPressedIndex) paintBtnPressed else paintBtnIdle
-                bg.alpha = if (i == cheatsOverlayPressedIndex) 0xAA else 0x55
-                canvas.drawRoundRect(rect, cellH * 0.15f, cellH * 0.15f, bg)
-                paintRing.alpha = 0x66
-                canvas.drawRoundRect(rect, cellH * 0.15f, cellH * 0.15f, paintRing)
-
-                textPaint.alpha = 0xDD
-                canvas.drawText(
-                    cheats[i].label,
-                    rect.centerX(),
-                    rect.centerY() + textPaint.textSize * 0.35f,
-                    textPaint,
-                )
-            }
-
-            // Close button at bottom
-            cheatsCloseRect = RectF(pad, h - closeH - pad, w - pad, h - pad)
-            val closeBg = Paint(paintBtnIdle).apply { alpha = 0x66 }
-            canvas.drawRoundRect(cheatsCloseRect, closeH * 0.25f, closeH * 0.25f, closeBg)
+            canvas.drawRoundRect(adminTrayCheatsPanelRect, cornerR, cornerR, panelBg)
             paintRing.alpha = 0x88
-            canvas.drawRoundRect(cheatsCloseRect, closeH * 0.25f, closeH * 0.25f, paintRing)
-            val closePaint =
+            canvas.drawRoundRect(adminTrayCheatsPanelRect, cornerR, cornerR, paintRing)
+
+            val backBg = if (adminTrayCheatsPressedIndex == -2) paintBtnPressed else paintBtnIdle
+            backBg.alpha = if (adminTrayCheatsPressedIndex == -2) 0xAA else 0x55
+            canvas.drawRect(adminTrayCheatsBackRect, backBg)
+
+            val titlePaint =
                 Paint(paintBtnLabel).apply {
-                    textSize = closeH * 0.4f
+                    textSize = (backH * 0.36f).coerceAtMost(w * 0.032f)
                     textAlign = Paint.Align.CENTER
                     alpha = 0xDD
                 }
             canvas.drawText(
-                "Close Cheats",
-                cheatsCloseRect.centerX(),
-                cheatsCloseRect.centerY() + closePaint.textSize * 0.35f,
-                closePaint,
+                "Back",
+                adminTrayCheatsBackRect.centerX(),
+                adminTrayCheatsBackRect.centerY() + titlePaint.textSize * 0.35f,
+                titlePaint,
             )
+
+            val divider = Paint().apply { color = 0x33FFFFFF }
+            canvas.drawRect(
+                adminTrayCheatsScrollRect.left,
+                adminTrayCheatsScrollRect.top,
+                adminTrayCheatsScrollRect.right,
+                adminTrayCheatsScrollRect.top + 1f,
+                divider,
+            )
+
+            val codePaint =
+                Paint(paintBtnLabel).apply {
+                    typeface = Typeface.MONOSPACE
+                    textSize = (rowH * 0.32f).coerceAtMost(w * 0.028f)
+                    textAlign = Paint.Align.LEFT
+                    alpha = 0xEE
+                }
+            val labelPaint =
+                Paint(paintBtnLabel).apply {
+                    textSize = (rowH * 0.3f).coerceAtMost(w * 0.026f)
+                    textAlign = Paint.Align.LEFT
+                    alpha = 0xDD
+                }
+            val rowBg =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = 0x33FFFFFF
+                }
+            val selectedStroke =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.STROKE
+                    color = controllerMenuFocusColor
+                    strokeWidth = 3f
+                }
+
+            canvas.save()
+            canvas.clipRect(adminTrayCheatsScrollRect)
+            currentCheats().forEachIndexed { i, cheat ->
+                val rowTop = adminTrayCheatsScrollRect.top + rowH * i - adminTrayCheatsScrollY
+                val rect = RectF(left, rowTop, left + panelW, rowTop + rowH)
+                adminTrayCheatsRects.add(rect)
+                if (rect.bottom < adminTrayCheatsScrollRect.top || rect.top > adminTrayCheatsScrollRect.bottom) {
+                    return@forEachIndexed
+                }
+                rowBg.alpha = if (i == adminTrayCheatsPressedIndex) 0x77 else 0x33
+                canvas.drawRect(rect, rowBg)
+                if (i == adminTrayCheatsSelectedIndex) canvas.drawRect(rect, selectedStroke)
+                if (i > 0) canvas.drawRect(rect.left, rect.top, rect.right, rect.top + 1f, divider)
+                val codeX = rect.left + panelW * 0.07f
+                val labelX = rect.left + panelW * 0.42f
+                val textY = rect.centerY() + codePaint.textSize * 0.35f
+                canvas.drawText(cheat.code.uppercase(), codeX, textY, codePaint)
+                canvas.drawText(cheat.label, labelX, textY, labelPaint)
+            }
+            canvas.restore()
         }
 
-        private fun handleCheatsOverlayTouch(event: MotionEvent): Boolean {
+        private fun openAdminTrayCheatsMenu() {
+            clearAdminTraySliderState()
+            closeAdminTrayDifficultyMenu()
+            adminTrayCheatsMenuOpen = true
+            adminTrayCheatsSelectedIndex = 0
+            adminTrayCheatsPressedIndex = -1
+            adminTrayCheatsPointerId = -1
+            adminTrayCheatsDragging = false
+            adminTrayCheatsScrollY = 0f
+            invalidate()
+        }
+
+        private fun closeAdminTrayCheatsMenu() {
+            adminTrayCheatsMenuOpen = false
+            adminTrayCheatsPressedIndex = -1
+            adminTrayCheatsPointerId = -1
+            adminTrayCheatsDragging = false
+            invalidate()
+        }
+
+        private fun injectAdminTrayCheat(index: Int) {
+            val cheats = currentCheats()
+            if (index !in cheats.indices) return
+            val injection =
+                touchCheatCodeToInject(
+                    gameVariant = gameVariant,
+                    code = cheats[index].code,
+                    d1CheatsEnabled = adminTrayD1CheatsEnabled,
+                )
+            adminTrayD1CheatsEnabled = injection.d1CheatsEnabled
+            closeAdminTray()
+            mainHandler.postDelayed({ cheatCodeCallback?.invoke(injection.code) }, 260L)
+        }
+
+        private fun handleAdminTrayCheatsTouch(event: MotionEvent): Boolean {
             val idx = event.actionIndex
             val px = event.getX(idx)
             val py = event.getY(idx)
+            val rowH = (height.toFloat() * 0.072f).coerceAtLeast(44f)
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                    cheatsOverlayPointerId = event.getPointerId(idx)
-                    // Check close button
-                    if (cheatsCloseRect.contains(px, py)) {
-                        cheatsOverlayPressedIndex = -2 // sentinel for close
-                        invalidate()
-                        return true
-                    }
-                    // Check cheat buttons
-                    for (i in cheatsOverlayRects.indices) {
-                        if (cheatsOverlayRects[i].contains(px, py)) {
-                            cheatsOverlayPressedIndex = i
-                            invalidate()
-                            return true
+                    adminTrayCheatsPointerId = event.getPointerId(idx)
+                    adminTrayCheatsLastY = py
+                    adminTrayCheatsDragStartY = py
+                    adminTrayCheatsDragging = false
+                    adminTrayCheatsPressedIndex = -1
+                    if (adminTrayCheatsBackRect.contains(px, py)) {
+                        adminTrayCheatsPressedIndex = -2
+                    } else if (adminTrayCheatsScrollRect.contains(px, py)) {
+                        for (i in adminTrayCheatsRects.indices) {
+                            if (adminTrayCheatsRects[i].contains(px, py)) {
+                                adminTrayCheatsPressedIndex = i
+                                adminTrayCheatsSelectedIndex = i
+                                break
+                            }
                         }
                     }
-                    cheatsOverlayPressedIndex = -1
+                    invalidate()
+                    return true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    val pi = event.findPointerIndex(adminTrayCheatsPointerId)
+                    if (pi < 0) return true
+                    val cy = event.getY(pi)
+                    val dy = cy - adminTrayCheatsLastY
+                    if (!adminTrayCheatsDragging && abs(cy - adminTrayCheatsDragStartY) > 10f) {
+                        adminTrayCheatsDragging = true
+                        adminTrayCheatsPressedIndex = -1
+                    }
+                    if (adminTrayCheatsDragging) {
+                        adminTrayCheatsScrollY =
+                            (adminTrayCheatsScrollY - dy)
+                                .coerceIn(0f, adminTrayCheatsMaxScroll(rowH, adminTrayCheatsScrollRect.height()))
+                        invalidate()
+                    }
+                    adminTrayCheatsLastY = cy
                     return true
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
-                    if (event.getPointerId(idx) == cheatsOverlayPointerId) {
-                        if (cheatsOverlayPressedIndex == -2 && cheatsCloseRect.contains(px, py)) {
-                            cheatsOverlayOpen = false
-                        } else if (cheatsOverlayPressedIndex >= 0) {
-                            val cheats = if (gameVariant == "d1") TouchBindings.CHEATS_D1 else TouchBindings.CHEATS_D2
-                            if (cheatsOverlayPressedIndex < cheats.size &&
-                                cheatsOverlayPressedIndex < cheatsOverlayRects.size &&
-                                cheatsOverlayRects[cheatsOverlayPressedIndex].contains(px, py)
-                            ) {
-                                cheatCodeCallback?.invoke(cheats[cheatsOverlayPressedIndex].code)
-                                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                            }
+                    if (event.getPointerId(idx) == adminTrayCheatsPointerId) {
+                        val pressed = adminTrayCheatsPressedIndex
+                        if (!adminTrayCheatsDragging && pressed == -2 && adminTrayCheatsBackRect.contains(px, py)) {
+                            closeAdminTrayCheatsMenu()
+                        } else if (!adminTrayCheatsDragging &&
+                            pressed in adminTrayCheatsRects.indices &&
+                            adminTrayCheatsRects[pressed].contains(px, py)
+                        ) {
+                            injectAdminTrayCheat(pressed)
+                            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                         }
-                        cheatsOverlayPressedIndex = -1
-                        cheatsOverlayPointerId = -1
+                        adminTrayCheatsPressedIndex = -1
+                        adminTrayCheatsPointerId = -1
+                        adminTrayCheatsDragging = false
                         invalidate()
                     }
                     return true
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
-                    cheatsOverlayPressedIndex = -1
-                    cheatsOverlayPointerId = -1
+                    adminTrayCheatsPressedIndex = -1
+                    adminTrayCheatsPointerId = -1
+                    adminTrayCheatsDragging = false
                     invalidate()
                     return true
                 }
             }
-            return true // consume all events while overlay is open
+            return true
         }
 
         // -- Admin tray ------------------------------------------
@@ -3478,6 +3593,10 @@ class TouchOverlayView
 
                 ADMIN_DIFFICULTY -> {
                     "Change Difficulty"
+                }
+
+                ADMIN_CHEATS -> {
+                    "Cheats"
                 }
 
                 ADMIN_AUTOMAP -> {
@@ -4127,6 +4246,7 @@ class TouchOverlayView
         fun closeAdminTray() {
             if (!adminTrayOpen && adminTraySlide <= 0f) return
             closeAdminTrayDifficultyMenu()
+            closeAdminTrayCheatsMenu()
             clearAdminTraySliderState()
             adminTrayPressedIndex = -1
             adminTrayPointerId = -1
@@ -4148,6 +4268,48 @@ class TouchOverlayView
         ): Boolean {
             if (!adminTrayOpen) return false
             if (action != 0) return true // consume up events but only act on down
+            if (adminTrayCheatsMenuOpen) {
+                val cheats = currentCheats()
+                when (keyCode) {
+                    android.view.KeyEvent.KEYCODE_DPAD_UP -> {
+                        adminTrayCheatsSelectedIndex = (adminTrayCheatsSelectedIndex - 1).coerceAtLeast(0)
+                        val rowH = (height.toFloat() * 0.072f).coerceAtLeast(44f)
+                        val rowTop = adminTrayCheatsSelectedIndex * rowH
+                        if (rowTop < adminTrayCheatsScrollY) adminTrayCheatsScrollY = rowTop
+                        invalidate()
+                        return true
+                    }
+
+                    android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        adminTrayCheatsSelectedIndex =
+                            (adminTrayCheatsSelectedIndex + 1).coerceAtMost((cheats.size - 1).coerceAtLeast(0))
+                        val rowH = (height.toFloat() * 0.072f).coerceAtLeast(44f)
+                        val rowBottom = (adminTrayCheatsSelectedIndex + 1) * rowH
+                        if (rowBottom > adminTrayCheatsScrollY + adminTrayCheatsScrollRect.height()) {
+                            adminTrayCheatsScrollY = rowBottom - adminTrayCheatsScrollRect.height()
+                        }
+                        clampAdminTrayCheatsScroll(rowH, adminTrayCheatsScrollRect.height())
+                        invalidate()
+                        return true
+                    }
+
+                    android.view.KeyEvent.KEYCODE_BUTTON_A,
+                    android.view.KeyEvent.KEYCODE_DPAD_CENTER,
+                    -> {
+                        injectAdminTrayCheat(adminTrayCheatsSelectedIndex)
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        return true
+                    }
+
+                    android.view.KeyEvent.KEYCODE_BUTTON_B,
+                    android.view.KeyEvent.KEYCODE_BACK,
+                    -> {
+                        closeAdminTrayCheatsMenu()
+                        return true
+                    }
+                }
+                return true
+            }
             if (adminTrayDifficultyMenuOpen) {
                 when (keyCode) {
                     android.view.KeyEvent.KEYCODE_DPAD_UP -> {
@@ -4282,6 +4444,13 @@ class TouchOverlayView
                 android.view.KeyEvent.KEYCODE_BUTTON_A,
                 android.view.KeyEvent.KEYCODE_DPAD_CENTER,
                 -> {
+                    if (selectedAction == ADMIN_CHEATS &&
+                        adminTrayActionEnabled(selectedAction, adminTrayEnabledStateProvider)
+                    ) {
+                        openAdminTrayCheatsMenu()
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        return true
+                    }
                     if (selectedAction == ADMIN_DIFFICULTY &&
                         adminTrayActionEnabled(selectedAction, adminTrayEnabledStateProvider)
                     ) {
@@ -4331,6 +4500,7 @@ class TouchOverlayView
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    if (adminTrayCheatsMenuOpen) return handleAdminTrayCheatsTouch(event)
                     if (adminTrayDifficultyMenuOpen) {
                         adminTrayDifficultyPressedIndex = -1
                         for (i in adminTrayDifficultyRects.indices) {
@@ -4377,6 +4547,7 @@ class TouchOverlayView
                 }
 
                 MotionEvent.ACTION_MOVE -> {
+                    if (adminTrayCheatsMenuOpen) return handleAdminTrayCheatsTouch(event)
                     if (adminTrayPointerId < 0) return true
                     val pi = event.findPointerIndex(adminTrayPointerId)
                     if (pi < 0) return true
@@ -4410,6 +4581,7 @@ class TouchOverlayView
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                    if (adminTrayCheatsMenuOpen) return handleAdminTrayCheatsTouch(event)
                     if (adminTrayDifficultyMenuOpen) {
                         val pressed = adminTrayDifficultyPressedIndex
                         if (pressed in adminTrayDifficultyRects.indices &&
@@ -4447,7 +4619,9 @@ class TouchOverlayView
                         ) {
                             val pressedAction = currentAdminTrayActions()[adminTrayPressedIndex]
                             if (adminTrayActionEnabled(pressedAction, adminTrayEnabledStateProvider)) {
-                                if (pressedAction == ADMIN_DIFFICULTY) {
+                                if (pressedAction == ADMIN_CHEATS) {
+                                    openAdminTrayCheatsMenu()
+                                } else if (pressedAction == ADMIN_DIFFICULTY) {
                                     openAdminTrayDifficultyMenu()
                                 } else {
                                     adminTrayCallback?.invoke(pressedAction)
@@ -4468,6 +4642,7 @@ class TouchOverlayView
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
+                    if (adminTrayCheatsMenuOpen) return handleAdminTrayCheatsTouch(event)
                     if (adminTrayDifficultyMenuOpen) {
                         adminTrayDifficultyPressedIndex = -1
                         invalidate()

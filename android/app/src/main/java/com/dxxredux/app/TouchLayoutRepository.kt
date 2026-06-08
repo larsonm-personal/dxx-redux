@@ -18,7 +18,8 @@ import java.io.File
 object TouchLayoutRepository {
     private const val TAG = "TouchLayoutRepository"
     private const val FILENAME = "touch_layout.json"
-    private const val CURRENT_VERSION = 3
+    private const val CURRENT_VERSION = 4
+    private const val LEGACY_BTN_CHEATS_MENU = 100
     private const val BUNDLED_DIR = "configs/touch"
     private const val USER_DIR = "configs/touch"
 
@@ -63,9 +64,29 @@ object TouchLayoutRepository {
                     radialMenus = migrated.radialMenus.map { migrateGuideWheelSecretSegment(it) },
                 )
         }
+        if (migrated.version < 4) {
+            migrated =
+                migrated.copy(
+                    version = 4,
+                    buttons = migrated.buttons.mapNotNull { migrateLegacyCheatsButton(it) },
+                    radialMenus = migrated.radialMenus.map { migrateLegacyCheatsRadial(it) },
+                )
+        }
         if (migrated.version >= CURRENT_VERSION) return migrated
         return migrated.copy(version = CURRENT_VERSION)
     }
+
+    private fun migrateLegacyCheatsButton(button: ButtonControl): ButtonControl? {
+        if (button.binding == LEGACY_BTN_CHEATS_MENU) return null
+        if (button.longPressBinding != LEGACY_BTN_CHEATS_MENU) return button
+        return button.copy(longPressEnabled = false, longPressBinding = -1)
+    }
+
+    private fun migrateLegacyCheatsRadial(radial: RadialMenuControl): RadialMenuControl =
+        radial.copy(
+            segments = radial.segments.filter { it.binding != LEGACY_BTN_CHEATS_MENU },
+            centerBinding = if (radial.centerBinding == LEGACY_BTN_CHEATS_MENU) -1 else radial.centerBinding,
+        )
 
     private fun migrateGuideWheelSecretSegment(radial: RadialMenuControl): RadialMenuControl {
         if (radial.id != "Guide" ||

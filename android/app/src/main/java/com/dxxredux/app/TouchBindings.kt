@@ -51,7 +51,6 @@ object TouchBindings {
     const val MIXER_BTN_BASE = 100
 
     // --- Virtual (overlay-only) bindings -- not sent as joystick buttons ---
-    const val BTN_CHEATS_MENU = 100
     const val BTN_GYRO_RECENTER = 101
 
     /** All button bindings with readable labels, for UI pickers. */
@@ -79,7 +78,6 @@ object TouchBindings {
             BTN_AUTOMAP to "Automap",
             BTN_ENERGY_SHIELD to "Energy->Shield",
             BTN_TOGGLE_BOMB to "Toggle Bomb",
-            BTN_CHEATS_MENU to "Cheats Menu",
             BTN_GYRO_RECENTER to "Gyro Recenter",
         )
 
@@ -388,6 +386,8 @@ object TouchBindings {
 
     // --- Cheat code definitions (from gamecntl.c cheat_codes[]) ---
     // Keep in sync with cheat_codes[] in d2/main/gamecntl.c and d1/main/gamecntl.c
+    const val D1_CHEAT_ENABLE_CODE = "gabbagabbahey"
+
     data class CheatDef(
         val code: String,
         val label: String,
@@ -437,4 +437,22 @@ object TouchBindings {
             CheatDef("ahimsa", "Robots Stop"),
             CheatDef("bittersweet", "Acid"),
         )
+}
+
+internal data class TouchCheatInjection(
+    val code: String,
+    val d1CheatsEnabled: Boolean,
+)
+
+internal fun touchCheatCodeToInject(
+    gameVariant: String,
+    code: String,
+    d1CheatsEnabled: Boolean,
+): TouchCheatInjection {
+    if (gameVariant != "d1") return TouchCheatInjection(code, d1CheatsEnabled)
+    val enablesD1Cheats = code.equals(TouchBindings.D1_CHEAT_ENABLE_CODE, ignoreCase = true)
+    if (enablesD1Cheats || d1CheatsEnabled) {
+        return TouchCheatInjection(code, d1CheatsEnabled = true)
+    }
+    return TouchCheatInjection(TouchBindings.D1_CHEAT_ENABLE_CODE + code, d1CheatsEnabled = true)
 }
