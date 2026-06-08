@@ -3323,6 +3323,19 @@ class TouchOverlayView
             adminTrayCheatsScrollY = adminTrayCheatsScrollY.coerceIn(0f, adminTrayCheatsMaxScroll(rowH, scrollH))
         }
 
+        private fun textToFitWidth(
+            text: String,
+            paint: Paint,
+            maxWidth: Float,
+        ): String {
+            if (paint.measureText(text) <= maxWidth) return text
+            val suffix = "..."
+            val suffixWidth = paint.measureText(suffix)
+            if (maxWidth <= suffixWidth) return suffix
+            val count = paint.breakText(text, true, maxWidth - suffixWidth, null)
+            return text.take(count).trimEnd() + suffix
+        }
+
         private fun drawAdminTrayCheatsMenu(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
@@ -3413,11 +3426,14 @@ class TouchOverlayView
                 canvas.drawRect(rect, rowBg)
                 if (i == adminTrayCheatsSelectedIndex) canvas.drawRect(rect, selectedStroke)
                 if (i > 0) canvas.drawRect(rect.left, rect.top, rect.right, rect.top + 1f, divider)
-                val codeX = rect.left + panelW * 0.07f
-                val labelX = rect.left + panelW * 0.42f
+                val rowPad = panelW * 0.04f
+                val codeX = rect.left + rowPad
+                val codeColumnW = panelW * 0.32f
+                val labelX = codeX + codeColumnW
+                val labelMaxW = rect.right - rowPad - labelX
                 val textY = rect.centerY() + codePaint.textSize * 0.35f
                 canvas.drawText(cheat.code.uppercase(), codeX, textY, codePaint)
-                canvas.drawText(cheat.label, labelX, textY, labelPaint)
+                canvas.drawText(textToFitWidth(cheat.label, labelPaint, labelMaxW), labelX, textY, labelPaint)
             }
             canvas.restore()
         }

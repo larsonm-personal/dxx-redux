@@ -96,3 +96,35 @@
 ## Verification
 - [x] `.\android\run-code-quality.ps1 -Fix -Paths ...` scoped to touched Kotlin files and the plan note
 - [x] `.\gradlew.bat --no-daemon testDebugUnitTest --tests com.dxxredux.app.AdminTrayUiTest --tests com.dxxredux.app.TouchOverlayDragZonePolicyTest --tests com.dxxredux.app.GyroToggleConfigTest --tests com.dxxredux.app.TouchCheatInjectionTest`
+
+## Duplicate Alias Audit
+- [x] Confirmed D2 `cheats.lamer` aliases all share the same state and effect:
+  `gabbagabbahey`, `motherlode`, `currygoat`, `zingermans`, `eatangelos`, `ericaanne`, `joshuaakira`, `whammazoom`
+- [x] Keep one D2 menu representative for that effect: `gabbagabbahey`
+- [x] Confirmed no same-state duplicates in the D1 cheat table
+- [x] Add regression coverage so duplicate aliases do not reappear in the Android menu
+
+## Duplicate Alias Verification
+- [x] `.\gradlew.bat --no-daemon testDebugUnitTest --tests com.dxxredux.app.TouchCheatInjectionTest`
+- [x] `.\android\run-code-quality.ps1 -Fix -Paths ...` scoped to the cheat catalog, cheat test, and plan note
+
+## Description Audit
+- [x] Validate pasted online descriptions against D1/D2 `FinalCheats()` implementations
+- [x] Update Android cheat descriptions with source-backed short text
+- [x] Highlight implemented cheats missing from the pasted tables and document source-derived descriptions
+- [x] Keep menu layout as two columns: cheat code on the far left, description to the right
+- [x] Add focused regression coverage and run verification
+
+## Source-Derived Description Notes
+- D2 `flash`: implemented here and marks a path to the exit, but was not clearly listed in the pasted D2 tables
+- D2 `astral`: implemented here as ghost physics, but missing from the pasted D2 tables
+- D2 `buggin`: implemented here as turbo mode, but missing from the pasted D2 tables
+- D2 `delshiftb`: source shows the stronger behavior: collect powerups, kill robots, blow reactor, and move to exit
+- D2 `spaniard`: source kills non-boss/non-buddy robots first; repeats can kill the buddy when nothing else is killed
+- D1 `bittersweet`: implemented here as psychedelic walls, though the pasted D1 table did not include it
+- D1 `porgys`: source calls the mega-wowie powerup helper, giving mega weapons plus 200 shields and energy
+- D1 `poboys`: source uses the same reactor/powerup/robot/exit helper as D2 `delshiftb`
+
+## Description Verification
+- [x] `.\gradlew.bat --no-daemon testDebugUnitTest --tests com.dxxredux.app.TouchCheatInjectionTest`
+- [x] `.\android\run-code-quality.ps1 -Fix -Paths ...` scoped to the cheat table, menu view, cheat test, and plan note
