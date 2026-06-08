@@ -32,11 +32,32 @@ fi
 echo "Accepting SDK licenses..."
 yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
 
+resolve_platform_package() {
+    local api_level="$1"
+    local package="platforms;android-$api_level"
+    local package_list
+    package_list="$("$SDKMANAGER" --list 2>/dev/null || true)"
+
+    if printf '%s\n' "$package_list" | grep -q "^[[:space:]]*${package}[[:space:]|]"; then
+        printf '%s\n' "$package"
+        return
+    fi
+
+    if printf '%s\n' "$package_list" | grep -q "^[[:space:]]*${package}\\.0[[:space:]|]"; then
+        printf '%s\n' "$package.0"
+        return
+    fi
+
+    printf '%s\n' "$package"
+}
+
 echo "Installing platform packages..."
-PACKAGES="platforms;android-$COMPILE_SDK build-tools;$BUILD_TOOLS_VERSION platform-tools cmake;$CMAKE_VERSION"
+COMPILE_SDK_PACKAGE="$(resolve_platform_package "$COMPILE_SDK")"
+PACKAGES="$COMPILE_SDK_PACKAGE build-tools;$BUILD_TOOLS_VERSION platform-tools cmake;$CMAKE_VERSION"
 # Also install the emulator's platform if it differs from COMPILE_SDK
 if [ -n "$EMULATOR_API_LEVEL" ] && [ "$EMULATOR_API_LEVEL" != "$COMPILE_SDK" ]; then
-    PACKAGES="$PACKAGES platforms;android-$EMULATOR_API_LEVEL"
+    EMULATOR_PLATFORM_PACKAGE="$(resolve_platform_package "$EMULATOR_API_LEVEL")"
+    PACKAGES="$PACKAGES $EMULATOR_PLATFORM_PACKAGE"
 fi
 # shellcheck disable=SC2086  # intentional word splitting on $PACKAGES
 $SDKMANAGER $PACKAGES

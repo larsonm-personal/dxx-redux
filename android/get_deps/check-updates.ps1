@@ -434,6 +434,10 @@ function Get-BuildToolsInstalledVersion {
     return Get-LatestInstalledDirectoryVersion (Join-Path (Join-Path $dependency_base "android-sdk") "build-tools") "*" "^(.+)$"
 }
 
+function Get-CompileSdkInstalledVersion {
+    return Get-LatestInstalledDirectoryVersion (Join-Path (Join-Path $dependency_base "android-sdk") "platforms") "android-*" "^android-(\d+)(?:\.0)?$"
+}
+
 function Get-SdkCmdlineToolsInstalledBuildId {
     $binDir = Join-Path (Join-Path (Join-Path (Join-Path $dependency_base "android-sdk") "cmdline-tools") "latest") "bin"
     $sdkManagerPath = Get-PlatformToolPath -BaseDir $binDir -ToolName "sdkmanager" -UseBatch
@@ -993,6 +997,51 @@ function Get-LatestBuildToolsVersion {
     return Get-LatestAndroidPackageVersion "build-tools"
 }
 
+function Get-LatestCompileSdkVersion {
+    $sdkManagerPath = Get-PlatformToolPath -BaseDir (Join-Path (Join-Path (Join-Path (Join-Path $dependency_base "android-sdk") "cmdline-tools") "latest") "bin") -ToolName "sdkmanager" -UseBatch
+    if ($sdkManagerPath) {
+        $savedJavaHome = $env:JAVA_HOME
+        $savedPath = $env:Path
+        try {
+            $localJdk = Join-Path $dependency_base "jdk-$JDK_MAJOR"
+            $localJava = Get-PlatformToolPath -BaseDir (Join-Path $localJdk "bin") -ToolName "java"
+            if ($localJava) {
+                $env:JAVA_HOME = $localJdk
+                $env:Path = "$(Join-Path $localJdk "bin");$env:Path"
+            }
+            $output = & $sdkManagerPath --list 2>&1
+            $versions = [regex]::Matches(($output -join "`n"), 'platforms;android-(\d+(?:\.0)?)\b') |
+                ForEach-Object {
+                    $version = $_.Groups[1].Value
+                    if ($version -match '^(\d+)(?:\.0)?$') {
+                        $Matches[1]
+                    } else {
+                        $version
+                    }
+                }
+            $latest = Select-LatestVersion $versions
+            if ($latest) { return $latest }
+        } catch {} finally {
+            $env:JAVA_HOME = $savedJavaHome
+            $env:Path = $savedPath
+        }
+    }
+
+    $content = Get-AndroidRepositoryContent
+    if (-not $content) { return $null }
+
+    $versions = [regex]::Matches($content, 'path="platforms;android-(\d+(?:\.\d+)?)"') |
+        ForEach-Object {
+            $version = $_.Groups[1].Value
+            if ($version -match '^(\d+)(?:\.0)?$') {
+                $Matches[1]
+            } else {
+                $version
+            }
+        }
+    return Select-LatestVersion $versions
+}
+
 function Get-LatestCMakeVersion {
     return Get-LatestAndroidPackageVersion "cmake"
 }
@@ -1151,6 +1200,12 @@ $deps = @(
     @{ Name = "Build Tools"; ConfKey = "BUILD_TOOLS_VERSION";
         Current = $conf["BUILD_TOOLS_VERSION"];
         Latest = Get-LatestBuildToolsVersion
+    },
+
+    @{ Name = "Compile SDK"; ConfKey = "COMPILE_SDK";
+        BaseKey = "COMPILE_SDK";
+        Current = $conf["COMPILE_SDK"];
+        Latest = Get-LatestCompileSdkVersion
     },
 
     @{ Name = "CMake"; ConfKey = "CMAKE_VERSION";
@@ -1591,6 +1646,14 @@ foreach ($item in $selectedTarget) {
         "Build Tools" {
             Update-Conf "BUILD_TOOLS_VERSION" $new
             Write-Host "    Run helpers/finalize.sh to install the new build tools via sdkmanager"
+        }
+        "Compile SDK" {
+            Update-Conf "COMPILE_SDK" $new
+            if ($dep.ContainsKey("InstallCmdKey")) {
+                Invoke-InstallSyncForDependency $dep $new
+            } else {
+                Write-Host "    Run helpers/finalize.sh to install the new Android SDK platform"
+            }
         }
         "CMake" {
             $cmakeUrl = Get-CmakeUrlForPlatform $new
