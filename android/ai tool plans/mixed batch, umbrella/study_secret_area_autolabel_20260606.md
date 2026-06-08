@@ -415,3 +415,12 @@ buildd2\main\dxx-redux-d2-secretareas.exe -hogdir C:\path\to\data -secretarea-js
 - [x] Hide the Guide wheel `Secret` slice unless the Reveal Secrets cheat is active.
 - [x] Reflow the remaining Guide wheel slices when `Secret` is hidden, matching the old slice positions.
 - [x] Verify with scoped Kotlin quality checks and Android build.
+
+## Follow-Up Marginal Trigger-Revealed Secrets Study
+- [x] Examine D2 level 3 current `S10` as the exemplar for hidden walls that are revealed by required progression. The current generated `S10` is the cloak pocket at `124:3 -> 118`, wall `61`, and no trigger links to either the entry side or reverse side. The blue-key-coincident trigger evidence points instead at current `S6`/`S7`: blue key segment `200` has trigger source walls `96` and `135`, which open candidate entries `89:4` and `199:4`.
+- [x] Compare with the D2 level 2 reactor-path cases where required triggers reveal the last generated secrets. Current D2 level 2 `S10` is a clean example: entry `57:1 -> 131` is opened by triggers `4`, `5`, and `6` sourced from ordinary illusion trigger walls on segments `54`, `53`, and `57`. `S8` is also trigger-opened from overlay wall `66` at `302:3`; `S9` has no direct trigger link.
+- [x] Propose a conservative filter that removes mandatory/revealed-by-progression pockets without dropping genuine optional switch secrets.
+  - Best first filter: mark a triggered candidate as marginal if at least one opener trigger source segment contains a key powerup, or the trigger source side itself is part of the ordinary progression traversal rather than behind another secret boundary. This catches the D2 level 3 blue-key-triggered `S6`/`S7` class and should not affect untriggered hidden-door pockets like current `S10`.
+  - Safer extension for D2 level 2 reactor-path cases: add a scan callback that exposes trigger source walls and all linked target sides, then suppress candidates when the same opener trigger is reachable in the ordinary graph and has no evidence of being an optional secret switch. Ordinary, pass-through illusion trigger surfaces on the main path are a stronger mandatory signal than shootable overlay switches.
+  - Avoid a broad "triggered from reachable segment" filter. The scanner intentionally added optional shootable-switch secrets using reachable trigger sources, so that broad rule would delete many real secrets.
+  - Keep the filter D2-only at first, because D1 trigger data is flag-based and the current added triggered-secret heuristic only applies to D2.

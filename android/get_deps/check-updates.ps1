@@ -400,13 +400,22 @@ function Get-JavaVersionFromExecutable($path) {
 }
 
 function Get-PowerShell7InstalledVersion {
+    $localPwsh = Get-PlatformToolPath -BaseDir (Join-Path $dependency_base "powershell-$POWERSHELL_VERSION") -ToolName "pwsh"
+    $localVersion = Get-PowerShellVersionFromCommand $localPwsh
+    if ($localVersion) { return $localVersion }
+
     $command = @(
         Get-Command pwsh -ErrorAction SilentlyContinue | Select-Object -First 1
         Get-Command pwsh-preview -ErrorAction SilentlyContinue | Select-Object -First 1
     ) | Where-Object { $_ } | Select-Object -First 1
     if (-not $command) { return $null }
+    return Get-PowerShellVersionFromCommand $command.Source
+}
+
+function Get-PowerShellVersionFromCommand($path) {
+    if (-not $path) { return $null }
     try {
-        return Normalize-CommandOutput (& $command.Source -NoProfile -Command '$PSVersionTable.PSVersion.ToString()')
+        return Normalize-CommandOutput (& $path -NoProfile -Command '$PSVersionTable.PSVersion.ToString()')
     } catch {
         return $null
     }
@@ -541,6 +550,14 @@ function Get-ChromaprintFpcalcUrlForPlatform($tag) {
         "Linux" { return "https://github.com/acoustid/chromaprint/releases/download/$tag/chromaprint-fpcalc-$plainVersion-linux-x86_64.tar.gz" }
         "MacOS" { return "https://github.com/acoustid/chromaprint/releases/download/$tag/chromaprint-fpcalc-$plainVersion-macos-x86_64.tar.gz" }
         default { return "https://github.com/acoustid/chromaprint/releases/download/$tag/chromaprint-fpcalc-$plainVersion-windows-x86_64.zip" }
+    }
+}
+
+function Get-PowerShellUrlForPlatform($version) {
+    switch ($script:hostPlatform) {
+        "Linux" { return "https://github.com/PowerShell/PowerShell/releases/download/v$version/powershell-$version-linux-x64.tar.gz" }
+        "MacOS" { return "https://github.com/PowerShell/PowerShell/releases/download/v$version/powershell-$version-osx-x64.tar.gz" }
+        default { return "https://github.com/PowerShell/PowerShell/releases/download/v$version/PowerShell-$version-win-x64.zip" }
     }
 }
 
@@ -1276,7 +1293,7 @@ $deps = @(
         Latest = if ($latestPowerShell) { $latestPowerShell["Version"] } else { $null };
         ReleaseTag = if ($latestPowerShell) { $latestPowerShell["Tag"] } else { $null };
         DriftLabel = "host-managed";
-        ManualInstallHint = if ($script:hostPlatform -eq "Linux") { "Run android/get_deps/helpers/get_powershell.sh to install the pinned PowerShell build on Linux" } else { "Download the configured PowerShell package and update PATH or your local pwsh install" }
+        ManualInstallHint = "Run android/get_deps/helpers/get_powershell.ps1 to install the pinned PowerShell build"
     }
 )
 
@@ -1650,15 +1667,11 @@ foreach ($item in $selectedTarget) {
             Update-Conf "SEVENZIP_DIR_NAME" "7z-$new"
         }
         "PowerShell 7" {
-            Update-Conf "POWERSHELL_URL" "https://github.com/PowerShell/PowerShell/releases/download/v$new/PowerShell-$new-win-x64.zip"
-            if ($script:hostPlatform -eq "Linux") {
-                if ($dep.ContainsKey("InstallCmdKey")) {
-                    Invoke-InstallSyncForDependency $dep $new
-                } else {
-                    Write-Host "    NOTE: PowerShell is a host tool; run helpers/get_powershell.sh or update your pwsh package"
-                }
+            Update-Conf "POWERSHELL_URL" (Get-PowerShellUrlForPlatform $new)
+            if ($dep.ContainsKey("InstallCmdKey")) {
+                Invoke-InstallSyncForDependency $dep $new
             } else {
-                Write-Host "    NOTE: PowerShell is a host tool; download and update PATH or your local tool install after fetching the new package"
+                Write-Host "    NOTE: PowerShell is a host tool; run helpers/get_powershell.ps1 or update your pwsh package"
             }
         }
     }
