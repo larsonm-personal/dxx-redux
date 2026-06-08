@@ -518,3 +518,15 @@ buildd2\main\dxx-redux-d2-secretareas.exe -hogdir C:\path\to\data -secretarea-js
 - Run scoped code quality:
   - `.\android\run-code-quality.ps1 -Fix -Paths @('android/app/src/main/cpp/shared/secret_area_scan.c', 'android/app/src/main/cpp/shared/secret_area_scan.h', 'android/app/src/main/cpp/shared/secret_area_game_adapter.c', 'android/test_fixtures/secret_area_base_game_baseline.json', 'android/ai tool plans/mixed batch, umbrella/study_secret_area_autolabel_20260606.md')`
 
+## Follow-Up Required-Route Trigger Filtering Implementation
+- [x] Add key-color constants and required-route side masks to the shared scanner.
+- [x] Replace broad key-segment marginal trigger checks with exact required-route source-side checks, while retaining the narrow multi-pass-through opener fallback for D2 level 2 style mandatory reveal chains.
+- [x] Wire D1/D2 adapters to the new scan view fields without moving logic into `d1/` or `d2/`.
+- [x] Run the base-game secret regression, inspect D2 level 1/2/3 deltas, and update the baseline.
+  - D1 remains 172 generated base-game secrets.
+  - D2 moves from 252 to 237 generated base-game secrets.
+  - D2 level 1 remains stable at 9 secrets, including the known `24:4` shootable-switch secret and `162:4` hidden-door secret.
+  - D2 level 2 drops from 9 to 8; the reactor-path triggered pocket at `57:1` is filtered again.
+  - D2 level 3 drops from 8 to 7; the route-triggered/blue-key-adjacent candidate is filtered while the later optional pocket remains.
+  - D2 level 21 drops from 9 to 4. The removed entries are trigger-opened pockets rather than ordinary hidden-door entries, so this looks like the intended mandatory route-trigger class, but it is worth play-testing.
+- [x] Run scoped code quality for touched files.

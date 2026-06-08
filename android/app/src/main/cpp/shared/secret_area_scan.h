@@ -30,6 +30,9 @@ typedef struct secret_area_scan_view {
 	int wall_flag_door_locked;
 	int wall_flag_illusion_off;
 	int wall_key_none;
+	int wall_key_blue;
+	int wall_key_red;
+	int wall_key_gold;
 	int wall_clip_hidden;
 	int obj_type_none;
 	int obj_type_robot;
@@ -66,7 +69,6 @@ typedef struct secret_area_scan_view {
 	int (*triggered_side_opener_segment)(void *user, int seg, int side, int index);
 	int (*triggered_side_opener_side)(void *user, int seg, int side, int index);
 	int (*triggered_side_opener_wall_num)(void *user, int seg, int side, int index);
-	int (*triggered_side_opener_is_marginal)(void *user, int seg, int side, int index);
 } secret_area_scan_view;
 
 typedef struct secret_area_entrance {

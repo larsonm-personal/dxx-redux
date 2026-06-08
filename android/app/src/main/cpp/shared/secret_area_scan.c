@@ -20,12 +20,24 @@ typedef struct candidate_secret {
 	secret_area_item items[SECRET_AREA_MAX_ITEMS];
 } candidate_secret;
 
+typedef struct route_side {
+	int seg;
+	int side;
+} route_side;
+
 static int progression_distance[SECRET_AREA_MAX_SEGMENTS];
 static int hidden_distance[SECRET_AREA_MAX_SEGMENTS];
 static int component_id[SECRET_AREA_MAX_SEGMENTS];
 static int queue[SECRET_AREA_MAX_SEGMENTS];
 static int component_count[SECRET_AREA_MAX_SEGMENTS];
 static int component_lowest_segment[SECRET_AREA_MAX_SEGMENTS];
+static unsigned char required_route_side[SECRET_AREA_MAX_SEGMENTS][SECRET_AREA_MAX_SIDES];
+static int route_parent_seg[SECRET_AREA_MAX_SEGMENTS];
+static int route_parent_side[SECRET_AREA_MAX_SEGMENTS];
+static int route_distance[SECRET_AREA_MAX_SEGMENTS];
+static int route_queue[SECRET_AREA_MAX_SEGMENTS];
+static int route_key_segments[3][SECRET_AREA_MAX_SEGMENTS];
+static route_side route_key_doors[3][SECRET_AREA_MAX_SEGMENTS];
 static candidate_secret candidates[SECRET_AREA_MAX_SEGMENTS];
 
 void secret_area_state_clear(secret_area_state *state)
@@ -174,31 +186,25 @@ static int side_has_reachable_trigger_opener(const secret_area_scan_view *view, 
 	return 0;
 }
 
-static int segment_contains_key_powerup(const secret_area_scan_view *view, int seg)
+static int source_wall_is_progression_pass_through(const secret_area_scan_view *view, int seg, int side, int index)
 {
-	int obj_count;
-	int objnum;
+	int source_seg;
+	int source_side;
+	int source_wall;
 
-	if (!valid_segment(view, seg) || !view->object_count)
+	if (!view->triggered_side_opener_wall_num || !view->triggered_side_opener_side)
 		return 0;
-	obj_count = view->object_count(view->user);
-	for (objnum = 0; objnum < obj_count; ++objnum) {
-		int type;
-		int id;
-		if (view->object_flags &&
-		    (view->object_flags(view->user, objnum) & view->obj_flag_should_be_dead))
-			continue;
-		if (view->object_segment(view->user, objnum) != seg)
-			continue;
-		type = view->object_type(view->user, objnum);
-		id = view->object_id(view->user, objnum);
-		if (type == view->obj_type_powerup && is_key_powerup(view, id))
-			return 1;
-	}
-	return 0;
+	source_seg = view->triggered_side_opener_segment(view->user, seg, side, index);
+	source_side = view->triggered_side_opener_side(view->user, seg, side, index);
+	source_wall = view->triggered_side_opener_wall_num(view->user, seg, side, index);
+	if (!valid_segment(view, source_seg) ||
+	    source_side < 0 || source_side >= SECRET_AREA_MAX_SIDES ||
+	    !valid_wall(view, source_wall))
+		return 0;
+	return required_route_side[source_seg][source_side] != 0;
 }
 
-static int source_wall_is_progression_pass_through(const secret_area_scan_view *view, int seg, int side, int index)
+static int source_wall_is_reachable_pass_through(const secret_area_scan_view *view, int seg, int side, int index)
 {
 	int source_seg;
 	int source_side;
@@ -234,7 +240,7 @@ static int progression_pass_through_opener_count(const secret_area_scan_view *vi
 		int opener_seg = view->triggered_side_opener_segment(view->user, seg, side, i);
 		if (!valid_segment(view, opener_seg) || progression_distance[opener_seg] < 0)
 			continue;
-		if (source_wall_is_progression_pass_through(view, seg, side, i))
+		if (source_wall_is_reachable_pass_through(view, seg, side, i))
 			pass_through_count++;
 	}
 	return pass_through_count;
@@ -242,16 +248,10 @@ static int progression_pass_through_opener_count(const secret_area_scan_view *vi
 
 static int triggered_side_opener_is_marginal(const secret_area_scan_view *view, int seg, int side, int index)
 {
-	int opener_seg;
-
-	opener_seg = view->triggered_side_opener_segment(view->user, seg, side, index);
-	if (segment_contains_key_powerup(view, opener_seg))
-		return 1;
-	if (view->triggered_side_opener_is_marginal &&
-	    view->triggered_side_opener_is_marginal(view->user, seg, side, index))
+	if (source_wall_is_progression_pass_through(view, seg, side, index))
 		return 1;
 	return progression_pass_through_opener_count(view, seg, side) >= 2 &&
-	       source_wall_is_progression_pass_through(view, seg, side, index);
+	       source_wall_is_reachable_pass_through(view, seg, side, index);
 }
 
 static int side_has_only_marginal_reachable_trigger_openers(const secret_area_scan_view *view, int seg, int side)
@@ -348,6 +348,276 @@ static int is_ordinary_edge(const secret_area_scan_view *view, int seg, int side
 		       !side_has_exit_trigger(view, seg, side);
 	}
 	return 0;
+}
+
+static int route_key_mask_for_index(const secret_area_scan_view *view, int index)
+{
+	switch (index) {
+		case 0:
+			return view->wall_key_blue;
+		case 1:
+			return view->wall_key_red;
+		case 2:
+			return view->wall_key_gold;
+		default:
+			return 0;
+	}
+}
+
+static int powerup_key_index(const secret_area_scan_view *view, int id)
+{
+	if (id == view->powerup_key_blue)
+		return 0;
+	if (id == view->powerup_key_red)
+		return 1;
+	if (id == view->powerup_key_gold)
+		return 2;
+	return -1;
+}
+
+static int route_wall_has_key(const secret_area_scan_view *view, int wall_keys, int index)
+{
+	int key_mask = route_key_mask_for_index(view, index);
+
+	return key_mask != 0 && (wall_keys & key_mask) != 0;
+}
+
+static void append_route_segment(int *segments, int *count, int seg)
+{
+	int i;
+
+	if (*count >= SECRET_AREA_MAX_SEGMENTS)
+		return;
+	for (i = 0; i < *count; ++i)
+		if (segments[i] == seg)
+			return;
+	segments[(*count)++] = seg;
+}
+
+static void append_route_door(route_side *doors, int *count, int seg, int side)
+{
+	int i;
+
+	if (*count >= SECRET_AREA_MAX_SEGMENTS)
+		return;
+	for (i = 0; i < *count; ++i)
+		if (doors[i].seg == seg && doors[i].side == side)
+			return;
+	doors[*count].seg = seg;
+	doors[*count].side = side;
+	(*count)++;
+}
+
+static int is_required_route_edge(const secret_area_scan_view *view, int seg, int side, int allowed_key_mask)
+{
+	int child = view->segment_child(view->user, seg, side);
+	int wall_num;
+	int wall_type;
+	int wall_flags;
+	int wall_keys;
+
+	if (!edge_has_valid_reverse(view, seg, side, child))
+		return 0;
+	if (is_secret_boundary_edge(view, seg, side, child))
+		return 0;
+	if (side_has_exit_trigger(view, seg, side))
+		return 0;
+	wall_num = side_wall_num(view, seg, side);
+	if (!valid_wall(view, wall_num))
+		return 1;
+	wall_type = view->wall_type(view->user, wall_num);
+	wall_flags = view->wall_flags(view->user, wall_num);
+	wall_keys = view->wall_keys(view->user, wall_num);
+	if (wall_type == view->wall_type_open || wall_type == view->wall_type_blastable)
+		return 1;
+	if (wall_type == view->wall_type_illusion)
+		return (wall_flags & view->wall_flag_illusion_off) == 0;
+	if (wall_type == view->wall_type_door) {
+		if (wall_keys == view->wall_key_none)
+			return (wall_flags & view->wall_flag_door_locked) == 0;
+		return (wall_keys & allowed_key_mask) != 0;
+	}
+	return 0;
+}
+
+static void mark_required_route_side(const secret_area_scan_view *view, int seg, int side)
+{
+	int child;
+	int reverse_side;
+
+	if (!valid_segment(view, seg) || side < 0 || side >= SECRET_AREA_MAX_SIDES)
+		return;
+	required_route_side[seg][side] = 1;
+	child = view->segment_child(view->user, seg, side);
+	if (!valid_segment(view, child))
+		return;
+	reverse_side = view->reverse_side(view->user, seg, child);
+	if (reverse_side >= 0 && reverse_side < SECRET_AREA_MAX_SIDES)
+		required_route_side[child][reverse_side] = 1;
+}
+
+static int find_required_route_shortest(const secret_area_scan_view *view, int start_seg, int goal_seg, int allowed_key_mask, int mark)
+{
+	int head = 0;
+	int tail = 0;
+	int i;
+
+	if (!valid_segment(view, start_seg) || !valid_segment(view, goal_seg))
+		return -1;
+	for (i = 0; i < view->num_segments; ++i) {
+		route_distance[i] = -1;
+		route_parent_seg[i] = -1;
+		route_parent_side[i] = -1;
+	}
+	route_distance[start_seg] = 0;
+	route_queue[tail++] = start_seg;
+	while (head < tail && route_distance[goal_seg] < 0) {
+		int seg = route_queue[head++];
+		int side;
+		for (side = 0; side < SECRET_AREA_MAX_SIDES; ++side) {
+			int child = view->segment_child(view->user, seg, side);
+			if (!valid_segment(view, child) || route_distance[child] >= 0)
+				continue;
+			if (!is_required_route_edge(view, seg, side, allowed_key_mask))
+				continue;
+			route_distance[child] = route_distance[seg] + 1;
+			route_parent_seg[child] = seg;
+			route_parent_side[child] = side;
+			route_queue[tail++] = child;
+			if (child == goal_seg)
+				break;
+		}
+	}
+	if (route_distance[goal_seg] < 0)
+		return -1;
+	if (mark) {
+		int cur = goal_seg;
+		while (cur != start_seg) {
+			int parent = route_parent_seg[cur];
+			int parent_side = route_parent_side[cur];
+			if (!valid_segment(view, parent) || parent_side < 0)
+				break;
+			mark_required_route_side(view, parent, parent_side);
+			cur = parent;
+		}
+	}
+	return route_distance[goal_seg];
+}
+
+static int find_reactor_segment(const secret_area_scan_view *view)
+{
+	int obj_count;
+	int objnum;
+	int seg;
+
+	if (view->object_count) {
+		obj_count = view->object_count(view->user);
+		for (objnum = 0; objnum < obj_count; ++objnum) {
+			if (view->object_flags &&
+			    (view->object_flags(view->user, objnum) & view->obj_flag_should_be_dead))
+				continue;
+			if (view->object_type(view->user, objnum) != view->obj_type_control_center)
+				continue;
+			seg = view->object_segment(view->user, objnum);
+			if (valid_segment(view, seg))
+				return seg;
+		}
+	}
+	if (!view->segment_special)
+		return -1;
+	for (seg = 0; seg < view->num_segments; ++seg)
+		if (view->segment_special(view->user, seg) == view->segment_special_control_center)
+			return seg;
+	return -1;
+}
+
+static void collect_required_route_targets(const secret_area_scan_view *view, int key_counts[3], int door_counts[3], int *reactor_seg)
+{
+	int obj_count;
+	int objnum;
+	int seg;
+
+	memset(key_counts, 0, sizeof(int) * 3);
+	memset(door_counts, 0, sizeof(int) * 3);
+	*reactor_seg = find_reactor_segment(view);
+	if (view->object_count) {
+		obj_count = view->object_count(view->user);
+		for (objnum = 0; objnum < obj_count; ++objnum) {
+			int key_index;
+			if (view->object_flags &&
+			    (view->object_flags(view->user, objnum) & view->obj_flag_should_be_dead))
+				continue;
+			if (view->object_type(view->user, objnum) != view->obj_type_powerup)
+				continue;
+			key_index = powerup_key_index(view, view->object_id(view->user, objnum));
+			if (key_index < 0)
+				continue;
+			seg = view->object_segment(view->user, objnum);
+			if (valid_segment(view, seg))
+				append_route_segment(route_key_segments[key_index], &key_counts[key_index], seg);
+		}
+	}
+	for (seg = 0; seg < view->num_segments; ++seg) {
+		int side;
+		for (side = 0; side < SECRET_AREA_MAX_SIDES; ++side) {
+			int wall_num = side_wall_num(view, seg, side);
+			int wall_keys;
+			int key_index;
+			if (!valid_wall(view, wall_num))
+				continue;
+			wall_keys = view->wall_keys(view->user, wall_num);
+			for (key_index = 0; key_index < 3; ++key_index)
+				if (route_wall_has_key(view, wall_keys, key_index))
+					append_route_door(route_key_doors[key_index], &door_counts[key_index], seg, side);
+		}
+	}
+}
+
+static void mark_shortest_key_route_to_door(const secret_area_scan_view *view, int key_index, const route_side *door)
+{
+	int key_mask = route_key_mask_for_index(view, key_index);
+	int best_distance = INT_MAX;
+	int best_key_seg = -1;
+	int i;
+
+	for (i = 0; i < SECRET_AREA_MAX_SEGMENTS && route_key_segments[key_index][i] >= 0; ++i) {
+		int key_seg = route_key_segments[key_index][i];
+		int distance = find_required_route_shortest(view, key_seg, door->seg, key_mask, 0);
+		if (distance >= 0 && distance < best_distance) {
+			best_distance = distance;
+			best_key_seg = key_seg;
+		}
+	}
+	if (best_key_seg < 0)
+		return;
+	find_required_route_shortest(view, best_key_seg, door->seg, key_mask, 1);
+	mark_required_route_side(view, door->seg, door->side);
+}
+
+static void mark_required_routes(const secret_area_scan_view *view)
+{
+	int key_counts[3];
+	int door_counts[3];
+	int reactor_seg;
+	int key_index;
+	int all_key_mask;
+
+	memset(required_route_side, 0, sizeof(required_route_side));
+	memset(route_key_segments, -1, sizeof(route_key_segments));
+	collect_required_route_targets(view, key_counts, door_counts, &reactor_seg);
+	for (key_index = 0; key_index < 3; ++key_index) {
+		int key_mask = route_key_mask_for_index(view, key_index);
+		int i;
+		if (key_counts[key_index] <= 0 || door_counts[key_index] <= 0 || key_mask == 0)
+			continue;
+		for (i = 0; i < key_counts[key_index]; ++i)
+			find_required_route_shortest(view, view->start_segment, route_key_segments[key_index][i], 0, 1);
+		for (i = 0; i < door_counts[key_index]; ++i)
+			mark_shortest_key_route_to_door(view, key_index, &route_key_doors[key_index][i]);
+	}
+	all_key_mask = view->wall_key_blue | view->wall_key_red | view->wall_key_gold;
+	if (reactor_seg >= 0)
+		find_required_route_shortest(view, view->start_segment, reactor_seg, all_key_mask, 1);
 }
 
 static void bfs_distances(const secret_area_scan_view *view, int *distances, int flags)
@@ -719,6 +989,7 @@ int secret_area_scan_level(const secret_area_scan_view *view, secret_area_state 
 	if (max_generated > SECRET_AREA_MAX_GENERATED)
 		max_generated = SECRET_AREA_MAX_GENERATED;
 	bfs_distances(view, progression_distance, SECRET_AREA_EDGE_ALLOW_PROGRESSION);
+	mark_required_routes(view);
 	bfs_distances(view, hidden_distance, SECRET_AREA_EDGE_ALLOW_HIDDEN | SECRET_AREA_EDGE_ALLOW_PROGRESSION);
 	component_total = build_components(view);
 	(void) component_total;

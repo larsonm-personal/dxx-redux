@@ -226,25 +226,6 @@ static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
 }
 #endif
 
-static int secret_area_segment_contains_key_powerup(int seg)
-{
-	int objnum;
-
-	if (seg < 0 || seg >= Num_segments)
-		return 0;
-	for (objnum = 0; objnum < num_objects; ++objnum) {
-		if (Objects[objnum].flags & OF_SHOULD_BE_DEAD)
-			continue;
-		if (Objects[objnum].segnum != seg || Objects[objnum].type != OBJ_POWERUP)
-			continue;
-		if (Objects[objnum].id == POW_KEY_BLUE ||
-		    Objects[objnum].id == POW_KEY_RED ||
-		    Objects[objnum].id == POW_KEY_GOLD)
-			return 1;
-	}
-	return 0;
-}
-
 static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_index)
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -322,17 +303,6 @@ static int secret_area_triggered_side_opener_wall_num(void *user, int seg, int s
 	return secret_area_side_opener_source_wall_at(seg, side, index);
 }
 
-static int secret_area_triggered_side_opener_is_marginal(void *user, int seg, int side, int index)
-{
-	int source_wall;
-
-	(void) user;
-	source_wall = secret_area_side_opener_source_wall_at(seg, side, index);
-	if (source_wall < 0 || source_wall >= Num_walls)
-		return 0;
-	return secret_area_segment_contains_key_powerup(Walls[source_wall].segnum);
-}
-
 void secret_area_rescan_current_level(void)
 {
 	secret_area_scan_view view;
@@ -351,6 +321,9 @@ void secret_area_rescan_current_level(void)
 	view.wall_flag_door_locked = WALL_DOOR_LOCKED;
 	view.wall_flag_illusion_off = WALL_ILLUSION_OFF;
 	view.wall_key_none = KEY_NONE;
+	view.wall_key_blue = KEY_BLUE;
+	view.wall_key_red = KEY_RED;
+	view.wall_key_gold = KEY_GOLD;
 	view.wall_clip_hidden = WCF_HIDDEN;
 	view.obj_type_none = OBJ_NONE;
 	view.obj_type_robot = OBJ_ROBOT;
@@ -386,7 +359,6 @@ void secret_area_rescan_current_level(void)
 	view.triggered_side_opener_segment = secret_area_triggered_side_opener_segment;
 	view.triggered_side_opener_side = secret_area_triggered_side_opener_side;
 	view.triggered_side_opener_wall_num = secret_area_triggered_side_opener_wall_num;
-	view.triggered_side_opener_is_marginal = secret_area_triggered_side_opener_is_marginal;
 	secret_area_scan_level(&view, &Secret_area_state);
 	secret_area_trace("done");
 }
