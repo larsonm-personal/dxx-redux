@@ -10,6 +10,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileWriter
+import java.util.Locale
 
 /**
  * Executes JSON5 automation scripts in the launcher (SetupActivity) process.
@@ -252,6 +253,42 @@ class LauncherScriptExecutor(
                         return
                     }
                     Log.i(TAG, "ASSERT_PASS: controller configs match")
+                    currentStep++
+                }
+
+                "analyze_level_metadata" -> {
+                    val label = step.optString("label", step.optString("file", step.optString("mod_file", "")))
+                    val minLevels = step.optInt("min_levels", 1)
+                    val expectedStatus = step.optString("status", "ok")
+                    val target =
+                        withContext(Dispatchers.IO) {
+                            buildLevelMetadataTargetForAutomation(step)
+                        }
+                    if (target == null) {
+                        fail("analyze_level_metadata: could not build target for $label")
+                        return
+                    }
+                    Log.i(TAG, "Analyzing level metadata: ${target.displayName}")
+                    val result = LevelMetadataAnalyzer.analyze(context, target)
+                    writeLevelMetadataAutomationResult(label, result)
+                    if (result.status != expectedStatus) {
+                        fail(
+                            "analyze_level_metadata: ${target.displayName} status=${result.status} " +
+                                "expected=$expectedStatus problems=${result.problems.joinToString("; ")}",
+                        )
+                        return
+                    }
+                    if (result.levels.size < minLevels) {
+                        fail(
+                            "analyze_level_metadata: ${target.displayName} levels=${result.levels.size} " +
+                                "expected at least $minLevels",
+                        )
+                        return
+                    }
+                    Log.i(
+                        TAG,
+                        "ASSERT_PASS: level metadata ${target.displayName} status=${result.status} levels=${result.levels.size}",
+                    )
                     currentStep++
                 }
 
@@ -565,6 +602,77 @@ class LauncherScriptExecutor(
             Log.w(TAG, "controller_match: item count differs (launcher=${lItems.length()} game=${gItems.length()})")
         }
         return null
+    }
+
+    private fun buildLevelMetadataTargetForAutomation(step: JSONObject): LevelMetadataTarget? {
+        val fileName = step.optString("file", "")
+        val modFileName = step.optString("mod_file", "")
+        val game = step.optString("game", GameFileFormats.GAME_D2)
+        val fileSetManager = FileSetManager(context.filesDir)
+        val setDir = fileSetManager.getSetDir(fileSetManager.getActive())
+
+        if (fileName.isNotBlank()) {
+            val file = findFile(setDir, fileName)?.let { File(setDir, it) } ?: File(setDir, fileName)
+            val metadata = GameFileMetadata.summarizeLocalFile(file)
+            return LevelMetadataTargets.directFile(file, setDir, metadata)
+        }
+
+        if (modFileName.isNotBlank()) {
+            val modFile = File(File(context.filesDir, "mods"), modFileName)
+            MissionZip.inspect(modFile)?.let { scan ->
+                LevelMetadataTargets.missionZip(modFile.absolutePath, setDir, scan)?.let { return it }
+            }
+            return LevelMetadataTargets.genericZip(modFile.absolutePath, setDir, modFile.name, game)
+        }
+
+        return null
+    }
+
+    private fun writeLevelMetadataAutomationResult(
+        label: String,
+        result: LevelMetadataResult,
+    ) {
+        val safeLabel =
+            label
+                .ifBlank { result.source.ifBlank { "metadata" } }
+                .lowercase(Locale.US)
+                .replace(Regex("[^a-z0-9._-]+"), "_")
+                .trim('_')
+                .ifBlank { "metadata" }
+        val file = File(context.filesDir, "level_metadata_automation_$safeLabel.json")
+        val levels = JSONArray()
+        result.levels.forEach { row ->
+            levels.put(
+                JSONObject()
+                    .put("level_num", row.levelNum)
+                    .put("secret", row.secret)
+                    .put("level_name", row.levelName)
+                    .put("level_file", row.levelFile)
+                    .put("robots", row.robots)
+                    .put("hostages", row.hostages)
+                    .put("secrets", row.secrets)
+                    .put("matcens", row.matcens)
+                    .put("energy_centers", row.energyCenters)
+                    .put("status", row.status),
+            )
+        }
+        val problems = JSONArray()
+        result.problems.forEach { problems.put(it) }
+        val diagnostics = JSONArray()
+        result.diagnostics.forEach { diagnostics.put(it) }
+        file.writeText(
+            JSONObject()
+                .put("status", result.status)
+                .put("source", result.source)
+                .put("game", result.game)
+                .put("mission_name", result.missionName)
+                .put("mission_filename", result.missionFilename)
+                .put("level_count", result.levels.size)
+                .put("levels", levels)
+                .put("problems", problems)
+                .put("diagnostics", diagnostics)
+                .toString() + "\n",
+        )
     }
 
     /** Navigate dot-path keys like "d2.ready" or "audio_sources[0].disc_id". */

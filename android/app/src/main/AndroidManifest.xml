@@ -75,11 +75,17 @@
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
 
-        <!-- Isolated level metadata worker. Malformed third-party level files
-             can crash native analysis without taking down SetupActivity. -->
+        <!-- Isolated level metadata workers. Malformed third-party level files
+             can crash native analysis without taking down SetupActivity.
+             D1 and D2 use separate processes so each process loads only one
+             game library. -->
         <service
-            android:name=".LevelMetadataAnalysisService"
-            android:process=":levelmeta"
+            android:name=".LevelMetadataD1AnalysisService"
+            android:process=":levelmeta_d1"
+            android:exported="false" />
+        <service
+            android:name=".LevelMetadataD2AnalysisService"
+            android:process=":levelmeta_d2"
             android:exported="false" />
     </application>
 

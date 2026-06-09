@@ -16,14 +16,14 @@ import java.io.File
 import java.util.Locale
 import java.util.UUID
 import java.util.zip.ZipFile
-import kotlin.system.exitProcess
 
 private const val LEVEL_METADATA_TIMEOUT_MS = 30_000L
 private const val LEVEL_METADATA_POLL_MS = 200L
 private const val LEVEL_METADATA_MAX_ZIP_FILES = 240
 private const val LEVEL_METADATA_MAX_ZIP_TOTAL_BYTES = 256L * 1024L * 1024L
 private const val LEVEL_METADATA_MAX_ZIP_ENTRY_BYTES = 64L * 1024L * 1024L
-private const val LEVEL_METADATA_PROCESS_SUFFIX = ":levelmeta"
+private const val LEVEL_METADATA_D1_PROCESS_SUFFIX = ":levelmeta_d1"
+private const val LEVEL_METADATA_D2_PROCESS_SUFFIX = ":levelmeta_d2"
 
 internal data class LevelMetadataTarget(
     val displayName: String,
@@ -388,7 +388,7 @@ internal object LevelMetadataAnalyzer {
             workDir.mkdirs()
             requestFile.writeText(request.toString(), Charsets.UTF_8)
             val intent =
-                Intent(appContext, LevelMetadataAnalysisService::class.java)
+                Intent(appContext, serviceClassForGame(target.game))
                     .putExtra(LevelMetadataAnalysisService.EXTRA_REQUEST_PATH, requestFile.absolutePath)
             appContext.startService(intent)
 
@@ -396,13 +396,15 @@ internal object LevelMetadataAnalyzer {
                 if (resultFile.isFile) {
                     return@withContext parseResultFile(target, resultFile)
                 }
-                if (!isWorkerProcessRunning(appContext) && System.currentTimeMillis() - startedAt > 1_000L) {
+                if (!isWorkerProcessRunning(appContext, target.game) &&
+                    System.currentTimeMillis() - startedAt > 1_000L
+                ) {
                     break
                 }
                 delay(LEVEL_METADATA_POLL_MS)
             }
 
-            killWorkerProcess(appContext)
+            killWorkerProcess(appContext, target.game)
             val diagnostics = collectDiagnostics(appContext, startedAt, checkpointFile)
             val status = if (diagnostics.any { it.contains("crash", ignoreCase = true) }) "crashed" else "timeout"
             LevelMetadataResult.failed(
@@ -412,6 +414,13 @@ internal object LevelMetadataAnalyzer {
                 diagnostics,
                 status,
             )
+        }
+
+    private fun serviceClassForGame(game: String): Class<out LevelMetadataAnalysisService> =
+        if (game == GameFileFormats.GAME_D1) {
+            LevelMetadataD1AnalysisService::class.java
+        } else {
+            LevelMetadataD2AnalysisService::class.java
         }
 
     private fun parseResultFile(
@@ -581,15 +590,30 @@ internal object LevelMetadataAnalyzer {
                 .forEach { add("Crash report saved: ${it.name}") }
         }
 
-    private fun isWorkerProcessRunning(context: Context): Boolean = levelMetadataWorkerProcess(context) != null
+    private fun isWorkerProcessRunning(
+        context: Context,
+        game: String,
+    ): Boolean = levelMetadataWorkerProcess(context, game) != null
 
-    private fun killWorkerProcess(context: Context) {
-        levelMetadataWorkerProcess(context)?.let { Process.killProcess(it.pid) }
+    private fun killWorkerProcess(
+        context: Context,
+        game: String,
+    ) {
+        levelMetadataWorkerProcess(context, game)?.let { Process.killProcess(it.pid) }
     }
 
-    private fun levelMetadataWorkerProcess(context: Context): ActivityManager.RunningAppProcessInfo? {
+    private fun levelMetadataWorkerProcess(
+        context: Context,
+        game: String,
+    ): ActivityManager.RunningAppProcessInfo? {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return null
-        val processName = context.packageName + LEVEL_METADATA_PROCESS_SUFFIX
+        val processName =
+            context.packageName +
+                if (game == GameFileFormats.GAME_D1) {
+                    LEVEL_METADATA_D1_PROCESS_SUFFIX
+                } else {
+                    LEVEL_METADATA_D2_PROCESS_SUFFIX
+                }
         return activityManager.runningAppProcesses?.firstOrNull { it.processName == processName }
     }
 }
@@ -612,13 +636,16 @@ internal object LevelMetadataNativeBridge {
             loadedLibrary = library
             CrashLog.installNativeHandler(context)
         }
-        return nativeAnalyzeLevelMetadata(requestJson)
+        return nativeAnalyzeLevelMetadata(context, requestJson)
     }
 
-    private external fun nativeAnalyzeLevelMetadata(requestJson: String): String?
+    private external fun nativeAnalyzeLevelMetadata(
+        context: Context,
+        requestJson: String,
+    ): String?
 }
 
-class LevelMetadataAnalysisService : Service() {
+open class LevelMetadataAnalysisService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(
@@ -635,10 +662,6 @@ class LevelMetadataAnalysisService : Service() {
             runCatching { runAnalysis(File(requestPath)) }
                 .onFailure { Log.e(TAG, "Level metadata analysis failed", it) }
             stopSelf(startId)
-            Thread {
-                Thread.sleep(100)
-                exitProcess(0)
-            }.start()
         }.start()
         return START_NOT_STICKY
     }
@@ -683,6 +706,10 @@ class LevelMetadataAnalysisService : Service() {
         private const val TAG = "DXX-LevelMetadata"
     }
 }
+
+class LevelMetadataD1AnalysisService : LevelMetadataAnalysisService()
+
+class LevelMetadataD2AnalysisService : LevelMetadataAnalysisService()
 
 private fun JSONObject.optStringList(name: String): List<String> {
     val array = optJSONArray(name) ?: return emptyList()

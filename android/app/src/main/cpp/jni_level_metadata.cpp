@@ -7,6 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <physfs.h>
 #include <SDL.h>
 
 extern "C" {
@@ -134,15 +135,26 @@ static std::vector<std::string> build_runtime_args(const std::string &data_dir)
 	return args;
 }
 
-static int init_levelmeta_runtime(const json &request, char *error, size_t error_size)
+static int init_levelmeta_runtime(JNIEnv *env, jobject context, const json &request, char *error, size_t error_size)
 {
 	std::vector<std::string> arg_storage = build_runtime_args(request.value("data_dir", ""));
 	std::vector<char *> argv;
+#ifdef __ANDROID__
+	PHYSFS_AndroidInit android_init;
+#endif
 
 	if (levelmeta_runtime_ready)
 		return 1;
+#ifdef __ANDROID__
+	android_init.jnienv = (void *) env;
+	android_init.context = (void *) context;
+	argv.push_back((char *) &android_init);
+	for (size_t i = 1; i < arg_storage.size(); i++)
+		argv.push_back(arg_storage[i].data());
+#else
 	for (std::string &arg : arg_storage)
 		argv.push_back(arg.data());
+#endif
 
 	write_checkpoint(request, "init", "memory");
 	mem_init();
@@ -170,13 +182,6 @@ static int init_levelmeta_runtime(const json &request, char *error, size_t error
 		return 0;
 	}
 #endif
-	{
-		const std::string extra_data_dir = request.value("extra_data_dir", "");
-		if (!extra_data_dir.empty()) {
-			write_checkpoint(request, "mount", "staged mission files");
-			PHYSFS_addToSearchPath(extra_data_dir.c_str(), 0);
-		}
-	}
 	write_checkpoint(request, "init", "game data");
 	load_text();
 	ReadConfigFile();
@@ -204,6 +209,19 @@ static int init_levelmeta_runtime(const json &request, char *error, size_t error
 #endif
 	levelmeta_runtime_ready = 1;
 	return 1;
+}
+
+static int mount_request_extra_dir(const json &request, char *error, size_t error_size)
+{
+	const std::string extra_data_dir = request.value("extra_data_dir", "");
+
+	if (extra_data_dir.empty())
+		return 1;
+	write_checkpoint(request, "mount", "staged mission files");
+	if (PHYSFS_addToSearchPath(extra_data_dir.c_str(), 0))
+		return 1;
+	snprintf(error, error_size, "could not mount staged files: %s", physfs_last_error());
+	return 0;
 }
 
 static int load_requested_mission(const json &request, char *error, size_t error_size)
@@ -401,7 +419,7 @@ static json failed_result(const json &request, const char *problem)
 	return root;
 }
 
-static json analyze_request(const json &request)
+static json analyze_request(JNIEnv *env, jobject context, const json &request)
 {
 	char error[256] = "";
 	const std::string source_type = request.value("source_type", "");
@@ -414,7 +432,9 @@ static json analyze_request(const json &request)
 		for (;;)
 			SDL_Delay(1000);
 	}
-	if (!init_levelmeta_runtime(request, error, sizeof(error)))
+	if (!init_levelmeta_runtime(env, context, request, error, sizeof(error)))
+		return failed_result(request, error);
+	if (!mount_request_extra_dir(request, error, sizeof(error)))
 		return failed_result(request, error);
 	if (source_type == "hog") {
 		if (!mount_requested_hogs(request, 1, error, sizeof(error)))
@@ -452,7 +472,8 @@ static json analyze_request(const json &request)
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEnv *env,
-                                                                           jobject,
+                                                                           jobject thiz,
+                                                                           jobject jcontext,
                                                                            jstring jrequest)
 {
 	const char *request_chars;
@@ -477,7 +498,7 @@ Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEn
 	env->ReleaseStringUTFChars(jrequest, request_chars);
 	try {
 		write_checkpoint(request, "begin", request.value("source_name", "").c_str());
-		result = analyze_request(request);
+		result = analyze_request(env, jcontext ? jcontext : thiz, request);
 		write_checkpoint(request, "done", result.value("status", "").c_str());
 	} catch (const std::exception &e) {
 		result = failed_result(request, e.what());

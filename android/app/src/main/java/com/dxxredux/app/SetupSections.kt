@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -61,6 +63,40 @@ internal fun BoxScope.SetupScrollArrows(scrollState: ScrollState) {
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = "Scroll down",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.SetupHorizontalScrollArrows(scrollState: ScrollState) {
+    if (scrollState.canScrollBackward) {
+        Surface(
+            modifier = Modifier.align(Alignment.CenterStart).padding(start = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp,
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Scroll left",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    if (scrollState.canScrollForward) {
+        Surface(
+            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp,
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Scroll right",
                 modifier = Modifier.size(24.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1679,34 +1715,53 @@ private fun LevelMetadataResultContent(result: LevelMetadataResult?) {
 @Composable
 private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
     val horizontal = rememberScrollState()
-    Column(
+    val vertical = rememberScrollState()
+    Box(
         modifier =
             Modifier
-                .fillMaxWidth()
-                .horizontalScroll(horizontal),
+                .fillMaxWidth(),
     ) {
-        LevelMetadataTableRow(
-            level = "Level",
-            name = "Name",
-            robots = "Robots",
-            hostages = "Hostages",
-            secrets = "Secrets",
-            matcens = "Matcens",
-            energy = "Energy",
-            bold = true,
-        )
-        levels.forEach { row ->
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(horizontal),
+        ) {
             LevelMetadataTableRow(
-                level = if (row.secret) "S${-row.levelNum}" else row.levelNum.toString(),
-                name = row.levelName.ifBlank { row.levelFile },
-                robots = row.robots.toString(),
-                hostages = row.hostages.toString(),
-                secrets = row.secrets.toString(),
-                matcens = row.matcens.toString(),
-                energy = row.energyCenters.toString(),
-                problem = row.problems.joinToString("; ").takeIf { it.isNotBlank() },
+                level = "Level",
+                name = "Name",
+                robots = "Robots",
+                hostages = "Hostages",
+                secrets = "Secrets",
+                matcens = "Matcens",
+                energy = "Energy",
+                bold = true,
             )
+            HorizontalDivider(modifier = Modifier.width(620.dp).padding(bottom = 2.dp))
+            Box(modifier = Modifier.heightIn(max = 260.dp)) {
+                Column(
+                    modifier =
+                        Modifier
+                            .verticalScroll(vertical)
+                            .padding(end = 8.dp),
+                ) {
+                    levels.forEach { row ->
+                        LevelMetadataTableRow(
+                            level = if (row.secret) "S${-row.levelNum}" else row.levelNum.toString(),
+                            name = row.levelName.ifBlank { row.levelFile },
+                            robots = row.robots.toString(),
+                            hostages = row.hostages.toString(),
+                            secrets = row.secrets.toString(),
+                            matcens = row.matcens.toString(),
+                            energy = row.energyCenters.toString(),
+                            problem = row.problems.joinToString("; ").takeIf { it.isNotBlank() },
+                        )
+                    }
+                }
+                SetupScrollArrows(vertical)
+            }
         }
+        SetupHorizontalScrollArrows(horizontal)
     }
 }
 

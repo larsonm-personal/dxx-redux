@@ -17,7 +17,7 @@ $ScriptDir = $PSScriptRoot
 $RepoRoot  = [System.IO.Path]::GetFullPath((Split-Path $ScriptDir))
 $OutFile   = Join-Path $ScriptDir "game_data_index.txt"
 
-$GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".gog", ".inst", ".exe", ".pkg", ".dxa")
+$GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".zip", ".gog", ".inst", ".exe", ".pkg", ".dxa")
 
 function Join-RepoPath {
     param(
