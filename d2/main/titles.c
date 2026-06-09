@@ -1578,6 +1578,10 @@ void do_briefing_screens(char *filename, int level_num)
 	// Too complicated otherwise
 #ifdef ANDROID
 	extern volatile int g_skippable_active;
+	extern void android_arm_cutscene_tap_suppress(void);
+	extern void game_flush_inputs(void);
+	game_flush_inputs();
+	android_arm_cutscene_tap_suppress();
 	g_skippable_active = 1;
 #endif
 	while (window_exists(wind))

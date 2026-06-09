@@ -514,14 +514,26 @@ private fun ModDetailsDialog(
                             },
                         )
 
-                        if (topLevelMetadataTargets.isNotEmpty()) {
-                            ModDetailSectionTitle("Level metadata")
-                            topLevelMetadataTargets.forEach { target ->
+                        when (topLevelMetadataTargets.size) {
+                            1 -> {
+                                val target = topLevelMetadataTargets.single()
                                 LevelMetadataButton(
-                                    label = target.displayName,
                                     onClick = { levelMetadataTarget = target },
                                     modifier = Modifier.padding(bottom = 6.dp),
                                 )
+                            }
+
+                            else -> {
+                                if (topLevelMetadataTargets.isNotEmpty()) {
+                                    ModDetailSectionTitle("Level metadata")
+                                    topLevelMetadataTargets.forEach { target ->
+                                        LevelMetadataButton(
+                                            label = target.displayName,
+                                            onClick = { levelMetadataTarget = target },
+                                            modifier = Modifier.padding(bottom = 6.dp),
+                                        )
+                                    }
+                                }
                             }
                         }
 

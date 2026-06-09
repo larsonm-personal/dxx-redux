@@ -72,6 +72,38 @@ class LevelMetadataTargetsTest {
     }
 
     @Test
+    fun directDescriptorUsesAdjacentHogForMetadata() {
+        val setDir = File("build/test-level-metadata-targets/direct-descriptor").absoluteFile
+        setDir.deleteRecursively()
+        setDir.mkdirs()
+        File(setDir, "max_f.hog").writeBytes(byteArrayOf(1, 2, 3, 4))
+        val descriptor =
+            File(setDir, "max_f.mn2").also {
+                it.writeText(
+                    """
+                    name = Descent Maximum (fixed)
+                    type = normal
+                    num_levels = 1
+                    psx01.rl2
+                    num_secrets = 1
+                    psxs1a.rl2,1
+                    """.trimIndent(),
+                )
+            }
+
+        val target = LevelMetadataTargets.directFile(descriptor, setDir, metadata = null)
+
+        assertNotNull(target)
+        target!!
+        assertEquals("max_f.mn2", target.displayName)
+        assertEquals("hog", target.sourceType)
+        assertEquals("max_f", target.missionName)
+        assertEquals(File(setDir, "max_f.hog").absolutePath, target.sourcePath)
+        assertEquals(listOf("psx01.rl2"), target.normalLevelFiles)
+        assertEquals(listOf("psxs1a.rl2"), target.secretLevelFiles)
+    }
+
+    @Test
     fun missionZipTargetsExposeEachMissionSet() {
         val setDir = File("build/test-level-metadata-targets/multi-zip-set").absoluteFile
         val zipFile = File("build/test-level-metadata-targets/descent_maximum_fixed.zip").absoluteFile
@@ -122,5 +154,46 @@ class LevelMetadataTargetsTest {
         assertEquals(listOf(listOf("max_f.hog", "max_f.mn2"), listOf("maxlnk_f.hog", "maxlnk_f.mn2")), targets.map {
             it.archiveEntries.sorted()
         })
+    }
+
+    @Test
+    fun zipDescriptorConstituentUsesSameStemHogForMetadata() {
+        val setDir = File("build/test-level-metadata-targets/zip-descriptor-set").absoluteFile
+        val zipFile = File("build/test-level-metadata-targets/descriptor_pair.zip").absoluteFile
+        setDir.deleteRecursively()
+        zipFile.parentFile?.mkdirs()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("max_f.hog"))
+            zip.write(byteArrayOf(1, 2, 3, 4))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("max_f.mn2"))
+            zip.write(
+                """
+                name = Descent Maximum (fixed)
+                type = normal
+                num_levels = 1
+                psx01.rl2
+                num_secrets = 1
+                psxs1a.rl2,1
+                """.trimIndent().toByteArray(),
+            )
+            zip.closeEntry()
+        }
+        val scan = MissionZip.inspect(zipFile)
+        assertNotNull(scan)
+        val descriptor = scan!!.constituents.single { it.name == "max_f.mn2" }
+
+        val target = LevelMetadataTargets.zipConstituent(zipFile.absolutePath, setDir, descriptor)
+
+        assertNotNull(target)
+        target!!
+        assertEquals("max_f.mn2", target.displayName)
+        assertEquals("mission_files", target.sourceType)
+        assertEquals("max_f", target.missionName)
+        assertEquals(listOf("max_f.hog"), target.hogFiles)
+        assertEquals(listOf("psx01.rl2"), target.normalLevelFiles)
+        assertEquals(listOf("psxs1a.rl2"), target.secretLevelFiles)
+        assertEquals(listOf("max_f.hog", "max_f.mn2"), target.archiveEntries.sorted())
     }
 }
