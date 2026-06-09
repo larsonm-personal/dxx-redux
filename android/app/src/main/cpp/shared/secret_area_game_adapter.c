@@ -7,6 +7,7 @@
 #include "gameseg.h"
 #include "gameseq.h"
 #include "hudmsg.h"
+#include "level_metadata_scan.h"
 #include "object.h"
 #include "player.h"
 #include "powerup.h"
@@ -16,6 +17,7 @@
 #include "wall.h"
 
 static secret_area_state Secret_area_state;
+static level_metadata_state Level_metadata_state;
 static int Secret_area_reveal_unfound;
 
 static void secret_area_trace(const char *stage)
@@ -115,6 +117,17 @@ static int secret_area_segment_center(void *user, int seg, int xyz[3])
 	xyz[1] = center.y;
 	xyz[2] = center.z;
 	return 1;
+}
+
+static int secret_area_energy_center_group_distance(void)
+{
+	const char *value = getenv("DXX_ENERGY_CENTER_GROUP_DISTANCE");
+	int distance;
+
+	if (!value || !*value)
+		return LEVEL_METADATA_DEFAULT_ENERGY_CENTER_GROUP_DISTANCE;
+	distance = atoi(value);
+	return distance > 0 ? distance : LEVEL_METADATA_DEFAULT_ENERGY_CENTER_GROUP_DISTANCE;
 }
 
 static int secret_area_object_count(void *user)
@@ -303,6 +316,22 @@ static int secret_area_triggered_side_opener_wall_num(void *user, int seg, int s
 	return secret_area_side_opener_source_wall_at(seg, side, index);
 }
 
+static void level_metadata_rescan_current_level(void)
+{
+	level_metadata_scan_view view;
+
+	memset(&view, 0, sizeof(view));
+	view.num_segments = Num_segments;
+	view.segment_special_fuelcen = SEGMENT_IS_FUELCEN;
+	view.segment_special_robotmaker = SEGMENT_IS_ROBOTMAKER;
+	view.energy_center_group_distance = secret_area_energy_center_group_distance();
+	view.segment_child = secret_area_segment_child;
+	view.reverse_side = secret_area_reverse_side;
+	view.segment_special = secret_area_segment_special;
+	view.segment_center = secret_area_segment_center;
+	level_metadata_scan_level(&view, &Level_metadata_state);
+}
+
 void secret_area_rescan_current_level(void)
 {
 	secret_area_scan_view view;
@@ -360,12 +389,18 @@ void secret_area_rescan_current_level(void)
 	view.triggered_side_opener_side = secret_area_triggered_side_opener_side;
 	view.triggered_side_opener_wall_num = secret_area_triggered_side_opener_wall_num;
 	secret_area_scan_level(&view, &Secret_area_state);
+	level_metadata_rescan_current_level();
 	secret_area_trace("done");
 }
 
 const secret_area_state *secret_area_get_state(void)
 {
 	return &Secret_area_state;
+}
+
+const level_metadata_state *level_metadata_get_state(void)
+{
+	return &Level_metadata_state;
 }
 
 int secret_area_note_segment_entered(int segnum)

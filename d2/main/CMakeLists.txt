@@ -70,6 +70,7 @@ set(D2X_MAIN_SOURCES
     vclip.c
     wall.c
     weapon.c
+    ../../android/app/src/main/cpp/shared/level_metadata_scan.c
     ../../android/app/src/main/cpp/shared/secret_area_game_adapter.c
     ../../android/app/src/main/cpp/shared/secret_area_item_names.c
     ../../android/app/src/main/cpp/shared/secret_area_scan.c

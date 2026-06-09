@@ -306,6 +306,7 @@ static nlohmann::ordered_json serialize_secret(const secret_area_entry &secret)
 
 static nlohmann::ordered_json serialize_current_level(int level_num, const char *level_file)
 {
+	const level_metadata_state *metadata = level_metadata_get_state();
 	const secret_area_state *state = secret_area_get_state();
 	int total = secret_area_total(state);
 	nlohmann::ordered_json result;
@@ -319,6 +320,14 @@ static nlohmann::ordered_json serialize_current_level(int level_num, const char 
 	result["raw_candidate_count"] = state->raw_candidate_count;
 	result["final_candidate_count"] = state->final_candidate_count;
 	result["secret_count"] = total;
+	result["energy_center_count"] = metadata ? metadata->energy_center_count : 0;
+	result["energy_center_raw_count"] = metadata ? metadata->energy_center_raw_count : 0;
+	result["energy_center_segment_count"] = metadata ? metadata->energy_center_segment_count : 0;
+	result["energy_center_group_distance"] = metadata ? metadata->energy_center_group_distance : 0;
+	result["energy_center_nearest_raw_distance"] = metadata ? metadata->energy_center_nearest_raw_distance : 0;
+	result["matcen_count"] = metadata ? metadata->matcen_count : 0;
+	result["matcen_raw_count"] = metadata ? metadata->matcen_raw_count : 0;
+	result["matcen_segment_count"] = metadata ? metadata->matcen_segment_count : 0;
 	for (int index = 0; index < total; ++index)
 		secrets.push_back(serialize_secret(state->secrets[index]));
 	result["secrets"] = secrets;

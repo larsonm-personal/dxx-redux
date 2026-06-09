@@ -346,6 +346,7 @@ static json serialize_position()
 /* -- Serialize generated secret areas --------------------------------- */
 static json serialize_secret_areas()
 {
+	const level_metadata_state *metadata = level_metadata_get_state();
 	const secret_area_state *state = secret_area_get_state();
 	json result;
 
@@ -358,6 +359,14 @@ static json serialize_secret_areas()
 	result["disabled_reason"] = secret_area_disabled_reason_name(state->disabled_reason);
 	result["raw_candidate_count"] = state->raw_candidate_count;
 	result["final_candidate_count"] = state->final_candidate_count;
+	result["energy_center_count"] = metadata ? metadata->energy_center_count : 0;
+	result["energy_center_raw_count"] = metadata ? metadata->energy_center_raw_count : 0;
+	result["energy_center_segment_count"] = metadata ? metadata->energy_center_segment_count : 0;
+	result["energy_center_group_distance"] = metadata ? metadata->energy_center_group_distance : 0;
+	result["energy_center_nearest_raw_distance"] = metadata ? metadata->energy_center_nearest_raw_distance : 0;
+	result["matcen_count"] = metadata ? metadata->matcen_count : 0;
+	result["matcen_raw_count"] = metadata ? metadata->matcen_raw_count : 0;
+	result["matcen_segment_count"] = metadata ? metadata->matcen_segment_count : 0;
 	result["found_count"] = secret_area_found_count(state);
 	result["total"] = secret_area_total(state);
 	result["reveal_unfound"] = (bool) secret_area_get_reveal_unfound();
