@@ -242,6 +242,28 @@ static int load_requested_mission(const json &request, char *error, size_t error
 	return 0;
 }
 
+static int mission_descriptor_available(const json &request)
+{
+	const std::string mission = request.value("mission_name", "");
+	std::string descriptor;
+
+	if (mission.empty())
+		return 0;
+#ifdef DXX_BUILD_DESCENT_II
+	descriptor = mission + ".mn2";
+#else
+	descriptor = mission + ".msn";
+#endif
+	return PHYSFSX_exists(descriptor.c_str(), 1);
+}
+
+static int load_mission_if_descriptor_available(const json &request, char *error, size_t error_size)
+{
+	if (!mission_descriptor_available(request))
+		return 1;
+	return load_requested_mission(request, error, error_size);
+}
+
 static std::vector<std::string> json_string_array(const json &request, const char *name)
 {
 	std::vector<std::string> values;
@@ -500,10 +522,14 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 	if (source_type == "hog") {
 		if (!mount_requested_hogs(request, 1, error, sizeof(error)))
 			return failed_result(request, error);
+		if (!load_mission_if_descriptor_available(request, error, sizeof(error)))
+			return failed_result(request, error);
 		return analyze_hog_entries(request);
 	}
 	if (source_type == "mission_files") {
 		if (!mount_requested_hogs(request, 0, error, sizeof(error)))
+			return failed_result(request, error);
+		if (!load_mission_if_descriptor_available(request, error, sizeof(error)))
 			return failed_result(request, error);
 		return analyze_hog_entries(request);
 	}
