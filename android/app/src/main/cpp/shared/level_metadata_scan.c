@@ -776,13 +776,6 @@ static const char *key_name(int key_index)
 	                                                : "unknown";
 }
 
-static int assume_key_acquired(int wanted_key, int *key_mask, level_metadata_state *state)
-{
-	*key_mask |= key_bit_for_index(wanted_key);
-	state->travel_key_detours++;
-	return 1;
-}
-
 static int acquire_key(
     const level_metadata_scan_view *view,
     int wanted_key,
@@ -810,7 +803,8 @@ static int acquire_key(
 		metadata_target *keys = key_targets[wanted_key];
 		int key_index = select_nearest_target(view, keys, key_target_count[wanted_key], *current_seg, current_pos, *key_mask, 1, wanted_key, &path);
 		if (key_index < 0) {
-			return assume_key_acquired(wanted_key, key_mask, state);
+			snprintf(state->travel_problem, sizeof(state->travel_problem), "%s key unreachable", key_name(wanted_key));
+			return 0;
 		}
 		if (find_shortest_path(view, *current_seg, current_pos, keys[key_index].seg, keys[key_index].pos, *key_mask, 0, -1, &path)) {
 			state->travel_distance += path.distance;
@@ -822,18 +816,8 @@ static int acquire_key(
 		}
 		if (!find_shortest_path(view, *current_seg, current_pos, keys[key_index].seg, keys[key_index].pos, *key_mask, 1, wanted_key, &path) ||
 		    path.first_locked_key < 0) {
-			metadata_path self_key_path;
-			if (find_shortest_path(view, *current_seg, current_pos, keys[key_index].seg, keys[key_index].pos, *key_mask, 1, -1, &self_key_path) &&
-			    self_key_path.first_locked_key == wanted_key) {
-				state->travel_distance += self_key_path.distance;
-				*current_seg = keys[key_index].seg;
-				copy_pos(current_pos, keys[key_index].pos);
-				keys[key_index].visited = 1;
-				*key_mask |= key_bit_for_index(wanted_key);
-				state->travel_key_detours++;
-				return 1;
-			}
-			return assume_key_acquired(wanted_key, key_mask, state);
+			snprintf(state->travel_problem, sizeof(state->travel_problem), "%s key unreachable", key_name(wanted_key));
+			return 0;
 		}
 		{
 			metadata_target door_target;

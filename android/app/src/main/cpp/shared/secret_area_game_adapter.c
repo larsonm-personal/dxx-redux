@@ -135,11 +135,33 @@ static int secret_area_segment_vertex(void *user, int seg, int index, int xyz[3]
 	return 1;
 }
 
+static int secret_area_player_start(int *seg, int xyz[3])
+{
+	int objnum;
+
+	for (objnum = 0; objnum < num_objects; ++objnum) {
+		int type = Objects[objnum].type;
+		if (type != OBJ_PLAYER && type != OBJ_GHOST)
+			continue;
+		if (seg)
+			*seg = Objects[objnum].segnum;
+		if (xyz) {
+			xyz[0] = Objects[objnum].pos.x;
+			xyz[1] = Objects[objnum].pos.y;
+			xyz[2] = Objects[objnum].pos.z;
+		}
+		return 1;
+	}
+	return 0;
+}
+
 static int secret_area_start_position(void *user, int xyz[3])
 {
 	(void) user;
 	if (!xyz)
 		return 0;
+	if (secret_area_player_start(NULL, xyz))
+		return 1;
 	xyz[0] = Player_init[Player_num].pos.x;
 	xyz[1] = Player_init[Player_num].pos.y;
 	xyz[2] = Player_init[Player_num].pos.z;
@@ -357,11 +379,12 @@ static int secret_area_triggered_side_opener_wall_num(void *user, int seg, int s
 static void level_metadata_rescan_current_level(void)
 {
 	level_metadata_scan_view view;
+	int start_segment;
 
 	memset(&view, 0, sizeof(view));
 	view.num_segments = Num_segments;
 	view.num_walls = Num_walls;
-	view.start_segment = Player_init[Player_num].segnum;
+	view.start_segment = secret_area_player_start(&start_segment, NULL) ? start_segment : Player_init[Player_num].segnum;
 	view.segment_special_fuelcen = SEGMENT_IS_FUELCEN;
 	view.segment_special_robotmaker = SEGMENT_IS_ROBOTMAKER;
 	view.segment_special_control_center = SEGMENT_IS_CONTROLCEN;
@@ -410,13 +433,14 @@ static void level_metadata_rescan_current_level(void)
 void secret_area_rescan_current_level(void)
 {
 	secret_area_scan_view view;
+	int start_segment;
 
 	secret_area_trace("start");
 	Secret_area_reveal_unfound = 0;
 	memset(&view, 0, sizeof(view));
 	view.num_segments = Num_segments;
 	view.num_walls = Num_walls;
-	view.start_segment = Player_init[Player_num].segnum;
+	view.start_segment = secret_area_player_start(&start_segment, NULL) ? start_segment : Player_init[Player_num].segnum;
 	view.max_generated = SECRET_AREA_MAX_GENERATED;
 	view.wall_type_blastable = WALL_BLASTABLE;
 	view.wall_type_door = WALL_DOOR;
