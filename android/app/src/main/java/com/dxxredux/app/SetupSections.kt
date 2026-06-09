@@ -1769,6 +1769,7 @@ private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
                                 },
                             travel = row.travelTimeText,
                             problem = row.metadataProblem(),
+                            note = row.metadataNote(),
                         )
                     }
                 }
@@ -1792,6 +1793,7 @@ private fun LevelMetadataTableRow(
     travel: String,
     bold: Boolean = false,
     problem: String? = null,
+    note: String? = null,
 ) {
     val weight = if (bold) FontWeight.SemiBold else FontWeight.Normal
     Row(
@@ -1819,6 +1821,14 @@ private fun LevelMetadataTableRow(
             modifier = Modifier.padding(start = 44.dp, bottom = 2.dp),
         )
     }
+    note?.let {
+        Text(
+            it,
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 44.dp, bottom = 2.dp),
+        )
+    }
 }
 
 private fun formatLevelMetadataVolumeMultiplier(value: Double): String {
@@ -1842,6 +1852,17 @@ private fun LevelMetadataLevelRow.metadataProblem(): String? {
             }
         }
     return messages.joinToString("; ").takeIf { it.isNotBlank() }
+}
+
+private fun LevelMetadataLevelRow.metadataNote(): String? {
+    val messages =
+        buildList {
+            addAll(notes)
+            if (travelNote.isNotBlank() && travelNote !in notes) {
+                add(travelNote)
+            }
+        }
+    return messages.joinToString("; ") { "note: $it" }.takeIf { it.isNotBlank() }
 }
 
 @Composable

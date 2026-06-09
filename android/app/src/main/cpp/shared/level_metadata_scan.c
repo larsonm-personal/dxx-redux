@@ -951,8 +951,7 @@ static void collect_travel_time(const level_metadata_scan_view *view, level_meta
 	found_reactor = collect_route_targets(view, hostage_targets, &hostage_count, &reactor, exit_targets, &exit_count);
 	state->travel_targets_total = hostage_count + (found_reactor ? 1 : 0) + (exit_count > 0 ? 1 : 0);
 	if (!found_reactor) {
-		snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "missing reactor");
-		return;
+		snprintf(state->travel_note, sizeof(state->travel_note), "%s", "missing reactor");
 	}
 	if (exit_count <= 0) {
 		snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "missing exit");
@@ -972,10 +971,11 @@ static void collect_travel_time(const level_metadata_scan_view *view, level_meta
 		if (!state->travel_problem[0])
 			snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "hostage unreachable");
 		state->travel_status = state->travel_targets_reached > 0 || state->travel_distance > 0.0 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
-	} else if (route_to_target(view, &current_seg, current_pos, &reactor, &key_mask, state)) {
+	} else if (!found_reactor || route_to_target(view, &current_seg, current_pos, &reactor, &key_mask, state)) {
 		metadata_path exit_path;
 		int exit_index;
-		state->travel_targets_reached++;
+		if (found_reactor)
+			state->travel_targets_reached++;
 		exit_index = select_nearest_target(view, exit_targets, exit_count, current_seg, current_pos, key_mask, 1, -1, &exit_path);
 		if (exit_index >= 0 && route_to_target(view, &current_seg, current_pos, &exit_targets[exit_index], &key_mask, state)) {
 			state->travel_targets_reached++;

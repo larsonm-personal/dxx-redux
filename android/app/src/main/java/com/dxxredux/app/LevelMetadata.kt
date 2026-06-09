@@ -60,11 +60,13 @@ internal data class LevelMetadataLevelRow(
     val travelTimeText: String,
     val travelStatus: String,
     val travelProblem: String,
+    val travelNote: String,
     val travelTargetsReached: Int,
     val travelTargetsTotal: Int,
     val travelKeyDetours: Int,
     val status: String,
     val problems: List<String>,
+    val notes: List<String>,
 )
 
 internal data class LevelMetadataResult(
@@ -104,11 +106,13 @@ internal data class LevelMetadataResult(
                                 travelTimeText = row.optString("travel_time_text"),
                                 travelStatus = row.optString("travel_status", "failed"),
                                 travelProblem = row.optString("travel_problem"),
+                                travelNote = row.optString("travel_note"),
                                 travelTargetsReached = row.optInt("travel_targets_reached"),
                                 travelTargetsTotal = row.optInt("travel_targets_total"),
                                 travelKeyDetours = row.optInt("travel_key_detours"),
                                 status = row.optString("status", "ok"),
                                 problems = row.optStringList("problems"),
+                                notes = row.optStringList("notes"),
                             ),
                         )
                     }

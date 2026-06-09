@@ -84,6 +84,7 @@ typedef struct level_metadata_state {
 	int travel_key_detours;
 	int travel_status;
 	char travel_problem[128];
+	char travel_note[128];
 } level_metadata_state;
 
 void level_metadata_state_clear(level_metadata_state *state);

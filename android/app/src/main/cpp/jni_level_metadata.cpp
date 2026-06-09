@@ -352,11 +352,13 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	row["travel_time_text"] = metadata ? format_levelmeta_time(metadata->travel_time_seconds) : "";
 	row["travel_status"] = metadata ? level_metadata_travel_status_name(metadata->travel_status) : "failed";
 	row["travel_problem"] = metadata && metadata->travel_problem[0] ? metadata->travel_problem : "";
+	row["travel_note"] = metadata && metadata->travel_note[0] ? metadata->travel_note : "";
 	row["travel_targets_reached"] = metadata ? metadata->travel_targets_reached : 0;
 	row["travel_targets_total"] = metadata ? metadata->travel_targets_total : 0;
 	row["travel_key_detours"] = metadata ? metadata->travel_key_detours : 0;
 	row["status"] = "ok";
 	row["problems"] = json::array();
+	row["notes"] = metadata && metadata->travel_note[0] ? json::array({ metadata->travel_note }) : json::array();
 	return row;
 }
 
@@ -382,11 +384,13 @@ static int scan_level(const json &request, json &levels, int level_num, const ch
 		row["travel_time_text"] = "";
 		row["travel_status"] = "failed";
 		row["travel_problem"] = "could not load level";
+		row["travel_note"] = "";
 		row["travel_targets_reached"] = 0;
 		row["travel_targets_total"] = 0;
 		row["travel_key_detours"] = 0;
 		row["status"] = "failed";
 		row["problems"] = json::array({ "could not load level" });
+		row["notes"] = json::array();
 		levels.push_back(row);
 		return 0;
 	}

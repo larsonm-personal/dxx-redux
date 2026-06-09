@@ -412,6 +412,8 @@ static nlohmann::ordered_json serialize_current_level(int level_num, const char 
 	result["travel_time_seconds"] = metadata ? metadata->travel_time_seconds : 0;
 	result["travel_status"] = metadata ? level_metadata_travel_status_name(metadata->travel_status) : "failed";
 	result["travel_problem"] = metadata && metadata->travel_problem[0] ? metadata->travel_problem : "";
+	result["travel_note"] = metadata && metadata->travel_note[0] ? metadata->travel_note : "";
+	result["notes"] = metadata && metadata->travel_note[0] ? nlohmann::ordered_json::array({ metadata->travel_note }) : nlohmann::ordered_json::array();
 	result["travel_targets_reached"] = metadata ? metadata->travel_targets_reached : 0;
 	result["travel_targets_total"] = metadata ? metadata->travel_targets_total : 0;
 	result["travel_key_detours"] = metadata ? metadata->travel_key_detours : 0;
