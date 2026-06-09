@@ -328,6 +328,15 @@ static nlohmann::ordered_json serialize_current_level(int level_num, const char 
 	result["matcen_count"] = metadata ? metadata->matcen_count : 0;
 	result["matcen_raw_count"] = metadata ? metadata->matcen_raw_count : 0;
 	result["matcen_segment_count"] = metadata ? metadata->matcen_segment_count : 0;
+	result["mine_volume"] = metadata ? metadata->mine_volume : 0.0;
+	result["mine_volume_normalized"] = metadata ? metadata->mine_volume_normalized : 0.0;
+	result["travel_distance"] = metadata ? metadata->travel_distance : 0.0;
+	result["travel_time_seconds"] = metadata ? metadata->travel_time_seconds : 0;
+	result["travel_status"] = metadata ? level_metadata_travel_status_name(metadata->travel_status) : "failed";
+	result["travel_problem"] = metadata && metadata->travel_problem[0] ? metadata->travel_problem : "";
+	result["travel_targets_reached"] = metadata ? metadata->travel_targets_reached : 0;
+	result["travel_targets_total"] = metadata ? metadata->travel_targets_total : 0;
+	result["travel_key_detours"] = metadata ? metadata->travel_key_detours : 0;
 	for (int index = 0; index < total; ++index)
 		secrets.push_back(serialize_secret(state->secrets[index]));
 	result["secrets"] = secrets;

@@ -1,5 +1,6 @@
 #include <jni.h>
 
+#include <cstdio>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -291,6 +292,29 @@ static void count_level_objects(int *robots, int *hostages)
 	}
 }
 
+static std::string format_levelmeta_multiplier(double value)
+{
+	char buffer[32];
+
+	if (value <= 0.0)
+		return "";
+	snprintf(buffer, sizeof(buffer), "%.1fx", value);
+	return buffer;
+}
+
+static std::string format_levelmeta_time(int seconds)
+{
+	char buffer[32];
+	int minutes;
+
+	if (seconds < 0)
+		seconds = 0;
+	minutes = seconds / 60;
+	seconds %= 60;
+	snprintf(buffer, sizeof(buffer), "%dM:%02dS", minutes, seconds);
+	return buffer;
+}
+
 static json serialize_current_level_row(int level_num, const char *level_file)
 {
 	const secret_area_state *secret_state = secret_area_get_state();
@@ -309,6 +333,17 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	row["secrets"] = secret_area_total(secret_state);
 	row["matcens"] = metadata ? metadata->matcen_count : 0;
 	row["energy_centers"] = metadata ? metadata->energy_center_count : 0;
+	row["mine_volume"] = metadata ? metadata->mine_volume : 0.0;
+	row["mine_volume_normalized"] = metadata ? metadata->mine_volume_normalized : 0.0;
+	row["mine_volume_text"] = metadata ? format_levelmeta_multiplier(metadata->mine_volume_normalized) : "";
+	row["travel_distance"] = metadata ? metadata->travel_distance : 0.0;
+	row["travel_time_seconds"] = metadata ? metadata->travel_time_seconds : 0;
+	row["travel_time_text"] = metadata ? format_levelmeta_time(metadata->travel_time_seconds) : "";
+	row["travel_status"] = metadata ? level_metadata_travel_status_name(metadata->travel_status) : "failed";
+	row["travel_problem"] = metadata && metadata->travel_problem[0] ? metadata->travel_problem : "";
+	row["travel_targets_reached"] = metadata ? metadata->travel_targets_reached : 0;
+	row["travel_targets_total"] = metadata ? metadata->travel_targets_total : 0;
+	row["travel_key_detours"] = metadata ? metadata->travel_key_detours : 0;
 	row["status"] = "ok";
 	row["problems"] = json::array();
 	return row;
@@ -328,6 +363,17 @@ static int scan_level(const json &request, json &levels, int level_num, const ch
 		row["secrets"] = 0;
 		row["matcens"] = 0;
 		row["energy_centers"] = 0;
+		row["mine_volume"] = 0.0;
+		row["mine_volume_normalized"] = 0.0;
+		row["mine_volume_text"] = "";
+		row["travel_distance"] = 0.0;
+		row["travel_time_seconds"] = 0;
+		row["travel_time_text"] = "";
+		row["travel_status"] = "failed";
+		row["travel_problem"] = "could not load level";
+		row["travel_targets_reached"] = 0;
+		row["travel_targets_total"] = 0;
+		row["travel_key_detours"] = 0;
 		row["status"] = "failed";
 		row["problems"] = json::array({ "could not load level" });
 		levels.push_back(row);

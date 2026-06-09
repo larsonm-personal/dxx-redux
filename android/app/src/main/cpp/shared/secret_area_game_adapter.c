@@ -119,6 +119,33 @@ static int secret_area_segment_center(void *user, int seg, int xyz[3])
 	return 1;
 }
 
+static int secret_area_segment_vertex(void *user, int seg, int index, int xyz[3])
+{
+	int vertex;
+
+	(void) user;
+	if (seg < 0 || seg >= Num_segments || index < 0 || index >= MAX_VERTICES_PER_SEGMENT || !xyz)
+		return 0;
+	vertex = Segments[seg].verts[index];
+	if (vertex < 0 || vertex >= Num_vertices)
+		return 0;
+	xyz[0] = Vertices[vertex].x;
+	xyz[1] = Vertices[vertex].y;
+	xyz[2] = Vertices[vertex].z;
+	return 1;
+}
+
+static int secret_area_start_position(void *user, int xyz[3])
+{
+	(void) user;
+	if (!xyz)
+		return 0;
+	xyz[0] = Player_init[Player_num].pos.x;
+	xyz[1] = Player_init[Player_num].pos.y;
+	xyz[2] = Player_init[Player_num].pos.z;
+	return 1;
+}
+
 static int secret_area_energy_center_group_distance(void)
 {
 	const char *value = getenv("DXX_ENERGY_CENTER_GROUP_DISTANCE");
@@ -190,6 +217,17 @@ static int secret_area_object_contains_count(void *user, int objnum)
 	if (objnum < 0 || objnum >= num_objects)
 		return 0;
 	return Objects[objnum].contains_count;
+}
+
+static int secret_area_object_position(void *user, int objnum, int xyz[3])
+{
+	(void) user;
+	if (objnum < 0 || objnum >= num_objects || !xyz)
+		return 0;
+	xyz[0] = Objects[objnum].pos.x;
+	xyz[1] = Objects[objnum].pos.y;
+	xyz[2] = Objects[objnum].pos.z;
+	return 1;
 }
 
 static const char *secret_area_powerup_name(void *user, int id)
@@ -322,13 +360,50 @@ static void level_metadata_rescan_current_level(void)
 
 	memset(&view, 0, sizeof(view));
 	view.num_segments = Num_segments;
+	view.num_walls = Num_walls;
+	view.start_segment = Player_init[Player_num].segnum;
 	view.segment_special_fuelcen = SEGMENT_IS_FUELCEN;
 	view.segment_special_robotmaker = SEGMENT_IS_ROBOTMAKER;
+	view.segment_special_control_center = SEGMENT_IS_CONTROLCEN;
 	view.energy_center_group_distance = secret_area_energy_center_group_distance();
+	view.wall_type_blastable = WALL_BLASTABLE;
+	view.wall_type_door = WALL_DOOR;
+	view.wall_type_illusion = WALL_ILLUSION;
+	view.wall_type_open = WALL_OPEN;
+	view.wall_flag_door_locked = WALL_DOOR_LOCKED;
+	view.wall_flag_illusion_off = WALL_ILLUSION_OFF;
+	view.wall_key_none = KEY_NONE;
+	view.wall_key_blue = KEY_BLUE;
+	view.wall_key_red = KEY_RED;
+	view.wall_key_gold = KEY_GOLD;
+	view.obj_type_none = OBJ_NONE;
+	view.obj_type_hostage = OBJ_HOSTAGE;
+	view.obj_type_powerup = OBJ_POWERUP;
+	view.obj_type_control_center = OBJ_CNTRLCEN;
+	view.obj_flag_should_be_dead = OF_SHOULD_BE_DEAD;
+	view.powerup_key_blue = POW_KEY_BLUE;
+	view.powerup_key_red = POW_KEY_RED;
+	view.powerup_key_gold = POW_KEY_GOLD;
 	view.segment_child = secret_area_segment_child;
 	view.reverse_side = secret_area_reverse_side;
+	view.wall_num = secret_area_wall_num;
+	view.wall_type = secret_area_wall_type;
+	view.wall_flags = secret_area_wall_flags;
+	view.wall_keys = secret_area_wall_keys;
 	view.segment_special = secret_area_segment_special;
 	view.segment_center = secret_area_segment_center;
+	view.segment_vertex = secret_area_segment_vertex;
+	view.start_position = secret_area_start_position;
+	view.object_count = secret_area_object_count;
+	view.object_segment = secret_area_object_segment;
+	view.object_type = secret_area_object_type;
+	view.object_id = secret_area_object_id;
+	view.object_flags = secret_area_object_flags;
+	view.object_contains_type = secret_area_object_contains_type;
+	view.object_contains_id = secret_area_object_contains_id;
+	view.object_contains_count = secret_area_object_contains_count;
+	view.object_position = secret_area_object_position;
+	view.side_has_exit_trigger = secret_area_side_has_exit_trigger;
 	level_metadata_scan_level(&view, &Level_metadata_state);
 }
 

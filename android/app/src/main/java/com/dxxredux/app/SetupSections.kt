@@ -1735,9 +1735,11 @@ private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
                 secrets = "Secrets",
                 matcens = "Matcens",
                 energy = "Energy",
+                volume = "Volume",
+                travel = "Travel",
                 bold = true,
             )
-            HorizontalDivider(modifier = Modifier.width(620.dp).padding(bottom = 2.dp))
+            HorizontalDivider(modifier = Modifier.width(780.dp).padding(bottom = 2.dp))
             Box(modifier = Modifier.heightIn(max = 260.dp)) {
                 Column(
                     modifier =
@@ -1754,7 +1756,16 @@ private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
                             secrets = row.secrets.toString(),
                             matcens = row.matcens.toString(),
                             energy = row.energyCenters.toString(),
-                            problem = row.problems.joinToString("; ").takeIf { it.isNotBlank() },
+                            volume =
+                                row.mineVolumeText.ifBlank {
+                                    if (row.mineVolumeNormalized > 0.0) {
+                                        "%.1fx".format(Locale.US, row.mineVolumeNormalized)
+                                    } else {
+                                        "n/a"
+                                    }
+                                },
+                            travel = row.travelTimeText,
+                            problem = row.metadataProblem(),
                         )
                     }
                 }
@@ -1774,6 +1785,8 @@ private fun LevelMetadataTableRow(
     secrets: String,
     matcens: String,
     energy: String,
+    volume: String,
+    travel: String,
     bold: Boolean = false,
     problem: String? = null,
 ) {
@@ -1781,7 +1794,7 @@ private fun LevelMetadataTableRow(
     Row(
         modifier =
             Modifier
-                .widthIn(min = 620.dp)
+                .widthIn(min = 780.dp)
                 .padding(vertical = 2.dp),
         verticalAlignment = Alignment.Top,
     ) {
@@ -1792,6 +1805,8 @@ private fun LevelMetadataTableRow(
         Text(secrets, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(60.dp))
         Text(matcens, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(64.dp))
         Text(energy, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(64.dp))
+        Text(volume, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(76.dp))
+        Text(travel, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(76.dp))
     }
     problem?.let {
         Text(
@@ -1801,6 +1816,17 @@ private fun LevelMetadataTableRow(
             modifier = Modifier.padding(start = 44.dp, bottom = 2.dp),
         )
     }
+}
+
+private fun LevelMetadataLevelRow.metadataProblem(): String? {
+    val messages =
+        buildList {
+            addAll(problems)
+            if (travelStatus != "ok" && travelProblem.isNotBlank()) {
+                add("Travel $travelStatus: $travelProblem")
+            }
+        }
+    return messages.joinToString("; ").takeIf { it.isNotBlank() }
 }
 
 @Composable
