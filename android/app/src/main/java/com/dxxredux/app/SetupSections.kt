@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -336,6 +337,7 @@ internal fun ModsSection(
             mod = mod,
             details = detailInfo,
             loading = detailLoading,
+            setDir = setDir,
             onDismiss = {
                 detailTarget = null
                 detailInfo = null
@@ -349,10 +351,31 @@ private fun ModDetailsDialog(
     mod: ModManager.ModInfo,
     details: ModManager.ModDetails?,
     loading: Boolean,
+    setDir: File,
     onDismiss: () -> Unit,
 ) {
     var textViewTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var constituentTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
+    var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
+    val topLevelMetadataTarget =
+        remember(details?.archivePath, details?.missionZip, setDir.absolutePath, mod.displayName, mod.game) {
+            details?.let {
+                it.missionZip?.let { missionZip ->
+                    LevelMetadataTargets.missionZip(it.archivePath, setDir, missionZip)
+                } ?: LevelMetadataTargets.genericZip(
+                    it.archivePath,
+                    setDir,
+                    mod.displayName,
+                    mod.game,
+                )
+            }
+        }
+    levelMetadataTarget?.let { target ->
+        LevelMetadataDialog(
+            target = target,
+            onDismiss = { levelMetadataTarget = null },
+        )
+    }
     textViewTarget?.let { constituent ->
         MissionZipTextDialog(
             constituent = constituent,
@@ -364,6 +387,7 @@ private fun ModDetailsDialog(
         MissionZipConstituentDialog(
             constituent = constituent,
             archivePath = details?.archivePath,
+            setDir = setDir,
             onView =
                 if (GameFileFormats.extensionOf(constituent.name) == "txt") {
                     {
@@ -448,6 +472,13 @@ private fun ModDetailsDialog(
                                 details.manifestSchema ?: "Not present"
                             },
                         )
+
+                        topLevelMetadataTarget?.let { target ->
+                            LevelMetadataButton(
+                                onClick = { levelMetadataTarget = target },
+                                modifier = Modifier.padding(bottom = 6.dp),
+                            )
+                        }
 
                         details.missionZip?.let { missionZip ->
                             DetailRow("Category", missionZip.category.replaceFirstChar { it.uppercase() })
@@ -645,15 +676,23 @@ private fun ModDetailsDialog(
 private fun MissionZipConstituentDialog(
     constituent: MissionZip.Constituent,
     archivePath: String?,
+    setDir: File,
     onView: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
+    var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
     val metadata =
         remember(archivePath, constituent.path) {
             archivePath?.let {
                 GameFileMetadata.summarizeZipConstituent(File(it), constituent.path, constituent.name)
             }
         }
+    levelMetadataTarget?.let { target ->
+        LevelMetadataDialog(
+            target = target,
+            onDismiss = { levelMetadataTarget = null },
+        )
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -691,6 +730,14 @@ private fun MissionZipConstituentDialog(
                     if (constituent.compressedSizeBytes > 0) {
                         DetailRow("Compressed", setupSectionFormatSize(constituent.compressedSizeBytes))
                     }
+                    archivePath
+                        ?.let { LevelMetadataTargets.zipConstituent(it, setDir, constituent, metadata) }
+                        ?.let { target ->
+                            LevelMetadataButton(
+                                onClick = { levelMetadataTarget = target },
+                                modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
+                            )
+                        }
                     FileMetadataDetails(metadata)
                 }
                 SetupScrollArrows(scrollState)
@@ -1340,10 +1387,18 @@ internal fun FileDetailDialog(
         remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename) {
             gameFileMetadataForStatus(status, setDir)
         }
+    val levelMetadataTarget =
+        remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename, fileMetadata) {
+            val localName = status.foundName ?: status.manifestEntry?.filename
+            val actualName = localName?.let { findFile(setDir, it) ?: it }
+            val file = actualName?.let { File(setDir, it) }
+            if (file?.isFile == true) LevelMetadataTargets.directFile(file, setDir, fileMetadata) else null
+        }
     val isMissing = !status.found && entry != null
     val isExternal = entry?.isExternal == true
     var confirmingDelete by remember { mutableStateOf(false) }
     var confirmingForget by remember { mutableStateOf(false) }
+    var showingLevelMetadata by remember { mutableStateOf(false) }
     val closeFocus = remember { FocusRequester() }
     val okFocus = remember { FocusRequester() }
 
@@ -1370,6 +1425,13 @@ internal fun FileDetailDialog(
     }
 
     RequestLauncherControllerFocus(closeFocus, true, name)
+
+    if (showingLevelMetadata && levelMetadataTarget != null) {
+        LevelMetadataDialog(
+            target = levelMetadataTarget,
+            onDismiss = { showingLevelMetadata = false },
+        )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1412,6 +1474,12 @@ internal fun FileDetailDialog(
                 Column(modifier = Modifier.verticalScroll(scrollState)) {
                     DetailRow("Category", description)
                     DetailRow("Type", describeExtension(name))
+                    levelMetadataTarget?.let {
+                        LevelMetadataButton(
+                            onClick = { showingLevelMetadata = true },
+                            modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
+                        )
+                    }
                     missionDescriptor?.let { mission ->
                         DetailRow("Title", mission.displayName)
                         mission.type?.let { DetailRow("Mission type", it) }
@@ -1508,6 +1576,176 @@ internal fun FileDetailDialog(
             }
         },
     )
+}
+
+@Composable
+private fun LevelMetadataButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.small,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Text("Level metadata", fontSize = 12.sp)
+    }
+}
+
+@Composable
+private fun LevelMetadataDialog(
+    target: LevelMetadataTarget,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    var result by remember(target) { mutableStateOf<LevelMetadataResult?>(null) }
+    var loading by remember(target) { mutableStateOf(true) }
+
+    LaunchedEffect(target) {
+        loading = true
+        result = LevelMetadataAnalyzer.analyze(context, target)
+        loading = false
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        title = {
+            Text(target.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        },
+        text = {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp),
+            ) {
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(scrollState)
+                            .padding(end = 8.dp),
+                ) {
+                    if (loading) {
+                        Row(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text("Analyzing levels", fontSize = 12.sp)
+                        }
+                    } else {
+                        LevelMetadataResultContent(result)
+                    }
+                }
+                SetupScrollArrows(scrollState)
+            }
+        },
+    )
+}
+
+@Composable
+private fun LevelMetadataResultContent(result: LevelMetadataResult?) {
+    if (result == null) {
+        ModDetailLine("No analysis result", color = MaterialTheme.colorScheme.error)
+        return
+    }
+    DetailRow("Status", result.status.replaceFirstChar { it.uppercase() })
+    if (result.game.isNotBlank()) {
+        DetailRow("Game", result.game.uppercase(Locale.US))
+    }
+    if (result.missionName.isNotBlank()) {
+        DetailRow("Mission", result.missionName)
+    }
+    result.problems.forEach { problem ->
+        ModDetailLine(problem, color = MaterialTheme.colorScheme.error)
+    }
+    result.diagnostics.forEach { diagnostic ->
+        ModDetailLine(diagnostic)
+    }
+    if (result.levels.isEmpty()) return
+
+    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    ModDetailSectionTitle("Levels")
+    LevelMetadataTable(result.levels)
+}
+
+@Composable
+private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
+    val horizontal = rememberScrollState()
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(horizontal),
+    ) {
+        LevelMetadataTableRow(
+            level = "Level",
+            name = "Name",
+            robots = "Robots",
+            hostages = "Hostages",
+            secrets = "Secrets",
+            matcens = "Matcens",
+            energy = "Energy",
+            bold = true,
+        )
+        levels.forEach { row ->
+            LevelMetadataTableRow(
+                level = if (row.secret) "S${-row.levelNum}" else row.levelNum.toString(),
+                name = row.levelName.ifBlank { row.levelFile },
+                robots = row.robots.toString(),
+                hostages = row.hostages.toString(),
+                secrets = row.secrets.toString(),
+                matcens = row.matcens.toString(),
+                energy = row.energyCenters.toString(),
+                problem = row.problems.joinToString("; ").takeIf { it.isNotBlank() },
+            )
+        }
+    }
+}
+
+@Composable
+private fun LevelMetadataTableRow(
+    level: String,
+    name: String,
+    robots: String,
+    hostages: String,
+    secrets: String,
+    matcens: String,
+    energy: String,
+    bold: Boolean = false,
+    problem: String? = null,
+) {
+    val weight = if (bold) FontWeight.SemiBold else FontWeight.Normal
+    Row(
+        modifier =
+            Modifier
+                .widthIn(min = 620.dp)
+                .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Text(level, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(44.dp))
+        Text(name, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(184.dp))
+        Text(robots, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(60.dp))
+        Text(hostages, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(68.dp))
+        Text(secrets, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(60.dp))
+        Text(matcens, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(64.dp))
+        Text(energy, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(64.dp))
+    }
+    problem?.let {
+        Text(
+            it,
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(start = 44.dp, bottom = 2.dp),
+        )
+    }
 }
 
 @Composable

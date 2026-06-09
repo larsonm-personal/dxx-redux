@@ -74,6 +74,13 @@
             android:name=".multiplayer.MultiplayerForegroundService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
+
+        <!-- Isolated level metadata worker. Malformed third-party level files
+             can crash native analysis without taking down SetupActivity. -->
+        <service
+            android:name=".LevelMetadataAnalysisService"
+            android:process=":levelmeta"
+            android:exported="false" />
     </application>
 
 </manifest>

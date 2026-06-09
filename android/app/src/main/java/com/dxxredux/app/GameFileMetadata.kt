@@ -149,11 +149,12 @@ internal object GameFileMetadata {
         }
         val game = detectGame(name, entries)
         val rows =
-            listOf(
-                "Entries" to entries.size.toString(),
-                "Embedded data" to entries.sumOf { it.sizeBytes }.toString(),
-                "Contents" to roleRollup(entries),
-            )
+            buildList {
+                add("Entries" to entries.size.toString())
+                addAll(levelCountRows(name, entries))
+                add("Embedded data" to entries.sumOf { it.sizeBytes }.toString())
+                add("Contents" to roleRollup(entries))
+            }
         return Summary(
             format = "HOG",
             scope =
@@ -485,6 +486,39 @@ internal object GameFileMetadata {
                 add("Includes encoded briefing or text data")
             }
         }
+
+    private fun levelCountRows(
+        name: String,
+        entries: List<EntrySummary>,
+    ): List<Pair<String, String>> {
+        val lower = name.lowercase(Locale.US)
+        if (lower == "descent.hog") {
+            return listOf("Normal levels" to "27", "Secret levels" to "3", "Total levels" to "30")
+        }
+        if (lower == "descent2.hog") {
+            return listOf("Normal levels" to "24", "Secret levels" to "6", "Total levels" to "30")
+        }
+        val normal =
+            entries.count {
+                when (GameFileFormats.extensionOf(it.name)) {
+                    "rdl", "rl2" -> true
+                    else -> false
+                }
+            }
+        val secret =
+            entries.count {
+                when (GameFileFormats.extensionOf(it.name)) {
+                    "sdl", "sl2" -> true
+                    else -> false
+                }
+            }
+        if (normal == 0 && secret == 0) return emptyList()
+        return buildList {
+            if (normal > 0) add("Normal levels" to normal.toString())
+            if (secret > 0) add("Secret levels" to secret.toString())
+            add("Total levels" to (normal + secret).toString())
+        }
+    }
 
     private fun problemSummary(
         format: String,
