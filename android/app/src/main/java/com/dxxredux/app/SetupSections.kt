@@ -35,6 +35,9 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.floor
+import kotlin.math.log10
+import kotlin.math.pow
 
 @Composable
 internal fun BoxScope.SetupScrollArrows(scrollState: ScrollState) {
@@ -1759,7 +1762,7 @@ private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
                             volume =
                                 row.mineVolumeText.ifBlank {
                                     if (row.mineVolumeNormalized > 0.0) {
-                                        "%.1fx".format(Locale.US, row.mineVolumeNormalized)
+                                        formatLevelMetadataVolumeMultiplier(row.mineVolumeNormalized)
                                     } else {
                                         "n/a"
                                     }
@@ -1816,6 +1819,18 @@ private fun LevelMetadataTableRow(
             modifier = Modifier.padding(start = 44.dp, bottom = 2.dp),
         )
     }
+}
+
+private fun formatLevelMetadataVolumeMultiplier(value: Double): String {
+    if (value <= 0.0) return ""
+    val (displayValue, decimals) =
+        if (value >= 10.0) {
+            val scale = 10.0.pow(floor(log10(value)) - 1.0)
+            floor(value / scale + 0.5) * scale to 0
+        } else {
+            value to if (value >= 1.0) 1 else 2
+        }
+    return "%.${decimals}fx".format(Locale.US, displayValue)
 }
 
 private fun LevelMetadataLevelRow.metadataProblem(): String? {

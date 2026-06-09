@@ -3,9 +3,11 @@
 #include <string.h>
 
 #include <fstream>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
+#include <physfs.h>
 #include <SDL.h>
 
 extern "C" {
@@ -28,6 +30,9 @@ extern "C" {
 #include "secret_area_scan.h"
 #include "secretarea.h"
 #include "songs.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "switch.h"
+#endif
 #include "texmerge.h"
 #include "text.h"
 #include "u_mem.h"
@@ -168,8 +173,17 @@ static int init_secret_area_runtime(int argc, char *argv[], char *error, size_t 
 	return 1;
 }
 
-static int load_base_mission(char *error, size_t error_size)
+static int load_base_mission(const char *requested_mission, char *error, size_t error_size)
 {
+	if (requested_mission && *requested_mission) {
+		std::vector<char> mission_name(requested_mission, requested_mission + strlen(requested_mission) + 1);
+
+		trace_dump_init("load_mission_requested");
+		if (load_mission_by_name(mission_name.data()))
+			return 1;
+		snprintf(error, error_size, "could not load requested mission %s", requested_mission);
+		return 0;
+	}
 #ifdef DXX_BUILD_DESCENT_II
 	char d2_mission[] = "d2";
 	char d2_demo_mission[] = "d2demo";
@@ -192,6 +206,17 @@ static int load_base_mission(char *error, size_t error_size)
 #endif
 }
 
+static int mount_extra_dir(const char *extra_dir, char *error, size_t error_size)
+{
+	if (!extra_dir || !*extra_dir)
+		return 1;
+	trace_dump_init("mount_extra_dir");
+	if (PHYSFS_addToSearchPath(extra_dir, 0))
+		return 1;
+	snprintf(error, error_size, "could not mount extra dir %s", extra_dir);
+	return 0;
+}
+
 static int dump_wall_clip_flags(int wall_num)
 {
 	int clip_num;
@@ -208,6 +233,12 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 {
 	int wall_type_counts[8] = { 0 };
 	int hidden_clip_by_type[8] = { 0 };
+#ifdef DXX_BUILD_DESCENT_II
+	int opener_source_type_counts[8] = { 0 };
+	int opener_target_type_counts[8] = { 0 };
+	int opener_links = 0;
+	int trigger_num;
+#endif
 	int type;
 	int wall_num;
 
@@ -221,6 +252,41 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 		if (dump_wall_clip_flags(wall_num) & WCF_HIDDEN)
 			hidden_clip_by_type[type]++;
 	}
+#ifdef DXX_BUILD_DESCENT_II
+	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
+		int link;
+		int source_wall;
+
+		if (Triggers[trigger_num].type != TT_OPEN_DOOR &&
+		    Triggers[trigger_num].type != TT_OPEN_WALL &&
+		    Triggers[trigger_num].type != TT_ILLUSORY_WALL)
+			continue;
+		for (source_wall = 0; source_wall < Num_walls; ++source_wall) {
+			if (Walls[source_wall].trigger != trigger_num)
+				continue;
+			type = Walls[source_wall].type;
+			if (type < 0 || type >= (int) (sizeof(opener_source_type_counts) / sizeof(opener_source_type_counts[0])))
+				type = 0;
+			opener_source_type_counts[type]++;
+		}
+		for (link = 0; link < Triggers[trigger_num].num_links; ++link) {
+			int seg = Triggers[trigger_num].seg[link];
+			int side = Triggers[trigger_num].side[link];
+			int target_wall;
+
+			if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
+				continue;
+			target_wall = Segments[seg].sides[side].wall_num;
+			if (target_wall < 0 || target_wall >= Num_walls)
+				continue;
+			type = Walls[target_wall].type;
+			if (type < 0 || type >= (int) (sizeof(opener_target_type_counts) / sizeof(opener_target_type_counts[0])))
+				type = 0;
+			opener_target_type_counts[type]++;
+			++opener_links;
+		}
+	}
+#endif
 	fprintf(stderr,
 	        "SECRET-AREA-DUMP WALLS level=%d file=%s walls=%d normal=%d blastable=%d door=%d illusion=%d open=%d hidden_normal=%d hidden_blastable=%d hidden_door=%d hidden_illusion=%d hidden_open=%d\n",
 	        level_num,
@@ -236,6 +302,18 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 	        hidden_clip_by_type[WALL_DOOR],
 	        hidden_clip_by_type[WALL_ILLUSION],
 	        hidden_clip_by_type[WALL_OPEN]);
+#ifdef DXX_BUILD_DESCENT_II
+	fprintf(stderr,
+	        "SECRET-AREA-DUMP TRIGGERS level=%d opener_links=%d source_open=%d source_overlay=%d target_closed=%d target_door=%d target_illusion=%d target_open=%d\n",
+	        level_num,
+	        opener_links,
+	        opener_source_type_counts[WALL_OPEN],
+	        opener_source_type_counts[WALL_OVERLAY],
+	        opener_target_type_counts[WALL_CLOSED],
+	        opener_target_type_counts[WALL_DOOR],
+	        opener_target_type_counts[WALL_ILLUSION],
+	        opener_target_type_counts[WALL_OPEN]);
+#endif
 	fflush(stderr);
 }
 
@@ -408,10 +486,12 @@ int main(int argc, char *argv[])
 {
 	char error[256] = "";
 	const char *json_out = find_arg_value(argc, argv, "-secretarea-json-out");
+	const char *mission = find_arg_value(argc, argv, "-mission");
+	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	int total_secrets = 0;
 
 	if (!json_out) {
-		fprintf(stderr, "usage: %s -secretarea-json-out <path> [-hogdir <game-data-dir>]\n",
+		fprintf(stderr, "usage: %s -secretarea-json-out <path> [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>]\n",
 		        argc > 0 ? argv[0] : "dxx-redux-secretareas");
 		return 1;
 	}
@@ -419,7 +499,11 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "SECRET-AREA-DUMP FAIL init %s\n", error[0] ? error : "runtime init failed");
 		return 1;
 	}
-	if (!load_base_mission(error, sizeof(error))) {
+	if (!mount_extra_dir(extra_dir, error, sizeof(error))) {
+		fprintf(stderr, "SECRET-AREA-DUMP FAIL extra-dir %s\n", error[0] ? error : "extra dir mount failed");
+		return 1;
+	}
+	if (!load_base_mission(mission, error, sizeof(error))) {
 		fprintf(stderr, "SECRET-AREA-DUMP FAIL mission %s\n", error[0] ? error : "mission load failed");
 		return 1;
 	}

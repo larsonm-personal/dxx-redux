@@ -299,7 +299,7 @@ static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
 }
 #endif
 
-static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_index)
+static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_index, int allow_keyed_target)
 {
 #ifdef DXX_BUILD_DESCENT_II
 	int trigger_num;
@@ -311,7 +311,7 @@ static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_
 	wall_num = Segments[seg].sides[side].wall_num;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return -1;
-	if (Walls[wall_num].keys != KEY_NONE)
+	if (!allow_keyed_target && Walls[wall_num].keys != KEY_NONE)
 		return -1;
 	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
 		int source_wall;
@@ -330,13 +330,14 @@ static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_
 	(void) seg;
 	(void) side;
 	(void) wanted_index;
+	(void) allow_keyed_target;
 #endif
 	return -1;
 }
 
 static int secret_area_side_opener_segment_at(int seg, int side, int wanted_index)
 {
-	int source_wall = secret_area_side_opener_source_wall_at(seg, side, wanted_index);
+	int source_wall = secret_area_side_opener_source_wall_at(seg, side, wanted_index, 0);
 
 	if (source_wall < 0 || source_wall >= Num_walls)
 		return -1;
@@ -353,6 +354,17 @@ static int secret_area_triggered_side_opener_count(void *user, int seg, int side
 	return count;
 }
 
+static int secret_area_metadata_triggered_side_opener_count(void *user, int seg, int side)
+{
+	int count = 0;
+
+	(void) user;
+	/* Metadata travel treats trigger-opened keyed walls as progress doors. */
+	while (secret_area_side_opener_source_wall_at(seg, side, count, 1) >= 0)
+		count++;
+	return count;
+}
+
 static int secret_area_triggered_side_opener_segment(void *user, int seg, int side, int index)
 {
 	(void) user;
@@ -364,7 +376,7 @@ static int secret_area_triggered_side_opener_side(void *user, int seg, int side,
 	int source_wall;
 
 	(void) user;
-	source_wall = secret_area_side_opener_source_wall_at(seg, side, index);
+	source_wall = secret_area_side_opener_source_wall_at(seg, side, index, 0);
 	if (source_wall < 0 || source_wall >= Num_walls)
 		return -1;
 	return Walls[source_wall].sidenum;
@@ -373,7 +385,7 @@ static int secret_area_triggered_side_opener_side(void *user, int seg, int side,
 static int secret_area_triggered_side_opener_wall_num(void *user, int seg, int side, int index)
 {
 	(void) user;
-	return secret_area_side_opener_source_wall_at(seg, side, index);
+	return secret_area_side_opener_source_wall_at(seg, side, index, 0);
 }
 
 static void level_metadata_rescan_current_level(void)
@@ -393,8 +405,6 @@ static void level_metadata_rescan_current_level(void)
 	view.wall_type_door = WALL_DOOR;
 	view.wall_type_illusion = WALL_ILLUSION;
 	view.wall_type_open = WALL_OPEN;
-	view.wall_flag_door_locked = WALL_DOOR_LOCKED;
-	view.wall_flag_illusion_off = WALL_ILLUSION_OFF;
 	view.wall_key_none = KEY_NONE;
 	view.wall_key_blue = KEY_BLUE;
 	view.wall_key_red = KEY_RED;
@@ -411,7 +421,6 @@ static void level_metadata_rescan_current_level(void)
 	view.reverse_side = secret_area_reverse_side;
 	view.wall_num = secret_area_wall_num;
 	view.wall_type = secret_area_wall_type;
-	view.wall_flags = secret_area_wall_flags;
 	view.wall_keys = secret_area_wall_keys;
 	view.segment_special = secret_area_segment_special;
 	view.segment_center = secret_area_segment_center;
@@ -427,6 +436,7 @@ static void level_metadata_rescan_current_level(void)
 	view.object_contains_count = secret_area_object_contains_count;
 	view.object_position = secret_area_object_position;
 	view.side_has_exit_trigger = secret_area_side_has_exit_trigger;
+	view.triggered_side_opener_count = secret_area_metadata_triggered_side_opener_count;
 	level_metadata_scan_level(&view, &Level_metadata_state);
 }
 

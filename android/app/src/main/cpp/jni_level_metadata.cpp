@@ -1,5 +1,6 @@
 #include <jni.h>
 
+#include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <sstream>
@@ -295,10 +296,20 @@ static void count_level_objects(int *robots, int *hostages)
 static std::string format_levelmeta_multiplier(double value)
 {
 	char buffer[32];
+	double display_value;
+	int decimals;
 
 	if (value <= 0.0)
 		return "";
-	snprintf(buffer, sizeof(buffer), "%.1fx", value);
+	if (value >= 10.0) {
+		double scale = pow(10.0, floor(log10(value)) - 1.0);
+		display_value = floor(value / scale + 0.5) * scale;
+		decimals = 0;
+	} else {
+		display_value = value;
+		decimals = value >= 1.0 ? 1 : 2;
+	}
+	snprintf(buffer, sizeof(buffer), "%.*fx", decimals, display_value);
 	return buffer;
 }
 

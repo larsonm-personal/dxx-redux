@@ -227,6 +227,25 @@ static int side_has_exit(const level_metadata_scan_view *view, int seg, int side
 	return child == -2;
 }
 
+static int side_has_trigger_opener(const level_metadata_scan_view *view, int seg, int side)
+{
+	return view->triggered_side_opener_count &&
+	       view->triggered_side_opener_count(view->user, seg, side) > 0 &&
+	       !side_has_exit(view, seg, side);
+}
+
+static int edge_has_trigger_opener(const level_metadata_scan_view *view, int seg, int side, int child)
+{
+	int reverse_side;
+
+	if (side_has_trigger_opener(view, seg, side))
+		return 1;
+	reverse_side = view->reverse_side ? view->reverse_side(view->user, seg, child) : -1;
+	return reverse_side >= 0 &&
+	       reverse_side < LEVEL_METADATA_MAX_SIDES &&
+	       side_has_trigger_opener(view, child, reverse_side);
+}
+
 static int side_center(const level_metadata_scan_view *view, int seg, int side, int xyz[3])
 {
 	int corners[4][3];
@@ -522,25 +541,25 @@ static int route_edge_passable(const level_metadata_scan_view *view, int seg, in
 	int child = view->segment_child(view->user, seg, side);
 	int wall_num;
 	int wall_type;
-	int wall_flags;
 	int wall_keys;
 
 	if (!edge_has_valid_reverse(view, seg, side, child))
 		return 0;
-	if (!view->wall_num || !view->wall_type || !view->wall_flags || !view->wall_keys)
+	if (edge_has_trigger_opener(view, seg, side, child))
+		return 1;
+	if (!view->wall_num || !view->wall_type || !view->wall_keys)
 		return 1;
 	wall_num = view->wall_num(view->user, seg, side);
 	if (!valid_wall(view, wall_num))
 		return 1;
 	wall_type = view->wall_type(view->user, wall_num);
-	wall_flags = view->wall_flags(view->user, wall_num);
 	wall_keys = view->wall_keys(view->user, wall_num);
 	if (wall_keys == view->wall_key_none)
 		return !side_has_exit(view, seg, side);
 	if (wall_type == view->wall_type_open || wall_type == view->wall_type_blastable)
 		return 1;
 	if (wall_type == view->wall_type_illusion)
-		return (wall_flags & view->wall_flag_illusion_off) == 0;
+		return !side_has_exit(view, seg, side);
 	if (wall_type == view->wall_type_door) {
 		if (wall_key_allowed(view, wall_keys, key_mask))
 			return 1;
