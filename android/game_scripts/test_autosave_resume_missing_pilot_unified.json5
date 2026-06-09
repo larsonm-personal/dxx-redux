@@ -3,8 +3,8 @@
     {"_info": {
         "games": ["d1", "d2"],
         "vars": {
-            "d1": {"GAME": "d1", "GAME_NUM": "1", "MISSION": "First Strike", "SAVE_ROOT": "d1x-redux"},
-            "d2": {"GAME": "d2", "GAME_NUM": "2", "MISSION": "Counterstrike", "SAVE_ROOT": "d2x-redux"}
+            "d1": {"GAME": "d1", "GAME_NUM": "1", "MISSION": "First Strike", "SAVE_PATH": "Players/save_sets/single/player/default/player.sg8"},
+            "d2": {"GAME": "d2", "GAME_NUM": "2", "MISSION": "Counterstrike", "SAVE_PATH": "Players/save_sets/single/player/d2/player.sg8"}
         },
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -74,7 +74,7 @@
         "in_game": "true",
         "screen_mode": "game",
         "current_level_num": "1",
-        "console.lines": {"contains": "startup resume: restoring '${SAVE_ROOT}/Players/player.sg8'"}
+        "console.lines": {"contains": "startup resume: restoring '${SAVE_PATH}'"}
     }},
     {"action": "log", "message": "Returning to launcher after loading the resume save"},
     {"action": "enter_launcher"},

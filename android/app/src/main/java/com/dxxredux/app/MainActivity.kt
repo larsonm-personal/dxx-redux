@@ -48,7 +48,6 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 internal const val EXTRA_TRANSIENT_LAUNCH_TOKEN = "transient_launch_token"
-private const val PREF_LAST_CONSUMED_TRANSIENT_LAUNCH_TOKEN = "last_consumed_transient_launch_token"
 
 internal fun shouldShowTouchOverlay(
     inGame: Boolean,
@@ -618,7 +617,6 @@ class MainActivity :
             redirectConsumedTransientLaunchToSetup()
             return
         }
-        consumeTransientLaunchToken()
         clearTransientLaunchExtrasFromIntent(intent)
 
         val lacksTouchscreen =
@@ -1580,7 +1578,6 @@ class MainActivity :
             redirectConsumedTransientLaunchToSetup()
             return
         }
-        consumeTransientLaunchToken()
         clearTransientLaunchExtrasFromIntent(intent)
     }
 
@@ -1594,6 +1591,7 @@ class MainActivity :
         if (!gameStarted) {
             gameStarted = true
             Log.i("DXX-Automate", "Game surface created, gameStarted=true")
+            consumeTransientLaunchToken()
 
             // If launched with automation intent extras (from launcher script
             // executor), load the script automatically once the engine starts
@@ -2519,6 +2517,7 @@ class MainActivity :
     }
 
     private fun redirectConsumedTransientLaunchToSetup() {
+        clearPendingResumeLaunch(this, pendingTransientLaunchToken)
         startActivity(
             Intent(this, SetupActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),

@@ -433,7 +433,8 @@ class LauncherScriptExecutor(
             .remove(
                 "selected_game",
             ).apply()
-        Log.i(TAG, "Game state reset (deleted plr/plx/sg/mg/cfg/file_sets files)")
+        clearPendingResumeLaunchState(context)
+        Log.i(TAG, "Game state reset (deleted plr/plx/sg/mg/cfg/file_sets/pending resume files)")
     }
 
     /** Check a field in setup_introspect.json. Triggers a fresh introspect first. */

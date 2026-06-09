@@ -913,6 +913,7 @@ private fun fileStatusArray(statuses: List<FileStatus>): JSONArray {
 internal fun SetupActivity.clearSaveFilesForAutomation(): Int {
     val saveRegex = Regex("""\.(?:sg|mg)[0-9]$""", RegexOption.IGNORE_CASE)
     var deleted = 0
+    clearPendingResumeLaunchState(this)
     for (subdir in arrayOf("d1x-redux", "d2x-redux")) {
         val dir = File(filesDir, subdir)
         if (!dir.exists()) continue

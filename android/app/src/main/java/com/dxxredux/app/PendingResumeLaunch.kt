@@ -4,7 +4,8 @@ import android.content.Context
 import org.json.JSONObject
 import java.io.File
 
-private const val PENDING_RESUME_LAUNCH_FILE = "pending_resume_launch.json"
+internal const val PENDING_RESUME_LAUNCH_FILE = "pending_resume_launch.json"
+internal const val PREF_LAST_CONSUMED_TRANSIENT_LAUNCH_TOKEN = "last_consumed_transient_launch_token"
 private const val PENDING_RESUME_LAUNCH_MAX_AGE_MS = 10 * 60 * 1000L
 
 internal data class PendingResumeLaunch(
@@ -139,6 +140,15 @@ internal fun clearPendingResumeLaunch(
         "pending resume launch clear: token=${token ?: ""}",
     )
     stateFile.delete()
+}
+
+internal fun clearPendingResumeLaunchState(context: Context) {
+    pendingResumeLaunchFile(context).delete()
+    context
+        .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+        .edit()
+        .remove(PREF_LAST_CONSUMED_TRANSIENT_LAUNCH_TOKEN)
+        .apply()
 }
 
 private fun pendingResumeLaunchSummary(json: JSONObject): String {
