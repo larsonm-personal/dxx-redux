@@ -749,6 +749,11 @@ internal object LevelMetadataAnalyzer {
                         }
                     }
                 }
+                if (GameFileFormats.isMissionDescriptor(leaf)) {
+                    val missionOut = File(File(stageDir, "missions"), leaf)
+                    missionOut.parentFile?.mkdirs()
+                    out.copyTo(missionOut, overwrite = true)
+                }
                 total += copied
             }
         }

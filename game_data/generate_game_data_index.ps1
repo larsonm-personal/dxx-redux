@@ -187,7 +187,8 @@ $SearchDirs = @(
     (Join-RepoPath "game_data" "extracted" "d2_mac_demo"),
     (Join-RepoPath "game_data" "extracted" "descent 1 demo 1-4_extracted"),
     (Join-RepoPath "game_data" "extracted" "descent 2 demo 1-0_extracted"),
-    (Join-RepoPath "game_data" "mods")
+    (Join-RepoPath "game_data" "mods"),
+    (Join-RepoPath "game_data")
 )
 
 # hash -> relative path (best canonical candidate wins)

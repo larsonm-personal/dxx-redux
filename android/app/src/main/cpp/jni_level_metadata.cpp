@@ -250,9 +250,9 @@ static int mission_descriptor_available(const json &request)
 	if (mission.empty())
 		return 0;
 #ifdef DXX_BUILD_DESCENT_II
-	descriptor = mission + ".mn2";
+	descriptor = MISSION_DIR + mission + ".mn2";
 #else
-	descriptor = mission + ".msn";
+	descriptor = MISSION_DIR + mission + ".msn";
 #endif
 	return PHYSFSX_exists(descriptor.c_str(), 1);
 }

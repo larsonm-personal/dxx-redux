@@ -13,3 +13,5 @@ ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1  game_data/CD i
 de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/WATER.PIG
 83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descent.hog
 093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descent.pig
+441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce  game_data/mission_files/Obsidian.zip
+469e7f6700ae32509edfcbab8bceed94e6af152b479428e2966d9dcc7de4a186  game_data/mission_files/plutonia.zip

@@ -21,6 +21,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <string.h>
 #include "pstypes.h"
 #include "strutil.h"
+#include "args.h"
 #include "console.h"
 #include "key.h"
 #include "gr.h"
@@ -1410,6 +1411,9 @@ int load_level(const char * filename_passed)
 
 	#if !defined(NDEBUG) && !defined(COMPACT_SEGS)
 	if (check_segment_connections())
+#ifdef __ANDROID__
+		if (!GameArg.SysInputDemoNoRender)
+#endif
 		nm_messagebox( "ERROR", 1, "Ok", 
 				"Connectivity errors detected in\n"
 				"mine.  See monochrome screen for\n"
