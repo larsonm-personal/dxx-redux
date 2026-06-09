@@ -384,9 +384,71 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	return row;
 }
 
-static int scan_level(const json &request, json &levels, int level_num, const char *level_file)
+static int count_current_level_coop_starts(void)
+{
+	int count = 0;
+	int playerlike_seen = 0;
+
+	for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		const object *obj = &Objects[objnum];
+		if (obj->flags & OF_SHOULD_BE_DEAD)
+			continue;
+		if (obj->type != OBJ_PLAYER && obj->type != OBJ_GHOST && obj->type != OBJ_COOP)
+			continue;
+		if (obj->type == OBJ_COOP || playerlike_seen == 0)
+			++count;
+		++playerlike_seen;
+	}
+	return count;
+}
+
+struct CoopStartRange {
+	int min = 0;
+	int max = 0;
+
+	void add(int value)
+	{
+		if (value <= 0)
+			return;
+		if (!min || value < min)
+			min = value;
+		if (value > max)
+			max = value;
+	}
+
+	std::string text() const
+	{
+		char buffer[32];
+
+		if (!min)
+			return "";
+		if (min == max) {
+			snprintf(buffer, sizeof(buffer), "%d", min);
+		} else {
+			snprintf(buffer, sizeof(buffer), "%d-%d", min, max);
+		}
+		return buffer;
+	}
+};
+
+static int request_wants_coop_start_header(const json &request)
+{
+	const std::string mission_type = request.value("mission_type", "");
+
+	return mission_type.empty() || mission_type == "normal" || mission_type == "Normal" || mission_type == "NORMAL";
+}
+
+static void set_coop_start_header(json &root, const json &request, const CoopStartRange &range)
+{
+	if (request_wants_coop_start_header(request))
+		root["coop_starts"] = range.text();
+}
+
+static int scan_level(const json &request, json &levels, int level_num, const char *level_file, int *coop_starts)
 {
 	write_checkpoint(request, "level", level_file ? level_file : "");
+	if (coop_starts)
+		*coop_starts = 0;
 	if (load_level(level_file)) {
 		json row;
 		row["level_num"] = level_num;
@@ -417,6 +479,8 @@ static int scan_level(const json &request, json &levels, int level_num, const ch
 		return 0;
 	}
 	Current_level_num = level_num;
+	if (coop_starts)
+		*coop_starts = count_current_level_coop_starts();
 	secret_area_rescan_current_level();
 	levels.push_back(serialize_current_level_row(level_num, level_file));
 	return 1;
@@ -431,22 +495,29 @@ static json analyze_hog_entries(const json &request)
 	int successful = 0;
 	int failed = 0;
 	int level_num = 1;
+	CoopStartRange coop_start_range;
 
 	if (normal_levels.empty() && secret_levels.empty())
 		return failed_result(request, "HOG contains no level entries");
 	for (const std::string &level_file : normal_levels) {
-		if (scan_level(request, levels, level_num, level_file.c_str()))
+		int coop_starts = 0;
+		if (scan_level(request, levels, level_num, level_file.c_str(), &coop_starts)) {
 			++successful;
-		else
+			coop_start_range.add(coop_starts);
+		} else {
 			++failed;
+		}
 		++level_num;
 	}
 	level_num = -1;
 	for (const std::string &level_file : secret_levels) {
-		if (scan_level(request, levels, level_num, level_file.c_str()))
+		int coop_starts = 0;
+		if (scan_level(request, levels, level_num, level_file.c_str(), &coop_starts)) {
 			++successful;
-		else
+			coop_start_range.add(coop_starts);
+		} else {
 			++failed;
+		}
 		--level_num;
 	}
 
@@ -458,6 +529,7 @@ static json analyze_hog_entries(const json &request)
 	root["source"] = request.value("source_name", "");
 	root["mission_name"] = request.value("mission_name", "");
 	root["mission_filename"] = request.value("hog_path", "");
+	set_coop_start_header(root, request, coop_start_range);
 	root["levels"] = levels;
 	root["problems"] = failed == 0 ? json::array() : json::array({ "one or more levels could not be loaded" });
 	return root;
@@ -467,11 +539,18 @@ static json analyze_loaded_mission(const json &request)
 {
 	json levels = json::array();
 	json root;
+	CoopStartRange coop_start_range;
 
-	for (int level = 1; level <= Last_level; ++level)
-		scan_level(request, levels, level, Level_names[level - 1]);
-	for (int level = -1; level >= Last_secret_level; --level)
-		scan_level(request, levels, level, Secret_level_names[-level - 1]);
+	for (int level = 1; level <= Last_level; ++level) {
+		int coop_starts = 0;
+		if (scan_level(request, levels, level, Level_names[level - 1], &coop_starts))
+			coop_start_range.add(coop_starts);
+	}
+	for (int level = -1; level >= Last_secret_level; --level) {
+		int coop_starts = 0;
+		if (scan_level(request, levels, level, Secret_level_names[-level - 1], &coop_starts))
+			coop_start_range.add(coop_starts);
+	}
 
 	root["schema"] = "dxx-level-metadata-v1";
 	root["status"] = "ok";
@@ -484,6 +563,7 @@ static json analyze_loaded_mission(const json &request)
 	root["source"] = request.value("source_name", "");
 	root["mission_name"] = Current_mission ? Current_mission_longname : "";
 	root["mission_filename"] = Current_mission ? Current_mission_filename : "";
+	set_coop_start_header(root, request, coop_start_range);
 	root["levels"] = levels;
 	root["problems"] = json::array();
 	return root;
@@ -536,11 +616,16 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 	if (source_type == "level") {
 		json root;
 		json levels = json::array();
+		CoopStartRange coop_start_range;
 		std::string level_file = request.value("level_file", "");
 		int level_num = request.value("level_num", 1);
 		if (level_file.empty())
 			return failed_result(request, "missing level file");
-		scan_level(request, levels, level_num, level_file.c_str());
+		{
+			int coop_starts = 0;
+			if (scan_level(request, levels, level_num, level_file.c_str(), &coop_starts))
+				coop_start_range.add(coop_starts);
+		}
 		root["schema"] = "dxx-level-metadata-v1";
 		root["status"] = levels.empty() || levels[0].value("status", "") != "ok" ? "failed" : "ok";
 		root["request_id"] = request.value("request_id", "");
@@ -548,6 +633,7 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 		root["source"] = request.value("source_name", "");
 		root["mission_name"] = "";
 		root["mission_filename"] = "";
+		set_coop_start_header(root, request, coop_start_range);
 		root["levels"] = levels;
 		root["problems"] = json::array();
 		return root;

@@ -1721,6 +1721,9 @@ private fun LevelMetadataResultContent(result: LevelMetadataResult?) {
     if (result.missionName.isNotBlank()) {
         DetailRow("Mission", result.missionName)
     }
+    if (result.coopStarts.isNotBlank()) {
+        DetailRow("Coop starts", result.coopStarts)
+    }
     result.problems.forEach { problem ->
         ModDetailLine(problem, color = MaterialTheme.colorScheme.error)
     }

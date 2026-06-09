@@ -32,6 +32,7 @@ internal data class LevelMetadataTarget(
     val sourcePath: String? = null,
     val dataDir: String? = null,
     val missionName: String? = null,
+    val missionType: String? = null,
     val levelFile: String? = null,
     val levelNum: Int = 1,
     val hogFile: String? = null,
@@ -75,6 +76,7 @@ internal data class LevelMetadataResult(
     val game: String,
     val missionName: String,
     val missionFilename: String,
+    val coopStarts: String,
     val levels: List<LevelMetadataLevelRow>,
     val problems: List<String>,
     val diagnostics: List<String> = emptyList(),
@@ -123,6 +125,7 @@ internal data class LevelMetadataResult(
                 game = obj.optString("game"),
                 missionName = obj.optString("mission_name"),
                 missionFilename = obj.optString("mission_filename"),
+                coopStarts = obj.optString("coop_starts"),
                 levels = rows,
                 problems = obj.optStringList("problems"),
                 diagnostics = obj.optStringList("diagnostics"),
@@ -142,6 +145,7 @@ internal data class LevelMetadataResult(
                 game = game,
                 missionName = "",
                 missionFilename = "",
+                coopStarts = "",
                 levels = emptyList(),
                 problems = listOf(problem),
                 diagnostics = diagnostics,
@@ -185,6 +189,7 @@ internal object LevelMetadataTargets {
                     sourcePath = file.absolutePath,
                     dataDir = setDir.absolutePath,
                     missionName = file.name.substringBeforeLast('.'),
+                    missionType = mission.type,
                     hogFile = file.name,
                     normalLevelFiles = mission.levelNames,
                     secretLevelFiles = mission.secretLevelNames,
@@ -250,6 +255,7 @@ internal object LevelMetadataTargets {
                 mission.path
                     .substringAfterLast('/')
                     .substringBeforeLast('.'),
+            missionType = mission.type,
             hogFiles =
                 missionSet.constituents
                     .filter { GameFileFormats.extensionOf(it.name) == "hog" }
@@ -440,6 +446,7 @@ internal object LevelMetadataTargets {
             sourcePath = hog.absolutePath,
             dataDir = setDir.absolutePath,
             missionName = descriptor.name.substringBeforeLast('.'),
+            missionType = mission.type,
             hogFile = hog.name,
             normalLevelFiles = mission.levelNames,
             secretLevelFiles = mission.secretLevelNames,
@@ -472,6 +479,7 @@ internal object LevelMetadataTargets {
                 archivePath = archivePath,
                 archiveEntries = listOf(constituent.path, hogEntry.name),
                 missionName = constituent.name.substringBeforeLast('.'),
+                missionType = mission.type,
                 hogFiles = listOf(hogName),
                 normalLevelFiles = mission.levelNames,
                 secretLevelFiles = mission.secretLevelNames,
@@ -504,6 +512,7 @@ internal object LevelMetadataTargets {
                 archivePath = archivePath,
                 archiveEntries = listOf(constituent.path, descriptorEntry.name),
                 missionName = constituent.name.substringBeforeLast('.'),
+                missionType = mission.type,
                 hogFiles = listOf(constituent.name),
                 normalLevelFiles = mission.levelNames,
                 secretLevelFiles = mission.secretLevelNames,
@@ -634,6 +643,7 @@ internal object LevelMetadataAnalyzer {
             .put("data_dir", prepared.dataDir)
             .put("extra_data_dir", prepared.extraDataDir)
             .put("mission_name", prepared.missionName)
+            .put("mission_type", target.missionType.orEmpty())
             .put("level_file", prepared.levelFile)
             .put("level_num", prepared.levelNum)
             .put("hog_path", prepared.hogPath)

@@ -256,6 +256,27 @@ class LauncherScriptExecutor(
                     currentStep++
                 }
 
+                "clear_mods" -> {
+                    val removed = withContext(Dispatchers.IO) { ModManager(context.filesDir).clearAllMods() }
+                    Log.i(TAG, "ASSERT_PASS: clear_mods removed $removed files")
+                    currentStep++
+                }
+
+                "import_mission_zip" -> {
+                    val label = step.optString("label", step.optString("file", step.optString("path", "")))
+                    val importResult =
+                        withContext(Dispatchers.IO) {
+                            importMissionZipForAutomation(step)
+                        }
+                    if (importResult == null) {
+                        fail("import_mission_zip: import failed for $label")
+                        return
+                    }
+                    writeMissionZipImportAutomationResult(label, importResult.first, importResult.second)
+                    Log.i(TAG, "ASSERT_PASS: imported mission ZIP ${importResult.first.filename}")
+                    currentStep++
+                }
+
                 "analyze_level_metadata" -> {
                     val label = step.optString("label", step.optString("file", step.optString("mod_file", "")))
                     val minLevels = step.optInt("min_levels", 1)
@@ -288,6 +309,46 @@ class LauncherScriptExecutor(
                     Log.i(
                         TAG,
                         "ASSERT_PASS: level metadata ${target.displayName} status=${result.status} levels=${result.levels.size}",
+                    )
+                    currentStep++
+                }
+
+                "analyze_level_metadata_all" -> {
+                    val label = step.optString("label", step.optString("file", step.optString("mod_file", "")))
+                    val minTotalLevels = step.optInt("min_total_levels", 1)
+                    val expectedStatus = step.optString("status", "ok")
+                    val targets =
+                        withContext(Dispatchers.IO) {
+                            buildLevelMetadataTargetsForAutomation(step)
+                        }
+                    if (targets.isEmpty()) {
+                        fail("analyze_level_metadata_all: could not build any targets for $label")
+                        return
+                    }
+                    val results = mutableListOf<LevelMetadataResult>()
+                    for (target in targets) {
+                        Log.i(TAG, "Analyzing level metadata: ${target.displayName}")
+                        results += LevelMetadataAnalyzer.analyze(context, target)
+                    }
+                    writeLevelMetadataAutomationResults(label, results)
+                    val bad = results.firstOrNull { it.status != expectedStatus }
+                    if (bad != null) {
+                        fail(
+                            "analyze_level_metadata_all: ${bad.source} status=${bad.status} " +
+                                "expected=$expectedStatus problems=${bad.problems.joinToString("; ")}",
+                        )
+                        return
+                    }
+                    val totalLevels = results.sumOf { it.levels.size }
+                    if (totalLevels < minTotalLevels) {
+                        fail(
+                            "analyze_level_metadata_all: total levels=$totalLevels expected at least $minTotalLevels",
+                        )
+                        return
+                    }
+                    Log.i(
+                        TAG,
+                        "ASSERT_PASS: level metadata targets=${results.size} total_levels=$totalLevels",
                     )
                     currentStep++
                 }
@@ -628,18 +689,80 @@ class LauncherScriptExecutor(
         return null
     }
 
+    private fun buildLevelMetadataTargetsForAutomation(step: JSONObject): List<LevelMetadataTarget> {
+        val fileName = step.optString("file", "")
+        val modFileName = step.optString("mod_file", "")
+        val game = step.optString("game", GameFileFormats.GAME_D2)
+        val fileSetManager = FileSetManager(context.filesDir)
+        val setDir = fileSetManager.getSetDir(fileSetManager.getActive())
+
+        if (fileName.isNotBlank()) {
+            val file = findFile(setDir, fileName)?.let { File(setDir, it) } ?: File(setDir, fileName)
+            val metadata = GameFileMetadata.summarizeLocalFile(file)
+            return listOfNotNull(LevelMetadataTargets.directFile(file, setDir, metadata))
+        }
+
+        if (modFileName.isNotBlank()) {
+            val modFile = File(File(context.filesDir, "mods"), modFileName)
+            MissionZip.inspect(modFile)?.let { scan ->
+                return LevelMetadataTargets.missionZipTargets(modFile.absolutePath, setDir, scan)
+            }
+            return listOfNotNull(LevelMetadataTargets.genericZip(modFile.absolutePath, setDir, modFile.name, game))
+        }
+
+        return emptyList()
+    }
+
+    private fun importMissionZipForAutomation(step: JSONObject): Pair<ModManager.ModInfo, MissionZip.ScanResult?>? {
+        val source = resolveAutomationFile(step)
+        if (!source.isFile) {
+            Log.e(TAG, "import_mission_zip: source missing: ${source.absolutePath}")
+            return null
+        }
+        val displayName = step.optString("display_name", source.name).ifBlank { source.name }
+        val modManager = ModManager(context.filesDir)
+        val before = modManager.listMods().map { it.filename }.toSet()
+        val mod = modManager.importMissionZipFile(source, displayName) ?: return null
+        modManager.reload()
+        val imported = modManager.listMods().firstOrNull { it.filename == mod.filename } ?: return null
+        if (imported.filename in before) {
+            Log.w(TAG, "import_mission_zip: ${imported.filename} replaced an existing manifest entry")
+        }
+        val scan = MissionZip.inspect(File(File(context.filesDir, "mods"), imported.filename))
+        return imported to scan
+    }
+
+    private fun resolveAutomationFile(step: JSONObject): File {
+        val path = step.optString("path", "")
+        if (path.isNotBlank()) {
+            val candidate = File(path)
+            return if (candidate.isAbsolute) candidate else File(context.filesDir, path)
+        }
+        return File(File(context.filesDir, "mission_zip_batch_cache"), step.optString("file", ""))
+    }
+
     private fun writeLevelMetadataAutomationResult(
         label: String,
         result: LevelMetadataResult,
     ) {
-        val safeLabel =
-            label
-                .ifBlank { result.source.ifBlank { "metadata" } }
-                .lowercase(Locale.US)
-                .replace(Regex("[^a-z0-9._-]+"), "_")
-                .trim('_')
-                .ifBlank { "metadata" }
+        val safeLabel = safeAutomationLabel(label.ifBlank { result.source.ifBlank { "metadata" } })
         val file = File(context.filesDir, "level_metadata_automation_$safeLabel.json")
+        file.writeText(levelMetadataResultJson(result).toString() + "\n")
+    }
+
+    private fun writeLevelMetadataAutomationResults(
+        label: String,
+        results: List<LevelMetadataResult>,
+    ) {
+        val file = File(context.filesDir, "level_metadata_automation_${safeAutomationLabel(label)}.json")
+        val array = JSONArray()
+        results.forEachIndexed { index, result ->
+            array.put(levelMetadataResultJson(result).put("target_index", index))
+        }
+        file.writeText(array.toString() + "\n")
+    }
+
+    private fun levelMetadataResultJson(result: LevelMetadataResult): JSONObject {
         val levels = JSONArray()
         result.levels.forEach { row ->
             levels.put(
@@ -653,27 +776,98 @@ class LauncherScriptExecutor(
                     .put("secrets", row.secrets)
                     .put("matcens", row.matcens)
                     .put("energy_centers", row.energyCenters)
+                    .put("mine_volume", row.mineVolume)
+                    .put("mine_volume_normalized", row.mineVolumeNormalized)
+                    .put("mine_volume_text", row.mineVolumeText)
+                    .put("travel_distance", row.travelDistance)
+                    .put("travel_time_seconds", row.travelTimeSeconds)
+                    .put("travel_time_text", row.travelTimeText)
+                    .put("travel_status", row.travelStatus)
+                    .put("travel_problem", row.travelProblem)
+                    .put("travel_note", row.travelNote)
+                    .put("travel_targets_reached", row.travelTargetsReached)
+                    .put("travel_targets_total", row.travelTargetsTotal)
+                    .put("travel_key_detours", row.travelKeyDetours)
+                    .put("problems", JSONArray(row.problems))
+                    .put("notes", JSONArray(row.notes))
                     .put("status", row.status),
             )
         }
-        val problems = JSONArray()
-        result.problems.forEach { problems.put(it) }
-        val diagnostics = JSONArray()
-        result.diagnostics.forEach { diagnostics.put(it) }
+        return JSONObject()
+            .put("status", result.status)
+            .put("source", result.source)
+            .put("game", result.game)
+            .put("mission_name", result.missionName)
+            .put("mission_filename", result.missionFilename)
+            .apply {
+                if (result.coopStarts.isNotBlank()) put("coop_starts", result.coopStarts)
+            }.put("level_count", result.levels.size)
+            .put("levels", levels)
+            .put("problems", JSONArray(result.problems))
+            .put("diagnostics", JSONArray(result.diagnostics))
+    }
+
+    private fun writeMissionZipImportAutomationResult(
+        label: String,
+        mod: ModManager.ModInfo,
+        scan: MissionZip.ScanResult?,
+    ) {
+        val file = File(context.filesDir, "mission_zip_import_${safeAutomationLabel(label)}.json")
         file.writeText(
             JSONObject()
-                .put("status", result.status)
-                .put("source", result.source)
-                .put("game", result.game)
-                .put("mission_name", result.missionName)
-                .put("mission_filename", result.missionFilename)
-                .put("level_count", result.levels.size)
-                .put("levels", levels)
-                .put("problems", problems)
-                .put("diagnostics", diagnostics)
+                .put("status", "ok")
+                .put("mod", modJson(mod))
+                .put("mission_sets", missionSetArrayJson(scan))
                 .toString() + "\n",
         )
     }
+
+    private fun modJson(mod: ModManager.ModInfo): JSONObject =
+        JSONObject()
+            .put("filename", mod.filename)
+            .put("display_name", mod.displayName)
+            .put("enabled", mod.enabled)
+            .put("size_bytes", mod.sizeBytes)
+            .put("game", mod.game)
+            .put("order", mod.order)
+            .put("kind", mod.kind)
+            .put("category", mod.category ?: JSONObject.NULL)
+            .put("mission_title", mod.missionTitle ?: JSONObject.NULL)
+            .put("import_mode", mod.importMode ?: JSONObject.NULL)
+
+    private fun missionSetArrayJson(scan: MissionZip.ScanResult?): JSONArray {
+        val array = JSONArray()
+        if (scan == null) return array
+        val sets = scan.missionSets.ifEmpty { listOf(MissionZip.MissionSet(scan.mission, scan.constituents)) }
+        sets.forEach { set ->
+            array.put(
+                JSONObject()
+                    .put("display_name", set.mission.displayName)
+                    .put("mission_path", set.mission.path)
+                    .put("game", set.mission.game)
+                    .put("normal_level_count", set.mission.levelNames.size)
+                    .put("secret_level_count", set.mission.secretLevelNames.size)
+                    .put(
+                        "hog_files",
+                        JSONArray(set.constituents.filter { it.name.endsWith(".hog", true) }.map { it.name }),
+                    ).put(
+                        "descriptor_files",
+                        JSONArray(
+                            set.constituents.filter { GameFileFormats.isMissionDescriptor(it.name) }.map { it.name },
+                        ),
+                    ),
+            )
+        }
+        return array
+    }
+
+    private fun safeAutomationLabel(label: String): String =
+        label
+            .ifBlank { "metadata" }
+            .lowercase(Locale.US)
+            .replace(Regex("[^a-z0-9._-]+"), "_")
+            .trim('_')
+            .ifBlank { "metadata" }
 
     /** Navigate dot-path keys like "d2.ready" or "audio_sources[0].disc_id". */
     private fun resolveJsonPath(

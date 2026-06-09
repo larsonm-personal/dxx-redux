@@ -100,6 +100,7 @@ game_data/**
 !game_data/**/
 !game_data/**/*_regression.json5
 !game_data/**/track_fingerprints.json
+!game_data/mission_files/*.json
 !game_data/manage_data.ps1
 !game_data/test_data_manifest.json
 !game_data/extract_dos_demos.ps1

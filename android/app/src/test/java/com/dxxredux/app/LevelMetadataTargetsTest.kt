@@ -149,6 +149,7 @@ class LevelMetadataTargetsTest {
 
         assertEquals(listOf("Descent Maximum (fixed)", "Descent Max Anarchy (fix)"), targets.map { it.displayName })
         assertEquals(listOf("max_f", "maxlnk_f"), targets.map { it.missionName })
+        assertEquals(listOf("normal", "anarchy"), targets.map { it.missionType })
         assertEquals(listOf(listOf("max_f.hog"), listOf("maxlnk_f.hog")), targets.map { it.hogFiles })
         assertEquals(listOf(listOf("psxs1a.rl2"), emptyList<String>()), targets.map { it.secretLevelFiles })
         assertEquals(listOf(listOf("max_f.hog", "max_f.mn2"), listOf("maxlnk_f.hog", "maxlnk_f.mn2")), targets.map {

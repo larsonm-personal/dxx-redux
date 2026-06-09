@@ -261,37 +261,42 @@ static int lookup_key_command(const char *name)
 /* -- Step types ------------------------------------------------------- */
 
 enum step_type {
-	STEP_KEY,                     /* inject key down+up, then delay */
-	STEP_WAIT_MS,                 /* wait N milliseconds */
-	STEP_WAIT_FOR,                /* wait for a game state condition */
-	STEP_INTROSPECT,              /* trigger introspection dump */
-	STEP_LOG,                     /* emit a logcat message */
-	STEP_ASSERT,                  /* check introspection values, fail if mismatch */
-	STEP_SELECT,                  /* find menu item by text and select it */
-	STEP_SEND_AXIS,               /* inject joystick axis event */
-	STEP_SEND_BUTTON,             /* inject joystick button press+release */
-	STEP_SEND_TOUCH_TAP,          /* inject a touch tap through android_input.c */
-	STEP_META_ACTION,             /* dispatch a native Android meta action */
-	STEP_SKIP_INTRO,              /* repeatedly dismiss launch intro with touch or button */
-	STEP_SKIP_BRIEFING,           /* escape only if a non-game window covers Game_wind */
-	STEP_ASSERT_OVERLAY,          /* check overlay ring buffer for matching entry */
-	STEP_FACE_VIEW,               /* move player inside a segment and face a wall */
-	STEP_FACE_FIRST_MERGED,       /* move player to the first merged face on the level */
-	STEP_POSE_VIEW,               /* move player to an exact position and orientation */
-	STEP_PROBE_CROSSHAIR,         /* request merged-wall crosshair probe and wait */
-	STEP_ASSERT_PROBE_MATCH,      /* compare two stored probe results */
-	STEP_ENTER_LAUNCHER,          /* yield back to launcher, write LAUNCHER_CONTINUE */
-	STEP_ENTER_GAME,              /* launcher-only: no-op in game engine (skip) */
-	STEP_SETUP_COMMAND,           /* launcher-only: no-op in game engine (skip) */
-	STEP_RESET_STATE,             /* launcher-only: no-op in game engine (skip) */
-	STEP_TRIGGER_ENDLEVEL,        /* call start_endlevel_sequence() */
-	STEP_TRIGGER_LEVELCOMPLETE,   /* call PlayerFinishedLevel(0) directly */
-	STEP_WRITE_CONFIG,            /* launcher-only: no-op in game engine (skip) */
-	STEP_TAP_BUTTON,              /* launcher-only: no-op in game engine (skip) */
-	STEP_ASSERT_BUTTON,           /* launcher-only: no-op in game engine (skip) */
-	STEP_ASSERT_CONTROLLER_MATCH, /* launcher-only: no-op in game engine (skip) */
-	STEP_SET_DEBUG,               /* set a debug flag (e.g. tex_overlay) */
-	STEP_SET_SECRET_REVEAL        /* automation-only: set automap secret reveal */
+	STEP_KEY,                        /* inject key down+up, then delay */
+	STEP_WAIT_MS,                    /* wait N milliseconds */
+	STEP_WAIT_FOR,                   /* wait for a game state condition */
+	STEP_INTROSPECT,                 /* trigger introspection dump */
+	STEP_LOG,                        /* emit a logcat message */
+	STEP_ASSERT,                     /* check introspection values, fail if mismatch */
+	STEP_SELECT,                     /* find menu item by text and select it */
+	STEP_SEND_AXIS,                  /* inject joystick axis event */
+	STEP_SEND_BUTTON,                /* inject joystick button press+release */
+	STEP_SEND_TOUCH_TAP,             /* inject a touch tap through android_input.c */
+	STEP_META_ACTION,                /* dispatch a native Android meta action */
+	STEP_SKIP_INTRO,                 /* repeatedly dismiss launch intro with touch or button */
+	STEP_SKIP_BRIEFING,              /* escape only if a non-game window covers Game_wind */
+	STEP_ASSERT_OVERLAY,             /* check overlay ring buffer for matching entry */
+	STEP_FACE_VIEW,                  /* move player inside a segment and face a wall */
+	STEP_FACE_FIRST_MERGED,          /* move player to the first merged face on the level */
+	STEP_POSE_VIEW,                  /* move player to an exact position and orientation */
+	STEP_PROBE_CROSSHAIR,            /* request merged-wall crosshair probe and wait */
+	STEP_ASSERT_PROBE_MATCH,         /* compare two stored probe results */
+	STEP_ENTER_LAUNCHER,             /* yield back to launcher, write LAUNCHER_CONTINUE */
+	STEP_ENTER_GAME,                 /* launcher-only: no-op in game engine (skip) */
+	STEP_SETUP_COMMAND,              /* launcher-only: no-op in game engine (skip) */
+	STEP_RESET_STATE,                /* launcher-only: no-op in game engine (skip) */
+	STEP_CLEAR_MODS,                 /* launcher-only: no-op in game engine (skip) */
+	STEP_IMPORT_MISSION_ZIP,         /* launcher-only: no-op in game engine (skip) */
+	STEP_ANALYZE_LEVEL_METADATA,     /* launcher-only: no-op in game engine (skip) */
+	STEP_ANALYZE_LEVEL_METADATA_ALL, /* launcher-only: no-op in game engine (skip) */
+	STEP_TRIGGER_ENDLEVEL,           /* call start_endlevel_sequence() */
+	STEP_TRIGGER_LEVELCOMPLETE,      /* call PlayerFinishedLevel(0) directly */
+	STEP_WRITE_CONFIG,               /* launcher-only: no-op in game engine (skip) */
+	STEP_TAP_BUTTON,                 /* launcher-only: no-op in game engine (skip) */
+	STEP_ASSERT_BUTTON,              /* launcher-only: no-op in game engine (skip) */
+	STEP_ASSERT_CONTROLLER_MATCH,    /* launcher-only: no-op in game engine (skip) */
+	STEP_ASSERT_MISSION_LIST_HAS_NON_BASE,
+	STEP_SET_DEBUG,        /* set a debug flag (e.g. tex_overlay) */
+	STEP_SET_SECRET_REVEAL /* automation-only: set automap secret reveal */
 };
 
 /* Key-value pair for STEP_ASSERT expectations.
@@ -320,31 +325,32 @@ struct auto_step {
 	std::string label;                  /* STEP_PROBE_CROSSHAIR: log label */
 	std::vector<assert_expect> expects; /* STEP_ASSERT: expected values */
 	std::string select_text;            /* STEP_SELECT: partial text to match */
-	bool optional = false;              /* STEP_SELECT: skip instead of fail on timeout */
-	int axis_id = -1;                   /* STEP_SEND_AXIS: axis number (0-5) */
-	float axis_value = 0.0f;            /* STEP_SEND_AXIS: value (-1.0 to 1.0) */
-	bool axis_touch_source = false;     /* STEP_SEND_AXIS: mark as touch/virtual source */
-	int button_id = -1;                 /* STEP_SEND_BUTTON: button index */
-	int button_held = 0;                /* STEP_SEND_BUTTON: 1 = hold (no release) */
-	int button_pressed = 1;             /* STEP_SEND_BUTTON: 0 = release only */
-	int meta_action_id = -1;            /* STEP_META_ACTION: action ID */
-	int segment = -1;                   /* STEP_FACE_VIEW: target segment */
-	int side = -1;                      /* STEP_FACE_VIEW: target side */
-	int face = 0;                       /* STEP_FACE_VIEW: target face on side */
-	float distance = 4.0f;              /* STEP_FACE_VIEW: distance inside segment */
-	float pos_x = 0.0f;                 /* STEP_POSE_VIEW: target X position */
-	float pos_y = 0.0f;                 /* STEP_POSE_VIEW: target Y position */
-	float pos_z = 0.0f;                 /* STEP_POSE_VIEW: target Z position */
-	int pitch = 0;                      /* STEP_POSE_VIEW: exact pitch */
-	int bank = 0;                       /* STEP_POSE_VIEW: exact bank */
-	int heading = 0;                    /* STEP_POSE_VIEW: exact heading */
-	int request_frame = -1;             /* STEP_PROBE_CROSSHAIR: request frame */
-	bool enabled = false;               /* STEP_SET_SECRET_REVEAL */
-	std::string match_label_a;          /* STEP_ASSERT_PROBE_MATCH: first label */
-	std::string match_label_b;          /* STEP_ASSERT_PROBE_MATCH: second label */
-	float hot_xy_tolerance = 0.02f;     /* STEP_ASSERT_PROBE_MATCH: max L-inf distance */
-	int require_hash_match = 0;         /* STEP_ASSERT_PROBE_MATCH: also require render_hash equal */
-	float max_mean_luma_diff = 0.0f;    /* STEP_ASSERT_PROBE_MATCH: 0 disables SAD check */
+	bool select_non_base_mission = false;
+	bool optional = false;           /* STEP_SELECT: skip instead of fail on timeout */
+	int axis_id = -1;                /* STEP_SEND_AXIS: axis number (0-5) */
+	float axis_value = 0.0f;         /* STEP_SEND_AXIS: value (-1.0 to 1.0) */
+	bool axis_touch_source = false;  /* STEP_SEND_AXIS: mark as touch/virtual source */
+	int button_id = -1;              /* STEP_SEND_BUTTON: button index */
+	int button_held = 0;             /* STEP_SEND_BUTTON: 1 = hold (no release) */
+	int button_pressed = 1;          /* STEP_SEND_BUTTON: 0 = release only */
+	int meta_action_id = -1;         /* STEP_META_ACTION: action ID */
+	int segment = -1;                /* STEP_FACE_VIEW: target segment */
+	int side = -1;                   /* STEP_FACE_VIEW: target side */
+	int face = 0;                    /* STEP_FACE_VIEW: target face on side */
+	float distance = 4.0f;           /* STEP_FACE_VIEW: distance inside segment */
+	float pos_x = 0.0f;              /* STEP_POSE_VIEW: target X position */
+	float pos_y = 0.0f;              /* STEP_POSE_VIEW: target Y position */
+	float pos_z = 0.0f;              /* STEP_POSE_VIEW: target Z position */
+	int pitch = 0;                   /* STEP_POSE_VIEW: exact pitch */
+	int bank = 0;                    /* STEP_POSE_VIEW: exact bank */
+	int heading = 0;                 /* STEP_POSE_VIEW: exact heading */
+	int request_frame = -1;          /* STEP_PROBE_CROSSHAIR: request frame */
+	bool enabled = false;            /* STEP_SET_SECRET_REVEAL */
+	std::string match_label_a;       /* STEP_ASSERT_PROBE_MATCH: first label */
+	std::string match_label_b;       /* STEP_ASSERT_PROBE_MATCH: second label */
+	float hot_xy_tolerance = 0.02f;  /* STEP_ASSERT_PROBE_MATCH: max L-inf distance */
+	int require_hash_match = 0;      /* STEP_ASSERT_PROBE_MATCH: also require render_hash equal */
+	float max_mean_luma_diff = 0.0f; /* STEP_ASSERT_PROBE_MATCH: 0 disables SAD check */
 };
 
 /* -- Script state ----------------------------------------------------- */
@@ -450,12 +456,17 @@ static const char *step_type_name(step_type t)
 		case STEP_ENTER_GAME: return "enter_game";
 		case STEP_SETUP_COMMAND: return "setup_command";
 		case STEP_RESET_STATE: return "reset_state";
+		case STEP_CLEAR_MODS: return "clear_mods";
+		case STEP_IMPORT_MISSION_ZIP: return "import_mission_zip";
+		case STEP_ANALYZE_LEVEL_METADATA: return "analyze_level_metadata";
+		case STEP_ANALYZE_LEVEL_METADATA_ALL: return "analyze_level_metadata_all";
 		case STEP_TRIGGER_ENDLEVEL: return "trigger_endlevel";
 		case STEP_TRIGGER_LEVELCOMPLETE: return "trigger_levelcomplete";
 		case STEP_WRITE_CONFIG: return "write_config";
 		case STEP_TAP_BUTTON: return "tap_button";
 		case STEP_ASSERT_BUTTON: return "assert_button";
 		case STEP_ASSERT_CONTROLLER_MATCH: return "assert_controller_match";
+		case STEP_ASSERT_MISSION_LIST_HAS_NON_BASE: return "assert_mission_list_has_non_base";
 		case STEP_SET_DEBUG: return "set_debug";
 		case STEP_SET_SECRET_REVEAL: return "set_secret_reveal";
 		default: return "unknown";
@@ -846,6 +857,90 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 		return false;
 	} else {
 		LOGE("SELECT: front window is not a newmenu or listbox");
+		return false;
+	}
+}
+
+static bool mission_list_item_is_base_or_command(const char *text)
+{
+	if (!text || !text[0])
+		return true;
+	if (icontains(text, "counterstrike") ||
+	    icontains(text, "first strike") ||
+	    icontains(text, "destination saturn") ||
+	    icontains(text, "descent 2") ||
+	    icontains(text, "descent ii") ||
+	    icontains(text, "descent:") ||
+	    strcasecmp(text, "ok") == 0 ||
+	    strcasecmp(text, "cancel") == 0)
+		return true;
+	return false;
+}
+
+static bool select_find_first_non_base_mission(int *out_target, int *out_current,
+                                               int *out_current_type)
+{
+	window *front = window_get_front();
+	if (!front) {
+		LOGE("SELECT_NON_BASE_MISSION: no front window");
+		return false;
+	}
+
+	int (*cb)(window *, d_event *, void *) = window_get_callback(front);
+	void *data = window_get_data(front);
+	if (!data) {
+		LOGE("SELECT_NON_BASE_MISSION: front window has no data");
+		return false;
+	}
+
+	if (cb == (int (*)(window *, d_event *, void *)) newmenu_handler) {
+		newmenu *menu = (newmenu *) data;
+		newmenu_item *items = newmenu_get_items(menu);
+		int nitems = newmenu_get_nitems(menu);
+		int citem = newmenu_get_citem(menu);
+		int current_type = (citem >= 0 && citem < nitems) ? items[citem].type : -1;
+
+		for (int i = 0; i < nitems; i++) {
+			const char *text = items[i].text;
+			if (!text || items[i].type == NM_TYPE_TEXT)
+				continue;
+			if (!mission_list_item_is_base_or_command(text)) {
+				*out_target = i;
+				*out_current = citem;
+				if (out_current_type)
+					*out_current_type = current_type;
+				LOGI("SELECT_NON_BASE_MISSION: found \"%s\" at index %d (current=%d) in newmenu",
+				     text, i, citem);
+				return true;
+			}
+		}
+		LOGE("SELECT_NON_BASE_MISSION: no non-base mission in newmenu (%d items)", nitems);
+		for (int i = 0; i < nitems; i++)
+			LOGI("  item[%d]: \"%s\"", i, items[i].text ? items[i].text : "(null)");
+		return false;
+	} else if (cb == (int (*)(window *, d_event *, void *)) listbox_handler) {
+		listbox *lb = (listbox *) data;
+		char **items = listbox_get_items(lb);
+		int nitems = listbox_get_nitems(lb);
+		int citem = listbox_get_citem(lb);
+		if (out_current_type)
+			*out_current_type = -1;
+
+		for (int i = 0; i < nitems; i++) {
+			if (items[i] && !mission_list_item_is_base_or_command(items[i])) {
+				*out_target = i;
+				*out_current = citem;
+				LOGI("SELECT_NON_BASE_MISSION: found \"%s\" at index %d (current=%d) in listbox",
+				     items[i], i, citem);
+				return true;
+			}
+		}
+		LOGE("SELECT_NON_BASE_MISSION: no non-base mission in listbox (%d items)", nitems);
+		for (int i = 0; i < nitems; i++)
+			LOGI("  item[%d]: \"%s\"", i, items[i] ? items[i] : "(null)");
+		return false;
+	} else {
+		LOGE("SELECT_NON_BASE_MISSION: front window is not a newmenu or listbox");
 		return false;
 	}
 }
@@ -1398,7 +1493,10 @@ static int parse_script(const char *json_text)
 			else if (action == "log") s.type = STEP_LOG;
 			else if (action == "assert") s.type = STEP_ASSERT;
 			else if (action == "select") s.type = STEP_SELECT;
-			else if (action == "send_axis") s.type = STEP_SEND_AXIS;
+			else if (action == "select_non_base_mission") {
+				s.type = STEP_SELECT;
+				s.select_non_base_mission = true;
+			} else if (action == "send_axis") s.type = STEP_SEND_AXIS;
 			else if (action == "send_button") s.type = STEP_SEND_BUTTON;
 			else if (action == "send_touch_tap") s.type = STEP_SEND_TOUCH_TAP;
 			else if (action == "meta_action") s.type = STEP_META_ACTION;
@@ -1414,12 +1512,17 @@ static int parse_script(const char *json_text)
 			else if (action == "enter_game") s.type = STEP_ENTER_GAME;
 			else if (action == "setup_command") s.type = STEP_SETUP_COMMAND;
 			else if (action == "reset_state") s.type = STEP_RESET_STATE;
+			else if (action == "clear_mods") s.type = STEP_CLEAR_MODS;
+			else if (action == "import_mission_zip") s.type = STEP_IMPORT_MISSION_ZIP;
+			else if (action == "analyze_level_metadata") s.type = STEP_ANALYZE_LEVEL_METADATA;
+			else if (action == "analyze_level_metadata_all") s.type = STEP_ANALYZE_LEVEL_METADATA_ALL;
 			else if (action == "trigger_endlevel") s.type = STEP_TRIGGER_ENDLEVEL;
 			else if (action == "trigger_levelcomplete") s.type = STEP_TRIGGER_LEVELCOMPLETE;
 			else if (action == "write_config") s.type = STEP_WRITE_CONFIG;
 			else if (action == "tap_button") s.type = STEP_TAP_BUTTON;
 			else if (action == "assert_button") s.type = STEP_ASSERT_BUTTON;
 			else if (action == "assert_controller_match") s.type = STEP_ASSERT_CONTROLLER_MATCH;
+			else if (action == "assert_mission_list_has_non_base") s.type = STEP_ASSERT_MISSION_LIST_HAS_NON_BASE;
 			else if (action == "set_debug") s.type = STEP_SET_DEBUG;
 			else if (action == "set_secret_reveal") s.type = STEP_SET_SECRET_REVEAL;
 			else {
@@ -1921,13 +2024,28 @@ extern "C" void game_automate_tick(void)
 			break;
 		}
 
+		case STEP_ASSERT_MISSION_LIST_HAS_NON_BASE: {
+			int target, current;
+			if (!select_find_first_non_base_mission(&target, &current, NULL)) {
+				if (s.timeout_ms > 0 && elapsed < (Uint32) s.timeout_ms)
+					break;
+				stop_script_fail("assert_mission_list_has_non_base: no non-base mission found");
+				break;
+			}
+			LOGI("ASSERT_PASS: non-base mission found at index %d (current=%d)", target, current);
+			log_append("assert_mission_list_has_non_base", "pass", "");
+			advance_step();
+			break;
+		}
+
 		case STEP_SELECT:
 			if (g_select_phase == 0) {
 				/* Phase 0: find the target item and compute navigation delta.
 				 * If timeout_ms is set, poll each frame until the item appears
 				 * instead of failing immediately. */
 				int target, current;
-				if (!select_find_item(s.select_text.c_str(), &target, &current, NULL)) {
+				bool found = s.select_non_base_mission ? select_find_first_non_base_mission(&target, &current, NULL) : select_find_item(s.select_text.c_str(), &target, &current, NULL);
+				if (!found) {
 					if (s.timeout_ms > 0 && elapsed < (Uint32) s.timeout_ms) {
 						break; /* retry next frame */
 					}
@@ -1956,8 +2074,8 @@ extern "C" void game_automate_tick(void)
 				 * DOWN press may advance by more than one index.
 				 */
 				int target, current, current_type;
-				if (!select_find_item(s.select_text.c_str(), &target, &current,
-				                      &current_type)) {
+				bool found = s.select_non_base_mission ? select_find_first_non_base_mission(&target, &current, &current_type) : select_find_item(s.select_text.c_str(), &target, &current, &current_type);
+				if (!found) {
 					stop_script_fail("SELECT: menu disappeared during navigation");
 					break;
 				}
@@ -1990,7 +2108,8 @@ extern "C" void game_automate_tick(void)
 				 * The cursor can drift between Phase 1 and 2 if the
 				 * game loop stalls (e.g. emulator lag). */
 				int target, current;
-				if (!select_find_item(s.select_text.c_str(), &target, &current, NULL)) {
+				bool found = s.select_non_base_mission ? select_find_first_non_base_mission(&target, &current, NULL) : select_find_item(s.select_text.c_str(), &target, &current, NULL);
+				if (!found) {
 					stop_script_fail("SELECT: menu disappeared before confirm");
 					break;
 				}
@@ -2410,6 +2529,10 @@ extern "C" void game_automate_tick(void)
 		case STEP_ENTER_GAME:
 		case STEP_SETUP_COMMAND:
 		case STEP_RESET_STATE:
+		case STEP_CLEAR_MODS:
+		case STEP_IMPORT_MISSION_ZIP:
+		case STEP_ANALYZE_LEVEL_METADATA:
+		case STEP_ANALYZE_LEVEL_METADATA_ALL:
 		case STEP_WRITE_CONFIG:
 		case STEP_TAP_BUTTON:
 		case STEP_ASSERT_BUTTON:
