@@ -2746,6 +2746,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 				Players[Player_num].last_score = dummy_player.last_score;
 				Players[Player_num].time_level = dummy_player.time_level;
 
+				Players[Player_num].num_kills_level = dummy_player.num_kills_level;
 				Players[Player_num].num_robots_level = dummy_player.num_robots_level;
 				Players[Player_num].num_robots_total = dummy_player.num_robots_total;
 				Players[Player_num].hostages_rescued_total = dummy_player.hostages_rescued_total;

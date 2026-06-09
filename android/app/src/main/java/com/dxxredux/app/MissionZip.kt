@@ -22,11 +22,17 @@ object MissionZip {
     data class ScanResult(
         val constituents: List<Constituent>,
         val mission: GameFileFormats.MissionDescriptor,
+        val missionSets: List<MissionSet>,
         val game: String,
         val category: String = CATEGORY_LEVELS,
         val totalSizeBytes: Long,
         val importMode: String,
         val readme: Constituent? = null,
+    )
+
+    data class MissionSet(
+        val mission: GameFileFormats.MissionDescriptor,
+        val constituents: List<Constituent>,
     )
 
     data class TextFileContent(
@@ -173,15 +179,38 @@ object MissionZip {
                 .singleOrNull()
                 ?: "both"
         val sortedConstituents = sortedConstituents(constituents)
+        val missionSets = missionSets(sortedConstituents, missions)
         return ScanResult(
             constituents = sortedConstituents,
             mission = mission,
+            missionSets = missionSets,
             game = game,
             totalSizeBytes = totalSizeBytes,
             importMode = if (totalSizeBytes <= SMALL_IN_MEMORY_LIMIT_BYTES) "stored_zip" else "extracted_bundle",
             readme = chooseReadme(sortedConstituents, zipStem),
         )
     }
+
+    private fun missionSets(
+        constituents: List<Constituent>,
+        missions: List<GameFileFormats.MissionDescriptor>,
+    ): List<MissionSet> =
+        missions.map { mission ->
+            val stem = leafName(mission.path).substringBeforeLast('.').lowercase(Locale.US)
+            val related =
+                constituents.filter { constituent ->
+                    constituent.path.equals(mission.path, ignoreCase = true) ||
+                        (
+                            constituent.name.substringBeforeLast('.').lowercase(Locale.US) == stem &&
+                                constituent.role in
+                                setOf(
+                                    GameFileFormats.MISSION_ZIP_HOG,
+                                    GameFileFormats.MISSION_ZIP_MOD_ARCHIVE,
+                                )
+                        )
+                }
+            MissionSet(mission, related.ifEmpty { constituents })
+        }
 
     private fun sortedConstituents(constituents: List<Constituent>): List<Constituent> =
         constituents.sortedWith(

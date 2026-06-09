@@ -2263,7 +2263,6 @@ private fun SetupScreen(
             for (uri in uris) {
                 val name = getDisplayName(context, uri)
                 if (name != null) {
-                    val lname = name.lowercase()
                     val ext = GameFileFormats.extensionOf(name)
                     val demoPackage = matchDemoInstallerPackage(context, name, uri)
                     when {
@@ -2320,11 +2319,7 @@ private fun SetupScreen(
                             sowUri = name to uri
                         }
 
-                        ext == "dem" -> {
-                            gameUris.add(FoundFile(name, uri))
-                        }
-
-                        lname in ALL_GAME_FILENAMES -> {
+                        isDirectGameDataImportName(name) -> {
                             gameUris.add(FoundFile(name, uri))
                         }
 

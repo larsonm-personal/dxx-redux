@@ -41,6 +41,26 @@ class MissionZipTest {
             listOf("mission_descriptor", "mission_hog", "mod_archive"),
             scan.constituents.map { it.role }.sorted(),
         )
+        assertEquals(listOf("Uneasy 4"), scan.missionSets.map { it.mission.displayName })
+    }
+
+    @Test
+    fun keepsMultipleMissionSetsFromOneZip() {
+        val zipFile = createDescentMaximumStyleZip()
+
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        scan!!
+        assertEquals("Descent Maximum (fixed)", scan.mission.displayName)
+        assertEquals(
+            listOf("Descent Maximum (fixed)", "Descent Max Anarchy (fix)"),
+            scan.missionSets.map { it.mission.displayName },
+        )
+        assertEquals(
+            listOf(listOf("max_f.hog", "max_f.mn2"), listOf("maxlnk_f.hog", "maxlnk_f.mn2")),
+            scan.missionSets.map { set -> set.constituents.map { it.name }.sorted() },
+        )
     }
 
     @Test
@@ -236,6 +256,49 @@ class MissionZipTest {
             }
         }
         zipFile.deleteOnExit()
+        return zipFile
+    }
+
+    private fun createDescentMaximumStyleZip(): File {
+        val zipFile = File.createTempFile("descent-maximum-style", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("max_f.hog"))
+            zip.write(byteArrayOf(1, 2, 3, 4))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("max_f.mn2"))
+            zip.write(
+                """
+                name = Descent Maximum (fixed)
+                type = normal
+                num_levels = 1
+                psx01.rl2
+                num_secrets = 1
+                psxs1a.rl2,1
+                """.trimIndent().toByteArray(),
+            )
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("maxlnk_f.hog"))
+            zip.write(byteArrayOf(5, 6, 7, 8))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("maxlnk_f.mn2"))
+            zip.write(
+                """
+                name = Descent Max Anarchy (fix)
+                type = anarchy
+                num_levels = 1
+                psxlink1.rl2
+                """.trimIndent().toByteArray(),
+            )
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("max_f.txt"))
+            zip.write("readme".toByteArray())
+            zip.closeEntry()
+        }
         return zipFile
     }
 }

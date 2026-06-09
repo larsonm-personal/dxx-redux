@@ -7,6 +7,14 @@ import org.junit.Test
 
 class ImportTreeScannerTest {
     @Test
+    fun acceptsArbitraryDirectMissionDataFilenames() {
+        assertEquals(true, isDirectGameDataImportName("D2X.MN2", emptySet()))
+        assertEquals(true, isDirectGameDataImportName("PANIC.HOG", emptySet()))
+        assertEquals(true, isDirectGameDataImportName("PANIC.MN2", emptySet()))
+        assertEquals(false, isDirectGameDataImportName("README.TXT", emptySet()))
+    }
+
+    @Test
     fun classifiesCueBinIsoGogSowAndAudioRows() {
         val result =
             classifyImportTreeRows(

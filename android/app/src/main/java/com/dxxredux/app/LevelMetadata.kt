@@ -159,6 +159,15 @@ internal object LevelMetadataTargets {
     fun canAnalyzeMissionZip(scan: MissionZip.ScanResult): Boolean =
         scan.constituents.any { canAnalyzeZipConstituent(it.name) }
 
+    fun missionZipTargets(
+        archivePath: String,
+        setDir: File,
+        scan: MissionZip.ScanResult,
+    ): List<LevelMetadataTarget> {
+        val sets = scan.missionSets.ifEmpty { listOf(MissionZip.MissionSet(scan.mission, scan.constituents)) }
+        return sets.mapNotNull { missionZipTarget(archivePath, setDir, scan, it) }
+    }
+
     fun directFile(
         file: File,
         setDir: File,
@@ -168,24 +177,33 @@ internal object LevelMetadataTargets {
         val game = gameForFile(file.name, metadata?.contents?.map { it.name }.orEmpty()) ?: return null
         val ext = GameFileFormats.extensionOf(file.name)
         if (ext == "hog" && !isBaseHog(file.name)) {
+            descriptorForHog(file, game)?.let { mission ->
+                return LevelMetadataTarget(
+                    displayName = file.name,
+                    game = game,
+                    sourceType = "hog",
+                    sourcePath = file.absolutePath,
+                    dataDir = setDir.absolutePath,
+                    missionName = file.name.substringBeforeLast('.'),
+                    hogFile = file.name,
+                    normalLevelFiles = mission.levelNames,
+                    secretLevelFiles = mission.secretLevelNames,
+                )
+            }
             hogLevelFiles(
                 metadata?.contents.orEmpty(),
             ).takeIf { it.first.isNotEmpty() || it.second.isNotEmpty() }?.let {
-                val descriptorExt = if (game == GameFileFormats.GAME_D1) "msn" else "mn2"
-                val descriptor = File(file.parentFile ?: setDir, "${file.name.substringBeforeLast('.')}.$descriptorExt")
-                if (!descriptor.isFile) {
-                    return LevelMetadataTarget(
-                        displayName = file.name,
-                        game = game,
-                        sourceType = "hog",
-                        sourcePath = file.absolutePath,
-                        dataDir = setDir.absolutePath,
-                        missionName = file.name.substringBeforeLast('.'),
-                        hogFile = file.name,
-                        normalLevelFiles = it.first,
-                        secretLevelFiles = it.second,
-                    )
-                }
+                return LevelMetadataTarget(
+                    displayName = file.name,
+                    game = game,
+                    sourceType = "hog",
+                    sourcePath = file.absolutePath,
+                    dataDir = setDir.absolutePath,
+                    missionName = file.name.substringBeforeLast('.'),
+                    hogFile = file.name,
+                    normalLevelFiles = it.first,
+                    secretLevelFiles = it.second,
+                )
             }
         }
         return LevelMetadataTarget(
@@ -204,26 +222,37 @@ internal object LevelMetadataTargets {
         archivePath: String,
         setDir: File,
         scan: MissionZip.ScanResult,
+    ): LevelMetadataTarget? = missionZipTargets(archivePath, setDir, scan).firstOrNull()
+
+    private fun missionZipTarget(
+        archivePath: String,
+        setDir: File,
+        scan: MissionZip.ScanResult,
+        missionSet: MissionZip.MissionSet,
     ): LevelMetadataTarget? {
         if (!canAnalyzeMissionZip(scan)) return null
-        val entries = scan.constituents.map { it.path }
+        val entries = missionSet.constituents.map { it.path }
+        val mission = missionSet.mission
         return LevelMetadataTarget(
-            displayName = scan.mission.displayName,
-            game = scan.game.takeIf { it == GameFileFormats.GAME_D1 || it == GameFileFormats.GAME_D2 } ?: return null,
+            displayName = mission.displayName,
+            game =
+                mission.game.takeIf {
+                    it == GameFileFormats.GAME_D1 || it == GameFileFormats.GAME_D2
+                } ?: return null,
             sourceType = "mission_files",
             dataDir = setDir.absolutePath,
             archivePath = archivePath,
             archiveEntries = entries,
             missionName =
-                scan.mission.path
+                mission.path
                     .substringAfterLast('/')
                     .substringBeforeLast('.'),
             hogFiles =
-                scan.constituents
+                missionSet.constituents
                     .filter { GameFileFormats.extensionOf(it.name) == "hog" }
                     .map { it.name },
-            normalLevelFiles = scan.mission.levelNames,
-            secretLevelFiles = scan.mission.secretLevelNames,
+            normalLevelFiles = mission.levelNames,
+            secretLevelFiles = mission.secretLevelNames,
         )
     }
 
@@ -384,6 +413,18 @@ internal object LevelMetadataTargets {
             }
         }
         return normal to secret
+    }
+
+    private fun descriptorForHog(
+        hogFile: File,
+        game: String,
+    ): GameFileFormats.MissionDescriptor? {
+        val descriptorExt = if (game == GameFileFormats.GAME_D1) "msn" else "mn2"
+        val descriptor = File(hogFile.parentFile, "${hogFile.name.substringBeforeLast('.')}.$descriptorExt")
+        if (!descriptor.isFile) return null
+        return runCatching {
+            GameFileFormats.parseMissionDescriptor(descriptor.name, descriptor.readText(Charsets.UTF_8))
+        }.getOrNull()
     }
 }
 

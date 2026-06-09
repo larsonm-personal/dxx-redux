@@ -900,6 +900,11 @@ void hud_show_robot_hostage_counts()
 		yline++;
 #endif
 
+	if (Current_level_num < 0) {
+		hud_draw_secret_counts(FSPACY(1) + LINE_SPACING * yline);
+		return;
+	}
+
 	snprintf(robot_str, sizeof(robot_str), "robots: %d/%d",
 	         hud_count_robot_kills(pnum), Players[pnum].num_robots_level);
 	hud_draw_right_text(FSPACY(1) + LINE_SPACING * yline, robot_str);

@@ -68,9 +68,7 @@ internal fun scanTreeForGameFiles(
 
                 if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
                     queue.add(childId)
-                } else if (displayName.lowercase() in ALL_GAME_FILENAMES ||
-                    displayName.lowercase().endsWith(".dem")
-                ) {
+                } else if (isDirectGameDataImportName(displayName)) {
                     val fileUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId)
                     results.add(FoundFile(displayName, fileUri))
                 }
@@ -79,6 +77,13 @@ internal fun scanTreeForGameFiles(
     }
     return results
 }
+
+internal fun isDirectGameDataImportName(
+    name: String,
+    allGameFileNames: Set<String> = ALL_GAME_FILENAMES,
+): Boolean =
+    AndroidGameFileExtensions.hasGameExtension(name) ||
+        name.lowercase() in allGameFileNames
 
 internal fun scanTreeForImportUris(
     context: Context,

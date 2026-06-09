@@ -396,19 +396,21 @@ private fun ModDetailsDialog(
     var textViewTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var constituentTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
-    val topLevelMetadataTarget =
+    val topLevelMetadataTargets =
         remember(details?.archivePath, details?.missionZip, setDir.absolutePath, mod.displayName, mod.game) {
             details?.let {
                 it.missionZip?.let { missionZip ->
-                    LevelMetadataTargets.missionZip(it.archivePath, setDir, missionZip)
-                } ?: LevelMetadataTargets.genericZip(
-                    it.archivePath,
-                    setDir,
-                    mod.displayName,
-                    mod.game,
+                    LevelMetadataTargets.missionZipTargets(it.archivePath, setDir, missionZip)
+                } ?: listOfNotNull(
+                    LevelMetadataTargets.genericZip(
+                        it.archivePath,
+                        setDir,
+                        mod.displayName,
+                        mod.game,
+                    ),
                 )
             }
-        }
+        }.orEmpty()
     levelMetadataTarget?.let { target ->
         LevelMetadataDialog(
             target = target,
@@ -512,11 +514,15 @@ private fun ModDetailsDialog(
                             },
                         )
 
-                        topLevelMetadataTarget?.let { target ->
-                            LevelMetadataButton(
-                                onClick = { levelMetadataTarget = target },
-                                modifier = Modifier.padding(bottom = 6.dp),
-                            )
+                        if (topLevelMetadataTargets.isNotEmpty()) {
+                            ModDetailSectionTitle("Level metadata")
+                            topLevelMetadataTargets.forEach { target ->
+                                LevelMetadataButton(
+                                    label = target.displayName,
+                                    onClick = { levelMetadataTarget = target },
+                                    modifier = Modifier.padding(bottom = 6.dp),
+                                )
+                            }
                         }
 
                         details.missionZip?.let { missionZip ->
@@ -1619,6 +1625,7 @@ internal fun FileDetailDialog(
 
 @Composable
 private fun LevelMetadataButton(
+    label: String = "Level metadata",
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1628,7 +1635,7 @@ private fun LevelMetadataButton(
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         modifier = modifier.fillMaxWidth(),
     ) {
-        Text("Level metadata", fontSize = 12.sp)
+        Text(label, fontSize = 12.sp)
     }
 }
 
