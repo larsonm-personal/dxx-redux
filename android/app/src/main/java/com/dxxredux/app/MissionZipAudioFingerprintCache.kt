@@ -25,9 +25,13 @@ class MissionZipAudioFingerprintCache(
         val localMatchConfidence: Float?,
         val localMatchDiscId: String?,
         val localMatchTrack: Int?,
+        val acoustIdName: String?,
+        val acoustIdLookupStatus: String?,
+        val acoustIdLookupAt: Long?,
         val lookupAt: Long,
     ) {
         val hasLocalMatch: Boolean get() = !localMatchName.isNullOrBlank()
+        val hasAcoustIdLookup: Boolean get() = !acoustIdLookupStatus.isNullOrBlank()
     }
 
     private val cacheFile = File(filesDir, CACHE_FILE)
@@ -76,6 +80,9 @@ class MissionZipAudioFingerprintCache(
                 localMatchConfidence = match?.confidence,
                 localMatchDiscId = match?.discId,
                 localMatchTrack = match?.trackNum,
+                acoustIdName = null,
+                acoustIdLookupStatus = null,
+                acoustIdLookupAt = null,
                 lookupAt = System.currentTimeMillis(),
             )
         val entries =
@@ -102,6 +109,22 @@ class MissionZipAudioFingerprintCache(
         val fingerprint = FingerprintBridge.fingerprintAudioFile(stagedAudio.absolutePath) ?: return null
         val match = FingerprintBridge.matchFingerprint(fingerprint.encoded, fingerprint.durationMs)
         return record(catalog, track, stagedAudio, fingerprint, match)
+    }
+
+    fun recordAcoustIdResult(
+        entry: Entry,
+        name: String?,
+        status: String,
+    ): Entry {
+        val updated =
+            entry.copy(
+                acoustIdName = name,
+                acoustIdLookupStatus = status,
+                acoustIdLookupAt = System.currentTimeMillis(),
+            )
+        val entries = loadEntries().filterNot { it.sameCacheRecord(entry) } + updated
+        saveEntries(entries)
+        return updated
     }
 
     private fun loadEntries(): List<Entry> {
@@ -159,6 +182,9 @@ class MissionZipAudioFingerprintCache(
                 localMatchConfidence?.let { put("local_match_confidence", it.toDouble()) }
                 localMatchDiscId?.let { put("local_match_disc_id", it) }
                 localMatchTrack?.let { put("local_match_track", it) }
+                acoustIdName?.let { put("acoustid_name", it) }
+                acoustIdLookupStatus?.let { put("acoustid_lookup_status", it) }
+                acoustIdLookupAt?.let { put("acoustid_lookup_at", it) }
             }
 
     private fun JSONObject.toEntry(): Entry? =
@@ -183,9 +209,22 @@ class MissionZipAudioFingerprintCache(
                     },
                 localMatchDiscId = optString("local_match_disc_id").takeIf { it.isNotBlank() },
                 localMatchTrack = if (has("local_match_track")) getInt("local_match_track") else null,
+                acoustIdName = optString("acoustid_name").takeIf { it.isNotBlank() },
+                acoustIdLookupStatus = optString("acoustid_lookup_status").takeIf { it.isNotBlank() },
+                acoustIdLookupAt = if (has("acoustid_lookup_at")) getLong("acoustid_lookup_at") else null,
                 lookupAt = optLong("lookup_at", 0L),
             )
         }.getOrNull()
+
+    private fun Entry.sameCacheRecord(other: Entry): Boolean =
+        archiveName == other.archiveName &&
+            archiveSize == other.archiveSize &&
+            archiveMtime == other.archiveMtime &&
+            trackId == other.trackId &&
+            entryPath == other.entryPath &&
+            nestedPath == other.nestedPath &&
+            hogEntryName == other.hogEntryName &&
+            contentSha256 == other.contentSha256
 
     private fun sha256(file: File): String =
         MessageDigest
@@ -205,6 +244,9 @@ class MissionZipAudioFingerprintCache(
     companion object {
         private const val CACHE_FILE = "mission_zip_audio_fingerprints.json"
         private const val SCHEMA = "dxx-mission-zip-audio-fingerprints-v1"
+        const val ACOUSTID_STATUS_OK = "ok"
+        const val ACOUSTID_STATUS_NO_MATCH = "no_match"
+        const val ACOUSTID_STATUS_FAILED = "failed"
         private val FINGERPRINT_EXTENSIONS = setOf("flac", "mp3", "ogg")
 
         fun isFingerprintSupported(track: MissionZipMusicTrack): Boolean =

@@ -360,13 +360,13 @@ Verification:
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\AudioFilePreviewDialog.kt','android\app\src\main\java\com\dxxredux\app\MissionZipMusicStageManager.kt','android\app\src\main\java\com\dxxredux\app\MusicPickerPage.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicStageManagerTest.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 4: Fingerprint Cache
-- Status: local chromaprint cache slice in progress 2026-06-09.
+- Status: local chromaprint cache slice completed 2026-06-09.
 - [x] Add `MissionZipAudioFingerprintCache.kt`.
 - [x] Add local chromaprint action for OGG/MP3/FLAC.
 - [x] Store content SHA-256, chromaprint, duration, and local match.
-- [ ] Store optional web lookup result.
+- [x] Store optional web lookup result.
 - [x] Reuse `FingerprintBridge`; do not add a new fingerprint implementation.
-- [ ] Reuse `AcoustIdClient` for explicit web lookup actions.
+- [x] Reuse `AcoustIdClient` for explicit web lookup actions.
 - Unit tests:
   - [x] cache key survives temp path changes,
   - [x] cache invalidates when archive size/mtime or content hash changes,
@@ -377,10 +377,15 @@ Verification:
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipAudioFingerprintCache.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipAudioFingerprintCacheTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 5: AcoustID Lookup UX
-- Add explicit per-track and "Identify all" actions, enabled only when `AcoustIdClient.configure(context)` succeeds.
-- Use existing rate limiting.
-- Cache failed/empty lookup status with timestamp to avoid repeated accidental lookups.
-- Add user-visible status for "local match", "web match", "no match", and "lookup failed".
+- Status: per-track explicit lookup slice completed 2026-06-09; bulk lookup remains.
+- [x] Add explicit per-track lookup action, enabled only when `AcoustIdClient.configure(context)` succeeds.
+- [ ] Add "Identify all" or "Lookup all" action.
+- [x] Use existing rate limiting.
+- [x] Cache failed/empty lookup status with timestamp to avoid repeated accidental lookups.
+- [x] Add user-visible status for "local match", "web match", "no match", and "lookup failed".
+
+Verification:
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
 
 ### Phase 6: Large ZIP Path
 - Exercise a mission ZIP over `SMALL_IN_MEMORY_LIMIT_BYTES`.

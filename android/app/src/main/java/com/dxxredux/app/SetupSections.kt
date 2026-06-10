@@ -772,6 +772,7 @@ private fun MissionZipMusicDialog(
     val scope = rememberCoroutineScope()
     val stageManager = remember(context.cacheDir) { MissionZipMusicStageManager(context.cacheDir) }
     val fingerprintCache = remember(context.filesDir) { MissionZipAudioFingerprintCache(context.filesDir) }
+    val acoustIdAvailable = remember(context) { AcoustIdClient.configure(context) }
     var cachedFingerprints by remember(catalog.archivePath) {
         mutableStateOf(fingerprintCache.cachedEntries(catalog))
     }
@@ -941,6 +942,77 @@ private fun MissionZipMusicDialog(
                                             fontSize = 11.sp,
                                         )
                                     }
+                                    if (acoustIdAvailable) {
+                                        TextButton(
+                                            onClick = {
+                                                stagingProblem = null
+                                                stagingTrackId = track.id
+                                                scope.launch {
+                                                    val result =
+                                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                            try {
+                                                                stageManager.cleanupOldFiles()
+                                                                val staged =
+                                                                    stageManager.stageCompressedAudioTrack(
+                                                                        catalog,
+                                                                        track,
+                                                                    ) ?: return@withContext null
+                                                                val cached =
+                                                                    fingerprintCache.identifyLocal(
+                                                                        context,
+                                                                        catalog,
+                                                                        track,
+                                                                        staged,
+                                                                    ) ?: return@withContext null
+                                                                if (cached.hasAcoustIdLookup) {
+                                                                    cached
+                                                                } else {
+                                                                    val webName =
+                                                                        AcoustIdClient.lookupFingerprint(
+                                                                            cached.chromaprint,
+                                                                            maxOf(1, cached.durationMs / 1000),
+                                                                        )
+                                                                    fingerprintCache.recordAcoustIdResult(
+                                                                        cached,
+                                                                        webName,
+                                                                        if (webName.isNullOrBlank()) {
+                                                                            MissionZipAudioFingerprintCache
+                                                                                .ACOUSTID_STATUS_NO_MATCH
+                                                                        } else {
+                                                                            MissionZipAudioFingerprintCache
+                                                                                .ACOUSTID_STATUS_OK
+                                                                        },
+                                                                    )
+                                                                }
+                                                            } catch (_: Exception) {
+                                                                cachedFingerprint?.let {
+                                                                    fingerprintCache.recordAcoustIdResult(
+                                                                        it,
+                                                                        null,
+                                                                        MissionZipAudioFingerprintCache
+                                                                            .ACOUSTID_STATUS_FAILED,
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    stagingTrackId = null
+                                                    if (result == null) {
+                                                        stagingProblem = "Could not look up ${track.displayName}"
+                                                    } else {
+                                                        cachedFingerprints = cachedFingerprints + (track.id to result)
+                                                    }
+                                                }
+                                            },
+                                            enabled = stagingTrackId == null,
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                            modifier = Modifier.height(28.dp).tvFocusBorder(),
+                                        ) {
+                                            Text(
+                                                if (stagingTrackId == track.id) "Working" else "Lookup",
+                                                fontSize = 11.sp,
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -982,6 +1054,20 @@ private fun missionZipMusicFingerprintLine(entry: MissionZipAudioFingerprintCach
         }
         if (entry.durationMs > 0) {
             append(" - ${"%.1f".format(Locale.US, entry.durationMs / 1000.0)}s")
+        }
+        when (entry.acoustIdLookupStatus) {
+            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK -> {
+                val name = entry.acoustIdName.orEmpty().ifBlank { "matched" }
+                append(" - AcoustID: $name")
+            }
+
+            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_NO_MATCH -> {
+                append(" - AcoustID: no web match")
+            }
+
+            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_FAILED -> {
+                append(" - AcoustID: lookup failed")
+            }
         }
     }
 

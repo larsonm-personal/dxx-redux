@@ -92,6 +92,36 @@ class MissionZipAudioFingerprintCacheTest {
         assertTrue(text.indexOf("game01.ogg") < text.indexOf("game02.ogg"))
     }
 
+    @Test
+    fun recordsAcoustIdResultOnExistingFingerprintEntry() {
+        val filesDir = testDir("acoustid/files")
+        val archive = testArchive("acoustid/mission.zip", byteArrayOf(1, 2, 3))
+        val track = testTrack("game01.ogg")
+        val staged = testArchive("acoustid/staged/game01.ogg", byteArrayOf(9, 8, 7))
+        val cache = MissionZipAudioFingerprintCache(filesDir)
+        val local =
+            cache.record(
+                testCatalog(archive, track),
+                track,
+                staged,
+                FingerprintBridge.FingerprintResult("fp-a", 1234),
+                FingerprintBridge.MatchResult(0.82f, "Known Track", "disc-a", 7),
+            )
+
+        val updated =
+            cache.recordAcoustIdResult(
+                local,
+                "Web Track",
+                MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK,
+            )
+        val reloaded = cache.cachedEntries(testCatalog(archive, track))[track.id]
+
+        assertEquals("Known Track", updated.localMatchName)
+        assertEquals("Web Track", reloaded!!.acoustIdName)
+        assertEquals(MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK, reloaded.acoustIdLookupStatus)
+        assertTrue(File(filesDir, "mission_zip_audio_fingerprints.json").readText().contains("\"acoustid_name\""))
+    }
+
     private fun testCatalog(
         archive: File,
         track: MissionZipMusicTrack,
