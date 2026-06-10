@@ -398,6 +398,29 @@ Verification:
 Verification:
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest`
 
+### Phase 7: Mission ZIP Soundtracks In Chromaprint Database
+- Status: completed for the first mission-ZIP database slice 2026-06-10.
+- [x] Add a `fingerprint_mission_zip_music.ps1` script that scans `game_data/mission_files/*.zip`.
+- [x] Extract OGG/MP3/FLAC tracks from top-level ZIP entries, nested DXA/ZIP entries, and HOG members.
+- [x] Fingerprint extracted files with the existing `fingerprint_audio.exe`.
+- [x] Query AcoustID with the same rate-limit and retry behavior used by CD and music-pack scripts.
+- [x] Write normalized `chromaprint_info.json5` files under `game_data/music/Mission ZIP - <zip name>/` so `update_known_discs_albums.ps1` can merge and deduplicate them.
+- [x] Add the mission ZIP fingerprint step to `update_all_fingerprints.ps1`.
+- [x] Add gitignore exceptions for the new script and generated mission soundtrack sidecars without allowing ZIP files.
+- [x] Verify with `trine2.zip`, first with `-SkipAcoustId` for HOG extraction and local fingerprinting, then with AcoustID enabled for online lookup.
+- [x] Run the mission-ZIP script across the full corpus once the API/network budget is acceptable.
+- [x] Fix `update_known_discs_albums.ps1` so regenerating album entries does not remove real disc entries that happen to appear after the generated album marker.
+- [x] Rebuild `known_discs.json5` after that fix and verify `Descent Anniversary (ISO)` and `Descent II Infinite Abyss` remain present.
+- [x] Run the mission-ZIP script across the full corpus and merge all discovered mission soundtracks.
+
+Verification:
+- `.\game_data\fingerprint_mission_zip_music.ps1 -Zip trine2.zip -SkipAcoustId`
+- `.\game_data\fingerprint_mission_zip_music.ps1 -Zip trine2.zip`
+- `.\game_data\update_known_discs_albums.ps1 -DryRun -Force`
+- `.\game_data\update_known_discs_albums.ps1 -Force`
+- `.\game_data\fingerprint_mission_zip_music.ps1 -Force`
+- `.\game_data\update_known_discs_albums.ps1 -Force`
+
 ## Demonstration ZIPs
 - `Obsidian.zip`: top-level `.sng`, HMP names, existing test pattern for HMP in HOG.
 - `Chasm.zip`: simple top-level `.sng`.
