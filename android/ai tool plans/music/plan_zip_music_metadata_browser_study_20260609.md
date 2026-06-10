@@ -336,16 +336,28 @@ Verification:
   - Existing music UI tests should still pass.
 
 ### Phase 3: Temp Staging And Preview
-- Add `MissionZipMusicStageManager`.
-- Implement compressed audio staging to cache and preview through existing `MediaPlayer` detail dialog.
-- Implement HMP/MID preview either by direct bytes or staged HOG plus `MidiPreviewBridge.readHogEntry`.
-- Implement OGG/MP3/FLAC extraction from a HOG member to a temp file for `MediaPlayer` and `FingerprintBridge`.
-- Add cleanup policy.
+Status: compressed-audio and MIDI preview slices completed 2026-06-09.
+
+- [x] Add `MissionZipMusicStageManager`.
+- [x] Implement compressed audio staging to cache and preview through a shared `MediaPlayer` detail dialog.
+- [x] Extract the custom-audio local file player into reusable `AudioFilePreviewDialog`.
+- [x] Add mission ZIP `Preview` actions for playable compressed audio tracks.
+- [x] Add staging tests for top-level audio, nested DXA audio, and HOG-contained audio.
+- [x] Extract the MIDI/HMP preview shell into reusable `MidiBytesPreviewDialog`.
+- [x] Implement HMP/HMQ/MID preview from selected mission ZIP track bytes.
+- [x] Add byte extraction tests for top-level MIDI, nested DXA HMP, and HOG-contained HMQ.
+- [x] Implement OGG/MP3/FLAC/WAV extraction from a HOG member to a temp file for `MediaPlayer`.
+- Reuse staged OGG/MP3/FLAC files for `FingerprintBridge` when the chromaprint cache phase begins.
+- [x] Add cleanup policy.
 - Automation:
   - open mod details,
   - open music tracks,
   - play first MIDI or OGG track,
   - introspect `music_preview` state or add a setup introspection field for file-preview player state.
+
+Verification:
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\AudioFilePreviewDialog.kt','android\app\src\main\java\com\dxxredux\app\MissionZipMusicStageManager.kt','android\app\src\main\java\com\dxxredux\app\MusicPickerPage.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicStageManagerTest.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 4: Fingerprint Cache
 - Add `MissionZipAudioFingerprintCache.kt`.

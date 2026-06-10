@@ -768,6 +768,42 @@ private fun MissionZipMusicDialog(
     catalog: MissionZipMusicCatalog,
     onDismiss: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val stageManager = remember(context.cacheDir) { MissionZipMusicStageManager(context.cacheDir) }
+    var previewTarget by remember { mutableStateOf<Pair<MissionZipMusicTrack, File>?>(null) }
+    var midiPreviewTarget by remember { mutableStateOf<MissionZipMusicTrack?>(null) }
+    var stagingTrackId by remember { mutableStateOf<String?>(null) }
+    var stagingProblem by remember { mutableStateOf<String?>(null) }
+
+    previewTarget?.let { (track, file) ->
+        AudioFilePreviewDialog(
+            title = "Track Preview",
+            audioFile = file,
+            lines =
+                listOf(
+                    AudioFilePreviewLine("File: ${track.displayName}"),
+                    AudioFilePreviewLine("Source: ${track.archiveEntryPath}"),
+                    AudioFilePreviewLine("Staged: ${file.absolutePath}", small = true),
+                ),
+            onDismiss = { previewTarget = null },
+        )
+    }
+    midiPreviewTarget?.let { track ->
+        MidiBytesPreviewDialog(
+            title = "MIDI Preview",
+            trackName = track.displayName,
+            detailLines =
+                listOf(
+                    "Source: ${track.archiveEntryPath}",
+                    missionZipMusicTrackSubtitle(track),
+                ),
+            isHmp = track.extension == "hmp" || track.extension == "hmq",
+            loadBytes = { stageManager.readMidiTrackBytes(catalog, track) },
+            onDismiss = { midiPreviewTarget = null },
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -791,19 +827,73 @@ private fun MissionZipMusicDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 6.dp),
                 )
+                stagingProblem?.let { problem ->
+                    Text(
+                        problem,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                }
                 catalog.sources.forEach { source ->
                     ModDetailSectionTitle(source.label)
                     if (source.containerPath.isNotBlank()) {
                         ModDetailLine(source.containerPath)
                     }
                     source.tracks.forEach { track ->
-                        Text(
-                            track.displayName,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(top = 3.dp),
-                        )
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                track.displayName,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (track.playable &&
+                                (
+                                    track.kind == MissionZipMusic.KIND_COMPRESSED_AUDIO ||
+                                        track.kind == MissionZipMusic.KIND_MIDI
+                                )
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        stagingProblem = null
+                                        if (track.kind == MissionZipMusic.KIND_MIDI) {
+                                            midiPreviewTarget = track
+                                        } else {
+                                            stagingTrackId = track.id
+                                            scope.launch {
+                                                val staged =
+                                                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                        stageManager.cleanupOldFiles()
+                                                        stageManager.stageCompressedAudioTrack(catalog, track)
+                                                    }
+                                                stagingTrackId = null
+                                                if (staged == null) {
+                                                    stagingProblem = "Could not stage ${track.displayName} for preview"
+                                                } else {
+                                                    previewTarget = track to staged
+                                                }
+                                            }
+                                        }
+                                    },
+                                    enabled = stagingTrackId == null,
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                    modifier = Modifier.height(28.dp).tvFocusBorder(),
+                                ) {
+                                    Text(
+                                        if (stagingTrackId == track.id) "Staging" else "Preview",
+                                        fontSize = 11.sp,
+                                    )
+                                }
+                            }
+                        }
                         ModDetailLine(missionZipMusicTrackSubtitle(track))
                     }
                 }

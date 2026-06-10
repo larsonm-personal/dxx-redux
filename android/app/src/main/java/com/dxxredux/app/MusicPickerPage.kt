@@ -1,7 +1,6 @@
 package com.dxxredux.app
 
 import android.content.Context
-import android.media.MediaPlayer
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -617,167 +616,24 @@ private fun MidiTrackPreviewDialog(
     sampleRate: Int,
     onDismiss: () -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
-
-    var playing by remember { mutableStateOf(false) }
-    var positionMs by remember { mutableIntStateOf(0) }
-    var durationMs by remember { mutableIntStateOf(0) }
-    var seeking by remember { mutableStateOf(false) }
-    val playFocus = remember { FocusRequester() }
-    val sliderFocus = remember { FocusRequester() }
-    val closeFocus = remember { FocusRequester() }
-    var loadError by remember { mutableStateOf<String?>(null) }
-
-    DisposableEffect(Unit) {
-        onDispose { MidiPreviewBridge.stop() }
-    }
-
-    // Poll playback state
-    LaunchedEffect(playing) {
-        while (playing) {
-            val state = MidiPreviewBridge.getState()
-            if (!seeking) {
-                positionMs = state.positionMs
-                durationMs = state.durationMs
-            }
-            if (state.state == MidiPreviewBridge.STATE_STOPPED && durationMs > 0) {
-                playing = false
-                positionMs = durationMs
-            }
-            delay(100)
+    val detailLines =
+        buildList {
+            add("Source: ${source.label}")
+            if (track.duration_ms > 0) add("Duration: ${formatMusicPickerPreviewTime(track.duration_ms)}")
         }
-    }
-
-    fun togglePlayback() {
-        if (!playing) {
-            scope.launch(Dispatchers.IO) {
-                val data = MidiPreviewBridge.readHogEntry(source.hog, track.filename)
-                if (data == null) {
-                    loadError = "Could not read ${track.filename} from HOG"
-                    return@launch
-                }
-                val isHmp = track.filename.lowercase().endsWith(".hmp")
-                if (MidiPreviewBridge.start(data, isHmp, sampleRate)) {
-                    playing = true
-                    loadError = null
-                } else {
-                    loadError = "Playback failed"
-                }
-            }
-        } else {
-            val state = MidiPreviewBridge.getState()
-            if (state.state == MidiPreviewBridge.STATE_PLAYING) {
-                MidiPreviewBridge.pause()
-            } else {
-                MidiPreviewBridge.resume()
-            }
-        }
-    }
-
-    fun formatTime(ms: Int): String {
-        val s = ms / 1000
-        return "%d:%02d".format(s / 60, s % 60)
-    }
-
-    AlertDialog(
-        modifier = Modifier.repeatVerticalDpadFocus(closeFocus),
-        onDismissRequest = onDismiss,
-        title = { Text("MIDI Preview", fontSize = 16.sp) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(track.filename, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                Text(
-                    "Source: ${source.label}",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (track.duration_ms > 0) {
-                    Text(
-                        "Duration: ${formatTime(track.duration_ms)}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                loadError?.let {
-                    Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    TextButton(
-                        onClick = { togglePlayback() },
-                        modifier = Modifier.focusRequester(playFocus).tvFocusBorder(),
-                    ) {
-                        val label =
-                            if (!playing) {
-                                "Play"
-                            } else {
-                                val s = MidiPreviewBridge.getState()
-                                if (s.state == MidiPreviewBridge.STATE_PAUSED) "Resume" else "Pause"
-                            }
-                        Text(label, fontSize = 13.sp)
-                    }
-                    if (playing) {
-                        TextButton(
-                            onClick = {
-                                MidiPreviewBridge.stop()
-                                playing = false
-                                positionMs = 0
-                            },
-                            modifier = Modifier.tvFocusBorder(),
-                        ) {
-                            Text("Stop", fontSize = 13.sp)
-                        }
-                    }
-                }
-
-                Slider(
-                    value = if (durationMs > 0) positionMs.toFloat() / durationMs.toFloat() else 0f,
-                    onValueChange = { frac ->
-                        if (durationMs > 0) {
-                            seeking = true
-                            positionMs = (frac * durationMs).toInt()
-                        }
-                    },
-                    onValueChangeFinished = {
-                        if (durationMs > 0) {
-                            MidiPreviewBridge.seek(positionMs.toFloat() / durationMs.toFloat())
-                        }
-                        seeking = false
-                    },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .focusRequester(sliderFocus)
-                            .focusProperties {
-                                up = playFocus
-                                down = closeFocus
-                            }.tvFocusBorder()
-                            .then(verticalDpadFocusEscape()),
-                )
-                if (durationMs > 0) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(formatTime(positionMs), fontSize = 10.sp)
-                        Text(formatTime(durationMs), fontSize = 10.sp)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.focusRequester(closeFocus).focusProperties { up = sliderFocus }.tvFocusBorder(),
-            ) { Text("Close") }
-        },
+    MidiBytesPreviewDialog(
+        title = "MIDI Preview",
+        trackName = track.filename,
+        detailLines = detailLines,
+        isHmp = track.filename.lowercase().endsWith(".hmp") || track.filename.lowercase().endsWith(".hmq"),
+        loadBytes = { MidiPreviewBridge.readHogEntry(source.hog, track.filename) },
+        onDismiss = onDismiss,
     )
+}
+
+private fun formatMusicPickerPreviewTime(ms: Int): String {
+    val seconds = ms / 1000
+    return "%d:%02d".format(seconds / 60, seconds % 60)
 }
 
 @Composable
@@ -1642,163 +1498,33 @@ private fun AudioFileDetailDialog(
     onDismiss: () -> Unit,
 ) {
     val audioFile = File(File(filesDir, CustomAudioSetManager.MUSIC_DIR), "${track.setId}/${track.filename}")
-    var player by remember { mutableStateOf<MediaPlayer?>(null) }
-    var playing by remember { mutableStateOf(false) }
-    var positionMs by remember { mutableIntStateOf(0) }
-    var durationMs by remember { mutableIntStateOf(0) }
-    var seeking by remember { mutableStateOf(false) }
-    val sliderFocus = remember { FocusRequester() }
-    val closeFocus = remember { FocusRequester() }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            player?.release()
-        }
-    }
-
-    // Poll playback position
-    LaunchedEffect(playing) {
-        while (playing) {
-            val p = player
-            if (p != null && p.isPlaying && !seeking) {
-                positionMs = p.currentPosition
-            }
-            delay(100)
-        }
-    }
-
-    fun togglePlayback() {
-        val p = player
-        if (p == null) {
-            if (!audioFile.exists()) return
-            try {
-                val mp =
-                    MediaPlayer().apply {
-                        setDataSource(audioFile.absolutePath)
-                        prepare()
-                        start()
-                    }
-                player = mp
-                durationMs = mp.duration
-                playing = true
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to play ${audioFile.name}: ${e.message}")
-            }
-        } else if (p.isPlaying) {
-            p.pause()
-        } else {
-            p.start()
-            playing = true
-        }
-    }
-
-    fun formatTime(ms: Int): String {
-        val s = ms / 1000
-        return "%d:%02d".format(s / 60, s % 60)
-    }
-
-    AlertDialog(
-        modifier = Modifier.repeatVerticalDpadFocus(closeFocus),
-        onDismissRequest = onDismiss,
-        title = { Text("Track Info", fontSize = 16.sp) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("File: ${track.filename}", fontSize = 12.sp)
-                Text("Set: ${track.setLabel}", fontSize = 12.sp)
-                Text(
+    val lines =
+        buildList {
+            add(AudioFilePreviewLine("File: ${track.filename}"))
+            add(AudioFilePreviewLine("Set: ${track.setLabel}"))
+            add(
+                AudioFilePreviewLine(
                     "Path: ${CustomAudioSetManager.MUSIC_DIR}/${track.setId}/${track.filename}",
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (track.matchedName != null) {
-                    val detail =
-                        buildString {
-                            append("Matched: ${track.matchedName}")
-                            if (track.trackNum != null) append(" (Track ${track.trackNum})")
-                            if (track.confidence != null) append(" [${"%d".format((track.confidence * 100).toInt())}%]")
-                        }
-                    Text(
-                        detail,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                } else {
-                    Text(
-                        "No fingerprint match",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                if (audioFile.exists()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        TextButton(onClick = { togglePlayback() }) {
-                            val label =
-                                when {
-                                    player == null -> "Play"
-                                    player?.isPlaying == true -> "Pause"
-                                    else -> "Resume"
-                                }
-                            Text(label, fontSize = 13.sp)
-                        }
-                        if (player != null) {
-                            TextButton(onClick = {
-                                player?.stop()
-                                player?.release()
-                                player = null
-                                playing = false
-                                positionMs = 0
-                                durationMs = 0
-                            }) {
-                                Text("Stop", fontSize = 13.sp)
-                            }
-                        }
+                    small = true,
+                ),
+            )
+            if (track.matchedName != null) {
+                val detail =
+                    buildString {
+                        append("Matched: ${track.matchedName}")
+                        if (track.trackNum != null) append(" (Track ${track.trackNum})")
+                        if (track.confidence != null) append(" [${"%d".format((track.confidence * 100).toInt())}%]")
                     }
-                    Slider(
-                        value = if (durationMs > 0) positionMs.toFloat() / durationMs.toFloat() else 0f,
-                        onValueChange = { frac ->
-                            if (durationMs > 0) {
-                                seeking = true
-                                positionMs = (frac * durationMs).toInt()
-                            }
-                        },
-                        onValueChangeFinished = {
-                            if (durationMs > 0) {
-                                player?.seekTo(positionMs)
-                            }
-                            seeking = false
-                        },
-                        enabled = durationMs > 0,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .focusRequester(sliderFocus)
-                                .focusProperties { down = closeFocus }
-                                .tvFocusBorder()
-                                .then(verticalDpadFocusEscape()),
-                    )
-                    if (durationMs > 0) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(formatTime(positionMs), fontSize = 10.sp)
-                            Text(formatTime(durationMs), fontSize = 10.sp)
-                        }
-                    }
-                }
+                add(AudioFilePreviewLine(detail, primary = true))
+            } else {
+                add(AudioFilePreviewLine("No fingerprint match", small = true))
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.focusRequester(closeFocus).focusProperties { up = sliderFocus }.tvFocusBorder(),
-            ) { Text("Close") }
-        },
+        }
+    AudioFilePreviewDialog(
+        title = "Track Info",
+        audioFile = audioFile,
+        lines = lines,
+        onDismiss = onDismiss,
     )
 }
 
