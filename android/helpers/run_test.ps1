@@ -64,6 +64,23 @@ function Send-SetupCommand {
     ) | Out-Null
 }
 
+# -- Preflight script metadata --------------------------------
+
+$scriptPath = Join-RegressionPath $scriptDir "game_scripts" $ScriptName
+$gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
+$isStandaloneScript = Get-ScriptStandalone -ScriptPath $scriptPath
+
+if (-not $isStandaloneScript) {
+    Write-Status "WARNING: $ScriptName is a support script (not standalone). It is normally run by another test" "Yellow"
+    $rawScriptText = Get-Content -Path $scriptPath -Raw
+    $rawPlaceholders = @([regex]::Matches($rawScriptText, '\$\{[A-Za-z0-9_]+\}') | ForEach-Object { $_.Value } | Select-Object -Unique)
+    if ($rawPlaceholders.Count -gt 0) {
+        Write-Status "FAIL: support template has unresolved placeholders: $($rawPlaceholders -join ',')" "Red"
+        Write-Status "Run this template through its wrapper instead of launching it directly" "Yellow"
+        exit 1
+    }
+}
+
 # -- Step 1: Health check -------------------------------------
 
 Ensure-EmulatorHealthy
@@ -84,13 +101,6 @@ if ($Install) {
 }
 
 # -- Step 3: Determine which game(s) to run -------------------
-
-$scriptPath = Join-RegressionPath $scriptDir "game_scripts" $ScriptName
-$gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
-
-if (-not (Get-ScriptStandalone -ScriptPath $scriptPath)) {
-    Write-Status "WARNING: $ScriptName is a support script (not standalone). It is normally run by another test" "Yellow"
-}
 
 if ($Game) {
     # Explicit -Game parameter overrides _info
@@ -163,6 +173,19 @@ foreach ($gameId in $gameList) {
         $pushSrc = $resolvedPath
     } else {
         $pushSrc = $scriptPath
+    }
+    $resolvedText = Get-Content -Path $pushSrc -Raw
+    $unresolved = @([regex]::Matches($resolvedText, '\$\{[A-Za-z0-9_]+\}') | ForEach-Object { $_.Value } | Select-Object -Unique)
+    if ($unresolved.Count -gt 0) {
+        $hint = if (-not $isStandaloneScript) {
+            " This support template should be run through its wrapper, not directly."
+        } else {
+            ""
+        }
+        Write-Status "FAIL: unresolved script placeholders: $($unresolved -join ',').$hint" "Red"
+        $allPassed = $false
+        if ($gameList.Count -gt 1) { continue }
+        exit 1
     }
 
     # -- Resolve declarative game data deps (if present) ----------

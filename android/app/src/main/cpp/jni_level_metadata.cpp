@@ -665,7 +665,7 @@ Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEn
 		request = json::object();
 		result = failed_result(request, e.what());
 		env->ReleaseStringUTFChars(jrequest, request_chars);
-		dumped = result.dump();
+		dumped = result.dump(2);
 		return env->NewStringUTF(dumped.c_str());
 	}
 	env->ReleaseStringUTFChars(jrequest, request_chars);
@@ -676,6 +676,6 @@ Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEn
 	} catch (const std::exception &e) {
 		result = failed_result(request, e.what());
 	}
-	dumped = result.dump();
+	dumped = result.dump(2);
 	return env->NewStringUTF(dumped.c_str());
 }

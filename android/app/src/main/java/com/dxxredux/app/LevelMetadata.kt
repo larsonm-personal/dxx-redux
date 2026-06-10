@@ -876,13 +876,25 @@ open class LevelMetadataAnalysisService : Service() {
             } catch (e: Throwable) {
                 failedJson(request, e.message ?: e.javaClass.simpleName)
             }
+        val formattedResult = formatJsonResult(result)
         resultFile.parentFile?.mkdirs()
         val tmp = File(resultFile.parentFile, resultFile.name + ".tmp")
-        tmp.writeText(result, Charsets.UTF_8)
+        tmp.writeText(formattedResult, Charsets.UTF_8)
         if (!tmp.renameTo(resultFile)) {
-            resultFile.writeText(result, Charsets.UTF_8)
+            resultFile.writeText(formattedResult, Charsets.UTF_8)
             tmp.delete()
         }
+    }
+
+    private fun formatJsonResult(text: String): String {
+        val trimmed = text.trim()
+        val formatted =
+            try {
+                if (trimmed.startsWith("[")) JSONArray(trimmed).toString(2) else JSONObject(trimmed).toString(2)
+            } catch (e: Throwable) {
+                trimmed
+            }
+        return formatted + "\n"
     }
 
     private fun failedJson(
@@ -897,7 +909,7 @@ open class LevelMetadataAnalysisService : Service() {
             .put("source", request.optString("source_name"))
             .put("levels", JSONArray())
             .put("problems", JSONArray().put(problem))
-            .toString()
+            .toString(2)
 
     companion object {
         const val EXTRA_REQUEST_PATH = "request_path"

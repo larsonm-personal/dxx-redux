@@ -17,6 +17,7 @@ $ErrorActionPreference = "Stop"
 $helpersDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "test_helpers.ps1")
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 if (-not $OutDir) {
     $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
@@ -44,10 +45,153 @@ function ConvertTo-JsonStringContent {
     return $literal.Substring(1, $literal.Length - 2)
 }
 
+function ConvertTo-NormalizedJsonText {
+    param([Parameter(Mandatory = $true)][string]$Text)
+
+    $trimmed = $Text.Trim()
+    if (-not $trimmed) { return $Text }
+    if ($trimmed -eq "[]") { return "[]`n" }
+    $parsed = $trimmed | ConvertFrom-Json
+    if ($trimmed.StartsWith("[")) {
+        $value = [System.Collections.ArrayList]::new()
+        foreach ($item in @($parsed)) {
+            [void]$value.Add($item)
+        }
+    } else {
+        $value = $parsed
+    }
+    $json = (ConvertTo-Json -InputObject $value -Depth 100) -replace "`r`n", "`n"
+    return "$json`n"
+}
+
+function Write-Utf8NoBomText {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Text
+    )
+
+    [System.IO.File]::WriteAllText($Path, $Text, [System.Text.UTF8Encoding]::new($false))
+}
+
+function Write-TestJsonText {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Text
+    )
+
+    try {
+        Write-Utf8NoBomText -Path $Path -Text (ConvertTo-NormalizedJsonText -Text $Text)
+    } catch {
+        Write-Utf8NoBomText -Path $Path -Text $Text
+    }
+}
+
+function Add-MissionZipGameHints {
+    param(
+        [Parameter(Mandatory = $true)]$Archive,
+        [Parameter(Mandatory = $true)][hashtable]$Counts,
+        [int]$Depth = 0
+    )
+
+    foreach ($entry in $Archive.Entries) {
+        if (-not $entry.Name) { continue }
+        $name = $entry.Name.ToLowerInvariant()
+        switch ([IO.Path]::GetExtension($name)) {
+            ".msn" { $Counts.d1 += 10 }
+            ".rdl" { $Counts.d1 += 1 }
+            ".sdl" { $Counts.d1 += 1 }
+            ".mn2" { $Counts.d2 += 10 }
+            ".rl2" { $Counts.d2 += 1 }
+            ".sl2" { $Counts.d2 += 1 }
+            ".zip" {
+                if ($Depth -ge 2 -or $entry.Length -gt 100MB) { break }
+                $stream = $entry.Open()
+                $memory = New-Object System.IO.MemoryStream
+                try {
+                    $stream.CopyTo($memory)
+                    $memory.Position = 0
+                    $nested = New-Object System.IO.Compression.ZipArchive($memory, [System.IO.Compression.ZipArchiveMode]::Read, $true)
+                    try {
+                        Add-MissionZipGameHints -Archive $nested -Counts $Counts -Depth ($Depth + 1)
+                    } finally {
+                        $nested.Dispose()
+                    }
+                } catch {
+                    $Counts.problems += "Could not inspect nested ZIP $($entry.FullName): $($_.Exception.Message)"
+                } finally {
+                    $stream.Dispose()
+                    $memory.Dispose()
+                }
+            }
+        }
+    }
+}
+
+function Get-MissionZipGameHint {
+    param([Parameter(Mandatory = $true)][string]$ZipPath)
+
+    $counts = @{ d1 = 0; d2 = 0; problems = @() }
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
+    try {
+        Add-MissionZipGameHints -Archive $archive -Counts $counts
+    } finally {
+        $archive.Dispose()
+    }
+
+    $game =
+    if ($counts.d1 -gt 0 -and $counts.d2 -eq 0) {
+        "d1"
+    } elseif ($counts.d2 -gt 0 -and $counts.d1 -eq 0) {
+        "d2"
+    } elseif ($counts.d1 -gt 0 -and $counts.d2 -gt 0) {
+        "mixed"
+    } else {
+        "unknown"
+    }
+    $reason =
+    if ($game -eq "mixed") {
+        "ZIP contains both D1 and D2 mission hints"
+    } elseif ($game -eq "unknown") {
+        "ZIP contains no D1/D2 mission descriptor or level hints"
+    } elseif ($counts.problems.Count -gt 0) {
+        ($counts.problems -join "; ")
+    } else {
+        ""
+    }
+    [pscustomobject]@{
+        Game = $game
+        D1Score = $counts.d1
+        D2Score = $counts.d2
+        Reason = $reason
+    }
+}
+
+function Get-MissionZipLaunchButtonText {
+    param([Parameter(Mandatory = $true)][ValidateSet("d1", "d2")][string]$GameId)
+    if ($GameId -eq "d1") { return "Launch Descent 1" }
+    return "Launch Descent 2"
+}
+
+function Get-MissionZipGameSelectButtonText {
+    param([Parameter(Mandatory = $true)][ValidateSet("d1", "d2")][string]$GameId)
+    if ($GameId -eq "d1") { return "Descent 1" }
+    return "Descent 2"
+}
+
+function Get-MissionZipStartConfirmAction {
+    param([Parameter(Mandatory = $true)][ValidateSet("d1", "d2")][string]$GameId)
+    if ($GameId -eq "d1") { return "key" }
+    return "select"
+}
+
 function Resolve-MissionZipTemplate {
     param(
         [Parameter(Mandatory = $true)][string]$DeviceZipName,
         [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)][ValidateSet("d1", "d2")][string]$GameId,
+        [Parameter(Mandatory = $true)][string]$GameSelectButtonText,
+        [Parameter(Mandatory = $true)][string]$MissionStartConfirmAction,
+        [Parameter(Mandatory = $true)][string]$LaunchButtonText,
         [Parameter(Mandatory = $true)][string]$OutputPath
     )
     $templatePath = Join-Path $androidRoot "game_scripts\test_mission_zip_batch_import_metadata_launch.json5"
@@ -55,6 +199,10 @@ function Resolve-MissionZipTemplate {
     $text = $text.Replace('${ZIP_FILE}', (ConvertTo-JsonStringContent $DeviceZipName))
     $text = $text.Replace('${ZIP_LABEL}', (ConvertTo-JsonStringContent $Label))
     $text = $text.Replace('${ZIP_DISPLAY_NAME}', (ConvertTo-JsonStringContent $DeviceZipName))
+    $text = $text.Replace('${GAME_ID}', (ConvertTo-JsonStringContent $GameId))
+    $text = $text.Replace('${GAME_SELECT_BUTTON_TEXT}', (ConvertTo-JsonStringContent $GameSelectButtonText))
+    $text = $text.Replace('${MISSION_START_CONFIRM_ACTION}', (ConvertTo-JsonStringContent $MissionStartConfirmAction))
+    $text = $text.Replace('${LAUNCH_BUTTON_TEXT}', (ConvertTo-JsonStringContent $LaunchButtonText))
     Set-Content -Path $OutputPath -Value $text -Encoding utf8
 }
 
@@ -90,7 +238,11 @@ function Save-AppTextFile {
     if (-not $text -or $text -match 'No such file') {
         return $false
     }
-    Set-Content -Path $LocalPath -Value $text -Encoding utf8
+    if ([IO.Path]::GetExtension($LocalPath).Equals(".json", [StringComparison]::OrdinalIgnoreCase)) {
+        Write-TestJsonText -Path $LocalPath -Text $text
+    } else {
+        Write-Utf8NoBomText -Path $LocalPath -Text $text
+    }
     return $true
 }
 
@@ -160,6 +312,7 @@ foreach ($zip in $zips) {
         Join-Path $RegressionJsonDir "$($zip.BaseName).json"
     }
     $hash = (Get-FileHash -Algorithm SHA256 -Path $zip.FullName).Hash.ToLowerInvariant()
+    $gameHint = Get-MissionZipGameHint -ZipPath $zip.FullName
 
     $record = [ordered]@{
         zip = $zip.FullName
@@ -167,6 +320,7 @@ foreach ($zip in $zips) {
         sha256 = $hash
         size_bytes = $zip.Length
         label = $label
+        game = $gameHint.Game
         status = "pending"
         metadata_json = $metadataPath
         regression_json = $regressionJsonPath
@@ -180,13 +334,25 @@ foreach ($zip in $zips) {
         Write-Status "SKIP large ZIP: $($zip.Name) ($([math]::Round($zip.Length / 1MB, 1)) MB)" "Yellow"
         $record["status"] = "skipped_large"
         $results += [pscustomobject]$record
-        Set-Content -Path $metadataPath -Value "[]" -Encoding utf8
+        Write-TestJsonText -Path $metadataPath -Text "[]"
+        continue
+    }
+    if ($gameHint.Game -notin @("d1", "d2")) {
+        $record["status"] = "skipped_$($gameHint.Game)_game"
+        $record["reason"] = $gameHint.Reason
+        Write-Status "SKIP $($gameHint.Game) game ZIP: $($zip.Name) -- $($gameHint.Reason)" "Yellow"
+        $results += [pscustomobject]$record
+        Write-TestJsonText -Path $metadataPath -Text "[]"
+        ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
         continue
     }
 
-    Write-Status "Running mission ZIP: $($zip.Name)"
+    $launchButtonText = Get-MissionZipLaunchButtonText -GameId $gameHint.Game
+    $gameSelectButtonText = Get-MissionZipGameSelectButtonText -GameId $gameHint.Game
+    $missionStartConfirmAction = Get-MissionZipStartConfirmAction -GameId $gameHint.Game
+    Write-Status "Running mission ZIP: $($zip.Name) ($($gameHint.Game.ToUpperInvariant()))"
     try {
-        Resolve-MissionZipTemplate -DeviceZipName $deviceZipName -Label $label -OutputPath $resolvedScript
+        Resolve-MissionZipTemplate -DeviceZipName $deviceZipName -Label $label -GameId $gameHint.Game -GameSelectButtonText $gameSelectButtonText -MissionStartConfirmAction $missionStartConfirmAction -LaunchButtonText $launchButtonText -OutputPath $resolvedScript
         Push-AppPrivateFile -LocalPath $zip.FullName -DeviceRelativePath "mission_zip_batch_cache/$deviceZipName"
         Push-AppPrivateFile -LocalPath $resolvedScript -DeviceRelativePath $deviceScriptName
 
@@ -210,6 +376,10 @@ foreach ($zip in $zips) {
         if (-not $passed -and $automationResult -and $automationResult.reason) {
             $record["reason"] = $automationResult.reason
         }
+        if (-not $passed) {
+            $reason = if ($record["reason"]) { $record["reason"] } else { "automation failed" }
+            Write-Status "FAIL: $($zip.Name): $reason" "Red"
+        }
     } catch {
         $record["status"] = "failed"
         $record["reason"] = $_.Exception.Message
@@ -217,7 +387,7 @@ foreach ($zip in $zips) {
     } finally {
         $metadataSaved = Save-AppTextFile -DeviceRelativePath "level_metadata_automation_$label.json" -LocalPath $metadataPath
         if (-not $metadataSaved) {
-            Set-Content -Path $metadataPath -Value "[]" -Encoding utf8
+            Write-TestJsonText -Path $metadataPath -Text "[]"
         }
         if ($metadataSaved -and -not $NoRegressionJson -and $record["status"] -eq "passed") {
             Copy-Item -Path $metadataPath -Destination $regressionJsonPath -Force
@@ -231,8 +401,29 @@ foreach ($zip in $zips) {
     }
 }
 
-ConvertTo-Json -InputObject @($results) -Depth 30 | Set-Content -Path (Join-Path $OutDir "summary.json") -Encoding utf8
+Write-TestJsonText -Path (Join-Path $OutDir "summary.json") -Text (ConvertTo-Json -InputObject @($results) -Depth 30)
 $failed = @($results | Where-Object { $_.status -eq "failed" })
-Write-Status "Mission ZIP batch complete: $($results.Count) total, $($failed.Count) failed. Output: $OutDir"
-if ($failed.Count -gt 0) { exit 1 }
+$passed = @($results | Where-Object { $_.status -eq "passed" })
+$skipped = @($results | Where-Object { $_.status -like "skipped*" })
+$failedSummaryPath = Join-Path $OutDir "failed_zips.txt"
+if ($failed.Count -gt 0) {
+    $failedLines = @()
+    foreach ($item in $failed) {
+        $reason = if ($item.reason) { $item.reason } else { "failed" }
+        $failedLines += "$($item.name)`t$reason"
+    }
+    Set-Content -Path $failedSummaryPath -Value $failedLines -Encoding utf8
+} else {
+    Set-Content -Path $failedSummaryPath -Value @() -Encoding utf8
+}
+Write-Status "Mission ZIP batch complete: $($results.Count) total, $($passed.Count) passed, $($skipped.Count) skipped, $($failed.Count) failed. Output: $OutDir"
+if ($failed.Count -gt 0) {
+    Write-Status "Failed ZIPs:" "Red"
+    foreach ($item in $failed) {
+        $reason = if ($item.reason) { $item.reason } else { "failed" }
+        Write-Host "  $($item.name) -- $reason" -ForegroundColor Red
+    }
+    Write-Status "Failed ZIP summary: $failedSummaryPath" "Yellow"
+    exit 1
+}
 exit 0

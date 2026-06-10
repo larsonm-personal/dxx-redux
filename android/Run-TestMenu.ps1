@@ -23,6 +23,7 @@ $HelpersDir = Join-Path -Path $ScriptDir -ChildPath "helpers"
 $GameScriptsDir = Join-Path -Path $ScriptDir -ChildPath "game_scripts"
 $TestsDir = Join-Path -Path $ScriptDir -ChildPath "tests"
 $runTestScript = Join-Path -Path $HelpersDir -ChildPath "run_test.ps1"
+$runMissionZipBatchScript = Join-Path -Path $HelpersDir -ChildPath "run_mission_zip_batch.ps1"
 
 . (Join-Path $HelpersDir "test_helpers.ps1")
 
@@ -125,6 +126,19 @@ if (-not $NoBuild) {
 }
 
 # -- Run the selected test ---------------------------------------------------
+
+if ($selected.Name -eq "test_mission_zip_batch_import_metadata_launch") {
+    if (-not (Test-Path $runMissionZipBatchScript)) {
+        Write-Host "[!] run_mission_zip_batch.ps1 not found at $runMissionZipBatchScript" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host ""
+    Write-Status "Running mission ZIP batch wrapper"
+    $batchArgs = @{}
+    if (-not $NoBuild) { $batchArgs.Install = $true }
+    & $runMissionZipBatchScript @batchArgs
+    exit $LASTEXITCODE
+}
 
 if ($selected.Type -eq "json5") {
     # json5: delegate to run_test.ps1 with optional game choice and params

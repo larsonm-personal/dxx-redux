@@ -92,6 +92,7 @@
 ## automated testing
 - use the introspection API (added specifically for AI tool debug access) to find out the current game state such as menu items, current level, ship position, etc. - do *not* rely on printing things to PNG and analyzing images. if you get stuck having to do that, extend the introspection API instead and re-run
 - use the automation api to drive the game into a desired state for testing. when using the automation api, save new automation scripts to android/game_scripts/*.json5 so they can be maintained and committed to git. eventually they'll be used for regression testing
+- all json output files or other text files used for regression checks should be pretty-printed and normalized (having keys/items in a regular order that is stable across changes, if possible). this *should not* be done by a post-run formatter pass; instead, find settings within the language/scripting system that produces the files, and have pretty-printing+normalizing be part of the output
 - place automated test files into "temp" within this repo so that the file writes don't need to be approved
 - when testing with the android emulator, the game will initially load to the main menu. there are helper script bits to choose a player, mission, level and skip briefings. see the regression test .json5 files and their attendant scripts
 - note that the D1 level set (the base game, not an expansion) is referred to as "first strike" and the d2 level set (the base game, not an expansion) is "counterstrike!". these are used in mission selection during automated tests
