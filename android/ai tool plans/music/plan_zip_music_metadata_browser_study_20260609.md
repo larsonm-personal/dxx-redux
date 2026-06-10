@@ -313,16 +313,18 @@ Verification:
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\EnginePreferencesPage.kt','android\app\src\main\java\com\dxxredux\app\SetupConfigFiles.kt','android\app\src\main\java\com\dxxredux\app\ConfigImportExport.kt','android\app\src\test\java\com\dxxredux\app\MusicLaunchPolicyTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md','android\ai tool plans\music\plan_trine2_embedded_soundtrack_investigation_20260609.md')`
 
 ### Phase 1: Discovery And UI Button
-- Add `MissionZipMusic.kt`.
-- Add music roles/extensions to mission ZIP scanning without changing importability rules.
-- Detect outer `.sng`, outer loose music files, nested DXA `.sng` and loose compressed audio, and HOG HMP/MID/HMQ entries.
-- Detect HOG-contained `.sng` plus HOG-contained OGG/MP3/FLAC entries. This is required for `trine2.zip`, `Trine1.zip`, `cererian_1.3.zip`, and `U3AAH.zip`.
-- Add a `Music tracks` button to `ModDetailsDialog` when catalog has playable or listable tracks.
-- Unit tests:
-  - top-level `.sng` detected,
-  - HOG HMP detected,
-  - nested DXA OGG detected,
-  - no button for ZIPs with no music.
+Status: completed 2026-06-09.
+
+- [x] Add `MissionZipMusic.kt`.
+- [x] Add music roles/extensions to mission ZIP scanning without changing importability rules.
+- [x] Detect outer `.sng`, outer loose music files, nested DXA `.sng` and loose compressed audio, and HOG HMP/MID/HMQ entries.
+- [x] Detect HOG-contained `.sng` plus HOG-contained OGG/MP3/FLAC entries. This is required for `trine2.zip`, `Trine1.zip`, `cererian_1.3.zip`, and `U3AAH.zip`.
+- [x] Add a `Music tracks` button to `ModDetailsDialog` when catalog has playable or listable tracks.
+- [x] Add unit tests for top-level `.sng`, HOG HMP, nested DXA OGG, HOG-contained `.sng` plus OGG, and no-music ZIPs.
+
+Verification:
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipMusic.kt','android\app\src\main\java\com\dxxredux\app\ModManager.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicTest.kt','android\app\src\test\java\com\dxxredux\app\MusicLaunchPolicyTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 2: Browser Refactor
 - Extract `TrackBrowserDialog` and preview detail dialogs from `MusicPickerPage.kt`.

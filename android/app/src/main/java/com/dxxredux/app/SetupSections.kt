@@ -396,6 +396,7 @@ private fun ModDetailsDialog(
     var textViewTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var constituentTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
+    var musicCatalogTarget by remember { mutableStateOf<MissionZipMusicCatalog?>(null) }
     val topLevelMetadataTargets =
         remember(details?.archivePath, details?.missionZip, setDir.absolutePath, mod.displayName, mod.game) {
             details?.let {
@@ -439,6 +440,12 @@ private fun ModDetailsDialog(
                     null
                 },
             onDismiss = { constituentTarget = null },
+        )
+    }
+    musicCatalogTarget?.let { catalog ->
+        MissionZipMusicDialog(
+            catalog = catalog,
+            onDismiss = { musicCatalogTarget = null },
         )
     }
     AlertDialog(
@@ -533,6 +540,33 @@ private fun ModDetailsDialog(
                                             modifier = Modifier.padding(bottom = 6.dp),
                                         )
                                     }
+                                }
+                            }
+                        }
+
+                        details.missionZipMusic?.let { catalog ->
+                            val trackCount = catalog.sources.sumOf { it.tracks.size }
+                            OutlinedButton(
+                                onClick = { musicCatalogTarget = catalog },
+                                shape = MaterialTheme.shapes.small,
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 6.dp),
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Text(
+                                        "Music tracks",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        "$trackCount entries across ${catalog.sources.size} source(s)",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                             }
                         }
@@ -728,6 +762,71 @@ private fun ModDetailsDialog(
         },
     )
 }
+
+@Composable
+private fun MissionZipMusicDialog(
+    catalog: MissionZipMusicCatalog,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        title = {
+            Text("Music tracks", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        },
+        text = {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(scrollState),
+            ) {
+                Text(
+                    catalog.archivePath,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
+                catalog.sources.forEach { source ->
+                    ModDetailSectionTitle(source.label)
+                    if (source.containerPath.isNotBlank()) {
+                        ModDetailLine(source.containerPath)
+                    }
+                    source.tracks.forEach { track ->
+                        Text(
+                            track.displayName,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(top = 3.dp),
+                        )
+                        ModDetailLine(missionZipMusicTrackSubtitle(track))
+                    }
+                }
+            }
+        },
+    )
+}
+
+private fun missionZipMusicTrackSubtitle(track: MissionZipMusicTrack): String =
+    buildList {
+        add(
+            when (track.kind) {
+                MissionZipMusic.KIND_SONG_REFERENCE -> "Song list reference"
+                MissionZipMusic.KIND_MIDI -> "MIDI/HMP track"
+                MissionZipMusic.KIND_COMPRESSED_AUDIO -> "Audio track"
+                else -> track.kind.replace('_', ' ')
+            },
+        )
+        if (track.extension.isNotBlank()) add(track.extension.uppercase(Locale.US))
+        if (track.sizeBytes > 0) add(setupSectionFormatSize(track.sizeBytes))
+        if (track.hogEntryName != null) add("inside ${track.archiveEntryPath}")
+        track.nestedEntryPath?.let { add(it) }
+    }.joinToString(" - ")
 
 @Composable
 private fun MissionZipConstituentDialog(

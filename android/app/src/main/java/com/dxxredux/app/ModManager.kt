@@ -172,6 +172,7 @@ class ModManager(
         val baseRequirements: List<ModBaseRequirement>,
         val problems: List<String>,
         val missionZip: MissionZip.ScanResult? = null,
+        val missionZipMusic: MissionZipMusicCatalog? = null,
     )
 
     private data class ActualBaseFile(
@@ -735,6 +736,7 @@ class ModManager(
                     baseRequirements = emptyList(),
                     problems = emptyList(),
                     missionZip = scan,
+                    missionZipMusic = MissionZipMusic.inspect(modFile),
                 )
             }
         } catch (e: Exception) {
