@@ -1,0 +1,392 @@
+[
+  {
+    "status": "ok",
+    "source": "Megalomania 01",
+    "game": "d1",
+    "mission_name": "megalo01",
+    "mission_filename": "megalo01.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Capella IV Au Mine",
+        "level_file": "megaloma.rdl",
+        "robots": 30,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 3,
+        "mine_volume": 5842966.327287003,
+        "mine_volume_normalized": 1.2777368257786763,
+        "mine_volume_text": "1.3x",
+        "travel_distance": 2723.8744295687784,
+        "travel_time_seconds": 54,
+        "travel_time_text": "0M:54S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 2
+      }
+    ],
+    "target_index": 0
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 02",
+    "game": "d1",
+    "mission_name": "megalo02",
+    "mission_filename": "megalo02.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Capella IV Refinery",
+        "level_file": "megaloma.rdl",
+        "robots": 36,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 16313322.26596187,
+        "mine_volume_normalized": 3.567388795768234,
+        "mine_volume_text": "3.6x",
+        "travel_distance": 2388.7725637990043,
+        "travel_time_seconds": 48,
+        "travel_time_text": "0M:48S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0
+      }
+    ],
+    "target_index": 1
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 03",
+    "game": "d1",
+    "mission_name": "megalo03",
+    "mission_filename": "megalo03.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Onkerfeldt Generating Station",
+        "level_file": "megaloma.rdl",
+        "robots": 39,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 16,
+        "energy_centers": 2,
+        "mine_volume": 123568210.19100216,
+        "mine_volume_normalized": 27.021831688342715,
+        "mine_volume_text": "27x",
+        "travel_distance": 9734.57531659301,
+        "travel_time_seconds": 195,
+        "travel_time_text": "3M:15S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 3
+      }
+    ],
+    "target_index": 2
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 04",
+    "game": "d1",
+    "mission_name": "megalo04",
+    "mission_filename": "megalo04.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Aquincum",
+        "level_file": "megaloma.rdl",
+        "robots": 73,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 2,
+        "energy_centers": 1,
+        "mine_volume": 22555195.142428067,
+        "mine_volume_normalized": 4.932358297448229,
+        "mine_volume_text": "4.9x",
+        "travel_distance": 3910.218777983866,
+        "travel_time_seconds": 78,
+        "travel_time_text": "1M:18S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 2
+      }
+    ],
+    "target_index": 3
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 05",
+    "game": "d1",
+    "mission_name": "megalo05",
+    "mission_filename": "megalo05.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Pegasus MHD Lab",
+        "level_file": "megaloma.rdl",
+        "robots": 107,
+        "hostages": 3,
+        "secrets": 0,
+        "matcens": 3,
+        "energy_centers": 3,
+        "mine_volume": 10956993.49022745,
+        "mine_volume_normalized": 2.3960696156846364,
+        "mine_volume_text": "2.4x",
+        "travel_distance": 5814.787622303168,
+        "travel_time_seconds": 116,
+        "travel_time_text": "1M:56S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3
+      }
+    ],
+    "target_index": 4
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 06",
+    "game": "d1",
+    "mission_name": "megalo06",
+    "mission_filename": "megalo06.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Heaviside Missile Base",
+        "level_file": "megaloma.rdl",
+        "robots": 63,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 5,
+        "energy_centers": 4,
+        "mine_volume": 46011452.038537055,
+        "mine_volume_normalized": 10.06176030873785,
+        "mine_volume_text": "10x",
+        "travel_distance": 3877.667901680775,
+        "travel_time_seconds": 78,
+        "travel_time_text": "1M:18S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 2
+      }
+    ],
+    "target_index": 5
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 07",
+    "game": "d1",
+    "mission_name": "megalo07",
+    "mission_filename": "megalo07.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Kliskowsky Shield Battery",
+        "level_file": "megaloma.rdl",
+        "robots": 111,
+        "hostages": 6,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 2,
+        "mine_volume": 15115174.2993487,
+        "mine_volume_normalized": 3.3053784239945667,
+        "mine_volume_text": "3.3x",
+        "travel_distance": 9210.100842306612,
+        "travel_time_seconds": 184,
+        "travel_time_text": "3M:04S",
+        "travel_targets_reached": 8,
+        "travel_targets_total": 8,
+        "travel_key_detours": 3
+      }
+    ],
+    "target_index": 6
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 08",
+    "game": "d1",
+    "mission_name": "megalo08",
+    "mission_filename": "megalo08.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Amberstream",
+        "level_file": "megaloma.rdl",
+        "robots": 20,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 189237075.2458674,
+        "mine_volume_normalized": 41.38226481215494,
+        "mine_volume_text": "41x",
+        "travel_distance": 1310.2871671442736,
+        "travel_time_seconds": 26,
+        "travel_time_text": "0M:26S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0
+      }
+    ],
+    "target_index": 7
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 09",
+    "game": "d1",
+    "mission_name": "megalo09",
+    "mission_filename": "megalo09.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Anomaly 12 Observation Vessel",
+        "level_file": "megaloma.rdl",
+        "robots": 81,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 3,
+        "energy_centers": 8,
+        "mine_volume": 304904924.2567844,
+        "mine_volume_normalized": 66.67644964249595,
+        "mine_volume_text": "67x",
+        "travel_distance": 1731.4024409137853,
+        "travel_time_seconds": 35,
+        "travel_time_text": "0M:35S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 1
+      }
+    ],
+    "target_index": 8
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 10",
+    "game": "d1",
+    "mission_name": "megalo10",
+    "mission_filename": "megalo10.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Atsutomo Robot Factory",
+        "level_file": "megaloma.rdl",
+        "robots": 48,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 11,
+        "energy_centers": 2,
+        "mine_volume": 34561729.22949187,
+        "mine_volume_normalized": 7.557940902873165,
+        "mine_volume_text": "7.6x",
+        "travel_distance": 8413.261955309295,
+        "travel_time_seconds": 168,
+        "travel_time_text": "2M:48S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 3
+      }
+    ],
+    "target_index": 9
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 11",
+    "game": "d1",
+    "mission_name": "megalo11",
+    "mission_filename": "megalo11.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Uaxactunia",
+        "level_file": "megaloma.rdl",
+        "robots": 66,
+        "hostages": 0,
+        "secrets": 5,
+        "matcens": 1,
+        "energy_centers": 1,
+        "mine_volume": 52629350.49558292,
+        "mine_volume_normalized": 11.50895888805221,
+        "mine_volume_text": "12x",
+        "travel_distance": 0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "travel_status": "failed",
+        "travel_problem": "target unreachable or blocked by unsupported door"
+      }
+    ],
+    "target_index": 10
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 12",
+    "game": "d1",
+    "mission_name": "megalo12",
+    "mission_filename": "megalo12.msn",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Progenitor",
+        "level_file": "megaloma.rdl",
+        "robots": 5,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 1,
+        "energy_centers": 8,
+        "mine_volume": 102480134.15569744,
+        "mine_volume_normalized": 22.410302231242333,
+        "mine_volume_text": "22x",
+        "travel_distance": 755.8022945425362,
+        "travel_time_seconds": 15,
+        "travel_time_text": "0M:15S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 0,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      }
+    ],
+    "target_index": 11
+  }
+]

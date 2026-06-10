@@ -1,0 +1,58 @@
+[
+  {
+    "status": "ok",
+    "source": "Tyrsis",
+    "game": "d2",
+    "mission_name": "TYRSIS",
+    "mission_filename": "TYRSIS.MN2",
+    "coop_starts": "4",
+    "level_count": 2,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Myrian",
+        "level_file": "myrian1.rl2",
+        "robots": 77,
+        "hostages": 4,
+        "secrets": 3,
+        "matcens": 2,
+        "energy_centers": 5,
+        "mine_volume": 17140772.101250738,
+        "mine_volume_normalized": 3.7483350937291866,
+        "mine_volume_text": "3.7x",
+        "travel_distance": 10266.414274629125,
+        "travel_time_seconds": 205,
+        "travel_time_text": "3M:25S",
+        "travel_targets_reached": 6,
+        "travel_targets_total": 6,
+        "travel_key_detours": 3
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Aerillia",
+        "level_file": "aerillia.rl2",
+        "robots": 103,
+        "hostages": 4,
+        "secrets": 4,
+        "matcens": 2,
+        "energy_centers": 6,
+        "mine_volume": 13494419.377982315,
+        "mine_volume_normalized": 2.950952584002877,
+        "mine_volume_text": "3.0x",
+        "travel_distance": 7762.053517662748,
+        "travel_time_seconds": 155,
+        "travel_time_text": "2M:35S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      }
+    ],
+    "target_index": 0
+  }
+]

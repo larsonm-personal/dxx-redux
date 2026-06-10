@@ -1,0 +1,56 @@
+[
+  {
+    "status": "ok",
+    "source": "Lagrange",
+    "game": "d2",
+    "mission_name": "LAGRANGE",
+    "mission_filename": "LAGRANGE.MN2",
+    "coop_starts": "1-4",
+    "level_count": 2,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Lagrange",
+        "level_file": "lagrange.rl2",
+        "robots": 75,
+        "hostages": 3,
+        "secrets": 0,
+        "matcens": 1,
+        "energy_centers": 2,
+        "mine_volume": 9068239.305758307,
+        "mine_volume_normalized": 1.9830378367627906,
+        "mine_volume_text": "2.0x",
+        "travel_distance": 3387.8051227899646,
+        "travel_time_seconds": 68,
+        "travel_time_text": "1M:08S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 0
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Museum of Death",
+        "level_file": "roberts.rl2",
+        "robots": 23,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 2947295.796684501,
+        "mine_volume_normalized": 0.6445131060057044,
+        "mine_volume_text": "0.64x",
+        "travel_distance": 0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "travel_status": "failed",
+        "travel_problem": "target unreachable or blocked by unsupported door"
+      }
+    ],
+    "target_index": 0
+  }
+]

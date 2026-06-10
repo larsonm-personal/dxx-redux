@@ -1,0 +1,54 @@
+[
+  {
+    "status": "ok",
+    "source": "Vela Mines",
+    "game": "d2",
+    "mission_name": "vela",
+    "mission_filename": "vela.mn2",
+    "coop_starts": "4",
+    "level_count": 2,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Robotic Research Lab",
+        "level_file": "level01.rl2",
+        "robots": 108,
+        "hostages": 3,
+        "secrets": 3,
+        "matcens": 17,
+        "energy_centers": 4,
+        "mine_volume": 7598830.647305993,
+        "mine_volume_normalized": 1.6617083185257193,
+        "mine_volume_text": "1.7x",
+        "travel_distance": 10601.530782039286,
+        "travel_time_seconds": 212,
+        "travel_time_text": "3M:32S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Mecha Construction Facility",
+        "level_file": "level02.rl2",
+        "robots": 140,
+        "hostages": 3,
+        "secrets": 1,
+        "matcens": 4,
+        "energy_centers": 4,
+        "mine_volume": 7849613.513446907,
+        "mine_volume_normalized": 1.7165493847571165,
+        "mine_volume_text": "1.7x",
+        "travel_distance": 7723.633319350938,
+        "travel_time_seconds": 154,
+        "travel_time_text": "2M:34S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3
+      }
+    ],
+    "target_index": 0
+  }
+]

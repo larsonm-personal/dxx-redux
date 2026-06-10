@@ -1,0 +1,56 @@
+[
+  {
+    "status": "ok",
+    "source": "Odyssee",
+    "game": "d2",
+    "mission_name": "odyssee",
+    "mission_filename": "odyssee.mn2",
+    "coop_starts": "4",
+    "level_count": 2,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Big Surprise",
+        "level_file": "1.rl2",
+        "robots": 124,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 3,
+        "energy_centers": 4,
+        "mine_volume": 47452668.61059632,
+        "mine_volume_normalized": 10.376924796241868,
+        "mine_volume_text": "10x",
+        "travel_distance": 7553.757877136302,
+        "travel_time_seconds": 151,
+        "travel_time_text": "2M:31S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 1
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "The Hell",
+        "level_file": "2.rl2",
+        "robots": 145,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 3,
+        "energy_centers": 3,
+        "mine_volume": 87147806.64818619,
+        "mine_volume_normalized": 19.05743685706469,
+        "mine_volume_text": "19x",
+        "travel_distance": 0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "travel_status": "failed",
+        "travel_problem": "target unreachable or blocked by unsupported door"
+      }
+    ],
+    "target_index": 0
+  }
+]

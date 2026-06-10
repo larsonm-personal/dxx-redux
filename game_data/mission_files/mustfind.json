@@ -1,0 +1,56 @@
+[
+  {
+    "status": "ok",
+    "source": "Must Find Secret!!!",
+    "game": "d2",
+    "mission_name": "MUSTFIND",
+    "mission_filename": "MUSTFIND.MN2",
+    "coop_starts": "1",
+    "level_count": 2,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Locked door",
+        "level_file": "lockdoor.rl2",
+        "robots": 2,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 2523704.956899906,
+        "mine_volume_normalized": 0.5518824823227164,
+        "mine_volume_text": "0.55x",
+        "travel_distance": 0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "travel_status": "failed",
+        "travel_problem": "red key missing"
+      },
+      {
+        "level_num": -1,
+        "secret": true,
+        "level_name": "The Level",
+        "level_file": "level.rl2",
+        "robots": 109,
+        "hostages": 5,
+        "secrets": 3,
+        "matcens": 4,
+        "energy_centers": 2,
+        "mine_volume": 16950764.477465924,
+        "mine_volume_normalized": 3.706784325764846,
+        "mine_volume_text": "3.7x",
+        "travel_distance": 10369.457174937796,
+        "travel_time_seconds": 207,
+        "travel_time_text": "3M:27S",
+        "travel_targets_reached": 7,
+        "travel_targets_total": 7,
+        "travel_key_detours": 3
+      }
+    ],
+    "target_index": 0
+  }
+]
