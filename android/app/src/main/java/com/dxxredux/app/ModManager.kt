@@ -522,7 +522,7 @@ class ModManager(
     fun writeEnabledModPaths(game: String) {
         val enabled =
             mods
-                .filter { it.enabled && (it.game == game || it.game == "both") }
+                .filter { it.enabledForLaunch(game) }
                 .sortedBy { it.order }
         val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
         val pathFile = File(File(filesDir, gameDir), ".active_mod_paths")
@@ -593,7 +593,7 @@ class ModManager(
     ): ModCompatibilityReport {
         val enabled =
             mods
-                .filter { it.enabled && (it.game == game || it.game == "both") }
+                .filter { it.enabledForLaunch(game) }
                 .sortedBy { it.order }
         val assetEntries = AssetManifest(setDir).load().associateBy { it.filename.lowercase(Locale.US) }
         val failures = mutableListOf<ModCompatibilityFailure>()
@@ -610,8 +610,16 @@ class ModManager(
 
     fun hasEnabledMissionZipBuiltinMusic(game: String): Boolean =
         mods
-            .filter { it.enabled && it.kind == MOD_KIND_MISSION_ZIP && (it.game == game || it.game == "both") }
+            .filter { it.enabledForLaunch(game) && it.kind == MOD_KIND_MISSION_ZIP }
             .any { missionZipHasBuiltinMusic(File(modsDir, it.filename)) }
+
+    private fun ModInfo.enabledForLaunch(game: String): Boolean =
+        enabled &&
+            (
+                this.game == game ||
+                    this.game == "both" ||
+                    (game == "d2" && kind == MOD_KIND_MISSION_ZIP && this.game == "d1")
+            )
 
     private fun registerMissionZip(
         filename: String,

@@ -66,6 +66,42 @@ class ModManagerMissionZipTest {
         assertTrue(File(stageDir, "Uneasy4.mn2").isFile)
         assertTrue(File(stageDir, "Uneasy4.hog").isFile)
         assertTrue(File(stageDir, "Uneasy4.dxa").isFile)
+
+        ModManager(filesDir).writeEnabledModPaths("d1")
+        assertFalse(File(filesDir, "d1x-redux/.active_mod_paths").exists())
+    }
+
+    @Test
+    fun d1MsnMissionZipStagesForD1AndD2Engine() {
+        val filesDir = File("build/test-mod-manager-mission-zip-d1-msn").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val manager = ModManager(filesDir)
+        val imported = manager.importMissionZipFile(createTrine2StyleMissionZip(), "trine2.zip")
+        assertNotNull(imported)
+        assertEquals("d1", imported!!.game)
+        assertEquals("Trine - Episode 2", imported.displayName)
+
+        manager.writeEnabledModPaths("d2")
+        val d2PathFile = File(filesDir, "d2x-redux/.active_mod_paths")
+        val d2Lines = d2PathFile.readLines()
+        assertEquals(1, d2Lines.size)
+        assertTrue(d2Lines[0].endsWith(".generated_mission_zips${File.separator}trine2.zip"))
+
+        val d2StageDir = File(filesDir, "d2x-redux/.generated_mission_zips/trine2.zip/missions")
+        assertTrue(File(d2StageDir, "trine2.msn").isFile)
+        assertTrue(File(d2StageDir, "trine2.hog").isFile)
+
+        manager.writeEnabledModPaths("d1")
+        val d1PathFile = File(filesDir, "d1x-redux/.active_mod_paths")
+        val d1Lines = d1PathFile.readLines()
+        assertEquals(1, d1Lines.size)
+        assertTrue(d1Lines[0].endsWith(".generated_mission_zips${File.separator}trine2.zip"))
+
+        val d1StageDir = File(filesDir, "d1x-redux/.generated_mission_zips/trine2.zip/missions")
+        assertTrue(File(d1StageDir, "trine2.msn").isFile)
+        assertTrue(File(d1StageDir, "trine2.hog").isFile)
     }
 
     @Test
@@ -174,6 +210,29 @@ class ModManagerMissionZipTest {
                 type = normal
                 num_levels = 1
                 Uneasy4.rl2
+                """.trimIndent().toByteArray(),
+            )
+            zip.closeEntry()
+        }
+        return zipFile
+    }
+
+    private fun createTrine2StyleMissionZip(): File {
+        val zipFile = File.createTempFile("missionzip-manager-trine2", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("trine2.hog"))
+            zip.write(createHogBytes("e2m1.rdl" to ByteArray(12)))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("trine2.msn"))
+            zip.write(
+                """
+                name = Trine - Episode 2
+                type = normal
+                num_levels = 1
+                e2m1.rdl
+                custom_music = yes
                 """.trimIndent().toByteArray(),
             )
             zip.closeEntry()

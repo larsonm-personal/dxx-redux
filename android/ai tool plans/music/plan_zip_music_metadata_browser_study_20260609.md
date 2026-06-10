@@ -448,6 +448,37 @@ Verification:
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\AcoustIdPrefs.kt','android\app\src\main\java\com\dxxredux\app\AdvancedSettingsPage.kt','android\app\src\main\java\com\dxxredux\app\ConfigImportExport.kt','android\app\src\main\java\com\dxxredux\app\FingerprintBridge.kt','android\app\src\main\java\com\dxxredux\app\MissionZipAudioFingerprintCache.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipAudioFingerprintCacheTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest`
 
+### Phase 10: Mission ZIP Launch Staging For Trine 2
+- Status: completed 2026-06-10.
+- [x] Inspect `trine2.zip` contents and compare its mission descriptor/HOG layout to the launcher staging rules.
+- [x] Identify why metadata can load but the D2 mission list cannot see the mission.
+- [x] Confirm no production staging fix is needed for the D1 `.msn`/`.rdl` layout.
+- [x] Add a focused regression for the Trine-style layout.
+- [x] Run focused tests and scoped code quality.
+
+Findings:
+- `trine2.zip` contains `trine2.msn` and `.rdl` levels inside `trine2.hog`, so it is a Descent 1 mission.
+- The launcher tags it `game = d1`; D2 launch excludes it from `.active_mod_paths`, so it will not appear under D2 `New Game`.
+- D1 launch stages it under `d1x-redux/.generated_mission_zips/trine2.zip/missions`.
+
+Verification:
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ModManagerMissionZipTest --tests com.dxxredux.app.MissionZipTest`
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\test\java\com\dxxredux\app\ModManagerMissionZipTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
+- `java -jar C:\local\ktlint-1.8.0\ktlint.jar --format android\app\src\test\java\com\dxxredux\app\ModManagerMissionZipTest.kt`
+
+### Phase 11: D1 Mission ZIPs In The D2 Engine
+- Status: completed 2026-06-10.
+- [x] Confirm D2 native mission listing can enumerate D1 `.msn` add-on missions.
+- [x] Change launcher mod filtering so D1 mission zips can be mounted for D2 launch.
+- [x] Keep D2 mission zips from leaking into D1 launch.
+- [x] Update the Trine-style regression to cover D2 mounting.
+- [x] Run focused tests and scoped code quality.
+
+Verification:
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ModManagerMissionZipTest --tests com.dxxredux.app.MissionZipTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\ModManager.kt','android\app\src\test\java\com\dxxredux\app\ModManagerMissionZipTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.ModManagerMissionZipTest --tests com.dxxredux.app.MissionZipTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
+
 ## Demonstration ZIPs
 - `Obsidian.zip`: top-level `.sng`, HMP names, existing test pattern for HMP in HOG.
 - `Chasm.zip`: simple top-level `.sng`.
