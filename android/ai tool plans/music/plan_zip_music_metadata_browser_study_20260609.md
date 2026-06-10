@@ -360,14 +360,21 @@ Verification:
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\AudioFilePreviewDialog.kt','android\app\src\main\java\com\dxxredux\app\MissionZipMusicStageManager.kt','android\app\src\main\java\com\dxxredux\app\MusicPickerPage.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicStageManagerTest.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 4: Fingerprint Cache
-- Add `MissionZipAudioFingerprintCache.kt`.
-- Add local chromaprint action for OGG/MP3/FLAC.
-- Store content SHA-256, chromaprint, duration, local match, and optional web lookup result.
-- Reuse `FingerprintBridge` and `AcoustIdClient`; do not add a new fingerprint implementation.
+- Status: local chromaprint cache slice in progress 2026-06-09.
+- [x] Add `MissionZipAudioFingerprintCache.kt`.
+- [x] Add local chromaprint action for OGG/MP3/FLAC.
+- [x] Store content SHA-256, chromaprint, duration, and local match.
+- [ ] Store optional web lookup result.
+- [x] Reuse `FingerprintBridge`; do not add a new fingerprint implementation.
+- [ ] Reuse `AcoustIdClient` for explicit web lookup actions.
 - Unit tests:
-  - cache key survives temp path changes,
-  - cache invalidates when archive size/mtime or content hash changes,
-  - cached result annotates browser rows.
+  - [x] cache key survives temp path changes,
+  - [x] cache invalidates when archive size/mtime or content hash changes,
+  - [ ] cached result annotates browser rows.
+
+Verification:
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipAudioFingerprintCache.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipAudioFingerprintCacheTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 5: AcoustID Lookup UX
 - Add explicit per-track and "Identify all" actions, enabled only when `AcoustIdClient.configure(context)` succeeds.

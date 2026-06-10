@@ -771,21 +771,27 @@ private fun MissionZipMusicDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val stageManager = remember(context.cacheDir) { MissionZipMusicStageManager(context.cacheDir) }
+    val fingerprintCache = remember(context.filesDir) { MissionZipAudioFingerprintCache(context.filesDir) }
+    var cachedFingerprints by remember(catalog.archivePath) {
+        mutableStateOf(fingerprintCache.cachedEntries(catalog))
+    }
     var previewTarget by remember { mutableStateOf<Pair<MissionZipMusicTrack, File>?>(null) }
     var midiPreviewTarget by remember { mutableStateOf<MissionZipMusicTrack?>(null) }
     var stagingTrackId by remember { mutableStateOf<String?>(null) }
     var stagingProblem by remember { mutableStateOf<String?>(null) }
 
     previewTarget?.let { (track, file) ->
+        val matchLine = cachedFingerprints[track.id]?.let { missionZipMusicFingerprintLine(it) }
         AudioFilePreviewDialog(
             title = "Track Preview",
             audioFile = file,
             lines =
-                listOf(
-                    AudioFilePreviewLine("File: ${track.displayName}"),
-                    AudioFilePreviewLine("Source: ${track.archiveEntryPath}"),
-                    AudioFilePreviewLine("Staged: ${file.absolutePath}", small = true),
-                ),
+                buildList {
+                    add(AudioFilePreviewLine("File: ${track.displayName}"))
+                    add(AudioFilePreviewLine("Source: ${track.archiveEntryPath}"))
+                    if (matchLine != null) add(AudioFilePreviewLine(matchLine, primary = true))
+                    add(AudioFilePreviewLine("Staged: ${file.absolutePath}", small = true))
+                },
             onDismiss = { previewTarget = null },
         )
     }
@@ -841,6 +847,7 @@ private fun MissionZipMusicDialog(
                         ModDetailLine(source.containerPath)
                     }
                     source.tracks.forEach { track ->
+                        val cachedFingerprint = cachedFingerprints[track.id]
                         Row(
                             modifier =
                                 Modifier
@@ -892,9 +899,55 @@ private fun MissionZipMusicDialog(
                                         fontSize = 11.sp,
                                     )
                                 }
+                                if (MissionZipAudioFingerprintCache.isFingerprintSupported(track)) {
+                                    TextButton(
+                                        onClick = {
+                                            stagingProblem = null
+                                            stagingTrackId = track.id
+                                            scope.launch {
+                                                val result =
+                                                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                        runCatching {
+                                                            stageManager.cleanupOldFiles()
+                                                            val staged =
+                                                                stageManager.stageCompressedAudioTrack(catalog, track)
+                                                                    ?: return@runCatching null
+                                                            fingerprintCache.identifyLocal(
+                                                                context,
+                                                                catalog,
+                                                                track,
+                                                                staged,
+                                                            )
+                                                        }.getOrNull()
+                                                    }
+                                                stagingTrackId = null
+                                                if (result == null) {
+                                                    stagingProblem = "Could not identify ${track.displayName}"
+                                                } else {
+                                                    cachedFingerprints = cachedFingerprints + (track.id to result)
+                                                    if (!result.hasLocalMatch) {
+                                                        stagingProblem =
+                                                            "Fingerprint cached for ${track.displayName}; no local match"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        enabled = stagingTrackId == null,
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                        modifier = Modifier.height(28.dp).tvFocusBorder(),
+                                    ) {
+                                        Text(
+                                            if (stagingTrackId == track.id) "Working" else "Identify",
+                                            fontSize = 11.sp,
+                                        )
+                                    }
+                                }
                             }
                         }
                         ModDetailLine(missionZipMusicTrackSubtitle(track))
+                        if (cachedFingerprint != null) {
+                            ModDetailLine(missionZipMusicFingerprintLine(cachedFingerprint))
+                        }
                     }
                 }
             }
@@ -917,6 +970,20 @@ private fun missionZipMusicTrackSubtitle(track: MissionZipMusicTrack): String =
         if (track.hogEntryName != null) add("inside ${track.archiveEntryPath}")
         track.nestedEntryPath?.let { add(it) }
     }.joinToString(" - ")
+
+private fun missionZipMusicFingerprintLine(entry: MissionZipAudioFingerprintCache.Entry): String =
+    buildString {
+        if (entry.localMatchName.isNullOrBlank()) {
+            append("Fingerprint cached; no local match")
+        } else {
+            append("Matched: ${entry.localMatchName}")
+            entry.localMatchTrack?.let { append(" (Track $it)") }
+            entry.localMatchConfidence?.let { append(" [${(it * 100).toInt()}%]") }
+        }
+        if (entry.durationMs > 0) {
+            append(" - ${"%.1f".format(Locale.US, entry.durationMs / 1000.0)}s")
+        }
+    }
 
 @Composable
 private fun MissionZipConstituentDialog(
