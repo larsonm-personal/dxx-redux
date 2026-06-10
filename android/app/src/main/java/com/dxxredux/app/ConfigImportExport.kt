@@ -25,6 +25,7 @@ object ConfigImportExport {
             "game_orientation",
             "music_mode",
             "touch_overlay_enabled",
+            PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE,
             PREF_SHOW_RESUME_OFFER,
             PREF_SHOW_DEMO_INSTALLER_OFFER,
             PREF_GUIDEBOT_HELPER_LINE,
@@ -286,6 +287,7 @@ object ConfigImportExport {
             if (!json.has(key)) continue
             when (key) {
                 "touch_overlay_enabled",
+                PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE,
                 PREF_SHOW_RESUME_OFFER,
                 PREF_SHOW_DEMO_INSTALLER_OFFER,
                 PREF_GUIDEBOT_HELPER_LINE,

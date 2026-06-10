@@ -47,6 +47,7 @@ internal const val PREF_REWIND_SUPPORT_ENABLED = "rewind_support_enabled"
 internal const val PREF_REWIND_TARGET_SECONDS = "rewind_target_seconds"
 internal const val PREF_SHOW_RESUME_OFFER = "show_resume_offer"
 internal const val PREF_SHOW_DEMO_INSTALLER_OFFER = "show_demo_installer_offer"
+internal const val PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE = "use_mission_soundtrack_when_available"
 
 // Keep in sync with android_rewind_policy.h.
 internal const val DEFAULT_REWIND_TARGET_SECONDS = 10
@@ -114,6 +115,9 @@ fun EnginePreferencesPage(
     }
     var showDemoInstallerOffer by remember {
         mutableStateOf(prefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true))
+    }
+    var useMissionSoundtrackWhenAvailable by remember {
+        mutableStateOf(prefs.getBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, true))
     }
 
     val hasChanges =
@@ -355,6 +359,49 @@ fun EnginePreferencesPage(
                         )
                         Text(
                             "When game data is missing, offer to install the hosted Mac demo packages",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Music", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    "Launch policy for mission-provided soundtracks",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = useMissionSoundtrackWhenAvailable,
+                        onCheckedChange = { checked ->
+                            useMissionSoundtrackWhenAvailable = checked
+                            prefs
+                                .edit()
+                                .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, checked)
+                                .apply()
+                        },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            "Use mission soundtrack when available",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "Mission packs with their own music play it instead of the global music mode",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
