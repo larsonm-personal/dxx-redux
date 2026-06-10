@@ -778,13 +778,25 @@ internal object LevelMetadataAnalyzer {
                     }
                 }
                 if (GameFileFormats.isMissionDescriptor(leaf)) {
-                    val missionOut = File(File(stageDir, "missions"), leaf)
-                    missionOut.parentFile?.mkdirs()
-                    out.copyTo(missionOut, overwrite = true)
+                    copyStageAlias(out, File(File(stageDir, "missions"), leaf))
+                }
+                if (GameFileFormats.isMissionDescriptor(leaf) || GameFileFormats.isLevelFile(leaf)) {
+                    val lowerLeaf = leaf.lowercase(Locale.US)
+                    copyStageAlias(out, File(stageDir, lowerLeaf))
+                    copyStageAlias(out, File(File(stageDir, "missions"), lowerLeaf))
                 }
                 total += copied
             }
         }
+    }
+
+    private fun copyStageAlias(
+        source: File,
+        target: File,
+    ) {
+        if (source.absolutePath == target.absolutePath) return
+        target.parentFile?.mkdirs()
+        source.copyTo(target, overwrite = true)
     }
 
     private fun collectDiagnostics(

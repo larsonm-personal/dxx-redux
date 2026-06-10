@@ -197,9 +197,14 @@ object MissionZip {
     ): List<MissionSet> =
         missions.map { mission ->
             val stem = leafName(mission.path).substringBeforeLast('.').lowercase(Locale.US)
+            val levelNames =
+                (mission.levelNames + mission.secretLevelNames)
+                    .map { leafName(it).lowercase(Locale.US) }
+                    .toSet()
             val related =
                 constituents.filter { constituent ->
                     constituent.path.equals(mission.path, ignoreCase = true) ||
+                        constituent.name.lowercase(Locale.US) in levelNames ||
                         (
                             constituent.name.substringBeforeLast('.').lowercase(Locale.US) == stem &&
                                 constituent.role in

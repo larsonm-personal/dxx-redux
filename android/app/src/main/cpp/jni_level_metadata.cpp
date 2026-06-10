@@ -206,9 +206,7 @@ static int init_levelmeta_runtime(JNIEnv *env, jobject context, const json &requ
 	init_game();
 	Players[Player_num].callsign[0] = '\0';
 	GameArg.SysUseNiceFPS = 0;
-#ifdef DXX_BUILD_DESCENT_II
 	GameArg.SysInputDemoNoRender = 1;
-#endif
 	levelmeta_runtime_ready = 1;
 	return 1;
 }

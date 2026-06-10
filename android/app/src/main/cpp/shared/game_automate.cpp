@@ -868,9 +868,6 @@ static bool mission_list_item_is_base_or_command(const char *text)
 	if (icontains(text, "counterstrike") ||
 	    icontains(text, "first strike") ||
 	    icontains(text, "destination saturn") ||
-	    icontains(text, "descent 2") ||
-	    icontains(text, "descent ii") ||
-	    icontains(text, "descent:") ||
 	    strcasecmp(text, "ok") == 0 ||
 	    strcasecmp(text, "cancel") == 0)
 		return true;

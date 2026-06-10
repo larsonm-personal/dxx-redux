@@ -10,7 +10,8 @@ param(
     [switch]$IncludeLarge,
     [switch]$NoRegressionJson,
     [long]$LargeZipBytes = 524288000,
-    [int]$TimeoutSeconds = 900
+    [int]$TimeoutSeconds = 900,
+    [int]$MaxEmulatorRecoveries = 5
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,6 +31,7 @@ $artifactsDir = Join-Path $OutDir "artifacts"
 $resolvedScriptDir = Join-Path $OutDir "resolved_scripts"
 New-Item -ItemType Directory -Force -Path $metadataDir, $importsDir, $artifactsDir, $resolvedScriptDir | Out-Null
 $script:LogFile = Join-Path $OutDir "batch.log"
+$script:MissionZipBatchRecoveryCount = 0
 
 function Get-SafeMissionZipLabel {
     param([Parameter(Mandatory = $true)][string]$Name)
@@ -114,6 +116,49 @@ function Write-MissionZipFailureJson {
         failure_text = Get-ShortMissionZipFailureText -Record $Record
     }
     Write-TestJsonText -Path $Path -Text ($failure | ConvertTo-Json -Depth 3)
+}
+
+function Test-AppPackageInstalled {
+    $path = Adb-Timeout -AdbArgs @("shell", "pm", "path", $script:PACKAGE) -Seconds 10
+    return ($path -and $path -match 'package:')
+}
+
+function Restore-MissionZipBatchDevice {
+    param([Parameter(Mandatory = $true)][string]$Reason)
+
+    $script:MissionZipBatchRecoveryCount++
+    if ($script:MissionZipBatchRecoveryCount -gt $MaxEmulatorRecoveries) {
+        throw "emulator recovery limit reached ($MaxEmulatorRecoveries)"
+    }
+
+    Write-Status "$Reason -- recovering emulator ($script:MissionZipBatchRecoveryCount/$MaxEmulatorRecoveries)" "Yellow"
+    Restart-AdbServer
+    Ensure-EmulatorHealthy | Out-Null
+
+    Write-Status "Installing APK after emulator recovery"
+    if (-not (Install-ApkOnDevice)) {
+        throw "APK install failed after emulator recovery"
+    }
+
+    Write-Status "Restoring standard D1/D2 base data after emulator recovery"
+    if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
+        throw "could not restore base game data after emulator recovery"
+    }
+}
+
+function Ensure-MissionZipBatchDeviceReady {
+    param([Parameter(Mandatory = $true)][string]$Reason)
+
+    if ((Test-EmulatorHealthy) -and (Test-AppPackageInstalled)) {
+        return
+    }
+    Restore-MissionZipBatchDevice -Reason $Reason
+}
+
+function Test-MissionZipNeedsEmulatorRecovery {
+    param([string]$Reason)
+
+    return $Reason -match 'SetupActivity did not become ready|adb push failed|run-as copy failed|Emulator crashed|device .*not found|device offline|protocol fault|closed'
 }
 
 function Add-MissionZipGameHints {
@@ -244,15 +289,36 @@ function Push-AppPrivateFile {
     $deviceLeaf = Split-Path -Leaf $DeviceRelativePath
     $deviceDir = (Split-Path -Parent $DeviceRelativePath).Replace('\', '/')
     $tmp = "/data/local/tmp/$deviceLeaf"
-    & $script:ADB push $LocalPath $tmp 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
+    $oldErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $pushOutput = & $script:ADB push $LocalPath $tmp 2>&1
+        $pushExit = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $oldErrorActionPreference
+    }
+    if ($pushExit -ne 0) {
+        $pushText = ($pushOutput -join " ").Trim()
+        if ($pushText) {
+            throw "adb push failed for ${LocalPath}: $pushText"
+        }
         throw "adb push failed for $LocalPath"
     }
     $filesDir = if ($deviceDir) { "files/$deviceDir" } else { "files" }
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", $filesDir) | Out-Null
     $dest = "/data/data/$($script:PACKAGE)/files/$($DeviceRelativePath.Replace('\', '/'))"
-    & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat $tmp > $dest'" 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
+    $ErrorActionPreference = "Continue"
+    try {
+        $copyOutput = & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat $tmp > $dest'" 2>&1
+        $copyExit = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $oldErrorActionPreference
+    }
+    if ($copyExit -ne 0) {
+        $copyText = ($copyOutput -join " ").Trim()
+        if ($copyText) {
+            throw "run-as copy failed for ${DeviceRelativePath}: $copyText"
+        }
         throw "run-as copy failed for $DeviceRelativePath"
     }
     & $script:ADB shell "rm -f $tmp" 2>&1 | Out-Null
@@ -305,7 +371,7 @@ if (-not $NoRegressionJson) {
     New-Item -ItemType Directory -Force -Path $RegressionJsonDir | Out-Null
 }
 
-Ensure-EmulatorHealthy
+Ensure-EmulatorHealthy | Out-Null
 if ($Install) {
     Write-Status "Installing APK"
     if (-not (Install-ApkOnDevice)) {
@@ -388,7 +454,9 @@ foreach ($zip in $zips) {
     $launchButtonText = Get-MissionZipLaunchButtonText -GameId $gameHint.Game
     $gameSelectButtonText = Get-MissionZipGameSelectButtonText -GameId $gameHint.Game
     $missionStartConfirmAction = Get-MissionZipStartConfirmAction -GameId $gameHint.Game
+    Ensure-MissionZipBatchDeviceReady -Reason "preparing $($zip.Name)"
     Write-Status "Running mission ZIP: $($zip.Name) ($($gameHint.Game.ToUpperInvariant()))"
+    $recoverAfterRun = $false
     try {
         Resolve-MissionZipTemplate -DeviceZipName $deviceZipName -Label $label -GameId $gameHint.Game -GameSelectButtonText $gameSelectButtonText -MissionStartConfirmAction $missionStartConfirmAction -LaunchButtonText $launchButtonText -OutputPath $resolvedScript
         Push-AppPrivateFile -LocalPath $zip.FullName -DeviceRelativePath "mission_zip_batch_cache/$deviceZipName"
@@ -421,9 +489,21 @@ foreach ($zip in $zips) {
     } catch {
         $record["status"] = "failed"
         $record["reason"] = $_.Exception.Message
+        $recoverAfterRun = Test-MissionZipNeedsEmulatorRecovery -Reason $record["reason"]
         Write-Status "FAIL: $($zip.Name): $($record["reason"])" "Red"
     } finally {
-        $metadataSaved = Save-AppTextFile -DeviceRelativePath "level_metadata_automation_$label.json" -LocalPath $metadataPath
+        $deviceHealthyAfterRun = Test-EmulatorHealthy
+        if (-not $deviceHealthyAfterRun) {
+            if (-not ($record.Contains("reason") -and $record["reason"])) {
+                $record["reason"] = "emulator crashed or adb became unavailable"
+            }
+            $recoverAfterRun = $true
+        }
+
+        $metadataSaved = $false
+        if ($deviceHealthyAfterRun) {
+            $metadataSaved = Save-AppTextFile -DeviceRelativePath "level_metadata_automation_$label.json" -LocalPath $metadataPath
+        }
         if ($record["status"] -eq "passed") {
             if (-not $metadataSaved) {
                 $record["status"] = "failed"
@@ -441,12 +521,17 @@ foreach ($zip in $zips) {
                 Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
             }
         }
-        Save-AppTextFile -DeviceRelativePath "mission_zip_import_$label.json" -LocalPath $importPath | Out-Null
-        Save-AppTextFile -DeviceRelativePath "automation_result.json" -LocalPath "$artifactPrefix.automation_result.json" | Out-Null
-        Save-AppTextFile -DeviceRelativePath "automation_log.jsonl" -LocalPath "$artifactPrefix.automation_log.jsonl" | Out-Null
-        Save-AppTextFile -DeviceRelativePath "introspect.json" -LocalPath "$artifactPrefix.introspect.json" | Out-Null
+        if ($deviceHealthyAfterRun) {
+            Save-AppTextFile -DeviceRelativePath "mission_zip_import_$label.json" -LocalPath $importPath | Out-Null
+            Save-AppTextFile -DeviceRelativePath "automation_result.json" -LocalPath "$artifactPrefix.automation_result.json" | Out-Null
+            Save-AppTextFile -DeviceRelativePath "automation_log.jsonl" -LocalPath "$artifactPrefix.automation_log.jsonl" | Out-Null
+            Save-AppTextFile -DeviceRelativePath "introspect.json" -LocalPath "$artifactPrefix.introspect.json" | Out-Null
+        }
         $results += [pscustomobject]$record
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        if ($recoverAfterRun) {
+            Restore-MissionZipBatchDevice -Reason "recovering after $($zip.Name)"
+        }
     }
 }
 

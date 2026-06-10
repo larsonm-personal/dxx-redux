@@ -61,6 +61,27 @@ class GameFileFormatsTest {
     }
 
     @Test
+    fun stripsInlineCommentsFromMissionDescriptorLevelLists() {
+        val mission =
+            GameFileFormats.parseMissionDescriptor(
+                "missions/HUMIL2.MSN",
+                """
+                name = Humility ver1.2
+                type = normal
+                num_levels = 1
+                humility.rdl           ;level filename 1
+                num_secrets = 1
+                humilitys.rdl,1        ;secret filename and origin
+                """.trimIndent(),
+            )
+
+        assertEquals(listOf("humility.rdl"), mission.levelNames)
+        assertEquals(listOf("humilitys.rdl"), mission.secretLevelNames)
+        assertEquals(listOf(1), mission.secretLevelOrigins)
+        assertEquals(GameFileFormats.GAME_D1, mission.game)
+    }
+
+    @Test
     fun classifiesMissionZipAndModRoles() {
         assertEquals(GameFileFormats.MISSION_ZIP_DESCRIPTOR, GameFileFormats.missionZipRoleForFile("custom.mn2"))
         assertEquals(GameFileFormats.MISSION_ZIP_HOG, GameFileFormats.missionZipRoleForFile("custom.hog"))

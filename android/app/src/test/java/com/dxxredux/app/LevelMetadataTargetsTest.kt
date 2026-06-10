@@ -158,6 +158,42 @@ class LevelMetadataTargetsTest {
     }
 
     @Test
+    fun missionZipTargetsIncludeLooseLevelsReferencedByDescriptor() {
+        val setDir = File("build/test-level-metadata-targets/loose-level-zip-set").absoluteFile
+        val zipFile = File("build/test-level-metadata-targets/loose_level.zip").absoluteFile
+        setDir.deleteRecursively()
+        zipFile.parentFile?.mkdirs()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("Extra/MAD.MSN"))
+            zip.write(
+                """
+                name = Mad Decorator!
+                type = normal
+                num_levels = 1
+                mad.rdl
+                """.trimIndent().toByteArray(),
+            )
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("Extra/MAD.RDL"))
+            zip.write(byteArrayOf(1, 2, 3, 4))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("Extra/OTHER.HOG"))
+            zip.write(byteArrayOf(5, 6, 7, 8))
+            zip.closeEntry()
+        }
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        val targets = LevelMetadataTargets.missionZipTargets(zipFile.absolutePath, setDir, scan!!)
+
+        assertEquals(listOf("Mad Decorator!"), targets.map { it.displayName })
+        assertEquals(listOf("mad.rdl"), targets.single().normalLevelFiles)
+        assertEquals(listOf("Extra/MAD.MSN", "Extra/MAD.RDL"), targets.single().archiveEntries.sorted())
+    }
+
+    @Test
     fun zipDescriptorConstituentUsesSameStemHogForMetadata() {
         val setDir = File("build/test-level-metadata-targets/zip-descriptor-set").absoluteFile
         val zipFile = File("build/test-level-metadata-targets/descriptor_pair.zip").absoluteFile

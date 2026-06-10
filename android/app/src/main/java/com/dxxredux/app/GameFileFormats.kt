@@ -397,14 +397,15 @@ object GameFileFormats {
             val line = rawLine.trim()
             if (line.isBlank() || line.startsWith(";") || line.startsWith("#")) continue
             if (remainingLevels > 0 && '=' !in line) {
-                val level = line.substringBefore(',').trim()
+                val level = cleanMissionListLine(line).substringBefore(',').trim()
                 if (level.isNotBlank()) levels += level
                 remainingLevels--
                 continue
             }
             if (remainingSecrets > 0 && '=' !in line) {
-                val secret = line.substringBefore(',').trim()
-                val origin = line.substringAfter(',', "").trim().toIntOrNull()
+                val secretLine = cleanMissionListLine(line)
+                val secret = secretLine.substringBefore(',').trim()
+                val origin = secretLine.substringAfter(',', "").trim().toIntOrNull()
                 if (secret.isNotBlank()) {
                     secrets += secret
                     origin?.let { secretOrigins += it }
@@ -470,6 +471,8 @@ object GameFileFormats {
     private fun normalizePath(path: String): String = path.replace('\\', '/').trim('/')
 
     private fun cleanMissionValue(value: String): String = value.substringBefore(';').trim()
+
+    private fun cleanMissionListLine(value: String): String = value.substringBefore(';').trim()
 
     private fun assetReferenceLabel(key: String): String =
         when (key) {
