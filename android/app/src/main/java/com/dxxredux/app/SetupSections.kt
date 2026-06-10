@@ -780,6 +780,54 @@ private fun MissionZipMusicDialog(
     var midiPreviewTarget by remember { mutableStateOf<MissionZipMusicTrack?>(null) }
     var stagingTrackId by remember { mutableStateOf<String?>(null) }
     var stagingProblem by remember { mutableStateOf<String?>(null) }
+    var bulkStatus by remember { mutableStateOf<String?>(null) }
+    val fingerprintableTracks =
+        remember(catalog) {
+            catalog.sources
+                .flatMap { it.tracks }
+                .filter { MissionZipAudioFingerprintCache.isFingerprintSupported(it) }
+        }
+    val busy = stagingTrackId != null
+
+    suspend fun identifyTrack(track: MissionZipMusicTrack): MissionZipAudioFingerprintCache.Entry? =
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                stageManager.cleanupOldFiles()
+                val staged = stageManager.stageCompressedAudioTrack(catalog, track) ?: return@runCatching null
+                fingerprintCache.identifyLocal(context, catalog, track, staged)
+            }.getOrNull()
+        }
+
+    suspend fun lookupTrack(track: MissionZipMusicTrack): MissionZipAudioFingerprintCache.Entry? =
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val cached = identifyTrack(track) ?: return@withContext null
+            try {
+                if (cached.hasAcoustIdLookup) {
+                    cached
+                } else {
+                    val webName =
+                        AcoustIdClient.lookupFingerprint(
+                            cached.chromaprint,
+                            maxOf(1, cached.durationMs / 1000),
+                        )
+                    fingerprintCache.recordAcoustIdResult(
+                        cached,
+                        webName,
+                        if (webName.isNullOrBlank()) {
+                            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_NO_MATCH
+                        } else {
+                            MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK
+                        },
+                    )
+                }
+            } catch (_: Exception) {
+                fingerprintCache.recordAcoustIdResult(
+                    cached,
+                    null,
+                    MissionZipAudioFingerprintCache.ACOUSTID_STATUS_FAILED,
+                )
+            }
+        }
 
     previewTarget?.let { (track, file) ->
         val matchLine = cachedFingerprints[track.id]?.let { missionZipMusicFingerprintLine(it) }
@@ -841,6 +889,89 @@ private fun MissionZipMusicDialog(
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(bottom = 4.dp),
                     )
+                }
+                bulkStatus?.let { status ->
+                    Text(
+                        status,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                }
+                if (fingerprintableTracks.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                stagingProblem = null
+                                bulkStatus = "Identifying 0/${fingerprintableTracks.size}"
+                                stagingTrackId = "bulk-identify"
+                                scope.launch {
+                                    var completed = 0
+                                    var matched = 0
+                                    val updates = mutableMapOf<String, MissionZipAudioFingerprintCache.Entry>()
+                                    for (track in fingerprintableTracks) {
+                                        val result = identifyTrack(track)
+                                        completed++
+                                        if (result != null) {
+                                            updates[track.id] = result
+                                            if (result.hasLocalMatch) matched++
+                                        }
+                                        cachedFingerprints = cachedFingerprints + updates
+                                        bulkStatus = "Identifying $completed/${fingerprintableTracks.size}"
+                                    }
+                                    stagingTrackId = null
+                                    cachedFingerprints = cachedFingerprints + updates
+                                    bulkStatus = "Identified $completed tracks; $matched local matches"
+                                }
+                            },
+                            enabled = !busy,
+                            shape = MaterialTheme.shapes.small,
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
+                        ) {
+                            Text("Identify all", fontSize = 11.sp)
+                        }
+                        if (acoustIdAvailable) {
+                            OutlinedButton(
+                                onClick = {
+                                    stagingProblem = null
+                                    bulkStatus = "Looking up 0/${fingerprintableTracks.size}"
+                                    stagingTrackId = "bulk-lookup"
+                                    scope.launch {
+                                        var completed = 0
+                                        var webMatches = 0
+                                        val updates = mutableMapOf<String, MissionZipAudioFingerprintCache.Entry>()
+                                        for (track in fingerprintableTracks) {
+                                            val result = lookupTrack(track)
+                                            completed++
+                                            if (result != null) {
+                                                updates[track.id] = result
+                                                if (result.acoustIdLookupStatus ==
+                                                    MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK
+                                                ) {
+                                                    webMatches++
+                                                }
+                                            }
+                                            cachedFingerprints = cachedFingerprints + updates
+                                            bulkStatus = "Looking up $completed/${fingerprintableTracks.size}"
+                                        }
+                                        stagingTrackId = null
+                                        cachedFingerprints = cachedFingerprints + updates
+                                        bulkStatus = "Looked up $completed tracks; $webMatches web matches"
+                                    }
+                                },
+                                enabled = !busy,
+                                shape = MaterialTheme.shapes.small,
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
+                            ) {
+                                Text("Lookup all", fontSize = 11.sp)
+                            }
+                        }
+                    }
                 }
                 catalog.sources.forEach { source ->
                     ModDetailSectionTitle(source.label)
@@ -906,21 +1037,7 @@ private fun MissionZipMusicDialog(
                                             stagingProblem = null
                                             stagingTrackId = track.id
                                             scope.launch {
-                                                val result =
-                                                    withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                                        runCatching {
-                                                            stageManager.cleanupOldFiles()
-                                                            val staged =
-                                                                stageManager.stageCompressedAudioTrack(catalog, track)
-                                                                    ?: return@runCatching null
-                                                            fingerprintCache.identifyLocal(
-                                                                context,
-                                                                catalog,
-                                                                track,
-                                                                staged,
-                                                            )
-                                                        }.getOrNull()
-                                                    }
+                                                val result = identifyTrack(track)
                                                 stagingTrackId = null
                                                 if (result == null) {
                                                     stagingProblem = "Could not identify ${track.displayName}"
@@ -948,53 +1065,7 @@ private fun MissionZipMusicDialog(
                                                 stagingProblem = null
                                                 stagingTrackId = track.id
                                                 scope.launch {
-                                                    val result =
-                                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                                            try {
-                                                                stageManager.cleanupOldFiles()
-                                                                val staged =
-                                                                    stageManager.stageCompressedAudioTrack(
-                                                                        catalog,
-                                                                        track,
-                                                                    ) ?: return@withContext null
-                                                                val cached =
-                                                                    fingerprintCache.identifyLocal(
-                                                                        context,
-                                                                        catalog,
-                                                                        track,
-                                                                        staged,
-                                                                    ) ?: return@withContext null
-                                                                if (cached.hasAcoustIdLookup) {
-                                                                    cached
-                                                                } else {
-                                                                    val webName =
-                                                                        AcoustIdClient.lookupFingerprint(
-                                                                            cached.chromaprint,
-                                                                            maxOf(1, cached.durationMs / 1000),
-                                                                        )
-                                                                    fingerprintCache.recordAcoustIdResult(
-                                                                        cached,
-                                                                        webName,
-                                                                        if (webName.isNullOrBlank()) {
-                                                                            MissionZipAudioFingerprintCache
-                                                                                .ACOUSTID_STATUS_NO_MATCH
-                                                                        } else {
-                                                                            MissionZipAudioFingerprintCache
-                                                                                .ACOUSTID_STATUS_OK
-                                                                        },
-                                                                    )
-                                                                }
-                                                            } catch (_: Exception) {
-                                                                cachedFingerprint?.let {
-                                                                    fingerprintCache.recordAcoustIdResult(
-                                                                        it,
-                                                                        null,
-                                                                        MissionZipAudioFingerprintCache
-                                                                            .ACOUSTID_STATUS_FAILED,
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
+                                                    val result = lookupTrack(track)
                                                     stagingTrackId = null
                                                     if (result == null) {
                                                         stagingProblem = "Could not look up ${track.displayName}"

@@ -1,7 +1,9 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -63,6 +65,27 @@ class MissionZipMusicStageManagerTest {
 
         assertNotNull(staged)
         assertArrayEquals(payload, staged!!.readBytes())
+    }
+
+    @Test
+    fun stagesSelectedAudioTrackFromLargeZipOnly() {
+        val payload = byteArrayOf(11, 13, 17, 19)
+        val zip = createZip("stage-large") {
+            writeEntry("song01.ogg", payload)
+            writeLargeEntry("padding.dat", MissionZip.SMALL_IN_MEMORY_LIMIT_BYTES + 1024L)
+        }
+        val catalog = MissionZipMusic.inspect(zip)
+        val track = catalog!!.sources.single().tracks.single()
+        val cacheDir = testCacheDir("stage-large")
+
+        val staged = MissionZipMusicStageManager(cacheDir).stageCompressedAudioTrack(catalog, track)
+
+        assertNotNull(staged)
+        assertArrayEquals(payload, staged!!.readBytes())
+        val stagedFiles = cacheDir.walkTopDown().filter { it.isFile }.toList()
+        assertEquals(1, stagedFiles.size)
+        assertEquals(payload.size.toLong(), stagedFiles.single().length())
+        assertTrue(zip.length() < MissionZip.SMALL_IN_MEMORY_LIMIT_BYTES)
     }
 
     @Test
@@ -148,6 +171,21 @@ class MissionZipMusicStageManagerTest {
     ) {
         putNextEntry(ZipEntry(name))
         write(bytes)
+        closeEntry()
+    }
+
+    private fun ZipOutputStream.writeLargeEntry(
+        name: String,
+        sizeBytes: Long,
+    ) {
+        putNextEntry(ZipEntry(name))
+        val chunk = ByteArray(1024 * 1024)
+        var remaining = sizeBytes
+        while (remaining > 0) {
+            val count = minOf(chunk.size.toLong(), remaining).toInt()
+            write(chunk, 0, count)
+            remaining -= count.toLong()
+        }
         closeEntry()
     }
 

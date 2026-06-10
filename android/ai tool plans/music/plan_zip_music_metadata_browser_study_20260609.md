@@ -374,12 +374,13 @@ Verification:
 
 Verification:
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipAudioFingerprintCache.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipAudioFingerprintCacheTest.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicStageManagerTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipAudioFingerprintCache.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipAudioFingerprintCacheTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
 ### Phase 5: AcoustID Lookup UX
-- Status: per-track explicit lookup slice completed 2026-06-09; bulk lookup remains.
+- Status: completed 2026-06-09.
 - [x] Add explicit per-track lookup action, enabled only when `AcoustIdClient.configure(context)` succeeds.
-- [ ] Add "Identify all" or "Lookup all" action.
+- [x] Add "Identify all" and "Lookup all" actions.
 - [x] Use existing rate limiting.
 - [x] Cache failed/empty lookup status with timestamp to avoid repeated accidental lookups.
 - [x] Add user-visible status for "local match", "web match", "no match", and "lookup failed".
@@ -388,10 +389,14 @@ Verification:
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MusicLaunchPolicyTest`
 
 ### Phase 6: Large ZIP Path
-- Exercise a mission ZIP over `SMALL_IN_MEMORY_LIMIT_BYTES`.
-- Confirm scanner uses `ZipFile` streaming and stage-on-demand, not full memory extraction.
-- Add a regression fixture or synthetic large ZIP test that verifies only selected music entries are extracted.
-- Add a real-file manual/regression demonstration with `trine2.zip`: open music browser, list 14 OGG tracks in song-list order, preview one level track, fingerprint one OGG, and launch the mission to verify the game enters built-in/addon music mode and plays a HOG-contained OGG.
+- Status: synthetic regression completed 2026-06-09; real-device demonstration remains.
+- [x] Exercise a mission ZIP over `SMALL_IN_MEMORY_LIMIT_BYTES`.
+- [x] Confirm scanner uses `ZipFile` streaming and stage-on-demand, not full memory extraction.
+- [x] Add a regression fixture or synthetic large ZIP test that verifies only selected music entries are extracted.
+- [ ] Add a real-file manual/regression demonstration with `trine2.zip`: open music browser, list 14 OGG tracks in song-list order, preview one level track, fingerprint one OGG, and launch the mission to verify the game enters built-in/addon music mode and plays a HOG-contained OGG.
+
+Verification:
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest`
 
 ## Demonstration ZIPs
 - `Obsidian.zip`: top-level `.sng`, HMP names, existing test pattern for HMP in HOG.
