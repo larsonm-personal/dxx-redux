@@ -153,7 +153,9 @@ function Invoke-SecretAreaDump {
     if ($LASTEXITCODE -ne 0) {
         throw "Secret-area dump failed for $Name"
     }
-    return (Get-Content -LiteralPath $OutPath -Raw | ConvertFrom-Json)
+    $dump = Get-Content -LiteralPath $OutPath -Raw | ConvertFrom-Json
+    Write-CanonicalJsonFile -Value $dump -Path $OutPath
+    return $dump
 }
 
 function Write-CanonicalJsonFile {
@@ -163,7 +165,7 @@ function Write-CanonicalJsonFile {
     )
 
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Path) | Out-Null
-    $json = $Value | ConvertTo-Json -Depth 100
+    $json = ($Value | ConvertTo-Json -Depth 100) -replace "`r`n", "`n"
     [System.IO.File]::WriteAllText($Path, $json + "`n", [System.Text.UTF8Encoding]::new($false))
 }
 
