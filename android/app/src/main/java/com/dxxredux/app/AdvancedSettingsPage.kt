@@ -252,6 +252,13 @@ fun AdvancedSettingsPage(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // -- Online metadata lookups --
+                    OnlineMetadataSection()
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // -- Debug Logging --
                     DebugLoggingSection()
 
@@ -457,6 +464,38 @@ fun AdvancedSettingsPage(
                 ScrollArrows(scrollState)
             }
         }
+    }
+}
+
+@Composable
+private fun OnlineMetadataSection() {
+    val ctx = LocalContext.current
+    val prefs = remember { ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE) }
+    var allowAcoustId by remember {
+        mutableStateOf(prefs.getBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, false))
+    }
+
+    Text("Online Metadata", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Allow AcoustID web lookups", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Text(
+                "Enable manual music-track lookup buttons that send fingerprints to AcoustID",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(
+            checked = allowAcoustId,
+            onCheckedChange = { newValue ->
+                allowAcoustId = newValue
+                prefs.edit().putBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, newValue).apply()
+            },
+        )
     }
 }
 

@@ -122,6 +122,44 @@ class MissionZipAudioFingerprintCacheTest {
         assertTrue(File(filesDir, "mission_zip_audio_fingerprints.json").readText().contains("\"acoustid_name\""))
     }
 
+    @Test
+    fun localMatchRefreshPreservesWebLookupResult() {
+        val filesDir = testDir("local-refresh/files")
+        val archive = testArchive("local-refresh/mission.zip", byteArrayOf(1, 2, 3))
+        val track = testTrack("game01.ogg")
+        val staged = testArchive("local-refresh/staged/game01.ogg", byteArrayOf(9, 8, 7))
+        val cache = MissionZipAudioFingerprintCache(filesDir)
+        val local =
+            cache.record(
+                testCatalog(archive, track),
+                track,
+                staged,
+                FingerprintBridge.FingerprintResult("fp-a", 1234),
+                null,
+                "old-db",
+            )
+        val web =
+            cache.recordAcoustIdResult(
+                local,
+                "Web Track",
+                MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK,
+            )
+
+        val updated =
+            cache.recordLocalMatchResult(
+                web,
+                FingerprintBridge.MatchResult(0.91f, "Bundled Track", "disc-b", 2),
+                "new-db",
+            )
+        val reloaded = cache.cachedEntries(testCatalog(archive, track))[track.id]
+
+        assertEquals("Bundled Track", updated.localMatchName)
+        assertEquals("new-db", reloaded!!.localMatchDbIdentity)
+        assertEquals("Web Track", reloaded.acoustIdName)
+        assertEquals(MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK, reloaded.acoustIdLookupStatus)
+        assertEquals(2, reloaded.localMatchTrack)
+    }
+
     private fun testCatalog(
         archive: File,
         track: MissionZipMusicTrack,

@@ -25,6 +25,7 @@ class MissionZipAudioFingerprintCache(
         val localMatchConfidence: Float?,
         val localMatchDiscId: String?,
         val localMatchTrack: Int?,
+        val localMatchDbIdentity: String?,
         val acoustIdName: String?,
         val acoustIdLookupStatus: String?,
         val acoustIdLookupAt: Long?,
@@ -61,6 +62,7 @@ class MissionZipAudioFingerprintCache(
         stagedAudio: File,
         fingerprint: FingerprintBridge.FingerprintResult,
         match: FingerprintBridge.MatchResult?,
+        localMatchDbIdentity: String? = null,
     ): Entry {
         val archive = File(catalog.archivePath)
         val contentSha256 = sha256(stagedAudio)
@@ -80,6 +82,7 @@ class MissionZipAudioFingerprintCache(
                 localMatchConfidence = match?.confidence,
                 localMatchDiscId = match?.discId,
                 localMatchTrack = match?.trackNum,
+                localMatchDbIdentity = localMatchDbIdentity,
                 acoustIdName = null,
                 acoustIdLookupStatus = null,
                 acoustIdLookupAt = null,
@@ -104,11 +107,35 @@ class MissionZipAudioFingerprintCache(
     ): Entry? {
         if (!isFingerprintSupported(track)) return null
         val contentSha256 = sha256(stagedAudio)
-        get(catalog, track, contentSha256)?.let { return it }
         FingerprintBridge.ensureDbLoaded(context)
+        val dbIdentity = FingerprintBridge.databaseIdentity(context)
+        get(catalog, track, contentSha256)?.let { cached ->
+            if (cached.localMatchDbIdentity == dbIdentity) return cached
+            val match = FingerprintBridge.matchFingerprint(cached.chromaprint, cached.durationMs)
+            return recordLocalMatchResult(cached, match, dbIdentity)
+        }
         val fingerprint = FingerprintBridge.fingerprintAudioFile(stagedAudio.absolutePath) ?: return null
         val match = FingerprintBridge.matchFingerprint(fingerprint.encoded, fingerprint.durationMs)
-        return record(catalog, track, stagedAudio, fingerprint, match)
+        return record(catalog, track, stagedAudio, fingerprint, match, dbIdentity)
+    }
+
+    fun recordLocalMatchResult(
+        entry: Entry,
+        match: FingerprintBridge.MatchResult?,
+        localMatchDbIdentity: String,
+    ): Entry {
+        val updated =
+            entry.copy(
+                localMatchName = match?.name,
+                localMatchConfidence = match?.confidence,
+                localMatchDiscId = match?.discId,
+                localMatchTrack = match?.trackNum,
+                localMatchDbIdentity = localMatchDbIdentity,
+                lookupAt = System.currentTimeMillis(),
+            )
+        val entries = loadEntries().filterNot { it.sameCacheRecord(entry) } + updated
+        saveEntries(entries)
+        return updated
     }
 
     fun recordAcoustIdResult(
@@ -182,6 +209,7 @@ class MissionZipAudioFingerprintCache(
                 localMatchConfidence?.let { put("local_match_confidence", it.toDouble()) }
                 localMatchDiscId?.let { put("local_match_disc_id", it) }
                 localMatchTrack?.let { put("local_match_track", it) }
+                localMatchDbIdentity?.let { put("local_match_db_identity", it) }
                 acoustIdName?.let { put("acoustid_name", it) }
                 acoustIdLookupStatus?.let { put("acoustid_lookup_status", it) }
                 acoustIdLookupAt?.let { put("acoustid_lookup_at", it) }
@@ -209,6 +237,7 @@ class MissionZipAudioFingerprintCache(
                     },
                 localMatchDiscId = optString("local_match_disc_id").takeIf { it.isNotBlank() },
                 localMatchTrack = if (has("local_match_track")) getInt("local_match_track") else null,
+                localMatchDbIdentity = optString("local_match_db_identity").takeIf { it.isNotBlank() },
                 acoustIdName = optString("acoustid_name").takeIf { it.isNotBlank() },
                 acoustIdLookupStatus = optString("acoustid_lookup_status").takeIf { it.isNotBlank() },
                 acoustIdLookupAt = if (has("acoustid_lookup_at")) getLong("acoustid_lookup_at") else null,

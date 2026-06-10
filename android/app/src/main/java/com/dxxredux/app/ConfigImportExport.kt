@@ -26,6 +26,7 @@ object ConfigImportExport {
             "music_mode",
             "touch_overlay_enabled",
             PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE,
+            PREF_ALLOW_ACOUSTID_WEB_LOOKUPS,
             PREF_SHOW_RESUME_OFFER,
             PREF_SHOW_DEMO_INSTALLER_OFFER,
             PREF_GUIDEBOT_HELPER_LINE,

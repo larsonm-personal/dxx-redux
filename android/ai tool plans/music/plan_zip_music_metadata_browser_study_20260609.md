@@ -435,6 +435,19 @@ Verification:
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest`
 - `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipMusic.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
 
+### Phase 9: Passive Local Matching And Web Lookup Consent
+- Status: completed 2026-06-10.
+- [x] Track the bundled fingerprint database identity on mission ZIP cache rows so existing fingerprints can be rematched when `known_discs.json5` changes.
+- [x] Run local fingerprinting/matching automatically when the music list opens.
+- [x] Remove manual local identify controls from the normal music list.
+- [x] Add an advanced setting that defaults off and gates AcoustID web lookup controls.
+- [x] Verify focused cache and music browser tests plus scoped code quality.
+
+Verification:
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest`
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\AcoustIdPrefs.kt','android\app\src\main\java\com\dxxredux\app\AdvancedSettingsPage.kt','android\app\src\main\java\com\dxxredux\app\ConfigImportExport.kt','android\app\src\main\java\com\dxxredux\app\FingerprintBridge.kt','android\app\src\main\java\com\dxxredux\app\MissionZipAudioFingerprintCache.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipAudioFingerprintCacheTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest`
+
 ## Demonstration ZIPs
 - `Obsidian.zip`: top-level `.sng`, HMP names, existing test pattern for HMP in HOG.
 - `Chasm.zip`: simple top-level `.sng`.

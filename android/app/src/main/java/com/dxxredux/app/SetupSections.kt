@@ -772,7 +772,18 @@ private fun MissionZipMusicDialog(
     val scope = rememberCoroutineScope()
     val stageManager = remember(context.cacheDir) { MissionZipMusicStageManager(context.cacheDir) }
     val fingerprintCache = remember(context.filesDir) { MissionZipAudioFingerprintCache(context.filesDir) }
-    val acoustIdAvailable = remember(context) { AcoustIdClient.configure(context) }
+    val prefs =
+        remember(context) {
+            context.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
+        }
+    val allowAcoustIdLookups =
+        remember(context) {
+            prefs.getBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, false)
+        }
+    val acoustIdAvailable =
+        remember(context, allowAcoustIdLookups) {
+            allowAcoustIdLookups && AcoustIdClient.configure(context)
+        }
     var cachedFingerprints by remember(catalog.archivePath) {
         mutableStateOf(fingerprintCache.cachedEntries(catalog))
     }
@@ -800,6 +811,7 @@ private fun MissionZipMusicDialog(
 
     suspend fun lookupTrack(track: MissionZipMusicTrack): MissionZipAudioFingerprintCache.Entry? =
         withContext(kotlinx.coroutines.Dispatchers.IO) {
+            if (!acoustIdAvailable) return@withContext null
             val cached = identifyTrack(track) ?: return@withContext null
             try {
                 if (cached.hasAcoustIdLookup) {
@@ -828,6 +840,29 @@ private fun MissionZipMusicDialog(
                 )
             }
         }
+
+    LaunchedEffect(catalog.archivePath, fingerprintableTracks.joinToString("|") { it.id }) {
+        if (fingerprintableTracks.isEmpty()) return@LaunchedEffect
+        stagingProblem = null
+        bulkStatus = "Matching local tracks 0/${fingerprintableTracks.size}"
+        stagingTrackId = "local-match"
+        var completed = 0
+        var matched = 0
+        val updates = mutableMapOf<String, MissionZipAudioFingerprintCache.Entry>()
+        for (track in fingerprintableTracks) {
+            val result = identifyTrack(track)
+            completed++
+            if (result != null) {
+                updates[track.id] = result
+                if (result.hasLocalMatch) matched++
+            }
+            cachedFingerprints = cachedFingerprints + updates
+            bulkStatus = "Matching local tracks $completed/${fingerprintableTracks.size}"
+        }
+        stagingTrackId = null
+        cachedFingerprints = cachedFingerprints + updates
+        bulkStatus = "Matched $matched/${fingerprintableTracks.size} tracks in bundled database"
+    }
 
     previewTarget?.let { (track, file) ->
         val matchLine = cachedFingerprints[track.id]?.let { missionZipMusicFingerprintLine(it) }
@@ -898,7 +933,7 @@ private fun MissionZipMusicDialog(
                         modifier = Modifier.padding(bottom = 4.dp),
                     )
                 }
-                if (fingerprintableTracks.isNotEmpty()) {
+                if (acoustIdAvailable && fingerprintableTracks.isNotEmpty()) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
@@ -906,70 +941,37 @@ private fun MissionZipMusicDialog(
                         OutlinedButton(
                             onClick = {
                                 stagingProblem = null
-                                bulkStatus = "Identifying 0/${fingerprintableTracks.size}"
-                                stagingTrackId = "bulk-identify"
+                                bulkStatus = "Looking up 0/${fingerprintableTracks.size}"
+                                stagingTrackId = "bulk-lookup"
                                 scope.launch {
                                     var completed = 0
-                                    var matched = 0
+                                    var webMatches = 0
                                     val updates = mutableMapOf<String, MissionZipAudioFingerprintCache.Entry>()
                                     for (track in fingerprintableTracks) {
-                                        val result = identifyTrack(track)
+                                        val result = lookupTrack(track)
                                         completed++
                                         if (result != null) {
                                             updates[track.id] = result
-                                            if (result.hasLocalMatch) matched++
+                                            if (result.acoustIdLookupStatus ==
+                                                MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK
+                                            ) {
+                                                webMatches++
+                                            }
                                         }
                                         cachedFingerprints = cachedFingerprints + updates
-                                        bulkStatus = "Identifying $completed/${fingerprintableTracks.size}"
+                                        bulkStatus = "Looking up $completed/${fingerprintableTracks.size}"
                                     }
                                     stagingTrackId = null
                                     cachedFingerprints = cachedFingerprints + updates
-                                    bulkStatus = "Identified $completed tracks; $matched local matches"
+                                    bulkStatus = "Looked up $completed tracks; $webMatches web matches"
                                 }
                             },
                             enabled = !busy,
                             shape = MaterialTheme.shapes.small,
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
+                            modifier = Modifier.fillMaxWidth().height(32.dp).tvFocusBorder(),
                         ) {
-                            Text("Identify all", fontSize = 11.sp)
-                        }
-                        if (acoustIdAvailable) {
-                            OutlinedButton(
-                                onClick = {
-                                    stagingProblem = null
-                                    bulkStatus = "Looking up 0/${fingerprintableTracks.size}"
-                                    stagingTrackId = "bulk-lookup"
-                                    scope.launch {
-                                        var completed = 0
-                                        var webMatches = 0
-                                        val updates = mutableMapOf<String, MissionZipAudioFingerprintCache.Entry>()
-                                        for (track in fingerprintableTracks) {
-                                            val result = lookupTrack(track)
-                                            completed++
-                                            if (result != null) {
-                                                updates[track.id] = result
-                                                if (result.acoustIdLookupStatus ==
-                                                    MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK
-                                                ) {
-                                                    webMatches++
-                                                }
-                                            }
-                                            cachedFingerprints = cachedFingerprints + updates
-                                            bulkStatus = "Looking up $completed/${fingerprintableTracks.size}"
-                                        }
-                                        stagingTrackId = null
-                                        cachedFingerprints = cachedFingerprints + updates
-                                        bulkStatus = "Looked up $completed tracks; $webMatches web matches"
-                                    }
-                                },
-                                enabled = !busy,
-                                shape = MaterialTheme.shapes.small,
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
-                            ) {
-                                Text("Lookup all", fontSize = 11.sp)
-                            }
+                            Text("Lookup all", fontSize = 11.sp)
                         }
                     }
                 }
@@ -1032,33 +1034,6 @@ private fun MissionZipMusicDialog(
                                     )
                                 }
                                 if (MissionZipAudioFingerprintCache.isFingerprintSupported(track)) {
-                                    TextButton(
-                                        onClick = {
-                                            stagingProblem = null
-                                            stagingTrackId = track.id
-                                            scope.launch {
-                                                val result = identifyTrack(track)
-                                                stagingTrackId = null
-                                                if (result == null) {
-                                                    stagingProblem = "Could not identify ${track.displayName}"
-                                                } else {
-                                                    cachedFingerprints = cachedFingerprints + (track.id to result)
-                                                    if (!result.hasLocalMatch) {
-                                                        stagingProblem =
-                                                            "Fingerprint cached for ${track.displayName}; no local match"
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        enabled = stagingTrackId == null,
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                                        modifier = Modifier.height(28.dp).tvFocusBorder(),
-                                    ) {
-                                        Text(
-                                            if (stagingTrackId == track.id) "Working" else "Identify",
-                                            fontSize = 11.sp,
-                                        )
-                                    }
                                     if (acoustIdAvailable) {
                                         TextButton(
                                             onClick = {
@@ -1117,7 +1092,7 @@ private fun missionZipMusicTrackSubtitle(track: MissionZipMusicTrack): String =
 private fun missionZipMusicFingerprintLine(entry: MissionZipAudioFingerprintCache.Entry): String =
     buildString {
         if (entry.localMatchName.isNullOrBlank()) {
-            append("Fingerprint cached; no local match")
+            append("Fingerprint cached; not in bundled database")
         } else {
             append("Matched: ${entry.localMatchName}")
             entry.localMatchTrack?.let { append(" (Track $it)") }

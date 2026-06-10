@@ -8,6 +8,7 @@ import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.security.MessageDigest
 
 // Filter AcoustID placeholder names where both artist and title are unknown
 private fun isPlaceholderName(name: String): Boolean = name == "[unknown] - [untitled]"
@@ -57,6 +58,28 @@ object FingerprintBridge {
         Log.i(TAG, "Fingerprint DB: $count entries loaded")
         return count
     }
+
+    fun databaseIdentity(context: Context): String =
+        MessageDigest
+            .getInstance("SHA-256")
+            .also { digest ->
+                listOf("known_discs.json5", "fingerprint_config.json5").forEach { assetName ->
+                    digest.update(assetName.toByteArray(Charsets.UTF_8))
+                    runCatching {
+                        context.assets.open(assetName).use { input ->
+                            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                            while (true) {
+                                val read = input.read(buffer)
+                                if (read < 0) break
+                                digest.update(buffer, 0, read)
+                            }
+                        }
+                    }.onFailure {
+                        digest.update("missing".toByteArray(Charsets.UTF_8))
+                    }
+                }
+            }.digest()
+            .joinToString("") { "%02x".format(it) }
 
     /**
      * Load match_threshold and duration_tolerance from fingerprint_config.json5
