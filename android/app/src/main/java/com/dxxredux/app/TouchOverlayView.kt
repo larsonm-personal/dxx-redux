@@ -434,7 +434,6 @@ class TouchOverlayView
             when (binding) {
                 TouchBindings.BTN_GYRO_RECENTER,
                 -> {
-                    Unit
                 }
 
                 TouchBindings.BTN_AUTOMAP -> {
@@ -1167,9 +1166,7 @@ class TouchOverlayView
                                 val selectedIndex = remainingActionSelectedIndex.coerceIn(0, actions.lastIndex)
                                 val selectedAction = actions[selectedIndex]
                                 val selectedBinding = selectedAction.binding
-                                if (selectedAction.adminAction == null &&
-                                    remainingActionUsesHeldActivation(selectedBinding)
-                                ) {
+                                if (remainingTouchActionStartsHeldActivation(selectedAction)) {
                                     remainingActionUsedSinceOpen = true
                                     if (remainingActionHeldBinding != selectedBinding) {
                                         releaseRemainingHeldActionIfNeeded()
@@ -1363,6 +1360,15 @@ class TouchOverlayView
                             remainingActionSelectedIndex = pressedIndex
                             remainingActionPointerId = pid
                             remainingActionPressedIndex = pressedIndex
+                            val pressedAction = actions[pressedIndex]
+                            val pressedBinding = pressedAction.binding
+                            if (remainingTouchActionStartsHeldActivation(pressedAction)) {
+                                releaseRemainingHeldActionIfNeeded()
+                                pressLayoutButtonBinding(pressedBinding, remainingActionHoldSourceTag(pressedBinding))
+                                remainingActionHeldBinding = pressedBinding
+                                remainingActionUsedSinceOpen = true
+                                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            }
                             invalidate()
                         } else {
                             closeRemainingActions()
@@ -1391,8 +1397,11 @@ class TouchOverlayView
                     if (remainingActionOpen && remainingActionPressedIndex in actions.indices) {
                         val pressedIndex = remainingActionPressedIndex
                         val fired = remainingActionItemRects[pressedIndex].contains(px, py)
-                        if (fired) {
-                            val action = actions[pressedIndex]
+                        val action = actions[pressedIndex]
+                        if (remainingTouchActionStartsHeldActivation(action)) {
+                            releaseRemainingHeldActionIfNeeded()
+                            closeRemainingActions()
+                        } else if (fired) {
                             if (!navigateAutomapMarkerMenu(action)) {
                                 closeRemainingActions()
                                 triggerRemainingAction(action)

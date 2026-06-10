@@ -137,5 +137,15 @@ class ControllerMenuCycleTest {
         assertTrue(remainingActionUsesHeldActivation(TouchBindings.BTN_ENERGY_SHIELD))
         assertFalse(remainingActionUsesHeldActivation(TouchBindings.BTN_HEADLIGHT))
         assertFalse(remainingActionUsesHeldActivation(TouchBindings.BTN_AUTOMAP))
+        assertTrue(
+            remainingTouchActionStartsHeldActivation(
+                RemainingTouchAction("Energy->Shield", binding = TouchBindings.BTN_ENERGY_SHIELD),
+            ),
+        )
+        assertFalse(
+            remainingTouchActionStartsHeldActivation(
+                RemainingTouchAction("Admin", binding = TouchBindings.BTN_ENERGY_SHIELD, adminAction = 1),
+            ),
+        )
     }
 }

@@ -139,6 +139,9 @@ internal fun remainingActionLabel(
 
 internal fun remainingActionUsesHeldActivation(binding: Int): Boolean = binding == TouchBindings.BTN_ENERGY_SHIELD
 
+internal fun remainingTouchActionStartsHeldActivation(action: RemainingTouchAction): Boolean =
+    action.adminAction == null && remainingActionUsesHeldActivation(action.binding)
+
 internal fun remainingKeyTouchActions(
     layout: TouchLayout,
     gameVariant: String,
