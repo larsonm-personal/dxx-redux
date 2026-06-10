@@ -528,7 +528,7 @@ static json analyze_hog_entries(const json &request)
 	root["game"] = request.value("game", "");
 	root["source"] = request.value("source_name", "");
 	root["mission_name"] = request.value("mission_name", "");
-	root["mission_filename"] = request.value("hog_path", "");
+	root["mission_filename"] = request.value("mission_filename", request.value("hog_path", ""));
 	set_coop_start_header(root, request, coop_start_range);
 	root["levels"] = levels;
 	root["problems"] = failed == 0 ? json::array() : json::array({ "one or more levels could not be loaded" });
@@ -577,6 +577,8 @@ static json failed_result(const json &request, const char *problem)
 	root["request_id"] = request.value("request_id", "");
 	root["game"] = request.value("game", "");
 	root["source"] = request.value("source_name", "");
+	root["mission_name"] = request.value("mission_name", "");
+	root["mission_filename"] = request.value("mission_filename", "");
 	root["levels"] = json::array();
 	root["problems"] = json::array({ problem ? problem : "analysis failed" });
 	return root;

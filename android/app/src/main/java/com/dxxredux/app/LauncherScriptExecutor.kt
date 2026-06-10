@@ -765,7 +765,7 @@ class LauncherScriptExecutor(
     private fun levelMetadataResultJson(result: LevelMetadataResult): JSONObject {
         val levels = JSONArray()
         result.levels.forEach { row ->
-            levels.put(
+            val rowJson =
                 JSONObject()
                     .put("level_num", row.levelNum)
                     .put("secret", row.secret)
@@ -782,29 +782,31 @@ class LauncherScriptExecutor(
                     .put("travel_distance", row.travelDistance)
                     .put("travel_time_seconds", row.travelTimeSeconds)
                     .put("travel_time_text", row.travelTimeText)
-                    .put("travel_status", row.travelStatus)
-                    .put("travel_problem", row.travelProblem)
-                    .put("travel_note", row.travelNote)
                     .put("travel_targets_reached", row.travelTargetsReached)
                     .put("travel_targets_total", row.travelTargetsTotal)
                     .put("travel_key_detours", row.travelKeyDetours)
-                    .put("problems", JSONArray(row.problems))
-                    .put("notes", JSONArray(row.notes))
-                    .put("status", row.status),
-            )
+            if (row.travelStatus != "ok") rowJson.put("travel_status", row.travelStatus)
+            if (row.travelProblem.isNotBlank()) rowJson.put("travel_problem", row.travelProblem)
+            if (row.travelNote.isNotBlank()) rowJson.put("travel_note", row.travelNote)
+            if (row.problems.isNotEmpty()) rowJson.put("problems", JSONArray(row.problems))
+            if (row.notes.isNotEmpty()) rowJson.put("notes", JSONArray(row.notes))
+            if (row.status != "ok") rowJson.put("status", row.status)
+            levels.put(rowJson)
         }
-        return JSONObject()
-            .put("status", result.status)
-            .put("source", result.source)
-            .put("game", result.game)
-            .put("mission_name", result.missionName)
-            .put("mission_filename", result.missionFilename)
-            .apply {
-                if (result.coopStarts.isNotBlank()) put("coop_starts", result.coopStarts)
-            }.put("level_count", result.levels.size)
-            .put("levels", levels)
-            .put("problems", JSONArray(result.problems))
-            .put("diagnostics", JSONArray(result.diagnostics))
+        val json =
+            JSONObject()
+                .put("status", result.status)
+                .put("source", result.source)
+                .put("game", result.game)
+                .put("mission_name", result.missionName)
+                .put("mission_filename", result.missionFilename)
+                .apply {
+                    if (result.coopStarts.isNotBlank()) put("coop_starts", result.coopStarts)
+                }.put("level_count", result.levels.size)
+                .put("levels", levels)
+        if (result.problems.isNotEmpty()) json.put("problems", JSONArray(result.problems))
+        if (result.diagnostics.isNotEmpty()) json.put("diagnostics", JSONArray(result.diagnostics))
+        return json
     }
 
     private fun writeMissionZipImportAutomationResult(

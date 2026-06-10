@@ -86,6 +86,36 @@ function Write-TestJsonText {
     }
 }
 
+function Get-ShortMissionZipFailureText {
+    param([Parameter(Mandatory = $true)][System.Collections.IDictionary]$Record)
+
+    $reason = if ($Record.Contains("reason") -and $Record["reason"]) {
+        [string]$Record["reason"]
+    } elseif ($Record.Contains("status") -and $Record["status"]) {
+        [string]$Record["status"]
+    } else {
+        "mission ZIP failed"
+    }
+    $reason = ($reason -replace '[\r\n\t]+', ' ') -replace '\s{2,}', ' '
+    $reason = $reason.Trim()
+    if ($reason.Length -gt 240) {
+        $reason = $reason.Substring(0, 237).TrimEnd() + "..."
+    }
+    return $reason
+}
+
+function Write-MissionZipFailureJson {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][System.Collections.IDictionary]$Record
+    )
+
+    $failure = [ordered]@{
+        failure_text = Get-ShortMissionZipFailureText -Record $Record
+    }
+    Write-TestJsonText -Path $Path -Text ($failure | ConvertTo-Json -Depth 3)
+}
+
 function Add-MissionZipGameHints {
     param(
         [Parameter(Mandatory = $true)]$Archive,
@@ -333,8 +363,13 @@ foreach ($zip in $zips) {
     if ($zip.Length -gt $LargeZipBytes -and -not $IncludeLarge) {
         Write-Status "SKIP large ZIP: $($zip.Name) ($([math]::Round($zip.Length / 1MB, 1)) MB)" "Yellow"
         $record["status"] = "skipped_large"
+        $record["reason"] = "ZIP is larger than the configured batch limit"
         $results += [pscustomobject]$record
-        Write-TestJsonText -Path $metadataPath -Text "[]"
+        Write-MissionZipFailureJson -Path $metadataPath -Record $record
+        if (-not $NoRegressionJson) {
+            Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
+        }
+        ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
         continue
     }
     if ($gameHint.Game -notin @("d1", "d2")) {
@@ -342,7 +377,10 @@ foreach ($zip in $zips) {
         $record["reason"] = $gameHint.Reason
         Write-Status "SKIP $($gameHint.Game) game ZIP: $($zip.Name) -- $($gameHint.Reason)" "Yellow"
         $results += [pscustomobject]$record
-        Write-TestJsonText -Path $metadataPath -Text "[]"
+        Write-MissionZipFailureJson -Path $metadataPath -Record $record
+        if (-not $NoRegressionJson) {
+            Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
+        }
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
         continue
     }
@@ -386,11 +424,22 @@ foreach ($zip in $zips) {
         Write-Status "FAIL: $($zip.Name): $($record["reason"])" "Red"
     } finally {
         $metadataSaved = Save-AppTextFile -DeviceRelativePath "level_metadata_automation_$label.json" -LocalPath $metadataPath
-        if (-not $metadataSaved) {
-            Write-TestJsonText -Path $metadataPath -Text "[]"
-        }
-        if ($metadataSaved -and -not $NoRegressionJson -and $record["status"] -eq "passed") {
-            Copy-Item -Path $metadataPath -Destination $regressionJsonPath -Force
+        if ($record["status"] -eq "passed") {
+            if (-not $metadataSaved) {
+                $record["status"] = "failed"
+                $record["reason"] = "metadata output file was not created"
+                Write-MissionZipFailureJson -Path $metadataPath -Record $record
+                if (-not $NoRegressionJson) {
+                    Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
+                }
+            } elseif (-not $NoRegressionJson) {
+                Copy-Item -Path $metadataPath -Destination $regressionJsonPath -Force
+            }
+        } else {
+            Write-MissionZipFailureJson -Path $metadataPath -Record $record
+            if (-not $NoRegressionJson) {
+                Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
+            }
         }
         Save-AppTextFile -DeviceRelativePath "mission_zip_import_$label.json" -LocalPath $importPath | Out-Null
         Save-AppTextFile -DeviceRelativePath "automation_result.json" -LocalPath "$artifactPrefix.automation_result.json" | Out-Null

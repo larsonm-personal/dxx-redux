@@ -2,8 +2,8 @@
   "schema": 1,
   "generated_by": "game_data/manage_data.ps1",
   "base_path": "dxx-redux",
-  "file_count": 264,
-  "total_size": 15022362825,
+  "file_count": 368,
+  "total_size": 16346858949,
   "files": [
     {
       "path": "game_data/CD images/d1 mac 2nd bin+cue/Descent [Mac].BIN",
@@ -1698,6 +1698,734 @@
       "size": 563071744,
       "sha256": "58ccb37ecd54c73b0ddbde8d9051a0a6498911fbe66cd025179da681e13559cd",
       "kind": "gog_installer"
+    },
+    {
+      "path": "game_data/mission_files/-MOON-.zip",
+      "name": "-MOON-.zip",
+      "size": 3617875,
+      "sha256": "dfb4adbc6f6d67aac87db51be7c8caecb449623af091bb35ce6e6c2d80f98f37",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/af_d1_beta.zip",
+      "name": "af_d1_beta.zip",
+      "size": 703906,
+      "sha256": "72ec0eae144e1e5dbe3385841ed0f56b12d74feea35295174dfa4f5cc7e2fbef",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/af-d2x.zip",
+      "name": "af-d2x.zip",
+      "size": 1597166,
+      "sha256": "c1f63ec050612eb9f857a88ee69f9531d1d72e97dfb4f3c312a95e88d1c3f045",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/anachron.zip",
+      "name": "anachron.zip",
+      "size": 229056,
+      "sha256": "0e1ebdfc112eefd43b09ab452ba1a6884472cd3424c3affc133f79fdd28cd4e0",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/ascent.zip",
+      "name": "ascent.zip",
+      "size": 1512430,
+      "sha256": "c5883c8044d47b05b106e69d6490ecb4e36401b38b08c70132dc72b116edc74b",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Bahagad.zip",
+      "name": "Bahagad.zip",
+      "size": 1207704,
+      "sha256": "794ab7273510d0d359f9ec6cc4180e355046bbff6aa3c6747e3d293c0c939c35",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/BelialSystemXL.zip",
+      "name": "BelialSystemXL.zip",
+      "size": 996528,
+      "sha256": "823ce30e9636eb1bc6a1f9b8b4da5bec6b16c55c145119f301f557f7c23b0f2b",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/bratmaze.zip",
+      "name": "bratmaze.zip",
+      "size": 228676,
+      "sha256": "8c9842c50d8f5f88b3baf3b880e8c78c03c24b5eb4a67972d16f44f1c4a443eb",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/cererian_1.3.zip",
+      "name": "cererian_1.3.zip",
+      "size": 64747390,
+      "sha256": "9073301baf5a4c040a35af14a676e556a1a56d27689a27de5ea150a4088e6c52",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Chasm.zip",
+      "name": "Chasm.zip",
+      "size": 531049,
+      "sha256": "1ff7d6031d91a17e500baeecb5fec816b76075844d4d16428878abe4bc91e94e",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/chromium.zip",
+      "name": "chromium.zip",
+      "size": 116499,
+      "sha256": "59ce745c2567670c9d0e3d8847ccd55fb007af30b2b7617aa4e370f0d53e0f74",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/chron10b.zip",
+      "name": "chron10b.zip",
+      "size": 383011,
+      "sha256": "4dc45726ca3ed8978d06a7b3c9a79a2a3a92598d2accd00bedeb105724d8e238",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Colossus.ZIP",
+      "name": "Colossus.ZIP",
+      "size": 228116,
+      "sha256": "886d451483453799038f00aa006a5e0cd31a9217a2c9cffe27750eaecd103e7a",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Countd2.zip",
+      "name": "Countd2.zip",
+      "size": 774454,
+      "sha256": "0377a47d23645061f22bc219e047c9be89d0261747f84f8c47bbd4ee87690c8e",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/D1Lost.ZIP",
+      "name": "D1Lost.ZIP",
+      "size": 857775,
+      "sha256": "605c921f629c8f6e33f8079d1a89c7328c9c1285eee60e94f85b479263a0aa22",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/d1mercen.zip",
+      "name": "d1mercen.zip",
+      "size": 417454,
+      "sha256": "fa39dcc42aec3cbd2cb38be66f0e9b9e6f11c4c66482148b1bfae0fe5c1f3f54",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/d1secret.zip",
+      "name": "d1secret.zip",
+      "size": 121362,
+      "sha256": "06ca4fe7bdfcce18450fd1157aadb7be0f301f98f60480a4eee02bd894045f90",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/D2Crossfire.zip",
+      "name": "D2Crossfire.zip",
+      "size": 907335,
+      "sha256": "bd199cc31799d3f29e32ab9ef8a2365fa40b913291271a642b98f623b0f5fb36",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/dd1lvls1.zip",
+      "name": "dd1lvls1.zip",
+      "size": 419295,
+      "sha256": "e42c0965dfcbdc853cf79517db4ba17b839299ea91a305b68e224c76157f1725",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/dd2lvls1.zip",
+      "name": "dd2lvls1.zip",
+      "size": 409653,
+      "sha256": "9c25e70577fd93e32a9806d801fd0a2564a3c180e1591c4e0c889a338161bce8",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Descend Again.zip",
+      "name": "Descend Again.zip",
+      "size": 1297857,
+      "sha256": "1f0c8c12e18b2bd64dd2720fd0090b24b240d9ee04df8c255c9823b0eaab1e60",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Descent 1 to Descent 2 Conversion.zip",
+      "name": "Descent 1 to Descent 2 Conversion.zip",
+      "size": 2176331,
+      "sha256": "08e0713d7a55e6dbcc059e00216ecb86ed3bfb220fec003ee5410992bad4e792",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/descent_maximum_fixed.zip",
+      "name": "descent_maximum_fixed.zip",
+      "size": 2066743,
+      "sha256": "7939e88652bdcbafc7568562189360fa1f262efd69d6cd5d79224a0bef1ab678",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Descent- Invertaus 1.2.zip",
+      "name": "Descent- Invertaus 1.2.zip",
+      "size": 97951,
+      "sha256": "a78b28c6719ee1fdbade61f1d9274bc1fb981804d99b733e02d332bc623828d5",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Descent.zip",
+      "name": "Descent.zip",
+      "size": 2695801,
+      "sha256": "b63a8a179c8614044de6dfa5a98b94899166c02abc051c88250dedacd07a8101",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Disint_Beta_3.zip",
+      "name": "Disint_Beta_3.zip",
+      "size": 1550139,
+      "sha256": "9acb7c048490a9063af84778d6d76b2ec84cd7342bebd3f2b8b9fd05c94afc1e",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/dontpnic.zip",
+      "name": "dontpnic.zip",
+      "size": 329136,
+      "sha256": "c88518a14108442a3f2355feb77426dd8e6d4025a9cf9a06af9aefc58e836b0a",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/dozen.zip",
+      "name": "dozen.zip",
+      "size": 356378,
+      "sha256": "8c51c494326c4ce0e76a4ccdc969f6c5d243ec0d50801a8c6d17e3b7f1f2cc48",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/driller1.zip",
+      "name": "driller1.zip",
+      "size": 331342,
+      "sha256": "3355f9750a49565c492dff014c2392d9b155ae40801e9d4d794b239afd665b7b",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/driller2.zip",
+      "name": "driller2.zip",
+      "size": 370466,
+      "sha256": "f71cb7d4ac9d6a651e3e2a269c85db0e8b7103476f3db05cca9090f45418035d",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/drmsaga.zip",
+      "name": "drmsaga.zip",
+      "size": 1379198,
+      "sha256": "aa8ba1df48cddb118aaf3950318930fe3c19f63d3c7af31df0e06c797d0bcc2d",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/DVLVLS1.zip",
+      "name": "DVLVLS1.zip",
+      "size": 392547,
+      "sha256": "6ccc36e0d534dcd4992b4474813b44b5d194111e8c92f2f20e08d0fa6134ade3",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/EAF.zip",
+      "name": "EAF.zip",
+      "size": 563465,
+      "sha256": "7d8832a03b0cb90aa3c8753ca77393e0fbdb17fb12fa18e14d897663accd41f7",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/EAF2.zip",
+      "name": "EAF2.zip",
+      "size": 3631840,
+      "sha256": "e5a5a74fd74e8b97212f9cef5b8357582a29e1adf988444cdffd99fecc8ab8ca",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/entropy_v.1.0.zip",
+      "name": "entropy_v.1.0.zip",
+      "size": 714419,
+      "sha256": "c4b658a6235612797d5290db50266e7d345b05126c88cc74616e9b46b65f87e2",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Entropy.zip",
+      "name": "Entropy.zip",
+      "size": 827906,
+      "sha256": "61c797f80275fbd4463da41618e703c1d7c0e01bbd795c4631a9018a1e4cff76",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Entropy2.zip",
+      "name": "Entropy2.zip",
+      "size": 955506,
+      "sha256": "211e2f2a5687740f5f5988f41e30b8b27bea2d0a433aca719875f92d28128f61",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/eq-set.zip",
+      "name": "eq-set.zip",
+      "size": 1053340,
+      "sha256": "560fc0e233377e5631ce5d38ed80a2901c66e7add9eb71072364db215874bd66",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/erisreb.zip",
+      "name": "erisreb.zip",
+      "size": 610432,
+      "sha256": "741449c569b4d4920ddc5ce354340ecd743cd6b4c97b3069eb9181fe0c3de30d",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/ewithin-versions.zip",
+      "name": "ewithin-versions.zip",
+      "size": 936110524,
+      "sha256": "d79a110669b9bc2d4439dddc41a129dd3b359a1bcbe4346b80f02f54b24656da",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/ex0core.zip",
+      "name": "ex0core.zip",
+      "size": 164303,
+      "sha256": "827eae845518cdd35adab483c59096e29e89c9833e7f78a5782d5c3233519ee4",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Extra_Missions.zip",
+      "name": "Extra_Missions.zip",
+      "size": 671733,
+      "sha256": "f5c330408eebe6097ca0bc39ae8252a7b92b223d86b5376a4e9c6e5706eac9b4",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/fimbul.zip",
+      "name": "fimbul.zip",
+      "size": 162385,
+      "sha256": "c41a597934e3d7bc657cc9e91d2bcaaac134c7812f4fd04cbda2ca00fe25dcc2",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/freelan.zip",
+      "name": "freelan.zip",
+      "size": 202968,
+      "sha256": "a44d1cbddd4b4c0f7b104c8e6e1fed8a022594db62010ce006d536dd95f5b103",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/GALAXY ASTEROIDS ALL.zip",
+      "name": "GALAXY ASTEROIDS ALL.zip",
+      "size": 447309,
+      "sha256": "32ee7981b32e7bb4b8c801570686dadfb3ab5419a5324ceb2da714595df5090f",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/galmond2.zip",
+      "name": "galmond2.zip",
+      "size": 852123,
+      "sha256": "4774feb37571040b7cef4cee9798e4b5c1a3f04b73466ddceff88427b3183969",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/gigalo.zip",
+      "name": "gigalo.zip",
+      "size": 868048,
+      "sha256": "63ad9dd8ddf9e3437f2c21829029ea84aa3baee1504dccd9aa019e4b30e4e7f6",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/gnomes.zip",
+      "name": "gnomes.zip",
+      "size": 135597,
+      "sha256": "2c307ac49d52357fb837de6ec885ad2a3961fece8a8bf907c6c07cc5f10fbb8b",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/grad3d.zip",
+      "name": "grad3d.zip",
+      "size": 1028349,
+      "sha256": "c20b270ea40267c8bde858ff7f535b822591e2467127010bd0b8125e80dd7ec7",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/HDPACK1.zip",
+      "name": "HDPACK1.zip",
+      "size": 97339,
+      "sha256": "4ca5bd54b6018ccc892597766fa86c9777a20c043e609715aac9fa2cc6f440a2",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/HDVBETA2.zip",
+      "name": "HDVBETA2.zip",
+      "size": 143723,
+      "sha256": "40635b1d3e6599f3d5a9f1a1697776a98ef87ce0c19632636a590690ed4ea9d0",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Hydro.ZIP",
+      "name": "Hydro.ZIP",
+      "size": 3352681,
+      "sha256": "e8861a61c506cfd66c3a117820535672b5eb7e03ce15e6fc73241c966e0309f7",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/icerealm.zip",
+      "name": "icerealm.zip",
+      "size": 317186,
+      "sha256": "5dea576aedcb37ba4de3d9c27a0f5c8637ac563924a824b198fa08aa6a584e43",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Imds.zip",
+      "name": "Imds.zip",
+      "size": 224108,
+      "sha256": "678bb77119289f5403a364922d588f9c544b56764cddc384a3114832f0c63a97",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/INSANE MISSION PACK ULTRA.zip",
+      "name": "INSANE MISSION PACK ULTRA.zip",
+      "size": 77417,
+      "sha256": "ded6860a1530472ad7c107a5e67af0239e87c35a2de4c65f2c7300712ecf41a2",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/ironblade.zip",
+      "name": "ironblade.zip",
+      "size": 514926,
+      "sha256": "99ba360e7946d8298d537c905c7d20e2d25de7bb79cb45f8ae5f73370b8fd40b",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/ironstar.zip",
+      "name": "ironstar.zip",
+      "size": 631796,
+      "sha256": "6ce79aee78fd6ff7727a7e2e0a45ba8df252cc7758a5dbf5c32cbaa45207ccab",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/k_sos.zip",
+      "name": "k_sos.zip",
+      "size": 506005,
+      "sha256": "6655bb11c80e44828c0ebad5363e8b0bc86812fdfaa123830231f522b4cbbe7f",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/KAK.ZIP",
+      "name": "KAK.ZIP",
+      "size": 1430660,
+      "sha256": "7faf9664ecd77a0e6f8a978149956449a1203125139641c18b909dc4438ff0f6",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/kcxf2.zip",
+      "name": "kcxf2.zip",
+      "size": 647838,
+      "sha256": "2dbb1b1f73b3dcbc3711e597907528938b527e25da73b349a108a47f9726c770",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/KKR.ZIP",
+      "name": "KKR.ZIP",
+      "size": 1676736,
+      "sha256": "70fe068eda444ff7c1ae4f826547e2d47f4a1ca981875643c180c7e90d3c93ba",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/lagrange.zip",
+      "name": "lagrange.zip",
+      "size": 270637,
+      "sha256": "cab844e17bbf730d15de8a53dffe99e5a29dad3dbf2e53e33ad6a51427d25f98",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/legacy.zip",
+      "name": "legacy.zip",
+      "size": 270195,
+      "sha256": "31a1f18be21f56eb9e825d3286ee43e58b54feb6bf4ea2c879de6b619a9a25d0",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/levigen.zip",
+      "name": "levigen.zip",
+      "size": 8550349,
+      "sha256": "d5c4368783fe00e7bbe077ce679f41f1000e2dc943f930450ad26ca1e5edb0b0",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Lostlvls.zip",
+      "name": "Lostlvls.zip",
+      "size": 5710042,
+      "sha256": "b4a1075dddc87eb1ca018288587cc56a6fac03ea97672a733bb169ee87c78307",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Lunar Series Revamped.zip",
+      "name": "Lunar Series Revamped.zip",
+      "size": 168344,
+      "sha256": "b134ffc1df360d3a760f4390e95ed2bb6736146827e400131846e7765b2e8418",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/magma.zip",
+      "name": "magma.zip",
+      "size": 256675,
+      "sha256": "57935b8decb5bae60931b8e8595fb9af3a74aca984184c2b96bd9c9dd35b2144",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Mandrill.zip",
+      "name": "Mandrill.zip",
+      "size": 1404305,
+      "sha256": "2abcb3443b4b245d9bf924573f06dac5ce9f634b30cf94f8f9b6789cfb87afe2",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/megalo.zip",
+      "name": "megalo.zip",
+      "size": 492078,
+      "sha256": "985db0adc234712ce37e4925ca604042e15653cf4c46d7bc0febfff9c5834982",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/mna.zip",
+      "name": "mna.zip",
+      "size": 242117,
+      "sha256": "56f7c482f1ec66c6176dfbc9972bbb75ce4031588436e58f7b1c6d2134f0b871",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/mustfind.zip",
+      "name": "mustfind.zip",
+      "size": 63378,
+      "sha256": "28e6b21f140f3a25a7efbf5c49687146eddf50c7c298c8f55120a40cfec1e5f9",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Obsidian.zip",
+      "name": "Obsidian.zip",
+      "size": 7676896,
+      "sha256": "441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/odyssee.zip",
+      "name": "odyssee.zip",
+      "size": 438466,
+      "sha256": "46e7df24e1cea4d4eedf2472d92b8778a502bd0a9d039a0476ada5b4c3c9c66a",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/ORION-D2.zip",
+      "name": "ORION-D2.zip",
+      "size": 1196439,
+      "sha256": "c0b2d967f2d792bf4321a726c4a1e1aa0359f03e67cc832acabf8eabdfdd3e19",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Orion.ZIP",
+      "name": "Orion.ZIP",
+      "size": 582100,
+      "sha256": "aa808a335c638c44e32d94624e11399a2251cdd70aff834bd438624e0155a15b",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/outerrch11.zip",
+      "name": "outerrch11.zip",
+      "size": 436766,
+      "sha256": "a2ac3dfd5889cf89a6a7354070d226f29e6eb2705796cf26c1742f8dd9224db1",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/phenomia.zip",
+      "name": "phenomia.zip",
+      "size": 739706,
+      "sha256": "9efac6bac01bf736e729a73dd2a0350ee5c721296759d35874ed3c7f121e1792",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Phobos.zip",
+      "name": "Phobos.zip",
+      "size": 1826713,
+      "sha256": "b8f602c3f57c077002643557030e173656f11cf736be0254831c9cf06c89b459",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/plutonia.zip",
+      "name": "plutonia.zip",
+      "size": 8078115,
+      "sha256": "469e7f6700ae32509edfcbab8bceed94e6af152b479428e2966d9dcc7de4a186",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/plutonionOutbreak.zip",
+      "name": "plutonionOutbreak.zip",
+      "size": 28812342,
+      "sha256": "83cdbbf458f11ee66ec2d6ae3f1b96bf82bdf102209b7abf389f9af8eef77296",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/prophecy.zip",
+      "name": "prophecy.zip",
+      "size": 812970,
+      "sha256": "75db652684f6eaf00275709ac223db86bcb4fc47a18b1d1beee97649e525ec58",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/quotienc_1.1.1.zip",
+      "name": "quotienc_1.1.1.zip",
+      "size": 3188768,
+      "sha256": "000e03a7950f83a45e847166e02990ac844eeda0ff7e066fe31580c336362824",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/revdrav2.zip",
+      "name": "revdrav2.zip",
+      "size": 302907,
+      "sha256": "42c504dc2e8302a5025bc1e9314bdf6ea4f4c27cfd22da21263ec5d0af493b8e",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/revodrav.zip",
+      "name": "revodrav.zip",
+      "size": 1202180,
+      "sha256": "23acc912b06ec7499f55512bd9d7a6e0776ca8550cd45cc00bba90f22d38ede6",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/ROGUE.zip",
+      "name": "ROGUE.zip",
+      "size": 198788,
+      "sha256": "8537b4b897dd43fed8274d25d8056de24a9f697425b2510e0352effa127f37e1",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/sanitati2.zip",
+      "name": "sanitati2.zip",
+      "size": 372865,
+      "sha256": "99125fa53ebe4f804e6b49255ffcd9a883ba25097e3368671d42668132e7a887",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/sens9.zip",
+      "name": "sens9.zip",
+      "size": 214146,
+      "sha256": "cef10690884ab707932c0e6f076a95b5497647062ee19e1464a56c3e6d6c5013",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/sirius.zip",
+      "name": "sirius.zip",
+      "size": 139972,
+      "sha256": "78d007c989e00ce61e8a0e45c7928a92cadf2532f351fea0720e183b3ab995da",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/sirius2.zip",
+      "name": "sirius2.zip",
+      "size": 381457,
+      "sha256": "31267de6d327408ece7047e90ce5b160f575069e355ed98bf3021f0ec615d689",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/TEW.zip",
+      "name": "TEW.zip",
+      "size": 11395812,
+      "sha256": "e03555304da6636883e2b4b7d37214628126f47f9f4e4d4348d3788cd9555d69",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/THEHIVE.zip",
+      "name": "THEHIVE.zip",
+      "size": 227884,
+      "sha256": "409a59a3faf94e4ab37e2d0eb9ff4ed19a7f25792883efcc1359ad18a2e88ec6",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/TheOmicronProject.zip",
+      "name": "TheOmicronProject.zip",
+      "size": 1643679,
+      "sha256": "2bb2a192cd30d71e4a7dd5f1b713762d33c26bb8878696f469325c72dd6e4e89",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/trainng.zip",
+      "name": "trainng.zip",
+      "size": 30579,
+      "sha256": "7a8384e4126117bf0ce37695bc2c82200084d3a018b2cee77248ed8a41609103",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Trine1.zip",
+      "name": "Trine1.zip",
+      "size": 61875872,
+      "sha256": "541b2e7c6dc40d2063d6be8f5718922608e342bde43e75db5755a0a466820d12",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/trine2.zip",
+      "name": "trine2.zip",
+      "size": 51913494,
+      "sha256": "d0a6ab2122fcb5e8ef580cb50e6b9c6d44b086799718a99f1553a9e07cba9323",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/TRINITY.ZIP",
+      "name": "TRINITY.ZIP",
+      "size": 6004907,
+      "sha256": "a1f81f0a7660f38a2bd20814b1fe2682ca074f424464f5593f4ed611ff8143c1",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/tu.zip",
+      "name": "tu.zip",
+      "size": 526206,
+      "sha256": "4970c0149cec5f69303a6e7ce469db417a60c7c5c435db90cfe11d97edc2286e",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Tyrsis.zip",
+      "name": "Tyrsis.zip",
+      "size": 131056,
+      "sha256": "e2610ec3c3c203b45fc3163de17e8fd972326aa6b8968d71bfaa88e695823faf",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/U3AAH.zip",
+      "name": "U3AAH.zip",
+      "size": 51519029,
+      "sha256": "4ba090125eb5c112b70a883e7fbe1983ac2193e14eea0a9a747e617e70bc2042",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Vela1.zip",
+      "name": "Vela1.zip",
+      "size": 1088065,
+      "sha256": "347f35571a8bc081c5d355967ea5b16498cb0421f274ce8eff0ee62377047693",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Vertigo Missions.ZIP",
+      "name": "Vertigo Missions.ZIP",
+      "size": 827502,
+      "sha256": "3ec80ed659cde86d2a2120833a87a542660215748f45f4d3500e31f570c3306b",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Vesta.zip",
+      "name": "Vesta.zip",
+      "size": 170114,
+      "sha256": "8b79b1def7be39c4377ac297f874157ce06ee994504c7d5f856dcf0d73f81ba1",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/vignett2.zip",
+      "name": "vignett2.zip",
+      "size": 10075038,
+      "sha256": "4f4f3eef34a0fe6a09a849cd8141cf64abb0409e98fae3853ced3e64ca4178c6",
+      "kind": "mission_zip"
+    },
+    {
+      "path": "game_data/mission_files/Vignettes.zip",
+      "name": "Vignettes.zip",
+      "size": 1365886,
+      "sha256": "c4d16a90c78210e37ecfdacc844c57f0363934ea90774863b651eb0381033139",
+      "kind": "mission_zip"
     },
     {
       "path": "game_data/music/D2 infinite abyss redbook mp3/01 Title.mp3",

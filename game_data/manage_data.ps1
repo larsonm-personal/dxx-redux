@@ -24,10 +24,12 @@ $CdExtensions = @(".bin", ".cue", ".iso", ".img", ".ccd", ".sub")
 $GogExtensions = @(".exe", ".pkg")
 $DemoExtensions = @(".exe", ".zip", ".sit", ".hqx")
 $MusicExtensions = @(".mp3")
+$MissionZipExtensions = @(".zip")
 $MusicTestRoots = @(
     "game_data/music/D2 infinite abyss redbook mp3/",
     "game_data/music/D2 redbook mp3 rips/"
 )
+$MissionZipRoot = "game_data/mission_files/"
 $ExcludedPathParts = @("extracted", "data_tracks")
 $RegressionDemoRoot = Join-Path $RepoRoot "android\regression_demos"
 $RegressionDemoExportSuffixes = @(".dximdemo", ".dem", ".rngtrace.jsonl")
@@ -74,6 +76,9 @@ function Test-SourceDataFile {
     if ($relative.StartsWith("game_data/demo installers/", [System.StringComparison]::OrdinalIgnoreCase)) {
         return $DemoExtensions -contains $extension
     }
+    if ($relative.StartsWith($MissionZipRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $MissionZipExtensions -contains $extension
+    }
     foreach ($musicRoot in $MusicTestRoots) {
         if ($relative.StartsWith($musicRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
             return $MusicExtensions -contains $extension
@@ -92,6 +97,9 @@ function Get-TestDataKind {
     }
     if ($RelativePath.StartsWith("game_data/demo installers/", [System.StringComparison]::OrdinalIgnoreCase)) {
         return "demo_installer"
+    }
+    if ($RelativePath.StartsWith($MissionZipRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return "mission_zip"
     }
     foreach ($musicRoot in $MusicTestRoots) {
         if ($RelativePath.StartsWith($musicRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -178,8 +186,8 @@ function Write-TestDataManifest {
         files = $entries
     }
 
-    $json = $manifest | ConvertTo-Json -Depth 5
-    Set-Content -LiteralPath $ManifestPath -Value ($json + "`n") -NoNewline -Encoding UTF8
+    $json = ($manifest | ConvertTo-Json -Depth 5) -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText($ManifestPath, "$json`n", [System.Text.UTF8Encoding]::new($false))
     Write-Host "Wrote $($entries.Count) entries to $ManifestPath"
 }
 
