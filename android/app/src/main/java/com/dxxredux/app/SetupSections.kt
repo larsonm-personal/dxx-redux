@@ -1124,7 +1124,7 @@ private fun missionZipMusicFingerprintLine(entry: MissionZipAudioFingerprintCach
             entry.localMatchConfidence?.let { append(" [${(it * 100).toInt()}%]") }
         }
         if (entry.durationMs > 0) {
-            append(" - ${"%.1f".format(Locale.US, entry.durationMs / 1000.0)}s")
+            append(" - ${formatMissionZipMusicDuration(entry.durationMs)}")
         }
         when (entry.acoustIdLookupStatus) {
             MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK -> {
@@ -1141,6 +1141,13 @@ private fun missionZipMusicFingerprintLine(entry: MissionZipAudioFingerprintCach
             }
         }
     }
+
+private fun formatMissionZipMusicDuration(durationMs: Int): String {
+    val totalSeconds = ((durationMs + 500L) / 1000L).coerceAtLeast(0L)
+    val minutes = totalSeconds / 60L
+    val seconds = totalSeconds % 60L
+    return if (minutes > 0L) "${minutes}m${seconds}s" else "${seconds}s"
+}
 
 @Composable
 private fun MissionZipConstituentDialog(

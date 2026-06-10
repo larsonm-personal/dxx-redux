@@ -421,6 +421,20 @@ Verification:
 - `.\game_data\fingerprint_mission_zip_music.ps1 -Force`
 - `.\game_data\update_known_discs_albums.ps1 -Force`
 
+### Phase 8: Mission ZIP Music Browser Cleanup
+- Status: completed 2026-06-10.
+- [x] Change cached fingerprint durations from decimal seconds to compact minute/second text such as `3m2s`.
+- [x] Treat song-list entries as ordering metadata for matching playable tracks instead of showing duplicate non-playable rows.
+- [x] Keep unresolved song-list names visible as non-playable references.
+- [x] Add regressions for Trine-style HOG-contained `.sng` plus OGG files and top-level song lists that reference playable MIDI tracks.
+- [x] Run focused unit tests and scoped code quality.
+
+Verification:
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicTest`
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest`
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.MissionZipMusicTest --tests com.dxxredux.app.MissionZipMusicStageManagerTest --tests com.dxxredux.app.MissionZipAudioFingerprintCacheTest`
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\java\com\dxxredux\app\MissionZipMusic.kt','android\app\src\main\java\com\dxxredux\app\SetupSections.kt','android\app\src\test\java\com\dxxredux\app\MissionZipMusicTest.kt','android\ai tool plans\music\plan_zip_music_metadata_browser_study_20260609.md')`
+
 ## Demonstration ZIPs
 - `Obsidian.zip`: top-level `.sng`, HMP names, existing test pattern for HMP in HOG.
 - `Chasm.zip`: simple top-level `.sng`.

@@ -192,23 +192,21 @@ object MissionZipMusic {
         private val label: String,
         private val containerPath: String,
     ) {
-        private val tracks = mutableListOf<MissionZipMusicTrack>()
+        private data class SongReference(
+            val name: String,
+            val archiveEntryPath: String,
+            val index: Int,
+        )
+
+        private val songReferences = mutableListOf<SongReference>()
+        private val playableTracks = mutableListOf<MissionZipMusicTrack>()
 
         fun addSongList(
             archiveEntryPath: String,
             text: String,
         ) {
             parseSongListReferences(text).forEachIndexed { index, name ->
-                tracks +=
-                    MissionZipMusicTrack(
-                        id = "$id:sng:$index:${name.lowercase(Locale.US)}",
-                        displayName = name,
-                        archiveEntryPath = archiveEntryPath,
-                        kind = KIND_SONG_REFERENCE,
-                        extension = extensionOf(name),
-                        sizeBytes = 0,
-                        playable = false,
-                    )
+                songReferences += SongReference(name, archiveEntryPath, index)
             }
         }
 
@@ -220,7 +218,7 @@ object MissionZipMusic {
             sizeBytes: Long,
         ) {
             val ext = extensionOf(name)
-            tracks +=
+            playableTracks +=
                 MissionZipMusicTrack(
                     id =
                         listOf(id, archiveEntryPath, nestedEntryPath.orEmpty(), hogEntryName.orEmpty(), name)
@@ -237,13 +235,56 @@ object MissionZipMusic {
         }
 
         fun addTrack(track: MissionZipMusicTrack) {
-            tracks += track
+            if (track.kind == KIND_SONG_REFERENCE) {
+                songReferences += SongReference(track.displayName, track.archiveEntryPath, songReferences.size)
+            } else {
+                playableTracks += track
+            }
         }
 
         fun build(): MissionZipMusicSource? =
-            tracks.takeIf { it.isNotEmpty() }?.let {
+            buildDisplayTracks().takeIf { it.isNotEmpty() }?.let {
                 MissionZipMusicSource(id, label, containerPath, it)
             }
+
+        private fun buildDisplayTracks(): List<MissionZipMusicTrack> {
+            if (songReferences.isEmpty()) return playableTracks
+            val byName =
+                playableTracks
+                    .groupBy { it.displayName.lowercase(Locale.US) }
+                    .mapValues { (_, tracks) -> ArrayDeque(tracks) }
+            val usedTrackIds = mutableSetOf<String>()
+            val usedNames = mutableSetOf<String>()
+            val displayTracks = mutableListOf<MissionZipMusicTrack>()
+
+            songReferences.forEach { reference ->
+                val nameKey = reference.name.lowercase(Locale.US)
+                if (!usedNames.add(nameKey)) return@forEach
+                val playable = byName[nameKey]?.removeFirstOrNull()
+                if (playable != null) {
+                    displayTracks += playable
+                    usedTrackIds += playable.id
+                } else {
+                    displayTracks +=
+                        MissionZipMusicTrack(
+                            id = "$id:sng:${reference.index}:$nameKey",
+                            displayName = reference.name,
+                            archiveEntryPath = reference.archiveEntryPath,
+                            kind = KIND_SONG_REFERENCE,
+                            extension = extensionOf(reference.name),
+                            sizeBytes = 0,
+                            playable = false,
+                        )
+                }
+            }
+
+            playableTracks.forEach { track ->
+                if (track.id !in usedTrackIds && usedNames.add(track.displayName.lowercase(Locale.US))) {
+                    displayTracks += track
+                }
+            }
+            return displayTracks
+        }
     }
 
     private fun parseSongListReferences(text: String): List<String> =

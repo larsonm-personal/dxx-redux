@@ -28,6 +28,24 @@ class MissionZipMusicTest {
     }
 
     @Test
+    fun usesTopLevelSongListToOrderPlayableTracksWithoutDuplicateReferences() {
+        val zip = createZip("music-top-level-playable") {
+            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+            writeEntry("briefing.hmp", ByteArray(16))
+            writeEntry("game01.hmp", ByteArray(24))
+            writeEntry("descent.sng", "game01.hmp\nbriefing.hmp\nmissing.hmp\n".toByteArray())
+        }
+
+        val catalog = MissionZipMusic.inspect(zip)
+
+        assertNotNull(catalog)
+        val archiveSource = catalog!!.sources.single { it.id == "archive" }
+        assertEquals(listOf("game01.hmp", "briefing.hmp", "missing.hmp"), archiveSource.tracks.map { it.displayName })
+        assertEquals(listOf(true, true, false), archiveSource.tracks.map { it.playable })
+    }
+
+    @Test
     fun detectsHogMidiTrack() {
         val zip = createZip("music-hog-midi") {
             writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
@@ -85,9 +103,9 @@ class MissionZipMusicTest {
             writeEntry(
                 "trine2.hog",
                 createHogBytes(
-                    "descent.sng" to "descent.ogg\nbriefing.ogg\ngame01.ogg\n".toByteArray(),
-                    "descent.ogg" to ByteArray(32),
                     "briefing.ogg" to ByteArray(40),
+                    "descent.sng" to "descent.ogg\nbriefing.ogg\ngame01.ogg\nmissing.ogg\n".toByteArray(),
+                    "descent.ogg" to ByteArray(32),
                     "game01.ogg" to ByteArray(48),
                     "level01.rl2" to ByteArray(8),
                 ),
@@ -98,14 +116,14 @@ class MissionZipMusicTest {
 
         assertNotNull(catalog)
         val hogSource = catalog!!.sources.single { it.containerPath == "trine2.hog" }
-        assertEquals(6, hogSource.tracks.size)
+        assertEquals(4, hogSource.tracks.size)
         assertEquals(
-            listOf("descent.ogg", "briefing.ogg", "game01.ogg"),
-            hogSource.tracks.filter { !it.playable }.map { it.displayName },
+            listOf("descent.ogg", "briefing.ogg", "game01.ogg", "missing.ogg"),
+            hogSource.tracks.map { it.displayName },
         )
         assertEquals(
-            listOf("descent.ogg", "briefing.ogg", "game01.ogg"),
-            hogSource.tracks.filter { it.playable }.map { it.displayName },
+            listOf(true, true, true, false),
+            hogSource.tracks.map { it.playable },
         )
     }
 
