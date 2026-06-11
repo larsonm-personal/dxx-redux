@@ -71,7 +71,7 @@ function Get-SecretAreaDefaultExe {
     param([Parameter(Mandatory)][string]$Name)
 
     $buildDir = if ($Name -eq 'd1') { 'buildd1' } else { 'buildd2' }
-    $baseName = "dxx-redux-$Name-secretareas"
+    $baseName = "dxx-redux-$Name-headless-metadata"
     foreach ($exeName in (Get-RegressionHostExecutableNames -BaseName $baseName)) {
         $candidate = Join-RegressionPath $repoRoot $buildDir 'main' $exeName
         if (Test-Path -LiteralPath $candidate -PathType Leaf) {
@@ -93,7 +93,7 @@ function Invoke-SecretAreaTargetBuild {
     if (-not $cmakePath) {
         throw "cmake not found. Install CMake or place Android SDK CMake under dependency_base.txt"
     }
-    $targetName = "dxx-redux-$Name-secretareas"
+    $targetName = "dxx-redux-$Name-headless-metadata"
     if (Test-RegressionWindowsHost) {
         $vcvars = 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat'
         if (-not (Test-Path -LiteralPath $vcvars -PathType Leaf)) {

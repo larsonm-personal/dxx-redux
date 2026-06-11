@@ -24,6 +24,8 @@ extern "C" {
 #include "inferno.h"
 #include "messagebox.h"
 #include "mission.h"
+#include "multi.h"
+#include "object.h"
 #include "physfsx.h"
 #include "player.h"
 #include "screens.h"
@@ -42,6 +44,7 @@ extern "C" {
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
 #endif
+extern "C" void gameseq_init_network_players(void);
 
 static unsigned char *headless_screen_pixels = NULL;
 static int secret_area_dump_failed = 0;
@@ -100,7 +103,7 @@ static int init_headless_screen(char *error, size_t error_size)
 	return 1;
 }
 
-static int init_secret_area_runtime(int argc, char *argv[], char *error, size_t error_size)
+static int init_headless_metadata_runtime(int argc, char *argv[], char *error, size_t error_size)
 {
 	trace_dump_init("mem_init");
 	mem_init();
@@ -326,6 +329,124 @@ static nlohmann::ordered_json serialize_int_array(const int *values, int count)
 	return result;
 }
 
+static nlohmann::ordered_json serialize_vector(const vms_vector &value)
+{
+	nlohmann::ordered_json result = nlohmann::ordered_json::array();
+
+	result.push_back((int) value.x);
+	result.push_back((int) value.y);
+	result.push_back((int) value.z);
+	return result;
+}
+
+static int count_loaded_coop_start_objects()
+{
+	int count = 0;
+	int player_or_coop_index = 0;
+
+	for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		object *obj = &Objects[objnum];
+
+		if (obj->type != OBJ_PLAYER && obj->type != OBJ_GHOST && obj->type != OBJ_COOP)
+			continue;
+		if (player_or_coop_index == 0 || obj->type == OBJ_COOP)
+			++count;
+		++player_or_coop_index;
+	}
+	return count;
+}
+
+static nlohmann::ordered_json serialize_coop_start_slot(int slot, int real_start_count)
+{
+	nlohmann::ordered_json result;
+
+	result["slot"] = slot;
+	result["generated"] = slot >= real_start_count;
+	result["seg"] = Player_init[slot].segnum;
+	result["pos"] = serialize_vector(Player_init[slot].pos);
+	result["objnum"] = Players[slot].objnum;
+	if (Players[slot].objnum >= 0 && Players[slot].objnum <= Highest_object_index)
+		result["object_type"] = (int) Objects[Players[slot].objnum].type;
+	else
+		result["object_type"] = -1;
+	return result;
+}
+
+static int positions_match(const vms_vector &a, const vms_vector &b)
+{
+	return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+static nlohmann::ordered_json serialize_coop_level(int level_num, const char *level_file)
+{
+	const int previous_game_mode = Game_mode;
+	int real_start_count;
+	int duplicate_pairs = 0;
+	int too_close_pairs = 0;
+	int minimum_pair_distance = 0x7fffffff;
+	nlohmann::ordered_json result;
+	nlohmann::ordered_json starts = nlohmann::ordered_json::array();
+
+	if (load_level(level_file)) {
+		fprintf(stderr, "COOP-START-DUMP FAIL level could not load %s\n", level_file ? level_file : "<null>");
+		secret_area_dump_failed = 1;
+		return result;
+	}
+	Current_level_num = level_num;
+	real_start_count = count_loaded_coop_start_objects();
+	Game_mode = GM_NETWORK | GM_MULTI_ROBOTS | GM_MULTI_COOP;
+	gameseq_init_network_players();
+	Game_mode = previous_game_mode;
+	for (int slot = 0; slot < MAX_PLAYERS; ++slot) {
+		for (int other = 0; other < slot; ++other) {
+			int distance = vm_vec_dist_quick(&Player_init[slot].pos, &Player_init[other].pos);
+
+			if (distance < minimum_pair_distance)
+				minimum_pair_distance = distance;
+			if (positions_match(Player_init[slot].pos, Player_init[other].pos))
+				++duplicate_pairs;
+			if (distance < Polygon_models[Player_ship->model_num].rad * 2)
+				++too_close_pairs;
+		}
+		starts.push_back(serialize_coop_start_slot(slot, real_start_count));
+	}
+	result["level_num"] = level_num;
+	result["level_name"] = Current_level_name;
+	result["level_file"] = level_file ? level_file : "";
+	result["real_start_count"] = real_start_count;
+	result["num_net_player_positions"] = NumNetPlayerPositions;
+	result["max_players"] = MAX_PLAYERS;
+	result["ship_radius"] = Polygon_models[Player_ship->model_num].rad;
+	result["minimum_allowed_distance"] = Polygon_models[Player_ship->model_num].rad * 2;
+	result["minimum_pair_distance"] = minimum_pair_distance == 0x7fffffff ? 0 : minimum_pair_distance;
+	result["duplicate_position_pairs"] = duplicate_pairs;
+	result["too_close_pairs"] = too_close_pairs;
+	result["starts"] = starts;
+	return result;
+}
+
+static nlohmann::ordered_json build_coop_start_dump()
+{
+	nlohmann::ordered_json root;
+	nlohmann::ordered_json levels = nlohmann::ordered_json::array();
+
+	root["schema"] = "dxx-coop-start-fanout-v1";
+#ifdef DXX_BUILD_DESCENT_II
+	root["game"] = "d2";
+#else
+	root["game"] = "d1";
+#endif
+	root["mission_name"] = Current_mission_longname;
+	root["mission_filename"] = Current_mission_filename;
+	root["max_players"] = MAX_PLAYERS;
+	for (int level = 1; level <= Last_level; ++level)
+		levels.push_back(serialize_coop_level(level, Level_names[level - 1]));
+	for (int level = -1; level >= Last_secret_level; --level)
+		levels.push_back(serialize_coop_level(level, Secret_level_names[-level - 1]));
+	root["levels"] = levels;
+	return root;
+}
+
 static nlohmann::ordered_json serialize_entrance(const secret_area_entrance &entrance)
 {
 	nlohmann::ordered_json result;
@@ -488,16 +609,17 @@ int main(int argc, char *argv[])
 {
 	char error[256] = "";
 	const char *json_out = find_arg_value(argc, argv, "-secretarea-json-out");
+	const char *coop_starts_json_out = find_arg_value(argc, argv, "-coop-starts-json-out");
 	const char *mission = find_arg_value(argc, argv, "-mission");
 	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	int total_secrets = 0;
 
-	if (!json_out) {
-		fprintf(stderr, "usage: %s -secretarea-json-out <path> [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>]\n",
-		        argc > 0 ? argv[0] : "dxx-redux-secretareas");
+	if (!json_out && !coop_starts_json_out) {
+		fprintf(stderr, "usage: %s (-secretarea-json-out <path> | -coop-starts-json-out <path>) [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>]\n",
+		        argc > 0 ? argv[0] : "dxx-redux-headless-metadata");
 		return 1;
 	}
-	if (!init_secret_area_runtime(argc, argv, error, sizeof(error))) {
+	if (!init_headless_metadata_runtime(argc, argv, error, sizeof(error))) {
 		fprintf(stderr, "SECRET-AREA-DUMP FAIL init %s\n", error[0] ? error : "runtime init failed");
 		return 1;
 	}
@@ -508,6 +630,24 @@ int main(int argc, char *argv[])
 	if (!load_base_mission(mission, error, sizeof(error))) {
 		fprintf(stderr, "SECRET-AREA-DUMP FAIL mission %s\n", error[0] ? error : "mission load failed");
 		return 1;
+	}
+
+	if (coop_starts_json_out) {
+		trace_dump_init("open_coop_starts_output");
+		std::ofstream stream(coop_starts_json_out);
+		if (!stream) {
+			fprintf(stderr, "COOP-START-DUMP FAIL output could not open %s\n", coop_starts_json_out);
+			return 1;
+		}
+		stream << build_coop_start_dump().dump(2) << "\n";
+		if (secret_area_dump_failed)
+			return 1;
+		if (!stream) {
+			fprintf(stderr, "COOP-START-DUMP FAIL output could not write %s\n", coop_starts_json_out);
+			return 1;
+		}
+		printf("COOP-START-DUMP OK out=%s\n", coop_starts_json_out);
+		return 0;
 	}
 
 	trace_dump_init("open_output");

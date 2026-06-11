@@ -17,8 +17,8 @@
 - [x] Wired level-load rescans through D1/D2 `LoadLevel()`.
 - [x] Wired per-frame segment entry marking through D1/D2 `GameProcessFrame()`, guarded against demo playback.
 - [x] Added `secret_areas` to Android introspection output for level-loaded game state.
-- [x] Added shared headless base-game JSON dump entrypoint in `android/app/src/main/cpp/headless/secret_area_dump_main.cpp`.
-- [x] Added `dxx-redux-d1-secretareas` and `dxx-redux-d2-secretareas` host target declarations.
+- [x] Added shared headless base-game JSON dump entrypoint in `android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp`.
+- [x] Added `dxx-redux-d1-headless-metadata` and `dxx-redux-d2-headless-metadata` host target declarations.
 - [x] Added PowerShell compare/update harness in `android/tests/test_secret_area_baseline.ps1` and `update_secret_area_baseline.ps1`.
 - [x] Build the new host dump targets and commit `android/test_fixtures/secret_area_base_game_baseline.json`.
 - [x] Added per-secret item summaries to runtime state, introspection, and the base-game regression JSON.
@@ -250,14 +250,14 @@ typedef struct secret_area_state {
 - Include normal levels and secret levels. Store D1/D2 secret levels with negative `level_num` to match the engine.
 - Prefer a host console dumper over emulator automation for this test. It will be faster, deterministic, and easier to review.
 - Suggested targets:
-  - `dxx-redux-d1-secretareas`
-  - `dxx-redux-d2-secretareas`
+  - `dxx-redux-d1-headless-metadata`
+  - `dxx-redux-d2-headless-metadata`
 - The D2 target can share most of the existing `dxx-redux-d2-headless` setup. The D1 target should be the same kind of narrow headless host tool, not a large new game path.
 - Suggested command shape:
 
 ```powershell
-buildd1\main\dxx-redux-d1-secretareas.exe -hogdir C:\path\to\data -secretarea-json-out temp\secret_area_baseline\d1.json
-buildd2\main\dxx-redux-d2-secretareas.exe -hogdir C:\path\to\data -secretarea-json-out temp\secret_area_baseline\d2.json
+buildd1\main\dxx-redux-d1-headless-metadata.exe -hogdir C:\path\to\data -secretarea-json-out temp\secret_area_baseline\d1.json
+buildd2\main\dxx-redux-d2-headless-metadata.exe -hogdir C:\path\to\data -secretarea-json-out temp\secret_area_baseline\d2.json
 ```
 
 - The dump tool should:

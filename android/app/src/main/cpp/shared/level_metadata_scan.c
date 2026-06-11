@@ -23,6 +23,8 @@ typedef struct metadata_path {
 	int first_locked_seg;
 	int first_locked_side;
 	int first_locked_key;
+	int terminal_pos[3];
+	int terminal_pos_valid;
 } metadata_path;
 
 static int component_id[LEVEL_METADATA_MAX_SEGMENTS];
@@ -175,6 +177,15 @@ static void copy_pos(int dest[3], const int src[3])
 	dest[0] = src[0];
 	dest[1] = src[1];
 	dest[2] = src[2];
+}
+
+static void weighted_point(int dest[3], const int a[3], int a_weight, const int b[3], int b_weight)
+{
+	int total = a_weight + b_weight;
+
+	dest[0] = (int) (((long long) a[0] * a_weight + (long long) b[0] * b_weight) / total);
+	dest[1] = (int) (((long long) a[1] * a_weight + (long long) b[1] * b_weight) / total);
+	dest[2] = (int) (((long long) a[2] * a_weight + (long long) b[2] * b_weight) / total);
 }
 
 static int key_index_for_wall_key(const level_metadata_scan_view *view, int wall_keys)
@@ -595,6 +606,7 @@ static int find_shortest_path(
 		path->first_locked_seg = -1;
 		path->first_locked_side = -1;
 		path->first_locked_key = -1;
+		path->terminal_pos_valid = 0;
 	}
 	if (!valid_segment(view, start_seg) || !valid_segment(view, goal_seg) ||
 	    !segment_center_valid[start_seg] || !segment_center_valid[goal_seg])
@@ -667,6 +679,64 @@ static int find_shortest_path(
 	return 1;
 }
 
+static int segment_target_visible(
+    const level_metadata_scan_view *view,
+    int seg,
+    const int *preferred_pos,
+    const metadata_target *target,
+    int visible_pos[3],
+    double *extra_distance)
+{
+	int candidate[3];
+	int side;
+	int vertex_index;
+
+	if (!view->target_visible_from_segment || !valid_segment(view, seg) || !target || !visible_pos)
+		return 0;
+	if (preferred_pos &&
+	    view->target_visible_from_segment(view->user, seg, preferred_pos, target->seg, target->pos)) {
+		copy_pos(visible_pos, preferred_pos);
+		if (extra_distance)
+			*extra_distance = 0.0;
+		return 1;
+	}
+	if (!segment_center_valid[seg])
+		return 0;
+	if (view->target_visible_from_segment(view->user, seg, segment_centers[seg], target->seg, target->pos)) {
+		copy_pos(visible_pos, segment_centers[seg]);
+		if (extra_distance)
+			*extra_distance = 0.0;
+		return 1;
+	}
+	for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+		int face_center[3];
+
+		if (!side_center(view, seg, side, face_center))
+			continue;
+		weighted_point(candidate, segment_centers[seg], 1, face_center, 3);
+		if (!view->target_visible_from_segment(view->user, seg, candidate, target->seg, target->pos))
+			continue;
+		copy_pos(visible_pos, candidate);
+		if (extra_distance)
+			*extra_distance = point_distance(segment_centers[seg], candidate);
+		return 1;
+	}
+	for (vertex_index = 0; vertex_index < 8; ++vertex_index) {
+		int vertex[3];
+
+		if (!view->segment_vertex || !view->segment_vertex(view->user, seg, vertex_index, vertex))
+			continue;
+		weighted_point(candidate, segment_centers[seg], 1, vertex, 3);
+		if (!view->target_visible_from_segment(view->user, seg, candidate, target->seg, target->pos))
+			continue;
+		copy_pos(visible_pos, candidate);
+		if (extra_distance)
+			*extra_distance = point_distance(segment_centers[seg], candidate);
+		return 1;
+	}
+	return 0;
+}
+
 static int find_nearest_visible_target(
     const level_metadata_scan_view *view,
     int start_seg,
@@ -683,6 +753,7 @@ static int find_nearest_visible_target(
 		path->first_locked_seg = -1;
 		path->first_locked_side = -1;
 		path->first_locked_key = -1;
+		path->terminal_pos_valid = 0;
 	}
 	if (!view->target_visible_from_segment ||
 	    !valid_segment(view, start_seg) ||
@@ -702,12 +773,16 @@ static int find_nearest_visible_target(
 	while (heap_size > 0) {
 		int cur = heap_pop(&heap_size);
 		int side;
-		const int *visible_pos = cur == start_seg && start_pos ? start_pos : segment_centers[cur];
-		if (segment_center_valid[cur] &&
-		    view->target_visible_from_segment(view->user, cur, visible_pos, target->seg, target->pos)) {
+		const int *preferred_pos = cur == start_seg && start_pos ? start_pos : NULL;
+		int visible_pos[3];
+		double visible_extra_distance = 0.0;
+
+		if (segment_target_visible(view, cur, preferred_pos, target, visible_pos, &visible_extra_distance)) {
 			if (path) {
-				path->distance = route_distance[cur];
+				path->distance = route_distance[cur] + visible_extra_distance;
 				path->first_locked_seg = cur;
+				copy_pos(path->terminal_pos, visible_pos);
+				path->terminal_pos_valid = 1;
 			}
 			return 1;
 		}
@@ -1019,11 +1094,10 @@ static int route_to_reactor(
 		return 0;
 	state->travel_distance += path.distance;
 	*current_seg = path.first_locked_seg >= 0 ? path.first_locked_seg : *current_seg;
-	if (path.distance == 0.0) {
-		/* current_pos already describes the firing point. */
-	} else if (segment_center_valid[*current_seg]) {
+	if (path.terminal_pos_valid)
+		copy_pos(current_pos, path.terminal_pos);
+	else if (segment_center_valid[*current_seg])
 		copy_pos(current_pos, segment_centers[*current_seg]);
-	}
 	state->travel_problem[0] = '\0';
 	return 1;
 }

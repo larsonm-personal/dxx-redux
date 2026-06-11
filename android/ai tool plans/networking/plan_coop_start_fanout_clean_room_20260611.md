@@ -212,10 +212,22 @@ Regression checks:
 
 ## Proposed phases
 
-1. Add a plan and confirm scope.
-2. Implement deterministic coop fanout in `d1/main/gameseq.c` and `d2/main/gameseq.c`.
-3. Add compact diagnostics and, if needed, introspection fields.
-4. Add a focused automation or headless test for one-start coop spawning.
-5. Run build, code quality, and the focused test.
+1. [x] Add a plan and confirm scope.
+2. [x] Implement deterministic coop fanout in `d1/main/gameseq.c` and `d2/main/gameseq.c`.
+3. [x] Add compact diagnostics.
+4. [x] Add a focused automation or headless test for underspecified coop spawning.
+5. [x] Run Windows host build for D1 and D2.
 6. Optional follow-up: raise classic in-game coop max-player UI cap from 4 to 8.
 
+## Implementation notes
+
+- Implemented in both `d1/main/gameseq.c` and `d2/main/gameseq.c`.
+- Coop synthetic starts now try deterministic offsets from the source start's local right, up, and forward vectors.
+- Candidates are accepted only when `find_point_seg()` finds a containing segment and the candidate is not too close to already assigned starts.
+- If no candidate fits, the code falls back to the source start position and counts that fallback in a verbose log line.
+- Non-coop multiplayer keeps the previous exact clone behavior.
+- Verified with `.\run-windows-build.ps1 -Target both`.
+- Added `-coop-starts-json-out` to the host headless metadata dump tool so mapsets can be loaded headlessly and checked after `gameseq_init_network_players()` runs in coop mode.
+- Added `android/tests/test_coop_start_fanout_mapset.ps1`, defaulting to Plutonian Shores.
+- Verified Plutonian Shores with `.\android\tests\test_coop_start_fanout_mapset.ps1`: all 32 levels reported 8 net player positions with no duplicate positions, and no start pairs closer than two ship radii, among the first 8 starts.
+- Rebuilt `dxx-redux-d2-headless-metadata` and `dxx-redux-d1-headless-metadata`.

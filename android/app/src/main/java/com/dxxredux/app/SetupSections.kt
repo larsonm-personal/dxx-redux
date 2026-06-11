@@ -791,6 +791,19 @@ private fun ModDetailsDialog(
     )
 }
 
+private const val MISSION_ZIP_LOCAL_MATCH_TASK_ID = "local-match"
+private const val MISSION_ZIP_BULK_LOOKUP_TASK_ID = "bulk-lookup"
+
+internal data class MissionZipMusicAnalysisProgress(
+    val label: String,
+    val completed: Int,
+    val total: Int,
+    val resultCount: Int? = null,
+) {
+    val fraction: Float?
+        get() = total.takeIf { it > 0 }?.let { (completed.toFloat() / it.toFloat()).coerceIn(0f, 1f) }
+}
+
 @Composable
 private fun MissionZipMusicDialog(
     catalog: MissionZipMusicCatalog,
@@ -819,7 +832,7 @@ private fun MissionZipMusicDialog(
     var midiPreviewTarget by remember { mutableStateOf<MissionZipMusicTrack?>(null) }
     var stagingTrackId by remember { mutableStateOf<String?>(null) }
     var stagingProblem by remember { mutableStateOf<String?>(null) }
-    var bulkStatus by remember { mutableStateOf<String?>(null) }
+    var musicProgress by remember { mutableStateOf<MissionZipMusicAnalysisProgress?>(null) }
     var storageFailureMessage by remember { mutableStateOf<String?>(null) }
     val fingerprintableTracks =
         remember(catalog) {
@@ -839,7 +852,7 @@ private fun MissionZipMusicDialog(
                 withContext(kotlinx.coroutines.Dispatchers.Main) {
                     storageFailureMessage = ImportStorageGuard.messageForFailure(e)
                     stagingProblem = "Not enough free space"
-                    bulkStatus = null
+                    musicProgress = null
                 }
                 null
             } catch (_: Exception) {
@@ -882,8 +895,13 @@ private fun MissionZipMusicDialog(
     LaunchedEffect(catalog.archivePath, fingerprintableTracks.joinToString("|") { it.id }) {
         if (fingerprintableTracks.isEmpty()) return@LaunchedEffect
         stagingProblem = null
-        bulkStatus = "Matching local tracks 0/${fingerprintableTracks.size}"
-        stagingTrackId = "local-match"
+        musicProgress =
+            MissionZipMusicAnalysisProgress(
+                label = "Generating chromaprints",
+                completed = 0,
+                total = fingerprintableTracks.size,
+            )
+        stagingTrackId = MISSION_ZIP_LOCAL_MATCH_TASK_ID
         var completed = 0
         var matched = 0
         val updates = mutableMapOf<String, MissionZipAudioFingerprintCache.Entry>()
@@ -895,11 +913,22 @@ private fun MissionZipMusicDialog(
                 if (result.hasLocalMatch) matched++
             }
             cachedFingerprints = cachedFingerprints + updates
-            bulkStatus = "Matching local tracks $completed/${fingerprintableTracks.size}"
+            musicProgress =
+                MissionZipMusicAnalysisProgress(
+                    label = "Generating chromaprints",
+                    completed = completed,
+                    total = fingerprintableTracks.size,
+                )
         }
         stagingTrackId = null
         cachedFingerprints = cachedFingerprints + updates
-        bulkStatus = "Matched $matched/${fingerprintableTracks.size} tracks in bundled database"
+        musicProgress =
+            MissionZipMusicAnalysisProgress(
+                label = "Bundled database matches",
+                completed = fingerprintableTracks.size,
+                total = fingerprintableTracks.size,
+                resultCount = matched,
+            )
     }
 
     previewTarget?.let { (track, file) ->
@@ -966,13 +995,22 @@ private fun MissionZipMusicDialog(
                         modifier = Modifier.padding(bottom = 4.dp),
                     )
                 }
-                bulkStatus?.let { status ->
+                musicProgress?.let { progress ->
+                    val fraction = progress.fraction
                     Text(
-                        status,
+                        formatMissionZipMusicProgress(progress),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp),
                     )
+                    if (fraction != null) {
+                        LinearProgressIndicator(
+                            progress = { fraction },
+                            modifier = Modifier.padding(bottom = 6.dp).fillMaxWidth().height(4.dp),
+                        )
+                    } else {
+                        LinearProgressIndicator(modifier = Modifier.padding(bottom = 6.dp).fillMaxWidth().height(4.dp))
+                    }
                 }
                 if (acoustIdAvailable && fingerprintableTracks.isNotEmpty()) {
                     Row(
@@ -982,8 +1020,13 @@ private fun MissionZipMusicDialog(
                         OutlinedButton(
                             onClick = {
                                 stagingProblem = null
-                                bulkStatus = "Looking up 0/${fingerprintableTracks.size}"
-                                stagingTrackId = "bulk-lookup"
+                                musicProgress =
+                                    MissionZipMusicAnalysisProgress(
+                                        label = "Looking up AcoustID matches",
+                                        completed = 0,
+                                        total = fingerprintableTracks.size,
+                                    )
+                                stagingTrackId = MISSION_ZIP_BULK_LOOKUP_TASK_ID
                                 scope.launch {
                                     var completed = 0
                                     var webMatches = 0
@@ -1000,11 +1043,22 @@ private fun MissionZipMusicDialog(
                                             }
                                         }
                                         cachedFingerprints = cachedFingerprints + updates
-                                        bulkStatus = "Looking up $completed/${fingerprintableTracks.size}"
+                                        musicProgress =
+                                            MissionZipMusicAnalysisProgress(
+                                                label = "Looking up AcoustID matches",
+                                                completed = completed,
+                                                total = fingerprintableTracks.size,
+                                            )
                                     }
                                     stagingTrackId = null
                                     cachedFingerprints = cachedFingerprints + updates
-                                    bulkStatus = "Looked up $completed tracks; $webMatches web matches"
+                                    musicProgress =
+                                        MissionZipMusicAnalysisProgress(
+                                            label = "AcoustID web matches",
+                                            completed = completed,
+                                            total = fingerprintableTracks.size,
+                                            resultCount = webMatches,
+                                        )
                                 }
                             },
                             enabled = !busy,
@@ -1030,6 +1084,10 @@ private fun MissionZipMusicDialog(
                                     .padding(top = 3.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            val fingerprintAnalysisActive =
+                                stagingTrackId == MISSION_ZIP_LOCAL_MATCH_TASK_ID &&
+                                    MissionZipAudioFingerprintCache.isFingerprintSupported(track) &&
+                                    cachedFingerprint == null
                             Text(
                                 track.displayName,
                                 fontSize = 12.sp,
@@ -1075,7 +1133,11 @@ private fun MissionZipMusicDialog(
                                     modifier = Modifier.height(28.dp).tvFocusBorder(),
                                 ) {
                                     Text(
-                                        if (stagingTrackId == track.id) "Staging" else "Preview",
+                                        when {
+                                            stagingTrackId == track.id -> "Staging"
+                                            fingerprintAnalysisActive -> "Analyzing"
+                                            else -> "Preview"
+                                        },
                                         fontSize = 11.sp,
                                     )
                                 }
@@ -1162,6 +1224,12 @@ private fun missionZipMusicFingerprintLine(entry: MissionZipAudioFingerprintCach
             }
         }
     }
+
+internal fun formatMissionZipMusicProgress(progress: MissionZipMusicAnalysisProgress): String {
+    val base = "${progress.label} ${progress.completed.coerceAtLeast(0)}/${progress.total.coerceAtLeast(0)}"
+    val resultCount = progress.resultCount ?: return base
+    return "$base, $resultCount matched"
+}
 
 private fun formatMissionZipMusicDuration(durationMs: Int): String {
     val totalSeconds = ((durationMs + 500L) / 1000L).coerceAtLeast(0L)

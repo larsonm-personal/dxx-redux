@@ -314,11 +314,11 @@ if(NOT ANDROID)
     dxx_input_demo_apply_codec_deps(dxx-redux-d2-headless)
     dxx_input_demo_apply_build_metadata(dxx-redux-d2-headless)
 
-    add_executable(dxx-redux-d2-secretareas
+    add_executable(dxx-redux-d2-headless-metadata
         ${D2X_HEADLESS_SOURCES}
         vers_id.c
         ../../android/app/src/main/cpp/headless/d2_headless_runtime.c
-        ../../android/app/src/main/cpp/headless/secret_area_dump_main.cpp
+        ../../android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
@@ -328,48 +328,48 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp
         ../../android/app/src/main/cpp/shared/input_demo_replay.cpp)
 
-    target_compile_features(dxx-redux-d2-secretareas PRIVATE cxx_std_11)
-    target_compile_definitions(dxx-redux-d2-secretareas PRIVATE
+    target_compile_features(dxx-redux-d2-headless-metadata PRIVATE cxx_std_11)
+    target_compile_definitions(dxx-redux-d2-headless-metadata PRIVATE
         DXX_BUILD_DESCENT_II
         DXX_VERSION_MAJORi=${PROJECT_VERSION_MAJOR}
         DXX_VERSION_MINORi=${PROJECT_VERSION_MINOR}
         DXX_VERSION_MICROi=$<IF:$<BOOL:${PROJECT_VERSION_MICRO}>,${PROJECT_VERSION_MICRO},0>
         DXX_HEADLESS_CONSOLE=1)
     if(NOT "${SIZEOF_SSIZE_T}" STREQUAL "")
-        target_compile_definitions(dxx-redux-d2-secretareas PRIVATE HAVE_SSIZE_T=1)
+        target_compile_definitions(dxx-redux-d2-headless-metadata PRIVATE HAVE_SSIZE_T=1)
     endif()
 
-    target_include_directories(dxx-redux-d2-secretareas PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR})
-    target_include_directories(dxx-redux-d2-secretareas PRIVATE ../../android/app/src/main/cpp/shared ${CMAKE_CURRENT_SOURCE_DIR})
-    target_link_libraries(dxx-redux-d2-secretareas PRIVATE ${DXX_TARGET_PREFIX}2d ${DXX_TARGET_PREFIX}3d ${DXX_TARGET_PREFIX}arch_sdl ${DXX_TARGET_PREFIX}iff ${DXX_TARGET_PREFIX}libmve ${DXX_TARGET_PREFIX}maths ${DXX_TARGET_PREFIX}mem ${DXX_TARGET_PREFIX}texmap)
-    target_link_libraries(dxx-redux-d2-secretareas PRIVATE nlohmann_json::nlohmann_json ZLIB::ZLIB)
+    target_include_directories(dxx-redux-d2-headless-metadata PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR})
+    target_include_directories(dxx-redux-d2-headless-metadata PRIVATE ../../android/app/src/main/cpp/shared ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(dxx-redux-d2-headless-metadata PRIVATE ${DXX_TARGET_PREFIX}2d ${DXX_TARGET_PREFIX}3d ${DXX_TARGET_PREFIX}arch_sdl ${DXX_TARGET_PREFIX}iff ${DXX_TARGET_PREFIX}libmve ${DXX_TARGET_PREFIX}maths ${DXX_TARGET_PREFIX}mem ${DXX_TARGET_PREFIX}texmap)
+    target_link_libraries(dxx-redux-d2-headless-metadata PRIVATE nlohmann_json::nlohmann_json ZLIB::ZLIB)
     if(OPENGL)
-        target_link_libraries(dxx-redux-d2-secretareas PRIVATE ${DXX_TARGET_PREFIX}arch_ogl ${DXX_TARGET_PREFIX}xmodel)
+        target_link_libraries(dxx-redux-d2-headless-metadata PRIVATE ${DXX_TARGET_PREFIX}arch_ogl ${DXX_TARGET_PREFIX}xmodel)
     endif()
-    target_link_libraries(dxx-redux-d2-secretareas PRIVATE ${DXX_TARGET_PREFIX}misc)
+    target_link_libraries(dxx-redux-d2-headless-metadata PRIVATE ${DXX_TARGET_PREFIX}misc)
     if(SDLMIXER)
-        target_link_libraries(dxx-redux-d2-secretareas PUBLIC ${SDL_MIXER_LIBRARIES})
+        target_link_libraries(dxx-redux-d2-headless-metadata PUBLIC ${SDL_MIXER_LIBRARIES})
     endif()
     if(UDP)
-        target_include_directories(dxx-redux-d2-secretareas PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-        target_sources(dxx-redux-d2-secretareas PRIVATE
+        target_include_directories(dxx-redux-d2-headless-metadata PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        target_sources(dxx-redux-d2-headless-metadata PRIVATE
             net_udp.c
             ../../android/app/src/main/cpp/shared/net/net_udp_android.c
             ../../android/app/src/main/cpp/shared/net/net_udp_p2p_proxy_shared.c)
     endif()
     if(WIN32)
-        target_link_libraries(dxx-redux-d2-secretareas PRIVATE ${DXX_TARGET_PREFIX}arch_win32)
+        target_link_libraries(dxx-redux-d2-headless-metadata PRIVATE ${DXX_TARGET_PREFIX}arch_win32)
     endif()
     if(APPLE)
-        target_link_libraries(dxx-redux-d2-secretareas PRIVATE ${DXX_TARGET_PREFIX}arch_cocoa)
+        target_link_libraries(dxx-redux-d2-headless-metadata PRIVATE ${DXX_TARGET_PREFIX}arch_cocoa)
     endif()
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        target_link_libraries(dxx-redux-d2-secretareas PRIVATE ${DXX_TARGET_PREFIX}arch_x11)
+        target_link_libraries(dxx-redux-d2-headless-metadata PRIVATE ${DXX_TARGET_PREFIX}arch_x11)
     endif()
 
-    target_link_libraries(dxx-redux-d2-secretareas PUBLIC ${OPENGL_LIBRARY} ${SDL_LIBRARY} ${SDL_MIXER_LIBRARY} ${PHYSFS_LIBRARY} ${PNG_LIBRARY} ${EXTRA_LIBRARIES})
-    dxx_input_demo_apply_codec_deps(dxx-redux-d2-secretareas)
-    dxx_input_demo_apply_build_metadata(dxx-redux-d2-secretareas)
+    target_link_libraries(dxx-redux-d2-headless-metadata PUBLIC ${OPENGL_LIBRARY} ${SDL_LIBRARY} ${SDL_MIXER_LIBRARY} ${PHYSFS_LIBRARY} ${PNG_LIBRARY} ${EXTRA_LIBRARIES})
+    dxx_input_demo_apply_codec_deps(dxx-redux-d2-headless-metadata)
+    dxx_input_demo_apply_build_metadata(dxx-redux-d2-headless-metadata)
 endif()
 
 install(TARGETS dxx-redux-d2 RUNTIME DESTINATION .)
