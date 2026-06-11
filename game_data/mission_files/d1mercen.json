@@ -1,0 +1,228 @@
+[
+  {
+    "status": "ok",
+    "source": "descent:mercenary03",
+    "game": "d1",
+    "mission_name": "merc03",
+    "mission_filename": "merc03.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "callisto terra-firma lab",
+        "level_file": "merc03.rdl",
+        "robots": 36,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 1,
+        "energy_centers": 0,
+        "mine_volume": 41493210.07420263,
+        "mine_volume_normalized": 9.073713514997513,
+        "mine_volume_text": "9.1x",
+        "travel_distance": 10681.02249942707,
+        "travel_time_seconds": 214,
+        "travel_time_text": "3M:34S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 2
+      }
+    ],
+    "target_index": 0
+  },
+  {
+    "status": "ok",
+    "source": "descent:mercenary04",
+    "game": "d1",
+    "mission_name": "merc04",
+    "mission_filename": "merc04.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "ptmc weapons testing",
+        "level_file": "merc04.rdl",
+        "robots": 34,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 2482897.95452636,
+        "mine_volume_normalized": 0.5429588283494226,
+        "mine_volume_text": "0.54x",
+        "travel_distance": 5934.231291343517,
+        "travel_time_seconds": 119,
+        "travel_time_text": "1M:59S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 3
+      }
+    ],
+    "target_index": 1
+  },
+  {
+    "status": "ok",
+    "source": "descent:mercenary05",
+    "game": "d1",
+    "mission_name": "merc05",
+    "mission_filename": "merc05.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "aukidanus water tunnels",
+        "level_file": "merc05.rdl",
+        "robots": 9,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 5042334.266074849,
+        "mine_volume_normalized": 1.1026550246509856,
+        "mine_volume_text": "1.1x",
+        "travel_distance": 2418.330019114724,
+        "travel_time_seconds": 48,
+        "travel_time_text": "0M:48S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0
+      }
+    ],
+    "target_index": 2
+  },
+  {
+    "status": "ok",
+    "source": "descent:mercenary06",
+    "game": "d1",
+    "mission_name": "merc06",
+    "mission_filename": "merc06.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "oberon military post",
+        "level_file": "merc06.rdl",
+        "robots": 22,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 3110129.4050002964,
+        "mine_volume_normalized": 0.6801214744551112,
+        "mine_volume_text": "0.68x",
+        "travel_distance": 4956.966656266783,
+        "travel_time_seconds": 99,
+        "travel_time_text": "1M:39S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 3
+      }
+    ],
+    "target_index": 3
+  },
+  {
+    "status": "ok",
+    "source": "descent:mercenary07",
+    "game": "d1",
+    "mission_name": "merc07",
+    "mission_filename": "merc07.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "europa tower colony",
+        "level_file": "merc07.rdl",
+        "robots": 25,
+        "hostages": 3,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 4295060.208209234,
+        "mine_volume_normalized": 0.9392415238363571,
+        "mine_volume_text": "0.94x",
+        "travel_distance": 8457.670738688343,
+        "travel_time_seconds": 169,
+        "travel_time_text": "2M:49S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3
+      }
+    ],
+    "target_index": 4
+  },
+  {
+    "status": "ok",
+    "source": "Descent:Mercenary01",
+    "game": "d1",
+    "mission_name": "merc01",
+    "mission_filename": "merc01.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "PTMC Smelting Facility",
+        "level_file": "merc01.rdl",
+        "robots": 38,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 3691693.0834689965,
+        "mine_volume_normalized": 0.8072975160223053,
+        "mine_volume_text": "0.81x",
+        "travel_distance": 1456.0838699985622,
+        "travel_time_seconds": 29,
+        "travel_time_text": "0M:29S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "travel_status": "partial",
+        "travel_problem": "blue key unreachable"
+      }
+    ],
+    "target_index": 5
+  },
+  {
+    "status": "ok",
+    "source": "Descent:Mercenary02",
+    "game": "d1",
+    "mission_name": "merc02",
+    "mission_filename": "merc02.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "ptmc particle research",
+        "level_file": "merc02.rdl",
+        "robots": 18,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 1844711.6247969235,
+        "mine_volume_normalized": 0.4034005749677955,
+        "mine_volume_text": "0.40x",
+        "travel_distance": 2079.384194732843,
+        "travel_time_seconds": 42,
+        "travel_time_text": "0M:42S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 2
+      }
+    ],
+    "target_index": 6
+  }
+]

@@ -1,0 +1,54 @@
+[
+  {
+    "status": "ok",
+    "source": "IMD Strike",
+    "game": "d2",
+    "mission_name": "imds",
+    "mission_filename": "imds.MN2",
+    "coop_starts": "1-4",
+    "level_count": 2,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "IMD Volcano Mine 018b",
+        "level_file": "Volcano.rl2",
+        "robots": 70,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 6,
+        "energy_centers": 3,
+        "mine_volume": 14641839.071414063,
+        "mine_volume_normalized": 3.201869723482981,
+        "mine_volume_text": "3.2x",
+        "travel_distance": 3363.427906143881,
+        "travel_time_seconds": 67,
+        "travel_time_text": "1M:07S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 1
+      },
+      {
+        "level_num": -1,
+        "secret": true,
+        "level_name": "Nukes 'R' Us! :)",
+        "level_file": "Secret.rl2",
+        "robots": 15,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 2004236.6535498681,
+        "mine_volume_normalized": 0.4382854249658413,
+        "mine_volume_text": "0.44x",
+        "travel_distance": 577.0349805484352,
+        "travel_time_seconds": 12,
+        "travel_time_text": "0M:12S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0
+      }
+    ],
+    "target_index": 0
+  }
+]

@@ -1,0 +1,78 @@
+[
+  {
+    "status": "ok",
+    "source": "Descent: Invertaus",
+    "game": "d1",
+    "mission_name": "dinvert",
+    "mission_filename": "dinvert.msn",
+    "coop_starts": "1-3",
+    "level_count": 3,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Fuego",
+        "level_file": "fuego.rdl",
+        "robots": 74,
+        "hostages": 2,
+        "secrets": 0,
+        "matcens": 2,
+        "energy_centers": 2,
+        "mine_volume": 5753112.851147958,
+        "mine_volume_normalized": 1.2580877145300082,
+        "mine_volume_text": "1.3x",
+        "travel_distance": 6885.270893067666,
+        "travel_time_seconds": 138,
+        "travel_time_text": "2M:18S",
+        "travel_targets_reached": 4,
+        "travel_targets_total": 4,
+        "travel_key_detours": 3
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Vulcan Mine",
+        "level_file": "destirus.rdl",
+        "robots": 63,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 3,
+        "energy_centers": 2,
+        "mine_volume": 5964641.437479448,
+        "mine_volume_normalized": 1.3043446753477412,
+        "mine_volume_text": "1.3x",
+        "travel_distance": 6692.730927836241,
+        "travel_time_seconds": 134,
+        "travel_time_text": "2M:14S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 3
+      },
+      {
+        "level_num": 3,
+        "secret": false,
+        "level_name": "Darrel Labs",
+        "level_file": "darrel.rdl",
+        "robots": 39,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 1,
+        "energy_centers": 1,
+        "mine_volume": 9047506.455870714,
+        "mine_volume_normalized": 1.9785039879742048,
+        "mine_volume_text": "2.0x",
+        "travel_distance": 533,
+        "travel_time_seconds": 11,
+        "travel_time_text": "0M:11S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 0,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      }
+    ],
+    "target_index": 0
+  }
+]

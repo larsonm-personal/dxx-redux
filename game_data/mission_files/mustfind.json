@@ -21,14 +21,12 @@
         "mine_volume": 2523704.956899906,
         "mine_volume_normalized": 0.5518824823227164,
         "mine_volume_text": "0.55x",
-        "travel_distance": 0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
-        "travel_targets_reached": 0,
+        "travel_distance": 516.5721222737329,
+        "travel_time_seconds": 10,
+        "travel_time_text": "0M:10S",
+        "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "travel_status": "failed",
-        "travel_problem": "red key missing"
+        "travel_key_detours": 0
       },
       {
         "level_num": -1,

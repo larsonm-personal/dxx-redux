@@ -1,0 +1,58 @@
+[
+  {
+    "status": "ok",
+    "source": "U3AAH",
+    "game": "d2",
+    "mission_name": "U3AAH",
+    "mission_filename": "U3AAH.mn2",
+    "coop_starts": "1",
+    "level_count": 2,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "U3AAH",
+        "level_file": "U3AAH.rl2",
+        "robots": 94,
+        "hostages": 2,
+        "secrets": 1,
+        "matcens": 1,
+        "energy_centers": 3,
+        "mine_volume": 124594288.32737851,
+        "mine_volume_normalized": 27.24621391947961,
+        "mine_volume_text": "27x",
+        "travel_distance": 6045.979023607985,
+        "travel_time_seconds": 121,
+        "travel_time_text": "2M:01S",
+        "travel_targets_reached": 3,
+        "travel_targets_total": 3,
+        "travel_key_detours": 1,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Vapobloc",
+        "level_file": "Vapobloc.rl2",
+        "robots": 102,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 10,
+        "mine_volume": 28892497.383987084,
+        "mine_volume_normalized": 6.318196242862076,
+        "mine_volume_text": "6.3x",
+        "travel_distance": 3102.4203728920934,
+        "travel_time_seconds": 62,
+        "travel_time_text": "1M:02S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0
+      }
+    ],
+    "target_index": 0
+  }
+]

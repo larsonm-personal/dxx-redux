@@ -21,14 +21,12 @@
         "mine_volume": 2936752.537271649,
         "mine_volume_normalized": 0.6422075115420454,
         "mine_volume_text": "0.64x",
-        "travel_distance": 1764.3648506166187,
-        "travel_time_seconds": 35,
-        "travel_time_text": "0M:35S",
-        "travel_targets_reached": 4,
+        "travel_distance": 2308.5224397882007,
+        "travel_time_seconds": 46,
+        "travel_time_text": "0M:46S",
+        "travel_targets_reached": 6,
         "travel_targets_total": 6,
-        "travel_key_detours": 1,
-        "travel_status": "partial",
-        "travel_problem": "target unreachable or blocked by unsupported door"
+        "travel_key_detours": 1
       },
       {
         "level_num": 2,
@@ -103,14 +101,12 @@
         "mine_volume": 9344916.59880799,
         "mine_volume_normalized": 2.0435414827508525,
         "mine_volume_text": "2.0x",
-        "travel_distance": 2181.3347891671447,
-        "travel_time_seconds": 44,
-        "travel_time_text": "0M:44S",
-        "travel_targets_reached": 2,
+        "travel_distance": 3672.3414406417105,
+        "travel_time_seconds": 73,
+        "travel_time_text": "1M:13S",
+        "travel_targets_reached": 4,
         "travel_targets_total": 4,
-        "travel_key_detours": 1,
-        "travel_status": "partial",
-        "travel_problem": "target unreachable or blocked by unsupported door"
+        "travel_key_detours": 1
       },
       {
         "level_num": 6,

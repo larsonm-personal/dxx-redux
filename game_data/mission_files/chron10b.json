@@ -1,0 +1,102 @@
+[
+  {
+    "status": "ok",
+    "source": "Chronolos Mine 1.0b",
+    "game": "d2",
+    "mission_name": "chron10b",
+    "mission_filename": "chron10b.mn2",
+    "coop_starts": "4-9",
+    "level_count": 4,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Dropship Loading",
+        "level_file": "dropship.rl2",
+        "robots": 106,
+        "hostages": 3,
+        "secrets": 1,
+        "matcens": 2,
+        "energy_centers": 5,
+        "mine_volume": 22680193.234055046,
+        "mine_volume_normalized": 4.959692814862436,
+        "mine_volume_text": "5.0x",
+        "travel_distance": 5983.679777561215,
+        "travel_time_seconds": 120,
+        "travel_time_text": "2M:00S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 2
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Reactor C",
+        "level_file": "reactorc.rl2",
+        "robots": 115,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 5,
+        "energy_centers": 15,
+        "mine_volume": 56224592.38892422,
+        "mine_volume_normalized": 12.29516450817554,
+        "mine_volume_text": "12x",
+        "travel_distance": 8818.499929612266,
+        "travel_time_seconds": 176,
+        "travel_time_text": "2M:56S",
+        "travel_targets_reached": 6,
+        "travel_targets_total": 6,
+        "travel_key_detours": 2
+      },
+      {
+        "level_num": 3,
+        "secret": false,
+        "level_name": "Hydro Plant",
+        "level_file": "specimen.rl2",
+        "robots": 88,
+        "hostages": 5,
+        "secrets": 4,
+        "matcens": 1,
+        "energy_centers": 16,
+        "mine_volume": 53947425.94885493,
+        "mine_volume_normalized": 11.797194939993064,
+        "mine_volume_text": "12x",
+        "travel_distance": 1621.638409775563,
+        "travel_time_seconds": 32,
+        "travel_time_text": "0M:32S",
+        "travel_targets_reached": 6,
+        "travel_targets_total": 6,
+        "travel_key_detours": 0,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      },
+      {
+        "level_num": -1,
+        "secret": true,
+        "level_name": "Fight or Flight",
+        "level_file": "secret1a.rl2",
+        "robots": 1,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 3774597.874607162,
+        "mine_volume_normalized": 0.8254270924629604,
+        "mine_volume_text": "0.83x",
+        "travel_distance": 139.11613766354105,
+        "travel_time_seconds": 3,
+        "travel_time_text": "0M:03S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 0,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      }
+    ],
+    "target_index": 0
+  }
+]

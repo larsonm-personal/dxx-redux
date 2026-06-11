@@ -1,0 +1,158 @@
+[
+  {
+    "status": "ok",
+    "source": "Gradius 3D: Defiance",
+    "game": "d2",
+    "mission_name": "GRADIUS",
+    "mission_filename": "GRADIUS.MN2",
+    "coop_starts": "4",
+    "level_count": 6,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Gradius 3D",
+        "level_file": "gradius1.rl2",
+        "robots": 224,
+        "hostages": 0,
+        "secrets": 6,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 34656761.351381145,
+        "mine_volume_normalized": 7.57872247767067,
+        "mine_volume_text": "7.6x",
+        "travel_distance": 6504.912090748812,
+        "travel_time_seconds": 130,
+        "travel_time_text": "2M:10S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 3,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Gradius 3D",
+        "level_file": "gradius2.rl2",
+        "robots": 266,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 6,
+        "mine_volume": 157000744.668035,
+        "mine_volume_normalized": 34.33284087231226,
+        "mine_volume_text": "34x",
+        "travel_distance": 12699.893524110917,
+        "travel_time_seconds": 254,
+        "travel_time_text": "4M:14S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 3,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      },
+      {
+        "level_num": 3,
+        "secret": false,
+        "level_name": "aquatica ore mine",
+        "level_file": "aquatica.rl2",
+        "robots": 250,
+        "hostages": 0,
+        "secrets": 7,
+        "matcens": 0,
+        "energy_centers": 6,
+        "mine_volume": 250124900.6250062,
+        "mine_volume_normalized": 54.697182675909,
+        "mine_volume_text": "55x",
+        "travel_distance": 9066.065908142198,
+        "travel_time_seconds": 181,
+        "travel_time_text": "3M:01S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 1,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      },
+      {
+        "level_num": 4,
+        "secret": false,
+        "level_name": "galactic greenhouse",
+        "level_file": "grnhouse.rl2",
+        "robots": 233,
+        "hostages": 0,
+        "secrets": 6,
+        "matcens": 0,
+        "energy_centers": 6,
+        "mine_volume": 272775040.0000029,
+        "mine_volume_normalized": 59.650303328563986,
+        "mine_volume_text": "60x",
+        "travel_distance": 21596.75425707648,
+        "travel_time_seconds": 432,
+        "travel_time_text": "7M:12S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 3,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      },
+      {
+        "level_num": 5,
+        "secret": false,
+        "level_name": "Ice Caves",
+        "level_file": "ice.rl2",
+        "robots": 267,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 261645045.4009961,
+        "mine_volume_normalized": 57.21640192073712,
+        "mine_volume_text": "57x",
+        "travel_distance": 17608.889510351157,
+        "travel_time_seconds": 352,
+        "travel_time_text": "5M:52S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 3,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      },
+      {
+        "level_num": 6,
+        "secret": false,
+        "level_name": "Iwihml Base",
+        "level_file": "iwihml.rl2",
+        "robots": 244,
+        "hostages": 0,
+        "secrets": 2,
+        "matcens": 0,
+        "energy_centers": 5,
+        "mine_volume": 281613591.83086336,
+        "mine_volume_normalized": 61.58311322823829,
+        "mine_volume_text": "62x",
+        "travel_distance": 8164.586620131554,
+        "travel_time_seconds": 163,
+        "travel_time_text": "2M:43S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 0,
+        "travel_note": "missing reactor",
+        "notes": [
+          "missing reactor"
+        ]
+      }
+    ],
+    "target_index": 0
+  }
+]
