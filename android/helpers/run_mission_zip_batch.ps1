@@ -8,6 +8,7 @@ param(
     [string]$RegressionJsonDir = "",
     [switch]$Install,
     [switch]$IncludeLarge,
+    [string[]]$LargeZipIncludePatterns = @("ewithin-versions.zip"),
     [switch]$NoRegressionJson,
     [long]$LargeZipBytes = 524288000,
     [int]$TimeoutSeconds = 900,
@@ -116,6 +117,20 @@ function Write-MissionZipFailureJson {
         failure_text = Get-ShortMissionZipFailureText -Record $Record
     }
     Write-TestJsonText -Path $Path -Text ($failure | ConvertTo-Json -Depth 3)
+}
+
+function Test-LargeMissionZipIncluded {
+    param([Parameter(Mandatory = $true)][string]$Name)
+
+    if ($IncludeLarge) {
+        return $true
+    }
+    foreach ($pattern in @($LargeZipIncludePatterns)) {
+        if ($pattern -and $Name -like $pattern) {
+            return $true
+        }
+    }
+    return $false
 }
 
 function Test-AppPackageInstalled {
@@ -426,15 +441,12 @@ foreach ($zip in $zips) {
         introspect_json = "$artifactPrefix.introspect.json"
     }
 
-    if ($zip.Length -gt $LargeZipBytes -and -not $IncludeLarge) {
+    if ($zip.Length -gt $LargeZipBytes -and -not (Test-LargeMissionZipIncluded -Name $zip.Name)) {
         Write-Status "SKIP large ZIP: $($zip.Name) ($([math]::Round($zip.Length / 1MB, 1)) MB)" "Yellow"
         $record["status"] = "skipped_large"
         $record["reason"] = "ZIP is larger than the configured batch limit"
         $results += [pscustomobject]$record
         Write-MissionZipFailureJson -Path $metadataPath -Record $record
-        if (-not $NoRegressionJson) {
-            Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
-        }
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
         continue
     }
@@ -444,9 +456,6 @@ foreach ($zip in $zips) {
         Write-Status "SKIP $($gameHint.Game) game ZIP: $($zip.Name) -- $($gameHint.Reason)" "Yellow"
         $results += [pscustomobject]$record
         Write-MissionZipFailureJson -Path $metadataPath -Record $record
-        if (-not $NoRegressionJson) {
-            Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
-        }
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
         continue
     }
