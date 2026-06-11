@@ -32,6 +32,7 @@ internal data class LevelMetadataTarget(
     val sourcePath: String? = null,
     val dataDir: String? = null,
     val missionName: String? = null,
+    val missionDisplayName: String? = null,
     val missionFilename: String? = null,
     val missionType: String? = null,
     val levelFile: String? = null,
@@ -190,6 +191,7 @@ internal object LevelMetadataTargets {
                     sourcePath = file.absolutePath,
                     dataDir = setDir.absolutePath,
                     missionName = file.name.substringBeforeLast('.'),
+                    missionDisplayName = mission.displayName,
                     missionFilename = descriptorFileNameForHog(file, game),
                     missionType = mission.type,
                     hogFile = file.name,
@@ -260,6 +262,7 @@ internal object LevelMetadataTargets {
                 mission.path
                     .substringAfterLast('/')
                     .substringBeforeLast('.'),
+            missionDisplayName = mission.displayName,
             missionFilename = mission.path.substringAfterLast('/').substringAfterLast('\\'),
             missionType = mission.type,
             hogFiles =
@@ -431,6 +434,7 @@ internal object LevelMetadataTargets {
             sourcePath = extracted.rootDir.absolutePath,
             dataDir = setDir.absolutePath,
             missionName = constituent.name.substringBeforeLast('.'),
+            missionDisplayName = mission.displayName,
             missionFilename = extracted.relativePath.substringAfterLast('/').substringAfterLast('\\'),
             missionType = mission.type,
             hogFiles = listOf(hog.relativePath),
@@ -463,6 +467,7 @@ internal object LevelMetadataTargets {
             sourcePath = extracted.rootDir.absolutePath,
             dataDir = setDir.absolutePath,
             missionName = constituent.name.substringBeforeLast('.'),
+            missionDisplayName = mission.displayName,
             missionFilename = descriptor.relativePath.substringAfterLast('/').substringAfterLast('\\'),
             missionType = mission.type,
             hogFiles = listOf(extracted.relativePath),
@@ -533,6 +538,7 @@ internal object LevelMetadataTargets {
             sourcePath = hog.absolutePath,
             dataDir = setDir.absolutePath,
             missionName = descriptor.name.substringBeforeLast('.'),
+            missionDisplayName = mission.displayName,
             missionFilename = descriptor.name,
             missionType = mission.type,
             hogFile = hog.name,
@@ -567,6 +573,7 @@ internal object LevelMetadataTargets {
                 archivePath = archivePath,
                 archiveEntries = listOf(constituent.path, hogEntry.name),
                 missionName = constituent.name.substringBeforeLast('.'),
+                missionDisplayName = mission.displayName,
                 missionFilename = constituent.name,
                 missionType = mission.type,
                 hogFiles = listOf(hogName),
@@ -601,6 +608,7 @@ internal object LevelMetadataTargets {
                 archivePath = archivePath,
                 archiveEntries = listOf(constituent.path, descriptorEntry.name),
                 missionName = constituent.name.substringBeforeLast('.'),
+                missionDisplayName = mission.displayName,
                 missionFilename = descriptorEntry.name.substringAfterLast('/').substringAfterLast('\\'),
                 missionType = mission.type,
                 hogFiles = listOf(constituent.name),
@@ -741,6 +749,7 @@ internal object LevelMetadataAnalyzer {
             .put("data_dir", prepared.dataDir)
             .put("extra_data_dir", prepared.extraDataDir)
             .put("mission_name", prepared.missionName)
+            .put("mission_display_name", prepared.missionDisplayName)
             .put("mission_filename", prepared.missionFilename)
             .put("mission_type", target.missionType.orEmpty())
             .put("level_file", prepared.levelFile)
@@ -758,6 +767,7 @@ internal object LevelMetadataAnalyzer {
         val dataDir: String,
         val extraDataDir: String,
         val missionName: String,
+        val missionDisplayName: String,
         val missionFilename: String,
         val levelFile: String,
         val levelNum: Int,
@@ -788,6 +798,7 @@ internal object LevelMetadataAnalyzer {
                 dataDir = target.dataDir.orEmpty(),
                 extraDataDir = stageDir.absolutePath,
                 missionName = target.missionName.orEmpty(),
+                missionDisplayName = target.missionDisplayName.orEmpty(),
                 missionFilename = target.missionFilename.orEmpty(),
                 levelFile = target.levelFile.orEmpty(),
                 levelNum = target.levelNum,
@@ -808,6 +819,7 @@ internal object LevelMetadataAnalyzer {
                 dataDir = target.dataDir.orEmpty(),
                 extraDataDir = source.absolutePath,
                 missionName = target.missionName.orEmpty(),
+                missionDisplayName = target.missionDisplayName.orEmpty(),
                 missionFilename = target.missionFilename.orEmpty(),
                 levelFile = target.levelFile.orEmpty(),
                 levelNum = target.levelNum,
@@ -822,6 +834,7 @@ internal object LevelMetadataAnalyzer {
             dataDir = target.dataDir ?: source?.parentFile?.absolutePath.orEmpty(),
             extraDataDir = "",
             missionName = target.missionName.orEmpty(),
+            missionDisplayName = target.missionDisplayName.orEmpty(),
             missionFilename = target.missionFilename.orEmpty(),
             levelFile = target.levelFile ?: source?.name.orEmpty(),
             levelNum = target.levelNum,

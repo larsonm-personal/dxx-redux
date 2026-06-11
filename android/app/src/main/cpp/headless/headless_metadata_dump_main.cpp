@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <fstream>
+#include <string>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -48,6 +49,11 @@ extern "C" void gameseq_init_network_players(void);
 
 static unsigned char *headless_screen_pixels = NULL;
 static int secret_area_dump_failed = 0;
+
+static std::string dump_metadata_json(const nlohmann::ordered_json &value)
+{
+	return value.dump(2, ' ', false, nlohmann::ordered_json::error_handler_t::replace);
+}
 
 static void trace_dump_init(const char *stage)
 {
@@ -639,7 +645,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "COOP-START-DUMP FAIL output could not open %s\n", coop_starts_json_out);
 			return 1;
 		}
-		stream << build_coop_start_dump().dump(2) << "\n";
+		stream << dump_metadata_json(build_coop_start_dump()) << "\n";
 		if (secret_area_dump_failed)
 			return 1;
 		if (!stream) {
@@ -656,7 +662,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "SECRET-AREA-DUMP FAIL output could not open %s\n", json_out);
 		return 1;
 	}
-	stream << build_dump(&total_secrets).dump(2) << "\n";
+	stream << dump_metadata_json(build_dump(&total_secrets)) << "\n";
 	if (secret_area_dump_failed)
 		return 1;
 	trace_dump_init("write_done");

@@ -67,6 +67,7 @@ class LevelMetadataTargetsTest {
         target!!
         assertEquals("hog", target.sourceType)
         assertEquals("d2x", target.missionName)
+        assertEquals("Descent 2: Vertigo", target.missionDisplayName)
         assertEquals(20, target.normalLevelFiles.size)
         assertEquals(listOf("d2xlvls1.rl2", "d2xlvls2.rl2", "d2xlvls3.rl2"), target.secretLevelFiles)
     }
@@ -98,6 +99,7 @@ class LevelMetadataTargetsTest {
         assertEquals("max_f.mn2", target.displayName)
         assertEquals("hog", target.sourceType)
         assertEquals("max_f", target.missionName)
+        assertEquals("Descent Maximum (fixed)", target.missionDisplayName)
         assertEquals(File(setDir, "max_f.hog").absolutePath, target.sourcePath)
         assertEquals(listOf("psx01.rl2"), target.normalLevelFiles)
         assertEquals(listOf("psxs1a.rl2"), target.secretLevelFiles)
@@ -149,6 +151,7 @@ class LevelMetadataTargetsTest {
 
         assertEquals(listOf("Descent Maximum (fixed)", "Descent Max Anarchy (fix)"), targets.map { it.displayName })
         assertEquals(listOf("max_f", "maxlnk_f"), targets.map { it.missionName })
+        assertEquals(listOf("Descent Maximum (fixed)", "Descent Max Anarchy (fix)"), targets.map { it.missionDisplayName })
         assertEquals(listOf("normal", "anarchy"), targets.map { it.missionType })
         assertEquals(listOf(listOf("max_f.hog"), listOf("maxlnk_f.hog")), targets.map { it.hogFiles })
         assertEquals(listOf(listOf("psxs1a.rl2"), emptyList<String>()), targets.map { it.secretLevelFiles })

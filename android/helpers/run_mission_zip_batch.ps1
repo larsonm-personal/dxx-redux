@@ -517,9 +517,6 @@ foreach ($zip in $zips) {
             }
         } else {
             Write-MissionZipFailureJson -Path $metadataPath -Record $record
-            if (-not $NoRegressionJson) {
-                Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
-            }
         }
         if ($deviceHealthyAfterRun) {
             Save-AppTextFile -DeviceRelativePath "mission_zip_import_$label.json" -LocalPath $importPath | Out-Null

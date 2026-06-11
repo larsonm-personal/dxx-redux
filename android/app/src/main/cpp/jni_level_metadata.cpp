@@ -52,11 +52,23 @@ static char levelmeta_pixels_name[] = "levelmeta_screen_pixels";
 
 static json failed_result(const json &request, const char *problem);
 
+static std::string dump_metadata_json(const json &value)
+{
+	return value.dump(2, ' ', false, json::error_handler_t::replace);
+}
+
 static const char *physfs_last_error(void)
 {
 	const char *error = PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
 
 	return error ? error : "unknown error";
+}
+
+static std::string request_mission_display_name(const json &request)
+{
+	const std::string display_name = request.value("mission_display_name", "");
+
+	return display_name.empty() ? request.value("mission_name", "") : display_name;
 }
 
 static void write_checkpoint(const json &request, const char *stage, const char *detail)
@@ -525,7 +537,7 @@ static json analyze_hog_entries(const json &request)
 	root["request_id"] = request.value("request_id", "");
 	root["game"] = request.value("game", "");
 	root["source"] = request.value("source_name", "");
-	root["mission_name"] = request.value("mission_name", "");
+	root["mission_name"] = request_mission_display_name(request);
 	root["mission_filename"] = request.value("mission_filename", request.value("hog_path", ""));
 	set_coop_start_header(root, request, coop_start_range);
 	root["levels"] = levels;
@@ -575,7 +587,7 @@ static json failed_result(const json &request, const char *problem)
 	root["request_id"] = request.value("request_id", "");
 	root["game"] = request.value("game", "");
 	root["source"] = request.value("source_name", "");
-	root["mission_name"] = request.value("mission_name", "");
+	root["mission_name"] = request_mission_display_name(request);
 	root["mission_filename"] = request.value("mission_filename", "");
 	root["levels"] = json::array();
 	root["problems"] = json::array({ problem ? problem : "analysis failed" });
@@ -665,7 +677,7 @@ Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEn
 		request = json::object();
 		result = failed_result(request, e.what());
 		env->ReleaseStringUTFChars(jrequest, request_chars);
-		dumped = result.dump(2);
+		dumped = dump_metadata_json(result);
 		return env->NewStringUTF(dumped.c_str());
 	}
 	env->ReleaseStringUTFChars(jrequest, request_chars);
@@ -676,6 +688,6 @@ Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEn
 	} catch (const std::exception &e) {
 		result = failed_result(request, e.what());
 	}
-	dumped = result.dump(2);
+	dumped = dump_metadata_json(result);
 	return env->NewStringUTF(dumped.c_str());
 }
