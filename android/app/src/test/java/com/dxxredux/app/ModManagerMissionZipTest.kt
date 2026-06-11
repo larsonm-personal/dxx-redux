@@ -7,6 +7,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileOutputStream
+import java.io.RandomAccessFile
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -191,6 +193,41 @@ class ModManagerMissionZipTest {
         assertFalse(File(filesDir, "mods/ewithin-xl.zip").exists())
     }
 
+    @Test
+    fun largeMissionZipImportsDurableExtractionAndDeletesWithOwner() {
+        val filesDir = File("build/test-mod-manager-mission-zip-large-extract").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val manager = ModManager(filesDir)
+        val imported = manager.importMissionZipFile(createLargePreambleMissionZip(), "LargeMission.zip")
+
+        assertNotNull(imported)
+        imported!!
+        assertEquals("extracted_bundle", imported.importMode)
+
+        val extractedRoot = File(filesDir, "mods/.extracted_mission_zips/LargeMission.zip")
+        assertTrue(File(extractedRoot, "missions/Uneasy4.hog").isFile)
+        assertTrue(File(extractedRoot, "missions/Uneasy4.mn2").isFile)
+
+        val modFile = File(filesDir, "mods/LargeMission.zip")
+        val scan = MissionZip.inspect(modFile)
+        assertNotNull(scan)
+        val target = LevelMetadataTargets.missionZipTargets(modFile.absolutePath, File(filesDir, "sets/default"), scan!!)
+            .single()
+        assertEquals(extractedRoot.absolutePath, target.sourcePath)
+        assertEquals(null, target.archivePath)
+        assertEquals(listOf("missions/Uneasy4.hog"), target.hogFiles)
+
+        manager.writeEnabledModPaths("d2")
+        val lines = File(filesDir, "d2x-redux/.active_mod_paths").readLines()
+        assertEquals(listOf(extractedRoot.absolutePath), lines)
+
+        manager.deleteMod(imported.filename)
+        assertFalse(File(filesDir, "mods/LargeMission.zip").exists())
+        assertFalse(extractedRoot.exists())
+    }
+
     private fun createMissionZip(): File {
         val zipFile = File.createTempFile("missionzip-manager", ".zip")
         zipFile.deleteOnExit()
@@ -213,6 +250,26 @@ class ModManagerMissionZipTest {
                 """.trimIndent().toByteArray(),
             )
             zip.closeEntry()
+        }
+        return zipFile
+    }
+
+    private fun createLargePreambleMissionZip(): File {
+        val zipFile = File.createTempFile("missionzip-manager-large", ".zip")
+        zipFile.deleteOnExit()
+        RandomAccessFile(zipFile, "rw").use { it.setLength(MissionZip.SMALL_IN_MEMORY_LIMIT_BYTES + 1L) }
+        FileOutputStream(zipFile, true).use { output ->
+            output.write(
+                createZipBytes {
+                    it.putNextEntry(ZipEntry("Uneasy4.hog"))
+                    it.write(createHogBytes("Uneasy4.rl2" to ByteArray(12)))
+                    it.closeEntry()
+
+                    it.putNextEntry(ZipEntry("Uneasy4.mn2"))
+                    it.write("name = Uneasy 4\nnum_levels = 1\nUneasy4.rl2\n".toByteArray())
+                    it.closeEntry()
+                },
+            )
         }
         return zipFile
     }

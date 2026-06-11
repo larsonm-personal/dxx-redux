@@ -64,6 +64,7 @@ typedef struct level_metadata_scan_view {
 	int (*object_position)(void *user, int objnum, int xyz[3]);
 	int (*side_has_exit_trigger)(void *user, int seg, int side);
 	int (*triggered_side_opener_count)(void *user, int seg, int side);
+	int (*target_visible_from_segment)(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3]);
 } level_metadata_scan_view;
 
 typedef struct level_metadata_state {

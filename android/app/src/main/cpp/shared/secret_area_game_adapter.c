@@ -6,6 +6,7 @@
 
 #include "gameseg.h"
 #include "gameseq.h"
+#include "fvi.h"
 #include "hudmsg.h"
 #include "level_metadata_scan.h"
 #include "object.h"
@@ -281,6 +282,33 @@ static int secret_area_side_has_exit_trigger(void *user, int seg, int side)
 #endif
 }
 
+static int secret_area_target_visible_from_segment(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3])
+{
+	fvi_info hit_data;
+	fvi_query query;
+	vms_vector from;
+	vms_vector target;
+
+	(void) user;
+	if (seg < 0 || seg >= Num_segments || target_seg < 0 || target_seg >= Num_segments || !from_pos || !target_pos)
+		return 0;
+	from.x = from_pos[0];
+	from.y = from_pos[1];
+	from.z = from_pos[2];
+	target.x = target_pos[0];
+	target.y = target_pos[1];
+	target.z = target_pos[2];
+	memset(&query, 0, sizeof(query));
+	memset(&hit_data, 0, sizeof(hit_data));
+	query.p0 = &from;
+	query.p1 = &target;
+	query.startseg = seg;
+	query.rad = 0;
+	query.thisobjnum = -1;
+	query.flags = FQ_TRANSWALL;
+	return find_vector_intersection(&query, &hit_data) == HIT_NONE;
+}
+
 #ifdef DXX_BUILD_DESCENT_II
 static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
 {
@@ -437,6 +465,7 @@ static void level_metadata_rescan_current_level(void)
 	view.object_position = secret_area_object_position;
 	view.side_has_exit_trigger = secret_area_side_has_exit_trigger;
 	view.triggered_side_opener_count = secret_area_metadata_triggered_side_opener_count;
+	view.target_visible_from_segment = secret_area_target_visible_from_segment;
 	level_metadata_scan_level(&view, &Level_metadata_state);
 }
 

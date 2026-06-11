@@ -29,7 +29,6 @@ class ModManager(
         private const val MANIFEST_FILE = "mod_manifest.json"
         private const val GENERATED_PATCH_DIR = ".generated_mod_patches"
         private const val GENERATED_MISSION_ZIP_DIR = ".generated_mission_zips"
-        private const val GENERATED_MISSION_DIR = "missions"
         const val MOD_KIND_DXA = "dxa"
         const val MOD_KIND_MISSION_ZIP = MissionZip.KIND
         private val MISSION_MIXER_MUSIC_EXTENSIONS = setOf("flac", "hmp", "mid", "mp3", "ogg")
@@ -263,9 +262,10 @@ class ModManager(
 
     fun deleteMod(filename: String) {
         File(modsDir, filename).delete()
+        MissionZipExtractionStore(filesDir).removeOwner(filename)
         mods.removeAll { it.filename == filename }
         save()
-        Log.i(TAG, "Deleted mod: $filename")
+        logInfo("Deleted mod: $filename")
     }
 
     fun clearAllMods(): Int {
@@ -423,12 +423,23 @@ class ModManager(
         if (scan == null) return importNestedRebirthMissionZip(source)
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
+        val extractionStore = MissionZipExtractionStore(filesDir)
+        extractionStore.removeOwner(safeName)
         if (source.absoluteFile != dest.absoluteFile) {
             ImportStorageGuard.requireFreeSpace(modsDir, source.length(), "import mission zip $displayName")
             val moved = moveDirectSource && source.renameTo(dest)
             if (!moved) {
                 source.copyTo(dest, overwrite = true)
             }
+        }
+        try {
+            if (scan.importMode == "extracted_bundle") {
+                extractionStore.ensureExtracted(safeName, dest, scan)
+            }
+        } catch (e: Exception) {
+            dest.delete()
+            extractionStore.removeOwner(safeName)
+            throw e
         }
         return registerMissionZip(safeName, dest.length(), scan)
     }
@@ -455,6 +466,11 @@ class ModManager(
                             dest.delete()
                             return null
                         }
+                val extractionStore = MissionZipExtractionStore(filesDir)
+                extractionStore.removeOwner(safeName)
+                if (scan.importMode == "extracted_bundle") {
+                    extractionStore.ensureExtracted(safeName, dest, scan)
+                }
                 registerMissionZip(safeName, dest.length(), scan)
             }
         } catch (e: Exception) {
@@ -578,15 +594,25 @@ class ModManager(
         modFile: File,
     ): List<String> {
         val scan = MissionZip.inspect(modFile) ?: return emptyList()
-        val stageDir = File(generatedMissionZipDir(game), safeGeneratedDirName(mod.filename))
-        if (!extractMissionZipForLaunch(modFile, stageDir, scan)) return emptyList()
+        if (mod.importMode == "extracted_bundle" || scan.importMode == "extracted_bundle") {
+            return MissionZipExtractionStore(filesDir).activePathLines(mod.filename, modFile, scan)
+        }
+        val stageDir = File(generatedMissionZipDir(game), safeMissionZipDirName(mod.filename))
+        try {
+            extractZipToRoot(modFile, stageDir, scan)
+        } catch (e: InsufficientStorageException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Could not stage mission zip ${modFile.absolutePath}: ${e.message ?: e.javaClass.simpleName}")
+            return emptyList()
+        }
         return buildList {
             add(stageDir.absolutePath)
             for (constituent in scan.constituents.filter { it.role == GameFileFormats.MISSION_ZIP_MOD_ARCHIVE }) {
                 val archive =
                     File(
                         stageDir,
-                        stagedMissionZipRelativePath(scan, constituent.path).replace('/', File.separatorChar),
+                        stagedRelativePath(scan, constituent.path).replace('/', File.separatorChar),
                     )
                 if (archive.isFile) add(archive.absolutePath)
             }
@@ -970,99 +996,6 @@ class ModManager(
         val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
         return File(File(filesDir, gameDir), GENERATED_MISSION_ZIP_DIR)
     }
-
-    private fun extractMissionZipForLaunch(
-        modFile: File,
-        stageDir: File,
-        scan: MissionZip.ScanResult,
-    ): Boolean =
-        try {
-            val stageRoot = stageDir.canonicalFile
-            if (stageRoot.exists()) stageRoot.deleteRecursively()
-            stageRoot.mkdirs()
-            val songLists = mutableListOf<File>()
-            var engineSongListExists = false
-            ZipFile(modFile).use { zip ->
-                ImportStorageGuard.requireFreeSpace(
-                    stageRoot,
-                    missionZipLaunchStageBytes(zip),
-                    "stage ${modFile.name}",
-                )
-                val entries = zip.entries()
-                while (entries.hasMoreElements()) {
-                    val entry = entries.nextElement()
-                    if (entry.isDirectory) continue
-                    val normalized = entry.name.replace('\\', '/').trim('/')
-                    if (normalized.isBlank()) continue
-                    val output =
-                        File(
-                            stageRoot,
-                            stagedMissionZipRelativePath(scan, normalized).replace('/', File.separatorChar),
-                        ).canonicalFile
-                    if (!output.path.startsWith(stageRoot.path + File.separator)) continue
-                    output.parentFile?.mkdirs()
-                    zip.getInputStream(entry).use { input ->
-                        FileOutputStream(output).use { outputStream ->
-                            input.copyTo(outputStream)
-                        }
-                    }
-                    val leaf = launcherLeafNameOf(normalized).lowercase(Locale.US)
-                    if ('/' !in normalized && launcherExtensionOf(leaf) == "sng") {
-                        if (leaf in MISSION_SONG_LIST_FILES) {
-                            engineSongListExists = true
-                        } else {
-                            songLists += output
-                        }
-                    }
-                }
-            }
-            if (!engineSongListExists && songLists.size == 1) {
-                val source = songLists.single()
-                val target = File(stageRoot, "$GENERATED_MISSION_DIR/descent.sng")
-                ImportStorageGuard.requireFreeSpace(target.parentFile ?: target, source.length(), "stage descent.sng")
-                source.copyTo(target, overwrite = true)
-            }
-            true
-        } catch (e: InsufficientStorageException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e(TAG, "Could not stage mission zip ${modFile.absolutePath}: ${e.message ?: e.javaClass.simpleName}")
-            false
-        }
-
-    private fun missionZipLaunchStageBytes(zip: ZipFile): Long {
-        val sizes = mutableListOf<Long>()
-        val entries = zip.entries()
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement()
-            if (!entry.isDirectory) sizes += entry.size
-        }
-        return ImportStorageGuard.archiveEntryBytes(sizes)
-    }
-
-    private fun stagedMissionZipRelativePath(
-        scan: MissionZip.ScanResult,
-        path: String,
-    ): String {
-        val normalized = path.replace('\\', '/').trim('/')
-        return if (missionZipUsesRootedLayout(scan)) {
-            normalized
-        } else {
-            "$GENERATED_MISSION_DIR/$normalized"
-        }
-    }
-
-    private fun missionZipUsesRootedLayout(scan: MissionZip.ScanResult): Boolean =
-        scan.constituents.any {
-            val path = it.path.lowercase(Locale.US)
-            path.startsWith("$GENERATED_MISSION_DIR/") &&
-                (
-                    it.role == GameFileFormats.MISSION_ZIP_DESCRIPTOR ||
-                        it.role == GameFileFormats.MISSION_ZIP_HOG
-                )
-        }
-
-    private fun safeGeneratedDirName(filename: String): String = filename.replace(Regex("[^a-zA-Z0-9._-]"), "_")
 
     private fun missionZipHasBuiltinMusic(modFile: File): Boolean =
         runCatching {

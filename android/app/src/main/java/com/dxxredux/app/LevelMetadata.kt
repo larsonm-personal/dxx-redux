@@ -241,6 +241,9 @@ internal object LevelMetadataTargets {
         missionSet: MissionZip.MissionSet,
     ): LevelMetadataTarget? {
         if (!canAnalyzeMissionZip(scan)) return null
+        missionZipExtractedStoreForArchivePath(archivePath)
+            ?.extractedTarget(archivePath, setDir, scan, missionSet)
+            ?.let { return it }
         val entries = missionSet.constituents.map { it.path }
         val mission = missionSet.mission
         return LevelMetadataTarget(
@@ -714,6 +717,25 @@ internal object LevelMetadataAnalyzer {
             )
         }
         val source = target.sourcePath?.let(::File)
+        if (source?.isDirectory == true && target.sourceType == "mission_files") {
+            val hogPaths =
+                target.hogFiles
+                    .map { File(source, it.replace('/', File.separatorChar)).absolutePath }
+                    .filter { File(it).isFile }
+            return PreparedTarget(
+                sourceType = target.sourceType,
+                dataDir = target.dataDir.orEmpty(),
+                extraDataDir = source.absolutePath,
+                missionName = target.missionName.orEmpty(),
+                missionFilename = target.missionFilename.orEmpty(),
+                levelFile = target.levelFile.orEmpty(),
+                levelNum = target.levelNum,
+                hogPath = "",
+                hogPaths = hogPaths,
+                normalLevelFiles = target.normalLevelFiles,
+                secretLevelFiles = target.secretLevelFiles,
+            )
+        }
         return PreparedTarget(
             sourceType = target.sourceType,
             dataDir = target.dataDir ?: source?.parentFile?.absolutePath.orEmpty(),

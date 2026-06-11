@@ -47,6 +47,9 @@ private data class StorageFileEntry(
     val purpose: String,
     val size: Long,
     val helperSymlinkTargetName: String? = null,
+    val linkedMissionZipOwner: String? = null,
+    val linkedMissionZipSourceExists: Boolean = false,
+    val isLinkedMissionZipOwner: Boolean = false,
 ) {
     val isHelperSymlink: Boolean
         get() = helperSymlinkTargetName != null
@@ -123,6 +126,9 @@ private fun buildCdSourceSafLabel(source: AudioSourceManager.AudioSource): Strin
 private fun scanStorageFiles(filesDir: File): StorageFileScanResult {
     val importRoot = ImportLocationManager(filesDir).getActiveRoot()
     val helperArtifacts = getSafLinkedHelperArtifactPaths(filesDir, AudioSourceManager(filesDir).getSources())
+    val extractionStore = MissionZipExtractionStore(filesDir)
+    val linkedFiles = extractionStore.linkedFilesByAbsolutePath()
+    val linkedOwnerFiles = linkedFiles.values.associateBy { it.ownerFile.absolutePath }
     val entries = mutableListOf<StorageFileEntry>()
 
     fun addTree(
@@ -137,14 +143,28 @@ private fun scanStorageFiles(filesDir: File): StorageFileScanResult {
             .filterNot { location == "internal" && it.absolutePath in helperArtifacts }
             .forEach { file ->
                 val rel = file.relativeTo(root).path
+                val linkedFile = linkedFiles[file.absolutePath]
+                val linkedOwnerFile = linkedOwnerFiles[file.absolutePath]
+                val linkedOwner = linkedFile?.ownerFilename ?: linkedOwnerFile?.ownerFilename
                 entries.add(
                     StorageFileEntry(
                         file = file,
                         location = location,
                         relativePath = rel,
                         absolutePath = file.absolutePath,
-                        purpose = launcherStorageFilePurpose(file, rel, importedRoot),
+                        purpose =
+                            if (linkedFile != null) {
+                                "Linked mission ZIP file"
+                            } else if (linkedOwnerFile != null) {
+                                "Mission ZIP with linked cache"
+                            } else {
+                                launcherStorageFilePurpose(file, rel, importedRoot)
+                            },
                         size = file.length(),
+                        linkedMissionZipOwner = linkedOwner,
+                        linkedMissionZipSourceExists =
+                            linkedFile?.sourceExists == true || linkedOwnerFile?.sourceExists == true,
+                        isLinkedMissionZipOwner = linkedOwnerFile != null,
                     ),
                 )
             }
@@ -1390,6 +1410,18 @@ private fun StorageInspectorSection(filesDir: File) {
                                             color = MaterialTheme.colorScheme.primary,
                                         )
                                     }
+                                    entry.linkedMissionZipOwner?.let { owner ->
+                                        Text(
+                                            if (entry.isLinkedMissionZipOwner) {
+                                                "linked extracted cache"
+                                            } else {
+                                                "linked to mod ZIP: $owner"
+                                            },
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
                                     Text(
                                         entry.purpose,
                                         fontSize = 10.sp,
@@ -1426,6 +1458,27 @@ private fun StorageInspectorSection(filesDir: File) {
                             Text("Companion file: $targetName", fontSize = 12.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                         }
+                        entry.linkedMissionZipOwner?.let { owner ->
+                            Text(
+                                if (entry.isLinkedMissionZipOwner) {
+                                    "Type: mission ZIP with linked extracted cache"
+                                } else {
+                                    "Type: linked mission ZIP file"
+                                },
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                if (entry.isLinkedMissionZipOwner) {
+                                    "Linked cache owner: $owner"
+                                } else {
+                                    "Linked to mod ZIP: $owner"
+                                },
+                                fontSize = 12.sp,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
                         Text("Purpose: ${entry.purpose}", fontSize = 12.sp)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text("Size: ${formatSize(entry.size)}", fontSize = 12.sp)
@@ -1449,30 +1502,66 @@ private fun StorageInspectorSection(filesDir: File) {
         }
 
         deleteEntry?.let { entry ->
+            val linkedOwner = entry.linkedMissionZipOwner
             AlertDialog(
                 onDismissRequest = { deleteEntry = null },
-                title = { Text("Delete file?") },
+                title = { Text(if (linkedOwner == null) "Delete file?" else "Remove linked mission ZIP?") },
                 text = {
                     Column {
                         Text(entry.absolutePath, fontSize = 11.sp)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("This cannot be undone.", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                        if (linkedOwner == null) {
+                            Text("This cannot be undone.", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                        } else if (entry.isLinkedMissionZipOwner) {
+                            Text(
+                                "This will unlink $linkedOwner from Mods and remove all cached files extracted from that ZIP.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        } else if (entry.linkedMissionZipSourceExists) {
+                            Text(
+                                "This will unlink $linkedOwner from Mods and remove all cached files extracted from that ZIP.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        } else {
+                            Text(
+                                "The source ZIP is missing. This will remove all cached files linked to $linkedOwner.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                 },
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            if (entry.file.delete()) {
+                            val deleted =
+                                if (linkedOwner == null) {
+                                    entry.file.delete()
+                                } else if (entry.linkedMissionZipSourceExists) {
+                                    ModManager(filesDir).deleteMod(linkedOwner)
+                                    true
+                                } else {
+                                    MissionZipExtractionStore(filesDir).removeOwner(linkedOwner)
+                                }
+                            if (deleted) {
                                 selectedEntry = null
                                 deleteEntry = null
                                 refreshFiles++
-                                Toast.makeText(ctx, "Deleted ${entry.file.name}", Toast.LENGTH_SHORT).show()
+                                val message =
+                                    if (linkedOwner == null) {
+                                        "Deleted ${entry.file.name}"
+                                    } else {
+                                        "Removed linked files for $linkedOwner"
+                                    }
+                                Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
                             } else {
                                 deleteEntry = null
                                 Toast.makeText(ctx, "Delete failed", Toast.LENGTH_LONG).show()
                             }
                         },
-                    ) { Text("Delete") }
+                    ) { Text(if (linkedOwner == null) "Delete" else "Remove") }
                 },
                 dismissButton = {
                     TextButton(onClick = { deleteEntry = null }) { Text("Cancel") }

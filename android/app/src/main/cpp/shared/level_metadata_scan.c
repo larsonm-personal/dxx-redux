@@ -667,6 +667,77 @@ static int find_shortest_path(
 	return 1;
 }
 
+static int find_nearest_visible_target(
+    const level_metadata_scan_view *view,
+    int start_seg,
+    const int start_pos[3],
+    const metadata_target *target,
+    int key_mask,
+    metadata_path *path)
+{
+	int heap_size = 0;
+	int seg;
+
+	if (path) {
+		path->distance = DBL_MAX;
+		path->first_locked_seg = -1;
+		path->first_locked_side = -1;
+		path->first_locked_key = -1;
+	}
+	if (!view->target_visible_from_segment ||
+	    !valid_segment(view, start_seg) ||
+	    !target ||
+	    !valid_segment(view, target->seg) ||
+	    !segment_center_valid[start_seg])
+		return 0;
+	for (seg = 0; seg < view->num_segments; ++seg) {
+		route_distance[seg] = DBL_MAX;
+		route_parent_seg[seg] = -1;
+		route_parent_side[seg] = -1;
+		route_closed[seg] = 0;
+		route_heap_pos[seg] = 0;
+	}
+	route_distance[start_seg] = start_pos ? point_distance(start_pos, segment_centers[start_seg]) : 0.0;
+	heap_push(&heap_size, start_seg);
+	while (heap_size > 0) {
+		int cur = heap_pop(&heap_size);
+		int side;
+		const int *visible_pos = cur == start_seg && start_pos ? start_pos : segment_centers[cur];
+		if (segment_center_valid[cur] &&
+		    view->target_visible_from_segment(view->user, cur, visible_pos, target->seg, target->pos)) {
+			if (path) {
+				path->distance = route_distance[cur];
+				path->first_locked_seg = cur;
+			}
+			return 1;
+		}
+		route_closed[cur] = 1;
+		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			int child = view->segment_child(view->user, cur, side);
+			double step;
+			double next_distance;
+			if (!valid_segment(view, child) || route_closed[child])
+				continue;
+			if (!route_edge_passable(view, cur, side, key_mask, 0, -1))
+				continue;
+			step = edge_distance(view, cur, child);
+			if (step == DBL_MAX)
+				continue;
+			next_distance = route_distance[cur] + step;
+			if (next_distance >= route_distance[child])
+				continue;
+			route_distance[child] = next_distance;
+			route_parent_seg[child] = cur;
+			route_parent_side[child] = side;
+			if (route_heap_pos[child])
+				heap_decrease(child);
+			else
+				heap_push(&heap_size, child);
+		}
+	}
+	return 0;
+}
+
 static int append_target(const level_metadata_scan_view *view, metadata_target *targets, int *count, int max_count, int seg, const int pos[3])
 {
 	if (!targets || !count || *count >= max_count || !pos || !valid_segment(view, seg))
@@ -932,6 +1003,31 @@ static int route_to_target(
 	return 0;
 }
 
+static int route_to_reactor(
+    const level_metadata_scan_view *view,
+    int *current_seg,
+    int current_pos[3],
+    const metadata_target *target,
+    int *key_mask,
+    level_metadata_state *state)
+{
+	metadata_path path;
+
+	if (route_to_target(view, current_seg, current_pos, target, key_mask, state))
+		return 1;
+	if (!find_nearest_visible_target(view, *current_seg, current_pos, target, *key_mask, &path))
+		return 0;
+	state->travel_distance += path.distance;
+	*current_seg = path.first_locked_seg >= 0 ? path.first_locked_seg : *current_seg;
+	if (path.distance == 0.0) {
+		/* current_pos already describes the firing point. */
+	} else if (segment_center_valid[*current_seg]) {
+		copy_pos(current_pos, segment_centers[*current_seg]);
+	}
+	state->travel_problem[0] = '\0';
+	return 1;
+}
+
 static void collect_travel_time(const level_metadata_scan_view *view, level_metadata_state *state)
 {
 	metadata_target reactor;
@@ -971,7 +1067,7 @@ static void collect_travel_time(const level_metadata_scan_view *view, level_meta
 		if (!state->travel_problem[0])
 			snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "hostage unreachable");
 		state->travel_status = state->travel_targets_reached > 0 || state->travel_distance > 0.0 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
-	} else if (!found_reactor || route_to_target(view, &current_seg, current_pos, &reactor, &key_mask, state)) {
+	} else if (!found_reactor || route_to_reactor(view, &current_seg, current_pos, &reactor, &key_mask, state)) {
 		metadata_path exit_path;
 		int exit_index;
 		if (found_reactor)
