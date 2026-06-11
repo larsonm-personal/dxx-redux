@@ -15,6 +15,13 @@
 #include "config.h"
 #include "args.h"
 #include "input_demo_hooks.h"
+#if defined(ANDROID) && defined(OGL)
+#include "game.h"
+#include "inferno.h"
+#include "ogl_init.h"
+#include "playsave.h"
+#include "screens.h"
+#endif
 #ifdef INTROSPECT_ON
 #include "game_introspect.h"
 #include "game_automate.h"
@@ -29,6 +36,17 @@ extern void mouse_cursor_autohide();
 extern int input_demo_replay_is_loaded(void);
 
 static int initialised=0;
+
+#if defined(ANDROID) && defined(OGL)
+static int android_needs_window_backing_clear(void)
+{
+	if (Screen_mode != SCREEN_GAME)
+		return 1;
+	if (!Game_wind || !window_is_visible(Game_wind))
+		return 1;
+	return PlayerCfg.CurrentCockpitMode == CM_LETTERBOX;
+}
+#endif
 
 void event_poll()
 {
@@ -204,6 +222,10 @@ void event_process(void)
 	}
 	
 	event.type = EVENT_WINDOW_DRAW;	// then draw all visible windows
+#if defined(ANDROID) && defined(OGL)
+	if (android_needs_window_backing_clear())
+		ogl_android_clear_window_backing();
+#endif
 	wind = window_get_first();
 	while (wind != NULL)
 	{

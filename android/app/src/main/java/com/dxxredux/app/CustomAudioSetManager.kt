@@ -175,6 +175,8 @@ class CustomAudioSetManager(
                             onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
                         }
                         allFiles.add(f.lowercase() to staged.absolutePath)
+                    } catch (e: InsufficientStorageException) {
+                        throw e
                     } catch (e: Exception) {
                         logWarn("Failed to stage referenced file $f: ${e.message}")
                     }

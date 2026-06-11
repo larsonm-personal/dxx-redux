@@ -2562,6 +2562,21 @@ void ogl_prepare_framebuffer_readback(void)
 }
 
 #ifdef ANDROID
+void ogl_android_clear_window_backing(void)
+{
+	int w = grd_curscreen ? grd_curscreen->sc_w : 0;
+	int h = grd_curscreen ? grd_curscreen->sc_h : 0;
+
+	if (w <= 0 || h <= 0)
+		return;
+	glBindFramebuffer(GL_FRAMEBUFFER,
+	                  g_msaa_fbo_bound && ogl_msaa_fbo ? ogl_msaa_fbo : 0);
+	ogl_android_viewport(0, 0, w, h);
+	glDisable(GL_SCISSOR_TEST);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+}
+
 void ogl_android_prepare_overlay_blit(void)
 {
 	int before_bound = g_msaa_fbo_bound;

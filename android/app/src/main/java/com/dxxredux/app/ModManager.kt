@@ -424,6 +424,7 @@ class ModManager(
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
         if (source.absoluteFile != dest.absoluteFile) {
+            ImportStorageGuard.requireFreeSpace(modsDir, source.length(), "import mission zip $displayName")
             val moved = moveDirectSource && source.renameTo(dest)
             if (!moved) {
                 source.copyTo(dest, overwrite = true)
@@ -438,6 +439,11 @@ class ModManager(
                 val child = selectNestedRebirthZip(zip) ?: return null
                 val safeName = launcherLeafNameOf(child.name).replace(Regex("[^a-zA-Z0-9._-]"), "_")
                 val dest = File(modsDir, safeName)
+                ImportStorageGuard.requireFreeSpace(
+                    modsDir,
+                    child.size.coerceAtLeast(0),
+                    "extract mission zip $safeName",
+                )
                 zip.getInputStream(child).use { input ->
                     FileOutputStream(dest).use { output ->
                         input.copyTo(output)
@@ -977,6 +983,11 @@ class ModManager(
             val songLists = mutableListOf<File>()
             var engineSongListExists = false
             ZipFile(modFile).use { zip ->
+                ImportStorageGuard.requireFreeSpace(
+                    stageRoot,
+                    missionZipLaunchStageBytes(zip),
+                    "stage ${modFile.name}",
+                )
                 val entries = zip.entries()
                 while (entries.hasMoreElements()) {
                     val entry = entries.nextElement()
@@ -1006,13 +1017,28 @@ class ModManager(
                 }
             }
             if (!engineSongListExists && songLists.size == 1) {
-                songLists.single().copyTo(File(stageRoot, "$GENERATED_MISSION_DIR/descent.sng"), overwrite = true)
+                val source = songLists.single()
+                val target = File(stageRoot, "$GENERATED_MISSION_DIR/descent.sng")
+                ImportStorageGuard.requireFreeSpace(target.parentFile ?: target, source.length(), "stage descent.sng")
+                source.copyTo(target, overwrite = true)
             }
             true
+        } catch (e: InsufficientStorageException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Could not stage mission zip ${modFile.absolutePath}: ${e.message ?: e.javaClass.simpleName}")
             false
         }
+
+    private fun missionZipLaunchStageBytes(zip: ZipFile): Long {
+        val sizes = mutableListOf<Long>()
+        val entries = zip.entries()
+        while (entries.hasMoreElements()) {
+            val entry = entries.nextElement()
+            if (!entry.isDirectory) sizes += entry.size
+        }
+        return ImportStorageGuard.archiveEntryBytes(sizes)
+    }
 
     private fun stagedMissionZipRelativePath(
         scan: MissionZip.ScanResult,

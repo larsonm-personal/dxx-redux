@@ -37,10 +37,15 @@
 - Prefer client id when present, then callsign. Callsign-only matching is acceptable as the requested fallback, but client id avoids collisions when two devices use the same pilot name.
 
 ## Revised bug-fix plan
-- [pending] Fix online late join launch level. Include the server runtime `current_level` in `GAME_STARTING`, or patch `game_info.level_num` from `runtime_level` for in-progress late joins. This is still needed because UDP object sync requires matching levels.
-- [pending] Fix progress inventory one-shot behavior. Replace `coop_progress_restore_attempted` with a per-level attempt marker or reset it on level start, so level 2 can load the level 1 progress sidecar.
-- [pending] Fix restore packet source-level handling. Store or transmit the cached record's source level instead of always writing `Current_level_num`, so same-level keys and spew cleanup are decided correctly.
-- [pending] Add spew cleanup before same-level restore. On host, before sending inventory to a rejoining player whose cached record came from the current level, remove `OBJ_POWERUP` objects owned by that player using existing object ownership mapping and `multi_send_remobj()`.
-- [pending] Send `MULTI_COOP_RESTORE_INV` directly to the joining player after object sync instead of broadcasting it.
-- [pending] Gate live rejoin restore and spew cleanup on `NETGAME_FLAG_COOP_QOL`, while leaving explicit coop save/autosave restore behavior independent unless product behavior says otherwise.
-- [pending] Add diagnostics and tests. Log cache lookup result, source level, current level, and spew cleanup count; add focused unit/integration coverage for level-2 late join launch level and progress inventory retry.
+- [done] Fix online late join launch level. Include the server runtime `current_level` in `GAME_STARTING`, or patch `game_info.level_num` from `runtime_level` for in-progress late joins. This is still needed because UDP object sync requires matching levels.
+- [done] Fix progress inventory one-shot behavior. Replace `coop_progress_restore_attempted` with a per-level attempt marker or reset it on level start, so level 2 can load the level 1 progress sidecar.
+- [done] Fix restore packet source-level handling. Store or transmit the cached record's source level instead of always writing `Current_level_num`, so same-level keys and spew cleanup are decided correctly.
+- [done] Add spew cleanup before same-level restore. On host, before sending inventory to a rejoining player whose cached record came from the current level, remove `OBJ_POWERUP` objects owned by that player using existing object ownership mapping and `multi_send_remobj()`.
+- [done] Send `MULTI_COOP_RESTORE_INV` directly to the joining player after object sync instead of broadcasting it.
+- [done] Gate live rejoin restore and spew cleanup on `NETGAME_FLAG_COOP_QOL`, while leaving explicit coop save/autosave restore behavior independent unless product behavior says otherwise.
+- [partial] Add diagnostics and tests. Cache lookup/source level/current level/spew cleanup logging was added; focused multiplayer integration tests were not added in this tranche.
+
+## Implementation verification
+- `git diff --check` passed.
+- `cargo check -q` passed in `server/`.
+- Linting/formatting passes were intentionally skipped because other tasks were running.

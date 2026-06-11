@@ -124,6 +124,9 @@ const coop_player_record *coop_get_absent_players(void);
  * Returns pointer to the record, or NULL if not found. */
 const coop_player_record *coop_find_absent_player(const char *callsign,
                                                   const char *client_id);
+const coop_player_record *coop_find_absent_player_with_level(const char *callsign,
+                                                             const char *client_id,
+                                                             int *source_level);
 
 /* Repopulate the absent player list from save metadata.
  * Called after state_restore_all_sub() loads a coop save. */

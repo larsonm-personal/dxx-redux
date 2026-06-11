@@ -109,6 +109,7 @@ void ogl_start_frame(void);
 void ogl_end_frame(void);
 void ogl_prepare_framebuffer_readback(void);
 #ifdef ANDROID
+void ogl_android_clear_window_backing(void);
 void ogl_android_prepare_overlay_blit(void);
 #endif
 void ogl_swap_buffers_internal(void);

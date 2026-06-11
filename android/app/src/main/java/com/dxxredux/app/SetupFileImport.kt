@@ -570,6 +570,7 @@ internal suspend fun copyUriToFileWithProgress(
     onProgress: suspend (Long, Long) -> Unit = { _, _ -> },
 ) {
     val totalBytes = ImportStorageGuard.queryUriSizeBytes(context.contentResolver, uri) ?: 0L
+    ImportStorageGuard.requireFreeSpace(dest.parentFile ?: dest, totalBytes, dest.name)
     var copiedBytes = 0L
     var lastReported = 0L
     onProgress(0L, totalBytes)

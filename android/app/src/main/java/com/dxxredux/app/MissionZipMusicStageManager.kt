@@ -22,6 +22,11 @@ class MissionZipMusicStageManager(
         val output = stagedFile(archive, track)
         if (output.isFile && (track.sizeBytes <= 0 || output.length() == track.sizeBytes)) return output
         output.parentFile?.mkdirs()
+        ImportStorageGuard.requireFreeSpace(
+            output.parentFile ?: output,
+            track.sizeBytes.takeIf { it > 0L } ?: archive.length(),
+            "stage ${track.displayName}",
+        )
         val temp = File(output.parentFile, "${output.name}.tmp")
         temp.delete()
         val ok =

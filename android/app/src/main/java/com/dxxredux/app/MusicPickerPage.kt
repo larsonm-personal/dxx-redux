@@ -141,6 +141,7 @@ fun MusicPickerPage(
     var importProgressLabel by remember { mutableStateOf("") }
     var importProgressBytes by remember { mutableLongStateOf(0L) }
     var importProgressTotal by remember { mutableLongStateOf(0L) }
+    var storageFailureMessage by remember { mutableStateOf<String?>(null) }
     var showAddToSetDialog by remember { mutableStateOf(false) }
     var pendingUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
 
@@ -286,18 +287,22 @@ fun MusicPickerPage(
                     importProgressLabel = ""
                     importProgressBytes = 0L
                     importProgressTotal = 0L
-                    importAudioFiles(ctx, filesDir, customMgr, newName, uris, targetSetId, copyToStorage) {
-                        label,
-                        copied,
-                        total,
-                        ->
-                        mainHandler.post {
-                            importProgressLabel = label
-                            importProgressBytes = copied
-                            importProgressTotal = total
+                    try {
+                        importAudioFiles(ctx, filesDir, customMgr, newName, uris, targetSetId, copyToStorage) {
+                            label,
+                            copied,
+                            total,
+                            ->
+                            mainHandler.post {
+                                importProgressLabel = label
+                                importProgressBytes = copied
+                                importProgressTotal = total
+                            }
                         }
+                        customSets = customMgr.getSets()
+                    } catch (e: InsufficientStorageException) {
+                        storageFailureMessage = ImportStorageGuard.messageForFailure(e)
                     }
-                    customSets = customMgr.getSets()
                     importingFiles = false
                     importProgressLabel = ""
                     importProgressBytes = 0L
@@ -305,6 +310,10 @@ fun MusicPickerPage(
                 }
             },
         )
+    }
+
+    storageFailureMessage?.let { message ->
+        StorageFailureDialog(message = message, onDismiss = { storageFailureMessage = null })
     }
 
     // Track preview dialog
@@ -1618,6 +1627,9 @@ internal suspend fun importAudioFiles(
                     }
                     imported.add(fileName)
                 }
+            } catch (e: InsufficientStorageException) {
+                Log.e(TAG, "Audio import stopped for storage: $uri", e)
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to import: $uri", e)
             }
@@ -1731,6 +1743,11 @@ private fun extractZipAudio(
                     if (isAudioFile(name)) {
                         val safeName = name.replace("..", "_").replace('/', '_').replace('\\', '_')
                         val dest = File(destDir, safeName)
+                        ImportStorageGuard.requireFreeSpace(
+                            destDir,
+                            entry.size.takeIf { it > 0L } ?: 0L,
+                            "extract $safeName",
+                        )
                         FileOutputStream(dest).use { out ->
                             LauncherFileCopy.copyStream(
                                 zip,
@@ -1774,6 +1791,11 @@ private fun extract7zAudio(
                     if (isAudioFile(name)) {
                         val safeName = name.replace("..", "_").replace('/', '_').replace('\\', '_')
                         val dest = File(destDir, safeName)
+                        ImportStorageGuard.requireFreeSpace(
+                            destDir,
+                            entry.size.takeIf { it > 0L } ?: 0L,
+                            "extract $safeName",
+                        )
                         FileOutputStream(dest).use { out ->
                             val buf = ByteArray(8192)
                             val totalBytes = entry.size.takeIf { it > 0L } ?: 0L

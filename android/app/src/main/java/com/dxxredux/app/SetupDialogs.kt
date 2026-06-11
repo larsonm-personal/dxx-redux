@@ -317,6 +317,7 @@ internal fun GogImportDialog(
     var tempPath by remember { mutableStateOf<String?>(null) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var includeAudio by remember { mutableStateOf(true) }
+    var storageFailureMessage by remember { mutableStateOf<String?>(null) }
     val extractFocus = remember { FocusRequester() }
     val doneFocus = remember { FocusRequester() }
 
@@ -415,6 +416,14 @@ internal fun GogImportDialog(
                         status = "Found ${gameFiles.size} game file(s) (${formatSize(totalSize)})"
                     }
                 }
+            } catch (e: InsufficientStorageException) {
+                Log.e("DXX-GogImport", "Analysis stopped for storage", e)
+                withContext(Dispatchers.Main) {
+                    copyingInstaller = false
+                    storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                    status = "Not enough free space"
+                    errorMsg = e.message
+                }
             } catch (e: Exception) {
                 Log.e("DXX-GogImport", "Analysis failed", e)
                 LauncherDebugLog.log(
@@ -427,6 +436,10 @@ internal fun GogImportDialog(
                 }
             }
         }
+    }
+
+    storageFailureMessage?.let { message ->
+        StorageFailureDialog(message = message, onDismiss = { storageFailureMessage = null })
     }
 
     AlertDialog(
@@ -566,17 +579,15 @@ internal fun GogImportDialog(
                     Button(
                         onClick = {
                             scope.launch {
-                                // Check disk space before extraction
                                 val totalNeeded =
                                     fileList!!.sumOf { f ->
                                         if (!includeAudio && GogImportBridge.isAudioFile(f.name)) 0L else f.size
                                     }
-                                val available = setDir.usableSpace
-                                // Need total + 50MB headroom for temp files and OS overhead
-                                if (available < totalNeeded + 50 * 1024 * 1024) {
-                                    val needMB = (totalNeeded + 50 * 1024 * 1024) / (1024 * 1024)
-                                    val availMB = available / (1024 * 1024)
-                                    status = "Not enough disk space: need ~${needMB}MB, have ${availMB}MB free"
+                                try {
+                                    ImportStorageGuard.requireFreeSpace(setDir, totalNeeded, "extract $installerName")
+                                } catch (e: InsufficientStorageException) {
+                                    storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                                    status = "Not enough free space"
                                     return@launch
                                 }
                                 processing = true
@@ -765,6 +776,13 @@ internal fun GogImportDialog(
                                                     "No files extracted"
                                                 }
                                         }
+                                    } catch (e: InsufficientStorageException) {
+                                        Log.e("DXX-GogImport", "Extraction stopped for storage", e)
+                                        withContext(Dispatchers.Main) {
+                                            storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                                            status = "Not enough free space"
+                                            errorMsg = e.message
+                                        }
                                     } catch (e: Exception) {
                                         Log.e("DXX-GogImport", "Extraction failed", e)
                                         LauncherDebugLog.log(
@@ -844,6 +862,7 @@ internal fun SowImportDialog(
     var copyProgressTotal by remember { mutableLongStateOf(0L) }
     var extractProgressBytes by remember { mutableLongStateOf(0L) }
     var extractProgressTotal by remember { mutableLongStateOf(0L) }
+    var storageFailureMessage by remember { mutableStateOf<String?>(null) }
     val extractFocus = remember { FocusRequester() }
     val doneFocus = remember { FocusRequester() }
 
@@ -878,11 +897,21 @@ internal fun SowImportDialog(
                     copyProgressBytes = 0L
                     copyProgressTotal = 0L
                 }
+            } catch (e: InsufficientStorageException) {
+                Log.e("DXX-SowImport", "Copy stopped for storage", e)
+                withContext(Dispatchers.Main) {
+                    status = "Not enough free space"
+                    storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                }
             } catch (e: Exception) {
                 Log.e("DXX-SowImport", "Copy failed", e)
                 withContext(Dispatchers.Main) { status = "Error: ${e.message}" }
             }
         }
+    }
+
+    storageFailureMessage?.let { message ->
+        StorageFailureDialog(message = message, onDismiss = { storageFailureMessage = null })
     }
 
     AlertDialog(
@@ -915,6 +944,17 @@ internal fun SowImportDialog(
                     Button(
                         onClick = {
                             scope.launch {
+                                try {
+                                    ImportStorageGuard.requireFreeSpace(
+                                        setDir,
+                                        tempPath?.let { File(it).length() } ?: 0L,
+                                        "extract $sowName",
+                                    )
+                                } catch (e: InsufficientStorageException) {
+                                    storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                                    status = "Not enough free space"
+                                    return@launch
+                                }
                                 processing = true
                                 status = "Extracting game files\u2026"
                                 extractProgressBytes = 0L
@@ -956,6 +996,12 @@ internal fun SowImportDialog(
                                                 } else {
                                                     "No game files found in archive"
                                                 }
+                                        }
+                                    } catch (e: InsufficientStorageException) {
+                                        Log.e("DXX-SowImport", "Extraction stopped for storage", e)
+                                        withContext(Dispatchers.Main) {
+                                            status = "Not enough free space"
+                                            storageFailureMessage = ImportStorageGuard.messageForFailure(e)
                                         }
                                     } catch (e: Exception) {
                                         Log.e("DXX-SowImport", "Extraction failed", e)
@@ -1041,6 +1087,7 @@ internal fun DiscImportDialog(
     var discLabel by remember { mutableStateOf<String?>(null) }
     var discId by remember { mutableStateOf<String?>(null) }
     var legacyDiscId by remember { mutableStateOf(0L) }
+    var storageFailureMessage by remember { mutableStateOf<String?>(null) }
     // Temp CUE path for native parsing
     var tempCuePath by remember { mutableStateOf<String?>(null) }
     var orderedBinUris by remember { mutableStateOf(binUris) }
@@ -1136,11 +1183,21 @@ internal fun DiscImportDialog(
                         status = "Failed to parse CUE file. Check that every referenced .bin/.img file was selected"
                     }
                 }
+            } catch (e: InsufficientStorageException) {
+                Log.e("DXX-DiscImport", "CUE staging stopped for storage", e)
+                withContext(Dispatchers.Main) {
+                    status = "Not enough free space"
+                    storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                }
             } catch (e: Exception) {
                 Log.e("DXX-DiscImport", "CUE parse failed", e)
                 withContext(Dispatchers.Main) { status = "Error: ${e.message}" }
             }
         }
+    }
+
+    storageFailureMessage?.let { message ->
+        StorageFailureDialog(message = message, onDismiss = { storageFailureMessage = null })
     }
 
     AlertDialog(
@@ -1158,6 +1215,18 @@ internal fun DiscImportDialog(
                             Button(
                                 onClick = {
                                     scope.launch {
+                                        try {
+                                            val dataTrack = tracks!!.first { it.isData }
+                                            ImportStorageGuard.requireFreeSpace(
+                                                setDir,
+                                                dataTrack.numSectors.toLong() * 2352L,
+                                                "extract disc game files",
+                                            )
+                                        } catch (e: InsufficientStorageException) {
+                                            storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                                            status = "Not enough free space"
+                                            return@launch
+                                        }
                                         processing = true
                                         status = "Extracting game files..."
                                         progressBytes = 0L
@@ -1512,6 +1581,7 @@ internal fun IsoImportDialog(
     var extractedCount by remember { mutableIntStateOf(0) }
     var progressBytes by remember { mutableLongStateOf(0L) }
     var progressTotal by remember { mutableLongStateOf(0L) }
+    var storageFailureMessage by remember { mutableStateOf<String?>(null) }
     val extractFocus = remember { FocusRequester() }
     val doneFocus = remember { FocusRequester() }
 
@@ -1553,6 +1623,10 @@ internal fun IsoImportDialog(
                 }
             }
         }
+    }
+
+    storageFailureMessage?.let { message ->
+        StorageFailureDialog(message = message, onDismiss = { storageFailureMessage = null })
     }
 
     AlertDialog(
@@ -1604,6 +1678,17 @@ internal fun IsoImportDialog(
                     Button(
                         onClick = {
                             scope.launch {
+                                try {
+                                    ImportStorageGuard.requireFreeSpace(
+                                        setDir,
+                                        fileList.orEmpty().sumOf { it.size },
+                                        "extract $isoName",
+                                    )
+                                } catch (e: InsufficientStorageException) {
+                                    storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                                    status = "Not enough free space"
+                                    return@launch
+                                }
                                 processing = true
                                 status = "Extracting game files..."
                                 progressBytes = 0L

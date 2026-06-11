@@ -154,6 +154,7 @@ static void coop_write_progress_inventory_file(const char *filename);
 /* --- absent player tracking --- */
 
 static coop_player_record coop_absent_list[COOP_MAX_REMEMBERED_PLAYERS];
+static int16_t coop_absent_source_levels[COOP_MAX_REMEMBERED_PLAYERS];
 static int coop_num_absent = 0;
 
 void coop_snapshot_player(int pnum, coop_player_record *rec)
@@ -336,6 +337,7 @@ void coop_track_absent_player(int pnum)
 		if ((rec.client_id[0] && strncmp(coop_absent_list[i].client_id, rec.client_id, COOP_CLIENT_ID_LEN) == 0) ||
 		    strncasecmp(coop_absent_list[i].callsign, rec.callsign, COOP_CALLSIGN_LEN) == 0) {
 			memcpy(&coop_absent_list[i], &rec, sizeof(rec));
+			coop_absent_source_levels[i] = (int16_t) Current_level_num;
 			con_printf(CON_NORMAL, "coop_save: updated absent player '%s' (slot %d)\n",
 			           rec.callsign, i);
 			return;
@@ -345,9 +347,12 @@ void coop_track_absent_player(int pnum)
 	if (coop_num_absent >= COOP_MAX_REMEMBERED_PLAYERS) {
 		memmove(&coop_absent_list[0], &coop_absent_list[1],
 		        sizeof(coop_player_record) * (COOP_MAX_REMEMBERED_PLAYERS - 1));
+		memmove(&coop_absent_source_levels[0], &coop_absent_source_levels[1],
+		        sizeof(int16_t) * (COOP_MAX_REMEMBERED_PLAYERS - 1));
 		coop_num_absent = COOP_MAX_REMEMBERED_PLAYERS - 1;
 	}
 	memcpy(&coop_absent_list[coop_num_absent], &rec, sizeof(rec));
+	coop_absent_source_levels[coop_num_absent] = (int16_t) Current_level_num;
 	coop_num_absent++;
 	con_printf(CON_NORMAL, "coop_save: tracked absent player '%s' (%d total absent)\n",
 	           rec.callsign, coop_num_absent);
@@ -357,6 +362,7 @@ void coop_clear_absent_players(void)
 {
 	coop_num_absent = 0;
 	memset(coop_absent_list, 0, sizeof(coop_absent_list));
+	memset(coop_absent_source_levels, 0, sizeof(coop_absent_source_levels));
 }
 
 int coop_get_num_absent_players(void)
@@ -372,18 +378,33 @@ const coop_player_record *coop_get_absent_players(void)
 const coop_player_record *coop_find_absent_player(const char *callsign,
                                                   const char *client_id)
 {
+	return coop_find_absent_player_with_level(callsign, client_id, NULL);
+}
+
+const coop_player_record *coop_find_absent_player_with_level(const char *callsign,
+                                                             const char *client_id,
+                                                             int *source_level)
+{
 	int i;
 
 	if (client_id && client_id[0]) {
-		for (i = 0; i < coop_num_absent; i++)
-			if (strncmp(coop_absent_list[i].client_id, client_id, COOP_CLIENT_ID_LEN) == 0)
+		for (i = 0; i < coop_num_absent; i++) {
+			if (strncmp(coop_absent_list[i].client_id, client_id, COOP_CLIENT_ID_LEN) == 0) {
+				if (source_level)
+					*source_level = coop_absent_source_levels[i];
 				return &coop_absent_list[i];
+			}
+		}
 	}
 
 	if (callsign && callsign[0]) {
-		for (i = 0; i < coop_num_absent; i++)
-			if (strncasecmp(coop_absent_list[i].callsign, callsign, COOP_CALLSIGN_LEN) == 0)
+		for (i = 0; i < coop_num_absent; i++) {
+			if (strncasecmp(coop_absent_list[i].callsign, callsign, COOP_CALLSIGN_LEN) == 0) {
+				if (source_level)
+					*source_level = coop_absent_source_levels[i];
 				return &coop_absent_list[i];
+			}
+		}
 	}
 
 	return NULL;
@@ -397,8 +418,10 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)
 	n = meta->num_absent_players;
 	if (n > COOP_MAX_REMEMBERED_PLAYERS)
 		n = COOP_MAX_REMEMBERED_PLAYERS;
-	for (i = 0; i < n; i++)
+	for (i = 0; i < n; i++) {
 		memcpy(&coop_absent_list[i], &meta->absent_players[i], sizeof(coop_player_record));
+		coop_absent_source_levels[i] = meta->level_num;
+	}
 	coop_num_absent = n;
 	con_printf(CON_NORMAL, "coop_save: loaded %d absent players from save metadata\n", n);
 }
@@ -711,7 +734,7 @@ static void coop_write_progress_inventory_file(const char *filename)
 	           Current_level_num, num);
 }
 
-static int coop_progress_restore_attempted = 0;
+static int coop_progress_restore_attempted_level = 0;
 
 int coop_load_progress_inventory(void)
 {
@@ -728,9 +751,9 @@ int coop_load_progress_inventory(void)
 	const char *host_client_id;
 	int host_restored = 0;
 
-	if (coop_progress_restore_attempted)
+	if (coop_progress_restore_attempted_level == Current_level_num)
 		return 0;
-	coop_progress_restore_attempted = 1;
+	coop_progress_restore_attempted_level = Current_level_num;
 
 	if (!(Game_mode & GM_MULTI_COOP))
 		return 0;
@@ -799,6 +822,7 @@ int coop_load_progress_inventory(void)
 		if (coop_num_absent < COOP_MAX_REMEMBERED_PLAYERS) {
 			rec.was_connected = 0;
 			memcpy(&coop_absent_list[coop_num_absent], &rec, sizeof(rec));
+			coop_absent_source_levels[coop_num_absent] = level;
 			coop_num_absent++;
 		}
 	}
@@ -1018,5 +1042,5 @@ void coop_disarm_auto_restore(void)
 {
 	coop_auto_restore_armed = 0;
 	coop_auto_restore_attempted = 0;
-	coop_progress_restore_attempted = 0;
+	coop_progress_restore_attempted_level = 0;
 }

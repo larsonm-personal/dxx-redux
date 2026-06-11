@@ -820,6 +820,7 @@ private fun MissionZipMusicDialog(
     var stagingTrackId by remember { mutableStateOf<String?>(null) }
     var stagingProblem by remember { mutableStateOf<String?>(null) }
     var bulkStatus by remember { mutableStateOf<String?>(null) }
+    var storageFailureMessage by remember { mutableStateOf<String?>(null) }
     val fingerprintableTracks =
         remember(catalog) {
             catalog.sources
@@ -830,11 +831,20 @@ private fun MissionZipMusicDialog(
 
     suspend fun identifyTrack(track: MissionZipMusicTrack): MissionZipAudioFingerprintCache.Entry? =
         withContext(kotlinx.coroutines.Dispatchers.IO) {
-            runCatching {
+            try {
                 stageManager.cleanupOldFiles()
-                val staged = stageManager.stageCompressedAudioTrack(catalog, track) ?: return@runCatching null
+                val staged = stageManager.stageCompressedAudioTrack(catalog, track) ?: return@withContext null
                 fingerprintCache.identifyLocal(context, catalog, track, staged)
-            }.getOrNull()
+            } catch (e: InsufficientStorageException) {
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                    stagingProblem = "Not enough free space"
+                    bulkStatus = null
+                }
+                null
+            } catch (_: Exception) {
+                null
+            }
         }
 
     suspend fun lookupTrack(track: MissionZipMusicTrack): MissionZipAudioFingerprintCache.Entry? =
@@ -920,6 +930,9 @@ private fun MissionZipMusicDialog(
             loadBytes = { stageManager.readMidiTrackBytes(catalog, track) },
             onDismiss = { midiPreviewTarget = null },
         )
+    }
+    storageFailureMessage?.let { message ->
+        StorageFailureDialog(message = message, onDismiss = { storageFailureMessage = null })
     }
 
     AlertDialog(
@@ -1039,9 +1052,14 @@ private fun MissionZipMusicDialog(
                                             stagingTrackId = track.id
                                             scope.launch {
                                                 val staged =
-                                                    withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                                        stageManager.cleanupOldFiles()
-                                                        stageManager.stageCompressedAudioTrack(catalog, track)
+                                                    try {
+                                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                            stageManager.cleanupOldFiles()
+                                                            stageManager.stageCompressedAudioTrack(catalog, track)
+                                                        }
+                                                    } catch (e: InsufficientStorageException) {
+                                                        storageFailureMessage = ImportStorageGuard.messageForFailure(e)
+                                                        null
                                                     }
                                                 stagingTrackId = null
                                                 if (staged == null) {

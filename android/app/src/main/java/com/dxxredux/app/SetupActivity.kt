@@ -207,8 +207,8 @@ class SetupActivity : ComponentActivity() {
         resumeCandidate: ResumeSaveBridge.ResumeSaveCandidate? = null,
     ) {
         val launchGame = resumeCandidate?.game ?: game
-        prepareGameLaunchFiles(launchGame, resumeCandidate?.musicType)?.let { report ->
-            showModCompatibilityFailure(report)
+        prepareGameLaunchFiles(launchGame, resumeCandidate?.musicType)?.let { message ->
+            showLaunchPreflightFailure(message)
             return
         }
         val resolvedResumeSavePath =
@@ -279,8 +279,8 @@ class SetupActivity : ComponentActivity() {
             return
         }
 
-        prepareGameLaunchFiles(demo.game)?.let { report ->
-            showModCompatibilityFailure(report)
+        prepareGameLaunchFiles(demo.game)?.let { message ->
+            showLaunchPreflightFailure(message)
             return
         }
 
@@ -330,7 +330,7 @@ class SetupActivity : ComponentActivity() {
     private fun prepareGameLaunchFiles(
         game: String,
         musicTypeOverride: Int? = null,
-    ): ModManager.ModCompatibilityReport? {
+    ): String? {
         val fileSetManager = FileSetManager(filesDir)
         val activeSetDir = fileSetManager.getSetDir(fileSetManager.getActive())
         val modManager = ModManager(filesDir)
@@ -338,19 +338,26 @@ class SetupActivity : ComponentActivity() {
         if (!compatibility.ok) {
             Log.e("DXX-Setup", "Mod compatibility check failed for $game: ${compatibility.toLogMessage()}")
             LauncherDebugLog.log("mod-compatibility-block game=$game ${compatibility.toLogMessage()}")
-            return compatibility
+            return compatibility.toUserMessage()
         }
-        fileSetManager.writeActiveSetPath()
-        AudioSourceManager(filesDir).writePlaylist(contentResolver)
-        modManager.writeEnabledModPaths(game)
-        writeInitialGameConfig()
-        migrateLegacyHalfRenderResolution()
-        writeMusicConfigForLaunch(game, musicTypeOverride)
+        try {
+            fileSetManager.writeActiveSetPath()
+            AudioSourceManager(filesDir).writePlaylist(contentResolver)
+            modManager.writeEnabledModPaths(game)
+            writeInitialGameConfig()
+            migrateLegacyHalfRenderResolution()
+            writeMusicConfigForLaunch(game, musicTypeOverride)
+        } catch (e: InsufficientStorageException) {
+            Log.e("DXX-Setup", "Launch storage preflight failed for $game", e)
+            LauncherDebugLog.log("launch-storage-block game=$game message=${e.message ?: ""}")
+            ImportStorageGuard.recordFailure(filesDir, "Launch preparation failed", e)
+            return ImportStorageGuard.messageForFailure(e)
+        }
         return null
     }
 
-    private fun showModCompatibilityFailure(report: ModManager.ModCompatibilityReport) {
-        Toast.makeText(this, report.toUserMessage(), Toast.LENGTH_LONG).show()
+    private fun showLaunchPreflightFailure(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     private fun logResumeCandidateLaunch(
@@ -396,8 +403,8 @@ class SetupActivity : ComponentActivity() {
                                 Log.e("DXX-Setup", "Cannot launch $game: ${gameDisplayName(game)} data is not ready")
                                 return
                             }
-                            prepareGameLaunchFiles(game)?.let { report ->
-                                showModCompatibilityFailure(report)
+                            prepareGameLaunchFiles(game)?.let { message ->
+                                showLaunchPreflightFailure(message)
                                 return
                             }
                             val launchIntent = createGameLaunchIntent(game)
@@ -1474,8 +1481,8 @@ class SetupActivity : ComponentActivity() {
             com.dxxredux.app.lobby.LobbyService
                 .stopDiscovery()
         }
-        prepareGameLaunchFiles(info.game)?.let { report ->
-            showModCompatibilityFailure(report)
+        prepareGameLaunchFiles(info.game)?.let { message ->
+            showLaunchPreflightFailure(message)
             mpGameLaunching = false
             return
         }
@@ -1597,18 +1604,18 @@ class SetupActivity : ComponentActivity() {
         val filesDir = filesDir
 
         setContent {
-            var modCompatibilityMessage by remember { mutableStateOf<String?>(null) }
-            modCompatibilityMessage?.let { message ->
+            var launchPreflightMessage by remember { mutableStateOf<String?>(null) }
+            launchPreflightMessage?.let { message ->
                 AlertDialog(
-                    onDismissRequest = { modCompatibilityMessage = null },
-                    title = { Text("Mod Compatibility Check Failed") },
+                    onDismissRequest = { launchPreflightMessage = null },
+                    title = { Text("Launch Blocked") },
                     text = {
                         SelectionContainer {
                             Text(message, fontSize = 12.sp)
                         }
                     },
                     confirmButton = {
-                        TextButton(onClick = { modCompatibilityMessage = null }) {
+                        TextButton(onClick = { launchPreflightMessage = null }) {
                             Text("OK")
                         }
                     },
@@ -1642,8 +1649,8 @@ class SetupActivity : ComponentActivity() {
                             ).show()
                     } else {
                         val launchGame = resumeCandidate?.game ?: game
-                        prepareGameLaunchFiles(launchGame, resumeCandidate?.musicType)?.let { report ->
-                            modCompatibilityMessage = report.toUserMessage()
+                        prepareGameLaunchFiles(launchGame, resumeCandidate?.musicType)?.let { message ->
+                            launchPreflightMessage = message
                             return@launch
                         }
                         val resolvedResumeSavePath =

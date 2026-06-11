@@ -251,6 +251,7 @@ data class GameStartingMsg(
     val game: String,
     @SerialName("your_slot") val yourSlot: Int = 0,
     @SerialName("max_players") val maxPlayers: Int = 4,
+    @SerialName("current_level") val currentLevel: Int? = null,
     @SerialName("game_info") val gameInfo: JsonObject = JsonObject(emptyMap()),
     val peers: List<PeerAssignment> = emptyList(),
 )

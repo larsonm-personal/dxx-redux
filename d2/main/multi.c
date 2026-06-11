@@ -7987,26 +7987,56 @@ void multi_do_rewind_result(const ubyte *buf)
 	}
 }
 
+static int coop_remove_rejoin_spew(int pnum)
+{
+	int i;
+	int removed = 0;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		if (Objects[i].type != OBJ_POWERUP)
+			continue;
+		if (Objects[i].flags & OF_SHOULD_BE_DEAD)
+			continue;
+		if (object_owner[i] != pnum)
+			continue;
+		multi_send_remobj(i);
+		Objects[i].flags |= OF_SHOULD_BE_DEAD;
+		removed++;
+	}
+
+	return removed;
+}
+
 void coop_send_restore_inventory(int pnum)
 {
 	const coop_player_record *rec;
+	int source_level = Current_level_num;
+	int same_level;
+	int removed;
 	int i;
 
 	if (!(Game_mode & GM_MULTI_COOP))
 		return;
 	if (!multi_i_am_master())
 		return;
+	if (!(Netgame.game_flags & NETGAME_FLAG_COOP_QOL))
+		return;
 
-	rec = coop_find_absent_player(Players[pnum].callsign,
-	                              Netgame.players[pnum].client_id);
+	rec = coop_find_absent_player_with_level(Players[pnum].callsign,
+	                                         Netgame.players[pnum].client_id,
+	                                         &source_level);
 	if (!rec) {
 		con_printf(CON_NORMAL, "coop_restore: no cached inventory for '%s'\n",
 			Players[pnum].callsign);
 		return;
 	}
 
-	con_printf(CON_NORMAL, "coop_restore: sending inventory to P%d '%s' (shields=%d energy=%d laser=%d)\n",
-		pnum, rec->callsign, f2i(rec->shields), f2i(rec->energy), rec->laser_level);
+	same_level = (source_level == Current_level_num);
+	removed = same_level ? coop_remove_rejoin_spew(pnum) : 0;
+
+	con_printf(CON_NORMAL, "coop_restore: sending inventory to P%d '%s' (src_level=%d cur_level=%d spew=%d shields=%d energy=%d laser=%d)\n",
+		pnum, rec->callsign, source_level, Current_level_num, removed,
+		f2i(rec->shields), f2i(rec->energy), rec->laser_level);
 
 	multibuf[0] = MULTI_COOP_RESTORE_INV;
 	multibuf[1] = (ubyte)pnum;
@@ -8027,9 +8057,9 @@ void coop_send_restore_inventory(int pnum)
 	PUT_INTEL_SHORT(multibuf + 69, rec->hostages_rescued_total);
 	PUT_INTEL_INT(multibuf + 71, rec->time_total);
 	multibuf[75] = (ubyte)rec->hours_total;
-	PUT_INTEL_SHORT(multibuf + 76, Current_level_num);
+	PUT_INTEL_SHORT(multibuf + 76, source_level);
 
-	multi_send_data(multibuf, 78, 2);
+	multi_send_data_direct(multibuf, 78, pnum, 2);
 }
 
 void coop_do_restore_inventory(const ubyte *buf)

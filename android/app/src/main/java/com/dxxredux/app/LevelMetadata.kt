@@ -741,6 +741,11 @@ internal object LevelMetadataAnalyzer {
         val buffer = ByteArray(8192)
         val usedNames = mutableSetOf<String>()
         ZipFile(archive).use { zip ->
+            ImportStorageGuard.requireFreeSpace(
+                stageDir,
+                levelMetadataZipStageBytes(zip, entryPaths),
+                "stage level metadata files",
+            )
             entryPaths.forEach { path ->
                 val entry = zip.getEntry(path) ?: throw IllegalArgumentException("ZIP entry is missing: $path")
                 if (entry.isDirectory) return@forEach
@@ -796,8 +801,19 @@ internal object LevelMetadataAnalyzer {
     ) {
         if (source.absolutePath == target.absolutePath) return
         target.parentFile?.mkdirs()
+        ImportStorageGuard.requireFreeSpace(target.parentFile ?: target, source.length(), "stage ${target.name}")
         source.copyTo(target, overwrite = true)
     }
+
+    private fun levelMetadataZipStageBytes(
+        zip: ZipFile,
+        entryPaths: List<String>,
+    ): Long =
+        ImportStorageGuard.archiveEntryBytes(
+            entryPaths.mapNotNull { path ->
+                zip.getEntry(path)?.takeUnless { it.isDirectory }?.size
+            },
+        )
 
     private fun collectDiagnostics(
         context: Context,

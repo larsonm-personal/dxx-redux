@@ -54,6 +54,7 @@ internal object LauncherFileCopy {
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): Long {
         val total = ImportStorageGuard.queryUriSizeBytes(context.contentResolver, uri) ?: 0L
+        ImportStorageGuard.requireFreeSpace(dest.parentFile ?: dest, total, label)
         context.contentResolver.openInputStream(uri)?.use { input ->
             FileOutputStream(dest).use { output ->
                 return copyStream(input, output, total, label, onProgress)
@@ -67,6 +68,7 @@ internal object LauncherFileCopy {
         label: String = source.name,
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): Long {
+        ImportStorageGuard.requireFreeSpace(dest.parentFile ?: dest, source.length(), label)
         FileInputStream(source).use { input ->
             FileOutputStream(dest).use { output ->
                 return copyStream(input, output, source.length(), label, onProgress)

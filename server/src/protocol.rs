@@ -235,6 +235,8 @@ pub enum ServerMessage {
         game: String,
         your_slot: u8,
         max_players: u8,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        current_level: Option<i32>,
         /// Extensible game config from the lobby (mission, mode, difficulty, etc.)
         game_info: JsonValue,
         peers: Vec<PeerAssignment>,

@@ -60,6 +60,12 @@ internal object ImportStorageGuard {
         }
     }
 
+    fun messageForFailure(error: InsufficientStorageException): String =
+        "Not enough free space to continue.\n\n" +
+            "Required: ${formatMib(error.requiredFreeBytes)}\n" +
+            "Available: ${formatMib(error.availableBytes)}\n\n" +
+            "The operation was stopped before writing more files."
+
     fun recordFailure(
         filesDir: File,
         message: String,
@@ -85,12 +91,24 @@ internal object ImportStorageGuard {
         return String.format(Locale.US, "%d MiB", roundedUp)
     }
 
+    fun archiveEntryBytes(entries: Iterable<Long>): Long {
+        var total = 0L
+        for (size in entries) {
+            if (size > 0L) total += size
+        }
+        return total
+    }
+
     private fun availableBytes(dir: File): Long {
         var current: File? = dir
         while (current != null && !current.exists()) {
             current = current.parentFile
         }
         val statPath = current ?: dir
-        return StatFs(statPath.absolutePath).availableBytes
+        return try {
+            StatFs(statPath.absolutePath).availableBytes
+        } catch (_: Throwable) {
+            statPath.usableSpace
+        }
     }
 }

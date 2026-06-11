@@ -1839,6 +1839,7 @@ async fn handle_authenticated_message(
                                 game: game.clone(),
                                 your_slot: my_slot as u8,
                                 max_players,
+                                current_level: None,
                                 game_info: game_info.clone(),
                                 peers,
                             },
@@ -2143,6 +2144,7 @@ async fn handle_authenticated_message(
                                     game,
                                     your_slot: joiner_slot,
                                     max_players,
+                                    current_level: lobby.runtime_level,
                                     game_info,
                                     peers: vec![PeerAssignment {
                                         slot: host_slot,
