@@ -217,7 +217,7 @@ internal fun ModsSection(
         mods = modManager.listMods()
     }
 
-    LaunchedEffect(detailTarget?.filename, setDir.absolutePath, refreshTrigger, mods) {
+    LaunchedEffect(detailTarget?.filename, setDir.absolutePath, refreshTrigger) {
         val target = detailTarget ?: return@LaunchedEffect
         detailInfo = null
         detailLoading = true
@@ -1250,7 +1250,10 @@ private fun MissionZipConstituentDialog(
     val metadata =
         remember(archivePath, constituent.path) {
             archivePath?.let {
-                GameFileMetadata.summarizeZipConstituent(File(it), constituent.path, constituent.name)
+                missionZipExtractedStoreForArchivePath(it)
+                    ?.extractedEntryForArchiveEntry(it, constituent.path)
+                    ?.let { entry -> GameFileMetadata.summarizeLocalFile(entry.file) }
+                    ?: GameFileMetadata.summarizeZipConstituent(File(it), constituent.path, constituent.name)
             }
         }
     levelMetadataTarget?.let { target ->

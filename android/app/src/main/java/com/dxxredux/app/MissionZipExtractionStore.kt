@@ -35,6 +35,12 @@ internal data class MissionZipLinkedFile(
     val sourceExists: Boolean,
 )
 
+internal data class MissionZipExtractedEntry(
+    val file: File,
+    val relativePath: String,
+    val rootDir: File,
+)
+
 internal class MissionZipExtractionStore(
     private val filesDir: File,
 ) {
@@ -170,6 +176,43 @@ internal class MissionZipExtractionStore(
                 }
             }
         }
+
+    fun extractedEntryForArchiveEntry(
+        archivePath: String,
+        entryPath: String,
+    ): MissionZipExtractedEntry? {
+        val archive = File(archivePath)
+        val normalized = entryPath.replace('\\', '/').trim('/')
+        val record = freshRecord(archive.name, archive) ?: return null
+        val extracted = record.files.firstOrNull { it.entryPath.equals(normalized, ignoreCase = true) } ?: return null
+        val file = File(record.rootDir, extracted.relativePath.replace('/', File.separatorChar))
+        if (!file.isFile) return null
+        return MissionZipExtractedEntry(file, extracted.relativePath, record.rootDir)
+    }
+
+    fun findExtractedSameStemEntry(
+        archivePath: String,
+        entryPath: String,
+        extension: String,
+    ): MissionZipExtractedEntry? {
+        val archive = File(archivePath)
+        val normalized = entryPath.replace('\\', '/').trim('/')
+        val record = freshRecord(archive.name, archive) ?: return null
+        val dir = normalized.substringBeforeLast('/', "")
+        val stem = normalized.substringAfterLast('/').substringBeforeLast('.')
+        val sibling = if (dir.isBlank()) "$stem.$extension" else "$dir/$stem.$extension"
+        val extracted =
+            record.files.firstOrNull { it.entryPath.equals(sibling, ignoreCase = true) }
+                ?: record.files.firstOrNull {
+                    it.entryPath
+                        .substringAfterLast('/')
+                        .lowercase(Locale.US) == "$stem.$extension".lowercase(Locale.US)
+                }
+                ?: return null
+        val file = File(record.rootDir, extracted.relativePath.replace('/', File.separatorChar))
+        if (!file.isFile) return null
+        return MissionZipExtractedEntry(file, extracted.relativePath, record.rootDir)
+    }
 
     fun extractedTarget(
         archivePath: String,

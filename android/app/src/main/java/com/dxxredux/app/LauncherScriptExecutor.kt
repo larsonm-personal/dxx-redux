@@ -722,7 +722,13 @@ class LauncherScriptExecutor(
         val displayName = step.optString("display_name", source.name).ifBlank { source.name }
         val modManager = ModManager(context.filesDir)
         val before = modManager.listMods().map { it.filename }.toSet()
-        val mod = modManager.importMissionZipFile(source, displayName) ?: return null
+        val shouldMoveSource = isInAutomationCache(source)
+        val mod =
+            if (shouldMoveSource) {
+                modManager.importMissionZipFileMovingSource(source, displayName)
+            } else {
+                modManager.importMissionZipFile(source, displayName)
+            } ?: return null
         modManager.reload()
         val imported = modManager.listMods().firstOrNull { it.filename == mod.filename } ?: return null
         if (imported.filename in before) {
@@ -730,6 +736,12 @@ class LauncherScriptExecutor(
         }
         val scan = MissionZip.inspect(File(File(context.filesDir, "mods"), imported.filename))
         return imported to scan
+    }
+
+    private fun isInAutomationCache(source: File): Boolean {
+        val cacheDir = File(context.filesDir, "mission_zip_batch_cache").canonicalFile
+        val canonicalSource = source.canonicalFile
+        return canonicalSource.parentFile == cacheDir
     }
 
     private fun resolveAutomationFile(step: JSONObject): File {

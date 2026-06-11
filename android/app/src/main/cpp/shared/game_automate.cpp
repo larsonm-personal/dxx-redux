@@ -866,10 +866,14 @@ static bool mission_list_item_is_base_or_command(const char *text)
 	if (!text || !text[0])
 		return true;
 	if (icontains(text, "counterstrike") ||
-	    icontains(text, "first strike") ||
-	    icontains(text, "destination saturn") ||
-	    strcasecmp(text, "ok") == 0 ||
 	    strcasecmp(text, "cancel") == 0)
+		return true;
+#ifndef DXX_BUILD_DESCENT_II
+	if (icontains(text, "first strike") ||
+	    icontains(text, "destination saturn"))
+		return true;
+#endif
+	if (strcasecmp(text, "ok") == 0)
 		return true;
 	return false;
 }

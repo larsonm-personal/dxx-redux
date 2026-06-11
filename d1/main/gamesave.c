@@ -775,10 +775,20 @@ int load_game_data(PHYSFS_file *LoadFile)
 		// read newline-terminated string, not sure what version this changed.
 		PHYSFSX_fgets(Current_level_name,sizeof(Current_level_name),LoadFile);
 	else if (game_top_fileinfo_version >= 14) { //load mine filename
-		// read null-terminated string
-		char *p=Current_level_name;
-		//must do read one char at a time, since no PHYSFSX_fgets()
-		do *p = PHYSFSX_fgetc(LoadFile); while (*p++!=0);
+		char *p = Current_level_name;
+		size_t remaining = sizeof(Current_level_name);
+		int c;
+
+		do {
+			c = PHYSFSX_fgetc(LoadFile);
+			if (c == EOF || c == 0)
+				break;
+			if (remaining > 1) {
+				*p++ = (char)c;
+				--remaining;
+			}
+		} while (1);
+		*p = 0;
 	}
 	else
 		Current_level_name[0]=0;

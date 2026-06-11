@@ -353,6 +353,7 @@ internal object LevelMetadataTargets {
         metadata: GameFileMetadata.Summary? = null,
     ): LevelMetadataTarget? {
         if (!canAnalyzeZipConstituent(constituent.name)) return null
+        extractedConstituentTarget(archivePath, setDir, constituent, metadata)?.let { return it }
         val game = gameForFile(constituent.name, metadata?.contents?.map { it.name }.orEmpty()) ?: return null
         val ext = GameFileFormats.extensionOf(constituent.name)
         if (GameFileFormats.isMissionDescriptor(constituent.name)) {
@@ -387,6 +388,86 @@ internal object LevelMetadataTargets {
             missionName = missionNameFor(constituent.name, game),
             levelFile = if (GameFileFormats.isLevelFile(constituent.name)) constituent.name else null,
             levelNum = if (ext == "sdl" || ext == "sl2") -1 else 1,
+        )
+    }
+
+    private fun extractedConstituentTarget(
+        archivePath: String,
+        setDir: File,
+        constituent: MissionZip.Constituent,
+        metadata: GameFileMetadata.Summary?,
+    ): LevelMetadataTarget? {
+        val store = missionZipExtractedStoreForArchivePath(archivePath) ?: return null
+        val extracted = store.extractedEntryForArchiveEntry(archivePath, constituent.path) ?: return null
+        val ext = GameFileFormats.extensionOf(constituent.name)
+        val game = gameForFile(constituent.name, metadata?.contents?.map { it.name }.orEmpty()) ?: return null
+        if (GameFileFormats.isMissionDescriptor(constituent.name)) {
+            extractedDescriptorTarget(store, archivePath, setDir, constituent, extracted, game)?.let { return it }
+        }
+        if (ext == "hog" && !isBaseHog(constituent.name)) {
+            extractedHogTarget(store, archivePath, setDir, constituent, extracted, game)?.let { return it }
+            return directFile(extracted.file, setDir, metadata)
+        }
+        return null
+    }
+
+    private fun extractedDescriptorTarget(
+        store: MissionZipExtractionStore,
+        archivePath: String,
+        setDir: File,
+        constituent: MissionZip.Constituent,
+        extracted: MissionZipExtractedEntry,
+        game: String,
+    ): LevelMetadataTarget? {
+        val mission =
+            runCatching {
+                GameFileFormats.parseMissionDescriptor(constituent.path, extracted.file.readText(Charsets.UTF_8))
+            }.getOrNull() ?: return null
+        val hog = store.findExtractedSameStemEntry(archivePath, constituent.path, "hog") ?: return null
+        return LevelMetadataTarget(
+            displayName = constituent.name,
+            game = game,
+            sourceType = "mission_files",
+            sourcePath = extracted.rootDir.absolutePath,
+            dataDir = setDir.absolutePath,
+            missionName = constituent.name.substringBeforeLast('.'),
+            missionFilename = extracted.relativePath.substringAfterLast('/').substringAfterLast('\\'),
+            missionType = mission.type,
+            hogFiles = listOf(hog.relativePath),
+            normalLevelFiles = mission.levelNames,
+            secretLevelFiles = mission.secretLevelNames,
+        )
+    }
+
+    private fun extractedHogTarget(
+        store: MissionZipExtractionStore,
+        archivePath: String,
+        setDir: File,
+        constituent: MissionZip.Constituent,
+        extracted: MissionZipExtractedEntry,
+        game: String,
+    ): LevelMetadataTarget? {
+        val descriptorExt = if (game == GameFileFormats.GAME_D1) "msn" else "mn2"
+        val descriptor = store.findExtractedSameStemEntry(archivePath, constituent.path, descriptorExt) ?: return null
+        val mission =
+            runCatching {
+                GameFileFormats.parseMissionDescriptor(
+                    descriptor.relativePath,
+                    descriptor.file.readText(Charsets.UTF_8),
+                )
+            }.getOrNull() ?: return null
+        return LevelMetadataTarget(
+            displayName = constituent.name,
+            game = game,
+            sourceType = "mission_files",
+            sourcePath = extracted.rootDir.absolutePath,
+            dataDir = setDir.absolutePath,
+            missionName = constituent.name.substringBeforeLast('.'),
+            missionFilename = descriptor.relativePath.substringAfterLast('/').substringAfterLast('\\'),
+            missionType = mission.type,
+            hogFiles = listOf(extracted.relativePath),
+            normalLevelFiles = mission.levelNames,
+            secretLevelFiles = mission.secretLevelNames,
         )
     }
 

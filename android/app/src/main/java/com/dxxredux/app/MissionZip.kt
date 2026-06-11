@@ -10,6 +10,7 @@ object MissionZip {
     const val KIND = "mission_zip"
     const val CATEGORY_LEVELS = "levels"
     const val SMALL_IN_MEMORY_LIMIT_BYTES = 100L * 1024L * 1024L
+    const val SMALL_NESTED_ARCHIVE_LIMIT_BYTES = 32L * 1024L * 1024L
     private val INLINE_README_EXTENSIONS = setOf("txt")
     private val EXTERNAL_README_EXTENSIONS = setOf("pdf", "rtf", "doc", "docx")
 
@@ -205,9 +206,24 @@ object MissionZip {
             missionSets = missionSets,
             game = game,
             totalSizeBytes = totalSizeBytes,
-            importMode = if (totalSizeBytes <= SMALL_IN_MEMORY_LIMIT_BYTES) "stored_zip" else "extracted_bundle",
+            importMode = if (shouldStoreZip(totalSizeBytes, sortedConstituents)) "stored_zip" else "extracted_bundle",
             readme = chooseReadme(sortedConstituents, zipStem),
         )
+    }
+
+    private fun shouldStoreZip(
+        totalSizeBytes: Long,
+        constituents: List<Constituent>,
+    ): Boolean {
+        if (totalSizeBytes > SMALL_IN_MEMORY_LIMIT_BYTES) return false
+        return constituents.none {
+            it.role in
+                setOf(
+                    GameFileFormats.MISSION_ZIP_HOG,
+                    GameFileFormats.MISSION_ZIP_MOD_ARCHIVE,
+                ) &&
+                it.sizeBytes > SMALL_NESTED_ARCHIVE_LIMIT_BYTES
+        }
     }
 
     private fun missionSets(

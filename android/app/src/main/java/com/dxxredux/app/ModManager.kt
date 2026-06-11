@@ -414,6 +414,11 @@ class ModManager(
         displayName: String = source.name,
     ): ModInfo? = importMissionZipFile(source, displayName, moveDirectSource = false)
 
+    internal fun importMissionZipFileMovingSource(
+        source: File,
+        displayName: String = source.name,
+    ): ModInfo? = importMissionZipFile(source, displayName, moveDirectSource = true)
+
     private fun importMissionZipFile(
         source: File,
         displayName: String,
@@ -426,9 +431,9 @@ class ModManager(
         val extractionStore = MissionZipExtractionStore(filesDir)
         extractionStore.removeOwner(safeName)
         if (source.absoluteFile != dest.absoluteFile) {
-            ImportStorageGuard.requireFreeSpace(modsDir, source.length(), "import mission zip $displayName")
             val moved = moveDirectSource && source.renameTo(dest)
             if (!moved) {
+                ImportStorageGuard.requireFreeSpace(modsDir, source.length(), "import mission zip $displayName")
                 source.copyTo(dest, overwrite = true)
             }
         }
