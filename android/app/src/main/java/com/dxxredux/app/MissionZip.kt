@@ -10,6 +10,8 @@ object MissionZip {
     const val KIND = "mission_zip"
     const val CATEGORY_LEVELS = "levels"
     const val SMALL_IN_MEMORY_LIMIT_BYTES = 100L * 1024L * 1024L
+    private val INLINE_README_EXTENSIONS = setOf("txt")
+    private val EXTERNAL_README_EXTENSIONS = setOf("pdf", "rtf", "doc", "docx")
 
     data class Constituent(
         val path: String,
@@ -158,6 +160,23 @@ object MissionZip {
         }
     }
 
+    fun isInlineReadmeCandidate(path: String): Boolean = GameFileFormats.extensionOf(path) in INLINE_README_EXTENSIONS
+
+    fun isExternalReadmeCandidate(path: String): Boolean =
+        GameFileFormats.extensionOf(path) in EXTERNAL_README_EXTENSIONS
+
+    fun isReadmeCandidate(path: String): Boolean = isInlineReadmeCandidate(path) || isExternalReadmeCandidate(path)
+
+    fun externalViewMimeType(path: String): String =
+        when (GameFileFormats.extensionOf(path)) {
+            "pdf" -> "application/pdf"
+            "rtf" -> "application/rtf"
+            "doc" -> "application/msword"
+            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "txt" -> "text/plain"
+            else -> "application/octet-stream"
+        }
+
     fun parseMissionDescriptor(
         path: String,
         text: String,
@@ -219,7 +238,7 @@ object MissionZip {
 
     private fun sortedConstituents(constituents: List<Constituent>): List<Constituent> =
         constituents.sortedWith(
-            compareBy<Constituent> { if (isTextFile(it.name)) 0 else 1 }
+            compareBy<Constituent> { readmeSortGroup(it.name) }
                 .thenBy { it.path.lowercase(Locale.US) },
         )
 
@@ -227,17 +246,36 @@ object MissionZip {
         constituents: List<Constituent>,
         zipStem: String?,
     ): Constituent? {
-        val textFiles = constituents.filter { isTextFile(it.name) }
-        if (textFiles.size <= 1) return textFiles.firstOrNull()
-        textFiles.firstOrNull { it.name.equals("README.txt", ignoreCase = true) }?.let { return it }
-        val zipPrefix = zipStem?.takeIf { it.isNotBlank() }?.lowercase(Locale.US)
-        if (zipPrefix != null) {
-            textFiles.firstOrNull { it.name.lowercase(Locale.US).startsWith(zipPrefix) }?.let { return it }
+        chooseReadmeFromCandidates(constituents.filter { isInlineReadmeCandidate(it.name) }, zipStem)?.let {
+            return it
         }
-        return textFiles.maxByOrNull { it.sizeBytes }
+        return chooseReadmeFromCandidates(constituents.filter { isExternalReadmeCandidate(it.name) }, zipStem)
     }
 
-    private fun isTextFile(path: String): Boolean = GameFileFormats.extensionOf(path) == "txt"
+    private fun chooseReadmeFromCandidates(
+        candidates: List<Constituent>,
+        zipStem: String?,
+    ): Constituent? {
+        if (candidates.size <= 1) return candidates.firstOrNull()
+        candidates.firstOrNull { isReadmeNamed(it.name) }?.let { return it }
+        val zipPrefix = zipStem?.takeIf { it.isNotBlank() }?.lowercase(Locale.US)
+        if (zipPrefix != null) {
+            candidates.firstOrNull { it.name.lowercase(Locale.US).startsWith(zipPrefix) }?.let { return it }
+        }
+        return candidates.sortedWith(compareByDescending<Constituent> { it.sizeBytes }.thenBy { it.path }).firstOrNull()
+    }
+
+    private fun readmeSortGroup(path: String): Int =
+        when {
+            isInlineReadmeCandidate(path) -> 0
+            isExternalReadmeCandidate(path) -> 1
+            else -> 2
+        }
+
+    private fun isReadmeNamed(path: String): Boolean =
+        leafName(path).substringBeforeLast('.').equals("README", ignoreCase = true) && isReadmeCandidate(path)
+
+    private fun isTextFile(path: String): Boolean = isInlineReadmeCandidate(path)
 
     private fun decodeText(bytes: ByteArray): String {
         val utf8 = bytes.toString(Charsets.UTF_8)

@@ -205,6 +205,112 @@ class MissionZipTest {
         assertEquals("large.txt", scan!!.readme!!.name)
     }
 
+    @Test
+    fun prefersTxtReadmeOverExternalDocuments() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "Castaway.zip",
+                listOf(
+                    "notes.txt" to "text wins",
+                    "README.pdf" to "pdf readme",
+                ),
+            )
+
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        assertEquals("notes.txt", scan!!.readme!!.name)
+    }
+
+    @Test
+    fun usesPdfReadmeWhenNoTxtExists() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "Castaway.zip",
+                listOf(
+                    "manual.pdf" to "pdf readme",
+                ),
+            )
+
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        val readmeName = scan!!.readme!!.name
+        assertEquals("manual.pdf", readmeName)
+        assertTrue(MissionZip.isExternalReadmeCandidate(readmeName))
+        assertEquals("application/pdf", MissionZip.externalViewMimeType(readmeName))
+    }
+
+    @Test
+    fun prefersReadmeNamedExternalDocumentBeforeLargestFallback() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "Castaway.zip",
+                listOf(
+                    "large.pdf" to "this pdf is larger",
+                    "README.pdf" to "pdf",
+                ),
+            )
+
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        assertEquals("README.pdf", scan!!.readme!!.name)
+    }
+
+    @Test
+    fun prefersZipNameExternalDocumentBeforeLargestFallback() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "Castaway.zip",
+                listOf(
+                    "large.doc" to "this word document is larger",
+                    "Castaway guide.docx" to "docx",
+                ),
+            )
+
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        assertEquals("Castaway guide.docx", scan!!.readme!!.name)
+        assertEquals(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            MissionZip.externalViewMimeType(scan.readme.name),
+        )
+    }
+
+    @Test
+    fun sortsInlineDocsBeforeExternalDocsBeforeOtherFiles() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "Castaway.zip",
+                listOf(
+                    "manual.pdf" to "pdf",
+                    "notes.txt" to "txt",
+                    "manual.rtf" to "rtf",
+                ),
+            )
+
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        assertEquals(
+            listOf("notes.txt", "manual.pdf", "manual.rtf"),
+            scan!!.constituents.take(3).map { it.name },
+        )
+    }
+
+    @Test
+    fun readTextFileRejectsExternalDocuments() {
+        val zipFile = createMissionZipWithDocs("Castaway.zip", listOf("README.pdf" to "pdf"))
+        val scan = MissionZip.inspect(zipFile)
+
+        assertNotNull(scan)
+        val content = MissionZip.readTextFile(zipFile, scan!!.readme!!.path)
+
+        assertEquals("Only .txt files can be viewed", content.problem)
+    }
+
     private fun createMissionZip(
         missionName: String,
         missionText: String,

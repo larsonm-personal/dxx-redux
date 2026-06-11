@@ -1,5 +1,8 @@
 package com.dxxredux.app
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
@@ -32,9 +35,11 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.zip.ZipFile
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
@@ -106,6 +111,11 @@ private fun BoxScope.SetupHorizontalScrollArrows(scrollState: ScrollState) {
         }
     }
 }
+
+private data class MissionZipViewAction(
+    val label: String,
+    val onClick: () -> Unit,
+)
 
 @Composable
 internal fun GameSectionHeader(
@@ -393,6 +403,8 @@ private fun ModDetailsDialog(
     setDir: File,
     onDismiss: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var textViewTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var constituentTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
@@ -425,20 +437,30 @@ private fun ModDetailsDialog(
             onDismiss = { textViewTarget = null },
         )
     }
+
+    fun openExternalConstituent(constituent: MissionZip.Constituent) {
+        val archivePath = details?.archivePath
+        scope.launch {
+            openMissionZipExternalDocument(context, archivePath, constituent)
+        }
+    }
     constituentTarget?.let { constituent ->
         MissionZipConstituentDialog(
             constituent = constituent,
             archivePath = details?.archivePath,
             setDir = setDir,
-            onView =
-                if (GameFileFormats.extensionOf(constituent.name) == "txt") {
-                    {
+            viewAction =
+                missionZipViewAction(
+                    constituent = constituent,
+                    onViewText = {
                         textViewTarget = constituent
                         constituentTarget = null
-                    }
-                } else {
-                    null
-                },
+                    },
+                    onViewExternal = {
+                        constituentTarget = null
+                        openExternalConstituent(constituent)
+                    },
+                ),
             onDismiss = { constituentTarget = null },
         )
     }
@@ -466,7 +488,13 @@ private fun ModDetailsDialog(
                 )
                 details?.missionZip?.readme?.let { readme ->
                     TextButton(
-                        onClick = { textViewTarget = readme },
+                        onClick = {
+                            if (MissionZip.isInlineReadmeCandidate(readme.name)) {
+                                textViewTarget = readme
+                            } else if (MissionZip.isExternalReadmeCandidate(readme.name)) {
+                                openExternalConstituent(readme)
+                            }
+                        },
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                         modifier = Modifier.height(32.dp),
                     ) {
@@ -1129,7 +1157,7 @@ private fun MissionZipConstituentDialog(
     constituent: MissionZip.Constituent,
     archivePath: String?,
     setDir: File,
-    onView: (() -> Unit)?,
+    viewAction: MissionZipViewAction?,
     onDismiss: () -> Unit,
 ) {
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
@@ -1151,9 +1179,9 @@ private fun MissionZipConstituentDialog(
             TextButton(onClick = onDismiss) { Text("Close") }
         },
         dismissButton =
-            onView?.let {
+            viewAction?.let { action ->
                 {
-                    TextButton(onClick = it) { Text("View") }
+                    TextButton(onClick = action.onClick) { Text(action.label) }
                 }
             },
         title = {
@@ -1261,6 +1289,130 @@ private fun MissionZipTextDialog(
             }
         },
     )
+}
+
+private fun missionZipViewAction(
+    constituent: MissionZip.Constituent,
+    onViewText: () -> Unit,
+    onViewExternal: () -> Unit,
+): MissionZipViewAction? =
+    when {
+        MissionZip.isInlineReadmeCandidate(constituent.name) -> {
+            MissionZipViewAction("View", onViewText)
+        }
+
+        MissionZip.isExternalReadmeCandidate(constituent.name) -> {
+            MissionZipViewAction("View external", onViewExternal)
+        }
+
+        else -> {
+            null
+        }
+    }
+
+private const val FILE_PROVIDER_AUTHORITY = "com.dxxredux.app.fileprovider"
+private const val FILE_VIEW_CACHE_MAX_AGE_MS = 24L * 60L * 60L * 1000L
+private const val FILE_VIEW_CACHE_MAX_BYTES = 64L * 1024L * 1024L
+
+private suspend fun openMissionZipExternalDocument(
+    context: Context,
+    archivePath: String?,
+    constituent: MissionZip.Constituent,
+) {
+    if (archivePath == null) {
+        Toast.makeText(context, "Mission ZIP is missing", Toast.LENGTH_SHORT).show()
+        return
+    }
+    try {
+        val uri =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                extractMissionZipConstituentToCache(context, File(archivePath), constituent)
+            }
+        openExternalFile(context, uri, MissionZip.externalViewMimeType(constituent.name), constituent.name)
+    } catch (e: Exception) {
+        Toast.makeText(context, "Could not open ${constituent.name}: ${e.message}", Toast.LENGTH_SHORT).show()
+    }
+}
+
+private fun extractMissionZipConstituentToCache(
+    context: Context,
+    archive: File,
+    constituent: MissionZip.Constituent,
+): Uri {
+    val viewDir = File(context.cacheDir, "file_view")
+    viewDir.mkdirs()
+    cleanupFileViewCache(viewDir)
+
+    val copy = File(viewDir, missionZipCacheFilename(archive, constituent))
+    copy.delete()
+    ZipFile(archive).use { zip ->
+        val entry = zip.getEntry(constituent.path) ?: throw IllegalArgumentException("Document file is missing")
+        if (entry.isDirectory) throw IllegalArgumentException("Document path is a directory")
+        zip.getInputStream(entry).use { input ->
+            FileOutputStream(copy).use { output ->
+                input.copyTo(output)
+            }
+        }
+    }
+    copy.setLastModified(System.currentTimeMillis())
+    cleanupFileViewCache(viewDir, keepFile = copy)
+    return androidx.core.content.FileProvider
+        .getUriForFile(context, FILE_PROVIDER_AUTHORITY, copy)
+}
+
+private fun cleanupFileViewCache(
+    viewDir: File,
+    keepFile: File? = null,
+) {
+    val files = viewDir.listFiles()?.filter { it.isFile } ?: return
+    val keepPath = keepFile?.absolutePath
+    val cutoff = System.currentTimeMillis() - FILE_VIEW_CACHE_MAX_AGE_MS
+    files
+        .filter { it.absolutePath != keepPath && it.lastModified() < cutoff }
+        .forEach { it.delete() }
+
+    var remaining =
+        viewDir
+            .listFiles()
+            ?.filter { it.isFile }
+            .orEmpty()
+    var totalBytes = remaining.sumOf { it.length().coerceAtLeast(0L) }
+    if (totalBytes <= FILE_VIEW_CACHE_MAX_BYTES) return
+    for (file in remaining.sortedBy { it.lastModified() }) {
+        if (file.absolutePath == keepPath) continue
+        val size = file.length().coerceAtLeast(0L)
+        if (file.delete()) totalBytes -= size
+        if (totalBytes <= FILE_VIEW_CACHE_MAX_BYTES) break
+    }
+}
+
+private fun missionZipCacheFilename(
+    archive: File,
+    constituent: MissionZip.Constituent,
+): String {
+    val key = "${archive.absolutePath}:${constituent.path}"
+    val prefix = Integer.toHexString(key.hashCode())
+    val leaf = GameFileFormats.leafName(constituent.name).ifBlank { "document" }
+    val safeLeaf = leaf.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "document" }
+    return "$prefix-$safeLeaf"
+}
+
+private fun openExternalFile(
+    context: Context,
+    uri: Uri,
+    mimeType: String,
+    displayName: String,
+) {
+    try {
+        val intent =
+            Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, mimeType)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        context.startActivity(intent)
+    } catch (_: Exception) {
+        Toast.makeText(context, "No viewer available for $displayName", Toast.LENGTH_SHORT).show()
+    }
 }
 
 private fun missionZipRoleLabel(role: String): String = GameFileFormats.missionZipRoleLabel(role)
