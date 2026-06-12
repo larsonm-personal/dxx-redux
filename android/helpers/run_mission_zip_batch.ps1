@@ -133,6 +133,27 @@ function Test-LargeMissionZipIncluded {
     return $false
 }
 
+function Get-MissionZipRegressionJsonPath {
+    param([Parameter(Mandatory = $true)][System.IO.FileInfo]$Zip)
+
+    if ($NoRegressionJson) {
+        return ""
+    }
+    return (Join-Path $RegressionJsonDir "$($Zip.BaseName).json")
+}
+
+function Get-MissionZipBatchSortRecord {
+    param([Parameter(Mandatory = $true)][System.IO.FileInfo]$Zip)
+
+    $jsonPath = Get-MissionZipRegressionJsonPath -Zip $Zip
+    $jsonItem = if ($jsonPath) { Get-Item -LiteralPath $jsonPath -ErrorAction SilentlyContinue } else { $null }
+    [pscustomobject]@{
+        Zip = $Zip
+        HasJson = $null -ne $jsonItem
+        JsonLastWriteTimeUtc = if ($jsonItem) { $jsonItem.LastWriteTimeUtc } else { [datetime]::MinValue }
+    }
+}
+
 function Test-AppPackageInstalled {
     $path = Adb-Timeout -AdbArgs @("shell", "pm", "path", $script:PACKAGE) -Seconds 10
     return ($path -and $path -match 'package:')
@@ -401,7 +422,10 @@ if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
     exit 1
 }
 
-$zips = @(Get-ChildItem -Path $ZipDir -Filter $Pattern -File | Sort-Object Name)
+$zips = @(Get-ChildItem -Path $ZipDir -Filter $Pattern -File |
+        ForEach-Object { Get-MissionZipBatchSortRecord -Zip $_ } |
+        Sort-Object @{ Expression = { if ($_.HasJson) { 1 } else { 0 } } }, JsonLastWriteTimeUtc, @{ Expression = { $_.Zip.Name } } |
+        ForEach-Object { $_.Zip })
 if ($zips.Count -eq 0) {
     Write-Status "FAIL: no ZIPs matched $Pattern in $ZipDir" "Red"
     exit 1
@@ -416,12 +440,7 @@ foreach ($zip in $zips) {
     $artifactPrefix = Join-Path $artifactsDir $label
     $resolvedScript = Join-Path $resolvedScriptDir "$label.json5"
     $deviceScriptName = "mission_zip_batch_current.json5"
-    $regressionJsonPath =
-    if ($NoRegressionJson) {
-        ""
-    } else {
-        Join-Path $RegressionJsonDir "$($zip.BaseName).json"
-    }
+    $regressionJsonPath = Get-MissionZipRegressionJsonPath -Zip $zip
     $hash = (Get-FileHash -Algorithm SHA256 -Path $zip.FullName).Hash.ToLowerInvariant()
     $gameHint = Get-MissionZipGameHint -ZipPath $zip.FullName
 
