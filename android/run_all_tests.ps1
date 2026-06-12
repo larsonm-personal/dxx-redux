@@ -249,6 +249,7 @@ $testTimeouts = @{
     "test_input_demo_determinism_matrix"  = 600
     "test_input_demo_regressions"         = 900
     "test_input_demo_regressions_graphics" = 900
+    "test_mission_zip_batch"              = 3600
     "test_saf_archiver"                   = 360
     "test_saf_redbook"                    = 420
     "test_all_extracts"                   = $testAllExtractsTimeout
@@ -290,6 +291,7 @@ foreach ($ps1File in $ps1Files) {
 $supportScriptOwners = @{
     "test_extract_regression_template" = "test_extract"
     "test_lan_mp" = "test_lan"
+    "test_mission_zip_batch_import_metadata_launch" = "test_mission_zip_batch"
 }
 
 # json5 game-automation scripts (run via run_test.ps1)

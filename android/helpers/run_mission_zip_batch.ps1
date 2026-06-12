@@ -11,6 +11,7 @@ param(
     [string[]]$LargeZipIncludePatterns = @("ewithin-versions.zip"),
     [switch]$NoRegressionJson,
     [long]$LargeZipBytes = 524288000,
+    [int]$MaxZips = 0,
     [int]$TimeoutSeconds = 900,
     [int]$MaxEmulatorRecoveries = 5
 )
@@ -432,6 +433,10 @@ $zipSortRecords = @(Get-ChildItem -Path $ZipDir -Filter $Pattern -File |
 if ($zipSortRecords.Count -eq 0) {
     Write-Status "FAIL: no ZIPs matched $Pattern in $ZipDir" "Red"
     exit 1
+}
+if ($MaxZips -gt 0 -and $zipSortRecords.Count -gt $MaxZips) {
+    Write-Status "Limiting mission ZIP batch to first $MaxZips zips after ordering"
+    $zipSortRecords = @($zipSortRecords | Select-Object -First $MaxZips)
 }
 Write-MissionZipBatchOrder -Records $zipSortRecords
 $zips = @($zipSortRecords | ForEach-Object { $_.Zip })

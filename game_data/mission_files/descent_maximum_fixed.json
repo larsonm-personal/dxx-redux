@@ -3,7 +3,7 @@
     "status": "ok",
     "source": "Descent Max Anarchy (fix)",
     "game": "d2",
-    "mission_name": "maxlnk_f",
+    "mission_name": "Descent Max Anarchy (fix)",
     "mission_filename": "maxlnk_f.mn2",
     "level_count": 6,
     "levels": [
@@ -134,7 +134,7 @@
     "status": "ok",
     "source": "Descent Maximum (fixed)",
     "game": "d2",
-    "mission_name": "max_f",
+    "mission_name": "Descent Maximum (fixed)",
     "mission_filename": "max_f.mn2",
     "coop_starts": "1-5",
     "level_count": 30,
