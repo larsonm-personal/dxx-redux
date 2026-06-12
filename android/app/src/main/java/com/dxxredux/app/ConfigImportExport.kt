@@ -30,6 +30,7 @@ object ConfigImportExport {
             PREF_SHOW_RESUME_OFFER,
             PREF_SHOW_DEMO_INSTALLER_OFFER,
             PREF_GUIDEBOT_HELPER_LINE,
+            PREF_GUIDEBOT_NAVIGATE_NEAREST_POINT,
             PREF_NEAREST_PLAYER_LINE,
         )
 

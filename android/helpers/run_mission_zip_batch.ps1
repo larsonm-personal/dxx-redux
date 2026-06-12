@@ -149,8 +149,27 @@ function Get-MissionZipBatchSortRecord {
     $jsonItem = if ($jsonPath) { Get-Item -LiteralPath $jsonPath -ErrorAction SilentlyContinue } else { $null }
     [pscustomobject]@{
         Zip = $Zip
+        JsonPath = $jsonPath
         HasJson = $null -ne $jsonItem
         JsonLastWriteTimeUtc = if ($jsonItem) { $jsonItem.LastWriteTimeUtc } else { [datetime]::MinValue }
+    }
+}
+
+function Write-MissionZipBatchOrder {
+    param([Parameter(Mandatory = $true)][object[]]$Records)
+
+    Write-Status "Mission ZIP processing order ($($Records.Count) zips)"
+    $index = 1
+    foreach ($record in $Records) {
+        if ($record.HasJson) {
+            $state = "existing JSON modified $($record.JsonLastWriteTimeUtc.ToString("yyyy-MM-dd HH:mm:ssZ"))"
+        } elseif ($record.JsonPath) {
+            $state = "missing JSON at $($record.JsonPath)"
+        } else {
+            $state = "regression JSON disabled"
+        }
+        Write-Host ("  {0,3}. {1} -- {2}" -f $index, $record.Zip.Name, $state)
+        $index++
     }
 }
 
@@ -407,6 +426,16 @@ if (-not $NoRegressionJson) {
     New-Item -ItemType Directory -Force -Path $RegressionJsonDir | Out-Null
 }
 
+$zipSortRecords = @(Get-ChildItem -Path $ZipDir -Filter $Pattern -File |
+        ForEach-Object { Get-MissionZipBatchSortRecord -Zip $_ } |
+        Sort-Object @{ Expression = { if ($_.HasJson) { 1 } else { 0 } } }, JsonLastWriteTimeUtc, @{ Expression = { $_.Zip.Name } })
+if ($zipSortRecords.Count -eq 0) {
+    Write-Status "FAIL: no ZIPs matched $Pattern in $ZipDir" "Red"
+    exit 1
+}
+Write-MissionZipBatchOrder -Records $zipSortRecords
+$zips = @($zipSortRecords | ForEach-Object { $_.Zip })
+
 Ensure-EmulatorHealthy | Out-Null
 if ($Install) {
     Write-Status "Installing APK"
@@ -419,15 +448,6 @@ if ($Install) {
 Write-Status "Resolving standard D1/D2 base data"
 if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
     Write-Status "FAIL: could not provision base game data" "Red"
-    exit 1
-}
-
-$zips = @(Get-ChildItem -Path $ZipDir -Filter $Pattern -File |
-        ForEach-Object { Get-MissionZipBatchSortRecord -Zip $_ } |
-        Sort-Object @{ Expression = { if ($_.HasJson) { 1 } else { 0 } } }, JsonLastWriteTimeUtc, @{ Expression = { $_.Zip.Name } } |
-        ForEach-Object { $_.Zip })
-if ($zips.Count -eq 0) {
-    Write-Status "FAIL: no ZIPs matched $Pattern in $ZipDir" "Red"
     exit 1
 }
 
@@ -544,7 +564,9 @@ foreach ($zip in $zips) {
                 Copy-Item -Path $metadataPath -Destination $regressionJsonPath -Force
             }
         } else {
-            Write-MissionZipFailureJson -Path $metadataPath -Record $record
+            if (-not $metadataSaved) {
+                Write-MissionZipFailureJson -Path $metadataPath -Record $record
+            }
         }
         if ($deviceHealthyAfterRun) {
             Save-AppTextFile -DeviceRelativePath "mission_zip_import_$label.json" -LocalPath $importPath | Out-Null

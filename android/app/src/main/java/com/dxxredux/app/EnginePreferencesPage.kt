@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import java.io.File
 
 internal const val PREF_GUIDEBOT_HELPER_LINE = "guidebot_helper_line_enabled"
+internal const val PREF_GUIDEBOT_NAVIGATE_NEAREST_POINT = "guidebot_navigate_nearest_point"
 internal const val PREF_NEAREST_PLAYER_LINE = "nearest_player_line_enabled"
 internal const val PREF_SKIP_INTRO_MOVIE = "skip_intro_movie"
 internal const val PREF_REWIND_SUPPORT_ENABLED = "rewind_support_enabled"
@@ -93,6 +94,9 @@ fun EnginePreferencesPage(
     var hasPilotFile by remember { mutableStateOf(false) }
     var showGuidebotLine by remember {
         mutableStateOf(prefs.getBoolean(PREF_GUIDEBOT_HELPER_LINE, true))
+    }
+    var guidebotNavigateNearestPoint by remember {
+        mutableStateOf(prefs.getBoolean(PREF_GUIDEBOT_NAVIGATE_NEAREST_POINT, false))
     }
     var showNearestPlayerLine by remember {
         mutableStateOf(prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true))
@@ -438,6 +442,30 @@ fun EnginePreferencesPage(
                         Text("Enable rewind support", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(
                             "Keeps rewind points available for the Rewind binding in single-player",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = guidebotNavigateNearestPoint,
+                        onCheckedChange = { checked ->
+                            guidebotNavigateNearestPoint = checked
+                            prefs.edit().putBoolean(PREF_GUIDEBOT_NAVIGATE_NEAREST_POINT, checked).apply()
+                        },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Guidebot navigate to nearest point", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "When a guidebot goal cannot be reached, follow the usable partial route instead",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

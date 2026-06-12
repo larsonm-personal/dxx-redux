@@ -1,0 +1,12 @@
+[
+    {"_info": {
+        "games": ["d1"]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "clear_mods"},
+    {"action": "import_mission_zip", "file": "lunar_series_revamped.zip", "label": "lunar_series_revamped", "display_name": "lunar_series_revamped.zip"},
+    {"action": "analyze_level_metadata_all", "label": "lunar_series_revamped", "mod_file": "lunar_series_revamped.zip", "game": "d1", "status": "ok", "min_total_levels": 1},
+    {"action": "log", "message": "Lunar Series Revamped metadata-only analysis passed"}
+]

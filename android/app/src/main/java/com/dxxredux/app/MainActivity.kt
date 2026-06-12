@@ -260,6 +260,8 @@ class MainActivity :
         showGuidebotLine: Boolean,
     )
 
+    external fun nativeSetGuidebotNavigateNearestPoint(enabled: Boolean)
+
     external fun nativeSetDebugLogEnabled(
         category: Int,
         on: Boolean,
@@ -733,6 +735,7 @@ class MainActivity :
             }
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
+        applyGuidebotNavigationPrefs(prefs)
         applyDemoRecordingPref()
 
         // Allow rendering into the display cutout (notch) area
@@ -1712,6 +1715,7 @@ class MainActivity :
         syncDebugLogPrefs()
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
+        applyGuidebotNavigationPrefs(prefs)
         applyDemoRecordingPref()
         applyGraphicsDebugPrefs(prefs)
         applyGraphicsSettingsPrefs(prefs)
@@ -1855,6 +1859,16 @@ class MainActivity :
             nativeSetCoopIndicatorOptions(
                 prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true),
                 prefs.getBoolean(PREF_GUIDEBOT_HELPER_LINE, true),
+            )
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
+    }
+
+    private fun applyGuidebotNavigationPrefs(prefs: android.content.SharedPreferences) {
+        try {
+            nativeSetGuidebotNavigateNearestPoint(
+                prefs.getBoolean(PREF_GUIDEBOT_NAVIGATE_NEAREST_POINT, false),
             )
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up

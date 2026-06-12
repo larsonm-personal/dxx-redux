@@ -59,6 +59,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "secretarea.h"
 #include "collide.h"
 #include "maths.h"
+#include "switch.h"
 #include "input_demo_hooks.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -71,6 +72,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include <android/log.h>
 #include "android_menu_scale.h"
+extern volatile int g_guidebot_navigate_nearest_point;
 #define ESCORT_DIAG(fmt, ...) __android_log_print(ANDROID_LOG_INFO, "DXX-ESCORT", fmt, ##__VA_ARGS__)
 #define ANDROID_JOY_BUTTON_A 0
 #define ANDROID_JOY_BUTTON_B 1
@@ -139,6 +141,241 @@ int	Escort_owner_player = -1;
 #endif
 
 fix64	Last_buddy_message_time;
+
+#ifdef __ANDROID__
+static int escort_player_has_key_for_wall(int keys)
+{
+	switch (keys) {
+		case KEY_NONE:
+			return 1;
+		case KEY_BLUE:
+			return (Players[Player_num].flags & PLAYER_FLAGS_BLUE_KEY) != 0;
+		case KEY_GOLD:
+			return (Players[Player_num].flags & PLAYER_FLAGS_GOLD_KEY) != 0;
+		case KEY_RED:
+			return (Players[Player_num].flags & PLAYER_FLAGS_RED_KEY) != 0;
+		default:
+			return 0;
+	}
+}
+
+static int escort_find_connect_side_num(int segnum, int child_segnum)
+{
+	int sidenum;
+
+	if (!IS_CHILD(child_segnum))
+		return -1;
+
+	for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++)
+		if (Segments[child_segnum].children[sidenum] == segnum)
+			return sidenum;
+
+	return -1;
+}
+
+static int escort_trigger_can_make_side_passable(int segnum, int sidenum)
+{
+	int trigger_num, link_num;
+
+	for (trigger_num = 0; trigger_num < Num_triggers; trigger_num++) {
+		if ((Triggers[trigger_num].flags & TF_DISABLED) ||
+		    ((Triggers[trigger_num].type != TT_OPEN_WALL) && (Triggers[trigger_num].type != TT_ILLUSORY_WALL)))
+			continue;
+
+		for (link_num = 0; link_num < Triggers[trigger_num].num_links; link_num++)
+			if ((Triggers[trigger_num].seg[link_num] == segnum) &&
+			    (Triggers[trigger_num].side[link_num] == sidenum))
+				return 1;
+	}
+
+	return 0;
+}
+
+static int escort_side_or_pair_has_open_trigger(int segnum, int sidenum)
+{
+	int child_segnum, connect_side;
+
+	if (escort_trigger_can_make_side_passable(segnum, sidenum))
+		return 1;
+
+	child_segnum = Segments[segnum].children[sidenum];
+	connect_side = escort_find_connect_side_num(segnum, child_segnum);
+	return (connect_side >= 0) && escort_trigger_can_make_side_passable(child_segnum, connect_side);
+}
+
+static int escort_live_side_cost(object *objp, int segnum, int sidenum)
+{
+	segment *segp = &Segments[segnum];
+
+	if (!IS_CHILD(segp->children[sidenum]))
+		return -1;
+
+	if ((WALL_IS_DOORWAY(segp, sidenum) & WID_FLY_FLAG) || ai_door_is_openable(objp, segp, sidenum))
+		return 0;
+
+	return -1;
+}
+
+static int escort_optimistic_side_cost(object *objp, int segnum, int sidenum)
+{
+	int wall_num;
+	segment *segp = &Segments[segnum];
+	wall *wallp;
+
+	if (!IS_CHILD(segp->children[sidenum]))
+		return -1;
+
+	if (escort_live_side_cost(objp, segnum, sidenum) == 0)
+		return 0;
+
+	wall_num = segp->sides[sidenum].wall_num;
+	if (wall_num < 0)
+		return 0;
+
+	wallp = &Walls[wall_num];
+	if (!escort_player_has_key_for_wall(wallp->keys))
+		return -1;
+
+	if ((wallp->type == WALL_DOOR) || (wallp->type == WALL_OPEN) || (wallp->type == WALL_ILLUSION))
+		return 1;
+
+	if ((wallp->type == WALL_CLOSED) && escort_side_or_pair_has_open_trigger(segnum, sidenum))
+		return 1;
+
+	return -1;
+}
+
+static int escort_optimistic_edge_cost(object *objp, int segnum, int sidenum)
+{
+	int child_segnum, connect_side, cost, reverse_cost;
+
+	cost = escort_optimistic_side_cost(objp, segnum, sidenum);
+	child_segnum = Segments[segnum].children[sidenum];
+	connect_side = escort_find_connect_side_num(segnum, child_segnum);
+	if (connect_side < 0)
+		return cost;
+
+	reverse_cost = escort_optimistic_side_cost(objp, child_segnum, connect_side);
+	if (cost < 0)
+		return reverse_cost;
+	if (reverse_cost < 0)
+		return cost;
+	return (cost < reverse_cost) ? cost : reverse_cost;
+}
+
+static int escort_find_nearest_reachable_goal_segment(object *objp, int goal_seg)
+{
+	int reachable_dist[MAX_SEGMENTS], optimistic_dist[MAX_SEGMENTS], optimistic_cost[MAX_SEGMENTS];
+	int queue[MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT];
+	int qhead, qtail;
+	int i, sidenum;
+	int start_seg = objp->segnum;
+	int best_seg = -1, best_dist = 32767, best_cost = 32767, best_reachable_dist = -1;
+
+	if ((goal_seg < 0) || (goal_seg > Highest_segment_index) ||
+	    (start_seg < 0) || (start_seg > Highest_segment_index))
+		return -1;
+
+	for (i = 0; i < MAX_SEGMENTS; i++) {
+		reachable_dist[i] = -1;
+		optimistic_dist[i] = -1;
+		optimistic_cost[i] = 32767;
+	}
+
+	qhead = qtail = 0;
+	queue[qtail++] = start_seg;
+	reachable_dist[start_seg] = 0;
+	while (qhead < qtail) {
+		int segnum = queue[qhead++];
+
+		for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
+			int child_segnum;
+
+			if (escort_live_side_cost(objp, segnum, sidenum) != 0)
+				continue;
+
+			child_segnum = Segments[segnum].children[sidenum];
+			if ((child_segnum >= 0) && (child_segnum <= Highest_segment_index) &&
+			    (reachable_dist[child_segnum] < 0)) {
+				reachable_dist[child_segnum] = reachable_dist[segnum] + 1;
+				if (qtail < MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT)
+					queue[qtail++] = child_segnum;
+			}
+		}
+	}
+
+	qhead = qtail = 0;
+	queue[qtail++] = goal_seg;
+	optimistic_dist[goal_seg] = 0;
+	optimistic_cost[goal_seg] = 0;
+	while (qhead < qtail) {
+		int segnum = queue[qhead++];
+
+		for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
+			int child_segnum = Segments[segnum].children[sidenum];
+			int edge_cost, next_dist, next_cost;
+
+			if ((child_segnum < 0) || (child_segnum > Highest_segment_index))
+				continue;
+
+			edge_cost = escort_optimistic_edge_cost(objp, segnum, sidenum);
+			if (edge_cost < 0)
+				continue;
+
+			next_dist = optimistic_dist[segnum] + 1;
+			next_cost = optimistic_cost[segnum] + edge_cost;
+			if ((optimistic_dist[child_segnum] < 0) ||
+			    (next_dist < optimistic_dist[child_segnum]) ||
+			    ((next_dist == optimistic_dist[child_segnum]) && (next_cost < optimistic_cost[child_segnum]))) {
+				optimistic_dist[child_segnum] = next_dist;
+				optimistic_cost[child_segnum] = next_cost;
+				if (qtail < MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT)
+					queue[qtail++] = child_segnum;
+			}
+		}
+	}
+
+	for (i = 0; i <= Highest_segment_index; i++) {
+		if ((reachable_dist[i] <= 0) || (reachable_dist[i] > Max_escort_length) || (optimistic_dist[i] < 0))
+			continue;
+
+		if ((optimistic_dist[i] < best_dist) ||
+		    ((optimistic_dist[i] == best_dist) && (optimistic_cost[i] < best_cost)) ||
+		    ((optimistic_dist[i] == best_dist) && (optimistic_cost[i] == best_cost) && (reachable_dist[i] > best_reachable_dist))) {
+			best_seg = i;
+			best_dist = optimistic_dist[i];
+			best_cost = optimistic_cost[i];
+			best_reachable_dist = reachable_dist[i];
+		}
+	}
+
+	ESCORT_DIAG("nearest guidebot fallback start=%d goal=%d target=%d dist=%d cost=%d reachable=%d",
+	            start_seg, goal_seg, best_seg, best_dist, best_cost, best_reachable_dist);
+	return best_seg;
+}
+
+static int escort_create_path_to_nearest_point(object *objp, int goal_seg)
+{
+	int target_seg = escort_find_nearest_reachable_goal_segment(objp, goal_seg);
+	ai_static *aip = &objp->ctype.ai_info;
+
+	if (target_seg < 0)
+		return 0;
+
+	create_path_to_segment(objp, target_seg, Max_escort_length, 1);
+	if (aip->path_length > 3)
+		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+
+	if ((aip->path_length <= 1) ||
+	    (Point_segs[aip->hide_index + aip->path_length - 1].segnum != target_seg)) {
+		input_demo_log_escort_path_state("escort_create_path_to_goal nearest_point_failed", objp);
+		return 0;
+	}
+
+	input_demo_log_escort_path_state("escort_create_path_to_goal nearest_point", objp);
+	return 1;
+}
+#endif
 
 #define STOLEN_ITEM_NONE 255
 #define STOLEN_ITEM_PROXIMITY_MINE 254
@@ -1102,6 +1339,7 @@ void escort_create_path_to_goal(object *objp)
 	int			objnum = objp-Objects;
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objnum];
+	int used_nearest_point = 0;
 
 	input_demo_log_escort_goal_probe("entry", objp, ailp, aip, -1, -1);
 
@@ -1232,30 +1470,53 @@ void escort_create_path_to_goal(object *objp)
 				aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("escort_create_path_to_goal to_segment", objp);
 			if ((aip->path_length > 0) && (Point_segs[aip->hide_index + aip->path_length - 1].segnum != goal_seg)) {
-				fix	dist_to_player;
-				Last_buddy_message_time = 0;	//	Force this message to get through.
-				if (Escort_goal_object == ESCORT_GOAL_SECRET)
-					buddy_message("Can't reach any secrets.");
-				else
-					buddy_message("Can't reach %s.", Escort_goal_text[Escort_goal_object-1]);
-				Looking_for_marker = -1;
-				Escort_goal_object = ESCORT_GOAL_SCRAM;
-				escort_clear_secret_goal();
-				dist_to_player = find_connected_distance(&objp->pos, objp->segnum, &Believed_player_pos, Believed_player_seg, 100, WID_FLY_FLAG);
-				if (dist_to_player > MIN_ESCORT_DISTANCE)
-					create_path_to_player(objp, Max_escort_length, 1);	//	MK!: Last parm used to be 1!
-				else {
-					// SIM RNG: this changes the live fallback scram path the guidebot follows
-					create_n_segment_path(objp, 8 + d_rand() * 8, -1);
-					aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
-					input_demo_log_escort_path_state("escort_create_path_to_goal fallback_scram", objp);
+#ifdef __ANDROID__
+				if (g_guidebot_navigate_nearest_point && escort_create_path_to_nearest_point(objp, goal_seg)) {
+					used_nearest_point = 1;
+					Last_buddy_message_time = 0;
+					if ((Escort_goal_object == ESCORT_GOAL_EXIT) || (Escort_goal_object == ESCORT_GOAL_EXIT2))
+						buddy_message("Can't reach exit, navigating as close as possible.");
+					else
+						buddy_message("Can't reach %s, navigating as close as possible.", Escort_goal_text[Escort_goal_object-1]);
+				} else
+#endif
+				{
+					fix	dist_to_player;
+					Last_buddy_message_time = 0;	//	Force this message to get through.
+					if (Escort_goal_object == ESCORT_GOAL_SECRET)
+						buddy_message("Can't reach any secrets.");
+					else
+						buddy_message("Can't reach %s.", Escort_goal_text[Escort_goal_object-1]);
+					Looking_for_marker = -1;
+					Escort_goal_object = ESCORT_GOAL_SCRAM;
+					escort_clear_secret_goal();
+					dist_to_player = find_connected_distance(&objp->pos, objp->segnum, &Believed_player_pos, Believed_player_seg, 100, WID_FLY_FLAG);
+					if (dist_to_player > MIN_ESCORT_DISTANCE)
+						create_path_to_player(objp, Max_escort_length, 1);	//	MK!: Last parm used to be 1!
+					else {
+						// SIM RNG: this changes the live fallback scram path the guidebot follows
+						create_n_segment_path(objp, 8 + d_rand() * 8, -1);
+						aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+						input_demo_log_escort_path_state("escort_create_path_to_goal fallback_scram", objp);
+					}
 				}
 			}
+#ifdef __ANDROID__
+			else if ((aip->path_length == 0) && g_guidebot_navigate_nearest_point && escort_create_path_to_nearest_point(objp, goal_seg)) {
+				used_nearest_point = 1;
+				Last_buddy_message_time = 0;
+				if ((Escort_goal_object == ESCORT_GOAL_EXIT) || (Escort_goal_object == ESCORT_GOAL_EXIT2))
+					buddy_message("Can't reach exit, navigating as close as possible.");
+				else
+					buddy_message("Can't reach %s, navigating as close as possible.", Escort_goal_text[Escort_goal_object-1]);
+			}
+#endif
 		}
 
 		ailp->mode = AIM_GOTO_OBJECT;
 
-		say_escort_goal(Escort_goal_object);
+		if (!used_nearest_point)
+			say_escort_goal(Escort_goal_object);
 	}
 
 }
