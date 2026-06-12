@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -358,10 +359,81 @@ static std::string format_levelmeta_time(int seconds)
 	return buffer;
 }
 
+static int levelmeta_read_bytes(PHYSFS_file *file, unsigned char *buffer, PHYSFS_uint64 count)
+{
+	return PHYSFS_readBytes(file, buffer, count) == (PHYSFS_sint64) count;
+}
+
+static int levelmeta_skip_bytes(PHYSFS_file *file, PHYSFS_uint64 count)
+{
+	const PHYSFS_sint64 pos = PHYSFS_tell(file);
+
+	return pos >= 0 && PHYSFS_seek(file, (PHYSFS_uint64) pos + count);
+}
+
+static int levelmeta_read_le16(PHYSFS_file *file, int *value)
+{
+	unsigned char bytes[2];
+
+	if (!levelmeta_read_bytes(file, bytes, sizeof(bytes)))
+		return 0;
+	*value = bytes[0] | (bytes[1] << 8);
+	return 1;
+}
+
+static std::string levelmeta_read_terminated_level_name(PHYSFS_file *file, int newline_terminated)
+{
+	std::string name;
+
+	for (;;) {
+		const int c = PHYSFSX_fgetc(file);
+		if (c == EOF || c == 0)
+			break;
+		if (newline_terminated && (c == '\n' || c == '\r'))
+			break;
+		if (name.size() < 255)
+			name.push_back((char) c);
+	}
+	return name;
+}
+
+static std::string read_level_display_name(const char *level_file)
+{
+	const int compatible_version = 22;
+	PHYSFS_file *file;
+	int signature;
+	int version;
+	std::string name;
+
+	if (!level_file || !level_file[0])
+		return "";
+	file = PHYSFS_openRead(level_file);
+	if (!file)
+		return "";
+	if (!levelmeta_read_le16(file, &signature) || signature != 0x6705 ||
+	    !levelmeta_read_le16(file, &version) || version < compatible_version || !levelmeta_skip_bytes(file, 115)) {
+		PHYSFS_close(file);
+		return "";
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (version >= 29 && !levelmeta_skip_bytes(file, 24)) {
+		PHYSFS_close(file);
+		return "";
+	}
+#endif
+	if (version >= 31)
+		name = levelmeta_read_terminated_level_name(file, 1);
+	else if (version >= 14)
+		name = levelmeta_read_terminated_level_name(file, 0);
+	PHYSFS_close(file);
+	return name;
+}
+
 static json serialize_current_level_row(int level_num, const char *level_file)
 {
 	const secret_area_state *secret_state = secret_area_get_state();
 	const level_metadata_state *metadata = level_metadata_get_state();
+	const std::string display_level_name = read_level_display_name(level_file);
 	int robots = 0;
 	int hostages = 0;
 	json row;
@@ -369,7 +441,8 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	count_level_objects(&robots, &hostages);
 	row["level_num"] = level_num;
 	row["secret"] = level_num < 0;
-	row["level_name"] = Current_level_name;
+	row["level_name"] =
+	    display_level_name.size() > strlen(Current_level_name) ? display_level_name : Current_level_name;
 	row["level_file"] = level_file ? level_file : "";
 	row["robots"] = robots;
 	row["hostages"] = hostages;
