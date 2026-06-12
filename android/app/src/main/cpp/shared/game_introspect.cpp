@@ -1195,8 +1195,9 @@ extern "C" char *game_introspect_get_state(void)
 		}
 	}
 
-	/* Serialize to string and return as malloc'd C string */
-	std::string result = j.dump();
+	/* Serialize to string and return as malloc'd C string.
+	 * Some legacy levels contain non-UTF-8 bytes in title fields. */
+	std::string result = j.dump(-1, ' ', false, json::error_handler_t::replace);
 	char *buf = (char *) malloc(result.size() + 1);
 	if (buf) {
 		memcpy(buf, result.c_str(), result.size() + 1);
