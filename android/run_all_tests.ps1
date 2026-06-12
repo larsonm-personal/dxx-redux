@@ -519,6 +519,34 @@ function Get-OnlineEmulatorSerials {
             Sort-Object -Unique)
 }
 
+function Stop-TestSuiteEmulators {
+    $onlineSerials = @(Get-OnlineEmulatorSerials)
+    if ($onlineSerials.Count -eq 0) {
+        return
+    }
+
+    $targetSerials = @(
+        $script:PRIMARY_EMULATOR_SERIAL,
+        $script:SECONDARY_EMULATOR_SERIAL
+    ) | Where-Object { $onlineSerials -contains $_ }
+
+    if ($targetSerials.Count -eq 0) {
+        return
+    }
+
+    Write-Host "Stopping Android emulators..." -ForegroundColor Yellow
+    foreach ($serial in $targetSerials) {
+        Write-Status "Stopping emulator $serial" "Yellow"
+        $null = Adb-Timeout -AdbArgs @("-s", $serial, "emu", "kill") -Seconds 10
+    }
+
+    Start-Sleep -Seconds 2
+    $remaining = @(Get-OnlineEmulatorSerials | Where-Object { $targetSerials -contains $_ })
+    if ($remaining.Count -gt 0) {
+        Write-Status "Emulator shutdown did not complete for: $($remaining -join ', ')" "Yellow"
+    }
+}
+
 function Test-SingleEmulatorFailureNeedsRecovery {
     param([hashtable]$Result)
 
@@ -1389,8 +1417,9 @@ if ($script:startedDocker) {
     Stop-DockerNat
 }
 
-# Note: we do NOT stop emulators or matchmaking servers -- they're useful for
-# by-hand testing after the run. Tests that own a server lifecycle clean it up
-# themselves.
+# Overnight unattended runs should not leave emulator processes burning CPU/GPU
+Stop-TestSuiteEmulators
+
+# Note: tests that own a server lifecycle clean it up themselves
 
 if ($failCount -gt 0) { exit 1 } else { exit 0 }

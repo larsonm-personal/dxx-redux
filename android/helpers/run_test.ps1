@@ -72,12 +72,14 @@ $isStandaloneScript = Get-ScriptStandalone -ScriptPath $scriptPath
 
 if (-not $isStandaloneScript) {
     Write-Status "WARNING: $ScriptName is a support script (not standalone). It is normally run by another test" "Yellow"
-    $rawScriptText = Get-Content -Path $scriptPath -Raw
-    $rawPlaceholders = @([regex]::Matches($rawScriptText, '\$\{[A-Za-z0-9_]+\}') | ForEach-Object { $_.Value } | Select-Object -Unique)
-    if ($rawPlaceholders.Count -gt 0) {
-        Write-Status "FAIL: support template has unresolved placeholders: $($rawPlaceholders -join ',')" "Red"
-        Write-Status "Run this template through its wrapper instead of launching it directly" "Yellow"
-        exit 1
+    if ($Params.Count -eq 0) {
+        $rawScriptText = Get-Content -Path $scriptPath -Raw
+        $rawPlaceholders = @([regex]::Matches($rawScriptText, '\$\{[A-Za-z0-9_]+\}') | ForEach-Object { $_.Value } | Select-Object -Unique)
+        if ($rawPlaceholders.Count -gt 0) {
+            Write-Status "FAIL: support template has unresolved placeholders: $($rawPlaceholders -join ',')" "Red"
+            Write-Status "Run this template through its wrapper instead of launching it directly" "Yellow"
+            exit 1
+        }
     }
 }
 
