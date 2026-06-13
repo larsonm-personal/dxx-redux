@@ -135,6 +135,8 @@ class SetupActivity : ComponentActivity() {
 
     private fun hasReturnableGameActivity(): Boolean = returnableGameActivityState() != null
 
+    private fun runningGameProcessPid(): Int? = readRunningGameProcessPid(this)
+
     private fun returnToGame(): Boolean {
         val state = returnableGameActivityState() ?: return false
         val intent = createGameLaunchIntent(state.game, inputDemoReplayPath = null)
@@ -206,6 +208,27 @@ class SetupActivity : ComponentActivity() {
         startStep: Int,
         resumeCandidate: ResumeSaveBridge.ResumeSaveCandidate? = null,
     ) {
+        runningGameProcessPid()?.let { pid ->
+            Log.w(
+                "DXX-Setup",
+                "Automation launch waiting for existing game process pid=$pid",
+            )
+            kotlinx.coroutines.MainScope().launch {
+                waitForAutomationGameExit()
+                if (runningGameProcessPid() != null) {
+                    Log.e("DXX-Setup", "Automation launch blocked by existing game process")
+                    Toast
+                        .makeText(
+                            this@SetupActivity,
+                            "Could not stop the previous game",
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    return@launch
+                }
+                launchGameForAutomation(game, scriptPath, startStep, resumeCandidate)
+            }
+            return
+        }
         val launchGame = resumeCandidate?.game ?: game
         prepareGameLaunchFiles(launchGame, resumeCandidate?.musicType)?.let { message ->
             showLaunchPreflightFailure(message)
@@ -1903,22 +1926,30 @@ class SetupActivity : ComponentActivity() {
 
     private suspend fun waitForAutomationGameExit() {
         val deadline = SystemClock.elapsedRealtime() + 5000L
-        while (hasReturnableGameActivity() && SystemClock.elapsedRealtime() < deadline) {
+        while (
+            (hasReturnableGameActivity() || runningGameProcessPid() != null) &&
+            SystemClock.elapsedRealtime() < deadline
+        ) {
             delay(100L)
         }
         val staleState = returnableGameActivityState()
-        if (staleState != null) {
+        val stalePid = staleState?.pid ?: runningGameProcessPid()
+        if (stalePid != null) {
             Log.w(
                 "DXX-Setup",
-                "LAUNCHER_CONTINUE: killing stale game process pid=${staleState.pid} game=${staleState.game}",
+                "LAUNCHER_CONTINUE: killing stale game process pid=$stalePid " +
+                    "game=${staleState?.game ?: ""}",
             )
-            android.os.Process.killProcess(staleState.pid)
+            android.os.Process.killProcess(stalePid)
             val killDeadline = SystemClock.elapsedRealtime() + 2000L
-            while (hasReturnableGameActivity() && SystemClock.elapsedRealtime() < killDeadline) {
+            while (
+                (hasReturnableGameActivity() || runningGameProcessPid() != null) &&
+                SystemClock.elapsedRealtime() < killDeadline
+            ) {
                 delay(100L)
             }
         }
-        gameRunningFlag = hasReturnableGameActivity()
+        gameRunningFlag = hasReturnableGameActivity() || runningGameProcessPid() != null
         if (gameRunningFlag) {
             Log.w("DXX-Setup", "LAUNCHER_CONTINUE: game process still returnable after wait")
         } else {

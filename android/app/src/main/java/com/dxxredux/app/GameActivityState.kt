@@ -59,15 +59,18 @@ internal fun readReturnableGameActivityState(context: Context): GameActivityStat
     return if (isGameProcessRunning(context, pid)) GameActivityState(pid, game) else null
 }
 
+internal fun readRunningGameProcessPid(context: Context): Int? {
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+    val gameProcessName = "${context.packageName}:game"
+    return activityManager
+        ?.runningAppProcesses
+        ?.firstOrNull { it.processName == gameProcessName }
+        ?.pid
+}
+
 private fun gameActivityStateFile(context: Context): File = File(context.filesDir, GAME_ACTIVITY_STATE_FILE)
 
 private fun isGameProcessRunning(
     context: Context,
     pid: Int,
-): Boolean {
-    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-    val gameProcessName = "${context.packageName}:game"
-    return activityManager
-        ?.runningAppProcesses
-        ?.any { it.pid == pid && it.processName == gameProcessName } == true
-}
+): Boolean = readRunningGameProcessPid(context) == pid
