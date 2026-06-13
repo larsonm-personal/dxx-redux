@@ -34,6 +34,25 @@ internal fun lockedGuideSpawnRingSelected(
         distancePx >= wheelRadiusPx * (2f / 3f) &&
         distancePx <= wheelRadiusPx * 1.2f
 
+internal fun axisRegionDragValue(
+    position: Float,
+    touchOrigin: Float,
+    minBound: Float,
+    maxBound: Float,
+): Float {
+    if (maxBound - minBound < 1f) return 0f
+    val origin = touchOrigin.coerceIn(minBound, maxBound)
+    val pos = position.coerceIn(minBound, maxBound)
+    val delta = pos - origin
+    return if (delta >= 0f) {
+        val range = maxBound - origin
+        if (range < 1f) 0f else (delta / range).coerceAtMost(1f)
+    } else {
+        val range = origin - minBound
+        if (range < 1f) 0f else (delta / range).coerceAtLeast(-1f)
+    }
+}
+
 /**
  * Semi-transparent touch overlay drawn on top of the game SurfaceView.
  *
@@ -2977,17 +2996,9 @@ class TouchOverlayView
         ) {
             val vertical = ar.control.orientation == SliderOrientation.VERTICAL
             val pos = if (vertical) py else px
-            // Asymmetric range: full -1..+1 from wherever the touch started
-            val posRange = if (vertical) ar.bottom - ar.touchOrigin else ar.right - ar.touchOrigin
-            val negRange = if (vertical) ar.touchOrigin - ar.top else ar.touchOrigin - ar.left
-            val delta = pos - ar.touchOrigin
+            val maxBound = if (vertical) height.toFloat() else width.toFloat()
 
-            var raw =
-                if (delta >= 0f) {
-                    if (posRange < 1f) 0f else (delta / posRange).coerceAtMost(1f)
-                } else {
-                    if (negRange < 1f) 0f else (delta / negRange).coerceAtLeast(-1f)
-                }
+            var raw = axisRegionDragValue(pos, ar.touchOrigin, 0f, maxBound)
             raw = applyResponseCurve(raw, ar.control.responseCurve, ar.control.exponent)
             raw = (raw * ar.control.sensitivity).coerceIn(-1f, 1f)
             if (ar.control.invert) raw = -raw
