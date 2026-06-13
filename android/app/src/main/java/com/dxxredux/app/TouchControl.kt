@@ -28,6 +28,12 @@ enum class DoubleTapMode {
     HOLD_FIRE, // Double-tap starts, releasing second tap stops
 }
 
+enum class StickExtremeAxis { X, Y }
+
+enum class StickExtremeDirection { NEGATIVE, POSITIVE }
+
+enum class StickExtremeActionMode { HOLD, PULSE_ON_ENTER }
+
 // --- Response curve math ---
 
 /** Apply the selected response curve to a normalized -1..1 input value. */
@@ -82,6 +88,110 @@ data class FloatingZone(
     }
 }
 
+data class StickExtremeAction(
+    val enabled: Boolean = false,
+    val axis: StickExtremeAxis = StickExtremeAxis.Y,
+    val direction: StickExtremeDirection = StickExtremeDirection.NEGATIVE,
+    val threshold: Float = TouchBindings.DEFAULT_STICK_EXTREME_THRESHOLD,
+    val releaseThreshold: Float = TouchBindings.DEFAULT_STICK_EXTREME_RELEASE_THRESHOLD,
+    val binding: Int = TouchBindings.BTN_AFTERBURNER,
+    val mode: StickExtremeActionMode = StickExtremeActionMode.HOLD,
+) {
+    fun toJson() =
+        JSONObject().apply {
+            put("enabled", enabled)
+            put("axis", axis.name)
+            put("direction", direction.name)
+            put("threshold", threshold.toDouble())
+            put("releaseThreshold", releaseThreshold.toDouble())
+            put("binding", binding)
+            put("mode", mode.name)
+        }
+
+    companion object {
+        fun fromJson(j: JSONObject) =
+            normalizeStickExtremeAction(
+                StickExtremeAction(
+                    enabled = j.optBoolean("enabled"),
+                    axis =
+                        enumValueOrDefault(
+                            j.optString("axis", StickExtremeAxis.Y.name),
+                            StickExtremeAxis.Y,
+                        ),
+                    direction =
+                        enumValueOrDefault(
+                            j.optString("direction", StickExtremeDirection.NEGATIVE.name),
+                            StickExtremeDirection.NEGATIVE,
+                        ),
+                    threshold =
+                        j
+                            .optDouble(
+                                "threshold",
+                                TouchBindings.DEFAULT_STICK_EXTREME_THRESHOLD.toDouble(),
+                            ).toFloat(),
+                    releaseThreshold =
+                        j
+                            .optDouble(
+                                "releaseThreshold",
+                                TouchBindings.DEFAULT_STICK_EXTREME_RELEASE_THRESHOLD.toDouble(),
+                            ).toFloat(),
+                    binding = j.optInt("binding", TouchBindings.BTN_AFTERBURNER),
+                    mode =
+                        enumValueOrDefault(
+                            j.optString("mode", StickExtremeActionMode.HOLD.name),
+                            StickExtremeActionMode.HOLD,
+                        ),
+                ),
+            )
+    }
+}
+
+private inline fun <reified T : Enum<T>> enumValueOrDefault(
+    name: String,
+    defaultValue: T,
+): T =
+    try {
+        enumValueOf<T>(name)
+    } catch (_: IllegalArgumentException) {
+        defaultValue
+    }
+
+internal fun normalizeStickExtremeAction(action: StickExtremeAction): StickExtremeAction {
+    val threshold =
+        action.threshold.coerceIn(
+            TouchBindings.MIN_STICK_EXTREME_THRESHOLD,
+            TouchBindings.MAX_STICK_EXTREME_THRESHOLD,
+        )
+    val release =
+        action.releaseThreshold
+            .coerceIn(
+                TouchBindings.MIN_STICK_EXTREME_RELEASE_THRESHOLD,
+                threshold - TouchBindings.MIN_STICK_EXTREME_HYSTERESIS,
+            )
+    return action.copy(threshold = threshold, releaseThreshold = release)
+}
+
+internal fun stickExtremeActionPressed(
+    action: StickExtremeAction,
+    axisX: Float,
+    axisY: Float,
+    wasPressed: Boolean,
+): Boolean {
+    if (!action.enabled) return false
+    val value =
+        when (action.axis) {
+            StickExtremeAxis.X -> axisX
+            StickExtremeAxis.Y -> axisY
+        }
+    val directionalValue =
+        when (action.direction) {
+            StickExtremeDirection.NEGATIVE -> -value
+            StickExtremeDirection.POSITIVE -> value
+        }
+    val threshold = if (wasPressed) action.releaseThreshold else action.threshold
+    return directionalValue > threshold
+}
+
 data class AnalogStickControl(
     val id: String,
     val xPct: Float,
@@ -111,6 +221,7 @@ data class AnalogStickControl(
     val posYBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
     val doubleTapBinding: Int = -1,
     val doubleTapMode: DoubleTapMode = DoubleTapMode.REPEAT_FIRE,
+    val extremeActions: List<StickExtremeAction> = emptyList(),
 ) {
     fun toJson() =
         JSONObject().apply {
@@ -147,6 +258,9 @@ data class AnalogStickControl(
             }
             if (doubleTapBinding >= 0) put("doubleTapBinding", doubleTapBinding)
             if (doubleTapMode != DoubleTapMode.REPEAT_FIRE) put("doubleTapMode", doubleTapMode.name)
+            if (extremeActions.isNotEmpty()) {
+                put("extremeActions", JSONArray(extremeActions.map { it.toJson() }))
+            }
         }
 
     companion object {
@@ -199,6 +313,12 @@ data class AnalogStickControl(
                     ) {
                         DoubleTapMode.REPEAT_FIRE
                     },
+                extremeActions =
+                    j.optJSONArray("extremeActions")?.let { arr ->
+                        (0 until arr.length()).map {
+                            StickExtremeAction.fromJson(arr.getJSONObject(it))
+                        }
+                    } ?: emptyList(),
             )
         }
     }

@@ -60,6 +60,18 @@ object HumanReadableConfig {
         if (s.doubleTapBinding >= 0) {
             j.put("doubleTapBinding", TouchBindings.bindingToName(s.doubleTapBinding))
         }
+        if (s.extremeActions.isNotEmpty()) {
+            j.put(
+                "extremeActions",
+                JSONArray(
+                    s.extremeActions.map { action ->
+                        action.toJson().apply {
+                            put("binding", TouchBindings.bindingToName(action.binding))
+                        }
+                    },
+                ),
+            )
+        }
         return j
     }
 
@@ -280,7 +292,36 @@ object HumanReadableConfig {
                 ) {
                     DoubleTapMode.REPEAT_FIRE
                 },
+            extremeActions = parseStickExtremeActions(j, warnings, id),
         )
+    }
+
+    private fun parseStickExtremeActions(
+        j: JSONObject,
+        warnings: MutableList<String>,
+        stickId: String,
+    ): List<StickExtremeAction> {
+        val arr = j.optJSONArray("extremeActions") ?: return emptyList()
+        val actions = mutableListOf<StickExtremeAction>()
+        for (i in 0 until arr.length()) {
+            try {
+                val item = arr.getJSONObject(i)
+                val binding =
+                    if (item.has("binding")) {
+                        resolveBinding(item, "binding", warnings, "stick '$stickId' extreme action $i")
+                    } else {
+                        TouchBindings.BTN_AFTERBURNER
+                    } ?: continue
+                actions.add(
+                    normalizeStickExtremeAction(
+                        StickExtremeAction.fromJson(item).copy(binding = binding),
+                    ),
+                )
+            } catch (e: Exception) {
+                warnings.add("stick '$stickId' extreme action $i: ${e.message}")
+            }
+        }
+        return actions
     }
 
     private fun parseButton(

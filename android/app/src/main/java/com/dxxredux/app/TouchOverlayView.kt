@@ -226,6 +226,9 @@ class TouchOverlayView
             var lastTapTime: Long = 0
             var tapCount = 0 // running tap count within double-tap window
             var dtLatched = false // true when double-tap latch is held on
+
+            // Extreme action tracking
+            val extremePressed = BooleanArray(control.extremeActions.size)
         }
 
         private class ButtonState(
@@ -1475,12 +1478,22 @@ class TouchOverlayView
         private fun stickBindingVisibleInCurrentMode(binding: Int): Boolean =
             !automapActive || automapTouchButtonVisible(binding)
 
+        private fun touchBindingAllowedInCurrentMode(binding: Int): Boolean {
+            if (gameVariant == "d1" &&
+                (binding in TouchBindings.D2_ONLY_BUTTONS || binding in TouchBindings.D2_ONLY_META_ACTIONS)
+            ) {
+                return false
+            }
+            return stickBindingVisibleInCurrentMode(binding)
+        }
+
         private fun releaseControlsHiddenInAutomap() {
             passthroughPointers.clear()
             for (b in buttonStates) {
                 if (!automapTouchButtonVisible(b.control.binding)) releaseLayoutButton(b, false)
             }
             for (s in stickStates) {
+                releaseStickExtremeActions(s)
                 if (s.control.buttonMode) {
                     resetStick(s)
                 } else if (s.dtLatched && !stickBindingVisibleInCurrentMode(s.control.doubleTapBinding)) {
@@ -2476,6 +2489,7 @@ class TouchOverlayView
                                 s.pointerId = -1
                                 s.pos.set(0f, 0f)
                                 s.floatingActive = false
+                                releaseStickExtremeActions(s)
                                 if (!s.control.buttonMode) {
                                     axisCallback?.invoke(s.control.axisX, 0f)
                                     axisCallback?.invoke(s.control.axisY, 0f)
@@ -2724,6 +2738,15 @@ class TouchOverlayView
             val cx = if (s.control.floating && s.floatingActive) s.floatingCX else s.centerX
             val cy = if (s.control.floating && s.floatingActive) s.floatingCY else s.centerY
 
+            var extremeX = 0f
+            var extremeY = 0f
+            if (s.radius > 0f) {
+                extremeX = (px - cx) / s.radius
+                extremeY = (py - cy) / s.radius
+                if (s.control.invertX) extremeX = -extremeX
+                if (s.control.invertY) extremeY = -extremeY
+            }
+
             var dx = px - cx
             var dy = py - cy
             val dist = hypot(dx, dy)
@@ -2770,16 +2793,15 @@ class TouchOverlayView
                 axisCallback?.invoke(s.control.axisX, rawX)
                 axisCallback?.invoke(s.control.axisY, rawY)
             }
+            updateStickExtremeActions(s, extremeX, extremeY)
 
             // Notify gyro manager that a stick sharing its axes is active
             updateGyroStickActive()
         }
 
-        /** Fire a double-tap binding with a delayed release so the press survives
-         *  at least one game frame (fixes fire-primary which uses level-triggered state). */
-        private fun fireDoubleTapPulse(
+        private fun fireTouchPulse(
             binding: Int,
-            sourceTag: String = "touch:dtap",
+            sourceTag: String,
         ) {
             if (TouchBindings.isMetaAction(binding)) {
                 metaActionCallback?.invoke(binding, true)
@@ -2788,6 +2810,15 @@ class TouchOverlayView
                 dispatchTouchButton(binding, true, sourceTag)
                 mainHandler.postDelayed({ dispatchTouchButton(binding, false, sourceTag) }, DOUBLE_TAP_RELEASE_DELAY_MS)
             }
+        }
+
+        /** Fire a double-tap binding with a delayed release so the press survives
+         *  at least one game frame (fixes fire-primary which uses level-triggered state). */
+        private fun fireDoubleTapPulse(
+            binding: Int,
+            sourceTag: String = "touch:dtap",
+        ) {
+            fireTouchPulse(binding, sourceTag)
         }
 
         /** Set or release a latched double-tap binding. */
@@ -2887,6 +2918,46 @@ class TouchOverlayView
             }
         }
 
+        private fun stickExtremeSourceTag(
+            s: StickState,
+            actionIndex: Int,
+        ): String = "touch:extreme${stickStates.indexOf(s)}:$actionIndex"
+
+        private fun updateStickExtremeActions(
+            s: StickState,
+            axisX: Float,
+            axisY: Float,
+        ) {
+            s.control.extremeActions.forEachIndexed { index, action ->
+                val wasPressed = s.extremePressed.getOrElse(index) { false }
+                val allowed = touchBindingAllowedInCurrentMode(action.binding)
+                val nowPressed = allowed && stickExtremeActionPressed(action, axisX, axisY, wasPressed)
+                if (nowPressed == wasPressed) return@forEachIndexed
+
+                s.extremePressed[index] = nowPressed
+                val tag = stickExtremeSourceTag(s, index)
+                when (action.mode) {
+                    StickExtremeActionMode.HOLD -> {
+                        dispatchTouchButton(action.binding, nowPressed, tag)
+                    }
+
+                    StickExtremeActionMode.PULSE_ON_ENTER -> {
+                        if (nowPressed) fireTouchPulse(action.binding, tag)
+                    }
+                }
+            }
+        }
+
+        private fun releaseStickExtremeActions(s: StickState) {
+            s.control.extremeActions.forEachIndexed { index, action ->
+                if (!s.extremePressed.getOrElse(index) { false }) return@forEachIndexed
+                s.extremePressed[index] = false
+                if (action.mode == StickExtremeActionMode.HOLD) {
+                    dispatchTouchButton(action.binding, false, stickExtremeSourceTag(s, index))
+                }
+            }
+        }
+
         private fun applyDeadzone(
             value: Float,
             deadzone: Float,
@@ -2914,6 +2985,7 @@ class TouchOverlayView
                     setDoubleTapLatch(binding, false, tag)
                 }
             }
+            releaseStickExtremeActions(s)
             // Clear mouse-mode pending drag
             if (s.control.mouseMode) {
                 s.mousePendingX = 0f

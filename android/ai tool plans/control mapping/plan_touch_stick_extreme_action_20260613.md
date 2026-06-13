@@ -18,9 +18,17 @@
 - [done] Define focused verification plan
 
 ## Phase 3: Implementation Follow-Up
-- [pending] Implement after the design is accepted
-- [pending] Run scoped code quality and relevant unit tests
-- [pending] Run an Android debug build
+- [done] Implement after the design is accepted
+- [done] Run scoped code quality and relevant unit tests
+- [done] Run an Android debug build
+
+## Implementation Notes
+- [done] Added `StickExtremeAction` model with axis, direction, threshold, release threshold, binding, and mode
+- [done] Added raw JSON and human-readable JSON round-trip support
+- [done] Added runtime dispatch from pre-clamp stick over-travel through `InputMixer`
+- [done] Added touch editor controls for one configurable extreme action per stick
+- [done] Added focused unit tests for parsing, human-readable export/import, and threshold hysteresis
+- [done] Verified with focused unit tests, scoped code quality, `:app:assembleDebug`, and `git diff --check`
 
 ## Existing Code Shape
 - Touch layouts are modeled in `TouchControl.kt`

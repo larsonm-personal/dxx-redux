@@ -1965,6 +1965,24 @@ private fun moveControl(
 // Properties panels
 // ═════════════════════════════════════════════════════════════════════════════
 
+private fun enabledDefaultExtremeAction(stick: AnalogStickControl): StickExtremeAction {
+    val existing = stick.extremeActions.firstOrNull() ?: StickExtremeAction()
+    return normalizeStickExtremeAction(existing.copy(enabled = true))
+}
+
+private fun stickWithExtremeAction(
+    stick: AnalogStickControl,
+    action: StickExtremeAction,
+): AnalogStickControl =
+    stick.copy(
+        extremeActions =
+            if (action.enabled) {
+                listOf(normalizeStickExtremeAction(action))
+            } else {
+                emptyList()
+            },
+    )
+
 @Composable
 private fun StickPropertiesPanel(
     stick: AnalogStickControl,
@@ -2128,6 +2146,86 @@ private fun StickPropertiesPanel(
         LabeledToggle("Haptic", stick.hapticFeedback) { onUpdate(stick.copy(hapticFeedback = it)) }
     }
 
+    // Extreme action (available for all stick modes)
+    val extremeAction = stick.extremeActions.firstOrNull()
+    val extremeEnabled = extremeAction?.enabled == true
+    LabeledToggle("Extreme Action", extremeEnabled) { enabled ->
+        onUpdate(
+            if (enabled) {
+                stickWithExtremeAction(stick, enabledDefaultExtremeAction(stick))
+            } else {
+                stick.copy(extremeActions = emptyList())
+            },
+        )
+    }
+    if (extremeEnabled) {
+        val action = normalizeStickExtremeAction(extremeAction)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ButtonBindingPicker("Binding", action.binding, Modifier.weight(1f), gameVariant) {
+                onUpdate(stickWithExtremeAction(stick, action.copy(binding = it)))
+            }
+            StickExtremeEnumPicker(
+                label = "Axis",
+                current = action.axis,
+                entries =
+                    listOf(
+                        StickExtremeAxis.X to "X",
+                        StickExtremeAxis.Y to "Y",
+                    ),
+                modifier = Modifier.weight(1f),
+            ) {
+                onUpdate(stickWithExtremeAction(stick, action.copy(axis = it)))
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StickExtremeEnumPicker(
+                label = "Direction",
+                current = action.direction,
+                entries =
+                    listOf(
+                        StickExtremeDirection.NEGATIVE to "Negative",
+                        StickExtremeDirection.POSITIVE to "Positive",
+                    ),
+                modifier = Modifier.weight(1f),
+            ) {
+                onUpdate(stickWithExtremeAction(stick, action.copy(direction = it)))
+            }
+            StickExtremeEnumPicker(
+                label = "Mode",
+                current = action.mode,
+                entries =
+                    listOf(
+                        StickExtremeActionMode.HOLD to "Hold",
+                        StickExtremeActionMode.PULSE_ON_ENTER to "Tap once",
+                    ),
+                modifier = Modifier.weight(1f),
+            ) {
+                onUpdate(stickWithExtremeAction(stick, action.copy(mode = it)))
+            }
+        }
+        LabeledSlider(
+            "Extreme Threshold",
+            action.threshold,
+            TouchBindings.MIN_STICK_EXTREME_THRESHOLD,
+            TouchBindings.MAX_STICK_EXTREME_THRESHOLD,
+            Modifier.fillMaxWidth(),
+        ) {
+            onUpdate(
+                stickWithExtremeAction(
+                    stick,
+                    action.copy(
+                        threshold = it,
+                        releaseThreshold =
+                            (
+                                it - TouchBindings.DEFAULT_STICK_EXTREME_THRESHOLD +
+                                    TouchBindings.DEFAULT_STICK_EXTREME_RELEASE_THRESHOLD
+                            ),
+                    ),
+                ),
+            )
+        }
+    }
+
     // Double-tap action (available for all stick modes)
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         DoubleTapBindingPicker(
@@ -2182,6 +2280,38 @@ private fun StickPropertiesPanel(
             }
             LabeledSlider("Bottom %", fz.bottomPct, 0f, 100f, Modifier.weight(1f)) {
                 onUpdate(stick.copy(floatingZone = fz.copy(bottomPct = it)))
+            }
+        }
+    }
+}
+
+@Composable
+private fun <T> StickExtremeEnumPicker(
+    label: String,
+    current: T,
+    entries: List<Pair<T, String>>,
+    modifier: Modifier = Modifier,
+    onChange: (T) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val currentLabel = entries.firstOrNull { it.first == current }?.second ?: current.toString()
+
+    Column(modifier = modifier) {
+        Text(label, color = Color.Gray, fontSize = 11.sp)
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(currentLabel, fontSize = 11.sp)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                entries.forEach { (value, name) ->
+                    DropdownMenuItem(
+                        text = { Text(name, fontSize = 12.sp) },
+                        onClick = {
+                            onChange(value)
+                            expanded = false
+                        },
+                    )
+                }
             }
         }
     }

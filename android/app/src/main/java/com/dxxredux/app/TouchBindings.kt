@@ -383,6 +383,12 @@ object TouchBindings {
     const val MIN_LONG_PRESS_DURATION_MS = 200
     const val MAX_LONG_PRESS_DURATION_MS = 2000
     const val DEFAULT_LONG_PRESS_DURATION_MS = 500
+    const val MIN_STICK_EXTREME_THRESHOLD = 1.01f
+    const val MAX_STICK_EXTREME_THRESHOLD = 2.5f
+    const val MIN_STICK_EXTREME_RELEASE_THRESHOLD = 0.5f
+    const val MIN_STICK_EXTREME_HYSTERESIS = 0.05f
+    const val DEFAULT_STICK_EXTREME_THRESHOLD = 1.5f
+    const val DEFAULT_STICK_EXTREME_RELEASE_THRESHOLD = 1.35f
 
     // --- Cheat code definitions (from gamecntl.c cheat_codes[]) ---
     // Keep in sync with cheat_codes[] in d2/main/gamecntl.c and d1/main/gamecntl.c
