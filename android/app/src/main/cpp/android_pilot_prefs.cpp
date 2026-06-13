@@ -189,6 +189,27 @@ static void read_visual_prefs(const char *files_dir,
 	}
 }
 
+static void read_music_prefs(const char *files_dir,
+                             int *has_pilot,
+                             int *source,
+                             int *prefer_mission,
+                             int *play_order,
+                             int *volume)
+{
+	android_get_default_music_prefs(source, prefer_mission, play_order, volume);
+	*has_pilot = 0;
+
+	char pilot_path[512];
+#ifdef DXX_BUILD_DESCENT_II
+	if (find_first_pilot(files_dir, "d2x-redux", ".plx", pilot_path, sizeof(pilot_path))) {
+#else
+	if (find_first_pilot(files_dir, "d1x-redux", ".plx", pilot_path, sizeof(pilot_path))) {
+#endif
+		*has_pilot = 1;
+		(void) plx_read_music_prefs(pilot_path, source, prefer_mission, play_order, volume);
+	}
+}
+
 struct write_ctx {
 	int cockpit_mode;
 	int auto_leveling;
@@ -200,10 +221,23 @@ struct visual_write_ctx {
 	int dynlight_color;
 };
 
+struct music_write_ctx {
+	int source;
+	int prefer_mission;
+	int play_order;
+	int volume;
+};
+
 static int write_visual_visitor(const char *path, void *ctx)
 {
 	struct visual_write_ctx *wc = (struct visual_write_ctx *) ctx;
 	return plx_write_visual_prefs(path, wc->alpha_effects, wc->dynlight_color);
+}
+
+static int write_music_visitor(const char *path, void *ctx)
+{
+	struct music_write_ctx *wc = (struct music_write_ctx *) ctx;
+	return plx_write_music_prefs(path, wc->source, wc->prefer_mission, wc->play_order, wc->volume);
 }
 
 #ifdef DXX_BUILD_DESCENT_II
@@ -340,6 +374,64 @@ JNI_FUNC(nativeWriteVisualPrefs)(JNIEnv *env,
 #endif
 
 	LOGI("nativeWriteVisualPrefs: alpha=%d dynlight=%d patched=%d", wc.alpha_effects, wc.dynlight_color, total);
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+	return (jint) total;
+}
+
+extern "C" JNIEXPORT jintArray JNICALL
+JNI_FUNC(nativeReadMusicPrefs)(JNIEnv *env, jclass, jstring jfilesDir)
+{
+	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	int has_pilot = 0;
+	int source = 2;
+	int prefer_mission = 1;
+	int play_order = 0;
+	int volume = 8;
+	jint raw[5];
+	jintArray result;
+
+	read_music_prefs(files_dir, &has_pilot, &source, &prefer_mission, &play_order, &volume);
+	LOGI("nativeReadMusicPrefs: has_pilot=%d source=%d prefer=%d play_order=%d volume=%d",
+	     has_pilot, source, prefer_mission, play_order, volume);
+
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+
+	raw[0] = (jint) has_pilot;
+	raw[1] = (jint) source;
+	raw[2] = (jint) (prefer_mission ? 1 : 0);
+	raw[3] = (jint) play_order;
+	raw[4] = (jint) volume;
+	result = env->NewIntArray(5);
+	env->SetIntArrayRegion(result, 0, 5, raw);
+	return result;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+JNI_FUNC(nativeWriteMusicPrefs)(JNIEnv *env,
+                                jclass,
+                                jstring jfilesDir,
+                                jint source,
+                                jboolean preferMission,
+                                jint playOrder,
+                                jint volume)
+{
+	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	struct music_write_ctx wc;
+	int total;
+
+	wc.source = (int) source;
+	wc.prefer_mission = preferMission ? 1 : 0;
+	wc.play_order = (int) playOrder;
+	wc.volume = (int) volume;
+
+#ifdef DXX_BUILD_DESCENT_II
+	total = for_each_pilot(files_dir, "d2x-redux", ".plx", write_music_visitor, &wc);
+#else
+	total = for_each_pilot(files_dir, "d1x-redux", ".plx", write_music_visitor, &wc);
+#endif
+
+	LOGI("nativeWriteMusicPrefs: source=%d prefer=%d play_order=%d volume=%d patched=%d",
+	     wc.source, wc.prefer_mission, wc.play_order, wc.volume, total);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 	return (jint) total;
 }

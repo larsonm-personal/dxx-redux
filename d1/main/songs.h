@@ -52,6 +52,8 @@ int songs_play_specific_track(int track);
 int songs_get_track_info(int *out_type, int *out_track, int *out_total,
                          char *out_name, int name_size);
 int songs_get_track_list(char *buf, int buf_size);
+void android_music_set_prefer_mission_soundtrack(int enabled);
+int android_music_get_prefer_mission_soundtrack(void);
 #endif
 
 #endif

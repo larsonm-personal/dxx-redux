@@ -51,6 +51,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "vers_id.h"
 #include "newdemo.h"
 #include "gauges.h"
+#ifdef ANDROID
+#include "songs.h"
+#endif
 
 //version 5  ->  6: added new highest level information
 //version 6  ->  7: stripped out the old saved_game array.
@@ -80,6 +83,47 @@ struct player_config PlayerCfg;
 int get_lifetime_checksum (int a,int b);
 extern void InitWeaponOrdering();
 void read_observer_setting(int obs_mode, char *line, char *word);
+
+#ifdef ANDROID
+static const char *android_music_plx_source(void)
+{
+	switch (GameCfg.MusicType) {
+		case MUSIC_TYPE_BUILTIN:
+			return android_music_get_prefer_mission_soundtrack() ? "mission" : "midi";
+		case MUSIC_TYPE_CUSTOM:
+			return "files";
+		case MUSIC_TYPE_REDBOOK:
+		default:
+			return "cd";
+	}
+}
+
+static void android_apply_music_source(const char *source)
+{
+	if (!d_strnicmp(source, "mission", 7)) {
+		GameCfg.MusicType = MUSIC_TYPE_BUILTIN;
+		android_music_set_prefer_mission_soundtrack(1);
+	} else if (!d_strnicmp(source, "files", 5)) {
+		GameCfg.MusicType = MUSIC_TYPE_CUSTOM;
+		android_music_set_prefer_mission_soundtrack(0);
+	} else if (!d_strnicmp(source, "midi", 4)) {
+		GameCfg.MusicType = MUSIC_TYPE_BUILTIN;
+		android_music_set_prefer_mission_soundtrack(0);
+	} else if (!d_strnicmp(source, "cd", 2)) {
+		GameCfg.MusicType = MUSIC_TYPE_REDBOOK;
+		android_music_set_prefer_mission_soundtrack(0);
+	}
+}
+
+static int android_clamp_int(int value, int min_value, int max_value)
+{
+	if (value < min_value)
+		return min_value;
+	if (value > max_value)
+		return max_value;
+	return value;
+}
+#endif
 
 int new_player_config()
 {
@@ -228,6 +272,33 @@ int read_player_d2x(char *filename)
 				d_strupr(word);
 			}
 		}
+#ifdef ANDROID
+		else if (strstr(word,"MUSIC"))
+		{
+			d_free(word);
+			PHYSFSX_fgets(line,50,f);
+			word=splitword(line,'=');
+			d_strupr(word);
+
+			while(!strstr(word,"END") && !PHYSFS_eof(f))
+			{
+				if(!strcmp(word,"SOURCE"))
+					android_apply_music_source(line);
+				if(!strcmp(word,"PREFERMISSION"))
+					android_music_set_prefer_mission_soundtrack(atoi(line) ? 1 : 0);
+				if(!strcmp(word,"PLAYORDER"))
+					GameCfg.CMLevelMusicPlayOrder = android_clamp_int(atoi(line), 0, 2);
+				if(!strcmp(word,"VOLUME")) {
+					GameCfg.MusicVolume = (ubyte)android_clamp_int(atoi(line), 0, 8);
+					songs_set_volume(GameCfg.MusicVolume);
+				}
+				d_free(word);
+				PHYSFSX_fgets(line,50,f);
+				word=splitword(line,'=');
+				d_strupr(word);
+			}
+		}
+#endif
 		else if (strstr(word,"JOYSTICK"))
 		{
 			d_free(word);
@@ -784,6 +855,14 @@ int write_player_d2x(char *filename)
 		PHYSFSX_printf(fout,"alphaeffects=%i\n",PlayerCfg.AlphaEffects);
 		PHYSFSX_printf(fout,"dynlightcolor=%i\n",PlayerCfg.DynLightColor);
 		PHYSFSX_printf(fout,"[end]\n");
+#ifdef ANDROID
+		PHYSFSX_printf(fout,"[music]\n");
+		PHYSFSX_printf(fout,"source=%s\n", android_music_plx_source());
+		PHYSFSX_printf(fout,"prefermission=%i\n", android_music_get_prefer_mission_soundtrack());
+		PHYSFSX_printf(fout,"playorder=%i\n", GameCfg.CMLevelMusicPlayOrder);
+		PHYSFSX_printf(fout,"volume=%i\n", GameCfg.MusicVolume);
+		PHYSFSX_printf(fout,"[end]\n");
+#endif
 		PHYSFSX_printf(fout,"[plx version]\n");
 		PHYSFSX_printf(fout,"plx version=%s\n", VERSION);
 		PHYSFSX_printf(fout,"[end]\n");

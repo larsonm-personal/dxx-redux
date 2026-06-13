@@ -40,6 +40,20 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_crash_handler.h"
 #endif
 
+#if defined(__ANDROID__) || defined(ANDROID)
+static int Android_music_prefer_mission_soundtrack = 1;
+
+void android_music_set_prefer_mission_soundtrack(int enabled)
+{
+	Android_music_prefer_mission_soundtrack = enabled ? 1 : 0;
+}
+
+int android_music_get_prefer_mission_soundtrack(void)
+{
+	return Android_music_prefer_mission_soundtrack;
+}
+#endif
+
 int Songs_initialized = 0;
 static int Song_playing = -1; // -1 if no song playing, else the Descent song number
 static int Redbook_playing = 0; // Redbook track num differs from Song_playing. We need this for Redbook repeat hooks.
@@ -82,10 +96,18 @@ void songs_init()
 
 	memset(sng_file, '\0', sizeof(sng_file));
 
-	if (fp == NULL) // try dxx-r.sng - a songfile specifically for dxx which level authors CAN use (dxx does not care if descent.sng contains MP3/OGG/etc. as well) besides the normal descent.sng containing files other versions of the game cannot play. this way a mission can contain a DOS-Descent compatible OST (hmp files) as well as a OST using MP3, OGG, etc.
+	if (fp == NULL
+#if defined(__ANDROID__) || defined(ANDROID)
+	    && Android_music_prefer_mission_soundtrack
+#endif
+	   ) // try dxx-r.sng - a songfile specifically for dxx which level authors CAN use (dxx does not care if descent.sng contains MP3/OGG/etc. as well) besides the normal descent.sng containing files other versions of the game cannot play. this way a mission can contain a DOS-Descent compatible OST (hmp files) as well as a OST using MP3, OGG, etc.
 		fp = PHYSFSX_openReadBuffered( "dxx-r.sng" );
 
-	if (fp == NULL) // try to open regular descent.sng
+	if (fp == NULL
+#if defined(__ANDROID__) || defined(ANDROID)
+	    && Android_music_prefer_mission_soundtrack
+#endif
+	   ) // try to open regular descent.sng
 		fp = PHYSFSX_openReadBuffered( "descent.sng" );
 
 	if ( fp == NULL ) // No descent.sng available. Define a default song-set

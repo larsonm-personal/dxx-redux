@@ -981,6 +981,40 @@ Java_com_dxxredux_app_MainActivity_nativeOpenSinglePlayerPauseIfSafe(JNIEnv *env
 	return JNI_TRUE;
 }
 
+static int g_android_overlay_time_paused = 0;
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeOpenOverlayPauseIfSafe(JNIEnv *env, jobject thiz)
+{
+	if (g_android_overlay_time_paused)
+		return JNI_TRUE;
+	if (!Game_wind || Screen_mode != SCREEN_GAME) {
+		LOGI("nativeOpenOverlayPauseIfSafe: not in live gameplay");
+		return JNI_FALSE;
+	}
+	if (Game_mode & GM_MULTI) {
+		LOGI("nativeOpenOverlayPauseIfSafe: multiplayer active");
+		return JNI_FALSE;
+	}
+	if (window_get_front() != Game_wind) {
+		LOGI("nativeOpenOverlayPauseIfSafe: menu already open");
+		return JNI_FALSE;
+	}
+	stop_time();
+	g_android_overlay_time_paused = 1;
+	return JNI_TRUE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeCloseOverlayPauseIfOwned(JNIEnv *env, jobject thiz)
+{
+	if (!g_android_overlay_time_paused)
+		return JNI_FALSE;
+	start_time();
+	g_android_overlay_time_paused = 0;
+	return JNI_TRUE;
+}
+
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeClosePauseIfFront(JNIEnv *env, jobject thiz)
 {

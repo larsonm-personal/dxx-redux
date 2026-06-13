@@ -103,6 +103,7 @@ internal fun adminTrayVisibleActions(
             TouchOverlayView.ADMIN_VIDEO_INFO,
             TouchOverlayView.ADMIN_BRIGHTNESS,
             TouchOverlayView.ADMIN_FOV,
+            TouchOverlayView.ADMIN_MUSIC,
         )
     if (canShowDifficultyChange) {
         actions.add(TouchOverlayView.ADMIN_DIFFICULTY)
@@ -119,7 +120,6 @@ internal fun adminTrayVisibleActions(
     }
     if (gamepadOnlyMode) {
         if (isMultiplayerGame) actions.add(TouchOverlayView.ADMIN_WARP)
-        actions.add(TouchOverlayView.ADMIN_MUSIC)
         if (showNetworkActions) actions.add(TouchOverlayView.ADMIN_ACCEPT_JOIN)
     }
     if (automapActive) {

@@ -158,6 +158,14 @@ fun MusicPickerPage(
     fun saveMusicMode(mode: String) {
         musicMode = mode
         prefs.edit().putString("music_mode", mode).apply()
+        val existing = NativePilotPreferences.readMusicPrefsForAll("d2", filesDir.absolutePath)
+        NativePilotPreferences.writeMusicPrefsToAll(
+            filesDir.absolutePath,
+            mode,
+            prefs.getBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, existing.preferMissionSoundtrack),
+            existing.playOrder,
+            existing.volume,
+        )
     }
 
     Surface(

@@ -363,6 +363,10 @@ class MainActivity :
 
     external fun nativeOpenSinglePlayerPauseIfSafe(): Boolean
 
+    external fun nativeOpenOverlayPauseIfSafe(): Boolean
+
+    external fun nativeCloseOverlayPauseIfOwned(): Boolean
+
     external fun nativeClosePauseIfFront(): Boolean
 
     external fun nativeOpenSaveMenuIfSafe(): Boolean
@@ -453,6 +457,18 @@ class MainActivity :
     external fun nativeGetMusicType(): Int
 
     external fun nativeGetTrackList(): String
+
+    external fun nativeGetMusicOverlayState(): String
+
+    external fun nativeSetMissionSoundtrackPreference(enabled: Boolean)
+
+    external fun nativeSetMusicSource(source: String): Boolean
+
+    external fun nativeSetMusicOneTrackPerLevel(enabled: Boolean): Boolean
+
+    external fun nativeSetMusicVolume(volume: Int): Int
+
+    external fun nativeSetMusicPaused(paused: Boolean): Boolean
 
     // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
     @Suppress("unused") // Called from native code
@@ -736,6 +752,7 @@ class MainActivity :
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyGuidebotNavigationPrefs(prefs)
+        applyMusicPolicyPrefs(prefs)
         applyDemoRecordingPref()
 
         // Allow rendering into the display cutout (notch) area
@@ -1716,6 +1733,7 @@ class MainActivity :
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyGuidebotNavigationPrefs(prefs)
+        applyMusicPolicyPrefs(prefs)
         applyDemoRecordingPref()
         applyGraphicsDebugPrefs(prefs)
         applyGraphicsSettingsPrefs(prefs)
@@ -1875,6 +1893,16 @@ class MainActivity :
         }
     }
 
+    private fun applyMusicPolicyPrefs(prefs: android.content.SharedPreferences) {
+        try {
+            nativeSetMissionSoundtrackPreference(
+                prefs.getBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, true),
+            )
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
+    }
+
     private fun applyDemoRecordingPref() {
         try {
             val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
@@ -1890,7 +1918,7 @@ class MainActivity :
             if (adminTrayPausedGame) return
             adminTrayPausedGame =
                 try {
-                    nativeOpenSinglePlayerPauseIfSafe()
+                    nativeOpenOverlayPauseIfSafe()
                 } catch (_: Exception) {
                     false
                 }
@@ -1899,7 +1927,7 @@ class MainActivity :
 
         if (!adminTrayPausedGame) return
         try {
-            nativeClosePauseIfFront()
+            nativeCloseOverlayPauseIfOwned()
         } catch (_: Exception) {
         }
         adminTrayPausedGame = false
@@ -1952,7 +1980,7 @@ class MainActivity :
         closeControllerSettingsStack()
         if (!openGameMenuSafely() && pauseWindowOwnedByTray) {
             try {
-                nativeClosePauseIfFront()
+                nativeCloseOverlayPauseIfOwned()
             } catch (_: Exception) {
             }
         }
@@ -1961,7 +1989,7 @@ class MainActivity :
     private fun openGameMenuSafely(): Boolean {
         if (adminTrayPausedGame) {
             try {
-                nativeClosePauseIfFront()
+                nativeCloseOverlayPauseIfOwned()
             } catch (_: Exception) {
             }
             adminTrayPausedGame = false
@@ -3403,15 +3431,16 @@ class MainActivity :
     private fun showMusicPanel() {
         videoInfoOverlay?.hide()
         if (musicPanel != null) return // already showing
+        syncAdminTrayPause(true)
         val panel =
-            MusicControlPanel(this, { track ->
-                nativePlaySpecificTrack(track)
-                updateTrackLabel()
-            }, {
+            MusicControlPanel(this, {
                 musicPanel?.let { mp ->
                     (gameSurfaceView.parent as? FrameLayout)?.removeView(mp)
                 }
                 musicPanel = null
+                syncAdminTrayPause(touchOverlay.isAdminTrayOpen())
+            }, {
+                updateTrackLabel()
             })
         musicPanel = panel
         val frame = gameSurfaceView.parent as? FrameLayout ?: return
@@ -3454,6 +3483,7 @@ class MainActivity :
             (gameSurfaceView.parent as? FrameLayout)?.removeView(mp)
         }
         musicPanel = null
+        syncAdminTrayPause(touchOverlay.isAdminTrayOpen())
     }
 
     // ── Overlay toast lines (multi-line, each fades independently) ──

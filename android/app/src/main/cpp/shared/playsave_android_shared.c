@@ -43,6 +43,178 @@ void android_get_default_hud_count_prefs(int *show_counts)
 		*show_counts = 0;
 }
 
+void android_get_default_music_prefs(int *source, int *prefer_mission, int *play_order, int *volume)
+{
+	if (source)
+		*source = 2;
+	if (prefer_mission)
+		*prefer_mission = 1;
+	if (play_order)
+		*play_order = 0;
+	if (volume)
+		*volume = 8;
+}
+
+static int playsave_android_music_source_from_string(const char *value)
+{
+	if (!value)
+		return 2;
+	if (!d_strnicmp(value, "mission", 7))
+		return 0;
+	if (!d_strnicmp(value, "files", 5))
+		return 1;
+	if (!d_strnicmp(value, "cd", 2))
+		return 2;
+	if (!d_strnicmp(value, "midi", 4))
+		return 3;
+	return 2;
+}
+
+static const char *playsave_android_music_source_to_string(int source)
+{
+	switch (source) {
+		case 0:
+			return "mission";
+		case 1:
+			return "files";
+		case 3:
+			return "midi";
+		case 2:
+		default:
+			return "cd";
+	}
+}
+
+static int playsave_android_clamp_int(int value, int min_value, int max_value)
+{
+	if (value < min_value)
+		return min_value;
+	if (value > max_value)
+		return max_value;
+	return value;
+}
+
+int plx_read_music_prefs(const char *path, int *source, int *prefer_mission, int *play_order, int *volume)
+{
+	FILE *f = fopen(path, "r");
+	char line[256];
+	int in_music = 0;
+	int found = 0;
+
+	if (!f) return 0;
+
+	while (fgets(line, sizeof(line), f)) {
+		if (!in_music) {
+			if (!d_strnicmp(line, "[music]", 7))
+				in_music = 1;
+			continue;
+		}
+		if (!d_strnicmp(line, "[end]", 5))
+			break;
+		if (!d_strnicmp(line, "source=", 7)) {
+			if (source)
+				*source = playsave_android_music_source_from_string(line + 7);
+			found = 1;
+			continue;
+		}
+		if (!d_strnicmp(line, "prefermission=", 14)) {
+			if (prefer_mission)
+				*prefer_mission = atoi(line + 14) ? 1 : 0;
+			found = 1;
+			continue;
+		}
+		if (!d_strnicmp(line, "playorder=", 10)) {
+			if (play_order)
+				*play_order = playsave_android_clamp_int(atoi(line + 10), 0, 2);
+			found = 1;
+			continue;
+		}
+		if (!d_strnicmp(line, "volume=", 7)) {
+			if (volume)
+				*volume = playsave_android_clamp_int(atoi(line + 7), 0, 8);
+			found = 1;
+		}
+	}
+
+	fclose(f);
+	return found;
+}
+
+int plx_write_music_prefs(const char *path, int source, int prefer_mission, int play_order, int volume)
+{
+	FILE *f = fopen(path, "r");
+	char buf[32768];
+	int buf_len = 0;
+	int in_music = 0;
+	int found_music = 0;
+	int wrote_music = 0;
+	char tmp[128];
+
+	source = playsave_android_clamp_int(source, 0, 3);
+	play_order = playsave_android_clamp_int(play_order, 0, 2);
+	volume = playsave_android_clamp_int(volume, 0, 8);
+
+#define PLAYSAVE_BUF_APPEND(s)                             \
+	do {                                                   \
+		int playsave_slen = (int) strlen(s);               \
+		if (buf_len + playsave_slen < (int) sizeof(buf)) { \
+			memcpy(buf + buf_len, s, playsave_slen);       \
+			buf_len += playsave_slen;                      \
+		}                                                  \
+	} while (0)
+
+#define PLAYSAVE_APPEND_MUSIC()                                                                     \
+	do {                                                                                            \
+		PLAYSAVE_BUF_APPEND("[music]\n");                                                           \
+		snprintf(tmp, sizeof(tmp), "source=%s\n", playsave_android_music_source_to_string(source)); \
+		PLAYSAVE_BUF_APPEND(tmp);                                                                   \
+		snprintf(tmp, sizeof(tmp), "prefermission=%i\n", prefer_mission ? 1 : 0);                   \
+		PLAYSAVE_BUF_APPEND(tmp);                                                                   \
+		snprintf(tmp, sizeof(tmp), "playorder=%i\n", play_order);                                   \
+		PLAYSAVE_BUF_APPEND(tmp);                                                                   \
+		snprintf(tmp, sizeof(tmp), "volume=%i\n", volume);                                          \
+		PLAYSAVE_BUF_APPEND(tmp);                                                                   \
+		PLAYSAVE_BUF_APPEND("[end]\n");                                                             \
+		wrote_music = 1;                                                                            \
+	} while (0)
+
+	if (f) {
+		char line[256];
+		while (fgets(line, sizeof(line), f)) {
+			if (!in_music && !d_strnicmp(line, "[music]", 7)) {
+				found_music = 1;
+				in_music = 1;
+				PLAYSAVE_APPEND_MUSIC();
+				continue;
+			}
+			if (in_music) {
+				if (!d_strnicmp(line, "[end]", 5))
+					in_music = 0;
+				continue;
+			}
+			PLAYSAVE_BUF_APPEND(line);
+		}
+		fclose(f);
+	}
+
+	if (!found_music) {
+		if (buf_len == 0)
+			PLAYSAVE_BUF_APPEND(playsave_android_options_header());
+		PLAYSAVE_APPEND_MUSIC();
+	}
+
+#undef PLAYSAVE_BUF_APPEND
+#undef PLAYSAVE_APPEND_MUSIC
+
+	f = fopen(path, "w");
+	if (!f) return 0;
+	fwrite(buf, 1, buf_len, f);
+	fflush(f);
+	fsync(fileno(f));
+	fclose(f);
+	return wrote_music;
+}
+
 int plx_read_robot_hostage_counts(const char *path, int *show_counts)
 {
 	FILE *f = fopen(path, "r");

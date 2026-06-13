@@ -9,121 +9,133 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import org.json.JSONArray
+import org.json.JSONObject
+import kotlin.math.abs
 import kotlin.math.min
+import kotlin.math.roundToInt
 
-/**
- * Semi-transparent full-screen overlay showing the track list.
- * Tap a track to play it; tap the X or outside the panel to dismiss.
- *
- * @param onPlayTrack called with the 1-based combined track number when a track is tapped
- * @param onDismiss called when the panel should be removed
- */
 class MusicControlPanel(
     context: Context,
-    private val onPlayTrack: (Int) -> Unit,
     private val onDismiss: () -> Unit,
+    private val onStateChanged: () -> Unit,
 ) : View(context) {
     data class TrackEntry(
         val index: Int,
         val name: String,
     )
 
-    private val tracks = mutableListOf<TrackEntry>()
-    private var currentTrack = -1
-    private var scrollOffset = 0f
-    private var panelRect = RectF()
-    private var rowHeight = 0f
-    private var closeRect = RectF()
-    private var titleHeight = 0f
-    private var selectedTrackIndex = -1
+    private data class MusicState(
+        val source: String = "cd",
+        val oneTrackPerLevel: Boolean = false,
+        val volume: Int = 8,
+        val paused: Boolean = false,
+        val currentTrack: Int = -1,
+        val tracks: List<TrackEntry> = emptyList(),
+    )
 
-    // Touch tracking
+    private val sourceOptions =
+        listOf(
+            "mission" to "Mission",
+            "files" to "Files",
+            "cd" to "CD",
+            "midi" to "MIDI",
+        )
+    private val activity: MainActivity? get() = context as? MainActivity
+    private var state = MusicState()
+    private var scrollOffset = 0f
+    private var selectedIndex = 0
+    private var panelRect = RectF()
+    private var closeRect = RectF()
+    private var playRect = RectF()
+    private var oneTrackRect = RectF()
+    private var sourceRect = RectF()
+    private val sourceOptionRects = mutableListOf<RectF>()
+    private var volumeRect = RectF()
+    private var trackListRect = RectF()
+    private val trackRects = mutableListOf<RectF>()
+    private var rowHeight = 0f
+    private var headerHeight = 0f
+    private var volumeTouchActive = false
+    private var sourceDropdownOpen = false
+    private var sourceDropdownIndex = 0
+    private var sourceTouchActive = false
+
     private var touchStartY = 0f
     private var touchStartScroll = 0f
     private var dragging = false
 
     private val bgPaint = Paint().apply { color = 0xCC000000.toInt() }
-    private val panelPaint = Paint().apply { color = 0xE6222222.toInt() }
+    private val panelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xE6222222.toInt() }
+    private val cellPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x55333333 }
+    private val activePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x6644AA66 }
+    private val selectedPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = 0xFF66FF66.toInt()
+            strokeWidth = 3f
+        }
     private val textPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFE0E0E0.toInt()
+            textAlign = Paint.Align.CENTER
+        }
+    private val smallTextPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFCCCCCC.toInt()
+            textAlign = Paint.Align.CENTER
+        }
+    private val currentTextPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFF77FF77.toInt()
+            textAlign = Paint.Align.LEFT
+        }
+    private val rowTextPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = 0xFFCCCCCC.toInt()
             textAlign = Paint.Align.LEFT
         }
-    private val currentPaint =
+    private val rowHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x22FFFFFF }
+    private val checkboxPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF44FF44.toInt()
-            textAlign = Paint.Align.LEFT
+            style = Paint.Style.STROKE
+            color = 0xCCFFFFFF.toInt()
+            strokeWidth = 2f
         }
-    private val titlePaint =
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFFFFFF.toInt()
-            textAlign = Paint.Align.CENTER
-        }
-    private val closePaint =
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFF4444.toInt()
-            textAlign = Paint.Align.CENTER
-        }
-    private val highlightPaint = Paint().apply { color = 0x22FFFFFF }
-    private val selectedPaint = Paint().apply { color = 0x33FFFFFF }
-    private val scrollHintPaint =
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xAAFFFFFF.toInt()
-            textAlign = Paint.Align.CENTER
-        }
+    private val scrollPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x88FFFFFF.toInt() }
 
     init {
-        loadTracks()
+        isFocusable = true
+        refreshState()
     }
 
-    private fun loadTracks() {
-        tracks.clear()
-        try {
-            val activity = context as? MainActivity ?: return
-            val json = activity.nativeGetTrackList()
-            val info = activity.nativeGetCurrentTrackInfo()
-            // Current track index from "musicType|trackIndex|totalTracks|trackName"
-            if (info.isNotEmpty()) {
-                val parts = info.split("|", limit = 4)
-                if (parts.size >= 2) currentTrack = parts[1].toIntOrNull() ?: -1
+    private fun refreshState() {
+        val a = activity ?: return
+        state =
+            runCatching {
+                val obj = JSONObject(a.nativeGetMusicOverlayState())
+                val tracksJson = obj.optJSONArray("tracks") ?: JSONArray()
+                val tracks =
+                    buildList {
+                        for (i in 0 until tracksJson.length()) {
+                            val track = tracksJson.getJSONObject(i)
+                            val idx = track.getInt("index")
+                            val name = track.optString("name", "")
+                            add(TrackEntry(idx, if (name.isBlank()) "Track ${idx + 1}" else name))
+                        }
+                    }
+                MusicState(
+                    source = obj.optString("source", "cd"),
+                    oneTrackPerLevel = obj.optBoolean("oneTrackPerLevel", false),
+                    volume = obj.optInt("volume", 8).coerceIn(0, 8),
+                    paused = obj.optBoolean("paused", false),
+                    currentTrack = obj.optInt("currentTrack", -1),
+                    tracks = tracks,
+                )
+            }.getOrElse {
+                MusicState()
             }
-            val arr = JSONArray(json)
-            for (i in 0 until arr.length()) {
-                val obj = arr.getJSONObject(i)
-                val idx = obj.getInt("index")
-                val name = obj.optString("name", "")
-                val label = if (name.isNotEmpty()) "Track ${idx + 1}: $name" else "Track ${idx + 1}"
-                tracks.add(TrackEntry(idx, label))
-            }
-            syncSelectedTrackIndex()
-        } catch (_: Exception) {
-            // engine not ready or no tracks
-        }
-    }
-
-    private fun syncSelectedTrackIndex() {
-        selectedTrackIndex =
-            when {
-                tracks.isEmpty() -> {
-                    -1
-                }
-
-                else -> {
-                    tracks.indexOfFirst { it.index == currentTrack }.takeIf { it >= 0 } ?: 0
-                }
-            }
-    }
-
-    private fun listViewportHeight(): Float = (panelRect.height() - titleHeight - 8f).coerceAtLeast(0f)
-
-    private fun ensureSelectedTrackVisible() {
-        scrollOffset =
-            scrollOffsetToKeepRowVisible(
-                currentOffset = scrollOffset,
-                selectedIndex = selectedTrackIndex,
-                rowHeight = rowHeight,
-                viewportHeight = listViewportHeight(),
-            ).coerceIn(0f, maxScroll())
+        if (selectedIndex >= focusCount()) selectedIndex = (focusCount() - 1).coerceAtLeast(0)
+        invalidate()
     }
 
     override fun onSizeChanged(
@@ -134,97 +146,253 @@ class MusicControlPanel(
     ) {
         super.onSizeChanged(w, h, oldw, oldh)
         val base = min(w, h).toFloat()
-        val margin = base * 0.08f
+        val margin = base * 0.06f
         panelRect.set(margin, margin, w - margin, h - margin)
-        textPaint.textSize = base * 0.035f
-        currentPaint.textSize = base * 0.035f
-        titlePaint.textSize = base * 0.05f
-        closePaint.textSize = base * 0.045f
-        rowHeight = base * 0.06f
-        titleHeight = base * 0.08f
-        val closeSize = base * 0.06f
-        closeRect.set(
-            panelRect.right - closeSize - base * 0.02f,
-            panelRect.top + base * 0.01f,
-            panelRect.right - base * 0.02f,
-            panelRect.top + base * 0.01f + closeSize,
+        headerHeight = base * 0.2f
+        rowHeight = (base * 0.058f).coerceAtLeast(34f)
+        textPaint.textSize = base * 0.04f
+        smallTextPaint.textSize = base * 0.028f
+        rowTextPaint.textSize = base * 0.032f
+        currentTextPaint.textSize = rowTextPaint.textSize
+        layoutControls()
+    }
+
+    private fun layoutControls() {
+        sourceOptionRects.clear()
+        trackRects.clear()
+        val pad = panelRect.width() * 0.025f
+        val top = panelRect.top + pad
+        val closeSize = headerHeight * 0.22f
+        closeRect.set(panelRect.right - closeSize - pad, top, panelRect.right - pad, top + closeSize)
+        val cellH = headerHeight * 0.26f
+        val gap = pad * 0.55f
+        val left = panelRect.left + pad
+        val usableRight = panelRect.right - pad - panelRect.width() * 0.12f
+        playRect.set(left, top, left + panelRect.width() * 0.18f, top + cellH)
+        oneTrackRect.set(playRect.right + gap, top, playRect.right + gap + panelRect.width() * 0.28f, top + cellH)
+        val srcTop = playRect.bottom + gap
+        sourceRect.set(left, srcTop, usableRight, srcTop + cellH)
+        val optionH = cellH * 0.92f
+        for (i in sourceOptions.indices) {
+            val y = sourceRect.bottom + i * optionH
+            sourceOptionRects.add(RectF(sourceRect.left, y, sourceRect.right, y + optionH))
+        }
+        volumeRect.set(
+            panelRect.right - panelRect.width() * 0.09f,
+            panelRect.top + headerHeight * 0.28f,
+            panelRect.right - pad,
+            panelRect.bottom - pad,
+        )
+        trackListRect.set(
+            panelRect.left + pad,
+            panelRect.top + headerHeight,
+            volumeRect.left - pad,
+            panelRect.bottom - pad,
         )
     }
 
     override fun onDraw(canvas: Canvas) {
-        // Dim background
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
+        canvas.drawRoundRect(panelRect, 8f, 8f, panelPaint)
+        layoutControls()
+        drawHeader(canvas)
+        drawTracks(canvas)
+        drawVolume(canvas)
+        drawSourceDropdown(canvas)
+        drawFocus(canvas)
+    }
 
-        // Panel background
-        canvas.drawRoundRect(panelRect, 16f, 16f, panelPaint)
+    private fun drawHeader(canvas: Canvas) {
+        textPaint.textSize = headerHeight * 0.18f
+        canvas.drawText("Music", panelRect.centerX(), panelRect.top + textPaint.textSize * 1.35f, textPaint)
+        drawCell(canvas, closeRect, "X", false)
+        drawCell(canvas, playRect, if (state.paused) "Play" else "Pause", false)
+        drawOneTrackCell(canvas)
+        drawSourceCell(canvas)
+    }
 
-        // Title
+    private fun drawOneTrackCell(canvas: Canvas) {
+        canvas.drawRect(oneTrackRect, if (state.oneTrackPerLevel) activePaint else cellPaint)
+        val s = oneTrackRect.height() * 0.36f
+        val box =
+            RectF(
+                oneTrackRect.left + s * 0.8f,
+                oneTrackRect.centerY() - s / 2f,
+                oneTrackRect.left + s * 1.8f,
+                oneTrackRect.centerY() + s / 2f,
+            )
+        canvas.drawRect(box, checkboxPaint)
+        if (state.oneTrackPerLevel) {
+            canvas.drawLine(box.left + s * 0.2f, box.centerY(), box.centerX(), box.bottom - s * 0.15f, checkboxPaint)
+            canvas.drawLine(
+                box.centerX(),
+                box.bottom - s * 0.15f,
+                box.right - s * 0.12f,
+                box.top + s * 0.15f,
+                checkboxPaint,
+            )
+        }
+        smallTextPaint.textSize = oneTrackRect.height() * 0.38f
+        smallTextPaint.textAlign = Paint.Align.LEFT
         canvas.drawText(
-            "Music Tracks",
-            panelRect.centerX(),
-            panelRect.top + titleHeight * 0.7f,
-            titlePaint,
+            trimToWidth("One track per level", smallTextPaint, oneTrackRect.right - box.right - s * 1.1f),
+            box.right + s * 0.5f,
+            oneTrackRect.centerY() + smallTextPaint.textSize * 0.35f,
+            smallTextPaint,
         )
+    }
 
-        // Close button
+    private fun drawCell(
+        canvas: Canvas,
+        rect: RectF,
+        label: String,
+        active: Boolean,
+    ) {
+        canvas.drawRect(rect, if (active) activePaint else cellPaint)
+        smallTextPaint.textSize = rect.height() * 0.42f
+        smallTextPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText(label, rect.centerX(), rect.centerY() + smallTextPaint.textSize * 0.35f, smallTextPaint)
+    }
+
+    private fun drawSourceCell(canvas: Canvas) {
+        canvas.drawRect(sourceRect, cellPaint)
+        smallTextPaint.textSize = sourceRect.height() * 0.42f
+        smallTextPaint.textAlign = Paint.Align.LEFT
+        val chevronWidth = smallTextPaint.measureText(" v")
+        val currentLabel = sourceOptions.getOrNull(sourceIndex())?.second ?: "CD"
+        val label = trimToWidth("Source: $currentLabel", smallTextPaint, sourceRect.width() - chevronWidth - 20f)
         canvas.drawText(
-            "\u2715",
-            closeRect.centerX(),
-            closeRect.centerY() + closePaint.textSize * 0.35f,
-            closePaint,
+            label,
+            sourceRect.left + 10f,
+            sourceRect.centerY() + smallTextPaint.textSize * 0.35f,
+            smallTextPaint,
         )
+        smallTextPaint.textAlign = Paint.Align.RIGHT
+        canvas.drawText(
+            if (sourceDropdownOpen) "^" else "v",
+            sourceRect.right - 10f,
+            sourceRect.centerY() + smallTextPaint.textSize * 0.35f,
+            smallTextPaint,
+        )
+    }
 
-        // Track list (clipped to panel)
+    private fun drawSourceDropdown(canvas: Canvas) {
+        if (!sourceDropdownOpen) return
+        sourceOptions.forEachIndexed { i, option ->
+            val rect = sourceOptionRects[i]
+            val active = state.source == option.first
+            canvas.drawRect(rect, if (active) activePaint else panelPaint)
+            smallTextPaint.textSize = rect.height() * 0.42f
+            smallTextPaint.textAlign = Paint.Align.LEFT
+            canvas.drawText(
+                option.second,
+                rect.left + 12f,
+                rect.centerY() + smallTextPaint.textSize * 0.35f,
+                smallTextPaint,
+            )
+            if (i == sourceDropdownIndex) {
+                canvas.drawRect(rect, selectedPaint)
+            }
+        }
+    }
+
+    private fun drawTracks(canvas: Canvas) {
+        trackRects.clear()
         canvas.save()
-        val listTop = panelRect.top + titleHeight
-        val listBottom = panelRect.bottom - 8f
-        canvas.clipRect(panelRect.left, listTop, panelRect.right, listBottom)
-
-        for ((i, track) in tracks.withIndex()) {
-            val y = listTop + i * rowHeight - scrollOffset
-            if (y + rowHeight < listTop || y > listBottom) continue
-
-            if (i == selectedTrackIndex) {
-                canvas.drawRect(panelRect.left + 4f, y, panelRect.right - 4f, y + rowHeight, selectedPaint)
+        canvas.clipRect(trackListRect)
+        state.tracks.forEachIndexed { i, track ->
+            val y = trackListRect.top + i * rowHeight - scrollOffset
+            val rect = RectF(trackListRect.left, y, trackListRect.right, y + rowHeight)
+            trackRects.add(rect)
+            if (rect.bottom < trackListRect.top || rect.top > trackListRect.bottom) return@forEachIndexed
+            if (track.index == state.currentTrack) {
+                canvas.drawRect(rect, rowHighlightPaint)
             }
-
-            // Highlight current track row
-            if (track.index == currentTrack) {
-                canvas.drawRect(panelRect.left + 4f, y, panelRect.right - 4f, y + rowHeight, highlightPaint)
-            }
-
-            val paint = if (track.index == currentTrack) currentPaint else textPaint
-            val textY = y + rowHeight * 0.65f
-            canvas.drawText(track.name, panelRect.left + 20f, textY, paint)
+            val paint = if (track.index == state.currentTrack) currentTextPaint else rowTextPaint
+            val label = "${i + 1}. ${track.name}"
+            canvas.drawText(
+                trimToWidth(label, paint, rect.width() - 20f),
+                rect.left + 10f,
+                rect.centerY() + paint.textSize * 0.35f,
+                paint,
+            )
         }
         canvas.restore()
 
-        // Scroll indicators
-        scrollHintPaint.textSize = titlePaint.textSize * 0.7f
         val max = maxScroll()
-        if (scrollOffset > 0f) {
-            canvas.drawText(
-                "\u25B2",
-                panelRect.centerX(),
-                listTop + scrollHintPaint.textSize,
-                scrollHintPaint,
+        if (max > 0f) {
+            val barW = 4f
+            val thumbH =
+                (trackListRect.height() * trackListRect.height() / (state.tracks.size * rowHeight))
+                    .coerceAtLeast(
+                        24f,
+                    )
+            val thumbTop = trackListRect.top + (trackListRect.height() - thumbH) * (scrollOffset / max)
+            canvas.drawRect(
+                trackListRect.right - barW,
+                trackListRect.top,
+                trackListRect.right,
+                trackListRect.bottom,
+                cellPaint,
             )
-        }
-        if (max > 0f && scrollOffset < max - 1f) {
-            canvas.drawText(
-                "\u25BC",
-                panelRect.centerX(),
-                listBottom - 4f,
-                scrollHintPaint,
-            )
+            canvas.drawRect(trackListRect.right - barW, thumbTop, trackListRect.right, thumbTop + thumbH, scrollPaint)
         }
     }
+
+    private fun drawVolume(canvas: Canvas) {
+        smallTextPaint.textSize = volumeRect.width() * 0.34f
+        smallTextPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText("Vol", volumeRect.centerX(), volumeRect.top - smallTextPaint.textSize * 0.35f, smallTextPaint)
+        val track = RectF(volumeRect.centerX() - 4f, volumeRect.top, volumeRect.centerX() + 4f, volumeRect.bottom)
+        canvas.drawRect(track, cellPaint)
+        val fraction = state.volume / 8f
+        val thumbY = volumeRect.bottom - volumeRect.height() * fraction
+        canvas.drawRect(track.left - 7f, thumbY - 5f, track.right + 7f, thumbY + 5f, scrollPaint)
+        canvas.drawText(
+            state.volume.toString(),
+            volumeRect.centerX(),
+            volumeRect.bottom + smallTextPaint.textSize * 1.1f,
+            smallTextPaint,
+        )
+    }
+
+    private fun drawFocus(canvas: Canvas) {
+        focusedRect()?.let { canvas.drawRect(it, selectedPaint) }
+    }
+
+    private fun focusedRect(): RectF? =
+        when {
+            selectedIndex == 0 -> {
+                playRect
+            }
+
+            selectedIndex == 1 -> {
+                oneTrackRect
+            }
+
+            selectedIndex == sourceFocusIndex() -> {
+                sourceRect
+            }
+
+            selectedIndex == volumeFocusIndex() -> {
+                volumeRect
+            }
+
+            selectedIndex >= firstTrackFocusIndex() -> {
+                val trackIndex = selectedIndex - firstTrackFocusIndex()
+                trackRects.getOrNull(trackIndex)
+            }
+
+            else -> {
+                null
+            }
+        }
 
     fun handleControllerKey(
         keyCode: Int,
         action: Int,
     ): Boolean {
-        val handledKey =
+        val handled =
             keyCode == KeyEvent.KEYCODE_DPAD_UP ||
                 keyCode == KeyEvent.KEYCODE_DPAD_DOWN ||
                 keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
@@ -235,11 +403,11 @@ class MusicControlPanel(
                 keyCode == KeyEvent.KEYCODE_BUTTON_Y ||
                 keyCode == KeyEvent.KEYCODE_BACK ||
                 keyCode == KeyEvent.KEYCODE_ESCAPE
-        if (!handledKey) return false
+        if (!handled) return false
         if (action != 0) return true
 
-        if (tracks.isNotEmpty() && selectedTrackIndex !in tracks.indices) {
-            syncSelectedTrackIndex()
+        if (sourceDropdownOpen) {
+            return handleSourceDropdownKey(keyCode)
         }
 
         when (keyCode) {
@@ -251,50 +419,104 @@ class MusicControlPanel(
                 onDismiss()
             }
 
-            KeyEvent.KEYCODE_DPAD_UP,
-            KeyEvent.KEYCODE_DPAD_DOWN,
             KeyEvent.KEYCODE_DPAD_LEFT,
+            -> {
+                if (selectedIndex == volumeFocusIndex()) {
+                    setVolume(state.volume - 1)
+                } else {
+                    moveFocus(-1)
+                }
+            }
+
             KeyEvent.KEYCODE_DPAD_RIGHT,
             -> {
-                if (tracks.isNotEmpty()) {
-                    val nextIndex = moveLinearSelection(selectedTrackIndex, tracks.size, keyCode)
-                    if (nextIndex != selectedTrackIndex) {
-                        selectedTrackIndex = nextIndex
-                        ensureSelectedTrackVisible()
-                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                    }
-                    invalidate()
+                if (selectedIndex == volumeFocusIndex()) {
+                    setVolume(state.volume + 1)
+                } else {
+                    moveFocus(1)
                 }
+            }
+
+            KeyEvent.KEYCODE_DPAD_UP,
+            -> {
+                moveFocus(-1)
+            }
+
+            KeyEvent.KEYCODE_DPAD_DOWN,
+            -> {
+                moveFocus(1)
             }
 
             KeyEvent.KEYCODE_BUTTON_A,
             KeyEvent.KEYCODE_DPAD_CENTER,
             -> {
-                if (selectedTrackIndex in tracks.indices) {
-                    currentTrack = tracks[selectedTrackIndex].index
-                    onPlayTrack(currentTrack)
-                    ensureSelectedTrackVisible()
-                    performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                    invalidate()
-                }
+                activateSelection()
             }
         }
-
+        invalidate()
         return true
     }
 
+    private fun moveFocus(delta: Int) {
+        selectedIndex = (selectedIndex + delta).coerceIn(0, focusCount() - 1)
+        ensureFocusedTrackVisible()
+        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+    }
+
+    private fun activateSelection() {
+        when {
+            selectedIndex == 0 -> {
+                setPaused(!state.paused)
+            }
+
+            selectedIndex == 1 -> {
+                setOneTrackPerLevel(!state.oneTrackPerLevel)
+            }
+
+            selectedIndex == sourceFocusIndex() -> {
+                openSourceDropdown()
+            }
+
+            selectedIndex == volumeFocusIndex() -> {
+                setVolume(state.volume + 1)
+            }
+
+            selectedIndex >= firstTrackFocusIndex() -> {
+                val trackIndex = selectedIndex - firstTrackFocusIndex()
+                state.tracks.getOrNull(trackIndex)?.let { playTrack(it.index) }
+            }
+        }
+        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        val px = event.x
+        val py = event.y
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                touchStartY = event.y
+                if (sourceDropdownOpen && sourceDropdownHitRect().contains(px, py)) {
+                    sourceTouchActive = true
+                    return true
+                }
+                if (volumeRect.contains(px, py)) {
+                    volumeTouchActive = true
+                    setVolumeFromTouch(py)
+                    return true
+                }
+                touchStartY = py
                 touchStartScroll = scrollOffset
                 dragging = false
                 return true
             }
 
             MotionEvent.ACTION_MOVE -> {
-                val dy = event.y - touchStartY
-                if (!dragging && kotlin.math.abs(dy) > 10f) dragging = true
+                if (sourceTouchActive) return true
+                if (volumeTouchActive) {
+                    setVolumeFromTouch(py)
+                    return true
+                }
+                val dy = py - touchStartY
+                if (!dragging && abs(dy) > 10f) dragging = true
                 if (dragging) {
                     scrollOffset = (touchStartScroll - dy).coerceIn(0f, maxScroll())
                     invalidate()
@@ -303,42 +525,237 @@ class MusicControlPanel(
             }
 
             MotionEvent.ACTION_UP -> {
+                if (volumeTouchActive) {
+                    setVolumeFromTouch(py)
+                    volumeTouchActive = false
+                    return true
+                }
+                if (sourceTouchActive) {
+                    sourceTouchActive = false
+                    handleTap(px, py)
+                    return true
+                }
                 if (dragging) return true
-                val px = event.x
-                val py = event.y
+                handleTap(px, py)
+                return true
+            }
 
-                // Close button
-                if (closeRect.contains(px, py)) {
-                    onDismiss()
-                    return true
-                }
-
-                // Outside panel
-                if (!panelRect.contains(px, py)) {
-                    onDismiss()
-                    return true
-                }
-
-                // Track tap
-                val listTop = panelRect.top + titleHeight
-                if (py >= listTop && py <= panelRect.bottom) {
-                    val idx = ((py - listTop + scrollOffset) / rowHeight).toInt()
-                    if (idx in tracks.indices) {
-                        selectedTrackIndex = idx
-                        currentTrack = tracks[idx].index
-                        onPlayTrack(currentTrack)
-                        invalidate()
-                    }
-                }
+            MotionEvent.ACTION_CANCEL -> {
+                volumeTouchActive = false
+                sourceTouchActive = false
                 return true
             }
         }
         return true
     }
 
-    private fun maxScroll(): Float {
-        val contentHeight = tracks.size * rowHeight
-        val viewHeight = panelRect.height() - titleHeight
-        return (contentHeight - viewHeight).coerceAtLeast(0f)
+    private fun handleTap(
+        px: Float,
+        py: Float,
+    ) {
+        when {
+            closeRect.contains(px, py) || !panelRect.contains(px, py) -> {
+                onDismiss()
+            }
+
+            playRect.contains(px, py) -> {
+                setPaused(!state.paused)
+            }
+
+            oneTrackRect.contains(px, py) -> {
+                setOneTrackPerLevel(!state.oneTrackPerLevel)
+            }
+
+            sourceRect.contains(px, py) -> {
+                if (sourceDropdownOpen) closeSourceDropdown() else openSourceDropdown()
+            }
+
+            else -> {
+                if (sourceDropdownOpen) {
+                    sourceOptionRects.forEachIndexed { i, rect ->
+                        if (rect.contains(px, py)) {
+                            sourceDropdownIndex = i
+                            chooseSourceDropdownOption()
+                            return
+                        }
+                    }
+                    closeSourceDropdown()
+                    return
+                }
+                if (trackListRect.contains(px, py)) {
+                    val idx = ((py - trackListRect.top + scrollOffset) / rowHeight).toInt()
+                    state.tracks.getOrNull(idx)?.let {
+                        selectedIndex = firstTrackFocusIndex() + idx
+                        playTrack(it.index)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun openSourceDropdown() {
+        sourceDropdownIndex = sourceIndex()
+        sourceDropdownOpen = true
+        invalidate()
+    }
+
+    private fun closeSourceDropdown() {
+        sourceDropdownOpen = false
+        invalidate()
+    }
+
+    private fun chooseSourceDropdownOption() {
+        val source = sourceOptions[sourceDropdownIndex].first
+        sourceDropdownOpen = false
+        if (source != state.source) {
+            setSource(source)
+        } else {
+            invalidate()
+        }
+    }
+
+    private fun handleSourceDropdownKey(keyCode: Int): Boolean {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP,
+            -> {
+                sourceDropdownIndex = (sourceDropdownIndex - 1).coerceAtLeast(0)
+            }
+
+            KeyEvent.KEYCODE_DPAD_DOWN,
+            -> {
+                sourceDropdownIndex = (sourceDropdownIndex + 1).coerceAtMost(sourceOptions.lastIndex)
+            }
+
+            KeyEvent.KEYCODE_BUTTON_A,
+            KeyEvent.KEYCODE_DPAD_CENTER,
+            -> {
+                chooseSourceDropdownOption()
+            }
+
+            KeyEvent.KEYCODE_DPAD_LEFT,
+            -> {
+                closeSourceDropdown()
+                moveFocus(-1)
+            }
+
+            KeyEvent.KEYCODE_DPAD_RIGHT,
+            -> {
+                closeSourceDropdown()
+                moveFocus(1)
+            }
+
+            KeyEvent.KEYCODE_BUTTON_B,
+            KeyEvent.KEYCODE_BUTTON_Y,
+            KeyEvent.KEYCODE_BACK,
+            KeyEvent.KEYCODE_ESCAPE,
+            -> {
+                closeSourceDropdown()
+            }
+        }
+        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+        invalidate()
+        return true
+    }
+
+    private fun setSource(source: String) {
+        val a = activity ?: return
+        if (source == "files") {
+            CustomAudioSetManager(a.filesDir).writeM3U(a)
+        }
+        val prefs = a.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+        val edit = prefs.edit()
+        when (source) {
+            "mission" -> {
+                edit.putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, true)
+            }
+
+            "files" -> {
+                edit.putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, false)
+                edit.putString("music_mode", "files")
+            }
+
+            "cd" -> {
+                edit.putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, false)
+                edit.putString("music_mode", "cd")
+            }
+
+            "midi" -> {
+                edit.putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, false)
+                edit.putString("music_mode", "midi")
+            }
+        }
+        edit.apply()
+        if (a.nativeSetMusicSource(source)) afterNativeChange()
+    }
+
+    private fun setOneTrackPerLevel(enabled: Boolean) {
+        activity?.nativeSetMusicOneTrackPerLevel(enabled)
+        afterNativeChange()
+    }
+
+    private fun setVolume(volume: Int) {
+        activity?.nativeSetMusicVolume(volume.coerceIn(0, 8))
+        afterNativeChange()
+    }
+
+    private fun setVolumeFromTouch(py: Float) {
+        val fraction = ((volumeRect.bottom - py) / volumeRect.height()).coerceIn(0f, 1f)
+        setVolume((fraction * 8f).roundToInt())
+    }
+
+    private fun setPaused(paused: Boolean) {
+        activity?.nativeSetMusicPaused(paused)
+        afterNativeChange()
+    }
+
+    private fun playTrack(track: Int) {
+        activity?.nativePlaySpecificTrack(track)
+        afterNativeChange()
+    }
+
+    private fun afterNativeChange() {
+        refreshState()
+        onStateChanged()
+    }
+
+    private fun ensureFocusedTrackVisible() {
+        if (selectedIndex < firstTrackFocusIndex()) return
+        val trackIndex = selectedIndex - firstTrackFocusIndex()
+        scrollOffset =
+            scrollOffsetToKeepRowVisible(
+                currentOffset = scrollOffset,
+                selectedIndex = trackIndex,
+                rowHeight = rowHeight,
+                viewportHeight = trackListRect.height(),
+            ).coerceIn(0f, maxScroll())
+    }
+
+    private fun focusCount(): Int = firstTrackFocusIndex() + state.tracks.size
+
+    private fun sourceFocusIndex(): Int = 2
+
+    private fun volumeFocusIndex(): Int = 3
+
+    private fun firstTrackFocusIndex(): Int = volumeFocusIndex() + 1
+
+    private fun maxScroll(): Float = (state.tracks.size * rowHeight - trackListRect.height()).coerceAtLeast(0f)
+
+    private fun sourceIndex(): Int = sourceOptions.indexOfFirst { it.first == state.source }.coerceAtLeast(0)
+
+    private fun sourceDropdownHitRect(): RectF {
+        val bounds = RectF(sourceRect)
+        sourceOptionRects.forEach { bounds.union(it) }
+        return bounds
+    }
+
+    private fun trimToWidth(
+        text: String,
+        paint: Paint,
+        maxWidth: Float,
+    ): String {
+        if (paint.measureText(text) <= maxWidth) return text
+        var end = text.length
+        while (end > 1 && paint.measureText(text.substring(0, end) + "...") > maxWidth) end--
+        return text.substring(0, end) + "..."
     }
 }

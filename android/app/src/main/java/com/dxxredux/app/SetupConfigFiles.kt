@@ -175,14 +175,36 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
     musicTypeOverride: Int? = null,
 ) {
     val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-    val mode = prefs.getString("music_mode", "cd") ?: "cd"
+    val pilotMusic =
+        NativePilotPreferences.readMusicPrefsForAll(
+            preferredGame = game ?: "d2",
+            filesDir = filesDir.absolutePath,
+        )
+    val mode =
+        if (pilotMusic.hasPilotFile) {
+            when (pilotMusic.source) {
+                "files",
+                "cd",
+                "midi",
+                -> pilotMusic.source
+
+                else -> "midi"
+            }
+        } else {
+            prefs.getString("music_mode", "cd") ?: "cd"
+        }
+    val useMissionSoundtrack =
+        if (pilotMusic.hasPilotFile) {
+            pilotMusic.preferMissionSoundtrack
+        } else {
+            prefs.getBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, true)
+        }
     val policy =
         resolveMusicLaunchPolicy(
             musicMode = mode,
             musicTypeOverride = musicTypeOverride,
             missionHasSoundtrack = game != null && ModManager(filesDir).hasEnabledMissionZipBuiltinMusic(game),
-            useMissionSoundtrackWhenAvailable =
-                prefs.getBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, true),
+            useMissionSoundtrackWhenAvailable = useMissionSoundtrack,
         )
 
     if (policy.useMissionZipBuiltinMusic) {
@@ -190,6 +212,10 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
     }
 
     val settings = mutableListOf("MusicType" to policy.musicType)
+    if (pilotMusic.hasPilotFile) {
+        settings.add("MusicVolume" to pilotMusic.volume.toString())
+        settings.add("CMLevelMusicPlayOrder" to pilotMusic.playOrder.toString())
+    }
 
     if (policy.useCdTrackOrder) {
         settings.add("OrigTrackOrder" to "1")
@@ -197,7 +223,9 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
         val m3uPath = CustomAudioSetManager(filesDir).writeM3U(this)
         if (m3uPath != null) {
             settings.add("CMLevelMusicPath" to m3uPath)
-            settings.add("CMLevelMusicPlayOrder" to "0")
+            if (!pilotMusic.hasPilotFile) {
+                settings.add("CMLevelMusicPlayOrder" to "0")
+            }
         }
     }
 

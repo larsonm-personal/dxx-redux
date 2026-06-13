@@ -20,6 +20,14 @@ object NativePilotPreferences {
         val dynLightColor: Boolean,
     )
 
+    data class MusicPrefs(
+        val hasPilotFile: Boolean,
+        val source: String,
+        val preferMissionSoundtrack: Boolean,
+        val playOrder: Int,
+        val volume: Int,
+    )
+
     init {
         System.loadLibrary("dxx-redux-d1")
         System.loadLibrary("dxx-redux-d2")
@@ -59,6 +67,26 @@ object NativePilotPreferences {
         dynLightColor: Boolean,
     ): Int
 
+    @JvmStatic external fun nativeReadMusicPrefsD1(filesDir: String): IntArray
+
+    @JvmStatic external fun nativeReadMusicPrefsD2(filesDir: String): IntArray
+
+    @JvmStatic external fun nativeWriteMusicPrefsD1(
+        filesDir: String,
+        source: Int,
+        preferMissionSoundtrack: Boolean,
+        playOrder: Int,
+        volume: Int,
+    ): Int
+
+    @JvmStatic external fun nativeWriteMusicPrefsD2(
+        filesDir: String,
+        source: Int,
+        preferMissionSoundtrack: Boolean,
+        playOrder: Int,
+        volume: Int,
+    ): Int
+
     private fun decodeEnginePrefs(raw: IntArray): EnginePrefs =
         EnginePrefs(
             hasPilotFile = raw.size >= 1 && raw[0] != 0,
@@ -72,6 +100,31 @@ object NativePilotPreferences {
             hasPilotFile = raw.size >= 1 && raw[0] != 0,
             alphaEffects = raw.size >= 2 && raw[1] != 0,
             dynLightColor = raw.size >= 3 && raw[2] != 0,
+        )
+
+    private fun musicSourceName(source: Int): String =
+        when (source) {
+            0 -> "mission"
+            1 -> "files"
+            3 -> "midi"
+            else -> "cd"
+        }
+
+    private fun musicSourceCode(source: String): Int =
+        when (source) {
+            "mission" -> 0
+            "files" -> 1
+            "midi" -> 3
+            else -> 2
+        }
+
+    private fun decodeMusicPrefs(raw: IntArray): MusicPrefs =
+        MusicPrefs(
+            hasPilotFile = raw.size >= 1 && raw[0] != 0,
+            source = musicSourceName(if (raw.size >= 2) raw[1] else 2),
+            preferMissionSoundtrack = raw.size < 3 || raw[2] != 0,
+            playOrder = (if (raw.size >= 4) raw[3] else 0).coerceIn(0, 2),
+            volume = (if (raw.size >= 5) raw[4] else 8).coerceIn(0, 8),
         )
 
     fun readEnginePrefs(
@@ -145,4 +198,67 @@ object NativePilotPreferences {
     ): Int =
         nativeWriteVisualPrefsD1(filesDir, alphaEffects, dynLightColor) +
             nativeWriteVisualPrefsD2(filesDir, alphaEffects, dynLightColor)
+
+    fun readMusicPrefs(
+        game: String,
+        filesDir: String,
+    ): MusicPrefs =
+        decodeMusicPrefs(if (game == "d1") nativeReadMusicPrefsD1(filesDir) else nativeReadMusicPrefsD2(filesDir))
+
+    fun readMusicPrefsForAll(
+        preferredGame: String,
+        filesDir: String,
+    ): MusicPrefs {
+        val preferred = readMusicPrefs(preferredGame, filesDir)
+        if (preferred.hasPilotFile) return preferred
+        return readMusicPrefs(if (preferredGame == "d1") "d2" else "d1", filesDir)
+    }
+
+    fun writeMusicPrefs(
+        game: String,
+        filesDir: String,
+        source: String,
+        preferMissionSoundtrack: Boolean,
+        playOrder: Int,
+        volume: Int,
+    ): Int =
+        if (game == "d1") {
+            nativeWriteMusicPrefsD1(
+                filesDir,
+                musicSourceCode(source),
+                preferMissionSoundtrack,
+                playOrder.coerceIn(0, 2),
+                volume.coerceIn(0, 8),
+            )
+        } else {
+            nativeWriteMusicPrefsD2(
+                filesDir,
+                musicSourceCode(source),
+                preferMissionSoundtrack,
+                playOrder.coerceIn(0, 2),
+                volume.coerceIn(0, 8),
+            )
+        }
+
+    fun writeMusicPrefsToAll(
+        filesDir: String,
+        source: String,
+        preferMissionSoundtrack: Boolean,
+        playOrder: Int,
+        volume: Int,
+    ): Int =
+        nativeWriteMusicPrefsD1(
+            filesDir,
+            musicSourceCode(source),
+            preferMissionSoundtrack,
+            playOrder.coerceIn(0, 2),
+            volume.coerceIn(0, 8),
+        ) +
+            nativeWriteMusicPrefsD2(
+                filesDir,
+                musicSourceCode(source),
+                preferMissionSoundtrack,
+                playOrder.coerceIn(0, 2),
+                volume.coerceIn(0, 8),
+            )
 }

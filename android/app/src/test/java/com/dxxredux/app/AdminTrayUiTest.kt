@@ -15,10 +15,11 @@ class AdminTrayUiTest {
     fun touchModeKeepsAutomapOutWhenTouchButtonIsMissing() {
         val actions = adminTrayVisibleActions(gamepadOnlyMode = false, hasTouchAutomapButton = false)
 
-        assertEquals(10, actions.size)
+        assertEquals(11, actions.size)
         assertFalse(actions.contains(TouchOverlayView.ADMIN_AUTOMAP))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_BRIGHTNESS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_CHEATS))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_MUSIC))
     }
 
     @Test
@@ -60,8 +61,8 @@ class AdminTrayUiTest {
                 TouchOverlayView.ADMIN_VIDEO_INFO,
                 TouchOverlayView.ADMIN_BRIGHTNESS,
                 TouchOverlayView.ADMIN_FOV,
-                TouchOverlayView.ADMIN_WARP,
                 TouchOverlayView.ADMIN_MUSIC,
+                TouchOverlayView.ADMIN_WARP,
                 TouchOverlayView.ADMIN_ACCEPT_JOIN,
             ),
             actions,

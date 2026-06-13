@@ -167,6 +167,7 @@ int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_n
 void android_get_default_pilot_prefs(int *cockpit_mode, int *auto_leveling);
 void android_get_default_visual_prefs(int *alpha_effects, int *dynlight_color);
 void android_get_default_hud_count_prefs(int *show_counts);
+void android_get_default_music_prefs(int *source, int *prefer_mission, int *play_order, int *volume);
 int plr_read_cockpit_autolevel(const char *path,
 							   int *cockpit_mode,
 							   int *auto_leveling);
@@ -177,6 +178,8 @@ int plx_read_robot_hostage_counts(const char *path, int *show_counts);
 int plx_write_robot_hostage_counts(const char *path, int show_counts);
 int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_color);
 int plx_write_visual_prefs(const char *path, int alpha_effects, int dynlight_color);
+int plx_read_music_prefs(const char *path, int *source, int *prefer_mission, int *play_order, int *volume);
+int plx_write_music_prefs(const char *path, int source, int prefer_mission, int play_order, int volume);
 int plr_patch_keysettings(const char *path,
                          const ubyte *kb, int kb_len,
                          const ubyte *joy, int joy_len,

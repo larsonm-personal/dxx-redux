@@ -131,12 +131,20 @@ fun EnginePreferencesPage(
 
     fun loadPrefs() {
         val data = NativePilotPreferences.readEnginePrefsForAll(gameVariant, filesDir.absolutePath)
+        val musicData = NativePilotPreferences.readMusicPrefsForAll(gameVariant, filesDir.absolutePath)
         cockpitMode = data.cockpitMode
         savedCockpitMode = data.cockpitMode
         autoLeveling = data.autoLeveling
         savedAutoLeveling = data.autoLeveling
         showRobotHostageCounts = data.showRobotHostageCounts
         savedShowRobotHostageCounts = data.showRobotHostageCounts
+        if (musicData.hasPilotFile) {
+            useMissionSoundtrackWhenAvailable = musicData.preferMissionSoundtrack
+            prefs
+                .edit()
+                .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, musicData.preferMissionSoundtrack)
+                .apply()
+        }
         hasPilotFile = data.hasPilotFile
         statusMessage = if (data.hasPilotFile) "" else "No pilot files found - showing defaults"
     }
@@ -390,10 +398,31 @@ fun EnginePreferencesPage(
                         checked = useMissionSoundtrackWhenAvailable,
                         onCheckedChange = { checked ->
                             useMissionSoundtrackWhenAvailable = checked
+                            val musicData =
+                                NativePilotPreferences.readMusicPrefsForAll(
+                                    gameVariant,
+                                    filesDir.absolutePath,
+                                )
+                            val source =
+                                when (musicData.source) {
+                                    "files",
+                                    "cd",
+                                    "midi",
+                                    -> musicData.source
+
+                                    else -> prefs.getString("music_mode", "cd") ?: "cd"
+                                }
                             prefs
                                 .edit()
                                 .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, checked)
                                 .apply()
+                            NativePilotPreferences.writeMusicPrefsToAll(
+                                filesDir.absolutePath,
+                                source,
+                                checked,
+                                musicData.playOrder,
+                                musicData.volume,
+                            )
                         },
                         modifier = Modifier.tvFocusBorder(),
                     )
