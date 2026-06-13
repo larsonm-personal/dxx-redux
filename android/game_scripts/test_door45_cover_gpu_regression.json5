@@ -27,7 +27,7 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
     {"action": "log", "message": "=== TEST: D2 L1 door45 closed-cover GPU regression ==="},
@@ -41,7 +41,6 @@
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "select", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
-    {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "skip_briefing", "timeout_ms": 20000, "post_delay_ms": 100},
 

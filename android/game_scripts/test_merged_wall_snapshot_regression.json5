@@ -42,7 +42,6 @@
     {"action": "select", "text": "${MISSION}", "optional": true,
      "post_delay_ms": 100, "timeout_ms": 1000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
-    {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "skip_briefing", "timeout_ms": 20000, "post_delay_ms": 100},
 

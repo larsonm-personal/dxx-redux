@@ -13,7 +13,7 @@
     {"action": "setup_command", "command": "clear_crash_reports", "post_delay_ms": 250},
     {"action": "import_mission_zip", "file": "${ZIP_FILE}", "label": "${ZIP_LABEL}", "display_name": "${ZIP_DISPLAY_NAME}"},
     {"action": "analyze_level_metadata_all", "label": "${ZIP_LABEL}", "mod_file": "${ZIP_FILE}", "game": "${GAME_ID}", "status": "ok", "min_total_levels": 1},
-    {"action": "tap_button", "text": "${GAME_SELECT_BUTTON_TEXT}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "${GAME_SELECT_BUTTON_TEXT}", "post_delay_ms": 0},
     {"action": "tap_button", "text": "${LAUNCH_BUTTON_TEXT}", "launches_game": true},
 
     {"action": "log", "message": "=== TEST: Mission ZIP batch ${ZIP_DISPLAY_NAME} ==="},
@@ -26,7 +26,6 @@
     {"action": "assert_mission_list_has_non_base", "timeout_ms": 10000},
     {"action": "select_non_base_mission", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "${MISSION_START_CONFIRM_ACTION}", "text": "Ok", "key": "enter", "post_delay_ms": 100, "timeout_ms": 5000},
-    {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000, "optional": true},
     {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
 

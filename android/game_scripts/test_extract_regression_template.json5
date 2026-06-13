@@ -33,7 +33,6 @@
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     // Difficulty
-    {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Trainee", "optional": true, "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "select", "text": "Rookie", "optional": true, "post_delay_ms": 100, "timeout_ms": 10000},
 

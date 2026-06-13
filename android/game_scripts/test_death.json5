@@ -42,7 +42,7 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
 
     {"action": "log", "message": "=== TEST: Death (Insane) ==="},
@@ -70,7 +70,6 @@
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
 
     // Insane difficulty (wait for menu transition from level dialog)
-    {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Insane", "post_delay_ms": 100, "timeout_ms": 10000},
 
     // Skip briefing (waits for level load, then escapes if briefing is showing)

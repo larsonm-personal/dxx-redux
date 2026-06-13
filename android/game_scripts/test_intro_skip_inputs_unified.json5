@@ -26,7 +26,7 @@
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
     {"action": "log", "message": "=== TEST: Intro skip by touch (${GAME}) ==="},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
@@ -35,7 +35,7 @@
 
     {"action": "enter_launcher"},
     {"action": "log", "message": "=== TEST: Intro skip by controller A (${GAME}) ==="},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "button": 0, "timeout_ms": 20000, "post_delay_ms": 200},

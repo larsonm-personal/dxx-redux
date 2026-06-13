@@ -47,7 +47,7 @@
 
     // -- Phase 2: Game -- select pilot, introspect --
 
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
     {"action": "log", "message": "=== Phase 2: In-game introspect (${GAME}) ==="},
 

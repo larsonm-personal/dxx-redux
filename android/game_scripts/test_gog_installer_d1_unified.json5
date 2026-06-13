@@ -111,7 +111,6 @@
     {"action": "key", "key": "enter", "post_delay_ms": 100},
 
     // Difficulty
-    {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
 
     // D1's post-difficulty transition responds more reliably to Escape here

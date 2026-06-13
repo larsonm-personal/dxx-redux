@@ -49,7 +49,6 @@
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Trainee difficulty (easiest, least enemy interference)
-    {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000},
 
     // Skip briefing

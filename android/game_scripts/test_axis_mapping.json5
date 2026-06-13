@@ -67,7 +67,7 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
 
     {"action": "log", "message": "=== TEST: Axis Mapping Regression ==="},
@@ -90,7 +90,6 @@
     {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
-    {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
 
     // D1's post-difficulty transition responds more reliably to a direct
