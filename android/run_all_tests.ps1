@@ -312,13 +312,22 @@ foreach ($t in $json5Files) {
         continue  # skip template scripts that need a caller
     }
     $name = $t.BaseName
+    $timeoutSeconds = if ($testTimeouts.ContainsKey($name)) {
+        $testTimeouts[$name]
+    } else {
+        $scriptTimeout = [Math]::Max($TestTimeoutSeconds, (Get-ScriptTimeoutSeconds -ScriptPath $t.FullName))
+        if ((Get-ScriptIsLauncher -ScriptPath $t.FullName) -and $scriptTimeout -lt 600) {
+            $scriptTimeout = 600
+        }
+        $scriptTimeout
+    }
     $allTests += @{
         Name = $name
         BaseName = $name
         Type = "json5"
         Path = $t.FullName
         Requires = "emulator"
-        TimeoutSeconds = if ($testTimeouts.ContainsKey($name)) { $testTimeouts[$name] } else { 0 }
+        TimeoutSeconds = $timeoutSeconds
     }
 }
 

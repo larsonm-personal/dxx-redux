@@ -437,13 +437,24 @@ function Ensure-AppPrivateFile {
         return
     }
 
-    Write-Status "  Pushing $(Split-Path $LocalPath -Leaf) -> $RemoteRelativePath" 'Gray'
-    Copy-LocalFileToAppPrivate -LocalPath $LocalPath -RemotePath $RemoteRelativePath -DisplayPath $RemoteRelativePath -TimeoutSeconds $TimeoutSeconds
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        $suffix = if ($attempt -eq 1) { '' } else { " (retry $attempt)" }
+        Write-Status "  Pushing $(Split-Path $LocalPath -Leaf) -> $RemoteRelativePath$suffix" 'Gray'
+        Copy-LocalFileToAppPrivate -LocalPath $LocalPath -RemotePath $RemoteRelativePath -DisplayPath $RemoteRelativePath -TimeoutSeconds $TimeoutSeconds
 
-    $remoteSize = Get-AppPrivateFileSize -RemoteRelativePath $RemoteRelativePath
-    if ($remoteSize -notmatch '^\d+$' -or [long]$remoteSize -ne $localItem.Length) {
+        $remoteSize = Get-AppPrivateFileSize -RemoteRelativePath $RemoteRelativePath
+        if ($remoteSize -match '^\d+$' -and [long]$remoteSize -eq $localItem.Length) {
+            return
+        }
         $actualSize = if ($remoteSize) { $remoteSize } else { '<missing>' }
-        throw "App-private staging failed for $RemoteRelativePath (expected $($localItem.Length) bytes, got $actualSize)"
+        if ($attempt -eq 3) {
+            $df = ''
+            try { $df = Invoke-AdbRaw -Arguments @('shell', 'df', '-h', "/data/data/$PACKAGE/files") -TimeoutSeconds 10 } catch { }
+            if ($df) { Write-Status "  Device storage:`n$df" 'Yellow' }
+            throw "App-private staging failed for $RemoteRelativePath (expected $($localItem.Length) bytes, got $actualSize)"
+        }
+        Write-Status "  App-private staging short write for $RemoteRelativePath (expected $($localItem.Length), got $actualSize); retrying" 'Yellow'
+        Invoke-AdbRaw -Arguments @('shell', 'run-as', $PACKAGE, 'rm', '-f', "/data/data/$PACKAGE/$RemoteRelativePath") -TimeoutSeconds 30 | Out-Null
     }
 }
 
