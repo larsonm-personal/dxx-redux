@@ -1,6 +1,9 @@
 [
     {"_info": {
-        "games": ["d1"]
+        "games": ["d1"],
+        "_deps": [
+            {"file": "lunar_series_revamped.zip", "sha256": "b134ffc1df360d3a760f4390e95ed2bb6736146827e400131846e7765b2e8418", "target": "files/mission_zip_batch_cache"}
+        ]
     }},
 
     {"action": "enter_launcher"},

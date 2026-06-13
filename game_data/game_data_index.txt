@@ -11,7 +11,12 @@ f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703  game_data/CD i
 facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/GROUPA.PIG
 ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/ICE.PIG
 de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/WATER.PIG
-83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descent.hog
-093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descent.pig
+55e3bdd20eb339322413db68c6cc04c610dcda32a5484ea036c058d55fe3f895  game_data/mods/d2x-xl/d2-hires-128-textures-ktx2.dxa
+91a66ee07304116b2a3e45dc5ec3b8fe6892f6568202407c5f032c90c4b2cccd  game_data/mods/d2x-xl/d2-hires-256-textures-ktx2.dxa
+497bdc14023334c86cf2439e0704da56e4d06ac4442c4fe7911eb678344ddb4e  game_data/mods/d2x-xl/d2-hires-512-textures-ktx2.dxa
+8a46ac26e8442a75ba1807692d44ea1b280bd3bd5b3f52e01c553a2c7892df4d  game_data/mods/d2x-xl/d2-hires-sounds.dxa
+b134ffc1df360d3a760f4390e95ed2bb6736146827e400131846e7765b2e8418  game_data/mission_files/Lunar Series Revamped.zip
 441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce  game_data/mission_files/Obsidian.zip
 469e7f6700ae32509edfcbab8bceed94e6af152b479428e2966d9dcc7de4a186  game_data/mission_files/plutonia.zip
+83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descent.hog
+093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descent.pig

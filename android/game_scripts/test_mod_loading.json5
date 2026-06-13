@@ -12,9 +12,9 @@
             "RESOLUTION": {
                 "label": "Texture resolution",
                 "options": {
-                    "128": {"DXA_SHA": "65b0da223b64e95f72904070e0a72ca81f9cb65912e92be3c6243546996f81ad"},
-                    "256": {"DXA_SHA": "b5b885f2331970a906ca8d467a45d76048789554299db477d7531d8a1dfb2676"},
-                    "512": {"DXA_SHA": "1bcc51fd896d3cbc2f0a0a58eb58260484088633dbb361eeab3da9e88b3d608c"}
+                    "128": {"DXA_SHA": "55e3bdd20eb339322413db68c6cc04c610dcda32a5484ea036c058d55fe3f895"},
+                    "256": {"DXA_SHA": "91a66ee07304116b2a3e45dc5ec3b8fe6892f6568202407c5f032c90c4b2cccd"},
+                    "512": {"DXA_SHA": "497bdc14023334c86cf2439e0704da56e4d06ac4442c4fe7911eb678344ddb4e"}
                 }
             }
         },
@@ -28,18 +28,24 @@
             {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
             {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
             {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
-            {"file": "d2-hires-sounds.dxa", "sha256": "d9cd5a3dd01effd264fda846379c53e40696e5b2aa2a856126333ba55f564307", "target": "files/mods"},
+            {"file": "d2-hires-sounds.dxa", "sha256": "8a46ac26e8442a75ba1807692d44ea1b280bd3bd5b3f52e01c553a2c7892df4d", "target": "files/mods"},
             {"file": "d2-hires-${RESOLUTION}-textures-ktx2.dxa", "sha256": "${DXA_SHA}", "target": "files/mods"}
         ]
     }},
 
     {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
     {"action": "write_config", "file": "mods/mod_manifest.json",
      "content": "{\"mods\":[{\"filename\":\"d2-hires-sounds.dxa\",\"displayName\":\"D2 Hires Sounds\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2-hires-${RESOLUTION}-textures-ktx2.dxa\",\"displayName\":\"D2 Hires ${RESOLUTION} Textures\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
 
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
     {"action": "log", "message": "=== TEST: Mod Loading ${RESOLUTION} ==="},
 
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},

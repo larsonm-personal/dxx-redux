@@ -25,6 +25,8 @@
     {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "show_resume_offer", "value": true}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
     {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 1000},
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
