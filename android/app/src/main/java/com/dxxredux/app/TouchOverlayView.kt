@@ -20,6 +20,7 @@ import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -670,6 +671,16 @@ class TouchOverlayView
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
                 color = touchActiveHighlightColor(TOUCH_ACTIVE_BUTTON_ALPHA)
+            }
+        private val paintExtremeActive =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = touchActiveHighlightColor(TOUCH_ACTIVE_BUTTON_ALPHA)
+            }
+        private val paintExtremeChargeDepleted =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0xCCB82828.toInt()
             }
         private val paintBtnSliderActive =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -1521,7 +1532,7 @@ class TouchOverlayView
             // -- Layout sticks -----------------------------------
             for (s in stickStates) {
                 if (!stickVisibleInCurrentMode(s)) continue
-                drawStick(canvas, s, gAlpha)
+                drawStick(canvas, s, gAlpha, ws)
             }
 
             // -- Layout buttons ----------------------------------
@@ -1605,43 +1616,115 @@ class TouchOverlayView
             canvas: Canvas,
             s: StickState,
             gAlpha: Float,
+            weaponState: WeaponState?,
         ) {
             val eff = (gAlpha * s.control.opacity).coerceIn(0f, 1f)
 
             val xLabel = TouchBindings.AXIS_LABELS[s.control.axisX] ?: "?"
             val yLabel = TouchBindings.AXIS_LABELS[s.control.axisY] ?: "?"
+            val activeExtremeLabel = activeStickExtremeActionLabel(s)
+            val extremeActive = activeExtremeLabel != null
 
             if (s.control.mouseMode) {
                 // Mouse mode: draw only a transparent bounding box for the touch region
-                paintRing.alpha = (0x44 * eff).toInt()
+                val fill = if (extremeActive) paintExtremeActive else paintFill
+                fill.alpha = ((if (extremeActive) 0x55 else 0x22) * eff).toInt()
+                canvas.drawRect(s.fzLeft, s.fzTop, s.fzRight, s.fzBottom, fill)
+                paintRing.color =
+                    if (extremeActive) touchActiveHighlightColor(TOUCH_ACTIVE_OPAQUE_ALPHA) else 0x66FFFFFF
+                paintRing.alpha = ((if (extremeActive) 0xAA else 0x44) * eff).toInt()
                 canvas.drawRect(s.fzLeft, s.fzTop, s.fzRight, s.fzBottom, paintRing)
+                paintRing.color = 0x66FFFFFF
+                drawStickAfterburnerCharge(canvas, s, eff, weaponState)
                 val mcx = (s.fzLeft + s.fzRight) / 2f
                 val mcy = (s.fzTop + s.fzBottom) / 2f
                 paintBtnLabel.alpha = (0x66 * eff).toInt()
                 paintBtnLabel.textSize = (s.fzRight - s.fzLeft).coerceAtMost(s.fzBottom - s.fzTop) * 0.06f
-                canvas.drawText(xLabel, mcx, mcy - paintBtnLabel.textSize * 0.3f, paintBtnLabel)
-                canvas.drawText(yLabel, mcx, mcy + paintBtnLabel.textSize * 1.0f, paintBtnLabel)
+                if (activeExtremeLabel != null) {
+                    canvas.drawText(activeExtremeLabel, mcx, mcy + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+                } else {
+                    canvas.drawText(xLabel, mcx, mcy - paintBtnLabel.textSize * 0.3f, paintBtnLabel)
+                    canvas.drawText(yLabel, mcx, mcy + paintBtnLabel.textSize * 1.0f, paintBtnLabel)
+                }
                 return
             }
 
             val cx = if (s.control.floating && s.floatingActive) s.floatingCX else s.centerX
             val cy = if (s.control.floating && s.floatingActive) s.floatingCY else s.centerY
 
-            paintFill.alpha = (0x33 * eff).toInt()
-            canvas.drawCircle(cx, cy, s.radius, paintFill)
-            paintRing.alpha = (0x66 * eff).toInt()
+            val fill = if (extremeActive) paintExtremeActive else paintFill
+            fill.alpha = ((if (extremeActive) 0x55 else 0x33) * eff).toInt()
+            canvas.drawCircle(cx, cy, s.radius, fill)
+            paintRing.color =
+                if (extremeActive) touchActiveHighlightColor(TOUCH_ACTIVE_OPAQUE_ALPHA) else 0x66FFFFFF
+            paintRing.alpha = ((if (extremeActive) 0xAA else 0x66) * eff).toInt()
             canvas.drawCircle(cx, cy, s.radius, paintRing)
+            paintRing.color = 0x66FFFFFF
 
             val thumbX = cx + s.pos.x
             val thumbY = cy + s.pos.y
-            paintThumb.alpha = (0x99 * eff).toInt()
-            canvas.drawCircle(thumbX, thumbY, s.radius * 0.22f, paintThumb)
+            val thumb = if (extremeActive) paintExtremeActive else paintThumb
+            thumb.alpha = ((if (extremeActive) 0xDD else 0x99) * eff).toInt()
+            canvas.drawCircle(thumbX, thumbY, s.radius * 0.22f, thumb)
+            drawStickAfterburnerCharge(canvas, s, eff, weaponState)
 
             // Axis name labels
             paintBtnLabel.alpha = (0x66 * eff).toInt()
             paintBtnLabel.textSize = s.radius * 0.22f
-            canvas.drawText(xLabel, cx, cy - paintBtnLabel.textSize * 0.3f, paintBtnLabel)
-            canvas.drawText(yLabel, cx, cy + paintBtnLabel.textSize * 1.0f, paintBtnLabel)
+            if (activeExtremeLabel != null) {
+                canvas.drawText(activeExtremeLabel, cx, cy + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+            } else {
+                canvas.drawText(xLabel, cx, cy - paintBtnLabel.textSize * 0.3f, paintBtnLabel)
+                canvas.drawText(yLabel, cx, cy + paintBtnLabel.textSize * 1.0f, paintBtnLabel)
+            }
+        }
+
+        private fun activeStickExtremeActionLabel(s: StickState): String? =
+            s.control.extremeActions.indices
+                .firstOrNull { s.extremePressed.getOrElse(it) { false } }
+                ?.let { index ->
+                    TouchBindings.bindingToName(s.control.extremeActions[index].binding)
+                }
+
+        private fun stickHasAfterburnerExtremeAction(s: StickState): Boolean =
+            s.control.extremeActions.any { it.enabled && it.binding == TouchBindings.BTN_AFTERBURNER }
+
+        private fun drawStickAfterburnerCharge(
+            canvas: Canvas,
+            s: StickState,
+            eff: Float,
+            weaponState: WeaponState?,
+        ) {
+            if (!stickHasAfterburnerExtremeAction(s)) return
+            val chargePct = weaponState?.afterburnerChargePct ?: 100
+            val depleted = (100 - chargePct).coerceIn(0, 100) / 100f
+            val vertical = s.fzBottom > s.fzTop && s.control.mouseMode
+            val left: Float
+            val centerY: Float
+            val barH: Float
+            val barW: Float
+            if (vertical) {
+                val zoneW = s.fzRight - s.fzLeft
+                val zoneH = s.fzBottom - s.fzTop
+                barW = max(4f, min(zoneW, zoneH) * 0.025f)
+                barH = zoneH * 0.42f
+                left = s.fzLeft + zoneW * 0.12f
+                centerY = (s.fzTop + s.fzBottom) / 2f
+            } else {
+                barW = max(4f, s.radius * 0.08f)
+                barH = s.radius * 1.2f
+                left = s.centerX - s.radius * 0.82f
+                centerY = s.centerY
+            }
+            val top = centerY - barH / 2f
+            val rect = RectF(left, top, left + barW, top + barH)
+            paintExtremeActive.alpha = (0xAA * eff).toInt()
+            canvas.drawRoundRect(rect, barW / 2f, barW / 2f, paintExtremeActive)
+            if (depleted > 0f) {
+                val redRect = RectF(rect.left, rect.top, rect.right, rect.top + rect.height() * depleted)
+                paintExtremeChargeDepleted.alpha = (0xCC * eff).toInt()
+                canvas.drawRoundRect(redRect, barW / 2f, barW / 2f, paintExtremeChargeDepleted)
+            }
         }
 
         private fun drawButton(
@@ -2738,14 +2821,14 @@ class TouchOverlayView
             val cx = if (s.control.floating && s.floatingActive) s.floatingCX else s.centerX
             val cy = if (s.control.floating && s.floatingActive) s.floatingCY else s.centerY
 
-            var extremeX = 0f
-            var extremeY = 0f
-            if (s.radius > 0f) {
-                extremeX = (px - cx) / s.radius
-                extremeY = (py - cy) / s.radius
-                if (s.control.invertX) extremeX = -extremeX
-                if (s.control.invertY) extremeY = -extremeY
-            }
+            val (extremeX, extremeY) =
+                stickExtremeTravelFromTouch(
+                    dxPx = px - cx,
+                    dyPx = py - cy,
+                    radiusPx = s.radius,
+                    invertX = s.control.invertX,
+                    invertY = s.control.invertY,
+                )
 
             var dx = px - cx
             var dy = py - cy

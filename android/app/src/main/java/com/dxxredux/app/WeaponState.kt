@@ -4,11 +4,11 @@ package com.dxxredux.app
  * Weapon inventory from nativeGetWeaponState().
  * Array layout: [priFlags, secFlags, playerFlags, priAmmo[0..9], secAmmo[0..9], priMax[0..9], secMax[0..9],
  *                currentPrimary, currentSecondary, currentBomb, laserLevel,
- *                primaryLastWasSuper[0..4], secondaryLastWasSuper[0..4], energy]
+ *                primaryLastWasSuper[0..4], secondaryLastWasSuper[0..4], energy, afterburnerChargePct]
  * Shared constants with C (jni_main.c / player.h):
  *   PLAYER_FLAGS_AMMO_RACK = 128
  *   PLAYER_FLAGS_HEADLIGHT_ON = 16384
- * Indices 43-57 duplicated with jni_main.c
+ * Indices 43-58 duplicated with jni_main.c
  */
 data class WeaponState(
     val primaryFlags: Int,
@@ -25,6 +25,7 @@ data class WeaponState(
     val primaryLastWasSuperFlags: IntArray = IntArray(PAIRED_SLOT_COUNT),
     val secondaryLastWasSuperFlags: IntArray = IntArray(PAIRED_SLOT_COUNT),
     val energy: Int = 0,
+    val afterburnerChargePct: Int = 100,
 ) {
     fun hasPrimary(index: Int) = index in 0..9 && (primaryFlags and (1 shl index)) != 0
 
@@ -69,6 +70,7 @@ data class WeaponState(
                         arr.getOrElse(47 + PAIRED_SLOT_COUNT + slot) { 0 }
                     },
                 energy = arr.getOrElse(57) { 0 },
+                afterburnerChargePct = arr.getOrElse(58) { 100 }.coerceIn(0, 100),
             )
         }
     }

@@ -91,7 +91,7 @@ data class FloatingZone(
 data class StickExtremeAction(
     val enabled: Boolean = false,
     val axis: StickExtremeAxis = StickExtremeAxis.Y,
-    val direction: StickExtremeDirection = StickExtremeDirection.NEGATIVE,
+    val direction: StickExtremeDirection = StickExtremeDirection.POSITIVE,
     val threshold: Float = TouchBindings.DEFAULT_STICK_EXTREME_THRESHOLD,
     val releaseThreshold: Float = TouchBindings.DEFAULT_STICK_EXTREME_RELEASE_THRESHOLD,
     val binding: Int = TouchBindings.BTN_AFTERBURNER,
@@ -120,8 +120,8 @@ data class StickExtremeAction(
                         ),
                     direction =
                         enumValueOrDefault(
-                            j.optString("direction", StickExtremeDirection.NEGATIVE.name),
-                            StickExtremeDirection.NEGATIVE,
+                            j.optString("direction", StickExtremeDirection.POSITIVE.name),
+                            StickExtremeDirection.POSITIVE,
                         ),
                     threshold =
                         j
@@ -190,6 +190,21 @@ internal fun stickExtremeActionPressed(
         }
     val threshold = if (wasPressed) action.releaseThreshold else action.threshold
     return directionalValue > threshold
+}
+
+internal fun stickExtremeTravelFromTouch(
+    dxPx: Float,
+    dyPx: Float,
+    radiusPx: Float,
+    invertX: Boolean,
+    invertY: Boolean,
+): Pair<Float, Float> {
+    if (radiusPx <= 0f) return 0f to 0f
+    var axisX = dxPx / radiusPx
+    var axisY = -dyPx / radiusPx
+    if (invertX) axisX = -axisX
+    if (invertY) axisY = -axisY
+    return axisX to axisY
 }
 
 data class AnalogStickControl(

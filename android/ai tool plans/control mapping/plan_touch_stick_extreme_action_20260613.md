@@ -22,6 +22,15 @@
 - [done] Run scoped code quality and relevant unit tests
 - [done] Run an Android debug build
 
+## Phase 4: Positive Direction And Active Feedback
+- [done] Change the default extreme direction to positive
+- [done] Prefix editor field labels with `Extreme Action`
+- [done] Fix stick-up detection for positive Y so the editor direction matches physical throttle-up use
+- [done] Show the active action name and green highlight on the stick while active
+- [done] Show an afterburner charge bar when afterburner is a stick extreme action
+- [done] Add or update focused tests
+- [done] Run scoped code quality, tests, and Android debug build
+
 ## Implementation Notes
 - [done] Added `StickExtremeAction` model with axis, direction, threshold, release threshold, binding, and mode
 - [done] Added raw JSON and human-readable JSON round-trip support
@@ -29,6 +38,9 @@
 - [done] Added touch editor controls for one configurable extreme action per stick
 - [done] Added focused unit tests for parsing, human-readable export/import, and threshold hysteresis
 - [done] Verified with focused unit tests, scoped code quality, `:app:assembleDebug`, and `git diff --check`
+- [done] Updated extreme action defaults so `Y positive` corresponds to physical stick-up for throttle use
+- [done] Added active-state stick highlight and active action label replacement
+- [done] Added D2 afterburner charge percent to the weapon-state bridge and rendered depletion as a red top-fill over the green bar
 
 ## Existing Code Shape
 - Touch layouts are modeled in `TouchControl.kt`
@@ -58,7 +70,7 @@ enum class StickExtremeActionMode { HOLD, PULSE_ON_ENTER }
 data class StickExtremeAction(
     val enabled: Boolean = false,
     val axis: StickExtremeAxis = StickExtremeAxis.Y,
-    val direction: StickExtremeDirection = StickExtremeDirection.NEGATIVE,
+    val direction: StickExtremeDirection = StickExtremeDirection.POSITIVE,
     val threshold: Float = 1.5f,
     val releaseThreshold: Float = 1.35f,
     val binding: Int = TouchBindings.BTN_AFTERBURNER,
@@ -85,7 +97,7 @@ Raw runtime JSON:
   {
     "enabled": true,
     "axis": "Y",
-    "direction": "NEGATIVE",
+    "direction": "POSITIVE",
     "threshold": 1.5,
     "releaseThreshold": 1.35,
     "binding": 27,
@@ -101,7 +113,7 @@ Human-readable JSON should use binding names:
   {
     "enabled": true,
     "axis": "Y",
-    "direction": "NEGATIVE",
+    "direction": "POSITIVE",
     "threshold": 1.5,
     "releaseThreshold": 1.35,
     "binding": "Afterburner",
@@ -134,7 +146,7 @@ Detection should use the pre-clamp directional component:
 5. Exit when component falls below `releaseThreshold`, when the finger lifts, when the overlay deactivates, when automap/game variant filtering hides the binding, or when pointer stealing resets the stick
 
 This means:
-- Default move-stick forward afterburner should be `axis = Y`, `direction = NEGATIVE`, `binding = Afterburner`, `mode = HOLD`, `threshold = 1.5`, `releaseThreshold = 1.35`
+- Default move-stick forward afterburner should be `axis = Y`, `direction = POSITIVE`, `binding = Afterburner`, `mode = HOLD`, `threshold = 1.5`, `releaseThreshold = 1.35`
 - If the user inverts that touch stick, the same negative emitted-axis direction continues to mean "forward" for the game because detection happens after the touch-level invert
 - Sensitivity, deadzone, and response curve should not affect the threshold. The threshold is physical drag distance measured in stick radii
 
@@ -189,8 +201,8 @@ Initial UI:
 - Threshold slider: `1.1..2.5`, default `1.5`
 
 To keep the first version approachable:
-- When enabling on a stick whose `axisY` label is `Fwd/Back`, default to `Y negative`
-- When enabling on other sticks, still default to `Y negative`, but let the user change it
+- When enabling on a stick whose `axisY` label is `Fwd/Back`, default to `Y positive`
+- When enabling on other sticks, still default to `Y positive`, but let the user change it
 - Hide `releaseThreshold` from UI initially and derive it as `threshold - 0.15`, clamped to at least `1.0`
 
 Potential label text:
@@ -223,7 +235,7 @@ If extending beyond sticks, consider renaming the data class to `AxisExtremeActi
   - A small pure helper reports enter/held/release with threshold `1.5` and release `1.35`
   - D1 filtering rejects `BTN_AFTERBURNER` for extreme action dispatch
 - Runtime/on-device smoke:
-  - Configure `move` stick with `Y negative`, `Afterburner`, `Hold`
+  - Configure `move` stick with `Y positive`, `Afterburner`, `Hold`
   - Drag to normal full forward: throttle axis reaches full scale, afterburner stays off
   - Drag past `1.5x`: afterburner button state turns on
   - Drag back below `1.35x`: afterburner turns off while throttle remains controlled

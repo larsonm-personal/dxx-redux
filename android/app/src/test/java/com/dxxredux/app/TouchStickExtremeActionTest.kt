@@ -91,6 +91,7 @@ class TouchStickExtremeActionTest {
         assertEquals("Afterburner", actionJson.getString("binding"))
         assertTrue(parsed.warnings.isEmpty())
         assertEquals(TouchBindings.BTN_AFTERBURNER, parsed.value?.sticks?.single()?.extremeActions?.single()?.binding)
+        assertEquals(StickExtremeDirection.POSITIVE, parsed.value?.sticks?.single()?.extremeActions?.single()?.direction)
     }
 
     @Test
@@ -99,14 +100,29 @@ class TouchStickExtremeActionTest {
             StickExtremeAction(
                 enabled = true,
                 axis = StickExtremeAxis.Y,
-                direction = StickExtremeDirection.NEGATIVE,
+                direction = StickExtremeDirection.POSITIVE,
                 threshold = 1.5f,
                 releaseThreshold = 1.35f,
             )
 
-        assertFalse(stickExtremeActionPressed(action, axisX = 0f, axisY = -1.49f, wasPressed = false))
-        assertTrue(stickExtremeActionPressed(action, axisX = 0f, axisY = -1.51f, wasPressed = false))
-        assertTrue(stickExtremeActionPressed(action, axisX = 0f, axisY = -1.36f, wasPressed = true))
-        assertFalse(stickExtremeActionPressed(action, axisX = 0f, axisY = -1.34f, wasPressed = true))
+        assertFalse(stickExtremeActionPressed(action, axisX = 0f, axisY = 1.49f, wasPressed = false))
+        assertTrue(stickExtremeActionPressed(action, axisX = 0f, axisY = 1.51f, wasPressed = false))
+        assertTrue(stickExtremeActionPressed(action, axisX = 0f, axisY = 1.36f, wasPressed = true))
+        assertFalse(stickExtremeActionPressed(action, axisX = 0f, axisY = 1.34f, wasPressed = true))
+    }
+
+    @Test
+    fun upwardTouchDragIsPositiveExtremeY() {
+        val (axisX, axisY) =
+            stickExtremeTravelFromTouch(
+                dxPx = 0f,
+                dyPx = -150f,
+                radiusPx = 100f,
+                invertX = false,
+                invertY = false,
+            )
+
+        assertEquals(0f, axisX, 0.0001f)
+        assertEquals(1.5f, axisY, 0.0001f)
     }
 }

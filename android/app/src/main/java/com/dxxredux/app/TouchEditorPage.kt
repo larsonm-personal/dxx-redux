@@ -2161,11 +2161,11 @@ private fun StickPropertiesPanel(
     if (extremeEnabled) {
         val action = normalizeStickExtremeAction(extremeAction)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ButtonBindingPicker("Binding", action.binding, Modifier.weight(1f), gameVariant) {
+            ButtonBindingPicker("Extreme Action Binding", action.binding, Modifier.weight(1f), gameVariant) {
                 onUpdate(stickWithExtremeAction(stick, action.copy(binding = it)))
             }
             StickExtremeEnumPicker(
-                label = "Axis",
+                label = "Extreme Action Axis",
                 current = action.axis,
                 entries =
                     listOf(
@@ -2179,7 +2179,7 @@ private fun StickPropertiesPanel(
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             StickExtremeEnumPicker(
-                label = "Direction",
+                label = "Extreme Action Direction",
                 current = action.direction,
                 entries =
                     listOf(
@@ -2191,7 +2191,7 @@ private fun StickPropertiesPanel(
                 onUpdate(stickWithExtremeAction(stick, action.copy(direction = it)))
             }
             StickExtremeEnumPicker(
-                label = "Mode",
+                label = "Extreme Action Mode",
                 current = action.mode,
                 entries =
                     listOf(
@@ -2204,7 +2204,7 @@ private fun StickPropertiesPanel(
             }
         }
         LabeledSlider(
-            "Extreme Threshold",
+            "Extreme Action Threshold",
             action.threshold,
             TouchBindings.MIN_STICK_EXTREME_THRESHOLD,
             TouchBindings.MAX_STICK_EXTREME_THRESHOLD,

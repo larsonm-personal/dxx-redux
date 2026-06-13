@@ -379,8 +379,8 @@ extern ubyte Secondary_last_was_super[MAX_SECONDARY_WEAPONS];
  *   [3..12]=priAmmo, [13..22]=secAmmo, [23..32]=priMax, [33..42]=secMax,
  *   [43]=currentPrimary, [44]=currentSecondary, [45]=currentBomb,
  *   [46]=laserLevel, [47..51]=primaryLastWasSuper[0..4],
- *   [52..56]=secondaryLastWasSuper[0..4], [57]=energy
- * Indices 43-57 duplicated in WeaponState.kt */
+ *   [52..56]=secondaryLastWasSuper[0..4], [57]=energy, [58]=afterburnerChargePct
+ * Indices 43-58 duplicated in WeaponState.kt */
 
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thiz)
@@ -389,7 +389,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thi
 
 	enum { WS_PRIMARY_PAIR_SLOTS = 5,
 		   WS_SECONDARY_PAIR_SLOTS = 5,
-		   WS_SIZE = 58 };
+		   WS_SIZE = 59 };
 	jint buf[WS_SIZE];
 	memset(buf, 0, sizeof(buf));
 
@@ -425,6 +425,9 @@ Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thi
 		buf[47 + WS_PRIMARY_PAIR_SLOTS + i] = (jint) Secondary_last_was_super[i];
 #endif
 	buf[57] = (jint) (Players[Player_num].energy / F1_0);
+#ifdef DXX_BUILD_DESCENT_II
+	buf[58] = (jint) ((Players[Player_num].afterburner_charge * 100) / F1_0);
+#endif
 
 	jintArray result = (*env)->NewIntArray(env, WS_SIZE);
 	if (result)
