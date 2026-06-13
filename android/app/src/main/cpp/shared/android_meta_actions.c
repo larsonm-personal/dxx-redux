@@ -66,6 +66,10 @@ static const meta_action_entry_t dispatch_table[] = {
 	/* Guide bot menu: instant SHIFT+F4 */
 	{ META_GUIDE_BOT_MENU, META_FLAG_INSTANT, 2, { SDLK_LSHIFT, SDLK_F4 } },
 
+	/* D2 cockpit camera windows: instant SHIFT+F1/F2 */
+	{ META_CYCLE_LEFT_VIEW, META_FLAG_INSTANT, 2, { SDLK_LSHIFT, SDLK_F1 } },
+	{ META_CYCLE_RIGHT_VIEW, META_FLAG_INSTANT, 2, { SDLK_LSHIFT, SDLK_F2 } },
+
 	/* Guide bot direct commands: instant SHIFT+digit */
 	{ META_GUIDE_FIND_ENERGY, META_FLAG_INSTANT, 2, { SDLK_LSHIFT, SDLK_1 } },
 	{ META_GUIDE_FIND_REACTOR, META_FLAG_INSTANT, 2, { SDLK_LSHIFT, SDLK_2 } },

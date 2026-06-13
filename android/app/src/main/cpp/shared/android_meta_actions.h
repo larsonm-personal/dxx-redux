@@ -50,6 +50,8 @@
 #define META_REWIND                1035
 #define META_GUIDE_SPAWN           1037
 #define META_GUIDE_FIND_SECRET     1038
+#define META_CYCLE_LEFT_VIEW       1039
+#define META_CYCLE_RIGHT_VIEW      1040
 
 /* Flags for dispatch table entries */
 #define META_FLAG_INSTANT 1 /* inject full press+release on button down, ignore up */

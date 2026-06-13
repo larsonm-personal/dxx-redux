@@ -23,7 +23,17 @@ class RemainingKeyTouchActionsTest {
         assertTrue(TouchBindings.META_WEAPON_1 in bindings)
         assertTrue(TouchBindings.META_WEAPON_10 in bindings)
         assertTrue(TouchBindings.META_GUIDE_BOT_MENU in bindings)
+        assertTrue(TouchBindings.META_CYCLE_LEFT_VIEW in bindings)
+        assertTrue(TouchBindings.META_CYCLE_RIGHT_VIEW in bindings)
         assertTrue(TouchBindings.META_REWIND in bindings)
+    }
+
+    @Test
+    fun cockpitWindowCycleActionsUseSharedMetaLabels() {
+        assertEquals("Cycle Left View", TouchBindings.META_BUTTON_LABELS[TouchBindings.META_CYCLE_LEFT_VIEW])
+        assertEquals("Cycle Right View", TouchBindings.META_BUTTON_LABELS[TouchBindings.META_CYCLE_RIGHT_VIEW])
+        assertEquals(TouchBindings.META_CYCLE_LEFT_VIEW, TouchBindings.nameToBinding("Cycle Left View"))
+        assertEquals(TouchBindings.META_CYCLE_RIGHT_VIEW, TouchBindings.nameToBinding("Meta: Cycle Right View"))
     }
 
     @Test
@@ -102,6 +112,8 @@ class RemainingKeyTouchActionsTest {
         assertTrue(TouchBindings.BTN_HEADLIGHT !in bindings)
         assertTrue(TouchBindings.META_DROP_MARKER !in bindings)
         assertTrue(TouchBindings.META_GUIDE_BOT_MENU !in bindings)
+        assertTrue(TouchBindings.META_CYCLE_LEFT_VIEW !in bindings)
+        assertTrue(TouchBindings.META_CYCLE_RIGHT_VIEW !in bindings)
     }
 
     @Test
