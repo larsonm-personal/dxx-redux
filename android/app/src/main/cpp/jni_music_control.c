@@ -19,11 +19,18 @@
 #include "game.h"
 #include "gameseq.h"
 #include "playsave.h"
+#include "android_crash_handler.h"
+#include "android_log.h"
+#include "android_music_control.h"
 
 #define TAG       "DXX-MusicCtrl"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
 extern int tsf_music_get_paused(void);
+static volatile int g_music_source_pending = 0;
+static volatile int g_music_source_type = MUSIC_TYPE_REDBOOK;
+static volatile int g_music_source_prefer_mission = 0;
+
 static int music_clamp(int value, int min_value, int max_value)
 {
 	if (value < min_value)
@@ -106,6 +113,11 @@ static int music_is_paused(void)
 
 static void music_replay_current(void)
 {
+	crash_breadcrumb_v("music replay current: type=%d prefer=%d game_wind=%d level=%d",
+	                   GameCfg.MusicType,
+	                   android_music_get_prefer_mission_soundtrack(),
+	                   Game_wind ? 1 : 0,
+	                   Current_level_num);
 	songs_uninit();
 	if (Game_wind)
 		songs_play_level_song(Current_level_num, 0);
@@ -118,6 +130,37 @@ static void music_save_config(void)
 	WriteConfigFile();
 	if (Player_num >= 0 && Player_num < MAX_PLAYERS)
 		write_player_file();
+}
+
+int android_music_control_apply_pending(void)
+{
+	int new_type;
+	int prefer_mission;
+
+	if (!g_music_source_pending)
+		return 0;
+
+	new_type = g_music_source_type;
+	prefer_mission = g_music_source_prefer_mission;
+	g_music_source_pending = 0;
+
+	crash_breadcrumb_v("music source apply: type=%d prefer=%d game_wind=%d level=%d",
+	                   new_type,
+	                   prefer_mission,
+	                   Game_wind ? 1 : 0,
+	                   Current_level_num);
+	debug_log(DLOG_GAME,
+	          "music source apply: type=%d prefer_mission=%d game_wind=%d level=%d",
+	          new_type,
+	          prefer_mission,
+	          Game_wind ? 1 : 0,
+	          Current_level_num);
+	GameCfg.MusicType = new_type;
+	android_music_set_prefer_mission_soundtrack(prefer_mission);
+	music_save_config();
+	music_replay_current();
+	debug_log(DLOG_GAME, "music source apply complete: type=%d", GameCfg.MusicType);
+	return 1;
 }
 
 JNIEXPORT jint JNICALL
@@ -267,6 +310,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicSource(
     JNIEnv *env, jobject thiz, jstring source)
 {
 	const char *src;
+	char src_copy[16];
 	int new_type;
 	int prefer_mission;
 	(void) thiz;
@@ -290,12 +334,17 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicSource(
 		(*env)->ReleaseStringUTFChars(env, source, src);
 		return JNI_FALSE;
 	}
+	snprintf(src_copy, sizeof(src_copy), "%s", src);
 	(*env)->ReleaseStringUTFChars(env, source, src);
 
 	GameCfg.MusicType = new_type;
 	android_music_set_prefer_mission_soundtrack(prefer_mission);
-	music_save_config();
-	music_replay_current();
+	g_music_source_type = new_type;
+	g_music_source_prefer_mission = prefer_mission;
+	g_music_source_pending = 1;
+	crash_breadcrumb_v("music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
+	LOGI("music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
+	debug_log(DLOG_GAME, "music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
 	return JNI_TRUE;
 }
 
@@ -333,9 +382,11 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicPaused(
 {
 	(void) env;
 	(void) thiz;
-	if (music_is_paused() != (paused ? 1 : 0))
-		songs_pause_resume();
-	return JNI_TRUE;
+	if (paused)
+		songs_pause();
+	else
+		songs_resume();
+	return music_is_paused() == (paused ? 1 : 0) ? JNI_TRUE : JNI_FALSE;
 }
 
 /* Returns JSON array of playable tracks for the track picker popup. */

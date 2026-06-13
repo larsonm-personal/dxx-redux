@@ -83,6 +83,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "android_log.h"
 #include "android_meta_actions.h"
+#include "android_music_control.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
 #include <SDL.h>
@@ -2563,6 +2564,8 @@ int ReadControls(d_event *event)
 
 #ifdef __ANDROID__
 	if (event->type == EVENT_IDLE) {
+		if (android_music_control_apply_pending())
+			return 1;
 		if (android_escort_release_pending) {
 			android_escort_release_pending = 0;
 			input_demo_record_direct_command_escort_release_control();
