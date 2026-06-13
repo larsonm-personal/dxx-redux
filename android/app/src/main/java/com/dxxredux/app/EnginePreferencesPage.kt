@@ -188,6 +188,70 @@ fun EnginePreferencesPage(
                         .fillMaxSize()
                         .verticalScroll(scrollState),
             ) {
+                Text("Launcher", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    "Launcher-only options that control setup-screen behavior before the game starts",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = showResumeOffer,
+                        onCheckedChange = { checked ->
+                            showResumeOffer = checked
+                            prefs.edit().putBoolean(PREF_SHOW_RESUME_OFFER, checked).apply()
+                        },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Show resume offer on launch", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "When a recent save is found, offer to resume it from the launcher before opening the game",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = showDemoInstallerOffer,
+                        onCheckedChange = { checked ->
+                            showDemoInstallerOffer = checked
+                            prefs.edit().putBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, checked).apply()
+                        },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            "Show D1/D2 demo installer offer on launch",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "When game data is missing, offer to install the hosted Mac demo packages",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text("Pilot-backed Preferences", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -349,34 +413,6 @@ fun EnginePreferencesPage(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Switch(
-                        checked = showDemoInstallerOffer,
-                        onCheckedChange = { checked ->
-                            showDemoInstallerOffer = checked
-                            prefs.edit().putBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, checked).apply()
-                        },
-                        modifier = Modifier.tvFocusBorder(),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            "Show D1/D2 demo installer offer on launch",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            "When game data is missing, offer to install the hosted Mac demo packages",
-                            fontSize = 9.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
@@ -525,42 +561,6 @@ fun EnginePreferencesPage(
                             )
                             Text("$seconds seconds", fontSize = 10.sp)
                         }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text("Launcher", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    "Launcher-only options that control setup-screen behavior before the game starts",
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Switch(
-                        checked = showResumeOffer,
-                        onCheckedChange = { checked ->
-                            showResumeOffer = checked
-                            prefs.edit().putBoolean(PREF_SHOW_RESUME_OFFER, checked).apply()
-                        },
-                        modifier = Modifier.tvFocusBorder(),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text("Show resume offer on launch", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "When a recent save is found, offer to resume it from the launcher before opening the game",
-                            fontSize = 9.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     }
                 }
 
