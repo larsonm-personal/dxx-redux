@@ -52,9 +52,12 @@
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
     {"action": "meta_action", "id": 1034, "post_delay_ms": 100},
-    {"action": "wait_ms", "ms": 1200},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "input_demo.recording": "true",
+        "input_demo.frame_count": {"gte": 10}
+    }},
     {"action": "meta_action", "id": 1034, "post_delay_ms": 100},
-    {"action": "wait_ms", "ms": 1500},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {"input_demo.recording": "false"}},
 
     {"action": "enter_launcher"},
     {"action": "setup_command", "command": "clear_crash_reports", "post_delay_ms": 250},

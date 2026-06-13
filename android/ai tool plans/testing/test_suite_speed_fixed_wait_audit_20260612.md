@@ -53,8 +53,26 @@ condition-based waits while preserving test coverage.
   signal.
 
 ## Introspection-backed pass plan
-- [ ] Inspect the runner and automation actions for existing condition support
-- [ ] Replace one or two high-value fixed waits with explicit readiness checks
-- [ ] Add narrow introspection fields only if an existing field is not enough
-- [ ] Validate each touched script on the emulator
-- [ ] Run scoped code quality and record final results
+- [x] Inspect the runner and automation actions for existing condition support
+- [x] Replace one or two high-value fixed waits with explicit readiness checks
+- [x] Add narrow introspection fields only if an existing field is not enough
+- [x] Validate each touched script on the emulator
+- [x] Run scoped code quality and record final results
+
+## Introspection-backed pass findings
+- Native `wait_for` previously supported equality checks only. It now accepts
+  the same `expect` object shape as `assert`, so tests can poll numeric and
+  containment conditions without logging assertion failures every frame.
+- `test_mod_loading.json5` now waits for hires texture counters to reach the
+  same thresholds it already asserted, replacing a 5000 ms fixed sleep.
+- Introspection now exposes `input_demo.recording` and
+  `input_demo.frame_count`, allowing quick-record tests to wait for captured
+  frames and recorder stop instead of sleeping around the toggle.
+- `test_mod_loading.json5` passed with `RESOLUTION=128` on the rebuilt APK.
+  The texture readiness wait completed through the file-based runner in
+  4832 ms.
+- `test_quick_record_classic_sidecar_stage.json5` passed with the recorder
+  waits converted to `input_demo` conditions. Waiting for 10 captured frames
+  took 583 ms, and waiting for recorder stop took 52 ms on this run.
+- Final focused validation passed: `assembleDebug`, scoped
+  `run-code-quality.ps1 -Fix`, and the two touched emulator scripts.

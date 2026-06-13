@@ -63,7 +63,11 @@
     {"action": "assert", "expect": {"mounted_mods": {"contains": "d2-hires-${RESOLUTION}-textures-ktx2.dxa"}}},
 
     // Wait for texture streaming then verify replacement coverage
-    {"action": "wait_ms", "ms": 5000},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "hires_textures.hires_count": {"gt": 0},
+        "hires_textures.max_hires_w": {"gte": "${RESOLUTION}"},
+        "hires_textures.replacement_pct": {"gte": 85}
+    }},
     {"action": "introspect"},
     {"action": "assert", "expect": {"hires_textures.hires_count": {"gt": 0}}},
     {"action": "assert", "expect": {"hires_textures.max_hires_w": {"gte": "${RESOLUTION}"}}},

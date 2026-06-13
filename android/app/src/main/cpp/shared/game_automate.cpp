@@ -1664,15 +1664,16 @@ static int load_script_file(const char *path)
 /* -- Assert: check introspection JSON values ------------------------- */
 
 /*
- * Run all assertions for a STEP_ASSERT.
+ * Run all assertions for a STEP_ASSERT or expectation-backed STEP_WAIT_FOR.
  * Parses introspection JSON with nlohmann and checks expected values.
  * Returns empty string on success, or a failure description on first failure.
  */
-static std::string run_assertions(auto_step &s)
+static std::string run_assertions(auto_step &s, bool log_success, bool log_failure)
 {
 	char *json_str = game_introspect_get_state();
 	if (!json_str) {
-		LOGE("ASSERT_FAIL: Could not get introspection state");
+		if (log_failure)
+			LOGE("ASSERT_FAIL: Could not get introspection state");
 		return "could not get introspection state";
 	}
 
@@ -1680,7 +1681,8 @@ static std::string run_assertions(auto_step &s)
 	try {
 		state = json::parse(json_str);
 	} catch (const std::exception &e) {
-		LOGE("ASSERT_FAIL: Failed to parse introspection JSON: %s", e.what());
+		if (log_failure)
+			LOGE("ASSERT_FAIL: Failed to parse introspection JSON: %s", e.what());
 		free(json_str);
 		std::string msg = "parse error: ";
 		msg += e.what();
@@ -1727,7 +1729,8 @@ static std::string run_assertions(auto_step &s)
 			}
 		}
 		if (!path_ok) {
-			LOGE("ASSERT_FAIL: key \"%s\" not found in introspection JSON", ae.key.c_str());
+			if (log_failure)
+				LOGE("ASSERT_FAIL: key \"%s\" not found in introspection JSON", ae.key.c_str());
 			std::string msg = "key \"";
 			msg += ae.key;
 			msg += "\" not found";
@@ -1813,33 +1816,35 @@ static std::string run_assertions(auto_step &s)
 			         ae.key.c_str(), ae.op.c_str());
 		}
 
-		if (pass) {
+		if (pass && log_success) {
 			LOGI("ASSERT_PASS: %s", desc);
-		} else {
-			LOGE("ASSERT_FAIL: %s", desc);
-			/* Dump key diagnostic fields for post-mortem analysis */
-			auto dump_field = [&](const char *name) {
-				if (state.contains(name)) {
-					auto &v = state[name];
-					if (v.is_number_integer())
-						LOGE("  DIAG %s = %d", name, v.get<int>());
-					else if (v.is_string())
-						LOGE("  DIAG %s = \"%s\"", name, v.get<std::string>().c_str());
+		} else if (!pass) {
+			if (log_failure) {
+				LOGE("ASSERT_FAIL: %s", desc);
+				/* Dump key diagnostic fields for post-mortem analysis */
+				auto dump_field = [&](const char *name) {
+					if (state.contains(name)) {
+						auto &v = state[name];
+						if (v.is_number_integer())
+							LOGE("  DIAG %s = %d", name, v.get<int>());
+						else if (v.is_string())
+							LOGE("  DIAG %s = \"%s\"", name, v.get<std::string>().c_str());
+					}
+				};
+				dump_field("control_type");
+				dump_field("heading_time");
+				dump_field("pitch_time");
+				dump_field("bank_time");
+				dump_field("slide_on_state");
+				dump_field("bank_on_state");
+				dump_field("screen_mode");
+				dump_field("in_game");
+				if (state.contains("raw_joy_axis") && state["raw_joy_axis"].is_array()) {
+					std::string axes;
+					for (auto &v : state["raw_joy_axis"])
+						axes += std::to_string(v.get<int>()) + " ";
+					LOGE("  DIAG raw_joy_axis = [%s]", axes.c_str());
 				}
-			};
-			dump_field("control_type");
-			dump_field("heading_time");
-			dump_field("pitch_time");
-			dump_field("bank_time");
-			dump_field("slide_on_state");
-			dump_field("bank_on_state");
-			dump_field("screen_mode");
-			dump_field("in_game");
-			if (state.contains("raw_joy_axis") && state["raw_joy_axis"].is_array()) {
-				std::string axes;
-				for (auto &v : state["raw_joy_axis"])
-					axes += std::to_string(v.get<int>()) + " ";
-				LOGE("  DIAG raw_joy_axis = [%s]", axes.c_str());
 			}
 			return std::string(desc);
 		}
@@ -1988,15 +1993,24 @@ extern "C" void game_automate_tick(void)
 			break;
 
 		case STEP_WAIT_FOR:
-			if (check_condition(s.field, s.value)) {
-				LOGI("Condition met: %s = %s (after %u ms)", s.field.c_str(), s.value.c_str(), elapsed);
-				log_append("wait_for", "done", s.field.c_str());
+			if (!s.expects.empty() ? run_assertions(s, true, false).empty() : check_condition(s.field, s.value)) {
+				if (!s.expects.empty())
+					LOGI("Condition met: expectations satisfied (after %u ms)", elapsed);
+				else
+					LOGI("Condition met: %s = %s (after %u ms)", s.field.c_str(), s.value.c_str(), elapsed);
+				log_append("wait_for", "done", !s.expects.empty() ? "expect" : s.field.c_str());
 				advance_step();
 			} else if (s.timeout_ms > 0 && elapsed >= (Uint32) s.timeout_ms) {
 				char reason[256];
-				snprintf(reason, sizeof(reason), "TIMEOUT waiting for %s = %s (after %d ms)",
-				         s.field.c_str(), s.value.c_str(), s.timeout_ms);
-				log_append("wait_for", "timeout", s.field.c_str());
+				if (!s.expects.empty()) {
+					std::string fail_desc = run_assertions(s, false, true);
+					snprintf(reason, sizeof(reason), "TIMEOUT waiting for expectations: %s (after %d ms)",
+					         fail_desc.c_str(), s.timeout_ms);
+				} else {
+					snprintf(reason, sizeof(reason), "TIMEOUT waiting for %s = %s (after %d ms)",
+					         s.field.c_str(), s.value.c_str(), s.timeout_ms);
+				}
+				log_append("wait_for", "timeout", !s.expects.empty() ? "expect" : s.field.c_str());
 				stop_script_fail(reason);
 			}
 			break;
@@ -2013,7 +2027,7 @@ extern "C" void game_automate_tick(void)
 			break;
 
 		case STEP_ASSERT: {
-			std::string fail_desc = run_assertions(s);
+			std::string fail_desc = run_assertions(s, true, true);
 			if (fail_desc.empty()) {
 				log_append("assert", "pass", "");
 				advance_step();

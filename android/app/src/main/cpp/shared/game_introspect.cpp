@@ -48,6 +48,7 @@ extern "C" {
 #include "wall.h"
 #include "secretarea.h"
 #include "android_menu_scale.h"
+#include "input_demo_recorder.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "ai.h"
 #include "escort.h"
@@ -1122,6 +1123,14 @@ extern "C" char *game_introspect_get_state(void)
 			PHYSFS_freeList(list);
 		}
 		j["mounted_mods"] = std::move(mods);
+	}
+
+	/* -- Input demo recorder state ------------------------------------ */
+	{
+		json input_demo;
+		input_demo["recording"] = input_demo_recorder_is_active() != 0;
+		input_demo["frame_count"] = input_demo_recorder_is_active() ? input_demo_recorder_frame_count() : 0;
+		j["input_demo"] = input_demo;
 	}
 
 	/* -- Hi-res texture stats (count PNG/JPG replacements) ------------ */
