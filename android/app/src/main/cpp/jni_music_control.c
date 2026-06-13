@@ -27,7 +27,7 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
 extern int tsf_music_get_paused(void);
-static volatile int g_music_source_pending = 0;
+static volatile int g_music_source_state = 0; /* 0 idle, 1 queued, 2 applying */
 static volatile int g_music_source_type = MUSIC_TYPE_REDBOOK;
 static volatile int g_music_source_prefer_mission = 0;
 
@@ -137,12 +137,12 @@ int android_music_control_apply_pending(void)
 	int new_type;
 	int prefer_mission;
 
-	if (!g_music_source_pending)
+	if (!g_music_source_state)
 		return 0;
 
 	new_type = g_music_source_type;
 	prefer_mission = g_music_source_prefer_mission;
-	g_music_source_pending = 0;
+	g_music_source_state = 2;
 
 	crash_breadcrumb_v("music source apply: type=%d prefer=%d game_wind=%d level=%d",
 	                   new_type,
@@ -160,6 +160,7 @@ int android_music_control_apply_pending(void)
 	music_save_config();
 	music_replay_current();
 	debug_log(DLOG_GAME, "music source apply complete: type=%d", GameCfg.MusicType);
+	g_music_source_state = 0;
 	return 1;
 }
 
@@ -296,6 +297,14 @@ Java_com_dxxredux_app_MainActivity_nativeGetMusicOverlayState(
 	return result;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsMusicSourceChangePending(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	return g_music_source_state ? JNI_TRUE : JNI_FALSE;
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetMissionSoundtrackPreference(
     JNIEnv *env, jobject thiz, jboolean enabled)
@@ -337,11 +346,9 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicSource(
 	snprintf(src_copy, sizeof(src_copy), "%s", src);
 	(*env)->ReleaseStringUTFChars(env, source, src);
 
-	GameCfg.MusicType = new_type;
-	android_music_set_prefer_mission_soundtrack(prefer_mission);
 	g_music_source_type = new_type;
 	g_music_source_prefer_mission = prefer_mission;
-	g_music_source_pending = 1;
+	g_music_source_state = 1;
 	crash_breadcrumb_v("music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
 	LOGI("music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
 	debug_log(DLOG_GAME, "music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
@@ -353,13 +360,14 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicOneTrackPerLevel(
     JNIEnv *env, jobject thiz, jboolean enabled)
 {
 	int play_order = enabled ? MUSIC_CM_PLAYORDER_LEVEL : MUSIC_CM_PLAYORDER_CONT;
+	int was_level = GameCfg.CMLevelMusicPlayOrder == MUSIC_CM_PLAYORDER_LEVEL;
 	(void) env;
 	(void) thiz;
 	if (GameCfg.CMLevelMusicPlayOrder == play_order)
 		return JNI_TRUE;
 	GameCfg.CMLevelMusicPlayOrder = play_order;
 	music_save_config();
-	if (Game_wind)
+	if (Game_wind && enabled && !was_level)
 		music_replay_current();
 	return JNI_TRUE;
 }

@@ -88,6 +88,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multibot.h"
 #ifdef __ANDROID__
 #include "android_crash_handler.h"
+#include "android_music_control.h"
 #include "android_profile.h"
 #include "android_rewind.h"
 #include "coop_save.h"
@@ -1130,6 +1131,10 @@ int game_handler(window *wind, d_event *event, void *data)
 			#ifdef __ANDROID__
 			static unsigned int android_profile_frame_id = 0;
 			android_profile_frame_begin("d1", ++android_profile_frame_id);
+			if (android_music_control_apply_pending()) {
+				android_profile_frame_end();
+				return 1;
+			}
 			#endif
 			if (input_demo_replay_is_loaded()) {
 				if (!input_demo_step_replay_frame()) {

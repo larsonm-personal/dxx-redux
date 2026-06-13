@@ -460,6 +460,8 @@ class MainActivity :
 
     external fun nativeGetMusicOverlayState(): String
 
+    external fun nativeIsMusicSourceChangePending(): Boolean
+
     external fun nativeSetMissionSoundtrackPreference(enabled: Boolean)
 
     external fun nativeSetMusicSource(source: String): Boolean
@@ -469,6 +471,8 @@ class MainActivity :
     external fun nativeSetMusicVolume(volume: Int): Int
 
     external fun nativeSetMusicPaused(paused: Boolean): Boolean
+
+    fun gameVariantForMusicOverlay(): String = gameVariantId
 
     // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
     @Suppress("unused") // Called from native code

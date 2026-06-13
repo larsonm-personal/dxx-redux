@@ -35,9 +35,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "config.h"
 #include "timer.h"
 #include "args.h"
-#ifdef ANDROID
+#if defined(__ANDROID__) || defined(ANDROID)
 #include "track_names.h"
 #include "android_crash_handler.h"
+#include "android_log.h"
 #endif
 
 #if defined(__ANDROID__) || defined(ANDROID)
@@ -88,11 +89,14 @@ void songs_init()
 	char inputline[80+1];
 	PHYSFS_file * fp = NULL;
 	char sng_file[PATH_MAX];
+	const char *loaded_sng = "base";
 
 	Songs_initialized = 0;
 
 	if (BIMSongs != NULL)
 		d_free(BIMSongs);
+	BIMSongs = NULL;
+	Num_bim_songs = 0;
 
 	memset(sng_file, '\0', sizeof(sng_file));
 
@@ -102,13 +106,19 @@ void songs_init()
 #endif
 	   ) // try dxx-r.sng - a songfile specifically for dxx which level authors CAN use (dxx does not care if descent.sng contains MP3/OGG/etc. as well) besides the normal descent.sng containing files other versions of the game cannot play. this way a mission can contain a DOS-Descent compatible OST (hmp files) as well as a OST using MP3, OGG, etc.
 		fp = PHYSFSX_openReadBuffered( "dxx-r.sng" );
+	if (fp != NULL)
+		loaded_sng = "dxx-r.sng";
 
 	if (fp == NULL
 #if defined(__ANDROID__) || defined(ANDROID)
 	    && Android_music_prefer_mission_soundtrack
 #endif
 	   ) // try to open regular descent.sng
+	{
 		fp = PHYSFSX_openReadBuffered( "descent.sng" );
+		if (fp != NULL)
+			loaded_sng = "descent.sng";
+	}
 
 	if ( fp == NULL ) // No descent.sng available. Define a default song-set
 	{
@@ -163,6 +173,14 @@ void songs_init()
 
 	Num_bim_songs = i;
 	Songs_initialized = 1;
+#if defined(__ANDROID__) || defined(ANDROID)
+	debug_log(DLOG_GAME,
+	          "songs_init: source=%s prefer_mission=%d songs=%d music_type=%d",
+	          loaded_sng,
+	          Android_music_prefer_mission_soundtrack,
+	          Num_bim_songs,
+	          GameCfg.MusicType);
+#endif
 	if (fp != NULL)
 		PHYSFS_close(fp);
 
@@ -202,6 +220,8 @@ void songs_uninit()
 #endif
 	if (BIMSongs != NULL)
 		d_free(BIMSongs);
+	BIMSongs = NULL;
+	Num_bim_songs = 0;
 	Songs_initialized = 0;
 }
 

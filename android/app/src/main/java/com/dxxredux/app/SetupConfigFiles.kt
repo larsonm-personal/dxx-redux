@@ -132,7 +132,7 @@ internal fun enableRedbookInConfig(
 
 internal data class MusicLaunchPolicy(
     val musicType: String,
-    val useMissionZipBuiltinMusic: Boolean,
+    val useMissionZipSoundtrack: Boolean,
     val useCdTrackOrder: Boolean,
     val useCustomAudioFiles: Boolean,
 )
@@ -144,14 +144,14 @@ internal fun resolveMusicLaunchPolicy(
     useMissionSoundtrackWhenAvailable: Boolean,
 ): MusicLaunchPolicy {
     val mode = musicMode ?: "cd"
-    val useMissionZipBuiltinMusic =
+    val useMissionZipSoundtrack =
         musicTypeOverride == null &&
             useMissionSoundtrackWhenAvailable &&
             missionHasSoundtrack
     val musicType =
         when {
             musicTypeOverride != null -> musicTypeOverride.coerceIn(0, 3).toString()
-            useMissionZipBuiltinMusic -> "1"
+            useMissionZipSoundtrack -> "1"
             mode == "midi" -> "1"
             mode == "cd" -> "2"
             mode == "files" -> "3"
@@ -160,13 +160,13 @@ internal fun resolveMusicLaunchPolicy(
 
     return MusicLaunchPolicy(
         musicType = musicType,
-        useMissionZipBuiltinMusic = useMissionZipBuiltinMusic,
+        useMissionZipSoundtrack = useMissionZipSoundtrack,
         useCdTrackOrder =
             musicTypeOverride == 2 ||
-                (!useMissionZipBuiltinMusic && musicTypeOverride == null && mode == "cd"),
+                (!useMissionZipSoundtrack && musicTypeOverride == null && mode == "cd"),
         useCustomAudioFiles =
             musicTypeOverride == 3 ||
-                (!useMissionZipBuiltinMusic && musicTypeOverride == null && mode == "files"),
+                (!useMissionZipSoundtrack && musicTypeOverride == null && mode == "files"),
     )
 }
 
@@ -203,12 +203,12 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
         resolveMusicLaunchPolicy(
             musicMode = mode,
             musicTypeOverride = musicTypeOverride,
-            missionHasSoundtrack = game != null && ModManager(filesDir).hasEnabledMissionZipBuiltinMusic(game),
+            missionHasSoundtrack = game != null && ModManager(filesDir).hasEnabledMissionZipSoundtrack(game),
             useMissionSoundtrackWhenAvailable = useMissionSoundtrack,
         )
 
-    if (policy.useMissionZipBuiltinMusic) {
-        Log.i("DXX-Setup", "Using mission zip built-in music for $game launch")
+    if (policy.useMissionZipSoundtrack) {
+        Log.i("DXX-Setup", "Using mission zip soundtrack for $game launch")
     }
 
     val settings = mutableListOf("MusicType" to policy.musicType)

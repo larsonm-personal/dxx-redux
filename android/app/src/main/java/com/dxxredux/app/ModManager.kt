@@ -31,7 +31,7 @@ class ModManager(
         private const val GENERATED_MISSION_ZIP_DIR = ".generated_mission_zips"
         const val MOD_KIND_DXA = "dxa"
         const val MOD_KIND_MISSION_ZIP = MissionZip.KIND
-        private val MISSION_MIXER_MUSIC_EXTENSIONS = setOf("flac", "hmp", "mid", "mp3", "ogg")
+        private val MISSION_SOUNDTRACK_EXTENSIONS = setOf("flac", "hmp", "mid", "mp3", "ogg")
         private val MISSION_SONG_LIST_FILES = setOf("descent.sng", "dxx-r.sng")
     }
 
@@ -645,10 +645,10 @@ class ModManager(
         return ModCompatibilityReport(failures, patchConflicts)
     }
 
-    fun hasEnabledMissionZipBuiltinMusic(game: String): Boolean =
+    fun hasEnabledMissionZipSoundtrack(game: String): Boolean =
         mods
             .filter { it.enabledForLaunch(game) && it.kind == MOD_KIND_MISSION_ZIP }
-            .any { missionZipHasBuiltinMusic(File(modsDir, it.filename)) }
+            .any { missionZipHasSoundtrack(File(modsDir, it.filename)) }
 
     private fun ModInfo.enabledForLaunch(game: String): Boolean =
         enabled &&
@@ -1002,7 +1002,7 @@ class ModManager(
         return File(File(filesDir, gameDir), GENERATED_MISSION_ZIP_DIR)
     }
 
-    private fun missionZipHasBuiltinMusic(modFile: File): Boolean =
+    private fun missionZipHasSoundtrack(modFile: File): Boolean =
         runCatching {
             ZipFile(modFile).use { outer ->
                 val entries = outer.entries()
@@ -1012,7 +1012,7 @@ class ModManager(
                     when (launcherExtensionOf(entry.name)) {
                         "sng" -> {
                             outer.getInputStream(entry).use { input ->
-                                if (songListReferencesMixerMusic(input.readBytes().toString(Charsets.UTF_8))) {
+                                if (songListReferencesMissionSoundtrack(input.readBytes().toString(Charsets.UTF_8))) {
                                     return@runCatching true
                                 }
                             }
@@ -1020,14 +1020,18 @@ class ModManager(
 
                         "dxa" -> {
                             outer.getInputStream(entry).use { input ->
-                                if (dxaHasBuiltinMusic(ZipInputStream(input))) return@runCatching true
+                                if (dxaHasSoundtrack(ZipInputStream(input))) return@runCatching true
                             }
                         }
 
                         "hog" -> {
                             outer.getInputStream(entry).use { input ->
-                                if (hogHasBuiltinMusic(input)) return@runCatching true
+                                if (hogHasSoundtrack(input)) return@runCatching true
                             }
+                        }
+
+                        in MISSION_SOUNDTRACK_EXTENSIONS -> {
+                            return@runCatching true
                         }
                     }
                 }
@@ -1035,14 +1039,17 @@ class ModManager(
             false
         }.getOrDefault(false)
 
-    private fun dxaHasBuiltinMusic(zip: ZipInputStream): Boolean =
+    private fun dxaHasSoundtrack(zip: ZipInputStream): Boolean =
         zip.use {
             var entry = it.nextEntry
             while (entry != null) {
-                if (!entry.isDirectory &&
-                    launcherLeafNameOf(entry.name).lowercase(Locale.US) in MISSION_SONG_LIST_FILES
-                ) {
-                    if (songListReferencesMixerMusic(it.readBytes().toString(Charsets.UTF_8))) return true
+                if (!entry.isDirectory) {
+                    val leaf = launcherLeafNameOf(entry.name).lowercase(Locale.US)
+                    if (leaf in MISSION_SONG_LIST_FILES) {
+                        if (songListReferencesMissionSoundtrack(it.readBytes().toString(Charsets.UTF_8))) return true
+                    } else if (launcherExtensionOf(leaf) in MISSION_SOUNDTRACK_EXTENSIONS) {
+                        return true
+                    }
                 }
                 it.closeEntry()
                 entry = it.nextEntry
@@ -1050,13 +1057,13 @@ class ModManager(
             false
         }
 
-    private fun songListReferencesMixerMusic(text: String): Boolean =
+    private fun songListReferencesMissionSoundtrack(text: String): Boolean =
         text
             .lineSequence()
             .map { it.trim().substringBefore(' ').substringBefore('\t') }
-            .any { launcherExtensionOf(it) in MISSION_MIXER_MUSIC_EXTENSIONS }
+            .any { launcherExtensionOf(it) in MISSION_SOUNDTRACK_EXTENSIONS }
 
-    private fun hogHasBuiltinMusic(input: InputStream): Boolean {
+    private fun hogHasSoundtrack(input: InputStream): Boolean {
         val magic = input.readNBytesCompat(3)
         if (magic.toString(Charsets.US_ASCII) != "DHF") return false
         while (true) {
@@ -1066,7 +1073,7 @@ class ModManager(
             if (lenBytes.size != 4) return false
             val name = hogEntryName(nameBytes)
             val size = leInt(lenBytes).toLong() and 0xffff_ffffL
-            if (launcherExtensionOf(name) in MISSION_MIXER_MUSIC_EXTENSIONS) return true
+            if (launcherExtensionOf(name) in MISSION_SOUNDTRACK_EXTENSIONS) return true
             input.skipFullyCompat(size)
         }
     }

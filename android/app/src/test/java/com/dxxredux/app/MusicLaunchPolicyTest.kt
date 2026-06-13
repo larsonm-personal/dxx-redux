@@ -17,7 +17,7 @@ class MusicLaunchPolicyTest {
             )
 
         assertEquals("2", policy.musicType)
-        assertFalse(policy.useMissionZipBuiltinMusic)
+        assertFalse(policy.useMissionZipSoundtrack)
         assertTrue(policy.useCdTrackOrder)
         assertFalse(policy.useCustomAudioFiles)
     }
@@ -34,7 +34,7 @@ class MusicLaunchPolicyTest {
                 )
 
             assertEquals("1", policy.musicType)
-            assertTrue(policy.useMissionZipBuiltinMusic)
+            assertTrue(policy.useMissionZipSoundtrack)
             assertFalse(policy.useCdTrackOrder)
             assertFalse(policy.useCustomAudioFiles)
         }
@@ -51,7 +51,7 @@ class MusicLaunchPolicyTest {
             )
 
         assertEquals("2", policy.musicType)
-        assertFalse(policy.useMissionZipBuiltinMusic)
+        assertFalse(policy.useMissionZipSoundtrack)
         assertTrue(policy.useCdTrackOrder)
         assertFalse(policy.useCustomAudioFiles)
     }
@@ -67,7 +67,7 @@ class MusicLaunchPolicyTest {
             )
 
         assertEquals("3", policy.musicType)
-        assertFalse(policy.useMissionZipBuiltinMusic)
+        assertFalse(policy.useMissionZipSoundtrack)
         assertFalse(policy.useCdTrackOrder)
         assertTrue(policy.useCustomAudioFiles)
     }

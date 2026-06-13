@@ -107,16 +107,28 @@ class ModManagerMissionZipTest {
     }
 
     @Test
-    fun missionZipWithOggSongListRequestsBuiltinMusic() {
-        val filesDir = File("build/test-mod-manager-mission-zip-builtin-music").absoluteFile
+    fun missionZipWithOggSongListRequestsMissionSoundtrack() {
+        val filesDir = File("build/test-mod-manager-mission-zip-soundtrack").absoluteFile
         filesDir.deleteRecursively()
         filesDir.mkdirs()
 
         val imported = ModManager(filesDir).importMissionZipFile(createMissionZipWithDxaMusic(), "Uneasy4.zip")
         assertNotNull(imported)
 
-        assertTrue(ModManager(filesDir).hasEnabledMissionZipBuiltinMusic("d2"))
-        assertFalse(ModManager(filesDir).hasEnabledMissionZipBuiltinMusic("d1"))
+        assertTrue(ModManager(filesDir).hasEnabledMissionZipSoundtrack("d2"))
+        assertFalse(ModManager(filesDir).hasEnabledMissionZipSoundtrack("d1"))
+    }
+
+    @Test
+    fun missionZipWithMixedMidiAndOggRequestsMissionSoundtrack() {
+        val filesDir = File("build/test-mod-manager-mission-zip-mixed-soundtrack").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val imported = ModManager(filesDir).importMissionZipFile(createMissionZipWithMixedSoundtrack(), "Mixed.zip")
+        assertNotNull(imported)
+
+        assertTrue(ModManager(filesDir).hasEnabledMissionZipSoundtrack("d2"))
     }
 
     @Test
@@ -129,7 +141,7 @@ class ModManagerMissionZipTest {
         val imported = manager.importMissionZipFile(createObsidianStyleMissionZip(), "Obsidian.zip")
         assertNotNull(imported)
 
-        assertTrue(manager.hasEnabledMissionZipBuiltinMusic("d2"))
+        assertTrue(manager.hasEnabledMissionZipSoundtrack("d2"))
         manager.writeEnabledModPaths("d2")
 
         val stageDir = File(filesDir, "d2x-redux/.generated_mission_zips/Obsidian.zip/missions")
@@ -515,6 +527,39 @@ class ModManagerMissionZipTest {
 
             zip.putNextEntry(ZipEntry("Uneasy4.mn2"))
             zip.write("name = Uneasy 4\nnum_levels = 1\nUneasy4.rl2\n".toByteArray())
+            zip.closeEntry()
+        }
+        return zipFile
+    }
+
+    private fun createMissionZipWithMixedSoundtrack(): File {
+        val zipFile = File.createTempFile("missionzip-manager-mixed-music", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("mixed.dxa"))
+            zip.write(
+                createZipBytes {
+                    it.putNextEntry(ZipEntry("descent.sng"))
+                    it.write("game01.hmp\nlevel02.ogg\n".toByteArray())
+                    it.closeEntry()
+
+                    it.putNextEntry(ZipEntry("game01.hmp"))
+                    it.write(byteArrayOf(1, 2, 3, 4))
+                    it.closeEntry()
+
+                    it.putNextEntry(ZipEntry("level02.ogg"))
+                    it.write(byteArrayOf(5, 6, 7, 8))
+                    it.closeEntry()
+                },
+            )
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("mixed.hog"))
+            zip.write(createHogBytes("level01.rl2" to ByteArray(12)))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("mixed.mn2"))
+            zip.write("name = Mixed Music\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
             zip.closeEntry()
         }
         return zipFile

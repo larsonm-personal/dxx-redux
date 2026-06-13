@@ -530,7 +530,7 @@ class AudioSourceManager(
                             cueContentUri = obj.optString("cue_content_uri", "").ifEmpty { null },
                         )
                     }.toMutableList()
-            Log.i(TAG, "Loaded ${sources.size} audio sources")
+            runCatching { Log.i(TAG, "Loaded ${sources.size} audio sources") }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load $SOURCES_FILE", e)
             sources = mutableListOf()
