@@ -29,6 +29,8 @@ internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
     } else {
         when (actionIndex) {
             TouchOverlayView.ADMIN_INCREASE_VIEW,
+            TouchOverlayView.ADMIN_CYCLE_LEFT_VIEW,
+            TouchOverlayView.ADMIN_CYCLE_RIGHT_VIEW,
             TouchOverlayView.ADMIN_DIFFICULTY,
             TouchOverlayView.ADMIN_CHEATS,
             TouchOverlayView.ADMIN_MUSIC,
@@ -88,6 +90,7 @@ internal fun adminTrayVisibleActions(
     isMultiplayerGame: Boolean = false,
     hasPendingLaunchInfo: Boolean = false,
     hasGuidebotAbdicateAction: Boolean = false,
+    hasCameraWindowCycleActions: Boolean = false,
     automapActive: Boolean = false,
     canShowDifficultyChange: Boolean = false,
 ): List<Int> {
@@ -105,6 +108,10 @@ internal fun adminTrayVisibleActions(
             TouchOverlayView.ADMIN_FOV,
             TouchOverlayView.ADMIN_MUSIC,
         )
+    if (hasCameraWindowCycleActions) {
+        actions.add(1, TouchOverlayView.ADMIN_CYCLE_LEFT_VIEW)
+        actions.add(2, TouchOverlayView.ADMIN_CYCLE_RIGHT_VIEW)
+    }
     if (canShowDifficultyChange) {
         actions.add(TouchOverlayView.ADMIN_DIFFICULTY)
     }

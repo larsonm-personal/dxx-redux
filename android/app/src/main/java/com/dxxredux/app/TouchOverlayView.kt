@@ -627,6 +627,8 @@ class TouchOverlayView
             const val ADMIN_AUTOMAP_NAME_MARKER = 22
             const val ADMIN_AUTOMAP_SECRET_REVEAL = 23
             const val ADMIN_CHEATS = 24
+            const val ADMIN_CYCLE_LEFT_VIEW = 25
+            const val ADMIN_CYCLE_RIGHT_VIEW = 26
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
             const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 
@@ -3746,6 +3748,14 @@ class TouchOverlayView
                     if (on) "AutoLevel: ON" else "AutoLevel: OFF"
                 }
 
+                ADMIN_CYCLE_LEFT_VIEW -> {
+                    "Left View"
+                }
+
+                ADMIN_CYCLE_RIGHT_VIEW -> {
+                    "Right View"
+                }
+
                 ADMIN_QUICK_SAVE -> {
                     "Save"
                 }
@@ -3858,6 +3868,7 @@ class TouchOverlayView
                 isMultiplayerGame = isMultiplayerGameProvider?.invoke() == true,
                 hasPendingLaunchInfo = hasPendingMultiplayerLaunchProvider?.invoke() == true,
                 hasGuidebotAbdicateAction = gameVariant == "d2",
+                hasCameraWindowCycleActions = gameVariant == "d2",
                 automapActive = automapActive,
                 canShowDifficultyChange = adminTrayCanShowDifficultyProvider?.invoke() == true,
             )

@@ -84,6 +84,21 @@ class AdminTrayUiTest {
     }
 
     @Test
+    fun d2TouchModeIncludesCameraWindowCycleActions() {
+        val actions =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = false,
+                hasTouchAutomapButton = true,
+                hasCameraWindowCycleActions = true,
+            )
+
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_CYCLE_LEFT_VIEW))
+        assertTrue(actions.contains(TouchOverlayView.ADMIN_CYCLE_RIGHT_VIEW))
+        assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_CYCLE_LEFT_VIEW))
+        assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_CYCLE_RIGHT_VIEW))
+    }
+
+    @Test
     fun automapModeHidesActionsThatOpenBrokenMenus() {
         val actions =
             adminTrayVisibleActions(

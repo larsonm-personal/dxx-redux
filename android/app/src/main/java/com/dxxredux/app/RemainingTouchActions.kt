@@ -25,12 +25,6 @@ private val remainingMultiplayerActionBindings =
         TouchBindings.META_DROP_FLAG,
     )
 
-private val remainingCameraWindowBindings =
-    listOf(
-        TouchBindings.META_CYCLE_LEFT_VIEW,
-        TouchBindings.META_CYCLE_RIGHT_VIEW,
-    )
-
 private val remainingPrimaryWeaponBindings =
     listOf(
         TouchBindings.META_WEAPON_1,
@@ -108,7 +102,6 @@ private fun remainingCandidateBindings(
         val hasSecondaryWheel = layout.radialMenus.any { it.id == "SecWpn" }
 
         addAll(remainingBaseActionBindings)
-        addAll(remainingCameraWindowBindings)
         if (layout.gyro.enabled) add(TouchBindings.META_GYRO_TOGGLE)
         if (isMultiplayerGame) addAll(remainingMultiplayerActionBindings)
         if (!hasPrimaryWheel) {

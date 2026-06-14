@@ -23,8 +23,8 @@ class RemainingKeyTouchActionsTest {
         assertTrue(TouchBindings.META_WEAPON_1 in bindings)
         assertTrue(TouchBindings.META_WEAPON_10 in bindings)
         assertTrue(TouchBindings.META_GUIDE_BOT_MENU in bindings)
-        assertTrue(TouchBindings.META_CYCLE_LEFT_VIEW in bindings)
-        assertTrue(TouchBindings.META_CYCLE_RIGHT_VIEW in bindings)
+        assertTrue(TouchBindings.META_CYCLE_LEFT_VIEW !in bindings)
+        assertTrue(TouchBindings.META_CYCLE_RIGHT_VIEW !in bindings)
         assertTrue(TouchBindings.META_REWIND in bindings)
     }
 

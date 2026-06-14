@@ -997,6 +997,14 @@ class MainActivity :
                     nativeCycleCockpit(1)
                 }
 
+                TouchOverlayView.ADMIN_CYCLE_LEFT_VIEW -> {
+                    dispatchMetaAction(TouchBindings.META_CYCLE_LEFT_VIEW, true)
+                }
+
+                TouchOverlayView.ADMIN_CYCLE_RIGHT_VIEW -> {
+                    dispatchMetaAction(TouchBindings.META_CYCLE_RIGHT_VIEW, true)
+                }
+
                 TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL -> {
                     nativeToggleAutoLeveling()
                 }

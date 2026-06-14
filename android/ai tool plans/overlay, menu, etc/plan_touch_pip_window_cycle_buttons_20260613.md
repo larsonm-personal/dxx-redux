@@ -20,3 +20,14 @@ Validation:
 - `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.RemainingKeyTouchActionsTest` passed.
 - `.\android\run-code-quality.ps1 -Fix -Paths @(...)` passed for the touched Kotlin/C files.
 - `.\gradlew.bat :app:assembleDebug` passed, including Android native builds for arm64-v8a, armeabi-v7a, and x86_64.
+
+Follow-up:
+- [x] Move the left/right view cycle controls from remaining-actions into the overlay settings tray.
+- [x] Keep the controls D2-only and routed through the same base `Shift-F1`/`Shift-F2` meta actions.
+- [x] Update settings-tray and remaining-actions tests.
+- [x] Run focused formatting/tests.
+
+Follow-up validation:
+- `.\android\run-code-quality.ps1 -Fix -Paths @(...)` passed for the touched Kotlin/C/plan files.
+- `.\gradlew.bat :app:testDebugUnitTest --tests com.dxxredux.app.RemainingKeyTouchActionsTest --tests com.dxxredux.app.AdminTrayUiTest` passed.
+- `.\gradlew.bat :app:assembleDebug` passed, including Android native builds for arm64-v8a, armeabi-v7a, and x86_64.
