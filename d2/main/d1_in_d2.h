@@ -34,12 +34,17 @@ typedef struct d1_in_d2_asset_stats {
 	int sound_map_entries;
 	int sound_files;
 	int sound_bytes;
+	int cockpit_active;
+	int cockpit_frames_applied;
+	int cockpit_frames_skipped;
 } d1_in_d2_asset_stats;
 
 void d1_in_d2_apply_effects(int active);
 void d1_in_d2_apply_powerup_vclips(int active);
 void d1_in_d2_apply_robot_assets(int active);
 void d1_in_d2_apply_sounds(int active);
+void d1_in_d2_apply_cockpit(int active);
+int d1_in_d2_prepare_guidebot_assets(void);
 void d1_in_d2_get_stats(d1_in_d2_asset_stats *stats);
 int d1_in_d2_ensure_spawnable_guidebot(void);
 int d1_in_d2_use_d1_robot_aiming(void);

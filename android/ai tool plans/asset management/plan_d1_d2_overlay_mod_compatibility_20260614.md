@@ -490,7 +490,7 @@ Validation:
 
 ### Phase 5: Cockpit, Gauge, HUD, and Menu Art
 
-Status: not started.
+Status: started.
 
 Deliverables:
 
@@ -498,6 +498,15 @@ Deliverables:
 - Apply D1 cockpit/gauge base art in D1-in-D2.
 - Support high resolution cockpit overlays for D1, D2, and explicitly marked
   cross-game packs.
+
+Progress:
+
+- Added a D1-in-D2 cockpit base art layer that loads D1 cockpit bitmaps into
+  the D2 cockpit slots for D1 missions, then restores D2 cockpit bitmaps when
+  returning to native D2.
+- Added cockpit compatibility counters to `asset_trace.d1_compat`.
+- Preserved spawnable guidebot D2 art by cloning its D2 bitmap data before D1
+  wall/robot compatibility replaces shared bitmap slots.
 
 Validation:
 

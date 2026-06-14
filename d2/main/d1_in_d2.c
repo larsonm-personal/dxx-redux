@@ -78,6 +78,12 @@ static int D1_robot_bitmap_slots_registered = 0;
 static int D1_robot_polygon_models_loaded = 0;
 static bitmap_index D1_robot_bitmap_slots[D1_MAX_OBJ_BITMAPS];
 static int D1_sounds_active = 0;
+static int D1_cockpit_active = 0;
+static int D1_cockpit_saved = 0;
+static grs_bitmap D1_original_cockpit_bitmaps[N_COCKPIT_BITMAPS];
+static int D1_original_cockpit_offsets[N_COCKPIT_BITMAPS];
+static ubyte D1_original_cockpit_file_flags[N_COCKPIT_BITMAPS];
+static ubyte D1_original_cockpit_valid[N_COCKPIT_BITMAPS];
 static int D2_guidebot_assets_saved = 0;
 static robot_info D2_guidebot_robot_info;
 static jointpos D2_guidebot_joints[MAX_ROBOT_JOINTS];
@@ -166,7 +172,7 @@ static void skip_d1_vclips_and_effects(PHYSFS_file *fp)
 	PHYSFSX_fseek(fp, D1_MAX_EFFECTS * sizeof(eclip), SEEK_CUR);
 }
 
-static int seek_d1_final_sound_maps(PHYSFS_file *fp, int pigsize)
+static int seek_d1_final_sound_maps(PHYSFS_file *fp, int pigsize, bitmap_index d1_cockpit[D1_N_COCKPIT_BITMAPS])
 {
 	robot_info temp_robot;
 	weapon_info temp_weapon;
@@ -235,13 +241,27 @@ static int seek_d1_final_sound_maps(PHYSFS_file *fp, int pigsize)
 	num_cockpits = PHYSFSX_readInt(fp);
 	if (num_cockpits < 0 || num_cockpits > D1_N_COCKPIT_BITMAPS)
 		return 0;
-	bitmap_index_read_n(temp_cockpit, D1_N_COCKPIT_BITMAPS, fp);
+	bitmap_index_read_n(d1_cockpit ? d1_cockpit : temp_cockpit, D1_N_COCKPIT_BITMAPS, fp);
 	return 1;
+}
+
+static int read_d1_cockpit_bitmaps(bitmap_index d1_cockpit[D1_N_COCKPIT_BITMAPS])
+{
+	PHYSFS_file *fp;
+	int pigsize, ok;
+
+	fp = open_d1_registered_pig();
+	if (!fp)
+		return 0;
+	pigsize = (int)PHYSFS_fileLength(fp);
+	ok = seek_d1_final_sound_maps(fp, pigsize, d1_cockpit);
+	PHYSFS_close(fp);
+	return ok;
 }
 
 static int read_d1_sound_maps(PHYSFS_file *fp, int pigsize, ubyte d1_sounds[D1_MAX_PIG_SOUNDS], ubyte d1_alt_sounds[D1_MAX_PIG_SOUNDS])
 {
-	if (!seek_d1_final_sound_maps(fp, pigsize))
+	if (!seek_d1_final_sound_maps(fp, pigsize, NULL))
 		return 0;
 	if (PHYSFS_read(fp, d1_sounds, sizeof(ubyte), D1_MAX_PIG_SOUNDS) != D1_MAX_PIG_SOUNDS)
 		return 0;
@@ -458,6 +478,82 @@ void d1_in_d2_apply_sounds(int active)
 	Last_stats.sound_map_entries = D1_MAX_PIG_SOUNDS;
 	Last_stats.sound_files = num_sounds;
 	Last_stats.sound_bytes = sound_bytes;
+}
+
+static void save_original_cockpit_bitmaps(void)
+{
+	int i;
+
+	if (D1_cockpit_saved)
+		return;
+	for (i = 0; i < N_COCKPIT_BITMAPS; i++) {
+		int bitmap_index = cockpit_bitmap[i].index;
+
+		if (bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES)
+			continue;
+		D1_original_cockpit_bitmaps[i] = GameBitmaps[bitmap_index];
+		D1_original_cockpit_offsets[i] = piggy_bitmap_get_offset(bitmap_index);
+		D1_original_cockpit_file_flags[i] = piggy_bitmap_get_file_flags(bitmap_index);
+		D1_original_cockpit_valid[i] = 1;
+	}
+	D1_cockpit_saved = 1;
+}
+
+void d1_in_d2_apply_cockpit(int active)
+{
+	bitmap_index d1_cockpit[D1_N_COCKPIT_BITMAPS];
+	int d2_visible_cockpits = N_COCKPIT_BITMAPS / 2;
+	int i;
+
+	Last_stats.cockpit_active = D1_cockpit_active;
+	Last_stats.cockpit_frames_applied = 0;
+	Last_stats.cockpit_frames_skipped = 0;
+
+	if (!active) {
+		if (D1_cockpit_active) {
+			for (i = 0; i < N_COCKPIT_BITMAPS; i++) {
+				int bitmap_index = cockpit_bitmap[i].index;
+				grs_bitmap *bmp;
+
+				if (!D1_original_cockpit_valid[i] ||
+				    bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES)
+					continue;
+				bmp = &GameBitmaps[bitmap_index];
+				gr_set_bitmap_data(bmp, NULL);
+				*bmp = D1_original_cockpit_bitmaps[i];
+				piggy_bitmap_set_file_state(bitmap_index, D1_original_cockpit_offsets[i],
+				                            D1_original_cockpit_file_flags[i]);
+				if (D1_original_cockpit_offsets[i]) {
+					gr_set_bitmap_flags(bmp, BM_FLAG_PAGED_OUT);
+					gr_set_bitmap_data(bmp, Piggy_bitmap_cache_data);
+				} else
+					gr_set_bitmap_flags(bmp, D1_original_cockpit_bitmaps[i].bm_flags);
+			}
+			D1_cockpit_active = 0;
+		}
+		Last_stats.cockpit_active = 0;
+		return;
+	}
+
+	save_original_cockpit_bitmaps();
+	if (!read_d1_cockpit_bitmaps(d1_cockpit))
+		return;
+
+	for (i = 0; i < d2_visible_cockpits; i++) {
+		int d1_index = i;
+		bitmap_index d2_bitmap = cockpit_bitmap[i];
+
+		if (d1_index >= D1_N_COCKPIT_BITMAPS || d2_bitmap.index >= MAX_BITMAP_FILES) {
+			Last_stats.cockpit_frames_skipped++;
+			continue;
+		}
+		if (load_d1_bitmap_frame(d1_cockpit[d1_index].index, d2_bitmap))
+			Last_stats.cockpit_frames_applied++;
+		else
+			Last_stats.cockpit_frames_skipped++;
+	}
+	D1_cockpit_active = 1;
+	Last_stats.cockpit_active = 1;
 }
 
 static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)
@@ -682,6 +778,59 @@ static void remove_spawnable_guidebot_assets(void)
 	D1_spawnable_guidebot_obj_bitmap_count = 0;
 }
 
+static int bitmap_data_size(const grs_bitmap *bmp)
+{
+	int size;
+
+	if (!bmp->bm_data)
+		return 0;
+	if (bmp->bm_flags & BM_FLAG_RLE) {
+		memcpy(&size, bmp->bm_data, sizeof(size));
+		return size > 0 ? size : 0;
+	}
+	return bmp->bm_rowsize * bmp->bm_h;
+}
+
+static int copy_bitmap_to_new_slot(bitmap_index src, bitmap_index *dest)
+{
+	grs_bitmap *src_bmp, *dest_bmp;
+	ubyte *data;
+	char name[13];
+	int saved_sound_offset, size, slot;
+
+	if (src.index >= MAX_BITMAP_FILES)
+		return 0;
+	PIGGY_PAGE_IN(src);
+	src_bmp = &GameBitmaps[src.index];
+	size = bitmap_data_size(src_bmp);
+	if (!size)
+		return 0;
+	if (Num_bitmap_files >= D1_ROBOT_BITMAP_SLOT_BASE)
+		return 0;
+	MALLOC(data, ubyte, size);
+	if (!data)
+		return 0;
+	memcpy(data, src_bmp->bm_data, size);
+
+	slot = Num_bitmap_files;
+	dest_bmp = &GameBitmaps[slot];
+	*dest_bmp = *src_bmp;
+	dest_bmp->bm_data = data;
+	dest_bmp->bm_parent = NULL;
+#ifdef OGL
+	dest_bmp->gltexture = NULL;
+	dest_bmp->gltexture_mask = NULL;
+#endif
+	snprintf(name, sizeof(name), "gbot%04d", slot);
+	saved_sound_offset = Num_sound_files < MAX_SOUND_FILES ? SoundOffset[Num_sound_files] : 0;
+	piggy_register_bitmap(dest_bmp, name, 1);
+	if (Num_sound_files < MAX_SOUND_FILES)
+		SoundOffset[Num_sound_files] = saved_sound_offset;
+	piggy_bitmap_set_file_state(slot, 0, src_bmp->bm_flags);
+	dest->index = slot;
+	return 1;
+}
+
 static int save_d2_guidebot_assets(void)
 {
 	int buddy_id, gun, state, i;
@@ -734,12 +883,18 @@ static int save_d2_guidebot_assets(void)
 		if (obj_bitmap < 0 || obj_bitmap >= MAX_OBJ_BITMAPS)
 			return 0;
 		D2_guidebot_obj_bitmaps[i] = ObjBitmaps[obj_bitmap];
+		copy_bitmap_to_new_slot(ObjBitmaps[obj_bitmap], &D2_guidebot_obj_bitmaps[i]);
 	}
 
 	if (!copy_model_data(&D2_guidebot_model, model))
 		return 0;
 	D2_guidebot_assets_saved = 1;
 	return 1;
+}
+
+int d1_in_d2_prepare_guidebot_assets(void)
+{
+	return save_d2_guidebot_assets();
 }
 
 int d1_in_d2_ensure_spawnable_guidebot(void)

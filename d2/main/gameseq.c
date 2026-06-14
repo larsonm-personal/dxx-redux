@@ -870,15 +870,18 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	d1_custom_remove();
 	if (EMULATING_D1) {
+		d1_in_d2_prepare_guidebot_assets();
 		load_d1_bitmap_replacements();
 		d1_in_d2_apply_effects(1);
 		d1_in_d2_apply_powerup_vclips(1);
+		d1_in_d2_apply_cockpit(1);
 		d1_in_d2_apply_sounds(1);
 		d1_custom_load_data(level_name);
 	} else {
 		d1_in_d2_apply_robot_assets(0);
 		d1_in_d2_apply_powerup_vclips(0);
 		d1_in_d2_apply_effects(0);
+		d1_in_d2_apply_cockpit(0);
 		d1_in_d2_apply_sounds(0);
 		load_bitmap_replacements(level_name);
 	}

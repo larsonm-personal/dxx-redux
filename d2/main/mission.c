@@ -1054,7 +1054,7 @@ typedef struct mission_menu
 static void mission_display_name(mle *mission, char *display_name)
 {
 	if (mission->descent_version == 1)
-		snprintf(display_name, MISSION_NAME_LEN + 6, "(D1) %s", mission->mission_name);
+		snprintf(display_name, MISSION_NAME_LEN + 6, "D1: %s", mission->mission_name);
 	else
 		snprintf(display_name, MISSION_NAME_LEN + 6, "%s", mission->mission_name);
 }
