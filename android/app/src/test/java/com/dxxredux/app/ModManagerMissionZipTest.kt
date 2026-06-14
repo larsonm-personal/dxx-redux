@@ -52,7 +52,7 @@ class ModManagerMissionZipTest {
         val imported = ModManager(filesDir).importMissionZipFile(createMissionZip(), "Uneasy4.zip")
         assertNotNull(imported)
 
-        ModManager(filesDir).writeEnabledModPaths("d2")
+        ModManager(filesDir).writeEnabledModPaths("d2", includeD1MissionZipsForD2 = false)
 
         val pathFile = File(filesDir, "d2x-redux/.active_mod_paths")
         val lines = pathFile.readLines()
@@ -112,6 +112,30 @@ class ModManagerMissionZipTest {
         assertHogHasEntry(d1Hog, "e2m1.dtx")
         assertHogHasEntry(d1Hog, "e2m1.pg1")
         assertD1CustomPig1Counts(d1Hog, "e2m1.dtx", bitmaps = 1, sounds = 1)
+    }
+
+    @Test
+    fun d1MsnMissionZipCanBeHiddenFromD2EngineWhenD1InD2IsNotReady() {
+        val filesDir = File("build/test-mod-manager-mission-zip-d1-hidden-from-d2").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val manager = ModManager(filesDir)
+        val imported = manager.importMissionZipFile(createTrine2StyleMissionZip(), "trine2.zip")
+        assertNotNull(imported)
+        assertEquals("d1", imported!!.game)
+
+        manager.writeEnabledModPaths("d2", includeD1MissionZipsForD2 = false)
+
+        assertFalse(File(filesDir, "d2x-redux/.active_mod_paths").exists())
+        assertFalse(File(filesDir, "d2x-redux/.generated_mission_zips/trine2.zip").exists())
+
+        manager.writeEnabledModPaths("d1")
+
+        val d1PathFile = File(filesDir, "d1x-redux/.active_mod_paths")
+        val d1Lines = d1PathFile.readLines()
+        assertEquals(1, d1Lines.size)
+        assertTrue(d1Lines[0].endsWith(".generated_mission_zips${File.separator}trine2.zip"))
     }
 
     @Test

@@ -546,10 +546,13 @@ class ModManager(
      * Write .active_mod_paths for the given game (d1 or d2).
      * Called before game launch alongside writeActiveSetPath().
      */
-    fun writeEnabledModPaths(game: String) {
+    fun writeEnabledModPaths(
+        game: String,
+        includeD1MissionZipsForD2: Boolean = true,
+    ) {
         val enabled =
             mods
-                .filter { it.enabledForLaunch(game) }
+                .filter { it.enabledForLaunch(game, includeD1MissionZipsForD2) }
                 .sortedBy { it.order }
         val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
         val pathFile = File(File(filesDir, gameDir), ".active_mod_paths")
@@ -627,10 +630,11 @@ class ModManager(
     fun checkEnabledModCompatibility(
         game: String,
         setDir: File,
+        includeD1MissionZipsForD2: Boolean = true,
     ): ModCompatibilityReport {
         val enabled =
             mods
-                .filter { it.enabledForLaunch(game) }
+                .filter { it.enabledForLaunch(game, includeD1MissionZipsForD2) }
                 .sortedBy { it.order }
         val assetEntries = AssetManifest(setDir).load().associateBy { it.filename.lowercase(Locale.US) }
         val failures = mutableListOf<ModCompatibilityFailure>()
@@ -646,19 +650,33 @@ class ModManager(
     }
 
     fun hasEnabledMissionZipSoundtrack(game: String): Boolean =
+        hasEnabledMissionZipSoundtrack(game, includeD1MissionZipsForD2 = true)
+
+    fun hasEnabledMissionZipSoundtrack(
+        game: String,
+        includeD1MissionZipsForD2: Boolean,
+    ): Boolean =
         mods
-            .filter { it.enabledForLaunch(game) && it.kind == MOD_KIND_MISSION_ZIP }
+            .filter { it.enabledForLaunch(game, includeD1MissionZipsForD2) && it.kind == MOD_KIND_MISSION_ZIP }
             .any { missionZipHasSoundtrack(File(modsDir, it.filename)) }
 
     fun hasEnabledD1MissionZipForD2(): Boolean =
         mods.any { it.enabled && it.kind == MOD_KIND_MISSION_ZIP && it.game == "d1" }
 
-    private fun ModInfo.enabledForLaunch(game: String): Boolean =
+    private fun ModInfo.enabledForLaunch(
+        game: String,
+        includeD1MissionZipsForD2: Boolean = true,
+    ): Boolean =
         enabled &&
             (
                 this.game == game ||
                     this.game == "both" ||
-                    (game == "d2" && kind == MOD_KIND_MISSION_ZIP && this.game == "d1")
+                    (
+                        includeD1MissionZipsForD2 &&
+                            game == "d2" &&
+                            kind == MOD_KIND_MISSION_ZIP &&
+                            this.game == "d1"
+                    )
             )
 
     private fun registerMissionZip(

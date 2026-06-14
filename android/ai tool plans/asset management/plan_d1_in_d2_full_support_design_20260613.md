@@ -660,3 +660,13 @@ After that, add the launcher readiness/UX layer so this becomes a discoverable s
 - [x] Port or adapt D1 compressed PC shareware sound decompression for shareware `descent.pig` variants.
 - [x] Add Mac D1 sound resource support using `Sounds/sounds.array` and `Sounds/SNDxxxx.raw` when present.
 - [x] Run scoped quality checks and builds for the edge-case sound work.
+- [x] Tighten the existing Trine 2 D1-in-D2 script to assert the registered D1 base sound table result exactly.
+- [x] Extend the fast mission ZIP staging test to prove the synthetic D1 custom `.dtx` fixture contains a sound entry.
+- [ ] Add real-data runtime coverage for compressed PC shareware and Mac raw sound resources if suitable fixture data becomes available.
+
+## Phase 6 D1-In-D2 Mission Visibility Tracker
+
+- [x] Gate D1 mission ZIP mounting into D2 on D1-in-D2 data readiness.
+- [x] Hide the built-in D1 mission from the D2 native mission list when `descent.pig` is missing.
+- [x] Add focused JVM coverage for D2 mission ZIP path filtering.
+- [x] Run scoped quality checks, JVM tests, and native build.

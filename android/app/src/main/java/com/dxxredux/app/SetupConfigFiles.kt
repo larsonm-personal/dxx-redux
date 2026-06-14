@@ -173,6 +173,7 @@ internal fun resolveMusicLaunchPolicy(
 internal fun SetupActivity.writeMusicConfigForLaunch(
     game: String? = null,
     musicTypeOverride: Int? = null,
+    includeD1MissionZipsForD2: Boolean = true,
 ) {
     val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
     val pilotMusic =
@@ -203,7 +204,9 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
         resolveMusicLaunchPolicy(
             musicMode = mode,
             musicTypeOverride = musicTypeOverride,
-            missionHasSoundtrack = game != null && ModManager(filesDir).hasEnabledMissionZipSoundtrack(game),
+            missionHasSoundtrack =
+                game != null &&
+                    ModManager(filesDir).hasEnabledMissionZipSoundtrack(game, includeD1MissionZipsForD2),
             useMissionSoundtrackWhenAvailable = useMissionSoundtrack,
         )
 

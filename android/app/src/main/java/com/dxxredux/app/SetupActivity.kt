@@ -355,21 +355,29 @@ class SetupActivity : ComponentActivity() {
         musicTypeOverride: Int? = null,
     ): String? {
         val fileSetManager = FileSetManager(filesDir)
-        val activeSetDir = fileSetManager.getSetDir(fileSetManager.getActive())
+        val activeSet = fileSetManager.getActive()
+        val activeSetDir = fileSetManager.getSetDir(activeSet)
+        val safManifest = fileSetManager.safManifestForSet(activeSet)
         val modManager = ModManager(filesDir)
-        val compatibility = modManager.checkEnabledModCompatibility(game, activeSetDir)
+        val includeD1MissionZipsForD2 =
+            game != "d2" ||
+                d1InD2Readiness(filesDir, activeSetDir, AssetManifest(activeSetDir), safManifest).ready
+        val compatibility = modManager.checkEnabledModCompatibility(game, activeSetDir, includeD1MissionZipsForD2)
         if (!compatibility.ok) {
             Log.e("DXX-Setup", "Mod compatibility check failed for $game: ${compatibility.toLogMessage()}")
             LauncherDebugLog.log("mod-compatibility-block game=$game ${compatibility.toLogMessage()}")
             return compatibility.toUserMessage()
         }
+        if (game == "d2" && !includeD1MissionZipsForD2 && modManager.hasEnabledD1MissionZipForD2()) {
+            LauncherDebugLog.log("d1-in-d2-hidden-missions reason=missing-d1-base-assets")
+        }
         try {
             fileSetManager.writeActiveSetPath()
             AudioSourceManager(filesDir).writePlaylist(contentResolver)
-            modManager.writeEnabledModPaths(game)
+            modManager.writeEnabledModPaths(game, includeD1MissionZipsForD2)
             writeInitialGameConfig()
             migrateLegacyHalfRenderResolution()
-            writeMusicConfigForLaunch(game, musicTypeOverride)
+            writeMusicConfigForLaunch(game, musicTypeOverride, includeD1MissionZipsForD2)
         } catch (e: InsufficientStorageException) {
             Log.e("DXX-Setup", "Launch storage preflight failed for $game", e)
             LauncherDebugLog.log("launch-storage-block game=$game message=${e.message ?: ""}")

@@ -10,7 +10,7 @@
   - maintaining a single source of truth. for example, the details of the player file format should stay in playsave.c and *not* be brought into the kotlin code to support editing player files from the launcher. the launcher code should call into playsave.c functions for every detailed bit of access it needs
   - it's ok to have shared constants that exist in both java and C code in order to make interfaces cleaner. document wherever there are duplicated constants/arrays/structs so both copies can be maintained
 - any changes that are made should keep the existing windows/linux/mac builds intact, using #defines or separate files or similar
-- any changes should be accompanied by a successful cmake build and test run
+- any changes should be accompanied y a successful cmake build and test run
 - before the first release (as in, currently), do *not* code for backwards compatibility within the launcher or android-specific code. do maintain compatibility in the d1/d2 dirs because it will help upstreaming. virtually every build will be a full apk rebuild with a data reset
 - long term, the android launcher will be extracted to a library to support multiple 90s era games (using the same controls picker, CD extraction, and so on). try to plan for clean separation between the game code and launcher code, as well as details like the multiplayer packet format having a game type tag so the server can support multiple games
 

@@ -36,6 +36,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "text.h"
 #include "u_mem.h"
 #include "ignorecase.h"
+#include "piggy.h"
 
 //values that describe where a mission is located
 enum mle_loc
@@ -443,6 +444,12 @@ void add_d1_builtin_mission_to_list(mle *mission)
 	size = PHYSFSX_fsize("descent.hog");
 	if (size == -1)
 		return;
+
+#ifdef __ANDROID__
+	// Android port: D1-in-D2 should only appear when D1 texture/sound assets are available.
+	if (!PHYSFSX_exists(D1_PIGFILE, 1))
+		return;
+#endif
 
 	switch (size) {
 	case D1_SHAREWARE_MISSION_HOGSIZE:
