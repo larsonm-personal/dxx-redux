@@ -15,6 +15,7 @@
 #include "effects.h"
 #include "byteswap.h"
 #include "bm.h"
+#include "gamepal.h"
 #include "gamesave.h"
 #include "powerup.h"
 #include "robot.h"
@@ -40,6 +41,16 @@
 #define D1_WEAPON_INFO_SIZE 115
 #define D1_ROBOT_BITMAP_SLOT_BASE (MAX_BITMAP_FILES - D1_MAX_OBJ_BITMAPS)
 
+#define D1_MODEL_OP_EOF 0
+#define D1_MODEL_OP_DEFPOINTS 1
+#define D1_MODEL_OP_FLATPOLY 2
+#define D1_MODEL_OP_TMAPPOLY 3
+#define D1_MODEL_OP_SORTNORM 4
+#define D1_MODEL_OP_RODBM 5
+#define D1_MODEL_OP_SUBCALL 6
+#define D1_MODEL_OP_DEFP_START 7
+#define D1_MODEL_OP_GLOW 8
+
 static int D1_effects_active = 0;
 static int D1_effects_saved = 0;
 static int D1_effects_loaded = 0;
@@ -59,6 +70,16 @@ static bitmap_index D1_robot_bitmap_slots[D1_MAX_OBJ_BITMAPS];
 static d1_in_d2_asset_stats Last_stats;
 
 extern int read_hamfile();
+
+static ushort model_word(ubyte *p)
+{
+	return *(ushort *)p;
+}
+
+static void set_model_word(ubyte *p, ushort value)
+{
+	*(ushort *)p = value;
+}
 
 void d1_in_d2_get_stats(d1_in_d2_asset_stats *stats)
 {
@@ -170,6 +191,94 @@ static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)
 			ri->anim_states[gun][state].offset = PHYSFSX_readShort(fp);
 		}
 	ri->always_0xabcd = PHYSFSX_readInt(fp);
+}
+
+static int read_d1_palette(ubyte palette[256 * 3])
+{
+	PHYSFS_file *fp = PHYSFSX_openReadBuffered(D1_DEFAULT_PALETTE);
+
+	if (!fp)
+		return 0;
+	if (PHYSFS_read(fp, palette, 256, 3) != 3) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	PHYSFS_close(fp);
+	return 1;
+}
+
+static ushort d1_palette_index_to_15bpp(ubyte palette[256 * 3], ushort color)
+{
+	ubyte *rgb;
+
+	if (color >= 256)
+		return color;
+
+	rgb = &palette[color * 3];
+	return (ushort)(((rgb[0] >> 1) << 10) | ((rgb[1] >> 1) << 5) | (rgb[2] >> 1));
+}
+
+static void convert_d1_model_flat_colors(ubyte *p, ubyte palette[256 * 3])
+{
+	ushort opcode;
+	ushort nv;
+
+	while ((opcode = model_word(p)) != D1_MODEL_OP_EOF) {
+		switch (opcode) {
+			case D1_MODEL_OP_DEFPOINTS:
+				p += model_word(p + 2) * sizeof(vms_vector) + 4;
+				break;
+
+			case D1_MODEL_OP_DEFP_START:
+				p += model_word(p + 2) * sizeof(vms_vector) + 8;
+				break;
+
+			case D1_MODEL_OP_FLATPOLY:
+				nv = model_word(p + 2);
+				set_model_word(p + 28, d1_palette_index_to_15bpp(palette, model_word(p + 28)));
+				p += 30 + ((nv & ~1) + 1) * 2;
+				break;
+
+			case D1_MODEL_OP_TMAPPOLY:
+				nv = model_word(p + 2);
+				p += 30 + ((nv & ~1) + 1) * 2 + nv * 12;
+				break;
+
+			case D1_MODEL_OP_SORTNORM:
+				convert_d1_model_flat_colors(p + model_word(p + 28), palette);
+				convert_d1_model_flat_colors(p + model_word(p + 30), palette);
+				p += 32;
+				break;
+
+			case D1_MODEL_OP_RODBM:
+				p += 36;
+				break;
+
+			case D1_MODEL_OP_SUBCALL:
+				convert_d1_model_flat_colors(p + model_word(p + 16), palette);
+				p += 20;
+				break;
+
+			case D1_MODEL_OP_GLOW:
+				p += 4;
+				break;
+
+			default:
+				return;
+		}
+	}
+}
+
+static void convert_d1_robot_model_flat_colors(int num_polygon_models)
+{
+	ubyte palette[256 * 3];
+	int i;
+
+	if (!read_d1_palette(palette))
+		return;
+
+	for (i = 0; i < num_polygon_models; i++)
+		convert_d1_model_flat_colors(Polygon_models[i].model_data, palette);
 }
 
 static int read_d1_effects()
@@ -446,6 +555,7 @@ void d1_in_d2_apply_robot_assets(int active)
 	polymodel_read_n(Polygon_models, num_polygon_models, fp);
 	for (i = 0; i < num_polygon_models; i++)
 		polygon_model_data_read(&Polygon_models[i], fp);
+	convert_d1_robot_model_flat_colors(num_polygon_models);
 	D1_robot_polygon_models_loaded = num_polygon_models;
 	Last_stats.robot_models = num_polygon_models;
 

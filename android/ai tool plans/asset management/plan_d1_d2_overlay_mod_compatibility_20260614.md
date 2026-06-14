@@ -557,17 +557,23 @@ Validation:
 2. Move D1 robot compatibility before final mission and user art overlays.
    This should prevent D1 robot base repair from clobbering overlay textures.
 
-3. Split D1 custom loading into metadata and art phases where possible.
+3. Keep D1 robot flat polygon colors in the asset plan.
+   D1 robot model data stores flat colors as D1 palette indexes, while D2
+   renders flat model colors as 15bpp RGB words. D1-in-D2 now normalizes base
+   D1 robot model flat colors at load time; overlay model support needs the
+   same treatment if it imports D1-authored polygon data.
+
+4. Split D1 custom loading into metadata and art phases where possible.
    Metadata can establish final references; art can then apply last.
 
-4. Add `.pog` sniffing for D1-in-D2.
+5. Add `.pog` sniffing for D1-in-D2.
    Many packs and tools use POG-like containers even when the mission is D1.
 
-5. Add D1 cockpit/gauge compatibility.
+6. Add D1 cockpit/gauge compatibility.
    This is a likely next class of "everything looks like D2" reports once
    walls, powerups, and robots are fixed.
 
-6. Make global high resolution overlays game-aware.
+7. Make global high resolution overlays game-aware.
    A D2 texture pack should not affect D1-in-D2 by default.
 
 ## Acceptance Criteria
