@@ -227,6 +227,28 @@ int piggy_bitmap_get_flags(grs_bitmap *bmp)
 	return bmp->bm_flags;
 }
 
+int piggy_bitmap_get_offset(int bitmap_index)
+{
+	if (bitmap_index >= 0 && bitmap_index < MAX_BITMAP_FILES)
+		return GameBitmapOffset[bitmap_index];
+	return 0;
+}
+
+ubyte piggy_bitmap_get_file_flags(int bitmap_index)
+{
+	if (bitmap_index >= 0 && bitmap_index < MAX_BITMAP_FILES)
+		return GameBitmapFlags[bitmap_index];
+	return 0;
+}
+
+void piggy_bitmap_set_file_state(int bitmap_index, int offset, ubyte flags)
+{
+	if (bitmap_index >= 0 && bitmap_index < MAX_BITMAP_FILES) {
+		GameBitmapOffset[bitmap_index] = offset;
+		GameBitmapFlags[bitmap_index] = flags;
+	}
+}
+
 bitmap_index piggy_register_bitmap( grs_bitmap * bmp, char * name, int in_file )
 {
 	bitmap_index temp;

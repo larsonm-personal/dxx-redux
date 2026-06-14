@@ -10,6 +10,7 @@ set(D2X_MAIN_SOURCES
     console.c
     controls.c
     credits.c
+    d1_custom.c
     digiobj.c
     dumpmine.c
     dxa_metadata_patch.cpp

@@ -18,5 +18,6 @@ de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1  game_data/CD i
 b134ffc1df360d3a760f4390e95ed2bb6736146827e400131846e7765b2e8418  game_data/mission_files/Lunar Series Revamped.zip
 441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce  game_data/mission_files/Obsidian.zip
 469e7f6700ae32509edfcbab8bceed94e6af152b479428e2966d9dcc7de4a186  game_data/mission_files/plutonia.zip
+d0a6ab2122fcb5e8ef580cb50e6b9c6d44b086799718a99f1553a9e07cba9323  game_data/mission_files/trine2.zip
 83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descent.hog
 093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe  game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/data_tracks/descent/descent.pig

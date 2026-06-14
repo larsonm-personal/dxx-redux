@@ -52,6 +52,7 @@ extern "C" {
 #ifdef DXX_BUILD_DESCENT_II
 #include "ai.h"
 #include "escort.h"
+#include "d1_custom.h"
 #endif
 
 /* Android port: hires texture tracking counters from ogl.c */
@@ -993,6 +994,21 @@ extern "C" char *game_introspect_get_state(void)
 		}
 		mv["last_result"] = result_str;
 		j["movie"] = std::move(mv);
+	}
+#endif
+
+	/* -- D1 custom texture replacement stats (D2 D1-emulation path) -- */
+#ifdef DXX_BUILD_DESCENT_II
+	{
+		d1_custom_texture_stats stats;
+		d1_custom_get_stats(&stats);
+		j["d1_custom_textures"] = {
+			{ "files_found", stats.files_found },
+			{ "bitmap_entries", stats.bitmap_entries },
+			{ "applied", stats.bitmap_applied },
+			{ "unresolved", stats.bitmap_unresolved },
+			{ "sound_entries", stats.sound_entries }
+		};
 	}
 #endif
 

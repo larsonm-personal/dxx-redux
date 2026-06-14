@@ -93,7 +93,9 @@ class ModManagerMissionZipTest {
 
         val d2StageDir = File(filesDir, "d2x-redux/.generated_mission_zips/trine2.zip/missions")
         assertTrue(File(d2StageDir, "trine2.msn").isFile)
-        assertTrue(File(d2StageDir, "trine2.hog").isFile)
+        val d2Hog = File(d2StageDir, "trine2.hog")
+        assertTrue(d2Hog.isFile)
+        assertHogHasEntry(d2Hog, "e2m1.dtx")
 
         manager.writeEnabledModPaths("d1")
         val d1PathFile = File(filesDir, "d1x-redux/.active_mod_paths")
@@ -103,7 +105,9 @@ class ModManagerMissionZipTest {
 
         val d1StageDir = File(filesDir, "d1x-redux/.generated_mission_zips/trine2.zip/missions")
         assertTrue(File(d1StageDir, "trine2.msn").isFile)
-        assertTrue(File(d1StageDir, "trine2.hog").isFile)
+        val d1Hog = File(d1StageDir, "trine2.hog")
+        assertTrue(d1Hog.isFile)
+        assertHogHasEntry(d1Hog, "e2m1.dtx")
     }
 
     @Test
@@ -380,7 +384,12 @@ class ModManagerMissionZipTest {
         zipFile.deleteOnExit()
         ZipOutputStream(zipFile.outputStream()).use { zip ->
             zip.putNextEntry(ZipEntry("trine2.hog"))
-            zip.write(createHogBytes("e2m1.rdl" to ByteArray(12)))
+            zip.write(
+                createHogBytes(
+                    "e2m1.rdl" to ByteArray(12),
+                    "e2m1.dtx" to createD1CustomTextureBytes(),
+                ),
+            )
             zip.closeEntry()
 
             zip.putNextEntry(ZipEntry("trine2.msn"))
@@ -391,6 +400,7 @@ class ModManagerMissionZipTest {
                 num_levels = 1
                 e2m1.rdl
                 custom_music = yes
+                custom_textures = yes
                 """.trimIndent().toByteArray(),
             )
             zip.closeEntry()
@@ -589,6 +599,45 @@ class ModManagerMissionZipTest {
             output.write(leInt(0))
             output.toByteArray()
         }
+
+    private fun createD1CustomTextureBytes(): ByteArray =
+        ByteArrayOutputStream().use { output ->
+            output.write(leInt(1))
+            output.write(leInt(0))
+            output.write(fixedName("rock263", 8))
+            output.write(byteArrayOf(0, 1, 1, 0, 7))
+            output.write(leInt(0))
+            output.write(byteArrayOf(7))
+            output.toByteArray()
+        }
+
+    private fun assertHogHasEntry(
+        hog: File,
+        name: String,
+    ) {
+        val data = hog.readBytes()
+        assertTrue(data.size >= 3)
+        assertEquals("DHF", data.copyOfRange(0, 3).toString(Charsets.US_ASCII))
+        var offset = 3
+        while (offset + 17 <= data.size) {
+            val entryName =
+                data
+                    .copyOfRange(offset, offset + 13)
+                    .takeWhile { it.toInt() != 0 }
+                    .toByteArray()
+                    .toString(Charsets.US_ASCII)
+            offset += 13
+            val size =
+                (data[offset].toInt() and 0xff) or
+                    ((data[offset + 1].toInt() and 0xff) shl 8) or
+                    ((data[offset + 2].toInt() and 0xff) shl 16) or
+                    ((data[offset + 3].toInt() and 0xff) shl 24)
+            offset += 4
+            if (entryName.equals(name, ignoreCase = true)) return
+            offset += size
+        }
+        assertTrue("Missing HOG entry $name", false)
+    }
 
     private fun fixedName(
         name: String,

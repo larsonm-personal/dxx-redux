@@ -607,4 +607,28 @@ Implement Phase 1 first. It is the shortest path to the immediate goal:
 3. Add D1 `.dtx`/`.pg1` bitmap replacement loading in D2.
 4. Verify `e2m1.dtx` applies nonzero replacements.
 
+## Implementation Tracker
+
+- [x] Add isolated D2 D1-custom texture loader source/header.
+- [x] Hook loader into D2 `LoadLevel()` only for `EMULATING_D1`.
+- [x] Add the new source to D2 CMake targets.
+- [x] Expose D1 custom texture counters through Android introspection.
+- [x] Extend the D1 mission ZIP fixture to stage per-level `.dtx` files.
+- [x] Add a Trine 2 D1-in-D2 automation script with declared data deps.
+- [x] Run scoped formatting/quality checks on touched files.
+- [x] Run JVM mission ZIP staging tests.
+- [x] Run Android native build and debug APK build.
+- [x] Run Trine 2 on emulator through the launcher into D2.
+- [x] Fix automation selection after first run picked "Descent: First Strike".
+- [x] Verify Trine 2 level 1 reports `d1_custom_textures.applied=6`.
+
 After that, add the launcher readiness/UX layer so this becomes a discoverable supported mode rather than a hidden compatibility behavior.
+
+## Phase 2 Texture Compatibility Tracker
+
+- [ ] Study D1 POG-like loader and current D2 D1-custom loader shape.
+- [ ] Add POG-like `PPIG` / `DPOG` parsing for D1-in-D2 custom textures.
+- [ ] Extend the mission ZIP fixture to cover old DTX plus POG-like custom data.
+- [ ] Run scoped quality checks.
+- [ ] Run JVM fixture tests.
+- [ ] Run Android native build.

@@ -84,6 +84,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "powerup.h"
 #include "text.h"
 #include "piggy.h"
+#include "d1_custom.h"
 #include "texmerge.h"
 #include "paging.h"
 #include "mission.h"
@@ -866,9 +867,11 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	load_endlevel_data(level_num);
 
-	if (EMULATING_D1)
+	d1_custom_remove();
+	if (EMULATING_D1) {
 		load_d1_bitmap_replacements();
-	else
+		d1_custom_load_data(level_name);
+	} else
 		load_bitmap_replacements(level_name);
 
 	load_level_robots(level_num);
