@@ -1007,7 +1007,13 @@ extern "C" char *game_introspect_get_state(void)
 			{ "bitmap_entries", stats.bitmap_entries },
 			{ "applied", stats.bitmap_applied },
 			{ "unresolved", stats.bitmap_unresolved },
-			{ "sound_entries", stats.sound_entries }
+			{ "sound_entries", stats.sound_entries },
+			{ "sound_applied", stats.sound_applied },
+			{ "sound_unresolved", stats.sound_unresolved },
+			{ "base_sound_entries", stats.base_sound_entries },
+			{ "base_sound_applied", stats.base_sound_applied },
+			{ "base_sound_unresolved", stats.base_sound_unresolved },
+			{ "base_sound_skipped", stats.base_sound_skipped }
 		};
 	}
 #endif

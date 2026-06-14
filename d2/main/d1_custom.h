@@ -11,6 +11,12 @@ typedef struct d1_custom_texture_stats {
 	int bitmap_applied;
 	int bitmap_unresolved;
 	int sound_entries;
+	int sound_applied;
+	int sound_unresolved;
+	int base_sound_entries;
+	int base_sound_applied;
+	int base_sound_unresolved;
+	int base_sound_skipped;
 } d1_custom_texture_stats;
 
 void d1_custom_load_data(char *level_name);

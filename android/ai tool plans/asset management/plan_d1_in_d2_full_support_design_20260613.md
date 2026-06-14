@@ -640,3 +640,23 @@ After that, add the launcher readiness/UX layer so this becomes a discoverable s
 - [x] Expose readiness through setup introspection for automation/debugging.
 - [x] Add focused JVM coverage for the readiness signal.
 - [x] Run scoped quality checks and JVM tests.
+
+## Phase 4 D1 Custom Sound Tracker
+
+- [x] Study D1 custom sound replacement behavior and D2 sound cache behavior.
+- [x] Add old D1 PIG-like sound replacement and restore support in the D2 D1-custom loader.
+- [x] Add 11 kHz D1 sound resampling to the active D2 sample rate.
+- [x] Expose sound applied/unresolved counters through Android introspection.
+- [x] Extend tests or automation fixtures to cover D1 custom sound entries.
+- [x] Run scoped quality checks and builds.
+
+## Phase 5 D1 Base Sound Tracker
+
+- [x] Trace how D2 initializes D2 base sounds while D1-in-D2 uses `descent.pig` only for textures.
+- [x] Add registered/OEM/raw D1 base sound sample replacement by sound name for D1 missions in D2.
+- [x] Restore D2 base sounds when leaving or reloading the D1 mission path.
+- [x] Expose D1 base sound counters through introspection.
+- [x] Assert D1 base sounds apply in the Trine 2 D1-in-D2 automation script.
+- [x] Port or adapt D1 compressed PC shareware sound decompression for shareware `descent.pig` variants.
+- [x] Add Mac D1 sound resource support using `Sounds/sounds.array` and `Sounds/SNDxxxx.raw` when present.
+- [x] Run scoped quality checks and builds for the edge-case sound work.

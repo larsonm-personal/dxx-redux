@@ -97,6 +97,7 @@ class ModManagerMissionZipTest {
         assertTrue(d2Hog.isFile)
         assertHogHasEntry(d2Hog, "e2m1.dtx")
         assertHogHasEntry(d2Hog, "e2m1.pg1")
+        assertD1CustomPig1Counts(d2Hog, "e2m1.dtx", bitmaps = 1, sounds = 1)
 
         manager.writeEnabledModPaths("d1")
         val d1PathFile = File(filesDir, "d1x-redux/.active_mod_paths")
@@ -110,6 +111,7 @@ class ModManagerMissionZipTest {
         assertTrue(d1Hog.isFile)
         assertHogHasEntry(d1Hog, "e2m1.dtx")
         assertHogHasEntry(d1Hog, "e2m1.pg1")
+        assertD1CustomPig1Counts(d1Hog, "e2m1.dtx", bitmaps = 1, sounds = 1)
     }
 
     @Test
@@ -231,8 +233,10 @@ class ModManagerMissionZipTest {
         val modFile = File(filesDir, "mods/LargeMission.zip")
         val scan = MissionZip.inspect(modFile)
         assertNotNull(scan)
-        val target = LevelMetadataTargets.missionZipTargets(modFile.absolutePath, File(filesDir, "sets/default"), scan!!)
-            .single()
+        val target =
+            LevelMetadataTargets
+                .missionZipTargets(modFile.absolutePath, File(filesDir, "sets/default"), scan!!)
+                .single()
         assertEquals(extractedRoot.absolutePath, target.sourcePath)
         assertEquals(null, target.archivePath)
         assertEquals(listOf("missions/Uneasy4.hog"), target.hogFiles)
@@ -606,11 +610,16 @@ class ModManagerMissionZipTest {
     private fun createD1CustomTextureBytes(): ByteArray =
         ByteArrayOutputStream().use { output ->
             output.write(leInt(1))
-            output.write(leInt(0))
+            output.write(leInt(1))
             output.write(fixedName("rock263", 8))
             output.write(byteArrayOf(0, 1, 1, 0, 7))
             output.write(leInt(0))
+            output.write(fixedName("laser", 8))
+            output.write(leInt(1))
+            output.write(leInt(1))
+            output.write(leInt(1))
             output.write(byteArrayOf(7))
+            output.write(byteArrayOf(42))
             output.toByteArray()
         }
 
@@ -631,6 +640,27 @@ class ModManagerMissionZipTest {
         hog: File,
         name: String,
     ) {
+        assertNotNull("Missing HOG entry $name", readHogEntryData(hog, name))
+    }
+
+    private fun assertD1CustomPig1Counts(
+        hog: File,
+        name: String,
+        bitmaps: Int,
+        sounds: Int,
+    ) {
+        val data = readHogEntryData(hog, name)
+        assertNotNull("Missing HOG entry $name", data)
+        data!!
+        assertTrue(data.size >= 8)
+        assertEquals(bitmaps, readLeInt(data, 0))
+        assertEquals(sounds, readLeInt(data, 4))
+    }
+
+    private fun readHogEntryData(
+        hog: File,
+        name: String,
+    ): ByteArray? {
         val data = hog.readBytes()
         assertTrue(data.size >= 3)
         assertEquals("DHF", data.copyOfRange(0, 3).toString(Charsets.US_ASCII))
@@ -644,15 +674,12 @@ class ModManagerMissionZipTest {
                     .toString(Charsets.US_ASCII)
             offset += 13
             val size =
-                (data[offset].toInt() and 0xff) or
-                    ((data[offset + 1].toInt() and 0xff) shl 8) or
-                    ((data[offset + 2].toInt() and 0xff) shl 16) or
-                    ((data[offset + 3].toInt() and 0xff) shl 24)
+                readLeInt(data, offset)
             offset += 4
-            if (entryName.equals(name, ignoreCase = true)) return
+            if (entryName.equals(name, ignoreCase = true)) return data.copyOfRange(offset, offset + size)
             offset += size
         }
-        assertTrue("Missing HOG entry $name", false)
+        return null
     }
 
     private fun fixedName(
@@ -672,6 +699,15 @@ class ModManagerMissionZipTest {
             ((value shr 16) and 0xff).toByte(),
             ((value shr 24) and 0xff).toByte(),
         )
+
+    private fun readLeInt(
+        data: ByteArray,
+        offset: Int,
+    ): Int =
+        (data[offset].toInt() and 0xff) or
+            ((data[offset + 1].toInt() and 0xff) shl 8) or
+            ((data[offset + 2].toInt() and 0xff) shl 16) or
+            ((data[offset + 3].toInt() and 0xff) shl 24)
 
     private fun leShort(value: Int): ByteArray =
         byteArrayOf(

@@ -46,11 +46,19 @@
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "d1_custom_textures.files_found": {"gte": 1},
         "d1_custom_textures.bitmap_entries": {"gt": 0},
-        "d1_custom_textures.applied": {"gt": 0}
+        "d1_custom_textures.applied": {"gt": 0},
+        "d1_custom_textures.base_sound_entries": {"eq": "98"},
+        "d1_custom_textures.base_sound_applied": {"eq": "64"},
+        "d1_custom_textures.base_sound_unresolved": {"eq": "34"},
+        "d1_custom_textures.base_sound_skipped": {"eq": "0"}
     }},
     {"action": "assert", "expect": {
         "d1_custom_textures.files_found": {"gte": 1},
-        "d1_custom_textures.applied": {"gt": 0}
+        "d1_custom_textures.applied": {"gt": 0},
+        "d1_custom_textures.base_sound_entries": {"eq": "98"},
+        "d1_custom_textures.base_sound_applied": {"eq": "64"},
+        "d1_custom_textures.base_sound_unresolved": {"eq": "34"},
+        "d1_custom_textures.base_sound_skipped": {"eq": "0"}
     }},
     {"action": "assert", "expect": {
         "console.lines": {"contains": "D1 custom textures:"}
