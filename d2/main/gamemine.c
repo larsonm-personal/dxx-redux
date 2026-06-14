@@ -43,6 +43,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "hash.h"
 #include "key.h"
 #include "piggy.h"
+#include "effects.h"
 #include "byteswap.h"
 #include "gamesave.h"
 
@@ -139,6 +140,95 @@ int CreateDefaultNewSegment();
 int New_file_format_load = 1; // "new file format" is everything newer than d1 shareware
 
 int d1_pig_present = 0; // can descent.pig from descent 1 be loaded?
+
+#define D1_MAX_EFFECTS 60
+#define D1_MAX_PIG_TEXTURES 800
+#define D1_MAX_PIG_SOUNDS 250
+#define D1_VCLIP_MAXNUM 70
+#define D1_TMAP_INFO_SIZE 26
+#define D1_VCLIP_SIZE 82
+
+static int D1_effect_destinations_active = 0;
+static int D1_effect_destinations_saved = 0;
+static int D1_effect_destinations_loaded = 0;
+static int D1_effect_original_destinations[MAX_EFFECTS];
+static int D1_effect_destinations[D1_MAX_EFFECTS];
+static int D1_num_effect_destinations = 0;
+
+static int read_d1_effect_destinations()
+{
+	PHYSFS_file *fp;
+	eclip d1_effects[D1_MAX_EFFECTS];
+	int i, num_effects, pigsize;
+
+	if (D1_effect_destinations_loaded)
+		return D1_num_effect_destinations > 0;
+
+	D1_effect_destinations_loaded = 1;
+	fp = PHYSFSX_openReadBuffered(D1_PIGFILE);
+	if (!fp)
+		return 0;
+
+	pigsize = (int)PHYSFS_fileLength(fp);
+	switch (pigsize) {
+		case D1_SHARE_BIG_PIGSIZE:
+		case D1_SHARE_10_PIGSIZE:
+		case D1_SHARE_PIGSIZE:
+		case D1_10_BIG_PIGSIZE:
+		case D1_10_PIGSIZE:
+			PHYSFS_close(fp);
+			return 0;
+		case D1_PIGSIZE:
+		case D1_OEM_PIGSIZE:
+		case D1_MAC_PIGSIZE:
+		case D1_MAC_SHARE_PIGSIZE:
+		default:
+			PHYSFSX_readInt(fp);
+			break;
+	}
+
+	PHYSFSX_readInt(fp);
+	PHYSFSX_fseek(fp, D1_MAX_PIG_TEXTURES * sizeof(bitmap_index), SEEK_CUR);
+	PHYSFSX_fseek(fp, D1_MAX_PIG_TEXTURES * D1_TMAP_INFO_SIZE, SEEK_CUR);
+	PHYSFSX_fseek(fp, 2 * D1_MAX_PIG_SOUNDS, SEEK_CUR);
+	PHYSFSX_readInt(fp);
+	PHYSFSX_fseek(fp, D1_VCLIP_MAXNUM * D1_VCLIP_SIZE, SEEK_CUR);
+	num_effects = PHYSFSX_readInt(fp);
+	if (num_effects < 0 || num_effects > D1_MAX_EFFECTS) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+
+	eclip_read_n(d1_effects, D1_MAX_EFFECTS, fp);
+	PHYSFS_close(fp);
+
+	D1_num_effect_destinations = num_effects;
+	for (i = 0; i < D1_num_effect_destinations; i++)
+		D1_effect_destinations[i] = d1_effects[i].dest_bm_num;
+	return D1_num_effect_destinations > 0;
+}
+
+static void apply_d1_effect_destinations(int active)
+{
+	int i;
+
+	if (!D1_effect_destinations_saved) {
+		for (i = 0; i < MAX_EFFECTS; i++)
+			D1_effect_original_destinations[i] = Effects[i].dest_bm_num;
+		D1_effect_destinations_saved = 1;
+	}
+	if (D1_effect_destinations_active == active)
+		return;
+	if (active && !read_d1_effect_destinations())
+		return;
+	for (i = 0; i < D1_num_effect_destinations && i < MAX_EFFECTS; i++) {
+		if (active && D1_effect_destinations[i] >= 0)
+			Effects[i].dest_bm_num = convert_d1_tmap_num(D1_effect_destinations[i]);
+		else
+			Effects[i].dest_bm_num = D1_effect_original_destinations[i];
+	}
+	D1_effect_destinations_active = active;
+}
 
 /* returns nonzero if d1_tmap_num references a texture which isn't available in d2. */
 int d1_tmap_num_unique(short d1_tmap_num) {
@@ -933,6 +1023,7 @@ int load_mine_data_compiled(PHYSFS_file *LoadFile)
 		New_file_format_load = 0; // descent 1 shareware
 	else
 		New_file_format_load = 1;
+	apply_d1_effect_destinations(Gamesave_current_version <= 1);
 
 	//	For compiled levels, textures map to themselves, prevent tmap_override always being gray,
 	//	bug which Matt and John refused to acknowledge, so here is Mike, fixing it.
