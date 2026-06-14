@@ -11,6 +11,7 @@ set(D2X_MAIN_SOURCES
     controls.c
     credits.c
     d1_custom.c
+    d1_in_d2.c
     digiobj.c
     dumpmine.c
     dxa_metadata_patch.cpp

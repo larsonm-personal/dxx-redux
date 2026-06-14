@@ -85,6 +85,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "text.h"
 #include "piggy.h"
 #include "d1_custom.h"
+#include "d1_in_d2.h"
 #include "texmerge.h"
 #include "paging.h"
 #include "mission.h"
@@ -870,19 +871,19 @@ void LoadLevel(int level_num,int page_in_textures)
 	d1_custom_remove();
 	if (EMULATING_D1) {
 		load_d1_bitmap_replacements();
-		apply_d1_effects(1);
-		apply_d1_powerup_vclips(1);
+		d1_in_d2_apply_effects(1);
+		d1_in_d2_apply_powerup_vclips(1);
 		d1_custom_load_data(level_name);
 	} else {
-		apply_d1_robot_assets(0);
-		apply_d1_powerup_vclips(0);
-		apply_d1_effects(0);
+		d1_in_d2_apply_robot_assets(0);
+		d1_in_d2_apply_powerup_vclips(0);
+		d1_in_d2_apply_effects(0);
 		load_bitmap_replacements(level_name);
 	}
 
 	load_level_robots(level_num);
 	if (EMULATING_D1)
-		apply_d1_robot_assets(1);
+		d1_in_d2_apply_robot_assets(1);
 
 	if ( page_in_textures && !skip_level_presentation ) {
 		piggy_load_level_data();

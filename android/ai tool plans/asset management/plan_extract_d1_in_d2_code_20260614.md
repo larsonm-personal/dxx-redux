@@ -204,7 +204,7 @@ No Android-specific CMake source addition should be needed.
 
 ### Phase 1: Mechanical Extraction
 
-Status: not started.
+Status: complete.
 
 Steps:
 
@@ -217,6 +217,18 @@ Steps:
 - Remove overlay declarations from `gamemine.h`.
 - Add `d1_in_d2.c` to `d2/main/CMakeLists.txt`.
 
+Progress:
+
+- Added `d1_in_d2.h`.
+- Added `d1_in_d2.c`.
+- Moved D1 effect, powerup vclip, and robot asset overlay code out of
+  `gamemine.c`.
+- Moved overlay-only includes out of `gamemine.c`.
+- Renamed the overlay entry points to `d1_in_d2_apply_*`.
+- Included `d1_in_d2.h` from `gameseq.c`.
+- Removed overlay declarations from `gamemine.h`.
+- Added `d1_in_d2.c` to `D2X_MAIN_SOURCES`.
+
 Expected old-file diff after Phase 1:
 
 - `gamemine.c`: only the D1 object-effect fix remains if it is in moved code,
@@ -227,8 +239,8 @@ Expected old-file diff after Phase 1:
 
 Validation:
 
-- Scoped code quality on touched files.
-- Android native build `:app:externalNativeBuildDebug`.
+- Scoped code quality on touched files: passed.
+- Android native build `:app:externalNativeBuildDebug`: passed.
 
 ### Phase 2: Optional Load-Order Wrapper
 
