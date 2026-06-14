@@ -17,9 +17,12 @@
 #include "bm.h"
 #include "gamepal.h"
 #include "gamesave.h"
+#include "hash.h"
 #include "mission.h"
+#include "player.h"
 #include "powerup.h"
 #include "robot.h"
+#include "sounds.h"
 #include "u_mem.h"
 #include "vclip.h"
 #include "d1_in_d2.h"
@@ -39,9 +42,12 @@
 #define D1_MAX_WALL_ANIMS 30
 #define D1_MAX_GAUGE_BMS_PC 80
 #define D1_MAX_GAUGE_BMS_MAC 85
+#define D1_N_COCKPIT_BITMAPS 4
 #define D1_TMAP_INFO_SIZE 26
 #define D1_VCLIP_SIZE 82
 #define D1_WCLIP_SIZE 66
+#define D1_DISKBITMAPHEADER_SIZE 17
+#define D1_DISKSOUNDHEADER_SIZE 20
 #define D1_WEAPON_INFO_SIZE 115
 #define D1_ROBOT_BITMAP_SLOT_BASE (MAX_BITMAP_FILES - D1_MAX_OBJ_BITMAPS)
 
@@ -71,6 +77,7 @@ static int D1_robot_assets_active = 0;
 static int D1_robot_bitmap_slots_registered = 0;
 static int D1_robot_polygon_models_loaded = 0;
 static bitmap_index D1_robot_bitmap_slots[D1_MAX_OBJ_BITMAPS];
+static int D1_sounds_active = 0;
 static int D2_guidebot_assets_saved = 0;
 static robot_info D2_guidebot_robot_info;
 static jointpos D2_guidebot_joints[MAX_ROBOT_JOINTS];
@@ -87,6 +94,13 @@ static int D1_spawnable_guidebot_obj_bitmap_count = 0;
 static d1_in_d2_asset_stats Last_stats;
 
 extern int read_hamfile();
+extern hashtable AllDigiSndNames;
+extern ubyte *SoundBits;
+extern int Num_sound_files;
+extern int SoundOffset[MAX_SOUND_FILES];
+
+static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp);
+static void read_d1_weapon_info(weapon_info *wi, int weapon_id, PHYSFS_file *fp);
 
 static ushort model_word(ubyte *p)
 {
@@ -152,6 +166,109 @@ static void skip_d1_vclips_and_effects(PHYSFS_file *fp)
 	PHYSFSX_fseek(fp, D1_MAX_EFFECTS * sizeof(eclip), SEEK_CUR);
 }
 
+static int seek_d1_final_sound_maps(PHYSFS_file *fp, int pigsize)
+{
+	robot_info temp_robot;
+	weapon_info temp_weapon;
+	player_ship temp_ship;
+	bitmap_index temp_cockpit[D1_N_COCKPIT_BITMAPS];
+	jointpos *temp_joints;
+	polymodel *temp_models;
+	int num_wall_anims, num_robot_types, num_robot_joints, num_weapon_types;
+	int num_powerups, num_polygon_models, num_cockpits, d1_gauge_count;
+	int i;
+
+	seek_d1_vclip_table(fp);
+	skip_d1_vclips_and_effects(fp);
+
+	num_wall_anims = PHYSFSX_readInt(fp);
+	if (num_wall_anims < 0 || num_wall_anims > D1_MAX_WALL_ANIMS)
+		return 0;
+	PHYSFSX_fseek(fp, D1_MAX_WALL_ANIMS * D1_WCLIP_SIZE, SEEK_CUR);
+
+	num_robot_types = PHYSFSX_readInt(fp);
+	if (num_robot_types < 0 || num_robot_types > D1_MAX_ROBOT_TYPES)
+		return 0;
+	for (i = 0; i < D1_MAX_ROBOT_TYPES; i++)
+		read_d1_robot_info(&temp_robot, fp);
+
+	num_robot_joints = PHYSFSX_readInt(fp);
+	if (num_robot_joints < 0 || num_robot_joints > D1_MAX_ROBOT_JOINTS)
+		return 0;
+	MALLOC(temp_joints, jointpos, D1_MAX_ROBOT_JOINTS);
+	if (!temp_joints)
+		return 0;
+	jointpos_read_n(temp_joints, D1_MAX_ROBOT_JOINTS, fp);
+	d_free(temp_joints);
+
+	num_weapon_types = PHYSFSX_readInt(fp);
+	if (num_weapon_types < 0 || num_weapon_types > D1_MAX_WEAPON_TYPES)
+		return 0;
+	for (i = 0; i < D1_MAX_WEAPON_TYPES; i++)
+		read_d1_weapon_info(&temp_weapon, i, fp);
+
+	num_powerups = PHYSFSX_readInt(fp);
+	if (num_powerups < 0 || num_powerups > D1_MAX_POWERUP_TYPES)
+		return 0;
+	PHYSFSX_fseek(fp, D1_MAX_POWERUP_TYPES * sizeof(powerup_type_info), SEEK_CUR);
+
+	num_polygon_models = PHYSFSX_readInt(fp);
+	if (num_polygon_models < 0 || num_polygon_models > D1_MAX_POLYGON_MODELS)
+		return 0;
+	MALLOC(temp_models, polymodel, num_polygon_models ? num_polygon_models : 1);
+	if (!temp_models)
+		return 0;
+	polymodel_read_n(temp_models, num_polygon_models, fp);
+	for (i = 0; i < num_polygon_models; i++)
+		PHYSFSX_fseek(fp, temp_models[i].model_data_size, SEEK_CUR);
+	d_free(temp_models);
+
+	d1_gauge_count = (pigsize == D1_MAC_PIGSIZE || pigsize == D1_MAC_SHARE_PIGSIZE)
+		? D1_MAX_GAUGE_BMS_MAC : D1_MAX_GAUGE_BMS_PC;
+	PHYSFSX_fseek(fp, d1_gauge_count * sizeof(bitmap_index), SEEK_CUR);
+	PHYSFSX_fseek(fp, D1_MAX_POLYGON_MODELS * sizeof(int), SEEK_CUR);
+	PHYSFSX_fseek(fp, D1_MAX_POLYGON_MODELS * sizeof(int), SEEK_CUR);
+	PHYSFSX_fseek(fp, D1_MAX_OBJ_BITMAPS * sizeof(bitmap_index), SEEK_CUR);
+	PHYSFSX_fseek(fp, D1_MAX_OBJ_BITMAPS * sizeof(short), SEEK_CUR);
+
+	player_ship_read(&temp_ship, fp);
+	num_cockpits = PHYSFSX_readInt(fp);
+	if (num_cockpits < 0 || num_cockpits > D1_N_COCKPIT_BITMAPS)
+		return 0;
+	bitmap_index_read_n(temp_cockpit, D1_N_COCKPIT_BITMAPS, fp);
+	return 1;
+}
+
+static int read_d1_sound_maps(PHYSFS_file *fp, int pigsize, ubyte d1_sounds[D1_MAX_PIG_SOUNDS], ubyte d1_alt_sounds[D1_MAX_PIG_SOUNDS])
+{
+	if (!seek_d1_final_sound_maps(fp, pigsize))
+		return 0;
+	if (PHYSFS_read(fp, d1_sounds, sizeof(ubyte), D1_MAX_PIG_SOUNDS) != D1_MAX_PIG_SOUNDS)
+		return 0;
+	if (PHYSFS_read(fp, d1_alt_sounds, sizeof(ubyte), D1_MAX_PIG_SOUNDS) != D1_MAX_PIG_SOUNDS)
+		return 0;
+	return 1;
+}
+
+static int d1_pig_data_start(PHYSFS_file *fp, int pigsize, int *pig_data_start)
+{
+	switch (pigsize) {
+		case D1_SHARE_BIG_PIGSIZE:
+		case D1_SHARE_10_PIGSIZE:
+		case D1_SHARE_PIGSIZE:
+		case D1_10_BIG_PIGSIZE:
+		case D1_10_PIGSIZE:
+		case D1_MAC_PIGSIZE:
+		case D1_MAC_SHARE_PIGSIZE:
+			return 0;
+		case D1_PIGSIZE:
+		case D1_OEM_PIGSIZE:
+		default:
+			*pig_data_start = PHYSFSX_readInt(fp);
+			return 1;
+	}
+}
+
 static void save_d2_d1_robot_tuning(void)
 {
 	int i, count;
@@ -183,6 +300,164 @@ static void apply_d1_robot_d2_tuning(robot_info *ri, int robot_id)
 int d1_in_d2_use_d1_robot_aiming(void)
 {
 	return Current_mission && EMULATING_D1;
+}
+
+void d1_in_d2_apply_sounds(int active)
+{
+	PHYSFS_file *fp;
+	ubyte d1_sounds[D1_MAX_PIG_SOUNDS];
+	ubyte d1_alt_sounds[D1_MAX_PIG_SOUNDS];
+	digi_sound temp_sound;
+	char name[9];
+	ubyte *ptr;
+	int pigsize, pig_data_start, num_bitmaps, num_sounds, header_size;
+	int sound_header_start, sound_data_start, sound_bytes;
+	int file_len;
+	int i;
+
+	if (!active) {
+		if (D1_sounds_active) {
+			digi_stop_digi_sounds();
+			read_hamfile();
+			if (Piggy_hamfile_version >= 3)
+				hashtable_free(&AllDigiSndNames);
+			read_sndfile();
+			piggy_read_sounds();
+			digi_free_cached_sounds();
+			D1_sounds_active = 0;
+		}
+		Last_stats.sounds_active = 0;
+		Last_stats.sound_pig_present = 0;
+		Last_stats.sound_pig_size = 0;
+		Last_stats.sound_map_entries = 0;
+		Last_stats.sound_files = 0;
+		Last_stats.sound_bytes = 0;
+		return;
+	}
+
+	Last_stats.sounds_active = D1_sounds_active;
+	if (D1_sounds_active)
+		return;
+	Last_stats.sound_pig_present = 0;
+	Last_stats.sound_pig_size = 0;
+	Last_stats.sound_map_entries = 0;
+	Last_stats.sound_files = 0;
+	Last_stats.sound_bytes = 0;
+
+	fp = open_d1_registered_pig();
+	if (!fp)
+		return;
+	pigsize = (int)PHYSFS_fileLength(fp);
+	Last_stats.sound_pig_present = 1;
+	Last_stats.sound_pig_size = pigsize;
+	if (!read_d1_sound_maps(fp, pigsize, d1_sounds, d1_alt_sounds)) {
+		PHYSFS_close(fp);
+		return;
+	}
+	PHYSFS_close(fp);
+
+	fp = PHYSFSX_openReadBuffered(D1_PIGFILE);
+	if (!fp)
+		return;
+	file_len = (int)PHYSFS_fileLength(fp);
+	if (!d1_pig_data_start(fp, pigsize, &pig_data_start)) {
+		PHYSFS_close(fp);
+		return;
+	}
+	if (pig_data_start < 0 || pig_data_start > file_len) {
+		PHYSFS_close(fp);
+		return;
+	}
+	PHYSFSX_fseek(fp, pig_data_start, SEEK_SET);
+	num_bitmaps = PHYSFSX_readInt(fp);
+	num_sounds = PHYSFSX_readInt(fp);
+	if (num_bitmaps < 0 || num_sounds < 0 || num_sounds > MAX_SOUND_FILES) {
+		PHYSFS_close(fp);
+		return;
+	}
+	sound_header_start = pig_data_start + 2 * sizeof(int) + num_bitmaps * D1_DISKBITMAPHEADER_SIZE;
+	header_size = num_bitmaps * D1_DISKBITMAPHEADER_SIZE + num_sounds * D1_DISKSOUNDHEADER_SIZE;
+	sound_data_start = pig_data_start + 2 * sizeof(int) + header_size;
+	if (sound_header_start < pig_data_start || sound_data_start < sound_header_start || sound_data_start > file_len) {
+		PHYSFS_close(fp);
+		return;
+	}
+	sound_bytes = 0;
+	for (i = 0; i < num_sounds; i++) {
+		int length, data_length, offset;
+
+		if (PHYSFSX_fseek(fp, sound_header_start + i * D1_DISKSOUNDHEADER_SIZE + 8, SEEK_SET)) {
+			PHYSFS_close(fp);
+			return;
+		}
+		length = PHYSFSX_readInt(fp);
+		data_length = PHYSFSX_readInt(fp);
+		offset = PHYSFSX_readInt(fp);
+		if (length < 0 || data_length < 0 || offset < 0 || sound_data_start + offset < sound_data_start || sound_data_start + offset + length > file_len || sound_bytes + length < sound_bytes) {
+			PHYSFS_close(fp);
+			return;
+		}
+		sound_bytes += length;
+	}
+
+	digi_stop_digi_sounds();
+	if (SoundBits)
+		d_free(SoundBits);
+	SoundBits = d_malloc(sound_bytes + 16);
+	if (!SoundBits) {
+		PHYSFS_close(fp);
+		Error("Not enough memory to load D1 sounds\n");
+	}
+	ptr = SoundBits;
+	for (i = 0; i < MAX_SOUND_FILES; i++) {
+		GameSounds[i].bits = 0;
+		GameSounds[i].freq = 0;
+		GameSounds[i].length = 0;
+		GameSounds[i].data = NULL;
+		SoundOffset[i] = 0;
+	}
+	Num_sound_files = 0;
+	hashtable_free(&AllDigiSndNames);
+	hashtable_init(&AllDigiSndNames, MAX_SOUND_FILES);
+	for (i = 0; i < num_sounds; i++) {
+		int length, data_length, offset;
+
+		PHYSFSX_fseek(fp, sound_header_start + i * D1_DISKSOUNDHEADER_SIZE, SEEK_SET);
+		PHYSFS_read(fp, name, 8, 1);
+		name[8] = 0;
+		length = PHYSFSX_readInt(fp);
+		data_length = PHYSFSX_readInt(fp);
+		(void)data_length;
+		offset = PHYSFSX_readInt(fp);
+		PHYSFSX_fseek(fp, sound_data_start + offset, SEEK_SET);
+		if (PHYSFS_read(fp, ptr, 1, length) != length) {
+			PHYSFS_close(fp);
+			return;
+		}
+		temp_sound.bits = 8;
+		temp_sound.freq = 11025;
+		temp_sound.length = length;
+		temp_sound.data = ptr;
+		SoundOffset[Num_sound_files] = -1;
+		piggy_register_sound(&temp_sound, name, 1);
+		ptr += length;
+	}
+	PHYSFS_close(fp);
+
+	for (i = 0; i < MAX_SOUNDS; i++) {
+		Sounds[i] = 255;
+		AltSounds[i] = 255;
+	}
+	for (i = 0; i < D1_MAX_PIG_SOUNDS; i++) {
+		Sounds[i] = d1_sounds[i];
+		AltSounds[i] = d1_alt_sounds[i];
+	}
+	digi_free_cached_sounds();
+	D1_sounds_active = 1;
+	Last_stats.sounds_active = 1;
+	Last_stats.sound_map_entries = D1_MAX_PIG_SOUNDS;
+	Last_stats.sound_files = num_sounds;
+	Last_stats.sound_bytes = sound_bytes;
 }
 
 static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)

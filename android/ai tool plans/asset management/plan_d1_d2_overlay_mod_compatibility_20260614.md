@@ -507,13 +507,24 @@ Validation:
 
 ### Phase 6: Sounds
 
-Status: not started.
+Status: started.
 
 Deliverables:
 
 - Confirm and document D1-in-D2 sound source order.
 - Add diagnostics for sound replacements.
 - Support game-tagged global sound overlays.
+- Load D1 base sound maps and raw samples before mission custom sound overlays.
+- Restore native D2 sound tables and samples when leaving D1-in-D2.
+
+Progress:
+
+- Added a D1-in-D2 base sound layer that reads D1 `Sounds[]`/`AltSounds[]`
+  mappings and raw sample headers/data from `descent.pig`.
+- Rebuilds the runtime sound name table from D1 sound names, so D1 mission
+  `.pg1`/`.dtx` and base sound overrides resolve against the D1 namespace.
+- Added `asset_trace.d1_compat` counters for D1 sound activation, PIG presence
+  and size, map entries, sample count, and loaded sample bytes.
 
 Validation:
 

@@ -28,11 +28,18 @@ typedef struct d1_in_d2_asset_stats {
 	int robot_obj_bitmaps_applied;
 	int robot_obj_bitmaps_skipped;
 	int robot_objects_updated;
+	int sounds_active;
+	int sound_pig_present;
+	int sound_pig_size;
+	int sound_map_entries;
+	int sound_files;
+	int sound_bytes;
 } d1_in_d2_asset_stats;
 
 void d1_in_d2_apply_effects(int active);
 void d1_in_d2_apply_powerup_vclips(int active);
 void d1_in_d2_apply_robot_assets(int active);
+void d1_in_d2_apply_sounds(int active);
 void d1_in_d2_get_stats(d1_in_d2_asset_stats *stats);
 int d1_in_d2_ensure_spawnable_guidebot(void);
 int d1_in_d2_use_d1_robot_aiming(void);
