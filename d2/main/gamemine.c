@@ -46,6 +46,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "effects.h"
 #include "byteswap.h"
 #include "gamesave.h"
+#include "powerup.h"
+#include "vclip.h"
 
 #define REMOVE_EXT(s)  (*(strchr( (s), '.' ))='\0')
 
@@ -148,26 +150,27 @@ int d1_pig_present = 0; // can descent.pig from descent 1 be loaded?
 #define D1_TMAP_INFO_SIZE 26
 #define D1_VCLIP_SIZE 82
 
-static int D1_effect_destinations_active = 0;
-static int D1_effect_destinations_saved = 0;
-static int D1_effect_destinations_loaded = 0;
-static int D1_effect_original_destinations[MAX_EFFECTS];
-static int D1_effect_destinations[D1_MAX_EFFECTS];
-static int D1_num_effect_destinations = 0;
+static int D1_effects_active = 0;
+static int D1_effects_saved = 0;
+static int D1_effects_loaded = 0;
+static eclip D1_original_effects[MAX_EFFECTS];
+static eclip D1_effects[D1_MAX_EFFECTS];
+static int D1_num_effects = 0;
+static int D1_powerup_vclips_active = 0;
+static int D1_powerup_vclips_saved = 0;
+static int D1_powerup_vclips_loaded = 0;
+static vclip D1_original_vclips[VCLIP_MAXNUM];
+static vclip D1_vclips[D1_VCLIP_MAXNUM];
+static int D1_num_vclips = 0;
 
-static int read_d1_effect_destinations()
+static PHYSFS_file *open_d1_registered_pig()
 {
 	PHYSFS_file *fp;
-	eclip d1_effects[D1_MAX_EFFECTS];
-	int i, num_effects, pigsize;
+	int pigsize;
 
-	if (D1_effect_destinations_loaded)
-		return D1_num_effect_destinations > 0;
-
-	D1_effect_destinations_loaded = 1;
 	fp = PHYSFSX_openReadBuffered(D1_PIGFILE);
 	if (!fp)
-		return 0;
+		return NULL;
 
 	pigsize = (int)PHYSFS_fileLength(fp);
 	switch (pigsize) {
@@ -177,7 +180,7 @@ static int read_d1_effect_destinations()
 		case D1_10_BIG_PIGSIZE:
 		case D1_10_PIGSIZE:
 			PHYSFS_close(fp);
-			return 0;
+			return NULL;
 		case D1_PIGSIZE:
 		case D1_OEM_PIGSIZE:
 		case D1_MAC_PIGSIZE:
@@ -186,11 +189,31 @@ static int read_d1_effect_destinations()
 			PHYSFSX_readInt(fp);
 			break;
 	}
+	return fp;
+}
 
+static void seek_d1_vclip_table(PHYSFS_file *fp)
+{
 	PHYSFSX_readInt(fp);
 	PHYSFSX_fseek(fp, D1_MAX_PIG_TEXTURES * sizeof(bitmap_index), SEEK_CUR);
 	PHYSFSX_fseek(fp, D1_MAX_PIG_TEXTURES * D1_TMAP_INFO_SIZE, SEEK_CUR);
 	PHYSFSX_fseek(fp, 2 * D1_MAX_PIG_SOUNDS, SEEK_CUR);
+}
+
+static int read_d1_effects()
+{
+	PHYSFS_file *fp;
+	int num_effects;
+
+	if (D1_effects_loaded)
+		return D1_num_effects > 0;
+
+	D1_effects_loaded = 1;
+	fp = open_d1_registered_pig();
+	if (!fp)
+		return 0;
+
+	seek_d1_vclip_table(fp);
 	PHYSFSX_readInt(fp);
 	PHYSFSX_fseek(fp, D1_VCLIP_MAXNUM * D1_VCLIP_SIZE, SEEK_CUR);
 	num_effects = PHYSFSX_readInt(fp);
@@ -199,35 +222,112 @@ static int read_d1_effect_destinations()
 		return 0;
 	}
 
-	eclip_read_n(d1_effects, D1_MAX_EFFECTS, fp);
+	eclip_read_n(D1_effects, D1_MAX_EFFECTS, fp);
 	PHYSFS_close(fp);
 
-	D1_num_effect_destinations = num_effects;
-	for (i = 0; i < D1_num_effect_destinations; i++)
-		D1_effect_destinations[i] = d1_effects[i].dest_bm_num;
-	return D1_num_effect_destinations > 0;
+	D1_num_effects = num_effects;
+	return D1_num_effects > 0;
 }
 
-static void apply_d1_effect_destinations(int active)
+static int read_d1_powerup_vclips()
 {
-	int i;
+	PHYSFS_file *fp;
 
-	if (!D1_effect_destinations_saved) {
+	if (D1_powerup_vclips_loaded)
+		return D1_num_vclips > 0;
+
+	D1_powerup_vclips_loaded = 1;
+	fp = open_d1_registered_pig();
+	if (!fp)
+		return 0;
+
+	seek_d1_vclip_table(fp);
+	D1_num_vclips = PHYSFSX_readInt(fp);
+	if (D1_num_vclips == 0)
+		D1_num_vclips = D1_VCLIP_MAXNUM;
+	if (D1_num_vclips < 0 || D1_num_vclips > D1_VCLIP_MAXNUM) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	vclip_read_n(D1_vclips, D1_VCLIP_MAXNUM, fp);
+	PHYSFS_close(fp);
+	return D1_num_vclips > 0;
+}
+
+void apply_d1_effects(int active)
+{
+	int i, j;
+
+	if (!D1_effects_saved) {
 		for (i = 0; i < MAX_EFFECTS; i++)
-			D1_effect_original_destinations[i] = Effects[i].dest_bm_num;
-		D1_effect_destinations_saved = 1;
+			D1_original_effects[i] = Effects[i];
+		D1_effects_saved = 1;
 	}
-	if (D1_effect_destinations_active == active)
+	if (!active && !D1_effects_active)
 		return;
-	if (active && !read_d1_effect_destinations())
+	if (active && !read_d1_effects())
 		return;
-	for (i = 0; i < D1_num_effect_destinations && i < MAX_EFFECTS; i++) {
-		if (active && D1_effect_destinations[i] >= 0)
-			Effects[i].dest_bm_num = convert_d1_tmap_num(D1_effect_destinations[i]);
+	for (i = 0; i < D1_num_effects && i < MAX_EFFECTS; i++) {
+		if (!active) {
+			Effects[i] = D1_original_effects[i];
+			continue;
+		}
+		if (D1_effects[i].changing_wall_texture >= 0)
+			Effects[i].changing_wall_texture = convert_d1_tmap_num(D1_effects[i].changing_wall_texture);
+		if (D1_effects[i].dest_bm_num >= 0)
+			Effects[i].dest_bm_num = convert_d1_tmap_num(D1_effects[i].dest_bm_num);
 		else
-			Effects[i].dest_bm_num = D1_effect_original_destinations[i];
+			Effects[i].dest_bm_num = -1;
+		Effects[i].vc.play_time = D1_effects[i].vc.play_time;
+		Effects[i].vc.frame_time = D1_effects[i].vc.frame_time;
+		Effects[i].vc.num_frames = D1_effects[i].vc.num_frames < D1_original_effects[i].vc.num_frames
+			? D1_effects[i].vc.num_frames : D1_original_effects[i].vc.num_frames;
+		for (j = 0; j < Effects[i].vc.num_frames; j++) {
+			if (load_d1_bitmap_frame(D1_effects[i].vc.frames[j].index, D1_original_effects[i].vc.frames[j]))
+				Effects[i].vc.frames[j] = D1_original_effects[i].vc.frames[j];
+		}
 	}
-	D1_effect_destinations_active = active;
+	D1_effects_active = active;
+}
+
+void apply_d1_powerup_vclips(int active)
+{
+	int i, j;
+
+	if (!D1_powerup_vclips_saved) {
+		for (i = 0; i < VCLIP_MAXNUM; i++)
+			D1_original_vclips[i] = Vclip[i];
+		D1_powerup_vclips_saved = 1;
+	}
+	if (!active && !D1_powerup_vclips_active)
+		return;
+	if (active && !read_d1_powerup_vclips())
+		return;
+
+	for (i = 0; i < VCLIP_MAXNUM; i++) {
+		if (!active) {
+			Vclip[i] = D1_original_vclips[i];
+			continue;
+		}
+		if (i >= D1_num_vclips)
+			continue;
+		Vclip[i].play_time = D1_vclips[i].play_time;
+		Vclip[i].frame_time = D1_vclips[i].frame_time;
+		Vclip[i].flags = D1_vclips[i].flags;
+		Vclip[i].light_value = D1_vclips[i].light_value;
+		Vclip[i].num_frames = D1_vclips[i].num_frames < D1_original_vclips[i].num_frames
+			? D1_vclips[i].num_frames : D1_original_vclips[i].num_frames;
+		for (j = 0; j < Vclip[i].num_frames; j++) {
+			if (load_d1_bitmap_frame(D1_vclips[i].frames[j].index, D1_original_vclips[i].frames[j]))
+				Vclip[i].frames[j] = D1_original_vclips[i].frames[j];
+		}
+	}
+
+	for (i = 0; i <= Highest_object_index; i++)
+		if (Objects[i].type == OBJ_POWERUP && Objects[i].id < MAX_POWERUP_TYPES)
+			Objects[i].rtype.vclip_info.frametime = Vclip[Objects[i].rtype.vclip_info.vclip_num].frame_time;
+
+	D1_powerup_vclips_active = active;
 }
 
 /* returns nonzero if d1_tmap_num references a texture which isn't available in d2. */
@@ -1023,7 +1123,6 @@ int load_mine_data_compiled(PHYSFS_file *LoadFile)
 		New_file_format_load = 0; // descent 1 shareware
 	else
 		New_file_format_load = 1;
-	apply_d1_effect_destinations(Gamesave_current_version <= 1);
 
 	//	For compiled levels, textures map to themselves, prevent tmap_override always being gray,
 	//	bug which Matt and John refused to acknowledge, so here is Mike, fixing it.

@@ -60,7 +60,7 @@ int load_palette(char *name,int used_for_level,int no_change_screen)
 	if (name==NULL)
 		name = last_palette_loaded_pig;
 
-	if (used_for_level && d_stricmp(last_palette_loaded_pig,name) != 0) {
+	if (used_for_level && d_stricmp(last_palette_loaded_pig,name) != 0 && d_stricmp(name, D1_DEFAULT_PALETTE) != 0) {
 
 		d_splitpath(name,NULL,NULL,pigname,NULL);
 		strcat(pigname,".pig");
@@ -99,7 +99,8 @@ int load_palette(char *name,int used_for_level,int no_change_screen)
 		strncpy(last_palette_loaded_pig,name,sizeof(last_palette_loaded_pig));
 
 		#ifdef EDITOR
-		piggy_new_pigfile(pigname);
+		if (d_stricmp(name, D1_DEFAULT_PALETTE) != 0)
+			piggy_new_pigfile(pigname);
 		#endif
 
 		texmerge_flush();

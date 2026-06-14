@@ -118,6 +118,7 @@ void piggy_new_pigfile(char *pigname);
 void load_bitmap_replacements(char *level_name);
 //if descent.pig exists, loads descent 1 texture bitmaps
 void load_d1_bitmap_replacements();
+int load_d1_bitmap_frame(short d1_index, bitmap_index d2_bitmap);
 
 /*
  * reads a bitmap_index structure from a PHYSFS_file

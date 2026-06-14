@@ -1285,7 +1285,9 @@ int load_level(const char * filename_passed)
 
 	if (Gamesave_current_version > 1)
 		PHYSFSX_fgets(Current_level_palette,sizeof(Current_level_palette),LoadFile);
-	if (Gamesave_current_version <= 1 || Current_level_palette[0]==0) // descent 1 level
+	if (Gamesave_current_version <= 1) // descent 1 level
+		strcpy(Current_level_palette, PHYSFSX_exists(D1_DEFAULT_PALETTE, 1) ? D1_DEFAULT_PALETTE : DEFAULT_LEVEL_PALETTE);
+	else if (Current_level_palette[0]==0)
 		strcpy(Current_level_palette, DEFAULT_LEVEL_PALETTE);
 
 	if (Gamesave_current_version >= 3)

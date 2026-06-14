@@ -870,9 +870,14 @@ void LoadLevel(int level_num,int page_in_textures)
 	d1_custom_remove();
 	if (EMULATING_D1) {
 		load_d1_bitmap_replacements();
+		apply_d1_effects(1);
+		apply_d1_powerup_vclips(1);
 		d1_custom_load_data(level_name);
-	} else
+	} else {
+		apply_d1_powerup_vclips(0);
+		apply_d1_effects(0);
 		load_bitmap_replacements(level_name);
+	}
 
 	load_level_robots(level_num);
 

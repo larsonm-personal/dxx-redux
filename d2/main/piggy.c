@@ -565,6 +565,7 @@ void piggy_init_pigfile(char *filename)
 extern int compute_average_pixel(grs_bitmap *new);
 
 ubyte *Bitmap_replacement_data = NULL;
+static ubyte *Bitmap_replacement_next = NULL;
 
 //reads in a new pigfile (for new palette)
 //returns the size of all the bitmap data
@@ -1666,6 +1667,7 @@ void free_bitmap_replacements()
 	if (Bitmap_replacement_data) {
 		d_free(Bitmap_replacement_data);
 		Bitmap_replacement_data = NULL;
+		Bitmap_replacement_next = NULL;
 	}
 }
 
@@ -1943,13 +1945,11 @@ void read_d1_tmap_nums_from_hog(PHYSFS_file *d1_pig)
 						arg++;//remove unwanted blanks
 					if (*arg == '\0')
 						break;
-					if (d1_tmap_num_unique(texture_count)) {
+					{
 						int d1_index = get_d1_bm_index(arg, d1_pig);
-						if (d1_index >= 0 && d1_index < D1_MAX_TMAP_NUM) {
+						if (d1_index >= 0 && d1_index < D1_MAX_TMAP_NUM)
 							d1_tmap_nums[d1_index] = texture_count;
-							//int d2_index = d2_index_for_d1_index(d1_index);
-						}
-				}
+					}
 				Assert (texture_count < D1_MAX_TEXTURES);
 				texture_count++;
 			}
@@ -1960,22 +1960,20 @@ void read_d1_tmap_nums_from_hog(PHYSFS_file *d1_pig)
 	PHYSFS_close (bitmaps);
 }
 
-/* If the given d1_index is the index of a bitmap we have to load
- * (because it is unique to descent 1), then returns the d2_index that
- * the given d1_index replaces.
- * Returns -1 if the given d1_index is not unique to descent 1.
+/* If the given d1_index is used by a D1 texture, returns the D2 bitmap index
+ * that should be replaced while emulating D1.
+ * Returns -1 if the given d1_index is not used by a D1 texture.
  */
 short d2_index_for_d1_index(short d1_index)
 {
 	Assert(d1_index >= 0 && d1_index < D1_MAX_TMAP_NUM);
-	if (! d1_tmap_nums || d1_tmap_nums[d1_index] == -1
-	    || ! d1_tmap_num_unique(d1_tmap_nums[d1_index]))
+	if (! d1_tmap_nums || d1_tmap_nums[d1_index] == -1)
   		return -1;
 
 	return Textures[convert_d1_tmap_num(d1_tmap_nums[d1_index])].index;
 }
 
-#define D1_BITMAPS_SIZE 300000
+#define D1_BITMAPS_SIZE (5 * 1024 * 1024)
 void load_d1_bitmap_replacements()
 {
 	PHYSFS_file * d1_Piggy_fp;
@@ -1983,7 +1981,6 @@ void load_d1_bitmap_replacements()
 	int pig_data_start, bitmap_header_start, bitmap_data_start;
 	int N_bitmaps;
 	short d1_index, d2_index;
-	ubyte* next_bitmap;
 	ubyte colormap[256];
 	ubyte d1_palette[256*3];
 	char *p;
@@ -2045,17 +2042,16 @@ void load_d1_bitmap_replacements()
 		return;
 	}
 
-	next_bitmap = Bitmap_replacement_data;
+	Bitmap_replacement_next = Bitmap_replacement_data;
 
 	for (d1_index = 1; d1_index <= N_bitmaps; d1_index++ ) {
 		d2_index = d2_index_for_d1_index(d1_index);
-		// only change bitmaps which are unique to d1
 		if (d2_index != -1) {
 			PHYSFSX_fseek(d1_Piggy_fp, bitmap_header_start + (d1_index-1) * DISKBITMAPHEADER_D1_SIZE, SEEK_SET);
 			DiskBitmapHeader_d1_read(&bmh, d1_Piggy_fp);
 
-			bitmap_read_d1( &GameBitmaps[d2_index], d1_Piggy_fp, bitmap_data_start, &bmh, &next_bitmap, d1_palette, colormap );
-			Assert(next_bitmap - Bitmap_replacement_data < D1_BITMAPS_SIZE);
+			bitmap_read_d1( &GameBitmaps[d2_index], d1_Piggy_fp, bitmap_data_start, &bmh, &Bitmap_replacement_next, d1_palette, colormap );
+			Assert(Bitmap_replacement_next - Bitmap_replacement_data < D1_BITMAPS_SIZE);
 			GameBitmapOffset[d2_index] = 0; // don't try to read bitmap from current d2 pigfile
 			GameBitmapFlags[d2_index] = bmh.flags;
 
@@ -2079,6 +2075,64 @@ void load_d1_bitmap_replacements()
 	last_palette_loaded_pig[0]= 0;  //force pig re-load
 
 	texmerge_flush();       //for re-merging with new textures
+}
+
+int load_d1_bitmap_frame(short d1_index, bitmap_index d2_bitmap)
+{
+	PHYSFS_file *d1_Piggy_fp;
+	DiskBitmapHeader bmh;
+	ubyte colormap[256];
+	ubyte d1_palette[256*3];
+	int pig_data_start, bitmap_header_start, bitmap_data_start;
+	int N_bitmaps, N_sounds, header_size, pigsize;
+
+	if (!Bitmap_replacement_next || d2_bitmap.index >= MAX_BITMAP_FILES)
+		return 0;
+
+	d1_Piggy_fp = PHYSFSX_openReadBuffered(D1_PIGFILE);
+	if (!d1_Piggy_fp)
+		return 0;
+
+	if (get_d1_colormap(d1_palette, colormap) != 0) {
+		PHYSFS_close(d1_Piggy_fp);
+		return 0;
+	}
+
+	pigsize = PHYSFS_fileLength(d1_Piggy_fp);
+	switch (pigsize) {
+	case D1_SHARE_BIG_PIGSIZE:
+	case D1_SHARE_10_PIGSIZE:
+	case D1_SHARE_PIGSIZE:
+	case D1_10_BIG_PIGSIZE:
+	case D1_10_PIGSIZE:
+		pig_data_start = 0;
+		break;
+	default:
+		pig_data_start = PHYSFSX_readInt(d1_Piggy_fp);
+		break;
+	}
+
+	PHYSFSX_fseek(d1_Piggy_fp, pig_data_start, SEEK_SET);
+	N_bitmaps = PHYSFSX_readInt(d1_Piggy_fp);
+	N_sounds = PHYSFSX_readInt(d1_Piggy_fp);
+	if (d1_index <= 0 || d1_index > N_bitmaps) {
+		PHYSFS_close(d1_Piggy_fp);
+		return 0;
+	}
+
+	header_size = N_bitmaps * DISKBITMAPHEADER_D1_SIZE + N_sounds * sizeof(DiskSoundHeader);
+	bitmap_header_start = pig_data_start + 2 * sizeof(int);
+	bitmap_data_start = bitmap_header_start + header_size;
+	PHYSFSX_fseek(d1_Piggy_fp, bitmap_header_start + (d1_index - 1) * DISKBITMAPHEADER_D1_SIZE, SEEK_SET);
+	DiskBitmapHeader_d1_read(&bmh, d1_Piggy_fp);
+
+	bitmap_read_d1(&GameBitmaps[d2_bitmap.index], d1_Piggy_fp, bitmap_data_start, &bmh, &Bitmap_replacement_next, d1_palette, colormap);
+	Assert(Bitmap_replacement_next - Bitmap_replacement_data < D1_BITMAPS_SIZE);
+	GameBitmapOffset[d2_bitmap.index] = 0;
+	GameBitmapFlags[d2_bitmap.index] = bmh.flags;
+
+	PHYSFS_close(d1_Piggy_fp);
+	return 1;
 }
 
 
