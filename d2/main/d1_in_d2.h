@@ -34,5 +34,6 @@ void d1_in_d2_apply_effects(int active);
 void d1_in_d2_apply_powerup_vclips(int active);
 void d1_in_d2_apply_robot_assets(int active);
 void d1_in_d2_get_stats(d1_in_d2_asset_stats *stats);
+int d1_in_d2_ensure_spawnable_guidebot(void);
 
 #endif /* _D1_IN_D2_H */

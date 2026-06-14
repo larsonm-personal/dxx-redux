@@ -76,3 +76,8 @@
 - [done] Run scoped code quality on changed files with `android/run-code-quality.ps1 -Fix -Paths ...` after the refined fallback implementation
 - [done] Build Android debug APK with `JAVA_HOME=C:\local\jdk-21` and `./gradlew.bat :app:assembleDebug` after the refined fallback implementation
 - [done] Run `git diff --check` on changed implementation files
+
+## D1-In-D2 Spawn Compatibility
+- [done] Preserve the D2 Guide-Bot robot definition, compact animation joint list, polygon model, and object bitmap references before D1-in-D2 replaces robot assets with D1 data
+- [done] Keep normal D1-in-D2 level startup faithful: no companion robot type is exposed unless the player explicitly asks to spawn/deploy the Guide-Bot
+- [done] When `create_buddy_bot()` runs in D1-in-D2 and no companion type exists, append the preserved D2 Guide-Bot assets as a new runtime-only robot type so the Android deploy control can spawn it at the player

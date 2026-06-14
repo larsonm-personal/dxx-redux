@@ -62,6 +62,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_energy_trace.h"
+#include "d1_in_d2.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -209,6 +210,7 @@ void create_buddy_bot(void)
 	int	buddy_id;
 	vms_vector	object_pos;
 
+	d1_in_d2_ensure_spawnable_guidebot();
 	for (buddy_id=0; buddy_id<N_robot_types; buddy_id++)
 		if (Robot_info[buddy_id].companion)
 			break;
@@ -2516,5 +2518,4 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 	#undef REPLAY_LOG_FIRE_GATE
 	#undef REPLAY_LOG_ACTUAL_FIRE
 }
-
 

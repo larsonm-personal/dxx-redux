@@ -19,6 +19,7 @@
 #include "gamesave.h"
 #include "powerup.h"
 #include "robot.h"
+#include "u_mem.h"
 #include "vclip.h"
 #include "d1_in_d2.h"
 
@@ -67,6 +68,15 @@ static int D1_robot_assets_active = 0;
 static int D1_robot_bitmap_slots_registered = 0;
 static int D1_robot_polygon_models_loaded = 0;
 static bitmap_index D1_robot_bitmap_slots[D1_MAX_OBJ_BITMAPS];
+static int D2_guidebot_assets_saved = 0;
+static robot_info D2_guidebot_robot_info;
+static jointpos D2_guidebot_joints[MAX_ROBOT_JOINTS];
+static int D2_guidebot_joint_count = 0;
+static polymodel D2_guidebot_model;
+static bitmap_index D2_guidebot_obj_bitmaps[MAX_POLYOBJ_TEXTURES];
+static int D1_spawnable_guidebot_model_index = -1;
+static int D1_spawnable_guidebot_obj_bitmap_base = -1;
+static int D1_spawnable_guidebot_obj_bitmap_count = 0;
 static d1_in_d2_asset_stats Last_stats;
 
 extern int read_hamfile();
@@ -281,6 +291,153 @@ static void convert_d1_robot_model_flat_colors(int num_polygon_models)
 		convert_d1_model_flat_colors(Polygon_models[i].model_data, palette);
 }
 
+static int copy_model_data(polymodel *dest, const polymodel *src)
+{
+	*dest = *src;
+	dest->model_data = d_malloc(src->model_data_size);
+	if (!dest->model_data)
+		return 0;
+	memcpy(dest->model_data, src->model_data, src->model_data_size);
+	return 1;
+}
+
+static void remove_spawnable_guidebot_assets(void)
+{
+	if (D1_spawnable_guidebot_model_index >= 0 &&
+	    D1_spawnable_guidebot_model_index < N_polygon_models) {
+		free_model(&Polygon_models[D1_spawnable_guidebot_model_index]);
+		if (D1_spawnable_guidebot_model_index == N_polygon_models - 1)
+			N_polygon_models--;
+	}
+	if (D1_spawnable_guidebot_obj_bitmap_base >= 0 &&
+	    N_ObjBitmaps == D1_spawnable_guidebot_obj_bitmap_base + D1_spawnable_guidebot_obj_bitmap_count)
+		N_ObjBitmaps = D1_spawnable_guidebot_obj_bitmap_base;
+	D1_spawnable_guidebot_model_index = -1;
+	D1_spawnable_guidebot_obj_bitmap_base = -1;
+	D1_spawnable_guidebot_obj_bitmap_count = 0;
+}
+
+static int save_d2_guidebot_assets(void)
+{
+	int buddy_id, gun, state, i;
+	int model_num;
+	polymodel *model;
+
+	if (D2_guidebot_assets_saved)
+		return 1;
+
+	for (buddy_id = 0; buddy_id < N_robot_types; buddy_id++)
+		if (Robot_info[buddy_id].companion)
+			break;
+	if (buddy_id == N_robot_types)
+		return 0;
+
+	model_num = Robot_info[buddy_id].model_num;
+	if (model_num < 0 || model_num >= N_polygon_models)
+		return 0;
+	model = &Polygon_models[model_num];
+	if (!model->model_data || model->n_textures > MAX_POLYOBJ_TEXTURES)
+		return 0;
+
+	D2_guidebot_robot_info = Robot_info[buddy_id];
+	D2_guidebot_joint_count = 0;
+	for (gun = 0; gun < MAX_GUNS + 1; gun++)
+		for (state = 0; state < N_ANIM_STATES; state++) {
+			jointlist *jl = &D2_guidebot_robot_info.anim_states[gun][state];
+			int offset = jl->offset;
+
+			if (!jl->n_joints) {
+				jl->offset = 0;
+				continue;
+			}
+			if (offset < 0 || offset + jl->n_joints > N_robot_joints ||
+			    D2_guidebot_joint_count + jl->n_joints > MAX_ROBOT_JOINTS)
+				return 0;
+			jl->offset = D2_guidebot_joint_count;
+			memcpy(&D2_guidebot_joints[D2_guidebot_joint_count], &Robot_joints[offset],
+			       jl->n_joints * sizeof(jointpos));
+			D2_guidebot_joint_count += jl->n_joints;
+		}
+
+	for (i = 0; i < model->n_textures; i++) {
+		int obj_bitmap_ptr = model->first_texture + i;
+		int obj_bitmap;
+
+		if (obj_bitmap_ptr < 0 || obj_bitmap_ptr >= MAX_OBJ_BITMAPS)
+			return 0;
+		obj_bitmap = ObjBitmapPtrs[obj_bitmap_ptr];
+		if (obj_bitmap < 0 || obj_bitmap >= MAX_OBJ_BITMAPS)
+			return 0;
+		D2_guidebot_obj_bitmaps[i] = ObjBitmaps[obj_bitmap];
+	}
+
+	if (!copy_model_data(&D2_guidebot_model, model))
+		return 0;
+	D2_guidebot_assets_saved = 1;
+	return 1;
+}
+
+int d1_in_d2_ensure_spawnable_guidebot(void)
+{
+	int i, robot_index, model_index, first_texture, joint_offset;
+	polymodel *model;
+
+	if (!D1_robot_assets_active)
+		return 1;
+
+	for (i = 0; i < N_robot_types; i++)
+		if (Robot_info[i].companion)
+			return 1;
+
+	if (!D2_guidebot_assets_saved)
+		return 0;
+
+	model = &D2_guidebot_model;
+	if (N_robot_types >= MAX_ROBOT_TYPES || N_polygon_models >= MAX_POLYGON_MODELS ||
+	    N_ObjBitmaps + model->n_textures > MAX_OBJ_BITMAPS ||
+	    N_robot_joints + D2_guidebot_joint_count > MAX_ROBOT_JOINTS)
+		return 0;
+
+	robot_index = N_robot_types++;
+	model_index = N_polygon_models++;
+	first_texture = N_ObjBitmaps;
+	joint_offset = N_robot_joints;
+
+	Robot_info[robot_index] = D2_guidebot_robot_info;
+	Robot_info[robot_index].model_num = model_index;
+	Robot_info[robot_index].companion = 1;
+	for (i = 0; i < MAX_GUNS + 1; i++) {
+		int state;
+		for (state = 0; state < N_ANIM_STATES; state++)
+			if (Robot_info[robot_index].anim_states[i][state].n_joints)
+				Robot_info[robot_index].anim_states[i][state].offset += joint_offset;
+	}
+	memcpy(&Robot_joints[N_robot_joints], D2_guidebot_joints, D2_guidebot_joint_count * sizeof(jointpos));
+	N_robot_joints += D2_guidebot_joint_count;
+
+	if (!copy_model_data(&Polygon_models[model_index], model)) {
+		N_robot_types--;
+		N_polygon_models--;
+		N_robot_joints = joint_offset;
+		return 0;
+	}
+	Polygon_models[model_index].first_texture = first_texture;
+	Polygon_models[model_index].simpler_model = 0;
+	Dying_modelnums[model_index] = -1;
+	Dead_modelnums[model_index] = -1;
+	D1_spawnable_guidebot_model_index = model_index;
+	D1_spawnable_guidebot_obj_bitmap_base = first_texture;
+	D1_spawnable_guidebot_obj_bitmap_count = model->n_textures;
+
+	for (i = 0; i < model->n_textures; i++) {
+		ObjBitmaps[N_ObjBitmaps] = D2_guidebot_obj_bitmaps[i];
+		ObjBitmapPtrs[N_ObjBitmaps] = N_ObjBitmaps;
+		N_ObjBitmaps++;
+	}
+
+	return 1;
+}
+
 static int read_d1_effects()
 {
 	PHYSFS_file *fp;
@@ -450,6 +607,7 @@ void d1_in_d2_apply_robot_assets(int active)
 	int num_powerups, num_polygon_models, d1_gauge_count, pigsize;
 	int free_model_count;
 
+	remove_spawnable_guidebot_assets();
 	if (!active) {
 		if (D1_robot_assets_active) {
 			free_polygon_models();
@@ -475,6 +633,7 @@ void d1_in_d2_apply_robot_assets(int active)
 			D1_robot_bitmap_slots[i].index = D1_ROBOT_BITMAP_SLOT_BASE + i;
 		D1_robot_bitmap_slots_registered = 1;
 	}
+	save_d2_guidebot_assets();
 
 	Last_stats.robot_assets_active = D1_robot_assets_active;
 	Last_stats.robot_pig_present = 0;
