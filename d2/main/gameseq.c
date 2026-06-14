@@ -874,12 +874,15 @@ void LoadLevel(int level_num,int page_in_textures)
 		apply_d1_powerup_vclips(1);
 		d1_custom_load_data(level_name);
 	} else {
+		apply_d1_robot_assets(0);
 		apply_d1_powerup_vclips(0);
 		apply_d1_effects(0);
 		load_bitmap_replacements(level_name);
 	}
 
 	load_level_robots(level_num);
+	if (EMULATING_D1)
+		apply_d1_robot_assets(1);
 
 	if ( page_in_textures && !skip_level_presentation ) {
 		piggy_load_level_data();
