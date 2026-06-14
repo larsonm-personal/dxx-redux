@@ -1830,12 +1830,19 @@ void bitmap_read_d1( grs_bitmap *bitmap, /* read into this bitmap */
  * "d1_tmap_nums" looks up a d1 tmap_num given a d1 bitmap. "-1" means "None".
  */
 short *d1_tmap_nums = NULL;
+static d1_bitmap_replacement_stats Last_d1_bitmap_replacement_stats;
 
 void free_d1_tmap_nums() {
 	if (d1_tmap_nums) {
 		d_free(d1_tmap_nums);
 		d1_tmap_nums = NULL;
 	}
+}
+
+void d1_bitmap_replacement_get_stats(d1_bitmap_replacement_stats *stats)
+{
+	if (stats)
+		*stats = Last_d1_bitmap_replacement_stats;
 }
 
 void bm_read_d1_tmap_nums(PHYSFS_file *d1pig)
@@ -1986,6 +1993,7 @@ void load_d1_bitmap_replacements()
 	char *p;
 	int pigsize;
 
+	memset(&Last_d1_bitmap_replacement_stats, 0, sizeof(Last_d1_bitmap_replacement_stats));
 	d1_Piggy_fp = PHYSFSX_openReadBuffered( D1_PIGFILE );
 
 #define D1_PIG_LOAD_FAILED "Failed loading " D1_PIGFILE
@@ -1993,14 +2001,18 @@ void load_d1_bitmap_replacements()
 		Warning(D1_PIG_LOAD_FAILED);
 		return;
 	}
+	Last_d1_bitmap_replacement_stats.pig_present = 1;
 
 	//first, free up data allocated for old bitmaps
 	free_bitmap_replacements();
 
-	if (get_d1_colormap( d1_palette, colormap ) != 0)
+	if (get_d1_colormap( d1_palette, colormap ) != 0) {
+		Last_d1_bitmap_replacement_stats.colormap_failed = 1;
 		Warning("Could not load descent 1 color palette");
+	}
 
 	pigsize = PHYSFS_fileLength(d1_Piggy_fp);
+	Last_d1_bitmap_replacement_stats.pig_size = pigsize;
 	switch (pigsize) {
 	case D1_SHARE_BIG_PIGSIZE:
 	case D1_SHARE_10_PIGSIZE:
@@ -2047,10 +2059,12 @@ void load_d1_bitmap_replacements()
 	for (d1_index = 1; d1_index <= N_bitmaps; d1_index++ ) {
 		d2_index = d2_index_for_d1_index(d1_index);
 		if (d2_index != -1) {
+			Last_d1_bitmap_replacement_stats.wall_entries++;
 			PHYSFSX_fseek(d1_Piggy_fp, bitmap_header_start + (d1_index-1) * DISKBITMAPHEADER_D1_SIZE, SEEK_SET);
 			DiskBitmapHeader_d1_read(&bmh, d1_Piggy_fp);
 
 			bitmap_read_d1( &GameBitmaps[d2_index], d1_Piggy_fp, bitmap_data_start, &bmh, &Bitmap_replacement_next, d1_palette, colormap );
+			Last_d1_bitmap_replacement_stats.wall_applied++;
 			Assert(Bitmap_replacement_next - Bitmap_replacement_data < D1_BITMAPS_SIZE);
 			GameBitmapOffset[d2_index] = 0; // don't try to read bitmap from current d2 pigfile
 			GameBitmapFlags[d2_index] = bmh.flags;
@@ -2065,6 +2079,7 @@ void load_d1_bitmap_replacements()
 						GameBitmaps[i] = GameBitmaps[d2_index];
 						GameBitmapOffset[i] = 0;
 						GameBitmapFlags[i] = bmh.flags;
+						Last_d1_bitmap_replacement_stats.animated_clones++;
 					}
 			}
 		}

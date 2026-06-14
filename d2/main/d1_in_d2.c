@@ -56,8 +56,15 @@ static int D1_robot_assets_active = 0;
 static int D1_robot_bitmap_slots_registered = 0;
 static int D1_robot_polygon_models_loaded = 0;
 static bitmap_index D1_robot_bitmap_slots[D1_MAX_OBJ_BITMAPS];
+static d1_in_d2_asset_stats Last_stats;
 
 extern int read_hamfile();
+
+void d1_in_d2_get_stats(d1_in_d2_asset_stats *stats)
+{
+	if (stats)
+		*stats = Last_stats;
+}
 
 static PHYSFS_file *open_d1_registered_pig()
 {
@@ -223,6 +230,11 @@ void d1_in_d2_apply_effects(int active)
 {
 	int i, j;
 
+	Last_stats.effects_active = active;
+	Last_stats.effects_loaded = D1_effects_loaded;
+	Last_stats.num_effects = D1_num_effects;
+	Last_stats.effect_frames_applied = 0;
+	Last_stats.effect_frames_skipped = 0;
 	if (!D1_effects_saved) {
 		for (i = 0; i < MAX_EFFECTS; i++)
 			D1_original_effects[i] = Effects[i];
@@ -230,8 +242,12 @@ void d1_in_d2_apply_effects(int active)
 	}
 	if (!active && !D1_effects_active)
 		return;
-	if (active && !read_d1_effects())
+	if (active && !read_d1_effects()) {
+		Last_stats.effects_active = D1_effects_active;
 		return;
+	}
+	Last_stats.effects_loaded = D1_effects_loaded;
+	Last_stats.num_effects = D1_num_effects;
 	for (i = 0; i < D1_num_effects && i < MAX_EFFECTS; i++) {
 		if (!active) {
 			Effects[i] = D1_original_effects[i];
@@ -252,17 +268,26 @@ void d1_in_d2_apply_effects(int active)
 		Effects[i].vc.num_frames = D1_effects[i].vc.num_frames < D1_original_effects[i].vc.num_frames
 			? D1_effects[i].vc.num_frames : D1_original_effects[i].vc.num_frames;
 		for (j = 0; j < Effects[i].vc.num_frames; j++) {
-			if (load_d1_bitmap_frame(D1_effects[i].vc.frames[j].index, D1_original_effects[i].vc.frames[j]))
+			if (load_d1_bitmap_frame(D1_effects[i].vc.frames[j].index, D1_original_effects[i].vc.frames[j])) {
 				Effects[i].vc.frames[j] = D1_original_effects[i].vc.frames[j];
+				Last_stats.effect_frames_applied++;
+			} else
+				Last_stats.effect_frames_skipped++;
 		}
 	}
 	D1_effects_active = active;
+	Last_stats.effects_active = D1_effects_active;
 }
 
 void d1_in_d2_apply_powerup_vclips(int active)
 {
 	int i, j;
 
+	Last_stats.powerup_vclips_active = active;
+	Last_stats.powerup_vclips_loaded = D1_powerup_vclips_loaded;
+	Last_stats.num_vclips = D1_num_vclips;
+	Last_stats.powerup_frames_applied = 0;
+	Last_stats.powerup_frames_skipped = 0;
 	if (!D1_powerup_vclips_saved) {
 		for (i = 0; i < VCLIP_MAXNUM; i++)
 			D1_original_vclips[i] = Vclip[i];
@@ -270,8 +295,12 @@ void d1_in_d2_apply_powerup_vclips(int active)
 	}
 	if (!active && !D1_powerup_vclips_active)
 		return;
-	if (active && !read_d1_powerup_vclips())
+	if (active && !read_d1_powerup_vclips()) {
+		Last_stats.powerup_vclips_active = D1_powerup_vclips_active;
 		return;
+	}
+	Last_stats.powerup_vclips_loaded = D1_powerup_vclips_loaded;
+	Last_stats.num_vclips = D1_num_vclips;
 
 	for (i = 0; i < VCLIP_MAXNUM; i++) {
 		if (!active) {
@@ -287,8 +316,11 @@ void d1_in_d2_apply_powerup_vclips(int active)
 		Vclip[i].num_frames = D1_vclips[i].num_frames < D1_original_vclips[i].num_frames
 			? D1_vclips[i].num_frames : D1_original_vclips[i].num_frames;
 		for (j = 0; j < Vclip[i].num_frames; j++) {
-			if (load_d1_bitmap_frame(D1_vclips[i].frames[j].index, D1_original_vclips[i].frames[j]))
+			if (load_d1_bitmap_frame(D1_vclips[i].frames[j].index, D1_original_vclips[i].frames[j])) {
 				Vclip[i].frames[j] = D1_original_vclips[i].frames[j];
+				Last_stats.powerup_frames_applied++;
+			} else
+				Last_stats.powerup_frames_skipped++;
 		}
 	}
 
@@ -297,6 +329,7 @@ void d1_in_d2_apply_powerup_vclips(int active)
 			Objects[i].rtype.vclip_info.frametime = Vclip[Objects[i].rtype.vclip_info.vclip_num].frame_time;
 
 	D1_powerup_vclips_active = active;
+	Last_stats.powerup_vclips_active = D1_powerup_vclips_active;
 }
 
 void d1_in_d2_apply_robot_assets(int active)
@@ -315,6 +348,16 @@ void d1_in_d2_apply_robot_assets(int active)
 			D1_robot_assets_active = 0;
 			D1_robot_polygon_models_loaded = 0;
 		}
+		Last_stats.robot_assets_active = 0;
+		Last_stats.robot_pig_present = 0;
+		Last_stats.robot_pig_size = 0;
+		Last_stats.robot_types = 0;
+		Last_stats.robot_joints = 0;
+		Last_stats.robot_models = 0;
+		Last_stats.robot_obj_bitmaps = 0;
+		Last_stats.robot_obj_bitmaps_applied = 0;
+		Last_stats.robot_obj_bitmaps_skipped = 0;
+		Last_stats.robot_objects_updated = 0;
 		return;
 	}
 
@@ -324,10 +367,26 @@ void d1_in_d2_apply_robot_assets(int active)
 		D1_robot_bitmap_slots_registered = 1;
 	}
 
+	Last_stats.robot_assets_active = D1_robot_assets_active;
+	Last_stats.robot_pig_present = 0;
+	Last_stats.robot_pig_size = 0;
+	Last_stats.robot_types = 0;
+	Last_stats.robot_joints = 0;
+	Last_stats.robot_models = 0;
+	Last_stats.robot_obj_bitmaps = 0;
+	Last_stats.robot_obj_bitmaps_applied = 0;
+	Last_stats.robot_obj_bitmaps_skipped = 0;
+	Last_stats.robot_objects_updated = 0;
 	fp = open_d1_registered_pig();
 	if (!fp)
 		return;
 	pigsize = (int)PHYSFS_fileLength(fp);
+	Last_stats.robot_pig_present = 1;
+	Last_stats.robot_pig_size = pigsize;
+	Last_stats.robot_obj_bitmaps = 0;
+	Last_stats.robot_obj_bitmaps_applied = 0;
+	Last_stats.robot_obj_bitmaps_skipped = 0;
+	Last_stats.robot_objects_updated = 0;
 
 	seek_d1_vclip_table(fp);
 	skip_d1_vclips_and_effects(fp);
@@ -347,6 +406,7 @@ void d1_in_d2_apply_robot_assets(int active)
 	for (i = 0; i < D1_MAX_ROBOT_TYPES; i++)
 		read_d1_robot_info(&Robot_info[i], fp);
 	N_robot_types = num_robot_types;
+	Last_stats.robot_types = num_robot_types;
 
 	num_robot_joints = PHYSFSX_readInt(fp);
 	if (num_robot_joints < 0 || num_robot_joints > D1_MAX_ROBOT_JOINTS) {
@@ -355,6 +415,7 @@ void d1_in_d2_apply_robot_assets(int active)
 	}
 	jointpos_read_n(Robot_joints, D1_MAX_ROBOT_JOINTS, fp);
 	N_robot_joints = num_robot_joints;
+	Last_stats.robot_joints = num_robot_joints;
 
 	num_weapon_types = PHYSFSX_readInt(fp);
 	if (num_weapon_types < 0 || num_weapon_types > D1_MAX_WEAPON_TYPES) {
@@ -386,6 +447,7 @@ void d1_in_d2_apply_robot_assets(int active)
 	for (i = 0; i < num_polygon_models; i++)
 		polygon_model_data_read(&Polygon_models[i], fp);
 	D1_robot_polygon_models_loaded = num_polygon_models;
+	Last_stats.robot_models = num_polygon_models;
 
 	d1_gauge_count = (pigsize == D1_MAC_PIGSIZE || pigsize == D1_MAC_SHARE_PIGSIZE)
 		? D1_MAX_GAUGE_BMS_MAC : D1_MAX_GAUGE_BMS_PC;
@@ -404,10 +466,14 @@ void d1_in_d2_apply_robot_assets(int active)
 	if (N_ObjBitmaps < D1_MAX_OBJ_BITMAPS)
 		N_ObjBitmaps = D1_MAX_OBJ_BITMAPS;
 	for (i = 0; i < D1_MAX_OBJ_BITMAPS; i++) {
-		if (d1_obj_bitmaps[i].index && load_d1_bitmap_frame(d1_obj_bitmaps[i].index, D1_robot_bitmap_slots[i]))
+		Last_stats.robot_obj_bitmaps++;
+		if (d1_obj_bitmaps[i].index && load_d1_bitmap_frame(d1_obj_bitmaps[i].index, D1_robot_bitmap_slots[i])) {
 			ObjBitmaps[i] = D1_robot_bitmap_slots[i];
-		else
+			Last_stats.robot_obj_bitmaps_applied++;
+		} else {
 			ObjBitmaps[i].index = 0;
+			Last_stats.robot_obj_bitmaps_skipped++;
+		}
 		ObjBitmapPtrs[i] = d1_obj_bitmap_ptrs[i];
 	}
 
@@ -416,10 +482,12 @@ void d1_in_d2_apply_robot_assets(int active)
 			continue;
 		Objects[i].rtype.pobj_info.model_num = Robot_info[Objects[i].id].model_num;
 		Objects[i].size = Polygon_models[Objects[i].rtype.pobj_info.model_num].rad;
+		Last_stats.robot_objects_updated++;
 		if (Objects[i].movement_type == MT_PHYSICS) {
 			Objects[i].mtype.phys_info.mass = Robot_info[Objects[i].id].mass;
 			Objects[i].mtype.phys_info.drag = Robot_info[Objects[i].id].drag;
 		}
 	}
 	D1_robot_assets_active = 1;
+	Last_stats.robot_assets_active = D1_robot_assets_active;
 }

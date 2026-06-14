@@ -397,7 +397,7 @@ data needs a stricter compatibility gate than pure visual replacements.
 
 ### Phase 1: Inventory and Trace
 
-Status: not started.
+Status: complete.
 
 Deliverables:
 
@@ -406,11 +406,24 @@ Deliverables:
   active base game, active palette, loaded overlay files, replacement counts.
 - Include D1-in-D2 Trine 2 in the trace output.
 
+Progress:
+
+- Added D1 base wall replacement counters from `load_d1_bitmap_replacements()`.
+- Added D1-in-D2 compatibility counters for effect frames, powerup vclip frames,
+  robot table/model counts, robot object bitmap replacements, and robot objects
+  updated.
+- Added an Android debug introspection `asset_trace` object with runtime mode,
+  selected base game, active palette fields, current pigfile, D1 base wall
+  stats, D1 compatibility stats, and D1 custom stats.
+- Left the existing flat `d1_custom_textures` introspection object in place for
+  compatibility with existing scripts.
+
 Validation:
 
-- Launch Trine 2 in D2 and confirm the trace identifies D1-in-D2, D1 palette,
-  D1 base wall replacements, D1 custom files if present, and robot overlay
-  status.
+- Launched Trine 2 in D2 with
+  `android/game_scripts/test_trine2_d1_in_d2_custom_textures.json5`: passed.
+- Confirmed the trace identifies D1-in-D2, D1 palette, D1 base wall
+  replacements, D1 custom files, D1 effects/vclips, and robot overlay status.
 
 ### Phase 2: Stabilize Layer Order
 

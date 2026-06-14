@@ -44,6 +44,15 @@ typedef struct alias {
 	char file_name[FILENAME_LEN];
 } alias;
 
+typedef struct d1_bitmap_replacement_stats {
+	int pig_present;
+	int pig_size;
+	int wall_entries;
+	int wall_applied;
+	int animated_clones;
+	int colormap_failed;
+} d1_bitmap_replacement_stats;
+
 extern alias alias_list[MAX_ALIASES];
 extern int Num_aliases;
 
@@ -119,6 +128,7 @@ void load_bitmap_replacements(char *level_name);
 //if descent.pig exists, loads descent 1 texture bitmaps
 void load_d1_bitmap_replacements();
 int load_d1_bitmap_frame(short d1_index, bitmap_index d2_bitmap);
+void d1_bitmap_replacement_get_stats(d1_bitmap_replacement_stats *stats);
 
 /*
  * reads a bitmap_index structure from a PHYSFS_file

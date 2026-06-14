@@ -53,6 +53,9 @@ extern "C" {
 #include "ai.h"
 #include "escort.h"
 #include "d1_custom.h"
+#include "d1_in_d2.h"
+#include "gamepal.h"
+#include "mission.h"
 #endif
 
 /* Android port: hires texture tracking counters from ogl.c */
@@ -994,6 +997,74 @@ extern "C" char *game_introspect_get_state(void)
 		}
 		mv["last_result"] = result_str;
 		j["movie"] = std::move(mv);
+	}
+#endif
+
+	/* -- Asset source trace for D1-in-D2 overlay compatibility -------- */
+#ifdef DXX_BUILD_DESCENT_II
+	{
+		d1_bitmap_replacement_stats d1_walls;
+		d1_in_d2_asset_stats d1_compat;
+		d1_custom_texture_stats d1_custom;
+		const bool emulating_d1 = Current_mission && EMULATING_D1;
+
+		d1_bitmap_replacement_get_stats(&d1_walls);
+		d1_in_d2_get_stats(&d1_compat);
+		d1_custom_get_stats(&d1_custom);
+
+		json trace;
+		trace["runtime_engine"] = "d2";
+		trace["selected_base_game"] = emulating_d1 ? "d1" : "d2";
+		trace["mode"] = emulating_d1 ? "d1-in-d2" : "d2";
+		trace["current_level_palette"] = std::string(Current_level_palette);
+		trace["last_palette_loaded"] = std::string(last_palette_loaded);
+		trace["last_palette_loaded_pig"] = std::string(last_palette_loaded_pig);
+		trace["current_pigfile"] = std::string(piggy_current_pigfile() ? piggy_current_pigfile() : "");
+
+		trace["d1_base_walls"] = {
+			{ "pig_present", (bool) d1_walls.pig_present },
+			{ "pig_size", d1_walls.pig_size },
+			{ "wall_entries", d1_walls.wall_entries },
+			{ "wall_applied", d1_walls.wall_applied },
+			{ "animated_clones", d1_walls.animated_clones },
+			{ "colormap_failed", (bool) d1_walls.colormap_failed }
+		};
+		trace["d1_compat"] = {
+			{ "effects_active", (bool) d1_compat.effects_active },
+			{ "effects_loaded", (bool) d1_compat.effects_loaded },
+			{ "num_effects", d1_compat.num_effects },
+			{ "effect_frames_applied", d1_compat.effect_frames_applied },
+			{ "effect_frames_skipped", d1_compat.effect_frames_skipped },
+			{ "powerup_vclips_active", (bool) d1_compat.powerup_vclips_active },
+			{ "powerup_vclips_loaded", (bool) d1_compat.powerup_vclips_loaded },
+			{ "num_vclips", d1_compat.num_vclips },
+			{ "powerup_frames_applied", d1_compat.powerup_frames_applied },
+			{ "powerup_frames_skipped", d1_compat.powerup_frames_skipped },
+			{ "robot_assets_active", (bool) d1_compat.robot_assets_active },
+			{ "robot_pig_present", (bool) d1_compat.robot_pig_present },
+			{ "robot_pig_size", d1_compat.robot_pig_size },
+			{ "robot_types", d1_compat.robot_types },
+			{ "robot_joints", d1_compat.robot_joints },
+			{ "robot_models", d1_compat.robot_models },
+			{ "robot_obj_bitmaps", d1_compat.robot_obj_bitmaps },
+			{ "robot_obj_bitmaps_applied", d1_compat.robot_obj_bitmaps_applied },
+			{ "robot_obj_bitmaps_skipped", d1_compat.robot_obj_bitmaps_skipped },
+			{ "robot_objects_updated", d1_compat.robot_objects_updated }
+		};
+		trace["d1_custom"] = {
+			{ "files_found", d1_custom.files_found },
+			{ "bitmap_entries", d1_custom.bitmap_entries },
+			{ "bitmap_applied", d1_custom.bitmap_applied },
+			{ "bitmap_unresolved", d1_custom.bitmap_unresolved },
+			{ "sound_entries", d1_custom.sound_entries },
+			{ "sound_applied", d1_custom.sound_applied },
+			{ "sound_unresolved", d1_custom.sound_unresolved },
+			{ "base_sound_entries", d1_custom.base_sound_entries },
+			{ "base_sound_applied", d1_custom.base_sound_applied },
+			{ "base_sound_unresolved", d1_custom.base_sound_unresolved },
+			{ "base_sound_skipped", d1_custom.base_sound_skipped }
+		};
+		j["asset_trace"] = std::move(trace);
 	}
 #endif
 

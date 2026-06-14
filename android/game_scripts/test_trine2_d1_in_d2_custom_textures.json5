@@ -44,6 +44,15 @@
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "asset_trace.mode": {"eq": "d1-in-d2"},
+        "asset_trace.selected_base_game": {"eq": "d1"},
+        "asset_trace.current_level_palette": {"eq": "palette.256"},
+        "asset_trace.d1_base_walls.pig_present": {"eq": "true"},
+        "asset_trace.d1_base_walls.wall_applied": {"gt": 0},
+        "asset_trace.d1_compat.effects_active": {"eq": "true"},
+        "asset_trace.d1_compat.powerup_vclips_active": {"eq": "true"},
+        "asset_trace.d1_compat.robot_assets_active": {"eq": "true"},
+        "asset_trace.d1_compat.robot_obj_bitmaps_applied": {"gt": 0},
         "d1_custom_textures.files_found": {"gte": 1},
         "d1_custom_textures.bitmap_entries": {"gt": 0},
         "d1_custom_textures.applied": {"gt": 0},
@@ -53,6 +62,10 @@
         "d1_custom_textures.base_sound_skipped": {"eq": "0"}
     }},
     {"action": "assert", "expect": {
+        "asset_trace.mode": {"eq": "d1-in-d2"},
+        "asset_trace.selected_base_game": {"eq": "d1"},
+        "asset_trace.d1_base_walls.wall_applied": {"gt": 0},
+        "asset_trace.d1_compat.robot_obj_bitmaps_applied": {"gt": 0},
         "d1_custom_textures.files_found": {"gte": 1},
         "d1_custom_textures.applied": {"gt": 0},
         "d1_custom_textures.base_sound_entries": {"eq": "98"},
