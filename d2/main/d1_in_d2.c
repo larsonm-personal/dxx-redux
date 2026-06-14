@@ -90,6 +90,8 @@ static jointpos D2_guidebot_joints[MAX_ROBOT_JOINTS];
 static int D2_guidebot_joint_count = 0;
 static polymodel D2_guidebot_model;
 static bitmap_index D2_guidebot_obj_bitmaps[MAX_POLYOBJ_TEXTURES];
+static grs_bitmap D2_guidebot_bitmaps[MAX_POLYOBJ_TEXTURES];
+static ubyte D2_guidebot_bitmap_valid[MAX_POLYOBJ_TEXTURES];
 static int D2_d1_robot_tuning_saved = 0;
 static int D2_d1_robot_tuning_count = 0;
 static ubyte D2_d1_robot_behavior[D1_MAX_ROBOT_TYPES];
@@ -791,44 +793,52 @@ static int bitmap_data_size(const grs_bitmap *bmp)
 	return bmp->bm_rowsize * bmp->bm_h;
 }
 
-static int copy_bitmap_to_new_slot(bitmap_index src, bitmap_index *dest)
+static int save_guidebot_bitmap_copy(int texture_index, bitmap_index src)
 {
-	grs_bitmap *src_bmp, *dest_bmp;
+	grs_bitmap *src_bmp;
 	ubyte *data;
-	char name[13];
-	int saved_sound_offset, size, slot;
+	int size;
 
-	if (src.index >= MAX_BITMAP_FILES)
+	if (texture_index < 0 || texture_index >= MAX_POLYOBJ_TEXTURES || src.index >= MAX_BITMAP_FILES)
 		return 0;
 	PIGGY_PAGE_IN(src);
 	src_bmp = &GameBitmaps[src.index];
 	size = bitmap_data_size(src_bmp);
 	if (!size)
 		return 0;
-	if (Num_bitmap_files >= D1_ROBOT_BITMAP_SLOT_BASE)
-		return 0;
 	MALLOC(data, ubyte, size);
 	if (!data)
 		return 0;
 	memcpy(data, src_bmp->bm_data, size);
 
-	slot = Num_bitmap_files;
-	dest_bmp = &GameBitmaps[slot];
-	*dest_bmp = *src_bmp;
-	dest_bmp->bm_data = data;
-	dest_bmp->bm_parent = NULL;
+	D2_guidebot_bitmaps[texture_index] = *src_bmp;
+	D2_guidebot_bitmaps[texture_index].bm_data = data;
+	D2_guidebot_bitmaps[texture_index].bm_parent = NULL;
 #ifdef OGL
-	dest_bmp->gltexture = NULL;
-	dest_bmp->gltexture_mask = NULL;
+	D2_guidebot_bitmaps[texture_index].gltexture = NULL;
+	D2_guidebot_bitmaps[texture_index].gltexture_mask = NULL;
 #endif
-	snprintf(name, sizeof(name), "gbot%04d", slot);
-	saved_sound_offset = Num_sound_files < MAX_SOUND_FILES ? SoundOffset[Num_sound_files] : 0;
-	piggy_register_bitmap(dest_bmp, name, 1);
-	if (Num_sound_files < MAX_SOUND_FILES)
-		SoundOffset[Num_sound_files] = saved_sound_offset;
-	piggy_bitmap_set_file_state(slot, 0, src_bmp->bm_flags);
-	dest->index = slot;
+	D2_guidebot_bitmap_valid[texture_index] = 1;
 	return 1;
+}
+
+static void restore_guidebot_bitmap_copies(void)
+{
+	int i;
+
+	if (!D2_guidebot_assets_saved)
+		return;
+	for (i = 0; i < D2_guidebot_model.n_textures; i++) {
+		int bitmap_index = D2_guidebot_obj_bitmaps[i].index;
+		grs_bitmap *bmp;
+
+		if (!D2_guidebot_bitmap_valid[i] || bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES)
+			continue;
+		bmp = &GameBitmaps[bitmap_index];
+		gr_set_bitmap_data(bmp, NULL);
+		*bmp = D2_guidebot_bitmaps[i];
+		piggy_bitmap_set_file_state(bitmap_index, 0, bmp->bm_flags);
+	}
 }
 
 static int save_d2_guidebot_assets(void)
@@ -883,7 +893,7 @@ static int save_d2_guidebot_assets(void)
 		if (obj_bitmap < 0 || obj_bitmap >= MAX_OBJ_BITMAPS)
 			return 0;
 		D2_guidebot_obj_bitmaps[i] = ObjBitmaps[obj_bitmap];
-		copy_bitmap_to_new_slot(ObjBitmaps[obj_bitmap], &D2_guidebot_obj_bitmaps[i]);
+		save_guidebot_bitmap_copy(i, D2_guidebot_obj_bitmaps[i]);
 	}
 
 	if (!copy_model_data(&D2_guidebot_model, model))
@@ -1281,6 +1291,7 @@ void d1_in_d2_apply_robot_assets(int active)
 			Objects[i].mtype.phys_info.drag = Robot_info[Objects[i].id].drag;
 		}
 	}
+	restore_guidebot_bitmap_copies();
 	D1_robot_assets_active = 1;
 	Last_stats.robot_assets_active = D1_robot_assets_active;
 }

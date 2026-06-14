@@ -501,12 +501,14 @@ Deliverables:
 
 Progress:
 
-- Added a D1-in-D2 cockpit base art layer that loads D1 cockpit bitmaps into
-  the D2 cockpit slots for D1 missions, then restores D2 cockpit bitmaps when
-  returning to native D2.
+- Added a D1-in-D2 cockpit base art layer, but left it disabled from level load
+  after playtesting showed D2 cockpit rendering stretches D1 cockpit art
+  horizontally. This needs a proper D1 cockpit layout/render pass before it is
+  re-enabled.
 - Added cockpit compatibility counters to `asset_trace.d1_compat`.
-- Preserved spawnable guidebot D2 art by cloning its D2 bitmap data before D1
-  wall/robot compatibility replaces shared bitmap slots.
+- Preserved spawnable guidebot D2 art by copying its D2 bitmap data and
+  restoring those slots after D1 wall/robot compatibility replaces shared
+  bitmap slots.
 
 Validation:
 
