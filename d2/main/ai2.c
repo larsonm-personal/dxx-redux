@@ -1001,6 +1001,8 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 
 	//	Set position to fire at based on difficulty level and robot's aiming ability
 	aim = FIRE_K*F1_0 - (FIRE_K-1)*(robptr->aim << 8);	//	F1_0 in bitmaps.tbl = same as used to be.  Worst is 50% more error.
+	if (d1_in_d2_use_d1_robot_aiming())
+		aim = F1_0;	// D1 robots had no per-type aim byte, so use D1's exact spread scale.
 
 	//	Robots aim more poorly during seismic disturbance.
 	if (Seismic_tremor_magnitude) {
@@ -2518,4 +2520,3 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 	#undef REPLAY_LOG_FIRE_GATE
 	#undef REPLAY_LOG_ACTUAL_FIRE
 }
-

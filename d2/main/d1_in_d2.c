@@ -17,11 +17,14 @@
 #include "bm.h"
 #include "gamepal.h"
 #include "gamesave.h"
+#include "mission.h"
 #include "powerup.h"
 #include "robot.h"
 #include "u_mem.h"
 #include "vclip.h"
 #include "d1_in_d2.h"
+#include "laser.h"
+#include "weapon.h"
 
 #define D1_MAX_EFFECTS 60
 #define D1_MAX_PIG_TEXTURES 800
@@ -76,7 +79,6 @@ static polymodel D2_guidebot_model;
 static bitmap_index D2_guidebot_obj_bitmaps[MAX_POLYOBJ_TEXTURES];
 static int D2_d1_robot_tuning_saved = 0;
 static int D2_d1_robot_tuning_count = 0;
-static ubyte D2_d1_robot_aim[D1_MAX_ROBOT_TYPES];
 static ubyte D2_d1_robot_behavior[D1_MAX_ROBOT_TYPES];
 static sbyte D2_d1_robot_lightcast[D1_MAX_ROBOT_TYPES];
 static int D1_spawnable_guidebot_model_index = -1;
@@ -159,7 +161,6 @@ static void save_d2_d1_robot_tuning(void)
 
 	count = N_robot_types < D1_MAX_ROBOT_TYPES ? N_robot_types : D1_MAX_ROBOT_TYPES;
 	for (i = 0; i < count; i++) {
-		D2_d1_robot_aim[i] = Robot_info[i].aim;
 		D2_d1_robot_behavior[i] = Robot_info[i].behavior;
 		D2_d1_robot_lightcast[i] = Robot_info[i].lightcast;
 	}
@@ -175,9 +176,13 @@ static void apply_d1_robot_d2_tuning(robot_info *ri, int robot_id)
 	if (robot_id < 0 || robot_id >= D2_d1_robot_tuning_count)
 		return;
 
-	ri->aim = D2_d1_robot_aim[robot_id];
 	ri->behavior = D2_d1_robot_behavior[robot_id];
 	ri->lightcast = D2_d1_robot_lightcast[robot_id];
+}
+
+int d1_in_d2_use_d1_robot_aiming(void)
+{
+	return Current_mission && EMULATING_D1;
 }
 
 static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)
@@ -236,6 +241,56 @@ static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)
 			ri->anim_states[gun][state].offset = PHYSFSX_readShort(fp);
 		}
 	ri->always_0xabcd = PHYSFSX_readInt(fp);
+}
+
+static void read_d1_weapon_info(weapon_info *wi, int weapon_id, PHYSFS_file *fp)
+{
+	int j;
+
+	memset(wi, 0, sizeof(*wi));
+	wi->render_type = (sbyte)PHYSFSX_readByte(fp);
+	wi->model_num = (sbyte)PHYSFSX_readByte(fp);
+	wi->model_num_inner = (sbyte)PHYSFSX_readByte(fp);
+	wi->persistent = (sbyte)PHYSFSX_readByte(fp);
+	wi->flash_vclip = (sbyte)PHYSFSX_readByte(fp);
+	wi->flash_sound = PHYSFSX_readShort(fp);
+	wi->robot_hit_vclip = (sbyte)PHYSFSX_readByte(fp);
+	wi->robot_hit_sound = PHYSFSX_readShort(fp);
+	wi->wall_hit_vclip = (sbyte)PHYSFSX_readByte(fp);
+	wi->wall_hit_sound = PHYSFSX_readShort(fp);
+	wi->fire_count = (sbyte)PHYSFSX_readByte(fp);
+	wi->ammo_usage = (sbyte)PHYSFSX_readByte(fp);
+	wi->weapon_vclip = (sbyte)PHYSFSX_readByte(fp);
+	wi->destroyable = (sbyte)PHYSFSX_readByte(fp);
+	wi->matter = (sbyte)PHYSFSX_readByte(fp);
+	wi->bounce = (sbyte)PHYSFSX_readByte(fp);
+	wi->homing_flag = (sbyte)PHYSFSX_readByte(fp);
+	PHYSFSX_fseek(fp, 3, SEEK_CUR);
+	wi->speedvar = 128;
+	wi->flags = 0;
+	wi->flash = 0;
+	wi->afterburner_size = 0;
+	wi->children = weapon_id == SMART_ID ? PLAYER_SMART_HOMING_ID : -1;
+	wi->energy_usage = PHYSFSX_readFix(fp);
+	wi->fire_wait = PHYSFSX_readFix(fp);
+	wi->multi_damage_scale = F1_0;
+	bitmap_index_read(&wi->bitmap, fp);
+	wi->blob_size = PHYSFSX_readFix(fp);
+	wi->flash_size = PHYSFSX_readFix(fp);
+	wi->impact_size = PHYSFSX_readFix(fp);
+	for (j = 0; j < NDL; j++)
+		wi->strength[j] = PHYSFSX_readFix(fp);
+	for (j = 0; j < NDL; j++)
+		wi->speed[j] = PHYSFSX_readFix(fp);
+	wi->mass = PHYSFSX_readFix(fp);
+	wi->drag = PHYSFSX_readFix(fp);
+	wi->thrust = PHYSFSX_readFix(fp);
+	wi->po_len_to_width_ratio = PHYSFSX_readFix(fp);
+	wi->light = PHYSFSX_readFix(fp);
+	wi->lifetime = PHYSFSX_readFix(fp);
+	wi->damage_radius = PHYSFSX_readFix(fp);
+	bitmap_index_read(&wi->picture, fp);
+	wi->hires_picture = wi->picture;
 }
 
 static int read_d1_palette(ubyte palette[256 * 3])
@@ -728,7 +783,8 @@ void d1_in_d2_apply_robot_assets(int active)
 		PHYSFS_close(fp);
 		return;
 	}
-	PHYSFSX_fseek(fp, D1_MAX_WEAPON_TYPES * D1_WEAPON_INFO_SIZE, SEEK_CUR);
+	for (i = 0; i < D1_MAX_WEAPON_TYPES; i++)
+		read_d1_weapon_info(&Weapon_info[i], i, fp);
 
 	num_powerups = PHYSFSX_readInt(fp);
 	if (num_powerups < 0 || num_powerups > D1_MAX_POWERUP_TYPES) {
