@@ -56,6 +56,8 @@ typedef struct mle {
 	enum mle_loc	location;           // where the mission is
 } mle;
 
+typedef char mission_display_name_buf[MISSION_NAME_LEN + 6];
+
 static int num_missions = -1;
 
 Mission *Current_mission = NULL; // currently loaded mission
@@ -1044,8 +1046,18 @@ int load_mission_by_name(char *mission_name)
 typedef struct mission_menu
 {
 	mle *mission_list;
+	int mission_count;
+	mission_display_name_buf *display_names;
 	int (*when_selected)(void);
 } mission_menu;
+
+static void mission_display_name(mle *mission, char *display_name)
+{
+	if (mission->descent_version == 1)
+		snprintf(display_name, MISSION_NAME_LEN + 6, "(D1) %s", mission->mission_name);
+	else
+		snprintf(display_name, MISSION_NAME_LEN + 6, "%s", mission->mission_name);
+}
 
 int mission_menu_handler(listbox *lb, d_event *event, mission_menu *mm)
 {
@@ -1058,7 +1070,7 @@ int mission_menu_handler(listbox *lb, d_event *event, mission_menu *mm)
 			if (citem >= 0)
 			{
 				// Chose a mission
-				strcpy(GameCfg.LastMission, list[citem]);
+				strcpy(GameCfg.LastMission, mm->mission_list[citem].mission_name);
 				
 				if (!load_mission(mm->mission_list + citem))
 				{
@@ -1071,6 +1083,7 @@ int mission_menu_handler(listbox *lb, d_event *event, mission_menu *mm)
 
 		case EVENT_WINDOW_CLOSE:
 			free_mission_list(mm->mission_list);
+			d_free(mm->display_names);
 			d_free(list);
 			d_free(mm);
 			break;
@@ -1115,14 +1128,24 @@ int select_mission(int anarchy_mode, char *message, int (*when_selected)(void))
 			free_mission_list(mission_list);
 			return 0;
 		}
+		MALLOC(mm->display_names, mission_display_name_buf, num_missions);
+		if (!mm->display_names)
+		{
+			d_free(mm);
+			d_free(m);
+			free_mission_list(mission_list);
+			return 0;
+		}
 
 		mm->mission_list = mission_list;
+		mm->mission_count = num_missions;
 		mm->when_selected = when_selected;
 		
         default_mission = 0;
         for (i = 0; i < num_missions; i++) {
-            m[i] = mission_list[i].mission_name;
-            if ( !d_stricmp( m[i], GameCfg.LastMission ) )
+            mission_display_name(&mission_list[i], mm->display_names[i]);
+            m[i] = mm->display_names[i];
+            if ( !d_stricmp( mission_list[i].mission_name, GameCfg.LastMission ) )
                 default_mission = i;
         }
 

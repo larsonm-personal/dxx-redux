@@ -35,6 +35,9 @@
 
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "assert", "expect": {
+        "menu.items": {"contains": "(D1) Trine - Episode 2"}
+    }},
     {"action": "select", "text": "Trine - Episode 2", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000, "optional": true},

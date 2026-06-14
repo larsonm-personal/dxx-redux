@@ -74,6 +74,11 @@ static jointpos D2_guidebot_joints[MAX_ROBOT_JOINTS];
 static int D2_guidebot_joint_count = 0;
 static polymodel D2_guidebot_model;
 static bitmap_index D2_guidebot_obj_bitmaps[MAX_POLYOBJ_TEXTURES];
+static int D2_d1_robot_tuning_saved = 0;
+static int D2_d1_robot_tuning_count = 0;
+static ubyte D2_d1_robot_aim[D1_MAX_ROBOT_TYPES];
+static ubyte D2_d1_robot_behavior[D1_MAX_ROBOT_TYPES];
+static sbyte D2_d1_robot_lightcast[D1_MAX_ROBOT_TYPES];
 static int D1_spawnable_guidebot_model_index = -1;
 static int D1_spawnable_guidebot_obj_bitmap_base = -1;
 static int D1_spawnable_guidebot_obj_bitmap_count = 0;
@@ -143,6 +148,36 @@ static void skip_d1_vclips_and_effects(PHYSFS_file *fp)
 	num_effects = PHYSFSX_readInt(fp);
 	(void)num_effects;
 	PHYSFSX_fseek(fp, D1_MAX_EFFECTS * sizeof(eclip), SEEK_CUR);
+}
+
+static void save_d2_d1_robot_tuning(void)
+{
+	int i, count;
+
+	if (D2_d1_robot_tuning_saved)
+		return;
+
+	count = N_robot_types < D1_MAX_ROBOT_TYPES ? N_robot_types : D1_MAX_ROBOT_TYPES;
+	for (i = 0; i < count; i++) {
+		D2_d1_robot_aim[i] = Robot_info[i].aim;
+		D2_d1_robot_behavior[i] = Robot_info[i].behavior;
+		D2_d1_robot_lightcast[i] = Robot_info[i].lightcast;
+	}
+	D2_d1_robot_tuning_count = count;
+	D2_d1_robot_tuning_saved = 1;
+}
+
+static void apply_d1_robot_d2_tuning(robot_info *ri, int robot_id)
+{
+	ri->weapon_type2 = -1;
+	ri->aim = 255;
+	ri->lightcast = 1;
+	if (robot_id < 0 || robot_id >= D2_d1_robot_tuning_count)
+		return;
+
+	ri->aim = D2_d1_robot_aim[robot_id];
+	ri->behavior = D2_d1_robot_behavior[robot_id];
+	ri->lightcast = D2_d1_robot_lightcast[robot_id];
 }
 
 static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)
@@ -634,6 +669,7 @@ void d1_in_d2_apply_robot_assets(int active)
 		D1_robot_bitmap_slots_registered = 1;
 	}
 	save_d2_guidebot_assets();
+	save_d2_d1_robot_tuning();
 
 	Last_stats.robot_assets_active = D1_robot_assets_active;
 	Last_stats.robot_pig_present = 0;
@@ -671,8 +707,10 @@ void d1_in_d2_apply_robot_assets(int active)
 		PHYSFS_close(fp);
 		return;
 	}
-	for (i = 0; i < D1_MAX_ROBOT_TYPES; i++)
+	for (i = 0; i < D1_MAX_ROBOT_TYPES; i++) {
 		read_d1_robot_info(&Robot_info[i], fp);
+		apply_d1_robot_d2_tuning(&Robot_info[i], i);
+	}
 	N_robot_types = num_robot_types;
 	Last_stats.robot_types = num_robot_types;
 

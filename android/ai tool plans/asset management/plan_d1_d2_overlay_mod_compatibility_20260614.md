@@ -202,6 +202,9 @@ Work items:
 - Split robot handling into two clear phases:
   - base semantic phase: select D1 or D2 robot tables and model references
   - final art overlay phase: apply mission and user robot texture overrides
+- Completed 2026-06-14: preserve D2-only D1 robot AI tuning fields (`aim`,
+  `behavior`, `lightcast`) before overlaying D1 robot tables, so D1-in-D2
+  robots do not inherit corrupted zero aim from the D1 PIG import path.
 - Keep the crash fix invariant: do not shrink global D2 model or object bitmap
   counts below values the D2 runtime can reference.
 - Add trace entries for:
