@@ -626,9 +626,17 @@ After that, add the launcher readiness/UX layer so this becomes a discoverable s
 
 ## Phase 2 Texture Compatibility Tracker
 
-- [ ] Study D1 POG-like loader and current D2 D1-custom loader shape.
-- [ ] Add POG-like `PPIG` / `DPOG` parsing for D1-in-D2 custom textures.
-- [ ] Extend the mission ZIP fixture to cover old DTX plus POG-like custom data.
-- [ ] Run scoped quality checks.
-- [ ] Run JVM fixture tests.
-- [ ] Run Android native build.
+- [x] Study D1 POG-like loader and current D2 D1-custom loader shape.
+- [x] Add POG-like `PPIG` / `DPOG` parsing for D1-in-D2 custom textures.
+- [x] Extend the mission ZIP fixture to cover old DTX plus POG-like custom data.
+- [x] Run scoped quality checks.
+- [x] Run JVM fixture tests.
+- [x] Run Android native build.
+
+## Phase 3 Launcher Readiness Tracker
+
+- [x] Trace D2 launch readiness and enabled D1 mission ZIP state in the launcher.
+- [x] Add a minimal D1-in-D2 readiness signal for D1 base assets.
+- [x] Expose readiness through setup introspection for automation/debugging.
+- [x] Add focused JVM coverage for the readiness signal.
+- [x] Run scoped quality checks and JVM tests.

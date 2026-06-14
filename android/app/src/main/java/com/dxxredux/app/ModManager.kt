@@ -650,6 +650,9 @@ class ModManager(
             .filter { it.enabledForLaunch(game) && it.kind == MOD_KIND_MISSION_ZIP }
             .any { missionZipHasSoundtrack(File(modsDir, it.filename)) }
 
+    fun hasEnabledD1MissionZipForD2(): Boolean =
+        mods.any { it.enabled && it.kind == MOD_KIND_MISSION_ZIP && it.game == "d1" }
+
     private fun ModInfo.enabledForLaunch(game: String): Boolean =
         enabled &&
             (

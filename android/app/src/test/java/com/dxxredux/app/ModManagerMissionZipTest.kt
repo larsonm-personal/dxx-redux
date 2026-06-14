@@ -96,6 +96,7 @@ class ModManagerMissionZipTest {
         val d2Hog = File(d2StageDir, "trine2.hog")
         assertTrue(d2Hog.isFile)
         assertHogHasEntry(d2Hog, "e2m1.dtx")
+        assertHogHasEntry(d2Hog, "e2m1.pg1")
 
         manager.writeEnabledModPaths("d1")
         val d1PathFile = File(filesDir, "d1x-redux/.active_mod_paths")
@@ -108,6 +109,7 @@ class ModManagerMissionZipTest {
         val d1Hog = File(d1StageDir, "trine2.hog")
         assertTrue(d1Hog.isFile)
         assertHogHasEntry(d1Hog, "e2m1.dtx")
+        assertHogHasEntry(d1Hog, "e2m1.pg1")
     }
 
     @Test
@@ -387,6 +389,7 @@ class ModManagerMissionZipTest {
             zip.write(
                 createHogBytes(
                     "e2m1.rdl" to ByteArray(12),
+                    "e2m1.pg1" to createD1PogLikeTextureBytes(),
                     "e2m1.dtx" to createD1CustomTextureBytes(),
                 ),
             )
@@ -611,6 +614,19 @@ class ModManagerMissionZipTest {
             output.toByteArray()
         }
 
+    private fun createD1PogLikeTextureBytes(): ByteArray =
+        ByteArrayOutputStream().use { output ->
+            output.write("DPOG".toByteArray(Charsets.US_ASCII))
+            output.write(leInt(1))
+            output.write(leInt(1))
+            output.write(leShort(0))
+            output.write(fixedName("rock263", 8))
+            output.write(byteArrayOf(0, 1, 1, 0, 0, 7))
+            output.write(leInt(0))
+            output.write(byteArrayOf(7))
+            output.toByteArray()
+        }
+
     private fun assertHogHasEntry(
         hog: File,
         name: String,
@@ -655,5 +671,11 @@ class ModManagerMissionZipTest {
             ((value shr 8) and 0xff).toByte(),
             ((value shr 16) and 0xff).toByte(),
             ((value shr 24) and 0xff).toByte(),
+        )
+
+    private fun leShort(value: Int): ByteArray =
+        byteArrayOf(
+            (value and 0xff).toByte(),
+            ((value shr 8) and 0xff).toByte(),
         )
 }

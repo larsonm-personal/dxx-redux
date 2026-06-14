@@ -19,6 +19,16 @@ internal data class FileStatus(
     val safSizeBytes: Long = 0,
 )
 
+internal data class D1InD2Readiness(
+    val needed: Boolean,
+    val ready: Boolean,
+    val degraded: Boolean,
+    val blocked: Boolean,
+    val d2Ready: Boolean,
+    val d1AssetsReady: Boolean,
+    val d1AssetStatuses: List<FileStatus>,
+)
+
 internal fun launcherDumpDirectoryState(
     prefix: String,
     dir: File,
@@ -124,6 +134,26 @@ internal fun launchDataReadyForGame(
     return checkFiles(setDir, fileList, manifest, safManifest)
         .filter { it.info.required }
         .all { it.found }
+}
+
+internal fun d1InD2Readiness(
+    filesDir: File,
+    setDir: File,
+    manifest: AssetManifest,
+    safManifest: SafManifest,
+): D1InD2Readiness {
+    val d2Ready = launchDataReadyForGame("d2", setDir, manifest, safManifest)
+    val d1Ready = launchDataReadyForGame("d1", setDir, manifest, safManifest)
+    val needed = ModManager(filesDir).hasEnabledD1MissionZipForD2()
+    return D1InD2Readiness(
+        needed = needed,
+        ready = !needed || (d2Ready && d1Ready),
+        degraded = needed && d2Ready && !d1Ready,
+        blocked = needed && !d2Ready,
+        d2Ready = d2Ready,
+        d1AssetsReady = d1Ready,
+        d1AssetStatuses = checkFiles(setDir, D1_FILES, manifest, safManifest),
+    )
 }
 
 // Duplicates known_versions.json5 so readiness can reject this old demo before native launch.

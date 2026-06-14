@@ -3,7 +3,10 @@ package com.dxxredux.app
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.createTempDirectory
 
 class SetupLaunchReadinessTest {
@@ -72,6 +75,66 @@ class SetupLaunchReadinessTest {
         )
     }
 
+    @Test
+    fun d1InD2ReadinessIsReadyWhenNoD1MissionZipIsEnabled() {
+        val filesDir = createTempDirectory("d1-in-d2-not-needed").toFile()
+        val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+        writeD2Files(setDir)
+
+        val readiness = d1InD2Readiness(
+            filesDir = filesDir,
+            setDir = setDir,
+            manifest = AssetManifest(setDir),
+            safManifest = SafManifest.forDir(setDir),
+        )
+
+        assertFalse(readiness.needed)
+        assertTrue(readiness.ready)
+        assertFalse(readiness.degraded)
+        assertFalse(readiness.blocked)
+    }
+
+    @Test
+    fun d1InD2ReadinessIsDegradedUntilD1BaseFilesArePresent() {
+        val filesDir = createTempDirectory("d1-in-d2-assets").toFile()
+        val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+        writeD2Files(setDir)
+        val imported = ModManager(filesDir).importMissionZipFile(createD1MissionZip(), "d1pack.zip")
+        assertTrue(imported?.game == "d1")
+
+        val degraded = d1InD2Readiness(
+            filesDir = filesDir,
+            setDir = setDir,
+            manifest = AssetManifest(setDir),
+            safManifest = SafManifest.forDir(setDir),
+        )
+
+        assertTrue(degraded.needed)
+        assertFalse(degraded.ready)
+        assertTrue(degraded.degraded)
+        assertFalse(degraded.blocked)
+
+        writeFile(setDir, "descent.hog")
+        writeFile(setDir, "descent.pig")
+        val ready = d1InD2Readiness(
+            filesDir = filesDir,
+            setDir = setDir,
+            manifest = AssetManifest(setDir),
+            safManifest = SafManifest.forDir(setDir),
+        )
+
+        assertTrue(ready.needed)
+        assertTrue(ready.ready)
+        assertFalse(ready.degraded)
+        assertFalse(ready.blocked)
+    }
+
+    private fun writeD2Files(setDir: File) {
+        for (info in D2_FILES.filter { it.required }) {
+            writeFile(setDir, info.filename)
+        }
+    }
+
     private fun writeFile(
         dir: File,
         name: String,
@@ -79,4 +142,48 @@ class SetupLaunchReadinessTest {
     ) {
         File(dir, name).writeBytes(ByteArray(size))
     }
+
+    private fun createD1MissionZip(): File {
+        val zipFile = File.createTempFile("d1-mission-pack", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("d1pack.hog"))
+            zip.write(createHogBytes("level01.rdl" to ByteArray(12)))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("d1pack.msn"))
+            zip.write("name = D1 Pack\nnum_levels = 1\nlevel01.rdl\n".toByteArray())
+            zip.closeEntry()
+        }
+        return zipFile
+    }
+
+    private fun createHogBytes(vararg entries: Pair<String, ByteArray>): ByteArray =
+        ByteArrayOutputStream().use { output ->
+            output.write("DHF".toByteArray(Charsets.US_ASCII))
+            entries.forEach { (name, data) ->
+                output.write(fixedName(name, 13))
+                output.write(leInt(data.size))
+                output.write(data)
+            }
+            output.toByteArray()
+        }
+
+    private fun fixedName(
+        name: String,
+        size: Int,
+    ): ByteArray {
+        val out = ByteArray(size)
+        val bytes = name.toByteArray(Charsets.US_ASCII)
+        bytes.copyInto(out, endIndex = minOf(bytes.size, size))
+        return out
+    }
+
+    private fun leInt(value: Int): ByteArray =
+        byteArrayOf(
+            (value and 0xff).toByte(),
+            ((value shr 8) and 0xff).toByte(),
+            ((value shr 16) and 0xff).toByte(),
+            ((value shr 24) and 0xff).toByte(),
+        )
 }

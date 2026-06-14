@@ -14,12 +14,14 @@
 #include "piggy.h"
 #include "texmerge.h"
 #include "console.h"
+#include "makesig.h"
 #include "d1_custom.h"
 
-#define D1_CUSTOM_DBM_FLAG_ABM 64
-#define D1_CUSTOM_DBM_FLAG_LARGE 128
-#define D1_CUSTOM_VALID 1
-#define D1_CUSTOM_BITMAP_FLAGS_TO_COPY (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT | BM_FLAG_NO_LIGHTING | BM_FLAG_RLE)
+#define D1_CUSTOM_DBM_FLAG_ABM           64
+#define D1_CUSTOM_DBM_FLAG_LARGE         128
+#define D1_CUSTOM_VALID                  1
+#define D1_CUSTOM_BITMAP_FLAGS_TO_COPY   (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT | BM_FLAG_NO_LIGHTING | BM_FLAG_RLE)
+#define D1_CUSTOM_POG_BITMAP_HEADER_SIZE 18
 
 extern hashtable AllBitmapsNames;
 
@@ -32,6 +34,17 @@ typedef struct d1_custom_bitmap_header {
 	ubyte avg_color;
 	int offset;
 } d1_custom_bitmap_header;
+
+typedef struct d1_custom_bitmap_header2 {
+	char name[8];
+	ubyte dflags;
+	ubyte width;
+	ubyte height;
+	ubyte hi_wh;
+	ubyte flags;
+	ubyte avg_color;
+	int offset;
+} d1_custom_bitmap_header2;
 
 typedef struct d1_custom_sound_header {
 	char name[8];
@@ -68,6 +81,20 @@ static int d1_custom_read_bitmap_header(PHYSFS_file *fp, d1_custom_bitmap_header
 	return 1;
 }
 
+static int d1_custom_read_bitmap_header2(PHYSFS_file *fp, d1_custom_bitmap_header2 *bmh)
+{
+	if (PHYSFS_read(fp, bmh->name, 8, 1) < 1)
+		return 0;
+	bmh->dflags = PHYSFSX_readByte(fp);
+	bmh->width = PHYSFSX_readByte(fp);
+	bmh->height = PHYSFSX_readByte(fp);
+	bmh->hi_wh = PHYSFSX_readByte(fp);
+	bmh->flags = PHYSFSX_readByte(fp);
+	bmh->avg_color = PHYSFSX_readByte(fp);
+	bmh->offset = PHYSFSX_readInt(fp);
+	return 1;
+}
+
 static int d1_custom_read_sound_header(PHYSFS_file *fp, d1_custom_sound_header *sndh)
 {
 	if (PHYSFS_read(fp, sndh->name, 8, 1) < 1)
@@ -76,6 +103,14 @@ static int d1_custom_read_sound_header(PHYSFS_file *fp, d1_custom_sound_header *
 	sndh->data_length = PHYSFSX_readInt(fp);
 	sndh->offset = PHYSFSX_readInt(fp);
 	return 1;
+}
+
+static void d1_custom_bitmap_name(char *name, const char *disk_name, ubyte dflags)
+{
+	memcpy(name, disk_name, 8);
+	name[8] = 0;
+	if (dflags & D1_CUSTOM_DBM_FLAG_ABM)
+		sprintf(strchr(name, 0), "#%d", dflags & 63);
 }
 
 static int d1_custom_parse_pig1(PHYSFS_file *fp, int first, int second, int *num_bitmaps, int *num_sounds, int *data_ofs)
@@ -125,7 +160,7 @@ static void d1_custom_save_original(int bitmap_index)
 	Bitmap_original_file_flags[bitmap_index] = piggy_bitmap_get_file_flags(bitmap_index);
 	if (offset) {
 		Bitmap_original[bitmap_index].bm_flags = BM_FLAG_PAGED_OUT;
-		Bitmap_original[bitmap_index].bm_data = (ubyte *)(size_t) offset;
+		Bitmap_original[bitmap_index].bm_data = (ubyte *) (size_t) offset;
 	}
 	Bitmap_original_valid[bitmap_index] = D1_CUSTOM_VALID;
 }
@@ -178,7 +213,95 @@ static int d1_custom_apply_bitmap(PHYSFS_file *fp, d1_custom_bitmap_info *info)
 	return 1;
 }
 
-static int d1_custom_load_pig1_file(char *filename, d1_custom_texture_stats *stats)
+static int d1_custom_load_pog_data(PHYSFS_file *fp, int sig, int version, d1_custom_texture_stats *stats)
+{
+	int num_bitmaps;
+	int has_repl = 0;
+	int data_ofs;
+	int i;
+	int applied = 0;
+	ushort *indices = NULL;
+	d1_custom_bitmap_info *bitmap_info = NULL;
+	PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
+
+	if (sig == MAKE_SIG('G', 'I', 'P', 'P') && version == 2)
+		has_repl = 0;
+	else if (sig == MAKE_SIG('G', 'O', 'P', 'D') && version == 1)
+		has_repl = 1;
+	else
+		return -1;
+
+	num_bitmaps = PHYSFSX_readInt(fp);
+	if (num_bitmaps < 0 || num_bitmaps > MAX_BITMAP_FILES)
+		return -1;
+	if (!num_bitmaps)
+		return 0;
+
+	data_ofs = 12 + num_bitmaps * D1_CUSTOM_POG_BITMAP_HEADER_SIZE + (has_repl ? num_bitmaps * 2 : 0);
+	if (data_ofs < 0 || data_ofs > file_len)
+		return -1;
+
+	MALLOC(bitmap_info, d1_custom_bitmap_info, num_bitmaps);
+	if (!bitmap_info)
+		return -1;
+	memset(bitmap_info, 0, num_bitmaps * sizeof(*bitmap_info));
+
+	if (has_repl) {
+		MALLOC(indices, ushort, num_bitmaps);
+		if (!indices) {
+			d_free(bitmap_info);
+			return -1;
+		}
+		for (i = 0; i < num_bitmaps; i++)
+			indices[i] = PHYSFSX_readShort(fp);
+	}
+
+	for (i = 0; i < num_bitmaps; i++) {
+		d1_custom_bitmap_header2 bmh;
+		char name[15];
+		int name_idx;
+		int repl_idx = -1;
+
+		if (!d1_custom_read_bitmap_header2(fp, &bmh)) {
+			if (indices)
+				d_free(indices);
+			d_free(bitmap_info);
+			return -1;
+		}
+
+		d1_custom_bitmap_name(name, bmh.name, bmh.dflags);
+		name_idx = hashtable_search(&AllBitmapsNames, name);
+		if (name_idx >= 0)
+			repl_idx = name_idx;
+		else if (has_repl && indices[i] < MAX_BITMAP_FILES)
+			repl_idx = indices[i];
+
+		bitmap_info[i].offset = bmh.offset + data_ofs;
+		bitmap_info[i].repl_idx = repl_idx;
+		bitmap_info[i].flags = bmh.flags & D1_CUSTOM_BITMAP_FLAGS_TO_COPY;
+		bitmap_info[i].avg_color = bmh.avg_color;
+		bitmap_info[i].width = bmh.width + ((bmh.hi_wh & 15) << 8);
+		bitmap_info[i].height = bmh.height + ((bmh.hi_wh >> 4) << 8);
+
+		stats->bitmap_entries++;
+		if (bitmap_info[i].repl_idx < 0)
+			stats->bitmap_unresolved++;
+	}
+
+	for (i = 0; i < num_bitmaps; i++) {
+		if (d1_custom_apply_bitmap(fp, &bitmap_info[i])) {
+			stats->bitmap_applied++;
+			applied++;
+		}
+	}
+
+	if (indices)
+		d_free(indices);
+	d_free(bitmap_info);
+	return applied;
+}
+
+static int d1_custom_load_file(char *filename, d1_custom_texture_stats *stats)
 {
 	PHYSFS_file *fp;
 	int first, second;
@@ -194,6 +317,13 @@ static int d1_custom_load_pig1_file(char *filename, d1_custom_texture_stats *sta
 	stats->files_found++;
 	first = PHYSFSX_readInt(fp);
 	second = PHYSFSX_readInt(fp);
+
+	applied = d1_custom_load_pog_data(fp, first, second, stats);
+	if (applied >= 0) {
+		PHYSFS_close(fp);
+		return applied;
+	}
+
 	if (!d1_custom_parse_pig1(fp, first, second, &num_bitmaps, &num_sounds, &data_ofs)) {
 		PHYSFS_close(fp);
 		return 0;
@@ -215,11 +345,7 @@ static int d1_custom_load_pig1_file(char *filename, d1_custom_texture_stats *sta
 			return 0;
 		}
 
-		memcpy(name, bmh.name, 8);
-		name[8] = 0;
-		if (bmh.dflags & D1_CUSTOM_DBM_FLAG_ABM)
-			sprintf(strchr(name, 0), "#%d", bmh.dflags & 63);
-
+		d1_custom_bitmap_name(name, bmh.name, bmh.dflags);
 		bitmap_info[i].offset = bmh.offset + data_ofs;
 		bitmap_info[i].repl_idx = hashtable_search(&AllBitmapsNames, name);
 		bitmap_info[i].flags = bmh.flags & D1_CUSTOM_BITMAP_FLAGS_TO_COPY;
@@ -289,13 +415,13 @@ void d1_custom_load_data(char *level_name)
 	d1_custom_remove();
 
 	change_filename_extension(custom_file, level_name, ".pg1");
-	d1_custom_load_pig1_file(custom_file, &stats);
+	d1_custom_load_file(custom_file, &stats);
 	change_filename_extension(custom_file, level_name, ".dtx");
-	d1_custom_load_pig1_file(custom_file, &stats);
+	d1_custom_load_file(custom_file, &stats);
 
 	if (stats.files_found) {
 		con_printf(CON_NORMAL, "D1 custom textures: files=%d bitmaps=%d applied=%d unresolved=%d sounds=%d\n",
-			stats.files_found, stats.bitmap_entries, stats.bitmap_applied, stats.bitmap_unresolved, stats.sound_entries);
+		           stats.files_found, stats.bitmap_entries, stats.bitmap_applied, stats.bitmap_unresolved, stats.sound_entries);
 		texmerge_flush();
 	}
 	Last_stats = stats;

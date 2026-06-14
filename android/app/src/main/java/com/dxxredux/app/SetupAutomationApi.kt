@@ -690,6 +690,7 @@ internal fun SetupActivity.writeIntrospectJson() {
         val d1Statuses = checkFiles(setDir, D1_FILES, manifest, safManifest)
         val d2Ready = launchDataReadyForGame("d2", setDir, manifest, safManifest)
         val d1Ready = launchDataReadyForGame("d1", setDir, manifest, safManifest)
+        val d1InD2 = d1InD2Readiness(dir, setDir, manifest, safManifest)
 
         val root = JSONObject()
         root.put("screen", "setup")
@@ -760,6 +761,16 @@ internal fun SetupActivity.writeIntrospectJson() {
         d1.put("ready", d1Ready)
         d1.put("files", fileStatusArray(d1Statuses))
         root.put("d1", d1)
+
+        val d1InD2Json = JSONObject()
+        d1InD2Json.put("needed", d1InD2.needed)
+        d1InD2Json.put("ready", d1InD2.ready)
+        d1InD2Json.put("degraded", d1InD2.degraded)
+        d1InD2Json.put("blocked", d1InD2.blocked)
+        d1InD2Json.put("d2_ready", d1InD2.d2Ready)
+        d1InD2Json.put("d1_assets_ready", d1InD2.d1AssetsReady)
+        d1InD2Json.put("files", fileStatusArray(d1InD2.d1AssetStatuses))
+        root.put("d1_in_d2", d1InD2Json)
 
         newestResumeCandidate?.let { root.put("resume_candidate", it.toJson()) }
 
