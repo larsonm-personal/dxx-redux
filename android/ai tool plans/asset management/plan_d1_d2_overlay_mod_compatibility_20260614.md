@@ -515,11 +515,19 @@ Progress:
   inherit the green/incorrect D1 interpretation of D2 palette indexes.
 - Added debug console lines for cockpit palette remap counts and guidebot
   texture restore counts during D1-in-D2 level load.
+- Extended the D2-retained cockpit palette layer to the gauge bitmap arrays,
+  since D2 draws cockpit shell art and cockpit/gauge overlays from different
+  bitmap tables.
+- Prevented the synthetic D1-in-D2 spawnable guidebot model index from using
+  an accidental xmodel table match. This keeps guidebot rendering on the
+  restored/remapped bitmap path instead of an unrelated high resolution model.
 
 Validation:
 
 - D1-in-D2 cockpit keeps D2 renderer-compatible dimensions while using colors
   remapped from D2 source art into the active D1 palette.
+- D1-in-D2 gauge bitmaps use colors remapped from D2 source art into the active
+  D1 palette.
 - Spawnable guidebot textures are preserved from D2 source art and remapped into
   the active D1 palette.
 - A cockpit overlay pack can replace one known cockpit/gauge image in each

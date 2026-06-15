@@ -15,9 +15,9 @@
 #include "effects.h"
 #include "byteswap.h"
 #include "bm.h"
-#include "console.h"
 #include "gamepal.h"
 #include "gamesave.h"
+#include "gauges.h"
 #include "hash.h"
 #include "mission.h"
 #include "player.h"
@@ -30,6 +30,7 @@
 #include "d1_in_d2.h"
 #include "laser.h"
 #include "weapon.h"
+#include "android_log.h"
 
 #define D1_MAX_EFFECTS 60
 #define D1_MAX_PIG_TEXTURES 800
@@ -89,6 +90,13 @@ static ubyte D1_original_cockpit_valid[N_COCKPIT_BITMAPS];
 static grs_bitmap D2_cockpit_bitmaps[N_COCKPIT_BITMAPS];
 static ubyte D2_cockpit_bitmap_valid[N_COCKPIT_BITMAPS];
 static ubyte *D1_cockpit_live_bitmap_data[N_COCKPIT_BITMAPS];
+static grs_bitmap D1_original_gauge_bitmaps[2][MAX_GAUGE_BMS];
+static int D1_original_gauge_offsets[2][MAX_GAUGE_BMS];
+static ubyte D1_original_gauge_file_flags[2][MAX_GAUGE_BMS];
+static ubyte D1_original_gauge_valid[2][MAX_GAUGE_BMS];
+static grs_bitmap D2_gauge_bitmaps[2][MAX_GAUGE_BMS];
+static ubyte D2_gauge_bitmap_valid[2][MAX_GAUGE_BMS];
+static ubyte *D1_gauge_live_bitmap_data[2][MAX_GAUGE_BMS];
 static int D2_guidebot_assets_saved = 0;
 static robot_info D2_guidebot_robot_info;
 static jointpos D2_guidebot_joints[MAX_ROBOT_JOINTS];
@@ -576,6 +584,96 @@ static int install_remapped_bitmap_copy(int bitmap_index, const grs_bitmap *src,
 	return 1;
 }
 
+static bitmap_index d1_in_d2_gauge_bitmap(int hires, int gauge)
+{
+	return hires ? Gauges_hires[gauge] : Gauges[gauge];
+}
+
+static void save_original_gauge_bitmaps(void)
+{
+	int hires, i;
+
+	for (hires = 0; hires < 2; hires++)
+		for (i = 0; i < MAX_GAUGE_BMS; i++) {
+			bitmap_index bi = d1_in_d2_gauge_bitmap(hires, i);
+			int bitmap_index = bi.index;
+			grs_bitmap *bmp;
+			ubyte *data;
+
+			if (!bitmap_index || bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES ||
+			    D1_original_gauge_valid[hires][i])
+				continue;
+			PIGGY_PAGE_IN(bi);
+			bmp = &GameBitmaps[bitmap_index];
+			D1_original_gauge_bitmaps[hires][i] = *bmp;
+			D1_original_gauge_offsets[hires][i] = piggy_bitmap_get_offset(bitmap_index);
+			D1_original_gauge_file_flags[hires][i] = piggy_bitmap_get_file_flags(bitmap_index);
+			D1_original_gauge_valid[hires][i] = 1;
+			if (duplicate_bitmap_data_for_remap(bmp, &data)) {
+				D2_gauge_bitmaps[hires][i] = *bmp;
+				D2_gauge_bitmaps[hires][i].bm_data = data;
+				D2_gauge_bitmaps[hires][i].bm_parent = NULL;
+#ifdef OGL
+				D2_gauge_bitmaps[hires][i].gltexture = NULL;
+				D2_gauge_bitmaps[hires][i].gltexture_mask = NULL;
+#endif
+				D2_gauge_bitmap_valid[hires][i] = 1;
+			}
+		}
+}
+
+static void restore_original_gauge_bitmaps(void)
+{
+	int hires, i;
+
+	for (hires = 0; hires < 2; hires++)
+		for (i = 0; i < MAX_GAUGE_BMS; i++) {
+			bitmap_index bi = d1_in_d2_gauge_bitmap(hires, i);
+			int bitmap_index = bi.index;
+			grs_bitmap *bmp;
+
+			if (!D1_original_gauge_valid[hires][i] ||
+			    bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES)
+				continue;
+			bmp = &GameBitmaps[bitmap_index];
+			release_live_bitmap_data(bmp, &D1_gauge_live_bitmap_data[hires][i]);
+			gr_set_bitmap_data(bmp, NULL);
+			*bmp = D1_original_gauge_bitmaps[hires][i];
+			piggy_bitmap_set_file_state(bitmap_index, D1_original_gauge_offsets[hires][i],
+			                            D1_original_gauge_file_flags[hires][i]);
+			if (D1_original_gauge_offsets[hires][i]) {
+				gr_set_bitmap_flags(bmp, BM_FLAG_PAGED_OUT);
+				gr_set_bitmap_data(bmp, Piggy_bitmap_cache_data);
+			} else
+				gr_set_bitmap_flags(bmp, D1_original_gauge_bitmaps[hires][i].bm_flags);
+		}
+}
+
+static int remap_gauge_bitmaps(ubyte d2_palette[256 * 3], int *skipped)
+{
+	int applied = 0;
+	int hires, i;
+
+	for (hires = 0; hires < 2; hires++)
+		for (i = 0; i < MAX_GAUGE_BMS; i++) {
+			bitmap_index bi = d1_in_d2_gauge_bitmap(hires, i);
+			int bitmap_index = bi.index;
+
+			if (!D2_gauge_bitmap_valid[hires][i] ||
+			    bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES) {
+				if (skipped)
+					(*skipped)++;
+				continue;
+			}
+			if (install_remapped_bitmap_copy(bitmap_index, &D2_gauge_bitmaps[hires][i],
+			                                  d2_palette, &D1_gauge_live_bitmap_data[hires][i]))
+				applied++;
+			else if (skipped)
+				(*skipped)++;
+		}
+	return applied;
+}
+
 static void save_original_cockpit_bitmaps(void)
 {
 	int i;
@@ -606,6 +704,7 @@ static void save_original_cockpit_bitmaps(void)
 			D2_cockpit_bitmap_valid[i] = 1;
 		}
 	}
+	save_original_gauge_bitmaps();
 	D1_cockpit_saved = 1;
 }
 
@@ -620,6 +719,7 @@ void d1_in_d2_apply_cockpit(int active)
 
 	if (!active) {
 		if (D1_cockpit_active) {
+			restore_original_gauge_bitmaps();
 			for (i = 0; i < N_COCKPIT_BITMAPS; i++) {
 				int bitmap_index = cockpit_bitmap[i].index;
 				grs_bitmap *bmp;
@@ -646,8 +746,13 @@ void d1_in_d2_apply_cockpit(int active)
 	}
 
 	save_original_cockpit_bitmaps();
-	if (!read_palette_file(D2_DEFAULT_PALETTE, d2_palette))
+	debug_log(DLOG_GAME, "D1-in-D2 cockpit/gauge palette remap begin num_cockpits=%d",
+	          Num_cockpits);
+	if (!read_palette_file(D2_DEFAULT_PALETTE, d2_palette)) {
+		debug_log(DLOG_GAME, "D1-in-D2 cockpit palette remap skipped: missing %s",
+		          D2_DEFAULT_PALETTE);
 		return;
+	}
 
 	for (i = 0; i < N_COCKPIT_BITMAPS; i++) {
 		bitmap_index d2_bitmap = cockpit_bitmap[i];
@@ -662,8 +767,10 @@ void d1_in_d2_apply_cockpit(int active)
 		else
 			Last_stats.cockpit_frames_skipped++;
 	}
-	con_printf(CON_DEBUG, "D1-in-D2 cockpit palette remap applied %d skipped %d\n",
-	           Last_stats.cockpit_frames_applied, Last_stats.cockpit_frames_skipped);
+	Last_stats.cockpit_frames_applied += remap_gauge_bitmaps(d2_palette,
+	                                                         &Last_stats.cockpit_frames_skipped);
+	debug_log(DLOG_GAME, "D1-in-D2 cockpit/gauge palette remap applied %d skipped %d",
+	          Last_stats.cockpit_frames_applied, Last_stats.cockpit_frames_skipped);
 	D1_cockpit_active = 1;
 	Last_stats.cockpit_active = 1;
 }
@@ -916,10 +1023,15 @@ static void restore_guidebot_bitmap_copies(void)
 	int restored = 0;
 	int i;
 
-	if (!D2_guidebot_assets_saved)
+	if (!D2_guidebot_assets_saved) {
+		debug_log(DLOG_GAME, "D1-in-D2 guidebot texture restore skipped: no saved D2 assets");
 		return;
-	if (!read_palette_file(D2_DEFAULT_PALETTE, d2_palette))
+	}
+	if (!read_palette_file(D2_DEFAULT_PALETTE, d2_palette)) {
+		debug_log(DLOG_GAME, "D1-in-D2 guidebot texture restore skipped: missing %s",
+		          D2_DEFAULT_PALETTE);
 		return;
+	}
 	for (i = 0; i < D2_guidebot_model.n_textures; i++) {
 		int bitmap_index = D2_guidebot_obj_bitmaps[i].index;
 
@@ -929,7 +1041,7 @@ static void restore_guidebot_bitmap_copies(void)
 		                                  &D2_guidebot_live_bitmap_data[i]))
 			restored++;
 	}
-	con_printf(CON_DEBUG, "D1-in-D2 guidebot textures restored %d\n", restored);
+	debug_log(DLOG_GAME, "D1-in-D2 guidebot textures restored %d", restored);
 }
 
 static void release_guidebot_live_bitmap_copies(void)
@@ -949,6 +1061,7 @@ static int save_d2_guidebot_assets(void)
 {
 	int buddy_id, gun, state, i;
 	int model_num;
+	int bitmap_copies = 0;
 	polymodel *model;
 
 	if (D2_guidebot_assets_saved)
@@ -997,12 +1110,15 @@ static int save_d2_guidebot_assets(void)
 		if (obj_bitmap < 0 || obj_bitmap >= MAX_OBJ_BITMAPS)
 			return 0;
 		D2_guidebot_obj_bitmaps[i] = ObjBitmaps[obj_bitmap];
-		save_guidebot_bitmap_copy(i, D2_guidebot_obj_bitmaps[i]);
+		if (save_guidebot_bitmap_copy(i, D2_guidebot_obj_bitmaps[i]))
+			bitmap_copies++;
 	}
 
 	if (!copy_model_data(&D2_guidebot_model, model))
 		return 0;
 	D2_guidebot_assets_saved = 1;
+	debug_log(DLOG_GAME, "D1-in-D2 guidebot assets saved robot=%d model=%d textures=%d copied=%d",
+	          buddy_id, model_num, model->n_textures, bitmap_copies);
 	return 1;
 }
 
@@ -1070,6 +1186,11 @@ int d1_in_d2_ensure_spawnable_guidebot(void)
 	}
 
 	return 1;
+}
+
+int d1_in_d2_is_spawnable_guidebot_model(int model_num)
+{
+	return model_num >= 0 && model_num == D1_spawnable_guidebot_model_index;
 }
 
 static int read_d1_effects()
