@@ -21,16 +21,24 @@
 #include "hash.h"
 #include "mission.h"
 #include "player.h"
+#include "palette.h"
 #include "powerup.h"
 #include "rle.h"
 #include "robot.h"
 #include "sounds.h"
+#include "strutil.h"
 #include "u_mem.h"
 #include "vclip.h"
 #include "d1_in_d2.h"
 #include "laser.h"
 #include "weapon.h"
 #include "android_log.h"
+
+#ifdef ANDROID
+#define D1_IN_D2_LOG(...) debug_log(DLOG_GAME, __VA_ARGS__)
+#else
+#define D1_IN_D2_LOG(...) ((void)0)
+#endif
 
 #define D1_MAX_EFFECTS 60
 #define D1_MAX_PIG_TEXTURES 800
@@ -113,6 +121,7 @@ static sbyte D2_d1_robot_lightcast[D1_MAX_ROBOT_TYPES];
 static int D1_spawnable_guidebot_model_index = -1;
 static int D1_spawnable_guidebot_obj_bitmap_base = -1;
 static int D1_spawnable_guidebot_obj_bitmap_count = 0;
+static int D1_spawnable_guidebot_draw_logged = 0;
 static d1_in_d2_asset_stats Last_stats;
 
 extern int read_hamfile();
@@ -496,6 +505,73 @@ static int read_palette_file(const char *filename, ubyte palette[256 * 3])
 	return 1;
 }
 
+static const char *d1_in_d2_target_palette_name(void)
+{
+	return Current_level_palette[0] ? Current_level_palette : D1_DEFAULT_PALETTE;
+}
+
+static int read_d1_in_d2_target_palette(ubyte palette[256 * 3])
+{
+	const char *name = d1_in_d2_target_palette_name();
+
+	if (read_palette_file(name, palette))
+		return 1;
+	return d_stricmp(name, D1_DEFAULT_PALETTE) != 0 &&
+	       read_palette_file(D1_DEFAULT_PALETTE, palette);
+}
+
+static int read_d2_retained_asset_source_palette(ubyte palette[256 * 3],
+                                                 const char **palette_name)
+{
+	if (read_palette_file(DEFAULT_LEVEL_PALETTE, palette)) {
+		*palette_name = DEFAULT_LEVEL_PALETTE;
+		return 1;
+	}
+	if (read_palette_file(D2_DEFAULT_PALETTE, palette)) {
+		*palette_name = D2_DEFAULT_PALETTE;
+		return 1;
+	}
+	*palette_name = DEFAULT_LEVEL_PALETTE;
+	return 0;
+}
+
+static ubyte closest_color_in_palette(const ubyte palette[256 * 3], int r, int g, int b)
+{
+	int i, best_index = 0;
+	long best_value;
+
+	best_value = (long)(r - palette[0]) * (r - palette[0]) +
+	             (long)(g - palette[1]) * (g - palette[1]) +
+	             (long)(b - palette[2]) * (b - palette[2]);
+	for (i = 1; i < 256; i++) {
+		const ubyte *rgb = &palette[i * 3];
+		long value = (long)(r - rgb[0]) * (r - rgb[0]) +
+		             (long)(g - rgb[1]) * (g - rgb[1]) +
+		             (long)(b - rgb[2]) * (b - rgb[2]);
+
+		if (value < best_value) {
+			best_value = value;
+			best_index = i;
+			if (!value)
+				break;
+		}
+	}
+	return (ubyte)best_index;
+}
+
+static void build_colormap_between_palettes(const ubyte source_palette[256 * 3],
+                                            const ubyte target_palette[256 * 3],
+                                            ubyte colormap[256])
+{
+	int i;
+
+	for (i = 0; i < 256; i++) {
+		const ubyte *rgb = &source_palette[i * 3];
+
+		colormap[i] = closest_color_in_palette(target_palette, rgb[0], rgb[1], rgb[2]);
+	}
+}
+
 static int bitmap_data_size(const grs_bitmap *bmp)
 {
 	int size;
@@ -541,21 +617,37 @@ static void release_live_bitmap_data(grs_bitmap *bmp, ubyte **live_data)
 	*live_data = NULL;
 }
 
-static void remap_bitmap_from_palette(grs_bitmap *bmp, ubyte source_palette[256 * 3])
+static void remap_bitmap_from_palette(grs_bitmap *bmp, ubyte source_palette[256 * 3],
+                                      ubyte target_palette[256 * 3])
 {
-	if (bmp->bm_flags & BM_FLAG_RLE) {
-		ubyte colormap[256];
-		int freq[256];
+	ubyte colormap[256];
 
-		build_colormap_good(source_palette, colormap, freq);
-		colormap[TRANSPARENCY_COLOR] = TRANSPARENCY_COLOR;
+	build_colormap_between_palettes(source_palette, target_palette, colormap);
+	colormap[TRANSPARENCY_COLOR] = TRANSPARENCY_COLOR;
+	if (bmp->bm_flags & BM_FLAG_RLE) {
 		rle_remap(bmp, colormap);
-	} else
-		gr_remap_bitmap_good(bmp, source_palette, TRANSPARENCY_COLOR, -1);
+	} else {
+		int transparent_seen = 0;
+		int y;
+		ubyte *p = bmp->bm_data;
+
+		for (y = 0; y < bmp->bm_h; y++, p += bmp->bm_rowsize) {
+			int x;
+
+			for (x = 0; x < bmp->bm_w; x++) {
+				if (p[x] == TRANSPARENCY_COLOR)
+					transparent_seen = 1;
+				p[x] = colormap[p[x]];
+			}
+		}
+		if (transparent_seen)
+			gr_set_transparent(bmp, 1);
+	}
 }
 
 static int install_remapped_bitmap_copy(int bitmap_index, const grs_bitmap *src,
-                                        ubyte source_palette[256 * 3], ubyte **live_data)
+                                        ubyte source_palette[256 * 3],
+                                        ubyte target_palette[256 * 3], ubyte **live_data)
 {
 	grs_bitmap *bmp;
 	grs_bitmap remapped;
@@ -573,7 +665,7 @@ static int install_remapped_bitmap_copy(int bitmap_index, const grs_bitmap *src,
 	remapped.gltexture = NULL;
 	remapped.gltexture_mask = NULL;
 #endif
-	remap_bitmap_from_palette(&remapped, source_palette);
+	remap_bitmap_from_palette(&remapped, source_palette, target_palette);
 
 	bmp = &GameBitmaps[bitmap_index];
 	release_live_bitmap_data(bmp, live_data);
@@ -649,7 +741,8 @@ static void restore_original_gauge_bitmaps(void)
 		}
 }
 
-static int remap_gauge_bitmaps(ubyte d2_palette[256 * 3], int *skipped)
+static int remap_gauge_bitmaps(ubyte d2_palette[256 * 3], ubyte target_palette[256 * 3],
+                               int *skipped)
 {
 	int applied = 0;
 	int hires, i;
@@ -666,7 +759,8 @@ static int remap_gauge_bitmaps(ubyte d2_palette[256 * 3], int *skipped)
 				continue;
 			}
 			if (install_remapped_bitmap_copy(bitmap_index, &D2_gauge_bitmaps[hires][i],
-			                                  d2_palette, &D1_gauge_live_bitmap_data[hires][i]))
+			                                  d2_palette, target_palette,
+			                                  &D1_gauge_live_bitmap_data[hires][i]))
 				applied++;
 			else if (skipped)
 				(*skipped)++;
@@ -711,6 +805,8 @@ static void save_original_cockpit_bitmaps(void)
 void d1_in_d2_apply_cockpit(int active)
 {
 	ubyte d2_palette[256 * 3];
+	ubyte target_palette[256 * 3];
+	const char *source_palette_name;
 	int i;
 
 	Last_stats.cockpit_active = D1_cockpit_active;
@@ -746,13 +842,19 @@ void d1_in_d2_apply_cockpit(int active)
 	}
 
 	save_original_cockpit_bitmaps();
-	debug_log(DLOG_GAME, "D1-in-D2 cockpit/gauge palette remap begin num_cockpits=%d",
-	          Num_cockpits);
-	if (!read_palette_file(D2_DEFAULT_PALETTE, d2_palette)) {
-		debug_log(DLOG_GAME, "D1-in-D2 cockpit palette remap skipped: missing %s",
-		          D2_DEFAULT_PALETTE);
+	if (!read_d2_retained_asset_source_palette(d2_palette, &source_palette_name)) {
+		D1_IN_D2_LOG("D1-in-D2 cockpit palette remap skipped: missing %s and %s",
+		             DEFAULT_LEVEL_PALETTE, D2_DEFAULT_PALETTE);
 		return;
 	}
+	if (!read_d1_in_d2_target_palette(target_palette)) {
+		D1_IN_D2_LOG("D1-in-D2 cockpit palette remap skipped: missing target %s",
+		             d1_in_d2_target_palette_name());
+		return;
+	}
+	D1_IN_D2_LOG("D1-in-D2 cockpit/gauge palette remap begin num_cockpits=%d source='%s' target='%s' loaded='%s' pig='%s'",
+	             Num_cockpits, source_palette_name, d1_in_d2_target_palette_name(),
+	             last_palette_loaded, last_palette_loaded_pig);
 
 	for (i = 0; i < N_COCKPIT_BITMAPS; i++) {
 		bitmap_index d2_bitmap = cockpit_bitmap[i];
@@ -762,15 +864,15 @@ void d1_in_d2_apply_cockpit(int active)
 			continue;
 		}
 		if (install_remapped_bitmap_copy(d2_bitmap.index, &D2_cockpit_bitmaps[i], d2_palette,
-		                                  &D1_cockpit_live_bitmap_data[i]))
+		                                  target_palette, &D1_cockpit_live_bitmap_data[i]))
 			Last_stats.cockpit_frames_applied++;
 		else
 			Last_stats.cockpit_frames_skipped++;
 	}
-	Last_stats.cockpit_frames_applied += remap_gauge_bitmaps(d2_palette,
+	Last_stats.cockpit_frames_applied += remap_gauge_bitmaps(d2_palette, target_palette,
 	                                                         &Last_stats.cockpit_frames_skipped);
-	debug_log(DLOG_GAME, "D1-in-D2 cockpit/gauge palette remap applied %d skipped %d",
-	          Last_stats.cockpit_frames_applied, Last_stats.cockpit_frames_skipped);
+	D1_IN_D2_LOG("D1-in-D2 cockpit/gauge palette remap applied %d skipped %d",
+	             Last_stats.cockpit_frames_applied, Last_stats.cockpit_frames_skipped);
 	D1_cockpit_active = 1;
 	Last_stats.cockpit_active = 1;
 }
@@ -986,6 +1088,7 @@ static void remove_spawnable_guidebot_assets(void)
 	D1_spawnable_guidebot_model_index = -1;
 	D1_spawnable_guidebot_obj_bitmap_base = -1;
 	D1_spawnable_guidebot_obj_bitmap_count = 0;
+	D1_spawnable_guidebot_draw_logged = 0;
 }
 
 static int save_guidebot_bitmap_copy(int texture_index, bitmap_index src)
@@ -1020,28 +1123,43 @@ static int save_guidebot_bitmap_copy(int texture_index, bitmap_index src)
 static void restore_guidebot_bitmap_copies(void)
 {
 	ubyte d2_palette[256 * 3];
+	ubyte target_palette[256 * 3];
+	const char *source_palette_name;
 	int restored = 0;
 	int i;
 
 	if (!D2_guidebot_assets_saved) {
-		debug_log(DLOG_GAME, "D1-in-D2 guidebot texture restore skipped: no saved D2 assets");
+		D1_IN_D2_LOG("D1-in-D2 guidebot texture restore skipped: no saved D2 assets");
 		return;
 	}
-	if (!read_palette_file(D2_DEFAULT_PALETTE, d2_palette)) {
-		debug_log(DLOG_GAME, "D1-in-D2 guidebot texture restore skipped: missing %s",
-		          D2_DEFAULT_PALETTE);
+	if (!read_d2_retained_asset_source_palette(d2_palette, &source_palette_name)) {
+		D1_IN_D2_LOG("D1-in-D2 guidebot texture restore skipped: missing %s and %s",
+		             DEFAULT_LEVEL_PALETTE, D2_DEFAULT_PALETTE);
 		return;
 	}
+	if (!read_d1_in_d2_target_palette(target_palette)) {
+		D1_IN_D2_LOG("D1-in-D2 guidebot texture restore skipped: missing target %s",
+		             d1_in_d2_target_palette_name());
+		return;
+	}
+	D1_IN_D2_LOG("D1-in-D2 guidebot texture restore begin textures=%d source='%s' target='%s' loaded='%s' pig='%s'",
+	             D2_guidebot_model.n_textures, source_palette_name,
+	             d1_in_d2_target_palette_name(), last_palette_loaded,
+	             last_palette_loaded_pig);
 	for (i = 0; i < D2_guidebot_model.n_textures; i++) {
 		int bitmap_index = D2_guidebot_obj_bitmaps[i].index;
 
 		if (!D2_guidebot_bitmap_valid[i] || bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES)
 			continue;
 		if (install_remapped_bitmap_copy(bitmap_index, &D2_guidebot_bitmaps[i], d2_palette,
-		                                  &D2_guidebot_live_bitmap_data[i]))
+		                                  target_palette, &D2_guidebot_live_bitmap_data[i])) {
+			D1_IN_D2_LOG("D1-in-D2 guidebot texture restored tex=%d bitmap=%d size=%dx%d flags=0x%x",
+			             i, bitmap_index, GameBitmaps[bitmap_index].bm_w,
+			             GameBitmaps[bitmap_index].bm_h, GameBitmaps[bitmap_index].bm_flags);
 			restored++;
+		}
 	}
-	debug_log(DLOG_GAME, "D1-in-D2 guidebot textures restored %d", restored);
+	D1_IN_D2_LOG("D1-in-D2 guidebot textures restored %d", restored);
 }
 
 static void release_guidebot_live_bitmap_copies(void)
@@ -1117,8 +1235,8 @@ static int save_d2_guidebot_assets(void)
 	if (!copy_model_data(&D2_guidebot_model, model))
 		return 0;
 	D2_guidebot_assets_saved = 1;
-	debug_log(DLOG_GAME, "D1-in-D2 guidebot assets saved robot=%d model=%d textures=%d copied=%d",
-	          buddy_id, model_num, model->n_textures, bitmap_copies);
+	D1_IN_D2_LOG("D1-in-D2 guidebot assets saved robot=%d model=%d textures=%d copied=%d first_texture=%d",
+	             buddy_id, model_num, model->n_textures, bitmap_copies, model->first_texture);
 	return 1;
 }
 
@@ -1178,6 +1296,7 @@ int d1_in_d2_ensure_spawnable_guidebot(void)
 	D1_spawnable_guidebot_model_index = model_index;
 	D1_spawnable_guidebot_obj_bitmap_base = first_texture;
 	D1_spawnable_guidebot_obj_bitmap_count = model->n_textures;
+	D1_spawnable_guidebot_draw_logged = 0;
 
 	for (i = 0; i < model->n_textures; i++) {
 		ObjBitmaps[N_ObjBitmaps] = D2_guidebot_obj_bitmaps[i];
@@ -1185,12 +1304,60 @@ int d1_in_d2_ensure_spawnable_guidebot(void)
 		N_ObjBitmaps++;
 	}
 
+	D1_IN_D2_LOG("D1-in-D2 guidebot spawnable robot=%d model=%d first_texture=%d textures=%d joints=%d speed=%d/%d/%d/%d/%d",
+	             robot_index, model_index, first_texture, model->n_textures,
+	             D2_guidebot_joint_count,
+	             Robot_info[robot_index].max_speed[0] / F1_0,
+	             Robot_info[robot_index].max_speed[1] / F1_0,
+	             Robot_info[robot_index].max_speed[2] / F1_0,
+	             Robot_info[robot_index].max_speed[3] / F1_0,
+	             Robot_info[robot_index].max_speed[4] / F1_0);
 	return 1;
 }
 
 int d1_in_d2_is_spawnable_guidebot_model(int model_num)
 {
 	return model_num >= 0 && model_num == D1_spawnable_guidebot_model_index;
+}
+
+void d1_in_d2_note_spawnable_guidebot_draw(int model_num)
+{
+	int i;
+	polymodel *po;
+
+	if (D1_spawnable_guidebot_draw_logged ||
+	    !d1_in_d2_is_spawnable_guidebot_model(model_num) ||
+	    model_num < 0 || model_num >= N_polygon_models)
+		return;
+
+	D1_spawnable_guidebot_draw_logged = 1;
+	po = &Polygon_models[model_num];
+	D1_IN_D2_LOG("D1-in-D2 guidebot draw model=%d first_texture=%d n_textures=%d objbase=%d objcount=%d",
+	             model_num, po->first_texture, po->n_textures,
+	             D1_spawnable_guidebot_obj_bitmap_base,
+	             D1_spawnable_guidebot_obj_bitmap_count);
+	for (i = 0; i < po->n_textures && i < MAX_POLYOBJ_TEXTURES; i++) {
+		int obj_bitmap_ptr = po->first_texture + i;
+		int obj_bitmap = -1;
+		bitmap_index bi;
+		grs_bitmap *bmp = NULL;
+
+		bi.index = -1;
+		if (obj_bitmap_ptr >= 0 && obj_bitmap_ptr < MAX_OBJ_BITMAPS) {
+			obj_bitmap = ObjBitmapPtrs[obj_bitmap_ptr];
+			if (obj_bitmap >= 0 && obj_bitmap < MAX_OBJ_BITMAPS) {
+				bi = ObjBitmaps[obj_bitmap];
+				if (bi.index >= 0 && bi.index < MAX_BITMAP_FILES)
+					bmp = &GameBitmaps[bi.index];
+			}
+		}
+		D1_IN_D2_LOG("D1-in-D2 guidebot draw tex=%d ptr=%d obj=%d bitmap=%d size=%dx%d flags=0x%x offset=%d",
+		             i, obj_bitmap_ptr, obj_bitmap, bi.index,
+		             bmp ? bmp->bm_w : 0, bmp ? bmp->bm_h : 0,
+		             bmp ? bmp->bm_flags : 0,
+		             bi.index >= 0 && bi.index < MAX_BITMAP_FILES ?
+		                     piggy_bitmap_get_offset(bi.index) : -1);
+	}
 }
 
 static int read_d1_effects()

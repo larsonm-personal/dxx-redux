@@ -537,6 +537,7 @@ void draw_polygon_model(vms_vector *pos,vms_matrix *orient,vms_angvec *anim_angl
 	Assert(model_num < N_polygon_models);
 
 	po=&Polygon_models[model_num];
+	d1_in_d2_note_spawnable_guidebot_draw(model_num);
 
 	//check if should use simple model
 	if (po->simpler_model )					//must have a simpler model

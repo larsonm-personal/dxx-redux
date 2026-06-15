@@ -627,6 +627,17 @@ Validation:
 7. Make global high resolution overlays game-aware.
    A D2 texture pack should not affect D1-in-D2 by default.
 
+8. Keep remap source and target palettes explicit for retained D2 assets.
+   On-device Trine 2 logs from build 16401 showed D1-in-D2 overlay work
+   running while `Current_level_palette` was `palette.256` but
+   `last_palette_loaded` was still `default.256`, likely due loading/menu
+   presentation timing. Cockpit/gauge and spawnable guidebot texture remaps now
+   build an explicit D2 gameplay-source to current-level-target palette map
+   instead of relying on global `gr_palette` state at overlay apply time.
+   The source side is `groupa.256`, matching the palette active while
+   `BITMAPS.TBL`/pig gameplay art is decoded, with `default.256` only as a
+   fallback if the gameplay palette is unavailable.
+
 ## Acceptance Criteria
 
 - Trine 2 in D2 uses D1 palette, D1 wall textures, D1 effect animations, D1
