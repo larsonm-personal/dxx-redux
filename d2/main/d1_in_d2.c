@@ -15,12 +15,14 @@
 #include "effects.h"
 #include "byteswap.h"
 #include "bm.h"
+#include "console.h"
 #include "gamepal.h"
 #include "gamesave.h"
 #include "hash.h"
 #include "mission.h"
 #include "player.h"
 #include "powerup.h"
+#include "rle.h"
 #include "robot.h"
 #include "sounds.h"
 #include "u_mem.h"
@@ -84,6 +86,9 @@ static grs_bitmap D1_original_cockpit_bitmaps[N_COCKPIT_BITMAPS];
 static int D1_original_cockpit_offsets[N_COCKPIT_BITMAPS];
 static ubyte D1_original_cockpit_file_flags[N_COCKPIT_BITMAPS];
 static ubyte D1_original_cockpit_valid[N_COCKPIT_BITMAPS];
+static grs_bitmap D2_cockpit_bitmaps[N_COCKPIT_BITMAPS];
+static ubyte D2_cockpit_bitmap_valid[N_COCKPIT_BITMAPS];
+static ubyte *D1_cockpit_live_bitmap_data[N_COCKPIT_BITMAPS];
 static int D2_guidebot_assets_saved = 0;
 static robot_info D2_guidebot_robot_info;
 static jointpos D2_guidebot_joints[MAX_ROBOT_JOINTS];
@@ -92,6 +97,7 @@ static polymodel D2_guidebot_model;
 static bitmap_index D2_guidebot_obj_bitmaps[MAX_POLYOBJ_TEXTURES];
 static grs_bitmap D2_guidebot_bitmaps[MAX_POLYOBJ_TEXTURES];
 static ubyte D2_guidebot_bitmap_valid[MAX_POLYOBJ_TEXTURES];
+static ubyte *D2_guidebot_live_bitmap_data[MAX_POLYOBJ_TEXTURES];
 static int D2_d1_robot_tuning_saved = 0;
 static int D2_d1_robot_tuning_count = 0;
 static ubyte D2_d1_robot_behavior[D1_MAX_ROBOT_TYPES];
@@ -245,20 +251,6 @@ static int seek_d1_final_sound_maps(PHYSFS_file *fp, int pigsize, bitmap_index d
 		return 0;
 	bitmap_index_read_n(d1_cockpit ? d1_cockpit : temp_cockpit, D1_N_COCKPIT_BITMAPS, fp);
 	return 1;
-}
-
-static int read_d1_cockpit_bitmaps(bitmap_index d1_cockpit[D1_N_COCKPIT_BITMAPS])
-{
-	PHYSFS_file *fp;
-	int pigsize, ok;
-
-	fp = open_d1_registered_pig();
-	if (!fp)
-		return 0;
-	pigsize = (int)PHYSFS_fileLength(fp);
-	ok = seek_d1_final_sound_maps(fp, pigsize, d1_cockpit);
-	PHYSFS_close(fp);
-	return ok;
 }
 
 static int read_d1_sound_maps(PHYSFS_file *fp, int pigsize, ubyte d1_sounds[D1_MAX_PIG_SOUNDS], ubyte d1_alt_sounds[D1_MAX_PIG_SOUNDS])
@@ -482,6 +474,108 @@ void d1_in_d2_apply_sounds(int active)
 	Last_stats.sound_bytes = sound_bytes;
 }
 
+static int read_palette_file(const char *filename, ubyte palette[256 * 3])
+{
+	PHYSFS_file *fp = PHYSFSX_openReadBuffered(filename);
+
+	if (!fp)
+		return 0;
+	if (PHYSFS_read(fp, palette, 256, 3) != 3) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	PHYSFS_close(fp);
+	return 1;
+}
+
+static int bitmap_data_size(const grs_bitmap *bmp)
+{
+	int size;
+
+	if (!bmp->bm_data)
+		return 0;
+	if (bmp->bm_flags & BM_FLAG_RLE) {
+		memcpy(&size, bmp->bm_data, sizeof(size));
+		return size > 0 ? size : 0;
+	}
+	return bmp->bm_rowsize * bmp->bm_h;
+}
+
+static int duplicate_bitmap_data_for_remap(const grs_bitmap *src, ubyte **data)
+{
+	int capacity, size;
+
+	size = bitmap_data_size(src);
+	if (size <= 0)
+		return 0;
+	capacity = size;
+	if (src->bm_flags & BM_FLAG_RLE) {
+		int rle_capacity = MAX_BMP_SIZE(src->bm_w, src->bm_h) + 30000;
+
+		if (capacity < rle_capacity)
+			capacity = rle_capacity;
+	}
+	MALLOC(*data, ubyte, capacity);
+	if (!*data)
+		return 0;
+	memcpy(*data, src->bm_data, size);
+	return 1;
+}
+
+static void release_live_bitmap_data(grs_bitmap *bmp, ubyte **live_data)
+{
+	if (!*live_data)
+		return;
+	if (bmp->bm_data == *live_data)
+		gr_free_bitmap_data(bmp);
+	else
+		d_free(*live_data);
+	*live_data = NULL;
+}
+
+static void remap_bitmap_from_palette(grs_bitmap *bmp, ubyte source_palette[256 * 3])
+{
+	if (bmp->bm_flags & BM_FLAG_RLE) {
+		ubyte colormap[256];
+		int freq[256];
+
+		build_colormap_good(source_palette, colormap, freq);
+		colormap[TRANSPARENCY_COLOR] = TRANSPARENCY_COLOR;
+		rle_remap(bmp, colormap);
+	} else
+		gr_remap_bitmap_good(bmp, source_palette, TRANSPARENCY_COLOR, -1);
+}
+
+static int install_remapped_bitmap_copy(int bitmap_index, const grs_bitmap *src,
+                                        ubyte source_palette[256 * 3], ubyte **live_data)
+{
+	grs_bitmap *bmp;
+	grs_bitmap remapped;
+	ubyte *data;
+
+	if (bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES)
+		return 0;
+	if (!duplicate_bitmap_data_for_remap(src, &data))
+		return 0;
+
+	remapped = *src;
+	remapped.bm_data = data;
+	remapped.bm_parent = NULL;
+#ifdef OGL
+	remapped.gltexture = NULL;
+	remapped.gltexture_mask = NULL;
+#endif
+	remap_bitmap_from_palette(&remapped, source_palette);
+
+	bmp = &GameBitmaps[bitmap_index];
+	release_live_bitmap_data(bmp, live_data);
+	gr_set_bitmap_data(bmp, NULL);
+	*bmp = remapped;
+	piggy_bitmap_set_file_state(bitmap_index, 0, bmp->bm_flags);
+	*live_data = data;
+	return 1;
+}
+
 static void save_original_cockpit_bitmaps(void)
 {
 	int i;
@@ -490,21 +584,34 @@ static void save_original_cockpit_bitmaps(void)
 		return;
 	for (i = 0; i < N_COCKPIT_BITMAPS; i++) {
 		int bitmap_index = cockpit_bitmap[i].index;
+		grs_bitmap *bmp;
+		ubyte *data;
 
 		if (bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES)
 			continue;
+		PIGGY_PAGE_IN(cockpit_bitmap[i]);
+		bmp = &GameBitmaps[bitmap_index];
 		D1_original_cockpit_bitmaps[i] = GameBitmaps[bitmap_index];
 		D1_original_cockpit_offsets[i] = piggy_bitmap_get_offset(bitmap_index);
 		D1_original_cockpit_file_flags[i] = piggy_bitmap_get_file_flags(bitmap_index);
 		D1_original_cockpit_valid[i] = 1;
+		if (duplicate_bitmap_data_for_remap(bmp, &data)) {
+			D2_cockpit_bitmaps[i] = *bmp;
+			D2_cockpit_bitmaps[i].bm_data = data;
+			D2_cockpit_bitmaps[i].bm_parent = NULL;
+#ifdef OGL
+			D2_cockpit_bitmaps[i].gltexture = NULL;
+			D2_cockpit_bitmaps[i].gltexture_mask = NULL;
+#endif
+			D2_cockpit_bitmap_valid[i] = 1;
+		}
 	}
 	D1_cockpit_saved = 1;
 }
 
 void d1_in_d2_apply_cockpit(int active)
 {
-	bitmap_index d1_cockpit[D1_N_COCKPIT_BITMAPS];
-	int d2_visible_cockpits = N_COCKPIT_BITMAPS / 2;
+	ubyte d2_palette[256 * 3];
 	int i;
 
 	Last_stats.cockpit_active = D1_cockpit_active;
@@ -521,6 +628,7 @@ void d1_in_d2_apply_cockpit(int active)
 				    bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES)
 					continue;
 				bmp = &GameBitmaps[bitmap_index];
+				release_live_bitmap_data(bmp, &D1_cockpit_live_bitmap_data[i]);
 				gr_set_bitmap_data(bmp, NULL);
 				*bmp = D1_original_cockpit_bitmaps[i];
 				piggy_bitmap_set_file_state(bitmap_index, D1_original_cockpit_offsets[i],
@@ -538,22 +646,24 @@ void d1_in_d2_apply_cockpit(int active)
 	}
 
 	save_original_cockpit_bitmaps();
-	if (!read_d1_cockpit_bitmaps(d1_cockpit))
+	if (!read_palette_file(D2_DEFAULT_PALETTE, d2_palette))
 		return;
 
-	for (i = 0; i < d2_visible_cockpits; i++) {
-		int d1_index = i;
+	for (i = 0; i < N_COCKPIT_BITMAPS; i++) {
 		bitmap_index d2_bitmap = cockpit_bitmap[i];
 
-		if (d1_index >= D1_N_COCKPIT_BITMAPS || d2_bitmap.index >= MAX_BITMAP_FILES) {
+		if (!D2_cockpit_bitmap_valid[i] || d2_bitmap.index >= MAX_BITMAP_FILES) {
 			Last_stats.cockpit_frames_skipped++;
 			continue;
 		}
-		if (load_d1_bitmap_frame(d1_cockpit[d1_index].index, d2_bitmap))
+		if (install_remapped_bitmap_copy(d2_bitmap.index, &D2_cockpit_bitmaps[i], d2_palette,
+		                                  &D1_cockpit_live_bitmap_data[i]))
 			Last_stats.cockpit_frames_applied++;
 		else
 			Last_stats.cockpit_frames_skipped++;
 	}
+	con_printf(CON_DEBUG, "D1-in-D2 cockpit palette remap applied %d skipped %d\n",
+	           Last_stats.cockpit_frames_applied, Last_stats.cockpit_frames_skipped);
 	D1_cockpit_active = 1;
 	Last_stats.cockpit_active = 1;
 }
@@ -668,16 +778,7 @@ static void read_d1_weapon_info(weapon_info *wi, int weapon_id, PHYSFS_file *fp)
 
 static int read_d1_palette(ubyte palette[256 * 3])
 {
-	PHYSFS_file *fp = PHYSFSX_openReadBuffered(D1_DEFAULT_PALETTE);
-
-	if (!fp)
-		return 0;
-	if (PHYSFS_read(fp, palette, 256, 3) != 3) {
-		PHYSFS_close(fp);
-		return 0;
-	}
-	PHYSFS_close(fp);
-	return 1;
+	return read_palette_file(D1_DEFAULT_PALETTE, palette);
 }
 
 static ushort d1_palette_index_to_15bpp(ubyte palette[256 * 3], ushort color)
@@ -780,19 +881,6 @@ static void remove_spawnable_guidebot_assets(void)
 	D1_spawnable_guidebot_obj_bitmap_count = 0;
 }
 
-static int bitmap_data_size(const grs_bitmap *bmp)
-{
-	int size;
-
-	if (!bmp->bm_data)
-		return 0;
-	if (bmp->bm_flags & BM_FLAG_RLE) {
-		memcpy(&size, bmp->bm_data, sizeof(size));
-		return size > 0 ? size : 0;
-	}
-	return bmp->bm_rowsize * bmp->bm_h;
-}
-
 static int save_guidebot_bitmap_copy(int texture_index, bitmap_index src)
 {
 	grs_bitmap *src_bmp;
@@ -824,20 +912,36 @@ static int save_guidebot_bitmap_copy(int texture_index, bitmap_index src)
 
 static void restore_guidebot_bitmap_copies(void)
 {
+	ubyte d2_palette[256 * 3];
+	int restored = 0;
 	int i;
 
 	if (!D2_guidebot_assets_saved)
 		return;
+	if (!read_palette_file(D2_DEFAULT_PALETTE, d2_palette))
+		return;
 	for (i = 0; i < D2_guidebot_model.n_textures; i++) {
 		int bitmap_index = D2_guidebot_obj_bitmaps[i].index;
-		grs_bitmap *bmp;
 
 		if (!D2_guidebot_bitmap_valid[i] || bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES)
 			continue;
-		bmp = &GameBitmaps[bitmap_index];
-		gr_set_bitmap_data(bmp, NULL);
-		*bmp = D2_guidebot_bitmaps[i];
-		piggy_bitmap_set_file_state(bitmap_index, 0, bmp->bm_flags);
+		if (install_remapped_bitmap_copy(bitmap_index, &D2_guidebot_bitmaps[i], d2_palette,
+		                                  &D2_guidebot_live_bitmap_data[i]))
+			restored++;
+	}
+	con_printf(CON_DEBUG, "D1-in-D2 guidebot textures restored %d\n", restored);
+}
+
+static void release_guidebot_live_bitmap_copies(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_POLYOBJ_TEXTURES; i++) {
+		int bitmap_index = D2_guidebot_obj_bitmaps[i].index;
+
+		if (bitmap_index < 0 || bitmap_index >= MAX_BITMAP_FILES)
+			continue;
+		release_live_bitmap_data(&GameBitmaps[bitmap_index], &D2_guidebot_live_bitmap_data[i]);
 	}
 }
 
@@ -1140,6 +1244,7 @@ void d1_in_d2_apply_robot_assets(int active)
 	remove_spawnable_guidebot_assets();
 	if (!active) {
 		if (D1_robot_assets_active) {
+			release_guidebot_live_bitmap_copies();
 			free_polygon_models();
 			read_hamfile();
 			D1_robot_assets_active = 0;

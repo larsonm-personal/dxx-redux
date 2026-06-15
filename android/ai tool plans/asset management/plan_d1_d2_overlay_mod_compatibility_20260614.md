@@ -501,18 +501,27 @@ Deliverables:
 
 Progress:
 
-- Added a D1-in-D2 cockpit base art layer, but left it disabled from level load
-  after playtesting showed D2 cockpit rendering stretches D1 cockpit art
-  horizontally. This needs a proper D1 cockpit layout/render pass before it is
-  re-enabled.
+- Replaced the disabled D1 cockpit art layer with a D2-shaped cockpit palette
+  compatibility layer. D1-in-D2 keeps the D2 cockpit dimensions that the D2
+  renderer expects, but remaps those D2-paletted pixels into the active D1
+  palette so the cockpit no longer renders with D2 palette indexes under D1
+  colors.
 - Added cockpit compatibility counters to `asset_trace.d1_compat`.
 - Preserved spawnable guidebot D2 art by copying its D2 bitmap data and
   restoring those slots after D1 wall/robot compatibility replaces shared
   bitmap slots.
+- Remaps the restored D2 guidebot texture copies from the D2 default palette
+  into the active D1 palette before installing them, so guidebot colors do not
+  inherit the green/incorrect D1 interpretation of D2 palette indexes.
+- Added debug console lines for cockpit palette remap counts and guidebot
+  texture restore counts during D1-in-D2 level load.
 
 Validation:
 
-- D1-in-D2 cockpit and gauge art use D1 assets by default.
+- D1-in-D2 cockpit keeps D2 renderer-compatible dimensions while using colors
+  remapped from D2 source art into the active D1 palette.
+- Spawnable guidebot textures are preserved from D2 source art and remapped into
+  the active D1 palette.
 - A cockpit overlay pack can replace one known cockpit/gauge image in each
   supported mode.
 
