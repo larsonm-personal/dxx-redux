@@ -100,6 +100,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "track_names.h"
 #include "coop_save.h"
 #include "coop_warp.h"
+#include "android_log.h"
 #endif
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -117,6 +118,77 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multibot.h"
 #include "multi.h"
 
+#ifdef ANDROID
+static unsigned int gameseq_mix_texture_debug(unsigned int hash, unsigned int value)
+{
+	hash ^= value;
+	hash *= 16777619u;
+	return hash;
+}
+
+static unsigned int gameseq_texture_table_signature(void)
+{
+	unsigned int hash = 2166136261u;
+
+	for (int i = 0; i < NumTextures; i++) {
+		unsigned int bitmap_index = Textures[i].index;
+		hash = gameseq_mix_texture_debug(hash, (unsigned int)i);
+		hash = gameseq_mix_texture_debug(hash, bitmap_index);
+		if (bitmap_index < MAX_BITMAP_FILES) {
+			hash = gameseq_mix_texture_debug(hash, (unsigned int)GameBitmaps[bitmap_index].bm_flags);
+			hash = gameseq_mix_texture_debug(hash, (unsigned int)GameBitmaps[bitmap_index].bm_w);
+			hash = gameseq_mix_texture_debug(hash, (unsigned int)GameBitmaps[bitmap_index].bm_h);
+		}
+	}
+
+	return hash;
+}
+
+static unsigned int gameseq_segment_texture_signature(void)
+{
+	unsigned int hash = 2166136261u;
+
+	for (int i = 0; i <= Highest_segment_index; i++) {
+		for (int j = 0; j < 6; j++) {
+			hash = gameseq_mix_texture_debug(hash, (unsigned int)i);
+			hash = gameseq_mix_texture_debug(hash, (unsigned int)j);
+			hash = gameseq_mix_texture_debug(hash, (unsigned int)(unsigned short)Segments[i].sides[j].tmap_num);
+			hash = gameseq_mix_texture_debug(hash, (unsigned int)(unsigned short)Segments[i].sides[j].tmap_num2);
+		}
+	}
+
+	return hash;
+}
+
+static void gameseq_log_multiplayer_texture_state(const char *phase, const char *level_name)
+{
+	if (!(Game_mode & GM_MULTI) || !debug_log_enabled[DLOG_TEXTURE])
+		return;
+
+	debug_log(DLOG_TEXTURE,
+	          "[leveltex] phase=%s level=%d file=%s mission=%s d1=%d game_mode=0x%x "
+	          "net_mode=%u net_flags=0x%x monitors=0x%x palette=%s last_palette=%s last_pig_palette=%s "
+	          "pig=%s textures=%d effects=%d highest_segment=%d texture_sig=%08x segment_sig=%08x",
+	          phase,
+	          Current_level_num,
+	          level_name ? level_name : "",
+	          Current_mission ? Current_mission_filename : "",
+	          Current_mission ? EMULATING_D1 : 0,
+	          Game_mode,
+	          (unsigned int)Netgame.gamemode,
+	          (unsigned int)Netgame.game_flags,
+	          (unsigned int)Netgame.monitor_vector,
+	          Current_level_palette,
+	          last_palette_loaded,
+	          last_palette_loaded_pig,
+	          piggy_current_pigfile(),
+	          NumTextures,
+	          Num_effects,
+	          Highest_segment_index,
+	          gameseq_texture_table_signature(),
+	          gameseq_segment_texture_signature());
+}
+#endif
 
 void StartNewLevelSecret(int level_num, int page_in_textures);
 void InitPlayerPosition(int random_flag);
@@ -850,6 +922,9 @@ void LoadLevel(int level_num,int page_in_textures)
 		Error("Couldn't load level file <%s>, error = %d",level_name,load_ret);
 
 	Current_level_num=level_num;
+#ifdef ANDROID
+	gameseq_log_multiplayer_texture_state("after-load-level", level_name);
+#endif
 	secret_area_rescan_current_level();
 
 #ifdef ANDROID
@@ -885,10 +960,16 @@ void LoadLevel(int level_num,int page_in_textures)
 		d1_in_d2_apply_sounds(0);
 		load_bitmap_replacements(level_name);
 	}
+#ifdef ANDROID
+	gameseq_log_multiplayer_texture_state("after-bitmap-replacements", level_name);
+#endif
 
 	load_level_robots(level_num);
 	if (EMULATING_D1)
 		d1_in_d2_apply_robot_assets(1);
+#ifdef ANDROID
+	gameseq_log_multiplayer_texture_state("after-robots", level_name);
+#endif
 
 	if ( page_in_textures && !skip_level_presentation ) {
 		piggy_load_level_data();
@@ -1764,6 +1845,9 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 	if (Game_mode & GM_MULTI)
 	{
 		multi_prep_level(); // Removes robots from level if necessary
+#ifdef ANDROID
+		gameseq_log_multiplayer_texture_state("after-multi-prep", NULL);
+#endif
 	}
 #endif
 

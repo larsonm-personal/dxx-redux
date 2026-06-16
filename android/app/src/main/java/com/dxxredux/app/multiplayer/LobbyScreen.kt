@@ -31,6 +31,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -308,6 +310,7 @@ private fun CoopSaveOffer(
 
     // Initialize from existing restore slot (written by CreateGameDialog)
     val existingSlot = remember(game) { readCoopRestoreSlot(filesDir, game) }
+    val freshLevel = remember(lobby.lobbyId) { lobby.gameInfo["level_num"]?.jsonPrimitive?.intOrNull ?: 1 }
     var useRestore by remember { mutableStateOf(existingSlot != null) }
     var lastActivatedFocusTarget by remember { mutableStateOf<CoopSaveFocusTarget?>(null) }
     val restoreFocus = remember { FocusRequester() }
@@ -325,9 +328,20 @@ private fun CoopSaveOffer(
     }
 
     // Write/delete coop_restore_slot.txt based on current selection
-    LaunchedEffect(useRestore, bestMatch) {
+    LaunchedEffect(useRestore, bestMatch, freshLevel) {
+        val targetLevel = if (useRestore) bestMatch.level else freshLevel
         writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
-        MultiplayerResumePrefs.saveRestoreSelection(context, game, if (useRestore) bestMatch else null)
+        MultiplayerResumePrefs.saveRestoreSelection(
+            context,
+            game,
+            if (useRestore) bestMatch else null,
+            levelNum = targetLevel,
+        )
+        if (lobby.gameInfo["level_num"]?.jsonPrimitive?.intOrNull != targetLevel) {
+            MatchmakingService.updateGameInfo(
+                JsonObject(lobby.gameInfo + ("level_num" to JsonPrimitive(targetLevel))),
+            )
+        }
     }
 
     val mins = bestMatch.levelTimeSeconds / 60

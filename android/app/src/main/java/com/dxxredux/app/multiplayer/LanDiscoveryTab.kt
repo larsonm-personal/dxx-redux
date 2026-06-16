@@ -275,6 +275,7 @@ private fun LanDiscoveryView(
     var hostedMission by remember { mutableStateOf(hostDefaults.mission) }
     var hostedDifficulty by remember { mutableStateOf(hostDefaults.difficulty) }
     var hostedLevelNum by remember { mutableStateOf(hostDefaults.levelNum) }
+    var hostedFreshLevelNum by remember { mutableStateOf(hostDefaults.levelNum) }
     var hostedCoopQol by remember { mutableStateOf(hostDefaults.coopQol) }
     var hostedFullDeathSpew by remember { mutableStateOf(hostDefaults.fullDeathSpew) }
     var hostedClientsCanRequestRewind by remember { mutableStateOf(hostDefaults.clientsCanRequestRewind) }
@@ -336,6 +337,7 @@ private fun LanDiscoveryView(
         hostedMission = record.mission
         hostedDifficulty = record.difficulty
         hostedLevelNum = record.levelNum
+        hostedFreshLevelNum = record.levelNum
         hostedCoopQol = record.coopQol
         hostedFullDeathSpew = record.fullDeathSpew
         hostedClientsCanRequestRewind = record.clientsCanRequestRewind
@@ -682,6 +684,8 @@ private fun LanDiscoveryView(
                         game = hostedGame,
                         mission = hostedMission,
                         playerCallsigns = hostedPlayers.map { it.callsign },
+                        freshLevelNum = hostedFreshLevelNum,
+                        onLevelSelected = { hostedLevelNum = it ?: hostedFreshLevelNum },
                     )
                 }
                 Button(
@@ -783,6 +787,7 @@ private fun LanDiscoveryView(
                 hostedMission = mission
                 hostedDifficulty = difficulty
                 hostedLevelNum = levelNum
+                hostedFreshLevelNum = levelNum
                 hostedCoopQol = coopQol
                 hostedFullDeathSpew = fullDeathSpew
                 hostedClientsCanRequestRewind = clientsCanRequestRewind
@@ -928,6 +933,8 @@ private fun LanCoopSaveOffer(
     game: String,
     mission: String?,
     playerCallsigns: List<String>,
+    freshLevelNum: Int,
+    onLevelSelected: (Int?) -> Unit,
 ) {
     val context = LocalContext.current
     val filesDir = context.filesDir
@@ -971,9 +978,16 @@ private fun LanCoopSaveOffer(
         }
     }
 
-    LaunchedEffect(useRestore, bestMatch) {
+    LaunchedEffect(useRestore, bestMatch, freshLevelNum) {
+        val targetLevel = if (useRestore) bestMatch.level else freshLevelNum
         writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
-        MultiplayerResumePrefs.saveRestoreSelection(context, game, if (useRestore) bestMatch else null)
+        MultiplayerResumePrefs.saveRestoreSelection(
+            context,
+            game,
+            if (useRestore) bestMatch else null,
+            levelNum = targetLevel,
+        )
+        onLevelSelected(if (useRestore) bestMatch.level else null)
     }
 
     val mins = bestMatch.levelTimeSeconds / 60

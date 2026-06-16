@@ -72,6 +72,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop_indicator_lines.h"
 #include "android_crash_handler.h"
 #include "android_log.h"
+#include "state_android_shared.h"
 #include <android/log.h>
 #endif
 
@@ -5380,9 +5381,14 @@ void multi_restore_game(ubyte slot, uint id)
 	/* Autosaves use COOP_AUTOSAVE_CALLSIGN -- try that if the normal
 	 * filename doesn't exist OR exists but has the wrong game_id.
 	 * coop_arm_auto_restore already does this fallback when arming;
-	 * multi_restore_game must mirror it or it picks up an old callsign
-	 * save with the wrong game_id and shows the "you must rejoin" dialog */
+	 * multi_restore_game must mirror it or it picks up stale legacy
+	 * autosaves with the wrong bitmap/effect state. */
 	if (slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
+		if (!multi_i_am_master()) {
+			COOPLOG("multi_restore_game: autosave slot %d restore skipped on peer", slot);
+			return;
+		}
+		state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
 		int need_fallback = !PHYSFSX_exists(filename, 0);
 		if (!need_fallback) {
 			int fid = state_get_game_id(filename);
@@ -5390,8 +5396,7 @@ void multi_restore_game(ubyte slot, uint id)
 				need_fallback = 1;
 		}
 		if (need_fallback)
-			snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
-				COOP_AUTOSAVE_CALLSIGN, slot);
+			state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
 	}
 	if (!PHYSFSX_exists(filename, 0)) {
 		con_printf(CON_NORMAL, "multi_restore_game: save file missing, skipping restore (peer)");

@@ -275,6 +275,7 @@ internal object MultiplayerResumePrefs {
         context: Context,
         game: String,
         selectedSave: CoopSaveEntry?,
+        levelNum: Int? = null,
     ) {
         val current = load(context) ?: return
         if (current.game != game || current.mode != "coop") return
@@ -283,6 +284,7 @@ internal object MultiplayerResumePrefs {
             context,
             current.copy(
                 updatedAtMs = System.currentTimeMillis(),
+                levelNum = levelNum ?: selectedSave?.level ?: current.levelNum,
                 coopRestoreSlot = restoreSlot,
                 coopRestoreSaveTime = selectedSave?.timestamp?.takeIf { restoreSlot != null },
                 coopRestoreLevel = selectedSave?.level?.takeIf { restoreSlot != null },

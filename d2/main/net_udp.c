@@ -37,6 +37,7 @@
 #include "fireball.h"
 #include "net_udp.h"
 #include "game.h"
+#include "gamepal.h"
 #include "multi.h"
 #include "endlevel.h"
 #include "palette.h"
@@ -83,6 +84,17 @@ static void mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
  * Kept separate from auto_host_pending to avoid re-entry when the
  * select-players window closes and the main menu re-activates. */
 static int net_auto_start_when_full = 0;
+
+static void net_udp_android_show_dump_message(const char *message)
+{
+	if (Game_wind)
+		window_set_visible(Game_wind, 0);
+	load_palette(MENU_PALETTE, 0, 1);
+	gr_palette_load(gr_palette);
+	nm_messagebox(NULL, 1, TXT_OK, "%s", message);
+	if (Game_wind)
+		window_set_visible(Game_wind, 1);
+}
 #else
 #define MPDIAG(fmt, ...) con_printf(CON_NORMAL, "MPDIAG: " fmt, ##__VA_ARGS__)
 #endif
@@ -3556,6 +3568,12 @@ void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 		case DUMP_KICKED:
 			if (Network_status==NETSTAT_PLAYING)
 				multi_leave_game();
+#ifdef __ANDROID__
+			if (data[5] == DUMP_PKTTIMEOUT)
+				net_udp_android_show_dump_message("You were removed from the game.\nYou failed receiving important\npackets. Sorry.");
+			if (data[5] == DUMP_KICKED)
+				net_udp_android_show_dump_message("You were kicked by Host!");
+#else
 			if (Game_wind)
 				window_set_visible(Game_wind, 0);
 			if (data[5] == DUMP_PKTTIMEOUT)
@@ -3564,6 +3582,7 @@ void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 				nm_messagebox(NULL, 1, TXT_OK, "You were kicked by Host!");
 			if (Game_wind)
 				window_set_visible(Game_wind, 1);
+#endif
 			multi_quit_game = 1;
 			game_leave_menus();
 			multi_reset_stuff();
@@ -3572,7 +3591,11 @@ void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 			if (data[5] > DUMP_DUPNAME) // invalid dump... heh
 				break;
 			Network_status = NETSTAT_MENU; // stop us from sending before message
+#ifdef __ANDROID__
+			net_udp_android_show_dump_message(NET_DUMP_STRINGS(data[5]));
+#else
 			nm_messagebox(NULL, 1, TXT_OK, NET_DUMP_STRINGS(data[5]));
+#endif
 			Network_status = NETSTAT_MENU;
 			multi_reset_stuff();
 			break;

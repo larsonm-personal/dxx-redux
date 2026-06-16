@@ -421,6 +421,12 @@ object MatchmakingService {
         NetLog.log("LOBBY", "Requesting game start")
     }
 
+    fun updateGameInfo(gameInfo: JsonObject) {
+        pendingGameInfo = gameInfo
+        send(protocolJson.encodeToString(UpdateGameInfoMsg.serializer(), UpdateGameInfoMsg(gameInfo = gameInfo)))
+        NetLog.log("LOBBY", "Updating game info")
+    }
+
     /** Host signals the server that the game engine has exited.
      *  The server transitions the lobby back to Waiting so players can re-ready. */
     fun endGame() {
