@@ -35,6 +35,7 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 					  int coop_qol, int full_death_spew,
 					  int player_spew_no_expire);
 int net_udp_rebind_for_hosting(void);
+void net_udp_request_resync_from_host(const char *reason);
 #endif
 
 // Some defines

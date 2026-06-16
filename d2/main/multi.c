@@ -6738,6 +6738,17 @@ void multi_do_restore_game(const ubyte *buf)
 	slot = *(ubyte *)(buf+count);			count += 1;
 	id = GET_INTEL_INT(buf+count);			count += 4;
 
+#ifdef __ANDROID__
+	if (slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT &&
+	    !multi_i_am_master()) {
+		COOPLOG("multi_do_restore_game: autosave slot %d received on peer, requesting host resync", slot);
+#ifdef USE_UDP
+		net_udp_request_resync_from_host("coop autosave restore");
+#endif
+		return;
+	}
+#endif
+
 	multi_restore_game( slot, id );
 }
 
@@ -6923,7 +6934,10 @@ void multi_restore_game(ubyte slot, uint id)
 	 * autosaves with the wrong bitmap/effect state. */
 	if (slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
 		if (!multi_i_am_master()) {
-			COOPLOG("multi_restore_game: autosave slot %d restore skipped on peer", slot);
+			COOPLOG("multi_restore_game: autosave slot %d restore skipped on peer, requesting host resync", slot);
+#ifdef USE_UDP
+			net_udp_request_resync_from_host("coop autosave restore");
+#endif
 			return;
 		}
 		state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);

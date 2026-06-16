@@ -77,6 +77,8 @@ static void mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
  * Kept separate from auto_host_pending to avoid re-entry when the
  * select-players window closes and the main menu re-activates. */
 static int net_auto_start_when_full = 0;
+static int android_resync_request_pending = 0;
+static fix64 android_resync_last_request_time = 0;
 #else
 #define MPDIAG(fmt, ...) con_printf(CON_NORMAL, "MPDIAG: " fmt, ##__VA_ARGS__)
 #endif
@@ -3254,6 +3256,38 @@ int net_udp_send_request(void)
 	return i;
 }
 
+#ifdef __ANDROID__
+void net_udp_request_resync_from_host(const char *reason)
+{
+	char logbuf[192];
+	int master;
+
+	if (!(Game_mode & GM_NETWORK) || UDP_Socket[0] == -1)
+		return;
+	if (multi_i_am_master())
+		return;
+
+	master = multi_who_is_master();
+	if (master < 0 || master >= MAX_PLAYERS || !Netgame.players[master].connected) {
+		MPDIAG("request_resync skipped: bad master=%d reason=%s\n",
+		       master, reason ? reason : "");
+		return;
+	}
+
+	Network_rejoined = 0;
+	Network_status = NETSTAT_WAITING;
+	Players[Player_num].connected = CONNECT_WAITING;
+	Netgame.players[Player_num].connected = CONNECT_WAITING;
+	android_resync_request_pending = 1;
+	android_resync_last_request_time = 0;
+
+	snprintf(logbuf, sizeof(logbuf),
+	         "[ANDROID] request_resync: reason=%s master=%d level=%d",
+	         reason ? reason : "", master, Current_level_num);
+	net_log_comment(logbuf);
+}
+#endif
+
 int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_addr, int lite_info, ubyte is_sync)
 {
 	int len = 0, i = 0, j = 0;
@@ -5050,6 +5084,9 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 			Netgame.players[i].LastPacketTime = timer_query();
 
 	Network_status = NETSTAT_PLAYING;
+#ifdef __ANDROID__
+	android_resync_request_pending = 0;
+#endif
 	multi_sort_kill_list();
 }
 
@@ -5975,6 +6012,15 @@ void net_udp_do_frame(int force, int listen)
 		multi_send_robot_frame(0);
 		net_udp_send_mdata(0, time);
 	}
+
+#ifdef __ANDROID__
+	if (android_resync_request_pending && !multi_i_am_master() &&
+	    Network_status == NETSTAT_WAITING &&
+	    time >= android_resync_last_request_time + (F1_0 * 2)) {
+		android_resync_last_request_time = time;
+		net_udp_send_request();
+	}
+#endif
 
 	net_udp_noloss_process_queue(time);
 
