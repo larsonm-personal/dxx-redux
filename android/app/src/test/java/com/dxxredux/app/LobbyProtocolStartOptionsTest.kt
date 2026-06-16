@@ -26,12 +26,14 @@ class LobbyProtocolStartOptionsTest {
                 maxPlayers = 4,
                 coopQol = true,
                 fullDeathSpew = false,
+                playerSpewNoExpire = false,
                 clientsCanRequestRewind = true,
             )
         val json = parsePacket(packet, packet.size) ?: error("packet did not parse")
 
         assertTrue(json.getBoolean("coop_qol"))
         assertFalse(json.getBoolean("full_death_spew"))
+        assertFalse(json.getBoolean("player_spew_no_expire"))
         assertTrue(json.getBoolean("clients_can_request_rewind"))
     }
 

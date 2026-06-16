@@ -27,6 +27,7 @@ class MultiplayerResumePrefsTest {
                 maxPlayers = 4,
                 coopQol = true,
                 fullDeathSpew = false,
+                playerSpewNoExpire = false,
                 localCallsign = "Miner",
                 localClientId = "local-id",
                 hostCallsign = "Miner",
@@ -202,6 +203,7 @@ class MultiplayerResumePrefsTest {
         assertEquals("coop", gameInfo["mode"]?.jsonPrimitive?.content)
         assertEquals(3, gameInfo["difficulty"]?.jsonPrimitive?.intOrNull)
         assertEquals(5, gameInfo["level_num"]?.jsonPrimitive?.intOrNull)
+        assertEquals("true", gameInfo["player_spew_no_expire"]?.jsonPrimitive?.content)
         assertEquals("true", gameInfo["clients_can_request_rewind"]?.jsonPrimitive?.content)
     }
 

@@ -395,6 +395,7 @@ object ConfigImportExport {
             put("max_players", prefs.getInt("host_max_players", 4))
             put("coop_qol", prefs.getBoolean("host_coop_qol", true))
             put("full_death_spew", prefs.getBoolean("host_full_death_spew", true))
+            put("player_spew_no_expire", prefs.getBoolean("host_player_spew_no_expire", true))
             put("clients_can_request_rewind", prefs.getBoolean("host_clients_can_request_rewind", false))
             put(
                 "mission_d1",
@@ -439,6 +440,10 @@ object ConfigImportExport {
         }
         if (json.has("full_death_spew")) {
             editor.putBoolean("host_full_death_spew", json.getBoolean("full_death_spew"))
+            count++
+        }
+        if (json.has("player_spew_no_expire")) {
+            editor.putBoolean("host_player_spew_no_expire", json.getBoolean("player_spew_no_expire"))
             count++
         }
         if (json.has("clients_can_request_rewind")) {

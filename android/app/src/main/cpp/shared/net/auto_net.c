@@ -30,6 +30,7 @@ int auto_host_level_num = 1;
 int auto_host_difficulty = 1;
 int auto_host_coop_qol = 1;
 int auto_host_full_death_spew = 1;
+int auto_host_player_spew_no_expire = 1;
 int auto_host_clients_can_request_rewind = 0;
 
 char auto_net_callsign[10] = "";
@@ -78,16 +79,19 @@ int check_auto_net(void)
 		 * This prevents re-entry when the select-players menu closes and
 		 * EVENT_WINDOW_ACTIVATED re-fires on the main menu. */
 		con_printf(CON_NORMAL, "auto_net: starting auto-host on port %d "
-		                       "(mission=%s mode=%d diff=%d max=%d lvl=%d qol=%d spew=%d client_rewind=%d)\n",
+		                       "(mission=%s mode=%d diff=%d max=%d lvl=%d qol=%d spew=%d "
+		                       "player_spew_no_expire=%d client_rewind=%d)\n",
 		           auto_host_my_port, auto_host_mission, auto_host_mode,
 		           auto_host_difficulty, auto_host_max_players,
 		           auto_host_level_num, auto_host_coop_qol,
 		           auto_host_full_death_spew,
+		           auto_host_player_spew_no_expire,
 		           auto_host_clients_can_request_rewind);
 		net_udp_auto_host(auto_host_my_port, auto_host_mission,
 		                  auto_host_mode, auto_host_difficulty,
 		                  auto_host_max_players, auto_host_level_num,
-		                  auto_host_coop_qol, auto_host_full_death_spew);
+		                  auto_host_coop_qol, auto_host_full_death_spew,
+		                  auto_host_player_spew_no_expire);
 		return 1;
 	}
 

@@ -199,6 +199,7 @@ fun buildStart(
     maxPlayers: Int = 4,
     coopQol: Boolean = true,
     fullDeathSpew: Boolean = true,
+    playerSpewNoExpire: Boolean = true,
     clientsCanRequestRewind: Boolean = false,
     restrictNonCoopFovToBase: Boolean = false,
 ): ByteArray {
@@ -215,6 +216,7 @@ fun buildStart(
     json.put("max_players", maxPlayers)
     json.put("coop_qol", coopQol)
     json.put("full_death_spew", fullDeathSpew)
+    json.put("player_spew_no_expire", playerSpewNoExpire)
     json.put("clients_can_request_rewind", clientsCanRequestRewind)
     json.put("restrict_noncoop_fov_to_base", restrictNonCoopFovToBase)
     return json.toString().toByteArray(Charsets.UTF_8)

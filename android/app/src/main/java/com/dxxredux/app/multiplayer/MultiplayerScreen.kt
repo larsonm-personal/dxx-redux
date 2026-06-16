@@ -611,6 +611,7 @@ private fun ServerBrowserContent(
                 levelNum,
                 coopQol,
                 fullDeathSpew,
+                playerSpewNoExpire,
                 clientsCanRequestRewind,
                 restrictNonCoopFovToBase,
                 ->
@@ -625,6 +626,7 @@ private fun ServerBrowserContent(
                             "level_num" to JsonPrimitive(levelNum),
                             "coop_qol" to JsonPrimitive(coopQol),
                             "full_death_spew" to JsonPrimitive(fullDeathSpew),
+                            "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
                             "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
                             "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
                         ),

@@ -278,6 +278,7 @@ private fun LanDiscoveryView(
     var hostedFreshLevelNum by remember { mutableStateOf(hostDefaults.levelNum) }
     var hostedCoopQol by remember { mutableStateOf(hostDefaults.coopQol) }
     var hostedFullDeathSpew by remember { mutableStateOf(hostDefaults.fullDeathSpew) }
+    var hostedPlayerSpewNoExpire by remember { mutableStateOf(hostDefaults.playerSpewNoExpire) }
     var hostedClientsCanRequestRewind by remember { mutableStateOf(hostDefaults.clientsCanRequestRewind) }
     var hostedRestrictNonCoopFovToBase by remember { mutableStateOf(hostDefaults.restrictNonCoopFovToBase) }
     var dismissResumeOffer by remember { mutableStateOf(false) }
@@ -340,6 +341,7 @@ private fun LanDiscoveryView(
         hostedFreshLevelNum = record.levelNum
         hostedCoopQol = record.coopQol
         hostedFullDeathSpew = record.fullDeathSpew
+        hostedPlayerSpewNoExpire = record.playerSpewNoExpire
         hostedClientsCanRequestRewind = record.clientsCanRequestRewind
         hostedRestrictNonCoopFovToBase = record.restrictNonCoopFovToBase
         if (!LobbyService.isDiscovering.value) {
@@ -695,6 +697,7 @@ private fun LanDiscoveryView(
                             hostedLevelNum,
                             coopQol = hostedCoopQol,
                             fullDeathSpew = hostedFullDeathSpew,
+                            playerSpewNoExpire = hostedPlayerSpewNoExpire,
                             clientsCanRequestRewind = hostedClientsCanRequestRewind,
                             restrictNonCoopFovToBase = hostedRestrictNonCoopFovToBase,
                         )
@@ -778,6 +781,7 @@ private fun LanDiscoveryView(
                 levelNum,
                 coopQol,
                 fullDeathSpew,
+                playerSpewNoExpire,
                 clientsCanRequestRewind,
                 restrictNonCoopFovToBase,
                 ->
@@ -790,6 +794,7 @@ private fun LanDiscoveryView(
                 hostedFreshLevelNum = levelNum
                 hostedCoopQol = coopQol
                 hostedFullDeathSpew = fullDeathSpew
+                hostedPlayerSpewNoExpire = playerSpewNoExpire
                 hostedClientsCanRequestRewind = clientsCanRequestRewind
                 hostedRestrictNonCoopFovToBase = restrictNonCoopFovToBase
                 LobbyService.hostLobby(callsign, game, mission ?: "", mode, maxPlayers)

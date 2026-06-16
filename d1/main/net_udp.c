@@ -3185,6 +3185,7 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 		buf[len] = Netgame.ReducedFlash; len++;
 		buf[len] = Netgame.GaussAmmoStyle; len++;
 		buf[len] = Netgame.FullDeathSpew; len++;
+		buf[len] = Netgame.PlayerSpewNoExpire; len++;
 		buf[len] = Netgame.team_color[0];						len++;
 		buf[len] = Netgame.team_color[1];						len++;
 		buf[len] = Netgame.NewSpawnAlgorithm; len++;
@@ -3415,6 +3416,7 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		Netgame.ReducedFlash = data[len]; len++;
 		Netgame.GaussAmmoStyle = data[len]; len++;
 		Netgame.FullDeathSpew = data[len]; len++;
+		Netgame.PlayerSpewNoExpire = data[len]; len++;
 		Netgame.team_color[0] = data[len];						len++;
 		Netgame.team_color[1] = data[len];						len++;
 		Netgame.NewSpawnAlgorithm = data[len]; len++;
@@ -4016,6 +4018,7 @@ static int opt_remote_hit_spark;
 static int opt_allow_custom_models_textures;
 static int opt_reduced_flash;
 static int opt_full_death_spew;
+static int opt_player_spew_no_expire;
 #ifdef __ANDROID__
 static int opt_coop_qol;
 #endif
@@ -4052,9 +4055,9 @@ void net_udp_more_game_options ()
 	char PrimDupText[80],SecDupText[80],SecCapText[80]; 
 	char HomingUpdateRateText[80];
 #ifdef USE_TRACKER
-	newmenu_item m[46];
+	newmenu_item m[47];
 #else
-	newmenu_item m[45];
+	newmenu_item m[46];
 #endif
 
 	snprintf(packstring,sizeof(char)*4,"%d",Netgame.PacketsPerSec);
@@ -4091,6 +4094,8 @@ void net_udp_more_game_options ()
 
 	opt_full_death_spew = opt;
 	m[opt].type = NM_TYPE_CHECK; m[opt].text = "100% death spew"; m[opt].value = Netgame.FullDeathSpew; opt++;
+	opt_player_spew_no_expire = opt;
+	m[opt].type = NM_TYPE_CHECK; m[opt].text = "Player spew does not expire"; m[opt].value = Netgame.PlayerSpewNoExpire; opt++;
 
 	opt_low_vulcan = opt;
 	m[opt].type = NM_TYPE_CHECK; m[opt].text = "Low Vulcan Ammo"; m[opt].value = Netgame.LowVulcan; opt++;	
@@ -4272,6 +4277,7 @@ menu:
 	Netgame.AllowCustomModelsTextures = m[opt_allow_custom_models_textures].value;
 	Netgame.ReducedFlash = m[opt_reduced_flash].value;
 	Netgame.FullDeathSpew = m[opt_full_death_spew].value;
+	Netgame.PlayerSpewNoExpire = m[opt_player_spew_no_expire].value;
 	Netgame.NewSpawnAlgorithm = m[opt_spawn_algorithm].value;
 }
 
@@ -4593,11 +4599,13 @@ void netgame_set_defaults(void)
 	Netgame.AllowCustomModelsTextures = 0;
 	Netgame.ReducedFlash = 0;
 	Netgame.FullDeathSpew = 0;
+	Netgame.PlayerSpewNoExpire = 0;
 	Netgame.GaussAmmoStyle = GAUSS_STYLE_DEPLETING;
 	Netgame.NewSpawnAlgorithm = 0;
 
 #ifdef __ANDROID__
 	Netgame.FullDeathSpew = 1;  /* android port: multiplayer QoL on by default */
+	Netgame.PlayerSpewNoExpire = 1;  /* android port: multiplayer QoL on by default */
 #endif
 
 #ifdef USE_TRACKER

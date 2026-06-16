@@ -59,6 +59,7 @@ internal fun CreateGameDialog(
         levelNum: Int,
         coopQol: Boolean,
         fullDeathSpew: Boolean,
+        playerSpewNoExpire: Boolean,
         clientsCanRequestRewind: Boolean,
         restrictNonCoopFovToBase: Boolean,
     ) -> Unit,
@@ -74,6 +75,7 @@ internal fun CreateGameDialog(
     var levelNumText by remember { mutableStateOf(defaults.levelNum.toString()) }
     var coopQol by remember { mutableStateOf(defaults.coopQol) }
     var fullDeathSpew by remember { mutableStateOf(defaults.fullDeathSpew) }
+    var playerSpewNoExpire by remember { mutableStateOf(defaults.playerSpewNoExpire) }
     var clientsCanRequestRewind by remember { mutableStateOf(defaults.clientsCanRequestRewind) }
     var restrictNonCoopFovToBase by remember { mutableStateOf(defaults.restrictNonCoopFovToBase) }
     var textEntryActive by remember { mutableStateOf(false) }
@@ -278,6 +280,21 @@ internal fun CreateGameDialog(
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Switch(
+                            checked = playerSpewNoExpire,
+                            onCheckedChange = { playerSpewNoExpire = it },
+                            modifier = Modifier.tvFocusBorder(),
+                        )
+                        Text(
+                            "Player spew does not expire",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
                     // Difficulty dropdown
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -408,6 +425,7 @@ internal fun CreateGameDialog(
                             maxPlayers = maxPlayers,
                             coopQol = coopQol,
                             fullDeathSpew = fullDeathSpew,
+                            playerSpewNoExpire = playerSpewNoExpire,
                             clientsCanRequestRewind = clientsCanRequestRewind,
                             restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                         ),
@@ -425,6 +443,7 @@ internal fun CreateGameDialog(
                         levelNum,
                         coopQol,
                         fullDeathSpew,
+                        playerSpewNoExpire,
                         clientsCanRequestRewind,
                         restrictNonCoopFovToBase,
                     )

@@ -1089,6 +1089,11 @@ object MatchmakingService {
                                     ?.jsonPrimitive
                                     ?.content
                                     ?.toBooleanStrictOrNull() ?: true,
+                            playerSpewNoExpire =
+                                gs.gameInfo["player_spew_no_expire"]
+                                    ?.jsonPrimitive
+                                    ?.content
+                                    ?.toBooleanStrictOrNull() ?: true,
                             clientsCanRequestRewind =
                                 gs.gameInfo["clients_can_request_rewind"]
                                     ?.jsonPrimitive

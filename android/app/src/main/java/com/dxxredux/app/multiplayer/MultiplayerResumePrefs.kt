@@ -24,6 +24,7 @@ internal data class MultiplayerResumeRecord(
     val maxPlayers: Int,
     val coopQol: Boolean = true,
     val fullDeathSpew: Boolean = true,
+    val playerSpewNoExpire: Boolean = true,
     val localCallsign: String,
     val localClientId: String? = null,
     val hostCallsign: String? = null,
@@ -79,6 +80,7 @@ internal fun MultiplayerResumeRecord.toHostDefaults(): HostGameDefaults.Defaults
         maxPlayers = maxPlayers,
         coopQol = coopQol,
         fullDeathSpew = fullDeathSpew,
+        playerSpewNoExpire = playerSpewNoExpire,
         clientsCanRequestRewind = clientsCanRequestRewind,
         restrictNonCoopFovToBase = restrictNonCoopFovToBase,
     )
@@ -93,6 +95,7 @@ internal fun MultiplayerResumeRecord.toGameInfoJson(): JsonObject =
             "level_num" to JsonPrimitive(levelNum),
             "coop_qol" to JsonPrimitive(coopQol),
             "full_death_spew" to JsonPrimitive(fullDeathSpew),
+            "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
             "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
             "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
         ),
@@ -124,6 +127,7 @@ internal fun encodeMultiplayerResumeRecord(record: MultiplayerResumeRecord): Str
         .put("max_players", record.maxPlayers)
         .put("coop_qol", record.coopQol)
         .put("full_death_spew", record.fullDeathSpew)
+        .put("player_spew_no_expire", record.playerSpewNoExpire)
         .put("local_callsign", record.localCallsign)
         .putNullable("local_client_id", record.localClientId)
         .putNullable("host_callsign", record.hostCallsign)
@@ -169,6 +173,7 @@ internal fun decodeMultiplayerResumeRecord(raw: String?): MultiplayerResumeRecor
             maxPlayers = json.optInt("max_players", 4),
             coopQol = json.optBoolean("coop_qol", true),
             fullDeathSpew = json.optBoolean("full_death_spew", true),
+            playerSpewNoExpire = json.optBoolean("player_spew_no_expire", true),
             localCallsign = callsign,
             localClientId = json.optNullableString("local_client_id"),
             hostCallsign = json.optNullableString("host_callsign"),
@@ -253,6 +258,7 @@ internal object MultiplayerResumePrefs {
                 maxPlayers = info.maxPlayers,
                 coopQol = info.coopQol,
                 fullDeathSpew = info.fullDeathSpew,
+                playerSpewNoExpire = info.playerSpewNoExpire,
                 clientsCanRequestRewind = info.clientsCanRequestRewind,
                 restrictNonCoopFovToBase = info.restrictNonCoopFovToBase,
                 localCallsign = localCallsign,

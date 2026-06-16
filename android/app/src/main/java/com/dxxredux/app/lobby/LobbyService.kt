@@ -940,6 +940,7 @@ object LobbyService {
         levelNum: Int,
         coopQol: Boolean = true,
         fullDeathSpew: Boolean = true,
+        playerSpewNoExpire: Boolean = true,
         clientsCanRequestRewind: Boolean = false,
         restrictNonCoopFovToBase: Boolean = false,
         hostPort: Int = NetworkConstants.ENGINE_PORT,
@@ -964,6 +965,7 @@ object LobbyService {
                 maxPlayers = hostedMaxPlayers,
                 coopQol = coopQol,
                 fullDeathSpew = fullDeathSpew,
+                playerSpewNoExpire = playerSpewNoExpire,
                 clientsCanRequestRewind = clientsCanRequestRewind,
                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,
             )
@@ -1015,6 +1017,7 @@ object LobbyService {
                     hostClientId = localClientId,
                     coopQol = coopQol,
                     fullDeathSpew = fullDeathSpew,
+                    playerSpewNoExpire = playerSpewNoExpire,
                     clientsCanRequestRewind = clientsCanRequestRewind,
                     restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                 )
@@ -1052,6 +1055,7 @@ object LobbyService {
         val maxPlayers = json.optInt("max_players", 4)
         val coopQol = json.optBoolean("coop_qol", true)
         val fullDeathSpew = json.optBoolean("full_death_spew", true)
+        val playerSpewNoExpire = json.optBoolean("player_spew_no_expire", true)
         val clientsCanRequestRewind = json.optBoolean("clients_can_request_rewind", false)
         val restrictNonCoopFovToBase = json.optBoolean("restrict_noncoop_fov_to_base", false)
         NetLog.log("LAN", "START received: $game/$mission lvl=$levelNum diff=$difficulty from $senderAddr")
@@ -1088,6 +1092,7 @@ object LobbyService {
                 hostClientId = joinedInfo.hostClientId,
                 coopQol = coopQol,
                 fullDeathSpew = fullDeathSpew,
+                playerSpewNoExpire = playerSpewNoExpire,
                 clientsCanRequestRewind = clientsCanRequestRewind,
                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,
             )

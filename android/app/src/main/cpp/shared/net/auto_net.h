@@ -42,6 +42,8 @@ extern int auto_host_difficulty;
 extern int auto_host_coop_qol;
 /* Host-side full death spew default (0/1) */
 extern int auto_host_full_death_spew;
+/* Host-side player spew persistence default (0/1) */
+extern int auto_host_player_spew_no_expire;
 /* Host-side client rewind request permission default (0/1). */
 extern int auto_host_clients_can_request_rewind;
 

@@ -2894,7 +2894,8 @@ void multi_disconnect_player(int pnum)
 							"  \"level_num\": %d,\n"
 							"  \"max_players\": %d,\n"
 							"  \"coop_qol\": %s,\n"
-							"  \"full_death_spew\": %s\n"
+							"  \"full_death_spew\": %s,\n"
+							"  \"player_spew_no_expire\": %s\n"
 							"}\n",
 							Players[Player_num].callsign,
 							Netgame.mission_name,
@@ -2902,7 +2903,8 @@ void multi_disconnect_player(int pnum)
 							Current_level_num,
 							Netgame.max_numplayers,
 							(Netgame.game_flags & NETGAME_FLAG_COOP_QOL) ? "true" : "false",
-							Netgame.FullDeathSpew ? "true" : "false");
+							Netgame.FullDeathSpew ? "true" : "false",
+							Netgame.PlayerSpewNoExpire ? "true" : "false");
 						PHYSFS_write(mfp, mbuf, mlen, 1);
 						PHYSFS_close(mfp);
 					}

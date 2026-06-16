@@ -1027,13 +1027,51 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 	return objnum;
 }
 
+#ifdef NETWORK
+static void mark_player_spew_objects(int start_net_create_loc, int rval)
+{
+	int i;
+
+	if (!(Game_mode & GM_MULTI))
+		return;
+
+	if (start_net_create_loc < 0 || start_net_create_loc > Net_create_loc) {
+		if (rval >= 0 && rval <= Highest_object_index)
+			start_net_create_loc = Net_create_loc - 1;
+		else
+			return;
+	}
+
+	for (i = start_net_create_loc; i < Net_create_loc; i++) {
+		int objnum = Net_create_objnums[i];
+		object *obj;
+
+		if (objnum < 0 || objnum > Highest_object_index)
+			continue;
+		obj = &Objects[objnum];
+		if (obj->type != OBJ_POWERUP)
+			continue;
+		obj->flags |= OF_PLAYER_DROPPED;
+		if (Netgame.PlayerSpewNoExpire)
+			obj->lifeleft = IMMORTAL_TIME;
+	}
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // Returns created object number.
 // If object dropped by player, set flag.
 int object_create_egg(object *objp)
 {
 	int	rval;
+#ifdef NETWORK
+	int start_net_create_loc = (Game_mode & GM_MULTI) ? Net_create_loc : -1;
+#endif
 	rval = drop_powerup(objp->contains_type, objp->contains_id, objp->contains_count, &objp->mtype.phys_info.velocity, &objp->pos, objp->segnum);
+#ifdef NETWORK
+	if (rval != -1 && objp->type == OBJ_PLAYER)
+		mark_player_spew_objects(start_net_create_loc, rval);
+#endif
 	return rval;
 }
 
