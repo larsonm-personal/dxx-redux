@@ -158,6 +158,81 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         return $null
     }
 
+    function Get-RegressionVcpkgTripletForVcVarsArch {
+        param([Parameter(Mandatory)][string]$Arch)
+
+        switch ($Arch) {
+            "x86" { return "x86-windows" }
+            "x64" { return "x64-windows" }
+            "arm" { return "arm-windows" }
+            "arm64" { return "arm64-windows" }
+            "x86_x64" { return "x64-windows" }
+            "x64_x86" { return "x86-windows" }
+            "x86_arm" { return "arm-windows" }
+            "x64_arm" { return "arm-windows" }
+            "x86_arm64" { return "arm64-windows" }
+            "x64_arm64" { return "arm64-windows" }
+            default { throw "Cannot map vcvars architecture '$Arch' to a vcpkg triplet" }
+        }
+    }
+
+    function Test-RegressionCMakeCacheNeedsFreshConfigure {
+        param(
+            [Parameter(Mandatory)][string]$BuildDir,
+            [Parameter(Mandatory)][string]$ExpectedTriplet
+        )
+
+        $cachePath = Join-RegressionPath $BuildDir "CMakeCache.txt"
+        if (-not (Test-Path -LiteralPath $cachePath -PathType Leaf)) {
+            return $false
+        }
+
+        $cacheText = Get-Content -Raw -LiteralPath $cachePath
+        if ($cacheText -match "VCPKG_TARGET_TRIPLET:STRING=([^\r\n]+)" -and $matches[1] -ne $ExpectedTriplet) {
+            Write-Host "Refreshing CMake cache: vcpkg triplet is '$($matches[1])', expected '$ExpectedTriplet'"
+            return $true
+        }
+        if ($cacheText -match "SDL_MIXER_(INCLUDE_DIR|LIBRARY):[^=]+=SDL_MIXER_[^\r\n]+-NOTFOUND") {
+            Write-Host "Refreshing CMake cache: stale SDL_mixer NOTFOUND entries detected"
+            return $true
+        }
+        if ($cacheText -match "CMAKE_MAKE_PROGRAM:FILEPATH=CMAKE_MAKE_PROGRAM-NOTFOUND") {
+            Write-Host "Refreshing CMake cache: stale Ninja NOTFOUND entry detected"
+            return $true
+        }
+
+        return $false
+    }
+
+    function Invoke-RegressionCMakeConfigure {
+        param(
+            [Parameter(Mandatory)][string]$CMakePath,
+            [Parameter(Mandatory)][string]$Preset,
+            [Parameter(Mandatory)][string]$BuildType,
+            [Parameter(Mandatory)][string]$SourceDir,
+            [Parameter(Mandatory)][string]$BuildDir,
+            [Parameter(Mandatory)][string]$Triplet,
+            [switch]$Fresh
+        )
+
+        $cmakeArgs = @()
+        if ($Fresh) {
+            $cmakeArgs += "--fresh"
+        }
+        $cmakeArgs += "--preset=$Preset"
+        $cmakeArgs += "-D"
+        $cmakeArgs += "CMAKE_BUILD_TYPE=$BuildType"
+        $cmakeArgs += "-D"
+        $cmakeArgs += "VCPKG_TARGET_TRIPLET=$Triplet"
+        $cmakeArgs += "-S"
+        $cmakeArgs += $SourceDir
+        $cmakeArgs += "-B"
+        $cmakeArgs += $BuildDir
+
+        & $CMakePath @cmakeArgs
+        $script:LastRegressionCMakeConfigureExitCode = $LASTEXITCODE
+    }
+
     function Resolve-RegressionAndroidSdkTool {
         param(
             [string]$DepBase,

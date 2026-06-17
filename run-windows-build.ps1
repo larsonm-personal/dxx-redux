@@ -19,20 +19,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSCommandPath
 Set-Location $repoRoot
 
-function Get-DependencyBase {
-    $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
-
-    if (-not (Test-Path $depBaseFile)) {
-        return $null
-    }
-
-    $firstLine = Get-Content $depBaseFile -First 1
-    if (-not $firstLine) {
-        return $null
-    }
-
-    return $firstLine.Trim()
-}
+. (Join-Path $repoRoot "android\helpers\test_host_platform.ps1")
 
 function Add-PathDirectory($dir) {
     if (-not $dir -or -not (Test-Path $dir)) {
@@ -75,24 +62,6 @@ function Find-ExecutablePath($name, $candidateDirs) {
     }
 
     return $null
-}
-
-function Get-AndroidSdkCMakeBinDirs($depBase) {
-    if (-not $depBase) {
-        return @()
-    }
-
-    $sdkCMakeRoot = Join-Path $depBase "android-sdk\cmake"
-    if (-not (Test-Path $sdkCMakeRoot)) {
-        return @()
-    }
-
-    return @(
-        Get-ChildItem $sdkCMakeRoot -Directory -ErrorAction SilentlyContinue |
-        Sort-Object Name -Descending |
-        ForEach-Object { Join-Path $_.FullName "bin" } |
-        Where-Object { Test-Path (Join-Path $_ "cmake.exe") }
-    )
 }
 
 function Find-VsWherePath {
@@ -401,7 +370,7 @@ function Show-CompilerChoices($instances) {
     Write-Host "  .\run-windows-build.ps1 -Compiler $(Get-CompilerIdBase ($instances | Select-Object -First 1)) -VcVarsVersion 14.40 -WindowsSdkVersion 10.0.26100.0"
 }
 
-$depBase = Get-DependencyBase
+$depBase = Get-RegressionDependencyBase -RepoRoot $repoRoot
 $vsInstances = Get-VsInstances
 
 if ($ListCompilers) {
@@ -432,6 +401,7 @@ if (-not (Test-Path $VcVarsAllPath)) {
 }
 
 $resolvedArch = Resolve-VcVarsArch $Compiler $VcVarsArch $Preset
+$vcpkgTriplet = Get-RegressionVcpkgTripletForVcVarsArch -Arch $resolvedArch
 $supportedArches = @(Get-SupportedVcVarsArches $VcVarsAllPath)
 if ($supportedArches -and $resolvedArch -notin $supportedArches) {
     throw "vcvarsall at $VcVarsAllPath does not support '$resolvedArch'. Supported values: $($supportedArches -join ', ')"
@@ -442,8 +412,8 @@ $vcvarsArgs = Import-VcVarsEnvironment $VcVarsAllPath $resolvedArch $VcVarsVersi
 $cmakeCandidateDirs = @()
 $ninjaCandidateDirs = @()
 
-$cmakeCandidateDirs += Get-AndroidSdkCMakeBinDirs $depBase
-$ninjaCandidateDirs += Get-AndroidSdkCMakeBinDirs $depBase
+$cmakeCandidateDirs += Get-RegressionAndroidSdkCMakeBinDirs -DepBase $depBase
+$ninjaCandidateDirs += Get-RegressionAndroidSdkCMakeBinDirs -DepBase $depBase
 
 if ($selectedInstance -and $selectedInstance.InstallationPath) {
     $cmakeCandidateDirs += Join-Path $selectedInstance.InstallationPath "Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
@@ -481,17 +451,17 @@ Write-Host "Using compiler: $(Get-CompilerIdBase $selectedInstance)"
 Write-Host "Visual Studio: $($selectedInstance.InstallationPath)"
 Write-Host "vcvarsall: $VcVarsAllPath"
 Write-Host "vcvars args: $($vcvarsArgs -join ' ')"
+Write-Host "vcpkg triplet: $vcpkgTriplet"
 Write-Host "cmake: $cmakePath"
 Write-Host "ninja: $ninjaPath"
 
 Get-Process cl -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 
-$targets =
-    switch ($Target) {
-        "d1" { @("d1") }
-        "d2" { @("d2") }
-        default { @("d1", "d2") }
-    }
+$targets = switch ($Target) {
+    "d1" { @("d1") }
+    "d2" { @("d2") }
+    default { @("d1", "d2") }
+}
 
 foreach ($game in $targets) {
     $buildDirName = if ($game -eq "d1") { "buildd1" } else { "buildd2" }
@@ -501,8 +471,15 @@ foreach ($game in $targets) {
     }
 
     Write-Host "Configuring $game with preset $Preset ($BuildType)"
-    & $cmakePath --preset=$Preset -D CMAKE_BUILD_TYPE=$BuildType -S $game -B $buildDir
-    if ($LASTEXITCODE -ne 0) {
+    $freshConfigure = Test-RegressionCMakeCacheNeedsFreshConfigure -BuildDir $buildDir -ExpectedTriplet $vcpkgTriplet
+    Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $game $buildDir $vcpkgTriplet -Fresh:$freshConfigure
+    $configureExit = $script:LastRegressionCMakeConfigureExitCode
+    if ($configureExit -ne 0 -and -not $freshConfigure -and (Test-Path (Join-Path $buildDir "CMakeCache.txt"))) {
+        Write-Host "CMake configure failed for $game; retrying once with a fresh CMake cache"
+        Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $game $buildDir $vcpkgTriplet -Fresh
+        $configureExit = $script:LastRegressionCMakeConfigureExitCode
+    }
+    if ($configureExit -ne 0) {
         throw "CMake configure failed for $game"
     }
 
