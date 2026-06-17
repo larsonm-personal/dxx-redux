@@ -33,10 +33,13 @@
 #include "input_demo_start_shared.h"
 
 #ifdef DXX_BUILD_DESCENT_II
+#include "d1_save_translate.h"
 extern int state_restore_all_sub(char *filename, int multi);
 #else
 extern int state_restore_all_sub(char *filename);
 #endif
+
+static int input_demo_d1_in_d2_start_from_level = 0;
 
 static unsigned int input_demo_primary_order_copy_count(void)
 {
@@ -269,6 +272,7 @@ int input_demo_parse_replay_cmdline(input_demo_replay_cmdline_options *options)
 	options->rng_trace_path = NULL;
 	options->replay_labels_enabled = 0;
 	options->allow_d1_in_d2 = 0;
+	options->d1_in_d2_start_from_level = 0;
 
 	arg_index = input_demo_find_cmd_arg("-inputdemo-replay");
 	actual_result_arg_index = input_demo_find_cmd_arg("-inputdemo-actual-result");
@@ -282,6 +286,8 @@ int input_demo_parse_replay_cmdline(input_demo_replay_cmdline_options *options)
 	input_demo_debug_set_enabled(debug_log_arg_index ? 1 : 0);
 	options->replay_labels_enabled = replay_labels_arg_index ? 1 : 0;
 	options->allow_d1_in_d2 = input_demo_find_cmd_arg("-inputdemo-d1-in-d2") ? 1 : 0;
+	options->d1_in_d2_start_from_level =
+	    input_demo_find_cmd_arg("-inputdemo-d1-in-d2-start-from-level") ? 1 : 0;
 	input_demo_apply_extra_replay_cmdline_options(options);
 
 	if (!arg_index)
@@ -317,6 +323,8 @@ int input_demo_apply_replay_common_setup(
 {
 	if (!options)
 		return 0;
+	input_demo_d1_in_d2_start_from_level =
+	    options->d1_in_d2_start_from_level ? 1 : 0;
 	if (options->actual_result_path)
 		input_demo_replay_set_actual_result_path(options->actual_result_path);
 	if (options->rng_trace_path && !input_demo_rng_trace_start_replay(
@@ -445,6 +453,37 @@ static int input_demo_restore_replay_checkpoint_data(
 	return 1;
 }
 
+static int input_demo_start_replay_new_level(
+    input_demo_replay_loaded_context *replay_context)
+{
+	const input_demo_player_cfg *replay_player_cfg;
+	int have_replay_player_cfg;
+
+	if (!replay_context)
+		return 1;
+	replay_player_cfg = &replay_context->replay_player_cfg;
+	have_replay_player_cfg = replay_context->have_replay_player_cfg;
+	INPUT_DEMO_CRUMB_V("input_demo: new_level mission=%s level=%d frames=%u",
+	                   replay_context->mission_name, input_demo_replay_level(),
+	                   input_demo_replay_frame_count());
+	if (!load_mission_by_name(replay_context->mission_name)) {
+		printf("Input demo replay could not load mission: %s\n",
+		       replay_context->mission_name);
+		input_demo_replay_unload();
+		return 1;
+	}
+	Difficulty_level = input_demo_replay_difficulty();
+	if (have_replay_player_cfg)
+		input_demo_apply_replay_player_cfg(replay_player_cfg);
+	printf("Input demo replay starting: %s level %d, %u frames\n",
+	       replay_context->mission_name, input_demo_replay_level(),
+	       input_demo_replay_frame_count());
+	INPUT_DEMO_CRUMB("input_demo: new_level StartNewGame");
+	input_demo_set_skip_level_intro(1);
+	StartNewGame(input_demo_replay_level());
+	return 0;
+}
+
 int input_demo_start_loaded_replay_common(void)
 {
 	const char *checkpoint_name;
@@ -470,25 +509,7 @@ int input_demo_start_loaded_replay_common(void)
 	replay_player_cfg = &replay_context.replay_player_cfg;
 	have_replay_player_cfg = replay_context.have_replay_player_cfg;
 	if (!strcmp(start_mode, "new_level")) {
-		INPUT_DEMO_CRUMB_V("input_demo: new_level mission=%s level=%d frames=%u",
-		                   mission_name, input_demo_replay_level(),
-		                   input_demo_replay_frame_count());
-		if (!load_mission_by_name(mission_name)) {
-			printf("Input demo replay could not load mission: %s\n",
-			       mission_name);
-			input_demo_replay_unload();
-			return 1;
-		}
-		Difficulty_level = input_demo_replay_difficulty();
-		if (have_replay_player_cfg)
-			input_demo_apply_replay_player_cfg(replay_player_cfg);
-		printf("Input demo replay starting: %s level %d, %u frames\n",
-		       mission_name, input_demo_replay_level(),
-		       input_demo_replay_frame_count());
-		INPUT_DEMO_CRUMB("input_demo: new_level StartNewGame");
-		input_demo_set_skip_level_intro(1);
-		StartNewGame(input_demo_replay_level());
-		return 0;
+		return input_demo_start_replay_new_level(&replay_context);
 	}
 	if (strcmp(start_mode, "save_checkpoint") != 0) {
 		printf("Input demo replay start_mode not supported: %s\n", start_mode);
@@ -504,6 +525,51 @@ int input_demo_start_loaded_replay_common(void)
 		input_demo_replay_unload();
 		return 1;
 	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (input_demo_d1_in_d2_start_from_level &&
+	    input_demo_replay_game() == INPUT_DEMO_GAME_D1) {
+		d1_save_translate_checkpoint_start d1_checkpoint;
+		const char *d1_mission_name;
+		if (!d1_save_translate_read_checkpoint_start(checkpoint_data, checkpoint_size,
+		                                             &d1_checkpoint)) {
+			printf("Input demo replay could not parse D1 checkpoint metadata\n");
+			input_demo_replay_unload();
+			return 1;
+		}
+		d1_mission_name =
+		    d1_checkpoint.mission_name[0] ? d1_checkpoint.mission_name : mission_name;
+		printf("Input demo replay D1-in-D2 starting from translated D1 checkpoint metadata\n");
+		INPUT_DEMO_CRUMB_V("input_demo: d1-in-d2 translated start mission=%s level=%d version=%d",
+		                   d1_mission_name, d1_checkpoint.current_level,
+		                   d1_checkpoint.version);
+		if (!load_mission_by_name((char *) d1_mission_name)) {
+			printf("Input demo replay could not load translated D1 mission: %s\n",
+			       d1_mission_name);
+			input_demo_replay_unload();
+			return 1;
+		}
+		Difficulty_level = d1_checkpoint.difficulty;
+		difficulty_restore_history(d1_checkpoint.difficulty_changed,
+		                           d1_checkpoint.difficulty_min,
+		                           d1_checkpoint.difficulty_max);
+		if (have_replay_player_cfg)
+			input_demo_apply_replay_player_cfg(replay_player_cfg);
+		printf("Input demo replay starting: %s level %d, %u frames\n",
+		       d1_mission_name, d1_checkpoint.current_level,
+		       input_demo_replay_frame_count());
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(d1_checkpoint.current_level);
+		GameTime64 = (fix64) d1_checkpoint.game_time +
+		             input_demo_replay_checkpoint_start_gt();
+		Difficulty_level = d1_checkpoint.difficulty;
+		difficulty_restore_history(d1_checkpoint.difficulty_changed,
+		                           d1_checkpoint.difficulty_min,
+		                           d1_checkpoint.difficulty_max);
+		d1_save_translate_apply_checkpoint_player(&d1_checkpoint,
+		                                          local_player_callsign);
+		return 0;
+	}
+#endif
 	if (!input_demo_restore_replay_checkpoint_data(checkpoint_name,
 	                                               checkpoint_data, checkpoint_size))
 		return 1;

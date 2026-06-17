@@ -13,6 +13,7 @@ typedef struct input_demo_replay_cmdline_options {
 	const char *rng_trace_path;
 	int replay_labels_enabled;
 	int allow_d1_in_d2;
+	int d1_in_d2_start_from_level;
 } input_demo_replay_cmdline_options;
 
 typedef struct input_demo_replay_loaded_context {
