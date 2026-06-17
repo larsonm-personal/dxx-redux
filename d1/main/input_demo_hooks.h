@@ -24,6 +24,21 @@ const char *input_demo_trace_collision_mode_name(void);
 void input_demo_log_player_robot_contact_probe(const char *step, struct object *player, struct object *robot,
 	const struct vms_vector *collision_point, int32_t damage);
 void input_demo_log_weapon_robot_accept_seq(struct object *weapon, struct object *robot);
+void input_demo_log_robot_fire_probe(struct object *objp,
+	const struct vms_vector *fire_vec, int weapon_type);
+int input_demo_trace_ai_visibility_active(struct object *objp);
+void input_demo_log_ai_visibility_probe(struct object *objp,
+	const char *step_label, int previous_visibility,
+	int raw_player_visibility, int final_player_visibility,
+	int sight_sound_gate, int attack_sound_gate, int misc_sound_gate,
+	const struct vms_vector *pos,
+	const struct vms_vector *believed_player_pos);
+void input_demo_log_ai_visibility_fvi_probe(struct object *objp,
+	const char *step_label, int visibility_result, int hit_type,
+	int hit_seg, int hit_object, int startseg, int flags, int32_t dot,
+	int32_t field_of_view, const struct vms_vector *hit_pos,
+	const struct vms_vector *pos,
+	const struct vms_vector *believed_player_pos);
 void input_demo_log_player_bump_probe(const char *step, struct object *obj0, struct object *obj1,
 	const struct vms_vector *relative_velocity, const struct vms_vector *float_force,
 	int32_t scale_num, int32_t scale_den, int damage_flag);

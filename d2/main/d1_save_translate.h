@@ -58,7 +58,9 @@ typedef struct d1_save_translate_checkpoint_start {
 	sbyte hours_total;
 	sbyte primary_weapon;
 	sbyte secondary_weapon;
+	int checkpoint_swap;
 	int object_count;
+	size_t object_stream_offset;
 	int has_player_object_pose;
 	int has_player_object_physics;
 	ubyte player_object_type;
@@ -92,6 +94,9 @@ typedef struct d1_save_translate_checkpoint_start {
 
 int d1_save_translate_read_checkpoint_start(const uint8_t *data, size_t size,
                                             d1_save_translate_checkpoint_start *start);
+int d1_save_translate_apply_checkpoint_objects(
+    const uint8_t *data, size_t size,
+    const d1_save_translate_checkpoint_start *start);
 void d1_save_translate_apply_checkpoint_player(
     const d1_save_translate_checkpoint_start *start,
     const char *local_player_callsign);

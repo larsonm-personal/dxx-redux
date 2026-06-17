@@ -54,6 +54,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "powerup.h"
 #include "gauges.h"
 #include "text.h"
+#include "input_demo_hooks.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -508,6 +509,7 @@ int player_is_visible_from_object(object *objp, vms_vector *pos, fix field_of_vi
 {
 	fix			dot;
 	fvi_query	fq;
+	int			visibility_result;
 
 	fq.p0						= pos;
 	if ((pos->x != objp->pos.x) || (pos->y != objp->pos.y) || (pos->z != objp->pos.z)) {
@@ -532,16 +534,22 @@ int player_is_visible_from_object(object *objp, vms_vector *pos, fix field_of_vi
 	Hit_pos = Hit_data.hit_pnt;
 	Hit_seg = Hit_data.hit_seg;
 
+	dot = 0;
+	visibility_result = 0;
 	if ((Hit_type == HIT_NONE) || ((Hit_type == HIT_OBJECT) && (Hit_data.hit_object == Players[Player_num].objnum))) {
 		dot = vm_vec_dot(vec_to_player, &objp->orient.fvec);
 		if (dot > field_of_view - (Overall_agitation << 9)) {
-			return 2;
+			visibility_result = 2;
 		} else {
-			return 1;
+			visibility_result = 1;
 		}
-	} else {
-		return 0;
 	}
+
+	input_demo_log_ai_visibility_fvi_probe(objp, "player_is_visible",
+		visibility_result, Hit_type, Hit_seg, Hit_data.hit_object,
+		fq.startseg, fq.flags, dot, field_of_view, &Hit_pos, pos,
+		&Believed_player_pos);
+	return visibility_result;
 }
 
 // ------------------------------------------------------------------------------------------------------------------
@@ -886,6 +894,7 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point)
 	}
 
 	Laser_create_new_easy( &fire_vec, fire_point, obj-Objects, robptr->weapon_type, 1);
+	input_demo_log_robot_fire_probe(obj, &fire_vec, robptr->weapon_type);
 
 #ifndef SHAREWARE
 #ifdef NETWORK
@@ -1268,6 +1277,12 @@ int		Robot_sound_volume=DEFAULT_ROBOT_SOUND_VOLUME;
 void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vector *vec_to_player, int *player_visibility, robot_info *robptr, int *flag)
 {
 	if (!*flag) {
+		int previous_visibility_before = ailp->previous_visibility;
+		int raw_player_visibility = -1;
+		int sight_sound_gate = 0;
+		int attack_sound_gate = 0;
+		int misc_sound_gate = 0;
+
 		if (Players[Player_num].flags & PLAYER_FLAGS_CLOAKED) {
 			fix			delta_time, dist;
 			int			cloak_index = (objp-Objects) % MAX_AI_CLOAK_INFO;
@@ -1283,10 +1298,12 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 
 			dist = vm_vec_normalized_dir_quick(vec_to_player, &Ai_cloak_info[cloak_index].last_position, pos);
 			*player_visibility = player_is_visible_from_object(objp, pos, robptr->field_of_view[Difficulty_level], vec_to_player);
+			raw_player_visibility = *player_visibility;
 			// *player_visibility = 2;
 
 			// FX RNG: sound only, this just jitters robot chatter cadence
 			if ((ailp->next_misc_sound_time < GameTime64) && (ailp->next_fire < F1_0) && (dist < F1_0*20)) {
+				misc_sound_gate = 1;
 				                ailp->next_misc_sound_time = GameTime64 + (d_rand_fx() + F1_0) * (7 - Difficulty_level) / 1;
 				digi_link_sound_to_pos( robptr->see_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
 			}
@@ -1298,6 +1315,7 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 				vec_to_player->x = F1_0;
 			}
 			*player_visibility = player_is_visible_from_object(objp, pos, robptr->field_of_view[Difficulty_level], vec_to_player);
+			raw_player_visibility = *player_visibility;
 
 			//	This horrible code added by MK in desperation on 12/13/94 to make robots wake up as soon as they
 			//	see you without killing frame rate.
@@ -1314,17 +1332,20 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 			if (!Player_exploded && (ailp->previous_visibility != *player_visibility) && (*player_visibility == 2)) {
 				if (ailp->previous_visibility == 0) {
 					if (ailp->time_player_seen + F1_0/2 < GameTime64) {
+						sight_sound_gate = 1;
 						digi_link_sound_to_pos( robptr->see_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
 						ailp->time_player_sound_attacked = GameTime64;
 						                        ailp->next_misc_sound_time = GameTime64 + F1_0 + d_rand_fx()*4;
 					}
 				} else if (ailp->time_player_sound_attacked + F1_0/4 < GameTime64) {
+					attack_sound_gate = 1;
 					digi_link_sound_to_pos( robptr->attack_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
 					ailp->time_player_sound_attacked = GameTime64;
 				}
 			} 
 
 			if ((*player_visibility == 2) && (ailp->next_misc_sound_time < GameTime64)) {
+				misc_sound_gate = 1;
 				                ailp->next_misc_sound_time = GameTime64 + (d_rand_fx() + F1_0) * (7 - Difficulty_level) / 2;
 				digi_link_sound_to_pos( robptr->attack_sound, objp->segnum, 0, pos, 0 , Robot_sound_volume);
 			}
@@ -1335,6 +1356,17 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 
 		if (*player_visibility) {
 			ailp->time_player_seen = GameTime64;
+		}
+
+		if (input_demo_trace_ai_visibility_active(objp) &&
+			(raw_player_visibility >= 0) &&
+			((previous_visibility_before != raw_player_visibility) ||
+			 (raw_player_visibility != *player_visibility) || sight_sound_gate ||
+			 attack_sound_gate || misc_sound_gate)) {
+			input_demo_log_ai_visibility_probe(objp, "compute_vis",
+				previous_visibility_before, raw_player_visibility,
+				*player_visibility, sight_sound_gate, attack_sound_gate,
+				misc_sound_gate, pos, &Believed_player_pos);
 		}
 	}
 

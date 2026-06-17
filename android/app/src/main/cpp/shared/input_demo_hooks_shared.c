@@ -833,6 +833,9 @@ static unsigned int input_demo_state_trace_hash_object(unsigned int hash,
 
 void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 {
+	static int previous_robot_hashes_valid = 0;
+	static unsigned int previous_robot_hashes[MAX_OBJECTS];
+	const int robot_sample_obj = 14;
 	int i;
 	int segnum;
 
@@ -840,6 +843,15 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 		return;
 	diag->highest_object_index = Highest_object_index;
 	diag->object_slot_bucket_size = INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE;
+	diag->object_focus_slot_base = 0;
+	diag->robot_changed_obj = -1;
+	diag->robot_changed_sig = -1;
+	diag->robot_changed_id = -1;
+	diag->robot_changed_bucket = -1;
+	diag->robot_changed_model = -1;
+	diag->robot_sample_obj = -1;
+	diag->robot_sample_sig = -1;
+	diag->robot_sample_id = -1;
 
 	for (i = 0; i <= Highest_object_index; ++i) {
 		object *obj = &Objects[i];
@@ -852,11 +864,17 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 
 		bucket = i >> INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS;
 		if (bucket >= 0 && bucket < INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT) {
+			unsigned int object_hash = input_demo_state_trace_hash_object(0, obj);
+
 			diag->object_slot_counts[bucket]++;
 			diag->object_slot_hashes[bucket] = input_demo_state_trace_hash_update(
 			    diag->object_slot_hashes[bucket], (unsigned int) i);
 			diag->object_slot_hashes[bucket] = input_demo_state_trace_hash_object(
 			    diag->object_slot_hashes[bucket], obj);
+			if (i >= diag->object_focus_slot_base &&
+			    i < diag->object_focus_slot_base + INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE)
+				diag->object_focus_slot_hashes[i - diag->object_focus_slot_base] =
+				    object_hash;
 		}
 
 		diag->live_object_count++;
@@ -864,10 +882,128 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 		    diag->live_object_hash, obj);
 
 		switch (obj->type) {
-			case OBJ_ROBOT:
+			case OBJ_ROBOT: {
+				unsigned int object_hash =
+				    input_demo_state_trace_hash_object(0, obj);
+
+				if (i == robot_sample_obj) {
+					ai_local *ailp = &Ai_local_info[i];
+
+					diag->robot_sample_obj = i;
+					diag->robot_sample_sig = obj->signature;
+					diag->robot_sample_id = obj->id;
+					diag->robot_sample_seg = obj->segnum;
+					diag->robot_sample_behavior = obj->ctype.ai_info.behavior;
+					diag->robot_sample_mode = ailp->mode;
+					diag->robot_sample_cur_state = obj->ctype.ai_info.CURRENT_STATE;
+					diag->robot_sample_goal_state = obj->ctype.ai_info.GOAL_STATE;
+					diag->robot_sample_goal_seg = ailp->goal_segment;
+					diag->robot_sample_hide_index = obj->ctype.ai_info.hide_index;
+					diag->robot_sample_path_dir = obj->ctype.ai_info.PATH_DIR;
+					diag->robot_sample_prev_vis = ailp->previous_visibility;
+					diag->robot_sample_aware = ailp->player_awareness_type;
+					diag->robot_sample_aware_time = ailp->player_awareness_time;
+					diag->robot_sample_since = ailp->time_since_processed;
+					diag->robot_sample_retry = ailp->retry_count;
+					diag->robot_sample_retry_chain = ailp->consecutive_retries;
+#ifdef DXX_BUILD_DESCENT_II
+					diag->robot_sample_next_action = ailp->next_action_time;
+#else
+					diag->robot_sample_next_action = ailp->wait_time;
+#endif
+					diag->robot_sample_path_index = obj->ctype.ai_info.cur_path_index;
+					diag->robot_sample_path_length = obj->ctype.ai_info.path_length;
+					diag->robot_sample_phys_flags = obj->mtype.phys_info.flags;
+					diag->robot_sample_vel_x = obj->mtype.phys_info.velocity.x;
+					diag->robot_sample_vel_y = obj->mtype.phys_info.velocity.y;
+					diag->robot_sample_vel_z = obj->mtype.phys_info.velocity.z;
+					diag->robot_sample_pos_x = obj->pos.x;
+					diag->robot_sample_pos_y = obj->pos.y;
+					diag->robot_sample_pos_z = obj->pos.z;
+					if (obj->ctype.ai_info.hide_index >= 0 &&
+					    obj->ctype.ai_info.cur_path_index >= 0 &&
+					    obj->ctype.ai_info.path_length > 0) {
+						const int point_index =
+						    obj->ctype.ai_info.hide_index +
+						    obj->ctype.ai_info.cur_path_index;
+						if (point_index >= 0 &&
+						    point_index < Point_segs_free_ptr - Point_segs) {
+							const vms_vector *goal_point =
+							    &Point_segs[point_index].point;
+							diag->robot_sample_goal_x = goal_point->x;
+							diag->robot_sample_goal_y = goal_point->y;
+							diag->robot_sample_goal_z = goal_point->z;
+						}
+						if (obj->ctype.ai_info.cur_path_index + 1 <
+						    obj->ctype.ai_info.path_length) {
+							const int next_point_index = point_index + 1;
+							if (next_point_index >= 0 &&
+							    next_point_index <
+							        Point_segs_free_ptr - Point_segs) {
+								const vms_vector *next_goal_point =
+								    &Point_segs[next_point_index].point;
+								diag->robot_sample_next_goal_x =
+								    next_goal_point->x;
+								diag->robot_sample_next_goal_y =
+								    next_goal_point->y;
+								diag->robot_sample_next_goal_z =
+								    next_goal_point->z;
+							}
+						}
+					}
+					diag->robot_sample_mass = obj->mtype.phys_info.mass;
+					diag->robot_sample_drag = obj->mtype.phys_info.drag;
+					diag->robot_sample_brakes = obj->mtype.phys_info.brakes;
+					diag->robot_sample_fvec_x = obj->orient.fvec.x;
+					diag->robot_sample_fvec_y = obj->orient.fvec.y;
+					diag->robot_sample_fvec_z = obj->orient.fvec.z;
+					diag->robot_sample_rotthrust_x = obj->mtype.phys_info.rotthrust.x;
+					diag->robot_sample_rotthrust_y = obj->mtype.phys_info.rotthrust.y;
+					diag->robot_sample_rotthrust_z = obj->mtype.phys_info.rotthrust.z;
+					diag->robot_sample_rotvel_x = obj->mtype.phys_info.rotvel.x;
+					diag->robot_sample_rotvel_y = obj->mtype.phys_info.rotvel.y;
+					diag->robot_sample_rotvel_z = obj->mtype.phys_info.rotvel.z;
+				}
 				diag->robot_object_count++;
-				diag->robot_state_hash = input_demo_state_trace_hash_object(
-				    diag->robot_state_hash, obj);
+				diag->robot_state_hash =
+				    input_demo_state_trace_hash_object(diag->robot_state_hash, obj);
+				if (previous_robot_hashes_valid &&
+				    diag->robot_changed_obj < 0 &&
+				    previous_robot_hashes[i] != object_hash) {
+					diag->robot_changed_obj = i;
+					diag->robot_changed_sig = obj->signature;
+					diag->robot_changed_id = obj->id;
+					diag->robot_changed_bucket =
+					    i >> INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS;
+					diag->robot_changed_prev_hash = previous_robot_hashes[i];
+					diag->robot_changed_hash = object_hash;
+					diag->robot_changed_type = obj->type;
+					diag->robot_changed_seg = obj->segnum;
+					diag->robot_changed_control = obj->control_type;
+					diag->robot_changed_movement = obj->movement_type;
+					diag->robot_changed_render = obj->render_type;
+					diag->robot_changed_flags = obj->flags;
+					diag->robot_changed_x = obj->pos.x;
+					diag->robot_changed_y = obj->pos.y;
+					diag->robot_changed_z = obj->pos.z;
+					diag->robot_changed_last_x = obj->last_pos.x;
+					diag->robot_changed_last_y = obj->last_pos.y;
+					diag->robot_changed_last_z = obj->last_pos.z;
+					if (obj->movement_type == MT_PHYSICS) {
+						diag->robot_changed_vel_x = obj->mtype.phys_info.velocity.x;
+						diag->robot_changed_vel_y = obj->mtype.phys_info.velocity.y;
+						diag->robot_changed_vel_z = obj->mtype.phys_info.velocity.z;
+						diag->robot_changed_rotvel_x = obj->mtype.phys_info.rotvel.x;
+						diag->robot_changed_rotvel_y = obj->mtype.phys_info.rotvel.y;
+						diag->robot_changed_rotvel_z = obj->mtype.phys_info.rotvel.z;
+					}
+					if (obj->render_type == RT_POLYOBJ) {
+						diag->robot_changed_model = obj->rtype.pobj_info.model_num;
+						diag->robot_changed_subobj_flags =
+						    obj->rtype.pobj_info.subobj_flags;
+					}
+				}
+				previous_robot_hashes[i] = object_hash;
 				diag->robot_ai_static_state_hash =
 				    input_demo_state_trace_hash_update(
 				        diag->robot_ai_static_state_hash, (unsigned int) i);
@@ -879,6 +1015,7 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 				if (obj->ctype.ai_info.danger_laser_num != -1)
 					diag->danger_laser_robots++;
 				break;
+			}
 			case OBJ_WEAPON:
 				diag->weapon_object_count++;
 				diag->weapon_state_hash = input_demo_state_trace_hash_object(
@@ -896,6 +1033,7 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 				break;
 		}
 	}
+	previous_robot_hashes_valid = 1;
 
 	if (Highest_segment_index < 0)
 		return;

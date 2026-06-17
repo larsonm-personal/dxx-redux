@@ -93,6 +93,12 @@ void input_demo_log_ai_visibility_probe(struct object *objp,
 	int sight_sound_gate, int attack_sound_gate, int misc_sound_gate,
 	const struct vms_vector *pos,
 	const struct vms_vector *believed_player_pos);
+void input_demo_log_ai_visibility_fvi_probe(struct object *objp,
+	const char *step_label, int visibility_result, int hit_type,
+	int hit_seg, int hit_object, int startseg, int flags, int32_t dot,
+	int32_t field_of_view, const struct vms_vector *hit_pos,
+	const struct vms_vector *pos,
+	const struct vms_vector *believed_player_pos);
 void input_demo_log_ai_awareness_roll_probe(struct object *objp,
 	const char *step_label, int previous_visibility, int player_visibility,
 	int dist_to_player, int obj_ref, int roll, int threshold, int pass,

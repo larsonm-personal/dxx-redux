@@ -26,6 +26,7 @@ typedef struct d1_in_d2_asset_stats {
 	int robot_models;
 	int weapon_records_active;
 	int weapon_types;
+	int player_ship_active;
 	int robot_obj_bitmaps;
 	int robot_obj_bitmaps_applied;
 	int robot_obj_bitmaps_skipped;
@@ -51,6 +52,7 @@ void d1_in_d2_get_stats(d1_in_d2_asset_stats *stats);
 int d1_in_d2_ensure_spawnable_guidebot(void);
 int d1_in_d2_is_spawnable_guidebot_model(int model_num);
 void d1_in_d2_note_spawnable_guidebot_draw(int model_num);
+int d1_in_d2_use_d1_gameplay(void);
 int d1_in_d2_use_d1_robot_aiming(void);
 
 #endif /* _D1_IN_D2_H */

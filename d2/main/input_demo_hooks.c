@@ -4128,6 +4128,121 @@ void input_demo_log_ai_visibility_probe(object *objp, const char *step_label,
 		believed_player_pos->z);
 }
 
+static void input_demo_hit_object_details(int hit_object, int *hit_obj_type,
+	int *hit_obj_id, int *hit_obj_sig, int *hit_obj_seg)
+{
+	if (hit_obj_type)
+		*hit_obj_type = -1;
+	if (hit_obj_id)
+		*hit_obj_id = -1;
+	if (hit_obj_sig)
+		*hit_obj_sig = -1;
+	if (hit_obj_seg)
+		*hit_obj_seg = -1;
+
+	if (hit_object < 0 || hit_object > Highest_object_index)
+		return;
+
+	if (hit_obj_type)
+		*hit_obj_type = Objects[hit_object].type;
+	if (hit_obj_id)
+		*hit_obj_id = Objects[hit_object].id;
+	if (hit_obj_sig)
+		*hit_obj_sig = Objects[hit_object].signature;
+	if (hit_obj_seg)
+		*hit_obj_seg = Objects[hit_object].segnum;
+}
+
+static int input_demo_trace_ai_visibility_fvi_active(object *objp)
+{
+	return input_demo_trace_ai_visibility_active(objp) &&
+		((int)(objp - Objects) == 14);
+}
+
+void input_demo_log_ai_visibility_fvi_probe(object *objp,
+	const char *step_label, int visibility_result, int hit_type,
+	int hit_seg, int hit_object, int startseg, int flags, int32_t dot,
+	int32_t field_of_view, const vms_vector *hit_pos, const vms_vector *pos,
+	const vms_vector *believed_player_pos)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	int hit_obj_type;
+	int hit_obj_id;
+	int hit_obj_sig;
+	int hit_obj_seg;
+	char probe[640];
+
+	if (!input_demo_trace_ai_visibility_fvi_active(objp) || (objnum < 0) || !pos ||
+		!believed_player_pos)
+		return;
+
+	input_demo_hit_object_details(hit_object, &hit_obj_type, &hit_obj_id,
+		&hit_obj_sig, &hit_obj_seg);
+	snprintf(probe, sizeof(probe),
+		"step=%s result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)",
+		step_label ? step_label : "unset",
+		visibility_result,
+		hit_type,
+		hit_seg,
+		hit_object,
+		hit_obj_type,
+		hit_obj_id,
+		hit_obj_sig,
+		hit_obj_seg,
+		startseg,
+		flags,
+		dot,
+		field_of_view,
+		Overall_agitation,
+		pos->x,
+		pos->y,
+		pos->z,
+		believed_player_pos->x,
+		believed_player_pos->y,
+		believed_player_pos->z,
+		hit_pos ? hit_pos->x : 0,
+		hit_pos ? hit_pos->y : 0,
+		hit_pos ? hit_pos->z : 0);
+	input_demo_append_replay_probe_message("probe_ai_visibility_fvi", objp,
+		probe);
+
+	if (!input_demo_debug_is_enabled())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo AI visibility FVI: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		step_label ? step_label : "unset",
+		objnum,
+		objp->signature,
+		objp->id,
+		objp->segnum,
+		visibility_result,
+		hit_type,
+		hit_seg,
+		hit_object,
+		hit_obj_type,
+		hit_obj_id,
+		hit_obj_sig,
+		hit_obj_seg,
+		startseg,
+		flags,
+		dot,
+		field_of_view,
+		Overall_agitation,
+		pos->x,
+		pos->y,
+		pos->z,
+		believed_player_pos->x,
+		believed_player_pos->y,
+		believed_player_pos->z,
+		hit_pos ? hit_pos->x : 0,
+		hit_pos ? hit_pos->y : 0,
+		hit_pos ? hit_pos->z : 0);
+}
+
 void input_demo_log_ai_awareness_roll_probe(object *objp,
 	const char *step_label, int previous_visibility, int player_visibility,
 	int dist_to_player, int obj_ref, int roll, int threshold, int pass,

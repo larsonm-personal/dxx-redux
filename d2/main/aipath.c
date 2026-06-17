@@ -40,6 +40,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fireball.h"
 #include "game.h"
 #include "deterministic_math.h"
+#include "d1_in_d2.h"
 #include "input_demo_hooks.h"
 
 #define	PARALLAX	0		//	If !0, then special debugging for Parallax eyes enabled.
@@ -116,6 +117,11 @@ void insert_center_points(point_seg *psegs, int *num_points)
 
 		psegs[2*i-1].segnum = psegs[2*i].segnum;
 		count++;
+	}
+
+	if (d1_in_d2_use_d1_gameplay()) {
+		*num_points = count;
+		return;
 	}
 
 	//	Now, remove unnecessary center points.
@@ -348,7 +354,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 	while (cur_seg != end_seg) {
 		segment	*segp = &Segments[cur_seg];
 
-		if (random_flag) {
+		if (random_flag && !d1_in_d2_use_d1_gameplay()) {
 			random_xlate_refresh_roll_count++;
 			// SIM RNG: this decides whether the live path perturbation basis is refreshed
 			if (d_rand() < 8192) {
@@ -820,7 +826,8 @@ void create_path_to_station(object *objp, int max_length)
 		;
 	} else {
 		create_path_points(objp, start_seg, end_seg, Point_segs_free_ptr, &aip->path_length, max_length, 1, 1, -1);
-		aip->path_length = polish_path(objp, Point_segs_free_ptr, aip->path_length);
+		if (!d1_in_d2_use_d1_gameplay())
+			aip->path_length = polish_path(objp, Point_segs_free_ptr, aip->path_length);
 		aip->hide_index = Point_segs_free_ptr - Point_segs;
 		aip->cur_path_index = 0;
 
@@ -881,7 +888,8 @@ void create_n_segment_path(object *objp, int path_length, int avoid_seg)
 
 	//	If this robot is visible (player_visibility is not available) and it's running away, move towards outside with
 	//	randomness to prevent a stream of bots from going away down the center of a corridor.
-	if (Ai_local_info[objp-Objects].previous_visibility) {
+	if (!d1_in_d2_use_d1_gameplay() &&
+	    Ai_local_info[objp-Objects].previous_visibility) {
 		if (aip->path_length) {
 			int	t_num_points = aip->path_length;
 			move_towards_outside(&Point_segs[aip->hide_index], &t_num_points, objp, 1);

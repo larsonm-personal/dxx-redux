@@ -36,6 +36,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "game.h"
 #include "bm.h"
+#include "d1_in_d2.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_hooks.h"
 #include "input_demo_replay.h"
@@ -896,9 +897,13 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 
 				//	If this is a robot:robot collision, only do it if both of them have attack_type != 0 (eg, green guy)
 				if (Objects[thisobjnum].type == OBJ_ROBOT)
-					if (Objects[objnum].type == OBJ_ROBOT)
-						// -- MK: 11/18/95, 4claws glomming together...this is easy.  -- if (!(Robot_info[Objects[objnum].id].attack_type && Robot_info[Objects[thisobjnum].id].attack_type))
+					if (Objects[objnum].type == OBJ_ROBOT) {
+						if (!d1_in_d2_use_d1_gameplay() ||
+							!(Robot_info[Objects[objnum].id].attack_type &&
+								Robot_info[Objects[thisobjnum].id].attack_type))
+							// -- MK: 11/18/95, 4claws glomming together...this is easy.  -- if (!(Robot_info[Objects[objnum].id].attack_type && Robot_info[Objects[thisobjnum].id].attack_type))
 							continue;
+					}
 
 				if (Objects[thisobjnum].type == OBJ_ROBOT && Robot_info[Objects[thisobjnum].id].attack_type)
 					fudged_rad = (rad*3)/4;

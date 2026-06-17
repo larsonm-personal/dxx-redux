@@ -88,6 +88,9 @@ static int D1_robot_assets_active = 0;
 static int D1_robot_bitmap_slots_registered = 0;
 static int D1_robot_polygon_models_loaded = 0;
 static bitmap_index D1_robot_bitmap_slots[D1_MAX_OBJ_BITMAPS];
+static int D1_player_ship_active = 0;
+static int D1_player_ship_saved = 0;
+static player_ship D1_original_player_ship;
 static int D1_sounds_active = 0;
 static int D1_cockpit_active = 0;
 static int D1_cockpit_saved = 0;
@@ -328,9 +331,39 @@ static void apply_d1_robot_d2_tuning(robot_info *ri, int robot_id)
 	ri->lightcast = D2_d1_robot_lightcast[robot_id];
 }
 
-int d1_in_d2_use_d1_robot_aiming(void)
+static void save_d2_player_ship(void)
+{
+	if (D1_player_ship_saved || !Player_ship)
+		return;
+	D1_original_player_ship = *Player_ship;
+	D1_player_ship_saved = 1;
+}
+
+static void apply_d1_player_ship(player_ship *ship)
+{
+	if (!Player_ship)
+		return;
+	save_d2_player_ship();
+	*Player_ship = *ship;
+	D1_player_ship_active = 1;
+}
+
+static void restore_d2_player_ship(void)
+{
+	if (!D1_player_ship_active || !D1_player_ship_saved || !Player_ship)
+		return;
+	*Player_ship = D1_original_player_ship;
+	D1_player_ship_active = 0;
+}
+
+int d1_in_d2_use_d1_gameplay(void)
 {
 	return Current_mission && EMULATING_D1;
+}
+
+int d1_in_d2_use_d1_robot_aiming(void)
+{
+	return d1_in_d2_use_d1_gameplay();
 }
 
 void d1_in_d2_apply_sounds(int active)
@@ -1525,6 +1558,7 @@ void d1_in_d2_apply_robot_assets(int active)
 	PHYSFS_file *fp;
 	bitmap_index d1_obj_bitmaps[D1_MAX_OBJ_BITMAPS];
 	ushort d1_obj_bitmap_ptrs[D1_MAX_OBJ_BITMAPS];
+	player_ship d1_player_ship;
 	int i, num_wall_anims, num_robot_types, num_robot_joints, num_weapon_types;
 	int num_powerups, num_polygon_models, d1_gauge_count, pigsize;
 	int free_model_count;
@@ -1535,6 +1569,7 @@ void d1_in_d2_apply_robot_assets(int active)
 			release_guidebot_live_bitmap_copies();
 			free_polygon_models();
 			read_hamfile();
+			restore_d2_player_ship();
 			D1_robot_assets_active = 0;
 			D1_robot_polygon_models_loaded = 0;
 		}
@@ -1546,6 +1581,7 @@ void d1_in_d2_apply_robot_assets(int active)
 		Last_stats.robot_models = 0;
 		Last_stats.weapon_records_active = 0;
 		Last_stats.weapon_types = 0;
+		Last_stats.player_ship_active = 0;
 		Last_stats.robot_obj_bitmaps = 0;
 		Last_stats.robot_obj_bitmaps_applied = 0;
 		Last_stats.robot_obj_bitmaps_skipped = 0;
@@ -1569,6 +1605,7 @@ void d1_in_d2_apply_robot_assets(int active)
 	Last_stats.robot_models = 0;
 	Last_stats.weapon_records_active = 0;
 	Last_stats.weapon_types = 0;
+	Last_stats.player_ship_active = D1_player_ship_active;
 	Last_stats.robot_obj_bitmaps = 0;
 	Last_stats.robot_obj_bitmaps_applied = 0;
 	Last_stats.robot_obj_bitmaps_skipped = 0;
@@ -1663,7 +1700,10 @@ void d1_in_d2_apply_robot_assets(int active)
 	bitmap_index_read_n(d1_obj_bitmaps, D1_MAX_OBJ_BITMAPS, fp);
 	for (i = 0; i < D1_MAX_OBJ_BITMAPS; i++)
 		d1_obj_bitmap_ptrs[i] = PHYSFSX_readShort(fp);
+	player_ship_read(&d1_player_ship, fp);
 	PHYSFS_close(fp);
+	apply_d1_player_ship(&d1_player_ship);
+	Last_stats.player_ship_active = D1_player_ship_active;
 
 	if (N_ObjBitmaps < D1_MAX_OBJ_BITMAPS)
 		N_ObjBitmaps = D1_MAX_OBJ_BITMAPS;
@@ -1680,6 +1720,15 @@ void d1_in_d2_apply_robot_assets(int active)
 	}
 
 	for (i = 0; i <= Highest_object_index; i++) {
+		if (Objects[i].type == OBJ_PLAYER && Player_ship) {
+			Objects[i].rtype.pobj_info.model_num = Player_ship->model_num;
+			Objects[i].size = Polygon_models[Player_ship->model_num].rad;
+			if (Objects[i].movement_type == MT_PHYSICS) {
+				Objects[i].mtype.phys_info.mass = Player_ship->mass;
+				Objects[i].mtype.phys_info.drag = Player_ship->drag;
+			}
+			continue;
+		}
 		if (Objects[i].type != OBJ_ROBOT || Objects[i].id >= N_robot_types)
 			continue;
 		Objects[i].rtype.pobj_info.model_num = Robot_info[Objects[i].id].model_num;

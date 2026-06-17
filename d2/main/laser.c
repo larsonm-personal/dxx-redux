@@ -56,6 +56,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multi.h"
 #include "playsave.h"
 #include "hudmsg.h"
+#include "d1_in_d2.h"
 
 #define NEWHOMER
 
@@ -1576,8 +1577,10 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 		spreadu, delay_time, make_sound, harmless, &shot_orientation);
 	input_demo_record_player_shot_event(obj, laser_type, gun_num, spreadr, spreadu, delay_time, make_sound, harmless);
 
-	input_demo_set_awareness_source("laser_player_fire", obj - Objects, laser_type);
-	create_awareness_event(obj, PA_WEAPON_WALL_COLLISION);
+	if (!d1_in_d2_use_d1_gameplay()) {
+		input_demo_set_awareness_source("laser_player_fire", obj - Objects, laser_type);
+		create_awareness_event(obj, PA_WEAPON_WALL_COLLISION);
+	}
 
 	// Find the initial position of the laser
 	pnt = &Player_ship->gun_points[gun_num];

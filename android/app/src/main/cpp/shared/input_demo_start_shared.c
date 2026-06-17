@@ -565,6 +565,12 @@ int input_demo_start_loaded_replay_common(void)
 		difficulty_restore_history(d1_checkpoint.difficulty_changed,
 		                           d1_checkpoint.difficulty_min,
 		                           d1_checkpoint.difficulty_max);
+		if (!d1_save_translate_apply_checkpoint_objects(checkpoint_data, checkpoint_size,
+		                                                &d1_checkpoint)) {
+			printf("Input demo replay could not translate D1 checkpoint objects\n");
+			input_demo_replay_unload();
+			return 1;
+		}
 		d1_save_translate_apply_checkpoint_player(&d1_checkpoint,
 		                                          local_player_callsign);
 		return 0;

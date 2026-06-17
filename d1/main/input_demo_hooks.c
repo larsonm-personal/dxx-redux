@@ -144,6 +144,177 @@ void input_demo_log_weapon_robot_accept_seq(object *weapon, object *robot)
 	accept_seq++;
 }
 
+void input_demo_log_robot_fire_probe(object *objp, const vms_vector *fire_vec,
+	int weapon_type)
+{
+	unsigned int frame;
+
+	if (!input_demo_replay_is_loaded() || !objp || objp->type != OBJ_ROBOT || !fire_vec)
+		return;
+
+	frame = (unsigned int)input_demo_replay_next_frame_index();
+	if (frame < 120 || frame > 150)
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay fire probe: frame=%u kind=robot_fire robot_obj=%d sig=%d robot_id=%d seg=%d gun=%d weapon=%d player_seg=%d pos=(%d,%d,%d) vec=(%d,%d,%d)\n",
+		frame,
+		(int)(objp - Objects),
+		objp->signature,
+		objp->id,
+		objp->segnum,
+		objp->ctype.ai_info.CURRENT_GUN,
+		weapon_type,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z,
+		fire_vec->x,
+		fire_vec->y,
+		fire_vec->z);
+}
+
+int input_demo_trace_ai_visibility_active(object *objp)
+{
+	return input_demo_debug_is_enabled() &&
+		objp &&
+		(objp->type == OBJ_ROBOT) &&
+		(input_demo_recorder_is_active() || input_demo_replay_is_loaded());
+}
+
+static void input_demo_hit_object_details(int hit_object, int *hit_obj_type,
+	int *hit_obj_id, int *hit_obj_sig, int *hit_obj_seg)
+{
+	if (hit_obj_type)
+		*hit_obj_type = -1;
+	if (hit_obj_id)
+		*hit_obj_id = -1;
+	if (hit_obj_sig)
+		*hit_obj_sig = -1;
+	if (hit_obj_seg)
+		*hit_obj_seg = -1;
+
+	if (hit_object < 0 || hit_object > Highest_object_index)
+		return;
+
+	if (hit_obj_type)
+		*hit_obj_type = Objects[hit_object].type;
+	if (hit_obj_id)
+		*hit_obj_id = Objects[hit_object].id;
+	if (hit_obj_sig)
+		*hit_obj_sig = Objects[hit_object].signature;
+	if (hit_obj_seg)
+		*hit_obj_seg = Objects[hit_object].segnum;
+}
+
+static int input_demo_trace_ai_visibility_fvi_active(object *objp)
+{
+	return input_demo_trace_ai_visibility_active(objp) &&
+		((int)(objp - Objects) == 14);
+}
+
+void input_demo_log_ai_visibility_probe(object *objp, const char *step_label,
+	int previous_visibility, int raw_player_visibility,
+	int final_player_visibility, int sight_sound_gate,
+	int attack_sound_gate, int misc_sound_gate, const vms_vector *pos,
+	const vms_vector *believed_player_pos)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_static *aip;
+	ai_local *ailp;
+
+	if (!input_demo_trace_ai_visibility_active(objp) || (objnum < 0) || !pos ||
+		!believed_player_pos)
+		return;
+
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[objnum];
+	con_printf(CON_NORMAL,
+		"Input demo AI visibility: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d prev_vis=%d raw_vis=%d final_vis=%d behavior=%d mode_ai=%d cur_state=%d goal_state=%d aware=%d aware_time=%d next_fire=%d next_fire2=%d next_misc=%lld seen=%lld sound_gates=%d/%d/%d pos=(%d,%d,%d) believed=(%d,%d,%d)\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_debug_frame_index(),
+		(long long)GameTime64,
+		step_label ? step_label : "unset",
+		objnum,
+		objp->signature,
+		objp->id,
+		objp->segnum,
+		previous_visibility,
+		raw_player_visibility,
+		final_player_visibility,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		ailp->next_fire,
+		-1,
+		(long long)ailp->next_misc_sound_time,
+		(long long)ailp->time_player_seen,
+		sight_sound_gate,
+		attack_sound_gate,
+		misc_sound_gate,
+		pos->x,
+		pos->y,
+		pos->z,
+		believed_player_pos->x,
+		believed_player_pos->y,
+		believed_player_pos->z);
+}
+
+void input_demo_log_ai_visibility_fvi_probe(object *objp,
+	const char *step_label, int visibility_result, int hit_type,
+	int hit_seg, int hit_object, int startseg, int flags, int32_t dot,
+	int32_t field_of_view, const vms_vector *hit_pos, const vms_vector *pos,
+	const vms_vector *believed_player_pos)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	int hit_obj_type;
+	int hit_obj_id;
+	int hit_obj_sig;
+	int hit_obj_seg;
+
+	if (!input_demo_trace_ai_visibility_fvi_active(objp) || (objnum < 0) || !pos ||
+		!believed_player_pos)
+		return;
+
+	input_demo_hit_object_details(hit_object, &hit_obj_type, &hit_obj_id,
+		&hit_obj_sig, &hit_obj_seg);
+	con_printf(CON_NORMAL,
+		"Input demo AI visibility FVI: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_debug_frame_index(),
+		(long long)GameTime64,
+		step_label ? step_label : "unset",
+		objnum,
+		objp->signature,
+		objp->id,
+		objp->segnum,
+		visibility_result,
+		hit_type,
+		hit_seg,
+		hit_object,
+		hit_obj_type,
+		hit_obj_id,
+		hit_obj_sig,
+		hit_obj_seg,
+		startseg,
+		flags,
+		dot,
+		field_of_view,
+		Overall_agitation,
+		pos->x,
+		pos->y,
+		pos->z,
+		believed_player_pos->x,
+		believed_player_pos->y,
+		believed_player_pos->z,
+		hit_pos ? hit_pos->x : 0,
+		hit_pos ? hit_pos->y : 0,
+		hit_pos ? hit_pos->z : 0);
+}
+
 const char *input_demo_current_mission_id(void)
 {
 	if (Current_mission && Current_mission_filename && Current_mission_filename[0])

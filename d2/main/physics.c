@@ -40,6 +40,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_debug_logging.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
+#include "d1_in_d2.h"
 
 //Global variables for physics system
 
@@ -878,7 +879,21 @@ void do_physics_sim_rot(object *obj)
 
 		drag = (obj->mtype.phys_info.drag*5)/2;
 
-		if (obj->mtype.phys_info.flags & PF_USES_THRUST) {
+		if (d1_in_d2_use_d1_gameplay()) {
+			if (obj->mtype.phys_info.flags & PF_USES_THRUST)
+				vm_vec_copy_scale(&accel,&obj->mtype.phys_info.rotthrust,fixdiv(f1_0,obj->mtype.phys_info.mass));
+
+			while (count--) {
+				if (obj->mtype.phys_info.flags & PF_USES_THRUST)
+					vm_vec_add2(&obj->mtype.phys_info.rotvel,&accel);
+
+				vm_vec_scale(&obj->mtype.phys_info.rotvel,f1_0-drag);
+			}
+
+			if (obj->mtype.phys_info.flags & PF_USES_THRUST)
+				vm_vec_scale_add2(&obj->mtype.phys_info.rotvel,&accel,k);
+			vm_vec_scale(&obj->mtype.phys_info.rotvel,f1_0-fixmul(k,drag));
+		} else if (obj->mtype.phys_info.flags & PF_USES_THRUST) {
 
 			vm_vec_copy_scale(&accel,&obj->mtype.phys_info.rotthrust,fixdiv(f1_0,obj->mtype.phys_info.mass));
 

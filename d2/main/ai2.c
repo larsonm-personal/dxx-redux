@@ -485,6 +485,7 @@ int player_is_visible_from_object(object *objp, vms_vector *pos, fix field_of_vi
 {
 	fix			dot;
 	fvi_query	fq;
+	int			visibility_result;
 
 	//	Assume that robot's gun tip is in same segment as robot's center.
 	if (objp->control_type == CT_AI)
@@ -510,24 +511,31 @@ int player_is_visible_from_object(object *objp, vms_vector *pos, fix field_of_vi
 	fq.rad					= F1_0/4;
 	fq.thisobjnum			= objp-Objects;
 	fq.ignore_obj_list	= NULL;
-	fq.flags					= FQ_TRANSWALL; // -- Why were we checking objects? | FQ_CHECK_OBJS;		//what about trans walls???
+	fq.flags					= d1_in_d2_use_d1_gameplay() ? (FQ_TRANSWALL | FQ_CHECK_OBJS) : FQ_TRANSWALL; // -- Why were we checking objects? | FQ_CHECK_OBJS;		//what about trans walls???
 
 	Hit_type = find_vector_intersection(&fq,&Hit_data);
 
 	Hit_pos = Hit_data.hit_pnt;
 	Hit_seg = Hit_data.hit_seg;
 
+	dot = 0;
+	visibility_result = 0;
 	// -- when we stupidly checked objects -- if ((Hit_type == HIT_NONE) || ((Hit_type == HIT_OBJECT) && (Hit_data.hit_object == Players[Player_num].objnum))) {
-	if (Hit_type == HIT_NONE) {
+	if ((Hit_type == HIT_NONE) ||
+	    (d1_in_d2_use_d1_gameplay() && (Hit_type == HIT_OBJECT) && (Hit_data.hit_object == Players[Player_num].objnum))) {
 		dot = vm_vec_dot(vec_to_player, &objp->orient.fvec);
 		if (dot > field_of_view - (Overall_agitation << 9)) {
-			return 2;
+			visibility_result = 2;
 		} else {
-			return 1;
+			visibility_result = 1;
 		}
-	} else {
-		return 0;
 	}
+
+	input_demo_log_ai_visibility_fvi_probe(objp, "player_is_visible",
+		visibility_result, Hit_type, Hit_seg, Hit_data.hit_object,
+		fq.startseg, fq.flags, dot, field_of_view, &Hit_pos, pos,
+		&Believed_player_pos);
+	return visibility_result;
 }
 
 // ------------------------------------------------------------------------------------------------------------------
@@ -726,6 +734,20 @@ void ai_frame_animation(object *objp)
 // ----------------------------------------------------------------------------------
 void set_next_fire_time(object *objp, ai_local *ailp, robot_info *robptr, int gun_num)
 {
+	if (d1_in_d2_use_d1_robot_aiming()) {
+		(void)objp;
+		(void)gun_num;
+		ailp->rapidfire_count++;
+
+		if (ailp->rapidfire_count < robptr->rapidfire_count[Difficulty_level]) {
+			ailp->next_fire = min(F1_0/8, robptr->firing_wait[Difficulty_level]/2);
+		} else {
+			ailp->rapidfire_count = 0;
+			ailp->next_fire = robptr->firing_wait[Difficulty_level];
+		}
+		return;
+	}
+
 	//	For guys in snipe mode, they have a 50% shot of getting this shot in free.
 	if ((gun_num != 0) || (robptr->weapon_type2 == -1))
 		// SIM RNG: this controls whether the live rapidfire burst advances
@@ -2410,7 +2432,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 			if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
 				aip->CURRENT_GUN = 0;
 		}
-	} else {
+	} else if (!d1_in_d2_use_d1_gameplay()) {
 		// SIM RNG: this decides whether blind-fire logic attempts a live shot
 		const int blind_roll = d_rand()/2;
 		const int blind_threshold = fixmul(FrameTime,
