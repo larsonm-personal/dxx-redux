@@ -63,6 +63,8 @@ typedef struct input_demo_state_trace_diag {
 	uint32_t object_slot_hashes[INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT];
 	int32_t robot_object_count;
 	uint32_t robot_state_hash;
+	uint32_t robot_ai_static_state_hash;
+	uint32_t robot_ai_local_state_hash;
 	int32_t weapon_object_count;
 	uint32_t weapon_state_hash;
 	int32_t fireball_object_count;

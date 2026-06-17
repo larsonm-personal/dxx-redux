@@ -24,6 +24,8 @@ typedef struct d1_in_d2_asset_stats {
 	int robot_types;
 	int robot_joints;
 	int robot_models;
+	int weapon_records_active;
+	int weapon_types;
 	int robot_obj_bitmaps;
 	int robot_obj_bitmaps_applied;
 	int robot_obj_bitmaps_skipped;

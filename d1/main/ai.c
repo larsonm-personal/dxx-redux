@@ -2401,13 +2401,16 @@ void do_ai_frame(object *obj)
 		#ifndef NDEBUG
 		if (Break_on_object != objnum) {    // don't time slice if we're interested in this object.
 		#endif
-			if ((dist_to_player > F1_0*250) && (ailp->time_since_processed <= F1_0*2))
+			if ((dist_to_player > F1_0*250) && (ailp->time_since_processed <= F1_0*2)) {
 				return;
+			}
 			else if (!((aip->behavior == AIB_STATION) && (ailp->mode == AIM_FOLLOW_PATH) && (aip->hide_segment != obj->segnum))) {
-				if ((dist_to_player > F1_0*150) && (ailp->time_since_processed <= F1_0))
+				if ((dist_to_player > F1_0*150) && (ailp->time_since_processed <= F1_0)) {
 					return;
-				else if ((dist_to_player > F1_0*100) && (ailp->time_since_processed <= F1_0/2))
+				}
+				else if ((dist_to_player > F1_0*100) && (ailp->time_since_processed <= F1_0/2)) {
 					return;
+				}
 			}
 		#ifndef NDEBUG
 		}
@@ -3230,6 +3233,11 @@ int ai_save_state(PHYSFS_file *fp)
 	PHYSFS_write(fp, &Boss_dying_sound_playing, sizeof(int), 1);
 	PHYSFS_write(fp, &Boss_hit_this_frame, sizeof(int), 1);
 	PHYSFS_write(fp, &Boss_been_hit, sizeof(int), 1);
+	{
+		int temp;
+		temp = Point_segs_free_ptr - Point_segs;
+		PHYSFS_write(fp, &temp, sizeof(int), 1);
+	}
 	PHYSFS_write(fp, &Num_awareness_events, sizeof(Num_awareness_events), 1);
 	for (i = 0; i < Num_awareness_events; i++) {
 		PHYSFS_write(fp, &Awareness_events[i].segnum, sizeof(Awareness_events[i].segnum), 1);
@@ -3332,6 +3340,14 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap, int rebirth)
 	Boss_dying_sound_playing = PHYSFSX_readSXE32(fp, swap);
 	Boss_hit_this_frame = PHYSFSX_readSXE32(fp, swap);
 	Boss_been_hit = PHYSFSX_readSXE32(fp, swap);
+
+	if (version >= 15) {
+		int temp = PHYSFSX_readSXE32(fp, swap);
+		if (temp >= 0 && temp <= MAX_POINT_SEGS)
+			Point_segs_free_ptr = &Point_segs[temp];
+		else
+			ai_path_rebuild_free_ptr_from_paths();
+	}
 
 	if (version >= 8) {
 		int saved_num_awareness_events = PHYSFSX_readSXE32(fp, swap);

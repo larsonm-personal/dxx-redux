@@ -513,7 +513,6 @@ void create_path_to_station(object *objp, int max_length)
 		ailp->player_awareness_type = 0;
 	}
 
-
 	maybe_ai_path_garbage_collect();
 
 }
@@ -921,6 +920,39 @@ void ai_path_set_runtime_state(const ai_path_runtime_state *state)
 	Player_following_path_flag = state->player_following_path_flag;
 	Player_goal_segment = state->player_goal_segment;
 #endif
+}
+
+void ai_path_rebuild_free_ptr_from_paths(void)
+{
+	int objnum;
+	int free_path_index = 0;
+
+	for (objnum = 0; objnum <= Highest_object_index; objnum++) {
+		object *objp = &Objects[objnum];
+		ai_static *aip;
+		int path_end;
+
+		if (objp->type != OBJ_ROBOT || objp->control_type != CT_AI)
+			continue;
+
+		aip = &objp->ctype.ai_info;
+		if (aip->path_length <= 0 || aip->hide_index < 0)
+			continue;
+
+		path_end = aip->hide_index + aip->path_length;
+		if (path_end > free_path_index && path_end <= MAX_POINT_SEGS)
+			free_path_index = path_end;
+	}
+
+#ifdef EDITOR
+	if (Player_path_length > 0 && Player_hide_index >= 0) {
+		int player_path_end = Player_hide_index + Player_path_length;
+		if (player_path_end > free_path_index && player_path_end <= MAX_POINT_SEGS)
+			free_path_index = player_path_end;
+	}
+#endif
+
+	Point_segs_free_ptr = &Point_segs[free_path_index];
 }
 
 //	----------------------------------------------------------------------------------------------------------

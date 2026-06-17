@@ -130,21 +130,160 @@ static int input_demo_count_live_objects_of_type(int object_type)
 	return count;
 }
 
-static unsigned int input_demo_state_trace_hash_update(unsigned int hash,
-                                                       unsigned int value)
+unsigned int input_demo_state_trace_hash_update(unsigned int hash,
+                                                unsigned int value)
 {
 	hash ^= value + 0x9e3779b9u + (hash << 6) + (hash >> 2);
 	return hash;
 }
 
-static unsigned int input_demo_state_trace_hash_i64(unsigned int hash,
-                                                    int64_t value)
+unsigned int input_demo_state_trace_hash_i64(unsigned int hash,
+                                             int64_t value)
 {
 	uint64_t bits = (uint64_t) value;
 
 	hash = input_demo_state_trace_hash_update(hash, (unsigned int) bits);
 	hash = input_demo_state_trace_hash_update(hash, (unsigned int) (bits >> 32));
 	return hash;
+}
+
+static unsigned int input_demo_state_trace_hash_ai_static(
+    unsigned int hash, const object *obj)
+{
+	int i;
+
+	if (!obj || obj->control_type != CT_AI)
+		return hash;
+
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) obj->ctype.ai_info.behavior);
+	for (i = 0; i < MAX_AI_FLAGS; ++i)
+		hash = input_demo_state_trace_hash_update(
+		    hash, (unsigned int) obj->ctype.ai_info.flags[i]);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.hide_segment);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.hide_index);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.path_length);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.cur_path_index);
+#ifdef DXX_BUILD_DESCENT_II
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.dying_sound_playing);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.danger_laser_num);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.danger_laser_signature);
+	hash = input_demo_state_trace_hash_i64(
+	    hash, obj->ctype.ai_info.dying_start_time);
+#else
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.follow_path_start_seg);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.follow_path_end_seg);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.danger_laser_signature);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->ctype.ai_info.danger_laser_num);
+#endif
+	return hash;
+}
+
+static unsigned int input_demo_hash_ai_local_angles(unsigned int hash,
+                                                    const vms_angvec *angles)
+{
+	int i;
+
+	for (i = 0; i < MAX_SUBMODELS; ++i) {
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) angles[i].p);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) angles[i].b);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) angles[i].h);
+	}
+	return hash;
+}
+
+void input_demo_capture_robot_ai_local_diag(input_demo_state_trace_diag *diag)
+{
+	int objnum;
+
+	if (!diag)
+		return;
+	for (objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		object *obj = &Objects[objnum];
+		ai_local *ailp;
+		int i;
+
+		if (obj->type != OBJ_ROBOT)
+			continue;
+		if (obj->flags & OF_SHOULD_BE_DEAD)
+			continue;
+		ailp = &Ai_local_info[objnum];
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) objnum);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) obj->signature);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash,
+		    (unsigned int) ailp->player_awareness_type);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->retry_count);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash,
+		    (unsigned int) ailp->consecutive_retries);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->mode);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash,
+		    (unsigned int) ailp->previous_visibility);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->rapidfire_count);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->goal_segment);
+#ifdef DXX_BUILD_DESCENT_II
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->next_action_time);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->next_fire);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->next_fire2);
+#else
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->last_see_time);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->last_attack_time);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->wait_time);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash, (unsigned int) ailp->next_fire);
+#endif
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash,
+		    (unsigned int) ailp->player_awareness_time);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_i64(
+		    diag->robot_ai_local_state_hash, ailp->time_player_seen);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_i64(
+		    diag->robot_ai_local_state_hash, ailp->time_player_sound_attacked);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_i64(
+		    diag->robot_ai_local_state_hash, ailp->next_misc_sound_time);
+		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
+		    diag->robot_ai_local_state_hash,
+		    (unsigned int) ailp->time_since_processed);
+		diag->robot_ai_local_state_hash = input_demo_hash_ai_local_angles(
+		    diag->robot_ai_local_state_hash, ailp->goal_angles);
+		diag->robot_ai_local_state_hash = input_demo_hash_ai_local_angles(
+		    diag->robot_ai_local_state_hash, ailp->delta_angles);
+		for (i = 0; i < MAX_SUBMODELS; ++i) {
+			diag->robot_ai_local_state_hash =
+			    input_demo_state_trace_hash_update(
+			        diag->robot_ai_local_state_hash,
+			        (unsigned int) ailp->goal_state[i]);
+			diag->robot_ai_local_state_hash =
+			    input_demo_state_trace_hash_update(
+			        diag->robot_ai_local_state_hash,
+			        (unsigned int) ailp->achieved_state[i]);
+		}
+	}
 }
 
 void input_demo_record_game_frame(void)
@@ -729,6 +868,12 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 				diag->robot_object_count++;
 				diag->robot_state_hash = input_demo_state_trace_hash_object(
 				    diag->robot_state_hash, obj);
+				diag->robot_ai_static_state_hash =
+				    input_demo_state_trace_hash_update(
+				        diag->robot_ai_static_state_hash, (unsigned int) i);
+				diag->robot_ai_static_state_hash =
+				    input_demo_state_trace_hash_ai_static(
+				        diag->robot_ai_static_state_hash, obj);
 				if (input_demo_robot_is_camera_awake(i, obj))
 					diag->camera_awake_robots++;
 				if (obj->ctype.ai_info.danger_laser_num != -1)

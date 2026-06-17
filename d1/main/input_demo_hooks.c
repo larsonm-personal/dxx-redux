@@ -52,6 +52,7 @@ void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
 	diag->ai_probe_phys_skip_after = -1;
 	input_demo_capture_runtime_state_diag(diag);
 	input_demo_capture_object_state_diag(diag);
+	input_demo_capture_robot_ai_local_diag(diag);
 	input_demo_capture_player_weapon_diag(diag);
 }
 void input_demo_log_player_robot_contact_probe(const char *step,

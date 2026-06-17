@@ -81,7 +81,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 14
+#define STATE_VERSION 15
 #define STATE_COMPATIBLE_VERSION 6
 #define STATE_RUNTIME_VERSION 8
 #define STATE_FIDELITY_VERSION 8
@@ -90,6 +90,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define STATE_OBJECT_SIGNATURE_RUNTIME_VERSION 11
 #define STATE_FX_RNG_RUNTIME_VERSION 12
 #define STATE_SECRET_AREA_RUNTIME_VERSION 14
+#define STATE_AI_PATH_FREE_PTR_VERSION 15
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -1203,7 +1204,7 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj)
 			obj->ctype.laser_info.parent_type      = obj_rw->ctype.laser_info.parent_type;
 			obj->ctype.laser_info.parent_num       = obj_rw->ctype.laser_info.parent_num;
 			obj->ctype.laser_info.parent_signature = obj_rw->ctype.laser_info.parent_signature;
-			obj->ctype.laser_info.creation_time    = obj_rw->ctype.laser_info.creation_time;
+			obj->ctype.laser_info.creation_time    = GameTime64 + (fix64)obj_rw->ctype.laser_info.creation_time;
 			obj->ctype.laser_info.creation_framecount = 0;
 			memset(obj->ctype.laser_info.hitobj_list, 0, sizeof(obj->ctype.laser_info.hitobj_list));
 			obj->ctype.laser_info.last_hitobj      = obj_rw->ctype.laser_info.last_hitobj;
@@ -2519,6 +2520,8 @@ RetryObjectLoading:
 
 	if (version >= STATE_RUNTIME_VERSION)
 		state_read_runtime_state(fp, swap, version);
+	if (version < STATE_AI_PATH_FREE_PTR_VERSION)
+		ai_path_rebuild_free_ptr_from_paths();
 
 #ifdef __ANDROID__
 	debug_log(DLOG_GAME,

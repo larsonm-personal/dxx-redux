@@ -9,6 +9,10 @@
 void input_demo_capture_runtime_state_diag(input_demo_state_trace_diag *diag);
 void input_demo_capture_player_weapon_diag(input_demo_state_trace_diag *diag);
 void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag);
+void input_demo_capture_robot_ai_local_diag(input_demo_state_trace_diag *diag);
+unsigned int input_demo_state_trace_hash_update(unsigned int hash,
+                                                unsigned int value);
+unsigned int input_demo_state_trace_hash_i64(unsigned int hash, int64_t value);
 void input_demo_capture_current_result(input_demo_result *result);
 void input_demo_delay_replay_frame_shared(fix frame_time,
                                           fix64 *replay_last_timer_value);

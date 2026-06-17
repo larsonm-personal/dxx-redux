@@ -35,6 +35,8 @@ extern "C" {
 #include "maths.h"
 #include "vecmat.h"
 #include "weapon.h"
+#include "laser.h"
+#include "cntrlcen.h"
 #include "automap.h"
 #include "segment.h"
 #include "playsave.h"
@@ -323,6 +325,95 @@ static json serialize_player()
 		{ "invulnerable", (bool) (p->flags & PLAYER_FLAGS_INVULNERABLE) }
 	};
 }
+
+#ifdef DXX_BUILD_DESCENT_II
+static json serialize_fix_array(const fix values[NDL])
+{
+	json out = json::array();
+
+	for (int i = 0; i < NDL; i++)
+		out.push_back((int) values[i]);
+	return out;
+}
+
+static json serialize_weapon_sample(int id)
+{
+	if (id < 0 || id >= MAX_WEAPON_TYPES)
+		return {
+			{ "id", id },
+			{ "valid", false }
+		};
+
+	const weapon_info &wi = Weapon_info[id];
+	return {
+		{ "id", id },
+		{ "valid", id < N_weapon_types },
+		{ "render_type", (int) wi.render_type },
+		{ "model_num", (int) wi.model_num },
+		{ "model_num_inner", (int) wi.model_num_inner },
+		{ "persistent", (int) wi.persistent },
+		{ "flash_vclip", (int) wi.flash_vclip },
+		{ "flash_sound", (int) wi.flash_sound },
+		{ "robot_hit_vclip", (int) wi.robot_hit_vclip },
+		{ "robot_hit_sound", (int) wi.robot_hit_sound },
+		{ "wall_hit_vclip", (int) wi.wall_hit_vclip },
+		{ "wall_hit_sound", (int) wi.wall_hit_sound },
+		{ "fire_count", (int) wi.fire_count },
+		{ "ammo_usage", (int) wi.ammo_usage },
+		{ "weapon_vclip", (int) wi.weapon_vclip },
+		{ "destroyable", (int) wi.destroyable },
+		{ "matter", (int) wi.matter },
+		{ "bounce", (int) wi.bounce },
+		{ "homing_flag", (int) wi.homing_flag },
+		{ "speedvar", (int) wi.speedvar },
+		{ "flags", (int) wi.flags },
+		{ "flash", (int) wi.flash },
+		{ "afterburner_size", (int) wi.afterburner_size },
+		{ "children", (int) wi.children },
+		{ "energy_usage_raw", (int) wi.energy_usage },
+		{ "fire_wait_raw", (int) wi.fire_wait },
+		{ "multi_damage_scale_raw", (int) wi.multi_damage_scale },
+		{ "bitmap_index", (int) wi.bitmap.index },
+		{ "blob_size_raw", (int) wi.blob_size },
+		{ "flash_size_raw", (int) wi.flash_size },
+		{ "impact_size_raw", (int) wi.impact_size },
+		{ "strength_raw", serialize_fix_array(wi.strength) },
+		{ "speed_raw", serialize_fix_array(wi.speed) },
+		{ "mass_raw", (int) wi.mass },
+		{ "drag_raw", (int) wi.drag },
+		{ "thrust_raw", (int) wi.thrust },
+		{ "po_len_to_width_ratio_raw", (int) wi.po_len_to_width_ratio },
+		{ "light_raw", (int) wi.light },
+		{ "lifetime_raw", (int) wi.lifetime },
+		{ "damage_radius_raw", (int) wi.damage_radius },
+		{ "picture_index", (int) wi.picture.index },
+		{ "hires_picture_index", (int) wi.hires_picture.index }
+	};
+}
+
+static json serialize_weapon_samples()
+{
+	enum { D1_SPREADFIRE_PROJECTILE_ID = 20 };
+	json samples;
+
+	samples["laser_l1"] = serialize_weapon_sample(LASER_ID_L1);
+	samples["laser_l4"] = serialize_weapon_sample(LASER_ID_L4);
+	samples["vulcan"] = serialize_weapon_sample(VULCAN_ID);
+	samples["primary_spreadfire"] = serialize_weapon_sample(Primary_weapon_to_weapon_info[SPREADFIRE_INDEX]);
+	samples["d2_spreadfire_projectile"] = serialize_weapon_sample(SPREADFIRE_ID);
+	samples["d1_spreadfire_projectile_id_20"] = serialize_weapon_sample(D1_SPREADFIRE_PROJECTILE_ID);
+	samples["plasma"] = serialize_weapon_sample(PLASMA_ID);
+	samples["fusion"] = serialize_weapon_sample(FUSION_ID);
+	samples["concussion"] = serialize_weapon_sample(CONCUSSION_ID);
+	samples["homing"] = serialize_weapon_sample(HOMING_ID);
+	samples["smart"] = serialize_weapon_sample(SMART_ID);
+	samples["mega"] = serialize_weapon_sample(MEGA_ID);
+	samples["player_smart_homing"] = serialize_weapon_sample(PLAYER_SMART_HOMING_ID);
+	samples["robot_smart_homing"] = serialize_weapon_sample(ROBOT_SMART_HOMING_ID);
+	samples["control_center"] = serialize_weapon_sample(CONTROLCEN_WEAPON_NUM);
+	return samples;
+}
+#endif
 
 /* -- Serialize position ----------------------------------------------- */
 static json serialize_position()
@@ -1055,6 +1146,8 @@ extern "C" char *game_introspect_get_state(void)
 			{ "robot_types", d1_compat.robot_types },
 			{ "robot_joints", d1_compat.robot_joints },
 			{ "robot_models", d1_compat.robot_models },
+			{ "weapon_records_active", (bool) d1_compat.weapon_records_active },
+			{ "weapon_types", d1_compat.weapon_types },
 			{ "robot_obj_bitmaps", d1_compat.robot_obj_bitmaps },
 			{ "robot_obj_bitmaps_applied", d1_compat.robot_obj_bitmaps_applied },
 			{ "robot_obj_bitmaps_skipped", d1_compat.robot_obj_bitmaps_skipped },
@@ -1074,6 +1167,20 @@ extern "C" char *game_introspect_get_state(void)
 			{ "base_sound_skipped", d1_custom.base_sound_skipped }
 		};
 		j["asset_trace"] = std::move(trace);
+	}
+#endif
+
+	/* -- Gameplay table trace --------------------------------------- */
+#ifdef DXX_BUILD_DESCENT_II
+	{
+		const bool emulating_d1 = Current_mission && EMULATING_D1;
+		json gameplay;
+		gameplay["runtime_engine"] = "d2";
+		gameplay["selected_base_game"] = emulating_d1 ? "d1" : "d2";
+		gameplay["mode"] = emulating_d1 ? "d1-in-d2" : "d2";
+		gameplay["weapon_table_count"] = N_weapon_types;
+		gameplay["weapon_samples"] = serialize_weapon_samples();
+		j["gameplay_trace"] = std::move(gameplay);
 	}
 #endif
 

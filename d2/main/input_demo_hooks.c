@@ -568,6 +568,7 @@ void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
 		diag->player_last_z = ConsoleObject->last_pos.z;
 	}
 	input_demo_capture_object_state_diag(diag);
+	input_demo_capture_robot_ai_local_diag(diag);
 	input_demo_capture_player_weapon_diag(diag);
 
 	if (input_demo_prepare_ai_schedule_probe_frame()) {

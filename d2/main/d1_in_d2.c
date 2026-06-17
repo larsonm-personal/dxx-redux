@@ -1544,6 +1544,8 @@ void d1_in_d2_apply_robot_assets(int active)
 		Last_stats.robot_types = 0;
 		Last_stats.robot_joints = 0;
 		Last_stats.robot_models = 0;
+		Last_stats.weapon_records_active = 0;
+		Last_stats.weapon_types = 0;
 		Last_stats.robot_obj_bitmaps = 0;
 		Last_stats.robot_obj_bitmaps_applied = 0;
 		Last_stats.robot_obj_bitmaps_skipped = 0;
@@ -1565,6 +1567,8 @@ void d1_in_d2_apply_robot_assets(int active)
 	Last_stats.robot_types = 0;
 	Last_stats.robot_joints = 0;
 	Last_stats.robot_models = 0;
+	Last_stats.weapon_records_active = 0;
+	Last_stats.weapon_types = 0;
 	Last_stats.robot_obj_bitmaps = 0;
 	Last_stats.robot_obj_bitmaps_applied = 0;
 	Last_stats.robot_obj_bitmaps_skipped = 0;
@@ -1618,6 +1622,8 @@ void d1_in_d2_apply_robot_assets(int active)
 	}
 	for (i = 0; i < D1_MAX_WEAPON_TYPES; i++)
 		read_d1_weapon_info(&Weapon_info[i], i, fp);
+	Last_stats.weapon_records_active = 1;
+	Last_stats.weapon_types = num_weapon_types;
 
 	num_powerups = PHYSFSX_readInt(fp);
 	if (num_powerups < 0 || num_powerups > D1_MAX_POWERUP_TYPES) {

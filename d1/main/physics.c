@@ -987,7 +987,7 @@ void do_physics_sim(object *obj)
 				input_demo_log_player_robot_hit_object_probe("hit_object_retry_state", obj, hit_info.hit_object, &pos_hit, &old_vel, n_ignore_objs, will_retry, ignored_hit);
 
 				break;
-			}	
+			}
 			case HIT_NONE:		
 				break;
 
@@ -1093,9 +1093,9 @@ void do_physics_sim(object *obj)
 #endif
 				update_object_seg(obj);
 
-			}
 		}
 	}
+}
 
 //--WE ALWYS WANT THIS IN, MATT AND MIKE DECISION ON 12/10/94, TWO MONTHS AFTER FINAL 	#ifndef NDEBUG
 	//if end point not in segment, move object to last pos, or segment center

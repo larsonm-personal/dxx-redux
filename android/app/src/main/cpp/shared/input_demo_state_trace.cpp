@@ -157,6 +157,8 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["object_slot_hashes"] = object_slot_hashes;
 	root["robot_object_count"] = diag.robot_object_count;
 	root["robot_state_hash"] = diag.robot_state_hash;
+	root["robot_ai_static_state_hash"] = diag.robot_ai_static_state_hash;
+	root["robot_ai_local_state_hash"] = diag.robot_ai_local_state_hash;
 	root["weapon_object_count"] = diag.weapon_object_count;
 	root["weapon_state_hash"] = diag.weapon_state_hash;
 	root["fireball_object_count"] = diag.fireball_object_count;
