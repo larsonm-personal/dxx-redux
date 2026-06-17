@@ -1023,8 +1023,15 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 
 	//	Set position to fire at based on difficulty level and robot's aiming ability
 	aim = FIRE_K*F1_0 - (FIRE_K-1)*(robptr->aim << 8);	//	F1_0 in bitmaps.tbl = same as used to be.  Worst is 50% more error.
-	if (d1_in_d2_use_d1_robot_aiming())
+	if (d1_in_d2_use_d1_robot_aiming()) {
 		aim = F1_0;	// D1 robots had no per-type aim byte, so use D1's exact spread scale.
+		bpp_diff.x = believed_player_pos->x + (d_rand()-16384) * (NDL-Difficulty_level-1) * 4;
+		bpp_diff.y = believed_player_pos->y + (d_rand()-16384) * (NDL-Difficulty_level-1) * 4;
+		bpp_diff.z = believed_player_pos->z + (d_rand()-16384) * (NDL-Difficulty_level-1) * 4;
+		(void)d_rand();
+		vm_vec_normalized_dir_quick(&fire_vec, &bpp_diff, fire_point);
+		goto player_led;
+	}
 
 	//	Robots aim more poorly during seismic disturbance.
 	if (Seismic_tremor_magnitude) {
@@ -1320,7 +1327,7 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 
 	//	If only allowed to do evade code, then done.
 	//	Hmm, perhaps brilliant insight.  If want claw-type guys to keep coming, don't return here after evasion.
-	if ((!robptr->attack_type) && (!robptr->thief) && evade_only)
+	if ((!robptr->attack_type) && (d1_in_d2_use_d1_gameplay() || !robptr->thief) && evade_only)
 		return;
 
 	//	If we fall out of above, then no object to be avoided.
@@ -1339,6 +1346,13 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 		} else {
 			move_towards_player(objp, vec_to_player);
 		}
+	} else if (d1_in_d2_use_d1_gameplay()) {
+		if (dist_to_player < circle_distance)
+			move_away_from_player(objp, vec_to_player, 0);
+		else if (dist_to_player < circle_distance * 2)
+			move_around_player(objp, vec_to_player, -1);
+		else
+			move_towards_player(objp, vec_to_player);
 	} else if (robptr->thief) {
 		move_towards_player(objp, vec_to_player);
 	} else {

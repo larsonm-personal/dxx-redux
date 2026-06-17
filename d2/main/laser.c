@@ -836,7 +836,10 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	// Move 1 frame, so that the end-tip of the laser is touching the gun barrel.
 	// This also jitters the laser a bit so that it doesn't alias.
 	//	Don't do for weapons created by weapons.
-	if ((Objects[parent].type == OBJ_PLAYER) && (Weapon_info[weapon_type].render_type != WEAPON_RENDER_NONE) && (weapon_type != FLARE_ID)) {
+	if (((Objects[parent].type == OBJ_PLAYER) ||
+	     (d1_in_d2_use_d1_gameplay() && Objects[parent].type != OBJ_WEAPON)) &&
+	    (Weapon_info[weapon_type].render_type != WEAPON_RENDER_NONE) &&
+	    (weapon_type != FLARE_ID)) {
 		vms_vector	end_pos;
 		int			end_segnum;
 
@@ -2005,7 +2008,7 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 	}
 
 	//	Make sure weapon is not moving faster than allowed speed.
-	{
+	if (!d1_in_d2_use_d1_gameplay() || Weapon_info[obj->id].thrust != 0) {
 		fix	weapon_speed;
 
 		fix max_weapon_speed = Weapon_info[obj->id].speed[Difficulty_level];

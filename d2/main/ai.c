@@ -427,7 +427,8 @@ void do_ai_frame(object *obj)
 	vms_vector  gun_point;
 	vms_vector  vis_vec_pos;
 	fix         schedule_dist_to_player = 0;
-	ailp->next_action_time -= FrameTime;
+	if (!d1_in_d2_use_d1_gameplay())
+		ailp->next_action_time -= FrameTime;
 
 	if (aip->SKIP_AI_COUNT) {
 		input_demo_note_ai_schedule_skip_return(obj);
@@ -1618,7 +1619,14 @@ _exit_cheat:
 
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 
-			if (player_visibility == 2) {
+			if (d1_in_d2_use_d1_gameplay()) {
+				if (player_visibility) {
+					ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
+					ai_multi_send_robot_position(objnum, -1);
+				} else if (!(Game_mode & GM_MULTI))
+					d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
+						robptr->turn_time[Difficulty_level], previous_visibility);
+			} else if (player_visibility == 2) {
 				ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 				ai_multi_send_robot_position(objnum, -1);
 			}
@@ -1630,7 +1638,14 @@ _exit_cheat:
 				if (!ai_multiplayer_awareness(obj, 68))
 					return;
 
-				if (player_visibility == 2) {   // @mk, 09/21/95, require that they be looking towards you to turn towards you.
+				if (d1_in_d2_use_d1_gameplay()) {
+					if (player_visibility) {
+						ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
+						ai_multi_send_robot_position(objnum, -1);
+					} else if (!(Game_mode & GM_MULTI))
+						d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
+							robptr->turn_time[Difficulty_level], previous_visibility);
+				} else if (player_visibility == 2) {   // @mk, 09/21/95, require that they be looking towards you to turn towards you.
 					ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 					ai_multi_send_robot_position(objnum, -1);
 				}
@@ -1639,7 +1654,7 @@ _exit_cheat:
 		case AIS_FIRE:
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 
-			if (player_visibility == 2) {
+			if (d1_in_d2_use_d1_gameplay() ? player_visibility : (player_visibility == 2)) {
 				if (!ai_multiplayer_awareness(obj, (ROBOT_FIRE_AGITATION-1))) {
 					if (Game_mode & GM_MULTI) {
 						ai_do_actual_firing_stuff(obj, aip, ailp, robptr, &vec_to_player, dist_to_player, &gun_point, player_visibility, object_animates, aip->CURRENT_GUN);
@@ -1648,6 +1663,9 @@ _exit_cheat:
 				}
 				ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 				ai_multi_send_robot_position(objnum, -1);
+			} else if (d1_in_d2_use_d1_gameplay() && !(Game_mode & GM_MULTI)) {
+				d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
+					robptr->turn_time[Difficulty_level], previous_visibility);
 			}
 
 			// Fire at player, if appropriate.
@@ -1657,11 +1675,14 @@ _exit_cheat:
 		case AIS_RECO:
 			if (!(obj_ref & 3)) {
 				compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
-				if (player_visibility == 2) {
+				if (d1_in_d2_use_d1_gameplay() ? player_visibility : (player_visibility == 2)) {
 					if (!ai_multiplayer_awareness(obj, 69))
 						return;
 					ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 					ai_multi_send_robot_position(objnum, -1);
+				} else if (d1_in_d2_use_d1_gameplay() && !(Game_mode & GM_MULTI)) {
+					d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
+						robptr->turn_time[Difficulty_level], previous_visibility);
 				} // -- MK, 06/09/95: else if (!(Game_mode & GM_MULTI)) {
 			}
 			break;

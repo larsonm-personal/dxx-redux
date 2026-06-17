@@ -26,6 +26,10 @@
 #include "player.h"
 #include "timer.h"
 
+#ifdef DXX_BUILD_DESCENT_II
+#include "d1_in_d2.h"
+#endif
+
 #include "input_demo_hooks_shared.h"
 
 extern int ReadControlsReplayFrame(void);
@@ -109,6 +113,8 @@ static void input_demo_finish_current_result_powerups(input_demo_result *result)
 static int input_demo_robot_is_camera_awake(int objnum, const object *obj)
 {
 #ifdef DXX_BUILD_DESCENT_II
+	if (d1_in_d2_use_d1_gameplay())
+		return (Ai_local_info[objnum].player_awareness_type > 0);
 	return ((obj->ctype.ai_info.SUB_FLAGS & SUB_FLAGS_CAMERA_AWAKE) != 0);
 #else
 	return (Ai_local_info[objnum].player_awareness_type > 0);
@@ -835,7 +841,7 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 {
 	static int previous_robot_hashes_valid = 0;
 	static unsigned int previous_robot_hashes[MAX_OBJECTS];
-	const int robot_sample_obj = 14;
+	const int robot_sample_obj = 11;
 	int i;
 	int segnum;
 
@@ -852,6 +858,13 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 	diag->robot_sample_obj = -1;
 	diag->robot_sample_sig = -1;
 	diag->robot_sample_id = -1;
+	diag->weapon_sample_obj = -1;
+	diag->weapon_sample_sig = -1;
+	diag->weapon_sample_id = -1;
+	diag->weapon_sample_seg = -1;
+	diag->weapon_sample_parent_type = -1;
+	diag->weapon_sample_parent_num = -1;
+	diag->weapon_sample_parent_sig = -1;
 
 	for (i = 0; i <= Highest_object_index; ++i) {
 		object *obj = &Objects[i];
@@ -1017,6 +1030,43 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 				break;
 			}
 			case OBJ_WEAPON:
+				if (diag->weapon_object_count == 0) {
+					diag->weapon_sample_obj = i;
+					diag->weapon_sample_sig = obj->signature;
+					diag->weapon_sample_id = obj->id;
+					diag->weapon_sample_seg = obj->segnum;
+					diag->weapon_sample_control = obj->control_type;
+					diag->weapon_sample_movement = obj->movement_type;
+					diag->weapon_sample_render = obj->render_type;
+					diag->weapon_sample_flags = obj->flags;
+					diag->weapon_sample_x = obj->pos.x;
+					diag->weapon_sample_y = obj->pos.y;
+					diag->weapon_sample_z = obj->pos.z;
+					diag->weapon_sample_last_x = obj->last_pos.x;
+					diag->weapon_sample_last_y = obj->last_pos.y;
+					diag->weapon_sample_last_z = obj->last_pos.z;
+					diag->weapon_sample_size = obj->size;
+					diag->weapon_sample_shields = obj->shields;
+					diag->weapon_sample_lifeleft = obj->lifeleft;
+					if (obj->movement_type == MT_PHYSICS) {
+						diag->weapon_sample_phys_flags =
+						    obj->mtype.phys_info.flags;
+						diag->weapon_sample_vel_x =
+						    obj->mtype.phys_info.velocity.x;
+						diag->weapon_sample_vel_y =
+						    obj->mtype.phys_info.velocity.y;
+						diag->weapon_sample_vel_z =
+						    obj->mtype.phys_info.velocity.z;
+					}
+					if (obj->control_type == CT_WEAPON) {
+						diag->weapon_sample_parent_type =
+						    obj->ctype.laser_info.parent_type;
+						diag->weapon_sample_parent_num =
+						    obj->ctype.laser_info.parent_num;
+						diag->weapon_sample_parent_sig =
+						    obj->ctype.laser_info.parent_signature;
+					}
+				}
 				diag->weapon_object_count++;
 				diag->weapon_state_hash = input_demo_state_trace_hash_object(
 				    diag->weapon_state_hash, obj);

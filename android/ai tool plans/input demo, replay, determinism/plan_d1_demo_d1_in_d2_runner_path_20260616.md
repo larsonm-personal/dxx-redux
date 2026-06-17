@@ -123,3 +123,27 @@ D1-in-D2 gameplay semantics notes:
 - Verification after the diagnostic slice:
   `.\android\run-code-quality.ps1 -Fix -Paths @('d1\main\ai.c','d1\main\input_demo_hooks.c','d1\main\input_demo_hooks.h','d2\main\ai2.c','d2\main\input_demo_hooks.c','d2\main\input_demo_hooks.h','android\ai tool plans\input demo, replay, determinism\plan_d1_demo_d1_in_d2_runner_path_20260616.md')`
   plus `.\run-windows-build.ps1 -Target d1` and `.\run-windows-build.ps1 -Target d2` passed.
+
+Level 5 fresh-demo replay slice:
+
+1. [completed] Verify `d1_descent_level5_20260616_202713.dximdemo` recreates under native D1 with state and RNG comparisons.
+2. [completed] Run the same demo under D1-in-D2 with the current save translation and gameplay compatibility branches.
+3. [in progress] Use the first state/RNG/probe mismatch to choose the next D1-in-D2 semantic fix.
+4. [pending] Rebuild and rerun the focused demo after each fix until the next divergence is understood or resolved.
+5. [in progress] Retarget the focused robot diagnostic to frame-29 object 11 and determine whether the exposed split is visibility/FVI, state transition, or turn integration.
+
+Level 5 fresh-demo notes:
+
+- Native D1 replay passed state and RNG verification:
+  `.\android\tests\run_input_demo_replay.ps1 -DemoPath C:\local\dxx-redux\android\regression_demos\d1_descent_level5_20260616_202713.dximdemo -Game d1 -Mode accelerated -Runner fast -StateLogPath temp\d1_level5_202713_d1_state.jsonl -CompareStateTrace -RngLogPath temp\d1_level5_202713_d1_rngtrace.jsonl -CompareRngTrace -ReplayDebugLog -KeepSandbox -TimeoutSeconds 240`
+- Native D1 completed 2430 frames with final state: energy 52, shields 151, score 5200, segment 249, robots_alive 89, robots_killed 106, powerups 48.
+- Initial D1-in-D2 replay now reaches all 2430 frames after the translated-checkpoint start path is used automatically for D1 replay data. Its frame-0 object allocator and live-object hashes match native D1, but restored player flight fields and AI state diagnostics diverge immediately.
+- First Level 5 restore fixes: D1-in-D2 now keeps the D1 object stream as the source of truth for the restored player object instead of overwriting it from the checkpoint metadata preview, clears D2-only AI subflags when translating D1 robot objects, and reports the D1 awareness concept in the shared `camera_awake_robots` trace while D1 gameplay compatibility is active.
+- Follow-up comparison showed the RNG stream reaches the same first comparable random call at frame 19 with matching call count, object context, RNG state, and result; the existing RNG comparator reports that as different only because the source file/function location is D1 `ai.c` versus D2 `ai2.c`.
+- The next real semantic mismatch is D2 decrementing `Ai_local_info[].next_action_time` every AI frame. D1's corresponding `wait_time` decrement is commented out, so D1-in-D2 now skips this decrement while D1 gameplay compatibility is active.
+- After the AI timer fix, selected gameplay state matches through frame 19. The first remaining gameplay mismatch is the weapon object created by robot 13's frame-19 shot: counts, RNG, robot state, and fireball state match, but the weapon hash differs at frame 20. D1 advances any non-weapon-parent laser from the muzzle to the bolt end; D2 only did that for player-fired weapons, so D1-in-D2 now uses D1's broader muzzle advance rule.
+- Added a first-live-weapon sample to the shared state trace and reran native D1 plus D1-in-D2. The frame-20 mismatch is weapon position/velocity only; id, parent, flags, size, shields, and lifetime match. The cause is D2's predictive `lead_player` branch. D1 consumes the same lead-choice RNG roll, but both branches effectively fire directly at the randomized believed-player point, so D1-in-D2 now preserves D1's RNG order and direct-fire vector when D1 robot aiming is active.
+- The D1 robot direct-fire fix moved the first selected mismatch to frame 21, object 13, immediately after that robot's frame-19 shot. D1-in-D2 was using D2's later non-claw movement rule keyed by `next_fire`; D1 uses the older three-way distance rule. D1-in-D2 now uses D1's non-claw `ai_move_relative_to_player` behavior.
+- The D1 non-claw movement fix moved the first mismatch to frame 34, where a player laser's velocity was clamped only in D1-in-D2. D1 only applies the `Laser_do_weapon_sequence` max-speed cap to thrust weapons, while D2 caps all weapons, so D1-in-D2 now skips that cap for non-thrust D1 weapons.
+- The weapon-speed fix moved the first mismatch to frame 41, object 12. That object is in `AIS_LOCK` and D1 turns on any nonzero visibility, while D2's lower AI state machine only turns on visibility `2`. D1-in-D2 now uses D1 lower-state turn semantics for search, lock, fire, and recoil.
+- The lower-state turn fix exposes the next frontier earlier: frame 29, object 11. RNG still matches there, but D1 and D1-in-D2 disagree on whether the lower-state turn should happen, which points to a visibility/FVI classification split that D2's stricter `player_visibility == 2` gate had previously masked. The current temporary detailed robot sample is hardcoded to object 12; retarget it to object 11 or make the sample selector configurable before the next diagnostic run.

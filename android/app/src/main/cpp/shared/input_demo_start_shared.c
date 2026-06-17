@@ -39,7 +39,7 @@ extern int state_restore_all_sub(char *filename, int multi);
 extern int state_restore_all_sub(char *filename);
 #endif
 
-static int input_demo_d1_in_d2_start_from_level = 0;
+static int input_demo_d1_in_d2_enabled = 0;
 
 static unsigned int input_demo_primary_order_copy_count(void)
 {
@@ -323,8 +323,7 @@ int input_demo_apply_replay_common_setup(
 {
 	if (!options)
 		return 0;
-	input_demo_d1_in_d2_start_from_level =
-	    options->d1_in_d2_start_from_level ? 1 : 0;
+	input_demo_d1_in_d2_enabled = options->allow_d1_in_d2 ? 1 : 0;
 	if (options->actual_result_path)
 		input_demo_replay_set_actual_result_path(options->actual_result_path);
 	if (options->rng_trace_path && !input_demo_rng_trace_start_replay(
@@ -526,7 +525,7 @@ int input_demo_start_loaded_replay_common(void)
 		return 1;
 	}
 #ifdef DXX_BUILD_DESCENT_II
-	if (input_demo_d1_in_d2_start_from_level &&
+	if (input_demo_d1_in_d2_enabled &&
 	    input_demo_replay_game() == INPUT_DEMO_GAME_D1) {
 		d1_save_translate_checkpoint_start d1_checkpoint;
 		const char *d1_mission_name;

@@ -492,6 +492,7 @@ static int d1_save_translate_read_object_control(d1_save_translate_reader *reade
 		for (i = 0; i < MAX_AI_FLAGS; i++)
 			if (!d1_save_translate_read_s8(reader, &obj->ctype.ai_info.flags[i]))
 				return 0;
+		obj->ctype.ai_info.SUB_FLAGS = 0;
 		if (!d1_save_translate_read_s16(reader, &obj->ctype.ai_info.hide_segment) ||
 		    !d1_save_translate_read_s16(reader, &obj->ctype.ai_info.hide_index) ||
 		    !d1_save_translate_read_s16(reader, &obj->ctype.ai_info.path_length) ||
@@ -1231,45 +1232,10 @@ void d1_save_translate_apply_checkpoint_player(
 	Players[Player_num].secondary_weapon = start->secondary_weapon;
 	select_weapon(Players[Player_num].primary_weapon, 0, 0, 0);
 	select_weapon(Players[Player_num].secondary_weapon, 1, 0, 0);
-	if (start->has_player_object_pose) {
-		int objnum = Players[Player_num].objnum;
-		if (objnum >= 0 && objnum <= Highest_object_index) {
-			object *obj = &Objects[objnum];
+	if (objnum >= 0 && objnum <= Highest_object_index) {
+		object *obj = &Objects[objnum];
 
-			if (start->player_object_segnum >= 0 &&
-			    start->player_object_segnum <= Highest_segment_index &&
-			    obj->segnum != start->player_object_segnum)
-				obj_relink(objnum, start->player_object_segnum);
-			obj->type = start->player_object_type;
-			obj->id = start->player_object_id;
-			obj->control_type = start->player_object_control_type;
-			obj->movement_type = start->player_object_movement_type;
-			obj->render_type = start->player_object_render_type;
-			obj->flags = start->player_object_flags;
-			obj->attached_obj = start->player_object_attached_obj;
-			obj->pos = start->player_object_pos;
-			obj->orient = start->player_object_orient;
-			obj->size = start->player_object_size;
-			obj->last_pos = start->player_object_last_pos;
-			obj->contains_type = start->player_object_contains_type;
-			obj->contains_id = start->player_object_contains_id;
-			obj->contains_count = start->player_object_contains_count;
-			obj->matcen_creator = start->player_object_matcen_creator;
-			obj->lifeleft = start->player_object_lifeleft;
-			obj->shields = start->player_object_shields;
-			if (start->has_player_object_physics) {
-				obj->mtype.phys_info.velocity = start->player_object_velocity;
-				obj->mtype.phys_info.thrust = start->player_object_thrust;
-				obj->mtype.phys_info.mass = start->player_object_mass;
-				obj->mtype.phys_info.drag = start->player_object_drag;
-				obj->mtype.phys_info.brakes = start->player_object_brakes;
-				obj->mtype.phys_info.rotvel = start->player_object_rotvel;
-				obj->mtype.phys_info.rotthrust = start->player_object_rotthrust;
-				obj->mtype.phys_info.turnroll = start->player_object_turnroll;
-				obj->mtype.phys_info.flags = start->player_object_phys_flags;
-			}
-			ConsoleObject = obj;
-			Viewer = obj;
-		}
+		ConsoleObject = obj;
+		Viewer = obj;
 	}
 }
