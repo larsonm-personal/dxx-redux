@@ -73,7 +73,10 @@ static void input_demo_format_replay_mission_name(const char *replay_mission,
                                                   char *mission_name, size_t mission_name_size)
 {
 #ifdef DXX_BUILD_DESCENT_II
-	snprintf(mission_name, mission_name_size, "%s", replay_mission);
+	if (!d_stricmp(replay_mission, "d1"))
+		snprintf(mission_name, mission_name_size, "%s", D1_MISSION_FILENAME);
+	else
+		snprintf(mission_name, mission_name_size, "%s", replay_mission);
 #else
 	if (!d_stricmp(replay_mission, "d1"))
 		snprintf(mission_name, mission_name_size, "%s", D1_MISSION_FILENAME);
@@ -195,13 +198,15 @@ int input_demo_maybe_validate_metadata_from_cmdline(void)
 
 static int input_demo_load_replay_checked(const char *demo_path,
                                           int expected_game,
+                                          int alternate_game,
                                           const char *expected_game_name,
                                           char *error,
                                           size_t error_size)
 {
 	if (!input_demo_replay_load(demo_path, error, error_size))
 		return 0;
-	if (input_demo_replay_game() != expected_game) {
+	if (input_demo_replay_game() != expected_game &&
+	    (!alternate_game || input_demo_replay_game() != alternate_game)) {
 		input_demo_replay_unload();
 		snprintf(error, error_size,
 		         "Input demo replay currently supports %s demos only",
@@ -211,11 +216,12 @@ static int input_demo_load_replay_checked(const char *demo_path,
 	return 1;
 }
 
-int input_demo_load_replay_from_path_common(const char *demo_path,
-                                            int expected_game,
-                                            const char *expected_game_name,
-                                            char *error,
-                                            size_t error_size)
+int input_demo_load_replay_from_path_common_with_alternate(const char *demo_path,
+                                                           int expected_game,
+                                                           int alternate_game,
+                                                           const char *expected_game_name,
+                                                           char *error,
+                                                           size_t error_size)
 {
 	int engine_mode;
 	int demo_mode;
@@ -232,8 +238,18 @@ int input_demo_load_replay_from_path_common(const char *demo_path,
 		snprintf(error, error_size, "%s", validation_error);
 		return 0;
 	}
-	return input_demo_load_replay_checked(demo_path, expected_game,
+	return input_demo_load_replay_checked(demo_path, expected_game, alternate_game,
 	                                      expected_game_name, error, error_size);
+}
+
+int input_demo_load_replay_from_path_common(const char *demo_path,
+                                            int expected_game,
+                                            const char *expected_game_name,
+                                            char *error,
+                                            size_t error_size)
+{
+	return input_demo_load_replay_from_path_common_with_alternate(
+	    demo_path, expected_game, 0, expected_game_name, error, error_size);
 }
 
 int input_demo_parse_replay_cmdline(input_demo_replay_cmdline_options *options)
@@ -252,6 +268,7 @@ int input_demo_parse_replay_cmdline(input_demo_replay_cmdline_options *options)
 	options->state_log_path = NULL;
 	options->rng_trace_path = NULL;
 	options->replay_labels_enabled = 0;
+	options->allow_d1_in_d2 = 0;
 
 	arg_index = input_demo_find_cmd_arg("-inputdemo-replay");
 	actual_result_arg_index = input_demo_find_cmd_arg("-inputdemo-actual-result");
@@ -264,6 +281,7 @@ int input_demo_parse_replay_cmdline(input_demo_replay_cmdline_options *options)
 
 	input_demo_debug_set_enabled(debug_log_arg_index ? 1 : 0);
 	options->replay_labels_enabled = replay_labels_arg_index ? 1 : 0;
+	options->allow_d1_in_d2 = input_demo_find_cmd_arg("-inputdemo-d1-in-d2") ? 1 : 0;
 	input_demo_apply_extra_replay_cmdline_options(options);
 
 	if (!arg_index)

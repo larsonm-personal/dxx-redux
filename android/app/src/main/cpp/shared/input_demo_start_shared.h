@@ -12,6 +12,7 @@ typedef struct input_demo_replay_cmdline_options {
 	const char *state_log_path;
 	const char *rng_trace_path;
 	int replay_labels_enabled;
+	int allow_d1_in_d2;
 } input_demo_replay_cmdline_options;
 
 typedef struct input_demo_replay_loaded_context {
@@ -46,6 +47,10 @@ int input_demo_maybe_validate_metadata_from_cmdline(void);
 int input_demo_load_replay_from_path_common(const char *demo_path,
                                             int expected_game, const char *expected_game_name, char *error,
                                             size_t error_size);
+int input_demo_load_replay_from_path_common_with_alternate(const char *demo_path,
+                                                           int expected_game, int alternate_game,
+                                                           const char *expected_game_name, char *error,
+                                                           size_t error_size);
 int input_demo_parse_replay_cmdline(input_demo_replay_cmdline_options *options);
 int input_demo_apply_replay_common_setup(
     const input_demo_replay_cmdline_options *options, char *error,

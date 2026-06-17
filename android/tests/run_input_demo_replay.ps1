@@ -30,6 +30,7 @@ param(
     [switch]$TraceRng,
     [switch]$CompareRngTrace,
     [switch]$SkipExpectedChecks,
+    [switch]$D1InD2,
     [switch]$AllowMissingActualResult,
     [ValidateSet(1, 2)]
     [int]$HeadlessConsoleOutput = 1,
@@ -333,6 +334,23 @@ function Get-GameConfig {
     throw "Unsupported game: $Name"
 }
 
+function Get-D1InD2GameConfig {
+    $config = Get-GameConfig -Name 'd2'
+    $config.RequiredFiles = @(
+        'DESCENT2.HOG',
+        'DESCENT2.HAM',
+        'GROUPA.PIG',
+        'DESCENT.HOG',
+        'DESCENT.PIG'
+    )
+    $config.RequiredHashes = @()
+    $config.DefaultDataDirs = @(
+        (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'temp'),
+        (Join-RegressionPath $repoRoot 'game_data_to_copy_to_emulator' 'data')
+    ) + $config.DefaultDataDirs
+    return $config
+}
+
 function Read-GameDataHashIndex {
     $indexFile = Join-RegressionPath $repoRoot 'game_data' 'game_data_index.txt'
     $generator = Join-RegressionPath $repoRoot 'game_data' 'generate_game_data_index.ps1'
@@ -560,9 +578,13 @@ function Test-CanUseHeadlessConsoleRunner {
         [string]$ResolvedGame,
         [hashtable]$Header,
         [hashtable]$LaunchMode,
-        [string]$Pilot
+        [string]$Pilot,
+        [switch]$D1InD2
     )
 
+    if ($D1InD2) {
+        return $false
+    }
     if ($Pilot) {
         return $false
     }
@@ -588,10 +610,11 @@ function Resolve-ReplayRunnerSelection {
         [hashtable]$LaunchMode,
         [string]$Pilot,
         [switch]$NoRender,
-        [switch]$PreferHeadlessConsole
+        [switch]$PreferHeadlessConsole,
+        [switch]$D1InD2
     )
 
-    $headlessAvailable = Test-CanUseHeadlessConsoleRunner -ResolvedGame $ResolvedGame -Header $Header -LaunchMode $LaunchMode -Pilot $Pilot
+    $headlessAvailable = Test-CanUseHeadlessConsoleRunner -ResolvedGame $ResolvedGame -Header $Header -LaunchMode $LaunchMode -Pilot $Pilot -D1InD2:$D1InD2
 
     switch ($RequestedRunner) {
         'visual' {
@@ -622,6 +645,9 @@ function Resolve-ReplayRunnerSelection {
             }
         }
         'headless-console' {
+            if ($D1InD2) {
+                throw '-Runner headless-console cannot be combined with -D1InD2'
+            }
             if ($NoRender) {
                 throw '-Runner headless-console cannot be combined with -NoRender'
             }
@@ -882,6 +908,7 @@ function Get-LaunchArguments {
         [switch]$NoRender,
         [switch]$ShowReplayRobotLabels,
         [switch]$ReplayDebugLog,
+        [switch]$D1InD2,
         [string]$ResolvedStateLogPath,
         [string]$ResolvedRngLogPath
     )
@@ -913,6 +940,9 @@ function Get-LaunchArguments {
     }
     if ($ReplayDebugLog) {
         $launchParameters += '-inputdemo-debug-log'
+    }
+    if ($D1InD2) {
+        $launchParameters += '-inputdemo-d1-in-d2'
     }
     if ($ResolvedStateLogPath) {
         $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
@@ -1276,11 +1306,33 @@ if ($DemoPath) {
 }
 
 $header = Get-DemoHeader -Path $resolvedDemoPath
-$resolvedGame = Resolve-DemoGame -Header $header -RequestedGame $Game
-$config = Get-GameConfig -Name $resolvedGame
+$recordedGame = Resolve-DemoGame -Header $header -RequestedGame 'auto'
+if ($D1InD2) {
+    if ($Game -eq 'd1') {
+        throw '-D1InD2 runs the D2 executable; use -Game auto or -Game d2'
+    }
+    if ($recordedGame -ne 'd1') {
+        throw "-D1InD2 requires a D1 recording, but this demo is '$recordedGame'"
+    }
+    if ($PreferHeadlessConsole) {
+        throw '-D1InD2 cannot be combined with -PreferHeadlessConsole'
+    }
+    $resolvedGame = 'd2'
+    $config = Get-D1InD2GameConfig
+    if ($Runner -eq 'auto') {
+        $Runner = 'windowed-no-present'
+    }
+} else {
+    $resolvedGame = Resolve-DemoGame -Header $header -RequestedGame $Game
+    $config = Get-GameConfig -Name $resolvedGame
+}
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
 if ($ResolveDataDirOnly) {
-    Write-Host "Resolved $resolvedGame data dir: $resolvedDataDir"
+    if ($D1InD2) {
+        Write-Host "Resolved d1-in-d2 data dir: $resolvedDataDir"
+    } else {
+        Write-Host "Resolved $resolvedGame data dir: $resolvedDataDir"
+    }
     exit 0
 }
 $runnerPromptDefaults = Get-RunnerPromptDefaults -RequestedRunner $Runner -RequestedMode $Mode -RequestedProfile $RenderProfile
@@ -1314,7 +1366,7 @@ if ($RngLogPath -or $TraceRng -or $CompareRngTrace) {
         New-Item -ItemType Directory -Path $rngLogDirectory -Force | Out-Null
     }
 }
-$runnerSelection = Resolve-ReplayRunnerSelection -RequestedRunner $Runner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole
+$runnerSelection = Resolve-ReplayRunnerSelection -RequestedRunner $Runner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole -D1InD2:$D1InD2
 $useHeadlessConsole = $runnerSelection.UseHeadlessConsole
 $effectiveNoRender = $runnerSelection.UseNoRender
 $headlessQuietConsole = $useHeadlessConsole -and ($HeadlessConsoleOutput -eq 1)
@@ -1363,7 +1415,7 @@ $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -
 $launchArgs = if ($useHeadlessConsole) {
     Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath -ReplayDebugLog:$ReplayDebugLog -HeadlessConsoleOutput $HeadlessConsoleOutput
 } else {
-    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
+    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -D1InD2:$D1InD2 -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
 }
 $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
 $runnerName = $runnerSelection.Name
@@ -1387,6 +1439,9 @@ if (-not $headlessQuietConsole) {
     Write-Host ''
     Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
     Write-Host "Game: $resolvedGame"
+    if ($D1InD2) {
+        Write-Host 'Replay compatibility: D1 recording under D2 executable'
+    }
     Write-Host "Runner: $runnerName"
     Write-Host "Runner selection: $($runnerSelection.Selection)"
     Write-Host "Replay path: $($runnerSelection.Description)"
@@ -1511,7 +1566,7 @@ if ($resolvedRngLogPath) {
     }
 }
 $compareError = $null
-if ($SkipExpectedChecks) {
+if ($SkipExpectedChecks -or $D1InD2) {
     $compareError = $null
 } elseif ($actualResult) {
     $compareDiffs = Compare-JsonDiff -Expected $expectedForCompare -Actual $actualResult

@@ -54,7 +54,11 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 		return cmdline_result;
 	demo_path = cmdline.demo_path;
 	INPUT_DEMO_CRUMB_V("input_demo: cmdline path=%s", demo_path);
-	if (!input_demo_load_replay_from_path(demo_path, replay_error, sizeof(replay_error)))
+	if (!input_demo_load_replay_from_path_common_with_alternate(
+	        demo_path, INPUT_DEMO_GAME_D2,
+	        cmdline.allow_d1_in_d2 ? INPUT_DEMO_GAME_D1 : 0,
+	        cmdline.allow_d1_in_d2 ? "D2 or D1-in-D2" : "D2",
+	        replay_error, sizeof(replay_error)))
 	{
 		printf("Input demo replay load failed: %s\n", replay_error);
 		return 1;
