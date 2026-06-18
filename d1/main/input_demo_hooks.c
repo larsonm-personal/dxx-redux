@@ -7,6 +7,7 @@
 #include "console.h"
 #include "controls.h"
 #include "endlevel.h"
+#include "fvi.h"
 #include "game.h"
 #include "gameseq.h"
 #include "input_demo_control_info.h"
@@ -25,9 +26,460 @@
 #include "newdemo.h"
 #include "object.h"
 #include "player.h"
+#include "wall.h"
+#include "weapon.h"
 
 extern int Num_awareness_events;
 #include "input_demo_hooks_shared.h"
+
+static void input_demo_append_replay_probe_message_d1(const char *kind,
+	object *objp, const char *message)
+{
+	char path[1024];
+	char *slash;
+	FILE *file;
+	const char *result_path = input_demo_replay_actual_result_path();
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+
+	if (!input_demo_replay_is_loaded() || !kind || !message ||
+		!result_path || !result_path[0])
+		return;
+
+	snprintf(path, sizeof(path), "%s", result_path);
+	slash = strrchr(path, '\\');
+	if (!slash)
+		slash = strrchr(path, '/');
+	if (!slash)
+		return;
+	slash[1] = 0;
+	if (strlen(path) + strlen("ai_schedule_probe.log") + 1 >= sizeof(path))
+		return;
+	strcat(path, "ai_schedule_probe.log");
+
+	file = fopen(path, "a");
+	if (!file)
+		return;
+	fprintf(file, "frame=%u gt=%lld kind=%s obj=%d sig=%d id=%d seg=%d %s\n",
+		input_demo_debug_frame_index(),
+		(long long)GameTime64,
+		kind,
+		objnum,
+		objp ? objp->signature : -1,
+		objp ? objp->id : -1,
+		objp ? objp->segnum : -1,
+		message);
+	fclose(file);
+}
+
+static int input_demo_trace_motion_probe_active(void)
+{
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+}
+
+static unsigned int input_demo_trace_motion_frame_index(void)
+{
+	if (input_demo_replay_is_loaded())
+		return (unsigned int)input_demo_replay_next_frame_index();
+	if (input_demo_recorder_is_active()) {
+		const unsigned int frame_count = (unsigned int)input_demo_recorder_frame_count();
+
+		return frame_count ? frame_count - 1 : 0;
+	}
+	return 0;
+}
+
+static const char *input_demo_physics_fate_name(int fate)
+{
+	switch (fate) {
+		case HIT_NONE:
+			return "none";
+		case HIT_WALL:
+			return "wall";
+		case HIT_OBJECT:
+			return "object";
+		case HIT_BAD_P0:
+			return "bad_p0";
+		default:
+			return "unknown";
+	}
+}
+
+void input_demo_log_d1_object13_physics_fate(object *obj, int fate,
+	const fvi_info *hit_info, const vms_vector *frame_vec,
+	const vms_vector *new_pos, fix sim_time, int ignore_count)
+{
+	char path[1024];
+	char *slash;
+	FILE *file;
+	const char *result_path = input_demo_replay_actual_result_path();
+	const int objnum = obj ? (int)(obj - Objects) : -1;
+	const object *hit_obj = NULL;
+	const int hit_objnum = hit_info ? hit_info->hit_object : -1;
+	int child_seg = -2;
+	int wall_num = -1;
+	int wall_type = -1;
+	int wall_state = -1;
+	int wall_flags = 0;
+	int doorway_flags = 0;
+
+	if (!input_demo_replay_is_loaded() || !obj || (objnum != 13 && objnum != 15) ||
+		!hit_info || !frame_vec || !new_pos || !result_path || !result_path[0])
+		return;
+	if (hit_objnum >= 0 && hit_objnum <= Highest_object_index)
+		hit_obj = &Objects[hit_objnum];
+	if (hit_info->hit_side_seg >= 0 && hit_info->hit_side_seg <= Highest_segment_index &&
+		hit_info->hit_side >= 0 && hit_info->hit_side < MAX_SIDES_PER_SEGMENT) {
+		segment *wall_seg = &Segments[hit_info->hit_side_seg];
+
+		child_seg = wall_seg->children[hit_info->hit_side];
+		wall_num = wall_seg->sides[hit_info->hit_side].wall_num;
+		doorway_flags = WALL_IS_DOORWAY(wall_seg, hit_info->hit_side);
+		if (wall_num >= 0 && wall_num < Num_walls) {
+			wall_type = Walls[wall_num].type;
+			wall_state = Walls[wall_num].state;
+			wall_flags = Walls[wall_num].flags;
+		}
+	}
+	snprintf(path, sizeof(path), "%s", result_path);
+	slash = strrchr(path, '\\');
+	if (!slash)
+		slash = strrchr(path, '/');
+	if (!slash)
+		return;
+	slash[1] = 0;
+	if (strlen(path) + strlen("ai_schedule_probe.log") + 1 >= sizeof(path))
+		return;
+	strcat(path, "ai_schedule_probe.log");
+	file = fopen(path, "a");
+	if (!file)
+		return;
+	fprintf(file,
+		"frame=%u gt=%lld kind=physics_fvi_fate obj=%d sig=%d id=%d seg=%d "
+		"fate=%s hit_seg=%d hit_side=%d hit_side_seg=%d hit_obj=%d "
+		"child=%d wall=%d wall_type=%d wall_state=%d wall_flags=0x%x doorway=0x%x "
+		"hit_type=%d hit_id=%d hit_sig=%d hit_segnum=%d "
+		"start=(%d,%d,%d) target=(%d,%d,%d) frame_vec=(%d,%d,%d) "
+		"vel=(%d,%d,%d) sim_time=%d ignore_count=%d\n",
+		input_demo_trace_motion_frame_index(),
+		(long long)GameTime64,
+		objnum,
+		obj->signature,
+		obj->id,
+		obj->segnum,
+		input_demo_physics_fate_name(fate),
+		hit_info->hit_seg,
+		hit_info->hit_side,
+		hit_info->hit_side_seg,
+		hit_objnum,
+		child_seg,
+		wall_num,
+		wall_type,
+		wall_state,
+		wall_flags,
+		doorway_flags,
+		hit_obj ? hit_obj->type : -1,
+		hit_obj ? hit_obj->id : -1,
+		hit_obj ? hit_obj->signature : -1,
+		hit_obj ? hit_obj->segnum : -1,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z,
+		new_pos->x,
+		new_pos->y,
+		new_pos->z,
+		frame_vec->x,
+		frame_vec->y,
+		frame_vec->z,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		sim_time,
+		ignore_count);
+	fclose(file);
+}
+
+static const char *input_demo_trace_motion_mode_name(void)
+{
+	if (input_demo_replay_is_loaded())
+		return "replay";
+	if (input_demo_recorder_is_active())
+		return "record";
+	return "none";
+}
+
+static int input_demo_player_robot_hit_object_probe_active(object *obj, int hit_object)
+{
+	object *other;
+
+	if (!input_demo_trace_motion_probe_active() ||
+		!ConsoleObject ||
+		hit_object < 0 ||
+		hit_object > Highest_object_index)
+		return 0;
+
+	other = &Objects[hit_object];
+	if (obj != ConsoleObject && other != ConsoleObject)
+		return 0;
+
+	if (obj == ConsoleObject)
+		return other->type == OBJ_ROBOT;
+
+	return obj->type == OBJ_ROBOT;
+}
+
+void input_demo_log_player_robot_hit_object_probe(
+	const char *step,
+	object *moving_obj,
+	int hit_object,
+	const vms_vector *collision_point,
+	const vms_vector *old_velocity,
+	int ignore_count,
+	int will_retry,
+	int ignored_hit)
+{
+	object *other;
+	object *player;
+	object *robot;
+	const int unchanged_velocity = old_velocity &&
+		old_velocity->x == moving_obj->mtype.phys_info.velocity.x &&
+		old_velocity->y == moving_obj->mtype.phys_info.velocity.y &&
+		old_velocity->z == moving_obj->mtype.phys_info.velocity.z;
+
+	if (!input_demo_player_robot_hit_object_probe_active(moving_obj, hit_object))
+		return;
+
+	other = &Objects[hit_object];
+	player = moving_obj == ConsoleObject ? moving_obj : other;
+	robot = moving_obj == ConsoleObject ? other : moving_obj;
+	con_printf(CON_NORMAL,
+		"Input demo physics object contact: mode=%s frame=%u gt=%lld step=%s move_obj=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) flags=0x%x ctype=%d mtype=%d persistent=%d unchanged=%d retry=%d ignored=%d ignore_count=%d old_vel=(%d,%d,%d) player=%d/%d/%d seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) shields=%d flags=0x%x robot=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) shields=%d flags=0x%x ctype=%d mtype=%d cp=(%d,%d,%d)\n",
+		input_demo_trace_motion_mode_name(),
+		input_demo_trace_motion_frame_index(),
+		(long long)GameTime64,
+		step,
+		moving_obj - Objects,
+		moving_obj->type,
+		moving_obj->id,
+		moving_obj->signature,
+		moving_obj->segnum,
+		moving_obj->pos.x,
+		moving_obj->pos.y,
+		moving_obj->pos.z,
+		moving_obj->last_pos.x,
+		moving_obj->last_pos.y,
+		moving_obj->last_pos.z,
+		moving_obj->mtype.phys_info.velocity.x,
+		moving_obj->mtype.phys_info.velocity.y,
+		moving_obj->mtype.phys_info.velocity.z,
+		moving_obj->flags,
+		moving_obj->control_type,
+		moving_obj->movement_type,
+		(moving_obj->mtype.phys_info.flags & PF_PERSISTENT) != 0,
+		unchanged_velocity,
+		will_retry,
+		ignored_hit,
+		ignore_count,
+		old_velocity ? old_velocity->x : 0,
+		old_velocity ? old_velocity->y : 0,
+		old_velocity ? old_velocity->z : 0,
+		player - Objects,
+		player->type,
+		player->id,
+		player->segnum,
+		player->pos.x,
+		player->pos.y,
+		player->pos.z,
+		player->mtype.phys_info.velocity.x,
+		player->mtype.phys_info.velocity.y,
+		player->mtype.phys_info.velocity.z,
+		Players[Player_num].shields,
+		player->flags,
+		robot - Objects,
+		robot->type,
+		robot->id,
+		robot->signature,
+		robot->segnum,
+		robot->pos.x,
+		robot->pos.y,
+		robot->pos.z,
+		robot->mtype.phys_info.velocity.x,
+		robot->mtype.phys_info.velocity.y,
+		robot->mtype.phys_info.velocity.z,
+		robot->shields,
+		robot->flags,
+		robot->control_type,
+		robot->movement_type,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+}
+
+void input_demo_log_powerup_spawn_probe(object *source, object *created, int created_objnum)
+{
+	char probe[256];
+
+	if (!source || !created)
+		return;
+	snprintf(probe, sizeof(probe),
+		"source=%d/%d/%d/%d seg=%d flags=0x%x contains=%d/%d/%d created=%d/%d/%d/%d/%d count=%d",
+		(int)(source - Objects),
+		source->signature,
+		source->type,
+		source->id,
+		source->segnum,
+		source->flags,
+		source->contains_type,
+		source->contains_id,
+		source->contains_count,
+		created_objnum,
+		created->signature,
+		created->id,
+		created->segnum,
+		created->flags,
+		created->ctype.powerup_info.count);
+	input_demo_append_replay_probe_message_d1("powerup_spawn", created, probe);
+}
+
+void input_demo_log_weapon_lifetime(const char *step, object *obj)
+{
+	char probe[512];
+
+	if (!step || !obj || obj->type != OBJ_WEAPON)
+		return;
+	snprintf(probe, sizeof(probe),
+		"step=%s id=%d homing=%d parent_type=%d parent=%d parent_sig=%d "
+		"last_hit=%d track_goal=%d life=%d seg=%d vel=(%d,%d,%d) "
+		"pos=(%d,%d,%d) last=(%d,%d,%d)",
+		step,
+		obj->id,
+		Weapon_info[obj->id].homing_flag,
+		obj->ctype.laser_info.parent_type,
+		obj->ctype.laser_info.parent_num,
+		obj->ctype.laser_info.parent_signature,
+		obj->ctype.laser_info.last_hitobj,
+		obj->ctype.laser_info.track_goal,
+		obj->lifeleft,
+		obj->segnum,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z,
+		obj->last_pos.x,
+		obj->last_pos.y,
+		obj->last_pos.z);
+	input_demo_append_replay_probe_message_d1("weapon_life", obj, probe);
+}
+
+void input_demo_log_player_shot_create_probe(object *shooter, object *weapon,
+	int laser_type, int gun_num, int harmless, int make_sound,
+	const vms_vector *direction)
+{
+	char probe[512];
+
+	if (!shooter || !weapon)
+		return;
+	snprintf(probe, sizeof(probe),
+		"shooter=%d laser_type=%d gun=%d harmless=%d sound=%d "
+		"pos=(%d,%d,%d) dir=(%d,%d,%d)",
+		(int)(shooter - Objects),
+		laser_type,
+		gun_num,
+		harmless,
+		make_sound,
+		weapon->pos.x,
+		weapon->pos.y,
+		weapon->pos.z,
+		direction ? direction->x : 0,
+		direction ? direction->y : 0,
+		direction ? direction->z : 0);
+	input_demo_append_replay_probe_message_d1("player_shot_create", weapon, probe);
+}
+
+void input_demo_log_replay_collision_pair(const char *kind, object *obj0,
+	object *obj1, const vms_vector *collision_point)
+{
+	char probe[768];
+
+	if (!kind || !obj0 || !obj1)
+		return;
+	snprintf(probe, sizeof(probe),
+		"a=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) "
+		"vel=(%d,%d,%d) size=%d shields=%d flags=0x%x "
+		"b=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) "
+		"vel=(%d,%d,%d) size=%d shields=%d flags=0x%x cp=(%d,%d,%d)",
+		(int)(obj0 - Objects),
+		obj0->type,
+		obj0->id,
+		obj0->signature,
+		obj0->segnum,
+		obj0->pos.x,
+		obj0->pos.y,
+		obj0->pos.z,
+		obj0->last_pos.x,
+		obj0->last_pos.y,
+		obj0->last_pos.z,
+		obj0->mtype.phys_info.velocity.x,
+		obj0->mtype.phys_info.velocity.y,
+		obj0->mtype.phys_info.velocity.z,
+		obj0->size,
+		obj0->shields,
+		obj0->flags,
+		(int)(obj1 - Objects),
+		obj1->type,
+		obj1->id,
+		obj1->signature,
+		obj1->segnum,
+		obj1->pos.x,
+		obj1->pos.y,
+		obj1->pos.z,
+		obj1->last_pos.x,
+		obj1->last_pos.y,
+		obj1->last_pos.z,
+		obj1->mtype.phys_info.velocity.x,
+		obj1->mtype.phys_info.velocity.y,
+		obj1->mtype.phys_info.velocity.z,
+		obj1->size,
+		obj1->shields,
+		obj1->flags,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+	input_demo_append_replay_probe_message_d1(kind, obj0, probe);
+}
+
+void input_demo_log_weapon_robot_path_probe(const char *step, object *weapon,
+	object *robot, const vms_vector *collision_point)
+{
+	char probe[512];
+
+	if (!step || !weapon || !robot)
+		return;
+	snprintf(probe, sizeof(probe),
+		"step=%s weapon=%d/%d/%d/%d/%d robot=%d/%d/%d/%d/%d "
+		"robot_flags=0x%x robot_shields=%d weapon_flags=0x%x "
+		"weapon_life=%d cp=(%d,%d,%d)",
+		step,
+		(int)(weapon - Objects),
+		weapon->signature,
+		weapon->type,
+		weapon->id,
+		weapon->segnum,
+		(int)(robot - Objects),
+		robot->signature,
+		robot->type,
+		robot->id,
+		robot->segnum,
+		robot->flags,
+		robot->shields,
+		weapon->flags,
+		weapon->lifeleft,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+	input_demo_append_replay_probe_message_d1("weapon_robot_path", weapon, probe);
+}
 
 void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
 {
@@ -210,7 +662,7 @@ static void input_demo_hit_object_details(int hit_object, int *hit_obj_type,
 static int input_demo_trace_ai_visibility_fvi_active(object *objp)
 {
 	return input_demo_trace_ai_visibility_active(objp) &&
-		((int)(objp - Objects) == 14);
+		((int)(objp - Objects) == 151);
 }
 
 void input_demo_log_ai_visibility_probe(object *objp, const char *step_label,
@@ -222,6 +674,7 @@ void input_demo_log_ai_visibility_probe(object *objp, const char *step_label,
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 	ai_static *aip;
 	ai_local *ailp;
+	char probe[640];
 
 	if (!input_demo_trace_ai_visibility_active(objp) || (objnum < 0) || !pos ||
 		!believed_player_pos)
@@ -229,6 +682,36 @@ void input_demo_log_ai_visibility_probe(object *objp, const char *step_label,
 
 	aip = &objp->ctype.ai_info;
 	ailp = &Ai_local_info[objnum];
+	snprintf(probe, sizeof(probe),
+		"step=%s prev_vis=%d raw_vis=%d final_vis=%d behavior=%d mode=%d cur_state=%d goal_state=%d gun=%d player_seg=%d believed_seg=%d goal_seg=%d aware=%d aware_time=%d next_fire=%d next_fire2=%d next_misc=%lld seen=%lld sound_gates=%d/%d/%d pos=(%d,%d,%d) believed=(%d,%d,%d)",
+		step_label ? step_label : "unset",
+		previous_visibility,
+		raw_player_visibility,
+		final_player_visibility,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		-1,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		ailp->goal_segment,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		ailp->next_fire,
+		-1,
+		(long long)ailp->next_misc_sound_time,
+		(long long)ailp->time_player_seen,
+		sight_sound_gate,
+		attack_sound_gate,
+		misc_sound_gate,
+		pos->x,
+		pos->y,
+		pos->z,
+		believed_player_pos->x,
+		believed_player_pos->y,
+		believed_player_pos->z);
+	input_demo_append_replay_probe_message_d1("probe_ai_visibility", objp, probe);
 	con_printf(CON_NORMAL,
 		"Input demo AI visibility: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d prev_vis=%d raw_vis=%d final_vis=%d behavior=%d mode_ai=%d cur_state=%d goal_state=%d aware=%d aware_time=%d next_fire=%d next_fire2=%d next_misc=%lld seen=%lld sound_gates=%d/%d/%d pos=(%d,%d,%d) believed=(%d,%d,%d)\n",
 		input_demo_debug_activity_mode_name(),
@@ -274,6 +757,7 @@ void input_demo_log_ai_visibility_fvi_probe(object *objp,
 	int hit_obj_id;
 	int hit_obj_sig;
 	int hit_obj_seg;
+	char probe[640];
 
 	if (!input_demo_trace_ai_visibility_fvi_active(objp) || (objnum < 0) || !pos ||
 		!believed_player_pos)
@@ -281,6 +765,33 @@ void input_demo_log_ai_visibility_fvi_probe(object *objp,
 
 	input_demo_hit_object_details(hit_object, &hit_obj_type, &hit_obj_id,
 		&hit_obj_sig, &hit_obj_seg);
+	snprintf(probe, sizeof(probe),
+		"step=%s result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)",
+		step_label ? step_label : "unset",
+		visibility_result,
+		hit_type,
+		hit_seg,
+		hit_object,
+		hit_obj_type,
+		hit_obj_id,
+		hit_obj_sig,
+		hit_obj_seg,
+		startseg,
+		flags,
+		dot,
+		field_of_view,
+		Overall_agitation,
+		pos->x,
+		pos->y,
+		pos->z,
+		believed_player_pos->x,
+		believed_player_pos->y,
+		believed_player_pos->z,
+		hit_pos ? hit_pos->x : 0,
+		hit_pos ? hit_pos->y : 0,
+		hit_pos ? hit_pos->z : 0);
+	input_demo_append_replay_probe_message_d1("probe_ai_visibility_fvi", objp,
+		probe);
 	con_printf(CON_NORMAL,
 		"Input demo AI visibility FVI: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)\n",
 		input_demo_debug_activity_mode_name(),

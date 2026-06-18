@@ -61,6 +61,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "controls.h"
 #include "kconfig.h"
 #include "d1_in_d2.h"
+#include "d1_in_d2_semantics.h"
 #include "input_demo_hooks.h"
 #include "input_demo_debug_logging.h"
 
@@ -434,6 +435,13 @@ void do_ai_frame(object *obj)
 		input_demo_note_ai_schedule_skip_return(obj);
 		input_demo_log_ai_schedule_probe("skip_return_pre", obj, aip, ailp, 0,
 			ailp->previous_visibility, -1);
+		if (d1_in_d2_use_d1_gameplay() &&
+			(ailp->previous_visibility || ailp->player_awareness_type) &&
+			(aip->behavior != AIB_STILL) &&
+			(aip->behavior != AIB_SNIPE) &&
+			(aip->behavior != AIB_RUN_FROM) &&
+			(obj->id != ROBOT_BRAIN))
+			ailp->mode = AIM_CHASE_OBJECT;
 		aip->SKIP_AI_COUNT--;
 		if (obj->mtype.phys_info.flags & PF_USES_THRUST) {
 			obj->mtype.phys_info.rotthrust.x = (obj->mtype.phys_info.rotthrust.x * 15)/16;
@@ -555,7 +563,9 @@ _exit_cheat:
 
 	// If this robot can fire, compute visibility from gun position.
 	// Don't want to compute visibility twice, as it is expensive.  (So is call to calc_gun_point).
-	if ((previous_visibility || !(obj_ref & 3)) && ready_to_fire(robptr, ailp) && (dist_to_player < F1_0*200) && (robptr->n_guns) && !(robptr->attack_type)) {
+	if ((d1_in_d2_use_d1_gameplay() || previous_visibility || !(obj_ref & 3)) &&
+	    ready_to_fire(robptr, ailp) && (dist_to_player < F1_0*200) &&
+	    (robptr->n_guns) && !(robptr->attack_type)) {
 		// Since we passed ready_to_fire(), either next_fire or next_fire2 <= 0.  calc_gun_point from relevant one.
 		// If both are <= 0, we will deal with the mess in ai_do_actual_firing_stuff
 		if (ailp->next_fire <= 0)
@@ -753,9 +763,15 @@ _exit_cheat:
 
 	// Make sure that if this guy got hit or bumped, then he's chasing player.
 	if ((ailp->player_awareness_type == PA_WEAPON_ROBOT_COLLISION) || (ailp->player_awareness_type >= PA_PLAYER_COLLISION)) {
-		compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
-		if (player_visibility == 1) // Only increase visibility if unobstructed, else claw guys attack through doors.
-			player_visibility = 2;
+		if (d1_in_d2_use_d1_gameplay()) {
+			// AIB_SNIPE is the same numeric value as D1's AIB_FOLLOW_PATH.
+			if ((aip->behavior != AIB_STILL) && (aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_RUN_FROM) && (obj->id != ROBOT_BRAIN))
+				ailp->mode = AIM_CHASE_OBJECT;
+		} else {
+			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
+			if (player_visibility == 1) // Only increase visibility if unobstructed, else claw guys attack through doors.
+				player_visibility = 2;
+		}
 	} else if (!d1_in_d2_use_d1_robot_aiming() && ((obj_ref&3) == 0) &&
 	           !previous_visibility && (dist_to_player < F1_0*100)) {
 		fix sval, rval;
@@ -1131,7 +1147,8 @@ _exit_cheat:
 				chase_path_pre_path_dir,
 				chase_path_pre_time_player_seen);
 
-			if ((player_visibility == 0) && (dist_to_player > F1_0*80) && (!(Game_mode & GM_MULTI))) {
+			if ((!d1_in_d2_use_d1_gameplay() || !chase_path_gate_pass) &&
+				(player_visibility == 0) && (dist_to_player > F1_0*80) && (!(Game_mode & GM_MULTI))) {
 				// If pretty far from the player, player cannot be seen
 				// (obstructed) and in chase mode, switch to follow path mode.
 				// This has one desirable benefit of avoiding physics retries.
@@ -1318,7 +1335,10 @@ _exit_cheat:
 			else if (aip->CURRENT_STATE == AIS_FLIN)
 				aip->GOAL_STATE = AIS_LOCK;
 
-			if (aip->behavior != AIB_RUN_FROM)
+			if (d1_in_d2_use_d1_robot_aiming()) {
+				if ((aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_RUN_FROM))
+					do_firing_stuff(obj, player_visibility, &vec_to_player);
+			} else if (aip->behavior != AIB_RUN_FROM)
 				do_firing_stuff(obj, player_visibility, &vec_to_player);
 
 			follow_path_visible_chase_pass =
@@ -1353,9 +1373,6 @@ _exit_cheat:
 					ailp->mode = AIM_STILL;
 					aip->hide_index = -1;
 					aip->path_length = 0;
-					if (d1_in_d2_use_d1_robot_aiming())
-						d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
-							robptr->turn_time[Difficulty_level], previous_visibility);
 				}
 			}
 
@@ -1619,17 +1636,12 @@ _exit_cheat:
 
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 
-			if (d1_in_d2_use_d1_gameplay()) {
-				if (player_visibility) {
-					ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
-					ai_multi_send_robot_position(objnum, -1);
-				} else if (!(Game_mode & GM_MULTI))
-					d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
-						robptr->turn_time[Difficulty_level], previous_visibility);
-			} else if (player_visibility == 2) {
+			if (d1_in_d2_ai_visibility_turns_robot(player_visibility)) {
 				ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 				ai_multi_send_robot_position(objnum, -1);
-			}
+			} else if (d1_in_d2_ai_may_turn_randomly_without_visibility(Game_mode))
+				d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
+					robptr->turn_time[Difficulty_level], previous_visibility);
 			break;
 		case AIS_LOCK:
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
@@ -1638,23 +1650,18 @@ _exit_cheat:
 				if (!ai_multiplayer_awareness(obj, 68))
 					return;
 
-				if (d1_in_d2_use_d1_gameplay()) {
-					if (player_visibility) {
-						ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
-						ai_multi_send_robot_position(objnum, -1);
-					} else if (!(Game_mode & GM_MULTI))
-						d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
-							robptr->turn_time[Difficulty_level], previous_visibility);
-				} else if (player_visibility == 2) {   // @mk, 09/21/95, require that they be looking towards you to turn towards you.
+				if (d1_in_d2_ai_visibility_turns_robot(player_visibility)) {
 					ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 					ai_multi_send_robot_position(objnum, -1);
-				}
+				} else if (d1_in_d2_ai_may_turn_randomly_without_visibility(Game_mode))
+					d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
+						robptr->turn_time[Difficulty_level], previous_visibility);
 			}
 			break;
 		case AIS_FIRE:
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 
-			if (d1_in_d2_use_d1_gameplay() ? player_visibility : (player_visibility == 2)) {
+			if (d1_in_d2_ai_visibility_turns_robot(player_visibility)) {
 				if (!ai_multiplayer_awareness(obj, (ROBOT_FIRE_AGITATION-1))) {
 					if (Game_mode & GM_MULTI) {
 						ai_do_actual_firing_stuff(obj, aip, ailp, robptr, &vec_to_player, dist_to_player, &gun_point, player_visibility, object_animates, aip->CURRENT_GUN);
@@ -1663,7 +1670,7 @@ _exit_cheat:
 				}
 				ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 				ai_multi_send_robot_position(objnum, -1);
-			} else if (d1_in_d2_use_d1_gameplay() && !(Game_mode & GM_MULTI)) {
+			} else if (d1_in_d2_ai_may_turn_randomly_without_visibility(Game_mode)) {
 				d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
 					robptr->turn_time[Difficulty_level], previous_visibility);
 			}
@@ -1675,12 +1682,12 @@ _exit_cheat:
 		case AIS_RECO:
 			if (!(obj_ref & 3)) {
 				compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
-				if (d1_in_d2_use_d1_gameplay() ? player_visibility : (player_visibility == 2)) {
+				if (d1_in_d2_ai_visibility_turns_robot(player_visibility)) {
 					if (!ai_multiplayer_awareness(obj, 69))
 						return;
 					ai_turn_towards_vector(&vec_to_player, obj, robptr->turn_time[Difficulty_level]);
 					ai_multi_send_robot_position(objnum, -1);
-				} else if (d1_in_d2_use_d1_gameplay() && !(Game_mode & GM_MULTI)) {
+				} else if (d1_in_d2_ai_may_turn_randomly_without_visibility(Game_mode)) {
 					d1_in_d2_ai_turn_randomly(&vec_to_player, obj,
 						robptr->turn_time[Difficulty_level], previous_visibility);
 				} // -- MK, 06/09/95: else if (!(Game_mode & GM_MULTI)) {
@@ -1914,17 +1921,15 @@ void pae_aux(int segnum, int type, int level)
 		New_awareness[segnum] = type;
 
 	// Process children.
-	for (j=0; j<MAX_SIDES_PER_SEGMENT; j++)
-		if (IS_CHILD(Segments[segnum].children[j]))
-		{
-			if (level <= 3)
+	if (level <= (d1_in_d2_use_d1_gameplay() ? 4 : 3))
+		for (j=0; j<MAX_SIDES_PER_SEGMENT; j++)
+			if (IS_CHILD(Segments[segnum].children[j]))
 			{
 				if (type == 4)
 					pae_aux(Segments[segnum].children[j], type-1, level+1);
 				else
 					pae_aux(Segments[segnum].children[j], type, level+1);
 			}
-		}
 }
 
 

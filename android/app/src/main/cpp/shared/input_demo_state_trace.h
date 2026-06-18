@@ -13,7 +13,8 @@ extern "C" {
 enum {
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS = 5,
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE = 1 << INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS,
-	INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT = 32
+	INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT = 32,
+	INPUT_DEMO_FIREBALL_TRACE_COUNT = 8
 };
 
 typedef struct input_demo_state_trace_diag {
@@ -95,10 +96,18 @@ typedef struct input_demo_state_trace_diag {
 	int32_t robot_sample_sig;
 	int32_t robot_sample_id;
 	int32_t robot_sample_seg;
+	int32_t robot_sample_model;
+	int32_t robot_sample_subobj_flags;
 	int32_t robot_sample_behavior;
 	int32_t robot_sample_mode;
 	int32_t robot_sample_cur_state;
 	int32_t robot_sample_goal_state;
+	int32_t robot_sample_anim_at_goal;
+	uint32_t robot_sample_anim_angles_hash;
+	uint32_t robot_sample_goal_angles_hash;
+	uint32_t robot_sample_delta_angles_hash;
+	uint32_t robot_sample_goal_state_hash;
+	uint32_t robot_sample_achieved_state_hash;
 	int32_t robot_sample_goal_seg;
 	int32_t robot_sample_hide_index;
 	int32_t robot_sample_path_dir;
@@ -130,6 +139,13 @@ typedef struct input_demo_state_trace_diag {
 	int32_t robot_sample_fvec_x;
 	int32_t robot_sample_fvec_y;
 	int32_t robot_sample_fvec_z;
+	int32_t robot_sample_rvec_x;
+	int32_t robot_sample_rvec_y;
+	int32_t robot_sample_rvec_z;
+	int32_t robot_sample_uvec_x;
+	int32_t robot_sample_uvec_y;
+	int32_t robot_sample_uvec_z;
+	uint32_t robot_sample_orient_hash;
 	int32_t robot_sample_rotthrust_x;
 	int32_t robot_sample_rotthrust_y;
 	int32_t robot_sample_rotthrust_z;
@@ -166,6 +182,59 @@ typedef struct input_demo_state_trace_diag {
 	int32_t weapon_sample_parent_sig;
 	int32_t fireball_object_count;
 	uint32_t fireball_state_hash;
+	int32_t fireball_changed_obj;
+	int32_t fireball_changed_sig;
+	int32_t fireball_changed_id;
+	int32_t fireball_changed_bucket;
+	uint32_t fireball_changed_prev_hash;
+	uint32_t fireball_changed_hash;
+	int32_t fireball_changed_seg;
+	int32_t fireball_changed_control;
+	int32_t fireball_changed_movement;
+	int32_t fireball_changed_render;
+	int32_t fireball_changed_flags;
+	int32_t fireball_changed_x;
+	int32_t fireball_changed_y;
+	int32_t fireball_changed_z;
+	int32_t fireball_changed_last_x;
+	int32_t fireball_changed_last_y;
+	int32_t fireball_changed_last_z;
+	int32_t fireball_changed_size;
+	int32_t fireball_changed_shields;
+	int32_t fireball_changed_lifeleft;
+	int32_t fireball_sample_obj;
+	int32_t fireball_sample_sig;
+	int32_t fireball_sample_id;
+	uint32_t fireball_sample_hash;
+	int32_t fireball_sample_seg;
+	int32_t fireball_sample_control;
+	int32_t fireball_sample_movement;
+	int32_t fireball_sample_render;
+	int32_t fireball_sample_flags;
+	int32_t fireball_sample_x;
+	int32_t fireball_sample_y;
+	int32_t fireball_sample_z;
+	int32_t fireball_sample_last_x;
+	int32_t fireball_sample_last_y;
+	int32_t fireball_sample_last_z;
+	int32_t fireball_sample_size;
+	int32_t fireball_sample_shields;
+	int32_t fireball_sample_lifeleft;
+	int32_t fireball_sample_attached_obj;
+	int32_t fireball_sample_spawn_time;
+	int32_t fireball_sample_delete_time;
+	int32_t fireball_sample_delete_objnum;
+	int32_t fireball_sample_attach_parent;
+	int32_t fireball_sample_prev_attach;
+	int32_t fireball_sample_next_attach;
+	int32_t fireball_trace_slots[INPUT_DEMO_FIREBALL_TRACE_COUNT];
+	int32_t fireball_trace_sigs[INPUT_DEMO_FIREBALL_TRACE_COUNT];
+	int32_t fireball_trace_ids[INPUT_DEMO_FIREBALL_TRACE_COUNT];
+	uint32_t fireball_trace_hashes[INPUT_DEMO_FIREBALL_TRACE_COUNT];
+	int32_t fireball_trace_segs[INPUT_DEMO_FIREBALL_TRACE_COUNT];
+	int32_t fireball_trace_lifeleft[INPUT_DEMO_FIREBALL_TRACE_COUNT];
+	int32_t fireball_trace_delete_objnums[INPUT_DEMO_FIREBALL_TRACE_COUNT];
+	int32_t fireball_trace_attached_objs[INPUT_DEMO_FIREBALL_TRACE_COUNT];
 	int32_t debris_object_count;
 	uint32_t debris_state_hash;
 	int32_t segment_object_list_count;

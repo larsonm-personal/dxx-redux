@@ -969,6 +969,9 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *collision_point )
 {
 
+	input_demo_log_replay_collision_pair("collide_robot_weapon_entry", robot,
+		weapon, collision_point);
+
 	if (Robot_info[robot->id].boss_flag)
 		Boss_hit_this_frame = 1;
 
@@ -1009,6 +1012,8 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 	if ( (weapon->ctype.laser_info.parent_type==OBJ_PLAYER) && !(robot->flags & OF_EXPLODING) )	{
 		object *expl_obj=NULL;
 
+		input_demo_log_weapon_robot_path_probe("accept", weapon, robot,
+			collision_point);
 		input_demo_log_weapon_robot_accept_seq(weapon, robot);
 
 		if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) {
@@ -1050,6 +1055,13 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 		}
 
 	}
+	else if ((weapon->ctype.laser_info.parent_type == OBJ_PLAYER) &&
+		(robot->flags & OF_EXPLODING))
+		input_demo_log_weapon_robot_path_probe("skip_robot_exploding",
+			weapon, robot, collision_point);
+	else
+		input_demo_log_weapon_robot_path_probe("skip_accept_gate", weapon,
+			robot, collision_point);
 
 	maybe_kill_weapon(weapon,robot);
 

@@ -851,6 +851,46 @@ int obj_in_list(int objnum,int *obj_list)
 
 int check_trans_wall(vms_vector *pnt,segment *seg,int sidenum,int facenum);
 
+static int input_demo_fvi_boundary_probe_active(short objnum)
+{
+	unsigned int frame;
+
+	if (!input_demo_replay_is_loaded() || !d1_in_d2_use_d1_gameplay() || objnum != 17)
+		return 0;
+	frame = input_demo_debug_frame_index();
+	return frame >= 309 && frame <= 313;
+}
+
+static void input_demo_log_fvi_boundary_probe(short objnum, int startseg, int side,
+	int face, int face_hit_type, int wid_flag, int startmask, int endmask,
+	int centermask, int flags, const vms_vector *p0, const vms_vector *p1,
+	const vms_vector *hit_point, fix rad)
+{
+	char probe[900];
+	segment *seg = &Segments[startseg];
+	int wall_num = seg->sides[side].wall_num;
+	int wall_type = -1;
+	int wall_state = -1;
+	int wall_flags = 0;
+
+	if (!input_demo_fvi_boundary_probe_active(objnum))
+		return;
+	if (wall_num >= 0 && wall_num < Num_walls) {
+		wall_type = Walls[wall_num].type;
+		wall_state = Walls[wall_num].state;
+		wall_flags = Walls[wall_num].flags;
+	}
+	snprintf(probe, sizeof(probe),
+		"start_seg=%d side=%d face=%d face_hit_type=%d wid=0x%x child=%d wall=%d wall_type=%d wall_state=%d wall_flags=0x%x startmask=0x%x endmask=0x%x centermask=0x%x flags=0x%x rad=%d p0=(%d,%d,%d) p1=(%d,%d,%d) hit=(%d,%d,%d)",
+		startseg, side, face, face_hit_type, wid_flag,
+		seg->children[side], wall_num, wall_type, wall_state, wall_flags,
+		startmask, endmask, centermask, flags, rad,
+		p0->x, p0->y, p0->z,
+		p1->x, p1->y, p1->z,
+		hit_point->x, hit_point->y, hit_point->z);
+	input_demo_append_replay_probe_message("fvi_boundary", &Objects[objnum], probe);
+}
+
 int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p1,fix rad,short thisobjnum,int *ignore_obj_list,int flags,int *seglist,int *n_segs,int entry_seg)
 {
 	segment *seg;				//the segment we're looking at
@@ -995,8 +1035,12 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 							wid_flag = WALL_IS_DOORWAY(seg, side);
 						}
 
+						input_demo_log_fvi_boundary_probe(thisobjnum, startseg, side, face,
+							face_hit_type, wid_flag, startmask, endmask, centermask,
+							flags, p0, p1, &hit_point, rad);
+
 						if ((wid_flag & WID_FLY_FLAG) ||
-							(((wid_flag & WID_RENDER_FLAG) && (wid_flag & WID_RENDPAST_FLAG)) &&
+							((d1_in_d2_use_d1_gameplay() ? (wid_flag == WID_TRANSPARENT_WALL) : ((wid_flag & WID_RENDER_FLAG) && (wid_flag & WID_RENDPAST_FLAG))) &&
 								((flags & FQ_TRANSWALL) || (flags & FQ_TRANSPOINT && check_trans_wall(&hit_point,seg,side,face))))) {
 
 							int newsegnum;

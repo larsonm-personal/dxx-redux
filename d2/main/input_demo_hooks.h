@@ -8,6 +8,7 @@ struct ai_static;
 struct object;
 struct vms_vector;
 
+typedef struct fvi_info fvi_info;
 typedef struct input_demo_result input_demo_result;
 typedef struct input_demo_state_trace_diag input_demo_state_trace_diag;
 
@@ -161,6 +162,14 @@ void input_demo_log_motion_fix_illegal_before(struct object *obj, int frame,
 	int hitseg, int hitside, int hitface,
 	const struct vms_vector *origin);
 void input_demo_log_motion_fix_illegal_after(struct object *obj, int frame);
+void input_demo_log_replay_physics_fvi_fate(struct object *obj, int fate,
+	const fvi_info *hit_info, const struct vms_vector *frame_vec,
+	const struct vms_vector *new_pos, int32_t sim_time, int ignore_count);
+void input_demo_log_player_robot_hit_object_probe(const char *step,
+	struct object *moving_obj, int hit_object,
+	const struct vms_vector *collision_point,
+	const struct vms_vector *old_velocity, int ignore_count,
+	int will_retry, int ignored_hit);
 void input_demo_log_preserved_ui_rng_probe(const char *stage,
 	int preserve_rng, unsigned int saved_rng_state,
 	unsigned int current_rng_state, int cockpit_mode, int no_draw_hud,
@@ -214,6 +223,11 @@ void input_demo_log_path_probe(struct object *objp, int start_seg, int end_seg, 
 void input_demo_log_path_detail(struct object *objp, int start_seg, int end_seg, int random_flag, int random_xlate_seed_count, int random_xlate_refresh_roll_count, int random_xlate_refresh_count, int queue_push_count, int raw_num_points, int final_num_points);
 void input_demo_log_path_points(const char *label, struct object *objp, const void *psegs, int num_points);
 void input_demo_log_robot_lifecycle_delete(int objnum, struct object *obj);
+void input_demo_log_debris_event(const char *step, struct object *source_obj,
+	struct object *debris_obj, int subobj_num);
+void input_demo_log_secondary_explosion_spawn(const char *step,
+	struct object *obj, struct object *del_obj, struct object *spawned_obj,
+	int vclip_num);
 unsigned int input_demo_trace_robot_fire_frame_index(void);
 int input_demo_trace_robot_fire_active(struct object *objp);
 void input_demo_log_robot_fire_probe(struct object *objp,

@@ -56,6 +56,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "fuelcen.h"
 #include "cntrlcen.h"
+#include "d1_in_d2.h"
+#include "d1_in_d2_semantics.h"
 #include "gameseg.h"
 #include "automap.h"
 #include "byteswap.h"
@@ -70,112 +72,6 @@ fix	Flash_effect=0;
 //--unused-- ubyte	Frame_processed[MAX_OBJECTS];
 
 int	PK1=1, PK2=8;
-
-static int input_demo_explosion_object_near_player(object *obj)
-{
-	if (!obj || !ConsoleObject)
-		return 0;
-
-	if (obj->segnum == ConsoleObject->segnum)
-		return 1;
-
-	return vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos) <
-		obj->size + ConsoleObject->size + F1_0 * 20;
-}
-
-static void input_demo_log_debris_event(const char *step, object *source_obj,
-	object *debris_obj, int subobj_num)
-{
-	char probe[512];
-
-	if (!step || !debris_obj ||
-		!(input_demo_recorder_is_active() || input_demo_replay_is_loaded()))
-		return;
-
-	snprintf(probe, sizeof(probe),
-		"step=%s source=%d/%d/%d/%d/%d debris=%d/%d/%d/%d/%d subobj=%d life=%d size=%d mass=%d drag=%d flags=0x%x phys=0x%x seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) rot=(%d,%d,%d)",
-		step,
-		source_obj ? (int)(source_obj - Objects) : -1,
-		source_obj ? source_obj->signature : -1,
-		source_obj ? source_obj->type : -1,
-		source_obj ? source_obj->id : -1,
-		source_obj ? source_obj->segnum : -1,
-		(int)(debris_obj - Objects),
-		debris_obj->signature,
-		debris_obj->type,
-		debris_obj->id,
-		debris_obj->segnum,
-		subobj_num,
-		debris_obj->lifeleft,
-		debris_obj->size,
-		debris_obj->mtype.phys_info.mass,
-		debris_obj->mtype.phys_info.drag,
-		debris_obj->flags,
-		debris_obj->mtype.phys_info.flags,
-		debris_obj->segnum,
-		debris_obj->pos.x,
-		debris_obj->pos.y,
-		debris_obj->pos.z,
-		debris_obj->mtype.phys_info.velocity.x,
-		debris_obj->mtype.phys_info.velocity.y,
-		debris_obj->mtype.phys_info.velocity.z,
-		debris_obj->mtype.phys_info.rotvel.x,
-		debris_obj->mtype.phys_info.rotvel.y,
-		debris_obj->mtype.phys_info.rotvel.z);
-	input_demo_append_replay_probe_message("debris_probe", debris_obj, probe);
-}
-
-static int input_demo_secondary_explosion_probe_active(object *obj, object *del_obj)
-{
-	if (!input_demo_debug_activity_probe_active() || !ConsoleObject)
-		return 0;
-
-	if (del_obj && del_obj->type == OBJ_ROBOT)
-		return input_demo_explosion_object_near_player(del_obj);
-
-	return input_demo_explosion_object_near_player(obj);
-}
-
-static void input_demo_log_secondary_explosion_spawn(const char *step,
-	object *obj,
-	object *del_obj,
-	object *spawned_obj,
-	int vclip_num)
-{
-	char probe[512];
-
-	if (!step || !obj ||
-		!input_demo_secondary_explosion_probe_active(obj, del_obj))
-		return;
-
-	snprintf(probe, sizeof(probe),
-		"step=%s source=%d/%d/%d/%d/%d life=%d spawn_time=%d delete_time=%d delete_objnum=%d del=%d/%d/%d/%d/%d flags=0x%x shields=%d spawned=%d/%d/%d/%d/%d vclip=%d",
-		step,
-		(int)(obj - Objects),
-		obj->signature,
-		obj->type,
-		obj->id,
-		obj->segnum,
-		obj->lifeleft,
-		obj->ctype.expl_info.spawn_time,
-		obj->ctype.expl_info.delete_time,
-		obj->ctype.expl_info.delete_objnum,
-		del_obj ? (int)(del_obj - Objects) : -1,
-		del_obj ? del_obj->signature : -1,
-		del_obj ? del_obj->type : -1,
-		del_obj ? del_obj->id : -1,
-		del_obj ? del_obj->segnum : -1,
-		del_obj ? del_obj->flags : 0,
-		del_obj ? del_obj->shields : 0,
-		spawned_obj ? (int)(spawned_obj - Objects) : -1,
-		spawned_obj ? spawned_obj->signature : -1,
-		spawned_obj ? spawned_obj->type : -1,
-		spawned_obj ? spawned_obj->id : -1,
-		spawned_obj ? spawned_obj->segnum : -1,
-		vclip_num);
-	input_demo_append_replay_probe_message("explosion_spawn",
-		spawned_obj ? spawned_obj : obj, probe);
-}
 
 object *object_create_explosion_sub(object *objp, short segnum, vms_vector * position, fix size, int vclip_type, fix maxdamage, fix maxdistance, fix maxforce, int parent )
 {
@@ -1043,7 +939,17 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 	else if (weapon_index != -1) {
 		if ((player_has_weapon(Player_num, weapon_index, 0) & HAS_WEAPON_FLAG) || weapon_nearby(del_obj, del_obj->contains_id)) {
 			// SIM RNG: this picks the actual replacement drop for duplicate weapons
-			if (d_rand() > 16384) {
+			if (d1_in_d2_use_d1_gameplay()) {
+				if (d_rand() > 16384) {
+					del_obj->contains_count = 1;
+					del_obj->contains_type = OBJ_POWERUP;
+					if (weapon_index == VULCAN_INDEX)
+						del_obj->contains_id = POW_VULCAN_AMMO;
+					else
+						del_obj->contains_id = POW_ENERGY;
+				} else
+					del_obj->contains_count = 0;
+			} else if (d_rand() > 16384) {
 				del_obj->contains_type = OBJ_POWERUP;
 				if (weapon_index == VULCAN_INDEX) {
 					del_obj->contains_id = POW_VULCAN_AMMO;
@@ -1060,7 +966,14 @@ void maybe_replace_powerup_with_energy(object *del_obj)
 	} else if (del_obj->contains_id == POW_QUAD_FIRE)
 		if ((Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS) || weapon_nearby(del_obj, del_obj->contains_id)) {
 			// SIM RNG: this picks the actual replacement drop for duplicate quads
-			if (d_rand() > 16384) {
+			if (d1_in_d2_use_d1_gameplay()) {
+				if (d_rand() > 16384) {
+					del_obj->contains_count = 1;
+					del_obj->contains_type = OBJ_POWERUP;
+					del_obj->contains_id = POW_ENERGY;
+				} else
+					del_obj->contains_count = 0;
+			} else if (d_rand() > 16384) {
 				del_obj->contains_type = OBJ_POWERUP;
 				del_obj->contains_id = POW_ENERGY;
 			} else {
@@ -1316,7 +1229,7 @@ int object_create_egg(object *objp)
 	int start_net_create_loc = (Game_mode & GM_MULTI) ? Net_create_loc : -1;
 #endif
 
-	if (!(Game_mode & GM_MULTI) & (objp->type != OBJ_PLAYER))
+	if (d1_in_d2_use_d2_resource_drop_suppression(objp, Game_mode))
 	{
 		if (objp->contains_type == OBJ_POWERUP)
 		{
@@ -1595,7 +1508,8 @@ void do_explosion_sequence(object *obj)
 
 		vclip_num = get_explosion_vclip(del_obj,1);
 
-		if (del_obj->type == OBJ_ROBOT && Robot_info[del_obj->id].badass)
+		if (del_obj->type == OBJ_ROBOT && Robot_info[del_obj->id].badass &&
+			d1_in_d2_use_d2_badass_robot_explosion())
 			expl_obj = object_create_badass_explosion( del_obj, del_obj->segnum, spawn_pos, fixmul(del_obj->size, EXPLOSION_SCALE), vclip_num, F1_0*Robot_info[del_obj->id].badass, i2f(4)*Robot_info[del_obj->id].badass, i2f(35)*Robot_info[del_obj->id].badass, -1 );
 		else
 			expl_obj = object_create_explosion( del_obj->segnum, spawn_pos, fixmul(del_obj->size, EXPLOSION_SCALE), vclip_num );

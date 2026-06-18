@@ -1068,6 +1068,8 @@ int object_create_egg(object *objp)
 	int start_net_create_loc = (Game_mode & GM_MULTI) ? Net_create_loc : -1;
 #endif
 	rval = drop_powerup(objp->contains_type, objp->contains_id, objp->contains_count, &objp->mtype.phys_info.velocity, &objp->pos, objp->segnum);
+	if (rval != -1 && objp->contains_type == OBJ_POWERUP)
+		input_demo_log_powerup_spawn_probe(objp, &Objects[rval], rval);
 #ifdef NETWORK
 	if (rval != -1 && objp->type == OBJ_PLAYER)
 		mark_player_spew_objects(start_net_create_loc, rval);

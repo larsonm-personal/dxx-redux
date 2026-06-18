@@ -63,6 +63,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_debug_logging.h"
 #include "input_demo_energy_trace.h"
 #include "d1_in_d2.h"
+#include "d1_in_d2_semantics.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -1397,7 +1398,8 @@ int	Break_on_object = -1;
 
 void do_firing_stuff(object *obj, int player_visibility, vms_vector *vec_to_player)
 {
-	if ((Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD ) || (player_visibility >= 1)) {
+	if (d1_in_d2_ai_nearby_fire_shortcut_active(Dist_to_last_fired_upon_player_pos, FIRE_AT_NEARBY_PLAYER_THRESHOLD) ||
+		(player_visibility >= 1)) {
 		//	Now, if in robot's field of view, lock onto player
 		fix	dot = vm_vec_dot(&obj->orient.fvec, vec_to_player);
 		if ((dot >= 7*F1_0/8) || (Players[Player_num].flags & PLAYER_FLAGS_CLOAKED)) {
@@ -1434,6 +1436,16 @@ void do_firing_stuff(object *obj, int player_visibility, vms_vector *vec_to_play
 void do_ai_robot_hit(object *objp, int type)
 {
 	if (objp->control_type == CT_AI) {
+		if (d1_in_d2_use_d1_gameplay()) {
+			if ((type == PA_WEAPON_ROBOT_COLLISION) || (type == PA_PLAYER_COLLISION))
+				switch (objp->ctype.ai_info.behavior) {
+					case AIM_STILL:
+						Ai_local_info[objp-Objects].mode = AIM_CHASE_OBJECT;
+						break;
+				}
+			return;
+		}
+
 		if ((type == PA_WEAPON_ROBOT_COLLISION) || (type == PA_PLAYER_COLLISION))
 			switch (objp->ctype.ai_info.behavior) {
 				case AIB_STILL:
@@ -1563,7 +1575,8 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 
 		//	@mk, 09/21/95: If player view is not obstructed and awareness is at least as high as a nearby collision,
 		//	act is if robot is looking at player.
-		if (ailp->player_awareness_type >= PA_NEARBY_ROBOT_FIRED)
+		if (!d1_in_d2_use_d1_gameplay() &&
+			ailp->player_awareness_type >= PA_NEARBY_ROBOT_FIRED)
 			if (*player_visibility == 1)
 				*player_visibility = 2;
 				
@@ -2305,7 +2318,8 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 				object_animates); \
 		} while (0)
 
-	if ((player_visibility == 2) || (Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD )) {
+	if ((player_visibility == 2) ||
+		d1_in_d2_ai_nearby_fire_shortcut_active(Dist_to_last_fired_upon_player_pos, FIRE_AT_NEARBY_PLAYER_THRESHOLD)) {
 		vms_vector	fire_pos;
 
 		fire_pos = Believed_player_pos;

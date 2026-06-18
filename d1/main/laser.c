@@ -42,6 +42,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "sounds.h"
 #include "ai.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "powerup.h"
 #include "multi.h"
@@ -417,6 +418,8 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	if ((obj->type == OBJ_WEAPON) && (obj->id == FLARE_ID))
 		// SIM RNG: this changes how long the live flare object persists
 		obj->lifeleft += (d_rand()-16384) << 2;		//	add in -2..2 seconds
+
+	input_demo_log_weapon_lifetime("create", obj);
 
 	return objnum;
 }
@@ -841,6 +844,9 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	if (harmless)
 		Objects[objnum].flags |= OF_HARMLESS;
 
+	input_demo_log_player_shot_create_probe(obj, &Objects[objnum], laser_type,
+		gun_num, harmless, make_sound, &LaserDir);
+
 	//	If the object firing the laser is the player, then indicate the laser object so robots can dodge.
 	if (obj == ConsoleObject)
 		Player_fired_laser_this_frame = objnum;
@@ -941,6 +947,8 @@ fix homing_turn_base[NDL] = { 4, 5, 6, 7, 8 };
 void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrameTime, unsigned int homerFrameCount)
 {
 	Assert(obj->control_type == CT_WEAPON);
+
+	input_demo_log_weapon_lifetime("sequence_entry", obj);
 
 	if (obj->lifeleft < 0 ) {		// We died of old age
 		obj->flags |= OF_SHOULD_BE_DEAD;

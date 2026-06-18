@@ -68,6 +68,7 @@ $repoRoot = Split-Path $scriptDir
 
 . "$helpersDir\test_helpers.ps1"
 . (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
+. (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
 
 # -- Report directory --
 
@@ -126,24 +127,39 @@ function Test-AnyCommandAvailable {
     return $false
 }
 
-function Get-RegressionDemoCount {
+function Get-RegressionDemoGameCounts {
     $demoRoot = Join-Path $scriptDir "regression_demos"
+    $counts = @{ all = 0; d1 = 0; d2 = 0 }
     if (-not (Test-Path -LiteralPath $demoRoot)) {
-        return 0
+        return $counts
     }
 
-    return @(
-        Get-ChildItem -Path $demoRoot -Recurse -Filter "*.dximdemo" -File -ErrorAction SilentlyContinue
-    ).Count
+    $demos = @(Get-ChildItem -Path $demoRoot -Recurse -Filter "*.dximdemo" -File -ErrorAction SilentlyContinue)
+    foreach ($demo in $demos) {
+        $counts['all']++
+        $recordedGame = Get-InputDemoRecordedGameName -DemoPath $demo.FullName
+        $counts[$recordedGame]++
+    }
+    return $counts
+}
+
+function Get-RegressionDemoCount {
+    param(
+        [ValidateSet('all', 'd1', 'd2')]
+        [string]$RecordedGame = 'all'
+    )
+
+    $counts = Get-RegressionDemoGameCounts
+    return $counts[$RecordedGame]
 }
 
 function Test-InputDemoCorpusAvailable {
-    $demoRoot = Join-Path $scriptDir "regression_demos"
-    if (-not (Test-Path -LiteralPath $demoRoot -PathType Container)) {
-        return $false
-    }
+    param(
+        [ValidateSet('all', 'd1', 'd2')]
+        [string]$RecordedGame = 'all'
+    )
 
-    return @(Get-ChildItem -LiteralPath $demoRoot -Recurse -Filter "*.dximdemo" -File -ErrorAction SilentlyContinue).Count -gt 0
+    return (Get-RegressionDemoCount -RecordedGame $RecordedGame) -gt 0
 }
 
 function Test-InputDemoDeterminismFixturesAvailable {
@@ -178,8 +194,11 @@ function Test-InputDemoDeterminismFixturesAvailable {
 function Get-TestBaseName {
     param([string]$TestName)
 
+    if ($TestName -like "test_input_demo_regressions*") {
+        return "test_input_demo_regressions"
+    }
+
     switch ($TestName) {
-        "test_input_demo_regressions_graphics" { return "test_input_demo_regressions" }
         default { return $TestName }
     }
 }
@@ -334,6 +353,9 @@ foreach ($t in $json5Files) {
 # ps1 integration tests
 foreach ($t in $ps1Files) {
     $name = $t.BaseName
+    if ($name -in @("test_input_demo_regressions", "test_input_demo_regressions_graphics")) {
+        continue
+    }
     $baseName = Get-TestBaseName -TestName $name
     $req = "none"
     if ($name -in $twoEmuTests) { $req = "two_emulators" }
@@ -373,6 +395,77 @@ foreach ($t in $ps1Files) {
     $allTests += $entry
 }
 
+$inputDemoRegressionHeadlessWrapper = Join-Path $testsDir "test_input_demo_regressions.ps1"
+$inputDemoRegressionGraphicsWrapper = Join-Path $testsDir "test_input_demo_regressions_graphics.ps1"
+$inputDemoRegressionMatrix = @(
+    @{
+        Name = "test_input_demo_regressions_d1"
+        Section = "d1/headless"
+        RunMode = "headless"
+        RecordedGame = "d1"
+        Path = $inputDemoRegressionHeadlessWrapper
+        Arguments = @("-RecordedGame", "d1", "-Game", "d1", "-RunMode", "headless")
+    },
+    @{
+        Name = "test_input_demo_regressions_d1_graphics"
+        Section = "d1/graphics"
+        RunMode = "graphics"
+        RecordedGame = "d1"
+        Path = $inputDemoRegressionGraphicsWrapper
+        Arguments = @("-RecordedGame", "d1", "-Game", "d1")
+    },
+    @{
+        Name = "test_input_demo_regressions_d2"
+        Section = "d2/headless"
+        RunMode = "headless"
+        RecordedGame = "d2"
+        Path = $inputDemoRegressionHeadlessWrapper
+        Arguments = @("-RecordedGame", "d2", "-Game", "d2", "-RunMode", "headless")
+    },
+    @{
+        Name = "test_input_demo_regressions_d2_graphics"
+        Section = "d2/graphics"
+        RunMode = "graphics"
+        RecordedGame = "d2"
+        Path = $inputDemoRegressionGraphicsWrapper
+        Arguments = @("-RecordedGame", "d2", "-Game", "d2")
+    },
+    @{
+        Name = "test_input_demo_regressions_d1_in_d2"
+        Section = "d1-in-d2/headless"
+        RunMode = "headless"
+        RecordedGame = "d1"
+        Path = $inputDemoRegressionHeadlessWrapper
+        Arguments = @("-RecordedGame", "d1", "-Game", "d2", "-RunMode", "headless", "-D1InD2")
+    },
+    @{
+        Name = "test_input_demo_regressions_d1_in_d2_graphics"
+        Section = "d1-in-d2/graphics"
+        RunMode = "graphics"
+        RecordedGame = "d1"
+        Path = $inputDemoRegressionGraphicsWrapper
+        Arguments = @("-RecordedGame", "d1", "-Game", "d2", "-D1InD2")
+    }
+)
+foreach ($definition in $inputDemoRegressionMatrix) {
+    if (-not (Test-Path -LiteralPath $definition.Path -PathType Leaf)) {
+        continue
+    }
+    $allTests += @{
+        Name = $definition.Name
+        BaseName = "test_input_demo_regressions"
+        Type = "ps1"
+        Path = $definition.Path
+        Requires = "none"
+        NeedsTierServer = $false
+        TimeoutSeconds = $testTimeouts["test_input_demo_regressions"]
+        DemoRunMode = $definition.RunMode
+        DemoRecordedGame = $definition.RecordedGame
+        DemoSection = $definition.Section
+        Arguments = $definition.Arguments
+    }
+}
+
 # Apply filter
 if ($Filter) {
     $allTests = @($allTests | Where-Object { Test-MatchesRequestedFilter -Test $_ -RequestedFilter $Filter })
@@ -390,13 +483,15 @@ foreach ($test in $allTests) {
 }
 
 $fixtureSkipped = @()
-$inputDemoCorpusAvailable = Test-InputDemoCorpusAvailable
 $inputDemoDeterminismFixturesAvailable = Test-InputDemoDeterminismFixturesAvailable
 $runnableTests = @($runnableTests | Where-Object {
         $keep = $true
-        if ($_.Name -in @("test_input_demo_regressions", "test_input_demo_regressions_graphics") -and -not $inputDemoCorpusAvailable) {
-            $fixtureSkipped += @{ Name = $_.Name; Reason = "no input-demo regression fixtures"; Type = $_.Type }
-            $keep = $false
+        if ($_.BaseName -eq "test_input_demo_regressions") {
+            $recordedGame = if ($_.ContainsKey("DemoRecordedGame")) { $_["DemoRecordedGame"] } else { "all" }
+            if (-not (Test-InputDemoCorpusAvailable -RecordedGame $recordedGame)) {
+                $fixtureSkipped += @{ Name = $_.Name; Reason = "no input-demo $recordedGame regression fixtures"; Type = $_.Type }
+                $keep = $false
+            }
         } elseif ($_.Name -eq "test_input_demo_determinism_matrix" -and -not $inputDemoDeterminismFixturesAvailable) {
             $fixtureSkipped += @{ Name = $_.Name; Reason = "input-demo determinism fixtures unavailable"; Type = $_.Type }
             $keep = $false
@@ -428,9 +523,13 @@ $tierDualEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requi
 $tierExtract = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq "extract" })
 
 $selectedRegressionDemoTests = @($runnableTests | Where-Object { $_.BaseName -eq "test_input_demo_regressions" })
-$selectedRegressionDemoModes = @($selectedRegressionDemoTests | ForEach-Object { $_.DemoRunMode } | Where-Object { $_ } | Sort-Object -Unique)
-$regressionDemoCount = Get-RegressionDemoCount
-$selectedRegressionDemoReplayCount = $regressionDemoCount * $selectedRegressionDemoTests.Count
+$selectedRegressionDemoSections = @($selectedRegressionDemoTests | ForEach-Object { $_.DemoSection } | Where-Object { $_ } | Sort-Object -Unique)
+$regressionDemoCounts = Get-RegressionDemoGameCounts
+$selectedRegressionDemoReplayCount = 0
+foreach ($test in $selectedRegressionDemoTests) {
+    $recordedGame = if ($test.ContainsKey("DemoRecordedGame")) { $test["DemoRecordedGame"] } else { "all" }
+    $selectedRegressionDemoReplayCount += Get-RegressionDemoCount -RecordedGame $recordedGame
+}
 
 function Test-HostToolPrerequisites {
     if (Test-RegressionWindowsHost) {
@@ -887,8 +986,8 @@ Write-Host "  Tier 1 (server only):    $($tierServer.Count)"
 Write-Host "  Tier 2 (single emu):     $($tierSingleEmu.Count)"
 Write-Host "  Tier 3 (extract):        $($tierExtract.Count)"
 Write-Host "  Tier 4 (dual emu):       $($tierDualEmu.Count)"
-if ($selectedRegressionDemoModes.Count -gt 0) {
-    Write-Host "  Demo regressions:       $regressionDemoCount demo(s), modes: $($selectedRegressionDemoModes -join '+'), replay runs: $selectedRegressionDemoReplayCount"
+if ($selectedRegressionDemoSections.Count -gt 0) {
+    Write-Host "  Demo regressions:      d1=$($regressionDemoCounts['d1']) d2=$($regressionDemoCounts['d2']) demo(s), sections: $($selectedRegressionDemoSections -join ', '), replay runs: $selectedRegressionDemoReplayCount"
 } else {
     Write-Host "  Demo regressions:       0 replay runs selected"
 }

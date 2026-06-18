@@ -731,7 +731,8 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 		;
 	} else {
 		create_path_points(objp, start_seg, end_seg, Point_segs_free_ptr, &aip->path_length, max_length, 1, safety_flag, -1);
-		aip->path_length = polish_path(objp, Point_segs_free_ptr, aip->path_length);
+		if (!d1_in_d2_use_d1_gameplay())
+			aip->path_length = polish_path(objp, Point_segs_free_ptr, aip->path_length);
 		aip->hide_index = Point_segs_free_ptr - Point_segs;
 		aip->cur_path_index = 0;
 		Point_segs_free_ptr += aip->path_length;
@@ -1031,7 +1032,9 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	}
 
 	if (aip->path_length < 2) {
-		if ((aip->behavior == AIB_SNIPE) || (ailp->mode == AIM_RUN_FROM_OBJECT)) {
+		const int d2_snipe_behavior = !d1_in_d2_use_d1_gameplay() &&
+		                              (aip->behavior == AIB_SNIPE);
+		if (d2_snipe_behavior || (ailp->mode == AIM_RUN_FROM_OBJECT)) {
 			if (ConsoleObject->segnum == objp->segnum) {
 				create_n_segment_path(objp, AVOID_SEG_LENGTH, -1);			//	Can't avoid segment player is in, robot is already in it! (That's what the -1 is for)
 				//--Int3_if((aip->path_length != 0));
@@ -1039,7 +1042,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 				create_n_segment_path(objp, AVOID_SEG_LENGTH, ConsoleObject->segnum);
 				//--Int3_if((aip->path_length != 0));
 			}
-			if (aip->behavior == AIB_SNIPE) {
+			if (d2_snipe_behavior) {
 				if (robptr->thief)
 					ailp->mode = AIM_THIEF_ATTACK;	//	It gets bashed in create_n_segment_path
 				else
@@ -1299,7 +1302,8 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 
 	//	If evading player, use highest difficulty level speed, plus something based on diff level
 	max_speed = robptr->max_speed[Difficulty_level];
-	if ((Ai_local_info[objp-Objects].mode == AIM_RUN_FROM_OBJECT) || (objp->ctype.ai_info.behavior == AIB_SNIPE))
+	if ((Ai_local_info[objp-Objects].mode == AIM_RUN_FROM_OBJECT) ||
+	    (!d1_in_d2_use_d1_gameplay() && (objp->ctype.ai_info.behavior == AIB_SNIPE)))
 		max_speed = max_speed*3/2;
 
 	vm_vec_sub(&norm_vec_to_goal, goal_point, &cur_pos);
@@ -1333,7 +1337,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 		dot /= -4;
 
 	//	If in snipe mode, can move fast even if not facing that direction.
-	if (objp->ctype.ai_info.behavior == AIB_SNIPE)
+	if (!d1_in_d2_use_d1_gameplay() && (objp->ctype.ai_info.behavior == AIB_SNIPE))
 		if (dot < F1_0/2)
 			dot = (dot + F1_0)/2;
 
@@ -1348,7 +1352,9 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	} else
 	objp->mtype.phys_info.velocity = norm_cur_vel;
 
-	if ((Ai_local_info[objp-Objects].mode == AIM_RUN_FROM_OBJECT) || (robptr->companion == 1) || (objp->ctype.ai_info.behavior == AIB_SNIPE)) {
+	if ((Ai_local_info[objp-Objects].mode == AIM_RUN_FROM_OBJECT) ||
+	    (robptr->companion == 1) ||
+	    (!d1_in_d2_use_d1_gameplay() && (objp->ctype.ai_info.behavior == AIB_SNIPE))) {
 		if (Ai_local_info[objp-Objects].mode == AIM_SNIPE_RETREAT_BACKWARDS) {
 			if ((player_visibility) && (vec_to_player != NULL))
 				norm_vec_to_goal = *vec_to_player;

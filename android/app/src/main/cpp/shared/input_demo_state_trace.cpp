@@ -106,6 +106,14 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	ordered_json object_slot_counts = ordered_json::array();
 	ordered_json object_slot_hashes = ordered_json::array();
 	ordered_json object_focus_slot_hashes = ordered_json::array();
+	ordered_json fireball_trace_slots = ordered_json::array();
+	ordered_json fireball_trace_sigs = ordered_json::array();
+	ordered_json fireball_trace_ids = ordered_json::array();
+	ordered_json fireball_trace_hashes = ordered_json::array();
+	ordered_json fireball_trace_segs = ordered_json::array();
+	ordered_json fireball_trace_lifeleft = ordered_json::array();
+	ordered_json fireball_trace_delete_objnums = ordered_json::array();
+	ordered_json fireball_trace_attached_objs = ordered_json::array();
 
 	for (int index = 0; index < INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT; ++index) {
 		object_slot_counts.push_back(diag.object_slot_counts[index]);
@@ -113,6 +121,17 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	}
 	for (int index = 0; index < INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE; ++index)
 		object_focus_slot_hashes.push_back(diag.object_focus_slot_hashes[index]);
+	for (int index = 0; index < INPUT_DEMO_FIREBALL_TRACE_COUNT; ++index) {
+		fireball_trace_slots.push_back(diag.fireball_trace_slots[index]);
+		fireball_trace_sigs.push_back(diag.fireball_trace_sigs[index]);
+		fireball_trace_ids.push_back(diag.fireball_trace_ids[index]);
+		fireball_trace_hashes.push_back(diag.fireball_trace_hashes[index]);
+		fireball_trace_segs.push_back(diag.fireball_trace_segs[index]);
+		fireball_trace_lifeleft.push_back(diag.fireball_trace_lifeleft[index]);
+		fireball_trace_delete_objnums.push_back(
+		    diag.fireball_trace_delete_objnums[index]);
+		fireball_trace_attached_objs.push_back(diag.fireball_trace_attached_objs[index]);
+	}
 
 	root["awareness_events"] = diag.awareness_events;
 	root["camera_awake_robots"] = diag.camera_awake_robots;
@@ -192,10 +211,18 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["robot_sample_sig"] = diag.robot_sample_sig;
 	root["robot_sample_id"] = diag.robot_sample_id;
 	root["robot_sample_seg"] = diag.robot_sample_seg;
+	root["robot_sample_model"] = diag.robot_sample_model;
+	root["robot_sample_subobj_flags"] = diag.robot_sample_subobj_flags;
 	root["robot_sample_behavior"] = diag.robot_sample_behavior;
 	root["robot_sample_mode"] = diag.robot_sample_mode;
 	root["robot_sample_cur_state"] = diag.robot_sample_cur_state;
 	root["robot_sample_goal_state"] = diag.robot_sample_goal_state;
+	root["robot_sample_anim_at_goal"] = diag.robot_sample_anim_at_goal;
+	root["robot_sample_anim_angles_hash"] = diag.robot_sample_anim_angles_hash;
+	root["robot_sample_goal_angles_hash"] = diag.robot_sample_goal_angles_hash;
+	root["robot_sample_delta_angles_hash"] = diag.robot_sample_delta_angles_hash;
+	root["robot_sample_goal_state_hash"] = diag.robot_sample_goal_state_hash;
+	root["robot_sample_achieved_state_hash"] = diag.robot_sample_achieved_state_hash;
 	root["robot_sample_goal_seg"] = diag.robot_sample_goal_seg;
 	root["robot_sample_hide_index"] = diag.robot_sample_hide_index;
 	root["robot_sample_path_dir"] = diag.robot_sample_path_dir;
@@ -227,6 +254,13 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["robot_sample_fvec_x"] = diag.robot_sample_fvec_x;
 	root["robot_sample_fvec_y"] = diag.robot_sample_fvec_y;
 	root["robot_sample_fvec_z"] = diag.robot_sample_fvec_z;
+	root["robot_sample_rvec_x"] = diag.robot_sample_rvec_x;
+	root["robot_sample_rvec_y"] = diag.robot_sample_rvec_y;
+	root["robot_sample_rvec_z"] = diag.robot_sample_rvec_z;
+	root["robot_sample_uvec_x"] = diag.robot_sample_uvec_x;
+	root["robot_sample_uvec_y"] = diag.robot_sample_uvec_y;
+	root["robot_sample_uvec_z"] = diag.robot_sample_uvec_z;
+	root["robot_sample_orient_hash"] = diag.robot_sample_orient_hash;
 	root["robot_sample_rotthrust_x"] = diag.robot_sample_rotthrust_x;
 	root["robot_sample_rotthrust_y"] = diag.robot_sample_rotthrust_y;
 	root["robot_sample_rotthrust_z"] = diag.robot_sample_rotthrust_z;
@@ -263,6 +297,59 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["weapon_sample_parent_sig"] = diag.weapon_sample_parent_sig;
 	root["fireball_object_count"] = diag.fireball_object_count;
 	root["fireball_state_hash"] = diag.fireball_state_hash;
+	root["fireball_changed_obj"] = diag.fireball_changed_obj;
+	root["fireball_changed_sig"] = diag.fireball_changed_sig;
+	root["fireball_changed_id"] = diag.fireball_changed_id;
+	root["fireball_changed_bucket"] = diag.fireball_changed_bucket;
+	root["fireball_changed_prev_hash"] = diag.fireball_changed_prev_hash;
+	root["fireball_changed_hash"] = diag.fireball_changed_hash;
+	root["fireball_changed_seg"] = diag.fireball_changed_seg;
+	root["fireball_changed_control"] = diag.fireball_changed_control;
+	root["fireball_changed_movement"] = diag.fireball_changed_movement;
+	root["fireball_changed_render"] = diag.fireball_changed_render;
+	root["fireball_changed_flags"] = diag.fireball_changed_flags;
+	root["fireball_changed_x"] = diag.fireball_changed_x;
+	root["fireball_changed_y"] = diag.fireball_changed_y;
+	root["fireball_changed_z"] = diag.fireball_changed_z;
+	root["fireball_changed_last_x"] = diag.fireball_changed_last_x;
+	root["fireball_changed_last_y"] = diag.fireball_changed_last_y;
+	root["fireball_changed_last_z"] = diag.fireball_changed_last_z;
+	root["fireball_changed_size"] = diag.fireball_changed_size;
+	root["fireball_changed_shields"] = diag.fireball_changed_shields;
+	root["fireball_changed_lifeleft"] = diag.fireball_changed_lifeleft;
+	root["fireball_sample_obj"] = diag.fireball_sample_obj;
+	root["fireball_sample_sig"] = diag.fireball_sample_sig;
+	root["fireball_sample_id"] = diag.fireball_sample_id;
+	root["fireball_sample_hash"] = diag.fireball_sample_hash;
+	root["fireball_sample_seg"] = diag.fireball_sample_seg;
+	root["fireball_sample_control"] = diag.fireball_sample_control;
+	root["fireball_sample_movement"] = diag.fireball_sample_movement;
+	root["fireball_sample_render"] = diag.fireball_sample_render;
+	root["fireball_sample_flags"] = diag.fireball_sample_flags;
+	root["fireball_sample_x"] = diag.fireball_sample_x;
+	root["fireball_sample_y"] = diag.fireball_sample_y;
+	root["fireball_sample_z"] = diag.fireball_sample_z;
+	root["fireball_sample_last_x"] = diag.fireball_sample_last_x;
+	root["fireball_sample_last_y"] = diag.fireball_sample_last_y;
+	root["fireball_sample_last_z"] = diag.fireball_sample_last_z;
+	root["fireball_sample_size"] = diag.fireball_sample_size;
+	root["fireball_sample_shields"] = diag.fireball_sample_shields;
+	root["fireball_sample_lifeleft"] = diag.fireball_sample_lifeleft;
+	root["fireball_sample_attached_obj"] = diag.fireball_sample_attached_obj;
+	root["fireball_sample_spawn_time"] = diag.fireball_sample_spawn_time;
+	root["fireball_sample_delete_time"] = diag.fireball_sample_delete_time;
+	root["fireball_sample_delete_objnum"] = diag.fireball_sample_delete_objnum;
+	root["fireball_sample_attach_parent"] = diag.fireball_sample_attach_parent;
+	root["fireball_sample_prev_attach"] = diag.fireball_sample_prev_attach;
+	root["fireball_sample_next_attach"] = diag.fireball_sample_next_attach;
+	root["fireball_trace_slots"] = fireball_trace_slots;
+	root["fireball_trace_sigs"] = fireball_trace_sigs;
+	root["fireball_trace_ids"] = fireball_trace_ids;
+	root["fireball_trace_hashes"] = fireball_trace_hashes;
+	root["fireball_trace_segs"] = fireball_trace_segs;
+	root["fireball_trace_lifeleft"] = fireball_trace_lifeleft;
+	root["fireball_trace_delete_objnums"] = fireball_trace_delete_objnums;
+	root["fireball_trace_attached_objs"] = fireball_trace_attached_objs;
 	root["debris_object_count"] = diag.debris_object_count;
 	root["debris_state_hash"] = diag.debris_state_hash;
 	root["segment_object_list_count"] = diag.segment_object_list_count;

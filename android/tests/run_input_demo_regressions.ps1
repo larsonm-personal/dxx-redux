@@ -3,6 +3,8 @@ param(
     [string]$DemoRoot,
     [ValidateSet('auto', 'd1', 'd2')]
     [string]$Game = 'auto',
+    [ValidateSet('all', 'd1', 'd2')]
+    [string]$RecordedGame = 'all',
     [ValidateSet('prompt', 'realtime', 'accelerated')]
     [string]$Mode = 'accelerated',
     [int]$TimeoutSeconds = 300,
@@ -14,6 +16,7 @@ param(
     [switch]$NoRender,
     [switch]$ReuseSandbox,
     [switch]$KeepSandbox,
+    [switch]$D1InD2,
     [switch]$ListOnly,
     [switch]$StopOnFirstFailure
 )
@@ -27,14 +30,62 @@ $wrapper = Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'
 function Get-RegressionBuildGames {
     param(
         [object[]]$Demos,
-        [string]$RequestedGame
+        [string]$RequestedGame,
+        [switch]$UseD1InD2
     )
+
+    if ($UseD1InD2) {
+        return @('d2')
+    }
 
     if ($RequestedGame -ne 'auto') {
         return @($RequestedGame)
     }
 
     return @($Demos | ForEach-Object { Get-InputDemoRecordedGameName -DemoPath $_.FullName } | Sort-Object -Unique)
+}
+
+function Get-EffectiveRecordedGameFilter {
+    param(
+        [string]$RequestedGame,
+        [string]$RequestedRecordedGame,
+        [switch]$UseD1InD2
+    )
+
+    if ($UseD1InD2) {
+        if ($RequestedRecordedGame -eq 'd2') {
+            throw '-D1InD2 can only replay D1-recorded demos'
+        }
+        if ($RequestedGame -eq 'd1') {
+            throw '-D1InD2 replays through the D2 engine; use -Game d2 or -Game auto'
+        }
+        return 'd1'
+    }
+
+    if ($RequestedRecordedGame -ne 'all') {
+        return $RequestedRecordedGame
+    }
+
+    if ($RequestedGame -in @('d1', 'd2')) {
+        return $RequestedGame
+    }
+
+    return 'all'
+}
+
+function Select-RegressionDemos {
+    param(
+        [object[]]$Demos,
+        [string]$RecordedGameFilter
+    )
+
+    if ($RecordedGameFilter -eq 'all') {
+        return @($Demos)
+    }
+
+    return @($Demos | Where-Object {
+            (Get-InputDemoRecordedGameName -DemoPath $_.FullName) -eq $RecordedGameFilter
+        })
 }
 
 if (-not $DemoRoot) {
@@ -44,7 +95,9 @@ if (-not (Test-Path -LiteralPath $DemoRoot)) {
     throw "Regression demo directory not found: $DemoRoot"
 }
 $resolvedDemoRoot = (Resolve-Path -LiteralPath $DemoRoot).Path
-$demos = @(Get-ChildItem -LiteralPath $resolvedDemoRoot -Recurse -Filter '*.dximdemo' -File | Sort-Object FullName)
+$allDemos = @(Get-ChildItem -LiteralPath $resolvedDemoRoot -Recurse -Filter '*.dximdemo' -File | Sort-Object FullName)
+$effectiveRecordedGame = Get-EffectiveRecordedGameFilter -RequestedGame $Game -RequestedRecordedGame $RecordedGame -UseD1InD2:$D1InD2
+$demos = @(Select-RegressionDemos -Demos $allDemos -RecordedGameFilter $effectiveRecordedGame)
 
 if ($ListOnly) {
     if ($demos.Count -eq 0) {
@@ -58,7 +111,8 @@ if ($ListOnly) {
 }
 
 if ($demos.Count -eq 0) {
-    throw "No .dximdemo files found under $resolvedDemoRoot"
+    $filterDescription = if ($effectiveRecordedGame -eq 'all') { 'any recorded game' } else { "recorded game '$effectiveRecordedGame'" }
+    throw "No .dximdemo files found under $resolvedDemoRoot for $filterDescription"
 }
 
 # Prompt user for run mode if not specified; list-only mode exits before this
@@ -85,9 +139,9 @@ if (-not $RunMode) {
     Write-Host ''
 }
 
-$buildGames = Get-RegressionBuildGames -Demos $demos -RequestedGame $Game
+$buildGames = Get-RegressionBuildGames -Demos $demos -RequestedGame $Game -UseD1InD2:$D1InD2
 foreach ($buildGame in $buildGames) {
-    $preferHeadless = $RunMode -eq 'headless'
+    $preferHeadless = ($RunMode -eq 'headless') -and -not $D1InD2
     Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $buildGame -PreferHeadlessConsole:$preferHeadless
 }
 
@@ -101,17 +155,24 @@ for ($index = 0; $index -lt $demos.Count; $index++) {
     Write-Host ''
     Write-Host ("[{0}/{1}] {2}" -f ($index + 1), $demos.Count, $relativeDemo)
 
+    $effectiveGame = if ($D1InD2) { 'd2' } else { $Game }
     $args = @(
         '-NoProfile',
         '-ExecutionPolicy', 'Bypass',
         '-File', $wrapper,
         '-DemoPath', $demo.FullName,
-        '-Game', $Game,
+        '-Game', $effectiveGame,
         '-Mode', $Mode,
         '-TimeoutSeconds', [string]$TimeoutSeconds
     )
-    if ($RunMode -eq 'headless') {
+    if ($D1InD2) {
+        $args += '-D1InD2'
+    }
+    if ($RunMode -eq 'headless' -and -not $D1InD2) {
         $args += '-PreferHeadlessConsole'
+    }
+    if ($RunMode -eq 'headless' -and $D1InD2 -and -not $NoRender) {
+        $args += '-NoRender'
     }
     if ($DataDir) {
         $args += @('-DataDir', $DataDir)

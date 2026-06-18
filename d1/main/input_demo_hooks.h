@@ -6,6 +6,7 @@
 struct object;
 struct vms_vector;
 
+typedef struct fvi_info fvi_info;
 typedef struct input_demo_result input_demo_result;
 typedef struct input_demo_state_trace_diag input_demo_state_trace_diag;
 
@@ -24,6 +25,15 @@ const char *input_demo_trace_collision_mode_name(void);
 void input_demo_log_player_robot_contact_probe(const char *step, struct object *player, struct object *robot,
 	const struct vms_vector *collision_point, int32_t damage);
 void input_demo_log_weapon_robot_accept_seq(struct object *weapon, struct object *robot);
+void input_demo_log_weapon_lifetime(const char *step, struct object *obj);
+void input_demo_log_player_shot_create_probe(struct object *shooter,
+	struct object *weapon, int laser_type, int gun_num, int harmless,
+	int make_sound, const struct vms_vector *direction);
+void input_demo_log_replay_collision_pair(const char *kind, struct object *obj0,
+	struct object *obj1, const struct vms_vector *collision_point);
+void input_demo_log_weapon_robot_path_probe(const char *step,
+	struct object *weapon, struct object *robot,
+	const struct vms_vector *collision_point);
 void input_demo_log_robot_fire_probe(struct object *objp,
 	const struct vms_vector *fire_vec, int weapon_type);
 int input_demo_trace_ai_visibility_active(struct object *objp);
@@ -42,6 +52,15 @@ void input_demo_log_ai_visibility_fvi_probe(struct object *objp,
 void input_demo_log_player_bump_probe(const char *step, struct object *obj0, struct object *obj1,
 	const struct vms_vector *relative_velocity, const struct vms_vector *float_force,
 	int32_t scale_num, int32_t scale_den, int damage_flag);
+void input_demo_log_powerup_spawn_probe(struct object *source, struct object *created, int created_objnum);
+void input_demo_log_d1_object13_physics_fate(struct object *obj, int fate,
+	const fvi_info *hit_info, const struct vms_vector *frame_vec,
+	const struct vms_vector *new_pos, int32_t sim_time, int ignore_count);
+void input_demo_log_player_robot_hit_object_probe(const char *step,
+	struct object *moving_obj, int hit_object,
+	const struct vms_vector *collision_point,
+	const struct vms_vector *old_velocity, int ignore_count,
+	int will_retry, int ignored_hit);
 void input_demo_log_current_replay_frame_state_mismatch(void);
 int input_demo_prepare_replay_frame(void);
 int input_demo_step_replay_frame(void);

@@ -16,9 +16,12 @@ param(
     [string]$DemoRoot,
     [ValidateSet('auto', 'd1', 'd2')]
     [string]$Game = 'auto',
+    [ValidateSet('all', 'd1', 'd2')]
+    [string]$RecordedGame = 'all',
     [ValidateSet('headless', 'graphics')]
     [string]$RunMode = 'headless',
     [int]$TimeoutSeconds = 180,
+    [switch]$D1InD2,
     [switch]$StopOnFirstFailure
 )
 
@@ -26,6 +29,7 @@ $ErrorActionPreference = 'Stop'
 
 $forwardedParams = @{
     Game = $Game
+    RecordedGame = $RecordedGame
     Mode = 'accelerated'
     RunMode = $RunMode
     TimeoutSeconds = $TimeoutSeconds
@@ -35,6 +39,9 @@ if ($DemoRoot) {
 }
 if ($StopOnFirstFailure) {
     $forwardedParams.StopOnFirstFailure = $true
+}
+if ($D1InD2) {
+    $forwardedParams.D1InD2 = $true
 }
 
 & "$PSScriptRoot\run_input_demo_regressions.ps1" @forwardedParams

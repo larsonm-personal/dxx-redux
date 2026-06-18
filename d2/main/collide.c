@@ -71,6 +71,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "switch.h"
 #include "palette.h"
 #include "gameseq.h"
+#include "d1_in_d2.h"
 #include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
@@ -78,6 +79,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
+
+static vms_vector *d1_in_d2_badass_explosion_pos(object *weapon, vms_vector *collision_point)
+{
+	return d1_in_d2_use_d1_gameplay() ? &weapon->pos : collision_point;
+}
 #include "collide.h"
 #include "escort.h"
 #include "multibot.h"
@@ -1014,7 +1020,7 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 
 		//	New by MK: If powerful badass, explode as badass, not due to lava, fixes megas being wimpy in lava.
 		if (wi->damage_radius >= VOLATILE_WALL_DAMAGE_RADIUS/2) {
-			explode_badass_weapon(weapon,hitpt);
+			explode_badass_weapon(weapon, d1_in_d2_badass_explosion_pos(weapon, hitpt));
 		} else {
 			object_create_badass_explosion( weapon, hitseg, hitpt,
 				wi->impact_size + VOLATILE_WALL_IMPACT_SIZE,
@@ -1028,7 +1034,7 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 		weapon->flags |= OF_SHOULD_BE_DEAD;		//make flares die in lava
 
 	}
-	else if ((TmapInfo[seg->sides[hitwall].tmap_num].flags & TMI_WATER) || (seg->sides[hitwall].tmap_num2 && (TmapInfo[seg->sides[hitwall].tmap_num2&0x3fff].flags & TMI_WATER))) {
+	else if (!d1_in_d2_use_d1_gameplay() && ((TmapInfo[seg->sides[hitwall].tmap_num].flags & TMI_WATER) || (seg->sides[hitwall].tmap_num2 && (TmapInfo[seg->sides[hitwall].tmap_num2&0x3fff].flags & TMI_WATER)))) {
 		weapon_info *wi = &Weapon_info[weapon->id];
 
 		//we've hit water
@@ -1079,7 +1085,7 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 
 			if ( Weapon_info[weapon->id].wall_hit_vclip > -1 )	{
 				if ( Weapon_info[weapon->id].damage_radius )
-					explode_badass_weapon(weapon,hitpt);
+					explode_badass_weapon(weapon, d1_in_d2_badass_explosion_pos(weapon, hitpt));
 				else
 					object_create_explosion( weapon->segnum, &weapon->pos, Weapon_info[weapon->id].impact_size, Weapon_info[weapon->id].wall_hit_vclip );
 			}
@@ -1243,7 +1249,7 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 		return;
 	}
 
-	if (robot->flags&OF_EXPLODING) {
+	if ((robot->flags & OF_EXPLODING) && !d1_in_d2_use_d1_gameplay()) {
 		input_demo_debug_log_player_robot_contact_probe("robot_player_skip_exploding", (void *)playerobj, (void *)robot, (void *)collision_point, 0);
 		return;
 	}
@@ -1562,7 +1568,7 @@ void collide_weapon_and_controlcen( object * weapon, object *controlcen, vms_vec
 			Control_center_been_hit = 1;
 
 		if ( Weapon_info[weapon->id].damage_radius )
-			explode_badass_weapon(weapon,collision_point);
+			explode_badass_weapon(weapon, d1_in_d2_badass_explosion_pos(weapon, collision_point));
 		else
 			object_create_explosion( controlcen->segnum, collision_point, controlcen->size*3/20, VCLIP_SMALL_EXPLOSION );
 
@@ -2019,7 +2025,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 		}
 		else		//normal badass explosion
-			badass_expl_obj = explode_badass_weapon(weapon,collision_point);
+			badass_expl_obj = explode_badass_weapon(weapon, d1_in_d2_badass_explosion_pos(weapon, collision_point));
 		input_demo_log_weapon_robot_path_event("badass_explosion", weapon,
 			robot, collision_point, damage_flag, boss_invul_flag,
 			badass_vclip, badass_expl_obj);
@@ -2890,7 +2896,7 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 			vm_vec_scale_add(collision_point, &playerobj->pos, &player2weapon, fixdiv(playerobj->size, mag)); 
 		}
 		
-		explode_badass_weapon(weapon,collision_point);
+		explode_badass_weapon(weapon, d1_in_d2_badass_explosion_pos(weapon, collision_point));
 
 	}
 
@@ -3154,7 +3160,7 @@ int maybe_detonate_weapon(object *weapon1, object *weapon2, vms_vector *collisio
 		if (dist < F1_0*5) {
 			maybe_kill_weapon(weapon1,weapon2);
 			if (weapon1->flags & OF_SHOULD_BE_DEAD) {
-				explode_badass_weapon(weapon1,collision_point);
+				explode_badass_weapon(weapon1, d1_in_d2_badass_explosion_pos(weapon1, collision_point));
 				digi_link_sound_to_pos( Weapon_info[weapon1->id].robot_hit_sound, weapon1->segnum , 0, collision_point, 0, F1_0 );
 			}
 			return 1;
@@ -3223,7 +3229,7 @@ void collide_weapon_and_debris( object * weapon, object * debris, vms_vector *co
 			0, debris->segnum, -1, collision_point);
 		explode_object(debris,0);
 		if ( Weapon_info[weapon->id].damage_radius )
-			explode_badass_weapon(weapon,collision_point);
+			explode_badass_weapon(weapon, d1_in_d2_badass_explosion_pos(weapon, collision_point));
 		maybe_kill_weapon(weapon,debris);
 		if (!(weapon->mtype.phys_info.flags & PF_PERSISTENT))
 			weapon->flags |= OF_SHOULD_BE_DEAD;
@@ -3456,5 +3462,3 @@ void collide_object_with_wall( object * A, fix hitspeed, short hitseg, short hit
 		Error( "Unhandled object type hit wall in collide.c\n" );
 	}
 }
-
-

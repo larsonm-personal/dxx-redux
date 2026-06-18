@@ -48,6 +48,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "effects.h"
 #include "byteswap.h"
 #include "args.h"
+#include "d1_in_d2.h"
 #include "input_demo_replay.h"
 
 #include "rewind_file_compat.h"
@@ -922,7 +923,29 @@ void do_door_close(int door_num)
 
 	//check for objects in doorway before closing
 	if (w->flags & WALL_DOOR_AUTO)
-		if (!is_door_free(&Segments[w->segnum],w->sidenum)) {
+		if (d1_in_d2_use_d1_gameplay()) {
+			for (p=0;p<d->n_parts;p++) {
+				int Connectside, side;
+				segment *csegp, *seg;
+				int objnum;
+		
+				seg = &Segments[w->segnum];
+				side = w->sidenum;
+		
+				csegp = &Segments[seg->children[side]];
+				Connectside = find_connect_side(seg, csegp);
+				Assert(Connectside != -1);
+
+				for (objnum=seg->objects;objnum!=-1;objnum=Objects[objnum].next)
+					if (check_poke(objnum,seg-Segments,side))
+						return;
+
+				for (objnum=csegp->objects;objnum!=-1;objnum=Objects[objnum].next)
+					if (check_poke(objnum,csegp-Segments,Connectside))
+						return;
+			}
+		}
+		else if (!is_door_free(&Segments[w->segnum],w->sidenum)) {
 			digi_kill_sound_linked_to_segment(w->segnum,w->sidenum,-1);
 			wall_open_door(&Segments[w->segnum],w->sidenum);		//re-open door
 			return;
@@ -1346,7 +1369,7 @@ void wall_frame_process()
 			if (d->back_wallnum[0] > -1)
 				Walls[d->back_wallnum[0]].flags |= WALL_DOOR_OPENED;
 
-			if (d->time > DOOR_WAIT_TIME && is_door_free(&Segments[w->segnum],w->sidenum)) {
+			if (d->time > DOOR_WAIT_TIME && (d1_in_d2_use_d1_gameplay() || is_door_free(&Segments[w->segnum],w->sidenum))) {
 				w->state = WALL_DOOR_CLOSING;
 				d->time = 0;
 			}

@@ -24,6 +24,7 @@
 #include "newdemo.h"
 #include "object.h"
 #include "player.h"
+#include "robot.h"
 #include "timer.h"
 
 #ifdef DXX_BUILD_DESCENT_II
@@ -207,6 +208,77 @@ static unsigned int input_demo_hash_ai_local_angles(unsigned int hash,
 		hash = input_demo_state_trace_hash_update(hash, (unsigned int) angles[i].h);
 	}
 	return hash;
+}
+
+static unsigned int input_demo_hash_angvec_range(const vms_angvec *angles,
+                                                 int count)
+{
+	unsigned int hash = 0;
+	int i;
+
+	for (i = 0; i < count; ++i) {
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) angles[i].p);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) angles[i].b);
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) angles[i].h);
+	}
+	return hash;
+}
+
+static unsigned int input_demo_hash_sbyte_range(const sbyte *values, int count)
+{
+	unsigned int hash = 0;
+	int i;
+
+	for (i = 0; i < count; ++i)
+		hash = input_demo_state_trace_hash_update(hash, (unsigned int) values[i]);
+	return hash;
+}
+
+static int input_demo_robot_anim_state_from_ai_state(int ai_state)
+{
+	switch (ai_state) {
+		case AIS_SRCH:
+		case AIS_LOCK:
+			return AS_ALERT;
+		case AIS_FLIN:
+			return AS_FLINCH;
+		case AIS_FIRE:
+			return AS_FIRE;
+		case AIS_RECO:
+			return AS_RECOIL;
+		default:
+			return AS_REST;
+	}
+}
+
+static int input_demo_robot_sample_base_anim_at_goal(const object *obj)
+{
+	const jointpos *jp_list;
+	int joint;
+	int num_joint_positions;
+	int robot_state;
+
+	if (!obj || obj->id < 0 || obj->id >= N_robot_types)
+		return -1;
+	if (obj->render_type != RT_POLYOBJ)
+		return -1;
+	if (Robot_info[obj->id].n_guns == 0)
+		return -1;
+	robot_state = input_demo_robot_anim_state_from_ai_state(
+	    obj->ctype.ai_info.GOAL_STATE);
+	num_joint_positions = robot_get_anim_state(&jp_list, obj->id, 0, robot_state);
+	for (joint = 0; joint < num_joint_positions; ++joint) {
+		const int jointnum = jp_list[joint].jointnum;
+		const vms_angvec *goal = &jp_list[joint].angles;
+		const vms_angvec *pose;
+
+		if (jointnum < 0 || jointnum >= MAX_SUBMODELS)
+			continue;
+		pose = &obj->rtype.pobj_info.anim_angles[jointnum];
+		if (goal->p != pose->p || goal->b != pose->b || goal->h != pose->h)
+			return 0;
+	}
+	return 1;
 }
 
 void input_demo_capture_robot_ai_local_diag(input_demo_state_trace_diag *diag)
@@ -841,9 +913,13 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 {
 	static int previous_robot_hashes_valid = 0;
 	static unsigned int previous_robot_hashes[MAX_OBJECTS];
-	const int robot_sample_obj = 11;
+	static int previous_fireball_hashes_valid = 0;
+	static unsigned int previous_fireball_hashes[MAX_OBJECTS];
+	const int robot_sample_obj = 15;
+	const int fireball_sample_obj = 174;
 	int i;
 	int segnum;
+	int fireball_trace_count;
 
 	if (!diag)
 		return;
@@ -855,6 +931,27 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 	diag->robot_changed_id = -1;
 	diag->robot_changed_bucket = -1;
 	diag->robot_changed_model = -1;
+	diag->fireball_changed_obj = -1;
+	diag->fireball_changed_sig = -1;
+	diag->fireball_changed_id = -1;
+	diag->fireball_changed_bucket = -1;
+	diag->fireball_sample_obj = -1;
+	diag->fireball_sample_sig = -1;
+	diag->fireball_sample_id = -1;
+	diag->fireball_sample_seg = -1;
+	diag->fireball_sample_delete_objnum = -1;
+	diag->fireball_sample_attach_parent = -1;
+	diag->fireball_sample_prev_attach = -1;
+	diag->fireball_sample_next_attach = -1;
+	for (i = 0; i < INPUT_DEMO_FIREBALL_TRACE_COUNT; ++i) {
+		diag->fireball_trace_slots[i] = -1;
+		diag->fireball_trace_sigs[i] = -1;
+		diag->fireball_trace_ids[i] = -1;
+		diag->fireball_trace_segs[i] = -1;
+		diag->fireball_trace_lifeleft[i] = -1;
+		diag->fireball_trace_delete_objnums[i] = -1;
+		diag->fireball_trace_attached_objs[i] = -1;
+	}
 	diag->robot_sample_obj = -1;
 	diag->robot_sample_sig = -1;
 	diag->robot_sample_id = -1;
@@ -865,6 +962,7 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 	diag->weapon_sample_parent_type = -1;
 	diag->weapon_sample_parent_num = -1;
 	diag->weapon_sample_parent_sig = -1;
+	fireball_trace_count = 0;
 
 	for (i = 0; i <= Highest_object_index; ++i) {
 		object *obj = &Objects[i];
@@ -906,10 +1004,25 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 					diag->robot_sample_sig = obj->signature;
 					diag->robot_sample_id = obj->id;
 					diag->robot_sample_seg = obj->segnum;
+					diag->robot_sample_model = obj->rtype.pobj_info.model_num;
+					diag->robot_sample_subobj_flags = obj->rtype.pobj_info.subobj_flags;
 					diag->robot_sample_behavior = obj->ctype.ai_info.behavior;
 					diag->robot_sample_mode = ailp->mode;
 					diag->robot_sample_cur_state = obj->ctype.ai_info.CURRENT_STATE;
 					diag->robot_sample_goal_state = obj->ctype.ai_info.GOAL_STATE;
+					diag->robot_sample_anim_at_goal =
+					    input_demo_robot_sample_base_anim_at_goal(obj);
+					diag->robot_sample_anim_angles_hash =
+					    input_demo_hash_angvec_range(
+					        obj->rtype.pobj_info.anim_angles, MAX_SUBMODELS);
+					diag->robot_sample_goal_angles_hash =
+					    input_demo_hash_angvec_range(ailp->goal_angles, MAX_SUBMODELS);
+					diag->robot_sample_delta_angles_hash =
+					    input_demo_hash_angvec_range(ailp->delta_angles, MAX_SUBMODELS);
+					diag->robot_sample_goal_state_hash =
+					    input_demo_hash_sbyte_range(ailp->goal_state, MAX_SUBMODELS);
+					diag->robot_sample_achieved_state_hash =
+					    input_demo_hash_sbyte_range(ailp->achieved_state, MAX_SUBMODELS);
 					diag->robot_sample_goal_seg = ailp->goal_segment;
 					diag->robot_sample_hide_index = obj->ctype.ai_info.hide_index;
 					diag->robot_sample_path_dir = obj->ctype.ai_info.PATH_DIR;
@@ -970,6 +1083,48 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 					diag->robot_sample_fvec_x = obj->orient.fvec.x;
 					diag->robot_sample_fvec_y = obj->orient.fvec.y;
 					diag->robot_sample_fvec_z = obj->orient.fvec.z;
+					diag->robot_sample_rvec_x = obj->orient.rvec.x;
+					diag->robot_sample_rvec_y = obj->orient.rvec.y;
+					diag->robot_sample_rvec_z = obj->orient.rvec.z;
+					diag->robot_sample_uvec_x = obj->orient.uvec.x;
+					diag->robot_sample_uvec_y = obj->orient.uvec.y;
+					diag->robot_sample_uvec_z = obj->orient.uvec.z;
+					diag->robot_sample_orient_hash =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_sample_orient_hash,
+					        (unsigned int) obj->orient.rvec.x);
+					diag->robot_sample_orient_hash =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_sample_orient_hash,
+					        (unsigned int) obj->orient.rvec.y);
+					diag->robot_sample_orient_hash =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_sample_orient_hash,
+					        (unsigned int) obj->orient.rvec.z);
+					diag->robot_sample_orient_hash =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_sample_orient_hash,
+					        (unsigned int) obj->orient.uvec.x);
+					diag->robot_sample_orient_hash =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_sample_orient_hash,
+					        (unsigned int) obj->orient.uvec.y);
+					diag->robot_sample_orient_hash =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_sample_orient_hash,
+					        (unsigned int) obj->orient.uvec.z);
+					diag->robot_sample_orient_hash =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_sample_orient_hash,
+					        (unsigned int) obj->orient.fvec.x);
+					diag->robot_sample_orient_hash =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_sample_orient_hash,
+					        (unsigned int) obj->orient.fvec.y);
+					diag->robot_sample_orient_hash =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_sample_orient_hash,
+					        (unsigned int) obj->orient.fvec.z);
 					diag->robot_sample_rotthrust_x = obj->mtype.phys_info.rotthrust.x;
 					diag->robot_sample_rotthrust_y = obj->mtype.phys_info.rotthrust.y;
 					diag->robot_sample_rotthrust_z = obj->mtype.phys_info.rotthrust.z;
@@ -1072,10 +1227,86 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 				    diag->weapon_state_hash, obj);
 				break;
 			case OBJ_FIREBALL:
+			{
+				unsigned int object_hash =
+				    input_demo_state_trace_hash_object(0, obj);
+
 				diag->fireball_object_count++;
 				diag->fireball_state_hash = input_demo_state_trace_hash_object(
 				    diag->fireball_state_hash, obj);
+				if (fireball_trace_count < INPUT_DEMO_FIREBALL_TRACE_COUNT) {
+					diag->fireball_trace_slots[fireball_trace_count] = i;
+					diag->fireball_trace_sigs[fireball_trace_count] = obj->signature;
+					diag->fireball_trace_ids[fireball_trace_count] = obj->id;
+					diag->fireball_trace_hashes[fireball_trace_count] = object_hash;
+					diag->fireball_trace_segs[fireball_trace_count] = obj->segnum;
+					diag->fireball_trace_lifeleft[fireball_trace_count] =
+					    obj->lifeleft;
+					diag->fireball_trace_delete_objnums[fireball_trace_count] =
+					    obj->ctype.expl_info.delete_objnum;
+					diag->fireball_trace_attached_objs[fireball_trace_count] =
+					    obj->attached_obj;
+					fireball_trace_count++;
+				}
+				if (i == fireball_sample_obj) {
+					diag->fireball_sample_obj = i;
+					diag->fireball_sample_sig = obj->signature;
+					diag->fireball_sample_id = obj->id;
+					diag->fireball_sample_hash = object_hash;
+					diag->fireball_sample_seg = obj->segnum;
+					diag->fireball_sample_control = obj->control_type;
+					diag->fireball_sample_movement = obj->movement_type;
+					diag->fireball_sample_render = obj->render_type;
+					diag->fireball_sample_flags = obj->flags;
+					diag->fireball_sample_x = obj->pos.x;
+					diag->fireball_sample_y = obj->pos.y;
+					diag->fireball_sample_z = obj->pos.z;
+					diag->fireball_sample_last_x = obj->last_pos.x;
+					diag->fireball_sample_last_y = obj->last_pos.y;
+					diag->fireball_sample_last_z = obj->last_pos.z;
+					diag->fireball_sample_size = obj->size;
+					diag->fireball_sample_shields = obj->shields;
+					diag->fireball_sample_lifeleft = obj->lifeleft;
+					diag->fireball_sample_attached_obj = obj->attached_obj;
+					diag->fireball_sample_spawn_time = obj->ctype.expl_info.spawn_time;
+					diag->fireball_sample_delete_time = obj->ctype.expl_info.delete_time;
+					diag->fireball_sample_delete_objnum =
+					    obj->ctype.expl_info.delete_objnum;
+					diag->fireball_sample_attach_parent =
+					    obj->ctype.expl_info.attach_parent;
+					diag->fireball_sample_prev_attach =
+					    obj->ctype.expl_info.prev_attach;
+					diag->fireball_sample_next_attach =
+					    obj->ctype.expl_info.next_attach;
+				}
+				if (previous_fireball_hashes_valid &&
+				    diag->fireball_changed_obj < 0 &&
+				    previous_fireball_hashes[i] != object_hash) {
+					diag->fireball_changed_obj = i;
+					diag->fireball_changed_sig = obj->signature;
+					diag->fireball_changed_id = obj->id;
+					diag->fireball_changed_bucket =
+					    i >> INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS;
+					diag->fireball_changed_prev_hash = previous_fireball_hashes[i];
+					diag->fireball_changed_hash = object_hash;
+					diag->fireball_changed_seg = obj->segnum;
+					diag->fireball_changed_control = obj->control_type;
+					diag->fireball_changed_movement = obj->movement_type;
+					diag->fireball_changed_render = obj->render_type;
+					diag->fireball_changed_flags = obj->flags;
+					diag->fireball_changed_x = obj->pos.x;
+					diag->fireball_changed_y = obj->pos.y;
+					diag->fireball_changed_z = obj->pos.z;
+					diag->fireball_changed_last_x = obj->last_pos.x;
+					diag->fireball_changed_last_y = obj->last_pos.y;
+					diag->fireball_changed_last_z = obj->last_pos.z;
+					diag->fireball_changed_size = obj->size;
+					diag->fireball_changed_shields = obj->shields;
+					diag->fireball_changed_lifeleft = obj->lifeleft;
+				}
+				previous_fireball_hashes[i] = object_hash;
 				break;
+			}
 			case OBJ_DEBRIS:
 				diag->debris_object_count++;
 				diag->debris_state_hash = input_demo_state_trace_hash_object(
@@ -1084,6 +1315,7 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 		}
 	}
 	previous_robot_hashes_valid = 1;
+	previous_fireball_hashes_valid = 1;
 
 	if (Highest_segment_index < 0)
 		return;

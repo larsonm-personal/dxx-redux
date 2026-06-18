@@ -12,6 +12,8 @@ set(D2X_MAIN_SOURCES
     credits.c
     d1_custom.c
     d1_in_d2.c
+    d1_in_d2_input_demo.c
+    d1_in_d2_semantics.c
     d1_save_translate.c
     digiobj.c
     dumpmine.c

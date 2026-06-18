@@ -67,6 +67,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "playsave.h"
 #include "timer.h"
+#include "d1_in_d2.h"
 #include "input_demo_hooks.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_recorder.h"
@@ -2868,10 +2869,14 @@ static void wake_up_robot_from_missile_camera(object *robot)
 
 void wake_up_missile_camera_robots(void)
 {
-	object *viewer = get_missile_camera_viewer();
-	int fcval = d_tick_count & 3;
+	object *viewer;
+	int fcval;
 	int i;
 
+	if (d1_in_d2_use_d1_gameplay())
+		return;
+	viewer = get_missile_camera_viewer();
+	fcval = d_tick_count & 3;
 	if (!viewer)
 		return;
 	Ai_last_missile_camera = (int)(viewer - Objects);
