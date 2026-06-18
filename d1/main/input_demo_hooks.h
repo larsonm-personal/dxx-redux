@@ -66,6 +66,7 @@ int input_demo_prepare_replay_frame(void);
 int input_demo_step_replay_frame(void);
 void input_demo_advance_replay_frame(void);
 void input_demo_finish_replay_without_close(void);
+int input_demo_finish_replay_from_game_over(void);
 int input_demo_finish_replay_from_mine_exit(void);
 
 #ifdef __cplusplus

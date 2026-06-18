@@ -26,6 +26,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <time.h>
 
 #include "inferno.h"
+#include "input_demo_hooks.h"
+#include "input_demo_replay.h"
 #include "input_demo_start.h"
 #include "game.h"
 #include "key.h"
@@ -549,6 +551,13 @@ void reset_player_object();
 
 void DoGameOver()
 {
+	if (input_demo_replay_is_loaded()) {
+		input_demo_finish_replay_from_game_over();
+		if (Game_wind)
+			window_close(Game_wind);
+		return;
+	}
+
 #ifndef SHAREWARE
 	if (PLAYING_BUILTIN_MISSION)
 #endif

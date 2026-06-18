@@ -44,6 +44,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "text.h"
 #include "strutil.h"
 #include "rbaudio.h"
+#include "input_demo_replay.h"
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -220,6 +221,9 @@ void scores_maybe_add_player(int abort_flag)
 	stats_info last_game;
 
 	if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP))
+		return;
+
+	if (input_demo_replay_is_loaded())
 		return;
   
 	scores_read(&scores);

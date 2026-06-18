@@ -836,6 +836,7 @@ const char *input_demo_current_mission_id(void)
 static int input_demo_replay_logged_state_mismatch = 0;
 static int input_demo_replay_logged_state_trace_error = 0;
 static fix64 input_demo_replay_last_timer_value = 0;
+static unsigned int input_demo_replay_result_frame_count_override = 0;
 
 void input_demo_log_current_replay_frame_state_mismatch(void)
 {
@@ -866,6 +867,9 @@ static void input_demo_write_replay_result(void)
 	if (!(result_path && result_path[0]))
 		return;
 	input_demo_capture_current_result(&result);
+	if (input_demo_replay_result_frame_count_override)
+		result.frame_count = input_demo_replay_result_frame_count_override;
+	input_demo_replay_result_frame_count_override = 0;
 	if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
 		con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
 	else {
@@ -882,6 +886,19 @@ void input_demo_finish_replay_without_close(void)
 	(void)input_demo_finish_replay_shared(0,
 		&input_demo_replay_last_timer_value,
 		NULL,
+		input_demo_write_replay_result);
+}
+
+static void input_demo_prepare_finish_replay_from_game_over(void)
+{
+	input_demo_replay_result_frame_count_override = input_demo_replay_frame_count();
+}
+
+int input_demo_finish_replay_from_game_over(void)
+{
+	return input_demo_finish_replay_shared(0,
+		&input_demo_replay_last_timer_value,
+		input_demo_prepare_finish_replay_from_game_over,
 		input_demo_write_replay_result);
 }
 

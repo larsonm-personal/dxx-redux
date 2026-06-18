@@ -68,7 +68,7 @@ void input_demo_record_player_shot_event(struct object *obj, int laser_type, int
 void input_demo_record_spreadfire_emit_event(int nfires, int flags, int spreadfire_toggle, int64_t next_laser_delta, int64_t last_laser_delta);
 void input_demo_log_replay_player_shot_probe(struct object *obj, int laser_type,
 	int gun_num, int32_t spreadr, int32_t spreadu, int32_t delay_time,
-	int make_sound, int harmless, const vms_vector *shot_orientation);
+	int make_sound, int harmless, const struct vms_vector *shot_orientation);
 void input_demo_log_replay_spreadfire_emit_probe(int nfires, int flags,
 	int spreadfire_toggle, int64_t next_laser_delta,
 	int64_t last_laser_delta);
@@ -247,6 +247,7 @@ int input_demo_prepare_replay_frame(void);
 int input_demo_step_replay_frame(void);
 void input_demo_advance_replay_frame(void);
 void input_demo_finish_replay_without_close(void);
+int input_demo_finish_replay_from_game_over(void);
 int input_demo_finish_replay_from_level_exit(void);
 int input_demo_finish_replay_from_mine_exit(void);
 

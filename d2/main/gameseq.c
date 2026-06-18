@@ -26,6 +26,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include <time.h>
 #include "inferno.h"
+#include "input_demo_hooks.h"
+#include "input_demo_replay.h"
 #include "input_demo_start.h"
 #include "game.h"
 #include "player.h"
@@ -683,10 +685,15 @@ void editor_reset_stuff_on_level()
 #endif
 
 //do whatever needs to be done when a player dies in multiplayer
-
 void DoGameOver()
 {
 //	nm_messagebox( TXT_GAME_OVER, 1, TXT_OK, "" );
+	if (input_demo_replay_is_loaded()) {
+		input_demo_finish_replay_from_game_over();
+		if (Game_wind)
+			window_close(Game_wind);
+		return;
+	}
 
 	if (PLAYING_BUILTIN_MISSION)
 		scores_maybe_add_player(0);
