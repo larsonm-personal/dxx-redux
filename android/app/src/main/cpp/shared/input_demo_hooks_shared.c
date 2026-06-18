@@ -38,6 +38,18 @@ extern void ReadControlsReplayPostFrame(void);
 extern void GameProcessFrame(void);
 extern int game_is_time_paused(void);
 
+static int previous_robot_hashes_valid = 0;
+static unsigned int previous_robot_hashes[MAX_OBJECTS];
+static int previous_robot_ai_static_hashes_valid = 0;
+static unsigned int previous_robot_ai_static_hashes[MAX_OBJECTS];
+static ai_static previous_robot_ai_static_values[MAX_OBJECTS];
+static int previous_robot_ai_static_present[MAX_OBJECTS];
+static int previous_robot_anim_pose_hashes_valid = 0;
+static unsigned int previous_robot_anim_pose_hashes[MAX_OBJECTS];
+static int previous_robot_anim_pose_present[MAX_OBJECTS];
+static int previous_fireball_hashes_valid = 0;
+static unsigned int previous_fireball_hashes[MAX_OBJECTS];
+
 #ifdef DXX_BUILD_DESCENT_II
 extern void input_demo_capture_current_result_prep_d2(player *current_player);
 extern void input_demo_capture_current_result_after_game_time_d2(
@@ -137,6 +149,18 @@ static int input_demo_count_live_objects_of_type(int object_type)
 	return count;
 }
 
+void input_demo_reset_object_state_diag_history(void)
+{
+	previous_robot_hashes_valid = 0;
+	previous_robot_ai_static_hashes_valid = 0;
+	previous_robot_anim_pose_hashes_valid = 0;
+	previous_fireball_hashes_valid = 0;
+	memset(previous_robot_ai_static_present, 0,
+	       sizeof(previous_robot_ai_static_present));
+	memset(previous_robot_anim_pose_present, 0,
+	       sizeof(previous_robot_anim_pose_present));
+}
+
 unsigned int input_demo_state_trace_hash_update(unsigned int hash,
                                                 unsigned int value)
 {
@@ -154,47 +178,55 @@ unsigned int input_demo_state_trace_hash_i64(unsigned int hash,
 	return hash;
 }
 
-static unsigned int input_demo_state_trace_hash_ai_static(
-    unsigned int hash, const object *obj)
+static unsigned int input_demo_state_trace_hash_ai_static_fields(
+    unsigned int hash, const ai_static *aip)
 {
 	int i;
 
-	if (!obj || obj->control_type != CT_AI)
+	if (!aip)
 		return hash;
 
 	hash = input_demo_state_trace_hash_update(hash,
-	                                          (unsigned int) obj->ctype.ai_info.behavior);
+	                                          (unsigned int) aip->behavior);
 	for (i = 0; i < MAX_AI_FLAGS; ++i)
 		hash = input_demo_state_trace_hash_update(
-		    hash, (unsigned int) obj->ctype.ai_info.flags[i]);
+		    hash, (unsigned int) aip->flags[i]);
 	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.hide_segment);
+	    hash, (unsigned int) aip->hide_segment);
 	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.hide_index);
-	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.path_length);
-	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.cur_path_index);
+	    hash, (unsigned int) aip->hide_index);
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) aip->path_length);
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) aip->cur_path_index);
 #ifdef DXX_BUILD_DESCENT_II
 	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.dying_sound_playing);
+	    hash, (unsigned int) aip->dying_sound_playing);
 	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.danger_laser_num);
+	    hash, (unsigned int) aip->danger_laser_num);
 	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.danger_laser_signature);
-	hash = input_demo_state_trace_hash_i64(
-	    hash, obj->ctype.ai_info.dying_start_time);
+	    hash, (unsigned int) aip->danger_laser_signature);
+	hash = input_demo_state_trace_hash_i64(hash, aip->dying_start_time);
 #else
 	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.follow_path_start_seg);
+	    hash, (unsigned int) aip->follow_path_start_seg);
 	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.follow_path_end_seg);
+	    hash, (unsigned int) aip->follow_path_end_seg);
 	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.danger_laser_signature);
-	hash = input_demo_state_trace_hash_update(
-	    hash, (unsigned int) obj->ctype.ai_info.danger_laser_num);
+	    hash, (unsigned int) aip->danger_laser_signature);
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) aip->danger_laser_num);
 #endif
 	return hash;
+}
+
+static unsigned int input_demo_state_trace_hash_ai_static(
+    unsigned int hash, const object *obj)
+{
+	if (!obj || obj->control_type != CT_AI)
+		return hash;
+	return input_demo_state_trace_hash_ai_static_fields(hash,
+	                                                    &obj->ctype.ai_info);
 }
 
 static unsigned int input_demo_hash_ai_local_angles(unsigned int hash,
@@ -281,6 +313,83 @@ static int input_demo_robot_sample_base_anim_at_goal(const object *obj)
 	return 1;
 }
 
+static unsigned int input_demo_hash_robot_ai_local(unsigned int hash,
+                                                   int objnum,
+                                                   const object *obj,
+                                                   const ai_local *ailp)
+{
+	int i;
+
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int) objnum);
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) obj->signature);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) ailp->player_awareness_type);
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) ailp->retry_count);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) ailp->consecutive_retries);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int) ailp->mode);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) ailp->previous_visibility);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) ailp->rapidfire_count);
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) ailp->goal_segment);
+#ifdef DXX_BUILD_DESCENT_II
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) ailp->next_action_time);
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) ailp->next_fire);
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) ailp->next_fire2);
+#else
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) ailp->last_see_time);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) ailp->last_attack_time);
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) ailp->wait_time);
+	hash = input_demo_state_trace_hash_update(hash,
+	                                          (unsigned int) ailp->next_fire);
+#endif
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) ailp->player_awareness_time);
+	hash = input_demo_state_trace_hash_i64(hash, ailp->time_player_seen);
+	hash = input_demo_state_trace_hash_i64(hash,
+	                                       ailp->time_player_sound_attacked);
+	hash = input_demo_state_trace_hash_i64(hash, ailp->next_misc_sound_time);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) ailp->time_since_processed);
+	hash = input_demo_hash_ai_local_angles(hash, ailp->goal_angles);
+	hash = input_demo_hash_ai_local_angles(hash, ailp->delta_angles);
+	for (i = 0; i < MAX_SUBMODELS; ++i) {
+		hash = input_demo_state_trace_hash_update(
+		    hash, (unsigned int) ailp->goal_state[i]);
+		hash = input_demo_state_trace_hash_update(
+		    hash, (unsigned int) ailp->achieved_state[i]);
+	}
+	return hash;
+}
+
+static unsigned int input_demo_hash_robot_anim_pose(unsigned int hash,
+                                                    const object *obj)
+{
+	if (!obj || obj->render_type != RT_POLYOBJ)
+		return hash;
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->signature);
+	hash = input_demo_state_trace_hash_update(hash, (unsigned int) obj->id);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->rtype.pobj_info.model_num);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->rtype.pobj_info.subobj_flags);
+	hash = input_demo_state_trace_hash_update(
+	    hash, (unsigned int) obj->rtype.pobj_info.tmap_override);
+	return input_demo_hash_ai_local_angles(hash,
+	                                       obj->rtype.pobj_info.anim_angles);
+}
+
 void input_demo_capture_robot_ai_local_diag(input_demo_state_trace_diag *diag)
 {
 	int objnum;
@@ -297,69 +406,13 @@ void input_demo_capture_robot_ai_local_diag(input_demo_state_trace_diag *diag)
 		if (obj->flags & OF_SHOULD_BE_DEAD)
 			continue;
 		ailp = &Ai_local_info[objnum];
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) objnum);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) obj->signature);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash,
-		    (unsigned int) ailp->player_awareness_type);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->retry_count);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash,
-		    (unsigned int) ailp->consecutive_retries);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->mode);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash,
-		    (unsigned int) ailp->previous_visibility);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->rapidfire_count);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->goal_segment);
-#ifdef DXX_BUILD_DESCENT_II
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->next_action_time);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->next_fire);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->next_fire2);
-#else
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->last_see_time);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->last_attack_time);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->wait_time);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash, (unsigned int) ailp->next_fire);
-#endif
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash,
-		    (unsigned int) ailp->player_awareness_time);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_i64(
-		    diag->robot_ai_local_state_hash, ailp->time_player_seen);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_i64(
-		    diag->robot_ai_local_state_hash, ailp->time_player_sound_attacked);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_i64(
-		    diag->robot_ai_local_state_hash, ailp->next_misc_sound_time);
-		diag->robot_ai_local_state_hash = input_demo_state_trace_hash_update(
-		    diag->robot_ai_local_state_hash,
-		    (unsigned int) ailp->time_since_processed);
-		diag->robot_ai_local_state_hash = input_demo_hash_ai_local_angles(
-		    diag->robot_ai_local_state_hash, ailp->goal_angles);
-		diag->robot_ai_local_state_hash = input_demo_hash_ai_local_angles(
-		    diag->robot_ai_local_state_hash, ailp->delta_angles);
-		for (i = 0; i < MAX_SUBMODELS; ++i) {
-			diag->robot_ai_local_state_hash =
-			    input_demo_state_trace_hash_update(
-			        diag->robot_ai_local_state_hash,
-			        (unsigned int) ailp->goal_state[i]);
-			diag->robot_ai_local_state_hash =
-			    input_demo_state_trace_hash_update(
-			        diag->robot_ai_local_state_hash,
-			        (unsigned int) ailp->achieved_state[i]);
+		diag->robot_ai_local_state_hash = input_demo_hash_robot_ai_local(
+		    diag->robot_ai_local_state_hash, objnum, obj, ailp);
+		i = objnum >> INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS;
+		if (i >= 0 && i < INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT) {
+			diag->robot_ai_local_bucket_hashes[i] =
+			    input_demo_hash_robot_ai_local(
+			        diag->robot_ai_local_bucket_hashes[i], objnum, obj, ailp);
 		}
 	}
 }
@@ -384,6 +437,8 @@ void input_demo_record_game_frame(void)
 	rng_call_count = d_rand_get_call_count();
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
 	input_demo_capture_current_result(&frame_state);
+	if (input_demo_recorder_frame_count() == 0)
+		input_demo_reset_object_state_diag_history();
 	input_demo_capture_state_trace_diag(&diag);
 	if (!input_demo_recorder_capture_frame((int32_t) FrameTime, &state, &pulse,
 	                                       rng_state, 1, rng_call_count,
@@ -593,6 +648,8 @@ void input_demo_write_replay_frame_state_trace_shared(
 	if (!replay_frame || !input_demo_state_trace_is_active())
 		return;
 	input_demo_capture_current_result(&actual_state);
+	if (replay_frame->frame == 0)
+		input_demo_reset_object_state_diag_history();
 	input_demo_capture_state_trace_diag(&diag);
 	if (input_demo_state_trace_write_frame(replay_frame->frame,
 	                                       replay_frame->frame_time,
@@ -911,10 +968,6 @@ static unsigned int input_demo_state_trace_hash_object(unsigned int hash,
 
 void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 {
-	static int previous_robot_hashes_valid = 0;
-	static unsigned int previous_robot_hashes[MAX_OBJECTS];
-	static int previous_fireball_hashes_valid = 0;
-	static unsigned int previous_fireball_hashes[MAX_OBJECTS];
 	const int robot_sample_obj = 15;
 	const int fireball_sample_obj = 174;
 	int i;
@@ -931,6 +984,14 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 	diag->robot_changed_id = -1;
 	diag->robot_changed_bucket = -1;
 	diag->robot_changed_model = -1;
+	diag->robot_ai_static_changed_obj = -1;
+	diag->robot_ai_static_changed_sig = -1;
+	diag->robot_ai_static_changed_id = -1;
+	diag->robot_anim_pose_changed_obj = -1;
+	diag->robot_anim_pose_changed_sig = -1;
+	diag->robot_anim_pose_changed_id = -1;
+	diag->robot_anim_pose_changed_model = -1;
+	diag->robot_anim_pose_changed_subobj_flags = -1;
 	diag->fireball_changed_obj = -1;
 	diag->fireball_changed_sig = -1;
 	diag->fireball_changed_id = -1;
@@ -996,6 +1057,10 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 			case OBJ_ROBOT: {
 				unsigned int object_hash =
 				    input_demo_state_trace_hash_object(0, obj);
+				unsigned int ai_static_hash = input_demo_state_trace_hash_update(
+				    0, (unsigned int) i);
+				unsigned int anim_pose_hash =
+				    input_demo_state_trace_hash_update(0, (unsigned int) i);
 
 				if (i == robot_sample_obj) {
 					ai_local *ailp = &Ai_local_info[i];
@@ -1135,6 +1200,15 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 				diag->robot_object_count++;
 				diag->robot_state_hash =
 				    input_demo_state_trace_hash_object(diag->robot_state_hash, obj);
+				if (bucket >= 0 && bucket < INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT) {
+					diag->robot_object_bucket_hashes[bucket] =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_object_bucket_hashes[bucket],
+					        (unsigned int) i);
+					diag->robot_object_bucket_hashes[bucket] =
+					    input_demo_state_trace_hash_object(
+					        diag->robot_object_bucket_hashes[bucket], obj);
+				}
 				if (previous_robot_hashes_valid &&
 				    diag->robot_changed_obj < 0 &&
 				    previous_robot_hashes[i] != object_hash) {
@@ -1172,12 +1246,132 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 					}
 				}
 				previous_robot_hashes[i] = object_hash;
+				ai_static_hash =
+				    input_demo_state_trace_hash_ai_static(ai_static_hash, obj);
+				if (bucket >= 0 && bucket < INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT) {
+					diag->robot_ai_static_bucket_hashes[bucket] =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_ai_static_bucket_hashes[bucket],
+					        (unsigned int) i);
+					diag->robot_ai_static_bucket_hashes[bucket] =
+					    input_demo_state_trace_hash_ai_static(
+					        diag->robot_ai_static_bucket_hashes[bucket], obj);
+				}
+				if (previous_robot_ai_static_hashes_valid &&
+				    previous_robot_ai_static_present[i] &&
+				    diag->robot_ai_static_changed_obj < 0 &&
+				    previous_robot_ai_static_hashes[i] != ai_static_hash) {
+					ai_static *aip = &obj->ctype.ai_info;
+
+					diag->robot_ai_static_changed_obj = i;
+					diag->robot_ai_static_changed_sig = obj->signature;
+					diag->robot_ai_static_changed_id = obj->id;
+					diag->robot_ai_static_changed_prev_hash =
+					    previous_robot_ai_static_hashes[i];
+					diag->robot_ai_static_changed_hash = ai_static_hash;
+					diag->robot_ai_static_changed_behavior = aip->behavior;
+					diag->robot_ai_static_changed_flags_hash =
+					    input_demo_hash_sbyte_range(aip->flags, MAX_AI_FLAGS);
+					diag->robot_ai_static_changed_current_gun =
+					    aip->CURRENT_GUN;
+					diag->robot_ai_static_changed_current_state =
+					    aip->CURRENT_STATE;
+					diag->robot_ai_static_changed_goal_state =
+					    aip->GOAL_STATE;
+					diag->robot_ai_static_changed_path_dir = aip->PATH_DIR;
+#ifdef DXX_BUILD_DESCENT_II
+					diag->robot_ai_static_changed_submode = aip->SUB_FLAGS;
+#else
+					diag->robot_ai_static_changed_submode = aip->SUBMODE;
+#endif
+					diag->robot_ai_static_changed_goalside = aip->GOALSIDE;
+					diag->robot_ai_static_changed_skip_ai_count =
+					    aip->SKIP_AI_COUNT;
+					diag->robot_ai_static_changed_hide_segment =
+					    aip->hide_segment;
+					diag->robot_ai_static_changed_hide_index = aip->hide_index;
+					diag->robot_ai_static_changed_path_length =
+					    aip->path_length;
+					diag->robot_ai_static_changed_cur_path_index =
+					    aip->cur_path_index;
+#ifdef DXX_BUILD_DESCENT_II
+					diag->robot_ai_static_changed_follow_start = -1;
+					diag->robot_ai_static_changed_follow_end = -1;
+#else
+					diag->robot_ai_static_changed_follow_start =
+					    aip->follow_path_start_seg;
+					diag->robot_ai_static_changed_follow_end =
+					    aip->follow_path_end_seg;
+#endif
+					diag->robot_ai_static_changed_danger_laser_num =
+					    aip->danger_laser_num;
+					diag->robot_ai_static_changed_danger_laser_sig =
+					    aip->danger_laser_signature;
+				}
 				diag->robot_ai_static_state_hash =
 				    input_demo_state_trace_hash_update(
 				        diag->robot_ai_static_state_hash, (unsigned int) i);
 				diag->robot_ai_static_state_hash =
 				    input_demo_state_trace_hash_ai_static(
 				        diag->robot_ai_static_state_hash, obj);
+				anim_pose_hash =
+				    input_demo_hash_robot_anim_pose(anim_pose_hash, obj);
+				diag->robot_anim_pose_state_hash =
+				    input_demo_state_trace_hash_update(
+				        diag->robot_anim_pose_state_hash, (unsigned int) i);
+				diag->robot_anim_pose_state_hash =
+				    input_demo_hash_robot_anim_pose(
+				        diag->robot_anim_pose_state_hash, obj);
+				if (bucket >= 0 && bucket < INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT) {
+					diag->robot_anim_pose_bucket_hashes[bucket] =
+					    input_demo_state_trace_hash_update(
+					        diag->robot_anim_pose_bucket_hashes[bucket],
+					        (unsigned int) i);
+					diag->robot_anim_pose_bucket_hashes[bucket] =
+					    input_demo_hash_robot_anim_pose(
+					        diag->robot_anim_pose_bucket_hashes[bucket], obj);
+				}
+				if (previous_robot_anim_pose_hashes_valid &&
+				    previous_robot_anim_pose_present[i] &&
+				    diag->robot_anim_pose_changed_obj < 0 &&
+				    previous_robot_anim_pose_hashes[i] != anim_pose_hash) {
+					ai_local *ailp = &Ai_local_info[i];
+
+					diag->robot_anim_pose_changed_obj = i;
+					diag->robot_anim_pose_changed_sig = obj->signature;
+					diag->robot_anim_pose_changed_id = obj->id;
+					diag->robot_anim_pose_changed_prev_hash =
+					    previous_robot_anim_pose_hashes[i];
+					diag->robot_anim_pose_changed_hash = anim_pose_hash;
+					if (obj->render_type == RT_POLYOBJ) {
+						diag->robot_anim_pose_changed_model =
+						    obj->rtype.pobj_info.model_num;
+						diag->robot_anim_pose_changed_subobj_flags =
+						    obj->rtype.pobj_info.subobj_flags;
+						diag->robot_anim_pose_changed_anim_angles_hash =
+						    input_demo_hash_angvec_range(
+						        obj->rtype.pobj_info.anim_angles,
+						        MAX_SUBMODELS);
+					}
+					diag->robot_anim_pose_changed_goal_angles_hash =
+					    input_demo_hash_angvec_range(ailp->goal_angles,
+					                                 MAX_SUBMODELS);
+					diag->robot_anim_pose_changed_delta_angles_hash =
+					    input_demo_hash_angvec_range(ailp->delta_angles,
+					                                 MAX_SUBMODELS);
+					diag->robot_anim_pose_changed_goal_state_hash =
+					    input_demo_hash_sbyte_range(ailp->goal_state,
+					                                MAX_SUBMODELS);
+					diag->robot_anim_pose_changed_achieved_state_hash =
+					    input_demo_hash_sbyte_range(ailp->achieved_state,
+					                                MAX_SUBMODELS);
+					diag->robot_anim_pose_changed_current_gun =
+					    obj->ctype.ai_info.CURRENT_GUN;
+					diag->robot_anim_pose_changed_current_state =
+					    obj->ctype.ai_info.CURRENT_STATE;
+					diag->robot_anim_pose_changed_goal_state =
+					    obj->ctype.ai_info.GOAL_STATE;
+				}
 				if (input_demo_robot_is_camera_awake(i, obj))
 					diag->camera_awake_robots++;
 				if (obj->ctype.ai_info.danger_laser_num != -1)
@@ -1226,8 +1420,7 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 				diag->weapon_state_hash = input_demo_state_trace_hash_object(
 				    diag->weapon_state_hash, obj);
 				break;
-			case OBJ_FIREBALL:
-			{
+			case OBJ_FIREBALL: {
 				unsigned int object_hash =
 				    input_demo_state_trace_hash_object(0, obj);
 
@@ -1314,7 +1507,53 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 				break;
 		}
 	}
+	if (previous_robot_ai_static_hashes_valid &&
+	    diag->robot_ai_static_changed_obj >= 0) {
+		for (i = 0; i <= Highest_object_index; ++i) {
+			object *obj = &Objects[i];
+
+			if ((obj->type != OBJ_ROBOT) || (obj->control_type != CT_AI))
+				continue;
+			diag->robot_ai_static_without_changed_hash =
+			    input_demo_state_trace_hash_update(
+			        diag->robot_ai_static_without_changed_hash, (unsigned int) i);
+			if (i == diag->robot_ai_static_changed_obj)
+				diag->robot_ai_static_without_changed_hash =
+				    input_demo_state_trace_hash_ai_static_fields(
+				        diag->robot_ai_static_without_changed_hash,
+				        &previous_robot_ai_static_values[i]);
+			else
+				diag->robot_ai_static_without_changed_hash =
+				    input_demo_state_trace_hash_ai_static(
+				        diag->robot_ai_static_without_changed_hash, obj);
+		}
+	}
+	memset(previous_robot_ai_static_present, 0,
+	       sizeof(previous_robot_ai_static_present));
+	memset(previous_robot_anim_pose_present, 0,
+	       sizeof(previous_robot_anim_pose_present));
+	for (i = 0; i <= Highest_object_index; ++i) {
+		object *obj = &Objects[i];
+
+		if ((obj->type != OBJ_ROBOT) || (obj->control_type != CT_AI))
+			continue;
+		previous_robot_ai_static_hashes[i] =
+		    input_demo_state_trace_hash_update(0, (unsigned int) i);
+		previous_robot_ai_static_hashes[i] =
+		    input_demo_state_trace_hash_ai_static(previous_robot_ai_static_hashes[i],
+		                                          obj);
+		previous_robot_ai_static_values[i] = obj->ctype.ai_info;
+		previous_robot_ai_static_present[i] = 1;
+		previous_robot_anim_pose_hashes[i] =
+		    input_demo_state_trace_hash_update(0, (unsigned int) i);
+		previous_robot_anim_pose_hashes[i] =
+		    input_demo_hash_robot_anim_pose(previous_robot_anim_pose_hashes[i],
+		                                    obj);
+		previous_robot_anim_pose_present[i] = 1;
+	}
 	previous_robot_hashes_valid = 1;
+	previous_robot_ai_static_hashes_valid = 1;
+	previous_robot_anim_pose_hashes_valid = 1;
 	previous_fireball_hashes_valid = 1;
 
 	if (Highest_segment_index < 0)

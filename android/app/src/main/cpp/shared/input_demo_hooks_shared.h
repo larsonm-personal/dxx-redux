@@ -10,6 +10,7 @@ void input_demo_capture_runtime_state_diag(input_demo_state_trace_diag *diag);
 void input_demo_capture_player_weapon_diag(input_demo_state_trace_diag *diag);
 void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag);
 void input_demo_capture_robot_ai_local_diag(input_demo_state_trace_diag *diag);
+void input_demo_reset_object_state_diag_history(void);
 unsigned int input_demo_state_trace_hash_update(unsigned int hash,
                                                 unsigned int value);
 unsigned int input_demo_state_trace_hash_i64(unsigned int hash, int64_t value);

@@ -275,13 +275,22 @@ function Get-MismatchStageLabel {
 function Get-DiagMismatchStageLabel {
     param([string]$MetadataDiff)
 
+    if ($MetadataDiff -match '^diag\.robot_anim_pose') {
+        return 'robot_animation_pose'
+    }
+    if ($MetadataDiff -match '^diag\.robot_ai_static') {
+        return 'robot_ai_static'
+    }
+    if ($MetadataDiff -match '^diag\.robot_ai_local') {
+        return 'robot_ai_local'
+    }
     if ($MetadataDiff -match '^diag\.(runtime_state_hash|object_allocator|object_signature_seed|object_free|object_homer|weapon_)') {
         return 'runtime_state'
     }
     if ($MetadataDiff -match '^diag\.segment_object_(list|link)') {
         return 'object_list_order'
     }
-    if ($MetadataDiff -match '^diag\.(highest_object_index|live_object|object_slot|robot_state|weapon_state|fireball_state|debris_state)') {
+    if ($MetadataDiff -match '^diag\.(highest_object_index|live_object|object_slot|robot_state|robot_object|weapon_state|fireball_state|debris_state)') {
         return 'object_state'
     }
     if ($MetadataDiff -match '^diag\.player_weapon') {
@@ -333,6 +342,26 @@ function Format-DiagSelectedValues {
             'segment_object_list_count',
             'segment_object_list_hash',
             'segment_object_link_error_count',
+            'robot_object_count',
+            'robot_state_hash',
+            'robot_changed_obj',
+            'robot_changed_sig',
+            'robot_changed_id',
+            'robot_ai_static_state_hash',
+            'robot_ai_static_changed_obj',
+            'robot_ai_static_changed_sig',
+            'robot_ai_static_changed_id',
+            'robot_ai_static_changed_current_gun',
+            'robot_ai_static_changed_current_state',
+            'robot_ai_static_changed_goal_state',
+            'robot_ai_local_state_hash',
+            'robot_anim_pose_state_hash',
+            'robot_anim_pose_changed_obj',
+            'robot_anim_pose_changed_sig',
+            'robot_anim_pose_changed_id',
+            'robot_anim_pose_changed_current_gun',
+            'robot_anim_pose_changed_current_state',
+            'robot_anim_pose_changed_goal_state',
             'weapon_object_count',
             'weapon_state_hash',
             'fireball_object_count',
@@ -358,24 +387,24 @@ function Format-DiagMismatchSummary {
         [string]$Stage
     )
 
-    if ($Stage -notin @('runtime_state', 'object_list_order', 'object_state', 'player_weapon_state')) {
+    if ($Stage -notin @('runtime_state', 'object_list_order', 'object_state', 'player_weapon_state', 'robot_ai_static', 'robot_ai_local', 'robot_animation_pose')) {
         return ''
     }
     return " expected_diag=$(Format-DiagSelectedValues -Diag $ExpectedDiag) actual_diag=$(Format-DiagSelectedValues -Diag $ActualDiag)"
 }
 
-function Format-ObjectSlotBucketHint {
+function Format-DiagBucketHint {
     param(
         [string]$MetadataDiff,
         [object]$ExpectedDiag,
         [object]$ActualDiag
     )
 
-    if ($MetadataDiff -notmatch '^diag\.object_slot_(counts|hashes)\[(\d+)\]') {
+    if ($MetadataDiff -notmatch '^diag\.(object_slot_(counts|hashes)|robot_object_bucket_hashes|robot_ai_static_bucket_hashes|robot_ai_local_bucket_hashes|robot_anim_pose_bucket_hashes)\[(\d+)\]') {
         return ''
     }
 
-    $bucket = [int]$matches[2]
+    $bucket = [int]$matches[3]
     $bucketSize = 32
     if ($ExpectedDiag -is [System.Collections.IDictionary] -and $ExpectedDiag.Contains('object_slot_bucket_size')) {
         $bucketSize = [int]$ExpectedDiag.object_slot_bucket_size
@@ -386,6 +415,96 @@ function Format-ObjectSlotBucketHint {
     $firstSlot = $bucket * $bucketSize
     $lastSlot = $firstSlot + $bucketSize - 1
     return " object_slot_range=${firstSlot}-${lastSlot}"
+}
+
+function Get-FirstDifferingArrayIndex {
+    param(
+        [object]$ExpectedDiag,
+        [object]$ActualDiag,
+        [string]$Key
+    )
+
+    if (-not ($ExpectedDiag -is [System.Collections.IDictionary]) -or -not ($ActualDiag -is [System.Collections.IDictionary])) {
+        return $null
+    }
+    if (-not $ExpectedDiag.Contains($Key) -or -not $ActualDiag.Contains($Key)) {
+        return $null
+    }
+    $expectedValues = $ExpectedDiag[$Key]
+    $actualValues = $ActualDiag[$Key]
+    if (-not ($expectedValues -is [System.Collections.IList]) -or $expectedValues -is [string] -or
+        -not ($actualValues -is [System.Collections.IList]) -or $actualValues -is [string]) {
+        return $null
+    }
+    $count = [Math]::Min($expectedValues.Count, $actualValues.Count)
+    for ($index = 0; $index -lt $count; $index++) {
+        if ($expectedValues[$index] -ne $actualValues[$index]) {
+            return [ordered]@{
+                Key = $Key
+                Index = $index
+                Expected = $expectedValues[$index]
+                Actual = $actualValues[$index]
+            }
+        }
+    }
+    if ($expectedValues.Count -ne $actualValues.Count) {
+        return [ordered]@{
+            Key = $Key
+            Index = $count
+            Expected = '<missing>'
+            Actual = '<missing>'
+        }
+    }
+    return $null
+}
+
+function Format-FirstBucketDiff {
+    param(
+        [object]$ExpectedDiag,
+        [object]$ActualDiag
+    )
+
+    foreach ($key in @(
+            'object_slot_hashes',
+            'robot_object_bucket_hashes',
+            'robot_ai_static_bucket_hashes',
+            'robot_ai_local_bucket_hashes',
+            'robot_anim_pose_bucket_hashes')) {
+        $diff = Get-FirstDifferingArrayIndex -ExpectedDiag $ExpectedDiag -ActualDiag $ActualDiag -Key $key
+        if ($null -ne $diff) {
+            $bucketSize = 32
+            if ($ExpectedDiag -is [System.Collections.IDictionary] -and $ExpectedDiag.Contains('object_slot_bucket_size')) {
+                $bucketSize = [int]$ExpectedDiag.object_slot_bucket_size
+            } elseif ($ActualDiag -is [System.Collections.IDictionary] -and $ActualDiag.Contains('object_slot_bucket_size')) {
+                $bucketSize = [int]$ActualDiag.object_slot_bucket_size
+            }
+            $firstSlot = $diff.Index * $bucketSize
+            $lastSlot = $firstSlot + $bucketSize - 1
+            return "$($diff.Key)[$($diff.Index)] range=${firstSlot}-${lastSlot} expected=$($diff.Expected) actual=$($diff.Actual)"
+        }
+    }
+    return ''
+}
+
+function Write-MismatchNeighborhood {
+    param(
+        [int]$FirstFrame,
+        [object]$ExpectedFrames,
+        [object]$ActualFrames,
+        [int]$Radius = 3
+    )
+
+    Write-Host "First mismatch neighborhood: frames $($FirstFrame - $Radius)-$($FirstFrame + $Radius)"
+    for ($frame = $FirstFrame - $Radius; $frame -le $FirstFrame + $Radius; $frame++) {
+        $key = [string]$frame
+        $expected = if ($ExpectedFrames.Contains($key)) { $ExpectedFrames[$key] } else { $null }
+        $actual = if ($ActualFrames.Contains($key)) { $ActualFrames[$key] } else { $null }
+        $expectedDiag = if ($expected -and $expected.Contains('diag')) { $expected.diag } else { $null }
+        $actualDiag = if ($actual -and $actual.Contains('diag')) { $actual.diag } else { $null }
+        $bucketDiff = Format-FirstBucketDiff -ExpectedDiag $expectedDiag -ActualDiag $actualDiag
+        $suffix = if ($bucketDiff.Length -gt 0) { " bucket_diff={$bucketDiff}" } else { '' }
+        Write-Host "  frame=$frame expected_diag=$(Format-DiagSelectedValues -Diag $expectedDiag) actual_diag=$(Format-DiagSelectedValues -Diag $actualDiag)$suffix"
+    }
 }
 
 function Read-StateTraceFrames {
@@ -503,7 +622,7 @@ foreach ($frameKey in (@($expectedFrames.Keys) | Sort-Object { [int]$_ })) {
                     if ($key -eq 'diag') {
                         $diagStage = Get-DiagMismatchStageLabel -MetadataDiff $metadataDiff
                         $diagSummary = Format-DiagMismatchSummary -ExpectedDiag $expected[$key] -ActualDiag $actual[$key] -Stage $diagStage
-                        $diagHint = Format-ObjectSlotBucketHint -MetadataDiff $metadataDiff -ExpectedDiag $expected[$key] -ActualDiag $actual[$key]
+                        $diagHint = Format-DiagBucketHint -MetadataDiff $metadataDiff -ExpectedDiag $expected[$key] -ActualDiag $actual[$key]
                         $mismatches.Add("frame=$frame stage=$diagStage $metadataDiff$diagHint$diagSummary")
                     } else {
                         $mismatches.Add("frame=$frame $metadataDiff")
@@ -547,5 +666,12 @@ if ($mismatches.Count -eq 0) {
 Write-Host 'RESULT: FAIL'
 foreach ($mismatch in $mismatches) {
     Write-Host $mismatch
+}
+$firstMismatchFrame = -1
+if ($mismatches[0] -match 'frame=(\d+)') {
+    $firstMismatchFrame = [int]$matches[1]
+}
+if ($firstMismatchFrame -ge 0) {
+    Write-MismatchNeighborhood -FirstFrame $firstMismatchFrame -ExpectedFrames $expectedFrames -ActualFrames $actualFrames
 }
 exit 1

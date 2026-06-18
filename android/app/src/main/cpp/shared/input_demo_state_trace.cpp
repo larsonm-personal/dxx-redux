@@ -106,6 +106,10 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	ordered_json object_slot_counts = ordered_json::array();
 	ordered_json object_slot_hashes = ordered_json::array();
 	ordered_json object_focus_slot_hashes = ordered_json::array();
+	ordered_json robot_object_bucket_hashes = ordered_json::array();
+	ordered_json robot_ai_static_bucket_hashes = ordered_json::array();
+	ordered_json robot_ai_local_bucket_hashes = ordered_json::array();
+	ordered_json robot_anim_pose_bucket_hashes = ordered_json::array();
 	ordered_json fireball_trace_slots = ordered_json::array();
 	ordered_json fireball_trace_sigs = ordered_json::array();
 	ordered_json fireball_trace_ids = ordered_json::array();
@@ -118,6 +122,13 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	for (int index = 0; index < INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT; ++index) {
 		object_slot_counts.push_back(diag.object_slot_counts[index]);
 		object_slot_hashes.push_back(diag.object_slot_hashes[index]);
+		robot_object_bucket_hashes.push_back(diag.robot_object_bucket_hashes[index]);
+		robot_ai_static_bucket_hashes.push_back(
+		    diag.robot_ai_static_bucket_hashes[index]);
+		robot_ai_local_bucket_hashes.push_back(
+		    diag.robot_ai_local_bucket_hashes[index]);
+		robot_anim_pose_bucket_hashes.push_back(
+		    diag.robot_anim_pose_bucket_hashes[index]);
 	}
 	for (int index = 0; index < INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE; ++index)
 		object_focus_slot_hashes.push_back(diag.object_focus_slot_hashes[index]);
@@ -181,6 +192,7 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["object_focus_slot_hashes"] = object_focus_slot_hashes;
 	root["robot_object_count"] = diag.robot_object_count;
 	root["robot_state_hash"] = diag.robot_state_hash;
+	root["robot_object_bucket_hashes"] = robot_object_bucket_hashes;
 	root["robot_changed_obj"] = diag.robot_changed_obj;
 	root["robot_changed_sig"] = diag.robot_changed_sig;
 	root["robot_changed_id"] = diag.robot_changed_id;
@@ -268,7 +280,59 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["robot_sample_rotvel_y"] = diag.robot_sample_rotvel_y;
 	root["robot_sample_rotvel_z"] = diag.robot_sample_rotvel_z;
 	root["robot_ai_static_state_hash"] = diag.robot_ai_static_state_hash;
+	root["robot_ai_static_bucket_hashes"] = robot_ai_static_bucket_hashes;
+	root["robot_ai_static_without_changed_hash"] = diag.robot_ai_static_without_changed_hash;
+	root["robot_ai_static_changed_obj"] = diag.robot_ai_static_changed_obj;
+	root["robot_ai_static_changed_sig"] = diag.robot_ai_static_changed_sig;
+	root["robot_ai_static_changed_id"] = diag.robot_ai_static_changed_id;
+	root["robot_ai_static_changed_prev_hash"] = diag.robot_ai_static_changed_prev_hash;
+	root["robot_ai_static_changed_hash"] = diag.robot_ai_static_changed_hash;
+	root["robot_ai_static_changed_behavior"] = diag.robot_ai_static_changed_behavior;
+	root["robot_ai_static_changed_flags_hash"] = diag.robot_ai_static_changed_flags_hash;
+	root["robot_ai_static_changed_current_gun"] = diag.robot_ai_static_changed_current_gun;
+	root["robot_ai_static_changed_current_state"] = diag.robot_ai_static_changed_current_state;
+	root["robot_ai_static_changed_goal_state"] = diag.robot_ai_static_changed_goal_state;
+	root["robot_ai_static_changed_path_dir"] = diag.robot_ai_static_changed_path_dir;
+	root["robot_ai_static_changed_submode"] = diag.robot_ai_static_changed_submode;
+	root["robot_ai_static_changed_goalside"] = diag.robot_ai_static_changed_goalside;
+	root["robot_ai_static_changed_skip_ai_count"] = diag.robot_ai_static_changed_skip_ai_count;
+	root["robot_ai_static_changed_hide_segment"] = diag.robot_ai_static_changed_hide_segment;
+	root["robot_ai_static_changed_hide_index"] = diag.robot_ai_static_changed_hide_index;
+	root["robot_ai_static_changed_path_length"] = diag.robot_ai_static_changed_path_length;
+	root["robot_ai_static_changed_cur_path_index"] = diag.robot_ai_static_changed_cur_path_index;
+	root["robot_ai_static_changed_follow_start"] = diag.robot_ai_static_changed_follow_start;
+	root["robot_ai_static_changed_follow_end"] = diag.robot_ai_static_changed_follow_end;
+	root["robot_ai_static_changed_danger_laser_num"] = diag.robot_ai_static_changed_danger_laser_num;
+	root["robot_ai_static_changed_danger_laser_sig"] = diag.robot_ai_static_changed_danger_laser_sig;
 	root["robot_ai_local_state_hash"] = diag.robot_ai_local_state_hash;
+	root["robot_ai_local_bucket_hashes"] = robot_ai_local_bucket_hashes;
+	root["robot_anim_pose_state_hash"] = diag.robot_anim_pose_state_hash;
+	root["robot_anim_pose_bucket_hashes"] = robot_anim_pose_bucket_hashes;
+	root["robot_anim_pose_changed_obj"] = diag.robot_anim_pose_changed_obj;
+	root["robot_anim_pose_changed_sig"] = diag.robot_anim_pose_changed_sig;
+	root["robot_anim_pose_changed_id"] = diag.robot_anim_pose_changed_id;
+	root["robot_anim_pose_changed_prev_hash"] =
+	    diag.robot_anim_pose_changed_prev_hash;
+	root["robot_anim_pose_changed_hash"] = diag.robot_anim_pose_changed_hash;
+	root["robot_anim_pose_changed_model"] = diag.robot_anim_pose_changed_model;
+	root["robot_anim_pose_changed_subobj_flags"] =
+	    diag.robot_anim_pose_changed_subobj_flags;
+	root["robot_anim_pose_changed_anim_angles_hash"] =
+	    diag.robot_anim_pose_changed_anim_angles_hash;
+	root["robot_anim_pose_changed_goal_angles_hash"] =
+	    diag.robot_anim_pose_changed_goal_angles_hash;
+	root["robot_anim_pose_changed_delta_angles_hash"] =
+	    diag.robot_anim_pose_changed_delta_angles_hash;
+	root["robot_anim_pose_changed_goal_state_hash"] =
+	    diag.robot_anim_pose_changed_goal_state_hash;
+	root["robot_anim_pose_changed_achieved_state_hash"] =
+	    diag.robot_anim_pose_changed_achieved_state_hash;
+	root["robot_anim_pose_changed_current_gun"] =
+	    diag.robot_anim_pose_changed_current_gun;
+	root["robot_anim_pose_changed_current_state"] =
+	    diag.robot_anim_pose_changed_current_state;
+	root["robot_anim_pose_changed_goal_state"] =
+	    diag.robot_anim_pose_changed_goal_state;
 	root["weapon_object_count"] = diag.weapon_object_count;
 	root["weapon_state_hash"] = diag.weapon_state_hash;
 	root["weapon_sample_obj"] = diag.weapon_sample_obj;
