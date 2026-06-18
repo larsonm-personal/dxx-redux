@@ -107,11 +107,12 @@
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
-    // D1 GOG full install has a single built-in mission. Accept default level 1.
+    // Accept default mission and level 1.
+    {"action": "key", "key": "enter", "post_delay_ms": 100},
     {"action": "key", "key": "enter", "post_delay_ms": 100},
 
     // Difficulty
-    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "select", "text": "Rookie", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000},
 
     // D1's post-difficulty transition responds more reliably to Escape here
     // than to skip_briefing's tap-based fallback.

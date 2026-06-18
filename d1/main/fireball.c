@@ -51,6 +51,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "cntrlcen.h"
 #include "gameseg.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_hooks.h"
 
 #define EXPLOSION_SCALE fl2f(2.5)		//explosion is the obj size times this  
 

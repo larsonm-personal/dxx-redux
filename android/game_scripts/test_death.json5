@@ -58,8 +58,8 @@
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5100},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
-    // Mission select (D2 only -- D1 has a single built-in mission)
-    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    // Mission select
+    {"action": "select", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Level number input (parameterized keys)
     {"action": "wait_ms", "ms": 300},

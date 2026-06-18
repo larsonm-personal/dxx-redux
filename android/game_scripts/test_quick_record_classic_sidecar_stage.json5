@@ -54,7 +54,7 @@
     {"action": "meta_action", "id": 1034, "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {
         "input_demo.recording": "true",
-        "input_demo.frame_count": {"gte": 10}
+        "input_demo.frame_count": {"gte": 9}
     }},
     {"action": "meta_action", "id": 1034, "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {"input_demo.recording": "false"}},

@@ -36,7 +36,7 @@
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "assert", "expect": {
-        "menu.items": {"contains": "(D1) Trine - Episode 2"}
+        "menu.items": {"contains": "D1: Trine - Episode 2"}
     }},
     {"action": "select", "text": "Trine - Episode 2", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
@@ -60,7 +60,7 @@
         "asset_trace.d1_compat.robot_obj_bitmaps_applied": {"gt": 0},
         "gameplay_trace.mode": {"eq": "d1-in-d2"},
         "gameplay_trace.weapon_samples.primary_spreadfire.valid": {"eq": "true"},
-        "gameplay_trace.weapon_samples.primary_spreadfire.id": {"eq": 12},
+        "gameplay_trace.weapon_samples.primary_spreadfire.id": {"eq": "12"},
         "gameplay_trace.weapon_samples.primary_spreadfire.speed_raw[0]": {"gt": 0},
         "gameplay_trace.weapon_samples.primary_spreadfire.fire_wait_raw": {"gt": 0},
         "gameplay_trace.weapon_samples.d1_spreadfire_projectile_id_20.valid": {"eq": "true"},
@@ -68,8 +68,8 @@
         "d1_custom_textures.bitmap_entries": {"gt": 0},
         "d1_custom_textures.applied": {"gt": 0},
         "d1_custom_textures.base_sound_entries": {"eq": "98"},
-        "d1_custom_textures.base_sound_applied": {"eq": "64"},
-        "d1_custom_textures.base_sound_unresolved": {"eq": "34"},
+        "d1_custom_textures.base_sound_applied": {"eq": "98"},
+        "d1_custom_textures.base_sound_unresolved": {"eq": "0"},
         "d1_custom_textures.base_sound_skipped": {"eq": "0"}
     }},
     {"action": "assert", "expect": {
@@ -82,8 +82,8 @@
         "d1_custom_textures.files_found": {"gte": 1},
         "d1_custom_textures.applied": {"gt": 0},
         "d1_custom_textures.base_sound_entries": {"eq": "98"},
-        "d1_custom_textures.base_sound_applied": {"eq": "64"},
-        "d1_custom_textures.base_sound_unresolved": {"eq": "34"},
+        "d1_custom_textures.base_sound_applied": {"eq": "98"},
+        "d1_custom_textures.base_sound_unresolved": {"eq": "0"},
         "d1_custom_textures.base_sound_skipped": {"eq": "0"}
     }},
     {"action": "assert", "expect": {

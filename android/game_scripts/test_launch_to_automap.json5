@@ -49,9 +49,8 @@
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
-    // Mission select (D2 only -- D1 has a single built-in mission)
-    {"action": "select", "text": "${MISSION}", "when": "d2", "optional": true,
-     "post_delay_ms": 100, "timeout_ms": 1000},
+    // Mission select
+    {"action": "select", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
     // accept default level 1
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
