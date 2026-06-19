@@ -1125,20 +1125,88 @@ static int d1_save_translate_apply_runtime_state(
 	return 1;
 }
 
+static int d1_save_translate_restore_checkpoint_object_links(void)
+{
+	int i, objnum, segnum;
+	ubyte seen[MAX_OBJECTS];
+
+	memset(seen, 0, sizeof(seen));
+	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
+		Segments[segnum].objects = -1;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+
+		obj->rtype.pobj_info.alt_textures = -1;
+		if (obj->type == OBJ_NONE)
+			continue;
+		if (obj->segnum < 0 || obj->segnum > Highest_segment_index)
+			return 0;
+		if (obj->prev == -1) {
+			if (Segments[obj->segnum].objects != -1)
+				return 0;
+			Segments[obj->segnum].objects = i;
+		}
+	}
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+
+		if (obj->type == OBJ_NONE)
+			continue;
+		segnum = obj->segnum;
+		if (obj->prev == -1) {
+			if (Segments[segnum].objects != i)
+				return 0;
+		} else {
+			if (obj->prev < 0 || obj->prev > Highest_object_index)
+				return 0;
+			if (Objects[obj->prev].type == OBJ_NONE ||
+			    Objects[obj->prev].segnum != segnum ||
+			    Objects[obj->prev].next != i)
+				return 0;
+		}
+		if (obj->next != -1) {
+			if (obj->next < 0 || obj->next > Highest_object_index)
+				return 0;
+			if (Objects[obj->next].type == OBJ_NONE ||
+			    Objects[obj->next].segnum != segnum ||
+			    Objects[obj->next].prev != i)
+				return 0;
+		}
+	}
+
+	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
+		for (objnum = Segments[segnum].objects; objnum != -1;
+		     objnum = Objects[objnum].next) {
+			if (objnum < 0 || objnum > Highest_object_index)
+				return 0;
+			if (seen[objnum])
+				return 0;
+			if (Objects[objnum].type == OBJ_NONE ||
+			    Objects[objnum].segnum != segnum)
+				return 0;
+			seen[objnum] = 1;
+		}
+
+	for (i = 0; i <= Highest_object_index; i++)
+		if (Objects[i].type != OBJ_NONE && !seen[i])
+			return 0;
+
+	return 1;
+}
+
 int d1_save_translate_apply_checkpoint_objects(
     const uint8_t *data, size_t size,
     const d1_save_translate_checkpoint_start *start)
 {
 	int i;
-	int segnum;
 	d1_save_translate_reader reader;
 
 	if (!data || !start || start->object_count <= 0 ||
 	    start->object_count > MAX_OBJECTS ||
 	    start->object_stream_offset >= size)
 		return 0;
-	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
-		Segments[segnum].objects = -1;
 	reset_objects(1);
 	init_morphs();
 	Do_appearance_effect = 0;
@@ -1150,17 +1218,13 @@ int d1_save_translate_apply_checkpoint_objects(
 		if (!d1_save_translate_read_object(&reader, &Objects[i]))
 			return 0;
 	Highest_object_index = start->object_count - 1;
+	if (!d1_save_translate_restore_checkpoint_object_links())
+		return 0;
 	for (i = 0; i <= Highest_object_index; i++) {
 		object *obj = &Objects[i];
 
-		obj->rtype.pobj_info.alt_textures = -1;
-		segnum = obj->segnum;
-		obj->next = obj->prev = obj->segnum = -1;
 		if (obj->type == OBJ_NONE)
 			continue;
-		if (segnum < 0 || segnum > Highest_segment_index)
-			return 0;
-		obj_link(i, segnum);
 		if (obj->type == OBJ_ROBOT && Robot_info[obj->id].boss_flag) {
 			fix save_shields = obj->shields;
 

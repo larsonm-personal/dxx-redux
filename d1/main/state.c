@@ -69,6 +69,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ogl_init.h"
 #endif
 #include "physfsx.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #ifdef __ANDROID__
 #include "android_resume_pilot.h"
@@ -2189,21 +2190,24 @@ RetryObjectLoading:
 		rebirth = 1;
 	}
 
-	for (i=0; i<=Highest_object_index; i++ )	{
-		obj = &Objects[i];
-		obj->rtype.pobj_info.alt_textures = -1;
-		segnum = obj->segnum;
-		obj->next = obj->prev = obj->segnum = -1;
-		if ( obj->type != OBJ_NONE )	{
-			// Check for a bogus Saturn version!!!!
-			if (!BogusSaturnShit )	{
-				if ( (segnum<0) || (segnum>Highest_segment_index) ) {
-					BogusSaturnShit = 1;
-					PHYSFS_seek( fp, ObjectStartLocation );
-					goto RetryObjectLoading;
+	if (!(input_demo_replay_has_checkpoint() &&
+		input_demo_restore_checkpoint_object_links())) {
+		for (i=0; i<=Highest_object_index; i++ )	{
+			obj = &Objects[i];
+			obj->rtype.pobj_info.alt_textures = -1;
+			segnum = obj->segnum;
+			obj->next = obj->prev = obj->segnum = -1;
+			if ( obj->type != OBJ_NONE )	{
+				// Check for a bogus Saturn version!!!!
+				if (!BogusSaturnShit )	{
+					if ( (segnum<0) || (segnum>Highest_segment_index) ) {
+						BogusSaturnShit = 1;
+						PHYSFS_seek( fp, ObjectStartLocation );
+						goto RetryObjectLoading;
+					}
 				}
+				obj_link(i,segnum);
 			}
-			obj_link(i,segnum);
 		}
 	}
 	special_reset_objects();

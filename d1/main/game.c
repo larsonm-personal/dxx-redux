@@ -1404,6 +1404,7 @@ void GameProcessFrame(void)
 	}
 
 	update_all_robot_location_info();
+	Player_fired_laser_this_frame = -1;
 
 	input_demo_debug_log_player_motion_state("exit");
 

@@ -1131,6 +1131,7 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 	const int fireball_sample_obj = 174;
 	int i;
 	int segnum;
+	int ai_static_trace_count;
 	int weapon_trace_count;
 	int fireball_trace_count;
 
@@ -1173,6 +1174,26 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 		diag->fireball_trace_delete_objnums[i] = -1;
 		diag->fireball_trace_attached_objs[i] = -1;
 	}
+	for (i = 0; i < INPUT_DEMO_AI_STATIC_TRACE_COUNT; ++i) {
+		diag->robot_ai_static_trace_slots[i] = -1;
+		diag->robot_ai_static_trace_sigs[i] = -1;
+		diag->robot_ai_static_trace_ids[i] = -1;
+		diag->robot_ai_static_trace_current_guns[i] = -1;
+		diag->robot_ai_static_trace_current_states[i] = -1;
+		diag->robot_ai_static_trace_goal_states[i] = -1;
+		diag->robot_ai_static_trace_path_dirs[i] = -1;
+		diag->robot_ai_static_trace_submodes[i] = -1;
+		diag->robot_ai_static_trace_goalsides[i] = -1;
+		diag->robot_ai_static_trace_skip_ai_counts[i] = -1;
+		diag->robot_ai_static_trace_hide_segments[i] = -1;
+		diag->robot_ai_static_trace_hide_indexes[i] = -1;
+		diag->robot_ai_static_trace_path_lengths[i] = -1;
+		diag->robot_ai_static_trace_cur_path_indexes[i] = -1;
+		diag->robot_ai_static_trace_follow_starts[i] = -1;
+		diag->robot_ai_static_trace_follow_ends[i] = -1;
+		diag->robot_ai_static_trace_danger_nums[i] = -1;
+		diag->robot_ai_static_trace_danger_sigs[i] = -1;
+	}
 	diag->robot_sample_obj = -1;
 	diag->robot_sample_sig = -1;
 	diag->robot_sample_id = -1;
@@ -1191,6 +1212,7 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 		diag->weapon_trace_lifeleft[i] = -1;
 		diag->weapon_trace_track_goals[i] = -1;
 	}
+	ai_static_trace_count = 0;
 	weapon_trace_count = 0;
 	fireball_trace_count = 0;
 	input_demo_capture_local_segment_trace(diag);
@@ -1484,6 +1506,59 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 				diag->robot_ai_static_state_hash =
 				    input_demo_state_trace_hash_ai_static(
 				        diag->robot_ai_static_state_hash, obj);
+				if (ai_static_trace_count <
+				    INPUT_DEMO_AI_STATIC_TRACE_COUNT) {
+					ai_static *aip = &obj->ctype.ai_info;
+					int trace_index = ai_static_trace_count++;
+
+					diag->robot_ai_static_trace_slots[trace_index] = i;
+					diag->robot_ai_static_trace_sigs[trace_index] =
+					    obj->signature;
+					diag->robot_ai_static_trace_ids[trace_index] = obj->id;
+					diag->robot_ai_static_trace_hashes[trace_index] =
+					    ai_static_hash;
+					diag->robot_ai_static_trace_flags_hashes[trace_index] =
+					    input_demo_hash_sbyte_range(aip->flags, MAX_AI_FLAGS);
+					diag->robot_ai_static_trace_current_guns[trace_index] =
+					    aip->CURRENT_GUN;
+					diag->robot_ai_static_trace_current_states[trace_index] =
+					    aip->CURRENT_STATE;
+					diag->robot_ai_static_trace_goal_states[trace_index] =
+					    aip->GOAL_STATE;
+					diag->robot_ai_static_trace_path_dirs[trace_index] =
+					    aip->PATH_DIR;
+#ifdef DXX_BUILD_DESCENT_II
+					diag->robot_ai_static_trace_submodes[trace_index] =
+					    aip->SUB_FLAGS;
+					diag->robot_ai_static_trace_follow_starts[trace_index] =
+					    -1;
+					diag->robot_ai_static_trace_follow_ends[trace_index] =
+					    -1;
+#else
+					diag->robot_ai_static_trace_submodes[trace_index] =
+					    aip->SUBMODE;
+					diag->robot_ai_static_trace_follow_starts[trace_index] =
+					    aip->follow_path_start_seg;
+					diag->robot_ai_static_trace_follow_ends[trace_index] =
+					    aip->follow_path_end_seg;
+#endif
+					diag->robot_ai_static_trace_goalsides[trace_index] =
+					    aip->GOALSIDE;
+					diag->robot_ai_static_trace_skip_ai_counts[trace_index] =
+					    aip->SKIP_AI_COUNT;
+					diag->robot_ai_static_trace_hide_segments[trace_index] =
+					    aip->hide_segment;
+					diag->robot_ai_static_trace_hide_indexes[trace_index] =
+					    aip->hide_index;
+					diag->robot_ai_static_trace_path_lengths[trace_index] =
+					    aip->path_length;
+					diag->robot_ai_static_trace_cur_path_indexes[trace_index] =
+					    aip->cur_path_index;
+					diag->robot_ai_static_trace_danger_nums[trace_index] =
+					    aip->danger_laser_num;
+					diag->robot_ai_static_trace_danger_sigs[trace_index] =
+					    aip->danger_laser_signature;
+				}
 				anim_pose_hash =
 				    input_demo_hash_robot_anim_pose(anim_pose_hash, obj);
 				diag->robot_anim_pose_state_hash =

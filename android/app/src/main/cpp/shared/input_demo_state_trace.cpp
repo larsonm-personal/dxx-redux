@@ -108,6 +108,26 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	ordered_json object_focus_slot_hashes = ordered_json::array();
 	ordered_json robot_object_bucket_hashes = ordered_json::array();
 	ordered_json robot_ai_static_bucket_hashes = ordered_json::array();
+	ordered_json robot_ai_static_trace_slots = ordered_json::array();
+	ordered_json robot_ai_static_trace_sigs = ordered_json::array();
+	ordered_json robot_ai_static_trace_ids = ordered_json::array();
+	ordered_json robot_ai_static_trace_hashes = ordered_json::array();
+	ordered_json robot_ai_static_trace_flags_hashes = ordered_json::array();
+	ordered_json robot_ai_static_trace_current_guns = ordered_json::array();
+	ordered_json robot_ai_static_trace_current_states = ordered_json::array();
+	ordered_json robot_ai_static_trace_goal_states = ordered_json::array();
+	ordered_json robot_ai_static_trace_path_dirs = ordered_json::array();
+	ordered_json robot_ai_static_trace_submodes = ordered_json::array();
+	ordered_json robot_ai_static_trace_goalsides = ordered_json::array();
+	ordered_json robot_ai_static_trace_skip_ai_counts = ordered_json::array();
+	ordered_json robot_ai_static_trace_hide_segments = ordered_json::array();
+	ordered_json robot_ai_static_trace_hide_indexes = ordered_json::array();
+	ordered_json robot_ai_static_trace_path_lengths = ordered_json::array();
+	ordered_json robot_ai_static_trace_cur_path_indexes = ordered_json::array();
+	ordered_json robot_ai_static_trace_follow_starts = ordered_json::array();
+	ordered_json robot_ai_static_trace_follow_ends = ordered_json::array();
+	ordered_json robot_ai_static_trace_danger_nums = ordered_json::array();
+	ordered_json robot_ai_static_trace_danger_sigs = ordered_json::array();
 	ordered_json robot_ai_local_bucket_hashes = ordered_json::array();
 	ordered_json robot_anim_pose_bucket_hashes = ordered_json::array();
 	ordered_json weapon_trace_slots = ordered_json::array();
@@ -155,6 +175,46 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	}
 	for (int index = 0; index < INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE; ++index)
 		object_focus_slot_hashes.push_back(diag.object_focus_slot_hashes[index]);
+	for (int index = 0; index < INPUT_DEMO_AI_STATIC_TRACE_COUNT; ++index) {
+		robot_ai_static_trace_slots.push_back(
+		    diag.robot_ai_static_trace_slots[index]);
+		robot_ai_static_trace_sigs.push_back(diag.robot_ai_static_trace_sigs[index]);
+		robot_ai_static_trace_ids.push_back(diag.robot_ai_static_trace_ids[index]);
+		robot_ai_static_trace_hashes.push_back(
+		    diag.robot_ai_static_trace_hashes[index]);
+		robot_ai_static_trace_flags_hashes.push_back(
+		    diag.robot_ai_static_trace_flags_hashes[index]);
+		robot_ai_static_trace_current_guns.push_back(
+		    diag.robot_ai_static_trace_current_guns[index]);
+		robot_ai_static_trace_current_states.push_back(
+		    diag.robot_ai_static_trace_current_states[index]);
+		robot_ai_static_trace_goal_states.push_back(
+		    diag.robot_ai_static_trace_goal_states[index]);
+		robot_ai_static_trace_path_dirs.push_back(
+		    diag.robot_ai_static_trace_path_dirs[index]);
+		robot_ai_static_trace_submodes.push_back(
+		    diag.robot_ai_static_trace_submodes[index]);
+		robot_ai_static_trace_goalsides.push_back(
+		    diag.robot_ai_static_trace_goalsides[index]);
+		robot_ai_static_trace_skip_ai_counts.push_back(
+		    diag.robot_ai_static_trace_skip_ai_counts[index]);
+		robot_ai_static_trace_hide_segments.push_back(
+		    diag.robot_ai_static_trace_hide_segments[index]);
+		robot_ai_static_trace_hide_indexes.push_back(
+		    diag.robot_ai_static_trace_hide_indexes[index]);
+		robot_ai_static_trace_path_lengths.push_back(
+		    diag.robot_ai_static_trace_path_lengths[index]);
+		robot_ai_static_trace_cur_path_indexes.push_back(
+		    diag.robot_ai_static_trace_cur_path_indexes[index]);
+		robot_ai_static_trace_follow_starts.push_back(
+		    diag.robot_ai_static_trace_follow_starts[index]);
+		robot_ai_static_trace_follow_ends.push_back(
+		    diag.robot_ai_static_trace_follow_ends[index]);
+		robot_ai_static_trace_danger_nums.push_back(
+		    diag.robot_ai_static_trace_danger_nums[index]);
+		robot_ai_static_trace_danger_sigs.push_back(
+		    diag.robot_ai_static_trace_danger_sigs[index]);
+	}
 	for (int index = 0; index < INPUT_DEMO_WEAPON_TRACE_COUNT; ++index) {
 		weapon_trace_slots.push_back(diag.weapon_trace_slots[index]);
 		weapon_trace_sigs.push_back(diag.weapon_trace_sigs[index]);
@@ -376,6 +436,39 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["robot_ai_static_changed_follow_end"] = diag.robot_ai_static_changed_follow_end;
 	root["robot_ai_static_changed_danger_laser_num"] = diag.robot_ai_static_changed_danger_laser_num;
 	root["robot_ai_static_changed_danger_laser_sig"] = diag.robot_ai_static_changed_danger_laser_sig;
+	root["robot_ai_static_trace_slots"] = robot_ai_static_trace_slots;
+	root["robot_ai_static_trace_sigs"] = robot_ai_static_trace_sigs;
+	root["robot_ai_static_trace_ids"] = robot_ai_static_trace_ids;
+	root["robot_ai_static_trace_hashes"] = robot_ai_static_trace_hashes;
+	root["robot_ai_static_trace_flags_hashes"] =
+	    robot_ai_static_trace_flags_hashes;
+	root["robot_ai_static_trace_current_guns"] =
+	    robot_ai_static_trace_current_guns;
+	root["robot_ai_static_trace_current_states"] =
+	    robot_ai_static_trace_current_states;
+	root["robot_ai_static_trace_goal_states"] =
+	    robot_ai_static_trace_goal_states;
+	root["robot_ai_static_trace_path_dirs"] = robot_ai_static_trace_path_dirs;
+	root["robot_ai_static_trace_submodes"] = robot_ai_static_trace_submodes;
+	root["robot_ai_static_trace_goalsides"] = robot_ai_static_trace_goalsides;
+	root["robot_ai_static_trace_skip_ai_counts"] =
+	    robot_ai_static_trace_skip_ai_counts;
+	root["robot_ai_static_trace_hide_segments"] =
+	    robot_ai_static_trace_hide_segments;
+	root["robot_ai_static_trace_hide_indexes"] =
+	    robot_ai_static_trace_hide_indexes;
+	root["robot_ai_static_trace_path_lengths"] =
+	    robot_ai_static_trace_path_lengths;
+	root["robot_ai_static_trace_cur_path_indexes"] =
+	    robot_ai_static_trace_cur_path_indexes;
+	root["robot_ai_static_trace_follow_starts"] =
+	    robot_ai_static_trace_follow_starts;
+	root["robot_ai_static_trace_follow_ends"] =
+	    robot_ai_static_trace_follow_ends;
+	root["robot_ai_static_trace_danger_nums"] =
+	    robot_ai_static_trace_danger_nums;
+	root["robot_ai_static_trace_danger_sigs"] =
+	    robot_ai_static_trace_danger_sigs;
 	root["robot_ai_local_state_hash"] = diag.robot_ai_local_state_hash;
 	root["robot_ai_local_bucket_hashes"] = robot_ai_local_bucket_hashes;
 	root["robot_anim_pose_state_hash"] = diag.robot_anim_pose_state_hash;

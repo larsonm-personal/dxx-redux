@@ -69,6 +69,7 @@ void input_demo_log_current_replay_frame_state_mismatch(void);
 int input_demo_prepare_replay_frame(void);
 int input_demo_step_replay_frame(void);
 void input_demo_advance_replay_frame(void);
+int input_demo_restore_checkpoint_object_links(void);
 void input_demo_finish_replay_without_close(void);
 int input_demo_finish_replay_from_game_over(void);
 int input_demo_finish_replay_from_mine_exit(void);

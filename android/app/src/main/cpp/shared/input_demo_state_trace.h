@@ -14,6 +14,7 @@ enum {
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS = 5,
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE = 1 << INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS,
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT = 32,
+	INPUT_DEMO_AI_STATIC_TRACE_COUNT = 256,
 	INPUT_DEMO_FIREBALL_TRACE_COUNT = 8,
 	INPUT_DEMO_WEAPON_TRACE_COUNT = 8,
 	INPUT_DEMO_SEGMENT_TRACE_COUNT = 7,
@@ -203,6 +204,26 @@ typedef struct input_demo_state_trace_diag {
 	int32_t robot_ai_static_changed_follow_end;
 	int32_t robot_ai_static_changed_danger_laser_num;
 	int32_t robot_ai_static_changed_danger_laser_sig;
+	int32_t robot_ai_static_trace_slots[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_sigs[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_ids[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	uint32_t robot_ai_static_trace_hashes[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	uint32_t robot_ai_static_trace_flags_hashes[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_current_guns[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_current_states[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_goal_states[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_path_dirs[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_submodes[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_goalsides[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_skip_ai_counts[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_hide_segments[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_hide_indexes[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_path_lengths[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_cur_path_indexes[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_follow_starts[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_follow_ends[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_danger_nums[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
+	int32_t robot_ai_static_trace_danger_sigs[INPUT_DEMO_AI_STATIC_TRACE_COUNT];
 	uint32_t robot_ai_local_state_hash;
 	uint32_t robot_ai_local_bucket_hashes[INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT];
 	uint32_t robot_anim_pose_state_hash;

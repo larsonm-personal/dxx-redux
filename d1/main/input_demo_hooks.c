@@ -26,6 +26,7 @@
 #include "newdemo.h"
 #include "object.h"
 #include "player.h"
+#include "segment.h"
 #include "wall.h"
 #include "weapon.h"
 
@@ -33,6 +34,80 @@ extern int Num_awareness_events;
 #include "input_demo_hooks_shared.h"
 
 static int input_demo_record_event_append_logged_error = 0;
+
+int input_demo_restore_checkpoint_object_links(void)
+{
+	int i, objnum, segnum;
+	ubyte seen[MAX_OBJECTS];
+
+	if (!input_demo_replay_has_checkpoint())
+		return 0;
+
+	memset(seen, 0, sizeof(seen));
+	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
+		Segments[segnum].objects = -1;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+
+		obj->rtype.pobj_info.alt_textures = -1;
+		if (obj->type == OBJ_NONE)
+			continue;
+		if (obj->segnum < 0 || obj->segnum > Highest_segment_index)
+			return 0;
+		if (obj->prev == -1) {
+			if (Segments[obj->segnum].objects != -1)
+				return 0;
+			Segments[obj->segnum].objects = i;
+		}
+	}
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+
+		if (obj->type == OBJ_NONE)
+			continue;
+		segnum = obj->segnum;
+		if (obj->prev == -1) {
+			if (Segments[segnum].objects != i)
+				return 0;
+		} else {
+			if (obj->prev < 0 || obj->prev > Highest_object_index)
+				return 0;
+			if (Objects[obj->prev].type == OBJ_NONE ||
+				Objects[obj->prev].segnum != segnum ||
+				Objects[obj->prev].next != i)
+				return 0;
+		}
+		if (obj->next != -1) {
+			if (obj->next < 0 || obj->next > Highest_object_index)
+				return 0;
+			if (Objects[obj->next].type == OBJ_NONE ||
+				Objects[obj->next].segnum != segnum ||
+				Objects[obj->next].prev != i)
+				return 0;
+		}
+	}
+
+	for (segnum = 0; segnum <= Highest_segment_index; segnum++)
+		for (objnum = Segments[segnum].objects; objnum != -1;
+			 objnum = Objects[objnum].next) {
+			if (objnum < 0 || objnum > Highest_object_index)
+				return 0;
+			if (seen[objnum])
+				return 0;
+			if (Objects[objnum].type == OBJ_NONE ||
+				Objects[objnum].segnum != segnum)
+				return 0;
+			seen[objnum] = 1;
+		}
+
+	for (i = 0; i <= Highest_object_index; i++)
+		if (Objects[i].type != OBJ_NONE && !seen[i])
+			return 0;
+
+	return 1;
+}
 
 static void input_demo_append_replay_probe_message_d1(const char *kind,
 	object *objp, const char *message)
