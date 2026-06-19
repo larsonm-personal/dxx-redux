@@ -35,7 +35,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "piggy.h"
 #include "player.h"
 #include "game.h"
+#include "gr.h"
 #include "bm.h"
+#include "textures.h"
+#include "texmerge.h"
 #include "d1_in_d2.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_hooks.h"
@@ -907,8 +910,63 @@ static int d1_in_d2_transparent_wall_point_blocks(segment *seg, int side)
 	return 0;
 }
 
+static int d1_in_d2_check_trans_wall(vms_vector *pnt, segment *seg, int sidenum,
+	int facenum, short objnum)
+{
+	grs_bitmap *bm;
+	side *side = &seg->sides[sidenum];
+	int bmx, bmy;
+	int direct_pixel, gpixel;
+	fix u, v;
+
+	find_hitpoint_uv(&u, &v, NULL, pnt, seg, sidenum, facenum);
+
+	if (side->tmap_num2 != 0) {
+		bm = texmerge_get_cached_bitmap(side->tmap_num, side->tmap_num2);
+	} else {
+		bm = &GameBitmaps[Textures[side->tmap_num].index];
+		PIGGY_PAGE_IN(Textures[side->tmap_num]);
+	}
+
+	if (bm->bm_flags & BM_FLAG_RLE)
+		bm = rle_expand_texture(bm);
+
+	bmx = ((unsigned)f2i(u * bm->bm_w)) % bm->bm_w;
+	bmy = ((unsigned)f2i(v * bm->bm_h)) % bm->bm_h;
+	direct_pixel = bm->bm_data[bmy * bm->bm_w + bmx];
+	gpixel = gr_gpixel(bm, bmx, bmy);
+	if (input_demo_fvi_boundary_probe_active(objnum)) {
+		char probe[512];
+		int wall_num = side->wall_num;
+		int clip_num = -1;
+		int clip_flags = 0;
+		int clip_frame0 = -1;
+
+		if (wall_num >= 0 && wall_num < Num_walls) {
+			clip_num = Walls[wall_num].clip_num;
+			if (clip_num >= 0 && clip_num < Num_wall_anims) {
+				clip_flags = WallAnims[clip_num].flags;
+				clip_frame0 = WallAnims[clip_num].frames[0];
+			}
+		}
+
+		snprintf(probe, sizeof(probe),
+			"seg=%d side=%d face=%d tmap=%d tmap2=%d wall=%d clip=%d clip_flags=0x%x clip_frame0=%d num_wall_anims=%d u=%d v=%d bmx=%d bmy=%d bm_w=%d bm_h=%d rowsize=%d flags=0x%x type=%d direct=%d gpixel=%d transparent=%d p=(%d,%d,%d)",
+			(int)(seg - Segments), sidenum, facenum,
+			side->tmap_num, side->tmap_num2, wall_num, clip_num, clip_flags,
+			clip_frame0, Num_wall_anims, u, v, bmx, bmy,
+			bm->bm_w, bm->bm_h, bm->bm_rowsize, bm->bm_flags, bm->bm_type,
+			direct_pixel, gpixel, gpixel == TRANSPARENCY_COLOR,
+			pnt->x, pnt->y, pnt->z);
+		input_demo_append_replay_probe_message("trans_wall_pixel",
+			&Objects[objnum], probe);
+	}
+
+	return gpixel == TRANSPARENCY_COLOR;
+}
+
 static int d1_in_d2_transparent_wall_crossable(int wid_flag, segment *seg,
-	int side, int flags, vms_vector *hit_point, int face)
+	int side, int flags, vms_vector *hit_point, int face, short objnum)
 {
 	if (wid_flag != WID_TRANSPARENT_WALL)
 		return 0;
@@ -918,7 +976,7 @@ static int d1_in_d2_transparent_wall_crossable(int wid_flag, segment *seg,
 		return 0;
 	if (d1_in_d2_transparent_wall_point_blocks(seg, side))
 		return 0;
-	return check_trans_wall(hit_point,seg,side,face);
+	return d1_in_d2_check_trans_wall(hit_point, seg, side, face, objnum);
 }
 
 int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p1,fix rad,short thisobjnum,int *ignore_obj_list,int flags,int *seglist,int *n_segs,int entry_seg)
@@ -1070,7 +1128,7 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 							flags, p0, p1, &hit_point, rad);
 
 						if ((wid_flag & WID_FLY_FLAG) ||
-							(d1_in_d2_use_d1_gameplay() ? d1_in_d2_transparent_wall_crossable(wid_flag, seg, side, flags, &hit_point, face) : (((wid_flag & WID_RENDER_FLAG) && (wid_flag & WID_RENDPAST_FLAG)) &&
+							(d1_in_d2_use_d1_gameplay() ? d1_in_d2_transparent_wall_crossable(wid_flag, seg, side, flags, &hit_point, face, thisobjnum) : (((wid_flag & WID_RENDER_FLAG) && (wid_flag & WID_RENDPAST_FLAG)) &&
 								((flags & FQ_TRANSWALL) || (flags & FQ_TRANSPOINT && check_trans_wall(&hit_point,seg,side,face)))))) {
 
 							int newsegnum;
@@ -1240,9 +1298,6 @@ quit_looking:
 //--unused--
 //--unused-- 	return mag;
 //--unused-- }
-
-#include "textures.h"
-#include "texmerge.h"
 
 #define cross(v0,v1) (fixmul((v0)->i,(v1)->j) - fixmul((v0)->j,(v1)->i))
 

@@ -29,6 +29,7 @@
 #include "strutil.h"
 #include "u_mem.h"
 #include "vclip.h"
+#include "wall.h"
 #include "d1_in_d2.h"
 #include "laser.h"
 #include "weapon.h"
@@ -84,6 +85,13 @@ static int D1_powerup_vclips_loaded = 0;
 static vclip D1_original_vclips[VCLIP_MAXNUM];
 static vclip D1_vclips[D1_VCLIP_MAXNUM];
 static int D1_num_vclips = 0;
+static int D1_wall_anims_active = 0;
+static int D1_wall_anims_saved = 0;
+static int D1_wall_anims_loaded = 0;
+static int D1_original_num_wall_anims = 0;
+static wclip D1_original_wall_anims[MAX_WALL_ANIMS];
+static wclip D1_wall_anims[D1_MAX_WALL_ANIMS];
+static int D1_num_wall_anims = 0;
 static int D1_robot_assets_active = 0;
 static int D1_robot_bitmap_slots_registered = 0;
 static int D1_robot_polygon_models_loaded = 0;
@@ -1551,6 +1559,101 @@ void d1_in_d2_apply_powerup_vclips(int active)
 
 	D1_powerup_vclips_active = active;
 	Last_stats.powerup_vclips_active = D1_powerup_vclips_active;
+}
+
+static int read_d1_wall_anims(void)
+{
+	PHYSFS_file *fp;
+	int num_wall_anims;
+
+	if (D1_wall_anims_loaded)
+		return 1;
+	fp = open_d1_registered_pig();
+	if (!fp)
+		return 0;
+	seek_d1_vclip_table(fp);
+	skip_d1_vclips_and_effects(fp);
+
+	num_wall_anims = PHYSFSX_readInt(fp);
+	if (num_wall_anims < 0 || num_wall_anims > D1_MAX_WALL_ANIMS) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	memset(D1_wall_anims, 0, sizeof(D1_wall_anims));
+	wclip_read_n_d1(D1_wall_anims, D1_MAX_WALL_ANIMS, fp);
+	PHYSFS_close(fp);
+	D1_num_wall_anims = num_wall_anims;
+	D1_wall_anims_loaded = 1;
+	return 1;
+}
+
+static void d1_in_d2_reapply_wall_anim_frames(void)
+{
+	int i, j;
+
+	for (i = 0; i < Num_segments; i++)
+		for (j = 0; j < MAX_SIDES_PER_SEGMENT; j++) {
+			side *sidep = &Segments[i].sides[j];
+			int wall_num = sidep->wall_num;
+			int clip_num;
+
+			if (wall_num < 0 || wall_num >= Num_walls)
+				continue;
+			clip_num = Walls[wall_num].clip_num;
+			if (clip_num < 0 || clip_num >= Num_wall_anims)
+				continue;
+			if (!(WallAnims[clip_num].flags & WCF_TMAP1))
+				continue;
+			sidep->tmap_num = WallAnims[clip_num].frames[0];
+			sidep->tmap_num2 = 0;
+		}
+}
+
+void d1_in_d2_apply_wall_anims(int active)
+{
+	int i, j;
+
+	Last_stats.wall_anims_active = active;
+	Last_stats.wall_anims_loaded = D1_wall_anims_loaded;
+	Last_stats.wall_anim_count = D1_num_wall_anims;
+	Last_stats.wall_anim_frames_converted = 0;
+	if (!D1_wall_anims_saved) {
+		D1_original_num_wall_anims = Num_wall_anims;
+		for (i = 0; i < MAX_WALL_ANIMS; i++)
+			D1_original_wall_anims[i] = WallAnims[i];
+		D1_wall_anims_saved = 1;
+	}
+	if (!active) {
+		if (D1_wall_anims_active) {
+			Num_wall_anims = D1_original_num_wall_anims;
+			for (i = 0; i < MAX_WALL_ANIMS; i++)
+				WallAnims[i] = D1_original_wall_anims[i];
+		}
+		D1_wall_anims_active = 0;
+		Last_stats.wall_anims_active = D1_wall_anims_active;
+		return;
+	}
+	if (!read_d1_wall_anims()) {
+		Last_stats.wall_anims_active = D1_wall_anims_active;
+		Last_stats.wall_anims_loaded = D1_wall_anims_loaded;
+		return;
+	}
+	for (i = 0; i < D1_num_wall_anims && i < MAX_WALL_ANIMS; i++) {
+		WallAnims[i] = D1_wall_anims[i];
+		if (WallAnims[i].num_frames > MAX_CLIP_FRAMES)
+			WallAnims[i].num_frames = MAX_CLIP_FRAMES;
+		for (j = 0; j < WallAnims[i].num_frames; j++) {
+			if (WallAnims[i].frames[j] >= 0)
+				WallAnims[i].frames[j] = convert_d1_tmap_num(WallAnims[i].frames[j]);
+			Last_stats.wall_anim_frames_converted++;
+		}
+	}
+	Num_wall_anims = D1_num_wall_anims;
+	d1_in_d2_reapply_wall_anim_frames();
+	D1_wall_anims_active = 1;
+	Last_stats.wall_anims_active = D1_wall_anims_active;
+	Last_stats.wall_anims_loaded = D1_wall_anims_loaded;
+	Last_stats.wall_anim_count = D1_num_wall_anims;
 }
 
 void d1_in_d2_apply_robot_assets(int active)

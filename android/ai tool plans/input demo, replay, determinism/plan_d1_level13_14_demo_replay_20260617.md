@@ -26,8 +26,9 @@ Plan:
 5. [in progress] If d1-in-d2 fails, use RNG/state traces to identify engine or save-translation splits and fix them.
 6. [done] Add broader diagnostics for fresh hand-recorded level 13 and 14 demos.
 7. [done] Run scoped build, replay, and code-quality validation for touched files.
-8. [in progress] Run the fresh level 14 and 15 demos in plain D1, then d1-in-d2, using the embedded diagnostics to fix any desyncs.
-9. [pending] For the remaining fresh level 15 mismatch, compare D1 and d1-in-d2 transparent-wall pixel decisions for D1 textures before adding any broader wall-type rule.
+8. [done] Run the fresh level 14 and 15 demos in plain D1, then d1-in-d2, using the embedded diagnostics to fix any desyncs.
+9. [done] For the remaining fresh level 15 mismatch, compare D1 and d1-in-d2 transparent-wall pixel decisions for D1 textures before adding any broader wall-type rule.
+10. [done] Audit the committed D1 behavior deltas and remove non-diagnostic D1 gameplay/replay changes from the working tree.
 
 Notes:
 
@@ -45,4 +46,7 @@ Notes:
 - Fresh level 14 and 15 plain D1 replays pass with the new recordings. Fresh level 14 also passes under d1-in-d2 after the homing robot firing readiness fix.
 - Fresh level 15 d1-in-d2 is improved but not semantically identical yet. The closed-door `FQ_TRANSPOINT` guard in D1-in-D2 FVI fixed an early player-laser path through a translated closed D1 door and reduced the final count from `powerups_remaining=80` to `powerups_remaining=78`; plain D1 ends at `powerups_remaining=77`.
 - Tried and backed out a broader D1-in-D2 block for unblasted `WALL_BLASTABLE` transparent-point crossings. It fixed player-laser signatures 3278/3279 at segment 38 side 4 wall 10, but incorrectly killed later signature 3284 at the same wall. This points to a D1 texture/transparency pixel decision mismatch, not a simple wall-type rule.
-- Current validation after backing out the blastable shortcut: `run-windows-build.ps1 -Game d2` passed, fresh level 14 d1-in-d2 passed, fresh level 15 d1-in-d2 passed the runner with the known final one-powerup mismatch, and scoped `android/run-code-quality.ps1 -Fix -Paths @(...)` passed.
+- Last-commit D1 audit: the committed `d1/main/game.c`, `d1/main/gamecntl.c`, and `d1/main/state.c` hunks changed replay/gameplay behavior, so they were removed from the working tree. The remaining D1-side changes are diagnostic/probe logging in `collide.c`, `input_demo_hooks.c/.h`, and `physics.c`.
+- Level 15 root cause: D1-in-D2 checkpoint world-state restore read saved D1 side `tmap_num`/`tmap_num2` values directly into live D2 segment sides. That made later FVI transparent-wall pixel checks sample the wrong D2 texture even though D1 wall animations had been loaded. `d1_save_translate_apply_d1_world_state()` now converts restored side textures through `convert_d1_tmap_num()`, preserving zero `tmap_num2`.
+- D1-in-D2 wall animation support now loads and converts D1 wall clips, applies them while emulating D1, and restores the D2 wall animation table when leaving D1 emulation.
+- Current validation: `run-windows-build.ps1 -Game d2` passed, fresh level 15 d1-in-d2 passed strict result checks, fresh level 14 d1-in-d2 passed strict result checks, and scoped `android/run-code-quality.ps1 -Fix -Paths @(...)` passed.

@@ -1706,22 +1706,6 @@ static int input_demo_replay_apply_direct_commands(void)
 	return 1;
 }
 
-static void input_demo_replay_clear_secondary_release_marker(void)
-{
-	input_demo_replay_frame frame, next_frame;
-	char error[256] = "";
-
-	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)) ||
-	    !input_demo_replay_get_next_frame(&next_frame, error, sizeof(error)))
-		return;
-	if (frame.state.fire_secondary_state && !next_frame.state.fire_secondary_state &&
-	    Player_fired_laser_this_frame >= 0 && Player_fired_laser_this_frame <= Highest_object_index &&
-	    Objects[Player_fired_laser_this_frame].type == OBJ_WEAPON &&
-	    Objects[Player_fired_laser_this_frame].id == Secondary_weapon_to_weapon_info[Players[Player_num].secondary_weapon] &&
-	    !Weapon_info[Objects[Player_fired_laser_this_frame].id].homing_flag)
-		Player_fired_laser_this_frame = -1;
-}
-
 int ReadControlsReplayFrame(void)
 {
 	Player_fired_laser_this_frame=-1;
@@ -1745,7 +1729,6 @@ int ReadControlsReplayFrame(void)
 		}
 
 		do_weapon_n_item_stuff();
-		input_demo_replay_clear_secondary_release_marker();
 	}
 
 	return 0;
@@ -1753,17 +1736,8 @@ int ReadControlsReplayFrame(void)
 
 void ReadControlsReplayPostFrame(void)
 {
-	input_demo_replay_frame next_frame;
-	char error[256] = "";
-
-	if (Endlevel_sequence || Player_is_dead)
-		return;
-	if (!input_demo_replay_get_next_frame(&next_frame, error, sizeof(error)))
-		return;
-	if (!next_frame.state.fire_secondary_state)
-		return;
-	do_weapon_n_item_stuff();
-	Player_fired_laser_this_frame = -1;
+	if (!Endlevel_sequence && !Player_is_dead)
+		do_weapon_n_item_stuff();
 }
 
 int ReadControls(d_event *event)

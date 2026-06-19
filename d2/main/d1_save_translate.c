@@ -8,6 +8,7 @@
 #include "effects.h"
 #include "fuelcen.h"
 #include "game.h"
+#include "gamemine.h"
 #include "laser.h"
 #include "morph.h"
 #include "object.h"
@@ -922,13 +923,17 @@ static int d1_save_translate_apply_d1_world_state(
 
 	for (i = 0; i <= Highest_segment_index; i++) {
 		for (j = 0; j < MAX_SIDES_PER_SEGMENT; j++) {
+			short tmap_num;
+			short tmap_num2;
 			if (!d1_save_translate_read_s16(reader,
 			                                &Segments[i].sides[j].wall_num) ||
 			    !d1_save_translate_read_s16(reader,
-			                                &Segments[i].sides[j].tmap_num) ||
+			                                &tmap_num) ||
 			    !d1_save_translate_read_s16(reader,
-			                                &Segments[i].sides[j].tmap_num2))
+			                                &tmap_num2))
 				return 0;
+			Segments[i].sides[j].tmap_num = convert_d1_tmap_num(tmap_num);
+			Segments[i].sides[j].tmap_num2 = tmap_num2 ? convert_d1_tmap_num(tmap_num2) : 0;
 		}
 	}
 

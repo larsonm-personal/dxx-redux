@@ -18,6 +18,10 @@ typedef struct d1_in_d2_asset_stats {
 	int num_vclips;
 	int powerup_frames_applied;
 	int powerup_frames_skipped;
+	int wall_anims_active;
+	int wall_anims_loaded;
+	int wall_anim_count;
+	int wall_anim_frames_converted;
 	int robot_assets_active;
 	int robot_pig_present;
 	int robot_pig_size;
@@ -44,6 +48,7 @@ typedef struct d1_in_d2_asset_stats {
 
 void d1_in_d2_apply_effects(int active);
 void d1_in_d2_apply_powerup_vclips(int active);
+void d1_in_d2_apply_wall_anims(int active);
 void d1_in_d2_apply_robot_assets(int active);
 void d1_in_d2_apply_sounds(int active);
 void d1_in_d2_apply_cockpit(int active);
