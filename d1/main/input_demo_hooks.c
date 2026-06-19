@@ -122,11 +122,14 @@ void input_demo_log_d1_object13_physics_fate(object *obj, int fate,
 	int wall_flags = 0;
 	int doorway_flags = 0;
 
-	if (!input_demo_replay_is_loaded() || !obj || (objnum != 13 && objnum != 15) ||
-		!hit_info || !frame_vec || !new_pos || !result_path || !result_path[0])
+	if (!input_demo_replay_is_loaded() || !obj || !hit_info || !frame_vec ||
+		!new_pos || !result_path || !result_path[0])
 		return;
 	if (hit_objnum >= 0 && hit_objnum <= Highest_object_index)
 		hit_obj = &Objects[hit_objnum];
+	if (objnum != 13 && objnum != 15 && obj != ConsoleObject &&
+		hit_obj != ConsoleObject)
+		return;
 	if (hit_info->hit_side_seg >= 0 && hit_info->hit_side_seg <= Highest_segment_index &&
 		hit_info->hit_side >= 0 && hit_info->hit_side < MAX_SIDES_PER_SEGMENT) {
 		segment *wall_seg = &Segments[hit_info->hit_side_seg];
@@ -370,6 +373,41 @@ void input_demo_log_weapon_lifetime(const char *step, object *obj)
 		obj->last_pos.y,
 		obj->last_pos.z);
 	input_demo_append_replay_probe_message_d1("weapon_life", obj, probe);
+}
+
+void input_demo_record_homing_state(const char *step, object *obj,
+	int straight_time_active, int do_homer_frame, int track_goal_before,
+	int track_goal_after, int dot, int32_t ideal_homer_frame_time,
+	unsigned int homer_frame_count)
+{
+	char probe[512];
+
+	if (!obj || obj->type != OBJ_WEAPON || !Weapon_info[obj->id].homing_flag)
+		return;
+	snprintf(probe, sizeof(probe),
+		"step=%s straight=%d do_homer_frame=%d "
+		"track_goal_before=%d track_goal_after=%d dot=%d "
+		"ideal_frame_time=%d homer_frame_count=%u creation_frame=%u "
+		"fvec=(%d,%d,%d) vel=(%d,%d,%d) pos=(%d,%d,%d)",
+		step ? step : "unset",
+		straight_time_active,
+		do_homer_frame,
+		track_goal_before,
+		track_goal_after,
+		dot,
+		ideal_homer_frame_time,
+		homer_frame_count,
+		obj->ctype.laser_info.creation_framecount,
+		obj->orient.fvec.x,
+		obj->orient.fvec.y,
+		obj->orient.fvec.z,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z);
+	input_demo_append_replay_probe_message_d1("homing_state", obj, probe);
 }
 
 void input_demo_log_player_shot_create_probe(object *shooter, object *weapon,

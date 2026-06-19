@@ -110,6 +110,19 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	ordered_json robot_ai_static_bucket_hashes = ordered_json::array();
 	ordered_json robot_ai_local_bucket_hashes = ordered_json::array();
 	ordered_json robot_anim_pose_bucket_hashes = ordered_json::array();
+	ordered_json weapon_trace_slots = ordered_json::array();
+	ordered_json weapon_trace_sigs = ordered_json::array();
+	ordered_json weapon_trace_ids = ordered_json::array();
+	ordered_json weapon_trace_hashes = ordered_json::array();
+	ordered_json weapon_trace_segs = ordered_json::array();
+	ordered_json weapon_trace_lifeleft = ordered_json::array();
+	ordered_json weapon_trace_track_goals = ordered_json::array();
+	ordered_json weapon_trace_fvec_x = ordered_json::array();
+	ordered_json weapon_trace_fvec_y = ordered_json::array();
+	ordered_json weapon_trace_fvec_z = ordered_json::array();
+	ordered_json weapon_trace_vel_x = ordered_json::array();
+	ordered_json weapon_trace_vel_y = ordered_json::array();
+	ordered_json weapon_trace_vel_z = ordered_json::array();
 	ordered_json fireball_trace_slots = ordered_json::array();
 	ordered_json fireball_trace_sigs = ordered_json::array();
 	ordered_json fireball_trace_ids = ordered_json::array();
@@ -118,6 +131,16 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	ordered_json fireball_trace_lifeleft = ordered_json::array();
 	ordered_json fireball_trace_delete_objnums = ordered_json::array();
 	ordered_json fireball_trace_attached_objs = ordered_json::array();
+	ordered_json segment_trace_segs = ordered_json::array();
+	ordered_json segment_trace_counts = ordered_json::array();
+	ordered_json segment_trace_hashes = ordered_json::array();
+	ordered_json segment_trace_heads = ordered_json::array();
+	ordered_json segment_trace_objs = ordered_json::array();
+	ordered_json segment_trace_sigs = ordered_json::array();
+	ordered_json segment_trace_types = ordered_json::array();
+	ordered_json segment_trace_ids = ordered_json::array();
+	ordered_json segment_trace_prevs = ordered_json::array();
+	ordered_json segment_trace_nexts = ordered_json::array();
 
 	for (int index = 0; index < INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT; ++index) {
 		object_slot_counts.push_back(diag.object_slot_counts[index]);
@@ -132,6 +155,21 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	}
 	for (int index = 0; index < INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE; ++index)
 		object_focus_slot_hashes.push_back(diag.object_focus_slot_hashes[index]);
+	for (int index = 0; index < INPUT_DEMO_WEAPON_TRACE_COUNT; ++index) {
+		weapon_trace_slots.push_back(diag.weapon_trace_slots[index]);
+		weapon_trace_sigs.push_back(diag.weapon_trace_sigs[index]);
+		weapon_trace_ids.push_back(diag.weapon_trace_ids[index]);
+		weapon_trace_hashes.push_back(diag.weapon_trace_hashes[index]);
+		weapon_trace_segs.push_back(diag.weapon_trace_segs[index]);
+		weapon_trace_lifeleft.push_back(diag.weapon_trace_lifeleft[index]);
+		weapon_trace_track_goals.push_back(diag.weapon_trace_track_goals[index]);
+		weapon_trace_fvec_x.push_back(diag.weapon_trace_fvec_x[index]);
+		weapon_trace_fvec_y.push_back(diag.weapon_trace_fvec_y[index]);
+		weapon_trace_fvec_z.push_back(diag.weapon_trace_fvec_z[index]);
+		weapon_trace_vel_x.push_back(diag.weapon_trace_vel_x[index]);
+		weapon_trace_vel_y.push_back(diag.weapon_trace_vel_y[index]);
+		weapon_trace_vel_z.push_back(diag.weapon_trace_vel_z[index]);
+	}
 	for (int index = 0; index < INPUT_DEMO_FIREBALL_TRACE_COUNT; ++index) {
 		fireball_trace_slots.push_back(diag.fireball_trace_slots[index]);
 		fireball_trace_sigs.push_back(diag.fireball_trace_sigs[index]);
@@ -142,6 +180,20 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 		fireball_trace_delete_objnums.push_back(
 		    diag.fireball_trace_delete_objnums[index]);
 		fireball_trace_attached_objs.push_back(diag.fireball_trace_attached_objs[index]);
+	}
+	for (int index = 0; index < INPUT_DEMO_SEGMENT_TRACE_COUNT; ++index) {
+		segment_trace_segs.push_back(diag.segment_trace_segs[index]);
+		segment_trace_counts.push_back(diag.segment_trace_counts[index]);
+		segment_trace_hashes.push_back(diag.segment_trace_hashes[index]);
+		segment_trace_heads.push_back(diag.segment_trace_heads[index]);
+	}
+	for (int index = 0; index < INPUT_DEMO_SEGMENT_TRACE_CHAIN_TOTAL; ++index) {
+		segment_trace_objs.push_back(diag.segment_trace_objs[index]);
+		segment_trace_sigs.push_back(diag.segment_trace_sigs[index]);
+		segment_trace_types.push_back(diag.segment_trace_types[index]);
+		segment_trace_ids.push_back(diag.segment_trace_ids[index]);
+		segment_trace_prevs.push_back(diag.segment_trace_prevs[index]);
+		segment_trace_nexts.push_back(diag.segment_trace_nexts[index]);
 	}
 
 	root["awareness_events"] = diag.awareness_events;
@@ -180,6 +232,26 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["player_last_x"] = diag.player_last_x;
 	root["player_last_y"] = diag.player_last_y;
 	root["player_last_z"] = diag.player_last_z;
+	root["player_bump_frame"] = diag.player_bump_frame;
+	root["player_bump_count"] = diag.player_bump_count;
+	root["player_bump_step_hash"] = diag.player_bump_step_hash;
+	root["player_bump_other_obj"] = diag.player_bump_other_obj;
+	root["player_bump_other_sig"] = diag.player_bump_other_sig;
+	root["player_bump_other_type"] = diag.player_bump_other_type;
+	root["player_bump_other_id"] = diag.player_bump_other_id;
+	root["player_bump_damage_flag"] = diag.player_bump_damage_flag;
+	root["player_bump_force_mag"] = diag.player_bump_force_mag;
+	root["player_bump_damage_raw"] = diag.player_bump_damage_raw;
+	root["player_bump_damage_scaled"] = diag.player_bump_damage_scaled;
+	root["player_bump_other_attack_type"] = diag.player_bump_other_attack_type;
+	root["player_bump_rel_vel_x"] = diag.player_bump_rel_vel_x;
+	root["player_bump_rel_vel_y"] = diag.player_bump_rel_vel_y;
+	root["player_bump_rel_vel_z"] = diag.player_bump_rel_vel_z;
+	root["player_bump_force_x"] = diag.player_bump_force_x;
+	root["player_bump_force_y"] = diag.player_bump_force_y;
+	root["player_bump_force_z"] = diag.player_bump_force_z;
+	root["player_bump_player_mass"] = diag.player_bump_player_mass;
+	root["player_bump_other_mass"] = diag.player_bump_other_mass;
 	root["player_weapon_count"] = diag.player_weapon_count;
 	root["player_weapon_hash"] = diag.player_weapon_hash;
 	root["highest_object_index"] = diag.highest_object_index;
@@ -359,6 +431,19 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["weapon_sample_parent_type"] = diag.weapon_sample_parent_type;
 	root["weapon_sample_parent_num"] = diag.weapon_sample_parent_num;
 	root["weapon_sample_parent_sig"] = diag.weapon_sample_parent_sig;
+	root["weapon_trace_slots"] = weapon_trace_slots;
+	root["weapon_trace_sigs"] = weapon_trace_sigs;
+	root["weapon_trace_ids"] = weapon_trace_ids;
+	root["weapon_trace_hashes"] = weapon_trace_hashes;
+	root["weapon_trace_segs"] = weapon_trace_segs;
+	root["weapon_trace_lifeleft"] = weapon_trace_lifeleft;
+	root["weapon_trace_track_goals"] = weapon_trace_track_goals;
+	root["weapon_trace_fvec_x"] = weapon_trace_fvec_x;
+	root["weapon_trace_fvec_y"] = weapon_trace_fvec_y;
+	root["weapon_trace_fvec_z"] = weapon_trace_fvec_z;
+	root["weapon_trace_vel_x"] = weapon_trace_vel_x;
+	root["weapon_trace_vel_y"] = weapon_trace_vel_y;
+	root["weapon_trace_vel_z"] = weapon_trace_vel_z;
 	root["fireball_object_count"] = diag.fireball_object_count;
 	root["fireball_state_hash"] = diag.fireball_state_hash;
 	root["fireball_changed_obj"] = diag.fireball_changed_obj;
@@ -419,6 +504,16 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["segment_object_list_count"] = diag.segment_object_list_count;
 	root["segment_object_list_hash"] = diag.segment_object_list_hash;
 	root["segment_object_link_error_count"] = diag.segment_object_link_error_count;
+	root["segment_trace_segs"] = segment_trace_segs;
+	root["segment_trace_counts"] = segment_trace_counts;
+	root["segment_trace_hashes"] = segment_trace_hashes;
+	root["segment_trace_heads"] = segment_trace_heads;
+	root["segment_trace_objs"] = segment_trace_objs;
+	root["segment_trace_sigs"] = segment_trace_sigs;
+	root["segment_trace_types"] = segment_trace_types;
+	root["segment_trace_ids"] = segment_trace_ids;
+	root["segment_trace_prevs"] = segment_trace_prevs;
+	root["segment_trace_nexts"] = segment_trace_nexts;
 	root["player_weapon_obj0"] = diag.player_weapon_obj0;
 	root["player_weapon_sig0"] = diag.player_weapon_sig0;
 	root["player_weapon_id0"] = diag.player_weapon_id0;

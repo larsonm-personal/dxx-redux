@@ -50,6 +50,29 @@ static int previous_robot_anim_pose_present[MAX_OBJECTS];
 static int previous_fireball_hashes_valid = 0;
 static unsigned int previous_fireball_hashes[MAX_OBJECTS];
 
+typedef struct input_demo_player_bump_trace {
+	int frame;
+	int count;
+	int step_hash;
+	int other_obj;
+	int other_sig;
+	int other_type;
+	int other_id;
+	int damage_flag;
+	int force_mag;
+	int damage_raw;
+	int damage_scaled;
+	int other_attack_type;
+	vms_vector relative_velocity;
+	vms_vector player_force;
+	int player_mass;
+	int other_mass;
+} input_demo_player_bump_trace;
+
+static input_demo_player_bump_trace input_demo_last_player_bump = {
+	-1, 0, 0, -1, -1, -1, -1, 0, 0, 0, 0, -1, { 0, 0, 0 }, { 0, 0, 0 }, 0, 0
+};
+
 #ifdef DXX_BUILD_DESCENT_II
 extern void input_demo_capture_current_result_prep_d2(player *current_player);
 extern void input_demo_capture_current_result_after_game_time_d2(
@@ -765,6 +788,27 @@ void input_demo_capture_runtime_state_diag(input_demo_state_trace_diag *diag)
 	diag->weapon_proximity_dropped = laser_state.proximity_dropped;
 	diag->weapon_helix_orientation = laser_state.helix_orientation;
 	diag->weapon_smartmines_dropped = laser_state.smartmines_dropped;
+	diag->player_bump_frame = input_demo_last_player_bump.frame;
+	diag->player_bump_count = input_demo_last_player_bump.count;
+	diag->player_bump_step_hash = input_demo_last_player_bump.step_hash;
+	diag->player_bump_other_obj = input_demo_last_player_bump.other_obj;
+	diag->player_bump_other_sig = input_demo_last_player_bump.other_sig;
+	diag->player_bump_other_type = input_demo_last_player_bump.other_type;
+	diag->player_bump_other_id = input_demo_last_player_bump.other_id;
+	diag->player_bump_damage_flag = input_demo_last_player_bump.damage_flag;
+	diag->player_bump_force_mag = input_demo_last_player_bump.force_mag;
+	diag->player_bump_damage_raw = input_demo_last_player_bump.damage_raw;
+	diag->player_bump_damage_scaled = input_demo_last_player_bump.damage_scaled;
+	diag->player_bump_other_attack_type =
+	    input_demo_last_player_bump.other_attack_type;
+	diag->player_bump_rel_vel_x = input_demo_last_player_bump.relative_velocity.x;
+	diag->player_bump_rel_vel_y = input_demo_last_player_bump.relative_velocity.y;
+	diag->player_bump_rel_vel_z = input_demo_last_player_bump.relative_velocity.z;
+	diag->player_bump_force_x = input_demo_last_player_bump.player_force.x;
+	diag->player_bump_force_y = input_demo_last_player_bump.player_force.y;
+	diag->player_bump_force_z = input_demo_last_player_bump.player_force.z;
+	diag->player_bump_player_mass = input_demo_last_player_bump.player_mass;
+	diag->player_bump_other_mass = input_demo_last_player_bump.other_mass;
 
 	runtime_hash = input_demo_state_trace_hash_update(runtime_hash,
 	                                                  (unsigned int) diag->object_allocator_num_objects);
@@ -966,12 +1010,128 @@ static unsigned int input_demo_state_trace_hash_object(unsigned int hash,
 	return hash;
 }
 
+static void input_demo_init_segment_trace_diag(input_demo_state_trace_diag *diag)
+{
+	int i;
+
+	for (i = 0; i < INPUT_DEMO_SEGMENT_TRACE_COUNT; ++i) {
+		diag->segment_trace_segs[i] = -1;
+		diag->segment_trace_counts[i] = 0;
+		diag->segment_trace_hashes[i] = 0;
+		diag->segment_trace_heads[i] = -1;
+	}
+	for (i = 0; i < INPUT_DEMO_SEGMENT_TRACE_CHAIN_TOTAL; ++i) {
+		diag->segment_trace_objs[i] = -1;
+		diag->segment_trace_sigs[i] = -1;
+		diag->segment_trace_types[i] = -1;
+		diag->segment_trace_ids[i] = -1;
+		diag->segment_trace_prevs[i] = -1;
+		diag->segment_trace_nexts[i] = -1;
+	}
+}
+
+static int input_demo_segment_trace_has_seg(input_demo_state_trace_diag *diag,
+                                            int slot_count, int segnum)
+{
+	int i;
+
+	for (i = 0; i < slot_count; ++i)
+		if (diag->segment_trace_segs[i] == segnum)
+			return 1;
+	return 0;
+}
+
+static int input_demo_capture_segment_trace_slot(input_demo_state_trace_diag *diag,
+                                                 int slot, int segnum)
+{
+	int objnum;
+	int guard = 0;
+	int chain_index;
+
+	if (slot < 0 || slot >= INPUT_DEMO_SEGMENT_TRACE_COUNT)
+		return 0;
+	if (segnum < 0 || segnum > Highest_segment_index)
+		return 0;
+	diag->segment_trace_segs[slot] = segnum;
+	objnum = Segments[segnum].objects;
+	diag->segment_trace_heads[slot] = objnum;
+	while (objnum != -1) {
+		object *obj;
+
+		if (objnum < 0 || objnum > Highest_object_index) {
+			diag->segment_object_link_error_count++;
+			break;
+		}
+		if (++guard > MAX_OBJECTS) {
+			diag->segment_object_link_error_count++;
+			break;
+		}
+		obj = &Objects[objnum];
+		diag->segment_trace_counts[slot]++;
+		diag->segment_trace_hashes[slot] = input_demo_state_trace_hash_update(
+		    diag->segment_trace_hashes[slot], (unsigned int) objnum);
+		diag->segment_trace_hashes[slot] = input_demo_state_trace_hash_update(
+		    diag->segment_trace_hashes[slot], (unsigned int) obj->signature);
+		diag->segment_trace_hashes[slot] = input_demo_state_trace_hash_update(
+		    diag->segment_trace_hashes[slot], (unsigned int) obj->type);
+		diag->segment_trace_hashes[slot] = input_demo_state_trace_hash_update(
+		    diag->segment_trace_hashes[slot], (unsigned int) obj->id);
+		diag->segment_trace_hashes[slot] = input_demo_state_trace_hash_update(
+		    diag->segment_trace_hashes[slot], (unsigned int) obj->prev);
+		diag->segment_trace_hashes[slot] = input_demo_state_trace_hash_update(
+		    diag->segment_trace_hashes[slot], (unsigned int) obj->next);
+		if (diag->segment_trace_counts[slot] <=
+		    INPUT_DEMO_SEGMENT_TRACE_CHAIN_COUNT) {
+			chain_index = slot * INPUT_DEMO_SEGMENT_TRACE_CHAIN_COUNT +
+			              diag->segment_trace_counts[slot] - 1;
+			diag->segment_trace_objs[chain_index] = objnum;
+			diag->segment_trace_sigs[chain_index] = obj->signature;
+			diag->segment_trace_types[chain_index] = obj->type;
+			diag->segment_trace_ids[chain_index] = obj->id;
+			diag->segment_trace_prevs[chain_index] = obj->prev;
+			diag->segment_trace_nexts[chain_index] = obj->next;
+		}
+		objnum = obj->next;
+	}
+	return 1;
+}
+
+static void input_demo_capture_local_segment_trace(
+    input_demo_state_trace_diag *diag)
+{
+	int base_segnum;
+	int slot_count = 0;
+	int side;
+
+	input_demo_init_segment_trace_diag(diag);
+	if (!ConsoleObject)
+		return;
+	base_segnum = ConsoleObject->segnum;
+	if (!input_demo_capture_segment_trace_slot(diag, slot_count, base_segnum))
+		return;
+	slot_count++;
+	for (side = 0; side < MAX_SIDES_PER_SEGMENT &&
+	               slot_count < INPUT_DEMO_SEGMENT_TRACE_COUNT;
+	     ++side) {
+		int child_segnum;
+
+		if (base_segnum < 0 || base_segnum > Highest_segment_index)
+			break;
+		child_segnum = Segments[base_segnum].children[side];
+		if (input_demo_segment_trace_has_seg(diag, slot_count, child_segnum))
+			continue;
+		if (input_demo_capture_segment_trace_slot(diag, slot_count, child_segnum))
+			slot_count++;
+	}
+}
+
 void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 {
 	const int robot_sample_obj = 15;
 	const int fireball_sample_obj = 174;
 	int i;
 	int segnum;
+	int weapon_trace_count;
 	int fireball_trace_count;
 
 	if (!diag)
@@ -1023,7 +1183,17 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 	diag->weapon_sample_parent_type = -1;
 	diag->weapon_sample_parent_num = -1;
 	diag->weapon_sample_parent_sig = -1;
+	for (i = 0; i < INPUT_DEMO_WEAPON_TRACE_COUNT; ++i) {
+		diag->weapon_trace_slots[i] = -1;
+		diag->weapon_trace_sigs[i] = -1;
+		diag->weapon_trace_ids[i] = -1;
+		diag->weapon_trace_segs[i] = -1;
+		diag->weapon_trace_lifeleft[i] = -1;
+		diag->weapon_trace_track_goals[i] = -1;
+	}
+	weapon_trace_count = 0;
 	fireball_trace_count = 0;
+	input_demo_capture_local_segment_trace(diag);
 
 	for (i = 0; i <= Highest_object_index; ++i) {
 		object *obj = &Objects[i];
@@ -1379,6 +1549,35 @@ void input_demo_capture_object_state_diag(input_demo_state_trace_diag *diag)
 				break;
 			}
 			case OBJ_WEAPON:
+				if (weapon_trace_count < INPUT_DEMO_WEAPON_TRACE_COUNT) {
+					unsigned int object_hash =
+					    input_demo_state_trace_hash_object(0, obj);
+
+					diag->weapon_trace_slots[weapon_trace_count] = i;
+					diag->weapon_trace_sigs[weapon_trace_count] = obj->signature;
+					diag->weapon_trace_ids[weapon_trace_count] = obj->id;
+					diag->weapon_trace_hashes[weapon_trace_count] = object_hash;
+					diag->weapon_trace_segs[weapon_trace_count] = obj->segnum;
+					diag->weapon_trace_lifeleft[weapon_trace_count] =
+					    obj->lifeleft;
+					diag->weapon_trace_track_goals[weapon_trace_count] =
+					    obj->ctype.laser_info.track_goal;
+					diag->weapon_trace_fvec_x[weapon_trace_count] =
+					    obj->orient.fvec.x;
+					diag->weapon_trace_fvec_y[weapon_trace_count] =
+					    obj->orient.fvec.y;
+					diag->weapon_trace_fvec_z[weapon_trace_count] =
+					    obj->orient.fvec.z;
+					if (obj->movement_type == MT_PHYSICS) {
+						diag->weapon_trace_vel_x[weapon_trace_count] =
+						    obj->mtype.phys_info.velocity.x;
+						diag->weapon_trace_vel_y[weapon_trace_count] =
+						    obj->mtype.phys_info.velocity.y;
+						diag->weapon_trace_vel_z[weapon_trace_count] =
+						    obj->mtype.phys_info.velocity.z;
+					}
+					weapon_trace_count++;
+				}
 				if (diag->weapon_object_count == 0) {
 					diag->weapon_sample_obj = i;
 					diag->weapon_sample_sig = obj->signature;
@@ -1706,6 +1905,24 @@ const char *input_demo_trace_collision_mode_name(void)
 	return "none";
 }
 
+static int input_demo_bump_watch_slot(const object *obj)
+{
+	if (!obj)
+		return -1;
+	return (int) (obj - Objects);
+}
+
+static int input_demo_bump_watch_active(const object *obj0, const object *obj1,
+                                        unsigned int frame_index)
+{
+	const int slot0 = input_demo_bump_watch_slot(obj0);
+	const int slot1 = input_demo_bump_watch_slot(obj1);
+
+	if (frame_index < 58 || frame_index > 62)
+		return 0;
+	return slot0 == 82 || slot1 == 82;
+}
+
 void input_demo_log_player_bump_probe(const char *step, object *obj0,
                                       object *obj1, const vms_vector *relative_velocity,
                                       const vms_vector *float_force, fix scale_num, fix scale_den,
@@ -1713,12 +1930,21 @@ void input_demo_log_player_bump_probe(const char *step, object *obj0,
 {
 	const object *player = NULL;
 	const object *other = NULL;
+	const object *robot = NULL;
+	const object *weapon = NULL;
 	const char *mode_name;
 	unsigned int frame_index;
+	const int trace_active = input_demo_trace_collision_pose_active();
+	const int state_trace_active = input_demo_state_trace_is_active();
+	unsigned int step_hash = 2166136261u;
 	vms_vector fix_force = { 0, 0, 0 };
 	vms_vector force_delta = { 0, 0, 0 };
+	vms_vector player_force = { 0, 0, 0 };
+	fix player_force_mag = 0;
+	fix damage_raw = 0;
+	fix damage_scaled = 0;
 
-	if (!input_demo_trace_collision_pose_active())
+	if (!trace_active && !state_trace_active)
 		return;
 	mode_name = input_demo_trace_collision_mode_name();
 	frame_index = input_demo_trace_collision_frame_index();
@@ -1732,8 +1958,14 @@ void input_demo_log_player_bump_probe(const char *step, object *obj0,
 		player = obj1;
 		other = obj0;
 	}
-	if (!player || !other)
-		return;
+	if (obj0 && obj0->type == OBJ_ROBOT && obj1 && obj1->type == OBJ_WEAPON) {
+		robot = obj0;
+		weapon = obj1;
+	} else if (obj1 && obj1->type == OBJ_ROBOT && obj0 &&
+	           obj0->type == OBJ_WEAPON) {
+		robot = obj1;
+		weapon = obj0;
+	}
 	if (relative_velocity && scale_den) {
 		fix_force.x = fixmuldiv(relative_velocity->x, scale_num, scale_den);
 		fix_force.y = fixmuldiv(relative_velocity->y, scale_num, scale_den);
@@ -1744,48 +1976,191 @@ void input_demo_log_player_bump_probe(const char *step, object *obj0,
 		force_delta.y = float_force->y - fix_force.y;
 		force_delta.z = float_force->z - fix_force.z;
 	}
+	if (trace_active && input_demo_bump_watch_active(obj0, obj1, frame_index))
+		con_printf(CON_NORMAL,
+		           "Input demo bump watch: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) obj1=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
+		           mode_name,
+		           frame_index,
+		           (long long) GameTime64,
+		           step,
+		           input_demo_bump_watch_slot(obj0),
+		           obj0 ? obj0->type : -1,
+		           obj0 ? obj0->id : -1,
+		           obj0 ? obj0->signature : -1,
+		           obj0 ? obj0->segnum : -1,
+		           obj0 ? obj0->pos.x : 0,
+		           obj0 ? obj0->pos.y : 0,
+		           obj0 ? obj0->pos.z : 0,
+		           obj0 ? obj0->mtype.phys_info.velocity.x : 0,
+		           obj0 ? obj0->mtype.phys_info.velocity.y : 0,
+		           obj0 ? obj0->mtype.phys_info.velocity.z : 0,
+		           input_demo_bump_watch_slot(obj1),
+		           obj1 ? obj1->type : -1,
+		           obj1 ? obj1->id : -1,
+		           obj1 ? obj1->signature : -1,
+		           obj1 ? obj1->segnum : -1,
+		           obj1 ? obj1->pos.x : 0,
+		           obj1 ? obj1->pos.y : 0,
+		           obj1 ? obj1->pos.z : 0,
+		           obj1 ? obj1->mtype.phys_info.velocity.x : 0,
+		           obj1 ? obj1->mtype.phys_info.velocity.y : 0,
+		           obj1 ? obj1->mtype.phys_info.velocity.z : 0,
+		           damage_flag,
+		           relative_velocity ? relative_velocity->x : 0,
+		           relative_velocity ? relative_velocity->y : 0,
+		           relative_velocity ? relative_velocity->z : 0,
+		           scale_num,
+		           scale_den,
+		           float_force ? float_force->x : 0,
+		           float_force ? float_force->y : 0,
+		           float_force ? float_force->z : 0,
+		           fix_force.x,
+		           fix_force.y,
+		           fix_force.z,
+		           force_delta.x,
+		           force_delta.y,
+		           force_delta.z,
+		           obj0 ? obj0->mtype.phys_info.mass : 0,
+		           obj1 ? obj1->mtype.phys_info.mass : 0);
+	if (!player && (!robot || !weapon ||
+	                weapon->ctype.laser_info.parent_type != OBJ_PLAYER))
+		return;
+	if (!player) {
+		if (trace_active)
+			con_printf(CON_NORMAL,
+			           "Input demo robot weapon bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) obj1=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) parent=%d/%d damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
+			           mode_name,
+			           frame_index,
+			           (long long) GameTime64,
+			           step,
+			           obj0 ? (int) (obj0 - Objects) : -1,
+			           obj0 ? obj0->type : -1,
+			           obj0 ? obj0->id : -1,
+			           obj0 ? obj0->signature : -1,
+			           obj0 ? obj0->segnum : -1,
+			           obj0 ? obj0->pos.x : 0,
+			           obj0 ? obj0->pos.y : 0,
+			           obj0 ? obj0->pos.z : 0,
+			           obj1 ? (int) (obj1 - Objects) : -1,
+			           obj1 ? obj1->type : -1,
+			           obj1 ? obj1->id : -1,
+			           obj1 ? obj1->signature : -1,
+			           obj1 ? obj1->segnum : -1,
+			           obj1 ? obj1->pos.x : 0,
+			           obj1 ? obj1->pos.y : 0,
+			           obj1 ? obj1->pos.z : 0,
+			           weapon ? weapon->ctype.laser_info.parent_num : -1,
+			           weapon ? weapon->ctype.laser_info.parent_signature : -1,
+			           damage_flag,
+			           relative_velocity ? relative_velocity->x : 0,
+			           relative_velocity ? relative_velocity->y : 0,
+			           relative_velocity ? relative_velocity->z : 0,
+			           scale_num,
+			           scale_den,
+			           float_force ? float_force->x : 0,
+			           float_force ? float_force->y : 0,
+			           float_force ? float_force->z : 0,
+			           fix_force.x,
+			           fix_force.y,
+			           fix_force.z,
+			           force_delta.x,
+			           force_delta.y,
+			           force_delta.z,
+			           obj0 ? obj0->mtype.phys_info.velocity.x : 0,
+			           obj0 ? obj0->mtype.phys_info.velocity.y : 0,
+			           obj0 ? obj0->mtype.phys_info.velocity.z : 0,
+			           obj1 ? obj1->mtype.phys_info.velocity.x : 0,
+			           obj1 ? obj1->mtype.phys_info.velocity.y : 0,
+			           obj1 ? obj1->mtype.phys_info.velocity.z : 0,
+			           obj0 ? obj0->mtype.phys_info.mass : 0,
+			           obj1 ? obj1->mtype.phys_info.mass : 0);
+		return;
+	}
+	if (float_force) {
+		player_force.x = float_force->x / 4;
+		player_force.y = float_force->y / 4;
+		player_force.z = float_force->z / 4;
+		if (player == obj0)
+			vm_vec_negate(&player_force);
+		player_force_mag = vm_vec_mag_quick(&player_force);
+		if (player->mtype.phys_info.mass)
+			damage_raw = fixdiv(player_force_mag,
+			                    player->mtype.phys_info.mass) /
+			             8;
+		damage_scaled = damage_raw;
+		if (other->type == OBJ_ROBOT && Robot_info[other->id].attack_type)
+			damage_scaled = fixmul(damage_scaled, FrameTime * 2);
+	}
+	while (step && *step) {
+		step_hash ^= (unsigned char) *step++;
+		step_hash *= 16777619u;
+	}
+	if ((int) frame_index != input_demo_last_player_bump.frame) {
+		input_demo_last_player_bump.frame = (int) frame_index;
+		input_demo_last_player_bump.count = 0;
+	}
+	input_demo_last_player_bump.count++;
+	input_demo_last_player_bump.step_hash = (int) step_hash;
+	input_demo_last_player_bump.other_obj = (int) (other - Objects);
+	input_demo_last_player_bump.other_sig = other->signature;
+	input_demo_last_player_bump.other_type = other->type;
+	input_demo_last_player_bump.other_id = other->id;
+	input_demo_last_player_bump.damage_flag = damage_flag;
+	input_demo_last_player_bump.force_mag = player_force_mag;
+	input_demo_last_player_bump.damage_raw = damage_raw;
+	input_demo_last_player_bump.damage_scaled = damage_scaled;
+	input_demo_last_player_bump.other_attack_type =
+	    other->type == OBJ_ROBOT ? Robot_info[other->id].attack_type : -1;
+	if (relative_velocity)
+		input_demo_last_player_bump.relative_velocity = *relative_velocity;
+	else
+		vm_vec_zero(&input_demo_last_player_bump.relative_velocity);
+	input_demo_last_player_bump.player_force = player_force;
+	input_demo_last_player_bump.player_mass = player->mtype.phys_info.mass;
+	input_demo_last_player_bump.other_mass = other->mtype.phys_info.mass;
 
-	con_printf(CON_NORMAL,
-	           "Input demo bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d seg=%d pos=(%d,%d,%d) obj1=%d/%d/%d seg=%d pos=(%d,%d,%d) damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
-	           mode_name,
-	           frame_index,
-	           (long long) GameTime64,
-	           step,
-	           obj0 ? (int) (obj0 - Objects) : -1,
-	           obj0 ? obj0->type : -1,
-	           obj0 ? obj0->id : -1,
-	           obj0 ? obj0->segnum : -1,
-	           obj0 ? obj0->pos.x : 0,
-	           obj0 ? obj0->pos.y : 0,
-	           obj0 ? obj0->pos.z : 0,
-	           obj1 ? (int) (obj1 - Objects) : -1,
-	           obj1 ? obj1->type : -1,
-	           obj1 ? obj1->id : -1,
-	           obj1 ? obj1->segnum : -1,
-	           obj1 ? obj1->pos.x : 0,
-	           obj1 ? obj1->pos.y : 0,
-	           obj1 ? obj1->pos.z : 0,
-	           damage_flag,
-	           relative_velocity ? relative_velocity->x : 0,
-	           relative_velocity ? relative_velocity->y : 0,
-	           relative_velocity ? relative_velocity->z : 0,
-	           scale_num,
-	           scale_den,
-	           float_force ? float_force->x : 0,
-	           float_force ? float_force->y : 0,
-	           float_force ? float_force->z : 0,
-	           fix_force.x,
-	           fix_force.y,
-	           fix_force.z,
-	           force_delta.x,
-	           force_delta.y,
-	           force_delta.z,
-	           obj0 ? obj0->mtype.phys_info.velocity.x : 0,
-	           obj0 ? obj0->mtype.phys_info.velocity.y : 0,
-	           obj0 ? obj0->mtype.phys_info.velocity.z : 0,
-	           obj1 ? obj1->mtype.phys_info.velocity.x : 0,
-	           obj1 ? obj1->mtype.phys_info.velocity.y : 0,
-	           obj1 ? obj1->mtype.phys_info.velocity.z : 0,
-	           obj0 ? obj0->mtype.phys_info.mass : 0,
-	           obj1 ? obj1->mtype.phys_info.mass : 0);
+	if (trace_active)
+		con_printf(CON_NORMAL,
+		           "Input demo bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d seg=%d pos=(%d,%d,%d) obj1=%d/%d/%d seg=%d pos=(%d,%d,%d) damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
+		           mode_name,
+		           frame_index,
+		           (long long) GameTime64,
+		           step,
+		           obj0 ? (int) (obj0 - Objects) : -1,
+		           obj0 ? obj0->type : -1,
+		           obj0 ? obj0->id : -1,
+		           obj0 ? obj0->segnum : -1,
+		           obj0 ? obj0->pos.x : 0,
+		           obj0 ? obj0->pos.y : 0,
+		           obj0 ? obj0->pos.z : 0,
+		           obj1 ? (int) (obj1 - Objects) : -1,
+		           obj1 ? obj1->type : -1,
+		           obj1 ? obj1->id : -1,
+		           obj1 ? obj1->segnum : -1,
+		           obj1 ? obj1->pos.x : 0,
+		           obj1 ? obj1->pos.y : 0,
+		           obj1 ? obj1->pos.z : 0,
+		           damage_flag,
+		           relative_velocity ? relative_velocity->x : 0,
+		           relative_velocity ? relative_velocity->y : 0,
+		           relative_velocity ? relative_velocity->z : 0,
+		           scale_num,
+		           scale_den,
+		           float_force ? float_force->x : 0,
+		           float_force ? float_force->y : 0,
+		           float_force ? float_force->z : 0,
+		           fix_force.x,
+		           fix_force.y,
+		           fix_force.z,
+		           force_delta.x,
+		           force_delta.y,
+		           force_delta.z,
+		           obj0 ? obj0->mtype.phys_info.velocity.x : 0,
+		           obj0 ? obj0->mtype.phys_info.velocity.y : 0,
+		           obj0 ? obj0->mtype.phys_info.velocity.z : 0,
+		           obj1 ? obj1->mtype.phys_info.velocity.x : 0,
+		           obj1 ? obj1->mtype.phys_info.velocity.y : 0,
+		           obj1 ? obj1->mtype.phys_info.velocity.z : 0,
+		           obj0 ? obj0->mtype.phys_info.mass : 0,
+		           obj1 ? obj1->mtype.phys_info.mass : 0);
 }

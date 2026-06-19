@@ -14,7 +14,12 @@ enum {
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS = 5,
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_SIZE = 1 << INPUT_DEMO_OBJECT_SLOT_BUCKET_BITS,
 	INPUT_DEMO_OBJECT_SLOT_BUCKET_COUNT = 32,
-	INPUT_DEMO_FIREBALL_TRACE_COUNT = 8
+	INPUT_DEMO_FIREBALL_TRACE_COUNT = 8,
+	INPUT_DEMO_WEAPON_TRACE_COUNT = 8,
+	INPUT_DEMO_SEGMENT_TRACE_COUNT = 7,
+	INPUT_DEMO_SEGMENT_TRACE_CHAIN_COUNT = 12,
+	INPUT_DEMO_SEGMENT_TRACE_CHAIN_TOTAL =
+	    INPUT_DEMO_SEGMENT_TRACE_COUNT * INPUT_DEMO_SEGMENT_TRACE_CHAIN_COUNT
 };
 
 typedef struct input_demo_state_trace_diag {
@@ -54,6 +59,26 @@ typedef struct input_demo_state_trace_diag {
 	int32_t player_last_x;
 	int32_t player_last_y;
 	int32_t player_last_z;
+	int32_t player_bump_frame;
+	int32_t player_bump_count;
+	int32_t player_bump_step_hash;
+	int32_t player_bump_other_obj;
+	int32_t player_bump_other_sig;
+	int32_t player_bump_other_type;
+	int32_t player_bump_other_id;
+	int32_t player_bump_damage_flag;
+	int32_t player_bump_force_mag;
+	int32_t player_bump_damage_raw;
+	int32_t player_bump_damage_scaled;
+	int32_t player_bump_other_attack_type;
+	int32_t player_bump_rel_vel_x;
+	int32_t player_bump_rel_vel_y;
+	int32_t player_bump_rel_vel_z;
+	int32_t player_bump_force_x;
+	int32_t player_bump_force_y;
+	int32_t player_bump_force_z;
+	int32_t player_bump_player_mass;
+	int32_t player_bump_other_mass;
 	int32_t player_weapon_count;
 	uint32_t player_weapon_hash;
 	int32_t highest_object_index;
@@ -223,6 +248,19 @@ typedef struct input_demo_state_trace_diag {
 	int32_t weapon_sample_parent_type;
 	int32_t weapon_sample_parent_num;
 	int32_t weapon_sample_parent_sig;
+	int32_t weapon_trace_slots[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_sigs[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_ids[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	uint32_t weapon_trace_hashes[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_segs[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_lifeleft[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_track_goals[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_fvec_x[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_fvec_y[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_fvec_z[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_vel_x[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_vel_y[INPUT_DEMO_WEAPON_TRACE_COUNT];
+	int32_t weapon_trace_vel_z[INPUT_DEMO_WEAPON_TRACE_COUNT];
 	int32_t fireball_object_count;
 	uint32_t fireball_state_hash;
 	int32_t fireball_changed_obj;
@@ -283,6 +321,16 @@ typedef struct input_demo_state_trace_diag {
 	int32_t segment_object_list_count;
 	uint32_t segment_object_list_hash;
 	int32_t segment_object_link_error_count;
+	int32_t segment_trace_segs[INPUT_DEMO_SEGMENT_TRACE_COUNT];
+	int32_t segment_trace_counts[INPUT_DEMO_SEGMENT_TRACE_COUNT];
+	uint32_t segment_trace_hashes[INPUT_DEMO_SEGMENT_TRACE_COUNT];
+	int32_t segment_trace_heads[INPUT_DEMO_SEGMENT_TRACE_COUNT];
+	int32_t segment_trace_objs[INPUT_DEMO_SEGMENT_TRACE_CHAIN_TOTAL];
+	int32_t segment_trace_sigs[INPUT_DEMO_SEGMENT_TRACE_CHAIN_TOTAL];
+	int32_t segment_trace_types[INPUT_DEMO_SEGMENT_TRACE_CHAIN_TOTAL];
+	int32_t segment_trace_ids[INPUT_DEMO_SEGMENT_TRACE_CHAIN_TOTAL];
+	int32_t segment_trace_prevs[INPUT_DEMO_SEGMENT_TRACE_CHAIN_TOTAL];
+	int32_t segment_trace_nexts[INPUT_DEMO_SEGMENT_TRACE_CHAIN_TOTAL];
 	int32_t player_weapon_obj0;
 	int32_t player_weapon_sig0;
 	int32_t player_weapon_id0;

@@ -2474,6 +2474,7 @@ void object_move_all()
 			input_demo_current_move_segnum = objp->segnum;
 			input_demo_current_move_control_type = objp->control_type;
 			object_move_one( objp );
+			input_demo_debug_log_object_watch_after_slot(i);
 			input_demo_current_move_objnum = -1;
 			input_demo_current_move_signature = -1;
 			input_demo_current_move_type = -1;

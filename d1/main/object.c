@@ -38,6 +38,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "slew.h"
 #include "render.h"
 #include "wall.h"
+#include "input_demo_debug_logging.h"
 #include "input_demo_rng_trace.h"
 #include "vclip.h"
 #include "polyobj.h"
@@ -1990,6 +1991,7 @@ void object_move_all()
 	for (i=0;i<=Highest_object_index;i++) {
 		if ( (objp->type != OBJ_NONE) && (!(objp->flags&OF_SHOULD_BE_DEAD)) )	{
 			object_move_one( objp );
+			input_demo_debug_log_object_watch_after_slot(i);
 		}
 		objp++;
 	}

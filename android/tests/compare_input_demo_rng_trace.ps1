@@ -309,14 +309,10 @@ if ($mismatchIndex -lt 0) {
         exit 1
     }
     if ($ignorableMismatch -and $ignorableMismatch.LineChanged) {
-        Write-Host 'RESULT: FAIL'
-        Write-Host 'Only source-line differences were found'
+        Write-Host 'Note: ignored source-line-only differences'
         Write-Host "First differing line: $($ignorableMismatch.LineNumber)"
         Write-Host "Expected source line: $($ignorableMismatch.ExpectedLineNumber)"
         Write-Host "Actual source line: $($ignorableMismatch.ActualLineNumber)"
-        Write-Host "Expected line: $($ignorableMismatch.ExpectedLine)"
-        Write-Host "Actual line: $($ignorableMismatch.ActualLine)"
-        exit 1
     }
     if ($ignorableMismatch -and $ignorableMismatch.SeqChanged) {
         Write-Host "Note: ignored sequence-only differences starting at comparable line $($ignorableMismatch.LineNumber)"

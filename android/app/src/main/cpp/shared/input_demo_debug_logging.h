@@ -26,6 +26,7 @@ const char *input_demo_debug_activity_mode_name(void);
 unsigned int input_demo_debug_frame_index(void);
 
 void input_demo_debug_log_player_motion_state(const char *stage);
+void input_demo_debug_log_object_watch_after_slot(int moved_slot);
 void input_demo_debug_log_warning_probe(const char *label, void *obj, int view_x, int view_y, int view_z, int near_center, int prev_danger_obj, int prev_danger_sig);
 void input_demo_debug_log_replay_frame_state_mismatch(const void *replay_frame);
 void input_demo_debug_log_result_state(const char *label);
@@ -60,6 +61,10 @@ void input_demo_debug_log_exploding_object_probe(const char *step, void *obj, in
 static inline void input_demo_debug_log_player_motion_state(const char *stage)
 {
 	(void) stage;
+}
+static inline void input_demo_debug_log_object_watch_after_slot(int moved_slot)
+{
+	(void) moved_slot;
 }
 static inline void input_demo_debug_log_warning_probe(const char *label, void *obj, int view_x, int view_y, int view_z, int near_center, int prev_danger_obj, int prev_danger_sig)
 {

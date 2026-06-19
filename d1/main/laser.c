@@ -978,6 +978,10 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 		vms_vector		vector_to_object, temp_vec;
 		fix				dot=F1_0;
 		fix				speed, max_speed;
+		const int straight_time_active =
+			(obj->ctype.laser_info.creation_time + HOMING_MISSILE_STRAIGHT_TIME >=
+			GameTime64);
+		const int track_goal_before = obj->ctype.laser_info.track_goal;
 
 		//	For first 1/2 second of life, missile flies straight.
 		if (obj->ctype.laser_info.creation_time + HOMING_MISSILE_STRAIGHT_TIME < GameTime64) {
@@ -1097,6 +1101,9 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 */
 #endif
 			}
+			input_demo_record_homing_state("sequence", obj,
+				straight_time_active, doHomerFrame, track_goal_before,
+				track_goal, dot, idealHomerFrameTime, homerFrameCount);
 		}
 	}
 

@@ -26,6 +26,10 @@ void input_demo_log_player_robot_contact_probe(const char *step, struct object *
 	const struct vms_vector *collision_point, int32_t damage);
 void input_demo_log_weapon_robot_accept_seq(struct object *weapon, struct object *robot);
 void input_demo_log_weapon_lifetime(const char *step, struct object *obj);
+void input_demo_record_homing_state(const char *step, struct object *obj,
+	int straight_time_active, int do_homer_frame, int track_goal_before,
+	int track_goal_after, int dot, int32_t ideal_homer_frame_time,
+	unsigned int homer_frame_count);
 void input_demo_log_player_shot_create_probe(struct object *shooter,
 	struct object *weapon, int laser_type, int gun_num, int harmless,
 	int make_sound, const struct vms_vector *direction);

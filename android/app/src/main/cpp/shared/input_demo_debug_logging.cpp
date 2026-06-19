@@ -21,6 +21,9 @@ extern "C" {
 #if INPUT_DEMO_DEBUG_LOGGING_AVAILABLE
 
 static int g_input_demo_debug_enabled = 0;
+static unsigned int g_object_watch_frame = (unsigned int) -1;
+static int g_object_watch_valid = 0;
+static vms_vector g_object_watch_velocity = { 0, 0, 0 };
 
 int input_demo_debug_is_enabled(void)
 {
@@ -137,8 +140,72 @@ static int input_demo_debug_exploding_object_probe_active(object *obj)
 
 void input_demo_debug_log_player_motion_state(const char *stage)
 {
-	if (stage)
+	if (stage) {
+		if (Highest_object_index >= 82 && Objects[82].type != OBJ_NONE)
+			input_demo_debug_printf(
+			    "Input demo object watch: frame=%u gt=%lld stage=%s obj=82 sig=%d type=%d id=%d seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) flags=0x%x shields=%d\n",
+			    input_demo_debug_frame_index(),
+			    (long long) GameTime64,
+			    stage,
+			    Objects[82].signature,
+			    Objects[82].type,
+			    Objects[82].id,
+			    Objects[82].segnum,
+			    Objects[82].pos.x,
+			    Objects[82].pos.y,
+			    Objects[82].pos.z,
+			    Objects[82].mtype.phys_info.velocity.x,
+			    Objects[82].mtype.phys_info.velocity.y,
+			    Objects[82].mtype.phys_info.velocity.z,
+			    Objects[82].flags,
+			    Objects[82].shields);
 		input_demo_debug_printf("Input demo player motion: stage=%s\n", stage);
+	}
+}
+
+void input_demo_debug_log_object_watch_after_slot(int moved_slot)
+{
+	const unsigned int frame = input_demo_debug_frame_index();
+	object *watch_obj;
+
+	if (!input_demo_debug_activity_frame_in_range(58, 62))
+		return;
+	if (Highest_object_index < 82 || Objects[82].type == OBJ_NONE)
+		return;
+
+	watch_obj = &Objects[82];
+	if (!g_object_watch_valid || g_object_watch_frame != frame) {
+		g_object_watch_frame = frame;
+		g_object_watch_valid = 1;
+		g_object_watch_velocity = watch_obj->mtype.phys_info.velocity;
+		return;
+	}
+	if (g_object_watch_velocity.x == watch_obj->mtype.phys_info.velocity.x &&
+	    g_object_watch_velocity.y == watch_obj->mtype.phys_info.velocity.y &&
+	    g_object_watch_velocity.z == watch_obj->mtype.phys_info.velocity.z)
+		return;
+
+	input_demo_debug_printf(
+	    "Input demo object watch delta: frame=%u gt=%lld after_slot=%d obj=82 sig=%d type=%d id=%d seg=%d pos=(%d,%d,%d) old_vel=(%d,%d,%d) new_vel=(%d,%d,%d) flags=0x%x shields=%d\n",
+	    frame,
+	    (long long) GameTime64,
+	    moved_slot,
+	    watch_obj->signature,
+	    watch_obj->type,
+	    watch_obj->id,
+	    watch_obj->segnum,
+	    watch_obj->pos.x,
+	    watch_obj->pos.y,
+	    watch_obj->pos.z,
+	    g_object_watch_velocity.x,
+	    g_object_watch_velocity.y,
+	    g_object_watch_velocity.z,
+	    watch_obj->mtype.phys_info.velocity.x,
+	    watch_obj->mtype.phys_info.velocity.y,
+	    watch_obj->mtype.phys_info.velocity.z,
+	    watch_obj->flags,
+	    watch_obj->shields);
+	g_object_watch_velocity = watch_obj->mtype.phys_info.velocity;
 }
 
 void input_demo_debug_log_warning_probe(const char *label, void *obj, int view_x, int view_y, int view_z, int near_center, int prev_danger_obj, int prev_danger_sig)
