@@ -629,7 +629,7 @@ void do_physics_sim(object *obj)
 			fq.flags |= FQ_GET_SEGLIST;
 
 		fate = find_vector_intersection(&fq,&hit_info);
-		input_demo_log_d1_object13_physics_fate(obj, fate, &hit_info,
+		input_demo_log_replay_physics_fvi_fate(obj, fate, &hit_info,
 			&frame_vec, &new_pos, sim_time, n_ignore_objs);
 		//if(fate != HIT_NONE) {
 		//	double radius = (double)(fq.rad) / (double)(F1_0); 

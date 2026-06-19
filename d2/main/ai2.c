@@ -2429,9 +2429,11 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 		}
 	} else if ( ((!robptr->attack_type) && (Weapon_info[Robot_info[obj->id].weapon_type].homing_flag == 1)) || (((Robot_info[obj->id].weapon_type2 != -1) && (Weapon_info[Robot_info[obj->id].weapon_type2].homing_flag == 1))) ) {
 		const int hit_dist = vm_vec_dist_quick(&Hit_pos, &obj->pos);
+		const int ready_to_fire_homing = d1_in_d2_use_d1_gameplay() ? (ailp->next_fire <= 0) :
+			(((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0)) || ((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)));
 
 		if (((!object_animates) || (ailp->achieved_state[aip->CURRENT_GUN] == AIS_FIRE))
-					&& (((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0)) || ((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)))
+					&& ready_to_fire_homing
 					&& (hit_dist > F1_0*40)) {
 			if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION)) {
 				REPLAY_LOG_FIRE_GATE("gate_homing_awareness_blocked", gun_num,

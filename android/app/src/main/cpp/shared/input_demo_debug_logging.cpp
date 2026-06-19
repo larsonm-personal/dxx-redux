@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -21,9 +22,15 @@ extern "C" {
 #if INPUT_DEMO_DEBUG_LOGGING_AVAILABLE
 
 static int g_input_demo_debug_enabled = 0;
-static unsigned int g_object_watch_frame = (unsigned int) -1;
-static int g_object_watch_valid = 0;
-static vms_vector g_object_watch_velocity = { 0, 0, 0 };
+static unsigned int g_robot_watch_frame = (unsigned int) -1;
+static unsigned int g_robot_watch_log_count = 0;
+static int g_robot_watch_valid[MAX_OBJECTS];
+static vms_vector g_robot_watch_pos[MAX_OBJECTS];
+static vms_vector g_robot_watch_velocity[MAX_OBJECTS];
+static int g_robot_watch_seg[MAX_OBJECTS];
+static int g_robot_watch_shields[MAX_OBJECTS];
+static int g_robot_watch_flags[MAX_OBJECTS];
+static int g_robot_watch_record_error_logged = 0;
 
 int input_demo_debug_is_enabled(void)
 {
@@ -88,6 +95,19 @@ void input_demo_debug_printf(const char *fmt, ...)
 	con_printf(0, "%s", buffer);
 }
 
+static void input_demo_debug_record_frame_event_json(const char *json_text)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active() || !json_text)
+		return;
+	if (!input_demo_recorder_append_frame_event_json(json_text, error, sizeof(error)) &&
+	    !g_robot_watch_record_error_logged) {
+		g_robot_watch_record_error_logged = 1;
+		con_printf(CON_NORMAL, "Input demo recorder event append failed: %s\n", error);
+	}
+}
+
 const char *input_demo_debug_activity_mode_name(void)
 {
 	if (input_demo_replay_is_loaded())
@@ -141,71 +161,160 @@ static int input_demo_debug_exploding_object_probe_active(object *obj)
 void input_demo_debug_log_player_motion_state(const char *stage)
 {
 	if (stage) {
-		if (Highest_object_index >= 82 && Objects[82].type != OBJ_NONE)
-			input_demo_debug_printf(
-			    "Input demo object watch: frame=%u gt=%lld stage=%s obj=82 sig=%d type=%d id=%d seg=%d pos=(%d,%d,%d) vel=(%d,%d,%d) flags=0x%x shields=%d\n",
-			    input_demo_debug_frame_index(),
-			    (long long) GameTime64,
-			    stage,
-			    Objects[82].signature,
-			    Objects[82].type,
-			    Objects[82].id,
-			    Objects[82].segnum,
-			    Objects[82].pos.x,
-			    Objects[82].pos.y,
-			    Objects[82].pos.z,
-			    Objects[82].mtype.phys_info.velocity.x,
-			    Objects[82].mtype.phys_info.velocity.y,
-			    Objects[82].mtype.phys_info.velocity.z,
-			    Objects[82].flags,
-			    Objects[82].shields);
 		input_demo_debug_printf("Input demo player motion: stage=%s\n", stage);
 	}
+}
+
+static int input_demo_debug_robot_watch_near_player(const object *obj)
+{
+	vms_vector obj_pos;
+
+	if (!obj || !ConsoleObject)
+		return 0;
+	if (obj->segnum == ConsoleObject->segnum)
+		return 1;
+	obj_pos = obj->pos;
+	return vm_vec_dist_quick(&obj_pos, &ConsoleObject->pos) < F1_0 * 100;
+}
+
+static int input_demo_debug_robot_watch_source_interesting(const object *source)
+{
+	if (!source)
+		return 0;
+	if (source == ConsoleObject)
+		return 1;
+	if (source->type == OBJ_PLAYER)
+		return 1;
+	if (source->type == OBJ_ROBOT)
+		return 1;
+	return source->type == OBJ_WEAPON &&
+	       source->ctype.laser_info.parent_type == OBJ_PLAYER;
 }
 
 void input_demo_debug_log_object_watch_after_slot(int moved_slot)
 {
 	const unsigned int frame = input_demo_debug_frame_index();
-	object *watch_obj;
+	object *source = NULL;
+	int objnum;
 
-	if (!input_demo_debug_activity_frame_in_range(58, 62))
+	if (!input_demo_debug_activity_probe_active())
 		return;
-	if (Highest_object_index < 82 || Objects[82].type == OBJ_NONE)
-		return;
-
-	watch_obj = &Objects[82];
-	if (!g_object_watch_valid || g_object_watch_frame != frame) {
-		g_object_watch_frame = frame;
-		g_object_watch_valid = 1;
-		g_object_watch_velocity = watch_obj->mtype.phys_info.velocity;
-		return;
+	if (moved_slot >= 0 && moved_slot <= Highest_object_index)
+		source = &Objects[moved_slot];
+	if (g_robot_watch_frame != frame) {
+		memset(g_robot_watch_valid, 0, sizeof(g_robot_watch_valid));
+		g_robot_watch_frame = frame;
+		g_robot_watch_log_count = 0;
 	}
-	if (g_object_watch_velocity.x == watch_obj->mtype.phys_info.velocity.x &&
-	    g_object_watch_velocity.y == watch_obj->mtype.phys_info.velocity.y &&
-	    g_object_watch_velocity.z == watch_obj->mtype.phys_info.velocity.z)
+	if (g_robot_watch_log_count >= 96)
 		return;
 
-	input_demo_debug_printf(
-	    "Input demo object watch delta: frame=%u gt=%lld after_slot=%d obj=82 sig=%d type=%d id=%d seg=%d pos=(%d,%d,%d) old_vel=(%d,%d,%d) new_vel=(%d,%d,%d) flags=0x%x shields=%d\n",
-	    frame,
-	    (long long) GameTime64,
-	    moved_slot,
-	    watch_obj->signature,
-	    watch_obj->type,
-	    watch_obj->id,
-	    watch_obj->segnum,
-	    watch_obj->pos.x,
-	    watch_obj->pos.y,
-	    watch_obj->pos.z,
-	    g_object_watch_velocity.x,
-	    g_object_watch_velocity.y,
-	    g_object_watch_velocity.z,
-	    watch_obj->mtype.phys_info.velocity.x,
-	    watch_obj->mtype.phys_info.velocity.y,
-	    watch_obj->mtype.phys_info.velocity.z,
-	    watch_obj->flags,
-	    watch_obj->shields);
-	g_object_watch_velocity = watch_obj->mtype.phys_info.velocity;
+	for (objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		object *watch_obj = &Objects[objnum];
+		const int changed =
+		    g_robot_watch_valid[objnum] &&
+		    (g_robot_watch_velocity[objnum].x !=
+		         watch_obj->mtype.phys_info.velocity.x ||
+		     g_robot_watch_velocity[objnum].y !=
+		         watch_obj->mtype.phys_info.velocity.y ||
+		     g_robot_watch_velocity[objnum].z !=
+		         watch_obj->mtype.phys_info.velocity.z ||
+		     g_robot_watch_pos[objnum].x != watch_obj->pos.x ||
+		     g_robot_watch_pos[objnum].y != watch_obj->pos.y ||
+		     g_robot_watch_pos[objnum].z != watch_obj->pos.z ||
+		     g_robot_watch_seg[objnum] != watch_obj->segnum ||
+		     g_robot_watch_shields[objnum] != watch_obj->shields ||
+		     g_robot_watch_flags[objnum] != watch_obj->flags);
+
+		if (watch_obj->type != OBJ_ROBOT ||
+		    (watch_obj->flags & OF_SHOULD_BE_DEAD)) {
+			g_robot_watch_valid[objnum] = 0;
+			continue;
+		}
+		if (changed &&
+		    (input_demo_debug_robot_watch_near_player(watch_obj) ||
+		     input_demo_debug_robot_watch_source_interesting(source))) {
+			char json[1200];
+
+			snprintf(
+			    json,
+			    sizeof(json),
+			    "{\"kind\":\"robot_watch_delta\",\"gt\":%lld,\"after_slot\":%d,\"source_type\":%d,\"source_id\":%d,\"source_sig\":%d,\"source_seg\":%d,\"robot_obj\":%d,\"robot_id\":%d,\"robot_sig\":%d,\"seg\":%d,\"old_seg\":%d,\"x\":%d,\"y\":%d,\"z\":%d,\"old_x\":%d,\"old_y\":%d,\"old_z\":%d,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"old_vx\":%d,\"old_vy\":%d,\"old_vz\":%d,\"flags\":%d,\"old_flags\":%d,\"shields\":%d,\"old_shields\":%d}",
+			    (long long) GameTime64,
+			    moved_slot,
+			    source ? source->type : -1,
+			    source ? source->id : -1,
+			    source ? source->signature : -1,
+			    source ? source->segnum : -1,
+			    objnum,
+			    watch_obj->id,
+			    watch_obj->signature,
+			    watch_obj->segnum,
+			    g_robot_watch_seg[objnum],
+			    watch_obj->pos.x,
+			    watch_obj->pos.y,
+			    watch_obj->pos.z,
+			    g_robot_watch_pos[objnum].x,
+			    g_robot_watch_pos[objnum].y,
+			    g_robot_watch_pos[objnum].z,
+			    watch_obj->mtype.phys_info.velocity.x,
+			    watch_obj->mtype.phys_info.velocity.y,
+			    watch_obj->mtype.phys_info.velocity.z,
+			    g_robot_watch_velocity[objnum].x,
+			    g_robot_watch_velocity[objnum].y,
+			    g_robot_watch_velocity[objnum].z,
+			    watch_obj->flags,
+			    g_robot_watch_flags[objnum],
+			    watch_obj->shields,
+			    g_robot_watch_shields[objnum]);
+			input_demo_debug_record_frame_event_json(json);
+			input_demo_debug_printf(
+			    "Input demo robot watch delta: mode=%s frame=%u gt=%lld after_slot=%d source=%d/%d/%d sig=%d robot=%d/%d sig=%d seg=%d old_seg=%d pos=(%d,%d,%d) old_pos=(%d,%d,%d) vel=(%d,%d,%d) old_vel=(%d,%d,%d) flags=0x%x old_flags=0x%x shields=%d old_shields=%d player_seg=%d player_pos=(%d,%d,%d)\n",
+			    input_demo_debug_activity_mode_name(),
+			    frame,
+			    (long long) GameTime64,
+			    moved_slot,
+			    source ? source->type : -1,
+			    source ? source->id : -1,
+			    source ? source->segnum : -1,
+			    source ? source->signature : -1,
+			    objnum,
+			    watch_obj->id,
+			    watch_obj->signature,
+			    watch_obj->segnum,
+			    g_robot_watch_seg[objnum],
+			    watch_obj->pos.x,
+			    watch_obj->pos.y,
+			    watch_obj->pos.z,
+			    g_robot_watch_pos[objnum].x,
+			    g_robot_watch_pos[objnum].y,
+			    g_robot_watch_pos[objnum].z,
+			    watch_obj->mtype.phys_info.velocity.x,
+			    watch_obj->mtype.phys_info.velocity.y,
+			    watch_obj->mtype.phys_info.velocity.z,
+			    g_robot_watch_velocity[objnum].x,
+			    g_robot_watch_velocity[objnum].y,
+			    g_robot_watch_velocity[objnum].z,
+			    watch_obj->flags,
+			    g_robot_watch_flags[objnum],
+			    watch_obj->shields,
+			    g_robot_watch_shields[objnum],
+			    ConsoleObject ? ConsoleObject->segnum : -1,
+			    ConsoleObject ? ConsoleObject->pos.x : 0,
+			    ConsoleObject ? ConsoleObject->pos.y : 0,
+			    ConsoleObject ? ConsoleObject->pos.z : 0);
+			g_robot_watch_log_count++;
+			if (g_robot_watch_log_count >= 96)
+				return;
+		}
+
+		g_robot_watch_valid[objnum] = 1;
+		g_robot_watch_pos[objnum] = watch_obj->pos;
+		g_robot_watch_velocity[objnum] = watch_obj->mtype.phys_info.velocity;
+		g_robot_watch_seg[objnum] = watch_obj->segnum;
+		g_robot_watch_shields[objnum] = watch_obj->shields;
+		g_robot_watch_flags[objnum] = watch_obj->flags;
+	}
 }
 
 void input_demo_debug_log_warning_probe(const char *label, void *obj, int view_x, int view_y, int view_z, int near_center, int prev_danger_obj, int prev_danger_sig)
@@ -277,46 +386,116 @@ void input_demo_debug_log_player_robot_contact_probe(const char *step, void *pla
 
 void input_demo_debug_log_weapon_robot_accept_seq(void *weapon, void *robot)
 {
-	(void) weapon;
-	(void) robot;
-	input_demo_debug_printf("Input demo weapon accept\n");
+	object *weapon_obj = (object *) weapon;
+	object *robot_obj = (object *) robot;
+
+	if (!input_demo_debug_activity_probe_active() || !weapon_obj || !robot_obj)
+		return;
+	input_demo_debug_printf(
+	    "Input demo weapon robot accept: mode=%s frame=%u gt=%lld weapon=%d/%d sig=%d seg=%d parent=%d/%d parent_sig=%d vel=(%d,%d,%d) robot=%d/%d sig=%d seg=%d shields=%d vel=(%d,%d,%d) flags=0x%x\n",
+	    input_demo_debug_activity_mode_name(),
+	    input_demo_debug_frame_index(),
+	    (long long) GameTime64,
+	    (int) (weapon_obj - Objects),
+	    weapon_obj->id,
+	    weapon_obj->signature,
+	    weapon_obj->segnum,
+	    weapon_obj->ctype.laser_info.parent_type,
+	    weapon_obj->ctype.laser_info.parent_num,
+	    weapon_obj->ctype.laser_info.parent_signature,
+	    weapon_obj->mtype.phys_info.velocity.x,
+	    weapon_obj->mtype.phys_info.velocity.y,
+	    weapon_obj->mtype.phys_info.velocity.z,
+	    (int) (robot_obj - Objects),
+	    robot_obj->id,
+	    robot_obj->signature,
+	    robot_obj->segnum,
+	    robot_obj->shields,
+	    robot_obj->mtype.phys_info.velocity.x,
+	    robot_obj->mtype.phys_info.velocity.y,
+	    robot_obj->mtype.phys_info.velocity.z,
+	    robot_obj->flags);
 }
 
 void input_demo_debug_log_weapon_robot_path_probe(const char *step, void *weapon, void *robot, const void *collision_point)
 {
-	(void) weapon;
-	(void) robot;
-	(void) collision_point;
-	if (step)
-		input_demo_debug_printf("Input demo weapon path: step=%s\n", step);
+	object *weapon_obj = (object *) weapon;
+	object *robot_obj = (object *) robot;
+	const vms_vector *cp = (const vms_vector *) collision_point;
+
+	if (!input_demo_debug_activity_probe_active() || !step || !weapon_obj || !robot_obj)
+		return;
+	input_demo_debug_printf(
+	    "Input demo weapon robot path: mode=%s frame=%u gt=%lld step=%s weapon=%d/%d sig=%d seg=%d flags=0x%x life=%d parent=%d/%d parent_sig=%d last_hit=%d track_goal=%d vel=(%d,%d,%d) pos=(%d,%d,%d) robot=%d/%d sig=%d seg=%d flags=0x%x shields=%d vel=(%d,%d,%d) pos=(%d,%d,%d) cp=(%d,%d,%d)\n",
+	    input_demo_debug_activity_mode_name(),
+	    input_demo_debug_frame_index(),
+	    (long long) GameTime64,
+	    step,
+	    (int) (weapon_obj - Objects),
+	    weapon_obj->id,
+	    weapon_obj->signature,
+	    weapon_obj->segnum,
+	    weapon_obj->flags,
+	    weapon_obj->lifeleft,
+	    weapon_obj->ctype.laser_info.parent_type,
+	    weapon_obj->ctype.laser_info.parent_num,
+	    weapon_obj->ctype.laser_info.parent_signature,
+	    weapon_obj->ctype.laser_info.last_hitobj,
+	    weapon_obj->ctype.laser_info.track_goal,
+	    weapon_obj->mtype.phys_info.velocity.x,
+	    weapon_obj->mtype.phys_info.velocity.y,
+	    weapon_obj->mtype.phys_info.velocity.z,
+	    weapon_obj->pos.x,
+	    weapon_obj->pos.y,
+	    weapon_obj->pos.z,
+	    (int) (robot_obj - Objects),
+	    robot_obj->id,
+	    robot_obj->signature,
+	    robot_obj->segnum,
+	    robot_obj->flags,
+	    robot_obj->shields,
+	    robot_obj->mtype.phys_info.velocity.x,
+	    robot_obj->mtype.phys_info.velocity.y,
+	    robot_obj->mtype.phys_info.velocity.z,
+	    robot_obj->pos.x,
+	    robot_obj->pos.y,
+	    robot_obj->pos.z,
+	    cp ? cp->x : 0,
+	    cp ? cp->y : 0,
+	    cp ? cp->z : 0);
 }
 
 void input_demo_debug_log_weapon_robot_reason_probe(const char *step, void *weapon, void *robot, const void *collision_point)
 {
-	(void) weapon;
-	(void) robot;
-	(void) collision_point;
-	if (step)
-		input_demo_debug_printf("Input demo weapon reason: step=%s\n", step);
+	input_demo_debug_log_weapon_robot_path_probe(step, weapon, robot, collision_point);
 }
 
 void input_demo_debug_log_weapon_robot_collision_pose(const char *step, void *weapon, void *robot, void *collision_point, int damage, int robot_old_shields)
 {
-	(void) weapon;
-	(void) robot;
-	(void) collision_point;
-	(void) damage;
-	(void) robot_old_shields;
-	if (step)
-		input_demo_debug_printf("Input demo collision pose: step=%s\n", step);
+	object *robot_obj = (object *) robot;
+
+	input_demo_debug_log_weapon_robot_path_probe(step, weapon, robot, collision_point);
+	if (!input_demo_debug_activity_probe_active() || !step || !robot_obj)
+		return;
+	input_demo_debug_printf(
+	    "Input demo weapon robot damage pose: mode=%s frame=%u gt=%lld step=%s damage=%d old_shields=%d new_shields=%d robot=%d sig=%d vel=(%d,%d,%d)\n",
+	    input_demo_debug_activity_mode_name(),
+	    input_demo_debug_frame_index(),
+	    (long long) GameTime64,
+	    step,
+	    damage,
+	    robot_old_shields,
+	    robot_obj->shields,
+	    (int) (robot_obj - Objects),
+	    robot_obj->signature,
+	    robot_obj->mtype.phys_info.velocity.x,
+	    robot_obj->mtype.phys_info.velocity.y,
+	    robot_obj->mtype.phys_info.velocity.z);
 }
 
 void input_demo_debug_log_weapon_robot_dispatch_probe(void *weapon, void *robot, const void *collision_point)
 {
-	(void) weapon;
-	(void) robot;
-	(void) collision_point;
-	input_demo_debug_printf("Input demo dispatch probe\n");
+	input_demo_debug_log_weapon_robot_path_probe("dispatch", weapon, robot, collision_point);
 }
 
 void input_demo_debug_log_ai_robot_state(const char *label, void *objp)

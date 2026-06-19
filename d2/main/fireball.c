@@ -152,7 +152,7 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 								phys_apply_force(obj0p,&vforce);
 
 								//	If not a boss, stun for 2 seconds at 32 force, 1 second at 16 force
-								if ((objp != NULL) && (!Robot_info[obj0p->id].boss_flag) && (Weapon_info[objp->id].flash)) {
+								if (!d1_in_d2_use_d1_gameplay() && (objp != NULL) && (!Robot_info[obj0p->id].boss_flag) && (Weapon_info[objp->id].flash)) {
 									ai_static	*aip = &obj0p->ctype.ai_info;
 									int			force_val = f2i(fixdiv(vm_vec_mag_quick(&vforce) * Weapon_info[objp->id].flash, FrameTime)/128) + 2;
 
@@ -247,7 +247,7 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 
 								phys_apply_force(obj0p,&vforce);
 								phys_apply_rot(obj0p,&vforce2);
-								if (Difficulty_level == 0)
+								if (!d1_in_d2_use_d1_gameplay() && Difficulty_level == 0)
 									damage /= 4;
 								
 								if ( obj0p->shields >= 0) {

@@ -1019,7 +1019,8 @@ void do_physics_sim(object *obj)
 
 					Assert(cheats.bouncyfire || !(obj->mtype.phys_info.flags & PF_STICK && obj->mtype.phys_info.flags & PF_BOUNCE));	//can't be bounce and stick
 
-					forcefield_bounce = (TmapInfo[Segments[WallHitSeg].sides[WallHitSide].tmap_num].flags & TMI_FORCE_FIELD);
+					forcefield_bounce = !d1_in_d2_use_d1_gameplay() &&
+						(TmapInfo[Segments[WallHitSeg].sides[WallHitSide].tmap_num].flags & TMI_FORCE_FIELD);
 
 					if (!forcefield_bounce && (obj->mtype.phys_info.flags & PF_STICK)) {		//stop moving
 
@@ -1055,7 +1056,8 @@ void do_physics_sim(object *obj)
 									obj->mtype.phys_info.flags |= PF_BOUNCED_ONCE;
 							}
 
-							bounced = 1;		//this object bounced
+							if (!d1_in_d2_use_d1_gameplay())
+								bounced = 1;		//this object bounced
 						}
 
 						vm_vec_scale_add2(&obj->mtype.phys_info.velocity,&hit_info.hit_wallnorm,-wall_part);
@@ -1215,6 +1217,40 @@ void do_physics_sim(object *obj)
 		}
 	}
 	*/
+
+	if (d1_in_d2_use_d1_gameplay() && input_demo_debug_activity_probe_active() &&
+		obj->type == OBJ_ROBOT && ConsoleObject &&
+		vm_vec_dist_quick(&obj->pos, &ConsoleObject->pos) < F1_0 * 100 &&
+		((fate == HIT_WALL) || (fate == HIT_OBJECT) || (fate == HIT_BAD_P0))) {
+		vms_vector moved_vec;
+		vms_vector movement_velocity;
+
+		vm_vec_sub(&moved_vec,&obj->pos,&start_pos);
+		vm_vec_copy_scale(&movement_velocity,&moved_vec,fixdiv(f1_0,FrameTime));
+		input_demo_debug_printf(
+			"Input demo d1-in-d2 physics final: mode=%s frame=%u gt=%lld obj=%d/%d sig=%d fate=%d stopped=%d bounced=%d pos=(%d,%d,%d) start=(%d,%d,%d) vel=(%d,%d,%d) movement_vel=(%d,%d,%d)\n",
+			input_demo_debug_activity_mode_name(),
+			input_demo_debug_frame_index(),
+			(long long)GameTime64,
+			objnum,
+			obj->id,
+			obj->signature,
+			fate,
+			obj_stopped,
+			bounced,
+			obj->pos.x,
+			obj->pos.y,
+			obj->pos.z,
+			start_pos.x,
+			start_pos.y,
+			start_pos.z,
+			obj->mtype.phys_info.velocity.x,
+			obj->mtype.phys_info.velocity.y,
+			obj->mtype.phys_info.velocity.z,
+			movement_velocity.x,
+			movement_velocity.y,
+			movement_velocity.z);
+	}
 
 	// After collision with objects and walls, set velocity from actual movement
 	if (!obj_stopped && !bounced 

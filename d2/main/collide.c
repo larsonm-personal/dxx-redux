@@ -84,6 +84,18 @@ static vms_vector *d1_in_d2_badass_explosion_pos(object *weapon, vms_vector *col
 {
 	return d1_in_d2_use_d1_gameplay() ? &weapon->pos : collision_point;
 }
+
+static vms_vector *d1_in_d2_player_badass_explosion_pos(object *weapon, vms_vector *collision_point)
+{
+	if (d1_in_d2_use_d1_gameplay()) {
+		weapon->pos.x = collision_point->x;
+		weapon->pos.y = collision_point->y;
+		weapon->pos.z = collision_point->z;
+		return &weapon->pos;
+	}
+
+	return collision_point;
+}
 #include "collide.h"
 #include "escort.h"
 #include "multibot.h"
@@ -2896,7 +2908,7 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 			vm_vec_scale_add(collision_point, &playerobj->pos, &player2weapon, fixdiv(playerobj->size, mag)); 
 		}
 		
-		explode_badass_weapon(weapon, d1_in_d2_badass_explosion_pos(weapon, collision_point));
+		explode_badass_weapon(weapon, d1_in_d2_player_badass_explosion_pos(weapon, collision_point));
 
 	}
 

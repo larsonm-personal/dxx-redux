@@ -1299,6 +1299,91 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj)
 	}
 }
 
+static void state_relink_objects_by_index(void)
+{
+	int i, segnum;
+	object *obj;
+
+	for (i=0; i<=Highest_object_index; i++ ) {
+		obj = &Objects[i];
+		obj->rtype.pobj_info.alt_textures = -1;
+		segnum = obj->segnum;
+		obj->next = obj->prev = obj->segnum = -1;
+		if ( obj->type != OBJ_NONE )
+			obj_link(i,segnum);
+	}
+}
+
+static int state_restore_segment_object_links(void)
+{
+	int i, segnum, objnum;
+	ubyte seen[MAX_OBJECTS];
+
+	memset(seen, 0, sizeof(seen));
+
+	for (segnum=0; segnum <= Highest_segment_index; segnum++)
+		Segments[segnum].objects = -1;
+
+	for (i=0; i<=Highest_object_index; i++) {
+		object *obj = &Objects[i];
+
+		obj->rtype.pobj_info.alt_textures = -1;
+		if (obj->type == OBJ_NONE)
+			continue;
+		if (obj->segnum < 0 || obj->segnum > Highest_segment_index)
+			return 0;
+		if (obj->prev == -1) {
+			if (Segments[obj->segnum].objects != -1)
+				return 0;
+			Segments[obj->segnum].objects = i;
+		}
+	}
+
+	for (i=0; i<=Highest_object_index; i++) {
+		object *obj = &Objects[i];
+
+		if (obj->type == OBJ_NONE)
+			continue;
+		segnum = obj->segnum;
+		if (obj->prev == -1) {
+			if (Segments[segnum].objects != i)
+				return 0;
+		} else {
+			if (obj->prev < 0 || obj->prev > Highest_object_index)
+				return 0;
+			if (Objects[obj->prev].type == OBJ_NONE ||
+				Objects[obj->prev].segnum != segnum ||
+				Objects[obj->prev].next != i)
+				return 0;
+		}
+		if (obj->next != -1) {
+			if (obj->next < 0 || obj->next > Highest_object_index)
+				return 0;
+			if (Objects[obj->next].type == OBJ_NONE ||
+				Objects[obj->next].segnum != segnum ||
+				Objects[obj->next].prev != i)
+				return 0;
+		}
+	}
+
+	for (segnum=0; segnum <= Highest_segment_index; segnum++)
+		for (objnum=Segments[segnum].objects; objnum!=-1; objnum=Objects[objnum].next) {
+			if (objnum < 0 || objnum > Highest_object_index)
+				return 0;
+			if (seen[objnum])
+				return 0;
+			if (Objects[objnum].type == OBJ_NONE || Objects[objnum].segnum != segnum)
+				return 0;
+			seen[objnum] = 1;
+		}
+
+	for (i=0; i<=Highest_object_index; i++)
+		if (Objects[i].type != OBJ_NONE && !seen[i])
+			return 0;
+
+	return 1;
+}
+
 // Following functions convert player to player_rw and back to be written to/read from Savegames. player only differ to player_rw in terms of timer values (fix/fix64). as we reset GameTime64 for writing so it can fit into fix it's not necessary to increment savegame version. But if we once store something else into object which might be useful after restoring, it might be handy to increment Savegame version and actually store these new infos.
 // turn player to player_rw to be saved to Savegame.
 void state_player_to_player_rw(player *pl, player_rw *pl_rw)
@@ -2189,23 +2274,23 @@ RetryObjectLoading:
 		rebirth = 1;
 	}
 
-	for (i=0; i<=Highest_object_index; i++ )	{
+	for (i=0; i<=Highest_object_index; i++ ) {
 		obj = &Objects[i];
-		obj->rtype.pobj_info.alt_textures = -1;
-		segnum = obj->segnum;
-		obj->next = obj->prev = obj->segnum = -1;
-		if ( obj->type != OBJ_NONE )	{
+		if ( obj->type != OBJ_NONE ) {
 			// Check for a bogus Saturn version!!!!
-			if (!BogusSaturnShit )	{
+			if (!BogusSaturnShit ) {
+				segnum = obj->segnum;
 				if ( (segnum<0) || (segnum>Highest_segment_index) ) {
 					BogusSaturnShit = 1;
 					PHYSFS_seek( fp, ObjectStartLocation );
 					goto RetryObjectLoading;
 				}
 			}
-			obj_link(i,segnum);
 		}
 	}
+
+	if (!state_restore_segment_object_links())
+		state_relink_objects_by_index();
 	special_reset_objects();
 
 	//Restore wall info

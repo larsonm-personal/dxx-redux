@@ -729,6 +729,24 @@ int input_demo_replay_get_current_frame(input_demo_replay_frame *frame,
 	return 1;
 }
 
+int input_demo_replay_get_next_frame(input_demo_replay_frame *frame,
+                                     char *error, size_t error_size)
+{
+	uint32_t frame_index;
+
+	if (!g_input_demo_replay_session.loaded)
+		return copy_error("input demo replay is not loaded", error, error_size);
+	if (input_demo_replay_is_finished())
+		return copy_error("input demo replay is at end of stream", error, error_size);
+	if (!frame)
+		return copy_error("missing replay frame output", error, error_size);
+	frame_index = g_input_demo_replay_session.next_frame_index + 1;
+	if (frame_index >= g_input_demo_replay_session.frames.size())
+		return copy_error("input demo replay has no next frame", error, error_size);
+	*frame = g_input_demo_replay_session.frames[frame_index];
+	return 1;
+}
+
 int input_demo_replay_advance_frame(char *error, size_t error_size)
 {
 	if (!g_input_demo_replay_session.loaded)

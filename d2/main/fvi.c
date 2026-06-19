@@ -853,12 +853,16 @@ int check_trans_wall(vms_vector *pnt,segment *seg,int sidenum,int facenum);
 
 static int input_demo_fvi_boundary_probe_active(short objnum)
 {
-	unsigned int frame;
+	object *objp;
 
-	if (!input_demo_replay_is_loaded() || !d1_in_d2_use_d1_gameplay() || objnum != 17)
+	if (!input_demo_replay_is_loaded() || !d1_in_d2_use_d1_gameplay() ||
+		!input_demo_debug_activity_probe_active() ||
+		objnum < 0 || objnum > Highest_object_index)
 		return 0;
-	frame = input_demo_debug_frame_index();
-	return frame >= 309 && frame <= 313;
+	objp = &Objects[objnum];
+	return objp->type == OBJ_WEAPON &&
+		objp->ctype.laser_info.parent_type == OBJ_PLAYER &&
+		!(objp->flags & (OF_SHOULD_BE_DEAD | OF_HARMLESS));
 }
 
 static void input_demo_log_fvi_boundary_probe(short objnum, int startseg, int side,
@@ -889,6 +893,32 @@ static void input_demo_log_fvi_boundary_probe(short objnum, int startseg, int si
 		p1->x, p1->y, p1->z,
 		hit_point->x, hit_point->y, hit_point->z);
 	input_demo_append_replay_probe_message("fvi_boundary", &Objects[objnum], probe);
+}
+
+static int d1_in_d2_transparent_wall_point_blocks(segment *seg, int side)
+{
+	int wall_num;
+
+	wall_num = seg->sides[side].wall_num;
+	if (wall_num >= 0 && wall_num < Num_walls &&
+		Walls[wall_num].type == WALL_DOOR &&
+		Walls[wall_num].state == WALL_DOOR_CLOSED)
+		return 1;
+	return 0;
+}
+
+static int d1_in_d2_transparent_wall_crossable(int wid_flag, segment *seg,
+	int side, int flags, vms_vector *hit_point, int face)
+{
+	if (wid_flag != WID_TRANSPARENT_WALL)
+		return 0;
+	if (flags & FQ_TRANSWALL)
+		return 1;
+	if (!(flags & FQ_TRANSPOINT))
+		return 0;
+	if (d1_in_d2_transparent_wall_point_blocks(seg, side))
+		return 0;
+	return check_trans_wall(hit_point,seg,side,face);
 }
 
 int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p1,fix rad,short thisobjnum,int *ignore_obj_list,int flags,int *seglist,int *n_segs,int entry_seg)
@@ -1040,8 +1070,8 @@ int fvi_sub(vms_vector *intp,int *ints,vms_vector *p0,int startseg,vms_vector *p
 							flags, p0, p1, &hit_point, rad);
 
 						if ((wid_flag & WID_FLY_FLAG) ||
-							((d1_in_d2_use_d1_gameplay() ? (wid_flag == WID_TRANSPARENT_WALL) : ((wid_flag & WID_RENDER_FLAG) && (wid_flag & WID_RENDPAST_FLAG))) &&
-								((flags & FQ_TRANSWALL) || (flags & FQ_TRANSPOINT && check_trans_wall(&hit_point,seg,side,face))))) {
+							(d1_in_d2_use_d1_gameplay() ? d1_in_d2_transparent_wall_crossable(wid_flag, seg, side, flags, &hit_point, face) : (((wid_flag & WID_RENDER_FLAG) && (wid_flag & WID_RENDPAST_FLAG)) &&
+								((flags & FQ_TRANSWALL) || (flags & FQ_TRANSPOINT && check_trans_wall(&hit_point,seg,side,face)))))) {
 
 							int newsegnum;
 							vms_vector sub_hit_point;

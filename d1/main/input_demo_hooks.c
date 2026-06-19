@@ -32,6 +32,8 @@
 extern int Num_awareness_events;
 #include "input_demo_hooks_shared.h"
 
+static int input_demo_record_event_append_logged_error = 0;
+
 static void input_demo_append_replay_probe_message_d1(const char *kind,
 	object *objp, const char *message)
 {
@@ -71,6 +73,19 @@ static void input_demo_append_replay_probe_message_d1(const char *kind,
 	fclose(file);
 }
 
+static void input_demo_record_frame_event_json_d1(const char *json_text)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_append_frame_event_json(json_text, error, sizeof(error)) &&
+		!input_demo_record_event_append_logged_error) {
+		input_demo_record_event_append_logged_error = 1;
+		con_printf(CON_NORMAL, "Input demo recorder event append failed: %s\n", error);
+	}
+}
+
 static int input_demo_trace_motion_probe_active(void)
 {
 	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
@@ -104,7 +119,7 @@ static const char *input_demo_physics_fate_name(int fate)
 	}
 }
 
-void input_demo_log_d1_object13_physics_fate(object *obj, int fate,
+void input_demo_log_replay_physics_fvi_fate(object *obj, int fate,
 	const fvi_info *hit_info, const vms_vector *frame_vec,
 	const vms_vector *new_pos, fix sim_time, int ignore_count)
 {
@@ -128,7 +143,10 @@ void input_demo_log_d1_object13_physics_fate(object *obj, int fate,
 	if (hit_objnum >= 0 && hit_objnum <= Highest_object_index)
 		hit_obj = &Objects[hit_objnum];
 	if (objnum != 13 && objnum != 15 && obj != ConsoleObject &&
-		hit_obj != ConsoleObject)
+		hit_obj != ConsoleObject &&
+		(obj->type != OBJ_WEAPON ||
+			obj->ctype.laser_info.parent_type != OBJ_PLAYER ||
+			(obj->flags & (OF_SHOULD_BE_DEAD | OF_HARMLESS))))
 		return;
 	if (hit_info->hit_side_seg >= 0 && hit_info->hit_side_seg <= Highest_segment_index &&
 		hit_info->hit_side >= 0 && hit_info->hit_side < MAX_SIDES_PER_SEGMENT) {
@@ -346,9 +364,39 @@ void input_demo_log_powerup_spawn_probe(object *source, object *created, int cre
 void input_demo_log_weapon_lifetime(const char *step, object *obj)
 {
 	char probe[512];
+	char json[768];
 
 	if (!step || !obj || obj->type != OBJ_WEAPON)
 		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"probe_weapon_life\",\"gt\":%lld,\"step\":\"%s\",\"obj\":%d,\"id\":%d,\"sig\":%d,\"seg\":%d,\"life\":%d,\"shields\":%d,\"flags\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"last_hit\":%d,\"track_goal\":%d,\"creation_frame\":%u,\"ctime\":%lld,\"homing\":%s,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"x\":%d,\"y\":%d,\"z\":%d,\"lastx\":%d,\"lasty\":%d,\"lastz\":%d}",
+		(long long)GameTime64,
+		step,
+		(int)(obj - Objects),
+		obj->id,
+		obj->signature,
+		obj->segnum,
+		obj->lifeleft,
+		obj->shields,
+		obj->flags,
+		obj->ctype.laser_info.parent_type,
+		obj->ctype.laser_info.parent_num,
+		obj->ctype.laser_info.parent_signature,
+		obj->ctype.laser_info.last_hitobj,
+		obj->ctype.laser_info.track_goal,
+		obj->ctype.laser_info.creation_framecount,
+		(long long)obj->ctype.laser_info.creation_time,
+		Weapon_info[obj->id].homing_flag ? "true" : "false",
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z,
+		obj->last_pos.x,
+		obj->last_pos.y,
+		obj->last_pos.z);
+	input_demo_record_frame_event_json_d1(json);
 	snprintf(probe, sizeof(probe),
 		"step=%s id=%d homing=%d parent_type=%d parent=%d parent_sig=%d "
 		"last_hit=%d track_goal=%d life=%d seg=%d vel=(%d,%d,%d) "
@@ -381,9 +429,37 @@ void input_demo_record_homing_state(const char *step, object *obj,
 	unsigned int homer_frame_count)
 {
 	char probe[512];
+	char json[768];
 
 	if (!obj || obj->type != OBJ_WEAPON || !Weapon_info[obj->id].homing_flag)
 		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"probe_homing\",\"gt\":%lld,\"step\":\"%s\",\"obj\":%d,\"id\":%d,\"sig\":%d,\"seg\":%d,\"life\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"straight\":%s,\"do_homer_frame\":%s,\"track_goal_before\":%d,\"track_goal_after\":%d,\"dot\":%d,\"ideal_frame_time\":%d,\"homer_frame_count\":%u,\"creation_frame\":%u,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"x\":%d,\"y\":%d,\"z\":%d}",
+		(long long)GameTime64,
+		step ? step : "unset",
+		(int)(obj - Objects),
+		obj->id,
+		obj->signature,
+		obj->segnum,
+		obj->lifeleft,
+		obj->ctype.laser_info.parent_type,
+		obj->ctype.laser_info.parent_num,
+		obj->ctype.laser_info.parent_signature,
+		straight_time_active ? "true" : "false",
+		do_homer_frame ? "true" : "false",
+		track_goal_before,
+		track_goal_after,
+		dot,
+		ideal_homer_frame_time,
+		homer_frame_count,
+		obj->ctype.laser_info.creation_framecount,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z);
+	input_demo_record_frame_event_json_d1(json);
 	snprintf(probe, sizeof(probe),
 		"step=%s straight=%d do_homer_frame=%d "
 		"track_goal_before=%d track_goal_after=%d dot=%d "
@@ -491,9 +567,39 @@ void input_demo_log_weapon_robot_path_probe(const char *step, object *weapon,
 	object *robot, const vms_vector *collision_point)
 {
 	char probe[512];
+	char json[768];
 
 	if (!step || !weapon || !robot)
 		return;
+	input_demo_debug_log_weapon_robot_path_probe(step, weapon, robot,
+		collision_point);
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"weapon_robot_path\",\"gt\":%lld,\"step\":\"%s\",\"weapon_obj\":%d,\"weapon_id\":%d,\"weapon_sig\":%d,\"weapon_seg\":%d,\"weapon_flags\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"last_hit\":%d,\"track_goal\":%d,\"robot_obj\":%d,\"robot_id\":%d,\"robot_sig\":%d,\"robot_seg\":%d,\"robot_flags\":%d,\"robot_shields\":%d,\"weapon_vx\":%d,\"weapon_vy\":%d,\"weapon_vz\":%d,\"robot_vx\":%d,\"robot_vy\":%d,\"robot_vz\":%d}",
+		(long long)GameTime64,
+		step,
+		(int)(weapon - Objects),
+		weapon->id,
+		weapon->signature,
+		weapon->segnum,
+		weapon->flags,
+		weapon->ctype.laser_info.parent_type,
+		weapon->ctype.laser_info.parent_num,
+		weapon->ctype.laser_info.parent_signature,
+		weapon->ctype.laser_info.last_hitobj,
+		weapon->ctype.laser_info.track_goal,
+		(int)(robot - Objects),
+		robot->id,
+		robot->signature,
+		robot->segnum,
+		robot->flags,
+		robot->shields,
+		weapon->mtype.phys_info.velocity.x,
+		weapon->mtype.phys_info.velocity.y,
+		weapon->mtype.phys_info.velocity.z,
+		robot->mtype.phys_info.velocity.x,
+		robot->mtype.phys_info.velocity.y,
+		robot->mtype.phys_info.velocity.z);
+	input_demo_record_frame_event_json_d1(json);
 	snprintf(probe, sizeof(probe),
 		"step=%s weapon=%d/%d/%d/%d/%d robot=%d/%d/%d/%d/%d "
 		"robot_flags=0x%x robot_shields=%d weapon_flags=0x%x "
@@ -618,6 +724,7 @@ void input_demo_log_weapon_robot_accept_seq(object *weapon, object *robot)
 		return;
 
 	frame = input_demo_trace_collision_frame_index();
+	input_demo_debug_log_weapon_robot_accept_seq(weapon, robot);
 	if (frame != last_frame) {
 		last_frame = frame;
 		accept_seq = 0;
@@ -643,7 +750,7 @@ void input_demo_log_robot_fire_probe(object *objp, const vms_vector *fire_vec,
 		return;
 
 	frame = (unsigned int)input_demo_replay_next_frame_index();
-	if (frame < 120 || frame > 150)
+	if (frame < 200 || frame > 260)
 		return;
 
 	con_printf(CON_NORMAL,
@@ -730,7 +837,7 @@ void input_demo_log_ai_visibility_probe(object *objp, const char *step_label,
 		ailp->mode,
 		aip->CURRENT_STATE,
 		aip->GOAL_STATE,
-		-1,
+		aip->CURRENT_GUN,
 		ConsoleObject ? ConsoleObject->segnum : -1,
 		ConsoleObject ? ConsoleObject->segnum : -1,
 		ailp->goal_segment,
@@ -751,7 +858,7 @@ void input_demo_log_ai_visibility_probe(object *objp, const char *step_label,
 		believed_player_pos->z);
 	input_demo_append_replay_probe_message_d1("probe_ai_visibility", objp, probe);
 	con_printf(CON_NORMAL,
-		"Input demo AI visibility: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d prev_vis=%d raw_vis=%d final_vis=%d behavior=%d mode_ai=%d cur_state=%d goal_state=%d aware=%d aware_time=%d next_fire=%d next_fire2=%d next_misc=%lld seen=%lld sound_gates=%d/%d/%d pos=(%d,%d,%d) believed=(%d,%d,%d)\n",
+		"Input demo AI visibility: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d prev_vis=%d raw_vis=%d final_vis=%d behavior=%d mode_ai=%d cur_state=%d goal_state=%d gun=%d aware=%d aware_time=%d next_fire=%d next_fire2=%d next_misc=%lld seen=%lld sound_gates=%d/%d/%d pos=(%d,%d,%d) believed=(%d,%d,%d)\n",
 		input_demo_debug_activity_mode_name(),
 		input_demo_debug_frame_index(),
 		(long long)GameTime64,
@@ -767,6 +874,7 @@ void input_demo_log_ai_visibility_probe(object *objp, const char *step_label,
 		ailp->mode,
 		aip->CURRENT_STATE,
 		aip->GOAL_STATE,
+		aip->CURRENT_GUN,
 		ailp->player_awareness_type,
 		ailp->player_awareness_time,
 		ailp->next_fire,
@@ -804,7 +912,7 @@ void input_demo_log_ai_visibility_fvi_probe(object *objp,
 	input_demo_hit_object_details(hit_object, &hit_obj_type, &hit_obj_id,
 		&hit_obj_sig, &hit_obj_seg);
 	snprintf(probe, sizeof(probe),
-		"step=%s result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)",
+		"step=%s result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)",
 		step_label ? step_label : "unset",
 		visibility_result,
 		hit_type,
@@ -831,7 +939,7 @@ void input_demo_log_ai_visibility_fvi_probe(object *objp,
 	input_demo_append_replay_probe_message_d1("probe_ai_visibility_fvi", objp,
 		probe);
 	con_printf(CON_NORMAL,
-		"Input demo AI visibility FVI: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)\n",
+		"Input demo AI visibility FVI: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d result=%d hit=%d hit_seg=%d hit_obj=%d/%d/%d/%d/%d startseg=%d flags=0x%x dot=%d fov=%d agitation=%d pos=(%d,%d,%d) believed=(%d,%d,%d) hit_pos=(%d,%d,%d)\n",
 		input_demo_debug_activity_mode_name(),
 		input_demo_debug_frame_index(),
 		(long long)GameTime64,

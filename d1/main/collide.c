@@ -60,6 +60,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "cntrlcen.h"
 #include "newdemo.h"
 #include "input_demo_hooks.h"
+#include "input_demo_debug_logging.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "endlevel.h"
@@ -1042,10 +1043,20 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 		if (!(weapon->flags & OF_HARMLESS)) {
 			fix	damage = weapon->shields;
+			fix robot_old_shields = robot->shields;
+			int robot_died;
 
 				damage = fixmul(damage, weapon->ctype.laser_info.multiplier);
 
-			if (! apply_damage_to_robot(robot, damage, weapon->ctype.laser_info.parent_num))
+			if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)
+				input_demo_debug_log_weapon_robot_collision_pose("weapon_robot pre_damage",
+					weapon, robot, collision_point, (int)damage, (int)robot_old_shields);
+			robot_died = apply_damage_to_robot(robot, damage, weapon->ctype.laser_info.parent_num);
+			if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)
+				input_demo_debug_log_weapon_robot_collision_pose("weapon_robot post_damage",
+					weapon, robot, collision_point, (int)damage, (int)robot_old_shields);
+
+			if (!robot_died)
 				bump_two_objects(robot, weapon, 0);		//only bump if not dead. no damage from bump
 			else if (weapon->ctype.laser_info.parent_signature == ConsoleObject->signature) {
 				add_points_to_score(Robot_info[robot->id].score_value);

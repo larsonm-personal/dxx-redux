@@ -57,7 +57,7 @@ void input_demo_log_player_bump_probe(const char *step, struct object *obj0, str
 	const struct vms_vector *relative_velocity, const struct vms_vector *float_force,
 	int32_t scale_num, int32_t scale_den, int damage_flag);
 void input_demo_log_powerup_spawn_probe(struct object *source, struct object *created, int created_objnum);
-void input_demo_log_d1_object13_physics_fate(struct object *obj, int fate,
+void input_demo_log_replay_physics_fvi_fate(struct object *obj, int fate,
 	const fvi_info *hit_info, const struct vms_vector *frame_vec,
 	const struct vms_vector *new_pos, int32_t sim_time, int ignore_count);
 void input_demo_log_player_robot_hit_object_probe(const char *step,

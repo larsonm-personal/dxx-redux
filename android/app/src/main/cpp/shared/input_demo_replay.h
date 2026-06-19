@@ -93,6 +93,8 @@ int input_demo_replay_get_current_frame_direct_command_event(uint32_t direct_com
                                                              char *error, size_t error_size);
 int input_demo_replay_get_current_frame(input_demo_replay_frame *frame,
                                         char *error, size_t error_size);
+int input_demo_replay_get_next_frame(input_demo_replay_frame *frame,
+                                     char *error, size_t error_size);
 int input_demo_replay_advance_frame(char *error, size_t error_size);
 
 #ifdef __cplusplus
