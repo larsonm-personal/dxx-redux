@@ -99,8 +99,14 @@ internal fun CreateGameDialog(
         } else {
             emptyList()
         }
-    var selectedSave by remember(coopSaves) {
-        mutableStateOf(coopSaves.firstOrNull { it.type == "full_save" })
+    val coopRestoreSelection =
+        if (mode == "coop") {
+            readCoopRestoreSelection(context.filesDir, game)
+        } else {
+            null
+        }
+    var selectedSave by remember(coopSaves, coopRestoreSelection) {
+        mutableStateOf(initialCoopSaveSelection(coopSaves, coopRestoreSelection))
     }
 
     val coopResumeLevel =

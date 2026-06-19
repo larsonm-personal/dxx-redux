@@ -970,12 +970,16 @@ private fun LanCoopSaveOffer(
                 ?.first
         } ?: return
 
-    var useRestore by remember { mutableStateOf(true) }
+    val existingSelection = remember(game) { readCoopRestoreSelection(filesDir, game) }
+    var useRestore by remember { mutableStateOf(initialCoopRestoreEnabled(existingSelection)) }
+    var selectionMade by remember { mutableStateOf(existingSelection != null) }
     var lastActivatedFocusTarget by remember { mutableStateOf<CoopSaveFocusTarget?>(null) }
     val restoreFocus = remember { FocusRequester() }
     val freshFocus = remember { FocusRequester() }
 
-    LaunchedEffect(bestMatch) { useRestore = true }
+    LaunchedEffect(bestMatch) {
+        if (!selectionMade && shouldAutoEnableCoopRestore(existingSelection)) useRestore = true
+    }
     LaunchedEffect(useRestore, lastActivatedFocusTarget) {
         when (lastActivatedFocusTarget ?: return@LaunchedEffect) {
             CoopSaveFocusTarget.RESTORE -> restoreFocus.requestFocusSafely()
@@ -1012,7 +1016,10 @@ private fun LanCoopSaveOffer(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (useRestore) {
                     Button(
-                        onClick = { lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE },
+                        onClick = {
+                            selectionMade = true
+                            lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE
+                        },
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -1022,6 +1029,7 @@ private fun LanCoopSaveOffer(
                     }
                     OutlinedButton(
                         onClick = {
+                            selectionMade = true
                             lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH
                             useRestore = false
                         },
@@ -1033,6 +1041,7 @@ private fun LanCoopSaveOffer(
                 } else {
                     OutlinedButton(
                         onClick = {
+                            selectionMade = true
                             lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE
                             useRestore = true
                         },
@@ -1042,7 +1051,10 @@ private fun LanCoopSaveOffer(
                                 .focusRequester(restoreFocus),
                     ) { Text("Restore", fontSize = 12.sp) }
                     Button(
-                        onClick = { lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH },
+                        onClick = {
+                            selectionMade = true
+                            lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH
+                        },
                         modifier =
                             Modifier
                                 .weight(1f)

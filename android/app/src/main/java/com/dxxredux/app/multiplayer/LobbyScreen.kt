@@ -308,17 +308,18 @@ private fun CoopSaveOffer(
     val bestMatch = scored.firstOrNull()?.first ?: return
     val bestMatchCount = scored.firstOrNull()?.second ?: 0
 
-    // Initialize from existing restore slot (written by CreateGameDialog)
-    val existingSlot = remember(game) { readCoopRestoreSlot(filesDir, game) }
+    // Initialize from existing restore choice (written by CreateGameDialog)
+    val existingSelection = remember(game) { readCoopRestoreSelection(filesDir, game) }
     val freshLevel = remember(lobby.lobbyId) { lobby.gameInfo["level_num"]?.jsonPrimitive?.intOrNull ?: 1 }
-    var useRestore by remember { mutableStateOf(existingSlot != null) }
+    var useRestore by remember { mutableStateOf(initialCoopRestoreEnabled(existingSelection)) }
+    var selectionMade by remember { mutableStateOf(existingSelection != null) }
     var lastActivatedFocusTarget by remember { mutableStateOf<CoopSaveFocusTarget?>(null) }
     val restoreFocus = remember { FocusRequester() }
     val freshFocus = remember { FocusRequester() }
 
     // When the best match changes (players join/leave), re-select if no slot was set
     LaunchedEffect(bestMatch) {
-        if (existingSlot == null) useRestore = true
+        if (!selectionMade && shouldAutoEnableCoopRestore(existingSelection)) useRestore = true
     }
     LaunchedEffect(useRestore, lastActivatedFocusTarget) {
         when (lastActivatedFocusTarget ?: return@LaunchedEffect) {
@@ -367,7 +368,10 @@ private fun CoopSaveOffer(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (useRestore) {
                     Button(
-                        onClick = { lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE },
+                        onClick = {
+                            selectionMade = true
+                            lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE
+                        },
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -377,6 +381,7 @@ private fun CoopSaveOffer(
                     }
                     OutlinedButton(
                         onClick = {
+                            selectionMade = true
                             lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH
                             useRestore = false
                         },
@@ -388,6 +393,7 @@ private fun CoopSaveOffer(
                 } else {
                     OutlinedButton(
                         onClick = {
+                            selectionMade = true
                             lastActivatedFocusTarget = CoopSaveFocusTarget.RESTORE
                             useRestore = true
                         },
@@ -397,7 +403,10 @@ private fun CoopSaveOffer(
                                 .focusRequester(restoreFocus),
                     ) { Text("Restore", fontSize = 12.sp) }
                     Button(
-                        onClick = { lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH },
+                        onClick = {
+                            selectionMade = true
+                            lastActivatedFocusTarget = CoopSaveFocusTarget.START_FRESH
+                        },
                         modifier =
                             Modifier
                                 .weight(1f)

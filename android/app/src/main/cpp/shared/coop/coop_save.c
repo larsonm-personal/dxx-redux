@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include <physfs.h>
@@ -908,6 +909,8 @@ static int coop_read_restore_slot_file(void)
 	char buf[16];
 	PHYSFS_sint64 len;
 	int slot;
+	char *end;
+	long parsed;
 
 	fp = PHYSFS_openRead("coop_restore_slot.txt");
 	if (!fp)
@@ -925,7 +928,10 @@ static int coop_read_restore_slot_file(void)
 	PHYSFS_delete("coop_restore_slot.txt");
 
 	buf[len] = '\0';
-	slot = atoi(buf);
+	parsed = strtol(buf, &end, 10);
+	if (end == buf || *end != '\0')
+		return -1;
+	slot = (int) parsed;
 	if (slot < 0 || slot > 9)
 		return -1;
 	return slot;

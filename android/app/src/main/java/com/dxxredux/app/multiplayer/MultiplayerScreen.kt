@@ -924,7 +924,13 @@ internal fun readCoopAutosaveHistory(
     }
 }
 
-/** Write the selected restore slot for the C engine to pick up on launch. */
+internal data class CoopRestoreSelection(
+    val slot: Int?,
+)
+
+private const val COOP_RESTORE_START_FRESH_SENTINEL = -1
+
+/** Write the selected restore choice for the C engine to pick up on launch. */
 internal fun writeCoopRestoreSlot(
     filesDir: File,
     game: String,
@@ -932,11 +938,11 @@ internal fun writeCoopRestoreSlot(
 ) {
     val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
     val file = File(filesDir, "$subdir/coop_restore_slot.txt")
+    file.parentFile?.mkdirs()
     if (slot != null) {
-        file.parentFile?.mkdirs()
         file.writeText(slot.toString())
     } else {
-        file.delete()
+        file.writeText(COOP_RESTORE_START_FRESH_SENTINEL.toString())
     }
 }
 
@@ -944,15 +950,40 @@ internal fun writeCoopRestoreSlot(
 internal fun readCoopRestoreSlot(
     filesDir: File,
     game: String,
-): Int? {
+): Int? = readCoopRestoreSelection(filesDir, game)?.slot
+
+/** Read the currently written restore choice, or null when no choice was made. */
+internal fun readCoopRestoreSelection(
+    filesDir: File,
+    game: String,
+): CoopRestoreSelection? {
     val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
     val file = File(filesDir, "$subdir/coop_restore_slot.txt")
     return try {
-        if (file.exists()) file.readText().trim().toIntOrNull() else null
+        val slot = if (file.exists()) file.readText().trim().toIntOrNull() else return null
+        when (slot) {
+            in 0..9 -> CoopRestoreSelection(slot)
+            COOP_RESTORE_START_FRESH_SENTINEL -> CoopRestoreSelection(null)
+            else -> null
+        }
     } catch (_: Exception) {
         null
     }
 }
+
+internal fun initialCoopRestoreEnabled(selection: CoopRestoreSelection?): Boolean = selection?.slot != null
+
+internal fun shouldAutoEnableCoopRestore(selection: CoopRestoreSelection?): Boolean = selection == null
+
+internal fun initialCoopSaveSelection(
+    coopSaves: List<CoopSaveEntry>,
+    selection: CoopRestoreSelection?,
+): CoopSaveEntry? =
+    if (selection != null) {
+        selection.slot?.let { slot -> coopSaves.firstOrNull { it.slot == slot } }
+    } else {
+        coopSaves.firstOrNull { it.type == "full_save" }
+    }
 
 /**
  * Read coop_progress.json and return a CoopSaveEntry of type "checkpoint".

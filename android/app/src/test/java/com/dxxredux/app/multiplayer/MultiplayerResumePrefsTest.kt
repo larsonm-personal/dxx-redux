@@ -9,9 +9,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class MultiplayerResumePrefsTest {
+    @get:Rule
+    val tempFolder = TemporaryFolder()
+
     @Test
     fun resumeRecordRoundTripsThroughJson() {
         val record =
@@ -49,6 +54,54 @@ class MultiplayerResumePrefsTest {
         val decoded = decodeMultiplayerResumeRecord(encodeMultiplayerResumeRecord(record))
 
         assertEquals(record, decoded)
+    }
+
+    @Test
+    fun coopRestoreSlotFreshSelectionIsExplicitButNotASlot() {
+        val filesDir = tempFolder.newFolder()
+
+        writeCoopRestoreSlot(filesDir, "d2", 7)
+
+        assertEquals(7, readCoopRestoreSlot(filesDir, "d2"))
+        assertEquals(7, readCoopRestoreSelection(filesDir, "d2")?.slot)
+
+        writeCoopRestoreSlot(filesDir, "d2", null)
+
+        val freshSelection = readCoopRestoreSelection(filesDir, "d2") ?: error("fresh selection missing")
+        assertNull(readCoopRestoreSlot(filesDir, "d2"))
+        assertNull(freshSelection.slot)
+        assertFalse(initialCoopRestoreEnabled(freshSelection))
+        assertFalse(shouldAutoEnableCoopRestore(freshSelection))
+    }
+
+    @Test
+    fun coopRestoreAutoEnableOnlyWhenNoChoiceWasWritten() {
+        val filesDir = tempFolder.newFolder()
+
+        assertNull(readCoopRestoreSelection(filesDir, "d1"))
+        assertTrue(shouldAutoEnableCoopRestore(readCoopRestoreSelection(filesDir, "d1")))
+
+        writeCoopRestoreSlot(filesDir, "d1", null)
+
+        assertFalse(shouldAutoEnableCoopRestore(readCoopRestoreSelection(filesDir, "d1")))
+    }
+
+    @Test
+    fun initialCoopSaveSelectionHonorsExplicitFreshChoice() {
+        val save5 =
+            CoopSaveEntry(
+                slot = 5,
+                level = 4,
+                timestamp = 100L,
+                numPlayers = 2,
+                callsigns = listOf("Miner", "Wing"),
+            )
+        val save6 = save5.copy(slot = 6, level = 5, timestamp = 200L)
+        val saves = listOf(save5, save6)
+
+        assertEquals(save5, initialCoopSaveSelection(saves, null))
+        assertNull(initialCoopSaveSelection(saves, CoopRestoreSelection(null)))
+        assertEquals(save6, initialCoopSaveSelection(saves, CoopRestoreSelection(6)))
     }
 
     @Test
