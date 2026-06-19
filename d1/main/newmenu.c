@@ -1355,6 +1355,23 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 			}
 
 #ifdef ANDROID
+			if ((event->type == EVENT_MOUSE_BUTTON_UP) && !menu->drag_happened && (menu->citem > -1))
+			{
+				newmenu_item *tap_item = &menu->items[menu->citem];
+				if ((tap_item->type == NM_TYPE_INPUT) ||
+				    ((tap_item->type == NM_TYPE_INPUT_MENU) && (tap_item->group == 1))) {
+					mouse_get_pos(&mx, &my, &mz);
+					newmenu_get_item_bounds(menu, menu->citem, &x1, &y1, &x2, &y2);
+					if (((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2))) {
+						extern void android_show_keyboard(int numeric, int field_y, const char *initial_text);
+						int visible_y = menu->y + tap_item->y - (newmenu_get_scroll_line_spacing(menu) * menu->scroll_offset);
+						android_show_keyboard(0, visible_y, tap_item->text ? tap_item->text : "");
+					}
+				}
+			}
+#endif
+
+#ifdef ANDROID
 			// Deferred check/radio toggle on button-up for scroll boxes (prevents accidental toggle during drag)
 			if ((event->type == EVENT_MOUSE_BUTTON_UP) && menu->is_scroll_box && !menu->drag_happened && (menu->citem > -1))
 			{

@@ -141,6 +141,12 @@ internal fun imeNativeSpecialKeyCode(keyCode: Int): Int? =
         else -> null
     }
 
+internal fun shouldConsumeKeyboardBack(
+    keyboardActive: Boolean,
+    keyboardImeVisible: Boolean,
+    gamepadOnlyMode: Boolean,
+): Boolean = keyboardActive && (keyboardImeVisible || gamepadOnlyMode)
+
 internal fun shouldDispatchGamepadButtonDown(
     isInGame: Boolean,
     repeatCount: Int,
@@ -531,6 +537,7 @@ class MainActivity :
     private var adminTrayCloseGraceUntilMs = 0L
     private var isMultiplayerGame = false
     private var mainViewFovLockedToBase = false
+    private var keyboardImeVisible = false
     private var imeNavigationDispatchDepth = 0
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
@@ -1555,18 +1562,22 @@ class MainActivity :
                     insets: WindowInsetsCompat,
                     runningAnimations: List<WindowInsetsAnimationCompat>,
                 ): WindowInsetsCompat {
-                    val imeHeight =
-                        sampleKeyboardHeightPx(
-                            imeBottomHint = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom,
-                        )
-                    if (imeHeight > 0) {
+                    val imeBottomHint = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                    val visibleImeHeight = sampleVisibleKeyboardHeightPx(imeBottomHint)
+                    val imeHeight = sampleKeyboardHeightPx(imeBottomHint)
+                    keyboardImeVisible = visibleImeHeight > 0
+                    if (visibleImeHeight > 0) {
                         nativeSetKeyboardHeight(imeHeight, keyboardReferenceHeightPx())
+                    } else {
+                        nativeSetKeyboardHeight(0, keyboardReferenceHeightPx())
                     }
                     return insets
                 }
 
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
-                    val imeHeight = sampleKeyboardHeightPx()
+                    val visibleImeHeight = sampleVisibleKeyboardHeightPx()
+                    val imeHeight = if (visibleImeHeight > 0) sampleKeyboardHeightPx() else 0
+                    keyboardImeVisible = visibleImeHeight > 0
                     nativeSetKeyboardHeight(imeHeight, keyboardReferenceHeightPx())
                 }
             },
@@ -2941,9 +2952,20 @@ class MainActivity :
                 KeyEvent.KEYCODE_BACK,
                 -> {
                     if (event.action == KeyEvent.ACTION_DOWN) {
-                        hideKeyboard()
+                        if (shouldConsumeKeyboardBack(
+                                gameSurfaceView.keyboardActive,
+                                isKeyboardImeVisibleNow(),
+                                gamepadOnlyMode,
+                            )
+                        ) {
+                            hideKeyboard()
+                            return true
+                        }
+                        deactivateKeyboardProxy()
+                        return super.dispatchKeyEvent(event)
+                    } else if (gameSurfaceView.keyboardActive) {
+                        return true
                     }
-                    return true
                 }
 
                 KeyEvent.KEYCODE_DPAD_UP,
@@ -3297,7 +3319,7 @@ class MainActivity :
             0
         }
 
-    private fun sampleKeyboardHeightPx(imeBottomHint: Int? = null): Int {
+    private fun sampleVisibleKeyboardHeightPx(imeBottomHint: Int? = null): Int {
         val decorView = window.decorView
         val screenHeight = keyboardReferenceHeightPx()
         val imeBottom =
@@ -3313,7 +3335,6 @@ class MainActivity :
                     ?.getInsets(WindowInsetsCompat.Type.ime())
                     ?.bottom ?: 0
             }
-        val imeStableBottom = imeIgnoringVisibilityHeightPx(decorView)
         val visibleFrame = Rect()
         decorView.getWindowVisibleDisplayFrame(visibleFrame)
         val systemBottom =
@@ -3323,13 +3344,21 @@ class MainActivity :
                 ?.bottom ?: 0
         val bottomOcclusion = (screenHeight - visibleFrame.bottom).coerceAtLeast(0)
         val fallbackBottom = (bottomOcclusion - systemBottom).coerceAtLeast(0)
+        return maxOf(imeBottom, fallbackBottom)
+    }
+
+    private fun sampleKeyboardHeightPx(imeBottomHint: Int? = null): Int {
+        val decorView = window.decorView
+        val screenHeight = keyboardReferenceHeightPx()
+        val visibleBottom = sampleVisibleKeyboardHeightPx(imeBottomHint)
+        val imeStableBottom = imeIgnoringVisibilityHeightPx(decorView)
         val tvFallbackBottom =
-            if (imeBottom == 0 && imeStableBottom == 0 && fallbackBottom == 0) {
+            if (visibleBottom == 0 && imeStableBottom == 0) {
                 tvKeyboardFallbackHeightPx(screenHeight)
             } else {
                 0
             }
-        return maxOf(imeBottom, imeStableBottom, fallbackBottom, tvFallbackBottom)
+        return maxOf(visibleBottom, imeStableBottom, tvFallbackBottom)
     }
 
     /** Poll for IME height via rootWindowInsets.  With adjustNothing
@@ -3339,6 +3368,14 @@ class MainActivity :
      *  to the visible window frame bottom when needed. */
     private fun pollKeyboardHeight(attemptsLeft: Int) {
         if (attemptsLeft <= 0) return
+        val visibleImeHeight = sampleVisibleKeyboardHeightPx()
+        keyboardImeVisible = visibleImeHeight > 0 || (gamepadOnlyMode && gameSurfaceView.keyboardActive)
+        if (!keyboardImeVisible) {
+            val r = Runnable { pollKeyboardHeight(attemptsLeft - 1) }
+            keyboardPollRunnable = r
+            window.decorView.postDelayed(r, 100)
+            return
+        }
         val imeHeight = sampleKeyboardHeightPx()
         if (imeHeight > 0) {
             nativeSetKeyboardHeight(imeHeight, keyboardReferenceHeightPx())
@@ -3366,6 +3403,7 @@ class MainActivity :
             keyboardInputView.setSelection(text.length)
             hatXState = 0
             hatYState = 0
+            keyboardImeVisible = gamepadOnlyMode
             gameSurfaceView.keyboardActive = true
             keyboardInputView.keyboardActive = true
             keyboardInputView.requestFocus()
@@ -3387,14 +3425,24 @@ class MainActivity :
             keyboardPollRunnable = null
             hatXState = 0
             hatYState = 0
-            gameSurfaceView.keyboardActive = false
-            keyboardInputView.keyboardActive = false
+            deactivateKeyboardProxy()
             WindowInsetsControllerCompat(window, keyboardInputView)
                 .hide(WindowInsetsCompat.Type.ime())
-            keyboardInputView.clearFocus()
-            gameSurfaceView.requestFocus()
             nativeSetKeyboardHeight(0, keyboardReferenceHeightPx())
         }
+    }
+
+    private fun isKeyboardImeVisibleNow(): Boolean {
+        keyboardImeVisible = sampleVisibleKeyboardHeightPx() > 0 || (gamepadOnlyMode && gameSurfaceView.keyboardActive)
+        return keyboardImeVisible
+    }
+
+    private fun deactivateKeyboardProxy() {
+        keyboardImeVisible = false
+        gameSurfaceView.keyboardActive = false
+        keyboardInputView.keyboardActive = false
+        keyboardInputView.clearFocus()
+        gameSurfaceView.requestFocus()
     }
 
     // ── Music overlay helpers ─────────────────────────────────

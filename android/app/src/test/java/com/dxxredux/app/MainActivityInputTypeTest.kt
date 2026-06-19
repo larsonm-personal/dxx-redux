@@ -3,6 +3,7 @@ package com.dxxredux.app
 import android.text.InputType
 import android.view.KeyEvent
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -48,5 +49,37 @@ class MainActivityInputTypeTest {
         assertEquals(KeyEvent.KEYCODE_ENTER, imeNativeSpecialKeyCode(KeyEvent.KEYCODE_ENTER))
         assertEquals(KeyEvent.KEYCODE_ENTER, imeNativeSpecialKeyCode(KeyEvent.KEYCODE_NUMPAD_ENTER))
         assertNull(imeNativeSpecialKeyCode(KeyEvent.KEYCODE_7))
+    }
+
+    @Test
+    fun shouldConsumeKeyboardBack_onlyWhenImeVisibleOrGamepadOnly() {
+        assertTrue(
+            shouldConsumeKeyboardBack(
+                keyboardActive = true,
+                keyboardImeVisible = true,
+                gamepadOnlyMode = false,
+            ),
+        )
+        assertTrue(
+            shouldConsumeKeyboardBack(
+                keyboardActive = true,
+                keyboardImeVisible = false,
+                gamepadOnlyMode = true,
+            ),
+        )
+        assertFalse(
+            shouldConsumeKeyboardBack(
+                keyboardActive = true,
+                keyboardImeVisible = false,
+                gamepadOnlyMode = false,
+            ),
+        )
+        assertFalse(
+            shouldConsumeKeyboardBack(
+                keyboardActive = false,
+                keyboardImeVisible = true,
+                gamepadOnlyMode = false,
+            ),
+        )
     }
 }
