@@ -105,6 +105,24 @@ class MultiplayerResumePrefsTest {
     }
 
     @Test
+    fun restoreSaveForHostedLevelRequiresMatchingFullSave() {
+        val save =
+            CoopSaveEntry(
+                slot = 5,
+                level = 4,
+                timestamp = 100L,
+                numPlayers = 2,
+                callsigns = listOf("Miner", "Wing"),
+            )
+        val checkpoint = save.copy(slot = -1, type = "checkpoint")
+
+        assertEquals(save, restoreSaveForHostedLevel(save, 4))
+        assertNull(restoreSaveForHostedLevel(save, 5))
+        assertNull(restoreSaveForHostedLevel(checkpoint, 4))
+        assertNull(restoreSaveForHostedLevel(null, 4))
+    }
+
+    @Test
     fun invalidSchemaIsIgnored() {
         val json = """{"schema_version":999,"role":"host","transport":"lan","game":"d2"}"""
 

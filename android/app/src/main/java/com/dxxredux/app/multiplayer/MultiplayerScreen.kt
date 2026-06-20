@@ -985,6 +985,11 @@ internal fun initialCoopSaveSelection(
         coopSaves.firstOrNull { it.type == "full_save" }
     }
 
+internal fun restoreSaveForHostedLevel(
+    selectedSave: CoopSaveEntry?,
+    levelNum: Int,
+): CoopSaveEntry? = selectedSave?.takeIf { it.slot >= 0 && it.level == levelNum }
+
 /**
  * Read coop_progress.json and return a CoopSaveEntry of type "checkpoint".
  * Returns null if no progress file exists, mission doesn't match, or level <= 0.

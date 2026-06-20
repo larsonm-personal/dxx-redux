@@ -436,10 +436,10 @@ internal fun CreateGameDialog(
                             restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                         ),
                     )
-                    // slot = -1 for checkpoint entries (no save file to load)
-                    val restoreSlot = selectedSave?.slot?.takeIf { it >= 0 }
+                    val restoreSave = restoreSaveForHostedLevel(selectedSave, levelNum)
+                    val restoreSlot = restoreSave?.slot
                     writeCoopRestoreSlot(context.filesDir, game, restoreSlot)
-                    MultiplayerResumePrefs.saveRestoreSelection(context, game, selectedSave)
+                    MultiplayerResumePrefs.saveRestoreSelection(context, game, restoreSave, levelNum)
                     onCreate(
                         game,
                         mission,
