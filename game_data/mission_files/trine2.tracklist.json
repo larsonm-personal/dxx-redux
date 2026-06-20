@@ -1,0 +1,64 @@
+{
+  "schema": "dxx-mission-tracklist-v1",
+  "source_zip": "trine2.zip",
+  "album": "Mission ZIP - trine2",
+  "tracks": [
+    {
+      "original_name": "descent.ogg",
+      "title": "Verran - Descent 1 Menu Remix"
+    },
+    {
+      "original_name": "endlevel.ogg",
+      "title": "Vertigo Fox - Gettin' Out"
+    },
+    {
+      "original_name": "endgame.ogg",
+      "title": "Vertigo Fox - Descent 1 End Game remix"
+    },
+    {
+      "slot": "level1",
+      "level": 1,
+      "title": "RoeTaKa & EvilHorde - Infiltrator"
+    },
+    {
+      "slot": "level2",
+      "level": 2,
+      "title": "Karl Casey/White Bat Audio - Invective"
+    },
+    {
+      "slot": "level3",
+      "level": 3,
+      "title": "Karl Casey/White Bat Audio - Get Your Ass to Mars"
+    },
+    {
+      "slot": "level4",
+      "level": 4,
+      "title": "Verran - Inward Journey"
+    },
+    {
+      "slot": "level5",
+      "level": 5,
+      "title": "Vertigo Fox - Myriad (Instrumental Mix)"
+    },
+    {
+      "slot": "level6",
+      "level": 6,
+      "title": "Johann Langlie - Robot Jungle (Extended Remix)"
+    },
+    {
+      "slot": "level7",
+      "level": 7,
+      "title": "Aim to Head - Tower"
+    },
+    {
+      "slot": "level8",
+      "level": 8,
+      "title": "Vertigo Fox - Defier (Instrumental Mix)"
+    },
+    {
+      "slot": "level9",
+      "level": 9,
+      "title": "Vertigo Fox - Hunting Shadows"
+    }
+  ]
+}

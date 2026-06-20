@@ -1,0 +1,83 @@
+{
+  "schema": "dxx-mission-tracklist-v1",
+  "source_zip": "ulterior_v1.0.6b.7z",
+  "album": "Mission ZIP - ulterior_v1.0.6b",
+  "tracks": [
+    {
+      "original_name": "briefing.ogg",
+      "title": "Vertigo Fox - The Void (Sol Contingency PTMC theme)"
+    },
+    {
+      "original_name": "endlevel.ogg",
+      "title": "Vertigo Fox - Gettin' Out"
+    },
+    {
+      "original_name": "credits.ogg",
+      "title": "Vertigo Fox - Chasing Glimmers"
+    },
+    {
+      "original_name": "d2a.ogg",
+      "title": "Sdogga Man - Don't Be Cheeky"
+    },
+    {
+      "original_name": "watera.ogg",
+      "title": "Vertigo Fox - FlashFloods"
+    },
+    {
+      "original_name": "firea.ogg",
+      "title": "Vertigo Fox - Burned Away"
+    },
+    {
+      "original_name": "icea.ogg",
+      "title": "REDWITCH - Prism"
+    },
+    {
+      "original_name": "deserta.ogg",
+      "title": "Sdogga Man - Ununity"
+    },
+    {
+      "original_name": "d2b.ogg",
+      "title": "Vertigo Fox - Wyys'l-Drag!n"
+    },
+    {
+      "original_name": "waterb.ogg",
+      "title": "Vertigo Fox - Strange Flow"
+    },
+    {
+      "original_name": "fireb.ogg",
+      "title": "REDWITCH - Stigma"
+    },
+    {
+      "original_name": "iceb.ogg",
+      "title": "Phozon - Submetallic Lustre"
+    },
+    {
+      "original_name": "desertb.ogg",
+      "title": "Vertigo Fox - Moon Clock (Instrumental Remix)"
+    },
+    {
+      "original_name": "waterc.ogg",
+      "title": "Vertigo Fox - Feral Sides"
+    },
+    {
+      "original_name": "firec.ogg",
+      "title": "Sdogga Man - Adventure"
+    },
+    {
+      "original_name": "icec.ogg",
+      "title": "Vertigo Fox - Shrouded Things (Instrumental Remix)"
+    },
+    {
+      "original_name": "desertc.ogg",
+      "title": "Vertigo Fox - Cast Into The Sun"
+    },
+    {
+      "original_name": "ragea.ogg",
+      "title": "Sdogga Man - In Orbit"
+    },
+    {
+      "original_name": "rageb.ogg",
+      "title": "Vertigo Fox - Instinctual"
+    }
+  ]
+}

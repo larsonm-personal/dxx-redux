@@ -1,0 +1,41 @@
+{
+  "schema": "dxx-mission-tracklist-v1",
+  "source_zip": "cererian_1.3.zip",
+  "album": "Mission ZIP - cererian_1.3",
+  "tracks": [
+    {
+      "slot": "level1",
+      "level": 1,
+      "title": "Descent (PSX) - Mystery Metal"
+    },
+    {
+      "slot": "level2",
+      "level": 2,
+      "title": "The Machine"
+    },
+    {
+      "slot": "level3",
+      "level": 3,
+      "title": "Vertigo Fox - Perimeter"
+    },
+    {
+      "slot": "level4",
+      "level": 4,
+      "title": "Descent (PSX) - A Big Problem"
+    },
+    {
+      "slot": "level5",
+      "level": 5,
+      "title": "Vertigo Fox - Saturn Redux"
+    },
+    {
+      "slot": "level6",
+      "level": 6,
+      "title": "Vertigo Fox - Claw'd Fusion"
+    },
+    {
+      "original_name": "endlevel.ogg",
+      "title": "Descent (PSX) - Escape"
+    }
+  ]
+}

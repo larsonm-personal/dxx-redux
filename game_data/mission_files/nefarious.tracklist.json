@@ -1,0 +1,12 @@
+{
+  "schema": "dxx-mission-tracklist-v1",
+  "source_zip": "nefarious.7z",
+  "album": "Mission ZIP - nefarious",
+  "tracks": [
+    {
+      "slot": "level8",
+      "level": 8,
+      "title": "After Burner II - Super Stripe"
+    }
+  ]
+}

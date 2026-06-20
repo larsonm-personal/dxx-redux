@@ -1,0 +1,47 @@
+{
+  "schema": "dxx-mission-tracklist-v1",
+  "source_zip": "castaway_redux.zip",
+  "album": "Mission ZIP - castaway_redux",
+  "tracks": [
+    {
+      "original_name": "briefing.ogg",
+      "title": "Vertigo Fox - Choppy Seas"
+    },
+    {
+      "original_name": "bntrng01.ogg",
+      "title": "nightsurfer - Crescent"
+    },
+    {
+      "original_name": "bntrng02.ogg",
+      "title": "nightsurfer - Terraform"
+    },
+    {
+      "original_name": "bntrng03.ogg",
+      "title": "nightsurfer - Tsunami Stones"
+    },
+    {
+      "original_name": "sable01.ogg",
+      "title": "Vertigo Fox - Emperor Unknown"
+    },
+    {
+      "original_name": "sable02.ogg",
+      "title": "Vertigo Fox - Vast Visions"
+    },
+    {
+      "original_name": "sable03.ogg",
+      "title": "Vertigo Fox - Quench"
+    },
+    {
+      "original_name": "sable04.ogg",
+      "title": "Vertigo Fox - Anomaly"
+    },
+    {
+      "original_name": "sable05.ogg",
+      "title": "Vertigo Fox - Taken Shape"
+    },
+    {
+      "original_name": "sable06.ogg",
+      "title": "Vertigo Fox - Eon Forged"
+    }
+  ]
+}

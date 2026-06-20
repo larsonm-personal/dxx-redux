@@ -1,0 +1,64 @@
+{
+  "schema": "dxx-mission-tracklist-v1",
+  "source_zip": "Trine1.zip",
+  "album": "Mission ZIP - Trine1",
+  "tracks": [
+    {
+      "original_name": "descent.ogg",
+      "title": "Verran - Descent 1 Menu Remix"
+    },
+    {
+      "original_name": "endlevel.ogg",
+      "title": "Ocelot Spirit - Gettin' Out"
+    },
+    {
+      "original_name": "endgame.ogg",
+      "title": "Ocelot Spirit - Descent 1 End Game remix"
+    },
+    {
+      "slot": "level1",
+      "level": 1,
+      "title": "Ocelot Spirit - Halcyon"
+    },
+    {
+      "slot": "level2",
+      "level": 2,
+      "title": "Karl Casey/White Bat Audio - Collider"
+    },
+    {
+      "slot": "level3",
+      "level": 3,
+      "title": "Karl Casey/White Bat Audio - The Chase"
+    },
+    {
+      "slot": "level4",
+      "level": 4,
+      "title": "Verran - Nebula Outpost"
+    },
+    {
+      "slot": "level5",
+      "level": 5,
+      "title": "Ocelot Spirit - Wisps"
+    },
+    {
+      "slot": "level6",
+      "level": 6,
+      "title": "Larry Peacock - Pain"
+    },
+    {
+      "slot": "level7",
+      "level": 7,
+      "title": "Ocelot Spirit - Dilapidated Dark"
+    },
+    {
+      "slot": "level8",
+      "level": 8,
+      "title": "Aim to Head - Bolgal"
+    },
+    {
+      "slot": "level9",
+      "level": 9,
+      "title": "Karl Casey/White Bat Audio - Black Lotus"
+    }
+  ]
+}
