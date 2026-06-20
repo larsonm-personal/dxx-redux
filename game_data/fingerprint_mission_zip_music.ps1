@@ -347,6 +347,75 @@ function Read-Json5File {
     return $stripped | ConvertFrom-Json
 }
 
+function Get-MissionTracklistPath {
+    param([System.IO.FileInfo]$ZipFile)
+    $candidates = @(
+        (Join-Path $ZipFile.DirectoryName "$($ZipFile.BaseName).tracklist.json"),
+        (Join-Path $ZipFile.DirectoryName "$($ZipFile.Name).tracklist.json")
+    )
+    foreach ($candidate in $candidates) {
+        if (Test-Path -LiteralPath $candidate) { return $candidate }
+    }
+    return $null
+}
+
+function Get-TrackSlot {
+    param($Track)
+    $name = if ($Track.original_name) { [string]$Track.original_name } else { [string]$Track.filename }
+    $base = [IO.Path]::GetFileNameWithoutExtension($name).ToLowerInvariant()
+    if ($base -eq "briefing" -or $base -eq "credits") { return $base }
+    if ($base -match '^game0*([1-9][0-9]*)$') { return "level$($Matches[1])" }
+    return ""
+}
+
+function Add-TracklistKey {
+    param([hashtable]$Lookup, [string]$Prefix, [AllowNull()][string]$Value, [string]$Name)
+    if (-not $Value) { return }
+    $key = "$Prefix`:$($Value.ToLowerInvariant())"
+    if (-not $Lookup.ContainsKey($key)) {
+        $Lookup[$key] = $Name
+    }
+}
+
+function Read-MissionTracklist {
+    param([System.IO.FileInfo]$ZipFile)
+    $path = Get-MissionTracklistPath -ZipFile $ZipFile
+    if (-not $path) { return @{} }
+    $doc = Read-Json5File $path
+    if ([string]$doc.schema -ne "dxx-mission-tracklist-v1") {
+        throw "Unsupported tracklist schema in ${path}: $($doc.schema)"
+    }
+    $lookup = @{}
+    foreach ($entry in @($doc.tracks)) {
+        $name = if ($entry.title) { [string]$entry.title } else { [string]$entry.name }
+        if (-not $name) { continue }
+        Add-TracklistKey -Lookup $lookup -Prefix "filename" -Value $entry.filename -Name $name
+        Add-TracklistKey -Lookup $lookup -Prefix "source_path" -Value $entry.source_path -Name $name
+        Add-TracklistKey -Lookup $lookup -Prefix "original_name" -Value $entry.original_name -Name $name
+        Add-TracklistKey -Lookup $lookup -Prefix "slot" -Value $entry.slot -Name $name
+        if ($entry.level) {
+            Add-TracklistKey -Lookup $lookup -Prefix "slot" -Value "level$($entry.level)" -Name $name
+        }
+    }
+    Write-Host "  Using tracklist sidecar $path"
+    return $lookup
+}
+
+function Get-TracklistName {
+    param($Track, [hashtable]$TracklistLookup)
+    if (-not $TracklistLookup -or $TracklistLookup.Count -eq 0) { return "" }
+    foreach ($candidate in @(
+            "filename:$([string]$Track.filename)",
+            "source_path:$([string]$Track.source_path)",
+            "original_name:$([string]$Track.original_name)",
+            "slot:$(Get-TrackSlot $Track)"
+        )) {
+        $key = $candidate.ToLowerInvariant()
+        if ($TracklistLookup.ContainsKey($key)) { return [string]$TracklistLookup[$key] }
+    }
+    return ""
+}
+
 function Invoke-AcoustIdLookup {
     param([string]$Fingerprint, [int]$DurationSec)
 
@@ -410,7 +479,7 @@ function Invoke-AcoustIdLookup {
 }
 
 function Add-AcoustIdResults {
-    param([array]$Tracks, [hashtable]$ExistingTracks)
+    param([array]$Tracks, [hashtable]$ExistingTracks, [hashtable]$TracklistLookup = @{})
     $resultTracks = @()
     foreach ($track in $Tracks) {
         $fname = [string]$track.filename
@@ -423,11 +492,13 @@ function Add-AcoustIdResults {
         if ($track.original_name) { $out["original_name"] = [string]$track.original_name }
 
         $existing = $ExistingTracks[$fname]
+        $existingNameSource = if ($existing -and $existing.name_source) { [string]$existing.name_source } else { "" }
         $canReuseExistingLookup = $existing -and $existing.acoustid_name -and
-            $existing.chromaprint -eq $track.chromaprint
+            $existing.chromaprint -eq $track.chromaprint -and $existingNameSource -ne "tracklist"
         if ($canReuseExistingLookup) {
             $out["acoustid_name"] = [string]$existing.acoustid_name
             if ($existing.acoustid_album) { $out["acoustid_album"] = [string]$existing.acoustid_album }
+            if ($existing.name_source) { $out["name_source"] = [string]$existing.name_source }
             Write-Host "  $fname -> cached: $($existing.acoustid_name)"
         } elseif (-not $SkipAcoustId -and $track.chromaprint -and $track.duration_ms -gt 0) {
             $durationSec = [math]::Round($track.duration_ms / 1000)
@@ -435,14 +506,31 @@ function Add-AcoustIdResults {
             if ($lookup) {
                 $out["acoustid_name"] = $lookup.name
                 if ($lookup.album) { $out["acoustid_album"] = $lookup.album }
+                $out["name_source"] = "acoustid"
                 $display = $lookup.name
                 if ($lookup.album) { $display += " [$($lookup.album)]" }
                 Write-Host "  $fname -> $display"
             } else {
-                Write-Host "  $fname -> no AcoustID match"
+                $tracklistName = Get-TracklistName -Track $track -TracklistLookup $TracklistLookup
+                if ($tracklistName) {
+                    $out["acoustid_name"] = $tracklistName
+                    $out["tracklist_name"] = $tracklistName
+                    $out["name_source"] = "tracklist"
+                    Write-Host "  $fname -> tracklist: $tracklistName"
+                } else {
+                    Write-Host "  $fname -> no AcoustID match"
+                }
             }
         } else {
-            Write-Host "  $fname -> fingerprinted (no lookup)"
+            $tracklistName = Get-TracklistName -Track $track -TracklistLookup $TracklistLookup
+            if ($tracklistName) {
+                $out["acoustid_name"] = $tracklistName
+                $out["tracklist_name"] = $tracklistName
+                $out["name_source"] = "tracklist"
+                Write-Host "  $fname -> tracklist: $tracklistName"
+            } else {
+                Write-Host "  $fname -> fingerprinted (no lookup)"
+            }
         }
         $resultTracks += [PSCustomObject]$out
     }
@@ -475,6 +563,8 @@ function Write-ChromaprintInfo {
         $line += ", `"duration_ms`": $($t.duration_ms)"
         if ($t.acoustid_name) { $line += ", `"acoustid_name`": `"$(Escape-JsonString $t.acoustid_name)`"" }
         if ($t.acoustid_album) { $line += ", `"acoustid_album`": `"$(Escape-JsonString $t.acoustid_album)`"" }
+        if ($t.tracklist_name) { $line += ", `"tracklist_name`": `"$(Escape-JsonString $t.tracklist_name)`"" }
+        if ($t.name_source) { $line += ", `"name_source`": `"$(Escape-JsonString $t.name_source)`"" }
         $line += "}$comma"
         $lines += $line
     }
@@ -532,9 +622,11 @@ foreach ($zipFile in $zipFiles) {
     $albumDir = Join-Path $OutputRoot $albumName
     $infoFile = Join-Path $albumDir "chromaprint_info.json5"
     $sourceSha1 = Get-Sha1File $zipFile.FullName
+    $tracklistLookup = @{}
 
     Write-Host "`n=== $($zipFile.Name) ==="
     try {
+        $tracklistLookup = Read-MissionTracklist -ZipFile $zipFile
         if ((Test-Path $infoFile) -and -not $Force) {
             $existingInfo = Read-Json5File $infoFile
             $storedSha1 = [string]$existingInfo.source_sha1
@@ -549,7 +641,7 @@ foreach ($zipFile in $zipFiles) {
                     $withAudio++
                     continue
                 }
-                $tracks = Add-AcoustIdResults -Tracks @($existingInfo.tracks) -ExistingTracks $existingTracks
+                $tracks = Add-AcoustIdResults -Tracks @($existingInfo.tracks) -ExistingTracks $existingTracks -TracklistLookup $tracklistLookup
                 Write-ChromaprintInfo -Path $infoFile -AlbumName $albumName -SourceZip $zipFile.Name -SourceSha1 $sourceSha1 -Tracks $tracks
                 Write-Host "  Updated $infoFile"
                 $processed++
@@ -621,7 +713,7 @@ foreach ($zipFile in $zipFiles) {
             }
             $tracks += [PSCustomObject]$track
         }
-        $tracks = Add-AcoustIdResults -Tracks $tracks -ExistingTracks @{}
+        $tracks = Add-AcoustIdResults -Tracks $tracks -ExistingTracks @{} -TracklistLookup $tracklistLookup
         Write-ChromaprintInfo -Path $infoFile -AlbumName $albumName -SourceZip $zipFile.Name -SourceSha1 $sourceSha1 -Tracks $tracks
         Write-Host "  Wrote $infoFile"
         $processed++

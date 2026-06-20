@@ -21,7 +21,7 @@ $musicDir = Join-Path $PSScriptRoot "music"
 $dbPath = "$repoRoot/android/app/src/main/assets/known_discs.json5"
 $configPath = "$repoRoot/android/app/src/main/assets/fingerprint_config.json5"
 
-# ── Load match threshold from fingerprint_config.json5 ──────────────
+# Load match threshold from fingerprint_config.json5
 
 $matchThreshold = 0.4
 if (Test-Path $configPath) {
@@ -36,7 +36,7 @@ if (Test-Path $configPath) {
 }
 Write-Host "Match threshold: $matchThreshold"
 
-# ── Ensure fingerprint_match.exe is available ───────────────────────
+# Ensure fingerprint_match.exe is available
 # Uses the C tool (XOR-popcount with offset alignment) for proper matching.
 # String prefix comparison does NOT work across different audio encodings.
 
@@ -56,7 +56,7 @@ if (-not (Test-Path $matchExe)) {
     }
 }
 
-# ── Load existing known_discs.json5 ────────────────────────────────
+# Load existing known_discs.json5
 
 Write-Host "Loading $dbPath"
 $dbRaw = Get-Content $dbPath -Raw
@@ -82,7 +82,7 @@ foreach ($disc in $db.discs) {
 }
 Write-Host "Loaded $($cdFingerprints.Count) CD audio track fingerprints"
 
-# ── Discover album .json5 files ────────────────────────────────────
+# Discover album .json5 files
 
 $albumFiles = Get-ChildItem "$musicDir/*/chromaprint_info.json5" -ErrorAction SilentlyContinue
 if ($albumFiles.Count -eq 0) {
@@ -94,7 +94,7 @@ Write-Host "Found $($albumFiles.Count) album info files"
 # Sort alphabetically by album name
 $albumFiles = $albumFiles | Sort-Object { $_.Directory.Name }
 
-# ── Build flat JSON for fingerprint_match.exe ──────────────────────
+# Build flat JSON for fingerprint_match.exe
 # Combine CD fingerprints + album fingerprints into a single JSON array
 
 $cdDiscIds = @{}
@@ -139,6 +139,8 @@ foreach ($file in $albumFiles) {
             DurationMs   = $t.duration_ms
             AcoustidName = $t.acoustid_name
             AcoustidAlbum = $t.acoustid_album
+            TracklistName = $t.tracklist_name
+            NameSource   = $t.name_source
         }
         $trackNum++
     }
@@ -155,7 +157,7 @@ $jsonText = $flatEntries | ConvertTo-Json -Depth 5
 [System.IO.File]::WriteAllText($tempJson, $jsonText, [System.Text.UTF8Encoding]::new($false))
 Write-Host "Wrote $($flatEntries.Count) entries to temp JSON for matching"
 
-# ── Run fingerprint_match.exe ──────────────────────────────────────
+# Run fingerprint_match.exe
 
 Write-Host "Running fingerprint_match.exe (threshold $matchThreshold)..."
 $matchStderrFile = Join-Path $repoRoot "temp/dedup_match_stderr.txt"
@@ -173,7 +175,7 @@ $matchStdout = Get-Content $matchStdoutFile -Raw
 
 $allPairs = $matchStdout | ConvertFrom-Json
 
-# ── CD priority hierarchy for stable match selection ────────────────
+# CD priority hierarchy for stable match selection
 # When an album track matches multiple CDs, pick the highest-priority CD.
 # Tier 0: base game discs, Mac discs, Definitive Collection, Vertigo/Infinite Abyss
 # Tier 1: all other CDs (alphabetically)
@@ -242,7 +244,7 @@ foreach ($pair in $allPairs) {
 }
 Write-Host "Found $($allPairs.Count) total pairs, $($dupLookup.Count) album tracks matching CD tracks"
 
-# ── Build album entries with duplicate info ─────────────────────────
+# Build album entries with duplicate info
 
 $albumEntries = @()
 $totalTracks = 0
@@ -271,6 +273,12 @@ foreach ($albumInfo in $albumInfos) {
         if ($t.AcoustidAlbum) {
             $trackEntry["acoustid_album"] = $t.AcoustidAlbum
         }
+        if ($t.TracklistName) {
+            $trackEntry["tracklist_name"] = $t.TracklistName
+        }
+        if ($t.NameSource) {
+            $trackEntry["name_source"] = $t.NameSource
+        }
 
         if ($isDuplicate) {
             $totalDuplicates++
@@ -298,7 +306,7 @@ foreach ($albumInfo in $albumInfos) {
 
 Write-Host "`nSummary: $($albumEntries.Count) albums, $totalTracks tracks, $totalDuplicates duplicates"
 
-# ── Generate output ─────────────────────────────────────────────────
+# Generate output
 
 # Read the original file and find where to insert album entries.
 # Strategy: find the last closing ']' of the discs array, insert before the
@@ -454,6 +462,14 @@ for ($ai = 0; $ai -lt $albumEntries.Count; $ai++) {
         if ($e.acoustid_album) {
             $albumEscaped = $e.acoustid_album -replace '"', '\"'
             $line += ", `"acoustid_album`": `"$albumEscaped`""
+        }
+        if ($e.tracklist_name) {
+            $tracklistEscaped = $e.tracklist_name -replace '"', '\"'
+            $line += ", `"tracklist_name`": `"$tracklistEscaped`""
+        }
+        if ($e.name_source) {
+            $sourceEscaped = $e.name_source -replace '"', '\"'
+            $line += ", `"name_source`": `"$sourceEscaped`""
         }
         $line += "}$comma"
         $albumLines += $line

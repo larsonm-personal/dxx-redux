@@ -1,0 +1,45 @@
+{
+  "schema": "dxx-mission-tracklist-v1",
+  "source_zip": "KCXF2RMv11.7z",
+  "album": "Mission ZIP - KCXF2RMv11",
+  "tracks": [
+    {
+      "slot": "briefing",
+      "title": "Unveiling - Deep Space Remix"
+    },
+    {
+      "slot": "credits",
+      "title": "Until Then..."
+    },
+    {
+      "slot": "level1",
+      "level": 1,
+      "title": "Birth of the Manul (ft. Ocelot Spirit)"
+    },
+    {
+      "slot": "level2",
+      "level": 2,
+      "title": "Rivulet Channels"
+    },
+    {
+      "slot": "level3",
+      "level": 3,
+      "title": "Elements Rising"
+    },
+    {
+      "slot": "level4",
+      "level": 4,
+      "title": "Shapes of Existence"
+    },
+    {
+      "slot": "level5",
+      "level": 5,
+      "title": "Uncoiling Forces"
+    },
+    {
+      "slot": "level6",
+      "level": 6,
+      "title": "Sensory Gleam"
+    }
+  ]
+}
