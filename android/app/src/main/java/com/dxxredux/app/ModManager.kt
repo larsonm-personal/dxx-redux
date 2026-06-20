@@ -383,7 +383,13 @@ class ModManager(
         contentResolver: ContentResolver,
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): ModInfo? {
-        val temp = File.createTempFile("mission_zip_import_", ".zip", modsDir)
+        val suffix =
+            GameFileFormats
+                .extensionOf(displayName)
+                .takeIf { it in setOf("zip", "7z") }
+                ?.let { ".$it" }
+                ?: ".zip"
+        val temp = File.createTempFile("mission_zip_import_", suffix, modsDir)
         try {
             val total = ImportStorageGuard.queryUriSizeBytes(contentResolver, uri) ?: 0L
             ImportStorageGuard.requireFreeSpace(modsDir, total, "import mission zip $displayName")
@@ -868,6 +874,7 @@ class ModManager(
         modFile: File,
         game: String?,
     ): List<ModPatchDocument> {
+        if (mod.kind == MOD_KIND_MISSION_ZIP && GameFileFormats.extensionOf(mod.filename) != "zip") return emptyList()
         try {
             ZipFile(modFile).use { zip ->
                 val patchPaths = mutableSetOf<String>()
@@ -1025,14 +1032,12 @@ class ModManager(
 
     private fun missionZipHasSoundtrack(modFile: File): Boolean =
         runCatching {
-            ZipFile(modFile).use { outer ->
-                val entries = outer.entries()
-                while (entries.hasMoreElements()) {
-                    val entry = entries.nextElement()
+            ArchiveFiles.open(modFile).use { outer ->
+                for (entry in outer.entries) {
                     if (entry.isDirectory) continue
-                    when (launcherExtensionOf(entry.name)) {
+                    when (launcherExtensionOf(entry.path)) {
                         "sng" -> {
-                            outer.getInputStream(entry).use { input ->
+                            outer.openInputStream(entry).use { input ->
                                 if (songListReferencesMissionSoundtrack(input.readBytes().toString(Charsets.UTF_8))) {
                                     return@runCatching true
                                 }
@@ -1040,13 +1045,13 @@ class ModManager(
                         }
 
                         "dxa" -> {
-                            outer.getInputStream(entry).use { input ->
+                            outer.openInputStream(entry).use { input ->
                                 if (dxaHasSoundtrack(ZipInputStream(input))) return@runCatching true
                             }
                         }
 
                         "hog" -> {
-                            outer.getInputStream(entry).use { input ->
+                            outer.openInputStream(entry).use { input ->
                                 if (hogHasSoundtrack(input)) return@runCatching true
                             }
                         }

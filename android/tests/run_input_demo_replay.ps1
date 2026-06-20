@@ -96,6 +96,60 @@ function Get-RelativeRepoPath {
     return [System.IO.Path]::GetRelativePath($repoRoot, $Path)
 }
 
+function Test-PathUnderDirectory {
+    param(
+        [string]$Path,
+        [string]$Directory
+    )
+
+    if (-not $Path -or -not $Directory) {
+        return $false
+    }
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $trimChars = @([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $fullDirectory = [System.IO.Path]::GetFullPath($Directory).TrimEnd($trimChars)
+    $fullDirectory = $fullDirectory + [System.IO.Path]::DirectorySeparatorChar
+    return $fullPath.StartsWith($fullDirectory, [System.StringComparison]::OrdinalIgnoreCase)
+}
+
+function Stop-ReplayProcess {
+    param(
+        [System.Diagnostics.Process]$Process
+    )
+
+    if (-not $Process) {
+        return
+    }
+    try {
+        $Process.Refresh()
+        if (-not $Process.HasExited) {
+            Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+            $Process.WaitForExit(2000) | Out-Null
+        }
+    } catch {
+        try { Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue } catch {}
+    }
+}
+
+function Stop-StaleReplayProcessesInDirectory {
+    param([string]$Directory)
+
+    if (-not $Directory) {
+        return
+    }
+
+    $targets = @(Get-Process -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.ProcessName -like 'dxx-redux-d*' -and
+                (Test-PathUnderDirectory -Path $_.Path -Directory $Directory)
+            })
+
+    foreach ($target in $targets) {
+        Stop-ReplayProcess -Process $target
+    }
+}
+
 function Resolve-AbsolutePath {
     param([string]$Path)
 
@@ -546,6 +600,8 @@ function New-LaunchSandbox {
     $safeName = ($SandboxName -replace '[^A-Za-z0-9_.-]', '_')
     $sandboxDir = Join-Path $outRoot "$($Config.Name)\$safeName"
     $sandboxExe = $null
+
+    Stop-StaleReplayProcessesInDirectory -Directory $sandboxDir
 
     if ((Test-Path -LiteralPath $sandboxDir) -and -not $ReuseSandbox) {
         Remove-Item -LiteralPath $sandboxDir -Recurse -Force
@@ -1053,6 +1109,21 @@ function Normalize-ExpectedResult {
     return $normalized
 }
 
+function Normalize-D1InD2ExpectedResult {
+    param(
+        [hashtable]$Expected,
+        [hashtable]$Actual
+    )
+
+    $normalized = ConvertTo-DeepHashtableClone -Value $Expected
+    foreach ($key in @('game', 'mission')) {
+        if ($normalized.ContainsKey($key) -and $Actual.ContainsKey($key)) {
+            $normalized[$key] = $Actual[$key]
+        }
+    }
+    return $normalized
+}
+
 function Get-TerminalExitExpectedSubset {
     param(
         [hashtable]$Expected,
@@ -1492,42 +1563,40 @@ $startInfo.RedirectStandardOutput = $false
 $startInfo.RedirectStandardError = $false
 $startInfo.Arguments = $quotedArgs
 
-$process = [System.Diagnostics.Process]::Start($startInfo)
-if (-not $process) {
-    throw 'Failed to start replay process'
-}
-
+$process = $null
 $replayStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-$waitResult = Wait-ForReplayResult -Process $process -ActualResultPath $actualResultPath -TimeoutSeconds $TimeoutSeconds
 $missingActualResult = $false
-if (-not $waitResult.ResultReady) {
+try {
+    $process = [System.Diagnostics.Process]::Start($startInfo)
+    if (-not $process) {
+        throw 'Failed to start replay process'
+    }
+
+    $waitResult = Wait-ForReplayResult -Process $process -ActualResultPath $actualResultPath -TimeoutSeconds $TimeoutSeconds
+    if (-not $waitResult.ResultReady) {
+        $replayStopwatch.Stop()
+        if (-not $waitResult.Exited) {
+            Stop-ReplayProcess -Process $process
+        }
+        if ($waitResult.Exited) {
+            if ($AllowMissingActualResult -and $resolvedStateLogPath -and (Test-Path -LiteralPath $resolvedStateLogPath)) {
+                $missingActualResult = $true
+            } else {
+                throw "Replay exited before writing an actual result`nExit code: $($waitResult.ExitCode)`nRepro: $($sandbox.Exe) $quotedArgs"
+            }
+        }
+        if (-not $missingActualResult) {
+            throw "Timed out waiting for replay result after $TimeoutSeconds seconds`nRepro: $($sandbox.Exe) $quotedArgs"
+        }
+    }
+
+    if (-not $process.HasExited -and -not $process.WaitForExit(2000)) {
+        Stop-ReplayProcess -Process $process
+    }
+} finally {
+    Stop-ReplayProcess -Process $process
     $replayStopwatch.Stop()
-    if (-not $waitResult.Exited) {
-        try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
-    }
-    if ($waitResult.Exited) {
-        if ($AllowMissingActualResult -and $resolvedStateLogPath -and (Test-Path -LiteralPath $resolvedStateLogPath)) {
-            $missingActualResult = $true
-        } else {
-            throw "Replay exited before writing an actual result`nExit code: $($waitResult.ExitCode)`nRepro: $($sandbox.Exe) $quotedArgs"
-        }
-    }
-    if (-not $missingActualResult) {
-        throw "Timed out waiting for replay result after $TimeoutSeconds seconds`nRepro: $($sandbox.Exe) $quotedArgs"
-    }
 }
-
-if (-not $process.HasExited) {
-    try {
-        if (-not $process.WaitForExit(2000)) {
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-        }
-    } catch {
-        try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
-    }
-}
-
-$replayStopwatch.Stop()
 $actualResult = $null
 if (-not $missingActualResult) {
     $actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
@@ -1537,8 +1606,11 @@ $stateTraceCompareError = $null
 $stateTraceExpectedPath = $null
 $rngTraceCompareError = $null
 $rngTraceExpectedPath = $null
-if ($actualResult -and (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory -Expected $normalizedExpectedResult -Actual $actualResult)) {
-    $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $normalizedExpectedResult -Actual $actualResult
+if ($actualResult -and $D1InD2) {
+    $expectedForCompare = Normalize-D1InD2ExpectedResult -Expected $expectedForCompare -Actual $actualResult
+}
+if ($actualResult -and (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory -Expected $expectedForCompare -Actual $actualResult)) {
+    $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $expectedForCompare -Actual $actualResult
 }
 if ($resolvedStateLogPath) {
     if (-not (Test-Path -LiteralPath $resolvedStateLogPath)) {
@@ -1577,7 +1649,7 @@ if ($resolvedRngLogPath) {
     }
 }
 $compareError = $null
-if ($SkipExpectedChecks -or $D1InD2) {
+if ($SkipExpectedChecks) {
     $compareError = $null
 } elseif ($actualResult) {
     $compareDiffs = Compare-JsonDiff -Expected $expectedForCompare -Actual $actualResult

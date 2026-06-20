@@ -5,7 +5,6 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.security.MessageDigest
 import java.util.Locale
-import java.util.zip.ZipFile
 
 class MissionZipMusicStageManager(
     cacheDir: File,
@@ -31,28 +30,28 @@ class MissionZipMusicStageManager(
         temp.delete()
         val ok =
             runCatching {
-                ZipFile(archive).use { zip ->
+                ArchiveFiles.open(archive).use { archiveFile ->
                     when {
                         track.hogEntryName != null && track.nestedEntryPath != null -> {
-                            zip.openEntryStream(track.archiveEntryPath)?.use { dxa ->
+                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
                                 extractFromDxaHog(dxa, track.nestedEntryPath, track.hogEntryName, temp)
                             } ?: false
                         }
 
                         track.hogEntryName != null -> {
-                            zip.openEntryStream(track.archiveEntryPath)?.use { hog ->
+                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { hog ->
                                 extractFromHog(hog, track.hogEntryName, temp)
                             } ?: false
                         }
 
                         track.nestedEntryPath != null -> {
-                            zip.openEntryStream(track.archiveEntryPath)?.use { dxa ->
+                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
                                 extractFromDxa(dxa, track.nestedEntryPath, temp)
                             } ?: false
                         }
 
                         else -> {
-                            zip.openEntryStream(track.archiveEntryPath)?.use { input ->
+                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { input ->
                                 FileOutputStream(temp).use { outputStream -> input.copyTo(outputStream) }
                             }
                             true
@@ -80,28 +79,28 @@ class MissionZipMusicStageManager(
         val archive = File(catalog.archivePath)
         if (!archive.isFile) return null
         return runCatching {
-            ZipFile(archive).use { zip ->
+            ArchiveFiles.open(archive).use { archiveFile ->
                 when {
                     track.hogEntryName != null && track.nestedEntryPath != null -> {
-                        zip.openEntryStream(track.archiveEntryPath)?.use { dxa ->
+                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
                             readFromDxaHog(dxa, track.nestedEntryPath, track.hogEntryName)
                         }
                     }
 
                     track.hogEntryName != null -> {
-                        zip.openEntryStream(track.archiveEntryPath)?.use { hog ->
+                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { hog ->
                             readFromHog(hog, track.hogEntryName)
                         }
                     }
 
                     track.nestedEntryPath != null -> {
-                        zip.openEntryStream(track.archiveEntryPath)?.use { dxa ->
+                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
                             readFromDxa(dxa, track.nestedEntryPath)
                         }
                     }
 
                     else -> {
-                        zip.openEntryStream(track.archiveEntryPath)?.use { it.readBytes() }
+                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { it.readBytes() }
                     }
                 }
             }
@@ -237,18 +236,13 @@ class MissionZipMusicStageManager(
         }
     }
 
-    private fun ZipFile.openEntryStream(path: String): InputStream? {
+    private fun ReadableArchiveFile.openEntryStream(path: String): InputStream? {
         val normalized = normalizePath(path)
-        val direct = getEntry(normalized)
-        if (direct != null) return getInputStream(direct)
-        val entries = entries()
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement()
-            if (!entry.isDirectory && normalizePath(entry.name).equals(normalized, ignoreCase = true)) {
-                return getInputStream(entry)
+        val entry =
+            findEntry(normalized) ?: entries.firstOrNull {
+                !it.isDirectory && normalizePath(it.path).equals(normalized, ignoreCase = true)
             }
-        }
-        return null
+        return entry?.let { openInputStream(it) }
     }
 
     private fun InputStream.copyLimitedTo(

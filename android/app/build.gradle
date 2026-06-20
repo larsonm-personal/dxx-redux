@@ -375,6 +375,7 @@ dependencies {
 
     // 7z archive support (for music packs distributed as .7z)
     implementation "org.apache.commons:commons-compress:${toolVersions['COMMONS_COMPRESS_VERSION']}"
+    implementation "org.tukaani:xz:${toolVersions['XZ_VERSION']}"
 
     // Tombstone-style crash capture for Java, native, and ANR failures
     implementation "com.iqiyi.xcrash:xcrash-android-lib:${toolVersions['XCRASH_VERSION']}"

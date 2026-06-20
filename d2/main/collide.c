@@ -439,7 +439,7 @@ void apply_force_damage(object *obj,fix force,object *other_obj)
 				damage = fixmul(damage, FrameTime*2);
 
 			//	Make trainee easier.
-			if (Difficulty_level == 0)
+			if (!d1_in_d2_use_d1_gameplay() && Difficulty_level == 0)
 				damage /= 2;
 
 			#ifdef NETWORK
@@ -703,7 +703,7 @@ int check_volatile_wall(object *obj,int segnum,int sidenum,vms_vector *hitpt)
 			if (d > 0) {
 				fix damage = fixmul(d,FrameTime);
 
-				if (Difficulty_level == 0)
+				if (!d1_in_d2_use_d1_gameplay() && Difficulty_level == 0)
 					damage /= 2;
 
 				if (!(Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE)) {

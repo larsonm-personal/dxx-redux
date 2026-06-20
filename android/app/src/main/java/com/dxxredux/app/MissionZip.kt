@@ -4,7 +4,6 @@ import java.io.File
 import java.io.InputStream
 import java.nio.charset.Charset
 import java.util.Locale
-import java.util.zip.ZipFile
 
 object MissionZip {
     const val KIND = "mission_zip"
@@ -31,6 +30,7 @@ object MissionZip {
         val totalSizeBytes: Long,
         val importMode: String,
         val readme: Constituent? = null,
+        val archiveFormat: String = "zip",
     )
 
     data class MissionSet(
@@ -46,29 +46,33 @@ object MissionZip {
 
     fun inspect(file: File): ScanResult? {
         if (!file.isFile) return null
-        ZipFile(file).use { zip ->
+        ArchiveFiles.open(file).use { archive ->
             val constituents = mutableListOf<Constituent>()
             val missions = mutableListOf<GameFileFormats.MissionDescriptor>()
-            val entries = zip.entries()
-            while (entries.hasMoreElements()) {
-                val entry = entries.nextElement()
+            for (entry in archive.entries) {
                 if (entry.isDirectory) continue
-                val name = leafName(entry.name)
+                val name = leafName(entry.path)
                 val role = GameFileFormats.missionZipRoleForFile(name)
                 constituents +=
                     Constituent(
-                        path = normalizePath(entry.name),
+                        path = normalizePath(entry.path),
                         name = name,
                         role = role,
-                        sizeBytes = entry.size.coerceAtLeast(0),
-                        compressedSizeBytes = entry.compressedSize.coerceAtLeast(0),
+                        sizeBytes = entry.sizeBytes,
+                        compressedSizeBytes = entry.compressedSizeBytes,
                     )
                 if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) {
-                    val text = zip.getInputStream(entry).bufferedReader().use { it.readText() }
-                    missions += parseMissionDescriptor(entry.name, text)
+                    val text = archive.openInputStream(entry).bufferedReader().use { it.readText() }
+                    missions += parseMissionDescriptor(entry.path, text)
                 }
             }
-            return buildResult(constituents, missions, file.length(), file.name.substringBeforeLast('.'))
+            return buildResult(
+                constituents,
+                missions,
+                file.length(),
+                file.name.substringBeforeLast('.'),
+                archive.format,
+            )
         }
     }
 
@@ -98,7 +102,13 @@ object MissionZip {
                 entry = zip.nextEntry
             }
         }
-        return buildResult(constituents, missions, constituents.sumOf { it.sizeBytes }, zipStem = null)
+        return buildResult(
+            constituents,
+            missions,
+            constituents.sumOf { it.sizeBytes },
+            zipStem = null,
+            archiveFormat = "zip",
+        )
     }
 
     fun isImportCandidate(input: InputStream): Boolean {
@@ -138,12 +148,12 @@ object MissionZip {
     ): TextFileContent {
         if (!file.isFile) return TextFileContent("", truncated = false, problem = "Mission ZIP is missing")
         return try {
-            ZipFile(file).use { zip ->
-                val entry = zip.getEntry(path) ?: return TextFileContent("", false, "Text file is missing")
-                if (!isTextFile(entry.name)) return TextFileContent("", false, "Only .txt files can be viewed")
+            ArchiveFiles.open(file).use { archive ->
+                val entry = archive.findEntry(path) ?: return TextFileContent("", false, "Text file is missing")
+                if (!isTextFile(entry.path)) return TextFileContent("", false, "Only .txt files can be viewed")
                 val limit = maxBytes.coerceAtLeast(1L).coerceAtMost((Int.MAX_VALUE - 1).toLong()).toInt()
                 val bytes =
-                    zip.getInputStream(entry).use { input ->
+                    archive.openInputStream(entry).use { input ->
                         val buffer = ByteArray(limit + 1)
                         var total = 0
                         while (total < buffer.size) {
@@ -188,6 +198,7 @@ object MissionZip {
         missions: List<GameFileFormats.MissionDescriptor>,
         totalSizeBytes: Long,
         zipStem: String?,
+        archiveFormat: String,
     ): ScanResult? {
         val mission = missions.firstOrNull() ?: return null
         val roles = constituents.map { it.role }.toSet()
@@ -206,15 +217,28 @@ object MissionZip {
             missionSets = missionSets,
             game = game,
             totalSizeBytes = totalSizeBytes,
-            importMode = if (shouldStoreZip(totalSizeBytes, sortedConstituents)) "stored_zip" else "extracted_bundle",
+            importMode =
+                if (shouldStoreArchive(
+                        archiveFormat,
+                        totalSizeBytes,
+                        sortedConstituents,
+                    )
+                ) {
+                    "stored_zip"
+                } else {
+                    "extracted_bundle"
+                },
             readme = chooseReadme(sortedConstituents, zipStem),
+            archiveFormat = archiveFormat,
         )
     }
 
-    private fun shouldStoreZip(
+    private fun shouldStoreArchive(
+        archiveFormat: String,
         totalSizeBytes: Long,
         constituents: List<Constituent>,
     ): Boolean {
+        if (archiveFormat != "zip") return false
         if (totalSizeBytes > SMALL_IN_MEMORY_LIMIT_BYTES) return false
         return constituents.none {
             it.role in

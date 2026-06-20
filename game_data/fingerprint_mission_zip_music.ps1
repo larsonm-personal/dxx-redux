@@ -25,6 +25,17 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $buildDir = Join-Path $repoRoot "android/tests/build"
 $fpExe = Join-Path $buildDir "Release/fingerprint_audio.exe"
 
+function Get-7zaPath {
+    $onPath = Get-Command 7za -ErrorAction SilentlyContinue
+    if ($onPath) { return $onPath.Source }
+    $onPath = Get-Command 7z -ErrorAction SilentlyContinue
+    if ($onPath) { return $onPath.Source }
+    $result = & "$repoRoot/android/get_deps/helpers/get_7zip.ps1"
+    $candidate = @($result | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -Last 1)
+    if ($candidate) { return $candidate[0] }
+    Write-Error "7za.exe not found. Run android/get_deps/helpers/get_7zip.ps1 or install 7-Zip"
+}
+
 function Escape-JsonString {
     param([AllowNull()][string]$Text)
     if ($null -eq $Text) { return "" }
@@ -264,6 +275,71 @@ function Extract-ZipAudio {
     return $count
 }
 
+function Extract-DirectoryAudio {
+    param(
+        [string]$DirectoryPath,
+        [string]$OutputDir,
+        [string]$SourcePrefix,
+        [hashtable]$SourceMap,
+        [string]$TempRoot
+    )
+    $count = 0
+    $files = Get-ChildItem -LiteralPath $DirectoryPath -File -Recurse
+    foreach ($file in $files) {
+        $relative = [System.IO.Path]::GetRelativePath($DirectoryPath, $file.FullName).Replace('\', '/')
+        $sourcePath = if ($SourcePrefix) { "$SourcePrefix!$relative" } else { $relative }
+        $ext = $file.Extension.ToLowerInvariant()
+        if (Test-AudioName $file.Name) {
+            $dest = New-UniqueAudioPath -OutputDir $OutputDir -SourcePath $sourcePath -SourceMap $SourceMap
+            Copy-Item -LiteralPath $file.FullName -Destination $dest -Force
+            $count++
+        } elseif ($ext -eq ".hog") {
+            $count += Extract-HogAudio -HogPath $file.FullName -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap
+        } elseif ($ext -eq ".dxa" -or $ext -eq ".zip") {
+            $count += Extract-ZipAudio -ArchivePath $file.FullName -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap -TempRoot $TempRoot
+        } elseif ($ext -eq ".7z") {
+            $count += Extract-SevenZipAudio -ArchivePath $file.FullName -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap -TempRoot $TempRoot
+        }
+    }
+    return $count
+}
+
+function Extract-SevenZipAudio {
+    param(
+        [string]$ArchivePath,
+        [string]$OutputDir,
+        [string]$SourcePrefix,
+        [hashtable]$SourceMap,
+        [string]$TempRoot
+    )
+    $extractDir = Join-Path $TempRoot "$([Guid]::NewGuid().ToString())_7z"
+    New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
+    try {
+        $sevenZip = Get-7zaPath
+        $output = & $sevenZip x "-o$extractDir" -y -- $ArchivePath 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "7z extract failed for ${ArchivePath}: $($output -join ' ')"
+        }
+        return Extract-DirectoryAudio -DirectoryPath $extractDir -OutputDir $OutputDir -SourcePrefix $SourcePrefix -SourceMap $SourceMap -TempRoot $TempRoot
+    } finally {
+        Remove-Item $extractDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Extract-MissionArchiveAudio {
+    param(
+        [string]$ArchivePath,
+        [string]$OutputDir,
+        [string]$SourcePrefix,
+        [hashtable]$SourceMap,
+        [string]$TempRoot
+    )
+    if ([IO.Path]::GetExtension($ArchivePath).Equals(".7z", [StringComparison]::OrdinalIgnoreCase)) {
+        return Extract-SevenZipAudio -ArchivePath $ArchivePath -OutputDir $OutputDir -SourcePrefix $SourcePrefix -SourceMap $SourceMap -TempRoot $TempRoot
+    }
+    return Extract-ZipAudio -ArchivePath $ArchivePath -OutputDir $OutputDir -SourcePrefix $SourcePrefix -SourceMap $SourceMap -TempRoot $TempRoot
+}
+
 function Read-Json5File {
     param([string]$Path)
     $raw = Get-Content $Path -Raw
@@ -439,7 +515,7 @@ if (-not $SkipAcoustId) {
 $script:lastRequestTime = [datetime]::MinValue
 $script:minDelayMs = 350
 
-$zipFiles = Get-ChildItem $MissionDir -File -Filter "*.zip" | Sort-Object Name
+$zipFiles = Get-ChildItem $MissionDir -File | Where-Object { $_.Extension -match '^\.(zip|7z)$' } | Sort-Object Name
 if ($Zip) {
     $zipFiles = $zipFiles | Where-Object { $_.Name -eq $Zip -or $_.BaseName -eq $Zip }
     if ($zipFiles.Count -eq 0) { Write-Error "No mission ZIP found matching: $Zip" }
@@ -495,7 +571,7 @@ foreach ($zipFile in $zipFiles) {
 
         $sourceMap = @{}
         try {
-            $count = Extract-ZipAudio -ArchivePath $zipFile.FullName -OutputDir $albumDir -SourcePrefix $zipFile.Name -SourceMap $sourceMap -TempRoot $tempRoot
+            $count = Extract-MissionArchiveAudio -ArchivePath $zipFile.FullName -OutputDir $albumDir -SourcePrefix $zipFile.Name -SourceMap $sourceMap -TempRoot $tempRoot
         } finally {
             Remove-Item $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
         }

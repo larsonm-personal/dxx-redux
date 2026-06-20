@@ -3,7 +3,6 @@ package com.dxxredux.app
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.Locale
-import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
 data class MissionZipMusicCatalog(
@@ -46,7 +45,7 @@ object MissionZipMusic {
         if (!file.isFile) return null
         val sources =
             runCatching {
-                ZipFile(file).use { zip ->
+                ArchiveFiles.open(file).use { archive ->
                     buildList {
                         val archiveBuilder =
                             SourceBuilder(
@@ -54,14 +53,12 @@ object MissionZipMusic {
                                 label = "Archive music",
                                 containerPath = "",
                             )
-                        val entries = zip.entries()
-                        while (entries.hasMoreElements()) {
-                            val entry = entries.nextElement()
+                        for (entry in archive.entries) {
                             if (entry.isDirectory) continue
-                            val normalized = normalizePath(entry.name)
+                            val normalized = normalizePath(entry.path)
                             when (extensionOf(normalized)) {
                                 "sng" -> {
-                                    zip.getInputStream(entry).use { input ->
+                                    archive.openInputStream(entry).use { input ->
                                         archiveBuilder.addSongList(
                                             normalized,
                                             input.readBytes().toString(Charsets.UTF_8),
@@ -75,18 +72,18 @@ object MissionZipMusic {
                                         nestedEntryPath = null,
                                         hogEntryName = null,
                                         name = leafName(normalized),
-                                        sizeBytes = entry.size.coerceAtLeast(0),
+                                        sizeBytes = entry.sizeBytes,
                                     )
                                 }
 
                                 "dxa" -> {
-                                    zip.getInputStream(entry).use { input ->
+                                    archive.openInputStream(entry).use { input ->
                                         scanDxa(normalized, input)?.let { add(it) }
                                     }
                                 }
 
                                 "hog" -> {
-                                    zip.getInputStream(entry).use { input ->
+                                    archive.openInputStream(entry).use { input ->
                                         scanHog(normalized, input)?.let { add(it) }
                                     }
                                 }

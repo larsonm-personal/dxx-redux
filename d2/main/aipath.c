@@ -719,7 +719,7 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 		max_length = MAX_DEPTH_TO_SEARCH_FOR_PLAYER;
 
 	ailp->time_player_seen = GameTime64;			//	Prevent from resetting path quickly.
-	ailp->goal_segment = Believed_player_seg;
+	ailp->goal_segment = d1_in_d2_use_d1_gameplay() ? ConsoleObject->segnum : Believed_player_seg;
 
 	start_seg = objp->segnum;
 	end_seg = ailp->goal_segment;

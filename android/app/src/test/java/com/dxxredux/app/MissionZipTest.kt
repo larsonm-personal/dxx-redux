@@ -1,5 +1,7 @@
 package com.dxxredux.app
 
+import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry
+import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -82,6 +84,32 @@ class MissionZipTest {
         assertEquals("d1", scan!!.game)
         assertEquals("Custom D1", scan.mission.displayName)
         assertEquals(listOf("custom01.rdl"), scan.mission.levelNames)
+    }
+
+    @Test
+    fun detectsD2MissionFromSevenZipFile() {
+        val sevenZipFile =
+            createMission7z(
+                "Seven.mn2",
+                """
+                name = Seven Pack
+                type = normal
+                num_levels = 1
+                seven01.rl2
+                """.trimIndent(),
+                listOf("README.txt" to "7z readme"),
+            )
+
+        val scan = MissionZip.inspect(sevenZipFile)
+
+        assertNotNull(scan)
+        scan!!
+        assertEquals("d2", scan.game)
+        assertEquals("7z", scan.archiveFormat)
+        assertEquals("extracted_bundle", scan.importMode)
+        assertEquals("Seven Pack", scan.mission.displayName)
+        assertEquals("README.txt", scan.readme!!.name)
+        assertEquals("7z readme", MissionZip.readTextFile(sevenZipFile, scan.readme.path).text)
     }
 
     @Test
@@ -332,6 +360,39 @@ class MissionZipTest {
             zip.closeEntry()
         }
         return zipFile
+    }
+
+    private fun createMission7z(
+        missionName: String,
+        missionText: String,
+        extraEntries: List<Pair<String, String>> = emptyList(),
+    ): File {
+        val archive = File.createTempFile("missionzip", ".7z")
+        archive.deleteOnExit()
+        val stem = missionName.substringBeforeLast('.')
+        SevenZOutputFile(archive).use { sevenZ ->
+            sevenZ.writeEntry("$stem.dxa", byteArrayOf(1, 2, 3, 4))
+            sevenZ.writeEntry("$stem.hog", byteArrayOf(5, 6, 7, 8))
+            sevenZ.writeEntry(missionName, missionText.toByteArray())
+            for ((name, text) in extraEntries) {
+                sevenZ.writeEntry(name, text.toByteArray())
+            }
+        }
+        return archive
+    }
+
+    private fun SevenZOutputFile.writeEntry(
+        name: String,
+        bytes: ByteArray,
+    ) {
+        val entry =
+            SevenZArchiveEntry().apply {
+                this.name = name
+                size = bytes.size.toLong()
+            }
+        putArchiveEntry(entry)
+        write(bytes)
+        closeArchiveEntry()
     }
 
     private fun createMissionZipWithDocs(

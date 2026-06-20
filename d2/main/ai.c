@@ -267,6 +267,8 @@ void init_ai_frame(void)
 // Ready to fire a weapon if next_fire <= 0 or next_fire2 <= 0.
 int ready_to_fire(robot_info *robptr, ai_local *ailp)
 {
+	if (d1_in_d2_use_d1_gameplay())
+		return (ailp->next_fire <= 0);
 	if (robptr->weapon_type2 != -1)
 		return (ailp->next_fire <= 0) || (ailp->next_fire2 <= 0);
 	else
@@ -333,10 +335,13 @@ static void input_demo_log_ai_schedule_probe(const char *label, object *obj, ai_
 		previous_visibility, dist_to_player, obj_ref);
 
 	snprintf(probe, sizeof(probe),
-		"step=%s behavior=%d mode=%d prev_vis=%d aware=%d aware_time=%d skip=%d since=%d dist=%d obj_ref=%d goal_seg=%d path=%d/%d retry=%d retry_chain=%d rapid=%d",
+		"step=%s behavior=%d mode=%d cur=%d goal=%d gun=%d prev_vis=%d aware=%d aware_time=%d skip=%d since=%d dist=%d obj_ref=%d goal_seg=%d path=%d/%d retry=%d retry_chain=%d rapid=%d next_fire=%d next_fire2=%d",
 		label,
 		aip->behavior,
 		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		aip->CURRENT_GUN,
 		previous_visibility,
 		ailp->player_awareness_type,
 		ailp->player_awareness_time,
@@ -349,7 +354,9 @@ static void input_demo_log_ai_schedule_probe(const char *label, object *obj, ai_
 		aip->path_length,
 		ailp->retry_count,
 		ailp->consecutive_retries,
-		ailp->rapidfire_count);
+		ailp->rapidfire_count,
+		ailp->next_fire,
+		ailp->next_fire2);
 	input_demo_append_replay_probe_message("probe_ai_schedule", obj, probe);
 
 	if (!input_demo_debug_is_enabled())
@@ -469,7 +476,8 @@ void do_ai_frame(object *obj)
 	// Kind of a hack.  If a robot is flinching, but it is time for it to fire, unflinch it.
 	// Else, you can turn a big nasty robot into a wimp by firing flares at it.
 	// This also allows the player to see the cool flinch effect for mechs without unbalancing the game.
-	if ((aip->GOAL_STATE == AIS_FLIN) && ready_to_fire(robptr, ailp)) {
+	if ((aip->GOAL_STATE == AIS_FLIN) &&
+	    (d1_in_d2_use_d1_gameplay() ? (ailp->next_fire < 0) : ready_to_fire(robptr, ailp))) {
 		aip->GOAL_STATE = AIS_FIRE;
 	}
 
@@ -826,6 +834,8 @@ _exit_cheat:
 		break;
 
 	default:
+		if (d1_in_d2_use_d1_gameplay())
+			break;
 		{
 			int	pv;
 
@@ -1609,7 +1619,8 @@ _exit_cheat:
 
 	// - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  -
 	// Hack by mk on 01/04/94, if a guy hasn't animated to the firing state, but his next_fire says ok to fire, bash him there
-	if (ready_to_fire(robptr, ailp) && (aip->GOAL_STATE == AIS_FIRE))
+	if ((d1_in_d2_use_d1_gameplay() ? (ailp->next_fire < 0) : ready_to_fire(robptr, ailp)) &&
+	    (aip->GOAL_STATE == AIS_FIRE))
 		aip->CURRENT_STATE = AIS_FIRE;
 
 	if ((aip->GOAL_STATE != AIS_FLIN)  && (obj->id != ROBOT_BRAIN)) {
@@ -1707,7 +1718,8 @@ _exit_cheat:
 		aip->CURRENT_GUN++;
 		if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
 		{
-			if ((robptr->n_guns == 1) || (robptr->weapon_type2 == -1))  // Two weapon types hack.
+			if (d1_in_d2_use_d1_gameplay() ||
+			    (robptr->n_guns == 1) || (robptr->weapon_type2 == -1))  // Two weapon types hack.
 				aip->CURRENT_GUN = 0;
 			else
 				aip->CURRENT_GUN = 1;

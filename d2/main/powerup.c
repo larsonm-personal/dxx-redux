@@ -47,6 +47,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "kconfig.h"
 #include "newdemo.h"
 #include "escort.h"
+#include "d1_in_d2.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_hooks.h"
 #ifdef EDITOR
@@ -189,7 +190,7 @@ int pick_up_energy(void)
 	if (Players[Player_num].energy < MAX_ENERGY) {
 		fix boost;
 		boost = 3*F1_0 + 3*F1_0*(NDL - Difficulty_level);
-		if (Difficulty_level == 0)
+		if (!d1_in_d2_use_d1_gameplay() && Difficulty_level == 0)
 			boost += boost/2;
 		Players[Player_num].energy += boost;
 		if (Players[Player_num].energy > MAX_ENERGY)
@@ -289,7 +290,7 @@ int do_powerup(object *obj)
 				fix shields_before = Players[Player_num].shields;
 				char extra_json[160];
 				char extra_log[160];
-				if (Difficulty_level == 0)
+				if (!d1_in_d2_use_d1_gameplay() && Difficulty_level == 0)
 					boost += boost/2;
 
 				if (Game_mode & GM_MULTI)

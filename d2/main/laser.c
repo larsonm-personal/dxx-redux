@@ -1797,6 +1797,7 @@ void Flare_create(object *obj)
 }
 
 #define	HOMING_MISSILE_SCALE	16
+#define	D1_HOMING_MISSILE_SCALE	8
 
 //--------------------------------------------------------------------
 //	Set object *objp's orientation to (or towards if I'm ambitious) its velocity.
@@ -1806,7 +1807,7 @@ void homing_missile_turn_towards_velocity(object *objp, vms_vector *norm_vel)
 
 	new_fvec = *norm_vel;
 
-	vm_vec_scale(&new_fvec, FrameTime * HOMING_MISSILE_SCALE);
+	vm_vec_scale(&new_fvec, FrameTime * (d1_in_d2_use_d1_gameplay() ? D1_HOMING_MISSILE_SCALE : HOMING_MISSILE_SCALE));
 	vm_vec_add2(&new_fvec, &objp->orient.fvec);
 	vm_vec_normalize_quick(&new_fvec);
 
@@ -1956,7 +1957,7 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 
 					absdot = abs(F1_0 - dot);
 
-					lifelost = fixmul(absdot*32, FrameTime);
+					lifelost = fixmul(absdot*32, d1_in_d2_use_d1_gameplay() ? idealHomerFrameTime : FrameTime);
 					obj->lifeleft -= lifelost;
 				}
 

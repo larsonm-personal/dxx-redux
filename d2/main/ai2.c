@@ -2362,7 +2362,7 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 								return;
 							}
 							//	New, multi-weapon-type system, 06/05/95 (life is slipping away...)
-							if (gun_num != 0) {
+							if (!d1_in_d2_use_d1_gameplay() && gun_num != 0) {
 								if (ailp->next_fire <= 0) {
 									ai_fire_laser_at_player(obj, gun_point, gun_num, &fire_pos);
 									Last_fired_upon_player_pos = fire_pos;
@@ -2414,7 +2414,8 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 				aip->CURRENT_GUN++;
 				if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
 				{
-					if ((Robot_info[obj->id].n_guns == 1) || (Robot_info[obj->id].weapon_type2 == -1))
+					if (d1_in_d2_use_d1_gameplay() ||
+					    (Robot_info[obj->id].n_guns == 1) || (Robot_info[obj->id].weapon_type2 == -1))
 						aip->CURRENT_GUN = 0;
 					else
 						aip->CURRENT_GUN = 1;
@@ -2427,7 +2428,9 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 			REPLAY_LOG_FIRE_GATE("gate_direct_not_ready", gun_num,
 				-1, 7*F1_0/8, -1, -1, -1, -1);
 		}
-	} else if ( ((!robptr->attack_type) && (Weapon_info[Robot_info[obj->id].weapon_type].homing_flag == 1)) || (((Robot_info[obj->id].weapon_type2 != -1) && (Weapon_info[Robot_info[obj->id].weapon_type2].homing_flag == 1))) ) {
+	} else if (d1_in_d2_use_d1_gameplay()
+			? (Weapon_info[Robot_info[obj->id].weapon_type].homing_flag == 1)
+			: (((!robptr->attack_type) && (Weapon_info[Robot_info[obj->id].weapon_type].homing_flag == 1)) || (((Robot_info[obj->id].weapon_type2 != -1) && (Weapon_info[Robot_info[obj->id].weapon_type2].homing_flag == 1))))) {
 		const int hit_dist = vm_vec_dist_quick(&Hit_pos, &obj->pos);
 		const int ready_to_fire_homing = d1_in_d2_use_d1_gameplay() ? (ailp->next_fire <= 0) :
 			(((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0)) || ((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)));

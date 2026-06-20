@@ -600,46 +600,61 @@ static void set_coop_start_header(json &root, const json &request, const CoopSta
 		root["coop_starts"] = range.text();
 }
 
-static int scan_level(const json &request, json &levels, int level_num, const char *level_file, int *coop_starts)
+enum LevelScanStatus {
+	LEVEL_SCAN_FAILED = 0,
+	LEVEL_SCAN_OK = 1,
+	LEVEL_SCAN_MISSING = 2,
+};
+
+static json failed_level_row(int level_num, const char *level_file, const char *problem)
+{
+	json row;
+	row["level_num"] = level_num;
+	row["secret"] = level_num < 0;
+	row["level_name"] = "";
+	row["level_file"] = level_file ? level_file : "";
+	row["robots"] = 0;
+	row["hostages"] = 0;
+	row["secrets"] = 0;
+	row["matcens"] = 0;
+	row["energy_centers"] = 0;
+	row["mine_volume"] = 0.0;
+	row["mine_volume_normalized"] = 0.0;
+	row["mine_volume_text"] = "";
+	row["travel_distance"] = 0.0;
+	row["travel_time_seconds"] = 0;
+	row["travel_time_text"] = "";
+	row["travel_status"] = "failed";
+	row["travel_problem"] = problem;
+	row["travel_note"] = "";
+	row["travel_targets_reached"] = 0;
+	row["travel_targets_total"] = 0;
+	row["travel_key_detours"] = 0;
+	row["status"] = "failed";
+	row["problems"] = json::array({ problem });
+	row["notes"] = json::array();
+	return row;
+}
+
+static LevelScanStatus scan_level(const json &request, json &levels, int level_num, const char *level_file, int *coop_starts)
 {
 	write_checkpoint(request, "level", level_file ? level_file : "");
 	if (coop_starts)
 		*coop_starts = 0;
+	if (!level_file || !level_file[0] || !PHYSFSX_exists(level_file, 1)) {
+		levels.push_back(failed_level_row(level_num, level_file, "level file is missing"));
+		return LEVEL_SCAN_MISSING;
+	}
 	if (load_level(level_file)) {
-		json row;
-		row["level_num"] = level_num;
-		row["secret"] = level_num < 0;
-		row["level_name"] = "";
-		row["level_file"] = level_file ? level_file : "";
-		row["robots"] = 0;
-		row["hostages"] = 0;
-		row["secrets"] = 0;
-		row["matcens"] = 0;
-		row["energy_centers"] = 0;
-		row["mine_volume"] = 0.0;
-		row["mine_volume_normalized"] = 0.0;
-		row["mine_volume_text"] = "";
-		row["travel_distance"] = 0.0;
-		row["travel_time_seconds"] = 0;
-		row["travel_time_text"] = "";
-		row["travel_status"] = "failed";
-		row["travel_problem"] = "could not load level";
-		row["travel_note"] = "";
-		row["travel_targets_reached"] = 0;
-		row["travel_targets_total"] = 0;
-		row["travel_key_detours"] = 0;
-		row["status"] = "failed";
-		row["problems"] = json::array({ "could not load level" });
-		row["notes"] = json::array();
-		levels.push_back(row);
-		return 0;
+		levels.push_back(failed_level_row(level_num, level_file, "could not load level"));
+		return LEVEL_SCAN_FAILED;
 	}
 	Current_level_num = level_num;
 	if (coop_starts)
 		*coop_starts = count_current_level_coop_starts();
 	secret_area_rescan_current_level();
 	levels.push_back(serialize_current_level_row(level_num, level_file));
-	return 1;
+	return LEVEL_SCAN_OK;
 }
 
 static json analyze_hog_entries(const json &request)
@@ -650,6 +665,7 @@ static json analyze_hog_entries(const json &request)
 	json root;
 	int successful = 0;
 	int failed = 0;
+	int missing_secret = 0;
 	int level_num = 1;
 	CoopStartRange coop_start_range;
 
@@ -657,7 +673,8 @@ static json analyze_hog_entries(const json &request)
 		return failed_result(request, "HOG contains no level entries");
 	for (const std::string &level_file : normal_levels) {
 		int coop_starts = 0;
-		if (scan_level(request, levels, level_num, level_file.c_str(), &coop_starts)) {
+		const LevelScanStatus status = scan_level(request, levels, level_num, level_file.c_str(), &coop_starts);
+		if (status == LEVEL_SCAN_OK) {
 			++successful;
 			coop_start_range.add(coop_starts);
 		} else {
@@ -668,9 +685,12 @@ static json analyze_hog_entries(const json &request)
 	level_num = -1;
 	for (const std::string &level_file : secret_levels) {
 		int coop_starts = 0;
-		if (scan_level(request, levels, level_num, level_file.c_str(), &coop_starts)) {
+		const LevelScanStatus status = scan_level(request, levels, level_num, level_file.c_str(), &coop_starts);
+		if (status == LEVEL_SCAN_OK) {
 			++successful;
 			coop_start_range.add(coop_starts);
+		} else if (status == LEVEL_SCAN_MISSING) {
+			++missing_secret;
 		} else {
 			++failed;
 		}
@@ -687,7 +707,11 @@ static json analyze_hog_entries(const json &request)
 	root["mission_filename"] = request.value("mission_filename", request.value("hog_path", ""));
 	set_coop_start_header(root, request, coop_start_range);
 	root["levels"] = levels;
-	root["problems"] = failed == 0 ? json::array() : json::array({ "one or more levels could not be loaded" });
+	root["problems"] = json::array();
+	if (failed)
+		root["problems"].push_back("one or more levels could not be loaded");
+	if (missing_secret)
+		root["problems"].push_back("one or more secret levels are referenced but missing");
 	return root;
 }
 

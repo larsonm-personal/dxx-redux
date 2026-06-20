@@ -61,15 +61,15 @@ internal object GameFileMetadata {
         displayName: String,
     ): Summary? {
         if (!zipFile.isFile) return null
-        ZipFile(zipFile).use { zip ->
-            val entry = zip.getEntry(path) ?: return null
-            val size = entry.size.coerceAtLeast(0)
-            return zip.getInputStream(entry).use { input ->
+        ArchiveFiles.open(zipFile).use { zip ->
+            val entry = zip.findEntry(path) ?: return null
+            val size = entry.sizeBytes.coerceAtLeast(0)
+            return zip.openInputStream(entry).use { input ->
                 when (GameFileFormats.extensionOf(displayName)) {
                     "hog" -> summarizeHog(displayName, size, input)
                     "dxa" -> summarizeZipStream(displayName, input, "DXA", "Mod archive")
-                    "pig" -> summarizePig(displayName, size) { zip.getInputStream(entry) }
-                    "pog" -> summarizePog(displayName, size) { zip.getInputStream(entry) }
+                    "pig" -> summarizePig(displayName, size) { zip.openInputStream(entry) }
+                    "pog" -> summarizePog(displayName, size) { zip.openInputStream(entry) }
                     "mn2", "msn" -> summarizeMissionDescriptor(displayName, input)
                     else -> null
                 }

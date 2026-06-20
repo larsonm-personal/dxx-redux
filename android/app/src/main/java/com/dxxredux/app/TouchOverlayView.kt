@@ -743,6 +743,8 @@ class TouchOverlayView
         private var adminTrayDifficultyMenuOpen = false
         private var adminTrayDifficultySelectedIndex = 0
         private var adminTrayDifficultyPressedIndex = -1
+        private var adminTrayDifficultyTouchStartedInPanel = false
+        private var adminTrayDifficultyDiagCount = 0
         private val adminTrayDifficultyRects = mutableListOf<RectF>()
         private var adminTrayDifficultyPanelRect = RectF()
         private var adminTrayCheatsMenuOpen = false
@@ -3953,23 +3955,91 @@ class TouchOverlayView
             adminTrayDifficultyMenuOpen = true
             adminTrayDifficultySelectedIndex = currentAdminTrayDifficultyValue()
             adminTrayDifficultyPressedIndex = -1
+            adminTrayDifficultyTouchStartedInPanel = false
+            refreshAdminTrayDifficultyLayout()
+            logAdminTrayDifficultyDiag(
+                "open current=${currentAdminTrayDifficultyValue()} rows=${adminTrayDifficultyRects.size} " +
+                    "panel=${adminTrayDifficultyPanelRect.toDiagString()}",
+            )
             invalidate()
         }
 
         private fun closeAdminTrayDifficultyMenu() {
             adminTrayDifficultyMenuOpen = false
             adminTrayDifficultyPressedIndex = -1
+            adminTrayDifficultyTouchStartedInPanel = false
             invalidate()
         }
 
         private fun selectAdminTrayDifficulty(difficulty: Int): Boolean {
             val clamped = clampAdminTrayDifficulty(difficulty)
             val applied = adminTrayDifficultySetter?.invoke(clamped) == true
+            logAdminTrayDifficultyDiag(
+                "select requested=$difficulty clamped=$clamped applied=$applied " +
+                    "current=${currentAdminTrayDifficultyValue()}",
+            )
             adminTrayDifficultySelectedIndex = clamped
             closeAdminTrayDifficultyMenu()
             invalidate()
             return applied
         }
+
+        private data class AdminTrayDifficultyLayout(
+            val panel: RectF,
+            val rows: List<RectF>,
+            val rowH: Float,
+            val titleH: Float,
+            val cornerR: Float,
+        )
+
+        private fun computeAdminTrayDifficultyLayout(): AdminTrayDifficultyLayout? {
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (w <= 0f || h <= 0f) return null
+
+            val rowH = (h * 0.07f).coerceAtLeast(44f)
+            val titleH = rowH * 0.8f
+            val panelW = (w * 0.42f).coerceAtLeast(260f).coerceAtMost(w * 0.86f)
+            val panelH = titleH + rowH * ADMIN_TRAY_DIFFICULTY_NAMES.size
+            val left = (w - panelW) / 2f
+            val top = (h - panelH) / 2f
+            val panel = RectF(left, top, left + panelW, top + panelH)
+            val rows =
+                ADMIN_TRAY_DIFFICULTY_NAMES.indices.map { i ->
+                    val rowTop = top + titleH + rowH * i
+                    RectF(left, rowTop, left + panelW, rowTop + rowH)
+                }
+            return AdminTrayDifficultyLayout(panel, rows, rowH, titleH, panelW * 0.02f)
+        }
+
+        private fun refreshAdminTrayDifficultyLayout(): AdminTrayDifficultyLayout? {
+            val layout = computeAdminTrayDifficultyLayout() ?: return null
+            adminTrayDifficultyPanelRect.set(layout.panel)
+            adminTrayDifficultyRects.clear()
+            adminTrayDifficultyRects.addAll(layout.rows)
+            return layout
+        }
+
+        private fun adminTrayDifficultyHitIndex(
+            px: Float,
+            py: Float,
+        ): Int {
+            for (i in adminTrayDifficultyRects.indices) {
+                if (adminTrayDifficultyRects[i].contains(px, py)) return i
+            }
+            return -1
+        }
+
+        private fun logAdminTrayDifficultyDiag(message: String) {
+            adminTrayDifficultyDiagCount += 1
+            if (adminTrayDifficultyDiagCount <= 80 || adminTrayDifficultyDiagCount % 25 == 0) {
+                DebugLog.log(DebugLogCategory.GAME, "[admin-difficulty-touch] $message")
+                Log.d("DXX-AdminDifficulty", message)
+            }
+        }
+
+        private fun RectF.toDiagString(): String =
+            "${left.roundToInt()},${top.roundToInt()} ${width().roundToInt()}x${height().roundToInt()}"
 
         private fun resetAdminTraySlidersFromProviders() {
             adminTrayBrightnessValue =
@@ -4085,18 +4155,12 @@ class TouchOverlayView
 
         private fun drawAdminTrayDifficultyMenu(canvas: Canvas) {
             val w = width.toFloat()
-            val h = height.toFloat()
-            val rowH = (h * 0.07f).coerceAtLeast(44f)
-            val titleH = rowH * 0.8f
-            val panelW = (w * 0.42f).coerceAtLeast(260f).coerceAtMost(w * 0.86f)
-            val panelH = titleH + rowH * ADMIN_TRAY_DIFFICULTY_NAMES.size
-            val left = (w - panelW) / 2f
-            val top = (h - panelH) / 2f
-            val cornerR = panelW * 0.02f
+            val layout = refreshAdminTrayDifficultyLayout() ?: return
+            val rowH = layout.rowH
+            val titleH = layout.titleH
+            val top = layout.panel.top
+            val cornerR = layout.cornerR
             val current = currentAdminTrayDifficultyValue()
-
-            adminTrayDifficultyPanelRect = RectF(left, top, left + panelW, top + panelH)
-            adminTrayDifficultyRects.clear()
 
             val panelBg =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -4144,9 +4208,7 @@ class TouchOverlayView
             val divider = Paint().apply { color = 0x22FFFFFF }
 
             for (i in ADMIN_TRAY_DIFFICULTY_NAMES.indices) {
-                val rowTop = top + titleH + rowH * i
-                val rect = RectF(left, rowTop, left + panelW, rowTop + rowH)
-                adminTrayDifficultyRects.add(rect)
+                val rect = adminTrayDifficultyRects[i]
                 rowBg.alpha = if (i == adminTrayDifficultyPressedIndex) 0x77 else 0x33
                 canvas.drawRect(rect, rowBg)
                 if (i == current) canvas.drawRect(rect, currentFill)
@@ -4704,14 +4766,22 @@ class TouchOverlayView
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     if (adminTrayCheatsMenuOpen) return handleAdminTrayCheatsTouch(event)
                     if (adminTrayDifficultyMenuOpen) {
+                        refreshAdminTrayDifficultyLayout()
                         adminTrayDifficultyPressedIndex = -1
-                        for (i in adminTrayDifficultyRects.indices) {
-                            if (adminTrayDifficultyRects[i].contains(px, py)) {
-                                adminTrayDifficultyPressedIndex = i
-                                adminTrayDifficultySelectedIndex = i
-                                invalidate()
-                                return true
-                            }
+                        adminTrayDifficultyTouchStartedInPanel =
+                            adminTrayDifficultyPanelRect.contains(px, py)
+                        val hit = adminTrayDifficultyHitIndex(px, py)
+                        logAdminTrayDifficultyDiag(
+                            "down x=${px.roundToInt()} y=${py.roundToInt()} hit=$hit " +
+                                "rows=${adminTrayDifficultyRects.size} " +
+                                "inPanel=$adminTrayDifficultyTouchStartedInPanel " +
+                                "pressed=$adminTrayDifficultyPressedIndex",
+                        )
+                        if (hit >= 0) {
+                            adminTrayDifficultyPressedIndex = hit
+                            adminTrayDifficultySelectedIndex = hit
+                            invalidate()
+                            return true
                         }
                         if (!adminTrayDifficultyPanelRect.contains(px, py)) {
                             closeAdminTrayDifficultyMenu()
@@ -4785,16 +4855,30 @@ class TouchOverlayView
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                     if (adminTrayCheatsMenuOpen) return handleAdminTrayCheatsTouch(event)
                     if (adminTrayDifficultyMenuOpen) {
+                        refreshAdminTrayDifficultyLayout()
                         val pressed = adminTrayDifficultyPressedIndex
-                        if (pressed in adminTrayDifficultyRects.indices &&
-                            adminTrayDifficultyRects[pressed].contains(px, py)
+                        val hit = adminTrayDifficultyHitIndex(px, py)
+                        val fallbackHit =
+                            pressed < 0 && adminTrayDifficultyTouchStartedInPanel && hit >= 0
+                        logAdminTrayDifficultyDiag(
+                            "up x=${px.roundToInt()} y=${py.roundToInt()} pressed=$pressed " +
+                                "hit=$hit fallback=$fallbackHit " +
+                                "inPanel=${adminTrayDifficultyPanelRect.contains(px, py)}",
+                        )
+                        if (
+                            (
+                                pressed in adminTrayDifficultyRects.indices &&
+                                    adminTrayDifficultyRects[pressed].contains(px, py)
+                            ) ||
+                            fallbackHit
                         ) {
-                            selectAdminTrayDifficulty(pressed)
+                            selectAdminTrayDifficulty(if (pressed >= 0) pressed else hit)
                             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                         } else if (!adminTrayDifficultyPanelRect.contains(px, py)) {
                             closeAdminTrayDifficultyMenu()
                         }
                         adminTrayDifficultyPressedIndex = -1
+                        adminTrayDifficultyTouchStartedInPanel = false
                         return true
                     }
                     if (event.getPointerId(idx) == adminTrayPointerId) {
@@ -4847,6 +4931,8 @@ class TouchOverlayView
                     if (adminTrayCheatsMenuOpen) return handleAdminTrayCheatsTouch(event)
                     if (adminTrayDifficultyMenuOpen) {
                         adminTrayDifficultyPressedIndex = -1
+                        adminTrayDifficultyTouchStartedInPanel = false
+                        logAdminTrayDifficultyDiag("cancel")
                         invalidate()
                         return true
                     }

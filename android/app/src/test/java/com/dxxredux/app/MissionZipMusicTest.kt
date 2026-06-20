@@ -1,5 +1,7 @@
 package com.dxxredux.app
 
+import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry
+import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -25,6 +27,21 @@ class MissionZipMusicTest {
         val archiveSource = catalog!!.sources.single { it.id == "archive" }
         assertEquals(listOf("descent.hmp", "briefing.hmp", "game01.hmp"), archiveSource.tracks.map { it.displayName })
         assertTrue(archiveSource.tracks.all { it.kind == MissionZipMusic.KIND_SONG_REFERENCE })
+    }
+
+    @Test
+    fun detectsTopLevelSongListReferencesInSevenZip() {
+        val archive = create7z("music-top-level") {
+            writeEntry("mission.mn2", "name = Music Test\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+            writeEntry("mission.hog", createHogBytes("level01.rl2" to ByteArray(8)))
+            writeEntry("descent.sng", "game01.hmp\nbriefing.hmp\n".toByteArray())
+        }
+
+        val catalog = MissionZipMusic.inspect(archive)
+
+        assertNotNull(catalog)
+        val archiveSource = catalog!!.sources.single { it.id == "archive" }
+        assertEquals(listOf("game01.hmp", "briefing.hmp"), archiveSource.tracks.map { it.displayName })
     }
 
     @Test
@@ -145,6 +162,30 @@ class MissionZipMusicTest {
         zipFile.deleteOnExit()
         ZipOutputStream(zipFile.outputStream()).use { it.writeEntries() }
         return zipFile
+    }
+
+    private fun create7z(
+        prefix: String,
+        writeEntries: SevenZOutputFile.() -> Unit,
+    ): File {
+        val archive = File.createTempFile(prefix, ".7z")
+        archive.deleteOnExit()
+        SevenZOutputFile(archive).use { it.writeEntries() }
+        return archive
+    }
+
+    private fun SevenZOutputFile.writeEntry(
+        name: String,
+        bytes: ByteArray,
+    ) {
+        val entry =
+            SevenZArchiveEntry().apply {
+                this.name = name
+                size = bytes.size.toLong()
+            }
+        putArchiveEntry(entry)
+        write(bytes)
+        closeArchiveEntry()
     }
 
     private fun createZipBytes(writeEntries: ZipOutputStream.() -> Unit): ByteArray =

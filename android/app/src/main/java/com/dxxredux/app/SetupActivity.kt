@@ -2341,7 +2341,11 @@ private fun SetupScreen(
                             }
                         }
 
-                        ext in setOf("7z", "sit", "hqx") -> {
+                        ext == "7z" -> {
+                            missionZipImportUris.add(name to uri)
+                        }
+
+                        ext in setOf("sit", "hqx") -> {
                             zipUris.add(name to uri)
                         }
 

@@ -5,7 +5,6 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
-import java.util.zip.ZipFile
 
 internal const val MISSION_ZIP_EXTRACTED_DIR = ".extracted_mission_zips"
 internal const val MISSION_ZIP_GENERATED_MISSION_DIR = "missions"
@@ -229,6 +228,7 @@ internal class MissionZipExtractionStore(
                 .filter { GameFileFormats.extensionOf(it.name) == "hog" }
                 .map { stagedRelativePath(scan, it.path) }
         if (hogFiles.isEmpty()) return null
+        val sourceLayout = missionFileSourceLayout(record.rootDir, hogFiles + stagedRelativePath(scan, mission.path))
         return LevelMetadataTarget(
             displayName = mission.displayName,
             game =
@@ -236,15 +236,15 @@ internal class MissionZipExtractionStore(
                     it == GameFileFormats.GAME_D1 || it == GameFileFormats.GAME_D2
                 } ?: return null,
             sourceType = "mission_files",
-            sourcePath = record.rootDir.absolutePath,
+            sourcePath = sourceLayout.root.absolutePath,
             dataDir = setDir.absolutePath,
             missionName =
                 mission.path
                     .substringAfterLast('/')
                     .substringBeforeLast('.'),
-            missionFilename = mission.path.substringAfterLast('/').substringAfterLast('\\'),
+            missionFilename = sourceLayout.relativeToRoot(stagedRelativePath(scan, mission.path)),
             missionType = mission.type,
-            hogFiles = hogFiles,
+            hogFiles = hogFiles.map(sourceLayout::relativeToRoot),
             normalLevelFiles = mission.levelNames,
             secretLevelFiles = mission.secretLevelNames,
         )
@@ -329,15 +329,8 @@ internal fun missionZipExtractedStoreForArchivePath(archivePath: String): Missio
     return MissionZipExtractionStore(filesDir)
 }
 
-internal fun missionZipLaunchStageBytes(zip: ZipFile): Long {
-    val sizes = mutableListOf<Long>()
-    val entries = zip.entries()
-    while (entries.hasMoreElements()) {
-        val entry = entries.nextElement()
-        if (!entry.isDirectory) sizes += entry.size
-    }
-    return ImportStorageGuard.archiveEntryBytes(sizes)
-}
+internal fun missionZipLaunchStageBytes(entries: List<ArchiveFileEntry>): Long =
+    ImportStorageGuard.archiveEntryBytes(entries.filterNot { it.isDirectory }.map { it.sizeBytes })
 
 internal fun stagedRelativePath(
     scan: MissionZip.ScanResult,
@@ -363,6 +356,28 @@ internal fun missionZipUsesRootedLayout(scan: MissionZip.ScanResult): Boolean =
 
 internal fun safeMissionZipDirName(filename: String): String = filename.replace(Regex("[^a-zA-Z0-9._-]"), "_")
 
+private data class MissionFileSourceLayout(
+    val root: File,
+    val prefix: String,
+) {
+    fun relativeToRoot(path: String): String = if (prefix.isEmpty()) path else path.removePrefix(prefix)
+}
+
+private fun missionFileSourceLayout(
+    extractedRoot: File,
+    relativePaths: List<String>,
+): MissionFileSourceLayout {
+    val dirs =
+        relativePaths
+            .map { it.replace('\\', '/').trim('/').substringBeforeLast('/', "") }
+            .filter { it.isNotBlank() }
+            .distinctBy { it.lowercase(Locale.US) }
+    if (dirs.size != 1) return MissionFileSourceLayout(extractedRoot, "")
+    val prefix = "${dirs.single().trim('/')}/"
+    val root = File(extractedRoot, prefix.replace('/', File.separatorChar))
+    return if (root.isDirectory) MissionFileSourceLayout(root, prefix) else MissionFileSourceLayout(extractedRoot, "")
+}
+
 internal fun extractZipToRoot(
     modFile: File,
     targetRoot: File,
@@ -374,17 +389,15 @@ internal fun extractZipToRoot(
     val extractedFiles = mutableListOf<MissionZipExtractedFile>()
     val songLists = mutableListOf<File>()
     var engineSongListExists = false
-    ZipFile(modFile).use { zip ->
+    ArchiveFiles.open(modFile).use { archive ->
         ImportStorageGuard.requireFreeSpace(
             stageRoot,
-            missionZipLaunchStageBytes(zip),
+            missionZipLaunchStageBytes(archive.entries),
             "extract ${modFile.name}",
         )
-        val entries = zip.entries()
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement()
+        for (entry in archive.entries) {
             if (entry.isDirectory) continue
-            val normalized = entry.name.replace('\\', '/').trim('/')
+            val normalized = entry.path.replace('\\', '/').trim('/')
             if (normalized.isBlank()) continue
             val relativePath = stagedRelativePath(scan, normalized)
             val output =
@@ -394,7 +407,7 @@ internal fun extractZipToRoot(
                 ).canonicalFile
             if (!output.path.startsWith(stageRoot.path + File.separator)) continue
             output.parentFile?.mkdirs()
-            zip.getInputStream(entry).use { input ->
+            archive.openInputStream(entry).use { input ->
                 FileOutputStream(output).use { outputStream ->
                     input.copyTo(outputStream)
                 }

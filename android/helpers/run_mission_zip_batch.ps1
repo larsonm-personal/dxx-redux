@@ -22,6 +22,17 @@ $androidRoot = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "test_helpers.ps1")
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
+function Get-7zaPath {
+    $onPath = Get-Command 7za -ErrorAction SilentlyContinue
+    if ($onPath) { return $onPath.Source }
+    $onPath = Get-Command 7z -ErrorAction SilentlyContinue
+    if ($onPath) { return $onPath.Source }
+    $result = & "$androidRoot\get_deps\helpers\get_7zip.ps1"
+    $candidate = @($result | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -Last 1)
+    if ($candidate) { return $candidate[0] }
+    throw "7za.exe not found. Run android/get_deps/helpers/get_7zip.ps1 or install 7-Zip"
+}
+
 if (-not $OutDir) {
     $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
     $OutDir = Join-Path $androidRoot "temp\mission_zip_batch\$stamp"
@@ -219,6 +230,27 @@ function Test-MissionZipNeedsEmulatorRecovery {
 
 function Add-MissionZipGameHints {
     param(
+        [Parameter(Mandatory = $true)][string[]]$EntryNames,
+        [Parameter(Mandatory = $true)][hashtable]$Counts,
+        [int]$Depth = 0
+    )
+
+    foreach ($entryName in $EntryNames) {
+        if (-not $entryName) { continue }
+        $name = ([IO.Path]::GetFileName($entryName)).ToLowerInvariant()
+        switch ([IO.Path]::GetExtension($name)) {
+            ".msn" { $Counts.d1 += 10 }
+            ".rdl" { $Counts.d1 += 1 }
+            ".sdl" { $Counts.d1 += 1 }
+            ".mn2" { $Counts.d2 += 10 }
+            ".rl2" { $Counts.d2 += 1 }
+            ".sl2" { $Counts.d2 += 1 }
+        }
+    }
+}
+
+function Add-ZipMissionGameHints {
+    param(
         [Parameter(Mandatory = $true)]$Archive,
         [Parameter(Mandatory = $true)][hashtable]$Counts,
         [int]$Depth = 0
@@ -243,7 +275,7 @@ function Add-MissionZipGameHints {
                     $memory.Position = 0
                     $nested = New-Object System.IO.Compression.ZipArchive($memory, [System.IO.Compression.ZipArchiveMode]::Read, $true)
                     try {
-                        Add-MissionZipGameHints -Archive $nested -Counts $Counts -Depth ($Depth + 1)
+                        Add-ZipMissionGameHints -Archive $nested -Counts $Counts -Depth ($Depth + 1)
                     } finally {
                         $nested.Dispose()
                     }
@@ -258,15 +290,49 @@ function Add-MissionZipGameHints {
     }
 }
 
+function Get-MissionArchiveEntryNames {
+    param([Parameter(Mandatory = $true)][string]$ArchivePath)
+
+    $ext = [IO.Path]::GetExtension($ArchivePath).ToLowerInvariant()
+    if ($ext -eq ".7z") {
+        $sevenZip = Get-7zaPath
+        $output = & $sevenZip l -slt -- $ArchivePath 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "7z list failed for ${ArchivePath}: $($output -join ' ')"
+        }
+        return @(
+            $output |
+                Where-Object { $_ -match '^Path = (.+)$' } |
+                ForEach-Object { $Matches[1] } |
+                Where-Object { $_ -and $_ -ne $ArchivePath }
+        )
+    }
+
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
+    try {
+        return @($archive.Entries | Where-Object { $_.Name } | ForEach-Object { $_.FullName })
+    } finally {
+        $archive.Dispose()
+    }
+}
+
 function Get-MissionZipGameHint {
     param([Parameter(Mandatory = $true)][string]$ZipPath)
 
     $counts = @{ d1 = 0; d2 = 0; problems = @() }
-    $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
-    try {
-        Add-MissionZipGameHints -Archive $archive -Counts $counts
-    } finally {
-        $archive.Dispose()
+    if ([IO.Path]::GetExtension($ZipPath).Equals(".7z", [StringComparison]::OrdinalIgnoreCase)) {
+        try {
+            Add-MissionZipGameHints -EntryNames (Get-MissionArchiveEntryNames -ArchivePath $ZipPath) -Counts $counts
+        } catch {
+            $counts.problems += "Could not inspect archive: $($_.Exception.Message)"
+        }
+    } else {
+        $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
+        try {
+            Add-ZipMissionGameHints -Archive $archive -Counts $counts
+        } finally {
+            $archive.Dispose()
+        }
     }
 
     $game =
@@ -459,7 +525,7 @@ if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
 $results = @()
 foreach ($zip in $zips) {
     $label = Get-SafeMissionZipLabel $zip.Name
-    $deviceZipName = "$label.zip"
+    $deviceZipName = "$label$($zip.Extension.ToLowerInvariant())"
     $metadataPath = Join-Path $metadataDir "$($zip.BaseName).json"
     $importPath = Join-Path $importsDir "$($zip.BaseName).import.json"
     $artifactPrefix = Join-Path $artifactsDir $label

@@ -427,17 +427,19 @@ internal object LevelMetadataTargets {
                 GameFileFormats.parseMissionDescriptor(constituent.path, extracted.file.readText(Charsets.UTF_8))
             }.getOrNull() ?: return null
         val hog = store.findExtractedSameStemEntry(archivePath, constituent.path, "hog") ?: return null
+        val sourceLayout =
+            extractedMissionFileSourceLayout(extracted.rootDir, listOf(extracted.relativePath, hog.relativePath))
         return LevelMetadataTarget(
             displayName = constituent.name,
             game = game,
             sourceType = "mission_files",
-            sourcePath = extracted.rootDir.absolutePath,
+            sourcePath = sourceLayout.root.absolutePath,
             dataDir = setDir.absolutePath,
             missionName = constituent.name.substringBeforeLast('.'),
             missionDisplayName = mission.displayName,
-            missionFilename = extracted.relativePath.substringAfterLast('/').substringAfterLast('\\'),
+            missionFilename = sourceLayout.relativeToRoot(extracted.relativePath),
             missionType = mission.type,
-            hogFiles = listOf(hog.relativePath),
+            hogFiles = listOf(sourceLayout.relativeToRoot(hog.relativePath)),
             normalLevelFiles = mission.levelNames,
             secretLevelFiles = mission.secretLevelNames,
         )
@@ -460,20 +462,48 @@ internal object LevelMetadataTargets {
                     descriptor.file.readText(Charsets.UTF_8),
                 )
             }.getOrNull() ?: return null
+        val sourceLayout =
+            extractedMissionFileSourceLayout(extracted.rootDir, listOf(extracted.relativePath, descriptor.relativePath))
         return LevelMetadataTarget(
             displayName = constituent.name,
             game = game,
             sourceType = "mission_files",
-            sourcePath = extracted.rootDir.absolutePath,
+            sourcePath = sourceLayout.root.absolutePath,
             dataDir = setDir.absolutePath,
             missionName = constituent.name.substringBeforeLast('.'),
             missionDisplayName = mission.displayName,
-            missionFilename = descriptor.relativePath.substringAfterLast('/').substringAfterLast('\\'),
+            missionFilename = sourceLayout.relativeToRoot(descriptor.relativePath),
             missionType = mission.type,
-            hogFiles = listOf(extracted.relativePath),
+            hogFiles = listOf(sourceLayout.relativeToRoot(extracted.relativePath)),
             normalLevelFiles = mission.levelNames,
             secretLevelFiles = mission.secretLevelNames,
         )
+    }
+
+    private data class ExtractedMissionFileSourceLayout(
+        val root: File,
+        val prefix: String,
+    ) {
+        fun relativeToRoot(path: String): String = if (prefix.isEmpty()) path else path.removePrefix(prefix)
+    }
+
+    private fun extractedMissionFileSourceLayout(
+        extractedRoot: File,
+        relativePaths: List<String>,
+    ): ExtractedMissionFileSourceLayout {
+        val dirs =
+            relativePaths
+                .map { it.replace('\\', '/').trim('/').substringBeforeLast('/', "") }
+                .filter { it.isNotBlank() }
+                .distinctBy { it.lowercase(Locale.US) }
+        if (dirs.size != 1) return ExtractedMissionFileSourceLayout(extractedRoot, "")
+        val prefix = "${dirs.single().trim('/')}/"
+        val root = File(extractedRoot, prefix.replace('/', File.separatorChar))
+        return if (root.isDirectory) {
+            ExtractedMissionFileSourceLayout(root, prefix)
+        } else {
+            ExtractedMissionFileSourceLayout(extractedRoot, "")
+        }
     }
 
     private fun gameForFile(

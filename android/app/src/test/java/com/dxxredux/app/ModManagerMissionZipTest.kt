@@ -1,5 +1,7 @@
 package com.dxxredux.app
 
+import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry
+import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -71,6 +73,36 @@ class ModManagerMissionZipTest {
 
         ModManager(filesDir).writeEnabledModPaths("d1")
         assertFalse(File(filesDir, "d1x-redux/.active_mod_paths").exists())
+    }
+
+    @Test
+    fun missionSevenZipImportsAndStagesAtMissions() {
+        val filesDir = File("build/test-mod-manager-mission-7z-active-path").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val imported = ModManager(filesDir).importMissionZipFile(createMission7z(), "SevenPack.7z")
+        assertNotNull(imported)
+        imported!!
+        assertEquals("Seven Pack", imported.displayName)
+        assertEquals("extracted_bundle", imported.importMode)
+
+        ModManager(filesDir).writeEnabledModPaths("d2", includeD1MissionZipsForD2 = false)
+
+        val pathFile = File(filesDir, "d2x-redux/.active_mod_paths")
+        val lines = pathFile.readLines()
+        assertEquals(2, lines.size)
+        assertTrue(lines[0].endsWith("mods${File.separator}.extracted_mission_zips${File.separator}SevenPack.7z"))
+        assertTrue(
+            lines[1].endsWith(
+                "mods${File.separator}.extracted_mission_zips${File.separator}SevenPack.7z${File.separator}missions${File.separator}Seven.dxa",
+            ),
+        )
+
+        val stageDir = File(filesDir, "mods/.extracted_mission_zips/SevenPack.7z/missions")
+        assertTrue(File(stageDir, "Seven.mn2").isFile)
+        assertTrue(File(stageDir, "Seven.hog").isFile)
+        assertTrue(File(stageDir, "Seven.dxa").isFile)
     }
 
     @Test
@@ -261,9 +293,9 @@ class ModManagerMissionZipTest {
             LevelMetadataTargets
                 .missionZipTargets(modFile.absolutePath, File(filesDir, "sets/default"), scan!!)
                 .single()
-        assertEquals(extractedRoot.absolutePath, target.sourcePath)
+        assertEquals(File(extractedRoot, "missions").absolutePath, target.sourcePath)
         assertEquals(null, target.archivePath)
-        assertEquals(listOf("missions/Uneasy4.hog"), target.hogFiles)
+        assertEquals(listOf("Uneasy4.hog"), target.hogFiles)
 
         val descriptorTarget =
             LevelMetadataTargets.zipConstituent(
@@ -274,9 +306,9 @@ class ModManagerMissionZipTest {
         assertNotNull(descriptorTarget)
         descriptorTarget!!
         assertEquals("mission_files", descriptorTarget.sourceType)
-        assertEquals(extractedRoot.absolutePath, descriptorTarget.sourcePath)
+        assertEquals(File(extractedRoot, "missions").absolutePath, descriptorTarget.sourcePath)
         assertEquals(null, descriptorTarget.archivePath)
-        assertEquals(listOf("missions/Uneasy4.hog"), descriptorTarget.hogFiles)
+        assertEquals(listOf("Uneasy4.hog"), descriptorTarget.hogFiles)
 
         val hogFile = File(extractedRoot, "missions/Uneasy4.hog")
         val hogTarget =
@@ -289,9 +321,9 @@ class ModManagerMissionZipTest {
         assertNotNull(hogTarget)
         hogTarget!!
         assertEquals("mission_files", hogTarget.sourceType)
-        assertEquals(extractedRoot.absolutePath, hogTarget.sourcePath)
+        assertEquals(File(extractedRoot, "missions").absolutePath, hogTarget.sourcePath)
         assertEquals(null, hogTarget.archivePath)
-        assertEquals(listOf("missions/Uneasy4.hog"), hogTarget.hogFiles)
+        assertEquals(listOf("Uneasy4.hog"), hogTarget.hogFiles)
 
         manager.writeEnabledModPaths("d2")
         val lines = File(filesDir, "d2x-redux/.active_mod_paths").readLines()
@@ -361,6 +393,31 @@ class ModManagerMissionZipTest {
             zip.closeEntry()
         }
         return zipFile
+    }
+
+    private fun createMission7z(): File {
+        val archive = File.createTempFile("missionzip-manager", ".7z")
+        archive.deleteOnExit()
+        SevenZOutputFile(archive).use { sevenZ ->
+            sevenZ.writeEntry("Seven.dxa", byteArrayOf(1, 2, 3, 4))
+            sevenZ.writeEntry("Seven.hog", byteArrayOf(5, 6, 7, 8))
+            sevenZ.writeEntry("Seven.mn2", "name = Seven Pack\nnum_levels = 1\nseven01.rl2\n".toByteArray())
+        }
+        return archive
+    }
+
+    private fun SevenZOutputFile.writeEntry(
+        name: String,
+        bytes: ByteArray,
+    ) {
+        val entry =
+            SevenZArchiveEntry().apply {
+                this.name = name
+                size = bytes.size.toLong()
+            }
+        putArchiveEntry(entry)
+        write(bytes)
+        closeArchiveEntry()
     }
 
     private fun createLargeNestedHogMissionZip(): File {
