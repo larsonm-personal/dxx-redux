@@ -2476,14 +2476,14 @@ int ReadControlsReplayFrame(void)
 
 void ReadControlsReplayPostFrame(void)
 {
-	input_demo_replay_frame next_frame;
+	input_demo_replay_frame frame;
 	char error[256] = "";
 
 	if (Endlevel_sequence || Player_is_dead)
 		return;
-	if (!input_demo_replay_get_next_frame(&next_frame, error, sizeof(error)))
+	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
 		return;
-	if (!next_frame.state.fire_secondary_state)
+	if (!frame.state.fire_secondary_state)
 		return;
 	do_weapon_n_item_stuff();
 	Player_fired_laser_this_frame = -1;
