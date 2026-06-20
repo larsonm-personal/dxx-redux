@@ -30,6 +30,7 @@ data class MissionZipMusicTrack(
     val extension: String,
     val sizeBytes: Long,
     val playable: Boolean,
+    val sourceFilePath: String? = null,
 )
 
 object MissionZipMusic {
@@ -125,18 +126,19 @@ object MissionZipMusic {
                                 hogEntryName = null,
                                 name = leafName(relativePath),
                                 sizeBytes = file.sizeBytes,
+                                sourceFilePath = diskFile.absolutePath,
                             )
                         }
 
                         "dxa" -> {
                             diskFile.inputStream().use { input ->
-                                scanDxa(relativePath, input)?.let { add(it) }
+                                scanDxa(relativePath, input, sourceFilePath = diskFile.absolutePath)?.let { add(it) }
                             }
                         }
 
                         "hog" -> {
                             diskFile.inputStream().use { input ->
-                                scanHog(relativePath, input)?.let { add(it) }
+                                scanHog(relativePath, input, sourceFilePath = diskFile.absolutePath)?.let { add(it) }
                             }
                         }
                     }
@@ -149,6 +151,7 @@ object MissionZipMusic {
     private fun scanDxa(
         archiveEntryPath: String,
         input: InputStream,
+        sourceFilePath: String? = null,
     ): MissionZipMusicSource? {
         val builder =
             SourceBuilder(
@@ -173,6 +176,7 @@ object MissionZipMusic {
                                 hogEntryName = null,
                                 name = leafName(nestedPath),
                                 sizeBytes = entry.size.coerceAtLeast(0),
+                                sourceFilePath = sourceFilePath,
                             )
                         }
 
@@ -182,6 +186,7 @@ object MissionZipMusic {
                                 archiveEntryPath = archiveEntryPath,
                                 input = ByteArrayInputStream(nestedHogBytes),
                                 nestedEntryPath = nestedPath,
+                                sourceFilePath = sourceFilePath,
                             )?.tracks?.forEach(builder::addTrack)
                         }
                     }
@@ -197,6 +202,7 @@ object MissionZipMusic {
         archiveEntryPath: String,
         input: InputStream,
         nestedEntryPath: String? = null,
+        sourceFilePath: String? = null,
     ): MissionZipMusicSource? {
         val containerPath = nestedEntryPath ?: archiveEntryPath
         val builder =
@@ -225,6 +231,7 @@ object MissionZipMusic {
                         hogEntryName = entryName,
                         name = entryName,
                         sizeBytes = size,
+                        sourceFilePath = sourceFilePath,
                     )
                 }
                 input.skipFullyCompat(size)
@@ -262,6 +269,7 @@ object MissionZipMusic {
             hogEntryName: String?,
             name: String,
             sizeBytes: Long,
+            sourceFilePath: String? = null,
         ) {
             val ext = extensionOf(name)
             playableTracks +=
@@ -277,6 +285,7 @@ object MissionZipMusic {
                     extension = ext,
                     sizeBytes = sizeBytes,
                     playable = true,
+                    sourceFilePath = sourceFilePath,
                 )
         }
 
