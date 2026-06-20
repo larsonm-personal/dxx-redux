@@ -704,6 +704,25 @@ internal fun SetupActivity.writeIntrospectJson() {
         root.put("set_files", JSONArray(setFiles))
         root.put("active_set_path", setDir.absolutePath)
 
+        val stagedInputDemos = InputDemoManager.listStagedDemos(dir)
+        root.put("staged_input_demo_count", stagedInputDemos.size)
+        root.put(
+            "staged_input_demos",
+            JSONArray(
+                stagedInputDemos.map { demo ->
+                    JSONObject()
+                        .put("filename", demo.file.name)
+                        .put("game", demo.game)
+                        .put("mission", demo.mission)
+                        .put("level", demo.level)
+                        .put("frame_count", demo.frameCount)
+                        .put("has_rng_trace", demo.traceFile != null)
+                        .put("has_classic_demo", demo.classicDemoFile != null)
+                        .put("header_readable", demo.headerReadable)
+                },
+            ),
+        )
+
         val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
         val networkLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.NETWORK), false)
         val graphicsLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.GRAPHICS), false)

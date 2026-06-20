@@ -149,13 +149,16 @@ function Invoke-LauncherStartupRecovery {
 }
 
 function Wait-ProcessDead {
-    # Poll until the app process is gone (after force-stop). Returns $true
-    # when the process is confirmed dead, $false on timeout.
+    # Poll until app processes are gone after force-stop.
     param([int]$TimeoutMs = 5000)
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.ElapsedMilliseconds -lt $TimeoutMs) {
-        $procId = Adb-Timeout -AdbArgs @("shell", "pidof", $script:PACKAGE) -Seconds 3
-        if (-not $procId -or $procId -notmatch '^\d+') { return $true }
+        $mainProcId = Adb-Timeout -AdbArgs @("shell", "pidof", $script:PACKAGE) -Seconds 3
+        $gameProcId = Adb-Timeout -AdbArgs @("shell", "pidof", "$($script:PACKAGE):game") -Seconds 3
+        if ((-not $mainProcId -or $mainProcId -notmatch '^\d+') -and
+            (-not $gameProcId -or $gameProcId -notmatch '^\d+')) {
+            return $true
+        }
         Start-Sleep -Milliseconds 200
     }
     return $false
@@ -712,8 +715,15 @@ function Write-ResolvedGameDataAssetManifest {
             } else {
                 $null
             }
-            if ($existingHash -eq $hash -and $existing.versionName) {
-                $entry.versionName = [string]$existing.versionName
+            $existingVersionName = $null
+            if ($existing) {
+                $existingVersionNameProperty = $existing.PSObject.Properties["versionName"]
+                if ($existingVersionNameProperty) {
+                    $existingVersionName = $existingVersionNameProperty.Value
+                }
+            }
+            if ($existingHash -eq $hash -and $existingVersionName) {
+                $entry.versionName = [string]$existingVersionName
             }
             $entries[$fname] = $entry
         }

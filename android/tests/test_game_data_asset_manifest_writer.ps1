@@ -1,6 +1,7 @@
 #!/usr/bin/env pwsh
 
 $ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
@@ -77,6 +78,13 @@ exit 0
             sizeBytes = 2
             importedAt = 456
             sourceUri = 'content://unrelated'
+        },
+        [ordered]@{
+            filename = 'descent.hog'
+            sha256 = $hogHash
+            sizeBytes = 3
+            importedAt = 789
+            sourceUri = 'content://old-hog-copy'
         }
     ) | ConvertTo-Json -Depth 5
 
@@ -139,6 +147,9 @@ exit 0
     if ($entries['descent.hog'].sha256 -ne $hogHash -or
         $entries['descent.hog'].sizeBytes -ne (Get-Item -LiteralPath $hogPath).Length) {
         throw 'descent.hog entry does not match the resolved dependency'
+    }
+    if ($entries['descent.hog'].PSObject.Properties.Name -contains 'versionName') {
+        throw 'missing existing versionName was written back as an explicit field'
     }
     if ($entries['other.dat'].sourceUri -ne 'content://unrelated') {
         throw 'unrelated manifest entry was not preserved'

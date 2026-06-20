@@ -525,6 +525,7 @@ class LauncherScriptExecutor(
                         )
                 }.forEach { it.delete() }
         }
+        val stagedDemosDeleted = InputDemoManager.deleteAllStagedDemos(dir)
         context
             .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
             .edit()
@@ -532,7 +533,11 @@ class LauncherScriptExecutor(
                 "selected_game",
             ).apply()
         clearPendingResumeLaunchState(context)
-        Log.i(TAG, "Game state reset (deleted plr/plx/sg/mg/cfg/file_sets/pending resume files)")
+        Log.i(
+            TAG,
+            "Game state reset (deleted plr/plx/sg/mg/cfg/file_sets/pending resume files, " +
+                "staged_input_demos=$stagedDemosDeleted)",
+        )
     }
 
     /** Check a field in setup_introspect.json. Triggers a fresh introspect first. */
