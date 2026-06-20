@@ -43,6 +43,35 @@ class AssetManifest(
     private fun findDiskFile(filename: String): File? =
         filesDir.listFiles()?.firstOrNull { it.name.equals(filename, ignoreCase = true) }
 
+    private fun canonicalize(entries: List<AssetEntry>): List<AssetEntry> {
+        val grouped =
+            entries
+                .map {
+                    it.copy(
+                        filename = it.filename.lowercase(),
+                        sha256 = it.sha256.lowercase(),
+                    )
+                }.groupBy { it.filename }
+
+        return grouped
+            .map { (filename, duplicates) ->
+                val diskFile = findDiskFile(filename)
+                val candidates =
+                    if (diskFile != null) {
+                        duplicates.filter { it.sizeBytes == diskFile.length() }.ifEmpty { duplicates }
+                    } else {
+                        duplicates
+                    }
+                val picked = candidates.maxBy { it.importedAt }
+                val versionName =
+                    picked.versionName ?: duplicates
+                        .firstOrNull {
+                            it.sha256.equals(picked.sha256, ignoreCase = true) && it.versionName != null
+                        }?.versionName
+                picked.copy(versionName = versionName)
+            }.sortedBy { it.filename }
+    }
+
     /**
      * Load the manifest from disk. Returns empty list if file doesn't exist or is corrupt.
      */
@@ -51,17 +80,19 @@ class AssetManifest(
         if (!file.exists()) return emptyList()
         return try {
             val json = JSONArray(file.readText())
-            (0 until json.length()).map { i ->
-                val obj = json.getJSONObject(i)
-                AssetEntry(
-                    filename = obj.getString("filename"),
-                    sha256 = obj.getString("sha256"),
-                    sizeBytes = obj.getLong("sizeBytes"),
-                    importedAt = obj.getLong("importedAt"),
-                    versionName = obj.optString("versionName").takeIf { it.isNotEmpty() },
-                    sourceUri = obj.optString("sourceUri").takeIf { it.isNotEmpty() },
-                )
-            }
+            val entries =
+                (0 until json.length()).map { i ->
+                    val obj = json.getJSONObject(i)
+                    AssetEntry(
+                        filename = obj.getString("filename").lowercase(),
+                        sha256 = obj.getString("sha256").lowercase(),
+                        sizeBytes = obj.getLong("sizeBytes"),
+                        importedAt = obj.getLong("importedAt"),
+                        versionName = obj.optString("versionName").takeIf { it.isNotEmpty() },
+                        sourceUri = obj.optString("sourceUri").takeIf { it.isNotEmpty() },
+                    )
+                }
+            canonicalize(entries)
         } catch (e: Exception) {
             Log.e("AssetManifest", "Failed to parse assets.json", e)
             emptyList()
@@ -73,7 +104,7 @@ class AssetManifest(
      */
     fun save(entries: List<AssetEntry>) {
         val json = JSONArray()
-        for (entry in entries) {
+        for (entry in canonicalize(entries)) {
             val obj = JSONObject()
             obj.put("filename", entry.filename)
             obj.put("sha256", entry.sha256)
@@ -105,14 +136,9 @@ class AssetManifest(
         val versionName = KnownVersions.lookup(lowerName, sha256)
         val now = System.currentTimeMillis()
 
-        val existing = entries.indexOfFirst { it.filename == lowerName }
         val entry = AssetEntry(lowerName, sha256.lowercase(), sizeBytes, now, versionName, sourceUri)
-
-        if (existing >= 0) {
-            entries[existing] = entry
-        } else {
-            entries.add(entry)
-        }
+        entries.removeAll { it.filename == lowerName }
+        entries.add(entry)
 
         save(entries)
         return entry

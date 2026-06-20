@@ -646,6 +646,97 @@ function Get-ScriptDeps {
     return $null
 }
 
+function Get-GameDataDepValue {
+    param(
+        [Parameter(Mandatory = $true)]$Dep,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+
+    if ($Dep -is [hashtable]) {
+        if ($Dep.ContainsKey($Name)) { return $Dep[$Name] }
+        return $null
+    }
+    return $Dep.$Name
+}
+
+function Write-ResolvedGameDataAssetManifest {
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$DepsByTarget,
+        [Parameter(Mandatory = $true)][hashtable]$Index
+    )
+
+    $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+    foreach ($target in $DepsByTarget.Keys) {
+        if ($target -match '^/(sdcard|storage)/') { continue }
+
+        $entries = @{}
+        $manifestPath = "$target/assets.json"
+        $existingJson = Adb-Timeout -AdbArgs @(
+            "shell", "run-as", $script:PACKAGE, "cat", $manifestPath
+        ) -Seconds 5
+        if ($existingJson -and $existingJson -match '^\s*\[') {
+            try {
+                $existingEntries = $existingJson | ConvertFrom-Json
+                foreach ($entry in ($existingEntries | ForEach-Object { $_ })) {
+                    if ($entry.filename) {
+                        $entries[$entry.filename.ToString().ToLowerInvariant()] = $entry
+                    }
+                }
+            } catch {}
+        }
+
+        foreach ($dep in $DepsByTarget[$target]) {
+            $file = (Get-GameDataDepValue -Dep $dep -Name "file")
+            $sha256 = (Get-GameDataDepValue -Dep $dep -Name "sha256")
+            if (-not $file -or -not $sha256) { continue }
+
+            $fname = $file.ToString().ToLowerInvariant()
+            $hash = $sha256.ToString().ToLowerInvariant()
+            $localFile = $Index[$hash]
+            if (-not $localFile -or -not (Test-Path -LiteralPath $localFile)) { continue }
+
+            $existing = $entries[$fname]
+            $importedAt = $now
+            if ($existing -and $existing.importedAt) {
+                try { $importedAt = [long]$existing.importedAt } catch {}
+            }
+
+            $entry = [ordered]@{
+                filename = $fname
+                sha256 = $hash
+                sizeBytes = [long](Get-Item -LiteralPath $localFile).Length
+                importedAt = $importedAt
+            }
+            $existingHash = if ($existing -and $existing.sha256) {
+                $existing.sha256.ToString().ToLowerInvariant()
+            } else {
+                $null
+            }
+            if ($existingHash -eq $hash -and $existing.versionName) {
+                $entry.versionName = [string]$existing.versionName
+            }
+            $entries[$fname] = $entry
+        }
+
+        if ($entries.Count -eq 0) { continue }
+
+        $manifestItems = @()
+        foreach ($name in @($entries.Keys | Sort-Object)) {
+            $manifestItems += $entries[$name]
+        }
+        $manifestJson = ConvertTo-Json -InputObject $manifestItems -Depth 5
+        $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("dxx-assets-{0}.json" -f ([guid]::NewGuid()))
+        try {
+            [System.IO.File]::WriteAllText($tmp, $manifestJson, [System.Text.UTF8Encoding]::new($false))
+            & $script:ADB push $tmp "/data/local/tmp/assets.json" 2>&1 | Out-Null
+            & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat /data/local/tmp/assets.json > /data/data/$($script:PACKAGE)/$manifestPath'" 2>&1 | Out-Null
+            & $script:ADB shell "rm -f /data/local/tmp/assets.json" 2>&1 | Out-Null
+        } finally {
+            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function Resolve-GameDataDeps {
     # Resolve declarative game data deps: look up each by sha256 in the index,
     # check if present on device, push if missing. Returns $true on success.
@@ -676,12 +767,7 @@ function Resolve-GameDataDeps {
     # Group deps by target dir, list what's on device per target
     $byTarget = @{}
     foreach ($dep in $Deps) {
-        # Support both hashtable (from Get-StandardGameDataDeps) and
-        # PSCustomObject (from ConvertFrom-Json). Use ContainsKey for
-        # hashtables to avoid StrictMode errors on missing keys.
-        $depTarget = if ($dep -is [hashtable]) {
-            if ($dep.ContainsKey('target')) { $dep['target'] } else { $null }
-        } else { $dep.target }
+        $depTarget = Get-GameDataDepValue -Dep $dep -Name "target"
         $t = if ($depTarget) { $depTarget } else { $defaultTarget }
         if (-not $byTarget.ContainsKey($t)) { $byTarget[$t] = @() }
         $byTarget[$t] += $dep
@@ -760,6 +846,7 @@ function Resolve-GameDataDeps {
             $pushCount++
         }
     }
+    Write-ResolvedGameDataAssetManifest -DepsByTarget $byTarget -Index $idx
     if ($pushCount -gt 0) {
         Write-Status "Game data: $pushCount files pushed via deps" "Green"
     }

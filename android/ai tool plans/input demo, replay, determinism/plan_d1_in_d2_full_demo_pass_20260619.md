@@ -27,6 +27,8 @@ Plan:
 7. [done] Rerun the full corpus using the built-in D1-in-D2 comparison.
 8. [done] Update deletion candidates from the built-in batch result.
 9. [done] Re-run scoped code quality for touched files.
+10. [done] Delete the flagged demo triplets from
+    `android/regression_demos`.
 
 Results:
 
@@ -93,3 +95,8 @@ Results:
   - `d1_descent_level17_20260618_150642`
   - `d1_descent_level4_20260616_121645`
   - `d1_descent_level6_20260617_153740`
+- Deletion follow-up: verified that each flagged stem has `.dem`, `.dximdemo`,
+  and `.dximdemo.rngtrace.jsonl` sidecars before deletion.
+- Deleted 27 files total: the 9 flagged stems, each with `.dem`, `.dximdemo`,
+  and `.dximdemo.rngtrace.jsonl`.
+- Post-deletion D1 regression demo list contains only the 4 strict keepers.

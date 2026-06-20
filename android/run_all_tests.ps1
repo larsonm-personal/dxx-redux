@@ -288,6 +288,7 @@ $extractTests = @(
 $noInfraTests = @(
     "test_cue_iso",
     "test_fpcalc_and_acoustid",
+    "test_game_data_asset_manifest_writer",
     "test_gradle_unit_tests",
     "test_input_demo_determinism_matrix",
     "test_input_demo_regressions",
