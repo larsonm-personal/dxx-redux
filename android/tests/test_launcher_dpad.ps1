@@ -147,7 +147,10 @@ function Wait-ForSetupButtonFocus {
 }
 
 function SendKey($code) {
-    & $script:ADB shell input keyevent $code 2>$null
+    $result = Adb-Timeout -AdbArgs @("shell", "input", "keyevent", [string]$code) -Seconds 5
+    if ($null -eq $result) {
+        Fail "ADB timed out sending keyevent $code"
+    }
 }
 
 function EnableLauncherDpadMode {
@@ -164,7 +167,10 @@ function SendSetupCommand {
         "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
         "--es", "command", $Command
     ) + $Extras
-    Adb -AdbArgs $broadcastCommand | Out-Null
+    $result = Adb-Timeout -AdbArgs $broadcastCommand -Seconds 5
+    if ($null -eq $result) {
+        Fail "ADB timed out sending setup command '$Command'"
+    }
 }
 
 # --- Setup ---
