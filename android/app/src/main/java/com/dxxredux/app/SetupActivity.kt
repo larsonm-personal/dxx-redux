@@ -2258,6 +2258,10 @@ private fun SetupScreen(
     var zipProgressBytes by remember { mutableLongStateOf(0L) }
     var zipProgressTotal by remember { mutableLongStateOf(0L) }
     var zipHadAudioFiles by remember { mutableStateOf(false) }
+    var missionArchiveImporting by remember { mutableStateOf(false) }
+    var missionArchiveProgressLabel by remember { mutableStateOf("") }
+    var missionArchiveProgressBytes by remember { mutableLongStateOf(0L) }
+    var missionArchiveProgressTotal by remember { mutableLongStateOf(0L) }
 
     // -- BIN/CUE disc import state -----------------------
     var discImportCueName by remember { mutableStateOf<String?>(null) }
@@ -2341,7 +2345,7 @@ private fun SetupScreen(
                             }
                         }
 
-                        ext == "7z" -> {
+                        ext == "7z" || ext == "rar" -> {
                             missionZipImportUris.add(name to uri)
                         }
 
@@ -2516,9 +2520,27 @@ private fun SetupScreen(
             if (missionZipImportUris.isNotEmpty()) {
                 val modMgr = ModManager(filesDir)
                 val results = mutableListOf<String>()
+                withContext(Dispatchers.Main) {
+                    missionArchiveImporting = true
+                    missionArchiveProgressLabel = "Importing level pack"
+                    missionArchiveProgressBytes = 0L
+                    missionArchiveProgressTotal = 0L
+                }
                 for ((name, uri) in missionZipImportUris) {
                     try {
-                        val mod = modMgr.importMissionZip(uri, name, context.contentResolver)
+                        withContext(Dispatchers.Main) {
+                            missionArchiveProgressLabel = "Importing level pack: $name"
+                            missionArchiveProgressBytes = 0L
+                            missionArchiveProgressTotal = 0L
+                        }
+                        val mod =
+                            modMgr.importMissionZip(uri, name, context.contentResolver) { progress ->
+                                scope.launch(Dispatchers.Main) {
+                                    missionArchiveProgressLabel = progress.label
+                                    missionArchiveProgressBytes = progress.bytesDone
+                                    missionArchiveProgressTotal = progress.bytesTotal
+                                }
+                            }
                         if (mod != null) {
                             results.add("Imported level pack: ${mod.displayName}")
                             Log.i("DXX-Setup", "Mission ZIP import ok: $name (${mod.sizeBytes} bytes)")
@@ -2533,6 +2555,10 @@ private fun SetupScreen(
                 }
                 val failures = results.filter { it.startsWith("Failed") }
                 withContext(Dispatchers.Main) {
+                    missionArchiveImporting = false
+                    missionArchiveProgressLabel = ""
+                    missionArchiveProgressBytes = 0L
+                    missionArchiveProgressTotal = 0L
                     if (failures.isNotEmpty()) {
                         for (f in failures) {
                             Toast.makeText(context, f, Toast.LENGTH_LONG).show()
@@ -2560,6 +2586,12 @@ private fun SetupScreen(
                     val result =
                         if (arcLower.endsWith(".7z")) {
                             extract7zContents(context, arcUri, tmpDir) { name, copied, total ->
+                                zipProgressFile = "$arcName: $name"
+                                zipProgressBytes = copied
+                                zipProgressTotal = total
+                            }
+                        } else if (arcLower.endsWith(".rar")) {
+                            extractRarContents(context, arcUri, tmpDir) { name, copied, total ->
                                 zipProgressFile = "$arcName: $name"
                                 zipProgressBytes = copied
                                 zipProgressTotal = total
@@ -2609,6 +2641,7 @@ private fun SetupScreen(
             withContext(Dispatchers.Main) {
                 scanning = false
                 zipExtracting = false
+                missionArchiveImporting = false
                 importStatus = "File processing failed: ${e.message}"
             }
         }
@@ -2618,6 +2651,7 @@ private fun SetupScreen(
         if (uris.isEmpty()) return
         scanning = true
         importStatus = ""
+        missionArchiveImporting = false
         scope.launch(Dispatchers.IO) {
             processPickedUris(uris)
         }
@@ -2626,6 +2660,7 @@ private fun SetupScreen(
     fun startDirectoryImport(treeUri: Uri) {
         scanning = true
         importStatus = ""
+        missionArchiveImporting = false
         scope.launch(Dispatchers.IO) {
             try {
                 // Folder import is a one-shot flow inside this activity, so the
@@ -2656,6 +2691,7 @@ private fun SetupScreen(
                 withContext(Dispatchers.Main) {
                     scanning = false
                     zipExtracting = false
+                    missionArchiveImporting = false
                     importStatus = "File processing failed: ${e.message}"
                 }
             }
@@ -3651,7 +3687,7 @@ private fun SetupScreen(
                         onClick = {
                             showImportChooser = true
                         },
-                        enabled = !scanning && !isHashing && !zipExtracting,
+                        enabled = !scanning && !isHashing && !zipExtracting && !missionArchiveImporting,
                         modifier = Modifier.fillMaxWidth().height(44.dp),
                         colors =
                             ButtonDefaults.buttonColors(
@@ -3660,7 +3696,7 @@ private fun SetupScreen(
                     ) {
                         Text(
                             text =
-                                if (scanning || zipExtracting) {
+                                if (scanning || zipExtracting || missionArchiveImporting) {
                                     "Importing\u2026"
                                 } else {
                                     "\uD83D\uDCC2 Select Game Files or Archive to Import"
@@ -3671,8 +3707,9 @@ private fun SetupScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text =
-                            "${importChooserConfig.helpText}. Supports .hog, .ham, .pig files, .zip/.7z archives," +
-                                " .cue disc images with .bin/.img tracks, .sow archives, and GOG installers.",
+                            "${importChooserConfig.helpText}. Supports .hog, .ham, .pig files, " +
+                                ".zip/.7z/.rar archives, .cue disc images with .bin/.img tracks, " +
+                                ".sow archives, and GOG installers.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -3824,7 +3861,36 @@ private fun SetupScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    if (importStatus.isNotEmpty()) {
+                    if (missionArchiveImporting) {
+                        Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                            Text(
+                                text = missionArchiveProgressLabel.ifBlank { "Importing level pack" },
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            if (missionArchiveProgressTotal > 0L) {
+                                val archivePct =
+                                    (
+                                        missionArchiveProgressBytes.toFloat() /
+                                            missionArchiveProgressTotal.toFloat()
+                                    ).coerceIn(0f, 1f)
+                                LinearProgressIndicator(
+                                    progress = { archivePct },
+                                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.primaryContainer,
+                                )
+                            } else {
+                                LinearProgressIndicator(
+                                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.primaryContainer,
+                                )
+                            }
+                        }
+                    } else if (importStatus.isNotEmpty()) {
                         Text(
                             text = importStatus,
                             fontSize = 13.sp,

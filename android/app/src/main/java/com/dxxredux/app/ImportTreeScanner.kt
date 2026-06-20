@@ -56,6 +56,7 @@ internal fun isDirectoryImportCandidateName(
     val lowercaseName = name.lowercase()
     return lowercaseName.endsWith(".zip") ||
         lowercaseName.endsWith(".7z") ||
+        lowercaseName.endsWith(".rar") ||
         lowercaseName.endsWith(".cue") ||
         lowercaseName.endsWith(".iso") ||
         lowercaseName.endsWith(".bin") ||

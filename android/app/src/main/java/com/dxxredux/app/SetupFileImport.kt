@@ -551,6 +551,75 @@ internal suspend fun extract7zContents(
         ZipExtractionResult(results, foundAudio)
     }
 
+internal suspend fun extractRarContents(
+    context: Context,
+    archiveUri: Uri,
+    tmpDir: File,
+    onProgress: suspend (String, Long, Long) -> Unit,
+): ZipExtractionResult =
+    kotlinx.coroutines.withContext(Dispatchers.IO) {
+        tmpDir.mkdirs()
+        val safeName = "rar_${System.currentTimeMillis()}"
+        val workDir = File(tmpDir, ".$safeName")
+        if (workDir.exists()) workDir.deleteRecursively()
+        workDir.mkdirs()
+        val tmpArchive = File(workDir, ".tmp_rar_import")
+        val results = mutableListOf<ExtractedFile>()
+        var foundAudio = false
+        val audioExts = setOf("mp3", "ogg", "flac")
+        try {
+            ImportStorageGuard.requireFreeSpace(
+                workDir,
+                ImportStorageGuard.queryUriSizeBytes(context.contentResolver, archiveUri) ?: 0L,
+                "stage RAR archive",
+            )
+            copyUriToFileWithProgress(context, archiveUri, tmpArchive) { copied, total ->
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    onProgress("Copying archive", copied, total)
+                }
+            }
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                onProgress("Extracting RAR archive", 0L, tmpArchive.length())
+            }
+            extractRarArchiveToDirectory(tmpArchive, workDir)
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                onProgress("Extracting RAR archive", tmpArchive.length(), tmpArchive.length())
+            }
+            val extractedFiles =
+                workDir
+                    .walkTopDown()
+                    .filter { it.isFile && it != tmpArchive }
+                    .toList()
+            for (file in extractedFiles.sortedBy { it.name.lowercase() }) {
+                val lowerName = file.name.lowercase()
+                val ext = lowerName.substringAfterLast('.', "")
+                if (ext in audioExts) foundAudio = true
+                if (lowerName !in ALL_GAME_FILENAMES || file.length() <= 1L) continue
+                val sha256 = AssetManifest.computeSha256(file)
+                if (sha256 != null) {
+                    val staged = File(tmpDir, lowerName)
+                    file.copyTo(staged, overwrite = true)
+                    results.add(ExtractedFile(lowerName, staged, sha256, staged.length()))
+                    Log.i(
+                        "DXX-Setup",
+                        "Extracted from RAR: $lowerName (${staged.length()} bytes, sha256=${sha256.take(16)}...)",
+                    )
+                }
+            }
+        } catch (e: InsufficientStorageException) {
+            Log.e("DXX-Setup", "RAR extraction ran out of space", e)
+            ImportStorageGuard.recordFailure(context.filesDir, "RAR extraction failed", e)
+            return@withContext ZipExtractionResult(results, foundAudio, e.message)
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "RAR extraction failed", e)
+            ImportStorageGuard.recordFailure(context.filesDir, "RAR extraction failed", e)
+            return@withContext ZipExtractionResult(results, foundAudio, "RAR extraction failed: ${e.message}")
+        } finally {
+            workDir.deleteRecursively()
+        }
+        ZipExtractionResult(results, foundAudio)
+    }
+
 internal fun cleanupTmpDir(filesDir: File) {
     val tmpDir = File(filesDir, "tmp")
     if (tmpDir.exists()) tmpDir.deleteRecursively()

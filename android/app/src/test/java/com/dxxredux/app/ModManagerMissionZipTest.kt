@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -103,6 +104,33 @@ class ModManagerMissionZipTest {
         assertTrue(File(stageDir, "Seven.mn2").isFile)
         assertTrue(File(stageDir, "Seven.hog").isFile)
         assertTrue(File(stageDir, "Seven.dxa").isFile)
+    }
+
+    @Test
+    fun missionRarImportsReetusAndStagesAtMissions() {
+        val source = File("../game_data/mission_files/reetus.rar").absoluteFile
+        assumeTrue("reetus.rar fixture is available", source.isFile)
+        val filesDir = File("build/test-mod-manager-mission-rar-active-path").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val imported = ModManager(filesDir).importMissionZipFile(source, "reetus.rar")
+
+        assertNotNull(imported)
+        imported!!
+        assertEquals("reetus mission", imported.displayName)
+        assertEquals("d1", imported.game)
+        assertEquals("extracted_bundle", imported.importMode)
+
+        ModManager(filesDir).writeEnabledModPaths("d1")
+
+        val pathFile = File(filesDir, "d1x-redux/.active_mod_paths")
+        val lines = pathFile.readLines()
+        assertEquals(listOf(File(filesDir, "mods/.extracted_mission_zips/reetus.rar").absolutePath), lines)
+
+        val stageDir = File(filesDir, "mods/.extracted_mission_zips/reetus.rar/missions")
+        assertTrue(File(stageDir, "reetus.MSN").isFile)
+        assertTrue(File(stageDir, "reetus.hog").isFile)
     }
 
     @Test

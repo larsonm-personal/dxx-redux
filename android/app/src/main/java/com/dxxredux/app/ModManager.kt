@@ -386,7 +386,7 @@ class ModManager(
         val suffix =
             GameFileFormats
                 .extensionOf(displayName)
-                .takeIf { it in setOf("zip", "7z") }
+                .takeIf { it in setOf("zip", "7z", "rar") }
                 ?.let { ".$it" }
                 ?: ".zip"
         val temp = File.createTempFile("mission_zip_import_", suffix, modsDir)
@@ -398,10 +398,11 @@ class ModManager(
                     LauncherFileCopy.copyStream(input, output, total, displayName, onProgress)
                 }
             } ?: return null
+            onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
             nestedRebirthChildSize(temp)?.let { childSize ->
                 ImportStorageGuard.requireFreeSpace(modsDir, childSize, "extract mission zip $displayName")
             }
-            return importMissionZipFile(temp, displayName, moveDirectSource = true)
+            return importMissionZipFile(temp, displayName, moveDirectSource = true, onProgress = onProgress)
         } catch (e: InsufficientStorageException) {
             Log.e(TAG, "Not enough space to import mission zip $displayName", e)
             ImportStorageGuard.recordFailure(filesDir, "Mission ZIP import failed for $displayName", e)
@@ -429,7 +430,9 @@ class ModManager(
         source: File,
         displayName: String,
         moveDirectSource: Boolean,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
     ): ModInfo? {
+        onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
         val scan = MissionZip.inspect(source)
         if (scan == null) return importNestedRebirthMissionZip(source)
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
@@ -445,8 +448,10 @@ class ModManager(
         }
         try {
             if (scan.importMode == "extracted_bundle") {
+                onProgress(LauncherCopyProgress("Extracting level pack: $displayName", 0L, 0L))
                 extractionStore.ensureExtracted(safeName, dest, scan)
             }
+            onProgress(LauncherCopyProgress("Finalizing level pack: $displayName", 0L, 0L))
         } catch (e: Exception) {
             dest.delete()
             extractionStore.removeOwner(safeName)

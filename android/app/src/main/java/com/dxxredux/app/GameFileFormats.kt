@@ -210,6 +210,7 @@ object GameFileFormats {
             "pkg" to FormatInfo("Mac installer"),
             "zip" to FormatInfo("ZIP archive"),
             "7z" to FormatInfo("7z archive"),
+            "rar" to FormatInfo("RAR archive"),
             "sit" to FormatInfo("StuffIt archive"),
             "hqx" to FormatInfo("BinHex archive"),
             "bin" to FormatInfo("CD disc image"),

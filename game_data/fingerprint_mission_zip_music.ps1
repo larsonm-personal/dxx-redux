@@ -36,6 +36,12 @@ function Get-7zaPath {
     Write-Error "7za.exe not found. Run android/get_deps/helpers/get_7zip.ps1 or install 7-Zip"
 }
 
+function Get-TarPath {
+    $onPath = Get-Command tar -ErrorAction SilentlyContinue
+    if ($onPath) { return $onPath.Source }
+    Write-Error "tar not found. Install bsdtar/libarchive or use a host with RAR extraction support"
+}
+
 function Escape-JsonString {
     param([AllowNull()][string]$Text)
     if ($null -eq $Text) { return "" }
@@ -267,6 +273,13 @@ function Extract-ZipAudio {
                 } finally {
                     Remove-Item $nestedPath -Force -ErrorAction SilentlyContinue
                 }
+            } elseif ($ext -eq ".rar") {
+                $nestedPath = Copy-EntryToTempFile -Entry $entry -TempRoot $TempRoot -Extension $ext
+                try {
+                    $count += Extract-RarAudio -ArchivePath $nestedPath -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap -TempRoot $TempRoot
+                } finally {
+                    Remove-Item $nestedPath -Force -ErrorAction SilentlyContinue
+                }
             }
         }
     } finally {
@@ -299,6 +312,8 @@ function Extract-DirectoryAudio {
             $count += Extract-ZipAudio -ArchivePath $file.FullName -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap -TempRoot $TempRoot
         } elseif ($ext -eq ".7z") {
             $count += Extract-SevenZipAudio -ArchivePath $file.FullName -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap -TempRoot $TempRoot
+        } elseif ($ext -eq ".rar") {
+            $count += Extract-RarAudio -ArchivePath $file.FullName -OutputDir $OutputDir -SourcePrefix $sourcePath -SourceMap $SourceMap -TempRoot $TempRoot
         }
     }
     return $count
@@ -326,6 +341,28 @@ function Extract-SevenZipAudio {
     }
 }
 
+function Extract-RarAudio {
+    param(
+        [string]$ArchivePath,
+        [string]$OutputDir,
+        [string]$SourcePrefix,
+        [hashtable]$SourceMap,
+        [string]$TempRoot
+    )
+    $extractDir = Join-Path $TempRoot "$([Guid]::NewGuid().ToString())_rar"
+    New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
+    try {
+        $tar = Get-TarPath
+        $output = & $tar -xf $ArchivePath -C $extractDir 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "RAR extract failed for ${ArchivePath}: $($output -join ' ')"
+        }
+        return Extract-DirectoryAudio -DirectoryPath $extractDir -OutputDir $OutputDir -SourcePrefix $SourcePrefix -SourceMap $SourceMap -TempRoot $TempRoot
+    } finally {
+        Remove-Item $extractDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Extract-MissionArchiveAudio {
     param(
         [string]$ArchivePath,
@@ -336,6 +373,9 @@ function Extract-MissionArchiveAudio {
     )
     if ([IO.Path]::GetExtension($ArchivePath).Equals(".7z", [StringComparison]::OrdinalIgnoreCase)) {
         return Extract-SevenZipAudio -ArchivePath $ArchivePath -OutputDir $OutputDir -SourcePrefix $SourcePrefix -SourceMap $SourceMap -TempRoot $TempRoot
+    }
+    if ([IO.Path]::GetExtension($ArchivePath).Equals(".rar", [StringComparison]::OrdinalIgnoreCase)) {
+        return Extract-RarAudio -ArchivePath $ArchivePath -OutputDir $OutputDir -SourcePrefix $SourcePrefix -SourceMap $SourceMap -TempRoot $TempRoot
     }
     return Extract-ZipAudio -ArchivePath $ArchivePath -OutputDir $OutputDir -SourcePrefix $SourcePrefix -SourceMap $SourceMap -TempRoot $TempRoot
 }
@@ -605,7 +645,7 @@ if (-not $SkipAcoustId) {
 $script:lastRequestTime = [datetime]::MinValue
 $script:minDelayMs = 350
 
-$zipFiles = Get-ChildItem $MissionDir -File | Where-Object { $_.Extension -match '^\.(zip|7z)$' } | Sort-Object Name
+$zipFiles = Get-ChildItem $MissionDir -File | Where-Object { $_.Extension -match '^\.(zip|7z|rar)$' } | Sort-Object Name
 if ($Zip) {
     $zipFiles = $zipFiles | Where-Object { $_.Name -eq $Zip -or $_.BaseName -eq $Zip }
     if ($zipFiles.Count -eq 0) { Write-Error "No mission ZIP found matching: $Zip" }
