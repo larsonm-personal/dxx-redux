@@ -79,6 +79,40 @@ New-Item -Path $ReportDir -ItemType Directory -Force -ErrorAction SilentlyContin
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $reportFile = Join-Path $ReportDir "report_$timestamp.md"
+$script:cancelRequested = $false
+$script:cancelCleanupStarted = $false
+
+function Stop-ChildProcessTree {
+    param([int]$ParentProcessId)
+
+    $children = @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$ParentProcessId" -ErrorAction SilentlyContinue)
+    foreach ($child in $children) {
+        Stop-ChildProcessTree -ParentProcessId ([int]$child.ProcessId)
+        try {
+            Stop-Process -Id ([int]$child.ProcessId) -Force -ErrorAction SilentlyContinue
+        } catch {}
+    }
+}
+
+function Request-TestSuiteCancel {
+    if ($script:cancelCleanupStarted) {
+        return
+    }
+    $script:cancelRequested = $true
+    $script:cancelCleanupStarted = $true
+    Write-Host ""
+    Write-Host "Ctrl-C received; stopping test runner children" -ForegroundColor Yellow
+    Stop-ChildProcessTree -ParentProcessId $PID
+}
+
+$script:cancelHandler =
+    [System.ConsoleCancelEventHandler] {
+        param($sender, $eventArgs)
+        $eventArgs.Cancel = $true
+        Request-TestSuiteCancel
+        [Environment]::Exit(130)
+    }
+[Console]::add_CancelKeyPress($script:cancelHandler)
 
 # -- Environment probes (non-provisioning) --
 
@@ -137,8 +171,11 @@ function Get-RegressionDemoGameCounts {
     $demos = @(Get-ChildItem -Path $demoRoot -Recurse -Filter "*.dximdemo" -File -ErrorAction SilentlyContinue)
     foreach ($demo in $demos) {
         $counts['all']++
-        $recordedGame = Get-InputDemoRecordedGameName -DemoPath $demo.FullName
-        $counts[$recordedGame]++
+        if ($demo.BaseName -like "d1_*") {
+            $counts['d1']++
+        } elseif ($demo.BaseName -like "d2_*") {
+            $counts['d2']++
+        }
     }
     return $counts
 }
@@ -598,7 +635,10 @@ function Restart-AdbServer {
     Write-Status "Restarting ADB server..." "DarkGray"
     Get-Process adb -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 1
-    & $script:ADB start-server 2>$null
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    & $script:ADB start-server 2>&1 | Out-Null
+    $ErrorActionPreference = $prevEAP
     Start-Sleep -Seconds 2
 }
 

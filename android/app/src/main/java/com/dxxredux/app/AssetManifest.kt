@@ -43,6 +43,33 @@ class AssetManifest(
     private fun findDiskFile(filename: String): File? =
         filesDir.listFiles()?.firstOrNull { it.name.equals(filename, ignoreCase = true) }
 
+    private fun findCanonicalDiskFile(filename: String): File? =
+        filesDir.listFiles()
+            ?.filter { it.name.equals(filename, ignoreCase = true) }
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { canonicalDiskFile(it) }
+
+    private fun canonicalDiskFile(files: List<File>): File =
+        files.firstOrNull { it.name == it.name.lowercase() }
+            ?: files.sortedBy { it.name }.first()
+
+    private fun readEntriesFromDisk(): List<AssetEntry> {
+        val file = manifestFile
+        if (!file.exists()) return emptyList()
+        val json = JSONArray(file.readText())
+        return (0 until json.length()).map { i ->
+            val obj = json.getJSONObject(i)
+            AssetEntry(
+                filename = obj.getString("filename").lowercase(),
+                sha256 = obj.getString("sha256").lowercase(),
+                sizeBytes = obj.getLong("sizeBytes"),
+                importedAt = obj.getLong("importedAt"),
+                versionName = obj.optString("versionName").takeIf { it.isNotEmpty() },
+                sourceUri = obj.optString("sourceUri").takeIf { it.isNotEmpty() },
+            )
+        }
+    }
+
     private fun canonicalize(entries: List<AssetEntry>): List<AssetEntry> {
         val grouped =
             entries
@@ -55,7 +82,7 @@ class AssetManifest(
 
         return grouped
             .map { (filename, duplicates) ->
-                val diskFile = findDiskFile(filename)
+                val diskFile = findCanonicalDiskFile(filename)
                 val candidates =
                     if (diskFile != null) {
                         duplicates.filter { it.sizeBytes == diskFile.length() }.ifEmpty { duplicates }
@@ -76,23 +103,8 @@ class AssetManifest(
      * Load the manifest from disk. Returns empty list if file doesn't exist or is corrupt.
      */
     fun load(): List<AssetEntry> {
-        val file = manifestFile
-        if (!file.exists()) return emptyList()
         return try {
-            val json = JSONArray(file.readText())
-            val entries =
-                (0 until json.length()).map { i ->
-                    val obj = json.getJSONObject(i)
-                    AssetEntry(
-                        filename = obj.getString("filename").lowercase(),
-                        sha256 = obj.getString("sha256").lowercase(),
-                        sizeBytes = obj.getLong("sizeBytes"),
-                        importedAt = obj.getLong("importedAt"),
-                        versionName = obj.optString("versionName").takeIf { it.isNotEmpty() },
-                        sourceUri = obj.optString("sourceUri").takeIf { it.isNotEmpty() },
-                    )
-                }
-            canonicalize(entries)
+            canonicalize(readEntriesFromDisk())
         } catch (e: Exception) {
             Log.e("AssetManifest", "Failed to parse assets.json", e)
             emptyList()
@@ -193,19 +205,16 @@ class AssetManifest(
      */
     fun findStaleFiles(gameFilenames: Set<String>): List<File> {
         val entries = load().associateBy { it.filename }
-        val stale = mutableListOf<File>()
-
         val diskFiles = filesDir.listFiles() ?: return emptyList()
-        for (file in diskFiles) {
-            val lower = file.name.lowercase()
-            if (lower !in gameFilenames) continue
-
-            val entry = entries[lower]
-            if (entry == null || entry.sizeBytes != file.length()) {
-                stale.add(file)
+        return diskFiles
+            .filter { it.name.lowercase() in gameFilenames }
+            .groupBy { it.name.lowercase() }
+            .toSortedMap()
+            .mapNotNull { (lower, variants) ->
+                val file = canonicalDiskFile(variants)
+                val entry = entries[lower]
+                if (entry == null || entry.sizeBytes != file.length()) file else null
             }
-        }
-        return stale
     }
 
     companion object {

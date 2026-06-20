@@ -726,15 +726,60 @@ function Write-ResolvedGameDataAssetManifest {
         }
         $manifestJson = ConvertTo-Json -InputObject $manifestItems -Depth 5
         $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("dxx-assets-{0}.json" -f ([guid]::NewGuid()))
+        $prevEAP = $ErrorActionPreference
         try {
+            $ErrorActionPreference = "Continue"
             [System.IO.File]::WriteAllText($tmp, $manifestJson, [System.Text.UTF8Encoding]::new($false))
             & $script:ADB push $tmp "/data/local/tmp/assets.json" 2>&1 | Out-Null
             & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat /data/local/tmp/assets.json > /data/data/$($script:PACKAGE)/$manifestPath'" 2>&1 | Out-Null
             & $script:ADB shell "rm -f /data/local/tmp/assets.json" 2>&1 | Out-Null
         } finally {
+            $ErrorActionPreference = $prevEAP
             Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
         }
     }
+}
+
+function Test-ResolvedGameDataCaseNormalized {
+    param([Parameter(Mandatory = $true)][hashtable]$DepsByTarget)
+
+    $ok = $true
+    foreach ($target in $DepsByTarget.Keys) {
+        $isExternal = $target -match '^/(sdcard|storage)/'
+        $listing = if ($isExternal) {
+            Adb-Timeout -AdbArgs @("shell", "ls", "-la", "$target/") -Seconds 5
+        } else {
+            Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "-la", "$target/") -Seconds 5
+        }
+        if (-not $listing) { continue }
+
+        $expected = @{}
+        foreach ($dep in $DepsByTarget[$target]) {
+            $file = Get-GameDataDepValue -Dep $dep -Name "file"
+            if ($file) { $expected[$file.ToString().ToLowerInvariant()] = $true }
+        }
+
+        $seen = @{}
+        foreach ($line in ($listing -split "`n")) {
+            if ($line.Trim() -notmatch '^\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\S+\s+\S+\s+(\S+)$') {
+                continue
+            }
+            $name = $matches[1].Trim()
+            $lowerName = $name.ToLowerInvariant()
+            if (-not $expected.ContainsKey($lowerName)) { continue }
+            if (-not $seen.ContainsKey($lowerName)) { $seen[$lowerName] = @() }
+            $seen[$lowerName] += $name
+        }
+
+        foreach ($lowerName in $seen.Keys) {
+            $variants = @($seen[$lowerName] | Sort-Object -Unique)
+            if ($variants.Count -gt 1 -or $variants[0] -cne $lowerName) {
+                Write-Status "FAIL: game data case variants remain in ${target}: $($variants -join ', ')" "Red"
+                $ok = $false
+            }
+        }
+    }
+    return $ok
 }
 
 function Resolve-GameDataDeps {
@@ -788,13 +833,21 @@ function Resolve-GameDataDeps {
         }
         $deviceFiles = @{}  # lowercase filename -> size
         $deviceOrigNames = @{}  # lowercase filename -> original cased name
+        $deviceNamesByLower = @{}  # lowercase filename -> all original cased names
         if ($listing) {
             foreach ($line in ($listing -split "`n")) {
                 # ls -la: perms links owner group SIZE date time filename
                 if ($line.Trim() -match '^\S+\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+\s+\S+\s+(\S+)$') {
                     $origName = $matches[2].Trim()
-                    $deviceFiles[$origName.ToLower()] = [long]$matches[1]
-                    $deviceOrigNames[$origName.ToLower()] = $origName
+                    $lowerName = $origName.ToLowerInvariant()
+                    if (-not $deviceNamesByLower.ContainsKey($lowerName)) {
+                        $deviceNamesByLower[$lowerName] = @()
+                    }
+                    $deviceNamesByLower[$lowerName] += $origName
+                    if (-not $deviceFiles.ContainsKey($lowerName) -or $origName -ceq $lowerName) {
+                        $deviceFiles[$lowerName] = [long]$matches[1]
+                        $deviceOrigNames[$lowerName] = $origName
+                    }
                 }
             }
         }
@@ -803,6 +856,45 @@ function Resolve-GameDataDeps {
             $fname = $dep.file.ToLower()
             $localFile = $idx[$dep.sha256]
             $needsPush = $false
+            $caseVariants = @()
+            if ($deviceNamesByLower.ContainsKey($fname)) {
+                $caseVariants = @($deviceNamesByLower[$fname] | Sort-Object -Unique)
+            }
+
+            if ($caseVariants.Count -gt 0) {
+                $exactLowercase = @($caseVariants | Where-Object { $_ -ceq $fname })
+                $prevEAP = $ErrorActionPreference
+                $ErrorActionPreference = "Continue"
+                if ($exactLowercase.Count -gt 0) {
+                    foreach ($variant in $caseVariants) {
+                        if ($variant -cne $fname) {
+                            if ($isExternal) {
+                                & $script:ADB shell "rm -f '$target/$variant'" 2>&1 | Out-Null
+                            } else {
+                                & $script:ADB shell "run-as $($script:PACKAGE) rm -f '$target/$variant'" 2>&1 | Out-Null
+                            }
+                        }
+                    }
+                    $deviceOrigNames[$fname] = $fname
+                    $deviceNamesByLower[$fname] = @($fname)
+                } elseif ($caseVariants.Count -gt 0) {
+                    $sourceName = $caseVariants[0]
+                    if ($isExternal) {
+                        & $script:ADB shell "mv '$target/$sourceName' '$target/$fname'" 2>&1 | Out-Null
+                        foreach ($variant in @($caseVariants | Select-Object -Skip 1)) {
+                            & $script:ADB shell "rm -f '$target/$variant'" 2>&1 | Out-Null
+                        }
+                    } else {
+                        & $script:ADB shell "run-as $($script:PACKAGE) mv '$target/$sourceName' '$target/$fname'" 2>&1 | Out-Null
+                        foreach ($variant in @($caseVariants | Select-Object -Skip 1)) {
+                            & $script:ADB shell "run-as $($script:PACKAGE) rm -f '$target/$variant'" 2>&1 | Out-Null
+                        }
+                    }
+                    $deviceOrigNames[$fname] = $fname
+                    $deviceNamesByLower[$fname] = @($fname)
+                }
+                $ErrorActionPreference = $prevEAP
+            }
 
             if (-not $deviceFiles.ContainsKey($fname)) {
                 $needsPush = $true
@@ -847,6 +939,9 @@ function Resolve-GameDataDeps {
         }
     }
     Write-ResolvedGameDataAssetManifest -DepsByTarget $byTarget -Index $idx
+    if (-not (Test-ResolvedGameDataCaseNormalized -DepsByTarget $byTarget)) {
+        return $false
+    }
     if ($pushCount -gt 0) {
         Write-Status "Game data: $pushCount files pushed via deps" "Green"
     }

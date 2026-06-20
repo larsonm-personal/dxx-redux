@@ -25,6 +25,21 @@ class AssetManifestTest {
     }
 
     @Test
+    fun diskCaseDuplicateUsesLowercaseCanonicalFile() {
+        val setDir = createTempDirectory("asset-manifest-disk-case-duplicates").toFile()
+        File(setDir, "DESCENT.HOG").writeBytes(ByteArray(1))
+        File(setDir, "descent.hog").writeBytes(ByteArray(17))
+        writeManifest(
+            setDir,
+            entry("descent.hog", sizeBytes = 17, importedAt = 200),
+        )
+
+        val stale = AssetManifest(setDir).findStaleFiles(setOf("descent.hog"))
+
+        assertTrue(stale.isEmpty())
+    }
+
+    @Test
     fun upsertRemovesDuplicateManifestEntries() {
         val setDir = createTempDirectory("asset-manifest-upsert-duplicates").toFile()
         File(setDir, "descent.pig").writeBytes(ByteArray(17))

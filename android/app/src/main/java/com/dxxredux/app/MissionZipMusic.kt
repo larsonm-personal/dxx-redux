@@ -299,6 +299,10 @@ object MissionZipMusic {
                 playableTracks
                     .groupBy { it.displayName.lowercase(Locale.US) }
                     .mapValues { (_, tracks) -> ArrayDeque(tracks) }
+            val byLeafName =
+                playableTracks
+                    .groupBy { leafName(it.displayName).lowercase(Locale.US) }
+                    .mapValues { (_, tracks) -> ArrayDeque(tracks) }
             val usedTrackIds = mutableSetOf<String>()
             val usedNames = mutableSetOf<String>()
             val displayTracks = mutableListOf<MissionZipMusicTrack>()
@@ -306,7 +310,9 @@ object MissionZipMusic {
             songReferences.forEach { reference ->
                 val nameKey = reference.name.lowercase(Locale.US)
                 if (!usedNames.add(nameKey)) return@forEach
-                val playable = byName[nameKey]?.removeFirstOrNull()
+                val playable =
+                    byName[nameKey].removeFirstUnused(usedTrackIds)
+                        ?: byLeafName[leafName(reference.name).lowercase(Locale.US)].removeFirstUnused(usedTrackIds)
                 if (playable != null) {
                     displayTracks += playable
                     usedTrackIds += playable.id
@@ -330,6 +336,17 @@ object MissionZipMusic {
                 }
             }
             return displayTracks
+        }
+
+        private fun ArrayDeque<MissionZipMusicTrack>?.removeFirstUnused(
+            usedTrackIds: Set<String>,
+        ): MissionZipMusicTrack? {
+            if (this == null) return null
+            while (isNotEmpty()) {
+                val track = removeFirst()
+                if (track.id !in usedTrackIds) return track
+            }
+            return null
         }
     }
 
