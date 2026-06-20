@@ -172,6 +172,17 @@ class ModManager(
         val problems: List<String>,
         val missionZip: MissionZip.ScanResult? = null,
         val missionZipMusic: MissionZipMusicCatalog? = null,
+        val missionZipExtraction: MissionZipExtractionInfo? = null,
+    )
+
+    data class MissionZipExtractionInfo(
+        val rootPath: String,
+        val sourceArchiveName: String,
+        val archiveFormat: String,
+        val ownerSizeBytes: Long,
+        val extractedSizeBytes: Long,
+        val fileCount: Int,
+        val importMode: String,
     )
 
     private data class ActualBaseFile(
@@ -395,7 +406,7 @@ class ModManager(
             ImportStorageGuard.requireFreeSpace(modsDir, total, "import mission zip $displayName")
             contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(temp).use { output ->
-                    LauncherFileCopy.copyStream(input, output, total, displayName, onProgress)
+                    LauncherFileCopy.copyStream(input, output, total, "Copying level pack: $displayName", onProgress)
                 }
             } ?: return null
             onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
@@ -434,7 +445,7 @@ class ModManager(
     ): ModInfo? {
         onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
         val scan = MissionZip.inspect(source)
-        if (scan == null) return importNestedRebirthMissionZip(source)
+        if (scan == null) return importNestedRebirthMissionZip(source, onProgress)
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
         val extractionStore = MissionZipExtractionStore(filesDir)
@@ -448,10 +459,15 @@ class ModManager(
         }
         try {
             if (scan.importMode == "extracted_bundle") {
-                onProgress(LauncherCopyProgress("Extracting level pack: $displayName", 0L, 0L))
-                extractionStore.ensureExtracted(safeName, dest, scan)
+                val extractLabel = "Extracting level pack cache for faster launches: $displayName"
+                onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
+                extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
+                    onProgress(LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total))
+                }
+                onProgress(LauncherCopyProgress("Cached level pack for faster launches: $displayName", 1L, 1L))
+            } else {
+                onProgress(LauncherCopyProgress("Finalizing level pack: $displayName", 0L, 0L))
             }
-            onProgress(LauncherCopyProgress("Finalizing level pack: $displayName", 0L, 0L))
         } catch (e: Exception) {
             dest.delete()
             extractionStore.removeOwner(safeName)
@@ -460,7 +476,10 @@ class ModManager(
         return registerMissionZip(safeName, dest.length(), scan)
     }
 
-    private fun importNestedRebirthMissionZip(source: File): ModInfo? =
+    private fun importNestedRebirthMissionZip(
+        source: File,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
+    ): ModInfo? =
         try {
             ZipFile(source).use { zip ->
                 val child = selectNestedRebirthZip(zip) ?: return null
@@ -473,9 +492,16 @@ class ModManager(
                 )
                 zip.getInputStream(child).use { input ->
                     FileOutputStream(dest).use { output ->
-                        input.copyTo(output)
+                        LauncherFileCopy.copyStream(
+                            input,
+                            output,
+                            child.size.coerceAtLeast(0),
+                            "Extracting Rebirth level pack from archive: $safeName",
+                            onProgress,
+                        )
                     }
                 }
+                onProgress(LauncherCopyProgress("Inspecting level pack: $safeName", 0L, 0L))
                 val scan =
                     MissionZip.inspect(dest)
                         ?: run {
@@ -485,7 +511,12 @@ class ModManager(
                 val extractionStore = MissionZipExtractionStore(filesDir)
                 extractionStore.removeOwner(safeName)
                 if (scan.importMode == "extracted_bundle") {
-                    extractionStore.ensureExtracted(safeName, dest, scan)
+                    val extractLabel = "Extracting level pack cache for faster launches: $safeName"
+                    onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
+                    extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
+                        onProgress(LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total))
+                    }
+                    onProgress(LauncherCopyProgress("Cached level pack for faster launches: $safeName", 1L, 1L))
                 }
                 registerMissionZip(safeName, dest.length(), scan)
             }
@@ -493,6 +524,14 @@ class ModManager(
             Log.e(TAG, "Failed to import nested Rebirth mission ZIP from ${source.absolutePath}", e)
             null
         }
+
+    private fun extractionProgressLabel(
+        base: String,
+        path: String,
+    ): String {
+        val leaf = path.replace('\\', '/').substringAfterLast('/').takeIf { it.isNotBlank() }
+        return if (leaf == null) base else "$base ($leaf)"
+    }
 
     private fun nestedRebirthChildSize(source: File): Long? =
         try {
@@ -612,9 +651,13 @@ class ModManager(
         mod: ModInfo,
         modFile: File,
     ): List<String> {
+        val extractionStore = MissionZipExtractionStore(filesDir)
+        if (mod.importMode == "extracted_bundle") {
+            extractionStore.activePathLines(mod.filename, modFile)?.let { return it }
+        }
         val scan = MissionZip.inspect(modFile) ?: return emptyList()
         if (mod.importMode == "extracted_bundle" || scan.importMode == "extracted_bundle") {
-            return MissionZipExtractionStore(filesDir).activePathLines(mod.filename, modFile, scan)
+            return extractionStore.activePathLines(mod.filename, modFile, scan)
         }
         val stageDir = File(generatedMissionZipDir(game), safeMissionZipDirName(mod.filename))
         try {
@@ -667,9 +710,19 @@ class ModManager(
         game: String,
         includeD1MissionZipsForD2: Boolean,
     ): Boolean =
-        mods
-            .filter { it.enabledForLaunch(game, includeD1MissionZipsForD2) && it.kind == MOD_KIND_MISSION_ZIP }
-            .any { missionZipHasSoundtrack(File(modsDir, it.filename)) }
+        MissionZipExtractionStore(filesDir).let { extractionStore ->
+            mods
+                .filter { it.enabledForLaunch(game, includeD1MissionZipsForD2) && it.kind == MOD_KIND_MISSION_ZIP }
+                .any {
+                    val modFile = File(modsDir, it.filename)
+                    val record = extractionStore.freshRecord(it.filename, modFile)
+                    if (record != null) {
+                        missionZipHasSoundtrack(record)
+                    } else {
+                        missionZipHasSoundtrack(modFile)
+                    }
+                }
+        }
 
     fun hasEnabledD1MissionZipForD2(): Boolean =
         mods.any { it.enabled && it.kind == MOD_KIND_MISSION_ZIP && it.game == "d1" }
@@ -788,7 +841,9 @@ class ModManager(
 
     private fun getMissionZipDetails(modFile: File): ModDetails =
         try {
-            val scan = MissionZip.inspect(modFile)
+            val extractionStore = MissionZipExtractionStore(filesDir)
+            val extractionRecord = extractionStore.freshRecord(modFile.name, modFile)
+            val scan = extractionRecord?.let { MissionZip.inspectExtracted(it) } ?: MissionZip.inspect(modFile)
             if (scan == null) {
                 ModDetails(
                     archivePath = modFile.absolutePath,
@@ -807,13 +862,16 @@ class ModManager(
                     fileCount = scan.constituents.size,
                     archiveSizeBytes = modFile.length(),
                     manifestSchema = null,
-                    notes = missionZipFeatureNotes(modFile, scan),
+                    notes = missionZipFeatureNotes(modFile, scan, extractionRecord),
                     categories = missionZipCategories(scan.constituents),
                     patches = emptyList(),
                     baseRequirements = emptyList(),
                     problems = emptyList(),
                     missionZip = scan,
-                    missionZipMusic = MissionZipMusic.inspect(modFile),
+                    missionZipMusic =
+                        extractionRecord?.let { MissionZipMusic.inspectExtracted(it) }
+                            ?: MissionZipMusic.inspect(modFile),
+                    missionZipExtraction = extractionRecord?.toMissionZipExtractionInfo(),
                 )
             }
         } catch (e: Exception) {
@@ -833,6 +891,7 @@ class ModManager(
     private fun missionZipFeatureNotes(
         modFile: File,
         scan: MissionZip.ScanResult,
+        extractionRecord: MissionZipExtractionRecord? = null,
     ): List<String> =
         buildList {
             if (scan.constituents.any { launcherExtensionOf(it.name) == "sng" }) {
@@ -842,7 +901,7 @@ class ModManager(
                 .filter { GameFileFormats.extensionOf(it.name) == "hog" }
                 .forEach { constituent ->
                     val summary =
-                        GameFileMetadata.summarizeZipConstituent(modFile, constituent.path, constituent.name)
+                        missionZipConstituentSummary(modFile, constituent, extractionRecord)
                             ?: return@forEach
                     if (summary.categories.isNotEmpty()) {
                         add(
@@ -859,7 +918,7 @@ class ModManager(
                 .filter { GameFileFormats.extensionOf(it.name) == "dxa" }
                 .forEach { constituent ->
                     val summary =
-                        GameFileMetadata.summarizeZipConstituent(modFile, constituent.path, constituent.name)
+                        missionZipConstituentSummary(modFile, constituent, extractionRecord)
                             ?: return@forEach
                     if (summary.categories.isNotEmpty()) {
                         add(
@@ -874,12 +933,40 @@ class ModManager(
                 }
         }
 
+    private fun missionZipConstituentSummary(
+        modFile: File,
+        constituent: MissionZip.Constituent,
+        extractionRecord: MissionZipExtractionRecord?,
+    ): GameFileMetadata.Summary? =
+        if (extractionRecord != null) {
+            MissionZipExtractionStore(filesDir).extractedSummaryForRecordEntry(extractionRecord, constituent.path)
+        } else {
+            GameFileMetadata.summarizeZipConstituent(modFile, constituent.path, constituent.name)
+        }
+
+    private fun MissionZipExtractionRecord.toMissionZipExtractionInfo(): MissionZipExtractionInfo =
+        MissionZipExtractionInfo(
+            rootPath = rootDir.absolutePath,
+            sourceArchiveName = sourceArchiveName,
+            archiveFormat = archiveFormat,
+            ownerSizeBytes = ownerSizeBytes,
+            extractedSizeBytes = extractedSizeBytes,
+            fileCount = fileCount,
+            importMode = importMode,
+        )
+
     private fun collectModPatchDocuments(
         mod: ModInfo,
         modFile: File,
         game: String?,
     ): List<ModPatchDocument> {
         if (mod.kind == MOD_KIND_MISSION_ZIP && GameFileFormats.extensionOf(mod.filename) != "zip") return emptyList()
+        if (mod.kind == MOD_KIND_MISSION_ZIP &&
+            mod.importMode == "extracted_bundle" &&
+            MissionZipExtractionStore(filesDir).freshRecord(mod.filename, modFile) != null
+        ) {
+            return emptyList()
+        }
         try {
             ZipFile(modFile).use { zip ->
                 val patchPaths = mutableSetOf<String>()
@@ -1064,6 +1151,36 @@ class ModManager(
                         in MISSION_SOUNDTRACK_EXTENSIONS -> {
                             return@runCatching true
                         }
+                    }
+                }
+            }
+            false
+        }.getOrDefault(false)
+
+    private fun missionZipHasSoundtrack(record: MissionZipExtractionRecord): Boolean =
+        runCatching {
+            for (entry in record.files) {
+                val file = File(record.rootDir, entry.relativePath.replace('/', File.separatorChar))
+                if (!file.isFile) continue
+                when (launcherExtensionOf(entry.relativePath)) {
+                    "sng" -> {
+                        if (songListReferencesMissionSoundtrack(file.readText(Charsets.UTF_8))) return@runCatching true
+                    }
+
+                    "dxa" -> {
+                        file.inputStream().use { input ->
+                            if (dxaHasSoundtrack(ZipInputStream(input))) return@runCatching true
+                        }
+                    }
+
+                    "hog" -> {
+                        file.inputStream().use { input ->
+                            if (hogHasSoundtrack(input)) return@runCatching true
+                        }
+                    }
+
+                    in MISSION_SOUNDTRACK_EXTENSIONS -> {
+                        return@runCatching true
                     }
                 }
             }

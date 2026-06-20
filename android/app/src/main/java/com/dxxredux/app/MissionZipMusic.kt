@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import java.io.ByteArrayInputStream
+import java.io.File
 import java.io.InputStream
 import java.util.Locale
 import java.util.zip.ZipInputStream
@@ -95,6 +96,54 @@ object MissionZipMusic {
             }.getOrNull()
                 ?: return null
         return MissionZipMusicCatalog(file.absolutePath, sources).takeIf { it.hasListableTracks }
+    }
+
+    internal fun inspectExtracted(record: MissionZipExtractionRecord): MissionZipMusicCatalog? {
+        if (!record.rootDir.isDirectory) return null
+        val sources =
+            buildList {
+                val archiveBuilder =
+                    SourceBuilder(
+                        id = "archive",
+                        label = "Archive music",
+                        containerPath = "",
+                    )
+                for (file in record.files) {
+                    if (file.entryPath.isBlank()) continue
+                    val relativePath = normalizePath(file.relativePath)
+                    val diskFile = File(record.rootDir, relativePath.replace('/', File.separatorChar))
+                    if (!diskFile.isFile) continue
+                    when (extensionOf(relativePath)) {
+                        "sng" -> {
+                            archiveBuilder.addSongList(relativePath, diskFile.readText(Charsets.UTF_8))
+                        }
+
+                        in PLAYABLE_EXTENSIONS -> {
+                            archiveBuilder.addPlayable(
+                                archiveEntryPath = relativePath,
+                                nestedEntryPath = null,
+                                hogEntryName = null,
+                                name = leafName(relativePath),
+                                sizeBytes = file.sizeBytes,
+                            )
+                        }
+
+                        "dxa" -> {
+                            diskFile.inputStream().use { input ->
+                                scanDxa(relativePath, input)?.let { add(it) }
+                            }
+                        }
+
+                        "hog" -> {
+                            diskFile.inputStream().use { input ->
+                                scanHog(relativePath, input)?.let { add(it) }
+                            }
+                        }
+                    }
+                }
+                archiveBuilder.build()?.let { add(0, it) }
+            }
+        return MissionZipMusicCatalog(record.rootDir.absolutePath, sources).takeIf { it.hasListableTracks }
     }
 
     private fun scanDxa(

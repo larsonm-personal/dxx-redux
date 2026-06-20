@@ -8,6 +8,7 @@ import java.util.Locale
 object MissionZip {
     const val KIND = "mission_zip"
     const val CATEGORY_LEVELS = "levels"
+    const val DURABLE_EXTRACT_THRESHOLD_BYTES = 10L * 1024L * 1024L
     const val SMALL_IN_MEMORY_LIMIT_BYTES = 100L * 1024L * 1024L
     const val SMALL_NESTED_ARCHIVE_LIMIT_BYTES = 32L * 1024L * 1024L
     private val INLINE_README_EXTENSIONS = setOf("txt")
@@ -109,6 +110,37 @@ object MissionZip {
             zipStem = null,
             archiveFormat = "zip",
         )
+    }
+
+    internal fun inspectExtracted(record: MissionZipExtractionRecord): ScanResult? {
+        val constituents = mutableListOf<Constituent>()
+        val missions = mutableListOf<GameFileFormats.MissionDescriptor>()
+        for (file in record.files) {
+            val entryPath = normalizePath(file.entryPath).takeIf { it.isNotBlank() } ?: continue
+            val name = leafName(entryPath)
+            val role = GameFileFormats.missionZipRoleForFile(name)
+            constituents +=
+                Constituent(
+                    path = entryPath,
+                    name = name,
+                    role = role,
+                    sizeBytes = file.sizeBytes,
+                    compressedSizeBytes = file.sizeBytes,
+                )
+            if (role == GameFileFormats.MISSION_ZIP_DESCRIPTOR) {
+                val diskFile = File(record.rootDir, file.relativePath.replace('/', File.separatorChar))
+                if (diskFile.isFile) {
+                    missions += parseMissionDescriptor(entryPath, diskFile.readText(Charsets.UTF_8))
+                }
+            }
+        }
+        return buildResult(
+            constituents,
+            missions,
+            record.ownerSizeBytes,
+            record.ownerFilename.substringBeforeLast('.'),
+            record.archiveFormat.ifBlank { "zip" },
+        )?.copy(importMode = record.importMode.ifBlank { "extracted_bundle" })
     }
 
     fun isImportCandidate(input: InputStream): Boolean {
@@ -239,7 +271,7 @@ object MissionZip {
         constituents: List<Constituent>,
     ): Boolean {
         if (archiveFormat != "zip") return false
-        if (totalSizeBytes > SMALL_IN_MEMORY_LIMIT_BYTES) return false
+        if (totalSizeBytes > DURABLE_EXTRACT_THRESHOLD_BYTES) return false
         return constituents.none {
             it.role in
                 setOf(

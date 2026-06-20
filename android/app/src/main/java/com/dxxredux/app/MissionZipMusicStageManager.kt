@@ -17,7 +17,7 @@ class MissionZipMusicStageManager(
     ): File? {
         if (!track.playable || track.kind != MissionZipMusic.KIND_COMPRESSED_AUDIO) return null
         val archive = File(catalog.archivePath)
-        if (!archive.isFile) return null
+        if (!archive.isFile && !archive.isDirectory) return null
         val output = stagedFile(archive, track)
         if (output.isFile && (track.sizeBytes <= 0 || output.length() == track.sizeBytes)) return output
         output.parentFile?.mkdirs()
@@ -30,31 +30,35 @@ class MissionZipMusicStageManager(
         temp.delete()
         val ok =
             runCatching {
-                ArchiveFiles.open(archive).use { archiveFile ->
-                    when {
-                        track.hogEntryName != null && track.nestedEntryPath != null -> {
-                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
-                                extractFromDxaHog(dxa, track.nestedEntryPath, track.hogEntryName, temp)
-                            } ?: false
-                        }
-
-                        track.hogEntryName != null -> {
-                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { hog ->
-                                extractFromHog(hog, track.hogEntryName, temp)
-                            } ?: false
-                        }
-
-                        track.nestedEntryPath != null -> {
-                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
-                                extractFromDxa(dxa, track.nestedEntryPath, temp)
-                            } ?: false
-                        }
-
-                        else -> {
-                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { input ->
-                                FileOutputStream(temp).use { outputStream -> input.copyTo(outputStream) }
+                if (archive.isDirectory) {
+                    extractFromDirectory(archive, track, temp)
+                } else {
+                    ArchiveFiles.open(archive).use { archiveFile ->
+                        when {
+                            track.hogEntryName != null && track.nestedEntryPath != null -> {
+                                archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
+                                    extractFromDxaHog(dxa, track.nestedEntryPath, track.hogEntryName, temp)
+                                } ?: false
                             }
-                            true
+
+                            track.hogEntryName != null -> {
+                                archiveFile.openEntryStream(track.archiveEntryPath)?.use { hog ->
+                                    extractFromHog(hog, track.hogEntryName, temp)
+                                } ?: false
+                            }
+
+                            track.nestedEntryPath != null -> {
+                                archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
+                                    extractFromDxa(dxa, track.nestedEntryPath, temp)
+                                } ?: false
+                            }
+
+                            else -> {
+                                archiveFile.openEntryStream(track.archiveEntryPath)?.use { input ->
+                                    FileOutputStream(temp).use { outputStream -> input.copyTo(outputStream) }
+                                }
+                                true
+                            }
                         }
                     }
                 }
@@ -77,30 +81,34 @@ class MissionZipMusicStageManager(
     ): ByteArray? {
         if (!track.playable || track.kind != MissionZipMusic.KIND_MIDI) return null
         val archive = File(catalog.archivePath)
-        if (!archive.isFile) return null
+        if (!archive.isFile && !archive.isDirectory) return null
         return runCatching {
-            ArchiveFiles.open(archive).use { archiveFile ->
-                when {
-                    track.hogEntryName != null && track.nestedEntryPath != null -> {
-                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
-                            readFromDxaHog(dxa, track.nestedEntryPath, track.hogEntryName)
+            if (archive.isDirectory) {
+                readFromDirectory(archive, track)
+            } else {
+                ArchiveFiles.open(archive).use { archiveFile ->
+                    when {
+                        track.hogEntryName != null && track.nestedEntryPath != null -> {
+                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
+                                readFromDxaHog(dxa, track.nestedEntryPath, track.hogEntryName)
+                            }
                         }
-                    }
 
-                    track.hogEntryName != null -> {
-                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { hog ->
-                            readFromHog(hog, track.hogEntryName)
+                        track.hogEntryName != null -> {
+                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { hog ->
+                                readFromHog(hog, track.hogEntryName)
+                            }
                         }
-                    }
 
-                    track.nestedEntryPath != null -> {
-                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
-                            readFromDxa(dxa, track.nestedEntryPath)
+                        track.nestedEntryPath != null -> {
+                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { dxa ->
+                                readFromDxa(dxa, track.nestedEntryPath)
+                            }
                         }
-                    }
 
-                    else -> {
-                        archiveFile.openEntryStream(track.archiveEntryPath)?.use { it.readBytes() }
+                        else -> {
+                            archiveFile.openEntryStream(track.archiveEntryPath)?.use { it.readBytes() }
+                        }
                     }
                 }
             }
@@ -121,6 +129,68 @@ class MissionZipMusicStageManager(
         val key = sha256("${archive.name}:${archive.length()}:${archive.lastModified()}:${track.id}")
         val safeName = track.displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_").ifBlank { "track.${track.extension}" }
         return File(File(root, key.take(16)), safeName)
+    }
+
+    private fun sourceFile(
+        rootDir: File,
+        relativePath: String,
+    ): File? {
+        val rootCanonical = rootDir.canonicalFile
+        val file = File(rootCanonical, normalizePath(relativePath).replace('/', File.separatorChar)).canonicalFile
+        if (!file.path.startsWith(rootCanonical.path + File.separator)) return null
+        return file.takeIf { it.isFile }
+    }
+
+    private fun extractFromDirectory(
+        rootDir: File,
+        track: MissionZipMusicTrack,
+        output: File,
+    ): Boolean {
+        val file = sourceFile(rootDir, track.archiveEntryPath) ?: return false
+        return when {
+            track.hogEntryName != null && track.nestedEntryPath != null -> {
+                file.inputStream().use { extractFromDxaHog(it, track.nestedEntryPath, track.hogEntryName, output) }
+            }
+
+            track.hogEntryName != null -> {
+                file.inputStream().use { extractFromHog(it, track.hogEntryName, output) }
+            }
+
+            track.nestedEntryPath != null -> {
+                file.inputStream().use { extractFromDxa(it, track.nestedEntryPath, output) }
+            }
+
+            else -> {
+                file.inputStream().use { input ->
+                    FileOutputStream(output).use { outputStream -> input.copyTo(outputStream) }
+                }
+                true
+            }
+        }
+    }
+
+    private fun readFromDirectory(
+        rootDir: File,
+        track: MissionZipMusicTrack,
+    ): ByteArray? {
+        val file = sourceFile(rootDir, track.archiveEntryPath) ?: return null
+        return when {
+            track.hogEntryName != null && track.nestedEntryPath != null -> {
+                file.inputStream().use { readFromDxaHog(it, track.nestedEntryPath, track.hogEntryName) }
+            }
+
+            track.hogEntryName != null -> {
+                file.inputStream().use { readFromHog(it, track.hogEntryName) }
+            }
+
+            track.nestedEntryPath != null -> {
+                file.inputStream().use { readFromDxa(it, track.nestedEntryPath) }
+            }
+
+            else -> {
+                file.readBytes()
+            }
+        }
     }
 
     private fun extractFromDxa(

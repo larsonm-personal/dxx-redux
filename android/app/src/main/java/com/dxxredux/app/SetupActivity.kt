@@ -2542,7 +2542,11 @@ private fun SetupScreen(
                                 }
                             }
                         if (mod != null) {
-                            results.add("Imported level pack: ${mod.displayName}")
+                            if (mod.importMode == "extracted_bundle") {
+                                results.add("Extracted level pack: ${mod.displayName} (cached for faster launches)")
+                            } else {
+                                results.add("Imported level pack: ${mod.displayName}")
+                            }
                             Log.i("DXX-Setup", "Mission ZIP import ok: $name (${mod.sizeBytes} bytes)")
                         } else {
                             results.add("Failed to import $name")
@@ -3863,12 +3867,31 @@ private fun SetupScreen(
 
                     if (missionArchiveImporting) {
                         Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                            val extractingCache =
+                                missionArchiveProgressLabel.contains("faster launches", ignoreCase = true) ||
+                                    missionArchiveProgressLabel.contains("cache", ignoreCase = true)
                             Text(
                                 text = missionArchiveProgressLabel.ifBlank { "Importing level pack" },
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary,
                             )
+                            if (extractingCache) {
+                                Text(
+                                    text = "Unpacking into app storage so future launches do not reprocess the archive",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (missionArchiveProgressTotal > 0L) {
+                                Text(
+                                    text =
+                                        "${formatSize(missionArchiveProgressBytes)} / " +
+                                            formatSize(missionArchiveProgressTotal),
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                             Spacer(modifier = Modifier.height(4.dp))
                             if (missionArchiveProgressTotal > 0L) {
                                 val archivePct =
@@ -3891,13 +3914,39 @@ private fun SetupScreen(
                             }
                         }
                     } else if (importStatus.isNotEmpty()) {
-                        Text(
-                            text = importStatus,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF4CAF50),
-                            modifier = Modifier.padding(bottom = 8.dp),
-                        )
+                        val cachedLevelPack = importStatus.contains("cached for faster launches", ignoreCase = true)
+                        if (cachedLevelPack) {
+                            Surface(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp),
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text(
+                                        text = importStatus,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    )
+                                    Text(
+                                        text = "Future launches will use the extracted files automatically",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = importStatus,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF4CAF50),
+                                modifier = Modifier.padding(bottom = 8.dp),
+                            )
+                        }
                     }
 
                     // -- ZIP extraction progress -----------------

@@ -36,10 +36,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.zip.ZipFile
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
@@ -602,6 +602,14 @@ private fun ModDetailsDialog(
                         details.missionZip?.let { missionZip ->
                             DetailRow("Category", missionZip.category.replaceFirstChar { it.uppercase() })
                             DetailRow("Import mode", missionZip.importMode.replace('_', ' '))
+                            details.missionZipExtraction?.let { extraction ->
+                                DetailRow("Extracted", "Yes")
+                                DetailRow("Original archive", extraction.sourceArchiveName)
+                                DetailRow("Archive format", extraction.archiveFormat.uppercase(Locale.US))
+                                DetailRow("Extracted files", extraction.fileCount.toString())
+                                DetailRow("Extracted size", setupSectionFormatSize(extraction.extractedSizeBytes))
+                                DetailRow("Extracted path", extraction.rootPath)
+                            }
                             ModDetailSectionTitle("Mission")
                             DetailRow("Title", missionZip.mission.displayName)
                             missionZip.mission.type?.let { DetailRow("Type", it) }
@@ -1323,8 +1331,7 @@ private fun MissionZipTextDialog(
 ) {
     val content =
         remember(archivePath, constituent.path) {
-            archivePath?.let { MissionZip.readTextFile(File(it), constituent.path) }
-                ?: MissionZip.TextFileContent("", truncated = false, problem = "Mission ZIP is missing")
+            readMissionZipTextFile(archivePath, constituent)
         }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1378,6 +1385,53 @@ private fun MissionZipTextDialog(
             }
         },
     )
+}
+
+private fun readMissionZipTextFile(
+    archivePath: String?,
+    constituent: MissionZip.Constituent,
+): MissionZip.TextFileContent {
+    if (archivePath ==
+        null
+    ) {
+        return MissionZip.TextFileContent("", truncated = false, problem = "Mission ZIP is missing")
+    }
+    missionZipExtractedStoreForArchivePath(archivePath)
+        ?.extractedEntryForArchiveEntry(archivePath, constituent.path)
+        ?.let { return readExtractedMissionZipTextFile(it.file, constituent.path) }
+    return MissionZip.readTextFile(File(archivePath), constituent.path)
+}
+
+private fun readExtractedMissionZipTextFile(
+    file: File,
+    path: String,
+    maxBytes: Long = 1024L * 1024L,
+): MissionZip.TextFileContent {
+    if (!MissionZip.isInlineReadmeCandidate(path)) {
+        return MissionZip.TextFileContent("", truncated = false, problem = "Only .txt files can be viewed")
+    }
+    if (!file.isFile) return MissionZip.TextFileContent("", truncated = false, problem = "Text file is missing")
+    return try {
+        val limit = maxBytes.coerceAtLeast(1L).coerceAtMost((Int.MAX_VALUE - 1).toLong()).toInt()
+        val bytes =
+            file.inputStream().use { input ->
+                val buffer = ByteArray(limit + 1)
+                var total = 0
+                while (total < buffer.size) {
+                    val read = input.read(buffer, total, buffer.size - total)
+                    if (read <= 0) break
+                    total += read
+                }
+                buffer.copyOf(total)
+            }
+        val truncated = bytes.size > limit
+        val keptBytes = bytes.copyOf(minOf(bytes.size, limit))
+        val utf8 = keptBytes.toString(Charsets.UTF_8)
+        val text = if ('\uFFFD' in utf8) keptBytes.toString(Charset.forName("windows-1252")) else utf8
+        MissionZip.TextFileContent(text, truncated)
+    } catch (e: Exception) {
+        MissionZip.TextFileContent("", truncated = false, problem = e.message ?: e.javaClass.simpleName)
+    }
 }
 
 private fun missionZipViewAction(
@@ -1434,12 +1488,21 @@ private fun extractMissionZipConstituentToCache(
 
     val copy = File(viewDir, missionZipCacheFilename(archive, constituent))
     copy.delete()
-    ZipFile(archive).use { zip ->
-        val entry = zip.getEntry(constituent.path) ?: throw IllegalArgumentException("Document file is missing")
-        if (entry.isDirectory) throw IllegalArgumentException("Document path is a directory")
-        zip.getInputStream(entry).use { input ->
-            FileOutputStream(copy).use { output ->
-                input.copyTo(output)
+    val extracted =
+        missionZipExtractedStoreForArchivePath(archive.absolutePath)
+            ?.extractedEntryForArchiveEntry(archive.absolutePath, constituent.path)
+            ?.file
+    if (extracted != null) {
+        extracted.copyTo(copy, overwrite = true)
+    } else {
+        ArchiveFiles.open(archive).use { archiveFile ->
+            val entry =
+                archiveFile.findEntry(constituent.path) ?: throw IllegalArgumentException("Document file is missing")
+            if (entry.isDirectory) throw IllegalArgumentException("Document path is a directory")
+            archiveFile.openInputStream(entry).use { input ->
+                FileOutputStream(copy).use { output ->
+                    input.copyTo(output)
+                }
             }
         }
     }

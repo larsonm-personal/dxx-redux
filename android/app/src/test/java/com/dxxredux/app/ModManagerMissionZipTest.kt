@@ -298,6 +298,41 @@ class ModManagerMissionZipTest {
     }
 
     @Test
+    fun parentMissionZipExtractsLargeRebirthChildDurably() {
+        val filesDir = File("build/test-mod-manager-mission-zip-parent-large-rebirth").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val manager = ModManager(filesDir)
+        val imported =
+            manager.importMissionZipFile(
+                createEnemyWithinParentZip(largeRebirthChild = true),
+                "ewithin-versions.zip",
+            )
+
+        assertNotNull(imported)
+        imported!!
+        assertEquals("ewithin-rebirth.zip", imported.filename)
+        assertEquals("extracted_bundle", imported.importMode)
+
+        val extractedRoot = File(filesDir, "mods/.extracted_mission_zips/ewithin-rebirth.zip")
+        assertTrue(File(extractedRoot, "ewithin.dxa").isFile)
+        assertTrue(File(extractedRoot, "missions/ewithin.mn2").isFile)
+        assertTrue(File(extractedRoot, "missions/ewithin.hog").isFile)
+
+        manager.writeEnabledModPaths("d2")
+        val lines = File(filesDir, "d2x-redux/.active_mod_paths").readLines()
+        assertEquals(
+            listOf(
+                extractedRoot.absolutePath,
+                File(extractedRoot, "ewithin.dxa").absolutePath,
+            ),
+            lines,
+        )
+    }
+
+
+    @Test
     fun largeMissionZipImportsDurableExtractionAndDeletesWithOwner() {
         val filesDir = File("build/test-mod-manager-mission-zip-large-extract").absoluteFile
         filesDir.deleteRecursively()
@@ -360,6 +395,61 @@ class ModManagerMissionZipTest {
         manager.deleteMod(imported.filename)
         assertFalse(File(filesDir, "mods/LargeMission.zip").exists())
         assertFalse(extractedRoot.exists())
+    }
+
+    @Test
+    fun durableMissionZipLaunchAndDetailsUseFreshExtractedRecord() {
+        val filesDir = File("build/test-mod-manager-mission-zip-extracted-record").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val manager = ModManager(filesDir)
+        val imported = manager.importMissionZipFile(createLargePreambleMissionZip(), "LargeMission.zip")
+
+        assertNotNull(imported)
+        imported!!
+        assertEquals("extracted_bundle", imported.importMode)
+
+        val modFile = File(filesDir, "mods/LargeMission.zip")
+        val originalLength = modFile.length()
+        RandomAccessFile(modFile, "rw").use {
+            it.setLength(0)
+            it.write(byteArrayOf(1, 2, 3, 4))
+            it.setLength(originalLength)
+        }
+
+        manager.writeEnabledModPaths("d2")
+        val extractedRoot = File(filesDir, "mods/.extracted_mission_zips/LargeMission.zip")
+        val lines = File(filesDir, "d2x-redux/.active_mod_paths").readLines()
+        assertEquals(listOf(extractedRoot.absolutePath), lines)
+
+        val details = manager.getModDetails(imported, File(filesDir, "sets/default"))
+        assertNotNull(details.missionZip)
+        assertEquals("Uneasy 4", details.missionZip!!.mission.displayName)
+        val extraction = requireNotNull(details.missionZipExtraction)
+        assertEquals("LargeMission.zip", extraction.sourceArchiveName)
+        assertEquals("zip", extraction.archiveFormat)
+        assertEquals(2, extraction.fileCount)
+        assertTrue(details.notes.any { it.startsWith("Uneasy4.hog contents:") })
+    }
+
+    @Test
+    fun durableExtractionReportsDeterminateProgress() {
+        val filesDir = File("build/test-mod-manager-mission-zip-extract-progress").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+        val source = createLargePreambleMissionZip()
+        val scan = MissionZip.inspect(source)
+        assertNotNull(scan)
+
+        val events = mutableListOf<Triple<Long, Long, String>>()
+        extractZipToRoot(source, File(filesDir, "extracted"), scan!!) { done, total, path ->
+            events += Triple(done, total, path)
+        }
+
+        assertTrue(events.any { it.second > 0L })
+        assertTrue(events.any { it.third.endsWith("Uneasy4.hog") })
+        assertEquals(events.last().second, events.last().first)
     }
 
     @Test
@@ -477,7 +567,7 @@ class ModManagerMissionZipTest {
     private fun createLargePreambleMissionZip(): File {
         val zipFile = File.createTempFile("missionzip-manager-large", ".zip")
         zipFile.deleteOnExit()
-        RandomAccessFile(zipFile, "rw").use { it.setLength(MissionZip.SMALL_IN_MEMORY_LIMIT_BYTES + 1L) }
+        RandomAccessFile(zipFile, "rw").use { it.setLength(MissionZip.DURABLE_EXTRACT_THRESHOLD_BYTES + 1L) }
         FileOutputStream(zipFile, true).use { output ->
             output.write(
                 createZipBytes {
@@ -524,10 +614,15 @@ class ModManagerMissionZipTest {
         return zipFile
     }
 
-    private fun createEnemyWithinParentZip(): File {
+    private fun createEnemyWithinParentZip(largeRebirthChild: Boolean = false): File {
         val zipFile = File.createTempFile("missionzip-manager-ewithin-parent", ".zip")
         zipFile.deleteOnExit()
-        val rebirthBytes = createZipBytes { writeEnemyWithinStyleEntries(it) }
+        val rebirthBytes =
+            if (largeRebirthChild) {
+                createLargePreambleZipBytes { writeEnemyWithinStyleEntries(it) }
+            } else {
+                createZipBytes { writeEnemyWithinStyleEntries(it) }
+            }
         val xlBytes =
             createZipBytes {
                 it.putNextEntry(ZipEntry("xl.txt"))
@@ -694,6 +789,13 @@ class ModManagerMissionZipTest {
     private fun createZipBytes(writeEntries: (ZipOutputStream) -> Unit): ByteArray =
         ByteArrayOutputStream().use { output ->
             ZipOutputStream(output).use(writeEntries)
+            output.toByteArray()
+        }
+
+    private fun createLargePreambleZipBytes(writeEntries: (ZipOutputStream) -> Unit): ByteArray =
+        ByteArrayOutputStream().use { output ->
+            output.write(ByteArray((MissionZip.DURABLE_EXTRACT_THRESHOLD_BYTES + 1L).toInt()))
+            output.write(createZipBytes(writeEntries))
             output.toByteArray()
         }
 
