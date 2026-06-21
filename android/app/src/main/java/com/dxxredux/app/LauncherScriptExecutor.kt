@@ -370,6 +370,7 @@ class LauncherScriptExecutor(
                     val deadline = System.currentTimeMillis() + timeoutMs
                     var button: SetupActivity.ButtonInfo? = null
                     var scrollAttempts = 0
+                    var resetToTop = false
                     while (true) {
                         button = activity.findButtonByText(text, exact)
                         if (button != null && button.enabled) break
@@ -385,7 +386,11 @@ class LauncherScriptExecutor(
                             }
                             return
                         }
-                        if (button == null && scrollAttempts < 20) {
+                        if (button == null && !resetToTop) {
+                            activity.scrollToTop()
+                            resetToTop = true
+                            delay(300)
+                        } else if (button == null && scrollAttempts < 20) {
                             activity.scrollDown()
                             scrollAttempts++
                             delay(400)
@@ -421,6 +426,7 @@ class LauncherScriptExecutor(
                     val deadline = System.currentTimeMillis() + timeoutMs
                     var button: SetupActivity.ButtonInfo? = null
                     var scrollAttempts = 0
+                    var resetToTop = false
                     while (true) {
                         button = activity.findButtonByText(text, exact)
                         if (button != null && (expectEnabled == null || button.enabled == expectEnabled)) {
@@ -440,7 +446,11 @@ class LauncherScriptExecutor(
                             }
                             return
                         }
-                        if (button == null && scrollAttempts < 20) {
+                        if (button == null && !resetToTop) {
+                            activity.scrollToTop()
+                            resetToTop = true
+                            delay(300)
+                        } else if (button == null && scrollAttempts < 20) {
                             activity.scrollDown()
                             scrollAttempts++
                             delay(400)

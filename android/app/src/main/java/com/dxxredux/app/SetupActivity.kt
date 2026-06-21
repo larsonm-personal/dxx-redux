@@ -1114,6 +1114,7 @@ class SetupActivity : ComponentActivity() {
                             // Brief delay after keyboard dismiss for layout to settle
                             kotlinx.coroutines.delay(200)
                             var scrollAttempts = 0
+                            var resetToTop = false
                             val deadline = System.currentTimeMillis() + 5000
                             while (true) {
                                 if (this@SetupActivity.performAccessibilityClick(text)) {
@@ -1121,7 +1122,11 @@ class SetupActivity : ComponentActivity() {
                                     return@launch
                                 }
                                 if (System.currentTimeMillis() > deadline) break
-                                if (scrollAttempts < 5) {
+                                if (!resetToTop) {
+                                    this@SetupActivity.scrollToTop()
+                                    resetToTop = true
+                                    kotlinx.coroutines.delay(300)
+                                } else if (scrollAttempts < 5) {
                                     this@SetupActivity.scrollDown()
                                     scrollAttempts++
                                     kotlinx.coroutines.delay(400)

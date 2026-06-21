@@ -267,7 +267,18 @@ internal fun SetupActivity.dismissKeyboard() {
 }
 
 /** Inject a scroll-down swipe gesture (finger moves upward to scroll content down). */
-internal suspend fun SetupActivity.scrollDown() {
+internal suspend fun SetupActivity.scrollDown(): Boolean = scrollSetupContent(forward = true)
+
+/** Inject a scroll-up swipe gesture (finger moves downward to scroll content up). */
+internal suspend fun SetupActivity.scrollUp(): Boolean = scrollSetupContent(forward = false)
+
+internal suspend fun SetupActivity.scrollToTop() {
+    repeat(12) {
+        if (!scrollUp()) return
+    }
+}
+
+private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean =
     withContext(Dispatchers.Main) {
         val root = window.decorView
         val composeView = findComposeView(root)
@@ -282,16 +293,25 @@ internal suspend fun SetupActivity.scrollDown() {
                 }
             var bestScrollNodeId: Int? = null
             var bestScrollArea = 0
-            val scrollDownAction =
-                AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+            val semanticAction =
+                if (forward) {
+                    AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN.id
+                } else {
+                    AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP.id
+                }
+            val legacyAction =
+                if (forward) {
+                    AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+                } else {
+                    AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+                }
             for (id in -1..maxScanId) {
                 val info = provider.createAccessibilityNodeInfo(id) ?: continue
-                val canScrollForward =
+                val canScroll =
                     info.actionList.any {
-                        it.id == AccessibilityNodeInfo.ACTION_SCROLL_FORWARD ||
-                            it.id == scrollDownAction
+                        it.id == legacyAction || it.id == semanticAction
                     }
-                if (!canScrollForward) continue
+                if (!canScroll) continue
                 val bounds = Rect()
                 info.getBoundsInScreen(bounds)
                 val area = bounds.width() * bounds.height()
@@ -304,25 +324,25 @@ internal suspend fun SetupActivity.scrollDown() {
                 val scrolled =
                     provider.performAction(
                         bestScrollNodeId,
-                        AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
+                        legacyAction,
                         null,
                     ) ||
                         provider.performAction(
                             bestScrollNodeId,
-                            scrollDownAction,
+                            semanticAction,
                             null,
                         )
                 if (scrolled) {
                     delay(250)
-                    return@withContext
+                    return@withContext true
                 }
             }
         }
 
         val decorView = window.decorView
         val centerX = decorView.width / 2f
-        val startY = decorView.height * 0.62f
-        val endY = decorView.height * 0.44f
+        val startY = decorView.height * (if (forward) 0.62f else 0.44f)
+        val endY = decorView.height * (if (forward) 0.44f else 0.62f)
         val downTime = SystemClock.uptimeMillis()
         val down =
             MotionEvent.obtain(
@@ -342,7 +362,7 @@ internal suspend fun SetupActivity.scrollDown() {
                 SystemClock.uptimeMillis(),
                 MotionEvent.ACTION_MOVE,
                 centerX,
-                startY - ((startY - endY) * 0.33f),
+                startY + ((endY - startY) * 0.33f),
                 0,
             )
         decorView.dispatchTouchEvent(mid1)
@@ -354,7 +374,7 @@ internal suspend fun SetupActivity.scrollDown() {
                 SystemClock.uptimeMillis(),
                 MotionEvent.ACTION_MOVE,
                 centerX,
-                startY - ((startY - endY) * 0.66f),
+                startY + ((endY - startY) * 0.66f),
                 0,
             )
         decorView.dispatchTouchEvent(mid2)
@@ -383,8 +403,8 @@ internal suspend fun SetupActivity.scrollDown() {
             )
         decorView.dispatchTouchEvent(up)
         up.recycle()
+        true
     }
-}
 
 /**
  * Read controller_config.json and patch all .plr files with its KeySettings.
