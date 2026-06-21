@@ -1085,6 +1085,7 @@ private fun MissionZipMusicDialog(
                     }
                     source.tracks.forEach { track ->
                         val cachedFingerprint = cachedFingerprints[track.id]
+                        val decodedName = cachedFingerprint?.let(::missionZipMusicDecodedName)
                         Row(
                             modifier =
                                 Modifier
@@ -1096,13 +1097,21 @@ private fun MissionZipMusicDialog(
                                 stagingTrackId == MISSION_ZIP_LOCAL_MATCH_TASK_ID &&
                                     MissionZipAudioFingerprintCache.isFingerprintSupported(track) &&
                                     cachedFingerprint == null
-                            Text(
-                                track.displayName,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    track.displayName,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                if (!decodedName.isNullOrBlank()) {
+                                    Text(
+                                        "Decoded: $decodedName",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
                             if (track.playable &&
                                 (
                                     track.kind == MissionZipMusic.KIND_COMPRESSED_AUDIO ||
@@ -1204,6 +1213,14 @@ private fun missionZipMusicTrackSubtitle(track: MissionZipMusicTrack): String =
         if (track.hogEntryName != null) add("inside ${track.archiveEntryPath}")
         track.nestedEntryPath?.let { add(it) }
     }.joinToString(" - ")
+
+internal fun missionZipMusicDecodedName(entry: MissionZipAudioFingerprintCache.Entry): String? =
+    entry.localMatchName
+        ?.trim()
+        ?.takeIf { it.isNotBlank() && it != "[unknown] - [untitled]" }
+        ?: entry.acoustIdName
+            ?.trim()
+            ?.takeIf { it.isNotBlank() && it != "[unknown] - [untitled]" }
 
 private fun missionZipMusicFingerprintLine(entry: MissionZipAudioFingerprintCache.Entry): String =
     buildString {

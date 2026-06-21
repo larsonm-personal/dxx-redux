@@ -13,6 +13,11 @@
  *   disc_id is ignored. */
 void track_overlay_notify(int track_or_song, int is_midi, unsigned long disc_id);
 
+/* Call when a mission zip built-in/addon track starts playing.
+ * Uses mission_music_names.json when present, otherwise falls back to the
+ * legacy MIDI Track N label. */
+void track_overlay_notify_mission_music(const char *filename, int song_index);
+
 /* Return the CUE-parsed title for a 1-based CD track, or NULL. */
 const char *track_names_get_cue_title(int track);
 
@@ -41,5 +46,9 @@ void jukebox_names_load(const char *json_path);
 /* Look up a chromaprint-decoded name for a jukebox file path.
  * Returns NULL if no name is known. */
 const char *jukebox_names_lookup(const char *filepath);
+
+/* Load and look up mission zip built-in/addon music names from PhysFS. */
+void mission_music_names_load(void);
+const char *mission_music_names_lookup(const char *filename);
 
 #endif

@@ -358,7 +358,7 @@ class SetupActivity : ComponentActivity() {
         val activeSet = fileSetManager.getActive()
         val activeSetDir = fileSetManager.getSetDir(activeSet)
         val safManifest = fileSetManager.safManifestForSet(activeSet)
-        val modManager = ModManager(filesDir)
+        val modManager = ModManager(filesDir, this)
         val includeD1MissionZipsForD2 =
             game != "d2" ||
                 d1InD2Readiness(filesDir, activeSetDir, AssetManifest(activeSetDir), safManifest).ready
@@ -2518,7 +2518,7 @@ private fun SetupScreen(
                 }
             }
             if (missionZipImportUris.isNotEmpty()) {
-                val modMgr = ModManager(filesDir)
+                val modMgr = ModManager(filesDir, context)
                 val results = mutableListOf<String>()
                 withContext(Dispatchers.Main) {
                     missionArchiveImporting = true

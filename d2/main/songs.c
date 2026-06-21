@@ -174,6 +174,7 @@ void songs_init()
 	Num_bim_songs = i;
 	Songs_initialized = 1;
 #if defined(__ANDROID__) || defined(ANDROID)
+	mission_music_names_load();
 	debug_log(DLOG_GAME,
 	          "songs_init: source=%s prefer_mission=%d songs=%d music_type=%d",
 	          loaded_sng,
@@ -385,7 +386,7 @@ int songs_play_song( int songnum, int repeat )
 			{
 				Song_playing = songnum;
 #ifdef ANDROID
-				track_overlay_notify(songnum, 1, 0);
+				track_overlay_notify_mission_music(BIMSongs[songnum].filename, songnum);
 #endif
 			}
 			break;
@@ -479,7 +480,7 @@ int songs_play_level_song( int levelnum, int offset )
 				{
 					Song_playing = songnum;
 #ifdef ANDROID
-					track_overlay_notify(songnum, 1, 0);
+					track_overlay_notify_mission_music(BIMSongs[songnum].filename, songnum);
 #endif
 				}
 			}
@@ -656,7 +657,7 @@ int songs_next_track(void)
 			if (songs_play_file(BIMSongs[track].filename, 1, NULL))
 			{
 				Song_playing = track;
-				track_overlay_notify(track, 1, 0);
+				track_overlay_notify_mission_music(BIMSongs[track].filename, track);
 				return 1;
 			}
 			return 0;
@@ -704,7 +705,7 @@ int songs_prev_track(void)
 			if (songs_play_file(BIMSongs[track].filename, 1, NULL))
 			{
 				Song_playing = track;
-				track_overlay_notify(track, 1, 0);
+				track_overlay_notify_mission_music(BIMSongs[track].filename, track);
 				return 1;
 			}
 			return 0;
@@ -742,7 +743,7 @@ int songs_play_specific_track(int track)
 			if (songs_play_file(BIMSongs[track].filename, 1, NULL))
 			{
 				Song_playing = track;
-				track_overlay_notify(track, 1, 0);
+				track_overlay_notify_mission_music(BIMSongs[track].filename, track);
 				return 1;
 			}
 			return 0;
@@ -775,7 +776,10 @@ int songs_get_track_info(int *out_type, int *out_track, int *out_total,
 				return -1;
 			*out_track = Song_playing;
 			*out_total = Num_bim_songs - SONG_FIRST_LEVEL_SONG;
-			strncpy(out_name, BIMSongs[Song_playing].filename, name_size - 1);
+			{
+				const char *decoded = mission_music_names_lookup(BIMSongs[Song_playing].filename);
+				strncpy(out_name, decoded && decoded[0] ? decoded : BIMSongs[Song_playing].filename, name_size - 1);
+			}
 			out_name[name_size - 1] = '\0';
 			return 0;
 
@@ -888,9 +892,10 @@ int songs_get_track_list(char *buf, int buf_size)
 			for (i = 0; i < n && pos < buf_size - 2; i++)
 			{
 				char escaped_name[256];
+				const char *name = mission_music_names_lookup(BIMSongs[SONG_FIRST_LEVEL_SONG + i].filename);
 				if (i > 0)
 					pos += snprintf(buf + pos, buf_size - pos, ",");
-				songs_json_escape(BIMSongs[SONG_FIRST_LEVEL_SONG + i].filename,
+				songs_json_escape(name && name[0] ? name : BIMSongs[SONG_FIRST_LEVEL_SONG + i].filename,
 				                  escaped_name, sizeof(escaped_name));
 				pos += snprintf(buf + pos, buf_size - pos,
 					"{\"index\":%d,\"name\":\"%s\"}",

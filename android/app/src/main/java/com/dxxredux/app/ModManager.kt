@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import org.json.JSONArray
@@ -23,6 +24,7 @@ import java.util.zip.ZipInputStream
  */
 class ModManager(
     private val filesDir: File,
+    private val context: Context? = null,
 ) {
     companion object {
         private const val TAG = "DXX-Mods"
@@ -273,6 +275,7 @@ class ModManager(
 
     fun deleteMod(filename: String) {
         File(modsDir, filename).delete()
+        MissionZipMusicNames.deleteCacheFile(filesDir, filename)
         MissionZipExtractionStore(filesDir).removeOwner(filename)
         mods.removeAll { it.filename == filename }
         save()
@@ -287,6 +290,7 @@ class ModManager(
             val dir = File(filesDir, gameDir)
             File(dir, ".active_mod_paths").delete()
             File(dir, GENERATED_PATCH_DIR).deleteRecursively()
+            File(dir, GENERATED_MISSION_ZIP_DIR).deleteRecursively()
         }
 
         mods = mutableListOf()
@@ -458,14 +462,21 @@ class ModManager(
             }
         }
         try {
-            if (scan.importMode == "extracted_bundle") {
-                val extractLabel = "Extracting level pack cache for faster launches: $displayName"
-                onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
-                extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
-                    onProgress(LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total))
+            val extractionRecord =
+                if (scan.importMode == "extracted_bundle") {
+                    val extractLabel = "Extracting level pack cache for faster launches: $displayName"
+                    onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
+                    val record =
+                        extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
+                            onProgress(LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total))
+                        }
+                    onProgress(LauncherCopyProgress("Cached level pack for faster launches: $displayName", 1L, 1L))
+                    record
+                } else {
+                    null
                 }
-                onProgress(LauncherCopyProgress("Cached level pack for faster launches: $displayName", 1L, 1L))
-            } else {
+            writeMissionZipMusicNames(safeName, dest, extractionRecord, displayName, onProgress)
+            if (scan.importMode != "extracted_bundle") {
                 onProgress(LauncherCopyProgress("Finalizing level pack: $displayName", 0L, 0L))
             }
         } catch (e: Exception) {
@@ -510,14 +521,24 @@ class ModManager(
                         }
                 val extractionStore = MissionZipExtractionStore(filesDir)
                 extractionStore.removeOwner(safeName)
-                if (scan.importMode == "extracted_bundle") {
-                    val extractLabel = "Extracting level pack cache for faster launches: $safeName"
-                    onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
-                    extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
-                        onProgress(LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total))
+                val extractionRecord =
+                    if (scan.importMode == "extracted_bundle") {
+                        val extractLabel = "Extracting level pack cache for faster launches: $safeName"
+                        onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
+                        val record =
+                            extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
+                                onProgress(
+                                    LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total),
+                                )
+                            }
+                        onProgress(
+                            LauncherCopyProgress("Cached level pack for faster launches: $safeName", 1L, 1L),
+                        )
+                        record
+                    } else {
+                        null
                     }
-                    onProgress(LauncherCopyProgress("Cached level pack for faster launches: $safeName", 1L, 1L))
-                }
+                writeMissionZipMusicNames(safeName, dest, extractionRecord, safeName, onProgress)
                 registerMissionZip(safeName, dest.length(), scan)
             }
         } catch (e: Exception) {
@@ -653,15 +674,26 @@ class ModManager(
     ): List<String> {
         val extractionStore = MissionZipExtractionStore(filesDir)
         if (mod.importMode == "extracted_bundle") {
-            extractionStore.activePathLines(mod.filename, modFile)?.let { return it }
+            extractionStore.freshRecord(mod.filename, modFile)?.let { record ->
+                writeMissionZipMusicNames(
+                    mod.filename,
+                    modFile,
+                    record,
+                    mod.displayName,
+                )
+                return extractionStore.activePathLines(mod.filename, modFile) ?: emptyList()
+            }
         }
         val scan = MissionZip.inspect(modFile) ?: return emptyList()
         if (mod.importMode == "extracted_bundle" || scan.importMode == "extracted_bundle") {
-            return extractionStore.activePathLines(mod.filename, modFile, scan)
+            val record = extractionStore.ensureExtracted(mod.filename, modFile, scan)
+            writeMissionZipMusicNames(mod.filename, modFile, record, mod.displayName)
+            return extractionStore.activePathLines(mod.filename, modFile) ?: emptyList()
         }
         val stageDir = File(generatedMissionZipDir(game), safeMissionZipDirName(mod.filename))
         try {
             extractZipToRoot(modFile, stageDir, scan)
+            copyMissionZipMusicNames(mod.filename, stageDir)
         } catch (e: InsufficientStorageException) {
             throw e
         } catch (e: Exception) {
@@ -679,6 +711,55 @@ class ModManager(
                 if (archive.isFile) add(archive.absolutePath)
             }
         }
+    }
+
+    private fun writeMissionZipMusicNames(
+        ownerFilename: String,
+        modFile: File,
+        extractionRecord: MissionZipExtractionRecord?,
+        displayName: String,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
+    ) {
+        val appContext = context ?: return
+        val catalog =
+            extractionRecord?.let { MissionZipMusic.inspectExtracted(it) }
+                ?: MissionZipMusic.inspect(modFile)
+                ?: return
+        val sidecar =
+            extractionRecord?.let { File(it.rootDir, MISSION_ZIP_MUSIC_NAMES_FILE) }
+                ?: MissionZipMusicNames.cacheFile(filesDir, ownerFilename)
+        if (sidecar.isFile) return
+        try {
+            val count =
+                MissionZipMusicNames.identifyLocalAndWrite(
+                    appContext,
+                    filesDir,
+                    catalog,
+                    sidecar,
+                ) { done, total, track ->
+                    if (total > 0) {
+                        onProgress(
+                            LauncherCopyProgress(
+                                "Identifying music tracks: $displayName ($track)",
+                                done.toLong(),
+                                total.toLong(),
+                            ),
+                        )
+                    }
+                }
+            if (count > 0) logInfo("Wrote $count mission music names for $displayName")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not identify mission zip music for $displayName", e)
+        }
+    }
+
+    private fun copyMissionZipMusicNames(
+        ownerFilename: String,
+        stageDir: File,
+    ) {
+        val sidecar = MissionZipMusicNames.cacheFile(filesDir, ownerFilename)
+        if (!sidecar.isFile) return
+        sidecar.copyTo(File(stageDir, MISSION_ZIP_MUSIC_NAMES_FILE), overwrite = true)
     }
 
     fun checkEnabledModCompatibility(

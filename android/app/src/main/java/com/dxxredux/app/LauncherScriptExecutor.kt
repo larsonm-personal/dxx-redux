@@ -725,7 +725,7 @@ class LauncherScriptExecutor(
             return null
         }
         val displayName = step.optString("display_name", source.name).ifBlank { source.name }
-        val modManager = ModManager(context.filesDir)
+        val modManager = ModManager(context.filesDir, context)
         val before = modManager.listMods().map { it.filename }.toSet()
         val shouldMoveSource = isInAutomationCache(source)
         val mod =
