@@ -295,6 +295,7 @@ enum step_type {
 	STEP_ASSERT_BUTTON,              /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_CONTROLLER_MATCH,    /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_MISSION_LIST_HAS_NON_BASE,
+	STEP_SELECT_MISSION,   /* select mission if mission picker is present */
 	STEP_SET_DEBUG,        /* set a debug flag (e.g. tex_overlay) */
 	STEP_SET_SECRET_REVEAL /* automation-only: set automap secret reveal */
 };
@@ -326,6 +327,7 @@ struct auto_step {
 	std::vector<assert_expect> expects; /* STEP_ASSERT: expected values */
 	std::string select_text;            /* STEP_SELECT: partial text to match */
 	bool select_non_base_mission = false;
+	bool select_mission = false;
 	bool optional = false;           /* STEP_SELECT: skip instead of fail on timeout */
 	int axis_id = -1;                /* STEP_SEND_AXIS: axis number (0-5) */
 	float axis_value = 0.0f;         /* STEP_SEND_AXIS: value (-1.0 to 1.0) */
@@ -467,6 +469,7 @@ static const char *step_type_name(step_type t)
 		case STEP_ASSERT_BUTTON: return "assert_button";
 		case STEP_ASSERT_CONTROLLER_MATCH: return "assert_controller_match";
 		case STEP_ASSERT_MISSION_LIST_HAS_NON_BASE: return "assert_mission_list_has_non_base";
+		case STEP_SELECT_MISSION: return "select_mission";
 		case STEP_SET_DEBUG: return "set_debug";
 		case STEP_SET_SECRET_REVEAL: return "set_secret_reveal";
 		default: return "unknown";
@@ -944,6 +947,54 @@ static bool select_find_first_non_base_mission(int *out_target, int *out_current
 		LOGE("SELECT_NON_BASE_MISSION: front window is not a newmenu or listbox");
 		return false;
 	}
+}
+
+static bool front_is_start_level_menu(void)
+{
+	window *front = window_get_front();
+	if (!front)
+		return false;
+
+	int (*cb)(window *, d_event *, void *) = window_get_callback(front);
+	void *data = window_get_data(front);
+	if (cb != (int (*)(window *, d_event *, void *)) newmenu_handler || !data)
+		return false;
+
+	newmenu *menu = (newmenu *) data;
+	newmenu_item *items = newmenu_get_items(menu);
+	int nitems = newmenu_get_nitems(menu);
+	int citem = newmenu_get_citem(menu);
+	const char *subtitle = newmenu_get_subtitle(menu);
+	bool has_start_prompt = subtitle && icontains(subtitle, "select starting level");
+	bool has_level_range = false;
+	bool has_input = false;
+
+	for (int i = 0; i < nitems; i++) {
+		const char *text = items[i].text;
+		if (text && icontains(text, "you may start on") &&
+		    icontains(text, "level up to"))
+			has_level_range = true;
+		if (items[i].type == NM_TYPE_INPUT)
+			has_input = true;
+	}
+
+	if (has_start_prompt && has_level_range && has_input) {
+		const char *current_text =
+		    (citem >= 0 && citem < nitems && items[citem].text) ? items[citem].text : "";
+		LOGI("SELECT_MISSION: mission picker skipped, already at start-level menu (citem=%d text=\"%s\")",
+		     citem, current_text);
+		return true;
+	}
+
+	return false;
+}
+
+static bool select_find_target(const auto_step &s, int *target, int *current,
+                               int *current_type)
+{
+	if (s.select_non_base_mission)
+		return select_find_first_non_base_mission(target, current, current_type);
+	return select_find_item(s.select_text.c_str(), target, current, current_type);
 }
 
 static bool select_can_confirm_current_input_as_ok(const auto_step &s,
@@ -1497,6 +1548,9 @@ static int parse_script(const char *json_text)
 			else if (action == "select_non_base_mission") {
 				s.type = STEP_SELECT;
 				s.select_non_base_mission = true;
+			} else if (action == "select_mission") {
+				s.type = STEP_SELECT_MISSION;
+				s.select_mission = true;
 			} else if (action == "send_axis") s.type = STEP_SEND_AXIS;
 			else if (action == "send_button") s.type = STEP_SEND_BUTTON;
 			else if (action == "send_touch_tap") s.type = STEP_SEND_TOUCH_TAP;
@@ -2054,12 +2108,18 @@ extern "C" void game_automate_tick(void)
 		}
 
 		case STEP_SELECT:
+		case STEP_SELECT_MISSION:
 			if (g_select_phase == 0) {
 				/* Phase 0: find the target item and compute navigation delta.
 				 * If timeout_ms is set, poll each frame until the item appears
 				 * instead of failing immediately. */
 				int target, current;
-				bool found = s.select_non_base_mission ? select_find_first_non_base_mission(&target, &current, NULL) : select_find_item(s.select_text.c_str(), &target, &current, NULL);
+				if (s.select_mission && front_is_start_level_menu()) {
+					log_append("select_mission", "skip", "start_level_menu");
+					advance_step();
+					break;
+				}
+				bool found = select_find_target(s, &target, &current, NULL);
 				if (!found) {
 					if (s.timeout_ms > 0 && elapsed < (Uint32) s.timeout_ms) {
 						break; /* retry next frame */
@@ -2089,7 +2149,7 @@ extern "C" void game_automate_tick(void)
 				 * DOWN press may advance by more than one index.
 				 */
 				int target, current, current_type;
-				bool found = s.select_non_base_mission ? select_find_first_non_base_mission(&target, &current, &current_type) : select_find_item(s.select_text.c_str(), &target, &current, &current_type);
+				bool found = select_find_target(s, &target, &current, &current_type);
 				if (!found) {
 					stop_script_fail("SELECT: menu disappeared during navigation");
 					break;
@@ -2123,7 +2183,7 @@ extern "C" void game_automate_tick(void)
 				 * The cursor can drift between Phase 1 and 2 if the
 				 * game loop stalls (e.g. emulator lag). */
 				int target, current;
-				bool found = s.select_non_base_mission ? select_find_first_non_base_mission(&target, &current, NULL) : select_find_item(s.select_text.c_str(), &target, &current, NULL);
+				bool found = select_find_target(s, &target, &current, NULL);
 				if (!found) {
 					stop_script_fail("SELECT: menu disappeared before confirm");
 					break;

@@ -41,7 +41,7 @@
 
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
-    {"action": "select", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "skip_briefing", "timeout_ms": 20000, "post_delay_ms": 100},

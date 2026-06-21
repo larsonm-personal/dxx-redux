@@ -87,7 +87,7 @@
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select
-    {"action": "select", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
     {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},

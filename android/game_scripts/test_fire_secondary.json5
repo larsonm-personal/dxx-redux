@@ -44,7 +44,7 @@
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
 
     // Mission select
-    {"action": "select", "text": "${MISSION}", "optional": true,
+    {"action": "select_mission", "text": "${MISSION}",
      "post_delay_ms": 100, "timeout_ms": 1000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 

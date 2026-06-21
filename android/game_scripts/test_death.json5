@@ -59,7 +59,7 @@
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select
-    {"action": "select", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Level number input (parameterized keys)
     {"action": "wait_ms", "ms": 300},
