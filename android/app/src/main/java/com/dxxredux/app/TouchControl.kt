@@ -192,6 +192,13 @@ internal fun stickExtremeActionPressed(
     return directionalValue > threshold
 }
 
+internal fun stickAfterburnerChargeVisible(
+    gameVariant: String,
+    actions: List<StickExtremeAction>,
+): Boolean =
+    gameVariant == "d2" &&
+        actions.any { it.enabled && it.binding == TouchBindings.BTN_AFTERBURNER }
+
 internal fun stickExtremeTravelFromTouch(
     dxPx: Float,
     dyPx: Float,

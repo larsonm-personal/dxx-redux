@@ -60,7 +60,26 @@ private data class StorageFileScanResult(
     val totalSize: Long,
 )
 
+private data class AdvancedPageInitialLists(
+    val logFiles: List<File>,
+    val crashFiles: List<File>,
+    val demos: List<StagedInputDemo>,
+)
+
+internal data class AdvancedPageLoadProgress(
+    val label: String,
+    val completed: Int,
+    val total: Int,
+)
+
 private const val STORAGE_FILE_PAGE_SIZE = 200
+private const val ADVANCED_PAGE_OPEN_STEP_COUNT = 3
+
+internal fun formatAdvancedPageLoadProgress(progress: AdvancedPageLoadProgress): String {
+    val total = progress.total.coerceAtLeast(1)
+    val completed = progress.completed.coerceIn(0, total)
+    return "${progress.label} $completed/$total"
+}
 
 private fun annotateStorageHelperSymlinks(entries: List<StorageFileEntry>): List<StorageFileEntry> {
     val helperTargets = mutableMapOf<String, String>()
@@ -197,7 +216,56 @@ fun AdvancedSettingsPage(
     val ctx = LocalContext.current
     val scrollState = rememberScrollState()
     val initialFocus = remember { FocusRequester() }
+    var initialLists by remember(filesDir) { mutableStateOf<AdvancedPageInitialLists?>(null) }
+    var loadProgress by remember(filesDir) {
+        mutableStateOf(
+            AdvancedPageLoadProgress(
+                label = "Preparing Advanced Settings",
+                completed = 0,
+                total = ADVANCED_PAGE_OPEN_STEP_COUNT,
+            ),
+        )
+    }
     RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
+
+    LaunchedEffect(ctx, filesDir) {
+        val appContext = ctx.applicationContext
+        var completed = 0
+
+        fun progress(label: String) {
+            loadProgress =
+                AdvancedPageLoadProgress(
+                    label = label,
+                    completed = completed,
+                    total = ADVANCED_PAGE_OPEN_STEP_COUNT,
+                )
+        }
+
+        progress("Scanning debug logs")
+        val logFiles = withContext(Dispatchers.IO) { DebugLog.listLogFiles(appContext) }
+        completed++
+
+        progress("Scanning crash reports")
+        val crashFiles = withContext(Dispatchers.IO) { CrashLog.listCrashFiles(appContext) }
+        completed++
+
+        progress("Scanning recorded demos")
+        val demos = withContext(Dispatchers.IO) { InputDemoManager.listStagedDemos(filesDir) }
+        completed++
+
+        loadProgress =
+            AdvancedPageLoadProgress(
+                label = "Advanced Settings ready",
+                completed = completed,
+                total = ADVANCED_PAGE_OPEN_STEP_COUNT,
+            )
+        initialLists =
+            AdvancedPageInitialLists(
+                logFiles = logFiles,
+                crashFiles = crashFiles,
+                demos = demos,
+            )
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -231,259 +299,298 @@ fun AdvancedSettingsPage(
             Spacer(modifier = Modifier.height(12.dp))
 
             Box(modifier = Modifier.weight(1f)) {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .verticalScroll(scrollState),
-                ) {
-                    // -- Export / Import configs --
-                    Text("Config Management", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    val configImportLauncher =
-                        rememberLauncherForActivityResult(
-                            contract =
-                                androidx.activity.result.contract.ActivityResultContracts
-                                    .OpenDocument(),
-                        ) { uri ->
-                            if (uri == null) return@rememberLauncherForActivityResult
-                            val msg = ConfigImportExport.importFromUri(ctx, uri)
-                            Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
-                        }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { ConfigImportExport.exportAll(ctx) },
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                            modifier = Modifier.height(32.dp),
-                        ) {
-                            Text("Export All Configs", fontSize = 12.sp)
-                        }
-                        OutlinedButton(
-                            onClick = { configImportLauncher.launch(arrayOf("application/json", "*/*")) },
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                            modifier = Modifier.height(32.dp),
-                        ) {
-                            Text("Import Config", fontSize = 12.sp)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // -- Online metadata lookups --
-                    OnlineMetadataSection()
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // -- Debug Logging --
-                    DebugLoggingSection()
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // -- Crash Reports --
-                    CrashReportsSection()
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // -- Newly-Recorded Demos --
-                    RecordedInputDemosSection(filesDir, fileSetManager, isGameReady, onPlayInputDemo)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // -- Storage Inspector --
-                    StorageInspectorSection(filesDir)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // -- Imported Files Location --
-                    ImportLocationSection(filesDir)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // -- Dangerous zone --
-                    Text("Danger Zone", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFF44336))
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Reset All Controls
-                    var showResetDialog by remember { mutableStateOf(false) }
-                    OutlinedButton(
-                        onClick = { showResetDialog = true },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        modifier = Modifier.height(36.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
+                val loadedLists = initialLists
+                if (loadedLists == null) {
+                    AdvancedPageOpenProgress(loadProgress)
+                } else {
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .verticalScroll(scrollState),
                     ) {
-                        Text("Reset All Controls", fontSize = 12.sp)
-                    }
-                    if (showResetDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showResetDialog = false },
-                            title = { Text("Reset All Controls") },
-                            text = {
-                                Text(
-                                    "This will reset ALL control bindings to defaults:\n\n" +
-                                        "- Touch layout (positions, sizes, bindings)\n" +
-                                        "- Physical controller mappings\n" +
-                                        "- In-game keyboard, joystick, and mouse settings for every pilot\n\n" +
-                                        "The app will restart after rese.",
-                                    fontSize = 13.sp,
-                                )
-                            },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    File(ctx.filesDir, "controller_config.json").delete()
-                                    File(ctx.filesDir, "touch_layout.json").delete()
-                                    ControllerConfigSlotRepository.clear(ctx)
-                                    TouchLayoutSlotRepository.clear(ctx)
-                                    NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d2")
-                                    NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d1")
-                                    showResetDialog = false
-                                    android.os.Process.killProcess(android.os.Process.myPid())
-                                }) {
-                                    Text("Reset & Restart", color = Color(0xFFF44336))
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showResetDialog = false }) { Text("Cancel") }
-                            },
+                        // -- Export / Import configs --
+                        Text("Config Management", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        val configImportLauncher =
+                            rememberLauncherForActivityResult(
+                                contract =
+                                    androidx.activity.result.contract.ActivityResultContracts
+                                        .OpenDocument(),
+                            ) { uri ->
+                                if (uri == null) return@rememberLauncherForActivityResult
+                                val msg = ConfigImportExport.importFromUri(ctx, uri)
+                                Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
+                            }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { ConfigImportExport.exportAll(ctx) },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.height(32.dp),
+                            ) {
+                                Text("Export All Configs", fontSize = 12.sp)
+                            }
+                            OutlinedButton(
+                                onClick = { configImportLauncher.launch(arrayOf("application/json", "*/*")) },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                modifier = Modifier.height(32.dp),
+                            ) {
+                                Text("Import Config", fontSize = 12.sp)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // -- Online metadata lookups --
+                        OnlineMetadataSection()
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // -- Debug Logging --
+                        DebugLoggingSection(loadedLists.logFiles)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // -- Crash Reports --
+                        CrashReportsSection(loadedLists.crashFiles)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // -- Newly-Recorded Demos --
+                        RecordedInputDemosSection(
+                            filesDir,
+                            fileSetManager,
+                            isGameReady,
+                            onPlayInputDemo,
+                            loadedLists.demos,
                         )
-                    }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    // Clear All Game Data
-                    var showClearGameDataDialog by remember { mutableStateOf(false) }
-                    OutlinedButton(
-                        onClick = { showClearGameDataDialog = true },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        modifier = Modifier.height(36.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
-                    ) {
-                        Text("Clear All Game Data", fontSize = 12.sp)
-                    }
-                    if (showClearGameDataDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showClearGameDataDialog = false },
-                            title = { Text("Clear All Game Data") },
-                            text = {
-                                Text(
-                                    "This will remove imported game data from every file set and delete all mods.\n\n" +
-                                        "Files added via file picker (leave-in-place) will be unlinked " +
-                                        "but not deleted from their original location.\n\n" +
-                                        "Pilot files, saved games, and control settings will be kept.\n\n" +
-                                        "The app will restart after clearing data",
-                                    fontSize = 13.sp,
-                                )
-                            },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    val retainedSafUris =
-                                        CustomAudioSetManager(ctx.filesDir)
-                                            .getSets()
-                                            .flatMap { it.referencedUris.values }
-                                    val audioSourceManager = AudioSourceManager(ctx.filesDir)
-                                    val audioCleared = audioSourceManager.getSources().size
-                                    val setsCleared =
-                                        fileSetManager.clearAllGameDataPreservingPlayers(
+                        // -- Storage Inspector --
+                        StorageInspectorSection(filesDir)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // -- Imported Files Location --
+                        ImportLocationSection(filesDir)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // -- Dangerous zone --
+                        Text(
+                            "Danger Zone",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color(0xFFF44336),
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Reset All Controls
+                        var showResetDialog by remember { mutableStateOf(false) }
+                        OutlinedButton(
+                            onClick = { showResetDialog = true },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            modifier = Modifier.height(36.dp),
+                            colors =
+                                ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFFF44336),
+                                ),
+                        ) {
+                            Text("Reset All Controls", fontSize = 12.sp)
+                        }
+                        if (showResetDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showResetDialog = false },
+                                title = { Text("Reset All Controls") },
+                                text = {
+                                    Text(
+                                        "This will reset ALL control bindings to defaults:\n\n" +
+                                            "- Touch layout (positions, sizes, bindings)\n" +
+                                            "- Physical controller mappings\n" +
+                                            "- In-game keyboard, joystick, and mouse settings for every pilot\n\n" +
+                                            "The app will restart after rese.",
+                                        fontSize = 13.sp,
+                                    )
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        File(ctx.filesDir, "controller_config.json").delete()
+                                        File(ctx.filesDir, "touch_layout.json").delete()
+                                        ControllerConfigSlotRepository.clear(ctx)
+                                        TouchLayoutSlotRepository.clear(ctx)
+                                        NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d2")
+                                        NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d1")
+                                        showResetDialog = false
+                                        android.os.Process.killProcess(android.os.Process.myPid())
+                                    }) {
+                                        Text("Reset & Restart", color = Color(0xFFF44336))
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showResetDialog = false }) { Text("Cancel") }
+                                },
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Clear All Game Data
+                        var showClearGameDataDialog by remember { mutableStateOf(false) }
+                        OutlinedButton(
+                            onClick = { showClearGameDataDialog = true },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            modifier = Modifier.height(36.dp),
+                            colors =
+                                ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFFF44336),
+                                ),
+                        ) {
+                            Text("Clear All Game Data", fontSize = 12.sp)
+                        }
+                        if (showClearGameDataDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showClearGameDataDialog = false },
+                                title = { Text("Clear All Game Data") },
+                                text = {
+                                    Text(
+                                        "This will remove imported game data from every file set " +
+                                            "and delete all mods.\n\n" +
+                                            "Files added via file picker (leave-in-place) will be unlinked " +
+                                            "but not deleted from their original location.\n\n" +
+                                            "Pilot files, saved games, and control settings will be kept.\n\n" +
+                                            "The app will restart after clearing data",
+                                        fontSize = 13.sp,
+                                    )
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        val retainedSafUris =
+                                            CustomAudioSetManager(ctx.filesDir)
+                                                .getSets()
+                                                .flatMap { it.referencedUris.values }
+                                        val audioSourceManager = AudioSourceManager(ctx.filesDir)
+                                        val audioCleared = audioSourceManager.getSources().size
+                                        val setsCleared =
+                                            fileSetManager.clearAllGameDataPreservingPlayers(
+                                                context = ctx,
+                                                retainedTrackedUris = retainedSafUris,
+                                            )
+                                        audioSourceManager.clearAll(
                                             context = ctx,
                                             retainedTrackedUris = retainedSafUris,
                                         )
-                                    audioSourceManager.clearAll(
-                                        context = ctx,
-                                        retainedTrackedUris = retainedSafUris,
+                                        val modsCleared = ModManager(ctx.filesDir).clearAllMods()
+                                        showClearGameDataDialog = false
+                                        Toast
+                                            .makeText(
+                                                ctx,
+                                                "Cleared $setsCleared set(s), removed $modsCleared mod(s), " +
+                                                    "cleared $audioCleared CD source(s)",
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                        android.os.Process.killProcess(android.os.Process.myPid())
+                                    }) {
+                                        Text("Clear & Restart", color = Color(0xFFF44336))
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showClearGameDataDialog = false }) { Text("Cancel") }
+                                },
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Delete All Player Files
+                        var showDeletePilotsDialog by remember { mutableStateOf(false) }
+                        OutlinedButton(
+                            onClick = { showDeletePilotsDialog = true },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            modifier = Modifier.height(36.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
+                        ) {
+                            Text("Delete All Player Files", fontSize = 12.sp)
+                        }
+                        if (showDeletePilotsDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showDeletePilotsDialog = false },
+                                title = { Text("Delete All Player Files") },
+                                text = {
+                                    Text(
+                                        "This will delete ALL pilot files (.plr), extended configs (.plx), " +
+                                            "effects (.eff), new game plus (.ngp), and saved games " +
+                                            "(.sg*, .mg*) for both Descent 1 and Descent 2 across all " +
+                                            "file sets.\n\nThis cannot be undone.\n\n" +
+                                            "The app will restart after deletion",
+                                        fontSize = 13.sp,
                                     )
-                                    val modsCleared = ModManager(ctx.filesDir).clearAllMods()
-                                    showClearGameDataDialog = false
-                                    Toast
-                                        .makeText(
-                                            ctx,
-                                            "Cleared $setsCleared set(s), removed $modsCleared mod(s), cleared $audioCleared CD source(s)",
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                    android.os.Process.killProcess(android.os.Process.myPid())
-                                }) {
-                                    Text("Clear & Restart", color = Color(0xFFF44336))
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showClearGameDataDialog = false }) { Text("Cancel") }
-                            },
-                        )
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        val deleted = fileSetManager.deleteAllPilotFiles()
+                                        showDeletePilotsDialog = false
+                                        Toast.makeText(ctx, "Deleted $deleted file(s)", Toast.LENGTH_SHORT).show()
+                                        android.os.Process.killProcess(android.os.Process.myPid())
+                                    }) {
+                                        Text("Delete & Restart", color = Color(0xFFF44336))
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showDeletePilotsDialog = false }) { Text("Cancel") }
+                                },
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Restart App
+                        Button(
+                            onClick = { android.os.Process.killProcess(android.os.Process.myPid()) },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                            modifier = Modifier.fillMaxWidth().height(44.dp),
+                        ) {
+                            Text("Restart App", fontSize = 14.sp)
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Delete All Player Files
-                    var showDeletePilotsDialog by remember { mutableStateOf(false) }
-                    OutlinedButton(
-                        onClick = { showDeletePilotsDialog = true },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        modifier = Modifier.height(36.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
-                    ) {
-                        Text("Delete All Player Files", fontSize = 12.sp)
-                    }
-                    if (showDeletePilotsDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showDeletePilotsDialog = false },
-                            title = { Text("Delete All Player Files") },
-                            text = {
-                                Text(
-                                    "This will delete ALL pilot files (.plr), extended configs (.plx), " +
-                                        "effects (.eff), new game plus (.ngp), and saved games " +
-                                        "(.sg*, .mg*) for both Descent 1 and Descent 2 across all " +
-                                        "file sets.\n\nThis cannot be undone.\n\n" +
-                                        "The app will restart after deletion",
-                                    fontSize = 13.sp,
-                                )
-                            },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    val deleted = fileSetManager.deleteAllPilotFiles()
-                                    showDeletePilotsDialog = false
-                                    Toast.makeText(ctx, "Deleted $deleted file(s)", Toast.LENGTH_SHORT).show()
-                                    android.os.Process.killProcess(android.os.Process.myPid())
-                                }) {
-                                    Text("Delete & Restart", color = Color(0xFFF44336))
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showDeletePilotsDialog = false }) { Text("Cancel") }
-                            },
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Restart App
-                    Button(
-                        onClick = { android.os.Process.killProcess(android.os.Process.myPid()) },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                    ) {
-                        Text("Restart App", fontSize = 14.sp)
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
                 ScrollArrows(scrollState)
             }
         }
+    }
+}
+
+@Composable
+private fun AdvancedPageOpenProgress(progress: AdvancedPageLoadProgress) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(top = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(formatAdvancedPageLoadProgress(progress), fontSize = 12.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+        LinearProgressIndicator(
+            progress = { (progress.completed.toFloat() / progress.total.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f) },
+            modifier = Modifier.fillMaxWidth().height(4.dp),
+        )
     }
 }
 
@@ -520,7 +627,7 @@ private fun OnlineMetadataSection() {
 }
 
 @Composable
-private fun DebugLoggingSection() {
+private fun DebugLoggingSection(initialLogFiles: List<File>) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
@@ -528,7 +635,7 @@ private fun DebugLoggingSection() {
         remember {
             mutableStateListOf(*Array(DebugLogCategory.COUNT) { DebugLog.isCategoryEnabled(ctx, it) })
         }
-    var logFiles by remember { mutableStateOf(DebugLog.listLogFiles(ctx)) }
+    var logFiles by remember(initialLogFiles) { mutableStateOf(initialLogFiles) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var transferProgress by remember { mutableStateOf<LauncherCopyProgress?>(null) }
     val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
@@ -676,11 +783,11 @@ private fun DebugLoggingSection() {
 }
 
 @Composable
-private fun CrashReportsSection() {
+private fun CrashReportsSection(initialCrashFiles: List<File>) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
-    var crashFiles by remember { mutableStateOf(CrashLog.listCrashFiles(ctx)) }
+    var crashFiles by remember(initialCrashFiles) { mutableStateOf(initialCrashFiles) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var transferProgress by remember { mutableStateOf<LauncherCopyProgress?>(null) }
     val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
@@ -829,13 +936,14 @@ private fun RecordedInputDemosSection(
     fileSetManager: FileSetManager,
     isGameReady: (String) -> Boolean,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
+    initialDemos: List<StagedInputDemo>,
 ) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     val activeSetName = fileSetManager.getActive()
     val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
-    var demos by remember { mutableStateOf(InputDemoManager.listStagedDemos(filesDir)) }
+    var demos by remember(initialDemos) { mutableStateOf(initialDemos) }
     var transferProgress by remember { mutableStateOf<LauncherCopyProgress?>(null) }
     var showDeleteAllDialog by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<StagedInputDemo?>(null) }
@@ -856,7 +964,10 @@ private fun RecordedInputDemosSection(
     Text("Newly-Recorded Demos", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. Play launches the staged input demo directly, and paired .rngtrace.jsonl and .dem sidecars still export with the demo and follow it into the active set ($activeSetName)",
+        "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. " +
+            "Play launches the staged input demo directly, and paired .rngtrace.jsonl " +
+            "and .dem sidecars still export with the demo and follow it into the " +
+            "active set ($activeSetName)",
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -1139,7 +1250,8 @@ private fun RecordedInputDemosSection(
             text = {
                 Column {
                     Text(
-                        "Copy ${installTarget?.file?.name} and any recorded sidecars into the active set ($activeSetName) demos folder",
+                        "Copy ${installTarget?.file?.name} and any recorded sidecars " +
+                            "into the active set ($activeSetName) demos folder",
                         fontSize = 13.sp,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1514,13 +1626,15 @@ private fun StorageInspectorSection(filesDir: File) {
                             Text("This cannot be undone.", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
                         } else if (entry.isLinkedMissionZipOwner) {
                             Text(
-                                "This will unlink $linkedOwner from Mods and remove all cached files extracted from that ZIP.",
+                                "This will unlink $linkedOwner from Mods and remove all cached " +
+                                    "files extracted from that ZIP.",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.error,
                             )
                         } else if (entry.linkedMissionZipSourceExists) {
                             Text(
-                                "This will unlink $linkedOwner from Mods and remove all cached files extracted from that ZIP.",
+                                "This will unlink $linkedOwner from Mods and remove all cached " +
+                                    "files extracted from that ZIP.",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.error,
                             )
@@ -1718,7 +1832,8 @@ private fun StorageInspectorSection(filesDir: File) {
             val removeSummary =
                 when {
                     entry.customSetId != null -> {
-                        "This removes the referenced audio file from the launcher set only. External storage files are not deleted"
+                        "This removes the referenced audio file from the launcher set only. " +
+                            "External storage files are not deleted"
                     }
 
                     entry.cdSourceId != null -> {
@@ -1726,7 +1841,8 @@ private fun StorageInspectorSection(filesDir: File) {
                     }
 
                     entry.isPermissionEntry -> {
-                        "This revokes the persisted SAF permission. Other entries that still rely on this grant may stop working"
+                        "This revokes the persisted SAF permission. Other entries that still " +
+                            "rely on this grant may stop working"
                     }
 
                     else -> {
@@ -1765,7 +1881,8 @@ private fun StorageInspectorSection(filesDir: File) {
             val removeDetail =
                 when {
                     entry.customSetId != null -> {
-                        "Remove this referenced audio file from its launcher set? This will not delete the external file"
+                        "Remove this referenced audio file from its launcher set? " +
+                            "This will not delete the external file"
                     }
 
                     entry.cdSourceId != null -> {
@@ -1773,7 +1890,8 @@ private fun StorageInspectorSection(filesDir: File) {
                     }
 
                     entry.isPermissionEntry -> {
-                        "Revoke this persisted SAF permission? Any remaining launcher entries that still need it may stop working"
+                        "Revoke this persisted SAF permission? Any remaining launcher entries " +
+                            "that still need it may stop working"
                     }
 
                     else -> {

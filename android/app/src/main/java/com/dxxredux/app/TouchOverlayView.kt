@@ -1691,7 +1691,7 @@ class TouchOverlayView
                 }
 
         private fun stickHasAfterburnerExtremeAction(s: StickState): Boolean =
-            s.control.extremeActions.any { it.enabled && it.binding == TouchBindings.BTN_AFTERBURNER }
+            stickAfterburnerChargeVisible(gameVariant, s.control.extremeActions)
 
         private fun drawStickAfterburnerCharge(
             canvas: Canvas,

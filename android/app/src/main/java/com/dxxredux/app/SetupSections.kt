@@ -901,19 +901,20 @@ private fun MissionZipMusicDialog(
         }
 
     LaunchedEffect(catalog.archivePath, fingerprintableTracks.joinToString("|") { it.id }) {
-        if (fingerprintableTracks.isEmpty()) return@LaunchedEffect
+        val pendingTracks = missionZipMusicTracksNeedingLocalAnalysis(fingerprintableTracks, cachedFingerprints)
+        if (pendingTracks.isEmpty()) return@LaunchedEffect
         stagingProblem = null
         musicProgress =
             MissionZipMusicAnalysisProgress(
                 label = "Generating chromaprints",
                 completed = 0,
-                total = fingerprintableTracks.size,
+                total = pendingTracks.size,
             )
         stagingTrackId = MISSION_ZIP_LOCAL_MATCH_TASK_ID
         var completed = 0
         var matched = 0
         val updates = mutableMapOf<String, MissionZipAudioFingerprintCache.Entry>()
-        for (track in fingerprintableTracks) {
+        for (track in pendingTracks) {
             val result = identifyTrack(track)
             completed++
             if (result != null) {
@@ -925,7 +926,7 @@ private fun MissionZipMusicDialog(
                 MissionZipMusicAnalysisProgress(
                     label = "Generating chromaprints",
                     completed = completed,
-                    total = fingerprintableTracks.size,
+                    total = pendingTracks.size,
                 )
         }
         stagingTrackId = null
@@ -933,8 +934,8 @@ private fun MissionZipMusicDialog(
         musicProgress =
             MissionZipMusicAnalysisProgress(
                 label = "Bundled database matches",
-                completed = fingerprintableTracks.size,
-                total = fingerprintableTracks.size,
+                completed = pendingTracks.size,
+                total = pendingTracks.size,
                 resultCount = matched,
             )
     }
@@ -1213,6 +1214,11 @@ private fun missionZipMusicTrackSubtitle(track: MissionZipMusicTrack): String =
         if (track.hogEntryName != null) add("inside ${track.archiveEntryPath}")
         track.nestedEntryPath?.let { add(it) }
     }.joinToString(" - ")
+
+internal fun missionZipMusicTracksNeedingLocalAnalysis(
+    tracks: List<MissionZipMusicTrack>,
+    cachedFingerprints: Map<String, MissionZipAudioFingerprintCache.Entry>,
+): List<MissionZipMusicTrack> = tracks.filter { it.id !in cachedFingerprints }
 
 internal fun missionZipMusicDecodedName(entry: MissionZipAudioFingerprintCache.Entry): String? =
     entry.localMatchName

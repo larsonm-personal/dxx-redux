@@ -1,0 +1,3 @@
+- [done] Confirm where the touch afterburner charge bar is drawn and why it appears in D1.
+- [done] Gate the afterburner charge bar so it only appears for D2.
+- [done] Run focused Kotlin tests or the smallest available validation for the touched code.

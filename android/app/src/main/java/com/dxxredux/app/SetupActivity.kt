@@ -3886,8 +3886,11 @@ private fun SetupScreen(
                             if (missionArchiveProgressTotal > 0L) {
                                 Text(
                                     text =
-                                        "${formatSize(missionArchiveProgressBytes)} / " +
-                                            formatSize(missionArchiveProgressTotal),
+                                        formatMissionArchiveProgressAmount(
+                                            missionArchiveProgressLabel,
+                                            missionArchiveProgressBytes,
+                                            missionArchiveProgressTotal,
+                                        ),
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -4441,6 +4444,20 @@ private fun formatSize(bytes: Long): String =
         bytes >= 1_024 -> "%.0f KB".format(bytes / 1_024.0)
         else -> "$bytes B"
     }
+
+internal fun formatMissionArchiveProgressAmount(
+    label: String,
+    done: Long,
+    total: Long,
+): String =
+    if (missionArchiveProgressUsesCounts(label)) {
+        "$done / $total"
+    } else {
+        "${formatSize(done)} / ${formatSize(total)}"
+    }
+
+private fun missionArchiveProgressUsesCounts(label: String): Boolean =
+    label.startsWith("Identifying music tracks:", ignoreCase = true)
 
 @Composable
 private fun ControllerSection(

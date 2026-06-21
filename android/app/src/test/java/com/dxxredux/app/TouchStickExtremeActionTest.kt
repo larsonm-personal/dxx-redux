@@ -112,6 +112,30 @@ class TouchStickExtremeActionTest {
     }
 
     @Test
+    fun afterburnerChargeBarIsD2Only() {
+        val actions = listOf(StickExtremeAction(enabled = true, binding = TouchBindings.BTN_AFTERBURNER))
+
+        assertTrue(stickAfterburnerChargeVisible(gameVariant = "d2", actions))
+        assertFalse(stickAfterburnerChargeVisible(gameVariant = "d1", actions))
+    }
+
+    @Test
+    fun afterburnerChargeBarRequiresEnabledAfterburnerAction() {
+        assertFalse(
+            stickAfterburnerChargeVisible(
+                gameVariant = "d2",
+                actions = listOf(StickExtremeAction(enabled = false, binding = TouchBindings.BTN_AFTERBURNER)),
+            ),
+        )
+        assertFalse(
+            stickAfterburnerChargeVisible(
+                gameVariant = "d2",
+                actions = listOf(StickExtremeAction(enabled = true, binding = TouchBindings.BTN_FIRE_PRIMARY)),
+            ),
+        )
+    }
+
+    @Test
     fun upwardTouchDragIsPositiveExtremeY() {
         val (axisX, axisY) =
             stickExtremeTravelFromTouch(
