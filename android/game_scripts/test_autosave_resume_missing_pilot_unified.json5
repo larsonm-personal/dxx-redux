@@ -1,4 +1,4 @@
-// TEST: Exit autosave, first direct resume without a .plr file, and offer re-show after loading
+// TEST: Exit autosave, direct resume, missing-pilot resume, and offer re-show after loading
 [
     {"_info": {
         "games": ["d1", "d2"],
@@ -65,6 +65,25 @@
     }},
     {"action": "assert_button", "text": "Load Last Save", "enabled": true},
     {"action": "assert_button", "text": "Stop Showing This", "enabled": true},
+    {"action": "tap_button", "text": "Load Last Save", "launches_game": true},
+
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+    {"action": "assert", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "current_level_num": "1"
+    }},
+    {"action": "log", "message": "Returning to launcher before missing-pilot resume"},
+    {"action": "enter_launcher"},
+
+    {"action": "wait_for", "field": "resume_offer_enabled", "value": "true", "timeout_ms": 10000},
+    {"action": "assert", "expect": {
+        "resume_offer_enabled": "true",
+        "resume_candidate.game": "${GAME}",
+        "resume_candidate.save_kind": "auto_exit",
+        "resume_candidate.description": "AUTO EXIT",
+        "resume_candidate.level_num": "1"
+    }},
     {"action": "setup_command", "command": "clear_pilot_files", "post_delay_ms": 500},
     {"action": "tap_button", "text": "Load Last Save", "launches_game": true},
 

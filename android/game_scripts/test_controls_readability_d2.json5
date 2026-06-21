@@ -1,8 +1,7 @@
-// TEST: Stage D2 in-game controls editor pages for readability regression coverage
+// TEST: D2 in-game controls menu and editor readability regression coverage
 [
     {"_info": {
         "games": ["d2"],
-        "standalone": false,
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
             {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
@@ -45,6 +44,7 @@
     {"action": "wait_for", "field": "menu_type", "value": "newmenu", "timeout_ms": 10000},
     {"action": "select", "text": "Controls", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "wait_for", "field": "menu_subtitle", "value": "Controls", "timeout_ms": 10000},
+
     {"action": "select", "text": "CUSTOMIZE KEYBOARD", "post_delay_ms": 400, "timeout_ms": 5000},
     {"action": "wait_for", "field": "menu_type", "value": "kconfig", "timeout_ms": 10000},
     {"action": "assert", "expect": {
@@ -99,6 +99,19 @@
         "menu_scale.src.y": 60
     }},
 
+    {"action": "key", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "field": "menu_subtitle", "value": "Controls", "timeout_ms": 10000},
+    {"action": "key", "key": "end", "post_delay_ms": 200},
+    {"action": "assert", "expect": {
+        "menu_subtitle": "Controls",
+        "menu.is_scroll_box": "true",
+        "menu.scroll_offset": {"gt": 0},
+        "menu.selected_index": "21",
+        "menu.items[19].text": "GAME SYSTEM KEYS",
+        "menu.items[20].text": "NETGAME SYSTEM KEYS",
+        "menu.items[21].text": "DEMO SYSTEM KEYS"
+    }},
+
     {"action": "introspect"},
-    {"action": "log", "message": "=== STAGED: D2 Customize Weapon Keys ==="}
+    {"action": "log", "message": "=== TEST: D2 controls readability -- COMPLETE ==="}
 ]
