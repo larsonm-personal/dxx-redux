@@ -429,7 +429,12 @@ try {
     }
 
 } finally {
-    if (-not $testPassed) { Cleanup }
+    if (-not $testPassed) {
+        Cleanup
+        if (Test-Path $script:LogFile) {
+            Get-Content $script:LogFile -ErrorAction SilentlyContinue | Write-Output
+        }
+    }
 }
 
 exit $(if ($testPassed) { 0 } else { 1 })

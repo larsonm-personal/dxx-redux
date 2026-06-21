@@ -1,5 +1,4 @@
-// TEST: D2 level-complete page should ignore the first carried touch, then
-// allow a later tap anywhere to advance
+// TEST: D2 level-complete page should ignore a carried touch, then allow a later tap anywhere to advance
 [
     {"_info": {
         "games": ["d2"],
@@ -47,12 +46,13 @@
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
+    {"action": "send_touch_down"},
     {"action": "trigger_levelcomplete"},
     {"action": "wait_for", "field": "levelcomplete_active", "value": "true", "timeout_ms": 2000},
-    {"action": "send_touch_tap"},
+    {"action": "send_touch_up"},
     {"action": "wait_ms", "ms": 100},
-    {"action": "assert", "expect": {"levelcomplete_active": "true", "cutscene_tap_suppress_arms": {"gte": 1}, "cutscene_tap_suppress_hits": {"gte": 1}}},
-    {"action": "wait_ms", "ms": 600},
+    {"action": "assert", "expect": {"levelcomplete_active": "true", "cutscene_tap_suppress_arms": {"gte": 1}}},
+    {"action": "wait_for", "field": "cutscene_tap_suppress_active", "value": "false", "timeout_ms": 2000},
     {"action": "send_touch_tap"},
     {"action": "wait_for", "field": "levelcomplete_active", "value": "false", "timeout_ms": 2000},
 

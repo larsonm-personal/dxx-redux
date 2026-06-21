@@ -183,6 +183,14 @@ static int android_handle_delayed_escape_touch(int action, int active,
 			return *touch_state != 0;
 
 		case 2: /* ACTION_UP */
+			if (*touch_state <= 0 && android_cutscene_tap_suppressed()) {
+				*touch_state = 0;
+				g_touch_active = 0;
+				g_touch_down_suppressed = 0;
+				g_cutscene_tap_suppress_hits++;
+				android_update_cutscene_release_gate();
+				return 1;
+			}
 			if (*touch_state > 0)
 				inject_key_tap(key);
 			if (*touch_state != 0) {
@@ -497,31 +505,37 @@ static void android_push_touch_action(int action, int gameX, int gameY)
 	}
 }
 
-void android_test_inject_touch_tap(void)
+static void android_test_touch_point(int *gameX, int *gameY)
 {
-	if (android_handle_delayed_escape_touch(0, g_levelcomplete_active,
-	                                        &g_levelcomplete_touch_state,
-	                                        SDLK_ESCAPE)) {
-		android_handle_delayed_escape_touch(2, g_levelcomplete_active,
-		                                    &g_levelcomplete_touch_state,
-		                                    SDLK_ESCAPE);
-		return;
-	}
-
 	int screenW, screenH;
-	int gameX, gameY;
 
 	android_get_touch_screen_size(&screenW, &screenH);
-	gameX = screenW > 2 ? screenW / 2 : 1;
-	gameY = screenH > 2 ? screenH / 2 : 1;
+	*gameX = screenW > 2 ? screenW / 2 : 1;
+	*gameY = screenH > 2 ? screenH / 2 : 1;
 
-	if (gameX < 0) gameX = 0;
-	if (gameX >= screenW) gameX = screenW - 1;
-	if (gameY < 0) gameY = 0;
-	if (gameY >= screenH) gameY = screenH - 1;
+	if (*gameX < 0) *gameX = 0;
+	if (*gameX >= screenW) *gameX = screenW - 1;
+	if (*gameY < 0) *gameY = 0;
+	if (*gameY >= screenH) *gameY = screenH - 1;
+}
 
-	android_push_touch_action(0, gameX, gameY);
-	android_push_touch_action(2, gameX, gameY);
+void android_test_inject_touch_action(int action)
+{
+	int gameX, gameY;
+
+	if (android_handle_delayed_escape_touch(action, g_levelcomplete_active,
+	                                        &g_levelcomplete_touch_state,
+	                                        SDLK_ESCAPE))
+		return;
+
+	android_test_touch_point(&gameX, &gameY);
+	android_push_touch_action(action, gameX, gameY);
+}
+
+void android_test_inject_touch_tap(void)
+{
+	android_test_inject_touch_action(0);
+	android_test_inject_touch_action(2);
 }
 
 JNIEXPORT void JNICALL

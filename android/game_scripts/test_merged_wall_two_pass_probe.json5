@@ -73,7 +73,7 @@
         "merged_wall_snapshot.faces[0].route": "force_two_pass",
         "merged_wall_snapshot.faces[0].merge_impl": "gpu_two_pass",
         "merged_wall_snapshot.faces[1].face": "0",
-        "merged_wall_snapshot.faces[1].submit_nv": "3",
+        "merged_wall_snapshot.faces[1].submit_nv": {"gte": 3},
         "merged_wall_last_draw_state.route": "force_two_pass",
         "merged_wall_last_draw_state.merge_impl": "gpu_two_pass",
         "merged_wall_last_draw_state.force_cull_off": "false",

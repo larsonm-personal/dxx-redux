@@ -64,6 +64,7 @@ extern "C" {
 
 #ifdef ANDROID
 extern "C" void android_test_inject_touch_tap(void);
+extern "C" void android_test_inject_touch_action(int action);
 extern "C" void android_automation_joystick_button(int button, int pressed);
 
 static void automation_enter_launcher(void)
@@ -271,6 +272,8 @@ enum step_type {
 	STEP_SEND_AXIS,                  /* inject joystick axis event */
 	STEP_SEND_BUTTON,                /* inject joystick button press+release */
 	STEP_SEND_TOUCH_TAP,             /* inject a touch tap through android_input.c */
+	STEP_SEND_TOUCH_DOWN,            /* inject a touch down through android_input.c */
+	STEP_SEND_TOUCH_UP,              /* inject a touch up through android_input.c */
 	STEP_META_ACTION,                /* dispatch a native Android meta action */
 	STEP_SKIP_INTRO,                 /* repeatedly dismiss launch intro with touch or button */
 	STEP_SKIP_BRIEFING,              /* escape only if a non-game window covers Game_wind */
@@ -445,6 +448,8 @@ static const char *step_type_name(step_type t)
 		case STEP_SEND_AXIS: return "send_axis";
 		case STEP_SEND_BUTTON: return "send_button";
 		case STEP_SEND_TOUCH_TAP: return "send_touch_tap";
+		case STEP_SEND_TOUCH_DOWN: return "send_touch_down";
+		case STEP_SEND_TOUCH_UP: return "send_touch_up";
 		case STEP_META_ACTION: return "meta_action";
 		case STEP_SKIP_INTRO: return "skip_intro";
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
@@ -1554,6 +1559,8 @@ static int parse_script(const char *json_text)
 			} else if (action == "send_axis") s.type = STEP_SEND_AXIS;
 			else if (action == "send_button") s.type = STEP_SEND_BUTTON;
 			else if (action == "send_touch_tap") s.type = STEP_SEND_TOUCH_TAP;
+			else if (action == "send_touch_down") s.type = STEP_SEND_TOUCH_DOWN;
+			else if (action == "send_touch_up") s.type = STEP_SEND_TOUCH_UP;
 			else if (action == "meta_action") s.type = STEP_META_ACTION;
 			else if (action == "skip_intro") s.type = STEP_SKIP_INTRO;
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
@@ -2249,6 +2256,24 @@ extern "C" void game_automate_tick(void)
 			advance_step();
 #else
 			stop_script_fail("send_touch_tap: Android-only action");
+#endif
+			break;
+
+		case STEP_SEND_TOUCH_DOWN:
+#ifdef ANDROID
+			android_test_inject_touch_action(0);
+			advance_step();
+#else
+			stop_script_fail("send_touch_down: Android-only action");
+#endif
+			break;
+
+		case STEP_SEND_TOUCH_UP:
+#ifdef ANDROID
+			android_test_inject_touch_action(2);
+			advance_step();
+#else
+			stop_script_fail("send_touch_up: Android-only action");
 #endif
 			break;
 

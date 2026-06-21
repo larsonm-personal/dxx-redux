@@ -3,7 +3,7 @@
     "status": "ok",
     "source": "Descent: The Enemy Within",
     "game": "d2",
-    "mission_name": "Descent: The Enemy Within",
+    "mission_name": "ewithin",
     "mission_filename": "ewithin.mn2",
     "coop_starts": "4",
     "level_count": 32,
