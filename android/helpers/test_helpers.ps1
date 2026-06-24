@@ -205,6 +205,53 @@ function Write-Status {
     }
 }
 
+function Write-BoundedLines {
+    param([string]$Text, [int]$Last = 40, [string]$Color = "Gray")
+    if (-not $Text) {
+        Write-Host "  (not available)" -ForegroundColor $Color
+        return
+    }
+    ($Text -split "`n") | Select-Object -Last $Last | ForEach-Object {
+        if ($_.Trim().Length -gt 0) {
+            Write-Host "  $_" -ForegroundColor $Color
+        }
+    }
+}
+
+function Write-DeviceFailureDiagnostics {
+    param([string]$Reason = "device failure")
+
+    Write-Status "--- device diagnostics: $Reason ---" "Yellow"
+
+    Write-Status "adb devices" "Yellow"
+    Write-BoundedLines -Text (Adb-Timeout -AdbArgs @("devices", "-l") -Seconds 5) -Last 20
+
+    Write-Status "device storage" "Yellow"
+    Write-BoundedLines -Text (Adb-Timeout -AdbArgs @("shell", "df", "-h", "/data") -Seconds 5) -Last 20
+
+    Write-Status "app memory" "Yellow"
+    Write-BoundedLines -Text (Adb-Timeout -AdbArgs @(
+            "shell", "sh", "-c",
+            "dumpsys meminfo $($script:PACKAGE); dumpsys meminfo $($script:PACKAGE):game"
+        ) -Seconds 10) -Last 80
+
+    Write-Status "recent crash logcat" "Yellow"
+    Write-BoundedLines -Text (Adb-Timeout -AdbArgs @(
+            "logcat", "-d", "-t", "400", "-s",
+            "AndroidRuntime:E", "libc:E", "DEBUG:*", "DXX:*"
+        ) -Seconds 10) -Last 80
+
+    Write-Status "recent tombstones" "Yellow"
+    Write-BoundedLines -Text (Adb-Timeout -AdbArgs @(
+            "shell", "sh", "-c", "ls -lt /data/tombstones 2>/dev/null | head -5"
+        ) -Seconds 5) -Last 20
+
+    Write-Status "automation log tail" "Yellow"
+    Write-BoundedLines -Text (Adb-Timeout -AdbArgs @(
+            "shell", "run-as", $script:PACKAGE, "cat", "files/automation_log.jsonl"
+        ) -Seconds 5) -Last 30
+}
+
 # -- Multi-device helpers (for dual-emulator tests like test_mp, test_lan) --
 
 function Adb-Dev {
@@ -862,6 +909,25 @@ function Resolve-GameDataDeps {
             }
         }
 
+        if (-not $isExternal -and $target -eq "files/mods") {
+            $expectedModFiles = @{}
+            foreach ($dep in $byTarget[$target]) {
+                $expectedModFiles[$dep.file.ToLowerInvariant()] = $true
+            }
+            $staleModFiles = @($deviceNamesByLower.Keys | Where-Object { -not $expectedModFiles.ContainsKey($_) })
+            if ($staleModFiles.Count -gt 0) {
+                Write-Status "Game data: removing $($staleModFiles.Count) stale files/mods entries" "Yellow"
+                foreach ($lowerName in $staleModFiles) {
+                    foreach ($origName in @($deviceNamesByLower[$lowerName] | Sort-Object -Unique)) {
+                        & $script:ADB shell "run-as $($script:PACKAGE) rm -f '$target/$origName'" 2>&1 | Out-Null
+                    }
+                    $deviceFiles.Remove($lowerName)
+                    $deviceOrigNames.Remove($lowerName)
+                    $deviceNamesByLower.Remove($lowerName)
+                }
+            }
+        }
+
         foreach ($dep in $byTarget[$target]) {
             $fname = $dep.file.ToLower()
             $localFile = $idx[$dep.sha256]
@@ -1191,6 +1257,7 @@ function Watch-AutomationResult {
                 Start-Sleep -Seconds 2
                 if (-not (Test-EmulatorHealthy)) {
                     Write-Status "FAIL: Emulator crashed during test (after ${elapsed}s)" "Red"
+                    Write-DeviceFailureDiagnostics -Reason "emulator health check failed after ${elapsed}s"
                     return $false
                 }
             }

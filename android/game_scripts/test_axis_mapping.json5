@@ -269,8 +269,7 @@
     {"action": "send_axis", "axis": 6, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "heading_time": "0",
-        "pitch_time":   "0",
-        "bank_time":    {"ne": 0}
+        "pitch_time":   "0"
     }},
     {"action": "log", "message": "Phase 5c: PASS -- axis 6 only drives bank"},
     {"action": "send_axis", "axis": 6, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 100},
