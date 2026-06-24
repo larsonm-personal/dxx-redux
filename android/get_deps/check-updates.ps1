@@ -439,7 +439,6 @@ function Get-CompileSdkInstalledVersion {
 }
 
 function Get-SdkCmdlineToolsInstalledBuildId {
-    $binDir = Join-Path (Join-Path (Join-Path (Join-Path $dependency_base "android-sdk") "cmdline-tools") "latest") "bin"
     $latestDir = Join-Path (Join-Path (Join-Path $dependency_base "android-sdk") "cmdline-tools") "latest"
     $binDir = Join-Path $latestDir "bin"
     $sdkManagerPath = Get-PlatformToolPath -BaseDir $binDir -ToolName "sdkmanager" -UseBatch
