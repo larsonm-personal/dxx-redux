@@ -440,9 +440,14 @@ function Get-CompileSdkInstalledVersion {
 
 function Get-SdkCmdlineToolsInstalledBuildId {
     $binDir = Join-Path (Join-Path (Join-Path (Join-Path $dependency_base "android-sdk") "cmdline-tools") "latest") "bin"
+    $latestDir = Join-Path (Join-Path (Join-Path $dependency_base "android-sdk") "cmdline-tools") "latest"
+    $binDir = Join-Path $latestDir "bin"
     $sdkManagerPath = Get-PlatformToolPath -BaseDir $binDir -ToolName "sdkmanager" -UseBatch
     if ($sdkManagerPath) {
-        return Get-SdkCommandLineToolsBuildId $SDK_CMDLINE_TOOLS_URL
+        $markerPath = Join-Path $latestDir ".dxx-cmdline-tools-build-id"
+        if (Test-Path -LiteralPath $markerPath) {
+            return (Get-Content -LiteralPath $markerPath -First 1).Trim()
+        }
     }
     return $null
 }
@@ -1661,7 +1666,11 @@ foreach ($item in $selectedTarget) {
             Write-Host "    Run helpers/get_cmake.sh and helpers/finalize.sh to install the updated CMake packages"
         }
         "Android SDK cmdline-tools" {
-            Write-Host "    Run helpers/get_sdk.sh to download the updated Android SDK command-line tools"
+            if ($dep.ContainsKey("InstallCmdKey")) {
+                Invoke-InstallSyncForDependency $dep $newDisplay
+            } else {
+                Write-Host "    Run helpers/get_sdk.sh to download the updated Android SDK command-line tools"
+            }
         }
         "JDK*" {
             if ($dep.JDKMajor) {
@@ -1762,7 +1771,7 @@ Write-Host ""
 Write-Host "IMPORTANT NOTES:"
 Write-Host "  - Kotlin and Compose Compiler must be compatible"
 Write-Host "    See https://developer.android.com/jetpack/androidx/releases/compose-kotlin"
-Write-Host "  - For NDK/JDK/SDK changes, re-run the get_deps install scripts"
+Write-Host "  - For manual NDK/JDK/SDK changes, re-run the get_deps install scripts"
 Write-Host "  - Run a test build:  $(Get-GradleVerificationCommand)"
 Write-Host ""
 Write-RunNote "finished" @(
