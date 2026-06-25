@@ -137,6 +137,10 @@ class SetupActivity : ComponentActivity() {
 
     private fun runningGameProcessPid(): Int? = readRunningGameProcessPid(this)
 
+    internal fun automationHasReturnableGameActivity(): Boolean = hasReturnableGameActivity()
+
+    internal fun automationRunningGameProcessPid(): Int? = runningGameProcessPid()
+
     private fun returnToGame(): Boolean {
         val state = returnableGameActivityState() ?: return false
         val intent = createGameLaunchIntent(state.game, inputDemoReplayPath = null)

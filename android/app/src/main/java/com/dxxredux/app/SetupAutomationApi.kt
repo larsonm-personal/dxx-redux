@@ -716,6 +716,11 @@ internal fun SetupActivity.writeIntrospectJson() {
         root.put("screen", "setup")
         root.put("can_launch", d2Ready || d1Ready)
         root.put("active_set", activeSet)
+        val runningGamePid = automationRunningGameProcessPid()
+        val hasReturnableGameActivity = automationHasReturnableGameActivity()
+        root.put("game_running", hasReturnableGameActivity || runningGamePid != null)
+        root.put("has_returnable_game_activity", hasReturnableGameActivity)
+        root.put("running_game_pid", runningGamePid ?: -1)
 
         val allFiles = dir.listFiles()?.map { it.name }?.sorted() ?: emptyList()
         root.put("files_on_disk", JSONArray(allFiles))
