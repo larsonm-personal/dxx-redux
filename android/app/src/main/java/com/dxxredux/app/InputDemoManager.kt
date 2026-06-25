@@ -48,6 +48,8 @@ internal object InputDemoManager {
         )
     }
 
+    fun listInstalledDemos(setDir: File): List<StagedInputDemo> = listInputDemos(File(setDir, "demos"), "installed")
+
     fun sanitizeInstallName(name: String): String {
         val withoutExtension =
             name
@@ -152,6 +154,18 @@ internal object InputDemoManager {
             )
         }
     }
+
+    private fun listInputDemos(
+        dir: File,
+        fallbackGame: String,
+    ): List<StagedInputDemo> =
+        (dir.listFiles() ?: emptyArray())
+            .filter { it.isFile && it.name.lowercase(Locale.US).endsWith(INPUT_DEMO_EXTENSION) }
+            .map { parseStagedDemo(it, fallbackGame) }
+            .sortedWith(
+                compareByDescending<StagedInputDemo> { it.file.lastModified() }
+                    .thenBy { it.file.name.lowercase(Locale.US) },
+            )
 
     private fun traceFileFor(file: File): File? {
         val trace = File(file.parentFile, file.name + INPUT_DEMO_RNG_TRACE_SUFFIX)

@@ -731,22 +731,11 @@ internal fun SetupActivity.writeIntrospectJson() {
 
         val stagedInputDemos = InputDemoManager.listStagedDemos(dir)
         root.put("staged_input_demo_count", stagedInputDemos.size)
-        root.put(
-            "staged_input_demos",
-            JSONArray(
-                stagedInputDemos.map { demo ->
-                    JSONObject()
-                        .put("filename", demo.file.name)
-                        .put("game", demo.game)
-                        .put("mission", demo.mission)
-                        .put("level", demo.level)
-                        .put("frame_count", demo.frameCount)
-                        .put("has_rng_trace", demo.traceFile != null)
-                        .put("has_classic_demo", demo.classicDemoFile != null)
-                        .put("header_readable", demo.headerReadable)
-                },
-            ),
-        )
+        root.put("staged_input_demos", inputDemoArray(stagedInputDemos))
+
+        val installedInputDemos = InputDemoManager.listInstalledDemos(setDir)
+        root.put("installed_input_demo_count", installedInputDemos.size)
+        root.put("installed_input_demos", inputDemoArray(installedInputDemos))
 
         val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
         val networkLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.NETWORK), false)
@@ -929,6 +918,21 @@ internal fun SetupActivity.writeIntrospectJson() {
         Log.e("DXX-Setup", "Failed to write introspect JSON", e)
     }
 }
+
+private fun inputDemoArray(demos: List<StagedInputDemo>): JSONArray =
+    JSONArray(
+        demos.map { demo ->
+            JSONObject()
+                .put("filename", demo.file.name)
+                .put("game", demo.game)
+                .put("mission", demo.mission)
+                .put("level", demo.level)
+                .put("frame_count", demo.frameCount)
+                .put("has_rng_trace", demo.traceFile != null)
+                .put("has_classic_demo", demo.classicDemoFile != null)
+                .put("header_readable", demo.headerReadable)
+        },
+    )
 
 private fun fileStatusArray(statuses: List<FileStatus>): JSONArray {
     val arr = JSONArray()
