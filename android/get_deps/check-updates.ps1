@@ -167,15 +167,16 @@ Refresh-ConfContext
 
 function Test-IsPrereleaseVersion($version) {
     if (-not $version) { return $false }
-    return $version -match '(?i)(?:^|[-._])(alpha|beta|rc)\d*(?:$|[-._])'
+    return $version -match '(?i)(?:^|[-._])(alpha|beta|preview|rc)\d*(?:$|[-._])'
 }
 
 function Get-PrereleaseRank($label) {
     switch ($label) {
         "alpha" { return 0 }
         "beta" { return 1 }
-        "rc" { return 2 }
-        default { return 3 }
+        "preview" { return 2 }
+        "rc" { return 3 }
+        default { return 4 }
     }
 }
 
@@ -204,7 +205,7 @@ function Get-VersionInfo($version) {
     $core = $normalized
     $preLabel = $null
     $preNumber = 0
-    if ($normalized -match '^(.*?)(?:[-._]?(alpha|beta|rc)(\d*))$') {
+    if ($normalized -match '^(.*?)(?:[-._](alpha|beta|preview|rc)(?:[-._]?(\d+))?)$') {
         $core = $Matches[1]
         $preLabel = $Matches[2].ToLower()
         if ($Matches[3]) {
@@ -400,16 +401,24 @@ function Get-JavaVersionFromExecutable($path) {
 }
 
 function Get-PowerShell7InstalledVersion {
-    $localPwsh = Get-PlatformToolPath -BaseDir (Join-Path $dependency_base "powershell-$POWERSHELL_VERSION") -ToolName "pwsh"
-    $localVersion = Get-PowerShellVersionFromCommand $localPwsh
-    if ($localVersion) { return $localVersion }
+    $currentPwsh = (Get-Process -Id $PID).Path
+    $currentVersion = Get-PowerShellVersionFromCommand $currentPwsh
+    if ($currentVersion -match '^7\.') { return $currentVersion }
 
     $command = @(
         Get-Command pwsh -ErrorAction SilentlyContinue | Select-Object -First 1
         Get-Command pwsh-preview -ErrorAction SilentlyContinue | Select-Object -First 1
     ) | Where-Object { $_ } | Select-Object -First 1
-    if (-not $command) { return $null }
-    return Get-PowerShellVersionFromCommand $command.Source
+    if ($command) {
+        $pathVersion = Get-PowerShellVersionFromCommand $command.Source
+        if ($pathVersion -match '^7\.') { return $pathVersion }
+    }
+
+    $localPwsh = Join-Path (Join-Path $dependency_base "powershell-$POWERSHELL_VERSION") (Get-PlatformExecutableName -ToolName "pwsh")
+    $localVersion = Get-PowerShellVersionFromCommand $localPwsh
+    if ($localVersion -match '^7\.') { return $localVersion }
+
+    return $null
 }
 
 function Get-PowerShellVersionFromCommand($path) {
@@ -1352,7 +1361,8 @@ $deps = @(
         Latest = if ($latestPowerShell) { $latestPowerShell["Version"] } else { $null };
         ReleaseTag = if ($latestPowerShell) { $latestPowerShell["Tag"] } else { $null };
         DriftLabel = "host-managed";
-        ManualInstallHint = "Run android/get_deps/helpers/get_powershell.ps1 to install the pinned PowerShell build"
+        PreferStable = $true;
+        ManualInstallHint = "Run android/get_deps/update-powershell.ps1 to update the pinned repo runtime"
     }
 )
 
@@ -1436,7 +1446,10 @@ foreach ($dep in $deps) {
     $targetComparison = Compare-VersionValues $currentValue $latestValue
     $targetNeedsUpdate = $false
     if ($latestValue -ne "???" -and $currentValue -ne "unknown") {
-        if (($null -eq $targetComparison -and $currentValue -ne $latestValue) -or
+        if (($dep.ContainsKey("PreferStable") -and $dep.PreferStable -and
+                (Test-IsPrereleaseVersion $currentValue) -and -not (Test-IsPrereleaseVersion $latestValue) -and
+                $currentValue -ne $latestValue) -or
+            ($null -eq $targetComparison -and $currentValue -ne $latestValue) -or
             ($null -ne $targetComparison -and $targetComparison -lt 0)) {
             $targetNeedsUpdate = $true
         }
@@ -1742,7 +1755,7 @@ foreach ($item in $selectedTarget) {
             if ($dep.ContainsKey("InstallCmdKey")) {
                 Invoke-InstallSyncForDependency $dep $new
             } else {
-                Write-Host "    NOTE: PowerShell is a host tool; run helpers/get_powershell.ps1 or update your pwsh package"
+                Write-Host "    NOTE: PowerShell is a host tool; run update-powershell.ps1 or update your pwsh package"
             }
         }
     }
