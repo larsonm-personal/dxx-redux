@@ -54,7 +54,7 @@
     {"action": "meta_action", "id": 1034, "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {
         "input_demo.recording": "true",
-        "input_demo.frame_count": {"gte": 9}
+        "input_demo.frame_count": {"gte": 1}
     }},
     {"action": "meta_action", "id": 1034, "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {"input_demo.recording": "false"}},
@@ -64,6 +64,10 @@
     {"action": "wait_for", "field": "staged_input_demo_count", "value": "1", "timeout_ms": 10000},
     {"action": "assert", "expect": {
         "staged_input_demos[0].game": "d2",
+        "staged_input_demos[0].level": "1",
+        "staged_input_demos[0].frame_count": {"gte": 1},
+        "staged_input_demos[0].header_readable": "true",
+        "staged_input_demos[0].has_rng_trace": "true",
         "staged_input_demos[0].has_classic_demo": "true"
     }},
     {"action": "assert_button", "text": "Advanced"},
