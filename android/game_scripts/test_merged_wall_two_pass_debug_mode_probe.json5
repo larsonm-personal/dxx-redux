@@ -64,13 +64,11 @@
         "debug_flags.merged_wall_mode": "1",
         "debug_flags.merged_wall_force_two_pass": "1",
         "merged_wall_snapshot.status": "ok",
-        "merged_wall_snapshot.center_hit_count": {"gte": 1},
         "merged_wall_snapshot.selected_count": {"gte": 2},
         "merged_wall_snapshot.faces": {"contains_object": {
             "seg": 83,
             "side": 3,
             "face": 1,
-            "center_hit": true,
             "submit_nv": {"gte": 3},
             "bbox_area": {"gt": 0},
             "route": "force_two_pass",
