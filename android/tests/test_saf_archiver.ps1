@@ -126,6 +126,27 @@ function Invoke-AdbWithTimeout {
     }
 }
 
+function Read-AutomationFile {
+    param([string]$Name)
+
+    $content = Invoke-AdbWithTimeout -Seconds 5 -AdbArgs "shell", "run-as $PACKAGE cat files/$Name"
+    if ($null -eq $content -or $content -match "No such file") {
+        return $null
+    }
+    return $content.Trim()
+}
+
+function Write-AutomationLogTail {
+    param([int]$Lines = 20)
+
+    $stepLog = Read-AutomationFile "automation_log.jsonl"
+    if ($stepLog) {
+        ($stepLog -split "`n") | Select-Object -Last $Lines | ForEach-Object { Write-Host "    $_" }
+    } else {
+        Write-Host "    (not available)"
+    }
+}
+
 # -- Preflight ----------------------------------------------------------
 Write-Host "=== SAF Archiver Test ===" -ForegroundColor Cyan
 Write-Host ""
@@ -380,6 +401,7 @@ Adb shell "rm -f $deviceTmp" | Out-Null
 
 # Clear logcat and send automation broadcast
 Adb logcat -c | Out-Null
+Adb shell "run-as $PACKAGE rm -f files/automation_result.json files/automation_log.jsonl" | Out-Null
 Adb shell "am broadcast -a com.dxxredux.AUTOMATE --es script $scriptBasename" | Out-Null
 
 Write-Host "  Monitoring for result (timeout: ${TIMEOUT_SEC}s)..."
@@ -390,6 +412,25 @@ $result = $null
 $failDetail = ""
 
 while (((Get-Date) - $startTime).TotalSeconds -lt $TIMEOUT_SEC) {
+    $resultJson = Read-AutomationFile "automation_result.json"
+    if ($resultJson -and $resultJson -match '"result"') {
+        try {
+            $resultObj = $resultJson | ConvertFrom-Json
+            if ($resultObj.result -eq "PASS") {
+                $result = "PASS"
+                break
+            }
+            if ($resultObj.result -eq "FAIL") {
+                $result = "FAIL"
+                $reason = if ($resultObj.reason) { $resultObj.reason } else { "unknown" }
+                $failDetail = "Automation failed at step $($resultObj.steps_completed)/$($resultObj.total_steps): $reason"
+                break
+            }
+        } catch {
+            # Partial writes are possible while the game is closing the file
+        }
+    }
+
     $logLines = (Adb logcat -d -s "DXX-Automate:*" 2>&1) -join "`n"
 
     if ($logLines -match "SCRIPT_RESULT: PASS") {
@@ -431,6 +472,8 @@ switch ($result) {
     "FAIL" {
         Write-Host "  RESULT: FAIL" -ForegroundColor Red
         Write-Host $failDetail
+        Write-Host "  Last automation file lines:" -ForegroundColor Yellow
+        Write-AutomationLogTail -Lines 20
     }
     "CRASH" {
         Write-Host "  RESULT: CRASH" -ForegroundColor Red
@@ -447,6 +490,8 @@ switch ($result) {
         $lastLog = Adb logcat -d -s "DXX-Automate:*" 2>&1 | Select-Object -Last 10
         Write-Host "  Last automation log lines:" -ForegroundColor Yellow
         $lastLog | ForEach-Object { Write-Host "    $_" }
+        Write-Host "  Last automation file lines:" -ForegroundColor Yellow
+        Write-AutomationLogTail -Lines 20
     }
 }
 

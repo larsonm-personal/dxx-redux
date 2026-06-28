@@ -132,6 +132,14 @@
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
+    {"action": "setup_command", "when": "${AUDIO_CHECKS_WHEN}", "command": "write_music_prefs",
+     "args": {
+         "source": "cd",
+         "prefer_mission_soundtrack": false,
+         "play_order": 0,
+         "volume": 8
+     },
+     "post_delay_ms": 500},
 
     // tap_button validates enabled + auto-scrolls to find off-screen buttons.
     // The Mac pkg path skips audio preview checks, so it can reach this button
