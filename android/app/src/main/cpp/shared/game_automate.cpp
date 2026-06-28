@@ -307,14 +307,16 @@ enum step_type {
  * Simple equality: {"key": "3"} or {"key": 3}
  * Comparison ops:  {"key": {"ne": 0}}, {"key": {"gt": 100}},
  *                  {"key": {"range": [10, 1000]}},
- *                  {"key": {"contains": "substring"}} */
+ *                  {"key": {"contains": "substring"}},
+ *                  {"array_key": {"contains_object": {"field": "value"}}} */
 struct assert_expect {
 	std::string key;
 	std::string value;     /* for simple equality (op=="eq") */
-	std::string op = "eq"; /* eq, ne, gt, lt, gte, lte, range */
+	std::string op = "eq"; /* eq, ne, gt, lt, gte, lte, range, contains, contains_object */
 	double num_value = 0;  /* for gt/lt/gte/lte/ne */
 	double range_min = 0;
 	double range_max = 0;
+	json object_value;
 };
 
 struct auto_step {
@@ -367,6 +369,8 @@ static int g_failed = 0;        /* set to 1 on assert/timeout failure */
 static Uint32 g_step_start = 0; /* SDL_GetTicks() when step began */
 static int g_key_phase = 0;     /* 0=not sent, 1=sent */
 static Uint32 g_repeat_start = 0;
+static window *g_skip_briefing_last_front = NULL;
+static int g_skip_briefing_last_game_wind_seen = -1;
 
 /* -- STEP_SELECT state (multi-frame navigation) ----------------------- */
 static int g_select_phase = 0; /* 0=init, 1=navigating, 2=enter sent */
@@ -1640,7 +1644,9 @@ static int parse_script(const char *json_text)
 						/* Comparison operator: {"gt": 0}, {"ne": 0}, {"range": [1,10]}, {"eq": "3"} */
 						for (auto &[op, opval] : val.items()) {
 							ae.op = op;
-							if (op == "range" && opval.is_array() && opval.size() == 2) {
+							if (op == "contains_object" && opval.is_object()) {
+								ae.object_value = opval;
+							} else if (op == "range" && opval.is_array() && opval.size() == 2) {
 								ae.range_min = opval[0].get<double>();
 								ae.range_max = opval[1].get<double>();
 							} else if (opval.is_number()) {
@@ -1723,6 +1729,70 @@ static int load_script_file(const char *path)
 }
 
 /* -- Assert: check introspection JSON values ------------------------- */
+
+static std::string json_assert_value_string(const json &val)
+{
+	if (val.is_number_integer())
+		return std::to_string(val.get<int64_t>());
+	if (val.is_number()) {
+		char tmp[64];
+		snprintf(tmp, sizeof(tmp), "%.1f", val.get<double>());
+		return tmp;
+	}
+	if (val.is_boolean())
+		return val.get<bool>() ? "true" : "false";
+	if (val.is_string())
+		return val.get<std::string>();
+	if (val.is_null())
+		return "null";
+	return val.dump();
+}
+
+static bool json_assert_scalar_matches(const json &actual, const json &expected)
+{
+	if (expected.is_object() && expected.size() == 1) {
+		auto it = expected.begin();
+		const std::string op = it.key();
+		const json &opval = it.value();
+		if (opval.is_number() && (op == "gt" || op == "lt" || op == "gte" || op == "lte")) {
+			if (!actual.is_number())
+				return false;
+			double a = actual.get<double>();
+			double e = opval.get<double>();
+			if (op == "gt")
+				return a > e;
+			if (op == "lt")
+				return a < e;
+			if (op == "gte")
+				return a >= e;
+			return a <= e;
+		}
+		if (op == "contains" && opval.is_string())
+			return icontains(json_assert_value_string(actual).c_str(), opval.get<std::string>().c_str());
+	}
+	return strcasecmp(json_assert_value_string(actual).c_str(),
+	                  json_assert_value_string(expected).c_str()) == 0;
+}
+
+static bool json_array_contains_object(const json &array, const json &expected)
+{
+	if (!array.is_array() || !expected.is_object())
+		return false;
+	for (const auto &elem : array) {
+		if (!elem.is_object())
+			continue;
+		bool matches = true;
+		for (auto &[key, val] : expected.items()) {
+			if (!elem.contains(key) || !json_assert_scalar_matches(elem[key], val)) {
+				matches = false;
+				break;
+			}
+		}
+		if (matches)
+			return true;
+	}
+	return false;
+}
 
 /*
  * Run all assertions for a STEP_ASSERT or expectation-backed STEP_WAIT_FOR.
@@ -1872,6 +1942,10 @@ static std::string run_assertions(auto_step &s, bool log_success, bool log_failu
 			}
 			snprintf(desc, sizeof(desc), "\"%s\" contains \"%s\" (got %s)",
 			         ae.key.c_str(), ae.value.c_str(), actual_str.c_str());
+		} else if (ae.op == "contains_object") {
+			pass = json_array_contains_object(val, ae.object_value);
+			snprintf(desc, sizeof(desc), "\"%s\" contains object %s (got %s)",
+			         ae.key.c_str(), ae.object_value.dump().c_str(), actual_str.c_str());
 		} else {
 			snprintf(desc, sizeof(desc), "\"%s\": unknown op \"%s\"",
 			         ae.key.c_str(), ae.op.c_str());
@@ -1937,6 +2011,8 @@ static void advance_step(void)
 	g_step_start = SDL_GetTicks();
 	g_key_phase = 0;
 	g_repeat_start = 0;
+	g_skip_briefing_last_front = NULL;
+	g_skip_briefing_last_game_wind_seen = -1;
 	g_select_phase = 0;
 	g_select_delta = 0;
 	g_inject_axis_logged = 0;
@@ -2323,13 +2399,26 @@ extern "C" void game_automate_tick(void)
 			 * any intervening windows (briefing, movie) with escape.
 			 * ShowLevelIntro blocks until the briefing closes, so Game_wind
 			 * won't exist until we dismiss the briefing first. */
+			{
+				window *front = window_get_front();
+				int game_wind_seen = Game_wind != NULL ? 1 : 0;
+				if (front != g_skip_briefing_last_front ||
+				    game_wind_seen != g_skip_briefing_last_game_wind_seen) {
+					g_skip_briefing_last_front = front;
+					g_skip_briefing_last_game_wind_seen = game_wind_seen;
+					g_step_start = now;
+					elapsed = 0;
+				}
+			}
+			if (s.timeout_ms > 0 && elapsed >= (Uint32) s.timeout_ms) {
+				stop_script_fail("skip_briefing: timed out waiting for game window");
+				break;
+			}
 			if (g_key_phase == 0) {
 				window *front = window_get_front();
 				if (Game_wind != NULL && (front == NULL || front == Game_wind)) {
 					LOGI("skip_briefing: game window is front, done");
 					advance_step();
-				} else if (s.timeout_ms > 0 && elapsed >= (Uint32) s.timeout_ms) {
-					stop_script_fail("skip_briefing: timed out waiting for game window");
 				} else if (front != NULL && front != Game_wind) {
 					/* Briefing or other non-game window on top -- dismiss it. */
 					LOGI("skip_briefing: dismissing non-game window (Game_wind=%s front=%s)",
@@ -2341,6 +2430,11 @@ extern "C" void game_automate_tick(void)
 						else
 							inject_key_tap("escape");
 					}
+					g_key_phase = 1;
+					g_repeat_start = now;
+				} else if (Game_wind == NULL) {
+					LOGI("skip_briefing: no front window yet, tapping to advance");
+					inject_mouse_tap();
 					g_key_phase = 1;
 					g_repeat_start = now;
 				}

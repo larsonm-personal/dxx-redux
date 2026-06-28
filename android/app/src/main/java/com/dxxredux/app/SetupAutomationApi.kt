@@ -86,7 +86,7 @@ internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.Button
 
     val buttons =
         clickableNodes.mapNotNull { click ->
-            val contained = textNodes.filter { click.bounds.contains(it.bounds) }
+            val contained = textNodes.filter { textBelongsToClickable(it.bounds, click.bounds) }
             if (contained.isEmpty()) return@mapNotNull null
             val label = contained.joinToString(" ") { it.text }
             SetupActivity.ButtonInfo(
@@ -104,6 +104,15 @@ internal fun SetupActivity.collectAccessibleButtons(): List<SetupActivity.Button
         "Scan: ${textNodes.size} text, ${clickableNodes.size} clickable, ${buttons.size} matched, range=0..$maxScanId (semantics=${semanticsIds.size})",
     )
     return buttons
+}
+
+private fun textBelongsToClickable(
+    textBounds: Rect,
+    clickBounds: Rect,
+): Boolean {
+    val centerX = (textBounds.left + textBounds.right) / 2
+    val centerY = (textBounds.top + textBounds.bottom) / 2
+    return clickBounds.contains(textBounds) || clickBounds.contains(centerX, centerY)
 }
 
 private fun findComposeView(view: View): View? {

@@ -341,8 +341,9 @@ class AudioSourceManager(
      * Write audio_playlist.json for the C engine.
      *
      * Called before game launch so RBAInit() can read it.
-     * For SAF sources, opens file descriptors and writes /proc/self/fd paths.
-     * Call [closeActivePfds] after the game exits to release them.
+     * For SAF content URIs, opens file descriptors and writes /proc/self/fd paths.
+     * Local filesystem paths are written directly. Call [closeActivePfds] after
+     * the game exits to release opened SAF descriptors.
      * Returns true if a playlist was written, false if legacy mode.
      */
     fun writePlaylist(resolver: ContentResolver? = null): Boolean {
@@ -400,6 +401,9 @@ class AudioSourceManager(
         return try {
             binContentUris
                 .map { uriStr ->
+                    if (isLocalCdContentPath(uriStr)) {
+                        return@map resolveBinPath(uriStr, activeSetDir)
+                    }
                     val pfd =
                         openBinContentUri(uriStr, resolver)
                             ?: throw IllegalStateException("Could not open BIN content URI: $uriStr")

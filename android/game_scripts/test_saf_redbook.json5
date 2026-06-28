@@ -10,7 +10,7 @@
 //
 // Prerequisites (handled by PS1 wrapper):
 //   - test_disc.bin pushed to /data/local/tmp/test_disc.bin
-//   - test_disc.cue pushed to app filesDir
+//   - test_disc.cue is written by this script after source cleanup
 [
     {"_info": {
         "games": ["d2"],
@@ -37,6 +37,8 @@
 
     // Clear any previous audio sources and mods
     {"action": "setup_command", "command": "clear_audio_sources", "post_delay_ms": 500},
+    {"action": "write_config", "file": "test_disc.cue",
+     "content": "FILE \"test_disc.bin\" BINARY\n  TRACK 01 MODE1/2352\n    INDEX 01 00:00:00\n  TRACK 02 AUDIO\n    TITLE \"Test Track 2\"\n    INDEX 01 00:00:10\n  TRACK 03 AUDIO\n    TITLE \"Test Track 3\"\n    INDEX 01 00:00:20\n"},
     // Write empty mod manifest so no mods are loaded
     {"action": "write_config", "file": "mods/mod_manifest.json",
      "content": "{\"mods\":[]}"},
@@ -48,6 +50,13 @@
          "cue_name": "test_disc.cue",
          "label": "Test Disc",
          "id": "test-saf-regression"
+     }, "post_delay_ms": 500},
+    {"action": "setup_command", "command": "write_music_prefs",
+     "args": {
+         "source": "cd",
+         "prefer_mission_soundtrack": false,
+         "play_order": 0,
+         "volume": 8
      }, "post_delay_ms": 500},
 
     // Verify audio source registered via setup introspection

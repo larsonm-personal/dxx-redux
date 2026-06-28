@@ -124,6 +124,7 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_autoselect --es game d2 --es primary "8,9,7,6,5,4,3,2,1,0,255" --es secondary "9,8,4,3,1,5,0,255,7,6,2"
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_engine_prefs --ei cockpit_mode 2 --ez auto_leveling false
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_music_prefs --es source cd --ez prefer_mission_soundtrack false
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command clear_crash_reports
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_midi_play --ei source 0 --ei track 2
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_midi_stop
@@ -491,6 +492,33 @@ class SetupActivity : ComponentActivity() {
                             "write_engine_prefs: patched $n file(s) " +
                                 "(cockpit_mode=$cockpitMode auto_leveling=$autoLeveling " +
                                 "show_counts=$showRobotHostageCounts)",
+                        )
+                    }
+
+                    "write_music_prefs" -> {
+                        val source = intent.getStringExtra("source") ?: "cd"
+                        val preferMissionSoundtrack =
+                            intent.getBooleanExtra("prefer_mission_soundtrack", source == "mission")
+                        val playOrder = intent.getIntExtra("play_order", 0)
+                        val volume = intent.getIntExtra("volume", 8)
+                        val n =
+                            NativePilotPreferences.writeMusicPrefsToAll(
+                                filesDir.absolutePath,
+                                source,
+                                preferMissionSoundtrack,
+                                playOrder,
+                                volume,
+                            )
+                        getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+                            .edit()
+                            .putString("music_mode", if (source in listOf("files", "midi")) source else "cd")
+                            .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, preferMissionSoundtrack)
+                            .commit()
+                        Log.i(
+                            "DXX-Setup",
+                            "write_music_prefs: patched $n file(s) " +
+                                "(source=$source prefer_mission=$preferMissionSoundtrack " +
+                                "play_order=$playOrder volume=$volume)",
                         )
                     }
 
