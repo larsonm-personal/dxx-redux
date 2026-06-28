@@ -480,6 +480,13 @@ void joy_flush()
 		Joystick.button_state[i] = SDL_RELEASED;
 }
 
+int joy_get_button_state(int button)
+{
+	if (button < 0 || button >= JOY_MAX_BUTTONS)
+		return 0;
+	return Joystick.button_state[button] ? 1 : 0;
+}
+
 int event_joystick_get_button(d_event *event)
 {
 	Assert((event->type == EVENT_JOYSTICK_BUTTON_DOWN) || (event->type == EVENT_JOYSTICK_BUTTON_UP));

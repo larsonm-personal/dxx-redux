@@ -508,7 +508,6 @@ class LauncherScriptExecutor(
                 "descent.cfg",
                 "controller_config.json",
                 "controller_introspect.json",
-                "file_sets.json",
             )
         for (pattern in patterns) {
             if (pattern.startsWith("*")) {
@@ -545,7 +544,7 @@ class LauncherScriptExecutor(
         clearPendingResumeLaunchState(context)
         Log.i(
             TAG,
-            "Game state reset (deleted plr/plx/sg/mg/cfg/file_sets/pending resume files, " +
+            "Game state reset (deleted plr/plx/sg/mg/cfg/pending resume files, " +
                 "staged_input_demos=$stagedDemosDeleted)",
         )
     }

@@ -133,31 +133,35 @@
 
     // -- Phase 2: Trigger axis-buttons -----------------------------------
     // send_axis keeps the axis value held until the matching zero-value
-    // send_axis clears it.  Wait for the state transition instead of sampling
-    // a single frame.
+    // send_axis clears it.  Assert the raw axis and axis-button state directly;
+    // throttle_time is frame-integrated gameplay output and can be stale.
 
     // 2a: RT axis (axis 5, value 0.8) should fire Accelerate (+RT = button 21)
     {"action": "log", "message": "Phase 2a: RT trigger (axis 5) -> Accelerate"},
     {"action": "send_axis", "axis": 5, "axis_value": 0.8},
     {"action": "wait_for", "timeout_ms": 3000, "expect": {
-        "throttle_time": {"ne": 0}
+        "raw_joy_axis[5]": {"gt": 0},
+        "joy_buttons[21]": {"eq": "1"}
     }},
-    {"action": "log", "message": "Phase 2a: PASS -- RT drives forward thrust"},
+    {"action": "log", "message": "Phase 2a: PASS -- RT latches Accelerate axis-button"},
     {"action": "send_axis", "axis": 5, "axis_value": 0.0},
     {"action": "wait_for", "timeout_ms": 3000, "expect": {
-        "throttle_time": {"eq": "0"}
+        "raw_joy_axis[5]": {"eq": "0"},
+        "joy_buttons[21]": {"eq": "0"}
     }},
 
     // 2b: LT axis (axis 4, value 0.8) should fire Reverse (+LT = button 19)
     {"action": "log", "message": "Phase 2b: LT trigger (axis 4) -> Reverse"},
     {"action": "send_axis", "axis": 4, "axis_value": 0.8},
     {"action": "wait_for", "timeout_ms": 3000, "expect": {
-        "throttle_time": {"ne": 0}
+        "raw_joy_axis[4]": {"gt": 0},
+        "joy_buttons[19]": {"eq": "1"}
     }},
-    {"action": "log", "message": "Phase 2b: PASS -- LT drives reverse thrust"},
+    {"action": "log", "message": "Phase 2b: PASS -- LT latches Reverse axis-button"},
     {"action": "send_axis", "axis": 4, "axis_value": 0.0},
     {"action": "wait_for", "timeout_ms": 3000, "expect": {
-        "throttle_time": {"eq": "0"}
+        "raw_joy_axis[4]": {"eq": "0"},
+        "joy_buttons[19]": {"eq": "0"}
     }},
 
     // -- Phase 3: Button binding defaults --------------------------------

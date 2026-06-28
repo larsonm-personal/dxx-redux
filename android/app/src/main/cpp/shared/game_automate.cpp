@@ -779,6 +779,8 @@ extern "C" int newmenu_handler(window *wind, d_event *event, void *data);
 extern "C" int listbox_handler(window *wind, d_event *event, void *data);
 extern "C" int newmenu_key_command(window *wind, d_event *event, newmenu *menu);
 extern "C" int listbox_key_command(window *wind, d_event *event, listbox *lb);
+typedef struct kc_menu kc_menu;
+extern "C" int kconfig_handler(window *wind, d_event *event, kc_menu *menu);
 extern "C" int game_handler(window *wind, d_event *event, void *data);
 typedef struct automap automap;
 extern "C" int automap_handler(window *wind, d_event *event, automap *am);
@@ -1044,6 +1046,13 @@ static bool select_dispatch_front_menu_key(int keycode, const char *key_name)
 		listbox_key_command(front, (d_event *) &key_event, (listbox *) data);
 		return true;
 	}
+	if (cb == (int (*)(window *, d_event *, void *)) kconfig_handler) {
+		if (!data)
+			return false;
+		LOGI("KEY: dispatching kconfig key %s (key=%d)", key_name, keycode);
+		kconfig_handler(front, (d_event *) &key_event, (kc_menu *) data);
+		return true;
+	}
 	if (cb == (int (*)(window *, d_event *, void *)) game_handler) {
 		LOGI("KEY: dispatching game key %s (key=%d)", key_name, keycode);
 		game_handler(front, (d_event *) &key_event, data);
@@ -1099,6 +1108,8 @@ static bool can_direct_dispatch_front_key_command(void)
 		return data != NULL;
 	if (cb == (int (*)(window *, d_event *, void *)) listbox_handler)
 		return data != NULL;
+	if (cb == (int (*)(window *, d_event *, void *)) kconfig_handler)
+		return data != NULL;
 	if (cb == (int (*)(window *, d_event *, void *)) game_handler)
 		return true;
 	if (cb == (int (*)(window *, d_event *, void *)) automap_handler)
@@ -1124,6 +1135,8 @@ static const char *describe_window_handler(window *wind)
 		return "newmenu";
 	if (cb == (int (*)(window *, d_event *, void *)) listbox_handler)
 		return "listbox";
+	if (cb == (int (*)(window *, d_event *, void *)) kconfig_handler)
+		return "kconfig";
 #ifdef DXX_BUILD_DESCENT_II
 	if (cb == (int (*)(window *, d_event *, void *)) title_handler)
 		return "title";
@@ -1979,6 +1992,12 @@ static std::string run_assertions(auto_step &s, bool log_success, bool log_failu
 					for (auto &v : state["raw_joy_axis"])
 						axes += std::to_string(v.get<int>()) + " ";
 					LOGE("  DIAG raw_joy_axis = [%s]", axes.c_str());
+				}
+				if (state.contains("joy_buttons") && state["joy_buttons"].is_array()) {
+					std::string buttons;
+					for (auto &v : state["joy_buttons"])
+						buttons += std::to_string(v.get<int>()) + " ";
+					LOGE("  DIAG joy_buttons = [%s]", buttons.c_str());
 				}
 			}
 			return std::string(desc);

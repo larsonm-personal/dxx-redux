@@ -41,6 +41,7 @@ extern "C" {
 #include "segment.h"
 #include "playsave.h"
 #include "kconfig.h"
+#include "joy.h"
 #include "gr.h"
 #include "multi.h"
 #include "songs.h"
@@ -1257,6 +1258,17 @@ extern "C" char *game_introspect_get_state(void)
 			auto &rja = j["raw_joy_axis"];
 			for (int a = 0; a < 8; a++)
 				rja[a] = (int) Controls.raw_joy_axis[a];
+		}
+		{
+			json buttons = json::array();
+			int button_count = MIXER_BTN_BASE + kconfig_get_joystick_count();
+			if (button_count < 26)
+				button_count = 26;
+			if (button_count > JOY_MAX_BUTTONS)
+				button_count = JOY_MAX_BUTTONS;
+			for (int b = 0; b < button_count; b++)
+				buttons.push_back(joy_get_button_state(b));
+			j["joy_buttons"] = std::move(buttons);
 		}
 	}
 

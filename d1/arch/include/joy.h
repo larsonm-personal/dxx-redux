@@ -30,6 +30,7 @@ extern void event_joystick_get_axis(struct d_event *event, int *axis, int *value
 extern int event_joystick_get_touch_source(struct d_event *event);
 extern void joy_flush();
 extern int event_joystick_get_button(struct d_event *event);
+extern int joy_get_button_state(int button);
 extern void joy_button_handler(SDL_JoyButtonEvent *jbe);
 extern void joy_hat_handler(SDL_JoyHatEvent *jhe);
 extern int joy_axis_handler(SDL_JoyAxisEvent *jae);
