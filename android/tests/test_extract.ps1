@@ -565,6 +565,19 @@ function Get-AppPrivateFileSize {
     }
 }
 
+function Get-DeviceFileSize {
+    param([string]$RemotePath)
+
+    try {
+        $quotedRemotePath = Quote-ShArg $RemotePath
+        return Invoke-AdbRaw -Arguments @(
+            'shell', "stat -c %s -- $quotedRemotePath 2>/dev/null"
+        ) -TimeoutSeconds 10
+    } catch {
+        return ''
+    }
+}
+
 function Copy-LocalFileToAppPrivate {
     param(
         [string]$LocalPath,
@@ -586,61 +599,56 @@ function Copy-LocalFileToAppPrivate {
         Invoke-AppPrivateShell -Command "mkdir -p -- $quotedRemoteAbsDir" -TimeoutSeconds 30 | Out-Null
         Invoke-AppPrivateShell -Command "rm -f -- $quotedRemoteTempAbsPath" -TimeoutSeconds 30 | Out-Null
         $localLength = (Get-Item -LiteralPath $LocalPath).Length
-        if ($localLength -le 32 * 1024 * 1024) {
-            Invoke-AdbRaw -Arguments @(
-                'exec-in', 'run-as', $PACKAGE, 'sh', '-c', "cat > $quotedRemoteTempAbsPath"
-            ) -InputFile $LocalPath -TimeoutSeconds $TimeoutSeconds | Out-Null
-            $tempSize = Get-AppPrivateFileSize -RemoteRelativePath $remoteTempPath
-            if ($tempSize -notmatch '^\d+$' -or [long]$tempSize -ne $localLength) {
-                throw "stream size mismatch for $DisplayPath (expected $localLength bytes, got $tempSize)"
-            }
-        } else {
-            $chunkSize = 16 * 1024 * 1024
-            $chunkTimeoutSeconds = [Math]::Min($TimeoutSeconds, 120)
-            $chunkDir = Join-Path ([System.IO.Path]::GetTempPath()) "dxx_extract_$PID_$([guid]::NewGuid().ToString('N'))"
-            New-Item -ItemType Directory -Path $chunkDir -Force | Out-Null
-            $chunkPath = Join-Path $chunkDir 'chunk.bin'
-            $remoteChunk = "/data/local/tmp/dxx_extract_${PID}_chunk.bin"
-            $buffer = [byte[]]::new($chunkSize)
-            $inputStream = [System.IO.File]::OpenRead($LocalPath)
-            try {
-                $expectedSize = [long]0
-                while (($read = $inputStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                    $chunkOut = [System.IO.File]::Open($chunkPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
-                    try {
-                        $chunkOut.Write($buffer, 0, $read)
-                    } finally {
-                        $chunkOut.Dispose()
-                    }
-                    Invoke-AdbRaw -Arguments @('push', $chunkPath, $remoteChunk) -TimeoutSeconds $chunkTimeoutSeconds | Out-Null
-                    Invoke-AdbRaw -Arguments @('shell', 'chmod', '644', $remoteChunk) -TimeoutSeconds 30 | Out-Null
-                    Invoke-AdbRaw -Arguments @(
-                        'exec-out', 'run-as', $PACKAGE, 'sh', '-c', "cat $remoteChunk >> $quotedRemoteTempAbsPath"
-                    ) -TimeoutSeconds $chunkTimeoutSeconds | Out-Null
-                    Invoke-AdbRaw -Arguments @('shell', 'rm', '-f', $remoteChunk) -TimeoutSeconds 30 | Out-Null
-                    $expectedSize += $read
-                    $remoteSize = Get-AppPrivateFileSize -RemoteRelativePath $remoteTempPath
-                    if ($remoteSize -notmatch '^\d+$' -or [long]$remoteSize -ne $expectedSize) {
-                        throw "chunk append mismatch for $DisplayPath (expected $expectedSize bytes, got $remoteSize)"
-                    }
+        $chunkSize = 16 * 1024 * 1024
+        $chunkTimeoutSeconds = [Math]::Min($TimeoutSeconds, 120)
+        $chunkDir = Join-Path ([System.IO.Path]::GetTempPath()) "dxx_extract_$PID_$([guid]::NewGuid().ToString('N'))"
+        New-Item -ItemType Directory -Path $chunkDir -Force | Out-Null
+        $chunkPath = Join-Path $chunkDir 'chunk.bin'
+        $remoteChunk = "/data/local/tmp/dxx_extract_${PID}_chunk_$([guid]::NewGuid().ToString('N')).bin"
+        $quotedRemoteChunk = Quote-ShArg $remoteChunk
+        $buffer = [byte[]]::new($chunkSize)
+        $inputStream = [System.IO.File]::OpenRead($LocalPath)
+        try {
+            $expectedSize = [long]0
+            while (($read = $inputStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                $chunkOut = [System.IO.File]::Open($chunkPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
+                try {
+                    $chunkOut.Write($buffer, 0, $read)
+                } finally {
+                    $chunkOut.Dispose()
                 }
-                if ($expectedSize -eq 0) {
-                    Invoke-AdbRaw -Arguments @(
-                        'exec-out', 'run-as', $PACKAGE, 'sh', '-c', ": > $quotedRemoteTempAbsPath"
-                    ) -TimeoutSeconds 30 | Out-Null
+                Invoke-AdbRaw -Arguments @('push', $chunkPath, $remoteChunk) -TimeoutSeconds $chunkTimeoutSeconds | Out-Null
+                Invoke-AdbRaw -Arguments @('shell', 'chmod', '644', $remoteChunk) -TimeoutSeconds 30 | Out-Null
+                $chunkRemoteSize = Get-DeviceFileSize -RemotePath $remoteChunk
+                if ($chunkRemoteSize -notmatch '^\d+$' -or [long]$chunkRemoteSize -ne $read) {
+                    throw "chunk push mismatch for $DisplayPath (expected $read bytes, got $chunkRemoteSize)"
                 }
-            } finally {
-                $inputStream.Dispose()
-                try { Invoke-AdbRaw -Arguments @('shell', 'rm', '-f', $remoteChunk) -TimeoutSeconds 30 | Out-Null } catch { }
-                Remove-Item -LiteralPath $chunkDir -Recurse -Force -ErrorAction SilentlyContinue
+                Invoke-AdbRaw -Arguments @(
+                    'exec-out', 'run-as', $PACKAGE, 'sh', '-c', "cat $quotedRemoteChunk >> $quotedRemoteTempAbsPath"
+                ) -TimeoutSeconds $chunkTimeoutSeconds | Out-Null
+                Invoke-AdbRaw -Arguments @('shell', 'rm', '-f', $remoteChunk) -TimeoutSeconds 30 | Out-Null
+                $expectedSize += $read
+                $remoteSize = Get-AppPrivateFileSize -RemoteRelativePath $remoteTempPath
+                if ($remoteSize -notmatch '^\d+$' -or [long]$remoteSize -ne $expectedSize) {
+                    throw "chunk append mismatch for $DisplayPath (expected $expectedSize bytes, got $remoteSize)"
+                }
             }
+            if ($expectedSize -eq 0) {
+                Invoke-AdbRaw -Arguments @(
+                    'exec-out', 'run-as', $PACKAGE, 'sh', '-c', ": > $quotedRemoteTempAbsPath"
+                ) -TimeoutSeconds 30 | Out-Null
+            }
+        } finally {
+            $inputStream.Dispose()
+            try { Invoke-AdbRaw -Arguments @('shell', 'rm', '-f', $remoteChunk) -TimeoutSeconds 30 | Out-Null } catch { }
+            Remove-Item -LiteralPath $chunkDir -Recurse -Force -ErrorAction SilentlyContinue
         }
         Invoke-AppPrivateShell -Command "mv -f -- $quotedRemoteTempAbsPath $quotedRemoteAbsPath" -TimeoutSeconds 30 | Out-Null
     } catch {
         try {
             Invoke-AppPrivateShell -Command "rm -f -- $quotedRemoteTempAbsPath" -TimeoutSeconds 30 | Out-Null
         } catch { }
-        throw "ADB stream failed for ${DisplayPath}: $_"
+        throw "ADB staging failed for ${DisplayPath}: $_"
     }
 }
 
