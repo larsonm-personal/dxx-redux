@@ -32,8 +32,7 @@
     {"action": "setup_command", "command": "clear_save_files"},
     {"action": "setup_command", "command": "write_bool_pref", "key": "show_resume_offer", "bool_value": false},
     {"action": "setup_command", "command": "write_bool_pref", "key": "skip_intro_movie", "bool_value": false},
-    {"action": "tap_button", "text": "Descent 2"},
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
     {"action": "log", "message": "=== TEST: Mine Exit path arms touch suppress window ==="},
 
