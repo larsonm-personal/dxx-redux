@@ -76,8 +76,8 @@
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
 
-    // ── Phase 1: D-pad buttons ──────────────────────────────────────────
-    // Pattern: hold button -> wait for kconfig to process -> assert -> release
+    // -- Phase 1: D-pad buttons ------------------------------------------
+    // Pattern: hold input -> wait for observed control state -> release -> wait for neutral.
 
     // In the mixer architecture, D-pad buttons go through Kotlin InputMixer.
     // send_button injects at the SDL/C level, so we use MIXER_BTN_BASE + kc_index.
@@ -86,71 +86,81 @@
     // 1a: Slide Up (kc=8, button 108) should cause vertical_thrust_time != 0
     {"action": "log", "message": "Phase 1a: Slide Up (button 108) -> Slide Up"},
     {"action": "send_button", "button": 108, "held": 1},
-    {"action": "wait_ms", "ms": 300},
-    {"action": "assert", "expect": {
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
         "slide_ud_time": {"ne": 0}
     }},
     {"action": "send_button", "button": 108, "pressed": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "slide_ud_time": {"eq": "0"}
+    }},
     {"action": "log", "message": "Phase 1a: PASS -- Slide Up drives slide up"},
-    {"action": "wait_ms", "ms": 200},
 
     // 1b: Slide Down (kc=9, button 109)
     {"action": "log", "message": "Phase 1b: Slide Down (button 109) -> Slide Down"},
     {"action": "send_button", "button": 109, "held": 1},
-    {"action": "wait_ms", "ms": 300},
-    {"action": "assert", "expect": {
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
         "slide_ud_time": {"ne": 0}
     }},
     {"action": "send_button", "button": 109, "pressed": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "slide_ud_time": {"eq": "0"}
+    }},
     {"action": "log", "message": "Phase 1b: PASS -- Slide Down drives slide down"},
-    {"action": "wait_ms", "ms": 200},
 
     // 1c: Slide Left (kc=6, button 106)
     {"action": "log", "message": "Phase 1c: Slide Left (button 106) -> Slide Left"},
     {"action": "send_button", "button": 106, "held": 1},
-    {"action": "wait_ms", "ms": 300},
-    {"action": "assert", "expect": {
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
         "slide_lr_time": {"ne": 0}
     }},
     {"action": "send_button", "button": 106, "pressed": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "slide_lr_time": {"eq": "0"}
+    }},
     {"action": "log", "message": "Phase 1c: PASS -- Slide Left drives slide left"},
-    {"action": "wait_ms", "ms": 200},
 
     // 1d: Slide Right (kc=7, button 107)
     {"action": "log", "message": "Phase 1d: Slide Right (button 107) -> Slide Right"},
     {"action": "send_button", "button": 107, "held": 1},
-    {"action": "wait_ms", "ms": 300},
-    {"action": "assert", "expect": {
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
         "slide_lr_time": {"ne": 0}
     }},
     {"action": "send_button", "button": 107, "pressed": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "slide_lr_time": {"eq": "0"}
+    }},
     {"action": "log", "message": "Phase 1d: PASS -- Slide Right drives slide right"},
-    {"action": "wait_ms", "ms": 200},
 
-    // ── Phase 2: Trigger axis-buttons ───────────────────────────────────
-    // send_axis already holds the axis value during post_delay_ms, so
-    // assert BEFORE resetting to 0.
+    // -- Phase 2: Trigger axis-buttons -----------------------------------
+    // send_axis keeps the axis value held until the matching zero-value
+    // send_axis clears it.  Wait for the state transition instead of sampling
+    // a single frame.
 
     // 2a: RT axis (axis 5, value 0.8) should fire Accelerate (+RT = button 21)
     {"action": "log", "message": "Phase 2a: RT trigger (axis 5) -> Accelerate"},
-    {"action": "send_axis", "axis": 5, "axis_value": 0.8, "post_delay_ms": 500},
-    {"action": "assert", "expect": {
+    {"action": "send_axis", "axis": 5, "axis_value": 0.8},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
         "throttle_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 2a: PASS -- RT drives forward thrust"},
-    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 200},
-    {"action": "wait_ms", "ms": 200},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "throttle_time": {"eq": "0"}
+    }},
 
     // 2b: LT axis (axis 4, value 0.8) should fire Reverse (+LT = button 19)
     {"action": "log", "message": "Phase 2b: LT trigger (axis 4) -> Reverse"},
-    {"action": "send_axis", "axis": 4, "axis_value": 0.8, "post_delay_ms": 500},
-    {"action": "assert", "expect": {
+    {"action": "send_axis", "axis": 4, "axis_value": 0.8},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
         "throttle_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 2b: PASS -- LT drives reverse thrust"},
-    {"action": "send_axis", "axis": 4, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 4, "axis_value": 0.0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "throttle_time": {"eq": "0"}
+    }},
 
-    // ── Phase 3: Button binding defaults ────────────────────────────────
+    // -- Phase 3: Button binding defaults --------------------------------
     // Assert that the fresh pilot has the correct button<->action mappings.
     // With identity mapping, pilot stores MIXER_BTN_BASE(100) + kc_index.
     // D1 and D2 have different kconfig index layouts, so these assertions

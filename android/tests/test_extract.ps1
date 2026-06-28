@@ -413,6 +413,33 @@ function Clear-AppPrivateDirectoryContents {
     Invoke-AdbRaw -Arguments @('exec-out', 'run-as', $PACKAGE, 'mkdir', '-p', $RemoteDir) -TimeoutSeconds 30 | Out-Null
 }
 
+function Get-AppPrivateAbsPath {
+    param([string]$RemotePath)
+
+    $normalized = $RemotePath -replace '\\', '/'
+    if ($normalized.StartsWith('/')) { return $normalized }
+    return "/data/data/$PACKAGE/$normalized"
+}
+
+function Invoke-AppPrivateShell {
+    param(
+        [string]$Command,
+        [int]$TimeoutSeconds = 30
+    )
+
+    Invoke-AdbRaw -Arguments @('exec-out', 'run-as', $PACKAGE, 'sh', '-c', $Command) -TimeoutSeconds $TimeoutSeconds
+}
+
+function Remove-AppPrivateFile {
+    param(
+        [string]$RemotePath,
+        [int]$TimeoutSeconds = 30
+    )
+
+    $quotedRemotePath = Quote-ShArg (Get-AppPrivateAbsPath $RemotePath)
+    Invoke-AppPrivateShell -Command "rm -f -- $quotedRemotePath" -TimeoutSeconds $TimeoutSeconds | Out-Null
+}
+
 function Clear-DirectImportScratch {
     try {
         Invoke-AdbRaw -Arguments @('shell', 'sh', '-c', 'rm -f /data/local/tmp/dxx_extract_*') -TimeoutSeconds 30 | Out-Null
@@ -440,21 +467,39 @@ function Ensure-AppPrivateFile {
     for ($attempt = 1; $attempt -le 3; $attempt++) {
         $suffix = if ($attempt -eq 1) { '' } else { " (retry $attempt)" }
         Write-Status "  Pushing $(Split-Path $LocalPath -Leaf) -> $RemoteRelativePath$suffix" 'Gray'
-        Copy-LocalFileToAppPrivate -LocalPath $LocalPath -RemotePath $RemoteRelativePath -DisplayPath $RemoteRelativePath -TimeoutSeconds $TimeoutSeconds
-
-        $remoteSize = Get-AppPrivateFileSize -RemoteRelativePath $RemoteRelativePath
-        if ($remoteSize -match '^\d+$' -and [long]$remoteSize -eq $localItem.Length) {
-            return
+        $copyError = $null
+        try {
+            Copy-LocalFileToAppPrivate -LocalPath $LocalPath -RemotePath $RemoteRelativePath -DisplayPath $RemoteRelativePath -TimeoutSeconds $TimeoutSeconds
+        } catch {
+            $copyError = $_
         }
-        $actualSize = if ($remoteSize) { $remoteSize } else { '<missing>' }
+
+        if (-not $copyError) {
+            $remoteSize = Get-AppPrivateFileSize -RemoteRelativePath $RemoteRelativePath
+            if ($remoteSize -match '^\d+$' -and [long]$remoteSize -eq $localItem.Length) {
+                return
+            }
+            $actualSize = if ($remoteSize) { $remoteSize } else { '<missing>' }
+        } else {
+            $actualSize = '<copy failed>'
+        }
+
         if ($attempt -eq 3) {
             $df = ''
             try { $df = Invoke-AdbRaw -Arguments @('shell', 'df', '-h', "/data/data/$PACKAGE/files") -TimeoutSeconds 10 } catch { }
             if ($df) { Write-Status "  Device storage:`n$df" 'Yellow' }
+            if ($copyError) {
+                throw "App-private staging failed for $RemoteRelativePath after copy error: $copyError"
+            }
             throw "App-private staging failed for $RemoteRelativePath (expected $($localItem.Length) bytes, got $actualSize)"
         }
-        Write-Status "  App-private staging short write for $RemoteRelativePath (expected $($localItem.Length), got $actualSize); retrying" 'Yellow'
-        Invoke-AdbRaw -Arguments @('shell', 'run-as', $PACKAGE, 'rm', '-f', "/data/data/$PACKAGE/$RemoteRelativePath") -TimeoutSeconds 30 | Out-Null
+
+        if ($copyError) {
+            Write-Status "  App-private staging copy failed for $RemoteRelativePath; retrying: $copyError" 'Yellow'
+        } else {
+            Write-Status "  App-private staging short write for $RemoteRelativePath (expected $($localItem.Length), got $actualSize); retrying" 'Yellow'
+        }
+        Remove-AppPrivateFile -RemotePath $RemoteRelativePath
     }
 }
 
@@ -528,23 +573,27 @@ function Copy-LocalFileToAppPrivate {
         [int]$TimeoutSeconds
     )
 
+    $RemotePath = $RemotePath -replace '\\', '/'
     $remoteDir = (Split-Path $RemotePath -Parent) -replace '\\', '/'
-    $remoteAbsPath = "/data/data/$PACKAGE/$RemotePath"
-    $remoteAbsDir = "/data/data/$PACKAGE/$remoteDir"
+    $remoteTempPath = "$RemotePath.tmp.$PID"
+    $remoteAbsPath = Get-AppPrivateAbsPath $RemotePath
+    $remoteAbsDir = Get-AppPrivateAbsPath $remoteDir
+    $remoteTempAbsPath = Get-AppPrivateAbsPath $remoteTempPath
     try {
         $quotedRemoteAbsDir = Quote-ShArg $remoteAbsDir
         $quotedRemoteAbsPath = Quote-ShArg $remoteAbsPath
-        Invoke-AdbRaw -Arguments @(
-            'exec-out', 'run-as', $PACKAGE, 'sh', '-c', "mkdir -p -- $quotedRemoteAbsDir"
-        ) -TimeoutSeconds 30 | Out-Null
-        Invoke-AdbRaw -Arguments @(
-            'exec-out', 'run-as', $PACKAGE, 'sh', '-c', "rm -f -- $quotedRemoteAbsPath"
-        ) -TimeoutSeconds 30 | Out-Null
+        $quotedRemoteTempAbsPath = Quote-ShArg $remoteTempAbsPath
+        Invoke-AppPrivateShell -Command "mkdir -p -- $quotedRemoteAbsDir" -TimeoutSeconds 30 | Out-Null
+        Invoke-AppPrivateShell -Command "rm -f -- $quotedRemoteTempAbsPath" -TimeoutSeconds 30 | Out-Null
         $localLength = (Get-Item -LiteralPath $LocalPath).Length
         if ($localLength -le 32 * 1024 * 1024) {
             Invoke-AdbRaw -Arguments @(
-                'exec-in', 'run-as', $PACKAGE, 'sh', '-c', "cat > $quotedRemoteAbsPath"
+                'exec-in', 'run-as', $PACKAGE, 'sh', '-c', "cat > $quotedRemoteTempAbsPath"
             ) -InputFile $LocalPath -TimeoutSeconds $TimeoutSeconds | Out-Null
+            $tempSize = Get-AppPrivateFileSize -RemoteRelativePath $remoteTempPath
+            if ($tempSize -notmatch '^\d+$' -or [long]$tempSize -ne $localLength) {
+                throw "stream size mismatch for $DisplayPath (expected $localLength bytes, got $tempSize)"
+            }
         } else {
             $chunkSize = 16 * 1024 * 1024
             $chunkTimeoutSeconds = [Math]::Min($TimeoutSeconds, 120)
@@ -566,18 +615,18 @@ function Copy-LocalFileToAppPrivate {
                     Invoke-AdbRaw -Arguments @('push', $chunkPath, $remoteChunk) -TimeoutSeconds $chunkTimeoutSeconds | Out-Null
                     Invoke-AdbRaw -Arguments @('shell', 'chmod', '644', $remoteChunk) -TimeoutSeconds 30 | Out-Null
                     Invoke-AdbRaw -Arguments @(
-                        'exec-out', 'run-as', $PACKAGE, 'sh', '-c', "cat $remoteChunk >> $quotedRemoteAbsPath"
+                        'exec-out', 'run-as', $PACKAGE, 'sh', '-c', "cat $remoteChunk >> $quotedRemoteTempAbsPath"
                     ) -TimeoutSeconds $chunkTimeoutSeconds | Out-Null
                     Invoke-AdbRaw -Arguments @('shell', 'rm', '-f', $remoteChunk) -TimeoutSeconds 30 | Out-Null
                     $expectedSize += $read
-                    $remoteSize = Get-AppPrivateFileSize -RemoteRelativePath $RemotePath
+                    $remoteSize = Get-AppPrivateFileSize -RemoteRelativePath $remoteTempPath
                     if ($remoteSize -notmatch '^\d+$' -or [long]$remoteSize -ne $expectedSize) {
                         throw "chunk append mismatch for $DisplayPath (expected $expectedSize bytes, got $remoteSize)"
                     }
                 }
                 if ($expectedSize -eq 0) {
                     Invoke-AdbRaw -Arguments @(
-                        'exec-out', 'run-as', $PACKAGE, 'sh', '-c', ": > $quotedRemoteAbsPath"
+                        'exec-out', 'run-as', $PACKAGE, 'sh', '-c', ": > $quotedRemoteTempAbsPath"
                     ) -TimeoutSeconds 30 | Out-Null
                 }
             } finally {
@@ -586,11 +635,10 @@ function Copy-LocalFileToAppPrivate {
                 Remove-Item -LiteralPath $chunkDir -Recurse -Force -ErrorAction SilentlyContinue
             }
         }
+        Invoke-AppPrivateShell -Command "mv -f -- $quotedRemoteTempAbsPath $quotedRemoteAbsPath" -TimeoutSeconds 30 | Out-Null
     } catch {
         try {
-            Invoke-AdbRaw -Arguments @(
-                'exec-out', 'run-as', $PACKAGE, 'sh', '-c', "rm -f -- $quotedRemoteAbsPath"
-            ) -TimeoutSeconds 30 | Out-Null
+            Invoke-AppPrivateShell -Command "rm -f -- $quotedRemoteTempAbsPath" -TimeoutSeconds 30 | Out-Null
         } catch { }
         throw "ADB stream failed for ${DisplayPath}: $_"
     }
