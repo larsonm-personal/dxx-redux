@@ -220,7 +220,6 @@ foreach ($specPath in $specs) {
     $ErrorActionPreference = 'Stop'
 
     $elapsed = (Get-Date) - $testStart
-    $status = if ($exitCode -eq 0) { 'PASS' } else { 'FAIL' }
 
     # Read new result from spec file (written by Exit-Test)
     $newStatus = $null
@@ -228,6 +227,13 @@ foreach ($specPath in $specs) {
         $specData = Read-Json5 $specPath
         if ($specData.last_test_result) { $newStatus = $specData.last_test_result.status }
     } catch {}
+    $status = if ($exitCode -ne 0) {
+        'FAIL'
+    } elseif ($newStatus -eq 'skip') {
+        'SKIP'
+    } else {
+        'PASS'
+    }
     $changed = ($priorStatus -ne $newStatus)
 
     $results += [PSCustomObject]@{
@@ -255,11 +261,12 @@ foreach ($specPath in $specs) {
 
 $totalElapsed = (Get-Date) - $startTime
 $passed = @($results | Where-Object { $_.Status -eq 'PASS' }).Count
+$skipped = @($results | Where-Object { $_.Status -eq 'SKIP' }).Count
 $changedCount = @($results | Where-Object { $_.Changed -eq '*' }).Count
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor White
-Write-Host "  RESULTS: $passed/$($results.Count) passed, $failures failed" -ForegroundColor $(if ($failures -eq 0) { 'Green' } else { 'Red' })
+Write-Host "  RESULTS: $passed/$($results.Count) passed, $skipped skipped, $failures failed" -ForegroundColor $(if ($failures -eq 0) { 'Green' } else { 'Red' })
 if ($changedCount -gt 0) {
     Write-Host "  Spec results changed: $changedCount" -ForegroundColor Yellow
 }

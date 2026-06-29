@@ -106,12 +106,12 @@ function Request-TestSuiteCancel {
 }
 
 $script:cancelHandler =
-    [System.ConsoleCancelEventHandler] {
-        param($sender, $eventArgs)
-        $eventArgs.Cancel = $true
-        Request-TestSuiteCancel
-        [Environment]::Exit(130)
-    }
+[System.ConsoleCancelEventHandler] {
+    param($sender, $eventArgs)
+    $eventArgs.Cancel = $true
+    Request-TestSuiteCancel
+    [Environment]::Exit(130)
+}
 [Console]::add_CancelKeyPress($script:cancelHandler)
 
 # -- Environment probes (non-provisioning) --
@@ -1016,6 +1016,89 @@ function ConvertTo-ArgumentText {
         }) -join ' '
 }
 
+$reportSidecarLogsByTestName = @{
+    test_double_launch = "test_double_launch_result.txt"
+    test_lan           = "lan_test_log.txt"
+    test_mp            = "mp_test_log.txt"
+}
+
+function Add-ReportSidecarLog {
+    param(
+        [string]$TestName,
+        [string]$LogFile,
+        [datetime]$StartedAt
+    )
+
+    if (-not $reportSidecarLogsByTestName.ContainsKey($TestName)) {
+        return $null
+    }
+
+    $sidecarLog = Join-Path (Join-Path $repoRoot "temp") $reportSidecarLogsByTestName[$TestName]
+    if (-not (Test-Path -LiteralPath $sidecarLog -PathType Leaf)) {
+        return $null
+    }
+
+    $sidecarItem = Get-Item -LiteralPath $sidecarLog -ErrorAction SilentlyContinue
+    if (-not $sidecarItem -or $sidecarItem.Length -eq 0) {
+        return $null
+    }
+    if ($StartedAt -and $sidecarItem.LastWriteTime -lt $StartedAt.AddSeconds(-2)) {
+        return $null
+    }
+
+    $sidecarText = Get-Content -LiteralPath $sidecarLog -Raw -ErrorAction SilentlyContinue
+    if (-not $sidecarText -or -not $sidecarText.Trim()) {
+        return $null
+    }
+
+    $logDir = Split-Path -Parent $LogFile
+    if ($logDir -and -not (Test-Path -LiteralPath $logDir -PathType Container)) {
+        New-Item -Path $logDir -ItemType Directory -Force | Out-Null
+    }
+
+    "" | Out-File -FilePath $LogFile -Append -Encoding utf8
+    "===== Sidecar log: $($sidecarItem.Name) =====" | Out-File -FilePath $LogFile -Append -Encoding utf8
+    $sidecarText | Out-File -FilePath $LogFile -Append -Encoding utf8
+    return $sidecarLog
+}
+
+function Get-PassingResultNotes {
+    param([string]$LogFile)
+
+    if (-not $LogFile -or -not (Test-Path -LiteralPath $LogFile -PathType Leaf)) {
+        return @()
+    }
+
+    $notes = [System.Collections.Generic.List[string]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($line in @(Get-Content -LiteralPath $LogFile -ErrorAction SilentlyContinue)) {
+        $trimmed = $line.Trim()
+        if (-not $trimmed -or $trimmed -match 'support script \(not standalone\)') {
+            continue
+        }
+
+        $note = $null
+        if ($trimmed -cmatch 'Mission ZIP batch complete: .*?,\s*[1-9]\d*\s+skipped') {
+            $note = "subtest skip summary: $trimmed"
+        } elseif ($trimmed -cmatch 'SKIP \(') {
+            $note = "internal skip: $trimmed"
+        } elseif ($trimmed -cmatch '\bTIMEOUT:') {
+            $note = "internal wait timeout: $trimmed"
+        } elseif ($trimmed -cmatch '\bWARN(?:ING)?:') {
+            $note = "warning: $trimmed"
+        }
+
+        if ($note -and $seen.Add($note)) {
+            $notes.Add($note) | Out-Null
+            if ($notes.Count -ge 4) {
+                break
+            }
+        }
+    }
+
+    return @($notes.ToArray())
+}
+
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
@@ -1101,6 +1184,7 @@ function Invoke-SingleTest {
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
     Write-Host "  Running: $name  [$($Test.Type)]  (timeout: ${testTimeout}s)" -ForegroundColor White
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $startedAt = Get-Date
 
     if ($Test.Type -eq "json5") {
         $psScript = $runTestScript
@@ -1163,6 +1247,9 @@ function Invoke-SingleTest {
 
         $stdout | Out-File -FilePath $logFile -Encoding utf8
         if ($stderr) { $stderr | Out-File -FilePath $logFile -Append -Encoding utf8 }
+        if (-not ("$stdout$stderr").Trim()) {
+            Add-ReportSidecarLog -TestName $name -LogFile $logFile -StartedAt $startedAt | Out-Null
+        }
         if ($timedOut) {
             "TIMEOUT: Test killed after ${testTimeout}s" | Out-File -FilePath $logFile -Append -Encoding utf8
         }
@@ -1191,10 +1278,14 @@ function Invoke-SingleTest {
     Write-Host "  $status ($elapsed)" -ForegroundColor $color
 
     if ($exitCode -eq 0) { $script:passCount++ } else { $script:failCount++ }
+    $notes = if ($status -eq "PASS") { @(Get-PassingResultNotes -LogFile $logFile) } else { @() }
+    if ($notes.Count -gt 0) {
+        Write-Host "    notes: $($notes.Count)" -ForegroundColor Yellow
+    }
 
     $result = @{
         Name = $name; Type = $Test.Type; Status = $status
-        ExitCode = $exitCode; Elapsed = $elapsed; LogFile = $logFile
+        ExitCode = $exitCode; Elapsed = $elapsed; LogFile = $logFile; Notes = $notes
     }
     $script:results += $result
 
@@ -1502,7 +1593,8 @@ Write-Host ""
 foreach ($r in $results) {
     $icon = if ($r.Status -eq "PASS") { "+" } else { "!" }
     $color = if ($r.Status -eq "PASS") { "Green" } else { "Red" }
-    Write-Host "  [$icon] $($r.Status.PadRight(7))  $($r.Elapsed)  $($r.Name)" -ForegroundColor $color
+    $noteSuffix = if ($r.Notes -and $r.Notes.Count -gt 0) { "  notes=$($r.Notes.Count)" } else { "" }
+    Write-Host "  [$icon] $($r.Status.PadRight(7))  $($r.Elapsed)  $($r.Name)$noteSuffix" -ForegroundColor $color
 }
 foreach ($s in $allSkipped) {
     Write-Host "  [-] SKIP           $($s.Name)  ($($s.Reason))" -ForegroundColor DarkGray
@@ -1536,6 +1628,20 @@ foreach ($s in $allSkipped) {
     $md += "| SKIP | -- | $($s.Name) | $($s.Type) ($($s.Reason)) |"
 }
 $md += ""
+
+$passingResultsWithNotes = @($results | Where-Object { $_.Status -eq "PASS" -and $_.Notes -and $_.Notes.Count -gt 0 })
+if ($passingResultsWithNotes.Count -gt 0) {
+    $md += "## Passing Results With Notes"
+    $md += ""
+    foreach ($r in $passingResultsWithNotes) {
+        $md += "### $($r.Name)"
+        $md += "- Log: ``$(Split-Path $r.LogFile -Leaf)``"
+        foreach ($note in $r.Notes) {
+            $md += "- $note"
+        }
+        $md += ""
+    }
+}
 
 if ($failCount -gt 0 -or $timeoutCount -gt 0) {
     $md += "## Non-passing Results"
