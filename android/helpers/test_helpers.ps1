@@ -1844,18 +1844,29 @@ function Start-ManagedEmulatorProcess {
         $arguments += "-no-window"
     }
 
-    $startArgs = @{
-        FilePath = $script:EMULATOR_EXE
-        ArgumentList = $arguments
-        RedirectStandardOutput = $logs.Stdout
-        RedirectStandardError = $logs.Stderr
-    }
-    if ((Test-RegressionWindowsHost) -and -not $Headless) {
-        $startArgs.WindowStyle = "Minimized"
-    }
-
     try {
-        Start-Process @startArgs
+        if (Test-RegressionWindowsHost) {
+            # ShellExecute avoids inheriting redirected test-runner handles
+            $processInfo = [System.Diagnostics.ProcessStartInfo]::new()
+            $processInfo.FileName = $script:EMULATOR_EXE
+            $processInfo.UseShellExecute = $true
+            $processInfo.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+            foreach ($argument in $arguments) {
+                $null = $processInfo.ArgumentList.Add($argument)
+            }
+
+            $process = [System.Diagnostics.Process]::Start($processInfo)
+            if ($process) {
+                $process.Dispose()
+                return $true
+            }
+            return $false
+        }
+
+        Start-Process -FilePath $script:EMULATOR_EXE `
+            -ArgumentList $arguments `
+            -RedirectStandardOutput $logs.Stdout `
+            -RedirectStandardError $logs.Stderr
         return $true
     } catch {
         Write-Status "FAIL: could not start ${AvdName}: $_" "Red"
