@@ -292,7 +292,6 @@ $tierServerManagedDualEmuTests = @()
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
     "test_autoselect_crash_unified"       = 240
-    "test_autosave_resume_missing_pilot_unified" = 300
     "test_axis_mapping"                   = 240
     "test_dpad_triggers"                 = 420
     "test_keyboard_defaults"              = 240
@@ -315,6 +314,40 @@ $testTimeouts = @{
     "test_server_integration"             = 600
     "test_validate_extract_regression_specs" = 60
 }
+
+function Get-RunTestJson5ChildTimeoutSeconds {
+    param(
+        [string]$ScriptPath,
+        [string]$TestName
+    )
+
+    $scriptTimeout = [Math]::Max(
+        [Math]::Max(300, $TestTimeoutSeconds),
+        (Get-ScriptTimeoutSeconds -ScriptPath $ScriptPath)
+    )
+    if ((Get-ScriptIsLauncher -ScriptPath $ScriptPath) -and $scriptTimeout -lt 600) {
+        $scriptTimeout = 600
+    }
+    if ($testTimeouts.ContainsKey($TestName)) {
+        $scriptTimeout = [Math]::Max($scriptTimeout, [int]$testTimeouts[$TestName])
+    }
+    return [int]$scriptTimeout
+}
+
+function Get-RunAllJson5TimeoutSeconds {
+    param(
+        [string]$ScriptPath,
+        [int]$ChildTimeoutSeconds
+    )
+
+    $gameCount = @(Get-ScriptGameInfo -ScriptPath $ScriptPath).Count
+    if ($gameCount -lt 1) {
+        $gameCount = 1
+    }
+    $perGameOverheadSeconds = if (Get-ScriptIsLauncher -ScriptPath $ScriptPath) { 90 } else { 45 }
+    return [int](($ChildTimeoutSeconds + $perGameOverheadSeconds) * $gameCount + 30)
+}
+
 $extractTests = @(
     "test_all_extracts",
     "test_extract",
@@ -368,15 +401,8 @@ foreach ($t in $json5Files) {
         continue  # skip template scripts that need a caller
     }
     $name = $t.BaseName
-    $timeoutSeconds = if ($testTimeouts.ContainsKey($name)) {
-        $testTimeouts[$name]
-    } else {
-        $scriptTimeout = [Math]::Max($TestTimeoutSeconds, (Get-ScriptTimeoutSeconds -ScriptPath $t.FullName))
-        if ((Get-ScriptIsLauncher -ScriptPath $t.FullName) -and $scriptTimeout -lt 600) {
-            $scriptTimeout = 600
-        }
-        $scriptTimeout
-    }
+    $childTimeoutSeconds = Get-RunTestJson5ChildTimeoutSeconds -ScriptPath $t.FullName -TestName $name
+    $timeoutSeconds = Get-RunAllJson5TimeoutSeconds -ScriptPath $t.FullName -ChildTimeoutSeconds $childTimeoutSeconds
     $allTests += @{
         Name = $name
         BaseName = $name
@@ -384,6 +410,7 @@ foreach ($t in $json5Files) {
         Path = $t.FullName
         Requires = "emulator"
         TimeoutSeconds = $timeoutSeconds
+        Arguments = @("-TimeoutSeconds", $childTimeoutSeconds.ToString())
     }
 }
 
@@ -1277,7 +1304,11 @@ function Invoke-SingleTest {
     }
     Write-Host "  $status ($elapsed)" -ForegroundColor $color
 
-    if ($exitCode -eq 0) { $script:passCount++ } else { $script:failCount++ }
+    if ($status -eq "PASS") {
+        $script:passCount++
+    } elseif ($status -eq "FAIL") {
+        $script:failCount++
+    }
     $notes = if ($status -eq "PASS") { @(Get-PassingResultNotes -LogFile $logFile) } else { @() }
     if ($notes.Count -gt 0) {
         Write-Host "    notes: $($notes.Count)" -ForegroundColor Yellow
@@ -1677,4 +1708,4 @@ Stop-TestSuiteEmulators
 
 # Note: tests that own a server lifecycle clean it up themselves
 
-if ($failCount -gt 0) { exit 1 } else { exit 0 }
+if ($failCount -gt 0 -or $timeoutCount -gt 0) { exit 1 } else { exit 0 }
