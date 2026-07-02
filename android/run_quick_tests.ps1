@@ -116,6 +116,16 @@ function Format-SecondsAsClock {
     return ([TimeSpan]::FromSeconds($Seconds)).ToString("mm\:ss")
 }
 
+function Get-QuickTestHistoricalSeconds {
+    param([hashtable]$Test)
+
+    if (-not $Test -or -not $Test.ContainsKey("HistoricalSeconds") -or $null -eq $Test.HistoricalSeconds) {
+        return 0
+    }
+
+    return [int]$Test.HistoricalSeconds
+}
+
 function Get-ReportLogExcerpt {
     param(
         [string]$LogFile,
@@ -174,6 +184,7 @@ function Invoke-QuickTest {
     param([hashtable]$Test)
 
     $name = $Test.Name
+    $historicalSeconds = Get-QuickTestHistoricalSeconds -Test $Test
     $logFile = Join-Path $ReportDir ("{0}_{1}.log" -f $name, $timestamp)
 
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
@@ -206,7 +217,7 @@ function Invoke-QuickTest {
             ExitCode = 1
             Elapsed = "00:00"
             LogFile = $logFile
-            Historical = Format-SecondsAsClock -Seconds $Test.HistoricalSeconds
+            Historical = Format-SecondsAsClock -Seconds $historicalSeconds
         }
     }
 
@@ -288,11 +299,11 @@ function Invoke-QuickTest {
         ExitCode = $exitCode
         Elapsed = $elapsed
         LogFile = $logFile
-        Historical = Format-SecondsAsClock -Seconds $Test.HistoricalSeconds
+        Historical = Format-SecondsAsClock -Seconds $historicalSeconds
     }
 }
 
-$historicalTotalSeconds = [int](($quickTests | Measure-Object -Property HistoricalSeconds -Sum).Sum)
+$historicalTotalSeconds = [int](($quickTests | ForEach-Object { Get-QuickTestHistoricalSeconds -Test $_ } | Measure-Object -Sum).Sum)
 $historicalTotal = Format-SecondsAsClock -Seconds $historicalTotalSeconds
 $historicalEstimateSource = "fixed per-test baselines"
 
@@ -320,13 +331,14 @@ $totalSw = [System.Diagnostics.Stopwatch]::StartNew()
 foreach ($test in $quickTests) {
     $elapsedSeconds = [int][Math]::Floor($totalSw.Elapsed.TotalSeconds)
     $remainingSeconds = $MaxTotalSeconds - $elapsedSeconds
-    if ($remainingSeconds -lt $test.HistoricalSeconds) {
+    $historicalSeconds = Get-QuickTestHistoricalSeconds -Test $test
+    if ($remainingSeconds -lt $historicalSeconds) {
         Write-Host "Skipping $($test.Name) because only $(Format-SecondsAsClock -Seconds ([Math]::Max(0, $remainingSeconds))) remains in the budget" -ForegroundColor Yellow
         $skipped += @{
             Name = $test.Name
             Type = $test.Type
             Reason = "budget"
-            Historical = Format-SecondsAsClock -Seconds $test.HistoricalSeconds
+            Historical = Format-SecondsAsClock -Seconds $historicalSeconds
         }
         continue
     }
@@ -371,7 +383,7 @@ $md += ""
 $md += "| Historical | Test | Type |"
 $md += "|-----------|------|------|"
 foreach ($test in $quickTests) {
-    $md += "| $(Format-SecondsAsClock -Seconds $test.HistoricalSeconds) | $($test.Name) | $($test.Type) |"
+    $md += "| $(Format-SecondsAsClock -Seconds (Get-QuickTestHistoricalSeconds -Test $test)) | $($test.Name) | $($test.Type) |"
 }
 $md += ""
 $md += "## Results"
