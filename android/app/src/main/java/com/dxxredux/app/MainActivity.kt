@@ -858,6 +858,7 @@ class MainActivity :
             com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value.gameLaunchInfo != null
         }
         touchOverlay.controllerBoundActionBindingsProvider = { controllerBoundActions }
+        touchOverlay.workingControllerInUseProvider = { hasWorkingControllerDevice() }
         touchOverlay.gamepadOnlyMode = gamepadOnlyMode
         touchOverlay.isEscortOwnerProvider = {
             try {
@@ -1746,14 +1747,9 @@ class MainActivity :
         }
         // Re-read preference (user may have toggled in SetupActivity)
         val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+        loadMetaBindings()
         // Default to enabled when no physical controller is connected
-        val hasController =
-            InputDevice.getDeviceIds().any { id ->
-                val dev = InputDevice.getDevice(id) ?: return@any false
-                val src = dev.sources
-                src and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
-                    src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
-            }
+        val hasController = hasWorkingControllerDevice()
         overlayEnabled = prefs.getBoolean("touch_overlay_enabled", !hasController)
         syncDebugLogPrefs()
         applySkipIntroPref(prefs)
@@ -2628,6 +2624,13 @@ class MainActivity :
 
     /** Load controller meta-action bindings from controller_config.json. */
     private fun loadMetaBindings() {
+        buttonMetaBindings = emptyMap()
+        controllerBoundActions = emptySet()
+        dpadMetaBindings = emptyMap()
+        halfAxisCombiners = emptyList()
+        controllerAxisExponents = defaultControllerAxisExponents()
+        mixerButtonMap = emptyMap()
+
         val file = File(filesDir, "controller_config.json")
         if (!file.exists()) return
         try {
@@ -2850,6 +2853,14 @@ class MainActivity :
         source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
             source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK ||
             source and InputDevice.SOURCE_DPAD == InputDevice.SOURCE_DPAD
+
+    private fun hasWorkingControllerDevice(): Boolean =
+        InputDevice.getDeviceIds().any { id ->
+            val device = InputDevice.getDevice(id) ?: return@any false
+            val source = device.sources
+            source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+                source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+        }
 
     private fun isImeReroutedEvent(): Boolean = imeNavigationDispatchDepth > 0
 

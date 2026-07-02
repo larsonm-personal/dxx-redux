@@ -147,9 +147,14 @@ internal fun remainingKeyTouchActions(
     gameVariant: String,
     isMultiplayerGame: Boolean = false,
     weaponState: WeaponState? = null,
+    controllerBoundBindings: Set<Int> = emptySet(),
+    workingControllerInUse: Boolean = false,
     extraBoundBindings: Set<Int> = emptySet(),
 ): List<RemainingTouchAction> {
-    val boundBindings = touchLayoutBoundActionBindings(layout) + extraBoundBindings
+    val boundBindings =
+        touchLayoutBoundActionBindings(layout) +
+            extraBoundBindings +
+            if (workingControllerInUse) controllerBoundBindings else emptySet()
     return remainingCandidateBindings(layout, isMultiplayerGame)
         .filter { binding ->
             gameVariant != "d1" ||

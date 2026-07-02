@@ -187,6 +187,31 @@ class RemainingKeyTouchActionsTest {
     }
 
     @Test
+    fun controllerBoundActionsFilterOnlyWhenWorkingControllerIsInUse() {
+        val controllerBindings = setOf(TouchBindings.META_REWIND, TouchBindings.BTN_HEADLIGHT)
+        val withoutController =
+            remainingKeyTouchActions(
+                TouchLayout(name = "Empty"),
+                gameVariant = "d2",
+                controllerBoundBindings = controllerBindings,
+                workingControllerInUse = false,
+            ).map { it.binding }
+        val withController =
+            remainingKeyTouchActions(
+                TouchLayout(name = "Empty"),
+                gameVariant = "d2",
+                controllerBoundBindings = controllerBindings,
+                workingControllerInUse = true,
+            ).map { it.binding }
+
+        assertTrue(TouchBindings.META_REWIND in withoutController)
+        assertTrue(TouchBindings.BTN_HEADLIGHT in withoutController)
+        assertTrue(TouchBindings.META_REWIND !in withController)
+        assertTrue(TouchBindings.BTN_HEADLIGHT !in withController)
+        assertTrue(TouchBindings.BTN_AUTOMAP in withController)
+    }
+
+    @Test
     fun controllerConfigBindingLabelsMapToActionBindings() {
         val bindings =
             controllerConfigBoundActionBindings(
@@ -195,6 +220,7 @@ class RemainingKeyTouchActionsTest {
                     "B" to "Headlight",
                     "RS_X" to "Turn L/R",
                     "X" to "Energy->Shield",
+                    "Y" to "Energy\u2192Shield",
                 ),
             )
 
@@ -202,6 +228,7 @@ class RemainingKeyTouchActionsTest {
         assertTrue(TouchBindings.BTN_HEADLIGHT in bindings)
         assertTrue(TouchBindings.BTN_ENERGY_SHIELD in bindings)
         assertTrue(TouchBindings.AXIS_RIGHT_X !in bindings)
+        assertEquals(TouchBindings.BTN_ENERGY_SHIELD, TouchBindings.nameToBinding("Energy\u2192Shield"))
     }
 
     @Test

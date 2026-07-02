@@ -137,6 +137,9 @@ class TouchOverlayView
         /** Returns action bindings already covered by physical controller config. */
         var controllerBoundActionBindingsProvider: (() -> Set<Int>)? = null
 
+        /** Returns true when controller config bindings should count as covered. */
+        var workingControllerInUseProvider: (() -> Boolean)? = null
+
         /** Returns true if local player owns the Guide-Bot in coop. Set by MainActivity. */
         var isEscortOwnerProvider: (() -> Boolean)? = null
 
@@ -970,7 +973,8 @@ class TouchOverlayView
                         gameVariant = gameVariant,
                         isMultiplayerGame = isMultiplayerGameProvider?.invoke() == true,
                         weaponState = weaponState,
-                        extraBoundBindings = controllerBoundActionBindingsProvider?.invoke() ?: emptySet(),
+                        controllerBoundBindings = controllerBoundActionBindingsProvider?.invoke() ?: emptySet(),
+                        workingControllerInUse = workingControllerInUseProvider?.invoke() == true,
                     ),
                 gamepadOnlyMode = gamepadOnlyMode,
                 controllerAdminActions = remainingAdminActionsProvider?.invoke() ?: emptyList(),

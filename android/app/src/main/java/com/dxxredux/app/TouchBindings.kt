@@ -310,6 +310,9 @@ object TouchBindings {
         BUTTON_LABELS.entries.associate { (k, v) -> v to k }
     }
 
+    private val BUTTON_LABEL_ALIASES: Map<String, Int> =
+        mapOf("Energy\u2192Shield" to BTN_ENERGY_SHIELD)
+
     private val META_LABELS_REVERSE: Map<String, Int> by lazy {
         META_BUTTON_LABELS.entries.associate { (k, v) -> v to k }
     }
@@ -327,6 +330,7 @@ object TouchBindings {
      *  Returns null if the name is not recognized. */
     fun nameToBinding(name: String): Int? {
         BUTTON_LABELS_REVERSE[name]?.let { return it }
+        BUTTON_LABEL_ALIASES[name]?.let { return it }
         if (name.startsWith("Meta: ")) {
             META_LABELS_REVERSE[name.removePrefix("Meta: ")]?.let { return it }
         }
