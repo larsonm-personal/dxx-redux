@@ -20,12 +20,16 @@ class RemainingKeyTouchActionsTest {
         assertTrue(TouchBindings.META_DROP_FLAG !in bindings)
         assertTrue(TouchBindings.META_GYRO_TOGGLE !in bindings)
         assertTrue(TouchBindings.META_RETURN_TO_LAUNCHER !in bindings)
-        assertTrue(TouchBindings.META_WEAPON_1 in bindings)
-        assertTrue(TouchBindings.META_WEAPON_10 in bindings)
+        assertTrue(TouchBindings.META_WEAPON_1 !in bindings)
+        assertTrue(TouchBindings.META_WEAPON_10 !in bindings)
+        assertTrue(TouchBindings.BTN_CYCLE_PRIMARY in bindings)
+        assertTrue(TouchBindings.BTN_CYCLE_SECONDARY in bindings)
         assertTrue(TouchBindings.META_GUIDE_BOT_MENU in bindings)
         assertTrue(TouchBindings.META_CYCLE_LEFT_VIEW !in bindings)
         assertTrue(TouchBindings.META_CYCLE_RIGHT_VIEW !in bindings)
         assertTrue(TouchBindings.META_REWIND in bindings)
+        assertEquals("Next Primary", actions.first { it.binding == TouchBindings.BTN_CYCLE_PRIMARY }.label)
+        assertEquals("Next Secondary", actions.first { it.binding == TouchBindings.BTN_CYCLE_SECONDARY }.label)
     }
 
     @Test
@@ -107,7 +111,9 @@ class RemainingKeyTouchActionsTest {
         val actions = remainingKeyTouchActions(TouchLayout(name = "Empty"), gameVariant = "d1")
         val bindings = actions.map { it.binding }
 
-        assertTrue(TouchBindings.META_WEAPON_1 in bindings)
+        assertTrue(TouchBindings.META_WEAPON_1 !in bindings)
+        assertTrue(TouchBindings.BTN_CYCLE_PRIMARY in bindings)
+        assertTrue(TouchBindings.BTN_CYCLE_SECONDARY in bindings)
         assertTrue(TouchBindings.META_PAUSE !in bindings)
         assertTrue(TouchBindings.BTN_HEADLIGHT !in bindings)
         assertTrue(TouchBindings.META_DROP_MARKER !in bindings)
@@ -252,6 +258,88 @@ class RemainingKeyTouchActionsTest {
     }
 
     @Test
+    fun completeDirectWeaponBindingsHideCycleFallbacks() {
+        val layout =
+            TouchLayout(
+                name = "Direct Weapons",
+                buttons =
+                    (
+                        primaryWeaponBindings() +
+                            secondaryWeaponBindings()
+                    ).mapIndexed { index, binding -> button(binding, "weapon$index") },
+            )
+
+        val bindings = remainingKeyTouchActions(layout, gameVariant = "d2").map { it.binding }
+
+        assertTrue(TouchBindings.BTN_CYCLE_PRIMARY !in bindings)
+        assertTrue(TouchBindings.BTN_CYCLE_SECONDARY !in bindings)
+        assertTrue(TouchBindings.META_WEAPON_1 !in bindings)
+        assertTrue(TouchBindings.META_WEAPON_10 !in bindings)
+    }
+
+    @Test
+    fun partialDirectWeaponBindingsStillShowCycleFallbacks() {
+        val layout =
+            TouchLayout(
+                name = "Partial Weapons",
+                buttons =
+                    listOf(
+                        button(TouchBindings.META_WEAPON_1, "primary1"),
+                        button(TouchBindings.META_WEAPON_6, "secondary1"),
+                    ),
+            )
+
+        val bindings = remainingKeyTouchActions(layout, gameVariant = "d2").map { it.binding }
+
+        assertTrue(TouchBindings.BTN_CYCLE_PRIMARY in bindings)
+        assertTrue(TouchBindings.BTN_CYCLE_SECONDARY in bindings)
+        assertTrue(TouchBindings.META_WEAPON_2 !in bindings)
+        assertTrue(TouchBindings.META_WEAPON_7 !in bindings)
+    }
+
+    @Test
+    fun cycleWeaponButtonsHideCycleFallbacks() {
+        val layout =
+            TouchLayout(
+                name = "Cycles",
+                buttons =
+                    listOf(
+                        button(TouchBindings.BTN_CYCLE_PRIMARY, "primary"),
+                        button(TouchBindings.BTN_CYCLE_SECONDARY, "secondary"),
+                    ),
+            )
+
+        val bindings = remainingKeyTouchActions(layout, gameVariant = "d2").map { it.binding }
+
+        assertTrue(TouchBindings.BTN_CYCLE_PRIMARY !in bindings)
+        assertTrue(TouchBindings.BTN_CYCLE_SECONDARY !in bindings)
+    }
+
+    @Test
+    fun controllerWeaponAccessCountsOnlyWhenWorkingControllerIsInUse() {
+        val controllerBindings = primaryWeaponBindings().toSet() + TouchBindings.BTN_CYCLE_SECONDARY
+        val withoutController =
+            remainingKeyTouchActions(
+                TouchLayout(name = "Empty"),
+                gameVariant = "d2",
+                controllerBoundBindings = controllerBindings,
+                workingControllerInUse = false,
+            ).map { it.binding }
+        val withController =
+            remainingKeyTouchActions(
+                TouchLayout(name = "Empty"),
+                gameVariant = "d2",
+                controllerBoundBindings = controllerBindings,
+                workingControllerInUse = true,
+            ).map { it.binding }
+
+        assertTrue(TouchBindings.BTN_CYCLE_PRIMARY in withoutController)
+        assertTrue(TouchBindings.BTN_CYCLE_SECONDARY in withoutController)
+        assertTrue(TouchBindings.BTN_CYCLE_PRIMARY !in withController)
+        assertTrue(TouchBindings.BTN_CYCLE_SECONDARY !in withController)
+    }
+
+    @Test
     fun toggleBombLabelShowsCurrentBombSelection() {
         val actions =
             remainingKeyTouchActions(
@@ -365,5 +453,34 @@ class RemainingKeyTouchActionsTest {
             currentPrimary = 0,
             currentSecondary = 0,
             currentBomb = currentBomb,
+        )
+
+    private fun button(
+        binding: Int,
+        id: String = "button$binding",
+    ) =
+        ButtonControl(
+            id = id,
+            xPct = 10f,
+            yPct = 10f,
+            binding = binding,
+        )
+
+    private fun primaryWeaponBindings() =
+        listOf(
+            TouchBindings.META_WEAPON_1,
+            TouchBindings.META_WEAPON_2,
+            TouchBindings.META_WEAPON_3,
+            TouchBindings.META_WEAPON_4,
+            TouchBindings.META_WEAPON_5,
+        )
+
+    private fun secondaryWeaponBindings() =
+        listOf(
+            TouchBindings.META_WEAPON_6,
+            TouchBindings.META_WEAPON_7,
+            TouchBindings.META_WEAPON_8,
+            TouchBindings.META_WEAPON_9,
+            TouchBindings.META_WEAPON_10,
         )
 }

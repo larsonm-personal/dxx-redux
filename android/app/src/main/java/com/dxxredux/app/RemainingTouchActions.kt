@@ -43,6 +43,10 @@ private val remainingSecondaryWeaponBindings =
         TouchBindings.META_WEAPON_10,
     )
 
+private val primaryWeaponCycleBindings = setOf(TouchBindings.BTN_CYCLE_PRIMARY)
+
+private val secondaryWeaponCycleBindings = setOf(TouchBindings.BTN_CYCLE_SECONDARY)
+
 private val remainingGuideBindings =
     listOf(
         TouchBindings.META_GUIDE_BOT_MENU,
@@ -98,22 +102,22 @@ private fun remainingCandidateBindings(
     isMultiplayerGame: Boolean,
 ): List<Int> =
     buildList {
-        val hasPrimaryWheel = layout.radialMenus.any { it.id == "PriWpn" }
-        val hasSecondaryWheel = layout.radialMenus.any { it.id == "SecWpn" }
-
         addAll(remainingBaseActionBindings)
         if (layout.gyro.enabled) add(TouchBindings.META_GYRO_TOGGLE)
         if (isMultiplayerGame) addAll(remainingMultiplayerActionBindings)
-        if (!hasPrimaryWheel) {
-            add(TouchBindings.BTN_CYCLE_PRIMARY)
-            addAll(remainingPrimaryWeaponBindings)
-        }
-        if (!hasSecondaryWheel) {
-            add(TouchBindings.BTN_CYCLE_SECONDARY)
-            addAll(remainingSecondaryWeaponBindings)
-        }
         if (layout.radialMenus.none { it.id == "Guide" }) addAll(remainingGuideBindings)
     }
+
+private fun needsWeaponCycleFallback(
+    layout: TouchLayout,
+    boundBindings: Set<Int>,
+    wheelId: String,
+    directBindings: List<Int>,
+    cycleBindings: Set<Int>,
+): Boolean =
+    layout.radialMenus.none { it.id == wheelId } &&
+        directBindings.any { it !in boundBindings } &&
+        cycleBindings.none { it in boundBindings }
 
 internal fun remainingActionLabel(
     binding: Int,
@@ -121,6 +125,14 @@ internal fun remainingActionLabel(
     weaponState: WeaponState? = null,
 ): String =
     when (binding) {
+        TouchBindings.BTN_CYCLE_PRIMARY -> {
+            "Next Primary"
+        }
+
+        TouchBindings.BTN_CYCLE_SECONDARY -> {
+            "Next Secondary"
+        }
+
         TouchBindings.BTN_TOGGLE_BOMB -> {
             val currentBomb = currentBombName(gameVariant, weaponState)
             if (currentBomb != null) {
@@ -155,7 +167,33 @@ internal fun remainingKeyTouchActions(
         touchLayoutBoundActionBindings(layout) +
             extraBoundBindings +
             if (workingControllerInUse) controllerBoundBindings else emptySet()
-    return remainingCandidateBindings(layout, isMultiplayerGame)
+    val candidateBindings =
+        buildList {
+            addAll(remainingCandidateBindings(layout, isMultiplayerGame))
+            if (
+                needsWeaponCycleFallback(
+                    layout,
+                    boundBindings,
+                    "PriWpn",
+                    remainingPrimaryWeaponBindings,
+                    primaryWeaponCycleBindings,
+                )
+            ) {
+                add(TouchBindings.BTN_CYCLE_PRIMARY)
+            }
+            if (
+                needsWeaponCycleFallback(
+                    layout,
+                    boundBindings,
+                    "SecWpn",
+                    remainingSecondaryWeaponBindings,
+                    secondaryWeaponCycleBindings,
+                )
+            ) {
+                add(TouchBindings.BTN_CYCLE_SECONDARY)
+            }
+        }
+    return candidateBindings
         .filter { binding ->
             gameVariant != "d1" ||
                 (binding !in TouchBindings.D2_ONLY_BUTTONS && binding !in TouchBindings.D2_ONLY_META_ACTIONS)
