@@ -60,12 +60,16 @@ extern int multi_protocol; // set and determinate used protocol
 #define MULTI_PROTO_UDP 1 // UDP protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
-#define MULTI_PROTO_VERSION 30012 // Redux 1.2 + full death spew + persistent player spew + thief stolen index + Android rewind request packets + coop difficulty changes
+#define MULTI_PROTO_VERSION 30013 // Redux 1.2 + full death spew + persistent player spew + thief stolen index + Android host-authoritative rewind save transfer + coop difficulty changes
 
 // PROTOCOL VARIABLES AND DEFINES - END
 
 
 #define MAX_MESSAGE_LEN 35
+#define MULTI_REWIND_SAVE_BEGIN_LEN     32
+#define MULTI_REWIND_SAVE_APPLY_LEN     4
+#define MULTI_REWIND_SAVE_CHUNK_PAYLOAD 432
+#define MULTI_REWIND_SAVE_CHUNK_LEN     (8 + MULTI_REWIND_SAVE_CHUNK_PAYLOAD)
 
 #define define_multiplayer_command(NAME,SIZE)	NAME,
 
@@ -152,6 +156,9 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_COOP_RESTORE_INV     , 78)  \
 	VALUE(MULTI_REWIND_REQUEST       , 3)   \
 	VALUE(MULTI_REWIND_RESULT        , 4)   \
+	VALUE(MULTI_REWIND_SAVE_BEGIN    , MULTI_REWIND_SAVE_BEGIN_LEN)   \
+	VALUE(MULTI_REWIND_SAVE_CHUNK    , MULTI_REWIND_SAVE_CHUNK_LEN)   \
+	VALUE(MULTI_REWIND_SAVE_APPLY    , MULTI_REWIND_SAVE_APPLY_LEN)   \
 	VALUE(MULTI_DIFFICULTY           , 3)   \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
@@ -159,6 +166,10 @@ for_each_multiplayer_command(enum {, define_multiplayer_command, });
 #define MAX_NET_CREATE_OBJECTS  40
 
 #define MAX_MULTI_MESSAGE_LEN   (4 + 8*MAX_OBSERVERS)
+#ifdef __ANDROID__
+#undef MAX_MULTI_MESSAGE_LEN
+#define MAX_MULTI_MESSAGE_LEN           MULTI_REWIND_SAVE_CHUNK_LEN
+#endif
 
 #define NETGAME_ANARCHY         0
 #define NETGAME_TEAM_ANARCHY    1
@@ -336,6 +347,7 @@ void multi_new_game(void);
 void multi_sort_kill_list(void);
 void multi_reset_stuff(void);
 void multi_send_data(unsigned char *buf, int len, int priority);
+void multi_send_data_direct(unsigned char *buf, int len, int pnum, int priority);
 void multi_send_obs_data(unsigned char* buf, int len);
 int get_team(int pnum);
 int get_team_size(int team_num);
@@ -453,8 +465,12 @@ int multi_who_is_master(void);
 void change_playernum_to(int new_pnum);
 #ifdef __ANDROID__
 void multi_send_rewind_request(void);
+int multi_perform_rewind_request(int requester, int *rewound_seconds);
 void multi_do_rewind_request(const ubyte *buf);
 void multi_do_rewind_result(const ubyte *buf);
+void multi_do_rewind_save_begin(const ubyte *buf);
+void multi_do_rewind_save_chunk(const ubyte *buf);
+void multi_do_rewind_save_apply(const ubyte *buf);
 void multi_send_difficulty(int difficulty);
 void multi_do_difficulty(const ubyte *buf);
 #endif

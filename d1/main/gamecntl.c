@@ -479,7 +479,10 @@ static int android_handle_ingame_saveload_request(void)
 			multi_send_rewind_request();
 			return 1;
 		}
-		rewind_result = android_rewind_request(NULL);
+		if (Game_mode & GM_MULTI_COOP)
+			rewind_result = multi_perform_rewind_request(Player_num, NULL);
+		else
+			rewind_result = android_rewind_request(NULL);
 		if (rewind_result == ANDROID_REWIND_STATUS_NOT_HOST) {
 			multi_send_rewind_request();
 			return 1;

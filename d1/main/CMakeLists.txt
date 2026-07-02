@@ -89,6 +89,7 @@ target_include_directories(dxx-redux-d1 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(ANDROID)
     target_sources(dxx-redux-d1 PRIVATE
+        ../../android/app/src/main/cpp/shared/multi_save_transfer.c
         ../../android/app/src/main/cpp/shared/state_android_shared.c
         ../../android/app/src/main/cpp/shared/playsave_android_shared.c)
 endif()
