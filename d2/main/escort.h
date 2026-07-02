@@ -14,6 +14,8 @@ struct input_demo_checkpoint_thief_state;
 extern void change_guidebot_name(void);
 extern void do_escort_menu(void);
 extern void detect_escort_goal_accomplished(int index);
+extern void invalidate_escort_goal(void);
+extern void escort_note_player_key_flags(int old_flags, int new_flags);
 extern void set_escort_special_goal(int key);
 extern void escort_find_secret_goal(void);
 extern int escort_get_secret_goal_display_index(void);

@@ -142,6 +142,35 @@ int	Escort_owner_player = -1;
 
 fix64	Last_buddy_message_time;
 
+#define ESCORT_KEY_FLAGS (PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_GOLD_KEY | PLAYER_FLAGS_RED_KEY)
+
+static int escort_is_companion_object(int objnum)
+{
+	if (objnum < 0 || objnum > Highest_object_index)
+		return 0;
+	if (Objects[objnum].type != OBJ_ROBOT)
+		return 0;
+	return Robot_info[Objects[objnum].id].companion;
+}
+
+static int escort_find_companion_object(void)
+{
+	int i;
+
+	for (i = 0; i <= Highest_object_index; i++)
+		if (escort_is_companion_object(i))
+			return i;
+
+	return -1;
+}
+
+static int escort_refresh_buddy_objnum(void)
+{
+	if (!escort_is_companion_object(Buddy_objnum))
+		Buddy_objnum = escort_find_companion_object();
+	return Buddy_objnum != -1;
+}
+
 #ifdef __ANDROID__
 static int escort_player_has_key_for_wall(int keys)
 {
@@ -440,8 +469,6 @@ static void thief_drop_stolen_mine(object *objp, int weapon_id)
 
 void init_buddy_for_level(void)
 {
-	int	i;
-
 	input_demo_reset_escort_state_probes();
 
 	Buddy_allowed_to_talk = 0;
@@ -456,11 +483,7 @@ void init_buddy_for_level(void)
 	Escort_owner_player = -1;
 #endif
 
-	for (i=0; i<=Highest_object_index; i++)
-		if (Robot_info[Objects[i].id].companion)
-			break;
-	if (i <= Highest_object_index)
-		Buddy_objnum = i;
+	Buddy_objnum = escort_find_companion_object();
 
 	Buddy_sorry_time = -F1_0;
 
@@ -489,16 +512,7 @@ void escort_spawn_at_player(void)
 #endif
 	}
 
-	if (Buddy_objnum < 0 || Buddy_objnum > Highest_object_index ||
-	    Objects[Buddy_objnum].type != OBJ_ROBOT || !Robot_info[Objects[Buddy_objnum].id].companion) {
-		int i;
-		for (i = 0; i <= Highest_object_index; i++)
-			if (Objects[i].type == OBJ_ROBOT && Robot_info[Objects[i].id].companion)
-				break;
-		Buddy_objnum = (i <= Highest_object_index) ? i : -1;
-	}
-
-	if (Buddy_objnum == -1) {
+	if (!escort_refresh_buddy_objnum()) {
 #ifdef NETWORK
 		if (Game_mode & GM_MULTI_COOP) {
 			HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot present in mine!");
@@ -506,11 +520,8 @@ void escort_spawn_at_player(void)
 		}
 #endif
 		create_buddy_bot();
-		for (Buddy_objnum = 0; Buddy_objnum <= Highest_object_index; Buddy_objnum++)
-			if (Objects[Buddy_objnum].type == OBJ_ROBOT && Robot_info[Objects[Buddy_objnum].id].companion)
-				break;
-		if (Buddy_objnum > Highest_object_index) {
-			Buddy_objnum = -1;
+		Buddy_objnum = escort_find_companion_object();
+		if (Buddy_objnum == -1) {
 			HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot type available");
 			return;
 		}
@@ -656,26 +667,11 @@ int ok_for_buddy_to_talk(void)
 	int		i;
 	segment	*segp;
 
-	if (Buddy_objnum == -1)
+	if (!escort_refresh_buddy_objnum())
 		return 0;
-
-	if (Objects[Buddy_objnum].type != OBJ_ROBOT) {
-		Buddy_allowed_to_talk = 0;
-		return 0;
-	}
 
 	if (Buddy_allowed_to_talk)
 		return 1;
-
-	if ((Objects[Buddy_objnum].type == OBJ_ROBOT) && (Buddy_objnum <= Highest_object_index) && !Robot_info[Objects[Buddy_objnum].id].companion) {
-		for (i=0; i<=Highest_object_index; i++)
-			if (Robot_info[Objects[i].id].companion)
-				break;
-		if (i > Highest_object_index)
-			return 0;
-		else
-			Buddy_objnum = i;
-	}
 
 	segp = &Segments[Objects[Buddy_objnum].segnum];
 
@@ -1269,6 +1265,27 @@ static int escort_goal_command_allowed(void)
 	return 1;
 }
 
+static int escort_owned_key_flags(void)
+{
+	int key_flags = Players[Player_num].flags & ESCORT_KEY_FLAGS;
+#ifdef NETWORK
+	int i;
+
+	if (Game_mode & GM_MULTI_COOP) {
+		key_flags = 0;
+		for (i = 0; i < MAX_PLAYERS; i++)
+			if (Players[i].connected != CONNECT_DISCONNECTED)
+				key_flags |= Players[i].flags & ESCORT_KEY_FLAGS;
+	}
+#endif
+	return key_flags;
+}
+
+static int escort_key_exists(int powerup_id)
+{
+	return exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, powerup_id, -1) != -1;
+}
+
 //	-----------------------------------------------------------------------------
 //	Return true if it happened, else return false.
 int find_exit_segment(void)
@@ -1522,26 +1539,38 @@ void escort_create_path_to_goal(object *objp)
 }
 
 //	-----------------------------------------------------------------------------
-//	Escort robot chooses goal object based on player's keys, location.
+//	Escort robot chooses goal object based on owned keys, location.
 //	Returns goal object.
 int escort_set_goal_object(void)
 {
+	int key_flags;
+
 	if (Escort_special_goal != -1)
 		return ESCORT_GOAL_UNSPECIFIED;
-	else if (!(ConsoleObject->flags & PLAYER_FLAGS_BLUE_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_BLUE, -1) != -1))
-		return ESCORT_GOAL_BLUE_KEY;
-	else if (!(ConsoleObject->flags & PLAYER_FLAGS_GOLD_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_GOLD, -1) != -1))
-		return ESCORT_GOAL_GOLD_KEY;
-	else if (!(ConsoleObject->flags & PLAYER_FLAGS_RED_KEY) && (exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, POW_KEY_RED, -1) != -1))
-		return ESCORT_GOAL_RED_KEY;
-	else if (Control_center_destroyed == 0) {
+
+	key_flags = escort_owned_key_flags();
+	if ((key_flags & PLAYER_FLAGS_RED_KEY) == 0) {
+		if ((key_flags & (PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_GOLD_KEY)) == 0) {
+			if (escort_key_exists(POW_KEY_BLUE))
+				return ESCORT_GOAL_BLUE_KEY;
+			if (escort_key_exists(POW_KEY_GOLD))
+				return ESCORT_GOAL_GOLD_KEY;
+		} else if ((key_flags & PLAYER_FLAGS_GOLD_KEY) == 0) {
+			if (escort_key_exists(POW_KEY_GOLD))
+				return ESCORT_GOAL_GOLD_KEY;
+		}
+		if (escort_key_exists(POW_KEY_RED))
+			return ESCORT_GOAL_RED_KEY;
+	}
+
+	if (Control_center_destroyed == 0) {
 		if (Num_boss_teleport_segs)
 			return ESCORT_GOAL_BOSS;
 		else
 			return ESCORT_GOAL_CONTROLCEN;
-	} else
-		return ESCORT_GOAL_EXIT;
-	
+	}
+
+	return ESCORT_GOAL_EXIT;
 }
 
 #define	MAX_ESCORT_TIME_AWAY		(F1_0*4)
@@ -1630,7 +1659,7 @@ static void escort_restore_companion_robot_control(void)
 	if (!(Game_mode & GM_MULTI_COOP))
 		return;
 	escort_validate_owner_after_restore();
-	if (Buddy_objnum == -1)
+	if (!escort_refresh_buddy_objnum())
 		return;
 	multi_restore_companion_robot_control(Buddy_objnum, Escort_owner_player);
 }
@@ -2034,6 +2063,12 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 void invalidate_escort_goal(void)
 {
 	Escort_goal_object = -1;
+}
+
+void escort_note_player_key_flags(int old_flags, int new_flags)
+{
+	if ((old_flags ^ new_flags) & ESCORT_KEY_FLAGS)
+		invalidate_escort_goal();
 }
 
 //	-------------------------------------------------------------------------------------------------
@@ -2845,7 +2880,6 @@ int escort_menu_handler(window *wind, d_event *event, escort_menu *menu)
 
 void do_escort_menu(void)
 {
-	int	i;
 	int	next_goal;
 	escort_menu *menu;
 	window *wind;
@@ -2866,14 +2900,7 @@ void do_escort_menu(void)
 #endif
 	}
 
-	for (i=0; i<=Highest_object_index; i++) {
-		if (Objects[i].type == OBJ_ROBOT)
-			if (Robot_info[Objects[i].id].companion)
-				break;
-	}
-
-	if (i > Highest_object_index) {
-
+	if (!escort_refresh_buddy_objnum()) {
 		HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot present in mine!");
 
 		#if 0	//ndef NDEBUG	// Just use HELPVISHNU!!
@@ -2897,16 +2924,8 @@ void do_escort_menu(void)
 		return;
 	menu->selected_item = 0;
 	menu->multiplayer_passthrough = (Game_mode & GM_MULTI) != 0;
-	
-	// Just make it the full screen size and let show_escort_menu figure it out
-	wind = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, (int (*)(window *, d_event *, void *))escort_menu_handler, menu);
-	if (!wind)
-	{
-		d_free(menu);
-		return;
-	}
-	if (menu->multiplayer_passthrough)
-		window_set_modal(wind, 0);
+	sprintf(menu->goal_str, "ERROR");
+	sprintf(menu->message_action, "Suppress");
 	
 	//	This prevents the buddy from coming back if you've told him to scram.
 	//	If we don't set next_goal, we get garbage there.
@@ -2920,12 +2939,9 @@ void do_escort_menu(void)
 	}
 
 	switch (next_goal) {
-	#ifndef NDEBUG
 		case ESCORT_GOAL_UNSPECIFIED:
 			Int3();
-			sprintf(menu->goal_str, "ERROR");
 			break;
-	#endif
 			
 		case ESCORT_GOAL_BLUE_KEY:
 			sprintf(menu->goal_str, "blue key");
@@ -2956,6 +2972,9 @@ void do_escort_menu(void)
 		case ESCORT_GOAL_MARKER9:
 			sprintf(menu->goal_str, "marker %i", next_goal-ESCORT_GOAL_MARKER1+1);
 			break;
+		default:
+			Int3();
+			break;
 
 	}
 			
@@ -2963,6 +2982,16 @@ void do_escort_menu(void)
 		sprintf(menu->message_action, "Suppress");
 	else
 		sprintf(menu->message_action, "Enable");
+
+	// Just make it the full screen size and let show_escort_menu figure it out
+	wind = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, (int (*)(window *, d_event *, void *))escort_menu_handler, menu);
+	if (!wind)
+	{
+		d_free(menu);
+		return;
+	}
+	if (menu->multiplayer_passthrough)
+		window_set_modal(wind, 0);
 }
 
 //	-------------------------------------------------------------------------------
@@ -3076,8 +3105,12 @@ void multi_do_escort_owner(const ubyte *buf)
 		return;
 	ESCORT_DIAG("rx escort_owner: new_owner=%d (was %d)", new_owner, Escort_owner_player);
 	Escort_owner_player = new_owner;
-	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index)
+
+	if (escort_refresh_buddy_objnum()) {
+		Buddy_allowed_to_talk = 1;
 		Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (sbyte)new_owner;
+	}
+
 	if (new_owner == Player_num)
 		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot: you have control");
 	else
@@ -3086,14 +3119,15 @@ void multi_do_escort_owner(const ubyte *buf)
 
 void escort_transfer_ownership_on_disconnect(int gone_pnum)
 {
+	int have_buddy;
+	int new_owner = -1;
+	int i;
+
 	if (Escort_owner_player != gone_pnum)
-		return;
-	if (Buddy_objnum < 0)
 		return;
 
 	// Pick lowest-numbered connected player as new owner
-	int new_owner = -1;
-	for (int i = 0; i < N_players; i++) {
+	for (i = 0; i < N_players; i++) {
 		if (i == gone_pnum)
 			continue;
 		if (Players[i].connected == CONNECT_PLAYING) {
@@ -3104,8 +3138,12 @@ void escort_transfer_ownership_on_disconnect(int gone_pnum)
 
 	ESCORT_DIAG("transfer_ownership: gone=%d new_owner=%d", gone_pnum, new_owner);
 	Escort_owner_player = new_owner;
-	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index)
+	have_buddy = escort_refresh_buddy_objnum();
+	if (have_buddy) {
+		if (new_owner >= 0)
+			Buddy_allowed_to_talk = 1;
 		Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (new_owner >= 0) ? (sbyte)new_owner : -1;
+	}
 	if (new_owner >= 0)
 		multi_send_escort_owner(new_owner);
 }
@@ -3131,7 +3169,7 @@ void escort_release_control(void)
 		return;
 
 	Escort_owner_player = new_owner;
-	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index)
+	if (escort_refresh_buddy_objnum())
 		Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (sbyte)new_owner;
 	multi_send_escort_owner(new_owner);
 	HUD_init_message_literal(HM_DEFAULT, "Guide-Bot control released");

@@ -5544,8 +5544,11 @@ void multi_do_flags (const ubyte *buf)
 	uint flags;
 
 	flags = GET_INTEL_INT(buf + 2);
-	if (pnum!=Player_num)
+	if (pnum!=Player_num) {
+		int old_flags = Players[(int)pnum].flags;
 		Players[(int)pnum].flags=flags;
+		escort_note_player_key_flags(old_flags, Players[(int)pnum].flags);
+	}
 }
 
 void multi_send_flags (char pnum)
@@ -6561,6 +6564,7 @@ void multi_do_ship_status( const ubyte *buf )
 	{
 		/* android port: update all remote player fields for coop caching */
 		int pnum = buf[1];
+		int old_flags = Players[pnum].flags;
 		Players[pnum].laser_level = buf[2];
 		Players[pnum].flags = GET_INTEL_SHORT(buf + 3);
 		Players[pnum].primary_ammo[1] = GET_INTEL_SHORT(buf + 5);
@@ -6584,6 +6588,7 @@ void multi_do_ship_status( const ubyte *buf )
 		int i;
 		for (i = 0; i < MAX_SECONDARY_WEAPONS; i++)
 			Players[pnum].secondary_ammo[i] = GET_INTEL_SHORT(buf + 9 + i * 2);
+		escort_note_player_key_flags(old_flags, Players[pnum].flags);
 	}
 #endif
 }

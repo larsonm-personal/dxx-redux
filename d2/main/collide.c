@@ -987,14 +987,19 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 		(Robot_info[Objects[weapon->ctype.laser_info.parent_num].id].companion==1)) {
 		robot_escort = 1;
 
-		if (Game_mode & GM_MULTI)
-		 {
-			 Int3();  // Get Jason!
-		    return;
-	    }
-
-
-		playernum = Player_num;		//if single player, he's the player's buddy
+		if (Game_mode & GM_MULTI) {
+#ifdef NETWORK
+			if (Game_mode & GM_MULTI_COOP)
+				playernum = (Escort_owner_player >= 0 && Escort_owner_player < MAX_PLAYERS &&
+				             Players[Escort_owner_player].connected != CONNECT_DISCONNECTED) ? Escort_owner_player : Player_num;
+			else
+#endif
+			{
+				Int3();  // Get Jason!
+				return;
+			}
+		} else
+			playernum = Player_num;		//if single player, he's the player's buddy
 	}
 	else {
 		robot_escort = 0;
@@ -3128,6 +3133,8 @@ void collide_player_and_powerup( object * playerobj, object * powerup, vms_vecto
 #ifndef SHAREWARE
 	else if ((Game_mode & GM_MULTI_COOP) && (playerobj->id != Player_num))
 	{
+		int old_flags = Players[playerobj->id].flags;
+
 		switch (powerup->id) {
 			case POW_KEY_BLUE:
 				Players[playerobj->id].flags |= PLAYER_FLAGS_BLUE_KEY;
@@ -3141,6 +3148,7 @@ void collide_player_and_powerup( object * playerobj, object * powerup, vms_vecto
 			default:
 				break;
 		}
+		escort_note_player_key_flags(old_flags, Players[playerobj->id].flags);
 	}
 #endif
 	return;
