@@ -37,6 +37,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "coop_save.h"
 #include "render.h"
+#ifdef __ANDROID__
+#include "auto_net.h"
+#endif
 #endif
 
 struct Cfg GameCfg;
@@ -108,6 +111,24 @@ static void android_apply_initial_defaults(void)
 		GameCfg.MusicType = MUSIC_TYPE_REDBOOK;
 		GameCfg.OrigTrackOrder = 1;
 	}
+}
+
+static const char *android_saved_last_player(void)
+{
+	if (!GameCfg.LastPlayer[0] || !strcmp(GameCfg.LastPlayer, COOP_AUTOSAVE_CALLSIGN))
+		return "";
+	return GameCfg.LastPlayer;
+}
+
+static int android_should_keep_saved_last_player(const char *last_player)
+{
+	if (!last_player[0] || !strcmp(last_player, COOP_AUTOSAVE_CALLSIGN))
+		return 1;
+#ifdef __ANDROID__
+	if (auto_net_is_transient_callsign(last_player))
+		return 1;
+#endif
+	return 0;
 }
 #endif
 
@@ -346,8 +367,8 @@ int WriteConfigFile()
 	GameCfg.GammaLevel = gr_palette_get_gamma();
 	last_player = Players[Player_num].callsign;
 #ifdef ANDROID
-	if (!last_player[0] || !strcmp(last_player, COOP_AUTOSAVE_CALLSIGN))
-		last_player = strcmp(GameCfg.LastPlayer, COOP_AUTOSAVE_CALLSIGN) ? GameCfg.LastPlayer : "";
+	if (android_should_keep_saved_last_player(last_player))
+		last_player = android_saved_last_player();
 #endif
 
 	infile = PHYSFSX_openWriteBuffered("descent.cfg");

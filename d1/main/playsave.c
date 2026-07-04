@@ -48,6 +48,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gauges.h"
 #include "args.h"
 #ifdef ANDROID
+#include "auto_net.h"
+#include "coop_save.h"
 #include "songs.h"
 #endif
 
@@ -1451,23 +1453,17 @@ int get_highest_level(void)
 }
 
 
-//write out player's saved games.  returns errno (0 == no error)
-int write_player_file()
+static int write_player_file_for_callsign(const char *callsign)
 {
 	char filename[PATH_MAX];
 	PHYSFS_file *file;
 	int errno_ret, i;
 
-	if ( Newdemo_state == ND_STATE_PLAYBACK )
-		return -1;
-
-	errno_ret = WriteConfigFile();
-
 	memset(filename, '\0', PATH_MAX);
-	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%.8s.plx" : "%.8s.plx", Players[Player_num].callsign);
+	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%.8s.plx" : "%.8s.plx", callsign);
 	write_player_d1x(filename);
 
-	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%.8s.plr" : "%.8s.plr", Players[Player_num].callsign);
+	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%.8s.plr" : "%.8s.plr", callsign);
 	file = PHYSFSX_openWriteBuffered(filename);
 
 	if (!file)
@@ -1545,6 +1541,36 @@ int write_player_file()
 		PHYSFS_delete(filename);			//delete bogus file
 		nm_messagebox(TXT_ERROR, 1, TXT_OK, "%s\n\n%s",TXT_ERROR_WRITING_PLR, strerror(errno_ret));
 	}
+
+	return errno_ret;
+}
+
+#ifdef __ANDROID__
+static int android_should_mirror_player_file(const char *callsign)
+{
+	return auto_net_is_transient_callsign(callsign) &&
+	       GameCfg.LastPlayer[0] &&
+	       d_stricmp(GameCfg.LastPlayer, callsign) &&
+	       d_stricmp(GameCfg.LastPlayer, COOP_AUTOSAVE_CALLSIGN);
+}
+#endif
+
+//write out player's saved games.  returns errno (0 == no error)
+int write_player_file()
+{
+	const char *callsign = Players[Player_num].callsign;
+	int errno_ret;
+
+	if ( Newdemo_state == ND_STATE_PLAYBACK )
+		return -1;
+
+	WriteConfigFile();
+	errno_ret = write_player_file_for_callsign(callsign);
+
+#ifdef __ANDROID__
+	if (errno_ret == EZERO && android_should_mirror_player_file(callsign))
+		(void) write_player_file_for_callsign(GameCfg.LastPlayer);
+#endif
 
 	return errno_ret;
 }

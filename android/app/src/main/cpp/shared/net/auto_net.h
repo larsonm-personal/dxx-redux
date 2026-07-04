@@ -58,6 +58,9 @@ extern char auto_net_callsign[10];
 #define AUTO_NET_CLIENT_ID_LEN 37
 extern char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN];
 
+/* True when callsign is the launcher's transient multiplayer callsign */
+int auto_net_is_transient_callsign(const char *callsign);
+
 /* Auto-create a pilot with auto_net_callsign if no pilot exists.
  * Called from main_menu_handler before check_auto_net(). */
 int auto_create_pilot(void);

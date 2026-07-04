@@ -52,6 +52,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "newdemo.h"
 #include "gauges.h"
 #ifdef ANDROID
+#include "auto_net.h"
+#include "coop_save.h"
 #include "songs.h"
 #endif
 
@@ -1229,22 +1231,16 @@ int get_highest_level(void)
 	return i;
 }
 
-//write out player's saved games.  returns errno (0 == no error)
-int write_player_file()
+static int write_player_file_for_callsign(const char *callsign)
 {
 	char filename[PATH_MAX];
 	PHYSFS_file *file;
 	int i;
 
-	if ( Newdemo_state == ND_STATE_PLAYBACK )
-		return -1;
-
-	WriteConfigFile();
-
 	memset(filename, '\0', PATH_MAX);
-	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%.8s.plx" : "%.8s.plx", Players[Player_num].callsign);
+	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%.8s.plx" : "%.8s.plx", callsign);
 	write_player_d2x(filename);
-	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%.8s.plr" : "%.8s.plr", Players[Player_num].callsign);
+	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%.8s.plr" : "%.8s.plr", callsign);
 	file = PHYSFSX_openWriteBuffered(filename);
 
 	if (!file)
@@ -1352,6 +1348,36 @@ int write_player_file()
 	}
 
 	return -1;
+}
+
+#ifdef __ANDROID__
+static int android_should_mirror_player_file(const char *callsign)
+{
+	return auto_net_is_transient_callsign(callsign) &&
+	       GameCfg.LastPlayer[0] &&
+	       d_stricmp(GameCfg.LastPlayer, callsign) &&
+	       d_stricmp(GameCfg.LastPlayer, COOP_AUTOSAVE_CALLSIGN);
+}
+#endif
+
+//write out player's saved games.  returns errno (0 == no error)
+int write_player_file()
+{
+	const char *callsign = Players[Player_num].callsign;
+	int rc;
+
+	if ( Newdemo_state == ND_STATE_PLAYBACK )
+		return -1;
+
+	WriteConfigFile();
+	rc = write_player_file_for_callsign(callsign);
+
+#ifdef __ANDROID__
+	if (rc == EZERO && android_should_mirror_player_file(callsign))
+		(void) write_player_file_for_callsign(GameCfg.LastPlayer);
+#endif
+
+	return rc;
 }
 
 #ifdef ANDROID
