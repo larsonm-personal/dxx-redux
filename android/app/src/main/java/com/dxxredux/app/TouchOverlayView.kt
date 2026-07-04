@@ -611,6 +611,7 @@ class TouchOverlayView
             // Extra base multiplier stacking with the per-axis sensitivity so
             // mouse mode feels responsive at the same slider value as stick mode
             private const val MOUSE_BASE_MULTIPLIER = 2f
+            private const val STICK_ACTIVE_FILL_ALPHA = 0x55
 
             // Admin tray action indices dispatched via adminTrayCallback
             const val ADMIN_INCREASE_VIEW = 0
@@ -1664,8 +1665,9 @@ class TouchOverlayView
             if (s.control.mouseMode) {
                 // Mouse mode: draw only a transparent bounding box for the touch region
                 val fill = if (extremeActive) paintExtremeActive else paintFill
-                fill.alpha = ((if (extremeActive) 0x55 else 0x22) * eff).toInt()
+                fill.alpha = ((if (extremeActive) STICK_ACTIVE_FILL_ALPHA else 0x22) * eff).toInt()
                 canvas.drawRect(s.fzLeft, s.fzTop, s.fzRight, s.fzBottom, fill)
+                if (extremeActive) drawStickAfterburnerHighlightDepletion(canvas, s, eff, weaponState)
                 paintRing.color =
                     if (extremeActive) touchActiveHighlightColor(TOUCH_ACTIVE_OPAQUE_ALPHA) else 0x66FFFFFF
                 paintRing.alpha = ((if (extremeActive) 0xAA else 0x44) * eff).toInt()
@@ -1689,8 +1691,9 @@ class TouchOverlayView
             val cy = if (s.control.floating && s.floatingActive) s.floatingCY else s.centerY
 
             val fill = if (extremeActive) paintExtremeActive else paintFill
-            fill.alpha = ((if (extremeActive) 0x55 else 0x33) * eff).toInt()
+            fill.alpha = ((if (extremeActive) STICK_ACTIVE_FILL_ALPHA else 0x33) * eff).toInt()
             canvas.drawCircle(cx, cy, s.radius, fill)
+            if (extremeActive) drawStickAfterburnerHighlightDepletion(canvas, s, eff, weaponState, cx, cy)
             paintRing.color =
                 if (extremeActive) touchActiveHighlightColor(TOUCH_ACTIVE_OPAQUE_ALPHA) else 0x66FFFFFF
             paintRing.alpha = ((if (extremeActive) 0xAA else 0x66) * eff).toInt()
@@ -1725,6 +1728,47 @@ class TouchOverlayView
         private fun stickHasAfterburnerExtremeAction(s: StickState): Boolean =
             stickAfterburnerChargeVisible(gameVariant, s.control.extremeActions)
 
+        private fun stickAfterburnerHighlightActive(s: StickState): Boolean =
+            gameVariant == "d2" &&
+                s.control.extremeActions.indices.any { index ->
+                    s.extremePressed.getOrElse(index) { false } &&
+                        s.control.extremeActions[index].binding == TouchBindings.BTN_AFTERBURNER
+                }
+
+        private fun drawStickAfterburnerHighlightDepletion(
+            canvas: Canvas,
+            s: StickState,
+            eff: Float,
+            weaponState: WeaponState?,
+            cx: Float = 0f,
+            cy: Float = 0f,
+        ) {
+            if (!stickAfterburnerHighlightActive(s)) return
+            val depleted = afterburnerChargeDepletedFraction(weaponState?.afterburnerChargePct)
+            if (depleted <= 0f) return
+            paintExtremeChargeDepleted.alpha = (STICK_ACTIVE_FILL_ALPHA * eff).toInt()
+            if (s.control.mouseMode) {
+                canvas.drawRect(
+                    s.fzLeft,
+                    s.fzTop,
+                    s.fzRight,
+                    s.fzTop + (s.fzBottom - s.fzTop) * depleted,
+                    paintExtremeChargeDepleted,
+                )
+                return
+            }
+
+            val saveCount = canvas.save()
+            canvas.clipRect(
+                cx - s.radius,
+                cy - s.radius,
+                cx + s.radius,
+                cy - s.radius + s.radius * 2f * depleted,
+            )
+            canvas.drawCircle(cx, cy, s.radius, paintExtremeChargeDepleted)
+            canvas.restoreToCount(saveCount)
+        }
+
         private fun drawStickAfterburnerCharge(
             canvas: Canvas,
             s: StickState,
@@ -1732,8 +1776,7 @@ class TouchOverlayView
             weaponState: WeaponState?,
         ) {
             if (!stickHasAfterburnerExtremeAction(s)) return
-            val chargePct = weaponState?.afterburnerChargePct ?: 100
-            val depleted = (100 - chargePct).coerceIn(0, 100) / 100f
+            val depleted = afterburnerChargeDepletedFraction(weaponState?.afterburnerChargePct)
             val vertical = s.fzBottom > s.fzTop && s.control.mouseMode
             val left: Float
             val centerY: Float
@@ -3347,10 +3390,10 @@ class TouchOverlayView
 
         private fun visibleRadialSegments(rm: RadialMenuState): List<RadialSegment> {
             if (rm.isWeaponWheel) return rm.filteredSegments
-            if (rm.control.id != "Guide" || secretAreaRevealProvider?.invoke() == true) {
+            if (rm.control.id != "Guide") {
                 return rm.control.segments
             }
-            return rm.control.segments.filter { it.binding != TouchBindings.META_GUIDE_FIND_SECRET }
+            return guideWheelVisibleSegments(rm.control.segments, secretAreaRevealProvider?.invoke() == true)
         }
 
         private fun keycodeToUnicode(keycode: Int): Int =

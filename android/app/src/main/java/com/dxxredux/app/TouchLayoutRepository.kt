@@ -27,7 +27,7 @@ internal fun isControllerMenuOnlyTouchLayout(layout: TouchLayout): Boolean =
 object TouchLayoutRepository {
     private const val TAG = "TouchLayoutRepository"
     private const val FILENAME = "touch_layout.json"
-    private const val CURRENT_VERSION = 5
+    private const val CURRENT_VERSION = 6
     private const val LEGACY_BTN_CHEATS_MENU = 100
     private const val BUNDLED_DIR = "configs/touch"
     private const val USER_DIR = "configs/touch"
@@ -88,6 +88,13 @@ object TouchLayoutRepository {
                     radialMenus = migrated.radialMenus.map { migrateGuideWheelNextGoalCenter(it) },
                 )
         }
+        if (migrated.version < 6) {
+            migrated =
+                migrated.copy(
+                    version = 6,
+                    radialMenus = migrated.radialMenus.map { migrateGuideWheelActions(it) },
+                )
+        }
         if (migrated.version >= CURRENT_VERSION) return migrated
         return migrated.copy(version = CURRENT_VERSION)
     }
@@ -129,6 +136,27 @@ object TouchLayoutRepository {
         return radial.copy(
             centerLabel = "Next",
             centerBinding = TouchBindings.META_GUIDE_NEXT_GOAL,
+        )
+    }
+
+    private fun migrateGuideWheelActions(radial: RadialMenuControl): RadialMenuControl {
+        if (radial.id != "Guide") return radial
+        val segments =
+            radial.segments
+                .filter { it.binding != TouchBindings.META_GUIDE_RELEASE_CONTROL }
+                .toMutableList()
+        if (segments.none { it.binding == TouchBindings.META_GUIDE_NEXT_GOAL }) {
+            val releaseIndex = radial.segments.indexOfFirst { it.binding == TouchBindings.META_GUIDE_RELEASE_CONTROL }
+            val insertIndex = if (releaseIndex >= 0) releaseIndex.coerceAtMost(segments.size) else segments.size
+            segments.add(insertIndex, RadialSegment("Next", TouchBindings.META_GUIDE_NEXT_GOAL))
+        }
+        val clearCenter =
+            radial.centerBinding == TouchBindings.META_GUIDE_NEXT_GOAL ||
+                radial.centerBinding == TouchBindings.META_GUIDE_CLEAR_GOAL
+        return radial.copy(
+            segments = segments,
+            centerLabel = if (clearCenter) "" else radial.centerLabel,
+            centerBinding = if (clearCenter) -1 else radial.centerBinding,
         )
     }
 

@@ -38,7 +38,7 @@ object TouchBindings {
 
     /** String labels for D2-only meta actions (controller config uses labels). */
     val D2_ONLY_META_LABELS: Set<String> by lazy {
-        D2_ONLY_META_ACTIONS.mapNotNull { META_BUTTON_LABELS[it] }.toSet()
+        D2_ONLY_META_ACTIONS.mapNotNull { ALL_META_BUTTON_LABELS[it] }.toSet()
     }
 
     /**
@@ -145,7 +145,6 @@ object TouchBindings {
             META_GUIDE_FIND_ITEMS to "GB: Find Items",
             META_GUIDE_FIND_EXIT to "GB: Find Exit",
             META_GUIDE_CLEAR_GOAL to "GB: Clear Goal",
-            META_GUIDE_RELEASE_CONTROL to "GB: Release Control",
             META_GUIDE_SPAWN to "GB: Spawn",
             META_GUIDE_FIND_SECRET to "GB: Find Secret",
             META_GUIDE_NEXT_GOAL to "GB: Next Goal",
@@ -170,6 +169,13 @@ object TouchBindings {
             META_GYRO_TOGGLE to "Gyro On/Off",
             META_RETURN_TO_LAUNCHER to "Exit to Launcher",
         )
+
+    private val HIDDEN_META_BUTTON_LABELS: Map<Int, String> =
+        mapOf(
+            META_GUIDE_RELEASE_CONTROL to "GB: Release Control",
+        )
+
+    private val ALL_META_BUTTON_LABELS: Map<Int, String> = META_BUTTON_LABELS + HIDDEN_META_BUTTON_LABELS
 
     /** Meta actions that only exist in D2 (guide bot, markers, CTF flag). */
     val D2_ONLY_META_ACTIONS =
@@ -229,15 +235,13 @@ object TouchBindings {
                     RadialSegment("Items", META_GUIDE_FIND_ITEMS),
                     RadialSegment("Exit", META_GUIDE_FIND_EXIT),
                     RadialSegment("Secret", META_GUIDE_FIND_SECRET),
-                    RadialSegment("Release", META_GUIDE_RELEASE_CONTROL),
+                    RadialSegment("Next", META_GUIDE_NEXT_GOAL),
                 ),
         )
 
     /** Center binding for preset radial menus (-1 = none). */
     val RADIAL_PRESET_CENTER: Map<String, Pair<String, Int>> =
-        mapOf(
-            "Guide" to ("Next" to META_GUIDE_NEXT_GOAL),
-        )
+        emptyMap()
 
     /** Human-readable labels for preset IDs, for the editor UI. */
     val RADIAL_PRESET_LABELS: Map<String, String> =
@@ -247,15 +251,15 @@ object TouchBindings {
             "Guide" to "Guide Bot",
         )
 
-    /** Combined labels map for pickers that show all bindings (standard + extra). */
-    val ALL_BUTTON_LABELS: Map<Int, String> = BUTTON_LABELS + META_BUTTON_LABELS
+    /** Combined labels map for resolving current and legacy bindings. */
+    val ALL_BUTTON_LABELS: Map<Int, String> = BUTTON_LABELS + ALL_META_BUTTON_LABELS
 
     /** Check if a binding ID is a meta action (dispatched via NativeMetaActions). */
     fun isMetaAction(binding: Int): Boolean = binding >= META_ACTION_OFFSET
 
     /** Reverse lookup: label string to meta action ID, or -1. */
     fun metaActionIdForLabel(label: String): Int =
-        META_BUTTON_LABELS.entries.firstOrNull { it.value == label }?.key ?: -1
+        ALL_META_BUTTON_LABELS.entries.firstOrNull { it.value == label }?.key ?: -1
 
     // --- JNI axis indices (nativeJoystickAxis axis parameter) ---
     const val AXIS_LEFT_X = 0 // Left stick horizontal
@@ -317,14 +321,14 @@ object TouchBindings {
         mapOf("Energy\u2192Shield" to BTN_ENERGY_SHIELD)
 
     private val META_LABELS_REVERSE: Map<String, Int> by lazy {
-        META_BUTTON_LABELS.entries.associate { (k, v) -> v to k }
+        ALL_META_BUTTON_LABELS.entries.associate { (k, v) -> v to k }
     }
 
     /** Convert a binding integer to a human-readable name.
      *  Covers standard buttons, meta actions, and Android keycodes. */
     fun bindingToName(id: Int): String {
         BUTTON_LABELS[id]?.let { return it }
-        META_BUTTON_LABELS[id]?.let { return "Meta: $it" }
+        ALL_META_BUTTON_LABELS[id]?.let { return "Meta: $it" }
         // Android KeyEvent keycodes (used in radial menus)
         return keycodeToName(id) ?: "binding_$id"
     }

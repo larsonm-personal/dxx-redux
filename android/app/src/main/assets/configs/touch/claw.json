@@ -137,8 +137,6 @@
       "y": 5.0,
       "size": 1.0,
       "opacity": 0.7,
-      "centerLabel": "Next",
-      "centerBinding": "Meta: GB: Next Goal",
       "haptic": true,
       "segments": [
         { "label": "Energy", "binding": "Meta: GB: Find Energy", "iconRes": "" },
@@ -150,7 +148,8 @@
         { "label": "Scram!", "binding": "Meta: GB: Scram", "iconRes": "" },
         { "label": "Items", "binding": "Meta: GB: Find Items", "iconRes": "" },
         { "label": "Exit", "binding": "Meta: GB: Find Exit", "iconRes": "" },
-        { "label": "Secret", "binding": "Meta: GB: Find Secret", "iconRes": "" }
+        { "label": "Secret", "binding": "Meta: GB: Find Secret", "iconRes": "" },
+        { "label": "Next", "binding": "Meta: GB: Next Goal", "iconRes": "" }
       ]
     },
     {

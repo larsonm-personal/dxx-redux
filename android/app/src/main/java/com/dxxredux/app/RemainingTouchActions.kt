@@ -52,7 +52,6 @@ private val remainingGuideBindings =
         TouchBindings.META_GUIDE_BOT_MENU,
         TouchBindings.META_GUIDE_NEXT_GOAL,
         TouchBindings.META_GUIDE_FIND_SECRET,
-        TouchBindings.META_GUIDE_RELEASE_CONTROL,
     )
 
 internal fun touchLayoutBoundActionBindings(layout: TouchLayout): Set<Int> {

@@ -136,6 +136,15 @@ class TouchStickExtremeActionTest {
     }
 
     @Test
+    fun afterburnerChargeDepletionMatchesBarFillAmount() {
+        assertEquals(0f, afterburnerChargeDepletedFraction(null), 0.0001f)
+        assertEquals(0f, afterburnerChargeDepletedFraction(100), 0.0001f)
+        assertEquals(0.58f, afterburnerChargeDepletedFraction(42), 0.0001f)
+        assertEquals(1f, afterburnerChargeDepletedFraction(-5), 0.0001f)
+        assertEquals(0f, afterburnerChargeDepletedFraction(150), 0.0001f)
+    }
+
+    @Test
     fun upwardTouchDragIsPositiveExtremeY() {
         val (axisX, axisY) =
             stickExtremeTravelFromTouch(

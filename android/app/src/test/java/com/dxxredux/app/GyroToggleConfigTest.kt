@@ -34,7 +34,7 @@ class GyroToggleConfigTest {
         val migrated = TouchLayoutRepository.migrateForCurrentVersion(legacyLayout)
         val migratedButton = migrated.buttons.single()
 
-        assertEquals(4, migrated.version)
+        assertEquals(6, migrated.version)
         assertTrue(migratedButton.longPressEnabled)
         assertEquals(TouchBindings.META_GYRO_TOGGLE, migratedButton.longPressBinding)
         assertEquals(TouchBindings.DEFAULT_LONG_PRESS_DURATION_MS, migratedButton.longPressDurationMs)
@@ -82,7 +82,7 @@ class GyroToggleConfigTest {
 
         val migrated = TouchLayoutRepository.migrateForCurrentVersion(legacyLayout)
 
-        assertEquals(4, migrated.version)
+        assertEquals(6, migrated.version)
         assertEquals(listOf("fire"), migrated.buttons.map { it.id })
         assertFalse(migrated.buttons.single().longPressEnabled)
         assertEquals(-1, migrated.buttons.single().longPressBinding)

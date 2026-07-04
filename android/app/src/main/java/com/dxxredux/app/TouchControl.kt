@@ -199,6 +199,18 @@ internal fun stickAfterburnerChargeVisible(
     gameVariant == "d2" &&
         actions.any { it.enabled && it.binding == TouchBindings.BTN_AFTERBURNER }
 
+internal fun afterburnerChargeDepletedFraction(chargePct: Int?): Float =
+    (100 - (chargePct ?: 100)).coerceIn(0, 100) / 100f
+
+internal fun guideWheelVisibleSegments(
+    segments: List<RadialSegment>,
+    secretAreaRevealed: Boolean,
+): List<RadialSegment> =
+    segments.filter {
+        it.binding != TouchBindings.META_GUIDE_RELEASE_CONTROL &&
+            (secretAreaRevealed || it.binding != TouchBindings.META_GUIDE_FIND_SECRET)
+    }
+
 internal fun stickExtremeTravelFromTouch(
     dxPx: Float,
     dyPx: Float,
