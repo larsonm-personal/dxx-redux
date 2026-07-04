@@ -925,6 +925,9 @@ class SetupActivity : ComponentActivity() {
                 when (cmd) {
                     "set_callsign" -> {
                         mpCallsign = intent.getStringExtra("callsign") ?: "Player"
+                        MatchmakingStateHolder.update { it.copy(callsign = mpCallsign) }
+                        com.dxxredux.app.multiplayer.CallsignPrefs
+                            .save(this@SetupActivity, mpCallsign)
                         Log.i("DXX-MP", "Callsign set to: $mpCallsign")
                     }
 
@@ -1049,7 +1052,10 @@ class SetupActivity : ComponentActivity() {
                             intent.getBooleanExtra("restrict_noncoop_fov_to_base", false)
                         val hostAddr = intent.getStringExtra("host_addr")
                         val hostPort = intent.getIntExtra("host_port", NetworkConstants.ENGINE_PORT)
-                        intent.getStringExtra("callsign")?.let { mpCallsign = it }
+                        intent.getStringExtra("callsign")?.let {
+                            mpCallsign = it
+                            MatchmakingStateHolder.update { state -> state.copy(callsign = it) }
+                        }
                         val isHost = mpMode == "host"
                         val info =
                             GameLaunchInfo(
@@ -1085,6 +1091,7 @@ class SetupActivity : ComponentActivity() {
                         val mode = intent.getStringExtra("mode") ?: "coop"
                         val maxPlayers = intent.getIntExtra("max_players", 4)
                         mpCallsign = callsign
+                        MatchmakingStateHolder.update { it.copy(callsign = callsign) }
                         com.dxxredux.app.lobby.LobbyService
                             .startDiscovery(this@SetupActivity, callsign)
                         com.dxxredux.app.lobby.LobbyService
@@ -1561,8 +1568,15 @@ class SetupActivity : ComponentActivity() {
             mpGameLaunching = false
             return
         }
+        val launchCallsign =
+            MatchmakingStateHolder.state.value.callsign
+                .takeIf { it.isNotBlank() } ?: mpCallsign
+        mpCallsign = launchCallsign
         val mpIntent = createGameLaunchIntent(info.game)
-        mpIntent.putExtra("mp_callsign", mpCallsign)
+        mpIntent.putExtra("mp_callsign", launchCallsign)
+        if (launchCallsign.isNotBlank()) {
+            mpIntent.putExtra("pilot_callsign", launchCallsign)
+        }
         if (info.isHost) {
             mpIntent.putExtra("mp_mode", "host")
             mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
@@ -1600,7 +1614,7 @@ class SetupActivity : ComponentActivity() {
         }
         mpIntent.putExtra("mp_restrict_noncoop_fov_to_base", info.restrictNonCoopFovToBase && info.mode != "coop")
         if (info.isLan) mpIntent.putExtra("mp_is_lan", true)
-        MultiplayerResumePrefs.saveLaunch(this, info, mpCallsign, MatchmakingStateHolder.state.value)
+        MultiplayerResumePrefs.saveLaunch(this, info, launchCallsign, MatchmakingStateHolder.state.value)
         // Clear gameLaunchInfo after consumption to prevent stale re-launches
         MatchmakingStateHolder.update { it.copy(gameLaunchInfo = null) }
         startActivity(mpIntent)

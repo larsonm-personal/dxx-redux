@@ -237,6 +237,20 @@ static int find_cmd_arg(const char *name)
 	return 0;
 }
 
+#ifdef __ANDROID__
+static void android_apply_startup_pilot_arg(void)
+{
+	const int arg_index = find_cmd_arg("-pilot");
+
+	if (GameArg.SysPilot || !arg_index)
+		return;
+	if (arg_index + 1 >= Num_args || !Args[arg_index + 1] ||
+	    !Args[arg_index + 1][0] || Args[arg_index + 1][0] == '-')
+		return;
+	GameArg.SysPilot = Args[arg_index + 1];
+}
+#endif
+
 static int maybe_dump_classic_demo_json(void)
 {
 	int arg_index = find_cmd_arg("-classicdemo-dump-json");
@@ -464,6 +478,7 @@ int main(int argc, char *argv[])
 		for (i = 0; i < Num_args; i++)
 			debug_log(DLOG_GAME, "startup parsed Args[%d]=%s", i, Args[i] ? Args[i] : "<null>");
 	}
+	android_apply_startup_pilot_arg();
 #endif
 
 	setbuf(stdout, NULL); // unbuffered output via printf

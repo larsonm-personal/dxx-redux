@@ -106,9 +106,24 @@ private fun ServerBrowserContent(
     val lanFocus = remember { FocusRequester() }
     val serverUrlFocus = remember { FocusRequester() }
     val callsignFocus = remember { FocusRequester() }
+    val newCallsignFocus = remember { FocusRequester() }
     val recentUrls = remember { mutableStateOf(RecentAddressPrefs.SERVER_URLS.load(context)) }
     var serverUrl by remember { mutableStateOf(recentUrls.value.firstOrNull() ?: state.serverUrl) }
-    var callsign by remember { mutableStateOf(state.callsign) }
+    val pilotCallsigns =
+        remember {
+            val fsm = com.dxxredux.app.FileSetManager(context.filesDir)
+            MultiplayerCallsigns.scan(context.filesDir, fsm.getSetDir(fsm.getActive()))
+        }
+    var pendingNewCallsign by remember { mutableStateOf<String?>(null) }
+    val callsignOptions =
+        remember(pilotCallsigns, pendingNewCallsign) {
+            MultiplayerCallsigns.mergePendingCallsign(pilotCallsigns, pendingNewCallsign)
+        }
+    var callsign by remember {
+        mutableStateOf(
+            MultiplayerCallsigns.pickInitialCallsign(state.callsign, callsignOptions),
+        )
+    }
     var showCreateDialog by remember { mutableStateOf(false) }
     var textEntryActive by remember { mutableStateOf(false) }
     var dismissResumeOffer by remember { mutableStateOf(false) }
@@ -140,6 +155,49 @@ private fun ServerBrowserContent(
     val isLandscape =
         LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
+    LaunchedEffect(state.callsign, callsignOptions) {
+        if (callsign.isBlank() || callsignOptions.none { it.equals(callsign, ignoreCase = true) }) {
+            callsign = MultiplayerCallsigns.pickInitialCallsign(state.callsign, callsignOptions)
+        }
+    }
+
+    fun persistSelectedCallsign(): String? {
+        val selected = MultiplayerCallsigns.sanitizeNewCallsign(callsign)
+        if (selected.isBlank()) return null
+        callsign = selected
+        CallsignPrefs.save(context, selected)
+        MatchmakingStateHolder.update { it.copy(callsign = selected) }
+        return selected
+    }
+
+    fun rememberNewCallsign(newCallsign: String) {
+        pendingNewCallsign = newCallsign
+        callsign = newCallsign
+        CallsignPrefs.save(context, newCallsign)
+        MatchmakingStateHolder.update { it.copy(callsign = newCallsign) }
+    }
+
+    fun rememberExternalCallsign(externalCallsign: String) {
+        if (pilotCallsigns.none { it.equals(externalCallsign, ignoreCase = true) }) {
+            pendingNewCallsign = externalCallsign
+        }
+        callsign = externalCallsign
+        CallsignPrefs.save(context, externalCallsign)
+        MatchmakingStateHolder.update { it.copy(callsign = externalCallsign) }
+    }
+
+    fun connectWithSelectedCallsign() {
+        val selected = persistSelectedCallsign() ?: return
+        RecentAddressPrefs.SERVER_URLS.add(context, serverUrl)
+        recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
+        MatchmakingService.connect(serverUrl, selected)
+    }
+
+    fun openLanWithSelectedCallsign() {
+        persistSelectedCallsign() ?: return
+        MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
+    }
+
     fun createOnlineResumeLobby(record: MultiplayerResumeRecord) {
         HostGameDefaults.save(context, record.toHostDefaults())
         writeCoopRestoreSlot(context.filesDir, record.game, record.coopRestoreSlot)
@@ -148,9 +206,8 @@ private fun ServerBrowserContent(
 
     fun beginOnlineResume(record: MultiplayerResumeRecord) {
         val savedServerUrl = record.serverUrl ?: return
-        callsign = record.localCallsign
+        rememberExternalCallsign(record.localCallsign)
         serverUrl = savedServerUrl
-        CallsignPrefs.save(context, record.localCallsign)
         RecentAddressPrefs.SERVER_URLS.add(context, savedServerUrl)
         recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
         pendingOnlineResume = record
@@ -225,8 +282,7 @@ private fun ServerBrowserContent(
                             HostGameDefaults.save(context, offerRecord.toHostDefaults())
                             writeCoopRestoreSlot(context.filesDir, offerRecord.game, offerRecord.coopRestoreSlot)
                         }
-                        callsign = offerRecord.localCallsign
-                        CallsignPrefs.save(context, offerRecord.localCallsign)
+                        rememberExternalCallsign(offerRecord.localCallsign)
                         MatchmakingStateHolder.update {
                             it.copy(callsign = offerRecord.localCallsign, nav = MultiplayerNav.LAN)
                         }
@@ -294,31 +350,43 @@ private fun ServerBrowserContent(
                 )
                 RecentSuggestions(recentUrls.value) { serverUrl = it }
                 Spacer(Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = callsign,
-                    onValueChange = { callsign = it.take(CallsignPrefs.MAX_LEN) },
-                    label = { Text("Callsign") },
-                    singleLine = true,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .focusRequester(callsignFocus)
-                            .focusProperties {
-                                up = serverUrlFocus
-                                down = connectFocus
-                            }.controllerTextFieldDpadExit(up = serverUrlFocus, down = connectFocus)
-                            .controllerTextEntryFocus { textEntryActive = it },
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    CallsignPickerField(
+                        selectedCallsign = callsign,
+                        callsigns = callsignOptions,
+                        onSelect = { callsign = it },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .focusRequester(callsignFocus)
+                                .focusProperties {
+                                    up = serverUrlFocus
+                                    right = newCallsignFocus
+                                    down = connectFocus
+                                },
+                    )
+                    NewCallsignButton(
+                        existingCallsigns = pilotCallsigns,
+                        onCreate = ::rememberNewCallsign,
+                        enabled = !isConnecting,
+                        modifier =
+                            Modifier
+                                .focusRequester(newCallsignFocus)
+                                .focusProperties {
+                                    up = serverUrlFocus
+                                    left = callsignFocus
+                                    down = connectFocus
+                                },
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
-                        onClick = {
-                            CallsignPrefs.save(context, callsign)
-                            RecentAddressPrefs.SERVER_URLS.add(context, serverUrl)
-                            recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
-                            MatchmakingService.connect(serverUrl, callsign)
-                        },
-                        enabled = !isConnecting,
+                        onClick = ::connectWithSelectedCallsign,
+                        enabled = !isConnecting && callsign.isNotBlank(),
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -346,12 +414,8 @@ private fun ServerBrowserContent(
                         }
                     }
                     Button(
-                        onClick = {
-                            CallsignPrefs.save(context, callsign)
-                            MatchmakingStateHolder.update { it.copy(callsign = callsign) }
-                            MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
-                        },
-                        enabled = !isConnecting,
+                        onClick = ::openLanWithSelectedCallsign,
+                        enabled = !isConnecting && callsign.isNotBlank(),
                         modifier =
                             Modifier
                                 .focusRequester(lanFocus)
@@ -383,13 +447,8 @@ private fun ServerBrowserContent(
                                 .controllerTextEntryFocus { textEntryActive = it },
                     )
                     Button(
-                        onClick = {
-                            CallsignPrefs.save(context, callsign)
-                            RecentAddressPrefs.SERVER_URLS.add(context, serverUrl)
-                            recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
-                            MatchmakingService.connect(serverUrl, callsign)
-                        },
-                        enabled = !isConnecting,
+                        onClick = ::connectWithSelectedCallsign,
+                        enabled = !isConnecting && callsign.isNotBlank(),
                         modifier =
                             Modifier
                                 .focusRequester(connectFocus)
@@ -422,34 +481,43 @@ private fun ServerBrowserContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    OutlinedTextField(
-                        value = callsign,
-                        onValueChange = { callsign = it.take(CallsignPrefs.MAX_LEN) },
-                        label = { Text("Callsign") },
-                        singleLine = true,
+                    CallsignPickerField(
+                        selectedCallsign = callsign,
+                        callsigns = callsignOptions,
+                        onSelect = { callsign = it },
                         modifier =
                             Modifier
                                 .weight(1f)
                                 .focusRequester(callsignFocus)
                                 .focusProperties {
                                     up = serverUrlFocus
+                                    right = newCallsignFocus
                                     down = connectFocus
-                                }.controllerTextFieldDpadExit(up = serverUrlFocus, down = connectFocus)
-                                .controllerTextEntryFocus { textEntryActive = it },
+                                },
+                    )
+                    NewCallsignButton(
+                        existingCallsigns = pilotCallsigns,
+                        onCreate = ::rememberNewCallsign,
+                        enabled = !isConnecting,
+                        modifier =
+                            Modifier
+                                .focusRequester(newCallsignFocus)
+                                .focusProperties {
+                                    up = serverUrlFocus
+                                    left = callsignFocus
+                                    right = lanFocus
+                                    down = connectFocus
+                                },
                     )
                     Button(
-                        onClick = {
-                            CallsignPrefs.save(context, callsign)
-                            MatchmakingStateHolder.update { it.copy(callsign = callsign) }
-                            MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
-                        },
-                        enabled = !isConnecting,
+                        onClick = ::openLanWithSelectedCallsign,
+                        enabled = !isConnecting && callsign.isNotBlank(),
                         modifier =
                             Modifier
                                 .focusRequester(lanFocus)
                                 .focusProperties {
                                     up = callsignFocus
-                                    left = connectFocus
+                                    left = newCallsignFocus
                                 },
                     ) {
                         Text("LAN")

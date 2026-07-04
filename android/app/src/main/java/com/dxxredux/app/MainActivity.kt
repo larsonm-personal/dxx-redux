@@ -513,6 +513,7 @@ class MainActivity :
     private var pendingInputDemoReplayPath: String? = null
     private var pendingResumeSavePath: String? = null
     private var pendingResumeCallsign: String? = null
+    private var pendingPilotCallsign: String? = null
     private var pendingTransientLaunchToken: String? = null
     private lateinit var gameSurfaceView: GameSurfaceView
     private lateinit var keyboardInputView: KeyboardInputView
@@ -2535,6 +2536,8 @@ class MainActivity :
             sourceIntent.getStringExtra("resume_save_path")?.takeIf { it.isNotBlank() }
         pendingResumeCallsign =
             sourceIntent.getStringExtra("resume_callsign")?.takeIf { it.isNotBlank() }
+        pendingPilotCallsign =
+            sourceIntent.getStringExtra("pilot_callsign")?.takeIf { it.isNotBlank() }
         pendingTransientLaunchToken =
             sourceIntent.getStringExtra(EXTRA_TRANSIENT_LAUNCH_TOKEN)?.takeIf { it.isNotBlank() }
         if (pendingInputDemoReplayPath == null && pendingResumeSavePath == null) {
@@ -2582,6 +2585,7 @@ class MainActivity :
         sourceIntent.removeExtra("input_demo_replay")
         sourceIntent.removeExtra("resume_save_path")
         sourceIntent.removeExtra("resume_callsign")
+        sourceIntent.removeExtra("pilot_callsign")
         sourceIntent.removeExtra(EXTRA_TRANSIENT_LAUNCH_TOKEN)
         setIntent(sourceIntent)
     }
@@ -2607,6 +2611,9 @@ class MainActivity :
 
     @Suppress("unused")
     fun consumeResumeCallsign(): String? = pendingResumeCallsign.also { pendingResumeCallsign = null }
+
+    @Suppress("unused")
+    fun consumePilotCallsign(): String? = pendingPilotCallsign.also { pendingPilotCallsign = null }
 
     private fun resetTouchOverlayForSuspend() {
         if (!::touchOverlay.isInitialized) return

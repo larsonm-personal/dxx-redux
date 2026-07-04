@@ -219,29 +219,39 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	char *input_demo_replay_path = NULL;
 	char *resume_save_path = NULL;
 	char *resume_callsign = NULL;
-	char *argv_startup[] = { NULL, NULL, NULL, NULL, NULL, NULL };
+	char *pilot_callsign = NULL;
+	char *argv_startup[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 	int argc = 1;
 	androidInit.jnienv = (void *) env;
 	androidInit.context = (void *) thiz; /* Activity is a valid Context */
 
 	argv_startup[0] = (char *) &androidInit;
+	pilot_callsign = android_consume_activity_string(env, thiz, "consumePilotCallsign");
 	input_demo_replay_path = android_consume_activity_string(env, thiz, "consumeInputDemoReplayPath");
 	if (input_demo_replay_path) {
 		LOGI("Launching input demo replay: %s", input_demo_replay_path);
 		argv_startup[argc++] = "-inputdemo-replay";
 		argv_startup[argc++] = input_demo_replay_path;
 	} else {
+		const char *startup_pilot = pilot_callsign;
+
 		resume_save_path = android_consume_activity_string(env, thiz, "consumeResumeSavePath");
 		resume_callsign = android_consume_activity_string(env, thiz, "consumeResumeCallsign");
 		if (resume_save_path && resume_save_path[0]) {
 			if (resume_callsign && resume_callsign[0]) {
 				LOGI("Launching startup resume for pilot '%s': %s",
 				     resume_callsign, resume_save_path);
-				argv_startup[argc++] = "-pilot";
-				argv_startup[argc++] = resume_callsign;
+				startup_pilot = resume_callsign;
 			} else {
 				LOGI("Launching startup resume with save-derived pilot: %s", resume_save_path);
 			}
+		}
+		if (startup_pilot && startup_pilot[0]) {
+			LOGI("Launching startup pilot: %s", startup_pilot);
+			argv_startup[argc++] = "-pilot";
+			argv_startup[argc++] = (char *) startup_pilot;
+		}
+		if (resume_save_path && resume_save_path[0]) {
 			argv_startup[argc++] = "-resume-save";
 			argv_startup[argc++] = resume_save_path;
 		}
@@ -253,6 +263,7 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	free(input_demo_replay_path);
 	free(resume_save_path);
 	free(resume_callsign);
+	free(pilot_callsign);
 
 	g_game_running = 0;
 
