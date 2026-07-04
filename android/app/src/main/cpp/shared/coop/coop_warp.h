@@ -15,8 +15,8 @@
 #include "fix.h"
 
 /* --- tunable constants --- */
-#define COOP_WARP_DISTANCE_THRESHOLD (F1_0 * 200)
-#define COOP_WARP_ENGAGEMENT_TIMEOUT (F1_0 * 20) /* 20s no engagement */
+#define COOP_WARP_DISTANCE_THRESHOLD (F1_0 * 160)
+#define COOP_WARP_ENGAGEMENT_TIMEOUT (F1_0 * 12) /* 12s no engagement */
 #define COOP_WARP_RESPAWN_TIMEOUT    (F1_0 * 5)  /* shorter after respawn */
 #define COOP_WARP_COOLDOWN           (F1_0 * 60) /* 60s between warps */
 #define COOP_WARP_MAX_RETRIES        30

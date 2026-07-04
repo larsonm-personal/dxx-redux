@@ -27,7 +27,7 @@ internal fun isControllerMenuOnlyTouchLayout(layout: TouchLayout): Boolean =
 object TouchLayoutRepository {
     private const val TAG = "TouchLayoutRepository"
     private const val FILENAME = "touch_layout.json"
-    private const val CURRENT_VERSION = 4
+    private const val CURRENT_VERSION = 5
     private const val LEGACY_BTN_CHEATS_MENU = 100
     private const val BUNDLED_DIR = "configs/touch"
     private const val USER_DIR = "configs/touch"
@@ -81,6 +81,13 @@ object TouchLayoutRepository {
                     radialMenus = migrated.radialMenus.map { migrateLegacyCheatsRadial(it) },
                 )
         }
+        if (migrated.version < 5) {
+            migrated =
+                migrated.copy(
+                    version = 5,
+                    radialMenus = migrated.radialMenus.map { migrateGuideWheelNextGoalCenter(it) },
+                )
+        }
         if (migrated.version >= CURRENT_VERSION) return migrated
         return migrated.copy(version = CURRENT_VERSION)
     }
@@ -113,6 +120,16 @@ object TouchLayoutRepository {
                 radial.segments + secretSegment
             }
         return radial.copy(segments = segments)
+    }
+
+    private fun migrateGuideWheelNextGoalCenter(radial: RadialMenuControl): RadialMenuControl {
+        if (radial.id != "Guide" || radial.centerBinding != TouchBindings.META_GUIDE_CLEAR_GOAL) {
+            return radial
+        }
+        return radial.copy(
+            centerLabel = "Next",
+            centerBinding = TouchBindings.META_GUIDE_NEXT_GOAL,
+        )
     }
 
     fun save(

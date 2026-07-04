@@ -1095,6 +1095,27 @@ int read_player_file()
 
 
 #ifdef ANDROID
+static int plr_filename_is_selectable(const char *filename)
+{
+	const char *base, *dot;
+	size_t callsign_len;
+
+	if (!filename || !filename[0])
+		return 0;
+	base = strrchr(filename, '/');
+	base = base ? base + 1 : filename;
+	dot = strrchr(base, '.');
+	if (!dot || dot == base || d_stricmp(dot, ".plr") || strchr(base, '.') != dot)
+		return 0;
+	callsign_len = (size_t)(dot - base);
+	if (callsign_len > CALLSIGN_LEN)
+		return 0;
+	if (callsign_len == strlen(COOP_AUTOSAVE_CALLSIGN) &&
+	    !d_strnicmp(base, COOP_AUTOSAVE_CALLSIGN, (int)callsign_len))
+		return 0;
+	return 1;
+}
+
 int plr_is_selectable(const char *filename)
 {
 	PHYSFS_file *file;
@@ -1105,7 +1126,7 @@ int plr_is_selectable(const char *filename)
 	int swap = 0;
 	long min_size;
 
-	if (!filename || !PHYSFSX_exists(filename, 0))
+	if (!plr_filename_is_selectable(filename) || !PHYSFSX_exists(filename, 0))
 		return 0;
 
 	file = PHYSFSX_openReadBuffered(filename);

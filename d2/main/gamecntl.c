@@ -2622,6 +2622,21 @@ int ReadControls(d_event *event)
 			}
 			return 1;
 		}
+		if (android_escort_next_goal_pending) {
+			android_escort_next_goal_pending = 0;
+			if (!(Game_mode & GM_MULTI)) {
+				input_demo_record_direct_command_guidebot_goal(KEY_0, 0);
+				escort_resume_default_goal();
+			} else if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == Player_num) {
+				input_demo_record_direct_command_guidebot_goal(KEY_0, 0);
+				escort_resume_default_goal();
+			} else if (Game_mode & GM_MULTI_COOP) {
+				HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
+			} else {
+				HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
+			}
+			return 1;
+		}
 		if (android_handle_ingame_saveload_request())
 			return 1;
 	}

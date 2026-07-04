@@ -137,8 +137,8 @@
       "y": 5.0,
       "size": 1.0,
       "opacity": 0.7,
-      "centerLabel": "Clear",
-      "centerBinding": "Meta: GB: Clear Goal",
+      "centerLabel": "Next",
+      "centerBinding": "Meta: GB: Next Goal",
       "haptic": true,
       "segments": [
         { "label": "Energy", "binding": "Meta: GB: Find Energy", "iconRes": "" },

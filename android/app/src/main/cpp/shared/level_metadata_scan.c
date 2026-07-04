@@ -1120,10 +1120,9 @@ static void collect_travel_time(const level_metadata_scan_view *view, level_meta
 	}
 	found_reactor = collect_route_targets(view, hostage_targets, &hostage_count, &reactor, exit_targets, &exit_count);
 	state->travel_targets_total = hostage_count + (found_reactor ? 1 : 0) + (exit_count > 0 ? 1 : 0);
-	if (!found_reactor) {
-		snprintf(state->travel_note, sizeof(state->travel_note), "%s", "missing reactor");
-	}
 	if (exit_count <= 0) {
+		if (!found_reactor)
+			snprintf(state->travel_note, sizeof(state->travel_note), "%s", "missing reactor");
 		snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "missing exit");
 		return;
 	}
@@ -1158,6 +1157,10 @@ static void collect_travel_time(const level_metadata_scan_view *view, level_meta
 		}
 	} else {
 		state->travel_status = state->travel_targets_reached > 0 || state->travel_distance > 0.0 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
+	}
+	if (!found_reactor) {
+		snprintf(state->travel_note, sizeof(state->travel_note), "%s",
+		         state->travel_status == LEVEL_METADATA_TRAVEL_OK ? "no reactor, exit exists" : "missing reactor");
 	}
 	state->travel_time_seconds = (int) floor(state->travel_distance / LEVEL_METADATA_SHIP_SPEED_UNITS_PER_SECOND + 0.5);
 }

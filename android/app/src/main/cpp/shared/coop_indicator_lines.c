@@ -34,8 +34,9 @@
 /* -- tuning ---------------------------------------------------------- */
 #define PATH_UPDATE_INTERVAL 30 /* frames between path recomputation */
 #define MAX_INDICATOR_DEPTH  25 /* max path segments to compute/draw */
-#define LINE_FADE_LEVEL      20 /* higher = more transparent (0-31)  */
-#define KEEPOUT_RADIUS_MULT  3  /* keep-out sphere = ship radius * N */
+#define LINE_FADE_LEVEL      14 /* higher = more transparent (0-31)  */
+#define LINE_HALF_WIDTH      (F1_0 / 4)
+#define KEEPOUT_RADIUS_MULT  3 /* keep-out sphere = ship radius * N */
 
 /* -- cached paths ---------------------------------------------------- */
 typedef struct {
@@ -53,6 +54,18 @@ static int s_show_nearest_player = 1;
 static int s_show_guidebot = 1;
 
 /* -- helpers --------------------------------------------------------- */
+
+static void draw_path_segment(const vms_vector *a, const vms_vector *b)
+{
+	g3s_point pa, pb;
+
+	if (a->x == b->x && a->y == b->y && a->z == b->z)
+		return;
+
+	g3_rotate_point(&pa, a);
+	g3_rotate_point(&pb, b);
+	g3_draw_rod_flat(&pa, LINE_HALF_WIDTH, &pb, LINE_HALF_WIDTH);
+}
 
 /* Check whether a segment is currently in the portal-rendered visible set */
 static int seg_is_visible(int segnum)
@@ -242,10 +255,7 @@ static void draw_path_lines(const indicator_path *path, int color)
 
 		if (!a_in && !b_in) {
 			/* both outside -- draw full segment */
-			g3s_point pa, pb;
-			g3_rotate_point(&pa, a);
-			g3_rotate_point(&pb, b);
-			g3_draw_line(&pa, &pb);
+			draw_path_segment(a, b);
 		} else {
 			/* one inside, one outside -- clip to sphere boundary */
 			fix t_den = db - da;
@@ -255,18 +265,14 @@ static void draw_path_lines(const indicator_path *path, int color)
 			 * boundary is crossed: dist(lerp(A,B,t)) == keepout_r */
 			fix t = fixdiv(keepout_r - da, t_den);
 			vms_vector delta, clipped;
-			g3s_point p_out, p_clip;
 			vm_vec_sub(&delta, b, a);
 			vm_vec_scale_add(&clipped, a, &delta, t);
-			g3_rotate_point(&p_clip, &clipped);
 			if (a_in) {
 				/* A inside, B outside: draw clipped->B */
-				g3_rotate_point(&p_out, b);
-				g3_draw_line(&p_clip, &p_out);
+				draw_path_segment(&clipped, b);
 			} else {
 				/* A outside, B inside: draw A->clipped */
-				g3_rotate_point(&p_out, a);
-				g3_draw_line(&p_out, &p_clip);
+				draw_path_segment(a, &clipped);
 			}
 		}
 	}

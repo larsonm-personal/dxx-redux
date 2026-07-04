@@ -60,6 +60,12 @@ if(NOT ANDROID)
     target_link_libraries(test_input_demo_rng_mode PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_input_demo_rng_mode PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_level_metadata_scan
+        ../../android/tests/test_level_metadata_scan.c
+        ../../android/app/src/main/cpp/shared/level_metadata_scan.c)
+    target_link_libraries(test_level_metadata_scan PRIVATE ${DXX_TARGET_PREFIX}maths)
+    target_include_directories(test_level_metadata_scan PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_input_demo_controls
         ../../android/tests/test_input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp)
@@ -127,6 +133,7 @@ if(NOT ANDROID)
             test_android_save_set
             test_android_rewind_policy
             test_input_demo_rng_mode
+            test_level_metadata_scan
             test_input_demo_controls
             test_input_demo_fixture
             test_input_demo_recorder

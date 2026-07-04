@@ -10,13 +10,14 @@
 #include "player.h"
 #include "playsave.h"
 #include "state.h"
+#include "strutil.h"
 
 #include "android_log.h"
 #include "android_resume_pilot.h"
 
 static int android_is_real_pilot_callsign(const char *callsign)
 {
-	return callsign && callsign[0] && strcmp(callsign, COOP_AUTOSAVE_CALLSIGN);
+	return callsign && callsign[0] && d_stricmp(callsign, COOP_AUTOSAVE_CALLSIGN);
 }
 
 static int android_find_fallback_pilot_callsign(char *callsign)
@@ -34,6 +35,7 @@ static int android_find_fallback_pilot_callsign(char *callsign)
 		return 0;
 	for (entry = list; *entry; entry++) {
 		char candidate[CALLSIGN_LEN + 1];
+		char filename[PATH_MAX];
 		char *dot = strstr(*entry, ".plr");
 		size_t len;
 
@@ -45,6 +47,9 @@ static int android_find_fallback_pilot_callsign(char *callsign)
 		memset(candidate, 0, sizeof(candidate));
 		memcpy(candidate, *entry, len);
 		if (!android_is_real_pilot_callsign(candidate))
+			continue;
+		snprintf(filename, sizeof(filename), GameArg.SysUsePlayersDir ? "Players/%s" : "%s", *entry);
+		if (!plr_is_selectable(filename))
 			continue;
 		strncpy(callsign, candidate, CALLSIGN_LEN);
 		callsign[CALLSIGN_LEN] = '\0';
@@ -104,7 +109,7 @@ int android_load_pilot_from_resume_save(const char *save_path, const char *game_
 		          Players[Player_num].callsign);
 		return can_fallback;
 	}
-	if (!strcmp(save_callsign, COOP_AUTOSAVE_CALLSIGN)) {
+	if (!d_stricmp(save_callsign, COOP_AUTOSAVE_CALLSIGN)) {
 		int can_fallback = android_is_real_pilot_callsign(Players[Player_num].callsign);
 
 		con_printf(CON_URGENT, "startup resume: save uses sentinel pilot '%s'\n", save_callsign);
@@ -128,6 +133,12 @@ int android_load_pilot_from_resume_save(const char *save_path, const char *game_
 		if (!PHYSFSX_exists(filename, 0)) {
 			con_printf(CON_URGENT,
 			           "startup resume: pilot file not found for '%s'; using save callsign\n",
+			           save_callsign);
+			strcpy(Players[Player_num].callsign, save_callsign);
+			load_source = "save_header";
+		} else if (!plr_is_selectable(filename)) {
+			con_printf(CON_URGENT,
+			           "startup resume: pilot file not selectable for '%s'; using save callsign\n",
 			           save_callsign);
 			strcpy(Players[Player_num].callsign, save_callsign);
 			load_source = "save_header";

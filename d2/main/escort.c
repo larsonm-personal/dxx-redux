@@ -953,7 +953,11 @@ void set_escort_special_goal(int special_key)
 			case KEY_7:	Escort_special_goal = ESCORT_GOAL_SCRAM;			break;
 			case KEY_8:	Escort_special_goal = ESCORT_GOAL_PLAYER_SPEW;	break;
 			case KEY_9:	Escort_special_goal = ESCORT_GOAL_EXIT;			break;
-			case KEY_0:	Escort_special_goal = -1;								break;
+			case KEY_0:
+				Escort_special_goal = -1;
+				Escort_goal_index = -1;
+				Escort_last_path_created = 0;
+				break;
 			default:
 				Int3();		//	Oops, called with illegal key value.
 		}
@@ -965,6 +969,14 @@ void set_escort_special_goal(int special_key)
 	// -- Escort_goal_object = escort_set_goal_object();
 
 	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+}
+
+void escort_resume_default_goal(void)
+{
+	Looking_for_marker = -1;
+	Last_buddy_key = -1;
+	set_escort_special_goal(KEY_0);
+	Last_buddy_key = -1;
 }
 
 void escort_find_secret_goal(void)
@@ -1286,6 +1298,33 @@ static int escort_key_exists(int powerup_id)
 	return exists_in_mine(ConsoleObject->segnum, OBJ_POWERUP, powerup_id, -1) != -1;
 }
 
+static int escort_reactor_exists(void)
+{
+	int i;
+
+	for (i=0; i<=Highest_object_index; i++)
+		if (Objects[i].type == OBJ_CNTRLCEN && !(Objects[i].flags & OF_SHOULD_BE_DEAD))
+			return 1;
+
+	return 0;
+}
+
+static int side_has_exit_trigger(int seg, int side)
+{
+	int wall_num;
+	int trigger_num;
+
+	if (seg < 0 || seg > Highest_segment_index || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	wall_num = Segments[seg].sides[side].wall_num;
+	if (wall_num < 0 || wall_num >= Num_walls)
+		return 0;
+	trigger_num = Walls[wall_num].trigger;
+	if (trigger_num < 0 || trigger_num >= Num_triggers)
+		return 0;
+	return Triggers[trigger_num].type == TT_EXIT;
+}
+
 //	-----------------------------------------------------------------------------
 //	Return true if it happened, else return false.
 int find_exit_segment(void)
@@ -1295,7 +1334,7 @@ int find_exit_segment(void)
 	//	---------- Find exit doors ----------
 	for (i=0; i<=Highest_segment_index; i++)
 		for (j=0; j<MAX_SIDES_PER_SEGMENT; j++)
-			if (Segments[i].children[j] == -2) {
+			if (Segments[i].children[j] == -2 || side_has_exit_trigger(i, j)) {
 				return i;
 			}
 
@@ -1566,11 +1605,11 @@ int escort_set_goal_object(void)
 	if (Control_center_destroyed == 0) {
 		if (Num_boss_teleport_segs)
 			return ESCORT_GOAL_BOSS;
-		else
+		else if (escort_reactor_exists())
 			return ESCORT_GOAL_CONTROLCEN;
 	}
 
-	return ESCORT_GOAL_EXIT;
+	return (Control_center_destroyed || find_exit_segment() != -1) ? ESCORT_GOAL_EXIT : ESCORT_GOAL_CONTROLCEN;
 }
 
 #define	MAX_ESCORT_TIME_AWAY		(F1_0*4)

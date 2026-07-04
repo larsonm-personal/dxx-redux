@@ -1595,6 +1595,8 @@ class TouchOverlayView
                         } else if (isEscortOwnerProvider?.invoke() == false) {
                             val owner = escortOwnerCallsignProvider?.invoke().orEmpty()
                             rm.quiescentLabel = if (owner.isNotEmpty()) owner else "Guide"
+                        } else {
+                            rm.quiescentLabel = "Guide"
                         }
                     }
                     if (!rm.isOpen && ws != null && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {

@@ -142,8 +142,8 @@
         { "label": "Exit", "binding": "Meta: GB: Find Exit", "iconRes": "" },
         { "label": "Secret", "binding": "Meta: GB: Find Secret", "iconRes": "" }
       ],
-      "centerLabel": "Clear",
-      "centerBinding": "Meta: GB: Clear Goal",
+      "centerLabel": "Next",
+      "centerBinding": "Meta: GB: Next Goal",
       "haptic": true
     },
     {
