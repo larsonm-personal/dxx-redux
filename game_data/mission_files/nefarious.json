@@ -1,0 +1,1295 @@
+[
+  {
+    "status": "ok",
+    "source": "Nefarious Assault",
+    "game": "d1",
+    "mission_name": "nefarius",
+    "mission_filename": "nefarius.msn",
+    "coop_starts": "4",
+    "level_count": 19,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Liquid Containment Tubes",
+        "level_file": "nefar01.rdl",
+        "robots": 23,
+        "hostages": 2,
+        "secrets": 1,
+        "matcens": 0,
+        "energy_centers": 3,
+        "mine_volume": 10313869.142251546,
+        "mine_volume_normalized": 2.255431519051062,
+        "mine_volume_text": "2.3x",
+        "travel_distance": 4806.3206849497365,
+        "travel_time_seconds": 96,
+        "travel_time_text": "1M:36S",
+        "travel_targets_reached": 4,
+        "travel_targets_total": 4,
+        "travel_key_detours": 2,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 51,
+            "distance": 874.043406270723,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 292,
+            "distance": 1372.9680541132643,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 324,
+            "distance": 996.4749156265541
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 326,
+            "side": 0,
+            "wall": 58,
+            "distance": 182.51747553348218,
+            "trigger": 4,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Coralinus Reservoir",
+        "level_file": "nefar02.rdl",
+        "robots": 36,
+        "hostages": 3,
+        "secrets": 2,
+        "matcens": 3,
+        "energy_centers": 3,
+        "mine_volume": 4639115.192614568,
+        "mine_volume_normalized": 1.0144792881914912,
+        "mine_volume_text": "1.0x",
+        "travel_distance": 7264.44204708684,
+        "travel_time_seconds": 145,
+        "travel_time_text": "2M:25S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 256,
+            "distance": 362.37917191106146,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 226,
+            "distance": 1309.7390221558492,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 496,
+            "distance": 1634.4149814647462,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 394,
+            "distance": 1359.11234716943
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 357,
+            "side": 2,
+            "wall": 44,
+            "distance": 177.68878617752003,
+            "trigger": 1,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 3,
+        "secret": false,
+        "level_name": "Water Pumping Plant",
+        "level_file": "nefar03.rdl",
+        "robots": 48,
+        "hostages": 4,
+        "secrets": 0,
+        "matcens": 3,
+        "energy_centers": 1,
+        "mine_volume": 6685460.310143299,
+        "mine_volume_normalized": 1.4619729700749708,
+        "mine_volume_text": "1.5x",
+        "travel_distance": 6631.323998697151,
+        "travel_time_seconds": 133,
+        "travel_time_text": "2M:13S",
+        "travel_targets_reached": 6,
+        "travel_targets_total": 6,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 165,
+            "distance": 415.62210215478353,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 322,
+            "distance": 788.5607303286663,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 556,
+            "distance": 1585.9850705325302,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 465,
+            "distance": 856.0950818332661
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 373,
+            "side": 2,
+            "wall": 66,
+            "distance": 166.18252602176182,
+            "trigger": 6,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 4,
+        "secret": false,
+        "level_name": "Base Dreena",
+        "level_file": "nefar04.rdl",
+        "robots": 48,
+        "hostages": 3,
+        "secrets": 7,
+        "matcens": 1,
+        "energy_centers": 3,
+        "mine_volume": 6305922.146153009,
+        "mine_volume_normalized": 1.378975762534329,
+        "mine_volume_text": "1.4x",
+        "travel_distance": 5872.108724212323,
+        "travel_time_seconds": 117,
+        "travel_time_text": "1M:57S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 166,
+            "distance": 1076.227184920911,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 294,
+            "distance": 1465.1637028812625,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 307,
+            "distance": 970.9599140075313,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 329,
+            "distance": 1108.876814170715
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 330,
+            "side": 5,
+            "wall": 61,
+            "distance": 106.50356564768151,
+            "trigger": 2,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 5,
+        "secret": false,
+        "level_name": "Fire Pit Hephaestus",
+        "level_file": "nefar05.rdl",
+        "robots": 55,
+        "hostages": 5,
+        "secrets": 4,
+        "matcens": 5,
+        "energy_centers": 3,
+        "mine_volume": 14375950.06963665,
+        "mine_volume_normalized": 3.1437252553976625,
+        "mine_volume_text": "3.1x",
+        "travel_distance": 6432.706516218523,
+        "travel_time_seconds": 129,
+        "travel_time_text": "2M:09S",
+        "travel_targets_reached": 7,
+        "travel_targets_total": 7,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 139
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 216,
+            "distance": 897.3450419451643,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 330,
+            "distance": 1234.6312166321097,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 421,
+            "distance": 901.1246508625121,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 0,
+            "distance": 1027.6777597144496
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 70,
+            "side": 1,
+            "wall": 4,
+            "distance": 186.6114467252238,
+            "trigger": 0,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 6,
+        "secret": false,
+        "level_name": "Hell Falcon Launch Bay",
+        "level_file": "nefar06.rdl",
+        "robots": 42,
+        "hostages": 0,
+        "secrets": 3,
+        "matcens": 1,
+        "energy_centers": 1,
+        "mine_volume": 8644763.819096342,
+        "mine_volume_normalized": 1.8904324384404323,
+        "mine_volume_text": "1.9x",
+        "travel_distance": 614.1410554970298,
+        "travel_time_seconds": 12,
+        "travel_time_text": "0M:12S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 270
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 232,
+            "distance": 524.1410554970298
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 230,
+            "side": 1,
+            "wall": 17,
+            "distance": 90,
+            "trigger": 1,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 7,
+        "secret": false,
+        "level_name": "Seraph Mine",
+        "level_file": "nefar07.rdl",
+        "robots": 68,
+        "hostages": 4,
+        "secrets": 4,
+        "matcens": 4,
+        "energy_centers": 3,
+        "mine_volume": 12338798.523960426,
+        "mine_volume_normalized": 2.6982420190068312,
+        "mine_volume_text": "2.7x",
+        "travel_distance": 12000.60407630748,
+        "travel_time_seconds": 240,
+        "travel_time_text": "4M:00S",
+        "travel_targets_reached": 6,
+        "travel_targets_total": 6,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 343,
+            "distance": 1879.3636146590443,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 452,
+            "distance": 1789.6126111461724,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 538,
+            "distance": 2891.131829898693,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 584,
+            "distance": 1887.8980130451073
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 593,
+            "side": 4,
+            "wall": 151,
+            "distance": 170.40091325211384,
+            "trigger": 1,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 8,
+        "secret": false,
+        "level_name": "Dragon Pit Outpost",
+        "level_file": "nefar08.rdl",
+        "robots": 43,
+        "hostages": 2,
+        "secrets": 4,
+        "matcens": 3,
+        "energy_centers": 2,
+        "mine_volume": 8580297.462307855,
+        "mine_volume_normalized": 1.8763349691964701,
+        "mine_volume_text": "1.9x",
+        "travel_distance": 5854.676733032817,
+        "travel_time_seconds": 117,
+        "travel_time_text": "1M:57S",
+        "travel_targets_reached": 4,
+        "travel_targets_total": 4,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 208,
+            "distance": 621.1122507945072,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 270,
+            "distance": 933.3423905252844,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 350,
+            "distance": 1025.2737922031984,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 515,
+            "distance": 1257.7477845591768
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 519,
+            "side": 0,
+            "wall": 77,
+            "distance": 236.77615355037483,
+            "trigger": 7,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 9,
+        "secret": false,
+        "level_name": "Glacier Road",
+        "level_file": "nefar09.rdl",
+        "robots": 43,
+        "hostages": 4,
+        "secrets": 0,
+        "matcens": 2,
+        "energy_centers": 3,
+        "mine_volume": 4518932.760380358,
+        "mine_volume_normalized": 0.9881978566589906,
+        "mine_volume_text": "0.99x",
+        "travel_distance": 4016.416699533184,
+        "travel_time_seconds": 80,
+        "travel_time_text": "1M:20S",
+        "travel_targets_reached": 6,
+        "travel_targets_total": 6,
+        "travel_key_detours": 2,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 56
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 177,
+            "distance": 599.1327727177461,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 608,
+            "distance": 1249.7892910273727,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 649,
+            "distance": 476.0614630984423
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 653,
+            "side": 4,
+            "wall": 28,
+            "distance": 206.51053998964946,
+            "trigger": 0,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 10,
+        "secret": false,
+        "level_name": "Mount Dawn",
+        "level_file": "nefar10.rdl",
+        "robots": 62,
+        "hostages": 0,
+        "secrets": 2,
+        "matcens": 4,
+        "energy_centers": 3,
+        "mine_volume": 10768480.284565045,
+        "mine_volume_normalized": 2.3548456462950536,
+        "mine_volume_text": "2.4x",
+        "travel_distance": 4912.498590913194,
+        "travel_time_seconds": 98,
+        "travel_time_text": "1M:38S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 38,
+            "distance": 247.49798463796813,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 102,
+            "distance": 728.9109274339613,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 608,
+            "distance": 1644.690599163171,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 536,
+            "distance": 1364.9127017347112
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 539,
+            "side": 1,
+            "wall": 53,
+            "distance": 261.59493386359424,
+            "trigger": 1,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 11,
+        "secret": false,
+        "level_name": "Frosticus Chamber",
+        "level_file": "nefar11.rdl",
+        "robots": 56,
+        "hostages": 3,
+        "secrets": 4,
+        "matcens": 6,
+        "energy_centers": 4,
+        "mine_volume": 9503655.44248739,
+        "mine_volume_normalized": 2.078254410207491,
+        "mine_volume_text": "2.1x",
+        "travel_distance": 6211.10736749677,
+        "travel_time_seconds": 124,
+        "travel_time_text": "2M:04S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 19
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 37,
+            "distance": 397.246777564818,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 152,
+            "distance": 757.7173744818357,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 304,
+            "distance": 1384.5444551447404,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 360,
+            "distance": 1362.0893607950638
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 362,
+            "side": 1,
+            "wall": 48,
+            "distance": 171.3140496626263,
+            "trigger": 7,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 12,
+        "secret": false,
+        "level_name": "Snow Fort Khione",
+        "level_file": "nefar12.rdl",
+        "robots": 56,
+        "hostages": 2,
+        "secrets": 3,
+        "matcens": 6,
+        "energy_centers": 2,
+        "mine_volume": 7380733.71792898,
+        "mine_volume_normalized": 1.6140149958801902,
+        "mine_volume_text": "1.6x",
+        "travel_distance": 10028.884679571367,
+        "travel_time_seconds": 201,
+        "travel_time_text": "3M:21S",
+        "travel_targets_reached": 4,
+        "travel_targets_total": 4,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 9
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 234,
+            "distance": 1002.0505758905093,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 428,
+            "distance": 1588.7096192647068,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 545,
+            "distance": 2082.09062392765,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 709,
+            "distance": 2185.1268581381437
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 603,
+            "side": 5,
+            "wall": 41,
+            "distance": 676.6267155695563,
+            "trigger": 3,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 13,
+        "secret": false,
+        "level_name": "High Security Complex Theta",
+        "level_file": "nefar13.rdl",
+        "robots": 38,
+        "hostages": 3,
+        "secrets": 7,
+        "matcens": 12,
+        "energy_centers": 2,
+        "mine_volume": 3081138.022368575,
+        "mine_volume_normalized": 0.6737816540379035,
+        "mine_volume_text": "0.67x",
+        "travel_distance": 3742.5608334583508,
+        "travel_time_seconds": 75,
+        "travel_time_text": "1M:15S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 69,
+            "distance": 641.2216444237697,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 119,
+            "distance": 545.4139238999206,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 246,
+            "distance": 427.4513365977511,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 303,
+            "distance": 819.0919850656334
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 305,
+            "side": 0,
+            "wall": 64,
+            "distance": 94.1739936068155,
+            "trigger": 12,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 14,
+        "secret": false,
+        "level_name": "Iron Sulfur Corridor",
+        "level_file": "nefar14.rdl",
+        "robots": 66,
+        "hostages": 3,
+        "secrets": 3,
+        "matcens": 5,
+        "energy_centers": 2,
+        "mine_volume": 5198883.750173433,
+        "mine_volume_normalized": 1.1368891840975779,
+        "mine_volume_text": "1.1x",
+        "travel_distance": 6393.531572514522,
+        "travel_time_seconds": 128,
+        "travel_time_text": "2M:08S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 29
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 101,
+            "distance": 838.5088866341783,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 198,
+            "distance": 1255.6678090436671,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 493,
+            "distance": 785.5247587913666,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 508,
+            "distance": 627.5526362786327
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 534,
+            "side": 3,
+            "wall": 61,
+            "distance": 327.9976023418121,
+            "trigger": 7,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 15,
+        "secret": false,
+        "level_name": "\"The Shadow Conduit\"",
+        "level_file": "nefar15.rdl",
+        "robots": 52,
+        "hostages": 2,
+        "secrets": 4,
+        "matcens": 8,
+        "energy_centers": 2,
+        "mine_volume": 8457573.473231,
+        "mine_volume_normalized": 1.8494977513405926,
+        "mine_volume_text": "1.8x",
+        "travel_distance": 1046.6060491631565,
+        "travel_time_seconds": 21,
+        "travel_time_text": "0M:21S",
+        "travel_targets_reached": 4,
+        "travel_targets_total": 4,
+        "travel_key_detours": 0,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 1
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 334,
+            "distance": 617.4525384716586
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 255,
+            "side": 1,
+            "wall": 26,
+            "distance": 82.00000000005821,
+            "trigger": 2,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": 16,
+        "secret": false,
+        "level_name": "Umbrin Nexus",
+        "level_file": "nefar16.rdl",
+        "robots": 45,
+        "hostages": 0,
+        "secrets": 3,
+        "matcens": 5,
+        "energy_centers": 3,
+        "mine_volume": 38704131.953337714,
+        "mine_volume_normalized": 8.46379936773297,
+        "mine_volume_text": "8.5x",
+        "travel_distance": 5227.556872665055,
+        "travel_time_seconds": 105,
+        "travel_time_text": "1M:45S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 582
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 305,
+            "distance": 1225.3793313827782,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 358,
+            "distance": 774.9354735314596,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 51,
+            "distance": 1001.2626115449305,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "label": "Boss",
+            "seg": 178,
+            "distance": 1216.9815772853512
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 54,
+            "side": 4,
+            "wall": 107,
+            "distance": 1142.6108074710603,
+            "trigger": 7,
+            "trigger_type": "unknown"
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": -1,
+        "secret": true,
+        "level_name": "Waste Containement 25",
+        "level_file": "nefars1.rdl",
+        "robots": 67,
+        "hostages": 0,
+        "secrets": 1,
+        "matcens": 3,
+        "energy_centers": 1,
+        "mine_volume": 5862334.703149285,
+        "mine_volume_normalized": 1.2819722920998131,
+        "mine_volume_text": "1.3x",
+        "travel_distance": 7342.925222803523,
+        "travel_time_seconds": 147,
+        "travel_time_text": "2M:27S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 224,
+            "distance": 773.173037727346,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 724,
+            "distance": 1215.2768077320661,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 358,
+            "distance": 1806.3852558062488,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 301,
+            "distance": 1041.0119222040753
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 231,
+            "side": 2,
+            "wall": 22,
+            "distance": 666.012257897228,
+            "trigger": 0,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": -2,
+        "secret": true,
+        "level_name": "Abandoned Facility E17",
+        "level_file": "nefars2.rdl",
+        "robots": 52,
+        "hostages": 3,
+        "secrets": 2,
+        "matcens": 3,
+        "energy_centers": 1,
+        "mine_volume": 14906991.6252238,
+        "mine_volume_normalized": 3.259853145511236,
+        "mine_volume_text": "3.3x",
+        "travel_distance": 5912.107750369814,
+        "travel_time_seconds": 118,
+        "travel_time_text": "1M:58S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 2,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 132
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 390,
+            "distance": 1072.7131503090707,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 721,
+            "distance": 1776.923069414871,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 583,
+            "distance": 1388.3120156764585
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 590,
+            "side": 3,
+            "wall": 74,
+            "distance": 145,
+            "trigger": 0,
+            "trigger_type": "unknown"
+          }
+        ]
+      },
+      {
+        "level_num": -3,
+        "secret": true,
+        "level_name": "Unknown Prison",
+        "level_file": "nefars3.rdl",
+        "robots": 55,
+        "hostages": 9,
+        "secrets": 3,
+        "matcens": 8,
+        "energy_centers": 3,
+        "mine_volume": 6445985.877560126,
+        "mine_volume_normalized": 1.4096048261897316,
+        "mine_volume_text": "1.4x",
+        "travel_distance": 6676.255718360873,
+        "travel_time_seconds": 134,
+        "travel_time_text": "2M:14S",
+        "travel_targets_reached": 11,
+        "travel_targets_total": 11,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 102,
+            "distance": 604.0188145160969,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 327,
+            "distance": 1133.3111617217626,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 306,
+            "distance": 898.8629375778993,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 454,
+            "distance": 841.9321449017388
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 412,
+            "side": 1,
+            "wall": 90,
+            "distance": 137.1654412191642,
+            "trigger": 5,
+            "trigger_type": "unknown"
+          }
+        ]
+      }
+    ],
+    "target_index": 0
+  }
+]

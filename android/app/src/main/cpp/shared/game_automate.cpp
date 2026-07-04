@@ -896,8 +896,7 @@ static bool mission_list_item_is_base_mission(const char *text)
 		return false;
 #ifdef DXX_BUILD_DESCENT_II
 	if (strncasecmp(text, "d1:", 3) == 0 ||
-	    strncasecmp(text, "d2:", 3) == 0 ||
-	    strncasecmp(text, "descent 2:", 10) == 0)
+	    strncasecmp(text, "d2:", 3) == 0)
 		return true;
 	if (icontains(text, "counterstrike"))
 		return true;

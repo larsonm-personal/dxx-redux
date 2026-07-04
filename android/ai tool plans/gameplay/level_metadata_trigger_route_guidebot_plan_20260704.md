@@ -21,7 +21,7 @@ Plan support for trigger-aware mission path analysis, metadata UI documentation,
 - [x] Extend Kotlin metadata models and add a per-level route detail UI.
 - [x] Preserve route steps in launcher automation JSON output.
 - [x] Regenerate focused KCXF2 committed mission ZIP regression baseline with route arrays.
-- [ ] Regenerate broader committed mission ZIP regression baselines under `game_data/mission_files/*.json` with route arrays. Partial: 46 of 106 non-tracklist JSON files now have route steps, 60 remain.
+- [ ] Regenerate broader committed mission ZIP regression baselines under `game_data/mission_files/*.json` with route arrays. Partial: 106 of 107 non-tracklist JSON files now have route steps. `U3AAH.json` remains open because metadata generation succeeds but the launch sanity step stalls after difficulty selection. `ulterior_v1.0.6b.7z` did not create a normal metadata JSON because archive import timed out.
 - [x] Add a live guidebot next-objective selector that can target trigger source walls.
 - [x] Add introspection and automation coverage for guidebot route objectives.
 - [x] Run scoped formatting, C tests, Kotlin compile, host builds, and a KCXF2 level 2 verification script.
@@ -66,7 +66,7 @@ Additional validation completed:
 
 ## Implementation Notes 2026-07-04 Broader Baseline Slice
 - `android/helpers/run_mission_zip_batch.ps1` now accepts multiple patterns and defaults to both `*.zip` and `*.7z`, so committed 7z mission archives can use the same metadata generation path.
-- Mission-list automation now separates command entries from stock base missions. D2 skips prefixed stock entries such as `D1:`, `D2:`, `Descent 2:`, and `Counterstrike`, while imported unprefixed D1 conversions can still be selected as custom missions.
+- Mission-list automation now separates command entries from stock base missions. D2 skips prefixed stock entries such as `D1:` and `D2:`, plus `Counterstrike`, while custom missions with descriptive names such as `Descent 2: Enemy Vignettes` remain selectable.
 - Added a sole-base fallback for mission-list automation. This keeps focused single-mission imports usable when the list legitimately contains only one selectable mission.
 - Generated new route-array baseline `game_data/mission_files/diehard.json` from `diehard.7z`.
 - Regenerated route arrays across four bounded `*.zip` chunks and one focused `Descent.zip` rerun. Current coverage is 46 of 106 non-tracklist mission JSON files with at least one `route_steps` array. The remaining 60 JSON files still need batch generation.
@@ -79,6 +79,26 @@ Additional validation completed:
 - Four bounded runs of `.\android\helpers\run_mission_zip_batch.ps1 -Pattern '*.zip' -MaxZips 12 -LargeZipIncludePatterns @() -TimeoutSeconds 900`
 - `cd android; .\gradlew.bat :app:assembleDebug` with JDK 21
 - `.\game_data\generate_game_data_index.ps1`
+
+## Implementation Notes 2026-07-04 Baseline Continuation
+- Continued broad mission ZIP generation from 46 of 106 existing non-tracklist JSON files with route arrays to 105 of 106.
+- Focused `tu.zip` rerun passed after the previous batch failure. Logcat showed the failed batch was an Android `levelmeta_d2` service process attach/start timeout, not a scanner timeout.
+- One bounded batch hit the outer tool timeout after updating `Tyrsis`, `Vela1`, `Vertigo Missions`, `Vesta`, and `Vignettes`; `U3AAH` timed out during launch sanity and `vignett2` exposed a mission selector bug.
+- Tightened D2 mission-list filtering so custom missions named like `Descent 2: Enemy Vignettes` are selectable. The automation still skips `D1:` and `D2:` prefixed stock entries and `Counterstrike`.
+- Focused `vignett2.zip` passed after the selector fix.
+- Regenerated the remaining existing normal ZIP baselines: `-MOON-`, `af_d1_beta`, `af-d2x`, `anachron`, `ascent`, `Bahagad`, `BelialSystemXL`, `bratmaze`, and `castaway_redux`.
+- `bratmaze.zip` initially lost the emulator during the group run. A fresh emulator/install resolved it and the focused rerun passed.
+- Added new route-array baseline `game_data/mission_files/nefarious.json` from `nefarious.7z`.
+- Final current coverage is 106 of 107 non-tracklist mission JSON files with route arrays. The remaining missing JSON is `U3AAH.json`; its temp metadata contains route arrays, but the batch does not copy it because the game launch sanity never reaches `automation_result.json`.
+- `ulterior_v1.0.6b.7z` remains open. The archive import step did not complete within 900 seconds, so no normal metadata JSON was created. `ewithin-versions.zip` remains intentionally skipped as the 892.7 MB oversized archive.
+
+Additional validation completed:
+- `.\android\gradlew.bat -p android :app:assembleDebug` with JDK 21
+- Focused rerun: `.\android\helpers\run_mission_zip_batch.ps1 -Pattern 'vignett2.zip' -Install -TimeoutSeconds 900`
+- Focused rerun: `.\android\helpers\run_mission_zip_batch.ps1 -Pattern 'U3AAH.zip' -Install -TimeoutSeconds 240` failed during launch sanity after metadata generation
+- Three focused groups covering the remaining ZIP baselines
+- Focused reruns: `bratmaze.zip`, `castaway_redux.zip`, `nefarious.7z`
+- Focused `ulterior_v1.0.6b.7z` attempt failed by import timeout
 
 ## Current Code Map
 - Shared metadata scanner:
