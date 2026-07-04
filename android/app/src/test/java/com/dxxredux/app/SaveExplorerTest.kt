@@ -178,6 +178,27 @@ class SaveExplorerTest {
         assertEquals("1:01:01", rows["Total Time"])
     }
 
+    @Test
+    fun coopNotLoadableStatusExplainsMultiplayerRestore() {
+        val coopSlot =
+            slot(
+                path = "/files/d2x-redux/Players/save_sets/coop/d2/coopsave.sg8",
+                relativePath = "d2x-redux/Players/save_sets/coop/d2/coopsave.sg8",
+                saveKind = "auto_progress",
+                saveTimeUnixSeconds = 1_700_000_100L,
+                slot = 8,
+                scope = "coop",
+                pilot = "coopsave",
+                loadable = false,
+                orphan = true,
+                orphanReason = "not_loadable_from_launcher",
+            )
+        val rows = saveExplorerDetailRows(coopSlot).associate { it.label to it.value }
+
+        assertEquals("Co-op save: use Multiplayer > Create Game > Restore from save", rows["Status"])
+        assertEquals("Co-op save: use Multiplayer > Create Game > Restore from save", saveExplorerStatusMessage(coopSlot))
+    }
+
     private fun slot(
         path: String,
         relativePath: String,
@@ -189,6 +210,8 @@ class SaveExplorerTest {
         loadable: Boolean = true,
         orphan: Boolean = false,
         orphanReason: String = "",
+        scope: String = "single",
+        pilot: String = "test",
         missionKey: String = "d2",
         missionName: String = "Counterstrike!",
         levelSeconds: Long = 120L,
@@ -197,8 +220,8 @@ class SaveExplorerTest {
         path = path,
         relativePath = relativePath,
         game = "d2",
-        scope = "single",
-        pilot = "test",
+        scope = scope,
+        pilot = pilot,
         missionKey = missionKey,
         saveKind = saveKind,
         saveTimeUnixSeconds = saveTimeUnixSeconds,

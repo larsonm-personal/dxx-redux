@@ -263,6 +263,19 @@ function Compare-VersionValues($left, $right) {
     return $null
 }
 
+function Test-InstallSyncNeeded($installedValue, $targetValue) {
+    if (-not $targetValue -or $targetValue -eq "???") {
+        return $false
+    }
+    if (-not $installedValue) {
+        return $true
+    }
+
+    $installedComparison = Compare-VersionValues $installedValue $targetValue
+    return (($null -eq $installedComparison -and $installedValue -ne $targetValue) -or
+        ($null -ne $installedComparison -and $installedComparison -ne 0))
+}
+
 function Select-LatestVersion($versions, [switch]$IncludePrerelease) {
     $uniqueVersions = $versions | Where-Object { $_ } | Sort-Object -Unique
     if (-not $IncludePrerelease) {
@@ -1462,15 +1475,7 @@ foreach ($dep in $deps) {
 
     $installNeedsSync = $false
     if ($dep.ContainsKey("InstalledVersionCmdKey")) {
-        if ($installedValue) {
-            $installedComparison = Compare-VersionValues $installedValue $currentValue
-            if (($null -eq $installedComparison -and $installedValue -ne $currentValue) -or
-                ($null -ne $installedComparison -and $installedComparison -ne 0)) {
-                $installNeedsSync = $true
-            }
-        } else {
-            $installNeedsSync = $true
-        }
+        $installNeedsSync = Test-InstallSyncNeeded $installedValue $currentValue
     }
     if ($installNeedsSync -and -not $dep.SuppressInstallSync) {
         if ($dep.ContainsKey("InstallCmdKey")) {
@@ -1566,6 +1571,38 @@ function Get-InstallPriority($depName) {
         "Android NDK" { return 3 }
         default { return 100 }
     }
+}
+
+$targetInstallSelections = @()
+$installAllSelected = (-not [string]::IsNullOrWhiteSpace($installInput)) -and (
+    $installInput.Trim().ToLowerInvariant() -in @("a", "all")
+)
+if ($installAllSelected -and $selectedTarget.Count -gt 0) {
+    foreach ($item in $selectedTarget) {
+        $dep = $item.Dep
+        if ($dep.SuppressInstallSync -or
+            -not $dep.ContainsKey("InstallCmdKey") -or
+            -not $dep.ContainsKey("InstalledVersionCmdKey")) {
+            continue
+        }
+
+        $installedValue = if ($dep.ContainsKey("Installed")) { $dep.Installed } else { $null }
+        if (-not (Test-InstallSyncNeeded $installedValue $dep.Latest)) {
+            continue
+        }
+
+        $alreadySelected = $selectedInstall | Where-Object { $_.Dep.Name -eq $dep.Name } | Select-Object -First 1
+        if ($alreadySelected) {
+            continue
+        }
+
+        $targetInstallSelections += @{ Index = 100000 + [int]$item.Index; Dep = $dep; FromTargetUpdate = $true }
+    }
+}
+if ($targetInstallSelections.Count -gt 0) {
+    $selectedInstall = @($selectedInstall + $targetInstallSelections)
+    $targetInstallNames = ($targetInstallSelections | ForEach-Object { $_.Dep.Name }) -join ', '
+    Write-Host ("Install sync 'a' also includes selected target updates: {0}" -f $targetInstallNames)
 }
 
 if ($selectedInstall.Count -gt 0) {

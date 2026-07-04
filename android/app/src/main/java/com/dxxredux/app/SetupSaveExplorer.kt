@@ -491,7 +491,7 @@ private fun SaveExplorerSlotRow(
                     )
                     if (slot?.orphan == true) {
                         Text(
-                            text = slot.orphanReason.ifBlank { "orphaned" },
+                            text = saveExplorerStatusMessage(slot),
                             fontSize = 8.sp,
                             color = MaterialTheme.colorScheme.error,
                             maxLines = 1,
@@ -744,10 +744,31 @@ internal fun saveExplorerDetailRows(slot: SaveExplorerBridge.SaveExplorerSlot): 
         add(SaveExplorerDetailRow("Size", saveExplorerSize(slot.sizeBytes)))
         add(SaveExplorerDetailRow("Metadata", if (slot.metadataBacked) "Present" else "Missing or incompatible"))
         if (slot.orphan) {
-            add(SaveExplorerDetailRow("Status", slot.orphanReason.ifBlank { "orphaned" }))
+            add(SaveExplorerDetailRow("Status", saveExplorerStatusMessage(slot)))
         }
         add(SaveExplorerDetailRow("Path", slot.relativePath.ifBlank { slot.path }))
     }
+
+internal fun saveExplorerStatusMessage(slot: SaveExplorerBridge.SaveExplorerSlot): String {
+    val reason = slot.orphanReason.ifBlank { "orphaned" }
+    return when (reason) {
+        "not_loadable_from_launcher" -> {
+            if (slot.scope == "coop") {
+                "Co-op save: use Multiplayer > Create Game > Restore from save"
+            } else {
+                "Not loadable directly from Save Explorer"
+            }
+        }
+
+        "metadata_footer_missing" -> {
+            "Metadata missing or incompatible"
+        }
+
+        else -> {
+            reason
+        }
+    }
+}
 
 private fun saveExplorerDetailTitle(slot: SaveExplorerBridge.SaveExplorerSlot): String =
     "${slot.description.ifBlank { "Save" }} | ${saveExplorerMissionSetLabel(slot)}"
