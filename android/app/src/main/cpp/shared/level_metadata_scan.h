@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #define LEVEL_METADATA_MAX_SEGMENTS                         9000
+#define LEVEL_METADATA_MAX_WALLS                            254
 #define LEVEL_METADATA_MAX_SIDES                            6
 #define LEVEL_METADATA_MAX_TARGETS                          512
 #define LEVEL_METADATA_MAX_ROUTE_STEPS                      96
@@ -68,6 +69,8 @@ typedef struct level_metadata_scan_view {
 	int wall_type_door;
 	int wall_type_illusion;
 	int wall_type_open;
+	int wall_flag_door_locked;
+	int wall_clip_hidden;
 	int wall_key_none;
 	int wall_key_blue;
 	int wall_key_red;
@@ -95,7 +98,9 @@ typedef struct level_metadata_scan_view {
 	int (*wall_segment)(void *user, int wall_num);
 	int (*wall_side)(void *user, int wall_num);
 	int (*wall_type)(void *user, int wall_num);
+	int (*wall_flags)(void *user, int wall_num);
 	int (*wall_keys)(void *user, int wall_num);
+	int (*wall_clip_flags)(void *user, int wall_num);
 	int (*wall_trigger)(void *user, int wall_num);
 	int (*segment_special)(void *user, int seg);
 	int (*segment_center)(void *user, int seg, int xyz[3]);

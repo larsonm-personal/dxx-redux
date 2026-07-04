@@ -13,11 +13,14 @@
 #define TEST_WALL_DOOR 2
 #define TEST_WALL_ILLUSION 3
 #define TEST_WALL_CLOSED 5
+#define TEST_WALL_FLAG_DOOR_LOCKED 8
+#define TEST_WALL_CLIP_HIDDEN 8
 #define TEST_KEY_NONE 1
 #define TEST_KEY_BLUE 2
 #define TEST_TRIGGER_OPEN_WALL 9
 #define TEST_TRIGGER_EXIT 3
 #define TEST_OBJ_POWERUP 1
+#define TEST_OBJ_CONTROL_CENTER 2
 #define TEST_POWERUP_BLUE_KEY 10
 
 static int test_children[TEST_SEGMENTS][TEST_SIDES] = {
@@ -27,7 +30,9 @@ static int test_children[TEST_SEGMENTS][TEST_SIDES] = {
 };
 static int test_wall_nums[TEST_SEGMENTS][TEST_SIDES];
 static int test_wall_type[TEST_WALLS];
+static int test_wall_flags[TEST_WALLS];
 static int test_wall_key[TEST_WALLS];
+static int test_wall_clip_flags[TEST_WALLS];
 static int test_wall_trigger[TEST_WALLS];
 static int test_wall_seg[TEST_WALLS];
 static int test_wall_sides[TEST_WALLS];
@@ -53,7 +58,9 @@ static void test_reset(void)
 			test_wall_nums[seg][side] = -1;
 	for (wall = 0; wall < TEST_WALLS; ++wall) {
 		test_wall_type[wall] = TEST_WALL_OPEN;
+		test_wall_flags[wall] = 0;
 		test_wall_key[wall] = TEST_KEY_NONE;
+		test_wall_clip_flags[wall] = 0;
 		test_wall_trigger[wall] = -1;
 		test_wall_seg[wall] = -1;
 		test_wall_sides[wall] = -1;
@@ -125,12 +132,28 @@ static int test_wall_type_at(void *user, int wall_num)
 	return test_wall_type[wall_num];
 }
 
+static int test_wall_flags_at(void *user, int wall_num)
+{
+	(void) user;
+	if (wall_num < 0 || wall_num >= TEST_WALLS)
+		return 0;
+	return test_wall_flags[wall_num];
+}
+
 static int test_wall_keys(void *user, int wall_num)
 {
 	(void) user;
 	if (wall_num < 0 || wall_num >= TEST_WALLS)
 		return TEST_KEY_NONE;
 	return test_wall_key[wall_num];
+}
+
+static int test_wall_clip_flags_at(void *user, int wall_num)
+{
+	(void) user;
+	if (wall_num < 0 || wall_num >= TEST_WALLS)
+		return 0;
+	return test_wall_clip_flags[wall_num];
 }
 
 static int test_wall_trigger_at(void *user, int wall_num)
@@ -217,6 +240,12 @@ static int test_side_has_exit_trigger(void *user, int seg, int side)
 	return seg == 2 && side == 0;
 }
 
+static int test_start_side_has_exit_trigger(void *user, int seg, int side)
+{
+	(void) user;
+	return seg == 0 && side == 5;
+}
+
 static int test_triggered_side_opener_count(void *user, int seg, int side)
 {
 	(void) user;
@@ -263,6 +292,14 @@ static int test_trigger_link_side(void *user, int trigger_num, int link_index)
 	return test_trigger_link_sides[0][link_index];
 }
 
+static int test_target_visible_from_segment(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3])
+{
+	(void) user;
+	(void) from_pos;
+	(void) target_pos;
+	return seg == 0 && target_seg == 1;
+}
+
 static level_metadata_scan_view test_view(void)
 {
 	level_metadata_scan_view view;
@@ -276,9 +313,12 @@ static level_metadata_scan_view test_view(void)
 	view.wall_type_door = TEST_WALL_DOOR;
 	view.wall_type_illusion = TEST_WALL_ILLUSION;
 	view.wall_type_open = TEST_WALL_OPEN;
+	view.wall_flag_door_locked = TEST_WALL_FLAG_DOOR_LOCKED;
 	view.wall_key_none = TEST_KEY_NONE;
 	view.wall_key_blue = TEST_KEY_BLUE;
+	view.wall_clip_hidden = TEST_WALL_CLIP_HIDDEN;
 	view.obj_type_powerup = TEST_OBJ_POWERUP;
+	view.obj_type_control_center = TEST_OBJ_CONTROL_CENTER;
 	view.powerup_key_blue = TEST_POWERUP_BLUE_KEY;
 	view.trigger_type_open_wall = TEST_TRIGGER_OPEN_WALL;
 	view.trigger_type_exit = TEST_TRIGGER_EXIT;
@@ -288,7 +328,9 @@ static level_metadata_scan_view test_view(void)
 	view.wall_segment = test_wall_segment;
 	view.wall_side = test_wall_side;
 	view.wall_type = test_wall_type_at;
+	view.wall_flags = test_wall_flags_at;
 	view.wall_keys = test_wall_keys;
+	view.wall_clip_flags = test_wall_clip_flags_at;
 	view.wall_trigger = test_wall_trigger_at;
 	view.segment_special = test_segment_special;
 	view.segment_center = test_segment_center;
@@ -440,6 +482,106 @@ static int test_route_trigger_step(void)
 	return failures;
 }
 
+static int test_route_shootable_trigger_step(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_nums[1][2] = 2;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_type[1] = TEST_WALL_CLOSED;
+	test_wall_type[2] = TEST_WALL_OPEN;
+	test_wall_trigger[2] = 0;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_wall_seg[2] = 1;
+	test_wall_sides[2] = 2;
+	test_trigger_link_count[0] = 2;
+	test_trigger_link_seg[0][0] = 0;
+	test_trigger_link_sides[0][0] = 0;
+	test_trigger_link_seg[0][1] = 1;
+	test_trigger_link_sides[0][1] = 1;
+	view.triggered_side_opener_count = test_triggered_side_opener_count;
+	view.triggered_side_opener_wall_num = test_triggered_side_opener_wall_num;
+	view.trigger_type = test_trigger_type_at;
+	view.trigger_link_count = test_trigger_link_count_at;
+	view.trigger_link_segment = test_trigger_link_segment;
+	view.trigger_link_side = test_trigger_link_side;
+	view.target_visible_from_segment = test_target_visible_from_segment;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("shootable trigger route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("shootable trigger route steps", 3, state.route_step_count);
+	failures += expect_string("shootable trigger route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_int("shootable trigger route segment", 0, state.route_steps[1].seg);
+	failures += expect_int("shootable trigger route wall", 2, state.route_steps[1].wall_num);
+	failures += expect_int("shootable trigger route trigger", 0, state.route_steps[1].trigger_num);
+	failures += expect_string("shootable trigger route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
+static int test_route_hidden_door_step(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_type[0] = TEST_WALL_DOOR;
+	test_wall_type[1] = TEST_WALL_DOOR;
+	test_wall_clip_flags[0] = TEST_WALL_CLIP_HIDDEN;
+	test_wall_clip_flags[1] = TEST_WALL_CLIP_HIDDEN;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("hidden door route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("hidden door route steps", 3, state.route_step_count);
+	failures += expect_string("hidden door route step", "hidden_door", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_int("hidden door route segment", 0, state.route_steps[1].seg);
+	failures += expect_int("hidden door route side", 0, state.route_steps[1].side);
+	failures += expect_int("hidden door route wall", 0, state.route_steps[1].wall_num);
+	failures += expect_int("hidden door route link count", 2, state.route_steps[1].opened_link_count);
+	failures += expect_string("hidden door route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
+static int test_route_visible_reactor_step(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_type[1] = TEST_WALL_CLOSED;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_object_count_value = 1;
+	test_object_type[0] = TEST_OBJ_CONTROL_CENTER;
+	test_object_seg[0] = 1;
+	view.side_has_exit_trigger = test_start_side_has_exit_trigger;
+	view.target_visible_from_segment = test_target_visible_from_segment;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("visible reactor route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("visible reactor route steps", 3, state.route_step_count);
+	failures += expect_string("visible reactor route step", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_string("visible reactor route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
 int main(void)
 {
 	int failures = 0;
@@ -448,6 +590,9 @@ int main(void)
 	failures += test_reactorless_missing_exit();
 	failures += test_route_key_step();
 	failures += test_route_trigger_step();
+	failures += test_route_shootable_trigger_step();
+	failures += test_route_hidden_door_step();
+	failures += test_route_visible_reactor_step();
 	if (failures)
 		return 1;
 

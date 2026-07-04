@@ -15,7 +15,8 @@ enum level_metadata_travel_status {
 enum metadata_route_block_kind {
 	METADATA_ROUTE_BLOCK_NONE = 0,
 	METADATA_ROUTE_BLOCK_KEY = 1,
-	METADATA_ROUTE_BLOCK_TRIGGER = 2
+	METADATA_ROUTE_BLOCK_TRIGGER = 2,
+	METADATA_ROUTE_BLOCK_HIDDEN_DOOR = 3
 };
 
 typedef struct metadata_target {
@@ -49,6 +50,9 @@ typedef struct metadata_route_block {
 typedef struct metadata_route_path {
 	double distance;
 	metadata_route_block first_block;
+	int terminal_seg;
+	int terminal_pos[3];
+	int terminal_pos_valid;
 } metadata_route_path;
 
 typedef struct metadata_route_context {
@@ -59,6 +63,9 @@ typedef struct metadata_route_context {
 	double pending_distance;
 	unsigned char fired_triggers[256];
 	unsigned char trigger_in_progress[256];
+	unsigned char avoided_triggers[256];
+	unsigned char opened_hidden_walls[LEVEL_METADATA_MAX_WALLS];
+	unsigned char hidden_door_in_progress[LEVEL_METADATA_MAX_WALLS];
 } metadata_route_context;
 
 static int component_id[LEVEL_METADATA_MAX_SEGMENTS];
@@ -273,6 +280,35 @@ static int wall_key_allowed(const level_metadata_scan_view *view, int wall_keys,
 	if ((wall_keys & view->wall_key_gold) != 0)
 		required |= key_bit_for_index(2);
 	return required == 0 || (required & key_mask) != 0;
+}
+
+static int metadata_wall_flags(const level_metadata_scan_view *view, int wall_num)
+{
+	if (!valid_wall(view, wall_num) || !view->wall_flags)
+		return 0;
+	return view->wall_flags(view->user, wall_num);
+}
+
+static int metadata_wall_clip_flags(const level_metadata_scan_view *view, int wall_num)
+{
+	if (!valid_wall(view, wall_num) || !view->wall_clip_flags)
+		return 0;
+	return view->wall_clip_flags(view->user, wall_num);
+}
+
+static int metadata_wall_is_hidden_door(const level_metadata_scan_view *view, int wall_num)
+{
+	if (!valid_wall(view, wall_num) ||
+	    !view->wall_type ||
+	    !view->wall_keys ||
+	    !view->wall_clip_flags ||
+	    view->wall_type(view->user, wall_num) != view->wall_type_door)
+		return 0;
+	if ((metadata_wall_clip_flags(view, wall_num) & view->wall_clip_hidden) == 0)
+		return 0;
+	if ((metadata_wall_flags(view, wall_num) & view->wall_flag_door_locked) != 0)
+		return 0;
+	return view->wall_keys(view->user, wall_num) == view->wall_key_none;
 }
 
 static int powerup_key_index(const level_metadata_scan_view *view, int id)
@@ -1177,6 +1213,16 @@ static void metadata_route_clear_block(metadata_route_block *block)
 	block->trigger_type = -1;
 }
 
+static void metadata_route_clear_path(metadata_route_path *path)
+{
+	if (!path)
+		return;
+	path->distance = DBL_MAX;
+	metadata_route_clear_block(&path->first_block);
+	path->terminal_seg = -1;
+	path->terminal_pos_valid = 0;
+}
+
 static int metadata_route_trigger_valid(int trigger_num)
 {
 	return trigger_num >= 0 && trigger_num < (int) sizeof(((metadata_route_context *) 0)->fired_triggers);
@@ -1210,6 +1256,47 @@ static const char *metadata_route_trigger_type_name(const level_metadata_scan_vi
 	return "unknown";
 }
 
+static int metadata_route_source_wall_block(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int seg,
+    int side,
+    int include_fired,
+    int source_wall,
+    metadata_route_block *block)
+{
+	int trigger_num;
+	int trigger_type;
+
+	if (!view->wall_trigger ||
+	    !view->wall_segment ||
+	    !view->wall_side ||
+	    !view->trigger_type ||
+	    !valid_wall(view, source_wall))
+		return 0;
+	trigger_num = view->wall_trigger(view->user, source_wall);
+	if (!metadata_route_trigger_valid(trigger_num))
+		return 0;
+	trigger_type = view->trigger_type(view->user, trigger_num);
+	if (!metadata_route_trigger_is_progress(view, trigger_type))
+		return 0;
+	if (!include_fired && route->fired_triggers[trigger_num])
+		return 0;
+	if (block) {
+		metadata_route_clear_block(block);
+		block->kind = METADATA_ROUTE_BLOCK_TRIGGER;
+		block->seg = seg;
+		block->side = side;
+		block->wall_num = view->wall_num ? view->wall_num(view->user, seg, side) : -1;
+		block->source_wall = source_wall;
+		block->source_seg = view->wall_segment(view->user, source_wall);
+		block->source_side = view->wall_side(view->user, source_wall);
+		block->trigger_num = trigger_num;
+		block->trigger_type = trigger_type;
+	}
+	return 1;
+}
+
 static int metadata_route_side_trigger_source(
     const level_metadata_scan_view *view,
     const metadata_route_context *route,
@@ -1234,31 +1321,8 @@ static int metadata_route_side_trigger_source(
 	count = view->triggered_side_opener_count(view->user, seg, side);
 	for (index = 0; index < count; ++index) {
 		int source_wall = view->triggered_side_opener_wall_num(view->user, seg, side, index);
-		int trigger_num;
-		int trigger_type;
-		if (!valid_wall(view, source_wall))
-			continue;
-		trigger_num = view->wall_trigger(view->user, source_wall);
-		if (!metadata_route_trigger_valid(trigger_num))
-			continue;
-		trigger_type = view->trigger_type(view->user, trigger_num);
-		if (!metadata_route_trigger_is_progress(view, trigger_type))
-			continue;
-		if (!include_fired && route->fired_triggers[trigger_num])
-			continue;
-		if (block) {
-			metadata_route_clear_block(block);
-			block->kind = METADATA_ROUTE_BLOCK_TRIGGER;
-			block->seg = seg;
-			block->side = side;
-			block->wall_num = view->wall_num ? view->wall_num(view->user, seg, side) : -1;
-			block->source_wall = source_wall;
-			block->source_seg = view->wall_segment(view->user, source_wall);
-			block->source_side = view->wall_side(view->user, source_wall);
-			block->trigger_num = trigger_num;
-			block->trigger_type = trigger_type;
-		}
-		return 1;
+		if (metadata_route_source_wall_block(view, route, seg, side, include_fired, source_wall, block))
+			return 1;
 	}
 	return 0;
 }
@@ -1334,17 +1398,32 @@ static int metadata_route_edge_passable(
 		return 1;
 	wall_type = view->wall_type(view->user, wall_num);
 	wall_keys = view->wall_keys(view->user, wall_num);
+	if (metadata_wall_is_hidden_door(view, wall_num)) {
+		if (route->opened_hidden_walls[wall_num])
+			return 1;
+		if (block) {
+			metadata_route_clear_block(block);
+			block->kind = METADATA_ROUTE_BLOCK_HIDDEN_DOOR;
+			block->seg = seg;
+			block->side = side;
+			block->wall_num = wall_num;
+		}
+		return optimistic;
+	}
 	if (wall_type == view->wall_type_open ||
 	    wall_type == view->wall_type_blastable ||
 	    wall_type == view->wall_type_illusion)
 		return 1;
-	if (wall_type == view->wall_type_door && wall_key_allowed(view, wall_keys, route->key_mask))
-		return 1;
 	if (metadata_route_edge_trigger_blocker(view, route, seg, side, child, &trigger_block)) {
+		if (metadata_route_trigger_valid(trigger_block.trigger_num) &&
+		    route->avoided_triggers[trigger_block.trigger_num])
+			return 0;
 		if (block)
 			*block = trigger_block;
 		return optimistic;
 	}
+	if (wall_type == view->wall_type_door && wall_key_allowed(view, wall_keys, route->key_mask))
+		return 1;
 	if (wall_type == view->wall_type_door && !wall_key_allowed(view, wall_keys, route->key_mask)) {
 		int key_index = key_index_for_wall_key(view, wall_keys);
 		if (key_index >= 0 && block) {
@@ -1371,10 +1450,7 @@ static int metadata_route_find_path(
 	int heap_size = 0;
 	int seg;
 
-	if (path) {
-		path->distance = DBL_MAX;
-		metadata_route_clear_block(&path->first_block);
-	}
+	metadata_route_clear_path(path);
 	if (!valid_segment(view, route->current_seg) ||
 	    !valid_segment(view, goal_seg) ||
 	    !segment_center_valid[route->current_seg] ||
@@ -1444,8 +1520,172 @@ static int metadata_route_find_path(
 				break;
 			}
 		}
+		path->terminal_seg = goal_seg;
+		if (goal_pos)
+			copy_pos(path->terminal_pos, goal_pos);
+		else
+			copy_pos(path->terminal_pos, segment_centers[goal_seg]);
+		path->terminal_pos_valid = 1;
 	}
 	return 1;
+}
+
+static int metadata_route_find_visible_path(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    const metadata_target *target,
+    metadata_route_path *path)
+{
+	int heap_size = 0;
+	int seg;
+
+	metadata_route_clear_path(path);
+	if (!view->target_visible_from_segment ||
+	    !route ||
+	    !valid_segment(view, route->current_seg) ||
+	    !target ||
+	    !valid_segment(view, target->seg) ||
+	    !segment_center_valid[route->current_seg])
+		return 0;
+	for (seg = 0; seg < view->num_segments; ++seg) {
+		route_distance[seg] = DBL_MAX;
+		route_parent_seg[seg] = -1;
+		route_parent_side[seg] = -1;
+		route_closed[seg] = 0;
+		route_heap_pos[seg] = 0;
+	}
+	route_distance[route->current_seg] = point_distance(route->current_pos, segment_centers[route->current_seg]);
+	heap_push(&heap_size, route->current_seg);
+	while (heap_size > 0) {
+		int cur = heap_pop(&heap_size);
+		int side;
+		const int *preferred_pos = cur == route->current_seg ? route->current_pos : NULL;
+		int visible_pos[3];
+		double visible_extra_distance = 0.0;
+
+		if (segment_target_visible(view, cur, preferred_pos, target, visible_pos, &visible_extra_distance)) {
+			if (path) {
+				path->distance = route_distance[cur] + visible_extra_distance;
+				path->terminal_seg = cur;
+				copy_pos(path->terminal_pos, visible_pos);
+				path->terminal_pos_valid = 1;
+			}
+			return 1;
+		}
+		route_closed[cur] = 1;
+		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			int child = view->segment_child(view->user, cur, side);
+			double step;
+			double next_distance;
+			if (!valid_segment(view, child) || route_closed[child])
+				continue;
+			if (!metadata_route_edge_passable(view, route, cur, side, 0, NULL))
+				continue;
+			step = edge_distance(view, cur, child);
+			if (step == DBL_MAX)
+				continue;
+			next_distance = route_distance[cur] + step;
+			if (next_distance >= route_distance[child])
+				continue;
+			route_distance[child] = next_distance;
+			route_parent_seg[child] = cur;
+			route_parent_side[child] = side;
+			if (route_heap_pos[child])
+				heap_decrease(child);
+			else
+				heap_push(&heap_size, child);
+		}
+	}
+	return 0;
+}
+
+static int metadata_route_trigger_source_pos(
+    const level_metadata_scan_view *view,
+    const metadata_route_block *block,
+    int pos[3])
+{
+	if (!block || !valid_segment(view, block->source_seg))
+		return 0;
+	if (side_center(view, block->source_seg, block->source_side, pos))
+		return 1;
+	if (segment_center_valid[block->source_seg]) {
+		copy_pos(pos, segment_centers[block->source_seg]);
+		return 1;
+	}
+	return 0;
+}
+
+static int metadata_route_try_trigger_firing_path(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    const metadata_route_block *candidate,
+    metadata_route_path *path)
+{
+	metadata_target target;
+	int pos[3];
+
+	if (!candidate ||
+	    !metadata_route_trigger_valid(candidate->trigger_num) ||
+	    route->fired_triggers[candidate->trigger_num] ||
+	    route->trigger_in_progress[candidate->trigger_num] ||
+	    !metadata_route_trigger_source_pos(view, candidate, pos))
+		return 0;
+	target.seg = candidate->source_seg;
+	copy_pos(target.pos, pos);
+	target.visited = 0;
+	return metadata_route_find_path(view, route, candidate->source_seg, pos, 0, path) ||
+	       metadata_route_find_visible_path(view, route, &target, path);
+}
+
+static int metadata_route_consider_trigger_firing_path(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    const metadata_route_block *candidate,
+    metadata_route_block *best_block,
+    metadata_route_path *best_path)
+{
+	metadata_route_path candidate_path;
+
+	if (!metadata_route_try_trigger_firing_path(view, route, candidate, &candidate_path))
+		return 0;
+	if (best_path->terminal_seg >= 0 && candidate_path.distance >= best_path->distance)
+		return 0;
+	*best_block = *candidate;
+	*best_path = candidate_path;
+	return 1;
+}
+
+static int metadata_route_find_trigger_firing_path(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    const metadata_route_block *block,
+    metadata_route_block *best_block,
+    metadata_route_path *best_path)
+{
+	int count;
+	int index;
+	int found = 0;
+
+	if (!block || !best_block || !best_path)
+		return 0;
+	metadata_route_clear_path(best_path);
+	found |= metadata_route_consider_trigger_firing_path(view, route, block, best_block, best_path);
+	if (!view->triggered_side_opener_count ||
+	    !view->triggered_side_opener_wall_num ||
+	    !valid_segment(view, block->seg) ||
+	    block->side < 0 ||
+	    block->side >= LEVEL_METADATA_MAX_SIDES)
+		return found;
+	count = view->triggered_side_opener_count(view->user, block->seg, block->side);
+	for (index = 0; index < count; ++index) {
+		metadata_route_block candidate;
+		int source_wall = view->triggered_side_opener_wall_num(view->user, block->seg, block->side, index);
+		if (!metadata_route_source_wall_block(view, route, block->seg, block->side, 0, source_wall, &candidate))
+			continue;
+		if (metadata_route_consider_trigger_firing_path(view, route, &candidate, best_block, best_path))
+			found = 1;
+	}
+	return found;
 }
 
 static void metadata_route_set_problem(level_metadata_state *state, const char *problem)
@@ -1453,6 +1693,13 @@ static void metadata_route_set_problem(level_metadata_state *state, const char *
 	if (!state || state->route_problem[0] || !problem)
 		return;
 	snprintf(state->route_problem, sizeof(state->route_problem), "%s", problem);
+}
+
+static int metadata_route_problem_is_avoidable_trigger_dependency(const char *problem)
+{
+	return problem &&
+	       (!strncmp(problem, "trigger route dependency loop", 29) ||
+	        !strcmp(problem, "trigger source missing"));
 }
 
 static level_metadata_route_step *metadata_route_append_step(
@@ -1546,6 +1793,125 @@ static int metadata_route_move_to_target(
     const int goal_pos[3],
     int depth);
 
+static int metadata_route_reverse_wall_num(const level_metadata_scan_view *view, int seg, int side)
+{
+	int child;
+	int reverse_side;
+
+	if (!view->segment_child || !view->reverse_side || !view->wall_num)
+		return -1;
+	child = view->segment_child(view->user, seg, side);
+	if (!valid_segment(view, child))
+		return -1;
+	reverse_side = view->reverse_side(view->user, seg, child);
+	if (reverse_side < 0 || reverse_side >= LEVEL_METADATA_MAX_SIDES)
+		return -1;
+	return view->wall_num(view->user, child, reverse_side);
+}
+
+static void metadata_route_set_hidden_door_state(
+    const level_metadata_scan_view *view,
+    const metadata_route_block *block,
+    unsigned char state[LEVEL_METADATA_MAX_WALLS],
+    unsigned char value)
+{
+	int reverse_wall;
+
+	if (!block || !state)
+		return;
+	if (valid_wall(view, block->wall_num))
+		state[block->wall_num] = value;
+	reverse_wall = metadata_route_reverse_wall_num(view, block->seg, block->side);
+	if (valid_wall(view, reverse_wall))
+		state[reverse_wall] = value;
+}
+
+static int metadata_route_hidden_door_in_progress(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    const metadata_route_block *block)
+{
+	int reverse_wall;
+
+	if (!route || !block)
+		return 0;
+	if (valid_wall(view, block->wall_num) && route->hidden_door_in_progress[block->wall_num])
+		return 1;
+	reverse_wall = metadata_route_reverse_wall_num(view, block->seg, block->side);
+	return valid_wall(view, reverse_wall) && route->hidden_door_in_progress[reverse_wall];
+}
+
+static void metadata_route_add_hidden_door_link(
+    level_metadata_route_step *step,
+    int seg,
+    int side,
+    int wall_num)
+{
+	int out;
+
+	if (!step ||
+	    step->opened_link_count >= LEVEL_METADATA_MAX_ROUTE_LINKS)
+		return;
+	out = step->opened_link_count++;
+	step->opened_link_seg[out] = seg;
+	step->opened_link_side[out] = side;
+	step->opened_link_wall[out] = wall_num;
+}
+
+static int metadata_route_open_hidden_door(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    const metadata_route_block *block,
+    int depth)
+{
+	level_metadata_route_step *step;
+	int pos[3];
+	int reverse_wall;
+	int child;
+	int reverse_side;
+
+	if (!block || block->kind != METADATA_ROUTE_BLOCK_HIDDEN_DOOR || !valid_wall(view, block->wall_num)) {
+		metadata_route_set_problem(state, "unknown hidden door route dependency");
+		return 0;
+	}
+	if (route->opened_hidden_walls[block->wall_num])
+		return 1;
+	if (metadata_route_hidden_door_in_progress(view, route, block)) {
+		metadata_route_set_problem(state, "hidden door route dependency loop");
+		return 0;
+	}
+	if (!side_center(view, block->seg, block->side, pos)) {
+		if (!valid_segment(view, block->seg) || !segment_center_valid[block->seg]) {
+			metadata_route_set_problem(state, "hidden door source missing");
+			return 0;
+		}
+		copy_pos(pos, segment_centers[block->seg]);
+	}
+	metadata_route_set_hidden_door_state(view, block, route->hidden_door_in_progress, 1);
+	if (!metadata_route_move_to_target(view, state, route, block->seg, pos, depth + 1)) {
+		metadata_route_set_hidden_door_state(view, block, route->hidden_door_in_progress, 0);
+		return 0;
+	}
+	route->current_seg = block->seg;
+	copy_pos(route->current_pos, pos);
+	step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_HIDDEN_DOOR, "Hidden door", block->seg, block->side);
+	if (!step) {
+		metadata_route_set_hidden_door_state(view, block, route->hidden_door_in_progress, 0);
+		return 0;
+	}
+	step->wall_num = block->wall_num;
+	metadata_route_add_hidden_door_link(step, block->seg, block->side, block->wall_num);
+	child = view->segment_child ? view->segment_child(view->user, block->seg, block->side) : -1;
+	reverse_side = valid_segment(view, child) && view->reverse_side ? view->reverse_side(view->user, block->seg, child) : -1;
+	reverse_wall = metadata_route_reverse_wall_num(view, block->seg, block->side);
+	if (valid_wall(view, reverse_wall))
+		metadata_route_add_hidden_door_link(step, child, reverse_side, reverse_wall);
+	metadata_route_set_hidden_door_state(view, block, route->opened_hidden_walls, 1);
+	metadata_route_set_hidden_door_state(view, block, route->hidden_door_in_progress, 0);
+	return 1;
+}
+
 static int metadata_route_acquire_key(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
@@ -1564,7 +1930,9 @@ static int metadata_route_acquire_key(
 	if ((route->key_mask & key_bit_for_index(key_index)) != 0)
 		return 1;
 	if ((route->key_in_progress & key_bit_for_index(key_index)) != 0) {
-		metadata_route_set_problem(state, "key route dependency loop");
+		char problem[64];
+		snprintf(problem, sizeof(problem), "%s key route dependency loop", key_name(key_index));
+		metadata_route_set_problem(state, problem);
 		return 0;
 	}
 	if (key_target_count[key_index] <= 0) {
@@ -1580,6 +1948,9 @@ static int metadata_route_acquire_key(
 		if (key_targets[key_index][i].visited)
 			continue;
 		if (!metadata_route_find_path(view, route, key_targets[key_index][i].seg, key_targets[key_index][i].pos, 1, &candidate))
+			continue;
+		if (candidate.first_block.kind == METADATA_ROUTE_BLOCK_KEY &&
+		    candidate.first_block.key_index == key_index)
 			continue;
 		if (candidate.distance < best_path.distance) {
 			best = i;
@@ -1618,36 +1989,65 @@ static int metadata_route_fire_trigger(
     const metadata_route_block *block,
     int depth)
 {
+	metadata_route_block step_block;
+	metadata_route_path firing_path;
+	int has_firing_path;
+	int selected_source_seg;
 	int pos[3];
 
 	if (!block || !metadata_route_trigger_valid(block->trigger_num)) {
 		metadata_route_set_problem(state, "unknown trigger route dependency");
 		return 0;
 	}
-	if (route->fired_triggers[block->trigger_num])
-		return 1;
-	if (route->trigger_in_progress[block->trigger_num]) {
-		metadata_route_set_problem(state, "trigger route dependency loop");
-		return 0;
-	}
 	if (!valid_segment(view, block->source_seg)) {
 		metadata_route_set_problem(state, "trigger source missing");
 		return 0;
 	}
-	if (!side_center(view, block->source_seg, block->source_side, pos) && segment_center_valid[block->source_seg])
-		copy_pos(pos, segment_centers[block->source_seg]);
-	route->trigger_in_progress[block->trigger_num] = 1;
-	if (!metadata_route_move_to_target(view, state, route, block->source_seg, pos, depth + 1)) {
-		route->trigger_in_progress[block->trigger_num] = 0;
+	step_block = *block;
+	has_firing_path = metadata_route_find_trigger_firing_path(view, route, block, &step_block, &firing_path);
+	if (route->fired_triggers[step_block.trigger_num])
+		return 1;
+	if (route->trigger_in_progress[step_block.trigger_num]) {
+		char problem[128];
+		snprintf(problem, sizeof(problem), "trigger route dependency loop: trigger %d source %d:%d wall %d target %d:%d",
+		         step_block.trigger_num,
+		         step_block.source_seg,
+		         step_block.source_side,
+		         step_block.source_wall,
+		         step_block.seg,
+		         step_block.side);
+		metadata_route_set_problem(state, problem);
 		return 0;
 	}
-	route->current_seg = block->source_seg;
-	copy_pos(route->current_pos, pos);
-	if (!metadata_route_step_for_trigger(view, state, route, block)) {
-		route->trigger_in_progress[block->trigger_num] = 0;
+	if (!metadata_route_trigger_source_pos(view, &step_block, pos)) {
+		metadata_route_set_problem(state, "trigger source missing");
 		return 0;
 	}
-	route->trigger_in_progress[block->trigger_num] = 0;
+	selected_source_seg = step_block.source_seg;
+	route->trigger_in_progress[step_block.trigger_num] = 1;
+	if (has_firing_path) {
+		route->pending_distance += firing_path.distance;
+		route->current_seg = firing_path.terminal_seg;
+		if (firing_path.terminal_pos_valid)
+			copy_pos(route->current_pos, firing_path.terminal_pos);
+		else
+			copy_pos(route->current_pos, pos);
+		step_block.source_seg = route->current_seg;
+		if (route->current_seg != selected_source_seg)
+			step_block.source_side = -1;
+	} else {
+		if (!metadata_route_move_to_target(view, state, route, step_block.source_seg, pos, depth + 1)) {
+			route->trigger_in_progress[step_block.trigger_num] = 0;
+			return 0;
+		}
+		route->current_seg = step_block.source_seg;
+		copy_pos(route->current_pos, pos);
+	}
+	if (!metadata_route_step_for_trigger(view, state, route, &step_block)) {
+		route->trigger_in_progress[step_block.trigger_num] = 0;
+		return 0;
+	}
+	route->trigger_in_progress[step_block.trigger_num] = 0;
 	return 1;
 }
 
@@ -1660,37 +2060,89 @@ static int metadata_route_move_to_target(
     int depth)
 {
 	int guard;
+	unsigned char saved_avoided_triggers[sizeof(route->avoided_triggers)];
+	char last_dependency_problem[sizeof(state->route_problem)] = "";
 
 	if (depth > LEVEL_METADATA_MAX_ROUTE_STEPS) {
 		metadata_route_set_problem(state, "route dependency depth limit");
 		return 0;
 	}
+	memcpy(saved_avoided_triggers, route->avoided_triggers, sizeof(saved_avoided_triggers));
 	for (guard = 0; guard < LEVEL_METADATA_MAX_ROUTE_STEPS; ++guard) {
 		metadata_route_path path;
 		if (metadata_route_find_path(view, route, goal_seg, goal_pos, 0, &path)) {
 			route->pending_distance += path.distance;
 			route->current_seg = goal_seg;
 			copy_pos(route->current_pos, goal_pos);
+			memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
 			return 1;
 		}
 		if (!metadata_route_find_path(view, route, goal_seg, goal_pos, 1, &path) ||
 		    path.first_block.kind == METADATA_ROUTE_BLOCK_NONE) {
-			metadata_route_set_problem(state, "route target unreachable");
+			metadata_route_set_problem(state, last_dependency_problem[0] ? last_dependency_problem : "route target unreachable");
+			memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
 			return 0;
 		}
 		if (path.first_block.kind == METADATA_ROUTE_BLOCK_KEY) {
-			if (!metadata_route_acquire_key(view, state, route, path.first_block.key_index, depth + 1))
+			if (!metadata_route_acquire_key(view, state, route, path.first_block.key_index, depth + 1)) {
+				memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
 				return 0;
+			}
 		} else if (path.first_block.kind == METADATA_ROUTE_BLOCK_TRIGGER) {
-			if (!metadata_route_fire_trigger(view, state, route, &path.first_block, depth + 1))
+			if (!metadata_route_fire_trigger(view, state, route, &path.first_block, depth + 1)) {
+				if (metadata_route_trigger_valid(path.first_block.trigger_num) &&
+				    metadata_route_problem_is_avoidable_trigger_dependency(state->route_problem)) {
+					snprintf(last_dependency_problem, sizeof(last_dependency_problem), "%s", state->route_problem);
+					state->route_problem[0] = '\0';
+					route->avoided_triggers[path.first_block.trigger_num] = 1;
+					continue;
+				}
+				memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
 				return 0;
+			}
+		} else if (path.first_block.kind == METADATA_ROUTE_BLOCK_HIDDEN_DOOR) {
+			if (!metadata_route_open_hidden_door(view, state, route, &path.first_block, depth + 1)) {
+				memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
+				return 0;
+			}
 		} else {
 			metadata_route_set_problem(state, "unsupported route dependency");
+			memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
 			return 0;
 		}
 	}
-	metadata_route_set_problem(state, "route dependency iteration limit");
+	metadata_route_set_problem(state, last_dependency_problem[0] ? last_dependency_problem : "route dependency iteration limit");
+	memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
 	return 0;
+}
+
+static int metadata_route_move_to_target_or_visible(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    const metadata_target *target,
+    int depth)
+{
+	char saved_problem[sizeof(state->route_problem)];
+	metadata_route_path path;
+
+	if (!target)
+		return 0;
+	if (metadata_route_move_to_target(view, state, route, target->seg, target->pos, depth))
+		return 1;
+	snprintf(saved_problem, sizeof(saved_problem), "%s", state->route_problem);
+	state->route_problem[0] = '\0';
+	if (!metadata_route_find_visible_path(view, route, target, &path)) {
+		metadata_route_set_problem(state, saved_problem[0] ? saved_problem : "route target unreachable");
+		return 0;
+	}
+	route->pending_distance += path.distance;
+	route->current_seg = path.terminal_seg;
+	if (path.terminal_pos_valid)
+		copy_pos(route->current_pos, path.terminal_pos);
+	else
+		copy_pos(route->current_pos, segment_centers[path.terminal_seg]);
+	return 1;
 }
 
 static int metadata_route_select_target(
@@ -1813,12 +2265,12 @@ static void collect_route_chain(const level_metadata_scan_view *view, level_meta
 		return;
 	}
 	if (found_reactor) {
-		if (!metadata_route_move_to_target(view, state, &route, reactor.seg, reactor.pos, 0))
+		if (!metadata_route_move_to_target_or_visible(view, state, &route, &reactor, 0))
 			goto route_partial;
 		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_REACTOR, &reactor, "Reactor"))
 			goto route_partial;
 	} else if (found_boss) {
-		if (!metadata_route_move_to_target(view, state, &route, boss.seg, boss.pos, 0))
+		if (!metadata_route_move_to_target_or_visible(view, state, &route, &boss, 0))
 			goto route_partial;
 		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_BOSS, &boss, "Boss"))
 			goto route_partial;

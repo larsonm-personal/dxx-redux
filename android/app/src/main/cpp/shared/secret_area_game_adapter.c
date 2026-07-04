@@ -532,10 +532,12 @@ static void level_metadata_rescan_current_level(void)
 	view.wall_type_door = WALL_DOOR;
 	view.wall_type_illusion = WALL_ILLUSION;
 	view.wall_type_open = WALL_OPEN;
+	view.wall_flag_door_locked = WALL_DOOR_LOCKED;
 	view.wall_key_none = KEY_NONE;
 	view.wall_key_blue = KEY_BLUE;
 	view.wall_key_red = KEY_RED;
 	view.wall_key_gold = KEY_GOLD;
+	view.wall_clip_hidden = WCF_HIDDEN;
 	view.obj_type_none = OBJ_NONE;
 	view.obj_type_robot = OBJ_ROBOT;
 	view.obj_type_hostage = OBJ_HOSTAGE;
@@ -560,7 +562,9 @@ static void level_metadata_rescan_current_level(void)
 	view.wall_segment = secret_area_wall_segment;
 	view.wall_side = secret_area_wall_side;
 	view.wall_type = secret_area_wall_type;
+	view.wall_flags = secret_area_wall_flags;
 	view.wall_keys = secret_area_wall_keys;
+	view.wall_clip_flags = secret_area_wall_clip_flags;
 	view.wall_trigger = secret_area_wall_trigger;
 	view.segment_special = secret_area_segment_special;
 	view.segment_center = secret_area_segment_center;

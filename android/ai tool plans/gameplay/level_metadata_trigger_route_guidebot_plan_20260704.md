@@ -100,6 +100,38 @@ Additional validation completed:
 - Focused reruns: `bratmaze.zip`, `castaway_redux.zip`, `nefarious.7z`
 - Focused `ulterior_v1.0.6b.7z` attempt failed by import timeout
 
+## Investigation Notes 2026-07-04 Obsidian Advanced Pathing
+- Obsidian is now the focused regression target for advanced route semantics beyond basic keys, reactor, and exit. Its levels are completable, but the current route-chain solver marks some rows partial or failed.
+- Git history for `game_data/mission_files/Obsidian.json` currently has `697d5f7d initial level zip intake` and `7c4231a9 rework guideboth pathing and metadata`. Compare those versions before changing scanner behavior, because the older flat metadata may show what was considered reachable before ordered route chains were introduced.
+- The investigation should separate two signals:
+  - `travel_*` reachability from the older metadata pass.
+  - `route_status`, `route_problem`, and `route_steps` from the newer dependency chain solver.
+- Obsidian specifically needs study for shootable switches as well as hidden wall triggers. Trigger source walls that are not ordinary fly-through doors may still be valid player objectives if the player can reach a segment with line-of-fire to the switch face.
+- First implementation target: identify why levels with complete `travel_targets_reached` still report `trigger route dependency loop`, then add the smallest scanner semantics or test fixture needed to model that pattern.
+
+Implementation update:
+- The scanner now treats reachable line-of-fire to a trigger source wall as a valid trigger objective. This fixes shootable switches whose source wall segment is not physically reachable.
+- Route generation now records visible reactor/boss objectives when the control center or boss can be attacked from a reachable firing segment.
+- Trigger dependency failures can make the optimistic search temporarily avoid the failing trigger and retry alternate paths to the same target.
+- Hidden doors are now modeled as route dependencies using `wall_flags`, `wall_clip_flags`, `WCF_HIDDEN`, and `WALL_DOOR_LOCKED` from the game adapter. Opening one appends a `hidden_door` step and marks both sides of that wall connection opened.
+- Trigger-linked doors are considered trigger dependencies before ordinary door passability. Generic keyless doors keep the previous passability behavior; using `WALL_DOOR_LOCKED` as a universal hard blocker produced false Obsidian failures.
+
+Obsidian result after focused regeneration:
+- `game_data/mission_files/Obsidian.json` now contains trigger-heavy and hidden-door route arrays. Examples include hidden-door steps in levels 1, 4, and 8, and trigger chains in levels 3, 5, 7, 9, and 14.
+- The focused batch now leaves only two non-ok route rows:
+  - Level 10, `Aquarius Falls`: `partial`, `route target unreachable`, chain `start -> key`.
+  - Level 12, `Lusus Flagship`: `failed`, `red key unreachable`, chain `start`.
+- This is a major improvement over the initial Obsidian ordered-route pass, where levels 1, 3, 9, 10, 12, 13, 14, and secret -1 were failed or partial. It also avoids the over-strict locked-door experiment that made levels 3, 5, 6, and 14 look worse despite known completability.
+
+Validation completed for this Obsidian slice:
+- `.\android\gradlew.bat -p android :app:assembleDebug` with JDK 21.
+- `.\run-windows-build.ps1 -Target both`.
+- `.\buildd1\maths\test_level_metadata_scan.exe`.
+- `.\buildd2\maths\test_level_metadata_scan.exe`.
+- `.\android\helpers\run_mission_zip_batch.ps1 -Pattern 'Obsidian.zip' -Install -TimeoutSeconds 900`.
+- `.\android\helpers\stop-stale-formatters.ps1`.
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android/app/src/main/cpp/shared/level_metadata_scan.c','android/app/src/main/cpp/shared/level_metadata_scan.h','android/app/src/main/cpp/shared/secret_area_game_adapter.c','android/tests/test_level_metadata_scan.c','game_data/mission_files/Obsidian.json','android/ai tool plans/gameplay/level_metadata_trigger_route_guidebot_plan_20260704.md')`.
+
 ## Current Code Map
 - Shared metadata scanner:
   - `android/app/src/main/cpp/shared/level_metadata_scan.h`
