@@ -54,6 +54,16 @@ internal fun axisRegionDragValue(
     }
 }
 
+internal fun controllerMenuControlVisible(
+    controllerMenuOnlyLayout: Boolean,
+    menuOpen: Boolean,
+): Boolean = !controllerMenuOnlyLayout || menuOpen
+
+internal fun adminTrayTabVisible(
+    gamepadOnlyMode: Boolean,
+    hasSettingsDiagnostic: Boolean,
+): Boolean = !gamepadOnlyMode && !hasSettingsDiagnostic
+
 /**
  * Semi-transparent touch overlay drawn on top of the game SurfaceView.
  *
@@ -1301,6 +1311,7 @@ class TouchOverlayView
             }
 
             recomputeRemainingActionGeometry(weaponState)
+            if (!remainingActionControlVisible()) return
             val eff = (layout.globalOpacity * layout.moreActions.opacity).coerceIn(0f, 1f)
 
             val buttonBg =
@@ -1388,6 +1399,7 @@ class TouchOverlayView
             }
 
             recomputeRemainingActionGeometry()
+            if (!remainingActionControlVisible()) return false
             val idx = event.actionIndex
             val px = event.getX(idx)
             val py = event.getY(idx)
@@ -1476,13 +1488,27 @@ class TouchOverlayView
             return remainingActionOpen
         }
 
+        private fun remainingActionControlVisible(): Boolean =
+            controllerMenuControlVisible(
+                controllerMenuOnlyLayout = isControllerMenuOnlyTouchLayout(layout),
+                menuOpen = remainingActionOpen,
+            )
+
         private fun buttonVisibleInCurrentMode(b: ButtonState): Boolean {
             if (gameVariant == "d1" && b.control.binding in TouchBindings.D2_ONLY_BUTTONS) return false
             return !automapActive || automapTouchButtonVisible(b.control.binding)
         }
 
-        private fun diagnosticVisibleInCurrentMode(d: DiagnosticState): Boolean =
-            !automapActive || d.control.type == DiagnosticType.SETTINGS
+        private fun settingsDiagnosticVisible(): Boolean =
+            controllerMenuControlVisible(
+                controllerMenuOnlyLayout = isControllerMenuOnlyTouchLayout(layout),
+                menuOpen = adminTrayOpen || adminTraySlide > 0f,
+            )
+
+        private fun diagnosticVisibleInCurrentMode(d: DiagnosticState): Boolean {
+            if (d.control.type == DiagnosticType.SETTINGS && !settingsDiagnosticVisible()) return false
+            return !automapActive || d.control.type == DiagnosticType.SETTINGS
+        }
 
         private fun stickVisibleInCurrentMode(s: StickState): Boolean {
             if (!automapActive || !s.control.buttonMode) return true
@@ -1615,7 +1641,7 @@ class TouchOverlayView
                 drawAdminTrayPanel(canvas)
                 if (adminTrayDifficultyMenuOpen) drawAdminTrayDifficultyMenu(canvas)
                 if (adminTrayCheatsMenuOpen) drawAdminTrayCheatsMenu(canvas)
-            } else if (!gamepadOnlyMode && !hasSettingsDiag) {
+            } else if (adminTrayTabVisible(gamepadOnlyMode, hasSettingsDiag)) {
                 drawAdminTrayTab(canvas)
             }
         }
@@ -2548,7 +2574,10 @@ class TouchOverlayView
 
                     // Try admin tray tab (hidden when a settings diagnostic replaces it)
                     val hasSettingsDiag = diagnosticStates.any { it.control.type == DiagnosticType.SETTINGS }
-                    if (!handled && !hasSettingsDiag && adminTrayTabRect.contains(px, py)) {
+                    if (!handled &&
+                        adminTrayTabVisible(gamepadOnlyMode, hasSettingsDiag) &&
+                        adminTrayTabRect.contains(px, py)
+                    ) {
                         openAdminTray()
                         handled = true
                     }
@@ -3448,6 +3477,7 @@ class TouchOverlayView
             val panelRect = if (visibleOnlyWhileTrayOpen) computeAdminTrayPanelRect() else RectF()
             for (d in diagnosticStates) {
                 if (d.control.type != DiagnosticType.SETTINGS) continue
+                if (!diagnosticVisibleInCurrentMode(d)) continue
                 if (visibleOnlyWhileTrayOpen && settingsDiagnosticOccludedByTray(d, panelRect)) continue
                 if (settingsDiagnosticHit(d, px, py)) return d
             }

@@ -5,6 +5,15 @@ import android.util.Log
 import org.json.JSONObject
 import java.io.File
 
+internal const val DEFAULT_TOUCH_PRESET_NAME = "Advanced"
+internal const val CONTROLLER_MENU_TOUCH_PRESET_NAME = "Controller Menus"
+
+internal fun defaultTouchPresetName(hasTouchscreen: Boolean): String =
+    if (hasTouchscreen) DEFAULT_TOUCH_PRESET_NAME else CONTROLLER_MENU_TOUCH_PRESET_NAME
+
+internal fun isControllerMenuOnlyTouchLayout(layout: TouchLayout): Boolean =
+    layout.name == CONTROLLER_MENU_TOUCH_PRESET_NAME
+
 /**
  * Loads, saves, and provides preset TouchLayouts.
  *
@@ -116,7 +125,8 @@ object TouchLayoutRepository {
     /** Default layout: first bundled preset, or a minimal hard-coded fallback. */
     fun defaultLayout(context: Context): TouchLayout {
         val bundled = loadBundledPresets(context)
-        return bundled.firstOrNull() ?: FALLBACK_LAYOUT
+        val defaultName = defaultTouchPresetName(context.hasTouchscreen())
+        return bundled.firstOrNull { it.name == defaultName } ?: bundled.firstOrNull() ?: FALLBACK_LAYOUT
     }
 
     /** Overload without context for field initializers (overlay view, etc.).

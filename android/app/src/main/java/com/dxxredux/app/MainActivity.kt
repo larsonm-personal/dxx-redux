@@ -64,6 +64,11 @@ internal fun shouldShowTouchOverlay(
     return gameplayOverlay || automap
 }
 
+internal fun defaultTouchOverlayEnabled(
+    hasTouchscreen: Boolean,
+    hasController: Boolean,
+): Boolean = !hasTouchscreen || !hasController
+
 internal fun settingsTrayVisibleForOverlay(
     adminTrayOpen: Boolean,
     adminTrayPausedGame: Boolean,
@@ -649,10 +654,7 @@ class MainActivity :
         }
         clearTransientLaunchExtrasFromIntent(intent)
 
-        val lacksTouchscreen =
-            !packageManager.hasSystemFeature(
-                android.content.pm.PackageManager.FEATURE_TOUCHSCREEN,
-            )
+        val lacksTouchscreen = !hasTouchscreen()
         if (BuildConfig.DEBUG && lacksTouchscreen) {
             // android port work: seed a clean no-UI perf test profile for TV builds
             applyTvPerfTestPrefs(getSharedPreferences("dxx_prefs", MODE_PRIVATE))
@@ -1748,9 +1750,13 @@ class MainActivity :
         // Re-read preference (user may have toggled in SetupActivity)
         val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
         loadMetaBindings()
-        // Default to enabled when no physical controller is connected
+        // Default to enabled when touch controls are needed or when the no-touch menu layout is active.
         val hasController = hasWorkingControllerDevice()
-        overlayEnabled = prefs.getBoolean("touch_overlay_enabled", !hasController)
+        overlayEnabled =
+            prefs.getBoolean(
+                "touch_overlay_enabled",
+                defaultTouchOverlayEnabled(hasTouchscreen = !gamepadOnlyMode, hasController = hasController),
+            )
         syncDebugLogPrefs()
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)

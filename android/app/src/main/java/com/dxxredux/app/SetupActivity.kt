@@ -4512,6 +4512,8 @@ private fun ControllerSection(
     onEnginePreferences: () -> Unit = {},
     onEditAutoselect: () -> Unit = {},
 ) {
+    val context = LocalContext.current
+
     // Poll for controller connect/disconnect every 1 second
     var pollTick by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
@@ -4594,7 +4596,12 @@ private fun ControllerSection(
     )
 
     // -- Touch overlay toggle --
-    val defaultOverlay = !hasController
+    val hasTouchscreen = remember(context) { context.hasTouchscreen() }
+    val defaultOverlay =
+        defaultTouchOverlayEnabled(
+            hasTouchscreen = hasTouchscreen,
+            hasController = hasController,
+        )
     var touchOverlay by remember {
         mutableStateOf(prefs.getBoolean("touch_overlay_enabled", defaultOverlay))
     }
