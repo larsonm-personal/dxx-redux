@@ -188,6 +188,7 @@ internal fun ModsSection(
     var detailTarget by remember { mutableStateOf<ModManager.ModInfo?>(null) }
     var detailInfo by remember { mutableStateOf<ModManager.ModDetails?>(null) }
     var detailLoading by remember { mutableStateOf(false) }
+    var detailProgress by remember { mutableStateOf<MetadataLoadProgress?>(null) }
     val modDownloadProgress = remember { mutableStateMapOf<String, Int>() }
     val scanCache = remember { mutableStateMapOf<String, DxaTextureScanner.ScanResult?>() }
     val scope = rememberCoroutineScope()
@@ -221,11 +222,14 @@ internal fun ModsSection(
         val target = detailTarget ?: return@LaunchedEffect
         detailInfo = null
         detailLoading = true
+        detailProgress = MetadataLoadProgress("Reading mod metadata", 1, 3)
         detailInfo =
             withContext(kotlinx.coroutines.Dispatchers.IO) {
                 modManager.getModDetails(target, setDir)
             }
+        detailProgress = MetadataLoadProgress("Preparing metadata view", 2, 3)
         detailLoading = false
+        detailProgress = null
     }
 
     LaunchedEffect(expanded) {
@@ -386,6 +390,7 @@ internal fun ModsSection(
             mod = mod,
             details = detailInfo,
             loading = detailLoading,
+            loadProgress = detailProgress,
             setDir = setDir,
             onDismiss = {
                 detailTarget = null
@@ -400,6 +405,7 @@ private fun ModDetailsDialog(
     mod: ModManager.ModInfo,
     details: ModManager.ModDetails?,
     loading: Boolean,
+    loadProgress: MetadataLoadProgress?,
     setDir: File,
     onDismiss: () -> Unit,
 ) {
@@ -512,14 +518,9 @@ private fun ModDetailsDialog(
                         .heightIn(max = 420.dp),
             ) {
                 if (loading || details == null) {
-                    Row(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text("Reading mod archive", fontSize = 12.sp)
-                    }
+                    MetadataLoadProgressView(
+                        loadProgress ?: MetadataLoadProgress("Reading mod archive", 0, 1),
+                    )
                 } else {
                     Column(
                         modifier =
@@ -1269,6 +1270,11 @@ private fun formatMissionZipMusicDuration(durationMs: Int): String {
     return if (minutes > 0L) "${minutes}m${seconds}s" else "${seconds}s"
 }
 
+private data class MetadataDetailLoadResult(
+    val metadata: GameFileMetadata.Summary?,
+    val levelMetadataTarget: LevelMetadataTarget?,
+)
+
 @Composable
 private fun MissionZipConstituentDialog(
     constituent: MissionZip.Constituent,
@@ -1278,15 +1284,54 @@ private fun MissionZipConstituentDialog(
     onDismiss: () -> Unit,
 ) {
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
-    val metadata =
-        remember(archivePath, constituent.path) {
-            archivePath?.let {
-                missionZipExtractedStoreForArchivePath(it)
-                    ?.extractedEntryForArchiveEntry(it, constituent.path)
-                    ?.let { entry -> GameFileMetadata.summarizeLocalFile(entry.file) }
-                    ?: GameFileMetadata.summarizeZipConstituent(File(it), constituent.path, constituent.name)
-            }
+    var metadataResult by remember(archivePath, constituent.path, setDir.absolutePath) {
+        mutableStateOf<MetadataDetailLoadResult?>(null)
+    }
+    var metadataProgress by remember(archivePath, constituent.path) {
+        mutableStateOf(MetadataLoadProgress("Locating metadata source", 0, 4))
+    }
+
+    LaunchedEffect(archivePath, constituent.path, setDir.absolutePath) {
+        val archive = archivePath
+        if (archive == null) {
+            metadataResult = MetadataDetailLoadResult(null, null)
+            return@LaunchedEffect
         }
+        metadataResult = null
+        metadataProgress = MetadataLoadProgress("Locating metadata source", 0, 4)
+        val extractedEntry =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                missionZipExtractedStoreForArchivePath(archive)
+                    ?.extractedEntryForArchiveEntry(archive, constituent.path)
+            }
+        metadataProgress =
+            MetadataLoadProgress(
+                if (extractedEntry != null) {
+                    "Reading extracted file metadata"
+                } else {
+                    "Reading archive entry metadata"
+                },
+                1,
+                4,
+            )
+        val metadata =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching {
+                    extractedEntry
+                        ?.let { GameFileMetadata.summarizeLocalFile(it.file) }
+                        ?: GameFileMetadata.summarizeZipConstituent(File(archive), constituent.path, constituent.name)
+                }.getOrNull()
+            }
+        metadataProgress = MetadataLoadProgress("Preparing level metadata entry", 2, 4)
+        val target =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching { LevelMetadataTargets.zipConstituent(archive, setDir, constituent, metadata) }.getOrNull()
+            }
+        metadataProgress = MetadataLoadProgress("Preparing metadata view", 3, 4)
+        metadataResult = MetadataDetailLoadResult(metadata, target)
+        metadataProgress = MetadataLoadProgress("Metadata ready", 4, 4)
+    }
+
     levelMetadataTarget?.let { target ->
         LevelMetadataDialog(
             target = target,
@@ -1330,15 +1375,21 @@ private fun MissionZipConstituentDialog(
                     if (constituent.compressedSizeBytes > 0) {
                         DetailRow("Compressed", setupSectionFormatSize(constituent.compressedSizeBytes))
                     }
-                    archivePath
-                        ?.let { LevelMetadataTargets.zipConstituent(it, setDir, constituent, metadata) }
-                        ?.let { target ->
+                    val loadedMetadata = metadataResult
+                    if (loadedMetadata == null) {
+                        MetadataLoadProgressView(
+                            metadataProgress,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
+                        )
+                    } else {
+                        loadedMetadata.levelMetadataTarget?.let { target ->
                             LevelMetadataButton(
                                 onClick = { levelMetadataTarget = target },
                                 modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
                             )
                         }
-                    FileMetadataDetails(metadata)
+                        FileMetadataDetails(loadedMetadata.metadata)
+                    }
                 }
                 SetupScrollArrows(scrollState)
             }
@@ -2162,17 +2213,54 @@ internal fun FileDetailDialog(
         remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename) {
             missionDescriptorForStatus(status, setDir)
         }
-    val fileMetadata =
+    val metadataSourceFile =
         remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename) {
-            gameFileMetadataForStatus(status, setDir)
-        }
-    val levelMetadataTarget =
-        remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename, fileMetadata) {
             val localName = status.foundName ?: status.manifestEntry?.filename
             val actualName = localName?.let { findFile(setDir, it) ?: it }
             val file = actualName?.let { File(setDir, it) }
-            if (file?.isFile == true) LevelMetadataTargets.directFile(file, setDir, fileMetadata) else null
+            file?.takeIf {
+                it.isFile &&
+                    (GameFileFormats.isMetadataInspectable(it.name) || LevelMetadataTargets.canAnalyzeFile(it.name))
+            }
         }
+    var fileMetadataResult by remember(metadataSourceFile?.absolutePath) {
+        mutableStateOf(
+            if (metadataSourceFile == null) {
+                MetadataDetailLoadResult(null, null)
+            } else {
+                null
+            },
+        )
+    }
+    var fileMetadataProgress by remember(metadataSourceFile?.absolutePath) {
+        mutableStateOf(MetadataLoadProgress("Locating file metadata", 0, 3))
+    }
+    LaunchedEffect(metadataSourceFile?.absolutePath, setDir.absolutePath) {
+        val file = metadataSourceFile
+        if (file == null) {
+            fileMetadataResult = MetadataDetailLoadResult(null, null)
+            return@LaunchedEffect
+        }
+        fileMetadataResult = null
+        fileMetadataProgress = MetadataLoadProgress("Reading file metadata", 1, 3)
+        val metadata =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                if (GameFileFormats.isMetadataInspectable(file.name)) {
+                    runCatching { GameFileMetadata.summarizeLocalFile(file) }.getOrNull()
+                } else {
+                    null
+                }
+            }
+        fileMetadataProgress = MetadataLoadProgress("Preparing level metadata entry", 2, 3)
+        val target =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching { LevelMetadataTargets.directFile(file, setDir, metadata) }.getOrNull()
+            }
+        fileMetadataResult = MetadataDetailLoadResult(metadata, target)
+        fileMetadataProgress = MetadataLoadProgress("Metadata ready", 3, 3)
+    }
+    val fileMetadata = fileMetadataResult?.metadata
+    val levelMetadataTarget = fileMetadataResult?.levelMetadataTarget
     val isMissing = !status.found && entry != null
     val isExternal = entry?.isExternal == true
     var confirmingDelete by remember { mutableStateOf(false) }
@@ -2253,11 +2341,18 @@ internal fun FileDetailDialog(
                 Column(modifier = Modifier.verticalScroll(scrollState)) {
                     DetailRow("Category", description)
                     DetailRow("Type", describeExtension(name))
-                    levelMetadataTarget?.let {
-                        LevelMetadataButton(
-                            onClick = { showingLevelMetadata = true },
+                    if (fileMetadataResult == null) {
+                        MetadataLoadProgressView(
+                            fileMetadataProgress,
                             modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
                         )
+                    } else {
+                        levelMetadataTarget?.let {
+                            LevelMetadataButton(
+                                onClick = { showingLevelMetadata = true },
+                                modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
+                            )
+                        }
                     }
                     missionDescriptor?.let { mission ->
                         DetailRow("Title", mission.displayName)
@@ -2374,6 +2469,31 @@ private fun LevelMetadataButton(
 }
 
 @Composable
+private fun MetadataLoadProgressView(
+    progress: MetadataLoadProgress,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                formatMetadataLoadProgress(progress),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        progress.fraction?.let { fraction ->
+            LinearProgressIndicator(
+                progress = { fraction },
+                modifier = Modifier.fillMaxWidth().height(4.dp),
+            )
+        } ?: LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(4.dp))
+    }
+}
+
+@Composable
 private fun LevelMetadataDialog(
     target: LevelMetadataTarget,
     onDismiss: () -> Unit,
@@ -2381,10 +2501,20 @@ private fun LevelMetadataDialog(
     val context = LocalContext.current
     var result by remember(target) { mutableStateOf<LevelMetadataResult?>(null) }
     var loading by remember(target) { mutableStateOf(true) }
+    var progress by remember(target) {
+        mutableStateOf(MetadataLoadProgress("Preparing analysis files", 0, 5))
+    }
 
     LaunchedEffect(target) {
         loading = true
-        result = LevelMetadataAnalyzer.analyze(context, target)
+        result = null
+        progress = MetadataLoadProgress("Preparing analysis files", 0, 5)
+        result =
+            LevelMetadataAnalyzer.analyze(context, target) { update ->
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    progress = update
+                }
+            }
         loading = false
     }
 
@@ -2412,14 +2542,7 @@ private fun LevelMetadataDialog(
                             .padding(end = 8.dp),
                 ) {
                     if (loading) {
-                        Row(
-                            modifier = Modifier.padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text("Analyzing levels", fontSize = 12.sp)
-                        }
+                        MetadataLoadProgressView(progress)
                     } else {
                         LevelMetadataResultContent(result)
                     }

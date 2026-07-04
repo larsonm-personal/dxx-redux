@@ -693,8 +693,18 @@ internal object LevelMetadataAnalyzer {
     suspend fun analyze(
         context: Context,
         target: LevelMetadataTarget,
+        onProgress: suspend (MetadataLoadProgress) -> Unit = {},
     ): LevelMetadataResult =
         withContext(Dispatchers.IO) {
+            val stepCount = 5
+
+            suspend fun progress(
+                label: String,
+                completed: Int,
+            ) {
+                onProgress(MetadataLoadProgress(label, completed, stepCount))
+            }
+
             val appContext = context.applicationContext
             val requestId = UUID.randomUUID().toString()
             val workDir = File(appContext.cacheDir, "level_metadata/$requestId")
@@ -702,6 +712,7 @@ internal object LevelMetadataAnalyzer {
             val checkpointFile = File(workDir, "checkpoint.json")
             val requestFile = File(workDir, "request.json")
             val startedAt = System.currentTimeMillis()
+            progress("Preparing analysis files", 0)
             val request =
                 try {
                     buildRequestJson(target, requestId, workDir, resultFile, checkpointFile)
@@ -713,16 +724,22 @@ internal object LevelMetadataAnalyzer {
                     )
                 }
 
+            progress("Writing analysis request", 1)
             workDir.mkdirs()
             requestFile.writeText(request.toString(), Charsets.UTF_8)
             val intent =
                 Intent(appContext, serviceClassForGame(target.game))
                     .putExtra(LevelMetadataAnalysisService.EXTRA_REQUEST_PATH, requestFile.absolutePath)
+            progress("Starting analysis worker", 2)
             appContext.startService(intent)
+            progress("Scanning levels", 3)
 
             while (System.currentTimeMillis() - startedAt < LEVEL_METADATA_TIMEOUT_MS) {
                 if (resultFile.isFile) {
-                    return@withContext parseResultFile(target, resultFile)
+                    progress("Reading analysis result", 4)
+                    val parsed = parseResultFile(target, resultFile)
+                    progress("Analysis complete", 5)
+                    return@withContext parsed
                 }
                 if (!isWorkerProcessRunning(appContext, target.game) &&
                     System.currentTimeMillis() - startedAt > 1_000L
@@ -733,6 +750,7 @@ internal object LevelMetadataAnalyzer {
             }
 
             killWorkerProcess(appContext, target.game)
+            progress("Collecting diagnostics", 4)
             val diagnostics = collectDiagnostics(appContext, startedAt, checkpointFile)
             val status = if (diagnostics.any { it.contains("crash", ignoreCase = true) }) "crashed" else "timeout"
             LevelMetadataResult.failed(
