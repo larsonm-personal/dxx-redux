@@ -29,6 +29,7 @@ static const char *category_tags[DLOG_COUNT] = {
 	"GAME",
 	"LAUNCHER",
 	"PROFILING",
+	"COOP_DESYNC",
 };
 
 static int debug_log_get_env(JNIEnv **env_out)

@@ -105,6 +105,61 @@ void multi_send_msgsend_state(int state);
 void multi_send_gmode_update();
 void multi_do_gmode_update(const ubyte *buf);
 void multi_do_difficulty(const ubyte *buf);
+int multi_i_am_master(void);
+
+#ifdef __ANDROID__
+static void multi_log_hidden_door_state(const char *event, int segnum, int side, int packet_flag)
+{
+	segment *seg, *csegp = NULL;
+	wall *w, *cw = NULL;
+	int wallnum, csegnum = -1, cside = -1, cwallnum = -1;
+	int clip_flags = 0, clip_frames = 0, frame0 = -1, frame_last = -1;
+	int i;
+
+	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+	if (segnum < 0 || segnum > Highest_segment_index || side < 0 || side > 5)
+		return;
+	seg = &Segments[segnum];
+	wallnum = seg->sides[side].wall_num;
+	if (wallnum < 0 || wallnum >= Num_walls)
+		return;
+	w = &Walls[wallnum];
+	if (w->clip_num < 0 || !(WallAnims[w->clip_num].flags & WCF_HIDDEN))
+		return;
+
+	clip_flags = WallAnims[w->clip_num].flags;
+	clip_frames = WallAnims[w->clip_num].num_frames;
+	if (clip_frames > 0) {
+		frame0 = WallAnims[w->clip_num].frames[0];
+		frame_last = WallAnims[w->clip_num].frames[clip_frames - 1];
+	}
+	csegnum = seg->children[side];
+	if (csegnum >= 0 && csegnum <= Highest_segment_index) {
+		csegp = &Segments[csegnum];
+		for (i = 0; i < 6; i++)
+			if (csegp->children[i] == segnum) {
+				cside = i;
+				break;
+			}
+		if (cside >= 0) {
+			cwallnum = csegp->sides[cside].wall_num;
+			if (cwallnum >= 0 && cwallnum < Num_walls)
+				cw = &Walls[cwallnum];
+		}
+	}
+	COOPLOG("hidden_door %s: seg=%d side=%d wall=%d type=%d state=%d flags=0x%x packet_flags=%d hps=%d keys=%d clip=%d clip_flags=0x%x frames=%d frame0=%d frame_last=%d tmap=%d/%d cseg=%d cside=%d cwall=%d cstate=%d cflags=0x%x ctmap=%d/%d level=%d player=%d master=%d",
+	        event, segnum, side, wallnum, w->type, w->state,
+	        w->flags, packet_flag, w->hps, w->keys, w->clip_num,
+	        clip_flags, clip_frames, frame0, frame_last,
+	        seg->sides[side].tmap_num, seg->sides[side].tmap_num2,
+	        csegnum, cside, cwallnum, cw ? cw->state : -1,
+	        cw ? cw->flags : 0,
+	        (csegp && cside >= 0) ? csegp->sides[cside].tmap_num : -1,
+	        (csegp && cside >= 0) ? csegp->sides[cside].tmap_num2 : -1,
+	        Current_level_num, Player_num, multi_i_am_master());
+}
+#endif
 
 //
 // Global variables
@@ -2903,18 +2958,27 @@ multi_do_door_open(const ubyte *buf)
 
 	w = &Walls[seg->sides[side].wall_num];
 
+#ifdef __ANDROID__
+	multi_log_hidden_door_state("recv_before", segnum, side, -1);
+#endif
 	if (w->type == WALL_BLASTABLE)
 	{
 		if (!(w->flags & WALL_BLASTED))
 		{
 			wall_destroy(seg, side);
 		}
+#ifdef __ANDROID__
+		multi_log_hidden_door_state("recv_after_blast", segnum, side, -1);
+#endif
 		return;
 	}
 	else if (w->state != WALL_DOOR_OPENING)
 	{
 		wall_open_door(seg, side);
 	}
+#ifdef __ANDROID__
+	multi_log_hidden_door_state("recv_after", segnum, side, -1);
+#endif
 }
 
 void
@@ -3893,6 +3957,9 @@ void multi_send_door_open(int segnum, int side, ubyte flag)
 	multibuf[0] = MULTI_DOOR_OPEN;
 	PUT_INTEL_SHORT(multibuf+1, segnum );
 	multibuf[3] = (sbyte)side;
+#ifdef __ANDROID__
+	multi_log_hidden_door_state("send_broadcast", segnum, side, flag);
+#endif
 	if(Netgame.RetroProtocol) {
 		multi_send_data(multibuf, 4, 1);
 	} else {
@@ -5205,6 +5272,9 @@ void multi_do_restore_game(const ubyte *buf)
 	id = GET_INTEL_INT(buf+count);			count += 4;
 
 #ifdef __ANDROID__
+	COOPLOG("multi_do_restore_game packet: game=d1 slot=%d id=%u master=%d current_level=%d net_level=%d n_players=%d",
+	        slot, id, multi_i_am_master(), Current_level_num,
+	        Netgame.levelnum, N_players);
 	if (slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT &&
 	    !multi_i_am_master()) {
 		COOPLOG("multi_do_restore_game: autosave slot %d received on peer, requesting host resync", slot);
@@ -5238,6 +5308,10 @@ void multi_send_restore_game(ubyte slot, uint id)
 	multibuf[count] = MULTI_RESTORE_GAME;		count += 1;
 	multibuf[count] = slot;				count += 1; // Save slot=0
 	PUT_INTEL_INT( multibuf+count, id );		count += 4; // Save id
+#ifdef __ANDROID__
+	COOPLOG("multi_send_restore_game: game=d1 slot=%d id=%u current_level=%d net_level=%d n_players=%d",
+	        slot, id, Current_level_num, Netgame.levelnum, N_players);
+#endif
 	multi_send_data(multibuf, count, 2);
 }
 
@@ -5415,25 +5489,43 @@ void multi_restore_game(ubyte slot, uint id)
 			state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
 	}
 	if (!PHYSFSX_exists(filename, 0)) {
-		con_printf(CON_NORMAL, "multi_restore_game: save file missing, skipping restore (peer)");
+		COOPLOG("multi_restore_game: file missing '%s', skipping (peer)", filename);
 		return;
 	}
 #endif
 
+#ifdef __ANDROID__
+	COOPLOG("multi_restore_game begin: game=d1 file='%s' slot=%d request_id=%u current_level=%d net_level=%d master=%d n_players=%d",
+	        filename, slot, id, Current_level_num, Netgame.levelnum,
+	        multi_i_am_master(), N_players);
+#endif
 	multi_prepare_restore_sync();
    
 	thisid=state_get_game_id(filename);
+#ifdef __ANDROID__
+	COOPLOG("multi_restore_game id check: game=d1 file_id=%d request_id=%u sentinel=%u",
+	        thisid, id, (uint)COOP_AUTOSAVE_GAME_ID);
+#endif
 #ifdef __ANDROID__
 	if (thisid!=id && thisid != (int)COOP_AUTOSAVE_GAME_ID)
 #else
 	if (thisid!=id)
 #endif
 	{
+#ifdef __ANDROID__
+		COOPLOG("multi_restore_game id mismatch: game=d1 file_id=%d request_id=%u file='%s'",
+		        thisid, id, filename);
+#endif
 		nm_messagebox(NULL, 1, TXT_OK, "A multi-save game was restored\nthat you are missing or does not\nmatch that of the others.\nYou must rejoin if you wish to\ncontinue.");
 		return;
 	}
   
 	state_restore_all_sub( filename );
+#ifdef __ANDROID__
+	COOPLOG("multi_restore_game done: game=d1 current_level=%d net_level=%d player_num=%d objnum=%d connected=%d",
+	        Current_level_num, Netgame.levelnum, Player_num,
+	        Players[Player_num].objnum, Players[Player_num].connected);
+#endif
 	multi_send_score(); // send my restored scores. I sent 0 when I loaded the level anyways...
 }
 

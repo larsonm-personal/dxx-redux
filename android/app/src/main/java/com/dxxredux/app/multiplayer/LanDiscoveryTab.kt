@@ -990,6 +990,11 @@ private fun LanCoopSaveOffer(
     LaunchedEffect(useRestore, bestMatch, freshLevelNum) {
         val targetLevel = if (useRestore) bestMatch.level else freshLevelNum
         writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
+        CoopDesyncLog.log(
+            "lan lobby restore offer: game=$game mission=${mission ?: ""} target_level=$targetLevel " +
+                "use_restore=$useRestore best_slot=${bestMatch.slot} best_level=${bestMatch.level} " +
+                "fresh_level=$freshLevelNum",
+        )
         MultiplayerResumePrefs.saveRestoreSelection(
             context,
             game,

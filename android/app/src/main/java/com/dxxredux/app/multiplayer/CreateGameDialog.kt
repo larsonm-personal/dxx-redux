@@ -439,6 +439,18 @@ internal fun CreateGameDialog(
                     val restoreSave = restoreSaveForHostedLevel(selectedSave, levelNum)
                     val restoreSlot = restoreSave?.slot
                     writeCoopRestoreSlot(context.filesDir, game, restoreSlot)
+                    if (mode == "coop") {
+                        val selectedSlot = selectedSave?.slot ?: -1
+                        val selectedLevel = selectedSave?.level ?: -1
+                        val restoredSlot = restoreSlot ?: -1
+                        val restoredLevel = restoreSave?.level ?: -1
+                        CoopDesyncLog.log(
+                            "create host restore selection: game=$game mission=$mission level=$levelNum " +
+                                "selected_slot=$selectedSlot selected_level=$selectedLevel " +
+                                "restore_slot=$restoredSlot restore_level=$restoredLevel " +
+                                "save_count=${coopSaves.size}",
+                        )
+                    }
                     MultiplayerResumePrefs.saveRestoreSelection(context, game, restoreSave, levelNum)
                     onCreate(
                         game,

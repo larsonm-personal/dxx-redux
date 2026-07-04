@@ -5676,7 +5676,18 @@ int net_udp_start_game(void)
 
 	if(net_udp_select_players())
 	{
+#ifdef __ANDROID__
+		if (Netgame.gamemode == NETGAME_COOPERATIVE)
+			COOPLOG("host StartNewLevel begin: game=d2 net_level=%d current_level=%d n_players=%d max=%d mission='%s'",
+			        Netgame.levelnum, Current_level_num, N_players,
+			        Netgame.max_numplayers, Netgame.mission_name);
+#endif
 		StartNewLevel(Netgame.levelnum);
+#ifdef __ANDROID__
+		if (Netgame.gamemode == NETGAME_COOPERATIVE)
+			COOPLOG("host StartNewLevel done: game=d2 net_level=%d current_level=%d player_num=%d n_players=%d",
+			        Netgame.levelnum, Current_level_num, Player_num, N_players);
+#endif
 	}
 	else
 	{
@@ -5965,7 +5976,18 @@ int net_udp_do_join_game(ubyte join_as_obs)
 
 	net_udp_set_game_mode(Netgame.gamemode, join_as_obs);
 
+#ifdef __ANDROID__
+	if (Netgame.gamemode == NETGAME_COOPERATIVE)
+		COOPLOG("join StartNewLevel begin: game=d2 net_level=%d current_level=%d player_num=%d n_players=%d mission='%s'",
+		        Netgame.levelnum, Current_level_num, Player_num,
+		        N_players, Netgame.mission_name);
+#endif
 	StartNewLevel(Netgame.levelnum);
+#ifdef __ANDROID__
+	if (Netgame.gamemode == NETGAME_COOPERATIVE)
+		COOPLOG("join StartNewLevel done: game=d2 net_level=%d current_level=%d player_num=%d n_players=%d",
+		        Netgame.levelnum, Current_level_num, Player_num, N_players);
+#endif
 	
 	return 1;     // look ma, we're in a game!!!
 }

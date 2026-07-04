@@ -193,6 +193,14 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 	Netgame.difficulty = difficulty;
 	Netgame.max_numplayers = max_players;
 	Netgame.levelnum = level_num;
+#ifdef __ANDROID__
+	if (mode == NETGAME_COOPERATIVE)
+		debug_log(DLOG_COOP_DESYNC,
+		          "[COOP] auto_host Netgame assigned: mission=%s current_mission=%s mode=%d diff=%d max=%d level=%d player_num=%d callsign='%s'",
+		          mission, Current_mission_filename, Netgame.gamemode,
+		          Netgame.difficulty, Netgame.max_numplayers,
+		          Netgame.levelnum, Player_num, Players[Player_num].callsign);
+#endif
 	if (coop_qol)
 		Netgame.game_flags |= NETGAME_FLAG_COOP_QOL;
 	else

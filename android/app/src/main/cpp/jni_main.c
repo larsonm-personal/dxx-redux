@@ -846,6 +846,12 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
 	auto_host_clients_can_request_rewind = clientsCanRequestRewind ? 1 : 0;
 	android_rewind_set_clients_can_request(auto_host_clients_can_request_rewind);
 	auto_host_pending = 1;
+	debug_log(DLOG_COOP_DESYNC,
+	          "[COOP] nativeSetAutoHost: port=%d mission=%s mode=%d max=%d level=%d diff=%d coop_qol=%d client_rewind=%d",
+	          auto_host_my_port, auto_host_mission, auto_host_mode,
+	          auto_host_max_players, auto_host_level_num,
+	          auto_host_difficulty, auto_host_coop_qol,
+	          auto_host_clients_can_request_rewind);
 	LOGI("nativeSetAutoHost: port=%d mission=%s mode=%d max=%d lvl=%d diff=%d coop_qol=%d full_death_spew=%d player_spew_no_expire=%d client_rewind=%d",
 	     auto_host_my_port, auto_host_mission, auto_host_mode,
 	     auto_host_max_players, auto_host_level_num, auto_host_difficulty,

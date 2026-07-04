@@ -10,6 +10,7 @@
 
 #include "auto_net.h"
 
+#include "android_log.h"
 #include "args.h"
 #include "config.h"
 #include "console.h"
@@ -187,6 +188,10 @@ int check_auto_net(void)
 		           auto_host_full_death_spew,
 		           auto_host_player_spew_no_expire,
 		           auto_host_clients_can_request_rewind);
+		COOPLOG("check_auto_net host: port=%d mission=%s mode=%d diff=%d max=%d level=%d callsign='%s'",
+		        auto_host_my_port, auto_host_mission, auto_host_mode,
+		        auto_host_difficulty, auto_host_max_players,
+		        auto_host_level_num, Players[Player_num].callsign);
 		net_udp_auto_host(auto_host_my_port, auto_host_mission,
 		                  auto_host_mode, auto_host_difficulty,
 		                  auto_host_max_players, auto_host_level_num,

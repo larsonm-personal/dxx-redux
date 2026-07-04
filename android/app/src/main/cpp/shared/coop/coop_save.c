@@ -38,6 +38,12 @@ extern sbyte PKilledFlags[MAX_PLAYERS];
 
 extern fix ThisLevelTime;
 
+#ifdef ANDROID
+#define COOP_SAVE_LOG(level, fmt, ...) COOPLOG(fmt, ##__VA_ARGS__)
+#else
+#define COOP_SAVE_LOG(level, fmt, ...) con_printf(level, fmt, ##__VA_ARGS__)
+#endif
+
 static uint32_t coop_restore_flags_durable(void)
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -108,7 +114,7 @@ static void coop_auto_restore_log_no_slot(void)
 #ifdef DXX_BUILD_DESCENT_II
 	COOPLOG("no restore slot file from lobby");
 #else
-	con_printf(CON_NORMAL, "coop_save: no restore slot selected from lobby\n");
+	COOP_SAVE_LOG(CON_NORMAL, "coop_save: no restore slot selected from lobby\n");
 #endif
 }
 
@@ -117,7 +123,7 @@ static void coop_auto_restore_log_slot_not_viable(int slot)
 #ifdef DXX_BUILD_DESCENT_II
 	COOPLOG("selected slot %d not viable", slot);
 #else
-	con_printf(CON_NORMAL, "coop_save: selected slot %d not viable\n", slot);
+	COOP_SAVE_LOG(CON_NORMAL, "coop_save: selected slot %d not viable\n", slot);
 #endif
 }
 
@@ -126,9 +132,9 @@ static void coop_auto_restore_log_armed(int slot, uint32_t gid)
 #ifdef DXX_BUILD_DESCENT_II
 	COOPLOG("auto-restore armed from lobby-selected slot %d (game_id=%u)", slot, gid);
 #else
-	con_printf(CON_NORMAL,
-	           "coop_save: auto-restore armed from lobby-selected slot %d (game_id=%u)\n",
-	           slot, gid);
+	COOP_SAVE_LOG(CON_NORMAL,
+	              "coop_save: auto-restore armed from lobby-selected slot %d (game_id=%u)\n",
+	              slot, gid);
 #endif
 }
 
@@ -139,9 +145,9 @@ static void coop_auto_restore_log_trigger(int slot, uint32_t gid, int frame)
 	        slot, gid, frame);
 #else
 	(void) frame;
-	con_printf(CON_NORMAL,
-	           "coop_save: triggering auto-restore from slot %d (game_id=%u)\n",
-	           slot, gid);
+	COOP_SAVE_LOG(CON_NORMAL,
+	              "coop_save: triggering auto-restore from slot %d (game_id=%u)\n",
+	              slot, gid);
 #endif
 }
 
@@ -226,8 +232,8 @@ void coop_write_save_metadata(void *fp)
 	}
 
 	PHYSFS_write((PHYSFS_file *) fp, &meta, sizeof(meta), 1);
-	con_printf(CON_DEBUG, "coop_save: wrote metadata trailer (%d active, %d absent)\n",
-	           meta.num_active_players, meta.num_absent_players);
+	COOP_SAVE_LOG(CON_DEBUG, "coop_save: wrote metadata trailer (%d active, %d absent)\n",
+	              meta.num_active_players, meta.num_absent_players);
 }
 
 int coop_read_save_metadata(void *fp, PHYSFS_sint64 expected_end,
@@ -285,8 +291,8 @@ int coop_read_save_metadata(void *fp, PHYSFS_sint64 expected_end,
 		return 0;
 	}
 
-	con_printf(CON_DEBUG, "coop_save: read metadata trailer (ver=%d, %d active, %d absent)\n",
-	           meta->version, meta->num_active_players, meta->num_absent_players);
+	COOP_SAVE_LOG(CON_DEBUG, "coop_save: read metadata trailer (ver=%d, %d active, %d absent)\n",
+	              meta->version, meta->num_active_players, meta->num_absent_players);
 	return 1;
 }
 
@@ -339,8 +345,8 @@ void coop_track_absent_player(int pnum)
 		    strncasecmp(coop_absent_list[i].callsign, rec.callsign, COOP_CALLSIGN_LEN) == 0) {
 			memcpy(&coop_absent_list[i], &rec, sizeof(rec));
 			coop_absent_source_levels[i] = (int16_t) Current_level_num;
-			con_printf(CON_NORMAL, "coop_save: updated absent player '%s' (slot %d)\n",
-			           rec.callsign, i);
+			COOP_SAVE_LOG(CON_NORMAL, "coop_save: updated absent player '%s' (slot %d)\n",
+			              rec.callsign, i);
 			return;
 		}
 	}
@@ -355,8 +361,8 @@ void coop_track_absent_player(int pnum)
 	memcpy(&coop_absent_list[coop_num_absent], &rec, sizeof(rec));
 	coop_absent_source_levels[coop_num_absent] = (int16_t) Current_level_num;
 	coop_num_absent++;
-	con_printf(CON_NORMAL, "coop_save: tracked absent player '%s' (%d total absent)\n",
-	           rec.callsign, coop_num_absent);
+	COOP_SAVE_LOG(CON_NORMAL, "coop_save: tracked absent player '%s' (%d total absent)\n",
+	              rec.callsign, coop_num_absent);
 }
 
 void coop_clear_absent_players(void)
@@ -424,7 +430,7 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)
 		coop_absent_source_levels[i] = meta->level_num;
 	}
 	coop_num_absent = n;
-	con_printf(CON_NORMAL, "coop_save: loaded %d absent players from save metadata\n", n);
+	COOP_SAVE_LOG(CON_NORMAL, "coop_save: loaded %d absent players from save metadata\n", n);
 }
 
 #define COOP_RESTORE_FLAGS_KEYS ( \
@@ -461,9 +467,9 @@ void coop_apply_record_to_player(int pnum, const coop_player_record *rec,
 	if (pnum == Player_num)
 		Objects[p->objnum].shields = p->shields;
 
-	con_printf(CON_NORMAL, "coop_save: applied record to P%d '%s' (shields=%d energy=%d laser=%d score=%d)\n",
-	           pnum, p->callsign, f2i(p->shields), f2i(p->energy),
-	           p->laser_level, p->score);
+	COOP_SAVE_LOG(CON_NORMAL, "coop_save: applied record to P%d '%s' (shields=%d energy=%d laser=%d score=%d)\n",
+	              pnum, p->callsign, f2i(p->shields), f2i(p->energy),
+	              p->laser_level, p->score);
 }
 
 static int coop_autosave_next_slot = 0;
@@ -487,8 +493,8 @@ int coop_autosave(void)
 	snprintf(desc, sizeof(desc), "Auto L%d %dp %dpts",
 	         Current_level_num, N_players, Players[Player_num].score);
 
-	con_printf(CON_NORMAL, "coop_save: auto-saving to slot %d: %s\n",
-	           slot, desc);
+	COOP_SAVE_LOG(CON_NORMAL, "coop_save: auto-saving to slot %d: %s\n",
+	              slot, desc);
 
 	{
 		uint saved_game_id = state_game_id;
@@ -731,8 +737,8 @@ static void coop_write_progress_inventory_file(const char *filename)
 	}
 
 	PHYSFS_close(fp);
-	con_printf(CON_NORMAL, "coop_save: wrote progress inventory (L%d, %d players)\n",
-	           Current_level_num, num);
+	COOP_SAVE_LOG(CON_NORMAL, "coop_save: wrote progress inventory (L%d, %d players)\n",
+	              Current_level_num, num);
 }
 
 static int coop_progress_restore_attempted_level = 0;
@@ -793,14 +799,14 @@ int coop_load_progress_inventory(void)
 	}
 
 	if (strncasecmp(mission, Current_mission_filename, 8) != 0) {
-		con_printf(CON_NORMAL, "coop_save: progress inventory mission mismatch ('%s' vs '%s')\n",
-		           mission, Current_mission_filename);
+		COOP_SAVE_LOG(CON_NORMAL, "coop_save: progress inventory mission mismatch ('%s' vs '%s')\n",
+		              mission, Current_mission_filename);
 		PHYSFS_close(fp);
 		return 0;
 	}
 	if (level != Current_level_num - 1) {
-		con_printf(CON_NORMAL, "coop_save: progress inventory level mismatch (L%d vs current L%d)\n",
-		           level, Current_level_num);
+		COOP_SAVE_LOG(CON_NORMAL, "coop_save: progress inventory level mismatch (L%d vs current L%d)\n",
+		              level, Current_level_num);
 		PHYSFS_close(fp);
 		return 0;
 	}
@@ -829,8 +835,8 @@ int coop_load_progress_inventory(void)
 	}
 
 	PHYSFS_close(fp);
-	con_printf(CON_NORMAL, "coop_save: loaded progress inventory (L%d, %d records, host_restored=%d, %d absent)\n",
-	           level, (int) num, host_restored, coop_num_absent);
+	COOP_SAVE_LOG(CON_NORMAL, "coop_save: loaded progress inventory (L%d, %d records, host_restored=%d, %d absent)\n",
+	              level, (int) num, host_restored, coop_num_absent);
 	return 1;
 }
 
@@ -891,8 +897,8 @@ void coop_write_progress_json(void)
 		coop_write_text_file(scoped_progress, buf);
 	coop_write_text_file("coop_progress.json", buf);
 
-	con_printf(CON_NORMAL, "coop_save: wrote coop_progress.json (L%d, %d players)\n",
-	           Current_level_num, n);
+	COOP_SAVE_LOG(CON_NORMAL, "coop_save: wrote coop_progress.json (L%d, %d players)\n",
+	              Current_level_num, n);
 
 	coop_write_progress_inventory();
 }

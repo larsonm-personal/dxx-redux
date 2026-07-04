@@ -60,12 +60,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import com.dxxredux.app.multiplayer.CoopDesyncLog
 import com.dxxredux.app.multiplayer.GameLaunchInfo
 import com.dxxredux.app.multiplayer.MatchmakingService
 import com.dxxredux.app.multiplayer.MatchmakingStateHolder
 import com.dxxredux.app.multiplayer.MultiplayerResumePrefs
 import com.dxxredux.app.multiplayer.NetworkConstants
 import com.dxxredux.app.multiplayer.PlayGamesAuth
+import com.dxxredux.app.multiplayer.readCoopRestoreSlot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -561,6 +563,7 @@ class SetupActivity : ComponentActivity() {
                             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.GAME), enabled)
                             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.LAUNCHER), enabled)
                             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.PROFILING), false)
+                            .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.COOP_DESYNC), enabled)
                             .commit()
                         Log.i("DXX-Setup", "write_probe_debug_prefs: enabled=$enabled")
                         requestSetupRefresh()
@@ -1615,6 +1618,20 @@ class SetupActivity : ComponentActivity() {
         mpIntent.putExtra("mp_restrict_noncoop_fov_to_base", info.restrictNonCoopFovToBase && info.mode != "coop")
         if (info.isLan) mpIntent.putExtra("mp_is_lan", true)
         MultiplayerResumePrefs.saveLaunch(this, info, launchCallsign, MatchmakingStateHolder.state.value)
+        val coopRestoreSlot =
+            if (info.isHost && info.mode == "coop") {
+                readCoopRestoreSlot(filesDir, info.game) ?: -1
+            } else {
+                -1
+            }
+        val mpRole = if (info.isHost) "host" else "join"
+        val mpTransport = if (info.isLan) "lan" else "matchmaking"
+        CoopDesyncLog.log(
+            "mp launch: role=$mpRole transport=$mpTransport " +
+                "game=${info.game} mission=${info.mission} mode=${info.mode} " +
+                "level=${info.levelNum} diff=${info.difficulty} " +
+                "max=${info.maxPlayers} callsign=$launchCallsign restore_slot=$coopRestoreSlot",
+        )
         // Clear gameLaunchInfo after consumption to prevent stale re-launches
         MatchmakingStateHolder.update { it.copy(gameLaunchInfo = null) }
         startActivity(mpIntent)

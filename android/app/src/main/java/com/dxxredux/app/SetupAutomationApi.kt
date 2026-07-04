@@ -753,6 +753,7 @@ internal fun SetupActivity.writeIntrospectJson() {
         val gameLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.GAME), false)
         val launcherLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.LAUNCHER), false)
         val profilingLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.PROFILING), false)
+        val coopDesyncLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.COOP_DESYNC), false)
         val debugPrefs = JSONObject()
         debugPrefs.put(
             "show_video_info_debug_options",
@@ -768,6 +769,7 @@ internal fun SetupActivity.writeIntrospectJson() {
         debugPrefs.put("game_log_enabled", gameLogEnabled)
         debugPrefs.put("launcher_log_enabled", launcherLogEnabled)
         debugPrefs.put("profiling_log_enabled", profilingLogEnabled)
+        debugPrefs.put("coop_desync_log_enabled", coopDesyncLogEnabled)
         debugPrefs.put("graphics_debug_logging", graphicsLogEnabled && textureLogEnabled)
         root.put("debug_prefs", debugPrefs)
 

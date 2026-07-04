@@ -383,7 +383,7 @@ void coop_indicator_lines_render(void)
 			         Controls.sideways_thrust_time,
 			         gw_front);
 			con_printf(CON_NORMAL, "%s", _diag_buf);
-			debug_log(DLOG_NETWORK, "[COOP] %s", _diag_buf);
+			debug_log(DLOG_COOP_DESYNC, "[COOP] %s", _diag_buf);
 		}
 	}
 

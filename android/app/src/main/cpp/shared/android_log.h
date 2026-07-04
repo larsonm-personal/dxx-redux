@@ -31,14 +31,13 @@ void debug_log_batch(int category, const char *payload);
 /* Called from JNI when the user toggles a category checkbox. */
 void debug_log_set_enabled(int category, int on);
 
-/* Log to both con_printf (logcat / DLOG_GAME) and DLOG_NETWORK.
- * Callers must also include console.h for con_printf. */
+/* Log Android coop restore/desync diagnostics without routing through
+ * con_printf, which would duplicate them into DLOG_GAME. */
 #define COOPLOG(fmt, ...)                                       \
 	do {                                                        \
 		char _cl_buf[256];                                      \
 		snprintf(_cl_buf, sizeof(_cl_buf), fmt, ##__VA_ARGS__); \
-		con_printf(CON_NORMAL, "%s", _cl_buf);                  \
-		debug_log(DLOG_NETWORK, "[COOP] %s", _cl_buf);          \
+		debug_log(DLOG_COOP_DESYNC, "[COOP] %s", _cl_buf);      \
 	} while (0)
 
 #else

@@ -2636,7 +2636,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			con_printf(CON_URGENT, "restore: coop callsign mismatch '%s' vs '%s'\n",
 				saved_callsign, Players[Player_num].callsign);
 #ifdef __ANDROID__
-			debug_log(DLOG_GAME, "restore coop callsign mismatch: game=d2 file='%s' saved='%s' current='%s'",
+			COOPLOG("restore coop callsign mismatch: game=d2 file='%s' saved='%s' current='%s'",
 				filename, saved_callsign, Players[Player_num].callsign);
 #endif
 			PHYSFS_close(fp);
@@ -2688,6 +2688,12 @@ int state_restore_all_sub(char *filename, int secret_restore)
 //Read level info
 	current_level = PHYSFSX_readSXE32(fp, swap);
 	PHYSFS_seek(fp, PHYSFS_tell(fp) + sizeof(PHYSFS_sint32)); // skip Next_level_num
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP)
+		COOPLOG("restore saved level: game=d2 file='%s' saved_level=%d current_before=%d net_before=%d secret=%d state_game_id=%u mission='%s'",
+		        filename, current_level, Current_level_num,
+		        Netgame.levelnum, secret_restore, state_game_id, mission);
+#endif
 
 //Restore GameTime
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
@@ -2731,7 +2737,18 @@ int state_restore_all_sub(char *filename, int secret_restore)
 //Read player info
 
 	{
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			COOPLOG("restore StartNewLevelSub begin: game=d2 saved_level=%d current_before=%d net_before=%d",
+			        current_level, Current_level_num, Netgame.levelnum);
+#endif
 		StartNewLevelSub(current_level, 1, secret_restore);
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			COOPLOG("restore StartNewLevelSub done: game=d2 saved_level=%d current_after=%d net_after=%d player_num=%d",
+			        current_level, Current_level_num, Netgame.levelnum,
+			        Player_num);
+#endif
 
 		if (secret_restore) {
 			player	dummy_player;
@@ -3197,6 +3214,12 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		PHYSFS_read(fp, &Netgame.numconnected, sizeof(ubyte), 1);
 		Netgame.level_time = PHYSFSX_readSXE32(fp, swap);
 #ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			COOPLOG("restore netgame read: game=d2 file='%s' saved_net_level=%d current_level=%d diff=%d status=%d num=%d max=%d connected=%d mission='%s'",
+			        filename, Netgame.levelnum, Current_level_num,
+			        Netgame.difficulty, Netgame.game_status,
+			        Netgame.numplayers, Netgame.max_numplayers,
+			        Netgame.numconnected, Netgame.mission_name);
 		/* Player count may differ from saved state (new joiners or
 		 * disconnected players). Re-derive from live session so the
 		 * networking layer stays consistent. */
@@ -3211,6 +3234,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			if (live_n > Netgame.max_numplayers)
 				Netgame.max_numplayers = live_n;
 			Netgame.numconnected = live_n;
+			if (Game_mode & GM_MULTI_COOP)
+				COOPLOG("restore netgame live count: game=d2 live=%d net_num=%d max=%d connected=%d",
+				        live_n, Netgame.numplayers,
+				        Netgame.max_numplayers, Netgame.numconnected);
 		}
 #endif
 		for (i = 0; i < MAX_PLAYERS; i++)
@@ -3273,7 +3300,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		if (have_android_meta)
 			state_android_restore_music_type_from_meta(&android_meta);
 		if (coop_read_save_metadata(physfs_fp, pos_after_base, &coop_meta)) {
-			con_printf(CON_DEBUG, "coop_save: restored metadata (%d active, %d absent)",
+			COOPLOG("coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);
 			/* Repopulate the absent player list so returning players get inventory back */
 			if (Game_mode & GM_MULTI_COOP)

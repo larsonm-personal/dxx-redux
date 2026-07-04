@@ -201,6 +201,10 @@ private fun ServerBrowserContent(
     fun createOnlineResumeLobby(record: MultiplayerResumeRecord) {
         HostGameDefaults.save(context, record.toHostDefaults())
         writeCoopRestoreSlot(context.filesDir, record.game, record.coopRestoreSlot)
+        CoopDesyncLog.log(
+            "online resume lobby create: game=${record.game} mission=${record.mission} level=${record.levelNum} " +
+                "restore_slot=${record.coopRestoreSlot ?: -1} restore_level=${record.coopRestoreLevel ?: -1}",
+        )
         MatchmakingService.createLobby(record.game, record.maxPlayers, record.toGameInfoJson())
     }
 
@@ -281,6 +285,11 @@ private fun ServerBrowserContent(
                         if (offerRecord.isHostLanCoop()) {
                             HostGameDefaults.save(context, offerRecord.toHostDefaults())
                             writeCoopRestoreSlot(context.filesDir, offerRecord.game, offerRecord.coopRestoreSlot)
+                            CoopDesyncLog.log(
+                                "lan resume offer accepted: game=${offerRecord.game} mission=${offerRecord.mission} " +
+                                    "level=${offerRecord.levelNum} restore_slot=${offerRecord.coopRestoreSlot ?: -1} " +
+                                    "restore_level=${offerRecord.coopRestoreLevel ?: -1}",
+                            )
                         }
                         rememberExternalCallsign(offerRecord.localCallsign)
                         MatchmakingStateHolder.update {
@@ -612,6 +621,10 @@ private fun ServerBrowserContent(
                 if (entry.slot >= 0) {
                     writeCoopRestoreSlot(context.filesDir, entry.game, entry.slot)
                 }
+                CoopDesyncLog.log(
+                    "recent coop save selected: game=${entry.game} mission=${entry.mission} level=${entry.level} " +
+                        "slot=${entry.slot}",
+                )
                 showCreateDialog = true
             })
         }
