@@ -634,3 +634,68 @@ Start with Phase 1 only:
 6. Serialize `route_steps` only after the scanner tests are passing.
 
 That gives a narrow, testable base before the guidebot starts making live decisions from the new model.
+
+## Guidebot Vantage Pathing Addendum
+Current code already has an Android route-goal bridge in `d2/main/escort.c`, and it is doing useful work:
+
+- `escort_route_next_goal()` reads `level_metadata_get_state()->route_steps`.
+- Key route steps map to the existing blue/yellow/red guidebot goals.
+- Trigger route steps become an active `Escort_route_goal`, with the guidebot menu showing `next: <label>`.
+- `escort_create_path_to_goal()` can fall back to `escort_create_path_to_nearest_point()` when the route target segment is not currently reachable.
+
+The remaining design gap is that a route step has one segment field, but shootable objectives need two concepts:
+
+- Objective: the wall, trigger, boss, reactor, hidden door, or exit side that must be acted on.
+- Guidance target: the reachable segment or point where the player and guidebot should go next.
+
+For ordinary keys and reachable doors these are often the same. For shootable switches, visible reactors, bosses, and some hidden doors, they are often different.
+
+### Recommended Live Guidebot Model
+Extend the Android route-goal state so it can distinguish objective identity from movement guidance:
+
+- `objective_kind`: route step kind such as trigger, hidden door, reactor, boss, exit.
+- `objective_seg`, `objective_side`, `objective_wall`, `objective_trigger`: the thing that must be opened, shot, or reached.
+- `guidance_seg`: the currently reachable segment to path the guidebot toward.
+- `guidance_pos`: optional fixed-point point within that segment, useful for line-of-fire positions found by the metadata scanner.
+- `guidance_mode`: `reach_objective`, `reach_hidden_door`, `reach_firing_position`, or `nearest_progress_point`.
+
+The guidebot should continue to create ordinary paths only through live passable edges. The broader route model should select a better live destination, not make the guidebot fly through closed walls.
+
+### Shootable Switch Behavior
+For trigger route steps:
+
+1. Check whether the trigger step is already satisfied using current trigger flags and linked wall passability.
+2. If not satisfied, first try to path to the source wall's own segment and side.
+3. If the source wall segment is not reachable, compute a live reachable set from the guidebot or player and choose the nearest reachable segment with line of fire to the trigger source wall.
+4. Path to that firing segment and label the goal as the semantic objective, for example `next: Open wall trigger 4`.
+5. Once there, the guidebot should initially point or wait rather than automatically firing. Automatic shooting can come later after tests prove it does not solve puzzle triggers out of order.
+
+This is the same idea as the scanner's `metadata_route_find_visible_path()`, but evaluated against live wall state. The current `escort_find_nearest_reachable_goal_segment()` is a good fallback building block, but shootables need "nearest reachable segment that can see the target", not just "nearest reachable segment on an optimistic path to the target segment".
+
+### Hidden Door Behavior
+Hidden door route steps should become guidebot route goals instead of falling back to classic behavior:
+
+1. Skip the step if the side is already passable.
+2. Path to the nearest live-reachable side of the hidden door pair.
+3. Show `next: Hidden door` or a more specific route label.
+4. After the wall becomes passable, advance to the next route step.
+
+### Reactor and Boss Visibility
+If a reactor or boss objective is not directly reachable but the scanner found a valid visible attack position, guidebot "next" should path to that firing position and retain the semantic label:
+
+- `next: Reactor`
+- `next: Boss`
+
+This avoids saying "can't reach reactor" when the real success path is to shoot it from a window, shaft, or neighboring chamber.
+
+### Implementation Slices
+- [done] Add guidance fields to `level_metadata_route_step` or derive them live into `escort_route_goal`.
+- [pending] Preserve scanner terminal firing positions for trigger, reactor, boss, and exit-visible paths if the live guidebot should reuse static metadata.
+- [done] Add a live line-of-fire helper in D2 escort code, preferably matching the adapter's `FQ_TRANSWALL` `find_vector_intersection()` behavior.
+- [done] Route `LEVEL_METADATA_ROUTE_HIDDEN_DOOR` through the Android guidebot route-goal bridge.
+- [done] Add introspection for objective kind, objective segment, guidance segment, path endpoint segment, and the live route chain.
+- [done] Extend `test_kcxf2_guidebot_route_next.json5` to assert that the active route goal paths to a reachable trigger guidance target.
+- [pending] Add an Obsidian-focused automation or headless check for shootable switch route steps so this does not only fit KCXF2.
+
+### Implementation Notes
+The first guidebot tranche derives guidance live in `escort_route_goal` rather than changing the route-step ABI. For KCXF2 level 2, current generated metadata is `Start -> Open wall trigger 13 -> Open wall trigger 19 -> Open wall trigger 18 -> Open wall trigger 17 -> Exit`; the focused automation now asserts the first `next` target as trigger 13 with `reach_firing_position` guidance and a reachable path endpoint.

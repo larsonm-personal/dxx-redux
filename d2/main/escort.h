@@ -28,7 +28,17 @@ extern int escort_get_route_goal_seg(void);
 extern int escort_get_route_goal_side(void);
 extern int escort_get_route_goal_wall(void);
 extern int escort_get_route_goal_trigger(void);
+extern int escort_get_route_goal_objective_kind(void);
+extern int escort_get_route_goal_objective_seg(void);
+extern int escort_get_route_goal_objective_side(void);
+extern int escort_get_route_goal_objective_wall(void);
+extern int escort_get_route_goal_objective_trigger(void);
+extern int escort_get_route_goal_guidance_mode(void);
+extern int escort_get_route_goal_guidance_seg(void);
+extern int escort_get_route_goal_guidance_side(void);
+extern int escort_get_route_goal_path_endpoint_seg(void);
 extern const char *escort_get_route_goal_label(void);
+extern const char *escort_get_route_goal_guidance_mode_name(void);
 #endif
 extern void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu);
 extern void input_demo_apply_recorded_guidebot_find_secret(void);

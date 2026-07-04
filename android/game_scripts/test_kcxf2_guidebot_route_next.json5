@@ -51,19 +51,19 @@
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
     {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "level_metadata_route.status": "ok",
+        "level_metadata_route.step_count": "6",
         "guidebot.released": "true",
         "guidebot.buddy_objnum": {"gte": 0},
-        "guidebot.goal_object": "1",
-        "guidebot.route_goal_active": "false"
-    }},
-
-    {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
-    {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
-        "player.has_blue_key": "true",
         "guidebot.route_goal_active": "true",
-        "guidebot.route_goal_trigger": "4",
-        "guidebot.route_goal_label": {"contains": "trigger 4"}
+        "guidebot.route_goal_trigger": "13",
+        "guidebot.route_goal_label": {"contains": "trigger 13"},
+        "guidebot.route_goal_objective_kind": "2",
+        "guidebot.route_goal_objective_trigger": "13",
+        "guidebot.route_goal_objective_wall": "10",
+        "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
+        "guidebot.route_goal_guidance_seg": {"gte": 0},
+        "guidebot.route_goal_path_endpoint_seg": {"gte": 0}
     }},
 
     {"action": "introspect"},

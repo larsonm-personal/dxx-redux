@@ -528,6 +528,55 @@ static json serialize_secret_areas()
 }
 
 #ifdef DXX_BUILD_DESCENT_II
+static const char *introspect_route_key_name(int key_index)
+{
+	switch (key_index) {
+		case 0: return "blue";
+		case 1: return "red";
+		case 2: return "gold";
+		default: return "";
+	}
+}
+
+static json serialize_level_metadata_route()
+{
+	const level_metadata_state *metadata = level_metadata_get_state();
+	json result;
+	json steps = json::array();
+	int count = 0;
+
+	if (!metadata) {
+		result["status"] = "failed";
+		result["problem"] = "missing_state";
+		result["steps"] = std::move(steps);
+		return result;
+	}
+	result["status"] = level_metadata_travel_status_name(metadata->route_status);
+	result["problem"] = metadata->route_problem[0] ? metadata->route_problem : "";
+	count = metadata->route_step_count;
+	if (count < 0)
+		count = 0;
+	if (count > LEVEL_METADATA_MAX_ROUTE_STEPS)
+		count = LEVEL_METADATA_MAX_ROUTE_STEPS;
+	result["step_count"] = count;
+	for (int index = 0; index < count; index++) {
+		const level_metadata_route_step *step = &metadata->route_steps[index];
+		json item;
+		item["index"] = index;
+		item["kind"] = level_metadata_route_step_kind_name(step->kind);
+		item["label"] = step->label;
+		item["seg"] = step->seg;
+		item["side"] = step->side;
+		item["wall"] = step->wall_num;
+		item["trigger"] = step->trigger_num;
+		item["key"] = introspect_route_key_name(step->key_index);
+		item["opened_link_count"] = step->opened_link_count;
+		steps.push_back(std::move(item));
+	}
+	result["steps"] = std::move(steps);
+	return result;
+}
+
 /* -- Serialize Guide-Bot state ---------------------------------------- */
 static json serialize_guidebot()
 {
@@ -548,6 +597,16 @@ static json serialize_guidebot()
 	result["route_goal_side"] = escort_get_route_goal_side();
 	result["route_goal_wall"] = escort_get_route_goal_wall();
 	result["route_goal_trigger"] = escort_get_route_goal_trigger();
+	result["route_goal_objective_kind"] = escort_get_route_goal_objective_kind();
+	result["route_goal_objective_seg"] = escort_get_route_goal_objective_seg();
+	result["route_goal_objective_side"] = escort_get_route_goal_objective_side();
+	result["route_goal_objective_wall"] = escort_get_route_goal_objective_wall();
+	result["route_goal_objective_trigger"] = escort_get_route_goal_objective_trigger();
+	result["route_goal_guidance_mode"] = escort_get_route_goal_guidance_mode();
+	result["route_goal_guidance_mode_name"] = escort_get_route_goal_guidance_mode_name();
+	result["route_goal_guidance_seg"] = escort_get_route_goal_guidance_seg();
+	result["route_goal_guidance_side"] = escort_get_route_goal_guidance_side();
+	result["route_goal_path_endpoint_seg"] = escort_get_route_goal_path_endpoint_seg();
 #endif
 	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index) {
 		result["segment"] = (int) Objects[Buddy_objnum].segnum;
@@ -789,6 +848,9 @@ extern "C" char *game_introspect_get_state(void)
 	j["difficulty_max"] = Difficulty_level_max_seen;
 	j["current_level_num"] = Current_level_num;
 	j["current_level_name"] = Current_level_name;
+#ifdef DXX_BUILD_DESCENT_II
+	j["level_metadata_route"] = serialize_level_metadata_route();
+#endif
 
 	bool in_game = (Game_wind != NULL && Screen_mode == SCREEN_GAME);
 	j["in_game"] = in_game;
