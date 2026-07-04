@@ -30,11 +30,11 @@
 #endif
 
 #include "coop_indicator_lines.h"
+#include "coop_indicator_lines_math.h"
 
 /* -- tuning ---------------------------------------------------------- */
 #define PATH_UPDATE_INTERVAL 30 /* frames between path recomputation */
 #define MAX_INDICATOR_DEPTH  25 /* max path segments to compute/draw */
-#define LINE_FADE_LEVEL      14 /* higher = more transparent (0-31)  */
 #define LINE_HALF_WIDTH      (F1_0 / 4)
 #define KEEPOUT_RADIUS_MULT  3 /* keep-out sphere = ship radius * N */
 
@@ -43,6 +43,7 @@ typedef struct {
 	point_seg segs[MAX_INDICATOR_DEPTH + 4];
 	short count;
 	int target_objnum; /* object index of target, -1=none   */
+	fix alpha;         /* 0..F1_0 display alpha             */
 } indicator_path;
 
 static indicator_path s_player_path;
@@ -77,11 +78,11 @@ static int seg_is_visible(int segnum)
 	return 0;
 }
 
-/* Check whether a target object is directly visible on the player's screen.
+/* Check whether a target object is well inside the player's screen.
  * Returns 1 if the target's segment is in the render list AND the target
- * position projects to within the 3D viewport.  Used to suppress indicator
- * lines when the player can already see the target. */
-static int target_is_on_screen(int objnum)
+ * position projects to the inner viewport.  Used to suppress indicator lines
+ * only once the player can comfortably see the target. */
+static int target_is_deep_on_screen(int objnum)
 {
 	/* globvars.h is a private 3d/ header not on our include path */
 	extern int Canvas_width, Canvas_height;
@@ -96,11 +97,8 @@ static int target_is_on_screen(int objnum)
 	g3_project_point(&pt);
 	if (pt.p3_flags & PF_OVERFLOW)
 		return 0;
-	if (pt.p3_sx < 0 || pt.p3_sx > i2f(Canvas_width))
-		return 0;
-	if (pt.p3_sy < 0 || pt.p3_sy > i2f(Canvas_height))
-		return 0;
-	return 1;
+	return coop_indicator_target_in_inner_screen(pt.p3_sx, pt.p3_sy,
+	                                             Canvas_width, Canvas_height);
 }
 
 /* Find the nearest connected coop player. Returns player index or -1 */
@@ -226,12 +224,13 @@ static void draw_path_lines(const indicator_path *path, int color)
 {
 	int i;
 	fix keepout_r = ConsoleObject->size * KEEPOUT_RADIUS_MULT;
+	int fade_level = coop_indicator_line_fade_level(path->alpha);
 
-	if (path->count < 2)
+	if (path->count < 2 || fade_level >= GR_FADE_OFF)
 		return;
 
 	gr_setcolor(color);
-	gr_settransblend(LINE_FADE_LEVEL, GR_BLEND_ADDITIVE_A);
+	gr_settransblend(fade_level, GR_BLEND_ADDITIVE_A);
 
 	for (i = 0; i < path->count - 1; i++) {
 		const vms_vector *a = &path->segs[i].point;
@@ -306,11 +305,13 @@ void coop_indicator_lines_set_options(int show_nearest_player, int show_guidebot
 	if (!s_show_nearest_player) {
 		s_player_path.count = 0;
 		s_player_path.target_objnum = -1;
+		s_player_path.alpha = 0;
 	}
 #ifdef DXX_BUILD_DESCENT_II
 	if (!s_show_guidebot) {
 		s_buddy_path.count = 0;
 		s_buddy_path.target_objnum = -1;
+		s_buddy_path.alpha = 0;
 	}
 #endif
 }
@@ -332,6 +333,13 @@ void coop_indicator_lines_render(void)
 	                 Objects[Buddy_objnum].type == OBJ_ROBOT;
 #else
 	int show_buddy = 0;
+#endif
+
+	if (!want_player_line)
+		s_player_path.alpha = 0;
+#ifdef DXX_BUILD_DESCENT_II
+	if (!show_buddy)
+		s_buddy_path.alpha = 0;
 #endif
 
 	if (!want_player_line && !show_buddy)
@@ -382,13 +390,28 @@ void coop_indicator_lines_render(void)
 	color_green = BM_XRGB(10, 31, 10);
 	color_blue = BM_XRGB(10, 10, 31);
 
-	/* Skip path line when the target is directly visible on screen */
-	if (want_player_line && !target_is_on_screen(s_player_path.target_objnum))
+	if (want_player_line) {
+		s_player_path.alpha = coop_indicator_line_advance_alpha(
+		    s_player_path.alpha,
+		    s_player_path.count >= 2 &&
+		        !target_is_deep_on_screen(s_player_path.target_objnum),
+		    FrameTime);
 		draw_path_lines(&s_player_path, color_green);
+	} else {
+		s_player_path.alpha = 0;
+	}
 
 #ifdef DXX_BUILD_DESCENT_II
-	if (!target_is_on_screen(s_buddy_path.target_objnum))
+	if (show_buddy) {
+		s_buddy_path.alpha = coop_indicator_line_advance_alpha(
+		    s_buddy_path.alpha,
+		    s_buddy_path.count >= 2 &&
+		        !target_is_deep_on_screen(s_buddy_path.target_objnum),
+		    FrameTime);
 		draw_path_lines(&s_buddy_path, color_blue);
+	} else {
+		s_buddy_path.alpha = 0;
+	}
 #endif
 }
 
