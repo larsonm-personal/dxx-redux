@@ -2851,6 +2851,7 @@ private fun SetupScreen(
                 filesDir = filesDir,
                 fileSetManager = fileSetManager,
                 isGameReady = { game -> if (game == "d1") d1RequiredOk else d2RequiredOk },
+                refreshTrigger = refreshTrigger,
                 controllerFocusActive = shouldSeedLauncherFocus,
                 onPlayInputDemo = onPlayInputDemo,
                 onBack = { showAdvancedPage = false },
@@ -3027,6 +3028,7 @@ private fun SetupScreen(
                 if (showSaveExplorer) {
                     SaveExplorerDialog(
                         filesDir = filesDir,
+                        refreshTrigger = refreshTrigger,
                         canLaunchGame = { game -> (game == "d1" && d1RequiredOk) || (game != "d1" && d2RequiredOk) },
                         onLoadCandidate = { selectedCandidate ->
                             selectedGame = selectedCandidate.game
@@ -3044,6 +3046,7 @@ private fun SetupScreen(
                     FileDetailDialog(
                         status = status,
                         setDir = setDir,
+                        refreshTrigger = refreshTrigger,
                         onDismiss = { detailStatus = null },
                         onDelete =
                             when {

@@ -207,6 +207,7 @@ fun AdvancedSettingsPage(
     filesDir: File,
     fileSetManager: FileSetManager,
     isGameReady: (String) -> Boolean,
+    refreshTrigger: Int = 0,
     controllerFocusActive: Boolean = true,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
     onBack: () -> Unit,
@@ -228,9 +229,10 @@ fun AdvancedSettingsPage(
     }
     RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
 
-    LaunchedEffect(ctx, filesDir) {
+    LaunchedEffect(ctx, filesDir, refreshTrigger) {
         val appContext = ctx.applicationContext
         var completed = 0
+        initialLists = null
 
         fun progress(label: String) {
             loadProgress =
@@ -379,7 +381,7 @@ fun AdvancedSettingsPage(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // -- Storage Inspector --
-                        StorageInspectorSection(filesDir)
+                        StorageInspectorSection(filesDir, refreshTrigger)
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
@@ -1351,7 +1353,10 @@ private fun isUnderDirectory(
     }
 
 @Composable
-private fun StorageInspectorSection(filesDir: File) {
+private fun StorageInspectorSection(
+    filesDir: File,
+    refreshTrigger: Int,
+) {
     val ctx = LocalContext.current
     var showFilesDialog by remember { mutableStateOf(false) }
     var showSafDialog by remember { mutableStateOf(false) }
@@ -1387,9 +1392,18 @@ private fun StorageInspectorSection(filesDir: File) {
         var selectedEntry by remember { mutableStateOf<StorageFileEntry?>(null) }
         var deleteEntry by remember { mutableStateOf<StorageFileEntry?>(null) }
         var sortBySize by remember { mutableStateOf(false) }
-        var displayLimit by remember(refreshFiles) { mutableIntStateOf(STORAGE_FILE_PAGE_SIZE) }
-        val scanResult by produceState<StorageFileScanResult?>(initialValue = null, refreshFiles) {
-            value = withContext(Dispatchers.IO) { scanStorageFiles(filesDir) }
+        var displayLimit by remember(refreshFiles, refreshTrigger) { mutableIntStateOf(STORAGE_FILE_PAGE_SIZE) }
+        var scanResult by remember(refreshFiles, refreshTrigger) { mutableStateOf<StorageFileScanResult?>(null) }
+        var scanProgress by remember(refreshFiles, refreshTrigger) {
+            mutableStateOf(MetadataLoadProgress("Scanning app storage", 0, 2))
+        }
+        LaunchedEffect(refreshFiles, refreshTrigger, filesDir.absolutePath) {
+            scanResult = null
+            scanProgress = MetadataLoadProgress("Scanning app storage", 0, 2)
+            val result = withContext(Dispatchers.IO) { scanStorageFiles(filesDir) }
+            scanProgress = MetadataLoadProgress("Preparing file list", 1, 2)
+            scanResult = result
+            scanProgress = MetadataLoadProgress("File list ready", 2, 2)
         }
         val allFiles = scanResult?.entries ?: emptyList()
         val fileEntries =
@@ -1418,14 +1432,7 @@ private fun StorageInspectorSection(filesDir: File) {
             },
             text = {
                 if (scanResult == null) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text("Scanning app storage…", fontSize = 12.sp)
-                    }
+                    MetadataLoadProgressView(scanProgress)
                 } else {
                     Column {
                         Row(
@@ -1710,7 +1717,7 @@ private fun StorageInspectorSection(filesDir: File) {
         var removeSafEntry by remember { mutableStateOf<SafEntry?>(null) }
 
         val safEntries =
-            remember(refreshSafEntries) {
+            remember(refreshSafEntries, refreshTrigger) {
                 val entries = mutableListOf<SafEntry>()
                 val trackedSafUris = mutableSetOf<String>()
                 // Custom audio referenced URIs

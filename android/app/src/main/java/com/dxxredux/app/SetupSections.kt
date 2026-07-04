@@ -391,6 +391,7 @@ internal fun ModsSection(
             details = detailInfo,
             loading = detailLoading,
             loadProgress = detailProgress,
+            refreshTrigger = refreshTrigger,
             setDir = setDir,
             onDismiss = {
                 detailTarget = null
@@ -406,6 +407,7 @@ private fun ModDetailsDialog(
     details: ModManager.ModDetails?,
     loading: Boolean,
     loadProgress: MetadataLoadProgress?,
+    refreshTrigger: Int,
     setDir: File,
     onDismiss: () -> Unit,
 ) {
@@ -433,6 +435,7 @@ private fun ModDetailsDialog(
     levelMetadataTarget?.let { target ->
         LevelMetadataDialog(
             target = target,
+            refreshTrigger = refreshTrigger,
             onDismiss = { levelMetadataTarget = null },
         )
     }
@@ -455,6 +458,7 @@ private fun ModDetailsDialog(
             constituent = constituent,
             archivePath = details?.archivePath,
             setDir = setDir,
+            refreshTrigger = refreshTrigger,
             viewAction =
                 missionZipViewAction(
                     constituent = constituent,
@@ -1280,18 +1284,19 @@ private fun MissionZipConstituentDialog(
     constituent: MissionZip.Constituent,
     archivePath: String?,
     setDir: File,
+    refreshTrigger: Int = 0,
     viewAction: MissionZipViewAction?,
     onDismiss: () -> Unit,
 ) {
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
-    var metadataResult by remember(archivePath, constituent.path, setDir.absolutePath) {
+    var metadataResult by remember(archivePath, constituent.path, setDir.absolutePath, refreshTrigger) {
         mutableStateOf<MetadataDetailLoadResult?>(null)
     }
-    var metadataProgress by remember(archivePath, constituent.path) {
+    var metadataProgress by remember(archivePath, constituent.path, refreshTrigger) {
         mutableStateOf(MetadataLoadProgress("Locating metadata source", 0, 4))
     }
 
-    LaunchedEffect(archivePath, constituent.path, setDir.absolutePath) {
+    LaunchedEffect(archivePath, constituent.path, setDir.absolutePath, refreshTrigger) {
         val archive = archivePath
         if (archive == null) {
             metadataResult = MetadataDetailLoadResult(null, null)
@@ -1335,6 +1340,7 @@ private fun MissionZipConstituentDialog(
     levelMetadataTarget?.let { target ->
         LevelMetadataDialog(
             target = target,
+            refreshTrigger = refreshTrigger,
             onDismiss = { levelMetadataTarget = null },
         )
     }
@@ -2151,6 +2157,7 @@ internal fun MusicInfoSection(
         FileDetailDialog(
             status = status,
             setDir = setDir,
+            refreshTrigger = refreshTrigger,
             onDismiss = { detailStatus = null },
         )
     }
@@ -2203,6 +2210,7 @@ internal fun gameFileMetadataForStatus(
 internal fun FileDetailDialog(
     status: FileStatus,
     setDir: File,
+    refreshTrigger: Int = 0,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
@@ -2210,11 +2218,11 @@ internal fun FileDetailDialog(
     val name = status.foundName ?: status.info.filename
     val description = descriptionForFile(name)
     val missionDescriptor =
-        remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename) {
+        remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename, refreshTrigger) {
             missionDescriptorForStatus(status, setDir)
         }
     val metadataSourceFile =
-        remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename) {
+        remember(name, setDir.absolutePath, status.found, status.manifestEntry?.filename, refreshTrigger) {
             val localName = status.foundName ?: status.manifestEntry?.filename
             val actualName = localName?.let { findFile(setDir, it) ?: it }
             val file = actualName?.let { File(setDir, it) }
@@ -2223,7 +2231,7 @@ internal fun FileDetailDialog(
                     (GameFileFormats.isMetadataInspectable(it.name) || LevelMetadataTargets.canAnalyzeFile(it.name))
             }
         }
-    var fileMetadataResult by remember(metadataSourceFile?.absolutePath) {
+    var fileMetadataResult by remember(metadataSourceFile?.absolutePath, refreshTrigger) {
         mutableStateOf(
             if (metadataSourceFile == null) {
                 MetadataDetailLoadResult(null, null)
@@ -2232,10 +2240,10 @@ internal fun FileDetailDialog(
             },
         )
     }
-    var fileMetadataProgress by remember(metadataSourceFile?.absolutePath) {
+    var fileMetadataProgress by remember(metadataSourceFile?.absolutePath, refreshTrigger) {
         mutableStateOf(MetadataLoadProgress("Locating file metadata", 0, 3))
     }
-    LaunchedEffect(metadataSourceFile?.absolutePath, setDir.absolutePath) {
+    LaunchedEffect(metadataSourceFile?.absolutePath, setDir.absolutePath, refreshTrigger) {
         val file = metadataSourceFile
         if (file == null) {
             fileMetadataResult = MetadataDetailLoadResult(null, null)
@@ -2296,6 +2304,7 @@ internal fun FileDetailDialog(
     if (showingLevelMetadata && levelMetadataTarget != null) {
         LevelMetadataDialog(
             target = levelMetadataTarget,
+            refreshTrigger = refreshTrigger,
             onDismiss = { showingLevelMetadata = false },
         )
     }
@@ -2469,43 +2478,19 @@ private fun LevelMetadataButton(
 }
 
 @Composable
-private fun MetadataLoadProgressView(
-    progress: MetadataLoadProgress,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                formatMetadataLoadProgress(progress),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(modifier = Modifier.height(6.dp))
-        progress.fraction?.let { fraction ->
-            LinearProgressIndicator(
-                progress = { fraction },
-                modifier = Modifier.fillMaxWidth().height(4.dp),
-            )
-        } ?: LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(4.dp))
-    }
-}
-
-@Composable
 private fun LevelMetadataDialog(
     target: LevelMetadataTarget,
+    refreshTrigger: Int = 0,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    var result by remember(target) { mutableStateOf<LevelMetadataResult?>(null) }
-    var loading by remember(target) { mutableStateOf(true) }
-    var progress by remember(target) {
+    var result by remember(target, refreshTrigger) { mutableStateOf<LevelMetadataResult?>(null) }
+    var loading by remember(target, refreshTrigger) { mutableStateOf(true) }
+    var progress by remember(target, refreshTrigger) {
         mutableStateOf(MetadataLoadProgress("Preparing analysis files", 0, 5))
     }
 
-    LaunchedEffect(target) {
+    LaunchedEffect(target, refreshTrigger) {
         loading = true
         result = null
         progress = MetadataLoadProgress("Preparing analysis files", 0, 5)

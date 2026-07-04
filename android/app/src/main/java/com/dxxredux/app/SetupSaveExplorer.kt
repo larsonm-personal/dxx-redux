@@ -92,6 +92,7 @@ internal data class SaveExplorerDetailRow(
 @Composable
 internal fun SaveExplorerDialog(
     filesDir: File,
+    refreshTrigger: Int = 0,
     canLaunchGame: (String) -> Boolean,
     onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
     onChanged: () -> Unit,
@@ -109,11 +110,20 @@ internal fun SaveExplorerDialog(
     var pendingDetails by remember { mutableStateOf<SaveExplorerBridge.SaveExplorerSlot?>(null) }
     var deleteError by remember { mutableStateOf<String?>(null) }
 
-    val slotsState =
-        produceState<List<SaveExplorerBridge.SaveExplorerSlot>?>(initialValue = null, refreshKey) {
-            value = withContext(Dispatchers.IO) { SaveExplorerBridge.listSlots(filesDir) }
-        }
-    val slots = slotsState.value
+    var slots by remember(refreshKey, refreshTrigger) {
+        mutableStateOf<List<SaveExplorerBridge.SaveExplorerSlot>?>(null)
+    }
+    var slotsProgress by remember(refreshKey, refreshTrigger) {
+        mutableStateOf(MetadataLoadProgress("Scanning saves", 0, 2))
+    }
+    LaunchedEffect(refreshKey, refreshTrigger, filesDir.absolutePath) {
+        slots = null
+        slotsProgress = MetadataLoadProgress("Scanning saves", 0, 2)
+        val loadedSlots = withContext(Dispatchers.IO) { SaveExplorerBridge.listSlots(filesDir) }
+        slotsProgress = MetadataLoadProgress("Preparing save list", 1, 2)
+        slots = loadedSlots
+        slotsProgress = MetadataLoadProgress("Save list ready", 2, 2)
+    }
     val gameOptions = remember(slots) { slots?.map { it.game }?.filter { it.isNotBlank() }?.distinct() ?: emptyList() }
     val scopeOptions =
         remember(slots, selectedGame) {
@@ -248,7 +258,7 @@ internal fun SaveExplorerDialog(
 
                 if (slots == null) {
                     Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                        Text("Scanning saves...")
+                        MetadataLoadProgressView(slotsProgress)
                     }
                 } else {
                     LazyColumn(
