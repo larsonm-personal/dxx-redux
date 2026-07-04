@@ -541,6 +541,14 @@ static json serialize_guidebot()
 	result["secret_goal_display_index"] = escort_get_secret_goal_display_index();
 	result["secret_goal_seg"] = escort_get_secret_goal_seg();
 	result["secret_goal_side"] = escort_get_secret_goal_side();
+#ifdef __ANDROID__
+	result["route_goal_active"] = (bool) escort_get_route_goal_active();
+	result["route_goal_label"] = escort_get_route_goal_label();
+	result["route_goal_seg"] = escort_get_route_goal_seg();
+	result["route_goal_side"] = escort_get_route_goal_side();
+	result["route_goal_wall"] = escort_get_route_goal_wall();
+	result["route_goal_trigger"] = escort_get_route_goal_trigger();
+#endif
 	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index) {
 		result["segment"] = (int) Objects[Buddy_objnum].segnum;
 		result["object_type"] = (int) Objects[Buddy_objnum].type;

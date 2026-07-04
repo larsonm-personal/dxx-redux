@@ -47,6 +47,7 @@ extern "C" {
 #include "debug_tex_overlay.h"
 #include "merged_wall_debug.h"
 #include "game.h"
+#include "player.h"
 #include "screens.h"
 #include "inferno.h"
 #include "key.h"
@@ -60,6 +61,9 @@ extern "C" {
 #include "object.h"
 #include "collide.h"
 #include "secretarea.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "escort.h"
+#endif
 }
 
 #ifdef ANDROID
@@ -875,21 +879,41 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 	}
 }
 
-static bool mission_list_item_is_base_or_command(const char *text)
+static bool mission_list_item_is_command(const char *text)
 {
 	if (!text || !text[0])
 		return true;
-	if (icontains(text, "counterstrike") ||
-	    strcasecmp(text, "cancel") == 0)
+	if (strcasecmp(text, "cancel") == 0)
 		return true;
-#ifndef DXX_BUILD_DESCENT_II
+	if (strcasecmp(text, "ok") == 0)
+		return true;
+	return false;
+}
+
+static bool mission_list_item_is_base_mission(const char *text)
+{
+	if (!text || !text[0])
+		return false;
+#ifdef DXX_BUILD_DESCENT_II
+	if (strncasecmp(text, "d1:", 3) == 0 ||
+	    strncasecmp(text, "d2:", 3) == 0 ||
+	    strncasecmp(text, "descent 2:", 10) == 0)
+		return true;
+	if (icontains(text, "counterstrike"))
+		return true;
+#else
+	if (icontains(text, "counterstrike"))
+		return true;
 	if (icontains(text, "first strike") ||
 	    icontains(text, "destination saturn"))
 		return true;
 #endif
-	if (strcasecmp(text, "ok") == 0)
-		return true;
 	return false;
+}
+
+static bool mission_list_item_is_base_or_command(const char *text)
+{
+	return mission_list_item_is_command(text) || mission_list_item_is_base_mission(text);
 }
 
 static bool select_find_first_non_base_mission(int *out_target, int *out_current,
@@ -929,6 +953,28 @@ static bool select_find_first_non_base_mission(int *out_target, int *out_current
 				return true;
 			}
 		}
+		int base_candidate = -1;
+		for (int i = 0; i < nitems; i++) {
+			const char *text = items[i].text;
+			if (!text || items[i].type == NM_TYPE_TEXT || mission_list_item_is_command(text))
+				continue;
+			if (mission_list_item_is_base_mission(text)) {
+				if (base_candidate >= 0) {
+					base_candidate = -1;
+					break;
+				}
+				base_candidate = i;
+			}
+		}
+		if (base_candidate >= 0) {
+			*out_target = base_candidate;
+			*out_current = citem;
+			if (out_current_type)
+				*out_current_type = current_type;
+			LOGI("SELECT_NON_BASE_MISSION: using sole base mission fallback \"%s\" at index %d (current=%d) in newmenu",
+			     items[base_candidate].text, base_candidate, citem);
+			return true;
+		}
 		LOGE("SELECT_NON_BASE_MISSION: no non-base mission in newmenu (%d items)", nitems);
 		for (int i = 0; i < nitems; i++)
 			LOGI("  item[%d]: \"%s\"", i, items[i].text ? items[i].text : "(null)");
@@ -949,6 +995,25 @@ static bool select_find_first_non_base_mission(int *out_target, int *out_current
 				     items[i], i, citem);
 				return true;
 			}
+		}
+		int base_candidate = -1;
+		for (int i = 0; i < nitems; i++) {
+			if (!items[i] || mission_list_item_is_command(items[i]))
+				continue;
+			if (mission_list_item_is_base_mission(items[i])) {
+				if (base_candidate >= 0) {
+					base_candidate = -1;
+					break;
+				}
+				base_candidate = i;
+			}
+		}
+		if (base_candidate >= 0) {
+			*out_target = base_candidate;
+			*out_current = citem;
+			LOGI("SELECT_NON_BASE_MISSION: using sole base mission fallback \"%s\" at index %d (current=%d) in listbox",
+			     items[base_candidate], base_candidate, citem);
+			return true;
 		}
 		LOGE("SELECT_NON_BASE_MISSION: no non-base mission in listbox (%d items)", nitems);
 		for (int i = 0; i < nitems; i++)
@@ -1477,6 +1542,48 @@ static int clear_level_robots(char *reason, size_t reason_size)
 	}
 
 	LOGI("clear_robots: removed=%d", removed);
+	return 1;
+}
+
+static int automation_key_flags_from_value(const char *value)
+{
+	char *end = NULL;
+	long numeric;
+	int flags = 0;
+
+	if (!value)
+		return 0;
+	numeric = strtol(value, &end, 0);
+	if (end && end != value && *end == '\0')
+		return (int) numeric & (PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_RED_KEY | PLAYER_FLAGS_GOLD_KEY);
+	if (icontains(value, "all")) {
+		flags |= PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_RED_KEY | PLAYER_FLAGS_GOLD_KEY;
+	} else {
+		if (icontains(value, "blue"))
+			flags |= PLAYER_FLAGS_BLUE_KEY;
+		if (icontains(value, "red"))
+			flags |= PLAYER_FLAGS_RED_KEY;
+		if (icontains(value, "gold") || icontains(value, "yellow"))
+			flags |= PLAYER_FLAGS_GOLD_KEY;
+	}
+	return flags;
+}
+
+static int set_player_key_flags(const std::string &value, char *reason, size_t reason_size)
+{
+	const int key_mask = PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_RED_KEY | PLAYER_FLAGS_GOLD_KEY;
+	const int old_flags = Players[Player_num].flags;
+	int new_flags;
+
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+		snprintf(reason, reason_size, "player_keys: game is not running");
+		return 0;
+	}
+	new_flags = (old_flags & ~key_mask) | automation_key_flags_from_value(value.c_str());
+	Players[Player_num].flags = new_flags;
+#ifdef DXX_BUILD_DESCENT_II
+	escort_note_player_key_flags(old_flags, new_flags);
+#endif
 	return 1;
 }
 
@@ -2804,6 +2911,13 @@ extern "C" void game_automate_tick(void)
 				const double shields = std::stod(s.value);
 				const fix damage = (fix) (shields * F1_0);
 				apply_damage_to_player(ConsoleObject, ConsoleObject, damage, 0);
+			} else if (s.field == "player_keys") {
+				char reason[128];
+				if (!set_player_key_flags(s.value, reason, sizeof(reason))) {
+					log_append("set_debug", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
 			} else if (s.field == "merged_wall_snapshot") {
 				int request_mode = (int) strtol(s.value.c_str(), NULL, 10);
 

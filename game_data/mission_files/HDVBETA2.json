@@ -26,7 +26,42 @@
         "travel_time_text": "2M:25S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
-        "travel_key_detours": 1
+        "travel_key_detours": 1,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "red key",
+            "seg": 209,
+            "distance": 1806.2341946934694,
+            "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 333,
+            "distance": 1501.370779748255
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 334,
+            "side": 4,
+            "wall": 74,
+            "distance": 512.2376922902912,
+            "trigger": 0,
+            "trigger_type": "unknown"
+          }
+        ]
       },
       {
         "level_num": 2,
@@ -46,12 +81,55 @@
         "travel_time_text": "2M:24S",
         "travel_targets_reached": 3,
         "travel_targets_total": 3,
-        "travel_key_detours": 2
+        "travel_key_detours": 2,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 385,
+            "distance": 1353.2035040816618,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 567,
+            "distance": 1712.0684843565693,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 622,
+            "distance": 1010.9312830575941
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 462,
+            "side": 4,
+            "wall": 76,
+            "distance": 975.5824899153174,
+            "trigger": 3,
+            "trigger_type": "unknown"
+          }
+        ]
       },
       {
         "level_num": 3,
         "secret": false,
-        "level_name": "Tricerius: Gore Acterain Test Facil",
+        "level_name": "Tricerius: Gore Acterain Test Facility",
         "level_file": "level03.rdl",
         "robots": 67,
         "hostages": 2,
@@ -66,7 +144,17 @@
         "travel_time_text": "2M:44S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
-        "travel_key_detours": 3
+        "travel_key_detours": 3,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          }
+        ],
+        "route_problem": "key route dependency loop"
       }
     ],
     "target_index": 0

@@ -2571,6 +2571,12 @@ private fun LevelMetadataResultContent(result: LevelMetadataResult?) {
 private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
     val horizontal = rememberScrollState()
     val vertical = rememberScrollState()
+    var selectedLevel by remember(levels) { mutableStateOf<LevelMetadataLevelRow?>(null) }
+
+    selectedLevel?.let { row ->
+        LevelMetadataLevelDialog(row = row, onDismiss = { selectedLevel = null })
+    }
+
     Box(
         modifier =
             Modifier
@@ -2594,7 +2600,7 @@ private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
                 travel = "Travel",
                 bold = true,
             )
-            HorizontalDivider(modifier = Modifier.width(780.dp).padding(bottom = 2.dp))
+            HorizontalDivider(modifier = Modifier.width(824.dp).padding(bottom = 2.dp))
             Box(modifier = Modifier.heightIn(max = 260.dp)) {
                 Column(
                     modifier =
@@ -2622,6 +2628,7 @@ private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
                             travel = row.travelTimeText,
                             problem = row.metadataProblem(),
                             note = row.metadataNote(),
+                            onDetails = { selectedLevel = row },
                         )
                     }
                 }
@@ -2646,12 +2653,13 @@ private fun LevelMetadataTableRow(
     bold: Boolean = false,
     problem: String? = null,
     note: String? = null,
+    onDetails: (() -> Unit)? = null,
 ) {
     val weight = if (bold) FontWeight.SemiBold else FontWeight.Normal
     Row(
         modifier =
             Modifier
-                .widthIn(min = 780.dp)
+                .widthIn(min = 824.dp)
                 .padding(vertical = 2.dp),
         verticalAlignment = Alignment.Top,
     ) {
@@ -2664,6 +2672,15 @@ private fun LevelMetadataTableRow(
         Text(energy, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(64.dp))
         Text(volume, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(76.dp))
         Text(travel, fontSize = 11.sp, fontWeight = weight, modifier = Modifier.width(76.dp))
+        Box(modifier = Modifier.width(44.dp), contentAlignment = Alignment.TopStart) {
+            if (bold) {
+                Text("Route", fontSize = 11.sp, fontWeight = weight)
+            } else if (onDetails != null) {
+                IconButton(onClick = onDetails, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Filled.Info, "Level route", modifier = Modifier.size(15.dp))
+                }
+            }
+        }
     }
     problem?.let {
         Text(
@@ -2682,6 +2699,90 @@ private fun LevelMetadataTableRow(
         )
     }
 }
+
+@Composable
+private fun LevelMetadataLevelDialog(
+    row: LevelMetadataLevelRow,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        title = {
+            Text(row.levelName.ifBlank { row.levelFile }, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        },
+        text = {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp),
+            ) {
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(scrollState)
+                            .padding(end = 8.dp),
+                ) {
+                    DetailRow("Level", formatLevelMetadataLevelNumber(row))
+                    if (row.levelFile.isNotBlank()) {
+                        DetailRow("File", row.levelFile)
+                    }
+                    DetailRow("Status", row.status.replaceFirstChar { it.uppercase() })
+                    DetailRow("Travel", row.travelTimeText.ifBlank { "n/a" })
+                    if (row.travelStatus != "ok" && row.travelProblem.isNotBlank()) {
+                        ModDetailLine(
+                            "Travel ${row.travelStatus}: ${row.travelProblem}",
+                            MaterialTheme.colorScheme.error,
+                        )
+                    }
+                    if (row.travelNote.isNotBlank()) {
+                        ModDetailLine(row.travelNote)
+                    }
+                    ModDetailSectionTitle("Path")
+                    if (row.routeStatus.isNotBlank()) {
+                        DetailRow("Route status", row.routeStatus.replaceFirstChar { it.uppercase() })
+                    }
+                    if (row.routeProblem.isNotBlank()) {
+                        ModDetailLine(row.routeProblem, MaterialTheme.colorScheme.error)
+                    }
+                    if (row.routeSteps.isEmpty()) {
+                        ModDetailLine("No route steps")
+                    } else {
+                        row.routeSteps.forEachIndexed { displayIndex, step ->
+                            Text(
+                                "${displayIndex + 1}. ${step.routeStepSummary()}",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(bottom = 2.dp),
+                            )
+                            step.routeOpenSummary().takeIf { it.isNotBlank() }?.let { opens ->
+                                Text(
+                                    opens,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 16.dp, bottom = 3.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+                SetupScrollArrows(scrollState)
+            }
+        },
+    )
+}
+
+private fun formatLevelMetadataLevelNumber(row: LevelMetadataLevelRow): String =
+    if (row.secret) {
+        "S${-row.levelNum}"
+    } else {
+        row.levelNum.toString()
+    }
 
 private fun formatLevelMetadataVolumeMultiplier(value: Double): String {
     if (value <= 0.0) return ""
@@ -2702,6 +2803,15 @@ private fun LevelMetadataLevelRow.metadataProblem(): String? {
             if (travelStatus != "ok" && travelProblem.isNotBlank()) {
                 add("Travel $travelStatus: $travelProblem")
             }
+            if (routeStatus.isNotBlank() && routeStatus != "ok") {
+                add(
+                    if (routeProblem.isNotBlank()) {
+                        "Route $routeStatus: $routeProblem"
+                    } else {
+                        "Route $routeStatus"
+                    },
+                )
+            }
         }
     return messages.joinToString("; ").takeIf { it.isNotBlank() }
 }
@@ -2716,6 +2826,48 @@ private fun LevelMetadataLevelRow.metadataNote(): String? {
         }
     return messages.joinToString("; ") { "note: $it" }.takeIf { it.isNotBlank() }
 }
+
+private fun LevelMetadataRouteStep.routeStepSummary(): String {
+    val displayLabel = label.ifBlank { routeStepFallbackLabel() }
+    val details =
+        buildList {
+            if (kind == "trigger" && trigger >= 0 && !displayLabel.contains("trigger", ignoreCase = true)) {
+                add("trigger $trigger")
+            }
+            if (triggerType.isNotBlank() && kind == "trigger") {
+                add(triggerType.replace('_', ' '))
+            }
+            if (seg >= 0) add("segment $seg")
+            if (side >= 0) add("side $side")
+            if (wall >= 0 && kind == "trigger") add("wall $wall")
+            if (distance > 0.0) add("${"%.0f".format(Locale.US, distance)} units")
+        }
+    return (listOf(displayLabel) + details).joinToString(", ")
+}
+
+private fun LevelMetadataRouteStep.routeStepFallbackLabel(): String =
+    when (kind) {
+        "start" -> "Start"
+        "key" -> key.ifBlank { "Key" }.replaceFirstChar { it.uppercase() } + " key"
+        "trigger" -> "Trigger"
+        "reactor" -> "Reactor"
+        "boss" -> "Boss"
+        "exit" -> "Exit"
+        "hidden_door" -> "Hidden door"
+        "hostage" -> "Hostage"
+        else -> kind.ifBlank { "Step" }.replace('_', ' ').replaceFirstChar { it.uppercase() }
+    }
+
+private fun LevelMetadataRouteStep.routeOpenSummary(): String =
+    opens
+        .takeIf { it.isNotEmpty() }
+        ?.joinToString(prefix = "Opens: ") { link ->
+            buildList {
+                if (link.seg >= 0) add("segment ${link.seg}")
+                if (link.side >= 0) add("side ${link.side}")
+                if (link.wall >= 0) add("wall ${link.wall}")
+            }.joinToString(" ").ifBlank { "target" }
+        }.orEmpty()
 
 @Composable
 private fun FileMetadataDetails(metadata: GameFileMetadata.Summary?) {

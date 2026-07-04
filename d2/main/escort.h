@@ -22,6 +22,14 @@ extern void escort_find_secret_goal(void);
 extern int escort_get_secret_goal_display_index(void);
 extern int escort_get_secret_goal_seg(void);
 extern int escort_get_secret_goal_side(void);
+#ifdef __ANDROID__
+extern int escort_get_route_goal_active(void);
+extern int escort_get_route_goal_seg(void);
+extern int escort_get_route_goal_side(void);
+extern int escort_get_route_goal_wall(void);
+extern int escort_get_route_goal_trigger(void);
+extern const char *escort_get_route_goal_label(void);
+#endif
 extern void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu);
 extern void input_demo_apply_recorded_guidebot_find_secret(void);
 extern void escort_rebuild_runtime_state_after_restore(void);

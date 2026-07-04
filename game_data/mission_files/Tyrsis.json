@@ -26,7 +26,17 @@
         "travel_time_text": "3M:25S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
-        "travel_key_detours": 3
+        "travel_key_detours": 3,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 1
+          }
+        ],
+        "route_problem": "key route dependency loop"
       },
       {
         "level_num": 2,
@@ -47,9 +57,73 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
-        "travel_note": "missing reactor",
+        "route_status": "partial",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 13
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 291,
+            "distance": 1334.414006154346,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 359,
+            "distance": 1511.7095999041182,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "label": "Open wall trigger 14",
+            "seg": 507,
+            "side": 0,
+            "wall": 145,
+            "distance": 1223.561983242493,
+            "trigger": 14,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 500,
+                "side": 5,
+                "wall": 114
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "label": "Open wall trigger 13",
+            "seg": 505,
+            "side": 0,
+            "wall": 144,
+            "distance": 131.2310562561766,
+            "trigger": 13,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 495,
+                "side": 5,
+                "wall": 113
+              }
+            ]
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "route_problem": "trigger route dependency loop",
         "notes": [
-          "missing reactor"
+          "no reactor, exit exists"
         ]
       }
     ],

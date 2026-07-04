@@ -26,7 +26,17 @@
         "travel_time_text": "0M:08S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 39
+          }
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 2,
@@ -46,7 +56,17 @@
         "travel_time_text": "0M:19S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          }
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 3,
@@ -66,7 +86,17 @@
         "travel_time_text": "0M:20S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 19
+          }
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 4,
@@ -86,7 +116,17 @@
         "travel_time_text": "1M:32S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 35
+          }
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 5,
@@ -106,7 +146,17 @@
         "travel_time_text": "0M:17S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 65
+          }
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 6,
@@ -126,7 +176,17 @@
         "travel_time_text": "1M:24S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 74
+          }
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 7,
@@ -146,7 +206,17 @@
         "travel_time_text": "0M:38S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 43
+          }
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 8,
@@ -166,7 +236,17 @@
         "travel_time_text": "0M:38S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 101
+          }
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 9,
@@ -186,7 +266,17 @@
         "travel_time_text": "0M:52S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 38
+          }
+        ],
+        "route_problem": "route target unreachable"
       }
     ],
     "target_index": 0

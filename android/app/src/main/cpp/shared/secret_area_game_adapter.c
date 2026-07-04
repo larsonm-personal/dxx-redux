@@ -12,6 +12,7 @@
 #include "object.h"
 #include "player.h"
 #include "powerup.h"
+#include "robot.h"
 #include "secret_area_item_names.h"
 #include "segment.h"
 #include "switch.h"
@@ -57,6 +58,22 @@ static int secret_area_wall_num(void *user, int seg, int side)
 	return Segments[seg].sides[side].wall_num;
 }
 
+static int secret_area_wall_segment(void *user, int wall_num)
+{
+	(void) user;
+	if (wall_num < 0 || wall_num >= Num_walls)
+		return -1;
+	return Walls[wall_num].segnum;
+}
+
+static int secret_area_wall_side(void *user, int wall_num)
+{
+	(void) user;
+	if (wall_num < 0 || wall_num >= Num_walls)
+		return -1;
+	return Walls[wall_num].sidenum;
+}
+
 static int secret_area_wall_type(void *user, int wall_num)
 {
 	(void) user;
@@ -79,6 +96,14 @@ static int secret_area_wall_keys(void *user, int wall_num)
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return KEY_NONE;
 	return Walls[wall_num].keys;
+}
+
+static int secret_area_wall_trigger(void *user, int wall_num)
+{
+	(void) user;
+	if (wall_num < 0 || wall_num >= Num_walls)
+		return -1;
+	return Walls[wall_num].trigger;
 }
 
 static int secret_area_wall_clip_flags(void *user, int wall_num)
@@ -253,6 +278,18 @@ static int secret_area_object_position(void *user, int objnum, int xyz[3])
 	return 1;
 }
 
+static int secret_area_object_is_boss(void *user, int objnum)
+{
+	(void) user;
+	if (objnum < 0 || objnum >= num_objects)
+		return 0;
+	if (Objects[objnum].type != OBJ_ROBOT)
+		return 0;
+	if (Objects[objnum].id < 0 || Objects[objnum].id >= N_robot_types)
+		return 0;
+	return Robot_info[Objects[objnum].id].boss_flag != 0;
+}
+
 static const char *secret_area_powerup_name(void *user, int id)
 {
 	(void) user;
@@ -416,6 +453,68 @@ static int secret_area_triggered_side_opener_wall_num(void *user, int seg, int s
 	return secret_area_side_opener_source_wall_at(seg, side, index, 0);
 }
 
+static int secret_area_metadata_triggered_side_opener_wall_num(void *user, int seg, int side, int index)
+{
+	(void) user;
+	return secret_area_side_opener_source_wall_at(seg, side, index, 1);
+}
+
+static int secret_area_trigger_type(void *user, int trigger_num)
+{
+	(void) user;
+#ifdef DXX_BUILD_DESCENT_II
+	if (trigger_num < 0 || trigger_num >= Num_triggers)
+		return -1;
+	return Triggers[trigger_num].type;
+#else
+	(void) trigger_num;
+	return -1;
+#endif
+}
+
+static int secret_area_trigger_link_count(void *user, int trigger_num)
+{
+	(void) user;
+#ifdef DXX_BUILD_DESCENT_II
+	if (trigger_num < 0 || trigger_num >= Num_triggers)
+		return 0;
+	return Triggers[trigger_num].num_links;
+#else
+	(void) trigger_num;
+	return 0;
+#endif
+}
+
+static int secret_area_trigger_link_segment(void *user, int trigger_num, int link_index)
+{
+	(void) user;
+#ifdef DXX_BUILD_DESCENT_II
+	if (trigger_num < 0 || trigger_num >= Num_triggers ||
+	    link_index < 0 || link_index >= Triggers[trigger_num].num_links)
+		return -1;
+	return Triggers[trigger_num].seg[link_index];
+#else
+	(void) trigger_num;
+	(void) link_index;
+	return -1;
+#endif
+}
+
+static int secret_area_trigger_link_side(void *user, int trigger_num, int link_index)
+{
+	(void) user;
+#ifdef DXX_BUILD_DESCENT_II
+	if (trigger_num < 0 || trigger_num >= Num_triggers ||
+	    link_index < 0 || link_index >= Triggers[trigger_num].num_links)
+		return -1;
+	return Triggers[trigger_num].side[link_index];
+#else
+	(void) trigger_num;
+	(void) link_index;
+	return -1;
+#endif
+}
+
 static void level_metadata_rescan_current_level(void)
 {
 	level_metadata_scan_view view;
@@ -438,6 +537,7 @@ static void level_metadata_rescan_current_level(void)
 	view.wall_key_red = KEY_RED;
 	view.wall_key_gold = KEY_GOLD;
 	view.obj_type_none = OBJ_NONE;
+	view.obj_type_robot = OBJ_ROBOT;
 	view.obj_type_hostage = OBJ_HOSTAGE;
 	view.obj_type_powerup = OBJ_POWERUP;
 	view.obj_type_control_center = OBJ_CNTRLCEN;
@@ -445,11 +545,23 @@ static void level_metadata_rescan_current_level(void)
 	view.powerup_key_blue = POW_KEY_BLUE;
 	view.powerup_key_red = POW_KEY_RED;
 	view.powerup_key_gold = POW_KEY_GOLD;
+#ifdef DXX_BUILD_DESCENT_II
+	view.trigger_type_open_door = TT_OPEN_DOOR;
+	view.trigger_type_exit = TT_EXIT;
+	view.trigger_type_secret_exit = TT_SECRET_EXIT;
+	view.trigger_type_illusion_off = TT_ILLUSION_OFF;
+	view.trigger_type_unlock_door = TT_UNLOCK_DOOR;
+	view.trigger_type_open_wall = TT_OPEN_WALL;
+	view.trigger_type_illusory_wall = TT_ILLUSORY_WALL;
+#endif
 	view.segment_child = secret_area_segment_child;
 	view.reverse_side = secret_area_reverse_side;
 	view.wall_num = secret_area_wall_num;
+	view.wall_segment = secret_area_wall_segment;
+	view.wall_side = secret_area_wall_side;
 	view.wall_type = secret_area_wall_type;
 	view.wall_keys = secret_area_wall_keys;
+	view.wall_trigger = secret_area_wall_trigger;
 	view.segment_special = secret_area_segment_special;
 	view.segment_center = secret_area_segment_center;
 	view.segment_vertex = secret_area_segment_vertex;
@@ -463,8 +575,14 @@ static void level_metadata_rescan_current_level(void)
 	view.object_contains_id = secret_area_object_contains_id;
 	view.object_contains_count = secret_area_object_contains_count;
 	view.object_position = secret_area_object_position;
+	view.object_is_boss = secret_area_object_is_boss;
 	view.side_has_exit_trigger = secret_area_side_has_exit_trigger;
 	view.triggered_side_opener_count = secret_area_metadata_triggered_side_opener_count;
+	view.triggered_side_opener_wall_num = secret_area_metadata_triggered_side_opener_wall_num;
+	view.trigger_type = secret_area_trigger_type;
+	view.trigger_link_count = secret_area_trigger_link_count;
+	view.trigger_link_segment = secret_area_trigger_link_segment;
+	view.trigger_link_side = secret_area_trigger_link_side;
 	view.target_visible_from_segment = secret_area_target_visible_from_segment;
 	level_metadata_scan_level(&view, &Level_metadata_state);
 }

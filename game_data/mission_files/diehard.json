@@ -1,0 +1,1355 @@
+[
+  {
+    "status": "ok",
+    "source": "DESCENT: DIE HARD!",
+    "game": "d2",
+    "mission_name": "diehard",
+    "mission_filename": "diehard.MN2",
+    "coop_starts": "1",
+    "level_count": 19,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Area 51",
+        "level_file": "DH01.RL2",
+        "robots": 138,
+        "hostages": 8,
+        "secrets": 2,
+        "matcens": 2,
+        "energy_centers": 6,
+        "mine_volume": 18245815.10729595,
+        "mine_volume_normalized": 3.989985321336904,
+        "mine_volume_text": "4.0x",
+        "travel_distance": 9018.112594706497,
+        "travel_time_seconds": 180,
+        "travel_time_text": "3M:00S",
+        "travel_targets_reached": 10,
+        "travel_targets_total": 10,
+        "travel_key_detours": 3,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 1
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 1",
+            "seg": 261,
+            "side": 5,
+            "wall": 28,
+            "distance": 1229.019087602312,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 260,
+                "side": 1,
+                "wall": 27
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 260,
+            "distance": 142,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 322,
+            "distance": 1287.7373277819538,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "red key",
+            "seg": 563,
+            "distance": 1063.922508818771,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 650,
+            "distance": 711.945985224484
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 683,
+            "side": 5,
+            "wall": 118,
+            "distance": 1326.5662097518098,
+            "trigger": 12,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Master's Igloo",
+        "level_file": "DH02.RL2",
+        "robots": 65,
+        "hostages": 5,
+        "secrets": 2,
+        "matcens": 5,
+        "energy_centers": 2,
+        "mine_volume": 43358926.87214367,
+        "mine_volume_normalized": 9.48170749026145,
+        "mine_volume_text": "9.5x",
+        "travel_distance": 1584.2705692628556,
+        "travel_time_seconds": 32,
+        "travel_time_text": "0M:32S",
+        "travel_targets_reached": 6,
+        "travel_targets_total": 6,
+        "travel_key_detours": 0,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 1",
+            "seg": 1,
+            "side": 1,
+            "wall": 26,
+            "distance": 30,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 19,
+                "side": 4,
+                "wall": 20
+              },
+              {
+                "seg": 5,
+                "side": 5,
+                "wall": 22
+              },
+              {
+                "seg": 0,
+                "side": 3,
+                "wall": 25
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "boss",
+            "label": "Boss",
+            "seg": 385,
+            "distance": 1103.937605479127
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 395,
+            "side": 3,
+            "wall": 50,
+            "distance": 150,
+            "trigger": 10,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 3,
+        "secret": false,
+        "level_name": "<*Idyll*>",
+        "level_file": "DH03.RL2",
+        "robots": 93,
+        "hostages": 6,
+        "secrets": 2,
+        "matcens": 4,
+        "energy_centers": 4,
+        "mine_volume": 35357639.16388342,
+        "mine_volume_normalized": 7.731990071773197,
+        "mine_volume_text": "7.7x",
+        "travel_distance": 9930.134589860447,
+        "travel_time_seconds": 199,
+        "travel_time_text": "3M:19S",
+        "travel_targets_reached": 8,
+        "travel_targets_total": 8,
+        "travel_key_detours": 2,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 2",
+            "seg": 53,
+            "side": 2,
+            "wall": 13,
+            "distance": 1161.3068339835993,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 28,
+                "side": 3,
+                "wall": 10
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 114,
+            "distance": 950.4371266184648,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "label": "Open wall trigger 13",
+            "seg": 123,
+            "side": 5,
+            "wall": 34,
+            "distance": 1144.5272808490388,
+            "trigger": 13,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 121,
+                "side": 0,
+                "wall": 45
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "label": "Illusory wall trigger 17",
+            "seg": 283,
+            "side": 0,
+            "wall": 67,
+            "distance": 771.6841972238965,
+            "trigger": 17,
+            "trigger_type_id": 11,
+            "trigger_type": "illusory_wall",
+            "opens": [
+              {
+                "seg": 217,
+                "side": 3,
+                "wall": 64
+              },
+              {
+                "seg": 294,
+                "side": 1,
+                "wall": 65
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "label": "Illusory wall trigger 16",
+            "seg": 294,
+            "side": 3,
+            "wall": 66,
+            "distance": 1317.9736277270433,
+            "trigger": 16,
+            "trigger_type_id": 11,
+            "trigger_type": "illusory_wall",
+            "opens": [
+              {
+                "seg": 284,
+                "side": 1,
+                "wall": 60
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "key",
+            "label": "red key",
+            "seg": 235,
+            "distance": 323.6036230441347,
+            "key": "red"
+          },
+          {
+            "index": 7,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 381,
+            "distance": 2486.396562055762
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 309,
+            "side": 4,
+            "wall": 77,
+            "distance": 1186.0504053197633,
+            "trigger": 19,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 4,
+        "secret": false,
+        "level_name": "Maverick's Misery",
+        "level_file": "DH04.RL2",
+        "robots": 108,
+        "hostages": 3,
+        "secrets": 4,
+        "matcens": 6,
+        "energy_centers": 4,
+        "mine_volume": 41929943.43659625,
+        "mine_volume_normalized": 9.169218138662798,
+        "mine_volume_text": "9.2x",
+        "travel_distance": 13308.319991901004,
+        "travel_time_seconds": 266,
+        "travel_time_text": "4M:26S",
+        "travel_targets_reached": 4,
+        "travel_targets_total": 4,
+        "travel_key_detours": 3,
+        "route_status": "partial",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 178,
+            "distance": 1819.6218296989302,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "label": "Open wall trigger 7",
+            "seg": 97,
+            "side": 0,
+            "wall": 53,
+            "distance": 2082.6461158103075,
+            "trigger": 7,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 257,
+                "side": 0,
+                "wall": 51
+              }
+            ]
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "route_problem": "trigger route dependency loop",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 5,
+        "secret": false,
+        "level_name": "Atlantis 2000",
+        "level_file": "DH05.RL2",
+        "robots": 62,
+        "hostages": 5,
+        "secrets": 2,
+        "matcens": 2,
+        "energy_centers": 2,
+        "mine_volume": 41185436.66392279,
+        "mine_volume_normalized": 9.006409786329161,
+        "mine_volume_text": "9.0x",
+        "travel_distance": 3115.9136055410486,
+        "travel_time_seconds": 62,
+        "travel_time_text": "1M:02S",
+        "travel_targets_reached": 6,
+        "travel_targets_total": 6,
+        "travel_key_detours": 0,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 5",
+            "seg": 47,
+            "side": 5,
+            "wall": 3,
+            "distance": 678,
+            "trigger": 5,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 42,
+                "side": 2,
+                "wall": 44
+              },
+              {
+                "seg": 53,
+                "side": 2,
+                "wall": 46
+              },
+              {
+                "seg": 54,
+                "side": 0,
+                "wall": 48
+              },
+              {
+                "seg": 39,
+                "side": 0,
+                "wall": 50
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "boss",
+            "label": "Boss",
+            "seg": 336,
+            "distance": 590.3694618202431
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 392,
+            "side": 5,
+            "wall": 58,
+            "distance": 1113.2092956413496,
+            "trigger": 6,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 6,
+        "secret": false,
+        "level_name": "Robot-Empire",
+        "level_file": "DH06.RL2",
+        "robots": 122,
+        "hostages": 0,
+        "secrets": 3,
+        "matcens": 6,
+        "energy_centers": 6,
+        "mine_volume": 31608673.186160993,
+        "mine_volume_normalized": 6.912168149138315,
+        "mine_volume_text": "6.9x",
+        "travel_distance": 3277.57241447339,
+        "travel_time_seconds": 66,
+        "travel_time_text": "1M:06S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 1,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          }
+        ],
+        "route_problem": "trigger route dependency loop"
+      },
+      {
+        "level_num": 7,
+        "secret": false,
+        "level_name": "Nomansland",
+        "level_file": "DH07.RL2",
+        "robots": 93,
+        "hostages": 6,
+        "secrets": 3,
+        "matcens": 2,
+        "energy_centers": 6,
+        "mine_volume": 23080781.927189272,
+        "mine_volume_normalized": 5.047293341125577,
+        "mine_volume_text": "5.0x",
+        "travel_distance": 6922.273780250605,
+        "travel_time_seconds": 138,
+        "travel_time_text": "2M:18S",
+        "travel_targets_reached": 7,
+        "travel_targets_total": 7,
+        "travel_key_detours": 2,
+        "route_status": "partial",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 1",
+            "seg": 318,
+            "side": 0,
+            "wall": 38,
+            "distance": 1256.3152937937152,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 61,
+                "side": 5,
+                "wall": 14
+              },
+              {
+                "seg": 60,
+                "side": 4,
+                "wall": 16
+              }
+            ]
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "route_problem": "route target unreachable",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 8,
+        "secret": false,
+        "level_name": "Nomansland final Core",
+        "level_file": "DH08.RL2",
+        "robots": 39,
+        "hostages": 0,
+        "secrets": 4,
+        "matcens": 0,
+        "energy_centers": 4,
+        "mine_volume": 27833150.90840661,
+        "mine_volume_normalized": 6.0865389086777615,
+        "mine_volume_text": "6.1x",
+        "travel_distance": 1104.1753451262223,
+        "travel_time_seconds": 22,
+        "travel_time_text": "0M:22S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "red key",
+            "seg": 0,
+            "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 179,
+            "distance": 588.406339426246
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 22,
+            "side": 4,
+            "wall": 4,
+            "distance": 863.406339426246,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 9,
+        "secret": false,
+        "level_name": "Groovebird's cool Home",
+        "level_file": "DH09.RL2",
+        "robots": 126,
+        "hostages": 10,
+        "secrets": 3,
+        "matcens": 6,
+        "energy_centers": 3,
+        "mine_volume": 27036211.769074783,
+        "mine_volume_normalized": 5.912264673778748,
+        "mine_volume_text": "5.9x",
+        "travel_distance": 7629.85335446887,
+        "travel_time_seconds": 153,
+        "travel_time_text": "2M:33S",
+        "travel_targets_reached": 11,
+        "travel_targets_total": 11,
+        "travel_key_detours": 2,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 60
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 243,
+            "distance": 620.1754703602592,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "label": "Open wall trigger 9",
+            "seg": 523,
+            "side": 5,
+            "wall": 105,
+            "distance": 1864.0380867179174,
+            "trigger": 9,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 428,
+                "side": 0,
+                "wall": 95
+              },
+              {
+                "seg": 432,
+                "side": 2,
+                "wall": 96
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 314,
+            "distance": 1894.0977091367893,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "label": "Boss",
+            "seg": 599,
+            "distance": 1731.991441487771
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 602,
+            "side": 3,
+            "wall": 112,
+            "distance": 353.77657905937446,
+            "trigger": 10,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 10,
+        "secret": false,
+        "level_name": "Pandora's Box",
+        "level_file": "DH10.RL2",
+        "robots": 161,
+        "hostages": 6,
+        "secrets": 12,
+        "matcens": 1,
+        "energy_centers": 8,
+        "mine_volume": 36192238.47424856,
+        "mine_volume_normalized": 7.914499813211015,
+        "mine_volume_text": "7.9x",
+        "travel_distance": 8703.810896653073,
+        "travel_time_seconds": 174,
+        "travel_time_text": "2M:54S",
+        "travel_targets_reached": 7,
+        "travel_targets_total": 7,
+        "travel_key_detours": 2,
+        "route_status": "partial",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Illusory wall trigger 0",
+            "seg": 112,
+            "side": 4,
+            "wall": 25,
+            "distance": 858.0411824189166,
+            "trigger": 0,
+            "trigger_type_id": 11,
+            "trigger_type": "illusory_wall",
+            "opens": [
+              {
+                "seg": 112,
+                "side": 5,
+                "wall": 18
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 162,
+            "distance": 1291.6644464589858,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 414,
+            "distance": 1851.26218091479,
+            "key": "red"
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "route_problem": "trigger route dependency loop",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 11,
+        "secret": false,
+        "level_name": "Alpha-Section",
+        "level_file": "DH11.RL2",
+        "robots": 82,
+        "hostages": 5,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 3,
+        "mine_volume": 16306033.842438348,
+        "mine_volume_normalized": 3.5657949671174705,
+        "mine_volume_text": "3.6x",
+        "travel_distance": 3921.5792621176392,
+        "travel_time_seconds": 78,
+        "travel_time_text": "1M:18S",
+        "travel_targets_reached": 7,
+        "travel_targets_total": 7,
+        "travel_key_detours": 1,
+        "route_status": "partial",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 11",
+            "seg": 228,
+            "side": 2,
+            "wall": 48,
+            "distance": 779.4284115615939,
+            "trigger": 11,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 0,
+                "side": 1,
+                "wall": 59
+              }
+            ]
+          }
+        ],
+        "route_problem": "route target unreachable"
+      },
+      {
+        "level_num": 12,
+        "secret": false,
+        "level_name": "Beta-Section",
+        "level_file": "DH12.RL2",
+        "robots": 82,
+        "hostages": 8,
+        "secrets": 1,
+        "matcens": 0,
+        "energy_centers": 2,
+        "mine_volume": 22409928.29522947,
+        "mine_volume_normalized": 4.900591419148146,
+        "mine_volume_text": "4.9x",
+        "travel_distance": 6420.180043772653,
+        "travel_time_seconds": 128,
+        "travel_time_text": "2M:08S",
+        "travel_targets_reached": 9,
+        "travel_targets_total": 9,
+        "travel_key_detours": 1,
+        "route_status": "partial",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 0",
+            "seg": 62,
+            "side": 3,
+            "wall": 26,
+            "distance": 32,
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 0,
+                "side": 2,
+                "wall": 18
+              },
+              {
+                "seg": 0,
+                "side": 4,
+                "wall": 20
+              },
+              {
+                "seg": 0,
+                "side": 0,
+                "wall": 22
+              },
+              {
+                "seg": 0,
+                "side": 5,
+                "wall": 24
+              }
+            ]
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "route_problem": "trigger route dependency loop",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 13,
+        "secret": false,
+        "level_name": "Gamma-Section",
+        "level_file": "DH13.RL2",
+        "robots": 44,
+        "hostages": 0,
+        "secrets": 1,
+        "matcens": 4,
+        "energy_centers": 2,
+        "mine_volume": 27568110.099699587,
+        "mine_volume_normalized": 6.028579923010225,
+        "mine_volume_text": "6.0x",
+        "travel_distance": 1251.240613792028,
+        "travel_time_seconds": 25,
+        "travel_time_text": "0M:25S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 0,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 1
+          },
+          {
+            "index": 1,
+            "kind": "boss",
+            "label": "Boss",
+            "seg": 118,
+            "distance": 1297.274044571174
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "label": "Open wall trigger 1",
+            "seg": 149,
+            "side": 0,
+            "wall": 16,
+            "distance": 1728.239944621979,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 140,
+                "side": 2,
+                "wall": 13
+              },
+              {
+                "seg": 139,
+                "side": 0,
+                "wall": 12
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 141,
+            "side": 0,
+            "wall": 10,
+            "distance": 1667.2065138428334,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 14,
+        "secret": false,
+        "level_name": "Delta-Section",
+        "level_file": "DH14.RL2",
+        "robots": 104,
+        "hostages": 13,
+        "secrets": 5,
+        "matcens": 5,
+        "energy_centers": 6,
+        "mine_volume": 27146978.197195426,
+        "mine_volume_normalized": 5.936487018447886,
+        "mine_volume_text": "5.9x",
+        "travel_distance": 7902.278931445378,
+        "travel_time_seconds": 158,
+        "travel_time_text": "2M:38S",
+        "travel_targets_reached": 14,
+        "travel_targets_total": 14,
+        "travel_key_detours": 2,
+        "route_status": "partial",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 166,
+            "distance": 671.8142733893361,
+            "key": "blue"
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "route_problem": "trigger route dependency loop",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 15,
+        "secret": false,
+        "level_name": "New Argyle Park",
+        "level_file": "DH15.RL2",
+        "robots": 63,
+        "hostages": 0,
+        "secrets": 7,
+        "matcens": 2,
+        "energy_centers": 0,
+        "mine_volume": 11413167.35634161,
+        "mine_volume_normalized": 2.4958254785534426,
+        "mine_volume_text": "2.5x",
+        "travel_distance": 2682.4420660760647,
+        "travel_time_seconds": 54,
+        "travel_time_text": "0M:54S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 1,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 117
+          }
+        ],
+        "route_problem": "key route dependency loop"
+      },
+      {
+        "level_num": 16,
+        "secret": false,
+        "level_name": "Heavy Hideout",
+        "level_file": "DH16.RL2",
+        "robots": 138,
+        "hostages": 6,
+        "secrets": 3,
+        "matcens": 1,
+        "energy_centers": 2,
+        "mine_volume": 20864105.226392824,
+        "mine_volume_normalized": 4.562551637544974,
+        "mine_volume_text": "4.6x",
+        "travel_distance": 7669.328301922528,
+        "travel_time_seconds": 153,
+        "travel_time_text": "2M:33S",
+        "travel_targets_reached": 8,
+        "travel_targets_total": 8,
+        "travel_key_detours": 2,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Illusory wall trigger 9",
+            "seg": 198,
+            "side": 3,
+            "wall": 59,
+            "distance": 672.8342208944496,
+            "trigger": 9,
+            "trigger_type_id": 11,
+            "trigger_type": "illusory_wall",
+            "opens": [
+              {
+                "seg": 215,
+                "side": 2,
+                "wall": 58
+              },
+              {
+                "seg": 225,
+                "side": 0,
+                "wall": 57
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "label": "Open wall trigger 8",
+            "seg": 225,
+            "side": 2,
+            "wall": 56,
+            "distance": 1081.195959825931,
+            "trigger": 8,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 225,
+                "side": 4,
+                "wall": 54
+              },
+              {
+                "seg": 225,
+                "side": 5,
+                "wall": 53
+              },
+              {
+                "seg": 201,
+                "side": 4,
+                "wall": 40
+              },
+              {
+                "seg": 198,
+                "side": 0,
+                "wall": 42
+              },
+              {
+                "seg": 200,
+                "side": 5,
+                "wall": 44
+              },
+              {
+                "seg": 197,
+                "side": 3,
+                "wall": 38
+              },
+              {
+                "seg": 196,
+                "side": 2,
+                "wall": 46
+              },
+              {
+                "seg": 199,
+                "side": 1,
+                "wall": 49
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 53,
+            "distance": 1052.9116885784688,
+            "key": "blue"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "red key",
+            "seg": 459,
+            "distance": 1793.0616146981843,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 402,
+            "distance": 894.7253639126791
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 461,
+            "side": 1,
+            "wall": 111,
+            "distance": 252,
+            "trigger": 17,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 17,
+        "secret": false,
+        "level_name": "Slaughterhouse",
+        "level_file": "DH17.RL2",
+        "robots": 147,
+        "hostages": 6,
+        "secrets": 7,
+        "matcens": 3,
+        "energy_centers": 8,
+        "mine_volume": 33180790.83938265,
+        "mine_volume_normalized": 7.25595801672613,
+        "mine_volume_text": "7.3x",
+        "travel_distance": 5860.854100104082,
+        "travel_time_seconds": 117,
+        "travel_time_text": "1M:57S",
+        "travel_targets_reached": 7,
+        "travel_targets_total": 7,
+        "travel_key_detours": 1,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 19",
+            "seg": 327,
+            "side": 5,
+            "wall": 123,
+            "distance": 592.9653693243592,
+            "trigger": 19,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 347,
+                "side": 3,
+                "wall": 130
+              },
+              {
+                "seg": 348,
+                "side": 3,
+                "wall": 132
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 366,
+            "distance": 354.3452316390634,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "boss",
+            "label": "Boss",
+            "seg": 642,
+            "distance": 1965.1305072125342
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 667,
+            "side": 1,
+            "wall": 156,
+            "distance": 590.4549322850446,
+            "trigger": 29,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 18,
+        "secret": false,
+        "level_name": "Ring of Fire",
+        "level_file": "DH18.RL2",
+        "robots": 44,
+        "hostages": 12,
+        "secrets": 0,
+        "matcens": 11,
+        "energy_centers": 2,
+        "mine_volume": 32795216.831461556,
+        "mine_volume_normalized": 7.171640893986077,
+        "mine_volume_text": "7.2x",
+        "travel_distance": 5462.652626550187,
+        "travel_time_seconds": 109,
+        "travel_time_text": "1M:49S",
+        "travel_targets_reached": 14,
+        "travel_targets_total": 14,
+        "travel_key_detours": 1,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 15
+          }
+        ],
+        "route_problem": "route target unreachable"
+      },
+      {
+        "level_num": 19,
+        "secret": false,
+        "level_name": "The Razor's Edge",
+        "level_file": "DH19.RL2",
+        "robots": 76,
+        "hostages": 6,
+        "secrets": 3,
+        "matcens": 3,
+        "energy_centers": 2,
+        "mine_volume": 16330199.999999614,
+        "mine_volume_normalized": 3.5710796098355706,
+        "mine_volume_text": "3.6x",
+        "travel_distance": 3231.4153979283674,
+        "travel_time_seconds": 65,
+        "travel_time_text": "1M:05S",
+        "travel_targets_reached": 7,
+        "travel_targets_total": 7,
+        "travel_key_detours": 0,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 5
+          },
+          {
+            "index": 1,
+            "kind": "boss",
+            "label": "Boss",
+            "seg": 133,
+            "distance": 245.31128874149275
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 315,
+            "side": 3,
+            "wall": 28,
+            "distance": 474.7234016525894,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      }
+    ],
+    "target_index": 0
+  }
+]

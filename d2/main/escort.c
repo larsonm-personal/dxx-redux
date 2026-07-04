@@ -171,7 +171,64 @@ static int escort_refresh_buddy_objnum(void)
 	return Buddy_objnum != -1;
 }
 
+static int escort_reactor_exists(void);
+
 #ifdef __ANDROID__
+typedef struct escort_route_goal {
+	int active;
+	int target_seg;
+	int target_side;
+	int target_wall;
+	int trigger_num;
+	char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
+} escort_route_goal;
+
+static escort_route_goal Escort_route_goal;
+
+static void escort_route_clear_goal(void)
+{
+	memset(&Escort_route_goal, 0, sizeof(Escort_route_goal));
+	Escort_route_goal.target_seg = -1;
+	Escort_route_goal.target_side = -1;
+	Escort_route_goal.target_wall = -1;
+	Escort_route_goal.trigger_num = -1;
+}
+
+static const char *escort_route_goal_label(void)
+{
+	return Escort_route_goal.label[0] ? Escort_route_goal.label : "route objective";
+}
+
+int escort_get_route_goal_active(void)
+{
+	return Escort_route_goal.active;
+}
+
+int escort_get_route_goal_seg(void)
+{
+	return Escort_route_goal.active ? Escort_route_goal.target_seg : -1;
+}
+
+int escort_get_route_goal_side(void)
+{
+	return Escort_route_goal.active ? Escort_route_goal.target_side : -1;
+}
+
+int escort_get_route_goal_wall(void)
+{
+	return Escort_route_goal.active ? Escort_route_goal.target_wall : -1;
+}
+
+int escort_get_route_goal_trigger(void)
+{
+	return Escort_route_goal.active ? Escort_route_goal.trigger_num : -1;
+}
+
+const char *escort_get_route_goal_label(void)
+{
+	return Escort_route_goal.active ? escort_route_goal_label() : "";
+}
+
 static int escort_player_has_key_for_wall(int keys)
 {
 	switch (keys) {
@@ -186,6 +243,15 @@ static int escort_player_has_key_for_wall(int keys)
 		default:
 			return 0;
 	}
+}
+
+static int escort_trigger_type_can_make_side_passable(int trigger_type)
+{
+	return trigger_type == TT_OPEN_DOOR ||
+	       trigger_type == TT_ILLUSION_OFF ||
+	       trigger_type == TT_UNLOCK_DOOR ||
+	       trigger_type == TT_OPEN_WALL ||
+	       trigger_type == TT_ILLUSORY_WALL;
 }
 
 static int escort_find_connect_side_num(int segnum, int child_segnum)
@@ -208,7 +274,7 @@ static int escort_trigger_can_make_side_passable(int segnum, int sidenum)
 
 	for (trigger_num = 0; trigger_num < Num_triggers; trigger_num++) {
 		if ((Triggers[trigger_num].flags & TF_DISABLED) ||
-		    ((Triggers[trigger_num].type != TT_OPEN_WALL) && (Triggers[trigger_num].type != TT_ILLUSORY_WALL)))
+		    !escort_trigger_type_can_make_side_passable(Triggers[trigger_num].type))
 			continue;
 
 		for (link_num = 0; link_num < Triggers[trigger_num].num_links; link_num++)
@@ -218,6 +284,110 @@ static int escort_trigger_can_make_side_passable(int segnum, int sidenum)
 	}
 
 	return 0;
+}
+
+static int escort_route_key_step_satisfied(const level_metadata_route_step *step, int key_flags)
+{
+	if (!step)
+		return 1;
+	switch (step->key_index) {
+		case 0:
+			return (key_flags & PLAYER_FLAGS_BLUE_KEY) != 0;
+		case 1:
+			return (key_flags & PLAYER_FLAGS_RED_KEY) != 0;
+		case 2:
+			return (key_flags & PLAYER_FLAGS_GOLD_KEY) != 0;
+		default:
+			return 1;
+	}
+}
+
+static int escort_route_link_passable(int segnum, int sidenum)
+{
+	segment *segp;
+
+	if (segnum < 0 || segnum > Highest_segment_index ||
+	    sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT)
+		return 1;
+	segp = &Segments[segnum];
+	if (WALL_IS_DOORWAY(segp, sidenum) & WID_FLY_FLAG)
+		return 1;
+	if (ConsoleObject && ai_door_is_openable(ConsoleObject, segp, sidenum))
+		return 1;
+	if (segp->sides[sidenum].wall_num < 0)
+		return IS_CHILD(segp->children[sidenum]);
+	return 0;
+}
+
+static int escort_route_trigger_step_satisfied(const level_metadata_route_step *step)
+{
+	int link;
+
+	if (!step || step->trigger_num < 0 || step->trigger_num >= Num_triggers)
+		return 1;
+	if (Triggers[step->trigger_num].flags & TF_DISABLED)
+		return 1;
+	if (step->opened_link_count <= 0)
+		return 0;
+	for (link = 0; link < step->opened_link_count; link++)
+		if (!escort_route_link_passable(step->opened_link_seg[link], step->opened_link_side[link]))
+			return 0;
+	return 1;
+}
+
+static void escort_route_set_trigger_goal(const level_metadata_route_step *step)
+{
+	escort_route_clear_goal();
+	Escort_route_goal.active = 1;
+	Escort_route_goal.target_seg = step->seg;
+	Escort_route_goal.target_side = step->side;
+	Escort_route_goal.target_wall = step->wall_num;
+	Escort_route_goal.trigger_num = step->trigger_num;
+	snprintf(Escort_route_goal.label, sizeof(Escort_route_goal.label), "%s",
+	         step->label[0] ? step->label : "trigger");
+}
+
+static int escort_route_next_goal(int key_flags)
+{
+	const level_metadata_state *metadata = level_metadata_get_state();
+	int i;
+
+	escort_route_clear_goal();
+	if (!metadata || metadata->route_step_count <= 0)
+		return ESCORT_GOAL_UNSPECIFIED;
+	for (i = 0; i < metadata->route_step_count && i < LEVEL_METADATA_MAX_ROUTE_STEPS; i++) {
+		const level_metadata_route_step *step = &metadata->route_steps[i];
+
+		switch (step->kind) {
+			case LEVEL_METADATA_ROUTE_START:
+				break;
+			case LEVEL_METADATA_ROUTE_KEY:
+				if (!escort_route_key_step_satisfied(step, key_flags))
+					return step->key_index == 0 ? ESCORT_GOAL_BLUE_KEY :
+					       step->key_index == 2 ? ESCORT_GOAL_GOLD_KEY :
+					                              ESCORT_GOAL_RED_KEY;
+				break;
+			case LEVEL_METADATA_ROUTE_TRIGGER:
+				if (!escort_route_trigger_step_satisfied(step) &&
+				    step->seg >= 0 && step->seg <= Highest_segment_index) {
+					escort_route_set_trigger_goal(step);
+					return ESCORT_GOAL_EXIT;
+				}
+				break;
+			case LEVEL_METADATA_ROUTE_REACTOR:
+				if (Control_center_destroyed == 0 && escort_reactor_exists())
+					return ESCORT_GOAL_UNSPECIFIED;
+				break;
+			case LEVEL_METADATA_ROUTE_BOSS:
+			case LEVEL_METADATA_ROUTE_EXIT:
+			case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+			case LEVEL_METADATA_ROUTE_HOSTAGE:
+				return ESCORT_GOAL_UNSPECIFIED;
+			default:
+				return ESCORT_GOAL_UNSPECIFIED;
+		}
+	}
+	return ESCORT_GOAL_UNSPECIFIED;
 }
 
 static int escort_side_or_pair_has_open_trigger(int segnum, int sidenum)
@@ -478,6 +648,9 @@ void init_buddy_for_level(void)
 	Escort_goal_index = -1;
 	Escort_goal_secret_seg = -1;
 	Escort_goal_secret_side = -1;
+#ifdef __ANDROID__
+	escort_route_clear_goal();
+#endif
 	Buddy_messages_suppressed = 0;
 #ifdef NETWORK
 	Escort_owner_player = -1;
@@ -735,7 +908,11 @@ void detect_escort_goal_accomplished(int index)
 //	See if goal found was a key.  Need to handle default goals differently.
 //	Note, no buddy_met_goal sound when blow up reactor or exit.  Not great, but ok
 //	since for reactor, noisy, for exit, buddy is disappearing.
+#ifdef __ANDROID__
+if ((Escort_special_goal == -1) && !Escort_route_goal.active && (Escort_goal_index == index)) {
+#else
 if ((Escort_special_goal == -1) && (Escort_goal_index == index)) {
+#endif
 	detected = 1;
 	goto dega_ok;
 }
@@ -915,6 +1092,9 @@ void set_escort_special_goal(int special_key)
 	if (!escort_goal_command_allowed())
 		return;
 	escort_clear_secret_goal();
+#ifdef __ANDROID__
+	escort_route_clear_goal();
+#endif
 
 	special_key = special_key & (~KEY_SHIFTED);
 
@@ -1396,6 +1576,9 @@ void escort_create_path_to_goal(object *objp)
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objnum];
 	int used_nearest_point = 0;
+#ifdef __ANDROID__
+	int using_route_goal = 0;
+#endif
 
 	input_demo_log_escort_goal_probe("entry", objp, ailp, aip, -1, -1);
 
@@ -1410,86 +1593,95 @@ void escort_create_path_to_goal(object *objp)
 		if (Escort_goal_index > -1)
 			goal_seg = Objects[Escort_goal_index].segnum;
 	} else {
-		switch (Escort_goal_object) {
-			case ESCORT_GOAL_BLUE_KEY:
-				Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, POW_KEY_BLUE, -1);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			case ESCORT_GOAL_GOLD_KEY:
-				Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, POW_KEY_GOLD, -1);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			case ESCORT_GOAL_RED_KEY:
-				Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, POW_KEY_RED, -1);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			case ESCORT_GOAL_CONTROLCEN:
-				Escort_goal_index = exists_in_mine(objp->segnum, OBJ_CNTRLCEN, -1, -1);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			case ESCORT_GOAL_EXIT:
-			case ESCORT_GOAL_EXIT2:
-				goal_seg = find_exit_segment();
-				Escort_goal_index = goal_seg;
-				break;
-			case ESCORT_GOAL_ENERGY:
-				Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, POW_ENERGY, -1);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			case ESCORT_GOAL_ENERGYCEN:
-				goal_seg = exists_in_mine(objp->segnum, FUELCEN_CHECK, -1, -1);
-				Escort_goal_index = goal_seg;
-				break;
-			case ESCORT_GOAL_SHIELD:
-				Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, POW_SHIELD_BOOST, -1);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			case ESCORT_GOAL_POWERUP:
-				Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, -1, -1);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			case ESCORT_GOAL_ROBOT:
-				Escort_goal_index = exists_in_mine(objp->segnum, OBJ_ROBOT, -1, -1);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			case ESCORT_GOAL_HOSTAGE:
-				Escort_goal_index = exists_in_mine(objp->segnum, OBJ_HOSTAGE, -1, -1);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			case ESCORT_GOAL_PLAYER_SPEW:
-				Escort_goal_index = exists_in_mine(objp->segnum, -1, -1, ESCORT_GOAL_PLAYER_SPEW);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			case ESCORT_GOAL_SECRET: {
-				escort_secret_goal_info secret_goal;
+#ifdef __ANDROID__
+		if (Escort_route_goal.active) {
+			goal_seg = Escort_route_goal.target_seg;
+			Escort_goal_index = goal_seg;
+			using_route_goal = 1;
+		} else
+#endif
+		{
+			switch (Escort_goal_object) {
+				case ESCORT_GOAL_BLUE_KEY:
+					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, POW_KEY_BLUE, -1);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				case ESCORT_GOAL_GOLD_KEY:
+					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, POW_KEY_GOLD, -1);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				case ESCORT_GOAL_RED_KEY:
+					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, POW_KEY_RED, -1);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				case ESCORT_GOAL_CONTROLCEN:
+					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_CNTRLCEN, -1, -1);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				case ESCORT_GOAL_EXIT:
+				case ESCORT_GOAL_EXIT2:
+					goal_seg = find_exit_segment();
+					Escort_goal_index = goal_seg;
+					break;
+				case ESCORT_GOAL_ENERGY:
+					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, POW_ENERGY, -1);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				case ESCORT_GOAL_ENERGYCEN:
+					goal_seg = exists_in_mine(objp->segnum, FUELCEN_CHECK, -1, -1);
+					Escort_goal_index = goal_seg;
+					break;
+				case ESCORT_GOAL_SHIELD:
+					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, POW_SHIELD_BOOST, -1);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				case ESCORT_GOAL_POWERUP:
+					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_POWERUP, -1, -1);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				case ESCORT_GOAL_ROBOT:
+					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_ROBOT, -1, -1);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				case ESCORT_GOAL_HOSTAGE:
+					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_HOSTAGE, -1, -1);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				case ESCORT_GOAL_PLAYER_SPEW:
+					Escort_goal_index = exists_in_mine(objp->segnum, -1, -1, ESCORT_GOAL_PLAYER_SPEW);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				case ESCORT_GOAL_SECRET: {
+					escort_secret_goal_info secret_goal;
 
-				Escort_goal_index = escort_find_nearest_unfound_secret_entrance(objp->segnum, -1, &secret_goal);
-				if (Escort_goal_index > -1) {
-					goal_seg = secret_goal.seg;
-					Escort_goal_secret_seg = secret_goal.seg;
-					Escort_goal_secret_side = secret_goal.side;
-				} else {
-					escort_clear_secret_goal();
+					Escort_goal_index = escort_find_nearest_unfound_secret_entrance(objp->segnum, -1, &secret_goal);
+					if (Escort_goal_index > -1) {
+						goal_seg = secret_goal.seg;
+						Escort_goal_secret_seg = secret_goal.seg;
+						Escort_goal_secret_side = secret_goal.side;
+					} else {
+						escort_clear_secret_goal();
+					}
+					break;
 				}
-				break;
+				case ESCORT_GOAL_SCRAM:
+					goal_seg = -3;		//	Kinda a hack.
+					Escort_goal_index = goal_seg;
+					break;
+				case ESCORT_GOAL_BOSS: {
+					int	boss_id;
+
+					boss_id = get_boss_id();
+					Assert(boss_id != -1);
+					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_ROBOT, boss_id, -1);
+					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
+					break;
+				}
+				default:
+					Int3();	//	Oops, Illegal value in Escort_goal_object.
+					goal_seg = 0;
+					break;
 			}
-			case ESCORT_GOAL_SCRAM:
-				goal_seg = -3;		//	Kinda a hack.
-				Escort_goal_index = goal_seg;
-				break;
-			case ESCORT_GOAL_BOSS: {
-				int	boss_id;
-	
-				boss_id = get_boss_id();
-				Assert(boss_id != -1);
-				Escort_goal_index = exists_in_mine(objp->segnum, OBJ_ROBOT, boss_id, -1);
-				if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
-				break;
-			}
-			default:
-				Int3();	//	Oops, Illegal value in Escort_goal_object.
-				goal_seg = 0;
-				break;
 		}
 	}
 
@@ -1530,7 +1722,9 @@ void escort_create_path_to_goal(object *objp)
 				if (g_guidebot_navigate_nearest_point && escort_create_path_to_nearest_point(objp, goal_seg)) {
 					used_nearest_point = 1;
 					Last_buddy_message_time = 0;
-					if ((Escort_goal_object == ESCORT_GOAL_EXIT) || (Escort_goal_object == ESCORT_GOAL_EXIT2))
+					if (using_route_goal)
+						buddy_message("Can't reach next: %s, navigating as close as possible.", escort_route_goal_label());
+					else if ((Escort_goal_object == ESCORT_GOAL_EXIT) || (Escort_goal_object == ESCORT_GOAL_EXIT2))
 						buddy_message("Can't reach exit, navigating as close as possible.");
 					else
 						buddy_message("Can't reach %s, navigating as close as possible.", Escort_goal_text[Escort_goal_object-1]);
@@ -1539,6 +1733,11 @@ void escort_create_path_to_goal(object *objp)
 				{
 					fix	dist_to_player;
 					Last_buddy_message_time = 0;	//	Force this message to get through.
+#ifdef __ANDROID__
+					if (using_route_goal)
+						buddy_message("Can't reach next: %s.", escort_route_goal_label());
+					else
+#endif
 					if (Escort_goal_object == ESCORT_GOAL_SECRET)
 						buddy_message("Can't reach any secrets.");
 					else
@@ -1561,7 +1760,9 @@ void escort_create_path_to_goal(object *objp)
 			else if ((aip->path_length == 0) && g_guidebot_navigate_nearest_point && escort_create_path_to_nearest_point(objp, goal_seg)) {
 				used_nearest_point = 1;
 				Last_buddy_message_time = 0;
-				if ((Escort_goal_object == ESCORT_GOAL_EXIT) || (Escort_goal_object == ESCORT_GOAL_EXIT2))
+				if (using_route_goal)
+					buddy_message("Can't reach next: %s, navigating as close as possible.", escort_route_goal_label());
+				else if ((Escort_goal_object == ESCORT_GOAL_EXIT) || (Escort_goal_object == ESCORT_GOAL_EXIT2))
 					buddy_message("Can't reach exit, navigating as close as possible.");
 				else
 					buddy_message("Can't reach %s, navigating as close as possible.", Escort_goal_text[Escort_goal_object-1]);
@@ -1571,8 +1772,14 @@ void escort_create_path_to_goal(object *objp)
 
 		ailp->mode = AIM_GOTO_OBJECT;
 
-		if (!used_nearest_point)
+		if (!used_nearest_point) {
+#ifdef __ANDROID__
+			if (using_route_goal)
+				buddy_message("Finding NEXT: %s", escort_route_goal_label());
+			else
+#endif
 			say_escort_goal(Escort_goal_object);
+		}
 	}
 
 }
@@ -1583,11 +1790,23 @@ void escort_create_path_to_goal(object *objp)
 int escort_set_goal_object(void)
 {
 	int key_flags;
+#ifdef __ANDROID__
+	int route_goal;
+#endif
 
-	if (Escort_special_goal != -1)
+	if (Escort_special_goal != -1) {
+#ifdef __ANDROID__
+		escort_route_clear_goal();
+#endif
 		return ESCORT_GOAL_UNSPECIFIED;
+	}
 
 	key_flags = escort_owned_key_flags();
+#ifdef __ANDROID__
+	route_goal = escort_route_next_goal(key_flags);
+	if (route_goal != ESCORT_GOAL_UNSPECIFIED)
+		return route_goal;
+#endif
 	if ((key_flags & PLAYER_FLAGS_RED_KEY) == 0) {
 		if ((key_flags & (PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_GOLD_KEY)) == 0) {
 			if (escort_key_exists(POW_KEY_BLUE))
@@ -2102,6 +2321,9 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 void invalidate_escort_goal(void)
 {
 	Escort_goal_object = -1;
+#ifdef __ANDROID__
+	escort_route_clear_goal();
+#endif
 }
 
 void escort_note_player_key_flags(int old_flags, int new_flags)
@@ -2998,6 +3220,12 @@ void do_escort_menu(void)
 			sprintf(menu->goal_str, "boss");
 			break;
 		case ESCORT_GOAL_EXIT:
+#ifdef __ANDROID__
+			if (Escort_route_goal.active) {
+				snprintf(menu->goal_str, sizeof(menu->goal_str), "next: %s", escort_route_goal_label());
+				break;
+			}
+#endif
 			sprintf(menu->goal_str, "exit");
 			break;
 		case ESCORT_GOAL_MARKER1:

@@ -49,6 +49,7 @@ extern "C" void gameseq_init_network_players(void);
 
 static unsigned char *headless_screen_pixels = NULL;
 static int secret_area_dump_failed = 0;
+static int secret_area_missing_secret_levels = 0;
 
 static std::string dump_metadata_json(const nlohmann::ordered_json &value)
 {
@@ -509,6 +510,74 @@ static nlohmann::ordered_json serialize_secret(const secret_area_entry &secret)
 	return result;
 }
 
+static const char *headless_metadata_key_name(int key_index)
+{
+	switch (key_index) {
+		case 0:
+			return "blue";
+		case 1:
+			return "red";
+		case 2:
+			return "gold";
+		default:
+			return "";
+	}
+}
+
+static nlohmann::ordered_json serialize_route_steps(const level_metadata_state *metadata)
+{
+	nlohmann::ordered_json steps = nlohmann::ordered_json::array();
+	int count;
+
+	if (!metadata)
+		return steps;
+	count = metadata->route_step_count;
+	if (count < 0)
+		count = 0;
+	if (count > LEVEL_METADATA_MAX_ROUTE_STEPS)
+		count = LEVEL_METADATA_MAX_ROUTE_STEPS;
+	for (int index = 0; index < count; ++index) {
+		const level_metadata_route_step &step = metadata->route_steps[index];
+		nlohmann::ordered_json item;
+		item["index"] = index;
+		item["kind"] = level_metadata_route_step_kind_name(step.kind);
+		if (step.label[0])
+			item["label"] = step.label;
+		if (step.seg >= 0)
+			item["seg"] = step.seg;
+		if (step.side >= 0)
+			item["side"] = step.side;
+		if (step.wall_num >= 0)
+			item["wall"] = step.wall_num;
+		if (step.distance_from_previous > 0.0)
+			item["distance"] = step.distance_from_previous;
+		if (step.kind == LEVEL_METADATA_ROUTE_KEY && step.key_index >= 0)
+			item["key"] = headless_metadata_key_name(step.key_index);
+		if (step.trigger_num >= 0)
+			item["trigger"] = step.trigger_num;
+		if (step.trigger_type >= 0)
+			item["trigger_type_id"] = step.trigger_type;
+		if (step.trigger_type_name[0])
+			item["trigger_type"] = step.trigger_type_name;
+		if (step.opened_link_count > 0) {
+			nlohmann::ordered_json opened = nlohmann::ordered_json::array();
+			for (int link = 0; link < step.opened_link_count; ++link) {
+				nlohmann::ordered_json open;
+				if (step.opened_link_seg[link] >= 0)
+					open["seg"] = step.opened_link_seg[link];
+				if (step.opened_link_side[link] >= 0)
+					open["side"] = step.opened_link_side[link];
+				if (step.opened_link_wall[link] >= 0)
+					open["wall"] = step.opened_link_wall[link];
+				opened.push_back(open);
+			}
+			item["opens"] = opened;
+		}
+		steps.push_back(item);
+	}
+	return steps;
+}
+
 static nlohmann::ordered_json serialize_current_level(int level_num, const char *level_file)
 {
 	const level_metadata_state *metadata = level_metadata_get_state();
@@ -544,9 +613,52 @@ static nlohmann::ordered_json serialize_current_level(int level_num, const char 
 	result["travel_targets_reached"] = metadata ? metadata->travel_targets_reached : 0;
 	result["travel_targets_total"] = metadata ? metadata->travel_targets_total : 0;
 	result["travel_key_detours"] = metadata ? metadata->travel_key_detours : 0;
+	result["route_status"] = metadata ? level_metadata_travel_status_name(metadata->route_status) : "failed";
+	result["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
+	result["route_steps"] = serialize_route_steps(metadata);
 	for (int index = 0; index < total; ++index)
 		secrets.push_back(serialize_secret(state->secrets[index]));
 	result["secrets"] = secrets;
+	return result;
+}
+
+static nlohmann::ordered_json serialize_failed_level(int level_num, const char *level_file, const char *problem)
+{
+	nlohmann::ordered_json result;
+
+	result["level_num"] = level_num;
+	result["level_name"] = "";
+	result["level_file"] = level_file ? level_file : "";
+	result["scanner_enabled"] = false;
+	result["disabled_reason"] = secret_area_disabled_reason_name(SECRET_AREA_DISABLED_INVALID_VIEW);
+	result["raw_candidate_count"] = 0;
+	result["final_candidate_count"] = 0;
+	result["secret_count"] = 0;
+	result["energy_center_count"] = 0;
+	result["energy_center_raw_count"] = 0;
+	result["energy_center_segment_count"] = 0;
+	result["energy_center_group_distance"] = 0;
+	result["energy_center_nearest_raw_distance"] = 0;
+	result["matcen_count"] = 0;
+	result["matcen_raw_count"] = 0;
+	result["matcen_segment_count"] = 0;
+	result["mine_volume"] = 0.0;
+	result["mine_volume_normalized"] = 0.0;
+	result["travel_distance"] = 0.0;
+	result["travel_time_seconds"] = 0;
+	result["travel_status"] = "failed";
+	result["travel_problem"] = problem ? problem : "could not load level";
+	result["travel_note"] = "";
+	result["notes"] = nlohmann::ordered_json::array();
+	result["travel_targets_reached"] = 0;
+	result["travel_targets_total"] = 0;
+	result["travel_key_detours"] = 0;
+	result["route_status"] = "failed";
+	result["route_problem"] = problem ? problem : "could not load level";
+	result["route_steps"] = nlohmann::ordered_json::array();
+	result["secrets"] = nlohmann::ordered_json::array();
+	result["status"] = "failed";
+	result["problems"] = nlohmann::ordered_json::array({ problem ? problem : "could not load level" });
 	return result;
 }
 
@@ -556,8 +668,18 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 	int total;
 
 	trace_dump_init("load_level");
+	if (!level_file || !level_file[0] || !PHYSFSX_exists(level_file, 1)) {
+		fprintf(stderr, "SECRET-AREA-DUMP WARN level missing %s\n", level_file ? level_file : "<null>");
+		levels.push_back(serialize_failed_level(level_num, level_file, "level file is missing"));
+		if (level_num < 0)
+			++secret_area_missing_secret_levels;
+		else
+			secret_area_dump_failed = 1;
+		return 0;
+	}
 	if (load_level(level_file)) {
 		fprintf(stderr, "SECRET-AREA-DUMP FAIL level could not load %s\n", level_file ? level_file : "<null>");
+		levels.push_back(serialize_failed_level(level_num, level_file, "could not load level"));
 		secret_area_dump_failed = 1;
 		return 0;
 	}
@@ -603,6 +725,9 @@ static nlohmann::ordered_json build_dump(int *total_secrets)
 	for (int level = -1; level >= Last_secret_level; --level)
 		secret_total += dump_level(levels, level, Secret_level_names[-level - 1]);
 	root["levels"] = levels;
+	root["problems"] = nlohmann::ordered_json::array();
+	if (secret_area_missing_secret_levels)
+		root["problems"].push_back("one or more secret levels are referenced but missing");
 	trace_dump_init("assemble_total");
 	root["total_secret_count"] = secret_total;
 	trace_dump_init("write_dump_done");

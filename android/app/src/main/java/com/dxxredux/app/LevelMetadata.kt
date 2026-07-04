@@ -45,6 +45,27 @@ internal data class LevelMetadataTarget(
     val archiveEntries: List<String> = emptyList(),
 )
 
+internal data class LevelMetadataRouteOpenLink(
+    val seg: Int = -1,
+    val side: Int = -1,
+    val wall: Int = -1,
+)
+
+internal data class LevelMetadataRouteStep(
+    val index: Int,
+    val kind: String,
+    val label: String,
+    val seg: Int = -1,
+    val side: Int = -1,
+    val wall: Int = -1,
+    val distance: Double = 0.0,
+    val key: String = "",
+    val trigger: Int = -1,
+    val triggerType: String = "",
+    val triggerTypeId: Int = -1,
+    val opens: List<LevelMetadataRouteOpenLink> = emptyList(),
+)
+
 internal data class LevelMetadataLevelRow(
     val levelNum: Int,
     val secret: Boolean,
@@ -67,6 +88,9 @@ internal data class LevelMetadataLevelRow(
     val travelTargetsReached: Int,
     val travelTargetsTotal: Int,
     val travelKeyDetours: Int,
+    val routeStatus: String,
+    val routeProblem: String,
+    val routeSteps: List<LevelMetadataRouteStep>,
     val status: String,
     val problems: List<String>,
     val notes: List<String>,
@@ -114,6 +138,9 @@ internal data class LevelMetadataResult(
                                 travelTargetsReached = row.optInt("travel_targets_reached"),
                                 travelTargetsTotal = row.optInt("travel_targets_total"),
                                 travelKeyDetours = row.optInt("travel_key_detours"),
+                                routeStatus = row.optString("route_status"),
+                                routeProblem = row.optString("route_problem"),
+                                routeSteps = row.optRouteSteps("route_steps"),
                                 status = row.optString("status", "ok"),
                                 problems = row.optStringList("problems"),
                                 notes = row.optStringList("notes"),
@@ -1137,6 +1164,44 @@ private fun JSONObject.optStringList(name: String): List<String> {
         for (index in 0 until array.length()) {
             val value = array.optString(index)
             if (value.isNotBlank()) add(value)
+        }
+    }
+}
+
+private fun JSONObject.optRouteSteps(name: String): List<LevelMetadataRouteStep> {
+    val array = optJSONArray(name) ?: return emptyList()
+    return buildList {
+        for (index in 0 until array.length()) {
+            val step = array.optJSONObject(index) ?: continue
+            val opens = step.optJSONArray("opens") ?: JSONArray()
+            add(
+                LevelMetadataRouteStep(
+                    index = step.optInt("index", index),
+                    kind = step.optString("kind"),
+                    label = step.optString("label"),
+                    seg = step.optInt("seg", -1),
+                    side = step.optInt("side", -1),
+                    wall = step.optInt("wall", -1),
+                    distance = step.optDouble("distance", 0.0),
+                    key = step.optString("key"),
+                    trigger = step.optInt("trigger", -1),
+                    triggerType = step.optString("trigger_type"),
+                    triggerTypeId = step.optInt("trigger_type_id", -1),
+                    opens =
+                        buildList {
+                            for (openIndex in 0 until opens.length()) {
+                                val open = opens.optJSONObject(openIndex) ?: continue
+                                add(
+                                    LevelMetadataRouteOpenLink(
+                                        seg = open.optInt("seg", -1),
+                                        side = open.optInt("side", -1),
+                                        wall = open.optInt("wall", -1),
+                                    ),
+                                )
+                            }
+                        },
+                ),
+            )
         }
     }
 }

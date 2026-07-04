@@ -13,16 +13,72 @@ Plan support for trigger-aware mission path analysis, metadata UI documentation,
 - [x] Split implementation into safe phases with tests.
 
 ## Implementation Checklist
-- [ ] Begin Phase 1 and route-step JSON implementation.
-- [ ] Add route step data structures and callback surface to `level_metadata_scan.h`.
-- [ ] Teach `level_metadata_scan.c` to produce a trigger-aware route chain without regressing current travel distance/status fields.
-- [ ] Extend C synthetic tests in `android/tests/test_level_metadata_scan.c`.
-- [ ] Serialize route steps from JNI and headless metadata dump paths.
-- [ ] Extend Kotlin metadata models and add a per-level route detail UI.
-- [ ] Preserve route steps in launcher automation JSON and mission ZIP regression baselines under `game_data/mission_files/*.json`.
-- [ ] Add a live guidebot next-objective selector that can target trigger source walls.
-- [ ] Add introspection and automation coverage for guidebot route objectives.
-- [ ] Run scoped formatting, C tests, Android metadata automation, and a KCXF2 level 2 verification script.
+- [x] Begin Phase 1 and route-step JSON implementation.
+- [x] Add route step data structures and callback surface to `level_metadata_scan.h`.
+- [x] Teach `level_metadata_scan.c` to produce a trigger-aware route chain without regressing current travel distance/status fields.
+- [x] Extend C synthetic tests in `android/tests/test_level_metadata_scan.c`.
+- [x] Serialize route steps from JNI and headless metadata dump paths.
+- [x] Extend Kotlin metadata models and add a per-level route detail UI.
+- [x] Preserve route steps in launcher automation JSON output.
+- [x] Regenerate focused KCXF2 committed mission ZIP regression baseline with route arrays.
+- [ ] Regenerate broader committed mission ZIP regression baselines under `game_data/mission_files/*.json` with route arrays. Partial: 46 of 106 non-tracklist JSON files now have route steps, 60 remain.
+- [x] Add a live guidebot next-objective selector that can target trigger source walls.
+- [x] Add introspection and automation coverage for guidebot route objectives.
+- [x] Run scoped formatting, C tests, Kotlin compile, host builds, and a KCXF2 level 2 verification script.
+- [x] Run focused Android metadata and guidebot automation after the KCXF2 baseline is regenerated.
+
+## Implementation Notes 2026-07-04
+- Phase 1 and the metadata/UI slice are implemented.
+- The route planner now emits structured steps for start, keys, triggers, reactor/boss, and exit.
+- `route_status`, `route_problem`, and `route_steps` are serialized by JNI and headless metadata paths.
+- `LauncherScriptExecutor` now preserves `route_steps`, so newly generated mission metadata JSON will carry route arrays.
+- The per-level metadata table now has a route details action that opens a compact path dialog.
+- Headless metadata now emits failed rows for missing level files instead of aborting the whole JSON file. KCXF2RMv11 references missing secret file `kcxf2_s0.rl2`; this now appears as a missing-level problem while normal levels still serialize.
+- MSVC packing from legacy engine headers can leave callers at 1-byte packing. `level_metadata_scan.h` now brackets its shared ABI structs with MSVC pack push/pop to keep C and C++ route-step layout consistent.
+
+Validation completed:
+- `.\android\helpers\stop-stale-formatters.ps1`
+- `.\android\run-code-quality.ps1 -Fix -Paths ...`
+- `.\run-windows-build.ps1 -Target both`
+- `.\buildd1\maths\test_level_metadata_scan.exe`
+- `.\buildd2\maths\test_level_metadata_scan.exe`
+- `.\android\gradlew.bat :app:compileDebugKotlin`
+- KCXF2 headless smoke: level 2 route status `ok`; route kinds `start -> key -> trigger -> trigger -> trigger -> trigger -> trigger -> trigger -> trigger -> exit`; trigger chain `4, 7, 8, 13, 19, 18, 17`; exit trigger `16`.
+
+## Implementation Notes 2026-07-04 Guidebot Slice
+- Focused mission ZIP automation regenerated `game_data/mission_files/KCXF2RMv11.json` with route arrays. KCXF2 level 2 now records `start -> key -> trigger -> trigger -> trigger -> trigger -> trigger -> trigger -> trigger -> exit`, with trigger chain `4, 7, 8, 13, 19, 18, 17` and exit trigger `16`.
+- Android D2 guidebot default "next" now checks `level_metadata_get_state()->route_steps` before falling back to classic key, boss, reactor, and exit selection.
+- Trigger route objectives store their own target segment, side, wall, trigger id, and label. The guidebot menu and "Finding NEXT" text use that route label.
+- Live route satisfaction checks player key flags, disabled triggers, and current wall state so already-opened trigger segments are skipped.
+- Introspection now exposes `guidebot.route_goal_active`, `route_goal_label`, `route_goal_seg`, `route_goal_side`, `route_goal_wall`, and `route_goal_trigger`.
+- Automation now supports `set_debug` field `player_keys`, which lets a script grant keys and forces D2 guidebot goal recomputation.
+- Added `android/game_scripts/test_kcxf2_guidebot_route_next.json5`. It imports KCXF2, analyzes metadata, launches level 2, verifies the guidebot first targets the blue key, grants the blue key, and verifies the next target is open-wall trigger 4.
+- Added `.7z` to `game_data/generate_game_data_index.ps1` and regenerated `game_data/game_data_index.txt` so mission ZIP dependencies can be declared directly.
+
+Additional validation completed:
+- `.\android\run-code-quality.ps1 -Fix -Paths @('d2/main/escort.c','d2/main/escort.h','android/app/src/main/cpp/shared/game_introspect.cpp','android/app/src/main/cpp/shared/game_automate.cpp','android/game_scripts/test_kcxf2_guidebot_route_next.json5','game_data/generate_game_data_index.ps1','game_data/game_data_index.txt','game_data/mission_files/KCXF2RMv11.json','android/ai tool plans/gameplay/level_metadata_trigger_route_guidebot_plan_20260704.md')`
+- `.\run-windows-build.ps1 -Target d2`
+- `.\buildd1\maths\test_level_metadata_scan.exe`
+- `.\buildd2\maths\test_level_metadata_scan.exe`
+- `cd android; .\gradlew.bat :app:assembleDebug` with JDK 21
+- `.\android\run-code-quality.ps1 -Fix -Paths @('android/game_scripts/test_kcxf2_guidebot_route_next.json5')`
+- `.\android\helpers\run_test.ps1 test_kcxf2_guidebot_route_next.json5 -TimeoutSeconds 900`
+
+## Implementation Notes 2026-07-04 Broader Baseline Slice
+- `android/helpers/run_mission_zip_batch.ps1` now accepts multiple patterns and defaults to both `*.zip` and `*.7z`, so committed 7z mission archives can use the same metadata generation path.
+- Mission-list automation now separates command entries from stock base missions. D2 skips prefixed stock entries such as `D1:`, `D2:`, `Descent 2:`, and `Counterstrike`, while imported unprefixed D1 conversions can still be selected as custom missions.
+- Added a sole-base fallback for mission-list automation. This keeps focused single-mission imports usable when the list legitimately contains only one selectable mission.
+- Generated new route-array baseline `game_data/mission_files/diehard.json` from `diehard.7z`.
+- Regenerated route arrays across four bounded `*.zip` chunks and one focused `Descent.zip` rerun. Current coverage is 46 of 106 non-tracklist mission JSON files with at least one `route_steps` array. The remaining 60 JSON files still need batch generation.
+- `ewithin-versions.zip` was intentionally skipped during bounded chunks by passing `-LargeZipIncludePatterns @()` because it is the oversized archive already treated specially by the batch helper.
+- `game_data/generate_game_data_index.ps1` now includes `.7z`; `game_data/game_data_index.txt` now includes `game_data/mission_files/KCXF2RMv11.7z`.
+
+Additional validation completed:
+- `.\android\helpers\run_mission_zip_batch.ps1 -Pattern 'diehard.7z' -Install -TimeoutSeconds 900`
+- `.\android\helpers\run_mission_zip_batch.ps1 -Pattern 'Descent.zip' -Install -TimeoutSeconds 900`
+- Four bounded runs of `.\android\helpers\run_mission_zip_batch.ps1 -Pattern '*.zip' -MaxZips 12 -LargeZipIncludePatterns @() -TimeoutSeconds 900`
+- `cd android; .\gradlew.bat :app:assembleDebug` with JDK 21
+- `.\game_data\generate_game_data_index.ps1`
 
 ## Current Code Map
 - Shared metadata scanner:

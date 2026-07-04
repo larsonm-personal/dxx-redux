@@ -4,7 +4,7 @@
 param(
     [string]$ZipDir = "C:\local\dxx-redux\game_data\mission_files",
     [string]$OutDir = "",
-    [string]$Pattern = "*.zip",
+    [string[]]$Pattern = @("*.zip", "*.7z"),
     [string]$RegressionJsonDir = "",
     [switch]$Install,
     [switch]$IncludeLarge,
@@ -493,11 +493,18 @@ if (-not $NoRegressionJson) {
     New-Item -ItemType Directory -Force -Path $RegressionJsonDir | Out-Null
 }
 
-$zipSortRecords = @(Get-ChildItem -Path $ZipDir -Filter $Pattern -File |
+$zipItems = @(
+    foreach ($itemPattern in @($Pattern)) {
+        if ($itemPattern) {
+            Get-ChildItem -Path $ZipDir -Filter $itemPattern -File
+        }
+    }
+) | Sort-Object FullName -Unique
+$zipSortRecords = @($zipItems |
         ForEach-Object { Get-MissionZipBatchSortRecord -Zip $_ } |
         Sort-Object @{ Expression = { if ($_.HasJson) { 1 } else { 0 } } }, JsonLastWriteTimeUtc, @{ Expression = { $_.Zip.Name } })
 if ($zipSortRecords.Count -eq 0) {
-    Write-Status "FAIL: no ZIPs matched $Pattern in $ZipDir" "Red"
+    Write-Status "FAIL: no ZIPs matched $($Pattern -join ', ') in $ZipDir" "Red"
     exit 1
 }
 if ($MaxZips -gt 0 -and $zipSortRecords.Count -gt $MaxZips) {

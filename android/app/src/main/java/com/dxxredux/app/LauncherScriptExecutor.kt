@@ -811,9 +811,12 @@ class LauncherScriptExecutor(
                     .put("travel_targets_reached", row.travelTargetsReached)
                     .put("travel_targets_total", row.travelTargetsTotal)
                     .put("travel_key_detours", row.travelKeyDetours)
+                    .put("route_status", row.routeStatus)
+                    .put("route_steps", levelMetadataRouteStepsJson(row.routeSteps))
             if (row.travelStatus != "ok") rowJson.put("travel_status", row.travelStatus)
             if (row.travelProblem.isNotBlank()) rowJson.put("travel_problem", row.travelProblem)
             if (row.travelNote.isNotBlank()) rowJson.put("travel_note", row.travelNote)
+            if (row.routeProblem.isNotBlank()) rowJson.put("route_problem", row.routeProblem)
             if (row.problems.isNotEmpty()) rowJson.put("problems", JSONArray(row.problems))
             if (row.notes.isNotEmpty()) rowJson.put("notes", JSONArray(row.notes))
             if (row.status != "ok") rowJson.put("status", row.status)
@@ -833,6 +836,38 @@ class LauncherScriptExecutor(
         if (result.problems.isNotEmpty()) json.put("problems", JSONArray(result.problems))
         if (result.diagnostics.isNotEmpty()) json.put("diagnostics", JSONArray(result.diagnostics))
         return json
+    }
+
+    private fun levelMetadataRouteStepsJson(steps: List<LevelMetadataRouteStep>): JSONArray {
+        val array = JSONArray()
+        steps.forEach { step ->
+            val item =
+                JSONObject()
+                    .put("index", step.index)
+                    .put("kind", step.kind)
+            if (step.label.isNotBlank()) item.put("label", step.label)
+            if (step.seg >= 0) item.put("seg", step.seg)
+            if (step.side >= 0) item.put("side", step.side)
+            if (step.wall >= 0) item.put("wall", step.wall)
+            if (step.distance > 0.0) item.put("distance", step.distance)
+            if (step.key.isNotBlank()) item.put("key", step.key)
+            if (step.trigger >= 0) item.put("trigger", step.trigger)
+            if (step.triggerTypeId >= 0) item.put("trigger_type_id", step.triggerTypeId)
+            if (step.triggerType.isNotBlank()) item.put("trigger_type", step.triggerType)
+            if (step.opens.isNotEmpty()) {
+                val opens = JSONArray()
+                step.opens.forEach { open ->
+                    val openJson = JSONObject()
+                    if (open.seg >= 0) openJson.put("seg", open.seg)
+                    if (open.side >= 0) openJson.put("side", open.side)
+                    if (open.wall >= 0) openJson.put("wall", open.wall)
+                    opens.put(openJson)
+                }
+                item.put("opens", opens)
+            }
+            array.put(item)
+        }
+        return array
     }
 
     private fun writeMissionZipImportAutomationResult(

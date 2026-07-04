@@ -12,6 +12,12 @@ enum level_metadata_travel_status {
 	LEVEL_METADATA_TRAVEL_FAILED = 2
 };
 
+enum metadata_route_block_kind {
+	METADATA_ROUTE_BLOCK_NONE = 0,
+	METADATA_ROUTE_BLOCK_KEY = 1,
+	METADATA_ROUTE_BLOCK_TRIGGER = 2
+};
+
 typedef struct metadata_target {
 	int seg;
 	int pos[3];
@@ -26,6 +32,34 @@ typedef struct metadata_path {
 	int terminal_pos[3];
 	int terminal_pos_valid;
 } metadata_path;
+
+typedef struct metadata_route_block {
+	int kind;
+	int key_index;
+	int seg;
+	int side;
+	int wall_num;
+	int source_wall;
+	int source_seg;
+	int source_side;
+	int trigger_num;
+	int trigger_type;
+} metadata_route_block;
+
+typedef struct metadata_route_path {
+	double distance;
+	metadata_route_block first_block;
+} metadata_route_path;
+
+typedef struct metadata_route_context {
+	int current_seg;
+	int current_pos[3];
+	int key_mask;
+	int key_in_progress;
+	double pending_distance;
+	unsigned char fired_triggers[256];
+	unsigned char trigger_in_progress[256];
+} metadata_route_context;
 
 static int component_id[LEVEL_METADATA_MAX_SEGMENTS];
 static int queue[LEVEL_METADATA_MAX_SEGMENTS];
@@ -69,6 +103,30 @@ const char *level_metadata_travel_status_name(int status)
 			return "partial";
 		case LEVEL_METADATA_TRAVEL_FAILED:
 			return "failed";
+		default:
+			return "unknown";
+	}
+}
+
+const char *level_metadata_route_step_kind_name(int kind)
+{
+	switch (kind) {
+		case LEVEL_METADATA_ROUTE_START:
+			return "start";
+		case LEVEL_METADATA_ROUTE_KEY:
+			return "key";
+		case LEVEL_METADATA_ROUTE_TRIGGER:
+			return "trigger";
+		case LEVEL_METADATA_ROUTE_REACTOR:
+			return "reactor";
+		case LEVEL_METADATA_ROUTE_BOSS:
+			return "boss";
+		case LEVEL_METADATA_ROUTE_EXIT:
+			return "exit";
+		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+			return "hidden_door";
+		case LEVEL_METADATA_ROUTE_HOSTAGE:
+			return "hostage";
 		default:
 			return "unknown";
 	}
@@ -1102,6 +1160,687 @@ static int route_to_reactor(
 	return 1;
 }
 
+static void metadata_route_clear_block(metadata_route_block *block)
+{
+	if (!block)
+		return;
+	memset(block, 0, sizeof(*block));
+	block->kind = METADATA_ROUTE_BLOCK_NONE;
+	block->key_index = -1;
+	block->seg = -1;
+	block->side = -1;
+	block->wall_num = -1;
+	block->source_wall = -1;
+	block->source_seg = -1;
+	block->source_side = -1;
+	block->trigger_num = -1;
+	block->trigger_type = -1;
+}
+
+static int metadata_route_trigger_valid(int trigger_num)
+{
+	return trigger_num >= 0 && trigger_num < (int) sizeof(((metadata_route_context *) 0)->fired_triggers);
+}
+
+static int metadata_route_trigger_is_progress(const level_metadata_scan_view *view, int trigger_type)
+{
+	return trigger_type == view->trigger_type_open_door ||
+	       trigger_type == view->trigger_type_open_wall ||
+	       trigger_type == view->trigger_type_illusory_wall ||
+	       trigger_type == view->trigger_type_illusion_off ||
+	       trigger_type == view->trigger_type_unlock_door;
+}
+
+static const char *metadata_route_trigger_type_name(const level_metadata_scan_view *view, int trigger_type)
+{
+	if (trigger_type == view->trigger_type_open_door)
+		return "open_door";
+	if (trigger_type == view->trigger_type_exit)
+		return "exit";
+	if (trigger_type == view->trigger_type_secret_exit)
+		return "secret_exit";
+	if (trigger_type == view->trigger_type_illusion_off)
+		return "illusion_off";
+	if (trigger_type == view->trigger_type_unlock_door)
+		return "unlock_door";
+	if (trigger_type == view->trigger_type_open_wall)
+		return "open_wall";
+	if (trigger_type == view->trigger_type_illusory_wall)
+		return "illusory_wall";
+	return "unknown";
+}
+
+static int metadata_route_side_trigger_source(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int seg,
+    int side,
+    int include_fired,
+    metadata_route_block *block)
+{
+	int count;
+	int index;
+
+	if (!view->triggered_side_opener_count ||
+	    !view->triggered_side_opener_wall_num ||
+	    !view->wall_trigger ||
+	    !view->wall_segment ||
+	    !view->wall_side ||
+	    !view->trigger_type ||
+	    !valid_segment(view, seg) ||
+	    side < 0 ||
+	    side >= LEVEL_METADATA_MAX_SIDES)
+		return 0;
+	count = view->triggered_side_opener_count(view->user, seg, side);
+	for (index = 0; index < count; ++index) {
+		int source_wall = view->triggered_side_opener_wall_num(view->user, seg, side, index);
+		int trigger_num;
+		int trigger_type;
+		if (!valid_wall(view, source_wall))
+			continue;
+		trigger_num = view->wall_trigger(view->user, source_wall);
+		if (!metadata_route_trigger_valid(trigger_num))
+			continue;
+		trigger_type = view->trigger_type(view->user, trigger_num);
+		if (!metadata_route_trigger_is_progress(view, trigger_type))
+			continue;
+		if (!include_fired && route->fired_triggers[trigger_num])
+			continue;
+		if (block) {
+			metadata_route_clear_block(block);
+			block->kind = METADATA_ROUTE_BLOCK_TRIGGER;
+			block->seg = seg;
+			block->side = side;
+			block->wall_num = view->wall_num ? view->wall_num(view->user, seg, side) : -1;
+			block->source_wall = source_wall;
+			block->source_seg = view->wall_segment(view->user, source_wall);
+			block->source_side = view->wall_side(view->user, source_wall);
+			block->trigger_num = trigger_num;
+			block->trigger_type = trigger_type;
+		}
+		return 1;
+	}
+	return 0;
+}
+
+static int metadata_route_edge_has_fired_trigger(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int seg,
+    int side,
+    int child)
+{
+	metadata_route_block block;
+	int reverse_side;
+
+	if (!route)
+		return 0;
+	if (metadata_route_side_trigger_source(view, route, seg, side, 1, &block) &&
+	    metadata_route_trigger_valid(block.trigger_num) &&
+	    route->fired_triggers[block.trigger_num])
+		return 1;
+	reverse_side = view->reverse_side ? view->reverse_side(view->user, seg, child) : -1;
+	return reverse_side >= 0 &&
+	       reverse_side < LEVEL_METADATA_MAX_SIDES &&
+	       metadata_route_side_trigger_source(view, route, child, reverse_side, 1, &block) &&
+	       metadata_route_trigger_valid(block.trigger_num) &&
+	       route->fired_triggers[block.trigger_num];
+}
+
+static int metadata_route_edge_trigger_blocker(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int seg,
+    int side,
+    int child,
+    metadata_route_block *block)
+{
+	int reverse_side;
+
+	if (metadata_route_side_trigger_source(view, route, seg, side, 0, block))
+		return 1;
+	reverse_side = view->reverse_side ? view->reverse_side(view->user, seg, child) : -1;
+	return reverse_side >= 0 &&
+	       reverse_side < LEVEL_METADATA_MAX_SIDES &&
+	       metadata_route_side_trigger_source(view, route, child, reverse_side, 0, block);
+}
+
+static int metadata_route_edge_passable(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int seg,
+    int side,
+    int optimistic,
+    metadata_route_block *block)
+{
+	int child = view->segment_child(view->user, seg, side);
+	int wall_num;
+	int wall_type;
+	int wall_keys;
+	metadata_route_block trigger_block;
+
+	if (block)
+		metadata_route_clear_block(block);
+	if (!edge_has_valid_reverse(view, seg, side, child))
+		return 0;
+	if (side_has_exit(view, seg, side))
+		return 0;
+	if (metadata_route_edge_has_fired_trigger(view, route, seg, side, child))
+		return 1;
+	if (!view->wall_num || !view->wall_type || !view->wall_keys)
+		return 1;
+	wall_num = view->wall_num(view->user, seg, side);
+	if (!valid_wall(view, wall_num))
+		return 1;
+	wall_type = view->wall_type(view->user, wall_num);
+	wall_keys = view->wall_keys(view->user, wall_num);
+	if (wall_type == view->wall_type_open ||
+	    wall_type == view->wall_type_blastable ||
+	    wall_type == view->wall_type_illusion)
+		return 1;
+	if (wall_type == view->wall_type_door && wall_key_allowed(view, wall_keys, route->key_mask))
+		return 1;
+	if (metadata_route_edge_trigger_blocker(view, route, seg, side, child, &trigger_block)) {
+		if (block)
+			*block = trigger_block;
+		return optimistic;
+	}
+	if (wall_type == view->wall_type_door && !wall_key_allowed(view, wall_keys, route->key_mask)) {
+		int key_index = key_index_for_wall_key(view, wall_keys);
+		if (key_index >= 0 && block) {
+			metadata_route_clear_block(block);
+			block->kind = METADATA_ROUTE_BLOCK_KEY;
+			block->key_index = key_index;
+			block->seg = seg;
+			block->side = side;
+			block->wall_num = wall_num;
+		}
+		return optimistic && key_index >= 0;
+	}
+	return 0;
+}
+
+static int metadata_route_find_path(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int goal_seg,
+    const int goal_pos[3],
+    int optimistic,
+    metadata_route_path *path)
+{
+	int heap_size = 0;
+	int seg;
+
+	if (path) {
+		path->distance = DBL_MAX;
+		metadata_route_clear_block(&path->first_block);
+	}
+	if (!valid_segment(view, route->current_seg) ||
+	    !valid_segment(view, goal_seg) ||
+	    !segment_center_valid[route->current_seg] ||
+	    !segment_center_valid[goal_seg])
+		return 0;
+	for (seg = 0; seg < view->num_segments; ++seg) {
+		route_distance[seg] = DBL_MAX;
+		route_parent_seg[seg] = -1;
+		route_parent_side[seg] = -1;
+		route_closed[seg] = 0;
+		route_heap_pos[seg] = 0;
+	}
+	route_distance[route->current_seg] = point_distance(route->current_pos, segment_centers[route->current_seg]);
+	heap_push(&heap_size, route->current_seg);
+	while (heap_size > 0) {
+		int cur = heap_pop(&heap_size);
+		int side;
+		if (cur == goal_seg)
+			break;
+		route_closed[cur] = 1;
+		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			int child = view->segment_child(view->user, cur, side);
+			double step;
+			double next_distance;
+			if (!valid_segment(view, child) || route_closed[child])
+				continue;
+			if (!metadata_route_edge_passable(view, route, cur, side, optimistic, NULL))
+				continue;
+			step = edge_distance(view, cur, child);
+			if (step == DBL_MAX)
+				continue;
+			next_distance = route_distance[cur] + step;
+			if (next_distance >= route_distance[child])
+				continue;
+			route_distance[child] = next_distance;
+			route_parent_seg[child] = cur;
+			route_parent_side[child] = side;
+			if (route_heap_pos[child])
+				heap_decrease(child);
+			else
+				heap_push(&heap_size, child);
+		}
+	}
+	if (route_distance[goal_seg] == DBL_MAX)
+		return 0;
+	if (path) {
+		int reversed[LEVEL_METADATA_MAX_SEGMENTS];
+		int count = 0;
+		int cur = goal_seg;
+		int i;
+		path->distance = route_distance[goal_seg] + (goal_pos ? point_distance(segment_centers[goal_seg], goal_pos) : 0.0);
+		while (valid_segment(view, cur) && count < LEVEL_METADATA_MAX_SEGMENTS) {
+			reversed[count++] = cur;
+			if (cur == route->current_seg)
+				break;
+			cur = route_parent_seg[cur];
+		}
+		for (i = count - 1; i > 0; --i) {
+			int from = reversed[i];
+			int to = reversed[i - 1];
+			int side = route_parent_side[to];
+			metadata_route_block block;
+			if (!metadata_route_edge_passable(view, route, from, side, 1, &block))
+				continue;
+			if (block.kind != METADATA_ROUTE_BLOCK_NONE) {
+				path->first_block = block;
+				break;
+			}
+		}
+	}
+	return 1;
+}
+
+static void metadata_route_set_problem(level_metadata_state *state, const char *problem)
+{
+	if (!state || state->route_problem[0] || !problem)
+		return;
+	snprintf(state->route_problem, sizeof(state->route_problem), "%s", problem);
+}
+
+static level_metadata_route_step *metadata_route_append_step(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    int kind,
+    const char *label,
+    int seg,
+    int side)
+{
+	level_metadata_route_step *step;
+	int i;
+
+	if (state->route_step_count >= LEVEL_METADATA_MAX_ROUTE_STEPS) {
+		metadata_route_set_problem(state, "route step limit");
+		return NULL;
+	}
+	step = &state->route_steps[state->route_step_count++];
+	memset(step, 0, sizeof(*step));
+	step->kind = kind;
+	step->seg = seg;
+	step->side = side;
+	step->wall_num = -1;
+	step->trigger_num = -1;
+	step->trigger_type = -1;
+	step->key_index = -1;
+	step->distance_from_previous = route ? route->pending_distance : 0.0;
+	snprintf(step->label, sizeof(step->label), "%s", label ? label : "");
+	for (i = 0; i < LEVEL_METADATA_MAX_ROUTE_LINKS; ++i) {
+		step->opened_link_seg[i] = -1;
+		step->opened_link_side[i] = -1;
+		step->opened_link_wall[i] = -1;
+	}
+	if (view && view->wall_num && valid_segment(view, seg) && side >= 0 && side < LEVEL_METADATA_MAX_SIDES)
+		step->wall_num = view->wall_num(view->user, seg, side);
+	if (route)
+		route->pending_distance = 0.0;
+	return step;
+}
+
+static int metadata_route_step_for_trigger(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    const metadata_route_block *block)
+{
+	level_metadata_route_step *step;
+	char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
+	const char *type_name;
+	int link_count;
+	int i;
+
+	if (!block || !metadata_route_trigger_valid(block->trigger_num))
+		return 0;
+	type_name = metadata_route_trigger_type_name(view, block->trigger_type);
+	snprintf(label, sizeof(label), "%s trigger %d",
+	         block->trigger_type == view->trigger_type_open_wall ? "Open wall" : block->trigger_type == view->trigger_type_open_door   ? "Open door"
+	                                                                         : block->trigger_type == view->trigger_type_unlock_door   ? "Unlock door"
+	                                                                         : block->trigger_type == view->trigger_type_illusion_off  ? "Illusion off"
+	                                                                         : block->trigger_type == view->trigger_type_illusory_wall ? "Illusory wall"
+	                                                                                                                                   : "Trigger",
+	         block->trigger_num);
+	step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_TRIGGER, label, block->source_seg, block->source_side);
+	if (!step)
+		return 0;
+	step->wall_num = block->source_wall;
+	step->trigger_num = block->trigger_num;
+	step->trigger_type = block->trigger_type;
+	snprintf(step->trigger_type_name, sizeof(step->trigger_type_name), "%s", type_name);
+	if (view->trigger_link_count && view->trigger_link_segment && view->trigger_link_side) {
+		link_count = view->trigger_link_count(view->user, block->trigger_num);
+		for (i = 0; i < link_count && step->opened_link_count < LEVEL_METADATA_MAX_ROUTE_LINKS; ++i) {
+			int link_seg = view->trigger_link_segment(view->user, block->trigger_num, i);
+			int link_side = view->trigger_link_side(view->user, block->trigger_num, i);
+			int out = step->opened_link_count++;
+			step->opened_link_seg[out] = link_seg;
+			step->opened_link_side[out] = link_side;
+			step->opened_link_wall[out] = view->wall_num && valid_segment(view, link_seg) ? view->wall_num(view->user, link_seg, link_side) : -1;
+		}
+	}
+	route->fired_triggers[block->trigger_num] = 1;
+	return 1;
+}
+
+static int metadata_route_move_to_target(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    int goal_seg,
+    const int goal_pos[3],
+    int depth);
+
+static int metadata_route_acquire_key(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    int key_index,
+    int depth)
+{
+	metadata_route_path best_path;
+	int best = -1;
+	int i;
+
+	if (key_index < 0 || key_index >= 3) {
+		metadata_route_set_problem(state, "unknown key route dependency");
+		return 0;
+	}
+	if ((route->key_mask & key_bit_for_index(key_index)) != 0)
+		return 1;
+	if ((route->key_in_progress & key_bit_for_index(key_index)) != 0) {
+		metadata_route_set_problem(state, "key route dependency loop");
+		return 0;
+	}
+	if (key_target_count[key_index] <= 0) {
+		char problem[64];
+		snprintf(problem, sizeof(problem), "%s key missing", key_name(key_index));
+		metadata_route_set_problem(state, problem);
+		return 0;
+	}
+	best_path.distance = DBL_MAX;
+	metadata_route_clear_block(&best_path.first_block);
+	for (i = 0; i < key_target_count[key_index]; ++i) {
+		metadata_route_path candidate;
+		if (key_targets[key_index][i].visited)
+			continue;
+		if (!metadata_route_find_path(view, route, key_targets[key_index][i].seg, key_targets[key_index][i].pos, 1, &candidate))
+			continue;
+		if (candidate.distance < best_path.distance) {
+			best = i;
+			best_path = candidate;
+		}
+	}
+	if (best < 0) {
+		char problem[64];
+		snprintf(problem, sizeof(problem), "%s key unreachable", key_name(key_index));
+		metadata_route_set_problem(state, problem);
+		return 0;
+	}
+	route->key_in_progress |= key_bit_for_index(key_index);
+	if (!metadata_route_move_to_target(view, state, route, key_targets[key_index][best].seg, key_targets[key_index][best].pos, depth + 1)) {
+		route->key_in_progress &= ~key_bit_for_index(key_index);
+		return 0;
+	}
+	{
+		char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
+		level_metadata_route_step *step;
+		snprintf(label, sizeof(label), "%s key", key_name(key_index));
+		step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_KEY, label, key_targets[key_index][best].seg, -1);
+		if (step)
+			step->key_index = key_index;
+	}
+	key_targets[key_index][best].visited = 1;
+	route->key_mask |= key_bit_for_index(key_index);
+	route->key_in_progress &= ~key_bit_for_index(key_index);
+	return 1;
+}
+
+static int metadata_route_fire_trigger(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    const metadata_route_block *block,
+    int depth)
+{
+	int pos[3];
+
+	if (!block || !metadata_route_trigger_valid(block->trigger_num)) {
+		metadata_route_set_problem(state, "unknown trigger route dependency");
+		return 0;
+	}
+	if (route->fired_triggers[block->trigger_num])
+		return 1;
+	if (route->trigger_in_progress[block->trigger_num]) {
+		metadata_route_set_problem(state, "trigger route dependency loop");
+		return 0;
+	}
+	if (!valid_segment(view, block->source_seg)) {
+		metadata_route_set_problem(state, "trigger source missing");
+		return 0;
+	}
+	if (!side_center(view, block->source_seg, block->source_side, pos) && segment_center_valid[block->source_seg])
+		copy_pos(pos, segment_centers[block->source_seg]);
+	route->trigger_in_progress[block->trigger_num] = 1;
+	if (!metadata_route_move_to_target(view, state, route, block->source_seg, pos, depth + 1)) {
+		route->trigger_in_progress[block->trigger_num] = 0;
+		return 0;
+	}
+	route->current_seg = block->source_seg;
+	copy_pos(route->current_pos, pos);
+	if (!metadata_route_step_for_trigger(view, state, route, block)) {
+		route->trigger_in_progress[block->trigger_num] = 0;
+		return 0;
+	}
+	route->trigger_in_progress[block->trigger_num] = 0;
+	return 1;
+}
+
+static int metadata_route_move_to_target(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    int goal_seg,
+    const int goal_pos[3],
+    int depth)
+{
+	int guard;
+
+	if (depth > LEVEL_METADATA_MAX_ROUTE_STEPS) {
+		metadata_route_set_problem(state, "route dependency depth limit");
+		return 0;
+	}
+	for (guard = 0; guard < LEVEL_METADATA_MAX_ROUTE_STEPS; ++guard) {
+		metadata_route_path path;
+		if (metadata_route_find_path(view, route, goal_seg, goal_pos, 0, &path)) {
+			route->pending_distance += path.distance;
+			route->current_seg = goal_seg;
+			copy_pos(route->current_pos, goal_pos);
+			return 1;
+		}
+		if (!metadata_route_find_path(view, route, goal_seg, goal_pos, 1, &path) ||
+		    path.first_block.kind == METADATA_ROUTE_BLOCK_NONE) {
+			metadata_route_set_problem(state, "route target unreachable");
+			return 0;
+		}
+		if (path.first_block.kind == METADATA_ROUTE_BLOCK_KEY) {
+			if (!metadata_route_acquire_key(view, state, route, path.first_block.key_index, depth + 1))
+				return 0;
+		} else if (path.first_block.kind == METADATA_ROUTE_BLOCK_TRIGGER) {
+			if (!metadata_route_fire_trigger(view, state, route, &path.first_block, depth + 1))
+				return 0;
+		} else {
+			metadata_route_set_problem(state, "unsupported route dependency");
+			return 0;
+		}
+	}
+	metadata_route_set_problem(state, "route dependency iteration limit");
+	return 0;
+}
+
+static int metadata_route_select_target(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    const metadata_target *targets,
+    int count)
+{
+	double best_distance = DBL_MAX;
+	int best = -1;
+	int i;
+
+	for (i = 0; i < count; ++i) {
+		metadata_route_path path;
+		if (!metadata_route_find_path(view, route, targets[i].seg, targets[i].pos, 1, &path))
+			continue;
+		if (path.distance < best_distance) {
+			best_distance = path.distance;
+			best = i;
+		}
+	}
+	return best;
+}
+
+static int metadata_route_find_boss_target(const level_metadata_scan_view *view, metadata_target *boss)
+{
+	int obj_count;
+	int objnum;
+
+	if (!boss)
+		return 0;
+	memset(boss, 0, sizeof(*boss));
+	if (!view->object_count || !view->object_segment || !view->object_type || !view->object_position || !view->object_is_boss)
+		return 0;
+	obj_count = view->object_count(view->user);
+	for (objnum = 0; objnum < obj_count; ++objnum) {
+		int pos[3];
+		int obj_seg;
+		if (view->object_flags &&
+		    (view->object_flags(view->user, objnum) & view->obj_flag_should_be_dead))
+			continue;
+		if (view->object_type(view->user, objnum) != view->obj_type_robot ||
+		    !view->object_is_boss(view->user, objnum))
+			continue;
+		obj_seg = view->object_segment(view->user, objnum);
+		if (!valid_segment(view, obj_seg) || !view->object_position(view->user, objnum, pos))
+			continue;
+		boss->seg = obj_seg;
+		copy_pos(boss->pos, pos);
+		return 1;
+	}
+	return 0;
+}
+
+static int metadata_route_append_target_step(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    int kind,
+    const metadata_target *target,
+    const char *label)
+{
+	int side = -1;
+	int wall_num = -1;
+	level_metadata_route_step *step;
+
+	if (kind == LEVEL_METADATA_ROUTE_EXIT && view->side_has_exit_trigger) {
+		int s;
+		for (s = 0; s < LEVEL_METADATA_MAX_SIDES; ++s) {
+			if (!view->side_has_exit_trigger(view->user, target->seg, s) &&
+			    view->segment_child(view->user, target->seg, s) != -2)
+				continue;
+			side = s;
+			wall_num = view->wall_num ? view->wall_num(view->user, target->seg, s) : -1;
+			break;
+		}
+	}
+	step = metadata_route_append_step(view, state, route, kind, label, target->seg, side);
+	if (!step)
+		return 0;
+	step->wall_num = wall_num;
+	if (kind == LEVEL_METADATA_ROUTE_EXIT && side >= 0 && view->wall_trigger && valid_wall(view, wall_num)) {
+		step->trigger_num = view->wall_trigger(view->user, wall_num);
+		if (view->trigger_type && metadata_route_trigger_valid(step->trigger_num)) {
+			step->trigger_type = view->trigger_type(view->user, step->trigger_num);
+			snprintf(step->trigger_type_name, sizeof(step->trigger_type_name), "%s",
+			         metadata_route_trigger_type_name(view, step->trigger_type));
+		}
+	}
+	return 1;
+}
+
+static void collect_route_chain(const level_metadata_scan_view *view, level_metadata_state *state)
+{
+	metadata_target reactor;
+	metadata_target boss;
+	int hostage_count = 0;
+	int exit_count = 0;
+	int found_reactor;
+	int found_boss;
+	int exit_index;
+	metadata_route_context route;
+
+	state->route_status = LEVEL_METADATA_TRAVEL_FAILED;
+	if (!valid_segment(view, view->start_segment) || !view->start_position) {
+		metadata_route_set_problem(state, "missing player start");
+		return;
+	}
+	memset(&route, 0, sizeof(route));
+	route.current_seg = view->start_segment;
+	if (!view->start_position(view->user, route.current_pos)) {
+		metadata_route_set_problem(state, "missing player start");
+		return;
+	}
+	found_reactor = collect_route_targets(view, hostage_targets, &hostage_count, &reactor, exit_targets, &exit_count);
+	found_boss = metadata_route_find_boss_target(view, &boss);
+	metadata_route_append_step(view, state, &route, LEVEL_METADATA_ROUTE_START, "Start", route.current_seg, -1);
+	if (exit_count <= 0) {
+		metadata_route_set_problem(state, "missing exit");
+		return;
+	}
+	if (found_reactor) {
+		if (!metadata_route_move_to_target(view, state, &route, reactor.seg, reactor.pos, 0))
+			goto route_partial;
+		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_REACTOR, &reactor, "Reactor"))
+			goto route_partial;
+	} else if (found_boss) {
+		if (!metadata_route_move_to_target(view, state, &route, boss.seg, boss.pos, 0))
+			goto route_partial;
+		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_BOSS, &boss, "Boss"))
+			goto route_partial;
+	}
+	exit_index = metadata_route_select_target(view, &route, exit_targets, exit_count);
+	if (exit_index < 0) {
+		metadata_route_set_problem(state, "exit unreachable");
+		goto route_partial;
+	}
+	if (!metadata_route_move_to_target(view, state, &route, exit_targets[exit_index].seg, exit_targets[exit_index].pos, 0))
+		goto route_partial;
+	if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_EXIT, &exit_targets[exit_index], "Exit"))
+		goto route_partial;
+	state->route_status = LEVEL_METADATA_TRAVEL_OK;
+	return;
+
+route_partial:
+	state->route_status = state->route_step_count > 1 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
+	if (!state->route_problem[0])
+		metadata_route_set_problem(state, "route incomplete");
+}
+
 static void collect_travel_time(const level_metadata_scan_view *view, level_metadata_state *state)
 {
 	metadata_target reactor;
@@ -1176,5 +1915,6 @@ int level_metadata_scan_level(const level_metadata_scan_view *view, level_metada
 	state->matcen_raw_count = count_connected_special_components(view, view->segment_special_robotmaker, &state->matcen_segment_count);
 	state->matcen_count = state->matcen_segment_count;
 	collect_travel_time(view, state);
+	collect_route_chain(view, state);
 	return state->energy_center_count;
 }

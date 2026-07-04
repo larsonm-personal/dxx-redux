@@ -26,7 +26,17 @@
         "travel_time_text": "0M:10S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          }
+        ],
+        "route_problem": "red key missing"
       },
       {
         "level_num": -1,
@@ -46,7 +56,33 @@
         "travel_time_text": "3M:27S",
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
-        "travel_key_detours": 3
+        "travel_key_detours": 3,
+        "route_status": "partial",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 360,
+            "distance": 1222.171731702565,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 532,
+            "distance": 1062.8444926196796,
+            "key": "gold"
+          }
+        ],
+        "route_problem": "route target unreachable"
       }
     ],
     "target_index": 0

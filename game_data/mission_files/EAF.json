@@ -26,7 +26,160 @@
         "travel_time_text": "1M:30S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 1
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 0",
+            "seg": 413,
+            "side": 4,
+            "wall": 32,
+            "distance": 470.0000000000435,
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 52,
+                "side": 2,
+                "wall": 26
+              },
+              {
+                "seg": 53,
+                "side": 0,
+                "wall": 24
+              },
+              {
+                "seg": 54,
+                "side": 0,
+                "wall": 31
+              },
+              {
+                "seg": 55,
+                "side": 2,
+                "wall": 29
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "label": "Open wall trigger 1",
+            "seg": 357,
+            "side": 2,
+            "wall": 39,
+            "distance": 1385.4471686654792,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 130,
+                "side": 1,
+                "wall": 37
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "label": "Open wall trigger 2",
+            "seg": 354,
+            "side": 4,
+            "wall": 40,
+            "distance": 1563.9748257377523,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 108,
+                "side": 4,
+                "wall": 33
+              },
+              {
+                "seg": 109,
+                "side": 5,
+                "wall": 36
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "label": "Open wall trigger 3",
+            "seg": 389,
+            "side": 1,
+            "wall": 45,
+            "distance": 1733.668834449779,
+            "trigger": 3,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 75,
+                "side": 4,
+                "wall": 41
+              },
+              {
+                "seg": 98,
+                "side": 5,
+                "wall": 43
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "label": "Open wall trigger 4",
+            "seg": 234,
+            "side": 1,
+            "wall": 50,
+            "distance": 1483.6086573253597,
+            "trigger": 4,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 242,
+                "side": 4,
+                "wall": 46
+              },
+              {
+                "seg": 241,
+                "side": 5,
+                "wall": 48
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 450,
+            "distance": 1000.8850944258666
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 0,
+            "side": 5,
+            "wall": 51,
+            "distance": 2257.5561986128696,
+            "trigger": 7,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ]
       },
       {
         "level_num": 2,
@@ -46,7 +199,17 @@
         "travel_time_text": "0M:35S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 41
+          }
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 3,
@@ -66,7 +229,142 @@
         "travel_time_text": "1M:04S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "red key",
+            "seg": 689,
+            "distance": 1518.5649392401688,
+            "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "label": "Open wall trigger 0",
+            "seg": 698,
+            "side": 4,
+            "wall": 96,
+            "distance": 925.2498361812468,
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 695,
+                "side": 5,
+                "wall": 81
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "label": "Open wall trigger 2",
+            "seg": 696,
+            "side": 5,
+            "wall": 98,
+            "distance": 448.69659841367377,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 565,
+                "side": 1,
+                "wall": 89
+              },
+              {
+                "seg": 563,
+                "side": 3,
+                "wall": 87
+              },
+              {
+                "seg": 559,
+                "side": 1,
+                "wall": 93
+              },
+              {
+                "seg": 561,
+                "side": 3,
+                "wall": 91
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 511,
+            "distance": 1383.9452121813424,
+            "key": "gold"
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "label": "Open wall trigger 1",
+            "seg": 700,
+            "side": 4,
+            "wall": 97,
+            "distance": 925.2493225268225,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 693,
+                "side": 5,
+                "wall": 79
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "label": "Open wall trigger 3",
+            "seg": 694,
+            "side": 5,
+            "wall": 99,
+            "distance": 448.6962253494467,
+            "trigger": 3,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 601,
+                "side": 5,
+                "wall": 95
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 603,
+            "distance": 718.3890556463275
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 701,
+            "side": 3,
+            "wall": 120,
+            "distance": 1768.662662632639,
+            "trigger": 13,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ]
       },
       {
         "level_num": 4,
@@ -86,7 +384,116 @@
         "travel_time_text": "0M:42S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 1",
+            "seg": 191,
+            "side": 5,
+            "wall": 13,
+            "distance": 1811.648145416106,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 440,
+                "side": 5,
+                "wall": 17
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "label": "Open wall trigger 2",
+            "seg": 441,
+            "side": 5,
+            "wall": 14,
+            "distance": 3251.8538847993264,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 193,
+                "side": 5,
+                "wall": 21
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "label": "Open wall trigger 3",
+            "seg": 194,
+            "side": 5,
+            "wall": 12,
+            "distance": 3251.6888501639605,
+            "trigger": 3,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 437,
+                "side": 5,
+                "wall": 19
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "label": "Open wall trigger 4",
+            "seg": 438,
+            "side": 5,
+            "wall": 15,
+            "distance": 3251.8539429941143,
+            "trigger": 4,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 309,
+                "side": 5,
+                "wall": 23
+              },
+              {
+                "seg": 5,
+                "side": 4,
+                "wall": 11
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 310,
+            "distance": 2590.798270575378
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 504,
+            "side": 4,
+            "wall": 24,
+            "distance": 1099.8361476459875,
+            "trigger": 6,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ]
       },
       {
         "level_num": 5,
@@ -107,9 +514,19 @@
         "travel_targets_reached": 0,
         "travel_targets_total": 0,
         "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          }
+        ],
         "travel_status": "failed",
         "travel_problem": "missing exit",
         "travel_note": "missing reactor",
+        "route_problem": "missing exit",
         "notes": [
           "missing reactor"
         ]

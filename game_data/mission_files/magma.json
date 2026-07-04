@@ -26,7 +26,17 @@
         "travel_time_text": "0M:21S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 152
+          }
+        ],
+        "route_problem": "route target unreachable"
       }
     ],
     "target_index": 0
@@ -58,7 +68,17 @@
         "travel_time_text": "0M:21S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
-        "travel_key_detours": 0
+        "travel_key_detours": 0,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 94
+          }
+        ],
+        "route_problem": "route target unreachable"
       }
     ],
     "target_index": 1
