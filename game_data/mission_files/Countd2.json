@@ -27,6 +27,9 @@
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 0,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -62,6 +65,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -83,6 +90,9 @@
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 2,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -126,6 +136,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -147,6 +161,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 2,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -190,6 +207,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -211,6 +232,9 @@
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 2,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -254,6 +278,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -275,6 +303,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -326,6 +357,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -347,6 +382,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -375,7 +413,7 @@
             "kind": "key",
             "label": "gold key",
             "seg": 513,
-            "distance": 1722.6025833947983,
+            "distance": 1740.701155147082,
             "key": "gold"
           },
           {
@@ -383,7 +421,7 @@
             "kind": "key",
             "label": "red key",
             "seg": 550,
-            "distance": 1336.9652266659439,
+            "distance": 1355.0637984182276,
             "key": "red"
           },
           {
@@ -398,6 +436,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -419,6 +461,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 2,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -429,21 +474,14 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 825,
-            "distance": 791.9411173696292
-          },
-          {
-            "index": 2,
             "kind": "key",
             "label": "blue key",
             "seg": 170,
-            "distance": 1738.9732307206016,
+            "distance": 1142.032113350972,
             "key": "blue"
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "key",
             "label": "gold key",
             "seg": 696,
@@ -451,7 +489,7 @@
             "key": "gold"
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "trigger",
             "label": "Open door trigger 7",
             "seg": 350,
@@ -470,17 +508,28 @@
             ]
           },
           {
+            "index": 4,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 719,
+            "distance": 2368.0038835945247
+          },
+          {
             "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 456,
             "side": 4,
             "wall": 84,
-            "distance": 2233.149798447882,
+            "distance": 269.78007715668446,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       }
     ],

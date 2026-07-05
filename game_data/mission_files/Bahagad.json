@@ -27,6 +27,9 @@
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 2,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -172,6 +175,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -193,7 +200,10 @@
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 3,
-        "route_status": "partial",
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -292,9 +302,64 @@
             "seg": 324,
             "distance": 197.8903730042896,
             "key": "red"
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "label": "Open wall trigger 2",
+            "seg": 70,
+            "wall": 40,
+            "distance": 856.7259734349847,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 110,
+                "side": 2,
+                "wall": 36
+              },
+              {
+                "seg": 115,
+                "side": 0,
+                "wall": 37
+              },
+              {
+                "seg": 115,
+                "side": 2,
+                "wall": 38
+              },
+              {
+                "seg": 109,
+                "side": 0,
+                "wall": 39
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 115,
+            "distance": 208.9989790274672
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 353,
+            "side": 1,
+            "wall": 121,
+            "distance": 857.189893457533,
+            "trigger": 13,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
-        "route_problem": "route target unreachable"
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
+        ]
       },
       {
         "level_num": 3,
@@ -315,6 +380,9 @@
         "travel_targets_reached": 9,
         "travel_targets_total": 9,
         "travel_key_detours": 3,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "failed",
         "route_steps": [
           {
@@ -324,7 +392,11 @@
             "seg": 1
           }
         ],
-        "route_problem": "trigger route dependency loop"
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_problem": "trigger route dependency loop: trigger 3 source 382:2 wall 102 target 379:0",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
+        ]
       },
       {
         "level_num": 4,
@@ -345,6 +417,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -451,12 +526,19 @@
           },
           {
             "index": 7,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 73,
+            "distance": 1566.0497484634507
+          },
+          {
+            "index": 8,
             "kind": "trigger",
             "label": "Open wall trigger 2",
             "seg": 41,
             "side": 3,
             "wall": 29,
-            "distance": 1269.6068015890216,
+            "distance": 316.4428786419188,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -474,7 +556,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "trigger",
             "label": "Open wall trigger 3",
             "seg": 88,
@@ -498,24 +580,21 @@
             ]
           },
           {
-            "index": 9,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 75,
-            "distance": 428.3602340422477
-          },
-          {
             "index": 10,
             "kind": "exit",
             "label": "Exit",
             "seg": 75,
             "side": 4,
             "wall": 25,
-            "distance": 9.99994302480549,
+            "distance": 438.3601770670532,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -537,6 +616,9 @@
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 3,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -642,6 +724,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -663,6 +749,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "partial",
         "route_steps": [
           {
@@ -688,7 +777,11 @@
             "key": "gold"
           }
         ],
-        "route_problem": "trigger route dependency loop"
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_problem": "trigger route dependency loop: trigger 11 source 403:5 wall 131 target 401:0",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
+        ]
       },
       {
         "level_num": 7,
@@ -709,6 +802,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 2,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -727,12 +823,33 @@
           },
           {
             "index": 2,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 626,
+            "side": 0,
+            "wall": 147,
+            "distance": 141.10141481500162,
+            "opens": [
+              {
+                "seg": 626,
+                "side": 0,
+                "wall": 147
+              },
+              {
+                "seg": 624,
+                "side": 2,
+                "wall": 146
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "trigger",
             "label": "Open wall trigger 5",
             "seg": 619,
             "side": 3,
             "wall": 143,
-            "distance": 862.2818564492287,
+            "distance": 1034.1151008854697,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -750,7 +867,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "label": "Open wall trigger 6",
             "seg": 747,
@@ -774,7 +891,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "key",
             "label": "red key",
             "seg": 276,
@@ -782,7 +899,7 @@
             "key": "red"
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "trigger",
             "label": "Open wall trigger 1",
             "seg": 425,
@@ -836,14 +953,14 @@
             ]
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 423,
             "distance": 94.99946386433132
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "exit",
             "label": "Exit",
             "seg": 235,
@@ -854,6 +971,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -875,6 +996,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1015,10 +1139,10 @@
           },
           {
             "index": 8,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 275,
-            "distance": 2058.694387139168
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 66,
+            "distance": 1971.4291051637279
           },
           {
             "index": 9,
@@ -1027,11 +1151,15 @@
             "seg": 87,
             "side": 4,
             "wall": 16,
-            "distance": 212.47164756492123,
+            "distance": 61.000092254478936,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -1053,6 +1181,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1114,6 +1245,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -1135,6 +1270,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1196,6 +1334,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
         ]
       }
     ],

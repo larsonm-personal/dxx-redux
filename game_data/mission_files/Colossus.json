@@ -27,6 +27,9 @@
         "travel_targets_reached": 9,
         "travel_targets_total": 9,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -79,6 +82,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -131,6 +137,9 @@
         "travel_targets_reached": 9,
         "travel_targets_total": 9,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -180,16 +189,36 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
-        "route_status": "failed",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 622
+          },
+          {
+            "index": 1,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 152,
+            "distance": 1427.0177762966841
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 96,
+            "side": 2,
+            "wall": 123,
+            "distance": 951.3890605532588,
+            "trigger": 10,
+            "trigger_type": "unknown"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       }
     ],
     "target_index": 0

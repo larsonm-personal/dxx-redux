@@ -27,7 +27,7 @@ internal fun isControllerMenuOnlyTouchLayout(layout: TouchLayout): Boolean =
 object TouchLayoutRepository {
     private const val TAG = "TouchLayoutRepository"
     private const val FILENAME = "touch_layout.json"
-    private const val CURRENT_VERSION = 6
+    private const val CURRENT_VERSION = 7
     private const val LEGACY_BTN_CHEATS_MENU = 100
     private const val BUNDLED_DIR = "configs/touch"
     private const val USER_DIR = "configs/touch"
@@ -95,6 +95,13 @@ object TouchLayoutRepository {
                     radialMenus = migrated.radialMenus.map { migrateGuideWheelActions(it) },
                 )
         }
+        if (migrated.version < 7) {
+            migrated =
+                migrated.copy(
+                    version = 7,
+                    radialMenus = migrated.radialMenus.map { migrateGuideWheelWarpToMe(it) },
+                )
+        }
         if (migrated.version >= CURRENT_VERSION) return migrated
         return migrated.copy(version = CURRENT_VERSION)
     }
@@ -158,6 +165,21 @@ object TouchLayoutRepository {
             centerLabel = if (clearCenter) "" else radial.centerLabel,
             centerBinding = if (clearCenter) -1 else radial.centerBinding,
         )
+    }
+
+    private fun migrateGuideWheelWarpToMe(radial: RadialMenuControl): RadialMenuControl {
+        if (radial.id != "Guide" ||
+            radial.segments.any { it.binding == TouchBindings.META_GUIDE_WARP_TO_ME }
+        ) {
+            return radial
+        }
+        val segments = radial.segments.toMutableList()
+        val nextIndex = segments.indexOfFirst { it.binding == TouchBindings.META_GUIDE_NEXT_GOAL }
+        segments.add(
+            if (nextIndex >= 0) nextIndex else segments.size,
+            RadialSegment("Warp Me", TouchBindings.META_GUIDE_WARP_TO_ME),
+        )
+        return radial.copy(segments = segments)
     }
 
     fun save(

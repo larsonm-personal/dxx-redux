@@ -172,6 +172,7 @@ static int escort_refresh_buddy_objnum(void)
 }
 
 static int escort_reactor_exists(void);
+static int escort_goal_command_allowed(void);
 
 #ifdef __ANDROID__
 enum escort_route_guidance_mode {
@@ -1377,6 +1378,147 @@ void escort_spawn_at_player(void)
 	HUD_init_message(HM_DEFAULT, old_buddy_objnum == -1 ? "%s deployed" : "%s released", PlayerCfg.GuidebotName);
 }
 
+static int escort_try_warp_position(object *buddy_objp, const vms_vector *candidate, int start_seg, vms_vector *warp_pos, int *warp_segnum)
+{
+	int candidate_segnum;
+	int old_segnum;
+	vms_vector old_pos;
+
+	candidate_segnum = find_point_seg(candidate, start_seg);
+	if (candidate_segnum < 0)
+		return 0;
+
+	old_pos = buddy_objp->pos;
+	old_segnum = buddy_objp->segnum;
+	buddy_objp->pos = *candidate;
+	buddy_objp->segnum = candidate_segnum;
+	if (object_intersects_wall(buddy_objp)) {
+		buddy_objp->pos = old_pos;
+		buddy_objp->segnum = old_segnum;
+		return 0;
+	}
+
+	buddy_objp->pos = old_pos;
+	buddy_objp->segnum = old_segnum;
+	*warp_pos = *candidate;
+	*warp_segnum = candidate_segnum;
+	return 1;
+}
+
+static int escort_try_warp_offset(object *buddy_objp, const vms_vector *dir, fix offset, vms_vector *warp_pos, int *warp_segnum)
+{
+	vms_vector candidate;
+
+	vm_vec_scale_add(&candidate, &ConsoleObject->pos, dir, offset);
+	return escort_try_warp_position(buddy_objp, &candidate, ConsoleObject->segnum, warp_pos, warp_segnum);
+}
+
+static int escort_find_warp_to_player_position(object *buddy_objp, vms_vector *warp_pos, int *warp_segnum)
+{
+	fix offset;
+	vms_vector candidate;
+
+	offset = ConsoleObject->size + buddy_objp->size + F1_0 / 2;
+	if (escort_try_warp_offset(buddy_objp, &ConsoleObject->orient.fvec, -offset, warp_pos, warp_segnum))
+		return 1;
+	if (escort_try_warp_offset(buddy_objp, &ConsoleObject->orient.rvec, offset, warp_pos, warp_segnum))
+		return 1;
+	if (escort_try_warp_offset(buddy_objp, &ConsoleObject->orient.rvec, -offset, warp_pos, warp_segnum))
+		return 1;
+	if (escort_try_warp_offset(buddy_objp, &ConsoleObject->orient.uvec, offset, warp_pos, warp_segnum))
+		return 1;
+	if (escort_try_warp_offset(buddy_objp, &ConsoleObject->orient.uvec, -offset, warp_pos, warp_segnum))
+		return 1;
+	if (escort_try_warp_offset(buddy_objp, &ConsoleObject->orient.fvec, offset, warp_pos, warp_segnum))
+		return 1;
+
+	compute_segment_center(&candidate, &Segments[ConsoleObject->segnum]);
+	if (escort_try_warp_position(buddy_objp, &candidate, ConsoleObject->segnum, warp_pos, warp_segnum))
+		return 1;
+
+	candidate = ConsoleObject->pos;
+	return escort_try_warp_position(buddy_objp, &candidate, ConsoleObject->segnum, warp_pos, warp_segnum);
+}
+
+void escort_warp_to_player(void)
+{
+	object *buddy_objp;
+	vms_vector warp_pos;
+	int warp_segnum;
+#ifdef NETWORK
+	sbyte remote_owner;
+#endif
+
+	if (!ConsoleObject)
+		return;
+
+	if (Game_mode & GM_MULTI) {
+#ifdef NETWORK
+		if (!(Game_mode & GM_MULTI_COOP)) {
+			HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
+			return;
+		}
+		if (Escort_owner_player != -1 && Escort_owner_player != Player_num) {
+			HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
+			return;
+		}
+#else
+		HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
+		return;
+#endif
+	}
+
+	if (!escort_refresh_buddy_objnum()) {
+		HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in mine.");
+		return;
+	}
+	if (!escort_goal_command_allowed())
+		return;
+
+	buddy_objp = &Objects[Buddy_objnum];
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == -1) {
+		Escort_owner_player = Player_num;
+		buddy_objp->ctype.ai_info.REMOTE_OWNER = (sbyte)Player_num;
+		multi_send_escort_owner(Player_num);
+	}
+	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num) {
+		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
+		return;
+	}
+#endif
+
+	if (!escort_find_warp_to_player_position(buddy_objp, &warp_pos, &warp_segnum)) {
+		HUD_init_message(HM_DEFAULT, "No clear space to warp %s", PlayerCfg.GuidebotName);
+		return;
+	}
+
+#ifdef NETWORK
+	remote_owner = buddy_objp->ctype.ai_info.REMOTE_OWNER;
+#endif
+	buddy_objp->last_pos = warp_pos;
+	buddy_objp->pos = warp_pos;
+	buddy_objp->orient = ConsoleObject->orient;
+	obj_relink(Buddy_objnum, warp_segnum);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.velocity);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.thrust);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.rotvel);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.rotthrust);
+	init_ai_object(Buddy_objnum, buddy_objp->ctype.ai_info.behavior, -1);
+#ifdef NETWORK
+	buddy_objp->ctype.ai_info.REMOTE_OWNER = remote_owner;
+#endif
+	buddy_objp->ctype.ai_info.hide_index = -1;
+	buddy_objp->ctype.ai_info.path_length = 0;
+	buddy_objp->ctype.ai_info.cur_path_index = 0;
+	Ai_local_info[Buddy_objnum].mode = AIM_GOTO_PLAYER;
+	Buddy_allowed_to_talk = 1;
+	Buddy_last_seen_player = GameTime64;
+	Buddy_last_player_path_created = GameTime64 - F1_0 * 2;
+	Escort_last_path_created = GameTime64 - F1_0 * 2;
+	HUD_init_message(HM_DEFAULT, "%s warped to you", PlayerCfg.GuidebotName);
+}
+
 //	-----------------------------------------------------------------------------
 //	See if segment from curseg through sidenum is reachable.
 //	Return true if it is reachable, else return false.
@@ -1730,7 +1872,6 @@ static int escort_find_nearest_unfound_secret_entrance(int start_seg,
                                                        int skip_display_index,
                                                        escort_secret_goal_info *goal);
 static void escort_report_secret_goal_failure(int goal_index);
-static int escort_goal_command_allowed(void);
 
 //	-----------------------------------------------------------------------------
 void set_escort_special_goal(int special_key)

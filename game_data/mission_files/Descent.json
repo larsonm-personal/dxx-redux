@@ -1713,10 +1713,59 @@
           {
             "index": 4,
             "kind": "trigger",
+            "label": "Open door trigger 2",
+            "seg": 545,
+            "side": 4,
+            "wall": 11,
+            "distance": 291.9310533650598,
+            "trigger": 2,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 581,
+                "side": 4,
+                "wall": 4
+              },
+              {
+                "seg": 586,
+                "side": 4,
+                "wall": 0
+              },
+              {
+                "seg": 582,
+                "side": 4,
+                "wall": 6
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "label": "Open door trigger 8",
+            "seg": 589,
+            "side": 5,
+            "wall": 7,
+            "distance": 274.9895951984429,
+            "trigger": 8,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 585,
+                "side": 4,
+                "wall": 2
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
             "label": "Open door trigger 11",
-            "seg": 599,
+            "seg": 588,
+            "side": 5,
             "wall": 3,
-            "distance": 296.93094225326803,
+            "distance": 194.99441917736934,
             "trigger": 11,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -1744,14 +1793,14 @@
             ]
           },
           {
-            "index": 5,
+            "index": 7,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 670,
-            "distance": 104.99491506036786
+            "distance": 129.99721126498446
           },
           {
-            "index": 6,
+            "index": 8,
             "kind": "exit",
             "label": "Exit",
             "seg": 592,

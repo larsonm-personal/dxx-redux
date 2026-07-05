@@ -27,6 +27,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -62,6 +65,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -83,6 +90,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
         "route_status": "ok",
         "route_steps": [
           {
@@ -93,14 +103,56 @@
           },
           {
             "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 203,
-            "distance": 1536.178247579633,
-            "key": "blue"
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 313,
+            "side": 5,
+            "wall": 70,
+            "distance": 183.3263734820751,
+            "opens": [
+              {
+                "seg": 313,
+                "side": 5,
+                "wall": 70
+              },
+              {
+                "seg": 150,
+                "side": 0,
+                "wall": 71
+              }
+            ]
           },
           {
             "index": 2,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 160,
+            "side": 5,
+            "wall": 52,
+            "distance": 317.8022166386306,
+            "opens": [
+              {
+                "seg": 160,
+                "side": 5,
+                "wall": 52
+              },
+              {
+                "seg": 161,
+                "side": 4,
+                "wall": 53
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 203,
+            "distance": 1672.5892215441806,
+            "key": "blue"
+          },
+          {
+            "index": 4,
             "kind": "key",
             "label": "gold key",
             "seg": 68,
@@ -108,7 +160,7 @@
             "key": "gold"
           },
           {
-            "index": 3,
+            "index": 5,
             "kind": "key",
             "label": "red key",
             "seg": 176,
@@ -116,14 +168,14 @@
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 6,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 137,
             "distance": 1950.743104521719
           },
           {
-            "index": 5,
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 4,
@@ -134,6 +186,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -155,16 +211,30 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 0,
-        "route_status": "failed",
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 470
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 184,
+            "distance": 231.0464036030285
           }
         ],
-        "route_problem": "key route dependency loop"
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_problem": "red key route dependency loop",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
+        ]
       }
     ],
     "target_index": 0

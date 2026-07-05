@@ -27,6 +27,9 @@
         "travel_targets_reached": 10,
         "travel_targets_total": 10,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -98,7 +101,10 @@
         "travel_targets_reached": 32,
         "travel_targets_total": 32,
         "travel_key_detours": 3,
-        "route_status": "ok",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
@@ -113,42 +119,9 @@
             "seg": 44,
             "distance": 141.0124980474851,
             "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 121,
-            "distance": 811.0839569516046,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 405,
-            "distance": 800.7388994617065,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 412,
-            "distance": 121.97636442555621
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 394,
-            "side": 1,
-            "wall": 125,
-            "distance": 152.41232645372315,
-            "trigger": 1,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "gold key unreachable"
       },
       {
         "level_num": 3,
@@ -169,6 +142,9 @@
         "travel_targets_reached": 8,
         "travel_targets_total": 10,
         "travel_key_detours": 2,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "failed",
         "route_steps": [
           {
@@ -201,6 +177,9 @@
         "travel_targets_reached": 3,
         "travel_targets_total": 3,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -272,16 +251,36 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
-        "route_status": "failed",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 758,
+            "distance": 378.9429751150097
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 181,
+            "side": 1,
+            "wall": 120,
+            "distance": 110,
+            "trigger": 4,
+            "trigger_type": "unknown"
           }
-        ],
-        "route_problem": "key route dependency loop"
+        ]
       },
       {
         "level_num": 6,
@@ -302,6 +301,9 @@
         "travel_targets_reached": 0,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "failed",
         "route_steps": [
           {
@@ -334,6 +336,9 @@
         "travel_targets_reached": 0,
         "travel_targets_total": 18,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "failed",
         "route_steps": [
           {
@@ -366,16 +371,60 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
-        "route_status": "failed",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 710,
+            "distance": 32.99038105676658
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 30,
+            "distance": 112.99038105676658,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 539,
+            "distance": 520,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "red key",
+            "seg": 610,
+            "distance": 619.6261743126157,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 736,
+            "side": 2,
+            "wall": 136,
+            "distance": 629.6261743126158,
+            "trigger": 0,
+            "trigger_type": "unknown"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       },
       {
         "level_num": 9,
@@ -396,6 +445,9 @@
         "travel_targets_reached": 9,
         "travel_targets_total": 10,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "partial",
         "route_steps": [
           {
@@ -459,16 +511,26 @@
         "travel_targets_reached": 13,
         "travel_targets_total": 13,
         "travel_key_detours": 3,
-        "route_status": "failed",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 33
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 438,
+            "distance": 434.86811780835194
           }
         ],
-        "route_problem": "route target unreachable"
+        "route_problem": "gold key unreachable"
       }
     ],
     "target_index": 0

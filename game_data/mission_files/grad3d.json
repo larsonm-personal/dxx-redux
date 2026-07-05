@@ -27,6 +27,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -54,7 +57,7 @@
           {
             "index": 3,
             "kind": "boss",
-            "label": "Boss",
+            "label": "Boss robot",
             "seg": 383,
             "distance": 1720.1488410682555
           },
@@ -79,8 +82,10 @@
           }
         ],
         "travel_note": "no reactor, exit exists",
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "no reactor, exit exists"
+          "no reactor, exit exists",
+          "no guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -102,6 +107,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -148,7 +156,7 @@
           {
             "index": 4,
             "kind": "boss",
-            "label": "Boss",
+            "label": "Boss robot",
             "seg": 636,
             "distance": 1921.396318074797
           },
@@ -174,8 +182,10 @@
           }
         ],
         "travel_note": "no reactor, exit exists",
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "no reactor, exit exists"
+          "no reactor, exit exists",
+          "no guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -197,6 +207,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "failed",
         "route_steps": [
           {
@@ -207,9 +220,11 @@
           }
         ],
         "travel_note": "no reactor, exit exists",
-        "route_problem": "key route dependency loop",
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "gold key unreachable",
         "notes": [
-          "no reactor, exit exists"
+          "no reactor, exit exists",
+          "no guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -231,6 +246,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "partial",
         "route_steps": [
           {
@@ -250,15 +268,17 @@
           {
             "index": 2,
             "kind": "boss",
-            "label": "Boss",
+            "label": "Boss robot",
             "seg": 103,
             "distance": 4077.73694778722
           }
         ],
         "travel_note": "no reactor, exit exists",
-        "route_problem": "key route dependency loop",
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "gold key unreachable",
         "notes": [
-          "no reactor, exit exists"
+          "no reactor, exit exists",
+          "no guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -280,6 +300,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -291,7 +314,7 @@
           {
             "index": 1,
             "kind": "boss",
-            "label": "Boss",
+            "label": "Boss robot",
             "seg": 78,
             "distance": 2052.616990734791
           },
@@ -333,8 +356,10 @@
           }
         ],
         "travel_note": "no reactor, exit exists",
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "no reactor, exit exists"
+          "no reactor, exit exists",
+          "no guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -356,6 +381,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -367,7 +395,7 @@
           {
             "index": 1,
             "kind": "boss",
-            "label": "Boss",
+            "label": "Boss robot",
             "seg": 134,
             "distance": 1512.620686507928
           },
@@ -385,8 +413,10 @@
           }
         ],
         "travel_note": "no reactor, exit exists",
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "no reactor, exit exists"
+          "no reactor, exit exists",
+          "no guidebot or guidebot start cage placed in this level"
         ]
       }
     ],

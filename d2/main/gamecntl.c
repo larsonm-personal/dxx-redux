@@ -1457,6 +1457,16 @@ static void input_demo_record_direct_command_guidebot_find_secret(void)
 		input_demo_log_direct_command_record_error("guidebot find secret", error);
 }
 
+static void input_demo_record_direct_command_guidebot_warp_to_me(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_guidebot_warp_to_me(error, sizeof(error)))
+		input_demo_log_direct_command_record_error("guidebot warp to me", error);
+}
+
 static void input_demo_record_direct_command_death_abort(void)
 {
 	char error[256] = "";
@@ -1513,6 +1523,9 @@ static int input_demo_replay_apply_direct_commands(void)
 				break;
 			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_SECRET:
 				input_demo_apply_recorded_guidebot_find_secret();
+				break;
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME:
+				escort_warp_to_player();
 				break;
 			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT:
 				break;
@@ -2635,6 +2648,12 @@ int ReadControls(d_event *event)
 			} else {
 				HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
 			}
+			return 1;
+		}
+		if (android_escort_warp_to_me_pending) {
+			android_escort_warp_to_me_pending = 0;
+			input_demo_record_direct_command_guidebot_warp_to_me();
+			escort_warp_to_player();
 			return 1;
 		}
 		if (android_handle_ingame_saveload_request())

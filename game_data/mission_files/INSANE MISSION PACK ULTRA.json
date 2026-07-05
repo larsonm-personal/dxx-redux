@@ -27,6 +27,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -74,6 +77,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -129,49 +135,19 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 2,
-        "route_status": "ok",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 1
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 14,
-            "distance": 639.7719962858441,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "red key",
-            "seg": 50,
-            "distance": 233.64968095212396,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 32,
-            "distance": 359.49623492349644
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 42,
-            "side": 5,
-            "wall": 20,
-            "distance": 130,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 4,
@@ -192,6 +168,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -203,7 +182,7 @@
           {
             "index": 1,
             "kind": "boss",
-            "label": "Boss",
+            "label": "Boss robot",
             "seg": 89,
             "distance": 416
           },
@@ -243,6 +222,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -290,6 +272,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -309,7 +294,7 @@
           {
             "index": 2,
             "kind": "boss",
-            "label": "Boss",
+            "label": "Boss robot",
             "seg": 58,
             "distance": 306
           },
@@ -349,6 +334,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -360,7 +348,7 @@
           {
             "index": 1,
             "kind": "boss",
-            "label": "Boss",
+            "label": "Boss robot",
             "seg": 55,
             "distance": 1399.4825729512359
           },
@@ -408,6 +396,9 @@
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -419,7 +410,7 @@
           {
             "index": 1,
             "kind": "boss",
-            "label": "Boss",
+            "label": "Boss robot",
             "seg": 86,
             "distance": 1650.2042068214448
           },

@@ -149,6 +149,7 @@
         { "label": "Items", "binding": "Meta: GB: Find Items", "iconRes": "" },
         { "label": "Exit", "binding": "Meta: GB: Find Exit", "iconRes": "" },
         { "label": "Secret", "binding": "Meta: GB: Find Secret", "iconRes": "" },
+        { "label": "Warp Me", "binding": "Meta: GB: Warp to Me", "iconRes": "" },
         { "label": "Next", "binding": "Meta: GB: Next Goal", "iconRes": "" }
       ]
     },

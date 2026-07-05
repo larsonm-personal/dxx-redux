@@ -96,6 +96,7 @@ extern void input_demo_apply_recorded_guidebot_goal(int special_key, int from_me
 extern void input_demo_apply_recorded_guidebot_find_secret(void);
 extern void escort_rebuild_runtime_state_after_restore(void);
 extern void escort_spawn_at_player(void);
+extern void escort_warp_to_player(void);
 extern void escort_get_input_demo_checkpoint_state(struct input_demo_checkpoint_escort_state *escort_state);
 extern void escort_get_input_demo_checkpoint_thief_state(struct input_demo_checkpoint_thief_state *thief_state);
 extern int Buddy_objnum, Buddy_allowed_to_talk;

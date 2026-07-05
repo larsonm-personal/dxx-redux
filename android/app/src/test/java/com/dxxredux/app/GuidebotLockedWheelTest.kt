@@ -29,6 +29,7 @@ class GuidebotLockedWheelTest {
         val bindings = guideSegments.map { it.binding }
 
         assertTrue(TouchBindings.META_GUIDE_NEXT_GOAL in bindings)
+        assertTrue(TouchBindings.META_GUIDE_WARP_TO_ME in bindings)
         assertFalse(TouchBindings.META_GUIDE_RELEASE_CONTROL in bindings)
         assertFalse(TouchBindings.RADIAL_PRESET_CENTER.containsKey("Guide"))
     }
@@ -44,6 +45,10 @@ class GuidebotLockedWheelTest {
             TouchBindings.META_GUIDE_RELEASE_CONTROL,
             TouchBindings.nameToBinding("Meta: GB: Release Control"),
         )
+        assertEquals(
+            "Meta: GB: Warp to Me",
+            TouchBindings.bindingToName(TouchBindings.META_GUIDE_WARP_TO_ME),
+        )
     }
 
     @Test
@@ -52,15 +57,16 @@ class GuidebotLockedWheelTest {
             listOf(
                 RadialSegment("Secret", TouchBindings.META_GUIDE_FIND_SECRET),
                 RadialSegment("Release", TouchBindings.META_GUIDE_RELEASE_CONTROL),
+                RadialSegment("Warp Me", TouchBindings.META_GUIDE_WARP_TO_ME),
                 RadialSegment("Next", TouchBindings.META_GUIDE_NEXT_GOAL),
             )
 
         assertEquals(
-            listOf("Next"),
+            listOf("Warp Me", "Next"),
             guideWheelVisibleSegments(segments, secretAreaRevealed = false).map { it.label },
         )
         assertEquals(
-            listOf("Secret", "Next"),
+            listOf("Secret", "Warp Me", "Next"),
             guideWheelVisibleSegments(segments, secretAreaRevealed = true).map { it.label },
         )
     }
@@ -95,6 +101,7 @@ class GuidebotLockedWheelTest {
         assertEquals("", migrated.centerLabel)
         assertEquals(TouchBindings.META_GUIDE_NEXT_GOAL, migrated.segments.last().binding)
         assertTrue(TouchBindings.META_GUIDE_FIND_ENERGY in bindings)
+        assertTrue(TouchBindings.META_GUIDE_WARP_TO_ME in bindings)
         assertFalse(TouchBindings.META_GUIDE_RELEASE_CONTROL in bindings)
     }
 }

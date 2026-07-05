@@ -27,6 +27,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -101,13 +104,31 @@
           },
           {
             "index": 5,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 46,
-            "distance": 272.17341994488595
+            "kind": "trigger",
+            "label": "Open door trigger 3",
+            "seg": 38,
+            "wall": 72,
+            "distance": 101.38670062692297,
+            "trigger": 3,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 40,
+                "side": 4,
+                "wall": 71
+              }
+            ]
           },
           {
             "index": 6,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 46,
+            "distance": 211.0980080594557
+          },
+          {
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 242,
@@ -118,6 +139,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
         ]
       },
       {
@@ -139,6 +164,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -166,6 +194,10 @@
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
         ]
       }
     ],

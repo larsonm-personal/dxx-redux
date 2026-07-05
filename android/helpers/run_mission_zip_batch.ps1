@@ -9,6 +9,7 @@ param(
     [switch]$Install,
     [switch]$IncludeLarge,
     [string[]]$LargeZipIncludePatterns = @("ewithin-versions.zip"),
+    [switch]$MetadataOnly,
     [switch]$NoRegressionJson,
     [long]$LargeZipBytes = 524288000,
     [int]$MaxZips = 0,
@@ -423,9 +424,11 @@ function Resolve-MissionZipTemplate {
         [Parameter(Mandatory = $true)][string]$GameSelectButtonText,
         [Parameter(Mandatory = $true)][string]$MissionStartConfirmAction,
         [Parameter(Mandatory = $true)][string]$LaunchButtonText,
-        [Parameter(Mandatory = $true)][string]$OutputPath
+        [Parameter(Mandatory = $true)][string]$OutputPath,
+        [switch]$MetadataOnly
     )
-    $templatePath = Join-Path $androidRoot "game_scripts\test_mission_zip_batch_import_metadata_launch.json5"
+    $templateName = if ($MetadataOnly) { "test_mission_zip_batch_import_metadata.json5" } else { "test_mission_zip_batch_import_metadata_launch.json5" }
+    $templatePath = Join-Path $androidRoot "game_scripts\$templateName"
     $text = Get-Content -Path $templatePath -Raw
     $text = $text.Replace('${ZIP_FILE}', (ConvertTo-JsonStringContent $DeviceZipName))
     $text = $text.Replace('${ZIP_LABEL}', (ConvertTo-JsonStringContent $Label))
@@ -618,7 +621,7 @@ foreach ($zip in $zips) {
     Write-Status "Running mission ZIP: $($zip.Name) ($($gameHint.Game.ToUpperInvariant()))"
     $recoverAfterRun = $false
     try {
-        Resolve-MissionZipTemplate -DeviceZipName $deviceZipName -Label $label -GameId $gameHint.Game -GameSelectButtonText $gameSelectButtonText -MissionStartConfirmAction $missionStartConfirmAction -LaunchButtonText $launchButtonText -OutputPath $resolvedScript
+        Resolve-MissionZipTemplate -DeviceZipName $deviceZipName -Label $label -GameId $gameHint.Game -GameSelectButtonText $gameSelectButtonText -MissionStartConfirmAction $missionStartConfirmAction -LaunchButtonText $launchButtonText -OutputPath $resolvedScript -MetadataOnly:$MetadataOnly
         Push-AppPrivateFile -LocalPath $zip.FullName -DeviceRelativePath "mission_zip_batch_cache/$deviceZipName"
         Push-AppPrivateFile -LocalPath $resolvedScript -DeviceRelativePath $deviceScriptName
 

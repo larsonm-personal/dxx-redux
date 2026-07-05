@@ -27,6 +27,9 @@
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -68,12 +71,75 @@
           },
           {
             "index": 5,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 754,
+            "side": 1,
+            "wall": 105,
+            "distance": 70.00006103521834,
+            "opens": [
+              {
+                "seg": 754,
+                "side": 1,
+                "wall": 105
+              },
+              {
+                "seg": 753,
+                "side": 3,
+                "wall": 104
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 753,
+            "side": 1,
+            "wall": 103,
+            "distance": 70,
+            "opens": [
+              {
+                "seg": 753,
+                "side": 1,
+                "wall": 103
+              },
+              {
+                "seg": 736,
+                "side": 3,
+                "wall": 102
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 736,
+            "side": 1,
+            "wall": 88,
+            "distance": 60,
+            "opens": [
+              {
+                "seg": 736,
+                "side": 1,
+                "wall": 88
+              },
+              {
+                "seg": 735,
+                "side": 3,
+                "wall": 87
+              }
+            ]
+          },
+          {
+            "index": 8,
             "kind": "exit",
             "label": "Exit",
             "seg": 712,
             "side": 2,
             "wall": 71,
-            "distance": 1742.2912394227899,
+            "distance": 1642.2911783875718,
             "trigger": 5,
             "trigger_type": "unknown"
           }
@@ -98,6 +164,9 @@
         "travel_targets_reached": 22,
         "travel_targets_total": 22,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -145,6 +214,9 @@
         "travel_targets_reached": 12,
         "travel_targets_total": 12,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -186,12 +258,33 @@
           },
           {
             "index": 5,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 768,
+            "side": 4,
+            "wall": 158,
+            "distance": 50,
+            "opens": [
+              {
+                "seg": 768,
+                "side": 4,
+                "wall": 158
+              },
+              {
+                "seg": 762,
+                "side": 5,
+                "wall": 157
+              }
+            ]
+          },
+          {
+            "index": 6,
             "kind": "exit",
             "label": "Exit",
             "seg": 784,
             "side": 1,
             "wall": 168,
-            "distance": 1586.0507521128682,
+            "distance": 1576.0507521128682,
             "trigger": 22,
             "trigger_type": "unknown"
           }
@@ -216,6 +309,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -279,6 +375,9 @@
         "travel_targets_reached": 0,
         "travel_targets_total": 20,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "failed",
         "route_steps": [
           {

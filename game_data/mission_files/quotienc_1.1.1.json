@@ -27,6 +27,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -82,6 +85,9 @@
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 2,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -145,6 +151,9 @@
         "travel_targets_reached": 0,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -163,35 +172,19 @@
           },
           {
             "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 451,
-            "distance": 1746.8162449484018,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 353,
-            "distance": 1737.9017455483497,
-            "key": "red"
-          },
-          {
-            "index": 4,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 517,
-            "distance": 1475.0309604525191
+            "distance": 1902.218694745179
           },
           {
-            "index": 5,
+            "index": 3,
             "kind": "exit",
             "label": "Exit",
             "seg": 506,
             "side": 1,
             "wall": 84,
-            "distance": 681.0972521205596,
+            "distance": 1236.247493573696,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -218,6 +211,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -289,6 +285,9 @@
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -360,6 +359,9 @@
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -378,14 +380,56 @@
           },
           {
             "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 440,
-            "distance": 2373.1719120210164,
-            "key": "gold"
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 680,
+            "side": 3,
+            "wall": 85,
+            "distance": 718.3057495734664,
+            "opens": [
+              {
+                "seg": 680,
+                "side": 3,
+                "wall": 85
+              },
+              {
+                "seg": 681,
+                "side": 1,
+                "wall": 84
+              }
+            ]
           },
           {
             "index": 3,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 683,
+            "side": 4,
+            "wall": 87,
+            "distance": 148.0622453850729,
+            "opens": [
+              {
+                "seg": 683,
+                "side": 4,
+                "wall": 87
+              },
+              {
+                "seg": 682,
+                "side": 5,
+                "wall": 86
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 440,
+            "distance": 1546.8039170624775,
+            "key": "gold"
+          },
+          {
+            "index": 5,
             "kind": "key",
             "label": "red key",
             "seg": 634,
@@ -393,14 +437,14 @@
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 6,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 358,
             "distance": 2579.030924462985
           },
           {
-            "index": 5,
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 320,
@@ -431,57 +475,19 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
-        "route_status": "ok",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 337
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 635,
-            "distance": 1860.5810909863123,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 269,
-            "distance": 1404.5987225897109,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 423,
-            "distance": 3000.7658111574347,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 491,
-            "distance": 2166.269481556814
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 367,
-            "side": 5,
-            "wall": 44,
-            "distance": 561.4233247508087,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 8,
@@ -502,6 +508,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -573,6 +582,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -644,6 +656,9 @@
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -715,6 +730,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -749,10 +767,10 @@
           },
           {
             "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 385,
-            "distance": 2549.885598727536
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 408,
+            "distance": 2629.885598727536
           },
           {
             "index": 5,
@@ -761,7 +779,7 @@
             "seg": 484,
             "side": 5,
             "wall": 76,
-            "distance": 517.5780488547035,
+            "distance": 297.5780488547035,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -786,6 +804,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -857,6 +878,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -928,6 +952,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -999,6 +1026,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1070,6 +1100,9 @@
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 2,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1133,6 +1166,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1180,6 +1216,9 @@
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1251,6 +1290,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1322,6 +1364,9 @@
         "travel_targets_reached": 9,
         "travel_targets_total": 9,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1363,12 +1408,54 @@
           },
           {
             "index": 5,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 520,
+            "side": 5,
+            "wall": 71,
+            "distance": 835.9273377313109,
+            "opens": [
+              {
+                "seg": 520,
+                "side": 5,
+                "wall": 71
+              },
+              {
+                "seg": 570,
+                "side": 4,
+                "wall": 70
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 570,
+            "side": 5,
+            "wall": 73,
+            "distance": 39.99999115858708,
+            "opens": [
+              {
+                "seg": 570,
+                "side": 5,
+                "wall": 73
+              },
+              {
+                "seg": 571,
+                "side": 4,
+                "wall": 72
+              }
+            ]
+          },
+          {
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 676,
             "side": 5,
             "wall": 104,
-            "distance": 975.9273329686846,
+            "distance": 139.99999689889424,
             "trigger": 1,
             "trigger_type": "unknown"
           }
@@ -1393,6 +1480,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1464,6 +1554,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1498,19 +1591,61 @@
           },
           {
             "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 455,
-            "distance": 3369.7791821326778
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 653,
+            "side": 0,
+            "wall": 113,
+            "distance": 3434.3653694811865,
+            "opens": [
+              {
+                "seg": 653,
+                "side": 0,
+                "wall": 113
+              },
+              {
+                "seg": 647,
+                "side": 2,
+                "wall": 111
+              }
+            ]
           },
           {
             "index": 5,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 604,
+            "distance": 591.0396649938898
+          },
+          {
+            "index": 6,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 587,
+            "side": 0,
+            "wall": 96,
+            "distance": 260.34655499796327,
+            "opens": [
+              {
+                "seg": 587,
+                "side": 0,
+                "wall": 96
+              },
+              {
+                "seg": 586,
+                "side": 2,
+                "wall": 95
+              }
+            ]
+          },
+          {
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 379,
             "side": 1,
             "wall": 45,
-            "distance": 900,
+            "distance": 440,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -1535,6 +1670,9 @@
         "travel_targets_reached": 0,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "failed",
         "route_steps": [
           {
@@ -1567,6 +1705,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1596,7 +1737,7 @@
             "kind": "key",
             "label": "red key",
             "seg": 405,
-            "distance": 2783.8626796717735,
+            "distance": 2805.3924130509226,
             "key": "red"
           },
           {
@@ -1604,7 +1745,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 264,
-            "distance": 1397.4768935373468
+            "distance": 1428.2096561281496
           },
           {
             "index": 5,
@@ -1638,6 +1779,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1648,21 +1792,84 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 277,
-            "distance": 1447.9791556662428
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 97,
+            "side": 2,
+            "wall": 90,
+            "distance": 1337.9791556662428,
+            "opens": [
+              {
+                "seg": 97,
+                "side": 2,
+                "wall": 90
+              },
+              {
+                "seg": 113,
+                "side": 4,
+                "wall": 91
+              }
+            ]
           },
           {
             "index": 2,
-            "kind": "key",
-            "label": "red key",
-            "seg": 495,
-            "distance": 871.8961724988346,
-            "key": "red"
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 277,
+            "distance": 130
           },
           {
             "index": 3,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 12,
+            "side": 2,
+            "wall": 24,
+            "distance": 1070,
+            "opens": [
+              {
+                "seg": 12,
+                "side": 2,
+                "wall": 24
+              },
+              {
+                "seg": 132,
+                "side": 4,
+                "wall": 25
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 78,
+            "side": 5,
+            "wall": 79,
+            "distance": 740,
+            "opens": [
+              {
+                "seg": 78,
+                "side": 5,
+                "wall": 79
+              },
+              {
+                "seg": 120,
+                "side": 4,
+                "wall": 80
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "label": "red key",
+            "seg": 495,
+            "distance": 341.89617249883463,
+            "key": "red"
+          },
+          {
+            "index": 6,
             "kind": "exit",
             "label": "Exit",
             "seg": 248,
@@ -1705,6 +1912,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1760,6 +1970,9 @@
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 2,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1823,6 +2036,9 @@
         "travel_targets_reached": 0,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1841,35 +2057,19 @@
           },
           {
             "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 451,
-            "distance": 1746.8162449484018,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 353,
-            "distance": 1737.9017455483497,
-            "key": "red"
-          },
-          {
-            "index": 4,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 517,
-            "distance": 1475.0309604525191
+            "distance": 1902.218694745179
           },
           {
-            "index": 5,
+            "index": 3,
             "kind": "exit",
             "label": "Exit",
             "seg": 506,
             "side": 1,
             "wall": 84,
-            "distance": 681.0972521205596,
+            "distance": 1236.247493573696,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -1896,6 +2096,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -1967,6 +2170,9 @@
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2038,6 +2244,9 @@
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2056,14 +2265,56 @@
           },
           {
             "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 440,
-            "distance": 2373.1719120210164,
-            "key": "gold"
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 680,
+            "side": 3,
+            "wall": 85,
+            "distance": 718.3057495734664,
+            "opens": [
+              {
+                "seg": 680,
+                "side": 3,
+                "wall": 85
+              },
+              {
+                "seg": 681,
+                "side": 1,
+                "wall": 84
+              }
+            ]
           },
           {
             "index": 3,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 683,
+            "side": 4,
+            "wall": 87,
+            "distance": 148.0622453850729,
+            "opens": [
+              {
+                "seg": 683,
+                "side": 4,
+                "wall": 87
+              },
+              {
+                "seg": 682,
+                "side": 5,
+                "wall": 86
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 440,
+            "distance": 1546.8039170624775,
+            "key": "gold"
+          },
+          {
+            "index": 5,
             "kind": "key",
             "label": "red key",
             "seg": 634,
@@ -2071,14 +2322,14 @@
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 6,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 358,
             "distance": 2579.030924462985
           },
           {
-            "index": 5,
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 320,
@@ -2109,57 +2360,19 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
-        "route_status": "ok",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 337
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 635,
-            "distance": 1860.5810909863123,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 269,
-            "distance": 1404.5987225897109,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 423,
-            "distance": 3000.7658111574347,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 491,
-            "distance": 2166.269481556814
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 367,
-            "side": 5,
-            "wall": 44,
-            "distance": 561.4233247508087,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 8,
@@ -2180,6 +2393,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2251,6 +2467,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2322,6 +2541,9 @@
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2393,6 +2615,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2427,10 +2652,10 @@
           },
           {
             "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 385,
-            "distance": 2549.885598727536
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 408,
+            "distance": 2629.885598727536
           },
           {
             "index": 5,
@@ -2439,7 +2664,7 @@
             "seg": 484,
             "side": 5,
             "wall": 76,
-            "distance": 517.5780488547035,
+            "distance": 297.5780488547035,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -2464,6 +2689,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2535,6 +2763,9 @@
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2606,6 +2837,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2677,6 +2911,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2748,6 +2985,9 @@
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 2,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2811,6 +3051,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2858,6 +3101,9 @@
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -2929,6 +3175,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -3000,6 +3249,9 @@
         "travel_targets_reached": 9,
         "travel_targets_total": 9,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -3041,12 +3293,54 @@
           },
           {
             "index": 5,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 520,
+            "side": 5,
+            "wall": 71,
+            "distance": 835.9273377313109,
+            "opens": [
+              {
+                "seg": 520,
+                "side": 5,
+                "wall": 71
+              },
+              {
+                "seg": 570,
+                "side": 4,
+                "wall": 70
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 570,
+            "side": 5,
+            "wall": 73,
+            "distance": 39.99999115858708,
+            "opens": [
+              {
+                "seg": 570,
+                "side": 5,
+                "wall": 73
+              },
+              {
+                "seg": 571,
+                "side": 4,
+                "wall": 72
+              }
+            ]
+          },
+          {
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 676,
             "side": 5,
             "wall": 104,
-            "distance": 975.9273329686846,
+            "distance": 139.99999689889424,
             "trigger": 1,
             "trigger_type": "unknown"
           }
@@ -3071,6 +3365,9 @@
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -3142,6 +3439,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -3176,19 +3476,61 @@
           },
           {
             "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 455,
-            "distance": 3369.7791821326778
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 653,
+            "side": 0,
+            "wall": 97,
+            "distance": 3434.3653694811865,
+            "opens": [
+              {
+                "seg": 653,
+                "side": 0,
+                "wall": 97
+              },
+              {
+                "seg": 647,
+                "side": 2,
+                "wall": 96
+              }
+            ]
           },
           {
             "index": 5,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 414,
+            "distance": 591.0396649938898
+          },
+          {
+            "index": 6,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 397,
+            "side": 0,
+            "wall": 94,
+            "distance": 260.34655499796327,
+            "opens": [
+              {
+                "seg": 397,
+                "side": 0,
+                "wall": 94
+              },
+              {
+                "seg": 396,
+                "side": 2,
+                "wall": 95
+              }
+            ]
+          },
+          {
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 379,
             "side": 1,
             "wall": 45,
-            "distance": 900,
+            "distance": 440,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -3213,6 +3555,9 @@
         "travel_targets_reached": 0,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "failed",
         "route_steps": [
           {
@@ -3245,6 +3590,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -3274,7 +3622,7 @@
             "kind": "key",
             "label": "red key",
             "seg": 405,
-            "distance": 2783.8626796717735,
+            "distance": 2805.3924130509226,
             "key": "red"
           },
           {
@@ -3282,7 +3630,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 264,
-            "distance": 1397.4768935373468
+            "distance": 1428.2096561281496
           },
           {
             "index": 5,
@@ -3316,6 +3664,9 @@
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
         "route_status": "ok",
         "route_steps": [
           {
@@ -3326,21 +3677,84 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 277,
-            "distance": 1447.9791556662428
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 97,
+            "side": 2,
+            "wall": 90,
+            "distance": 1337.9791556662428,
+            "opens": [
+              {
+                "seg": 97,
+                "side": 2,
+                "wall": 90
+              },
+              {
+                "seg": 113,
+                "side": 4,
+                "wall": 91
+              }
+            ]
           },
           {
             "index": 2,
-            "kind": "key",
-            "label": "red key",
-            "seg": 495,
-            "distance": 871.8961724988346,
-            "key": "red"
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 277,
+            "distance": 130
           },
           {
             "index": 3,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 12,
+            "side": 2,
+            "wall": 24,
+            "distance": 1070,
+            "opens": [
+              {
+                "seg": 12,
+                "side": 2,
+                "wall": 24
+              },
+              {
+                "seg": 132,
+                "side": 4,
+                "wall": 25
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 78,
+            "side": 5,
+            "wall": 79,
+            "distance": 740,
+            "opens": [
+              {
+                "seg": 78,
+                "side": 5,
+                "wall": 79
+              },
+              {
+                "seg": 120,
+                "side": 4,
+                "wall": 80
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "label": "red key",
+            "seg": 495,
+            "distance": 341.89617249883463,
+            "key": "red"
+          },
+          {
+            "index": 6,
             "kind": "exit",
             "label": "Exit",
             "seg": 248,
