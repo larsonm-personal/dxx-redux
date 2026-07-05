@@ -164,13 +164,37 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 579,
-            "distance": 1448.238801678142
+            "kind": "key",
+            "label": "blue key",
+            "seg": 190,
+            "distance": 2269.734338767416,
+            "key": "blue"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 243,
+            "distance": 1900.5211462579648,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 524,
+            "distance": 2306.3723558875818,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 579,
+            "distance": 1684.628418780846
+          },
+          {
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 141,
@@ -296,13 +320,29 @@
           },
           {
             "index": 2,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 497,
-            "distance": 1641.6865495565173
+            "kind": "key",
+            "label": "gold key",
+            "seg": 283,
+            "distance": 1944.1233682853585,
+            "key": "gold"
           },
           {
             "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 470,
+            "distance": 2158.4878159472632,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 497,
+            "distance": 580
+          },
+          {
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 213,

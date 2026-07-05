@@ -178,18 +178,59 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 141,
+            "distance": 807.6934851993716,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 390,
+            "distance": 1775.578861579474,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 503,
+            "distance": 997.4947804693741,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 545,
+            "distance": 1560.171640744627
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 504,
+            "side": 2,
+            "wall": 148,
+            "distance": 130,
+            "trigger": 0,
+            "trigger_type": "unknown"
           }
         ],
         "travel_status": "failed",
-        "travel_problem": "target unreachable or blocked by unsupported door",
-        "route_problem": "route target unreachable"
+        "travel_problem": "target unreachable or blocked by unsupported door"
       },
       {
         "level_num": -1,

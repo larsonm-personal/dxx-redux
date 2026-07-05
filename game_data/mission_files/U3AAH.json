@@ -40,11 +40,19 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 280,
+            "distance": 556.989864807628,
+            "key": "blue"
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "label": "Open door trigger 1",
             "seg": 4596,
             "wall": 19,
-            "distance": 449.95230054692934,
+            "distance": 383.96016331273904,
             "trigger": 1,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -62,7 +70,7 @@
             ]
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "trigger",
             "label": "Open door trigger 2",
             "seg": 356,
@@ -80,21 +88,13 @@
             ]
           },
           {
-            "index": 3,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 280,
-            "distance": 235.56422789147913,
-            "key": "blue"
-          },
-          {
             "index": 4,
             "kind": "trigger",
             "label": "Open door trigger 3",
             "seg": 712,
             "side": 4,
             "wall": 25,
-            "distance": 1275.7378833479393,
+            "distance": 1472.2999871385964,
             "trigger": 3,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -121,12 +121,20 @@
           },
           {
             "index": 6,
+            "kind": "key",
+            "label": "red key",
+            "seg": 4551,
+            "distance": 5216.52214630162,
+            "key": "red"
+          },
+          {
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 5462,
             "side": 1,
             "wall": 184,
-            "distance": 4768.17863066179,
+            "distance": 819.2640792716834,
             "trigger": 15,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -245,12 +253,20 @@
           },
           {
             "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 1389,
+            "distance": 1370.9718444276991,
+            "key": "red"
+          },
+          {
+            "index": 4,
             "kind": "hidden_door",
             "label": "Hidden door",
             "seg": 2000,
             "side": 5,
             "wall": 64,
-            "distance": 965.4109646205303,
+            "distance": 1390.8695154152676,
             "opens": [
               {
                 "seg": 2000,
@@ -265,14 +281,14 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 3351,
             "distance": 1958.7346281167995
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "exit",
             "label": "Exit",
             "seg": 3404,

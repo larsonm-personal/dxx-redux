@@ -638,7 +638,7 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -648,36 +648,49 @@
           },
           {
             "index": 1,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 541,
-            "side": 5,
-            "wall": 46,
-            "distance": 386.89387310618497,
-            "opens": [
-              {
-                "seg": 541,
-                "side": 5,
-                "wall": 46
-              },
-              {
-                "seg": 497,
-                "side": 4,
-                "wall": 47
-              }
-            ]
+            "kind": "key",
+            "label": "blue key",
+            "seg": 8,
+            "distance": 1178.969087759688,
+            "key": "blue"
           },
           {
             "index": 2,
             "kind": "key",
             "label": "gold key",
             "seg": 509,
-            "distance": 347.7291166934098,
+            "distance": 1187.718944392906,
             "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 518,
+            "distance": 907.2001182964852,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 557,
+            "distance": 813.8622626823853
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 519,
+            "side": 4,
+            "wall": 32,
+            "distance": 579.2330878866821,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key route dependency loop",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

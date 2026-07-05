@@ -234,40 +234,11 @@
           {
             "index": 2,
             "kind": "trigger",
-            "label": "Open wall trigger 0",
-            "seg": 17,
-            "side": 4,
-            "wall": 18,
-            "distance": 154.90223562309646,
-            "trigger": 0,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 29,
-                "side": 5,
-                "wall": 13
-              },
-              {
-                "seg": 11,
-                "side": 3,
-                "wall": 17
-              },
-              {
-                "seg": 10,
-                "side": 3,
-                "wall": 14
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
             "label": "Open wall trigger 4",
             "seg": 381,
             "side": 0,
             "wall": 40,
-            "distance": 1976.2782305058859,
+            "distance": 2896.801300476819,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -280,7 +251,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "label": "red key",
             "seg": 272,
@@ -288,13 +259,13 @@
             "key": "red"
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "trigger",
             "label": "Open door trigger 9",
             "seg": 388,
             "side": 2,
             "wall": 49,
-            "distance": 2164.0015491418617,
+            "distance": 2432.2614453761685,
             "trigger": 9,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -342,14 +313,14 @@
             ]
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 385,
-            "distance": 1396.8558654342214
+            "distance": 1669.8987797654515
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "exit",
             "label": "Exit",
             "seg": 395,
@@ -427,22 +398,11 @@
           },
           {
             "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 13",
-            "seg": 123,
-            "side": 5,
-            "wall": 34,
-            "distance": 1144.5272808490388,
-            "trigger": 13,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 121,
-                "side": 0,
-                "wall": 45
-              }
-            ]
+            "kind": "key",
+            "label": "red key",
+            "seg": 235,
+            "distance": 2139.7450773382225,
+            "key": "red"
           },
           {
             "index": 4,
@@ -451,7 +411,7 @@
             "seg": 283,
             "side": 0,
             "wall": 67,
-            "distance": 771.6841972238965,
+            "distance": 1283.4783173372891,
             "trigger": 17,
             "trigger_type_id": 11,
             "trigger_type": "illusory_wall",
@@ -489,21 +449,13 @@
           },
           {
             "index": 6,
-            "kind": "key",
-            "label": "red key",
-            "seg": 235,
-            "distance": 323.6036230441347,
-            "key": "red"
-          },
-          {
-            "index": 7,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 362,
-            "distance": 2147.794824685339
+            "distance": 2182.290135075093
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 309,
@@ -1119,12 +1071,20 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 162,
+            "distance": 543.8453098629552,
+            "key": "blue"
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "label": "Illusory wall trigger 0",
             "seg": 112,
             "side": 4,
             "wall": 25,
-            "distance": 858.0411824189166,
+            "distance": 1291.664446458986,
             "trigger": 0,
             "trigger_type_id": 11,
             "trigger_type": "illusory_wall",
@@ -1137,19 +1097,11 @@
             ]
           },
           {
-            "index": 2,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 162,
-            "distance": 1291.6644464589858,
-            "key": "blue"
-          },
-          {
             "index": 3,
             "kind": "key",
             "label": "red key",
             "seg": 414,
-            "distance": 1851.26218091479,
+            "distance": 579.597734455804,
             "key": "red"
           }
         ],
@@ -1963,17 +1915,17 @@
           },
           {
             "index": 1,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 150,
-            "distance": 649.5528973470546
-          },
-          {
-            "index": 2,
             "kind": "key",
             "label": "red key",
             "seg": 150,
+            "distance": 649.5528973470546,
             "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 150
           },
           {
             "index": 3,

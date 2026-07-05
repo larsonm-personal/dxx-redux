@@ -258,13 +258,21 @@
           {
             "index": 1,
             "kind": "key",
-            "label": "red key",
-            "seg": 689,
-            "distance": 1518.5649392401688,
-            "key": "red"
+            "label": "gold key",
+            "seg": 511,
+            "distance": 1519.5364013109156,
+            "key": "gold"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 689,
+            "distance": 2285.8629028151922,
+            "key": "red"
+          },
+          {
+            "index": 3,
             "kind": "trigger",
             "label": "Open wall trigger 0",
             "seg": 698,
@@ -283,7 +291,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "label": "Open wall trigger 2",
             "seg": 696,
@@ -317,21 +325,13 @@
             ]
           },
           {
-            "index": 4,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 511,
-            "distance": 1383.9452121813424,
-            "key": "gold"
-          },
-          {
             "index": 5,
             "kind": "trigger",
             "label": "Open wall trigger 1",
             "seg": 700,
             "side": 4,
             "wall": 97,
-            "distance": 925.2493225268225,
+            "distance": 608.6962558662566,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

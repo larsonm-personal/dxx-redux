@@ -313,20 +313,28 @@
           {
             "index": 1,
             "kind": "key",
-            "label": "red key",
-            "seg": 261,
-            "distance": 353.0936768925213,
-            "key": "red"
+            "label": "gold key",
+            "seg": 281,
+            "distance": 293.0933992854925,
+            "key": "gold"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 261,
+            "distance": 100.0002810270786,
+            "key": "red"
+          },
+          {
+            "index": 3,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 54,
             "distance": 664.7548925653264
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "exit",
             "label": "Exit",
             "seg": 175,
@@ -464,18 +472,18 @@
           },
           {
             "index": 3,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 552,
-            "distance": 695.3665397425087
-          },
-          {
-            "index": 4,
             "kind": "key",
             "label": "red key",
             "seg": 652,
-            "distance": 825.660147380612,
+            "distance": 1388.944955989728,
             "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 552,
+            "distance": 825.6601473806118
           },
           {
             "index": 5,
@@ -484,7 +492,7 @@
             "seg": 539,
             "side": 1,
             "wall": 137,
-            "distance": 1224.5469472350708,
+            "distance": 530.9685309878519,
             "trigger": 5,
             "trigger_type": "unknown"
           }
@@ -512,7 +520,7 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -523,15 +531,48 @@
           {
             "index": 1,
             "kind": "key",
+            "label": "blue key",
+            "seg": 409,
+            "distance": 904.9215522051269,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 777,
+            "distance": 766.9143897262802,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
             "label": "red key",
             "seg": 742,
-            "distance": 814.942250090791,
+            "distance": 1259.614676014016,
             "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 591,
+            "distance": 4136.736820211329
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 410,
+            "side": 5,
+            "wall": 58,
+            "distance": 390.2608001237894,
+            "trigger": 0,
+            "trigger_type": "unknown"
           }
         ],
         "travel_status": "partial",
-        "travel_problem": "could not return to locked door after key",
-        "route_problem": "gold key unreachable"
+        "travel_problem": "could not return to locked door after key"
       },
       {
         "level_num": 9,
@@ -639,12 +680,28 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 522,
+            "distance": 900.9529693805315,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 799,
+            "distance": 1876.9944971688997,
+            "key": "gold"
+          },
+          {
+            "index": 3,
             "kind": "hidden_door",
             "label": "Hidden door",
             "seg": 614,
             "side": 2,
             "wall": 152,
-            "distance": 745.7097104294257,
+            "distance": 1914.898352597473,
             "opens": [
               {
                 "seg": 614,
@@ -659,27 +716,11 @@
             ]
           },
           {
-            "index": 2,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 522,
-            "distance": 1116.2136464977534,
-            "key": "blue"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 799,
-            "distance": 1876.9944971688997,
-            "key": "gold"
-          },
-          {
             "index": 4,
             "kind": "key",
             "label": "red key",
             "seg": 113,
-            "distance": 2363.6335539705724,
+            "distance": 453.7354495154213,
             "key": "red"
           },
           {

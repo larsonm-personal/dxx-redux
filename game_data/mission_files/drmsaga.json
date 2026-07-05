@@ -472,12 +472,20 @@
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 205,
+            "distance": 1419.3006519727962,
+            "key": "blue"
+          },
+          {
+            "index": 3,
             "kind": "trigger",
             "label": "Open wall trigger 1",
             "seg": 357,
             "side": 4,
             "wall": 131,
-            "distance": 1423.1309342154223,
+            "distance": 1222.617670324948,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -500,13 +508,21 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 278,
+            "distance": 1222.5654007347794,
+            "key": "gold"
+          },
+          {
+            "index": 5,
             "kind": "trigger",
             "label": "Open wall trigger 17",
             "seg": 379,
             "side": 4,
             "wall": 171,
-            "distance": 708.7120026654311,
+            "distance": 704.8294508326373,
             "trigger": 17,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -519,7 +535,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 6,
             "kind": "hidden_door",
             "label": "Hidden door",
             "seg": 368,
@@ -540,7 +556,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 7,
             "kind": "trigger",
             "label": "Open wall trigger 2",
             "seg": 355,
@@ -569,14 +585,22 @@
             ]
           },
           {
-            "index": 6,
+            "index": 8,
+            "kind": "key",
+            "label": "red key",
+            "seg": 132,
+            "distance": 707.772575079742,
+            "key": "red"
+          },
+          {
+            "index": 9,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 132,
-            "distance": 704.7725612557927
+            "distance": 4.999986176050643
           },
           {
-            "index": 7,
+            "index": 10,
             "kind": "exit",
             "label": "Exit",
             "seg": 37,

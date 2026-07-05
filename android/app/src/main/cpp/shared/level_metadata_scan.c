@@ -68,6 +68,14 @@ typedef struct metadata_route_context {
 	unsigned char hidden_door_in_progress[LEVEL_METADATA_MAX_WALLS];
 } metadata_route_context;
 
+typedef struct metadata_route_progress_snapshot {
+	metadata_route_context route;
+	int route_step_count;
+	char route_problem[128];
+	level_metadata_route_step route_steps[LEVEL_METADATA_MAX_ROUTE_STEPS];
+	unsigned char key_target_visited[3][LEVEL_METADATA_MAX_TARGETS];
+} metadata_route_progress_snapshot;
+
 static int component_id[LEVEL_METADATA_MAX_SEGMENTS];
 static int queue[LEVEL_METADATA_MAX_SEGMENTS];
 static int energy_segments[LEVEL_METADATA_MAX_SEGMENTS];
@@ -2022,6 +2030,66 @@ static int metadata_route_acquire_key(
 	return 1;
 }
 
+static void metadata_route_save_progress(
+    const level_metadata_state *state,
+    const metadata_route_context *route,
+    metadata_route_progress_snapshot *snapshot)
+{
+	int key;
+	int i;
+
+	if (!state || !route || !snapshot)
+		return;
+	snapshot->route = *route;
+	snapshot->route_step_count = state->route_step_count;
+	snprintf(snapshot->route_problem, sizeof(snapshot->route_problem), "%s", state->route_problem);
+	memcpy(snapshot->route_steps, state->route_steps, sizeof(snapshot->route_steps));
+	memset(snapshot->key_target_visited, 0, sizeof(snapshot->key_target_visited));
+	for (key = 0; key < 3; ++key)
+		for (i = 0; i < key_target_count[key]; ++i)
+			snapshot->key_target_visited[key][i] = (unsigned char) key_targets[key][i].visited;
+}
+
+static void metadata_route_restore_progress(
+    level_metadata_state *state,
+    metadata_route_context *route,
+    const metadata_route_progress_snapshot *snapshot)
+{
+	int key;
+	int i;
+
+	if (!state || !route || !snapshot)
+		return;
+	*route = snapshot->route;
+	state->route_step_count = snapshot->route_step_count;
+	snprintf(state->route_problem, sizeof(state->route_problem), "%s", snapshot->route_problem);
+	memcpy(state->route_steps, snapshot->route_steps, sizeof(snapshot->route_steps));
+	for (key = 0; key < 3; ++key)
+		for (i = 0; i < key_target_count[key]; ++i)
+			key_targets[key][i].visited = snapshot->key_target_visited[key][i];
+}
+
+static void metadata_route_acquire_ordered_keys(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    int depth)
+{
+	static const int key_order[3] = { 0, 2, 1 };
+	int i;
+
+	for (i = 0; i < 3; ++i) {
+		metadata_route_progress_snapshot snapshot;
+		int key_index = key_order[i];
+		if (key_target_count[key_index] <= 0 ||
+		    (route->key_mask & key_bit_for_index(key_index)) != 0)
+			continue;
+		metadata_route_save_progress(state, route, &snapshot);
+		if (!metadata_route_acquire_key(view, state, route, key_index, depth + 1))
+			metadata_route_restore_progress(state, route, &snapshot);
+	}
+}
+
 static int metadata_route_fire_trigger(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
@@ -2359,6 +2427,7 @@ static void collect_route_chain(const level_metadata_scan_view *view, level_meta
 		metadata_route_set_problem(state, "missing exit");
 		return;
 	}
+	metadata_route_acquire_ordered_keys(view, state, &route, 0);
 	if (found_boss) {
 		if (!metadata_route_move_to_target_or_visible(view, state, &route, &boss, 0))
 			goto route_partial;

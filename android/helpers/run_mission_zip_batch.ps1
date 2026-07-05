@@ -220,6 +220,77 @@ function Write-MissionZipBatchOrder {
     }
 }
 
+function Format-MissionZipBatchDuration {
+    param([Parameter(Mandatory = $true)][TimeSpan]$Elapsed)
+
+    $totalSeconds = [int][Math]::Floor($Elapsed.TotalSeconds)
+    $hours = [int]($totalSeconds / 3600)
+    $minutes = [int](($totalSeconds % 3600) / 60)
+    $seconds = $totalSeconds % 60
+    if ($hours -gt 0) {
+        return ("{0}:{1:d2}:{2:d2}" -f $hours, $minutes, $seconds)
+    }
+    return ("{0}:{1:d2}" -f $minutes, $seconds)
+}
+
+function Get-MissionZipBatchCounts {
+    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Results)
+
+    return [pscustomobject]@{
+        Passed = @($Results | Where-Object { $_.status -eq "passed" }).Count
+        Skipped = @($Results | Where-Object { $_.status -like "skipped*" }).Count
+        Failed = @($Results | Where-Object { $_.status -eq "failed" }).Count
+    }
+}
+
+function Write-MissionZipBatchStart {
+    param(
+        [Parameter(Mandatory = $true)][int]$Index,
+        [Parameter(Mandatory = $true)][int]$Total,
+        [Parameter(Mandatory = $true)][System.IO.FileInfo]$Zip,
+        [Parameter(Mandatory = $true)][string]$Game,
+        [Parameter(Mandatory = $true)][TimeSpan]$BatchElapsed,
+        [Parameter(Mandatory = $true)][object]$Counts
+    )
+
+    $percent = if ($Total -gt 0) { [int]((($Index - 1) / $Total) * 100) } else { 0 }
+    $sizeMb = [Math]::Round($Zip.Length / 1MB, 1)
+    $elapsedText = Format-MissionZipBatchDuration -Elapsed $BatchElapsed
+    Write-Progress -Activity "Mission ZIP metadata batch" -Status "Running ${Index}/${Total}: $($Zip.Name)" -PercentComplete $percent
+    Write-Status ("[{0}/{1}] Running mission ZIP: {2} ({3}, {4} MB, elapsed {5}, passed {6}, skipped {7}, failed {8})" -f
+        $Index, $Total, $Zip.Name, $Game.ToUpperInvariant(), $sizeMb, $elapsedText, $Counts.Passed, $Counts.Skipped, $Counts.Failed)
+}
+
+function Write-MissionZipBatchResult {
+    param(
+        [Parameter(Mandatory = $true)][int]$Index,
+        [Parameter(Mandatory = $true)][int]$Total,
+        [Parameter(Mandatory = $true)][System.IO.FileInfo]$Zip,
+        [Parameter(Mandatory = $true)][System.Collections.IDictionary]$Record,
+        [Parameter(Mandatory = $true)][TimeSpan]$RunElapsed,
+        [Parameter(Mandatory = $true)][TimeSpan]$BatchElapsed,
+        [Parameter(Mandatory = $true)][object]$Counts
+    )
+
+    $status = [string]$Record["status"]
+    $color = if ($status -eq "passed") { "Green" } elseif ($status -like "skipped*") { "Yellow" } else { "Red" }
+    $percent = if ($Total -gt 0) { [int](($Index / $Total) * 100) } else { 100 }
+    $runText = Format-MissionZipBatchDuration -Elapsed $RunElapsed
+    $elapsedText = Format-MissionZipBatchDuration -Elapsed $BatchElapsed
+    Write-Progress -Activity "Mission ZIP metadata batch" -Status "$status ${Index}/${Total}: $($Zip.Name)" -PercentComplete $percent
+    Write-Status ("[{0}/{1}] {2}: {3} in {4} (elapsed {5}, passed {6}, skipped {7}, failed {8})" -f
+        $Index, $Total, $status.ToUpperInvariant(), $Zip.Name, $runText, $elapsedText, $Counts.Passed, $Counts.Skipped, $Counts.Failed) $color
+    if ($Record.Contains("reason") -and $Record["reason"]) {
+        Write-Status "  reason: $($Record["reason"])" $color
+    }
+    if ($Record.Contains("metadata_json") -and $Record["metadata_json"]) {
+        Write-Status "  metadata: $($Record["metadata_json"])" "DarkGray"
+    }
+    if ($Record.Contains("regression_json") -and $Record["regression_json"]) {
+        Write-Status "  regression JSON: $($Record["regression_json"])" "DarkGray"
+    }
+}
+
 function Test-AppPackageInstalled {
     $path = Adb-Timeout -AdbArgs @("shell", "pm", "path", $script:PACKAGE) -Seconds 10
     return ($path -and $path -match 'package:')
@@ -550,6 +621,12 @@ if ($MaxZips -gt 0 -and $zipSortRecords.Count -gt $MaxZips) {
 }
 Write-MissionZipBatchOrder -Records $zipSortRecords
 $zips = @($zipSortRecords | ForEach-Object { $_.Zip })
+Write-Status "Mission ZIP batch output: $OutDir"
+if ($NoRegressionJson) {
+    Write-Status "Regression JSON output disabled" "Yellow"
+} else {
+    Write-Status "Regression JSON output: $RegressionJsonDir"
+}
 
 Ensure-EmulatorHealthy | Out-Null
 if ($Install) {
@@ -567,7 +644,11 @@ if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
 }
 
 $results = @()
+$batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+$zipIndex = 0
 foreach ($zip in $zips) {
+    $zipIndex++
+    $runStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $label = Get-SafeMissionZipLabel $zip.Name
     $deviceZipName = "$label$($zip.Extension.ToLowerInvariant())"
     $metadataPath = Join-Path $metadataDir "$($zip.BaseName).json"
@@ -595,6 +676,7 @@ foreach ($zip in $zips) {
         introspect_json = "$artifactPrefix.introspect.json"
     }
 
+    Write-MissionZipBatchStart -Index $zipIndex -Total $zips.Count -Zip $zip -Game $gameHint.Game -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
     if ($zip.Length -gt $LargeZipBytes -and -not (Test-LargeMissionZipIncluded -Name $zip.Name)) {
         Write-Status "SKIP large ZIP: $($zip.Name) ($([math]::Round($zip.Length / 1MB, 1)) MB)" "Yellow"
         $record["status"] = "skipped_large"
@@ -602,6 +684,8 @@ foreach ($zip in $zips) {
         $results += [pscustomobject]$record
         Write-MissionZipFailureJson -Path $metadataPath -Record $record
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        $runStopwatch.Stop()
+        Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
         continue
     }
     if ($gameHint.Game -notin @("d1", "d2")) {
@@ -611,6 +695,8 @@ foreach ($zip in $zips) {
         $results += [pscustomobject]$record
         Write-MissionZipFailureJson -Path $metadataPath -Record $record
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        $runStopwatch.Stop()
+        Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
         continue
     }
 
@@ -618,7 +704,6 @@ foreach ($zip in $zips) {
     $gameSelectButtonText = Get-MissionZipGameSelectButtonText -GameId $gameHint.Game
     $missionStartConfirmAction = Get-MissionZipStartConfirmAction -GameId $gameHint.Game
     Ensure-MissionZipBatchDeviceReady -Reason "preparing $($zip.Name)"
-    Write-Status "Running mission ZIP: $($zip.Name) ($($gameHint.Game.ToUpperInvariant()))"
     $recoverAfterRun = $false
     try {
         Resolve-MissionZipTemplate -DeviceZipName $deviceZipName -Label $label -GameId $gameHint.Game -GameSelectButtonText $gameSelectButtonText -MissionStartConfirmAction $missionStartConfirmAction -LaunchButtonText $launchButtonText -OutputPath $resolvedScript -MetadataOnly:$MetadataOnly
@@ -691,12 +776,16 @@ foreach ($zip in $zips) {
         }
         $results += [pscustomobject]$record
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        $runStopwatch.Stop()
+        Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
         if ($recoverAfterRun) {
             Restore-MissionZipBatchDevice -Reason "recovering after $($zip.Name)"
         }
     }
 }
 
+$batchStopwatch.Stop()
+Write-Progress -Activity "Mission ZIP metadata batch" -Completed
 Write-TestJsonText -Path (Join-Path $OutDir "summary.json") -Text (ConvertTo-Json -InputObject @($results) -Depth 30)
 $failed = @($results | Where-Object { $_.status -eq "failed" })
 $passed = @($results | Where-Object { $_.status -eq "passed" })

@@ -40,26 +40,26 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 233,
-            "distance": 333.56071321407137
-          },
-          {
-            "index": 2,
             "kind": "key",
             "label": "blue key",
             "seg": 176,
-            "distance": 3097.4925197326997,
+            "distance": 3323.931806518629,
             "key": "blue"
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "key",
             "label": "red key",
             "seg": 311,
             "distance": 3953.1615349602785,
             "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 233,
+            "distance": 862.7904416557207
           },
           {
             "index": 4,
@@ -68,7 +68,7 @@
             "seg": 236,
             "side": 5,
             "wall": 16,
-            "distance": 1716.8077315200205,
+            "distance": 961.1387162924425,
             "trigger": 0,
             "trigger_type": "unknown"
           }

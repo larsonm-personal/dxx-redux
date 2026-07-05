@@ -18,12 +18,16 @@
 #define TEST_WALL_CLIP_HIDDEN      8
 #define TEST_KEY_NONE              1
 #define TEST_KEY_BLUE              2
+#define TEST_KEY_RED               4
+#define TEST_KEY_GOLD              8
 #define TEST_TRIGGER_OPEN_WALL     9
 #define TEST_TRIGGER_EXIT          3
 #define TEST_OBJ_POWERUP           1
 #define TEST_OBJ_CONTROL_CENTER    2
 #define TEST_OBJ_ROBOT             3
 #define TEST_POWERUP_BLUE_KEY      10
+#define TEST_POWERUP_RED_KEY       11
+#define TEST_POWERUP_GOLD_KEY      12
 #define TEST_ROBOT_BOSS            20
 #define TEST_ROBOT_GUIDEBOT        21
 
@@ -370,11 +374,15 @@ static level_metadata_scan_view test_view(void)
 	view.wall_flag_door_locked = TEST_WALL_FLAG_DOOR_LOCKED;
 	view.wall_key_none = TEST_KEY_NONE;
 	view.wall_key_blue = TEST_KEY_BLUE;
+	view.wall_key_red = TEST_KEY_RED;
+	view.wall_key_gold = TEST_KEY_GOLD;
 	view.wall_clip_hidden = TEST_WALL_CLIP_HIDDEN;
 	view.obj_type_powerup = TEST_OBJ_POWERUP;
 	view.obj_type_control_center = TEST_OBJ_CONTROL_CENTER;
 	view.obj_type_robot = TEST_OBJ_ROBOT;
 	view.powerup_key_blue = TEST_POWERUP_BLUE_KEY;
+	view.powerup_key_red = TEST_POWERUP_RED_KEY;
+	view.powerup_key_gold = TEST_POWERUP_GOLD_KEY;
 	view.trigger_type_open_wall = TEST_TRIGGER_OPEN_WALL;
 	view.trigger_type_exit = TEST_TRIGGER_EXIT;
 	view.segment_child = test_segment_child;
@@ -540,6 +548,51 @@ static int test_route_key_uses_longer_open_path(void)
 	failures += expect_int("longer key route key index", 0, state.route_steps[1].key_index);
 	failures += expect_string("longer key route reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	failures += expect_string("longer key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[3].kind));
+	return failures;
+}
+
+static int test_route_prefers_ordered_key_chain(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_children[0][2] = 3;
+	test_children[3][3] = 0;
+	test_wall_nums[1][0] = 0;
+	test_wall_nums[2][1] = 1;
+	test_wall_type[0] = TEST_WALL_DOOR;
+	test_wall_type[1] = TEST_WALL_DOOR;
+	test_wall_key[0] = TEST_KEY_GOLD;
+	test_wall_key[1] = TEST_KEY_GOLD;
+	test_wall_seg[0] = 1;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 2;
+	test_wall_sides[1] = 1;
+	test_object_count_value = 4;
+	test_object_type[0] = TEST_OBJ_POWERUP;
+	test_object_id[0] = TEST_POWERUP_BLUE_KEY;
+	test_object_seg[0] = 3;
+	test_object_type[1] = TEST_OBJ_POWERUP;
+	test_object_id[1] = TEST_POWERUP_GOLD_KEY;
+	test_object_seg[1] = 1;
+	test_object_type[2] = TEST_OBJ_POWERUP;
+	test_object_id[2] = TEST_POWERUP_RED_KEY;
+	test_object_seg[2] = 2;
+	test_object_type[3] = TEST_OBJ_CONTROL_CENTER;
+	test_object_seg[3] = 2;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("ordered key route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("ordered key route steps", 6, state.route_step_count);
+	failures += expect_string("ordered key route blue", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_int("ordered key route blue index", 0, state.route_steps[1].key_index);
+	failures += expect_string("ordered key route gold", "key", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	failures += expect_int("ordered key route gold index", 2, state.route_steps[2].key_index);
+	failures += expect_string("ordered key route red", "key", level_metadata_route_step_kind_name(state.route_steps[3].kind));
+	failures += expect_int("ordered key route red index", 1, state.route_steps[3].key_index);
+	failures += expect_string("ordered key route reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[4].kind));
+	failures += expect_string("ordered key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[5].kind));
 	return failures;
 }
 
@@ -862,6 +915,7 @@ int main(void)
 	failures += test_reactorless_missing_exit();
 	failures += test_route_key_step();
 	failures += test_route_key_uses_longer_open_path();
+	failures += test_route_prefers_ordered_key_chain();
 	failures += test_route_trigger_step();
 	failures += test_route_shootable_trigger_step();
 	failures += test_route_accepts_any_fired_opener_for_side();

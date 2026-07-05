@@ -363,6 +363,34 @@ static int count_loaded_coop_start_objects()
 	return count;
 }
 
+struct CoopStartRange {
+	int min = 0;
+	int max = 0;
+
+	void add(int value)
+	{
+		if (value <= 0)
+			return;
+		if (!min || value < min)
+			min = value;
+		if (value > max)
+			max = value;
+	}
+
+	std::string text() const
+	{
+		char buffer[32];
+
+		if (!min)
+			return "";
+		if (min == max)
+			snprintf(buffer, sizeof(buffer), "%d", min);
+		else
+			snprintf(buffer, sizeof(buffer), "%d-%d", min, max);
+		return buffer;
+	}
+};
+
 static nlohmann::ordered_json serialize_coop_start_slot(int slot, int real_start_count)
 {
 	nlohmann::ordered_json result;
@@ -594,17 +622,38 @@ static nlohmann::ordered_json serialize_metadata_notes(const level_metadata_stat
 	return notes;
 }
 
+static void count_level_objects(int *robots, int *hostages)
+{
+	*robots = 0;
+	*hostages = 0;
+	for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		const object *obj = &Objects[objnum];
+		if (obj->flags & OF_SHOULD_BE_DEAD)
+			continue;
+		if (obj->type == OBJ_ROBOT)
+			++*robots;
+		else if (obj->type == OBJ_HOSTAGE)
+			++*hostages;
+	}
+}
+
 static nlohmann::ordered_json serialize_current_level(int level_num, const char *level_file)
 {
 	const level_metadata_state *metadata = level_metadata_get_state();
 	const secret_area_state *state = secret_area_get_state();
 	int total = secret_area_total(state);
+	int robots = 0;
+	int hostages = 0;
 	nlohmann::ordered_json result;
 	nlohmann::ordered_json secrets = nlohmann::ordered_json::array();
 
+	count_level_objects(&robots, &hostages);
 	result["level_num"] = level_num;
+	result["secret"] = level_num < 0;
 	result["level_name"] = Current_level_name;
 	result["level_file"] = level_file ? level_file : "";
+	result["robot_count"] = robots;
+	result["hostage_count"] = hostages;
 	result["scanner_enabled"] = state->enabled ? true : false;
 	result["disabled_reason"] = secret_area_disabled_reason_name(state->disabled_reason);
 	result["raw_candidate_count"] = state->raw_candidate_count;
@@ -648,8 +697,11 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	nlohmann::ordered_json result;
 
 	result["level_num"] = level_num;
+	result["secret"] = level_num < 0;
 	result["level_name"] = "";
 	result["level_file"] = level_file ? level_file : "";
+	result["robot_count"] = 0;
+	result["hostage_count"] = 0;
 	result["scanner_enabled"] = false;
 	result["disabled_reason"] = secret_area_disabled_reason_name(SECRET_AREA_DISABLED_INVALID_VIEW);
 	result["raw_candidate_count"] = 0;
@@ -688,7 +740,8 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	return result;
 }
 
-static int dump_level(nlohmann::ordered_json &levels, int level_num, const char *level_file)
+static int dump_level(nlohmann::ordered_json &levels, int level_num, const char *level_file,
+                      CoopStartRange *coop_start_range)
 {
 	const secret_area_state *state;
 	int total;
@@ -711,6 +764,8 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 	}
 	trace_wall_inventory(level_num, level_file);
 	Current_level_num = level_num;
+	if (coop_start_range)
+		coop_start_range->add(count_loaded_coop_start_objects());
 	trace_dump_init("rescan_level");
 	secret_area_rescan_current_level();
 	state = secret_area_get_state();
@@ -735,6 +790,7 @@ static nlohmann::ordered_json build_dump(int *total_secrets)
 	nlohmann::ordered_json root;
 	nlohmann::ordered_json levels = nlohmann::ordered_json::array();
 	int secret_total = 0;
+	CoopStartRange coop_start_range;
 
 	root["schema"] = "dxx-secret-area-baseline-v1";
 	root["algorithm_version"] = 2;
@@ -747,9 +803,11 @@ static nlohmann::ordered_json build_dump(int *total_secrets)
 	root["mission_name"] = Current_mission_longname;
 	root["mission_filename"] = Current_mission_filename;
 	for (int level = 1; level <= Last_level; ++level)
-		secret_total += dump_level(levels, level, Level_names[level - 1]);
+		secret_total += dump_level(levels, level, Level_names[level - 1], &coop_start_range);
 	for (int level = -1; level >= Last_secret_level; --level)
-		secret_total += dump_level(levels, level, Secret_level_names[-level - 1]);
+		secret_total += dump_level(levels, level, Secret_level_names[-level - 1], &coop_start_range);
+	if (!coop_start_range.text().empty())
+		root["coop_starts"] = coop_start_range.text();
 	root["levels"] = levels;
 	root["problems"] = nlohmann::ordered_json::array();
 	if (secret_area_missing_secret_levels)
