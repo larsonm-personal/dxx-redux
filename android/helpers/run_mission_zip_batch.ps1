@@ -65,18 +65,51 @@ function ConvertTo-NormalizedJsonText {
 
     $trimmed = $Text.Trim()
     if (-not $trimmed) { return $Text }
-    if ($trimmed -eq "[]") { return "[]`n" }
-    $parsed = $trimmed | ConvertFrom-Json
-    if ($trimmed.StartsWith("[")) {
-        $value = [System.Collections.ArrayList]::new()
-        foreach ($item in @($parsed)) {
-            [void]$value.Add($item)
-        }
-    } else {
-        $value = $parsed
+    $formatterPath = Join-Path $helpersDir "normalize_json.py"
+    if (-not (Test-Path -LiteralPath $formatterPath -PathType Leaf)) {
+        throw "JSON formatter not found: $formatterPath"
     }
-    $json = (ConvertTo-Json -InputObject $value -Depth 100) -replace "`r`n", "`n"
-    return "$json`n"
+    $python = Get-Command python -ErrorAction SilentlyContinue
+    $usePyLauncher = $false
+    if (-not $python) {
+        $python = Get-Command py -ErrorAction SilentlyContinue
+        $usePyLauncher = $true
+    }
+    if (-not $python) {
+        throw "Python not found for JSON formatting"
+    }
+
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $python.Source
+    if ($usePyLauncher) {
+        [void]$startInfo.ArgumentList.Add("-3")
+    }
+    [void]$startInfo.ArgumentList.Add($formatterPath)
+    $startInfo.RedirectStandardInput = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    $startInfo.StandardInputEncoding = $utf8NoBom
+    $startInfo.StandardOutputEncoding = $utf8NoBom
+    $startInfo.StandardErrorEncoding = $utf8NoBom
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+
+    $process = [System.Diagnostics.Process]::Start($startInfo)
+    try {
+        $process.StandardInput.Write($trimmed)
+        $process.StandardInput.Close()
+        $json = $process.StandardOutput.ReadToEnd()
+        $errorText = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+        if ($process.ExitCode -ne 0) {
+            throw "JSON formatter failed with exit code $($process.ExitCode): $errorText"
+        }
+        $json = $json -replace "`r`n", "`n"
+        return ($json.TrimEnd([char[]]@("`r", "`n")) + "`n")
+    } finally {
+        $process.Dispose()
+    }
 }
 
 function Write-Utf8NoBomText {
@@ -97,6 +130,7 @@ function Write-TestJsonText {
     try {
         Write-Utf8NoBomText -Path $Path -Text (ConvertTo-NormalizedJsonText -Text $Text)
     } catch {
+        Write-Warning "JSON normalization failed for ${Path}: $($_.Exception.Message)"
         Write-Utf8NoBomText -Path $Path -Text $Text
     }
 }

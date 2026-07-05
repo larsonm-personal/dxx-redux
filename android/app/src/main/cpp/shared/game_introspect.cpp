@@ -577,6 +577,78 @@ static json serialize_level_metadata_route()
 	return result;
 }
 
+static json serialize_guidebot_route_analysis()
+{
+	const level_metadata_state *metadata = level_metadata_get_state();
+	json result;
+	json steps = json::array();
+	int count = 0;
+	int selected_index = -1;
+
+	if (!metadata) {
+		result["available"] = false;
+		result["steps"] = std::move(steps);
+		return result;
+	}
+	count = metadata->route_step_count;
+	if (count < 0)
+		count = 0;
+	if (count > LEVEL_METADATA_MAX_ROUTE_STEPS)
+		count = LEVEL_METADATA_MAX_ROUTE_STEPS;
+	for (int index = 0; index < count; index++) {
+		escort_route_step_analysis analysis;
+		json item;
+		json links = json::array();
+
+		escort_route_step_analysis_clear(&analysis);
+		if (!escort_route_analyze_step(index, &analysis))
+			continue;
+		if (analysis.selected_next)
+			selected_index = index;
+		item["index"] = index;
+		item["kind"] = level_metadata_route_step_kind_name(analysis.kind);
+		item["label"] = metadata->route_steps[index].label;
+		item["satisfied"] = analysis.satisfied != 0;
+		item["satisfied_reason"] = escort_route_step_satisfied_reason_name(analysis.satisfied_reason);
+		item["selected_next"] = analysis.selected_next != 0;
+		item["reachable"] = analysis.reachable;
+		item["guidance_mode"] = analysis.guidance_mode;
+		item["key_index"] = analysis.key_index;
+		item["key_owned"] = analysis.key_owned;
+		item["key_exists"] = analysis.key_exists;
+		item["trigger"] = analysis.trigger_num;
+		item["trigger_flags"] = analysis.trigger_flags;
+		item["trigger_disabled"] = analysis.trigger_disabled;
+		item["linked_wall_count"] = analysis.linked_wall_count;
+		item["linked_walls_passable"] = analysis.linked_walls_passable;
+		item["first_blocking_link"] = analysis.first_blocking_link;
+		item["first_blocking_seg"] = analysis.first_blocking_seg;
+		item["first_blocking_side"] = analysis.first_blocking_side;
+		item["first_blocking_wall"] = analysis.first_blocking_wall;
+		for (int link = 0; link < analysis.linked_wall_count && link < LEVEL_METADATA_MAX_ROUTE_LINKS; link++) {
+			escort_route_link_analysis link_analysis;
+			json link_item;
+
+			escort_route_link_analysis_clear(&link_analysis);
+			if (!escort_route_analyze_step_link(index, link, &link_analysis))
+				continue;
+			link_item["index"] = link;
+			link_item["seg"] = link_analysis.seg;
+			link_item["side"] = link_analysis.side;
+			link_item["wall"] = link_analysis.wall;
+			link_item["passable"] = link_analysis.passable != 0;
+			links.push_back(std::move(link_item));
+		}
+		item["links"] = std::move(links);
+		steps.push_back(std::move(item));
+	}
+	result["available"] = true;
+	result["step_count"] = count;
+	result["selected_index"] = selected_index;
+	result["steps"] = std::move(steps);
+	return result;
+}
+
 /* -- Serialize Guide-Bot state ---------------------------------------- */
 static json serialize_guidebot()
 {
@@ -607,6 +679,7 @@ static json serialize_guidebot()
 	result["route_goal_guidance_seg"] = escort_get_route_goal_guidance_seg();
 	result["route_goal_guidance_side"] = escort_get_route_goal_guidance_side();
 	result["route_goal_path_endpoint_seg"] = escort_get_route_goal_path_endpoint_seg();
+	result["route_analysis"] = serialize_guidebot_route_analysis();
 #endif
 	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index) {
 		result["segment"] = (int) Objects[Buddy_objnum].segnum;

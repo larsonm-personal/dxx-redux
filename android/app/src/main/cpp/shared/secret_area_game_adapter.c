@@ -290,6 +290,20 @@ static int secret_area_object_is_boss(void *user, int objnum)
 	return Robot_info[Objects[objnum].id].boss_flag != 0;
 }
 
+#ifdef DXX_BUILD_DESCENT_II
+static int secret_area_object_is_companion(void *user, int objnum)
+{
+	(void) user;
+	if (objnum < 0 || objnum >= num_objects)
+		return 0;
+	if (Objects[objnum].type != OBJ_ROBOT)
+		return 0;
+	if (Objects[objnum].id < 0 || Objects[objnum].id >= N_robot_types)
+		return 0;
+	return Robot_info[Objects[objnum].id].companion != 0;
+}
+#endif
+
 static const char *secret_area_powerup_name(void *user, int id)
 {
 	(void) user;
@@ -580,6 +594,9 @@ static void level_metadata_rescan_current_level(void)
 	view.object_contains_count = secret_area_object_contains_count;
 	view.object_position = secret_area_object_position;
 	view.object_is_boss = secret_area_object_is_boss;
+#ifdef DXX_BUILD_DESCENT_II
+	view.object_is_companion = secret_area_object_is_companion;
+#endif
 	view.side_has_exit_trigger = secret_area_side_has_exit_trigger;
 	view.triggered_side_opener_count = secret_area_metadata_triggered_side_opener_count;
 	view.triggered_side_opener_wall_num = secret_area_metadata_triggered_side_opener_wall_num;

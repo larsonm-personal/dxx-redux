@@ -61,6 +61,7 @@ extern "C" {
 #include "object.h"
 #include "collide.h"
 #include "secretarea.h"
+#include "switch.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
 #endif
@@ -1586,6 +1587,29 @@ static int set_player_key_flags(const std::string &value, char *reason, size_t r
 	return 1;
 }
 
+static int fire_level_trigger(const std::string &value, char *reason, size_t reason_size)
+{
+	char *end = NULL;
+	long trigger_num;
+
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+		snprintf(reason, reason_size, "fire_trigger: game is not running");
+		return 0;
+	}
+	trigger_num = strtol(value.c_str(), &end, 10);
+	if (end == value.c_str() || (end && *end != '\0')) {
+		snprintf(reason, reason_size, "fire_trigger: invalid trigger '%s'", value.c_str());
+		return 0;
+	}
+	if (trigger_num < 0 || trigger_num >= Num_triggers) {
+		snprintf(reason, reason_size, "fire_trigger: trigger %ld outside 0..%d", trigger_num, Num_triggers - 1);
+		return 0;
+	}
+	check_trigger_sub((int) trigger_num, Player_num, 1);
+	LOGI("fire_trigger: trigger=%ld", trigger_num);
+	return 1;
+}
+
 /* -- Condition checking ----------------------------------------------- */
 
 extern "C" window *Game_wind;
@@ -2913,6 +2937,13 @@ extern "C" void game_automate_tick(void)
 			} else if (s.field == "player_keys") {
 				char reason[128];
 				if (!set_player_key_flags(s.value, reason, sizeof(reason))) {
+					log_append("set_debug", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
+			} else if (s.field == "fire_trigger") {
+				char reason[128];
+				if (!fire_level_trigger(s.value, reason, sizeof(reason))) {
 					log_append("set_debug", "fail", reason);
 					stop_script_fail(reason);
 					break;

@@ -116,6 +116,7 @@ typedef struct level_metadata_scan_view {
 	int (*object_contains_count)(void *user, int objnum);
 	int (*object_position)(void *user, int objnum, int xyz[3]);
 	int (*object_is_boss)(void *user, int objnum);
+	int (*object_is_companion)(void *user, int objnum);
 	int (*side_has_exit_trigger)(void *user, int seg, int side);
 	int (*triggered_side_opener_count)(void *user, int seg, int side);
 	int (*triggered_side_opener_wall_num)(void *user, int seg, int side, int index);
@@ -145,6 +146,11 @@ typedef struct level_metadata_state {
 	int travel_status;
 	char travel_problem[128];
 	char travel_note[128];
+	int guidebot_count;
+	int guidebot_placed;
+	int guidebot_accessible;
+	char guidebot_placement_note[128];
+	char guidebot_note[128];
 	int route_status;
 	char route_problem[128];
 	int route_step_count;

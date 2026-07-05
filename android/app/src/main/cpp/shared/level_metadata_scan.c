@@ -1633,8 +1633,16 @@ static int metadata_route_try_trigger_firing_path(
 	target.seg = candidate->source_seg;
 	copy_pos(target.pos, pos);
 	target.visited = 0;
-	return metadata_route_find_path(view, route, candidate->source_seg, pos, 0, path) ||
-	       metadata_route_find_visible_path(view, route, &target, path);
+	if (metadata_route_find_path(view, route, candidate->source_seg, pos, 0, path))
+		return 1;
+	{
+		metadata_route_path optimistic_source;
+		if (metadata_route_find_path(view, route, candidate->source_seg, pos, 1, &optimistic_source) &&
+		    !(optimistic_source.first_block.kind == METADATA_ROUTE_BLOCK_TRIGGER &&
+		      optimistic_source.first_block.trigger_num == candidate->trigger_num))
+			return 0;
+	}
+	return metadata_route_find_visible_path(view, route, &target, path);
 }
 
 static int metadata_route_consider_trigger_firing_path(
@@ -2197,6 +2205,61 @@ static int metadata_route_find_boss_target(const level_metadata_scan_view *view,
 	return 0;
 }
 
+static void collect_guidebot_info(const level_metadata_scan_view *view, level_metadata_state *state)
+{
+	metadata_route_context route;
+	int obj_count;
+	int objnum;
+	int start_valid = 0;
+
+	if (!view->object_is_companion || !view->object_count || !view->object_segment || !view->object_position)
+		return;
+	memset(&route, 0, sizeof(route));
+	route.current_seg = view->start_segment;
+	if (valid_segment(view, route.current_seg) && view->start_position)
+		start_valid = view->start_position(view->user, route.current_pos);
+	obj_count = view->object_count(view->user);
+	for (objnum = 0; objnum < obj_count; ++objnum) {
+		int pos[3];
+		int obj_seg;
+		if (view->object_flags &&
+		    (view->object_flags(view->user, objnum) & view->obj_flag_should_be_dead))
+			continue;
+		if (!view->object_is_companion(view->user, objnum))
+			continue;
+		state->guidebot_count++;
+		if (state->guidebot_accessible || !start_valid)
+			continue;
+		obj_seg = view->object_segment(view->user, objnum);
+		if (!valid_segment(view, obj_seg) || !view->object_position(view->user, objnum, pos))
+			continue;
+		if (obj_seg == route.current_seg || metadata_route_find_path(view, &route, obj_seg, pos, 0, NULL))
+			state->guidebot_accessible = 1;
+	}
+	if (state->guidebot_count <= 0) {
+		snprintf(
+		    state->guidebot_placement_note,
+		    sizeof(state->guidebot_placement_note),
+		    "%s",
+		    "no guidebot or guidebot start cage placed in this level");
+	} else if (!state->guidebot_accessible) {
+		state->guidebot_placed = 1;
+		snprintf(
+		    state->guidebot_placement_note,
+		    sizeof(state->guidebot_placement_note),
+		    "%s",
+		    "guidebot or guidebot start cage placed in this level");
+		snprintf(state->guidebot_note, sizeof(state->guidebot_note), "%s", "guidebot is present but not reachable from the start");
+	} else {
+		state->guidebot_placed = 1;
+		snprintf(
+		    state->guidebot_placement_note,
+		    sizeof(state->guidebot_placement_note),
+		    "%s",
+		    "guidebot or guidebot start cage placed in this level");
+	}
+}
+
 static int metadata_route_append_target_step(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
@@ -2264,15 +2327,15 @@ static void collect_route_chain(const level_metadata_scan_view *view, level_meta
 		metadata_route_set_problem(state, "missing exit");
 		return;
 	}
-	if (found_reactor) {
+	if (found_boss) {
+		if (!metadata_route_move_to_target_or_visible(view, state, &route, &boss, 0))
+			goto route_partial;
+		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_BOSS, &boss, "Boss robot"))
+			goto route_partial;
+	} else if (found_reactor) {
 		if (!metadata_route_move_to_target_or_visible(view, state, &route, &reactor, 0))
 			goto route_partial;
 		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_REACTOR, &reactor, "Reactor"))
-			goto route_partial;
-	} else if (found_boss) {
-		if (!metadata_route_move_to_target_or_visible(view, state, &route, &boss, 0))
-			goto route_partial;
-		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_BOSS, &boss, "Boss"))
 			goto route_partial;
 	}
 	exit_index = metadata_route_select_target(view, &route, exit_targets, exit_count);
@@ -2367,6 +2430,7 @@ int level_metadata_scan_level(const level_metadata_scan_view *view, level_metada
 	state->matcen_raw_count = count_connected_special_components(view, view->segment_special_robotmaker, &state->matcen_segment_count);
 	state->matcen_count = state->matcen_segment_count;
 	collect_travel_time(view, state);
+	collect_guidebot_info(view, state);
 	collect_route_chain(view, state);
 	return state->energy_center_count;
 }

@@ -21,7 +21,10 @@
 #define TEST_TRIGGER_EXIT 3
 #define TEST_OBJ_POWERUP 1
 #define TEST_OBJ_CONTROL_CENTER 2
+#define TEST_OBJ_ROBOT 3
 #define TEST_POWERUP_BLUE_KEY 10
+#define TEST_ROBOT_BOSS 20
+#define TEST_ROBOT_GUIDEBOT 21
 
 static int test_children[TEST_SEGMENTS][TEST_SIDES] = {
 	{ 1, -1, -1, -1, -1, -1 },
@@ -40,6 +43,7 @@ static int test_object_count_value;
 static int test_object_type[TEST_OBJECTS];
 static int test_object_id[TEST_OBJECTS];
 static int test_object_seg[TEST_OBJECTS];
+static int test_segment_special_values[TEST_SEGMENTS];
 static int test_trigger_type[1];
 static int test_trigger_link_count[1];
 static int test_trigger_link_seg[1][LEVEL_METADATA_MAX_ROUTE_LINKS];
@@ -71,6 +75,8 @@ static void test_reset(void)
 		test_object_id[object] = -1;
 		test_object_seg[object] = -1;
 	}
+	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
+		test_segment_special_values[seg] = 0;
 	test_trigger_type[0] = TEST_TRIGGER_OPEN_WALL;
 	test_trigger_link_count[0] = 0;
 	for (link = 0; link < LEVEL_METADATA_MAX_ROUTE_LINKS; ++link) {
@@ -167,8 +173,9 @@ static int test_wall_trigger_at(void *user, int wall_num)
 static int test_segment_special(void *user, int seg)
 {
 	(void) user;
-	(void) seg;
-	return 0;
+	if (seg < 0 || seg >= TEST_SEGMENTS)
+		return 0;
+	return test_segment_special_values[seg];
 }
 
 static int test_segment_center(void *user, int seg, int xyz[3])
@@ -232,6 +239,24 @@ static int test_object_position(void *user, int objnum, int xyz[3])
 	xyz[1] = 0;
 	xyz[2] = 0;
 	return 1;
+}
+
+static int test_object_is_boss(void *user, int objnum)
+{
+	(void) user;
+	return objnum >= 0 &&
+	       objnum < TEST_OBJECTS &&
+	       test_object_type[objnum] == TEST_OBJ_ROBOT &&
+	       test_object_id[objnum] == TEST_ROBOT_BOSS;
+}
+
+static int test_object_is_companion(void *user, int objnum)
+{
+	(void) user;
+	return objnum >= 0 &&
+	       objnum < TEST_OBJECTS &&
+	       test_object_type[objnum] == TEST_OBJ_ROBOT &&
+	       test_object_id[objnum] == TEST_ROBOT_GUIDEBOT;
 }
 
 static int test_side_has_exit_trigger(void *user, int seg, int side)
@@ -319,6 +344,7 @@ static level_metadata_scan_view test_view(void)
 	view.wall_clip_hidden = TEST_WALL_CLIP_HIDDEN;
 	view.obj_type_powerup = TEST_OBJ_POWERUP;
 	view.obj_type_control_center = TEST_OBJ_CONTROL_CENTER;
+	view.obj_type_robot = TEST_OBJ_ROBOT;
 	view.powerup_key_blue = TEST_POWERUP_BLUE_KEY;
 	view.trigger_type_open_wall = TEST_TRIGGER_OPEN_WALL;
 	view.trigger_type_exit = TEST_TRIGGER_EXIT;
@@ -340,6 +366,7 @@ static level_metadata_scan_view test_view(void)
 	view.object_type = test_object_type_at;
 	view.object_id = test_object_id_at;
 	view.object_position = test_object_position;
+	view.object_is_boss = test_object_is_boss;
 	view.side_has_exit_trigger = test_side_has_exit_trigger;
 	return view;
 }
@@ -582,6 +609,125 @@ static int test_route_visible_reactor_step(void)
 	return failures;
 }
 
+static int test_route_prefers_boss_over_control_center_segment(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_segment_special_values[1] = view.segment_special_control_center;
+	test_object_count_value = 1;
+	test_object_type[0] = TEST_OBJ_ROBOT;
+	test_object_id[0] = TEST_ROBOT_BOSS;
+	test_object_seg[0] = 1;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("boss route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("boss route steps", 3, state.route_step_count);
+	failures += expect_string("boss route step", "boss", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_string("boss route label", "Boss robot", state.route_steps[1].label);
+	failures += expect_string("boss route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
+static int test_route_prefers_boss_over_reactor_object(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_object_count_value = 2;
+	test_object_type[0] = TEST_OBJ_CONTROL_CENTER;
+	test_object_seg[0] = 2;
+	test_object_type[1] = TEST_OBJ_ROBOT;
+	test_object_id[1] = TEST_ROBOT_BOSS;
+	test_object_seg[1] = 1;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("boss over reactor route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("boss over reactor route steps", 3, state.route_step_count);
+	failures += expect_string("boss over reactor route step", "boss", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_string("boss over reactor route label", "Boss robot", state.route_steps[1].label);
+	failures += expect_string("boss over reactor route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
+static int test_guidebot_missing_note(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	view.object_is_companion = test_object_is_companion;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_int("missing guidebot count", 0, state.guidebot_count);
+	failures += expect_int("missing guidebot placed", 0, state.guidebot_placed);
+	failures += expect_int("missing guidebot accessible", 0, state.guidebot_accessible);
+	failures += expect_string(
+	    "missing guidebot placement note",
+	    "no guidebot or guidebot start cage placed in this level",
+	    state.guidebot_placement_note);
+	failures += expect_string("missing guidebot note", "", state.guidebot_note);
+	return failures;
+}
+
+static int test_guidebot_accessible(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	view.object_is_companion = test_object_is_companion;
+	test_object_count_value = 1;
+	test_object_type[0] = TEST_OBJ_ROBOT;
+	test_object_id[0] = TEST_ROBOT_GUIDEBOT;
+	test_object_seg[0] = 1;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_int("accessible guidebot count", 1, state.guidebot_count);
+	failures += expect_int("accessible guidebot placed", 1, state.guidebot_placed);
+	failures += expect_int("accessible guidebot flag", 1, state.guidebot_accessible);
+	failures += expect_string(
+	    "accessible guidebot placement note",
+	    "guidebot or guidebot start cage placed in this level",
+	    state.guidebot_placement_note);
+	failures += expect_string("accessible guidebot note", "", state.guidebot_note);
+	return failures;
+}
+
+static int test_guidebot_unreachable_note(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	view.object_is_companion = test_object_is_companion;
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_type[1] = TEST_WALL_CLOSED;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_object_count_value = 1;
+	test_object_type[0] = TEST_OBJ_ROBOT;
+	test_object_id[0] = TEST_ROBOT_GUIDEBOT;
+	test_object_seg[0] = 1;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_int("unreachable guidebot count", 1, state.guidebot_count);
+	failures += expect_int("unreachable guidebot placed", 1, state.guidebot_placed);
+	failures += expect_int("unreachable guidebot accessible", 0, state.guidebot_accessible);
+	failures += expect_string(
+	    "unreachable guidebot placement note",
+	    "guidebot or guidebot start cage placed in this level",
+	    state.guidebot_placement_note);
+	failures += expect_string("unreachable guidebot note", "guidebot is present but not reachable from the start", state.guidebot_note);
+	return failures;
+}
+
 int main(void)
 {
 	int failures = 0;
@@ -593,6 +739,11 @@ int main(void)
 	failures += test_route_shootable_trigger_step();
 	failures += test_route_hidden_door_step();
 	failures += test_route_visible_reactor_step();
+	failures += test_route_prefers_boss_over_control_center_segment();
+	failures += test_route_prefers_boss_over_reactor_object();
+	failures += test_guidebot_missing_note();
+	failures += test_guidebot_accessible();
+	failures += test_guidebot_unreachable_note();
 	if (failures)
 		return 1;
 

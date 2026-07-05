@@ -811,14 +811,25 @@ class LauncherScriptExecutor(
                     .put("travel_targets_reached", row.travelTargetsReached)
                     .put("travel_targets_total", row.travelTargetsTotal)
                     .put("travel_key_detours", row.travelKeyDetours)
+                    .put("guidebot_count", row.guidebotCount)
+                    .put("guidebot_placed", row.guidebotPlaced)
+                    .put("guidebot_accessible", row.guidebotAccessible)
                     .put("route_status", row.routeStatus)
                     .put("route_steps", levelMetadataRouteStepsJson(row.routeSteps))
             if (row.travelStatus != "ok") rowJson.put("travel_status", row.travelStatus)
             if (row.travelProblem.isNotBlank()) rowJson.put("travel_problem", row.travelProblem)
             if (row.travelNote.isNotBlank()) rowJson.put("travel_note", row.travelNote)
+            if (row.guidebotPlacementNote.isNotBlank()) {
+                rowJson.put("guidebot_placement_note", row.guidebotPlacementNote)
+            }
+            if (row.guidebotNote.isNotBlank()) rowJson.put("guidebot_note", row.guidebotNote)
             if (row.routeProblem.isNotBlank()) rowJson.put("route_problem", row.routeProblem)
             if (row.problems.isNotEmpty()) rowJson.put("problems", JSONArray(row.problems))
-            if (row.notes.isNotEmpty()) rowJson.put("notes", JSONArray(row.notes))
+            val notes =
+                (row.notes + listOf(row.travelNote, row.guidebotPlacementNote, row.guidebotNote))
+                    .filter { it.isNotBlank() }
+                    .distinct()
+            if (notes.isNotEmpty()) rowJson.put("notes", JSONArray(notes))
             if (row.status != "ok") rowJson.put("status", row.status)
             levels.put(rowJson)
         }

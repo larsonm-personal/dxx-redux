@@ -23,6 +23,53 @@ extern int escort_get_secret_goal_display_index(void);
 extern int escort_get_secret_goal_seg(void);
 extern int escort_get_secret_goal_side(void);
 #ifdef __ANDROID__
+enum escort_route_step_satisfied_reason {
+	ESCORT_ROUTE_STEP_REASON_NONE = 0,
+	ESCORT_ROUTE_STEP_REASON_START,
+	ESCORT_ROUTE_STEP_REASON_KEY_OWNED,
+	ESCORT_ROUTE_STEP_REASON_KEY_MISSING,
+	ESCORT_ROUTE_STEP_REASON_TRIGGER_DISABLED,
+	ESCORT_ROUTE_STEP_REASON_LINKS_PASSABLE,
+	ESCORT_ROUTE_STEP_REASON_LINKS_BLOCKED,
+	ESCORT_ROUTE_STEP_REASON_LATER_REACHABLE,
+	ESCORT_ROUTE_STEP_REASON_REACTOR_DESTROYED,
+	ESCORT_ROUTE_STEP_REASON_REACTOR_ALIVE,
+	ESCORT_ROUTE_STEP_REASON_NOT_APPLICABLE,
+	ESCORT_ROUTE_STEP_REASON_INVALID
+};
+
+typedef struct escort_route_step_analysis {
+	int valid;
+	int index;
+	int kind;
+	int satisfied;
+	int satisfied_reason;
+	int selected_next;
+	int reachable;
+	int guidance_mode;
+	int key_index;
+	int key_owned;
+	int key_exists;
+	int trigger_num;
+	int trigger_flags;
+	int trigger_disabled;
+	int linked_wall_count;
+	int linked_walls_passable;
+	int first_blocking_link;
+	int first_blocking_seg;
+	int first_blocking_side;
+	int first_blocking_wall;
+} escort_route_step_analysis;
+
+typedef struct escort_route_link_analysis {
+	int valid;
+	int index;
+	int passable;
+	int seg;
+	int side;
+	int wall;
+} escort_route_link_analysis;
+
 extern int escort_get_route_goal_active(void);
 extern int escort_get_route_goal_seg(void);
 extern int escort_get_route_goal_side(void);
@@ -39,6 +86,11 @@ extern int escort_get_route_goal_guidance_side(void);
 extern int escort_get_route_goal_path_endpoint_seg(void);
 extern const char *escort_get_route_goal_label(void);
 extern const char *escort_get_route_goal_guidance_mode_name(void);
+extern void escort_route_step_analysis_clear(escort_route_step_analysis *analysis);
+extern void escort_route_link_analysis_clear(escort_route_link_analysis *analysis);
+extern int escort_route_analyze_step(int step_index, escort_route_step_analysis *analysis);
+extern int escort_route_analyze_step_link(int step_index, int link_index, escort_route_link_analysis *analysis);
+extern const char *escort_route_step_satisfied_reason_name(int reason);
 #endif
 extern void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu);
 extern void input_demo_apply_recorded_guidebot_find_secret(void);

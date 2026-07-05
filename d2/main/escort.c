@@ -225,6 +225,14 @@ static const char *escort_route_goal_label(void)
 	return Escort_route_goal.label[0] ? Escort_route_goal.label : "route objective";
 }
 
+#ifdef __ANDROID__
+static void escort_start_default_goal_now(void);
+#endif
+static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int *selected_index);
+static int escort_route_step_reachable(const level_metadata_route_step *step, int guidance_mode);
+static int escort_owned_key_flags(void);
+static int escort_key_exists(int powerup_id);
+
 int escort_get_route_goal_active(void)
 {
 	return Escort_route_goal.active;
@@ -318,6 +326,71 @@ const char *escort_get_route_goal_guidance_mode_name(void)
 	}
 }
 
+void escort_route_step_analysis_clear(escort_route_step_analysis *analysis)
+{
+	if (!analysis)
+		return;
+	memset(analysis, 0, sizeof(*analysis));
+	analysis->index = -1;
+	analysis->kind = -1;
+	analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_NONE;
+	analysis->reachable = -1;
+	analysis->guidance_mode = ESCORT_ROUTE_GUIDANCE_NONE;
+	analysis->key_index = -1;
+	analysis->key_owned = -1;
+	analysis->key_exists = -1;
+	analysis->trigger_num = -1;
+	analysis->trigger_flags = -1;
+	analysis->trigger_disabled = -1;
+	analysis->linked_wall_count = 0;
+	analysis->linked_walls_passable = -1;
+	analysis->first_blocking_link = -1;
+	analysis->first_blocking_seg = -1;
+	analysis->first_blocking_side = -1;
+	analysis->first_blocking_wall = -1;
+}
+
+void escort_route_link_analysis_clear(escort_route_link_analysis *analysis)
+{
+	if (!analysis)
+		return;
+	memset(analysis, 0, sizeof(*analysis));
+	analysis->index = -1;
+	analysis->seg = -1;
+	analysis->side = -1;
+	analysis->wall = -1;
+}
+
+const char *escort_route_step_satisfied_reason_name(int reason)
+{
+	switch (reason) {
+		case ESCORT_ROUTE_STEP_REASON_START:
+			return "start";
+		case ESCORT_ROUTE_STEP_REASON_KEY_OWNED:
+			return "key_owned";
+		case ESCORT_ROUTE_STEP_REASON_KEY_MISSING:
+			return "key_missing";
+		case ESCORT_ROUTE_STEP_REASON_TRIGGER_DISABLED:
+			return "trigger_disabled";
+		case ESCORT_ROUTE_STEP_REASON_LINKS_PASSABLE:
+			return "links_passable";
+		case ESCORT_ROUTE_STEP_REASON_LINKS_BLOCKED:
+			return "links_blocked";
+		case ESCORT_ROUTE_STEP_REASON_LATER_REACHABLE:
+			return "later_reachable";
+		case ESCORT_ROUTE_STEP_REASON_REACTOR_DESTROYED:
+			return "reactor_destroyed";
+		case ESCORT_ROUTE_STEP_REASON_REACTOR_ALIVE:
+			return "reactor_alive";
+		case ESCORT_ROUTE_STEP_REASON_NOT_APPLICABLE:
+			return "not_applicable";
+		case ESCORT_ROUTE_STEP_REASON_INVALID:
+			return "invalid";
+		default:
+			return "none";
+	}
+}
+
 static int escort_player_has_key_for_wall(int keys)
 {
 	switch (keys) {
@@ -390,22 +463,6 @@ static int escort_trigger_can_make_side_passable(int segnum, int sidenum)
 	return 0;
 }
 
-static int escort_route_key_step_satisfied(const level_metadata_route_step *step, int key_flags)
-{
-	if (!step)
-		return 1;
-	switch (step->key_index) {
-		case 0:
-			return (key_flags & PLAYER_FLAGS_BLUE_KEY) != 0;
-		case 1:
-			return (key_flags & PLAYER_FLAGS_RED_KEY) != 0;
-		case 2:
-			return (key_flags & PLAYER_FLAGS_GOLD_KEY) != 0;
-		default:
-			return 1;
-	}
-}
-
 static int escort_route_link_passable(int segnum, int sidenum)
 {
 	segment *segp;
@@ -423,36 +480,208 @@ static int escort_route_link_passable(int segnum, int sidenum)
 	return 0;
 }
 
-static int escort_route_links_passable(const level_metadata_route_step *step);
-
-static int escort_route_trigger_step_satisfied(const level_metadata_route_step *step)
+static int escort_route_key_flag(int key_index)
 {
-	if (!step || step->trigger_num < 0 || step->trigger_num >= Num_triggers)
-		return 1;
-	if (Triggers[step->trigger_num].flags & TF_DISABLED)
-		return 1;
-	if (step->opened_link_count <= 0)
-		return 0;
-	return escort_route_links_passable(step);
+	switch (key_index) {
+		case 0:
+			return PLAYER_FLAGS_BLUE_KEY;
+		case 1:
+			return PLAYER_FLAGS_RED_KEY;
+		case 2:
+			return PLAYER_FLAGS_GOLD_KEY;
+		default:
+			return 0;
+	}
 }
 
-static int escort_route_links_passable(const level_metadata_route_step *step)
+static int escort_route_key_powerup_id(int key_index)
 {
-	int link;
+	switch (key_index) {
+		case 0:
+			return POW_KEY_BLUE;
+		case 1:
+			return POW_KEY_RED;
+		case 2:
+			return POW_KEY_GOLD;
+		default:
+			return -1;
+	}
+}
 
+static int escort_route_key_goal(int key_index)
+{
+	return key_index == 0 ? ESCORT_GOAL_BLUE_KEY :
+	       key_index == 2 ? ESCORT_GOAL_GOLD_KEY :
+	                        ESCORT_GOAL_RED_KEY;
+}
+
+static int escort_route_step_guidance_mode(const level_metadata_route_step *step)
+{
 	if (!step)
+		return ESCORT_ROUTE_GUIDANCE_NONE;
+	switch (step->kind) {
+		case LEVEL_METADATA_ROUTE_TRIGGER:
+			return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
+		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+			return ESCORT_ROUTE_GUIDANCE_REACH_HIDDEN_DOOR;
+		case LEVEL_METADATA_ROUTE_KEY:
+		case LEVEL_METADATA_ROUTE_REACTOR:
+		case LEVEL_METADATA_ROUTE_BOSS:
+		case LEVEL_METADATA_ROUTE_EXIT:
+		case LEVEL_METADATA_ROUTE_HOSTAGE:
+			return ESCORT_ROUTE_GUIDANCE_REACH_OBJECTIVE;
+		default:
+			return ESCORT_ROUTE_GUIDANCE_NONE;
+	}
+}
+
+static int escort_route_step_link_count(const level_metadata_route_step *step)
+{
+	if (!step)
+		return 0;
+	if (step->opened_link_count > 0)
+		return step->opened_link_count < LEVEL_METADATA_MAX_ROUTE_LINKS ?
+		       step->opened_link_count :
+		       LEVEL_METADATA_MAX_ROUTE_LINKS;
+	return step->side >= 0 ? 1 : 0;
+}
+
+static int escort_route_step_link_at(const level_metadata_route_step *step, int link_index, int *seg, int *side, int *wall)
+{
+	int link_count;
+
+	if (seg)
+		*seg = -1;
+	if (side)
+		*side = -1;
+	if (wall)
+		*wall = -1;
+	link_count = escort_route_step_link_count(step);
+	if (!step || link_index < 0 || link_index >= link_count)
+		return 0;
+	if (step->opened_link_count > 0) {
+		if (seg)
+			*seg = step->opened_link_seg[link_index];
+		if (side)
+			*side = step->opened_link_side[link_index];
+		if (wall)
+			*wall = step->opened_link_wall[link_index];
 		return 1;
-	if (step->opened_link_count <= 0)
-		return escort_route_link_passable(step->seg, step->side);
-	for (link = 0; link < step->opened_link_count; link++)
-		if (!escort_route_link_passable(step->opened_link_seg[link], step->opened_link_side[link]))
-			return 0;
+	}
+	if (seg)
+		*seg = step->seg;
+	if (side)
+		*side = step->side;
+	if (wall)
+		*wall = step->wall_num;
 	return 1;
 }
 
-static int escort_route_hidden_door_step_satisfied(const level_metadata_route_step *step)
+static int escort_route_step_links_passable(const level_metadata_route_step *step, escort_route_step_analysis *analysis)
 {
-	return escort_route_links_passable(step);
+	int link_count = escort_route_step_link_count(step);
+	int link;
+
+	if (analysis) {
+		analysis->linked_wall_count = link_count;
+		analysis->linked_walls_passable = 1;
+	}
+	for (link = 0; link < link_count; link++) {
+		int seg, side, wall;
+		int passable;
+		escort_route_step_link_at(step, link, &seg, &side, &wall);
+		passable = escort_route_link_passable(seg, side);
+		if (passable)
+			continue;
+		if (analysis) {
+			analysis->linked_walls_passable = 0;
+			analysis->first_blocking_link = link;
+			analysis->first_blocking_seg = seg;
+			analysis->first_blocking_side = side;
+			analysis->first_blocking_wall = wall;
+		}
+		return 0;
+	}
+	return 1;
+}
+
+static void escort_route_analyze_step_for_key_flags(
+    const level_metadata_route_step *step,
+    int step_index,
+    int key_flags,
+    escort_route_step_analysis *analysis)
+{
+	int key_flag;
+	int key_powerup;
+
+	escort_route_step_analysis_clear(analysis);
+	if (!analysis)
+		return;
+	analysis->index = step_index;
+	if (!step) {
+		analysis->satisfied = 1;
+		analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_INVALID;
+		return;
+	}
+	analysis->valid = 1;
+	analysis->kind = step->kind;
+	analysis->key_index = step->key_index;
+	analysis->trigger_num = step->trigger_num;
+	analysis->guidance_mode = escort_route_step_guidance_mode(step);
+	analysis->reachable = escort_route_step_reachable(step, analysis->guidance_mode);
+
+	switch (step->kind) {
+		case LEVEL_METADATA_ROUTE_START:
+			analysis->satisfied = 1;
+			analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_START;
+			break;
+		case LEVEL_METADATA_ROUTE_KEY:
+			key_flag = escort_route_key_flag(step->key_index);
+			key_powerup = escort_route_key_powerup_id(step->key_index);
+			analysis->key_owned = key_flag ? ((key_flags & key_flag) != 0) : 1;
+			analysis->key_exists = key_powerup >= 0 ? escort_key_exists(key_powerup) : 0;
+			analysis->satisfied = analysis->key_owned;
+			analysis->satisfied_reason = analysis->satisfied ?
+			                              ESCORT_ROUTE_STEP_REASON_KEY_OWNED :
+			                              ESCORT_ROUTE_STEP_REASON_KEY_MISSING;
+			break;
+		case LEVEL_METADATA_ROUTE_TRIGGER:
+			if (step->trigger_num < 0 || step->trigger_num >= Num_triggers) {
+				analysis->satisfied = 1;
+				analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_INVALID;
+				break;
+			}
+			analysis->trigger_flags = Triggers[step->trigger_num].flags;
+			analysis->trigger_disabled = (Triggers[step->trigger_num].flags & TF_DISABLED) != 0;
+			if (analysis->trigger_disabled) {
+				analysis->satisfied = 1;
+				analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_TRIGGER_DISABLED;
+				break;
+			}
+			analysis->satisfied = escort_route_step_links_passable(step, analysis);
+			if (analysis->satisfied) {
+				analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_LINKS_PASSABLE;
+			} else {
+				analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_LINKS_BLOCKED;
+			}
+			break;
+		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+			analysis->satisfied = escort_route_step_links_passable(step, analysis);
+			analysis->satisfied_reason = analysis->satisfied ?
+			                              ESCORT_ROUTE_STEP_REASON_LINKS_PASSABLE :
+			                              ESCORT_ROUTE_STEP_REASON_LINKS_BLOCKED;
+			break;
+		case LEVEL_METADATA_ROUTE_REACTOR:
+			analysis->satisfied = Control_center_destroyed != 0 || !escort_reactor_exists();
+			analysis->satisfied_reason = analysis->satisfied ?
+			                              ESCORT_ROUTE_STEP_REASON_REACTOR_DESTROYED :
+			                              ESCORT_ROUTE_STEP_REASON_REACTOR_ALIVE;
+			break;
+		default:
+			analysis->satisfied = 0;
+			analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_NOT_APPLICABLE;
+			break;
+	}
 }
 
 static void escort_route_set_step_goal(const level_metadata_route_step *step, int guidance_mode)
@@ -479,37 +708,47 @@ static void escort_route_set_step_goal(const level_metadata_route_step *step, in
 	         step->label[0] ? step->label : "route objective");
 }
 
-static int escort_route_next_goal(int key_flags)
+static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int *selected_index)
 {
 	const level_metadata_state *metadata = level_metadata_get_state();
 	int i;
 
-	escort_route_clear_goal();
+	if (selected_index)
+		*selected_index = -1;
+	if (set_goal)
+		escort_route_clear_goal();
 	if (!metadata || metadata->route_step_count <= 0)
 		return ESCORT_GOAL_UNSPECIFIED;
 	for (i = 0; i < metadata->route_step_count && i < LEVEL_METADATA_MAX_ROUTE_STEPS; i++) {
 		const level_metadata_route_step *step = &metadata->route_steps[i];
+		escort_route_step_analysis analysis;
 
+		escort_route_analyze_step_for_key_flags(step, i, key_flags, &analysis);
 		switch (step->kind) {
 			case LEVEL_METADATA_ROUTE_START:
 				break;
 			case LEVEL_METADATA_ROUTE_KEY:
-				if (!escort_route_key_step_satisfied(step, key_flags))
-					return step->key_index == 0 ? ESCORT_GOAL_BLUE_KEY :
-					       step->key_index == 2 ? ESCORT_GOAL_GOLD_KEY :
-					                              ESCORT_GOAL_RED_KEY;
+				if (!analysis.satisfied) {
+					if (selected_index)
+						*selected_index = i;
+					return escort_route_key_goal(step->key_index);
+				}
 				break;
 			case LEVEL_METADATA_ROUTE_TRIGGER:
-				if (!escort_route_trigger_step_satisfied(step) &&
-				    escort_valid_segment(step->seg)) {
-					escort_route_set_step_goal(step, ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION);
+				if (!analysis.satisfied && escort_valid_segment(step->seg)) {
+					if (set_goal)
+						escort_route_set_step_goal(step, ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION);
+					if (selected_index)
+						*selected_index = i;
 					return ESCORT_GOAL_EXIT;
 				}
 				break;
 			case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
-				if (!escort_route_hidden_door_step_satisfied(step) &&
-				    escort_valid_segment(step->seg)) {
-					escort_route_set_step_goal(step, ESCORT_ROUTE_GUIDANCE_REACH_HIDDEN_DOOR);
+				if (!analysis.satisfied && escort_valid_segment(step->seg)) {
+					if (set_goal)
+						escort_route_set_step_goal(step, ESCORT_ROUTE_GUIDANCE_REACH_HIDDEN_DOOR);
+					if (selected_index)
+						*selected_index = i;
 					return ESCORT_GOAL_EXIT;
 				}
 				break;
@@ -526,6 +765,56 @@ static int escort_route_next_goal(int key_flags)
 		}
 	}
 	return ESCORT_GOAL_UNSPECIFIED;
+}
+
+static int escort_route_next_goal(int key_flags)
+{
+	return escort_route_next_goal_for_key_flags(key_flags, 1, NULL);
+}
+
+int escort_route_analyze_step(int step_index, escort_route_step_analysis *analysis)
+{
+	const level_metadata_state *metadata = level_metadata_get_state();
+	int selected_index = -1;
+	int key_flags;
+	int count;
+
+	escort_route_step_analysis_clear(analysis);
+	if (!analysis || !metadata)
+		return 0;
+	count = metadata->route_step_count;
+	if (count > LEVEL_METADATA_MAX_ROUTE_STEPS)
+		count = LEVEL_METADATA_MAX_ROUTE_STEPS;
+	if (step_index < 0 || step_index >= count)
+		return 0;
+	key_flags = escort_owned_key_flags();
+	escort_route_next_goal_for_key_flags(key_flags, 0, &selected_index);
+	escort_route_analyze_step_for_key_flags(&metadata->route_steps[step_index], step_index, key_flags, analysis);
+	analysis->selected_next = step_index == selected_index;
+	return 1;
+}
+
+int escort_route_analyze_step_link(int step_index, int link_index, escort_route_link_analysis *analysis)
+{
+	const level_metadata_state *metadata = level_metadata_get_state();
+	const level_metadata_route_step *step;
+	int count;
+
+	escort_route_link_analysis_clear(analysis);
+	if (!analysis || !metadata)
+		return 0;
+	count = metadata->route_step_count;
+	if (count > LEVEL_METADATA_MAX_ROUTE_STEPS)
+		count = LEVEL_METADATA_MAX_ROUTE_STEPS;
+	if (step_index < 0 || step_index >= count)
+		return 0;
+	step = &metadata->route_steps[step_index];
+	if (!escort_route_step_link_at(step, link_index, &analysis->seg, &analysis->side, &analysis->wall))
+		return 0;
+	analysis->valid = 1;
+	analysis->index = link_index;
+	analysis->passable = escort_route_link_passable(analysis->seg, analysis->side);
+	return 1;
 }
 
 static int escort_side_or_pair_has_open_trigger(int segnum, int sidenum)
@@ -866,6 +1155,72 @@ static int escort_create_path_to_nearest_point(object *objp, int goal_seg)
 		escort_route_set_guidance_segment(target_seg, -1, ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT);
 	input_demo_log_escort_path_state("escort_create_path_to_goal nearest_point", objp);
 	return 1;
+}
+
+static object *escort_route_reference_object(void)
+{
+	if (escort_is_companion_object(Buddy_objnum))
+		return &Objects[Buddy_objnum];
+	if (ConsoleObject)
+		return ConsoleObject;
+	return NULL;
+}
+
+static int escort_route_segment_reachable_from(object *objp, int goal_seg)
+{
+	int reachable[MAX_SEGMENTS];
+	int queue[MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT];
+	int qhead, qtail;
+	int i;
+
+	if (!objp || !escort_valid_segment(objp->segnum) || !escort_valid_segment(goal_seg))
+		return -1;
+	if (objp->segnum == goal_seg)
+		return 1;
+	for (i = 0; i < MAX_SEGMENTS; i++)
+		reachable[i] = 0;
+	qhead = qtail = 0;
+	queue[qtail++] = objp->segnum;
+	reachable[objp->segnum] = 1;
+	while (qhead < qtail) {
+		int segnum = queue[qhead++];
+		int sidenum;
+
+		for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
+			int child_segnum;
+			if (escort_live_side_cost(objp, segnum, sidenum) != 0)
+				continue;
+			child_segnum = Segments[segnum].children[sidenum];
+			if (!escort_valid_segment(child_segnum) || reachable[child_segnum])
+				continue;
+			if (child_segnum == goal_seg)
+				return 1;
+			reachable[child_segnum] = 1;
+			if (qtail < MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT)
+				queue[qtail++] = child_segnum;
+		}
+	}
+	return 0;
+}
+
+static int escort_route_step_reachable(const level_metadata_route_step *step, int guidance_mode)
+{
+	object *objp = escort_route_reference_object();
+	int target_seg;
+
+	if (!step || !objp)
+		return -1;
+	target_seg = step->seg;
+	if (step->kind == LEVEL_METADATA_ROUTE_TRIGGER &&
+	    guidance_mode == ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION &&
+	    escort_valid_wall(step->wall_num)) {
+		int visible_seg = escort_route_find_nearest_visible_wall_segment(objp, step->wall_num);
+		if (escort_valid_segment(visible_seg))
+			target_seg = visible_seg;
+	}
+	if (!escort_valid_segment(target_seg) && escort_valid_wall(step->wall_num))
+		target_seg = Walls[step->wall_num].segnum;
+	return escort_route_segment_reachable_from(objp, target_seg);
 }
 #endif
 
@@ -1450,6 +1805,9 @@ void escort_resume_default_goal(void)
 	Last_buddy_key = -1;
 	set_escort_special_goal(KEY_0);
 	Last_buddy_key = -1;
+#ifdef __ANDROID__
+	escort_start_default_goal_now();
+#endif
 }
 
 void escort_find_secret_goal(void)
@@ -2128,6 +2486,30 @@ int escort_set_goal_object(void)
 
 	return (Control_center_destroyed || find_exit_segment() != -1) ? ESCORT_GOAL_EXIT : ESCORT_GOAL_CONTROLCEN;
 }
+
+#ifdef __ANDROID__
+static void escort_start_default_goal_now(void)
+{
+	object *objp;
+	ai_static *aip;
+	ai_local *ailp;
+
+	if (!escort_goal_command_allowed() || !escort_is_companion_object(Buddy_objnum))
+		return;
+	objp = &Objects[Buddy_objnum];
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[Buddy_objnum];
+	Escort_goal_object = escort_set_goal_object();
+	if (Escort_goal_object == ESCORT_GOAL_UNSPECIFIED)
+		return;
+	ailp->mode = AIM_GOTO_OBJECT;
+	escort_create_path_to_goal(objp);
+	if (aip->path_length > 3)
+		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+	Escort_last_path_created = GameTime64;
+	Buddy_last_player_path_created = GameTime64;
+}
+#endif
 
 #define	MAX_ESCORT_TIME_AWAY		(F1_0*4)
 

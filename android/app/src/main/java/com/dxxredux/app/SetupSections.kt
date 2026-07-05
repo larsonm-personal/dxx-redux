@@ -2627,7 +2627,7 @@ private fun LevelMetadataTable(levels: List<LevelMetadataLevelRow>) {
                                 },
                             travel = row.travelTimeText,
                             problem = row.metadataProblem(),
-                            note = row.metadataNote(),
+                            note = row.metadataSummaryNote(),
                             onDetails = { selectedLevel = row },
                         )
                     }
@@ -2743,6 +2743,10 @@ private fun LevelMetadataLevelDialog(
                     if (row.travelNote.isNotBlank()) {
                         ModDetailLine(row.travelNote)
                     }
+                    row
+                        .metadataNotes()
+                        .filter { it != row.travelNote }
+                        .forEach { note -> ModDetailLine(note) }
                     ModDetailSectionTitle("Path")
                     if (row.routeStatus.isNotBlank()) {
                         DetailRow("Route status", row.routeStatus.replaceFirstChar { it.uppercase() })
@@ -2816,15 +2820,28 @@ private fun LevelMetadataLevelRow.metadataProblem(): String? {
     return messages.joinToString("; ").takeIf { it.isNotBlank() }
 }
 
-private fun LevelMetadataLevelRow.metadataNote(): String? {
+private fun LevelMetadataLevelRow.metadataSummaryNote(): String? =
+    metadataNotes()
+        .filter { it != guidebotPlacementNote }
+        .joinToString("; ") {
+            "note: $it"
+        }.takeIf { it.isNotBlank() }
+
+private fun LevelMetadataLevelRow.metadataNotes(): List<String> {
     val messages =
         buildList {
             addAll(notes)
             if (travelNote.isNotBlank() && travelNote !in notes) {
                 add(travelNote)
             }
+            if (guidebotPlacementNote.isNotBlank() && guidebotPlacementNote !in this) {
+                add(guidebotPlacementNote)
+            }
+            if (guidebotNote.isNotBlank() && guidebotNote !in this) {
+                add(guidebotNote)
+            }
         }
-    return messages.joinToString("; ") { "note: $it" }.takeIf { it.isNotBlank() }
+    return messages.distinct()
 }
 
 private fun LevelMetadataRouteStep.routeStepSummary(): String {
