@@ -142,7 +142,7 @@
             "seg": 114,
             "side": 3,
             "wall": 54,
-            "distance": 229,
+            "distance": 229.0,
             "opens": [
               {
                 "seg": 114,
@@ -163,7 +163,7 @@
             "seg": 217,
             "side": 3,
             "wall": 55,
-            "distance": 40,
+            "distance": 40.0,
             "trigger": 6,
             "trigger_type_id": 4,
             "trigger_type": "secret_exit"
@@ -286,7 +286,7 @@
         "mine_volume_text": "6.1x",
         "travel_distance": 7858.126067649241,
         "travel_time_seconds": 157,
-        "travel_time_text": "2M:37S",
+        "travel_time_text": "3M:37S",
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 3,
@@ -426,7 +426,7 @@
         "mine_volume": 28723820.970393013,
         "mine_volume_normalized": 6.2813101728050045,
         "mine_volume_text": "6.3x",
-        "travel_distance": 1100,
+        "travel_distance": 1100.0,
         "travel_time_seconds": 22,
         "travel_time_text": "0M:22S",
         "travel_targets_reached": 2,
@@ -448,7 +448,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 576,
-            "distance": 580
+            "distance": 580.0
           },
           {
             "index": 2,
@@ -457,7 +457,7 @@
             "seg": 556,
             "side": 1,
             "wall": 53,
-            "distance": 520,
+            "distance": 520.0,
             "trigger": 3,
             "trigger_type_id": 3,
             "trigger_type": "exit"

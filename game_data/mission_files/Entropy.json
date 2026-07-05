@@ -18,7 +18,7 @@
         "secrets": 3,
         "matcens": 2,
         "energy_centers": 1,
-        "mine_volume": 24904610,
+        "mine_volume": 24904610.0,
         "mine_volume_normalized": 5.446127111848547,
         "mine_volume_text": "5.4x",
         "travel_distance": 1165.9600102420354,
@@ -105,7 +105,7 @@
             "kind": "key",
             "label": "red key",
             "seg": 163,
-            "distance": 285,
+            "distance": 285.0,
             "key": "red"
           },
           {
@@ -315,7 +315,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 71,
-            "distance": 230
+            "distance": 230.0
           },
           {
             "index": 14,
@@ -324,7 +324,7 @@
             "seg": 43,
             "side": 5,
             "wall": 107,
-            "distance": 440,
+            "distance": 440.0,
             "trigger": 11,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -350,7 +350,7 @@
         "mine_volume_text": "12x",
         "travel_distance": 14490.510565801496,
         "travel_time_seconds": 290,
-        "travel_time_text": "4M:50S",
+        "travel_time_text": "5M:50S",
         "travel_targets_reached": 20,
         "travel_targets_total": 20,
         "travel_key_detours": 1,
@@ -668,7 +668,7 @@
         "mine_volume_text": "7.6x",
         "travel_distance": 1942.230531922269,
         "travel_time_seconds": 39,
-        "travel_time_text": "0M:39S",
+        "travel_time_text": "1M:39S",
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 0,
@@ -794,7 +794,7 @@
             "kind": "key",
             "label": "red key",
             "seg": 288,
-            "distance": 550,
+            "distance": 550.0,
             "key": "red"
           },
           {
@@ -828,7 +828,7 @@
             "seg": 326,
             "side": 0,
             "wall": 14,
-            "distance": 120,
+            "distance": 120.0,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -852,7 +852,7 @@
             "seg": 325,
             "side": 0,
             "wall": 15,
-            "distance": 120,
+            "distance": 120.0,
             "trigger": 14,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -902,7 +902,7 @@
         "mine_volume": 21322749.999999914,
         "mine_volume_normalized": 4.6628478371742474,
         "mine_volume_text": "4.7x",
-        "travel_distance": 690,
+        "travel_distance": 690.0,
         "travel_time_seconds": 14,
         "travel_time_text": "0M:14S",
         "travel_targets_reached": 2,

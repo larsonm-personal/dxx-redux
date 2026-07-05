@@ -1,446 +1,6 @@
 [
   {
     "status": "ok",
-    "source": "descent:mercenary03",
-    "game": "d1",
-    "mission_name": "descent:mercenary03",
-    "mission_filename": "merc03.msn",
-    "coop_starts": "1",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "callisto terra-firma lab",
-        "level_file": "merc03.rdl",
-        "robots": 36,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 1,
-        "energy_centers": 0,
-        "mine_volume": 41493210.07420263,
-        "mine_volume_normalized": 9.073713514997513,
-        "mine_volume_text": "9.1x",
-        "travel_distance": 10681.02249942707,
-        "travel_time_seconds": 214,
-        "travel_time_text": "3M:34S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 2,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 20
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 176,
-            "distance": 3323.931806518629,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "red key",
-            "seg": 311,
-            "distance": 3953.1615349602785,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 233,
-            "distance": 862.7904416557207
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 236,
-            "side": 5,
-            "wall": 16,
-            "distance": 961.1387162924425,
-            "trigger": 0,
-            "trigger_type": "unknown"
-          }
-        ]
-      }
-    ],
-    "target_index": 0
-  },
-  {
-    "status": "ok",
-    "source": "descent:mercenary04",
-    "game": "d1",
-    "mission_name": "descent:mercenary04",
-    "mission_filename": "merc04.msn",
-    "coop_starts": "1",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "ptmc weapons testing",
-        "level_file": "merc04.rdl",
-        "robots": 34,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 0,
-        "energy_centers": 0,
-        "mine_volume": 2482897.95452636,
-        "mine_volume_normalized": 0.5429588283494226,
-        "mine_volume_text": "0.54x",
-        "travel_distance": 5934.231291343517,
-        "travel_time_seconds": 119,
-        "travel_time_text": "1M:59S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 3,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 225
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 226,
-            "distance": 756.924805873035,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 68,
-            "side": 5,
-            "wall": 20,
-            "distance": 879.9999694824567,
-            "opens": [
-              {
-                "seg": 68,
-                "side": 5,
-                "wall": 20
-              },
-              {
-                "seg": 227,
-                "side": 4,
-                "wall": 21
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 229,
-            "distance": 70,
-            "key": "gold"
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "label": "red key",
-            "seg": 31,
-            "distance": 357.5,
-            "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 300,
-            "distance": 1983.6537615335874
-          },
-          {
-            "index": 6,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 231,
-            "side": 5,
-            "wall": 26,
-            "distance": 1406.15382256872,
-            "trigger": 0,
-            "trigger_type": "unknown"
-          }
-        ]
-      }
-    ],
-    "target_index": 1
-  },
-  {
-    "status": "ok",
-    "source": "descent:mercenary05",
-    "game": "d1",
-    "mission_name": "descent:mercenary05",
-    "mission_filename": "merc05.msn",
-    "coop_starts": "1",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "aukidanus water tunnels",
-        "level_file": "merc05.rdl",
-        "robots": 9,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 0,
-        "energy_centers": 0,
-        "mine_volume": 5042334.266074849,
-        "mine_volume_normalized": 1.1026550246509856,
-        "mine_volume_text": "1.1x",
-        "travel_distance": 2418.330019114724,
-        "travel_time_seconds": 48,
-        "travel_time_text": "0M:48S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 111,
-            "distance": 1466.793864087212
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 95,
-            "side": 4,
-            "wall": 12,
-            "distance": 951.5361550275121,
-            "trigger": 0,
-            "trigger_type": "unknown"
-          }
-        ]
-      }
-    ],
-    "target_index": 2
-  },
-  {
-    "status": "ok",
-    "source": "descent:mercenary06",
-    "game": "d1",
-    "mission_name": "descent:mercenary06",
-    "mission_filename": "merc06.msn",
-    "coop_starts": "1",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "oberon military post",
-        "level_file": "merc06.rdl",
-        "robots": 22,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 0,
-        "energy_centers": 0,
-        "mine_volume": 3110129.4050002964,
-        "mine_volume_normalized": 0.6801214744551112,
-        "mine_volume_text": "0.68x",
-        "travel_distance": 4956.966656266783,
-        "travel_time_seconds": 99,
-        "travel_time_text": "1M:39S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 3,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 20
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 89,
-            "distance": 710.4258932576399,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 283,
-            "distance": 1059.6555059480186,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 245,
-            "distance": 949.2296126903786,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 202,
-            "side": 5,
-            "wall": 54,
-            "distance": 770,
-            "opens": [
-              {
-                "seg": 202,
-                "side": 5,
-                "wall": 54
-              },
-              {
-                "seg": 203,
-                "side": 4,
-                "wall": 55
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 212,
-            "distance": 250
-          },
-          {
-            "index": 6,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 213,
-            "side": 1,
-            "wall": 56,
-            "distance": 557.6556443707464,
-            "trigger": 0,
-            "trigger_type": "unknown"
-          }
-        ]
-      }
-    ],
-    "target_index": 3
-  },
-  {
-    "status": "ok",
-    "source": "descent:mercenary07",
-    "game": "d1",
-    "mission_name": "descent:mercenary07",
-    "mission_filename": "merc07.msn",
-    "coop_starts": "1",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "europa tower colony",
-        "level_file": "merc07.rdl",
-        "robots": 25,
-        "hostages": 3,
-        "secrets": 0,
-        "matcens": 0,
-        "energy_centers": 0,
-        "mine_volume": 4295060.208209234,
-        "mine_volume_normalized": 0.9392415238363571,
-        "mine_volume_text": "0.94x",
-        "travel_distance": 8457.670738688343,
-        "travel_time_seconds": 169,
-        "travel_time_text": "2M:49S",
-        "travel_targets_reached": 5,
-        "travel_targets_total": 5,
-        "travel_key_detours": 3,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 205,
-            "distance": 452.33424649888764,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 221,
-            "distance": 656.3051557912416,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 326,
-            "distance": 2030.0087819618554,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 358,
-            "distance": 2271.239838218032
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 244,
-            "side": 4,
-            "wall": 31,
-            "distance": 1244.321788005038,
-            "trigger": 1,
-            "trigger_type": "unknown"
-          }
-        ]
-      }
-    ],
-    "target_index": 4
-  },
-  {
-    "status": "ok",
     "source": "Descent:Mercenary01",
     "game": "d1",
     "mission_name": "Descent:Mercenary01",
@@ -516,7 +76,7 @@
             "seg": 90,
             "side": 5,
             "wall": 69,
-            "distance": 250,
+            "distance": 250.0,
             "trigger": 1,
             "trigger_type": "unknown"
           }
@@ -525,7 +85,7 @@
         "travel_problem": "blue key unreachable"
       }
     ],
-    "target_index": 5
+    "target_index": 0
   },
   {
     "status": "ok",
@@ -551,7 +111,7 @@
         "mine_volume_text": "0.40x",
         "travel_distance": 2079.384194732843,
         "travel_time_seconds": 42,
-        "travel_time_text": "0M:42S",
+        "travel_time_text": "1M:42S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 2,
@@ -571,7 +131,7 @@
             "kind": "key",
             "label": "blue key",
             "seg": 186,
-            "distance": 475,
+            "distance": 475.0,
             "key": "blue"
           },
           {
@@ -598,6 +158,446 @@
             "wall": 0,
             "distance": 646.8061763956946,
             "trigger": 0,
+            "trigger_type": "unknown"
+          }
+        ]
+      }
+    ],
+    "target_index": 1
+  },
+  {
+    "status": "ok",
+    "source": "descent:mercenary03",
+    "game": "d1",
+    "mission_name": "descent:mercenary03",
+    "mission_filename": "merc03.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "callisto terra-firma lab",
+        "level_file": "merc03.rdl",
+        "robots": 36,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 1,
+        "energy_centers": 0,
+        "mine_volume": 41493210.07420263,
+        "mine_volume_normalized": 9.073713514997513,
+        "mine_volume_text": "9.1x",
+        "travel_distance": 10681.02249942707,
+        "travel_time_seconds": 214,
+        "travel_time_text": "4M:34S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 2,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 20
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 176,
+            "distance": 3323.931806518629,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 311,
+            "distance": 3953.1615349602785,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 233,
+            "distance": 862.7904416557207
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 236,
+            "side": 5,
+            "wall": 16,
+            "distance": 961.1387162924425,
+            "trigger": 0,
+            "trigger_type": "unknown"
+          }
+        ]
+      }
+    ],
+    "target_index": 2
+  },
+  {
+    "status": "ok",
+    "source": "descent:mercenary04",
+    "game": "d1",
+    "mission_name": "descent:mercenary04",
+    "mission_filename": "merc04.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "ptmc weapons testing",
+        "level_file": "merc04.rdl",
+        "robots": 34,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 2482897.95452636,
+        "mine_volume_normalized": 0.5429588283494226,
+        "mine_volume_text": "0.54x",
+        "travel_distance": 5934.231291343517,
+        "travel_time_seconds": 119,
+        "travel_time_text": "2M:59S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 225
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 226,
+            "distance": 756.924805873035,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 68,
+            "side": 5,
+            "wall": 20,
+            "distance": 879.9999694824567,
+            "opens": [
+              {
+                "seg": 68,
+                "side": 5,
+                "wall": 20
+              },
+              {
+                "seg": 227,
+                "side": 4,
+                "wall": 21
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 229,
+            "distance": 70.0,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "red key",
+            "seg": 31,
+            "distance": 357.5,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 300,
+            "distance": 1983.6537615335874
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 231,
+            "side": 5,
+            "wall": 26,
+            "distance": 1406.15382256872,
+            "trigger": 0,
+            "trigger_type": "unknown"
+          }
+        ]
+      }
+    ],
+    "target_index": 3
+  },
+  {
+    "status": "ok",
+    "source": "descent:mercenary05",
+    "game": "d1",
+    "mission_name": "descent:mercenary05",
+    "mission_filename": "merc05.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "aukidanus water tunnels",
+        "level_file": "merc05.rdl",
+        "robots": 9,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 5042334.266074849,
+        "mine_volume_normalized": 1.1026550246509856,
+        "mine_volume_text": "1.1x",
+        "travel_distance": 2418.330019114724,
+        "travel_time_seconds": 48,
+        "travel_time_text": "1M:48S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 111,
+            "distance": 1466.793864087212
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 95,
+            "side": 4,
+            "wall": 12,
+            "distance": 951.5361550275121,
+            "trigger": 0,
+            "trigger_type": "unknown"
+          }
+        ]
+      }
+    ],
+    "target_index": 4
+  },
+  {
+    "status": "ok",
+    "source": "descent:mercenary06",
+    "game": "d1",
+    "mission_name": "descent:mercenary06",
+    "mission_filename": "merc06.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "oberon military post",
+        "level_file": "merc06.rdl",
+        "robots": 22,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 3110129.4050002964,
+        "mine_volume_normalized": 0.6801214744551112,
+        "mine_volume_text": "0.68x",
+        "travel_distance": 4956.966656266783,
+        "travel_time_seconds": 99,
+        "travel_time_text": "2M:39S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 20
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 89,
+            "distance": 710.4258932576399,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 283,
+            "distance": 1059.6555059480186,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 245,
+            "distance": 949.2296126903786,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 202,
+            "side": 5,
+            "wall": 54,
+            "distance": 770.0,
+            "opens": [
+              {
+                "seg": 202,
+                "side": 5,
+                "wall": 54
+              },
+              {
+                "seg": 203,
+                "side": 4,
+                "wall": 55
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 212,
+            "distance": 250.0
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 213,
+            "side": 1,
+            "wall": 56,
+            "distance": 557.6556443707464,
+            "trigger": 0,
+            "trigger_type": "unknown"
+          }
+        ]
+      }
+    ],
+    "target_index": 5
+  },
+  {
+    "status": "ok",
+    "source": "descent:mercenary07",
+    "game": "d1",
+    "mission_name": "descent:mercenary07",
+    "mission_filename": "merc07.msn",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "europa tower colony",
+        "level_file": "merc07.rdl",
+        "robots": 25,
+        "hostages": 3,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 0,
+        "mine_volume": 4295060.208209234,
+        "mine_volume_normalized": 0.9392415238363571,
+        "mine_volume_text": "0.94x",
+        "travel_distance": 8457.670738688343,
+        "travel_time_seconds": 169,
+        "travel_time_text": "3M:49S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 3,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 205,
+            "distance": 452.33424649888764,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 221,
+            "distance": 656.3051557912416,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 326,
+            "distance": 2030.0087819618554,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 358,
+            "distance": 2271.239838218032
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 244,
+            "side": 4,
+            "wall": 31,
+            "distance": 1244.321788005038,
+            "trigger": 1,
             "trigger_type": "unknown"
           }
         ]

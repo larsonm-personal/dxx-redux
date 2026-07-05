@@ -21,7 +21,7 @@
         "mine_volume": 13444234.663020857,
         "mine_volume_normalized": 2.939978216737058,
         "mine_volume_text": "2.9x",
-        "travel_distance": 0,
+        "travel_distance": 0.0,
         "travel_time_seconds": 0,
         "travel_time_text": "0M:00S",
         "travel_targets_reached": 0,
@@ -204,12 +204,20 @@
           },
           {
             "index": 6,
+            "kind": "key",
+            "label": "red key",
+            "seg": 503,
+            "distance": 255.31079538891134,
+            "key": "red"
+          },
+          {
+            "index": 7,
             "kind": "trigger",
             "label": "Open wall trigger 12",
             "seg": 104,
             "side": 4,
             "wall": 104,
-            "distance": 807.3124561288797,
+            "distance": 813.0372097728455,
             "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -232,14 +240,14 @@
             ]
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 505,
             "distance": 871.5372461091995
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "exit",
             "label": "Exit",
             "seg": 511,
@@ -271,7 +279,7 @@
         "mine_volume_text": "4.1x",
         "travel_distance": 8928.358058318076,
         "travel_time_seconds": 179,
-        "travel_time_text": "2M:59S",
+        "travel_time_text": "3M:59S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -307,57 +315,14 @@
           },
           {
             "index": 2,
-            "kind": "trigger",
-            "label": "Open wall trigger 6",
-            "seg": 20,
-            "wall": 87,
-            "distance": 171.875,
-            "trigger": 6,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 6,
-                "side": 4,
-                "wall": 88
-              },
-              {
-                "seg": 60,
-                "side": 5,
-                "wall": 7
-              },
-              {
-                "seg": 64,
-                "side": 1,
-                "wall": 4
-              },
-              {
-                "seg": 117,
-                "side": 1,
-                "wall": 35
-              },
-              {
-                "seg": 159,
-                "side": 0,
-                "wall": 39
-              },
-              {
-                "seg": 159,
-                "side": 2,
-                "wall": 37
-              }
-            ]
-          },
-          {
-            "index": 3,
             "kind": "key",
             "label": "blue key",
             "seg": 270,
-            "distance": 809.0150862602103,
+            "distance": 737.1400862602103,
             "key": "blue"
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "label": "gold key",
             "seg": 347,
@@ -365,28 +330,20 @@
             "key": "gold"
           },
           {
-            "index": 5,
-            "kind": "key",
-            "label": "red key",
-            "seg": 763,
-            "distance": 2537.114617322908,
-            "key": "red"
-          },
-          {
-            "index": 6,
+            "index": 4,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 476,
-            "distance": 740.7454258601945
+            "distance": 579.3992646345781
           },
           {
-            "index": 7,
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 668,
             "side": 4,
             "wall": 185,
-            "distance": 831.2228087861149,
+            "distance": 955.3929530493024,
             "trigger": 10,
             "trigger_type_id": 3,
             "trigger_type": "exit"

@@ -23,7 +23,7 @@
         "mine_volume_text": "2.5x",
         "travel_distance": 7643.466255101892,
         "travel_time_seconds": 153,
-        "travel_time_text": "2M:33S",
+        "travel_time_text": "3M:33S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
@@ -183,7 +183,7 @@
             "kind": "key",
             "label": "blue key",
             "seg": 479,
-            "distance": 42,
+            "distance": 42.0,
             "key": "blue"
           },
           {
@@ -282,7 +282,7 @@
         "mine_volume_text": "2.9x",
         "travel_distance": 5250.970759998568,
         "travel_time_seconds": 105,
-        "travel_time_text": "1M:45S",
+        "travel_time_text": "2M:45S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -480,20 +480,95 @@
         "mine_volume_text": "3.8x",
         "travel_distance": 2498.0851311270662,
         "travel_time_seconds": 50,
-        "travel_time_text": "0M:50S",
+        "travel_time_text": "1M:50S",
         "travel_targets_reached": 3,
         "travel_targets_total": 5,
         "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "failed",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 228
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open door trigger 5",
+            "seg": 304,
+            "side": 0,
+            "wall": 77,
+            "distance": 996.0470732810348,
+            "trigger": 5,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 361,
+                "side": 0,
+                "wall": 75
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "label": "Open wall trigger 0",
+            "seg": 129,
+            "side": 5,
+            "wall": 0,
+            "distance": 1340.121034986376,
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 131,
+                "side": 1,
+                "wall": 2
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 65,
+            "distance": 181.3320775402354,
+            "key": "blue"
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 293,
+            "side": 0,
+            "wall": 32,
+            "distance": 1897.5169712317486,
+            "opens": [
+              {
+                "seg": 293,
+                "side": 0,
+                "wall": 32
+              },
+              {
+                "seg": 279,
+                "side": 2,
+                "wall": 33
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 58,
+            "distance": 1560.0076015587674,
+            "key": "gold"
           }
         ],
         "travel_status": "partial",
@@ -519,20 +594,89 @@
         "mine_volume_text": "7.9x",
         "travel_distance": 17160.971295896445,
         "travel_time_seconds": 343,
-        "travel_time_text": "5M:43S",
+        "travel_time_text": "6M:43S",
         "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 3,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "failed",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 399
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 70,
+            "distance": 3370.3024989577943,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 86,
+            "side": 2,
+            "wall": 1,
+            "distance": 4092.470011751831,
+            "opens": [
+              {
+                "seg": 86,
+                "side": 2,
+                "wall": 1
+              },
+              {
+                "seg": 78,
+                "side": 0,
+                "wall": 0
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 78,
+            "distance": 42.740757979530244,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "label": "Open wall trigger 3",
+            "seg": 218,
+            "side": 0,
+            "wall": 120,
+            "distance": 2881.437366734465,
+            "trigger": 3,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 215,
+                "side": 3,
+                "wall": 121
+              },
+              {
+                "seg": 168,
+                "side": 2,
+                "wall": 119
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "label": "red key",
+            "seg": 229,
+            "distance": 1051.9531723945547,
+            "key": "red"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
@@ -556,7 +700,7 @@
         "mine_volume_text": "0.80x",
         "travel_distance": 1854.551344433933,
         "travel_time_seconds": 37,
-        "travel_time_text": "0M:37S",
+        "travel_time_text": "1M:37S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 1,

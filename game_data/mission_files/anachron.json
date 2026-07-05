@@ -30,16 +30,49 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 886
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 114,
+            "distance": 1537.9310575793666,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 547,
+            "distance": 1988.1940357050846,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 755,
+            "distance": 1899.685143629485
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 318,
+            "side": 4,
+            "wall": 44,
+            "distance": 1288.2507250182293,
+            "trigger": 0,
+            "trigger_type": "unknown"
           }
-        ],
-        "route_problem": "red key route dependency loop"
+        ]
       },
       {
         "level_num": 2,
@@ -137,16 +170,57 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 505
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 594,
+            "distance": 2092.347048512719,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 236,
+            "distance": 3455.747616224021,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 441,
+            "distance": 2656.7700593855125,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 826,
+            "distance": 981.4897322755487
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 763,
+            "side": 0,
+            "wall": 131,
+            "distance": 326.13471179417235,
+            "trigger": 8,
+            "trigger_type": "unknown"
           }
-        ],
-        "route_problem": "gold key route dependency loop"
+        ]
       }
     ],
     "target_index": 0

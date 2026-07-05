@@ -1,700 +1,6 @@
 [
   {
     "status": "ok",
-    "source": "gigalomania 07",
-    "game": "d2",
-    "mission_name": "gigalomania 07",
-    "mission_filename": "gigalo07.mn2",
-    "coop_starts": "4",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "Lupus II Black Labs",
-        "level_file": "gigaloma.rl2",
-        "robots": 77,
-        "hostages": 0,
-        "secrets": 4,
-        "matcens": 2,
-        "energy_centers": 4,
-        "mine_volume": 20839060.349227056,
-        "mine_volume_normalized": 4.55707483688255,
-        "mine_volume_text": "4.6x",
-        "travel_distance": 3311.4577299605785,
-        "travel_time_seconds": 66,
-        "travel_time_text": "1M:06S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 1,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 716,
-            "distance": 639.4774444733757
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "red key",
-            "seg": 483,
-            "distance": 410.3107100556299,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 635,
-            "side": 0,
-            "wall": 171,
-            "distance": 1091.5469632628308,
-            "trigger": 7,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      }
-    ],
-    "target_index": 0
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 08",
-    "game": "d2",
-    "mission_name": "Gigalomania 08",
-    "mission_filename": "gigalo08.mn2",
-    "coop_starts": "4",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "The Brain",
-        "level_file": "gigaloma.rl2",
-        "robots": 193,
-        "hostages": 3,
-        "secrets": 1,
-        "matcens": 1,
-        "energy_centers": 15,
-        "mine_volume": 93739892.861977,
-        "mine_volume_normalized": 20.49899082850087,
-        "mine_volume_text": "20x",
-        "travel_distance": 4416.943112396617,
-        "travel_time_seconds": 88,
-        "travel_time_text": "1M:28S",
-        "travel_targets_reached": 5,
-        "travel_targets_total": 5,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 17,
-            "side": 3,
-            "wall": 4,
-            "distance": 457.99434812915973,
-            "opens": [
-              {
-                "seg": 17,
-                "side": 3,
-                "wall": 4
-              },
-              {
-                "seg": 1,
-                "side": 1,
-                "wall": 5
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 674,
-            "distance": 4093.0356466449934,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 1",
-            "seg": 519,
-            "side": 4,
-            "wall": 146,
-            "distance": 3206.4442706028385,
-            "trigger": 1,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 11,
-                "side": 0,
-                "wall": 9
-              },
-              {
-                "seg": 9,
-                "side": 3,
-                "wall": 10
-              },
-              {
-                "seg": 9,
-                "side": 0,
-                "wall": 12
-              },
-              {
-                "seg": 9,
-                "side": 1,
-                "wall": 6
-              },
-              {
-                "seg": 680,
-                "side": 4,
-                "wall": 182
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 11,
-            "distance": 2741.994438084871
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 29,
-            "side": 4,
-            "wall": 14,
-            "distance": 553.885435365755,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      }
-    ],
-    "target_index": 1
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 09",
-    "game": "d2",
-    "mission_name": "Gigalomania 09",
-    "mission_filename": "gigalo09.mn2",
-    "coop_starts": "4",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "Fischer Observatory",
-        "level_file": "gigaloma.rl2",
-        "robots": 75,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 2,
-        "energy_centers": 5,
-        "mine_volume": 38403046.024503544,
-        "mine_volume_normalized": 8.397958054015554,
-        "mine_volume_text": "8.4x",
-        "travel_distance": 8851.396660556786,
-        "travel_time_seconds": 177,
-        "travel_time_text": "2M:57S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 2,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 156
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 350,
-            "distance": 1228.8518291455505,
-            "key": "gold"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "red key",
-            "seg": 392,
-            "distance": 322.487962886845,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 716,
-            "distance": 3139.867322616227
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 723,
-            "side": 0,
-            "wall": 194,
-            "distance": 1277.3200043810182,
-            "trigger": 34,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      }
-    ],
-    "target_index": 2
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 10",
-    "game": "d2",
-    "mission_name": "Gigalomania 10",
-    "mission_filename": "gigalo10.mn2",
-    "coop_starts": "4",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "UltraSpace Shipyard",
-        "level_file": "gigaloma.rl2",
-        "robots": 71,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 5,
-        "energy_centers": 3,
-        "mine_volume": 57374754.76062001,
-        "mine_volume_normalized": 12.546681415106447,
-        "mine_volume_text": "13x",
-        "travel_distance": 4176.641665077102,
-        "travel_time_seconds": 84,
-        "travel_time_text": "1M:24S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 1,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 14",
-            "seg": 33,
-            "side": 4,
-            "wall": 54,
-            "distance": 132.65564437074636,
-            "trigger": 14,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 149,
-                "side": 4,
-                "wall": 49
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "label": "Open door trigger 76",
-            "seg": 563,
-            "side": 0,
-            "wall": 217,
-            "distance": 1339.0041869434822,
-            "trigger": 76,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 373,
-                "side": 2,
-                "wall": 219
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open door trigger 78",
-            "seg": 571,
-            "side": 2,
-            "wall": 231,
-            "distance": 530.0166521721593,
-            "trigger": 78,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 371,
-                "side": 2,
-                "wall": 229
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "label": "Open door trigger 79",
-            "seg": 585,
-            "side": 0,
-            "wall": 232,
-            "distance": 535.9564907231322,
-            "trigger": 79,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 381,
-                "side": 4,
-                "wall": 220
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "trigger",
-            "label": "Open door trigger 80",
-            "seg": 634,
-            "side": 4,
-            "wall": 233,
-            "distance": 870.0542963025516,
-            "trigger": 80,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 376,
-                "side": 0,
-                "wall": 222
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "trigger",
-            "label": "Open door trigger 81",
-            "seg": 659,
-            "side": 2,
-            "wall": 234,
-            "distance": 275.0151506589001,
-            "trigger": 81,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 369,
-                "side": 2,
-                "wall": 122
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "key",
-            "label": "red key",
-            "seg": 600,
-            "distance": 785.9901951359278,
-            "key": "red"
-          },
-          {
-            "index": 8,
-            "kind": "trigger",
-            "label": "Open wall trigger 26",
-            "seg": 395,
-            "side": 0,
-            "wall": 142,
-            "distance": 1206.183369611283,
-            "trigger": 26,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 397,
-                "side": 4,
-                "wall": 135
-              }
-            ]
-          },
-          {
-            "index": 9,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 411,
-            "distance": 339.4905637771522
-          },
-          {
-            "index": 10,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 159,
-            "side": 5,
-            "wall": 202,
-            "distance": 753.4062228398512,
-            "trigger": 70,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      }
-    ],
-    "target_index": 3
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 11",
-    "game": "d2",
-    "mission_name": "Gigalomania 11",
-    "mission_filename": "gigalo11.mn2",
-    "coop_starts": "4",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "Riviera Waste Disposal",
-        "level_file": "gigaloma.rl2",
-        "robots": 6,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 8160159.072138152,
-        "mine_volume_normalized": 1.7844593253927075,
-        "mine_volume_text": "1.8x",
-        "travel_distance": 908.1975785638564,
-        "travel_time_seconds": 18,
-        "travel_time_text": "0M:18S",
-        "travel_targets_reached": 1,
-        "travel_targets_total": 1,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 0",
-            "seg": 569,
-            "side": 3,
-            "wall": 62,
-            "distance": 756.2399737196499,
-            "trigger": 0,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 568,
-                "side": 4,
-                "wall": 42
-              },
-              {
-                "seg": 568,
-                "side": 0,
-                "wall": 46
-              },
-              {
-                "seg": 568,
-                "side": 2,
-                "wall": 48
-              },
-              {
-                "seg": 568,
-                "side": 5,
-                "wall": 44
-              },
-              {
-                "seg": 569,
-                "side": 4,
-                "wall": 50
-              },
-              {
-                "seg": 569,
-                "side": 5,
-                "wall": 52
-              },
-              {
-                "seg": 569,
-                "side": 0,
-                "wall": 54
-              },
-              {
-                "seg": 569,
-                "side": 2,
-                "wall": 56
-              },
-              {
-                "seg": 570,
-                "side": 0,
-                "wall": 60
-              },
-              {
-                "seg": 570,
-                "side": 5,
-                "wall": 58
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 599,
-            "side": 5,
-            "wall": 63,
-            "distance": 172.1684992665878,
-            "trigger": 1,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "travel_note": "no reactor, exit exists",
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no reactor, exit exists",
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      }
-    ],
-    "target_index": 4
-  },
-  {
-    "status": "ok",
-    "source": "gigalomania 12",
-    "game": "d2",
-    "mission_name": "gigalomania 12",
-    "mission_filename": "gigalo12.mn2",
-    "coop_starts": "4",
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "The Underworld",
-        "level_file": "gigaloma.rl2",
-        "robots": 4,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 8,
-        "energy_centers": 4,
-        "mine_volume": 63415763.34228628,
-        "mine_volume_normalized": 13.867726017672895,
-        "mine_volume_text": "14x",
-        "travel_distance": 1205.575233939152,
-        "travel_time_seconds": 24,
-        "travel_time_text": "0M:24S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 377,
-            "distance": 839.3827115686322
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 370,
-            "side": 5,
-            "wall": 161,
-            "distance": 366.1925223705199,
-            "trigger": 1,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      }
-    ],
-    "target_index": 5
-  },
-  {
-    "status": "ok",
     "source": "Gigalomania 01",
     "game": "d2",
     "mission_name": "Gigalomania 01",
@@ -912,7 +218,7 @@
         ]
       }
     ],
-    "target_index": 6
+    "target_index": 0
   },
   {
     "status": "ok",
@@ -938,7 +244,7 @@
         "mine_volume_text": "3.2x",
         "travel_distance": 1835.3678341706632,
         "travel_time_seconds": 37,
-        "travel_time_text": "0M:37S",
+        "travel_time_text": "1M:37S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 2,
@@ -1058,7 +364,7 @@
         ]
       }
     ],
-    "target_index": 7
+    "target_index": 1
   },
   {
     "status": "ok",
@@ -1084,7 +390,7 @@
         "mine_volume_text": "5.0x",
         "travel_distance": 7928.927528009261,
         "travel_time_seconds": 159,
-        "travel_time_text": "2M:39S",
+        "travel_time_text": "3M:39S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -1102,45 +408,11 @@
           {
             "index": 1,
             "kind": "trigger",
-            "label": "Open wall trigger 10",
-            "seg": 406,
-            "side": 5,
-            "wall": 145,
-            "distance": 988.0864080751007,
-            "trigger": 10,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 412,
-                "side": 4,
-                "wall": 144
-              },
-              {
-                "seg": 417,
-                "side": 4,
-                "wall": 141
-              },
-              {
-                "seg": 415,
-                "side": 4,
-                "wall": 140
-              },
-              {
-                "seg": 413,
-                "side": 4,
-                "wall": 137
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
             "label": "Open wall trigger 0",
             "seg": 132,
             "side": 2,
             "wall": 62,
-            "distance": 1278.9513580630896,
+            "distance": 526.7623206926307,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1183,7 +455,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "key",
             "label": "blue key",
             "seg": 147,
@@ -1191,7 +463,7 @@
             "key": "blue"
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "label": "gold key",
             "seg": 345,
@@ -1199,7 +471,7 @@
             "key": "gold"
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "key",
             "label": "red key",
             "seg": 506,
@@ -1207,11 +479,45 @@
             "key": "red"
           },
           {
+            "index": 5,
+            "kind": "trigger",
+            "label": "Open wall trigger 10",
+            "seg": 406,
+            "side": 5,
+            "wall": 145,
+            "distance": 802.010188729854,
+            "trigger": 10,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 412,
+                "side": 4,
+                "wall": 144
+              },
+              {
+                "seg": 417,
+                "side": 4,
+                "wall": 141
+              },
+              {
+                "seg": 415,
+                "side": 4,
+                "wall": 140
+              },
+              {
+                "seg": 413,
+                "side": 4,
+                "wall": 137
+              }
+            ]
+          },
+          {
             "index": 6,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 771,
-            "distance": 1266.4064559440435
+            "distance": 743.8558794610109
           },
           {
             "index": 7,
@@ -1232,7 +538,7 @@
         ]
       }
     ],
-    "target_index": 8
+    "target_index": 2
   },
   {
     "status": "ok",
@@ -1407,7 +713,7 @@
         ]
       }
     ],
-    "target_index": 9
+    "target_index": 3
   },
   {
     "status": "ok",
@@ -1433,7 +739,7 @@
         "mine_volume_text": "4.4x",
         "travel_distance": 5357.187880022122,
         "travel_time_seconds": 107,
-        "travel_time_text": "1M:47S",
+        "travel_time_text": "2M:47S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
@@ -1522,7 +828,7 @@
         ]
       }
     ],
-    "target_index": 10
+    "target_index": 4
   },
   {
     "status": "ok",
@@ -1622,6 +928,788 @@
             "wall": 22,
             "distance": 818.8462150652905,
             "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      }
+    ],
+    "target_index": 5
+  },
+  {
+    "status": "ok",
+    "source": "gigalomania 07",
+    "game": "d2",
+    "mission_name": "gigalomania 07",
+    "mission_filename": "gigalo07.mn2",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Lupus II Black Labs",
+        "level_file": "gigaloma.rl2",
+        "robots": 77,
+        "hostages": 0,
+        "secrets": 4,
+        "matcens": 2,
+        "energy_centers": 4,
+        "mine_volume": 20839060.349227056,
+        "mine_volume_normalized": 4.55707483688255,
+        "mine_volume_text": "4.6x",
+        "travel_distance": 3311.4577299605785,
+        "travel_time_seconds": 66,
+        "travel_time_text": "1M:06S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 452,
+            "distance": 1441.0647114346477,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 533,
+            "distance": 2258.3460013835324,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 483,
+            "distance": 1759.4199185376262,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 716,
+            "distance": 269.8455812970318
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 635,
+            "side": 0,
+            "wall": 171,
+            "distance": 868.392334557146,
+            "trigger": 7,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      }
+    ],
+    "target_index": 6
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 08",
+    "game": "d2",
+    "mission_name": "Gigalomania 08",
+    "mission_filename": "gigalo08.mn2",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "The Brain",
+        "level_file": "gigaloma.rl2",
+        "robots": 193,
+        "hostages": 3,
+        "secrets": 1,
+        "matcens": 1,
+        "energy_centers": 15,
+        "mine_volume": 93739892.861977,
+        "mine_volume_normalized": 20.49899082850087,
+        "mine_volume_text": "20x",
+        "travel_distance": 4416.943112396617,
+        "travel_time_seconds": 88,
+        "travel_time_text": "1M:28S",
+        "travel_targets_reached": 5,
+        "travel_targets_total": 5,
+        "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 313,
+            "distance": 1375.0939322451463,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 674,
+            "distance": 2642.163884430479,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 491,
+            "distance": 3188.4215896515293,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 17,
+            "side": 3,
+            "wall": 4,
+            "distance": 3088.1532824546025,
+            "opens": [
+              {
+                "seg": 17,
+                "side": 3,
+                "wall": 4
+              },
+              {
+                "seg": 1,
+                "side": 1,
+                "wall": 5
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "label": "Open wall trigger 1",
+            "seg": 519,
+            "side": 4,
+            "wall": 146,
+            "distance": 2151.99469748383,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 11,
+                "side": 0,
+                "wall": 9
+              },
+              {
+                "seg": 9,
+                "side": 3,
+                "wall": 10
+              },
+              {
+                "seg": 9,
+                "side": 0,
+                "wall": 12
+              },
+              {
+                "seg": 9,
+                "side": 1,
+                "wall": 6
+              },
+              {
+                "seg": 680,
+                "side": 4,
+                "wall": 182
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 11,
+            "distance": 2741.994438084871
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 29,
+            "side": 4,
+            "wall": 14,
+            "distance": 553.885435365755,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      }
+    ],
+    "target_index": 7
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 09",
+    "game": "d2",
+    "mission_name": "Gigalomania 09",
+    "mission_filename": "gigalo09.mn2",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Fischer Observatory",
+        "level_file": "gigaloma.rl2",
+        "robots": 75,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 2,
+        "energy_centers": 5,
+        "mine_volume": 38403046.024503544,
+        "mine_volume_normalized": 8.397958054015554,
+        "mine_volume_text": "8.4x",
+        "travel_distance": 8851.396660556786,
+        "travel_time_seconds": 177,
+        "travel_time_text": "3M:57S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 2,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 156
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 0",
+            "seg": 64,
+            "side": 3,
+            "wall": 98,
+            "distance": 376.84658438426493,
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 6,
+                "side": 5,
+                "wall": 34
+              },
+              {
+                "seg": 8,
+                "side": 5,
+                "wall": 32
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "label": "Open wall trigger 4",
+            "seg": 65,
+            "side": 3,
+            "wall": 108,
+            "distance": 706.8465691254933,
+            "trigger": 4,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 11,
+                "side": 4,
+                "wall": 31
+              },
+              {
+                "seg": 13,
+                "side": 4,
+                "wall": 29
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 37,
+            "distance": 654.8527984836142,
+            "key": "blue"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 350,
+            "distance": 1393.7046428879364,
+            "key": "gold"
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "label": "red key",
+            "seg": 392,
+            "distance": 322.487962886845,
+            "key": "red"
+          },
+          {
+            "index": 6,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 716,
+            "distance": 3139.867322616227
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 723,
+            "side": 0,
+            "wall": 194,
+            "distance": 1277.3200043810182,
+            "trigger": 34,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      }
+    ],
+    "target_index": 8
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 10",
+    "game": "d2",
+    "mission_name": "Gigalomania 10",
+    "mission_filename": "gigalo10.mn2",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "UltraSpace Shipyard",
+        "level_file": "gigaloma.rl2",
+        "robots": 71,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 5,
+        "energy_centers": 3,
+        "mine_volume": 57374754.76062001,
+        "mine_volume_normalized": 12.546681415106447,
+        "mine_volume_text": "13x",
+        "travel_distance": 4176.641665077102,
+        "travel_time_seconds": 84,
+        "travel_time_text": "1M:24S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 1,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 14",
+            "seg": 33,
+            "side": 4,
+            "wall": 54,
+            "distance": 132.65564437074636,
+            "trigger": 14,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 149,
+                "side": 4,
+                "wall": 49
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "label": "Open door trigger 76",
+            "seg": 563,
+            "side": 0,
+            "wall": 217,
+            "distance": 1339.0041869434822,
+            "trigger": 76,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 373,
+                "side": 2,
+                "wall": 219
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "label": "Open door trigger 78",
+            "seg": 571,
+            "side": 2,
+            "wall": 231,
+            "distance": 530.0166521721593,
+            "trigger": 78,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 371,
+                "side": 2,
+                "wall": 229
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "label": "Open door trigger 79",
+            "seg": 585,
+            "side": 0,
+            "wall": 232,
+            "distance": 535.9564907231322,
+            "trigger": 79,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 381,
+                "side": 4,
+                "wall": 220
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "label": "Open door trigger 80",
+            "seg": 634,
+            "side": 4,
+            "wall": 233,
+            "distance": 870.0542963025516,
+            "trigger": 80,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 376,
+                "side": 0,
+                "wall": 222
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "label": "Open door trigger 81",
+            "seg": 659,
+            "side": 2,
+            "wall": 234,
+            "distance": 275.0151506589001,
+            "trigger": 81,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 369,
+                "side": 2,
+                "wall": 122
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "key",
+            "label": "red key",
+            "seg": 600,
+            "distance": 785.9901951359278,
+            "key": "red"
+          },
+          {
+            "index": 8,
+            "kind": "trigger",
+            "label": "Open wall trigger 26",
+            "seg": 395,
+            "side": 0,
+            "wall": 142,
+            "distance": 1206.183369611283,
+            "trigger": 26,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 397,
+                "side": 4,
+                "wall": 135
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 411,
+            "distance": 339.4905637771522
+          },
+          {
+            "index": 10,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 159,
+            "side": 5,
+            "wall": 202,
+            "distance": 753.4062228398512,
+            "trigger": 70,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      }
+    ],
+    "target_index": 9
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 11",
+    "game": "d2",
+    "mission_name": "Gigalomania 11",
+    "mission_filename": "gigalo11.mn2",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Riviera Waste Disposal",
+        "level_file": "gigaloma.rl2",
+        "robots": 6,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 8160159.072138152,
+        "mine_volume_normalized": 1.7844593253927075,
+        "mine_volume_text": "1.8x",
+        "travel_distance": 908.1975785638564,
+        "travel_time_seconds": 18,
+        "travel_time_text": "0M:18S",
+        "travel_targets_reached": 1,
+        "travel_targets_total": 1,
+        "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open wall trigger 0",
+            "seg": 569,
+            "side": 3,
+            "wall": 62,
+            "distance": 756.2399737196499,
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 568,
+                "side": 4,
+                "wall": 42
+              },
+              {
+                "seg": 568,
+                "side": 0,
+                "wall": 46
+              },
+              {
+                "seg": 568,
+                "side": 2,
+                "wall": 48
+              },
+              {
+                "seg": 568,
+                "side": 5,
+                "wall": 44
+              },
+              {
+                "seg": 569,
+                "side": 4,
+                "wall": 50
+              },
+              {
+                "seg": 569,
+                "side": 5,
+                "wall": 52
+              },
+              {
+                "seg": 569,
+                "side": 0,
+                "wall": 54
+              },
+              {
+                "seg": 569,
+                "side": 2,
+                "wall": 56
+              },
+              {
+                "seg": 570,
+                "side": 0,
+                "wall": 60
+              },
+              {
+                "seg": 570,
+                "side": 5,
+                "wall": 58
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 599,
+            "side": 5,
+            "wall": 63,
+            "distance": 172.1684992665878,
+            "trigger": 1,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "travel_note": "no reactor, exit exists",
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no reactor, exit exists",
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      }
+    ],
+    "target_index": 10
+  },
+  {
+    "status": "ok",
+    "source": "gigalomania 12",
+    "game": "d2",
+    "mission_name": "gigalomania 12",
+    "mission_filename": "gigalo12.mn2",
+    "coop_starts": "4",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "The Underworld",
+        "level_file": "gigaloma.rl2",
+        "robots": 4,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 8,
+        "energy_centers": 4,
+        "mine_volume": 63415763.34228628,
+        "mine_volume_normalized": 13.867726017672895,
+        "mine_volume_text": "14x",
+        "travel_distance": 1205.575233939152,
+        "travel_time_seconds": 24,
+        "travel_time_text": "0M:24S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 377,
+            "distance": 839.3827115686322
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 370,
+            "side": 5,
+            "wall": 161,
+            "distance": 366.1925223705199,
+            "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }

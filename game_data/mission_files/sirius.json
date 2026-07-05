@@ -23,7 +23,7 @@
         "mine_volume_text": "1.6x",
         "travel_distance": 5743.922943411329,
         "travel_time_seconds": 115,
-        "travel_time_text": "1M:55S",
+        "travel_time_text": "2M:55S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
@@ -81,7 +81,7 @@
         "mine_volume_text": "6.4x",
         "travel_distance": 14443.9995132487,
         "travel_time_seconds": 289,
-        "travel_time_text": "4M:49S",
+        "travel_time_text": "5M:49S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
@@ -98,56 +98,14 @@
           },
           {
             "index": 1,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 320,
-            "side": 5,
-            "wall": 60,
-            "distance": 183.3263734820751,
-            "opens": [
-              {
-                "seg": 320,
-                "side": 5,
-                "wall": 60
-              },
-              {
-                "seg": 157,
-                "side": 0,
-                "wall": 61
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 167,
-            "side": 5,
-            "wall": 42,
-            "distance": 317.8022166386306,
-            "opens": [
-              {
-                "seg": 167,
-                "side": 5,
-                "wall": 42
-              },
-              {
-                "seg": 168,
-                "side": 4,
-                "wall": 43
-              }
-            ]
-          },
-          {
-            "index": 3,
             "kind": "key",
             "label": "blue key",
             "seg": 210,
-            "distance": 1672.5892215441806,
+            "distance": 1536.178247579633,
             "key": "blue"
           },
           {
-            "index": 4,
+            "index": 2,
             "kind": "key",
             "label": "gold key",
             "seg": 75,
@@ -155,7 +113,7 @@
             "key": "gold"
           },
           {
-            "index": 5,
+            "index": 3,
             "kind": "key",
             "label": "red key",
             "seg": 183,
@@ -163,14 +121,14 @@
             "key": "red"
           },
           {
-            "index": 6,
+            "index": 4,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 144,
             "distance": 1950.743104521719
           },
           {
-            "index": 7,
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 317,
@@ -197,14 +155,14 @@
         "mine_volume_text": "5.2x",
         "travel_distance": 2374.450219612141,
         "travel_time_seconds": 47,
-        "travel_time_text": "0M:47S",
+        "travel_time_text": "1M:47S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -214,13 +172,47 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 266,
+            "distance": 538.3364731550051,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 46,
+            "distance": 1568.9720594026705,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 85,
+            "distance": 2969.121449416814,
+            "key": "red"
+          },
+          {
+            "index": 4,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 184,
-            "distance": 231.0464036030285
+            "distance": 2676.16716734295
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 569,
+            "side": 2,
+            "wall": 72,
+            "distance": 727.8778709656631,
+            "trigger": 0,
+            "trigger_type": "unknown"
           }
-        ],
-        "route_problem": "red key route dependency loop"
+        ]
       }
     ],
     "target_index": 0

@@ -3,7 +3,7 @@
     "status": "ok",
     "source": "Trine - Episode 1",
     "game": "d1",
-    "mission_name": "trine1",
+    "mission_name": "Trine - Episode 1",
     "mission_filename": "trine1.msn",
     "coop_starts": "4",
     "level_count": 10,
@@ -173,20 +173,28 @@
           {
             "index": 2,
             "kind": "key",
-            "label": "red key",
-            "seg": 424,
-            "distance": 2384.443380944531,
-            "key": "red"
+            "label": "gold key",
+            "seg": 652,
+            "distance": 1621.031731380402,
+            "key": "gold"
           },
           {
             "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 424,
+            "distance": 1583.7480448154965,
+            "key": "red"
+          },
+          {
+            "index": 4,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 328,
             "distance": 1109.638739584344
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 553,
@@ -287,7 +295,7 @@
         "mine_volume_text": "3.3x",
         "travel_distance": 11490.115022987053,
         "travel_time_seconds": 230,
-        "travel_time_text": "3M:50S",
+        "travel_time_text": "4M:50S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
@@ -453,20 +461,36 @@
           {
             "index": 1,
             "kind": "key",
-            "label": "red key",
-            "seg": 565,
-            "distance": 434.4599763018758,
-            "key": "red"
+            "label": "blue key",
+            "seg": 156,
+            "distance": 537.3289605848609,
+            "key": "blue"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 385,
+            "distance": 787.0092896589224,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 565,
+            "distance": 820.7088478708612,
+            "key": "red"
+          },
+          {
+            "index": 4,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 657,
             "distance": 608.9326788061417
           },
           {
-            "index": 3,
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 560,
@@ -493,7 +517,7 @@
         "mine_volume_text": "3.5x",
         "travel_distance": 8412.336907324701,
         "travel_time_seconds": 168,
-        "travel_time_text": "2M:48S",
+        "travel_time_text": "3M:48S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -518,13 +542,29 @@
           },
           {
             "index": 2,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 318,
-            "distance": 1502.5904404592636
+            "kind": "key",
+            "label": "gold key",
+            "seg": 606,
+            "distance": 1722.380946186546,
+            "key": "gold"
           },
           {
             "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 727,
+            "distance": 1358.9325406875473,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 318,
+            "distance": 1139.1420349602643
+          },
+          {
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 114,

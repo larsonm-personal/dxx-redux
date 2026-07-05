@@ -23,7 +23,7 @@
         "mine_volume_text": "0.55x",
         "travel_distance": 2014.7469531131394,
         "travel_time_seconds": 40,
-        "travel_time_text": "0M:40S",
+        "travel_time_text": "1M:40S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 1,
@@ -81,7 +81,7 @@
         "mine_volume_text": "0.47x",
         "travel_distance": 2500.9809032143885,
         "travel_time_seconds": 50,
-        "travel_time_text": "0M:50S",
+        "travel_time_text": "1M:50S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
@@ -118,7 +118,7 @@
             "seg": 157,
             "side": 3,
             "wall": 57,
-            "distance": 350,
+            "distance": 350.0,
             "trigger": 4,
             "trigger_type": "unknown"
           }
@@ -139,7 +139,7 @@
         "mine_volume_text": "0.50x",
         "travel_distance": 4985.9340428213145,
         "travel_time_seconds": 100,
-        "travel_time_text": "1M:40S",
+        "travel_time_text": "2M:40S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 2,
@@ -272,7 +272,7 @@
             "seg": 266,
             "side": 2,
             "wall": 54,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 266,
@@ -293,7 +293,7 @@
             "seg": 267,
             "side": 2,
             "wall": 56,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 267,
@@ -314,7 +314,7 @@
             "seg": 268,
             "side": 2,
             "wall": 58,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 268,
@@ -335,7 +335,7 @@
             "seg": 269,
             "side": 2,
             "wall": 60,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 269,
@@ -356,7 +356,7 @@
             "seg": 270,
             "side": 2,
             "wall": 62,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 270,
@@ -377,7 +377,7 @@
             "seg": 271,
             "side": 2,
             "wall": 64,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 271,
@@ -398,7 +398,7 @@
             "seg": 272,
             "side": 2,
             "wall": 66,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 272,
@@ -419,7 +419,7 @@
             "seg": 273,
             "side": 2,
             "wall": 68,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 273,
@@ -440,7 +440,7 @@
             "seg": 274,
             "side": 2,
             "wall": 70,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 274,
@@ -461,7 +461,7 @@
             "seg": 275,
             "side": 2,
             "wall": 72,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 275,
@@ -482,7 +482,7 @@
             "seg": 276,
             "side": 2,
             "wall": 74,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 276,
@@ -503,7 +503,7 @@
             "seg": 277,
             "side": 2,
             "wall": 76,
-            "distance": 40,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 277,
@@ -522,7 +522,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 282,
-            "distance": 110
+            "distance": 110.0
           },
           {
             "index": 18,
@@ -552,7 +552,7 @@
         "mine_volume_text": "3.8x",
         "travel_distance": 5947.9681245643,
         "travel_time_seconds": 119,
-        "travel_time_text": "1M:59S",
+        "travel_time_text": "2M:59S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
@@ -572,7 +572,7 @@
             "kind": "key",
             "label": "blue key",
             "seg": 1,
-            "distance": 965,
+            "distance": 965.0,
             "key": "blue"
           },
           {
@@ -580,7 +580,7 @@
             "kind": "key",
             "label": "gold key",
             "seg": 145,
-            "distance": 1160,
+            "distance": 1160.0,
             "key": "gold"
           },
           {
@@ -588,7 +588,7 @@
             "kind": "key",
             "label": "red key",
             "seg": 147,
-            "distance": 620,
+            "distance": 620.0,
             "key": "red"
           },
           {
@@ -700,7 +700,7 @@
         "mine_volume_text": "3.3x",
         "travel_distance": 7807.623438008345,
         "travel_time_seconds": 156,
-        "travel_time_text": "2M:36S",
+        "travel_time_text": "3M:36S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,

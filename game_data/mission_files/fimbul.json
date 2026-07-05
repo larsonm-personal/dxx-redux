@@ -251,7 +251,7 @@
         "mine_volume_text": "8.2x",
         "travel_distance": 7680.687086862928,
         "travel_time_seconds": 154,
-        "travel_time_text": "2M:34S",
+        "travel_time_text": "3M:34S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
@@ -269,20 +269,36 @@
           {
             "index": 1,
             "kind": "key",
-            "label": "gold key",
-            "seg": 226,
-            "distance": 2026.8603515916723,
-            "key": "gold"
+            "label": "blue key",
+            "seg": 218,
+            "distance": 1326.1070203775137,
+            "key": "blue"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 226,
+            "distance": 892.4917436494236,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 363,
+            "distance": 2776.248530244644,
+            "key": "red"
+          },
+          {
+            "index": 4,
             "kind": "trigger",
-            "label": "Open wall trigger 3",
-            "seg": 45,
-            "side": 2,
-            "wall": 66,
-            "distance": 2403.1377562098114,
-            "trigger": 3,
+            "label": "Open wall trigger 5",
+            "seg": 343,
+            "side": 4,
+            "wall": 65,
+            "distance": 382.9308126678701,
+            "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
@@ -299,12 +315,12 @@
             ]
           },
           {
-            "index": 3,
+            "index": 5,
             "kind": "trigger",
             "label": "Open wall trigger 2",
-            "seg": 51,
+            "seg": 78,
             "wall": 61,
-            "distance": 111.57695687682546,
+            "distance": 101.59650386418473,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -322,22 +338,14 @@
             ]
           },
           {
-            "index": 4,
-            "kind": "key",
-            "label": "red key",
-            "seg": 363,
-            "distance": 591.8004139107602,
-            "key": "red"
-          },
-          {
-            "index": 5,
+            "index": 6,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 7,
-            "distance": 1297.8819173628501
+            "distance": 832.4773911290107
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 31,

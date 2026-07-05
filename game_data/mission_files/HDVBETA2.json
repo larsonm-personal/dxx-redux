@@ -135,7 +135,7 @@
       {
         "level_num": 3,
         "secret": false,
-        "level_name": "Tricerius: Gore Acterain Test Facility",
+        "level_name": "Tricerius: Gore Acterain Test Facil",
         "level_file": "level03.rdl",
         "robots": 67,
         "hostages": 2,
@@ -147,23 +147,85 @@
         "mine_volume_text": "1.9x",
         "travel_distance": 8202.06899290314,
         "travel_time_seconds": 164,
-        "travel_time_text": "2M:44S",
+        "travel_time_text": "3M:44S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 155,
+            "distance": 1605.7238595159104,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 210,
+            "distance": 1199.504773532645,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 342,
+            "distance": 866.1054627028835,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 369,
+            "distance": 1552.7542861742224
+          },
+          {
+            "index": 5,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 369,
+            "side": 5,
+            "wall": 73,
+            "distance": 10.000016253207175,
+            "opens": [
+              {
+                "seg": 369,
+                "side": 5,
+                "wall": 73
+              },
+              {
+                "seg": 366,
+                "side": 4,
+                "wall": 74
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 421,
+            "side": 4,
+            "wall": 85,
+            "distance": 584.1488397245464,
+            "trigger": 4,
+            "trigger_type": "unknown"
           }
-        ],
-        "route_problem": "gold key route dependency loop"
+        ]
       }
     ],
     "target_index": 0

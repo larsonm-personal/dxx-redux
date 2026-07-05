@@ -23,7 +23,7 @@
         "mine_volume_text": "15x",
         "travel_distance": 28822.184069196224,
         "travel_time_seconds": 576,
-        "travel_time_text": "9M:36S",
+        "travel_time_text": "10M:36S",
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 3,
@@ -97,7 +97,7 @@
             "seg": 753,
             "side": 1,
             "wall": 103,
-            "distance": 70,
+            "distance": 70.0,
             "opens": [
               {
                 "seg": 753,
@@ -118,7 +118,7 @@
             "seg": 736,
             "side": 1,
             "wall": 88,
-            "distance": 60,
+            "distance": 60.0,
             "opens": [
               {
                 "seg": 736,
@@ -263,7 +263,7 @@
             "seg": 768,
             "side": 4,
             "wall": 158,
-            "distance": 50,
+            "distance": 50.0,
             "opens": [
               {
                 "seg": 768,
@@ -305,7 +305,7 @@
         "mine_volume_text": "12x",
         "travel_distance": 17626.328898178475,
         "travel_time_seconds": 353,
-        "travel_time_text": "5M:53S",
+        "travel_time_text": "6M:53S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -369,7 +369,7 @@
         "mine_volume": 614386627.2976665,
         "mine_volume_normalized": 134.35374687991543,
         "mine_volume_text": "130x",
-        "travel_distance": 0,
+        "travel_distance": 0.0,
         "travel_time_seconds": 0,
         "travel_time_text": "0M:00S",
         "travel_targets_reached": 0,

@@ -168,7 +168,7 @@
         "mine_volume_text": "3.0x",
         "travel_distance": 4895.895034603575,
         "travel_time_seconds": 98,
-        "travel_time_text": "1M:38S",
+        "travel_time_text": "2M:38S",
         "travel_targets_reached": 3,
         "travel_targets_total": 3,
         "travel_key_detours": 1,
@@ -672,7 +672,7 @@
         "mine_volume_text": "1.7x",
         "travel_distance": 1717.206918783524,
         "travel_time_seconds": 34,
-        "travel_time_text": "0M:34S",
+        "travel_time_text": "1M:34S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
@@ -689,12 +689,20 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 25,
+            "distance": 468.7865287787579,
+            "key": "gold"
+          },
+          {
+            "index": 2,
             "kind": "hidden_door",
             "label": "Hidden door",
             "seg": 9,
             "side": 5,
             "wall": 4,
-            "distance": 155.77068103307084,
+            "distance": 349.0158477456871,
             "opens": [
               {
                 "seg": 9,
@@ -709,19 +717,11 @@
             ]
           },
           {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 25,
-            "distance": 349.0158477456871,
-            "key": "gold"
-          },
-          {
             "index": 3,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 80,
-            "distance": 760.6102793998521
+            "distance": 447.5944316541649
           },
           {
             "index": 4,
@@ -756,7 +756,7 @@
         "mine_volume_text": "3.2x",
         "travel_distance": 4502.548036783009,
         "travel_time_seconds": 90,
-        "travel_time_text": "1M:30S",
+        "travel_time_text": "2M:30S",
         "travel_targets_reached": 3,
         "travel_targets_total": 3,
         "travel_key_detours": 0,

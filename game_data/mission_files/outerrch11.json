@@ -81,7 +81,7 @@
         "mine_volume_text": "1.1x",
         "travel_distance": 5562.0124035046465,
         "travel_time_seconds": 111,
-        "travel_time_text": "1M:51S",
+        "travel_time_text": "2M:51S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 2,
@@ -103,7 +103,7 @@
             "seg": 17,
             "side": 1,
             "wall": 2,
-            "distance": 70,
+            "distance": 70.0,
             "opens": [
               {
                 "seg": 17,
@@ -156,7 +156,7 @@
       {
         "level_num": 3,
         "secret": false,
-        "level_name": "Defense Outpost for Orcean Militaries",
+        "level_name": "Defense Outpost for Orcean Militari",
         "level_file": "doom.rdl",
         "robots": 87,
         "hostages": 4,
@@ -234,7 +234,7 @@
         "mine_volume_text": "5.2x",
         "travel_distance": 5556.492605898362,
         "travel_time_seconds": 111,
-        "travel_time_text": "1M:51S",
+        "travel_time_text": "2M:51S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -317,24 +317,11 @@
           },
           {
             "index": 1,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 139,
-            "side": 3,
-            "wall": 9,
-            "distance": 1000.0615108218597,
-            "opens": [
-              {
-                "seg": 139,
-                "side": 3,
-                "wall": 9
-              },
-              {
-                "seg": 186,
-                "side": 1,
-                "wall": 8
-              }
-            ]
+            "kind": "key",
+            "label": "blue key",
+            "seg": 292,
+            "distance": 1414.0874618645762,
+            "key": "blue"
           },
           {
             "index": 2,
@@ -343,7 +330,7 @@
             "seg": 103,
             "side": 3,
             "wall": 7,
-            "distance": 211.3195642648561,
+            "distance": 826.9034713995466,
             "opens": [
               {
                 "seg": 103,
@@ -360,25 +347,38 @@
           {
             "index": 3,
             "kind": "key",
-            "label": "blue key",
-            "seg": 292,
-            "distance": 826.9034713995466,
-            "key": "blue"
+            "label": "gold key",
+            "seg": 306,
+            "distance": 324.17230709090006,
+            "key": "gold"
           },
           {
             "index": 4,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 306,
-            "distance": 1090.2481531874646,
-            "key": "gold"
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 139,
+            "side": 3,
+            "wall": 9,
+            "distance": 474.664246052774,
+            "opens": [
+              {
+                "seg": 139,
+                "side": 3,
+                "wall": 9
+              },
+              {
+                "seg": 186,
+                "side": 1,
+                "wall": 8
+              }
+            ]
           },
           {
             "index": 5,
             "kind": "key",
             "label": "red key",
             "seg": 374,
-            "distance": 1174.0330594360119,
+            "distance": 761.0129534129277,
             "key": "red"
           },
           {
@@ -416,7 +416,7 @@
         "mine_volume_text": "17x",
         "travel_distance": 7998.77611360393,
         "travel_time_seconds": 160,
-        "travel_time_text": "2M:40S",
+        "travel_time_text": "3M:40S",
         "travel_targets_reached": 9,
         "travel_targets_total": 9,
         "travel_key_detours": 3,
@@ -457,19 +457,12 @@
           },
           {
             "index": 4,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 127,
-            "distance": 1338.880980831797
-          },
-          {
-            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 564,
             "side": 5,
             "wall": 74,
-            "distance": 295.24178864457963,
+            "distance": 1630.1227389585656,
             "trigger": 4,
             "trigger_type": "unknown"
           }
@@ -494,7 +487,7 @@
         "mine_volume_text": "3.8x",
         "travel_distance": 11423.243802737437,
         "travel_time_seconds": 228,
-        "travel_time_text": "3M:48S",
+        "travel_time_text": "4M:48S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,

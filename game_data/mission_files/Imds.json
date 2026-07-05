@@ -40,14 +40,41 @@
           },
           {
             "index": 1,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 91,
-            "distance": 420,
-            "key": "gold"
+            "kind": "trigger",
+            "label": "Open door trigger 0",
+            "seg": 186,
+            "side": 5,
+            "wall": 30,
+            "distance": 1102.398590235698,
+            "trigger": 0,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 165,
+                "side": 5,
+                "wall": 29
+              }
+            ]
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 188,
+            "distance": 1490.640156123853,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 91,
+            "distance": 1170.0951996273172,
+            "key": "gold"
+          },
+          {
+            "index": 4,
             "kind": "trigger",
             "label": "Open wall trigger 6",
             "seg": 9,
@@ -71,7 +98,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 5,
             "kind": "key",
             "label": "red key",
             "seg": 7,
@@ -79,7 +106,7 @@
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 6,
             "kind": "trigger",
             "label": "Open wall trigger 4",
             "seg": 42,
@@ -103,7 +130,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 7,
             "kind": "trigger",
             "label": "Open door trigger 3",
             "seg": 38,
@@ -121,14 +148,14 @@
             ]
           },
           {
-            "index": 6,
+            "index": 8,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 46,
             "distance": 211.0980080594557
           },
           {
-            "index": 7,
+            "index": 9,
             "kind": "exit",
             "label": "Exit",
             "seg": 242,
@@ -189,7 +216,7 @@
             "seg": 77,
             "side": 4,
             "wall": 14,
-            "distance": 70,
+            "distance": 70.0,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"

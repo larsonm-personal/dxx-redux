@@ -1,385 +1,6 @@
 [
   {
     "status": "ok",
-    "source": "Descent Max Anarchy (fix)",
-    "game": "d2",
-    "mission_name": "Descent Max Anarchy (fix)",
-    "mission_filename": "maxlnk_f.mn2",
-    "level_count": 6,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "Combat Center",
-        "level_file": "psxlink1.rl2",
-        "robots": 0,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 3213069.497735789,
-        "mine_volume_normalized": 0.702632360188434,
-        "mine_volume_text": "0.70x",
-        "travel_distance": 861.8962345638527,
-        "travel_time_seconds": 17,
-        "travel_time_text": "0M:17S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 21
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 66,
-            "distance": 490.4928875227743
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 56,
-            "side": 4,
-            "wall": 12,
-            "distance": 371.4033470410783,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 2,
-        "secret": false,
-        "level_name": "Old Friend",
-        "level_file": "psxlink2.rl2",
-        "robots": 0,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 5528088.860764011,
-        "mine_volume_normalized": 1.2088795858001722,
-        "mine_volume_text": "1.2x",
-        "travel_distance": 1619.9832572579835,
-        "travel_time_seconds": 32,
-        "travel_time_text": "0M:32S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 99
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 27,
-            "distance": 1060.0314877024405
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 18,
-            "side": 4,
-            "wall": 39,
-            "distance": 884.7201989609478,
-            "trigger": 10,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 3,
-        "secret": false,
-        "level_name": "Milestone",
-        "level_file": "psxlink3.rl2",
-        "robots": 0,
-        "hostages": 0,
-        "secrets": 3,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 3940298.9125205064,
-        "mine_volume_normalized": 0.8616625089196449,
-        "mine_volume_text": "0.86x",
-        "travel_distance": 983.7460154688617,
-        "travel_time_seconds": 20,
-        "travel_time_text": "0M:20S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 79
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open door trigger 3",
-            "seg": 6,
-            "side": 0,
-            "wall": 32,
-            "distance": 594.1416726002726,
-            "trigger": 3,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 113,
-                "side": 4,
-                "wall": 30
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 114,
-            "distance": 130
-          },
-          {
-            "index": 3,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 104,
-            "side": 4,
-            "wall": 16,
-            "distance": 769.4992205705992,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 4,
-        "secret": false,
-        "level_name": "Bandit's Cove",
-        "level_file": "psxlink4.rl2",
-        "robots": 0,
-        "hostages": 0,
-        "secrets": 4,
-        "matcens": 0,
-        "energy_centers": 2,
-        "mine_volume": 4144907.986268276,
-        "mine_volume_normalized": 0.9064063143383182,
-        "mine_volume_text": "0.91x",
-        "travel_distance": 770.0533528092462,
-        "travel_time_seconds": 15,
-        "travel_time_text": "0M:15S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 30
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 81,
-            "distance": 455.6126463689721
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 85,
-            "side": 4,
-            "wall": 20,
-            "distance": 314.4407064402741,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 5,
-        "secret": false,
-        "level_name": "Attack Run",
-        "level_file": "psxlink5.rl2",
-        "robots": 0,
-        "hostages": 0,
-        "secrets": 4,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 1954167.0015725652,
-        "mine_volume_normalized": 0.4273362196133218,
-        "mine_volume_text": "0.43x",
-        "travel_distance": 335.40545232205193,
-        "travel_time_seconds": 7,
-        "travel_time_text": "0M:07S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 91
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open door trigger 2",
-            "seg": 5,
-            "side": 5,
-            "wall": 28,
-            "distance": 81.06084859696475,
-            "trigger": 2,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 122,
-                "side": 4,
-                "wall": 24
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 131,
-            "distance": 145.95528206067564
-          },
-          {
-            "index": 3,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 124,
-            "side": 4,
-            "wall": 20,
-            "distance": 177.96482473072885,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 6,
-        "secret": false,
-        "level_name": "Tactics XIII",
-        "level_file": "psxlink6.rl2",
-        "robots": 0,
-        "hostages": 0,
-        "secrets": 1,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 2788158.283390147,
-        "mine_volume_normalized": 0.6097129976858174,
-        "mine_volume_text": "0.61x",
-        "travel_distance": 1201.428163369586,
-        "travel_time_seconds": 24,
-        "travel_time_text": "0M:24S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 200
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 197,
-            "distance": 773.2623211331685
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 202,
-            "side": 4,
-            "wall": 0,
-            "distance": 428.1658422364176,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      }
-    ],
-    "target_index": 0
-  },
-  {
-    "status": "ok",
     "source": "Descent Maximum (fixed)",
     "game": "d2",
     "mission_name": "Descent Maximum (fixed)",
@@ -402,7 +23,7 @@
         "mine_volume_text": "0.51x",
         "travel_distance": 2223.0292238853494,
         "travel_time_seconds": 44,
-        "travel_time_text": "0M:44S",
+        "travel_time_text": "1M:44S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 1,
@@ -555,7 +176,7 @@
         "mine_volume_text": "0.80x",
         "travel_distance": 5110.32779518578,
         "travel_time_seconds": 102,
-        "travel_time_text": "1M:42S",
+        "travel_time_text": "2M:42S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
@@ -634,7 +255,7 @@
         "mine_volume_text": "2.1x",
         "travel_distance": 2033.1390307653555,
         "travel_time_seconds": 41,
-        "travel_time_text": "0M:41S",
+        "travel_time_text": "1M:41S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 0,
@@ -664,7 +285,7 @@
             "seg": 181,
             "side": 4,
             "wall": 80,
-            "distance": 30,
+            "distance": 30.0,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1034,7 +655,7 @@
         "mine_volume_text": "2.4x",
         "travel_distance": 8463.588999431133,
         "travel_time_seconds": 169,
-        "travel_time_text": "2M:49S",
+        "travel_time_text": "3M:49S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
@@ -1147,7 +768,7 @@
         "mine_volume_text": "1.7x",
         "travel_distance": 4726.899480441074,
         "travel_time_seconds": 95,
-        "travel_time_text": "1M:35S",
+        "travel_time_text": "2M:35S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
@@ -1507,7 +1128,7 @@
             "seg": 24,
             "side": 5,
             "wall": 60,
-            "distance": 70,
+            "distance": 70.0,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1863,7 +1484,7 @@
             "seg": 136,
             "side": 4,
             "wall": 40,
-            "distance": 20,
+            "distance": 20.0,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2007,7 +1628,7 @@
         "mine_volume_text": "1.3x",
         "travel_distance": 2104.4913399643415,
         "travel_time_seconds": 42,
-        "travel_time_text": "0M:42S",
+        "travel_time_text": "1M:42S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
@@ -2128,7 +1749,7 @@
         "mine_volume_text": "1.6x",
         "travel_distance": 2268.450914369981,
         "travel_time_seconds": 45,
-        "travel_time_text": "0M:45S",
+        "travel_time_text": "1M:45S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 0,
@@ -2325,7 +1946,7 @@
         "mine_volume_text": "1.6x",
         "travel_distance": 5175.970158475333,
         "travel_time_seconds": 104,
-        "travel_time_text": "1M:44S",
+        "travel_time_text": "2M:44S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
@@ -2458,7 +2079,7 @@
             "seg": 171,
             "side": 5,
             "wall": 74,
-            "distance": 10,
+            "distance": 10.0,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2509,7 +2130,7 @@
             "seg": 3,
             "side": 0,
             "wall": 80,
-            "distance": 80,
+            "distance": 80.0,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2653,7 +2274,7 @@
         "mine_volume_text": "1.1x",
         "travel_distance": 4603.57983392868,
         "travel_time_seconds": 92,
-        "travel_time_text": "1M:32S",
+        "travel_time_text": "2M:32S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
@@ -2799,7 +2420,7 @@
         "mine_volume_text": "2.0x",
         "travel_distance": 5115.202404694369,
         "travel_time_seconds": 102,
-        "travel_time_text": "1M:42S",
+        "travel_time_text": "2M:42S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -2915,7 +2536,7 @@
         "mine_volume_text": "2.2x",
         "travel_distance": 4972.31077900501,
         "travel_time_seconds": 99,
-        "travel_time_text": "1M:39S",
+        "travel_time_text": "2M:39S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 2,
@@ -3128,7 +2749,7 @@
         "mine_volume_text": "1.4x",
         "travel_distance": 2719.9844440876363,
         "travel_time_seconds": 54,
-        "travel_time_text": "0M:54S",
+        "travel_time_text": "1M:54S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 2,
@@ -3268,7 +2889,7 @@
         "mine_volume_text": "3.5x",
         "travel_distance": 7778.468512478421,
         "travel_time_seconds": 156,
-        "travel_time_text": "2M:36S",
+        "travel_time_text": "3M:36S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 2,
@@ -3700,7 +3321,7 @@
         "mine_volume_text": "0.53x",
         "travel_distance": 2431.182649643944,
         "travel_time_seconds": 49,
-        "travel_time_text": "0M:49S",
+        "travel_time_text": "1M:49S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
@@ -3786,6 +3407,386 @@
             "wall": 36,
             "distance": 229.38088950093925,
             "trigger": 6,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      }
+    ],
+    "target_index": 0
+  },
+  {
+    "status": "ok",
+    "source": "Descent Max Anarchy (fix)",
+    "game": "d2",
+    "mission_name": "Descent Max Anarchy (fix)",
+    "mission_filename": "maxlnk_f.mn2",
+    "coop_starts": "1",
+    "level_count": 6,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Combat Center",
+        "level_file": "psxlink1.rl2",
+        "robots": 0,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 3213069.497735789,
+        "mine_volume_normalized": 0.702632360188434,
+        "mine_volume_text": "0.70x",
+        "travel_distance": 861.8962345638527,
+        "travel_time_seconds": 17,
+        "travel_time_text": "0M:17S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 21
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 66,
+            "distance": 490.4928875227743
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 56,
+            "side": 4,
+            "wall": 12,
+            "distance": 371.4033470410783,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Old Friend",
+        "level_file": "psxlink2.rl2",
+        "robots": 0,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 5528088.860764011,
+        "mine_volume_normalized": 1.2088795858001722,
+        "mine_volume_text": "1.2x",
+        "travel_distance": 1619.9832572579835,
+        "travel_time_seconds": 32,
+        "travel_time_text": "1M:32S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 99
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 27,
+            "distance": 1060.0314877024405
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 18,
+            "side": 4,
+            "wall": 39,
+            "distance": 884.7201989609478,
+            "trigger": 10,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      },
+      {
+        "level_num": 3,
+        "secret": false,
+        "level_name": "Milestone",
+        "level_file": "psxlink3.rl2",
+        "robots": 0,
+        "hostages": 0,
+        "secrets": 3,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 3940298.9125205064,
+        "mine_volume_normalized": 0.8616625089196449,
+        "mine_volume_text": "0.86x",
+        "travel_distance": 983.7460154688617,
+        "travel_time_seconds": 20,
+        "travel_time_text": "0M:20S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 79
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open door trigger 3",
+            "seg": 6,
+            "side": 0,
+            "wall": 32,
+            "distance": 594.1416726002726,
+            "trigger": 3,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 113,
+                "side": 4,
+                "wall": 30
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 114,
+            "distance": 130.0
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 104,
+            "side": 4,
+            "wall": 16,
+            "distance": 769.4992205705992,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      },
+      {
+        "level_num": 4,
+        "secret": false,
+        "level_name": "Bandit's Cove",
+        "level_file": "psxlink4.rl2",
+        "robots": 0,
+        "hostages": 0,
+        "secrets": 4,
+        "matcens": 0,
+        "energy_centers": 2,
+        "mine_volume": 4144907.986268276,
+        "mine_volume_normalized": 0.9064063143383182,
+        "mine_volume_text": "0.91x",
+        "travel_distance": 770.0533528092462,
+        "travel_time_seconds": 15,
+        "travel_time_text": "0M:15S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 30
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 81,
+            "distance": 455.6126463689721
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 85,
+            "side": 4,
+            "wall": 20,
+            "distance": 314.4407064402741,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      },
+      {
+        "level_num": 5,
+        "secret": false,
+        "level_name": "Attack Run",
+        "level_file": "psxlink5.rl2",
+        "robots": 0,
+        "hostages": 0,
+        "secrets": 4,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 1954167.0015725652,
+        "mine_volume_normalized": 0.4273362196133218,
+        "mine_volume_text": "0.43x",
+        "travel_distance": 335.40545232205193,
+        "travel_time_seconds": 7,
+        "travel_time_text": "0M:07S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 91
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "label": "Open door trigger 2",
+            "seg": 5,
+            "side": 5,
+            "wall": 28,
+            "distance": 81.06084859696475,
+            "trigger": 2,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 122,
+                "side": 4,
+                "wall": 24
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 131,
+            "distance": 145.95528206067564
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 124,
+            "side": 4,
+            "wall": 20,
+            "distance": 177.96482473072885,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      },
+      {
+        "level_num": 6,
+        "secret": false,
+        "level_name": "Tactics XIII",
+        "level_file": "psxlink6.rl2",
+        "robots": 0,
+        "hostages": 0,
+        "secrets": 1,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 2788158.283390147,
+        "mine_volume_normalized": 0.6097129976858174,
+        "mine_volume_text": "0.61x",
+        "travel_distance": 1201.428163369586,
+        "travel_time_seconds": 24,
+        "travel_time_text": "0M:24S",
+        "travel_targets_reached": 2,
+        "travel_targets_total": 2,
+        "travel_key_detours": 0,
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 200
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 197,
+            "distance": 773.2623211331685
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 202,
+            "side": 4,
+            "wall": 0,
+            "distance": 428.1658422364176,
+            "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }

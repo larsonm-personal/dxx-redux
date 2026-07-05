@@ -23,7 +23,7 @@
         "mine_volume_text": "3.3x",
         "travel_distance": 4863.032689366368,
         "travel_time_seconds": 97,
-        "travel_time_text": "1M:37S",
+        "travel_time_text": "2M:37S",
         "travel_targets_reached": 9,
         "travel_targets_total": 9,
         "travel_key_detours": 1,
@@ -40,33 +40,18 @@
           },
           {
             "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 0",
-            "seg": 192,
-            "wall": 46,
-            "distance": 1691.3065071390024,
-            "trigger": 0,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 217,
-                "side": 1,
-                "wall": 45
-              },
-              {
-                "seg": 214,
-                "side": 3,
-                "wall": 44
-              }
-            ]
+            "kind": "key",
+            "label": "blue key",
+            "seg": 194,
+            "distance": 1693.244076738198,
+            "key": "blue"
           },
           {
             "index": 2,
             "kind": "key",
             "label": "red key",
             "seg": 204,
-            "distance": 1824.4662407416204,
+            "distance": 1006.0050474350003,
             "key": "red"
           },
           {
@@ -74,7 +59,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 274,
-            "distance": 728.1334210584996
+            "distance": 1976.1187875354935
           },
           {
             "index": 4,
@@ -300,7 +285,7 @@
             "kind": "key",
             "label": "red key",
             "seg": 71,
-            "distance": 137,
+            "distance": 137.0,
             "key": "red"
           },
           {
@@ -908,7 +893,7 @@
         "mine_volume": 17852833.857381895,
         "mine_volume_normalized": 3.9040483867852265,
         "mine_volume_text": "3.9x",
-        "travel_distance": 417,
+        "travel_distance": 417.0,
         "travel_time_seconds": 8,
         "travel_time_text": "0M:08S",
         "travel_targets_reached": 2,

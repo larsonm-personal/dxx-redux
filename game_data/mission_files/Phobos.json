@@ -23,7 +23,7 @@
         "mine_volume_text": "4.8x",
         "travel_distance": 2376.3076174686275,
         "travel_time_seconds": 48,
-        "travel_time_text": "0M:48S",
+        "travel_time_text": "1M:48S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 0,
@@ -40,11 +40,19 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 300,
+            "distance": 1348.2953199200842,
+            "key": "blue"
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "label": "Open wall trigger 1",
-            "seg": 102,
+            "seg": 127,
             "wall": 9,
-            "distance": 786.1609116491018,
+            "distance": 358.97114317029974,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -62,47 +70,15 @@
             ]
           },
           {
-            "index": 2,
-            "kind": "trigger",
-            "label": "Open wall trigger 0",
-            "seg": 154,
-            "side": 5,
-            "wall": 8,
-            "distance": 1181.5832580060028,
-            "trigger": 0,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 154,
-                "side": 0,
-                "wall": 7
-              },
-              {
-                "seg": 152,
-                "side": 2,
-                "wall": 6
-              }
-            ]
-          },
-          {
             "index": 3,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 300,
-            "distance": 1150.4491404066566,
-            "key": "blue"
-          },
-          {
-            "index": 4,
             "kind": "key",
             "label": "gold key",
             "seg": 323,
-            "distance": 1900.734336480728,
+            "distance": 1619.7054796510276,
             "key": "gold"
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "key",
             "label": "red key",
             "seg": 279,
@@ -110,14 +86,14 @@
             "key": "red"
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 231,
             "distance": 1550.8928909660513
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "exit",
             "label": "Exit",
             "seg": 74,
@@ -149,7 +125,7 @@
         "mine_volume_text": "7.4x",
         "travel_distance": 19751.826721908634,
         "travel_time_seconds": 395,
-        "travel_time_text": "6M:35S",
+        "travel_time_text": "7M:35S",
         "travel_targets_reached": 12,
         "travel_targets_total": 12,
         "travel_key_detours": 3,
@@ -228,7 +204,7 @@
         "mine_volume_text": "6.1x",
         "travel_distance": 10918.69879668353,
         "travel_time_seconds": 218,
-        "travel_time_text": "3M:38S",
+        "travel_time_text": "4M:38S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -464,7 +440,7 @@
         "mine_volume_text": "2.1x",
         "travel_distance": 4789.558303175485,
         "travel_time_seconds": 96,
-        "travel_time_text": "1M:36S",
+        "travel_time_text": "2M:36S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 0,
@@ -519,7 +495,7 @@
         "mine_volume_text": "6.0x",
         "travel_distance": 1947.2570647572666,
         "travel_time_seconds": 39,
-        "travel_time_text": "0M:39S",
+        "travel_time_text": "1M:39S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,

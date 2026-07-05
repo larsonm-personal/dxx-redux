@@ -23,7 +23,7 @@
         "mine_volume_text": "1.3x",
         "travel_distance": 2723.8744295687784,
         "travel_time_seconds": 54,
-        "travel_time_text": "0M:54S",
+        "travel_time_text": "1M:54S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 2,
@@ -68,7 +68,7 @@
             "seg": 461,
             "side": 5,
             "wall": 28,
-            "distance": 210,
+            "distance": 210.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -101,7 +101,7 @@
         "mine_volume_text": "3.6x",
         "travel_distance": 2388.7725637990043,
         "travel_time_seconds": 48,
-        "travel_time_text": "0M:48S",
+        "travel_time_text": "1M:48S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
@@ -118,13 +118,29 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 494,
-            "distance": 1444.6387470557693
+            "kind": "key",
+            "label": "blue key",
+            "seg": 220,
+            "distance": 764.2175673137195,
+            "key": "blue"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 212,
+            "distance": 1607.409844987673,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 494,
+            "distance": 1788.2635589340573
+          },
+          {
+            "index": 4,
             "kind": "exit",
             "label": "Exit",
             "seg": 47,
@@ -266,13 +282,29 @@
           },
           {
             "index": 1,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 257,
-            "distance": 953.5966662245719
+            "kind": "key",
+            "label": "blue key",
+            "seg": 111,
+            "distance": 659.9994506836298,
+            "key": "blue"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 189,
+            "distance": 820.3788516570922,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 257,
+            "distance": 1701.8643871268455
+          },
+          {
+            "index": 4,
             "kind": "exit",
             "label": "Exit",
             "seg": 123,
@@ -311,7 +343,7 @@
         "mine_volume_text": "2.4x",
         "travel_distance": 5814.787622303168,
         "travel_time_seconds": 116,
-        "travel_time_text": "1M:56S",
+        "travel_time_text": "2M:56S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
@@ -344,18 +376,18 @@
           },
           {
             "index": 3,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 557,
-            "distance": 1451.4731651790469
-          },
-          {
-            "index": 4,
             "kind": "key",
             "label": "red key",
             "seg": 483,
-            "distance": 1094.7699482113749,
+            "distance": 1287.5290409710074,
             "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 557,
+            "distance": 1094.7699482113746
           },
           {
             "index": 5,
@@ -364,7 +396,7 @@
             "seg": 453,
             "side": 5,
             "wall": 60,
-            "distance": 729.5505472078298,
+            "distance": 792.3669493733455,
             "trigger": 2,
             "trigger_type": "unknown"
           }
@@ -438,10 +470,10 @@
           },
           {
             "index": 4,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 439,
-            "distance": 736.6191852743999
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 341,
+            "distance": 29.999847412128776
           },
           {
             "index": 5,
@@ -450,7 +482,7 @@
             "seg": 265,
             "side": 5,
             "wall": 58,
-            "distance": 788.2060941740301,
+            "distance": 440.5708714561728,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -631,7 +663,7 @@
         "mine_volume_text": "67x",
         "travel_distance": 1731.4024409137853,
         "travel_time_seconds": 35,
-        "travel_time_text": "0M:35S",
+        "travel_time_text": "1M:35S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
@@ -701,7 +733,7 @@
         "mine_volume_text": "7.6x",
         "travel_distance": 8413.261955309295,
         "travel_time_seconds": 168,
-        "travel_time_text": "2M:48S",
+        "travel_time_text": "3M:48S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -718,21 +750,14 @@
           },
           {
             "index": 1,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 532,
-            "distance": 1022.3552899749395
-          },
-          {
-            "index": 2,
             "kind": "key",
             "label": "blue key",
             "seg": 198,
-            "distance": 441.26917554669717,
+            "distance": 781.0859923579299,
             "key": "blue"
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "key",
             "label": "gold key",
             "seg": 545,
@@ -740,12 +765,19 @@
             "key": "gold"
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "label": "red key",
             "seg": 552,
             "distance": 760.4414825439567,
             "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 532,
+            "distance": 481.7111768894819
           },
           {
             "index": 5,
@@ -754,7 +786,7 @@
             "seg": 61,
             "side": 2,
             "wall": 4,
-            "distance": 1351.0817724682047,
+            "distance": 951.9095570236797,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -804,19 +836,43 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 223,
-            "distance": 244.3705983732471
+            "kind": "key",
+            "label": "blue key",
+            "seg": 747,
+            "distance": 602.4621051107613,
+            "key": "blue"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 774,
+            "distance": 1214.682226990849,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 744,
+            "distance": 1455.4826109270875,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 223,
+            "distance": 611.4340497940733
+          },
+          {
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 227,
             "side": 0,
             "wall": 67,
-            "distance": 254.3705983732471,
+            "distance": 511.25,
             "trigger": 9,
             "trigger_type": "unknown"
           }

@@ -23,7 +23,7 @@
         "mine_volume_text": "0.72x",
         "travel_distance": 7776.585538451466,
         "travel_time_seconds": 156,
-        "travel_time_text": "2M:36S",
+        "travel_time_text": "3M:36S",
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 3,
@@ -97,7 +97,7 @@
         "mine_volume_text": "0.92x",
         "travel_distance": 4491.550396347142,
         "travel_time_seconds": 90,
-        "travel_time_text": "1M:30S",
+        "travel_time_text": "2M:30S",
         "travel_targets_reached": 10,
         "travel_targets_total": 10,
         "travel_key_detours": 3,
@@ -169,7 +169,7 @@
         "mine_volume": 5509005.290655115,
         "mine_volume_normalized": 1.204706400652486,
         "mine_volume_text": "1.2x",
-        "travel_distance": 0,
+        "travel_distance": 0.0,
         "travel_time_seconds": 0,
         "travel_time_text": "0M:00S",
         "travel_targets_reached": 0,
@@ -224,7 +224,7 @@
             "seg": 504,
             "side": 2,
             "wall": 148,
-            "distance": 130,
+            "distance": 130.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -247,7 +247,7 @@
         "mine_volume_text": "0.70x",
         "travel_distance": 5215.938639839912,
         "travel_time_seconds": 104,
-        "travel_time_text": "1M:44S",
+        "travel_time_text": "2M:44S",
         "travel_targets_reached": 20,
         "travel_targets_total": 20,
         "travel_key_detours": 3,
@@ -267,7 +267,7 @@
             "kind": "key",
             "label": "blue key",
             "seg": 387,
-            "distance": 300,
+            "distance": 300.0,
             "key": "blue"
           },
           {
@@ -293,7 +293,7 @@
             "seg": 149,
             "side": 5,
             "wall": 47,
-            "distance": 10,
+            "distance": 10.0,
             "opens": [
               {
                 "seg": 149,
@@ -321,7 +321,7 @@
             "seg": 220,
             "side": 5,
             "wall": 67,
-            "distance": 10,
+            "distance": 10.0,
             "opens": [
               {
                 "seg": 220,

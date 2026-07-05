@@ -56,17 +56,17 @@
           },
           {
             "index": 3,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 383,
-            "distance": 1720.1488410682555
-          },
-          {
-            "index": 4,
             "kind": "key",
             "label": "gold key",
             "seg": 383,
+            "distance": 1720.1488410682555,
             "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 383
           },
           {
             "index": 5,
@@ -155,18 +155,18 @@
           },
           {
             "index": 4,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 636,
-            "distance": 1921.396318074797
-          },
-          {
-            "index": 5,
             "kind": "key",
             "label": "red key",
             "seg": 653,
-            "distance": 90.7938723661793,
+            "distance": 2012.1901904409763,
             "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 636,
+            "distance": 90.7938723661793
           },
           {
             "index": 6,
@@ -175,7 +175,7 @@
             "seg": 747,
             "side": 2,
             "wall": 110,
-            "distance": 2727.127221900741,
+            "distance": 2636.3333495345614,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -210,18 +210,60 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 801
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 448,
+            "distance": 3608.646397615927,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 248,
+            "distance": 2807.2528519372518,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 304,
+            "distance": 5126.192674865025,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 241,
+            "distance": 2694.278794799277
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 15,
+            "side": 1,
+            "wall": 124,
+            "distance": 3125.370510747469,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key route dependency loop",
         "notes": [
           "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"
@@ -249,7 +291,7 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -267,15 +309,42 @@
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "red key",
+            "seg": 26,
+            "distance": 4180.720205045203,
+            "key": "red"
+          },
+          {
+            "index": 3,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 103,
-            "distance": 4077.73694778722
+            "distance": 102.98325725798338
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 22,
+            "distance": 7109.02706319332,
+            "key": "gold"
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 33,
+            "side": 1,
+            "wall": 78,
+            "distance": 5563.28985373961,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key route dependency loop",
         "notes": [
           "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"
@@ -296,7 +365,7 @@
         "mine_volume_text": "57x",
         "travel_distance": 17608.889510351157,
         "travel_time_seconds": 352,
-        "travel_time_text": "5M:52S",
+        "travel_time_text": "6M:52S",
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 3,
@@ -313,21 +382,14 @@
           },
           {
             "index": 1,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 78,
-            "distance": 2052.616990734791
-          },
-          {
-            "index": 2,
             "kind": "key",
             "label": "blue key",
             "seg": 356,
-            "distance": 2331.578038963847,
+            "distance": 3904.619717986782,
             "key": "blue"
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "key",
             "label": "gold key",
             "seg": 475,
@@ -335,12 +397,19 @@
             "key": "gold"
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "label": "red key",
             "seg": 550,
             "distance": 2887.7489543027727,
             "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 78,
+            "distance": 2246.592225192459
           },
           {
             "index": 5,
@@ -349,7 +418,7 @@
             "seg": 745,
             "side": 2,
             "wall": 58,
-            "distance": 4153.312497822296,
+            "distance": 1906.7202726298378,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -377,7 +446,7 @@
         "mine_volume_text": "62x",
         "travel_distance": 8164.586620131554,
         "travel_time_seconds": 163,
-        "travel_time_text": "2M:43S",
+        "travel_time_text": "3M:43S",
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 0,

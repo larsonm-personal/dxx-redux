@@ -94,31 +94,18 @@
           },
           {
             "index": 2,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 370,
-            "side": 1,
-            "wall": 149,
-            "distance": 280.1034522097848,
-            "opens": [
-              {
-                "seg": 370,
-                "side": 1,
-                "wall": 149
-              },
-              {
-                "seg": 643,
-                "side": 3,
-                "wall": 148
-              }
-            ]
+            "kind": "key",
+            "label": "blue key",
+            "seg": 483,
+            "distance": 880.2948908591853,
+            "key": "blue"
           },
           {
             "index": 3,
             "kind": "key",
             "label": "red key",
             "seg": 72,
-            "distance": 661.3555064704192,
+            "distance": 1025.899630393733,
             "key": "red"
           },
           {
@@ -240,7 +227,7 @@
         "mine_volume_text": "4.1x",
         "travel_distance": 1718.0556975425854,
         "travel_time_seconds": 34,
-        "travel_time_text": "0M:34S",
+        "travel_time_text": "1M:34S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
@@ -518,7 +505,7 @@
             "kind": "key",
             "label": "gold key",
             "seg": 197,
-            "distance": 30,
+            "distance": 30.0,
             "key": "gold"
           },
           {
@@ -547,7 +534,7 @@
             "kind": "key",
             "label": "red key",
             "seg": 103,
-            "distance": 50,
+            "distance": 50.0,
             "key": "red"
           },
           {
@@ -590,7 +577,7 @@
         "mine_volume_text": "8.2x",
         "travel_distance": 4845.173455823433,
         "travel_time_seconds": 97,
-        "travel_time_text": "1M:37S",
+        "travel_time_text": "2M:37S",
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 1,
@@ -669,7 +656,7 @@
         "mine_volume_text": "2.7x",
         "travel_distance": 8686.371807451322,
         "travel_time_seconds": 174,
-        "travel_time_text": "2M:54S",
+        "travel_time_text": "3M:54S",
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 3,

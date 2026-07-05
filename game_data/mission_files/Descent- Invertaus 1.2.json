@@ -211,7 +211,7 @@
         "mine_volume": 9047506.455870714,
         "mine_volume_normalized": 1.9785039879742048,
         "mine_volume_text": "2.0x",
-        "travel_distance": 533,
+        "travel_distance": 533.0,
         "travel_time_seconds": 11,
         "travel_time_text": "0M:11S",
         "travel_targets_reached": 1,
@@ -254,19 +254,12 @@
           },
           {
             "index": 4,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 431,
-            "distance": 1044.2670777085864
-          },
-          {
-            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 363,
             "side": 1,
             "wall": 47,
-            "distance": 1111.2670784236093,
+            "distance": 518.999999284977,
             "trigger": 1,
             "trigger_type": "unknown"
           }

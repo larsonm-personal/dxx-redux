@@ -3,7 +3,7 @@
     "status": "ok",
     "source": "Nefarious Assault",
     "game": "d1",
-    "mission_name": "nefarius",
+    "mission_name": "Nefarious Assault",
     "mission_filename": "nefarius.msn",
     "coop_starts": "4",
     "level_count": 19,
@@ -23,7 +23,7 @@
         "mine_volume_text": "2.3x",
         "travel_distance": 4806.3206849497365,
         "travel_time_seconds": 96,
-        "travel_time_text": "1M:36S",
+        "travel_time_text": "2M:36S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 2,
@@ -258,7 +258,7 @@
         "mine_volume_text": "1.4x",
         "travel_distance": 5872.108724212323,
         "travel_time_seconds": 117,
-        "travel_time_text": "1M:57S",
+        "travel_time_text": "2M:57S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
@@ -465,19 +465,64 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 232,
-            "distance": 524.1410554970298
+            "kind": "key",
+            "label": "blue key",
+            "seg": 164,
+            "distance": 326.33728415519084,
+            "key": "blue"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 471,
+            "distance": 768.5172982661647,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "hidden_door",
+            "label": "Hidden door",
+            "seg": 470,
+            "side": 0,
+            "wall": 82,
+            "distance": 32.00000192673731,
+            "opens": [
+              {
+                "seg": 470,
+                "side": 0,
+                "wall": 82
+              },
+              {
+                "seg": 285,
+                "side": 2,
+                "wall": 81
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "red key",
+            "seg": 321,
+            "distance": 272.60469270584326,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 232,
+            "distance": 809.885995919753
+          },
+          {
+            "index": 6,
             "kind": "exit",
             "label": "Exit",
             "seg": 230,
             "side": 1,
             "wall": 17,
-            "distance": 90,
+            "distance": 90.0,
             "trigger": 1,
             "trigger_type": "unknown"
           }
@@ -593,7 +638,7 @@
         "mine_volume_text": "1.9x",
         "travel_distance": 5854.676733032817,
         "travel_time_seconds": 117,
-        "travel_time_text": "1M:57S",
+        "travel_time_text": "2M:57S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 3,
@@ -733,7 +778,7 @@
         "mine_volume_text": "2.4x",
         "travel_distance": 4912.498590913194,
         "travel_time_seconds": 98,
-        "travel_time_text": "1M:38S",
+        "travel_time_text": "2M:38S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -1120,13 +1165,37 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 334,
-            "distance": 617.4525384716586
+            "kind": "key",
+            "label": "blue key",
+            "seg": 87,
+            "distance": 357.4525384716004,
+            "key": "blue"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 222,
+            "distance": 229.0,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 374,
+            "distance": 349.31479195923134,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 334,
+            "distance": 454.31479195928955
+          },
+          {
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 255,
@@ -1153,7 +1222,7 @@
         "mine_volume_text": "8.5x",
         "travel_distance": 5227.556872665055,
         "travel_time_seconds": 105,
-        "travel_time_text": "1M:45S",
+        "travel_time_text": "2M:45S",
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 3,
@@ -1194,19 +1263,12 @@
           },
           {
             "index": 4,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 178,
-            "distance": 1216.9815772853512
-          },
-          {
-            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 54,
             "side": 4,
             "wall": 107,
-            "distance": 1142.6108074710603,
+            "distance": 1614.7110496719065,
             "trigger": 7,
             "trigger_type": "unknown"
           }
@@ -1326,7 +1388,7 @@
         "mine_volume_text": "3.3x",
         "travel_distance": 5912.107750369814,
         "travel_time_seconds": 118,
-        "travel_time_text": "1M:58S",
+        "travel_time_text": "2M:58S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 2,
@@ -1392,7 +1454,7 @@
             "seg": 590,
             "side": 3,
             "wall": 74,
-            "distance": 145,
+            "distance": 145.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }

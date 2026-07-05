@@ -73,7 +73,7 @@
             "seg": 165,
             "side": 4,
             "wall": 4,
-            "distance": 40,
+            "distance": 40.0,
             "trigger": 0,
             "trigger_type_id": 4,
             "trigger_type": "secret_exit"

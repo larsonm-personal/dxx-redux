@@ -21,9 +21,9 @@
         "mine_volume": 1304964.6698545292,
         "mine_volume_normalized": 0.28536899266839516,
         "mine_volume_text": "0.29x",
-        "travel_distance": 2113.487323887378,
-        "travel_time_seconds": 42,
-        "travel_time_text": "0M:42S",
+        "travel_distance": 1783.487323887378,
+        "travel_time_seconds": 36,
+        "travel_time_text": "1M:36S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -59,7 +59,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 31,
-            "distance": 10.149993896484375
+            "distance": 0.1999969482421875
           },
           {
             "index": 4,
@@ -68,7 +68,7 @@
             "seg": 29,
             "side": 1,
             "wall": 39,
-            "distance": 403.5,
+            "distance": 413.6499938964844,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -89,7 +89,7 @@
         "mine_volume_text": "0.29x",
         "travel_distance": 1909.670157866294,
         "travel_time_seconds": 38,
-        "travel_time_text": "0M:38S",
+        "travel_time_text": "1M:38S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -109,7 +109,7 @@
             "kind": "key",
             "label": "blue key",
             "seg": 36,
-            "distance": 221,
+            "distance": 221.0,
             "key": "blue"
           },
           {
@@ -117,7 +117,7 @@
             "kind": "key",
             "label": "red key",
             "seg": 22,
-            "distance": 265,
+            "distance": 265.0,
             "key": "red"
           },
           {
@@ -125,7 +125,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 24,
-            "distance": 450
+            "distance": 450.0
           },
           {
             "index": 4,
@@ -134,7 +134,7 @@
             "seg": 36,
             "side": 4,
             "wall": 50,
-            "distance": 210,
+            "distance": 210.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -155,7 +155,7 @@
         "mine_volume_text": "0.33x",
         "travel_distance": 2819.016480413834,
         "travel_time_seconds": 56,
-        "travel_time_text": "0M:56S",
+        "travel_time_text": "1M:56S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -221,7 +221,7 @@
         "mine_volume_text": "0.29x",
         "travel_distance": 1603.8492920571828,
         "travel_time_seconds": 32,
-        "travel_time_text": "0M:32S",
+        "travel_time_text": "1M:32S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -287,7 +287,7 @@
         "mine_volume_text": "0.26x",
         "travel_distance": 1739.4708775188922,
         "travel_time_seconds": 35,
-        "travel_time_text": "0M:35S",
+        "travel_time_text": "1M:35S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -353,7 +353,7 @@
         "mine_volume_text": "0.41x",
         "travel_distance": 1810.2901795077794,
         "travel_time_seconds": 36,
-        "travel_time_text": "0M:36S",
+        "travel_time_text": "1M:36S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 1,
@@ -411,7 +411,7 @@
         "mine_volume_text": "0.57x",
         "travel_distance": 1632.790042859471,
         "travel_time_seconds": 33,
-        "travel_time_text": "0M:33S",
+        "travel_time_text": "1M:33S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 1,
@@ -469,7 +469,7 @@
         "mine_volume_text": "0.61x",
         "travel_distance": 2530.062159811163,
         "travel_time_seconds": 51,
-        "travel_time_text": "0M:51S",
+        "travel_time_text": "1M:51S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 1,
@@ -506,7 +506,7 @@
             "seg": 26,
             "side": 5,
             "wall": 14,
-            "distance": 190,
+            "distance": 190.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -527,7 +527,7 @@
         "mine_volume_text": "0.53x",
         "travel_distance": 1689.472171639384,
         "travel_time_seconds": 34,
-        "travel_time_text": "0M:34S",
+        "travel_time_text": "1M:34S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -824,12 +824,12 @@
         "mine_volume": 5223272.168256525,
         "mine_volume_normalized": 1.1422224306305462,
         "mine_volume_text": "1.1x",
-        "travel_distance": 1600.7519712230885,
-        "travel_time_seconds": 32,
-        "travel_time_text": "0M:32S",
-        "travel_targets_reached": 4,
+        "travel_distance": 3312.966377476419,
+        "travel_time_seconds": 66,
+        "travel_time_text": "1M:06S",
+        "travel_targets_reached": 6,
         "travel_targets_total": 6,
-        "travel_key_detours": 1,
+        "travel_key_detours": 2,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -862,7 +862,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 26,
-            "distance": 504.8007569770813
+            "distance": 419.731045011851
           },
           {
             "index": 4,
@@ -871,13 +871,11 @@
             "seg": 24,
             "side": 4,
             "wall": 46,
-            "distance": 125,
+            "distance": 331.9302880347697,
             "trigger": 0,
             "trigger_type": "unknown"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "target unreachable or blocked by unsupported door"
+        ]
       },
       {
         "level_num": 14,
@@ -894,7 +892,7 @@
         "mine_volume_text": "0.33x",
         "travel_distance": 2097.91977592921,
         "travel_time_seconds": 42,
-        "travel_time_text": "0M:42S",
+        "travel_time_text": "1M:42S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -960,7 +958,7 @@
         "mine_volume_text": "0.51x",
         "travel_distance": 2941.307205720983,
         "travel_time_seconds": 59,
-        "travel_time_text": "0M:59S",
+        "travel_time_text": "1M:59S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 1,
@@ -1018,7 +1016,7 @@
         "mine_volume_text": "0.60x",
         "travel_distance": 2699.6691348762706,
         "travel_time_seconds": 54,
-        "travel_time_text": "0M:54S",
+        "travel_time_text": "1M:54S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 1,
@@ -1076,7 +1074,7 @@
         "mine_volume_text": "0.43x",
         "travel_distance": 1821.4511297380477,
         "travel_time_seconds": 36,
-        "travel_time_text": "0M:36S",
+        "travel_time_text": "1M:36S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 1,
@@ -1106,7 +1104,7 @@
             "seg": 9,
             "side": 2,
             "wall": 8,
-            "distance": 10,
+            "distance": 10.0,
             "opens": [
               {
                 "seg": 9,
@@ -1240,16 +1238,16 @@
         "mine_volume": 2111652.2980545275,
         "mine_volume_normalized": 0.4617750220233142,
         "mine_volume_text": "0.46x",
-        "travel_distance": 1300.7456378027207,
-        "travel_time_seconds": 26,
-        "travel_time_text": "0M:26S",
-        "travel_targets_reached": 4,
+        "travel_distance": 2060.1440661492315,
+        "travel_time_seconds": 41,
+        "travel_time_text": "1M:41S",
+        "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 1,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -1272,11 +1270,26 @@
             "seg": 35,
             "distance": 466.93819399698964,
             "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 24,
+            "distance": 434.4381939969897
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 22,
+            "side": 0,
+            "wall": 2,
+            "distance": 268.9205501415065,
+            "trigger": 2,
+            "trigger_type": "unknown"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "target unreachable or blocked by unsupported door",
-        "route_problem": "route target unreachable"
+        ]
       },
       {
         "level_num": 20,
@@ -1293,7 +1306,7 @@
         "mine_volume_text": "0.37x",
         "travel_distance": 5038.844944343672,
         "travel_time_seconds": 101,
-        "travel_time_text": "1M:41S",
+        "travel_time_text": "2M:41S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
@@ -1475,7 +1488,7 @@
         "mine_volume_text": "0.51x",
         "travel_distance": 1717.2960542152152,
         "travel_time_seconds": 34,
-        "travel_time_text": "0M:34S",
+        "travel_time_text": "1M:34S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
@@ -1602,7 +1615,7 @@
             "seg": 40,
             "side": 4,
             "wall": 14,
-            "distance": 10,
+            "distance": 10.0,
             "opens": [
               {
                 "seg": 40,
@@ -1644,7 +1657,7 @@
         "mine_volume_text": "0.12x",
         "travel_distance": 1885.0449666410175,
         "travel_time_seconds": 38,
-        "travel_time_text": "0M:38S",
+        "travel_time_text": "1M:38S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
@@ -1716,9 +1729,9 @@
         "mine_volume": 4387940.892526384,
         "mine_volume_normalized": 0.9595526233888768,
         "mine_volume_text": "0.96x",
-        "travel_distance": 792.1871977183193,
-        "travel_time_seconds": 16,
-        "travel_time_text": "0M:16S",
+        "travel_distance": 893.9384504682544,
+        "travel_time_seconds": 18,
+        "travel_time_text": "0M:18S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 0,
@@ -1754,7 +1767,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 36,
-            "distance": 308.67673894611397
+            "distance": 365.2188094093003
           },
           {
             "index": 4,
@@ -1763,7 +1776,7 @@
             "seg": 13,
             "side": 1,
             "wall": 0,
-            "distance": 183.5924884090553,
+            "distance": 228.8016706958039,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -1875,10 +1888,10 @@
           },
           {
             "index": 1,
-            "kind": "boss",
-            "label": "Boss robot",
+            "kind": "reactor",
+            "label": "Reactor",
             "seg": 6,
-            "distance": 369.3184542064048
+            "distance": 339.73581478792664
           },
           {
             "index": 2,
@@ -1887,7 +1900,7 @@
             "seg": 36,
             "side": 1,
             "wall": 11,
-            "distance": 299.33089422475933,
+            "distance": 269.7482548062812,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -1908,7 +1921,7 @@
         "mine_volume_text": "0.46x",
         "travel_distance": 1697.2294495520337,
         "travel_time_seconds": 34,
-        "travel_time_text": "0M:34S",
+        "travel_time_text": "1M:34S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
@@ -1982,7 +1995,7 @@
         "mine_volume_text": "0.40x",
         "travel_distance": 1667.8838458055347,
         "travel_time_seconds": 33,
-        "travel_time_text": "0M:33S",
+        "travel_time_text": "1M:33S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
@@ -2054,16 +2067,16 @@
         "mine_volume": 4287966.093719918,
         "mine_volume_normalized": 0.9376901865837431,
         "mine_volume_text": "0.94x",
-        "travel_distance": 4365.712343363856,
-        "travel_time_seconds": 87,
-        "travel_time_text": "1M:27S",
-        "travel_targets_reached": 6,
+        "travel_distance": 3561.879894856569,
+        "travel_time_seconds": 71,
+        "travel_time_text": "1M:11S",
+        "travel_targets_reached": 4,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
@@ -2094,26 +2107,11 @@
             "seg": 1,
             "distance": 680.1647550972561,
             "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 0,
-            "distance": 763.1647550972563
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 30,
-            "side": 4,
-            "wall": 40,
-            "distance": 750.1647550972564,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "target unreachable or blocked by unsupported door",
+        "route_problem": "route target unreachable"
       }
     ],
     "target_index": 0

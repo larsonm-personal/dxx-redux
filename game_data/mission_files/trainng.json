@@ -21,7 +21,7 @@
         "mine_volume": 3815999.9999999925,
         "mine_volume_normalized": 0.8344808876273917,
         "mine_volume_text": "0.83x",
-        "travel_distance": 410,
+        "travel_distance": 410.0,
         "travel_time_seconds": 8,
         "travel_time_text": "0M:08S",
         "travel_targets_reached": 2,
@@ -43,7 +43,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 6,
-            "distance": 3500
+            "distance": 3500.0
           },
           {
             "index": 2,
@@ -52,7 +52,7 @@
             "seg": 0,
             "side": 0,
             "wall": 0,
-            "distance": 110,
+            "distance": 110.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -71,7 +71,7 @@
         "mine_volume": 755999.9999999981,
         "mine_volume_normalized": 0.16532168528467187,
         "mine_volume_text": "0.17x",
-        "travel_distance": 925,
+        "travel_distance": 925.0,
         "travel_time_seconds": 19,
         "travel_time_text": "0M:19S",
         "travel_targets_reached": 2,
@@ -93,7 +93,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 11,
-            "distance": 735
+            "distance": 735.0
           },
           {
             "index": 2,
@@ -102,7 +102,7 @@
             "seg": 7,
             "side": 0,
             "wall": 2,
-            "distance": 110,
+            "distance": 110.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -121,7 +121,7 @@
         "mine_volume": 773999.9999999967,
         "mine_volume_normalized": 0.16925791588668757,
         "mine_volume_text": "0.17x",
-        "travel_distance": 980,
+        "travel_distance": 980.0,
         "travel_time_seconds": 20,
         "travel_time_text": "0M:20S",
         "travel_targets_reached": 2,
@@ -143,7 +143,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 8,
-            "distance": 790
+            "distance": 790.0
           },
           {
             "index": 2,
@@ -152,7 +152,7 @@
             "seg": 4,
             "side": 0,
             "wall": 0,
-            "distance": 110,
+            "distance": 110.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -171,9 +171,9 @@
         "mine_volume": 2096000.000000011,
         "mine_volume_normalized": 0.45835218565697733,
         "mine_volume_text": "0.46x",
-        "travel_distance": 4610,
+        "travel_distance": 4610.0,
         "travel_time_seconds": 92,
-        "travel_time_text": "1M:32S",
+        "travel_time_text": "2M:32S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
@@ -193,7 +193,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 12,
-            "distance": 4420
+            "distance": 4420.0
           },
           {
             "index": 2,
@@ -202,7 +202,7 @@
             "seg": 0,
             "side": 0,
             "wall": 0,
-            "distance": 110,
+            "distance": 110.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -221,7 +221,7 @@
         "mine_volume": 10485333.333333297,
         "mine_volume_normalized": 2.2929272188336123,
         "mine_volume_text": "2.3x",
-        "travel_distance": 840,
+        "travel_distance": 840.0,
         "travel_time_seconds": 17,
         "travel_time_text": "0M:17S",
         "travel_targets_reached": 2,
@@ -243,7 +243,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 20,
-            "distance": 650
+            "distance": 650.0
           },
           {
             "index": 2,
@@ -252,7 +252,7 @@
             "seg": 8,
             "side": 0,
             "wall": 0,
-            "distance": 110,
+            "distance": 110.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -271,7 +271,7 @@
         "mine_volume": 1936000.0000000023,
         "mine_volume_normalized": 0.423363469194611,
         "mine_volume_text": "0.42x",
-        "travel_distance": 4210,
+        "travel_distance": 4210.0,
         "travel_time_seconds": 84,
         "travel_time_text": "1M:24S",
         "travel_targets_reached": 2,
@@ -293,7 +293,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 12,
-            "distance": 4020
+            "distance": 4020.0
           },
           {
             "index": 2,
@@ -302,7 +302,7 @@
             "seg": 0,
             "side": 0,
             "wall": 0,
-            "distance": 110,
+            "distance": 110.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -321,9 +321,9 @@
         "mine_volume": 2207999.9999999995,
         "mine_volume_normalized": 0.48284428718063,
         "mine_volume_text": "0.48x",
-        "travel_distance": 1890,
+        "travel_distance": 1890.0,
         "travel_time_seconds": 38,
-        "travel_time_text": "0M:38S",
+        "travel_time_text": "1M:38S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
@@ -343,7 +343,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 12,
-            "distance": 1700
+            "distance": 1700.0
           },
           {
             "index": 2,
@@ -352,7 +352,7 @@
             "seg": 0,
             "side": 0,
             "wall": 0,
-            "distance": 110,
+            "distance": 110.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -371,9 +371,9 @@
         "mine_volume": 1512000.0000000205,
         "mine_volume_normalized": 0.330643370569349,
         "mine_volume_text": "0.33x",
-        "travel_distance": 1910,
+        "travel_distance": 1910.0,
         "travel_time_seconds": 38,
-        "travel_time_text": "0M:38S",
+        "travel_time_text": "1M:38S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
@@ -393,7 +393,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 12,
-            "distance": 1720
+            "distance": 1720.0
           },
           {
             "index": 2,
@@ -402,7 +402,7 @@
             "seg": 0,
             "side": 0,
             "wall": 0,
-            "distance": 110,
+            "distance": 110.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }
@@ -423,7 +423,7 @@
         "mine_volume_text": "0.88x",
         "travel_distance": 2600.442776693695,
         "travel_time_seconds": 52,
-        "travel_time_text": "0M:52S",
+        "travel_time_text": "1M:52S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
@@ -452,7 +452,7 @@
             "seg": 0,
             "side": 0,
             "wall": 0,
-            "distance": 110,
+            "distance": 110.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }

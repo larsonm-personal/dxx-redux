@@ -23,7 +23,7 @@
         "mine_volume_text": "4.0x",
         "travel_distance": 2391.580302382599,
         "travel_time_seconds": 48,
-        "travel_time_text": "0M:48S",
+        "travel_time_text": "1M:48S",
         "travel_targets_reached": 9,
         "travel_targets_total": 9,
         "travel_key_detours": 0,
@@ -78,7 +78,7 @@
         "mine_volume_text": "3.0x",
         "travel_distance": 2703.303364078741,
         "travel_time_seconds": 54,
-        "travel_time_text": "0M:54S",
+        "travel_time_text": "1M:54S",
         "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 1,
@@ -230,7 +230,7 @@
         "mine_volume_text": "2.4x",
         "travel_distance": 2708.819754671495,
         "travel_time_seconds": 54,
-        "travel_time_text": "0M:54S",
+        "travel_time_text": "1M:54S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
@@ -250,7 +250,7 @@
             "kind": "key",
             "label": "blue key",
             "seg": 622,
-            "distance": 2,
+            "distance": 2.0,
             "key": "blue"
           },
           {
@@ -258,7 +258,7 @@
             "kind": "key",
             "label": "gold key",
             "seg": 622,
-            "distance": 5,
+            "distance": 5.0,
             "key": "gold"
           },
           {

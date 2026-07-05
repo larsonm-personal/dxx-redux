@@ -21,7 +21,7 @@
         "mine_volume": 5049812.585603894,
         "mine_volume_normalized": 1.1042903796610901,
         "mine_volume_text": "1.1x",
-        "travel_distance": 6342,
+        "travel_distance": 6342.0,
         "travel_time_seconds": 127,
         "travel_time_text": "2M:07S",
         "travel_targets_reached": 18,
@@ -43,7 +43,7 @@
             "kind": "key",
             "label": "blue key",
             "seg": 582,
-            "distance": 500,
+            "distance": 500.0,
             "key": "blue"
           },
           {
@@ -51,7 +51,7 @@
             "kind": "key",
             "label": "gold key",
             "seg": 104,
-            "distance": 740,
+            "distance": 740.0,
             "key": "gold"
           },
           {
@@ -59,7 +59,7 @@
             "kind": "key",
             "label": "red key",
             "seg": 244,
-            "distance": 440,
+            "distance": 440.0,
             "key": "red"
           },
           {
@@ -67,7 +67,7 @@
             "kind": "reactor",
             "label": "Reactor",
             "seg": 627,
-            "distance": 600
+            "distance": 600.0
           },
           {
             "index": 5,
@@ -76,7 +76,7 @@
             "seg": 308,
             "side": 0,
             "wall": 60,
-            "distance": 190,
+            "distance": 190.0,
             "trigger": 2,
             "trigger_type": "unknown"
           }
@@ -97,7 +97,7 @@
         "mine_volume_text": "0.56x",
         "travel_distance": 2073.114229552416,
         "travel_time_seconds": 41,
-        "travel_time_text": "0M:41S",
+        "travel_time_text": "1M:41S",
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 0,
@@ -114,13 +114,37 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 289,
-            "distance": 793.0718334019693
+            "kind": "key",
+            "label": "blue key",
+            "seg": 182,
+            "distance": 820.0814523452027,
+            "key": "blue"
           },
           {
             "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 206,
+            "distance": 420.0,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 248,
+            "distance": 700.0,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 289,
+            "distance": 772.9903810567666
+          },
+          {
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 27,
@@ -145,7 +169,7 @@
         "mine_volume": 5209328.3943645535,
         "mine_volume_normalized": 1.1391732134360368,
         "mine_volume_text": "1.1x",
-        "travel_distance": 0,
+        "travel_distance": 0.0,
         "travel_time_seconds": 0,
         "travel_time_text": "0M:00S",
         "travel_targets_reached": 0,
@@ -154,18 +178,59 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 150,
+            "distance": 415.5402209580307,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 296,
+            "distance": 600.9163028625853,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 306,
+            "distance": 820.4750925201954,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 515,
+            "distance": 793.0670031540229
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 124,
+            "side": 5,
+            "wall": 60,
+            "distance": 393.4281401268672,
+            "trigger": 0,
+            "trigger_type": "unknown"
           }
         ],
         "travel_status": "failed",
-        "travel_problem": "target unreachable or blocked by unsupported door",
-        "route_problem": "route target unreachable"
+        "travel_problem": "target unreachable or blocked by unsupported door"
       },
       {
         "level_num": 4,
@@ -202,7 +267,7 @@
             "kind": "key",
             "label": "blue key",
             "seg": 245,
-            "distance": 540,
+            "distance": 540.0,
             "key": "blue"
           },
           {
@@ -256,7 +321,7 @@
         "mine_volume_text": "1.1x",
         "travel_distance": 5625.659437435169,
         "travel_time_seconds": 113,
-        "travel_time_text": "1M:53S",
+        "travel_time_text": "2M:53S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -276,7 +341,7 @@
             "kind": "key",
             "label": "blue key",
             "seg": 101,
-            "distance": 160,
+            "distance": 160.0,
             "key": "blue"
           },
           {
@@ -309,7 +374,7 @@
             "seg": 373,
             "side": 4,
             "wall": 67,
-            "distance": 10,
+            "distance": 10.0,
             "opens": [
               {
                 "seg": 373,
@@ -425,7 +490,7 @@
         "mine_volume_text": "9.5x",
         "travel_distance": 5931.374093737568,
         "travel_time_seconds": 119,
-        "travel_time_text": "1M:59S",
+        "travel_time_text": "2M:59S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -466,8 +531,8 @@
           },
           {
             "index": 4,
-            "kind": "boss",
-            "label": "Boss robot",
+            "kind": "reactor",
+            "label": "Reactor",
             "seg": 224,
             "distance": 2296.331539086738
           },
@@ -478,7 +543,7 @@
             "seg": 136,
             "side": 1,
             "wall": 20,
-            "distance": 373,
+            "distance": 373.0,
             "trigger": 0,
             "trigger_type": "unknown"
           }

@@ -30,13 +30,37 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 338
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 383,
+            "distance": 1079.4759618284186,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 79,
+            "distance": 951.7539267907142,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 419,
+            "distance": 577.6266956765129,
+            "key": "red"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
@@ -274,7 +298,7 @@
         "mine_volume_text": "2.7x",
         "travel_distance": 1843.9373889054532,
         "travel_time_seconds": 37,
-        "travel_time_text": "0M:37S",
+        "travel_time_text": "1M:37S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
