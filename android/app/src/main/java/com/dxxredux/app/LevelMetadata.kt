@@ -15,6 +15,7 @@ import org.json.JSONObject
 import java.io.File
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipFile
 
 private const val LEVEL_METADATA_TIMEOUT_MS = 30_000L
@@ -1090,6 +1091,20 @@ internal object LevelMetadataNativeBridge {
     ): String?
 }
 
+internal object LevelMetadataAnalysisSingleFlight {
+    private val running = AtomicBoolean(false)
+
+    fun tryEnter(): Boolean = running.compareAndSet(false, true)
+
+    fun exit() {
+        running.set(false)
+    }
+
+    fun resetForTest() {
+        running.set(false)
+    }
+}
+
 open class LevelMetadataAnalysisService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -1104,9 +1119,20 @@ open class LevelMetadataAnalysisService : Service() {
             return START_NOT_STICKY
         }
         Thread {
-            runCatching { runAnalysis(File(requestPath)) }
-                .onFailure { Log.e(TAG, "Level metadata analysis failed", it) }
-            stopSelf(startId)
+            val requestFile = File(requestPath)
+            if (!LevelMetadataAnalysisSingleFlight.tryEnter()) {
+                runCatching { writeBusyResult(requestFile) }
+                    .onFailure { Log.e(TAG, "Level metadata busy result failed", it) }
+                stopSelf(startId)
+                return@Thread
+            }
+            try {
+                runCatching { runAnalysis(requestFile) }
+                    .onFailure { Log.e(TAG, "Level metadata analysis failed", it) }
+            } finally {
+                LevelMetadataAnalysisSingleFlight.exit()
+                stopSelf(startId)
+            }
         }.start()
         return START_NOT_STICKY
     }
@@ -1123,6 +1149,22 @@ open class LevelMetadataAnalysisService : Service() {
             } catch (e: Throwable) {
                 failedJson(request, e.message ?: e.javaClass.simpleName)
             }
+        writeResult(resultFile, result)
+    }
+
+    private fun writeBusyResult(requestFile: File) {
+        val requestJson = requestFile.readText(Charsets.UTF_8)
+        val request = JSONObject(requestJson)
+        writeResult(
+            File(request.optString("result_path")),
+            failedJson(request, "Level metadata analysis is already running"),
+        )
+    }
+
+    private fun writeResult(
+        resultFile: File,
+        result: String,
+    ) {
         val formattedResult = formatJsonResult(result)
         resultFile.parentFile?.mkdirs()
         val tmp = File(resultFile.parentFile, resultFile.name + ".tmp")

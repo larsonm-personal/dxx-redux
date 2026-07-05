@@ -3,34 +3,36 @@
 
 #include "level_metadata_scan.h"
 
-#define TEST_SEGMENTS 3
-#define TEST_SIDES    LEVEL_METADATA_MAX_SIDES
-#define TEST_WALLS    8
-#define TEST_OBJECTS  4
-#define TEST_FIX      65536
-#define TEST_WALL_OPEN 4
-#define TEST_WALL_BLASTABLE 1
-#define TEST_WALL_DOOR 2
-#define TEST_WALL_ILLUSION 3
-#define TEST_WALL_CLOSED 5
+#define TEST_SEGMENTS              4
+#define TEST_SIDES                 LEVEL_METADATA_MAX_SIDES
+#define TEST_WALLS                 8
+#define TEST_OBJECTS               4
+#define TEST_FIX                   65536
+#define TEST_WALL_OPEN             4
+#define TEST_WALL_BLASTABLE        1
+#define TEST_WALL_DOOR             2
+#define TEST_WALL_ILLUSION         3
+#define TEST_WALL_CLOSED           5
 #define TEST_WALL_FLAG_DOOR_LOCKED 8
-#define TEST_WALL_CLIP_HIDDEN 8
-#define TEST_KEY_NONE 1
-#define TEST_KEY_BLUE 2
-#define TEST_TRIGGER_OPEN_WALL 9
-#define TEST_TRIGGER_EXIT 3
-#define TEST_OBJ_POWERUP 1
-#define TEST_OBJ_CONTROL_CENTER 2
-#define TEST_OBJ_ROBOT 3
-#define TEST_POWERUP_BLUE_KEY 10
-#define TEST_ROBOT_BOSS 20
-#define TEST_ROBOT_GUIDEBOT 21
+#define TEST_WALL_CLIP_HIDDEN      8
+#define TEST_KEY_NONE              1
+#define TEST_KEY_BLUE              2
+#define TEST_TRIGGER_OPEN_WALL     9
+#define TEST_TRIGGER_EXIT          3
+#define TEST_OBJ_POWERUP           1
+#define TEST_OBJ_CONTROL_CENTER    2
+#define TEST_OBJ_ROBOT             3
+#define TEST_POWERUP_BLUE_KEY      10
+#define TEST_ROBOT_BOSS            20
+#define TEST_ROBOT_GUIDEBOT        21
 
-static int test_children[TEST_SEGMENTS][TEST_SIDES] = {
+static const int test_default_children[TEST_SEGMENTS][TEST_SIDES] = {
 	{ 1, -1, -1, -1, -1, -1 },
 	{ 2, 0, -1, -1, -1, -1 },
-	{ -1, 1, -1, -1, -1, -1 }
+	{ -1, 1, -1, -1, -1, -1 },
+	{ -1, -1, -1, -1, -1, -1 }
 };
+static int test_children[TEST_SEGMENTS][TEST_SIDES];
 static int test_wall_nums[TEST_SEGMENTS][TEST_SIDES];
 static int test_wall_type[TEST_WALLS];
 static int test_wall_flags[TEST_WALLS];
@@ -57,6 +59,9 @@ static void test_reset(void)
 	int object;
 	int link;
 
+	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
+		for (side = 0; side < TEST_SIDES; ++side)
+			test_children[seg][side] = test_default_children[seg][side];
 	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
 		for (side = 0; side < TEST_SIDES; ++side)
 			test_wall_nums[seg][side] = -1;
@@ -467,6 +472,53 @@ static int test_route_key_step(void)
 	return failures;
 }
 
+static int test_route_key_uses_longer_open_path(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_children[0][2] = 3;
+	test_children[3][3] = 0;
+	test_children[3][0] = 2;
+	test_children[2][3] = 3;
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_nums[1][0] = 2;
+	test_wall_nums[2][1] = 3;
+	test_wall_type[0] = TEST_WALL_DOOR;
+	test_wall_type[1] = TEST_WALL_DOOR;
+	test_wall_type[2] = TEST_WALL_DOOR;
+	test_wall_type[3] = TEST_WALL_DOOR;
+	test_wall_key[0] = TEST_KEY_BLUE;
+	test_wall_key[1] = TEST_KEY_BLUE;
+	test_wall_key[2] = TEST_KEY_BLUE;
+	test_wall_key[3] = TEST_KEY_BLUE;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_wall_seg[2] = 1;
+	test_wall_sides[2] = 0;
+	test_wall_seg[3] = 2;
+	test_wall_sides[3] = 1;
+	test_object_count_value = 2;
+	test_object_type[0] = TEST_OBJ_POWERUP;
+	test_object_id[0] = TEST_POWERUP_BLUE_KEY;
+	test_object_seg[0] = 2;
+	test_object_type[1] = TEST_OBJ_CONTROL_CENTER;
+	test_object_seg[1] = 1;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("longer key route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("longer key route steps", 4, state.route_step_count);
+	failures += expect_string("longer key route key", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_int("longer key route key index", 0, state.route_steps[1].key_index);
+	failures += expect_string("longer key route reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	failures += expect_string("longer key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[3].kind));
+	return failures;
+}
+
 static int test_route_trigger_step(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -735,6 +787,7 @@ int main(void)
 	failures += test_reactorless_reachable_exit();
 	failures += test_reactorless_missing_exit();
 	failures += test_route_key_step();
+	failures += test_route_key_uses_longer_open_path();
 	failures += test_route_trigger_step();
 	failures += test_route_shootable_trigger_step();
 	failures += test_route_hidden_door_step();

@@ -435,7 +435,6 @@ private fun ModDetailsDialog(
     levelMetadataTarget?.let { target ->
         LevelMetadataDialog(
             target = target,
-            refreshTrigger = refreshTrigger,
             onDismiss = { levelMetadataTarget = null },
         )
     }
@@ -1340,7 +1339,6 @@ private fun MissionZipConstituentDialog(
     levelMetadataTarget?.let { target ->
         LevelMetadataDialog(
             target = target,
-            refreshTrigger = refreshTrigger,
             onDismiss = { levelMetadataTarget = null },
         )
     }
@@ -2304,7 +2302,6 @@ internal fun FileDetailDialog(
     if (showingLevelMetadata && levelMetadataTarget != null) {
         LevelMetadataDialog(
             target = levelMetadataTarget,
-            refreshTrigger = refreshTrigger,
             onDismiss = { showingLevelMetadata = false },
         )
     }
@@ -2480,17 +2477,16 @@ private fun LevelMetadataButton(
 @Composable
 private fun LevelMetadataDialog(
     target: LevelMetadataTarget,
-    refreshTrigger: Int = 0,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    var result by remember(target, refreshTrigger) { mutableStateOf<LevelMetadataResult?>(null) }
-    var loading by remember(target, refreshTrigger) { mutableStateOf(true) }
-    var progress by remember(target, refreshTrigger) {
+    var result by remember(target) { mutableStateOf<LevelMetadataResult?>(null) }
+    var loading by remember(target) { mutableStateOf(true) }
+    var progress by remember(target) {
         mutableStateOf(MetadataLoadProgress("Preparing analysis files", 0, 5))
     }
 
-    LaunchedEffect(target, refreshTrigger) {
+    LaunchedEffect(target) {
         loading = true
         result = null
         progress = MetadataLoadProgress("Preparing analysis files", 0, 5)

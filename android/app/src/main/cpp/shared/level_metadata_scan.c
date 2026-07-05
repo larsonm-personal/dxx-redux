@@ -1375,6 +1375,7 @@ static int metadata_route_edge_passable(
     int seg,
     int side,
     int optimistic,
+    int forbidden_missing_key,
     metadata_route_block *block)
 {
 	int child = view->segment_child(view->user, seg, side);
@@ -1434,17 +1435,18 @@ static int metadata_route_edge_passable(
 			block->side = side;
 			block->wall_num = wall_num;
 		}
-		return optimistic && key_index >= 0;
+		return optimistic && key_index >= 0 && key_index != forbidden_missing_key;
 	}
 	return 0;
 }
 
-static int metadata_route_find_path(
+static int metadata_route_find_path_forbidden_key(
     const level_metadata_scan_view *view,
     const metadata_route_context *route,
     int goal_seg,
     const int goal_pos[3],
     int optimistic,
+    int forbidden_missing_key,
     metadata_route_path *path)
 {
 	int heap_size = 0;
@@ -1477,7 +1479,7 @@ static int metadata_route_find_path(
 			double next_distance;
 			if (!valid_segment(view, child) || route_closed[child])
 				continue;
-			if (!metadata_route_edge_passable(view, route, cur, side, optimistic, NULL))
+			if (!metadata_route_edge_passable(view, route, cur, side, optimistic, forbidden_missing_key, NULL))
 				continue;
 			step = edge_distance(view, cur, child);
 			if (step == DBL_MAX)
@@ -1513,7 +1515,7 @@ static int metadata_route_find_path(
 			int to = reversed[i - 1];
 			int side = route_parent_side[to];
 			metadata_route_block block;
-			if (!metadata_route_edge_passable(view, route, from, side, 1, &block))
+			if (!metadata_route_edge_passable(view, route, from, side, 1, forbidden_missing_key, &block))
 				continue;
 			if (block.kind != METADATA_ROUTE_BLOCK_NONE) {
 				path->first_block = block;
@@ -1528,6 +1530,17 @@ static int metadata_route_find_path(
 		path->terminal_pos_valid = 1;
 	}
 	return 1;
+}
+
+static int metadata_route_find_path(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int goal_seg,
+    const int goal_pos[3],
+    int optimistic,
+    metadata_route_path *path)
+{
+	return metadata_route_find_path_forbidden_key(view, route, goal_seg, goal_pos, optimistic, -1, path);
 }
 
 static int metadata_route_find_visible_path(
@@ -1579,7 +1592,7 @@ static int metadata_route_find_visible_path(
 			double next_distance;
 			if (!valid_segment(view, child) || route_closed[child])
 				continue;
-			if (!metadata_route_edge_passable(view, route, cur, side, 0, NULL))
+			if (!metadata_route_edge_passable(view, route, cur, side, 0, -1, NULL))
 				continue;
 			step = edge_distance(view, cur, child);
 			if (step == DBL_MAX)
@@ -1955,10 +1968,8 @@ static int metadata_route_acquire_key(
 		metadata_route_path candidate;
 		if (key_targets[key_index][i].visited)
 			continue;
-		if (!metadata_route_find_path(view, route, key_targets[key_index][i].seg, key_targets[key_index][i].pos, 1, &candidate))
-			continue;
-		if (candidate.first_block.kind == METADATA_ROUTE_BLOCK_KEY &&
-		    candidate.first_block.key_index == key_index)
+		if (!metadata_route_find_path_forbidden_key(
+		        view, route, key_targets[key_index][i].seg, key_targets[key_index][i].pos, 1, key_index, &candidate))
 			continue;
 		if (candidate.distance < best_path.distance) {
 			best = i;
