@@ -232,41 +232,12 @@
           },
           {
             "index": 8,
-            "kind": "trigger",
-            "label": "Open wall trigger 28",
-            "seg": 143,
-            "side": 5,
-            "wall": 179,
-            "distance": 436.7780127771674,
-            "trigger": 28,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 27,
-                "side": 0,
-                "wall": 97
-              },
-              {
-                "seg": 126,
-                "side": 4,
-                "wall": 187
-              },
-              {
-                "seg": 110,
-                "side": 2,
-                "wall": 189
-              }
-            ]
-          },
-          {
-            "index": 9,
             "kind": "exit",
             "label": "Exit",
             "seg": 682,
             "side": 5,
             "wall": 193,
-            "distance": 1223.0042858076863,
+            "distance": 806.226028893852,
             "trigger": 33,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -479,64 +450,11 @@
           {
             "index": 7,
             "kind": "trigger",
-            "label": "Open wall trigger 9",
-            "seg": 439,
-            "side": 5,
-            "wall": 171,
-            "distance": 120.49135588139657,
-            "trigger": 9,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 612,
-                "side": 5,
-                "wall": 175
-              },
-              {
-                "seg": 324,
-                "side": 5,
-                "wall": 190
-              },
-              {
-                "seg": 441,
-                "side": 5,
-                "wall": 192
-              }
-            ]
-          },
-          {
-            "index": 8,
-            "kind": "trigger",
-            "label": "Open wall trigger 3",
-            "seg": 461,
-            "side": 2,
-            "wall": 182,
-            "distance": 682.7393402329145,
-            "trigger": 3,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 323,
-                "side": 5,
-                "wall": 165
-              },
-              {
-                "seg": 440,
-                "side": 5,
-                "wall": 167
-              }
-            ]
-          },
-          {
-            "index": 9,
-            "kind": "trigger",
             "label": "Open wall trigger 1",
             "seg": 129,
             "side": 2,
             "wall": 181,
-            "distance": 40.00079928126455,
+            "distance": 682.7399035540845,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -554,7 +472,7 @@
             ]
           },
           {
-            "index": 10,
+            "index": 8,
             "kind": "trigger",
             "label": "Open wall trigger 7",
             "seg": 323,
@@ -583,7 +501,7 @@
             ]
           },
           {
-            "index": 11,
+            "index": 9,
             "kind": "trigger",
             "label": "Open wall trigger 13",
             "seg": 617,
@@ -607,7 +525,7 @@
             ]
           },
           {
-            "index": 12,
+            "index": 10,
             "kind": "trigger",
             "label": "Open wall trigger 14",
             "seg": 619,
@@ -626,7 +544,7 @@
             ]
           },
           {
-            "index": 13,
+            "index": 11,
             "kind": "trigger",
             "label": "Open wall trigger 37",
             "seg": 203,
@@ -645,14 +563,14 @@
             ]
           },
           {
-            "index": 14,
+            "index": 12,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 622,
             "distance": 709.8471977661505
           },
           {
-            "index": 15,
+            "index": 13,
             "kind": "exit",
             "label": "Exit",
             "seg": 594,

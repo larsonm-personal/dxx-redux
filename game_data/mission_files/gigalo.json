@@ -1482,110 +1482,14 @@
           },
           {
             "index": 3,
-            "kind": "trigger",
-            "label": "Open door trigger 12",
-            "seg": 371,
-            "side": 2,
-            "wall": 149,
-            "distance": 96.29907650258684,
-            "trigger": 12,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 383,
-                "side": 4,
-                "wall": 159
-              },
-              {
-                "seg": 384,
-                "side": 4,
-                "wall": 161
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "label": "Open door trigger 11",
-            "seg": 380,
-            "side": 2,
-            "wall": 148,
-            "distance": 94.52116950579087,
-            "trigger": 11,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 383,
-                "side": 4,
-                "wall": 159
-              },
-              {
-                "seg": 384,
-                "side": 4,
-                "wall": 161
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "trigger",
-            "label": "Open door trigger 10",
-            "seg": 377,
-            "side": 2,
-            "wall": 147,
-            "distance": 94.52118442597941,
-            "trigger": 10,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 383,
-                "side": 4,
-                "wall": 159
-              },
-              {
-                "seg": 384,
-                "side": 4,
-                "wall": 161
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "trigger",
-            "label": "Open door trigger 9",
-            "seg": 375,
-            "side": 2,
-            "wall": 146,
-            "distance": 96.29907650258684,
-            "trigger": 9,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 383,
-                "side": 4,
-                "wall": 159
-              },
-              {
-                "seg": 384,
-                "side": 4,
-                "wall": 161
-              }
-            ]
-          },
-          {
-            "index": 7,
             "kind": "key",
             "label": "gold key",
             "seg": 318,
-            "distance": 274.2065383847767,
+            "distance": 315.80986084061965,
             "key": "gold"
           },
           {
-            "index": 8,
+            "index": 4,
             "kind": "key",
             "label": "red key",
             "seg": 410,
@@ -1593,14 +1497,14 @@
             "key": "red"
           },
           {
-            "index": 9,
+            "index": 5,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 461,
             "distance": 868.8838695571875
           },
           {
-            "index": 10,
+            "index": 6,
             "kind": "exit",
             "label": "Exit",
             "seg": 443,

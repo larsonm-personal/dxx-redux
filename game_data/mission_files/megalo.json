@@ -188,19 +188,35 @@
           },
           {
             "index": 2,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 723,
-            "distance": 707.4017267022953
+            "kind": "key",
+            "label": "gold key",
+            "seg": 423,
+            "distance": 2223.8596982649074,
+            "key": "gold"
           },
           {
             "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 721,
+            "distance": 2699.264324227546,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 723,
+            "distance": 1266.8948087704473
+          },
+          {
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 161,
             "side": 4,
             "wall": 111,
-            "distance": 535.3397486381316,
+            "distance": 1300.5265469633357,
             "trigger": 3,
             "trigger_type": "unknown"
           }

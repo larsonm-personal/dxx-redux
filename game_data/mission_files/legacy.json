@@ -308,29 +308,10 @@
           {
             "index": 2,
             "kind": "trigger",
-            "label": "Open wall trigger 0",
-            "seg": 49,
-            "side": 1,
-            "wall": 22,
-            "distance": 151.16345496432848,
-            "trigger": 0,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 50,
-                "side": 5,
-                "wall": 20
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
             "label": "Open wall trigger 6",
             "seg": 20,
             "wall": 87,
-            "distance": 223.03845496432848,
+            "distance": 171.875,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -368,7 +349,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "label": "blue key",
             "seg": 270,
@@ -376,7 +357,7 @@
             "key": "blue"
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "key",
             "label": "gold key",
             "seg": 347,
@@ -384,7 +365,7 @@
             "key": "gold"
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "key",
             "label": "red key",
             "seg": 763,
@@ -392,14 +373,14 @@
             "key": "red"
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 476,
             "distance": 740.7454258601945
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
             "seg": 668,

@@ -765,7 +765,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key unreachable",
+        "route_problem": "blue key route dependency loop",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -1420,33 +1420,14 @@
           },
           {
             "index": 7,
-            "kind": "trigger",
-            "label": "Open door trigger 2",
-            "seg": 333,
-            "side": 4,
-            "wall": 88,
-            "distance": 30.5,
-            "trigger": 2,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 92,
-                "side": 2,
-                "wall": 28
-              }
-            ]
-          },
-          {
-            "index": 8,
             "kind": "key",
             "label": "gold key",
             "seg": 633,
-            "distance": 173.24402031760047,
+            "distance": 191.74402031760047,
             "key": "gold"
           },
           {
-            "index": 9,
+            "index": 8,
             "kind": "key",
             "label": "red key",
             "seg": 246,
@@ -1454,7 +1435,7 @@
             "key": "red"
           },
           {
-            "index": 10,
+            "index": 9,
             "kind": "hidden_door",
             "label": "Hidden door",
             "seg": 622,
@@ -1475,14 +1456,14 @@
             ]
           },
           {
-            "index": 11,
+            "index": 10,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 27,
             "distance": 1815.70085392829
           },
           {
-            "index": 12,
+            "index": 11,
             "kind": "exit",
             "label": "Exit",
             "seg": 583,

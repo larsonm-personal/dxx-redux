@@ -1560,45 +1560,21 @@
           },
           {
             "index": 6,
-            "kind": "trigger",
-            "label": "Open door trigger 2",
-            "seg": 476,
-            "side": 3,
-            "wall": 74,
-            "distance": 223.69876831623642,
-            "trigger": 2,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 478,
-                "side": 0,
-                "wall": 72
-              },
-              {
-                "seg": 479,
-                "side": 2,
-                "wall": 73
-              }
-            ]
-          },
-          {
-            "index": 7,
             "kind": "key",
             "label": "red key",
             "seg": 535,
-            "distance": 684.5326098073347,
+            "distance": 680.8361017873019,
             "key": "red"
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 603,
             "distance": 2636.334468309486
           },
           {
-            "index": 9,
+            "index": 8,
             "kind": "exit",
             "label": "Exit",
             "seg": 702,
@@ -2161,7 +2137,7 @@
         ],
         "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "red key unreachable",
+        "route_problem": "red key route dependency loop",
         "notes": [
           "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"

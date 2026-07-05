@@ -286,7 +286,7 @@
             "seg": 397
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "red key route dependency loop"
       },
       {
         "level_num": 6,

@@ -487,7 +487,7 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -502,9 +502,42 @@
             "seg": 36,
             "distance": 1508.111625504511,
             "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 251,
+            "distance": 3333.5143914088294,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 736,
+            "distance": 2647.0822280406796,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 765,
+            "distance": 1735.216373348885
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 767,
+            "side": 4,
+            "wall": 61,
+            "distance": 217.45480025876097,
+            "trigger": 1,
+            "trigger_type": "unknown"
           }
-        ],
-        "route_problem": "gold key unreachable"
+        ]
       },
       {
         "level_num": 8,

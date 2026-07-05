@@ -1072,18 +1072,60 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
             "label": "Start",
             "seg": 51
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 359,
+            "distance": 1662.315638598426,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 271,
+            "distance": 1622.1712750331787,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 402,
+            "distance": 1458.5957172308638,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 445,
+            "distance": 2265.992041371993
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 84,
+            "side": 5,
+            "wall": 16,
+            "distance": 2037.3346361026706,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key unreachable",
         "notes": [
           "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"
@@ -1150,71 +1192,13 @@
           },
           {
             "index": 2,
-            "kind": "trigger",
-            "label": "Open door trigger 1",
-            "seg": 46,
-            "side": 4,
-            "wall": 9,
-            "distance": 30,
-            "trigger": 1,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 53,
-                "side": 4,
-                "wall": 6
-              },
-              {
-                "seg": 54,
-                "side": 4,
-                "wall": 4
-              },
-              {
-                "seg": 55,
-                "side": 4,
-                "wall": 2
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open door trigger 0",
-            "seg": 45,
-            "side": 4,
-            "wall": 8,
-            "distance": 40,
-            "trigger": 0,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 53,
-                "side": 4,
-                "wall": 6
-              },
-              {
-                "seg": 54,
-                "side": 4,
-                "wall": 4
-              },
-              {
-                "seg": 55,
-                "side": 4,
-                "wall": 2
-              }
-            ]
-          },
-          {
-            "index": 4,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 219,
-            "distance": 947.9883586142357
+            "distance": 938.0649620157203
           },
           {
-            "index": 5,
+            "index": 3,
             "kind": "exit",
             "label": "Exit",
             "seg": 0,

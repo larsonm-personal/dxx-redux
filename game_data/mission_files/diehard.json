@@ -1670,7 +1670,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "red key unreachable",
+        "route_problem": "red key route dependency loop",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -1732,35 +1732,11 @@
           {
             "index": 2,
             "kind": "trigger",
-            "label": "Illusory wall trigger 9",
-            "seg": 198,
-            "side": 3,
-            "wall": 59,
-            "distance": 68.2842712474619,
-            "trigger": 9,
-            "trigger_type_id": 11,
-            "trigger_type": "illusory_wall",
-            "opens": [
-              {
-                "seg": 215,
-                "side": 2,
-                "wall": 58
-              },
-              {
-                "seg": 225,
-                "side": 0,
-                "wall": 57
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
             "label": "Open wall trigger 8",
             "seg": 225,
             "side": 2,
             "wall": 56,
-            "distance": 1081.195959825931,
+            "distance": 1052.911688578469,
             "trigger": 8,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1808,7 +1784,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "label": "blue key",
             "seg": 53,
@@ -1816,7 +1792,7 @@
             "key": "blue"
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "key",
             "label": "red key",
             "seg": 459,
@@ -1824,14 +1800,14 @@
             "key": "red"
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 402,
             "distance": 894.7253639126791
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "exit",
             "label": "Exit",
             "seg": 461,

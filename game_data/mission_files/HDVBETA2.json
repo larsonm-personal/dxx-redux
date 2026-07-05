@@ -163,7 +163,7 @@
             "seg": 0
           }
         ],
-        "route_problem": "gold key unreachable"
+        "route_problem": "gold key route dependency loop"
       }
     ],
     "target_index": 0

@@ -94,120 +94,12 @@
           },
           {
             "index": 2,
-            "kind": "trigger",
-            "label": "Open door trigger 4",
-            "seg": 340,
-            "side": 5,
-            "wall": 160,
-            "distance": 89.95119088523556,
-            "trigger": 4,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 339,
-                "side": 2,
-                "wall": 46
-              },
-              {
-                "seg": 338,
-                "side": 0,
-                "wall": 45
-              },
-              {
-                "seg": 346,
-                "side": 2,
-                "wall": 48
-              },
-              {
-                "seg": 345,
-                "side": 0,
-                "wall": 47
-              },
-              {
-                "seg": 347,
-                "side": 2,
-                "wall": 49
-              },
-              {
-                "seg": 348,
-                "side": 0,
-                "wall": 50
-              },
-              {
-                "seg": 328,
-                "side": 2,
-                "wall": 43
-              },
-              {
-                "seg": 332,
-                "side": 0,
-                "wall": 44
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open door trigger 3",
-            "seg": 334,
-            "side": 5,
-            "wall": 158,
-            "distance": 89.95113791341399,
-            "trigger": 3,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 339,
-                "side": 2,
-                "wall": 46
-              },
-              {
-                "seg": 338,
-                "side": 0,
-                "wall": 45
-              },
-              {
-                "seg": 346,
-                "side": 2,
-                "wall": 48
-              },
-              {
-                "seg": 345,
-                "side": 0,
-                "wall": 47
-              },
-              {
-                "seg": 347,
-                "side": 2,
-                "wall": 49
-              },
-              {
-                "seg": 348,
-                "side": 0,
-                "wall": 50
-              },
-              {
-                "seg": 328,
-                "side": 2,
-                "wall": 43
-              },
-              {
-                "seg": 332,
-                "side": 0,
-                "wall": 44
-              }
-            ]
-          },
-          {
-            "index": 4,
             "kind": "hidden_door",
             "label": "Hidden door",
             "seg": 370,
             "side": 1,
             "wall": 149,
-            "distance": 227.90395694298246,
+            "distance": 280.1034522097848,
             "opens": [
               {
                 "seg": 370,
@@ -222,7 +114,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 3,
             "kind": "key",
             "label": "red key",
             "seg": 72,
@@ -230,14 +122,14 @@
             "key": "red"
           },
           {
-            "index": 6,
+            "index": 4,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 588,
             "distance": 1109.678067975495
           },
           {
-            "index": 7,
+            "index": 5,
             "kind": "exit",
             "label": "Exit",
             "seg": 127,

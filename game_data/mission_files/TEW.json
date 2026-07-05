@@ -357,7 +357,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key unreachable",
+        "route_problem": "gold key route dependency loop",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -894,7 +894,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key unreachable",
+        "route_problem": "gold key route dependency loop",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -1877,18 +1877,18 @@
           },
           {
             "index": 3,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 8,
-            "distance": 50.31027491439928
-          },
-          {
-            "index": 4,
             "kind": "key",
             "label": "red key",
             "seg": 172,
-            "distance": 591.9847124901239,
+            "distance": 642.2949874045232,
             "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 8,
+            "distance": 1408.3154474887774
           },
           {
             "index": 5,
@@ -1897,7 +1897,7 @@
             "seg": 690,
             "side": 1,
             "wall": 124,
-            "distance": 1685.3093659064627,
+            "distance": 370.6742024715557,
             "trigger": 11,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -2426,37 +2426,13 @@
           },
           {
             "index": 7,
-            "kind": "trigger",
-            "label": "Open door trigger 3",
-            "seg": 705,
-            "side": 1,
-            "wall": 116,
-            "distance": 115,
-            "trigger": 3,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 719,
-                "side": 1,
-                "wall": 114
-              },
-              {
-                "seg": 720,
-                "side": 1,
-                "wall": 112
-              }
-            ]
-          },
-          {
-            "index": 8,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 737,
-            "distance": 706.4146181423633
+            "distance": 704.8660930212042
           },
           {
-            "index": 9,
+            "index": 8,
             "kind": "exit",
             "label": "Exit",
             "seg": 788,

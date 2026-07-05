@@ -105,7 +105,7 @@
             "seg": 0
           }
         ],
-        "route_problem": "gold key unreachable"
+        "route_problem": "gold key route dependency loop"
       },
       {
         "level_num": 3,
@@ -296,7 +296,7 @@
             "seg": 15
           }
         ],
-        "route_problem": "gold key unreachable"
+        "route_problem": "gold key route dependency loop"
       },
       {
         "level_num": 5,
@@ -528,7 +528,7 @@
             "seg": 0
           }
         ],
-        "route_problem": "blue key unreachable"
+        "route_problem": "blue key route dependency loop"
       },
       {
         "level_num": -1,

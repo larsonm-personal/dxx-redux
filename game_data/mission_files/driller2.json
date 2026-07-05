@@ -109,7 +109,7 @@
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -124,10 +124,44 @@
             "seg": 44,
             "distance": 141.0124980474851,
             "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 121,
+            "distance": 811.0839569516046,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 405,
+            "distance": 800.7388994617065,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 412,
+            "distance": 125.4739768758612
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 394,
+            "side": 1,
+            "wall": 125,
+            "distance": 155.90993890402814,
+            "trigger": 1,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -230,22 +264,57 @@
           },
           {
             "index": 3,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 503,
-            "distance": 931.6830214650104
+            "kind": "key",
+            "label": "gold key",
+            "seg": 394,
+            "distance": 838.6926404082438,
+            "key": "gold"
           },
           {
             "index": 4,
+            "kind": "trigger",
+            "label": "Open wall trigger 2",
+            "seg": 473,
+            "side": 5,
+            "wall": 220,
+            "distance": 569.7652591671504,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 477,
+                "side": 5,
+                "wall": 221
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "label": "red key",
+            "seg": 478,
+            "distance": 330.0035285416991,
+            "key": "red"
+          },
+          {
+            "index": 6,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 503,
+            "distance": 1008.8954136293754
+          },
+          {
+            "index": 7,
             "kind": "exit",
             "label": "Exit",
-            "seg": 677,
-            "side": 1,
-            "wall": 142,
-            "distance": 980.9018938168325,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
+            "seg": 663,
+            "side": 2,
+            "wall": 103,
+            "distance": 71,
+            "trigger": 4,
+            "trigger_type_id": 4,
+            "trigger_type": "secret_exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",

@@ -1331,24 +1331,45 @@ static int metadata_route_edge_has_fired_trigger(
     const level_metadata_scan_view *view,
     const metadata_route_context *route,
     int seg,
+    int side)
+{
+	metadata_route_block block;
+	int count;
+	int index;
+
+	if (!route ||
+	    !view->triggered_side_opener_count ||
+	    !view->triggered_side_opener_wall_num ||
+	    !valid_segment(view, seg) ||
+	    side < 0 ||
+	    side >= LEVEL_METADATA_MAX_SIDES)
+		return 0;
+	count = view->triggered_side_opener_count(view->user, seg, side);
+	for (index = 0; index < count; ++index) {
+		int source_wall = view->triggered_side_opener_wall_num(view->user, seg, side, index);
+		if (metadata_route_source_wall_block(view, route, seg, side, 1, source_wall, &block) &&
+		    metadata_route_trigger_valid(block.trigger_num) &&
+		    route->fired_triggers[block.trigger_num])
+			return 1;
+	}
+	return 0;
+}
+
+static int metadata_route_edge_pair_has_fired_trigger(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int seg,
     int side,
     int child)
 {
-	metadata_route_block block;
 	int reverse_side;
 
-	if (!route)
-		return 0;
-	if (metadata_route_side_trigger_source(view, route, seg, side, 1, &block) &&
-	    metadata_route_trigger_valid(block.trigger_num) &&
-	    route->fired_triggers[block.trigger_num])
+	if (metadata_route_edge_has_fired_trigger(view, route, seg, side))
 		return 1;
 	reverse_side = view->reverse_side ? view->reverse_side(view->user, seg, child) : -1;
 	return reverse_side >= 0 &&
 	       reverse_side < LEVEL_METADATA_MAX_SIDES &&
-	       metadata_route_side_trigger_source(view, route, child, reverse_side, 1, &block) &&
-	       metadata_route_trigger_valid(block.trigger_num) &&
-	       route->fired_triggers[block.trigger_num];
+	       metadata_route_edge_has_fired_trigger(view, route, child, reverse_side);
 }
 
 static int metadata_route_edge_trigger_blocker(
@@ -1390,7 +1411,7 @@ static int metadata_route_edge_passable(
 		return 0;
 	if (side_has_exit(view, seg, side))
 		return 0;
-	if (metadata_route_edge_has_fired_trigger(view, route, seg, side, child))
+	if (metadata_route_edge_pair_has_fired_trigger(view, route, seg, side, child))
 		return 1;
 	if (!view->wall_num || !view->wall_type || !view->wall_keys)
 		return 1;

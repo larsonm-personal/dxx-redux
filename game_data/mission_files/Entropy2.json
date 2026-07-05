@@ -363,50 +363,12 @@
           },
           {
             "index": 7,
-            "kind": "trigger",
-            "label": "Open wall trigger 13",
-            "seg": 62,
-            "side": 4,
-            "wall": 55,
-            "distance": 60,
-            "trigger": 13,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 263,
-                "side": 0,
-                "wall": 40
-              }
-            ]
-          },
-          {
-            "index": 8,
-            "kind": "trigger",
-            "label": "Open wall trigger 5",
-            "seg": 330,
-            "side": 0,
-            "wall": 47,
-            "distance": 666.0943344900055,
-            "trigger": 5,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 263,
-                "side": 0,
-                "wall": 40
-              }
-            ]
-          },
-          {
-            "index": 9,
             "kind": "exit",
             "label": "Exit",
             "seg": 108,
             "side": 4,
             "wall": 56,
-            "distance": 1830.555156071559,
+            "distance": 2169.754772887478,
             "trigger": 4,
             "trigger_type_id": 3,
             "trigger_type": "exit"

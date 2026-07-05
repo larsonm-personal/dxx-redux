@@ -831,6 +831,8 @@ internal object LevelMetadataAnalyzer {
             .put("request_id", requestId)
             .put("game", target.game)
             .put("source_name", target.displayName)
+            .put("source_path", target.sourcePath.orEmpty())
+            .put("archive_path", target.archivePath.orEmpty())
             .put("source_type", prepared.sourceType)
             .put("data_dir", prepared.dataDir)
             .put("extra_data_dir", prepared.extraDataDir)

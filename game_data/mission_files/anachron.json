@@ -39,7 +39,7 @@
             "seg": 886
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "red key route dependency loop"
       },
       {
         "level_num": 2,
@@ -63,7 +63,7 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -86,9 +86,34 @@
             "seg": 236,
             "distance": 2608.977685084024,
             "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 646,
+            "distance": 1830.8244134246931,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 344,
+            "distance": 1333.7058623633961
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 433,
+            "side": 1,
+            "wall": 72,
+            "distance": 1498.0187892524386,
+            "trigger": 4,
+            "trigger_type": "unknown"
           }
-        ],
-        "route_problem": "red key unreachable"
+        ]
       },
       {
         "level_num": 3,
@@ -121,7 +146,7 @@
             "seg": 505
           }
         ],
-        "route_problem": "gold key unreachable"
+        "route_problem": "gold key route dependency loop"
       }
     ],
     "target_index": 0

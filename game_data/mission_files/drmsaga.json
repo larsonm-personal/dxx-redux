@@ -84,47 +84,13 @@
           },
           {
             "index": 2,
-            "kind": "trigger",
-            "label": "Open wall trigger 5",
-            "seg": 40,
-            "side": 4,
-            "wall": 66,
-            "distance": 395.2310562561766,
-            "trigger": 5,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 39,
-                "side": 0,
-                "wall": 57
-              },
-              {
-                "seg": 39,
-                "side": 1,
-                "wall": 59
-              },
-              {
-                "seg": 39,
-                "side": 2,
-                "wall": 61
-              },
-              {
-                "seg": 39,
-                "side": 3,
-                "wall": 63
-              }
-            ]
-          },
-          {
-            "index": 3,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 77,
-            "distance": 386.07564756463296
+            "distance": 587.3067038208096
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "trigger",
             "label": "Open wall trigger 7",
             "seg": 203,

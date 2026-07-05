@@ -138,7 +138,7 @@
             "distance": 415.38018641534904
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "red key route dependency loop"
       },
       {
         "level_num": 3,
@@ -178,7 +178,7 @@
             "distance": 218.305180101395
           }
         ],
-        "route_problem": "blue key unreachable"
+        "route_problem": "blue key route dependency loop"
       },
       {
         "level_num": 4,

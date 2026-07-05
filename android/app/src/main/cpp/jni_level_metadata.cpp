@@ -14,6 +14,7 @@
 #include <SDL.h>
 
 extern "C" {
+#include "android_crash_handler.h"
 #include "args.h"
 #include "bm.h"
 #include "config.h"
@@ -70,6 +71,57 @@ static std::string request_mission_display_name(const json &request)
 	const std::string display_name = request.value("mission_display_name", "");
 
 	return display_name.empty() ? request.value("mission_name", "") : display_name;
+}
+
+static std::string leaf_name(const std::string &path)
+{
+	const size_t slash = path.find_last_of("/\\");
+
+	return slash == std::string::npos ? path : path.substr(slash + 1);
+}
+
+static std::string request_metadata_source_file(const json &request)
+{
+	static const char *fields[] = {
+		"source_path",
+		"hog_path",
+		"archive_path",
+		"mission_filename",
+		"level_file",
+		"source_name",
+	};
+
+	for (const char *field : fields) {
+		const std::string value = request.value(field, "");
+		if (!value.empty())
+			return leaf_name(value);
+	}
+	const json::const_iterator hog_paths = request.find("hog_paths");
+	if (hog_paths != request.end() && hog_paths->is_array() && !hog_paths->empty() && (*hog_paths)[0].is_string())
+		return leaf_name((*hog_paths)[0].get<std::string>());
+	return "";
+}
+
+static void breadcrumb_metadata_request(const json &request, const char *stage)
+{
+	const std::string game = request.value("game", "");
+	const std::string source_type = request.value("source_type", "");
+	const std::string file = request_metadata_source_file(request);
+	const std::string mission = request_mission_display_name(request);
+	const std::string level_file = leaf_name(request.value("level_file", ""));
+
+	crash_breadcrumb_v("levelmeta %s game=%s type=%s file=%s",
+	                   stage ? stage : "", game.c_str(), source_type.c_str(), file.c_str());
+	if (!mission.empty() || !level_file.empty())
+		crash_breadcrumb_v("levelmeta detail mission=%s level=%s", mission.c_str(), level_file.c_str());
+}
+
+static void breadcrumb_metadata_level(const json &request, int level_num, const char *level_file)
+{
+	const std::string source = request_metadata_source_file(request);
+	const std::string level = leaf_name(level_file ? level_file : "");
+
+	crash_breadcrumb_v("levelmeta level n=%d file=%s source=%s", level_num, level.c_str(), source.c_str());
 }
 
 static void write_checkpoint(const json &request, const char *stage, const char *detail)
@@ -739,6 +791,7 @@ static json failed_level_row(int level_num, const char *level_file, const char *
 static LevelScanStatus scan_level(const json &request, json &levels, int level_num, const char *level_file, int *coop_starts)
 {
 	write_checkpoint(request, "level", level_file ? level_file : "");
+	breadcrumb_metadata_level(request, level_num, level_file);
 	if (coop_starts)
 		*coop_starts = 0;
 	if (!level_file || !level_file[0] || !PHYSFSX_exists(level_file, 1)) {
@@ -952,9 +1005,11 @@ Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEn
 	}
 	env->ReleaseStringUTFChars(jrequest, request_chars);
 	try {
+		breadcrumb_metadata_request(request, "begin");
 		write_checkpoint(request, "begin", request.value("source_name", "").c_str());
 		result = analyze_request(env, jcontext ? jcontext : thiz, request);
 		write_checkpoint(request, "done", result.value("status", "").c_str());
+		breadcrumb_metadata_request(request, result.value("status", "").c_str());
 	} catch (const std::exception &e) {
 		result = failed_result(request, e.what());
 	}

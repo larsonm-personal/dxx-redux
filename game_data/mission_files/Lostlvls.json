@@ -485,85 +485,13 @@
           },
           {
             "index": 9,
-            "kind": "trigger",
-            "label": "Open wall trigger 1",
-            "seg": 14,
-            "side": 4,
-            "wall": 7,
-            "distance": 180.00000000117345,
-            "trigger": 1,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 20,
-                "side": 3,
-                "wall": 5
-              },
-              {
-                "seg": 83,
-                "side": 1,
-                "wall": 4
-              }
-            ]
-          },
-          {
-            "index": 10,
-            "kind": "trigger",
-            "label": "Open wall trigger 3",
-            "seg": 24,
-            "side": 5,
-            "wall": 9,
-            "distance": 160.00000000234692,
-            "trigger": 3,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 20,
-                "side": 3,
-                "wall": 5
-              },
-              {
-                "seg": 83,
-                "side": 1,
-                "wall": 4
-              }
-            ]
-          },
-          {
-            "index": 11,
-            "kind": "trigger",
-            "label": "Open wall trigger 0",
-            "seg": 36,
-            "side": 2,
-            "wall": 6,
-            "distance": 180.00000000117348,
-            "trigger": 0,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 20,
-                "side": 3,
-                "wall": 5
-              },
-              {
-                "seg": 83,
-                "side": 1,
-                "wall": 4
-              }
-            ]
-          },
-          {
-            "index": 12,
             "kind": "boss",
             "label": "Boss robot",
             "seg": 83,
             "distance": 170.5413680827337
           },
           {
-            "index": 13,
+            "index": 10,
             "kind": "exit",
             "label": "Exit",
             "seg": 93,
@@ -848,35 +776,11 @@
           {
             "index": 4,
             "kind": "trigger",
-            "label": "Illusory wall trigger 10",
-            "seg": 506,
-            "side": 4,
-            "wall": 96,
-            "distance": 139.99960129973147,
-            "trigger": 10,
-            "trigger_type_id": 11,
-            "trigger_type": "illusory_wall",
-            "opens": [
-              {
-                "seg": 568,
-                "side": 1,
-                "wall": 95
-              },
-              {
-                "seg": 367,
-                "side": 3,
-                "wall": 94
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "trigger",
             "label": "Open wall trigger 12",
             "seg": 568,
             "side": 3,
             "wall": 100,
-            "distance": 82.00006276940935,
+            "distance": 82.00008784706698,
             "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -889,7 +793,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "key",
             "label": "gold key",
             "seg": 384,
@@ -897,7 +801,7 @@
             "key": "gold"
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "trigger",
             "label": "Open wall trigger 20",
             "seg": 723,
@@ -951,7 +855,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "key",
             "label": "red key",
             "seg": 639,
@@ -959,14 +863,14 @@
             "key": "red"
           },
           {
-            "index": 9,
+            "index": 8,
             "kind": "reactor",
             "label": "Reactor",
             "seg": 738,
             "distance": 722.714100522352
           },
           {
-            "index": 10,
+            "index": 9,
             "kind": "exit",
             "label": "Exit",
             "seg": 698,

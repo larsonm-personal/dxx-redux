@@ -1071,7 +1071,7 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -1086,11 +1086,79 @@
             "seg": 777,
             "distance": 528.6143226246661,
             "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 147,
+            "distance": 2655.8107114100258,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "label": "red key",
+            "seg": 892,
+            "distance": 2632.836820596698,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "label": "Open wall trigger 6",
+            "seg": 125,
+            "side": 0,
+            "wall": 209,
+            "distance": 2957.460868691404,
+            "trigger": 6,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 802,
+                "side": 4,
+                "wall": 206
+              },
+              {
+                "seg": 18,
+                "side": 5,
+                "wall": 5
+              },
+              {
+                "seg": 20,
+                "side": 5,
+                "wall": 3
+              },
+              {
+                "seg": 22,
+                "side": 5,
+                "wall": 1
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "boss",
+            "label": "Boss robot",
+            "seg": 803,
+            "distance": 933.6833684019186
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 793,
+            "side": 5,
+            "wall": 162,
+            "distance": 329.1683710358538,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key unreachable",
         "notes": [
           "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"
@@ -2046,7 +2114,7 @@
         ],
         "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "red key unreachable",
+        "route_problem": "red key route dependency loop",
         "notes": [
           "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"

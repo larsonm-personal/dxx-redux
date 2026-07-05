@@ -7,6 +7,7 @@
 #define TEST_SIDES                 LEVEL_METADATA_MAX_SIDES
 #define TEST_WALLS                 8
 #define TEST_OBJECTS               4
+#define TEST_TRIGGERS              2
 #define TEST_FIX                   65536
 #define TEST_WALL_OPEN             4
 #define TEST_WALL_BLASTABLE        1
@@ -46,10 +47,10 @@ static int test_object_type[TEST_OBJECTS];
 static int test_object_id[TEST_OBJECTS];
 static int test_object_seg[TEST_OBJECTS];
 static int test_segment_special_values[TEST_SEGMENTS];
-static int test_trigger_type[1];
-static int test_trigger_link_count[1];
-static int test_trigger_link_seg[1][LEVEL_METADATA_MAX_ROUTE_LINKS];
-static int test_trigger_link_sides[1][LEVEL_METADATA_MAX_ROUTE_LINKS];
+static int test_trigger_type[TEST_TRIGGERS];
+static int test_trigger_link_count[TEST_TRIGGERS];
+static int test_trigger_link_seg[TEST_TRIGGERS][LEVEL_METADATA_MAX_ROUTE_LINKS];
+static int test_trigger_link_sides[TEST_TRIGGERS][LEVEL_METADATA_MAX_ROUTE_LINKS];
 
 static void test_reset(void)
 {
@@ -57,6 +58,7 @@ static void test_reset(void)
 	int side;
 	int wall;
 	int object;
+	int trigger;
 	int link;
 
 	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
@@ -82,11 +84,13 @@ static void test_reset(void)
 	}
 	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
 		test_segment_special_values[seg] = 0;
-	test_trigger_type[0] = TEST_TRIGGER_OPEN_WALL;
-	test_trigger_link_count[0] = 0;
-	for (link = 0; link < LEVEL_METADATA_MAX_ROUTE_LINKS; ++link) {
-		test_trigger_link_seg[0][link] = -1;
-		test_trigger_link_sides[0][link] = -1;
+	for (trigger = 0; trigger < TEST_TRIGGERS; ++trigger) {
+		test_trigger_type[trigger] = TEST_TRIGGER_OPEN_WALL;
+		test_trigger_link_count[trigger] = 0;
+		for (link = 0; link < LEVEL_METADATA_MAX_ROUTE_LINKS; ++link) {
+			test_trigger_link_seg[trigger][link] = -1;
+			test_trigger_link_sides[trigger][link] = -1;
+		}
 	}
 }
 
@@ -290,36 +294,56 @@ static int test_triggered_side_opener_wall_num(void *user, int seg, int side, in
 	return (seg == 0 && side == 0) || (seg == 1 && side == 1) ? 2 : -1;
 }
 
+static int test_multi_opener_side_opener_count(void *user, int seg, int side)
+{
+	(void) user;
+	return (seg == 1 && side == 0) || (seg == 2 && side == 1) ? 2 : 0;
+}
+
+static int test_multi_opener_side_opener_wall_num(void *user, int seg, int side, int index)
+{
+	(void) user;
+	if (!((seg == 1 && side == 0) || (seg == 2 && side == 1)))
+		return -1;
+	if (index == 0)
+		return 2;
+	if (index == 1)
+		return 3;
+	return -1;
+}
+
 static int test_trigger_type_at(void *user, int trigger_num)
 {
 	(void) user;
-	if (trigger_num != 0)
+	if (trigger_num < 0 || trigger_num >= TEST_TRIGGERS)
 		return -1;
-	return test_trigger_type[0];
+	return test_trigger_type[trigger_num];
 }
 
 static int test_trigger_link_count_at(void *user, int trigger_num)
 {
 	(void) user;
-	if (trigger_num != 0)
+	if (trigger_num < 0 || trigger_num >= TEST_TRIGGERS)
 		return 0;
-	return test_trigger_link_count[0];
+	return test_trigger_link_count[trigger_num];
 }
 
 static int test_trigger_link_segment(void *user, int trigger_num, int link_index)
 {
 	(void) user;
-	if (trigger_num != 0 || link_index < 0 || link_index >= test_trigger_link_count[0])
+	if (trigger_num < 0 || trigger_num >= TEST_TRIGGERS ||
+	    link_index < 0 || link_index >= test_trigger_link_count[trigger_num])
 		return -1;
-	return test_trigger_link_seg[0][link_index];
+	return test_trigger_link_seg[trigger_num][link_index];
 }
 
 static int test_trigger_link_side(void *user, int trigger_num, int link_index)
 {
 	(void) user;
-	if (trigger_num != 0 || link_index < 0 || link_index >= test_trigger_link_count[0])
+	if (trigger_num < 0 || trigger_num >= TEST_TRIGGERS ||
+	    link_index < 0 || link_index >= test_trigger_link_count[trigger_num])
 		return -1;
-	return test_trigger_link_sides[0][link_index];
+	return test_trigger_link_sides[trigger_num][link_index];
 }
 
 static int test_target_visible_from_segment(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3])
@@ -604,6 +628,56 @@ static int test_route_shootable_trigger_step(void)
 	return failures;
 }
 
+static int test_route_accepts_any_fired_opener_for_side(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[1][0] = 0;
+	test_wall_nums[2][1] = 1;
+	test_wall_nums[2][2] = 2;
+	test_wall_nums[0][2] = 3;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_type[1] = TEST_WALL_CLOSED;
+	test_wall_type[2] = TEST_WALL_OPEN;
+	test_wall_type[3] = TEST_WALL_OPEN;
+	test_wall_trigger[2] = 0;
+	test_wall_trigger[3] = 1;
+	test_wall_seg[0] = 1;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 2;
+	test_wall_sides[1] = 1;
+	test_wall_seg[2] = 2;
+	test_wall_sides[2] = 2;
+	test_wall_seg[3] = 0;
+	test_wall_sides[3] = 2;
+	test_trigger_link_count[0] = 2;
+	test_trigger_link_seg[0][0] = 1;
+	test_trigger_link_sides[0][0] = 0;
+	test_trigger_link_seg[0][1] = 2;
+	test_trigger_link_sides[0][1] = 1;
+	test_trigger_link_count[1] = 2;
+	test_trigger_link_seg[1][0] = 1;
+	test_trigger_link_sides[1][0] = 0;
+	test_trigger_link_seg[1][1] = 2;
+	test_trigger_link_sides[1][1] = 1;
+	view.triggered_side_opener_count = test_multi_opener_side_opener_count;
+	view.triggered_side_opener_wall_num = test_multi_opener_side_opener_wall_num;
+	view.trigger_type = test_trigger_type_at;
+	view.trigger_link_count = test_trigger_link_count_at;
+	view.trigger_link_segment = test_trigger_link_segment;
+	view.trigger_link_side = test_trigger_link_side;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("multi-opener route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("multi-opener route steps", 3, state.route_step_count);
+	failures += expect_string("multi-opener route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_int("multi-opener route trigger", 1, state.route_steps[1].trigger_num);
+	failures += expect_string("multi-opener route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
 static int test_route_hidden_door_step(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -790,6 +864,7 @@ int main(void)
 	failures += test_route_key_uses_longer_open_path();
 	failures += test_route_trigger_step();
 	failures += test_route_shootable_trigger_step();
+	failures += test_route_accepts_any_fired_opener_for_side();
 	failures += test_route_hidden_door_step();
 	failures += test_route_visible_reactor_step();
 	failures += test_route_prefers_boss_over_control_center_segment();
