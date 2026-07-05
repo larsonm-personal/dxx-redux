@@ -5,6 +5,7 @@
 #include "secret_area_scan.h"
 
 void secret_area_rescan_current_level(void);
+void level_metadata_rescan_current_level(void);
 const secret_area_state *secret_area_get_state(void);
 const level_metadata_state *level_metadata_get_state(void);
 int secret_area_note_segment_entered(int segnum);

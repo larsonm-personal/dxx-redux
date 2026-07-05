@@ -773,6 +773,11 @@ static int escort_route_next_goal(int key_flags)
 	return escort_route_next_goal_for_key_flags(key_flags, 1, NULL);
 }
 
+static void escort_route_refresh_metadata(void)
+{
+	level_metadata_rescan_current_level();
+}
+
 int escort_route_analyze_step(int step_index, escort_route_step_analysis *analysis)
 {
 	const level_metadata_state *metadata = level_metadata_get_state();
@@ -2600,6 +2605,7 @@ int escort_set_goal_object(void)
 
 	key_flags = escort_owned_key_flags();
 #ifdef __ANDROID__
+	escort_route_refresh_metadata();
 	route_goal = escort_route_next_goal(key_flags);
 	if (route_goal != ESCORT_GOAL_UNSPECIFIED)
 		return route_goal;

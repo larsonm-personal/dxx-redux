@@ -400,13 +400,44 @@ function Copy-RawMissionFileSet {
         $target = Join-Path $StageDir $leaf
         Copy-Item -LiteralPath $file.FullName -Destination $target -Force
         $ext = [IO.Path]::GetExtension($leaf).ToLowerInvariant()
-        if ($ext -in @(".msn", ".mn2", ".rdl", ".rl2", ".sdl", ".sl2")) {
+        if ($ext -in @(".msn", ".mn2", ".hog", ".rdl", ".rl2", ".sdl", ".sl2")) {
             $lower = $leaf.ToLowerInvariant()
             Copy-StageAlias -Source $target -Target (Join-Path $StageDir $lower)
             Copy-StageAlias -Source $target -Target (Join-Path (Join-Path $StageDir "missions") $leaf)
             Copy-StageAlias -Source $target -Target (Join-Path (Join-Path $StageDir "missions") $lower)
         }
     }
+}
+
+function Get-HeadlessFailureSummary {
+    param(
+        [Parameter(Mandatory = $true)][string]$Mission,
+        [Parameter(Mandatory = $true)][string]$LogPath
+    )
+
+    if (-not (Test-Path -LiteralPath $LogPath -PathType Leaf)) {
+        return "headless metadata failed for ${Mission}; log was not written"
+    }
+
+    $lines = @(Get-Content -LiteralPath $LogPath)
+    $failLines = @($lines | Where-Object { $_ -like "SECRET-AREA-DUMP FAIL*" } | Select-Object -First 3)
+    if ($failLines.Count -gt 0) {
+        return "headless metadata failed for ${Mission}: $($failLines -join '; '); log=$LogPath"
+    }
+
+    $missingLevels = @(
+        $lines |
+            Where-Object { $_ -like "SECRET-AREA-DUMP WARN level missing *" } |
+            ForEach-Object { $_ -replace '^SECRET-AREA-DUMP WARN level missing ', '' } |
+            Select-Object -First 8
+    )
+    if ($missingLevels.Count -gt 0) {
+        $suffix = if ($missingLevels.Count -ge 8) { ", ..." } else { "" }
+        return "headless metadata failed for ${Mission}: missing required level files $($missingLevels -join ', ')$suffix; check that the mission HOG and descriptor were staged together; log=$LogPath"
+    }
+
+    $tail = ($lines | Select-Object -Last 8) -join " "
+    return "headless metadata failed for ${Mission}: $tail; log=$LogPath"
 }
 
 function Expand-MissionArchive {
@@ -496,12 +527,7 @@ function Invoke-HeadlessScan {
     $dataDir = $DataDirs[$game]
     & $exe -hogdir $dataDir -extra-dir $StageDir -mission $mission -secretarea-json-out $RawOutputPath > $LogPath 2>&1
     if ($LASTEXITCODE -ne 0) {
-        $tail = if (Test-Path -LiteralPath $LogPath) {
-            (Get-Content -LiteralPath $LogPath | Select-Object -Last 12) -join " "
-        } else {
-            ""
-        }
-        throw "headless metadata failed for ${mission}: $tail"
+        throw (Get-HeadlessFailureSummary -Mission $mission -LogPath $LogPath)
     }
     return Get-Content -LiteralPath $RawOutputPath -Raw | ConvertFrom-Json
 }

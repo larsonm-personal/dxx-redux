@@ -304,6 +304,12 @@ static int metadata_wall_clip_flags(const level_metadata_scan_view *view, int wa
 	return view->wall_clip_flags(view->user, wall_num);
 }
 
+static int metadata_wall_is_opened_door(const level_metadata_scan_view *view, int wall_num)
+{
+	return view->wall_flag_door_opened &&
+	       (metadata_wall_flags(view, wall_num) & view->wall_flag_door_opened) != 0;
+}
+
 static int metadata_wall_is_hidden_door(const level_metadata_scan_view *view, int wall_num)
 {
 	if (!valid_wall(view, wall_num) ||
@@ -667,6 +673,8 @@ static int route_edge_passable(const level_metadata_scan_view *view, int seg, in
 		return 1;
 	wall_type = view->wall_type(view->user, wall_num);
 	wall_keys = view->wall_keys(view->user, wall_num);
+	if (metadata_wall_is_opened_door(view, wall_num))
+		return 1;
 	if (wall_keys == view->wall_key_none)
 		return !side_has_exit(view, seg, side);
 	if (wall_type == view->wall_type_open || wall_type == view->wall_type_blastable)
@@ -1428,6 +1436,8 @@ static int metadata_route_edge_passable(
 		return 1;
 	wall_type = view->wall_type(view->user, wall_num);
 	wall_keys = view->wall_keys(view->user, wall_num);
+	if (metadata_wall_is_opened_door(view, wall_num))
+		return 1;
 	if (metadata_wall_is_hidden_door(view, wall_num)) {
 		if (route->opened_hidden_walls[wall_num])
 			return 1;

@@ -14,6 +14,7 @@
 #define TEST_WALL_DOOR             2
 #define TEST_WALL_ILLUSION         3
 #define TEST_WALL_CLOSED           5
+#define TEST_WALL_FLAG_DOOR_OPENED 2
 #define TEST_WALL_FLAG_DOOR_LOCKED 8
 #define TEST_WALL_CLIP_HIDDEN      8
 #define TEST_KEY_NONE              1
@@ -372,6 +373,7 @@ static level_metadata_scan_view test_view(void)
 	view.wall_type_illusion = TEST_WALL_ILLUSION;
 	view.wall_type_open = TEST_WALL_OPEN;
 	view.wall_flag_door_locked = TEST_WALL_FLAG_DOOR_LOCKED;
+	view.wall_flag_door_opened = TEST_WALL_FLAG_DOOR_OPENED;
 	view.wall_key_none = TEST_KEY_NONE;
 	view.wall_key_blue = TEST_KEY_BLUE;
 	view.wall_key_red = TEST_KEY_RED;
@@ -681,6 +683,46 @@ static int test_route_shootable_trigger_step(void)
 	return failures;
 }
 
+static int test_route_skips_already_opened_trigger_door(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_nums[0][2] = 2;
+	test_wall_type[0] = TEST_WALL_DOOR;
+	test_wall_type[1] = TEST_WALL_DOOR;
+	test_wall_type[2] = TEST_WALL_OPEN;
+	test_wall_flags[0] = TEST_WALL_FLAG_DOOR_OPENED;
+	test_wall_flags[1] = TEST_WALL_FLAG_DOOR_OPENED;
+	test_wall_trigger[2] = 0;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_wall_seg[2] = 0;
+	test_wall_sides[2] = 2;
+	test_trigger_link_count[0] = 2;
+	test_trigger_link_seg[0][0] = 0;
+	test_trigger_link_sides[0][0] = 0;
+	test_trigger_link_seg[0][1] = 1;
+	test_trigger_link_sides[0][1] = 1;
+	view.triggered_side_opener_count = test_triggered_side_opener_count;
+	view.triggered_side_opener_wall_num = test_triggered_side_opener_wall_num;
+	view.trigger_type = test_trigger_type_at;
+	view.trigger_link_count = test_trigger_link_count_at;
+	view.trigger_link_segment = test_trigger_link_segment;
+	view.trigger_link_side = test_trigger_link_side;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("opened trigger door route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("opened trigger door route steps", 2, state.route_step_count);
+	failures += expect_string("opened trigger door route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	return failures;
+}
+
 static int test_route_accepts_any_fired_opener_for_side(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -918,6 +960,7 @@ int main(void)
 	failures += test_route_prefers_ordered_key_chain();
 	failures += test_route_trigger_step();
 	failures += test_route_shootable_trigger_step();
+	failures += test_route_skips_already_opened_trigger_door();
 	failures += test_route_accepts_any_fired_opener_for_side();
 	failures += test_route_hidden_door_step();
 	failures += test_route_visible_reactor_step();

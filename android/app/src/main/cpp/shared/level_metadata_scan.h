@@ -70,6 +70,7 @@ typedef struct level_metadata_scan_view {
 	int wall_type_illusion;
 	int wall_type_open;
 	int wall_flag_door_locked;
+	int wall_flag_door_opened;
 	int wall_clip_hidden;
 	int wall_key_none;
 	int wall_key_blue;

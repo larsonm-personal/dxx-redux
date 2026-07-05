@@ -529,7 +529,7 @@ static int secret_area_trigger_link_side(void *user, int trigger_num, int link_i
 #endif
 }
 
-static void level_metadata_rescan_current_level(void)
+void level_metadata_rescan_current_level(void)
 {
 	level_metadata_scan_view view;
 	int start_segment;
@@ -547,6 +547,7 @@ static void level_metadata_rescan_current_level(void)
 	view.wall_type_illusion = WALL_ILLUSION;
 	view.wall_type_open = WALL_OPEN;
 	view.wall_flag_door_locked = WALL_DOOR_LOCKED;
+	view.wall_flag_door_opened = WALL_DOOR_OPENED;
 	view.wall_key_none = KEY_NONE;
 	view.wall_key_blue = KEY_BLUE;
 	view.wall_key_red = KEY_RED;
