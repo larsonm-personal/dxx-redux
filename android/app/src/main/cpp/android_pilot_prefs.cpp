@@ -1,6 +1,6 @@
 /*
- * android_pilot_prefs.cpp -- JNI wrapper for launcher-side cockpit mode and
- * auto-level preferences stored in pilot-related files.
+ * android_pilot_prefs.cpp -- JNI wrapper for launcher-side engine preferences
+ * stored in pilot-related files.
  *
  * File format knowledge stays in playsave.c so Kotlin does not duplicate the
  * D1/D2 player-file layouts.
@@ -127,10 +127,12 @@ static void read_engine_prefs(const char *files_dir,
                               int *has_pilot,
                               int *cockpit_mode,
                               int *auto_leveling,
-                              int *show_counts)
+                              int *show_counts,
+                              int *headlight_active_default)
 {
 	android_get_default_pilot_prefs(cockpit_mode, auto_leveling);
 	android_get_default_hud_count_prefs(show_counts);
+	*headlight_active_default = 0;
 	*has_pilot = 0;
 
 #ifdef DXX_BUILD_DESCENT_II
@@ -138,7 +140,7 @@ static void read_engine_prefs(const char *files_dir,
 	char plx_path[512];
 	if (find_first_pilot(files_dir, "d2x-redux", ".plr", pilot_path, sizeof(pilot_path))) {
 		*has_pilot = 1;
-		(void) plr_read_cockpit_autolevel(pilot_path, cockpit_mode, auto_leveling);
+		(void) plr_read_cockpit_autolevel(pilot_path, cockpit_mode, auto_leveling, headlight_active_default);
 	}
 	if (find_first_pilot(files_dir, "d2x-redux", ".plx", plx_path, sizeof(plx_path))) {
 		*has_pilot = 1;
@@ -214,6 +216,7 @@ struct write_ctx {
 	int cockpit_mode;
 	int auto_leveling;
 	int show_counts;
+	int headlight_active_default;
 };
 
 struct visual_write_ctx {
@@ -244,7 +247,7 @@ static int write_music_visitor(const char *path, void *ctx)
 static int write_visitor(const char *path, void *ctx)
 {
 	struct write_ctx *wc = (struct write_ctx *) ctx;
-	return plr_patch_cockpit_autolevel(path, wc->cockpit_mode, wc->auto_leveling);
+	return plr_patch_cockpit_autolevel(path, wc->cockpit_mode, wc->auto_leveling, wc->headlight_active_default);
 }
 
 static int write_hud_counts_visitor(const char *path, void *ctx)
@@ -276,12 +279,14 @@ JNI_FUNC(nativeReadEnginePrefs)(JNIEnv *env, jclass, jstring jfilesDir)
 	int cockpit_mode = 0;
 	int auto_leveling = 1;
 	int show_counts = 0;
-	jint raw[4];
+	int headlight_active_default = 0;
+	jint raw[5];
 	jintArray result;
 
-	read_engine_prefs(files_dir, &has_pilot, &cockpit_mode, &auto_leveling, &show_counts);
-	LOGI("nativeReadEnginePrefs: has_pilot=%d cockpit=%d autolevel=%d counts=%d",
-	     has_pilot, cockpit_mode, auto_leveling, show_counts);
+	read_engine_prefs(files_dir, &has_pilot, &cockpit_mode, &auto_leveling, &show_counts,
+	                  &headlight_active_default);
+	LOGI("nativeReadEnginePrefs: has_pilot=%d cockpit=%d autolevel=%d counts=%d headlight_default=%d",
+	     has_pilot, cockpit_mode, auto_leveling, show_counts, headlight_active_default);
 
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 
@@ -289,8 +294,9 @@ JNI_FUNC(nativeReadEnginePrefs)(JNIEnv *env, jclass, jstring jfilesDir)
 	raw[1] = (jint) cockpit_mode;
 	raw[2] = (jint) (auto_leveling ? 1 : 0);
 	raw[3] = (jint) (show_counts ? 1 : 0);
-	result = env->NewIntArray(4);
-	env->SetIntArrayRegion(result, 0, 4, raw);
+	raw[4] = (jint) (headlight_active_default ? 1 : 0);
+	result = env->NewIntArray(5);
+	env->SetIntArrayRegion(result, 0, 5, raw);
 	return result;
 }
 
@@ -300,7 +306,8 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
                                  jstring jfilesDir,
                                  jint cockpitMode,
                                  jboolean autoLeveling,
-                                 jboolean showRobotHostageCounts)
+                                 jboolean showRobotHostageCounts,
+                                 jboolean headlightActiveDefault)
 {
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
 	struct write_ctx wc;
@@ -309,6 +316,7 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
 	wc.cockpit_mode = (int) cockpitMode;
 	wc.auto_leveling = autoLeveling ? 1 : 0;
 	wc.show_counts = showRobotHostageCounts ? 1 : 0;
+	wc.headlight_active_default = headlightActiveDefault ? 1 : 0;
 
 #ifdef DXX_BUILD_DESCENT_II
 	{
@@ -324,8 +332,8 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
 	}
 #endif
 
-	LOGI("nativeWriteEnginePrefs: cockpit=%d autolevel=%d counts=%d patched=%d",
-	     wc.cockpit_mode, wc.auto_leveling, wc.show_counts, total);
+	LOGI("nativeWriteEnginePrefs: cockpit=%d autolevel=%d counts=%d headlight_default=%d patched=%d",
+	     wc.cockpit_mode, wc.auto_leveling, wc.show_counts, wc.headlight_active_default, total);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 	return (jint) total;
 }

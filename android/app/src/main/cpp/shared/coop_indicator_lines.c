@@ -25,6 +25,11 @@
 #include "wall.h"
 #include "switch.h"
 #include "cntrlcen.h"
+#include "gameseg.h"
+#include "textures.h"
+#ifdef OGL
+#include "ogl_init.h"
+#endif
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
 #endif
@@ -279,12 +284,202 @@ static void draw_path_lines(const indicator_path *path, int color)
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
 }
 
-/* -- post-restore diagnostics ---------------------------------------- */
+/* -- coop diagnostics ------------------------------------------------ */
 static int s_diag_frames;
+
+typedef struct {
+	unsigned int texture_sig;
+	unsigned int segment_sig;
+	unsigned int player_tex_sig;
+	int paged_out;
+	int gltex_ptrs;
+	int gltex_handles;
+	int png_handles;
+	int mask_handles;
+	int mipmapped;
+	int invalid_tmaps;
+	int first_bad_seg;
+	int first_bad_side;
+	int first_bad_tmap1;
+	int first_bad_tmap2;
+} coop_texture_diag;
+
+static unsigned int coop_diag_mix(unsigned int hash, unsigned int value)
+{
+	hash ^= value;
+	hash *= 16777619u;
+	return hash;
+}
+
+static void coop_collect_texture_diag(coop_texture_diag *diag)
+{
+	unsigned int hash;
+	int i, j;
+
+	memset(diag, 0, sizeof(*diag));
+	diag->first_bad_seg = -1;
+	diag->first_bad_side = -1;
+	diag->first_bad_tmap1 = -1;
+	diag->first_bad_tmap2 = -1;
+
+	hash = 2166136261u;
+	for (i = 0; i < NumTextures; i++) {
+		unsigned int bitmap_index = Textures[i].index;
+		hash = coop_diag_mix(hash, (unsigned int) i);
+		hash = coop_diag_mix(hash, bitmap_index);
+		if (bitmap_index < MAX_BITMAP_FILES) {
+			grs_bitmap *bm = &GameBitmaps[bitmap_index];
+			hash = coop_diag_mix(hash, (unsigned int) bm->bm_flags);
+			hash = coop_diag_mix(hash, (unsigned int) bm->bm_w);
+			hash = coop_diag_mix(hash, (unsigned int) bm->bm_h);
+			if (bm->bm_flags & BM_FLAG_PAGED_OUT)
+				diag->paged_out++;
+#ifdef OGL
+			if (bm->gltexture) {
+				diag->gltex_ptrs++;
+				if (bm->gltexture->handle > 0)
+					diag->gltex_handles++;
+				if (bm->gltexture->is_png)
+					diag->png_handles++;
+				if (bm->gltexture->has_mipmaps)
+					diag->mipmapped++;
+			}
+			if (bm->gltexture_mask && bm->gltexture_mask->handle > 0)
+				diag->mask_handles++;
+#endif
+		}
+	}
+	diag->texture_sig = hash;
+
+	hash = 2166136261u;
+	for (i = 0; i <= Highest_segment_index; i++) {
+		for (j = 0; j < 6; j++) {
+			int tmap1 = Segments[i].sides[j].tmap_num;
+			int tmap2 = (int) (unsigned short) Segments[i].sides[j].tmap_num2;
+			int tmap2_base = tmap2 & 0x3fff;
+			int invalid = (tmap1 < 0 || tmap1 >= NumTextures ||
+			               (tmap2_base && tmap2_base >= NumTextures));
+			hash = coop_diag_mix(hash, (unsigned int) i);
+			hash = coop_diag_mix(hash, (unsigned int) j);
+			hash = coop_diag_mix(hash, (unsigned int) (unsigned short) tmap1);
+			hash = coop_diag_mix(hash, (unsigned int) tmap2);
+			if (invalid) {
+				diag->invalid_tmaps++;
+				if (diag->first_bad_seg < 0) {
+					diag->first_bad_seg = i;
+					diag->first_bad_side = j;
+					diag->first_bad_tmap1 = tmap1;
+					diag->first_bad_tmap2 = tmap2;
+				}
+			}
+		}
+	}
+	diag->segment_sig = hash;
+
+	hash = 2166136261u;
+	for (i = 0; i < MAX_PLAYERS; i++) {
+		hash = coop_diag_mix(hash, multi_player_tex_color[i]);
+		for (j = 0; j < N_PLAYER_SHIP_TEXTURES; j++)
+			hash = coop_diag_mix(hash, multi_player_textures[i][j].index);
+	}
+	for (i = 0; i < N_players && i < MAX_PLAYERS; i++) {
+		object *obj = NULL;
+		hash = coop_diag_mix(hash, (unsigned int) i);
+		hash = coop_diag_mix(hash, (unsigned int) Players[i].connected);
+		hash = coop_diag_mix(hash, (unsigned int) Players[i].objnum);
+		if (Players[i].objnum >= 0 && Players[i].objnum <= Highest_object_index)
+			obj = &Objects[Players[i].objnum];
+		if (obj && obj->render_type == RT_POLYOBJ) {
+			hash = coop_diag_mix(hash, (unsigned int) obj->type);
+			hash = coop_diag_mix(hash, (unsigned int) obj->id);
+			hash = coop_diag_mix(hash, (unsigned int) obj->rtype.pobj_info.model_num);
+			hash = coop_diag_mix(hash, (unsigned int) obj->rtype.pobj_info.alt_textures);
+		}
+	}
+	diag->player_tex_sig = hash;
+}
 
 void coop_indicator_diag_trigger(void)
 {
 	s_diag_frames = 120; /* ~4 seconds, logged every 10th frame */
+}
+
+static void coop_indicator_diag_tick(void)
+{
+	extern int Player_is_dead;
+	extern window *Game_wind;
+	coop_texture_diag tex_diag;
+	char _diag_buf[512];
+	int gw_front;
+
+	if (s_diag_frames <= 0)
+		return;
+
+	s_diag_frames--;
+	if (s_diag_frames % 10 != 0)
+		return;
+	if (!ConsoleObject)
+		return;
+
+	gw_front = (Game_wind && Game_wind == window_get_front());
+	snprintf(_diag_buf, sizeof(_diag_buf),
+	         "diag[%d]: ct=%d mt=%d pf=0x%x dead=%d"
+	         " vel=%d,%d,%d thrust=%d,%d,%d"
+	         " fwd=%d pitch=%d hdg=%d side=%d"
+	         " gw_front=%d",
+	         s_diag_frames,
+	         ConsoleObject->control_type,
+	         ConsoleObject->movement_type,
+	         ConsoleObject->mtype.phys_info.flags,
+	         Player_is_dead,
+	         ConsoleObject->mtype.phys_info.velocity.x,
+	         ConsoleObject->mtype.phys_info.velocity.y,
+	         ConsoleObject->mtype.phys_info.velocity.z,
+	         ConsoleObject->mtype.phys_info.thrust.x,
+	         ConsoleObject->mtype.phys_info.thrust.y,
+	         ConsoleObject->mtype.phys_info.thrust.z,
+	         Controls.forward_thrust_time,
+	         Controls.pitch_time,
+	         Controls.heading_time,
+	         Controls.sideways_thrust_time,
+	         gw_front);
+	con_printf(CON_NORMAL, "%s", _diag_buf);
+	debug_log(DLOG_COOP_DESYNC, "[COOP] %s", _diag_buf);
+
+	coop_collect_texture_diag(&tex_diag);
+	debug_log(DLOG_COOP_DESYNC,
+	          "[COOP] texdiag[%d]: level=%d game_mode=0x%x net_mode=%u net_flags=0x%x "
+	          "monitors=0x%x player=%d master=%d n_players=%d custom_tex=%d textures=%d "
+	          "first_multi=%d highest_segment=%d texture_sig=%08x segment_sig=%08x "
+	          "player_tex_sig=%08x paged=%d gl_ptr=%d gl_handle=%d png=%d mask=%d "
+	          "mip=%d invalid_tmaps=%d first_bad=%d:%d:%d/%d",
+	          s_diag_frames,
+	          Current_level_num,
+	          Game_mode,
+	          (unsigned int) Netgame.gamemode,
+	          (unsigned int) Netgame.game_flags,
+	          (unsigned int) Netgame.monitor_vector,
+	          Player_num,
+	          multi_who_is_master(),
+	          N_players,
+	          (int) Netgame.AllowCustomModelsTextures,
+	          NumTextures,
+	          First_multi_bitmap_num,
+	          Highest_segment_index,
+	          tex_diag.texture_sig,
+	          tex_diag.segment_sig,
+	          tex_diag.player_tex_sig,
+	          tex_diag.paged_out,
+	          tex_diag.gltex_ptrs,
+	          tex_diag.gltex_handles,
+	          tex_diag.png_handles,
+	          tex_diag.mask_handles,
+	          tex_diag.mipmapped,
+	          tex_diag.invalid_tmaps,
+	          tex_diag.first_bad_seg,
+	          tex_diag.first_bad_side,
+	          tex_diag.first_bad_tmap1,
+	          tex_diag.first_bad_tmap2);
 }
 
 /* -- common coop check ----------------------------------------------- */
@@ -342,6 +537,8 @@ void coop_indicator_lines_render(void)
 		s_buddy_path.alpha = 0;
 #endif
 
+	coop_indicator_diag_tick();
+
 	if (!want_player_line && !show_buddy)
 		return;
 
@@ -352,40 +549,6 @@ void coop_indicator_lines_render(void)
 		s_frame_counter = PATH_UPDATE_INTERVAL;
 	}
 	s_frame_counter--;
-
-	/* per-frame diagnostics after coop restore (every 10th frame) */
-	if (s_diag_frames > 0) {
-		s_diag_frames--;
-		if (s_diag_frames % 10 == 0) {
-			extern int Player_is_dead;
-			extern window *Game_wind;
-			char _diag_buf[512];
-			int gw_front = (Game_wind && Game_wind == window_get_front());
-			snprintf(_diag_buf, sizeof(_diag_buf),
-			         "diag[%d]: ct=%d mt=%d pf=0x%x dead=%d"
-			         " vel=%d,%d,%d thrust=%d,%d,%d"
-			         " fwd=%d pitch=%d hdg=%d side=%d"
-			         " gw_front=%d",
-			         s_diag_frames,
-			         ConsoleObject->control_type,
-			         ConsoleObject->movement_type,
-			         ConsoleObject->mtype.phys_info.flags,
-			         Player_is_dead,
-			         ConsoleObject->mtype.phys_info.velocity.x,
-			         ConsoleObject->mtype.phys_info.velocity.y,
-			         ConsoleObject->mtype.phys_info.velocity.z,
-			         ConsoleObject->mtype.phys_info.thrust.x,
-			         ConsoleObject->mtype.phys_info.thrust.y,
-			         ConsoleObject->mtype.phys_info.thrust.z,
-			         Controls.forward_thrust_time,
-			         Controls.pitch_time,
-			         Controls.heading_time,
-			         Controls.sideways_thrust_time,
-			         gw_front);
-			con_printf(CON_NORMAL, "%s", _diag_buf);
-			debug_log(DLOG_COOP_DESYNC, "[COOP] %s", _diag_buf);
-		}
-	}
 
 	color_green = BM_XRGB(10, 31, 10);
 	color_blue = BM_XRGB(10, 10, 31);

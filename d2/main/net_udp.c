@@ -66,6 +66,7 @@
 #include "auto_net.h"
 #include "android_log.h"
 #include "android_crash_handler.h"
+#include "coop_indicator_lines.h"
 #include <android/log.h>
 #define MPDIAG(fmt, ...) do { \
 	char _mpdiag_buf[256]; \
@@ -5684,9 +5685,11 @@ int net_udp_start_game(void)
 #endif
 		StartNewLevel(Netgame.levelnum);
 #ifdef __ANDROID__
-		if (Netgame.gamemode == NETGAME_COOPERATIVE)
+		if (Netgame.gamemode == NETGAME_COOPERATIVE) {
 			COOPLOG("host StartNewLevel done: game=d2 net_level=%d current_level=%d player_num=%d n_players=%d",
 			        Netgame.levelnum, Current_level_num, Player_num, N_players);
+			coop_indicator_diag_trigger();
+		}
 #endif
 	}
 	else
@@ -5984,9 +5987,11 @@ int net_udp_do_join_game(ubyte join_as_obs)
 #endif
 	StartNewLevel(Netgame.levelnum);
 #ifdef __ANDROID__
-	if (Netgame.gamemode == NETGAME_COOPERATIVE)
+	if (Netgame.gamemode == NETGAME_COOPERATIVE) {
 		COOPLOG("join StartNewLevel done: game=d2 net_level=%d current_level=%d player_num=%d n_players=%d",
 		        Netgame.levelnum, Current_level_num, Player_num, N_players);
+		coop_indicator_diag_trigger();
+	}
 #endif
 	
 	return 1;     // look ma, we're in a game!!!

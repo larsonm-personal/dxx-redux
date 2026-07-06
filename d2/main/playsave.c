@@ -85,6 +85,9 @@ struct player_config PlayerCfg;
 int get_lifetime_checksum (int a,int b);
 extern void InitWeaponOrdering();
 void read_observer_setting(int obs_mode, char *line, char *word);
+#ifdef ANDROID
+extern volatile int g_headlight_off_by_default_qol;
+#endif
 
 #ifdef ANDROID
 static const char *android_music_plx_source(void)
@@ -157,7 +160,11 @@ int new_player_config()
 	PlayerCfg.ReticleRGBA[0] = RET_COLOR_DEFAULT_R; PlayerCfg.ReticleRGBA[1] = RET_COLOR_DEFAULT_G; PlayerCfg.ReticleRGBA[2] = RET_COLOR_DEFAULT_B; PlayerCfg.ReticleRGBA[3] = RET_COLOR_DEFAULT_A;
 	PlayerCfg.ReticleSize = 0;
 	PlayerCfg.MissileViewEnabled = 1;
+#ifdef ANDROID
+	PlayerCfg.HeadlightActiveDefault = g_headlight_off_by_default_qol ? 0 : 1;
+#else
 	PlayerCfg.HeadlightActiveDefault = 1;
+#endif
 	PlayerCfg.GuidedInBigWindow = 0;
 	strcpy(PlayerCfg.GuidebotName,"GUIDE-BOT");
 	strcpy(PlayerCfg.GuidebotNameReal,"GUIDE-BOT");
@@ -939,6 +946,10 @@ int read_player_file()
 	PHYSFS_seek(file,PHYSFS_tell(file)+sizeof(sbyte)); //skip Default_display_mode
 	PlayerCfg.MissileViewEnabled      = PHYSFSX_readByte(file);
 	PlayerCfg.HeadlightActiveDefault  = PHYSFSX_readByte(file);
+#ifdef ANDROID
+	if (g_headlight_off_by_default_qol)
+		PlayerCfg.HeadlightActiveDefault = 0;
+#endif
 	PlayerCfg.GuidedInBigWindow      = PHYSFSX_readByte(file);
 	if (player_file_version >= 19)
 		PHYSFS_seek(file,PHYSFS_tell(file)+sizeof(sbyte)); //skip Automap_always_hires
@@ -1470,7 +1481,8 @@ int plr_patch_keysettings(const char *path,
  */
 int plr_read_cockpit_autolevel(const char *path,
 				   int *cockpit_mode,
-				   int *auto_leveling)
+				   int *auto_leveling,
+				   int *headlight_active_default)
 {
 	unsigned char buf[4];
 	unsigned int id;
@@ -1497,6 +1509,10 @@ int plr_read_cockpit_autolevel(const char *path,
 	*cockpit_mode = fgetc(f);
 	if (*cockpit_mode == EOF) { fclose(f); return 0; }
 
+	if (fseek(f, 16, SEEK_SET) != 0) { fclose(f); return 0; }
+	*headlight_active_default = fgetc(f);
+	if (*headlight_active_default == EOF) { fclose(f); return 0; }
+
 	fclose(f);
 	return 1;
 }
@@ -1507,7 +1523,8 @@ int plr_read_cockpit_autolevel(const char *path,
  */
 int plr_patch_cockpit_autolevel(const char *path,
 				    int cockpit_mode,
-				    int auto_leveling)
+				    int auto_leveling,
+				    int headlight_active_default)
 {
 	unsigned char buf[4];
 	unsigned int id;
@@ -1534,6 +1551,12 @@ int plr_patch_cockpit_autolevel(const char *path,
 
 	if (fseek(f, 13, SEEK_SET) != 0 ||
 	    fputc(cockpit_mode, f) == EOF) {
+		fclose(f);
+		return 0;
+	}
+
+	if (fseek(f, 16, SEEK_SET) != 0 ||
+	    fputc(headlight_active_default ? 1 : 0, f) == EOF) {
 		fclose(f);
 		return 0;
 	}

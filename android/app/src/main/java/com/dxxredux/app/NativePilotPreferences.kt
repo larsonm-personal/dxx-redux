@@ -1,7 +1,7 @@
 package com.dxxredux.app
 
 /**
- * JNI wrapper for launcher-side cockpit mode and auto-level preferences.
+ * JNI wrapper for launcher-side engine preferences stored in pilot files.
  *
  * D1 and D2 store these fields differently, so the native layer keeps the
  * player-file parsing and patching in playsave.c.
@@ -12,6 +12,7 @@ object NativePilotPreferences {
         val cockpitMode: Int,
         val autoLeveling: Boolean,
         val showRobotHostageCounts: Boolean,
+        val headlightActiveDefault: Boolean,
     )
 
     data class VisualPrefs(
@@ -42,6 +43,7 @@ object NativePilotPreferences {
         cockpitMode: Int,
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
+        headlightActiveDefault: Boolean,
     ): Int
 
     @JvmStatic external fun nativeWriteEnginePrefsD2(
@@ -49,6 +51,7 @@ object NativePilotPreferences {
         cockpitMode: Int,
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
+        headlightActiveDefault: Boolean,
     ): Int
 
     @JvmStatic external fun nativeReadVisualPrefsD1(filesDir: String): IntArray
@@ -93,6 +96,7 @@ object NativePilotPreferences {
             cockpitMode = if (raw.size >= 2) raw[1] else 0,
             autoLeveling = raw.size >= 3 && raw[2] != 0,
             showRobotHostageCounts = raw.size >= 4 && raw[3] != 0,
+            headlightActiveDefault = raw.size >= 5 && raw[4] != 0,
         )
 
     private fun decodeVisualPrefs(raw: IntArray): VisualPrefs =
@@ -148,11 +152,24 @@ object NativePilotPreferences {
         cockpitMode: Int,
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
+        headlightActiveDefault: Boolean = false,
     ): Int =
         if (game == "d1") {
-            nativeWriteEnginePrefsD1(filesDir, cockpitMode, autoLeveling, showRobotHostageCounts)
+            nativeWriteEnginePrefsD1(
+                filesDir,
+                cockpitMode,
+                autoLeveling,
+                showRobotHostageCounts,
+                headlightActiveDefault,
+            )
         } else {
-            nativeWriteEnginePrefsD2(filesDir, cockpitMode, autoLeveling, showRobotHostageCounts)
+            nativeWriteEnginePrefsD2(
+                filesDir,
+                cockpitMode,
+                autoLeveling,
+                showRobotHostageCounts,
+                headlightActiveDefault,
+            )
         }
 
     fun writeEnginePrefsToAll(
@@ -160,9 +177,22 @@ object NativePilotPreferences {
         cockpitMode: Int,
         autoLeveling: Boolean,
         showRobotHostageCounts: Boolean,
+        headlightActiveDefault: Boolean = false,
     ): Int =
-        nativeWriteEnginePrefsD1(filesDir, cockpitMode, autoLeveling, showRobotHostageCounts) +
-            nativeWriteEnginePrefsD2(filesDir, cockpitMode, autoLeveling, showRobotHostageCounts)
+        nativeWriteEnginePrefsD1(
+            filesDir,
+            cockpitMode,
+            autoLeveling,
+            showRobotHostageCounts,
+            headlightActiveDefault,
+        ) +
+            nativeWriteEnginePrefsD2(
+                filesDir,
+                cockpitMode,
+                autoLeveling,
+                showRobotHostageCounts,
+                headlightActiveDefault,
+            )
 
     fun readVisualPrefs(
         game: String,

@@ -32,6 +32,7 @@ object ConfigImportExport {
             PREF_GUIDEBOT_HELPER_LINE,
             PREF_GUIDEBOT_NAVIGATE_NEAREST_POINT,
             PREF_NEAREST_PLAYER_LINE,
+            PREF_HEADLIGHT_OFF_BY_DEFAULT,
         )
 
     // descent.cfg keys managed through the launcher UI
@@ -345,6 +346,7 @@ object ConfigImportExport {
                         put("cockpit_mode", prefs.cockpitMode)
                         put("auto_leveling", prefs.autoLeveling)
                         put("show_robot_hostage_counts", prefs.showRobotHostageCounts)
+                        put("headlight_active_default", prefs.headlightActiveDefault)
                     },
                 )
             } catch (_: Exception) {
@@ -370,6 +372,7 @@ object ConfigImportExport {
                         obj.getInt("cockpit_mode"),
                         obj.getBoolean("auto_leveling"),
                         obj.optBoolean("show_robot_hostage_counts", false),
+                        obj.optBoolean("headlight_active_default", false),
                     )
                 results.add(
                     if (count > 0) {

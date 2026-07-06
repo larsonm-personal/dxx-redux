@@ -67,7 +67,7 @@
     {"action": "enter_launcher"},
     {"action": "log", "message": "=== Phase 3: Write engine prefs (${GAME}) ==="},
     {"action": "setup_command", "command": "write_engine_prefs",
-     "args": {"cockpit_mode": 2, "auto_leveling": false}, "post_delay_ms": 1000},
+     "args": {"cockpit_mode": 2, "auto_leveling": false, "headlight_active_default": false}, "post_delay_ms": 1000},
     {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
 
@@ -78,7 +78,11 @@
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "key", "key": "enter", "post_delay_ms": 100},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "assert", "expect": {"cockpit_mode": "2", "auto_leveling": "false"}},
+    {"action": "assert", "expect": {
+        "cockpit_mode": "2",
+        "auto_leveling": "false",
+        "headlight_active_default": "false"
+    }},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
@@ -92,7 +96,8 @@
         "screen_mode": "game",
         "cockpit_mode": "2",
         "current_cockpit_mode": "2",
-        "auto_leveling": "false"
+        "auto_leveling": "false",
+        "headlight_active_default": "false"
     }},
     {"action": "introspect"},
     {"action": "log", "message": "=== TEST: Engine prefs launcher persistence -- COMPLETE ==="}

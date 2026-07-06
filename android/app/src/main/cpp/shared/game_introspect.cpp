@@ -1394,6 +1394,11 @@ extern "C" char *game_introspect_get_state(void)
 		j["cockpit_mode"] = (int) PlayerCfg.PreferredCockpitMode;
 		j["current_cockpit_mode"] = (int) PlayerCfg.CurrentCockpitMode;
 		j["auto_leveling"] = (bool) PlayerCfg.AutoLeveling;
+#ifdef DXX_BUILD_DESCENT_II
+		j["headlight_active_default"] = (bool) PlayerCfg.HeadlightActiveDefault;
+#else
+		j["headlight_active_default"] = false;
+#endif
 		j["msaa_samples"] = ogl_msaa_samples;
 		j["msaa_max_samples"] = ogl_msaa_max_samples;
 		j["msaa_fbo_bound"] = (bool) g_msaa_fbo_bound;

@@ -46,6 +46,7 @@ internal const val PREF_NEAREST_PLAYER_LINE = "nearest_player_line_enabled"
 internal const val PREF_SKIP_INTRO_MOVIE = "skip_intro_movie"
 internal const val PREF_REWIND_SUPPORT_ENABLED = "rewind_support_enabled"
 internal const val PREF_REWIND_TARGET_SECONDS = "rewind_target_seconds"
+internal const val PREF_HEADLIGHT_OFF_BY_DEFAULT = "headlight_off_by_default"
 internal const val PREF_SHOW_RESUME_OFFER = "show_resume_offer"
 internal const val PREF_SHOW_DEMO_INSTALLER_OFFER = "show_demo_installer_offer"
 internal const val PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE = "use_mission_soundtrack_when_available"
@@ -113,6 +114,9 @@ fun EnginePreferencesPage(
                 prefs.getInt(PREF_REWIND_TARGET_SECONDS, DEFAULT_REWIND_TARGET_SECONDS),
             ),
         )
+    }
+    var headlightOffByDefault by remember {
+        mutableStateOf(prefs.getBoolean(PREF_HEADLIGHT_OFF_BY_DEFAULT, true))
     }
     var showResumeOffer by remember {
         mutableStateOf(prefs.getBoolean(PREF_SHOW_RESUME_OFFER, true))
@@ -341,6 +345,7 @@ fun EnginePreferencesPage(
                                     cockpitMode,
                                     autoLeveling,
                                     showRobotHostageCounts,
+                                    !headlightOffByDefault,
                                 )
                             if (count > 0) {
                                 savedCockpitMode = cockpitMode
@@ -490,6 +495,30 @@ fun EnginePreferencesPage(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = headlightOffByDefault,
+                        onCheckedChange = { checked ->
+                            headlightOffByDefault = checked
+                            prefs.edit().putBoolean(PREF_HEADLIGHT_OFF_BY_DEFAULT, checked).apply()
+                        },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Headlight off by default", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "In D2, picking up the headlight keeps it off until toggled on",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,

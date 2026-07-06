@@ -123,6 +123,22 @@ class MultiplayerResumePrefsTest {
     }
 
     @Test
+    fun startFreshPreservesCurrentLevelText() {
+        val save =
+            CoopSaveEntry(
+                slot = 5,
+                level = 4,
+                timestamp = 100L,
+                numPlayers = 2,
+                callsigns = listOf("Miner", "Wing"),
+            )
+
+        assertEquals("4", coopLevelTextAfterSaveSelection("9", save))
+        assertEquals("9", coopLevelTextAfterSaveSelection("9", null))
+        assertEquals("9", coopLevelTextAfterSaveSelection("9", save.copy(level = 0)))
+    }
+
+    @Test
     fun invalidSchemaIsIgnored() {
         val json = """{"schema_version":999,"role":"host","transport":"lan","game":"d2"}"""
 

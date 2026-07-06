@@ -273,6 +273,8 @@ class MainActivity :
 
     external fun nativeSetGuidebotNavigateNearestPoint(enabled: Boolean)
 
+    external fun nativeSetHeadlightOffByDefaultQol(enabled: Boolean)
+
     external fun nativeSetDebugLogEnabled(
         category: Int,
         on: Boolean,
@@ -769,6 +771,7 @@ class MainActivity :
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyGuidebotNavigationPrefs(prefs)
+        applyHeadlightDefaultPrefs(prefs)
         applyMusicPolicyPrefs(prefs)
         applyDemoRecordingPref()
 
@@ -1762,6 +1765,7 @@ class MainActivity :
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyGuidebotNavigationPrefs(prefs)
+        applyHeadlightDefaultPrefs(prefs)
         applyMusicPolicyPrefs(prefs)
         applyDemoRecordingPref()
         applyGraphicsDebugPrefs(prefs)
@@ -1916,6 +1920,16 @@ class MainActivity :
         try {
             nativeSetGuidebotNavigateNearestPoint(
                 prefs.getBoolean(PREF_GUIDEBOT_NAVIGATE_NEAREST_POINT, false),
+            )
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
+    }
+
+    private fun applyHeadlightDefaultPrefs(prefs: android.content.SharedPreferences) {
+        try {
+            nativeSetHeadlightOffByDefaultQol(
+                prefs.getBoolean(PREF_HEADLIGHT_OFF_BY_DEFAULT, true),
             )
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up

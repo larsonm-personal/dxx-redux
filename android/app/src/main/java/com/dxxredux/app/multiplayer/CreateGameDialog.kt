@@ -118,13 +118,7 @@ internal fun CreateGameDialog(
 
     // When a save is selected, auto-set the level to match
     LaunchedEffect(selectedSave) {
-        val save = selectedSave
-        if (save != null && save.level > 0) {
-            levelNumText = save.level.toString()
-        } else if (save == null && coopSaves.isNotEmpty()) {
-            val fallback = coopResumeLevel?.let { it + 1 } ?: defaults.levelNum
-            levelNumText = fallback.toString()
-        }
+        levelNumText = coopLevelTextAfterSaveSelection(levelNumText, selectedSave)
     }
 
     LaunchedEffect(coopResumeLevel) {
@@ -474,6 +468,11 @@ internal fun CreateGameDialog(
         },
     )
 }
+
+internal fun coopLevelTextAfterSaveSelection(
+    currentLevelText: String,
+    selectedSave: CoopSaveEntry?,
+): String = selectedSave?.level?.takeIf { it > 0 }?.toString() ?: currentLevelText
 
 @Composable
 private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
