@@ -103,19 +103,6 @@ static int render_android_can_auto_oldmerge_tmap2(int tmap1, int tmap2,
 		&& bmovl->gltexture->h == 64;
 }
 
-static int render_android_should_force_multiplayer_oldmerge_tmap2(int tmap1, int tmap2)
-{
-	int overlay = tmap2 & 0x3FFF;
-	grs_bitmap *bmovl;
-
-	if (!(Game_mode & GM_MULTI) || !tmap2 || tmap1 < 0 || tmap1 >= NumTextures || overlay >= NumTextures)
-		return 0;
-
-	PIGGY_PAGE_IN(Textures[overlay]);
-	bmovl = &GameBitmaps[Textures[overlay].index];
-	return (bmovl->bm_flags & BM_FLAG_TRANSPARENT)
-		&& !(bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT);
-}
 #endif
 #include "args.h"
 
@@ -430,13 +417,6 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		use_alt_texmerge = 0;
 		android_oldmerge_impl = "old_texmerge";
 		android_oldmerge_reason = "force_legacy_texmerge";
-	}
-	else if (use_alt_texmerge
-		&& render_android_should_force_multiplayer_oldmerge_tmap2(tmap1, tmap2))
-	{
-		use_alt_texmerge = 0;
-		android_oldmerge_impl = "auto_old_texmerge";
-		android_oldmerge_reason = "coop_plain_transparent_overlay";
 	}
 	else if (use_alt_texmerge
 		&& !g_merged_wall_force_two_pass

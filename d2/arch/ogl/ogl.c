@@ -1556,6 +1556,12 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 		glTexCoordPointer(2, GL_FLOAT, 0, texcoord_array);  
 	}
 
+#if defined(ANDROID) && defined(OGL_MERGE)
+	if (tmap_drawer_ptr == draw_tmap)
+		android_merged_wall_forensics_log_single_draw("g3_draw_tmap_submit", bm,
+			(const struct g3s_point **)pointlist, uvl_list, color_array, nv);
+#endif
+
 	if (!skip_merged_wall_cover_draw)
 		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
 

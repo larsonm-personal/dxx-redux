@@ -39,6 +39,7 @@ void ogl_prog_set_tex2_alpha_cutoff(GLfloat alpha_cutoff);
 #define MERGED_WALL_BITMAP_DUMP_WIDTH     64
 #define MERGED_WALL_PROBE_HIT_NONE        0
 #define MERGED_WALL_CACHED_TEXMERGE_COUNT 32
+#define MERGED_WALL_TEXTURE_READBACK_MAX  16
 
 static struct merged_wall_cached_texmerge_entry g_merged_wall_cached_texmerge[MERGED_WALL_CACHED_TEXMERGE_COUNT];
 static int g_merged_wall_cached_texmerge_initialized = 0;
@@ -46,6 +47,7 @@ static unsigned int g_merged_wall_forensics_seq = 0;
 static unsigned int g_merged_wall_forensics_generation = 0;
 static int g_merged_wall_forensics_reuse_logs = 0;
 static int g_merged_wall_forensics_draw_logs = 0;
+static int g_merged_wall_forensics_single_draw_logs = 0;
 #define MERGED_WALL_PROBE_HIT_BBOX      1
 #define MERGED_WALL_PROBE_HIT_POLYGON   2
 #define MERGED_WALL_PROBE_HIT_PROJECTED 3
@@ -198,6 +200,8 @@ static int merged_wall_dumped_cover_textures[MERGED_WALL_BITMAP_DUMP_MAX];
 static int merged_wall_dumped_cover_texture_count = 0;
 static int merged_wall_readback_cover_textures[MERGED_WALL_BITMAP_DUMP_MAX];
 static int merged_wall_readback_cover_texture_count = 0;
+static unsigned int merged_wall_texture_readback_handles[MERGED_WALL_TEXTURE_READBACK_MAX];
+static int merged_wall_texture_readback_handle_count = 0;
 static int merged_wall_cover_frame_id = -1;
 static int merged_wall_cover_event_count = 0;
 static unsigned int merged_wall_tmap2_upload_seq = 0;
@@ -402,6 +406,7 @@ void android_merged_wall_cached_texmerge_clear(
 
 void android_merged_wall_cached_texmerge_clear_cache(void)
 {
+	merged_wall_texture_readback_handle_count = 0;
 	if (Game_mode & GM_MULTI)
 		debug_log_force(DLOG_TEXTURE,
 		                "[mwall_cache] event=clear frame=%d pass=%d seq=%d mode=0x%x entries=%d",
@@ -1874,6 +1879,7 @@ static int merged_wall_should_clear_secondary_units_for_single(grs_bitmap *bm,
 	int experiment_clear =
 	    (int) g_merged_wall_experiment_mode == MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE;
 	int cached_clear = 0;
+	int old_texmerge_clear = 0;
 
 	if (log_clear)
 		*log_clear = 0;
@@ -1885,9 +1891,11 @@ static int merged_wall_should_clear_secondary_units_for_single(grs_bitmap *bm,
 		skip_reason = "no_face_ctx";
 	else if (!merged_wall_single_clear_matches_face_context())
 		skip_reason = "face_tmap2_zero";
-	else
+	else {
 		cached_clear = merged_wall_find_cached_texmerge_bitmap(bm) != NULL;
-	if (!skip_reason && (experiment_clear || cached_clear)) {
+		old_texmerge_clear = !cached_clear;
+	}
+	if (!skip_reason && (experiment_clear || cached_clear || old_texmerge_clear)) {
 		if (log_clear)
 			*log_clear = experiment_clear || g_merged_wall_snapshot_pending;
 		return 1;
@@ -3167,6 +3175,311 @@ unsigned int android_merged_wall_forensics_bitmap_hash(grs_bitmap *bm,
 	return hash;
 }
 
+static int merged_wall_note_texture_readback(unsigned int handle)
+{
+	int i;
+
+	if (handle == 0)
+		return 0;
+	for (i = 0; i < merged_wall_texture_readback_handle_count; i++)
+		if (merged_wall_texture_readback_handles[i] == handle)
+			return 0;
+	if (merged_wall_texture_readback_handle_count < MERGED_WALL_TEXTURE_READBACK_MAX)
+		merged_wall_texture_readback_handles[merged_wall_texture_readback_handle_count++] = handle;
+	return 1;
+}
+
+static void merged_wall_index_to_rgba(unsigned char idx, int bm_flags,
+                                      unsigned char rgba[4])
+{
+	if (idx == 254 && (bm_flags & BM_FLAG_SUPER_TRANSPARENT)) {
+		rgba[0] = 255;
+		rgba[1] = 255;
+		rgba[2] = 255;
+		rgba[3] = 0;
+	} else if (idx == TRANSPARENCY_COLOR && (bm_flags & BM_FLAG_TRANSPARENT)) {
+		rgba[0] = 0;
+		rgba[1] = 0;
+		rgba[2] = 0;
+		rgba[3] = 0;
+	} else {
+		rgba[0] = (unsigned char) (gr_palette[idx * 3] * 4);
+		rgba[1] = (unsigned char) (gr_palette[idx * 3 + 1] * 4);
+		rgba[2] = (unsigned char) (gr_palette[idx * 3 + 2] * 4);
+		rgba[3] = 255;
+	}
+}
+
+static void merged_wall_log_texture_gpu_readback(const char *tag, grs_bitmap *bm,
+                                                 int force)
+{
+	grs_bitmap *src;
+	ogl_texture *texture;
+	const char *name;
+	GLuint fbo = 0;
+	GLint prev_fbo = 0;
+	GLenum status;
+	GLenum gl_err = GL_NO_ERROR;
+	unsigned char *rgba;
+	unsigned int gpu_hash = 2166136261u;
+	unsigned int expected_hash = 2166136261u;
+	unsigned int src_hash;
+	unsigned int sum_r = 0, sum_g = 0, sum_b = 0, sum_a = 0;
+	unsigned char first_expected[4] = { 0, 0, 0, 0 };
+	unsigned char first_actual[4] = { 0, 0, 0, 0 };
+	unsigned char p0[4] = { 0, 0, 0, 0 };
+	unsigned char pc[4] = { 0, 0, 0, 0 };
+	int src_bytes, src254, src255;
+	int read_w, read_h, pixel_count;
+	int compare = 0;
+	int mismatches = 0;
+	int first_x = -1, first_y = -1;
+	int src_stride = 0;
+	int zero_a = 0, black_rgb = 0, bright_rgb = 0;
+	int active_prog = 0, bound_tex0 = 0, bound_tex1 = 0, bound_tex2 = 0, mip1_w = 0;
+	int x, y, i;
+
+	if (!bm || !bm->gltexture)
+		return;
+	texture = bm->gltexture;
+	if (texture->handle <= 0)
+		return;
+	if (!force && !merged_wall_note_texture_readback(texture->handle))
+		return;
+	read_w = texture->w > 0 ? texture->w : texture->tw;
+	read_h = texture->h > 0 ? texture->h : texture->th;
+	if (read_w <= 0 || read_h <= 0 || read_w > 256 || read_h > 256)
+		return;
+	pixel_count = read_w * read_h;
+	rgba = (unsigned char *) malloc((size_t) pixel_count * 4u);
+	if (!rgba)
+		return;
+
+	while (glGetError() != GL_NO_ERROR) {}
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prev_fbo);
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	                       GL_TEXTURE_2D, texture->handle, 0);
+	status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status == GL_FRAMEBUFFER_COMPLETE)
+		glReadPixels(0, 0, read_w, read_h, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+	gl_err = glGetError();
+	glBindFramebuffer(GL_FRAMEBUFFER, prev_fbo);
+	if (fbo)
+		glDeleteFramebuffers(1, &fbo);
+	if (status != GL_FRAMEBUFFER_COMPLETE || gl_err != GL_NO_ERROR) {
+		free(rgba);
+		while (glGetError() != GL_NO_ERROR) {}
+		debug_log_force(DLOG_TEXTURE,
+		                "[mwall_texread] tag=%s status=skip reason=%s frame=%d pass=%d seq=%d handle=%u fbo_status=0x%x err=0x%x",
+		                tag ? tag : "",
+		                status != GL_FRAMEBUFFER_COMPLETE ? "fbo_incomplete" : "readpixels_failed",
+		                g_merged_wall_frame_id,
+		                g_merged_wall_render_pass,
+		                g_merged_wall_draw_seq,
+		                texture->handle,
+		                status,
+		                gl_err);
+		return;
+	}
+
+	name = piggy_game_bitmap_name(bm);
+	src = merged_wall_get_source_bitmap(bm);
+	src_hash = android_merged_wall_forensics_bitmap_hash(bm, &src_bytes, &src254, &src255);
+	compare = src && src->bm_w == read_w && src->bm_h == read_h;
+	if (src)
+		src_stride = src->bm_rowsize > 0 ? src->bm_rowsize : src->bm_w;
+	for (y = 0; y < read_h; y++) {
+		for (x = 0; x < read_w; x++) {
+			unsigned char expected[4] = { 0, 0, 0, 255 };
+			unsigned char *actual = rgba + ((y * read_w + x) * 4);
+
+			gpu_hash = merged_wall_fnv1a_append(gpu_hash, actual, 4);
+			sum_r += actual[0];
+			sum_g += actual[1];
+			sum_b += actual[2];
+			sum_a += actual[3];
+			if (actual[3] == 0)
+				zero_a++;
+			if (actual[0] == 0 && actual[1] == 0 && actual[2] == 0)
+				black_rgb++;
+			if (actual[0] > 220 && actual[1] > 220 && actual[2] > 220)
+				bright_rgb++;
+			if (!compare)
+				continue;
+			merged_wall_index_to_rgba(src->bm_data[y * src_stride + x],
+			                          bm->bm_flags, expected);
+			expected_hash = merged_wall_fnv1a_append(expected_hash, expected, 4);
+			if (memcmp(expected, actual, 4)) {
+				mismatches++;
+				if (first_x < 0) {
+					first_x = x;
+					first_y = y;
+					memcpy(first_expected, expected, sizeof(first_expected));
+					memcpy(first_actual, actual, sizeof(first_actual));
+				}
+			}
+		}
+	}
+	if (!compare)
+		expected_hash = 0;
+	memcpy(p0, rgba, sizeof(p0));
+	memcpy(pc, rgba + (((read_h / 2) * read_w + (read_w / 2)) * 4),
+	       sizeof(pc));
+	free(rgba);
+	while (glGetError() != GL_NO_ERROR) {}
+	android_merged_wall_get_draw_state(texture, &active_prog, &bound_tex0,
+	                                   &bound_tex1, &bound_tex2, &mip1_w);
+	i = pixel_count > 0 ? pixel_count : 1;
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_texread] tag=%s status=ok frame=%d pass=%d seq=%d seg=%d side=%d face=%d name=%s ptr=%p handle=%u format=0x%x internal=0x%x tex=%dx%d src=%dx%d compare=%d src_hash=0x%08x expected_rgba=0x%08x gpu_rgba=0x%08x mismatches=%d first=%d/%d exp=%u/%u/%u/%u got=%u/%u/%u/%u avg=%u/%u/%u/%u zero_a=%d black=%d bright=%d p0=%u/%u/%u/%u pc=%u/%u/%u/%u prog=%d bound=%d/%d/%d mip1=%d",
+	                tag ? tag : "",
+	                g_merged_wall_frame_id,
+	                g_merged_wall_render_pass,
+	                g_merged_wall_draw_seq,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+	                name ? name : "<none>",
+	                (void *) bm,
+	                texture->handle,
+	                (unsigned int) texture->format,
+	                (unsigned int) texture->internalformat,
+	                read_w,
+	                read_h,
+	                src ? src->bm_w : 0,
+	                src ? src->bm_h : 0,
+	                compare,
+	                src_hash,
+	                expected_hash,
+	                gpu_hash,
+	                compare ? mismatches : -1,
+	                first_x,
+	                first_y,
+	                first_expected[0], first_expected[1], first_expected[2], first_expected[3],
+	                first_actual[0], first_actual[1], first_actual[2], first_actual[3],
+	                sum_r / (unsigned int) i,
+	                sum_g / (unsigned int) i,
+	                sum_b / (unsigned int) i,
+	                sum_a / (unsigned int) i,
+	                zero_a,
+	                black_rgb,
+	                bright_rgb,
+	                p0[0], p0[1], p0[2], p0[3],
+	                pc[0], pc[1], pc[2], pc[3],
+	                active_prog,
+	                bound_tex0,
+	                bound_tex1,
+	                bound_tex2,
+	                mip1_w);
+}
+
+static unsigned char merged_wall_oriented_top_pixel(grs_bitmap *top, int orient,
+                                                    int x, int y, int wh)
+{
+	switch (orient) {
+		case 1:
+			return top->bm_data[wh * x + ((wh - 1) - y)];
+		case 2:
+			return top->bm_data[wh * ((wh - 1) - y) + ((wh - 1) - x)];
+		case 3:
+			return top->bm_data[wh * ((wh - 1) - x) + y];
+		default:
+			return top->bm_data[wh * y + x];
+	}
+}
+
+static void merged_wall_log_merge_reference(const char *tag, const char *game,
+                                            int tmap_bottom, int tmap_top,
+                                            grs_bitmap *bottom_bmp,
+                                            grs_bitmap *top_bmp,
+                                            grs_bitmap *merged_bmp,
+                                            int slot, int orient)
+{
+	grs_bitmap *bottom = merged_wall_get_source_bitmap(bottom_bmp);
+	grs_bitmap *top = merged_wall_get_source_bitmap(top_bmp);
+	grs_bitmap *live = merged_wall_get_source_bitmap(merged_bmp);
+	unsigned int ref_hash = 2166136261u;
+	unsigned int live_hash;
+	int live_bytes, live254, live255;
+	int ref254 = 0, ref255 = 0, mismatches = 0;
+	int first_x = -1, first_y = -1;
+	int first_ref = -1, first_live = -1;
+	int super_merge;
+	int x, y, wh;
+
+	if (!bottom || !top || !live)
+		return;
+	if (bottom->bm_w != bottom->bm_h || top->bm_w != top->bm_h ||
+	    bottom->bm_w != top->bm_w || bottom->bm_h != top->bm_h)
+		return;
+	wh = bottom->bm_w;
+	if (live->bm_w != wh || live->bm_h != wh)
+		return;
+	super_merge = (top_bmp->bm_flags & BM_FLAG_SUPER_TRANSPARENT) != 0;
+	for (y = 0; y < wh; y++) {
+		for (x = 0; x < wh; x++) {
+			unsigned char c = merged_wall_oriented_top_pixel(top, orient, x, y, wh);
+			unsigned char ref;
+			unsigned char actual;
+
+			if (c == TRANSPARENCY_COLOR)
+				ref = bottom->bm_data[y * bottom->bm_rowsize + x];
+			else if (super_merge && c == 254)
+				ref = TRANSPARENCY_COLOR;
+			else
+				ref = c;
+			actual = live->bm_data[y * live->bm_rowsize + x];
+			ref_hash = merged_wall_fnv1a_append(ref_hash, &ref, 1);
+			if (ref == 254)
+				ref254++;
+			if (ref == 255)
+				ref255++;
+			if (ref != actual) {
+				mismatches++;
+				if (first_x < 0) {
+					first_x = x;
+					first_y = y;
+					first_ref = ref;
+					first_live = actual;
+				}
+			}
+		}
+	}
+	live_hash = android_merged_wall_forensics_bitmap_hash(merged_bmp,
+	                                                      &live_bytes, &live254, &live255);
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_merge_ref] tag=%s game=%s frame=%d pass=%d seq=%d slot=%d orient=%d super=%d seg=%d side=%d face=%d tmap1=%d tmap2=0x%x wh=%d ref_hash=0x%08x live_hash=0x%08x mismatches=%d first=%d/%d ref=%d live=%d ref_254=%d ref_255=%d live_254=%d live_255=%d merged_ptr=%p merged_gl=%u",
+	                tag ? tag : "",
+	                game ? game : "",
+	                g_merged_wall_frame_id,
+	                g_merged_wall_render_pass,
+	                g_merged_wall_draw_seq,
+	                slot,
+	                orient,
+	                super_merge,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+	                tmap_bottom,
+	                tmap_top,
+	                wh,
+	                ref_hash,
+	                live_hash,
+	                mismatches,
+	                first_x,
+	                first_y,
+	                first_ref,
+	                first_live,
+	                ref254,
+	                ref255,
+	                live254,
+	                live255,
+	                (void *) merged_bmp,
+	                merged_bmp && merged_bmp->gltexture ? merged_bmp->gltexture->handle : 0);
+}
+
 static int merged_wall_forensics_context_target(void)
 {
 	return g_android_draw_face_ctx.valid &&
@@ -3190,6 +3503,8 @@ void android_merged_wall_forensics_note_flush(const char *game, const char *reas
 	g_merged_wall_forensics_generation++;
 	g_merged_wall_forensics_reuse_logs = 0;
 	g_merged_wall_forensics_draw_logs = 0;
+	g_merged_wall_forensics_single_draw_logs = 0;
+	merged_wall_texture_readback_handle_count = 0;
 	if (!(Game_mode & GM_MULTI))
 		return;
 	debug_log_force(DLOG_TEXTURE,
@@ -3338,6 +3653,10 @@ void android_merged_wall_forensics_log_pair(const char *tag, const char *game,
 	                merged_bmp ? merged_bmp->bm_handle : 0,
 	                merged_bmp ? (void *) merged_bmp->gltexture : NULL,
 	                merged_bmp && merged_bmp->gltexture ? merged_bmp->gltexture->handle : 0);
+	if (!tag || !strstr(tag, "reuse"))
+		merged_wall_log_merge_reference(tag, game, tmap_bottom, tmap_top,
+		                                bottom_bmp, top_bmp, merged_bmp,
+		                                slot, orient);
 }
 
 void android_merged_wall_forensics_log_draw(const char *tag, grs_bitmap *bm)
@@ -3395,6 +3714,176 @@ void android_merged_wall_forensics_log_draw(const char *tag, grs_bitmap *bm)
 	                bound_tex1,
 	                bound_tex2,
 	                mip1_w);
+	merged_wall_log_texture_gpu_readback(tag, bm, 0);
+}
+
+void android_merged_wall_forensics_log_single_draw(const char *tag, grs_bitmap *bm,
+                                                   const struct g3s_point **pointlist,
+                                                   const g3s_uvl *uvl_list,
+                                                   const GLfloat *color_array, int nv)
+{
+	const char *name;
+	ogl_texture *texture;
+	float min_u = 0.0f, max_u = 0.0f, min_v = 0.0f, max_v = 0.0f;
+	float min_r = 1.0f, max_r = 0.0f, min_g = 1.0f, max_g = 0.0f;
+	float min_b = 1.0f, max_b = 0.0f, min_a = 1.0f, max_a = 0.0f;
+	float sum_r = 0.0f, sum_g = 0.0f, sum_b = 0.0f, sum_a = 0.0f;
+	float min_sx = 0.0f, max_sx = 0.0f, min_sy = 0.0f, max_sy = 0.0f;
+	float screen_area;
+	unsigned int hash;
+	int bytes, idx254, idx255;
+	int bbox_valid;
+	int depth_enabled = 0, blend_enabled = 0, cull_enabled = 0;
+	int depth_func = 0, front_face = 0, cull_mode = 0;
+	int polygon_offset_enabled = 0, draw_fbo = 0;
+	int active_prog = 0, bound_tex0 = 0, bound_tex1 = 0, bound_tex2 = 0, mip1_w = 0;
+	unsigned char depth_writemask = 0;
+	unsigned char color_mask[4] = { 0, 0, 0, 0 };
+	float polygon_offset_factor = 0.0f, polygon_offset_units = 0.0f;
+	int i;
+
+	if (!bm || !pointlist || !uvl_list || nv <= 0)
+		return;
+	if (!merged_wall_forensics_should_log_bitmap(bm))
+		return;
+	if (!g_merged_wall_snapshot_pending &&
+	    g_merged_wall_forensics_single_draw_logs >= 32)
+		return;
+	if (!g_merged_wall_snapshot_pending)
+		g_merged_wall_forensics_single_draw_logs++;
+	name = piggy_game_bitmap_name(bm);
+	texture = bm->gltexture;
+	hash = android_merged_wall_forensics_bitmap_hash(bm, &bytes, &idx254, &idx255);
+	min_u = max_u = f2fl(uvl_list[0].u);
+	min_v = max_v = f2fl(uvl_list[0].v);
+	for (i = 0; i < nv; i++) {
+		float u = f2fl(uvl_list[i].u);
+		float v = f2fl(uvl_list[i].v);
+		float r = color_array ? color_array[i * 4] : 0.0f;
+		float g = color_array ? color_array[i * 4 + 1] : 0.0f;
+		float b = color_array ? color_array[i * 4 + 2] : 0.0f;
+		float a = color_array ? color_array[i * 4 + 3] : 0.0f;
+
+		if (u < min_u) min_u = u;
+		if (u > max_u) max_u = u;
+		if (v < min_v) min_v = v;
+		if (v > max_v) max_v = v;
+		if (r < min_r) min_r = r;
+		if (r > max_r) max_r = r;
+		if (g < min_g) min_g = g;
+		if (g > max_g) max_g = g;
+		if (b < min_b) min_b = b;
+		if (b > max_b) max_b = b;
+		if (a < min_a) min_a = a;
+		if (a > max_a) max_a = a;
+		sum_r += r;
+		sum_g += g;
+		sum_b += b;
+		sum_a += a;
+	}
+	bbox_valid = merged_wall_get_screen_bbox(pointlist, nv,
+	                                         &min_sx, &max_sx, &min_sy, &max_sy);
+	screen_area = android_merged_wall_get_screen_area(pointlist, nv);
+	if (texture)
+		android_merged_wall_get_draw_state(texture, &active_prog, &bound_tex0,
+		                                   &bound_tex1, &bound_tex2, &mip1_w);
+	android_merged_wall_get_gl_state(&depth_enabled, &blend_enabled, &cull_enabled,
+	                                 &depth_writemask, &depth_func, &front_face,
+	                                 &cull_mode, &polygon_offset_enabled,
+	                                 &polygon_offset_factor, &polygon_offset_units,
+	                                 color_mask, &draw_fbo);
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_single_draw] tag=%s frame=%d pass=%d seq=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x nv=%d name=%s ptr=%p hash=0x%08x bytes=%d idx254=%d idx255=%d handle=%u gl=%u bbox_valid=%d box=%.1f..%.1f/%.1f..%.1f area=%.1f uv=%.3f..%.3f/%.3f..%.3f color_min=%.3f/%.3f/%.3f/%.3f color_max=%.3f/%.3f/%.3f/%.3f color_avg=%.3f/%.3f/%.3f/%.3f depth=%d depthmask=%d depthfunc=0x%x blend=%d cull=%d front=0x%x cullmode=0x%x polyoff=%d poly=%.1f/%.1f colormask=%d%d%d%d fbo=%d prog=%d bound=%d/%d/%d mip1=%d",
+	                tag ? tag : "",
+	                g_merged_wall_frame_id,
+	                g_merged_wall_render_pass,
+	                g_merged_wall_draw_seq,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
+	                nv,
+	                name ? name : "<none>",
+	                (void *) bm,
+	                hash,
+	                bytes,
+	                idx254,
+	                idx255,
+	                bm ? bm->bm_handle : 0,
+	                texture ? texture->handle : 0,
+	                bbox_valid,
+	                min_sx,
+	                max_sx,
+	                min_sy,
+	                max_sy,
+	                screen_area,
+	                min_u,
+	                max_u,
+	                min_v,
+	                max_v,
+	                min_r, min_g, min_b, min_a,
+	                max_r, max_g, max_b, max_a,
+	                sum_r / (float) nv,
+	                sum_g / (float) nv,
+	                sum_b / (float) nv,
+	                sum_a / (float) nv,
+	                depth_enabled,
+	                depth_writemask ? 1 : 0,
+	                depth_func,
+	                blend_enabled,
+	                cull_enabled,
+	                front_face,
+	                cull_mode,
+	                polygon_offset_enabled,
+	                polygon_offset_factor,
+	                polygon_offset_units,
+	                color_mask[0] ? 1 : 0,
+	                color_mask[1] ? 1 : 0,
+	                color_mask[2] ? 1 : 0,
+	                color_mask[3] ? 1 : 0,
+	                draw_fbo,
+	                active_prog,
+	                bound_tex0,
+	                bound_tex1,
+	                bound_tex2,
+	                mip1_w);
+	g_merged_wall_last_draw_state.valid = 1;
+	g_merged_wall_last_draw_state.frame_id = g_merged_wall_frame_id;
+	g_merged_wall_last_draw_state.render_pass = g_merged_wall_render_pass;
+	g_merged_wall_last_draw_state.draw_seq = g_merged_wall_draw_seq;
+	g_merged_wall_last_draw_state.seg = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1;
+	g_merged_wall_last_draw_state.side = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1;
+	g_merged_wall_last_draw_state.face = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1;
+	g_merged_wall_last_draw_state.child = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1;
+	g_merged_wall_last_draw_state.wid_flags = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1;
+	g_merged_wall_last_draw_state.tmap1 = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1;
+	g_merged_wall_last_draw_state.tmap2 = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0;
+	g_merged_wall_last_draw_state.depth_enabled = depth_enabled;
+	g_merged_wall_last_draw_state.blend_enabled = blend_enabled;
+	g_merged_wall_last_draw_state.cull_enabled = cull_enabled;
+	g_merged_wall_last_draw_state.polygon_offset_enabled = polygon_offset_enabled;
+	g_merged_wall_last_draw_state.polygon_offset_factor = polygon_offset_factor;
+	g_merged_wall_last_draw_state.polygon_offset_units = polygon_offset_units;
+	g_merged_wall_last_draw_state.depth_writemask = depth_writemask;
+	g_merged_wall_last_draw_state.depth_func = depth_func;
+	g_merged_wall_last_draw_state.front_face = front_face;
+	g_merged_wall_last_draw_state.cull_mode = cull_mode;
+	g_merged_wall_last_draw_state.draw_fbo = draw_fbo;
+	g_merged_wall_last_draw_state.screen_area = screen_area;
+	g_merged_wall_last_draw_state.force_cull_off = 0;
+	g_merged_wall_last_draw_state.force_polygon_offset = 0;
+	g_merged_wall_last_draw_state.force_depth_off = 0;
+	merged_wall_copy_string(g_merged_wall_last_draw_state.route,
+	                        sizeof(g_merged_wall_last_draw_state.route),
+	                        g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0
+	                            ? "old_texmerge"
+	                            : "single");
+	merged_wall_copy_string(g_merged_wall_last_draw_state.merge_impl,
+	                        sizeof(g_merged_wall_last_draw_state.merge_impl),
+	                        "single_texture");
 }
 
 static void merged_wall_bytes_to_hex(char *out, int out_size,
@@ -5528,6 +6017,7 @@ static void merged_wall_probe_log_layer_bitmap(const char *layer,
 	                idx254,
 	                idx255,
 	                mask_handle);
+	merged_wall_log_texture_gpu_readback(layer ? layer : "tap_layer", bitmap, 1);
 }
 
 static void merged_wall_probe_log_merged_bitmap(const struct merged_wall_tracked_face *track)
@@ -5611,6 +6101,13 @@ static void merged_wall_probe_log_merged_bitmap(const struct merged_wall_tracked
 	                merged_bytes,
 	                merged_254,
 	                merged_255);
+	if (track->draw_ctx.valid)
+		merged_wall_log_merge_reference("tap_probe", "tap",
+		                                track->draw_ctx.tmap1,
+		                                track->draw_ctx.tmap2,
+		                                source_bot, source_ovl, bitmap,
+		                                track->merged_slot, track->orient);
+	merged_wall_log_texture_gpu_readback("tap_merged", bitmap, 1);
 }
 
 struct merged_wall_probe_candidate {

@@ -143,6 +143,9 @@ void android_merged_wall_forensics_log_pair(
     int slot, int orient);
 void android_merged_wall_forensics_log_draw(
     const char *tag, grs_bitmap *bm);
+void android_merged_wall_forensics_log_single_draw(
+    const char *tag, grs_bitmap *bm, const struct g3s_point **pointlist,
+    const g3s_uvl *uvl_list, const GLfloat *color_array, int nv);
 void android_merged_wall_reset_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx);
 void android_merged_wall_set_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx,
                                                   const char *route, int orig_nv,
