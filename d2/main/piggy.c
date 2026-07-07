@@ -121,6 +121,39 @@ ushort GameBitmapXlat[MAX_BITMAP_FILES];
 
 int piggy_page_flushed = 0;
 
+#ifdef ANDROID
+static void piggy_log_pageout_trigger(const char *reason, int requested_bitmap, int resolved_bitmap,
+									  const grs_bitmap *bmp, int need_bytes)
+{
+	const char *name = "<none>";
+	int real_flags = 0;
+
+	if (!(Game_mode & GM_MULTI))
+		return;
+	if (resolved_bitmap >= 0 && resolved_bitmap < Num_bitmap_files) {
+		name = AllBitmaps[resolved_bitmap].name;
+		real_flags = GameBitmapFlags[resolved_bitmap];
+	}
+	debug_log_force(DLOG_TEXTURE,
+					"[texcache] event=pageout_trigger game=d2 mode=0x%x reason=%s requested=%d resolved=%d name=%s need=%d cache_next=%d cache_size=%d flushed_before=%d bm_flags=0x%x real_flags=0x%x w=%d h=%d rowsize=%d handle=%u",
+					Game_mode,
+					reason ? reason : "",
+					requested_bitmap,
+					resolved_bitmap,
+					name ? name : "<none>",
+					need_bytes,
+					Piggy_bitmap_cache_next,
+					Piggy_bitmap_cache_size,
+					piggy_page_flushed,
+					bmp ? bmp->bm_flags : 0,
+					real_flags,
+					bmp ? bmp->bm_w : 0,
+					bmp ? bmp->bm_h : 0,
+					bmp ? bmp->bm_rowsize : 0,
+					bmp ? bmp->bm_handle : 0);
+}
+#endif
+
 #define DBM_FLAG_ABM    64 // animated bitmap
 #define DBM_NUM_FRAMES  63
 
@@ -1209,6 +1242,9 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 			// GET JOHN NOW IF YOU GET THIS ASSERT!!!
 			//Assert( Piggy_bitmap_cache_next+zsize < Piggy_bitmap_cache_size );
 			if ( Piggy_bitmap_cache_next+zsize >= Piggy_bitmap_cache_size ) {
+#ifdef ANDROID
+				piggy_log_pageout_trigger("rle_pre", bitmap.index, i, bmp, zsize);
+#endif
 				Int3();
 				piggy_bitmap_page_out_all();
 				goto ReDoIt;
@@ -1253,6 +1289,9 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 
 			Piggy_bitmap_cache_next += zsize;
 			if ( Piggy_bitmap_cache_next+zsize >= Piggy_bitmap_cache_size ) {
+#ifdef ANDROID
+				piggy_log_pageout_trigger("rle_post", bitmap.index, i, bmp, zsize);
+#endif
 				Int3();
 				piggy_bitmap_page_out_all();
 				goto ReDoIt;
@@ -1265,6 +1304,9 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 			Assert( Piggy_bitmap_cache_next+(bmp->bm_h*bmp->bm_w) < Piggy_bitmap_cache_size );
 #endif
 			if ( Piggy_bitmap_cache_next+(bmp->bm_h*bmp->bm_w) >= Piggy_bitmap_cache_size ) {
+#ifdef ANDROID
+				piggy_log_pageout_trigger("raw_pre", bitmap.index, i, bmp, bmp->bm_h * bmp->bm_w);
+#endif
 				piggy_bitmap_page_out_all();
 				goto ReDoIt;
 			}

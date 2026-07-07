@@ -165,3 +165,27 @@ Use the fresh-start D2 level 7 coop desync log to identify why a texture near st
 - Passed: `git diff --check`
 - Passed: `.\android\gradlew.bat -p android :app:assembleDebug`
 - Next run can leave Texture logging off. Use coop desync logging plus the mwall tap/probe when the wrong texture is visible; the forced tap/cache lines should still appear in the exported debug log.
+
+## Fresh tap log 2026-07-06 17:57
+- [x] Review the new host log with the same wrong texture and a mwall tap.
+- [x] Check whether the tap resolved to a wall face.
+- [x] Improve tap/probe fallback logging so a near miss still reports the tracked/selected face identity.
+- [x] Add cache-full trigger logging so `piggy_page_out_all` reports which bitmap request caused it.
+- [x] Validate the logging change and hand off next-run instructions.
+
+## Fresh tap log findings
+- The run is a fresh D2 coop level 7 host start with build 17260 and categories `Graphics, Texture, Coop Desync`.
+- During level load, D2 hit `piggy_page_out_all` three times: once at empty cache, then near capacity twice (`cache_next=2456763` and `2457527` of `2457600`). Each full page-out flushed texmerge entries.
+- The coop segment signature stayed stable (`segment_sig=e8f97cd8`) while texture/paging counters alternated, so this still looks like texture/cache lifecycle behavior rather than level segment data mutation.
+- The tap request logged pose and timing, but the resolver returned `status=no_crosshair_face` with `tracked=1 selected=1`. The tap therefore did not identify the visible wrong face in this log.
+- Because the logger knew one tracked face existed, the next useful improvement is to force-log the tracked/selected face summary on no-hit tap probes instead of only logging counts.
+
+## Fresh tap log changes
+- `merged_wall_log_tap_probe()` now keeps the existing `status=no_crosshair_face` line and adds a forced `[mwall_tap_probe] kind=face_candidate` line when a tracked fallback exists. The fallback reports source (`selected` or `nearest`), box, `seg/side/face`, `tmap1/tmap2`, overlay index, route, merge implementation, and reason.
+- The no-hit fallback also emits forced `base_fallback`, `overlay_fallback`, and merged-bitmap details for that candidate face, only on the tap/probe path.
+- D1/D2 `piggy_bitmap_page_in()` now logs a forced `[texcache] event=pageout_trigger` before cache-full page-outs. The line includes `requested/resolved` bitmap IDs, bitmap name, reason (`rle_pre`, `rle_post`, or `raw_pre`), needed bytes, cache cursor, flags, dimensions, rowsize, and handle.
+
+## Fresh tap log validation
+- Passed: `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\cpp\shared\merged_wall_debug.c','d1\main\piggy.c','d2\main\piggy.c','android\ai tool plans\crash, logging, diagnostics\coop_level7_blue_texture_log_review_20260706.md')`
+- Passed: `git diff --check`
+- Passed: `.\android\gradlew.bat -p android :app:assembleDebug`

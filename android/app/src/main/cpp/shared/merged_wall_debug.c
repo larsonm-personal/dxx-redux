@@ -5408,6 +5408,57 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 	g_merged_wall_probe_result.frame_id = g_merged_wall_frame_id;
 	g_merged_wall_probe_result.request_frame = g_merged_wall_snapshot_request_frame;
 	if (!best.valid) {
+		int fallback_index = -1;
+		const char *fallback_source = "none";
+		const char *fallback_box_kind = "none";
+		float fallback_min_sx = 0.0f, fallback_max_sx = 0.0f;
+		float fallback_min_sy = 0.0f, fallback_max_sy = 0.0f;
+		float fallback_area = 0.0f;
+		float fallback_dist2 = 0.0f;
+
+		for (i = 0; i < selected_count; i++) {
+			if (selected[i] >= 0 && selected[i] < merged_wall_tracked_face_count) {
+				fallback_index = selected[i];
+				fallback_source = "selected";
+				break;
+			}
+		}
+		if (fallback_index < 0) {
+			for (i = 0; i < merged_wall_tracked_face_count; i++) {
+				const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[i];
+				const char *box_kind = "none";
+				float min_sx = 0.0f, max_sx = 0.0f, min_sy = 0.0f, max_sy = 0.0f;
+				float box_area = 0.0f;
+				float dist2;
+
+				if (!merged_wall_get_track_overlap_box(track, &min_sx, &max_sx, &min_sy, &max_sy,
+				                                       &box_area, &box_kind))
+					continue;
+				dist2 = merged_wall_bbox_distance_sq(canvas_center_x, canvas_center_y,
+				                                     min_sx, max_sx, min_sy, max_sy);
+				if (fallback_index < 0 || dist2 < fallback_dist2 - 0.5f ||
+				    (dist2 <= fallback_dist2 + 0.5f &&
+				     (track->draw_order > merged_wall_tracked_faces[fallback_index].draw_order ||
+				      (track->draw_order == merged_wall_tracked_faces[fallback_index].draw_order &&
+				       track->draw_seq > merged_wall_tracked_faces[fallback_index].draw_seq)))) {
+					fallback_index = i;
+					fallback_source = "nearest";
+					fallback_box_kind = box_kind;
+					fallback_min_sx = min_sx;
+					fallback_max_sx = max_sx;
+					fallback_min_sy = min_sy;
+					fallback_max_sy = max_sy;
+					fallback_area = box_area;
+					fallback_dist2 = dist2;
+				}
+			}
+		}
+		if (fallback_index >= 0 && fallback_index < merged_wall_tracked_face_count &&
+		    !merged_wall_get_track_overlap_box(&merged_wall_tracked_faces[fallback_index],
+		                                       &fallback_min_sx, &fallback_max_sx,
+		                                       &fallback_min_sy, &fallback_max_sy,
+		                                       &fallback_area, &fallback_box_kind))
+			fallback_box_kind = "none";
 		merged_wall_copy_string(g_merged_wall_probe_result.status,
 		                        sizeof(g_merged_wall_probe_result.status), "no_crosshair_face");
 		merged_wall_copy_string(g_merged_wall_probe_result.route,
@@ -5432,6 +5483,75 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 		                canvas_center_y,
 		                merged_wall_tracked_face_count,
 		                selected_count);
+		if (fallback_index >= 0 && fallback_index < merged_wall_tracked_face_count) {
+			const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[fallback_index];
+			int overlay_tex_num = track->draw_ctx.valid && track->draw_ctx.tmap2 != 0
+			                          ? merged_wall_overlay_index(track->draw_ctx.tmap2)
+			                          : -1;
+			int center_hit = fallback_area > 0.0f &&
+			                 merged_wall_bbox_contains_point(canvas_center_x, canvas_center_y,
+			                                                 fallback_min_sx, fallback_max_sx,
+			                                                 fallback_min_sy, fallback_max_sy);
+			int rank = merged_wall_selected_rank(selected, selected_count, fallback_index);
+
+			fallback_dist2 = fallback_area > 0.0f
+			                     ? merged_wall_bbox_distance_sq(canvas_center_x, canvas_center_y,
+			                                                    fallback_min_sx, fallback_max_sx,
+			                                                    fallback_min_sy, fallback_max_sy)
+			                     : 0.0f;
+			g_merged_wall_probe_result.hit_kind = MERGED_WALL_PROBE_HIT_NONE;
+			g_merged_wall_probe_result.center_polygon_hit = 0;
+			g_merged_wall_probe_result.center_bbox_hit = center_hit;
+			g_merged_wall_probe_result.seg = track->draw_ctx.valid ? track->draw_ctx.seg : -1;
+			g_merged_wall_probe_result.side = track->draw_ctx.valid ? track->draw_ctx.side : -1;
+			g_merged_wall_probe_result.face = track->draw_ctx.valid ? track->draw_ctx.face : -1;
+			g_merged_wall_probe_result.child = track->draw_ctx.valid ? track->draw_ctx.child : -1;
+			g_merged_wall_probe_result.wid_flags = track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0;
+			g_merged_wall_probe_result.tmap1 = track->draw_ctx.valid ? track->draw_ctx.tmap1 : -1;
+			g_merged_wall_probe_result.tmap2 = track->draw_ctx.valid ? track->draw_ctx.tmap2 : 0;
+			g_merged_wall_probe_result.orient = track->orient;
+			merged_wall_copy_string(g_merged_wall_probe_result.route,
+			                        sizeof(g_merged_wall_probe_result.route), track->route);
+			merged_wall_copy_string(g_merged_wall_probe_result.merge_impl,
+			                        sizeof(g_merged_wall_probe_result.merge_impl), track->merge_impl);
+			debug_log_force(DLOG_TEXTURE,
+			                "[mwall_tap_probe] kind=face_candidate status=no_crosshair_face source=%s rank=%d center_hit=%d dist2=%.1f frame=%d request_frame=%d level=%d name=%s box_kind=%s box=%.1f..%.1f/%.1f..%.1f area=%.1f pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x overlay=%d orient=%d route=%s merge_impl=%s reason=%s",
+			                fallback_source,
+			                rank >= 0 ? rank + 1 : 0,
+			                center_hit,
+			                fallback_dist2,
+			                g_merged_wall_frame_id,
+			                g_merged_wall_snapshot_request_frame,
+			                Current_level_num,
+			                level_name,
+			                fallback_box_kind,
+			                fallback_min_sx,
+			                fallback_max_sx,
+			                fallback_min_sy,
+			                fallback_max_sy,
+			                fallback_area,
+			                track->render_pass,
+			                track->draw_seq,
+			                track->draw_order,
+			                track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+			                track->draw_ctx.valid ? track->draw_ctx.side : -1,
+			                track->draw_ctx.valid ? track->draw_ctx.face : -1,
+			                track->draw_ctx.valid ? track->draw_ctx.child : -1,
+			                track->draw_ctx.valid ? track->draw_ctx.side_type : -1,
+			                track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0,
+			                track->draw_ctx.valid ? track->draw_ctx.tmap1 : -1,
+			                track->draw_ctx.valid ? track->draw_ctx.tmap2 : 0,
+			                overlay_tex_num,
+			                track->orient,
+			                track->route,
+			                track->merge_impl,
+			                track->decision_reason);
+			if (track->draw_ctx.valid)
+				merged_wall_probe_log_layer_bitmap("base_fallback", track, track->draw_ctx.tmap1);
+			if (overlay_tex_num >= 0)
+				merged_wall_probe_log_layer_bitmap("overlay_fallback", track, overlay_tex_num);
+			merged_wall_probe_log_merged_bitmap(track);
+		}
 		return;
 	}
 
