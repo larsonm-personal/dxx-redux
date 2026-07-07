@@ -139,6 +139,24 @@ object DebugLog {
         }
     }
 
+    fun logForced(
+        context: Context,
+        category: Int,
+        message: String,
+    ) {
+        synchronized(lock) {
+            if (category < 0 || category >= DebugLogCategory.COUNT) return
+            if (writer == null) openLog(context)
+            writer ?: return
+            try {
+                val tag = DebugLogCategory.labels[category].uppercase()
+                writeLine(tag, message)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to write forced log line", e)
+            }
+        }
+    }
+
     fun logBatch(
         category: Int,
         payload: String,

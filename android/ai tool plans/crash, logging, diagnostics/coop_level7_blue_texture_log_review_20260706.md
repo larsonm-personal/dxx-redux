@@ -115,3 +115,53 @@ Use the fresh-start D2 level 7 coop desync log to identify why a texture near st
 - Passed: `.\android\run-code-quality.ps1 -Fix -Paths @('d1\main\render.c','d2\main\render.c','d1\arch\ogl\ogl.c','d2\arch\ogl\ogl.c','d1\xmodel\xmodel.cpp','d2\xmodel\xmodel.cpp','d1\main\endlevel.c','d1\main\menu.c','d2\main\menu.c','android\app\src\main\java\com\dxxredux\app\GraphicsSettingsPage.kt','android\ai tool plans\crash, logging, diagnostics\coop_level7_blue_texture_log_review_20260706.md')`
 - Passed: `.\android\gradlew.bat -p android :app:assembleDebug`
 - Build note: the native build still reports existing packed-member warnings in D1/D2 `xmodel.cpp` around the model view-matrix upload helper, outside the modified `xmodel_show()` branch.
+
+## Post-unification report 2026-07-06
+- [x] Record user result that the visual problem is unchanged after honoring `ClassicDepth` in multiplayer.
+- [x] Make the next run bypass Android cached merged-wall premerge directly, without relying on a launcher debug preference.
+- [x] Add enough route logging to prove whether the focus face uses the bypass.
+- [x] Validate and hand off the exact next-run logging instructions.
+
+## Post-unification findings
+- The unchanged visual result falsifies the broad `GM_MULTI` render-pass split as the main visible cause for this face, or shows that the tested run did not depend on `ClassicDepth`.
+- The strongest remaining targeted suspect is still the Android `merge_cached` / `gpu_cached_single` path for plain transparent overlay walls.
+- The existing launcher preference `Force legacy CPU texmerge` should force CPU texmerge via `merged_wall_experiment=10`, but the next run should not depend on toggling that preference correctly.
+- Implemented the next diagnostic as a direct Android multiplayer bypass: if `GM_MULTI` is set and the overlay bitmap is normal transparent, D1/D2 now use old CPU texmerge instead of the OGL live/cached merged-wall path. Focus overlays log `[mwall_exp] ... merge_impl=auto_old_texmerge reason=coop_plain_transparent_overlay`.
+
+## Post-unification validation
+- Passed: `.\android\run-code-quality.ps1 -Fix -Paths @('d1\main\render.c','d2\main\render.c','android\ai tool plans\crash, logging, diagnostics\coop_level7_blue_texture_log_review_20260706.md')`
+- Passed: `git diff --check`
+- Passed: `.\android\gradlew.bat -p android :app:assembleDebug`
+- Next run needs Graphics and Texture logging enabled. The mwall tap is useful but not required if the same focus overlay logs automatically; use it if the visible wrong wall is easy to aim at.
+
+## Simultaneous correction observation 2026-07-06
+- [x] Record user report that textures stayed wrong for several minutes in coop, then flipped correct for both players at once.
+- [x] Inspect texture cache, texmerge, and palette invalidation paths that can rebuild visible textures mid-level.
+- [x] Add targeted logging around piggy page-out, texmerge flush, and Android cached merged-wall clear/recreate.
+- [x] Add a forced native debug-log path so texture tap/probe lines can punch through when the Texture category is off.
+- [x] Validate and document next-run logging settings.
+
+## Simultaneous correction findings
+- Simultaneous correction on both peers points toward a synchronized game-state event causing cache invalidation/rebuild, not a random per-device GL state leak.
+- `piggy_bitmap_page_out_all()` resets `Piggy_bitmap_cache_next`, increments `piggy_page_flushed`, calls `texmerge_flush()`, and pages out piggy bitmaps. A later `PIGGY_PAGE_IN()` rebuilds source bitmap data and merged texmerge entries.
+- `texmerge_get_cached_bitmap()` explicitly handles `piggy_page_flushed` by re-reading base and overlay textures before creating a merged bitmap. If the bad wall was using a stale/incorrect merged result, a full piggy page-out can make it correct on the next rebuild.
+- Android also has a 32-entry cached merged-wall LRU. Eviction or clear/recreate of that entry can replace a bad cached composite with a good one.
+- Palette restore and OGL texture-list resets also clear GL textures and the Android merged-wall cache, but they are less likely during normal flying unless a menu/death/palette restore happened.
+- To keep debug logs smaller, the next pass should not require enabling the full Texture category. Forced one-shot/cache-event lines should write through the native logger even when `DLOG_TEXTURE` is disabled.
+
+## Simultaneous correction changes
+- Added `debug_log_force()` on the native side plus `DebugLog.logForced()`/`debugLogForcedFromNative()` on the Kotlin side. Forced lines write to the debug log without enabling their category.
+- Converted `[mwall_tap_probe]`, `[mwall_snap] request`, and `[mwall_snap_pose]` to forced Texture logs so the tap/probe bundle punches through with Texture logging off.
+- Added sparse forced lifecycle lines:
+  - `[texcache] event=piggy_page_out_all ...`
+  - `[mwall_texmerge] event=flush ...`
+  - `[mwall_texmerge] event=create ...` for tracked merged-wall overlays
+  - `[mwall_cache] event=clear/create/evict ...` for tracked Android cached merged-wall entries
+  - `[texcache] event=ogl_palette_invalidate ...`
+- Left high-volume Texture logs, including cache reuse and broad render diagnostics, behind the normal Texture category.
+
+## Simultaneous correction validation
+- Passed: `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\cpp\shared\android_log.c','android\app\src\main\cpp\shared\android_log.h','android\app\src\main\cpp\shared\merged_wall_debug.c','android\app\src\main\java\com\dxxredux\app\DebugLog.kt','android\app\src\main\java\com\dxxredux\app\MainActivity.kt','d1\main\piggy.c','d2\main\piggy.c','d1\main\texmerge.c','d2\main\texmerge.c','d1\arch\ogl\ogl.c','d2\arch\ogl\ogl.c','android\ai tool plans\crash, logging, diagnostics\coop_level7_blue_texture_log_review_20260706.md')`
+- Passed: `git diff --check`
+- Passed: `.\android\gradlew.bat -p android :app:assembleDebug`
+- Next run can leave Texture logging off. Use coop desync logging plus the mwall tap/probe when the wrong texture is visible; the forced tap/cache lines should still appear in the exported debug log.

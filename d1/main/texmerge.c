@@ -119,13 +119,15 @@ static void texmerge_log_event(const char *event, int slot, int tmap_bottom,
 	const char *botname;
 	const char *ovlname;
 	TEXTURE_CACHE *entry;
+	int force_log;
 
 	if (!texmerge_should_log(bitmap_top))
 		return;
 	entry = &Cache[slot];
 	botname = piggy_game_bitmap_name(bitmap_bottom);
 	ovlname = piggy_game_bitmap_name(bitmap_top);
-	debug_log(DLOG_TEXTURE,
+	force_log = event && strcmp(event, "reuse");
+	(force_log ? debug_log_force : debug_log)(DLOG_TEXTURE,
 		"[mwall_texmerge] event=%s frame=%d pass=%d seq=%d slot=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s first_owner=%d/%d/%d create_frame=%d last_owner=%d/%d/%d last_use_frame=%d",
 		event,
 		g_merged_wall_frame_id,
@@ -183,6 +185,16 @@ int texmerge_init(int num_cached_textures)
 void texmerge_flush()
 {
 	int i;
+
+#ifdef ANDROID
+	if (Game_mode & GM_MULTI)
+		debug_log_force(DLOG_TEXTURE,
+			"[mwall_texmerge] event=flush game=d1 mode=0x%x entries=%d hits=%d misses=%d",
+			Game_mode,
+			num_cache_entries,
+			cache_hits,
+			cache_misses);
+#endif
 
 	for (i=0; i<num_cache_entries; i++ )	{
 		Cache[i].last_time_used = -1;

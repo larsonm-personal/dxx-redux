@@ -883,6 +883,14 @@ void ogl_invalidate_game_palette_textures(void)
 {
 	int i;
 
+#ifdef ANDROID
+	if (Game_mode & GM_MULTI)
+		debug_log_force(DLOG_TEXTURE,
+		                "[texcache] event=ogl_palette_invalidate game=d2 mode=0x%x bitmaps=%d",
+		                Game_mode,
+		                Num_bitmap_files);
+#endif
+
 #if defined(ANDROID) && defined(OGL_MERGE)
 	android_merged_wall_cached_texmerge_clear_cache();
 #endif

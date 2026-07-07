@@ -102,6 +102,20 @@ static int render_android_can_auto_oldmerge_tmap2(int tmap1, int tmap2,
 		&& bmovl->gltexture->w == 64
 		&& bmovl->gltexture->h == 64;
 }
+
+static int render_android_should_force_multiplayer_oldmerge_tmap2(int tmap1, int tmap2)
+{
+	int overlay = tmap2 & 0x3FFF;
+	grs_bitmap *bmovl;
+
+	if (!(Game_mode & GM_MULTI) || !tmap2 || tmap1 < 0 || tmap1 >= NumTextures || overlay >= NumTextures)
+		return 0;
+
+	PIGGY_PAGE_IN(Textures[overlay]);
+	bmovl = &GameBitmaps[Textures[overlay].index];
+	return (bmovl->bm_flags & BM_FLAG_TRANSPARENT)
+		&& !(bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT);
+}
 #endif
 #include "args.h"
 
@@ -418,6 +432,13 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		android_oldmerge_reason = "force_legacy_texmerge";
 	}
 	else if (use_alt_texmerge
+		&& render_android_should_force_multiplayer_oldmerge_tmap2(tmap1, tmap2))
+	{
+		use_alt_texmerge = 0;
+		android_oldmerge_impl = "auto_old_texmerge";
+		android_oldmerge_reason = "coop_plain_transparent_overlay";
+	}
+	else if (use_alt_texmerge
 		&& !g_merged_wall_force_two_pass
 		&& android_is_logging_target
 		&& Segments[segnum].sides[sidenum].type == SIDE_IS_TRI_13
@@ -460,15 +481,16 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		if (tmap2 != 0) { 
 			bm = texmerge_get_cached_bitmap( tmap1, tmap2 );
 	#ifdef ANDROID
-			if ((int)g_merged_wall_experiment_mode == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
-					&& android_merged_wall_is_logging_target_tmap2(tmap2))
+			if (android_oldmerge_impl && android_merged_wall_is_logging_target_tmap2(tmap2))
 				debug_log(DLOG_TEXTURE,
-					"[mwall_exp] frame=%d pass=%d seq=%d mode=%d(%s) merge_impl=old_texmerge seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
+					"[mwall_exp] frame=%d pass=%d seq=%d mode=%d(%s) merge_impl=%s reason=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
 					g_merged_wall_frame_id,
 					g_merged_wall_render_pass,
 					g_merged_wall_draw_seq,
 					(int)g_merged_wall_experiment_mode,
-					"force_legacy_texmerge",
+					android_merged_wall_experiment_name((int)g_merged_wall_experiment_mode),
+					android_oldmerge_impl,
+					android_oldmerge_reason ? android_oldmerge_reason : "",
 					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
 					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
 					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,

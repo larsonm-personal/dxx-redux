@@ -25,6 +25,11 @@ extern volatile int debug_log_enabled[DLOG_COUNT];
 void debug_log(int category, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
 
+/* Format and send a log line even if the category is disabled.
+ * Use only for explicit user-triggered diagnostics or sparse lifecycle events. */
+void debug_log_force(int category, const char *fmt, ...)
+    __attribute__((format(printf, 2, 3)));
+
 /* Send a newline-delimited payload to Kotlin as one batched write. */
 void debug_log_batch(int category, const char *payload);
 
@@ -43,6 +48,7 @@ void debug_log_set_enabled(int category, int on);
 #else
 /* No-op on non-Android builds */
 #define debug_log(...)       ((void) 0)
+#define debug_log_force(...) ((void) 0)
 #define debug_log_batch(...) ((void) 0)
 #define COOPLOG(fmt, ...)    ((void) 0)
 #endif

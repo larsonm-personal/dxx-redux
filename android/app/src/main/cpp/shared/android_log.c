@@ -117,6 +117,22 @@ void debug_log(int category, const char *fmt, ...)
 	debug_log_call_java_method("debugLogFromNative", category, buf);
 }
 
+void debug_log_force(int category, const char *fmt, ...)
+{
+	if (category < 0 || category >= DLOG_COUNT)
+		return;
+
+	char buf[1024];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+
+	__android_log_print(ANDROID_LOG_DEBUG, "DXX-DLOG",
+	                    "[%s] %s", category_tags[category], buf);
+	debug_log_call_java_method("debugLogForcedFromNative", category, buf);
+}
+
 void debug_log_batch(int category, const char *payload)
 {
 	if (category < 0 || category >= DLOG_COUNT)

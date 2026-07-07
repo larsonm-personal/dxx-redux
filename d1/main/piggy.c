@@ -45,6 +45,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "newmenu.h"
 #include "custom.h"
 
+#ifdef ANDROID
+#include "android_log.h"
+#endif
+
 int piggy_is_substitutable_bitmap( char * name, char * subst_name );
 
 //#define NO_DUMP_SOUNDS	1		//if set, dump bitmaps but not sounds
@@ -713,6 +717,16 @@ void piggy_bitmap_page_out_all()
 {
 	int i;
 	
+#ifdef ANDROID
+	if (Game_mode & GM_MULTI)
+		debug_log_force(DLOG_TEXTURE,
+			"[texcache] event=piggy_page_out_all game=d1 mode=0x%x cache_next=%d cache_size=%d flushed_before=%d",
+			Game_mode,
+			Piggy_bitmap_cache_next,
+			Piggy_bitmap_cache_size,
+			piggy_page_flushed);
+#endif
+
 	Piggy_bitmap_cache_next = 0;
 
 	piggy_page_flushed++;

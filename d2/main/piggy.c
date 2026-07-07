@@ -53,6 +53,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "console.h"
 #include "dxa_metadata_patch.h"
 
+#ifdef ANDROID
+#include "android_log.h"
+#endif
+
 //#define NO_DUMP_SOUNDS        1   //if set, dump bitmaps but not sounds
 
 #define DEFAULT_PIGFILE_REGISTERED      "groupa.pig"
@@ -1322,6 +1326,16 @@ void piggy_bitmap_page_out_all()
 {
 	int i;
 	
+#ifdef ANDROID
+	if (Game_mode & GM_MULTI)
+		debug_log_force(DLOG_TEXTURE,
+			"[texcache] event=piggy_page_out_all game=d2 mode=0x%x cache_next=%d cache_size=%d flushed_before=%d",
+			Game_mode,
+			Piggy_bitmap_cache_next,
+			Piggy_bitmap_cache_size,
+			piggy_page_flushed);
+#endif
+
 	Piggy_bitmap_cache_next = 0;
 
 	piggy_page_flushed++;

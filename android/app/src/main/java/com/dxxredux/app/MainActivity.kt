@@ -3701,6 +3701,14 @@ class MainActivity :
     }
 
     @Suppress("unused")
+    fun debugLogForcedFromNative(
+        category: Int,
+        message: String,
+    ) {
+        DebugLog.logForced(this, category, message)
+    }
+
+    @Suppress("unused")
     fun debugLogBatchFromNative(
         category: Int,
         payload: String,
