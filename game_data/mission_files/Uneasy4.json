@@ -1,0 +1,225 @@
+[
+  {
+    "status": "ok",
+    "source": "Uneasy 4",
+    "game": "d2",
+    "mission_name": "Uneasy 4",
+    "mission_filename": "Uneasy4.mn2",
+    "coop_starts": "1",
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Uneasy 4",
+        "level_file": "Uneasy4.rl2",
+        "robots": 201,
+        "hostages": 18,
+        "secrets": 4,
+        "matcens": 4,
+        "energy_centers": 6,
+        "mine_volume": 245931968.31899187,
+        "mine_volume_normalized": 53.7802744284026,
+        "mine_volume_text": "54x",
+        "travel_distance": 27100.197367434383,
+        "travel_time_seconds": 542,
+        "travel_time_text": "9M:02S",
+        "travel_targets_reached": 20,
+        "travel_targets_total": 20,
+        "travel_key_detours": 2,
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "label": "Start",
+            "seg": 5785
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "label": "blue key",
+            "seg": 4231,
+            "distance": 2289.8625839361857,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "label": "gold key",
+            "seg": 4955,
+            "distance": 1961.6704341756165,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "label": "Open door trigger 1",
+            "seg": 86,
+            "side": 3,
+            "wall": 19,
+            "distance": 1615.9559277762903,
+            "trigger": 1,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 62,
+                "side": 2,
+                "wall": 15
+              },
+              {
+                "seg": 66,
+                "side": 2,
+                "wall": 13
+              },
+              {
+                "seg": 71,
+                "side": 3,
+                "wall": 17
+              },
+              {
+                "seg": 75,
+                "side": 3,
+                "wall": 11
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "label": "red key",
+            "seg": 5855,
+            "distance": 1550.6351413975847,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "label": "Open door trigger 12",
+            "seg": 7488,
+            "side": 5,
+            "wall": 227,
+            "distance": 397.6440076609144,
+            "trigger": 12,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 2666,
+                "side": 5,
+                "wall": 92
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "label": "Open door trigger 2",
+            "seg": 370,
+            "side": 5,
+            "wall": 36,
+            "distance": 1205.0777837942528,
+            "trigger": 2,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 329,
+                "side": 0,
+                "wall": 24
+              },
+              {
+                "seg": 330,
+                "side": 0,
+                "wall": 25
+              },
+              {
+                "seg": 331,
+                "side": 1,
+                "wall": 26
+              },
+              {
+                "seg": 332,
+                "side": 1,
+                "wall": 27
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "label": "Open wall trigger 19",
+            "seg": 8750,
+            "side": 5,
+            "wall": 248,
+            "distance": 3971.1592741384984,
+            "trigger": 19,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 7597,
+                "side": 2,
+                "wall": 246
+              },
+              {
+                "seg": 7598,
+                "side": 0,
+                "wall": 247
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "trigger",
+            "label": "Open wall trigger 20",
+            "seg": 8844,
+            "side": 5,
+            "wall": 249,
+            "distance": 713.2829951457297,
+            "trigger": 20,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 7598,
+                "side": 2,
+                "wall": 245
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "reactor",
+            "label": "Reactor",
+            "seg": 8575,
+            "distance": 758.5689895950305
+          },
+          {
+            "index": 10,
+            "kind": "exit",
+            "label": "Exit",
+            "seg": 8544,
+            "side": 2,
+            "wall": 228,
+            "distance": 266.41331803598564,
+            "trigger": 13,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "guidebot_note": "guidebot is present but not reachable from the start",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level",
+          "guidebot is present but not reachable from the start"
+        ]
+      }
+    ],
+    "target_index": 0
+  }
+]
