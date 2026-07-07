@@ -121,15 +121,10 @@ if (-not $NoBuild) {
     if ($needsBuild) {
         Write-Host "=== Building APK ==="
         $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $ScriptDir
-        Push-Location $ScriptDir
-        try {
-            & $gradleWrapper assembleDebug --no-daemon 2>&1 | ForEach-Object { Write-Host $_ }
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "ERROR: Build failed" -ForegroundColor Red
-                exit 1
-            }
-        } finally {
-            Pop-Location
+        & $gradleWrapper -p $ScriptDir assembleDebug --no-daemon 2>&1 | ForEach-Object { Write-Host $_ }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Build failed" -ForegroundColor Red
+            exit 1
         }
         Write-Host ""
     }

@@ -189,3 +189,48 @@ Use the fresh-start D2 level 7 coop desync log to identify why a texture near st
 - Passed: `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\cpp\shared\merged_wall_debug.c','d1\main\piggy.c','d2\main\piggy.c','android\ai tool plans\crash, logging, diagnostics\coop_level7_blue_texture_log_review_20260706.md')`
 - Passed: `git diff --check`
 - Passed: `.\android\gradlew.bat -p android :app:assembleDebug`
+
+## Tap log 2026-07-06 19:33
+- [x] Review the new coop desync log with forced tap/cache diagnostics.
+- [x] Identify whether the tap fallback names the visually wrong face.
+- [x] Compare page-out trigger bitmaps against coop-only texture pressure.
+- [x] Implement a post-level-load multiplayer texmerge cache reset.
+
+## Tap log 2026-07-06 19:33 findings
+- The run used build 17262 with only `Coop Desync` enabled; forced Texture diagnostics still punched through.
+- The page-out triggers during D2 level 7 load were `gauge06b` (`requested=254`) and `misc068#6` (`requested=1718`), both `reason=rle_post`, not the tapped wall textures.
+- The tap fallback identified the same visible wall: `seg=169 side=0 face=0`, `tmap1=73` (`rock198`), `tmap2=0x132`, overlay `306` (`ceil035`).
+- The face was already using `route=old_texmerge merge_impl=auto_old_texmerge reason=coop_plain_transparent_overlay`. This rules out the Android cached merged-wall path as the active renderer for this wrong-texture run.
+- The remaining fit for "wrong from fresh coop start, then both players flip correct together" is a stale or incorrectly built legacy texmerge cache entry surviving from level-load paging until a later piggy/texmerge flush rebuilds it.
+
+## Tap log 2026-07-06 19:33 changes
+- Added an Android-multiplayer-only post-level-load cache reset in D1/D2 `LoadLevel()` after texture paging and OGL texture cache warmup.
+- The hook force-logs `[texcache] event=post_level_load_flush ...`, then calls `texmerge_flush()` and `android_merged_wall_cached_texmerge_clear_cache()`.
+- This leaves single-player behavior unchanged and should prevent level-load-time merged composites from carrying into gameplay.
+
+## Tap log 2026-07-06 19:33 validation
+- Passed: `.\android\run-code-quality.ps1 -Fix -Paths @('d1\main\gameseq.c','d2\main\gameseq.c','android\ai tool plans\crash, logging, diagnostics\coop_level7_blue_texture_log_review_20260706.md')`
+- Passed: `.\android\gradlew.bat -p android :app:assembleDebug`
+
+## Ten-target forensics pass
+- [x] Instrument source bitmap page-in/page-out generation for the target textures.
+- [x] Instrument raw and expanded source bitmap hashes before every target legacy merge.
+- [x] Instrument legacy texmerge create/reuse/evict with merged bitmap hashes and slot provenance.
+- [x] Instrument GL upload of target/merged bitmaps with CPU hash, handle, and upload state.
+- [x] Instrument draw submission of target merged bitmaps with GL binding/state at first few frames and tap.
+- [x] Instrument target face route transitions and per-frame first draw after level start.
+- [x] Instrument post-level-load cache reset with before/after cache generation details.
+- [x] Instrument palette/alpha/mask source decisions for target bitmaps without requiring Texture logging.
+- [x] Instrument tap render readback/hash for fallback candidates even when the crosshair misses.
+- [x] Instrument global texture signatures around coop lifecycle phases and after multiplayer prep.
+
+## Ten-target forensics changes
+- Added compact forced `[mwall_forensic]` records for target bitmaps `rock198`, `ceil035`, and the older `metl154` case.
+- Added target source/page-in, legacy texmerge create/reuse/evict/flush, GL upload, draw bind, tap fallback render sample, and D2 coop lifecycle signature logging.
+- Legacy texmerge entries now keep Android-only source `tmap1/tmap2` provenance so eviction logs identify the old slot contents.
+- Reuse and draw-bind logs are capped per cache generation; tap, create, evict, flush, upload, and lifecycle records still punch through Texture category filtering.
+
+## Ten-target forensics validation
+- Passed: `.\android\run-code-quality.ps1 -Fix -Paths @('android\app\src\main\cpp\shared\merged_wall_debug.c','android\app\src\main\cpp\shared\merged_wall_debug.h','d1\arch\ogl\ogl.c','d2\arch\ogl\ogl.c','d1\main\piggy.c','d2\main\piggy.c','d1\main\texmerge.c','d2\main\texmerge.c','d1\main\gameseq.c','d2\main\gameseq.c','android\ai tool plans\crash, logging, diagnostics\coop_level7_blue_texture_log_review_20260706.md')`
+- Passed: `git diff --check`
+- Passed after fixing one missing local declaration caught by the first build attempt: `.\android\gradlew.bat -p android :app:assembleDebug`

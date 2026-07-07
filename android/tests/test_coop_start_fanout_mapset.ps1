@@ -12,7 +12,6 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-Set-Location $repoRoot
 
 function Resolve-RepoPath {
     param([Parameter(Mandatory)][string]$Path)

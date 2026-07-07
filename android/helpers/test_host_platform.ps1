@@ -476,7 +476,6 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
             [string]$Label = $Target
         )
 
-        $originalLocation = Get-Location
         if (Test-RegressionWindowsHost) {
             $buildScript = Join-RegressionPath $RepoRoot "run-windows-build.ps1"
             if (-not (Test-Path -LiteralPath $buildScript -PathType Leaf)) {
@@ -506,8 +505,6 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
                     throw "Host build failed for $Label with exit code $LASTEXITCODE (fallback arch: $fallbackArch)"
                 }
                 return
-            } finally {
-                Set-Location -LiteralPath $originalLocation.Path
             }
 
             throw "Host build failed for $Label with exit code $LASTEXITCODE"

@@ -39,14 +39,9 @@ function Invoke-NativeCTest {
 
     Write-Host ""
     Write-Host "Running native CTest suite for $GameName"
-    Push-Location $testDir
-    try {
-        ctest -C $Configuration --output-on-failure
-        if ($LASTEXITCODE -ne 0) {
-            throw "CTest failed for $GameName with exit code $LASTEXITCODE"
-        }
-    } finally {
-        Pop-Location
+    ctest --test-dir $testDir -C $Configuration --output-on-failure
+    if ($LASTEXITCODE -ne 0) {
+        throw "CTest failed for $GameName with exit code $LASTEXITCODE"
     }
 }
 

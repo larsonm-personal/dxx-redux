@@ -69,9 +69,8 @@ if (-not (Test-ServerReachable)) {
     if (-not $serverBin) { $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "debug") -BaseName "dxx-matchmaking" }
     if (-not $serverBin -or -not (Test-Path $serverBin)) {
         Write-Host "Building matchmaking server..." -ForegroundColor Yellow
-        Push-Location $serverDir
-        & cargo build --release 2>&1 | Out-Null
-        Pop-Location
+        $serverManifest = Join-RegressionPath $serverDir "Cargo.toml"
+        & cargo build --release --manifest-path $serverManifest 2>&1 | Out-Null
         $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
     }
     if ($serverBin -and (Test-Path $serverBin)) {

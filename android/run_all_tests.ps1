@@ -1162,19 +1162,14 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {
 
     Write-Host "== Building debug APK ==" -ForegroundColor Cyan
     $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $scriptDir
-    Push-Location $scriptDir
-    try {
-        & $gradleWrapper assembleDebug --console=plain 2>&1 |
-            Where-Object { $_ -match "^(> Task|BUILD |FAIL|error:|Execution failed|What went wrong|Exception)" } |
-            ForEach-Object { Write-Host "  $_" }
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "FAIL: APK build failed" -ForegroundColor Red
-            exit 1
-        }
-        Write-Host "  Build OK" -ForegroundColor Green
-    } finally {
-        Pop-Location
+    & $gradleWrapper -p $scriptDir assembleDebug --console=plain 2>&1 |
+        Where-Object { $_ -match "^(> Task|BUILD |FAIL|error:|Execution failed|What went wrong|Exception)" } |
+        ForEach-Object { Write-Host "  $_" }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "FAIL: APK build failed" -ForegroundColor Red
+        exit 1
     }
+    Write-Host "  Build OK" -ForegroundColor Green
     Write-Host ""
 }
 

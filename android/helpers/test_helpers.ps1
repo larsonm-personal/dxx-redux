@@ -2039,10 +2039,9 @@ function Start-MatchmakingServer {
     if (-not $serverBin) { $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "debug") -BaseName "dxx-matchmaking" }
     if (-not $serverBin -or -not (Test-Path $serverBin)) {
         Write-Status "Building matchmaking server..." "Yellow"
-        Push-Location $serverDir
-        $buildOut = & cargo build --release 2>&1
+        $serverManifest = Join-RegressionPath $serverDir "Cargo.toml"
+        $buildOut = & cargo build --release --manifest-path $serverManifest 2>&1
         $buildExitCode = $LASTEXITCODE
-        Pop-Location
         if ($buildExitCode -ne 0 -and ($buildOut -match "lock file version 4 requires" -or $buildOut -match "rustc [0-9.]+ is not supported")) {
             $rustHelper = Join-RegressionPath $script:REPO_ROOT "android" "get_deps" "helpers" "get_rust.sh"
             if (Test-Path -LiteralPath $rustHelper -PathType Leaf) {
@@ -2054,10 +2053,8 @@ function Start-MatchmakingServer {
                     if (Test-Path -LiteralPath (Join-RegressionPath $cargoDir "cargo")) {
                         $env:PATH = "$cargoDir$([System.IO.Path]::PathSeparator)$env:PATH"
                     }
-                    Push-Location $serverDir
-                    $buildOut = & cargo build --release 2>&1
+                    $buildOut = & cargo build --release --manifest-path $serverManifest 2>&1
                     $buildExitCode = $LASTEXITCODE
-                    Pop-Location
                 }
             }
         }
@@ -2123,11 +2120,10 @@ function Start-DockerNat {
     Write-Status "Starting Docker NAT ($NatA / $NatB)..." "Yellow"
     $env:NAT_A = $NatA
     $env:NAT_B = $NatB
-    Push-Location $composeDir
-    docker compose down 2>&1 | Out-Null
-    docker compose up -d --build 2>&1 | Out-Null
+    $composeFile = Join-RegressionPath $composeDir "docker-compose.yml"
+    docker compose --project-directory $composeDir -f $composeFile down 2>&1 | Out-Null
+    docker compose --project-directory $composeDir -f $composeFile up -d --build 2>&1 | Out-Null
     $rc = $LASTEXITCODE
-    Pop-Location
     Remove-Item Env:\NAT_A -ErrorAction SilentlyContinue
     Remove-Item Env:\NAT_B -ErrorAction SilentlyContinue
     if ($rc -ne 0) {

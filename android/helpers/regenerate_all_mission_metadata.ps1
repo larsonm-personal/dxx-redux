@@ -17,8 +17,6 @@ function Write-Status {
     Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Message" -ForegroundColor $Color
 }
 
-Set-Location $repoRoot
-
 if (-not (Test-Path -LiteralPath $zipDir -PathType Container)) {
     throw "Mission metadata source directory not found: $zipDir"
 }
@@ -38,14 +36,9 @@ if (Test-Path -LiteralPath $jdkHome -PathType Container) {
 }
 
 Write-Status "Building debug APK"
-Push-Location $androidRoot
-try {
-    & $gradle assembleDebug
-    if ($LASTEXITCODE -ne 0) {
-        throw "Debug APK build failed with exit code $LASTEXITCODE"
-    }
-} finally {
-    Pop-Location
+& $gradle -p $androidRoot assembleDebug
+if ($LASTEXITCODE -ne 0) {
+    throw "Debug APK build failed with exit code $LASTEXITCODE"
 }
 
 Write-Status "Regenerating mission metadata JSON"
@@ -59,4 +52,3 @@ if ($batchExit -ne 0) {
 
 Write-Status "Mission metadata regeneration complete" "Green"
 Write-Status "Output: $outDir" "Green"
-

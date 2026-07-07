@@ -25,13 +25,8 @@ if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 
 # Run tests via CTest
 Write-Host "`nRunning tests..."
-Push-Location $buildDir
-try {
-    ctest -C Release --output-on-failure
-    $rc = $LASTEXITCODE
-} finally {
-    Pop-Location
-}
+ctest --test-dir $buildDir -C Release --output-on-failure
+$rc = $LASTEXITCODE
 
 # Clean up test fixtures left by test_cue_iso
 Remove-Item -Recurse -Force "$srcDir\test_fixtures" -ErrorAction SilentlyContinue

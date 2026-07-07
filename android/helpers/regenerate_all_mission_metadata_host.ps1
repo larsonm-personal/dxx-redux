@@ -58,6 +58,21 @@ function Get-HostExecutable {
     return ""
 }
 
+function Get-PowerShellPath {
+    $current = (Get-Process -Id $PID).Path
+    if ($current -and (Test-Path -LiteralPath $current -PathType Leaf)) {
+        return $current
+    }
+
+    $name = if ($PSVersionTable.PSEdition -eq "Core") { "pwsh" } else { "powershell" }
+    $command = Get-Command $name -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($command) {
+        return $command.Source
+    }
+
+    throw "$name not found for host build"
+}
+
 function Initialize-HostExecutable {
     $d1 = Get-HostExecutable -Game d1
     $d2 = Get-HostExecutable -Game d2
@@ -67,7 +82,8 @@ function Initialize-HostExecutable {
 
     Write-Status "Building host metadata executables"
     if ($IsWindows -or $env:OS -eq "Windows_NT") {
-        & (Join-Path $repoRoot "run-windows-build.ps1") -Target both
+        $powershell = Get-PowerShellPath
+        & $powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $repoRoot "run-windows-build.ps1") -Target both
     } else {
         $bash = Get-Command bash -ErrorAction SilentlyContinue | Select-Object -First 1
         if (-not $bash) {
@@ -538,7 +554,6 @@ function Write-SummaryRecord {
     Add-Utf8NoBomText -Path $summaryJsonl -Text (($Record | ConvertTo-Json -Depth 30 -Compress) + "`n")
 }
 
-Set-Location $repoRoot
 New-Item -ItemType Directory -Force -Path $metadataDir, $rawDir, $logsDir, $stagesDir | Out-Null
 if (-not (Test-Path -LiteralPath $zipDir -PathType Container)) {
     throw "Mission metadata source directory not found: $zipDir"

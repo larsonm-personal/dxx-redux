@@ -198,9 +198,8 @@ try {
     # Build if binary doesn't exist
     if (-not $serverBin) {
         Write-Status "Server binary not found, building..."
-        Push-Location $serverDir
-        $buildOut = & cargo build --release 2>&1 | Out-String
-        Pop-Location
+        $serverManifest = Join-Path $serverDir "Cargo.toml"
+        $buildOut = & cargo build --release --manifest-path $serverManifest 2>&1 | Out-String
         $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
         if (-not $serverBin) {
             Write-Status "FAIL: Server build failed" "Red"

@@ -17,7 +17,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-Set-Location $repoRoot
 
 $tempDir = Join-Path $repoRoot "temp"
 if (-not (Test-Path $tempDir)) { New-Item -ItemType Directory -Path $tempDir | Out-Null }
@@ -29,7 +28,7 @@ $summaryPath = Join-Path $tempDir "d1d2_diff_summary.txt"
 Write-Host "Base: $Base"
 Write-Host "Collecting numstat for d1/ and d2/..."
 
-$numstat = git diff --numstat $Base -- d1/ d2/
+$numstat = git -C $repoRoot diff --numstat $Base -- d1/ d2/
 if ($LASTEXITCODE -ne 0) {
     Write-Error "git diff failed. Is '$Base' a valid ref?"
     exit 1
@@ -82,7 +81,7 @@ Get-Content $summaryPath
 if ($ShowContent) {
     $dumpPath = Join-Path $tempDir "d1d2_diff_top$Top.patch"
     $topPaths = $sorted | Select-Object -First $Top -ExpandProperty Path
-    git diff $Base -- $topPaths | Set-Content -Encoding utf8 $dumpPath
+    git -C $repoRoot diff $Base -- $topPaths | Set-Content -Encoding utf8 $dumpPath
     Write-Host ""
     Write-Host "Wrote full patch for top $Top files: $dumpPath"
 }

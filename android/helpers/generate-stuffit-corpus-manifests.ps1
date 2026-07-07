@@ -323,12 +323,7 @@ foreach ($archiveName in $SelectedArchives) {
     New-Item -ItemType Directory -Path $archiveWorkDir -Force | Out-Null
 
     Write-Status "Extracting $archiveName" Yellow
-    Push-Location $archiveWorkDir
-    try {
-        & $tools.UnarExe -f -q $archivePath 2>$null | Out-Null
-    } finally {
-        Pop-Location
-    }
+    & $tools.UnarExe -f -q -o $archiveWorkDir $archivePath 2>$null | Out-Null
 
     $rootDir = Get-ExtractedRoot -WorkingDir $archiveWorkDir -ArchiveBaseName $archiveBaseName
     $lsarContents = @(Get-LsarContents -LsarExe $tools.LsarExe -ArchivePath $archivePath)

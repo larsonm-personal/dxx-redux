@@ -47,10 +47,8 @@ if (-not (Test-Path $matchExe)) {
     Write-Host "Building fingerprint_match.exe..."
     . "$repoRoot\android\helpers\test_env.ps1"
     if (-not (Test-Path $buildDir)) { New-Item -ItemType Directory -Path $buildDir | Out-Null }
-    Push-Location $buildDir
-    & cmake "$repoRoot/android/app/src/main/cpp/extract" -DCMAKE_BUILD_TYPE=Release 2>&1 | Out-Null
-    & cmake --build . --config Release --target fingerprint_match -- /p:ErrorLimit=10 2>&1 | Out-Null
-    Pop-Location
+    & cmake -S "$repoRoot/android/app/src/main/cpp/extract" -B $buildDir -DCMAKE_BUILD_TYPE=Release 2>&1 | Out-Null
+    & cmake --build $buildDir --config Release --target fingerprint_match -- /p:ErrorLimit=10 2>&1 | Out-Null
     if (-not (Test-Path $matchExe)) {
         Write-Error "Failed to build fingerprint_match.exe"
     }

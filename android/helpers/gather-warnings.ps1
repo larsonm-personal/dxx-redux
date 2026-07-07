@@ -45,52 +45,47 @@ if (-not $env:JAVA_HOME -and (Test-Path $depBaseFile)) {
 Write-Host "Running assembleDebug to gather warnings..."
 Write-Host "Log file: $logFile"
 
-Push-Location $androidRoot
-try {
-    $gradlew = Join-Path $androidRoot "gradlew.bat"
-    if (-not (Test-Path $gradlew)) {
-        Write-Error "gradlew.bat not found at $gradlew"
-        exit 1
-    }
-
-    # Run build, capturing both stdout and stderr
-    $output = & $gradlew assembleDebug --no-daemon 2>&1 | Out-String -Stream
-
-    # Filter for warning lines
-    $warnings = @()
-    $header = @(
-        "# Compiler warnings gathered on $datestamp",
-        "# Source: gradlew assembleDebug",
-        "# NOTE: Do NOT modify d1/ or d2/ source files to fix these warnings",
-        "#       Only fix warnings in files under android/.",
-        ""
-    )
-
-    foreach ($line in $output) {
-        $isNativeWarning = $line -match ':\d+:\d+: warning:' -or $line -match '\[-W'
-        $isKotlinWarning = $line -match 'w: ' -and $line -match '\.kt:'
-
-        if ($NativeOnly -and $isNativeWarning) {
-            $warnings += $line
-        } elseif ($KotlinOnly -and $isKotlinWarning) {
-            $warnings += $line
-        } elseif (-not $NativeOnly -and -not $KotlinOnly -and ($isNativeWarning -or $isKotlinWarning)) {
-            $warnings += $line
-        }
-    }
-
-    ($header + $warnings) | Set-Content $logFile -Encoding UTF8
-
-    $nativeCount = ($warnings | Where-Object { $_ -match ':\d+:\d+: warning:' -or $_ -match '\[-W' }).Count
-    $kotlinCount = ($warnings | Where-Object { $_ -match 'w: ' -and $_ -match '\.kt:' }).Count
-
-    Write-Host ""
-    Write-Host "Warnings found:"
-    Write-Host "  C/C++ (NDK):  $nativeCount"
-    Write-Host "  Kotlin:       $kotlinCount"
-    Write-Host "  Total:        $($warnings.Count)"
-    Write-Host ""
-    Write-Host "Written to: $logFile"
-} finally {
-    Pop-Location
+$gradlew = Join-Path $androidRoot "gradlew.bat"
+if (-not (Test-Path $gradlew)) {
+    Write-Error "gradlew.bat not found at $gradlew"
+    exit 1
 }
+
+# Run build, capturing both stdout and stderr
+$output = & $gradlew -p $androidRoot assembleDebug --no-daemon 2>&1 | Out-String -Stream
+
+# Filter for warning lines
+$warnings = @()
+$header = @(
+    "# Compiler warnings gathered on $datestamp",
+    "# Source: gradlew assembleDebug",
+    "# NOTE: Do NOT modify d1/ or d2/ source files to fix these warnings",
+    "#       Only fix warnings in files under android/.",
+    ""
+)
+
+foreach ($line in $output) {
+    $isNativeWarning = $line -match ':\d+:\d+: warning:' -or $line -match '\[-W'
+    $isKotlinWarning = $line -match 'w: ' -and $line -match '\.kt:'
+
+    if ($NativeOnly -and $isNativeWarning) {
+        $warnings += $line
+    } elseif ($KotlinOnly -and $isKotlinWarning) {
+        $warnings += $line
+    } elseif (-not $NativeOnly -and -not $KotlinOnly -and ($isNativeWarning -or $isKotlinWarning)) {
+        $warnings += $line
+    }
+}
+
+($header + $warnings) | Set-Content $logFile -Encoding UTF8
+
+$nativeCount = ($warnings | Where-Object { $_ -match ':\d+:\d+: warning:' -or $_ -match '\[-W' }).Count
+$kotlinCount = ($warnings | Where-Object { $_ -match 'w: ' -and $_ -match '\.kt:' }).Count
+
+Write-Host ""
+Write-Host "Warnings found:"
+Write-Host "  C/C++ (NDK):  $nativeCount"
+Write-Host "  Kotlin:       $kotlinCount"
+Write-Host "  Total:        $($warnings.Count)"
+Write-Host ""
+Write-Host "Written to: $logFile"

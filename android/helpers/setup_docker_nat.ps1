@@ -61,11 +61,10 @@ Write-Status "Starting NAT containers: A=$NatA, B=$NatB" "White"
 
 $env:NAT_A = $NatA
 $env:NAT_B = $NatB
-Push-Location $COMPOSE_DIR
-docker compose down 2>&1 | Out-Null
-docker compose up -d --build 2>&1 | ForEach-Object { Write-Status "  $_" "Gray" }
+$composeFile = Join-Path $COMPOSE_DIR "docker-compose.yml"
+docker compose --project-directory $COMPOSE_DIR -f $composeFile down 2>&1 | Out-Null
+docker compose --project-directory $COMPOSE_DIR -f $composeFile up -d --build 2>&1 | ForEach-Object { Write-Status "  $_" "Gray" }
 $composeExit = $LASTEXITCODE
-Pop-Location
 Remove-Item Env:\NAT_A -ErrorAction SilentlyContinue
 Remove-Item Env:\NAT_B -ErrorAction SilentlyContinue
 

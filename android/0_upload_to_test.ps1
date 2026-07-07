@@ -18,6 +18,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$repoRoot = Split-Path $PSScriptRoot
 
 function Get-UploadedBuildStamp {
     $buildInfoPath = Join-Path $PSScriptRoot "app\src\main\java\com\dxxredux\app\BuildInfo.kt"
@@ -38,7 +39,6 @@ function Get-UploadedBuildStamp {
     return "$($dateMatch.Groups[1].Value) $($timeMatch.Groups[1].Value)"
 }
 
-Push-Location $PSScriptRoot
 try {
     Write-Host ""
     Write-Host "================================"
@@ -53,7 +53,7 @@ try {
     #  Query the target track to determine version code with rev
     # ---------------------------------------------------------------
 
-    $commitCount = [int](git rev-list --count HEAD).Trim()
+    $commitCount = [int](git -C $repoRoot rev-list --count HEAD).Trim()
     Write-Host "Git commit count: $commitCount"
 
     $rev = 0
@@ -120,7 +120,7 @@ try {
     # Build the AAB
     Write-Host "Step 1: Building AAB..."
     Write-Host ""
-    & .\1_build-aab.ps1 -BuildType $BuildType -VersionCode $versionCode
+    & (Join-Path $PSScriptRoot "1_build-aab.ps1") -BuildType $BuildType -VersionCode $versionCode
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed with exit code $LASTEXITCODE"
     }
@@ -140,7 +140,7 @@ try {
     Write-Host ""
     Write-Host "Step 2: Uploading to Play Store..."
     Write-Host ""
-    & .\2_deploy-playstore.ps1 -TrackName $TrackName
+    & (Join-Path $PSScriptRoot "2_deploy-playstore.ps1") -TrackName $TrackName
     if ($LASTEXITCODE -ne 0) {
         throw "Deploy failed with exit code $LASTEXITCODE"
     }
@@ -158,6 +158,4 @@ try {
     Write-Host "ERROR: $_"
     Write-Host ""
     exit 1
-} finally {
-    Pop-Location
 }

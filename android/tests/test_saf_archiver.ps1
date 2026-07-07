@@ -195,19 +195,14 @@ if (!$NoBuild) {
     Write-Host ""
     Write-Host "Step 1: Building debug APK..." -ForegroundColor Yellow
     $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $androidDir
-    Push-Location $androidDir
-    try {
-        & $gradleWrapper assembleDebug --console=plain 2>&1 |
-            Where-Object { $_ -match "BUILD |FAIL|error:" } |
-            ForEach-Object { Write-Host "  $_" }
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "FAIL: Build failed" -ForegroundColor Red
-            exit 1
-        }
-        Write-Progress-Flush "[OK] Build successful" Green
-    } finally {
-        Pop-Location
+    & $gradleWrapper -p $androidDir assembleDebug --console=plain 2>&1 |
+        Where-Object { $_ -match "BUILD |FAIL|error:" } |
+        ForEach-Object { Write-Host "  $_" }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "FAIL: Build failed" -ForegroundColor Red
+        exit 1
     }
+    Write-Progress-Flush "[OK] Build successful" Green
 } else {
     Write-Host "Step 1: Skipping build (--NoBuild)" -ForegroundColor DarkGray
 }

@@ -3,13 +3,11 @@
 # Usage: .\run_nat_tests.ps1
 
 $ErrorActionPreference = "Stop"
-Push-Location $PSScriptRoot
+$serverManifest = Join-Path $PSScriptRoot "Cargo.toml"
 
 Write-Host "Running NAT simulator tests..." -ForegroundColor Cyan
-cargo test --test nat_sim_tests -- --nocapture 2>&1
+cargo test --manifest-path $serverManifest --test nat_sim_tests -- --nocapture 2>&1
 $exitCode = $LASTEXITCODE
-
-Pop-Location
 
 if ($exitCode -ne 0) {
     Write-Host "NAT tests FAILED (exit code $exitCode)" -ForegroundColor Red

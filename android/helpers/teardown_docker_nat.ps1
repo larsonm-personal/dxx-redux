@@ -38,8 +38,7 @@ foreach ($serial in @($EMU1, $EMU2)) {
 
 # -- Stop Docker containers --
 Write-Status "Stopping NAT containers..."
-Push-Location $COMPOSE_DIR
-docker compose down 2>&1 | ForEach-Object { Write-Status "  $_" "Gray" }
-Pop-Location
+$composeFile = Join-Path $COMPOSE_DIR "docker-compose.yml"
+docker compose --project-directory $COMPOSE_DIR -f $composeFile down 2>&1 | ForEach-Object { Write-Status "  $_" "Gray" }
 
 Write-Status "Docker NAT testbed torn down" "Green"

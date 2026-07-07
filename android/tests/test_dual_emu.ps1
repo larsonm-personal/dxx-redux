@@ -157,11 +157,10 @@ function Setup-DockerNat {
     Write-Status "Starting NAT containers: A=$NatA, B=$NatB"
     $env:NAT_A = $NatA
     $env:NAT_B = $NatB
-    Push-Location $composeDir
-    docker compose down 2>&1 | Out-Null
-    docker compose up -d --build 2>&1 | ForEach-Object { Write-Status "  $_" "Gray" }
+    $composeFile = Join-Path $composeDir "docker-compose.yml"
+    docker compose --project-directory $composeDir -f $composeFile down 2>&1 | Out-Null
+    docker compose --project-directory $composeDir -f $composeFile up -d --build 2>&1 | ForEach-Object { Write-Status "  $_" "Gray" }
     $rc = $LASTEXITCODE
-    Pop-Location
     Remove-Item Env:\NAT_A -ErrorAction SilentlyContinue
     Remove-Item Env:\NAT_B -ErrorAction SilentlyContinue
 
@@ -215,10 +214,8 @@ $APK = Join-Path $ANDROID_DIR "app\build\outputs\apk\debug\app-debug.apk"
 if (-not $NoBuild) {
     Write-Status ""
     Write-Status "--- Building APK ---" "White"
-    Push-Location $ANDROID_DIR
-    $gradleOut = & .\gradlew.bat assembleDebug 2>&1 | Out-String
+    $gradleOut = & (Join-Path $ANDROID_DIR "gradlew.bat") -p $ANDROID_DIR assembleDebug 2>&1 | Out-String
     $gradleExit = $LASTEXITCODE
-    Pop-Location
     if ($gradleExit -ne 0) {
         Write-Status "FAIL: Gradle build failed" "Red"
         Write-Status ($gradleOut | Select-Object -Last 20) "Yellow"
@@ -312,9 +309,8 @@ $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $server
 
 if (-not $NoBuild -or -not $serverBin) {
     Write-Status "  Building matchmaking server..."
-    Push-Location $serverDir
-    $buildOut = & cargo build --release 2>&1 | Out-String
-    Pop-Location
+    $serverManifest = Join-Path $serverDir "Cargo.toml"
+    $buildOut = & cargo build --release --manifest-path $serverManifest 2>&1 | Out-String
     $serverBin = Resolve-RegressionBuildTool -Directory (Join-RegressionPath $serverDir "target" "release") -BaseName "dxx-matchmaking"
     if (-not $serverBin) {
         Write-Status "FAIL: Server build failed" "Red"

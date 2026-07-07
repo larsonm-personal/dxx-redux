@@ -17,7 +17,6 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSCommandPath
-Set-Location $repoRoot
 
 . (Join-Path $repoRoot "android\helpers\test_host_platform.ps1")
 
@@ -471,12 +470,13 @@ foreach ($game in $targets) {
     }
 
     Write-Host "Configuring $game with preset $Preset ($BuildType)"
+    $sourceDir = Join-Path $repoRoot $game
     $freshConfigure = Test-RegressionCMakeCacheNeedsFreshConfigure -BuildDir $buildDir -ExpectedTriplet $vcpkgTriplet
-    Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $game $buildDir $vcpkgTriplet -Fresh:$freshConfigure
+    Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $sourceDir $buildDir $vcpkgTriplet -Fresh:$freshConfigure
     $configureExit = $script:LastRegressionCMakeConfigureExitCode
     if ($configureExit -ne 0 -and -not $freshConfigure -and (Test-Path (Join-Path $buildDir "CMakeCache.txt"))) {
         Write-Host "CMake configure failed for $game; retrying once with a fresh CMake cache"
-        Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $game $buildDir $vcpkgTriplet -Fresh
+        Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $sourceDir $buildDir $vcpkgTriplet -Fresh
         $configureExit = $script:LastRegressionCMakeConfigureExitCode
     }
     if ($configureExit -ne 0) {

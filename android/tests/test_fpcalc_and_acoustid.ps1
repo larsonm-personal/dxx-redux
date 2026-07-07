@@ -20,7 +20,15 @@ param(
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path (Join-Path (Join-Path $repoRoot "android") "helpers") "test_host_platform.ps1")
-Set-Location $repoRoot
+
+function Resolve-RepoPath {
+    param([Parameter(Mandatory)][string]$Path)
+
+    if ([System.IO.Path]::IsPathRooted($Path)) {
+        return $Path
+    }
+    return Join-Path $repoRoot $Path
+}
 
 $testsPassed = 0
 $testsFailed = 0
@@ -45,7 +53,7 @@ if (-not $fpAudio) {
     Write-Error "fingerprint_audio not found. Run: cmake --build android/tests/build --config Release"
 }
 
-$depBase = (Get-Content "dependency_base.txt" -First 1).Trim()
+$depBase = (Get-Content -LiteralPath (Resolve-RepoPath "dependency_base.txt") -First 1).Trim()
 $fpcalcExe = $null
 $fpcalcDirs = Get-ChildItem (Join-RegressionPath $depBase "fpcalc-*") -Directory -ErrorAction SilentlyContinue |
     Sort-Object Name -Descending
@@ -55,7 +63,7 @@ foreach ($fpcalcDir in $fpcalcDirs) {
 }
 if (-not $fpcalcExe -or -not (Test-Path $fpcalcExe)) {
     Write-Host "Downloading fpcalc..."
-    $fpcalcExe = & android/get_deps/helpers/get_fpcalc.ps1
+    $fpcalcExe = & (Resolve-RepoPath "android/get_deps/helpers/get_fpcalc.ps1")
 }
 
 # ── Find a D2 redbook track to test with ────────────────────────────
@@ -68,10 +76,11 @@ foreach ($candidate in @(
         "game_data/music/D2 infinite abyss redbook mp3",
         "game_data/music/D2 redbook mp3 rips"
     )) {
-    if (-not (Test-Path $candidate)) { continue }
-    $candidateTrack = Get-ChildItem $candidate -Filter "*.mp3" | Select-Object -First 1
+    $candidateDir = Resolve-RepoPath $candidate
+    if (-not (Test-Path $candidateDir)) { continue }
+    $candidateTrack = Get-ChildItem $candidateDir -Filter "*.mp3" | Select-Object -First 1
     if ($candidateTrack) {
-        $redbookDir = $candidate
+        $redbookDir = $candidateDir
         $testTrack = $candidateTrack
         break
     }
@@ -179,10 +188,10 @@ if (-not $SkipAcoustId) {
     Write-Host "=== Test 2: AcoustID lookup ==="
 
     # Load API key
-    $configPath = "android/acoustid_config.json5"
+    $configPath = Resolve-RepoPath "android/acoustid_config.json5"
     $apiKey = $null
     if (Test-Path $configPath) {
-        $raw = Get-Content $configPath -Raw
+        $raw = Get-Content -LiteralPath $configPath -Raw
         $cleaned = $raw -replace '//[^\n]*' -replace '/\*[\s\S]*?\*/'
         try {
             $cfg = $cleaned | ConvertFrom-Json

@@ -9,6 +9,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$repoRoot = Split-Path $PSScriptRoot
 
 function Read-NumberedChoice {
     param(
@@ -32,65 +33,63 @@ function Read-NumberedChoice {
     }
 }
 
-Push-Location $PSScriptRoot
-try {
-    # Set JAVA_HOME if not already set
-    if (-not $env:JAVA_HOME) {
-        $_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
-        if (-not (Test-Path $_depBaseFile)) {
-            Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
-            exit 1
-        }
-        $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
-        $jdk = Get-ChildItem "$DEP_BASE\jdk-*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
-        if ($jdk) {
-            $env:JAVA_HOME = $jdk.FullName
-            Write-Host "JAVA_HOME = $env:JAVA_HOME"
-        } else {
-            Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually"
-        }
+# Set JAVA_HOME if not already set
+if (-not $env:JAVA_HOME) {
+    $_depBaseFile = Join-Path $repoRoot "dependency_base.txt"
+    if (-not (Test-Path $_depBaseFile)) {
+        Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
+        exit 1
     }
-
-    # Prompt for build type (or use parameter)
-    Write-Host ""
-    if (-not $BuildType) {
-        Write-Host "Select build type:"
-        Write-Host "  1) Debug"
-        Write-Host "  2) Release (signed, for Play Console)"
-        Write-Host "  3) Internal (debug + release signing, for Play internal testing)"
-        Write-Host ""
-        $BuildType = Read-NumberedChoice -Prompt "Enter choice (1-3)" -OptionCount 3
-    }
-    if (-not $BuildType) { $BuildType = "1" }
-
-    if ($BuildType -eq '1') {
-        $variant = "Debug"
-    } elseif ($BuildType -eq '3') {
-        $variant = "Internal"
+    $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
+    $jdk = Get-ChildItem "$DEP_BASE\jdk-*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+    if ($jdk) {
+        $env:JAVA_HOME = $jdk.FullName
+        Write-Host "JAVA_HOME = $env:JAVA_HOME"
     } else {
-        $variant = "Release"
+        Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually"
     }
-    $task = "bundle$variant"
+}
 
-    $commitCount = (git rev-list --count HEAD).Trim()
-    if ($VersionCode) {
-        $versionCode = $VersionCode
-    } else {
-        $versionCode = [int]$commitCount * 10
-    }
-    $gitHash = (git rev-parse --short HEAD).Trim()
-    $buildDate = Get-Date -Format "yyyy-MM-dd"
-    $buildTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'Pacific Standard Time').ToString('HH:mm')
+# Prompt for build type (or use parameter)
+Write-Host ""
+if (-not $BuildType) {
+    Write-Host "Select build type:"
+    Write-Host "  1) Debug"
+    Write-Host "  2) Release (signed, for Play Console)"
+    Write-Host "  3) Internal (debug + release signing, for Play internal testing)"
     Write-Host ""
-    Write-Host "commitCount: $commitCount (# of git commits)"
-    Write-Host "versionCode: $versionCode (commitCount*10 + rev)"
-    Write-Host "gitHash:     $gitHash"
-    Write-Host "buildDate:   $buildDate"
-    Write-Host "buildTime:   $buildTime PST"
+    $BuildType = Read-NumberedChoice -Prompt "Enter choice (1-3)" -OptionCount 3
+}
+if (-not $BuildType) { $BuildType = "1" }
 
-    # Generate BuildInfo.kt with real build metadata
-    $buildInfoPath = "app\src\main\java\com\dxxredux\app\BuildInfo.kt"
-    $buildInfoContent = @"
+if ($BuildType -eq '1') {
+    $variant = "Debug"
+} elseif ($BuildType -eq '3') {
+    $variant = "Internal"
+} else {
+    $variant = "Release"
+}
+$task = "bundle$variant"
+
+$commitCount = (git -C $repoRoot rev-list --count HEAD).Trim()
+if ($VersionCode) {
+    $versionCode = $VersionCode
+} else {
+    $versionCode = [int]$commitCount * 10
+}
+$gitHash = (git -C $repoRoot rev-parse --short HEAD).Trim()
+$buildDate = Get-Date -Format "yyyy-MM-dd"
+$buildTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'Pacific Standard Time').ToString('HH:mm')
+Write-Host ""
+Write-Host "commitCount: $commitCount (# of git commits)"
+Write-Host "versionCode: $versionCode (commitCount*10 + rev)"
+Write-Host "gitHash:     $gitHash"
+Write-Host "buildDate:   $buildDate"
+Write-Host "buildTime:   $buildTime PST"
+
+# Generate BuildInfo.kt with real build metadata
+$buildInfoPath = Join-Path $PSScriptRoot "app\src\main\java\com\dxxredux\app\BuildInfo.kt"
+$buildInfoContent = @"
 package com.dxxredux.app
 
 /**
@@ -107,48 +106,47 @@ object BuildInfo {
     const val BUILD_TYPE = "$($variant.ToLower())"
 }
 "@
-    Set-Content -Path $buildInfoPath -Value $buildInfoContent -Encoding UTF8
-    Write-Host "Generated: $buildInfoPath"
+Set-Content -Path $buildInfoPath -Value $buildInfoContent -Encoding UTF8
+Write-Host "Generated: $buildInfoPath"
 
-    # Ensure Gradle wrapper exists (not in VCS -- generated by get_deps/helpers/get_gradle_wrapper.sh)
-    if (-not (Test-Path "gradle\wrapper\gradle-wrapper.jar") -or -not (Test-Path "gradle\wrapper\gradle-wrapper.properties")) {
-        Write-Host "Gradle wrapper not found -- running get_gradle_wrapper.sh..."
-        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        $env:GET_ALL_RUNNING = "1"
-        & bash get_deps/helpers/get_gradle_wrapper.sh 2>&1 | ForEach-Object { "$_" }
-        $env:GET_ALL_RUNNING = $null
-        $ErrorActionPreference = $prevEAP
-        if (-not (Test-Path "gradle\wrapper\gradle-wrapper.jar")) {
-            throw "Failed to bootstrap Gradle wrapper. Run get_deps\helpers\get_gradle_wrapper.sh manually"
-        }
+# Ensure Gradle wrapper exists (not in VCS -- generated by get_deps/helpers/get_gradle_wrapper.sh)
+$gradleWrapperJar = Join-Path $PSScriptRoot "gradle\wrapper\gradle-wrapper.jar"
+$gradleWrapperProps = Join-Path $PSScriptRoot "gradle\wrapper\gradle-wrapper.properties"
+if (-not (Test-Path $gradleWrapperJar) -or -not (Test-Path $gradleWrapperProps)) {
+    Write-Host "Gradle wrapper not found -- running get_gradle_wrapper.sh..."
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    $env:GET_ALL_RUNNING = "1"
+    & bash (Join-Path $PSScriptRoot "get_deps\helpers\get_gradle_wrapper.sh") 2>&1 | ForEach-Object { "$_" }
+    $env:GET_ALL_RUNNING = $null
+    $ErrorActionPreference = $prevEAP
+    if (-not (Test-Path $gradleWrapperJar)) {
+        throw "Failed to bootstrap Gradle wrapper. Run get_deps\helpers\get_gradle_wrapper.sh manually"
     }
-
-    Write-Host ""
-    Write-Host "Building AAB ($variant) for armeabi-v7a, arm64-v8a, x86_64..."
-    Write-Host ""
-    & .\gradlew.bat $task "-PskipBuildInfo" "-PversionCodeOverride=$versionCode"
-    if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE" }
-
-    # Find the AAB
-    $variantLower = $variant.ToLower()
-    $aabDir = "app\build\outputs\bundle\$variantLower"
-    $aab = Get-ChildItem "$aabDir\*.aab" -ErrorAction SilentlyContinue | Select-Object -First 1
-    if (-not $aab) { throw "AAB not found in $aabDir" }
-
-    # Copy to build-outputs/ with timestamp
-    $outDir = "build-outputs"
-    if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
-
-    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $outName = "dxx-redux-$variantLower-$timestamp-v$versionCode.aab"
-    $outPath = Join-Path $outDir $outName
-
-    Copy-Item $aab.FullName $outPath
-    $sizeMB = [math]::Round((Get-Item $outPath).Length / 1MB, 1)
-
-    Write-Host ""
-    Write-Host "AAB built successfully: $outPath ($sizeMB MB)"
-    Write-Host ""
-} finally {
-    Pop-Location
 }
+
+Write-Host ""
+Write-Host "Building AAB ($variant) for armeabi-v7a, arm64-v8a, x86_64..."
+Write-Host ""
+& (Join-Path $PSScriptRoot "gradlew.bat") -p $PSScriptRoot $task "-PskipBuildInfo" "-PversionCodeOverride=$versionCode"
+if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE" }
+
+# Find the AAB
+$variantLower = $variant.ToLower()
+$aabDir = Join-Path $PSScriptRoot "app\build\outputs\bundle\$variantLower"
+$aab = Get-ChildItem "$aabDir\*.aab" -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $aab) { throw "AAB not found in $aabDir" }
+
+# Copy to build-outputs/ with timestamp
+$outDir = Join-Path $PSScriptRoot "build-outputs"
+if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
+
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$outName = "dxx-redux-$variantLower-$timestamp-v$versionCode.aab"
+$outPath = Join-Path $outDir $outName
+
+Copy-Item $aab.FullName $outPath
+$sizeMB = [math]::Round((Get-Item $outPath).Length / 1MB, 1)
+
+Write-Host ""
+Write-Host "AAB built successfully: $outPath ($sizeMB MB)"
+Write-Host ""
