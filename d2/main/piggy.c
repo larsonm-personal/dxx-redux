@@ -55,6 +55,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef ANDROID
 #include "android_log.h"
+#include "merged_wall_debug.h"
 #endif
 
 //#define NO_DUMP_SOUNDS        1   //if set, dump bitmaps but not sounds
@@ -1345,6 +1346,9 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 		//@@}
 
 		compute_average_rgb(bmp, bmp->avg_color_rgb);
+#ifdef ANDROID
+		android_merged_wall_forensics_log_bitmap("piggy_page_in", "d2", bmp, i);
+#endif
 
 		start_time();
 	}

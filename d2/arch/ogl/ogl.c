@@ -1491,6 +1491,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 		ogl_texwrap(bm->gltexture, GL_REPEAT);
 	#if defined(ANDROID) && defined(OGL_MERGE)
 		android_merged_wall_clear_secondary_units_for_single(bm);
+		android_merged_wall_forensics_log_draw("g3_draw_tmap_bind", bm);
 	#endif
 		r_tpolyc++;
 #ifdef ANDROID
@@ -3644,6 +3645,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 #endif
 					profile_source = "ktx2";
 					android_perf_clock_now(&texture_total_end);
+					android_merged_wall_forensics_log_bitmap("upload_ktx2", "d2",
+						bm, -1);
 					android_profile_texture_load("d2", bitmapname, profile_source,
 						edata.orig_width, edata.orig_height, bm->bm_flags,
 						android_perf_elapsed_us(&texture_total_start, &texture_total_end),
@@ -3767,6 +3770,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				r_hires_loaded++;
 				profile_source = "png";
 				android_perf_clock_now(&texture_total_end);
+				android_merged_wall_forensics_log_bitmap("upload_png", "d2",
+					bm, -1);
 				android_profile_texture_load("d2", bitmapname, profile_source,
 					pdata.width, pdata.height, bm->bm_flags,
 					android_perf_elapsed_us(&texture_total_start, &texture_total_end),
@@ -3933,6 +3938,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 	#if defined(ANDROID) && defined(OGL_MERGE)
 	android_merged_wall_log_palette_source(bitmapname, buf, bm->bm_w, bm->bm_h,
 		bm->bm_flags, 1u << 4, "stock-native");
+	android_merged_wall_forensics_log_bitmap("upload_stock", "d2", bm, -1);
 	#endif
 
 #if defined(ANDROID) && defined(OGL_MERGE)

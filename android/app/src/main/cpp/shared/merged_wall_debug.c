@@ -42,6 +42,10 @@ void ogl_prog_set_tex2_alpha_cutoff(GLfloat alpha_cutoff);
 
 static struct merged_wall_cached_texmerge_entry g_merged_wall_cached_texmerge[MERGED_WALL_CACHED_TEXMERGE_COUNT];
 static int g_merged_wall_cached_texmerge_initialized = 0;
+static unsigned int g_merged_wall_forensics_seq = 0;
+static unsigned int g_merged_wall_forensics_generation = 0;
+static int g_merged_wall_forensics_reuse_logs = 0;
+static int g_merged_wall_forensics_draw_logs = 0;
 #define MERGED_WALL_PROBE_HIT_BBOX      1
 #define MERGED_WALL_PROBE_HIT_POLYGON   2
 #define MERGED_WALL_PROBE_HIT_PROJECTED 3
@@ -1959,7 +1963,9 @@ void android_merged_wall_clear_secondary_units_for_single(grs_bitmap *bm)
 
 static int merged_wall_is_logging_target_name(const char *name)
 {
-	return name && !d_stricmp(name, "metl154");
+	return name && (!d_stricmp(name, "metl154") ||
+	                !d_stricmp(name, "ceil035") ||
+	                !d_stricmp(name, "rock198"));
 }
 
 static int merged_wall_mark_source_log(const char *bitmapname, unsigned int bit)
@@ -3130,6 +3136,265 @@ static void merged_wall_compute_source_stats(grs_bitmap *src,
 	if (hash_out) *hash_out = hash;
 	if (idx254_out) *idx254_out = idx254;
 	if (idx255_out) *idx255_out = idx255;
+}
+
+int android_merged_wall_is_forensic_target_bitmap(grs_bitmap *bm)
+{
+	return android_merged_wall_is_logging_target_bitmap(bm);
+}
+
+int android_merged_wall_is_forensic_target_tmap2(int tmap2)
+{
+	return android_merged_wall_is_logging_target_tmap2(tmap2);
+}
+
+unsigned int android_merged_wall_forensics_bitmap_hash(grs_bitmap *bm,
+                                                       int *bytes, int *idx254,
+                                                       int *idx255)
+{
+	grs_bitmap *src;
+	unsigned int hash = 0;
+
+	if (bytes) *bytes = 0;
+	if (idx254) *idx254 = 0;
+	if (idx255) *idx255 = 0;
+	src = merged_wall_get_source_bitmap(bm);
+	if (!src)
+		return 0;
+	merged_wall_compute_source_stats(src, &hash, idx254, idx255);
+	if (bytes)
+		*bytes = src->bm_w * src->bm_h;
+	return hash;
+}
+
+static int merged_wall_forensics_context_target(void)
+{
+	return g_android_draw_face_ctx.valid &&
+	       android_merged_wall_is_forensic_target_tmap2(g_android_draw_face_ctx.tmap2);
+}
+
+static int merged_wall_forensics_should_log_bitmap(grs_bitmap *bm)
+{
+	return bm && (android_merged_wall_is_forensic_target_bitmap(bm) ||
+	              merged_wall_forensics_context_target());
+}
+
+static unsigned int merged_wall_forensics_next_seq(void)
+{
+	g_merged_wall_forensics_seq++;
+	return g_merged_wall_forensics_seq;
+}
+
+void android_merged_wall_forensics_note_flush(const char *game, const char *reason)
+{
+	g_merged_wall_forensics_generation++;
+	g_merged_wall_forensics_reuse_logs = 0;
+	g_merged_wall_forensics_draw_logs = 0;
+	if (!(Game_mode & GM_MULTI))
+		return;
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_forensic] kind=flush seq=%u gen=%u game=%s reason=%s mode=0x%x frame=%d pass=%d draw_seq=%d seg=%d side=%d face=%d tmap1=%d tmap2=0x%x",
+	                merged_wall_forensics_next_seq(),
+	                g_merged_wall_forensics_generation,
+	                game ? game : "",
+	                reason ? reason : "",
+	                Game_mode,
+	                g_merged_wall_frame_id,
+	                g_merged_wall_render_pass,
+	                g_merged_wall_draw_seq,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0);
+}
+
+void android_merged_wall_forensics_log_bitmap(const char *tag, const char *game,
+                                              grs_bitmap *bm, int bitmap_id)
+{
+	const char *name;
+	ogl_texture *texture;
+	unsigned int hash;
+	int bytes, idx254, idx255;
+	int active_prog = 0, bound_tex0 = 0, bound_tex1 = 0, bound_tex2 = 0, mip1_w = 0;
+
+	if (!merged_wall_forensics_should_log_bitmap(bm))
+		return;
+	name = piggy_game_bitmap_name(bm);
+	texture = bm->gltexture;
+	hash = android_merged_wall_forensics_bitmap_hash(bm, &bytes, &idx254, &idx255);
+	if (texture)
+		android_merged_wall_get_draw_state(texture, &active_prog, &bound_tex0,
+		                                   &bound_tex1, &bound_tex2, &mip1_w);
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_forensic] kind=bitmap tag=%s seq=%u gen=%u game=%s frame=%d pass=%d draw_seq=%d id=%d name=%s ptr=%p data=%p bm_flags=0x%x real_flags=0x%x w=%d h=%d rowsize=%d handle=%u texptr=%p gl=%u mask=%u is_png=%d tex_size=%dx%d uv=%.3f/%.3f hash=0x%08x bytes=%d idx254=%d idx255=%d seg=%d side=%d face=%d tmap1=%d tmap2=0x%x prog=%d bound=%d/%d/%d mip1=%d",
+	                tag ? tag : "",
+	                merged_wall_forensics_next_seq(),
+	                g_merged_wall_forensics_generation,
+	                game ? game : "",
+	                g_merged_wall_frame_id,
+	                g_merged_wall_render_pass,
+	                g_merged_wall_draw_seq,
+	                bitmap_id,
+	                name ? name : "<none>",
+	                (void *) bm,
+	                bm ? (void *) bm->bm_data : NULL,
+	                bm ? bm->bm_flags : 0,
+	                bm ? piggy_bitmap_get_flags(bm) : 0,
+	                bm ? bm->bm_w : 0,
+	                bm ? bm->bm_h : 0,
+	                bm ? bm->bm_rowsize : 0,
+	                bm ? bm->bm_handle : 0,
+	                texture ? (void *) texture : NULL,
+	                texture ? texture->handle : 0,
+	                bm && bm->gltexture_mask ? bm->gltexture_mask->handle : 0,
+	                texture ? texture->is_png : -1,
+	                texture ? texture->w : 0,
+	                texture ? texture->h : 0,
+	                texture ? texture->u : 0.0f,
+	                texture ? texture->v : 0.0f,
+	                hash,
+	                bytes,
+	                idx254,
+	                idx255,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
+	                active_prog,
+	                bound_tex0,
+	                bound_tex1,
+	                bound_tex2,
+	                mip1_w);
+}
+
+void android_merged_wall_forensics_log_pair(const char *tag, const char *game,
+                                            int tmap_bottom, int tmap_top,
+                                            grs_bitmap *bottom_bmp,
+                                            grs_bitmap *top_bmp,
+                                            grs_bitmap *merged_bmp,
+                                            int slot, int orient)
+{
+	const char *botname = bottom_bmp ? piggy_game_bitmap_name(bottom_bmp) : NULL;
+	const char *topname = top_bmp ? piggy_game_bitmap_name(top_bmp) : NULL;
+	const char *mergedname = merged_bmp ? piggy_game_bitmap_name(merged_bmp) : NULL;
+	unsigned int bottom_hash, top_hash, merged_hash;
+	int bottom_bytes, top_bytes, merged_bytes;
+	int bottom_254, bottom_255, top_254, top_255, merged_254, merged_255;
+	int should_log;
+
+	should_log = merged_wall_forensics_context_target() ||
+	             android_merged_wall_is_forensic_target_bitmap(bottom_bmp) ||
+	             android_merged_wall_is_forensic_target_bitmap(top_bmp);
+	if (!should_log)
+		return;
+	if (tag && strstr(tag, "reuse")) {
+		if (g_merged_wall_forensics_reuse_logs >= 24)
+			return;
+		g_merged_wall_forensics_reuse_logs++;
+	}
+	bottom_hash = android_merged_wall_forensics_bitmap_hash(bottom_bmp,
+	                                                        &bottom_bytes, &bottom_254, &bottom_255);
+	top_hash = android_merged_wall_forensics_bitmap_hash(top_bmp,
+	                                                     &top_bytes, &top_254, &top_255);
+	merged_hash = android_merged_wall_forensics_bitmap_hash(merged_bmp,
+	                                                        &merged_bytes, &merged_254, &merged_255);
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_forensic] kind=pair tag=%s seq=%u gen=%u game=%s frame=%d pass=%d draw_seq=%d slot=%d orient=%d seg=%d side=%d face=%d wid=%d tmap1=%d tmap2=0x%x bot=%s ovl=%s merged=%s bot_hash=0x%08x bot_bytes=%d bot_254=%d bot_255=%d top_hash=0x%08x top_bytes=%d top_254=%d top_255=%d merged_hash=0x%08x merged_bytes=%d merged_254=%d merged_255=%d bot_ptr=%p top_ptr=%p merged_ptr=%p merged_handle=%u merged_tex=%p merged_gl=%u",
+	                tag ? tag : "",
+	                merged_wall_forensics_next_seq(),
+	                g_merged_wall_forensics_generation,
+	                game ? game : "",
+	                g_merged_wall_frame_id,
+	                g_merged_wall_render_pass,
+	                g_merged_wall_draw_seq,
+	                slot,
+	                orient,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+	                tmap_bottom,
+	                tmap_top,
+	                botname ? botname : "<none>",
+	                topname ? topname : "<none>",
+	                mergedname ? mergedname : "<none>",
+	                bottom_hash,
+	                bottom_bytes,
+	                bottom_254,
+	                bottom_255,
+	                top_hash,
+	                top_bytes,
+	                top_254,
+	                top_255,
+	                merged_hash,
+	                merged_bytes,
+	                merged_254,
+	                merged_255,
+	                (void *) bottom_bmp,
+	                (void *) top_bmp,
+	                (void *) merged_bmp,
+	                merged_bmp ? merged_bmp->bm_handle : 0,
+	                merged_bmp ? (void *) merged_bmp->gltexture : NULL,
+	                merged_bmp && merged_bmp->gltexture ? merged_bmp->gltexture->handle : 0);
+}
+
+void android_merged_wall_forensics_log_draw(const char *tag, grs_bitmap *bm)
+{
+	const char *name;
+	ogl_texture *texture;
+	unsigned int hash;
+	int bytes, idx254, idx255;
+	int active_prog = 0, bound_tex0 = 0, bound_tex1 = 0, bound_tex2 = 0, mip1_w = 0;
+
+	if (!merged_wall_forensics_should_log_bitmap(bm))
+		return;
+	if (g_merged_wall_forensics_draw_logs >= 32)
+		return;
+	g_merged_wall_forensics_draw_logs++;
+	name = piggy_game_bitmap_name(bm);
+	texture = bm->gltexture;
+	hash = android_merged_wall_forensics_bitmap_hash(bm, &bytes, &idx254, &idx255);
+	if (texture)
+		android_merged_wall_get_draw_state(texture, &active_prog, &bound_tex0,
+		                                   &bound_tex1, &bound_tex2, &mip1_w);
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_forensic] kind=draw tag=%s seq=%u gen=%u frame=%d pass=%d draw_seq=%d seg=%d side=%d face=%d wid=%d tmap1=%d tmap2=0x%x name=%s ptr=%p hash=0x%08x bytes=%d idx254=%d idx255=%d bm_flags=0x%x real_flags=0x%x handle=%u texptr=%p gl=%u mask=%u is_png=%d tex_size=%dx%d uv=%.3f/%.3f prog=%d bound=%d/%d/%d mip1=%d",
+	                tag ? tag : "",
+	                merged_wall_forensics_next_seq(),
+	                g_merged_wall_forensics_generation,
+	                g_merged_wall_frame_id,
+	                g_merged_wall_render_pass,
+	                g_merged_wall_draw_seq,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+	                g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
+	                name ? name : "<none>",
+	                (void *) bm,
+	                hash,
+	                bytes,
+	                idx254,
+	                idx255,
+	                bm ? bm->bm_flags : 0,
+	                bm ? piggy_bitmap_get_flags(bm) : 0,
+	                bm ? bm->bm_handle : 0,
+	                texture ? (void *) texture : NULL,
+	                texture ? texture->handle : 0,
+	                bm && bm->gltexture_mask ? bm->gltexture_mask->handle : 0,
+	                texture ? texture->is_png : -1,
+	                texture ? texture->w : 0,
+	                texture ? texture->h : 0,
+	                texture ? texture->u : 0.0f,
+	                texture ? texture->v : 0.0f,
+	                active_prog,
+	                bound_tex0,
+	                bound_tex1,
+	                bound_tex2,
+	                mip1_w);
 }
 
 static void merged_wall_bytes_to_hex(char *out, int out_size,
@@ -5195,6 +5460,10 @@ static void merged_wall_probe_log_layer_bitmap(const char *layer,
 	float prio = 0.0f;
 	unsigned long numrend = 0;
 	int tex_flags = 0;
+	unsigned int hash = 0;
+	int bytes = 0;
+	int idx254 = 0;
+	int idx255 = 0;
 
 	if (!track || tex_num < 0 || tex_num >= NumTextures)
 		return;
@@ -5217,8 +5486,10 @@ static void merged_wall_probe_log_layer_bitmap(const char *layer,
 		numrend = texture->numrend;
 		tex_flags = texture->flags;
 	}
+	hash = android_merged_wall_forensics_bitmap_hash(bitmap, &bytes, &idx254,
+	                                                 &idx255);
 	debug_log_force(DLOG_TEXTURE,
-	                "[mwall_tap_probe] kind=tex frame=%d request_frame=%d seg=%d side=%d face=%d layer=%s tex=%d name=%s real_flags=0x%x bm_flags=0x%x bm_handle=%u avg=%d rowsize=%d bitmap_ptr=%p texture_ptr=%p handle=%u is_png=%d w=%d h=%d tw=%d th=%d lw=%d bytes=%d bytesu=%d mip=%d wrap=%d u=%.3f v=%.3f internal=0x%x format=0x%x prio=%.3f numrend=%lu tex_flags=0x%x mask_handle=%u",
+	                "[mwall_tap_probe] kind=tex frame=%d request_frame=%d seg=%d side=%d face=%d layer=%s tex=%d name=%s real_flags=0x%x bm_flags=0x%x bm_handle=%u avg=%d rowsize=%d bitmap_ptr=%p texture_ptr=%p handle=%u is_png=%d w=%d h=%d tw=%d th=%d lw=%d bytes=%d bytesu=%d mip=%d wrap=%d u=%.3f v=%.3f internal=0x%x format=0x%x prio=%.3f numrend=%lu tex_flags=0x%x src_hash=0x%08x src_bytes=%d src_254=%d src_255=%d mask_handle=%u",
 	                g_merged_wall_frame_id,
 	                g_merged_wall_snapshot_request_frame,
 	                track->draw_ctx.valid ? track->draw_ctx.seg : -1,
@@ -5252,6 +5523,10 @@ static void merged_wall_probe_log_layer_bitmap(const char *layer,
 	                prio,
 	                numrend,
 	                tex_flags,
+	                hash,
+	                bytes,
+	                idx254,
+	                idx255,
 	                mask_handle);
 }
 
@@ -5265,6 +5540,10 @@ static void merged_wall_probe_log_merged_bitmap(const struct merged_wall_tracked
 	unsigned int format = 0;
 	int bytesu = 0;
 	int tex_flags = 0;
+	unsigned int bot_hash = 0, ovl_hash = 0, merged_hash = 0;
+	int bot_bytes = 0, ovl_bytes = 0, merged_bytes = 0;
+	int bot_254 = 0, bot_255 = 0, ovl_254 = 0, ovl_255 = 0;
+	int merged_254 = 0, merged_255 = 0;
 
 	if (!track || !track->merged_bitmap)
 		return;
@@ -5283,8 +5562,15 @@ static void merged_wall_probe_log_merged_bitmap(const struct merged_wall_tracked
 		bytesu = texture->bytesu;
 		tex_flags = texture->flags;
 	}
+	bot_hash = android_merged_wall_forensics_bitmap_hash(source_bot, &bot_bytes,
+	                                                     &bot_254, &bot_255);
+	ovl_hash = android_merged_wall_forensics_bitmap_hash(source_ovl, &ovl_bytes,
+	                                                     &ovl_254, &ovl_255);
+	merged_hash = android_merged_wall_forensics_bitmap_hash(bitmap, &merged_bytes,
+	                                                        &merged_254,
+	                                                        &merged_255);
 	debug_log_force(DLOG_TEXTURE,
-	                "[mwall_tap_probe] kind=merged frame=%d request_frame=%d seg=%d side=%d face=%d route=%s merge_impl=%s slot=%d bitmap_ptr=%p texture_ptr=%p source_bot_ptr=%p source_ovl_ptr=%p handle=%u is_png=%d w=%d h=%d tw=%d th=%d lw=%d bytes=%d bytesu=%d mip=%d wrap=%d u=%.3f v=%.3f internal=0x%x format=0x%x tex_flags=0x%x",
+	                "[mwall_tap_probe] kind=merged frame=%d request_frame=%d seg=%d side=%d face=%d route=%s merge_impl=%s slot=%d bitmap_ptr=%p texture_ptr=%p source_bot_ptr=%p source_ovl_ptr=%p handle=%u is_png=%d w=%d h=%d tw=%d th=%d lw=%d bytes=%d bytesu=%d mip=%d wrap=%d u=%.3f v=%.3f internal=0x%x format=0x%x tex_flags=0x%x bot_hash=0x%08x bot_bytes=%d bot_254=%d bot_255=%d ovl_hash=0x%08x ovl_bytes=%d ovl_254=%d ovl_255=%d merged_hash=0x%08x merged_bytes=%d merged_254=%d merged_255=%d",
 	                g_merged_wall_frame_id,
 	                g_merged_wall_snapshot_request_frame,
 	                track->draw_ctx.valid ? track->draw_ctx.seg : -1,
@@ -5312,7 +5598,19 @@ static void merged_wall_probe_log_merged_bitmap(const struct merged_wall_tracked
 	                texture ? texture->v : 0.0f,
 	                internalformat,
 	                format,
-	                tex_flags);
+	                tex_flags,
+	                bot_hash,
+	                bot_bytes,
+	                bot_254,
+	                bot_255,
+	                ovl_hash,
+	                ovl_bytes,
+	                ovl_254,
+	                ovl_255,
+	                merged_hash,
+	                merged_bytes,
+	                merged_254,
+	                merged_255);
 }
 
 struct merged_wall_probe_candidate {
@@ -5546,6 +5844,7 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 			                track->route,
 			                track->merge_impl,
 			                track->decision_reason);
+			merged_wall_probe_capture_render_sample(track, screen_w, screen_h);
 			if (track->draw_ctx.valid)
 				merged_wall_probe_log_layer_bitmap("base_fallback", track, track->draw_ctx.tmap1);
 			if (overlay_tex_num >= 0)

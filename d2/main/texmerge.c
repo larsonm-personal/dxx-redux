@@ -59,6 +59,8 @@ typedef struct	{
 	int last_owner_seg;
 	int last_owner_side;
 	int last_owner_face;
+	int tmap_bottom;
+	int tmap_top;
 	int creation_frame;
 	int last_use_frame;
 #endif
@@ -80,6 +82,8 @@ static void texmerge_reset_owner(TEXTURE_CACHE *entry)
 	entry->last_owner_seg = -1;
 	entry->last_owner_side = -1;
 	entry->last_owner_face = -1;
+	entry->tmap_bottom = -1;
+	entry->tmap_top = 0;
 	entry->creation_frame = -1;
 	entry->last_use_frame = -1;
 }
@@ -147,6 +151,10 @@ static void texmerge_log_event(const char *event, int slot, int tmap_bottom,
 		entry->last_owner_side,
 		entry->last_owner_face,
 		entry->last_use_frame);
+	android_merged_wall_forensics_log_pair(
+		force_log ? "legacy_texmerge_create" : "legacy_texmerge_reuse",
+		"d2", tmap_bottom, tmap_top, bitmap_bottom, bitmap_top,
+		entry->bitmap, slot, orient);
 }
 #endif
 
@@ -186,6 +194,7 @@ void texmerge_flush()
 	int i;
 
 #ifdef ANDROID
+	android_merged_wall_forensics_note_flush("d2", "legacy_texmerge_flush");
 	if (Game_mode & GM_MULTI)
 		debug_log_force(DLOG_TEXTURE,
 			"[mwall_texmerge] event=flush game=d2 mode=0x%x entries=%d hits=%d misses=%d",
@@ -273,8 +282,18 @@ grs_bitmap * texmerge_get_cached_bitmap( int tmap_bottom, int tmap_top )
 	if (bitmap_bottom->bm_w != bitmap_top->bm_w || bitmap_bottom->bm_h != bitmap_top->bm_h)
 		Error("Top and Bottom textures have different size!\n");
 
-	if (Cache[least_recently_used].bitmap != NULL)
+	if (Cache[least_recently_used].bitmap != NULL) {
+#ifdef ANDROID
+		android_merged_wall_forensics_log_pair("legacy_texmerge_evict",
+			"d2", Cache[least_recently_used].tmap_bottom,
+			Cache[least_recently_used].tmap_top,
+			Cache[least_recently_used].bottom_bmp,
+			Cache[least_recently_used].top_bmp,
+			Cache[least_recently_used].bitmap,
+			least_recently_used, Cache[least_recently_used].orient);
+#endif
 		gr_free_bitmap(Cache[least_recently_used].bitmap);
+	}
 	Cache[least_recently_used].bitmap = gr_create_bitmap(bitmap_bottom->bm_w,  bitmap_bottom->bm_h);
 #ifdef OGL
 	ogl_freebmtexture(Cache[least_recently_used].bitmap);
@@ -296,6 +315,8 @@ grs_bitmap * texmerge_get_cached_bitmap( int tmap_bottom, int tmap_top )
 	Cache[least_recently_used].orient = orient;
 #ifdef ANDROID
 	texmerge_reset_owner(&Cache[least_recently_used]);
+	Cache[least_recently_used].tmap_bottom = tmap_bottom;
+	Cache[least_recently_used].tmap_top = tmap_top;
 	texmerge_set_owner(&Cache[least_recently_used]);
 	texmerge_log_event("create", least_recently_used, tmap_bottom, tmap_top,
 		bitmap_bottom, bitmap_top, orient);

@@ -127,6 +127,22 @@ int android_merged_wall_is_logging_target_bitmap(
     grs_bitmap *bm);
 int android_merged_wall_is_logging_target_tmap2(
     int tmap2);
+int android_merged_wall_is_forensic_target_bitmap(
+    grs_bitmap *bm);
+int android_merged_wall_is_forensic_target_tmap2(
+    int tmap2);
+unsigned int android_merged_wall_forensics_bitmap_hash(
+    grs_bitmap *bm, int *bytes, int *idx254, int *idx255);
+void android_merged_wall_forensics_note_flush(
+    const char *game, const char *reason);
+void android_merged_wall_forensics_log_bitmap(
+    const char *tag, const char *game, grs_bitmap *bm, int bitmap_id);
+void android_merged_wall_forensics_log_pair(
+    const char *tag, const char *game, int tmap_bottom, int tmap_top,
+    grs_bitmap *bottom_bmp, grs_bitmap *top_bmp, grs_bitmap *merged_bmp,
+    int slot, int orient);
+void android_merged_wall_forensics_log_draw(
+    const char *tag, grs_bitmap *bm);
 void android_merged_wall_reset_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx);
 void android_merged_wall_set_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx,
                                                   const char *route, int orig_nv,

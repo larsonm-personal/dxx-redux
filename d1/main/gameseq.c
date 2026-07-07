@@ -104,6 +104,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "segment.h"
 #include "gameseg.h"
 #include "multibot.h"
+#ifdef ANDROID
+#include "android_log.h"
+#include "merged_wall_debug.h"
+#endif
 #ifdef __ANDROID__
 #include "coop_save.h"
 #include "coop_warp.h"
@@ -783,6 +787,17 @@ void LoadLevel(int level_num,int page_in_textures)
 		ogl_cache_level_textures();
 #endif
 	}
+
+#ifdef ANDROID
+	if (Game_mode & GM_MULTI) {
+		debug_log_force(DLOG_TEXTURE,
+			"[texcache] event=post_level_load_flush game=d1 mode=0x%x level=%d",
+			Game_mode,
+			Current_level_num);
+		texmerge_flush();
+		android_merged_wall_cached_texmerge_clear_cache();
+	}
+#endif
 }
 
 //sets up Player_num & ConsoleObject

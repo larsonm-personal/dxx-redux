@@ -103,6 +103,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop_save.h"
 #include "coop_warp.h"
 #include "android_log.h"
+#include "merged_wall_debug.h"
 #endif
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -164,10 +165,10 @@ static unsigned int gameseq_segment_texture_signature(void)
 
 static void gameseq_log_multiplayer_texture_state(const char *phase, const char *level_name)
 {
-	if (!(Game_mode & GM_MULTI) || !debug_log_enabled[DLOG_TEXTURE])
+	if (!(Game_mode & GM_MULTI))
 		return;
 
-	debug_log(DLOG_TEXTURE,
+	debug_log_force(DLOG_TEXTURE,
 	          "[leveltex] phase=%s level=%d file=%s mission=%s d1=%d game_mode=0x%x "
 	          "net_mode=%u net_flags=0x%x monitors=0x%x palette=%s last_palette=%s last_pig_palette=%s "
 	          "pig=%s textures=%d effects=%d highest_segment=%d texture_sig=%08x segment_sig=%08x",
@@ -986,6 +987,17 @@ void LoadLevel(int level_num,int page_in_textures)
 		ogl_cache_level_textures();
 #endif
 	}
+
+#ifdef ANDROID
+	if (Game_mode & GM_MULTI) {
+		debug_log_force(DLOG_TEXTURE,
+			"[texcache] event=post_level_load_flush game=d2 mode=0x%x level=%d",
+			Game_mode,
+			Current_level_num);
+		texmerge_flush();
+		android_merged_wall_cached_texmerge_clear_cache();
+	}
+#endif
 
 #ifdef NETWORK
 	my_segments_checksum = netmisc_calc_checksum();

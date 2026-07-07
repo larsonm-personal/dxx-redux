@@ -47,6 +47,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef ANDROID
 #include "android_log.h"
+#include "merged_wall_debug.h"
 #endif
 
 int piggy_is_substitutable_bitmap( char * name, char * subst_name );
@@ -742,6 +743,9 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 		}
 
 		compute_average_rgb(bmp, bmp->avg_color_rgb);
+#ifdef ANDROID
+		android_merged_wall_forensics_log_bitmap("piggy_page_in", "d1", bmp, i);
+#endif
 
 		start_time();
 	}
