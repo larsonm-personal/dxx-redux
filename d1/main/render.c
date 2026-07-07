@@ -323,9 +323,16 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		pointlist[i] = &Segment_points[vp[i]];
 	}
 
-	if (tmap1 >= NumTextures) {
+	if (tmap1 < 0 || tmap1 >= NumTextures) {
 		Int3();
 		Segments[segnum].sides[sidenum].tmap_num = 0;
+		tmap1 = 0;
+	}
+
+	if (tmap2 != 0 && (tmap2 & 0x3FFF) >= NumTextures) {
+		Int3();
+		Segments[segnum].sides[sidenum].tmap_num2 = 0;
+		tmap2 = 0;
 	}
 
 #ifdef OGL
@@ -1497,7 +1504,7 @@ int sort_func(sort_item *a,sort_item *b)
 
 	delta_dist = a->dist - b->dist;
 
-	if (!GameCfg.ClassicDepth || (Game_mode & GM_MULTI))
+	if (!GameCfg.ClassicDepth)
 		return delta_dist;
 
 	obj_a = &Objects[a->objnum];
@@ -2059,7 +2066,7 @@ void render_mine(int start_seg_num,fix eye_offset)
 	}
 
 #ifdef OGL
-	if (GameCfg.ClassicDepth && !(Game_mode & GM_MULTI)) {
+	if (GameCfg.ClassicDepth) {
 #ifdef ANDROID
 		g_merged_wall_render_pass = 1;
 #endif

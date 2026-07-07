@@ -517,7 +517,7 @@ private fun OriginalVisualOptionsSection(
     DebugOptionRow(
         checked = classicDepth,
         title = "Classic depth ordering",
-        detail = "Matches the in-game Classic Depth Ordering option",
+        detail = "Uses the same classic depth ordering in all game modes",
         onCheckedChange = {
             classicDepth = it
             updateAllConfigFiles(filesDir, listOf("ClassicDepth" to if (it) "1" else "0"))

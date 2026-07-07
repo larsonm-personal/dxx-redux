@@ -547,6 +547,23 @@ grs_bitmap *android_merged_wall_cached_texmerge_try_reuse_cache(
 	    bottom_bmp, overlay_bmp, orient, out_slot);
 }
 
+static struct merged_wall_cached_texmerge_entry *
+merged_wall_find_cached_texmerge_bitmap(grs_bitmap *bm)
+{
+	int i;
+
+	if (!bm || !g_merged_wall_cached_texmerge_initialized)
+		return NULL;
+	for (i = 0; i < MERGED_WALL_CACHED_TEXMERGE_COUNT; i++) {
+		struct merged_wall_cached_texmerge_entry *entry =
+		    &g_merged_wall_cached_texmerge[i];
+
+		if (entry->texture && (&entry->bitmap == bm || entry->bitmap.gltexture == bm->gltexture))
+			return entry;
+	}
+	return NULL;
+}
+
 void android_merged_wall_cached_texmerge_commit_entry(
     struct merged_wall_cached_texmerge_entry *entry,
     grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
@@ -1834,13 +1851,17 @@ static int merged_wall_single_clear_matches_face_context(void)
 	return g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0;
 }
 
-static int merged_wall_should_clear_secondary_units_for_single(grs_bitmap *bm)
+static int merged_wall_should_clear_secondary_units_for_single(grs_bitmap *bm,
+                                                               int *log_clear)
 {
 	const char *bm_name = bm ? piggy_game_bitmap_name(bm) : NULL;
 	const char *skip_reason = NULL;
+	int experiment_clear =
+	    (int) g_merged_wall_experiment_mode == MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE;
+	int cached_clear = 0;
 
-	if ((int) g_merged_wall_experiment_mode != MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE)
-		return 0;
+	if (log_clear)
+		*log_clear = 0;
 	if (!bm)
 		skip_reason = "no_bitmap";
 	else if (!bm->gltexture)
@@ -1849,8 +1870,15 @@ static int merged_wall_should_clear_secondary_units_for_single(grs_bitmap *bm)
 		skip_reason = "no_face_ctx";
 	else if (!merged_wall_single_clear_matches_face_context())
 		skip_reason = "face_tmap2_zero";
-	if (!skip_reason)
+	else
+		cached_clear = merged_wall_find_cached_texmerge_bitmap(bm) != NULL;
+	if (!skip_reason && (experiment_clear || cached_clear)) {
+		if (log_clear)
+			*log_clear = experiment_clear || g_merged_wall_snapshot_pending;
 		return 1;
+	}
+	if (!experiment_clear)
+		return 0;
 	debug_log(DLOG_TEXTURE,
 	          "[mwall_texexp_skip] frame=%d pass=%d seq=%d mode=%d reason=%s bm=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
 	          g_merged_wall_frame_id,
@@ -1876,18 +1904,22 @@ void android_merged_wall_clear_secondary_units_for_single(grs_bitmap *bm)
 	GLint after_tex0 = -1, after_tex1 = -1, after_tex2 = -1;
 	GLint mip1_w = -1;
 	const char *bm_name;
+	int log_clear = 0;
 
-	if (!merged_wall_should_clear_secondary_units_for_single(bm))
+	if (!merged_wall_should_clear_secondary_units_for_single(bm, &log_clear))
 		return;
 
 	bm_name = piggy_game_bitmap_name(bm);
-	android_merged_wall_get_draw_state(bm->gltexture, &before_prog,
-	                                   &before_tex0, &before_tex1, &before_tex2, &mip1_w);
+	if (log_clear)
+		android_merged_wall_get_draw_state(bm->gltexture, &before_prog,
+		                                   &before_tex0, &before_tex1, &before_tex2, &mip1_w);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
+	if (!log_clear)
+		return;
 	android_merged_wall_get_draw_state(bm->gltexture, &after_prog,
 	                                   &after_tex0, &after_tex1, &after_tex2, &mip1_w);
 	debug_log(DLOG_TEXTURE,
@@ -2779,6 +2811,8 @@ static int merged_wall_cover_is_debug_target(
 {
 	const char *name = cover_bitmap ? piggy_game_bitmap_name(cover_bitmap) : NULL;
 
+	if (track && track->merged_bitmap == cover_bitmap && merged_wall_find_cached_texmerge_bitmap(cover_bitmap))
+		return 1;
 	if (android_texture_debug_matches_target_name(name))
 		return 1;
 	if (!android_texture_debug_target_is_crosshair())
@@ -3423,6 +3457,7 @@ static void merged_wall_log_cover_gpu_readback(const char *kind,
                                                grs_bitmap *cover_bitmap,
                                                int is_debug_target)
 {
+	struct merged_wall_cached_texmerge_entry *cache_entry = NULL;
 	grs_bitmap *src;
 	ogl_texture *texture;
 	const char *name;
@@ -3441,10 +3476,13 @@ static void merged_wall_log_cover_gpu_readback(const char *kind,
 
 	if (!cover_ctx || !cover_ctx->valid || !cover_bitmap || !cover_bitmap->gltexture)
 		return;
+	cache_entry = merged_wall_find_cached_texmerge_bitmap(cover_bitmap);
 	name = piggy_game_bitmap_name(cover_bitmap);
 	if (!is_debug_target)
 		return;
-	if (!merged_wall_note_cover_gpu_readback(cover_ctx->tmap1))
+	if (!merged_wall_note_cover_gpu_readback(cache_entry
+	                                             ? 100000 + cache_entry->slot
+	                                             : cover_ctx->tmap1))
 		return;
 
 	texture = cover_bitmap->gltexture;
@@ -3461,7 +3499,11 @@ static void merged_wall_log_cover_gpu_readback(const char *kind,
 		return;
 	}
 
-	src = merged_wall_get_source_bitmap(cover_bitmap);
+	src = cache_entry && cache_entry->bottom_bmp
+	          ? merged_wall_get_source_bitmap(cache_entry->bottom_bmp)
+	          : merged_wall_get_source_bitmap(cover_bitmap);
+	if (!src && cache_entry)
+		src = cache_entry->bottom_bmp;
 	if (src)
 		merged_wall_compute_source_stats(src, &src_hash, &src_idx254, &src_idx255);
 
@@ -3639,6 +3681,7 @@ static void merged_wall_log_live_cover_state(const char *kind,
                                              int hud_texfilt, int aniso_level,
                                              int is_debug_target)
 {
+	struct merged_wall_cached_texmerge_entry *cache_entry = NULL;
 	grs_bitmap *src_bitmap = NULL;
 	ogl_texture *texture;
 	const char *name;
@@ -3676,7 +3719,8 @@ static void merged_wall_log_live_cover_state(const char *kind,
 		                                  cover_ctx, cover_bitmap);
 		return;
 	}
-	if (cover_ctx->tmap2 != 0) {
+	cache_entry = merged_wall_find_cached_texmerge_bitmap(cover_bitmap);
+	if (cover_ctx->tmap2 != 0 && !cache_entry) {
 		merged_wall_log_cover_bitmap_skip("cover_has_tmap2", kind, shader_kind,
 		                                  cover_ctx, cover_bitmap);
 		return;
@@ -3726,6 +3770,59 @@ static void merged_wall_log_live_cover_state(const char *kind,
 	glActiveTexture(GL_TEXTURE2);
 	glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound_tex2);
 	glActiveTexture((GLenum) active_tex);
+	if (cache_entry) {
+		const char *cache_bottom_name =
+		    piggy_game_bitmap_name(cache_entry->bottom_bmp);
+		const char *cache_top_name =
+		    piggy_game_bitmap_name(cache_entry->top_bmp);
+		GLuint cache_bottom_handle =
+		    cache_entry->bottom_bmp && cache_entry->bottom_bmp->gltexture
+		        ? cache_entry->bottom_bmp->gltexture->handle
+		        : 0;
+		GLuint cache_top_handle =
+		    cache_entry->top_bmp && cache_entry->top_bmp->gltexture
+		        ? cache_entry->top_bmp->gltexture->handle
+		        : 0;
+
+		debug_log(DLOG_TEXTURE,
+		          "[mwall_cache_live] kind=%s shader=%s frame=%d pass=%d seq=%d face_pass=%d face_seq=%d face_order=%d cover_order=%d ordered=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x slot=%d orient=%d output=%u tex0=%d tex1=%d tex2=%d expected_base=%u expected_ovl=%u base=%s ovl=%s out_min=0x%x out_mag=0x%x out_wrap=0x%x/0x%x out_mip=%d size=%dx%d overlap=%.1f face_box=%s",
+		          kind ? kind : "",
+		          shader_kind ? shader_kind : "",
+		          g_merged_wall_frame_id,
+		          g_merged_wall_render_pass,
+		          g_merged_wall_draw_seq,
+		          face_pass,
+		          face_seq,
+		          face_order,
+		          draw_order,
+		          ordered,
+		          cover_ctx->seg,
+		          cover_ctx->side,
+		          cover_ctx->face,
+		          cover_ctx->child,
+		          cover_ctx->wid_flags,
+		          cover_ctx->tmap1,
+		          cover_ctx->tmap2,
+		          cache_entry->slot,
+		          cache_entry->orient,
+		          texture->handle,
+		          bound_tex0,
+		          bound_tex1,
+		          bound_tex2,
+		          cache_bottom_handle,
+		          cache_top_handle,
+		          cache_bottom_name ? cache_bottom_name : "<none>",
+		          cache_top_name ? cache_top_name : "<none>",
+		          tex_min,
+		          tex_mag,
+		          tex_wrap_s,
+		          tex_wrap_t,
+		          texture->has_mipmaps,
+		          texture->w,
+		          texture->h,
+		          overlap_area,
+		          track_box_kind ? track_box_kind : "exact");
+	}
 	bbox_valid = merged_wall_get_screen_bbox(pointlist, nv,
 	                                         &bbox_min_sx, &bbox_max_sx,
 	                                         &bbox_min_sy, &bbox_max_sy);
@@ -3736,7 +3833,11 @@ static void merged_wall_log_live_cover_state(const char *kind,
 	uv_valid = merged_wall_get_uv_bbox(uvl_list, nv,
 	                                   &uv_min_u, &uv_max_u,
 	                                   &uv_min_v, &uv_max_v);
-	src_bitmap = merged_wall_get_source_bitmap(cover_bitmap);
+	src_bitmap = cache_entry && cache_entry->bottom_bmp
+	                 ? merged_wall_get_source_bitmap(cache_entry->bottom_bmp)
+	                 : merged_wall_get_source_bitmap(cover_bitmap);
+	if (!src_bitmap && cache_entry)
+		src_bitmap = cache_entry->bottom_bmp;
 	if (src_bitmap && uv_valid) {
 		texel_span_u = fabsf(uv_max_u - uv_min_u) * src_bitmap->bm_w;
 		texel_span_v = fabsf(uv_max_v - uv_min_v) * src_bitmap->bm_h;

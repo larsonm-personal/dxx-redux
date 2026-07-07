@@ -383,11 +383,20 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		return;
 	}
 
-	if (tmap1 >= NumTextures) {
+	if (tmap1 < 0 || tmap1 >= NumTextures) {
 #ifndef RELEASE
 		Int3();
 #endif
 		Segments[segnum].sides[sidenum].tmap_num = 0;
+		tmap1 = 0;
+	}
+
+	if (tmap2 != 0 && (tmap2 & 0x3FFF) >= NumTextures) {
+#ifndef RELEASE
+		Int3();
+#endif
+		Segments[segnum].sides[sidenum].tmap_num2 = 0;
+		tmap2 = 0;
 	}
 
 #ifdef OGL
@@ -2566,7 +2575,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	}
 
 #ifdef OGL
-	if (GameCfg.ClassicDepth && !(Game_mode & GM_MULTI)) {
+	if (GameCfg.ClassicDepth) {
 #ifdef ANDROID
 		g_merged_wall_render_pass = 1;
 #endif

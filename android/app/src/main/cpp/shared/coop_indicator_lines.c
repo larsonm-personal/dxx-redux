@@ -291,6 +291,7 @@ typedef struct {
 	unsigned int texture_sig;
 	unsigned int segment_sig;
 	unsigned int player_tex_sig;
+	unsigned int invalid_sig;
 	int paged_out;
 	int gltex_ptrs;
 	int gltex_handles;
@@ -302,6 +303,8 @@ typedef struct {
 	int first_bad_side;
 	int first_bad_tmap1;
 	int first_bad_tmap2;
+	int bad_refs_truncated;
+	char bad_refs[192];
 } coop_texture_diag;
 
 static unsigned int coop_diag_mix(unsigned int hash, unsigned int value)
@@ -321,6 +324,7 @@ static void coop_collect_texture_diag(coop_texture_diag *diag)
 	diag->first_bad_side = -1;
 	diag->first_bad_tmap1 = -1;
 	diag->first_bad_tmap2 = -1;
+	diag->invalid_sig = 2166136261u;
 
 	hash = 2166136261u;
 	for (i = 0; i < NumTextures; i++) {
@@ -364,13 +368,27 @@ static void coop_collect_texture_diag(coop_texture_diag *diag)
 			hash = coop_diag_mix(hash, (unsigned int) (unsigned short) tmap1);
 			hash = coop_diag_mix(hash, (unsigned int) tmap2);
 			if (invalid) {
+				size_t len = strlen(diag->bad_refs);
+				size_t avail = sizeof(diag->bad_refs) - len;
+				int written;
 				diag->invalid_tmaps++;
+				diag->invalid_sig = coop_diag_mix(diag->invalid_sig, (unsigned int) i);
+				diag->invalid_sig = coop_diag_mix(diag->invalid_sig, (unsigned int) j);
+				diag->invalid_sig = coop_diag_mix(diag->invalid_sig, (unsigned int) (unsigned short) tmap1);
+				diag->invalid_sig = coop_diag_mix(diag->invalid_sig, (unsigned int) tmap2);
 				if (diag->first_bad_seg < 0) {
 					diag->first_bad_seg = i;
 					diag->first_bad_side = j;
 					diag->first_bad_tmap1 = tmap1;
 					diag->first_bad_tmap2 = tmap2;
 				}
+				if (avail > 1) {
+					written = snprintf(diag->bad_refs + len, avail, "%s%d:%d:%d/%d",
+					                   len ? "," : "", i, j, tmap1, tmap2);
+					if (written < 0 || (size_t) written >= avail)
+						diag->bad_refs_truncated = 1;
+				} else
+					diag->bad_refs_truncated = 1;
 			}
 		}
 	}
@@ -480,6 +498,13 @@ static void coop_indicator_diag_tick(void)
 	          tex_diag.first_bad_side,
 	          tex_diag.first_bad_tmap1,
 	          tex_diag.first_bad_tmap2);
+	if (tex_diag.invalid_tmaps)
+		debug_log(DLOG_COOP_DESYNC,
+		          "[COOP] texbad[%d]: invalid_sig=%08x refs=%s%s",
+		          s_diag_frames,
+		          tex_diag.invalid_sig,
+		          tex_diag.bad_refs,
+		          tex_diag.bad_refs_truncated ? ",..." : "");
 }
 
 /* -- common coop check ----------------------------------------------- */

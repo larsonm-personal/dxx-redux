@@ -181,7 +181,7 @@ void xmodel_show(void *model, int mpcolor, g3s_lrgb *light) {
 	render_model& rm = *(render_model *)model;
 	int num_bitmaps = rm.m.m_textures.m_nBitmaps;
 
-	if (GameCfg.ClassicDepth && !(Game_mode & GM_MULTI))
+	if (GameCfg.ClassicDepth)
 		glEnable(GL_DEPTH_TEST);
 
 	float color_alpha;
@@ -215,7 +215,7 @@ void xmodel_show(void *model, int mpcolor, g3s_lrgb *light) {
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	if (GameCfg.ClassicDepth && !(Game_mode & GM_MULTI))
+	if (GameCfg.ClassicDepth)
 		glDisable(GL_DEPTH_TEST);
 }
 
