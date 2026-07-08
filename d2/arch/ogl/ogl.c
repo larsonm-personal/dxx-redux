@@ -533,6 +533,10 @@ void ogl_smash_texture_list_internal(void){
 }
 
 int ogl_allow_png(void){
+#ifdef ANDROID
+	if (Game_mode & GM_MULTI_COOP)
+		return 1;
+#endif
 	return !(Game_mode & GM_MULTI) || Netgame.AllowCustomModelsTextures;
 }
 

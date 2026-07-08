@@ -511,9 +511,11 @@ grs_bitmap *texture_list[MAX_POLYOBJ_TEXTURES];
 bitmap_index texture_list_index[MAX_POLYOBJ_TEXTURES];
 
 int alt_textures_to_ship_color(bitmap_index alt_textures[]) {
-	if (alt_textures &&
-		alt_textures >= multi_player_textures[0] && alt_textures < multi_player_textures[MAX_PLAYERS])
-		return multi_player_tex_color[(alt_textures - multi_player_textures[0]) / N_PLAYER_SHIP_TEXTURES];
+	bitmap_index *first_player_texture = &multi_player_textures[0][0];
+	bitmap_index *last_player_texture = first_player_texture + MAX_PLAYERS * N_PLAYER_SHIP_TEXTURES;
+
+	if (alt_textures && alt_textures >= first_player_texture && alt_textures < last_player_texture)
+		return multi_player_tex_color[(alt_textures - first_player_texture) / N_PLAYER_SHIP_TEXTURES];
 	return 0;
 }
 
@@ -523,13 +525,20 @@ void draw_polygon_model(vms_vector *pos,vms_matrix *orient,vms_angvec *anim_angl
 {
 	polymodel *po;
 	int i;
+#ifdef OGL
+	int allow_xmodel;
+#endif
 
 	if (model_num < 0)
 		return;
 
 #ifdef OGL
-	if (!d1_in_d2_is_spawnable_guidebot_model(model_num) &&
-	    (!(Game_mode & GM_MULTI) || Netgame.AllowCustomModelsTextures))
+#ifdef ANDROID
+	allow_xmodel = (Game_mode & GM_MULTI_COOP) || !(Game_mode & GM_MULTI) || Netgame.AllowCustomModelsTextures;
+#else
+	allow_xmodel = !(Game_mode & GM_MULTI) || Netgame.AllowCustomModelsTextures;
+#endif
+	if (!d1_in_d2_is_spawnable_guidebot_model(model_num) && allow_xmodel)
 		if (xmodel_show_if_loaded(model_num, pos, orient, alt_textures_to_ship_color(alt_textures), &light))
 			return;
 #endif

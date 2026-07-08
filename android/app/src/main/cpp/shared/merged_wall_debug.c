@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "3d.h"
+#include "effects.h"
 #include "gameseg.h"
 #include "gameseq.h"
 #include "gr.h"
@@ -29,17 +30,20 @@ void ogl_prog_set_tex2_current_matrix(const GLfloat *matrix, int super);
 void ogl_prog_set_tex2_debug_mode(int mode);
 void ogl_prog_set_tex2_alpha_cutoff(GLfloat alpha_cutoff);
 
-#define MERGED_WALL_LOG_PT_COUNT          16
-#define MERGED_WALL_TRACKED_FACE_MAX      32
-#define MERGED_WALL_COVER_EVENT_MAX       64
-#define MERGED_WALL_SNAPSHOT_COVER_EXACT  1
-#define MERGED_WALL_SNAPSHOT_COVER_BBOX   2
-#define MERGED_WALL_SNAPSHOT_OVERDRAW_MAX 6
-#define MERGED_WALL_BITMAP_DUMP_MAX       16
-#define MERGED_WALL_BITMAP_DUMP_WIDTH     64
-#define MERGED_WALL_PROBE_HIT_NONE        0
-#define MERGED_WALL_CACHED_TEXMERGE_COUNT 32
-#define MERGED_WALL_TEXTURE_READBACK_MAX  16
+#define MERGED_WALL_LOG_PT_COUNT            16
+#define MERGED_WALL_TRACKED_FACE_MAX        32
+#define MERGED_WALL_COVER_EVENT_MAX         64
+#define MERGED_WALL_SNAPSHOT_COVER_EXACT    1
+#define MERGED_WALL_SNAPSHOT_COVER_BBOX     2
+#define MERGED_WALL_SNAPSHOT_OVERDRAW_MAX   6
+#define MERGED_WALL_BITMAP_DUMP_MAX         16
+#define MERGED_WALL_BITMAP_DUMP_WIDTH       64
+#define MERGED_WALL_PROBE_HIT_NONE          0
+#define MERGED_WALL_CACHED_TEXMERGE_COUNT   32
+#define MERGED_WALL_TEXTURE_READBACK_MAX    16
+#define MERGED_WALL_PROBE_DRAW_FACE_MAX     64
+#define MERGED_WALL_PROBE_DRAW_FACE_LOG_MAX 8
+#define MERGED_WALL_FNV1A_OFFSET            2166136261u
 
 static struct merged_wall_cached_texmerge_entry g_merged_wall_cached_texmerge[MERGED_WALL_CACHED_TEXMERGE_COUNT];
 static int g_merged_wall_cached_texmerge_initialized = 0;
@@ -123,6 +127,42 @@ struct merged_wall_snapshot_cover_event {
 	char cover_ovl[24];
 };
 
+struct merged_wall_probe_draw_face {
+	int valid;
+	int render_pass;
+	int draw_seq;
+	int draw_order;
+	int nv;
+	int projected_count;
+	struct android_draw_face_context draw_ctx;
+	grs_bitmap *bitmap;
+	int bbox_valid;
+	int projected_bbox_valid;
+	float min_sx;
+	float max_sx;
+	float min_sy;
+	float max_sy;
+	float bbox_area;
+	float projected_min_sx;
+	float projected_max_sx;
+	float projected_min_sy;
+	float projected_max_sy;
+	float projected_bbox_area;
+	int polygon_hit;
+	int bbox_hit;
+	int projected_hit;
+	int hit_score;
+	float dist2;
+	fix depth_min;
+	fix depth_max;
+	fix depth_avg;
+	fix pts[MERGED_WALL_LOG_PT_COUNT][3];
+	int pt_projected[MERGED_WALL_LOG_PT_COUNT];
+	float pt_sx[MERGED_WALL_LOG_PT_COUNT];
+	float pt_sy[MERGED_WALL_LOG_PT_COUNT];
+	g3s_uvl uvl[MERGED_WALL_LOG_PT_COUNT];
+};
+
 struct merged_wall_snapshot_focus_cover {
 	int valid;
 	int event_index;
@@ -193,7 +233,10 @@ static struct merged_wall_snapshot_target_cover merged_wall_snapshot_target_cove
 
 static struct merged_wall_tracked_face merged_wall_tracked_faces[MERGED_WALL_TRACKED_FACE_MAX];
 static struct merged_wall_snapshot_cover_event merged_wall_cover_events[MERGED_WALL_COVER_EVENT_MAX];
+static struct merged_wall_probe_draw_face merged_wall_probe_draw_faces[MERGED_WALL_PROBE_DRAW_FACE_MAX];
 static int merged_wall_tracked_face_count = 0;
+static int merged_wall_probe_draw_face_count = 0;
+static int merged_wall_probe_draw_face_seen_count = 0;
 static int merged_wall_tracked_frame_id = -1;
 static int merged_wall_draw_order = 0;
 static int merged_wall_dumped_cover_textures[MERGED_WALL_BITMAP_DUMP_MAX];
@@ -2435,6 +2478,8 @@ static void merged_wall_begin_frame_tracking(void)
 		return;
 	merged_wall_tracked_frame_id = g_merged_wall_frame_id;
 	merged_wall_tracked_face_count = 0;
+	merged_wall_probe_draw_face_count = 0;
+	merged_wall_probe_draw_face_seen_count = 0;
 	merged_wall_draw_order = 0;
 }
 
@@ -2718,6 +2763,177 @@ static void merged_wall_get_debug_target_centers(float *center_x, float *center_
 	if (canvas_center_y) *canvas_center_y = local_canvas_center_y;
 }
 
+static int merged_wall_probe_draw_face_better(
+    const struct merged_wall_probe_draw_face *candidate,
+    const struct merged_wall_probe_draw_face *current)
+{
+	if (!candidate || !candidate->valid)
+		return 0;
+	if (!current || !current->valid)
+		return 1;
+	if (candidate->hit_score != current->hit_score)
+		return candidate->hit_score > current->hit_score;
+	if (candidate->hit_score > 0) {
+		if (candidate->draw_order != current->draw_order)
+			return candidate->draw_order > current->draw_order;
+		if (candidate->dist2 < current->dist2 - 0.5f)
+			return 1;
+		if (candidate->dist2 > current->dist2 + 0.5f)
+			return 0;
+	} else {
+		if (candidate->dist2 < current->dist2 - 0.5f)
+			return 1;
+		if (candidate->dist2 > current->dist2 + 0.5f)
+			return 0;
+		if (candidate->draw_order != current->draw_order)
+			return candidate->draw_order > current->draw_order;
+	}
+	if (candidate->bbox_area < current->bbox_area - 0.5f)
+		return 1;
+	if (candidate->bbox_area > current->bbox_area + 0.5f)
+		return 0;
+	return candidate->render_pass > current->render_pass;
+}
+
+static void merged_wall_probe_store_draw_face(
+    const struct merged_wall_probe_draw_face *candidate)
+{
+	struct merged_wall_probe_draw_face swap;
+	int index;
+
+	if (!candidate || !candidate->valid)
+		return;
+	if (merged_wall_probe_draw_face_count < MERGED_WALL_PROBE_DRAW_FACE_MAX) {
+		index = merged_wall_probe_draw_face_count++;
+		merged_wall_probe_draw_faces[index] = *candidate;
+	} else {
+		index = MERGED_WALL_PROBE_DRAW_FACE_MAX - 1;
+		if (!merged_wall_probe_draw_face_better(candidate,
+		                                        &merged_wall_probe_draw_faces[index]))
+			return;
+		merged_wall_probe_draw_faces[index] = *candidate;
+	}
+	while (index > 0 &&
+	       merged_wall_probe_draw_face_better(&merged_wall_probe_draw_faces[index],
+	                                          &merged_wall_probe_draw_faces[index - 1])) {
+		swap = merged_wall_probe_draw_faces[index - 1];
+		merged_wall_probe_draw_faces[index - 1] = merged_wall_probe_draw_faces[index];
+		merged_wall_probe_draw_faces[index] = swap;
+		index--;
+	}
+}
+
+static void merged_wall_probe_record_draw_face(grs_bitmap *bm,
+                                               const struct g3s_point **pointlist,
+                                               const g3s_uvl *uvl_list, int nv)
+{
+	struct merged_wall_probe_draw_face candidate;
+	float canvas_center_x = 0.0f;
+	float canvas_center_y = 0.0f;
+	fix64 depth_sum = 0;
+	int i;
+
+	if (!g_merged_wall_snapshot_pending ||
+	    g_merged_wall_snapshot_request_mode != MERGED_WALL_REQUEST_PROBE)
+		return;
+	if (!g_android_draw_face_ctx.valid || !bm || !pointlist ||
+	    nv <= 0 || nv > MERGED_WALL_LOG_PT_COUNT)
+		return;
+
+	memset(&candidate, 0, sizeof(candidate));
+	candidate.valid = 1;
+	candidate.render_pass = g_merged_wall_render_pass;
+	candidate.draw_seq = g_merged_wall_draw_seq;
+	candidate.draw_order = merged_wall_draw_order;
+	candidate.nv = nv;
+	candidate.draw_ctx = g_android_draw_face_ctx;
+	candidate.bitmap = bm;
+	candidate.bbox_valid = merged_wall_get_screen_bbox(pointlist, nv,
+	                                                   &candidate.min_sx,
+	                                                   &candidate.max_sx,
+	                                                   &candidate.min_sy,
+	                                                   &candidate.max_sy);
+	candidate.bbox_area = candidate.bbox_valid
+	                          ? (candidate.max_sx - candidate.min_sx) *
+	                                (candidate.max_sy - candidate.min_sy)
+	                          : 0.0f;
+	candidate.projected_bbox_valid = merged_wall_get_projected_bbox(
+	    pointlist, nv, &candidate.projected_count,
+	    &candidate.projected_min_sx, &candidate.projected_max_sx,
+	    &candidate.projected_min_sy, &candidate.projected_max_sy);
+	candidate.projected_bbox_area = candidate.projected_bbox_valid
+	                                    ? (candidate.projected_max_sx - candidate.projected_min_sx) *
+	                                          (candidate.projected_max_sy - candidate.projected_min_sy)
+	                                    : 0.0f;
+	candidate.projected_count = merged_wall_store_projected_points(pointlist, nv,
+	                                                               candidate.pt_projected,
+	                                                               candidate.pt_sx,
+	                                                               candidate.pt_sy);
+	if (!candidate.bbox_valid && !candidate.projected_bbox_valid)
+		return;
+
+	merged_wall_get_debug_target_centers(NULL, NULL,
+	                                     &canvas_center_x, &canvas_center_y);
+	candidate.polygon_hit =
+	    merged_wall_projected_polygon_valid(nv, candidate.projected_count) &&
+	    merged_wall_projected_polygon_contains_point(nv,
+	                                                 candidate.pt_projected,
+	                                                 candidate.pt_sx,
+	                                                 candidate.pt_sy,
+	                                                 canvas_center_x,
+	                                                 canvas_center_y);
+	candidate.bbox_hit =
+	    candidate.bbox_valid &&
+	    merged_wall_bbox_contains_point(canvas_center_x, canvas_center_y,
+	                                    candidate.min_sx, candidate.max_sx,
+	                                    candidate.min_sy, candidate.max_sy);
+	candidate.projected_hit =
+	    !candidate.bbox_hit && candidate.projected_bbox_valid &&
+	    merged_wall_bbox_contains_point(canvas_center_x, canvas_center_y,
+	                                    candidate.projected_min_sx,
+	                                    candidate.projected_max_sx,
+	                                    candidate.projected_min_sy,
+	                                    candidate.projected_max_sy);
+	candidate.hit_score = candidate.polygon_hit ? 3
+	                                            : (candidate.bbox_hit ? 2
+	                                                                  : (candidate.projected_hit ? 1 : 0));
+	if (candidate.bbox_valid)
+		candidate.dist2 = merged_wall_bbox_distance_sq(canvas_center_x,
+		                                               canvas_center_y,
+		                                               candidate.min_sx,
+		                                               candidate.max_sx,
+		                                               candidate.min_sy,
+		                                               candidate.max_sy);
+	else
+		candidate.dist2 = merged_wall_bbox_distance_sq(canvas_center_x,
+		                                               canvas_center_y,
+		                                               candidate.projected_min_sx,
+		                                               candidate.projected_max_sx,
+		                                               candidate.projected_min_sy,
+		                                               candidate.projected_max_sy);
+	for (i = 0; i < nv; i++) {
+		candidate.pts[i][0] = pointlist[i]->p3_vec.x;
+		candidate.pts[i][1] = pointlist[i]->p3_vec.y;
+		candidate.pts[i][2] = pointlist[i]->p3_vec.z;
+		if (uvl_list)
+			candidate.uvl[i] = uvl_list[i];
+		else
+			memset(&candidate.uvl[i], 0, sizeof(candidate.uvl[i]));
+		if (i == 0) {
+			candidate.depth_min = candidate.depth_max = pointlist[i]->p3_vec.z;
+		} else {
+			if (pointlist[i]->p3_vec.z < candidate.depth_min)
+				candidate.depth_min = pointlist[i]->p3_vec.z;
+			if (pointlist[i]->p3_vec.z > candidate.depth_max)
+				candidate.depth_max = pointlist[i]->p3_vec.z;
+		}
+		depth_sum += pointlist[i]->p3_vec.z;
+	}
+	candidate.depth_avg = nv > 0 ? (fix) (depth_sum / nv) : 0;
+	merged_wall_probe_draw_face_seen_count++;
+	merged_wall_probe_store_draw_face(&candidate);
+}
+
 static int merged_wall_cover_matches_crosshair_target(
     const struct merged_wall_tracked_face *track,
     int cover_nv,
@@ -2912,7 +3128,7 @@ static void merged_wall_probe_capture_render_sample(const struct merged_wall_tra
 	float min_sy = 0.0f, max_sy = 0.0f;
 	float bbox_area = 0.0f;
 	const char *box_kind = "none";
-	unsigned int hash = 2166136261u;
+	unsigned int hash = MERGED_WALL_FNV1A_OFFSET;
 	int polygon_valid;
 	int valid_cells = 0;
 	int hot_cells = 0;
@@ -3115,7 +3331,7 @@ static void merged_wall_compute_source_stats(grs_bitmap *src,
                                              int *idx254_out,
                                              int *idx255_out)
 {
-	unsigned int hash = 2166136261u;
+	unsigned int hash = MERGED_WALL_FNV1A_OFFSET;
 	int idx254 = 0, idx255 = 0;
 	int row_stride, row_bytes;
 	int x, y;
@@ -3221,8 +3437,8 @@ static void merged_wall_log_texture_gpu_readback(const char *tag, grs_bitmap *bm
 	GLenum status;
 	GLenum gl_err = GL_NO_ERROR;
 	unsigned char *rgba;
-	unsigned int gpu_hash = 2166136261u;
-	unsigned int expected_hash = 2166136261u;
+	unsigned int gpu_hash = MERGED_WALL_FNV1A_OFFSET;
+	unsigned int expected_hash = MERGED_WALL_FNV1A_OFFSET;
 	unsigned int src_hash;
 	unsigned int sum_r = 0, sum_g = 0, sum_b = 0, sum_a = 0;
 	unsigned char first_expected[4] = { 0, 0, 0, 0 };
@@ -3400,7 +3616,7 @@ static void merged_wall_log_merge_reference(const char *tag, const char *game,
 	grs_bitmap *bottom = merged_wall_get_source_bitmap(bottom_bmp);
 	grs_bitmap *top = merged_wall_get_source_bitmap(top_bmp);
 	grs_bitmap *live = merged_wall_get_source_bitmap(merged_bmp);
-	unsigned int ref_hash = 2166136261u;
+	unsigned int ref_hash = MERGED_WALL_FNV1A_OFFSET;
 	unsigned int live_hash;
 	int live_bytes, live254, live255;
 	int ref254 = 0, ref255 = 0, mismatches = 0;
@@ -3744,6 +3960,7 @@ void android_merged_wall_forensics_log_single_draw(const char *tag, grs_bitmap *
 
 	if (!bm || !pointlist || !uvl_list || nv <= 0)
 		return;
+	merged_wall_probe_record_draw_face(bm, pointlist, uvl_list, nv);
 	if (!merged_wall_forensics_should_log_bitmap(bm))
 		return;
 	if (!g_merged_wall_snapshot_pending &&
@@ -4314,7 +4531,7 @@ static void merged_wall_log_cover_gpu_readback(const char *kind,
 		return;
 	}
 
-	gpu_hash = merged_wall_fnv1a_append(2166136261u, rgba, pixel_count * 4);
+	gpu_hash = merged_wall_fnv1a_append(MERGED_WALL_FNV1A_OFFSET, rgba, pixel_count * 4);
 	for (i = 0; i < pixel_count; i++) {
 		const unsigned char *px = rgba + i * 4;
 
@@ -5931,6 +6148,464 @@ static const char *merged_wall_probe_corner_tag(const struct merged_wall_tracked
 	return track->pt_sy[index] <= mid_y ? "RT" : "RB";
 }
 
+struct merged_wall_tmap_state {
+	int tex_num;
+	int bitmap_index;
+	const char *name;
+	int flags;
+	int lighting;
+	int damage;
+	int eclip_num;
+	int destroyed;
+	int slide_u;
+	int slide_v;
+	int eclip_flags;
+	int eclip_frame_count;
+	int eclip_time_left;
+	int eclip_frames;
+	int eclip_wall_texture;
+	int eclip_dest_bm;
+	int eclip_frame0_bm;
+	int eclip_current_bm;
+};
+
+static void merged_wall_hash_int(unsigned int *hash, int value)
+{
+	if (!hash)
+		return;
+	*hash = merged_wall_fnv1a_append(*hash, (const unsigned char *) &value,
+	                                 sizeof(value));
+}
+
+static int merged_wall_texture_valid(int tex_num)
+{
+	return tex_num >= 0 && tex_num < NumTextures;
+}
+
+static const char *merged_wall_texture_name(int tex_num)
+{
+	grs_bitmap *bitmap;
+	const char *name;
+
+	if (!merged_wall_texture_valid(tex_num))
+		return "<invalid>";
+	bitmap = &GameBitmaps[Textures[tex_num].index];
+	name = piggy_game_bitmap_name(bitmap);
+	return name ? name : "<none>";
+}
+
+static void merged_wall_init_tmap_state(struct merged_wall_tmap_state *state)
+{
+	if (!state)
+		return;
+	memset(state, 0, sizeof(*state));
+	state->tex_num = -1;
+	state->bitmap_index = -1;
+	state->name = "<invalid>";
+	state->flags = -1;
+	state->lighting = 0;
+	state->damage = 0;
+	state->eclip_num = -1;
+	state->destroyed = -1;
+	state->slide_u = 0;
+	state->slide_v = 0;
+	state->eclip_flags = -1;
+	state->eclip_frame_count = -1;
+	state->eclip_time_left = -1;
+	state->eclip_frames = -1;
+	state->eclip_wall_texture = -1;
+	state->eclip_dest_bm = -1;
+	state->eclip_frame0_bm = -1;
+	state->eclip_current_bm = -1;
+}
+
+static void merged_wall_fill_tmap_state(int tex_num,
+                                        struct merged_wall_tmap_state *state)
+{
+	int eclip_num;
+
+	merged_wall_init_tmap_state(state);
+	if (!state || !merged_wall_texture_valid(tex_num))
+		return;
+
+	state->tex_num = tex_num;
+	state->bitmap_index = Textures[tex_num].index;
+	state->name = merged_wall_texture_name(tex_num);
+	state->flags = TmapInfo[tex_num].flags;
+	state->lighting = TmapInfo[tex_num].lighting;
+	state->damage = TmapInfo[tex_num].damage;
+	state->eclip_num = TmapInfo[tex_num].eclip_num;
+#ifdef DXX_BUILD_DESCENT_II
+	state->destroyed = TmapInfo[tex_num].destroyed;
+	state->slide_u = TmapInfo[tex_num].slide_u;
+	state->slide_v = TmapInfo[tex_num].slide_v;
+#endif
+
+	eclip_num = state->eclip_num;
+	if (eclip_num >= 0 && eclip_num < Num_effects && eclip_num < MAX_EFFECTS) {
+		int current_frame = Effects[eclip_num].frame_count;
+
+		state->eclip_flags = Effects[eclip_num].flags;
+		state->eclip_frame_count = current_frame;
+		state->eclip_time_left = Effects[eclip_num].time_left;
+		state->eclip_frames = Effects[eclip_num].vc.num_frames;
+		state->eclip_wall_texture = Effects[eclip_num].changing_wall_texture;
+		state->eclip_dest_bm = Effects[eclip_num].dest_bm_num;
+		if (Effects[eclip_num].vc.num_frames > 0)
+			state->eclip_frame0_bm = Effects[eclip_num].vc.frames[0].index;
+		if (current_frame >= 0 && current_frame < Effects[eclip_num].vc.num_frames)
+			state->eclip_current_bm =
+			    Effects[eclip_num].vc.frames[current_frame].index;
+	}
+}
+
+static void merged_wall_hash_tmap_state(unsigned int *hash,
+                                        const struct merged_wall_tmap_state *state)
+{
+	if (!hash || !state)
+		return;
+	merged_wall_hash_int(hash, state->tex_num);
+	merged_wall_hash_int(hash, state->bitmap_index);
+	merged_wall_hash_int(hash, state->flags);
+	merged_wall_hash_int(hash, state->lighting);
+	merged_wall_hash_int(hash, state->damage);
+	merged_wall_hash_int(hash, state->eclip_num);
+	merged_wall_hash_int(hash, state->destroyed);
+	merged_wall_hash_int(hash, state->slide_u);
+	merged_wall_hash_int(hash, state->slide_v);
+	merged_wall_hash_int(hash, state->eclip_flags);
+	merged_wall_hash_int(hash, state->eclip_frame_count);
+	merged_wall_hash_int(hash, state->eclip_time_left);
+	merged_wall_hash_int(hash, state->eclip_frames);
+	merged_wall_hash_int(hash, state->eclip_wall_texture);
+	merged_wall_hash_int(hash, state->eclip_dest_bm);
+	merged_wall_hash_int(hash, state->eclip_frame0_bm);
+	merged_wall_hash_int(hash, state->eclip_current_bm);
+}
+
+static unsigned int merged_wall_side_uv_signature(const struct side *sidep)
+{
+	unsigned int hash = MERGED_WALL_FNV1A_OFFSET;
+	int i;
+
+	if (!sidep)
+		return 0;
+	for (i = 0; i < 4; i++) {
+		merged_wall_hash_int(&hash, sidep->uvls[i].u);
+		merged_wall_hash_int(&hash, sidep->uvls[i].v);
+		merged_wall_hash_int(&hash, sidep->uvls[i].l);
+	}
+	return hash;
+}
+
+static int merged_wall_active_door_index_for_wall(int wall_num)
+{
+	int i, part;
+
+	if (wall_num < 0)
+		return -1;
+	for (i = 0; i < Num_open_doors; i++) {
+		active_door *doorp = &ActiveDoors[i];
+		int parts = doorp->n_parts;
+
+		if (parts < 0)
+			parts = 0;
+		if (parts > 2)
+			parts = 2;
+		for (part = 0; part < parts; part++)
+			if (doorp->front_wallnum[part] == wall_num ||
+			    doorp->back_wallnum[part] == wall_num)
+				return i;
+	}
+	return -1;
+}
+
+#ifdef DXX_BUILD_DESCENT_II
+static int merged_wall_cloaking_wall_index_for_wall(int wall_num)
+{
+	int i;
+
+	if (wall_num < 0)
+		return -1;
+	for (i = 0; i < Num_cloaking_walls; i++)
+		if (CloakingWalls[i].front_wallnum == wall_num ||
+		    CloakingWalls[i].back_wallnum == wall_num)
+			return i;
+	return -1;
+}
+#endif
+
+static void merged_wall_probe_log_side_state(const char *source,
+                                             const struct merged_wall_tracked_face *track)
+{
+	const struct android_draw_face_context *ctx;
+	segment *segp = NULL;
+	struct side *sidep = NULL;
+	segment *conn_seg = NULL;
+	struct side *conn_sidep = NULL;
+	wall *wallp = NULL;
+	wall *conn_wallp = NULL;
+	active_door *doorp = NULL;
+	wclip *clip = NULL;
+	struct merged_wall_tmap_state base_state;
+	struct merged_wall_tmap_state overlay_state;
+	unsigned int side_sig = MERGED_WALL_FNV1A_OFFSET;
+	unsigned int uv_sig = 0;
+	int segnum, sidenum, child, wall_num, conn_side, conn_child, conn_wall_num;
+	int raw_tmap1, raw_tmap2, overlay;
+	int wid_flags;
+	int wall_type = -1, wall_state = -1, wall_clip = -1, wall_keys = -1;
+	int wall_hps = 0, wall_trigger = -1, wall_linked = -1;
+	int wall_control = -1, wall_cloak = -1;
+	unsigned int wall_flags = 0;
+	int conn_type = -1, conn_state = -1;
+	unsigned int conn_flags = 0;
+	int clip_valid = 0, clip_flags = 0, clip_frames = -1, clip_play_time = -1;
+	int clip_frame0 = -1, clip_last = -1;
+	int door_index = -1, door_time = -1, door_parts = -1;
+	int door_front0 = -1, door_back0 = -1, door_front1 = -1, door_back1 = -1;
+	int cloak_index = -1, cloak_time = -1;
+
+	if (!track || !track->draw_ctx.valid)
+		return;
+	ctx = &track->draw_ctx;
+	segnum = ctx->seg;
+	sidenum = ctx->side;
+	if (segnum < 0 || segnum > Highest_segment_index ||
+	    sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT)
+		return;
+
+	segp = &Segments[segnum];
+	sidep = &segp->sides[sidenum];
+	child = segp->children[sidenum];
+	wall_num = sidep->wall_num;
+	raw_tmap1 = sidep->tmap_num;
+	raw_tmap2 = sidep->tmap_num2;
+	overlay = raw_tmap2 ? merged_wall_overlay_index(raw_tmap2) : -1;
+	wid_flags = WALL_IS_DOORWAY(segp, sidenum);
+	uv_sig = merged_wall_side_uv_signature(sidep);
+	if (wall_num >= 0 && wall_num < Num_walls) {
+		wallp = &Walls[wall_num];
+		wall_type = wallp->type;
+		wall_flags = wallp->flags;
+		wall_state = wallp->state;
+		wall_trigger = wallp->trigger;
+		wall_clip = wallp->clip_num;
+		wall_keys = wallp->keys;
+		wall_hps = wallp->hps;
+		wall_linked = wallp->linked_wall;
+#ifdef DXX_BUILD_DESCENT_II
+		wall_control = wallp->controlling_trigger;
+		wall_cloak = wallp->cloak_value;
+#endif
+	}
+	if (child >= 0 && child <= Highest_segment_index) {
+		conn_seg = &Segments[child];
+		conn_side = find_connect_side(conn_seg, segp);
+		if (conn_side >= 0 && conn_side < MAX_SIDES_PER_SEGMENT) {
+			conn_sidep = &conn_seg->sides[conn_side];
+			conn_child = conn_seg->children[conn_side];
+			conn_wall_num = conn_sidep->wall_num;
+			if (conn_wall_num >= 0 && conn_wall_num < Num_walls) {
+				conn_wallp = &Walls[conn_wall_num];
+				conn_type = conn_wallp->type;
+				conn_state = conn_wallp->state;
+				conn_flags = conn_wallp->flags;
+			}
+		} else {
+			conn_child = -1;
+			conn_wall_num = -1;
+		}
+	} else {
+		conn_side = -1;
+		conn_child = -1;
+		conn_wall_num = -1;
+	}
+	if (wall_clip >= 0 && wall_clip < Num_wall_anims &&
+	    WallAnims[wall_clip].num_frames > 0) {
+		clip = &WallAnims[wall_clip];
+		clip_valid = 1;
+		clip_flags = clip->flags;
+		clip_frames = clip->num_frames;
+		clip_play_time = clip->play_time;
+		clip_frame0 = clip->frames[0];
+		clip_last = clip->frames[clip->num_frames - 1];
+	}
+	door_index = merged_wall_active_door_index_for_wall(wall_num >= 0 ? wall_num : conn_wall_num);
+	if (door_index >= 0 && door_index < Num_open_doors) {
+		doorp = &ActiveDoors[door_index];
+		door_time = doorp->time;
+		door_parts = doorp->n_parts;
+		door_front0 = doorp->front_wallnum[0];
+		door_back0 = doorp->back_wallnum[0];
+		door_front1 = doorp->front_wallnum[1];
+		door_back1 = doorp->back_wallnum[1];
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	cloak_index = merged_wall_cloaking_wall_index_for_wall(wall_num >= 0 ? wall_num : conn_wall_num);
+	if (cloak_index >= 0 && cloak_index < Num_cloaking_walls)
+		cloak_time = CloakingWalls[cloak_index].time;
+#endif
+
+	merged_wall_fill_tmap_state(raw_tmap1, &base_state);
+	merged_wall_fill_tmap_state(overlay, &overlay_state);
+
+	merged_wall_hash_int(&side_sig, Current_level_num);
+	merged_wall_hash_int(&side_sig, Game_mode);
+	merged_wall_hash_int(&side_sig, segnum);
+	merged_wall_hash_int(&side_sig, sidenum);
+	merged_wall_hash_int(&side_sig, child);
+	merged_wall_hash_int(&side_sig, sidep->type);
+	merged_wall_hash_int(&side_sig, wid_flags);
+	merged_wall_hash_int(&side_sig, raw_tmap1);
+	merged_wall_hash_int(&side_sig, raw_tmap2);
+	merged_wall_hash_int(&side_sig, wall_num);
+	merged_wall_hash_int(&side_sig, wall_type);
+	merged_wall_hash_int(&side_sig, (int) wall_flags);
+	merged_wall_hash_int(&side_sig, wall_state);
+	merged_wall_hash_int(&side_sig, wall_trigger);
+	merged_wall_hash_int(&side_sig, wall_clip);
+	merged_wall_hash_int(&side_sig, wall_keys);
+	merged_wall_hash_int(&side_sig, wall_hps);
+	merged_wall_hash_int(&side_sig, wall_linked);
+	merged_wall_hash_int(&side_sig, wall_control);
+	merged_wall_hash_int(&side_sig, wall_cloak);
+	merged_wall_hash_int(&side_sig, conn_side);
+	merged_wall_hash_int(&side_sig, conn_child);
+	merged_wall_hash_int(&side_sig, conn_wall_num);
+	merged_wall_hash_int(&side_sig, conn_type);
+	merged_wall_hash_int(&side_sig, (int) conn_flags);
+	merged_wall_hash_int(&side_sig, conn_state);
+	if (conn_sidep) {
+		merged_wall_hash_int(&side_sig, conn_sidep->type);
+		merged_wall_hash_int(&side_sig, conn_sidep->tmap_num);
+		merged_wall_hash_int(&side_sig, conn_sidep->tmap_num2);
+	}
+	merged_wall_hash_int(&side_sig, (int) uv_sig);
+	merged_wall_hash_int(&side_sig, door_index);
+	merged_wall_hash_int(&side_sig, door_time);
+	merged_wall_hash_int(&side_sig, door_parts);
+	merged_wall_hash_int(&side_sig, door_front0);
+	merged_wall_hash_int(&side_sig, door_back0);
+	merged_wall_hash_int(&side_sig, door_front1);
+	merged_wall_hash_int(&side_sig, door_back1);
+	merged_wall_hash_int(&side_sig, cloak_index);
+	merged_wall_hash_int(&side_sig, cloak_time);
+	merged_wall_hash_int(&side_sig, clip_valid);
+	merged_wall_hash_int(&side_sig, clip_flags);
+	merged_wall_hash_int(&side_sig, clip_frames);
+	merged_wall_hash_int(&side_sig, clip_play_time);
+	merged_wall_hash_int(&side_sig, clip_frame0);
+	merged_wall_hash_int(&side_sig, clip_last);
+	merged_wall_hash_tmap_state(&side_sig, &base_state);
+	merged_wall_hash_tmap_state(&side_sig, &overlay_state);
+
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_tap_probe] kind=side_state source=%s frame=%d request_frame=%d level=%d seg=%d side=%d face=%d side_sig=0x%08x uv_sig=0x%08x child=%d side_type=%d wid=%d draw_tmap1=%d draw_tmap2=0x%x raw_tmap1=%d raw_tmap2=0x%x overlay=%d wall_num=%d wall_type=%d wall_state=%d wall_flags=0x%x wall_clip=%d wall_keys=%d wall_hps=%d wall_trigger=%d wall_linked=%d wall_control=%d wall_cloak=%d open_doors=%d door_idx=%d door_time=%d door_parts=%d door_front=%d/%d door_back=%d/%d cloak_idx=%d cloak_time=%d clip_valid=%d clip_flags=0x%x clip_frames=%d clip_play=%d clip_f0=%d clip_last=%d clip_f0_name=%s clip_last_name=%s conn_seg=%d conn_side=%d conn_child=%d conn_side_type=%d conn_tmap1=%d conn_tmap2=0x%x conn_wall=%d conn_wall_type=%d conn_wall_state=%d conn_wall_flags=0x%x",
+	                source ? source : "",
+	                g_merged_wall_frame_id,
+	                g_merged_wall_snapshot_request_frame,
+	                Current_level_num,
+	                segnum,
+	                sidenum,
+	                ctx->face,
+	                side_sig,
+	                uv_sig,
+	                child,
+	                sidep->type,
+	                wid_flags,
+	                ctx->tmap1,
+	                ctx->tmap2,
+	                raw_tmap1,
+	                raw_tmap2,
+	                overlay,
+	                wall_num,
+	                wall_type,
+	                wall_state,
+	                wall_flags,
+	                wall_clip,
+	                wall_keys,
+	                wall_hps,
+	                wall_trigger,
+	                wall_linked,
+	                wall_control,
+	                wall_cloak,
+	                Num_open_doors,
+	                door_index,
+	                door_time,
+	                door_parts,
+	                door_front0,
+	                door_front1,
+	                door_back0,
+	                door_back1,
+	                cloak_index,
+	                cloak_time,
+	                clip_valid,
+	                clip_flags,
+	                clip_frames,
+	                clip_play_time,
+	                clip_frame0,
+	                clip_last,
+	                merged_wall_texture_name(clip_frame0),
+	                merged_wall_texture_name(clip_last),
+	                child,
+	                conn_side,
+	                conn_child,
+	                conn_sidep ? conn_sidep->type : -1,
+	                conn_sidep ? conn_sidep->tmap_num : -1,
+	                conn_sidep ? conn_sidep->tmap_num2 : 0,
+	                conn_wall_num,
+	                conn_type,
+	                conn_state,
+	                conn_flags);
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_tap_probe] kind=side_tex_state source=%s frame=%d request_frame=%d level=%d seg=%d side=%d face=%d side_sig=0x%08x base_tex=%d base_name=%s base_bitmap=%d base_flags=0x%x base_light=%d base_damage=%d base_eclip=%d base_destroyed=%d base_slide=%d/%d base_ec_flags=0x%x base_ec_frame=%d base_ec_time_left=%d base_ec_frames=%d base_ec_wall_tex=%d base_ec_dest=%d base_ec_f0_bm=%d base_ec_cur_bm=%d overlay_tex=%d overlay_name=%s overlay_bitmap=%d overlay_flags=0x%x overlay_light=%d overlay_damage=%d overlay_eclip=%d overlay_destroyed=%d overlay_slide=%d/%d overlay_ec_flags=0x%x overlay_ec_frame=%d overlay_ec_time_left=%d overlay_ec_frames=%d overlay_ec_wall_tex=%d overlay_ec_dest=%d overlay_ec_f0_bm=%d overlay_ec_cur_bm=%d",
+	                source ? source : "",
+	                g_merged_wall_frame_id,
+	                g_merged_wall_snapshot_request_frame,
+	                Current_level_num,
+	                segnum,
+	                sidenum,
+	                ctx->face,
+	                side_sig,
+	                base_state.tex_num,
+	                base_state.name,
+	                base_state.bitmap_index,
+	                base_state.flags,
+	                base_state.lighting,
+	                base_state.damage,
+	                base_state.eclip_num,
+	                base_state.destroyed,
+	                base_state.slide_u,
+	                base_state.slide_v,
+	                base_state.eclip_flags,
+	                base_state.eclip_frame_count,
+	                base_state.eclip_time_left,
+	                base_state.eclip_frames,
+	                base_state.eclip_wall_texture,
+	                base_state.eclip_dest_bm,
+	                base_state.eclip_frame0_bm,
+	                base_state.eclip_current_bm,
+	                overlay_state.tex_num,
+	                overlay_state.name,
+	                overlay_state.bitmap_index,
+	                overlay_state.flags,
+	                overlay_state.lighting,
+	                overlay_state.damage,
+	                overlay_state.eclip_num,
+	                overlay_state.destroyed,
+	                overlay_state.slide_u,
+	                overlay_state.slide_v,
+	                overlay_state.eclip_flags,
+	                overlay_state.eclip_frame_count,
+	                overlay_state.eclip_time_left,
+	                overlay_state.eclip_frames,
+	                overlay_state.eclip_wall_texture,
+	                overlay_state.eclip_dest_bm,
+	                overlay_state.eclip_frame0_bm,
+	                overlay_state.eclip_current_bm);
+}
+
 static void merged_wall_probe_log_layer_bitmap(const char *layer,
                                                const struct merged_wall_tracked_face *track,
                                                int tex_num)
@@ -6110,6 +6785,195 @@ static void merged_wall_probe_log_merged_bitmap(const struct merged_wall_tracked
 	merged_wall_log_texture_gpu_readback("tap_merged", bitmap, 1);
 }
 
+static int merged_wall_probe_draw_face_hit_kind(
+    const struct merged_wall_probe_draw_face *face)
+{
+	if (!face)
+		return MERGED_WALL_PROBE_HIT_NONE;
+	if (face->polygon_hit)
+		return MERGED_WALL_PROBE_HIT_POLYGON;
+	if (face->bbox_hit)
+		return MERGED_WALL_PROBE_HIT_BBOX;
+	if (face->projected_hit)
+		return MERGED_WALL_PROBE_HIT_PROJECTED;
+	return MERGED_WALL_PROBE_HIT_NONE;
+}
+
+static void merged_wall_probe_track_from_draw_face(
+    struct merged_wall_tracked_face *track,
+    const struct merged_wall_probe_draw_face *face)
+{
+	if (!track || !face)
+		return;
+	memset(track, 0, sizeof(*track));
+	track->render_pass = face->render_pass;
+	track->draw_seq = face->draw_seq;
+	track->draw_order = face->draw_order;
+	track->nv = face->nv;
+	track->projected_count = face->projected_count;
+	track->draw_ctx = face->draw_ctx;
+	track->bbox_valid = face->bbox_valid;
+	track->projected_bbox_valid = face->projected_bbox_valid;
+	track->min_sx = face->min_sx;
+	track->max_sx = face->max_sx;
+	track->min_sy = face->min_sy;
+	track->max_sy = face->max_sy;
+	track->bbox_area = face->bbox_area;
+	track->projected_min_sx = face->projected_min_sx;
+	track->projected_max_sx = face->projected_max_sx;
+	track->projected_min_sy = face->projected_min_sy;
+	track->projected_max_sy = face->projected_max_sy;
+	track->projected_bbox_area = face->projected_bbox_area;
+	memcpy(track->pts, face->pts, sizeof(track->pts));
+	memcpy(track->pt_projected, face->pt_projected, sizeof(track->pt_projected));
+	memcpy(track->pt_sx, face->pt_sx, sizeof(track->pt_sx));
+	memcpy(track->pt_sy, face->pt_sy, sizeof(track->pt_sy));
+	memcpy(track->uvl, face->uvl, sizeof(track->uvl));
+	track->orient = face->draw_ctx.valid ? ((face->draw_ctx.tmap2 >> 14) & 3) : 0;
+	track->merged_bitmap = face->draw_ctx.valid && face->draw_ctx.tmap2 != 0 ? face->bitmap : NULL;
+	track->merged_slot = -1;
+	merged_wall_copy_string(track->route, sizeof(track->route), "drawn_face");
+	merged_wall_copy_string(track->merge_impl, sizeof(track->merge_impl),
+	                        face->draw_ctx.valid && face->draw_ctx.tmap2 != 0
+	                            ? "drawn_tmap2_bitmap"
+	                            : "drawn_single_bitmap");
+}
+
+static void merged_wall_probe_log_draw_faces(float canvas_center_x,
+                                             float canvas_center_y,
+                                             int canvas_x, int canvas_y,
+                                             int canvas_w, int canvas_h)
+{
+	struct merged_wall_tracked_face track;
+	const char *level_name = Current_level_name[0] ? Current_level_name : "<none>";
+	int polygon_hits = 0;
+	int bbox_hits = 0;
+	int projected_hits = 0;
+	int nearest = 0;
+	const char *status;
+	int logged;
+	int i;
+
+	for (i = 0; i < merged_wall_probe_draw_face_count; i++) {
+		const struct merged_wall_probe_draw_face *face = &merged_wall_probe_draw_faces[i];
+
+		if (face->polygon_hit)
+			polygon_hits++;
+		else if (face->bbox_hit)
+			bbox_hits++;
+		else if (face->projected_hit)
+			projected_hits++;
+		else
+			nearest++;
+	}
+	logged = merged_wall_probe_draw_face_count < MERGED_WALL_PROBE_DRAW_FACE_LOG_MAX
+	             ? merged_wall_probe_draw_face_count
+	             : MERGED_WALL_PROBE_DRAW_FACE_LOG_MAX;
+	status = merged_wall_probe_draw_face_count <= 0 ? "none"
+	                                                : (polygon_hits || bbox_hits || projected_hits ? "hit" : "nearest");
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_tap_probe] kind=all_face status=%s frame=%d request_frame=%d level=%d name=%s canvas=%d,%d,%d,%d canvas_center=%.1f/%.1f seen=%d retained=%d logged=%d polygon_hits=%d bbox_hits=%d projected_hits=%d nearest=%d",
+	                status,
+	                g_merged_wall_frame_id,
+	                g_merged_wall_snapshot_request_frame,
+	                Current_level_num,
+	                level_name,
+	                canvas_x,
+	                canvas_y,
+	                canvas_w,
+	                canvas_h,
+	                canvas_center_x,
+	                canvas_center_y,
+	                merged_wall_probe_draw_face_seen_count,
+	                merged_wall_probe_draw_face_count,
+	                logged,
+	                polygon_hits,
+	                bbox_hits,
+	                projected_hits,
+	                nearest);
+	for (i = 0; i < logged; i++) {
+		const struct merged_wall_probe_draw_face *face = &merged_wall_probe_draw_faces[i];
+		grs_bitmap *bitmap = face->bitmap;
+		ogl_texture *texture = bitmap ? bitmap->gltexture : NULL;
+		const char *bitmap_name = bitmap ? piggy_game_bitmap_name(bitmap) : NULL;
+		unsigned int hash;
+		int bytes = 0;
+		int idx254 = 0;
+		int idx255 = 0;
+		int overlay_tex_num = face->draw_ctx.valid && face->draw_ctx.tmap2 != 0
+		                          ? merged_wall_overlay_index(face->draw_ctx.tmap2)
+		                          : -1;
+
+		hash = android_merged_wall_forensics_bitmap_hash(bitmap, &bytes,
+		                                                 &idx254, &idx255);
+		debug_log_force(DLOG_TEXTURE,
+		                "[mwall_tap_probe] kind=all_face_candidate rank=%d hit=%s polygon_hit=%d bbox_hit=%d projected_hit=%d dist2=%.1f frame=%d request_frame=%d level=%d name=%s pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x overlay=%d nv=%d projected=%d box=%.1f..%.1f/%.1f..%.1f area=%.1f proj_box=%.1f..%.1f/%.1f..%.1f proj_area=%.1f depth=%d..%d avg=%d bitmap=%s ptr=%p hash=0x%08x bytes=%d idx254=%d idx255=%d bm_handle=%u gl=%u is_png=%d tex_size=%dx%d",
+		                i + 1,
+		                merged_wall_probe_hit_kind_name_local(
+		                    merged_wall_probe_draw_face_hit_kind(face)),
+		                face->polygon_hit,
+		                face->bbox_hit,
+		                face->projected_hit,
+		                face->dist2,
+		                g_merged_wall_frame_id,
+		                g_merged_wall_snapshot_request_frame,
+		                Current_level_num,
+		                level_name,
+		                face->render_pass,
+		                face->draw_seq,
+		                face->draw_order,
+		                face->draw_ctx.valid ? face->draw_ctx.seg : -1,
+		                face->draw_ctx.valid ? face->draw_ctx.side : -1,
+		                face->draw_ctx.valid ? face->draw_ctx.face : -1,
+		                face->draw_ctx.valid ? face->draw_ctx.child : -1,
+		                face->draw_ctx.valid ? face->draw_ctx.side_type : -1,
+		                face->draw_ctx.valid ? face->draw_ctx.wid_flags : 0,
+		                face->draw_ctx.valid ? face->draw_ctx.tmap1 : -1,
+		                face->draw_ctx.valid ? face->draw_ctx.tmap2 : 0,
+		                overlay_tex_num,
+		                face->nv,
+		                face->projected_count,
+		                face->min_sx,
+		                face->max_sx,
+		                face->min_sy,
+		                face->max_sy,
+		                face->bbox_area,
+		                face->projected_min_sx,
+		                face->projected_max_sx,
+		                face->projected_min_sy,
+		                face->projected_max_sy,
+		                face->projected_bbox_area,
+		                (int) face->depth_min,
+		                (int) face->depth_max,
+		                (int) face->depth_avg,
+		                bitmap_name ? bitmap_name : "<none>",
+		                (void *) bitmap,
+		                hash,
+		                bytes,
+		                idx254,
+		                idx255,
+		                bitmap ? bitmap->bm_handle : 0,
+		                texture ? texture->handle : 0,
+		                texture ? texture->is_png : -1,
+		                texture ? texture->w : 0,
+		                texture ? texture->h : 0);
+		if (i == 0) {
+			merged_wall_probe_track_from_draw_face(&track, face);
+			merged_wall_probe_log_side_state("all_face", &track);
+			if (face->draw_ctx.valid)
+				merged_wall_probe_log_layer_bitmap("base_all_face",
+				                                   &track, face->draw_ctx.tmap1);
+			if (overlay_tex_num >= 0)
+				merged_wall_probe_log_layer_bitmap("overlay_all_face",
+				                                   &track, overlay_tex_num);
+			if (bitmap)
+				merged_wall_log_texture_gpu_readback("all_face_draw", bitmap, 1);
+			if (track.merged_bitmap)
+				merged_wall_probe_log_merged_bitmap(&track);
+		}
+	}
+}
+
 struct merged_wall_probe_candidate {
 	int valid;
 	int index;
@@ -6154,6 +7018,9 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 	struct merged_wall_probe_candidate best = { 0 };
 	const char *level_name = Current_level_name[0] ? Current_level_name : "<none>";
 	int i;
+
+	merged_wall_probe_log_draw_faces(canvas_center_x, canvas_center_y,
+	                                 canvas_x, canvas_y, canvas_w, canvas_h);
 
 	for (i = 0; i < merged_wall_tracked_face_count; i++) {
 		const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[i];
@@ -6341,6 +7208,7 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 			                track->route,
 			                track->merge_impl,
 			                track->decision_reason);
+			merged_wall_probe_log_side_state("fallback", track);
 			merged_wall_probe_capture_render_sample(track, screen_w, screen_h);
 			if (track->draw_ctx.valid)
 				merged_wall_probe_log_layer_bitmap("base_fallback", track, track->draw_ctx.tmap1);
@@ -6489,6 +7357,7 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 		                sample_path,
 		                flip_axis,
 		                flip_screen_axis);
+		merged_wall_probe_log_side_state("crosshair", track);
 		debug_log_force(DLOG_TEXTURE,
 		                "[mwall_tap_probe] kind=derived frame=%d request_frame=%d seg=%d side=%d face=%d u_min=%.6f u_max=%.6f v_min=%.6f v_max=%.6f u_span=%.6f v_span=%.6f u_shift_hint=%.6f v_shift_hint=%.6f u_screen_axis=%s v_screen_axis=%s cached_anchor_uv=%.6f/%.6f legacy_anchor_uv=%.6f/%.6f active_anchor_px=%.3f/%.3f route_agree=%d",
 		                g_merged_wall_frame_id,
