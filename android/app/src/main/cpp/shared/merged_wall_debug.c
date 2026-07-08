@@ -7,12 +7,17 @@
 
 #include "3d.h"
 #include "effects.h"
+#include "fvi.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "gamepal.h"
+#endif
 #include "gameseg.h"
 #include "gameseq.h"
 #include "gr.h"
 #include "inferno.h"
 #include "object.h"
 #include "ogl_init.h"
+#include "palette.h"
 #include "piggy.h"
 #include "rle.h"
 #include "segment.h"
@@ -26,6 +31,8 @@
 #include "gles3_shim.h"
 
 extern GLuint ogl_prog_tex2;
+extern unsigned char *ogl_pal;
+extern vms_vector Viewer_eye;
 void ogl_prog_set_tex2_current_matrix(const GLfloat *matrix, int super);
 void ogl_prog_set_tex2_debug_mode(int mode);
 void ogl_prog_set_tex2_alpha_cutoff(GLfloat alpha_cutoff);
@@ -3426,6 +3433,70 @@ static void merged_wall_index_to_rgba(unsigned char idx, int bm_flags,
 	}
 }
 
+static unsigned int merged_wall_palette_hash(const unsigned char *pal)
+{
+	if (!pal)
+		return 0;
+	return merged_wall_fnv1a_append(MERGED_WALL_FNV1A_OFFSET, pal, 256 * 3);
+}
+
+static unsigned int merged_wall_pack_rgba(const unsigned char rgba[4])
+{
+	if (!rgba)
+		return 0;
+	return ((unsigned int) rgba[0] << 24) |
+	       ((unsigned int) rgba[1] << 16) |
+	       ((unsigned int) rgba[2] << 8) |
+	       (unsigned int) rgba[3];
+}
+
+static unsigned int merged_wall_palette_index_rgba(const unsigned char *pal,
+                                                   int idx, int bm_flags)
+{
+	unsigned char rgba[4] = { 0, 0, 0, 0 };
+
+	if (idx < 0 || idx > 255)
+		return 0;
+	if (idx == 254 && (bm_flags & BM_FLAG_SUPER_TRANSPARENT)) {
+		rgba[0] = 255;
+		rgba[1] = 255;
+		rgba[2] = 255;
+		rgba[3] = 0;
+	} else if (idx == TRANSPARENCY_COLOR && (bm_flags & BM_FLAG_TRANSPARENT)) {
+		rgba[0] = 0;
+		rgba[1] = 0;
+		rgba[2] = 0;
+		rgba[3] = 0;
+	} else if (pal) {
+		rgba[0] = (unsigned char) (pal[idx * 3] * 4);
+		rgba[1] = (unsigned char) (pal[idx * 3 + 1] * 4);
+		rgba[2] = (unsigned char) (pal[idx * 3 + 2] * 4);
+		rgba[3] = 255;
+	}
+	return merged_wall_pack_rgba(rgba);
+}
+
+static int merged_wall_bitmap_sample_index(grs_bitmap *bitmap, int sample)
+{
+	grs_bitmap *src = merged_wall_get_source_bitmap(bitmap);
+	int row_stride, x, y;
+
+	if (!src || !src->bm_data || src->bm_w <= 0 || src->bm_h <= 0)
+		return -1;
+	row_stride = src->bm_rowsize > 0 ? src->bm_rowsize : src->bm_w;
+	if (sample == 0) {
+		x = 0;
+		y = 0;
+	} else if (sample == 1) {
+		x = src->bm_w / 2;
+		y = src->bm_h / 2;
+	} else {
+		x = src->bm_w - 1;
+		y = src->bm_h - 1;
+	}
+	return src->bm_data[y * row_stride + x];
+}
+
 static void merged_wall_log_texture_gpu_readback(const char *tag, grs_bitmap *bm,
                                                  int force)
 {
@@ -6606,6 +6677,139 @@ static void merged_wall_probe_log_side_state(const char *source,
 	                overlay_state.eclip_current_bm);
 }
 
+static const char *merged_wall_palette_pointer_name(const unsigned char *pal)
+{
+	if (!pal)
+		return "null";
+	if (pal == gr_palette)
+		return "gr_palette";
+	if (pal == gr_current_pal)
+		return "gr_current_pal";
+	return "other";
+}
+
+static void merged_wall_probe_log_palette_bitmap(const char *source,
+                                                 const struct merged_wall_tracked_face *track,
+                                                 const char *layer,
+                                                 int tex_num,
+                                                 grs_bitmap *bitmap)
+{
+	const struct android_draw_face_context *ctx = track ? &track->draw_ctx : NULL;
+	grs_bitmap *src = merged_wall_get_source_bitmap(bitmap);
+	const char *name = piggy_game_bitmap_name(bitmap);
+	int real_flags = bitmap ? piggy_bitmap_get_flags(bitmap) : 0;
+	int src_bytes = 0, idx254 = 0, idx255 = 0;
+	int idx0 = merged_wall_bitmap_sample_index(bitmap, 0);
+	int idxc = merged_wall_bitmap_sample_index(bitmap, 1);
+	int idxlast = merged_wall_bitmap_sample_index(bitmap, 2);
+	unsigned int src_hash = android_merged_wall_forensics_bitmap_hash(bitmap,
+	                                                                  &src_bytes,
+	                                                                  &idx254,
+	                                                                  &idx255);
+
+	if (!bitmap)
+		return;
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_tap_probe] kind=palette_bitmap source=%s frame=%d request_frame=%d level=%d seg=%d side=%d face=%d layer=%s tex=%d name=%s real_flags=0x%x bm_flags=0x%x w=%d h=%d src_hash=0x%08x src_bytes=%d src_254=%d src_255=%d idx0=%d idxc=%d idxlast=%d idx0_rgba=0x%08x/0x%08x/0x%08x idxc_rgba=0x%08x/0x%08x/0x%08x idxlast_rgba=0x%08x/0x%08x/0x%08x idx254_rgba=0x%08x/0x%08x/0x%08x idx255_rgba=0x%08x/0x%08x/0x%08x",
+	                source ? source : "",
+	                g_merged_wall_frame_id,
+	                g_merged_wall_snapshot_request_frame,
+	                Current_level_num,
+	                ctx && ctx->valid ? ctx->seg : -1,
+	                ctx && ctx->valid ? ctx->side : -1,
+	                ctx && ctx->valid ? ctx->face : -1,
+	                layer ? layer : "",
+	                tex_num,
+	                name ? name : "<none>",
+	                real_flags,
+	                bitmap ? bitmap->bm_flags : 0,
+	                src ? src->bm_w : 0,
+	                src ? src->bm_h : 0,
+	                src_hash,
+	                src_bytes,
+	                idx254,
+	                idx255,
+	                idx0,
+	                idxc,
+	                idxlast,
+	                merged_wall_palette_index_rgba(gr_palette, idx0, real_flags),
+	                merged_wall_palette_index_rgba(gr_current_pal, idx0, real_flags),
+	                merged_wall_palette_index_rgba(ogl_pal, idx0, real_flags),
+	                merged_wall_palette_index_rgba(gr_palette, idxc, real_flags),
+	                merged_wall_palette_index_rgba(gr_current_pal, idxc, real_flags),
+	                merged_wall_palette_index_rgba(ogl_pal, idxc, real_flags),
+	                merged_wall_palette_index_rgba(gr_palette, idxlast, real_flags),
+	                merged_wall_palette_index_rgba(gr_current_pal, idxlast, real_flags),
+	                merged_wall_palette_index_rgba(ogl_pal, idxlast, real_flags),
+	                merged_wall_palette_index_rgba(gr_palette, 254, real_flags),
+	                merged_wall_palette_index_rgba(gr_current_pal, 254, real_flags),
+	                merged_wall_palette_index_rgba(ogl_pal, 254, real_flags),
+	                merged_wall_palette_index_rgba(gr_palette, 255, real_flags),
+	                merged_wall_palette_index_rgba(gr_current_pal, 255, real_flags),
+	                merged_wall_palette_index_rgba(ogl_pal, 255, real_flags));
+}
+
+static void merged_wall_probe_log_palette_state(const char *source,
+                                                const struct merged_wall_tracked_face *track)
+{
+	const struct android_draw_face_context *ctx;
+	int overlay_tex_num = -1;
+#ifdef DXX_BUILD_DESCENT_II
+	const char *level_palette = Current_level_palette[0] ? Current_level_palette : "<none>";
+	const char *last_palette = last_palette_loaded[0] ? last_palette_loaded : "<none>";
+	const char *last_pig_palette = last_palette_loaded_pig[0] ? last_palette_loaded_pig : "<none>";
+	const char *pigfile = piggy_current_pigfile();
+#else
+	const char *level_palette = "<d1>";
+	const char *last_palette = "<d1>";
+	const char *last_pig_palette = "<d1>";
+	const char *pigfile = "<d1>";
+#endif
+
+	if (!track || !track->draw_ctx.valid)
+		return;
+	ctx = &track->draw_ctx;
+	if (ctx->tmap2 != 0)
+		overlay_tex_num = merged_wall_overlay_index(ctx->tmap2);
+
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_tap_probe] kind=palette_state source=%s frame=%d request_frame=%d level=%d seg=%d side=%d face=%d game_mode=%d gr_ptr=%p current_ptr=%p ogl_ptr=%p ogl_source=%s gr_hash=0x%08x current_hash=0x%08x ogl_hash=0x%08x gr_current_same=%d ogl_gr_same=%d ogl_current_same=%d gamma=%d level_palette=%s last_palette=%s last_pig_palette=%s pig=%s",
+	                source ? source : "",
+	                g_merged_wall_frame_id,
+	                g_merged_wall_snapshot_request_frame,
+	                Current_level_num,
+	                ctx->seg,
+	                ctx->side,
+	                ctx->face,
+	                Game_mode,
+	                (void *) gr_palette,
+	                (void *) gr_current_pal,
+	                (void *) ogl_pal,
+	                merged_wall_palette_pointer_name(ogl_pal),
+	                merged_wall_palette_hash(gr_palette),
+	                merged_wall_palette_hash(gr_current_pal),
+	                merged_wall_palette_hash(ogl_pal),
+	                memcmp(gr_palette, gr_current_pal, 256 * 3) == 0,
+	                ogl_pal && memcmp(ogl_pal, gr_palette, 256 * 3) == 0,
+	                ogl_pal && memcmp(ogl_pal, gr_current_pal, 256 * 3) == 0,
+	                (int) gr_palette_gamma,
+	                level_palette,
+	                last_palette,
+	                last_pig_palette,
+	                pigfile ? pigfile : "<none>");
+	if (merged_wall_texture_valid(ctx->tmap1))
+		merged_wall_probe_log_palette_bitmap(source, track, "base",
+		                                     ctx->tmap1,
+		                                     &GameBitmaps[Textures[ctx->tmap1].index]);
+	if (merged_wall_texture_valid(overlay_tex_num))
+		merged_wall_probe_log_palette_bitmap(source, track, "overlay",
+		                                     overlay_tex_num,
+		                                     &GameBitmaps[Textures[overlay_tex_num].index]);
+	if (track->merged_bitmap)
+		merged_wall_probe_log_palette_bitmap(source, track, "merged",
+		                                     -1, track->merged_bitmap);
+}
+
 static void merged_wall_probe_log_layer_bitmap(const char *layer,
                                                const struct merged_wall_tracked_face *track,
                                                int tex_num)
@@ -6839,6 +7043,259 @@ static void merged_wall_probe_track_from_draw_face(
 	                            : "drawn_single_bitmap");
 }
 
+static void merged_wall_probe_track_from_context(
+    struct merged_wall_tracked_face *track,
+    const struct android_draw_face_context *ctx,
+    const char *route,
+    const char *merge_impl)
+{
+	if (!track || !ctx)
+		return;
+	memset(track, 0, sizeof(*track));
+	track->draw_ctx = *ctx;
+	track->nv = ctx->nv;
+	track->orient = ctx->valid ? ((ctx->tmap2 >> 14) & 3) : 0;
+	track->merged_slot = -1;
+	merged_wall_copy_string(track->route, sizeof(track->route), route ? route : "");
+	merged_wall_copy_string(track->merge_impl, sizeof(track->merge_impl),
+	                        merge_impl ? merge_impl : "");
+}
+
+static void merged_wall_probe_side_center(int segnum, int sidenum,
+                                          vms_vector *center)
+{
+	segment *segp;
+	int i;
+
+	if (!center)
+		return;
+	vm_vec_zero(center);
+	if (segnum < 0 || segnum > Highest_segment_index ||
+	    sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT)
+		return;
+	segp = &Segments[segnum];
+	for (i = 0; i < 4; i++) {
+		const vms_vector *v = &Vertices[segp->verts[(int) Side_to_verts[sidenum][i]]];
+
+		center->x += v->x / 4;
+		center->y += v->y / 4;
+		center->z += v->z / 4;
+	}
+}
+
+static int merged_wall_probe_choose_segment_side(int segnum,
+                                                 const vms_vector *origin,
+                                                 const vms_vector *forward,
+                                                 fix *best_dot_out)
+{
+	segment *segp;
+	int best_side = -1;
+	int best_solid = 0;
+	fix best_dot = 0;
+	int side;
+
+	if (best_dot_out)
+		*best_dot_out = 0;
+	if (segnum < 0 || segnum > Highest_segment_index || !origin || !forward)
+		return -1;
+	segp = &Segments[segnum];
+	for (side = 0; side < MAX_SIDES_PER_SEGMENT; side++) {
+		vms_vector center;
+		vms_vector delta;
+		int wid = WALL_IS_DOORWAY(segp, side);
+		int solid = !(wid & WID_FLY_FLAG);
+		fix dot;
+
+		merged_wall_probe_side_center(segnum, side, &center);
+		vm_vec_sub(&delta, &center, origin);
+		dot = vm_vec_dot(&delta, forward);
+		if (best_side < 0 || (solid && !best_solid) ||
+		    (solid == best_solid && dot > best_dot)) {
+			best_side = side;
+			best_solid = solid;
+			best_dot = dot;
+		}
+	}
+	if (best_dot_out)
+		*best_dot_out = best_dot;
+	return best_side;
+}
+
+static int merged_wall_probe_log_geometry_ray(float canvas_center_x,
+                                              float canvas_center_y,
+                                              struct merged_wall_tracked_face *out_track)
+{
+	struct merged_wall_tracked_face track;
+	struct android_draw_face_context ctx;
+	vms_vector origin, end, hit_point, uv_point;
+	fvi_query fq;
+	fvi_info hit;
+	segment *segp = NULL;
+	struct side *sidep = NULL;
+	fix u = 0, v = 0, l = 0;
+	fix forced_dot = 0;
+	int viewer_objnum = -1;
+	int startseg = -1;
+	int eye_startseg = -1;
+	int fate = HIT_NONE;
+	int segnum = -1;
+	int sidenum = -1;
+	int forced = 0;
+	const char *status = "no_hit";
+	const char *route = "geometry_ray";
+	int overlay_tex_num = -1;
+
+	memset(&track, 0, sizeof(track));
+	if (out_track)
+		memset(out_track, 0, sizeof(*out_track));
+	if (!Viewer) {
+		debug_log_force(DLOG_TEXTURE,
+		                "[mwall_tap_probe] kind=geometry_face status=no_viewer frame=%d request_frame=%d canvas_center=%.1f/%.1f",
+		                g_merged_wall_frame_id,
+		                g_merged_wall_snapshot_request_frame,
+		                canvas_center_x,
+		                canvas_center_y);
+		return 0;
+	}
+
+	origin = Viewer_eye;
+	eye_startseg = find_point_seg(&origin, Viewer->segnum);
+	if (eye_startseg >= 0)
+		startseg = eye_startseg;
+	else {
+		origin = Viewer->pos;
+		startseg = find_point_seg(&origin, Viewer->segnum);
+	}
+	vm_vec_scale_add(&end, &origin, &Viewer->orient.fvec, i2f(5000));
+	memset(&fq, 0, sizeof(fq));
+	memset(&hit, 0, sizeof(hit));
+	viewer_objnum = (int) (Viewer - Objects);
+	fq.p0 = &origin;
+	fq.p1 = &end;
+	fq.startseg = startseg >= 0 ? startseg : Viewer->segnum;
+	fq.rad = 0;
+	fq.thisobjnum = (short) viewer_objnum;
+	fq.ignore_obj_list = NULL;
+	fq.flags = FQ_GET_SEGLIST;
+	fate = find_vector_intersection(&fq, &hit);
+
+	if (fate == HIT_WALL) {
+		segnum = hit.hit_side_seg >= 0 ? hit.hit_side_seg : hit.hit_seg;
+		sidenum = hit.hit_side;
+		hit_point = hit.hit_pnt;
+		status = "hit";
+	} else {
+		segnum = hit.n_segs > 0 ? hit.seglist[hit.n_segs - 1] : fq.startseg;
+		sidenum = merged_wall_probe_choose_segment_side(segnum, &origin,
+		                                                &Viewer->orient.fvec,
+		                                                &forced_dot);
+		merged_wall_probe_side_center(segnum, sidenum, &hit_point);
+		forced = sidenum >= 0;
+		status = forced ? "forced_lastseg" : (fate == HIT_BAD_P0 ? "bad_startseg" : "no_wall");
+		route = forced ? "geometry_forced" : "geometry_ray";
+	}
+
+	if (segnum < 0 || segnum > Highest_segment_index ||
+	    sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT) {
+		debug_log_force(DLOG_TEXTURE,
+		                "[mwall_tap_probe] kind=geometry_face status=%s frame=%d request_frame=%d canvas_center=%.1f/%.1f fate=%d viewer_obj=%d viewer_seg=%d eye_startseg=%d startseg=%d n_segs=%d origin=%d/%d/%d end=%d/%d/%d fvec=%d/%d/%d forced_dot=%d",
+		                status,
+		                g_merged_wall_frame_id,
+		                g_merged_wall_snapshot_request_frame,
+		                canvas_center_x,
+		                canvas_center_y,
+		                fate,
+		                viewer_objnum,
+		                Viewer->segnum,
+		                eye_startseg,
+		                fq.startseg,
+		                hit.n_segs,
+		                (int) origin.x,
+		                (int) origin.y,
+		                (int) origin.z,
+		                (int) end.x,
+		                (int) end.y,
+		                (int) end.z,
+		                (int) Viewer->orient.fvec.x,
+		                (int) Viewer->orient.fvec.y,
+		                (int) Viewer->orient.fvec.z,
+		                (int) forced_dot);
+		return 0;
+	}
+
+	segp = &Segments[segnum];
+	sidep = &segp->sides[sidenum];
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.valid = 1;
+	ctx.seg = segnum;
+	ctx.side = sidenum;
+	ctx.face = 0;
+	ctx.child = segp->children[sidenum];
+	ctx.side_type = sidep->type;
+	ctx.nv = 4;
+	ctx.wid_flags = WALL_IS_DOORWAY(segp, sidenum);
+	ctx.tmap1 = sidep->tmap_num;
+	ctx.tmap2 = sidep->tmap_num2;
+	merged_wall_probe_track_from_context(&track, &ctx, route,
+	                                     forced ? "forced_segment_side" : "fvi_wall");
+	if (ctx.tmap2 != 0)
+		overlay_tex_num = merged_wall_overlay_index(ctx.tmap2);
+
+	uv_point = hit_point;
+	find_hitpoint_uv(&u, &v, &l, &uv_point, segp, sidenum, 0);
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_tap_probe] kind=geometry_face status=%s frame=%d request_frame=%d level=%d canvas_center=%.1f/%.1f fate=%d viewer_obj=%d viewer_seg=%d eye_startseg=%d startseg=%d n_segs=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x overlay=%d forced=%d forced_dot=%d origin=%d/%d/%d end=%d/%d/%d fvec=%d/%d/%d hit=%d/%d/%d u_fix=%d v_fix=%d l_fix=%d u=%.6f v=%.6f",
+	                status,
+	                g_merged_wall_frame_id,
+	                g_merged_wall_snapshot_request_frame,
+	                Current_level_num,
+	                canvas_center_x,
+	                canvas_center_y,
+	                fate,
+	                viewer_objnum,
+	                Viewer->segnum,
+	                eye_startseg,
+	                fq.startseg,
+	                hit.n_segs,
+	                ctx.seg,
+	                ctx.side,
+	                ctx.face,
+	                ctx.child,
+	                ctx.side_type,
+	                ctx.wid_flags,
+	                ctx.tmap1,
+	                ctx.tmap2,
+	                overlay_tex_num,
+	                forced,
+	                (int) forced_dot,
+	                (int) origin.x,
+	                (int) origin.y,
+	                (int) origin.z,
+	                (int) end.x,
+	                (int) end.y,
+	                (int) end.z,
+	                (int) Viewer->orient.fvec.x,
+	                (int) Viewer->orient.fvec.y,
+	                (int) Viewer->orient.fvec.z,
+	                (int) hit_point.x,
+	                (int) hit_point.y,
+	                (int) hit_point.z,
+	                (int) u,
+	                (int) v,
+	                (int) l,
+	                f2fl(u),
+	                f2fl(v));
+	merged_wall_probe_log_side_state("geometry", &track);
+	merged_wall_probe_log_palette_state("geometry", &track);
+	if (merged_wall_texture_valid(ctx.tmap1))
+		merged_wall_probe_log_layer_bitmap("base_geometry", &track, ctx.tmap1);
+	if (merged_wall_texture_valid(overlay_tex_num))
+		merged_wall_probe_log_layer_bitmap("overlay_geometry", &track, overlay_tex_num);
+	if (out_track)
+		*out_track = track;
+	return 1;
+}
+
 static void merged_wall_probe_log_draw_faces(float canvas_center_x,
                                              float canvas_center_y,
                                              int canvas_x, int canvas_y,
@@ -6960,6 +7417,7 @@ static void merged_wall_probe_log_draw_faces(float canvas_center_x,
 		if (i == 0) {
 			merged_wall_probe_track_from_draw_face(&track, face);
 			merged_wall_probe_log_side_state("all_face", &track);
+			merged_wall_probe_log_palette_state("all_face", &track);
 			if (face->draw_ctx.valid)
 				merged_wall_probe_log_layer_bitmap("base_all_face",
 				                                   &track, face->draw_ctx.tmap1);
@@ -7016,11 +7474,16 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
                                       const int *selected, int selected_count)
 {
 	struct merged_wall_probe_candidate best = { 0 };
+	struct merged_wall_tracked_face geometry_track;
 	const char *level_name = Current_level_name[0] ? Current_level_name : "<none>";
+	int geometry_hit;
 	int i;
 
 	merged_wall_probe_log_draw_faces(canvas_center_x, canvas_center_y,
 	                                 canvas_x, canvas_y, canvas_w, canvas_h);
+	geometry_hit = merged_wall_probe_log_geometry_ray(canvas_center_x,
+	                                                  canvas_center_y,
+	                                                  &geometry_track);
 
 	for (i = 0; i < merged_wall_tracked_face_count; i++) {
 		const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[i];
@@ -7077,6 +7540,7 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 		float fallback_min_sy = 0.0f, fallback_max_sy = 0.0f;
 		float fallback_area = 0.0f;
 		float fallback_dist2 = 0.0f;
+		const char *face_status = geometry_hit ? "geometry_hit" : "no_crosshair_face";
 
 		for (i = 0; i < selected_count; i++) {
 			if (selected[i] >= 0 && selected[i] < merged_wall_tracked_face_count) {
@@ -7122,17 +7586,39 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 		                                       &fallback_area, &fallback_box_kind))
 			fallback_box_kind = "none";
 		merged_wall_copy_string(g_merged_wall_probe_result.status,
-		                        sizeof(g_merged_wall_probe_result.status), "no_crosshair_face");
-		merged_wall_copy_string(g_merged_wall_probe_result.route,
-		                        sizeof(g_merged_wall_probe_result.route), "");
-		merged_wall_copy_string(g_merged_wall_probe_result.merge_impl,
-		                        sizeof(g_merged_wall_probe_result.merge_impl), "");
+		                        sizeof(g_merged_wall_probe_result.status), face_status);
+		if (geometry_hit) {
+			g_merged_wall_probe_result.hit_kind = MERGED_WALL_PROBE_HIT_POLYGON;
+			g_merged_wall_probe_result.center_polygon_hit = 1;
+			g_merged_wall_probe_result.center_bbox_hit = 1;
+			g_merged_wall_probe_result.seg = geometry_track.draw_ctx.seg;
+			g_merged_wall_probe_result.side = geometry_track.draw_ctx.side;
+			g_merged_wall_probe_result.face = geometry_track.draw_ctx.face;
+			g_merged_wall_probe_result.child = geometry_track.draw_ctx.child;
+			g_merged_wall_probe_result.wid_flags = geometry_track.draw_ctx.wid_flags;
+			g_merged_wall_probe_result.tmap1 = geometry_track.draw_ctx.tmap1;
+			g_merged_wall_probe_result.tmap2 = geometry_track.draw_ctx.tmap2;
+			g_merged_wall_probe_result.orient = geometry_track.orient;
+			merged_wall_copy_string(g_merged_wall_probe_result.route,
+			                        sizeof(g_merged_wall_probe_result.route),
+			                        geometry_track.route);
+			merged_wall_copy_string(g_merged_wall_probe_result.merge_impl,
+			                        sizeof(g_merged_wall_probe_result.merge_impl),
+			                        geometry_track.merge_impl);
+		} else {
+			merged_wall_copy_string(g_merged_wall_probe_result.route,
+			                        sizeof(g_merged_wall_probe_result.route), "");
+			merged_wall_copy_string(g_merged_wall_probe_result.merge_impl,
+			                        sizeof(g_merged_wall_probe_result.merge_impl), "");
+		}
 		merged_wall_copy_string(g_merged_wall_probe_result.ovl_flip_axis,
 		                        sizeof(g_merged_wall_probe_result.ovl_flip_axis), "none");
 		merged_wall_copy_string(g_merged_wall_probe_result.flip_screen_axis,
 		                        sizeof(g_merged_wall_probe_result.flip_screen_axis), "none");
 		debug_log_force(DLOG_TEXTURE,
-		                "[mwall_tap_probe] kind=face status=no_crosshair_face frame=%d request_frame=%d level=%d name=%s canvas=%d,%d,%d,%d canvas_center=%.1f/%.1f tracked=%d selected=%d",
+		                "[mwall_tap_probe] kind=face status=%s render_center_hit=0 geometry_hit=%d frame=%d request_frame=%d level=%d name=%s canvas=%d,%d,%d,%d canvas_center=%.1f/%.1f tracked=%d selected=%d geometry_seg=%d geometry_side=%d geometry_face=%d geometry_tmap1=%d geometry_tmap2=0x%x",
+		                face_status,
+		                geometry_hit,
 		                g_merged_wall_frame_id,
 		                g_merged_wall_snapshot_request_frame,
 		                Current_level_num,
@@ -7144,7 +7630,12 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 		                canvas_center_x,
 		                canvas_center_y,
 		                merged_wall_tracked_face_count,
-		                selected_count);
+		                selected_count,
+		                geometry_hit ? geometry_track.draw_ctx.seg : -1,
+		                geometry_hit ? geometry_track.draw_ctx.side : -1,
+		                geometry_hit ? geometry_track.draw_ctx.face : -1,
+		                geometry_hit ? geometry_track.draw_ctx.tmap1 : -1,
+		                geometry_hit ? geometry_track.draw_ctx.tmap2 : 0);
 		if (fallback_index >= 0 && fallback_index < merged_wall_tracked_face_count) {
 			const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[fallback_index];
 			int overlay_tex_num = track->draw_ctx.valid && track->draw_ctx.tmap2 != 0
@@ -7161,23 +7652,26 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 			                                                    fallback_min_sx, fallback_max_sx,
 			                                                    fallback_min_sy, fallback_max_sy)
 			                     : 0.0f;
-			g_merged_wall_probe_result.hit_kind = MERGED_WALL_PROBE_HIT_NONE;
-			g_merged_wall_probe_result.center_polygon_hit = 0;
-			g_merged_wall_probe_result.center_bbox_hit = center_hit;
-			g_merged_wall_probe_result.seg = track->draw_ctx.valid ? track->draw_ctx.seg : -1;
-			g_merged_wall_probe_result.side = track->draw_ctx.valid ? track->draw_ctx.side : -1;
-			g_merged_wall_probe_result.face = track->draw_ctx.valid ? track->draw_ctx.face : -1;
-			g_merged_wall_probe_result.child = track->draw_ctx.valid ? track->draw_ctx.child : -1;
-			g_merged_wall_probe_result.wid_flags = track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0;
-			g_merged_wall_probe_result.tmap1 = track->draw_ctx.valid ? track->draw_ctx.tmap1 : -1;
-			g_merged_wall_probe_result.tmap2 = track->draw_ctx.valid ? track->draw_ctx.tmap2 : 0;
-			g_merged_wall_probe_result.orient = track->orient;
-			merged_wall_copy_string(g_merged_wall_probe_result.route,
-			                        sizeof(g_merged_wall_probe_result.route), track->route);
-			merged_wall_copy_string(g_merged_wall_probe_result.merge_impl,
-			                        sizeof(g_merged_wall_probe_result.merge_impl), track->merge_impl);
+			if (!geometry_hit) {
+				g_merged_wall_probe_result.hit_kind = MERGED_WALL_PROBE_HIT_NONE;
+				g_merged_wall_probe_result.center_polygon_hit = 0;
+				g_merged_wall_probe_result.center_bbox_hit = center_hit;
+				g_merged_wall_probe_result.seg = track->draw_ctx.valid ? track->draw_ctx.seg : -1;
+				g_merged_wall_probe_result.side = track->draw_ctx.valid ? track->draw_ctx.side : -1;
+				g_merged_wall_probe_result.face = track->draw_ctx.valid ? track->draw_ctx.face : -1;
+				g_merged_wall_probe_result.child = track->draw_ctx.valid ? track->draw_ctx.child : -1;
+				g_merged_wall_probe_result.wid_flags = track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0;
+				g_merged_wall_probe_result.tmap1 = track->draw_ctx.valid ? track->draw_ctx.tmap1 : -1;
+				g_merged_wall_probe_result.tmap2 = track->draw_ctx.valid ? track->draw_ctx.tmap2 : 0;
+				g_merged_wall_probe_result.orient = track->orient;
+				merged_wall_copy_string(g_merged_wall_probe_result.route,
+				                        sizeof(g_merged_wall_probe_result.route), track->route);
+				merged_wall_copy_string(g_merged_wall_probe_result.merge_impl,
+				                        sizeof(g_merged_wall_probe_result.merge_impl), track->merge_impl);
+			}
 			debug_log_force(DLOG_TEXTURE,
-			                "[mwall_tap_probe] kind=face_candidate status=no_crosshair_face source=%s rank=%d center_hit=%d dist2=%.1f frame=%d request_frame=%d level=%d name=%s box_kind=%s box=%.1f..%.1f/%.1f..%.1f area=%.1f pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x overlay=%d orient=%d route=%s merge_impl=%s reason=%s",
+			                "[mwall_tap_probe] kind=face_candidate status=%s source=%s rank=%d center_hit=%d dist2=%.1f frame=%d request_frame=%d level=%d name=%s box_kind=%s box=%.1f..%.1f/%.1f..%.1f area=%.1f pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x overlay=%d orient=%d route=%s merge_impl=%s reason=%s",
+			                face_status,
 			                fallback_source,
 			                rank >= 0 ? rank + 1 : 0,
 			                center_hit,
@@ -7209,6 +7703,7 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 			                track->merge_impl,
 			                track->decision_reason);
 			merged_wall_probe_log_side_state("fallback", track);
+			merged_wall_probe_log_palette_state("fallback", track);
 			merged_wall_probe_capture_render_sample(track, screen_w, screen_h);
 			if (track->draw_ctx.valid)
 				merged_wall_probe_log_layer_bitmap("base_fallback", track, track->draw_ctx.tmap1);
@@ -7358,6 +7853,7 @@ static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center
 		                flip_axis,
 		                flip_screen_axis);
 		merged_wall_probe_log_side_state("crosshair", track);
+		merged_wall_probe_log_palette_state("crosshair", track);
 		debug_log_force(DLOG_TEXTURE,
 		                "[mwall_tap_probe] kind=derived frame=%d request_frame=%d seg=%d side=%d face=%d u_min=%.6f u_max=%.6f v_min=%.6f v_max=%.6f u_span=%.6f v_span=%.6f u_shift_hint=%.6f v_shift_hint=%.6f u_screen_axis=%s v_screen_axis=%s cached_anchor_uv=%.6f/%.6f legacy_anchor_uv=%.6f/%.6f active_anchor_px=%.3f/%.3f route_agree=%d",
 		                g_merged_wall_frame_id,
