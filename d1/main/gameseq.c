@@ -780,6 +780,9 @@ void LoadLevel(int level_num,int page_in_textures)
 	songs_play_level_song( Current_level_num, 0 );
 
 	gr_palette_load(gr_palette);		//actually load the palette
+#if defined(OGL) && defined(__ANDROID__)
+	ogl_invalidate_game_palette_textures();
+#endif
 
 	if ( page_in_textures ) {
 		piggy_load_level_data();

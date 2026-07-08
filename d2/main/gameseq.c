@@ -1854,6 +1854,9 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 
 	load_palette(Current_level_palette,0,1);
 	gr_palette_load(gr_palette);
+#if defined(OGL) && defined(__ANDROID__)
+	ogl_invalidate_game_palette_textures();
+#endif
 
 #ifdef NETWORK
 	if ((Game_mode & GM_MULTI_COOP) && Network_rejoined)
