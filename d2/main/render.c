@@ -53,9 +53,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "input_demo_replay.h"
 #include "input_demo_debug_logging.h"
-#ifdef OGL
-#include "ogl_init.h"
-#endif
 #include "replay_debug_overlay.h"
 
 /* android port: robot label overlay -- global array definition */
@@ -66,43 +63,6 @@ int g_replay_robot_labels_enabled = 0;
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
 #include "merged_wall_debug.h"
-#include "android_log.h"
-
-void ogl_bindbmtex(grs_bitmap *bm);
-
-static int render_android_can_auto_oldmerge_tmap2(int tmap1, int tmap2,
-	grs_bitmap **out_bmbot, grs_bitmap **out_bmovl)
-{
-	int overlay = tmap2 & 0x3FFF;
-	grs_bitmap *bmbot;
-	grs_bitmap *bmovl;
-
-	if (!gl_initialized || !tmap2 || tmap1 >= NumTextures || overlay >= NumTextures)
-		return 0;
-
-	PIGGY_PAGE_IN(Textures[tmap1]);
-	PIGGY_PAGE_IN(Textures[overlay]);
-	bmbot = &GameBitmaps[Textures[tmap1].index];
-	bmovl = &GameBitmaps[Textures[overlay].index];
-	ogl_bindbmtex(bmbot);
-	ogl_bindbmtex(bmovl);
-
-	if (out_bmbot)
-		*out_bmbot = bmbot;
-	if (out_bmovl)
-		*out_bmovl = bmovl;
-
-	if (!bmbot->gltexture || !bmovl->gltexture)
-		return 0;
-
-	return !bmbot->gltexture->is_png
-		&& !bmovl->gltexture->is_png
-		&& bmbot->gltexture->w == 64
-		&& bmbot->gltexture->h == 64
-		&& bmovl->gltexture->w == 64
-		&& bmovl->gltexture->h == 64;
-}
-
 #endif
 #include "args.h"
 
@@ -402,50 +362,6 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 
 #ifdef OGL
 	int use_alt_texmerge = GameArg.DbgAltTexMerge;
-#ifdef ANDROID
-	const char *android_oldmerge_impl = NULL;
-	const char *android_oldmerge_reason = NULL;
-	int android_is_logging_target = 0;
-	int android_can_auto_oldmerge = 0;
-
-	if (tmap2 != 0)
-		android_is_logging_target = android_merged_wall_is_logging_target_tmap2(tmap2);
-	if (use_alt_texmerge && android_is_logging_target)
-		android_can_auto_oldmerge = render_android_can_auto_oldmerge_tmap2(tmap1, tmap2, NULL, NULL);
-	if (tmap2 != 0 && (int)g_merged_wall_experiment_mode == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE)
-	{
-		use_alt_texmerge = 0;
-		android_oldmerge_impl = "old_texmerge";
-		android_oldmerge_reason = "force_legacy_texmerge";
-	}
-	else if (use_alt_texmerge
-		&& !g_merged_wall_force_two_pass
-		&& android_is_logging_target
-		&& Segments[segnum].sides[sidenum].type == SIDE_IS_TRI_13
-		&& g_android_draw_face_ctx.valid
-		&& g_android_draw_face_ctx.face == 1)
-	{
-		android_oldmerge_impl = "auto_old_texmerge";
-		android_oldmerge_reason = android_can_auto_oldmerge
-			? "tri13_face1_stock_64x64"
-			: "merged_wall_tri13_face1_fallback";
-		use_alt_texmerge = 0;
-		debug_log(DLOG_TEXTURE,
-			"[mwall_exp] frame=%d pass=%d seq=%d merge_impl=%s reason=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
-			g_merged_wall_frame_id,
-			g_merged_wall_render_pass,
-			g_merged_wall_draw_seq,
-			android_oldmerge_impl,
-			android_oldmerge_reason,
-			g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
-			g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
-			g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
-			g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
-			g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
-			tmap1,
-			tmap2);
-	}
-#endif
 	if (use_alt_texmerge){
 		PIGGY_PAGE_IN(Textures[tmap1]);
 		bm = &GameBitmaps[Textures[tmap1].index];
@@ -460,25 +376,6 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		// New code for overlapping textures...
 		if (tmap2 != 0) { 
 			bm = texmerge_get_cached_bitmap( tmap1, tmap2 );
-	#ifdef ANDROID
-			if (android_oldmerge_impl && android_merged_wall_is_logging_target_tmap2(tmap2))
-				debug_log(DLOG_TEXTURE,
-					"[mwall_exp] frame=%d pass=%d seq=%d mode=%d(%s) merge_impl=%s reason=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
-					g_merged_wall_frame_id,
-					g_merged_wall_render_pass,
-					g_merged_wall_draw_seq,
-					(int)g_merged_wall_experiment_mode,
-					android_merged_wall_experiment_name((int)g_merged_wall_experiment_mode),
-					android_oldmerge_impl,
-					android_oldmerge_reason ? android_oldmerge_reason : "",
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
-					tmap1,
-					tmap2);
-	#endif
 		} else {
 			bm = &GameBitmaps[Textures[tmap1].index];
 			PIGGY_PAGE_IN(Textures[tmap1]);
@@ -550,13 +447,6 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		}else
 #endif
 		{
-#ifdef ANDROID
-			if (tmap2 != 0 && android_oldmerge_impl)
-				android_merged_wall_track_face((const struct g3s_point **)pointlist, nv,
-					uvl_copy, ((tmap2 & 0xC000) >> 14) & 3,
-					android_merged_wall_next_draw_order(), "old_texmerge",
-					android_oldmerge_impl, android_oldmerge_reason, bm, -1);
-#endif
 			g3_draw_tmap(nv,pointlist,uvl_copy,dyn_light,bm);
 		}
 

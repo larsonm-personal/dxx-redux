@@ -33,10 +33,6 @@ extern volatile int g_debug_tex_overlay_active;
 #define MERGED_WALL_DEBUG_OVERLAY_ALPHA 1
 #define MERGED_WALL_DEBUG_OVERLAY_RGB   2
 
-#define MERGED_WALL_EXPERIMENT_DEFAULT                      0
-#define MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE        10
-#define MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE 11
-
 #define MERGED_WALL_REQUEST_SNAPSHOT 1
 #define MERGED_WALL_REQUEST_PROBE    2
 
@@ -267,9 +263,6 @@ struct merged_wall_last_draw_state {
 	int cull_mode;
 	int draw_fbo;
 	float screen_area;
-	int force_cull_off;
-	int force_polygon_offset;
-	int force_depth_off;
 	char route[24];
 	char merge_impl[24];
 };
@@ -282,8 +275,6 @@ struct merged_wall_last_draw_state {
 	} while (0)
 
 extern volatile int g_merged_wall_debug_mode;
-extern volatile int g_merged_wall_experiment_mode;
-extern volatile int g_merged_wall_experiment_pending_apply;
 extern volatile int g_merged_wall_snapshot_pending;
 extern volatile int g_merged_wall_snapshot_request_frame;
 extern volatile int g_merged_wall_snapshot_request_mode;

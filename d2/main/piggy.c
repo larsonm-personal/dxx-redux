@@ -1346,9 +1346,6 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 		//@@}
 
 		compute_average_rgb(bmp, bmp->avg_color_rgb);
-#ifdef ANDROID
-		android_merged_wall_forensics_log_bitmap("piggy_page_in", "d2", bmp, i);
-#endif
 
 		start_time();
 	}

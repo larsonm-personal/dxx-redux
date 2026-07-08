@@ -2914,9 +2914,6 @@ extern "C" void game_automate_tick(void)
 				                      (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) ? 1 : 0);
 			else if (s.field == "merged_wall_mode")
 				g_merged_wall_debug_mode = (int) std::stod(s.value);
-			else if (s.field == "merged_wall_force_two_pass")
-				g_merged_wall_force_two_pass =
-				    (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) ? 1 : 0;
 			else if (s.field == "clear_robots") {
 				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) {
 					char reason[128];
@@ -2957,20 +2954,6 @@ extern "C" void game_automate_tick(void)
 					android_merged_wall_request_snapshot(
 					    request_mode == MERGED_WALL_REQUEST_PROBE ? MERGED_WALL_REQUEST_PROBE
 					                                              : MERGED_WALL_REQUEST_SNAPSHOT);
-			} else if (s.field == "merged_wall_experiment") {
-				int experiment = (int) std::stod(s.value);
-
-				switch (experiment) {
-					case MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE:
-					case MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE:
-						g_merged_wall_experiment_mode = experiment;
-						break;
-					default:
-						g_merged_wall_experiment_mode = MERGED_WALL_EXPERIMENT_DEFAULT;
-						break;
-				}
-				__sync_synchronize();
-				g_merged_wall_experiment_pending_apply = 1;
 			} else
 				LOGE("set_debug: unknown field '%s'", s.field.c_str());
 			LOGI("set_debug: %s = %s", s.field.c_str(), s.value.c_str());

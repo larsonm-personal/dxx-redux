@@ -600,29 +600,6 @@ static const char *merged_wall_debug_mode_name(int mode)
 	}
 }
 
-static const char *merged_wall_experiment_name(int mode)
-{
-	switch (mode) {
-		case MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE:
-			return "force_legacy_texmerge";
-		case MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE:
-			return "clear_secondary_units_single";
-		default:
-			return "default";
-	}
-}
-
-static int merged_wall_clamp_experiment_mode(int mode)
-{
-	switch (mode) {
-		case MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE:
-		case MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE:
-			return mode;
-		default:
-			return MERGED_WALL_EXPERIMENT_DEFAULT;
-	}
-}
-
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
                                                       jstring jname, jint value)
@@ -646,20 +623,6 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 		          old, merged_wall_debug_mode_name(old),
 		          clamped, merged_wall_debug_mode_name(clamped));
 		g_merged_wall_debug_mode = clamped;
-	} else if (strcmp(name, "merged_wall_experiment") == 0) {
-		int old = (int) g_merged_wall_experiment_mode;
-		int clamped = merged_wall_clamp_experiment_mode((int) value);
-
-		LOGI("debug flag: merged_wall_experiment %d(%s) -> %d(%s)",
-		     old, merged_wall_experiment_name(old),
-		     clamped, merged_wall_experiment_name(clamped));
-		debug_log(DLOG_TEXTURE,
-		          "[mwall_exp] toggle: old=%d(%s) new=%d(%s)",
-		          old, merged_wall_experiment_name(old),
-		          clamped, merged_wall_experiment_name(clamped));
-		g_merged_wall_experiment_mode = clamped;
-		__sync_synchronize();
-		g_merged_wall_experiment_pending_apply = 1;
 	} else if (strcmp(name, "merged_wall_snapshot") == 0) {
 		if (value) {
 			android_merged_wall_request_snapshot(
@@ -1086,7 +1049,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject 
  *   [18] = aniso_level       (current anisotropic filtering level, 0=off)
  *   [19] = aniso_max         (max aniso level supported by GPU)
  *   [30] = merged_wall_mode      (OFF/Alpha/RGB debug view)
- *   [31] = merged_wall_experiment (default/force-legacy-texmerge surfaced mode)
+ *   [31] = reserved
  *   [32] = swap_time_us          (eglSwapBuffers or swap wrapper time)
  *   [33] = msaa_resolve_time_us  (MSAA resolve/blit time)
  *   [34] = gl_error_time_us      (end-frame glGetError drain time)
@@ -1179,7 +1142,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	buf[29] = (jint) GameCfg.HudTexFilt;
 #ifdef INTROSPECT_ON
 	buf[30] = (jint) g_merged_wall_debug_mode;
-	buf[31] = (jint) g_merged_wall_experiment_mode;
+	buf[31] = 0;
 #else
 	buf[30] = 0;
 	buf[31] = 0;

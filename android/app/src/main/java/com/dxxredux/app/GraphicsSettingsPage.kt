@@ -589,9 +589,6 @@ private fun DebugOptionsSection(prefs: SharedPreferences) {
                 DebugLog.isCategoryEnabled(ctx, DebugLogCategory.TEXTURE),
         )
     }
-    var forceLegacyTexmerge by remember {
-        mutableStateOf(prefs.getBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false))
-    }
 
     Text("Debug Options", fontWeight = FontWeight.Bold, fontSize = 11.sp)
     Spacer(modifier = Modifier.height(2.dp))
@@ -616,18 +613,6 @@ private fun DebugOptionsSection(prefs: SharedPreferences) {
             graphicsDebugLogging = it
             DebugLog.setCategoryEnabled(ctx, DebugLogCategory.GRAPHICS, it)
             DebugLog.setCategoryEnabled(ctx, DebugLogCategory.TEXTURE, it)
-        },
-    )
-
-    Spacer(modifier = Modifier.height(4.dp))
-
-    DebugOptionRow(
-        checked = forceLegacyTexmerge,
-        title = "Force legacy CPU texmerge",
-        detail = "Applies the merged-wall legacy texmerge experiment on launch or resume",
-        onCheckedChange = {
-            forceLegacyTexmerge = it
-            prefs.edit().putBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, it).apply()
         },
     )
 }

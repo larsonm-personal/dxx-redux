@@ -38,6 +38,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.dpadTextFieldNavigation
 import com.dxxredux.app.tvFocusBorder
 
@@ -87,6 +88,10 @@ internal fun CreateGameDialog(
     val createFocus = remember { FocusRequester() }
     val dismissOrEndTextEntry =
         rememberControllerTextEntryDismiss(textEntryActive, dialogFocus, { textEntryActive = it }, onDismiss)
+    val stockVisualNotice =
+        remember(context, game, mode) {
+            VisualReplacementPolicy.noticeText(VisualReplacementPolicy.summaryForPvp(context, game, mode))
+        }
 
     RequestControllerInitialFocus(dialogFocus, revealFocusOnRequest = false)
 
@@ -263,6 +268,14 @@ internal fun CreateGameDialog(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
+                        }
+                        stockVisualNotice?.let {
+                            Text(
+                                it,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
                         }
                     }
                     Row(

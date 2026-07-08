@@ -159,3 +159,45 @@ Host/client UX:
    - PVP with a texture pack enabled should launch and show stock visuals.
    - PVP custom missions that require mission texture data should still load.
    - Level 7 D2 coop door26 should stay correct after the cleanup.
+
+## Implementation status
+- [done] Tranche 1/2: protected the palette invalidation fix and centralized Android visual replacement policy.
+- [partial] Tranche 3/4: removed hardcoded logging target names, converted target cache/source logs to generic named-target logging, and removed the `metl154` symbol/tag debt.
+- [done] Tranche 5: surfaced PVP stock-visual notices in online and LAN host/lobby flows.
+- [done] Tranche 6: ran scoped formatting/static checks and Android Kotlin/native build verification.
+
+## Implementation notes
+- Added `android_visual_policy.h`; Android single-player and coop allow optional texture/model replacements, while Android non-coop multiplayer uses stock optional visuals regardless of `Netgame.AllowCustomModelsTextures`.
+- Added `VisualReplacementPolicy.kt` and `ModManager.enabledVisualReplacementSummary()` so host/client lobby UI can warn only when enabled visual replacement packs will actually be omitted.
+- Online lobbies publish `stock_visuals_enforced`, `omitted_visual_mod_count`, `omitted_visual_texture_count`, and `omitted_visual_mods` in `game_info`.
+- LAN announce, join-ack, and start packets carry the same fields, and host/join/discovered lobby views render the same notice.
+- Validation passed:
+  - `.\android\run-code-quality.ps1 -Fix -Paths <touched files>`
+  - `.\gradlew.bat :app:compileDebugKotlin :app:externalNativeBuildDebug`
+
+## Continuation tranche
+- [done] Renamed remaining `metl154` diagnostic symbols and log tags in the Android merged-wall path to neutral merged-wall names.
+- [done] Confirmed no fixed texture names or old `metl154` tags remain in `android/app/src/main/cpp/shared`, `d1/arch/ogl`, or `d2/arch/ogl`.
+- [done] Ran scoped formatting and Android native build verification.
+
+Continuation validation:
+- `.\android\run-code-quality.ps1 -Fix -Paths android\app\src\main\cpp\shared\merged_wall_debug.c d1\arch\ogl\ogl.c d2\arch\ogl\ogl.c`
+- `.\gradlew.bat :app:externalNativeBuildDebug`
+
+## Reduction tranche
+- [done] Deleted the standalone merged-wall forensic logging stream and draw/upload/page-in/legacy-texmerge call sites.
+- [done] Replaced the old single-draw forensic hook with `android_merged_wall_probe_record_draw_face()` so tap probes still collect drawn-face candidates.
+- [done] Removed dead-end render overrides: merged-wall experiment mode, force-legacy/auto-old-texmerge routing, force-two-pass debug routing, and the matching JNI/Kotlin controls.
+- [done] Kept tap-triggered generic face, texture, palette, merge-reference, and GPU readback diagnostics.
+- [done] Measured line-count reduction and validated.
+
+Reduction notes:
+- `merged_wall_debug.c` went from 8075 lines before this tranche to 7584 lines after cleanup.
+- Current whole working diff is net negative after this pass: 538 insertions, 1292 deletions.
+- Active source scan is clean for removed investigation names: `forensic`, `mwall_single_draw`, `merged_wall_experiment`, `force_two_pass`, `android_oldmerge`, `auto_old_texmerge`, and the old hardcoded texture tags.
+- Retained diagnostics are still generic and are gated by texture debug target or explicit snapshot/probe request.
+
+Reduction validation:
+- `.\android\run-code-quality.ps1 -Fix -Paths <touched native, JNI, Kotlin files>`
+- `.\gradlew.bat :app:externalNativeBuildDebug`
+- `.\gradlew.bat :app:compileDebugKotlin`

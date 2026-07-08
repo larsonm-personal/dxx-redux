@@ -47,6 +47,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef OGL
 #include "ogl_init.h"
 #endif
+#ifdef ANDROID
+#include "android_visual_policy.h"
+#endif
 #include "xmodel.h"
 
 polymodel Polygon_models[MAX_POLYGON_MODELS];	// = {&bot11,&bot17,&robot_s2,&robot_b2,&bot11,&bot17,&robot_s2,&robot_b2};
@@ -526,7 +529,7 @@ void draw_polygon_model(vms_vector *pos,vms_matrix *orient,vms_angvec *anim_angl
 
 #ifdef OGL
 #ifdef ANDROID
-	allow_xmodel = (Game_mode & GM_MULTI_COOP) || !(Game_mode & GM_MULTI) || Netgame.AllowCustomModelsTextures;
+	allow_xmodel = android_visual_replacements_allowed();
 #else
 	allow_xmodel = !(Game_mode & GM_MULTI) || Netgame.AllowCustomModelsTextures;
 #endif

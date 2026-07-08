@@ -589,7 +589,6 @@ class MainActivity :
         prefs
             .edit()
             .putBoolean(PREF_SHOW_VIDEO_INFO_DEBUG_OPTIONS, false)
-            .putBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false)
             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.GRAPHICS), false)
             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.TEXTURE), false)
             .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.PROFILING), false)
@@ -1790,14 +1789,6 @@ class MainActivity :
                 nativeSetDebugFlag("merged_wall_mode", 0)
                 videoInfoOverlay?.show()
             }
-            nativeSetDebugFlag(
-                "merged_wall_experiment",
-                if (prefs.getBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false)) {
-                    MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE_VALUE
-                } else {
-                    0
-                },
-            )
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }

@@ -37,8 +37,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.lobby.LobbyService
 import kotlinx.coroutines.delay
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
@@ -697,21 +699,22 @@ private fun ServerBrowserContent(
                 restrictNonCoopFovToBase,
                 ->
                 showCreateDialog = false
-                val gameInfo =
-                    JsonObject(
-                        mapOf(
-                            "game" to JsonPrimitive(game),
-                            "mission" to JsonPrimitive(mission ?: ""),
-                            "mode" to JsonPrimitive(mode),
-                            "difficulty" to JsonPrimitive(difficulty),
-                            "level_num" to JsonPrimitive(levelNum),
-                            "coop_qol" to JsonPrimitive(coopQol),
-                            "full_death_spew" to JsonPrimitive(fullDeathSpew),
-                            "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
-                            "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
-                            "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
-                        ),
+                val visualSummary = VisualReplacementPolicy.summaryForPvp(context, game, mode)
+                val baseGameInfo: Map<String, JsonElement> =
+                    mapOf(
+                        "game" to JsonPrimitive(game),
+                        "mission" to JsonPrimitive(mission ?: ""),
+                        "mode" to JsonPrimitive(mode),
+                        "difficulty" to JsonPrimitive(difficulty),
+                        "level_num" to JsonPrimitive(levelNum),
+                        "coop_qol" to JsonPrimitive(coopQol),
+                        "full_death_spew" to JsonPrimitive(fullDeathSpew),
+                        "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
+                        "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
+                        "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
                     )
+                val gameInfo =
+                    JsonObject(baseGameInfo + VisualReplacementPolicy.gameInfoFields(visualSummary))
                 MatchmakingService.createLobby(game, maxPlayers, gameInfo)
             },
             onDismiss = { showCreateDialog = false },
@@ -846,6 +849,14 @@ private fun LobbyCard(lobby: LobbyInfo) {
                     if (displayLevel != null) append(" / Lv $displayLevel")
                 }
             Text(configLine, style = MaterialTheme.typography.bodySmall)
+            VisualReplacementPolicy.noticeText(lobby.gameInfo)?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
             if (lobby.hasCode) {
                 Text("(code required)", style = MaterialTheme.typography.bodySmall)
             }

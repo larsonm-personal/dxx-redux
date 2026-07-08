@@ -891,9 +891,6 @@ static json serialize_merged_wall_last_draw_state()
 		{ "cull_mode", state.cull_mode },
 		{ "draw_fbo", state.draw_fbo },
 		{ "screen_area", state.screen_area },
-		{ "force_cull_off", (bool) state.force_cull_off },
-		{ "force_polygon_offset", (bool) state.force_polygon_offset },
-		{ "force_depth_off", (bool) state.force_depth_off },
 		{ "route", std::string(state.route) },
 		{ "merge_impl", std::string(state.merge_impl) }
 	};
@@ -1010,8 +1007,6 @@ extern "C" char *game_introspect_get_state(void)
 		dbg["texture_target"] = android_texture_debug_get_target_display();
 		dbg["texture_log"] = (bool) debug_log_enabled[DLOG_TEXTURE];
 		dbg["merged_wall_mode"] = (int) g_merged_wall_debug_mode;
-		dbg["merged_wall_experiment"] = (int) g_merged_wall_experiment_mode;
-		dbg["merged_wall_force_two_pass"] = (int) g_merged_wall_force_two_pass;
 		j["debug_flags"] = std::move(dbg);
 	}
 	j["merged_wall_last_draw_state"] = serialize_merged_wall_last_draw_state();

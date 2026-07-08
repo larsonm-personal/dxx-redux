@@ -1,6 +1,7 @@
 package com.dxxredux.app.lobby
 
 import com.dxxredux.app.BuildInfo
+import com.dxxredux.app.VisualReplacementPolicy
 import org.json.JSONObject
 
 // LAN lobby discovery protocol. JSON-over-UDP on port 42400.
@@ -53,6 +54,10 @@ data class LanLobbyAnnounce(
     val hostPort: Int = com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT,
     val hostClientId: String? = null,
     val restrictNonCoopFovToBase: Boolean = false,
+    val stockVisualsEnforced: Boolean = false,
+    val omittedVisualModCount: Int = 0,
+    val omittedVisualTextureCount: Int = 0,
+    val omittedVisualModNames: List<String> = emptyList(),
 )
 
 /** Build a JSON ANNOUNCE packet for broadcasting. */
@@ -70,6 +75,10 @@ fun buildAnnounce(
     hostPort: Int = com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT,
     hostClientId: String? = null,
     restrictNonCoopFovToBase: Boolean = false,
+    stockVisualsEnforced: Boolean = false,
+    omittedVisualModCount: Int = 0,
+    omittedVisualTextureCount: Int = 0,
+    omittedVisualModNames: List<String> = emptyList(),
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_ANNOUNCE)
@@ -87,6 +96,13 @@ fun buildAnnounce(
     if (hostPort != com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT) json.put("host_port", hostPort)
     if (!hostClientId.isNullOrBlank()) json.put("host_client_id", hostClientId)
     json.put("restrict_noncoop_fov_to_base", restrictNonCoopFovToBase)
+    VisualReplacementPolicy.putJsonFields(
+        json,
+        stockVisualsEnforced,
+        omittedVisualModCount,
+        omittedVisualTextureCount,
+        omittedVisualModNames,
+    )
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
@@ -113,6 +129,10 @@ fun buildJoinAck(
     maxPlayers: Int,
     hostCallsign: String? = null,
     hostClientId: String? = null,
+    stockVisualsEnforced: Boolean = false,
+    omittedVisualModCount: Int = 0,
+    omittedVisualTextureCount: Int = 0,
+    omittedVisualModNames: List<String> = emptyList(),
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_JOIN_ACK)
@@ -124,6 +144,13 @@ fun buildJoinAck(
     json.put("build", BuildInfo.GIT_COMMIT_COUNT)
     if (!hostCallsign.isNullOrBlank()) json.put("host_callsign", hostCallsign)
     if (!hostClientId.isNullOrBlank()) json.put("host_client_id", hostClientId)
+    VisualReplacementPolicy.putJsonFields(
+        json,
+        stockVisualsEnforced,
+        omittedVisualModCount,
+        omittedVisualTextureCount,
+        omittedVisualModNames,
+    )
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
@@ -202,6 +229,10 @@ fun buildStart(
     playerSpewNoExpire: Boolean = true,
     clientsCanRequestRewind: Boolean = false,
     restrictNonCoopFovToBase: Boolean = false,
+    stockVisualsEnforced: Boolean = false,
+    omittedVisualModCount: Int = 0,
+    omittedVisualTextureCount: Int = 0,
+    omittedVisualModNames: List<String> = emptyList(),
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_START)
@@ -219,6 +250,13 @@ fun buildStart(
     json.put("player_spew_no_expire", playerSpewNoExpire)
     json.put("clients_can_request_rewind", clientsCanRequestRewind)
     json.put("restrict_noncoop_fov_to_base", restrictNonCoopFovToBase)
+    VisualReplacementPolicy.putJsonFields(
+        json,
+        stockVisualsEnforced,
+        omittedVisualModCount,
+        omittedVisualTextureCount,
+        omittedVisualModNames,
+    )
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

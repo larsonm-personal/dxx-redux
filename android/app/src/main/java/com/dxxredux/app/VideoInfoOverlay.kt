@@ -18,7 +18,6 @@ internal enum class VideoInfoControllerAction {
     ANISO,
     MSAA,
     MERGED_WALL,
-    MERGED_WALL_EXPERIMENT,
     MERGED_WALL_TAP,
     LABELS,
 }
@@ -30,7 +29,6 @@ internal fun videoInfoControllerActions(showDebugControls: Boolean): List<VideoI
         add(VideoInfoControllerAction.MSAA)
         if (showDebugControls) {
             add(VideoInfoControllerAction.MERGED_WALL)
-            add(VideoInfoControllerAction.MERGED_WALL_EXPERIMENT)
             add(VideoInfoControllerAction.MERGED_WALL_TAP)
             add(VideoInfoControllerAction.LABELS)
         }
@@ -205,14 +203,12 @@ class VideoInfoOverlay(
     // Labels toggle button state and hit region
     private var labelsOn = false
     private var mergedWallMode = 0
-    private var mergedWallExperimentMode = 0
     private var showDebugControls = false
     private var buttonPressed = false
     private var anisoPressed = false
     private var msaaPressed = false
     private var texFiltPressed = false
     private var mergedWallPressed = false
-    private var mergedWallExperimentPressed = false
     private var mergedWallTapPressed = false
     private var mergedWallTapFlashUntilMs = 0L
     private var selectedControllerAction: VideoInfoControllerAction? = null
@@ -221,7 +217,6 @@ class VideoInfoOverlay(
     private val msaaRect = RectF()
     private val texFiltRect = RectF()
     private val mergedWallRect = RectF()
-    private val mergedWallExperimentRect = RectF()
     private val mergedWallTapRect = RectF()
     private val panelBounds = RectF()
 
@@ -275,9 +270,8 @@ class VideoInfoOverlay(
                     if (stats != null && stats.size >= 28) {
                         texFiltLevel = stats[27]
                     }
-                    if (stats != null && stats.size >= 32) {
+                    if (stats != null && stats.size >= 31) {
                         mergedWallMode = stats[30]
-                        mergedWallExperimentMode = stats[31]
                     }
                     if (stats != null && stats.size >= 39) {
                         swapTimeUs = stats[32]
@@ -450,10 +444,6 @@ class VideoInfoOverlay(
 
             VideoInfoControllerAction.MERGED_WALL -> {
                 cycleMergedWallMode()
-            }
-
-            VideoInfoControllerAction.MERGED_WALL_EXPERIMENT -> {
-                cycleMergedWallExperiment()
             }
 
             VideoInfoControllerAction.MERGED_WALL_TAP -> {
@@ -736,31 +726,6 @@ class VideoInfoOverlay(
             canvas.drawText(mergedWallText, panelLeft + layout.panelPad, baselineY, mergedWallPaint)
             baselineY += layout.buttonLineHeight
 
-            // Surface the small set of explicit merged-wall experiment modes.
-            val mergedWallExperimentText =
-                when (mergedWallExperimentMode) {
-                    MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE_VALUE -> "mwall exp: Legacy"
-                    MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE_VALUE -> "mwall exp: Clear TU1/2"
-                    0 -> "mwall exp: Default"
-                    else -> "mwall exp: Compat $mergedWallExperimentMode"
-                }
-            val mergedWallExperimentPaint = if (mergedWallExperimentMode == 0) fpsWarnPaint else fpsGoodPaint
-            setButtonBounds(mergedWallExperimentRect, panelLeft, panelWidth, baselineY, layout)
-            val mergedWallExperimentBg =
-                when {
-                    mergedWallExperimentPressed -> btnPressedPaint
-                    selectedControllerAction == VideoInfoControllerAction.MERGED_WALL_EXPERIMENT -> btnFocusedPaint
-                    else -> btnNormalPaint
-                }
-            canvas.drawRoundRect(
-                mergedWallExperimentRect,
-                layout.buttonCornerRadius,
-                layout.buttonCornerRadius,
-                mergedWallExperimentBg,
-            )
-            canvas.drawText(mergedWallExperimentText, panelLeft + layout.panelPad, baselineY, mergedWallExperimentPaint)
-            baselineY += layout.buttonLineHeight
-
             val tapActive = android.os.SystemClock.uptimeMillis() < mergedWallTapFlashUntilMs
             val mergedWallTapText = if (tapActive) "mwall tap: Sent" else "mwall tap: Tap"
             val mergedWallTapPaint = if (tapActive) fpsGoodPaint else valuePaint
@@ -794,7 +759,6 @@ class VideoInfoOverlay(
             canvas.drawText(labelsText, panelLeft + layout.panelPad, baselineY, labelTogglePaint)
         } else {
             mergedWallRect.setEmpty()
-            mergedWallExperimentRect.setEmpty()
             mergedWallTapRect.setEmpty()
             buttonRect.setEmpty()
         }
@@ -809,7 +773,6 @@ class VideoInfoOverlay(
         val inMsaa = msaaRect.contains(event.x, event.y)
         val inTexFilt = texFiltRect.contains(event.x, event.y)
         val inMergedWall = mergedWallRect.contains(event.x, event.y)
-        val inMergedWallExperiment = mergedWallExperimentRect.contains(event.x, event.y)
         val inMergedWallTap = mergedWallTapRect.contains(event.x, event.y)
 
         when (event.action) {
@@ -844,12 +807,6 @@ class VideoInfoOverlay(
                     invalidate()
                     return true
                 }
-                if (inMergedWallExperiment) {
-                    selectedControllerAction = VideoInfoControllerAction.MERGED_WALL_EXPERIMENT
-                    mergedWallExperimentPressed = true
-                    invalidate()
-                    return true
-                }
                 if (inMergedWallTap) {
                     selectedControllerAction = VideoInfoControllerAction.MERGED_WALL_TAP
                     mergedWallTapPressed = true
@@ -881,10 +838,6 @@ class VideoInfoOverlay(
                     cycleMergedWallMode()
                     performClick()
                 }
-                if (mergedWallExperimentPressed && inMergedWallExperiment) {
-                    cycleMergedWallExperiment()
-                    performClick()
-                }
                 if (mergedWallTapPressed && inMergedWallTap) {
                     triggerMergedWallTap()
                     performClick()
@@ -894,7 +847,6 @@ class VideoInfoOverlay(
                     msaaPressed ||
                     texFiltPressed ||
                     mergedWallPressed ||
-                    mergedWallExperimentPressed ||
                     mergedWallTapPressed ||
                     inPanel
                 ) {
@@ -903,7 +855,6 @@ class VideoInfoOverlay(
                     msaaPressed = false
                     texFiltPressed = false
                     mergedWallPressed = false
-                    mergedWallExperimentPressed = false
                     mergedWallTapPressed = false
                     invalidate()
                     return true
@@ -916,7 +867,6 @@ class VideoInfoOverlay(
                 msaaPressed = false
                 texFiltPressed = false
                 mergedWallPressed = false
-                mergedWallExperimentPressed = false
                 mergedWallTapPressed = false
                 invalidate()
             }
@@ -1018,19 +968,6 @@ class VideoInfoOverlay(
         val next = (mergedWallMode + 1) % 3
         mergedWallMode = next
         debugFlagSetter?.invoke("merged_wall_mode", next)
-    }
-
-    private fun cycleMergedWallExperiment() {
-        val levels =
-            intArrayOf(
-                0,
-                MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE_VALUE,
-                MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE_VALUE,
-            )
-        val idx = levels.indexOf(mergedWallExperimentMode).let { if (it >= 0) it else 0 }
-        val next = levels[(idx + 1) % levels.size]
-        mergedWallExperimentMode = next
-        debugFlagSetter?.invoke("merged_wall_experiment", next)
     }
 
     private fun triggerMergedWallTap() {

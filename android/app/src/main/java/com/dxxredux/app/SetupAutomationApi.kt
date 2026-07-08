@@ -759,10 +759,6 @@ internal fun SetupActivity.writeIntrospectJson() {
             "show_video_info_debug_options",
             prefs.getBoolean(PREF_SHOW_VIDEO_INFO_DEBUG_OPTIONS, false),
         )
-        debugPrefs.put(
-            "force_legacy_merged_wall_texmerge",
-            prefs.getBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false),
-        )
         debugPrefs.put("network_log_enabled", networkLogEnabled)
         debugPrefs.put("graphics_log_enabled", graphicsLogEnabled)
         debugPrefs.put("texture_log_enabled", textureLogEnabled)

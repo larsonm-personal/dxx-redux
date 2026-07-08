@@ -54,6 +54,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.dxxredux.app.BuildInfo
+import com.dxxredux.app.ModManager
+import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.lobby.LobbyService
 import com.dxxredux.app.tvFocusBorder
 import kotlinx.coroutines.Dispatchers
@@ -169,6 +171,18 @@ private fun LanJoinedLobbyView(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        VisualReplacementPolicy
+            .noticeText(
+                info.stockVisualsEnforced,
+                info.omittedVisualModCount,
+                info.omittedVisualModNames,
+            )?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         if (info.hostBuild.isNotEmpty() && info.hostBuild != BuildInfo.GIT_COMMIT_COUNT) {
             Text(
                 "Warning: host build (${info.hostBuild}) differs from yours (${BuildInfo.GIT_COMMIT_COUNT})",
@@ -281,6 +295,7 @@ private fun LanDiscoveryView(
     var hostedPlayerSpewNoExpire by remember { mutableStateOf(hostDefaults.playerSpewNoExpire) }
     var hostedClientsCanRequestRewind by remember { mutableStateOf(hostDefaults.clientsCanRequestRewind) }
     var hostedRestrictNonCoopFovToBase by remember { mutableStateOf(hostDefaults.restrictNonCoopFovToBase) }
+    var hostedVisualSummary by remember { mutableStateOf(ModManager.VisualReplacementSummary()) }
     var dismissResumeOffer by remember { mutableStateOf(false) }
     var resumeStatus by remember { mutableStateOf<String?>(null) }
     val resumeRecord = remember { MultiplayerResumePrefs.load(context) }
@@ -344,10 +359,23 @@ private fun LanDiscoveryView(
         hostedPlayerSpewNoExpire = record.playerSpewNoExpire
         hostedClientsCanRequestRewind = record.clientsCanRequestRewind
         hostedRestrictNonCoopFovToBase = record.restrictNonCoopFovToBase
+        val visualSummary = VisualReplacementPolicy.summaryForPvp(context, record.game, record.mode)
+        hostedVisualSummary = visualSummary
         if (!LobbyService.isDiscovering.value) {
             LobbyService.startDiscovery(context, hostCallsign)
         }
-        LobbyService.hostLobby(hostCallsign, record.game, record.mission, record.mode, record.maxPlayers)
+        LobbyService.hostLobby(
+            hostCallsign,
+            record.game,
+            record.mission,
+            record.mode,
+            record.maxPlayers,
+            restrictNonCoopFovToBase = record.restrictNonCoopFovToBase,
+            stockVisualsEnforced = visualSummary.hasOmittedVisuals,
+            omittedVisualModCount = visualSummary.omittedModCount,
+            omittedVisualTextureCount = visualSummary.omittedTextureCount,
+            omittedVisualModNames = visualSummary.omittedModNames,
+        )
     }
 
     fun clientResume(record: MultiplayerResumeRecord) {
@@ -528,7 +556,10 @@ private fun LanDiscoveryView(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     OutlinedButton(
-                        onClick = { LobbyService.stopHosting() },
+                        onClick = {
+                            LobbyService.stopHosting()
+                            hostedVisualSummary = ModManager.VisualReplacementSummary()
+                        },
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -679,6 +710,14 @@ private fun LanDiscoveryView(
                             }
                         }
                     }
+                    VisualReplacementPolicy.noticeText(hostedVisualSummary)?.let {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
                 Spacer(Modifier.height(8.dp))
                 if (hostedMode == "coop") {
@@ -797,7 +836,20 @@ private fun LanDiscoveryView(
                 hostedPlayerSpewNoExpire = playerSpewNoExpire
                 hostedClientsCanRequestRewind = clientsCanRequestRewind
                 hostedRestrictNonCoopFovToBase = restrictNonCoopFovToBase
-                LobbyService.hostLobby(callsign, game, mission ?: "", mode, maxPlayers)
+                val visualSummary = VisualReplacementPolicy.summaryForPvp(context, game, mode)
+                hostedVisualSummary = visualSummary
+                LobbyService.hostLobby(
+                    callsign,
+                    game,
+                    mission ?: "",
+                    mode,
+                    maxPlayers,
+                    restrictNonCoopFovToBase = restrictNonCoopFovToBase,
+                    stockVisualsEnforced = visualSummary.hasOmittedVisuals,
+                    omittedVisualModCount = visualSummary.omittedModCount,
+                    omittedVisualTextureCount = visualSummary.omittedTextureCount,
+                    omittedVisualModNames = visualSummary.omittedModNames,
+                )
             },
             onDismiss = { showHostDialog = false },
         )
@@ -864,6 +916,18 @@ private fun LanLobbyCard(
                 "${lobby.announce.mission} -- ${lobby.announce.mode} (${lobby.announce.game})",
                 style = MaterialTheme.typography.bodySmall,
             )
+            VisualReplacementPolicy
+                .noticeText(
+                    lobby.announce.stockVisualsEnforced,
+                    lobby.announce.omittedVisualModCount,
+                    lobby.announce.omittedVisualModNames,
+                )?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             if (isInGame) {
                 val diffName = difficulties.getOrElse(lobby.announce.difficulty) { "?" }
                 Text(
@@ -904,6 +968,7 @@ private fun LanLobbyCard(
                                 isLan = true,
                                 hostCallsign = lobby.announce.callsign,
                                 hostClientId = lobby.announce.hostClientId,
+                                restrictNonCoopFovToBase = lobby.announce.restrictNonCoopFovToBase,
                             ),
                         )
                     },

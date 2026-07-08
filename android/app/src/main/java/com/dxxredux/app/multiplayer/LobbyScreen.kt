@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.VisualReplacementPolicy
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
@@ -94,6 +95,13 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
             Text(
                 configParts.joinToString(" / "),
                 style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        VisualReplacementPolicy.noticeText(gi)?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
             )
         }
         Spacer(Modifier.height(12.dp))

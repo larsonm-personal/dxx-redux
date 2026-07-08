@@ -131,6 +131,14 @@ class ModManager(
         fun toLogMessage(): String = toUserMessage().replace('\n', ' ')
     }
 
+    data class VisualReplacementSummary(
+        val omittedModCount: Int = 0,
+        val omittedTextureCount: Int = 0,
+        val omittedModNames: List<String> = emptyList(),
+    ) {
+        val hasOmittedVisuals: Boolean get() = omittedModCount > 0
+    }
+
     data class ModFileCategorySummary(
         val label: String,
         val count: Int,
@@ -782,6 +790,34 @@ class ModManager(
         }
         val patchConflicts = collectPatchConflicts(patchDocuments)
         return ModCompatibilityReport(failures, patchConflicts)
+    }
+
+    fun enabledVisualReplacementSummary(
+        game: String,
+        includeD1MissionZipsForD2: Boolean = true,
+    ): VisualReplacementSummary {
+        val names = mutableListOf<String>()
+        var omittedModCount = 0
+        var textureCount = 0
+        val enabled =
+            mods
+                .filter { it.enabledForLaunch(game, includeD1MissionZipsForD2) }
+                .sortedBy { it.order }
+
+        for (mod in enabled) {
+            val modFile = File(modsDir, mod.filename)
+            val count = countVisualReplacementAssets(modFile)
+            if (count <= 0) continue
+            omittedModCount++
+            textureCount += count
+            if (names.size < 3) names += mod.displayName
+        }
+
+        return VisualReplacementSummary(
+            omittedModCount = omittedModCount,
+            omittedTextureCount = textureCount,
+            omittedModNames = names,
+        )
     }
 
     fun hasEnabledMissionZipSoundtrack(game: String): Boolean =
@@ -1618,6 +1654,32 @@ class ModManager(
             registryCategory != null -> registryCategory to exampleWithPurpose
             else -> "Other files" to leaf
         }
+    }
+
+    private fun countVisualReplacementAssets(file: File): Int {
+        if (!file.isFile) return 0
+        if (isVisualReplacementAsset(file.name)) return 1
+        return try {
+            var count = 0
+            ZipFile(file).use { zip ->
+                val entries = zip.entries()
+                while (entries.hasMoreElements()) {
+                    val entry = entries.nextElement()
+                    if (!entry.isDirectory && isVisualReplacementAsset(entry.name)) count++
+                }
+            }
+            count
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not scan visual replacements in ${file.name}", e)
+            0
+        }
+    }
+
+    private fun isVisualReplacementAsset(path: String): Boolean {
+        val leaf = launcherLeafNameOf(path).lowercase(Locale.US)
+        return GameFileFormats.isTextureReplacement(leaf) ||
+            leaf.endsWith(".ase") ||
+            (leaf.startsWith("model") && leaf.endsWith(".bin"))
     }
 
     private fun readPatchDetails(

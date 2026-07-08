@@ -34,6 +34,7 @@
 
 #ifdef ANDROID
 #include "android_texture_debug.h"
+#include "android_visual_policy.h"
 #endif
 
 #ifdef ANDROID
@@ -297,22 +298,13 @@ extern int linedotscale;
 #define f2glf(x) (f2fl(x))
 
 #if defined(ANDROID) && defined(OGL_MERGE)
-static int metl154_single_clip_active = 0;
-
-#define g_metl154_debug_mode g_merged_wall_debug_mode
-#define g_metl154_experiment_mode g_merged_wall_experiment_mode
-#define g_metl154_experiment_pending_apply g_merged_wall_experiment_pending_apply
-#define g_metl154_snapshot_pending g_merged_wall_snapshot_pending
-#define g_metl154_snapshot_request_frame g_merged_wall_snapshot_request_frame
-#define g_metl154_render_pass g_merged_wall_render_pass
-#define g_metl154_frame_id g_merged_wall_frame_id
-#define g_metl154_draw_seq g_merged_wall_draw_seq
+static int mwall_single_clip_active = 0;
 
 static struct merged_wall_tmap2_submit_context merged_wall_tmap2_submit_ctx = {
 	"merge_raw", 0, 0, 0xff, 0, 0, 0, 0
 };
 
-static bool ogl_clip_and_draw_metl154_single(int nv, const g3s_point **pointlist,
+static bool ogl_clip_and_draw_mwall_single(int nv, const g3s_point **pointlist,
 	g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bm);
 #endif
 
@@ -534,8 +526,7 @@ void ogl_smash_texture_list_internal(void){
 
 int ogl_allow_png(void){
 #ifdef ANDROID
-	if (Game_mode & GM_MULTI_COOP)
-		return 1;
+	return android_visual_replacements_allowed();
 #endif
 	return !(Game_mode & GM_MULTI) || Netgame.AllowCustomModelsTextures;
 }
@@ -783,14 +774,6 @@ static int ogl_android_apply_texture_filters_all(int texfilt, int *generated)
 
 static void ogl_android_apply_pending_runtime_options(const char *source)
 {
-	if (g_metl154_experiment_pending_apply) {
-		g_metl154_experiment_pending_apply = 0;
-		__sync_synchronize();
-		debug_log(DLOG_TEXTURE,
-			"[mwall_exp] apply: mode=%d(%s) texture_reload=0",
-			(int)g_metl154_experiment_mode,
-			android_merged_wall_experiment_name((int)g_metl154_experiment_mode));
-	}
 	if (g_aniso_pending_apply) {
 		int generated = 0;
 		int effective_texfilt;
@@ -1004,9 +987,9 @@ void ogl_cache_level_textures(void)
 		for (i = 0; i < Num_bitmap_files; i++) {
 			grs_bitmap *bm = &GameBitmaps[i];
 			const char *cname = piggy_game_bitmap_name(bm);
-			if (cname && !d_stricmp(cname, "metl154"))
+			if (android_texture_debug_matches_target_name(cname))
 				debug_log(DLOG_TEXTURE,
-					"[metl154cache] pre-load: i=%d bm_flags=0x%x GameBitmapFlags=0x%x gltex=%p mask=%p",
+					"[texcache_target] pre-load: i=%d bm_flags=0x%x GameBitmapFlags=0x%x gltex=%p mask=%p",
 					i, bm->bm_flags,
 					piggy_bitmap_get_flags(bm),
 					(void *)bm->gltexture,
@@ -1017,9 +1000,9 @@ void ogl_cache_level_textures(void)
 				    i + 1, Num_bitmap_files, cname ? cname : "<null>", bm->bm_flags);
 			int had_tex = (bm->gltexture && bm->gltexture->handle > 0);
 			ogl_loadbmtexture(bm);
-			if (cname && !d_stricmp(cname, "metl154"))
+			if (android_texture_debug_matches_target_name(cname))
 				debug_log(DLOG_TEXTURE,
-					"[metl154cache] post-load: i=%d bm_flags=0x%x gltex=%p mask=%p",
+					"[texcache_target] post-load: i=%d bm_flags=0x%x gltex=%p mask=%p",
 					i, bm->bm_flags,
 					(void *)bm->gltexture,
 					(void *)bm->gltexture_mask);
@@ -1456,7 +1439,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	GLfloat color_alpha = 1.0;
 	int skip_merged_wall_cover_draw = 0;
 #if defined(ANDROID) && defined(OGL_MERGE)
-	if (!metl154_single_clip_active
+	if (!mwall_single_clip_active
 		&& tmap_drawer_ptr == draw_tmap
 		&& android_merged_wall_is_logging_target_bitmap(bm)
 		&& g_android_draw_face_ctx.valid
@@ -1466,7 +1449,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 			|| (g_android_draw_face_ctx.wid_flags & WID_CLOAKED_FLAG)
 #endif
 		))
-		return ogl_clip_and_draw_metl154_single(nv, pointlist, uvl_list,
+		return ogl_clip_and_draw_mwall_single(nv, pointlist, uvl_list,
 			light_rgb, bm);
 #endif
 #if defined(ANDROID) && defined(OGL_MERGE)
@@ -1495,24 +1478,10 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 		ogl_texwrap(bm->gltexture, GL_REPEAT);
 	#if defined(ANDROID) && defined(OGL_MERGE)
 		android_merged_wall_clear_secondary_units_for_single(bm);
-		android_merged_wall_forensics_log_draw("g3_draw_tmap_bind", bm);
 	#endif
 		r_tpolyc++;
 #ifdef ANDROID
-		/* android port: log first few 3D texture bindings per level for debugging */
-		if (r_etc2_render_log_count < 5) {
-			const char *bname = piggy_game_bitmap_name(bm);
-			GLint cur_min_filter = 0;
-			glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &cur_min_filter);
-			__android_log_print(ANDROID_LOG_INFO, "DXX-TEX",
-			    "3D render bind #%d: %s handle=%u is_png=%d w=%d h=%d u=%.3f v=%.3f min_filter=0x%x",
-			    r_etc2_render_log_count, bname ? bname : "?",
-			    bm->gltexture->handle, bm->gltexture->is_png,
-			    bm->gltexture->w, bm->gltexture->h,
-			    bm->gltexture->u, bm->gltexture->v,
-			    cur_min_filter);
-			r_etc2_render_log_count++;
-		}
+		android_texture_debug_log_render_bind(&r_etc2_render_log_count, bm);
 #endif
 		color_alpha = (grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0));
 #if defined(ANDROID) && defined(OGL_MERGE)
@@ -1562,8 +1531,8 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 
 #if defined(ANDROID) && defined(OGL_MERGE)
 	if (tmap_drawer_ptr == draw_tmap)
-		android_merged_wall_forensics_log_single_draw("g3_draw_tmap_submit", bm,
-			(const struct g3s_point **)pointlist, uvl_list, color_array, nv);
+		android_merged_wall_probe_record_draw_face(bm,
+			(const struct g3s_point **)pointlist, uvl_list, nv);
 #endif
 
 	if (!skip_merged_wall_cover_draw)
@@ -1604,7 +1573,6 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 #if defined(ANDROID)
 	int draw_order = android_merged_wall_next_draw_order();
 	int is_logging_target_plain = 0;
-	int merged_wall_force_two_pass = 0, merged_wall_force_cull_off = 0, merged_wall_force_depth_off = 0, merged_wall_force_polygon_offset = 0;
 	GLint merged_wall_depth_enabled = 0, merged_wall_blend_enabled = 0, merged_wall_cull_enabled = 0;
 	GLint merged_wall_depth_func = 0, merged_wall_front_face = 0, merged_wall_cull_mode = 0, merged_wall_polygon_offset_enabled = 0, merged_wall_draw_fbo = 0;
 	GLfloat merged_wall_polygon_offset_factor = 0.0f, merged_wall_polygon_offset_units = 0.0f;
@@ -1652,10 +1620,9 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	super = (bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && bmovl->gltexture_mask;
 	#if defined(ANDROID)
 	is_logging_target_plain = !super && android_merged_wall_is_logging_target_bitmap(bmovl);
-	merged_wall_force_two_pass = is_logging_target_plain && g_merged_wall_force_two_pass;
 	if (android_merged_wall_is_logging_target_bitmap(bmovl))
 		debug_log(DLOG_TEXTURE,
-			"[metl154super] idx=%d bm_flags=0x%x real=0x%x mask=%p mask_h=%u super=%d",
+			"[mwall_super] idx=%d bm_flags=0x%x real=0x%x mask=%p mask_h=%u super=%d",
 			(int)(bmovl - GameBitmaps),
 			bmovl->bm_flags,
 			piggy_bitmap_get_flags(bmovl),
@@ -1673,60 +1640,37 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	glActiveTexture(GL_TEXTURE0);
 	#if defined(ANDROID)
 	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT)) {
-		if (merged_wall_force_two_pass) {
-			const char *botname = piggy_game_bitmap_name(bmbot);
-			const char *ovlname = piggy_game_bitmap_name(bmovl);
-
-			debug_log(DLOG_TEXTURE,
-				"[metl154clip] frame=%d pass=%d seq=%d stage=route route=force_two_pass merge_impl=gpu_two_pass seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=0 bot=%s ovl=%s",
-				g_metl154_frame_id,
-				g_metl154_render_pass,
-				g_metl154_draw_seq,
-				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
-				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
-				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
-				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
-				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
-				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
-				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
-				label_nv,
-				orient,
-				botname ? botname : "<none>",
-				ovlname ? ovlname : "<none>");
-			merged_wall_tmap2_submit_ctx.route = "force_two_pass";
-		} else {
-			int merged_slot = -1;
-			grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
-				bmovl, orient, &merged_slot);
-			if (merged) {
-				android_texture_debug_add_joined_labels((const g3s_point *const *)label_pointlist,
-					label_nv, bmbot, bmovl);
-				if (android_merged_wall_is_logging_target_bitmap(bmovl)) {
-					const char *botname = piggy_game_bitmap_name(bmbot);
-					const char *ovlname = piggy_game_bitmap_name(bmovl);
-					debug_log(DLOG_TEXTURE,
-						"[metl154clip] frame=%d pass=%d seq=%d stage=route route=merge_cached merge_impl=gpu_cached_single seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=0 bot=%s ovl=%s",
-						g_metl154_frame_id,
-						g_metl154_render_pass,
-						g_metl154_draw_seq,
-						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
-						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
-						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
-						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
-						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
-						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
-						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
-						label_nv,
-						orient,
-						botname ? botname : "<none>",
-						ovlname ? ovlname : "<none>");
-				}
-				android_merged_wall_track_face(
+		int merged_slot = -1;
+		grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
+			bmovl, orient, &merged_slot);
+		if (merged) {
+			android_texture_debug_add_joined_labels((const g3s_point *const *)label_pointlist,
+				label_nv, bmbot, bmovl);
+			if (android_merged_wall_is_logging_target_bitmap(bmovl)) {
+				const char *botname = piggy_game_bitmap_name(bmbot);
+				const char *ovlname = piggy_game_bitmap_name(bmovl);
+				debug_log(DLOG_TEXTURE,
+					"[mwall_clip] frame=%d pass=%d seq=%d stage=route route=merge_cached merge_impl=gpu_cached_single seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=0 bot=%s ovl=%s",
+					g_merged_wall_frame_id,
+					g_merged_wall_render_pass,
+					g_merged_wall_draw_seq,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
+					label_nv,
+					orient,
+					botname ? botname : "<none>",
+					ovlname ? ovlname : "<none>");
+			}
+			android_merged_wall_track_face(
 				(const struct g3s_point **)pointlist, nv, uvl_list, orient,
 				draw_order, "merge_cached", "gpu_cached_single", NULL,
 				merged, merged_slot);
-				return g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, merged);
-			}
+			return g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, merged);
 		}
 	}
 	#endif
@@ -1796,7 +1740,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	GLfloat tex2_alpha_cutoff = 0.5f;
 	#ifdef ANDROID
 	int log_tmap2_geometry = !super && android_merged_wall_is_logging_target_bitmap(bmovl);
-	int tex2_debug_mode = (!super && android_merged_wall_is_logging_target_bitmap(bmovl)) ? g_metl154_debug_mode : MERGED_WALL_DEBUG_NONE;
+	int tex2_debug_mode = (!super && android_merged_wall_is_logging_target_bitmap(bmovl)) ? g_merged_wall_debug_mode : MERGED_WALL_DEBUG_NONE;
 	#else
 	int tex2_debug_mode = 0;
 	#endif
@@ -1872,8 +1816,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 			merged_wall_depth_writemask, merged_wall_depth_func, merged_wall_front_face,
 			merged_wall_cull_mode, merged_wall_polygon_offset_enabled,
 			merged_wall_polygon_offset_factor, merged_wall_polygon_offset_units,
-			(const unsigned char *) merged_wall_color_mask, merged_wall_draw_fbo,
-			merged_wall_force_cull_off, merged_wall_force_polygon_offset, merged_wall_force_depth_off);
+			(const unsigned char *) merged_wall_color_mask, merged_wall_draw_fbo);
 	if (log_tmap2_geometry)
 		android_merged_wall_log_split(&merged_wall_tmap2_submit_ctx,
 			(const struct g3s_point *const *)pointlist, nv);
@@ -1925,7 +1868,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 }
 
 #if defined(ANDROID) && defined(OGL_MERGE)
-static bool ogl_clip_and_draw_metl154_single(int nv, const g3s_point **pointlist,
+static bool ogl_clip_and_draw_mwall_single(int nv, const g3s_point **pointlist,
 	g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bm)
 {
 	g3s_point *clip_src[MAX_POINTS_IN_POLY], *clip_dest[MAX_POINTS_IN_POLY];
@@ -1938,9 +1881,9 @@ static bool ogl_clip_and_draw_metl154_single(int nv, const g3s_point **pointlist
 	bool result = 0;
 
 	if (nv < 3 || nv > MAX_POINTS_IN_POLY) {
-		metl154_single_clip_active = 1;
+		mwall_single_clip_active = 1;
 		result = g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, bm);
-		metl154_single_clip_active = 0;
+		mwall_single_clip_active = 0;
 		return result;
 	}
 
@@ -1960,10 +1903,10 @@ static bool ogl_clip_and_draw_metl154_single(int nv, const g3s_point **pointlist
 	if (cc.uand)
 	{
 		debug_log(DLOG_TEXTURE,
-			"[metl154clip] frame=%d pass=%d seq=%d kind=single stage=culled orig_nv=%d clipped_nv=0 uor=0x%x uand=0x%x behind=%d",
-			g_metl154_frame_id,
-			g_metl154_render_pass,
-			g_metl154_draw_seq,
+			"[mwall_clip] frame=%d pass=%d seq=%d kind=single stage=culled orig_nv=%d clipped_nv=0 uor=0x%x uand=0x%x behind=%d",
+			g_merged_wall_frame_id,
+			g_merged_wall_render_pass,
+			g_merged_wall_draw_seq,
 			nv,
 			cc.uor,
 			cc.uand,
@@ -1971,18 +1914,18 @@ static bool ogl_clip_and_draw_metl154_single(int nv, const g3s_point **pointlist
 		return 1;
 	}
 	if (!cc.uor) {
-		metl154_single_clip_active = 1;
+		mwall_single_clip_active = 1;
 		result = g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, bm);
-		metl154_single_clip_active = 0;
+		mwall_single_clip_active = 0;
 		return result;
 	}
 
 	bufptr = clip_polygon(clip_src, clip_dest, &clipped_nv, &cc);
 	debug_log(DLOG_TEXTURE,
-		"[metl154clip] frame=%d pass=%d seq=%d kind=single stage=clip orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d",
-		g_metl154_frame_id,
-		g_metl154_render_pass,
-		g_metl154_draw_seq,
+		"[mwall_clip] frame=%d pass=%d seq=%d kind=single stage=clip orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d",
+		g_merged_wall_frame_id,
+		g_merged_wall_render_pass,
+		g_merged_wall_draw_seq,
 		nv,
 		clipped_nv,
 		cc.uor,
@@ -1998,10 +1941,10 @@ static bool ogl_clip_and_draw_metl154_single(int nv, const g3s_point **pointlist
 			if (p->p3_flags & PF_OVERFLOW)
 			{
 				debug_log(DLOG_TEXTURE,
-					"[metl154clip] frame=%d pass=%d seq=%d kind=single stage=overflow orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d",
-					g_metl154_frame_id,
-					g_metl154_render_pass,
-					g_metl154_draw_seq,
+					"[mwall_clip] frame=%d pass=%d seq=%d kind=single stage=overflow orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d",
+					g_merged_wall_frame_id,
+					g_merged_wall_render_pass,
+					g_merged_wall_draw_seq,
 					nv,
 					clipped_nv,
 					cc.uor,
@@ -2019,10 +1962,10 @@ static bool ogl_clip_and_draw_metl154_single(int nv, const g3s_point **pointlist
 			clipped_light[i].b = p->p3_l;
 		}
 
-		metl154_single_clip_active = 1;
+		mwall_single_clip_active = 1;
 		result = g3_draw_tmap(clipped_nv, draw_points, clipped_uvl,
 			clipped_light, bm);
-		metl154_single_clip_active = 0;
+		mwall_single_clip_active = 0;
 	}
 
 free_points:
@@ -2044,7 +1987,7 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 	g3s_point **bufptr;
 	g3s_codes cc;
 	unsigned int post_uor = 0, post_uand = 0xff;
-	const char *route_name = route ? route : "clip_metl154";
+	const char *route_name = route ? route : "clip_mwall";
 	int input_behind = 0, temp_points = 0, post_behind = 0;
 	int clipped_nv = nv, i;
 	bool result = 0;
@@ -2072,10 +2015,10 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 	if (cc.uand)
 	{
 		debug_log(DLOG_TEXTURE,
-			"[metl154clip] frame=%d pass=%d seq=%d stage=culled kind=merge route=%s orig_nv=%d clipped_nv=0 uor=0x%x uand=0x%x behind=%d input_behind=%d temp=%d post_uor=0x%x post_uand=0x%x post_behind=%d",
-			g_metl154_frame_id,
-			g_metl154_render_pass,
-			g_metl154_draw_seq,
+			"[mwall_clip] frame=%d pass=%d seq=%d stage=culled kind=merge route=%s orig_nv=%d clipped_nv=0 uor=0x%x uand=0x%x behind=%d input_behind=%d temp=%d post_uor=0x%x post_uand=0x%x post_behind=%d",
+			g_merged_wall_frame_id,
+			g_merged_wall_render_pass,
+			g_merged_wall_draw_seq,
 			route_name,
 			nv,
 			cc.uor,
@@ -2103,10 +2046,10 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 		(const struct g3s_point *const *)bufptr, clipped_nv,
 		&post_uor, &post_uand, &post_behind, &temp_points);
 	debug_log(DLOG_TEXTURE,
-		"[metl154clip] frame=%d pass=%d seq=%d stage=clip kind=merge route=%s orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d input_behind=%d temp=%d post_uor=0x%x post_uand=0x%x post_behind=%d",
-		g_metl154_frame_id,
-		g_metl154_render_pass,
-		g_metl154_draw_seq,
+		"[mwall_clip] frame=%d pass=%d seq=%d stage=clip kind=merge route=%s orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d input_behind=%d temp=%d post_uor=0x%x post_uand=0x%x post_behind=%d",
+		g_merged_wall_frame_id,
+		g_merged_wall_render_pass,
+		g_merged_wall_draw_seq,
 		route_name,
 		nv,
 		clipped_nv,
@@ -2128,10 +2071,10 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 			if (p->p3_flags & PF_OVERFLOW)
 			{
 				debug_log(DLOG_TEXTURE,
-					"[metl154clip] frame=%d pass=%d seq=%d stage=overflow kind=merge route=%s orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d input_behind=%d temp=%d post_uor=0x%x post_uand=0x%x post_behind=%d",
-					g_metl154_frame_id,
-					g_metl154_render_pass,
-					g_metl154_draw_seq,
+					"[mwall_clip] frame=%d pass=%d seq=%d stage=overflow kind=merge route=%s orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d input_behind=%d temp=%d post_uor=0x%x post_uand=0x%x post_behind=%d",
+					g_merged_wall_frame_id,
+					g_merged_wall_render_pass,
+					g_merged_wall_draw_seq,
 					route_name,
 					nv,
 					clipped_nv,
@@ -2178,9 +2121,9 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 	int input_behind = 0;
 	if (android_merged_wall_is_logging_target_bitmap(bmovl)
 		&& !(bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT)) {
-		android_merged_wall_log_tmap2_route("clip_metl154", bmbot, bmovl, nv, orient);
+		android_merged_wall_log_tmap2_route("clip_mwall", bmbot, bmovl, nv, orient);
 		return ogl_clip_and_draw_tmap2_merge(nv, pointlist, uvl_list,
-			light_rgb, bmbot, bmovl, orient, "clip_metl154");
+			light_rgb, bmbot, bmovl, orient, "clip_mwall");
 	}
 	if (android_merged_wall_is_logging_target_bitmap(bmovl))
 		android_merged_wall_log_tmap2_route("merge_raw", bmbot, bmovl, nv, orient);
@@ -3655,8 +3598,6 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 #endif
 					profile_source = "ktx2";
 					android_perf_clock_now(&texture_total_end);
-					android_merged_wall_forensics_log_bitmap("upload_ktx2", "d2",
-						bm, -1);
 					android_profile_texture_load("d2", bitmapname, profile_source,
 						edata.orig_width, edata.orig_height, bm->bm_flags,
 						android_perf_elapsed_us(&texture_total_start, &texture_total_end),
@@ -3780,8 +3721,6 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				r_hires_loaded++;
 				profile_source = "png";
 				android_perf_clock_now(&texture_total_end);
-				android_merged_wall_forensics_log_bitmap("upload_png", "d2",
-					bm, -1);
 				android_profile_texture_load("d2", bitmapname, profile_source,
 					pdata.width, pdata.height, bm->bm_flags,
 					android_perf_elapsed_us(&texture_total_start, &texture_total_end),
@@ -3948,15 +3887,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 	#if defined(ANDROID) && defined(OGL_MERGE)
 	android_merged_wall_log_palette_source(bitmapname, buf, bm->bm_w, bm->bm_h,
 		bm->bm_flags, 1u << 4, "stock-native");
-	android_merged_wall_forensics_log_bitmap("upload_stock", "d2", bm, -1);
 	#endif
 
-#if defined(ANDROID) && defined(OGL_MERGE)
-	debug_log(DLOG_TEXTURE,
-		"Stock mask check: %s bm_flags=0x%x real_flags=0x%x super=%d",
-		bitmapname ? bitmapname : "<null>", bm->bm_flags, real_flags,
-		!!(bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT));
-#endif
 #ifdef OGL_MERGE
 	if (bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT) {
 		unsigned char *mask;

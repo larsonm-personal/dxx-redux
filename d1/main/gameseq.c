@@ -781,6 +781,7 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	gr_palette_load(gr_palette);		//actually load the palette
 #if defined(OGL) && defined(__ANDROID__)
+	// Palette-indexed GL textures must be rebuilt after the final level palette is active.
 	ogl_invalidate_game_palette_textures();
 #endif
 

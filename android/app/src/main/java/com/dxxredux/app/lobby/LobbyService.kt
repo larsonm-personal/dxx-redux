@@ -3,6 +3,7 @@ package com.dxxredux.app.lobby
 import android.content.Context
 import android.net.wifi.WifiManager
 import android.util.Log
+import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.multiplayer.ClientIdentity
 import com.dxxredux.app.multiplayer.NetLog
 import com.dxxredux.app.multiplayer.NetworkConstants
@@ -82,6 +83,10 @@ object LobbyService {
         val hostBuild: String = "",
         val hostCallsign: String? = null,
         val hostClientId: String? = null,
+        val stockVisualsEnforced: Boolean = false,
+        val omittedVisualModCount: Int = 0,
+        val omittedVisualTextureCount: Int = 0,
+        val omittedVisualModNames: List<String> = emptyList(),
     )
 
     private val _joinedLobby = MutableStateFlow<JoinedLobbyInfo?>(null)
@@ -186,6 +191,14 @@ object LobbyService {
 
     @Volatile private var hostedRestrictNonCoopFovToBase: Boolean = false
 
+    @Volatile private var hostedStockVisualsEnforced: Boolean = false
+
+    @Volatile private var hostedOmittedVisualModCount: Int = 0
+
+    @Volatile private var hostedOmittedVisualTextureCount: Int = 0
+
+    @Volatile private var hostedOmittedVisualModNames: List<String> = emptyList()
+
     /**
      * Start discovery mode. Acquires multicast lock, opens the UDP socket,
      * and begins listening for ANNOUNCE packets.
@@ -228,6 +241,10 @@ object LobbyService {
         socketRefreshNeededOnResume = false
         hostedHostPort = NetworkConstants.ENGINE_PORT
         hostedRestrictNonCoopFovToBase = false
+        hostedStockVisualsEnforced = false
+        hostedOmittedVisualModCount = 0
+        hostedOmittedVisualTextureCount = 0
+        hostedOmittedVisualModNames = emptyList()
         localClientId = null
         closeSocket()
         NetLog.log("LAN", "Discovery stopped")
@@ -244,6 +261,11 @@ object LobbyService {
         mission: String,
         mode: String,
         maxPlayers: Int,
+        restrictNonCoopFovToBase: Boolean = false,
+        stockVisualsEnforced: Boolean = false,
+        omittedVisualModCount: Int = 0,
+        omittedVisualTextureCount: Int = 0,
+        omittedVisualModNames: List<String> = emptyList(),
     ) {
         if (!_isDiscovering.value) return
         hostedLobbyId = UUID.randomUUID().toString()
@@ -252,6 +274,11 @@ object LobbyService {
         hostedMission = mission
         hostedMode = mode
         hostedMaxPlayers = maxPlayers
+        hostedRestrictNonCoopFovToBase = restrictNonCoopFovToBase
+        hostedStockVisualsEnforced = stockVisualsEnforced
+        hostedOmittedVisualModCount = omittedVisualModCount
+        hostedOmittedVisualTextureCount = omittedVisualTextureCount
+        hostedOmittedVisualModNames = omittedVisualModNames
         _hostedLobbyPlayers.value =
             listOf(
                 LanPlayer(callsign = callsign, address = "127.0.0.1", clientId = localClientId, ready = true),
@@ -272,6 +299,10 @@ object LobbyService {
         announceJob = null
         hostedLobbyId = null
         hostedRestrictNonCoopFovToBase = false
+        hostedStockVisualsEnforced = false
+        hostedOmittedVisualModCount = 0
+        hostedOmittedVisualTextureCount = 0
+        hostedOmittedVisualModNames = emptyList()
         _hostedLobbyPlayers.value = emptyList()
         _chatMessages.value = emptyList()
         Log.i(TAG, "Stopped hosting LAN lobby")
@@ -699,6 +730,10 @@ object LobbyService {
                 hostPort = json.optInt("host_port", NetworkConstants.ENGINE_PORT),
                 hostClientId = json.optString("host_client_id", "").takeIf { it.isNotBlank() },
                 restrictNonCoopFovToBase = json.optBoolean("restrict_noncoop_fov_to_base", false),
+                stockVisualsEnforced = json.optBoolean(VisualReplacementPolicy.STOCK_VISUALS_ENFORCED, false),
+                omittedVisualModCount = json.optInt(VisualReplacementPolicy.OMITTED_VISUAL_MOD_COUNT, 0),
+                omittedVisualTextureCount = json.optInt(VisualReplacementPolicy.OMITTED_VISUAL_TEXTURE_COUNT, 0),
+                omittedVisualModNames = VisualReplacementPolicy.namesFromJson(json),
             )
         lobbies[lobbyId] = DiscoveredLobby(announce = announce)
         publishLobbies()
@@ -730,6 +765,10 @@ object LobbyService {
                     hostedMaxPlayers,
                     hostCallsign,
                     localClientId,
+                    hostedStockVisualsEnforced,
+                    hostedOmittedVisualModCount,
+                    hostedOmittedVisualTextureCount,
+                    hostedOmittedVisualModNames,
                 ),
                 senderAddr,
             )
@@ -779,6 +818,10 @@ object LobbyService {
                         hostedMaxPlayers,
                         hostCallsign,
                         localClientId,
+                        hostedStockVisualsEnforced,
+                        hostedOmittedVisualModCount,
+                        hostedOmittedVisualTextureCount,
+                        hostedOmittedVisualModNames,
                     ),
                     senderAddr,
                 )
@@ -812,6 +855,10 @@ object LobbyService {
                 hostedMaxPlayers,
                 hostCallsign,
                 localClientId,
+                hostedStockVisualsEnforced,
+                hostedOmittedVisualModCount,
+                hostedOmittedVisualTextureCount,
+                hostedOmittedVisualModNames,
             ),
             senderAddr,
         )
@@ -911,6 +958,10 @@ object LobbyService {
                 hostBuild = json.optString("build", ""),
                 hostCallsign = json.optString("host_callsign", "").takeIf { it.isNotBlank() },
                 hostClientId = json.optString("host_client_id", "").takeIf { it.isNotBlank() },
+                stockVisualsEnforced = json.optBoolean(VisualReplacementPolicy.STOCK_VISUALS_ENFORCED, false),
+                omittedVisualModCount = json.optInt(VisualReplacementPolicy.OMITTED_VISUAL_MOD_COUNT, 0),
+                omittedVisualTextureCount = json.optInt(VisualReplacementPolicy.OMITTED_VISUAL_TEXTURE_COUNT, 0),
+                omittedVisualModNames = VisualReplacementPolicy.namesFromJson(json),
             )
         NetLog.log("LAN", "JOIN_ACK received for lobby $lobbyId from $senderAddr")
         Log.i(TAG, "JOIN_ACK received for lobby $lobbyId from $senderAddr")
@@ -968,6 +1019,10 @@ object LobbyService {
                 playerSpewNoExpire = playerSpewNoExpire,
                 clientsCanRequestRewind = clientsCanRequestRewind,
                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,
+                stockVisualsEnforced = hostedStockVisualsEnforced,
+                omittedVisualModCount = hostedOmittedVisualModCount,
+                omittedVisualTextureCount = hostedOmittedVisualTextureCount,
+                omittedVisualModNames = hostedOmittedVisualModNames,
             )
         // Mark game started (rejects further JOINs) but keep announcing
         // so in-game lobbies remain discoverable on LAN
@@ -1154,6 +1209,10 @@ object LobbyService {
                 hostPort = hostedHostPort,
                 hostClientId = localClientId,
                 restrictNonCoopFovToBase = hostedRestrictNonCoopFovToBase,
+                stockVisualsEnforced = hostedStockVisualsEnforced,
+                omittedVisualModCount = hostedOmittedVisualModCount,
+                omittedVisualTextureCount = hostedOmittedVisualTextureCount,
+                omittedVisualModNames = hostedOmittedVisualModNames,
             )
         sendTo(data, senderAddr)
         Log.i(TAG, "handleQuery: sent ANNOUNCE to $senderAddr for lobby $lid")
@@ -1218,6 +1277,10 @@ object LobbyService {
                 hostPort = hostedHostPort,
                 hostClientId = localClientId,
                 restrictNonCoopFovToBase = hostedRestrictNonCoopFovToBase,
+                stockVisualsEnforced = hostedStockVisualsEnforced,
+                omittedVisualModCount = hostedOmittedVisualModCount,
+                omittedVisualTextureCount = hostedOmittedVisualTextureCount,
+                omittedVisualModNames = hostedOmittedVisualModNames,
             )
         sendBroadcast(data)
     }
