@@ -473,12 +473,25 @@ void coop_apply_record_to_player(int pnum, const coop_player_record *rec,
 }
 
 static int coop_autosave_next_slot = 0;
+static uint32_t coop_autosave_game_id_sequence = 0;
+
+static uint32_t coop_make_autosave_game_id(void)
+{
+	uint32_t id = ((uint32_t) time(NULL) << 8) ^
+	              (++coop_autosave_game_id_sequence) ^
+	              ((uint32_t) N_players << 16) ^
+	              ((uint32_t) (Current_level_num & 0xff) << 24);
+	if (!id || id == COOP_AUTOSAVE_GAME_ID)
+		id ^= 0x13579bdfu;
+	return id;
+}
 
 int coop_autosave(void)
 {
 	char filename[PATH_MAX];
 	char desc[20];
 	int slot;
+	uint32_t autosave_game_id;
 
 	if (!(Game_mode & GM_MULTI_COOP))
 		return 0;
@@ -490,18 +503,23 @@ int coop_autosave(void)
 	coop_autosave_next_slot++;
 
 	state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
+	memset(desc, 0, sizeof(desc));
 	snprintf(desc, sizeof(desc), "Auto L%d %dp %dpts",
 	         Current_level_num, N_players, Players[Player_num].score);
+	autosave_game_id = coop_make_autosave_game_id();
 
 	COOP_SAVE_LOG(CON_NORMAL, "coop_save: auto-saving to slot %d: %s\n",
 	              slot, desc);
+
+	if (multi_i_am_master())
+		multi_send_save_game(slot, autosave_game_id, desc);
 
 	{
 		uint saved_game_id = state_game_id;
 		char saved_callsign[CALLSIGN_LEN + 1];
 		memcpy(saved_callsign, Players[Player_num].callsign, CALLSIGN_LEN + 1);
 
-		state_game_id = COOP_AUTOSAVE_GAME_ID;
+		state_game_id = autosave_game_id;
 		strncpy(Players[Player_num].callsign, COOP_AUTOSAVE_CALLSIGN, CALLSIGN_LEN + 1);
 
 		stop_time();
@@ -974,13 +992,16 @@ void coop_arm_auto_restore(void)
 	}
 
 	state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
-	gid = state_get_game_id(filename);
-	coop_auto_restore_trace("try callsign file '%s' game_id=%u", filename, gid);
-	if (!gid &&
-	    slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
+	if (slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
 		state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
 		gid = state_get_game_id(filename);
 		coop_auto_restore_trace("try autosave file '%s' game_id=%u", filename, gid);
+	} else
+		gid = 0;
+	if (!gid) {
+		state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
+		gid = state_get_game_id(filename);
+		coop_auto_restore_trace("try callsign file '%s' game_id=%u", filename, gid);
 	}
 	if (!gid) {
 		coop_auto_restore_log_slot_not_viable(slot);

@@ -311,6 +311,7 @@ int get_team_size(int team_num);
 int multi_maybe_disable_friendly_fire(object *killer);
 void multi_initiate_save_game();
 void multi_initiate_restore_game();
+void multi_send_save_game(ubyte slot, uint id, char *desc);
 void multi_send_restore_game(ubyte slot, uint id);
 void multi_prepare_restore_sync(void);
 void multi_restore_game(ubyte slot, uint id);

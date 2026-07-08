@@ -6816,14 +6816,6 @@ void multi_do_restore_game(const ubyte *buf)
 	COOPLOG("multi_do_restore_game packet: game=d2 slot=%d id=%u master=%d current_level=%d net_level=%d n_players=%d",
 	        slot, id, multi_i_am_master(), Current_level_num,
 	        Netgame.levelnum, N_players);
-	if (slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT &&
-	    !multi_i_am_master()) {
-		COOPLOG("multi_do_restore_game: autosave slot %d received on peer, requesting host resync", slot);
-#ifdef USE_UDP
-		net_udp_request_resync_from_host("coop autosave restore");
-#endif
-		return;
-	}
 #endif
 
 	multi_restore_game( slot, id );
@@ -6974,6 +6966,11 @@ void multi_save_game(ubyte slot, uint id, char *desc)
 	if ((Endlevel_sequence) || (Control_center_destroyed))
 		return;
 
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP)
+		state_android_build_save_filename(filename, PATH_MAX, slot, 1, 1);
+	else
+#endif
 	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%s.mg%d" : "%s.mg%d", Players[Player_num].callsign, slot);
 	HUD_init_message(HM_MULTI,  "Saving game #%d, '%s'", slot, desc);
 	stop_time();
@@ -7008,35 +7005,33 @@ void multi_restore_game(ubyte slot, uint id)
 
 	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%s.mg%d" : "%s.mg%d", Players[Player_num].callsign, slot);
 #ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP)
+		state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
 	/* Autosaves use COOP_AUTOSAVE_CALLSIGN -- try that if the normal
 	 * filename doesn't exist OR exists but has the wrong game_id.
 	 * coop_arm_auto_restore already does this fallback when arming;
 	 * multi_restore_game must mirror it or it picks up stale legacy
 	 * autosaves with the wrong bitmap/effect state. */
 	if (slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
-		if (!multi_i_am_master()) {
-			COOPLOG("multi_restore_game: autosave slot %d restore skipped on peer, requesting host resync", slot);
-#ifdef USE_UDP
-			net_udp_request_resync_from_host("coop autosave restore");
-#endif
-			return;
-		}
-		state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
+		if (multi_i_am_master())
+			state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
+		else
+			state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
 		int need_fallback = !PHYSFSX_exists(filename, 0);
 		if (!need_fallback) {
 			int fid = state_get_game_id(filename);
 			if (fid != (int)id && fid != (int)COOP_AUTOSAVE_GAME_ID)
 				need_fallback = 1;
 		}
-		if (need_fallback)
-			state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
+		if (need_fallback) {
+			if (multi_i_am_master())
+				state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
+			else
+				state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
+		}
 	}
-	/* If still missing (peer doesn't have autosave), skip gracefully --
-	 * the host will sync us through normal multiplayer sync */
-	if (!PHYSFSX_exists(filename, 0)) {
-		COOPLOG("multi_restore_game: file missing '%s', skipping (peer)", filename);
-		return;
-	}
+	if (!PHYSFSX_exists(filename, 0))
+		COOPLOG("multi_restore_game: file missing '%s'", filename);
 	COOPLOG("multi_restore_game: file='%s' slot=%d id=%u", filename, slot, id);
 #endif
 

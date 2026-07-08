@@ -51,6 +51,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "effects.h"
 #include "playsave.h"
+#ifdef OGL
+#include "ogl_init.h"
+#endif
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
 #include "merged_wall_debug.h"

@@ -116,6 +116,7 @@ struct newmenu
 };
 grs_bitmap nm_background, nm_background1;
 grs_bitmap *nm_background_sub = NULL;
+static char nm_background1_filename[PATH_MAX];
 #ifdef ANDROID
 static ubyte nm_background1_palette[768];  // saved palette from the background PCX
 enum { ANDROID_TINY_TEXT_MAX_VISIBLE = 9 };
@@ -342,6 +343,7 @@ void newmenu_free_background()	{
 	}
 	if (nm_background1.bm_data)
 		gr_free_bitmap_data (&nm_background1);
+	nm_background1_filename[0] = 0;
 }
 
 // Draws the custom menu background pcx, if available
@@ -358,12 +360,19 @@ void nm_draw_background1(char * filename)
 
 	if (filename != NULL)
 	{
+		if (nm_background1.bm_data != NULL && d_stricmp(nm_background1_filename, filename))
+		{
+			gr_free_bitmap_data(&nm_background1);
+			nm_background1_filename[0] = 0;
+		}
 		if (nm_background1.bm_data == NULL)
 		{
 			gr_init_bitmap_data (&nm_background1);
 			pcx_error = pcx_read_bitmap( filename, &nm_background1, BM_LINEAR, gr_palette );
 			Assert(pcx_error == PCX_ERROR_NONE);
 			(void)pcx_error;
+			strncpy(nm_background1_filename, filename, sizeof(nm_background1_filename));
+			nm_background1_filename[sizeof(nm_background1_filename) - 1] = 0;
 #ifdef ANDROID
 			// Save the PCX palette so we can restore it on cached draws.
 			// On Android (SDL software rendering), gr_palette may be

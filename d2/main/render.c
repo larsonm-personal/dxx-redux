@@ -53,6 +53,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "input_demo_replay.h"
 #include "input_demo_debug_logging.h"
+#ifdef OGL
+#include "ogl_init.h"
+#endif
 #include "replay_debug_overlay.h"
 
 /* android port: robot label overlay -- global array definition */

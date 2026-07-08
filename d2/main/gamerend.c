@@ -50,6 +50,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "gameseq.h"
 #include "args.h"
+#include "gamepal.h"
 #include "maths.h"
 #include "input_demo_hooks.h"
 #include "input_demo_replay.h"
@@ -71,6 +72,31 @@ extern void newmenu_free_background();
 int netplayerinfo_on=0;
 
 extern ubyte DefiningMarkerMessage;
+
+#ifdef ANDROID
+static void android_boxed_message_save_palette(ubyte *palette, ubyte *fade_table,
+                                               ubyte *current_palette, char *last_palette)
+{
+	memcpy(palette, gr_palette, sizeof(gr_palette));
+	memcpy(fade_table, gr_fade_table, sizeof(gr_fade_table));
+	gr_palette_read(current_palette);
+	strncpy(last_palette, last_palette_loaded, FILENAME_LEN);
+	last_palette[FILENAME_LEN - 1] = 0;
+}
+
+static void android_boxed_message_restore_palette(ubyte *palette, ubyte *fade_table,
+                                                  ubyte *current_palette, char *last_palette)
+{
+	memcpy(gr_palette, palette, sizeof(gr_palette));
+	memcpy(gr_fade_table, fade_table, sizeof(gr_fade_table));
+	strncpy(last_palette_loaded, last_palette, FILENAME_LEN);
+	last_palette_loaded[FILENAME_LEN - 1] = 0;
+	gr_palette_load(current_palette);
+	newmenu_free_background();
+	gr_remap_color_fonts();
+	gr_remap_mono_fonts();
+}
+#endif
 
 void game_draw_marker_message()
 {
@@ -1141,9 +1167,25 @@ void show_boxed_message(char *msg, int RenderFlag)
 	#ifdef ANDROID
 		extern int g_ogl_render_context;
 		int prev_context = g_ogl_render_context;
+		int use_menu_palette = !RenderFlag;
+		ubyte saved_palette[256 * 3];
+		ubyte saved_fade_table[256 * GR_FADE_LEVELS];
+		ubyte saved_current_palette[256 * 3];
+		char saved_last_palette[FILENAME_LEN];
 	#endif
 	
 	gr_set_current_canvas(NULL);
+
+	#ifdef ANDROID
+	if (use_menu_palette) {
+		android_boxed_message_save_palette(saved_palette, saved_fade_table,
+		                                   saved_current_palette, saved_last_palette);
+		last_palette_loaded[0] = 0;
+		load_palette(MENU_PALETTE, 0, 1);
+		gr_palette_load(gr_palette);
+	}
+	#endif
+
 	gr_set_curfont( MEDIUM1_FONT );
 	gr_set_fontcolor(BM_XRGB(31, 31, 31), -1);
 	gr_get_string_size(msg,&w,&h,&aw);
@@ -1166,4 +1208,10 @@ void show_boxed_message(char *msg, int RenderFlag)
 	// If we haven't drawn behind it, need to flip
 	if (!RenderFlag)
 		gr_flip();
+
+	#ifdef ANDROID
+	if (use_menu_palette)
+		android_boxed_message_restore_palette(saved_palette, saved_fade_table,
+		                                      saved_current_palette, saved_last_palette);
+	#endif
 }
