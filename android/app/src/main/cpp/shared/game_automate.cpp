@@ -2914,6 +2914,9 @@ extern "C" void game_automate_tick(void)
 				                      (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) ? 1 : 0);
 			else if (s.field == "merged_wall_mode")
 				g_merged_wall_debug_mode = (int) std::stod(s.value);
+			else if (s.field == "merged_wall_force_two_pass")
+				g_merged_wall_force_two_pass =
+				    (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) ? 1 : 0;
 			else if (s.field == "clear_robots") {
 				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) {
 					char reason[128];

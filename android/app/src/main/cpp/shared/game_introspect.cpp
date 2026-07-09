@@ -1012,6 +1012,7 @@ extern "C" char *game_introspect_get_state(void)
 		dbg["texture_target"] = android_texture_debug_get_target_display();
 		dbg["texture_log"] = (bool) debug_log_enabled[DLOG_TEXTURE];
 		dbg["merged_wall_mode"] = (int) g_merged_wall_debug_mode;
+		dbg["merged_wall_force_two_pass"] = (int) g_merged_wall_force_two_pass;
 		j["debug_flags"] = std::move(dbg);
 	}
 	j["merged_wall_last_draw_state"] = serialize_merged_wall_last_draw_state();

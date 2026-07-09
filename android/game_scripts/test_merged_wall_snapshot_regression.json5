@@ -50,8 +50,8 @@
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
     {"action": "set_debug", "field": "clear_robots", "value": "1"},
+    {"action": "set_debug", "field": "texture_target", "value": "auto"},
     {"action": "set_debug", "field": "merged_wall_mode", "value": "0"},
-    {"action": "set_debug", "field": "merged_wall_experiment", "value": "0"},
     {"action": "set_debug", "field": "merged_wall_force_two_pass", "value": "0"},
     {"action": "face_view", "segment": 83, "side": 3, "face": 1, "distance": 12.0, "post_delay_ms": 250},
     {"action": "set_debug", "field": "merged_wall_snapshot", "value": "1"},

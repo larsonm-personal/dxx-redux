@@ -35,6 +35,8 @@ struct merged_wall_tmap2_submit_context {
 	unsigned int upload_id;
 };
 
+extern volatile int g_merged_wall_force_two_pass;
+
 void android_merged_wall_log_cached_texmerge(
     const char *event,
     grs_bitmap *bottom_bmp,

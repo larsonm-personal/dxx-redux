@@ -27,15 +27,12 @@
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "show_video_info_debug_options", "value": true}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
-     "args": {"key": "force_legacy_merged_wall_texmerge", "value": true}, "post_delay_ms": 250},
-    {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "dlog_graphics_enabled", "value": true}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "dlog_texture_enabled", "value": true}, "post_delay_ms": 250},
 
     {"action": "assert", "expect": {
         "debug_prefs.show_video_info_debug_options": "true",
-        "debug_prefs.force_legacy_merged_wall_texmerge": "true",
         "debug_prefs.graphics_log_enabled": "true",
         "debug_prefs.texture_log_enabled": "true",
         "debug_prefs.graphics_debug_logging": "true"
@@ -47,7 +44,6 @@
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "assert", "expect": {
         "screen_mode": "menu",
-        "debug_flags.merged_wall_experiment": "10",
         "debug_flags.texture_log": "true"
     }},
 
@@ -55,15 +51,12 @@
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "show_video_info_debug_options", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
-     "args": {"key": "force_legacy_merged_wall_texmerge", "value": false}, "post_delay_ms": 250},
-    {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "dlog_graphics_enabled", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "dlog_texture_enabled", "value": false}, "post_delay_ms": 250},
 
     {"action": "assert", "expect": {
         "debug_prefs.show_video_info_debug_options": "false",
-        "debug_prefs.force_legacy_merged_wall_texmerge": "false",
         "debug_prefs.graphics_log_enabled": "false",
         "debug_prefs.texture_log_enabled": "false",
         "debug_prefs.graphics_debug_logging": "false"

@@ -21,7 +21,7 @@ class ResumeSavePanelTest {
 
     @Test
     fun collapsedPanelUsesSaveExplorerLabel() {
-        assertEquals("Save Explorer", resumePanelCollapsedLabel())
+        assertEquals("view saves", resumePanelCollapsedLabel())
     }
 
     @Test

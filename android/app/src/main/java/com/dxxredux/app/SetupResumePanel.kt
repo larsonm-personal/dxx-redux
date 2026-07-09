@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,6 +33,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -138,7 +138,7 @@ internal fun decodeResumeSaveThumbnail(candidate: ResumeSaveBridge.ResumeSaveCan
 
 internal fun resumePanelHeaderTextOrder(): List<String> = listOf("Resume Recent Save", "Save Explorer")
 
-internal fun resumePanelCollapsedLabel(): String = "Save Explorer"
+internal fun resumePanelCollapsedLabel(): String = "view saves"
 
 @Composable
 internal fun ResumeSavePanel(
@@ -188,12 +188,13 @@ internal fun ResumeSavePanel(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                TextButton(
+                OutlinedButton(
                     onClick = onOpenSaveExplorer,
-                    modifier = Modifier.height(28.dp).tvFocusBorder(),
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                    modifier = Modifier.heightIn(min = 36.dp).tvFocusBorder(),
+                    shape = RoundedCornerShape(percent = 50),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                 ) {
-                    Text(headerTextOrder[1], fontSize = 9.sp, maxLines = 1)
+                    Text(headerTextOrder[1], fontSize = 10.sp, maxLines = 1)
                 }
                 IconButton(
                     onClick = onHide,

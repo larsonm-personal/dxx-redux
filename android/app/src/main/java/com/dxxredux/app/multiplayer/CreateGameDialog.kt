@@ -85,6 +85,7 @@ internal fun CreateGameDialog(
     val difficultyFocus = remember { FocusRequester() }
     val levelFocus = remember { FocusRequester() }
     val maxPlayersFocus = remember { FocusRequester() }
+    val optionsFocus = remember { FocusRequester() }
     val createFocus = remember { FocusRequester() }
     val dismissOrEndTextEntry =
         rememberControllerTextEntryDismiss(textEntryActive, dialogFocus, { textEntryActive = it }, onDismiss)
@@ -200,6 +201,116 @@ internal fun CreateGameDialog(
                             }
                         }
                     }
+                    // Difficulty dropdown
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text("Difficulty", style = MaterialTheme.typography.labelMedium)
+                        Box {
+                            var diffExpanded by remember { mutableStateOf(false) }
+                            OutlinedButton(
+                                onClick = { diffExpanded = true },
+                                modifier =
+                                    Modifier
+                                        .focusRequester(difficultyFocus)
+                                        .focusProperties { down = levelFocus },
+                            ) {
+                                Text(difficultyNames[difficulty])
+                            }
+                            DropdownMenu(
+                                expanded = diffExpanded,
+                                onDismissRequest = { diffExpanded = false },
+                            ) {
+                                difficultyNames.forEachIndexed { idx, name ->
+                                    DropdownMenuItem(
+                                        text = { Text(name) },
+                                        onClick = {
+                                            difficulty = idx
+                                            diffExpanded = false
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    // Level number + Max players on same row
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = levelNumText,
+                            onValueChange = { levelNumText = it.filter { c -> c.isDigit() } },
+                            label = { Text("Level") },
+                            singleLine = true,
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .focusRequester(levelFocus)
+                                    .focusProperties {
+                                        up = difficultyFocus
+                                        right = maxPlayersFocus
+                                        down = optionsFocus
+                                    }.dpadTextFieldNavigation(up = difficultyFocus, down = optionsFocus)
+                                    .controllerTextEntryFocus { textEntryActive = it },
+                        )
+                        OutlinedTextField(
+                            value = maxPlayersText,
+                            onValueChange = { maxPlayersText = it.filter { c -> c.isDigit() } },
+                            label = { Text("Max Players") },
+                            singleLine = true,
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .focusRequester(maxPlayersFocus)
+                                    .focusProperties {
+                                        up = difficultyFocus
+                                        left = levelFocus
+                                        down = optionsFocus
+                                    }.dpadTextFieldNavigation(up = difficultyFocus, down = optionsFocus)
+                                    .controllerTextEntryFocus { textEntryActive = it },
+                        )
+                    }
+                    if (coopSaves.isNotEmpty()) {
+                        Text("Restore from save:", style = MaterialTheme.typography.labelMedium)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            val noSaveSelected = selectedSave == null
+                            if (noSaveSelected) {
+                                Button(
+                                    onClick = { selectedSave = null },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text("Start fresh (no restore)") }
+                            } else {
+                                OutlinedButton(
+                                    onClick = { selectedSave = null },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text("Start fresh (no restore)") }
+                            }
+                            coopSaves.forEach { save ->
+                                val typeTag = if (save.type == "checkpoint") "[Chk]" else "[Save]"
+                                val scoreStr = if (save.totalScore > 0) " ${save.totalScore}pts" else ""
+                                val label =
+                                    "$typeTag L${save.level} - ${save.numPlayers}p" +
+                                        " - ${save.callsigns.joinToString()}" +
+                                        "$scoreStr - ${formatTimeAgo(save.timestamp)}"
+                                if (selectedSave == save) {
+                                    Button(
+                                        onClick = {},
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) { Text(label, fontSize = 11.sp, maxLines = 2) }
+                                } else {
+                                    OutlinedButton(
+                                        onClick = { selectedSave = save },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) { Text(label, fontSize = 11.sp, maxLines = 2) }
+                                }
+                            }
+                        }
+                    } else if (coopResumeLevel != null) {
+                        Text(
+                            "Last completed: Level $coopResumeLevel",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                     if (mode == "coop") {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -209,7 +320,7 @@ internal fun CreateGameDialog(
                             Switch(
                                 checked = coopQol,
                                 onCheckedChange = { coopQol = it },
-                                modifier = Modifier.tvFocusBorder(),
+                                modifier = Modifier.focusRequester(optionsFocus).tvFocusBorder(),
                             )
                             Column {
                                 Text(
@@ -255,7 +366,7 @@ internal fun CreateGameDialog(
                             Switch(
                                 checked = restrictNonCoopFovToBase,
                                 onCheckedChange = { restrictNonCoopFovToBase = it },
-                                modifier = Modifier.tvFocusBorder(),
+                                modifier = Modifier.focusRequester(optionsFocus).tvFocusBorder(),
                             )
                             Column {
                                 Text(
@@ -306,116 +417,6 @@ internal fun CreateGameDialog(
                         Text(
                             "Player spew does not expire",
                             style = MaterialTheme.typography.labelMedium,
-                        )
-                    }
-                    // Difficulty dropdown
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text("Difficulty", style = MaterialTheme.typography.labelMedium)
-                        Box {
-                            var diffExpanded by remember { mutableStateOf(false) }
-                            OutlinedButton(
-                                onClick = { diffExpanded = true },
-                                modifier =
-                                    Modifier
-                                        .focusRequester(difficultyFocus)
-                                        .focusProperties { down = levelFocus },
-                            ) {
-                                Text(difficultyNames[difficulty])
-                            }
-                            DropdownMenu(
-                                expanded = diffExpanded,
-                                onDismissRequest = { diffExpanded = false },
-                            ) {
-                                difficultyNames.forEachIndexed { idx, name ->
-                                    DropdownMenuItem(
-                                        text = { Text(name) },
-                                        onClick = {
-                                            difficulty = idx
-                                            diffExpanded = false
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    // Level number + Max players on same row
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = levelNumText,
-                            onValueChange = { levelNumText = it.filter { c -> c.isDigit() } },
-                            label = { Text("Level") },
-                            singleLine = true,
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .focusRequester(levelFocus)
-                                    .focusProperties {
-                                        up = difficultyFocus
-                                        right = maxPlayersFocus
-                                        down = createFocus
-                                    }.dpadTextFieldNavigation(up = difficultyFocus, down = createFocus)
-                                    .controllerTextEntryFocus { textEntryActive = it },
-                        )
-                        OutlinedTextField(
-                            value = maxPlayersText,
-                            onValueChange = { maxPlayersText = it.filter { c -> c.isDigit() } },
-                            label = { Text("Max Players") },
-                            singleLine = true,
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .focusRequester(maxPlayersFocus)
-                                    .focusProperties {
-                                        up = difficultyFocus
-                                        left = levelFocus
-                                        down = createFocus
-                                    }.dpadTextFieldNavigation(up = difficultyFocus, down = createFocus)
-                                    .controllerTextEntryFocus { textEntryActive = it },
-                        )
-                    }
-                    if (coopSaves.isNotEmpty()) {
-                        Text("Restore from save:", style = MaterialTheme.typography.labelMedium)
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            val noSaveSelected = selectedSave == null
-                            if (noSaveSelected) {
-                                Button(
-                                    onClick = { selectedSave = null },
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) { Text("Start fresh (no restore)") }
-                            } else {
-                                OutlinedButton(
-                                    onClick = { selectedSave = null },
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) { Text("Start fresh (no restore)") }
-                            }
-                            coopSaves.forEach { save ->
-                                val typeTag = if (save.type == "checkpoint") "[Chk]" else "[Save]"
-                                val scoreStr = if (save.totalScore > 0) " ${save.totalScore}pts" else ""
-                                val label =
-                                    "$typeTag L${save.level} - ${save.numPlayers}p" +
-                                        " - ${save.callsigns.joinToString()}" +
-                                        "$scoreStr - ${formatTimeAgo(save.timestamp)}"
-                                if (selectedSave == save) {
-                                    Button(
-                                        onClick = {},
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) { Text(label, fontSize = 11.sp, maxLines = 2) }
-                                } else {
-                                    OutlinedButton(
-                                        onClick = { selectedSave = save },
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) { Text(label, fontSize = 11.sp, maxLines = 2) }
-                                }
-                            }
-                        }
-                    } else if (coopResumeLevel != null) {
-                        Text(
-                            "Last completed: Level $coopResumeLevel",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }

@@ -1563,6 +1563,7 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 #if defined(ANDROID)
 	int draw_order = android_merged_wall_next_draw_order();
 	int is_logging_target_plain = 0;
+	int merged_wall_force_two_pass = 0;
 	GLint merged_wall_depth_enabled = 0, merged_wall_blend_enabled = 0, merged_wall_cull_enabled = 0;
 	GLint merged_wall_depth_func = 0, merged_wall_front_face = 0, merged_wall_cull_mode = 0, merged_wall_polygon_offset_enabled = 0, merged_wall_draw_fbo = 0;
 	GLfloat merged_wall_polygon_offset_factor = 0.0f, merged_wall_polygon_offset_units = 0.0f;
@@ -1611,6 +1612,7 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 	super = (bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && bmovl->gltexture_mask;
 	#if defined(ANDROID)
 	is_logging_target_plain = !super && android_merged_wall_is_logging_target_bitmap(bmovl);
+	merged_wall_force_two_pass = is_logging_target_plain && g_merged_wall_force_two_pass;
 	if (android_merged_wall_is_logging_target_bitmap(bmovl))
 		debug_log(DLOG_TEXTURE,
 			"[mwall_super] idx=%d bm_flags=0x%x real=0x%x mask=%p mask_h=%u super=%d",
@@ -1631,37 +1633,43 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 	glActiveTexture(GL_TEXTURE0);
 	#if defined(ANDROID)
 	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT)) {
-		int merged_slot = -1;
-		grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
-			bmovl, orient, &merged_slot);
-		if (merged) {
-			android_texture_debug_add_joined_labels((const g3s_point *const *)label_pointlist,
-				label_nv, bmbot, bmovl);
-			if (android_merged_wall_is_logging_target_bitmap(bmovl)) {
-				const char *botname = piggy_game_bitmap_name(bmbot);
-				const char *ovlname = piggy_game_bitmap_name(bmovl);
-				debug_log(DLOG_TEXTURE,
-					"[mwall_clip] frame=%d pass=%d seq=%d stage=route route=merge_cached merge_impl=gpu_cached_single seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=0 bot=%s ovl=%s",
-					g_merged_wall_frame_id,
-					g_merged_wall_render_pass,
-					g_merged_wall_draw_seq,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
-					label_nv,
-					orient,
-					botname ? botname : "<none>",
-					ovlname ? ovlname : "<none>");
+		if (merged_wall_force_two_pass) {
+			android_merged_wall_log_tmap2_route("force_two_pass",
+				bmbot, bmovl, label_nv, orient);
+			merged_wall_tmap2_submit_ctx.route = "force_two_pass";
+		} else {
+			int merged_slot = -1;
+			grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
+				bmovl, orient, &merged_slot);
+			if (merged) {
+				android_texture_debug_add_joined_labels((const g3s_point *const *)label_pointlist,
+					label_nv, bmbot, bmovl);
+				if (android_merged_wall_is_logging_target_bitmap(bmovl)) {
+					const char *botname = piggy_game_bitmap_name(bmbot);
+					const char *ovlname = piggy_game_bitmap_name(bmovl);
+					debug_log(DLOG_TEXTURE,
+						"[mwall_clip] frame=%d pass=%d seq=%d stage=route route=merge_cached merge_impl=gpu_cached_single seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=0 bot=%s ovl=%s",
+						g_merged_wall_frame_id,
+						g_merged_wall_render_pass,
+						g_merged_wall_draw_seq,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
+						label_nv,
+						orient,
+						botname ? botname : "<none>",
+						ovlname ? ovlname : "<none>");
+				}
+				android_merged_wall_track_face(
+					(const struct g3s_point **)pointlist, nv, uvl_list, orient,
+					draw_order, "merge_cached", "gpu_cached_single", NULL,
+					merged, merged_slot);
+				return g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, merged);
 			}
-			android_merged_wall_track_face(
-				(const struct g3s_point **)pointlist, nv, uvl_list, orient,
-				draw_order, "merge_cached", "gpu_cached_single", NULL,
-				merged, merged_slot);
-			return g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, merged);
 		}
 	}
 	#endif

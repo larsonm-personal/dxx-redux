@@ -52,7 +52,6 @@
     {"action": "set_debug", "field": "texture_target", "value": "door45#0"},
     {"action": "set_debug", "field": "texture_log", "value": "1"},
     {"action": "set_debug", "field": "merged_wall_mode", "value": "0"},
-    {"action": "set_debug", "field": "merged_wall_experiment", "value": "0"},
     {"action": "set_debug", "field": "merged_wall_force_two_pass", "value": "0"},
 
     {"action": "pose_view", "segment": 80, "x": -107.764038, "y": -72.492294, "z": 147.704697, "pitch": 661, "bank": 488, "heading": 15072, "post_delay_ms": 250},
@@ -88,5 +87,6 @@
     }},
 
     {"action": "log", "message": "=== TEST: D2 L1 door45 closed-cover GPU regression -- PASS ==="},
+    {"action": "set_debug", "field": "texture_target", "value": "auto"},
     {"action": "introspect"}
 ]

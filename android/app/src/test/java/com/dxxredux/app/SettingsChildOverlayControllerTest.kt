@@ -40,7 +40,6 @@ class SettingsChildOverlayControllerTest {
                 VideoInfoControllerAction.ANISO,
                 VideoInfoControllerAction.MSAA,
                 VideoInfoControllerAction.MERGED_WALL,
-                VideoInfoControllerAction.MERGED_WALL_EXPERIMENT,
                 VideoInfoControllerAction.MERGED_WALL_TAP,
                 VideoInfoControllerAction.LABELS,
             ),

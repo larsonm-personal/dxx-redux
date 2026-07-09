@@ -224,6 +224,7 @@ volatile int g_merged_wall_snapshot_request_mode = 0;
 volatile int g_merged_wall_render_pass = 0;
 volatile int g_merged_wall_frame_id = 0;
 volatile int g_merged_wall_draw_seq = 0;
+volatile int g_merged_wall_force_two_pass = 0;
 struct android_draw_face_context g_android_draw_face_ctx = { 0 };
 struct merged_wall_snapshot_result g_merged_wall_snapshot_result = { 0 };
 struct merged_wall_probe_result g_merged_wall_probe_result = { 0 };
