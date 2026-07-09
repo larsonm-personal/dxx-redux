@@ -15,8 +15,9 @@ class ResumeSavePanelTest {
     }
 
     @Test
-    fun headerTextOrderPutsResumeTitleBeforeSaveExplorerButton() {
-        assertEquals(listOf("Resume Recent Save", "Save Explorer"), resumePanelHeaderTextOrder())
+    fun panelLabelsPutLoadInHeaderAndExplorerInBottomRow() {
+        assertEquals("Load Last Save", resumePanelHeaderLoadLabel())
+        assertEquals("Save Explorer", resumePanelSaveExplorerLabel())
     }
 
     @Test

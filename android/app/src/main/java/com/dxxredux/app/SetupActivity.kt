@@ -3024,17 +3024,11 @@ private fun SetupScreen(
                             ) {
                                 ResumeSavePanel(
                                     candidate = candidate,
-                                    options = availableResumeOptions,
                                     thumbnail = resumeThumbnail,
                                     onLoad = {
                                         selectedGame = candidate.game
                                         gamePrefs.edit().putString("selected_game", candidate.game).apply()
                                         onLaunchGame(candidate.game, candidate)
-                                    },
-                                    onLoadCandidate = { selectedCandidate ->
-                                        selectedGame = selectedCandidate.game
-                                        gamePrefs.edit().putString("selected_game", selectedCandidate.game).apply()
-                                        onLaunchGame(selectedCandidate.game, selectedCandidate)
                                     },
                                     onOpenSaveExplorer = { showSaveExplorer = true },
                                     onHide = { setSaveExplorerPanelExpanded(false) },
@@ -3066,6 +3060,7 @@ private fun SetupScreen(
                 if (showSaveExplorer) {
                     SaveExplorerDialog(
                         filesDir = filesDir,
+                        resumeOptions = availableResumeOptions,
                         refreshTrigger = refreshTrigger,
                         canLaunchGame = { game -> (game == "d1" && d1RequiredOk) || (game != "d1" && d2RequiredOk) },
                         onLoadCandidate = { selectedCandidate ->

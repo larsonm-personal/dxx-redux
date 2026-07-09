@@ -20,13 +20,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -36,7 +33,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -136,23 +132,21 @@ internal fun decodeResumeSaveThumbnail(candidate: ResumeSaveBridge.ResumeSaveCan
     return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
 }
 
-internal fun resumePanelHeaderTextOrder(): List<String> = listOf("Resume Recent Save", "Save Explorer")
+internal fun resumePanelHeaderLoadLabel(): String = "Load Last Save"
+
+internal fun resumePanelSaveExplorerLabel(): String = "Save Explorer"
 
 internal fun resumePanelCollapsedLabel(): String = "view saves"
 
 @Composable
 internal fun ResumeSavePanel(
     candidate: ResumeSaveBridge.ResumeSaveCandidate,
-    options: ResumeSaveBridge.ResumeSaveOptions?,
     thumbnail: Bitmap?,
     onLoad: () -> Unit,
-    onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
     onOpenSaveExplorer: () -> Unit,
     onHide: () -> Unit,
 ) {
     val panelColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.94f)
-    val headerTextOrder = resumePanelHeaderTextOrder()
-    var showChooser by remember { mutableStateOf(false) }
     var previewThumbnail by remember { mutableStateOf<Bitmap?>(null) }
     val loadFocus = remember { FocusRequester() }
     RequestLauncherControllerFocus(loadFocus, true, candidate.path)
@@ -180,21 +174,12 @@ internal fun ResumeSavePanel(
                     onOpen = { previewThumbnail = it },
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    headerTextOrder[0],
-                    modifier = Modifier.weight(1f).padding(end = 6.dp),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                OutlinedButton(
-                    onClick = onOpenSaveExplorer,
-                    modifier = Modifier.heightIn(min = 36.dp).tvFocusBorder(),
-                    shape = RoundedCornerShape(percent = 50),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                Button(
+                    onClick = onLoad,
+                    modifier = Modifier.weight(1f).focusRequester(loadFocus).tvFocusBorder(),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                 ) {
-                    Text(headerTextOrder[1], fontSize = 10.sp, maxLines = 1)
+                    Text(resumePanelHeaderLoadLabel(), fontSize = 10.sp, maxLines = 1)
                 }
                 IconButton(
                     onClick = onHide,
@@ -228,36 +213,17 @@ internal fun ResumeSavePanel(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Button(
-                    onClick = onLoad,
-                    modifier = Modifier.weight(1f).focusRequester(loadFocus).tvFocusBorder(),
+                OutlinedButton(
+                    onClick = onOpenSaveExplorer,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 36.dp).tvFocusBorder(),
+                    shape = RoundedCornerShape(percent = 50),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                 ) {
-                    Text("Load Last Save", fontSize = 9.sp, maxLines = 1)
-                }
-                Button(
-                    onClick = { showChooser = true },
-                    modifier = Modifier.weight(1f).tvFocusBorder(),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
-                    enabled = options.hasChooseCandidates(),
-                ) {
-                    Text("Choose Save", fontSize = 9.sp, maxLines = 1)
+                    Text(resumePanelSaveExplorerLabel(), fontSize = 10.sp, maxLines = 1)
                 }
             }
         }
-    }
-
-    if (showChooser && options != null) {
-        ResumeSaveChoiceDialog(
-            options = options,
-            onDismiss = { showChooser = false },
-            onLoadCandidate = {
-                showChooser = false
-                onLoadCandidate(it)
-            },
-        )
     }
 
     previewThumbnail?.let { expandedThumbnail ->
@@ -305,11 +271,6 @@ internal fun ResumeSavePanelCollapsed(onOpen: () -> Unit) {
     }
 }
 
-private fun ResumeSaveBridge.ResumeSaveOptions?.hasChooseCandidates(): Boolean =
-    this?.let {
-        it.highestProgress != null || it.lastExit != null || it.lastAbort != null || it.lastMinimize != null
-    } == true
-
 internal data class ResumeSaveChoiceRow(
     val label: String,
     val candidate: ResumeSaveBridge.ResumeSaveCandidate,
@@ -322,90 +283,6 @@ internal fun resumeSaveChoiceRows(options: ResumeSaveBridge.ResumeSaveOptions): 
         options.lastAbort?.let { ResumeSaveChoiceRow("Last Abort Save", it) },
         options.lastMinimize?.let { ResumeSaveChoiceRow("Last Minimize Save", it) },
     )
-
-@Composable
-private fun ResumeSaveChoiceDialog(
-    options: ResumeSaveBridge.ResumeSaveOptions,
-    onDismiss: () -> Unit,
-    onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
-) {
-    val choices = remember(options) { resumeSaveChoiceRows(options) }
-    var previewThumbnail by remember { mutableStateOf<Bitmap?>(null) }
-    val scrollState = rememberScrollState()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-        title = { Text("Choose Save") },
-        text = {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 420.dp),
-            ) {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(scrollState)
-                            .padding(end = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    choices.forEach { choiceRow ->
-                        val choice = choiceRow.candidate
-                        val choiceThumbnail =
-                            remember(choice.path, choice.saveTimeUnixSeconds, choice.thumbnailRgb6) {
-                                decodeResumeSaveThumbnail(choice)
-                            }
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            ResumeSaveThumbnailFrame(
-                                thumbnail = choiceThumbnail,
-                                modifier = Modifier.size(width = 150.dp, height = 75.dp),
-                                contentDescription = "${choiceRow.label} thumbnail",
-                                placeholderFontSize = 9.sp,
-                                onOpen = { previewThumbnail = it },
-                            )
-                        }
-                        Button(
-                            onClick = { onLoadCandidate(choice) },
-                            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.Start,
-                            ) {
-                                Text(choiceRow.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                Text(
-                                    resumeChoiceLine(choice),
-                                    fontSize = 9.sp,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        }
-                    }
-                }
-                SharedScrollArrows(scrollState)
-            }
-        },
-    )
-
-    previewThumbnail?.let { expandedThumbnail ->
-        ResumeSaveThumbnailPreview(
-            thumbnail = expandedThumbnail,
-            onDismiss = { previewThumbnail = null },
-        )
-    }
-}
 
 @Composable
 private fun ResumeSaveThumbnailFrame(
@@ -567,7 +444,7 @@ private fun resumePanelSecondaryLine(candidate: ResumeSaveBridge.ResumeSaveCandi
         append(" total")
     }
 
-private fun resumeChoiceLine(candidate: ResumeSaveBridge.ResumeSaveCandidate): String {
+internal fun resumeChoiceLine(candidate: ResumeSaveBridge.ResumeSaveCandidate): String {
     val callsign = resolveResumeSaveLaunchCallsign(candidate) ?: "unknown pilot"
     return buildString {
         append(resumeGameDisplayName(candidate.game))

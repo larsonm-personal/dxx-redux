@@ -8,8 +8,15 @@ import org.junit.Test
 class SaveExplorerTest {
     @Test
     fun modeLabelsPutMostRecentFirstAndDefault() {
-        assertEquals(listOf("Most Recent", "Save Set", "All Slots"), saveExplorerModeLabels())
-        assertEquals("Most Recent", saveExplorerDefaultModeLabel())
+        assertEquals(listOf("Choose Save", "Most Recent", "Save Set", "All Slots"), saveExplorerModeLabels())
+        assertEquals("Choose Save", saveExplorerDefaultModeLabel())
+    }
+
+    @Test
+    fun modeNavigationMovesAcrossTabsAndWraps() {
+        assertEquals("Most Recent", saveExplorerModeLabelAfter("Choose Save", 1))
+        assertEquals("All Slots", saveExplorerModeLabelAfter("Choose Save", -1))
+        assertEquals("Choose Save", saveExplorerModeLabelAfter("All Slots", 1))
     }
 
     @Test

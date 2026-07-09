@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,6 +53,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,10 +73,12 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 
 private enum class SaveExplorerMode(
     val label: String,
 ) {
+    Choose("Choose Save"),
     Recent("Most Recent"),
     SaveSet("Save Set"),
     All("All Slots"),
@@ -77,7 +86,24 @@ private enum class SaveExplorerMode(
 
 internal fun saveExplorerModeLabels(): List<String> = SaveExplorerMode.values().map { it.label }
 
-internal fun saveExplorerDefaultModeLabel(): String = SaveExplorerMode.Recent.label
+internal fun saveExplorerDefaultModeLabel(): String = SaveExplorerMode.Choose.label
+
+private fun saveExplorerModeAfter(
+    mode: SaveExplorerMode,
+    step: Int,
+): SaveExplorerMode {
+    val modes = SaveExplorerMode.values()
+    val nextIndex = (mode.ordinal + step).floorMod(modes.size)
+    return modes[nextIndex]
+}
+
+internal fun saveExplorerModeLabelAfter(
+    currentLabel: String,
+    step: Int,
+): String {
+    val current = SaveExplorerMode.values().first { it.label == currentLabel }
+    return saveExplorerModeAfter(current, step).label
+}
 
 internal data class SaveExplorerRow(
     val slotIndex: Int,
@@ -92,6 +118,7 @@ internal data class SaveExplorerDetailRow(
 @Composable
 internal fun SaveExplorerDialog(
     filesDir: File,
+    resumeOptions: ResumeSaveBridge.ResumeSaveOptions? = null,
     refreshTrigger: Int = 0,
     canLaunchGame: (String) -> Boolean,
     onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
@@ -100,7 +127,7 @@ internal fun SaveExplorerDialog(
 ) {
     val scope = rememberCoroutineScope()
     var refreshKey by remember { mutableIntStateOf(0) }
-    var mode by remember { mutableStateOf(SaveExplorerMode.Recent) }
+    var mode by remember { mutableStateOf(SaveExplorerMode.Choose) }
     var selectedGame by remember { mutableStateOf("") }
     var selectedScope by remember { mutableStateOf("single") }
     var selectedPilot by remember { mutableStateOf("") }
@@ -171,6 +198,10 @@ internal fun SaveExplorerDialog(
     val displayedRows =
         remember(slots, mode, selectedGame, selectedScope, selectedPilot, selectedMission, orphanOnly) {
             when (mode) {
+                SaveExplorerMode.Choose -> {
+                    emptyList()
+                }
+
                 SaveExplorerMode.SaveSet -> {
                     saveExplorerSaveSetRows(
                         slots.orEmpty(),
@@ -195,6 +226,10 @@ internal fun SaveExplorerDialog(
             }
         }
 
+    fun changeMode(step: Int) {
+        mode = saveExplorerModeAfter(mode, step)
+    }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -203,7 +238,35 @@ internal fun SaveExplorerDialog(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(12.dp),
+                    .pointerInput(Unit) {
+                        var dragX = 0f
+                        detectHorizontalDragGestures(
+                            onDragStart = { dragX = 0f },
+                            onHorizontalDrag = { _, dragAmount -> dragX += dragAmount },
+                            onDragEnd = {
+                                if (abs(dragX) >= 80f) {
+                                    changeMode(if (dragX < 0f) 1 else -1)
+                                }
+                            },
+                        )
+                    }.onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (event.key) {
+                            Key.DirectionLeft -> {
+                                changeMode(-1)
+                                true
+                            }
+
+                            Key.DirectionRight -> {
+                                changeMode(1)
+                                true
+                            }
+
+                            else -> {
+                                false
+                            }
+                        }
+                    }.padding(12.dp),
             shape = RoundedCornerShape(8.dp),
             color = MaterialTheme.colorScheme.surface,
         ) {
@@ -256,7 +319,13 @@ internal fun SaveExplorerDialog(
                     }
                 }
 
-                if (slots == null) {
+                if (mode == SaveExplorerMode.Choose) {
+                    SaveExplorerChooseSaveTab(
+                        options = resumeOptions,
+                        onLoadCandidate = onLoadCandidate,
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                    )
+                } else if (slots == null) {
                     Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                         MetadataLoadProgressView(slotsProgress)
                     }
@@ -343,6 +412,77 @@ internal fun SaveExplorerDialog(
             slot = slot,
             onDismiss = { pendingDetails = null },
         )
+    }
+}
+
+private fun Int.floorMod(divisor: Int): Int = ((this % divisor) + divisor) % divisor
+
+@Composable
+private fun SaveExplorerChooseSaveTab(
+    options: ResumeSaveBridge.ResumeSaveOptions?,
+    onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
+    modifier: Modifier,
+) {
+    val choices = remember(options) { options?.let(::resumeSaveChoiceRows).orEmpty() }
+    if (choices.isEmpty()) {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Text(
+                "No alternate resume saves found",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        return
+    }
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(choices, key = { it.candidate.path + ":" + it.label }) { choiceRow ->
+            SaveExplorerChooseSaveRow(choiceRow, onLoadCandidate)
+        }
+    }
+}
+
+@Composable
+private fun SaveExplorerChooseSaveRow(
+    choiceRow: ResumeSaveChoiceRow,
+    onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
+) {
+    val choice = choiceRow.candidate
+    val thumbnail =
+        remember(choice.path, choice.saveTimeUnixSeconds, choice.thumbnailRgb6) {
+            decodeResumeSaveThumbnail(choice)
+        }
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(6.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SaveExplorerLargeThumbnail(thumbnail)
+            Button(
+                onClick = { onLoadCandidate(choice) },
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.Start,
+                ) {
+                    Text(choiceRow.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        resumeChoiceLine(choice),
+                        fontSize = 9.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
     }
 }
 
