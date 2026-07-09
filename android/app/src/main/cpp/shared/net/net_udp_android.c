@@ -10,6 +10,7 @@
 #endif
 
 #include "strutil.h"
+#include "multi.h"
 #include "player.h"
 
 #ifdef __ANDROID__
@@ -90,7 +91,7 @@ int android_net_udp_select_welcome_player_slot(int existing_player_num,
 		*network_player_added = 0;
 
 	if (existing_player_num != -1) {
-		if (players[existing_player_num].connected)
+		if (players[existing_player_num].connected == CONNECT_PLAYING)
 			return ANDROID_NET_UDP_WELCOME_SLOT_ALREADY_CONNECTED;
 		return existing_player_num;
 	}

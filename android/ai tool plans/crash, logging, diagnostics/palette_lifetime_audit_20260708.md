@@ -61,3 +61,8 @@ Audit other places where palette-indexed screens, menus, movies, backgrounds, fo
 - [done] Invalidate bitmap OGL texture after indexed remap in D1 and D2.
 - [done] Run scoped code quality on touched files.
 - [done] Run Android native build check.
+
+## Multiplayer Wait Menu Follow-Up
+- [done] Trace the `TXT_WAIT` / `TXT_NET_WAITING` multiplayer load menu palette path.
+- [done] Make full-screen Android PCX menus use the menu palette for menu contents even when `Game_wind` still exists during multiplayer load.
+- [done] Run scoped code quality and native build checks.

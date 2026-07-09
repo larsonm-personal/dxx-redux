@@ -12,13 +12,16 @@
 #include "game.h"
 #include "hudmsg.h"
 #include "multi.h"
+#include "physfsx.h"
 #include "player.h"
 #include "pstypes.h"
+#include "state_android_shared.h"
 #include "timer.h"
 #include "u_mem.h"
 
 typedef struct multi_rewind_save_transfer {
 	int active;
+	int transfer_kind;
 	ubyte transfer_id;
 	int requester;
 	uint total_size;
@@ -34,7 +37,9 @@ typedef struct multi_rewind_save_transfer {
 	unsigned char *chunk_received;
 } multi_rewind_save_transfer;
 
-#define MULTI_REWIND_TRANSFER_MAX_BYTES (600u * 1024u)
+#define MULTI_SAVE_TRANSFER_KIND_REWIND  0
+#define MULTI_SAVE_TRANSFER_KIND_RESTORE 1
+#define MULTI_SAVE_TRANSFER_MAX_BYTES    (2u * 1024u * 1024u)
 
 static multi_rewind_save_transfer Rewind_save_transfer;
 static ubyte Rewind_save_transfer_id = 0;
@@ -103,8 +108,10 @@ static void multi_rewind_receive_reset(void)
 static void multi_rewind_apply_received_transfer(void)
 {
 	android_rewind_authoritative_restore restore;
+	rewind_memory_buffer buffer;
 	uint checksum;
 	int status;
+	int restored;
 
 	if (!Rewind_save_transfer.active ||
 	    !Rewind_save_transfer.apply_pending ||
@@ -113,10 +120,32 @@ static void multi_rewind_apply_received_transfer(void)
 	checksum = multi_rewind_checksum(Rewind_save_transfer.data,
 	                                 Rewind_save_transfer.total_size);
 	if (checksum != Rewind_save_transfer.checksum) {
-		COOPLOG("rewind transfer checksum mismatch: got=%u expected=%u bytes=%u",
-		        checksum, Rewind_save_transfer.checksum,
+		COOPLOG("save transfer checksum mismatch: kind=%d got=%u expected=%u bytes=%u",
+		        Rewind_save_transfer.transfer_kind, checksum,
+		        Rewind_save_transfer.checksum,
 		        Rewind_save_transfer.total_size);
-		HUD_init_message_literal(HM_DEFAULT, "Host rewind sync failed");
+		HUD_init_message_literal(HM_DEFAULT,
+		                         Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE
+		                             ? "Host save sync failed"
+		                             : "Host rewind sync failed");
+		multi_rewind_receive_reset();
+		return;
+	}
+
+	if (Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE) {
+		buffer.data = Rewind_save_transfer.data;
+		buffer.size = Rewind_save_transfer.total_size;
+		buffer.capacity = Rewind_save_transfer.total_size;
+		restored = state_restore_from_memory(&buffer);
+		if (restored) {
+			HUD_init_message_literal(HM_DEFAULT, "Host save restored");
+			multi_send_score();
+		} else {
+			HUD_init_message_literal(HM_DEFAULT, "Host save failed");
+		}
+		COOPLOG("coop restore transfer apply: status=%d bytes=%u chunks=%d",
+		        restored, Rewind_save_transfer.total_size,
+		        Rewind_save_transfer.total_chunks);
 		multi_rewind_receive_reset();
 		return;
 	}
@@ -144,23 +173,31 @@ static void multi_rewind_apply_received_transfer(void)
 	multi_rewind_receive_reset();
 }
 
-static int multi_send_rewind_save_transfer(
-    const android_rewind_authoritative_restore *restore, int requester)
+static int multi_send_save_transfer_buffer(const unsigned char *data,
+                                           size_t total_size,
+                                           int transfer_kind,
+                                           int requester,
+                                           int rewound_seconds,
+                                           int64_t game_time64,
+                                           int has_collision_delay_last_play_time,
+                                           int64_t collision_delay_last_play_time)
 {
-	size_t total_size = restore->buffer.size;
 	int total_chunks;
 	int chunk_index;
 	uint checksum;
 	ubyte transfer_id;
 
-	if (!restore->buffer.data || total_size == 0 ||
-	    total_size > MULTI_REWIND_TRANSFER_MAX_BYTES)
+	if (!data || total_size == 0 ||
+	    total_size > MULTI_SAVE_TRANSFER_MAX_BYTES)
+		return 0;
+	if (transfer_kind != MULTI_SAVE_TRANSFER_KIND_REWIND &&
+	    transfer_kind != MULTI_SAVE_TRANSFER_KIND_RESTORE)
 		return 0;
 	total_chunks = (int) ((total_size + MULTI_REWIND_SAVE_CHUNK_PAYLOAD - 1) /
 	                      MULTI_REWIND_SAVE_CHUNK_PAYLOAD);
 	if (total_chunks <= 0 || total_chunks > 65535)
 		return 0;
-	checksum = multi_rewind_checksum(restore->buffer.data, total_size);
+	checksum = multi_rewind_checksum(data, total_size);
 	transfer_id = ++Rewind_save_transfer_id;
 	if (!transfer_id)
 		transfer_id = ++Rewind_save_transfer_id;
@@ -169,13 +206,13 @@ static int multi_send_rewind_save_transfer(
 	multibuf[0] = MULTI_REWIND_SAVE_BEGIN;
 	multibuf[1] = transfer_id;
 	multibuf[2] = (ubyte) requester;
-	multibuf[3] = (ubyte) multi_rewind_clamp_u8(restore->rewound_seconds);
+	multibuf[3] = (ubyte) multi_rewind_clamp_u8(rewound_seconds);
 	PUT_INTEL_INT(multibuf + 4, (uint) total_size);
 	PUT_INTEL_INT(multibuf + 8, checksum);
-	multi_rewind_put_i64(multibuf + 12, restore->game_time64);
-	multi_rewind_put_i64(multibuf + 20,
-	                     restore->collision_delay_last_play_time);
-	multibuf[28] = (ubyte) (restore->has_collision_delay_last_play_time ? 1 : 0);
+	multi_rewind_put_i64(multibuf + 12, game_time64);
+	multi_rewind_put_i64(multibuf + 20, collision_delay_last_play_time);
+	multibuf[28] = (ubyte) (has_collision_delay_last_play_time ? 1 : 0);
+	multibuf[29] = (ubyte) transfer_kind;
 	PUT_INTEL_SHORT(multibuf + 30, (ushort) total_chunks);
 	multi_send_data(multibuf, MULTI_REWIND_SAVE_BEGIN_LEN, 2);
 
@@ -189,7 +226,7 @@ static int multi_send_rewind_save_transfer(
 		multibuf[1] = transfer_id;
 		PUT_INTEL_SHORT(multibuf + 2, (ushort) chunk_index);
 		PUT_INTEL_SHORT(multibuf + 4, (ushort) data_len);
-		memcpy(multibuf + 8, restore->buffer.data + offset, data_len);
+		memcpy(multibuf + 8, data + offset, data_len);
 		multi_send_data(multibuf, MULTI_REWIND_SAVE_CHUNK_LEN, 2);
 	}
 
@@ -197,12 +234,83 @@ static int multi_send_rewind_save_transfer(
 	multibuf[0] = MULTI_REWIND_SAVE_APPLY;
 	multibuf[1] = transfer_id;
 	multibuf[2] = (ubyte) requester;
-	multibuf[3] = (ubyte) multi_rewind_clamp_u8(restore->rewound_seconds);
+	multibuf[3] = (ubyte) multi_rewind_clamp_u8(rewound_seconds);
 	multi_send_data(multibuf, MULTI_REWIND_SAVE_APPLY_LEN, 2);
 
-	COOPLOG("rewind transfer sent: id=%u requester=%d bytes=%u chunks=%d checksum=%u",
-	        transfer_id, requester, (uint) total_size, total_chunks, checksum);
+	COOPLOG("save transfer sent: kind=%d id=%u requester=%d bytes=%u chunks=%d checksum=%u",
+	        transfer_kind, transfer_id, requester, (uint) total_size,
+	        total_chunks, checksum);
 	return 1;
+}
+
+static int multi_send_rewind_save_transfer(
+    const android_rewind_authoritative_restore *restore, int requester)
+{
+	return multi_send_save_transfer_buffer(
+	    restore->buffer.data, restore->buffer.size,
+	    MULTI_SAVE_TRANSFER_KIND_REWIND, requester,
+	    restore->rewound_seconds, restore->game_time64,
+	    restore->has_collision_delay_last_play_time,
+	    restore->collision_delay_last_play_time);
+}
+
+int multi_send_coop_restore_save_transfer(const char *filename, ubyte slot, uint id)
+{
+	PHYSFS_file *fp;
+	PHYSFS_sint64 file_len;
+	unsigned char *data;
+	int sent;
+
+	if (!filename || !(Game_mode & GM_MULTI_COOP) || !multi_i_am_master())
+		return 0;
+	if (!multi_rewind_has_connected_clients()) {
+		COOPLOG("coop restore transfer skipped: no connected clients slot=%u id=%u",
+		        (uint) slot, id);
+		return 1;
+	}
+	if (!Netgame.PacketLossPrevention) {
+		COOPLOG("coop restore transfer refused: packet loss prevention disabled slot=%u id=%u",
+		        (uint) slot, id);
+		return 0;
+	}
+
+	fp = PHYSFSX_openReadBuffered(filename);
+	if (!fp) {
+		COOPLOG("coop restore transfer open failed: slot=%u id=%u file='%s'",
+		        (uint) slot, id, filename);
+		return 0;
+	}
+	file_len = PHYSFS_fileLength(fp);
+	if (file_len <= 0 || (uint64_t) file_len > MULTI_SAVE_TRANSFER_MAX_BYTES) {
+		COOPLOG("coop restore transfer refused: slot=%u id=%u bytes=%u max=%u",
+		        (uint) slot, id, (uint) file_len,
+		        (uint) MULTI_SAVE_TRANSFER_MAX_BYTES);
+		PHYSFS_close(fp);
+		return 0;
+	}
+	data = (unsigned char *) d_malloc((unsigned int) file_len);
+	if (!data) {
+		COOPLOG("coop restore transfer alloc failed: slot=%u id=%u bytes=%u",
+		        (uint) slot, id, (uint) file_len);
+		PHYSFS_close(fp);
+		return 0;
+	}
+	if (PHYSFS_read(fp, data, 1, (PHYSFS_uint32) file_len) != file_len) {
+		COOPLOG("coop restore transfer read failed: slot=%u id=%u bytes=%u file='%s'",
+		        (uint) slot, id, (uint) file_len, filename);
+		d_free(data);
+		PHYSFS_close(fp);
+		return 0;
+	}
+	PHYSFS_close(fp);
+
+	sent = multi_send_save_transfer_buffer(data, (size_t) file_len,
+	                                       MULTI_SAVE_TRANSFER_KIND_RESTORE,
+	                                       Player_num, 0, GameTime64, 0, 0);
+	COOPLOG("coop restore transfer send: sent=%d slot=%u id=%u bytes=%u file='%s'",
+	        sent, (uint) slot, id, (uint) file_len, filename);
+	d_free(data);
+	return sent;
 }
 
 static void multi_send_rewind_result(int requester, int status, int rewound_seconds)
@@ -250,9 +358,9 @@ int multi_perform_rewind_request(int requester, int *rewound_seconds)
 	if (status != ANDROID_REWIND_STATUS_RESTORED)
 		return status;
 	if (!restore.buffer.data || restore.buffer.size == 0 ||
-	    restore.buffer.size > MULTI_REWIND_TRANSFER_MAX_BYTES) {
+	    restore.buffer.size > MULTI_SAVE_TRANSFER_MAX_BYTES) {
 		COOPLOG("rewind transfer refused: bytes=%u max=%u",
-		        (uint) restore.buffer.size, (uint) MULTI_REWIND_TRANSFER_MAX_BYTES);
+		        (uint) restore.buffer.size, (uint) MULTI_SAVE_TRANSFER_MAX_BYTES);
 		return ANDROID_REWIND_STATUS_FAILED;
 	}
 
@@ -336,6 +444,7 @@ void multi_do_rewind_save_begin(const ubyte *buf)
 {
 	uint total_size;
 	uint checksum;
+	int transfer_kind;
 	int total_chunks;
 	int expected_chunks;
 
@@ -343,18 +452,26 @@ void multi_do_rewind_save_begin(const ubyte *buf)
 		return;
 	total_size = GET_INTEL_INT(buf + 4);
 	checksum = GET_INTEL_INT(buf + 8);
+	transfer_kind = buf[29];
 	total_chunks = GET_INTEL_SHORT(buf + 30);
-	if (total_size == 0 || total_size > MULTI_REWIND_TRANSFER_MAX_BYTES ||
+	if (total_size == 0 || total_size > MULTI_SAVE_TRANSFER_MAX_BYTES ||
 	    total_chunks <= 0) {
-		COOPLOG("rewind transfer begin rejected: bytes=%u chunks=%d",
+		COOPLOG("save transfer begin rejected: bytes=%u chunks=%d",
 		        total_size, total_chunks);
+		multi_rewind_receive_reset();
+		return;
+	}
+	if (transfer_kind != MULTI_SAVE_TRANSFER_KIND_REWIND &&
+	    transfer_kind != MULTI_SAVE_TRANSFER_KIND_RESTORE) {
+		COOPLOG("save transfer begin rejected: unknown kind=%d",
+		        transfer_kind);
 		multi_rewind_receive_reset();
 		return;
 	}
 	expected_chunks = (int) ((total_size + MULTI_REWIND_SAVE_CHUNK_PAYLOAD - 1) /
 	                         MULTI_REWIND_SAVE_CHUNK_PAYLOAD);
 	if (total_chunks != expected_chunks) {
-		COOPLOG("rewind transfer begin rejected: bytes=%u chunks=%d expected=%d",
+		COOPLOG("save transfer begin rejected: bytes=%u chunks=%d expected=%d",
 		        total_size, total_chunks, expected_chunks);
 		multi_rewind_receive_reset();
 		return;
@@ -365,12 +482,16 @@ void multi_do_rewind_save_begin(const ubyte *buf)
 	Rewind_save_transfer.chunk_received =
 	    (unsigned char *) d_malloc((unsigned int) total_chunks);
 	if (!Rewind_save_transfer.data || !Rewind_save_transfer.chunk_received) {
-		HUD_init_message_literal(HM_DEFAULT, "Host rewind sync failed");
+		HUD_init_message_literal(HM_DEFAULT,
+		                         transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE
+		                             ? "Host save sync failed"
+		                             : "Host rewind sync failed");
 		multi_rewind_receive_reset();
 		return;
 	}
 	memset(Rewind_save_transfer.chunk_received, 0, (size_t) total_chunks);
 	Rewind_save_transfer.active = 1;
+	Rewind_save_transfer.transfer_kind = transfer_kind;
 	Rewind_save_transfer.transfer_id = buf[1];
 	Rewind_save_transfer.requester = buf[2];
 	Rewind_save_transfer.rewound_seconds = buf[3];
@@ -381,10 +502,13 @@ void multi_do_rewind_save_begin(const ubyte *buf)
 	    multi_rewind_get_i64(buf + 20);
 	Rewind_save_transfer.has_collision_delay_last_play_time = buf[28] ? 1 : 0;
 	Rewind_save_transfer.total_chunks = total_chunks;
-	HUD_init_message_literal(HM_DEFAULT, "Receiving host rewind");
-	COOPLOG("rewind transfer begin: id=%u requester=%d bytes=%u chunks=%d checksum=%u",
-	        Rewind_save_transfer.transfer_id, Rewind_save_transfer.requester,
-	        total_size, total_chunks, checksum);
+	HUD_init_message_literal(HM_DEFAULT,
+	                         transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE
+	                             ? "Receiving host save"
+	                             : "Receiving host rewind");
+	COOPLOG("save transfer begin: kind=%d id=%u requester=%d bytes=%u chunks=%d checksum=%u",
+	        transfer_kind, Rewind_save_transfer.transfer_id,
+	        Rewind_save_transfer.requester, total_size, total_chunks, checksum);
 }
 
 void multi_do_rewind_save_chunk(const ubyte *buf)

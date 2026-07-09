@@ -116,7 +116,10 @@ static char nm_background1_filename[PATH_MAX];
 #ifdef ANDROID
 static ubyte nm_background1_palette[768];  // saved palette from the background PCX
 static ubyte nm_background_palette[768];
+static ubyte android_newmenu_menu_palette[768];
+static ubyte android_newmenu_menu_fade_table[256 * GR_FADE_LEVELS];
 static int nm_background_palette_valid = 0;
+static int android_newmenu_menu_palette_valid = 0;
 enum { ANDROID_TINY_TEXT_MAX_VISIBLE = 9 };
 
 static int android_tap_outside_game_menu(newmenu *menu, int mx, int my)
@@ -308,6 +311,32 @@ static void android_newmenu_expand_tiny_text(newmenu *menu)
 	menu->tabs_flag = 0;
 	menu->max_on_menu = ANDROID_TINY_TEXT_MAX_VISIBLE;
 	menu->max_displayable = count;
+}
+
+static void android_newmenu_prepare_fullscreen_contents(newmenu *menu)
+{
+	ubyte saved_palette[768];
+	ubyte saved_fade_table[256 * GR_FADE_LEVELS];
+
+	if (!menu || !menu->filename)
+		return;
+
+	if (!android_newmenu_menu_palette_valid) {
+		memcpy(saved_palette, gr_palette, sizeof(saved_palette));
+		memcpy(saved_fade_table, gr_fade_table, sizeof(saved_fade_table));
+		gr_use_palette_table("palette.256");
+		memcpy(android_newmenu_menu_palette, gr_palette, sizeof(android_newmenu_menu_palette));
+		memcpy(android_newmenu_menu_fade_table, gr_fade_table,
+		       sizeof(android_newmenu_menu_fade_table));
+		memcpy(gr_palette, saved_palette, sizeof(saved_palette));
+		memcpy(gr_fade_table, saved_fade_table, sizeof(saved_fade_table));
+		android_newmenu_menu_palette_valid = 1;
+	}
+
+	memcpy(gr_palette, android_newmenu_menu_palette, sizeof(android_newmenu_menu_palette));
+	memcpy(gr_fade_table, android_newmenu_menu_fade_table,
+	       sizeof(android_newmenu_menu_fade_table));
+	gr_palette_load(gr_palette);
 }
 #else
 static int android_newmenu_uses_readable_tiny(newmenu *menu)
@@ -2015,6 +2044,10 @@ static void newmenu_draw_contents(newmenu *menu)
 	int i;
 	int scroll_line_spacing;
 	int string_width, string_height, average_width;
+
+#ifdef ANDROID
+	android_newmenu_prepare_fullscreen_contents(menu);
+#endif
 
 	gr_set_curfont(newmenu_get_body_font(menu));
 	scroll_line_spacing = newmenu_get_scroll_line_spacing(menu);

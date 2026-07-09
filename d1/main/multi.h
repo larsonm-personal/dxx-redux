@@ -406,6 +406,7 @@ void change_playernum_to(int new_pnum);
 #ifdef __ANDROID__
 void multi_send_rewind_request(void);
 int multi_perform_rewind_request(int requester, int *rewound_seconds);
+int multi_send_coop_restore_save_transfer(const char *filename, ubyte slot, uint id);
 void multi_do_rewind_request(const ubyte *buf);
 void multi_do_rewind_result(const ubyte *buf);
 void multi_do_rewind_save_begin(const ubyte *buf);

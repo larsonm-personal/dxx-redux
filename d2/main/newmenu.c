@@ -313,6 +313,14 @@ static void android_newmenu_expand_tiny_text(newmenu *menu)
 	menu->max_on_menu = ANDROID_TINY_TEXT_MAX_VISIBLE;
 	menu->max_displayable = count;
 }
+
+static void android_newmenu_prepare_fullscreen_contents(newmenu *menu)
+{
+	if (!menu || !menu->filename)
+		return;
+	load_palette(MENU_PALETTE,0,1);
+	gr_palette_load(gr_palette);
+}
 #else
 static int android_newmenu_uses_readable_tiny(newmenu *menu)
 {
@@ -2025,6 +2033,10 @@ static void newmenu_draw_contents(newmenu *menu)
 	int scroll_line_spacing;
 	int string_width, string_height, average_width;
 
+#ifdef ANDROID
+	android_newmenu_prepare_fullscreen_contents(menu);
+#endif
+
 	gr_set_curfont(newmenu_get_body_font(menu));
 	scroll_line_spacing = newmenu_get_scroll_line_spacing(menu);
 
@@ -2204,10 +2216,6 @@ static void android_newmenu_draw_scaled(newmenu *menu,
 	if (menu->filename != NULL) {
 		gr_set_current_canvas(NULL);
 		nm_draw_background1(menu->filename);
-		if (Game_wind == NULL) {
-			load_palette(MENU_PALETTE,0,1);
-			gr_palette_load(gr_palette);
-		}
 	}
 
 	gr_init_bitmap_alloc(&source_bitmap, BM_LINEAR, 0, 0, SWIDTH, SHEIGHT, SWIDTH);
@@ -2266,10 +2274,6 @@ int newmenu_draw(window *wind, newmenu *menu)
 	{
 		gr_set_current_canvas( NULL );
 		nm_draw_background1(menu->filename);
-		if (menu->filename != NULL && Game_wind == NULL) {
-			load_palette(MENU_PALETTE,0,1);
-			gr_palette_load(gr_palette);
-		}
 		if (menu->filename == NULL)
 			nm_draw_background(menu->x-(menu->is_scroll_box?FSPACX(5):0),menu->y,menu->x+menu->w,menu->y+menu->h);
 

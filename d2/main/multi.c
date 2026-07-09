@@ -6835,9 +6835,54 @@ void multi_send_save_game(ubyte slot, uint id, char * desc)
 	multi_send_data(multibuf, count, 2);
 }
 
+#ifdef __ANDROID__
+static int multi_android_restore_uses_autosave_slot(ubyte slot)
+{
+	return slot >= COOP_AUTOSAVE_SLOT_FIRST &&
+	       slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT;
+}
+
+static int multi_android_restore_file_needs_fallback(char *filename, uint id)
+{
+	int fid;
+
+	if (!PHYSFSX_exists(filename, 0))
+		return 1;
+	fid = state_get_game_id(filename);
+	return fid != (int)id && fid != (int)COOP_AUTOSAVE_GAME_ID;
+}
+
+static void multi_android_build_restore_filename(char *filename, ubyte slot, uint id)
+{
+	state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
+	if (!multi_android_restore_uses_autosave_slot(slot))
+		return;
+	if (!multi_i_am_master())
+		return;
+	state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
+	if (multi_android_restore_file_needs_fallback(filename, id))
+		state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
+}
+#endif
+
 void multi_send_restore_game(ubyte slot, uint id)
 {
 	int count = 0;
+
+#ifdef __ANDROID__
+	if ((Game_mode & GM_MULTI_COOP) && multi_i_am_master()) {
+		char filename[PATH_MAX];
+
+		multi_android_build_restore_filename(filename, slot, id);
+		if (multi_send_coop_restore_save_transfer(filename, slot, id)) {
+			COOPLOG("multi_send_restore_game: game=d2 sent restore transfer slot=%d id=%u file='%s'",
+			        slot, id, filename);
+			return;
+		}
+		COOPLOG("multi_send_restore_game: game=d2 restore transfer failed, falling back to restore packet slot=%d id=%u file='%s'",
+		        slot, id, filename);
+	}
+#endif
 	
 	multibuf[count] = MULTI_RESTORE_GAME;		count += 1;
 	multibuf[count] = slot;				count += 1; // Save slot=0
@@ -6910,8 +6955,6 @@ void multi_initiate_save_game()
 	multi_do_frame();
 	multi_save_game( slot,game_id, desc );
 }
-
-extern int state_get_game_id(char *);
 
 void multi_initiate_restore_game()
 {
@@ -7006,30 +7049,7 @@ void multi_restore_game(ubyte slot, uint id)
 	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%s.mg%d" : "%s.mg%d", Players[Player_num].callsign, slot);
 #ifdef __ANDROID__
 	if (Game_mode & GM_MULTI_COOP)
-		state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
-	/* Autosaves use COOP_AUTOSAVE_CALLSIGN -- try that if the normal
-	 * filename doesn't exist OR exists but has the wrong game_id.
-	 * coop_arm_auto_restore already does this fallback when arming;
-	 * multi_restore_game must mirror it or it picks up stale legacy
-	 * autosaves with the wrong bitmap/effect state. */
-	if (slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
-		if (multi_i_am_master())
-			state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
-		else
-			state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
-		int need_fallback = !PHYSFSX_exists(filename, 0);
-		if (!need_fallback) {
-			int fid = state_get_game_id(filename);
-			if (fid != (int)id && fid != (int)COOP_AUTOSAVE_GAME_ID)
-				need_fallback = 1;
-		}
-		if (need_fallback) {
-			if (multi_i_am_master())
-				state_android_build_save_filename(filename, PATH_MAX, slot, 1, 0);
-			else
-				state_android_build_coop_autosave_filename(filename, PATH_MAX, slot);
-		}
-	}
+		multi_android_build_restore_filename(filename, slot, id);
 	if (!PHYSFSX_exists(filename, 0))
 		COOPLOG("multi_restore_game: file missing '%s'", filename);
 	COOPLOG("multi_restore_game: file='%s' slot=%d id=%u", filename, slot, id);
@@ -7058,6 +7078,13 @@ void multi_restore_game(ubyte slot, uint id)
 #ifdef __ANDROID__
 		COOPLOG("multi_restore_game id mismatch: game=d2 file_id=%d request_id=%u file='%s'",
 		        thisid, id, filename);
+		if ((Game_mode & GM_MULTI_COOP) && !multi_i_am_master()) {
+			COOPLOG("multi_restore_game id mismatch: game=d2 waiting for host restore transfer or resync");
+#ifdef USE_UDP
+			net_udp_request_resync_from_host("coop restore missing save");
+#endif
+			return;
+		}
 #endif
 		nm_messagebox(NULL, 1, TXT_OK, "A multi-save game was restored\nthat you are missing or does not\nmatch that of the others.\nYou must rejoin if you wish to\ncontinue.");
 		return;
