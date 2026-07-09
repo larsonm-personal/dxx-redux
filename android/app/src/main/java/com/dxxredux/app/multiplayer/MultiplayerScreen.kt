@@ -191,7 +191,6 @@ private fun ServerBrowserContent(
     val lanFocus = remember { FocusRequester() }
     val serverUrlFocus = remember { FocusRequester() }
     val callsignFocus = remember { FocusRequester() }
-    val newCallsignFocus = remember { FocusRequester() }
     val recentUrls = remember { mutableStateOf(RecentAddressPrefs.SERVER_URLS.load(context)) }
     var serverUrl by remember { mutableStateOf(recentUrls.value.firstOrNull() ?: state.serverUrl) }
     val callsignSelection = rememberCallsignSelectionState(state)
@@ -409,26 +408,13 @@ private fun ServerBrowserContent(
                         selectedCallsign = callsignSelection.selectedCallsign,
                         callsigns = callsignSelection.callsignOptions,
                         onSelect = callsignSelection.onSelect,
+                        onCreate = { callsignSelection.persistCallsign(it) },
                         modifier =
                             Modifier
                                 .weight(1f)
                                 .focusRequester(callsignFocus)
                                 .focusProperties {
                                     up = serverUrlFocus
-                                    right = newCallsignFocus
-                                    down = connectFocus
-                                },
-                    )
-                    NewCallsignButton(
-                        existingCallsigns = callsignSelection.callsignOptions,
-                        onCreate = { callsignSelection.persistCallsign(it) },
-                        enabled = !isConnecting,
-                        modifier =
-                            Modifier
-                                .focusRequester(newCallsignFocus)
-                                .focusProperties {
-                                    up = serverUrlFocus
-                                    left = callsignFocus
                                     down = connectFocus
                                 },
                     )
@@ -536,26 +522,13 @@ private fun ServerBrowserContent(
                         selectedCallsign = callsignSelection.selectedCallsign,
                         callsigns = callsignSelection.callsignOptions,
                         onSelect = callsignSelection.onSelect,
+                        onCreate = { callsignSelection.persistCallsign(it) },
                         modifier =
                             Modifier
                                 .weight(1f)
                                 .focusRequester(callsignFocus)
                                 .focusProperties {
                                     up = serverUrlFocus
-                                    right = newCallsignFocus
-                                    down = connectFocus
-                                },
-                    )
-                    NewCallsignButton(
-                        existingCallsigns = callsignSelection.callsignOptions,
-                        onCreate = { callsignSelection.persistCallsign(it) },
-                        enabled = !isConnecting,
-                        modifier =
-                            Modifier
-                                .focusRequester(newCallsignFocus)
-                                .focusProperties {
-                                    up = serverUrlFocus
-                                    left = callsignFocus
                                     right = lanFocus
                                     down = connectFocus
                                 },
@@ -568,7 +541,7 @@ private fun ServerBrowserContent(
                                 .focusRequester(lanFocus)
                                 .focusProperties {
                                     up = callsignFocus
-                                    left = newCallsignFocus
+                                    left = callsignFocus
                                 },
                     ) {
                         Text("LAN")
@@ -1288,13 +1261,9 @@ private fun LanContent(
                 selectedCallsign = lanCallsign,
                 callsigns = callsignSelection.callsignOptions,
                 onSelect = { persistLanCallsign(it) },
-                enabled = !callsignLocked,
-                modifier = Modifier.weight(1f),
-            )
-            NewCallsignButton(
-                existingCallsigns = callsignSelection.callsignOptions,
                 onCreate = { persistLanCallsign(it) },
                 enabled = !callsignLocked,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         Spacer(Modifier.height(8.dp))

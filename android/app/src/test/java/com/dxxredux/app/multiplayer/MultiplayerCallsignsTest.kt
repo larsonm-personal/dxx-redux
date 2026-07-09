@@ -39,6 +39,18 @@ class MultiplayerCallsignsTest {
         assertEquals("", MultiplayerCallsigns.pickInitialCallsign("missing", emptyList()))
     }
 
+    @Test
+    fun pickerDisplayTextPromptsCreateOnlyWhenEmpty() {
+        assertEquals("create", MultiplayerCallsigns.pickerDisplayText("", emptyList()))
+        assertEquals(true, MultiplayerCallsigns.pickerShowsCreatePrompt("", emptyList()))
+
+        assertEquals("Select callsign", MultiplayerCallsigns.pickerDisplayText("", listOf("ace")))
+        assertEquals(false, MultiplayerCallsigns.pickerShowsCreatePrompt("", listOf("ace")))
+
+        assertEquals("ace", MultiplayerCallsigns.pickerDisplayText("ace", emptyList()))
+        assertEquals(false, MultiplayerCallsigns.pickerShowsCreatePrompt("ace", emptyList()))
+    }
+
     private fun java.io.File.writeTestFile() {
         parentFile?.mkdirs()
         writeText("x")

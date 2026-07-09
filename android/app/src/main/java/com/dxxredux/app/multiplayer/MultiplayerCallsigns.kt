@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.dxxredux.app.dpadTextFieldNavigation
 import java.io.File
@@ -75,6 +76,19 @@ internal object MultiplayerCallsigns {
         return (options + pending).sortedBy { it.lowercase(Locale.US) }
     }
 
+    fun pickerDisplayText(
+        selectedCallsign: String,
+        options: List<String>,
+    ): String =
+        selectedCallsign.ifBlank {
+            if (options.isEmpty()) "create" else "Select callsign"
+        }
+
+    fun pickerShowsCreatePrompt(
+        selectedCallsign: String,
+        options: List<String>,
+    ): Boolean = selectedCallsign.isBlank() && options.isEmpty()
+
     private fun pilotDirs(root: File): List<File> =
         listOf(
             File(root, "d2x-redux/Players"),
@@ -102,13 +116,22 @@ internal fun CallsignPickerField(
     selectedCallsign: String,
     callsigns: List<String>,
     onSelect: (String) -> Unit,
+    onCreate: (String) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
     var showPicker by remember { mutableStateOf(false) }
+    var showCreateDialog by remember { mutableStateOf(false) }
+    val createPrompt = MultiplayerCallsigns.pickerShowsCreatePrompt(selectedCallsign, callsigns)
     OutlinedButton(
-        onClick = { showPicker = true },
-        enabled = enabled && callsigns.isNotEmpty(),
+        onClick = {
+            if (callsigns.isEmpty()) {
+                showCreateDialog = true
+            } else {
+                showPicker = true
+            }
+        },
+        enabled = enabled,
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
@@ -117,10 +140,9 @@ internal fun CallsignPickerField(
         ) {
             Text("Callsign", style = MaterialTheme.typography.labelSmall)
             Text(
-                selectedCallsign.ifBlank {
-                    if (callsigns.isEmpty()) "No pilots yet" else "Select callsign"
-                },
+                MultiplayerCallsigns.pickerDisplayText(selectedCallsign, callsigns),
                 style = MaterialTheme.typography.bodyMedium,
+                color = if (createPrompt) MaterialTheme.colorScheme.error else Color.Unspecified,
             )
         }
     }
@@ -128,6 +150,10 @@ internal fun CallsignPickerField(
     if (showPicker) {
         CallsignPickerDialog(
             callsigns = callsigns,
+            onNew = {
+                showPicker = false
+                showCreateDialog = true
+            },
             onSelect = {
                 onSelect(it)
                 showPicker = false
@@ -135,29 +161,14 @@ internal fun CallsignPickerField(
             onDismiss = { showPicker = false },
         )
     }
-}
-
-@Composable
-internal fun NewCallsignButton(
-    existingCallsigns: List<String>,
-    onCreate: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
-    var showDialog by remember { mutableStateOf(false) }
-    Button(onClick = { showDialog = true }, enabled = enabled, modifier = modifier) {
-        Icon(Icons.Default.Add, contentDescription = "Create callsign")
-        Spacer(Modifier.width(4.dp))
-        Text("New")
-    }
-    if (showDialog) {
+    if (showCreateDialog) {
         NewCallsignDialog(
-            existingCallsigns = existingCallsigns,
+            existingCallsigns = callsigns,
             onCreate = {
                 onCreate(it)
-                showDialog = false
+                showCreateDialog = false
             },
-            onDismiss = { showDialog = false },
+            onDismiss = { showCreateDialog = false },
         )
     }
 }
@@ -165,6 +176,7 @@ internal fun NewCallsignButton(
 @Composable
 private fun CallsignPickerDialog(
     callsigns: List<String>,
+    onNew: () -> Unit,
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -175,6 +187,14 @@ private fun CallsignPickerDialog(
         title = { Text("Select Callsign") },
         text = {
             LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
+                item {
+                    Button(onClick = onNew, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.Add, contentDescription = "Create callsign")
+                        Spacer(Modifier.width(4.dp))
+                        Text("New")
+                    }
+                    HorizontalDivider()
+                }
                 items(callsigns) { callsign ->
                     Row(
                         modifier =
