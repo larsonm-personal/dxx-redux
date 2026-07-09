@@ -564,6 +564,7 @@ static json serialize_level_metadata_route()
 		json item;
 		item["index"] = index;
 		item["kind"] = level_metadata_route_step_kind_name(step->kind);
+		item["activation_kind"] = level_metadata_route_activation_kind_name(step->activation_kind);
 		item["label"] = step->label;
 		item["seg"] = step->seg;
 		item["side"] = step->side;
@@ -607,6 +608,7 @@ static json serialize_guidebot_route_analysis()
 			selected_index = index;
 		item["index"] = index;
 		item["kind"] = level_metadata_route_step_kind_name(analysis.kind);
+		item["activation_kind"] = level_metadata_route_activation_kind_name(analysis.activation_kind);
 		item["label"] = metadata->route_steps[index].label;
 		item["satisfied"] = analysis.satisfied != 0;
 		item["satisfied_reason"] = escort_route_step_satisfied_reason_name(analysis.satisfied_reason);
@@ -670,6 +672,9 @@ static json serialize_guidebot()
 	result["route_goal_wall"] = escort_get_route_goal_wall();
 	result["route_goal_trigger"] = escort_get_route_goal_trigger();
 	result["route_goal_objective_kind"] = escort_get_route_goal_objective_kind();
+	result["route_goal_activation_kind"] = escort_get_route_goal_activation_kind();
+	result["route_goal_activation_kind_name"] =
+	    level_metadata_route_activation_kind_name(escort_get_route_goal_activation_kind());
 	result["route_goal_objective_seg"] = escort_get_route_goal_objective_seg();
 	result["route_goal_objective_side"] = escort_get_route_goal_objective_side();
 	result["route_goal_objective_wall"] = escort_get_route_goal_objective_wall();

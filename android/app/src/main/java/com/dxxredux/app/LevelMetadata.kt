@@ -55,6 +55,7 @@ internal data class LevelMetadataRouteOpenLink(
 internal data class LevelMetadataRouteStep(
     val index: Int,
     val kind: String,
+    val activationKind: String = "",
     val label: String,
     val seg: Int = -1,
     val side: Int = -1,
@@ -1232,6 +1233,7 @@ private fun JSONObject.optRouteSteps(name: String): List<LevelMetadataRouteStep>
                 LevelMetadataRouteStep(
                     index = step.optInt("index", index),
                     kind = step.optString("kind"),
+                    activationKind = step.optString("activation_kind"),
                     label = step.optString("label"),
                     seg = step.optInt("seg", -1),
                     side = step.optInt("side", -1),

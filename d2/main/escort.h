@@ -42,6 +42,7 @@ typedef struct escort_route_step_analysis {
 	int valid;
 	int index;
 	int kind;
+	int activation_kind;
 	int satisfied;
 	int satisfied_reason;
 	int selected_next;
@@ -76,6 +77,7 @@ extern int escort_get_route_goal_side(void);
 extern int escort_get_route_goal_wall(void);
 extern int escort_get_route_goal_trigger(void);
 extern int escort_get_route_goal_objective_kind(void);
+extern int escort_get_route_goal_activation_kind(void);
 extern int escort_get_route_goal_objective_seg(void);
 extern int escort_get_route_goal_objective_side(void);
 extern int escort_get_route_goal_objective_wall(void);

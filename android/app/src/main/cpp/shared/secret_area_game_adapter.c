@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "bm.h"
+#include "effects.h"
 #include "gameseg.h"
 #include "gameseq.h"
 #include "fvi.h"
@@ -117,6 +119,40 @@ static int secret_area_wall_clip_flags(void *user, int wall_num)
 	if (clip_num < 0 || clip_num >= Num_wall_anims)
 		return 0;
 	return WallAnims[clip_num].flags;
+}
+
+static int secret_area_wall_is_shootable_trigger(void *user, int wall_num)
+{
+	int seg;
+	int side;
+	int tm;
+	int ec;
+
+	(void) user;
+	if (wall_num < 0 || wall_num >= Num_walls)
+		return 0;
+	seg = Walls[wall_num].segnum;
+	side = Walls[wall_num].sidenum;
+	if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	tm = Segments[seg].sides[side].tmap_num2;
+	if (tm == 0)
+		return 0;
+	tm &= 0x3fff;
+	if (tm < 0 || tm >= MAX_TEXTURES)
+		return 0;
+	ec = TmapInfo[tm].eclip_num;
+	if (ec >= 0 &&
+	    ec < Num_effects &&
+	    ec < MAX_EFFECTS &&
+	    Effects[ec].dest_bm_num != -1 &&
+	    (Effects[ec].flags & EF_ONE_SHOT) == 0)
+		return 1;
+#ifdef DXX_BUILD_DESCENT_II
+	if (ec == -1 && TmapInfo[tm].destroyed != -1)
+		return 1;
+#endif
+	return 0;
 }
 
 static int secret_area_segment_special(void *user, int seg)
@@ -606,6 +642,7 @@ void level_metadata_rescan_current_level(void)
 	view.trigger_link_segment = secret_area_trigger_link_segment;
 	view.trigger_link_side = secret_area_trigger_link_side;
 	view.target_visible_from_segment = secret_area_target_visible_from_segment;
+	view.wall_is_shootable_trigger = secret_area_wall_is_shootable_trigger;
 	level_metadata_scan_level(&view, &Level_metadata_state);
 }
 

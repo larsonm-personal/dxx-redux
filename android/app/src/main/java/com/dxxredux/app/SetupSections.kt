@@ -2755,11 +2755,19 @@ private fun LevelMetadataLevelDialog(
                     } else {
                         row.routeSteps.forEachIndexed { displayIndex, step ->
                             Text(
-                                "${displayIndex + 1}. ${step.routeStepSummary()}",
-                                fontSize = 11.sp,
+                                "${displayIndex + 1}. ${step.routeStepTitle()}",
+                                fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(bottom = 2.dp),
+                                modifier = Modifier.padding(bottom = 1.dp),
                             )
+                            step.routeStepDetails().takeIf { it.isNotBlank() }?.let { details ->
+                                Text(
+                                    details,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 16.dp, bottom = 3.dp),
+                                )
+                            }
                             step.routeOpenSummary().takeIf { it.isNotBlank() }?.let { opens ->
                                 Text(
                                     opens,
@@ -2840,23 +2848,65 @@ private fun LevelMetadataLevelRow.metadataNotes(): List<String> {
     return messages.distinct()
 }
 
-private fun LevelMetadataRouteStep.routeStepSummary(): String {
-    val displayLabel = label.ifBlank { routeStepFallbackLabel() }
-    val details =
-        buildList {
-            if (kind == "trigger" && trigger >= 0 && !displayLabel.contains("trigger", ignoreCase = true)) {
-                add("trigger $trigger")
-            }
-            if (triggerType.isNotBlank() && kind == "trigger") {
-                add(triggerType.replace('_', ' '))
-            }
-            if (seg >= 0) add("segment $seg")
-            if (side >= 0) add("side $side")
-            if (wall >= 0 && kind == "trigger") add("wall $wall")
-            if (distance > 0.0) add("${"%.0f".format(Locale.US, distance)} units")
+private fun LevelMetadataRouteStep.routeStepTitle(): String =
+    routeActivationLabel().ifBlank { label.ifBlank { routeStepFallbackLabel() } }
+
+private fun LevelMetadataRouteStep.routeStepDetails(): String =
+    buildList {
+        val title = routeStepTitle()
+        if (kind == "trigger" && trigger >= 0 && !title.contains("trigger $trigger", ignoreCase = true)) {
+            add("trigger $trigger")
         }
-    return (listOf(displayLabel) + details).joinToString(", ")
-}
+        if (triggerType.isNotBlank() && kind == "trigger") {
+            add(triggerType.replace('_', ' '))
+        }
+        if (seg >= 0) add("segment $seg")
+        if (side >= 0) add("side $side")
+        if (wall >= 0 && kind == "trigger") add("wall $wall")
+        if (distance > 0.0) add("${"%.0f".format(Locale.US, distance)} units")
+    }.joinToString(", ")
+
+private fun LevelMetadataRouteStep.routeActivationLabel(): String =
+    when (activationKind) {
+        "pickup_key" -> {
+            key
+                .ifBlank { "" }
+                .replaceFirstChar { it.uppercase() }
+                .let { if (it.isBlank()) "Collect key" else "Collect $it key" }
+        }
+
+        "shoot_switch" -> {
+            "Shoot switch"
+        }
+
+        "fly_through_trigger" -> {
+            "Fly through trigger"
+        }
+
+        "activate_switch" -> {
+            "Activate switch"
+        }
+
+        "open_hidden_door" -> {
+            "Open hidden wall door"
+        }
+
+        "destroy_reactor" -> {
+            "Destroy reactor"
+        }
+
+        "destroy_boss" -> {
+            "Destroy boss"
+        }
+
+        "enter_exit" -> {
+            "Enter exit"
+        }
+
+        else -> {
+            ""
+        }
+    }
 
 private fun LevelMetadataRouteStep.routeStepFallbackLabel(): String =
     when (kind) {

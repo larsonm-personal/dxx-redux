@@ -35,6 +35,18 @@ enum level_metadata_route_step_kind {
 	LEVEL_METADATA_ROUTE_HOSTAGE = 7
 };
 
+enum level_metadata_route_activation_kind {
+	LEVEL_METADATA_ROUTE_ACTIVATION_NONE = 0,
+	LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY = 1,
+	LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH = 2,
+	LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER = 3,
+	LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH = 4,
+	LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR = 5,
+	LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR = 6,
+	LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS = 7,
+	LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT = 8
+};
+
 #ifdef _MSC_VER
 /* Engine headers can leave MSVC packing at 1 byte; this is a shared ABI. */
 #pragma pack(push, 8)
@@ -48,6 +60,7 @@ typedef struct level_metadata_route_step {
 	int trigger_num;
 	int trigger_type;
 	int key_index;
+	int activation_kind;
 	double distance_from_previous;
 	char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
 	char trigger_type_name[LEVEL_METADATA_ROUTE_TRIGGER_TYPE_LEN];
@@ -126,6 +139,7 @@ typedef struct level_metadata_scan_view {
 	int (*trigger_link_segment)(void *user, int trigger_num, int link_index);
 	int (*trigger_link_side)(void *user, int trigger_num, int link_index);
 	int (*target_visible_from_segment)(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3]);
+	int (*wall_is_shootable_trigger)(void *user, int wall_num);
 } level_metadata_scan_view;
 
 typedef struct level_metadata_state {
@@ -166,6 +180,7 @@ void level_metadata_state_clear(level_metadata_state *state);
 int level_metadata_scan_level(const level_metadata_scan_view *view, level_metadata_state *state);
 const char *level_metadata_travel_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
+const char *level_metadata_route_activation_kind_name(int kind);
 
 #ifdef __cplusplus
 }

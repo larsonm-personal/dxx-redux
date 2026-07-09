@@ -856,6 +856,7 @@ class LauncherScriptExecutor(
                 JSONObject()
                     .put("index", step.index)
                     .put("kind", step.kind)
+            if (step.activationKind.isNotBlank()) item.put("activation_kind", step.activationKind)
             if (step.label.isNotBlank()) item.put("label", step.label)
             if (step.seg >= 0) item.put("seg", step.seg)
             if (step.side >= 0) item.put("side", step.side)

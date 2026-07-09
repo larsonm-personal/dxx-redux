@@ -147,6 +147,32 @@ const char *level_metadata_route_step_kind_name(int kind)
 	}
 }
 
+const char *level_metadata_route_activation_kind_name(int kind)
+{
+	switch (kind) {
+		case LEVEL_METADATA_ROUTE_ACTIVATION_NONE:
+			return "none";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY:
+			return "pickup_key";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
+			return "shoot_switch";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
+			return "fly_through_trigger";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH:
+			return "activate_switch";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR:
+			return "open_hidden_door";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR:
+			return "destroy_reactor";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS:
+			return "destroy_boss";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT:
+			return "enter_exit";
+		default:
+			return "unknown";
+	}
+}
+
 static int valid_segment(const level_metadata_scan_view *view, int seg)
 {
 	return view && seg >= 0 && seg < view->num_segments;
@@ -297,6 +323,13 @@ static int metadata_wall_flags(const level_metadata_scan_view *view, int wall_nu
 	return view->wall_flags(view->user, wall_num);
 }
 
+static int metadata_wall_type(const level_metadata_scan_view *view, int wall_num)
+{
+	if (!valid_wall(view, wall_num) || !view->wall_type)
+		return -1;
+	return view->wall_type(view->user, wall_num);
+}
+
 static int metadata_wall_clip_flags(const level_metadata_scan_view *view, int wall_num)
 {
 	if (!valid_wall(view, wall_num) || !view->wall_clip_flags)
@@ -316,7 +349,7 @@ static int metadata_wall_is_hidden_door(const level_metadata_scan_view *view, in
 	    !view->wall_type ||
 	    !view->wall_keys ||
 	    !view->wall_clip_flags ||
-	    view->wall_type(view->user, wall_num) != view->wall_type_door)
+	    metadata_wall_type(view, wall_num) != view->wall_type_door)
 		return 0;
 	if ((metadata_wall_clip_flags(view, wall_num) & view->wall_clip_hidden) == 0)
 		return 0;
@@ -1787,6 +1820,7 @@ static level_metadata_route_step *metadata_route_append_step(
 	step->trigger_num = -1;
 	step->trigger_type = -1;
 	step->key_index = -1;
+	step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
 	step->distance_from_previous = route ? route->pending_distance : 0.0;
 	snprintf(step->label, sizeof(step->label), "%s", label ? label : "");
 	for (i = 0; i < LEVEL_METADATA_MAX_ROUTE_LINKS; ++i) {
@@ -1801,6 +1835,38 @@ static level_metadata_route_step *metadata_route_append_step(
 	return step;
 }
 
+static int metadata_route_trigger_activation_kind(
+    const level_metadata_scan_view *view,
+    const metadata_route_block *block)
+{
+	int wall_type;
+
+	if (!view || !block)
+		return LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH;
+	if (view->wall_is_shootable_trigger &&
+	    valid_wall(view, block->source_wall) &&
+	    view->wall_is_shootable_trigger(view->user, block->source_wall))
+		return LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH;
+	wall_type = metadata_wall_type(view, block->source_wall);
+	if (wall_type == view->wall_type_open)
+		return LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER;
+	return LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH;
+}
+
+static const char *metadata_route_trigger_action_name(int activation_kind)
+{
+	switch (activation_kind) {
+		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
+			return "Shoot switch";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
+			return "Fly-through";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH:
+			return "Activate switch";
+		default:
+			return "Trigger";
+	}
+}
+
 static int metadata_route_step_for_trigger(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
@@ -1812,16 +1878,14 @@ static int metadata_route_step_for_trigger(
 	const char *type_name;
 	int link_count;
 	int i;
+	int activation_kind;
 
 	if (!block || !metadata_route_trigger_valid(block->trigger_num))
 		return 0;
 	type_name = metadata_route_trigger_type_name(view, block->trigger_type);
+	activation_kind = metadata_route_trigger_activation_kind(view, block);
 	snprintf(label, sizeof(label), "%s trigger %d",
-	         block->trigger_type == view->trigger_type_open_wall ? "Open wall" : block->trigger_type == view->trigger_type_open_door   ? "Open door"
-	                                                                         : block->trigger_type == view->trigger_type_unlock_door   ? "Unlock door"
-	                                                                         : block->trigger_type == view->trigger_type_illusion_off  ? "Illusion off"
-	                                                                         : block->trigger_type == view->trigger_type_illusory_wall ? "Illusory wall"
-	                                                                                                                                   : "Trigger",
+	         metadata_route_trigger_action_name(activation_kind),
 	         block->trigger_num);
 	step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_TRIGGER, label, block->source_seg, block->source_side);
 	if (!step)
@@ -1829,6 +1893,7 @@ static int metadata_route_step_for_trigger(
 	step->wall_num = block->source_wall;
 	step->trigger_num = block->trigger_num;
 	step->trigger_type = block->trigger_type;
+	step->activation_kind = activation_kind;
 	snprintf(step->trigger_type_name, sizeof(step->trigger_type_name), "%s", type_name);
 	if (view->trigger_link_count && view->trigger_link_segment && view->trigger_link_side) {
 		link_count = view->trigger_link_count(view->user, block->trigger_num);
@@ -1961,6 +2026,7 @@ static int metadata_route_open_hidden_door(
 		return 0;
 	}
 	step->wall_num = block->wall_num;
+	step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR;
 	metadata_route_add_hidden_door_link(step, block->seg, block->side, block->wall_num);
 	child = view->segment_child ? view->segment_child(view->user, block->seg, block->side) : -1;
 	reverse_side = valid_segment(view, child) && view->reverse_side ? view->reverse_side(view->user, block->seg, child) : -1;
@@ -2031,8 +2097,10 @@ static int metadata_route_acquire_key(
 		level_metadata_route_step *step;
 		snprintf(label, sizeof(label), "%s key", key_name(key_index));
 		step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_KEY, label, key_targets[key_index][best].seg, -1);
-		if (step)
+		if (step) {
 			step->key_index = key_index;
+			step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY;
+		}
 	}
 	key_targets[key_index][best].visited = 1;
 	route->key_mask |= key_bit_for_index(key_index);
@@ -2397,6 +2465,17 @@ static int metadata_route_append_target_step(
 	if (!step)
 		return 0;
 	step->wall_num = wall_num;
+	switch (kind) {
+		case LEVEL_METADATA_ROUTE_REACTOR:
+			step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR;
+			break;
+		case LEVEL_METADATA_ROUTE_BOSS:
+			step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS;
+			break;
+		case LEVEL_METADATA_ROUTE_EXIT:
+			step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT;
+			break;
+	}
 	if (kind == LEVEL_METADATA_ROUTE_EXIT && side >= 0 && view->wall_trigger && valid_wall(view, wall_num)) {
 		step->trigger_num = view->wall_trigger(view->user, wall_num);
 		if (view->trigger_type && metadata_route_trigger_valid(step->trigger_num)) {

@@ -190,6 +190,7 @@ typedef struct escort_route_goal {
 	int target_wall;
 	int trigger_num;
 	int objective_kind;
+	int activation_kind;
 	int objective_seg;
 	int objective_side;
 	int objective_wall;
@@ -211,6 +212,7 @@ static void escort_route_clear_goal(void)
 	Escort_route_goal.target_wall = -1;
 	Escort_route_goal.trigger_num = -1;
 	Escort_route_goal.objective_kind = -1;
+	Escort_route_goal.activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
 	Escort_route_goal.objective_seg = -1;
 	Escort_route_goal.objective_side = -1;
 	Escort_route_goal.objective_wall = -1;
@@ -224,6 +226,22 @@ static void escort_route_clear_goal(void)
 static const char *escort_route_goal_label(void)
 {
 	return Escort_route_goal.label[0] ? Escort_route_goal.label : "route objective";
+}
+
+static const char *escort_route_goal_instruction(void)
+{
+	switch (Escort_route_goal.activation_kind) {
+		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
+			return "go here and shoot this switch";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
+			return "fly through this trigger";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH:
+			return "activate this switch";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR:
+			return "open this hidden wall door";
+		default:
+			return escort_route_goal_label();
+	}
 }
 
 #ifdef __ANDROID__
@@ -262,6 +280,11 @@ int escort_get_route_goal_trigger(void)
 int escort_get_route_goal_objective_kind(void)
 {
 	return Escort_route_goal.active ? Escort_route_goal.objective_kind : -1;
+}
+
+int escort_get_route_goal_activation_kind(void)
+{
+	return Escort_route_goal.active ? Escort_route_goal.activation_kind : LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
 }
 
 int escort_get_route_goal_objective_seg(void)
@@ -334,6 +357,7 @@ void escort_route_step_analysis_clear(escort_route_step_analysis *analysis)
 	memset(analysis, 0, sizeof(*analysis));
 	analysis->index = -1;
 	analysis->kind = -1;
+	analysis->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
 	analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_NONE;
 	analysis->reachable = -1;
 	analysis->guidance_mode = ESCORT_ROUTE_GUIDANCE_NONE;
@@ -522,7 +546,15 @@ static int escort_route_step_guidance_mode(const level_metadata_route_step *step
 		return ESCORT_ROUTE_GUIDANCE_NONE;
 	switch (step->kind) {
 		case LEVEL_METADATA_ROUTE_TRIGGER:
-			return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
+			switch (step->activation_kind) {
+				case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
+					return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
+				case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
+				case LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH:
+					return ESCORT_ROUTE_GUIDANCE_REACH_OBJECTIVE;
+				default:
+					return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
+			}
 		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
 			return ESCORT_ROUTE_GUIDANCE_REACH_HIDDEN_DOOR;
 		case LEVEL_METADATA_ROUTE_KEY:
@@ -626,6 +658,7 @@ static void escort_route_analyze_step_for_key_flags(
 	}
 	analysis->valid = 1;
 	analysis->kind = step->kind;
+	analysis->activation_kind = step->activation_kind;
 	analysis->key_index = step->key_index;
 	analysis->trigger_num = step->trigger_num;
 	analysis->guidance_mode = escort_route_step_guidance_mode(step);
@@ -694,6 +727,7 @@ static void escort_route_set_step_goal(const level_metadata_route_step *step, in
 	Escort_route_goal.target_wall = step->wall_num;
 	Escort_route_goal.trigger_num = step->trigger_num;
 	Escort_route_goal.objective_kind = step->kind;
+	Escort_route_goal.activation_kind = step->activation_kind;
 	Escort_route_goal.objective_seg = step->seg;
 	Escort_route_goal.objective_side = step->side;
 	Escort_route_goal.objective_wall = step->wall_num;
@@ -738,7 +772,7 @@ static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int
 			case LEVEL_METADATA_ROUTE_TRIGGER:
 				if (!analysis.satisfied && escort_valid_segment(step->seg)) {
 					if (set_goal)
-						escort_route_set_step_goal(step, ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION);
+						escort_route_set_step_goal(step, analysis.guidance_mode);
 					if (selected_index)
 						*selected_index = i;
 					return ESCORT_GOAL_EXIT;
@@ -747,7 +781,7 @@ static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int
 			case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
 				if (!analysis.satisfied && escort_valid_segment(step->seg)) {
 					if (set_goal)
-						escort_route_set_step_goal(step, ESCORT_ROUTE_GUIDANCE_REACH_HIDDEN_DOOR);
+						escort_route_set_step_goal(step, analysis.guidance_mode);
 					if (selected_index)
 						*selected_index = i;
 					return ESCORT_GOAL_EXIT;
@@ -970,6 +1004,7 @@ static void escort_route_refresh_guidance_target(object *objp)
 		return;
 	Escort_route_goal.path_endpoint_seg = -1;
 	if (Escort_route_goal.objective_kind != LEVEL_METADATA_ROUTE_TRIGGER ||
+	    Escort_route_goal.activation_kind != LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH ||
 	    !escort_valid_wall(Escort_route_goal.objective_wall))
 		return;
 	visible_seg = escort_route_find_nearest_visible_wall_segment(objp, Escort_route_goal.objective_wall);
@@ -2577,7 +2612,7 @@ void escort_create_path_to_goal(object *objp)
 		if (!used_nearest_point) {
 #ifdef __ANDROID__
 			if (using_route_goal)
-				buddy_message("Finding NEXT: %s", escort_route_goal_label());
+				buddy_message("Finding NEXT: %s", escort_route_goal_instruction());
 			else
 #endif
 			say_escort_goal(Escort_goal_object);
