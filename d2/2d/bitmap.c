@@ -202,6 +202,22 @@ void build_colormap_good( ubyte * palette, ubyte * colormap, int * freq )
 	}
 }
 
+static void gr_remap_bitmap_invalidate_texture(grs_bitmap *bmp)
+{
+#ifdef OGL
+	while (bmp && bmp->bm_parent)
+		bmp = bmp->bm_parent;
+#ifdef ANDROID
+	if (bmp && bmp->gltexture && bmp->gltexture->is_png)
+		return;
+#endif
+	if (bmp)
+		ogl_freebmtexture(bmp);
+#else
+	(void)bmp;
+#endif
+}
+
 void gr_remap_bitmap( grs_bitmap * bmp, ubyte * palette, int transparent_color, int super_transparent_color )
 {
 	ubyte colormap[256];
@@ -226,6 +242,8 @@ void gr_remap_bitmap( grs_bitmap * bmp, ubyte * palette, int transparent_color, 
 
 	if ( (super_transparent_color>=0) && (super_transparent_color<=255) && (freq[super_transparent_color]>0) )
 		gr_set_super_transparent (bmp, 0);
+
+	gr_remap_bitmap_invalidate_texture(bmp);
 }
 
 void gr_remap_bitmap_good( grs_bitmap * bmp, ubyte * palette, int transparent_color, int super_transparent_color )
@@ -254,6 +272,8 @@ void gr_remap_bitmap_good( grs_bitmap * bmp, ubyte * palette, int transparent_co
 
 	if ( (super_transparent_color>=0) && (super_transparent_color<=255) && (freq[super_transparent_color]>0) )
 		gr_set_super_transparent (bmp, 1);
+
+	gr_remap_bitmap_invalidate_texture(bmp);
 }
 
 void gr_bitmap_check_transparency( grs_bitmap * bmp )

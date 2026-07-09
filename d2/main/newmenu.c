@@ -119,6 +119,8 @@ grs_bitmap *nm_background_sub = NULL;
 static char nm_background1_filename[PATH_MAX];
 #ifdef ANDROID
 static ubyte nm_background1_palette[768];  // saved palette from the background PCX
+static ubyte nm_background_palette[768];
+static int nm_background_palette_valid = 0;
 enum { ANDROID_TINY_TEXT_MAX_VISIBLE = 9 };
 
 static int android_tap_outside_game_menu(newmenu *menu, int mx, int my)
@@ -331,7 +333,8 @@ static grs_font *newmenu_get_scroll_marker_font(newmenu *menu)
 
 newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * item, int (*subfunction)(newmenu *menu, d_event *event, void *userdata), void *userdata, int citem, char * filename, int TinyMode, int TabsFlag );
 
-void newmenu_free_background()	{
+static void newmenu_free_framed_background(void)
+{
 	if (nm_background.bm_data)
 	{
 		if (nm_background_sub)
@@ -341,6 +344,13 @@ void newmenu_free_background()	{
 		}
 		gr_free_bitmap_data (&nm_background);
 	}
+#ifdef ANDROID
+	nm_background_palette_valid = 0;
+#endif
+}
+
+void newmenu_free_background()	{
+	newmenu_free_framed_background();
 	if (nm_background1.bm_data)
 		gr_free_bitmap_data (&nm_background1);
 	nm_background1_filename[0] = 0;
@@ -422,6 +432,12 @@ void nm_draw_background(int x1, int y1, int x2, int y2 )
 		load_palette(MENU_PALETTE,0,1);
 	#endif
 
+#ifdef ANDROID
+	if (nm_background.bm_data &&
+	    (!nm_background_palette_valid || memcmp(nm_background_palette, gr_palette, sizeof(nm_background_palette))))
+		newmenu_free_framed_background();
+#endif
+
 	if (nm_background.bm_data == NULL)
 	{
 		int pcx_error;
@@ -432,6 +448,10 @@ void nm_draw_background(int x1, int y1, int x2, int y2 )
 		(void)pcx_error;
 		gr_palette_load( gr_palette );
 		gr_remap_bitmap_good( &nm_background, background_palette, -1, -1 );
+#ifdef ANDROID
+		memcpy(nm_background_palette, gr_palette, sizeof(nm_background_palette));
+		nm_background_palette_valid = 1;
+#endif
 		BGScaleX=((float)SWIDTH/nm_background.bm_w);
 		BGScaleY=((float)SHEIGHT/nm_background.bm_h);
 		init_sub=1;
