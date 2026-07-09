@@ -764,7 +764,7 @@ internal fun saveExplorerStatusMessage(slot: SaveExplorerBridge.SaveExplorerSlot
     return when (reason) {
         "not_loadable_from_launcher" -> {
             if (slot.scope == "coop") {
-                "Co-op save: use Multiplayer > Create Game > Restore from save"
+                "Co-op save: use Multiplayer > Host LAN Game > Restore from save"
             } else {
                 "Not loadable directly from Save Explorer"
             }

@@ -49,12 +49,26 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
+private fun lanOnlyMultiplayerRelease(): Boolean = true
+
 @Composable
 fun MultiplayerScreen(
     onBack: () -> Unit,
     onLaunchGame: (GameLaunchInfo) -> Unit,
 ) {
     val state by MatchmakingStateHolder.state.collectAsState()
+
+    if (lanOnlyMultiplayerRelease() && state.nav == MultiplayerNav.BROWSER) {
+        BackHandler {
+            if (LobbyService.joinedLobby.value != null) {
+                LobbyService.leaveLanLobby(state.callsign)
+            } else {
+                onBack()
+            }
+        }
+        LanContent(state, onBack, onLaunchGame)
+        return
+    }
 
     when (state.nav) {
         MultiplayerNav.LOBBY -> {
@@ -83,7 +97,7 @@ fun MultiplayerScreen(
                 if (LobbyService.joinedLobby.value != null) {
                     LobbyService.leaveLanLobby(state.callsign)
                 } else {
-                    MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+                    onBack()
                 }
             }
             LanContent(state, onBack, onLaunchGame)
@@ -94,6 +108,75 @@ fun MultiplayerScreen(
             ServerBrowserContent(state, onBack)
         }
     }
+}
+
+private class CallsignSelectionState(
+    val callsignOptions: List<String>,
+    val selectedCallsign: String,
+    val onSelect: (String) -> Unit,
+    val persistSelected: () -> String?,
+    val persistCallsign: (String) -> String?,
+)
+
+@Composable
+private fun rememberCallsignSelectionState(state: MatchmakingState): CallsignSelectionState {
+    val context = LocalContext.current
+    val savedCallsign = remember { CallsignPrefs.load(context) }
+    val pilotCallsigns =
+        remember {
+            val fsm = com.dxxredux.app.FileSetManager(context.filesDir)
+            MultiplayerCallsigns.scan(context.filesDir, fsm.getSetDir(fsm.getActive()))
+        }
+    val preferredCallsign = if (state.callsign == "Player") savedCallsign else state.callsign
+    var pendingNewCallsign by remember {
+        mutableStateOf(
+            savedCallsign.takeIf { saved ->
+                MultiplayerCallsigns.isValidNewCallsign(saved) &&
+                    pilotCallsigns.none { it.equals(saved, ignoreCase = true) }
+            },
+        )
+    }
+    val callsignOptions =
+        remember(pilotCallsigns, pendingNewCallsign) {
+            MultiplayerCallsigns.mergePendingCallsign(pilotCallsigns, pendingNewCallsign)
+        }
+    var callsign by remember {
+        mutableStateOf(
+            MultiplayerCallsigns.pickInitialCallsign(preferredCallsign, callsignOptions),
+        )
+    }
+
+    LaunchedEffect(savedCallsign) {
+        if (state.callsign == "Player" && savedCallsign != state.callsign) {
+            MatchmakingStateHolder.update { it.copy(callsign = savedCallsign) }
+        }
+    }
+
+    LaunchedEffect(preferredCallsign, callsignOptions) {
+        if (callsign.isBlank() || callsignOptions.none { it.equals(callsign, ignoreCase = true) }) {
+            callsign = MultiplayerCallsigns.pickInitialCallsign(preferredCallsign, callsignOptions)
+        }
+    }
+
+    fun persistCallsign(input: String): String? {
+        val selected = MultiplayerCallsigns.sanitizeNewCallsign(input)
+        if (selected.isBlank()) return null
+        if (pilotCallsigns.none { it.equals(selected, ignoreCase = true) }) {
+            pendingNewCallsign = selected
+        }
+        callsign = selected
+        CallsignPrefs.save(context, selected)
+        MatchmakingStateHolder.update { it.copy(callsign = selected) }
+        return selected
+    }
+
+    return CallsignSelectionState(
+        callsignOptions = callsignOptions,
+        selectedCallsign = callsign,
+        onSelect = { callsign = it },
+        persistSelected = { persistCallsign(callsign) },
+        persistCallsign = ::persistCallsign,
+    )
 }
 
 @Composable
@@ -111,21 +194,7 @@ private fun ServerBrowserContent(
     val newCallsignFocus = remember { FocusRequester() }
     val recentUrls = remember { mutableStateOf(RecentAddressPrefs.SERVER_URLS.load(context)) }
     var serverUrl by remember { mutableStateOf(recentUrls.value.firstOrNull() ?: state.serverUrl) }
-    val pilotCallsigns =
-        remember {
-            val fsm = com.dxxredux.app.FileSetManager(context.filesDir)
-            MultiplayerCallsigns.scan(context.filesDir, fsm.getSetDir(fsm.getActive()))
-        }
-    var pendingNewCallsign by remember { mutableStateOf<String?>(null) }
-    val callsignOptions =
-        remember(pilotCallsigns, pendingNewCallsign) {
-            MultiplayerCallsigns.mergePendingCallsign(pilotCallsigns, pendingNewCallsign)
-        }
-    var callsign by remember {
-        mutableStateOf(
-            MultiplayerCallsigns.pickInitialCallsign(state.callsign, callsignOptions),
-        )
-    }
+    val callsignSelection = rememberCallsignSelectionState(state)
     var showCreateDialog by remember { mutableStateOf(false) }
     var textEntryActive by remember { mutableStateOf(false) }
     var dismissResumeOffer by remember { mutableStateOf(false) }
@@ -157,36 +226,7 @@ private fun ServerBrowserContent(
     val isLandscape =
         LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-    LaunchedEffect(state.callsign, callsignOptions) {
-        if (callsign.isBlank() || callsignOptions.none { it.equals(callsign, ignoreCase = true) }) {
-            callsign = MultiplayerCallsigns.pickInitialCallsign(state.callsign, callsignOptions)
-        }
-    }
-
-    fun persistSelectedCallsign(): String? {
-        val selected = MultiplayerCallsigns.sanitizeNewCallsign(callsign)
-        if (selected.isBlank()) return null
-        callsign = selected
-        CallsignPrefs.save(context, selected)
-        MatchmakingStateHolder.update { it.copy(callsign = selected) }
-        return selected
-    }
-
-    fun rememberNewCallsign(newCallsign: String) {
-        pendingNewCallsign = newCallsign
-        callsign = newCallsign
-        CallsignPrefs.save(context, newCallsign)
-        MatchmakingStateHolder.update { it.copy(callsign = newCallsign) }
-    }
-
-    fun rememberExternalCallsign(externalCallsign: String) {
-        if (pilotCallsigns.none { it.equals(externalCallsign, ignoreCase = true) }) {
-            pendingNewCallsign = externalCallsign
-        }
-        callsign = externalCallsign
-        CallsignPrefs.save(context, externalCallsign)
-        MatchmakingStateHolder.update { it.copy(callsign = externalCallsign) }
-    }
+    fun persistSelectedCallsign(): String? = callsignSelection.persistSelected()
 
     fun connectWithSelectedCallsign() {
         val selected = persistSelectedCallsign() ?: return
@@ -212,7 +252,7 @@ private fun ServerBrowserContent(
 
     fun beginOnlineResume(record: MultiplayerResumeRecord) {
         val savedServerUrl = record.serverUrl ?: return
-        rememberExternalCallsign(record.localCallsign)
+        callsignSelection.persistCallsign(record.localCallsign)
         serverUrl = savedServerUrl
         RecentAddressPrefs.SERVER_URLS.add(context, savedServerUrl)
         recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
@@ -293,7 +333,7 @@ private fun ServerBrowserContent(
                                     "restore_level=${offerRecord.coopRestoreLevel ?: -1}",
                             )
                         }
-                        rememberExternalCallsign(offerRecord.localCallsign)
+                        callsignSelection.persistCallsign(offerRecord.localCallsign)
                         MatchmakingStateHolder.update {
                             it.copy(callsign = offerRecord.localCallsign, nav = MultiplayerNav.LAN)
                         }
@@ -366,9 +406,9 @@ private fun ServerBrowserContent(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     CallsignPickerField(
-                        selectedCallsign = callsign,
-                        callsigns = callsignOptions,
-                        onSelect = { callsign = it },
+                        selectedCallsign = callsignSelection.selectedCallsign,
+                        callsigns = callsignSelection.callsignOptions,
+                        onSelect = callsignSelection.onSelect,
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -380,8 +420,8 @@ private fun ServerBrowserContent(
                                 },
                     )
                     NewCallsignButton(
-                        existingCallsigns = pilotCallsigns,
-                        onCreate = ::rememberNewCallsign,
+                        existingCallsigns = callsignSelection.callsignOptions,
+                        onCreate = { callsignSelection.persistCallsign(it) },
                         enabled = !isConnecting,
                         modifier =
                             Modifier
@@ -397,7 +437,7 @@ private fun ServerBrowserContent(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = ::connectWithSelectedCallsign,
-                        enabled = !isConnecting && callsign.isNotBlank(),
+                        enabled = !isConnecting && callsignSelection.selectedCallsign.isNotBlank(),
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -426,7 +466,7 @@ private fun ServerBrowserContent(
                     }
                     Button(
                         onClick = ::openLanWithSelectedCallsign,
-                        enabled = !isConnecting && callsign.isNotBlank(),
+                        enabled = !isConnecting && callsignSelection.selectedCallsign.isNotBlank(),
                         modifier =
                             Modifier
                                 .focusRequester(lanFocus)
@@ -459,7 +499,7 @@ private fun ServerBrowserContent(
                     )
                     Button(
                         onClick = ::connectWithSelectedCallsign,
-                        enabled = !isConnecting && callsign.isNotBlank(),
+                        enabled = !isConnecting && callsignSelection.selectedCallsign.isNotBlank(),
                         modifier =
                             Modifier
                                 .focusRequester(connectFocus)
@@ -493,9 +533,9 @@ private fun ServerBrowserContent(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     CallsignPickerField(
-                        selectedCallsign = callsign,
-                        callsigns = callsignOptions,
-                        onSelect = { callsign = it },
+                        selectedCallsign = callsignSelection.selectedCallsign,
+                        callsigns = callsignSelection.callsignOptions,
+                        onSelect = callsignSelection.onSelect,
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -507,8 +547,8 @@ private fun ServerBrowserContent(
                                 },
                     )
                     NewCallsignButton(
-                        existingCallsigns = pilotCallsigns,
-                        onCreate = ::rememberNewCallsign,
+                        existingCallsigns = callsignSelection.callsignOptions,
+                        onCreate = { callsignSelection.persistCallsign(it) },
                         enabled = !isConnecting,
                         modifier =
                             Modifier
@@ -522,7 +562,7 @@ private fun ServerBrowserContent(
                     )
                     Button(
                         onClick = ::openLanWithSelectedCallsign,
-                        enabled = !isConnecting && callsign.isNotBlank(),
+                        enabled = !isConnecting && callsignSelection.selectedCallsign.isNotBlank(),
                         modifier =
                             Modifier
                                 .focusRequester(lanFocus)
@@ -1169,9 +1209,35 @@ private fun LanContent(
     onBack: () -> Unit,
     onLaunchGame: (GameLaunchInfo) -> Unit,
 ) {
+    val context = LocalContext.current
     val isLandscape =
         LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
     val localIpLabel = remember { getLocalIpLabel() }
+    val callsignSelection = rememberCallsignSelectionState(state)
+    val joinedLobby by LobbyService.joinedLobby.collectAsState()
+    val isHosting by LobbyService.isHosting.collectAsState()
+    val isDiscovering by LobbyService.isDiscovering.collectAsState()
+    val callsignLocked = joinedLobby != null || isHosting
+    val lanCallsign = callsignSelection.selectedCallsign
+
+    fun leaveOrBack() {
+        if (LobbyService.joinedLobby.value != null) {
+            LobbyService.leaveLanLobby(lanCallsign)
+        } else {
+            onBack()
+        }
+    }
+
+    fun persistLanCallsign(input: String): String? {
+        val previous = MatchmakingStateHolder.state.value.callsign
+        val selected = callsignSelection.persistCallsign(input) ?: return null
+        if (!callsignLocked && isDiscovering && !selected.equals(previous, ignoreCase = true)) {
+            LobbyService.stopDiscovery()
+            LobbyService.startDiscovery(context, selected)
+        }
+        return selected
+    }
+
     Column(
         modifier =
             Modifier
@@ -1187,9 +1253,7 @@ private fun LanContent(
                     modifier = Modifier.weight(1f),
                 )
                 OutlinedButton(
-                    onClick = {
-                        MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
-                    },
+                    onClick = ::leaveOrBack,
                 ) { Text("Back") }
             }
             localIpLabel?.let {
@@ -1209,15 +1273,33 @@ private fun LanContent(
                 Text("LAN Games", style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.weight(1f))
                 OutlinedButton(
-                    onClick = {
-                        MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
-                    },
+                    onClick = ::leaveOrBack,
                 ) { Text("Back") }
             }
         }
         Spacer(Modifier.height(8.dp))
 
-        LanDiscoveryTab(callsign = state.callsign, onLaunchGame = onLaunchGame)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            CallsignPickerField(
+                selectedCallsign = lanCallsign,
+                callsigns = callsignSelection.callsignOptions,
+                onSelect = { persistLanCallsign(it) },
+                enabled = !callsignLocked,
+                modifier = Modifier.weight(1f),
+            )
+            NewCallsignButton(
+                existingCallsigns = callsignSelection.callsignOptions,
+                onCreate = { persistLanCallsign(it) },
+                enabled = !callsignLocked,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+
+        LanDiscoveryTab(callsign = lanCallsign, onLaunchGame = onLaunchGame)
     }
 }
 

@@ -48,6 +48,7 @@ internal const val PREF_REWIND_SUPPORT_ENABLED = "rewind_support_enabled"
 internal const val PREF_REWIND_TARGET_SECONDS = "rewind_target_seconds"
 internal const val PREF_HEADLIGHT_OFF_BY_DEFAULT = "headlight_off_by_default"
 internal const val PREF_SHOW_RESUME_OFFER = "show_resume_offer"
+internal const val PREF_SAVE_EXPLORER_PANEL_EXPANDED = "save_explorer_panel_expanded"
 internal const val PREF_SHOW_DEMO_INSTALLER_OFFER = "show_demo_installer_offer"
 internal const val PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE = "use_mission_soundtrack_when_available"
 
@@ -117,9 +118,6 @@ fun EnginePreferencesPage(
     }
     var headlightOffByDefault by remember {
         mutableStateOf(prefs.getBoolean(PREF_HEADLIGHT_OFF_BY_DEFAULT, true))
-    }
-    var showResumeOffer by remember {
-        mutableStateOf(prefs.getBoolean(PREF_SHOW_RESUME_OFFER, true))
     }
     var showDemoInstallerOffer by remember {
         mutableStateOf(prefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true))
@@ -201,30 +199,6 @@ fun EnginePreferencesPage(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Switch(
-                        checked = showResumeOffer,
-                        onCheckedChange = { checked ->
-                            showResumeOffer = checked
-                            prefs.edit().putBoolean(PREF_SHOW_RESUME_OFFER, checked).apply()
-                        },
-                        modifier = Modifier.tvFocusBorder(),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text("Show resume offer on launch", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "When a recent save is found, offer to resume it from the launcher before opening the game",
-                            fontSize = 9.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,

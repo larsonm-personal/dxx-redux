@@ -195,8 +195,8 @@ class SaveExplorerTest {
             )
         val rows = saveExplorerDetailRows(coopSlot).associate { it.label to it.value }
 
-        assertEquals("Co-op save: use Multiplayer > Create Game > Restore from save", rows["Status"])
-        assertEquals("Co-op save: use Multiplayer > Create Game > Restore from save", saveExplorerStatusMessage(coopSlot))
+        assertEquals("Co-op save: use Multiplayer > Host LAN Game > Restore from save", rows["Status"])
+        assertEquals("Co-op save: use Multiplayer > Host LAN Game > Restore from save", saveExplorerStatusMessage(coopSlot))
     }
 
     private fun slot(

@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -135,7 +136,9 @@ internal fun decodeResumeSaveThumbnail(candidate: ResumeSaveBridge.ResumeSaveCan
     return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
 }
 
-internal fun resumePanelHeaderTextOrder(): List<String> = listOf("Resume Recent Save", "Stop Showing This")
+internal fun resumePanelHeaderTextOrder(): List<String> = listOf("Resume Recent Save", "Save Explorer")
+
+internal fun resumePanelCollapsedLabel(): String = "Save Explorer"
 
 @Composable
 internal fun ResumeSavePanel(
@@ -144,8 +147,8 @@ internal fun ResumeSavePanel(
     thumbnail: Bitmap?,
     onLoad: () -> Unit,
     onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
+    onOpenSaveExplorer: () -> Unit,
     onHide: () -> Unit,
-    onStopShowing: () -> Unit,
 ) {
     val panelColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.94f)
     val headerTextOrder = resumePanelHeaderTextOrder()
@@ -185,12 +188,12 @@ internal fun ResumeSavePanel(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Button(
-                    onClick = onStopShowing,
-                    modifier = Modifier.height(24.dp).tvFocusBorder(),
+                TextButton(
+                    onClick = onOpenSaveExplorer,
+                    modifier = Modifier.height(28.dp).tvFocusBorder(),
                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
                 ) {
-                    Text(headerTextOrder[1], fontSize = 7.sp, maxLines = 1)
+                    Text(headerTextOrder[1], fontSize = 9.sp, maxLines = 1)
                 }
                 IconButton(
                     onClick = onHide,
@@ -261,6 +264,43 @@ internal fun ResumeSavePanel(
             thumbnail = expandedThumbnail,
             onDismiss = { previewThumbnail = null },
         )
+    }
+}
+
+@Composable
+internal fun ResumeSavePanelCollapsed(onOpen: () -> Unit) {
+    val panelColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.94f)
+    ElevatedCard(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(
+                    onClickLabel = "Open save explorer panel",
+                    onClick = onOpen,
+                ).tvFocusable(),
+        colors =
+            CardDefaults.elevatedCardColors(
+                containerColor = panelColor,
+            ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 34.dp).padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                resumePanelCollapsedLabel(),
+                modifier = Modifier.weight(1f),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Icon(
+                imageVector = Icons.Filled.KeyboardArrowDown,
+                contentDescription = "Open save explorer panel",
+            )
+        }
     }
 }
 

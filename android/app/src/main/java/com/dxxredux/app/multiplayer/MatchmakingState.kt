@@ -108,7 +108,7 @@ data class MatchmakingState(
     val maintenanceMessage: String? = null,
     val errorMessage: String? = null,
     val statusLog: List<String> = emptyList(),
-    val nav: MultiplayerNav = MultiplayerNav.BROWSER,
+    val nav: MultiplayerNav = MultiplayerNav.LAN,
     val currentLobby: CurrentLobbyState? = null,
     val chatMessages: List<ChatMessage> = emptyList(),
     val connectionInfo: List<PeerConnectionInfoMsg> = emptyList(),

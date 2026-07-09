@@ -7,6 +7,11 @@ import org.junit.Test
 
 class MultiplayerControllerFocusPolicyTest {
     @Test
+    fun defaultMultiplayerStateOpensLanView() {
+        assertEquals(MultiplayerNav.LAN, MatchmakingState().nav)
+    }
+
+    @Test
     fun disconnectedBrowserStartsOnConnect() {
         assertEquals(
             MultiplayerBrowserInitialFocusTarget.CONNECT,

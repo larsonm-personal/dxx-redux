@@ -76,7 +76,7 @@
         "resume_candidate.level_num": "1"
     }},
     {"action": "assert_button", "text": "Load Last Save", "enabled": true},
-    {"action": "assert_button", "text": "Stop Showing This", "enabled": true},
+    {"action": "assert_button", "text": "Save Explorer", "enabled": true},
 
     {"action": "log", "message": "=== TEST: D2 abort game returns to main menu -- PASS ==="},
     {"action": "introspect"}

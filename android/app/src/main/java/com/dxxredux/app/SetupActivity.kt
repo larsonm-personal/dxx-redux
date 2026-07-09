@@ -530,7 +530,11 @@ class SetupActivity : ComponentActivity() {
                     "write_bool_pref" -> {
                         val key = intent.getStringExtra("key") ?: return
                         val value = intent.getBooleanExtra("value", false)
-                        getSharedPreferences("dxx_prefs", MODE_PRIVATE).edit().putBoolean(key, value).commit()
+                        val editor = getSharedPreferences("dxx_prefs", MODE_PRIVATE).edit().putBoolean(key, value)
+                        if (key == PREF_SHOW_RESUME_OFFER) {
+                            editor.putBoolean(PREF_SAVE_EXPLORER_PANEL_EXPANDED, value)
+                        }
+                        editor.commit()
                         Log.i("DXX-Setup", "write_bool_pref: $key=$value")
                         requestSetupRefresh()
                     }
@@ -2139,19 +2143,17 @@ private fun SetupScreen(
     val canLaunch = d2RequiredOk || d1RequiredOk
 
     val context = androidx.compose.ui.platform.LocalContext.current
-    val resumeOfferEnabled =
-        context
-            .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-            .getBoolean(PREF_SHOW_RESUME_OFFER, true)
+    val gamePrefs = remember { context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE) }
+    val resumeOfferPrefEnabled = gamePrefs.getBoolean(PREF_SHOW_RESUME_OFFER, true)
     val resumeSaveOptions by produceState<ResumeSaveBridge.ResumeSaveOptions?>(
         initialValue = null,
         refreshTrigger,
         focusResumeTrigger,
         gameRunning,
-        resumeOfferEnabled,
+        resumeOfferPrefEnabled,
     ) {
         value = ResumeSaveBridge.findOptions(filesDir)
-        if (value == null && !gameRunning && resumeOfferEnabled) {
+        if (value == null && !gameRunning) {
             repeat(20) {
                 delay(500L)
                 value = ResumeSaveBridge.findOptions(filesDir)
@@ -2177,14 +2179,25 @@ private fun SetupScreen(
     val resumeCandidate =
         availableResumeOptions?.latestOverall
     val resumeOfferKey = resumeCandidate?.let { "${it.path}|${it.saveTimeUnixSeconds}" }
-    var dismissedResumeKey by remember { mutableStateOf<String?>(null) }
-    val showResumePanel =
+    var saveExplorerPanelExpanded by remember(refreshTrigger) {
+        mutableStateOf(gamePrefs.getBoolean(PREF_SAVE_EXPLORER_PANEL_EXPANDED, resumeOfferPrefEnabled))
+    }
+    val showResumeArea =
         !gameRunning &&
             !isHashing &&
-            resumeOfferEnabled &&
             resumeCandidate != null &&
-            resumeOfferKey != null &&
-            dismissedResumeKey != resumeOfferKey
+            resumeOfferKey != null
+    val showResumePanel = showResumeArea && saveExplorerPanelExpanded
+
+    fun setSaveExplorerPanelExpanded(expanded: Boolean) {
+        saveExplorerPanelExpanded = expanded
+        val editor = gamePrefs.edit().putBoolean(PREF_SAVE_EXPLORER_PANEL_EXPANDED, expanded)
+        if (expanded) {
+            editor.putBoolean(PREF_SHOW_RESUME_OFFER, true)
+        }
+        editor.apply()
+    }
+
     val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
 
     // -- Startup and refresh audit: prune stale entries, then hash new/changed files --
@@ -2283,7 +2296,6 @@ private fun SetupScreen(
     var showSaveExplorer by remember { mutableStateOf(false) }
 
     // -- Game selection state --------------------------------
-    val gamePrefs = remember { context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE) }
     var showDemoInstallerOffer by remember {
         mutableStateOf(gamePrefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true))
     }
@@ -3024,18 +3036,24 @@ private fun SetupScreen(
                                         gamePrefs.edit().putString("selected_game", selectedCandidate.game).apply()
                                         onLaunchGame(selectedCandidate.game, selectedCandidate)
                                     },
-                                    onHide = { dismissedResumeKey = resumeOfferKey },
-                                    onStopShowing = {
-                                        context
-                                            .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-                                            .edit()
-                                            .putBoolean(PREF_SHOW_RESUME_OFFER, false)
-                                            .apply()
-                                        dismissedResumeKey = resumeOfferKey
-                                    },
+                                    onOpenSaveExplorer = { showSaveExplorer = true },
+                                    onHide = { setSaveExplorerPanelExpanded(false) },
                                 )
                             }
-                            if (showResumePanel) {
+                            AnimatedVisibility(
+                                visible = showResumeArea && !saveExplorerPanelExpanded,
+                                enter =
+                                    expandVertically(expandFrom = Alignment.Top) +
+                                        fadeIn(),
+                                exit =
+                                    shrinkVertically(shrinkTowards = Alignment.Top) +
+                                        fadeOut(),
+                            ) {
+                                ResumeSavePanelCollapsed(
+                                    onOpen = { setSaveExplorerPanelExpanded(true) },
+                                )
+                            }
+                            if (showResumeArea) {
                                 Spacer(modifier = Modifier.height(10.dp))
                             }
                         }
@@ -3477,13 +3495,6 @@ private fun SetupScreen(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(modifier = Modifier.weight(1f))
-                        TextButton(
-                            onClick = { showSaveExplorer = true },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                            modifier = Modifier.height(28.dp),
-                        ) {
-                            Text("Save Explorer", fontSize = 12.sp)
-                        }
                         TextButton(
                             onClick = { showSetDialog = true },
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
@@ -4391,7 +4402,12 @@ private fun SetupScreen(
                     }
 
                     Button(
-                        onClick = { showMultiplayerPage = true },
+                        onClick = {
+                            com.dxxredux.app.multiplayer.MatchmakingStateHolder.update {
+                                it.copy(nav = com.dxxredux.app.multiplayer.MultiplayerNav.LAN)
+                            }
+                            showMultiplayerPage = true
+                        },
                         modifier =
                             Modifier
                                 .fillMaxWidth()

@@ -15,8 +15,13 @@ class ResumeSavePanelTest {
     }
 
     @Test
-    fun headerTextOrderPutsResumeTitleBeforeStopShowingButton() {
-        assertEquals(listOf("Resume Recent Save", "Stop Showing This"), resumePanelHeaderTextOrder())
+    fun headerTextOrderPutsResumeTitleBeforeSaveExplorerButton() {
+        assertEquals(listOf("Resume Recent Save", "Save Explorer"), resumePanelHeaderTextOrder())
+    }
+
+    @Test
+    fun collapsedPanelUsesSaveExplorerLabel() {
+        assertEquals("Save Explorer", resumePanelCollapsedLabel())
     }
 
     @Test
