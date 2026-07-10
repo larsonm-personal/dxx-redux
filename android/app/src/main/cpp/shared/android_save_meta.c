@@ -127,6 +127,7 @@ int android_save_meta_build(android_save_meta_disk *out,
 	out->difficulty_changed = params->difficulty_changed ? 1 : 0;
 	out->difficulty_min = android_save_meta_clamp_difficulty(params->difficulty_min);
 	out->difficulty_max = android_save_meta_clamp_difficulty(params->difficulty_max);
+	out->guidebot_route_target_mode = params->guidebot_route_target_mode;
 	if (out->difficulty_min > out->difficulty_max) {
 		out->difficulty_changed = 0;
 		out->difficulty_min = 0;
@@ -168,6 +169,8 @@ int android_save_meta_is_valid(const android_save_meta_disk *meta)
 		return 0;
 	if (meta->difficulty_min > 4 || meta->difficulty_max > 4 ||
 	    meta->difficulty_min > meta->difficulty_max)
+		return 0;
+	if (meta->guidebot_route_target_mode > 1)
 		return 0;
 	if (meta->thumbnail_format == ANDROID_SAVE_META_THUMB_NONE)
 		return 1;

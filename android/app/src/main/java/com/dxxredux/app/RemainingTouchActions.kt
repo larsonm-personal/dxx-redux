@@ -51,6 +51,7 @@ private val remainingGuideBindings =
     listOf(
         TouchBindings.META_GUIDE_BOT_MENU,
         TouchBindings.META_GUIDE_NEXT_GOAL,
+        TouchBindings.META_GUIDE_FIND_UNEXPLORED,
         TouchBindings.META_GUIDE_FIND_SECRET,
     )
 

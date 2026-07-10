@@ -152,7 +152,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_CREATE_EXPLOSION2    , 24)  \
 	VALUE(MULTI_WARP_TO_PLAYER       , 17)  \
 	VALUE(MULTI_COOP_PEER_STATUS     , 8)   \
-	VALUE(MULTI_ESCORT_OWNER         , 3)   \
+	VALUE(MULTI_ESCORT_OWNER         , 9)   \
 	VALUE(MULTI_COOP_RESTORE_INV     , 78)  \
 	VALUE(MULTI_REWIND_REQUEST       , 3)   \
 	VALUE(MULTI_REWIND_RESULT        , 4)   \

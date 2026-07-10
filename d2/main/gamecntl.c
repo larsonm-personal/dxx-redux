@@ -1457,6 +1457,16 @@ static void input_demo_record_direct_command_guidebot_find_secret(void)
 		input_demo_log_direct_command_record_error("guidebot find secret", error);
 }
 
+static void input_demo_record_direct_command_guidebot_find_unexplored(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_stage_direct_command_guidebot_find_unexplored(error, sizeof(error)))
+		input_demo_log_direct_command_record_error("guidebot find unexplored", error);
+}
+
 static void input_demo_record_direct_command_guidebot_warp_to_me(void)
 {
 	char error[256] = "";
@@ -1523,6 +1533,9 @@ static int input_demo_replay_apply_direct_commands(void)
 				break;
 			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_SECRET:
 				input_demo_apply_recorded_guidebot_find_secret();
+				break;
+			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_UNEXPLORED:
+				input_demo_apply_recorded_guidebot_find_unexplored();
 				break;
 			case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME:
 				escort_warp_to_player();
@@ -2628,6 +2641,21 @@ int ReadControls(d_event *event)
 			} else if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == Player_num) {
 				input_demo_record_direct_command_guidebot_find_secret();
 				escort_find_secret_goal();
+			} else if (Game_mode & GM_MULTI_COOP) {
+				HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
+			} else {
+				HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
+			}
+			return 1;
+		}
+		if (android_escort_find_unexplored_pending) {
+			android_escort_find_unexplored_pending = 0;
+			if (!(Game_mode & GM_MULTI)) {
+				input_demo_record_direct_command_guidebot_find_unexplored();
+				escort_find_unexplored_goal();
+			} else if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == Player_num) {
+				input_demo_record_direct_command_guidebot_find_unexplored();
+				escort_find_unexplored_goal();
 			} else if (Game_mode & GM_MULTI_COOP) {
 				HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
 			} else {

@@ -13,6 +13,9 @@ extern "C" {
 #define LEVEL_METADATA_MAX_ROUTE_LINKS                      10
 #define LEVEL_METADATA_ROUTE_LABEL_LEN                      64
 #define LEVEL_METADATA_ROUTE_TRIGGER_TYPE_LEN               24
+#define LEVEL_METADATA_KEY_MASK_BLUE                        (1 << 0)
+#define LEVEL_METADATA_KEY_MASK_RED                         (1 << 1)
+#define LEVEL_METADATA_KEY_MASK_GOLD                        (1 << 2)
 #define LEVEL_METADATA_DEFAULT_ENERGY_CENTER_GROUP_DISTANCE (40 * 65536)
 #define LEVEL_METADATA_FIX_SCALE                            65536.0
 #define LEVEL_METADATA_SHIP_SPEED_UNITS_PER_SECOND          50.0
@@ -32,7 +35,8 @@ enum level_metadata_route_step_kind {
 	LEVEL_METADATA_ROUTE_BOSS = 4,
 	LEVEL_METADATA_ROUTE_EXIT = 5,
 	LEVEL_METADATA_ROUTE_HIDDEN_DOOR = 6,
-	LEVEL_METADATA_ROUTE_HOSTAGE = 7
+	LEVEL_METADATA_ROUTE_HOSTAGE = 7,
+	LEVEL_METADATA_ROUTE_UNEXPLORED = 8
 };
 
 enum level_metadata_route_activation_kind {
@@ -74,6 +78,8 @@ typedef struct level_metadata_scan_view {
 	int num_segments;
 	int num_walls;
 	int start_segment;
+	int initial_key_mask;
+	int initial_control_center_destroyed;
 	int segment_special_fuelcen;
 	int segment_special_robotmaker;
 	int segment_special_control_center;
@@ -105,9 +111,12 @@ typedef struct level_metadata_scan_view {
 	int trigger_type_unlock_door;
 	int trigger_type_open_wall;
 	int trigger_type_illusory_wall;
+	int trigger_flag_disabled;
 	void *user;
 	int (*segment_child)(void *user, int seg, int side);
 	int (*reverse_side)(void *user, int seg, int child);
+	int (*side_is_flyable)(void *user, int seg, int side);
+	int (*side_is_control_center_link)(void *user, int seg, int side);
 	int (*wall_num)(void *user, int seg, int side);
 	int (*wall_segment)(void *user, int wall_num);
 	int (*wall_side)(void *user, int wall_num);
@@ -135,6 +144,7 @@ typedef struct level_metadata_scan_view {
 	int (*triggered_side_opener_count)(void *user, int seg, int side);
 	int (*triggered_side_opener_wall_num)(void *user, int seg, int side, int index);
 	int (*trigger_type)(void *user, int trigger_num);
+	int (*trigger_flags)(void *user, int trigger_num);
 	int (*trigger_link_count)(void *user, int trigger_num);
 	int (*trigger_link_segment)(void *user, int trigger_num, int link_index);
 	int (*trigger_link_side)(void *user, int trigger_num, int link_index);
@@ -178,6 +188,8 @@ typedef struct level_metadata_state {
 
 void level_metadata_state_clear(level_metadata_state *state);
 int level_metadata_scan_level(const level_metadata_scan_view *view, level_metadata_state *state);
+int level_metadata_scan_end_route(const level_metadata_scan_view *view, level_metadata_state *state);
+int level_metadata_scan_route_to_segment(const level_metadata_scan_view *view, int target_seg, level_metadata_state *state);
 const char *level_metadata_travel_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

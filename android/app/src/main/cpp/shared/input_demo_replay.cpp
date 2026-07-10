@@ -182,6 +182,10 @@ static bool parse_direct_command_event_json(const std::string &json_text,
 		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_SECRET;
 		return true;
 	}
+	if (command == "guidebot_find_unexplored") {
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_UNEXPLORED;
+		return true;
+	}
 	if (command == "guidebot_warp_to_me") {
 		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME;
 		return true;

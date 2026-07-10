@@ -435,6 +435,16 @@ void do_ai_frame(object *obj)
 	vms_vector  gun_point;
 	vms_vector  vis_vec_pos;
 	fix         schedule_dist_to_player = 0;
+#ifdef NETWORK
+	/* android port: remote guidebots are pose replicas.  Returning here keeps
+	 * local path following, flare creation, and simulation RNG owner-only. */
+	if ((Game_mode & GM_MULTI_COOP) && Robot_info[obj->id].companion) {
+		if (Escort_owner_player != -1 && Escort_owner_player != Player_num)
+			return;
+		if (Escort_owner_player == -1 && !multi_i_am_master())
+			return;
+	}
+#endif
 	if (!d1_in_d2_use_d1_gameplay())
 		ailp->next_action_time -= FrameTime;
 
@@ -1025,12 +1035,6 @@ _exit_cheat:
 
 		compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
 
-#ifdef NETWORK
-		// android port: only the escort owner runs companion AI in coop;
-		// non-owners receive position via MULTI_ROBOT_POSITION.
-		// Allow unowned (-1) so ok_for_buddy_to_talk() can claim ownership.
-		if (!(Game_mode & GM_MULTI_COOP) || Escort_owner_player == -1 || Escort_owner_player == Player_num)
-#endif
 		do_escort_frame(obj, dist_to_player, player_visibility);
 
 		if (obj->ctype.ai_info.danger_laser_num != -1) {

@@ -54,6 +54,7 @@
 #define META_CYCLE_RIGHT_VIEW      1040
 #define META_GUIDE_NEXT_GOAL       1041
 #define META_GUIDE_WARP_TO_ME      1042
+#define META_GUIDE_FIND_UNEXPLORED 1043
 
 /* Flags for dispatch table entries */
 #define META_FLAG_INSTANT 1 /* inject full press+release on button down, ignore up */
@@ -75,6 +76,10 @@ extern volatile int android_escort_spawn_pending;
 /* Set on UI thread by META_GUIDE_FIND_SECRET, consumed on the game thread
  * in gamecntl.c to send the guide-bot to a generated secret entrance. */
 extern volatile int android_escort_find_secret_pending;
+
+/* Set on UI thread by META_GUIDE_FIND_UNEXPLORED, consumed on the game thread
+ * in gamecntl.c to send the guide-bot toward unexplored map space. */
+extern volatile int android_escort_find_unexplored_pending;
 
 /* Set on UI thread by META_GUIDE_NEXT_GOAL, consumed on the game thread
  * in gamecntl.c to resume the guide-bot's default objective progression. */

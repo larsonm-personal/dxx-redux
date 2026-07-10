@@ -71,6 +71,11 @@ if(NOT ANDROID)
     target_link_libraries(test_level_metadata_scan PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_level_metadata_scan PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_escort_owner_policy
+        ../../android/tests/test_escort_owner_policy.c
+        ../main/escort_owner_policy.c)
+    target_include_directories(test_escort_owner_policy PRIVATE ../main)
+
     add_executable(test_input_demo_controls
         ../../android/tests/test_input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp)
@@ -140,6 +145,7 @@ if(NOT ANDROID)
             test_android_rewind_policy
             test_input_demo_rng_mode
             test_level_metadata_scan
+            test_escort_owner_policy
             test_input_demo_controls
             test_input_demo_fixture
             test_input_demo_recorder

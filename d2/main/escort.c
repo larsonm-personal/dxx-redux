@@ -56,6 +56,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "automap.h"
 #include "laser.h"
 #include "escort.h"
+#include "escort_owner_policy.h"
 #include "secretarea.h"
 #include "collide.h"
 #include "maths.h"
@@ -138,6 +139,10 @@ int	Looking_for_marker;
 int	Last_buddy_key;
 #ifdef NETWORK
 int	Escort_owner_player = -1;
+static unsigned int Escort_owner_generation;
+static int Escort_network_target_mode;
+static void escort_apply_multiplayer_owner(int new_owner, int target_mode);
+static int escort_owner_candidate_eligible(int pnum);
 #endif
 
 fix64	Last_buddy_message_time;
@@ -173,6 +178,7 @@ static int escort_refresh_buddy_objnum(void)
 
 static int escort_reactor_exists(void);
 static int escort_goal_command_allowed(void);
+int find_exit_segment(void);
 
 #ifdef __ANDROID__
 enum escort_route_guidance_mode {
@@ -182,6 +188,24 @@ enum escort_route_guidance_mode {
 	ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION = 3,
 	ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT = 4
 };
+
+#define ESCORT_ROUTE_OBJECTIVE_UNEXPLORED 1000
+
+enum escort_route_target_mode {
+	ESCORT_ROUTE_TARGET_END_OF_LEVEL = 0,
+	ESCORT_ROUTE_TARGET_UNEXPLORED = 1
+};
+
+typedef struct escort_unexplored_route_target {
+	int active;
+	int component_size;
+	int target_seg;
+	int waypoint_seg;
+	int direct_reachable;
+	int optimistic_distance;
+	int optimistic_cost;
+	int reachable_distance;
+} escort_unexplored_route_target;
 
 typedef struct escort_route_goal {
 	int active;
@@ -203,6 +227,44 @@ typedef struct escort_route_goal {
 } escort_route_goal;
 
 static escort_route_goal Escort_route_goal;
+static escort_unexplored_route_target Escort_unexplored_route_target;
+static int Escort_route_target_mode = ESCORT_ROUTE_TARGET_END_OF_LEVEL;
+static int Escort_route_target_mode_restore_pending;
+static const char *Escort_route_last_replan_reason = "level_start";
+
+static int escort_find_unexplored_route_target(escort_unexplored_route_target *target);
+
+static void escort_unexplored_route_target_clear(escort_unexplored_route_target *target)
+{
+	if (!target)
+		return;
+	memset(target, 0, sizeof(*target));
+	target->target_seg = -1;
+	target->waypoint_seg = -1;
+	target->optimistic_distance = -1;
+	target->optimistic_cost = -1;
+	target->reachable_distance = -1;
+}
+
+static void escort_route_set_target_mode(int target_mode)
+{
+	Escort_route_target_mode = target_mode;
+	if (target_mode != ESCORT_ROUTE_TARGET_UNEXPLORED)
+		escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
+}
+
+static void escort_route_note_replan(const char *reason)
+{
+	Escort_route_last_replan_reason = reason && reason[0] ? reason : "unknown";
+}
+
+static void escort_route_sync_target_mode(void)
+{
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == Player_num)
+		multi_send_escort_owner(Escort_owner_player);
+#endif
+}
 
 static void escort_route_clear_goal(void)
 {
@@ -230,6 +292,8 @@ static const char *escort_route_goal_label(void)
 
 static const char *escort_route_goal_instruction(void)
 {
+	if (Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_UNEXPLORED)
+		return "unexplored";
 	switch (Escort_route_goal.activation_kind) {
 		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
 			return "go here and shoot this switch";
@@ -251,10 +315,12 @@ static const char *escort_route_goal_instruction(void)
 }
 
 #ifdef __ANDROID__
-static void escort_start_default_goal_now(void);
+static int escort_start_default_goal_now(void);
 #endif
 static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int *selected_index);
+static int escort_route_unexplored_next_goal(int set_goal);
 static int escort_route_step_reachable(const level_metadata_route_step *step, int guidance_mode);
+static object *escort_route_reference_object(void);
 static int escort_owned_key_flags(void);
 static int escort_key_exists(int powerup_id);
 static int escort_boss_exists(void);
@@ -332,6 +398,50 @@ int escort_get_route_goal_guidance_side(void)
 int escort_get_route_goal_path_endpoint_seg(void)
 {
 	return Escort_route_goal.active ? Escort_route_goal.path_endpoint_seg : -1;
+}
+
+int escort_get_route_target_mode(void)
+{
+	return Escort_route_target_mode;
+}
+
+const char *escort_get_route_last_replan_reason(void)
+{
+	return Escort_route_last_replan_reason;
+}
+
+void escort_restore_route_target_mode(int target_mode)
+{
+	escort_route_set_target_mode(
+	    target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED ?
+	        ESCORT_ROUTE_TARGET_UNEXPLORED :
+	        ESCORT_ROUTE_TARGET_END_OF_LEVEL);
+	Escort_route_target_mode_restore_pending = 1;
+}
+
+const char *escort_get_route_target_mode_name(void)
+{
+	return Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED ? "unexplored" : "end_of_level";
+}
+
+int escort_get_unexplored_component_size(void)
+{
+	return Escort_unexplored_route_target.active ? Escort_unexplored_route_target.component_size : 0;
+}
+
+int escort_get_unexplored_target_seg(void)
+{
+	return Escort_unexplored_route_target.active ? Escort_unexplored_route_target.target_seg : -1;
+}
+
+int escort_get_unexplored_waypoint_seg(void)
+{
+	return Escort_unexplored_route_target.active ? Escort_unexplored_route_target.waypoint_seg : -1;
+}
+
+int escort_get_unexplored_direct_reachable(void)
+{
+	return Escort_unexplored_route_target.active ? Escort_unexplored_route_target.direct_reachable : 0;
 }
 
 const char *escort_get_route_goal_label(void)
@@ -514,6 +624,7 @@ static int escort_wall_is_hidden_door(int wall_num)
 
 static int escort_route_link_passable(int segnum, int sidenum)
 {
+	object *reference_obj;
 	segment *segp;
 	int wall_num;
 
@@ -526,7 +637,8 @@ static int escort_route_link_passable(int segnum, int sidenum)
 	wall_num = segp->sides[sidenum].wall_num;
 	if (escort_wall_is_hidden_door(wall_num))
 		return 0;
-	if (ConsoleObject && ai_door_is_openable(ConsoleObject, segp, sidenum))
+	reference_obj = escort_route_reference_object();
+	if (reference_obj && ai_door_is_openable(reference_obj, segp, sidenum))
 		return 1;
 	if (wall_num < 0)
 		return IS_CHILD(segp->children[sidenum]);
@@ -583,6 +695,8 @@ static int escort_route_goal_object_for_step(const level_metadata_route_step *st
 			return ESCORT_GOAL_EXIT;
 		case LEVEL_METADATA_ROUTE_HOSTAGE:
 			return ESCORT_GOAL_HOSTAGE;
+		case LEVEL_METADATA_ROUTE_UNEXPLORED:
+			return ESCORT_GOAL_EXIT;
 		default:
 			return ESCORT_GOAL_EXIT;
 	}
@@ -610,6 +724,7 @@ static int escort_route_step_guidance_mode(const level_metadata_route_step *step
 		case LEVEL_METADATA_ROUTE_BOSS:
 		case LEVEL_METADATA_ROUTE_EXIT:
 		case LEVEL_METADATA_ROUTE_HOSTAGE:
+		case LEVEL_METADATA_ROUTE_UNEXPLORED:
 			return ESCORT_ROUTE_GUIDANCE_REACH_OBJECTIVE;
 		default:
 			return ESCORT_ROUTE_GUIDANCE_NONE;
@@ -697,6 +812,7 @@ static int escort_route_step_is_targetable(const level_metadata_route_step *step
 		case LEVEL_METADATA_ROUTE_BOSS:
 		case LEVEL_METADATA_ROUTE_EXIT:
 		case LEVEL_METADATA_ROUTE_HOSTAGE:
+		case LEVEL_METADATA_ROUTE_UNEXPLORED:
 			return escort_valid_segment(step->seg) || escort_valid_wall(step->wall_num);
 		default:
 			return 0;
@@ -752,11 +868,6 @@ static void escort_route_analyze_step_for_key_flags(
 			}
 			analysis->trigger_flags = Triggers[step->trigger_num].flags;
 			analysis->trigger_disabled = (Triggers[step->trigger_num].flags & TF_DISABLED) != 0;
-			if (analysis->trigger_disabled) {
-				analysis->satisfied = 1;
-				analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_TRIGGER_DISABLED;
-				break;
-			}
 			analysis->satisfied = escort_route_step_links_passable(step, analysis);
 			if (analysis->satisfied) {
 				analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_LINKS_PASSABLE;
@@ -786,6 +897,12 @@ static void escort_route_analyze_step_for_key_flags(
 			analysis->satisfied = 0;
 			analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_EXIT_PENDING;
 			break;
+		case LEVEL_METADATA_ROUTE_UNEXPLORED:
+			analysis->satisfied = escort_valid_segment(step->seg) && Automap_visited[step->seg] != 0;
+			analysis->satisfied_reason = analysis->satisfied ?
+			                              ESCORT_ROUTE_STEP_REASON_LATER_REACHABLE :
+			                              ESCORT_ROUTE_STEP_REASON_NOT_APPLICABLE;
+			break;
 		default:
 			analysis->satisfied = 0;
 			analysis->satisfied_reason = ESCORT_ROUTE_STEP_REASON_NOT_APPLICABLE;
@@ -810,6 +927,11 @@ static void escort_route_set_step_goal(const level_metadata_route_step *step, in
 	Escort_route_goal.guidance_mode = guidance_mode;
 	Escort_route_goal.guidance_seg = step->seg;
 	Escort_route_goal.guidance_side = step->side;
+	if (step->kind == LEVEL_METADATA_ROUTE_UNEXPLORED) {
+		Escort_route_goal.objective_kind = ESCORT_ROUTE_OBJECTIVE_UNEXPLORED;
+		if (Escort_unexplored_route_target.active)
+			Escort_route_goal.objective_seg = Escort_unexplored_route_target.target_seg;
+	}
 	if (escort_valid_wall(step->wall_num)) {
 		Escort_route_goal.objective_seg = Walls[step->wall_num].segnum;
 		Escort_route_goal.objective_side = Walls[step->wall_num].sidenum;
@@ -822,13 +944,14 @@ static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int
 {
 	const level_metadata_state *metadata = level_metadata_get_state();
 	int i;
+	int unexplored_mode = Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED;
 
 	if (selected_index)
 		*selected_index = -1;
 	if (set_goal)
 		escort_route_clear_goal();
 	if (!metadata || metadata->route_step_count <= 0)
-		return ESCORT_GOAL_UNSPECIFIED;
+		return unexplored_mode ? escort_route_unexplored_next_goal(set_goal) : ESCORT_GOAL_UNSPECIFIED;
 	for (i = 0; i < metadata->route_step_count && i < LEVEL_METADATA_MAX_ROUTE_STEPS; i++) {
 		const level_metadata_route_step *step = &metadata->route_steps[i];
 		escort_route_step_analysis analysis;
@@ -858,9 +981,14 @@ static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int
 			case LEVEL_METADATA_ROUTE_BOSS:
 			case LEVEL_METADATA_ROUTE_EXIT:
 			case LEVEL_METADATA_ROUTE_HOSTAGE:
+			case LEVEL_METADATA_ROUTE_UNEXPLORED:
 				if (!analysis.satisfied && escort_route_step_is_targetable(step)) {
+					int guidance_mode = analysis.guidance_mode;
+
+					if (analysis.reachable == 0)
+						guidance_mode = ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
 					if (set_goal)
-						escort_route_set_step_goal(step, analysis.guidance_mode);
+						escort_route_set_step_goal(step, guidance_mode);
 					if (selected_index)
 						*selected_index = i;
 					return escort_route_goal_object_for_step(step);
@@ -870,6 +998,8 @@ static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int
 				return ESCORT_GOAL_UNSPECIFIED;
 		}
 	}
+	if (unexplored_mode)
+		return escort_route_unexplored_next_goal(set_goal);
 	return ESCORT_GOAL_UNSPECIFIED;
 }
 
@@ -880,7 +1010,21 @@ static int escort_route_next_goal(int key_flags)
 
 static void escort_route_refresh_metadata(void)
 {
-	level_metadata_rescan_current_level();
+	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED &&
+	    escort_is_companion_object(Buddy_objnum)) {
+		escort_unexplored_route_target target;
+
+		if (escort_find_unexplored_route_target(&target)) {
+			Escort_unexplored_route_target = target;
+			level_metadata_rescan_route_to_segment_from_object(Buddy_objnum, target.target_seg);
+			return;
+		}
+		escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
+	}
+	if (escort_is_companion_object(Buddy_objnum))
+		level_metadata_rescan_route_from_object(Buddy_objnum);
+	else
+		level_metadata_rescan_current_level();
 }
 
 int escort_route_analyze_step(int step_index, escort_route_step_analysis *analysis)
@@ -1408,6 +1552,277 @@ static int escort_find_nearest_reachable_goal_segment(object *objp, int goal_seg
 	return best_seg;
 }
 
+static void escort_compute_live_reachable_dist(object *objp, int reachable_dist[MAX_SEGMENTS])
+{
+	int queue[MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT];
+	int qhead, qtail;
+	int i;
+
+	for (i = 0; i < MAX_SEGMENTS; i++)
+		reachable_dist[i] = -1;
+	if (!objp || !escort_valid_segment(objp->segnum) || objp->segnum >= MAX_SEGMENTS)
+		return;
+
+	qhead = qtail = 0;
+	queue[qtail++] = objp->segnum;
+	reachable_dist[objp->segnum] = 0;
+	while (qhead < qtail) {
+		int segnum = queue[qhead++];
+		int sidenum;
+
+		for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
+			int child_segnum;
+
+			if (escort_live_side_cost(objp, segnum, sidenum) != 0)
+				continue;
+			child_segnum = Segments[segnum].children[sidenum];
+			if (!escort_valid_segment(child_segnum) || child_segnum >= MAX_SEGMENTS ||
+			    reachable_dist[child_segnum] >= 0)
+				continue;
+			reachable_dist[child_segnum] = reachable_dist[segnum] + 1;
+			if (qtail < MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT)
+				queue[qtail++] = child_segnum;
+		}
+	}
+}
+
+static int escort_unexplored_target_is_better(const escort_unexplored_route_target *candidate,
+                                              const escort_unexplored_route_target *best)
+{
+	if (!best->active)
+		return 1;
+	if (candidate->component_size != best->component_size)
+		return candidate->component_size > best->component_size;
+	if (candidate->direct_reachable != best->direct_reachable)
+		return candidate->direct_reachable > best->direct_reachable;
+	if (candidate->optimistic_distance != best->optimistic_distance)
+		return candidate->optimistic_distance < best->optimistic_distance;
+	if (candidate->optimistic_cost != best->optimistic_cost)
+		return candidate->optimistic_cost < best->optimistic_cost;
+	if (candidate->reachable_distance != best->reachable_distance)
+		return candidate->reachable_distance < best->reachable_distance;
+	if (candidate->target_seg != best->target_seg)
+		return candidate->target_seg < best->target_seg;
+	return candidate->waypoint_seg < best->waypoint_seg;
+}
+
+static int escort_route_component_best_unexplored_target(
+    object *objp,
+    const int *component_segments,
+    int component_size,
+    const int reachable_dist[MAX_SEGMENTS],
+    escort_unexplored_route_target *target)
+{
+	static int optimistic_dist[MAX_SEGMENTS];
+	static int optimistic_cost[MAX_SEGMENTS];
+	static int optimistic_source[MAX_SEGMENTS];
+	int queue[MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT];
+	int qhead, qtail;
+	int i, j;
+
+	escort_unexplored_route_target_clear(target);
+	if (!objp || !component_segments || component_size <= 0 || !target)
+		return 0;
+
+	for (j = 0; j < component_size; j++) {
+		int segnum = component_segments[j];
+		escort_unexplored_route_target candidate;
+
+		if (segnum < 0 || segnum >= MAX_SEGMENTS ||
+		    reachable_dist[segnum] <= 0 ||
+		    reachable_dist[segnum] > Max_escort_length)
+			continue;
+		escort_unexplored_route_target_clear(&candidate);
+		candidate.active = 1;
+		candidate.component_size = component_size;
+		candidate.target_seg = segnum;
+		candidate.waypoint_seg = segnum;
+		candidate.direct_reachable = 1;
+		candidate.optimistic_distance = 0;
+		candidate.optimistic_cost = 0;
+		candidate.reachable_distance = reachable_dist[segnum];
+		if (escort_unexplored_target_is_better(&candidate, target))
+			*target = candidate;
+	}
+	if (target->active)
+		return 1;
+
+	for (i = 0; i < MAX_SEGMENTS; i++) {
+		optimistic_dist[i] = -1;
+		optimistic_cost[i] = 32767;
+		optimistic_source[i] = -1;
+	}
+
+	qhead = qtail = 0;
+	for (j = 0; j < component_size; j++) {
+		int segnum = component_segments[j];
+		if (!escort_valid_segment(segnum) || segnum >= MAX_SEGMENTS ||
+		    optimistic_dist[segnum] >= 0)
+			continue;
+		optimistic_dist[segnum] = 0;
+		optimistic_cost[segnum] = 0;
+		optimistic_source[segnum] = segnum;
+		if (qtail < MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT)
+			queue[qtail++] = segnum;
+	}
+	while (qhead < qtail) {
+		int segnum = queue[qhead++];
+		int sidenum;
+
+		for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
+			int child_segnum = Segments[segnum].children[sidenum];
+			int edge_cost, next_dist, next_cost;
+
+			if (!escort_valid_segment(child_segnum) || child_segnum >= MAX_SEGMENTS)
+				continue;
+			edge_cost = escort_optimistic_edge_cost(objp, segnum, sidenum);
+			if (edge_cost < 0)
+				continue;
+			next_dist = optimistic_dist[segnum] + 1;
+			next_cost = optimistic_cost[segnum] + edge_cost;
+			if ((optimistic_dist[child_segnum] < 0) ||
+			    (next_dist < optimistic_dist[child_segnum]) ||
+			    ((next_dist == optimistic_dist[child_segnum]) &&
+			     (next_cost < optimistic_cost[child_segnum]))) {
+				optimistic_dist[child_segnum] = next_dist;
+				optimistic_cost[child_segnum] = next_cost;
+				optimistic_source[child_segnum] = optimistic_source[segnum];
+				if (qtail < MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT)
+					queue[qtail++] = child_segnum;
+			}
+		}
+	}
+
+	for (i = 0; i <= Highest_segment_index && i < MAX_SEGMENTS; i++) {
+		escort_unexplored_route_target candidate;
+
+		if (reachable_dist[i] <= 0 ||
+		    reachable_dist[i] > Max_escort_length ||
+		    optimistic_dist[i] < 0 ||
+		    optimistic_source[i] < 0)
+			continue;
+		escort_unexplored_route_target_clear(&candidate);
+		candidate.active = 1;
+		candidate.component_size = component_size;
+		candidate.target_seg = optimistic_source[i];
+		candidate.waypoint_seg = i;
+		candidate.direct_reachable = 0;
+		candidate.optimistic_distance = optimistic_dist[i];
+		candidate.optimistic_cost = optimistic_cost[i];
+		candidate.reachable_distance = reachable_dist[i];
+		if (escort_unexplored_target_is_better(&candidate, target))
+			*target = candidate;
+	}
+
+	return target->active;
+}
+
+static int escort_find_unexplored_route_target(escort_unexplored_route_target *target)
+{
+	static ubyte component_seen[MAX_SEGMENTS];
+	static int reachable_dist[MAX_SEGMENTS];
+	static int component_segments[MAX_SEGMENTS];
+	int queue[MAX_SEGMENTS];
+	escort_unexplored_route_target best;
+	object *objp = escort_route_reference_object();
+	int i;
+
+	escort_unexplored_route_target_clear(target);
+	escort_unexplored_route_target_clear(&best);
+	if (!objp || !escort_valid_segment(objp->segnum))
+		return 0;
+
+	memset(component_seen, 0, sizeof(component_seen));
+	escort_compute_live_reachable_dist(objp, reachable_dist);
+	for (i = 0; i <= Highest_segment_index && i < MAX_SEGMENTS; i++) {
+		int qhead, qtail, component_size;
+		escort_unexplored_route_target candidate;
+
+		if (component_seen[i] || Automap_visited[i])
+			continue;
+		qhead = qtail = 0;
+		component_size = 0;
+		component_seen[i] = 1;
+		queue[qtail++] = i;
+		while (qhead < qtail) {
+			int segnum = queue[qhead++];
+			int sidenum;
+
+			component_segments[component_size++] = segnum;
+			for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
+				int child_segnum = Segments[segnum].children[sidenum];
+				if (!escort_valid_segment(child_segnum) || child_segnum >= MAX_SEGMENTS ||
+				    escort_optimistic_edge_cost(objp, segnum, sidenum) < 0 ||
+				    component_seen[child_segnum] || Automap_visited[child_segnum])
+					continue;
+				component_seen[child_segnum] = 1;
+				if (qtail < MAX_SEGMENTS)
+					queue[qtail++] = child_segnum;
+			}
+		}
+		if (component_size <= 0)
+			continue;
+		if (!escort_route_component_best_unexplored_target(
+		        objp, component_segments, component_size, reachable_dist, &candidate))
+			continue;
+		if (escort_unexplored_target_is_better(&candidate, &best))
+			best = candidate;
+	}
+
+	if (!best.active)
+		return 0;
+	if (target)
+		*target = best;
+	ESCORT_DIAG("unexplored target component=%d target=%d waypoint=%d direct=%d opt_dist=%d opt_cost=%d reachable=%d",
+	            best.component_size,
+	            best.target_seg,
+	            best.waypoint_seg,
+	            best.direct_reachable,
+	            best.optimistic_distance,
+	            best.optimistic_cost,
+	            best.reachable_distance);
+	return 1;
+}
+
+static void escort_route_set_unexplored_goal(const escort_unexplored_route_target *target)
+{
+	escort_route_clear_goal();
+	if (!target || !target->active || !escort_valid_segment(target->waypoint_seg))
+		return;
+	Escort_route_goal.active = 1;
+	Escort_route_goal.target_seg = target->waypoint_seg;
+	Escort_route_goal.target_side = -1;
+	Escort_route_goal.target_wall = -1;
+	Escort_route_goal.trigger_num = -1;
+	Escort_route_goal.objective_kind = ESCORT_ROUTE_OBJECTIVE_UNEXPLORED;
+	Escort_route_goal.activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
+	Escort_route_goal.objective_seg = target->target_seg;
+	Escort_route_goal.objective_side = -1;
+	Escort_route_goal.objective_wall = -1;
+	Escort_route_goal.objective_trigger = -1;
+	Escort_route_goal.guidance_mode = target->direct_reachable ?
+	                                  ESCORT_ROUTE_GUIDANCE_REACH_OBJECTIVE :
+	                                  ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
+	Escort_route_goal.guidance_seg = target->waypoint_seg;
+	Escort_route_goal.guidance_side = -1;
+	snprintf(Escort_route_goal.label, sizeof(Escort_route_goal.label), "%s", "unexplored");
+	Escort_unexplored_route_target = *target;
+}
+
+static int escort_route_unexplored_next_goal(int set_goal)
+{
+	escort_unexplored_route_target target;
+
+	if (!escort_find_unexplored_route_target(&target)) {
+		if (set_goal)
+			escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
+		return ESCORT_GOAL_UNSPECIFIED;
+	}
+	if (set_goal)
+		escort_route_set_unexplored_goal(&target);
+	return ESCORT_GOAL_EXIT;
+}
+
 static int escort_create_path_to_nearest_point(object *objp, int goal_seg)
 {
 	int target_seg = escort_find_nearest_reachable_goal_segment(objp, goal_seg);
@@ -1429,6 +1844,39 @@ static int escort_create_path_to_nearest_point(object *objp, int goal_seg)
 	if (Escort_route_goal.active)
 		escort_route_set_guidance_segment(target_seg, -1, ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT);
 	input_demo_log_escort_path_state("escort_create_path_to_goal nearest_point", objp);
+	return 1;
+}
+
+static int escort_should_use_nearest_point_fallback(int using_route_goal)
+{
+	if (g_guidebot_navigate_nearest_point)
+		return 1;
+	if (using_route_goal)
+		return 1;
+	return Escort_goal_object == ESCORT_GOAL_BOSS ||
+	       Escort_goal_object == ESCORT_GOAL_CONTROLCEN ||
+	       Escort_goal_object == ESCORT_GOAL_EXIT ||
+	       Escort_goal_object == ESCORT_GOAL_EXIT2;
+}
+
+static void escort_report_nearest_point_fallback(int using_route_goal)
+{
+	Last_buddy_message_time = 0;
+	if (using_route_goal)
+		buddy_message("Can't reach next: %s, navigating as close as possible.", escort_route_goal_label());
+	else if ((Escort_goal_object == ESCORT_GOAL_EXIT) || (Escort_goal_object == ESCORT_GOAL_EXIT2))
+		buddy_message("Can't reach exit, navigating as close as possible.");
+	else
+		buddy_message("Can't reach %s, navigating as close as possible.", Escort_goal_text[Escort_goal_object-1]);
+}
+
+static int escort_try_nearest_point_fallback(object *objp, int goal_seg, int using_route_goal)
+{
+	if (!escort_should_use_nearest_point_fallback(using_route_goal))
+		return 0;
+	if (!escort_create_path_to_nearest_point(objp, goal_seg))
+		return 0;
+	escort_report_nearest_point_fallback(using_route_goal);
 	return 1;
 }
 
@@ -1578,10 +2026,15 @@ void init_buddy_for_level(void)
 	Escort_goal_secret_side = -1;
 #ifdef __ANDROID__
 	escort_route_clear_goal();
+	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
+	escort_route_note_replan("level_start");
+	Escort_route_target_mode_restore_pending = 0;
 #endif
 	Buddy_messages_suppressed = 0;
 #ifdef NETWORK
 	Escort_owner_player = -1;
+	Escort_owner_generation = 0;
+	Escort_network_target_mode = 0;
 #endif
 
 	Buddy_objnum = escort_find_companion_object();
@@ -1647,10 +2100,13 @@ void escort_spawn_at_player(void)
 	Escort_goal_index = -1;
 	Escort_goal_secret_seg = -1;
 	Escort_goal_secret_side = -1;
+#ifdef __ANDROID__
+	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
+	escort_route_clear_goal();
+	escort_route_note_replan("guidebot_spawned");
+#endif
 #ifdef NETWORK
 	if (Game_mode & GM_MULTI_COOP) {
-		Escort_owner_player = Player_num;
-		buddy_objp->ctype.ai_info.REMOTE_OWNER = (sbyte)Player_num;
 		multi_send_escort_owner(Player_num);
 	}
 #endif
@@ -1757,12 +2213,10 @@ void escort_warp_to_player(void)
 	buddy_objp = &Objects[Buddy_objnum];
 #ifdef NETWORK
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == -1) {
-		Escort_owner_player = Player_num;
-		buddy_objp->ctype.ai_info.REMOTE_OWNER = (sbyte)Player_num;
 		multi_send_escort_owner(Player_num);
 	}
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num) {
-		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
+		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot control requested");
 		return;
 	}
 #endif
@@ -1944,14 +2398,16 @@ int ok_for_buddy_to_talk(void)
 	Buddy_allowed_to_talk = 1;
 
 #ifdef NETWORK
-	// android port: first player to free the guidebot becomes its owner in coop
-	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == -1) {
-		Escort_owner_player = Player_num;
-		if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index)
-			Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (sbyte)Player_num;
-		multi_send_escort_owner(Player_num);
-		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot: you have control");
-		ESCORT_DIAG("ownership claimed by player %d", Player_num);
+	/* android port: only the master simulates passive cage release while the
+	 * guidebot is unowned, so initial assignment cannot race across peers. */
+	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == -1 && multi_i_am_master()) {
+		int owner_pnum;
+		for (owner_pnum = 0; owner_pnum < N_players; owner_pnum++)
+			if (escort_owner_candidate_eligible(owner_pnum)) {
+				multi_send_escort_owner(owner_pnum);
+				ESCORT_DIAG("initial ownership assigned to player %d", owner_pnum);
+				break;
+			}
 	}
 #endif
 
@@ -2161,7 +2617,10 @@ void set_escort_special_goal(int special_key)
 		return;
 	escort_clear_secret_goal();
 #ifdef __ANDROID__
+	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 	escort_route_clear_goal();
+	escort_route_note_replan("goal_command");
+	escort_route_sync_target_mode();
 #endif
 
 	special_key = special_key & (~KEY_SHIFTED);
@@ -2239,6 +2698,12 @@ void escort_find_secret_goal(void)
 	if (!escort_goal_command_allowed())
 		return;
 
+#ifdef __ANDROID__
+	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
+	escort_route_clear_goal();
+	escort_route_note_replan("secret_command");
+	escort_route_sync_target_mode();
+#endif
 	if ((Escort_special_goal == ESCORT_GOAL_SECRET || Escort_goal_object == ESCORT_GOAL_SECRET) &&
 	    Escort_goal_index > 0)
 		skip_display_index = Escort_goal_index;
@@ -2265,6 +2730,37 @@ void escort_find_secret_goal(void)
 	say_escort_goal(ESCORT_GOAL_SECRET);
 }
 
+void escort_find_unexplored_goal(void)
+{
+#ifdef __ANDROID__
+	if (!escort_goal_command_allowed())
+		return;
+
+	Looking_for_marker = -1;
+	Last_buddy_key = -1;
+	Escort_special_goal = -1;
+	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+	Escort_goal_index = -1;
+	escort_clear_secret_goal();
+	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_UNEXPLORED);
+	escort_route_clear_goal();
+	escort_route_note_replan("unexplored_command");
+	Last_buddy_message_time = GameTime64 - 2*F1_0;
+	if (escort_start_default_goal_now()) {
+		escort_route_sync_target_mode();
+		return;
+	}
+
+	Last_buddy_message_time = 0;
+	buddy_message("No reachable unexplored area found.");
+	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+	Escort_goal_index = -1;
+	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
+	escort_route_clear_goal();
+	escort_route_sync_target_mode();
+#endif
+}
+
 void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu)
 {
 	if (from_menu) {
@@ -2280,6 +2776,11 @@ void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu)
 void input_demo_apply_recorded_guidebot_find_secret(void)
 {
 	escort_find_secret_goal();
+}
+
+void input_demo_apply_recorded_guidebot_find_unexplored(void)
+{
+	escort_find_unexplored_goal();
 }
 
 //	-----------------------------------------------------------------------------
@@ -2389,6 +2890,38 @@ int exists_in_mine(int start_seg, int objtype, int objid, int special)
 
 	return -1;
 }
+
+#ifdef __ANDROID__
+static int escort_find_unreachable_goal_segment(int escort_goal_object)
+{
+	int i;
+
+	switch (escort_goal_object) {
+		case ESCORT_GOAL_BOSS:
+			for (i=0; i<=Highest_object_index; i++)
+				if (Objects[i].type == OBJ_ROBOT &&
+				    Robot_info[Objects[i].id].boss_flag &&
+				    !(Objects[i].flags & OF_SHOULD_BE_DEAD) &&
+				    escort_valid_segment(Objects[i].segnum))
+					return Objects[i].segnum;
+			break;
+		case ESCORT_GOAL_CONTROLCEN:
+			for (i=0; i<=Highest_object_index; i++)
+				if (Objects[i].type == OBJ_CNTRLCEN &&
+				    !(Objects[i].flags & OF_SHOULD_BE_DEAD) &&
+				    escort_valid_segment(Objects[i].segnum))
+					return Objects[i].segnum;
+			for (i=0; i<=Highest_segment_index; i++)
+				if (escort_valid_segment(i) && Segment2s[i].special == SEGMENT_IS_CONTROLCEN)
+					return i;
+			break;
+		case ESCORT_GOAL_EXIT:
+		case ESCORT_GOAL_EXIT2:
+			return find_exit_segment();
+	}
+	return -1;
+}
+#endif
 
 static void escort_clear_secret_goal(void)
 {
@@ -2537,7 +3070,8 @@ static int escort_owned_key_flags(void)
 	if (Game_mode & GM_MULTI_COOP) {
 		key_flags = 0;
 		for (i = 0; i < MAX_PLAYERS; i++)
-			if (Players[i].connected != CONNECT_DISCONNECTED)
+			if (Players[i].connected == CONNECT_PLAYING &&
+			    !(Netgame.host_is_obs && i == 0))
 				key_flags |= Players[i].flags & ESCORT_KEY_FLAGS;
 	}
 #endif
@@ -2558,7 +3092,7 @@ static int escort_reactor_exists(void)
 			return 1;
 
 	for (i=0; i<=Highest_segment_index; i++)
-		if (escort_valid_segment(i) && Segment2s[i].special == SEGMENT_IS_CONTROLCEN)
+		if (Segment2s[i].special == SEGMENT_IS_CONTROLCEN)
 			return 1;
 
 	return 0;
@@ -2778,6 +3312,16 @@ void escort_create_path_to_goal(object *objp)
 		Escort_goal_index);
 
 	if ((Escort_goal_index < 0) && (Escort_goal_index != -3)) {	//	I apologize for this statement -- MK, 09/22/95
+#ifdef __ANDROID__
+		if (Escort_goal_index == -2) {
+			goal_seg = escort_find_unreachable_goal_segment(Escort_goal_object);
+			if (escort_valid_segment(goal_seg) &&
+			    escort_try_nearest_point_fallback(objp, goal_seg, using_route_goal)) {
+				used_nearest_point = 1;
+				goto escort_goal_path_ready;
+			}
+		}
+#endif
 		if (Escort_goal_object == ESCORT_GOAL_SECRET) {
 			escort_report_secret_goal_failure(Escort_goal_index);
 			Looking_for_marker = -1;
@@ -2808,15 +3352,8 @@ void escort_create_path_to_goal(object *objp)
 			input_demo_log_escort_path_state("escort_create_path_to_goal to_segment", objp);
 			if ((aip->path_length > 0) && (Point_segs[aip->hide_index + aip->path_length - 1].segnum != goal_seg)) {
 #ifdef __ANDROID__
-				if (g_guidebot_navigate_nearest_point && escort_create_path_to_nearest_point(objp, goal_seg)) {
+				if (escort_try_nearest_point_fallback(objp, goal_seg, using_route_goal)) {
 					used_nearest_point = 1;
-					Last_buddy_message_time = 0;
-					if (using_route_goal)
-						buddy_message("Can't reach next: %s, navigating as close as possible.", escort_route_goal_label());
-					else if ((Escort_goal_object == ESCORT_GOAL_EXIT) || (Escort_goal_object == ESCORT_GOAL_EXIT2))
-						buddy_message("Can't reach exit, navigating as close as possible.");
-					else
-						buddy_message("Can't reach %s, navigating as close as possible.", Escort_goal_text[Escort_goal_object-1]);
 				} else
 #endif
 				{
@@ -2846,19 +3383,13 @@ void escort_create_path_to_goal(object *objp)
 				}
 			}
 #ifdef __ANDROID__
-			else if ((aip->path_length == 0) && g_guidebot_navigate_nearest_point && escort_create_path_to_nearest_point(objp, goal_seg)) {
+			else if ((aip->path_length == 0) && escort_try_nearest_point_fallback(objp, goal_seg, using_route_goal)) {
 				used_nearest_point = 1;
-				Last_buddy_message_time = 0;
-				if (using_route_goal)
-					buddy_message("Can't reach next: %s, navigating as close as possible.", escort_route_goal_label());
-				else if ((Escort_goal_object == ESCORT_GOAL_EXIT) || (Escort_goal_object == ESCORT_GOAL_EXIT2))
-					buddy_message("Can't reach exit, navigating as close as possible.");
-				else
-					buddy_message("Can't reach %s, navigating as close as possible.", Escort_goal_text[Escort_goal_object-1]);
 			}
 #endif
 		}
 
+escort_goal_path_ready:
 #ifdef __ANDROID__
 		if (using_route_goal)
 			escort_route_note_path_endpoint(objp);
@@ -2900,6 +3431,8 @@ int escort_set_goal_object(void)
 	route_goal = escort_route_next_goal(key_flags);
 	if (route_goal != ESCORT_GOAL_UNSPECIFIED)
 		return route_goal;
+	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED)
+		return ESCORT_GOAL_UNSPECIFIED;
 #endif
 	if ((key_flags & PLAYER_FLAGS_RED_KEY) == 0) {
 		if ((key_flags & (PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_GOLD_KEY)) == 0) {
@@ -2926,26 +3459,27 @@ int escort_set_goal_object(void)
 }
 
 #ifdef __ANDROID__
-static void escort_start_default_goal_now(void)
+static int escort_start_default_goal_now(void)
 {
 	object *objp;
 	ai_static *aip;
 	ai_local *ailp;
 
 	if (!escort_goal_command_allowed() || !escort_is_companion_object(Buddy_objnum))
-		return;
+		return 0;
 	objp = &Objects[Buddy_objnum];
 	aip = &objp->ctype.ai_info;
 	ailp = &Ai_local_info[Buddy_objnum];
 	Escort_goal_object = escort_set_goal_object();
 	if (Escort_goal_object == ESCORT_GOAL_UNSPECIFIED)
-		return;
+		return 0;
 	ailp->mode = AIM_GOTO_OBJECT;
 	escort_create_path_to_goal(objp);
 	if (aip->path_length > 3)
 		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 	Escort_last_path_created = GameTime64;
 	Buddy_last_player_path_created = GameTime64;
+	return 1;
 }
 #endif
 
@@ -2953,14 +3487,41 @@ static void escort_start_default_goal_now(void)
 
 fix64	Buddy_last_seen_player = 0, Buddy_last_player_path_created;
 
+#ifdef __ANDROID__
+static int escort_route_goal_has_pending_path_for(const ai_local *ailp, const ai_static *aip)
+{
+	int next_path_index;
+
+	if (!Escort_route_goal.active || !ailp || !aip || ailp->mode != AIM_GOTO_OBJECT || aip->path_length <= 1)
+		return 0;
+	next_path_index = aip->cur_path_index + aip->PATH_DIR;
+	return next_path_index >= 0 && next_path_index < aip->path_length;
+}
+
+int escort_get_route_goal_path_pending(void)
+{
+	if (!escort_is_companion_object(Buddy_objnum))
+		return 0;
+	return escort_route_goal_has_pending_path_for(
+	    &Ai_local_info[Buddy_objnum], &Objects[Buddy_objnum].ctype.ai_info);
+}
+#endif
+
 //	-----------------------------------------------------------------------------
 int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)
 {
 	//	Note: This one has highest priority because, even if already going towards player,
 	//	might be necessary to create a new path, as player can move.
-	if (GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY)
-		if (GameTime64 - Buddy_last_player_path_created > F1_0)
+	if (GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY) {
+		if (GameTime64 - Buddy_last_player_path_created > F1_0) {
+#ifdef __ANDROID__
+			if (!escort_route_goal_has_pending_path_for(ailp, aip))
+				return 1;
+#else
 			return 1;
+#endif
+		}
+	}
 
 	if (ailp->mode == AIM_GOTO_PLAYER)
 		return 0;
@@ -3024,9 +3585,8 @@ static void escort_validate_owner_after_restore(void)
 {
 	if (!(Game_mode & GM_MULTI_COOP))
 		return;
-	if ((Escort_owner_player < -1) || (Escort_owner_player >= MAX_PLAYERS) ||
-	    ((Escort_owner_player >= 0) &&
-	     (Players[Escort_owner_player].connected != CONNECT_PLAYING)))
+	if ((Escort_owner_player < -1) ||
+	    ((Escort_owner_player >= 0) && !escort_owner_candidate_eligible(Escort_owner_player)))
 		Escort_owner_player = -1;
 }
 
@@ -3052,6 +3612,11 @@ void escort_rebuild_runtime_state_after_restore(void)
 	fix64 raw_time_player_seen;
 	fix64 raw_escort_last_path_created;
 	int i;
+#ifdef __ANDROID__
+	int preserve_route_target_mode = Escort_route_target_mode_restore_pending;
+	Escort_route_target_mode_restore_pending = 0;
+	escort_route_note_replan("save_restore");
+#endif
 
 	input_demo_reset_escort_state_probes();
 	input_demo_checkpoint_escort_state_clear(&checkpoint_escort_state);
@@ -3156,6 +3721,8 @@ void escort_rebuild_runtime_state_after_restore(void)
 		Escort_goal_index = -1;
 		escort_clear_secret_goal();
 #ifdef __ANDROID__
+		if (!preserve_route_target_mode)
+			escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 		escort_route_clear_goal();
 #endif
 	}
@@ -3357,6 +3924,9 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			input_demo_log_escort_goal_reset();
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 		Escort_last_path_created = GameTime64;
+#ifdef __ANDROID__
+		escort_route_note_replan("periodic_refresh");
+#endif
 	}
 	if (replay_state_probe_active) {
 		replay_player_seg = ConsoleObject->segnum;
@@ -3450,13 +4020,18 @@ void invalidate_escort_goal(void)
 	Escort_goal_object = -1;
 #ifdef __ANDROID__
 	escort_route_clear_goal();
+	escort_route_note_replan("goal_invalidated");
 #endif
 }
 
 void escort_note_player_key_flags(int old_flags, int new_flags)
 {
-	if ((old_flags ^ new_flags) & ESCORT_KEY_FLAGS)
+	if ((old_flags ^ new_flags) & ESCORT_KEY_FLAGS) {
 		invalidate_escort_goal();
+#ifdef __ANDROID__
+		escort_route_note_replan("key_change");
+#endif
+	}
 }
 
 //	-------------------------------------------------------------------------------------------------
@@ -4484,62 +5059,223 @@ static void show_escort_menu(escort_menu *menu)
 
 #ifdef NETWORK
 // android port: multiplayer coop guidebot support
-void multi_send_escort_owner(int owner_pnum)
+enum {
+	ESCORT_OWNER_PACKET_STATE = 0,
+	ESCORT_OWNER_PACKET_REQUEST = 1
+};
+
+static int escort_route_target_mode_for_network(void)
+{
+#ifdef __ANDROID__
+	return Escort_route_target_mode;
+#else
+	return Escort_network_target_mode;
+#endif
+}
+
+static int escort_route_target_mode_valid(int target_mode)
+{
+	return target_mode == 0 || target_mode == 1;
+}
+
+static int escort_owner_candidate_eligible(int pnum)
+{
+	if (pnum < 0 || pnum >= N_players || pnum >= MAX_PLAYERS)
+		return 0;
+	if (Players[pnum].connected != CONNECT_PLAYING)
+		return 0;
+	if (Netgame.host_is_obs && pnum == 0)
+		return 0;
+	return 1;
+}
+
+static void escort_reset_navigation_for_owner(int new_owner)
+{
+	object *buddy_objp;
+	ai_static *aip;
+	ai_local *ailp;
+
+	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+	Escort_special_goal = -1;
+	Escort_goal_index = -1;
+	escort_clear_secret_goal();
+#ifdef __ANDROID__
+	escort_route_clear_goal();
+	escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
+	escort_route_note_replan("owner_handoff");
+#endif
+	if (!escort_refresh_buddy_objnum())
+		return;
+
+	buddy_objp = &Objects[Buddy_objnum];
+	aip = &buddy_objp->ctype.ai_info;
+	ailp = &Ai_local_info[Buddy_objnum];
+	aip->hide_index = -1;
+	aip->path_length = 0;
+	aip->cur_path_index = 0;
+	aip->PATH_DIR = 1;
+	ailp->mode = AIM_GOTO_PLAYER;
+	Buddy_last_seen_player = GameTime64;
+	Buddy_last_player_path_created = GameTime64;
+	Escort_last_path_created = GameTime64;
+
+	if (new_owner == Player_num && ConsoleObject) {
+		create_path_to_player(buddy_objp, Max_escort_length, 1);
+		if (aip->path_length > 3)
+			aip->path_length = polish_path(buddy_objp, &Point_segs[aip->hide_index], aip->path_length);
+		ailp->mode = AIM_GOTO_PLAYER;
+	}
+}
+
+static void escort_apply_multiplayer_owner(int new_owner, int target_mode)
+{
+	int old_owner = Escort_owner_player;
+	int owner_changed = old_owner != new_owner;
+#ifdef __ANDROID__
+	int mode_changed;
+#endif
+
+	if (!escort_route_target_mode_valid(target_mode))
+		target_mode = 0;
+	Escort_network_target_mode = target_mode;
+#ifdef __ANDROID__
+	mode_changed = Escort_route_target_mode != target_mode;
+
+	escort_route_set_target_mode(target_mode);
+	if (mode_changed && !owner_changed && new_owner != Player_num) {
+		escort_route_clear_goal();
+		escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
+		escort_route_note_replan("owner_mode_sync");
+	}
+#else
+	(void) target_mode;
+#endif
+
+	Escort_owner_player = new_owner;
+	if (escort_refresh_buddy_objnum()) {
+		if (new_owner >= 0)
+			Buddy_allowed_to_talk = 1;
+		multi_restore_companion_robot_control(Buddy_objnum, new_owner);
+	}
+
+	if (!owner_changed)
+		return;
+	escort_reset_navigation_for_owner(new_owner);
+	ESCORT_DIAG("ownership applied: old=%d new=%d mode=%d", old_owner, new_owner, target_mode);
+	if (new_owner == Player_num)
+		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot: you have control");
+	else if (new_owner >= 0)
+		HUD_init_message(HM_DEFAULT, "Guide-Bot: %s has control", Players[new_owner].callsign);
+	else
+		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot has no owner");
+}
+
+static void escort_send_owner_packet(int packet_kind, int owner_pnum, int target_mode, unsigned int generation)
 {
 	multibuf[0] = MULTI_ESCORT_OWNER;
 	multibuf[1] = (ubyte)Player_num;
-	multibuf[2] = (ubyte)owner_pnum;
-	multi_send_data(multibuf, 3, 2);
+	multibuf[2] = (ubyte)(sbyte)owner_pnum;
+	multibuf[3] = (ubyte)target_mode;
+	multibuf[4] = (ubyte)packet_kind;
+	multibuf[5] = (ubyte)generation;
+	multibuf[6] = (ubyte)(generation >> 8);
+	multibuf[7] = (ubyte)(generation >> 16);
+	multibuf[8] = (ubyte)(generation >> 24);
+	multi_send_data(multibuf, 9, 2);
+}
+
+static unsigned int escort_next_owner_generation(void)
+{
+	Escort_owner_generation++;
+	if (Escort_owner_generation == 0)
+		Escort_owner_generation = 1;
+	return Escort_owner_generation;
+}
+
+unsigned int escort_get_owner_generation(void)
+{
+	return Escort_owner_generation;
+}
+
+void multi_send_escort_owner(int owner_pnum)
+{
+	int target_mode = escort_route_target_mode_for_network();
+
+	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+	if (owner_pnum != -1 && !escort_owner_candidate_eligible(owner_pnum))
+		return;
+	if (multi_i_am_master()) {
+		unsigned int generation = escort_next_owner_generation();
+		escort_apply_multiplayer_owner(owner_pnum, target_mode);
+		escort_send_owner_packet(ESCORT_OWNER_PACKET_STATE, owner_pnum, target_mode, generation);
+	} else {
+		escort_send_owner_packet(ESCORT_OWNER_PACKET_REQUEST, owner_pnum, target_mode, Escort_owner_generation);
+	}
 }
 
 void multi_do_escort_owner(const ubyte *buf)
 {
-	int new_owner = (int)buf[2];
-	if (new_owner < 0 || new_owner >= MAX_PLAYERS)
+	int sender = (int)buf[1];
+	int new_owner = (int)(sbyte)buf[2];
+	int target_mode = (int)buf[3];
+	int packet_kind = (int)buf[4];
+	unsigned int generation = (unsigned int)buf[5] |
+	                          ((unsigned int)buf[6] << 8) |
+	                          ((unsigned int)buf[7] << 16) |
+	                          ((unsigned int)buf[8] << 24);
+
+	if (sender < 0 || sender >= N_players || sender >= MAX_PLAYERS)
 		return;
-	ESCORT_DIAG("rx escort_owner: new_owner=%d (was %d)", new_owner, Escort_owner_player);
-	Escort_owner_player = new_owner;
+	if (new_owner != -1 && !escort_owner_candidate_eligible(new_owner))
+		return;
+	if (!escort_route_target_mode_valid(target_mode))
+		return;
 
-	if (escort_refresh_buddy_objnum()) {
-		Buddy_allowed_to_talk = 1;
-		Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (sbyte)new_owner;
+	if (packet_kind == ESCORT_OWNER_PACKET_REQUEST) {
+		if (!multi_i_am_master())
+			return;
+		if (!escort_owner_request_allowed(Escort_owner_player,
+		                                  sender,
+		                                  new_owner,
+		                                  escort_owner_candidate_eligible(sender),
+		                                  new_owner == -1 || escort_owner_candidate_eligible(new_owner),
+		                                  Escort_owner_generation,
+		                                  generation))
+			return;
+		generation = escort_next_owner_generation();
+		escort_apply_multiplayer_owner(new_owner, target_mode);
+		escort_send_owner_packet(ESCORT_OWNER_PACKET_STATE, new_owner, target_mode, generation);
+		return;
 	}
-
-	if (new_owner == Player_num)
-		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot: you have control");
-	else
-		HUD_init_message(HM_DEFAULT, "Guide-Bot: %s has control", Players[new_owner].callsign);
+	if (packet_kind != ESCORT_OWNER_PACKET_STATE || sender != multi_who_is_master())
+		return;
+	if (generation <= Escort_owner_generation)
+		return;
+	Escort_owner_generation = generation;
+	escort_apply_multiplayer_owner(new_owner, target_mode);
 }
 
 void escort_transfer_ownership_on_disconnect(int gone_pnum)
 {
-	int have_buddy;
 	int new_owner = -1;
 	int i;
 
-	if (Escort_owner_player != gone_pnum)
+	if (!multi_i_am_master() || Escort_owner_player != gone_pnum)
 		return;
 
 	// Pick lowest-numbered connected player as new owner
 	for (i = 0; i < N_players; i++) {
 		if (i == gone_pnum)
 			continue;
-		if (Players[i].connected == CONNECT_PLAYING) {
+		if (escort_owner_candidate_eligible(i)) {
 			new_owner = i;
 			break;
 		}
 	}
 
 	ESCORT_DIAG("transfer_ownership: gone=%d new_owner=%d", gone_pnum, new_owner);
-	Escort_owner_player = new_owner;
-	have_buddy = escort_refresh_buddy_objnum();
-	if (have_buddy) {
-		if (new_owner >= 0)
-			Buddy_allowed_to_talk = 1;
-		Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (new_owner >= 0) ? (sbyte)new_owner : -1;
-	}
-	if (new_owner >= 0)
-		multi_send_escort_owner(new_owner);
+	multi_send_escort_owner(new_owner);
 }
 
 void escort_release_control(void)
@@ -4554,7 +5290,7 @@ void escort_release_control(void)
 
 	for (offset = 1; offset < N_players; offset++) {
 		candidate = (Player_num + offset) % N_players;
-		if (Players[candidate].connected == CONNECT_PLAYING) {
+		if (escort_owner_candidate_eligible(candidate)) {
 			new_owner = candidate;
 			break;
 		}
@@ -4562,9 +5298,6 @@ void escort_release_control(void)
 	if (new_owner < 0)
 		return;
 
-	Escort_owner_player = new_owner;
-	if (escort_refresh_buddy_objnum())
-		Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (sbyte)new_owner;
 	multi_send_escort_owner(new_owner);
 	HUD_init_message_literal(HM_DEFAULT, "Guide-Bot control released");
 }

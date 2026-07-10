@@ -1079,10 +1079,6 @@ multi_make_player_ghost(int playernum)
 
 	if (Game_mode & GM_MULTI_ROBOTS)
 		multi_strip_robots(playernum);
-
-	// android port: transfer guidebot ownership if the departing player owned it
-	if (Game_mode & GM_MULTI_COOP)
-		escort_transfer_ownership_on_disconnect(playernum);
 }
 
 void
@@ -2720,6 +2716,10 @@ void multi_do_escape(const ubyte *buf)
 	}
 	create_player_appearance_effect(&Objects[objnum]);
 	multi_make_player_ghost(buf[1]);
+	/* android port: escaping leaves the owner unavailable, unlike an ordinary
+	 * death, so the multiplayer master adopts the guidebot here */
+	if ((Game_mode & GM_MULTI_COOP) && multi_i_am_master())
+		escort_transfer_ownership_on_disconnect((int)buf[1]);
 
 	if (is_observer()) {
 		multi_obs_check_all_escaped();
@@ -2964,8 +2964,6 @@ void multi_disconnect_player(int pnum)
 					}
 					android_notify_host_migration();
 				}
-				/* Transfer guidebot ownership if the old host owned it */
-				escort_transfer_ownership_on_disconnect(pnum);
 				goto after_host_check;
 			}
 		}
@@ -2984,6 +2982,10 @@ void multi_disconnect_player(int pnum)
 	}
 
 after_host_check:
+	/* android port: only the current multiplayer master chooses the replacement
+	 * owner, after host migration has established that authority */
+	if ((Game_mode & GM_MULTI_COOP) && multi_i_am_master())
+		escort_transfer_ownership_on_disconnect(pnum);
 	if (is_observer()) {
 		multi_obs_check_all_escaped();
 	} else {

@@ -23,6 +23,7 @@ set(D2X_MAIN_SOURCES
     input_demo_start.c
     endlevel.c
     escort.c
+    escort_owner_policy.c
     fireball.c
     fuelcen.c
     fvi.c

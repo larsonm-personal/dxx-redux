@@ -127,6 +127,7 @@ object TouchBindings {
     const val META_CYCLE_RIGHT_VIEW = 1040
     const val META_GUIDE_NEXT_GOAL = 1041
     const val META_GUIDE_WARP_TO_ME = 1042
+    const val META_GUIDE_FIND_UNEXPLORED = 1043
 
     /** Labels for meta actions, used in Extra button pickers. */
     val META_BUTTON_LABELS: Map<Int, String> =
@@ -150,6 +151,7 @@ object TouchBindings {
             META_GUIDE_FIND_SECRET to "GB: Find Secret",
             META_GUIDE_NEXT_GOAL to "GB: Next Goal",
             META_GUIDE_WARP_TO_ME to "GB: Warp to Me",
+            META_GUIDE_FIND_UNEXPLORED to "GB: Unexplored",
             META_CYCLE_LEFT_VIEW to "Cycle Left View",
             META_CYCLE_RIGHT_VIEW to "Cycle Right View",
             META_MULTIPLAYER_HUD to "Multiplayer HUD",
@@ -198,6 +200,7 @@ object TouchBindings {
             META_GUIDE_FIND_SECRET,
             META_GUIDE_NEXT_GOAL,
             META_GUIDE_WARP_TO_ME,
+            META_GUIDE_FIND_UNEXPLORED,
             META_CYCLE_LEFT_VIEW,
             META_CYCLE_RIGHT_VIEW,
             META_DROP_FLAG,
@@ -245,7 +248,9 @@ object TouchBindings {
 
     /** Center binding for preset radial menus (-1 = none). */
     val RADIAL_PRESET_CENTER: Map<String, Pair<String, Int>> =
-        emptyMap()
+        mapOf(
+            "Guide" to ("Unexplored" to META_GUIDE_FIND_UNEXPLORED),
+        )
 
     /** Human-readable labels for preset IDs, for the editor UI. */
     val RADIAL_PRESET_LABELS: Map<String, String> =

@@ -49,6 +49,7 @@
 #include "kmatrix.h"
 #include "newdemo.h"
 #include "multibot.h"
+#include "escort.h"
 #include "wall.h"
 #include "bm.h"
 #include "effects.h"
@@ -7931,6 +7932,8 @@ void net_udp_send_extras ()
 		net_udp_send_player_flags();    
 	if (Network_sending_extras==2)
 		multi_send_powcap_update();
+	if (Network_sending_extras==1 && Game_mode & GM_MULTI_COOP)
+		multi_send_escort_owner(Escort_owner_player);
 	if (Network_sending_extras==1 && Game_mode & GM_BOUNTY)
 		multi_send_bounty();
 

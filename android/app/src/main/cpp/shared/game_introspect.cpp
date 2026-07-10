@@ -55,6 +55,7 @@ extern "C" {
 #ifdef DXX_BUILD_DESCENT_II
 #include "ai.h"
 #include "escort.h"
+#include "multibot.h"
 #include "d1_custom.h"
 #include "d1_in_d2.h"
 #include "gamepal.h"
@@ -661,10 +662,17 @@ static json serialize_guidebot()
 	result["goal_object"] = Escort_goal_object;
 	result["special_goal"] = Escort_special_goal;
 	result["goal_index"] = Escort_goal_index;
+#ifdef NETWORK
+	result["owner_player"] = Escort_owner_player;
+	result["owner_is_local"] = Escort_owner_player == Player_num;
+	result["owner_generation"] = escort_get_owner_generation();
+#endif
 	result["secret_goal_display_index"] = escort_get_secret_goal_display_index();
 	result["secret_goal_seg"] = escort_get_secret_goal_seg();
 	result["secret_goal_side"] = escort_get_secret_goal_side();
 #ifdef __ANDROID__
+	const level_metadata_state *route_metadata = level_metadata_get_state();
+
 	result["route_goal_active"] = (bool) escort_get_route_goal_active();
 	result["route_goal_label"] = escort_get_route_goal_label();
 	result["route_goal_seg"] = escort_get_route_goal_seg();
@@ -684,11 +692,38 @@ static json serialize_guidebot()
 	result["route_goal_guidance_seg"] = escort_get_route_goal_guidance_seg();
 	result["route_goal_guidance_side"] = escort_get_route_goal_guidance_side();
 	result["route_goal_path_endpoint_seg"] = escort_get_route_goal_path_endpoint_seg();
+	result["route_goal_path_pending"] = (bool) escort_get_route_goal_path_pending();
+	result["route_target_mode"] = escort_get_route_target_mode();
+	result["route_target_mode_name"] = escort_get_route_target_mode_name();
+	result["route_last_replan_reason"] = escort_get_route_last_replan_reason();
+	result["unexplored_component_size"] = escort_get_unexplored_component_size();
+	result["unexplored_target_seg"] = escort_get_unexplored_target_seg();
+	result["unexplored_waypoint_seg"] = escort_get_unexplored_waypoint_seg();
+	result["unexplored_direct_reachable"] = (bool) escort_get_unexplored_direct_reachable();
+	result["route_status"] = route_metadata ? level_metadata_travel_status_name(route_metadata->route_status) : "unavailable";
+	result["route_problem"] = route_metadata && route_metadata->route_problem[0] ? route_metadata->route_problem : "";
+	result["route_start_seg"] = route_metadata && route_metadata->route_step_count > 0 ? route_metadata->route_steps[0].seg : -1;
+	result["route_start_matches_buddy"] =
+	    route_metadata && route_metadata->route_step_count > 0 &&
+	    Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
+	    route_metadata->route_steps[0].seg == Objects[Buddy_objnum].segnum;
 	result["route_analysis"] = serialize_guidebot_route_analysis();
 #endif
 	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index) {
 		result["segment"] = (int) Objects[Buddy_objnum].segnum;
 		result["object_type"] = (int) Objects[Buddy_objnum].type;
+		result["ai_mode"] = Ai_local_info[Buddy_objnum].mode;
+		result["path_index"] = Objects[Buddy_objnum].ctype.ai_info.cur_path_index;
+		result["path_length"] = Objects[Buddy_objnum].ctype.ai_info.path_length;
+		result["path_direction"] = Objects[Buddy_objnum].ctype.ai_info.PATH_DIR;
+#ifdef NETWORK
+		int remote_slot = Objects[Buddy_objnum].ctype.ai_info.REMOTE_SLOT_NUM;
+		result["remote_owner"] = (int) Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER;
+		result["remote_slot"] = remote_slot;
+		result["local_control_slot_matches"] =
+		    remote_slot >= 0 && remote_slot < MAX_ROBOTS_CONTROLLED &&
+		    robot_controlled[remote_slot] == Buddy_objnum;
+#endif
 	} else {
 		result["segment"] = nullptr;
 		result["object_type"] = nullptr;

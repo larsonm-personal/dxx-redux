@@ -95,6 +95,7 @@ int main(void)
 	params.level_name = "Fueling Center";
 	params.level_seconds = 999;
 	params.total_seconds = 2222;
+	params.guidebot_route_target_mode = 1;
 	params.thumbnail_rgb6 = thumb_b;
 	params.thumbnail_width = ANDROID_SAVE_META_THUMB_W;
 	params.thumbnail_height = ANDROID_SAVE_META_THUMB_H;
@@ -178,6 +179,8 @@ int main(void)
 			failures += report_failure("newest candidate kept the wrong total seconds");
 		if (newest.meta.music_type != 2)
 			failures += report_failure("newest candidate kept the wrong music type");
+		if (newest.meta.guidebot_route_target_mode != 1)
+			failures += report_failure("guidebot route target mode did not round-trip");
 	}
 
 	remove("test_android_save_meta_d1.sav");

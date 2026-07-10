@@ -6,6 +6,9 @@
 
 void secret_area_rescan_current_level(void);
 void level_metadata_rescan_current_level(void);
+void level_metadata_rescan_current_level_from_object(int objnum);
+void level_metadata_rescan_route_from_object(int objnum);
+void level_metadata_rescan_route_to_segment_from_object(int objnum, int target_seg);
 const secret_area_state *secret_area_get_state(void);
 const level_metadata_state *level_metadata_get_state(void);
 int secret_area_note_segment_entered(int segnum);

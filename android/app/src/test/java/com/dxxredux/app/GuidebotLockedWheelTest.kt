@@ -24,14 +24,16 @@ class GuidebotLockedWheelTest {
     }
 
     @Test
-    fun guidePresetUsesNextSliceWithoutReleaseOrCenter() {
+    fun guidePresetUsesNextSliceAndUnexploredCenterWithoutRelease() {
         val guideSegments = TouchBindings.RADIAL_PRESET_SEGMENTS.getValue("Guide")
         val bindings = guideSegments.map { it.binding }
+        val center = TouchBindings.RADIAL_PRESET_CENTER.getValue("Guide")
 
         assertTrue(TouchBindings.META_GUIDE_NEXT_GOAL in bindings)
         assertTrue(TouchBindings.META_GUIDE_WARP_TO_ME in bindings)
         assertFalse(TouchBindings.META_GUIDE_RELEASE_CONTROL in bindings)
-        assertFalse(TouchBindings.RADIAL_PRESET_CENTER.containsKey("Guide"))
+        assertEquals("Unexplored", center.first)
+        assertEquals(TouchBindings.META_GUIDE_FIND_UNEXPLORED, center.second)
     }
 
     @Test
@@ -97,11 +99,36 @@ class GuidebotLockedWheelTest {
         val migrated = TouchLayoutRepository.migrateForCurrentVersion(layout).radialMenus.single()
         val bindings = migrated.segments.map { it.binding }
 
-        assertEquals(-1, migrated.centerBinding)
-        assertEquals("", migrated.centerLabel)
+        assertEquals(TouchBindings.META_GUIDE_FIND_UNEXPLORED, migrated.centerBinding)
+        assertEquals("Unexplored", migrated.centerLabel)
         assertEquals(TouchBindings.META_GUIDE_NEXT_GOAL, migrated.segments.last().binding)
         assertTrue(TouchBindings.META_GUIDE_FIND_ENERGY in bindings)
         assertTrue(TouchBindings.META_GUIDE_WARP_TO_ME in bindings)
         assertFalse(TouchBindings.META_GUIDE_RELEASE_CONTROL in bindings)
+    }
+
+    @Test
+    fun guideWheelMigrationPreservesCustomCenterAction() {
+        val customBinding = TouchBindings.META_GUIDE_FIND_SECRET
+        val layout =
+            TouchLayout(
+                version = 7,
+                radialMenus =
+                    listOf(
+                        RadialMenuControl(
+                            id = "Guide",
+                            xPct = 50f,
+                            yPct = 50f,
+                            segments = emptyList(),
+                            centerLabel = "Secret",
+                            centerBinding = customBinding,
+                        ),
+                    ),
+            )
+
+        val migrated = TouchLayoutRepository.migrateForCurrentVersion(layout).radialMenus.single()
+
+        assertEquals("Secret", migrated.centerLabel)
+        assertEquals(customBinding, migrated.centerBinding)
     }
 }

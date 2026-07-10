@@ -28,6 +28,7 @@ volatile int android_force_quit = 0;
 volatile int android_escort_release_pending = 0;
 volatile int android_escort_spawn_pending = 0;
 volatile int android_escort_find_secret_pending = 0;
+volatile int android_escort_find_unexplored_pending = 0;
 volatile int android_escort_next_goal_pending = 0;
 volatile int android_escort_warp_to_me_pending = 0;
 volatile int android_demo_record_toggle_pending = 0;
@@ -176,6 +177,12 @@ int meta_action_dispatch(int action_id, int pressed)
 	if (action_id == META_GUIDE_FIND_SECRET) {
 		if (pressed)
 			android_escort_find_secret_pending = 1;
+		return 0;
+	}
+
+	if (action_id == META_GUIDE_FIND_UNEXPLORED) {
+		if (pressed)
+			android_escort_find_unexplored_pending = 1;
 		return 0;
 	}
 

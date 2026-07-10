@@ -26,6 +26,9 @@
 #include "coop_save.h"
 #include "android_log.h"
 #include "state_android_shared.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "escort.h"
+#endif
 
 extern int state_save_all_sub(char *filename, char *desc);
 #ifdef DXX_BUILD_DESCENT_II
@@ -516,6 +519,9 @@ void state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	android_params.difficulty_changed = Difficulty_level_changed ? 1 : 0;
 	android_params.difficulty_min = Difficulty_level_min_seen;
 	android_params.difficulty_max = Difficulty_level_max_seen;
+#ifdef DXX_BUILD_DESCENT_II
+	android_params.guidebot_route_target_mode = (uint8_t) escort_get_route_target_mode();
+#endif
 	android_save_meta_apply_cached_thumbnail(&android_params);
 	android_save_meta_write_physfs(physfs_fp, &android_params);
 	state_android_write_last_save_set(

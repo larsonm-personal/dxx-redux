@@ -1686,6 +1686,23 @@ extern	int	Buddy_objnum;
 
 //int	Buddy_got_stuck = 0;
 
+static int ai_companion_has_key(int key_flag)
+{
+#ifdef NETWORK
+	int i;
+
+	if (Game_mode & GM_MULTI_COOP) {
+		for (i = 0; i < MAX_PLAYERS; i++)
+			if (Players[i].connected == CONNECT_PLAYING &&
+			    !(Netgame.host_is_obs && i == 0) &&
+			    (Players[i].flags & key_flag))
+				return 1;
+		return 0;
+	}
+#endif
+	return (Players[Player_num].flags & key_flag) != 0;
+}
+
 //	-----------------------------------------------------------------------------------------------------------
 //	Return true if door can be flown through by a suitable type robot.
 //	Brains, avoid robots, companions can open doors.
@@ -1726,11 +1743,11 @@ int ai_door_is_openable(object *objp, segment *segp, int sidenum)
 			
 		if (wallp->keys != KEY_NONE) {
 			if (wallp->keys == KEY_BLUE)
-				return (Players[Player_num].flags & PLAYER_FLAGS_BLUE_KEY);
+				return ai_companion_has_key(PLAYER_FLAGS_BLUE_KEY);
 			else if (wallp->keys == KEY_GOLD)
-				return (Players[Player_num].flags & PLAYER_FLAGS_GOLD_KEY);
+				return ai_companion_has_key(PLAYER_FLAGS_GOLD_KEY);
 			else if (wallp->keys == KEY_RED)
-				return (Players[Player_num].flags & PLAYER_FLAGS_RED_KEY);
+				return ai_companion_has_key(PLAYER_FLAGS_RED_KEY);
 		}
 
 		if ((wallp->type != WALL_DOOR) && (wallp->type != WALL_CLOSED))

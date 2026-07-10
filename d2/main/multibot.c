@@ -192,11 +192,21 @@ multi_strip_robots(int playernum)
 	if (Game_mode & GM_MULTI_ROBOTS) {
 	
 		if (playernum == Player_num)
-			for (i = 0; i < MAX_ROBOTS_CONTROLLED; i++)
-				multi_delete_controlled_robot(robot_controlled[i]);
+			for (i = 0; i < MAX_ROBOTS_CONTROLLED; i++) {
+				int objnum = robot_controlled[i];
+				if ((Game_mode & GM_MULTI_COOP) && playernum == Escort_owner_player &&
+				    objnum >= 0 && objnum <= Highest_object_index &&
+				    Objects[objnum].type == OBJ_ROBOT &&
+				    Robot_info[Objects[objnum].id].companion)
+					continue;
+				multi_delete_controlled_robot(objnum);
+			}
 
 		for (i = 1; i <= Highest_object_index; i++)
 			if ((Objects[i].type == OBJ_ROBOT) && (Objects[i].ctype.ai_info.REMOTE_OWNER == playernum)) {
+				if ((Game_mode & GM_MULTI_COOP) && playernum == Escort_owner_player &&
+				    Robot_info[Objects[i].id].companion)
+					continue;
 				Assert((Objects[i].control_type == CT_AI) || (Objects[i].control_type == CT_NONE) || (Objects[i].control_type == CT_MORPH));
 				Objects[i].ctype.ai_info.REMOTE_OWNER = -1;
 				if (playernum == Player_num)
@@ -223,6 +233,21 @@ multi_restore_companion_robot_control(int objnum, int owner_pnum)
 		return;
 	if ((Objects[objnum].type != OBJ_ROBOT) ||
 	    !Robot_info[Objects[objnum].id].companion)
+		return;
+
+	if ((owner_pnum >= 0) && (owner_pnum < MAX_PLAYERS) &&
+	    (Players[owner_pnum].connected == CONNECT_PLAYING) &&
+	    (Objects[objnum].ctype.ai_info.REMOTE_OWNER == owner_pnum)) {
+		if (owner_pnum != Player_num)
+			return;
+		slot = Objects[objnum].ctype.ai_info.REMOTE_SLOT_NUM;
+		if ((slot >= 0) && (slot < MAX_ROBOTS_CONTROLLED) &&
+		    (robot_controlled[slot] == objnum))
+			return;
+	}
+	if (((owner_pnum < 0) || (owner_pnum >= MAX_PLAYERS) ||
+	     (Players[owner_pnum].connected != CONNECT_PLAYING)) &&
+	    (Objects[objnum].ctype.ai_info.REMOTE_OWNER == -1))
 		return;
 
 	for (i = 0; i < MAX_ROBOTS_CONTROLLED; i++)

@@ -23,6 +23,7 @@
 #define TEST_KEY_GOLD              8
 #define TEST_TRIGGER_OPEN_WALL     9
 #define TEST_TRIGGER_EXIT          3
+#define TEST_TRIGGER_FLAG_DISABLED 4
 #define TEST_OBJ_POWERUP           1
 #define TEST_OBJ_CONTROL_CENTER    2
 #define TEST_OBJ_ROBOT             3
@@ -54,9 +55,12 @@ static int test_object_id[TEST_OBJECTS];
 static int test_object_seg[TEST_OBJECTS];
 static int test_segment_special_values[TEST_SEGMENTS];
 static int test_trigger_type[TEST_TRIGGERS];
+static int test_trigger_flags[TEST_TRIGGERS];
 static int test_trigger_link_count[TEST_TRIGGERS];
 static int test_trigger_link_seg[TEST_TRIGGERS][LEVEL_METADATA_MAX_ROUTE_LINKS];
 static int test_trigger_link_sides[TEST_TRIGGERS][LEVEL_METADATA_MAX_ROUTE_LINKS];
+static int test_side_flyable[TEST_SEGMENTS][TEST_SIDES];
+static int test_control_center_link[TEST_SEGMENTS][TEST_SIDES];
 
 static void test_reset(void)
 {
@@ -68,8 +72,11 @@ static void test_reset(void)
 	int link;
 
 	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
-		for (side = 0; side < TEST_SIDES; ++side)
+		for (side = 0; side < TEST_SIDES; ++side) {
 			test_children[seg][side] = test_default_children[seg][side];
+			test_side_flyable[seg][side] = 0;
+			test_control_center_link[seg][side] = 0;
+		}
 	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
 		for (side = 0; side < TEST_SIDES; ++side)
 			test_wall_nums[seg][side] = -1;
@@ -93,6 +100,7 @@ static void test_reset(void)
 		test_segment_special_values[seg] = 0;
 	for (trigger = 0; trigger < TEST_TRIGGERS; ++trigger) {
 		test_trigger_type[trigger] = TEST_TRIGGER_OPEN_WALL;
+		test_trigger_flags[trigger] = 0;
 		test_trigger_link_count[trigger] = 0;
 		for (link = 0; link < LEVEL_METADATA_MAX_ROUTE_LINKS; ++link) {
 			test_trigger_link_seg[trigger][link] = -1;
@@ -120,6 +128,22 @@ static int test_segment_child(void *user, int seg, int side)
 	if (seg < 0 || seg >= TEST_SEGMENTS || side < 0 || side >= TEST_SIDES)
 		return -1;
 	return test_children[seg][side];
+}
+
+static int test_side_is_flyable(void *user, int seg, int side)
+{
+	(void) user;
+	return seg >= 0 && seg < TEST_SEGMENTS &&
+	       side >= 0 && side < TEST_SIDES &&
+	       test_side_flyable[seg][side];
+}
+
+static int test_side_is_control_center_link(void *user, int seg, int side)
+{
+	(void) user;
+	return seg >= 0 && seg < TEST_SEGMENTS &&
+	       side >= 0 && side < TEST_SIDES &&
+	       test_control_center_link[seg][side];
 }
 
 static int test_wall_num(void *user, int seg, int side)
@@ -335,6 +359,14 @@ static int test_trigger_type_at(void *user, int trigger_num)
 	return test_trigger_type[trigger_num];
 }
 
+static int test_trigger_flags_at(void *user, int trigger_num)
+{
+	(void) user;
+	if (trigger_num < 0 || trigger_num >= TEST_TRIGGERS)
+		return 0;
+	return test_trigger_flags[trigger_num];
+}
+
 static int test_trigger_link_count_at(void *user, int trigger_num)
 {
 	(void) user;
@@ -397,8 +429,11 @@ static level_metadata_scan_view test_view(void)
 	view.powerup_key_gold = TEST_POWERUP_GOLD_KEY;
 	view.trigger_type_open_wall = TEST_TRIGGER_OPEN_WALL;
 	view.trigger_type_exit = TEST_TRIGGER_EXIT;
+	view.trigger_flag_disabled = TEST_TRIGGER_FLAG_DISABLED;
 	view.segment_child = test_segment_child;
 	view.reverse_side = test_reverse_side;
+	view.side_is_flyable = test_side_is_flyable;
+	view.side_is_control_center_link = test_side_is_control_center_link;
 	view.wall_num = test_wall_num;
 	view.wall_segment = test_wall_segment;
 	view.wall_side = test_wall_side;
@@ -407,6 +442,7 @@ static level_metadata_scan_view test_view(void)
 	view.wall_keys = test_wall_keys;
 	view.wall_clip_flags = test_wall_clip_flags_at;
 	view.wall_trigger = test_wall_trigger_at;
+	view.trigger_flags = test_trigger_flags_at;
 	view.segment_special = test_segment_special;
 	view.segment_center = test_segment_center;
 	view.start_position = test_start_position;
@@ -487,6 +523,24 @@ static int test_reactorless_missing_exit(void)
 	return failures;
 }
 
+static int test_end_route_refresh_preserves_static_metadata(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	level_metadata_scan_level(&view, &state);
+	state.energy_center_count = 37;
+	state.travel_distance = 1234.0;
+	level_metadata_scan_end_route(&view, &state);
+	failures += expect_int("route-only energy centers", 37, state.energy_center_count);
+	failures += expect_double("route-only travel distance", 1234.0, state.travel_distance);
+	failures += expect_string("route-only status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("route-only steps", 2, state.route_step_count);
+	return failures;
+}
+
 static int test_route_key_step(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -515,6 +569,31 @@ static int test_route_key_step(void)
 	failures += expect_int("key route key index", 0, state.route_steps[1].key_index);
 	failures += expect_string("key route activation", "pickup_key", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
 	failures += expect_string("key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
+static int test_route_uses_initial_key_without_powerup(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_type[0] = TEST_WALL_DOOR;
+	test_wall_type[1] = TEST_WALL_DOOR;
+	test_wall_key[0] = TEST_KEY_BLUE;
+	test_wall_key[1] = TEST_KEY_BLUE;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	view.initial_key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("initial key route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("initial key route steps", 2, state.route_step_count);
+	failures += expect_string("initial key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	return failures;
 }
 
@@ -738,6 +817,158 @@ static int test_route_skips_already_opened_trigger_door(void)
 	failures += expect_string("opened trigger door route status", "ok", level_metadata_travel_status_name(state.route_status));
 	failures += expect_int("opened trigger door route steps", 2, state.route_step_count);
 	failures += expect_string("opened trigger door route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	return failures;
+}
+
+static int test_route_does_not_reoffer_disabled_trigger(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_nums[0][2] = 2;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_type[1] = TEST_WALL_CLOSED;
+	test_wall_type[2] = TEST_WALL_OPEN;
+	test_wall_trigger[2] = 0;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_wall_seg[2] = 0;
+	test_wall_sides[2] = 2;
+	test_trigger_flags[0] = TEST_TRIGGER_FLAG_DISABLED;
+	test_trigger_link_count[0] = 2;
+	test_trigger_link_seg[0][0] = 0;
+	test_trigger_link_sides[0][0] = 0;
+	test_trigger_link_seg[0][1] = 1;
+	test_trigger_link_sides[0][1] = 1;
+	view.triggered_side_opener_count = test_triggered_side_opener_count;
+	view.triggered_side_opener_wall_num = test_triggered_side_opener_wall_num;
+	view.trigger_type = test_trigger_type_at;
+	view.trigger_link_count = test_trigger_link_count_at;
+	view.trigger_link_segment = test_trigger_link_segment;
+	view.trigger_link_side = test_trigger_link_side;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("disabled trigger route status", "failed", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("disabled trigger route steps", 1, state.route_step_count);
+	failures += expect_string("disabled trigger route problem", "exit unreachable", state.route_problem);
+	return failures;
+}
+
+static int test_route_promotes_unreachable_trigger_blocker(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_nums[3][0] = 2;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_type[1] = TEST_WALL_CLOSED;
+	test_wall_type[2] = TEST_WALL_CLOSED;
+	test_wall_trigger[2] = 0;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_wall_seg[2] = 3;
+	test_wall_sides[2] = 0;
+	test_trigger_link_count[0] = 2;
+	test_trigger_link_seg[0][0] = 0;
+	test_trigger_link_sides[0][0] = 0;
+	test_trigger_link_seg[0][1] = 1;
+	test_trigger_link_sides[0][1] = 1;
+	view.triggered_side_opener_count = test_triggered_side_opener_count;
+	view.triggered_side_opener_wall_num = test_triggered_side_opener_wall_num;
+	view.trigger_type = test_trigger_type_at;
+	view.trigger_link_count = test_trigger_link_count_at;
+	view.trigger_link_segment = test_trigger_link_segment;
+	view.trigger_link_side = test_trigger_link_side;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("unreachable trigger route status", "partial", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("unreachable trigger route steps", 2, state.route_step_count);
+	failures += expect_string("unreachable trigger route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_int("unreachable trigger route wall", 2, state.route_steps[1].wall_num);
+	failures += expect_int("unreachable trigger route trigger", 0, state.route_steps[1].trigger_num);
+	return failures;
+}
+
+static int test_segment_route_reuses_trigger_dependencies(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_nums[0][2] = 2;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_type[1] = TEST_WALL_CLOSED;
+	test_wall_type[2] = TEST_WALL_OPEN;
+	test_wall_trigger[2] = 0;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_wall_seg[2] = 0;
+	test_wall_sides[2] = 2;
+	test_trigger_link_count[0] = 2;
+	test_trigger_link_seg[0][0] = 0;
+	test_trigger_link_sides[0][0] = 0;
+	test_trigger_link_seg[0][1] = 1;
+	test_trigger_link_sides[0][1] = 1;
+	view.triggered_side_opener_count = test_triggered_side_opener_count;
+	view.triggered_side_opener_wall_num = test_triggered_side_opener_wall_num;
+	view.trigger_type = test_trigger_type_at;
+	view.trigger_link_count = test_trigger_link_count_at;
+	view.trigger_link_segment = test_trigger_link_segment;
+	view.trigger_link_side = test_trigger_link_side;
+	level_metadata_scan_route_to_segment(&view, 2, &state);
+	failures += expect_string("segment route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("segment route steps", 3, state.route_step_count);
+	failures += expect_string("segment route trigger", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_string("segment route terminal", "unexplored", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	failures += expect_int("segment route terminal seg", 2, state.route_steps[2].seg);
+	return failures;
+}
+
+static int test_route_opens_control_center_links_after_reactor(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_wall_nums[1][0] = 0;
+	test_wall_nums[2][1] = 1;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_type[1] = TEST_WALL_CLOSED;
+	test_wall_seg[0] = 1;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 2;
+	test_wall_sides[1] = 1;
+	test_control_center_link[1][0] = 1;
+	test_control_center_link[2][1] = 1;
+	test_object_count_value = 1;
+	test_object_type[0] = TEST_OBJ_CONTROL_CENTER;
+	test_object_seg[0] = 1;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("control center link route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("control center link route steps", 3, state.route_step_count);
+	failures += expect_string("control center link reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_string("control center link exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	level_metadata_scan_route_to_segment(&view, 2, &state);
+	failures += expect_string("control center unexplored status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("control center unexplored steps", 3, state.route_step_count);
+	failures += expect_string("control center unexplored reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_string("control center unexplored terminal", "unexplored", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	return failures;
 }
 
@@ -978,12 +1209,18 @@ int main(void)
 
 	failures += test_reactorless_reachable_exit();
 	failures += test_reactorless_missing_exit();
+	failures += test_end_route_refresh_preserves_static_metadata();
 	failures += test_route_key_step();
+	failures += test_route_uses_initial_key_without_powerup();
 	failures += test_route_key_uses_longer_open_path();
 	failures += test_route_prefers_ordered_key_chain();
 	failures += test_route_trigger_step();
 	failures += test_route_shootable_trigger_step();
 	failures += test_route_skips_already_opened_trigger_door();
+	failures += test_route_does_not_reoffer_disabled_trigger();
+	failures += test_route_promotes_unreachable_trigger_blocker();
+	failures += test_segment_route_reuses_trigger_dependencies();
+	failures += test_route_opens_control_center_links_after_reactor();
 	failures += test_route_accepts_any_fired_opener_for_side();
 	failures += test_route_hidden_door_step();
 	failures += test_route_visible_reactor_step();

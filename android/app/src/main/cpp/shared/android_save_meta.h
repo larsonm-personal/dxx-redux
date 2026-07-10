@@ -59,6 +59,7 @@ typedef struct android_save_meta_write_params {
 	uint8_t difficulty_changed;
 	uint8_t difficulty_min;
 	uint8_t difficulty_max;
+	uint8_t guidebot_route_target_mode;
 	const uint8_t *thumbnail_rgb6;
 	uint16_t thumbnail_width;
 	uint16_t thumbnail_height;
@@ -89,7 +90,7 @@ typedef struct android_save_meta_disk {
 	uint8_t difficulty_changed;
 	uint8_t difficulty_min;
 	uint8_t difficulty_max;
-	uint8_t reserved1;
+	uint8_t guidebot_route_target_mode;
 	uint8_t music_type;
 	uint8_t thumbnail_rgb6[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
 	android_save_meta_footer footer;

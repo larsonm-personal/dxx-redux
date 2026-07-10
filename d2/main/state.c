@@ -248,6 +248,49 @@ static int state_android_read_coop_metadata_trailer(PHYSFS_file *fp,
 	PHYSFS_seek(fp, saved_pos);
 	return have_coop_meta;
 }
+
+static int state_android_remap_escort_owner(const coop_save_metadata *meta)
+{
+	int current_slot;
+	int saved_owner;
+
+	if (!meta)
+		return -1;
+	saved_owner = meta->escort_owner_player;
+	if (saved_owner < 0 || saved_owner >= MAX_PLAYERS)
+		return -1;
+
+	for (current_slot = 0; current_slot < N_players; current_slot++) {
+		int meta_index;
+
+		if (Players[current_slot].connected != CONNECT_PLAYING)
+			continue;
+		if (Netgame.host_is_obs && current_slot == 0)
+			continue;
+		meta_index = coop_find_player_in_metadata(
+			Players[current_slot].callsign,
+			Netgame.players[current_slot].client_id,
+			meta);
+		if (meta_index >= 0 && meta_index < meta->num_active_players &&
+		    meta->active_players[meta_index].original_slot == saved_owner)
+			return current_slot;
+	}
+	return -1;
+}
+
+static int state_android_first_eligible_escort_owner(void)
+{
+	int i;
+
+	for (i = 0; i < N_players; i++) {
+		if (Players[i].connected != CONNECT_PLAYING)
+			continue;
+		if (Netgame.host_is_obs && i == 0)
+			continue;
+		return i;
+	}
+	return -1;
+}
 #endif
 
 #ifndef __ANDROID__
@@ -3297,8 +3340,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		android_save_meta_disk android_meta;
 		int have_android_meta = android_save_meta_read_physfs(physfs_fp, file_len, &android_meta);
 		coop_save_metadata coop_meta;
-		if (have_android_meta)
+		if (have_android_meta) {
 			state_android_restore_music_type_from_meta(&android_meta);
+			escort_restore_route_target_mode(android_meta.guidebot_route_target_mode);
+		}
 		if (coop_read_save_metadata(physfs_fp, pos_after_base, &coop_meta)) {
 			COOPLOG("coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);
@@ -3308,7 +3353,9 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			/* Restore guidebot ownership state (v2+) */
 			if (coop_meta.version >= 2 && (Game_mode & GM_MULTI_COOP)) {
 				Buddy_allowed_to_talk = coop_meta.buddy_allowed_to_talk;
-				Escort_owner_player = coop_meta.escort_owner_player;
+				Escort_owner_player = state_android_remap_escort_owner(&coop_meta);
+				if (Escort_owner_player < 0 && Buddy_allowed_to_talk)
+					Escort_owner_player = state_android_first_eligible_escort_owner();
 				if (Escort_owner_player >= 0 && Escort_owner_player < MAX_PLAYERS) {
 					if (Escort_owner_player == Player_num)
 						HUD_init_message_literal(HM_DEFAULT, "Guide-Bot: you have control");

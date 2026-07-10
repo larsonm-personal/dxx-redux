@@ -60,6 +60,9 @@ typedef struct metadata_route_context {
 	int current_pos[3];
 	int key_mask;
 	int key_in_progress;
+	int control_center_destroyed;
+	int unresolved_block_valid;
+	metadata_route_block unresolved_block;
 	double pending_distance;
 	unsigned char fired_triggers[256];
 	unsigned char trigger_in_progress[256];
@@ -142,6 +145,8 @@ const char *level_metadata_route_step_kind_name(int kind)
 			return "hidden_door";
 		case LEVEL_METADATA_ROUTE_HOSTAGE:
 			return "hostage";
+		case LEVEL_METADATA_ROUTE_UNEXPLORED:
+			return "unexplored";
 		default:
 			return "unknown";
 	}
@@ -1326,6 +1331,10 @@ static int metadata_route_source_wall_block(
 	trigger_num = view->wall_trigger(view->user, source_wall);
 	if (!metadata_route_trigger_valid(trigger_num))
 		return 0;
+	if (view->trigger_flag_disabled &&
+	    view->trigger_flags &&
+	    (view->trigger_flags(view->user, trigger_num) & view->trigger_flag_disabled))
+		return 0;
 	trigger_type = view->trigger_type(view->user, trigger_num);
 	if (!metadata_route_trigger_is_progress(view, trigger_type))
 		return 0;
@@ -1439,6 +1448,42 @@ static int metadata_route_edge_trigger_blocker(
 	       metadata_route_side_trigger_source(view, route, child, reverse_side, 0, block);
 }
 
+static int metadata_route_edge_pair_is_flyable(
+    const level_metadata_scan_view *view,
+    int seg,
+    int side,
+    int child)
+{
+	int reverse_side;
+
+	if (!view->side_is_flyable)
+		return 0;
+	if (view->side_is_flyable(view->user, seg, side))
+		return 1;
+	reverse_side = view->reverse_side ? view->reverse_side(view->user, seg, child) : -1;
+	return reverse_side >= 0 &&
+	       reverse_side < LEVEL_METADATA_MAX_SIDES &&
+	       view->side_is_flyable(view->user, child, reverse_side);
+}
+
+static int metadata_route_edge_pair_is_control_center_link(
+    const level_metadata_scan_view *view,
+    int seg,
+    int side,
+    int child)
+{
+	int reverse_side;
+
+	if (!view->side_is_control_center_link)
+		return 0;
+	if (view->side_is_control_center_link(view->user, seg, side))
+		return 1;
+	reverse_side = view->reverse_side ? view->reverse_side(view->user, seg, child) : -1;
+	return reverse_side >= 0 &&
+	       reverse_side < LEVEL_METADATA_MAX_SIDES &&
+	       view->side_is_control_center_link(view->user, child, reverse_side);
+}
+
 static int metadata_route_edge_passable(
     const level_metadata_scan_view *view,
     const metadata_route_context *route,
@@ -1460,6 +1505,11 @@ static int metadata_route_edge_passable(
 		return 0;
 	if (side_has_exit(view, seg, side))
 		return 0;
+	if (metadata_route_edge_pair_is_flyable(view, seg, side, child))
+		return 1;
+	if (route->control_center_destroyed &&
+	    metadata_route_edge_pair_is_control_center_link(view, seg, side, child))
+		return 1;
 	if (metadata_route_edge_pair_has_fired_trigger(view, route, seg, side, child))
 		return 1;
 	if (!view->wall_num || !view->wall_type || !view->wall_keys)
@@ -1871,7 +1921,8 @@ static int metadata_route_step_for_trigger(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
     metadata_route_context *route,
-    const metadata_route_block *block)
+    const metadata_route_block *block,
+    int mark_fired)
 {
 	level_metadata_route_step *step;
 	char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
@@ -1906,7 +1957,8 @@ static int metadata_route_step_for_trigger(
 			step->opened_link_wall[out] = view->wall_num && valid_segment(view, link_seg) ? view->wall_num(view->user, link_seg, link_side) : -1;
 		}
 	}
-	route->fired_triggers[block->trigger_num] = 1;
+	if (mark_fired)
+		route->fired_triggers[block->trigger_num] = 1;
 	return 1;
 }
 
@@ -1983,6 +2035,33 @@ static void metadata_route_add_hidden_door_link(
 	step->opened_link_wall[out] = wall_num;
 }
 
+static int metadata_route_append_hidden_door_step(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    const metadata_route_block *block)
+{
+	level_metadata_route_step *step;
+	int reverse_wall;
+	int child;
+	int reverse_side;
+
+	if (!block || block->kind != METADATA_ROUTE_BLOCK_HIDDEN_DOOR || !valid_wall(view, block->wall_num))
+		return 0;
+	step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_HIDDEN_DOOR, "Shoot hidden wall", block->seg, block->side);
+	if (!step)
+		return 0;
+	step->wall_num = block->wall_num;
+	step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR;
+	metadata_route_add_hidden_door_link(step, block->seg, block->side, block->wall_num);
+	child = view->segment_child ? view->segment_child(view->user, block->seg, block->side) : -1;
+	reverse_side = valid_segment(view, child) && view->reverse_side ? view->reverse_side(view->user, block->seg, child) : -1;
+	reverse_wall = metadata_route_reverse_wall_num(view, block->seg, block->side);
+	if (valid_wall(view, reverse_wall))
+		metadata_route_add_hidden_door_link(step, child, reverse_side, reverse_wall);
+	return 1;
+}
+
 static int metadata_route_open_hidden_door(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
@@ -1990,11 +2069,7 @@ static int metadata_route_open_hidden_door(
     const metadata_route_block *block,
     int depth)
 {
-	level_metadata_route_step *step;
 	int pos[3];
-	int reverse_wall;
-	int child;
-	int reverse_side;
 
 	if (!block || block->kind != METADATA_ROUTE_BLOCK_HIDDEN_DOOR || !valid_wall(view, block->wall_num)) {
 		metadata_route_set_problem(state, "unknown hidden door route dependency");
@@ -2020,19 +2095,10 @@ static int metadata_route_open_hidden_door(
 	}
 	route->current_seg = block->seg;
 	copy_pos(route->current_pos, pos);
-	step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_HIDDEN_DOOR, "Shoot hidden wall", block->seg, block->side);
-	if (!step) {
+	if (!metadata_route_append_hidden_door_step(view, state, route, block)) {
 		metadata_route_set_hidden_door_state(view, block, route->hidden_door_in_progress, 0);
 		return 0;
 	}
-	step->wall_num = block->wall_num;
-	step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR;
-	metadata_route_add_hidden_door_link(step, block->seg, block->side, block->wall_num);
-	child = view->segment_child ? view->segment_child(view->user, block->seg, block->side) : -1;
-	reverse_side = valid_segment(view, child) && view->reverse_side ? view->reverse_side(view->user, block->seg, child) : -1;
-	reverse_wall = metadata_route_reverse_wall_num(view, block->seg, block->side);
-	if (valid_wall(view, reverse_wall))
-		metadata_route_add_hidden_door_link(step, child, reverse_side, reverse_wall);
 	metadata_route_set_hidden_door_state(view, block, route->opened_hidden_walls, 1);
 	metadata_route_set_hidden_door_state(view, block, route->hidden_door_in_progress, 0);
 	return 1;
@@ -2229,12 +2295,39 @@ static int metadata_route_fire_trigger(
 		route->current_seg = step_block.source_seg;
 		copy_pos(route->current_pos, pos);
 	}
-	if (!metadata_route_step_for_trigger(view, state, route, &step_block)) {
+	if (!metadata_route_step_for_trigger(view, state, route, &step_block, 1)) {
 		route->trigger_in_progress[step_block.trigger_num] = 0;
 		return 0;
 	}
 	route->trigger_in_progress[step_block.trigger_num] = 0;
 	return 1;
+}
+
+static void metadata_route_note_unresolved_block(
+    metadata_route_context *route,
+    const metadata_route_block *block)
+{
+	if (!route || !block || route->unresolved_block_valid)
+		return;
+	if (block->kind != METADATA_ROUTE_BLOCK_TRIGGER &&
+	    block->kind != METADATA_ROUTE_BLOCK_HIDDEN_DOOR)
+		return;
+	route->unresolved_block = *block;
+	route->unresolved_block_valid = 1;
+}
+
+static int metadata_route_append_unresolved_block(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route)
+{
+	if (!route || !route->unresolved_block_valid)
+		return 0;
+	if (route->unresolved_block.kind == METADATA_ROUTE_BLOCK_TRIGGER)
+		return metadata_route_step_for_trigger(view, state, route, &route->unresolved_block, 0);
+	if (route->unresolved_block.kind == METADATA_ROUTE_BLOCK_HIDDEN_DOOR)
+		return metadata_route_append_hidden_door_step(view, state, route, &route->unresolved_block);
+	return 0;
 }
 
 static int metadata_route_move_to_target(
@@ -2275,19 +2368,26 @@ static int metadata_route_move_to_target(
 				return 0;
 			}
 		} else if (path.first_block.kind == METADATA_ROUTE_BLOCK_TRIGGER) {
+			int saved_unresolved_block_valid = route->unresolved_block_valid;
+			metadata_route_block saved_unresolved_block = route->unresolved_block;
+
 			if (!metadata_route_fire_trigger(view, state, route, &path.first_block, depth + 1)) {
 				if (metadata_route_trigger_valid(path.first_block.trigger_num) &&
 				    metadata_route_problem_is_avoidable_trigger_dependency(state->route_problem)) {
+					route->unresolved_block_valid = saved_unresolved_block_valid;
+					route->unresolved_block = saved_unresolved_block;
 					snprintf(last_dependency_problem, sizeof(last_dependency_problem), "%s", state->route_problem);
 					state->route_problem[0] = '\0';
 					route->avoided_triggers[path.first_block.trigger_num] = 1;
 					continue;
 				}
+				metadata_route_note_unresolved_block(route, &path.first_block);
 				memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
 				return 0;
 			}
 		} else if (path.first_block.kind == METADATA_ROUTE_BLOCK_HIDDEN_DOOR) {
 			if (!metadata_route_open_hidden_door(view, state, route, &path.first_block, depth + 1)) {
+				metadata_route_note_unresolved_block(route, &path.first_block);
 				memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
 				return 0;
 			}
@@ -2394,6 +2494,11 @@ static void collect_guidebot_info(const level_metadata_scan_view *view, level_me
 		return;
 	memset(&route, 0, sizeof(route));
 	route.current_seg = view->start_segment;
+	route.key_mask = view->initial_key_mask &
+	                 (LEVEL_METADATA_KEY_MASK_BLUE |
+	                  LEVEL_METADATA_KEY_MASK_RED |
+	                  LEVEL_METADATA_KEY_MASK_GOLD);
+	route.control_center_destroyed = view->initial_control_center_destroyed != 0;
 	if (valid_segment(view, route.current_seg) && view->start_position)
 		start_valid = view->start_position(view->user, route.current_pos);
 	obj_count = view->object_count(view->user);
@@ -2505,6 +2610,11 @@ static void collect_route_chain(const level_metadata_scan_view *view, level_meta
 	}
 	memset(&route, 0, sizeof(route));
 	route.current_seg = view->start_segment;
+	route.key_mask = view->initial_key_mask &
+	                 (LEVEL_METADATA_KEY_MASK_BLUE |
+	                  LEVEL_METADATA_KEY_MASK_RED |
+	                  LEVEL_METADATA_KEY_MASK_GOLD);
+	route.control_center_destroyed = view->initial_control_center_destroyed != 0;
 	if (!view->start_position(view->user, route.current_pos)) {
 		metadata_route_set_problem(state, "missing player start");
 		return;
@@ -2522,11 +2632,13 @@ static void collect_route_chain(const level_metadata_scan_view *view, level_meta
 			goto route_partial;
 		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_BOSS, &boss, "Boss robot"))
 			goto route_partial;
+		route.control_center_destroyed = 1;
 	} else if (found_reactor) {
 		if (!metadata_route_move_to_target_or_visible(view, state, &route, &reactor, 0))
 			goto route_partial;
 		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_REACTOR, &reactor, "Reactor"))
 			goto route_partial;
+		route.control_center_destroyed = 1;
 	}
 	exit_index = metadata_route_select_target(view, &route, exit_targets, exit_count);
 	if (exit_index < 0) {
@@ -2541,6 +2653,7 @@ static void collect_route_chain(const level_metadata_scan_view *view, level_meta
 	return;
 
 route_partial:
+	metadata_route_append_unresolved_block(view, state, &route);
 	state->route_status = state->route_step_count > 1 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
 	if (!state->route_problem[0])
 		metadata_route_set_problem(state, "route incomplete");
@@ -2554,7 +2667,10 @@ static void collect_travel_time(const level_metadata_scan_view *view, level_meta
 	int found_reactor;
 	int current_seg = view->start_segment;
 	int current_pos[3];
-	int key_mask = 0;
+	int key_mask = view->initial_key_mask &
+	               (LEVEL_METADATA_KEY_MASK_BLUE |
+	                LEVEL_METADATA_KEY_MASK_RED |
+	                LEVEL_METADATA_KEY_MASK_GOLD);
 	int i;
 
 	state->travel_status = LEVEL_METADATA_TRAVEL_FAILED;
@@ -2607,6 +2723,99 @@ static void collect_travel_time(const level_metadata_scan_view *view, level_meta
 		         state->travel_status == LEVEL_METADATA_TRAVEL_OK ? "no reactor, exit exists" : "missing reactor");
 	}
 	state->travel_time_seconds = (int) floor(state->travel_distance / LEVEL_METADATA_SHIP_SPEED_UNITS_PER_SECOND + 0.5);
+}
+
+static void level_metadata_route_result_clear(level_metadata_state *state)
+{
+	if (!state)
+		return;
+	state->route_status = LEVEL_METADATA_TRAVEL_FAILED;
+	state->route_problem[0] = '\0';
+	state->route_step_count = 0;
+	memset(state->route_steps, 0, sizeof(state->route_steps));
+}
+
+int level_metadata_scan_end_route(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state)
+{
+	if (!state || !view_is_valid(view))
+		return 0;
+	level_metadata_route_result_clear(state);
+	collect_segment_centers(view);
+	collect_route_chain(view, state);
+	return state->route_status == LEVEL_METADATA_TRAVEL_OK;
+}
+
+int level_metadata_scan_route_to_segment(
+    const level_metadata_scan_view *view,
+    int target_seg,
+    level_metadata_state *state)
+{
+	metadata_route_context route;
+	metadata_target reactor;
+	metadata_target boss;
+	metadata_target target;
+	int hostage_count = 0;
+	int exit_count = 0;
+	int found_reactor;
+	int found_boss;
+
+	level_metadata_state_clear(state);
+	if (!state || !view_is_valid(view) || !valid_segment(view, target_seg))
+		return 0;
+	collect_segment_centers(view);
+	found_reactor = collect_route_targets(view, hostage_targets, &hostage_count, &reactor, exit_targets, &exit_count);
+	found_boss = metadata_route_find_boss_target(view, &boss);
+	memset(&route, 0, sizeof(route));
+	route.current_seg = view->start_segment;
+	route.key_mask = view->initial_key_mask &
+	                 (LEVEL_METADATA_KEY_MASK_BLUE |
+	                  LEVEL_METADATA_KEY_MASK_RED |
+	                  LEVEL_METADATA_KEY_MASK_GOLD);
+	route.control_center_destroyed = view->initial_control_center_destroyed != 0;
+	state->route_status = LEVEL_METADATA_TRAVEL_FAILED;
+	if (!valid_segment(view, route.current_seg) ||
+	    !view->start_position ||
+	    !view->start_position(view->user, route.current_pos)) {
+		metadata_route_set_problem(state, "missing player start");
+		return 0;
+	}
+	metadata_route_append_step(view, state, &route, LEVEL_METADATA_ROUTE_START, "Start", route.current_seg, -1);
+	metadata_route_acquire_ordered_keys(view, state, &route, 0);
+	if (found_boss) {
+		if (!metadata_route_move_to_target_or_visible(view, state, &route, &boss, 0))
+			goto route_partial;
+		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_BOSS, &boss, "Boss robot"))
+			goto route_partial;
+		route.control_center_destroyed = 1;
+	} else if (found_reactor) {
+		if (!metadata_route_move_to_target_or_visible(view, state, &route, &reactor, 0))
+			goto route_partial;
+		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_REACTOR, &reactor, "Reactor"))
+			goto route_partial;
+		route.control_center_destroyed = 1;
+	}
+	if (!segment_center_valid[target_seg]) {
+		metadata_route_set_problem(state, "unexplored target missing center");
+		goto route_partial;
+	}
+	target.seg = target_seg;
+	copy_pos(target.pos, segment_centers[target_seg]);
+	target.visited = 0;
+	if (!metadata_route_move_to_target(view, state, &route, target.seg, target.pos, 0))
+		goto route_partial;
+	if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_UNEXPLORED, &target, "Unexplored"))
+		goto route_partial;
+	state->route_status = LEVEL_METADATA_TRAVEL_OK;
+	return 1;
+
+route_partial:
+	metadata_route_append_unresolved_block(view, state, &route);
+	state->route_status = state->route_step_count > 1 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
+	if (!state->route_problem[0])
+		metadata_route_set_problem(state, "unexplored route incomplete");
+	return 0;
 }
 
 int level_metadata_scan_level(const level_metadata_scan_view *view, level_metadata_state *state)

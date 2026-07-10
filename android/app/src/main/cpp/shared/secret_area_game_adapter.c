@@ -5,7 +5,9 @@
 #include <string.h>
 
 #include "bm.h"
+#include "cntrlcen.h"
 #include "effects.h"
+#include "game.h"
 #include "gameseg.h"
 #include "gameseq.h"
 #include "fvi.h"
@@ -19,10 +21,17 @@
 #include "segment.h"
 #include "switch.h"
 #include "wall.h"
+#ifdef NETWORK
+#include "multi.h"
+#endif
 
 static secret_area_state Secret_area_state;
 static level_metadata_state Level_metadata_state;
 static int Secret_area_reveal_unfound;
+
+typedef struct level_metadata_game_context {
+	int start_objnum;
+} level_metadata_game_context;
 
 static void secret_area_trace(const char *stage)
 {
@@ -50,6 +59,25 @@ static int secret_area_reverse_side(void *user, int seg, int child)
 	if (seg < 0 || seg >= Num_segments || child < 0 || child >= Num_segments)
 		return -1;
 	return find_connect_side(&Segments[seg], &Segments[child]);
+}
+
+static int secret_area_side_is_flyable(void *user, int seg, int side)
+{
+	(void) user;
+	if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	return (WALL_IS_DOORWAY(&Segments[seg], side) & WID_FLY_FLAG) != 0;
+}
+
+static int secret_area_side_is_control_center_link(void *user, int seg, int side)
+{
+	int i;
+
+	(void) user;
+	for (i = 0; i < ControlCenterTriggers.num_links; ++i)
+		if (ControlCenterTriggers.seg[i] == seg && ControlCenterTriggers.side[i] == side)
+			return 1;
+	return 0;
 }
 
 static int secret_area_wall_num(void *user, int seg, int side)
@@ -197,32 +225,76 @@ static int secret_area_segment_vertex(void *user, int seg, int index, int xyz[3]
 	return 1;
 }
 
+static int secret_area_object_start(int objnum, int *seg, int xyz[3])
+{
+	if (objnum < 0 || objnum >= num_objects || Objects[objnum].type == OBJ_NONE)
+		return 0;
+	if (seg)
+		*seg = Objects[objnum].segnum;
+	if (xyz) {
+		xyz[0] = Objects[objnum].pos.x;
+		xyz[1] = Objects[objnum].pos.y;
+		xyz[2] = Objects[objnum].pos.z;
+	}
+	return 1;
+}
+
 static int secret_area_player_start(int *seg, int xyz[3])
 {
 	int objnum;
+	int local_objnum = Players[Player_num].objnum;
+
+	if (local_objnum >= 0 && local_objnum < num_objects &&
+	    (Objects[local_objnum].type == OBJ_PLAYER || Objects[local_objnum].type == OBJ_GHOST))
+		return secret_area_object_start(local_objnum, seg, xyz);
 
 	for (objnum = 0; objnum < num_objects; ++objnum) {
 		int type = Objects[objnum].type;
 		if (type != OBJ_PLAYER && type != OBJ_GHOST)
 			continue;
-		if (seg)
-			*seg = Objects[objnum].segnum;
-		if (xyz) {
-			xyz[0] = Objects[objnum].pos.x;
-			xyz[1] = Objects[objnum].pos.y;
-			xyz[2] = Objects[objnum].pos.z;
-		}
-		return 1;
+		return secret_area_object_start(objnum, seg, xyz);
 	}
 	return 0;
 }
 
+static int secret_area_metadata_start(void *user, int *seg, int xyz[3])
+{
+	const level_metadata_game_context *context = (const level_metadata_game_context *) user;
+
+	if (context && secret_area_object_start(context->start_objnum, seg, xyz))
+		return 1;
+	return secret_area_player_start(seg, xyz);
+}
+
+static int secret_area_current_key_mask(void)
+{
+	int flags = Players[Player_num].flags;
+	int key_mask = 0;
+#ifdef NETWORK
+	int i;
+
+	if (Game_mode & GM_MULTI_COOP) {
+		flags = 0;
+		for (i = 0; i < MAX_PLAYERS; i++)
+			if (Players[i].connected == CONNECT_PLAYING &&
+			    !(Netgame.host_is_obs && i == 0))
+				flags |= Players[i].flags;
+	}
+#endif
+	if (flags & PLAYER_FLAGS_BLUE_KEY)
+		key_mask |= LEVEL_METADATA_KEY_MASK_BLUE;
+	if (flags & PLAYER_FLAGS_RED_KEY)
+		key_mask |= LEVEL_METADATA_KEY_MASK_RED;
+	if (flags & PLAYER_FLAGS_GOLD_KEY)
+		key_mask |= LEVEL_METADATA_KEY_MASK_GOLD;
+	return key_mask;
+}
+
 static int secret_area_start_position(void *user, int xyz[3])
 {
-	(void) user;
 	if (!xyz)
 		return 0;
-	if (secret_area_player_start(NULL, xyz))
+	if (secret_area_metadata_start(user, NULL, xyz))
 		return 1;
 	xyz[0] = Player_init[Player_num].pos.x;
 	xyz[1] = Player_init[Player_num].pos.y;
@@ -396,27 +468,30 @@ static int secret_area_target_visible_from_segment(void *user, int seg, const in
 	return find_vector_intersection(&query, &hit_data) == HIT_NONE;
 }
 
-#ifdef DXX_BUILD_DESCENT_II
 static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
 {
 	int i;
 
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
 		return 0;
+#ifdef DXX_BUILD_DESCENT_II
 	if (Triggers[trigger_num].type != TT_OPEN_DOOR &&
 	    Triggers[trigger_num].type != TT_OPEN_WALL &&
 	    Triggers[trigger_num].type != TT_ILLUSORY_WALL)
 		return 0;
+#else
+	if ((Triggers[trigger_num].flags &
+	     (TRIGGER_CONTROL_DOORS | TRIGGER_ILLUSION_OFF)) == 0)
+		return 0;
+#endif
 	for (i = 0; i < Triggers[trigger_num].num_links; ++i)
 		if (Triggers[trigger_num].seg[i] == seg && Triggers[trigger_num].side[i] == side)
 			return 1;
 	return 0;
 }
-#endif
 
 static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_index, int allow_keyed_target)
 {
-#ifdef DXX_BUILD_DESCENT_II
 	int trigger_num;
 	int wall_num;
 	int found = 0;
@@ -441,12 +516,6 @@ static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_
 			found++;
 		}
 	}
-#else
-	(void) seg;
-	(void) side;
-	(void) wanted_index;
-	(void) allow_keyed_target;
-#endif
 	return -1;
 }
 
@@ -517,63 +586,87 @@ static int secret_area_trigger_type(void *user, int trigger_num)
 		return -1;
 	return Triggers[trigger_num].type;
 #else
-	(void) trigger_num;
+	int flags;
+
+	if (trigger_num < 0 || trigger_num >= Num_triggers)
+		return -1;
+	flags = Triggers[trigger_num].flags;
+	if (flags & TRIGGER_CONTROL_DOORS)
+		return TRIGGER_CONTROL_DOORS;
+	if (flags & TRIGGER_ILLUSION_OFF)
+		return TRIGGER_ILLUSION_OFF;
+	if (flags & TRIGGER_EXIT)
+		return TRIGGER_EXIT;
+	if (flags & TRIGGER_SECRET_EXIT)
+		return TRIGGER_SECRET_EXIT;
 	return -1;
 #endif
+}
+
+static int secret_area_trigger_flags(void *user, int trigger_num)
+{
+	(void) user;
+	if (trigger_num < 0 || trigger_num >= Num_triggers)
+		return 0;
+	return Triggers[trigger_num].flags;
 }
 
 static int secret_area_trigger_link_count(void *user, int trigger_num)
 {
 	(void) user;
-#ifdef DXX_BUILD_DESCENT_II
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
 		return 0;
 	return Triggers[trigger_num].num_links;
-#else
-	(void) trigger_num;
-	return 0;
-#endif
 }
 
 static int secret_area_trigger_link_segment(void *user, int trigger_num, int link_index)
 {
 	(void) user;
-#ifdef DXX_BUILD_DESCENT_II
 	if (trigger_num < 0 || trigger_num >= Num_triggers ||
 	    link_index < 0 || link_index >= Triggers[trigger_num].num_links)
 		return -1;
 	return Triggers[trigger_num].seg[link_index];
-#else
-	(void) trigger_num;
-	(void) link_index;
-	return -1;
-#endif
 }
 
 static int secret_area_trigger_link_side(void *user, int trigger_num, int link_index)
 {
 	(void) user;
-#ifdef DXX_BUILD_DESCENT_II
 	if (trigger_num < 0 || trigger_num >= Num_triggers ||
 	    link_index < 0 || link_index >= Triggers[trigger_num].num_links)
 		return -1;
 	return Triggers[trigger_num].side[link_index];
-#else
-	(void) trigger_num;
-	(void) link_index;
-	return -1;
-#endif
 }
 
-void level_metadata_rescan_current_level(void)
+static void level_metadata_copy_route(const level_metadata_state *route_state)
 {
+	if (!route_state)
+		return;
+	Level_metadata_state.route_status = route_state->route_status;
+	snprintf(Level_metadata_state.route_problem,
+	         sizeof(Level_metadata_state.route_problem),
+	         "%s",
+	         route_state->route_problem);
+	Level_metadata_state.route_step_count = route_state->route_step_count;
+	memcpy(Level_metadata_state.route_steps,
+	       route_state->route_steps,
+	       sizeof(Level_metadata_state.route_steps));
+}
+
+static void level_metadata_rescan_current_level_internal(int start_objnum, int route_target_seg, int route_only)
+{
+	level_metadata_game_context context;
 	level_metadata_scan_view view;
+	level_metadata_state route_state;
 	int start_segment;
 
+	context.start_objnum = start_objnum;
 	memset(&view, 0, sizeof(view));
+	view.user = &context;
 	view.num_segments = Num_segments;
 	view.num_walls = Num_walls;
-	view.start_segment = secret_area_player_start(&start_segment, NULL) ? start_segment : Player_init[Player_num].segnum;
+	view.start_segment = secret_area_metadata_start(&context, &start_segment, NULL) ? start_segment : Player_init[Player_num].segnum;
+	view.initial_key_mask = secret_area_current_key_mask();
+	view.initial_control_center_destroyed = Control_center_destroyed != 0;
 	view.segment_special_fuelcen = SEGMENT_IS_FUELCEN;
 	view.segment_special_robotmaker = SEGMENT_IS_ROBOTMAKER;
 	view.segment_special_control_center = SEGMENT_IS_CONTROLCEN;
@@ -606,9 +699,20 @@ void level_metadata_rescan_current_level(void)
 	view.trigger_type_unlock_door = TT_UNLOCK_DOOR;
 	view.trigger_type_open_wall = TT_OPEN_WALL;
 	view.trigger_type_illusory_wall = TT_ILLUSORY_WALL;
+	view.trigger_flag_disabled = TF_DISABLED;
+#else
+	view.trigger_type_open_door = TRIGGER_CONTROL_DOORS;
+	view.trigger_type_exit = TRIGGER_EXIT;
+	view.trigger_type_secret_exit = TRIGGER_SECRET_EXIT;
+	view.trigger_type_illusion_off = TRIGGER_ILLUSION_OFF;
+	view.trigger_type_unlock_door = -2;
+	view.trigger_type_open_wall = -3;
+	view.trigger_type_illusory_wall = -4;
 #endif
 	view.segment_child = secret_area_segment_child;
 	view.reverse_side = secret_area_reverse_side;
+	view.side_is_flyable = secret_area_side_is_flyable;
+	view.side_is_control_center_link = secret_area_side_is_control_center_link;
 	view.wall_num = secret_area_wall_num;
 	view.wall_segment = secret_area_wall_segment;
 	view.wall_side = secret_area_wall_side;
@@ -638,12 +742,43 @@ void level_metadata_rescan_current_level(void)
 	view.triggered_side_opener_count = secret_area_metadata_triggered_side_opener_count;
 	view.triggered_side_opener_wall_num = secret_area_metadata_triggered_side_opener_wall_num;
 	view.trigger_type = secret_area_trigger_type;
+	view.trigger_flags = secret_area_trigger_flags;
 	view.trigger_link_count = secret_area_trigger_link_count;
 	view.trigger_link_segment = secret_area_trigger_link_segment;
 	view.trigger_link_side = secret_area_trigger_link_side;
 	view.target_visible_from_segment = secret_area_target_visible_from_segment;
 	view.wall_is_shootable_trigger = secret_area_wall_is_shootable_trigger;
-	level_metadata_scan_level(&view, &Level_metadata_state);
+	if (!route_only)
+		level_metadata_scan_level(&view, &Level_metadata_state);
+	if (route_only) {
+		if (route_target_seg >= 0)
+			level_metadata_scan_route_to_segment(&view, route_target_seg, &route_state);
+		else {
+			level_metadata_state_clear(&route_state);
+			level_metadata_scan_end_route(&view, &route_state);
+		}
+		level_metadata_copy_route(&route_state);
+	}
+}
+
+void level_metadata_rescan_current_level(void)
+{
+	level_metadata_rescan_current_level_internal(-1, -1, 0);
+}
+
+void level_metadata_rescan_current_level_from_object(int objnum)
+{
+	level_metadata_rescan_current_level_internal(objnum, -1, 0);
+}
+
+void level_metadata_rescan_route_from_object(int objnum)
+{
+	level_metadata_rescan_current_level_internal(objnum, -1, 1);
+}
+
+void level_metadata_rescan_route_to_segment_from_object(int objnum, int target_seg)
+{
+	level_metadata_rescan_current_level_internal(objnum, target_seg, 1);
 }
 
 void secret_area_rescan_current_level(void)
