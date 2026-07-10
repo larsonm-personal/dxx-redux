@@ -61,6 +61,7 @@ static int test_trigger_link_seg[TEST_TRIGGERS][LEVEL_METADATA_MAX_ROUTE_LINKS];
 static int test_trigger_link_sides[TEST_TRIGGERS][LEVEL_METADATA_MAX_ROUTE_LINKS];
 static int test_side_flyable[TEST_SEGMENTS][TEST_SIDES];
 static int test_control_center_link[TEST_SEGMENTS][TEST_SIDES];
+static int test_segment_explored[TEST_SEGMENTS];
 
 static void test_reset(void)
 {
@@ -97,7 +98,10 @@ static void test_reset(void)
 		test_object_seg[object] = -1;
 	}
 	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
+	{
 		test_segment_special_values[seg] = 0;
+		test_segment_explored[seg] = 0;
+	}
 	for (trigger = 0; trigger < TEST_TRIGGERS; ++trigger) {
 		test_trigger_type[trigger] = TEST_TRIGGER_OPEN_WALL;
 		test_trigger_flags[trigger] = 0;
@@ -128,6 +132,12 @@ static int test_segment_child(void *user, int seg, int side)
 	if (seg < 0 || seg >= TEST_SEGMENTS || side < 0 || side >= TEST_SIDES)
 		return -1;
 	return test_children[seg][side];
+}
+
+static int test_segment_is_explored(void *user, int seg)
+{
+	(void) user;
+	return seg >= 0 && seg < TEST_SEGMENTS && test_segment_explored[seg];
 }
 
 static int test_side_is_flyable(void *user, int seg, int side)
@@ -431,6 +441,7 @@ static level_metadata_scan_view test_view(void)
 	view.trigger_type_exit = TEST_TRIGGER_EXIT;
 	view.trigger_flag_disabled = TEST_TRIGGER_FLAG_DISABLED;
 	view.segment_child = test_segment_child;
+	view.segment_is_explored = test_segment_is_explored;
 	view.reverse_side = test_reverse_side;
 	view.side_is_flyable = test_side_is_flyable;
 	view.side_is_control_center_link = test_side_is_control_center_link;
@@ -939,6 +950,97 @@ static int test_segment_route_reuses_trigger_dependencies(void)
 	return failures;
 }
 
+static int test_unexplored_route_acquires_key_for_largest_component(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	level_metadata_unexplored_route result;
+	int failures = 0;
+
+	test_reset();
+	test_segment_explored[0] = 1;
+	test_children[0][2] = 3;
+	test_children[3][1] = 0;
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_type[0] = TEST_WALL_DOOR;
+	test_wall_type[1] = TEST_WALL_DOOR;
+	test_wall_key[0] = TEST_KEY_BLUE;
+	test_wall_key[1] = TEST_KEY_BLUE;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	test_object_count_value = 1;
+	test_object_type[0] = TEST_OBJ_POWERUP;
+	test_object_id[0] = TEST_POWERUP_BLUE_KEY;
+	test_object_seg[0] = 0;
+	level_metadata_scan_unexplored_route(&view, &state, &result);
+	failures += expect_string("keyed unexplored status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("keyed unexplored component", 2, result.component_size);
+	failures += expect_int("keyed unexplored target", 1, result.target_seg);
+	failures += expect_int("keyed unexplored waypoint", 0, result.waypoint_seg);
+	failures += expect_int("keyed unexplored direct", 0, result.direct_reachable);
+	failures += expect_int("keyed unexplored steps", 3, state.route_step_count);
+	failures += expect_string("keyed unexplored key step", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_string("keyed unexplored terminal", "unexplored", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
+static int test_unexplored_route_keeps_hidden_wall_dependency(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	level_metadata_unexplored_route result;
+	int failures = 0;
+
+	test_reset();
+	test_segment_explored[0] = 1;
+	test_children[0][2] = 3;
+	test_children[3][1] = 0;
+	test_wall_nums[0][0] = 0;
+	test_wall_nums[1][1] = 1;
+	test_wall_type[0] = TEST_WALL_DOOR;
+	test_wall_type[1] = TEST_WALL_DOOR;
+	test_wall_key[0] = TEST_KEY_NONE;
+	test_wall_key[1] = TEST_KEY_NONE;
+	test_wall_clip_flags[0] = TEST_WALL_CLIP_HIDDEN;
+	test_wall_clip_flags[1] = TEST_WALL_CLIP_HIDDEN;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	test_wall_seg[1] = 1;
+	test_wall_sides[1] = 1;
+	level_metadata_scan_unexplored_route(&view, &state, &result);
+	failures += expect_string("hidden unexplored status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_int("hidden unexplored component", 2, result.component_size);
+	failures += expect_int("hidden unexplored target", 1, result.target_seg);
+	failures += expect_int("hidden unexplored waypoint", 0, result.waypoint_seg);
+	failures += expect_int("hidden unexplored direct", 0, result.direct_reachable);
+	failures += expect_int("hidden unexplored steps", 3, state.route_step_count);
+	failures += expect_string("hidden unexplored blocker", "hidden_door", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_int("hidden unexplored wall", 0, state.route_steps[1].wall_num);
+	failures += expect_string("hidden unexplored terminal", "unexplored", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
+static int test_unexplored_route_clears_target_when_fully_explored(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	level_metadata_unexplored_route result;
+	int failures = 0;
+	int seg;
+
+	test_reset();
+	for (seg = 0; seg < TEST_SEGMENTS; ++seg)
+		test_segment_explored[seg] = 1;
+	failures += expect_int("fully explored result", 0, level_metadata_scan_unexplored_route(&view, &state, &result));
+	failures += expect_int("fully explored target", -1, result.target_seg);
+	failures += expect_string("fully explored status", "failed", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("fully explored problem", "no unexplored area", state.route_problem);
+	return failures;
+}
+
 static int test_route_opens_control_center_links_after_reactor(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -1220,6 +1322,9 @@ int main(void)
 	failures += test_route_does_not_reoffer_disabled_trigger();
 	failures += test_route_promotes_unreachable_trigger_blocker();
 	failures += test_segment_route_reuses_trigger_dependencies();
+	failures += test_unexplored_route_acquires_key_for_largest_component();
+	failures += test_unexplored_route_keeps_hidden_wall_dependency();
+	failures += test_unexplored_route_clears_target_when_fully_explored();
 	failures += test_route_opens_control_center_links_after_reactor();
 	failures += test_route_accepts_any_fired_opener_for_side();
 	failures += test_route_hidden_door_step();

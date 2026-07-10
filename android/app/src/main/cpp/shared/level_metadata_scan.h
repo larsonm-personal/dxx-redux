@@ -114,6 +114,7 @@ typedef struct level_metadata_scan_view {
 	int trigger_flag_disabled;
 	void *user;
 	int (*segment_child)(void *user, int seg, int side);
+	int (*segment_is_explored)(void *user, int seg);
 	int (*reverse_side)(void *user, int seg, int child);
 	int (*side_is_flyable)(void *user, int seg, int side);
 	int (*side_is_control_center_link)(void *user, int seg, int side);
@@ -151,6 +152,13 @@ typedef struct level_metadata_scan_view {
 	int (*target_visible_from_segment)(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3]);
 	int (*wall_is_shootable_trigger)(void *user, int wall_num);
 } level_metadata_scan_view;
+
+typedef struct level_metadata_unexplored_route {
+	int component_size;
+	int target_seg;
+	int waypoint_seg;
+	int direct_reachable;
+} level_metadata_unexplored_route;
 
 typedef struct level_metadata_state {
 	int energy_center_segment_count;
@@ -190,6 +198,10 @@ void level_metadata_state_clear(level_metadata_state *state);
 int level_metadata_scan_level(const level_metadata_scan_view *view, level_metadata_state *state);
 int level_metadata_scan_end_route(const level_metadata_scan_view *view, level_metadata_state *state);
 int level_metadata_scan_route_to_segment(const level_metadata_scan_view *view, int target_seg, level_metadata_state *state);
+int level_metadata_scan_unexplored_route(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    level_metadata_unexplored_route *result);
 const char *level_metadata_travel_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

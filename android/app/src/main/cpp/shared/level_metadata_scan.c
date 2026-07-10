@@ -81,6 +81,11 @@ typedef struct metadata_route_progress_snapshot {
 
 static int component_id[LEVEL_METADATA_MAX_SEGMENTS];
 static int queue[LEVEL_METADATA_MAX_SEGMENTS];
+static int unexplored_component_size[LEVEL_METADATA_MAX_SEGMENTS];
+static int unexplored_component_target[LEVEL_METADATA_MAX_SEGMENTS];
+static double unexplored_component_distance[LEVEL_METADATA_MAX_SEGMENTS];
+static unsigned char unexplored_component_direct[LEVEL_METADATA_MAX_SEGMENTS];
+static unsigned char unexplored_component_tried[LEVEL_METADATA_MAX_SEGMENTS];
 static int energy_segments[LEVEL_METADATA_MAX_SEGMENTS];
 static int energy_centers[LEVEL_METADATA_MAX_SEGMENTS][3];
 static int energy_parent[LEVEL_METADATA_MAX_SEGMENTS];
@@ -1562,23 +1567,19 @@ static int metadata_route_edge_passable(
 	return 0;
 }
 
-static int metadata_route_find_path_forbidden_key(
+static int metadata_route_compute_paths(
     const level_metadata_scan_view *view,
     const metadata_route_context *route,
     int goal_seg,
-    const int goal_pos[3],
     int optimistic,
-    int forbidden_missing_key,
-    metadata_route_path *path)
+    int forbidden_missing_key)
 {
 	int heap_size = 0;
 	int seg;
 
-	metadata_route_clear_path(path);
 	if (!valid_segment(view, route->current_seg) ||
-	    !valid_segment(view, goal_seg) ||
 	    !segment_center_valid[route->current_seg] ||
-	    !segment_center_valid[goal_seg])
+	    (goal_seg >= 0 && (!valid_segment(view, goal_seg) || !segment_center_valid[goal_seg])))
 		return 0;
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		route_distance[seg] = DBL_MAX;
@@ -1592,7 +1593,7 @@ static int metadata_route_find_path_forbidden_key(
 	while (heap_size > 0) {
 		int cur = heap_pop(&heap_size);
 		int side;
-		if (cur == goal_seg)
+		if (goal_seg >= 0 && cur == goal_seg)
 			break;
 		route_closed[cur] = 1;
 		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
@@ -1618,7 +1619,20 @@ static int metadata_route_find_path_forbidden_key(
 				heap_push(&heap_size, child);
 		}
 	}
-	if (route_distance[goal_seg] == DBL_MAX)
+	return goal_seg < 0 || route_distance[goal_seg] != DBL_MAX;
+}
+
+static int metadata_route_find_path_forbidden_key(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int goal_seg,
+    const int goal_pos[3],
+    int optimistic,
+    int forbidden_missing_key,
+    metadata_route_path *path)
+{
+	metadata_route_clear_path(path);
+	if (!metadata_route_compute_paths(view, route, goal_seg, optimistic, forbidden_missing_key))
 		return 0;
 	if (path) {
 		int reversed[LEVEL_METADATA_MAX_SEGMENTS];
@@ -2592,7 +2606,12 @@ static int metadata_route_append_target_step(
 	return 1;
 }
 
-static void collect_route_chain(const level_metadata_scan_view *view, level_metadata_state *state)
+static int metadata_route_begin_progression(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    int require_exit,
+    int *exit_count_out)
 {
 	metadata_target reactor;
 	metadata_target boss;
@@ -2600,46 +2619,72 @@ static void collect_route_chain(const level_metadata_scan_view *view, level_meta
 	int exit_count = 0;
 	int found_reactor;
 	int found_boss;
-	int exit_index;
-	metadata_route_context route;
 
 	state->route_status = LEVEL_METADATA_TRAVEL_FAILED;
+	memset(route, 0, sizeof(*route));
+	if (exit_count_out)
+		*exit_count_out = 0;
 	if (!valid_segment(view, view->start_segment) || !view->start_position) {
 		metadata_route_set_problem(state, "missing player start");
-		return;
+		return 0;
 	}
-	memset(&route, 0, sizeof(route));
-	route.current_seg = view->start_segment;
-	route.key_mask = view->initial_key_mask &
-	                 (LEVEL_METADATA_KEY_MASK_BLUE |
-	                  LEVEL_METADATA_KEY_MASK_RED |
-	                  LEVEL_METADATA_KEY_MASK_GOLD);
-	route.control_center_destroyed = view->initial_control_center_destroyed != 0;
-	if (!view->start_position(view->user, route.current_pos)) {
+	route->current_seg = view->start_segment;
+	route->key_mask = view->initial_key_mask &
+	                  (LEVEL_METADATA_KEY_MASK_BLUE |
+	                   LEVEL_METADATA_KEY_MASK_RED |
+	                   LEVEL_METADATA_KEY_MASK_GOLD);
+	route->control_center_destroyed = view->initial_control_center_destroyed != 0;
+	if (!view->start_position(view->user, route->current_pos)) {
 		metadata_route_set_problem(state, "missing player start");
-		return;
+		return 0;
 	}
 	found_reactor = collect_route_targets(view, hostage_targets, &hostage_count, &reactor, exit_targets, &exit_count);
 	found_boss = metadata_route_find_boss_target(view, &boss);
-	metadata_route_append_step(view, state, &route, LEVEL_METADATA_ROUTE_START, "Start", route.current_seg, -1);
-	if (exit_count <= 0) {
+	if (exit_count_out)
+		*exit_count_out = exit_count;
+	if (!metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_START, "Start", route->current_seg, -1))
+		return 0;
+	if (require_exit && exit_count <= 0) {
 		metadata_route_set_problem(state, "missing exit");
-		return;
+		return 0;
 	}
-	metadata_route_acquire_ordered_keys(view, state, &route, 0);
+	metadata_route_acquire_ordered_keys(view, state, route, 0);
 	if (found_boss) {
-		if (!metadata_route_move_to_target_or_visible(view, state, &route, &boss, 0))
-			goto route_partial;
-		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_BOSS, &boss, "Boss robot"))
-			goto route_partial;
-		route.control_center_destroyed = 1;
+		if (!metadata_route_move_to_target_or_visible(view, state, route, &boss, 0))
+			return 0;
+		if (!metadata_route_append_target_step(view, state, route, LEVEL_METADATA_ROUTE_BOSS, &boss, "Boss robot"))
+			return 0;
+		route->control_center_destroyed = 1;
 	} else if (found_reactor) {
-		if (!metadata_route_move_to_target_or_visible(view, state, &route, &reactor, 0))
-			goto route_partial;
-		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_REACTOR, &reactor, "Reactor"))
-			goto route_partial;
-		route.control_center_destroyed = 1;
+		if (!metadata_route_move_to_target_or_visible(view, state, route, &reactor, 0))
+			return 0;
+		if (!metadata_route_append_target_step(view, state, route, LEVEL_METADATA_ROUTE_REACTOR, &reactor, "Reactor"))
+			return 0;
+		route->control_center_destroyed = 1;
 	}
+	return 1;
+}
+
+static void metadata_route_finish_partial(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    const char *problem)
+{
+	metadata_route_append_unresolved_block(view, state, route);
+	state->route_status = state->route_step_count > 1 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
+	if (!state->route_problem[0])
+		metadata_route_set_problem(state, problem);
+}
+
+static void collect_route_chain(const level_metadata_scan_view *view, level_metadata_state *state)
+{
+	metadata_route_context route;
+	int exit_count = 0;
+	int exit_index;
+
+	if (!metadata_route_begin_progression(view, state, &route, 1, &exit_count))
+		goto route_partial;
 	exit_index = metadata_route_select_target(view, &route, exit_targets, exit_count);
 	if (exit_index < 0) {
 		metadata_route_set_problem(state, "exit unreachable");
@@ -2653,10 +2698,7 @@ static void collect_route_chain(const level_metadata_scan_view *view, level_meta
 	return;
 
 route_partial:
-	metadata_route_append_unresolved_block(view, state, &route);
-	state->route_status = state->route_step_count > 1 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
-	if (!state->route_problem[0])
-		metadata_route_set_problem(state, "route incomplete");
+	metadata_route_finish_partial(view, state, &route, "route incomplete");
 }
 
 static void collect_travel_time(const level_metadata_scan_view *view, level_metadata_state *state)
@@ -2753,49 +2795,14 @@ int level_metadata_scan_route_to_segment(
     level_metadata_state *state)
 {
 	metadata_route_context route;
-	metadata_target reactor;
-	metadata_target boss;
 	metadata_target target;
-	int hostage_count = 0;
-	int exit_count = 0;
-	int found_reactor;
-	int found_boss;
 
 	level_metadata_state_clear(state);
 	if (!state || !view_is_valid(view) || !valid_segment(view, target_seg))
 		return 0;
 	collect_segment_centers(view);
-	found_reactor = collect_route_targets(view, hostage_targets, &hostage_count, &reactor, exit_targets, &exit_count);
-	found_boss = metadata_route_find_boss_target(view, &boss);
-	memset(&route, 0, sizeof(route));
-	route.current_seg = view->start_segment;
-	route.key_mask = view->initial_key_mask &
-	                 (LEVEL_METADATA_KEY_MASK_BLUE |
-	                  LEVEL_METADATA_KEY_MASK_RED |
-	                  LEVEL_METADATA_KEY_MASK_GOLD);
-	route.control_center_destroyed = view->initial_control_center_destroyed != 0;
-	state->route_status = LEVEL_METADATA_TRAVEL_FAILED;
-	if (!valid_segment(view, route.current_seg) ||
-	    !view->start_position ||
-	    !view->start_position(view->user, route.current_pos)) {
-		metadata_route_set_problem(state, "missing player start");
-		return 0;
-	}
-	metadata_route_append_step(view, state, &route, LEVEL_METADATA_ROUTE_START, "Start", route.current_seg, -1);
-	metadata_route_acquire_ordered_keys(view, state, &route, 0);
-	if (found_boss) {
-		if (!metadata_route_move_to_target_or_visible(view, state, &route, &boss, 0))
-			goto route_partial;
-		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_BOSS, &boss, "Boss robot"))
-			goto route_partial;
-		route.control_center_destroyed = 1;
-	} else if (found_reactor) {
-		if (!metadata_route_move_to_target_or_visible(view, state, &route, &reactor, 0))
-			goto route_partial;
-		if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_REACTOR, &reactor, "Reactor"))
-			goto route_partial;
-		route.control_center_destroyed = 1;
-	}
+	if (!metadata_route_begin_progression(view, state, &route, 0, NULL))
+		goto route_partial;
 	if (!segment_center_valid[target_seg]) {
 		metadata_route_set_problem(state, "unexplored target missing center");
 		goto route_partial;
@@ -2811,10 +2818,189 @@ int level_metadata_scan_route_to_segment(
 	return 1;
 
 route_partial:
-	metadata_route_append_unresolved_block(view, state, &route);
-	state->route_status = state->route_step_count > 1 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
-	if (!state->route_problem[0])
-		metadata_route_set_problem(state, "unexplored route incomplete");
+	metadata_route_finish_partial(view, state, &route, "unexplored route incomplete");
+	return 0;
+}
+
+static void metadata_unexplored_route_clear(level_metadata_unexplored_route *result)
+{
+	if (!result)
+		return;
+	memset(result, 0, sizeof(*result));
+	result->target_seg = -1;
+	result->waypoint_seg = -1;
+}
+
+static int metadata_route_collect_unexplored_components(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route)
+{
+	int component_count = 0;
+	int seg;
+
+	for (seg = 0; seg < view->num_segments; ++seg)
+		component_id[seg] = -1;
+	for (seg = 0; seg < view->num_segments; ++seg) {
+		int qhead;
+		int qtail;
+
+		if (component_id[seg] >= 0 || view->segment_is_explored(view->user, seg))
+			continue;
+		qhead = 0;
+		qtail = 0;
+		queue[qtail++] = seg;
+		component_id[seg] = component_count;
+		unexplored_component_size[component_count] = 0;
+		while (qhead < qtail) {
+			int current = queue[qhead++];
+			int side;
+
+			unexplored_component_size[component_count]++;
+			for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+				int child = view->segment_child(view->user, current, side);
+
+				if (!valid_segment(view, child) ||
+				    component_id[child] >= 0 ||
+				    view->segment_is_explored(view->user, child) ||
+				    !metadata_route_edge_passable(view, route, current, side, 1, -1, NULL))
+					continue;
+				component_id[child] = component_count;
+				queue[qtail++] = child;
+			}
+		}
+		component_count++;
+	}
+	return component_count;
+}
+
+static void metadata_route_update_unexplored_candidate(int component, int seg, double distance, int direct)
+{
+	if (component < 0 ||
+	    (unexplored_component_target[component] >= 0 &&
+	     (distance > unexplored_component_distance[component] ||
+	      (distance == unexplored_component_distance[component] &&
+	       seg >= unexplored_component_target[component]))))
+		return;
+	unexplored_component_target[component] = seg;
+	unexplored_component_distance[component] = distance;
+	unexplored_component_direct[component] = (unsigned char) direct;
+}
+
+static void metadata_route_find_unexplored_candidates(
+    const level_metadata_scan_view *view,
+    const metadata_route_context *route,
+    int component_count)
+{
+	int component;
+	int seg;
+
+	for (component = 0; component < component_count; ++component) {
+		unexplored_component_target[component] = -1;
+		unexplored_component_distance[component] = DBL_MAX;
+		unexplored_component_direct[component] = 0;
+		unexplored_component_tried[component] = 0;
+	}
+	metadata_route_compute_paths(view, route, -1, 0, -1);
+	for (seg = 0; seg < view->num_segments; ++seg) {
+		component = component_id[seg];
+		if (component >= 0 && route_distance[seg] != DBL_MAX)
+			metadata_route_update_unexplored_candidate(component, seg, route_distance[seg], 1);
+	}
+	metadata_route_compute_paths(view, route, -1, 1, -1);
+	for (seg = 0; seg < view->num_segments; ++seg) {
+		component = component_id[seg];
+		if (component >= 0 &&
+		    unexplored_component_target[component] < 0 &&
+		    route_distance[seg] != DBL_MAX)
+			metadata_route_update_unexplored_candidate(component, seg, route_distance[seg], 0);
+	}
+}
+
+static int metadata_route_unexplored_candidate_is_better(int candidate, int best)
+{
+	if (best < 0)
+		return 1;
+	if (unexplored_component_size[candidate] != unexplored_component_size[best])
+		return unexplored_component_size[candidate] > unexplored_component_size[best];
+	if (unexplored_component_direct[candidate] != unexplored_component_direct[best])
+		return unexplored_component_direct[candidate] > unexplored_component_direct[best];
+	if (unexplored_component_distance[candidate] != unexplored_component_distance[best])
+		return unexplored_component_distance[candidate] < unexplored_component_distance[best];
+	return unexplored_component_target[candidate] < unexplored_component_target[best];
+}
+
+static int metadata_route_select_unexplored_candidate(int component_count)
+{
+	int best = -1;
+	int component;
+
+	for (component = 0; component < component_count; ++component) {
+		if (unexplored_component_tried[component] ||
+		    unexplored_component_target[component] < 0)
+			continue;
+		if (metadata_route_unexplored_candidate_is_better(component, best))
+			best = component;
+	}
+	return best;
+}
+
+int level_metadata_scan_unexplored_route(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    level_metadata_unexplored_route *result)
+{
+	metadata_route_context route;
+	metadata_route_progress_snapshot prefix;
+	int component_count;
+
+	level_metadata_state_clear(state);
+	metadata_unexplored_route_clear(result);
+	if (!state || !view_is_valid(view))
+		return 0;
+	if (!view->segment_is_explored) {
+		metadata_route_set_problem(state, "missing explored segment state");
+		return 0;
+	}
+	collect_segment_centers(view);
+	if (!metadata_route_begin_progression(view, state, &route, 0, NULL))
+		goto route_partial;
+	component_count = metadata_route_collect_unexplored_components(view, &route);
+	if (component_count <= 0) {
+		metadata_route_set_problem(state, "no unexplored area");
+		goto route_partial;
+	}
+	metadata_route_find_unexplored_candidates(view, &route, component_count);
+	metadata_route_save_progress(state, &route, &prefix);
+	for (;;) {
+		metadata_target target;
+		int component = metadata_route_select_unexplored_candidate(component_count);
+
+		if (component < 0)
+			break;
+		unexplored_component_tried[component] = 1;
+		metadata_route_restore_progress(state, &route, &prefix);
+		target.seg = unexplored_component_target[component];
+		copy_pos(target.pos, segment_centers[target.seg]);
+		target.visited = 0;
+		if (!metadata_route_move_to_target(view, state, &route, target.seg, target.pos, 0))
+			continue;
+		if (!metadata_route_append_target_step(
+		        view, state, &route, LEVEL_METADATA_ROUTE_UNEXPLORED, &target, "Unexplored"))
+			continue;
+		state->route_status = LEVEL_METADATA_TRAVEL_OK;
+		if (result) {
+			result->component_size = unexplored_component_size[component];
+			result->target_seg = target.seg;
+			result->waypoint_seg = state->route_step_count > 1 ? state->route_steps[1].seg : target.seg;
+			result->direct_reachable = unexplored_component_direct[component] && prefix.route_step_count == 1;
+		}
+		return 1;
+	}
+	metadata_route_restore_progress(state, &route, &prefix);
+	metadata_route_set_problem(state, "no reachable unexplored area");
+
+route_partial:
+	metadata_route_finish_partial(view, state, &route, "unexplored route incomplete");
 	return 0;
 }
 

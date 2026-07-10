@@ -202,9 +202,6 @@ typedef struct escort_unexplored_route_target {
 	int target_seg;
 	int waypoint_seg;
 	int direct_reachable;
-	int optimistic_distance;
-	int optimistic_cost;
-	int reachable_distance;
 } escort_unexplored_route_target;
 
 typedef struct escort_route_goal {
@@ -232,8 +229,6 @@ static int Escort_route_target_mode = ESCORT_ROUTE_TARGET_END_OF_LEVEL;
 static int Escort_route_target_mode_restore_pending;
 static const char *Escort_route_last_replan_reason = "level_start";
 
-static int escort_find_unexplored_route_target(escort_unexplored_route_target *target);
-
 static void escort_unexplored_route_target_clear(escort_unexplored_route_target *target)
 {
 	if (!target)
@@ -241,9 +236,6 @@ static void escort_unexplored_route_target_clear(escort_unexplored_route_target 
 	memset(target, 0, sizeof(*target));
 	target->target_seg = -1;
 	target->waypoint_seg = -1;
-	target->optimistic_distance = -1;
-	target->optimistic_cost = -1;
-	target->reachable_distance = -1;
 }
 
 static void escort_route_set_target_mode(int target_mode)
@@ -318,7 +310,6 @@ static const char *escort_route_goal_instruction(void)
 static int escort_start_default_goal_now(void);
 #endif
 static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int *selected_index);
-static int escort_route_unexplored_next_goal(int set_goal);
 static int escort_route_step_reachable(const level_metadata_route_step *step, int guidance_mode);
 static object *escort_route_reference_object(void);
 static int escort_owned_key_flags(void);
@@ -950,8 +941,10 @@ static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int
 		*selected_index = -1;
 	if (set_goal)
 		escort_route_clear_goal();
+	if (unexplored_mode && !Escort_unexplored_route_target.active)
+		return ESCORT_GOAL_UNSPECIFIED;
 	if (!metadata || metadata->route_step_count <= 0)
-		return unexplored_mode ? escort_route_unexplored_next_goal(set_goal) : ESCORT_GOAL_UNSPECIFIED;
+		return ESCORT_GOAL_UNSPECIFIED;
 	for (i = 0; i < metadata->route_step_count && i < LEVEL_METADATA_MAX_ROUTE_STEPS; i++) {
 		const level_metadata_route_step *step = &metadata->route_steps[i];
 		escort_route_step_analysis analysis;
@@ -998,8 +991,6 @@ static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int
 				return ESCORT_GOAL_UNSPECIFIED;
 		}
 	}
-	if (unexplored_mode)
-		return escort_route_unexplored_next_goal(set_goal);
 	return ESCORT_GOAL_UNSPECIFIED;
 }
 
@@ -1012,14 +1003,24 @@ static void escort_route_refresh_metadata(void)
 {
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED &&
 	    escort_is_companion_object(Buddy_objnum)) {
-		escort_unexplored_route_target target;
+		level_metadata_unexplored_route route;
 
-		if (escort_find_unexplored_route_target(&target)) {
-			Escort_unexplored_route_target = target;
-			level_metadata_rescan_route_to_segment_from_object(Buddy_objnum, target.target_seg);
+		if (level_metadata_rescan_unexplored_route_from_object(Buddy_objnum, &route)) {
+			escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
+			Escort_unexplored_route_target.active = 1;
+			Escort_unexplored_route_target.component_size = route.component_size;
+			Escort_unexplored_route_target.target_seg = route.target_seg;
+			Escort_unexplored_route_target.waypoint_seg = route.waypoint_seg;
+			Escort_unexplored_route_target.direct_reachable = route.direct_reachable;
+			ESCORT_DIAG("unexplored target component=%d target=%d waypoint=%d direct=%d",
+			            route.component_size,
+			            route.target_seg,
+			            route.waypoint_seg,
+			            route.direct_reachable);
 			return;
 		}
 		escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
+		return;
 	}
 	if (escort_is_companion_object(Buddy_objnum))
 		level_metadata_rescan_route_from_object(Buddy_objnum);
@@ -1550,277 +1551,6 @@ static int escort_find_nearest_reachable_goal_segment(object *objp, int goal_seg
 	ESCORT_DIAG("nearest guidebot fallback start=%d goal=%d target=%d dist=%d cost=%d reachable=%d",
 	            start_seg, goal_seg, best_seg, best_dist, best_cost, best_reachable_dist);
 	return best_seg;
-}
-
-static void escort_compute_live_reachable_dist(object *objp, int reachable_dist[MAX_SEGMENTS])
-{
-	int queue[MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT];
-	int qhead, qtail;
-	int i;
-
-	for (i = 0; i < MAX_SEGMENTS; i++)
-		reachable_dist[i] = -1;
-	if (!objp || !escort_valid_segment(objp->segnum) || objp->segnum >= MAX_SEGMENTS)
-		return;
-
-	qhead = qtail = 0;
-	queue[qtail++] = objp->segnum;
-	reachable_dist[objp->segnum] = 0;
-	while (qhead < qtail) {
-		int segnum = queue[qhead++];
-		int sidenum;
-
-		for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
-			int child_segnum;
-
-			if (escort_live_side_cost(objp, segnum, sidenum) != 0)
-				continue;
-			child_segnum = Segments[segnum].children[sidenum];
-			if (!escort_valid_segment(child_segnum) || child_segnum >= MAX_SEGMENTS ||
-			    reachable_dist[child_segnum] >= 0)
-				continue;
-			reachable_dist[child_segnum] = reachable_dist[segnum] + 1;
-			if (qtail < MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT)
-				queue[qtail++] = child_segnum;
-		}
-	}
-}
-
-static int escort_unexplored_target_is_better(const escort_unexplored_route_target *candidate,
-                                              const escort_unexplored_route_target *best)
-{
-	if (!best->active)
-		return 1;
-	if (candidate->component_size != best->component_size)
-		return candidate->component_size > best->component_size;
-	if (candidate->direct_reachable != best->direct_reachable)
-		return candidate->direct_reachable > best->direct_reachable;
-	if (candidate->optimistic_distance != best->optimistic_distance)
-		return candidate->optimistic_distance < best->optimistic_distance;
-	if (candidate->optimistic_cost != best->optimistic_cost)
-		return candidate->optimistic_cost < best->optimistic_cost;
-	if (candidate->reachable_distance != best->reachable_distance)
-		return candidate->reachable_distance < best->reachable_distance;
-	if (candidate->target_seg != best->target_seg)
-		return candidate->target_seg < best->target_seg;
-	return candidate->waypoint_seg < best->waypoint_seg;
-}
-
-static int escort_route_component_best_unexplored_target(
-    object *objp,
-    const int *component_segments,
-    int component_size,
-    const int reachable_dist[MAX_SEGMENTS],
-    escort_unexplored_route_target *target)
-{
-	static int optimistic_dist[MAX_SEGMENTS];
-	static int optimistic_cost[MAX_SEGMENTS];
-	static int optimistic_source[MAX_SEGMENTS];
-	int queue[MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT];
-	int qhead, qtail;
-	int i, j;
-
-	escort_unexplored_route_target_clear(target);
-	if (!objp || !component_segments || component_size <= 0 || !target)
-		return 0;
-
-	for (j = 0; j < component_size; j++) {
-		int segnum = component_segments[j];
-		escort_unexplored_route_target candidate;
-
-		if (segnum < 0 || segnum >= MAX_SEGMENTS ||
-		    reachable_dist[segnum] <= 0 ||
-		    reachable_dist[segnum] > Max_escort_length)
-			continue;
-		escort_unexplored_route_target_clear(&candidate);
-		candidate.active = 1;
-		candidate.component_size = component_size;
-		candidate.target_seg = segnum;
-		candidate.waypoint_seg = segnum;
-		candidate.direct_reachable = 1;
-		candidate.optimistic_distance = 0;
-		candidate.optimistic_cost = 0;
-		candidate.reachable_distance = reachable_dist[segnum];
-		if (escort_unexplored_target_is_better(&candidate, target))
-			*target = candidate;
-	}
-	if (target->active)
-		return 1;
-
-	for (i = 0; i < MAX_SEGMENTS; i++) {
-		optimistic_dist[i] = -1;
-		optimistic_cost[i] = 32767;
-		optimistic_source[i] = -1;
-	}
-
-	qhead = qtail = 0;
-	for (j = 0; j < component_size; j++) {
-		int segnum = component_segments[j];
-		if (!escort_valid_segment(segnum) || segnum >= MAX_SEGMENTS ||
-		    optimistic_dist[segnum] >= 0)
-			continue;
-		optimistic_dist[segnum] = 0;
-		optimistic_cost[segnum] = 0;
-		optimistic_source[segnum] = segnum;
-		if (qtail < MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT)
-			queue[qtail++] = segnum;
-	}
-	while (qhead < qtail) {
-		int segnum = queue[qhead++];
-		int sidenum;
-
-		for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
-			int child_segnum = Segments[segnum].children[sidenum];
-			int edge_cost, next_dist, next_cost;
-
-			if (!escort_valid_segment(child_segnum) || child_segnum >= MAX_SEGMENTS)
-				continue;
-			edge_cost = escort_optimistic_edge_cost(objp, segnum, sidenum);
-			if (edge_cost < 0)
-				continue;
-			next_dist = optimistic_dist[segnum] + 1;
-			next_cost = optimistic_cost[segnum] + edge_cost;
-			if ((optimistic_dist[child_segnum] < 0) ||
-			    (next_dist < optimistic_dist[child_segnum]) ||
-			    ((next_dist == optimistic_dist[child_segnum]) &&
-			     (next_cost < optimistic_cost[child_segnum]))) {
-				optimistic_dist[child_segnum] = next_dist;
-				optimistic_cost[child_segnum] = next_cost;
-				optimistic_source[child_segnum] = optimistic_source[segnum];
-				if (qtail < MAX_SEGMENTS * MAX_SIDES_PER_SEGMENT)
-					queue[qtail++] = child_segnum;
-			}
-		}
-	}
-
-	for (i = 0; i <= Highest_segment_index && i < MAX_SEGMENTS; i++) {
-		escort_unexplored_route_target candidate;
-
-		if (reachable_dist[i] <= 0 ||
-		    reachable_dist[i] > Max_escort_length ||
-		    optimistic_dist[i] < 0 ||
-		    optimistic_source[i] < 0)
-			continue;
-		escort_unexplored_route_target_clear(&candidate);
-		candidate.active = 1;
-		candidate.component_size = component_size;
-		candidate.target_seg = optimistic_source[i];
-		candidate.waypoint_seg = i;
-		candidate.direct_reachable = 0;
-		candidate.optimistic_distance = optimistic_dist[i];
-		candidate.optimistic_cost = optimistic_cost[i];
-		candidate.reachable_distance = reachable_dist[i];
-		if (escort_unexplored_target_is_better(&candidate, target))
-			*target = candidate;
-	}
-
-	return target->active;
-}
-
-static int escort_find_unexplored_route_target(escort_unexplored_route_target *target)
-{
-	static ubyte component_seen[MAX_SEGMENTS];
-	static int reachable_dist[MAX_SEGMENTS];
-	static int component_segments[MAX_SEGMENTS];
-	int queue[MAX_SEGMENTS];
-	escort_unexplored_route_target best;
-	object *objp = escort_route_reference_object();
-	int i;
-
-	escort_unexplored_route_target_clear(target);
-	escort_unexplored_route_target_clear(&best);
-	if (!objp || !escort_valid_segment(objp->segnum))
-		return 0;
-
-	memset(component_seen, 0, sizeof(component_seen));
-	escort_compute_live_reachable_dist(objp, reachable_dist);
-	for (i = 0; i <= Highest_segment_index && i < MAX_SEGMENTS; i++) {
-		int qhead, qtail, component_size;
-		escort_unexplored_route_target candidate;
-
-		if (component_seen[i] || Automap_visited[i])
-			continue;
-		qhead = qtail = 0;
-		component_size = 0;
-		component_seen[i] = 1;
-		queue[qtail++] = i;
-		while (qhead < qtail) {
-			int segnum = queue[qhead++];
-			int sidenum;
-
-			component_segments[component_size++] = segnum;
-			for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
-				int child_segnum = Segments[segnum].children[sidenum];
-				if (!escort_valid_segment(child_segnum) || child_segnum >= MAX_SEGMENTS ||
-				    escort_optimistic_edge_cost(objp, segnum, sidenum) < 0 ||
-				    component_seen[child_segnum] || Automap_visited[child_segnum])
-					continue;
-				component_seen[child_segnum] = 1;
-				if (qtail < MAX_SEGMENTS)
-					queue[qtail++] = child_segnum;
-			}
-		}
-		if (component_size <= 0)
-			continue;
-		if (!escort_route_component_best_unexplored_target(
-		        objp, component_segments, component_size, reachable_dist, &candidate))
-			continue;
-		if (escort_unexplored_target_is_better(&candidate, &best))
-			best = candidate;
-	}
-
-	if (!best.active)
-		return 0;
-	if (target)
-		*target = best;
-	ESCORT_DIAG("unexplored target component=%d target=%d waypoint=%d direct=%d opt_dist=%d opt_cost=%d reachable=%d",
-	            best.component_size,
-	            best.target_seg,
-	            best.waypoint_seg,
-	            best.direct_reachable,
-	            best.optimistic_distance,
-	            best.optimistic_cost,
-	            best.reachable_distance);
-	return 1;
-}
-
-static void escort_route_set_unexplored_goal(const escort_unexplored_route_target *target)
-{
-	escort_route_clear_goal();
-	if (!target || !target->active || !escort_valid_segment(target->waypoint_seg))
-		return;
-	Escort_route_goal.active = 1;
-	Escort_route_goal.target_seg = target->waypoint_seg;
-	Escort_route_goal.target_side = -1;
-	Escort_route_goal.target_wall = -1;
-	Escort_route_goal.trigger_num = -1;
-	Escort_route_goal.objective_kind = ESCORT_ROUTE_OBJECTIVE_UNEXPLORED;
-	Escort_route_goal.activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
-	Escort_route_goal.objective_seg = target->target_seg;
-	Escort_route_goal.objective_side = -1;
-	Escort_route_goal.objective_wall = -1;
-	Escort_route_goal.objective_trigger = -1;
-	Escort_route_goal.guidance_mode = target->direct_reachable ?
-	                                  ESCORT_ROUTE_GUIDANCE_REACH_OBJECTIVE :
-	                                  ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
-	Escort_route_goal.guidance_seg = target->waypoint_seg;
-	Escort_route_goal.guidance_side = -1;
-	snprintf(Escort_route_goal.label, sizeof(Escort_route_goal.label), "%s", "unexplored");
-	Escort_unexplored_route_target = *target;
-}
-
-static int escort_route_unexplored_next_goal(int set_goal)
-{
-	escort_unexplored_route_target target;
-
-	if (!escort_find_unexplored_route_target(&target)) {
-		if (set_goal)
-			escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
-		return ESCORT_GOAL_UNSPECIFIED;
-	}
-	if (set_goal)
-		escort_route_set_unexplored_goal(&target);
-	return ESCORT_GOAL_EXIT;
 }
 
 static int escort_create_path_to_nearest_point(object *objp, int goal_seg)

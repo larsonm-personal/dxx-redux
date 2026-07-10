@@ -19,6 +19,7 @@
 #include "robot.h"
 #include "secret_area_item_names.h"
 #include "segment.h"
+#include "automap.h"
 #include "switch.h"
 #include "wall.h"
 #ifdef NETWORK
@@ -27,6 +28,8 @@
 
 static secret_area_state Secret_area_state;
 static level_metadata_state Level_metadata_state;
+static int Level_metadata_route_start_objnum = -1;
+static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
 
 typedef struct level_metadata_game_context {
@@ -51,6 +54,12 @@ static int secret_area_segment_child(void *user, int seg, int side)
 	if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
 		return -1;
 	return Segments[seg].children[side];
+}
+
+static int secret_area_segment_is_explored(void *user, int seg)
+{
+	(void) user;
+	return seg >= 0 && seg < Num_segments && Automap_visited[seg] != 0;
 }
 
 static int secret_area_reverse_side(void *user, int seg, int child)
@@ -652,7 +661,11 @@ static void level_metadata_copy_route(const level_metadata_state *route_state)
 	       sizeof(Level_metadata_state.route_steps));
 }
 
-static void level_metadata_rescan_current_level_internal(int start_objnum, int route_target_seg, int route_only)
+static void level_metadata_rescan_current_level_internal(
+    int start_objnum,
+    int route_target_seg,
+    int route_only,
+    level_metadata_unexplored_route *unexplored_result)
 {
 	level_metadata_game_context context;
 	level_metadata_scan_view view;
@@ -665,6 +678,8 @@ static void level_metadata_rescan_current_level_internal(int start_objnum, int r
 	view.num_segments = Num_segments;
 	view.num_walls = Num_walls;
 	view.start_segment = secret_area_metadata_start(&context, &start_segment, NULL) ? start_segment : Player_init[Player_num].segnum;
+	Level_metadata_route_start_objnum = start_objnum;
+	Level_metadata_route_start_seg = view.start_segment;
 	view.initial_key_mask = secret_area_current_key_mask();
 	view.initial_control_center_destroyed = Control_center_destroyed != 0;
 	view.segment_special_fuelcen = SEGMENT_IS_FUELCEN;
@@ -710,6 +725,7 @@ static void level_metadata_rescan_current_level_internal(int start_objnum, int r
 	view.trigger_type_illusory_wall = -4;
 #endif
 	view.segment_child = secret_area_segment_child;
+	view.segment_is_explored = secret_area_segment_is_explored;
 	view.reverse_side = secret_area_reverse_side;
 	view.side_is_flyable = secret_area_side_is_flyable;
 	view.side_is_control_center_link = secret_area_side_is_control_center_link;
@@ -751,7 +767,9 @@ static void level_metadata_rescan_current_level_internal(int start_objnum, int r
 	if (!route_only)
 		level_metadata_scan_level(&view, &Level_metadata_state);
 	if (route_only) {
-		if (route_target_seg >= 0)
+		if (unexplored_result)
+			level_metadata_scan_unexplored_route(&view, &route_state, unexplored_result);
+		else if (route_target_seg >= 0)
 			level_metadata_scan_route_to_segment(&view, route_target_seg, &route_state);
 		else {
 			level_metadata_state_clear(&route_state);
@@ -763,22 +781,40 @@ static void level_metadata_rescan_current_level_internal(int start_objnum, int r
 
 void level_metadata_rescan_current_level(void)
 {
-	level_metadata_rescan_current_level_internal(-1, -1, 0);
+	level_metadata_rescan_current_level_internal(-1, -1, 0, NULL);
 }
 
 void level_metadata_rescan_current_level_from_object(int objnum)
 {
-	level_metadata_rescan_current_level_internal(objnum, -1, 0);
+	level_metadata_rescan_current_level_internal(objnum, -1, 0, NULL);
 }
 
 void level_metadata_rescan_route_from_object(int objnum)
 {
-	level_metadata_rescan_current_level_internal(objnum, -1, 1);
+	level_metadata_rescan_current_level_internal(objnum, -1, 1, NULL);
 }
 
 void level_metadata_rescan_route_to_segment_from_object(int objnum, int target_seg)
 {
-	level_metadata_rescan_current_level_internal(objnum, target_seg, 1);
+	level_metadata_rescan_current_level_internal(objnum, target_seg, 1, NULL);
+}
+
+int level_metadata_rescan_unexplored_route_from_object(
+    int objnum,
+    level_metadata_unexplored_route *result)
+{
+	level_metadata_rescan_current_level_internal(objnum, -1, 1, result);
+	return result && result->target_seg >= 0;
+}
+
+int level_metadata_get_route_start_objnum(void)
+{
+	return Level_metadata_route_start_objnum;
+}
+
+int level_metadata_get_route_start_seg(void)
+{
+	return Level_metadata_route_start_seg;
 }
 
 void secret_area_rescan_current_level(void)

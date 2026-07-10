@@ -76,7 +76,7 @@ unreachable goals.
   analyzer identified, including hidden-wall and shoot-switch activation.
 
 ### 5. Unexplored routing is still a parallel planner
-- [ ] Derive the unexplored terminal from the same optimistic route graph and
+- [x] Derive the unexplored terminal from the same optimistic route graph and
   blocker chain used by end-of-level routing.
 - [x] Do not flood-fill unexplored components through every structural child edge;
   use explicit optimistic edge rules and retain the first obstruction.
@@ -127,7 +127,7 @@ unreachable goals.
 - [x] Preserve exact activation geometry and honor partial route status.
 
 ### Phase 3: Unexplored integration
-- [ ] Replace the independent component planner with an alternate terminal on the
+- [x] Replace the independent component planner with an alternate terminal on the
   shared route graph.
 - [x] Preserve target mode across save, replay, and multiplayer handoff.
 - [x] Add blocked-frontier and long-route behavior tests.
@@ -154,6 +154,18 @@ unreachable goals.
 - [x] Replace five-second full metadata rescans with route-only live refreshes.
 - [x] Run Phase 2 and current Phase 3 validation and record results here.
 
+## Continuation tranche
+- [x] Factor one progression prefix for end-of-level, explicit-segment, and
+  unexplored routes.
+- [x] Select the largest progress-reachable unexplored component inside the
+  shared scanner using its live edge and blocker model.
+- [x] Remove the independent unexplored component graph from `escort.c` and
+  expose scanner-selected target diagnostics through the engine adapter.
+- [x] Make route-start provenance diagnostics stable after the guidebot moves
+  away from the segment where its route was scanned.
+- [x] Add missing-key, obstruction, and no-unexplored regression fixtures, then
+  rerun native, Android, and focused emulator validation.
+
 ## Validation, 2026-07-09
 - `run-windows-build.ps1 -Target both`: passed before the final D2-only additions.
 - `run-windows-build.ps1 -Target d2`: passed after ownership policy, late-join,
@@ -178,3 +190,16 @@ unreachable goals.
 - `test_kcxf2_guidebot_hidden_door_next.json5`: passed with hidden wall 61 at
   segment 221/side 4 selected, both linked sides blocked, and the route path
   still pending after seven seconds.
+
+## Validation, shared unexplored routing, 2026-07-09
+- `run-windows-build.ps1 -Target both`: passed for D1 and D2 after the shared
+  progression-prefix and route-provenance changes.
+- D1 native CTest: 13/13 passed; D2 native CTest: 14/14 passed.
+- `gradlew :app:testDebugUnitTest :app:assembleDebug`: passed for all configured
+  Android ABIs.
+- Scoped `run-code-quality.ps1 -Fix` and `git diff --check`: passed.
+- `test_guidebot_unexplored_goal.json5`: passed with scanner-selected component
+  size 193 and the shared `Start -> Reactor -> Unexplored` route.
+- `test_kcxf2_guidebot_hidden_door_next.json5`: passed with hidden wall 61 at
+  segment 221/side 4 selected and path-pending behavior retained after seven
+  seconds.
