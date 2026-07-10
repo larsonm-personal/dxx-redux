@@ -2209,8 +2209,18 @@ class TouchOverlayView
                 }
                 drawCenteredTextBlock(canvas, segs[i].label, lx, ly, paintBtnLabel)
                 if (active) paintBtnLabel.typeface = Typeface.DEFAULT
+            }
+            if (state.control.centerBinding >= 0) {
+                val active = state.activeSegment == RADIAL_CENTER
+                paintRadialSeg.color = if (active) 0x88445566.toInt() else 0x66555555
+                canvas.drawCircle(cx, cy, centerR, paintRadialSeg)
+                paintRing.alpha = (0x66 * eff).toInt()
+                canvas.drawCircle(cx, cy, centerR, paintRing)
+                paintBtnLabel.alpha = ((if (active) 0xFF else 0xCC) * eff).toInt()
                 paintBtnLabel.textSize = centerR * 0.45f
+                paintBtnLabel.typeface = if (active) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
                 drawCenteredTextBlock(canvas, state.control.centerLabel, cx, cy, paintBtnLabel)
+                paintBtnLabel.typeface = Typeface.DEFAULT
             }
         }
 

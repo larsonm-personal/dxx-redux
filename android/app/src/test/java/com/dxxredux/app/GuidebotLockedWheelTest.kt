@@ -130,5 +130,37 @@ class GuidebotLockedWheelTest {
 
         assertEquals("Secret", migrated.centerLabel)
         assertEquals(customBinding, migrated.centerBinding)
+        assertEquals(
+            listOf(TouchBindings.META_GUIDE_FIND_UNEXPLORED),
+            migrated.segments.map { it.binding },
+        )
+    }
+
+    @Test
+    fun guideWheelVersionEightMigrationRestoresMissingUnexploredAction() {
+        val layout =
+            TouchLayout(
+                version = 8,
+                radialMenus =
+                    listOf(
+                        RadialMenuControl(
+                            id = "Guide",
+                            xPct = 50f,
+                            yPct = 50f,
+                            segments =
+                                listOf(
+                                    RadialSegment("Energy", TouchBindings.META_GUIDE_FIND_ENERGY),
+                                    RadialSegment("Next", TouchBindings.META_GUIDE_NEXT_GOAL),
+                                ),
+                        ),
+                    ),
+            )
+
+        val migrated = TouchLayoutRepository.migrateForCurrentVersion(layout)
+        val guide = migrated.radialMenus.single()
+
+        assertEquals(9, migrated.version)
+        assertEquals("Unexplored", guide.centerLabel)
+        assertEquals(TouchBindings.META_GUIDE_FIND_UNEXPLORED, guide.centerBinding)
     }
 }
