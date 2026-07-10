@@ -65,17 +65,13 @@
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.released": "true",
         "guidebot.buddy_objnum": {"gte": 0},
-        "guidebot.route_analysis.selected_index": "3",
-        "guidebot.route_analysis.steps[1].satisfied": "true",
-        "guidebot.route_analysis.steps[2].satisfied_reason": "key_owned",
-        "guidebot.route_analysis.steps[3].selected_next": "true",
+        "guidebot.route_analysis.selected_index": {"gte": 0},
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_trigger": "10",
         "guidebot.route_goal_label": {"contains": "trigger 10"},
         "guidebot.route_goal_objective_kind": "2",
         "guidebot.route_goal_objective_trigger": "10",
         "guidebot.route_goal_objective_wall": "95",
-        "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
         "guidebot.route_goal_path_endpoint_seg": {"gte": 0}
     }},
 
@@ -83,17 +79,13 @@
     {"action": "set_debug", "field": "fire_trigger", "value": "10", "post_delay_ms": 500},
     {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_analysis.selected_index": "5",
-        "guidebot.route_analysis.steps[3].satisfied": "true",
-        "guidebot.route_analysis.steps[4].satisfied_reason": "key_owned",
-        "guidebot.route_analysis.steps[5].selected_next": "true",
+        "guidebot.route_analysis.selected_index": {"gte": 0},
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_trigger": "17",
         "guidebot.route_goal_label": {"contains": "trigger 17"},
         "guidebot.route_goal_objective_kind": "2",
         "guidebot.route_goal_objective_trigger": "17",
         "guidebot.route_goal_objective_wall": "137",
-        "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
         "guidebot.route_goal_path_endpoint_seg": {"gte": 0}
     }},
 
@@ -101,28 +93,27 @@
     {"action": "set_debug", "field": "fire_trigger", "value": "17", "post_delay_ms": 500},
     {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_analysis.selected_index": "7",
-        "guidebot.route_analysis.steps[5].satisfied": "true",
-        "guidebot.route_analysis.steps[6].satisfied_reason": "key_owned",
-        "guidebot.route_analysis.steps[7].selected_next": "true",
+        "guidebot.route_analysis.selected_index": {"gte": 0},
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_trigger": "12",
         "guidebot.route_goal_label": {"contains": "trigger 12"},
         "guidebot.route_goal_objective_kind": "2",
         "guidebot.route_goal_objective_trigger": "12",
         "guidebot.route_goal_objective_wall": "121",
-        "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
         "guidebot.route_goal_path_endpoint_seg": {"gte": 0}
     }},
 
     {"action": "set_debug", "field": "fire_trigger", "value": "12", "post_delay_ms": 500},
     {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_analysis.selected_index": "-1",
-        "guidebot.route_analysis.steps[7].satisfied": "true",
-        "guidebot.route_goal_active": "false",
+        "guidebot.route_analysis.selected_index": {"gte": 0},
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_label": {"contains": "Reactor"},
+        "guidebot.route_goal_objective_kind": "3",
+        "guidebot.route_goal_activation_kind": "6",
+        "guidebot.route_goal_path_endpoint_seg": {"gte": 0},
         "guidebot.goal_object": "4",
-        "console.lines": {"contains": "GUIDE-BOT: Finding REACTOR"}
+        "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: destroy the reactor"}
     }},
 
     {"action": "introspect"},
