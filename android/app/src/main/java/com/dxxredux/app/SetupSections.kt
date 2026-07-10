@@ -2888,7 +2888,7 @@ private fun LevelMetadataRouteStep.routeActivationLabel(): String =
         }
 
         "open_hidden_door" -> {
-            "Open hidden wall door"
+            "Shoot hidden wall"
         }
 
         "destroy_reactor" -> {
@@ -2916,7 +2916,7 @@ private fun LevelMetadataRouteStep.routeStepFallbackLabel(): String =
         "reactor" -> "Reactor"
         "boss" -> "Boss"
         "exit" -> "Exit"
-        "hidden_door" -> "Hidden door"
+        "hidden_door" -> "Hidden wall"
         "hostage" -> "Hostage"
         else -> kind.ifBlank { "Step" }.replace('_', ' ').replaceFirstChar { it.uppercase() }
     }

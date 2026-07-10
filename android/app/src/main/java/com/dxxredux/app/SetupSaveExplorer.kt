@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,12 +19,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -34,7 +40,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -43,6 +48,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -51,6 +57,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.key.Key
@@ -60,7 +67,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,6 +83,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private enum class SaveExplorerMode(
     val label: String,
@@ -84,26 +94,34 @@ private enum class SaveExplorerMode(
     All("All Slots"),
 }
 
-internal fun saveExplorerModeLabels(): List<String> = SaveExplorerMode.values().map { it.label }
+private val saveExplorerModes = SaveExplorerMode.values().toList()
+
+internal fun saveExplorerModeLabels(): List<String> = saveExplorerModes.map { it.label }
 
 internal fun saveExplorerDefaultModeLabel(): String = SaveExplorerMode.Choose.label
 
 private fun saveExplorerModeAfter(
     mode: SaveExplorerMode,
     step: Int,
-): SaveExplorerMode {
-    val modes = SaveExplorerMode.values()
-    val nextIndex = (mode.ordinal + step).floorMod(modes.size)
-    return modes[nextIndex]
-}
+): SaveExplorerMode = saveExplorerModes[saveExplorerPageIndexAfter(mode.ordinal, step)]
 
 internal fun saveExplorerModeLabelAfter(
     currentLabel: String,
     step: Int,
 ): String {
-    val current = SaveExplorerMode.values().first { it.label == currentLabel }
+    val current = saveExplorerModes.first { it.label == currentLabel }
     return saveExplorerModeAfter(current, step).label
 }
+
+internal fun saveExplorerLivePageIndex(
+    currentPage: Int,
+    offsetFraction: Float,
+): Int = (currentPage + offsetFraction).roundToInt().coerceIn(saveExplorerModes.indices)
+
+internal fun saveExplorerPageIndexAfter(
+    currentPage: Int,
+    step: Int,
+): Int = (currentPage + step).coerceIn(saveExplorerModes.indices)
 
 internal data class SaveExplorerRow(
     val slotIndex: Int,
@@ -127,7 +145,7 @@ internal fun SaveExplorerDialog(
 ) {
     val scope = rememberCoroutineScope()
     var refreshKey by remember { mutableIntStateOf(0) }
-    var mode by remember { mutableStateOf(SaveExplorerMode.Choose) }
+    val pagerState = rememberPagerState(pageCount = { saveExplorerModes.size })
     var selectedGame by remember { mutableStateOf("") }
     var selectedScope by remember { mutableStateOf("single") }
     var selectedPilot by remember { mutableStateOf("") }
@@ -195,39 +213,13 @@ internal fun SaveExplorerDialog(
         if (selectedMission !in missionOptions) selectedMission = missionOptions.firstOrNull().orEmpty()
     }
 
-    val displayedRows =
-        remember(slots, mode, selectedGame, selectedScope, selectedPilot, selectedMission, orphanOnly) {
-            when (mode) {
-                SaveExplorerMode.Choose -> {
-                    emptyList()
-                }
-
-                SaveExplorerMode.SaveSet -> {
-                    saveExplorerSaveSetRows(
-                        slots.orEmpty(),
-                        selectedGame,
-                        selectedScope,
-                        selectedPilot,
-                        selectedMission,
-                    )
-                }
-
-                SaveExplorerMode.Recent -> {
-                    saveExplorerRecentSlots(slots.orEmpty())
-                        .map { SaveExplorerRow(it.slot, it) }
-                }
-
-                SaveExplorerMode.All -> {
-                    slots
-                        .orEmpty()
-                        .filter { !orphanOnly || it.orphan }
-                        .map { SaveExplorerRow(it.slot, it) }
-                }
+    fun movePage(step: Int) {
+        val nextPage = saveExplorerPageIndexAfter(pagerState.currentPage, step)
+        if (nextPage != pagerState.currentPage) {
+            scope.launch {
+                pagerState.animateScrollToPage(nextPage)
             }
         }
-
-    fun changeMode(step: Int) {
-        mode = saveExplorerModeAfter(mode, step)
     }
 
     Dialog(
@@ -238,27 +230,16 @@ internal fun SaveExplorerDialog(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .pointerInput(Unit) {
-                        var dragX = 0f
-                        detectHorizontalDragGestures(
-                            onDragStart = { dragX = 0f },
-                            onHorizontalDrag = { _, dragAmount -> dragX += dragAmount },
-                            onDragEnd = {
-                                if (abs(dragX) >= 80f) {
-                                    changeMode(if (dragX < 0f) 1 else -1)
-                                }
-                            },
-                        )
-                    }.onPreviewKeyEvent { event ->
+                    .onPreviewKeyEvent { event ->
                         if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                         when (event.key) {
                             Key.DirectionLeft -> {
-                                changeMode(-1)
+                                movePage(-1)
                                 true
                             }
 
                             Key.DirectionRight -> {
-                                changeMode(1)
+                                movePage(1)
                                 true
                             }
 
@@ -289,61 +270,44 @@ internal fun SaveExplorerDialog(
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    SaveExplorerMode.values().forEach { chipMode ->
-                        FilterChip(
-                            selected = mode == chipMode,
-                            onClick = { mode = chipMode },
-                            label = { Text(chipMode.label, fontSize = 12.sp) },
-                        )
-                    }
-                }
-
-                if (mode == SaveExplorerMode.SaveSet) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        SaveExplorerDropdown("Game", selectedGame, gameOptions) { selectedGame = it }
-                        SaveExplorerDropdown("Scope", selectedScope, scopeOptions) { selectedScope = it }
-                        SaveExplorerDropdown("Pilot", selectedPilot, pilotOptions) { selectedPilot = it }
-                        SaveExplorerDropdown("Level Set", selectedMission, missionOptions) { selectedMission = it }
-                    }
-                } else if (mode == SaveExplorerMode.All) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = orphanOnly, onCheckedChange = { orphanOnly = it })
-                        Text("Orphans only", fontSize = 12.sp)
-                    }
-                }
-
-                if (mode == SaveExplorerMode.Choose) {
-                    SaveExplorerChooseSaveTab(
-                        options = resumeOptions,
-                        onLoadCandidate = onLoadCandidate,
-                        modifier = Modifier.fillMaxWidth().weight(1f),
-                    )
-                } else if (slots == null) {
-                    Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                        MetadataLoadProgressView(slotsProgress)
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth().weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(5.dp),
-                    ) {
-                        items(displayedRows, key = { row -> "${row.slotIndex}:${row.slot?.path.orEmpty()}" }) { row ->
-                            SaveExplorerSlotRow(
-                                row = row,
-                                canLaunchGame = canLaunchGame,
-                                onOpenDetails = { pendingDetails = it },
-                                onLoadCandidate = onLoadCandidate,
-                                onDelete = { pendingDelete = it },
-                            )
+                SaveExplorerModeTabRow(
+                    pagerState = pagerState,
+                    onModeStep = ::movePage,
+                    onModeSelected = { page ->
+                        scope.launch {
+                            pagerState.animateScrollToPage(page)
                         }
-                    }
+                    },
+                )
+
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                ) { page ->
+                    SaveExplorerPage(
+                        mode = saveExplorerModes[page],
+                        slots = slots,
+                        slotsProgress = slotsProgress,
+                        resumeOptions = resumeOptions,
+                        selectedGame = selectedGame,
+                        gameOptions = gameOptions,
+                        onGameSelected = { selectedGame = it },
+                        selectedScope = selectedScope,
+                        scopeOptions = scopeOptions,
+                        onScopeSelected = { selectedScope = it },
+                        selectedPilot = selectedPilot,
+                        pilotOptions = pilotOptions,
+                        onPilotSelected = { selectedPilot = it },
+                        selectedMission = selectedMission,
+                        missionOptions = missionOptions,
+                        onMissionSelected = { selectedMission = it },
+                        orphanOnly = orphanOnly,
+                        onOrphanOnlyChanged = { orphanOnly = it },
+                        canLaunchGame = canLaunchGame,
+                        onOpenDetails = { pendingDetails = it },
+                        onLoadCandidate = onLoadCandidate,
+                        onDelete = { pendingDelete = it },
+                    )
                 }
 
                 deleteError?.let {
@@ -415,7 +379,251 @@ internal fun SaveExplorerDialog(
     }
 }
 
-private fun Int.floorMod(divisor: Int): Int = ((this % divisor) + divisor) % divisor
+@Composable
+private fun SaveExplorerModeTabRow(
+    pagerState: PagerState,
+    onModeStep: (Int) -> Unit,
+    onModeSelected: (Int) -> Unit,
+) {
+    val pagePosition = pagerState.currentPage + pagerState.currentPageOffsetFraction
+    val activePage = saveExplorerLivePageIndex(pagerState.currentPage, pagerState.currentPageOffsetFraction)
+    var tabDragX by remember { mutableFloatStateOf(0f) }
+    val density = LocalDensity.current
+    val dragOffset = with(density) { tabDragX.toDp() }
+    BoxWithConstraints(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .clipToBounds()
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { tabDragX = 0f },
+                        onHorizontalDrag = { _, dragAmount -> tabDragX += dragAmount },
+                        onDragCancel = { tabDragX = 0f },
+                        onDragEnd = {
+                            if (abs(tabDragX) >= 36f) {
+                                onModeStep(if (tabDragX < 0f) 1 else -1)
+                            }
+                            tabDragX = 0f
+                        },
+                    )
+                },
+    ) {
+        val arrowGutter = 30.dp
+        val tabCellWidth = 124.dp
+        val visibleWidth = maxWidth - arrowGutter * 2f
+        val rowOffset = arrowGutter + visibleWidth * 0.5f - tabCellWidth * (pagePosition + 0.5f) + dragOffset
+        Row(
+            modifier =
+                Modifier
+                    .offset(x = rowOffset)
+                    .width(tabCellWidth * saveExplorerModes.size.toFloat())
+                    .height(40.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            saveExplorerModes.forEachIndexed { page, chipMode ->
+                SaveExplorerTabButton(
+                    label = chipMode.label,
+                    selected = activePage == page,
+                    onClick = { onModeSelected(page) },
+                    modifier = Modifier.width(tabCellWidth - 4.dp),
+                )
+            }
+        }
+        SharedHorizontalScrollArrows(
+            canScrollBackward = pagePosition > 0.01f,
+            canScrollForward = pagePosition < saveExplorerModes.lastIndex - 0.01f,
+            onScrollBackward = { onModeStep(-1) },
+            onScrollForward = { onModeStep(1) },
+        )
+    }
+}
+
+@Composable
+private fun SaveExplorerTabButton(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier.height(34.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(percent = 50),
+        color = if (selected) colorScheme.primaryContainer else colorScheme.surfaceVariant.copy(alpha = 0.72f),
+        border = BorderStroke(1.dp, if (selected) colorScheme.primary else colorScheme.outline),
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 3.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                label,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                color = if (selected) colorScheme.onPrimaryContainer else colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SaveExplorerPage(
+    mode: SaveExplorerMode,
+    slots: List<SaveExplorerBridge.SaveExplorerSlot>?,
+    slotsProgress: MetadataLoadProgress,
+    resumeOptions: ResumeSaveBridge.ResumeSaveOptions?,
+    selectedGame: String,
+    gameOptions: List<String>,
+    onGameSelected: (String) -> Unit,
+    selectedScope: String,
+    scopeOptions: List<String>,
+    onScopeSelected: (String) -> Unit,
+    selectedPilot: String,
+    pilotOptions: List<String>,
+    onPilotSelected: (String) -> Unit,
+    selectedMission: String,
+    missionOptions: List<String>,
+    onMissionSelected: (String) -> Unit,
+    orphanOnly: Boolean,
+    onOrphanOnlyChanged: (Boolean) -> Unit,
+    canLaunchGame: (String) -> Boolean,
+    onOpenDetails: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
+    onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
+    onDelete: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
+) {
+    when (mode) {
+        SaveExplorerMode.Choose -> {
+            SaveExplorerChooseSaveTab(
+                options = resumeOptions,
+                onLoadCandidate = onLoadCandidate,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        SaveExplorerMode.Recent -> {
+            SaveExplorerSlotPageBody(
+                slots = slots,
+                slotsProgress = slotsProgress,
+                rows =
+                    remember(slots) {
+                        saveExplorerRecentSlots(slots.orEmpty()).map { SaveExplorerRow(it.slot, it) }
+                    },
+                canLaunchGame = canLaunchGame,
+                onOpenDetails = onOpenDetails,
+                onLoadCandidate = onLoadCandidate,
+                onDelete = onDelete,
+            )
+        }
+
+        SaveExplorerMode.SaveSet -> {
+            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val filterScrollState = rememberScrollState()
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(filterScrollState),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        SaveExplorerDropdown("Game", selectedGame, gameOptions, onGameSelected)
+                        SaveExplorerDropdown("Scope", selectedScope, scopeOptions, onScopeSelected)
+                        SaveExplorerDropdown("Pilot", selectedPilot, pilotOptions, onPilotSelected)
+                        SaveExplorerDropdown("Level Set", selectedMission, missionOptions, onMissionSelected)
+                    }
+                    SharedHorizontalScrollArrows(filterScrollState)
+                }
+                SaveExplorerSlotPageBody(
+                    slots = slots,
+                    slotsProgress = slotsProgress,
+                    rows =
+                        remember(slots, selectedGame, selectedScope, selectedPilot, selectedMission) {
+                            saveExplorerSaveSetRows(
+                                slots.orEmpty(),
+                                selectedGame,
+                                selectedScope,
+                                selectedPilot,
+                                selectedMission,
+                            )
+                        },
+                    canLaunchGame = canLaunchGame,
+                    onOpenDetails = onOpenDetails,
+                    onLoadCandidate = onLoadCandidate,
+                    onDelete = onDelete,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+
+        SaveExplorerMode.All -> {
+            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = orphanOnly, onCheckedChange = onOrphanOnlyChanged)
+                    Text("Orphans only", fontSize = 12.sp)
+                }
+                SaveExplorerSlotPageBody(
+                    slots = slots,
+                    slotsProgress = slotsProgress,
+                    rows =
+                        remember(slots, orphanOnly) {
+                            slots
+                                .orEmpty()
+                                .filter { !orphanOnly || it.orphan }
+                                .map { SaveExplorerRow(it.slot, it) }
+                        },
+                    canLaunchGame = canLaunchGame,
+                    onOpenDetails = onOpenDetails,
+                    onLoadCandidate = onLoadCandidate,
+                    onDelete = onDelete,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SaveExplorerSlotPageBody(
+    slots: List<SaveExplorerBridge.SaveExplorerSlot>?,
+    slotsProgress: MetadataLoadProgress,
+    rows: List<SaveExplorerRow>,
+    canLaunchGame: (String) -> Boolean,
+    onOpenDetails: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
+    onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
+    onDelete: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
+    modifier: Modifier = Modifier.fillMaxSize(),
+) {
+    if (slots == null) {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            MetadataLoadProgressView(slotsProgress)
+        }
+        return
+    }
+
+    val slotListState = rememberLazyListState()
+    Box(modifier = modifier) {
+        LazyColumn(
+            state = slotListState,
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            items(rows, key = { row ->
+                "${row.slotIndex}:${row.slot?.path.orEmpty()}"
+            }) { row ->
+                SaveExplorerSlotRow(
+                    row = row,
+                    canLaunchGame = canLaunchGame,
+                    onOpenDetails = onOpenDetails,
+                    onLoadCandidate = onLoadCandidate,
+                    onDelete = onDelete,
+                )
+            }
+        }
+        SharedLazyListScrollArrows(slotListState)
+    }
+}
 
 @Composable
 private fun SaveExplorerChooseSaveTab(
@@ -434,13 +642,18 @@ private fun SaveExplorerChooseSaveTab(
         }
         return
     }
-    LazyColumn(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        items(choices, key = { it.candidate.path + ":" + it.label }) { choiceRow ->
-            SaveExplorerChooseSaveRow(choiceRow, onLoadCandidate)
+    val listState = rememberLazyListState()
+    Box(modifier = modifier) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(choices, key = { it.candidate.path + ":" + it.label }) { choiceRow ->
+                SaveExplorerChooseSaveRow(choiceRow, onLoadCandidate)
+            }
         }
+        SharedLazyListScrollArrows(listState)
     }
 }
 

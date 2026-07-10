@@ -13,10 +13,18 @@ class SaveExplorerTest {
     }
 
     @Test
-    fun modeNavigationMovesAcrossTabsAndWraps() {
+    fun modeNavigationMovesAcrossTabsAndStopsAtEdges() {
         assertEquals("Most Recent", saveExplorerModeLabelAfter("Choose Save", 1))
-        assertEquals("All Slots", saveExplorerModeLabelAfter("Choose Save", -1))
-        assertEquals("Choose Save", saveExplorerModeLabelAfter("All Slots", 1))
+        assertEquals("Choose Save", saveExplorerModeLabelAfter("Choose Save", -1))
+        assertEquals("All Slots", saveExplorerModeLabelAfter("All Slots", 1))
+    }
+
+    @Test
+    fun livePageIndexTracksPagerOffset() {
+        assertEquals(0, saveExplorerLivePageIndex(0, 0.49f))
+        assertEquals(1, saveExplorerLivePageIndex(0, 0.50f))
+        assertEquals(1, saveExplorerLivePageIndex(1, -0.49f))
+        assertEquals(1, saveExplorerLivePageIndex(1, -0.50f))
     }
 
     @Test

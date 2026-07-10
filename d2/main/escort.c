@@ -238,7 +238,7 @@ static const char *escort_route_goal_instruction(void)
 		case LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH:
 			return "activate this switch";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR:
-			return "open this hidden wall door";
+			return "shoot this hidden wall";
 		default:
 			return escort_route_goal_label();
 	}
@@ -488,9 +488,21 @@ static int escort_trigger_can_make_side_passable(int segnum, int sidenum)
 	return 0;
 }
 
+static int escort_wall_is_hidden_door(int wall_num)
+{
+	int clip_num;
+
+	if (!escort_valid_wall(wall_num) || Walls[wall_num].type != WALL_DOOR)
+		return 0;
+	clip_num = Walls[wall_num].clip_num;
+	return clip_num >= 0 && clip_num < Num_wall_anims &&
+	       (WallAnims[clip_num].flags & WCF_HIDDEN);
+}
+
 static int escort_route_link_passable(int segnum, int sidenum)
 {
 	segment *segp;
+	int wall_num;
 
 	if (segnum < 0 || segnum > Highest_segment_index ||
 	    sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT)
@@ -498,9 +510,12 @@ static int escort_route_link_passable(int segnum, int sidenum)
 	segp = &Segments[segnum];
 	if (WALL_IS_DOORWAY(segp, sidenum) & WID_FLY_FLAG)
 		return 1;
+	wall_num = segp->sides[sidenum].wall_num;
+	if (escort_wall_is_hidden_door(wall_num))
+		return 0;
 	if (ConsoleObject && ai_door_is_openable(ConsoleObject, segp, sidenum))
 		return 1;
-	if (segp->sides[sidenum].wall_num < 0)
+	if (wall_num < 0)
 		return IS_CHILD(segp->children[sidenum]);
 	return 0;
 }

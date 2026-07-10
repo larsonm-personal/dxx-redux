@@ -2020,7 +2020,7 @@ static int metadata_route_open_hidden_door(
 	}
 	route->current_seg = block->seg;
 	copy_pos(route->current_pos, pos);
-	step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_HIDDEN_DOOR, "Hidden door", block->seg, block->side);
+	step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_HIDDEN_DOOR, "Shoot hidden wall", block->seg, block->side);
 	if (!step) {
 		metadata_route_set_hidden_door_state(view, block, route->hidden_door_in_progress, 0);
 		return 0;
