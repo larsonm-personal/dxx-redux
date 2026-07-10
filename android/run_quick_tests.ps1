@@ -41,6 +41,8 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $PSCommandPath
 $helpersDir = Join-Path $scriptDir "helpers"
 $repoRoot = Split-Path $scriptDir
+. (Join-Path $helpersDir "test_helpers.ps1")
+. (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
 
 if (-not $ReportDir) {
     $ReportDir = Join-Path $repoRoot "temp\test_reports"
@@ -75,23 +77,26 @@ function New-QuickDemoSubset {
 }
 
 $quickDemoRoot = New-QuickDemoSubset -DestinationRoot (Join-Path $repoRoot "temp\quick_demo_subset_$timestamp")
+$headlessExecutable = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName "d2" -PreferHeadlessConsole
+$headlessFreshnessIssue = Get-InputDemoExecutableFreshnessIssue `
+    -RepoRoot $repoRoot `
+    -GameName "d2" `
+    -ExecutablePath $headlessExecutable `
+    -Description "D2 headless replay executable"
+$headlessHistoricalSeconds = if ($headlessFreshnessIssue) { 65 } else { 4 }
 
 $quickTests = @(
-    @{ Name = "test_cue_iso"; Type = "ps1"; RelativePath = "tests\test_cue_iso.ps1"; HistoricalSeconds = 3 },
-    @{ Name = "test_fpcalc_and_acoustid"; Type = "ps1"; RelativePath = "tests\test_fpcalc_and_acoustid.ps1"; HistoricalSeconds = 2 },
+    @{ Name = "test_cue_iso"; Type = "ps1"; RelativePath = "tests\test_cue_iso.ps1"; HistoricalSeconds = 5 },
+    @{ Name = "test_fpcalc_and_acoustid"; Type = "ps1"; RelativePath = "tests\test_fpcalc_and_acoustid.ps1"; HistoricalSeconds = 3 },
     @{ Name = "test_input_demo_rng_trace_compare"; Type = "ps1"; RelativePath = "tests\test_input_demo_rng_trace_compare.ps1"; HistoricalSeconds = 0 },
     @{ Name = "test_input_demo_state_trace_compare"; Type = "ps1"; RelativePath = "tests\test_input_demo_state_trace_compare.ps1"; HistoricalSeconds = 0 },
-    @{ Name = "test_input_demo_regressions_headless_quick"; Type = "ps1"; RelativePath = "tests\test_input_demo_regressions.ps1"; Arguments = @("-DemoRoot", $quickDemoRoot, "-Game", "d2", "-TimeoutSeconds", "120", "-StopOnFirstFailure"); HistoricalSeconds = 3 },
+    @{ Name = "test_input_demo_regressions_headless_quick"; Type = "ps1"; RelativePath = "tests\test_input_demo_regressions.ps1"; Arguments = @("-DemoRoot", $quickDemoRoot, "-Game", "d2", "-TimeoutSeconds", "120", "-StopOnFirstFailure"); HistoricalSeconds = $headlessHistoricalSeconds },
     @{ Name = "test_input_demo_regressions_graphics_quick"; Type = "ps1"; RelativePath = "tests\test_input_demo_regressions_graphics.ps1"; Arguments = @("-DemoRoot", $quickDemoRoot, "-Game", "d2", "-TimeoutSeconds", "120", "-StopOnFirstFailure"); HistoricalSeconds = 10 },
-    @{ Name = "test_autoselect_plx"; Type = "ps1"; RelativePath = "tests\test_autoselect_plx.ps1"; HistoricalSeconds = 7 },
-    @{ Name = "test_mod_loading"; Type = "json5"; RelativePath = "game_scripts\test_mod_loading.json5"; HistoricalSeconds = 1 },
-    @{ Name = "test_menu_scale_d2"; Type = "json5"; RelativePath = "game_scripts\test_menu_scale_d2.json5"; HistoricalSeconds = 12 },
-    @{ Name = "test_launcher_graphics_debug_prefs"; Type = "json5"; RelativePath = "game_scripts\test_launcher_graphics_debug_prefs.json5"; HistoricalSeconds = 15 },
-    @{ Name = "test_quick_record_classic_sidecar_stage"; Type = "json5"; RelativePath = "game_scripts\test_quick_record_classic_sidecar_stage.json5"; HistoricalSeconds = 23 },
-    @{ Name = "test_quick_record_classic_sidecar_install"; Type = "json5"; RelativePath = "game_scripts\test_quick_record_classic_sidecar_install.json5"; HistoricalSeconds = 18 },
-    @{ Name = "test_launcher_dpad"; Type = "ps1"; RelativePath = "tests\test_launcher_dpad.ps1"; HistoricalSeconds = 16 },
-    @{ Name = "test_saf_basic"; Type = "json5"; RelativePath = "game_scripts\test_saf_basic.json5"; HistoricalSeconds = 21 },
-    @{ Name = "test_levelcomplete_touch_skip"; Type = "json5"; RelativePath = "game_scripts\test_levelcomplete_touch_skip.json5"; HistoricalSeconds = 17 }
+    @{ Name = "test_quick_record_classic_sidecar"; Type = "json5"; RelativePath = "game_scripts\test_quick_record_classic_sidecar.json5"; HistoricalSeconds = 35 },
+    @{ Name = "test_mod_loading"; Type = "json5"; RelativePath = "game_scripts\test_mod_loading.json5"; HistoricalSeconds = 25 },
+    @{ Name = "test_launcher_graphics_debug_prefs"; Type = "json5"; RelativePath = "game_scripts\test_launcher_graphics_debug_prefs.json5"; HistoricalSeconds = 27 },
+    @{ Name = "test_menu_scale_d2"; Type = "json5"; RelativePath = "game_scripts\test_menu_scale_d2.json5"; HistoricalSeconds = 20 },
+    @{ Name = "test_levelcomplete_touch_skip"; Type = "json5"; RelativePath = "game_scripts\test_levelcomplete_touch_skip.json5"; HistoricalSeconds = 18 }
 )
 
 function ConvertTo-ArgumentText {
@@ -239,6 +244,8 @@ function Invoke-QuickTest {
 
     $timedOut = $false
     $exitCode = 1
+    $stdout = ""
+    $stderr = ""
     try {
         $proc = [System.Diagnostics.Process]::Start($psi)
         $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
@@ -278,16 +285,14 @@ function Invoke-QuickTest {
 
     $sw.Stop()
     $elapsed = $sw.Elapsed.ToString("mm\:ss")
-    if ($timedOut) {
-        $status = "TIMEOUT"
-        $exitCode = 1
-        $color = "Yellow"
-    } elseif ($exitCode -eq 0) {
-        $status = "PASS"
-        $color = "Green"
-    } else {
-        $status = "FAIL"
-        $color = "Red"
+    $skipMarker = [regex]::Match("$stdout`n$stderr", '(?m)^RESULT:\s*SKIP(?:\s*\((?<reason>[^\r\n]*)\))?')
+    $skipDeclared = $skipMarker.Success
+    $status = Get-TestStatusFromExitCode -ExitCode $exitCode -TimedOut $timedOut -SkipDeclared $skipDeclared
+    $color = switch ($status) {
+        "PASS" { "Green" }
+        "SKIP" { "DarkYellow" }
+        "TIMEOUT" { "Yellow" }
+        default { "Red" }
     }
 
     Write-Host "  $status ($elapsed)" -ForegroundColor $color
@@ -300,12 +305,19 @@ function Invoke-QuickTest {
         Elapsed = $elapsed
         LogFile = $logFile
         Historical = Format-SecondsAsClock -Seconds $historicalSeconds
+        Reason = if ($status -eq "SKIP" -and $skipMarker.Groups["reason"].Success) {
+            $skipMarker.Groups["reason"].Value
+        } else { "" }
     }
 }
 
 $historicalTotalSeconds = [int](($quickTests | ForEach-Object { Get-QuickTestHistoricalSeconds -Test $_ } | Measure-Object -Sum).Sum)
 $historicalTotal = Format-SecondsAsClock -Seconds $historicalTotalSeconds
-$historicalEstimateSource = "fixed per-test baselines"
+$historicalEstimateSource = if ($headlessFreshnessIssue) {
+    "conservative per-test baselines with a required headless rebuild"
+} else {
+    "conservative per-test baselines"
+}
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  DXX-Redux Quick Test Suite" -ForegroundColor Cyan
@@ -317,8 +329,7 @@ Write-Host "Budget: $(Format-SecondsAsClock -Seconds $MaxTotalSeconds)" -Foregro
 Write-Host ""
 
 if ($historicalTotalSeconds -gt $MaxTotalSeconds) {
-    Write-Host "Quick suite estimate exceeds budget" -ForegroundColor Red
-    exit 1
+    Write-Host "Estimate exceeds budget; lower-priority cases will be skipped as the deadline approaches" -ForegroundColor Yellow
 }
 
 $results = @()
@@ -326,6 +337,7 @@ $skipped = @()
 $passCount = 0
 $failCount = 0
 $timeoutCount = 0
+$runtimeSkipCount = 0
 $totalSw = [System.Diagnostics.Stopwatch]::StartNew()
 
 foreach ($test in $quickTests) {
@@ -348,11 +360,12 @@ foreach ($test in $quickTests) {
 
     switch ($result.Status) {
         "PASS" { $passCount++ }
-        "TIMEOUT" { $timeoutCount++; $failCount++ }
+        "SKIP" { $runtimeSkipCount++ }
+        "TIMEOUT" { $timeoutCount++ }
         default { $failCount++ }
     }
 
-    if ($StopOnFail -and $result.ExitCode -ne 0) {
+    if ($StopOnFail -and $result.Status -in @("FAIL", "TIMEOUT")) {
         Write-Host "Stopping early because -StopOnFail was set" -ForegroundColor Yellow
         break
     }
@@ -360,9 +373,25 @@ foreach ($test in $quickTests) {
 
 $totalSw.Stop()
 $totalElapsed = $totalSw.Elapsed.ToString("hh\:mm\:ss")
+$totalSkipped = $runtimeSkipCount + $skipped.Count
+$accountedTestNames = [System.Collections.Generic.HashSet[string]]::new()
+foreach ($result in $results) { [void]$accountedTestNames.Add([string]$result.Name) }
+foreach ($skippedTest in $skipped) { [void]$accountedTestNames.Add([string]$skippedTest.Name) }
+$notRun = @(
+    $quickTests |
+        Where-Object { -not $accountedTestNames.Contains([string]$_.Name) } |
+        ForEach-Object {
+            @{
+                Name = $_.Name
+                Type = $_.Type
+                Reason = "stopped after prior failure"
+                Historical = Format-SecondsAsClock -Seconds (Get-QuickTestHistoricalSeconds -Test $_)
+            }
+        }
+)
 
 Write-Host ""
-Write-Host "Passed: $passCount  Failed: $failCount  Timeouts: $timeoutCount  Skipped: $($skipped.Count)  Total time: $totalElapsed" -ForegroundColor White
+Write-Host "Passed: $passCount  Failed: $failCount  Timeouts: $timeoutCount  Skipped: $totalSkipped  Not run: $($notRun.Count)  Total time: $totalElapsed" -ForegroundColor White
 Write-Host "Report: $reportFile" -ForegroundColor Cyan
 Write-Host ""
 
@@ -373,7 +402,8 @@ $md += "## Summary"
 $md += "- Passed: $passCount"
 $md += "- Failed: $failCount"
 $md += "- Timeouts: $timeoutCount"
-$md += "- Skipped: $($skipped.Count)"
+$md += "- Skipped: $totalSkipped"
+$md += "- Not run: $($notRun.Count)"
 $md += "- Total time: $totalElapsed"
 $md += "- Budget: $(Format-SecondsAsClock -Seconds $MaxTotalSeconds)"
 $md += "- Historical estimate: $historicalTotal from $historicalEstimateSource"
@@ -391,17 +421,23 @@ $md += ""
 $md += "| Status | Time | Historical | Test | Type |"
 $md += "|--------|------|------------|------|------|"
 foreach ($result in $results) {
-    $md += "| $($result.Status) | $($result.Elapsed) | $($result.Historical) | $($result.Name) | $($result.Type) |"
+    $resultType = if ($result.Status -eq "SKIP" -and $result.Reason) {
+        "$($result.Type) ($($result.Reason))"
+    } else { $result.Type }
+    $md += "| $($result.Status) | $($result.Elapsed) | $($result.Historical) | $($result.Name) | $resultType |"
 }
 foreach ($item in $skipped) {
     $md += "| SKIP | -- | $($item.Historical) | $($item.Name) | $($item.Type) ($($item.Reason)) |"
 }
+foreach ($item in $notRun) {
+    $md += "| NOT_RUN | -- | $($item.Historical) | $($item.Name) | $($item.Type) ($($item.Reason)) |"
+}
 $md += ""
 
-if ($failCount -gt 0 -or $timeoutCount -gt 0) {
+if ($failCount -gt 0 -or $timeoutCount -gt 0 -or $notRun.Count -gt 0) {
     $md += "## Non-passing Results"
     $md += ""
-    foreach ($result in ($results | Where-Object { $_.Status -ne 'PASS' })) {
+    foreach ($result in ($results | Where-Object { $_.Status -in @('FAIL', 'TIMEOUT') })) {
         $md += "### $($result.Name)"
         $md += "- Status: $($result.Status)"
         $md += "- Exit code: $($result.ExitCode)"
@@ -418,7 +454,7 @@ if ($failCount -gt 0 -or $timeoutCount -gt 0) {
 
 $md -join "`n" | Set-Content -Path $reportFile -Encoding utf8
 
-if ($failCount -gt 0) {
+if ($failCount -gt 0 -or $timeoutCount -gt 0 -or $notRun.Count -gt 0) {
     exit 1
 }
 exit 0

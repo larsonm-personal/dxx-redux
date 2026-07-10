@@ -1,7 +1,7 @@
 // TEST HELPER: Joiner side of the two-peer Guide-Bot ownership scenario.
 // Run with test_lan.ps1 -GuidebotOwnership alongside the host helper.
 [
-    {"_info": {"games": ["d2"], "_standalone": false}},
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
 
     {"action": "log", "message": "=== COOP GUIDEBOT OWNER: joiner ==="},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {

@@ -30,6 +30,7 @@
     {"_info": {
         "games": ["d2"],
         "_standalone": false,
+        "_owner": "test_gog_installer_redbook_unified",
         "params": {
             "INSTALLER_VARIANT": {
                 "label": "D2 GOG installer variant",

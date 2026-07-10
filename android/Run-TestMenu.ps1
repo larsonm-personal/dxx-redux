@@ -23,7 +23,6 @@ $HelpersDir = Join-Path -Path $ScriptDir -ChildPath "helpers"
 $GameScriptsDir = Join-Path -Path $ScriptDir -ChildPath "game_scripts"
 $TestsDir = Join-Path -Path $ScriptDir -ChildPath "tests"
 $runTestScript = Join-Path -Path $HelpersDir -ChildPath "run_test.ps1"
-$runMissionZipBatchScript = Join-Path -Path $HelpersDir -ChildPath "run_mission_zip_batch.ps1"
 
 . (Join-Path $HelpersDir "test_helpers.ps1")
 
@@ -65,13 +64,13 @@ Write-Host ""
 $allTests = @()
 
 # json5 game-automation scripts
-$json5Tests = @(Get-ChildItem -Path $GameScriptsDir -Filter "*.json5" -File -ErrorAction SilentlyContinue | Sort-Object Name)
+$json5Tests = @(Get-ChildItem -Path $GameScriptsDir -Filter "*.json5" -File -ErrorAction SilentlyContinue |
+        Where-Object { Get-ScriptStandalone -ScriptPath $_.FullName } |
+        Sort-Object Name)
 foreach ($t in $json5Tests) {
     $games = Get-ScriptGameInfo -ScriptPath $t.FullName
-    $standalone = Get-ScriptStandalone -ScriptPath $t.FullName
     $tag = if ($games) { "[" + ($games -join ",") + "]" } else { "" }
-    if (-not $standalone) { $tag = "[support] $tag" }
-    $allTests += @{ Name = $t.BaseName; Type = "json5"; Path = $t.FullName; Games = $games; Tag = $tag; Standalone = $standalone }
+    $allTests += @{ Name = $t.BaseName; Type = "json5"; Path = $t.FullName; Games = $games; Tag = $tag }
 }
 
 # ps1 integration tests
@@ -98,8 +97,7 @@ for ($i = 0; $i -lt $allTests.Count; $i++) {
         Write-Host "  --- PowerShell integration tests ---" -ForegroundColor DarkGray
     }
     $entry = $allTests[$i]
-    $color = if ($entry.Standalone -eq $false) { "DarkGray" } else { "White" }
-    Write-Host "  $($i + 1)) $($entry.Name)  $($entry.Tag)" -ForegroundColor $color
+    Write-Host "  $($i + 1)) $($entry.Name)  $($entry.Tag)" -ForegroundColor White
 }
 Write-Host ""
 
@@ -126,19 +124,6 @@ if (-not $NoBuild) {
 }
 
 # -- Run the selected test ---------------------------------------------------
-
-if ($selected.Name -eq "test_mission_zip_batch_import_metadata_launch") {
-    if (-not (Test-Path $runMissionZipBatchScript)) {
-        Write-Host "[!] run_mission_zip_batch.ps1 not found at $runMissionZipBatchScript" -ForegroundColor Red
-        exit 1
-    }
-    Write-Host ""
-    Write-Status "Running mission ZIP batch wrapper"
-    $batchArgs = @{}
-    if (-not $NoBuild) { $batchArgs.Install = $true }
-    & $runMissionZipBatchScript @batchArgs
-    exit $LASTEXITCODE
-}
 
 if ($selected.Type -eq "json5") {
     # json5: delegate to run_test.ps1 with optional game choice and params

@@ -9,7 +9,7 @@
 // This script assumes the game has been launched from SetupActivity
 // and will reach the pilot select screen first.
 [
-    {"_info": {"_standalone": false}},
+    {"_info": {"_standalone": false, "_owner": "test_extract"}},
     {"action": "log", "message": "=== Extraction regression test ==="},
 
     // Demo and title-screen variants can still be in the launch intro here.

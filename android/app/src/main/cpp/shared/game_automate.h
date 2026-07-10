@@ -25,18 +25,11 @@ extern "C" {
 void game_automate_set_path(const char *dir_path);
 
 /*
- * Request loading a JSON automation script.
- * Thread-safe: sets a volatile path; actual loading happens on the
- * game thread in game_automate_tick().
+ * Request loading a JSON automation script. The path, starting step, and run
+ * identity are published as one synchronized request and latched by the game
+ * thread in game_automate_tick().
  */
-void game_automate_load_script(const char *script_path);
-
-/*
- * Set the starting step index for the next script load.
- * Used when the launcher passes control to the game engine mid-script.
- * Must be called before game_automate_load_script().
- */
-void game_automate_set_start_step(int step);
+void game_automate_load_script(const char *script_path, int start_step, const char *run_id);
 
 /*
  * Called from the game thread (event_process) each frame.
@@ -53,13 +46,11 @@ static inline void game_automate_set_path(const char *p)
 {
 	(void) p;
 }
-static inline void game_automate_load_script(const char *p)
+static inline void game_automate_load_script(const char *p, int step, const char *run_id)
 {
 	(void) p;
-}
-static inline void game_automate_set_start_step(int s)
-{
-	(void) s;
+	(void) step;
+	(void) run_id;
 }
 static inline void game_automate_tick(void) {}
 

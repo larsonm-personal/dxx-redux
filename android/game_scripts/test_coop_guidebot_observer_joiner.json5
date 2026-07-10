@@ -1,6 +1,6 @@
 // TEST HELPER: Playing joiner receives Guide-Bot ownership from observer host.
 [
-    {"_info": {"games": ["d2"], "_standalone": false}},
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
 
     {"action": "log", "message": "=== COOP GUIDEBOT OBSERVER JOINER ==="},
     {"action": "wait_for", "timeout_ms": 15000, "expect": {

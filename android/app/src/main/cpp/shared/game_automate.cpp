@@ -14,6 +14,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <atomic>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -386,10 +388,18 @@ static int g_held_axis_active[8] = { 0 };
 static float g_held_axis_value[8] = { 0.0f };
 static int g_held_axis_touch_source[8] = { 0 };
 
+struct automation_load_request {
+	char script_path[512] = "";
+	char run_id[80] = "";
+	int start_step = 0;
+};
+
 static char g_automate_dir[512] = "";
-static char g_pending_script[512] = "";
-static volatile int g_load_requested = 0;
-static int g_start_step = 0;      /* skip to this step index on load */
+static char g_active_script[512] = "";
+static char g_active_run_id[80] = "";
+static automation_load_request g_pending_load;
+static std::mutex g_pending_load_mutex;
+static std::atomic<bool> g_load_requested{ false };
 static Uint32 g_script_start = 0; /* SDL_GetTicks() when script began */
 static FILE *g_log_fp = NULL;     /* automation_log.jsonl file handle */
 static int g_log_seq = 0;         /* monotonic sequence for log lines */
@@ -494,17 +504,37 @@ static const char *step_type_name(step_type t)
 
 /* -- File-based result/log writing ------------------------------------ */
 
+static FILE *begin_result_file(char *path, size_t path_size, char *temp_path, size_t temp_path_size)
+{
+	snprintf(path, path_size, "%s/automation_result.json", g_automate_dir);
+	snprintf(temp_path, temp_path_size, "%s/automation_result.json.tmp", g_automate_dir);
+	return fopen(temp_path, "w");
+}
+
+static void publish_result_file(FILE *f, const char *temp_path, const char *path)
+{
+	fflush(f);
+	fclose(f);
+	if (rename(temp_path, path) != 0)
+		remove(temp_path);
+}
+
 static void write_result_file(const char *result, const char *reason)
 {
 	if (!g_automate_dir[0])
 		return;
 
-	char path[1024];
-	snprintf(path, sizeof(path), "%s/automation_result.json", g_automate_dir);
+	char path[1024], temp_path[1024];
 
 	Uint32 elapsed = SDL_GetTicks() - g_script_start;
+	const int total_steps = (int) g_steps.size();
+	int steps_completed = strcmp(result, "PASS") == 0 ? g_current_step : g_current_step + 1;
+	if (steps_completed < 0)
+		steps_completed = 0;
+	if (steps_completed > total_steps)
+		steps_completed = total_steps;
 
-	FILE *f = fopen(path, "w");
+	FILE *f = begin_result_file(path, sizeof(path), temp_path, sizeof(temp_path));
 	if (!f)
 		return;
 
@@ -526,20 +556,20 @@ static void write_result_file(const char *result, const char *reason)
 		escaped[ei] = '\0';
 
 		fprintf(f,
-		        "{\"result\":\"%s\",\"steps_completed\":%d,"
+		        "{\"result\":\"%s\",\"run_id\":\"%s\",\"steps_completed\":%d,"
 		        "\"total_steps\":%d,\"reason\":\"%s\","
 		        "\"elapsed_ms\":%u}\n",
-		        result, g_current_step + 1, (int) g_steps.size(),
+		        result, g_active_run_id, steps_completed, total_steps,
 		        escaped, (unsigned) elapsed);
 	} else {
 		fprintf(f,
-		        "{\"result\":\"%s\",\"steps_completed\":%d,"
+		        "{\"result\":\"%s\",\"run_id\":\"%s\",\"steps_completed\":%d,"
 		        "\"total_steps\":%d,\"elapsed_ms\":%u}\n",
-		        result, g_current_step + 1, (int) g_steps.size(),
+		        result, g_active_run_id, steps_completed, total_steps,
 		        (unsigned) elapsed);
 	}
 
-	fclose(f);
+	publish_result_file(f, temp_path, path);
 }
 
 static void write_result_file_continue(int next_step)
@@ -547,22 +577,21 @@ static void write_result_file_continue(int next_step)
 	if (!g_automate_dir[0])
 		return;
 
-	char path[1024];
-	snprintf(path, sizeof(path), "%s/automation_result.json", g_automate_dir);
+	char path[1024], temp_path[1024];
 
 	Uint32 elapsed = SDL_GetTicks() - g_script_start;
 
-	FILE *f = fopen(path, "w");
+	FILE *f = begin_result_file(path, sizeof(path), temp_path, sizeof(temp_path));
 	if (!f)
 		return;
 
 	fprintf(f,
-	        "{\"result\":\"LAUNCHER_CONTINUE\",\"next_step\":%d,"
+	        "{\"result\":\"LAUNCHER_CONTINUE\",\"run_id\":\"%s\",\"next_step\":%d,"
 	        "\"steps_completed\":%d,\"total_steps\":%d,"
 	        "\"elapsed_ms\":%u,\"script_path\":\"%s\"}\n",
-	        next_step, g_current_step + 1, (int) g_steps.size(),
-	        (unsigned) elapsed, g_pending_script);
-	fclose(f);
+	        g_active_run_id, next_step, g_current_step + 1, (int) g_steps.size(),
+	        (unsigned) elapsed, g_active_script);
+	publish_result_file(f, temp_path, path);
 }
 
 static void log_append(const char *action, const char *status, const char *detail)
@@ -605,6 +634,8 @@ static void remove_stale_result(void)
 
 	char path[1024];
 	snprintf(path, sizeof(path), "%s/automation_result.json", g_automate_dir);
+	remove(path);
+	snprintf(path, sizeof(path), "%s/automation_result.json.tmp", g_automate_dir);
 	remove(path);
 }
 
@@ -2197,29 +2228,48 @@ extern "C" void game_automate_set_path(const char *dir_path)
 	}
 }
 
-extern "C" void game_automate_load_script(const char *script_path)
+extern "C" void game_automate_load_script(const char *script_path, int start_step,
+                                          const char *run_id)
 {
-	if (script_path) {
-		strncpy(g_pending_script, script_path, sizeof(g_pending_script) - 1);
-		g_pending_script[sizeof(g_pending_script) - 1] = '\0';
-		g_load_requested = 1;
-		LOGI("Script load requested: %s", script_path);
+	if (!script_path)
+		return;
+
+	{
+		const std::lock_guard<std::mutex> lock(g_pending_load_mutex);
+		strncpy(g_pending_load.script_path, script_path, sizeof(g_pending_load.script_path) - 1);
+		g_pending_load.script_path[sizeof(g_pending_load.script_path) - 1] = '\0';
+		strncpy(g_pending_load.run_id, run_id ? run_id : "", sizeof(g_pending_load.run_id) - 1);
+		g_pending_load.run_id[sizeof(g_pending_load.run_id) - 1] = '\0';
+		g_pending_load.start_step = start_step;
+		g_load_requested.store(true, std::memory_order_release);
 	}
+	LOGI("Script load requested: %s start_step=%d run_id=%s", script_path, start_step,
+	     run_id ? run_id : "");
 }
 
 extern "C" void game_automate_tick(void)
 {
 	/* Handle pending load request (from JNI thread) */
-	if (g_load_requested) {
-		g_load_requested = 0;
-		LOGI("Loading automation script: %s", g_pending_script);
+	if (g_load_requested.load(std::memory_order_acquire)) {
+		automation_load_request request;
+		{
+			const std::lock_guard<std::mutex> lock(g_pending_load_mutex);
+			request = g_pending_load;
+			g_load_requested.store(false, std::memory_order_relaxed);
+		}
+
+		strncpy(g_active_script, request.script_path, sizeof(g_active_script) - 1);
+		g_active_script[sizeof(g_active_script) - 1] = '\0';
+		strncpy(g_active_run_id, request.run_id, sizeof(g_active_run_id) - 1);
+		g_active_run_id[sizeof(g_active_run_id) - 1] = '\0';
+		LOGI("Loading automation script: %s start_step=%d run_id=%s", g_active_script,
+		     request.start_step, g_active_run_id);
 
 		remove_stale_result();
 		open_log_file();
 
-		if (load_script_file(g_pending_script)) {
-			g_current_step = g_start_step;
-			g_start_step = 0; /* reset for next load */
+		if (load_script_file(g_active_script)) {
+			g_current_step = request.start_step;
 			g_step_start = SDL_GetTicks();
 			g_script_start = g_step_start;
 			clear_held_axes();
@@ -2988,12 +3038,6 @@ extern "C" void game_automate_tick(void)
 			advance_step();
 			break;
 	}
-}
-
-extern "C" void game_automate_set_start_step(int step)
-{
-	g_start_step = step;
-	LOGI("Start step set to %d", step);
 }
 
 #endif /* INTROSPECT_ON */

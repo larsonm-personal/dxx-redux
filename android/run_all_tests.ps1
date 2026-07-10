@@ -312,7 +312,9 @@ $testTimeouts = @{
     "test_mp"                             = 240
     "test_lan"                            = 240
     "test_server_integration"             = 600
+    "test_test_helpers_process_wait"      = 60
     "test_validate_extract_regression_specs" = 60
+    "test_validate_automation_catalog"    = 60
 }
 
 function Get-RunTestJson5ChildTimeoutSeconds {
@@ -367,38 +369,47 @@ $noInfraTests = @(
     "test_server_integration",
     "test_input_demo_state_trace_compare",
     "test_input_demo_rng_trace_compare",
-    "test_validate_extract_regression_specs"
+    "test_test_helpers_process_wait",
+    "test_validate_extract_regression_specs",
+    "test_validate_automation_catalog"
 )
 
 $allTests = @()
-$nonStandaloneSkipped = @()
+$supportScripts = @()
+$catalogErrors = @()
 $testsDir = Join-Path $scriptDir "tests"
 $ps1Files = @(Get-ChildItem -Path $testsDir -Filter "test_*.ps1" -File -ErrorAction SilentlyContinue | Sort-Object Name)
 $ps1TestNames = @{}
 foreach ($ps1File in $ps1Files) {
     $ps1TestNames[$ps1File.BaseName] = $true
 }
-$supportScriptOwners = @{
-    "test_extract_regression_template" = "test_extract"
-    "test_lan_mp" = "test_lan"
-    "test_mission_zip_batch_import_metadata_launch" = "test_mission_zip_batch"
-}
 
 # json5 game-automation scripts (run via run_test.ps1)
 $gameScriptsDir = Join-Path $scriptDir "game_scripts"
 $json5Files = @(Get-ChildItem -Path $gameScriptsDir -Filter "test_*.json5" -File -ErrorAction SilentlyContinue | Sort-Object Name)
 foreach ($t in $json5Files) {
-    if (-not (Get-ScriptStandalone -ScriptPath $t.FullName)) {
-        $owner = if ($supportScriptOwners.ContainsKey($t.BaseName)) {
-            $supportScriptOwners[$t.BaseName]
+    $info = Get-TestScriptInfo -ScriptPath $t.FullName
+    if ($null -eq $info) {
+        $catalogErrors += "$($t.Name): missing or unparseable first _info object"
+        continue
+    }
+    $standalone = -not ($info._standalone -eq $false)
+    $owner = if ($info._owner) { [string]$info._owner } else { $null }
+    if (-not $standalone) {
+        if (-not $owner) {
+            $catalogErrors += "$($t.Name): _standalone=false requires _owner"
+        } elseif (-not $ps1TestNames.ContainsKey($owner)) {
+            $catalogErrors += "$($t.Name): owner '$owner' is not a top-level PowerShell test"
         } else {
-            $t.BaseName
+            $supportScripts += @{ Name = $t.BaseName; Owner = $owner; Type = "json5" }
         }
-        if ($ps1TestNames.ContainsKey($owner)) {
-            continue
-        }
-        $nonStandaloneSkipped += @{ Name = $t.BaseName; Reason = "script _standalone=false"; Type = "json5" }
-        continue  # skip template scripts that need a caller
+        continue
+    }
+    if ($owner) {
+        $catalogErrors += "$($t.Name): standalone scripts cannot declare _owner"
+    }
+    if ($ps1TestNames.ContainsKey($t.BaseName)) {
+        $catalogErrors += "$($t.Name): duplicate top-level test name '$($t.BaseName)'"
     }
     $name = $t.BaseName
     $childTimeoutSeconds = Get-RunTestJson5ChildTimeoutSeconds -ScriptPath $t.FullName -TestName $name
@@ -412,6 +423,14 @@ foreach ($t in $json5Files) {
         TimeoutSeconds = $timeoutSeconds
         Arguments = @("-TimeoutSeconds", $childTimeoutSeconds.ToString())
     }
+}
+
+if ($catalogErrors.Count -gt 0) {
+    Write-Host "FAIL: Invalid automation test catalog" -ForegroundColor Red
+    foreach ($catalogError in $catalogErrors) {
+        Write-Host "  $catalogError" -ForegroundColor Red
+    }
+    exit 1
 }
 
 # ps1 integration tests
@@ -563,20 +582,10 @@ $runnableTests = @($runnableTests | Where-Object {
         $keep
     })
 
-function Get-TestExecutionOrderKey {
-    param([hashtable]$Test)
-
-    switch ($Test.Name) {
-        "test_quick_record_classic_sidecar_stage" { return "test_quick_record_classic_sidecar_00_stage" }
-        "test_quick_record_classic_sidecar_install" { return "test_quick_record_classic_sidecar_01_install" }
-        default { return $Test.Name }
-    }
-}
-
 function Sort-TestsForExecution {
     param([object[]]$Tests)
 
-    return , @($Tests | Sort-Object @{ Expression = { Get-TestExecutionOrderKey $_ } }, @{ Expression = { $_.Name } })
+    return , @($Tests | Sort-Object Name)
 }
 
 # Group by infrastructure tier
@@ -701,10 +710,13 @@ function Stop-TestSuiteEmulators {
         return
     }
 
-    $targetSerials = @(
-        $script:PRIMARY_EMULATOR_SERIAL,
-        $script:SECONDARY_EMULATOR_SERIAL
-    ) | Where-Object { $onlineSerials -contains $_ }
+    $targetSerials = @()
+    if ($script:startedEmu1 -and $onlineSerials -contains $script:PRIMARY_EMULATOR_SERIAL) {
+        $targetSerials += $script:PRIMARY_EMULATOR_SERIAL
+    }
+    if ($script:startedEmu2 -and $onlineSerials -contains $script:SECONDARY_EMULATOR_SERIAL) {
+        $targetSerials += $script:SECONDARY_EMULATOR_SERIAL
+    }
 
     if ($targetSerials.Count -eq 0) {
         return
@@ -1130,7 +1142,7 @@ Write-Host "========================================================" -Foregroun
 Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Tests found: $($allTests.Count) total, $($runnableTests.Count) runnable, $($manualSkipped.Count) manual-skipped, $($nonStandaloneSkipped.Count) non-standalone skipped" -ForegroundColor White
+Write-Host "Tests found: $($allTests.Count) total, $($runnableTests.Count) runnable, $($manualSkipped.Count) manual-skipped, $($supportScripts.Count) support-owned" -ForegroundColor White
 Write-Host "  Tier 0 (no infra):       $($tierNone.Count)"
 Write-Host "  Tier 1 (server only):    $($tierServer.Count)"
 Write-Host "  Tier 2 (single emu):     $($tierSingleEmu.Count)"
@@ -1184,6 +1196,7 @@ $results = @()
 $passCount = 0
 $failCount = 0
 $timeoutCount = 0
+$skipCount = 0
 $infraSkipped = @($fixtureSkipped)
 $stopEarly = $false
 $totalSw = [System.Diagnostics.Stopwatch]::StartNew()
@@ -1247,6 +1260,8 @@ function Invoke-SingleTest {
 
     $timedOut = $false
     $exitCode = 1
+    $stdout = ""
+    $stderr = ""
     try {
         $proc = [System.Diagnostics.Process]::Start($psi)
         $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
@@ -1290,12 +1305,14 @@ function Invoke-SingleTest {
     $sw.Stop()
     $elapsed = $sw.Elapsed.ToString("mm\:ss")
 
-    if ($timedOut) {
-        $status = "TIMEOUT"; $color = "Yellow"; $script:timeoutCount++
-    } elseif ($exitCode -eq 0) {
-        $status = "PASS"; $color = "Green"
-    } else {
-        $status = "FAIL"; $color = "Red"
+    $skipMarker = [regex]::Match("$stdout`n$stderr", '(?m)^RESULT:\s*SKIP(?:\s*\((?<reason>[^\r\n]*)\))?')
+    $skipDeclared = $skipMarker.Success
+    $status = Get-TestStatusFromExitCode -ExitCode $exitCode -TimedOut $timedOut -SkipDeclared $skipDeclared
+    $color = switch ($status) {
+        "PASS" { "Green" }
+        "SKIP" { [void]($script:skipCount++); "DarkYellow" }
+        "TIMEOUT" { [void]($script:timeoutCount++); "Yellow" }
+        default { "Red" }
     }
     Write-Host "  $status ($elapsed)" -ForegroundColor $color
 
@@ -1312,10 +1329,13 @@ function Invoke-SingleTest {
     $result = @{
         Name = $name; Type = $Test.Type; Status = $status
         ExitCode = $exitCode; Elapsed = $elapsed; LogFile = $logFile; Notes = $notes
+        Reason = if ($status -eq "SKIP" -and $skipMarker.Groups["reason"].Success) {
+            $skipMarker.Groups["reason"].Value
+        } else { "" }
     }
     $script:results += $result
 
-    if ($StopOnFail -and $exitCode -ne 0) {
+    if ($StopOnFail -and $status -in @("FAIL", "TIMEOUT")) {
         Write-Host "  Stopping early (-StopOnFail)" -ForegroundColor Yellow
         $script:stopEarly = $true
     }
@@ -1457,7 +1477,7 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
         foreach ($test in $tierSingleEmu) {
             if ($stopEarly) { break }
             $result = Invoke-SingleTest -Test $test
-            if ($result.Status -eq "PASS") {
+            if ($result.Status -in @("PASS", "SKIP")) {
                 $singleEmuFailureStreak = 0
                 continue
             }
@@ -1513,7 +1533,7 @@ if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
             foreach ($test in $tierExtract) {
                 if ($stopEarly) { break }
                 $result = Invoke-SingleTest -Test $test
-                if ($result.Status -ne "PASS") {
+                if ($result.Status -in @("FAIL", "TIMEOUT")) {
                     Write-Status "Tier 3 recovery: reprovisioning primary emulator after $($result.Name)" "Yellow"
                     if (-not (Recover-SingleEmulatorEnvironment -SerialRef ([ref]$emu1Serial))) {
                         Write-Status "Tier 3 recovery failed; stopping remaining extract tests" "Red"
@@ -1583,7 +1603,7 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
         foreach ($test in $tierDualEmu) {
             if ($stopEarly) { break }
             $result = Invoke-SingleTest -Test $test
-            if ($result.Status -ne "PASS") {
+            if ($result.Status -in @("FAIL", "TIMEOUT")) {
                 Write-Status "Tier 4 recovery: recycling dual-emulator environment after $($result.Name)" "Yellow"
                 if (-not (Recover-DualEmulatorEnvironment -PrimarySerialRef ([ref]$emu1Serial) -SecondarySerialRef ([ref]$emu2Serial) -EnsureServer:$tier4NeedsServer)) {
                     Write-Status "Tier 4 recovery failed; stopping remaining dual-emulator tests" "Red"
@@ -1605,7 +1625,21 @@ $totalSw.Stop()
 $totalElapsed = $totalSw.Elapsed.ToString("hh\:mm\:ss")
 
 # Merge manual + infra skips
-$allSkipped = @($manualSkipped) + @($nonStandaloneSkipped) + @($infraSkipped)
+$allSkipped = @($manualSkipped) + @($infraSkipped)
+$accountedTestNames = [System.Collections.Generic.HashSet[string]]::new()
+foreach ($result in $results) { [void]$accountedTestNames.Add([string]$result.Name) }
+foreach ($skippedTest in $allSkipped) { [void]$accountedTestNames.Add([string]$skippedTest.Name) }
+$notRun = @(
+    $runnableTests |
+        Where-Object { -not $accountedTestNames.Contains([string]$_.Name) } |
+        ForEach-Object {
+            @{
+                Name = $_.Name
+                Type = $_.Type
+                Reason = if ($stopEarly) { "stopped after prior failure" } else { "execution did not reach this test" }
+            }
+        }
+)
 
 # -- Generate report --
 
@@ -1617,17 +1651,21 @@ Write-Host ""
 
 # Console summary
 foreach ($r in $results) {
-    $icon = if ($r.Status -eq "PASS") { "+" } else { "!" }
-    $color = if ($r.Status -eq "PASS") { "Green" } else { "Red" }
+    $icon = if ($r.Status -eq "PASS") { "+" } elseif ($r.Status -eq "SKIP") { "-" } else { "!" }
+    $color = if ($r.Status -eq "PASS") { "Green" } elseif ($r.Status -eq "SKIP") { "DarkYellow" } else { "Red" }
     $noteSuffix = if ($r.Notes -and $r.Notes.Count -gt 0) { "  notes=$($r.Notes.Count)" } else { "" }
     Write-Host "  [$icon] $($r.Status.PadRight(7))  $($r.Elapsed)  $($r.Name)$noteSuffix" -ForegroundColor $color
 }
 foreach ($s in $allSkipped) {
     Write-Host "  [-] SKIP           $($s.Name)  ($($s.Reason))" -ForegroundColor DarkGray
 }
+foreach ($item in $notRun) {
+    Write-Host "  [ ] NOT_RUN        $($item.Name)  ($($item.Reason))" -ForegroundColor Yellow
+}
 
 Write-Host ""
-Write-Host "  Passed: $passCount  Failed: $failCount  Timeouts: $timeoutCount  Skipped: $($allSkipped.Count)  Total time: $totalElapsed"
+$totalSkipped = $skipCount + $allSkipped.Count
+Write-Host "  Passed: $passCount  Failed: $failCount  Timeouts: $timeoutCount  Skipped: $totalSkipped  Not run: $($notRun.Count)  Total time: $totalElapsed"
 Write-Host ""
 
 # Markdown report
@@ -1638,7 +1676,8 @@ $md += "## Summary"
 $md += "- Passed: $passCount"
 $md += "- Failed: $failCount"
 $md += "- Timeouts: $timeoutCount"
-$md += "- Skipped: $($allSkipped.Count)"
+$md += "- Skipped: $totalSkipped"
+$md += "- Not run: $($notRun.Count)"
 $md += "- Total time: $totalElapsed"
 $md += "- Per-test timeout: ${TestTimeoutSeconds}s"
 $md += "- Auto-provisioned: emu1=$($script:startedEmu1) emu2=$($script:startedEmu2) server=$(($null -ne $script:autoServerProc)) docker=$($script:startedDocker)"
@@ -1648,10 +1687,14 @@ $md += ""
 $md += "| Status | Time | Test | Type |"
 $md += "|--------|------|------|------|"
 foreach ($r in $results) {
-    $md += "| $($r.Status) | $($r.Elapsed) | $($r.Name) | $($r.Type) |"
+    $resultType = if ($r.Status -eq "SKIP" -and $r.Reason) { "$($r.Type) ($($r.Reason))" } else { $r.Type }
+    $md += "| $($r.Status) | $($r.Elapsed) | $($r.Name) | $resultType |"
 }
 foreach ($s in $allSkipped) {
     $md += "| SKIP | -- | $($s.Name) | $($s.Type) ($($s.Reason)) |"
+}
+foreach ($item in $notRun) {
+    $md += "| NOT_RUN | -- | $($item.Name) | $($item.Type) ($($item.Reason)) |"
 }
 $md += ""
 
@@ -1703,4 +1746,4 @@ Stop-TestSuiteEmulators
 
 # Note: tests that own a server lifecycle clean it up themselves
 
-if ($failCount -gt 0 -or $timeoutCount -gt 0) { exit 1 } else { exit 0 }
+if ($failCount -gt 0 -or $timeoutCount -gt 0 -or $notRun.Count -gt 0) { exit 1 } else { exit 0 }

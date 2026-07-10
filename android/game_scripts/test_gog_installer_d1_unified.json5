@@ -30,6 +30,7 @@
     {"_info": {
         "games": ["d1"],
         "_standalone": false,
+        "_owner": "test_gog_installer_d1_unified",
         "params": {
             "INSTALLER_VARIANT": {
                 "label": "D1 GOG installer variant",

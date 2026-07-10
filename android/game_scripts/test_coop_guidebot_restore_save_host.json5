@@ -1,7 +1,7 @@
 // TEST HELPER: Save a host-owned Guide-Bot before network slots are reversed.
 // Run with test_lan.ps1 -GuidebotSlotRemapRestore.
 [
-    {"_info": {"games": ["d2"], "_standalone": false}},
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
 
     {"action": "log", "message": "=== COOP GUIDEBOT RESTORE: save host ==="},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {

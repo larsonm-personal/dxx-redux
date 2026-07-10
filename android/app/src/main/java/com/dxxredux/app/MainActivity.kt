@@ -233,11 +233,13 @@ class MainActivity :
 
     external fun nativeSetIntrospectPath(path: String)
 
-    external fun nativeLoadAutomationScript(path: String)
+    external fun nativeLoadAutomationScript(
+        path: String,
+        startStep: Int,
+        runId: String,
+    )
 
     external fun nativeSetAutomationPath(path: String)
-
-    external fun nativeSetAutomationStartStep(step: Int)
 
     external fun nativeSetMusicGain(gainDb: Float)
 
@@ -1653,6 +1655,7 @@ class MainActivity :
             if (BuildConfig.DEBUG) {
                 val autoScript = intent.getStringExtra("automation_script")
                 val autoStep = intent.getIntExtra("automation_start_step", 0)
+                val autoRunId = intent.getStringExtra("automation_run_id").orEmpty()
                 if (!autoScript.isNullOrEmpty()) {
                     val resolved =
                         if (autoScript.startsWith("/")) {
@@ -1662,10 +1665,9 @@ class MainActivity :
                         }
                     Log.i(
                         "DXX-Automate",
-                        "Intent automation: script=$resolved start_step=$autoStep",
+                        "Intent automation: script=$resolved start_step=$autoStep run_id=$autoRunId",
                     )
-                    nativeSetAutomationStartStep(autoStep)
-                    nativeLoadAutomationScript(resolved)
+                    nativeLoadAutomationScript(resolved, autoStep, autoRunId)
                 }
             }
 
@@ -2294,6 +2296,7 @@ class MainActivity :
                     return
                 }
                 val scriptPath = intent.getStringExtra("script")
+                val runId = intent.getStringExtra("run_id").orEmpty()
                 if (scriptPath.isNullOrEmpty()) {
                     Log.e("DXX-Automate", "No 'script' extra in AUTOMATE broadcast")
                     return
@@ -2305,8 +2308,8 @@ class MainActivity :
                     } else {
                         filesDir.absolutePath + "/" + scriptPath
                     }
-                Log.i("DXX-Automate", "Loading automation script: $resolvedPath")
-                nativeLoadAutomationScript(resolvedPath)
+                Log.i("DXX-Automate", "Loading automation script: $resolvedPath run_id=$runId")
+                nativeLoadAutomationScript(resolvedPath, 0, runId)
             }
         }
 

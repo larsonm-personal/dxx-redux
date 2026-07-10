@@ -1,7 +1,7 @@
 // TEST HELPER: Observe the host-owned Guide-Bot while its coop save is made.
 // Run with test_lan.ps1 -GuidebotSlotRemapRestore.
 [
-    {"_info": {"games": ["d2"], "_standalone": false}},
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
 
     {"action": "log", "message": "=== COOP GUIDEBOT RESTORE: save joiner ==="},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {

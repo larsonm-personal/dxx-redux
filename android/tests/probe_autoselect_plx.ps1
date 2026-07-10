@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# test_autoselect_plx.ps1 -- Integration test for weapon autoselect file handling.
+# probe_autoselect_plx.ps1 -- Inspect existing weapon autoselect files.
 #
 # Verifies:
 #   1. D1 .plx weapon reorder section read/write format
@@ -7,13 +7,14 @@
 #   3. App installs and setup introspection works
 #
 # Usage:
-#   .\android\tests\test_autoselect_plx.ps1
+#   .\android\tests\probe_autoselect_plx.ps1
 
 $ErrorActionPreference = "Stop"
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 $pass = 0
 $fail = 0
+$skipped = 0
 
 function Assert-True {
     param([bool]$Condition, [string]$Message)
@@ -41,6 +42,7 @@ Write-Status "--- D1 .plx weapon reorder format ---" -Color Yellow
 $d1plxExists = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "test", "-f", "files/d1x-redux/Players/player.plx", "&&", "echo", "yes")
 if (-not ($d1plxExists -match "yes")) {
     Write-Status "  SKIP: D1 player.plx not present (D1 game data not installed or no pilot created)" -Color DarkGray
+    $skipped++
 } else {
 
     # Read existing D1 .plx file
@@ -112,6 +114,7 @@ if (-not ($d1plxExists -match "yes")) {
 
     } else {
         Write-Status "  SKIP: No primary= line found, cannot test round-trip" -Color DarkGray
+        $skipped++
     }
 
 } # end d1plxExists
@@ -122,6 +125,7 @@ Write-Status "--- D2 .plr binary header ---" -Color Yellow
 $d2plrExists = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "test", "-f", "files/d2x-redux/Players/player.plr", "&&", "echo", "yes")
 if (-not ($d2plrExists -match "yes")) {
     Write-Status "  SKIP: D2 player.plr not present (D2 game data not installed)" -Color DarkGray
+    $skipped++
 } else {
     # Read first 6 bytes of D2 .plr: should be DPLR signature (LE: 0x52 0x4C 0x50 0x44)
     # followed by version (LE u16)
@@ -160,7 +164,11 @@ if ($setup) {
 
 # -- Summary --
 Write-Status ""
-Write-Status "=== Results: $pass passed, $fail failed ===" -Color $(if ($fail -eq 0) { "Green" } else { "Red" })
+Write-Status "=== Results: $pass passed, $fail failed, $skipped skipped ===" -Color $(if ($fail -eq 0) { "Green" } else { "Red" })
 
 if ($fail -gt 0) { exit 1 }
+if ($skipped -gt 0) {
+    Write-Host "RESULT: SKIP (existing pilot fixture unavailable)"
+    exit 2
+}
 exit 0

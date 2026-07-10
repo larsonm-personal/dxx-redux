@@ -1,7 +1,7 @@
 // TEST HELPER: Verify the new host does not inherit ownership after restore.
 // The saved owner was slot 0 and is now the joiner in slot 1.
 [
-    {"_info": {"games": ["d2"], "_standalone": false}},
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
 
     {"action": "log", "message": "=== COOP GUIDEBOT RESTORE: remapped host ==="},
     {"action": "wait_for", "timeout_ms": 90000, "expect": {

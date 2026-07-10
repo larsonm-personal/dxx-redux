@@ -535,16 +535,13 @@ Java_com_dxxredux_app_NativeTextureLookupCache_nativeClearD2(JNIEnv *env, jclass
 
 /* ── Automation: load and run a JSON script of input steps ────────── */
 JNIEXPORT void JNICALL
-Java_com_dxxredux_app_MainActivity_nativeSetAutomationStartStep(JNIEnv *env, jobject thiz, jint step)
-{
-	game_automate_set_start_step((int) step);
-}
-
-JNIEXPORT void JNICALL
-Java_com_dxxredux_app_MainActivity_nativeLoadAutomationScript(JNIEnv *env, jobject thiz, jstring jpath)
+Java_com_dxxredux_app_MainActivity_nativeLoadAutomationScript(JNIEnv *env, jobject thiz, jstring jpath,
+                                                              jint start_step, jstring jrun_id)
 {
 	const char *path = (*env)->GetStringUTFChars(env, jpath, NULL);
-	game_automate_load_script(path);
+	const char *run_id = (*env)->GetStringUTFChars(env, jrun_id, NULL);
+	game_automate_load_script(path, (int) start_step, run_id);
+	(*env)->ReleaseStringUTFChars(env, jrun_id, run_id);
 	(*env)->ReleaseStringUTFChars(env, jpath, path);
 }
 

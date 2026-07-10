@@ -1,8 +1,7 @@
-// TEST: Record a quick demo and surface the staged triplet on the launcher Advanced page
+// TEST: Record and install a quick demo with RNG and classic-demo sidecars
 //
 // Starts a D2 level, toggles Android quick recording on and off through the
-// native meta action, then returns to the launcher and verifies that the
-// Advanced page shows the staged recording controls.
+// native meta action, then verifies and installs the complete staged triplet.
 [
     {"_info": {
         "games": ["d2"],
@@ -33,7 +32,7 @@
     {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
-    {"action": "log", "message": "=== TEST: Quick record staged sidecar ==="},
+    {"action": "log", "message": "=== TEST: Quick record sidecar workflow ==="},
 
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
@@ -72,7 +71,18 @@
     }},
     {"action": "assert_button", "text": "Advanced"},
     {"action": "tap_button", "text": "Advanced", "post_delay_ms": 600},
-    {"action": "tap_button", "text": "Add to Game", "exact": true, "post_delay_ms": 300},
+    {"action": "assert_button", "text": "Add to Game", "exact": true},
+    {"action": "install_staged_demo", "game": "d2", "name": "quick_record_sidecar"},
+    {"action": "wait_for", "field": "staged_input_demo_count", "value": "0", "timeout_ms": 10000},
+    {"action": "assert", "expect": {
+        "installed_input_demos[0].filename": "quick_record_sidecar.dximdemo",
+        "installed_input_demos[0].game": "d2",
+        "installed_input_demos[0].level": "1",
+        "installed_input_demos[0].frame_count": {"gte": 1},
+        "installed_input_demos[0].header_readable": "true",
+        "installed_input_demos[0].has_rng_trace": "true",
+        "installed_input_demos[0].has_classic_demo": "true"
+    }},
 
-    {"action": "log", "message": "=== TEST: Quick record staged sidecar -- PASS ==="}
+    {"action": "log", "message": "=== TEST: Quick record sidecar workflow -- PASS ==="}
 ]

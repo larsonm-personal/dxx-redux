@@ -167,6 +167,25 @@ class SetupActivity : ComponentActivity() {
     // Scripts can alternate between launcher and game phases via
     // enter_launcher / enter_game steps in a single JSON5 array.
     private var launcherExecutor: LauncherScriptExecutor? = null
+    private val automationStatePreferences
+        get() = getSharedPreferences("automation_state", Context.MODE_PRIVATE)
+
+    private fun rememberActiveAutomationRunId(runId: String) {
+        automationStatePreferences.edit().putString("active_run_id", runId).commit()
+    }
+
+    private fun activeAutomationRunId(): String? =
+        if (automationStatePreferences.contains("active_run_id")) {
+            automationStatePreferences.getString("active_run_id", null)
+        } else {
+            null
+        }
+
+    internal fun clearActiveAutomationRunId(runId: String) {
+        if (activeAutomationRunId() == runId) {
+            automationStatePreferences.edit().remove("active_run_id").commit()
+        }
+    }
 
     /** Accessible button discovered by walking the Compose accessibility tree. */
     data class ButtonInfo(
@@ -187,22 +206,25 @@ class SetupActivity : ComponentActivity() {
             ) {
                 if (!BuildConfig.DEBUG) return
                 val scriptPath = intent?.getStringExtra("script") ?: return
+                val runId = intent.getStringExtra("run_id").orEmpty()
+                rememberActiveAutomationRunId(runId)
                 val resolved =
                     if (scriptPath.startsWith("/")) {
                         scriptPath
                     } else {
                         filesDir.absolutePath + "/" + scriptPath
                     }
-                Log.i("DXX-Setup", "SETUP_AUTOMATE: loading $resolved")
+                Log.i("DXX-Setup", "SETUP_AUTOMATE: loading $resolved run_id=$runId")
                 val executor =
-                    LauncherScriptExecutor(this@SetupActivity) { game, path, startStep ->
-                        launchGameForAutomation(game, path, startStep)
+                    LauncherScriptExecutor(this@SetupActivity, runId) { game, path, startStep ->
+                        launchGameForAutomation(game, path, startStep, automationRunId = runId)
                     }
                 launcherExecutor = executor
                 kotlinx.coroutines.MainScope().launch {
                     try {
                         executor.execute(resolved, 0)
                     } catch (e: Exception) {
+                        clearActiveAutomationRunId(runId)
                         Log.e("DXX-Setup", "Launcher automation failed: ${e.message}", e)
                     }
                 }
@@ -214,6 +236,7 @@ class SetupActivity : ComponentActivity() {
         scriptPath: String,
         startStep: Int,
         resumeCandidate: ResumeSaveBridge.ResumeSaveCandidate? = null,
+        automationRunId: String = "",
     ) {
         runningGameProcessPid()?.let { pid ->
             Log.w(
@@ -232,7 +255,7 @@ class SetupActivity : ComponentActivity() {
                         ).show()
                     return@launch
                 }
-                launchGameForAutomation(game, scriptPath, startStep, resumeCandidate)
+                launchGameForAutomation(game, scriptPath, startStep, resumeCandidate, automationRunId)
             }
             return
         }
@@ -281,6 +304,7 @@ class SetupActivity : ComponentActivity() {
             )
         intent.putExtra("automation_script", scriptPath)
         intent.putExtra("automation_start_step", startStep)
+        intent.putExtra("automation_run_id", automationRunId)
         startActivity(intent)
     }
 
@@ -1751,7 +1775,13 @@ class SetupActivity : ComponentActivity() {
                 onLaunchGame = launch@{ game, resumeCandidate ->
                     val pending = launcherExecutor?.consumePendingLaunch()
                     if (pending != null) {
-                        launchGameForAutomation(game, pending.scriptPath, pending.nextStep, resumeCandidate)
+                        launchGameForAutomation(
+                            game,
+                            pending.scriptPath,
+                            pending.nextStep,
+                            resumeCandidate,
+                            pending.runId,
+                        )
                     } else if (resumeCandidate == null && (gameRunningFlag || hasReturnableGameActivity())) {
                         if (!returnToGame()) {
                             gameRunningFlag = false
@@ -1981,15 +2011,32 @@ class SetupActivity : ComponentActivity() {
                 val json = org.json.JSONObject(resultFile.readText())
                 if (json.optString("result") == "LAUNCHER_CONTINUE") {
                     val nextStep = json.getInt("next_step")
+                    val resultRunId = json.optString("run_id", "")
+                    val expectedRunId = activeAutomationRunId()
+                    if (expectedRunId == null || expectedRunId != resultRunId) {
+                        Log.w(
+                            "DXX-Setup",
+                            "Discarding LAUNCHER_CONTINUE for run_id=$resultRunId; expected=$expectedRunId",
+                        )
+                        resultFile.delete()
+                        return
+                    }
                     val resultScriptPath =
                         json.optString("script_path", "").takeIf { it.isNotEmpty() }?.let { path ->
                             if (path.startsWith("/")) path else filesDir.absolutePath + "/" + path
                         }
                     val existingExecutor = launcherExecutor
+                    if (existingExecutor != null && existingExecutor.runId != resultRunId) {
+                        Log.w(
+                            "DXX-Setup",
+                            "Ignoring LAUNCHER_CONTINUE for run_id=$resultRunId while run_id=${existingExecutor.runId} is active",
+                        )
+                        return
+                    }
                     val executor =
                         existingExecutor
-                            ?: LauncherScriptExecutor(this) { game, path, startStep ->
-                                launchGameForAutomation(game, path, startStep)
+                            ?: LauncherScriptExecutor(this, resultRunId) { game, path, startStep ->
+                                launchGameForAutomation(game, path, startStep, automationRunId = resultRunId)
                             }.also { launcherExecutor = it }
 
                     Log.i(
@@ -2011,6 +2058,8 @@ class SetupActivity : ComponentActivity() {
                             Log.e("DXX-Setup", "LAUNCHER_CONTINUE missing script_path for recovery")
                         }
                     }
+                } else if (json.optString("result") in setOf("PASS", "FAIL")) {
+                    clearActiveAutomationRunId(json.optString("run_id", ""))
                 }
             } catch (e: Exception) {
                 Log.e("DXX-Setup", "Error reading automation result", e)

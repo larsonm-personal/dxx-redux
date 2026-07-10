@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.content.Intent
+import android.system.Os
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -24,6 +25,7 @@ import java.util.Locale
  */
 class LauncherScriptExecutor(
     private val activity: SetupActivity,
+    internal val runId: String,
     private val launchGame: (game: String, scriptPath: String, startStep: Int) -> Unit,
 ) {
     private val context: Context get() = activity
@@ -37,6 +39,7 @@ class LauncherScriptExecutor(
     data class PendingGameLaunch(
         val scriptPath: String,
         val nextStep: Int,
+        val runId: String,
     )
 
     var pendingGameLaunch: PendingGameLaunch? = null
@@ -400,7 +403,7 @@ class LauncherScriptExecutor(
                     }
                     Log.i(TAG, "TAP: \"${button.text}\" at (${button.centerX}, ${button.centerY})")
                     if (launchesGame) {
-                        pendingGameLaunch = PendingGameLaunch(scriptPath, currentStep + 1)
+                        pendingGameLaunch = PendingGameLaunch(scriptPath, currentStep + 1, runId)
                     }
                     if (!activity.performAccessibilityClick(text)) {
                         // Fallback to touch injection
@@ -538,13 +541,17 @@ class LauncherScriptExecutor(
         context
             .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
             .edit()
-            .remove(
-                "selected_game",
-            ).apply()
+            .clear()
+            .commit()
+        context
+            .getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
         clearPendingResumeLaunchState(context)
         Log.i(
             TAG,
-            "Game state reset (deleted plr/plx/sg/mg/cfg/pending resume files, " +
+            "Game state reset (deleted plr/plx/sg/mg/cfg/pending resume files and preferences, " +
                 "staged_input_demos=$stagedDemosDeleted)",
         )
     }
@@ -1004,15 +1011,21 @@ class LauncherScriptExecutor(
         val f = File(context.filesDir, "automation_result.json")
         val json = JSONObject()
         json.put("result", result)
-        json.put("steps_completed", currentStep + 1)
+        json.put("run_id", runId)
+        val stepsCompleted = if (result == "PASS") currentStep else currentStep + 1
+        json.put("steps_completed", stepsCompleted.coerceIn(0, totalSteps))
         json.put("total_steps", totalSteps)
         json.put("elapsed_ms", elapsed)
         if (reason != null) json.put("reason", reason)
-        f.writeText(json.toString() + "\n")
+        val temp = File(context.filesDir, "automation_result.json.tmp")
+        temp.writeText(json.toString() + "\n")
+        Os.rename(temp.absolutePath, f.absolutePath)
+        activity.clearActiveAutomationRunId(runId)
     }
 
     private fun removeStaleResult() {
         File(context.filesDir, "automation_result.json").delete()
+        File(context.filesDir, "automation_result.json.tmp").delete()
     }
 
     /** Strip // line comments and trailing commas for JSON5 -> JSON conversion. */

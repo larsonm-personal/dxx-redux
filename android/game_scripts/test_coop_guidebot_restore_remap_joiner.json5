@@ -1,6 +1,6 @@
 // TEST HELPER: Verify saved ownership follows this identity from slot 0 to 1.
 [
-    {"_info": {"games": ["d2"], "_standalone": false}},
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
 
     {"action": "log", "message": "=== COOP GUIDEBOT RESTORE: remapped joiner ==="},
     {"action": "wait_for", "timeout_ms": 90000, "expect": {

@@ -475,7 +475,7 @@ function Start-EmulatorIfNeeded {
 }
 
 function Reset-GameState {
-    # Reset shared config for a fresh test state.
+    # Reset shared config and preferences for a fresh test state.
     # Preserve pilot files so launcher-backed tests do not re-enter the
     # first-launch pilot flow on every run. Tests that need a missing pilot
     # state clear those files explicitly via setup_command clear_pilot_files.
@@ -485,6 +485,9 @@ function Reset-GameState {
         "find", "files", "-name", "'descent.cfg'", "-delete") | Out-Null
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
         "rm", "-f", "files/controller_config.json") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
+        "rm", "-f", "shared_prefs/dxx_prefs.xml", "shared_prefs/dxx_prefs.xml.bak",
+        "shared_prefs/launcher_prefs.xml", "shared_prefs/launcher_prefs.xml.bak") | Out-Null
     # Reset active file set to "default" -- previous tests may have
     # created/switched to a different set that is now empty.
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
@@ -1210,13 +1213,45 @@ function Send-AutomationScript {
     return $true
 }
 
+function Test-AutomationResultRunId {
+    # A correlated runner must never accept a result from an earlier invocation.
+    param(
+        [AllowNull()][object]$Result,
+        [string]$ExpectedRunId
+    )
+
+    if (-not $ExpectedRunId) { return $true }
+    if ($null -eq $Result) { return $false }
+    $runIdProperty = $Result.PSObject.Properties["run_id"]
+    if ($null -eq $runIdProperty) { return $false }
+    return ([string]$runIdProperty.Value -ceq $ExpectedRunId)
+}
+
+function Get-TestStatusFromExitCode {
+    param(
+        [int]$ExitCode,
+        [bool]$TimedOut = $false,
+        [bool]$SkipDeclared = $false
+    )
+
+    if ($TimedOut) { return "TIMEOUT" }
+    if ($ExitCode -eq 0) { return "PASS" }
+    if ($ExitCode -eq 2 -and $SkipDeclared) { return "SKIP" }
+    return "FAIL"
+}
+
 function Watch-AutomationResult {
     # Monitor for SCRIPT_RESULT via file-based result (primary) and logcat (fallback).
     # Handles SCRIPT_BACKGROUND markers by pressing HOME, waiting, then resuming.
     # Returns $true for PASS, $false for FAIL/timeout.
-    param([int]$TimeoutSeconds = 300, [switch]$IsLauncherScript)
+    param(
+        [int]$TimeoutSeconds = 300,
+        [switch]$IsLauncherScript,
+        [string]$ExpectedRunId
+    )
 
-    Write-Status "Monitoring test (timeout: ${TimeoutSeconds}s)..."
+    $runLabel = if ($ExpectedRunId) { ", run_id=$ExpectedRunId" } else { "" }
+    Write-Status "Monitoring test (timeout: ${TimeoutSeconds}s$runLabel)..."
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $lastHealthCheck = 0
     $finished = $false
@@ -1235,6 +1270,7 @@ function Watch-AutomationResult {
     $lastAutomationSeq = -1
     $lastAutomationProgressSeconds = -1
     $automationProgressGraceSeconds = 120
+    $mismatchedRunIds = [System.Collections.Generic.HashSet[string]]::new()
 
     while (-not $finished) {
         $elapsedNow = [int]$sw.Elapsed.TotalSeconds
@@ -1366,7 +1402,13 @@ function Watch-AutomationResult {
         if ($resultJson -and $resultJson -match '"result"') {
             try {
                 $resultObj = $resultJson | ConvertFrom-Json
-                if ($resultObj.result -eq "PASS") {
+                $resultRunId = if ($resultObj.run_id) { [string]$resultObj.run_id } else { "" }
+                if (-not (Test-AutomationResultRunId -Result $resultObj -ExpectedRunId $ExpectedRunId)) {
+                    if ($mismatchedRunIds.Add($resultRunId)) {
+                        $displayRunId = if ($resultRunId) { $resultRunId } else { "<missing>" }
+                        Write-Status "Ignoring automation result for run_id=$displayRunId" "Yellow"
+                    }
+                } elseif ($resultObj.result -eq "PASS") {
                     Write-Status "PASS (file-based, $($resultObj.steps_completed)/$($resultObj.total_steps) steps, $($resultObj.elapsed_ms)ms)" "Green"
                     $finished = $true
                     $passed = $true
@@ -1433,11 +1475,11 @@ function Watch-AutomationResult {
         if ($log.Length -gt 0) {
             $lines = $log -split "`n"
             foreach ($line in $lines) {
-                if ($line -match 'SCRIPT_RESULT:\s*PASS') {
+                if (-not $ExpectedRunId -and $line -match 'SCRIPT_RESULT:\s*PASS') {
                     Write-Status "PASS (logcat)" "Green"
                     $finished = $true
                     $passed = $true
-                } elseif ($line -match 'SCRIPT_RESULT:\s*FAIL') {
+                } elseif (-not $ExpectedRunId -and $line -match 'SCRIPT_RESULT:\s*FAIL') {
                     Write-Status "FAIL (logcat): $line" "Red"
                     $finished = $true
                     $passed = $false
@@ -1538,10 +1580,8 @@ function Get-GameIntrospection {
     try { return ($json | ConvertFrom-Json) } catch { return $null }
 }
 
-function Get-ScriptParams {
-    # Read a .json5 test script and return the params dict from its _info element.
-    # Returns hashtable of {ParamName -> {label, options -> {value -> {var_overrides}}}}
-    # or $null if no params defined.
+function Get-TestScriptInfo {
+    # Parse and return the first _info object from a JSON5 automation script.
     param([Parameter(Mandatory = $true)][string]$ScriptPath)
     if (-not (Test-Path $ScriptPath)) { return $null }
     $raw = Get-Content $ScriptPath -Raw
@@ -1549,10 +1589,20 @@ function Get-ScriptParams {
     $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
     try {
         $arr = $raw | ConvertFrom-Json
-        if ($arr.Count -gt 0 -and $arr[0]._info -and $arr[0]._info.params) {
-            return $arr[0]._info.params
+        if ($arr.Count -gt 0 -and $arr[0]._info) {
+            return $arr[0]._info
         }
     } catch {}
+    return $null
+}
+
+function Get-ScriptParams {
+    # Read a .json5 test script and return the params dict from its _info element.
+    # Returns hashtable of {ParamName -> {label, options -> {value -> {var_overrides}}}}
+    # or $null if no params defined.
+    param([Parameter(Mandatory = $true)][string]$ScriptPath)
+    $info = Get-TestScriptInfo -ScriptPath $ScriptPath
+    if ($info -and $info.params) { return $info.params }
     return $null
 }
 
@@ -1563,33 +1613,16 @@ function Get-ScriptGameInfo {
         [Parameter(Mandatory = $true)]
         [string]$ScriptPath
     )
-    if (-not (Test-Path $ScriptPath)) { return $null }
-    $raw = Get-Content $ScriptPath -Raw
-    # Strip single-line comments, trailing commas
-    $raw = [regex]::Replace($raw, '//.*', '')
-    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
-    try {
-        $arr = $raw | ConvertFrom-Json
-        if ($arr.Count -gt 0 -and $arr[0]._info -and $arr[0]._info.games) {
-            return @($arr[0]._info.games)
-        }
-    } catch {}
+    $info = Get-TestScriptInfo -ScriptPath $ScriptPath
+    if ($info -and $info.games) { return @($info.games) }
     return $null
 }
 
 function Get-ScriptStandalone {
     # Return $false if the script's _info has "_standalone": false, else $true.
     param([Parameter(Mandatory = $true)] [string]$ScriptPath)
-    if (-not (Test-Path $ScriptPath)) { return $true }
-    $raw = Get-Content $ScriptPath -Raw
-    $raw = [regex]::Replace($raw, '//.*', '')
-    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
-    try {
-        $arr = $raw | ConvertFrom-Json
-        if ($arr.Count -gt 0 -and $arr[0]._info -and $arr[0]._info._standalone -eq $false) {
-            return $false
-        }
-    } catch {}
+    $info = Get-TestScriptInfo -ScriptPath $ScriptPath
+    if ($info -and $info._standalone -eq $false) { return $false }
     return $true
 }
 

@@ -3,7 +3,8 @@
 [
     {"_info": {
         "games": ["d1", "d2"],
-        "_standalone": false
+        "_standalone": false,
+        "_owner": "test_mission_zip_batch"
     }},
 
     {"action": "enter_launcher"},

@@ -36,6 +36,11 @@ function Push-TestScriptToDevice {
     )
 
     Write-Status "Pushing test script: $DeviceName"
+    $devicePrefix = $DeviceName -replace '\.run-[^.]+\.json5$', ''
+    Adb -AdbArgs @(
+        "shell", "run-as", $script:PACKAGE, "find", "files", "-maxdepth", "1",
+        "-name", "'$devicePrefix.run-*.json5'", "-delete"
+    ) | Out-Null
     Adb -AdbArgs @("push", $SourcePath, "/data/local/tmp/$DeviceName") | Out-Null
     for ($stageAttempt = 1; $stageAttempt -le 3; $stageAttempt++) {
         Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files") | Out-Null
@@ -43,6 +48,7 @@ function Push-TestScriptToDevice {
 
         $staged = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "files/$DeviceName") -Seconds 5
         if ($staged -and $staged -notmatch 'No such file') {
+            Adb -AdbArgs @("shell", "rm", "-f", "/data/local/tmp/$DeviceName") | Out-Null
             return $true
         }
 
@@ -52,6 +58,7 @@ function Push-TestScriptToDevice {
     }
 
     Write-Status "FAIL: Could not stage test script on device: $DeviceName" "Red"
+    Adb -AdbArgs @("shell", "rm", "-f", "/data/local/tmp/$DeviceName") | Out-Null
     return $false
 }
 
@@ -169,7 +176,9 @@ foreach ($gameId in $gameList) {
     # -- Resolve script (variable substitution + conditional filtering) --
 
     $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId -Params $resolvedParams
-    $pushName = $ScriptName
+    $runId = [guid]::NewGuid().ToString("N")
+    $scriptStem = [System.IO.Path]::GetFileNameWithoutExtension($ScriptName)
+    $pushName = "$scriptStem.run-$runId.json5"
     if ($resolvedPath -ne $scriptPath) {
         # Push the resolved file instead, but keep the original name on device
         $pushSrc = $resolvedPath
@@ -212,7 +221,8 @@ foreach ($gameId in $gameList) {
         if (-not (Resolve-GameDataDeps -Deps $deps)) {
             if (-not $isInteractive) {
                 Write-Status "SKIP: deps unavailable in non-interactive mode" "Yellow"
-                exit 0
+                Write-Host "RESULT: SKIP (declared game-data dependencies unavailable)"
+                exit 2
             }
             $allPassed = $false
             if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
@@ -249,7 +259,7 @@ foreach ($gameId in $gameList) {
         Stop-AppAndWait
         Reset-GameState
         Adb -AdbArgs @("logcat", "-c") | Out-Null
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json", "files/automation_result.json.tmp") | Out-Null
         Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
 
         $launcherReady = $false
@@ -287,7 +297,7 @@ foreach ($gameId in $gameList) {
             Stop-AppAndWait
             Reset-GameState
             Adb -AdbArgs @("logcat", "-c") | Out-Null
-            Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
+            Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json", "files/automation_result.json.tmp") | Out-Null
             Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
         }
 
@@ -313,9 +323,12 @@ foreach ($gameId in $gameList) {
         }
 
         Write-Status "Sending SETUP_AUTOMATE broadcast for: $ScriptName"
-        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_AUTOMATE", "--es", "script", $ScriptName) | Out-Null
+        Adb -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_AUTOMATE",
+            "--es", "script", $pushName, "--es", "run_id", $runId
+        ) | Out-Null
 
-        $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout -IsLauncherScript
+        $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout -IsLauncherScript -ExpectedRunId $runId
     } else {
         # -- Game script: launch game + send AUTOMATE broadcast -----------
 
@@ -350,12 +363,15 @@ foreach ($gameId in $gameList) {
 
         Start-Sleep -Seconds 1
         Adb -AdbArgs @("logcat", "-c") | Out-Null
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json", "files/automation_result.json.tmp") | Out-Null
         Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
         Write-Status "Sending automation broadcast for: $ScriptName"
-        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $ScriptName) | Out-Null
+        Adb -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE",
+            "--es", "script", $pushName, "--es", "run_id", $runId
+        ) | Out-Null
 
-        $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout
+        $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout -ExpectedRunId $runId
     }
 
     if (-not $passed) {
