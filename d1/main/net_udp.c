@@ -5337,6 +5337,10 @@ net_udp_select_players(void)
 	m[opts].type = NM_TYPE_MENU; m[opts].text = TXT_OK; opts++;
 
 	m[0].value = 1;                         // Assume server will play...
+#ifdef __ANDROID__
+	if (auto_host_pending && auto_host_observer)
+		m[0].value = 0;
+#endif
 
 	if (PlayerCfg.NoRankings)
 		sprintf( text[0], "%d. %-20s", 1, Players[Player_num].callsign );
@@ -5981,6 +5985,17 @@ void net_udp_timeout_check(fix64 time)
 
 	int i = 0;
 	static fix64 last_timeout_time = 0;
+
+#ifdef __ANDROID__
+	if (multi_save_transfer_timeout_suspended()) {
+		for (i = 0; i < N_players; ++i)
+			if (i != Player_num &&
+			    Players[i].connected != CONNECT_DISCONNECTED)
+				Netgame.players[i].LastPacketTime = time;
+		last_timeout_time = time;
+		return;
+	}
+#endif
 	
 	if (time>=last_timeout_time+F1_0)
 	{

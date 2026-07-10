@@ -1,0 +1,24 @@
+// TEST HELPER: Observer-host side of Guide-Bot ownership assignment.
+[
+    {"_info": {"games": ["d2"], "_standalone": false}},
+
+    {"action": "log", "message": "=== COOP GUIDEBOT OBSERVER HOST ==="},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {
+        "in_game": "true",
+        "is_network": "true",
+        "multiplayer.my_player_num": "0",
+        "multiplayer.num_connected": "2",
+        "multiplayer.host_is_observer": "true"
+    }},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.owner_player": "1",
+        "guidebot.owner_is_local": "false",
+        "guidebot.owner_generation": {"gte": 1},
+        "guidebot.remote_owner": "1",
+        "guidebot.local_control_slot_matches": "false"
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== COOP GUIDEBOT OBSERVER HOST PASS ==="}
+]

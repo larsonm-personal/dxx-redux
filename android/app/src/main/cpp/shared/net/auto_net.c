@@ -39,6 +39,7 @@ int auto_host_coop_qol = 1;
 int auto_host_full_death_spew = 1;
 int auto_host_player_spew_no_expire = 1;
 int auto_host_clients_can_request_rewind = 0;
+int auto_host_observer = 0;
 
 char auto_net_callsign[10] = "";
 char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN] = "";

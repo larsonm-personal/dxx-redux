@@ -104,9 +104,9 @@
         "mine_volume": 4589835.689277863,
         "mine_volume_normalized": 1.003702872131153,
         "mine_volume_text": "1.0x",
-        "travel_distance": 3443.6138105206883,
-        "travel_time_seconds": 69,
-        "travel_time_text": "1M:09S",
+        "travel_distance": 3483.4805233134157,
+        "travel_time_seconds": 70,
+        "travel_time_text": "1M:10S",
         "travel_targets_reached": 10,
         "travel_targets_total": 10,
         "travel_key_detours": 2,
@@ -146,7 +146,7 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 472,
-            "distance": 984.2050378388219,
+            "distance": 1024.0717506315495,
             "key": "red"
           },
           {

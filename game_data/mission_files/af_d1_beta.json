@@ -290,7 +290,7 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 270,
-            "distance": 686.09239338494,
+            "distance": 2252.3353547907054,
             "key": "blue"
           },
           {
@@ -310,7 +310,7 @@
             "seg": 224,
             "side": 4,
             "wall": 13,
-            "distance": 1298.825620839749,
+            "distance": 2509.4595170740963,
             "trigger": 1,
             "trigger_type_id": 1,
             "trigger_type": "open_door",

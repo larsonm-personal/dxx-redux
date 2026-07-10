@@ -1003,6 +1003,7 @@ extern "C" char *game_introspect_get_state(void)
 			mp["game_status"] = (int) Netgame.game_status;
 			mp["network_status"] = Network_status;
 			mp["my_player_num"] = Player_num;
+			mp["host_is_observer"] = Netgame.host_is_obs != 0;
 
 			json players_arr = json::array();
 			for (int i = 0; i < N_players && i < MAX_PLAYERS; i++) {

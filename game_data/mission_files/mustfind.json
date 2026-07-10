@@ -101,10 +101,10 @@
         "mine_volume": 16950764.477465924,
         "mine_volume_normalized": 3.706784325764846,
         "mine_volume_text": "3.7x",
-        "travel_distance": 10369.457174937796,
-        "travel_time_seconds": 207,
-        "travel_time_text": "3M:27S",
-        "travel_targets_reached": 7,
+        "travel_distance": 10034.397669177803,
+        "travel_time_seconds": 201,
+        "travel_time_text": "3M:21S",
+        "travel_targets_reached": 6,
         "travel_targets_total": 7,
         "travel_key_detours": 3,
         "guidebot_count": 1,
@@ -130,15 +130,35 @@
           },
           {
             "index": 2,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 3",
+            "seg": 474,
+            "side": 2,
+            "wall": 161,
+            "distance": 1052.8444926196796,
+            "trigger": 3,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 448,
+                "side": 0,
+                "wall": 155
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 532,
-            "distance": 1062.8444926196796,
+            "distance": 190.0,
             "key": "gold"
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
@@ -157,7 +177,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -166,15 +186,34 @@
             "key": "red"
           },
           {
-            "index": 5,
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 7",
+            "seg": 128,
+            "wall": 218,
+            "distance": 1345.8384334622017,
+            "trigger": 7,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 725,
+                "side": 0,
+                "wall": 217
+              }
+            ]
+          },
+          {
+            "index": 7,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 792,
-            "distance": 2015.0616558096056
+            "distance": 725.5082830357176
           },
           {
-            "index": 6,
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -187,6 +226,8 @@
             "trigger_type": "exit"
           }
         ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"

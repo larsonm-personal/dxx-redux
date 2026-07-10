@@ -1486,6 +1486,7 @@ void multi_do_frame(void)
 	/* android port: auto-restore from coop auto-save (Phase 4) */
 	coop_arm_auto_restore();
 	coop_try_auto_restore();
+	multi_save_transfer_frame();
 	/* android port: restore inventory from progress checkpoint (Track B) */
 	coop_load_progress_inventory();
 	/* android port: dump control state at coop start for debugging.
@@ -7009,7 +7010,10 @@ void multi_initiate_restore_game()
 	slot--;
 	multi_send_restore_game(slot,state_game_id);
 	multi_do_frame();
-	multi_restore_game(slot,state_game_id);
+#ifdef __ANDROID__
+	if (!multi_coop_restore_transfer_pending())
+#endif
+		multi_restore_game(slot,state_game_id);
 }
 
 void multi_save_game(ubyte slot, uint id, char *desc)
@@ -7040,6 +7044,13 @@ void multi_prepare_restore_sync(void)
 	if (multi_i_am_master())
 		for (i = 0; i < MAX_PLAYERS; i++)
 			if (Players[i].connected == CONNECT_PLAYING && i != Player_num) {
+#ifdef __ANDROID__
+				/* Android coop restore remaps the live roster and transfers the
+				 * authoritative save. Keep peers playing so identity matching and
+				 * reliable save chunks continue to include them. */
+				if (Game_mode & GM_MULTI_COOP)
+					continue;
+#endif
 				Players[i].connected = CONNECT_WAITING;
 
 				if (Current_obs_player == i) {
@@ -7577,6 +7588,8 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 			multi_do_rewind_save_chunk(buf); break;
 		case MULTI_REWIND_SAVE_APPLY:
 			multi_do_rewind_save_apply(buf); break;
+		case MULTI_REWIND_SAVE_READY:
+			multi_do_rewind_save_ready(buf); break;
 #endif
 		case MULTI_DIFFICULTY:
 			if (!Endlevel_sequence) multi_do_difficulty(buf); break;

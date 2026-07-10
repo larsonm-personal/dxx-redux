@@ -1,0 +1,21 @@
+// TEST HELPER: Verify saved ownership follows this identity from slot 0 to 1.
+[
+    {"_info": {"games": ["d2"], "_standalone": false}},
+
+    {"action": "log", "message": "=== COOP GUIDEBOT RESTORE: remapped joiner ==="},
+    {"action": "wait_for", "timeout_ms": 90000, "expect": {
+        "in_game": "true",
+        "is_network": "true",
+        "player.callsign": "LanHost",
+        "multiplayer.my_player_num": "1",
+        "multiplayer.num_connected": "2",
+        "guidebot.released": "true",
+        "guidebot.owner_player": "1",
+        "guidebot.owner_is_local": "true",
+        "guidebot.remote_owner": "1",
+        "guidebot.local_control_slot_matches": "true",
+        "guidebot.route_target_mode_name": "unexplored"
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== COOP GUIDEBOT RESTORE: remapped joiner PASS ==="}
+]

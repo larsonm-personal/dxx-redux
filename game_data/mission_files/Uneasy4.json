@@ -21,12 +21,12 @@
         "mine_volume": 245931968.31899187,
         "mine_volume_normalized": 53.7802744284026,
         "mine_volume_text": "54x",
-        "travel_distance": 27100.197367434383,
-        "travel_time_seconds": 542,
-        "travel_time_text": "9M:02S",
+        "travel_distance": 28100.94471037765,
+        "travel_time_seconds": 562,
+        "travel_time_text": "9M:22S",
         "travel_targets_reached": 20,
         "travel_targets_total": 20,
-        "travel_key_detours": 2,
+        "travel_key_detours": 3,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -65,7 +65,7 @@
             "seg": 86,
             "side": 3,
             "wall": 19,
-            "distance": 1612.4194241697403,
+            "distance": 1615.9559277762903,
             "trigger": 1,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -98,7 +98,7 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 5855,
-            "distance": 1547.0986377910351,
+            "distance": 1550.6351413975847,
             "key": "red"
           },
           {
@@ -183,14 +183,34 @@
           },
           {
             "index": 8,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 20",
+            "seg": 8844,
+            "side": 5,
+            "wall": 249,
+            "distance": 713.2829951457297,
+            "trigger": 20,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 7598,
+                "side": 2,
+                "wall": 245
+              }
+            ]
+          },
+          {
+            "index": 9,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 8575,
-            "distance": 711.844678244653
+            "distance": 758.5689895950305
           },
           {
-            "index": 9,
+            "index": 10,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

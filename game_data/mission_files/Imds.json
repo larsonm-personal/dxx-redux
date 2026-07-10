@@ -21,16 +21,16 @@
         "mine_volume": 14641839.071414063,
         "mine_volume_normalized": 3.201869723482981,
         "mine_volume_text": "3.2x",
-        "travel_distance": 3363.427906143881,
-        "travel_time_seconds": 67,
-        "travel_time_text": "1M:07S",
-        "travel_targets_reached": 2,
+        "travel_distance": 640.498756211209,
+        "travel_time_seconds": 13,
+        "travel_time_text": "0M:13S",
+        "travel_targets_reached": 0,
         "travel_targets_total": 2,
-        "travel_key_detours": 1,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
@@ -67,117 +67,12 @@
             "seg": 188,
             "distance": 1490.640156123853,
             "key": "blue"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 91,
-            "distance": 1170.0951996273172,
-            "key": "gold"
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 6",
-            "seg": 9,
-            "side": 5,
-            "wall": 86,
-            "distance": 896.0426497797488,
-            "trigger": 6,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 4,
-                "side": 0,
-                "wall": 0
-              },
-              {
-                "seg": 4,
-                "side": 2,
-                "wall": 2
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 7,
-            "distance": 215.1594033880629,
-            "key": "red"
-          },
-          {
-            "index": 6,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 4",
-            "seg": 42,
-            "side": 5,
-            "wall": 79,
-            "distance": 988.8999649779389,
-            "trigger": 4,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 24,
-                "side": 0,
-                "wall": 75
-              },
-              {
-                "seg": 24,
-                "side": 2,
-                "wall": 77
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 3",
-            "seg": 38,
-            "wall": 72,
-            "distance": 101.38670062692297,
-            "trigger": 3,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 40,
-                "side": 4,
-                "wall": 71
-              }
-            ]
-          },
-          {
-            "index": 8,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 46,
-            "distance": 211.0980080594557
-          },
-          {
-            "index": 9,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 242,
-            "side": 1,
-            "wall": 84,
-            "distance": 732.173419944886,
-            "trigger": 5,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
+        "travel_status": "partial",
+        "travel_problem": "gold key unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "gold key unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -215,14 +110,34 @@
           },
           {
             "index": 1,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
+            "seg": 46,
+            "side": 4,
+            "wall": 20,
+            "distance": 664.1383696347966,
+            "trigger": 1,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 81,
+                "side": 3,
+                "wall": 16
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 76,
-            "distance": 507.0349805484352
+            "distance": 677.1031754638093
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

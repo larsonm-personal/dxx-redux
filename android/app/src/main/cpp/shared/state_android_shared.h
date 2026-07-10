@@ -34,6 +34,8 @@ int state_android_save_to_path(const char *filename, const char *desc,
 int state_save_to_memory(rewind_memory_buffer *buffer, const char *desc,
                          int save_kind, int blank_thumbnail);
 int state_restore_from_memory(const rewind_memory_buffer *buffer);
+int state_restore_coop_from_memory(const rewind_memory_buffer *buffer);
+int state_android_coop_callsign_remap_allowed(void);
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind);
 void state_android_maybe_periodic_autosave(void);
 

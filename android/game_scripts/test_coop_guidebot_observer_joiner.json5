@@ -1,0 +1,23 @@
+// TEST HELPER: Playing joiner receives Guide-Bot ownership from observer host.
+[
+    {"_info": {"games": ["d2"], "_standalone": false}},
+
+    {"action": "log", "message": "=== COOP GUIDEBOT OBSERVER JOINER ==="},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {
+        "in_game": "true",
+        "is_network": "true",
+        "multiplayer.my_player_num": "1",
+        "multiplayer.num_connected": "2",
+        "multiplayer.host_is_observer": "true"
+    }},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.owner_player": "1",
+        "guidebot.owner_is_local": "true",
+        "guidebot.owner_generation": {"gte": 1},
+        "guidebot.remote_owner": "1",
+        "guidebot.local_control_slot_matches": "true"
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== COOP GUIDEBOT OBSERVER JOINER PASS ==="}
+]

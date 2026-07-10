@@ -23,6 +23,7 @@
 #include "switch.h"
 #include "wall.h"
 #ifdef DXX_BUILD_DESCENT_II
+#include "ai.h"
 #include "escort.h"
 #endif
 #ifdef NETWORK
@@ -38,6 +39,27 @@ static int Secret_area_reveal_unfound;
 typedef struct level_metadata_game_context {
 	int start_objnum;
 } level_metadata_game_context;
+
+static level_metadata_game_context Level_metadata_game_context;
+static level_metadata_scan_view Level_metadata_scan_view;
+static int Level_metadata_scan_view_initialized;
+
+typedef struct level_metadata_opener_entry {
+	short source_wall;
+	short next;
+} level_metadata_opener_entry;
+
+#define LEVEL_METADATA_MAX_OPENER_ENTRIES (MAX_WALLS * MAX_WALLS_PER_LINK)
+
+static vms_vector Level_metadata_segment_centers[LEVEL_METADATA_MAX_SEGMENTS];
+static short Level_metadata_opener_first[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
+static level_metadata_opener_entry Level_metadata_opener_entries[LEVEL_METADATA_MAX_OPENER_ENTRIES];
+static int Level_metadata_opener_entry_count;
+static int Level_metadata_topology_num_segments;
+static int Level_metadata_topology_num_walls;
+static int Level_metadata_topology_num_triggers;
+static int Level_metadata_topology_valid;
+static int Level_metadata_opener_index_valid;
 
 static void secret_area_trace(const char *stage)
 {
@@ -79,6 +101,38 @@ static int secret_area_side_is_flyable(void *user, int seg, int side)
 	if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
 		return 0;
 	return (WALL_IS_DOORWAY(&Segments[seg], side) & WID_FLY_FLAG) != 0;
+}
+
+static int secret_area_side_is_hard_blocked(void *user, int seg, int side)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	level_metadata_game_context *context = (level_metadata_game_context *) user;
+	int objnum;
+	int wall_num;
+	object *objp;
+
+	if (!context ||
+	    seg < 0 || seg >= Num_segments ||
+	    side < 0 || side >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	objnum = context->start_objnum;
+	if (objnum < 0 || objnum > Highest_object_index)
+		return 0;
+	objp = &Objects[objnum];
+	if (objp->type != OBJ_ROBOT || !Robot_info[objp->id].companion)
+		return 0;
+	wall_num = Segments[seg].sides[side].wall_num;
+	if (wall_num < 0 || wall_num >= Num_walls ||
+	    !(Walls[wall_num].flags & WALL_BUDDY_PROOF))
+		return 0;
+	return !((WALL_IS_DOORWAY(&Segments[seg], side) & WID_FLY_FLAG) ||
+	         ai_door_is_openable(objp, &Segments[seg], side));
+#else
+	(void) user;
+	(void) seg;
+	(void) side;
+	return 0;
+#endif
 }
 
 static int secret_area_side_is_control_center_link(void *user, int seg, int side)
@@ -214,7 +268,10 @@ static int secret_area_segment_center(void *user, int seg, int xyz[3])
 	(void) user;
 	if (seg < 0 || seg >= Num_segments || !xyz)
 		return 0;
-	compute_segment_center(&center, &Segments[seg]);
+	if (Level_metadata_topology_valid && seg < Level_metadata_topology_num_segments)
+		center = Level_metadata_segment_centers[seg];
+	else
+		compute_segment_center(&center, &Segments[seg]);
 	xyz[0] = center.x;
 	xyz[1] = center.y;
 	xyz[2] = center.z;
@@ -477,26 +534,147 @@ static int secret_area_target_visible_from_segment(void *user, int seg, const in
 	return find_vector_intersection(&query, &hit_data) == HIT_NONE;
 }
 
+int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], int wall_num)
+{
+	fvi_info hit_data;
+	fvi_query query;
+	vms_vector from;
+	vms_vector target;
+	int wall_seg;
+	int wall_side;
+	int fate;
+
+	if (seg < 0 || seg >= Num_segments || !from_pos || wall_num < 0 || wall_num >= Num_walls)
+		return 0;
+	wall_seg = Walls[wall_num].segnum;
+	wall_side = Walls[wall_num].sidenum;
+	if (wall_seg < 0 || wall_seg >= Num_segments || wall_side < 0 || wall_side >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	if (wall_seg == seg)
+		return 1;
+	from.x = from_pos[0];
+	from.y = from_pos[1];
+	from.z = from_pos[2];
+	compute_center_point_on_side(&target, &Segments[wall_seg], wall_side);
+	memset(&query, 0, sizeof(query));
+	memset(&hit_data, 0, sizeof(hit_data));
+	query.p0 = &from;
+	query.p1 = &target;
+	query.startseg = seg;
+	query.rad = 0;
+	query.thisobjnum = -1;
+	query.flags = FQ_TRANSWALL;
+	fate = find_vector_intersection(&query, &hit_data);
+	return fate == HIT_NONE ||
+	       (fate == HIT_WALL &&
+	        hit_data.hit_type == HIT_WALL &&
+	        hit_data.hit_side_seg == wall_seg &&
+	        hit_data.hit_side == wall_side);
+}
+
+static int secret_area_wall_visible_from_segment(void *user, int seg, const int from_pos[3], int wall_num)
+{
+	(void) user;
+	return level_metadata_wall_visible_from_position(seg, from_pos, wall_num);
+}
+
+static int secret_area_trigger_opens_links(int trigger_num)
+{
+	if (trigger_num < 0 || trigger_num >= Num_triggers)
+		return 0;
+#ifdef DXX_BUILD_DESCENT_II
+	return Triggers[trigger_num].type == TT_OPEN_DOOR ||
+	       Triggers[trigger_num].type == TT_ILLUSION_OFF ||
+	       Triggers[trigger_num].type == TT_UNLOCK_DOOR ||
+	       Triggers[trigger_num].type == TT_OPEN_WALL ||
+	       Triggers[trigger_num].type == TT_ILLUSORY_WALL;
+#else
+	return (Triggers[trigger_num].flags &
+	        (TRIGGER_CONTROL_DOORS | TRIGGER_ILLUSION_OFF)) != 0;
+#endif
+}
+
 static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
 {
 	int i;
 
-	if (trigger_num < 0 || trigger_num >= Num_triggers)
+	if (!secret_area_trigger_opens_links(trigger_num))
 		return 0;
-#ifdef DXX_BUILD_DESCENT_II
-	if (Triggers[trigger_num].type != TT_OPEN_DOOR &&
-	    Triggers[trigger_num].type != TT_OPEN_WALL &&
-	    Triggers[trigger_num].type != TT_ILLUSORY_WALL)
-		return 0;
-#else
-	if ((Triggers[trigger_num].flags &
-	     (TRIGGER_CONTROL_DOORS | TRIGGER_ILLUSION_OFF)) == 0)
-		return 0;
-#endif
 	for (i = 0; i < Triggers[trigger_num].num_links; ++i)
 		if (Triggers[trigger_num].seg[i] == seg && Triggers[trigger_num].side[i] == side)
 			return 1;
 	return 0;
+}
+
+static void secret_area_rebuild_level_topology(void)
+{
+	short opener_last[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
+	int seg;
+	int side;
+	int trigger_num;
+
+	Level_metadata_topology_valid = 0;
+	Level_metadata_opener_index_valid = 1;
+	Level_metadata_opener_entry_count = 0;
+	memset(Level_metadata_opener_first, 0xff, sizeof(Level_metadata_opener_first));
+	memset(opener_last, 0xff, sizeof(opener_last));
+	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg)
+		compute_segment_center(&Level_metadata_segment_centers[seg], &Segments[seg]);
+	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
+		int link;
+
+		if (!secret_area_trigger_opens_links(trigger_num))
+			continue;
+		for (link = 0; link < Triggers[trigger_num].num_links; ++link) {
+			int prior_link;
+			int source_wall;
+
+			seg = Triggers[trigger_num].seg[link];
+			side = Triggers[trigger_num].side[link];
+			if (seg < 0 || seg >= Num_segments || seg >= LEVEL_METADATA_MAX_SEGMENTS ||
+			    side < 0 || side >= MAX_SIDES_PER_SEGMENT)
+				continue;
+			for (prior_link = 0; prior_link < link; ++prior_link)
+				if (Triggers[trigger_num].seg[prior_link] == seg &&
+				    Triggers[trigger_num].side[prior_link] == side)
+					break;
+			if (prior_link < link)
+				continue;
+			for (source_wall = 0; source_wall < Num_walls; ++source_wall) {
+				int entry;
+
+				if (Walls[source_wall].trigger != trigger_num)
+					continue;
+				if (Level_metadata_opener_entry_count >= LEVEL_METADATA_MAX_OPENER_ENTRIES) {
+					Level_metadata_opener_index_valid = 0;
+					continue;
+				}
+				entry = Level_metadata_opener_entry_count++;
+				Level_metadata_opener_entries[entry].source_wall = (short) source_wall;
+				Level_metadata_opener_entries[entry].next = -1;
+				if (Level_metadata_opener_first[seg][side] < 0)
+					Level_metadata_opener_first[seg][side] = (short) entry;
+				else
+					Level_metadata_opener_entries[opener_last[seg][side]].next = (short) entry;
+				opener_last[seg][side] = (short) entry;
+			}
+		}
+	}
+	Level_metadata_topology_num_segments = Num_segments;
+	Level_metadata_topology_num_walls = Num_walls;
+	Level_metadata_topology_num_triggers = Num_triggers;
+	Level_metadata_topology_valid = Num_segments <= LEVEL_METADATA_MAX_SEGMENTS;
+	if (!Level_metadata_topology_valid)
+		Level_metadata_opener_index_valid = 0;
+}
+
+static void secret_area_ensure_level_topology(void)
+{
+	if (!Level_metadata_topology_valid ||
+	    Level_metadata_topology_num_segments != Num_segments ||
+	    Level_metadata_topology_num_walls != Num_walls ||
+	    Level_metadata_topology_num_triggers != Num_triggers)
+		secret_area_rebuild_level_topology();
 }
 
 static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_index, int allow_keyed_target)
@@ -512,6 +690,19 @@ static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_
 		return -1;
 	if (!allow_keyed_target && Walls[wall_num].keys != KEY_NONE)
 		return -1;
+	secret_area_ensure_level_topology();
+	if (Level_metadata_topology_valid && Level_metadata_opener_index_valid) {
+		int entry = Level_metadata_opener_first[seg][side];
+
+		while (entry >= 0) {
+			if (found == wanted_index)
+				return Level_metadata_opener_entries[entry].source_wall;
+			found++;
+			entry = Level_metadata_opener_entries[entry].next;
+		}
+		return -1;
+	}
+	found = 0;
 	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
 		int source_wall;
 
@@ -661,119 +852,138 @@ static void level_metadata_copy_route(const level_metadata_state *route_state)
 	       sizeof(Level_metadata_state.route_steps));
 }
 
+static void level_metadata_initialize_scan_view(void)
+{
+	level_metadata_scan_view *view = &Level_metadata_scan_view;
+
+	if (Level_metadata_scan_view_initialized)
+		return;
+	memset(view, 0, sizeof(*view));
+	view->user = &Level_metadata_game_context;
+	view->segment_special_fuelcen = SEGMENT_IS_FUELCEN;
+	view->segment_special_robotmaker = SEGMENT_IS_ROBOTMAKER;
+	view->segment_special_control_center = SEGMENT_IS_CONTROLCEN;
+	view->wall_type_blastable = WALL_BLASTABLE;
+	view->wall_type_door = WALL_DOOR;
+	view->wall_type_illusion = WALL_ILLUSION;
+	view->wall_type_open = WALL_OPEN;
+	view->wall_flag_door_locked = WALL_DOOR_LOCKED;
+	view->wall_flag_door_opened = WALL_DOOR_OPENED;
+	view->wall_key_none = KEY_NONE;
+	view->wall_key_blue = KEY_BLUE;
+	view->wall_key_red = KEY_RED;
+	view->wall_key_gold = KEY_GOLD;
+	view->wall_clip_hidden = WCF_HIDDEN;
+	view->obj_type_none = OBJ_NONE;
+	view->obj_type_robot = OBJ_ROBOT;
+	view->obj_type_hostage = OBJ_HOSTAGE;
+	view->obj_type_powerup = OBJ_POWERUP;
+	view->obj_type_control_center = OBJ_CNTRLCEN;
+	view->obj_flag_should_be_dead = OF_SHOULD_BE_DEAD;
+	view->powerup_key_blue = POW_KEY_BLUE;
+	view->powerup_key_red = POW_KEY_RED;
+	view->powerup_key_gold = POW_KEY_GOLD;
+#ifdef DXX_BUILD_DESCENT_II
+	view->trigger_type_open_door = TT_OPEN_DOOR;
+	view->trigger_type_exit = TT_EXIT;
+	view->trigger_type_secret_exit = TT_SECRET_EXIT;
+	view->trigger_type_illusion_off = TT_ILLUSION_OFF;
+	view->trigger_type_unlock_door = TT_UNLOCK_DOOR;
+	view->trigger_type_open_wall = TT_OPEN_WALL;
+	view->trigger_type_illusory_wall = TT_ILLUSORY_WALL;
+	view->trigger_flag_disabled = TF_DISABLED;
+#else
+	view->trigger_type_open_door = TRIGGER_CONTROL_DOORS;
+	view->trigger_type_exit = TRIGGER_EXIT;
+	view->trigger_type_secret_exit = TRIGGER_SECRET_EXIT;
+	view->trigger_type_illusion_off = TRIGGER_ILLUSION_OFF;
+	view->trigger_type_unlock_door = -2;
+	view->trigger_type_open_wall = -3;
+	view->trigger_type_illusory_wall = -4;
+#endif
+	view->segment_child = secret_area_segment_child;
+	view->segment_is_explored = secret_area_segment_is_explored;
+	view->reverse_side = secret_area_reverse_side;
+	view->side_is_flyable = secret_area_side_is_flyable;
+	view->side_is_hard_blocked = secret_area_side_is_hard_blocked;
+	view->side_is_control_center_link = secret_area_side_is_control_center_link;
+	view->wall_num = secret_area_wall_num;
+	view->wall_segment = secret_area_wall_segment;
+	view->wall_side = secret_area_wall_side;
+	view->wall_type = secret_area_wall_type;
+	view->wall_flags = secret_area_wall_flags;
+	view->wall_keys = secret_area_wall_keys;
+	view->wall_clip_flags = secret_area_wall_clip_flags;
+	view->wall_trigger = secret_area_wall_trigger;
+	view->segment_special = secret_area_segment_special;
+	view->segment_center = secret_area_segment_center;
+	view->segment_vertex = secret_area_segment_vertex;
+	view->start_position = secret_area_start_position;
+	view->object_count = secret_area_object_count;
+	view->object_segment = secret_area_object_segment;
+	view->object_type = secret_area_object_type;
+	view->object_id = secret_area_object_id;
+	view->object_flags = secret_area_object_flags;
+	view->object_contains_type = secret_area_object_contains_type;
+	view->object_contains_id = secret_area_object_contains_id;
+	view->object_contains_count = secret_area_object_contains_count;
+	view->object_position = secret_area_object_position;
+	view->object_is_boss = secret_area_object_is_boss;
+#ifdef DXX_BUILD_DESCENT_II
+	view->object_is_companion = secret_area_object_is_companion;
+#endif
+	view->side_has_exit_trigger = secret_area_side_has_exit_trigger;
+	view->triggered_side_opener_count = secret_area_metadata_triggered_side_opener_count;
+	view->triggered_side_opener_wall_num = secret_area_metadata_triggered_side_opener_wall_num;
+	view->trigger_type = secret_area_trigger_type;
+	view->trigger_flags = secret_area_trigger_flags;
+	view->trigger_link_count = secret_area_trigger_link_count;
+	view->trigger_link_segment = secret_area_trigger_link_segment;
+	view->trigger_link_side = secret_area_trigger_link_side;
+	view->target_visible_from_segment = secret_area_target_visible_from_segment;
+	view->wall_visible_from_segment = secret_area_wall_visible_from_segment;
+	view->wall_is_shootable_trigger = secret_area_wall_is_shootable_trigger;
+	Level_metadata_scan_view_initialized = 1;
+}
+
+static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objnum)
+{
+	level_metadata_scan_view *view = &Level_metadata_scan_view;
+	int start_segment;
+
+	level_metadata_initialize_scan_view();
+	secret_area_ensure_level_topology();
+	Level_metadata_game_context.start_objnum = start_objnum;
+	view->num_segments = Num_segments;
+	view->num_walls = Num_walls;
+	view->start_segment = secret_area_metadata_start(&Level_metadata_game_context, &start_segment, NULL) ? start_segment : Player_init[Player_num].segnum;
+	view->initial_key_mask = secret_area_current_key_mask();
+	view->initial_control_center_destroyed = Control_center_destroyed != 0;
+	view->energy_center_group_distance = secret_area_energy_center_group_distance();
+	return view;
+}
+
 static void level_metadata_rescan_current_level_internal(
     int start_objnum,
     int route_target_seg,
     int route_only,
     level_metadata_unexplored_route *unexplored_result)
 {
-	level_metadata_game_context context;
-	level_metadata_scan_view view;
+	level_metadata_scan_view *view = level_metadata_refresh_scan_view(start_objnum);
 	level_metadata_state route_state;
-	int start_segment;
 
-	context.start_objnum = start_objnum;
-	memset(&view, 0, sizeof(view));
-	view.user = &context;
-	view.num_segments = Num_segments;
-	view.num_walls = Num_walls;
-	view.start_segment = secret_area_metadata_start(&context, &start_segment, NULL) ? start_segment : Player_init[Player_num].segnum;
 	Level_metadata_route_start_objnum = start_objnum;
-	Level_metadata_route_start_seg = view.start_segment;
-	view.initial_key_mask = secret_area_current_key_mask();
-	view.initial_control_center_destroyed = Control_center_destroyed != 0;
-	view.segment_special_fuelcen = SEGMENT_IS_FUELCEN;
-	view.segment_special_robotmaker = SEGMENT_IS_ROBOTMAKER;
-	view.segment_special_control_center = SEGMENT_IS_CONTROLCEN;
-	view.energy_center_group_distance = secret_area_energy_center_group_distance();
-	view.wall_type_blastable = WALL_BLASTABLE;
-	view.wall_type_door = WALL_DOOR;
-	view.wall_type_illusion = WALL_ILLUSION;
-	view.wall_type_open = WALL_OPEN;
-	view.wall_flag_door_locked = WALL_DOOR_LOCKED;
-	view.wall_flag_door_opened = WALL_DOOR_OPENED;
-	view.wall_key_none = KEY_NONE;
-	view.wall_key_blue = KEY_BLUE;
-	view.wall_key_red = KEY_RED;
-	view.wall_key_gold = KEY_GOLD;
-	view.wall_clip_hidden = WCF_HIDDEN;
-	view.obj_type_none = OBJ_NONE;
-	view.obj_type_robot = OBJ_ROBOT;
-	view.obj_type_hostage = OBJ_HOSTAGE;
-	view.obj_type_powerup = OBJ_POWERUP;
-	view.obj_type_control_center = OBJ_CNTRLCEN;
-	view.obj_flag_should_be_dead = OF_SHOULD_BE_DEAD;
-	view.powerup_key_blue = POW_KEY_BLUE;
-	view.powerup_key_red = POW_KEY_RED;
-	view.powerup_key_gold = POW_KEY_GOLD;
-#ifdef DXX_BUILD_DESCENT_II
-	view.trigger_type_open_door = TT_OPEN_DOOR;
-	view.trigger_type_exit = TT_EXIT;
-	view.trigger_type_secret_exit = TT_SECRET_EXIT;
-	view.trigger_type_illusion_off = TT_ILLUSION_OFF;
-	view.trigger_type_unlock_door = TT_UNLOCK_DOOR;
-	view.trigger_type_open_wall = TT_OPEN_WALL;
-	view.trigger_type_illusory_wall = TT_ILLUSORY_WALL;
-	view.trigger_flag_disabled = TF_DISABLED;
-#else
-	view.trigger_type_open_door = TRIGGER_CONTROL_DOORS;
-	view.trigger_type_exit = TRIGGER_EXIT;
-	view.trigger_type_secret_exit = TRIGGER_SECRET_EXIT;
-	view.trigger_type_illusion_off = TRIGGER_ILLUSION_OFF;
-	view.trigger_type_unlock_door = -2;
-	view.trigger_type_open_wall = -3;
-	view.trigger_type_illusory_wall = -4;
-#endif
-	view.segment_child = secret_area_segment_child;
-	view.segment_is_explored = secret_area_segment_is_explored;
-	view.reverse_side = secret_area_reverse_side;
-	view.side_is_flyable = secret_area_side_is_flyable;
-	view.side_is_control_center_link = secret_area_side_is_control_center_link;
-	view.wall_num = secret_area_wall_num;
-	view.wall_segment = secret_area_wall_segment;
-	view.wall_side = secret_area_wall_side;
-	view.wall_type = secret_area_wall_type;
-	view.wall_flags = secret_area_wall_flags;
-	view.wall_keys = secret_area_wall_keys;
-	view.wall_clip_flags = secret_area_wall_clip_flags;
-	view.wall_trigger = secret_area_wall_trigger;
-	view.segment_special = secret_area_segment_special;
-	view.segment_center = secret_area_segment_center;
-	view.segment_vertex = secret_area_segment_vertex;
-	view.start_position = secret_area_start_position;
-	view.object_count = secret_area_object_count;
-	view.object_segment = secret_area_object_segment;
-	view.object_type = secret_area_object_type;
-	view.object_id = secret_area_object_id;
-	view.object_flags = secret_area_object_flags;
-	view.object_contains_type = secret_area_object_contains_type;
-	view.object_contains_id = secret_area_object_contains_id;
-	view.object_contains_count = secret_area_object_contains_count;
-	view.object_position = secret_area_object_position;
-	view.object_is_boss = secret_area_object_is_boss;
-#ifdef DXX_BUILD_DESCENT_II
-	view.object_is_companion = secret_area_object_is_companion;
-#endif
-	view.side_has_exit_trigger = secret_area_side_has_exit_trigger;
-	view.triggered_side_opener_count = secret_area_metadata_triggered_side_opener_count;
-	view.triggered_side_opener_wall_num = secret_area_metadata_triggered_side_opener_wall_num;
-	view.trigger_type = secret_area_trigger_type;
-	view.trigger_flags = secret_area_trigger_flags;
-	view.trigger_link_count = secret_area_trigger_link_count;
-	view.trigger_link_segment = secret_area_trigger_link_segment;
-	view.trigger_link_side = secret_area_trigger_link_side;
-	view.target_visible_from_segment = secret_area_target_visible_from_segment;
-	view.wall_is_shootable_trigger = secret_area_wall_is_shootable_trigger;
+	Level_metadata_route_start_seg = view->start_segment;
 	if (!route_only)
-		level_metadata_scan_level(&view, &Level_metadata_state);
+		level_metadata_scan_level(view, &Level_metadata_state);
 	if (route_only) {
 		if (unexplored_result)
-			level_metadata_scan_unexplored_route(&view, &route_state, unexplored_result);
+			level_metadata_scan_unexplored_route(view, &route_state, unexplored_result);
 		else if (route_target_seg >= 0)
-			level_metadata_scan_route_to_segment(&view, route_target_seg, &route_state);
+			level_metadata_scan_route_to_segment(view, route_target_seg, &route_state);
 		else {
 			level_metadata_state_clear(&route_state);
-			level_metadata_scan_end_route(&view, &route_state);
+			level_metadata_scan_end_route(view, &route_state);
 		}
 		level_metadata_copy_route(&route_state);
 	}
@@ -807,6 +1017,20 @@ int level_metadata_rescan_unexplored_route_from_object(
 	return result && result->target_seg >= 0;
 }
 
+int level_metadata_route_edge_cost_from_object(int objnum, int seg, int side)
+{
+	level_metadata_scan_view *view = &Level_metadata_scan_view;
+
+	level_metadata_initialize_scan_view();
+	secret_area_ensure_level_topology();
+	Level_metadata_game_context.start_objnum = objnum;
+	view->num_segments = Num_segments;
+	view->num_walls = Num_walls;
+	view->initial_key_mask = secret_area_current_key_mask();
+	view->initial_control_center_destroyed = Control_center_destroyed != 0;
+	return level_metadata_scan_route_edge_cost(view, seg, side);
+}
+
 int level_metadata_get_route_start_objnum(void)
 {
 	return Level_metadata_route_start_objnum;
@@ -824,6 +1048,8 @@ void secret_area_rescan_current_level(void)
 
 	secret_area_trace("start");
 	Secret_area_reveal_unfound = 0;
+	Level_metadata_topology_valid = 0;
+	secret_area_ensure_level_topology();
 	memset(&view, 0, sizeof(view));
 	view.num_segments = Num_segments;
 	view.num_walls = Num_walls;

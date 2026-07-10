@@ -78,16 +78,16 @@
         "mine_volume": 13843833.05916331,
         "mine_volume_normalized": 3.0273621853710826,
         "mine_volume_text": "3.0x",
-        "travel_distance": 5919.473056999475,
-        "travel_time_seconds": 118,
-        "travel_time_text": "2M:58S",
-        "travel_targets_reached": 7,
+        "travel_distance": 142.30079830986068,
+        "travel_time_seconds": 3,
+        "travel_time_text": "0M:03S",
+        "travel_targets_reached": 0,
         "travel_targets_total": 7,
-        "travel_key_detours": 3,
+        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
@@ -95,98 +95,13 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 26,
-            "distance": 153.00342959194103,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 15",
-            "seg": 302,
-            "side": 4,
-            "wall": 74,
-            "distance": 541.6978046411383,
-            "trigger": 15,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 91,
-                "side": 2,
-                "wall": 40
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 4",
-            "seg": 115,
-            "side": 0,
-            "wall": 44,
-            "distance": 767.3630140364297,
-            "trigger": 4,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 131,
-                "side": 1,
-                "wall": 61
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 318,
-            "distance": 1144.660387311834,
-            "key": "gold"
-          },
-          {
-            "index": 5,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 390,
-            "distance": 959.2892238067507,
-            "key": "red"
-          },
-          {
-            "index": 6,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 437,
-            "distance": 1053.2114851512429
-          },
-          {
-            "index": 7,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 42,
-            "side": 4,
-            "wall": 45,
-            "distance": 517.5440597451832,
-            "trigger": 5,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
+        "travel_status": "partial",
+        "travel_problem": "blue key unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
+        "route_problem": "blue key unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level",
           "guidebot is present but not reachable from the start"
@@ -520,15 +435,35 @@
           },
           {
             "index": 12,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 11",
+            "seg": 447,
+            "side": 3,
+            "wall": 138,
+            "distance": 807.3368924432788,
+            "trigger": 11,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 372,
+                "side": 0,
+                "wall": 135
+              }
+            ]
+          },
+          {
+            "index": 13,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 421,
-            "distance": 621.562714843242,
+            "distance": 228.35999446750796,
             "key": "red"
           },
           {
-            "index": 13,
+            "index": 14,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Shoot hidden wall",
@@ -550,7 +485,7 @@
             ]
           },
           {
-            "index": 14,
+            "index": 15,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Shoot hidden wall",
@@ -572,7 +507,7 @@
             ]
           },
           {
-            "index": 15,
+            "index": 16,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -580,7 +515,7 @@
             "distance": 422.2651250213508
           },
           {
-            "index": 16,
+            "index": 17,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 6",
@@ -600,7 +535,7 @@
             ]
           },
           {
-            "index": 17,
+            "index": 18,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Shoot hidden wall",
@@ -622,7 +557,7 @@
             ]
           },
           {
-            "index": 18,
+            "index": 19,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

@@ -21,10 +21,10 @@
         "mine_volume": 9068239.305758307,
         "mine_volume_normalized": 1.9830378367627906,
         "mine_volume_text": "2.0x",
-        "travel_distance": 3387.8051227899646,
-        "travel_time_seconds": 68,
-        "travel_time_text": "1M:08S",
-        "travel_targets_reached": 5,
+        "travel_distance": 887.5629792858585,
+        "travel_time_seconds": 18,
+        "travel_time_text": "0M:18S",
+        "travel_targets_reached": 1,
         "travel_targets_total": 5,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -40,6 +40,8 @@
             "seg": 710
           }
         ],
+        "travel_status": "partial",
+        "travel_problem": "hostage unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_problem": "gold key route dependency loop",
         "notes": [

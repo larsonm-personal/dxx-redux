@@ -66,6 +66,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "collide.h"
 #include "multi.h"
 #include "escort.h"
+#include "escort_owner_policy.h"
 #include "gr.h"
 #include "palette.h"
 #ifdef OGL
@@ -78,6 +79,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_resume_pilot.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
+#include "state_android_shared.h"
 #include "coop_save.h"
 #include "coop_indicator_lines.h"
 #include "android_log.h"
@@ -215,6 +217,31 @@ static int state_android_physfs_raw_close(struct PHYSFS_File *file)
 #endif
 
 #ifdef __ANDROID__
+static int state_android_read_android_metadata_trailer(PHYSFS_file *fp,
+	android_save_meta_disk *meta)
+{
+	struct PHYSFS_File *physfs_fp;
+	PHYSFS_sint64 saved_pos;
+	PHYSFS_sint64 file_len;
+	int have_meta;
+
+	if (!fp || !meta)
+		return 0;
+	file_len = PHYSFS_fileLength(fp);
+	if (!rewind_file_is_memory(fp)) {
+		physfs_fp = rewind_file_physfs_handle(fp);
+		return physfs_fp ? android_save_meta_read_physfs(physfs_fp, file_len, meta) : 0;
+	}
+
+	saved_pos = PHYSFS_tell(fp);
+	have_meta = file_len >= (PHYSFS_sint64)sizeof(*meta) &&
+		PHYSFS_seek(fp, file_len - (PHYSFS_sint64)sizeof(*meta)) &&
+		PHYSFS_read(fp, meta, sizeof(*meta), 1) == 1 &&
+		android_save_meta_is_valid(meta);
+	PHYSFS_seek(fp, saved_pos);
+	return have_meta;
+}
+
 static int state_android_read_coop_metadata_trailer(PHYSFS_file *fp,
 	coop_save_metadata *meta)
 {
@@ -226,8 +253,26 @@ static int state_android_read_coop_metadata_trailer(PHYSFS_file *fp,
 	int have_android_meta;
 	int have_coop_meta = 0;
 
-	if (!fp || !meta || rewind_file_is_memory(fp))
+	if (!fp || !meta)
 		return 0;
+
+	if (rewind_file_is_memory(fp)) {
+		saved_pos = PHYSFS_tell(fp);
+		file_len = PHYSFS_fileLength(fp);
+		have_android_meta = state_android_read_android_metadata_trailer(fp,
+			&android_meta);
+		coop_meta_start = file_len - (PHYSFS_sint64)sizeof(*meta);
+		if (have_android_meta)
+			coop_meta_start -= (PHYSFS_sint64)sizeof(android_save_meta_disk);
+		if (coop_meta_start >= 0 && PHYSFS_seek(fp, coop_meta_start) &&
+		    PHYSFS_read(fp, meta, sizeof(*meta), 1) == 1 &&
+		    meta->tag == COOP_SAVE_META_TAG && meta->version >= 1 &&
+		    meta->num_active_players <= MAX_PLAYERS &&
+		    meta->num_absent_players <= COOP_MAX_REMEMBERED_PLAYERS)
+			have_coop_meta = 1;
+		PHYSFS_seek(fp, saved_pos);
+		return have_coop_meta;
+	}
 
 	physfs_fp = rewind_file_physfs_handle(fp);
 	if (!physfs_fp)
@@ -251,6 +296,9 @@ static int state_android_read_coop_metadata_trailer(PHYSFS_file *fp,
 
 static int state_android_remap_escort_owner(const coop_save_metadata *meta)
 {
+	int original_slot_by_current_slot[MAX_PLAYERS];
+	unsigned char eligible[MAX_PLAYERS];
+	int player_count = N_players < MAX_PLAYERS ? N_players : MAX_PLAYERS;
 	int current_slot;
 	int saved_owner;
 
@@ -260,12 +308,16 @@ static int state_android_remap_escort_owner(const coop_save_metadata *meta)
 	if (saved_owner < 0 || saved_owner >= MAX_PLAYERS)
 		return -1;
 
-	for (current_slot = 0; current_slot < N_players; current_slot++) {
+	for (current_slot = 0; current_slot < player_count; current_slot++) {
 		int meta_index;
 
-		if (Players[current_slot].connected != CONNECT_PLAYING)
-			continue;
-		if (Netgame.host_is_obs && current_slot == 0)
+		original_slot_by_current_slot[current_slot] = -1;
+		eligible[current_slot] = (unsigned char) escort_owner_slot_eligible(
+		    current_slot,
+		    player_count,
+		    Players[current_slot].connected == CONNECT_PLAYING,
+		    Netgame.host_is_obs != 0);
+		if (!eligible[current_slot])
 			continue;
 		meta_index = coop_find_player_in_metadata(
 			Players[current_slot].callsign,
@@ -273,23 +325,29 @@ static int state_android_remap_escort_owner(const coop_save_metadata *meta)
 			meta);
 		if (meta_index >= 0 && meta_index < meta->num_active_players &&
 		    meta->active_players[meta_index].original_slot == saved_owner)
-			return current_slot;
+			original_slot_by_current_slot[current_slot] =
+			    meta->active_players[meta_index].original_slot;
 	}
-	return -1;
+	return escort_owner_remap_saved_slot(
+	    saved_owner,
+	    original_slot_by_current_slot,
+	    eligible,
+	    player_count);
 }
 
 static int state_android_first_eligible_escort_owner(void)
 {
+	unsigned char eligible[MAX_PLAYERS];
+	int player_count = N_players < MAX_PLAYERS ? N_players : MAX_PLAYERS;
 	int i;
 
-	for (i = 0; i < N_players; i++) {
-		if (Players[i].connected != CONNECT_PLAYING)
-			continue;
-		if (Netgame.host_is_obs && i == 0)
-			continue;
-		return i;
-	}
-	return -1;
+	for (i = 0; i < player_count; ++i)
+		eligible[i] = (unsigned char) escort_owner_slot_eligible(
+		    i,
+		    player_count,
+		    Players[i].connected == CONNECT_PLAYING,
+		    Netgame.host_is_obs != 0);
+	return escort_owner_first_eligible_slot(eligible, player_count);
 }
 #endif
 
@@ -2671,7 +2729,13 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		PHYSFS_read(fp, &saved_callsign, sizeof(char)*CALLSIGN_LEN+1, 1);
 #ifdef __ANDROID__
 		if (strcmp(saved_callsign, Players[Player_num].callsign) &&
-		    strcmp(saved_callsign, COOP_AUTOSAVE_CALLSIGN))
+		    strcmp(saved_callsign, COOP_AUTOSAVE_CALLSIGN) &&
+		    state_android_coop_callsign_remap_allowed())
+			COOPLOG("restore accepting authoritative coop callsign remap: game=d2 file='%s' saved='%s' current='%s'",
+			        filename, saved_callsign, Players[Player_num].callsign);
+		if (strcmp(saved_callsign, Players[Player_num].callsign) &&
+		    strcmp(saved_callsign, COOP_AUTOSAVE_CALLSIGN) &&
+		    !state_android_coop_callsign_remap_allowed())
 #else
 		if (strcmp(saved_callsign, Players[Player_num].callsign))
 #endif
@@ -3333,18 +3397,18 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		"restore save complete: game=d2 file='%s' current_level=%d callsign='%s' highest_object=%d game_mode=%d secret_restore=%d",
 		filename, Current_level_num, Players[Player_num].callsign,
 		Highest_object_index, Game_mode, secret_restore);
-	if (!rewind_file_is_memory(fp)) {
-		struct PHYSFS_File *physfs_fp = rewind_file_physfs_handle(fp);
+	{
 		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
 		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
 		android_save_meta_disk android_meta;
-		int have_android_meta = android_save_meta_read_physfs(physfs_fp, file_len, &android_meta);
+		int have_android_meta = state_android_read_android_metadata_trailer(fp, &android_meta);
 		coop_save_metadata coop_meta;
+		int have_coop_meta = state_android_read_coop_metadata_trailer(fp, &coop_meta);
 		if (have_android_meta) {
 			state_android_restore_music_type_from_meta(&android_meta);
 			escort_restore_route_target_mode(android_meta.guidebot_route_target_mode);
 		}
-		if (coop_read_save_metadata(physfs_fp, pos_after_base, &coop_meta)) {
+		if (have_coop_meta) {
 			COOPLOG("coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);
 			/* Repopulate the absent player list so returning players get inventory back */

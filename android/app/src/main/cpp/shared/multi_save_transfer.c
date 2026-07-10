@@ -37,12 +37,44 @@ typedef struct multi_rewind_save_transfer {
 	unsigned char *chunk_received;
 } multi_rewind_save_transfer;
 
+typedef struct multi_save_send_transfer {
+	int active;
+	int transfer_kind;
+	ubyte transfer_id;
+	int requester;
+	uint total_size;
+	uint checksum;
+	int64_t game_time64;
+	int has_collision_delay_last_play_time;
+	int64_t collision_delay_last_play_time;
+	int rewound_seconds;
+	int total_chunks;
+	int next_chunk;
+	int begin_sent;
+	int apply_sent;
+	int coop_restore_pending;
+	ubyte coop_restore_slot;
+	uint coop_restore_game_id;
+	fix64 started_at;
+	unsigned char required_players[MAX_PLAYERS];
+	unsigned char ready_players[MAX_PLAYERS];
+	unsigned char applying_players[MAX_PLAYERS];
+	unsigned char *data;
+} multi_save_send_transfer;
+
 #define MULTI_SAVE_TRANSFER_KIND_REWIND  0
 #define MULTI_SAVE_TRANSFER_KIND_RESTORE 1
+#define MULTI_SAVE_TRANSFER_READY_BUFFER 1
+#define MULTI_SAVE_TRANSFER_READY_APPLY  2
 #define MULTI_SAVE_TRANSFER_MAX_BYTES    (2u * 1024u * 1024u)
+#define MULTI_SAVE_TRANSFER_CHUNKS_FRAME 8
+#define MULTI_SAVE_TRANSFER_TIMEOUT      (F1_0 * 60)
 
 static multi_rewind_save_transfer Rewind_save_transfer;
+static multi_save_send_transfer Save_send_transfer;
 static ubyte Rewind_save_transfer_id = 0;
+static int Save_transfer_restore_active;
+static fix64 Save_transfer_timeout_grace_until;
 
 static int multi_rewind_requester_valid(int pnum)
 {
@@ -105,6 +137,54 @@ static void multi_rewind_receive_reset(void)
 	memset(&Rewind_save_transfer, 0, sizeof(Rewind_save_transfer));
 }
 
+static void multi_save_send_reset(void)
+{
+	if (Save_send_transfer.data)
+		d_free(Save_send_transfer.data);
+	memset(&Save_send_transfer, 0, sizeof(Save_send_transfer));
+}
+
+static void multi_save_transfer_refresh_peer_times(void)
+{
+	fix64 now = timer_query();
+	int i;
+
+	for (i = 0; i < N_players; ++i)
+		if (i != Player_num &&
+		    Players[i].connected != CONNECT_DISCONNECTED)
+			Netgame.players[i].LastPacketTime = now;
+}
+
+static void multi_save_transfer_begin_restore(void)
+{
+	Save_transfer_restore_active = 1;
+	Save_transfer_timeout_grace_until = timer_query() + F1_0 * 60;
+}
+
+static void multi_save_transfer_finish_restore(void)
+{
+	Save_transfer_restore_active = 0;
+	Save_transfer_timeout_grace_until = timer_query() + F1_0 * 30;
+	multi_save_transfer_refresh_peer_times();
+}
+
+int multi_save_transfer_timeout_suspended(void)
+{
+	return Save_transfer_restore_active ||
+	       timer_query() < Save_transfer_timeout_grace_until;
+}
+
+static void multi_rewind_send_ready(int phase)
+{
+	memset(multibuf, 0, MULTI_REWIND_SAVE_READY_LEN);
+	multibuf[0] = MULTI_REWIND_SAVE_READY;
+	multibuf[1] = Rewind_save_transfer.transfer_id;
+	multibuf[2] = (ubyte) Player_num;
+	multibuf[3] = (ubyte) phase;
+	multi_send_data_direct(multibuf, MULTI_REWIND_SAVE_READY_LEN,
+	                       multi_who_is_master(), 2);
+}
+
 static void multi_rewind_apply_received_transfer(void)
 {
 	android_rewind_authoritative_restore restore;
@@ -136,7 +216,11 @@ static void multi_rewind_apply_received_transfer(void)
 		buffer.data = Rewind_save_transfer.data;
 		buffer.size = Rewind_save_transfer.total_size;
 		buffer.capacity = Rewind_save_transfer.total_size;
-		restored = state_restore_from_memory(&buffer);
+		multi_save_transfer_begin_restore();
+		multi_rewind_send_ready(MULTI_SAVE_TRANSFER_READY_APPLY);
+		multi_prepare_restore_sync();
+		restored = state_restore_coop_from_memory(&buffer);
+		multi_save_transfer_finish_restore();
 		if (restored) {
 			HUD_init_message_literal(HM_DEFAULT, "Host save restored");
 			multi_send_score();
@@ -183,9 +267,10 @@ static int multi_send_save_transfer_buffer(const unsigned char *data,
                                            int64_t collision_delay_last_play_time)
 {
 	int total_chunks;
-	int chunk_index;
 	uint checksum;
 	ubyte transfer_id;
+	unsigned char *data_copy;
+	int i;
 
 	if (!data || total_size == 0 ||
 	    total_size > MULTI_SAVE_TRANSFER_MAX_BYTES)
@@ -197,50 +282,185 @@ static int multi_send_save_transfer_buffer(const unsigned char *data,
 	                      MULTI_REWIND_SAVE_CHUNK_PAYLOAD);
 	if (total_chunks <= 0 || total_chunks > 65535)
 		return 0;
+	if (Save_send_transfer.active) {
+		COOPLOG("save transfer refused: another send is active");
+		return 0;
+	}
+	data_copy = (unsigned char *) d_malloc((unsigned int) total_size);
+	if (!data_copy)
+		return 0;
+	memcpy(data_copy, data, total_size);
 	checksum = multi_rewind_checksum(data, total_size);
 	transfer_id = ++Rewind_save_transfer_id;
 	if (!transfer_id)
 		transfer_id = ++Rewind_save_transfer_id;
 
-	memset(multibuf, 0, MULTI_REWIND_SAVE_BEGIN_LEN);
-	multibuf[0] = MULTI_REWIND_SAVE_BEGIN;
-	multibuf[1] = transfer_id;
-	multibuf[2] = (ubyte) requester;
-	multibuf[3] = (ubyte) multi_rewind_clamp_u8(rewound_seconds);
-	PUT_INTEL_INT(multibuf + 4, (uint) total_size);
-	PUT_INTEL_INT(multibuf + 8, checksum);
-	multi_rewind_put_i64(multibuf + 12, game_time64);
-	multi_rewind_put_i64(multibuf + 20, collision_delay_last_play_time);
-	multibuf[28] = (ubyte) (has_collision_delay_last_play_time ? 1 : 0);
-	multibuf[29] = (ubyte) transfer_kind;
-	PUT_INTEL_SHORT(multibuf + 30, (ushort) total_chunks);
-	multi_send_data(multibuf, MULTI_REWIND_SAVE_BEGIN_LEN, 2);
-
-	for (chunk_index = 0; chunk_index < total_chunks; chunk_index++) {
-		size_t offset = (size_t) chunk_index * MULTI_REWIND_SAVE_CHUNK_PAYLOAD;
-		size_t data_len = total_size - offset;
-		if (data_len > MULTI_REWIND_SAVE_CHUNK_PAYLOAD)
-			data_len = MULTI_REWIND_SAVE_CHUNK_PAYLOAD;
-		memset(multibuf, 0, MULTI_REWIND_SAVE_CHUNK_LEN);
-		multibuf[0] = MULTI_REWIND_SAVE_CHUNK;
-		multibuf[1] = transfer_id;
-		PUT_INTEL_SHORT(multibuf + 2, (ushort) chunk_index);
-		PUT_INTEL_SHORT(multibuf + 4, (ushort) data_len);
-		memcpy(multibuf + 8, data + offset, data_len);
-		multi_send_data(multibuf, MULTI_REWIND_SAVE_CHUNK_LEN, 2);
+	memset(&Save_send_transfer, 0, sizeof(Save_send_transfer));
+	Save_send_transfer.active = 1;
+	Save_send_transfer.transfer_kind = transfer_kind;
+	Save_send_transfer.transfer_id = transfer_id;
+	Save_send_transfer.requester = requester;
+	Save_send_transfer.total_size = (uint) total_size;
+	Save_send_transfer.checksum = checksum;
+	Save_send_transfer.game_time64 = game_time64;
+	Save_send_transfer.has_collision_delay_last_play_time =
+	    has_collision_delay_last_play_time;
+	Save_send_transfer.collision_delay_last_play_time =
+	    collision_delay_last_play_time;
+	Save_send_transfer.rewound_seconds = rewound_seconds;
+	Save_send_transfer.total_chunks = total_chunks;
+	Save_send_transfer.started_at = timer_query();
+	Save_send_transfer.data = data_copy;
+	for (i = 0; i < MAX_PLAYERS; ++i) {
+		Save_send_transfer.required_players[i] =
+		    (i != Player_num && Players[i].connected == CONNECT_PLAYING) ? 1 : 0;
+		Save_send_transfer.ready_players[i] =
+		    Save_send_transfer.required_players[i] ? 0 : 1;
+		Save_send_transfer.applying_players[i] =
+		    Save_send_transfer.required_players[i] ? 0 : 1;
 	}
 
-	memset(multibuf, 0, MULTI_REWIND_SAVE_APPLY_LEN);
-	multibuf[0] = MULTI_REWIND_SAVE_APPLY;
-	multibuf[1] = transfer_id;
-	multibuf[2] = (ubyte) requester;
-	multibuf[3] = (ubyte) multi_rewind_clamp_u8(rewound_seconds);
-	multi_send_data(multibuf, MULTI_REWIND_SAVE_APPLY_LEN, 2);
-
-	COOPLOG("save transfer sent: kind=%d id=%u requester=%d bytes=%u chunks=%d checksum=%u",
+	COOPLOG("save transfer queued: kind=%d id=%u requester=%d bytes=%u chunks=%d checksum=%u",
 	        transfer_kind, transfer_id, requester, (uint) total_size,
 	        total_chunks, checksum);
 	return 1;
+}
+
+static int multi_save_transfer_all_players_ready(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_PLAYERS; ++i)
+		if (Save_send_transfer.required_players[i] &&
+		    !Save_send_transfer.ready_players[i])
+			return 0;
+	return 1;
+}
+
+static int multi_save_transfer_all_players_applying(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_PLAYERS; ++i)
+		if (Save_send_transfer.required_players[i] &&
+		    !Save_send_transfer.applying_players[i])
+			return 0;
+	return 1;
+}
+
+static void multi_save_transfer_send_begin(void)
+{
+	memset(multibuf, 0, MULTI_REWIND_SAVE_BEGIN_LEN);
+	multibuf[0] = MULTI_REWIND_SAVE_BEGIN;
+	multibuf[1] = Save_send_transfer.transfer_id;
+	multibuf[2] = (ubyte) Save_send_transfer.requester;
+	multibuf[3] = (ubyte) multi_rewind_clamp_u8(Save_send_transfer.rewound_seconds);
+	PUT_INTEL_INT(multibuf + 4, Save_send_transfer.total_size);
+	PUT_INTEL_INT(multibuf + 8, Save_send_transfer.checksum);
+	multi_rewind_put_i64(multibuf + 12, Save_send_transfer.game_time64);
+	multi_rewind_put_i64(multibuf + 20,
+	                     Save_send_transfer.collision_delay_last_play_time);
+	multibuf[28] =
+	    (ubyte) (Save_send_transfer.has_collision_delay_last_play_time ? 1 : 0);
+	multibuf[29] = (ubyte) Save_send_transfer.transfer_kind;
+	PUT_INTEL_SHORT(multibuf + 30, (ushort) Save_send_transfer.total_chunks);
+	multi_send_data(multibuf, MULTI_REWIND_SAVE_BEGIN_LEN, 2);
+}
+
+static void multi_save_transfer_send_chunk(int chunk_index)
+{
+	size_t offset = (size_t) chunk_index * MULTI_REWIND_SAVE_CHUNK_PAYLOAD;
+	size_t data_len = Save_send_transfer.total_size - offset;
+
+	if (data_len > MULTI_REWIND_SAVE_CHUNK_PAYLOAD)
+		data_len = MULTI_REWIND_SAVE_CHUNK_PAYLOAD;
+	memset(multibuf, 0, MULTI_REWIND_SAVE_CHUNK_LEN);
+	multibuf[0] = MULTI_REWIND_SAVE_CHUNK;
+	multibuf[1] = Save_send_transfer.transfer_id;
+	PUT_INTEL_SHORT(multibuf + 2, (ushort) chunk_index);
+	PUT_INTEL_SHORT(multibuf + 4, (ushort) data_len);
+	memcpy(multibuf + 8, Save_send_transfer.data + offset, data_len);
+	multi_send_data(multibuf, MULTI_REWIND_SAVE_CHUNK_LEN, 2);
+}
+
+static void multi_save_transfer_send_apply(void)
+{
+
+	memset(multibuf, 0, MULTI_REWIND_SAVE_APPLY_LEN);
+	multibuf[0] = MULTI_REWIND_SAVE_APPLY;
+	multibuf[1] = Save_send_transfer.transfer_id;
+	multibuf[2] = (ubyte) Save_send_transfer.requester;
+	multibuf[3] = (ubyte) multi_rewind_clamp_u8(Save_send_transfer.rewound_seconds);
+	multi_send_data(multibuf, MULTI_REWIND_SAVE_APPLY_LEN, 2);
+}
+
+void multi_save_transfer_frame(void)
+{
+	int chunks_sent = 0;
+	ubyte restore_slot;
+	uint restore_game_id;
+
+	if (!Save_send_transfer.active)
+		return;
+	if (!(Game_mode & GM_MULTI_COOP) || !multi_i_am_master()) {
+		multi_save_send_reset();
+		return;
+	}
+	if (timer_query() > Save_send_transfer.started_at +
+	                        MULTI_SAVE_TRANSFER_TIMEOUT) {
+		COOPLOG("save transfer send timeout: kind=%d id=%u chunks=%d/%d",
+		        Save_send_transfer.transfer_kind,
+		        Save_send_transfer.transfer_id,
+		        Save_send_transfer.next_chunk,
+		        Save_send_transfer.total_chunks);
+		multi_save_send_reset();
+		return;
+	}
+	if (!Save_send_transfer.begin_sent) {
+		multi_save_transfer_send_begin();
+		Save_send_transfer.begin_sent = 1;
+		return;
+	}
+	if (!multi_save_transfer_all_players_ready())
+		return;
+
+	while (Save_send_transfer.next_chunk < Save_send_transfer.total_chunks &&
+	       chunks_sent < MULTI_SAVE_TRANSFER_CHUNKS_FRAME) {
+		multi_save_transfer_send_chunk(Save_send_transfer.next_chunk++);
+		chunks_sent++;
+	}
+	if (Save_send_transfer.next_chunk < Save_send_transfer.total_chunks)
+		return;
+
+	if (!Save_send_transfer.apply_sent) {
+		multi_save_transfer_send_apply();
+		Save_send_transfer.apply_sent = 1;
+		COOPLOG("save transfer payload sent: kind=%d id=%u requester=%d bytes=%u chunks=%d checksum=%u",
+		        Save_send_transfer.transfer_kind,
+		        Save_send_transfer.transfer_id,
+		        Save_send_transfer.requester,
+		        Save_send_transfer.total_size,
+		        Save_send_transfer.total_chunks,
+		        Save_send_transfer.checksum);
+		return;
+	}
+
+	if (!Save_send_transfer.coop_restore_pending) {
+		multi_save_send_reset();
+		return;
+	}
+	if (!multi_save_transfer_all_players_applying())
+		return;
+
+	restore_slot = Save_send_transfer.coop_restore_slot;
+	restore_game_id = Save_send_transfer.coop_restore_game_id;
+	COOPLOG("coop restore transfer synchronized: id=%u slot=%u game_id=%u",
+	        Save_send_transfer.transfer_id, (uint) restore_slot,
+	        restore_game_id);
+	multi_save_send_reset();
+	multi_save_transfer_begin_restore();
+	multi_restore_game(restore_slot, restore_game_id);
+	multi_save_transfer_finish_restore();
 }
 
 static int multi_send_rewind_save_transfer(
@@ -307,10 +527,21 @@ int multi_send_coop_restore_save_transfer(const char *filename, ubyte slot, uint
 	sent = multi_send_save_transfer_buffer(data, (size_t) file_len,
 	                                       MULTI_SAVE_TRANSFER_KIND_RESTORE,
 	                                       Player_num, 0, GameTime64, 0, 0);
+	if (sent && Save_send_transfer.active) {
+		Save_send_transfer.coop_restore_pending = 1;
+		Save_send_transfer.coop_restore_slot = slot;
+		Save_send_transfer.coop_restore_game_id = id;
+	}
 	COOPLOG("coop restore transfer send: sent=%d slot=%u id=%u bytes=%u file='%s'",
 	        sent, (uint) slot, id, (uint) file_len, filename);
 	d_free(data);
 	return sent;
+}
+
+int multi_coop_restore_transfer_pending(void)
+{
+	return Save_send_transfer.active &&
+	       Save_send_transfer.coop_restore_pending;
 }
 
 static void multi_send_rewind_result(int requester, int status, int rewound_seconds)
@@ -506,9 +737,34 @@ void multi_do_rewind_save_begin(const ubyte *buf)
 	                         transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE
 	                             ? "Receiving host save"
 	                             : "Receiving host rewind");
+	multi_rewind_send_ready(MULTI_SAVE_TRANSFER_READY_BUFFER);
 	COOPLOG("save transfer begin: kind=%d id=%u requester=%d bytes=%u chunks=%d checksum=%u",
 	        transfer_kind, Rewind_save_transfer.transfer_id,
 	        Rewind_save_transfer.requester, total_size, total_chunks, checksum);
+}
+
+void multi_do_rewind_save_ready(const ubyte *buf)
+{
+	int pnum = buf[2];
+	int phase = buf[3];
+
+	if (!multi_i_am_master() || !Save_send_transfer.active ||
+	    buf[1] != Save_send_transfer.transfer_id ||
+	    pnum < 0 || pnum >= N_players || pnum == Player_num ||
+	    Players[pnum].connected != CONNECT_PLAYING ||
+	    !Save_send_transfer.required_players[pnum])
+		return;
+	if (phase == MULTI_SAVE_TRANSFER_READY_BUFFER) {
+		Save_send_transfer.ready_players[pnum] = 1;
+		COOPLOG("save transfer buffer ready: id=%u player=%d",
+		        Save_send_transfer.transfer_id, pnum);
+	} else if (phase == MULTI_SAVE_TRANSFER_READY_APPLY &&
+	           Save_send_transfer.apply_sent &&
+	           Save_send_transfer.ready_players[pnum]) {
+		Save_send_transfer.applying_players[pnum] = 1;
+		COOPLOG("save transfer apply ready: id=%u player=%d",
+		        Save_send_transfer.transfer_id, pnum);
+	}
 }
 
 void multi_do_rewind_save_chunk(const ubyte *buf)

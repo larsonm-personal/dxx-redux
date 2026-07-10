@@ -15,7 +15,7 @@
         "level_file": "2drav1.rl2",
         "robots": 24,
         "hostages": 2,
-        "secrets": 0,
+        "secrets": 1,
         "matcens": 0,
         "energy_centers": 1,
         "mine_volume": 2790795.4318704815,
@@ -187,10 +187,9 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 95,
-            "side": 5,
+            "seg": 89,
             "wall": 38,
-            "distance": 1482.8865284210879,
+            "distance": 1401.1365295463063,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -218,7 +217,7 @@
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 91,
-            "distance": 150.00003791322118,
+            "distance": 68.25003903843952,
             "key": "blue"
           },
           {
@@ -504,10 +503,10 @@
         "mine_volume": 1663023.6443684585,
         "mine_volume_normalized": 0.36366914226885055,
         "mine_volume_text": "0.36x",
-        "travel_distance": 1367.213382192935,
-        "travel_time_seconds": 27,
-        "travel_time_text": "0M:27S",
-        "travel_targets_reached": 2,
+        "travel_distance": 1037.2133905346595,
+        "travel_time_seconds": 21,
+        "travel_time_text": "0M:21S",
+        "travel_targets_reached": 1,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -544,6 +543,8 @@
             "trigger_type": "exit"
           }
         ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"

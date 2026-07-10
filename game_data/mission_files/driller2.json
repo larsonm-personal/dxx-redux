@@ -297,9 +297,9 @@
         "mine_volume": 6762005.553904716,
         "mine_volume_normalized": 1.4787118440156632,
         "mine_volume_text": "1.5x",
-        "travel_distance": 4529.156812909905,
-        "travel_time_seconds": 91,
-        "travel_time_text": "2M:31S",
+        "travel_distance": 5831.474610015384,
+        "travel_time_seconds": 117,
+        "travel_time_text": "2M:57S",
         "travel_targets_reached": 3,
         "travel_targets_total": 3,
         "travel_key_detours": 3,
@@ -361,7 +361,7 @@
             "seg": 473,
             "side": 5,
             "wall": 220,
-            "distance": 569.7652591671504,
+            "distance": 1084.7201826501912,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -388,7 +388,7 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 503,
-            "distance": 1008.8954136293754
+            "distance": 1402.576850440595
           },
           {
             "index": 7,
@@ -455,7 +455,7 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 481,
-            "distance": 850.9257313029415,
+            "distance": 1326.6473564354055,
             "key": "gold"
           },
           {
@@ -540,7 +540,7 @@
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 211,
-            "distance": 706.4155725789411,
+            "distance": 812.4987731426573,
             "key": "red"
           },
           {
@@ -559,7 +559,7 @@
             "seg": 196,
             "side": 5,
             "wall": 163,
-            "distance": 782.8456031147447,
+            "distance": 1103.3215358659463,
             "trigger": 11,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -623,15 +623,39 @@
           },
           {
             "index": 3,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
+            "seg": 59,
+            "wall": 47,
+            "distance": 473.05361243322454,
+            "trigger": 2,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 64,
+                "side": 4,
+                "wall": 30
+              },
+              {
+                "seg": 208,
+                "side": 1,
+                "wall": 44
+              }
+            ]
+          },
+          {
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 85,
-            "distance": 637.8433429778465,
+            "distance": 179.74669034051533,
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -639,14 +663,14 @@
             "distance": 370.3318271835235
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 261,
             "side": 5,
             "wall": 88,
-            "distance": 370.0,
+            "distance": 410.0,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"

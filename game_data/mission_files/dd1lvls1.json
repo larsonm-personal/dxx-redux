@@ -584,12 +584,12 @@
         "mine_volume": 8066323.494892634,
         "mine_volume_normalized": 1.7639394103531718,
         "mine_volume_text": "1.8x",
-        "travel_distance": 10403.481372608909,
-        "travel_time_seconds": 208,
-        "travel_time_text": "3M:28S",
-        "travel_targets_reached": 9,
+        "travel_distance": 3847.148612518731,
+        "travel_time_seconds": 77,
+        "travel_time_text": "1M:17S",
+        "travel_targets_reached": 3,
         "travel_targets_total": 9,
-        "travel_key_detours": 3,
+        "travel_key_detours": 1,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -747,7 +747,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "hostage unreachable"
       },
       {
         "level_num": 8,

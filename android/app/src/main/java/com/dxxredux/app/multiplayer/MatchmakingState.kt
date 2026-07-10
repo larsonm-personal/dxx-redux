@@ -94,6 +94,7 @@ data class GameLaunchInfo(
     val playerSpewNoExpire: Boolean = true,
     val clientsCanRequestRewind: Boolean = false,
     val restrictNonCoopFovToBase: Boolean = false,
+    val hostObserver: Boolean = false,
 )
 
 data class MatchmakingState(

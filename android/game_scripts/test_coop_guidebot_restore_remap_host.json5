@@ -1,0 +1,22 @@
+// TEST HELPER: Verify the new host does not inherit ownership after restore.
+// The saved owner was slot 0 and is now the joiner in slot 1.
+[
+    {"_info": {"games": ["d2"], "_standalone": false}},
+
+    {"action": "log", "message": "=== COOP GUIDEBOT RESTORE: remapped host ==="},
+    {"action": "wait_for", "timeout_ms": 90000, "expect": {
+        "in_game": "true",
+        "is_network": "true",
+        "player.callsign": "LanJoin",
+        "multiplayer.my_player_num": "0",
+        "multiplayer.num_connected": "2",
+        "guidebot.released": "true",
+        "guidebot.owner_player": "1",
+        "guidebot.owner_is_local": "false",
+        "guidebot.remote_owner": "1",
+        "guidebot.local_control_slot_matches": "false",
+        "guidebot.route_target_mode_name": "unexplored"
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== COOP GUIDEBOT RESTORE: remapped host PASS ==="}
+]

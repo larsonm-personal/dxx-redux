@@ -21,12 +21,12 @@
         "mine_volume": 11906309.989161136,
         "mine_volume_normalized": 2.603665652023607,
         "mine_volume_text": "2.6x",
-        "travel_distance": 7426.226383298194,
-        "travel_time_seconds": 149,
-        "travel_time_text": "2M:29S",
+        "travel_distance": 6309.334673193724,
+        "travel_time_seconds": 126,
+        "travel_time_text": "2M:06S",
         "travel_targets_reached": 9,
         "travel_targets_total": 9,
-        "travel_key_detours": 1,
+        "travel_key_detours": 2,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -93,9 +93,9 @@
         "mine_volume": 14274796.754420394,
         "mine_volume_normalized": 3.1216051012393513,
         "mine_volume_text": "3.1x",
-        "travel_distance": 11042.110191523914,
-        "travel_time_seconds": 221,
-        "travel_time_text": "4M:41S",
+        "travel_distance": 11259.36368569154,
+        "travel_time_seconds": 225,
+        "travel_time_text": "4M:45S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
@@ -194,16 +194,16 @@
         "mine_volume": 30039936.952993613,
         "mine_volume_normalized": 6.569117728722496,
         "mine_volume_text": "6.6x",
-        "travel_distance": 15597.645663470457,
-        "travel_time_seconds": 312,
-        "travel_time_text": "5M:12S",
-        "travel_targets_reached": 18,
+        "travel_distance": 4001.798937387749,
+        "travel_time_seconds": 80,
+        "travel_time_text": "1M:20S",
+        "travel_targets_reached": 10,
         "travel_targets_total": 18,
-        "travel_key_detours": 3,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
@@ -255,120 +255,11 @@
                 "wall": 67
               }
             ]
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 183,
-            "distance": 430.6082378050953,
-            "key": "blue"
-          },
-          {
-            "index": 4,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
-            "seg": 201,
-            "side": 0,
-            "wall": 64,
-            "distance": 78.11672973940631,
-            "opens": [
-              {
-                "seg": 201,
-                "side": 0,
-                "wall": 64
-              },
-              {
-                "seg": 202,
-                "side": 2,
-                "wall": 65
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 653,
-            "distance": 1994.4887646624725,
-            "key": "gold"
-          },
-          {
-            "index": 6,
-            "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 3",
-            "seg": 681,
-            "side": 5,
-            "wall": 110,
-            "distance": 1878.3623534345254,
-            "trigger": 3,
-            "trigger_type_id": 1,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 240,
-                "side": 1,
-                "wall": 112
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
-            "seg": 681,
-            "side": 5,
-            "wall": 110,
-            "distance": 95.98677152989121,
-            "opens": [
-              {
-                "seg": 681,
-                "side": 5,
-                "wall": 110
-              },
-              {
-                "seg": 236,
-                "side": 4,
-                "wall": 111
-              }
-            ]
-          },
-          {
-            "index": 8,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 702,
-            "distance": 2008.405675625294,
-            "key": "red"
-          },
-          {
-            "index": 9,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 751,
-            "distance": 2906.8742375332945
-          },
-          {
-            "index": 10,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 644,
-            "side": 4,
-            "wall": 144,
-            "distance": 841.1466143888925,
-            "trigger": 4,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "blue key unreachable",
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 4,
@@ -508,16 +399,16 @@
         "mine_volume": 16316228.096246997,
         "mine_volume_normalized": 3.568024241217822,
         "mine_volume_text": "3.6x",
-        "travel_distance": 6151.785754525703,
-        "travel_time_seconds": 123,
-        "travel_time_text": "2M:03S",
-        "travel_targets_reached": 9,
+        "travel_distance": 4989.099977981138,
+        "travel_time_seconds": 100,
+        "travel_time_text": "2M:40S",
+        "travel_targets_reached": 4,
         "travel_targets_total": 9,
-        "travel_key_detours": 1,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
@@ -537,44 +428,38 @@
           },
           {
             "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 614,
-            "distance": 957.6986845439355,
-            "key": "gold"
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
+            "seg": 691,
+            "side": 1,
+            "wall": 76,
+            "distance": 1296.8309966610127,
+            "opens": [
+              {
+                "seg": 691,
+                "side": 1,
+                "wall": 76
+              },
+              {
+                "seg": 683,
+                "side": 3,
+                "wall": 77
+              }
+            ]
           },
           {
             "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 679,
-            "distance": 2576.677618403177,
-            "key": "red"
-          },
-          {
-            "index": 4,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 572,
-            "distance": 2758.796397543415
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 33,
-            "side": 3,
-            "wall": 8,
-            "distance": 328.9807630208831,
-            "trigger": 5,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
+            "distance": 872.7672879663346
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "gold key unreachable",
+        "route_problem": "gold key unreachable"
       },
       {
         "level_num": 6,
@@ -589,10 +474,10 @@
         "mine_volume": 11318424.223090393,
         "mine_volume_normalized": 2.4751070996404247,
         "mine_volume_text": "2.5x",
-        "travel_distance": 10186.130367546399,
-        "travel_time_seconds": 204,
-        "travel_time_text": "3M:24S",
-        "travel_targets_reached": 6,
+        "travel_distance": 10102.555827543896,
+        "travel_time_seconds": 202,
+        "travel_time_text": "3M:22S",
+        "travel_targets_reached": 5,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
         "guidebot_count": 0,
@@ -721,7 +606,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable"
       },
       {
         "level_num": 7,
@@ -736,12 +623,12 @@
         "mine_volume": 16149191.932834655,
         "mine_volume_normalized": 3.5314968602140993,
         "mine_volume_text": "3.5x",
-        "travel_distance": 10874.590184701168,
-        "travel_time_seconds": 217,
-        "travel_time_text": "4M:37S",
-        "travel_targets_reached": 8,
+        "travel_distance": 1458.1837414841737,
+        "travel_time_seconds": 29,
+        "travel_time_text": "0M:29S",
+        "travel_targets_reached": 3,
         "travel_targets_total": 8,
-        "travel_key_detours": 3,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -755,7 +642,9 @@
             "seg": 0
           }
         ],
-        "route_problem": "blue key route dependency loop"
+        "travel_status": "partial",
+        "travel_problem": "red key unreachable",
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": -1,
@@ -770,10 +659,10 @@
         "mine_volume": 17621152.48116567,
         "mine_volume_normalized": 3.8533844243974773,
         "mine_volume_text": "3.9x",
-        "travel_distance": 8689.11932645547,
-        "travel_time_seconds": 174,
-        "travel_time_text": "3M:54S",
-        "travel_targets_reached": 2,
+        "travel_distance": 8121.977515624289,
+        "travel_time_seconds": 162,
+        "travel_time_text": "3M:42S",
+        "travel_targets_reached": 1,
         "travel_targets_total": 2,
         "travel_key_detours": 2,
         "guidebot_count": 0,
@@ -847,7 +736,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable"
       }
     ],
     "target_index": 0

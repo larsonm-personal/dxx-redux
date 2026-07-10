@@ -21,9 +21,9 @@
         "mine_volume": 2529962.2465349874,
         "mine_volume_normalized": 0.5532508231531211,
         "mine_volume_text": "0.55x",
-        "travel_distance": 2014.7469531131394,
-        "travel_time_seconds": 40,
-        "travel_time_text": "1M:40S",
+        "travel_distance": 2176.885767439575,
+        "travel_time_seconds": 44,
+        "travel_time_text": "1M:44S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 1,
@@ -147,9 +147,9 @@
         "mine_volume": 2279511.4524917854,
         "mine_volume_normalized": 0.4984823742746734,
         "mine_volume_text": "0.50x",
-        "travel_distance": 4985.9340428213145,
-        "travel_time_seconds": 100,
-        "travel_time_text": "2M:40S",
+        "travel_distance": 5025.9340428213145,
+        "travel_time_seconds": 101,
+        "travel_time_text": "2M:41S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 2,
@@ -189,7 +189,7 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 266,
-            "distance": 626.17753486993
+            "distance": 666.17753486993
           },
           {
             "index": 4,
@@ -783,12 +783,12 @@
         "mine_volume": 14865231.73522806,
         "mine_volume_normalized": 3.250721114570233,
         "mine_volume_text": "3.3x",
-        "travel_distance": 7807.623438008345,
-        "travel_time_seconds": 156,
-        "travel_time_text": "3M:36S",
-        "travel_targets_reached": 6,
+        "travel_distance": 11413.645252251663,
+        "travel_time_seconds": 228,
+        "travel_time_text": "4M:48S",
+        "travel_targets_reached": 5,
         "travel_targets_total": 6,
-        "travel_key_detours": 2,
+        "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -849,7 +849,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable"
       },
       {
         "level_num": 8,

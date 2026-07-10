@@ -21,9 +21,9 @@
         "mine_volume": 30049968.948213886,
         "mine_volume_normalized": 6.571311520199458,
         "mine_volume_text": "6.6x",
-        "travel_distance": 9408.339025361145,
-        "travel_time_seconds": 188,
-        "travel_time_text": "3M:08S",
+        "travel_distance": 10714.251567812698,
+        "travel_time_seconds": 214,
+        "travel_time_text": "4M:34S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -75,37 +75,45 @@
           },
           {
             "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 381,
-            "distance": 2633.7896400788172,
-            "key": "gold"
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 2",
+            "seg": 190,
+            "side": 0,
+            "wall": 80,
+            "distance": 14.807758711882302,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 48,
+                "side": 0,
+                "wall": 38
+              }
+            ]
           },
           {
             "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 303,
-            "distance": 2087.868574921715,
-            "key": "red"
+            "label": "gold key",
+            "seg": 381,
+            "distance": 2624.222342185285,
+            "key": "gold"
           },
           {
             "index": 5,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
-            "seg": 304,
-            "side": 3,
-            "wall": 74,
-            "distance": 130.85348148235312,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
+            "seg": 300,
+            "wall": 77,
+            "distance": 1954.5121606700518,
+            "trigger": 1,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
             "opens": [
-              {
-                "seg": 304,
-                "side": 3,
-                "wall": 74
-              },
               {
                 "seg": 300,
                 "side": 1,
@@ -115,14 +123,23 @@
           },
           {
             "index": 6,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 303,
+            "distance": 148.37515254753882,
+            "key": "red"
+          },
+          {
+            "index": 7,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 347,
-            "distance": 1790.8409813707744
+            "distance": 1901.6702398078537
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -369,10 +386,9 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 29",
-            "seg": 291,
-            "side": 0,
+            "seg": 177,
             "wall": 99,
-            "distance": 1763.7555100273366,
+            "distance": 100.48851062986729,
             "trigger": 29,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -401,37 +417,15 @@
           },
           {
             "index": 6,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
-            "seg": 291,
-            "side": 2,
-            "wall": 91,
-            "distance": 26.60389830504536,
-            "opens": [
-              {
-                "seg": 291,
-                "side": 2,
-                "wall": 91
-              },
-              {
-                "seg": 288,
-                "side": 0,
-                "wall": 90
-              }
-            ]
-          },
-          {
-            "index": 7,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 196,
-            "distance": 1614.460891070339,
+            "distance": 721.3305767230595,
             "key": "red"
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -439,7 +433,7 @@
             "distance": 383.14262053024777
           },
           {
-            "index": 9,
+            "index": 8,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Shoot hidden wall",
@@ -461,7 +455,7 @@
             ]
           },
           {
-            "index": 10,
+            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -494,9 +488,9 @@
         "mine_volume": 14163689.045305926,
         "mine_volume_normalized": 3.0973081254206702,
         "mine_volume_text": "3.1x",
-        "travel_distance": 9348.47328836374,
-        "travel_time_seconds": 187,
-        "travel_time_text": "3M:07S",
+        "travel_distance": 9646.122880422763,
+        "travel_time_seconds": 193,
+        "travel_time_text": "3M:13S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -688,10 +682,10 @@
         "mine_volume": 7930485.050174957,
         "mine_volume_normalized": 1.7342343301849505,
         "mine_volume_text": "1.7x",
-        "travel_distance": 1717.206918783524,
-        "travel_time_seconds": 34,
-        "travel_time_text": "1M:34S",
-        "travel_targets_reached": 2,
+        "travel_distance": 1484.7792398152383,
+        "travel_time_seconds": 30,
+        "travel_time_text": "0M:30S",
+        "travel_targets_reached": 1,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
         "guidebot_count": 0,
@@ -739,14 +733,34 @@
           },
           {
             "index": 3,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
+            "seg": 64,
+            "side": 2,
+            "wall": 21,
+            "distance": 997.2177306564726,
+            "trigger": 2,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 34,
+                "side": 0,
+                "wall": 13
+              }
+            ]
+          },
+          {
+            "index": 4,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 80,
-            "distance": 447.5944316541649
+            "distance": 1084.3898457070836
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -759,6 +773,8 @@
             "trigger_type": "exit"
           }
         ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"

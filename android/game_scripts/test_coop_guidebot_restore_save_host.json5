@@ -1,0 +1,40 @@
+// TEST HELPER: Save a host-owned Guide-Bot before network slots are reversed.
+// Run with test_lan.ps1 -GuidebotSlotRemapRestore.
+[
+    {"_info": {"games": ["d2"], "_standalone": false}},
+
+    {"action": "log", "message": "=== COOP GUIDEBOT RESTORE: save host ==="},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "in_game": "true",
+        "is_network": "true",
+        "multiplayer.my_player_num": "0",
+        "multiplayer.num_connected": "2"
+    }},
+
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.owner_player": "0",
+        "guidebot.owner_is_local": "true",
+        "guidebot.owner_generation": {"gte": 1},
+        "guidebot.remote_owner": "0",
+        "guidebot.local_control_slot_matches": "true"
+    }},
+
+    {"action": "meta_action", "id": 1043, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {
+        "guidebot.owner_player": "0",
+        "guidebot.owner_is_local": "true",
+        "guidebot.owner_generation": {"gte": 2},
+        "guidebot.route_target_mode_name": "unexplored"
+    }},
+    {"action": "set_debug", "field": "coop_autosave", "value": "true", "post_delay_ms": 1000},
+    {"action": "assert", "expect": {
+        "guidebot.owner_player": "0",
+        "guidebot.owner_is_local": "true",
+        "guidebot.local_control_slot_matches": "true",
+        "guidebot.route_target_mode_name": "unexplored"
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== COOP GUIDEBOT RESTORE: save host PASS ==="}
+]

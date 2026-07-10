@@ -46,6 +46,7 @@ extern int auto_host_full_death_spew;
 extern int auto_host_player_spew_no_expire;
 /* Host-side client rewind request permission default (0/1). */
 extern int auto_host_clients_can_request_rewind;
+extern int auto_host_observer;
 
 /* Callsign for auto-created pilot (shared by host and join paths).
  * When non-empty and no pilot exists, a pilot with this name is created

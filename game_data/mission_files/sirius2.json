@@ -21,10 +21,10 @@
         "mine_volume": 8052328.547130503,
         "mine_volume_normalized": 1.760879002483454,
         "mine_volume_text": "1.8x",
-        "travel_distance": 5927.752401762606,
-        "travel_time_seconds": 119,
-        "travel_time_text": "2M:59S",
-        "travel_targets_reached": 5,
+        "travel_distance": 5136.928968792107,
+        "travel_time_seconds": 103,
+        "travel_time_text": "2M:43S",
+        "travel_targets_reached": 4,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
         "guidebot_count": 1,
@@ -70,6 +70,8 @@
             "trigger_type": "exit"
           }
         ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -88,10 +90,10 @@
         "mine_volume": 29984642.563672878,
         "mine_volume_normalized": 6.557025980535603,
         "mine_volume_text": "6.6x",
-        "travel_distance": 14695.204622721018,
-        "travel_time_seconds": 294,
-        "travel_time_text": "5M:54S",
-        "travel_targets_reached": 5,
+        "travel_distance": 13703.447401400255,
+        "travel_time_seconds": 274,
+        "travel_time_text": "5M:34S",
+        "travel_targets_reached": 4,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
         "guidebot_count": 1,
@@ -155,6 +157,8 @@
             "trigger_type": "exit"
           }
         ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -173,12 +177,12 @@
         "mine_volume": 24407729.977951046,
         "mine_volume_normalized": 5.337469648053021,
         "mine_volume_text": "5.3x",
-        "travel_distance": 2620.577388582593,
-        "travel_time_seconds": 52,
-        "travel_time_text": "1M:52S",
-        "travel_targets_reached": 5,
+        "travel_distance": 11527.452269202968,
+        "travel_time_seconds": 231,
+        "travel_time_text": "4M:51S",
+        "travel_targets_reached": 4,
         "travel_targets_total": 5,
-        "travel_key_detours": 0,
+        "travel_key_detours": 3,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -240,6 +244,8 @@
             "trigger_type": "exit"
           }
         ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"

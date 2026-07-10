@@ -564,34 +564,37 @@
           },
           {
             "index": 4,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 423,
-            "distance": 2497.5988166210327,
-            "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
-            "seg": 424,
-            "side": 1,
-            "wall": 101,
-            "distance": 112.01100200964572,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
+            "seg": 326,
+            "side": 3,
+            "wall": 102,
+            "distance": 2402.722189163052,
+            "trigger": 2,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
             "opens": [
-              {
-                "seg": 424,
-                "side": 1,
-                "wall": 101
-              },
               {
                 "seg": 421,
                 "side": 3,
                 "wall": 100
+              },
+              {
+                "seg": 422,
+                "side": 3,
+                "wall": 98
               }
             ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 423,
+            "distance": 385.4095018600242,
+            "key": "red"
           },
           {
             "index": 6,
@@ -599,7 +602,7 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 500,
-            "distance": 911.3553332519181
+            "distance": 1005.0968248920374
           },
           {
             "index": 7,
@@ -886,30 +889,21 @@
           },
           {
             "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 385,
-            "distance": 1117.8682361159438,
-            "key": "red"
-          },
-          {
-            "index": 4,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 402,
-            "distance": 1344.9114587889985
+            "distance": 903.1226652003869
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 63,
             "side": 2,
             "wall": 12,
-            "distance": 567.2681702632999,
+            "distance": 624.2270323660525,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1078,34 +1072,37 @@
           },
           {
             "index": 4,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 423,
-            "distance": 2497.5988166210327,
-            "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
-            "seg": 424,
-            "side": 1,
-            "wall": 101,
-            "distance": 112.01100200964572,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
+            "seg": 326,
+            "side": 3,
+            "wall": 102,
+            "distance": 2402.722189163052,
+            "trigger": 2,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
             "opens": [
-              {
-                "seg": 424,
-                "side": 1,
-                "wall": 101
-              },
               {
                 "seg": 421,
                 "side": 3,
                 "wall": 100
+              },
+              {
+                "seg": 422,
+                "side": 3,
+                "wall": 98
               }
             ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 423,
+            "distance": 385.4095018600242,
+            "key": "red"
           },
           {
             "index": 6,
@@ -1113,7 +1110,7 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 500,
-            "distance": 911.3553332519181
+            "distance": 1005.0968248920374
           },
           {
             "index": 7,

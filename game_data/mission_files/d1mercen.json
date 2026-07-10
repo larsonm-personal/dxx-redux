@@ -54,7 +54,7 @@
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 265,
-            "distance": 919.9997863771197,
+            "distance": 1119.999893188649,
             "key": "gold"
           },
           {
@@ -483,12 +483,12 @@
         "mine_volume": 3110129.4050002964,
         "mine_volume_normalized": 0.6801214744551112,
         "mine_volume_text": "0.68x",
-        "travel_distance": 4956.966656266783,
-        "travel_time_seconds": 99,
-        "travel_time_text": "2M:39S",
-        "travel_targets_reached": 2,
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "travel_targets_reached": 0,
         "travel_targets_total": 2,
-        "travel_key_detours": 3,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -502,7 +502,9 @@
             "seg": 20
           }
         ],
-        "route_problem": "trigger route dependency loop: trigger 1 source 262:5 wall 88 target 226:1"
+        "travel_status": "failed",
+        "travel_problem": "target unreachable or blocked by unsupported door",
+        "route_problem": "route target unreachable"
       }
     ],
     "target_index": 5

@@ -707,6 +707,10 @@ static int route_edge_passable(const level_metadata_scan_view *view, int seg, in
 
 	if (!edge_has_valid_reverse(view, seg, side, child))
 		return 0;
+	if (side_has_exit(view, seg, side))
+		return 0;
+	if (view->side_is_flyable && view->side_is_flyable(view->user, seg, side))
+		return 1;
 	if (edge_has_trigger_opener(view, seg, side, child))
 		return 1;
 	if (!view->wall_num || !view->wall_type || !view->wall_keys)
@@ -718,13 +722,16 @@ static int route_edge_passable(const level_metadata_scan_view *view, int seg, in
 	wall_keys = view->wall_keys(view->user, wall_num);
 	if (metadata_wall_is_opened_door(view, wall_num))
 		return 1;
-	if (wall_keys == view->wall_key_none)
-		return !side_has_exit(view, seg, side);
-	if (wall_type == view->wall_type_open || wall_type == view->wall_type_blastable)
+	if (metadata_wall_is_hidden_door(view, wall_num))
 		return 1;
-	if (wall_type == view->wall_type_illusion)
-		return !side_has_exit(view, seg, side);
+	if (wall_type == view->wall_type_open ||
+	    wall_type == view->wall_type_blastable ||
+	    wall_type == view->wall_type_illusion)
+		return 1;
 	if (wall_type == view->wall_type_door) {
+		if (view->wall_flag_door_locked &&
+		    (metadata_wall_flags(view, wall_num) & view->wall_flag_door_locked) != 0)
+			return 0;
 		if (wall_key_allowed(view, wall_keys, key_mask))
 			return 1;
 		return allow_missing_key && key_index_for_wall_key(view, wall_keys) != forbidden_missing_key;
@@ -832,11 +839,25 @@ static int find_shortest_path(
 	return 1;
 }
 
+static int metadata_target_visible_from_pos(
+    const level_metadata_scan_view *view,
+    int seg,
+    const int pos[3],
+    const metadata_target *target,
+    int wall_num)
+{
+	if (valid_wall(view, wall_num) && view->wall_visible_from_segment)
+		return view->wall_visible_from_segment(view->user, seg, pos, wall_num);
+	return view->target_visible_from_segment &&
+	       view->target_visible_from_segment(view->user, seg, pos, target->seg, target->pos);
+}
+
 static int segment_target_visible(
     const level_metadata_scan_view *view,
     int seg,
     const int *preferred_pos,
     const metadata_target *target,
+    int wall_num,
     int visible_pos[3],
     double *extra_distance)
 {
@@ -844,10 +865,11 @@ static int segment_target_visible(
 	int side;
 	int vertex_index;
 
-	if (!view->target_visible_from_segment || !valid_segment(view, seg) || !target || !visible_pos)
+	if ((!view->target_visible_from_segment && !view->wall_visible_from_segment) ||
+	    !valid_segment(view, seg) || !target || !visible_pos)
 		return 0;
 	if (preferred_pos &&
-	    view->target_visible_from_segment(view->user, seg, preferred_pos, target->seg, target->pos)) {
+	    metadata_target_visible_from_pos(view, seg, preferred_pos, target, wall_num)) {
 		copy_pos(visible_pos, preferred_pos);
 		if (extra_distance)
 			*extra_distance = 0.0;
@@ -855,7 +877,7 @@ static int segment_target_visible(
 	}
 	if (!segment_center_valid[seg])
 		return 0;
-	if (view->target_visible_from_segment(view->user, seg, segment_centers[seg], target->seg, target->pos)) {
+	if (metadata_target_visible_from_pos(view, seg, segment_centers[seg], target, wall_num)) {
 		copy_pos(visible_pos, segment_centers[seg]);
 		if (extra_distance)
 			*extra_distance = 0.0;
@@ -867,7 +889,7 @@ static int segment_target_visible(
 		if (!side_center(view, seg, side, face_center))
 			continue;
 		weighted_point(candidate, segment_centers[seg], 1, face_center, 3);
-		if (!view->target_visible_from_segment(view->user, seg, candidate, target->seg, target->pos))
+		if (!metadata_target_visible_from_pos(view, seg, candidate, target, wall_num))
 			continue;
 		copy_pos(visible_pos, candidate);
 		if (extra_distance)
@@ -880,7 +902,7 @@ static int segment_target_visible(
 		if (!view->segment_vertex || !view->segment_vertex(view->user, seg, vertex_index, vertex))
 			continue;
 		weighted_point(candidate, segment_centers[seg], 1, vertex, 3);
-		if (!view->target_visible_from_segment(view->user, seg, candidate, target->seg, target->pos))
+		if (!metadata_target_visible_from_pos(view, seg, candidate, target, wall_num))
 			continue;
 		copy_pos(visible_pos, candidate);
 		if (extra_distance)
@@ -930,7 +952,7 @@ static int find_nearest_visible_target(
 		int visible_pos[3];
 		double visible_extra_distance = 0.0;
 
-		if (segment_target_visible(view, cur, preferred_pos, target, visible_pos, &visible_extra_distance)) {
+		if (segment_target_visible(view, cur, preferred_pos, target, -1, visible_pos, &visible_extra_distance)) {
 			if (path) {
 				path->distance = route_distance[cur] + visible_extra_distance;
 				path->first_locked_seg = cur;
@@ -1453,22 +1475,14 @@ static int metadata_route_edge_trigger_blocker(
 	       metadata_route_side_trigger_source(view, route, child, reverse_side, 0, block);
 }
 
-static int metadata_route_edge_pair_is_flyable(
+static int metadata_route_side_is_flyable(
     const level_metadata_scan_view *view,
     int seg,
-    int side,
-    int child)
+    int side)
 {
-	int reverse_side;
-
 	if (!view->side_is_flyable)
 		return 0;
-	if (view->side_is_flyable(view->user, seg, side))
-		return 1;
-	reverse_side = view->reverse_side ? view->reverse_side(view->user, seg, child) : -1;
-	return reverse_side >= 0 &&
-	       reverse_side < LEVEL_METADATA_MAX_SIDES &&
-	       view->side_is_flyable(view->user, child, reverse_side);
+	return view->side_is_flyable(view->user, seg, side) != 0;
 }
 
 static int metadata_route_edge_pair_is_control_center_link(
@@ -1510,7 +1524,7 @@ static int metadata_route_edge_passable(
 		return 0;
 	if (side_has_exit(view, seg, side))
 		return 0;
-	if (metadata_route_edge_pair_is_flyable(view, seg, side, child))
+	if (metadata_route_side_is_flyable(view, seg, side))
 		return 1;
 	if (route->control_center_destroyed &&
 	    metadata_route_edge_pair_is_control_center_link(view, seg, side, child))
@@ -1538,6 +1552,18 @@ static int metadata_route_edge_passable(
 		}
 		return optimistic;
 	}
+	if (view->side_is_hard_blocked &&
+	    view->side_is_hard_blocked(view->user, seg, side)) {
+		if (metadata_route_edge_trigger_blocker(view, route, seg, side, child, &trigger_block)) {
+			if (metadata_route_trigger_valid(trigger_block.trigger_num) &&
+			    route->avoided_triggers[trigger_block.trigger_num])
+				return 0;
+			if (block)
+				*block = trigger_block;
+			return optimistic;
+		}
+		return 0;
+	}
 	if (wall_type == view->wall_type_open ||
 	    wall_type == view->wall_type_blastable ||
 	    wall_type == view->wall_type_illusion)
@@ -1550,6 +1576,10 @@ static int metadata_route_edge_passable(
 			*block = trigger_block;
 		return optimistic;
 	}
+	if (wall_type == view->wall_type_door &&
+	    view->wall_flag_door_locked &&
+	    (metadata_wall_flags(view, wall_num) & view->wall_flag_door_locked) != 0)
+		return 0;
 	if (wall_type == view->wall_type_door && wall_key_allowed(view, wall_keys, route->key_mask))
 		return 1;
 	if (wall_type == view->wall_type_door && !wall_key_allowed(view, wall_keys, route->key_mask)) {
@@ -1565,6 +1595,33 @@ static int metadata_route_edge_passable(
 		return optimistic && key_index >= 0 && key_index != forbidden_missing_key;
 	}
 	return 0;
+}
+
+int level_metadata_scan_route_edge_cost(
+    const level_metadata_scan_view *view,
+    int seg,
+    int side)
+{
+	metadata_route_context route;
+
+	if (!view ||
+	    !view->segment_child ||
+	    !view->reverse_side ||
+	    !valid_segment(view, seg) ||
+	    side < 0 ||
+	    side >= LEVEL_METADATA_MAX_SIDES)
+		return LEVEL_METADATA_ROUTE_EDGE_BLOCKED;
+	memset(&route, 0, sizeof(route));
+	route.key_mask = view->initial_key_mask &
+	                 (LEVEL_METADATA_KEY_MASK_BLUE |
+	                  LEVEL_METADATA_KEY_MASK_RED |
+	                  LEVEL_METADATA_KEY_MASK_GOLD);
+	route.control_center_destroyed = view->initial_control_center_destroyed != 0;
+	if (metadata_route_edge_passable(view, &route, seg, side, 0, -1, NULL))
+		return LEVEL_METADATA_ROUTE_EDGE_PASSABLE;
+	if (metadata_route_edge_passable(view, &route, seg, side, 1, -1, NULL))
+		return LEVEL_METADATA_ROUTE_EDGE_PROGRESS;
+	return LEVEL_METADATA_ROUTE_EDGE_BLOCKED;
 }
 
 static int metadata_route_compute_paths(
@@ -1683,13 +1740,14 @@ static int metadata_route_find_visible_path(
     const level_metadata_scan_view *view,
     const metadata_route_context *route,
     const metadata_target *target,
+    int wall_num,
     metadata_route_path *path)
 {
 	int heap_size = 0;
 	int seg;
 
 	metadata_route_clear_path(path);
-	if (!view->target_visible_from_segment ||
+	if ((!view->target_visible_from_segment && !view->wall_visible_from_segment) ||
 	    !route ||
 	    !valid_segment(view, route->current_seg) ||
 	    !target ||
@@ -1712,7 +1770,7 @@ static int metadata_route_find_visible_path(
 		int visible_pos[3];
 		double visible_extra_distance = 0.0;
 
-		if (segment_target_visible(view, cur, preferred_pos, target, visible_pos, &visible_extra_distance)) {
+		if (segment_target_visible(view, cur, preferred_pos, target, wall_num, visible_pos, &visible_extra_distance)) {
 			if (path) {
 				path->distance = route_distance[cur] + visible_extra_distance;
 				path->terminal_seg = cur;
@@ -1784,14 +1842,7 @@ static int metadata_route_try_trigger_firing_path(
 	target.visited = 0;
 	if (metadata_route_find_path(view, route, candidate->source_seg, pos, 0, path))
 		return 1;
-	{
-		metadata_route_path optimistic_source;
-		if (metadata_route_find_path(view, route, candidate->source_seg, pos, 1, &optimistic_source) &&
-		    !(optimistic_source.first_block.kind == METADATA_ROUTE_BLOCK_TRIGGER &&
-		      optimistic_source.first_block.trigger_num == candidate->trigger_num))
-			return 0;
-	}
-	return metadata_route_find_visible_path(view, route, &target, path);
+	return metadata_route_find_visible_path(view, route, &target, candidate->source_wall, path);
 }
 
 static int metadata_route_consider_trigger_firing_path(
@@ -2432,7 +2483,7 @@ static int metadata_route_move_to_target_or_visible(
 		return 1;
 	snprintf(saved_problem, sizeof(saved_problem), "%s", state->route_problem);
 	state->route_problem[0] = '\0';
-	if (!metadata_route_find_visible_path(view, route, target, &path)) {
+	if (!metadata_route_find_visible_path(view, route, target, -1, &path)) {
 		metadata_route_set_problem(state, saved_problem[0] ? saved_problem : "route target unreachable");
 		return 0;
 	}

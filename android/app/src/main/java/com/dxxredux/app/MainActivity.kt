@@ -464,6 +464,7 @@ class MainActivity :
         fullDeathSpew: Boolean,
         playerSpewNoExpire: Boolean,
         clientsCanRequestRewind: Boolean,
+        hostObserver: Boolean,
     )
 
     external fun nativeGetCurrentTrackInfo(): String
@@ -733,6 +734,7 @@ class MainActivity :
             val fullDeathSpew = intent.getBooleanExtra("mp_full_death_spew", true)
             val playerSpewNoExpire = intent.getBooleanExtra("mp_player_spew_no_expire", true)
             val clientsCanRequestRewind = intent.getBooleanExtra("mp_clients_can_request_rewind", false)
+            val hostObserver = intent.getBooleanExtra("mp_host_observer", false)
             nativeSetAutoHost(
                 myPort,
                 mission,
@@ -744,6 +746,7 @@ class MainActivity :
                 fullDeathSpew,
                 playerSpewNoExpire,
                 clientsCanRequestRewind,
+                hostObserver,
             )
         }
 

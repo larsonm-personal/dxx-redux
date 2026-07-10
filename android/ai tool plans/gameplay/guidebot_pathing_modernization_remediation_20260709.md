@@ -63,7 +63,7 @@ unreachable goals.
 ### 4. Metadata and executable path rules diverge
 - [x] Replace `ai_door_is_openable(ConsoleObject, ...)` in route analysis because
   the console-object shortcut treats every door as openable.
-- [ ] Centralize live edge classification so metadata analysis, nearest-progress
+- [x] Centralize live edge classification so metadata analysis, nearest-progress
   search, unexplored targeting, and `create_path_*` agree about doors, keys,
   hidden walls, triggers, and buddy-proof walls.
 - [x] Use computed step reachability when selecting a goal, including selecting
@@ -99,7 +99,7 @@ unreachable goals.
 - [x] Add the last replan reason to introspection.
 - [x] Add two-peer tests for initial claim, abdication, disconnect adoption, and
   death without adoption.
-- [ ] Add two-peer tests for host observer exclusion and ownership after
+- [x] Add two-peer tests for host observer exclusion and ownership after
   slot-remapped coop restore.
 - [x] Add multiplayer route tests with different key inventories and different
   `Automap_visited` sets.
@@ -124,7 +124,7 @@ unreachable goals.
 ### Phase 2: Live route-state contract
 - [x] Extend the scan view with explicit start, current keys, trigger state, and
   progression state.
-- [ ] Unify edge passability and blocker selection between scanner and guidebot.
+- [x] Unify edge passability and blocker selection between scanner and guidebot.
 - [x] Preserve exact activation geometry and honor partial route status.
 
 ### Phase 3: Unexplored integration
@@ -134,7 +134,7 @@ unreachable goals.
 - [x] Add blocked-frontier and long-route behavior tests.
 
 ### Phase 4: Performance and regression validation
-- [ ] Split static topology scanning from live-state evaluation.
+- [x] Split static topology scanning from live-state evaluation.
 - [x] Expand integration coverage and regenerate mission metadata.
 - [x] Run scoped quality checks, host builds, Android tests, and focused emulator
   scripts.
@@ -196,6 +196,21 @@ unreachable goals.
 - [x] Give the host all keys and the joiner none, then verify the joiner selects
   the red-key waypoint before handoff while the host skips it after adoption.
 
+## Shared edge and topology continuation
+- [x] Expose one live/progress/blocked edge classification from the metadata
+  scanner and use it for guidebot reachability, visible-position searches, and
+  nearest-progress ranking.
+- [x] Make metadata-route path creation consume that same classification so an
+  executable path cannot bypass a selected trigger, hidden wall, key, or
+  buddy-proof obstruction.
+- [x] Cover directional wall state, keys, triggers, hidden walls, and
+  guidebot-only hard blocks with focused native fixtures.
+- [x] Cache immutable segment geometry and trigger-to-wall topology for the
+  level, while continuing to evaluate keys, walls, objects, reactor state, and
+  automap coverage live on every route refresh.
+- [x] Add the remaining host-observer and slot-remapped restore multiplayer
+  scenarios, then rerun native, host, Android, and focused emulator validation.
+
 ## Validation, 2026-07-09
 - `run-windows-build.ps1 -Target both`: passed before the final D2-only additions.
 - `run-windows-build.ps1 -Target d2`: passed after ownership policy, late-join,
@@ -206,7 +221,7 @@ unreachable goals.
 - `gradlew :app:testDebugUnitTest`: 447 completed, 446 passed and 1 skipped.
 - `gradlew :app:assembleDebug`: passed for all configured Android ABIs.
 - Scoped `run-code-quality.ps1 -Fix` and `git diff --check`: passed.
-- Two-emulator ownership/handoff behavior still needs runtime validation; use the
+- Two-emulator ownership/handoff behavior was subsequently validated with the
   new `guidebot.owner_*`, `remote_*`, and `local_control_slot_matches` fields.
 
 ## Validation, authenticated ownership packets, 2026-07-09
@@ -268,3 +283,42 @@ unreachable goals.
 - `test_kcxf2_guidebot_hidden_door_next.json5`: passed with hidden wall 61 at
   segment 221/side 4 selected and path-pending behavior retained after seven
   seconds.
+
+## Validation, shared edges and multiplayer restore, 2026-07-09
+- One live edge classifier now drives metadata routing, guidebot route path
+  creation, nearest-progress ranking, and unexplored selection. Static segment
+  and trigger topology is cached while keys, walls, triggers, reactor state,
+  objects, and automap coverage remain live inputs.
+- Directional walls, held and missing keys, fired triggers, hidden walls,
+  guidebot-only hard blocks, partial routes, and alternate unexplored blockers
+  have focused native coverage.
+- `run-windows-build.ps1 -Target both`: passed for D1 and D2 after the final
+  restore-state review. D1 native CTest passed 13/13 and D2 passed 14/14.
+- `gradlew :app:testDebugUnitTest`: passed. `gradlew :app:assembleDebug`: passed
+  for all configured Android ABIs after the final restore preparation fix.
+- Scoped `run-code-quality.ps1` and `git diff --check`: passed after the final
+  implementation change.
+- `test_lan.ps1 -Game d2 -GuidebotHostObserver -SkipBuild`: passed; the observing
+  host was excluded and the joiner became owner at generation 1.
+- `test_lan.ps1 -Game d2 -GuidebotOwnership -SkipBuild`: passed initial claim,
+  abdication, death without transfer, disconnect adoption, owner-local keys,
+  owner-local automap replanning, and generation advancement through 4.
+- `test_lan.ps1 -Game d2 -GuidebotSlotRemapRestore -SkipBuild`: passed after the
+  final client restore preparation change. Both peers remapped the saved owner
+  from slot 0 to live slot 1, preserved `Unexplored`, and retained robot control
+  only on the owning peer.
+- Coop restore payloads are copied, paced, checksummed, and synchronized through
+  buffer-ready and apply-ready phases. D1 protocol is 30013 and D2 is 30014.
+  Blocking restores suspend peer timeouts, and transferred clients run the same
+  multiplayer robot-control preparation as the host before restoring.
+- Full metadata regeneration processed 110 archives: 109 passed, the
+  descriptor-free archive was skipped, none failed, and a second pass changed
+  zero hashes. KCXF2 hidden-wall and shared `Unexplored` emulator scripts passed
+  against the regenerated metadata.
+
+## Residual limitation
+- Host-authoritative rewind uses the paced payload transport but still applies
+  the host snapshot before queuing the peer transfer. Coop save restore now has
+  the stronger synchronized boundary described above; making rewind use that
+  same boundary is a separate follow-up and is not needed for guidebot path,
+  ownership, or save-restore correctness.

@@ -46,6 +46,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "byteswap.h"
 #include "wall.h"
 #include "escort.h"
+#ifdef __ANDROID__
+#include "android_log.h"
+#endif
 
 
 
@@ -234,6 +237,12 @@ multi_restore_companion_robot_control(int objnum, int owner_pnum)
 	if ((Objects[objnum].type != OBJ_ROBOT) ||
 	    !Robot_info[Objects[objnum].id].companion)
 		return;
+#ifdef __ANDROID__
+	COOPLOG("guidebot control restore begin: obj=%d owner=%d local=%d remote_owner=%d remote_slot=%d",
+	        objnum, owner_pnum, Player_num,
+	        Objects[objnum].ctype.ai_info.REMOTE_OWNER,
+	        Objects[objnum].ctype.ai_info.REMOTE_SLOT_NUM);
+#endif
 
 	if ((owner_pnum >= 0) && (owner_pnum < MAX_PLAYERS) &&
 	    (Players[owner_pnum].connected == CONNECT_PLAYING) &&
@@ -293,6 +302,10 @@ multi_restore_companion_robot_control(int objnum, int owner_pnum)
 	robot_last_send_time[slot] = GameTime64;
 	robot_last_message_time[slot] = GameTime64;
 	Objects[objnum].ctype.ai_info.REMOTE_SLOT_NUM = slot;
+#ifdef __ANDROID__
+	COOPLOG("guidebot control restore applied: obj=%d owner=%d local=%d slot=%d",
+	        objnum, owner_pnum, Player_num, slot);
+#endif
 }
 
 void

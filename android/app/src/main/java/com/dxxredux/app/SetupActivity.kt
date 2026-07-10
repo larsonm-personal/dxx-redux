@@ -1058,6 +1058,7 @@ class SetupActivity : ComponentActivity() {
                         val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
                         val playerSpewNoExpire = intent.getBooleanExtra("player_spew_no_expire", true)
                         val clientsCanRequestRewind = intent.getBooleanExtra("clients_can_request_rewind", false)
+                        val hostObserver = intent.getBooleanExtra("host_observer", false)
                         val restrictNonCoopFovToBase =
                             intent.getBooleanExtra("restrict_noncoop_fov_to_base", false)
                         val hostAddr = intent.getStringExtra("host_addr")
@@ -1086,6 +1087,7 @@ class SetupActivity : ComponentActivity() {
                                 playerSpewNoExpire = playerSpewNoExpire,
                                 clientsCanRequestRewind = clientsCanRequestRewind,
                                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,
+                                hostObserver = hostObserver,
                             )
                         Log.i(
                             "DXX-MP",
@@ -1599,6 +1601,7 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_full_death_spew", info.fullDeathSpew)
             mpIntent.putExtra("mp_player_spew_no_expire", info.playerSpewNoExpire)
             mpIntent.putExtra("mp_clients_can_request_rewind", info.clientsCanRequestRewind)
+            mpIntent.putExtra("mp_host_observer", info.hostObserver)
         } else {
             mpIntent.putExtra("mp_mode", "join")
             if (info.lanHostAddr != null) {

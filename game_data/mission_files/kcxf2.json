@@ -98,16 +98,16 @@
         "mine_volume": 13717017.097587228,
         "mine_volume_normalized": 2.9996301371055347,
         "mine_volume_text": "3.0x",
-        "travel_distance": 5651.699828451739,
-        "travel_time_seconds": 113,
-        "travel_time_text": "2M:53S",
+        "travel_distance": 7894.256888402626,
+        "travel_time_seconds": 158,
+        "travel_time_text": "3M:38S",
         "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 1,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
@@ -124,30 +124,10 @@
             "seg": 58,
             "distance": 2730.7838205272224,
             "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 577,
-            "distance": 809.3116568947289
-          },
-          {
-            "index": 3,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 585,
-            "side": 3,
-            "wall": 53,
-            "distance": 538.3876360041563,
-            "trigger": 8,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -165,12 +145,12 @@
         "mine_volume": 16656617.19126358,
         "mine_volume_normalized": 3.6424603507954223,
         "mine_volume_text": "3.6x",
-        "travel_distance": 7322.650950412393,
-        "travel_time_seconds": 146,
-        "travel_time_text": "2M:26S",
-        "travel_targets_reached": 3,
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "travel_targets_reached": 0,
         "travel_targets_total": 3,
-        "travel_key_detours": 1,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -186,12 +166,62 @@
           {
             "index": 1,
             "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 0",
+            "seg": 147,
+            "side": 4,
+            "wall": 22,
+            "distance": 1926.0308488747387,
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 92,
+                "side": 1,
+                "wall": 20
+              },
+              {
+                "seg": 148,
+                "side": 3,
+                "wall": 21
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
+            "seg": 148,
+            "side": 1,
+            "wall": 24,
+            "distance": 483.280205395624,
+            "trigger": 2,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 0,
+                "side": 5,
+                "wall": 1
+              },
+              {
+                "seg": 1,
+                "side": 4,
+                "wall": 0
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
             "seg": 1,
             "side": 5,
             "wall": 25,
-            "distance": 30.0,
+            "distance": 1613.213577982502,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -219,7 +249,7 @@
             ]
           },
           {
-            "index": 2,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 4",
@@ -244,14 +274,22 @@
             ]
           },
           {
-            "index": 3,
+            "index": 5,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 156,
+            "distance": 1325.7456824114656
+          },
+          {
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 6",
             "seg": 216,
             "side": 0,
             "wall": 38,
-            "distance": 2236.855310862477,
+            "distance": 1127.6416317197447,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -269,7 +307,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 8",
@@ -294,7 +332,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 8,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -303,27 +341,21 @@
             "key": "red"
           },
           {
-            "index": 6,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 156,
-            "distance": 1658.2200567275463
-          },
-          {
-            "index": 7,
+            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 357,
             "side": 1,
             "wall": 62,
-            "distance": 841.5080318145768,
+            "distance": 1356.222506926644,
             "trigger": 13,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
         ],
+        "travel_status": "failed",
+        "travel_problem": "hostage unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -384,9 +416,9 @@
         "mine_volume": 16074935.53005781,
         "mine_volume_normalized": 3.515258508824886,
         "mine_volume_text": "3.5x",
-        "travel_distance": 4537.669430471178,
-        "travel_time_seconds": 91,
-        "travel_time_text": "2M:31S",
+        "travel_distance": 7274.027150478424,
+        "travel_time_seconds": 145,
+        "travel_time_text": "2M:25S",
         "travel_targets_reached": 3,
         "travel_targets_total": 3,
         "travel_key_detours": 0,
@@ -404,22 +436,13 @@
           },
           {
             "index": 1,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 827,
-            "distance": 2288.726782682845
-          },
-          {
-            "index": 2,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 28",
-            "seg": 782,
-            "side": 1,
-            "wall": 198,
-            "distance": 195.19127412152295,
-            "trigger": 28,
+            "label": "Fly-through trigger 27",
+            "seg": 774,
+            "wall": 197,
+            "distance": 1776.4638917627024,
+            "trigger": 27,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
@@ -441,6 +464,14 @@
             ]
           },
           {
+            "index": 2,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 827,
+            "distance": 223.88219431453336
+          },
+          {
             "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
@@ -448,7 +479,7 @@
             "seg": 786,
             "side": 1,
             "wall": 202,
-            "distance": 162.29249637353493,
+            "distance": 338.70651611598146,
             "trigger": 31,
             "trigger_type_id": 3,
             "trigger_type": "exit"

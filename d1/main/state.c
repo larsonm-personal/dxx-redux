@@ -75,6 +75,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_resume_pilot.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
+#include "state_android_shared.h"
 #include "coop_save.h"
 #include "coop_indicator_lines.h"
 #include "android_log.h"
@@ -172,6 +173,31 @@ static int g_android_save_blank_thumbnail = 0;
 #endif
 
 #ifdef __ANDROID__
+static int state_android_read_android_metadata_trailer(PHYSFS_file *fp,
+	android_save_meta_disk *meta)
+{
+	struct PHYSFS_File *physfs_fp;
+	PHYSFS_sint64 saved_pos;
+	PHYSFS_sint64 file_len;
+	int have_meta;
+
+	if (!fp || !meta)
+		return 0;
+	file_len = PHYSFS_fileLength(fp);
+	if (!rewind_file_is_memory(fp)) {
+		physfs_fp = rewind_file_physfs_handle(fp);
+		return physfs_fp ? android_save_meta_read_physfs(physfs_fp, file_len, meta) : 0;
+	}
+
+	saved_pos = PHYSFS_tell(fp);
+	have_meta = file_len >= (PHYSFS_sint64)sizeof(*meta) &&
+		PHYSFS_seek(fp, file_len - (PHYSFS_sint64)sizeof(*meta)) &&
+		PHYSFS_read(fp, meta, sizeof(*meta), 1) == 1 &&
+		android_save_meta_is_valid(meta);
+	PHYSFS_seek(fp, saved_pos);
+	return have_meta;
+}
+
 static int state_android_read_coop_metadata_trailer(PHYSFS_file *fp,
 	coop_save_metadata *meta)
 {
@@ -183,8 +209,26 @@ static int state_android_read_coop_metadata_trailer(PHYSFS_file *fp,
 	int have_android_meta;
 	int have_coop_meta = 0;
 
-	if (!fp || !meta || rewind_file_is_memory(fp))
+	if (!fp || !meta)
 		return 0;
+
+	if (rewind_file_is_memory(fp)) {
+		saved_pos = PHYSFS_tell(fp);
+		file_len = PHYSFS_fileLength(fp);
+		have_android_meta = state_android_read_android_metadata_trailer(fp,
+			&android_meta);
+		coop_meta_start = file_len - (PHYSFS_sint64)sizeof(*meta);
+		if (have_android_meta)
+			coop_meta_start -= (PHYSFS_sint64)sizeof(android_save_meta_disk);
+		if (coop_meta_start >= 0 && PHYSFS_seek(fp, coop_meta_start) &&
+		    PHYSFS_read(fp, meta, sizeof(*meta), 1) == 1 &&
+		    meta->tag == COOP_SAVE_META_TAG && meta->version >= 1 &&
+		    meta->num_active_players <= MAX_PLAYERS &&
+		    meta->num_absent_players <= COOP_MAX_REMEMBERED_PLAYERS)
+			have_coop_meta = 1;
+		PHYSFS_seek(fp, saved_pos);
+		return have_coop_meta;
+	}
 
 	physfs_fp = rewind_file_physfs_handle(fp);
 	if (!physfs_fp)
@@ -2019,7 +2063,13 @@ int state_restore_all_sub(char *filename)
 		PHYSFS_read(fp, &saved_callsign, sizeof(char)*CALLSIGN_LEN+1, 1);
 #ifdef __ANDROID__
 		if (strcmp(saved_callsign, Players[Player_num].callsign) &&
-		    strcmp(saved_callsign, COOP_AUTOSAVE_CALLSIGN))
+		    strcmp(saved_callsign, COOP_AUTOSAVE_CALLSIGN) &&
+		    state_android_coop_callsign_remap_allowed())
+			COOPLOG("restore accepting authoritative coop callsign remap: game=d1 file='%s' saved='%s' current='%s'",
+			        filename, saved_callsign, Players[Player_num].callsign);
+		if (strcmp(saved_callsign, Players[Player_num].callsign) &&
+		    strcmp(saved_callsign, COOP_AUTOSAVE_CALLSIGN) &&
+		    !state_android_coop_callsign_remap_allowed())
 #else
 		if (strcmp(saved_callsign, Players[Player_num].callsign))
 #endif
@@ -2559,16 +2609,16 @@ RetryObjectLoading:
 		"restore save complete: game=d1 file='%s' current_level=%d callsign='%s' highest_object=%d game_mode=%d",
 		filename, Current_level_num, Players[Player_num].callsign,
 		Highest_object_index, Game_mode);
-	if (!rewind_file_is_memory(fp)) {
-		struct PHYSFS_File *physfs_fp = rewind_file_physfs_handle(fp);
+	{
 		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
 		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
 		android_save_meta_disk android_meta;
-		int have_android_meta = android_save_meta_read_physfs(physfs_fp, file_len, &android_meta);
+		int have_android_meta = state_android_read_android_metadata_trailer(fp, &android_meta);
 		coop_save_metadata coop_meta;
+		int have_coop_meta = state_android_read_coop_metadata_trailer(fp, &coop_meta);
 		if (have_android_meta)
 			state_android_restore_music_type_from_meta(&android_meta);
-		if (coop_read_save_metadata(physfs_fp, pos_after_base, &coop_meta)) {
+		if (have_coop_meta) {
 			COOPLOG("coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);
 			/* Repopulate the absent player list so returning players get inventory back */

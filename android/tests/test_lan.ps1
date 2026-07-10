@@ -19,6 +19,8 @@
 #   .\test_lan.ps1
 #   .\test_lan.ps1 -Game d1
 #   .\test_lan.ps1 -GuidebotOwnership
+#   .\test_lan.ps1 -GuidebotHostObserver
+#   .\test_lan.ps1 -GuidebotSlotRemapRestore
 #   .\test_lan.ps1 -UseRelay
 #   .\test_lan.ps1 -SkipBuild
 
@@ -27,6 +29,8 @@ param(
     [switch]$SkipBuild,
     [switch]$UseRelay,
     [switch]$GuidebotOwnership,
+    [switch]$GuidebotHostObserver,
+    [switch]$GuidebotSlotRemapRestore,
     [int]$TimeoutSeconds = 120
 )
 
@@ -301,6 +305,310 @@ function Invoke-GuidebotOwnershipScenario {
     return $true
 }
 
+function Invoke-GuidebotHostObserverScenario {
+    $hostScript = "test_coop_guidebot_observer_host.json5"
+    $joinScript = "test_coop_guidebot_observer_joiner.json5"
+
+    Write-Status ""
+    Write-Status "--- Guide-Bot observer-host exclusion scenario ---" "White"
+    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName $joinScript)) {
+        return $false
+    }
+    Start-Sleep -Milliseconds 250
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName $hostScript)) {
+        return $false
+    }
+
+    $script:hostAutomationResult = $null
+    $script:joinAutomationResult = $null
+    $finished = Wait-ForCondition -Description "paired observer-host Guide-Bot automation" -TimeoutSec 60 -PollMs 1000 -Condition {
+        $script:hostAutomationResult = Get-DeviceAutomationResult -Serial $EMU1
+        $script:joinAutomationResult = Get-DeviceAutomationResult -Serial $EMU2
+        $hostDone = $script:hostAutomationResult -and
+        $script:hostAutomationResult.result -in @("PASS", "FAIL")
+        $joinDone = $script:joinAutomationResult -and
+        $script:joinAutomationResult.result -in @("PASS", "FAIL")
+        return $hostDone -and $joinDone
+    }
+    if (-not $finished -or
+        $script:hostAutomationResult.result -ne "PASS" -or
+        $script:joinAutomationResult.result -ne "PASS") {
+        Write-Status "FAIL: observer-host Guide-Bot automation did not pass" "Red"
+        Write-DeviceAutomationDiagnostics -Serial $EMU1
+        Write-DeviceAutomationDiagnostics -Serial $EMU2
+        return $false
+    }
+
+    $hostIntro = Get-GameIntrospection -Serial $EMU1
+    $joinIntro = Get-GameIntrospection -Serial $EMU2
+    $hostMp = Get-IntroMultiplayer -Intro $hostIntro
+    $joinMp = Get-IntroMultiplayer -Intro $joinIntro
+    $hostGuidebot = Get-IntroGuidebot -Intro $hostIntro
+    $joinGuidebot = Get-IntroGuidebot -Intro $joinIntro
+    $stateMatches = $hostMp -and $joinMp -and $hostGuidebot -and $joinGuidebot -and
+    [bool]$hostMp.host_is_observer -and [bool]$joinMp.host_is_observer -and
+    [int]$hostGuidebot.owner_player -eq 1 -and
+    [int]$joinGuidebot.owner_player -eq 1 -and
+    [int]$hostGuidebot.owner_generation -eq [int]$joinGuidebot.owner_generation -and
+    [int]$hostGuidebot.owner_generation -ge 1 -and
+    -not [bool]$hostGuidebot.owner_is_local -and
+    [bool]$joinGuidebot.owner_is_local -and
+    -not [bool]$hostGuidebot.local_control_slot_matches -and
+    [bool]$joinGuidebot.local_control_slot_matches
+    if (-not $stateMatches) {
+        Write-Status "FAIL: observer host was not excluded from Guide-Bot ownership" "Red"
+        Write-DeviceAutomationDiagnostics -Serial $EMU1
+        Write-DeviceAutomationDiagnostics -Serial $EMU2
+        return $false
+    }
+
+    Write-Status "Observer host excluded; playing joiner owns Guide-Bot at generation $($joinGuidebot.owner_generation)" "Green"
+    return $true
+}
+
+function Invoke-PairedGameAutomation {
+    param(
+        [string]$PrimarySerial,
+        [string]$PrimaryScript,
+        [string]$SecondarySerial,
+        [string]$SecondaryScript,
+        [string]$Description,
+        [int]$TimeoutSec = 60
+    )
+
+    if (-not (Start-DeviceGameAutomation -Serial $SecondarySerial -ScriptName $SecondaryScript)) {
+        return $false
+    }
+    Start-Sleep -Milliseconds 250
+    if (-not (Start-DeviceGameAutomation -Serial $PrimarySerial -ScriptName $PrimaryScript)) {
+        return $false
+    }
+
+    $script:primaryAutomationResult = $null
+    $script:secondaryAutomationResult = $null
+    $finished = Wait-ForCondition -Description $Description -TimeoutSec $TimeoutSec -PollMs 1000 -Condition {
+        $script:primaryAutomationResult = Get-DeviceAutomationResult -Serial $PrimarySerial
+        $script:secondaryAutomationResult = Get-DeviceAutomationResult -Serial $SecondarySerial
+        $primaryDone = $script:primaryAutomationResult -and
+        $script:primaryAutomationResult.result -in @("PASS", "FAIL")
+        $secondaryDone = $script:secondaryAutomationResult -and
+        $script:secondaryAutomationResult.result -in @("PASS", "FAIL")
+        return $primaryDone -and $secondaryDone
+    }
+    if (-not $finished -or
+        $script:primaryAutomationResult.result -ne "PASS" -or
+        $script:secondaryAutomationResult.result -ne "PASS") {
+        Write-Status "FAIL: $Description did not pass" "Red"
+        Write-DeviceAutomationDiagnostics -Serial $PrimarySerial
+        Write-DeviceAutomationDiagnostics -Serial $SecondarySerial
+        return $false
+    }
+    return $true
+}
+
+function Test-DeviceCoopSaveSlot {
+    param([string]$Serial, [int]$Slot, [string]$Callsign)
+
+    $saveName = if ($Callsign) { $Callsign.ToLowerInvariant() } else { "coopsave" }
+    $path = "files/d2x-redux/Players/save_sets/coop/d2/$saveName.mg$Slot"
+    $found = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "ls", $path
+    ) -Seconds 5
+    return $found -and $found -match [regex]::Escape("$saveName.mg$Slot")
+}
+
+function Get-DeviceLatestCoopAutosaveSlot {
+    param([string]$Serial)
+
+    $historyJson = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "cat",
+        "files/d2x-redux/Players/save_sets/coop/d2/coop_autosave_history.json"
+    ) -Seconds 5
+    if (-not $historyJson -or $historyJson -notmatch '^\s*\[') {
+        return -1
+    }
+    try {
+        $history = @($historyJson | ConvertFrom-Json)
+        if ($history.Count -gt 0) {
+            return [int]$history[0].slot
+        }
+    } catch {
+        return -1
+    }
+    return -1
+}
+
+function Set-DeviceCoopRestoreSlot {
+    param([string]$Serial, [int]$Slot)
+
+    $localPath = Join-Path $REPO_ROOT "temp\coop_restore_slot.txt"
+    [System.IO.File]::WriteAllText(
+        $localPath,
+        $Slot.ToString(),
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "push", $localPath, "/data/local/tmp/coop_restore_slot.txt"
+    ) -Seconds 30 | Out-Null
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "mkdir", "-p", "files/d2x-redux"
+    ) -Seconds 5 | Out-Null
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "cp", "/data/local/tmp/coop_restore_slot.txt",
+        "files/d2x-redux/coop_restore_slot.txt"
+    ) -Seconds 5 | Out-Null
+    $actual = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "cat", "files/d2x-redux/coop_restore_slot.txt"
+    ) -Seconds 5
+    return $actual -and $actual.Trim() -eq $Slot.ToString()
+}
+
+function Invoke-GuidebotSlotRemapRestoreScenario {
+    Write-Status ""
+    Write-Status "--- Guide-Bot slot-remapped coop restore scenario ---" "White"
+    if (-not (Invoke-PairedGameAutomation `
+                -PrimarySerial $EMU1 `
+                -PrimaryScript "test_coop_guidebot_restore_save_host.json5" `
+                -SecondarySerial $EMU2 `
+                -SecondaryScript "test_coop_guidebot_restore_save_joiner.json5" `
+                -Description "paired Guide-Bot pre-restore save automation")) {
+        return $false
+    }
+
+    $script:guidebotRestoreSaveSlot = -1
+    $saved = Wait-ForCondition -Description "coop autosave reaches both peers" -TimeoutSec 20 -PollMs 500 -Condition {
+        $latestSlot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+        if ($latestSlot -lt 0) {
+            return $false
+        }
+        $bothHaveSave = (Test-DeviceCoopSaveSlot -Serial $EMU1 -Slot $latestSlot) -and
+        (Test-DeviceCoopSaveSlot -Serial $EMU2 -Slot $latestSlot -Callsign $CALLSIGN2)
+        if ($bothHaveSave) {
+            $script:guidebotRestoreSaveSlot = $latestSlot
+        }
+        return $bothHaveSave
+    }
+    if (-not $saved) {
+        Write-Status "FAIL: a matching synchronized coop autosave was not created" "Red"
+        return $false
+    }
+    $saveSlot = $script:guidebotRestoreSaveSlot
+    Write-Status "Saved slot-0 owner and Unexplored intent to coop slot $saveSlot" "Green"
+
+    foreach ($emu in @($EMU1, $EMU2)) {
+        Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+            "shell", "am", "force-stop", $PACKAGE
+        ) -Seconds 10 | Out-Null
+        Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+            "shell", "run-as", $PACKAGE, "rm", "-f", "files/file_sets.json"
+        ) -Seconds 5 | Out-Null
+    }
+
+    Write-Status "Relaunching with LanJoin as host slot 0 and LanHost as joiner slot 1"
+    if (-not (Start-SetupActivity -Serial $EMU2)) {
+        Write-Status "FAIL: SetupActivity didn't restart on $EMU2" "Red"
+        return $false
+    }
+    if (-not (Start-SetupActivity -Serial $EMU1)) {
+        Write-Status "FAIL: SetupActivity didn't restart on $EMU1" "Red"
+        return $false
+    }
+    if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU2 -Slot $saveSlot)) {
+        Write-Status "FAIL: could not stage coop restore slot on the new host" "Red"
+        return $false
+    }
+
+    $newHostIpRaw = Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @(
+        "shell", "ip", "addr", "show", "wlan0"
+    ) -Seconds 5
+    $newHostIp = ($newHostIpRaw | Select-String -Pattern 'inet (\d+\.\d+\.\d+\.\d+)' | ForEach-Object {
+            $_.Matches[0].Groups[1].Value
+        })
+    if (-not $newHostIp) {
+        Write-Status "FAIL: could not get the swapped host wlan0 IP" "Red"
+        return $false
+    }
+
+    Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras @(
+        "--es", "game", $Game,
+        "--es", "mp_mode", "host",
+        "--es", "mission", $MISSION,
+        "--es", "mode", $MODE,
+        "--ei", "max_players", "2",
+        "--ei", "level_num", "1",
+        "--ei", "difficulty", "1",
+        "--es", "callsign", $CALLSIGN2
+    )
+    $null = Wait-ForCondition -Description "swapped host game process" -TimeoutSec 30 -PollMs 500 -Condition {
+        $gamePid = Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @(
+            "shell", "pidof", "${PACKAGE}:game"
+        ) -Seconds 5
+        return $gamePid -and $gamePid -match '^\d+'
+    }
+    Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras @(
+        "--es", "game", $Game,
+        "--es", "mp_mode", "join",
+        "--es", "mission", $MISSION,
+        "--es", "mode", $MODE,
+        "--ei", "max_players", "2",
+        "--ei", "level_num", "1",
+        "--ei", "difficulty", "1",
+        "--es", "callsign", $CALLSIGN1,
+        "--es", "host_addr", $newHostIp,
+        "--ei", "host_port", "42424"
+    )
+
+    $swappedSync = Wait-ForCondition -Description "slot-swapped LAN game sync" -TimeoutSec $TimeoutSeconds -PollMs 2000 -Condition {
+        $script:swappedHostIntro = Get-GameIntrospection -Serial $EMU2
+        $script:swappedJoinIntro = Get-GameIntrospection -Serial $EMU1
+        $hostPlayers = Get-IntroNumConnected -Intro $script:swappedHostIntro
+        $joinPlayers = Get-IntroNumConnected -Intro $script:swappedJoinIntro
+        return $script:swappedHostIntro -and $script:swappedJoinIntro -and
+        [bool]$script:swappedHostIntro.in_game -and [bool]$script:swappedJoinIntro.in_game -and
+        [bool]$script:swappedHostIntro.is_network -and [bool]$script:swappedJoinIntro.is_network -and
+        $hostPlayers -ge 2 -and $joinPlayers -ge 2
+    }
+    if (-not $swappedSync) {
+        Write-Status "FAIL: slot-swapped peers did not synchronize" "Red"
+        return $false
+    }
+
+    if (-not (Invoke-PairedGameAutomation `
+                -PrimarySerial $EMU2 `
+                -PrimaryScript "test_coop_guidebot_restore_remap_host.json5" `
+                -SecondarySerial $EMU1 `
+                -SecondaryScript "test_coop_guidebot_restore_remap_joiner.json5" `
+                -Description "paired slot-remapped Guide-Bot restore automation" `
+                -TimeoutSec 105)) {
+        return $false
+    }
+
+    $hostIntro = Get-GameIntrospection -Serial $EMU2
+    $joinIntro = Get-GameIntrospection -Serial $EMU1
+    $hostGuidebot = Get-IntroGuidebot -Intro $hostIntro
+    $joinGuidebot = Get-IntroGuidebot -Intro $joinIntro
+    $stateMatches = $hostGuidebot -and $joinGuidebot -and
+    [int]$hostGuidebot.owner_player -eq 1 -and
+    [int]$joinGuidebot.owner_player -eq 1 -and
+    [int]$hostGuidebot.owner_generation -eq [int]$joinGuidebot.owner_generation -and
+    -not [bool]$hostGuidebot.owner_is_local -and
+    [bool]$joinGuidebot.owner_is_local -and
+    -not [bool]$hostGuidebot.local_control_slot_matches -and
+    [bool]$joinGuidebot.local_control_slot_matches -and
+    $hostGuidebot.route_target_mode_name -eq "unexplored" -and
+    $joinGuidebot.route_target_mode_name -eq "unexplored"
+    if (-not $stateMatches) {
+        Write-Status "FAIL: Guide-Bot restore state differs between slot-swapped peers" "Red"
+        Write-DeviceAutomationDiagnostics -Serial $EMU2
+        Write-DeviceAutomationDiagnostics -Serial $EMU1
+        return $false
+    }
+
+    Write-Status "Saved owner identity remapped from slot 0 to slot 1 on both peers" "Green"
+    Write-Status "Unexplored intent and owner-local robot control survived coop restore" "Green"
+    return $true
+}
+
 # ---- Main Test Flow ----
 
 try {
@@ -309,8 +617,18 @@ try {
     Write-Status "Game: $Game | Mission: $MISSION | Mode: $MODE"
     Write-Status ""
 
-    if ($GuidebotOwnership -and $Game -ne "d2") {
-        Write-Status "FAIL: -GuidebotOwnership currently requires D2" "Red"
+    if (($GuidebotOwnership -or $GuidebotHostObserver -or $GuidebotSlotRemapRestore) -and $Game -ne "d2") {
+        Write-Status "FAIL: Guide-Bot LAN scenarios currently require D2" "Red"
+        exit 1
+    }
+    if (($GuidebotOwnership -and $GuidebotHostObserver) -or
+        ($GuidebotOwnership -and $GuidebotSlotRemapRestore) -or
+        ($GuidebotHostObserver -and $GuidebotSlotRemapRestore)) {
+        Write-Status "FAIL: choose one Guide-Bot LAN scenario per run" "Red"
+        exit 1
+    }
+    if ($GuidebotSlotRemapRestore -and $UseRelay) {
+        Write-Status "FAIL: slot-remapped restore coverage requires direct LAN" "Red"
         exit 1
     }
 
@@ -349,6 +667,28 @@ try {
         Write-Status "FAIL: SetupActivity didn't start on $EMU2" "Red"; Cleanup; exit 1
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
+
+    if ($GuidebotSlotRemapRestore) {
+        Write-Status "Clearing prior coop saves before slot-remap coverage"
+        foreach ($emu in @($EMU1, $EMU2)) {
+            Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+                "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+                "--es", "command", "clear_save_files"
+            ) -Seconds 10 | Out-Null
+            Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+                "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+                "--es", "command", "write_probe_debug_prefs", "--ez", "enabled", "true"
+            ) -Seconds 10 | Out-Null
+            Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+                "shell", "run-as", $PACKAGE, "rm", "-f",
+                "files/d2x-redux/coop_restore_slot.txt",
+                "files/d2x-redux/coop_autosave_history.json",
+                "files/d2x-redux/coop_autosave_info.json",
+                "files/d2x-redux/Players/save_sets/coop/d2/coop_autosave_history.json",
+                "files/d2x-redux/Players/save_sets/coop/d2/coop_autosave_info.json"
+            ) -Seconds 10 | Out-Null
+        }
+    }
 
     # -- Step 2: Set up networking (relay or direct LAN) --
     Write-Status ""
@@ -408,7 +748,7 @@ try {
 
     # Host (EMU1)
     Write-Status "Sending lan_launch host to $EMU1..."
-    Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras @(
+    $hostExtras = @(
         "--es", "game", $Game,
         "--es", "mp_mode", "host",
         "--es", "mission", $MISSION,
@@ -418,6 +758,10 @@ try {
         "--ei", "difficulty", "1",
         "--es", "callsign", $CALLSIGN1
     )
+    if ($GuidebotHostObserver) {
+        $hostExtras += @("--ez", "host_observer", "true")
+    }
+    Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras $hostExtras
 
     # Poll for host game process to appear (replaces fixed 5s sleep)
     $null = Wait-ForCondition -Description "Host game process" -TimeoutSec 30 -PollMs 500 -Condition {
@@ -618,6 +962,12 @@ try {
 
     if ($testPassed -and $GuidebotOwnership) {
         $testPassed = Invoke-GuidebotOwnershipScenario
+    }
+    if ($testPassed -and $GuidebotHostObserver) {
+        $testPassed = Invoke-GuidebotHostObserverScenario
+    }
+    if ($testPassed -and $GuidebotSlotRemapRestore) {
+        $testPassed = Invoke-GuidebotSlotRemapRestoreScenario
     }
 
     # Stop logcat capture

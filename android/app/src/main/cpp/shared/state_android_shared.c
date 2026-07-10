@@ -40,6 +40,8 @@ extern int state_restore_all_sub(char *filename);
 #endif
 extern int Player_is_dead;
 
+static int g_state_android_coop_callsign_remap_allowed;
+
 enum {
 	STATE_ANDROID_DESC_LENGTH = 20,
 	STATE_ANDROID_NUM_SAVES = 10,
@@ -626,7 +628,8 @@ int state_save_to_memory(rewind_memory_buffer *buffer, const char *desc,
 	return result;
 }
 
-int state_restore_from_memory(const rewind_memory_buffer *buffer)
+static int state_restore_from_memory_internal(const rewind_memory_buffer *buffer,
+                                              int allow_coop_callsign_remap)
 {
 	int result;
 	char filename[PATH_MAX];
@@ -635,9 +638,26 @@ int state_restore_from_memory(const rewind_memory_buffer *buffer)
 		return 0;
 	state_android_memory_filename(filename, sizeof(filename));
 	g_state_android_memory_read_buffer = buffer;
+	g_state_android_coop_callsign_remap_allowed = allow_coop_callsign_remap;
 	result = state_android_restore_from_memory_call(filename);
+	g_state_android_coop_callsign_remap_allowed = 0;
 	g_state_android_memory_read_buffer = NULL;
 	return result;
+}
+
+int state_restore_from_memory(const rewind_memory_buffer *buffer)
+{
+	return state_restore_from_memory_internal(buffer, 0);
+}
+
+int state_restore_coop_from_memory(const rewind_memory_buffer *buffer)
+{
+	return state_restore_from_memory_internal(buffer, 1);
+}
+
+int state_android_coop_callsign_remap_allowed(void)
+{
+	return g_state_android_coop_callsign_remap_allowed;
 }
 
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)

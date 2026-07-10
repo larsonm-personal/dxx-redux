@@ -60,6 +60,7 @@ extern "C" {
 #include "gameseq.h"
 #include "object.h"
 #include "collide.h"
+#include "coop/coop_save.h"
 #include "secretarea.h"
 #include "switch.h"
 #ifdef DXX_BUILD_DESCENT_II
@@ -2953,6 +2954,12 @@ extern "C" void game_automate_tick(void)
 					break;
 				}
 				Automap_visited[segnum] = 0;
+			} else if (s.field == "coop_autosave") {
+				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&
+				    !coop_autosave()) {
+					stop_script_fail("coop_autosave: active coop game required");
+					break;
+				}
 			} else if (s.field == "fire_trigger") {
 				char reason[128];
 				if (!fire_level_trigger(s.value, reason, sizeof(reason))) {

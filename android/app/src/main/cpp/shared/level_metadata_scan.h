@@ -51,6 +51,12 @@ enum level_metadata_route_activation_kind {
 	LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT = 8
 };
 
+enum level_metadata_route_edge_cost {
+	LEVEL_METADATA_ROUTE_EDGE_BLOCKED = -1,
+	LEVEL_METADATA_ROUTE_EDGE_PASSABLE = 0,
+	LEVEL_METADATA_ROUTE_EDGE_PROGRESS = 1
+};
+
 #ifdef _MSC_VER
 /* Engine headers can leave MSVC packing at 1 byte; this is a shared ABI. */
 #pragma pack(push, 8)
@@ -117,6 +123,7 @@ typedef struct level_metadata_scan_view {
 	int (*segment_is_explored)(void *user, int seg);
 	int (*reverse_side)(void *user, int seg, int child);
 	int (*side_is_flyable)(void *user, int seg, int side);
+	int (*side_is_hard_blocked)(void *user, int seg, int side);
 	int (*side_is_control_center_link)(void *user, int seg, int side);
 	int (*wall_num)(void *user, int seg, int side);
 	int (*wall_segment)(void *user, int wall_num);
@@ -150,6 +157,7 @@ typedef struct level_metadata_scan_view {
 	int (*trigger_link_segment)(void *user, int trigger_num, int link_index);
 	int (*trigger_link_side)(void *user, int trigger_num, int link_index);
 	int (*target_visible_from_segment)(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3]);
+	int (*wall_visible_from_segment)(void *user, int seg, const int from_pos[3], int wall_num);
 	int (*wall_is_shootable_trigger)(void *user, int wall_num);
 } level_metadata_scan_view;
 
@@ -202,6 +210,7 @@ int level_metadata_scan_unexplored_route(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
     level_metadata_unexplored_route *result);
+int level_metadata_scan_route_edge_cost(const level_metadata_scan_view *view, int seg, int side);
 const char *level_metadata_travel_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

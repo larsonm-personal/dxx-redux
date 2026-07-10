@@ -1064,7 +1064,8 @@ void coop_try_auto_restore(void)
 	coop_auto_restore_armed = 0;
 
 	multi_send_restore_game(coop_auto_restore_slot, coop_auto_restore_game_id);
-	multi_restore_game(coop_auto_restore_slot, coop_auto_restore_game_id);
+	if (!multi_coop_restore_transfer_pending())
+		multi_restore_game(coop_auto_restore_slot, coop_auto_restore_game_id);
 	return;
 
 disarm:

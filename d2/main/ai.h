@@ -94,6 +94,9 @@ extern void make_random_vector(vms_vector *vec);
 extern void init_robots_for_level(void);
 extern int ai_behavior_to_mode(int behavior);
 extern void create_path_to_segment(object *objp, int goalseg, int max_length, int safety_flag);
+#ifdef __ANDROID__
+extern void create_path_to_segment_metadata_route(object *objp, int goalseg, int max_length, int safety_flag);
+#endif
 extern int ready_to_fire(robot_info *robptr, ai_local *ailp);
 extern int polish_path(object *objp, point_seg *psegs, int num_points);
 extern void move_towards_player(object *objp, vms_vector *vec_to_player);

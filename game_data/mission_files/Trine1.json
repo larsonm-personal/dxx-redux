@@ -21,9 +21,9 @@
         "mine_volume": 5405522.396735425,
         "mine_volume_normalized": 1.1820768154396049,
         "mine_volume_text": "1.2x",
-        "travel_distance": 3700.941466931772,
-        "travel_time_seconds": 74,
-        "travel_time_text": "1M:14S",
+        "travel_distance": 3849.7559670355004,
+        "travel_time_seconds": 77,
+        "travel_time_text": "1M:17S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
         "travel_key_detours": 1,
@@ -156,12 +156,12 @@
         "mine_volume": 13490282.880227195,
         "mine_volume_normalized": 2.9500480168334953,
         "mine_volume_text": "3.0x",
-        "travel_distance": 7321.665640258348,
-        "travel_time_seconds": 146,
-        "travel_time_text": "2M:26S",
+        "travel_distance": 10111.715376041348,
+        "travel_time_seconds": 202,
+        "travel_time_text": "3M:22S",
         "travel_targets_reached": 4,
         "travel_targets_total": 4,
-        "travel_key_detours": 2,
+        "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -399,16 +399,16 @@
         "mine_volume": 27959483.863653567,
         "mine_volume_normalized": 6.114165333371439,
         "mine_volume_text": "6.1x",
-        "travel_distance": 12105.656057019214,
-        "travel_time_seconds": 242,
-        "travel_time_text": "4M:02S",
-        "travel_targets_reached": 5,
+        "travel_distance": 7197.37096709358,
+        "travel_time_seconds": 144,
+        "travel_time_text": "2M:24S",
+        "travel_targets_reached": 3,
         "travel_targets_total": 5,
-        "travel_key_detours": 3,
+        "travel_key_detours": 1,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
@@ -434,93 +434,11 @@
             "seg": 365,
             "distance": 1875.3526343025917,
             "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 7",
-            "seg": 549,
-            "side": 5,
-            "wall": 136,
-            "distance": 2320.4006737437603,
-            "trigger": 7,
-            "trigger_type_id": 1,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 590,
-                "side": 4,
-                "wall": 113
-              },
-              {
-                "seg": 591,
-                "side": 4,
-                "wall": 115
-              },
-              {
-                "seg": 603,
-                "side": 2,
-                "wall": 131
-              },
-              {
-                "seg": 598,
-                "side": 0,
-                "wall": 127
-              },
-              {
-                "seg": 585,
-                "side": 5,
-                "wall": 123
-              },
-              {
-                "seg": 597,
-                "side": 0,
-                "wall": 129
-              },
-              {
-                "seg": 601,
-                "side": 2,
-                "wall": 133
-              },
-              {
-                "seg": 565,
-                "side": 4,
-                "wall": 121
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 643,
-            "distance": 396.25001525878906,
-            "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 685,
-            "distance": 1268.9950295149447
-          },
-          {
-            "index": 6,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 743,
-            "side": 4,
-            "wall": 161,
-            "distance": 933.8893714081426,
-            "trigger": 8,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "could not return to locked door after key",
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 7,
@@ -726,12 +644,12 @@
         "mine_volume": 16056266.42490482,
         "mine_volume_normalized": 3.5111759586573603,
         "mine_volume_text": "3.5x",
-        "travel_distance": 8412.336907324701,
-        "travel_time_seconds": 168,
-        "travel_time_text": "3M:48S",
+        "travel_distance": 12038.78440581705,
+        "travel_time_seconds": 241,
+        "travel_time_text": "4M:01S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
-        "travel_key_detours": 2,
+        "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -939,12 +857,12 @@
         "mine_volume": 8980121.05318639,
         "mine_volume_normalized": 1.9637681832978044,
         "mine_volume_text": "2.0x",
-        "travel_distance": 1165.2972185417589,
-        "travel_time_seconds": 23,
-        "travel_time_text": "0M:23S",
-        "travel_targets_reached": 2,
+        "travel_distance": 3113.60525305345,
+        "travel_time_seconds": 62,
+        "travel_time_text": "1M:02S",
+        "travel_targets_reached": 1,
         "travel_targets_total": 2,
-        "travel_key_detours": 0,
+        "travel_key_detours": 1,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -987,7 +905,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable"
       }
     ],
     "target_index": 0

@@ -531,47 +531,6 @@ const char *escort_route_step_satisfied_reason_name(int reason)
 	}
 }
 
-static int escort_player_has_key_for_wall(int keys)
-{
-	int owner_pnum = escort_key_owner_player();
-
-	switch (keys) {
-		case KEY_NONE:
-			return 1;
-		case KEY_BLUE:
-			return (Players[owner_pnum].flags & PLAYER_FLAGS_BLUE_KEY) != 0;
-		case KEY_GOLD:
-			return (Players[owner_pnum].flags & PLAYER_FLAGS_GOLD_KEY) != 0;
-		case KEY_RED:
-			return (Players[owner_pnum].flags & PLAYER_FLAGS_RED_KEY) != 0;
-		default:
-			return 0;
-	}
-}
-
-static int escort_trigger_type_can_make_side_passable(int trigger_type)
-{
-	return trigger_type == TT_OPEN_DOOR ||
-	       trigger_type == TT_ILLUSION_OFF ||
-	       trigger_type == TT_UNLOCK_DOOR ||
-	       trigger_type == TT_OPEN_WALL ||
-	       trigger_type == TT_ILLUSORY_WALL;
-}
-
-static int escort_find_connect_side_num(int segnum, int child_segnum)
-{
-	int sidenum;
-
-	if (!IS_CHILD(child_segnum))
-		return -1;
-
-	for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++)
-		if (Segments[child_segnum].children[sidenum] == segnum)
-			return sidenum;
-
-	return -1;
-}
-
 static int escort_valid_segment(int segnum)
 {
 	return segnum >= 0 && segnum <= Highest_segment_index;
@@ -587,56 +546,19 @@ static int escort_valid_wall(int wall_num)
 	return wall_num >= 0 && wall_num < Num_walls;
 }
 
-static int escort_trigger_can_make_side_passable(int segnum, int sidenum)
-{
-	int trigger_num, link_num;
-
-	for (trigger_num = 0; trigger_num < Num_triggers; trigger_num++) {
-		if ((Triggers[trigger_num].flags & TF_DISABLED) ||
-		    !escort_trigger_type_can_make_side_passable(Triggers[trigger_num].type))
-			continue;
-
-		for (link_num = 0; link_num < Triggers[trigger_num].num_links; link_num++)
-			if ((Triggers[trigger_num].seg[link_num] == segnum) &&
-			    (Triggers[trigger_num].side[link_num] == sidenum))
-				return 1;
-	}
-
-	return 0;
-}
-
-static int escort_wall_is_hidden_door(int wall_num)
-{
-	int clip_num;
-
-	if (!escort_valid_wall(wall_num) || Walls[wall_num].type != WALL_DOOR)
-		return 0;
-	clip_num = Walls[wall_num].clip_num;
-	return clip_num >= 0 && clip_num < Num_wall_anims &&
-	       (WallAnims[clip_num].flags & WCF_HIDDEN);
-}
-
 static int escort_route_link_passable(int segnum, int sidenum)
 {
 	object *reference_obj;
-	segment *segp;
-	int wall_num;
 
 	if (segnum < 0 || segnum > Highest_segment_index ||
 	    sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT)
 		return 1;
-	segp = &Segments[segnum];
-	if (WALL_IS_DOORWAY(segp, sidenum) & WID_FLY_FLAG)
-		return 1;
-	wall_num = segp->sides[sidenum].wall_num;
-	if (escort_wall_is_hidden_door(wall_num))
-		return 0;
 	reference_obj = escort_route_reference_object();
-	if (reference_obj && ai_door_is_openable(reference_obj, segp, sidenum))
-		return 1;
-	if (wall_num < 0)
-		return IS_CHILD(segp->children[sidenum]);
-	return 0;
+	if (!reference_obj)
+		return 0;
+	return level_metadata_route_edge_cost_from_object(
+	           reference_obj - Objects, segnum, sidenum) ==
+	       LEVEL_METADATA_ROUTE_EDGE_PASSABLE;
 }
 
 static int escort_route_key_flag(int key_index)
@@ -1078,71 +1000,26 @@ int escort_route_analyze_step_link(int step_index, int link_index, escort_route_
 	return 1;
 }
 
-static int escort_side_or_pair_has_open_trigger(int segnum, int sidenum)
-{
-	int child_segnum, connect_side;
-
-	if (escort_trigger_can_make_side_passable(segnum, sidenum))
-		return 1;
-
-	child_segnum = Segments[segnum].children[sidenum];
-	connect_side = escort_find_connect_side_num(segnum, child_segnum);
-	return (connect_side >= 0) && escort_trigger_can_make_side_passable(child_segnum, connect_side);
-}
-
 static int escort_live_side_cost(object *objp, int segnum, int sidenum)
 {
-	segment *segp = &Segments[segnum];
-
-	if (!IS_CHILD(segp->children[sidenum]))
+	if (!objp || !escort_valid_segment(segnum) || !escort_valid_side(sidenum))
 		return -1;
-
-	if ((WALL_IS_DOORWAY(segp, sidenum) & WID_FLY_FLAG) || ai_door_is_openable(objp, segp, sidenum))
-		return 0;
-
-	return -1;
-}
-
-static int escort_route_wall_center(int wall_num, vms_vector *pos)
-{
-	if (!pos || !escort_valid_wall(wall_num))
-		return 0;
-	if (!escort_valid_segment(Walls[wall_num].segnum) || !escort_valid_side(Walls[wall_num].sidenum))
-		return 0;
-	compute_center_point_on_side(pos, &Segments[Walls[wall_num].segnum], Walls[wall_num].sidenum);
-	return 1;
-}
-
-static int escort_route_wall_hit_matches(int wall_num, const fvi_info *hit_data)
-{
-	if (!escort_valid_wall(wall_num) || !hit_data)
-		return 0;
-	return hit_data->hit_type == HIT_WALL &&
-	       hit_data->hit_side_seg == Walls[wall_num].segnum &&
-	       hit_data->hit_side == Walls[wall_num].sidenum;
+	return level_metadata_route_edge_cost_from_object(
+	           objp - Objects, segnum, sidenum) ==
+	               LEVEL_METADATA_ROUTE_EDGE_PASSABLE ?
+	           0 : -1;
 }
 
 static int escort_route_can_see_wall_from_pos(int from_seg, const vms_vector *from_pos, int wall_num)
 {
-	fvi_info hit_data;
-	fvi_query query;
-	vms_vector target;
-	int fate;
+	int pos[3];
 
-	if (!escort_valid_segment(from_seg) || !from_pos || !escort_route_wall_center(wall_num, &target))
+	if (!escort_valid_segment(from_seg) || !from_pos || !escort_valid_wall(wall_num))
 		return 0;
-	if (Walls[wall_num].segnum == from_seg)
-		return 1;
-	memset(&query, 0, sizeof(query));
-	memset(&hit_data, 0, sizeof(hit_data));
-	query.p0 = (vms_vector *) from_pos;
-	query.p1 = &target;
-	query.startseg = from_seg;
-	query.rad = 0;
-	query.thisobjnum = -1;
-	query.flags = FQ_TRANSWALL;
-	fate = find_vector_intersection(&query, &hit_data);
-	return fate == HIT_NONE || escort_route_wall_hit_matches(wall_num, &hit_data);
+	pos[0] = from_pos->x;
+	pos[1] = from_pos->y;
+	pos[2] = from_pos->z;
+	return level_metadata_wall_visible_from_position(from_seg, pos, wall_num);
 }
 
 static int escort_route_can_see_pos_from_pos(int from_seg, const vms_vector *from_pos, const vms_vector *target)
@@ -1166,7 +1043,7 @@ static int escort_route_can_see_pos_from_pos(int from_seg, const vms_vector *fro
 static int escort_route_segment_can_see_wall(int segnum, int wall_num)
 {
 	vms_vector center, side_center, candidate;
-	int sidenum;
+	int sidenum, vertex_index;
 
 	if (!escort_valid_segment(segnum) || !escort_valid_wall(wall_num))
 		return 0;
@@ -1178,6 +1055,14 @@ static int escort_route_segment_can_see_wall(int segnum, int wall_num)
 		candidate.x = (center.x + side_center.x * 3) / 4;
 		candidate.y = (center.y + side_center.y * 3) / 4;
 		candidate.z = (center.z + side_center.z * 3) / 4;
+		if (escort_route_can_see_wall_from_pos(segnum, &candidate, wall_num))
+			return 1;
+	}
+	for (vertex_index = 0; vertex_index < MAX_VERTICES_PER_SEGMENT; vertex_index++) {
+		const vms_vector *vertex = &Vertices[Segments[segnum].verts[vertex_index]];
+		candidate.x = (center.x + vertex->x * 3) / 4;
+		candidate.y = (center.y + vertex->y * 3) / 4;
+		candidate.z = (center.z + vertex->z * 3) / 4;
 		if (escort_route_can_see_wall_from_pos(segnum, &candidate, wall_num))
 			return 1;
 	}
@@ -1422,49 +1307,13 @@ static void escort_route_note_path_endpoint(object *objp)
 
 static int escort_optimistic_side_cost(object *objp, int segnum, int sidenum)
 {
-	int wall_num;
-	segment *segp = &Segments[segnum];
-	wall *wallp;
+	int edge_cost;
 
-	if (!IS_CHILD(segp->children[sidenum]))
+	if (!objp || !escort_valid_segment(segnum) || !escort_valid_side(sidenum))
 		return -1;
-
-	if (escort_live_side_cost(objp, segnum, sidenum) == 0)
-		return 0;
-
-	wall_num = segp->sides[sidenum].wall_num;
-	if (wall_num < 0)
-		return 0;
-
-	wallp = &Walls[wall_num];
-	if (!escort_player_has_key_for_wall(wallp->keys))
-		return -1;
-
-	if ((wallp->type == WALL_DOOR) || (wallp->type == WALL_OPEN) || (wallp->type == WALL_ILLUSION))
-		return 1;
-
-	if ((wallp->type == WALL_CLOSED) && escort_side_or_pair_has_open_trigger(segnum, sidenum))
-		return 1;
-
-	return -1;
-}
-
-static int escort_optimistic_edge_cost(object *objp, int segnum, int sidenum)
-{
-	int child_segnum, connect_side, cost, reverse_cost;
-
-	cost = escort_optimistic_side_cost(objp, segnum, sidenum);
-	child_segnum = Segments[segnum].children[sidenum];
-	connect_side = escort_find_connect_side_num(segnum, child_segnum);
-	if (connect_side < 0)
-		return cost;
-
-	reverse_cost = escort_optimistic_side_cost(objp, child_segnum, connect_side);
-	if (cost < 0)
-		return reverse_cost;
-	if (reverse_cost < 0)
-		return cost;
-	return (cost < reverse_cost) ? cost : reverse_cost;
+	edge_cost = level_metadata_route_edge_cost_from_object(objp - Objects, segnum, sidenum);
+	return edge_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE ? 0 :
+	       edge_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS ? 1 : -1;
 }
 
 static int escort_find_nearest_reachable_goal_segment(object *objp, int goal_seg)
@@ -1517,12 +1366,15 @@ static int escort_find_nearest_reachable_goal_segment(object *objp, int goal_seg
 
 		for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
 			int child_segnum = Segments[segnum].children[sidenum];
-			int edge_cost, next_dist, next_cost;
+			int edge_cost, next_dist, next_cost, reverse_side;
 
 			if ((child_segnum < 0) || (child_segnum > Highest_segment_index))
 				continue;
 
-			edge_cost = escort_optimistic_edge_cost(objp, segnum, sidenum);
+			reverse_side = find_connect_side(&Segments[segnum], &Segments[child_segnum]);
+			if (!escort_valid_side(reverse_side))
+				continue;
+			edge_cost = escort_optimistic_side_cost(objp, child_segnum, reverse_side);
 			if (edge_cost < 0)
 				continue;
 
@@ -1566,7 +1418,7 @@ static int escort_create_path_to_nearest_point(object *objp, int goal_seg)
 	if (target_seg < 0)
 		return 0;
 
-	create_path_to_segment(objp, target_seg, Max_escort_length, 1);
+	create_path_to_segment_metadata_route(objp, target_seg, Max_escort_length, 1);
 	if (aip->path_length > 3)
 		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 
@@ -1842,7 +1694,16 @@ void escort_spawn_at_player(void)
 #endif
 #ifdef NETWORK
 	if (Game_mode & GM_MULTI_COOP) {
-		multi_send_escort_owner(Player_num);
+		int requested_owner = Player_num;
+
+		if (multi_i_am_master() && !escort_owner_candidate_eligible(requested_owner)) {
+			for (requested_owner = 0; requested_owner < N_players; ++requested_owner)
+				if (escort_owner_candidate_eligible(requested_owner))
+					break;
+			if (requested_owner >= N_players)
+				requested_owner = -1;
+		}
+		multi_send_escort_owner(requested_owner);
 	}
 #endif
 	HUD_init_message(HM_DEFAULT, old_buddy_objnum == -1 ? "%s deployed" : "%s released", PlayerCfg.GuidebotName);
@@ -3080,7 +2941,12 @@ void escort_create_path_to_goal(object *objp)
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("escort_create_path_to_goal scram", objp);
 		} else {
-			create_path_to_segment(objp, goal_seg, Max_escort_length, 1);	//	MK!: Last parm (safety_flag) used to be 1!!
+#ifdef __ANDROID__
+			if (using_route_goal)
+				create_path_to_segment_metadata_route(objp, goal_seg, Max_escort_length, 1);
+			else
+#endif
+				create_path_to_segment(objp, goal_seg, Max_escort_length, 1);	//	MK!: Last parm (safety_flag) used to be 1!!
 			if (aip->path_length > 3)
 				aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("escort_create_path_to_goal to_segment", objp);
@@ -4816,11 +4682,11 @@ static int escort_owner_candidate_eligible(int pnum)
 {
 	if (pnum < 0 || pnum >= N_players || pnum >= MAX_PLAYERS)
 		return 0;
-	if (Players[pnum].connected != CONNECT_PLAYING)
-		return 0;
-	if (Netgame.host_is_obs && pnum == 0)
-		return 0;
-	return 1;
+	return escort_owner_slot_eligible(
+	    pnum,
+	    N_players,
+	    Players[pnum].connected == CONNECT_PLAYING,
+	    Netgame.host_is_obs != 0);
 }
 
 static void escort_reset_navigation_for_owner(int new_owner)

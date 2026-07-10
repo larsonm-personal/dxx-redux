@@ -156,12 +156,12 @@
         "mine_volume": 17240525.17432823,
         "mine_volume_normalized": 3.7701490436676734,
         "mine_volume_text": "3.8x",
-        "travel_distance": 2481.2590017391094,
-        "travel_time_seconds": 50,
-        "travel_time_text": "1M:50S",
-        "travel_targets_reached": 0,
+        "travel_distance": 11044.457531328317,
+        "travel_time_seconds": 221,
+        "travel_time_text": "4M:41S",
+        "travel_targets_reached": 5,
         "travel_targets_total": 5,
-        "travel_key_detours": 1,
+        "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -222,9 +222,7 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "gold key unreachable"
+        ]
       },
       {
         "level_num": 4,
@@ -990,10 +988,10 @@
         "mine_volume": 20152556.96831796,
         "mine_volume_normalized": 4.4069506359757815,
         "mine_volume_text": "4.4x",
-        "travel_distance": 12884.997528674523,
-        "travel_time_seconds": 258,
-        "travel_time_text": "4M:18S",
-        "travel_targets_reached": 5,
+        "travel_distance": 12077.437400885537,
+        "travel_time_seconds": 242,
+        "travel_time_text": "4M:02S",
+        "travel_targets_reached": 4,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
         "guidebot_count": 0,
@@ -1056,7 +1054,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable"
       },
       {
         "level_num": 14,
@@ -1233,12 +1233,12 @@
         "mine_volume": 21560429.151513558,
         "mine_volume_normalized": 4.714823389932537,
         "mine_volume_text": "4.7x",
-        "travel_distance": 11671.886983636063,
-        "travel_time_seconds": 233,
-        "travel_time_text": "4M:53S",
+        "travel_distance": 17155.825660970982,
+        "travel_time_seconds": 343,
+        "travel_time_text": "6M:43S",
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
-        "travel_key_detours": 2,
+        "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1284,7 +1284,7 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 306,
-            "distance": 2332.988107216523
+            "distance": 3054.511589797825
           },
           {
             "index": 5,
@@ -1314,12 +1314,12 @@
         "mine_volume": 19476763.373946905,
         "mine_volume_normalized": 4.259168445597463,
         "mine_volume_text": "4.3x",
-        "travel_distance": 4991.486799853608,
-        "travel_time_seconds": 100,
-        "travel_time_text": "2M:40S",
+        "travel_distance": 12937.953966724617,
+        "travel_time_seconds": 259,
+        "travel_time_text": "4M:19S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
-        "travel_key_detours": 0,
+        "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1717,10 +1717,10 @@
         "mine_volume": 24395558.99052805,
         "mine_volume_normalized": 5.334808102877957,
         "mine_volume_text": "5.3x",
-        "travel_distance": 12367.694649101419,
-        "travel_time_seconds": 247,
-        "travel_time_text": "4M:07S",
-        "travel_targets_reached": 6,
+        "travel_distance": 11445.501334934084,
+        "travel_time_seconds": 229,
+        "travel_time_text": "4M:49S",
+        "travel_targets_reached": 5,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
         "guidebot_count": 0,
@@ -1783,7 +1783,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable"
       },
       {
         "level_num": 22,
@@ -1923,12 +1925,12 @@
         "mine_volume": 56923591.11199333,
         "mine_volume_normalized": 12.448021183981917,
         "mine_volume_text": "12x",
-        "travel_distance": 7743.2432491086665,
-        "travel_time_seconds": 155,
-        "travel_time_text": "3M:35S",
-        "travel_targets_reached": 2,
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "travel_targets_reached": 0,
         "travel_targets_total": 2,
-        "travel_key_detours": 3,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1989,7 +1991,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "failed",
+        "travel_problem": "target unreachable or blocked by unsupported door"
       },
       {
         "level_num": -2,
@@ -2619,12 +2623,12 @@
         "mine_volume": 17240525.17432823,
         "mine_volume_normalized": 3.7701490436676734,
         "mine_volume_text": "3.8x",
-        "travel_distance": 2481.2590017391094,
-        "travel_time_seconds": 50,
-        "travel_time_text": "1M:50S",
-        "travel_targets_reached": 0,
+        "travel_distance": 11044.457531328317,
+        "travel_time_seconds": 221,
+        "travel_time_text": "4M:41S",
+        "travel_targets_reached": 5,
         "travel_targets_total": 5,
-        "travel_key_detours": 1,
+        "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2685,9 +2689,7 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "gold key unreachable"
+        ]
       },
       {
         "level_num": 4,
@@ -3453,10 +3455,10 @@
         "mine_volume": 20152556.96831796,
         "mine_volume_normalized": 4.4069506359757815,
         "mine_volume_text": "4.4x",
-        "travel_distance": 12884.997528674523,
-        "travel_time_seconds": 258,
-        "travel_time_text": "4M:18S",
-        "travel_targets_reached": 5,
+        "travel_distance": 12077.437400885537,
+        "travel_time_seconds": 242,
+        "travel_time_text": "4M:02S",
+        "travel_targets_reached": 4,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
         "guidebot_count": 0,
@@ -3519,7 +3521,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable"
       },
       {
         "level_num": 14,
@@ -3696,12 +3700,12 @@
         "mine_volume": 21560429.151513558,
         "mine_volume_normalized": 4.714823389932537,
         "mine_volume_text": "4.7x",
-        "travel_distance": 11671.886983636063,
-        "travel_time_seconds": 233,
-        "travel_time_text": "4M:53S",
+        "travel_distance": 17155.825660970982,
+        "travel_time_seconds": 343,
+        "travel_time_text": "6M:43S",
         "travel_targets_reached": 8,
         "travel_targets_total": 8,
-        "travel_key_detours": 2,
+        "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3747,7 +3751,7 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 306,
-            "distance": 2332.988107216523
+            "distance": 3054.511589797825
           },
           {
             "index": 5,
@@ -3777,12 +3781,12 @@
         "mine_volume": 19476763.373946905,
         "mine_volume_normalized": 4.259168445597463,
         "mine_volume_text": "4.3x",
-        "travel_distance": 4991.486799853608,
-        "travel_time_seconds": 100,
-        "travel_time_text": "2M:40S",
+        "travel_distance": 12937.953966724617,
+        "travel_time_seconds": 259,
+        "travel_time_text": "4M:19S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
-        "travel_key_detours": 0,
+        "travel_key_detours": 3,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -4180,10 +4184,10 @@
         "mine_volume": 24395558.99052805,
         "mine_volume_normalized": 5.334808102877957,
         "mine_volume_text": "5.3x",
-        "travel_distance": 12367.694649101419,
-        "travel_time_seconds": 247,
-        "travel_time_text": "4M:07S",
-        "travel_targets_reached": 6,
+        "travel_distance": 11445.501334934084,
+        "travel_time_seconds": 229,
+        "travel_time_text": "4M:49S",
+        "travel_targets_reached": 5,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
         "guidebot_count": 0,
@@ -4246,7 +4250,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "partial",
+        "travel_problem": "exit unreachable"
       },
       {
         "level_num": 22,
@@ -4386,12 +4392,12 @@
         "mine_volume": 56923591.11199333,
         "mine_volume_normalized": 12.448021183981917,
         "mine_volume_text": "12x",
-        "travel_distance": 7743.2432491086665,
-        "travel_time_seconds": 155,
-        "travel_time_text": "3M:35S",
-        "travel_targets_reached": 2,
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "travel_targets_reached": 0,
         "travel_targets_total": 2,
-        "travel_key_detours": 3,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -4452,7 +4458,9 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ]
+        ],
+        "travel_status": "failed",
+        "travel_problem": "target unreachable or blocked by unsupported door"
       },
       {
         "level_num": -2,
