@@ -312,6 +312,7 @@ static int escort_start_default_goal_now(void);
 static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int *selected_index);
 static int escort_route_step_reachable(const level_metadata_route_step *step, int guidance_mode);
 static object *escort_route_reference_object(void);
+static int escort_key_owner_player(void);
 static int escort_owned_key_flags(void);
 static int escort_key_exists(int powerup_id);
 static int escort_boss_exists(void);
@@ -532,15 +533,17 @@ const char *escort_route_step_satisfied_reason_name(int reason)
 
 static int escort_player_has_key_for_wall(int keys)
 {
+	int owner_pnum = escort_key_owner_player();
+
 	switch (keys) {
 		case KEY_NONE:
 			return 1;
 		case KEY_BLUE:
-			return (Players[Player_num].flags & PLAYER_FLAGS_BLUE_KEY) != 0;
+			return (Players[owner_pnum].flags & PLAYER_FLAGS_BLUE_KEY) != 0;
 		case KEY_GOLD:
-			return (Players[Player_num].flags & PLAYER_FLAGS_GOLD_KEY) != 0;
+			return (Players[owner_pnum].flags & PLAYER_FLAGS_GOLD_KEY) != 0;
 		case KEY_RED:
-			return (Players[Player_num].flags & PLAYER_FLAGS_RED_KEY) != 0;
+			return (Players[owner_pnum].flags & PLAYER_FLAGS_RED_KEY) != 0;
 		default:
 			return 0;
 	}
@@ -955,6 +958,8 @@ static int escort_route_next_goal_for_key_flags(int key_flags, int set_goal, int
 				break;
 			case LEVEL_METADATA_ROUTE_KEY:
 				if (!analysis.satisfied) {
+					if (set_goal && escort_valid_segment(step->seg))
+						escort_route_set_step_goal(step, analysis.guidance_mode);
 					if (selected_index)
 						*selected_index = i;
 					return escort_route_key_goal(step->key_index);
@@ -2793,19 +2798,18 @@ static int escort_goal_command_allowed(void)
 
 static int escort_owned_key_flags(void)
 {
-	int key_flags = Players[Player_num].flags & ESCORT_KEY_FLAGS;
-#ifdef NETWORK
-	int i;
+	return Players[escort_key_owner_player()].flags & ESCORT_KEY_FLAGS;
+}
 
-	if (Game_mode & GM_MULTI_COOP) {
-		key_flags = 0;
-		for (i = 0; i < MAX_PLAYERS; i++)
-			if (Players[i].connected == CONNECT_PLAYING &&
-			    !(Netgame.host_is_obs && i == 0))
-				key_flags |= Players[i].flags & ESCORT_KEY_FLAGS;
-	}
+static int escort_key_owner_player(void)
+{
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI_COOP) &&
+	    Escort_owner_player >= 0 && Escort_owner_player < MAX_PLAYERS &&
+	    Players[Escort_owner_player].connected == CONNECT_PLAYING)
+		return Escort_owner_player;
 #endif
-	return key_flags;
+	return Player_num;
 }
 
 static int escort_key_exists(int powerup_id)
@@ -4944,9 +4948,10 @@ void multi_send_escort_owner(int owner_pnum)
 	}
 }
 
-void multi_do_escort_owner(const ubyte *buf)
+void multi_do_escort_owner(const ubyte *buf, int authenticated_sender)
 {
-	int sender = (int)buf[1];
+	int claimed_sender = (int)buf[1];
+	int sender;
 	int new_owner = (int)(sbyte)buf[2];
 	int target_mode = (int)buf[3];
 	int packet_kind = (int)buf[4];
@@ -4955,6 +4960,13 @@ void multi_do_escort_owner(const ubyte *buf)
 	                          ((unsigned int)buf[7] << 16) |
 	                          ((unsigned int)buf[8] << 24);
 
+	if (!escort_owner_packet_sender_valid(claimed_sender, authenticated_sender)) {
+		ESCORT_DIAG("ownership packet rejected: claimed_sender=%d authenticated_sender=%d",
+		            claimed_sender,
+		            authenticated_sender);
+		return;
+	}
+	sender = authenticated_sender;
 	if (sender < 0 || sender >= N_players || sender >= MAX_PLAYERS)
 		return;
 	if (new_owner != -1 && !escort_owner_candidate_eligible(new_owner))

@@ -35,12 +35,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 152
           },
           {
             "index": 1,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 1013,
             "distance": 385.9599959189029
@@ -48,6 +50,7 @@
           {
             "index": 2,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 1008,
             "side": 2,
@@ -102,12 +105,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 94
           },
           {
             "index": 1,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 489,
             "distance": 363.9044953901606
@@ -115,6 +120,7 @@
           {
             "index": 2,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 484,
             "side": 2,

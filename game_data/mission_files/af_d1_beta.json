@@ -75,7 +75,8 @@
             "wall": 78,
             "distance": 388.50399318707207,
             "trigger": 8,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ]
       },
@@ -86,7 +87,7 @@
         "level_file": "esonapri.rdl",
         "robots": 103,
         "hostages": 0,
-        "secrets": 7,
+        "secrets": 8,
         "matcens": 2,
         "energy_centers": 1,
         "mine_volume": 16744216.365510112,
@@ -112,15 +113,35 @@
           },
           {
             "index": 1,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 4",
+            "seg": 76,
+            "side": 2,
+            "wall": 89,
+            "distance": 287.0983623710149,
+            "trigger": 4,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 15,
+                "side": 2,
+                "wall": 10
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 34,
-            "distance": 355.3742264345697,
+            "distance": 348.47662612274877,
             "key": "blue"
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -129,7 +150,7 @@
             "key": "red"
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -137,7 +158,7 @@
             "distance": 1089.7024018008926
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -146,7 +167,8 @@
             "wall": 105,
             "distance": 572.2007163450878,
             "trigger": 5,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ]
       },
@@ -157,7 +179,7 @@
         "level_file": "sedurta.rdl",
         "robots": 162,
         "hostages": 0,
-        "secrets": 7,
+        "secrets": 9,
         "matcens": 14,
         "energy_centers": 4,
         "mine_volume": 21333714.76488668,
@@ -165,7 +187,7 @@
         "mine_volume_text": "4.7x",
         "travel_distance": 13942.166789260124,
         "travel_time_seconds": 279,
-        "travel_time_text": "4M:39S",
+        "travel_time_text": "5M:39S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -226,7 +248,8 @@
             "wall": 115,
             "distance": 1027.1124478540876,
             "trigger": 9,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ]
       },
@@ -281,15 +304,35 @@
           },
           {
             "index": 3,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 1",
+            "seg": 224,
+            "side": 4,
+            "wall": 13,
+            "distance": 1298.825620839749,
+            "trigger": 1,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 218,
+                "side": 4,
+                "wall": 42
+              }
+            ]
+          },
+          {
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 423,
-            "distance": 2078.077644918043,
+            "distance": 874.2504702361184,
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -297,7 +340,7 @@
             "distance": 2002.8433250799062
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -306,7 +349,8 @@
             "wall": 67,
             "distance": 409.8753411041107,
             "trigger": 4,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ]
       },
@@ -386,7 +430,8 @@
             "wall": 169,
             "distance": 1526.715672747704,
             "trigger": 3,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ]
       },
@@ -405,7 +450,7 @@
         "mine_volume_text": "8.6x",
         "travel_distance": 20959.325640038565,
         "travel_time_seconds": 419,
-        "travel_time_text": "6M:59S",
+        "travel_time_text": "7M:59S",
         "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 3,
@@ -466,7 +511,8 @@
             "wall": 173,
             "distance": 999.9366069052834,
             "trigger": 4,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ]
       },
@@ -530,11 +576,11 @@
           },
           {
             "index": 4,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
             "seg": 235,
-            "distance": 1515.0798323658062
+            "distance": 1548.4340163348988
           },
           {
             "index": 5,
@@ -544,9 +590,10 @@
             "seg": 768,
             "side": 0,
             "wall": 85,
-            "distance": 938.0961345991116,
+            "distance": 971.4503185682044,
             "trigger": 7,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ]
       },
@@ -565,7 +612,7 @@
         "mine_volume_text": "4.4x",
         "travel_distance": 8406.406417954086,
         "travel_time_seconds": 168,
-        "travel_time_text": "2M:48S",
+        "travel_time_text": "3M:48S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
@@ -599,7 +646,7 @@
         "mine_volume_text": "3.9x",
         "travel_distance": 14143.449262023003,
         "travel_time_seconds": 283,
-        "travel_time_text": "4M:43S",
+        "travel_time_text": "5M:43S",
         "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
@@ -660,7 +707,8 @@
             "wall": 172,
             "distance": 430.2685347371793,
             "trigger": 8,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ]
       },
@@ -724,11 +772,11 @@
           },
           {
             "index": 4,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 314,
-            "distance": 1376.45866135641
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 309,
+            "distance": 1262.422181547617
           },
           {
             "index": 5,
@@ -738,9 +786,10 @@
             "seg": 77,
             "side": 2,
             "wall": 4,
-            "distance": 1286.3076433108656,
+            "distance": 1172.2711635020728,
             "trigger": 7,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ]
       }

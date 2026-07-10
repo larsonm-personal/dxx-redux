@@ -35,12 +35,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 193,
             "distance": 742.2744316439222,
@@ -49,6 +51,7 @@
           {
             "index": 2,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 150,
             "distance": 1120.963171351561
@@ -56,6 +59,7 @@
           {
             "index": 3,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 69,
             "side": 4,
@@ -98,12 +102,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 326
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 60,
             "distance": 902.2055314672626,
@@ -112,6 +118,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 178,
             "distance": 1481.244606727643,
@@ -120,6 +127,7 @@
           {
             "index": 3,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 362,
             "distance": 1599.5128629047788
@@ -127,6 +135,7 @@
           {
             "index": 4,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 319,
             "side": 4,
@@ -169,12 +178,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 225
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 247,
             "distance": 1323.4302147381788,
@@ -183,6 +194,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 259,
             "distance": 1464.3584157772257,
@@ -191,6 +203,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 367,
             "distance": 957.6669810066173,
@@ -199,6 +212,7 @@
           {
             "index": 4,
             "kind": "boss",
+            "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 475,
             "distance": 518.6872044163696
@@ -206,6 +220,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 353,
             "side": 4,
@@ -248,12 +263,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 61,
             "distance": 654.6907220559087,
@@ -262,6 +279,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 187,
             "distance": 1388.028121148464,
@@ -270,6 +288,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 90,
             "distance": 1669.3084282081404,
@@ -278,6 +297,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 372,
             "distance": 1290.628230894907
@@ -285,6 +305,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 222,
             "side": 4,
@@ -327,12 +348,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 3
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 369,
             "distance": 775.9837738655991,
@@ -341,6 +364,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 586,
             "distance": 1112.005278660675,
@@ -349,6 +373,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 367,
             "distance": 2291.3411149186904,
@@ -357,6 +382,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 707,
             "distance": 507.00693863380496
@@ -364,6 +390,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 587,
             "side": 4,
@@ -406,12 +433,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 10
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 410,
             "distance": 1043.860783890781,
@@ -420,6 +449,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 513,
             "distance": 1740.4720362076494,
@@ -428,6 +458,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 550,
             "distance": 1354.834664219321,
@@ -436,6 +467,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 574,
             "distance": 965.6127662831444
@@ -443,6 +475,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 453,
             "side": 4,
@@ -485,12 +518,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 1
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 170,
             "distance": 1143.9094852679432,
@@ -499,6 +534,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 696,
             "distance": 1226.2776875669756,
@@ -507,6 +543,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 350,
             "distance": 3027.9983866410644,
@@ -515,6 +552,7 @@
           {
             "index": 4,
             "kind": "boss",
+            "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 716,
             "distance": 2155.1355347995964
@@ -522,6 +560,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 456,
             "side": 4,
@@ -564,12 +603,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 220,
             "distance": 616.1718773538853,
@@ -578,6 +619,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 355,
             "distance": 989.7606434356422,
@@ -586,6 +628,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 481,
             "distance": 1755.6951860077415,
@@ -594,6 +637,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 258,
             "distance": 2076.2501850814456
@@ -601,6 +645,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 163,
             "side": 4,
@@ -643,12 +688,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 445
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 8,
             "distance": 1178.969087759688,
@@ -657,6 +704,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 509,
             "distance": 1187.718944392906,
@@ -665,6 +713,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 518,
             "distance": 907.2001182964852,
@@ -673,6 +722,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 557,
             "distance": 813.8622626823853
@@ -680,6 +730,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 519,
             "side": 4,
@@ -722,13 +773,15 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 21
           },
           {
             "index": 1,
             "kind": "hidden_door",
-            "label": "Hidden door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
             "seg": 327,
             "side": 4,
             "wall": 70,
@@ -749,6 +802,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 326,
             "distance": 169.99625958768294,
@@ -757,6 +811,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 365,
             "distance": 1348.997810749357,
@@ -765,6 +820,7 @@
           {
             "index": 4,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 246,
             "distance": 1361.1882073127922,
@@ -773,7 +829,8 @@
           {
             "index": 5,
             "kind": "trigger",
-            "label": "Open door trigger 3",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 3",
             "seg": 407,
             "side": 4,
             "wall": 92,
@@ -792,6 +849,7 @@
           {
             "index": 6,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 420,
             "distance": 129.99763114070888
@@ -799,6 +857,7 @@
           {
             "index": 7,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 435,
             "side": 4,
@@ -841,12 +900,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 44
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 152,
             "distance": 693.3274006423871,
@@ -855,6 +916,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 128,
             "distance": 1873.889364431283,
@@ -863,6 +925,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 337,
             "distance": 1460.216463413288,
@@ -871,6 +934,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 404,
             "distance": 1156.9086608867249
@@ -878,6 +942,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 347,
             "side": 4,
@@ -920,12 +985,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 84
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 242,
             "distance": 857.5359526671674,
@@ -934,6 +1001,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 214,
             "distance": 1486.0428462939717,
@@ -942,6 +1010,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 254,
             "distance": 1466.0063560724834,
@@ -950,6 +1019,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 328,
             "distance": 1517.2733696760783
@@ -957,6 +1027,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 336,
             "side": 4,
@@ -999,12 +1070,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 224,
             "distance": 465.8419860970572,
@@ -1013,6 +1086,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 223,
             "distance": 2345.1531969024813,
@@ -1021,6 +1095,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 209,
             "distance": 1768.8445873851817,
@@ -1029,6 +1104,7 @@
           {
             "index": 4,
             "kind": "boss",
+            "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 280,
             "distance": 1503.3076510467142
@@ -1036,6 +1112,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 360,
             "side": 4,
@@ -1078,12 +1155,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 187
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 621,
             "distance": 2515.236796240641,
@@ -1092,6 +1171,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 622,
             "distance": 2264.0681120561135,
@@ -1100,6 +1180,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 651,
             "distance": 1772.7653616396026,
@@ -1108,6 +1189,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 6,
             "distance": 2152.6895387803997
@@ -1115,6 +1197,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 376,
             "side": 4,
@@ -1157,13 +1240,15 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 217
           },
           {
             "index": 1,
             "kind": "hidden_door",
-            "label": "Hidden door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
             "seg": 238,
             "side": 4,
             "wall": 22,
@@ -1184,6 +1269,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 216,
             "distance": 297.5435047276753,
@@ -1192,6 +1278,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 221,
             "distance": 2824.796066976755,
@@ -1200,6 +1287,7 @@
           {
             "index": 4,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 77,
             "distance": 2314.19314033655,
@@ -1208,6 +1296,7 @@
           {
             "index": 5,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 442,
             "distance": 1423.4549409740632
@@ -1215,6 +1304,7 @@
           {
             "index": 6,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 447,
             "side": 4,
@@ -1257,12 +1347,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 605
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 201,
             "distance": 1031.016523370337,
@@ -1271,6 +1363,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 229,
             "distance": 1172.0078931909227,
@@ -1279,6 +1372,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 299,
             "distance": 1037.525984027142,
@@ -1287,6 +1381,7 @@
           {
             "index": 4,
             "kind": "boss",
+            "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 374,
             "distance": 1655.0655813161732
@@ -1294,6 +1389,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 136,
             "side": 4,
@@ -1336,12 +1432,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 85
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 557,
             "distance": 1271.170959923011,
@@ -1350,6 +1448,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 419,
             "distance": 1695.541061738097,
@@ -1358,6 +1457,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 194,
             "distance": 2066.469848684591,
@@ -1366,6 +1466,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 303,
             "distance": 1811.3545020768156
@@ -1373,6 +1474,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 93,
             "side": 4,
@@ -1415,12 +1517,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 16
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 296,
             "distance": 1095.266559894173,
@@ -1429,6 +1533,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 199,
             "distance": 1586.6329924868953,
@@ -1437,6 +1542,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 592,
             "distance": 2125.160042527549,
@@ -1445,6 +1551,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 650,
             "distance": 1685.8966480527986
@@ -1452,6 +1559,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 562,
             "side": 4,
@@ -1494,12 +1602,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 2
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 405,
             "distance": 623.842719746649,
@@ -1508,6 +1618,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 385,
             "distance": 1221.8273818417606,
@@ -1516,6 +1627,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 522,
             "distance": 1181.7254381222892,
@@ -1524,6 +1636,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 328,
             "distance": 1104.3386329091777
@@ -1531,6 +1644,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 332,
             "side": 4,
@@ -1573,12 +1687,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 62
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 267,
             "distance": 419.4576684297641,
@@ -1587,6 +1703,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 159,
             "distance": 330.2010889316175,
@@ -1595,6 +1712,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 296,
             "distance": 494.73498986868395,
@@ -1603,6 +1721,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 401,
             "distance": 748.660254050966
@@ -1610,6 +1729,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 397,
             "side": 4,
@@ -1652,12 +1772,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 11
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 40,
             "distance": 675.9862775904952,
@@ -1666,6 +1788,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 598,
             "distance": 1844.99445903063,
@@ -1674,6 +1797,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 577,
             "distance": 1153.9457623925455,
@@ -1682,7 +1806,8 @@
           {
             "index": 4,
             "kind": "trigger",
-            "label": "Open door trigger 2",
+            "activation_kind": "activate_switch",
+            "label": "Activate switch trigger 2",
             "seg": 545,
             "side": 4,
             "wall": 11,
@@ -1711,7 +1836,8 @@
           {
             "index": 5,
             "kind": "trigger",
-            "label": "Open door trigger 8",
+            "activation_kind": "activate_switch",
+            "label": "Activate switch trigger 8",
             "seg": 590,
             "side": 5,
             "wall": 7,
@@ -1730,7 +1856,8 @@
           {
             "index": 6,
             "kind": "trigger",
-            "label": "Open door trigger 11",
+            "activation_kind": "activate_switch",
+            "label": "Activate switch trigger 11",
             "seg": 589,
             "side": 5,
             "wall": 3,
@@ -1764,6 +1891,7 @@
           {
             "index": 7,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 557,
             "distance": 109.99750259047008
@@ -1771,6 +1899,7 @@
           {
             "index": 8,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 593,
             "side": 4,
@@ -1813,12 +1942,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 35
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 262,
             "distance": 839.9217687769409,
@@ -1827,6 +1958,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 306,
             "distance": 638.8508924256288,
@@ -1835,6 +1967,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 172,
             "distance": 1656.3213336437175,
@@ -1843,6 +1976,7 @@
           {
             "index": 4,
             "kind": "boss",
+            "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 236,
             "distance": 1998.618765774656
@@ -1850,6 +1984,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 82,
             "side": 4,
@@ -1892,12 +2027,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 73
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 362,
             "distance": 1726.154939530784,
@@ -1906,6 +2043,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 627,
             "distance": 1121.1047121750369,
@@ -1914,6 +2052,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 497,
             "distance": 1851.7222025164874,
@@ -1922,6 +2061,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 442,
             "distance": 1559.5449366768771
@@ -1929,6 +2069,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 551,
             "side": 4,
@@ -1971,12 +2112,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 429
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 650,
             "distance": 462.13456327049164,
@@ -1985,6 +2128,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 745,
             "distance": 873.5731809312264,
@@ -1993,6 +2137,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 568,
             "distance": 837.9291570933786,
@@ -2001,6 +2146,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 688,
             "distance": 1365.6033781492326
@@ -2008,6 +2154,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 747,
             "side": 4,
@@ -2050,12 +2197,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 355
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 88,
             "distance": 577.3086652591059,
@@ -2064,6 +2213,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 150,
             "distance": 1304.095524170935,
@@ -2072,6 +2222,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 188,
             "distance": 1546.844704833136,
@@ -2080,6 +2231,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 382,
             "distance": 1883.9397465150653
@@ -2087,6 +2239,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 309,
             "side": 4,
@@ -2129,12 +2282,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 28
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 169,
             "distance": 1611.464825078995,
@@ -2143,6 +2298,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 13,
             "distance": 2781.8389390585753,
@@ -2151,7 +2307,8 @@
           {
             "index": 3,
             "kind": "hidden_door",
-            "label": "Hidden door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
             "seg": 163,
             "side": 4,
             "wall": 102,
@@ -2172,6 +2329,7 @@
           {
             "index": 4,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 303,
             "distance": 507.8733414505972,
@@ -2180,6 +2338,7 @@
           {
             "index": 5,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 396,
             "distance": 1827.4379404193758
@@ -2187,6 +2346,7 @@
           {
             "index": 6,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 376,
             "side": 4,
@@ -2229,12 +2389,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 22
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 7,
             "distance": 543.7654690823217,
@@ -2243,6 +2405,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 6,
             "distance": 1151.8089762486522,
@@ -2251,6 +2414,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 24,
             "distance": 880.3113192590708,
@@ -2259,6 +2423,7 @@
           {
             "index": 4,
             "kind": "boss",
+            "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 37,
             "distance": 490.00001525878906
@@ -2266,6 +2431,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 293,
             "side": 4,

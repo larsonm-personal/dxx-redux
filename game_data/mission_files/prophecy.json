@@ -35,13 +35,15 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
           },
           {
             "index": 1,
             "kind": "hidden_door",
-            "label": "Hidden door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
             "seg": 94,
             "side": 3,
             "wall": 8,
@@ -62,7 +64,8 @@
           {
             "index": 2,
             "kind": "trigger",
-            "label": "Open door trigger 0",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 0",
             "seg": 99,
             "side": 3,
             "wall": 10,
@@ -81,6 +84,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 61,
             "distance": 603.2906438320358,
@@ -89,7 +93,8 @@
           {
             "index": 4,
             "kind": "hidden_door",
-            "label": "Hidden door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
             "seg": 256,
             "side": 0,
             "wall": 39,
@@ -110,7 +115,8 @@
           {
             "index": 5,
             "kind": "trigger",
-            "label": "Open wall trigger 1",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
             "seg": 273,
             "side": 1,
             "wall": 41,
@@ -129,6 +135,7 @@
           {
             "index": 6,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 204,
             "distance": 469.2992264585977,
@@ -137,7 +144,8 @@
           {
             "index": 7,
             "kind": "hidden_door",
-            "label": "Hidden door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
             "seg": 309,
             "side": 5,
             "wall": 60,
@@ -158,7 +166,8 @@
           {
             "index": 8,
             "kind": "trigger",
-            "label": "Open wall trigger 2",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
             "seg": 348,
             "side": 3,
             "wall": 66,
@@ -177,6 +186,7 @@
           {
             "index": 9,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 299,
             "distance": 202.7362161416499,
@@ -185,6 +195,7 @@
           {
             "index": 10,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 376,
             "distance": 1305.1879981842922
@@ -192,6 +203,7 @@
           {
             "index": 11,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 377,
             "side": 1,
@@ -234,13 +246,15 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
           },
           {
             "index": 1,
             "kind": "trigger",
-            "label": "Open wall trigger 1",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
             "seg": 155,
             "side": 4,
             "wall": 25,
@@ -264,6 +278,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 141,
             "distance": 696.0981684244374,
@@ -272,6 +287,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 209,
             "distance": 1859.637860956722,
@@ -280,7 +296,8 @@
           {
             "index": 4,
             "kind": "trigger",
-            "label": "Open wall trigger 5",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 5",
             "seg": 373,
             "side": 3,
             "wall": 58,
@@ -314,6 +331,7 @@
           {
             "index": 5,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 380,
             "distance": 364.9689130633475,
@@ -322,6 +340,7 @@
           {
             "index": 6,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 424,
             "distance": 779.3109022453942
@@ -329,6 +348,7 @@
           {
             "index": 7,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 438,
             "side": 1,
@@ -371,12 +391,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 223,
             "distance": 1599.2433390629947,
@@ -385,7 +407,8 @@
           {
             "index": 2,
             "kind": "trigger",
-            "label": "Open wall trigger 3",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 3",
             "seg": 431,
             "side": 2,
             "wall": 64,
@@ -409,7 +432,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "label": "Open wall trigger 12",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 12",
             "seg": 404,
             "side": 0,
             "wall": 63,
@@ -428,6 +452,7 @@
           {
             "index": 4,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 393,
             "distance": 298.9222902038093,
@@ -436,7 +461,8 @@
           {
             "index": 5,
             "kind": "trigger",
-            "label": "Open wall trigger 13",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 13",
             "seg": 522,
             "side": 2,
             "wall": 98,
@@ -455,6 +481,7 @@
           {
             "index": 6,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 506,
             "distance": 578.5825331531732,
@@ -463,6 +490,7 @@
           {
             "index": 7,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 565,
             "distance": 1415.4018782206442
@@ -470,6 +498,7 @@
           {
             "index": 8,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 533,
             "side": 1,
@@ -512,13 +541,15 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
           },
           {
             "index": 1,
             "kind": "hidden_door",
-            "label": "Hidden door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
             "seg": 160,
             "side": 4,
             "wall": 41,
@@ -539,7 +570,8 @@
           {
             "index": 2,
             "kind": "trigger",
-            "label": "Open wall trigger 8",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 8",
             "seg": 169,
             "side": 4,
             "wall": 40,
@@ -558,6 +590,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 171,
             "distance": 513.4220000856515,
@@ -566,7 +599,8 @@
           {
             "index": 4,
             "kind": "hidden_door",
-            "label": "Hidden door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
             "seg": 324,
             "side": 4,
             "wall": 110,
@@ -587,7 +621,8 @@
           {
             "index": 5,
             "kind": "trigger",
-            "label": "Open wall trigger 10",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 10",
             "seg": 333,
             "side": 4,
             "wall": 118,
@@ -616,6 +651,7 @@
           {
             "index": 6,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 223,
             "distance": 1045.4269232113304,
@@ -624,7 +660,8 @@
           {
             "index": 7,
             "kind": "hidden_door",
-            "label": "Hidden door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
             "seg": 395,
             "side": 0,
             "wall": 82,
@@ -645,7 +682,8 @@
           {
             "index": 8,
             "kind": "trigger",
-            "label": "Open wall trigger 6",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 6",
             "seg": 419,
             "side": 0,
             "wall": 94,
@@ -674,7 +712,8 @@
           {
             "index": 9,
             "kind": "trigger",
-            "label": "Open wall trigger 5",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 5",
             "seg": 435,
             "side": 0,
             "wall": 93,
@@ -698,6 +737,7 @@
           {
             "index": 10,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 452,
             "distance": 141.21451224797863,
@@ -706,6 +746,7 @@
           {
             "index": 11,
             "kind": "boss",
+            "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 235,
             "distance": 1384.1415165586454
@@ -713,6 +754,7 @@
           {
             "index": 12,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 348,
             "side": 5,
@@ -755,13 +797,15 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
           },
           {
             "index": 1,
             "kind": "hidden_door",
-            "label": "Hidden door",
+            "activation_kind": "open_hidden_door",
+            "label": "Shoot hidden wall",
             "seg": 101,
             "side": 0,
             "wall": 10,
@@ -782,7 +826,8 @@
           {
             "index": 2,
             "kind": "trigger",
-            "label": "Open door trigger 13",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 13",
             "seg": 115,
             "side": 0,
             "wall": 12,
@@ -801,7 +846,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "label": "Open door trigger 0",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 0",
             "seg": 113,
             "side": 4,
             "wall": 14,
@@ -820,7 +866,8 @@
           {
             "index": 4,
             "kind": "trigger",
-            "label": "Open door trigger 1",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
             "seg": 114,
             "side": 0,
             "wall": 15,
@@ -839,7 +886,8 @@
           {
             "index": 5,
             "kind": "trigger",
-            "label": "Open wall trigger 2",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
             "seg": 112,
             "side": 4,
             "wall": 13,
@@ -858,6 +906,7 @@
           {
             "index": 6,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 116,
             "distance": 236.5260198485414,
@@ -866,7 +915,8 @@
           {
             "index": 7,
             "kind": "trigger",
-            "label": "Open wall trigger 15",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 15",
             "seg": 301,
             "side": 2,
             "wall": 67,
@@ -885,6 +935,7 @@
           {
             "index": 8,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 299,
             "distance": 192.89168124872,
@@ -893,7 +944,8 @@
           {
             "index": 9,
             "kind": "trigger",
-            "label": "Open wall trigger 5",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 5",
             "seg": 399,
             "side": 4,
             "wall": 122,
@@ -912,7 +964,8 @@
           {
             "index": 10,
             "kind": "trigger",
-            "label": "Open wall trigger 8",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 8",
             "seg": 400,
             "side": 0,
             "wall": 119,
@@ -931,6 +984,7 @@
           {
             "index": 11,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 377,
             "distance": 644.5222434832668,
@@ -939,6 +993,7 @@
           {
             "index": 12,
             "kind": "boss",
+            "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 541,
             "distance": 1632.1257417151892
@@ -946,6 +1001,7 @@
           {
             "index": 13,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 547,
             "side": 1,

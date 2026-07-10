@@ -121,7 +121,7 @@ extern int Buddy_objnum, Buddy_allowed_to_talk;
 extern int Escort_owner_player;
 unsigned int escort_get_owner_generation(void);
 void multi_send_escort_owner(int owner_pnum);
-void multi_do_escort_owner(const ubyte *buf);
+void multi_do_escort_owner(const ubyte *buf, int authenticated_sender);
 void escort_transfer_ownership_on_disconnect(int gone_pnum);
 void escort_release_control(void);
 #endif

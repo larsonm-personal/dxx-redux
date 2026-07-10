@@ -1,0 +1,51 @@
+// TEST HELPER: Host side of the two-peer Guide-Bot ownership scenario.
+// Run with test_lan.ps1 -GuidebotOwnership alongside the joiner helper.
+[
+    {"_info": {"games": ["d2"], "_standalone": false}},
+
+    {"action": "log", "message": "=== COOP GUIDEBOT OWNER: host ==="},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "in_game": "true",
+        "is_network": "true",
+        "multiplayer.my_player_num": "0",
+        "multiplayer.num_connected": "2"
+    }},
+
+    {"action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.owner_player": "0",
+        "guidebot.owner_is_local": "true",
+        "guidebot.owner_generation": {"gte": 1},
+        "guidebot.remote_owner": "0",
+        "guidebot.local_control_slot_matches": "true"
+    }},
+
+    {"action": "wait_ms", "ms": 4000},
+    {"action": "meta_action", "id": 1032, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.owner_player": "1",
+        "guidebot.owner_is_local": "false",
+        "guidebot.owner_generation": {"gte": 2},
+        "guidebot.remote_owner": "1",
+        "guidebot.local_control_slot_matches": "false"
+    }},
+
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {
+        "guidebot.owner_player": "1",
+        "guidebot.owner_generation": {"gte": 3},
+        "guidebot.route_target_mode_name": "unexplored"
+    }},
+    {"action": "wait_ms", "ms": 6000},
+    {"action": "assert", "expect": {
+        "guidebot.owner_player": "1",
+        "guidebot.owner_is_local": "false",
+        "guidebot.owner_generation": "3",
+        "guidebot.remote_owner": "1",
+        "guidebot.local_control_slot_matches": "false",
+        "guidebot.route_target_mode_name": "unexplored"
+    }},
+    {"action": "introspect"},
+    {"action": "log", "message": "=== COOP GUIDEBOT OWNER: host PASS ==="}
+]

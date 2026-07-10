@@ -18,6 +18,7 @@
 # Usage:
 #   .\test_lan.ps1
 #   .\test_lan.ps1 -Game d1
+#   .\test_lan.ps1 -GuidebotOwnership
 #   .\test_lan.ps1 -UseRelay
 #   .\test_lan.ps1 -SkipBuild
 
@@ -25,6 +26,7 @@ param(
     [string]$Game = "d2",
     [switch]$SkipBuild,
     [switch]$UseRelay,
+    [switch]$GuidebotOwnership,
     [int]$TimeoutSeconds = 120
 )
 
@@ -107,6 +109,198 @@ function Get-IntroNumConnected {
     return [int]$prop.Value
 }
 
+function Get-IntroGuidebot {
+    param($Intro)
+
+    if (-not $Intro) {
+        return $null
+    }
+    $prop = $Intro.PSObject.Properties['guidebot']
+    if ($null -eq $prop) {
+        return $null
+    }
+    return $prop.Value
+}
+
+function Start-DeviceGameAutomation {
+    param([string]$Serial, [string]$ScriptName)
+
+    $scriptPath = Join-Path $REPO_ROOT "android\game_scripts\$ScriptName"
+    if (-not (Test-Path $scriptPath)) {
+        Write-Status "FAIL: automation script not found: $scriptPath" "Red"
+        return $false
+    }
+
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "push", $scriptPath, "/data/local/tmp/$ScriptName"
+    ) -Seconds 30 | Out-Null
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "cp", "/data/local/tmp/$ScriptName", "files/$ScriptName"
+    ) -Seconds 10 | Out-Null
+    $copied = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "ls", "files/$ScriptName"
+    ) -Seconds 5
+    if (-not $copied -or $copied -notmatch [regex]::Escape($ScriptName)) {
+        Write-Status "FAIL: could not stage $ScriptName on $Serial" "Red"
+        return $false
+    }
+
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "rm", "-f",
+        "files/automation_result.json", "files/automation_log.jsonl"
+    ) -Seconds 5 | Out-Null
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE",
+        "--es", "script", $ScriptName
+    ) -Seconds 10 | Out-Null
+    return $true
+}
+
+function Get-DeviceAutomationResult {
+    param([string]$Serial)
+
+    $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "cat", "files/automation_result.json"
+    ) -Seconds 5
+    if (-not $json -or $json -notmatch '^\s*\{') {
+        return $null
+    }
+    try {
+        return $json | ConvertFrom-Json
+    } catch {
+        return $null
+    }
+}
+
+function Write-DeviceAutomationDiagnostics {
+    param([string]$Serial)
+
+    $result = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "cat", "files/automation_result.json"
+    ) -Seconds 5
+    $log = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "cat", "files/automation_log.jsonl"
+    ) -Seconds 5
+    Write-Status "  $Serial automation result: $result" "Yellow"
+    if ($log) {
+        Write-Status "  $Serial automation log tail:" "Yellow"
+        ($log -split "`n") | Select-Object -Last 20 | ForEach-Object {
+            Write-Status "    $_" "Gray"
+        }
+    }
+}
+
+function Invoke-GuidebotOwnershipScenario {
+    $hostScript = "test_coop_guidebot_owner_host.json5"
+    $joinScript = "test_coop_guidebot_owner_joiner.json5"
+
+    Write-Status ""
+    Write-Status "--- Guide-Bot ownership and route-intent scenario ---" "White"
+    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName $joinScript)) {
+        return $false
+    }
+    Start-Sleep -Milliseconds 250
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName $hostScript)) {
+        return $false
+    }
+
+    $script:hostAutomationResult = $null
+    $script:joinAutomationResult = $null
+    $finished = Wait-ForCondition -Description "paired Guide-Bot automation" -TimeoutSec 60 -PollMs 1000 -Condition {
+        $script:hostAutomationResult = Get-DeviceAutomationResult -Serial $EMU1
+        $script:joinAutomationResult = Get-DeviceAutomationResult -Serial $EMU2
+        $hostDone = $script:hostAutomationResult -and
+        $script:hostAutomationResult.result -in @("PASS", "FAIL")
+        $joinDone = $script:joinAutomationResult -and
+        $script:joinAutomationResult.result -in @("PASS", "FAIL")
+        return $hostDone -and $joinDone
+    }
+    if (-not $finished -or
+        $script:hostAutomationResult.result -ne "PASS" -or
+        $script:joinAutomationResult.result -ne "PASS") {
+        Write-Status "FAIL: paired Guide-Bot automation did not pass" "Red"
+        Write-DeviceAutomationDiagnostics -Serial $EMU1
+        Write-DeviceAutomationDiagnostics -Serial $EMU2
+        return $false
+    }
+
+    $hostIntro = Get-GameIntrospection -Serial $EMU1
+    $joinIntro = Get-GameIntrospection -Serial $EMU2
+    $hostGuidebot = Get-IntroGuidebot -Intro $hostIntro
+    $joinGuidebot = Get-IntroGuidebot -Intro $joinIntro
+    $stateMatches = $hostGuidebot -and $joinGuidebot -and
+    [int]$hostGuidebot.owner_player -eq 1 -and
+    [int]$joinGuidebot.owner_player -eq 1 -and
+    [int]$hostGuidebot.owner_generation -eq [int]$joinGuidebot.owner_generation -and
+    [int]$hostGuidebot.owner_generation -ge 3 -and
+    -not [bool]$hostGuidebot.owner_is_local -and
+    [bool]$joinGuidebot.owner_is_local -and
+    -not [bool]$hostGuidebot.local_control_slot_matches -and
+    [bool]$joinGuidebot.local_control_slot_matches -and
+    $hostGuidebot.route_target_mode_name -eq "unexplored" -and
+    $joinGuidebot.route_target_mode_name -eq "unexplored" -and
+    [int]$joinGuidebot.unexplored_component_size -eq 1 -and
+    [int]$joinGuidebot.unexplored_target_seg -eq 56
+    if (-not $stateMatches) {
+        Write-Status "FAIL: final Guide-Bot ownership state differs between peers" "Red"
+        Write-DeviceAutomationDiagnostics -Serial $EMU1
+        Write-DeviceAutomationDiagnostics -Serial $EMU2
+        return $false
+    }
+
+    Write-Status "Guide-Bot owner synchronized to joiner at generation $($hostGuidebot.owner_generation)" "Green"
+    Write-Status "Unexplored route intent synchronized back to host" "Green"
+
+    Write-Status "Stopping the Guide-Bot owner to exercise disconnect adoption"
+    Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @(
+        "shell", "am", "force-stop", $PACKAGE
+    ) -Seconds 10 | Out-Null
+    $script:adoptionIntro = $null
+    $adopted = Wait-ForCondition -Description "host adopts Guide-Bot after owner disconnect" -TimeoutSec 35 -PollMs 1000 -Condition {
+        $script:adoptionIntro = Get-GameIntrospection -Serial $EMU1
+        $mp = Get-IntroMultiplayer -Intro $script:adoptionIntro
+        $guidebot = Get-IntroGuidebot -Intro $script:adoptionIntro
+        return $mp -and $guidebot -and
+        [int]$mp.num_connected -eq 1 -and
+        [int]$guidebot.owner_player -eq 0 -and
+        [int]$guidebot.owner_generation -ge 4 -and
+        [bool]$guidebot.owner_is_local -and
+        [int]$guidebot.remote_owner -eq 0 -and
+        [bool]$guidebot.local_control_slot_matches -and
+        $guidebot.route_target_mode_name -eq "unexplored"
+    }
+    if (-not $adopted) {
+        Write-Status "FAIL: host did not adopt Guide-Bot after owner disconnect" "Red"
+        Write-DeviceAutomationDiagnostics -Serial $EMU1
+        return $false
+    }
+
+    $adoptedGuidebot = Get-IntroGuidebot -Intro $script:adoptionIntro
+    Write-Status "Host adopted Guide-Bot at generation $($adoptedGuidebot.owner_generation) with Unexplored intent preserved" "Green"
+
+    $script:replannedIntro = $null
+    $replanned = Wait-ForCondition -Description "new owner recomputes Unexplored route from local automap" -TimeoutSec 20 -PollMs 1000 -Condition {
+        $script:replannedIntro = Get-GameIntrospection -Serial $EMU1
+        $guidebot = Get-IntroGuidebot -Intro $script:replannedIntro
+        return $guidebot -and
+        [int]$guidebot.owner_player -eq 0 -and
+        $guidebot.route_target_mode_name -eq "unexplored" -and
+        [int]$guidebot.unexplored_component_size -gt 1 -and
+        [int]$guidebot.unexplored_target_seg -ge 0 -and
+        [bool]$guidebot.route_goal_active -and
+        [bool]$guidebot.route_goal_path_pending -and
+        $guidebot.route_goal_label -eq "Reactor" -and
+        [int]$guidebot.route_goal_objective_kind -eq 3
+    }
+    if (-not $replanned) {
+        Write-Status "FAIL: adopted Guide-Bot did not recompute Unexplored from the host automap" "Red"
+        return $false
+    }
+    $replannedGuidebot = Get-IntroGuidebot -Intro $script:replannedIntro
+    Write-Status "Host recomputed a $($replannedGuidebot.unexplored_component_size)-segment unexplored component" "Green"
+    return $true
+}
+
 # ---- Main Test Flow ----
 
 try {
@@ -114,6 +308,11 @@ try {
     Write-Status "=== LAN Multiplayer Integration Test ===" "White"
     Write-Status "Game: $Game | Mission: $MISSION | Mode: $MODE"
     Write-Status ""
+
+    if ($GuidebotOwnership -and $Game -ne "d2") {
+        Write-Status "FAIL: -GuidebotOwnership currently requires D2" "Red"
+        exit 1
+    }
 
     # -- Step 0: Ensure both emulators are online (auto-start if needed) --
     Write-Status "Checking emulators..."
@@ -415,6 +614,10 @@ try {
     if (-not ($gi2 -and $gi2.is_network -and $joinFinalPlayers -ge 2)) {
         Write-Status "FAIL: EMU2 did not report an active two-player network game" "Red"
         $testPassed = $false
+    }
+
+    if ($testPassed -and $GuidebotOwnership) {
+        $testPassed = Invoke-GuidebotOwnershipScenario
     }
 
     # Stop logcat capture

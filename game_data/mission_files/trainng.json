@@ -35,12 +35,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 39
           },
           {
             "index": 1,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 6,
             "distance": 3500.0
@@ -48,13 +50,15 @@
           {
             "index": 2,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 0,
             "side": 0,
             "wall": 0,
             "distance": 110.0,
             "trigger": 0,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ]
       },
@@ -80,33 +84,17 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 11,
-            "distance": 735.0
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 7,
-            "side": 0,
-            "wall": 2,
-            "distance": 110.0,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 3,
@@ -130,33 +118,17 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 19
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 8,
-            "distance": 790.0
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 4,
-            "side": 0,
-            "wall": 0,
-            "distance": 110.0,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 4,
@@ -180,33 +152,17 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 35
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 12,
-            "distance": 4420.0
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 0,
-            "side": 0,
-            "wall": 0,
-            "distance": 110.0,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 5,
@@ -230,33 +186,17 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 65
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 20,
-            "distance": 650.0
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 8,
-            "side": 0,
-            "wall": 0,
-            "distance": 110.0,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 6,
@@ -280,33 +220,17 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 74
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 12,
-            "distance": 4020.0
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 0,
-            "side": 0,
-            "wall": 0,
-            "distance": 110.0,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 7,
@@ -330,33 +254,17 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 43
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 12,
-            "distance": 1700.0
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 0,
-            "side": 0,
-            "wall": 0,
-            "distance": 110.0,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 8,
@@ -380,33 +288,17 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 101
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 12,
-            "distance": 1720.0
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 0,
-            "side": 0,
-            "wall": 0,
-            "distance": 110.0,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 9,
@@ -430,33 +322,17 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 38
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 12,
-            "distance": 2410.442776693695
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 0,
-            "side": 0,
-            "wall": 0,
-            "distance": 110.0,
-            "trigger": 0,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       }
     ],
     "target_index": 0

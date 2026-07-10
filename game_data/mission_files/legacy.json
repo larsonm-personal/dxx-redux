@@ -35,6 +35,7 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 2
           }
@@ -74,13 +75,15 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 0
           },
           {
             "index": 1,
             "kind": "trigger",
-            "label": "Open wall trigger 0",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 0",
             "seg": 19,
             "side": 5,
             "wall": 14,
@@ -104,7 +107,8 @@
           {
             "index": 2,
             "kind": "trigger",
-            "label": "Open wall trigger 1",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
             "seg": 47,
             "side": 4,
             "wall": 29,
@@ -138,7 +142,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "label": "Open wall trigger 4",
+            "activation_kind": "activate_switch",
+            "label": "Activate switch trigger 4",
             "seg": 371,
             "side": 5,
             "wall": 40,
@@ -157,7 +162,8 @@
           {
             "index": 4,
             "kind": "trigger",
-            "label": "Open wall trigger 5",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 5",
             "seg": 379,
             "side": 3,
             "wall": 47,
@@ -181,7 +187,8 @@
           {
             "index": 5,
             "kind": "trigger",
-            "label": "Open wall trigger 15",
+            "activation_kind": "activate_switch",
+            "label": "Activate switch trigger 15",
             "seg": 378,
             "side": 1,
             "wall": 46,
@@ -205,6 +212,7 @@
           {
             "index": 6,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 503,
             "distance": 255.31079538891134,
@@ -213,7 +221,8 @@
           {
             "index": 7,
             "kind": "trigger",
-            "label": "Open wall trigger 12",
+            "activation_kind": "activate_switch",
+            "label": "Activate switch trigger 12",
             "seg": 104,
             "side": 4,
             "wall": 104,
@@ -242,6 +251,7 @@
           {
             "index": 8,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 505,
             "distance": 871.5372461091995
@@ -249,6 +259,7 @@
           {
             "index": 9,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 511,
             "side": 5,
@@ -291,13 +302,15 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 11
           },
           {
             "index": 1,
             "kind": "trigger",
-            "label": "Open wall trigger 4",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 4",
             "seg": 30,
             "side": 5,
             "wall": 30,
@@ -316,6 +329,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 270,
             "distance": 737.1400862602103,
@@ -324,6 +338,7 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 347,
             "distance": 1257.8701228814045,
@@ -332,6 +347,7 @@
           {
             "index": 4,
             "kind": "reactor",
+            "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 476,
             "distance": 579.3992646345781
@@ -339,6 +355,7 @@
           {
             "index": 5,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 668,
             "side": 4,

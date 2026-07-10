@@ -22,6 +22,9 @@
 #include "automap.h"
 #include "switch.h"
 #include "wall.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "escort.h"
+#endif
 #ifdef NETWORK
 #include "multi.h"
 #endif
@@ -277,19 +280,16 @@ static int secret_area_metadata_start(void *user, int *seg, int xyz[3])
 
 static int secret_area_current_key_mask(void)
 {
-	int flags = Players[Player_num].flags;
+	int key_player = Player_num;
+	int flags;
 	int key_mask = 0;
-#ifdef NETWORK
-	int i;
-
-	if (Game_mode & GM_MULTI_COOP) {
-		flags = 0;
-		for (i = 0; i < MAX_PLAYERS; i++)
-			if (Players[i].connected == CONNECT_PLAYING &&
-			    !(Netgame.host_is_obs && i == 0))
-				flags |= Players[i].flags;
-	}
+#if defined(NETWORK) && defined(DXX_BUILD_DESCENT_II)
+	if ((Game_mode & GM_MULTI_COOP) &&
+	    Escort_owner_player >= 0 && Escort_owner_player < MAX_PLAYERS &&
+	    Players[Escort_owner_player].connected == CONNECT_PLAYING)
+		key_player = Escort_owner_player;
 #endif
+	flags = Players[key_player].flags;
 	if (flags & PLAYER_FLAGS_BLUE_KEY)
 		key_mask |= LEVEL_METADATA_KEY_MASK_BLUE;
 	if (flags & PLAYER_FLAGS_RED_KEY)

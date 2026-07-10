@@ -1,6 +1,7 @@
 #ifndef D2_ESCORT_OWNER_POLICY_H
 #define D2_ESCORT_OWNER_POLICY_H
 
+int escort_owner_packet_sender_valid(int claimed_sender, int authenticated_sender);
 int escort_owner_request_allowed(int current_owner,
                                  int sender,
                                  int requested_owner,

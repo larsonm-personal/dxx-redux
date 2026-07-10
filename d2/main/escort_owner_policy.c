@@ -1,5 +1,10 @@
 #include "escort_owner_policy.h"
 
+int escort_owner_packet_sender_valid(int claimed_sender, int authenticated_sender)
+{
+	return authenticated_sender >= 0 && claimed_sender == authenticated_sender;
+}
+
 int escort_owner_request_allowed(int current_owner,
                                  int sender,
                                  int requested_owner,

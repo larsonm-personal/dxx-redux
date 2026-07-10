@@ -107,6 +107,7 @@ static void automation_enter_launcher(void)
 
 /* Automap_active is defined in automap.c; we just need the extern. */
 extern "C" int Automap_active;
+extern "C" unsigned char Automap_visited[];
 extern "C" int Current_level_num;
 extern "C" volatile int g_intro_active;
 
@@ -2941,6 +2942,17 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail(reason);
 					break;
 				}
+			} else if (s.field == "automap_visit_all") {
+				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0)
+					for (int segnum = 0; segnum <= Highest_segment_index; segnum++)
+						Automap_visited[segnum] = 1;
+			} else if (s.field == "automap_unvisit_segment") {
+				const int segnum = (int) strtol(s.value.c_str(), NULL, 10);
+				if (segnum < 0 || segnum > Highest_segment_index) {
+					stop_script_fail("automap_unvisit_segment: invalid segment");
+					break;
+				}
+				Automap_visited[segnum] = 0;
 			} else if (s.field == "fire_trigger") {
 				char reason[128];
 				if (!fire_level_trigger(s.value, reason, sizeof(reason))) {

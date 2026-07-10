@@ -276,6 +276,8 @@ static const int message_length[] = {
 	for_each_multiplayer_command(, define_message_length, )
 };
 
+static void multi_process_data_from_player(const ubyte *buf, int len, int authenticated_sender);
+
 char PowerupsInMine[MAX_POWERUP_TYPES],MaxPowerupsAllowed[MAX_POWERUP_TYPES];
 extern fix ThisLevelTime;
 
@@ -3473,6 +3475,12 @@ void multi_reset_object_texture (object *objp)
 void
 multi_process_bigdata(const ubyte *buf, unsigned len)
 {
+	multi_process_bigdata_from_player(buf, len, -1);
+}
+
+void
+multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender)
+{
 	// Takes a bunch of messages, check them for validity,
 	// and pass them to multi_process_data.
 
@@ -3496,7 +3504,7 @@ multi_process_bigdata(const ubyte *buf, unsigned len)
 			return;
 		}
 
-		multi_process_data(&buf[bytes_processed], sub_len);
+		multi_process_data_from_player(&buf[bytes_processed], sub_len, authenticated_sender);
 		bytes_processed += sub_len;
 	}
 }
@@ -7391,6 +7399,12 @@ void save_hoard_data(void)
 void
 multi_process_data(const ubyte *buf, int len)
 {
+	multi_process_data_from_player(buf, len, -1);
+}
+
+static void
+multi_process_data_from_player(const ubyte *buf, int len, int authenticated_sender)
+{
 	// Take an entire message (that has already been checked for validity,
 	// if necessary) and act on it.
 
@@ -7567,7 +7581,7 @@ multi_process_data(const ubyte *buf, int len)
 		case MULTI_DIFFICULTY:
 			if (!Endlevel_sequence) multi_do_difficulty(buf); break;
 		case MULTI_ESCORT_OWNER:
-			if (!Endlevel_sequence) multi_do_escort_owner(buf); break;
+			if (!Endlevel_sequence) multi_do_escort_owner(buf, authenticated_sender); break;
 		default:
 			Int3();
 	}

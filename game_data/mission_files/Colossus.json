@@ -35,12 +35,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 661
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 250,
             "distance": 2265.9371205074376,
@@ -49,13 +51,15 @@
           {
             "index": 2,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 617,
             "side": 5,
             "wall": 9,
             "distance": 2103.1899595090777,
             "trigger": 2,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ],
         "travel_note": "no reactor, exit exists",
@@ -90,12 +94,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 461
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 461,
             "distance": 11.119798360659255,
@@ -103,22 +109,45 @@
           },
           {
             "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 224,
-            "distance": 1257.9152851794859,
-            "key": "gold"
+            "kind": "trigger",
+            "activation_kind": "activate_switch",
+            "label": "Activate switch trigger 13",
+            "seg": 65,
+            "side": 3,
+            "wall": 149,
+            "distance": 2236.499597569903,
+            "trigger": 13,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 300,
+                "side": 2,
+                "wall": 68
+              }
+            ]
           },
           {
             "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 224,
+            "distance": 2004.13531474211,
+            "key": "gold"
+          },
+          {
+            "index": 4,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 187,
             "side": 2,
             "wall": 74,
             "distance": 1090.843756689374,
             "trigger": 3,
-            "trigger_type": "unknown"
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ],
         "travel_note": "no reactor, exit exists",
@@ -139,12 +168,12 @@
         "mine_volume": 18126779.12693504,
         "mine_volume_normalized": 3.9639545953014825,
         "mine_volume_text": "4.0x",
-        "travel_distance": 3815.871983081071,
-        "travel_time_seconds": 76,
-        "travel_time_text": "1M:16S",
+        "travel_distance": 2961.017586101577,
+        "travel_time_seconds": 59,
+        "travel_time_text": "1M:59S",
         "travel_targets_reached": 9,
         "travel_targets_total": 9,
-        "travel_key_detours": 1,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -153,12 +182,14 @@
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 154
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 154,
             "distance": 5.308074985766786,
@@ -167,6 +198,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 154,
             "distance": 7.848192647368187,
@@ -174,40 +206,66 @@
           },
           {
             "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 230,
-            "distance": 1191.4320970540407,
-            "key": "red"
+            "kind": "trigger",
+            "activation_kind": "activate_switch",
+            "label": "Activate switch trigger 31",
+            "seg": 200,
+            "side": 2,
+            "wall": 156,
+            "distance": 354.81852920352026,
+            "trigger": 31,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 217,
+                "side": 0,
+                "wall": 151
+              }
+            ]
           },
           {
             "index": 4,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 230,
-            "side": 0,
-            "wall": 110,
-            "distance": 17.519797395155237,
+            "kind": "trigger",
+            "activation_kind": "activate_switch",
+            "label": "Activate switch trigger 18",
+            "seg": 430,
+            "side": 5,
+            "wall": 131,
+            "distance": 1149.0397910809131,
+            "trigger": 18,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
             "opens": [
-              {
-                "seg": 230,
-                "side": 0,
-                "wall": 110
-              },
               {
                 "seg": 565,
                 "side": 3,
                 "wall": 111
+              },
+              {
+                "seg": 515,
+                "side": 2,
+                "wall": 109
               }
             ]
           },
           {
             "index": 5,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 230,
+            "distance": 442.5433670304319,
+            "key": "red"
+          },
+          {
+            "index": 6,
             "kind": "exit",
+            "activation_kind": "enter_exit",
             "label": "Exit",
             "seg": 218,
             "side": 2,
-            "distance": 227.02009943320374
+            "distance": 231.47754635074583
           }
         ],
         "travel_note": "no reactor, exit exists",
@@ -237,17 +295,19 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "partial",
         "route_steps": [
           {
             "index": 0,
             "kind": "start",
+            "activation_kind": "none",
             "label": "Start",
             "seg": 622
           },
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 622,
             "distance": 2.0,
@@ -256,6 +316,7 @@
           {
             "index": 2,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 622,
             "distance": 5.0,
@@ -264,30 +325,14 @@
           {
             "index": 3,
             "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 622,
             "distance": 5.000016742839712,
             "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 152,
-            "distance": 1429.0177930395234
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 96,
-            "side": 2,
-            "wall": 123,
-            "distance": 951.3890605532588,
-            "trigger": 10,
-            "trigger_type": "unknown"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       }
     ],
     "target_index": 0

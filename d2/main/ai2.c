@@ -64,6 +64,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_energy_trace.h"
 #include "d1_in_d2.h"
 #include "d1_in_d2_semantics.h"
+#include "escort.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -1689,16 +1690,10 @@ extern	int	Buddy_objnum;
 static int ai_companion_has_key(int key_flag)
 {
 #ifdef NETWORK
-	int i;
-
-	if (Game_mode & GM_MULTI_COOP) {
-		for (i = 0; i < MAX_PLAYERS; i++)
-			if (Players[i].connected == CONNECT_PLAYING &&
-			    !(Netgame.host_is_obs && i == 0) &&
-			    (Players[i].flags & key_flag))
-				return 1;
-		return 0;
-	}
+	if ((Game_mode & GM_MULTI_COOP) &&
+	    Escort_owner_player >= 0 && Escort_owner_player < MAX_PLAYERS &&
+	    Players[Escort_owner_player].connected == CONNECT_PLAYING)
+		return (Players[Escort_owner_player].flags & key_flag) != 0;
 #endif
 	return (Players[Player_num].flags & key_flag) != 0;
 }

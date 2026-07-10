@@ -334,6 +334,7 @@ void multi_send_endlevel_packet();
 void multi_leave_game(void);
 void multi_process_data(const ubyte *dat, int len);
 void multi_process_bigdata(const ubyte *buf, unsigned len);
+void multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender);
 void multi_do_death(int objnum);
 void multi_send_message_dialog(void);
 int multi_delete_extra_objects(void);

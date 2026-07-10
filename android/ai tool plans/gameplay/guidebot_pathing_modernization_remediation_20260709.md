@@ -24,7 +24,7 @@ unreachable goals.
   from ownership candidates.
 - [x] Make the current multiplayer master choose adoption and validate connected
   owners, request authority, generations, and stale/out-of-order updates.
-- [ ] Bind the owner packet's claimed sender byte to transport-level peer
+- [x] Bind the owner packet's claimed sender byte to transport-level peer
   identity; the legacy `multi_do_data` dispatch currently exposes only payload.
 - [x] Resolve passive initial ownership through the same authority instead of allowing
   whichever client first notices the opened cage to claim it.
@@ -97,17 +97,18 @@ unreachable goals.
 - [x] Add route status, selected blocker, exact activation edge, and path-pending
   state to introspection.
 - [x] Add the last replan reason to introspection.
-- [ ] Add two-peer tests for initial claim, abdication, disconnect adoption, death
-  without adoption, host observer exclusion, and ownership after slot-remapped
-  coop restore.
-- [ ] Add multiplayer route tests with different key inventories and different
+- [x] Add two-peer tests for initial claim, abdication, disconnect adoption, and
+  death without adoption.
+- [ ] Add two-peer tests for host observer exclusion and ownership after
+  slot-remapped coop restore.
+- [x] Add multiplayer route tests with different key inventories and different
   `Automap_visited` sets.
 - [x] Strengthen KCXF2 and unexplored tests to assert the selected action and
   required edge, not only that a path endpoint exists.
 - [x] Add fixtures for partial metadata routes, live key masks, already-fired
   triggers, control-center links, hidden walls, and alternate unexplored blockers.
 - [x] Add focused fixtures for held live keys and multiplayer owner-request policy.
-- [ ] Regenerate checked-in mission metadata after scanner changes and verify both
+- [x] Regenerate checked-in mission metadata after scanner changes and verify both
   host regeneration and the Android import path.
 
 ## Implementation phases
@@ -134,7 +135,7 @@ unreachable goals.
 
 ### Phase 4: Performance and regression validation
 - [ ] Split static topology scanning from live-state evaluation.
-- [ ] Expand integration coverage and regenerate mission metadata.
+- [x] Expand integration coverage and regenerate mission metadata.
 - [x] Run scoped quality checks, host builds, Android tests, and focused emulator
   scripts.
 
@@ -166,6 +167,35 @@ unreachable goals.
 - [x] Add missing-key, obstruction, and no-unexplored regression fixtures, then
   rerun native, Android, and focused emulator validation.
 
+## Multiplayer authority continuation
+- [x] Carry the authenticated UDP transport player through batched `MDATA`
+  dispatch without changing the behavior of unrelated multiplayer commands.
+- [x] Reject guidebot owner packets whose claimed sender does not match that
+  authenticated player, including legacy dispatch with no sender provenance.
+- [x] Add focused sender-authentication coverage and rerun D2 host, native, and
+  Android validation before beginning two-peer scenarios.
+- [x] Extend the existing direct-LAN harness with paired host/joiner automation
+  for initial claim, abdication, local control-slot transfer, and synchronized
+  `Unexplored` route intent.
+- [x] Run the new two-peer ownership scenario and retain durable introspection
+  and automation-result diagnostics for failures.
+- [x] Keep metadata-selected key waypoints as active route goals so periodic
+  refresh and the four-second return gate cannot discard their paths after an
+  ownership handoff.
+- [x] Extend the same scenario through owner disconnect and verify master-only
+  adoption, generation advance, local control-slot repair, and preserved route
+  target mode on the remaining peer.
+- [x] Kill the active owner while it remains connected and verify ordinary coop
+  death does not transfer ownership, advance generation, or release its
+  companion control slot.
+- [x] Give the peers deliberately different automap coverage and verify the new
+  owner recomputes the shared `Unexplored` intent against its local map after
+  disconnect adoption.
+- [x] Replace team-wide coop key aggregation in the metadata adapter, guidebot
+  selector, and companion door executor with the current owner's inventory.
+- [x] Give the host all keys and the joiner none, then verify the joiner selects
+  the red-key waypoint before handoff while the host skips it after adoption.
+
 ## Validation, 2026-07-09
 - `run-windows-build.ps1 -Target both`: passed before the final D2-only additions.
 - `run-windows-build.ps1 -Target d2`: passed after ownership policy, late-join,
@@ -178,6 +208,41 @@ unreachable goals.
 - Scoped `run-code-quality.ps1 -Fix` and `git diff --check`: passed.
 - Two-emulator ownership/handoff behavior still needs runtime validation; use the
   new `guidebot.owner_*`, `remote_*`, and `local_control_slot_matches` fields.
+
+## Validation, authenticated ownership packets, 2026-07-09
+- `run-windows-build.ps1 -Target d2`: passed after carrying UDP sender identity
+  through batched multiplayer dispatch.
+- D2 native CTest: 14/14 passed, including matching, spoofed, and missing-sender
+  owner-packet policy cases.
+- `gradlew :app:assembleDebug`: passed for all configured Android ABIs.
+- Scoped `run-code-quality.ps1 -Fix` and `git diff --check`: passed.
+
+## Validation, two-peer ownership and route intent, 2026-07-09
+- `test_lan.ps1 -Game d2 -GuidebotOwnership -SkipBuild`: passed on direct LAN
+  with `emulator-5554` as host and `emulator-5556` as joiner.
+- The host claimed generation 1, abdicated to the joiner at generation 2, and
+  accepted the joiner's authenticated `Unexplored` update at generation 3.
+- Both peers agreed on owner, generation, remote-owner flags, and local control
+  slot; only the owner retained a local robot-control slot.
+- The first run exposed a legacy-key regression: the red-key waypoint lost route
+  provenance and the four-second return gate recalled the guidebot. Keeping key
+  steps as active route goals fixed it; D2 host build, 14/14 native tests, Android
+  assemble, and the unchanged two-peer scenario then passed.
+- The expanded scenario passed with the joiner dying at generation 3 without an
+  ownership change, then disconnecting; the host adopted at generation 4,
+  repaired its control slot, preserved `Unexplored`, and resumed a pending
+  metadata-selected red-key path.
+- With deliberately different local state, the joiner selected red key from a
+  one-segment unexplored component, while the all-keys host adopted and rebuilt
+  a 193-segment component whose next waypoint was Reactor. This verifies both
+  key inventory and automap targets are owner-local rather than transferred.
+- After changing `ai_door_is_openable()` to use the same owner inventory, the D2
+  host build, 14/14 native tests, Android assemble for all ABIs, and the complete
+  two-peer scenario passed again.
+- Full host metadata regeneration processed 110 archives: 109 passed, the
+  descriptor-free `ewithin-versions.zip` was skipped, and none failed. A second
+  full regeneration changed zero metadata hashes. The KCXF2 Android
+  import/analyze/hidden-wall script also passed against the regenerated schema.
 
 ## Validation, route remediation, 2026-07-09
 - `run-windows-build.ps1 -Target both`: passed after the live scanner and
