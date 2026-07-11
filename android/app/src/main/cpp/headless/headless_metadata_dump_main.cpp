@@ -613,12 +613,12 @@ static nlohmann::ordered_json serialize_metadata_notes(const level_metadata_stat
 
 	if (!metadata)
 		return notes;
-	if (metadata->travel_note[0])
-		notes.push_back(metadata->travel_note);
+	if (metadata->route_note[0])
+		notes.push_back(metadata->route_note);
 	if (metadata->guidebot_placement_note[0] &&
-	    strcmp(metadata->guidebot_placement_note, metadata->travel_note))
+	    strcmp(metadata->guidebot_placement_note, metadata->route_note))
 		notes.push_back(metadata->guidebot_placement_note);
-	if (metadata->guidebot_note[0] && strcmp(metadata->guidebot_note, metadata->travel_note))
+	if (metadata->guidebot_note[0] && strcmp(metadata->guidebot_note, metadata->route_note))
 		notes.push_back(metadata->guidebot_note);
 	return notes;
 }
@@ -672,13 +672,7 @@ static nlohmann::ordered_json serialize_current_level(int level_num, const char 
 	result["mine_volume_normalized"] = metadata ? metadata->mine_volume_normalized : 0.0;
 	result["travel_distance"] = metadata ? metadata->travel_distance : 0.0;
 	result["travel_time_seconds"] = metadata ? metadata->travel_time_seconds : 0;
-	result["travel_status"] = metadata ? level_metadata_travel_status_name(metadata->travel_status) : "failed";
-	result["travel_problem"] = metadata && metadata->travel_problem[0] ? metadata->travel_problem : "";
-	result["travel_note"] = metadata && metadata->travel_note[0] ? metadata->travel_note : "";
 	result["notes"] = serialize_metadata_notes(metadata);
-	result["travel_targets_reached"] = metadata ? metadata->travel_targets_reached : 0;
-	result["travel_targets_total"] = metadata ? metadata->travel_targets_total : 0;
-	result["travel_key_detours"] = metadata ? metadata->travel_key_detours : 0;
 	result["guidebot_count"] = metadata ? metadata->guidebot_count : 0;
 	result["guidebot_placed"] = metadata && metadata->guidebot_placed != 0;
 	result["guidebot_accessible"] = metadata && metadata->guidebot_accessible != 0;
@@ -686,6 +680,7 @@ static nlohmann::ordered_json serialize_current_level(int level_num, const char 
 	result["guidebot_note"] = metadata && metadata->guidebot_note[0] ? metadata->guidebot_note : "";
 	result["route_status"] = metadata ? level_metadata_travel_status_name(metadata->route_status) : "failed";
 	result["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
+	result["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
 	result["route_steps"] = serialize_route_steps(metadata);
 	for (int index = 0; index < total; ++index)
 		secrets.push_back(serialize_secret(state->secrets[index]));
@@ -720,13 +715,7 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	result["mine_volume_normalized"] = 0.0;
 	result["travel_distance"] = 0.0;
 	result["travel_time_seconds"] = 0;
-	result["travel_status"] = "failed";
-	result["travel_problem"] = problem ? problem : "could not load level";
-	result["travel_note"] = "";
 	result["notes"] = nlohmann::ordered_json::array();
-	result["travel_targets_reached"] = 0;
-	result["travel_targets_total"] = 0;
-	result["travel_key_detours"] = 0;
 	result["guidebot_count"] = 0;
 	result["guidebot_placed"] = false;
 	result["guidebot_accessible"] = false;
@@ -734,6 +723,7 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	result["guidebot_note"] = "";
 	result["route_status"] = "failed";
 	result["route_problem"] = problem ? problem : "could not load level";
+	result["route_note"] = "";
 	result["route_steps"] = nlohmann::ordered_json::array();
 	result["secrets"] = nlohmann::ordered_json::array();
 	result["status"] = "failed";

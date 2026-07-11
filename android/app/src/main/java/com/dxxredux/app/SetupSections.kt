@@ -2730,18 +2730,9 @@ private fun LevelMetadataLevelDialog(
                     }
                     DetailRow("Status", row.status.replaceFirstChar { it.uppercase() })
                     DetailRow("Travel", row.travelTimeText.ifBlank { "n/a" })
-                    if (row.travelStatus != "ok" && row.travelProblem.isNotBlank()) {
-                        ModDetailLine(
-                            "Travel ${row.travelStatus}: ${row.travelProblem}",
-                            MaterialTheme.colorScheme.error,
-                        )
-                    }
-                    if (row.travelNote.isNotBlank()) {
-                        ModDetailLine(row.travelNote)
-                    }
                     row
                         .metadataNotes()
-                        .filter { it != row.travelNote }
+                        .filter { it != row.routeNote }
                         .forEach { note -> ModDetailLine(note) }
                     ModDetailSectionTitle("Path")
                     if (row.routeStatus.isNotBlank()) {
@@ -2749,6 +2740,9 @@ private fun LevelMetadataLevelDialog(
                     }
                     if (row.routeProblem.isNotBlank()) {
                         ModDetailLine(row.routeProblem, MaterialTheme.colorScheme.error)
+                    }
+                    if (row.routeNote.isNotBlank()) {
+                        ModDetailLine(row.routeNote)
                     }
                     if (row.routeSteps.isEmpty()) {
                         ModDetailLine("No route steps")
@@ -2808,9 +2802,6 @@ private fun LevelMetadataLevelRow.metadataProblem(): String? {
     val messages =
         buildList {
             addAll(problems)
-            if (travelStatus != "ok" && travelProblem.isNotBlank()) {
-                add("Travel $travelStatus: $travelProblem")
-            }
             if (routeStatus.isNotBlank() && routeStatus != "ok") {
                 add(
                     if (routeProblem.isNotBlank()) {
@@ -2835,8 +2826,8 @@ private fun LevelMetadataLevelRow.metadataNotes(): List<String> {
     val messages =
         buildList {
             addAll(notes)
-            if (travelNote.isNotBlank() && travelNote !in notes) {
-                add(travelNote)
+            if (routeNote.isNotBlank() && routeNote !in notes) {
+                add(routeNote)
             }
             if (guidebotPlacementNote.isNotBlank() && guidebotPlacementNote !in this) {
                 add(guidebotPlacementNote)

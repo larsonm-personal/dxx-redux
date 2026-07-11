@@ -21,11 +21,11 @@
         "mine_volume": 4799017.839581888,
         "mine_volume_normalized": 1.0494467155434983,
         "mine_volume_text": "1.0x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 2097.087137573862,
+        "travel_time_seconds": 42,
+        "travel_time_text": "1M:42S",
         "travel_targets_reached": 0,
-        "travel_targets_total": 4,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
@@ -70,8 +70,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "failed",
-        "travel_problem": "hostage unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -90,11 +88,11 @@
         "mine_volume": 7409569.611309375,
         "mine_volume_normalized": 1.6203208139891003,
         "mine_volume_text": "1.6x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 4141.113505825773,
+        "travel_time_seconds": 83,
+        "travel_time_text": "1M:23S",
         "travel_targets_reached": 0,
-        "travel_targets_total": 4,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
@@ -148,8 +146,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "failed",
-        "travel_problem": "hostage unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -168,11 +164,11 @@
         "mine_volume": 10652854.602068901,
         "mine_volume_normalized": 2.3295606824161474,
         "mine_volume_text": "2.3x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 5338.151338080968,
+        "travel_time_seconds": 107,
+        "travel_time_text": "2M:47S",
         "travel_targets_reached": 0,
-        "travel_targets_total": 5,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
@@ -226,8 +222,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "failed",
-        "travel_problem": "hostage unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
         "notes": [
@@ -248,11 +242,11 @@
         "mine_volume": 8579690.931369342,
         "mine_volume_normalized": 1.876202333327512,
         "mine_volume_text": "1.9x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 4545.490933713702,
+        "travel_time_seconds": 91,
+        "travel_time_text": "2M:31S",
         "travel_targets_reached": 0,
-        "travel_targets_total": 8,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
@@ -306,8 +300,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "failed",
-        "travel_problem": "hostage unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -326,11 +318,11 @@
         "mine_volume": 11569071.705930518,
         "mine_volume_normalized": 2.5299185603222907,
         "mine_volume_text": "2.5x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 4860.712216122435,
+        "travel_time_seconds": 97,
+        "travel_time_text": "2M:37S",
         "travel_targets_reached": 0,
-        "travel_targets_total": 5,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
@@ -393,8 +385,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "failed",
-        "travel_problem": "hostage unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
         "notes": [
@@ -415,11 +405,11 @@
         "mine_volume": 8144801.689576732,
         "mine_volume_normalized": 1.7811009809924225,
         "mine_volume_text": "1.8x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 5755.4467462618995,
+        "travel_time_seconds": 115,
+        "travel_time_text": "2M:55S",
         "travel_targets_reached": 0,
-        "travel_targets_total": 6,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
@@ -482,8 +472,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "failed",
-        "travel_problem": "hostage unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
         "notes": [
@@ -504,11 +492,11 @@
         "mine_volume": 23133154.725437667,
         "mine_volume_normalized": 5.058746197302163,
         "mine_volume_text": "5.1x",
-        "travel_distance": 149.0,
-        "travel_time_seconds": 3,
-        "travel_time_text": "0M:03S",
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
         "travel_targets_reached": 0,
-        "travel_targets_total": 5,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
@@ -523,8 +511,6 @@
             "seg": 1
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "gold key unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
         "route_problem": "route target unreachable",

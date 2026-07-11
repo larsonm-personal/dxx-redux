@@ -630,12 +630,12 @@ static json serialize_metadata_notes(const level_metadata_state *metadata)
 
 	if (!metadata)
 		return notes;
-	if (metadata->travel_note[0])
-		notes.push_back(metadata->travel_note);
+	if (metadata->route_note[0])
+		notes.push_back(metadata->route_note);
 	if (metadata->guidebot_placement_note[0] &&
-	    strcmp(metadata->guidebot_placement_note, metadata->travel_note))
+	    strcmp(metadata->guidebot_placement_note, metadata->route_note))
 		notes.push_back(metadata->guidebot_placement_note);
-	if (metadata->guidebot_note[0] && strcmp(metadata->guidebot_note, metadata->travel_note))
+	if (metadata->guidebot_note[0] && strcmp(metadata->guidebot_note, metadata->route_note))
 		notes.push_back(metadata->guidebot_note);
 	return notes;
 }
@@ -665,12 +665,6 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	row["travel_distance"] = metadata ? metadata->travel_distance : 0.0;
 	row["travel_time_seconds"] = metadata ? metadata->travel_time_seconds : 0;
 	row["travel_time_text"] = metadata ? format_levelmeta_time(metadata->travel_time_seconds) : "";
-	row["travel_status"] = metadata ? level_metadata_travel_status_name(metadata->travel_status) : "failed";
-	row["travel_problem"] = metadata && metadata->travel_problem[0] ? metadata->travel_problem : "";
-	row["travel_note"] = metadata && metadata->travel_note[0] ? metadata->travel_note : "";
-	row["travel_targets_reached"] = metadata ? metadata->travel_targets_reached : 0;
-	row["travel_targets_total"] = metadata ? metadata->travel_targets_total : 0;
-	row["travel_key_detours"] = metadata ? metadata->travel_key_detours : 0;
 	row["guidebot_count"] = metadata ? metadata->guidebot_count : 0;
 	row["guidebot_placed"] = metadata && metadata->guidebot_placed != 0;
 	row["guidebot_accessible"] = metadata && metadata->guidebot_accessible != 0;
@@ -678,6 +672,7 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	row["guidebot_note"] = metadata && metadata->guidebot_note[0] ? metadata->guidebot_note : "";
 	row["route_status"] = metadata ? level_metadata_travel_status_name(metadata->route_status) : "failed";
 	row["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
+	row["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
 	row["route_steps"] = serialize_route_steps(metadata);
 	row["status"] = "ok";
 	row["problems"] = json::array();
@@ -769,12 +764,6 @@ static json failed_level_row(int level_num, const char *level_file, const char *
 	row["travel_distance"] = 0.0;
 	row["travel_time_seconds"] = 0;
 	row["travel_time_text"] = "";
-	row["travel_status"] = "failed";
-	row["travel_problem"] = problem;
-	row["travel_note"] = "";
-	row["travel_targets_reached"] = 0;
-	row["travel_targets_total"] = 0;
-	row["travel_key_detours"] = 0;
 	row["guidebot_count"] = 0;
 	row["guidebot_placed"] = false;
 	row["guidebot_accessible"] = false;
@@ -782,6 +771,7 @@ static json failed_level_row(int level_num, const char *level_file, const char *
 	row["guidebot_note"] = "";
 	row["route_status"] = "failed";
 	row["route_problem"] = problem;
+	row["route_note"] = "";
 	row["route_steps"] = json::array();
 	row["status"] = "failed";
 	row["problems"] = json::array({ problem });

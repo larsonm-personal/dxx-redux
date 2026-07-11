@@ -21,11 +21,11 @@
         "mine_volume": 19380216.362807907,
         "mine_volume_normalized": 4.238055595609768,
         "mine_volume_text": "4.2x",
-        "travel_distance": 4004.9699299448494,
-        "travel_time_seconds": 80,
-        "travel_time_text": "1M:20S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
+        "travel_distance": 6169.394153401646,
+        "travel_time_seconds": 123,
+        "travel_time_text": "2M:03S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
@@ -167,7 +167,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no reactor, exit exists",
@@ -187,12 +186,12 @@
         "mine_volume": 24128618.165080205,
         "mine_volume_normalized": 5.276433622541555,
         "mine_volume_text": "5.3x",
-        "travel_distance": 8884.330939492269,
-        "travel_time_seconds": 178,
-        "travel_time_text": "3M:58S",
-        "travel_targets_reached": 4,
-        "travel_targets_total": 4,
-        "travel_key_detours": 1,
+        "travel_distance": 6975.279171421791,
+        "travel_time_seconds": 140,
+        "travel_time_text": "2M:20S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 0,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -407,7 +406,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no reactor, exit exists",
@@ -427,12 +425,12 @@
         "mine_volume": 36523516.054369174,
         "mine_volume_normalized": 7.98694342146838,
         "mine_volume_text": "8.0x",
-        "travel_distance": 6943.861945033563,
-        "travel_time_seconds": 139,
-        "travel_time_text": "2M:19S",
-        "travel_targets_reached": 4,
-        "travel_targets_total": 4,
-        "travel_key_detours": 1,
+        "travel_distance": 19187.787288020936,
+        "travel_time_seconds": 384,
+        "travel_time_text": "6M:24S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 0,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -841,7 +839,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no reactor, exit exists",
@@ -861,12 +858,12 @@
         "mine_volume": 70213562.57443435,
         "mine_volume_normalized": 15.35426520455857,
         "mine_volume_text": "15x",
-        "travel_distance": 4894.295639335468,
-        "travel_time_seconds": 98,
-        "travel_time_text": "2M:38S",
-        "travel_targets_reached": 5,
-        "travel_targets_total": 5,
-        "travel_key_detours": 1,
+        "travel_distance": 12394.6401063454,
+        "travel_time_seconds": 248,
+        "travel_time_text": "4M:08S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 0,
+        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -950,7 +947,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
         "notes": [
@@ -972,12 +968,12 @@
         "mine_volume": 25386966.80440765,
         "mine_volume_normalized": 5.551608645992994,
         "mine_volume_text": "5.6x",
-        "travel_distance": 3661.967666580112,
-        "travel_time_seconds": 73,
-        "travel_time_text": "1M:13S",
-        "travel_targets_reached": 1,
-        "travel_targets_total": 1,
-        "travel_key_detours": 1,
+        "travel_distance": 8213.155866392595,
+        "travel_time_seconds": 164,
+        "travel_time_text": "3M:44S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 0,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1189,7 +1185,6 @@
             "trigger_type": "secret_exit"
           }
         ],
-        "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no reactor, exit exists",
@@ -1209,11 +1204,11 @@
         "mine_volume": 35458736.98203823,
         "mine_volume_normalized": 7.754098089863088,
         "mine_volume_text": "7.8x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 3503.421626183416,
+        "travel_time_seconds": 70,
+        "travel_time_text": "1M:10S",
         "travel_targets_reached": 0,
-        "travel_targets_total": 2,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
@@ -1412,8 +1407,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "failed",
-        "travel_problem": "target unreachable or blocked by unsupported door",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -1443,8 +1436,6 @@
         "guidebot_accessible": false,
         "route_status": "failed",
         "route_steps": [],
-        "travel_status": "failed",
-        "travel_problem": "level file is missing",
         "route_problem": "level file is missing",
         "problems": "level file is missing",
         "status": "failed"
@@ -1462,11 +1453,11 @@
         "mine_volume": 24951572.718440466,
         "mine_volume_normalized": 5.456396894597393,
         "mine_volume_text": "5.5x",
-        "travel_distance": 2104.0944079866645,
-        "travel_time_seconds": 42,
-        "travel_time_text": "1M:42S",
-        "travel_targets_reached": 4,
-        "travel_targets_total": 4,
+        "travel_distance": 50.59096608641404,
+        "travel_time_seconds": 1,
+        "travel_time_text": "0M:01S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
@@ -1494,7 +1485,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no reactor, exit exists",

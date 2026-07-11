@@ -631,10 +631,7 @@ static int test_reactorless_reachable_exit(void)
 
 	test_reset();
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("travel status", "ok", level_metadata_travel_status_name(state.travel_status));
-	failures += expect_string("travel note", "no reactor, exit exists", state.travel_note);
-	failures += expect_int("targets reached", 1, state.travel_targets_reached);
-	failures += expect_int("targets total", 1, state.travel_targets_total);
+	failures += expect_string("route note", "no reactor, exit exists", state.route_note);
 	failures += expect_double("travel distance", 200.0, state.travel_distance);
 	failures += expect_int("travel time", 4, state.travel_time_seconds);
 	failures += expect_string("route status", "ok", level_metadata_travel_status_name(state.route_status));
@@ -654,11 +651,9 @@ static int test_reactorless_missing_exit(void)
 	test_reset();
 	view.side_has_exit_trigger = NULL;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("missing exit status", "failed", level_metadata_travel_status_name(state.travel_status));
-	failures += expect_string("missing exit problem", "missing exit", state.travel_problem);
-	failures += expect_string("missing exit note", "missing reactor", state.travel_note);
 	failures += expect_string("missing exit route status", "failed", level_metadata_travel_status_name(state.route_status));
 	failures += expect_string("missing exit route problem", "missing exit", state.route_problem);
+	failures += expect_string("missing exit route note", "missing reactor", state.route_note);
 	return failures;
 }
 
@@ -1335,10 +1330,9 @@ static int test_route_hidden_door_step(void)
 	test_wall_seg[1] = 1;
 	test_wall_sides[1] = 1;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("hidden door travel status", "ok", level_metadata_travel_status_name(state.travel_status));
-	failures += expect_string("hidden door travel problem", "", state.travel_problem);
-	failures += expect_int("hidden door travel targets", state.travel_targets_total, state.travel_targets_reached);
 	failures += expect_string("hidden door route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_double("hidden door route distance", 200.0, state.travel_distance);
+	failures += expect_int("hidden door route time", 4, state.travel_time_seconds);
 	failures += expect_int("hidden door route steps", 3, state.route_step_count);
 	failures += expect_string("hidden door route step", "hidden_door", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("hidden door route label", "Open hidden door", state.route_steps[1].label);

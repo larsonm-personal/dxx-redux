@@ -103,7 +103,6 @@ typedef struct level_metadata_scan_view {
 	int wall_key_gold;
 	int obj_type_none;
 	int obj_type_robot;
-	int obj_type_hostage;
 	int obj_type_powerup;
 	int obj_type_control_center;
 	int obj_flag_should_be_dead;
@@ -181,12 +180,6 @@ typedef struct level_metadata_state {
 	double mine_volume_normalized;
 	double travel_distance;
 	int travel_time_seconds;
-	int travel_targets_reached;
-	int travel_targets_total;
-	int travel_key_detours;
-	int travel_status;
-	char travel_problem[128];
-	char travel_note[128];
 	int guidebot_count;
 	int guidebot_placed;
 	int guidebot_accessible;
@@ -194,6 +187,7 @@ typedef struct level_metadata_state {
 	char guidebot_note[128];
 	int route_status;
 	char route_problem[128];
+	char route_note[128];
 	int route_step_count;
 	level_metadata_route_step route_steps[LEVEL_METADATA_MAX_ROUTE_STEPS];
 } level_metadata_state;

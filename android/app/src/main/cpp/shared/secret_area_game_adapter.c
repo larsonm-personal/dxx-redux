@@ -876,7 +876,6 @@ static void level_metadata_initialize_scan_view(void)
 	view->wall_clip_hidden = WCF_HIDDEN;
 	view->obj_type_none = OBJ_NONE;
 	view->obj_type_robot = OBJ_ROBOT;
-	view->obj_type_hostage = OBJ_HOSTAGE;
 	view->obj_type_powerup = OBJ_POWERUP;
 	view->obj_type_control_center = OBJ_CNTRLCEN;
 	view->obj_flag_should_be_dead = OF_SHOULD_BE_DEAD;

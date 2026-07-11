@@ -25,7 +25,7 @@
         "travel_time_seconds": 0,
         "travel_time_text": "0M:00S",
         "travel_targets_reached": 0,
-        "travel_targets_total": 9,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
@@ -40,12 +40,9 @@
             "seg": 661
           }
         ],
-        "travel_status": "failed",
-        "travel_problem": "gold key missing",
-        "travel_note": "missing reactor",
         "route_problem": "blue key unreachable",
         "notes": [
-          "missing reactor"
+          "no reactor, exit exists"
         ]
       },
       {
@@ -61,12 +58,12 @@
         "mine_volume": 13780953.781881224,
         "mine_volume_normalized": 3.0136117778449494,
         "mine_volume_text": "3.0x",
-        "travel_distance": 2776.816812338468,
-        "travel_time_seconds": 56,
-        "travel_time_text": "1M:56S",
-        "travel_targets_reached": 1,
-        "travel_targets_total": 1,
-        "travel_key_detours": 1,
+        "travel_distance": 5410.493728556659,
+        "travel_time_seconds": 108,
+        "travel_time_text": "2M:48S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 0,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -131,7 +128,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
         ]
@@ -149,12 +145,12 @@
         "mine_volume": 18126779.12693504,
         "mine_volume_normalized": 3.9639545953014825,
         "mine_volume_text": "4.0x",
-        "travel_distance": 4111.522931510091,
-        "travel_time_seconds": 82,
-        "travel_time_text": "1M:22S",
-        "travel_targets_reached": 9,
-        "travel_targets_total": 9,
-        "travel_key_detours": 2,
+        "travel_distance": 2207.8812923576966,
+        "travel_time_seconds": 44,
+        "travel_time_text": "1M:44S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 0,
+        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -253,7 +249,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
         ]
@@ -271,11 +266,11 @@
         "mine_volume": 10784400.311225878,
         "mine_volume_normalized": 2.358327029413236,
         "mine_volume_text": "2.4x",
-        "travel_distance": 2378.406836849943,
-        "travel_time_seconds": 48,
-        "travel_time_text": "1M:48S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
+        "travel_distance": 12.000016742839712,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "travel_targets_reached": 0,
+        "travel_targets_total": 0,
         "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,

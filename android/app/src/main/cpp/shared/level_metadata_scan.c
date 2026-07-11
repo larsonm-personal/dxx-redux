@@ -25,15 +25,6 @@ typedef struct metadata_target {
 	int visited;
 } metadata_target;
 
-typedef struct metadata_path {
-	double distance;
-	int first_locked_seg;
-	int first_locked_side;
-	int first_locked_key;
-	int terminal_pos[3];
-	int terminal_pos_valid;
-} metadata_path;
-
 typedef struct metadata_route_block {
 	int kind;
 	int key_index;
@@ -98,7 +89,6 @@ static int route_parent_side[LEVEL_METADATA_MAX_SEGMENTS];
 static unsigned char route_closed[LEVEL_METADATA_MAX_SEGMENTS];
 static int route_heap[LEVEL_METADATA_MAX_SEGMENTS + 1];
 static int route_heap_pos[LEVEL_METADATA_MAX_SEGMENTS];
-static metadata_target hostage_targets[LEVEL_METADATA_MAX_TARGETS];
 static metadata_target key_targets[3][LEVEL_METADATA_MAX_TARGETS];
 static int key_target_count[3];
 static metadata_target exit_targets[LEVEL_METADATA_MAX_TARGETS];
@@ -389,25 +379,6 @@ static int side_has_exit(const level_metadata_scan_view *view, int seg, int side
 	return child == -2;
 }
 
-static int side_has_trigger_opener(const level_metadata_scan_view *view, int seg, int side)
-{
-	return view->triggered_side_opener_count &&
-	       view->triggered_side_opener_count(view->user, seg, side) > 0 &&
-	       !side_has_exit(view, seg, side);
-}
-
-static int edge_has_trigger_opener(const level_metadata_scan_view *view, int seg, int side, int child)
-{
-	int reverse_side;
-
-	if (side_has_trigger_opener(view, seg, side))
-		return 1;
-	reverse_side = view->reverse_side ? view->reverse_side(view->user, seg, child) : -1;
-	return reverse_side >= 0 &&
-	       reverse_side < LEVEL_METADATA_MAX_SIDES &&
-	       side_has_trigger_opener(view, child, reverse_side);
-}
-
 static int side_center(const level_metadata_scan_view *view, int seg, int side, int xyz[3])
 {
 	int corners[4][3];
@@ -678,165 +649,12 @@ static void heap_decrease(int seg)
 		heap_sift_up(route_heap_pos[seg]);
 }
 
-static int edge_required_missing_key(const level_metadata_scan_view *view, int seg, int side, int key_mask)
-{
-	int wall_num;
-	int wall_keys;
-	int key_index;
-
-	if (!view->wall_num || !view->wall_keys)
-		return -1;
-	wall_num = view->wall_num(view->user, seg, side);
-	if (!valid_wall(view, wall_num))
-		return -1;
-	wall_keys = view->wall_keys(view->user, wall_num);
-	if (wall_keys == view->wall_key_none || wall_key_allowed(view, wall_keys, key_mask))
-		return -1;
-	key_index = key_index_for_wall_key(view, wall_keys);
-	if (key_index < 0 || (key_mask & key_bit_for_index(key_index)) != 0)
-		return -1;
-	return key_index;
-}
-
-static int route_edge_passable(const level_metadata_scan_view *view, int seg, int side, int key_mask, int allow_missing_key, int forbidden_missing_key)
-{
-	int child = view->segment_child(view->user, seg, side);
-	int wall_num;
-	int wall_type;
-	int wall_keys;
-
-	if (!edge_has_valid_reverse(view, seg, side, child))
-		return 0;
-	if (side_has_exit(view, seg, side))
-		return 0;
-	if (view->side_is_flyable && view->side_is_flyable(view->user, seg, side))
-		return 1;
-	if (edge_has_trigger_opener(view, seg, side, child))
-		return 1;
-	if (!view->wall_num || !view->wall_type || !view->wall_keys)
-		return 1;
-	wall_num = view->wall_num(view->user, seg, side);
-	if (!valid_wall(view, wall_num))
-		return 1;
-	wall_type = view->wall_type(view->user, wall_num);
-	wall_keys = view->wall_keys(view->user, wall_num);
-	if (metadata_wall_is_opened_door(view, wall_num))
-		return 1;
-	if (metadata_wall_is_hidden_door(view, wall_num))
-		return 1;
-	if (wall_type == view->wall_type_open ||
-	    wall_type == view->wall_type_blastable ||
-	    wall_type == view->wall_type_illusion)
-		return 1;
-	if (wall_type == view->wall_type_door) {
-		if (view->wall_flag_door_locked &&
-		    (metadata_wall_flags(view, wall_num) & view->wall_flag_door_locked) != 0)
-			return 0;
-		if (wall_key_allowed(view, wall_keys, key_mask))
-			return 1;
-		return allow_missing_key && key_index_for_wall_key(view, wall_keys) != forbidden_missing_key;
-	}
-	return 0;
-}
-
 static double edge_distance(const level_metadata_scan_view *view, int seg, int child)
 {
 	if (!valid_segment(view, seg) || !valid_segment(view, child) ||
 	    !segment_center_valid[seg] || !segment_center_valid[child])
 		return DBL_MAX;
 	return point_distance(segment_centers[seg], segment_centers[child]);
-}
-
-static int find_shortest_path(
-    const level_metadata_scan_view *view,
-    int start_seg,
-    const int start_pos[3],
-    int goal_seg,
-    const int goal_pos[3],
-    int key_mask,
-    int allow_missing_key,
-    int forbidden_missing_key,
-    metadata_path *path)
-{
-	int heap_size = 0;
-	int seg;
-
-	if (path) {
-		path->distance = DBL_MAX;
-		path->first_locked_seg = -1;
-		path->first_locked_side = -1;
-		path->first_locked_key = -1;
-		path->terminal_pos_valid = 0;
-	}
-	if (!valid_segment(view, start_seg) || !valid_segment(view, goal_seg) ||
-	    !segment_center_valid[start_seg] || !segment_center_valid[goal_seg])
-		return 0;
-	for (seg = 0; seg < view->num_segments; ++seg) {
-		route_distance[seg] = DBL_MAX;
-		route_parent_seg[seg] = -1;
-		route_parent_side[seg] = -1;
-		route_closed[seg] = 0;
-		route_heap_pos[seg] = 0;
-	}
-	route_distance[start_seg] = start_pos ? point_distance(start_pos, segment_centers[start_seg]) : 0.0;
-	heap_push(&heap_size, start_seg);
-	while (heap_size > 0) {
-		int cur = heap_pop(&heap_size);
-		int side;
-		if (cur == goal_seg)
-			break;
-		route_closed[cur] = 1;
-		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
-			int child = view->segment_child(view->user, cur, side);
-			double step;
-			double next_distance;
-			if (!valid_segment(view, child) || route_closed[child])
-				continue;
-			if (!route_edge_passable(view, cur, side, key_mask, allow_missing_key, forbidden_missing_key))
-				continue;
-			step = edge_distance(view, cur, child);
-			if (step == DBL_MAX)
-				continue;
-			next_distance = route_distance[cur] + step;
-			if (next_distance >= route_distance[child])
-				continue;
-			route_distance[child] = next_distance;
-			route_parent_seg[child] = cur;
-			route_parent_side[child] = side;
-			if (route_heap_pos[child])
-				heap_decrease(child);
-			else
-				heap_push(&heap_size, child);
-		}
-	}
-	if (route_distance[goal_seg] == DBL_MAX)
-		return 0;
-	if (path) {
-		int reversed[LEVEL_METADATA_MAX_SEGMENTS];
-		int count = 0;
-		int cur = goal_seg;
-		int i;
-		path->distance = route_distance[goal_seg] + (goal_pos ? point_distance(segment_centers[goal_seg], goal_pos) : 0.0);
-		while (valid_segment(view, cur) && count < LEVEL_METADATA_MAX_SEGMENTS) {
-			reversed[count++] = cur;
-			if (cur == start_seg)
-				break;
-			cur = route_parent_seg[cur];
-		}
-		for (i = count - 1; i > 0; --i) {
-			int from = reversed[i];
-			int to = reversed[i - 1];
-			int side = route_parent_side[to];
-			int key_index = edge_required_missing_key(view, from, side, key_mask);
-			if (key_index >= 0) {
-				path->first_locked_seg = from;
-				path->first_locked_side = side;
-				path->first_locked_key = key_index;
-				break;
-			}
-		}
-	}
-	return 1;
 }
 
 static int metadata_target_visible_from_pos(
@@ -912,82 +730,6 @@ static int segment_target_visible(
 	return 0;
 }
 
-static int find_nearest_visible_target(
-    const level_metadata_scan_view *view,
-    int start_seg,
-    const int start_pos[3],
-    const metadata_target *target,
-    int key_mask,
-    metadata_path *path)
-{
-	int heap_size = 0;
-	int seg;
-
-	if (path) {
-		path->distance = DBL_MAX;
-		path->first_locked_seg = -1;
-		path->first_locked_side = -1;
-		path->first_locked_key = -1;
-		path->terminal_pos_valid = 0;
-	}
-	if (!view->target_visible_from_segment ||
-	    !valid_segment(view, start_seg) ||
-	    !target ||
-	    !valid_segment(view, target->seg) ||
-	    !segment_center_valid[start_seg])
-		return 0;
-	for (seg = 0; seg < view->num_segments; ++seg) {
-		route_distance[seg] = DBL_MAX;
-		route_parent_seg[seg] = -1;
-		route_parent_side[seg] = -1;
-		route_closed[seg] = 0;
-		route_heap_pos[seg] = 0;
-	}
-	route_distance[start_seg] = start_pos ? point_distance(start_pos, segment_centers[start_seg]) : 0.0;
-	heap_push(&heap_size, start_seg);
-	while (heap_size > 0) {
-		int cur = heap_pop(&heap_size);
-		int side;
-		const int *preferred_pos = cur == start_seg && start_pos ? start_pos : NULL;
-		int visible_pos[3];
-		double visible_extra_distance = 0.0;
-
-		if (segment_target_visible(view, cur, preferred_pos, target, -1, visible_pos, &visible_extra_distance)) {
-			if (path) {
-				path->distance = route_distance[cur] + visible_extra_distance;
-				path->first_locked_seg = cur;
-				copy_pos(path->terminal_pos, visible_pos);
-				path->terminal_pos_valid = 1;
-			}
-			return 1;
-		}
-		route_closed[cur] = 1;
-		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
-			int child = view->segment_child(view->user, cur, side);
-			double step;
-			double next_distance;
-			if (!valid_segment(view, child) || route_closed[child])
-				continue;
-			if (!route_edge_passable(view, cur, side, key_mask, 0, -1))
-				continue;
-			step = edge_distance(view, cur, child);
-			if (step == DBL_MAX)
-				continue;
-			next_distance = route_distance[cur] + step;
-			if (next_distance >= route_distance[child])
-				continue;
-			route_distance[child] = next_distance;
-			route_parent_seg[child] = cur;
-			route_parent_side[child] = side;
-			if (route_heap_pos[child])
-				heap_decrease(child);
-			else
-				heap_push(&heap_size, child);
-		}
-	}
-	return 0;
-}
-
 static int append_target(const level_metadata_scan_view *view, metadata_target *targets, int *count, int max_count, int seg, const int pos[3])
 {
 	if (!targets || !count || *count >= max_count || !pos || !valid_segment(view, seg))
@@ -1001,8 +743,6 @@ static int append_target(const level_metadata_scan_view *view, metadata_target *
 
 static int collect_route_targets(
     const level_metadata_scan_view *view,
-    metadata_target *hostages,
-    int *hostage_count,
     metadata_target *reactor,
     metadata_target *exits,
     int *exit_count)
@@ -1013,7 +753,6 @@ static int collect_route_targets(
 	int side;
 	int found_reactor = 0;
 
-	*hostage_count = 0;
 	*exit_count = 0;
 	memset(key_target_count, 0, sizeof(key_target_count));
 	if (reactor)
@@ -1031,9 +770,7 @@ static int collect_route_targets(
 			if (!valid_segment(view, obj_seg) || !view->object_position(view->user, objnum, pos))
 				continue;
 			type = view->object_type(view->user, objnum);
-			if (type == view->obj_type_hostage) {
-				append_target(view, hostages, hostage_count, LEVEL_METADATA_MAX_TARGETS, obj_seg, pos);
-			} else if (type == view->obj_type_control_center && reactor && !found_reactor) {
+			if (type == view->obj_type_control_center && reactor && !found_reactor) {
 				reactor->seg = obj_seg;
 				copy_pos(reactor->pos, pos);
 				found_reactor = 1;
@@ -1075,206 +812,11 @@ static int collect_route_targets(
 	return found_reactor;
 }
 
-static int select_nearest_target(
-    const level_metadata_scan_view *view,
-    const metadata_target *targets,
-    int count,
-    int current_seg,
-    const int current_pos[3],
-    int key_mask,
-    int allow_locked_fallback,
-    int forbidden_missing_key,
-    metadata_path *best_path)
-{
-	int best = -1;
-	int pass;
-
-	if (best_path)
-		best_path->distance = DBL_MAX;
-	for (pass = 0; pass < (allow_locked_fallback ? 2 : 1) && best < 0; ++pass) {
-		int allow_missing_key = pass != 0;
-		int i;
-		for (i = 0; i < count; ++i) {
-			metadata_path candidate;
-			if (targets[i].visited)
-				continue;
-			if (!find_shortest_path(view, current_seg, current_pos, targets[i].seg, targets[i].pos, key_mask, allow_missing_key, forbidden_missing_key, &candidate))
-				continue;
-			if (candidate.distance >= best_path->distance)
-				continue;
-			best = i;
-			*best_path = candidate;
-		}
-	}
-	return best;
-}
-
 static const char *key_name(int key_index)
 {
 	return key_index == 0 ? "blue" : key_index == 1 ? "red"
 	                             : key_index == 2   ? "gold"
 	                                                : "unknown";
-}
-
-static int acquire_key(
-    const level_metadata_scan_view *view,
-    int wanted_key,
-    int *current_seg,
-    int current_pos[3],
-    int *key_mask,
-    level_metadata_state *state,
-    int in_progress)
-{
-	int guard;
-
-	if ((*key_mask & key_bit_for_index(wanted_key)) != 0)
-		return 1;
-	if (wanted_key < 0 || wanted_key >= 3 || (in_progress & key_bit_for_index(wanted_key)) != 0) {
-		snprintf(state->travel_problem, sizeof(state->travel_problem), "%s key dependency loop", key_name(wanted_key));
-		return 0;
-	}
-	if (key_target_count[wanted_key] <= 0) {
-		snprintf(state->travel_problem, sizeof(state->travel_problem), "%s key missing", key_name(wanted_key));
-		return 0;
-	}
-	in_progress |= key_bit_for_index(wanted_key);
-	for (guard = 0; guard < 8; ++guard) {
-		metadata_path path;
-		metadata_target *keys = key_targets[wanted_key];
-		int key_index = select_nearest_target(view, keys, key_target_count[wanted_key], *current_seg, current_pos, *key_mask, 1, wanted_key, &path);
-		if (key_index < 0) {
-			snprintf(state->travel_problem, sizeof(state->travel_problem), "%s key unreachable", key_name(wanted_key));
-			return 0;
-		}
-		if (find_shortest_path(view, *current_seg, current_pos, keys[key_index].seg, keys[key_index].pos, *key_mask, 0, -1, &path)) {
-			state->travel_distance += path.distance;
-			*current_seg = keys[key_index].seg;
-			copy_pos(current_pos, keys[key_index].pos);
-			keys[key_index].visited = 1;
-			*key_mask |= key_bit_for_index(wanted_key);
-			return 1;
-		}
-		if (!find_shortest_path(view, *current_seg, current_pos, keys[key_index].seg, keys[key_index].pos, *key_mask, 1, wanted_key, &path) ||
-		    path.first_locked_key < 0) {
-			snprintf(state->travel_problem, sizeof(state->travel_problem), "%s key unreachable", key_name(wanted_key));
-			return 0;
-		}
-		{
-			metadata_target door_target;
-			metadata_path door_path;
-			metadata_path return_path;
-
-			door_target.seg = path.first_locked_seg;
-			copy_pos(door_target.pos, segment_centers[path.first_locked_seg]);
-			door_target.visited = 0;
-			if (!find_shortest_path(view, *current_seg, current_pos, door_target.seg, door_target.pos, *key_mask, 0, -1, &door_path)) {
-				snprintf(state->travel_problem, sizeof(state->travel_problem), "%s key door approach unreachable", key_name(wanted_key));
-				return 0;
-			}
-			state->travel_distance += door_path.distance;
-			*current_seg = door_target.seg;
-			copy_pos(current_pos, door_target.pos);
-			if (!acquire_key(view, path.first_locked_key, current_seg, current_pos, key_mask, state, in_progress))
-				return 0;
-			if (!find_shortest_path(view, *current_seg, current_pos, door_target.seg, door_target.pos, *key_mask, 0, -1, &return_path)) {
-				snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "could not return to locked door after key");
-				return 0;
-			}
-			state->travel_distance += return_path.distance;
-			*current_seg = door_target.seg;
-			copy_pos(current_pos, door_target.pos);
-			state->travel_key_detours++;
-		}
-	}
-	snprintf(state->travel_problem, sizeof(state->travel_problem), "%s key detour limit", key_name(wanted_key));
-	return 0;
-}
-
-static int route_to_target(
-    const level_metadata_scan_view *view,
-    int *current_seg,
-    int current_pos[3],
-    const metadata_target *target,
-    int *key_mask,
-    level_metadata_state *state)
-{
-	int guard;
-
-	for (guard = 0; guard < 8; ++guard) {
-		metadata_path path;
-		if (find_shortest_path(view, *current_seg, current_pos, target->seg, target->pos, *key_mask, 0, -1, &path)) {
-			state->travel_distance += path.distance;
-			*current_seg = target->seg;
-			copy_pos(current_pos, target->pos);
-			return 1;
-		}
-		if (!find_shortest_path(view, *current_seg, current_pos, target->seg, target->pos, *key_mask, 1, -1, &path)) {
-			snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "target unreachable or blocked by unsupported door");
-			return 0;
-		}
-		if (path.first_locked_key < 0) {
-			snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "target unreachable");
-			return 0;
-		}
-		if (key_target_count[path.first_locked_key] <= 0) {
-			snprintf(state->travel_problem, sizeof(state->travel_problem), "%s key missing",
-			         path.first_locked_key == 0 ? "blue" : path.first_locked_key == 1 ? "red"
-			                                                                          : "gold");
-			return 0;
-		}
-		{
-			metadata_target door_target;
-			metadata_path door_path;
-			metadata_path return_path;
-
-			door_target.seg = path.first_locked_seg;
-			copy_pos(door_target.pos, segment_centers[path.first_locked_seg]);
-			door_target.visited = 0;
-			if (!find_shortest_path(view, *current_seg, current_pos, door_target.seg, door_target.pos, *key_mask, 0, -1, &door_path)) {
-				snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "locked door approach unreachable");
-				return 0;
-			}
-			state->travel_distance += door_path.distance;
-			*current_seg = door_target.seg;
-			copy_pos(current_pos, door_target.pos);
-			if (!acquire_key(view, path.first_locked_key, current_seg, current_pos, key_mask, state, 0))
-				return 0;
-			if (!find_shortest_path(view, *current_seg, current_pos, door_target.seg, door_target.pos, *key_mask, 0, -1, &return_path)) {
-				snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "could not return to locked door after key");
-				return 0;
-			}
-			state->travel_distance += return_path.distance;
-			*current_seg = door_target.seg;
-			copy_pos(current_pos, door_target.pos);
-			state->travel_key_detours++;
-		}
-	}
-	snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "too many key detours");
-	return 0;
-}
-
-static int route_to_reactor(
-    const level_metadata_scan_view *view,
-    int *current_seg,
-    int current_pos[3],
-    const metadata_target *target,
-    int *key_mask,
-    level_metadata_state *state)
-{
-	metadata_path path;
-
-	if (route_to_target(view, current_seg, current_pos, target, key_mask, state))
-		return 1;
-	if (!find_nearest_visible_target(view, *current_seg, current_pos, target, *key_mask, &path))
-		return 0;
-	state->travel_distance += path.distance;
-	*current_seg = path.first_locked_seg >= 0 ? path.first_locked_seg : *current_seg;
-	if (path.terminal_pos_valid)
-		copy_pos(current_pos, path.terminal_pos);
-	else if (segment_center_valid[*current_seg])
-		copy_pos(current_pos, segment_centers[*current_seg]);
-	state->travel_problem[0] = '\0';
-	return 1;
 }
 
 static void metadata_route_clear_block(metadata_route_block *block)
@@ -2666,7 +2208,6 @@ static int metadata_route_begin_progression(
 {
 	metadata_target reactor;
 	metadata_target boss;
-	int hostage_count = 0;
 	int exit_count = 0;
 	int found_reactor;
 	int found_boss;
@@ -2689,8 +2230,11 @@ static int metadata_route_begin_progression(
 		metadata_route_set_problem(state, "missing player start");
 		return 0;
 	}
-	found_reactor = collect_route_targets(view, hostage_targets, &hostage_count, &reactor, exit_targets, &exit_count);
+	found_reactor = collect_route_targets(view, &reactor, exit_targets, &exit_count);
 	found_boss = metadata_route_find_boss_target(view, &boss);
+	if (!found_reactor)
+		snprintf(state->route_note, sizeof(state->route_note), "%s",
+		         exit_count > 0 ? "no reactor, exit exists" : "missing reactor");
 	if (exit_count_out)
 		*exit_count_out = exit_count;
 	if (!metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_START, "Start", route->current_seg, -1))
@@ -2752,69 +2296,17 @@ route_partial:
 	metadata_route_finish_partial(view, state, &route, "route incomplete");
 }
 
-static void collect_travel_time(const level_metadata_scan_view *view, level_metadata_state *state)
+static void collect_route_travel_metrics(level_metadata_state *state)
 {
-	metadata_target reactor;
-	int hostage_count = 0;
-	int exit_count = 0;
-	int found_reactor;
-	int current_seg = view->start_segment;
-	int current_pos[3];
-	int key_mask = view->initial_key_mask &
-	               (LEVEL_METADATA_KEY_MASK_BLUE |
-	                LEVEL_METADATA_KEY_MASK_RED |
-	                LEVEL_METADATA_KEY_MASK_GOLD);
 	int i;
 
-	state->travel_status = LEVEL_METADATA_TRAVEL_FAILED;
-	if (!valid_segment(view, current_seg) || !view->start_position || !view->start_position(view->user, current_pos)) {
-		snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "missing player start");
+	if (!state)
 		return;
-	}
-	found_reactor = collect_route_targets(view, hostage_targets, &hostage_count, &reactor, exit_targets, &exit_count);
-	state->travel_targets_total = hostage_count + (found_reactor ? 1 : 0) + (exit_count > 0 ? 1 : 0);
-	if (exit_count <= 0) {
-		if (!found_reactor)
-			snprintf(state->travel_note, sizeof(state->travel_note), "%s", "missing reactor");
-		snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "missing exit");
-		return;
-	}
-	for (i = 0; i < hostage_count; ++i) {
-		metadata_path best_path;
-		int target_index = select_nearest_target(view, hostage_targets, hostage_count, current_seg, current_pos, key_mask, 1, -1, &best_path);
-		if (target_index < 0)
-			break;
-		if (!route_to_target(view, &current_seg, current_pos, &hostage_targets[target_index], &key_mask, state))
-			break;
-		hostage_targets[target_index].visited = 1;
-		state->travel_targets_reached++;
-	}
-	if (state->travel_targets_reached < hostage_count) {
-		if (!state->travel_problem[0])
-			snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "hostage unreachable");
-		state->travel_status = state->travel_targets_reached > 0 || state->travel_distance > 0.0 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
-	} else if (!found_reactor || route_to_reactor(view, &current_seg, current_pos, &reactor, &key_mask, state)) {
-		metadata_path exit_path;
-		int exit_index;
-		if (found_reactor)
-			state->travel_targets_reached++;
-		exit_index = select_nearest_target(view, exit_targets, exit_count, current_seg, current_pos, key_mask, 1, -1, &exit_path);
-		if (exit_index >= 0 && route_to_target(view, &current_seg, current_pos, &exit_targets[exit_index], &key_mask, state)) {
-			state->travel_targets_reached++;
-			state->travel_status = LEVEL_METADATA_TRAVEL_OK;
-			state->travel_problem[0] = '\0';
-		} else {
-			if (!state->travel_problem[0])
-				snprintf(state->travel_problem, sizeof(state->travel_problem), "%s", "exit unreachable");
-			state->travel_status = LEVEL_METADATA_TRAVEL_PARTIAL;
-		}
-	} else {
-		state->travel_status = state->travel_targets_reached > 0 || state->travel_distance > 0.0 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
-	}
-	if (!found_reactor) {
-		snprintf(state->travel_note, sizeof(state->travel_note), "%s",
-		         state->travel_status == LEVEL_METADATA_TRAVEL_OK ? "no reactor, exit exists" : "missing reactor");
-	}
+	state->travel_distance = 0.0;
+	for (i = 0; i < state->route_step_count; ++i)
+		if (isfinite(state->route_steps[i].distance_from_previous) &&
+		    state->route_steps[i].distance_from_previous > 0.0)
+			state->travel_distance += state->route_steps[i].distance_from_previous;
 	state->travel_time_seconds = (int) floor(state->travel_distance / LEVEL_METADATA_SHIP_SPEED_UNITS_PER_SECOND + 0.5);
 }
 
@@ -2826,21 +2318,6 @@ static void level_metadata_route_result_clear(level_metadata_state *state)
 	state->route_problem[0] = '\0';
 	state->route_step_count = 0;
 	memset(state->route_steps, 0, sizeof(state->route_steps));
-}
-
-static void reconcile_travel_exit_with_route(level_metadata_state *state)
-{
-	if (!state ||
-	    state->route_status != LEVEL_METADATA_TRAVEL_OK ||
-	    state->travel_status == LEVEL_METADATA_TRAVEL_OK ||
-	    state->travel_targets_total <= 0 ||
-	    state->travel_targets_reached + 1 != state->travel_targets_total)
-		return;
-	state->travel_targets_reached++;
-	state->travel_status = LEVEL_METADATA_TRAVEL_OK;
-	state->travel_problem[0] = '\0';
-	if (strcmp(state->travel_note, "missing reactor") == 0)
-		snprintf(state->travel_note, sizeof(state->travel_note), "%s", "no reactor, exit exists");
 }
 
 int level_metadata_scan_end_route(
@@ -3080,9 +2557,8 @@ int level_metadata_scan_level(const level_metadata_scan_view *view, level_metada
 	collect_energy_center_stats(view, state);
 	state->matcen_raw_count = count_connected_special_components(view, view->segment_special_robotmaker, &state->matcen_segment_count);
 	state->matcen_count = state->matcen_segment_count;
-	collect_travel_time(view, state);
 	collect_guidebot_info(view, state);
 	collect_route_chain(view, state);
-	reconcile_travel_exit_with_route(state);
+	collect_route_travel_metrics(state);
 	return state->energy_center_count;
 }
