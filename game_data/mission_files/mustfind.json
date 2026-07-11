@@ -46,38 +46,16 @@
           },
           {
             "index": 2,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 78,
-            "side": 4,
-            "wall": 2,
-            "distance": 162.99038105676658,
-            "opens": [
-              {
-                "seg": 78,
-                "side": 4,
-                "wall": 2
-              },
-              {
-                "seg": 165,
-                "side": 5,
-                "wall": 3
-              }
-            ]
-          },
-          {
-            "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
-            "seg": 165,
-            "side": 4,
-            "wall": 4,
-            "distance": 40.0,
-            "trigger": 0,
-            "trigger_type_id": 4,
-            "trigger_type": "secret_exit"
+            "seg": 56,
+            "side": 0,
+            "wall": 8,
+            "distance": 202.99038105676658,
+            "trigger": 1,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
@@ -98,9 +76,9 @@
         "mine_volume": 16950764.477465924,
         "mine_volume_normalized": 3.706784325764846,
         "mine_volume_text": "3.7x",
-        "travel_distance": 5964.351139944854,
+        "travel_distance": 5926.81607925654,
         "travel_time_seconds": 119,
-        "travel_time_text": "2M:59S",
+        "travel_time_text": "1M:59S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -181,12 +159,20 @@
           },
           {
             "index": 6,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 792,
+            "distance": 2015.0616558096056
+          },
+          {
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 7",
-            "seg": 128,
+            "seg": 792,
             "wall": 218,
-            "distance": 1345.8384334622017,
+            "distance": 9.375,
             "trigger": 7,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -199,14 +185,6 @@
             ]
           },
           {
-            "index": 7,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 792,
-            "distance": 725.5082830357176
-          },
-          {
             "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
@@ -214,7 +192,7 @@
             "seg": 715,
             "side": 4,
             "wall": 212,
-            "distance": 335.0595057599932,
+            "distance": 344.4345057599932,
             "trigger": 6,
             "trigger_type_id": 3,
             "trigger_type": "exit"

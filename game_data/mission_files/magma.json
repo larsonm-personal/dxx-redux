@@ -21,7 +21,7 @@
         "mine_volume": 8557950.531829733,
         "mine_volume_normalized": 1.871448154107075,
         "mine_volume_text": "1.9x",
-        "travel_distance": 704.5397071438642,
+        "travel_distance": 702.2098759146188,
         "travel_time_seconds": 14,
         "travel_time_text": "0M:14S",
         "guidebot_count": 0,
@@ -42,7 +42,7 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 1013,
-            "distance": 385.9599959189029
+            "distance": 384.79508030428025
           },
           {
             "index": 2,
@@ -52,7 +52,7 @@
             "seg": 1008,
             "side": 2,
             "wall": 246,
-            "distance": 318.5797112249613,
+            "distance": 317.4147956103386,
             "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"

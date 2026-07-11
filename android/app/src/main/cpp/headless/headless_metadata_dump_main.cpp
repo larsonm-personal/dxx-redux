@@ -16,6 +16,7 @@ extern "C" {
 #include "bm.h"
 #include "config.h"
 #include "console.h"
+#include "cntrlcen.h"
 #include "digi.h"
 #include "dxxerror.h"
 #include "game.h"
@@ -29,6 +30,7 @@ extern "C" {
 #include "object.h"
 #include "physfsx.h"
 #include "player.h"
+#include "powerup.h"
 #include "screens.h"
 #include "secret_area_scan.h"
 #include "secretarea.h"
@@ -239,6 +241,68 @@ static int dump_wall_clip_flags(int wall_num)
 	return WallAnims[clip_num].flags;
 }
 
+static void trace_topological_path(int level_num, const char *kind, int target_seg)
+{
+	static int parent[MAX_SEGMENTS];
+	static int parent_side[MAX_SEGMENTS];
+	static int queue[MAX_SEGMENTS];
+	int start_seg = -1;
+	int head = 0;
+	int tail = 0;
+	int seg;
+
+	for (seg = 0; seg <= Highest_object_index; ++seg)
+		if (Objects[seg].type == OBJ_PLAYER) {
+			start_seg = Objects[seg].segnum;
+			break;
+		}
+	if (start_seg < 0 || start_seg >= Num_segments || target_seg < 0 || target_seg >= Num_segments)
+		return;
+	for (seg = 0; seg < Num_segments; ++seg) {
+		parent[seg] = -2;
+		parent_side[seg] = -1;
+	}
+	parent[start_seg] = -1;
+	queue[tail++] = start_seg;
+	while (head < tail && parent[target_seg] == -2) {
+		int current = queue[head++];
+		int side;
+		for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+			int child = Segments[current].children[side];
+			if (child < 0 || child >= Num_segments || parent[child] != -2)
+				continue;
+			parent[child] = current;
+			parent_side[child] = side;
+			queue[tail++] = child;
+		}
+	}
+	fprintf(stderr, "SECRET-AREA-DUMP TOPOLOGY level=%d kind=%s start=%d target=%d connected=%d\n",
+	        level_num, kind, start_seg, target_seg, parent[target_seg] != -2);
+	if (parent[target_seg] == -2)
+		return;
+	for (seg = target_seg; parent[seg] >= 0; seg = parent[seg]) {
+		int from = parent[seg];
+		int side = parent_side[seg];
+		int reverse_side = find_connect_side(&Segments[from], &Segments[seg]);
+		int wall = Segments[from].sides[side].wall_num;
+		int reverse_wall = reverse_side >= 0 ? Segments[seg].sides[reverse_side].wall_num : -1;
+		fprintf(stderr,
+		        "SECRET-AREA-DUMP TOPOLOGY-EDGE level=%d kind=%s from=%d side=%d to=%d reverse_side=%d wall=%d wall_type=%d keys=%d flags=%d trigger=%d tmap2=%d reverse_wall=%d reverse_type=%d reverse_keys=%d reverse_flags=%d reverse_trigger=%d reverse_tmap2=%d\n",
+		        level_num, kind, from, side, seg, reverse_side, wall,
+		        wall >= 0 && wall < Num_walls ? Walls[wall].type : -1,
+		        wall >= 0 && wall < Num_walls ? Walls[wall].keys : -1,
+		        wall >= 0 && wall < Num_walls ? Walls[wall].flags : 0,
+		        wall >= 0 && wall < Num_walls ? Walls[wall].trigger : -1,
+		        Segments[from].sides[side].tmap_num2,
+		        reverse_wall,
+		        reverse_wall >= 0 && reverse_wall < Num_walls ? Walls[reverse_wall].type : -1,
+		        reverse_wall >= 0 && reverse_wall < Num_walls ? Walls[reverse_wall].keys : -1,
+		        reverse_wall >= 0 && reverse_wall < Num_walls ? Walls[reverse_wall].flags : 0,
+		        reverse_wall >= 0 && reverse_wall < Num_walls ? Walls[reverse_wall].trigger : -1,
+		        reverse_side >= 0 ? Segments[seg].sides[reverse_side].tmap_num2 : 0);
+	}
+}
+
 static void trace_wall_inventory(int level_num, const char *level_file)
 {
 	int wall_type_counts[8] = { 0 };
@@ -251,6 +315,7 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 #endif
 	int type;
 	int wall_num;
+	int objnum;
 
 	if (!getenv("DXX_SECRET_AREA_DUMP_TRACE"))
 		return;
@@ -262,26 +327,95 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 		if (dump_wall_clip_flags(wall_num) & WCF_HIDDEN)
 			hidden_clip_by_type[type]++;
 	}
+	for (objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		const object *obj = &Objects[objnum];
+		int key_id = -1;
+		if (obj->type == OBJ_CNTRLCEN)
+			fprintf(stderr, "SECRET-AREA-DUMP TARGET level=%d kind=reactor object=%d seg=%d\n",
+			        level_num, objnum, obj->segnum);
+#ifdef DXX_BUILD_DESCENT_II
+		if (obj->type == OBJ_ROBOT && obj->id >= 0 && obj->id < N_robot_types && Robot_info[obj->id].boss_flag)
+			fprintf(stderr, "SECRET-AREA-DUMP TARGET level=%d kind=boss object=%d id=%d seg=%d\n",
+			        level_num, objnum, obj->id, obj->segnum);
+#endif
+		if (obj->type == OBJ_CNTRLCEN)
+			trace_topological_path(level_num, "reactor", obj->segnum);
+#ifdef DXX_BUILD_DESCENT_II
+		if (obj->type == OBJ_ROBOT && obj->id >= 0 && obj->id < N_robot_types && Robot_info[obj->id].boss_flag)
+			trace_topological_path(level_num, "boss", obj->segnum);
+#endif
+		if (obj->type == OBJ_POWERUP &&
+		    (obj->id == POW_KEY_BLUE || obj->id == POW_KEY_RED || obj->id == POW_KEY_GOLD)) {
+			key_id = obj->id;
+			fprintf(stderr,
+			        "SECRET-AREA-DUMP KEY level=%d object=%d id=%d seg=%d direct=1\n",
+			        level_num, objnum, obj->id, obj->segnum);
+		}
+		if (obj->contains_type == OBJ_POWERUP && obj->contains_count > 0 &&
+		    (obj->contains_id == POW_KEY_BLUE || obj->contains_id == POW_KEY_RED || obj->contains_id == POW_KEY_GOLD)) {
+			key_id = obj->contains_id;
+			fprintf(stderr,
+			        "SECRET-AREA-DUMP KEY level=%d object=%d id=%d seg=%d direct=0 carrier_type=%d count=%d\n",
+			        level_num, objnum, obj->contains_id, obj->segnum, obj->type, obj->contains_count);
+		}
+		if (key_id >= 0 && obj->segnum >= 0 && obj->segnum < Num_segments) {
+			int side;
+			trace_topological_path(level_num, "key", obj->segnum);
+			for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+				int wall = Segments[obj->segnum].sides[side].wall_num;
+				fprintf(stderr,
+				        "SECRET-AREA-DUMP KEY-SIDE level=%d id=%d seg=%d side=%d child=%d wall=%d wall_type=%d keys=%d flags=%d trigger=%d\n",
+				        level_num, key_id, obj->segnum, side, Segments[obj->segnum].children[side], wall,
+				        wall >= 0 && wall < Num_walls ? Walls[wall].type : -1,
+				        wall >= 0 && wall < Num_walls ? Walls[wall].keys : -1,
+				        wall >= 0 && wall < Num_walls ? Walls[wall].flags : 0,
+				        wall >= 0 && wall < Num_walls ? Walls[wall].trigger : -1);
+			}
+		}
+	}
 #ifdef DXX_BUILD_DESCENT_II
 	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
 		int link;
 		int source_wall;
 
 		if (Triggers[trigger_num].type != TT_OPEN_DOOR &&
+		    Triggers[trigger_num].type != TT_ILLUSION_OFF &&
+		    Triggers[trigger_num].type != TT_UNLOCK_DOOR &&
 		    Triggers[trigger_num].type != TT_OPEN_WALL &&
 		    Triggers[trigger_num].type != TT_ILLUSORY_WALL)
 			continue;
 		for (source_wall = 0; source_wall < Num_walls; ++source_wall) {
+			int source_seg;
+			int source_side;
+			int source_child;
+			int reverse_side = -1;
+			int reverse_wall = -1;
+
 			if (Walls[source_wall].trigger != trigger_num)
 				continue;
+			source_seg = Walls[source_wall].segnum;
+			source_side = Walls[source_wall].sidenum;
+			source_child = source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT ?
+				Segments[source_seg].children[source_side] : -1;
+			if (source_child >= 0 && source_child < Num_segments) {
+				reverse_side = find_connect_side(&Segments[source_seg], &Segments[source_child]);
+				if (reverse_side >= 0)
+					reverse_wall = Segments[source_child].sides[reverse_side].wall_num;
+			}
 			fprintf(stderr,
-			        "SECRET-AREA-DUMP TRIGGER-SOURCE level=%d trigger=%d type=%d wall=%d seg=%d side=%d\n",
+			        "SECRET-AREA-DUMP TRIGGER-SOURCE level=%d trigger=%d type=%d wall=%d wall_type=%d seg=%d side=%d child=%d reverse_side=%d reverse_wall=%d tmap2=%d\n",
 			        level_num,
 			        trigger_num,
 			        Triggers[trigger_num].type,
 			        source_wall,
-			        Walls[source_wall].segnum,
-			        Walls[source_wall].sidenum);
+			        Walls[source_wall].type,
+			        source_seg,
+			        source_side,
+			        source_child,
+			        reverse_side,
+			        reverse_wall,
+			        source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT ?
+			            Segments[source_seg].sides[source_side].tmap_num2 : 0);
 			type = Walls[source_wall].type;
 			if (type < 0 || type >= (int) (sizeof(opener_source_type_counts) / sizeof(opener_source_type_counts[0])))
 				type = 0;
@@ -312,6 +446,14 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 			opener_target_type_counts[type]++;
 			++opener_links;
 		}
+	}
+	for (trigger_num = 0; trigger_num < ControlCenterTriggers.num_links; ++trigger_num) {
+		int seg = ControlCenterTriggers.seg[trigger_num];
+		int side = ControlCenterTriggers.side[trigger_num];
+		int wall = seg >= 0 && seg < Num_segments && side >= 0 && side < MAX_SIDES_PER_SEGMENT ?
+			Segments[seg].sides[side].wall_num : -1;
+		fprintf(stderr, "SECRET-AREA-DUMP CONTROL-CENTER-LINK level=%d link=%d seg=%d side=%d wall=%d\n",
+		        level_num, trigger_num, seg, side, wall);
 	}
 #endif
 	fprintf(stderr,

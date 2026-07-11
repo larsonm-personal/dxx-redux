@@ -21,7 +21,7 @@
         "mine_volume": 3691693.0834689965,
         "mine_volume_normalized": 0.8072975160223053,
         "mine_volume_text": "0.81x",
-        "travel_distance": 3776.257923737544,
+        "travel_distance": 3776.2579237375444,
         "travel_time_seconds": 76,
         "travel_time_text": "1M:16S",
         "guidebot_count": 0,
@@ -56,22 +56,13 @@
           },
           {
             "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 343,
-            "distance": 1399.2291243420436,
-            "key": "red"
-          },
-          {
-            "index": 4,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 0",
             "seg": 343,
             "side": 0,
             "wall": 68,
-            "distance": 9.999984745413537,
+            "distance": 1409.2291090874571,
             "trigger": 0,
             "trigger_type_id": 1,
             "trigger_type": "open_door",
@@ -84,12 +75,21 @@
             ]
           },
           {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 343,
+            "distance": 9.999984745413537,
+            "key": "red"
+          },
+          {
             "index": 5,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 287,
-            "distance": 687.5135939577997
+            "distance": 677.5136092123862
           },
           {
             "index": 6,
@@ -133,7 +133,7 @@
         "mine_volume_text": "0.40x",
         "travel_distance": 1859.3841947328433,
         "travel_time_seconds": 37,
-        "travel_time_text": "1M:37S",
+        "travel_time_text": "0M:37S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -295,7 +295,7 @@
         "mine_volume_text": "0.54x",
         "travel_distance": 5454.232359457799,
         "travel_time_seconds": 109,
-        "travel_time_text": "2M:49S",
+        "travel_time_text": "1M:49S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -407,7 +407,7 @@
         "mine_volume_text": "1.1x",
         "travel_distance": 2418.330019114724,
         "travel_time_seconds": 48,
-        "travel_time_text": "1M:48S",
+        "travel_time_text": "0M:48S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -484,7 +484,7 @@
             "seg": 20
           }
         ],
-        "route_problem": "route target unreachable"
+        "route_problem": "blue key unreachable"
       }
     ],
     "target_index": 5

@@ -1043,8 +1043,9 @@ static int escort_route_can_see_pos_from_pos(int from_seg, const vms_vector *fro
 
 static int escort_route_segment_can_see_wall(int segnum, int wall_num)
 {
+	static const int sample_weights[] = { 3, 7, 15 };
 	vms_vector center, side_center, candidate;
-	int sidenum, vertex_index;
+	int edge, sample_index, sidenum, vertex_index;
 
 	if (!escort_valid_segment(segnum) || !escort_valid_wall(wall_num))
 		return 0;
@@ -1053,27 +1054,52 @@ static int escort_route_segment_can_see_wall(int segnum, int wall_num)
 		return 1;
 	for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
 		compute_center_point_on_side(&side_center, &Segments[segnum], sidenum);
-		candidate.x = (center.x + side_center.x * 3) / 4;
-		candidate.y = (center.y + side_center.y * 3) / 4;
-		candidate.z = (center.z + side_center.z * 3) / 4;
-		if (escort_route_can_see_wall_from_pos(segnum, &candidate, wall_num))
-			return 1;
+		for (sample_index = 0; sample_index < (int) (sizeof(sample_weights) / sizeof(sample_weights[0])); ++sample_index) {
+			int weight = sample_weights[sample_index];
+			candidate.x = (center.x + side_center.x * weight) / (weight + 1);
+			candidate.y = (center.y + side_center.y * weight) / (weight + 1);
+			candidate.z = (center.z + side_center.z * weight) / (weight + 1);
+			if (escort_route_can_see_wall_from_pos(segnum, &candidate, wall_num))
+				return 1;
+		}
 	}
 	for (vertex_index = 0; vertex_index < MAX_VERTICES_PER_SEGMENT; vertex_index++) {
 		const vms_vector *vertex = &Vertices[Segments[segnum].verts[vertex_index]];
-		candidate.x = (center.x + vertex->x * 3) / 4;
-		candidate.y = (center.y + vertex->y * 3) / 4;
-		candidate.z = (center.z + vertex->z * 3) / 4;
-		if (escort_route_can_see_wall_from_pos(segnum, &candidate, wall_num))
-			return 1;
+		for (sample_index = 0; sample_index < (int) (sizeof(sample_weights) / sizeof(sample_weights[0])); ++sample_index) {
+			int weight = sample_weights[sample_index];
+			candidate.x = (center.x + vertex->x * weight) / (weight + 1);
+			candidate.y = (center.y + vertex->y * weight) / (weight + 1);
+			candidate.z = (center.z + vertex->z * weight) / (weight + 1);
+			if (escort_route_can_see_wall_from_pos(segnum, &candidate, wall_num))
+				return 1;
+		}
+	}
+	for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
+		for (edge = 0; edge < 4; edge++) {
+			const vms_vector *first = &Vertices[Segments[segnum].verts[Side_to_verts[sidenum][edge]]];
+			const vms_vector *second = &Vertices[Segments[segnum].verts[Side_to_verts[sidenum][(edge + 1) % 4]]];
+			vms_vector edge_midpoint;
+			edge_midpoint.x = (first->x + second->x) / 2;
+			edge_midpoint.y = (first->y + second->y) / 2;
+			edge_midpoint.z = (first->z + second->z) / 2;
+			for (sample_index = 0; sample_index < (int) (sizeof(sample_weights) / sizeof(sample_weights[0])); ++sample_index) {
+				int weight = sample_weights[sample_index];
+				candidate.x = (center.x + edge_midpoint.x * weight) / (weight + 1);
+				candidate.y = (center.y + edge_midpoint.y * weight) / (weight + 1);
+				candidate.z = (center.z + edge_midpoint.z * weight) / (weight + 1);
+				if (escort_route_can_see_wall_from_pos(segnum, &candidate, wall_num))
+					return 1;
+			}
+		}
 	}
 	return 0;
 }
 
 static int escort_route_segment_can_see_pos(int segnum, const vms_vector *target)
 {
+	static const int sample_weights[] = { 3, 7, 15 };
 	vms_vector center, side_center, candidate;
-	int sidenum, vertex_index;
+	int edge, sample_index, sidenum, vertex_index;
 
 	if (!escort_valid_segment(segnum) || !target)
 		return 0;
@@ -1082,19 +1108,43 @@ static int escort_route_segment_can_see_pos(int segnum, const vms_vector *target
 		return 1;
 	for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
 		compute_center_point_on_side(&side_center, &Segments[segnum], sidenum);
-		candidate.x = (center.x + side_center.x * 3) / 4;
-		candidate.y = (center.y + side_center.y * 3) / 4;
-		candidate.z = (center.z + side_center.z * 3) / 4;
-		if (escort_route_can_see_pos_from_pos(segnum, &candidate, target))
-			return 1;
+		for (sample_index = 0; sample_index < (int) (sizeof(sample_weights) / sizeof(sample_weights[0])); ++sample_index) {
+			int weight = sample_weights[sample_index];
+			candidate.x = (center.x + side_center.x * weight) / (weight + 1);
+			candidate.y = (center.y + side_center.y * weight) / (weight + 1);
+			candidate.z = (center.z + side_center.z * weight) / (weight + 1);
+			if (escort_route_can_see_pos_from_pos(segnum, &candidate, target))
+				return 1;
+		}
 	}
 	for (vertex_index = 0; vertex_index < MAX_VERTICES_PER_SEGMENT; vertex_index++) {
 		const vms_vector *vertex = &Vertices[Segments[segnum].verts[vertex_index]];
-		candidate.x = (center.x + vertex->x * 3) / 4;
-		candidate.y = (center.y + vertex->y * 3) / 4;
-		candidate.z = (center.z + vertex->z * 3) / 4;
-		if (escort_route_can_see_pos_from_pos(segnum, &candidate, target))
-			return 1;
+		for (sample_index = 0; sample_index < (int) (sizeof(sample_weights) / sizeof(sample_weights[0])); ++sample_index) {
+			int weight = sample_weights[sample_index];
+			candidate.x = (center.x + vertex->x * weight) / (weight + 1);
+			candidate.y = (center.y + vertex->y * weight) / (weight + 1);
+			candidate.z = (center.z + vertex->z * weight) / (weight + 1);
+			if (escort_route_can_see_pos_from_pos(segnum, &candidate, target))
+				return 1;
+		}
+	}
+	for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
+		for (edge = 0; edge < 4; edge++) {
+			const vms_vector *first = &Vertices[Segments[segnum].verts[Side_to_verts[sidenum][edge]]];
+			const vms_vector *second = &Vertices[Segments[segnum].verts[Side_to_verts[sidenum][(edge + 1) % 4]]];
+			vms_vector edge_midpoint;
+			edge_midpoint.x = (first->x + second->x) / 2;
+			edge_midpoint.y = (first->y + second->y) / 2;
+			edge_midpoint.z = (first->z + second->z) / 2;
+			for (sample_index = 0; sample_index < (int) (sizeof(sample_weights) / sizeof(sample_weights[0])); ++sample_index) {
+				int weight = sample_weights[sample_index];
+				candidate.x = (center.x + edge_midpoint.x * weight) / (weight + 1);
+				candidate.y = (center.y + edge_midpoint.y * weight) / (weight + 1);
+				candidate.z = (center.z + edge_midpoint.z * weight) / (weight + 1);
+				if (escort_route_can_see_pos_from_pos(segnum, &candidate, target))
+					return 1;
+			}
+		}
 	}
 	return 0;
 }

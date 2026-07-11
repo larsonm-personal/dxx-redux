@@ -168,13 +168,13 @@
         "mine_volume": 44666753.54184962,
         "mine_volume_normalized": 9.767702343563073,
         "mine_volume_text": "9.8x",
-        "travel_distance": 2092.347048512719,
-        "travel_time_seconds": 42,
-        "travel_time_text": "0M:42S",
+        "travel_distance": 13772.929308664836,
+        "travel_time_seconds": 275,
+        "travel_time_text": "4M:35S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -191,9 +191,82 @@
             "seg": 594,
             "distance": 2092.347048512719,
             "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 1",
+            "seg": 322,
+            "side": 1,
+            "wall": 33,
+            "distance": 3962.441082461864,
+            "trigger": 1,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 237,
+                "side": 1,
+                "wall": 22
+              },
+              {
+                "seg": 238,
+                "side": 1,
+                "wall": 24
+              },
+              {
+                "seg": 320,
+                "side": 1,
+                "wall": 31
+              },
+              {
+                "seg": 356,
+                "side": 0,
+                "wall": 147
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 236,
+            "distance": 324.74024691861223,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 441,
+            "distance": 2901.724357224866,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 826,
+            "distance": 4165.541861752601
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 763,
+            "side": 0,
+            "wall": 131,
+            "distance": 326.13471179417235,
+            "trigger": 8,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "gold key route dependency loop"
+        ]
       }
     ],
     "target_index": 0

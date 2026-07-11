@@ -21,9 +21,9 @@
         "mine_volume": 3715917.8318125354,
         "mine_volume_normalized": 0.8125949713420816,
         "mine_volume_text": "0.81x",
-        "travel_distance": 4212.076458368403,
-        "travel_time_seconds": 84,
-        "travel_time_text": "1M:24S",
+        "travel_distance": 3930.387347500858,
+        "travel_time_seconds": 79,
+        "travel_time_text": "1M:19S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -69,7 +69,7 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 395,
-            "distance": 778.747177631674
+            "distance": 557.9026221979017
           },
           {
             "index": 5,
@@ -79,7 +79,7 @@
             "seg": 184,
             "side": 1,
             "wall": 56,
-            "distance": 512.9960270120064,
+            "distance": 452.15147157823407,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -99,7 +99,7 @@
         "mine_volume": 4589835.689277863,
         "mine_volume_normalized": 1.003702872131153,
         "mine_volume_text": "1.0x",
-        "travel_distance": 3203.4805233134157,
+        "travel_distance": 3180.9805233134157,
         "travel_time_seconds": 64,
         "travel_time_text": "1M:04S",
         "guidebot_count": 0,
@@ -147,7 +147,7 @@
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
             "seg": 559,
-            "distance": 346.0
+            "distance": 334.75
           },
           {
             "index": 5,
@@ -157,7 +157,7 @@
             "seg": 413,
             "side": 4,
             "wall": 104,
-            "distance": 156.0,
+            "distance": 144.75,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -179,7 +179,7 @@
         "mine_volume_text": "1.0x",
         "travel_distance": 5844.068845977652,
         "travel_time_seconds": 117,
-        "travel_time_text": "2M:57S",
+        "travel_time_text": "1M:57S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,

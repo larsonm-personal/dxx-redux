@@ -21,13 +21,13 @@
         "mine_volume": 9068239.305758307,
         "mine_volume_normalized": 1.9830378367627906,
         "mine_volume_text": "2.0x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 4025.1436058035815,
+        "travel_time_seconds": 81,
+        "travel_time_text": "1M:21S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -35,10 +35,127 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 710
+          },
+          {
+            "index": 1,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 301,
+            "side": 4,
+            "wall": 141,
+            "distance": 335.8341052881699,
+            "opens": [
+              {
+                "seg": 301,
+                "side": 4,
+                "wall": 141
+              },
+              {
+                "seg": 302,
+                "side": 5,
+                "wall": 140
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 375,
+            "side": 5,
+            "wall": 103,
+            "distance": 301.47372319329395,
+            "opens": [
+              {
+                "seg": 375,
+                "side": 5,
+                "wall": 103
+              },
+              {
+                "seg": 284,
+                "side": 5,
+                "wall": 102
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 178,
+            "distance": 1938.0642976621027,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 8",
+            "seg": 359,
+            "wall": 203,
+            "distance": 249.66685225312938,
+            "trigger": 8,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 2,
+                "side": 2,
+                "wall": 239
+              },
+              {
+                "seg": 739,
+                "side": 0,
+                "wall": 240
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 737,
+            "distance": 371.74215611656587
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 3",
+            "seg": 692,
+            "side": 0,
+            "wall": 197,
+            "distance": 685.8624712903194,
+            "trigger": 3,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 694,
+                "side": 0,
+                "wall": 195
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 695,
+            "side": 0,
+            "wall": 196,
+            "distance": 142.5,
+            "trigger": 2,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key route dependency loop",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -56,9 +173,9 @@
         "mine_volume": 2947295.796684501,
         "mine_volume_normalized": 0.6445131060057044,
         "mine_volume_text": "0.64x",
-        "travel_distance": 1596.6940073840926,
+        "travel_distance": 1583.6794618152512,
         "travel_time_seconds": 32,
-        "travel_time_text": "1M:32S",
+        "travel_time_text": "0M:32S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -77,7 +194,7 @@
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 163,
-            "distance": 1434.8742040817558
+            "distance": 1029.3346573877247
           },
           {
             "index": 2,
@@ -87,7 +204,7 @@
             "seg": 161,
             "side": 5,
             "wall": 60,
-            "distance": 161.8198033023368,
+            "distance": 554.3448044275266,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"

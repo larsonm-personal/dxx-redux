@@ -563,9 +563,7 @@ int level_metadata_wall_visible_from_position(int seg, const int from_pos[3], in
 	query.startseg = seg;
 	query.rad = 0;
 	query.thisobjnum = -1;
-	/* Match laser collision: a shot may cross only a transparent texel, not an
-	 * arbitrary point on a transparent wall such as a grate. */
-	query.flags = FQ_TRANSPOINT;
+	query.flags = FQ_TRANSWALL;
 	fate = find_vector_intersection(&query, &hit_data);
 	return fate == HIT_NONE ||
 	       (fate == HIT_WALL &&

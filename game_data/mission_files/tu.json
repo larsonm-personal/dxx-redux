@@ -171,7 +171,7 @@
         "mine_volume_text": "3.0x",
         "travel_distance": 8190.138044806499,
         "travel_time_seconds": 164,
-        "travel_time_text": "3M:44S",
+        "travel_time_text": "2M:44S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -292,9 +292,9 @@
         "mine_volume": 7311254.403215211,
         "mine_volume_normalized": 1.5988212956144436,
         "mine_volume_text": "1.6x",
-        "travel_distance": 3990.4895018936577,
-        "travel_time_seconds": 80,
-        "travel_time_text": "1M:20S",
+        "travel_distance": 4111.460184050383,
+        "travel_time_seconds": 82,
+        "travel_time_text": "1M:22S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -425,38 +425,16 @@
           },
           {
             "index": 8,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 180,
-            "side": 5,
-            "wall": 60,
-            "distance": 377.0477033605311,
-            "opens": [
-              {
-                "seg": 180,
-                "side": 5,
-                "wall": 60
-              },
-              {
-                "seg": 182,
-                "side": 4,
-                "wall": 61
-              }
-            ]
-          },
-          {
-            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
-            "seg": 182,
-            "side": 5,
-            "wall": 63,
-            "distance": 40.792156108742276,
-            "trigger": 15,
-            "trigger_type_id": 4,
-            "trigger_type": "secret_exit"
+            "seg": 142,
+            "side": 2,
+            "wall": 38,
+            "distance": 538.8105416259987,
+            "trigger": 1,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
@@ -481,7 +459,7 @@
         "mine_volume_text": "3.1x",
         "travel_distance": 8792.4150830683,
         "travel_time_seconds": 176,
-        "travel_time_text": "3M:56S",
+        "travel_time_text": "2M:56S",
         "guidebot_count": 2,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -684,22 +662,13 @@
           },
           {
             "index": 1,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 25,
-            "distance": 468.7865287787579,
-            "key": "gold"
-          },
-          {
-            "index": 2,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 9,
             "side": 5,
             "wall": 4,
-            "distance": 349.0158477456871,
+            "distance": 155.77068103307084,
             "opens": [
               {
                 "seg": 9,
@@ -714,6 +683,15 @@
             ]
           },
           {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 25,
+            "distance": 349.0158477456871,
+            "key": "gold"
+          },
+          {
             "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
@@ -721,7 +699,7 @@
             "seg": 64,
             "side": 2,
             "wall": 21,
-            "distance": 997.2177306564726,
+            "distance": 1310.2335784021595,
             "trigger": 2,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",

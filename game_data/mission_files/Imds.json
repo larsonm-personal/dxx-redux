@@ -21,13 +21,13 @@
         "mine_volume": 14641839.071414063,
         "mine_volume_normalized": 3.201869723482981,
         "mine_volume_text": "3.2x",
-        "travel_distance": 2593.038746359551,
-        "travel_time_seconds": 52,
-        "travel_time_text": "1M:52S",
+        "travel_distance": 4190.3193084141985,
+        "travel_time_seconds": 84,
+        "travel_time_text": "1M:24S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -64,10 +64,30 @@
             "seg": 188,
             "distance": 1490.640156123853,
             "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 46,
+            "distance": 1168.6878808409826
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 242,
+            "side": 1,
+            "wall": 84,
+            "distance": 428.5926812136653,
+            "trigger": 5,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

@@ -23,7 +23,7 @@
         "mine_volume_text": "1.0x",
         "travel_distance": 2097.087137573862,
         "travel_time_seconds": 42,
-        "travel_time_text": "1M:42S",
+        "travel_time_text": "0M:42S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -160,7 +160,7 @@
         "mine_volume_text": "2.3x",
         "travel_distance": 5338.151338080968,
         "travel_time_seconds": 107,
-        "travel_time_text": "2M:47S",
+        "travel_time_text": "1M:47S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -235,7 +235,7 @@
         "mine_volume_text": "1.9x",
         "travel_distance": 4545.490933713702,
         "travel_time_seconds": 91,
-        "travel_time_text": "2M:31S",
+        "travel_time_text": "1M:31S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -308,7 +308,7 @@
         "mine_volume_text": "2.5x",
         "travel_distance": 4860.712216122435,
         "travel_time_seconds": 97,
-        "travel_time_text": "2M:37S",
+        "travel_time_text": "1M:37S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -392,7 +392,7 @@
         "mine_volume_text": "1.8x",
         "travel_distance": 5755.4467462618995,
         "travel_time_seconds": 115,
-        "travel_time_text": "2M:55S",
+        "travel_time_text": "1M:55S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -474,13 +474,13 @@
         "mine_volume": 23133154.725437667,
         "mine_volume_normalized": 5.058746197302163,
         "mine_volume_text": "5.1x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 2488.2670455567504,
+        "travel_time_seconds": 50,
+        "travel_time_text": "0M:50S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -488,11 +488,50 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 1
+          },
+          {
+            "index": 1,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 719,
+            "distance": 527.5649154880474
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 7",
+            "seg": 721,
+            "wall": 167,
+            "distance": 930.9395830166483,
+            "trigger": 7,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 594,
+                "side": 4,
+                "wall": 40
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 456,
+            "side": 4,
+            "wall": 84,
+            "distance": 1029.7625470520545,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
-        "route_problem": "route target unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level",
           "guidebot is present but not reachable from the start"
