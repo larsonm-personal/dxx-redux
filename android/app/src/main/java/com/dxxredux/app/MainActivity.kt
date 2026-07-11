@@ -288,6 +288,12 @@ class MainActivity :
         touchActive: Boolean,
     )
 
+    external fun nativeJoystickAxes(
+        axes: IntArray,
+        values: FloatArray,
+        touchActive: BooleanArray,
+    )
+
     external fun nativeJoystickButton(
         button: Int,
         pressed: Int,
@@ -849,6 +855,9 @@ class MainActivity :
                     nativeJoystickButton(TouchBindings.MIXER_BTN_BASE + btn, pressed)
                 },
                 axisCallback = { axis, value, touchActive -> nativeJoystickAxis(axis, value, touchActive) },
+                axisBatchCallback = { axes, values, touchActive ->
+                    nativeJoystickAxes(axes, values, touchActive)
+                },
             )
         touchOverlay.inputMixer = inputMixer
         touchOverlay.axisCallback = { axis, value ->
@@ -3256,24 +3265,28 @@ class MainActivity :
             val ry = controllerAxisValue("RS_Y", event.getAxisValue(MotionEvent.AXIS_RZ))
             val lt = controllerAxisValue("LT", event.getAxisValue(MotionEvent.AXIS_LTRIGGER))
             val rt = controllerAxisValue("RT", event.getAxisValue(MotionEvent.AXIS_RTRIGGER))
-            inputMixer.setAxis(0, "ctrl", lx)
-            inputMixer.setAxis(1, "ctrl", ly)
-            inputMixer.setAxis(2, "ctrl", rx)
-            inputMixer.setAxis(3, "ctrl", ry)
-            inputMixer.setAxis(4, "ctrl", lt)
-            inputMixer.setAxis(5, "ctrl", rt)
             rawAxisValues[0] = lx
             rawAxisValues[1] = ly
             rawAxisValues[2] = rx
             rawAxisValues[3] = ry
             rawAxisValues[4] = lt
             rawAxisValues[5] = rt
+            val controllerAxes =
+                mutableMapOf(
+                    0 to lx,
+                    1 to ly,
+                    2 to rx,
+                    3 to ry,
+                    4 to lt,
+                    5 to rt,
+                )
             // Compute half-axis combiner virtual axes
             for ((virt, posSource, negSource) in halfAxisCombiners) {
                 val pos = if (posSource in 0..5) rawAxisValues[posSource] else 0f
                 val neg = if (negSource in 0..5) rawAxisValues[negSource] else 0f
-                inputMixer.setAxis(virt, "ctrl:half", (pos - neg).coerceIn(-1f, 1f))
+                controllerAxes[virt] = (pos - neg).coerceIn(-1f, 1f)
             }
+            inputMixer.setAxes("ctrl", controllerAxes)
 
             // D-pad reported as HAT axes → synthesize keyboard arrow keys
             val hx = event.getAxisValue(MotionEvent.AXIS_HAT_X)

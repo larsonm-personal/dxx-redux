@@ -10,6 +10,7 @@ package com.dxxredux.app
 class InputMixer(
     private val buttonCallback: (button: Int, pressed: Int) -> Unit,
     private val axisCallback: (axis: Int, value: Float, touchActive: Boolean) -> Unit,
+    private val axisBatchCallback: ((axes: IntArray, values: FloatArray, touchActive: BooleanArray) -> Unit)? = null,
 ) {
     // Per-button: actionId -> { sourceTag -> pressed }
     private val buttonSources = HashMap<Int, HashMap<String, Boolean>>()
@@ -54,12 +55,33 @@ class InputMixer(
         sources[sourceTag] = value
         val sum = sources.values.fold(0f) { acc, v -> acc + v }.coerceIn(-1f, 1f)
         val touchActive = sources.any { (tag, axisValue) -> tag.startsWith("touch") && axisValue != 0f }
-        dispatchAxisIfChanged(axisId, sum, touchActive)
+        updateAxisIfChanged(axisId, sum, touchActive)?.let { axisCallback(it.first, it.second, it.third) }
+    }
+
+    /** Update one source across a complete producer vector and dispatch it atomically. */
+    @Synchronized
+    fun setAxes(
+        sourceTag: String,
+        values: Map<Int, Float>,
+    ) {
+        val axisIds = values.keys.sorted()
+        for (axisId in axisIds) {
+            axisSources.getOrPut(axisId) { HashMap() }[sourceTag] = values.getValue(axisId)
+        }
+        val changes =
+            axisIds.mapNotNull { axisId ->
+                val sources = axisSources.getValue(axisId)
+                val sum = sources.values.fold(0f) { acc, sourceValue -> acc + sourceValue }.coerceIn(-1f, 1f)
+                val touchActive = sources.any { (tag, sourceValue) -> tag.startsWith("touch") && sourceValue != 0f }
+                updateAxisIfChanged(axisId, sum, touchActive)
+            }
+        dispatchAxes(changes)
     }
 
     /** Release all buttons and zero all axes for sources matching [prefix]. */
     @Synchronized
     fun clearSources(prefix: String) {
+        val axisChanges = mutableListOf<Triple<Int, Float, Boolean>>()
         val btnIter = buttonSources.entries.iterator()
         while (btnIter.hasNext()) {
             val (actionId, sources) = btnIter.next()
@@ -79,10 +101,11 @@ class InputMixer(
             if (hadSources) {
                 val sum = sources.values.fold(0f) { acc, v -> acc + v }.coerceIn(-1f, 1f)
                 val touchActive = sources.any { (tag, axisValue) -> tag.startsWith("touch") && axisValue != 0f }
-                dispatchAxisIfChanged(axisId, sum, touchActive)
+                updateAxisIfChanged(axisId, sum, touchActive)?.let { axisChanges += it }
             }
             if (sources.isEmpty()) axisIter.remove()
         }
+        dispatchAxes(axisChanges)
     }
 
     /** Release all mixed input before the activity stops. */
@@ -100,21 +123,35 @@ class InputMixer(
         axisState.clear()
         axisTouchState.clear()
         pressedButtons.forEach { buttonCallback(it, 0) }
-        activeAxes.forEach { axisCallback(it, 0f, false) }
+        dispatchAxes(activeAxes.sorted().map { Triple(it, 0f, false) })
     }
 
-    private fun dispatchAxisIfChanged(
+    private fun updateAxisIfChanged(
         axisId: Int,
         value: Float,
         touchActive: Boolean,
-    ) {
+    ): Triple<Int, Float, Boolean>? {
         if ((axisState[axisId] ?: 0f) == value &&
             (axisTouchState[axisId] ?: false) == touchActive
         ) {
-            return
+            return null
         }
         axisState[axisId] = value
         axisTouchState[axisId] = touchActive
-        axisCallback(axisId, value, touchActive)
+        return Triple(axisId, value, touchActive)
+    }
+
+    private fun dispatchAxes(changes: List<Triple<Int, Float, Boolean>>) {
+        if (changes.isEmpty()) return
+        val batchCallback = axisBatchCallback
+        if (batchCallback == null) {
+            changes.forEach { axisCallback(it.first, it.second, it.third) }
+            return
+        }
+        batchCallback(
+            changes.map { it.first }.toIntArray(),
+            changes.map { it.second }.toFloatArray(),
+            changes.map { it.third }.toBooleanArray(),
+        )
     }
 }

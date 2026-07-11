@@ -1376,6 +1376,50 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickAxis(JNIEnv *env, jobject thiz,
 		LOGI("joystick axis %d = %.3f (sdl %d)", axis, value, raw_value);
 }
 
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeJoystickAxes(
+    JNIEnv *env, jobject thiz, jintArray axis_array,
+    jfloatArray value_array, jbooleanArray touch_array)
+{
+	(void) thiz;
+	if (!axis_array || !value_array || !touch_array)
+		return;
+	const jsize count = (*env)->GetArrayLength(env, axis_array);
+	if (count <= 0 || count > ANDROID_AXIS_MAILBOX_AXIS_COUNT ||
+	    (*env)->GetArrayLength(env, value_array) != count ||
+	    (*env)->GetArrayLength(env, touch_array) != count)
+		return;
+
+	jint *jni_axes = (*env)->GetIntArrayElements(env, axis_array, NULL);
+	jfloat *jni_values = (*env)->GetFloatArrayElements(env, value_array, NULL);
+	jboolean *jni_touches = (*env)->GetBooleanArrayElements(env, touch_array, NULL);
+	if (!jni_axes || !jni_values || !jni_touches) {
+		if (jni_axes)
+			(*env)->ReleaseIntArrayElements(env, axis_array, jni_axes, JNI_ABORT);
+		if (jni_values)
+			(*env)->ReleaseFloatArrayElements(env, value_array, jni_values, JNI_ABORT);
+		if (jni_touches)
+			(*env)->ReleaseBooleanArrayElements(env, touch_array, jni_touches, JNI_ABORT);
+		return;
+	}
+
+	int axes[ANDROID_AXIS_MAILBOX_AXIS_COUNT];
+	int raw_values[ANDROID_AXIS_MAILBOX_AXIS_COUNT];
+	unsigned char touch_sources[ANDROID_AXIS_MAILBOX_AXIS_COUNT];
+	for (jsize index = 0; index < count; ++index) {
+		axes[index] = jni_axes[index];
+		raw_values[index] = (int) (jni_values[index] * 32767.0f);
+		touch_sources[index] = jni_touches[index] != JNI_FALSE;
+		if (touch_sources[index])
+			android_touch_enable_joystick_mode();
+	}
+	android_axis_mailbox_publish_batch(axes, raw_values, touch_sources, count);
+
+	(*env)->ReleaseIntArrayElements(env, axis_array, jni_axes, JNI_ABORT);
+	(*env)->ReleaseFloatArrayElements(env, value_array, jni_values, JNI_ABORT);
+	(*env)->ReleaseBooleanArrayElements(env, touch_array, jni_touches, JNI_ABORT);
+}
+
 /*
  * nativeJoystickButton(button, pressed)
  *   button:  button index 0-9

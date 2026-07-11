@@ -91,20 +91,38 @@ void record_effective_transition_locked(int axis, int raw_value,
 extern "C" android_axis_generation android_axis_mailbox_publish(int axis, int raw_value,
                                                                 int touch_source)
 {
-	if (axis < 0 || axis >= ANDROID_AXIS_MAILBOX_AXIS_COUNT)
+	const unsigned char touch = touch_source != 0;
+	return android_axis_mailbox_publish_batch(&axis, &raw_value, &touch, 1);
+}
+
+extern "C" android_axis_generation android_axis_mailbox_publish_batch(
+    const int *axes, const int *raw_values,
+    const unsigned char *touch_sources, int count)
+{
+	if (!axes || !raw_values || !touch_sources || count <= 0)
+		return 0;
+	int valid_count = 0;
+	for (int index = 0; index < count; ++index)
+		valid_count += axes[index] >= 0 && axes[index] < ANDROID_AXIS_MAILBOX_AXIS_COUNT;
+	if (!valid_count)
 		return 0;
 
 	std::lock_guard<std::mutex> guard(g_mailbox.lock);
-	if (g_mailbox.production_generation[axis] > g_mailbox.production_consumed[axis])
-		++g_mailbox.coalesced_count;
 	const android_axis_generation generation = next_generation_locked();
-	g_mailbox.production_raw[axis] = clamp_raw_value(raw_value);
-	g_mailbox.production_touch[axis] = touch_source != 0;
-	g_mailbox.production_generation[axis] = generation;
-	if (!g_mailbox.automation_active)
-		record_effective_transition_locked(
-		    axis, g_mailbox.production_raw[axis],
-		    g_mailbox.production_touch[axis], generation);
+	for (int index = 0; index < count; ++index) {
+		const int axis = axes[index];
+		if (axis < 0 || axis >= ANDROID_AXIS_MAILBOX_AXIS_COUNT)
+			continue;
+		if (g_mailbox.production_generation[axis] > g_mailbox.production_consumed[axis])
+			++g_mailbox.coalesced_count;
+		g_mailbox.production_raw[axis] = clamp_raw_value(raw_values[index]);
+		g_mailbox.production_touch[axis] = touch_sources[index] != 0;
+		g_mailbox.production_generation[axis] = generation;
+		if (!g_mailbox.automation_active)
+			record_effective_transition_locked(
+			    axis, g_mailbox.production_raw[axis],
+			    g_mailbox.production_touch[axis], generation);
+	}
 	++g_mailbox.publish_count;
 	return generation;
 }

@@ -52,4 +52,32 @@ class InputMixerTest {
             events,
         )
     }
+
+    @Test
+    fun producerVectorsMixAndDispatchAsOneBatch() {
+        val singles = mutableListOf<Triple<Int, Float, Boolean>>()
+        val batches = mutableListOf<List<Triple<Int, Float, Boolean>>>()
+        val mixer =
+            InputMixer(
+                { _, _ -> },
+                { axis, value, touch -> singles += Triple(axis, value, touch) },
+                { axes, values, touches ->
+                    batches += axes.indices.map { Triple(axes[it], values[it], touches[it]) }
+                },
+            )
+
+        mixer.setAxis(0, "touch:stick", 0.25f)
+        mixer.setAxes("ctrl", mapOf(1 to -0.5f, 0 to 0.5f))
+        mixer.setAxes("ctrl", mapOf(0 to 0.5f, 1 to -0.5f))
+        mixer.clearSources("ctrl")
+
+        assertEquals(listOf(Triple(0, 0.25f, true)), singles)
+        assertEquals(
+            listOf(
+                listOf(Triple(0, 0.75f, true), Triple(1, -0.5f, false)),
+                listOf(Triple(0, 0.25f, true), Triple(1, 0f, false)),
+            ),
+            batches,
+        )
+    }
 }

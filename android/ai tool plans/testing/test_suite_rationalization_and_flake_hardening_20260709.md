@@ -17,7 +17,8 @@ Reduce duplicate coverage, improve failure signal, and remove structural sources
 
 ## Evidence to inspect
 
-- Latest report: `temp/test_reports/report_20260708_232908.md`
+- Latest full report: `temp/test_reports/report_20260710_132022.md`
+- Prior full reports: `temp/test_reports/report_20260708_232908.md` and `temp/test_reports/report_20260709_225804.md`
 - Earlier suite cleanup, runtime, hardening, and report follow-up plans under `android/ai tool plans/testing/`
 - Test manifest and orchestration scripts
 - Shared setup, cleanup, fixture, automation, and result-reporting helpers
@@ -34,18 +35,77 @@ Reduce duplicate coverage, improve failure signal, and remove structural sources
 
 ## Status
 
-The first implementation tranche is complete. The second full-report tranche is in progress against `report_20260709_225804.md`.
+Three implementation tranches are complete. The two failures in `report_20260710_132022.md` were both resolved as product/architecture defects: lossy Android continuous-input delivery and an over-broad Guide-Bot exit-selection change. No timeout was extended and no demo was re-recorded.
 
 ## Second full-report tranche
 
 Latest full run: 74 passed, 6 failed, 0 timed out, 6 skipped, 0 not run in 1:07:43.
 
-1. [in progress] Reconcile all six failures with their complete logs and durable artifacts
-2. [pending] Collapse duplicate input-demo reporting so one simulation divergence is one primary failure with backend corroboration
-3. [pending] Repair merged-wall diagnostics at the producer/contract boundary rather than weakening assertions
-4. [pending] Replace incidental guidebot route-size assertions with a semantic route contract, while preserving real route defects as failures
-5. [pending] Replace whole-file secret baseline failure output with a normalized structural diff and classify the current change
-6. [pending] Run focused regression tests, builds, code quality, and a representative profile
+1. [complete] Reconcile all six failures with their complete logs and durable artifacts
+2. [complete] Collapse duplicate input-demo reporting so one simulation divergence is one primary failure with backend corroboration
+3. [complete] Repair merged-wall diagnostics at the producer/contract boundary rather than weakening assertions
+4. [complete] Replace incidental guidebot route-size assertions with a semantic route contract, while preserving real route defects as failures
+5. [complete] Replace whole-file secret baseline failure output with a normalized structural diff and classify the current change
+6. [complete] Run focused regression tests, builds, code quality, and a representative profile
+
+### Second-tranche outcome
+
+- The normal full profile now runs the complete headless D1, D2, and D1-in-D2 demo corpus as the primary simulation contract, plus one hash-pinned graphics canary per engine path. The complete graphics matrix moved to `-ExtendedGraphics`.
+- Graphics replay compares against the archived headless actual result, so one simulation divergence is one primary failure with backend corroboration rather than two nominal failures.
+- Host replay builds use a freshness stamp that distinguishes relevant host sources from newer Android-only files.
+- Merged-wall probes now assert the producer's actual diagnostic contract, and the duplicate debug-mode top-level scenario was folded into the remaining extended probe.
+- Guide-Bot route scenarios assert semantic route status, objective, activation, and reachable guidance instead of incidental selected-index values.
+- Secret-area baselines use normalized structural differences and the accepted additive schema was regenerated.
+- The resulting full report was `report_20260710_132022.md`: 77 passed, 2 failed, 0 timed out, 7 skipped, 0 not run in 1:13:49.
+
+## Third full-report tranche
+
+The July 10 report predates this remediation. Its two failures were independently reproducible and were not timing-budget problems.
+
+1. [complete] Replace lossy SDL-queued Android axes with a mutex-protected latest-state mailbox drained on the game thread
+2. [complete] Preserve discrete threshold-region transitions for axis-bound buttons so a press and release during one stalled frame cannot be coalesced away
+3. [complete] Correlate assertions to the exact mailbox generation consumed by `kconfig`, including a production-publisher probe with all 127 usable SDL queue slots deliberately occupied
+4. [complete] Merge analog routing, multi-axis hold/release, D-pad, and trigger coverage into one 69-step scenario; move static binding ownership to Kotlin units; delete `test_dpad_triggers`
+5. [complete] Remove the obsolete D-pad timeout override and the ineffective axis timeout exception
+6. [complete] Diagnose the D2 level 9 demo and restore classic Guide-Bot exit semantics without changing the recording
+7. [complete] Validate D1, D2, the trigger-only KCXF2 path, native host suites, Android builds/units, catalog, and code quality
+
+### Android input root cause and design
+
+- The default Advanced layout can publish about 100 axis samples per second from gyro alone. SDL 1.2 exposes 127 usable event slots, so 1.1 to 2.0 second full-suite frame stalls filled the queue.
+- `nativeJoystickAxis` ignored `SDL_PushEvent` failure. The reported D2 heading assertion sampled zero because the automation axis event had been silently dropped. An isolated retry passed only because the queue was empty.
+- Production JNI, touch, controller, gyro, and automation now publish through one 11-axis mailbox. Continuous values coalesce to the latest complete desired state; the game thread drains them before the discrete SDL queue.
+- Axis-button threshold regions are retained as an ordered transition stream. This preserves short trigger/directional pulses while still coalescing high-frequency samples inside the same region.
+- `event_flush` does not discard continuous state. This prevents a one-shot zero release from racing with a menu/input flush and leaving an axis stuck.
+- Automation owns a complete vector during source-correlated assertions, while production updates continue accumulating and are restored on release. Trigger edges are probe-relative, not process-lifetime counters.
+- Kotlin suppresses unchanged mixed-axis JNI calls and releases all active mixed input when the activity stops.
+- The merged scenario deterministically fills all 127 SDL slots, then proves the production mailbox path still reaches `kconfig`. It also publishes a trigger press and release before one drain and observes exactly one down and one up edge.
+
+### Guide-Bot demo root cause and fix
+
+- The failing fixture `d2_descent2_level9_20260512_115624.dximdemo` was stable, not flaky. RNG state matched through call 45726; the first divergence was Guide-Bot path creation at call 45727.
+- Commit `a2d7f70b` changed `find_exit_segment` from legacy `child == -2` selection to one combined `child == -2 || TT_EXIT` scan. That made the chosen destination depend on segment numbering.
+- A survey of all 30 stock Counterstrike levels found the combined loop chose an external endpoint first in 12 levels, a trigger surface first in 14, and an external-only endpoint in four. Firewalker changed from external segment 252 to trigger segment 38.
+- `find_exit_segment` now uses two explicit passes: preserve the classic external endpoint when present, then fall back to `TT_EXIT` for trigger-only community levels such as KCXF2. A host policy unit owns external precedence, trigger-only fallback, external-only behavior, and no-exit behavior.
+- The original level 9 fixture now passes with its exact recorded final state. KCXF2 still passes all 47 semantic route steps. No replay special case, expectation change, or fixture re-record was needed.
+
+### Third-tranche validation
+
+- `test_axis_mapping.json5`: D1 and D2 both passed 69/69; queue saturation reported 127 slots; final mailbox state had no pending axes; the pre-drain trigger pulse reported one correlated down and one correlated up edge.
+- Targeted D2 demo replay passed 1/1 with the original shields 200, score 300950, lives 9, and segment 37 result.
+- `test_kcxf2_guidebot_route_next.json5` passed 47/47 after the external-first fallback change.
+- Native host CTest passed D1 14/14 and D2 16/16, including mailbox lifecycle/transition and Guide-Bot exit-policy tests.
+- JDK 21 `:app:testDebugUnitTest :app:assembleDebug` passed for arm64-v8a, armeabi-v7a, and x86_64.
+- Scoped code quality and `git diff --check` passed. Catalog validation reports 45 standalone JSON tests, 15 support scripts, and 36 PowerShell entries.
+
+### Batched producer follow-up
+
+- [complete] Controller motion now mixes its six physical axes and all configured half-axis combiners as one producer vector.
+- `InputMixer.setAxes` applies every source update before calculating changed mixed outputs, then invokes one batch callback. Unchanged axes are omitted because their desired mixed state is already current.
+- `nativeJoystickAxes` validates parallel axis/value/touch arrays and publishes the changed vector through one mailbox lock acquisition and one shared generation. The game thread can no longer observe a partially published controller sample.
+- Multi-axis source clearing and activity-stop release also use the batch callback. Individual touch and gyro updates retain the single-axis path.
+- Kotlin unit coverage verifies additive touch/controller mixing, deterministic axis order, unchanged-vector suppression, and atomic source clearing. The native mailbox unit verifies three axes receive one generation.
+- JDK 21 unit/build validation passed for all Android ABIs; native CTest remained D1 14/14 and D2 16/16; the installed D2 routing scenario passed 69/69 with the 127-slot saturation proof intact.
 
 ## Prior work assessment
 

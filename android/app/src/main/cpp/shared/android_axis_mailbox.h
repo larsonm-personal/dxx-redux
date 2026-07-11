@@ -44,6 +44,11 @@ typedef struct android_axis_mailbox_transition {
 android_axis_generation android_axis_mailbox_publish(int axis, int raw_value,
                                                      int touch_source);
 
+/* Publish one producer vector under a single generation and lock acquisition */
+android_axis_generation android_axis_mailbox_publish_batch(
+    const int *axes, const int *raw_values,
+    const unsigned char *touch_sources, int count);
+
 /* Replace device input with one complete automation-owned axis vector */
 android_axis_generation android_axis_mailbox_publish_automation(
     const int raw_values[ANDROID_AXIS_MAILBOX_AXIS_COUNT],

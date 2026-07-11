@@ -143,6 +143,25 @@ int main()
 	assert(!android_axis_mailbox_take_transition(snapshot.batch_generation,
 	                                             &transition));
 	android_axis_mailbox_mark_applied(&snapshot, 2);
+
+	/* One controller sample must publish every changed axis at one generation. */
+	android_axis_mailbox_reset_for_tests();
+	const int batch_axes[] = { 0, 2, 10 };
+	const int batch_values[] = { 1000, -2000, 3000 };
+	const unsigned char batch_touches[] = { 0, 1, 0 };
+	const android_axis_generation batch_generation =
+	    android_axis_mailbox_publish_batch(batch_axes, batch_values,
+	                                       batch_touches, 3);
+	assert(batch_generation > 0);
+	assert(android_axis_mailbox_take_snapshot(&snapshot));
+	assert(snapshot.batch_generation == batch_generation);
+	assert(snapshot.raw_value[0] == 1000);
+	assert(snapshot.raw_value[2] == -2000);
+	assert(snapshot.raw_value[10] == 3000);
+	assert(snapshot.axis_generation[0] == batch_generation);
+	assert(snapshot.axis_generation[2] == batch_generation);
+	assert(snapshot.axis_generation[10] == batch_generation);
+	assert(snapshot.touch_source[2]);
 	puts("android axis mailbox tests passed");
 	return 0;
 }
