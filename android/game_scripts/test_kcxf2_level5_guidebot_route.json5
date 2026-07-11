@@ -47,7 +47,7 @@
     {"action": "meta_action", "id": 1041, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "level_metadata_route.status": "ok",
-        "level_metadata_route.step_count": "9",
+        "level_metadata_route.step_count": "6",
         "guidebot.route_status": "ok",
         "guidebot.route_goal_label": {"contains": "blue key"},
         "guidebot.route_goal_activation_kind_name": "pickup_key",

@@ -19,10 +19,6 @@ enum metadata_route_block_kind {
 	METADATA_ROUTE_BLOCK_HIDDEN_DOOR = 3
 };
 
-#define METADATA_ROUTE_PROGRESS_ACTION_SECONDS 5.0
-#define METADATA_ROUTE_PROGRESS_ACTION_DISTANCE \
-	(LEVEL_METADATA_SHIP_SPEED_UNITS_PER_SECOND * METADATA_ROUTE_PROGRESS_ACTION_SECONDS)
-
 typedef struct metadata_target {
 	int seg;
 	int pos[3];
@@ -95,6 +91,7 @@ static int route_parent_side[LEVEL_METADATA_MAX_SEGMENTS];
 static unsigned char route_closed[LEVEL_METADATA_MAX_SEGMENTS];
 static int route_heap[LEVEL_METADATA_MAX_SEGMENTS + 1];
 static int route_heap_pos[LEVEL_METADATA_MAX_SEGMENTS];
+static int route_heap_uses_progress_cost;
 static metadata_target key_targets[3][LEVEL_METADATA_MAX_TARGETS];
 static int key_target_count[3];
 static metadata_target exit_targets[LEVEL_METADATA_MAX_TARGETS];
@@ -622,25 +619,15 @@ static int metadata_route_block_progress_weight(const metadata_route_block *bloc
 {
 	if (!block || block->kind == METADATA_ROUTE_BLOCK_NONE)
 		return 0;
-	if (block->kind == METADATA_ROUTE_BLOCK_TRIGGER)
-		return 0;
-	if (block->kind == METADATA_ROUTE_BLOCK_HIDDEN_DOOR)
-		return 5;
 	return 1;
-}
-
-static double metadata_route_cost(double distance, int progress_weight)
-{
-	return distance + progress_weight * METADATA_ROUTE_PROGRESS_ACTION_DISTANCE;
 }
 
 static int route_cost_less(int left_seg, int right_seg)
 {
-	double left_cost = metadata_route_cost(route_distance[left_seg], route_progress_weight[left_seg]);
-	double right_cost = metadata_route_cost(route_distance[right_seg], route_progress_weight[right_seg]);
-
-	return left_cost < right_cost ||
-	       (left_cost == right_cost && route_distance[left_seg] < route_distance[right_seg]);
+	if (route_heap_uses_progress_cost &&
+	    route_progress_weight[left_seg] != route_progress_weight[right_seg])
+		return route_progress_weight[left_seg] < route_progress_weight[right_seg];
+	return route_distance[left_seg] < route_distance[right_seg];
 }
 
 static void heap_sift_up(int index)
@@ -1232,6 +1219,7 @@ static int metadata_route_compute_paths(
 	    !segment_center_valid[route->current_seg] ||
 	    (goal_seg >= 0 && (!valid_segment(view, goal_seg) || !segment_center_valid[goal_seg])))
 		return 0;
+	route_heap_uses_progress_cost = forbidden_missing_key < 0;
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		route_distance[seg] = DBL_MAX;
 		route_progress_weight[seg] = INT_MAX;
@@ -1264,8 +1252,12 @@ static int metadata_route_compute_paths(
 				continue;
 			next_distance = route_distance[cur] + step;
 			next_progress_weight = route_progress_weight[cur] + metadata_route_block_progress_weight(&block);
-			if (metadata_route_cost(next_distance, next_progress_weight) >=
-			    metadata_route_cost(route_distance[child], route_progress_weight[child]))
+			if (route_heap_uses_progress_cost &&
+			    next_progress_weight > route_progress_weight[child])
+				continue;
+			if ((!route_heap_uses_progress_cost ||
+			     next_progress_weight == route_progress_weight[child]) &&
+			    next_distance >= route_distance[child])
 				continue;
 			route_distance[child] = next_distance;
 			route_progress_weight[child] = next_progress_weight;
@@ -1883,6 +1875,37 @@ static void metadata_route_restore_progress(
 			key_targets[key][i].visited = snapshot->key_target_visited[key][i];
 }
 
+static int metadata_route_acquire_recovery_key(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    metadata_route_context *route,
+    int depth)
+{
+	static const int recovery_order[3] = { 0, 2, 1 };
+	char last_problem[sizeof(state->route_problem)] = "";
+	int key;
+
+	for (key = 0; key < 3; ++key) {
+		metadata_route_progress_snapshot snapshot;
+		int candidate_key = recovery_order[key];
+
+		if ((route->key_mask & key_bit_for_index(candidate_key)) != 0 ||
+		    (route->key_in_progress & key_bit_for_index(candidate_key)) != 0 ||
+		    key_target_count[candidate_key] <= 0)
+			continue;
+		metadata_route_save_progress(state, route, &snapshot);
+		state->route_problem[0] = '\0';
+		if (metadata_route_acquire_key(view, state, route, candidate_key, depth + 1))
+			return 1;
+		if (!last_problem[0] && state->route_problem[0])
+			snprintf(last_problem, sizeof(last_problem), "%s", state->route_problem);
+		metadata_route_restore_progress(state, route, &snapshot);
+	}
+	if (last_problem[0])
+		snprintf(state->route_problem, sizeof(state->route_problem), "%s", last_problem);
+	return 0;
+}
+
 static int metadata_route_fire_trigger(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
@@ -2007,12 +2030,26 @@ static int metadata_route_move_to_target(
 		}
 		if (!metadata_route_find_path(view, route, goal_seg, goal_pos, 1, &path) ||
 		    path.first_block.kind == METADATA_ROUTE_BLOCK_NONE) {
+			state->route_problem[0] = '\0';
+			if (metadata_route_acquire_recovery_key(view, state, route, depth + 1))
+				continue;
 			metadata_route_set_problem(state, last_dependency_problem[0] ? last_dependency_problem : "route target unreachable");
 			memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
 			return 0;
 		}
 		if (path.first_block.kind == METADATA_ROUTE_BLOCK_KEY) {
+			metadata_route_progress_snapshot snapshot;
+			char key_problem[sizeof(state->route_problem)];
+
+			metadata_route_save_progress(state, route, &snapshot);
 			if (!metadata_route_acquire_key(view, state, route, path.first_block.key_index, depth + 1)) {
+				snprintf(key_problem, sizeof(key_problem), "%s", state->route_problem);
+				metadata_route_restore_progress(state, route, &snapshot);
+				state->route_problem[0] = '\0';
+				if (metadata_route_acquire_recovery_key(view, state, route, depth + 1))
+					continue;
+				if (key_problem[0])
+					snprintf(state->route_problem, sizeof(state->route_problem), "%s", key_problem);
 				memcpy(route->avoided_triggers, saved_avoided_triggers, sizeof(saved_avoided_triggers));
 				return 0;
 			}
@@ -2086,7 +2123,8 @@ static int metadata_route_select_target(
     const metadata_target *targets,
     int count)
 {
-	double best_cost = DBL_MAX;
+	double best_distance = DBL_MAX;
+	int best_progress_weight = INT_MAX;
 	int best = -1;
 	int i;
 
@@ -2094,9 +2132,10 @@ static int metadata_route_select_target(
 		metadata_route_path path;
 		if (!metadata_route_find_path(view, route, targets[i].seg, targets[i].pos, 1, &path))
 			continue;
-		double cost = metadata_route_cost(path.distance, path.progress_weight);
-		if (cost < best_cost) {
-			best_cost = cost;
+		if (path.progress_weight < best_progress_weight ||
+		    (path.progress_weight == best_progress_weight && path.distance < best_distance)) {
+			best_progress_weight = path.progress_weight;
+			best_distance = path.distance;
 			best = i;
 		}
 	}

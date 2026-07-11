@@ -1,0 +1,39 @@
+#!/usr/bin/env pwsh
+
+$ErrorActionPreference = "Stop"
+
+$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$metadataDir = Join-Path $repoRoot "game_data\mission_files"
+$mismatches = @()
+$checked = 0
+
+Get-ChildItem -LiteralPath $metadataDir -Filter "*.json" |
+    Where-Object { $_.Name -notlike "*.tracklist.json" } |
+    ForEach-Object {
+        $metadataFile = $_
+        $missions = @(Get-Content -LiteralPath $metadataFile.FullName -Raw | ConvertFrom-Json)
+        foreach ($mission in $missions) {
+            foreach ($level in @($mission.levels)) {
+                if ($null -eq $level.travel_time_seconds -or $null -eq $level.travel_time_text) {
+                    continue
+                }
+
+                $seconds = [int]$level.travel_time_seconds
+                $expected = "{0}M:{1:d2}S" -f [Math]::Floor($seconds / 60), ($seconds % 60)
+                $checked++
+                if ($level.travel_time_text -ne $expected) {
+                    $mismatches += "{0} level {1}: {2} seconds is '{3}', expected '{4}'" -f `
+                        $metadataFile.Name, $level.level_num, $seconds, $level.travel_time_text, $expected
+                }
+            }
+        }
+    }
+
+if ($mismatches.Count -gt 0) {
+    $reported = @($mismatches | Select-Object -First 20)
+    $remaining = $mismatches.Count - $reported.Count
+    $suffix = if ($remaining -gt 0) { "`n... and $remaining more" } else { "" }
+    throw "Found $($mismatches.Count) mission metadata travel time mismatches:`n$($reported -join "`n")$suffix"
+}
+
+Write-Host "PASS: $checked mission metadata travel times match their numeric values"

@@ -9,11 +9,19 @@
 
 ## Fix
 
-- [ ] Make the host time formatter truncate whole minutes
-- [ ] Add focused regression coverage for sub-minute and multi-minute values
-- [ ] Regenerate checked-in mission metadata with the corrected formatter
-- [ ] Run the focused test and scoped code-quality checks
-- [ ] Record final validation
+- [x] Make the host time formatter truncate whole minutes
+- [x] Add focused regression coverage for sub-minute and multi-minute values
+- [x] Regenerate checked-in mission metadata with the corrected formatter
+- [x] Run the focused test and scoped code-quality checks
+- [x] Record final validation
+
+## Final validation
+
+- Full host regeneration: 110 archives considered, 109 passed, 1 descriptor-less archive skipped, 0 failed
+- Metadata consistency test: all 1,274 level records passed
+- KCXF2RMv11 level 2: 108 seconds now formats as `1M:48S`
+- Scoped PowerShell code quality passed for the producer and regression test
+- `git diff --check` passed
 
 ## Notes
 

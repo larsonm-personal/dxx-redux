@@ -279,7 +279,7 @@ function Format-LevelTime {
     param([int]$Seconds)
 
     if ($Seconds -lt 0) { $Seconds = 0 }
-    $minutes = [int]($Seconds / 60)
+    $minutes = [Math]::Floor($Seconds / 60)
     $remaining = $Seconds % 60
     return ("{0}M:{1:d2}S" -f $minutes, $remaining)
 }
