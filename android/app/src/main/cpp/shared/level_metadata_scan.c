@@ -19,6 +19,10 @@ enum metadata_route_block_kind {
 	METADATA_ROUTE_BLOCK_HIDDEN_DOOR = 3
 };
 
+#define METADATA_ROUTE_PROGRESS_ACTION_SECONDS 5.0
+#define METADATA_ROUTE_PROGRESS_ACTION_DISTANCE \
+	(LEVEL_METADATA_SHIP_SPEED_UNITS_PER_SECOND * METADATA_ROUTE_PROGRESS_ACTION_SECONDS)
+
 typedef struct metadata_target {
 	int seg;
 	int pos[3];
@@ -40,6 +44,7 @@ typedef struct metadata_route_block {
 
 typedef struct metadata_route_path {
 	double distance;
+	int progress_weight;
 	metadata_route_block first_block;
 	int terminal_seg;
 	int terminal_pos[3];
@@ -84,6 +89,7 @@ static unsigned char energy_seen[LEVEL_METADATA_MAX_SEGMENTS];
 static int segment_centers[LEVEL_METADATA_MAX_SEGMENTS][3];
 static unsigned char segment_center_valid[LEVEL_METADATA_MAX_SEGMENTS];
 static double route_distance[LEVEL_METADATA_MAX_SEGMENTS];
+static int route_progress_weight[LEVEL_METADATA_MAX_SEGMENTS];
 static int route_parent_seg[LEVEL_METADATA_MAX_SEGMENTS];
 static int route_parent_side[LEVEL_METADATA_MAX_SEGMENTS];
 static unsigned char route_closed[LEVEL_METADATA_MAX_SEGMENTS];
@@ -379,6 +385,26 @@ static int side_has_exit(const level_metadata_scan_view *view, int seg, int side
 	return child == -2;
 }
 
+static int side_has_route_exit(const level_metadata_scan_view *view, int seg, int side)
+{
+	int wall_num;
+	int trigger_num;
+
+	if (view->segment_child(view->user, seg, side) == -2)
+		return 1;
+	if (!view->side_has_exit_trigger ||
+	    !view->side_has_exit_trigger(view->user, seg, side))
+		return 0;
+	if (!view->wall_num || !view->wall_trigger || !view->trigger_type)
+		return 1;
+	wall_num = view->wall_num(view->user, seg, side);
+	if (!valid_wall(view, wall_num))
+		return 1;
+	trigger_num = view->wall_trigger(view->user, wall_num);
+	return view->trigger_type_secret_exit == 0 ||
+	       view->trigger_type(view->user, trigger_num) != view->trigger_type_secret_exit;
+}
+
 static int side_center(const level_metadata_scan_view *view, int seg, int side, int xyz[3])
 {
 	int corners[4][3];
@@ -592,11 +618,36 @@ static void heap_swap(int a, int b)
 	route_heap_pos[seg_b] = a;
 }
 
+static int metadata_route_block_progress_weight(const metadata_route_block *block)
+{
+	if (!block || block->kind == METADATA_ROUTE_BLOCK_NONE)
+		return 0;
+	if (block->kind == METADATA_ROUTE_BLOCK_TRIGGER)
+		return 0;
+	if (block->kind == METADATA_ROUTE_BLOCK_HIDDEN_DOOR)
+		return 5;
+	return 1;
+}
+
+static double metadata_route_cost(double distance, int progress_weight)
+{
+	return distance + progress_weight * METADATA_ROUTE_PROGRESS_ACTION_DISTANCE;
+}
+
+static int route_cost_less(int left_seg, int right_seg)
+{
+	double left_cost = metadata_route_cost(route_distance[left_seg], route_progress_weight[left_seg]);
+	double right_cost = metadata_route_cost(route_distance[right_seg], route_progress_weight[right_seg]);
+
+	return left_cost < right_cost ||
+	       (left_cost == right_cost && route_distance[left_seg] < route_distance[right_seg]);
+}
+
 static void heap_sift_up(int index)
 {
 	while (index > 1) {
 		int parent = index / 2;
-		if (route_distance[route_heap[parent]] <= route_distance[route_heap[index]])
+		if (!route_cost_less(route_heap[index], route_heap[parent]))
 			break;
 		heap_swap(parent, index);
 		index = parent;
@@ -609,9 +660,9 @@ static void heap_sift_down(int index, int size)
 		int left = index * 2;
 		int right = left + 1;
 		int smallest = index;
-		if (left <= size && route_distance[route_heap[left]] < route_distance[route_heap[smallest]])
+		if (left <= size && route_cost_less(route_heap[left], route_heap[smallest]))
 			smallest = left;
-		if (right <= size && route_distance[route_heap[right]] < route_distance[route_heap[smallest]])
+		if (right <= size && route_cost_less(route_heap[right], route_heap[smallest]))
 			smallest = right;
 		if (smallest == index)
 			break;
@@ -802,7 +853,7 @@ static int collect_route_targets(
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
 			int pos[3];
-			if (!side_has_exit(view, seg, side))
+			if (!side_has_route_exit(view, seg, side))
 				continue;
 			if (!side_center(view, seg, side, pos) && segment_center_valid[seg])
 				copy_pos(pos, segment_centers[seg]);
@@ -841,6 +892,7 @@ static void metadata_route_clear_path(metadata_route_path *path)
 	if (!path)
 		return;
 	path->distance = DBL_MAX;
+	path->progress_weight = INT_MAX;
 	metadata_route_clear_block(&path->first_block);
 	path->terminal_seg = -1;
 	path->terminal_pos_valid = 0;
@@ -1182,12 +1234,14 @@ static int metadata_route_compute_paths(
 		return 0;
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		route_distance[seg] = DBL_MAX;
+		route_progress_weight[seg] = INT_MAX;
 		route_parent_seg[seg] = -1;
 		route_parent_side[seg] = -1;
 		route_closed[seg] = 0;
 		route_heap_pos[seg] = 0;
 	}
 	route_distance[route->current_seg] = point_distance(route->current_pos, segment_centers[route->current_seg]);
+	route_progress_weight[route->current_seg] = 0;
 	heap_push(&heap_size, route->current_seg);
 	while (heap_size > 0) {
 		int cur = heap_pop(&heap_size);
@@ -1196,20 +1250,25 @@ static int metadata_route_compute_paths(
 			break;
 		route_closed[cur] = 1;
 		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			metadata_route_block block;
 			int child = view->segment_child(view->user, cur, side);
+			int next_progress_weight;
 			double step;
 			double next_distance;
 			if (!valid_segment(view, child) || route_closed[child])
 				continue;
-			if (!metadata_route_edge_passable(view, route, cur, side, optimistic, forbidden_missing_key, NULL))
+			if (!metadata_route_edge_passable(view, route, cur, side, optimistic, forbidden_missing_key, &block))
 				continue;
 			step = edge_distance(view, cur, child);
 			if (step == DBL_MAX)
 				continue;
 			next_distance = route_distance[cur] + step;
-			if (next_distance >= route_distance[child])
+			next_progress_weight = route_progress_weight[cur] + metadata_route_block_progress_weight(&block);
+			if (metadata_route_cost(next_distance, next_progress_weight) >=
+			    metadata_route_cost(route_distance[child], route_progress_weight[child]))
 				continue;
 			route_distance[child] = next_distance;
+			route_progress_weight[child] = next_progress_weight;
 			route_parent_seg[child] = cur;
 			route_parent_side[child] = side;
 			if (route_heap_pos[child])
@@ -1239,6 +1298,7 @@ static int metadata_route_find_path_forbidden_key(
 		int cur = goal_seg;
 		int i;
 		path->distance = route_distance[goal_seg] + (goal_pos ? point_distance(segment_centers[goal_seg], goal_pos) : 0.0);
+		path->progress_weight = route_progress_weight[goal_seg];
 		while (valid_segment(view, cur) && count < LEVEL_METADATA_MAX_SEGMENTS) {
 			reversed[count++] = cur;
 			if (cur == route->current_seg)
@@ -1298,12 +1358,14 @@ static int metadata_route_find_visible_path(
 		return 0;
 	for (seg = 0; seg < view->num_segments; ++seg) {
 		route_distance[seg] = DBL_MAX;
+		route_progress_weight[seg] = INT_MAX;
 		route_parent_seg[seg] = -1;
 		route_parent_side[seg] = -1;
 		route_closed[seg] = 0;
 		route_heap_pos[seg] = 0;
 	}
 	route_distance[route->current_seg] = point_distance(route->current_pos, segment_centers[route->current_seg]);
+	route_progress_weight[route->current_seg] = 0;
 	heap_push(&heap_size, route->current_seg);
 	while (heap_size > 0) {
 		int cur = heap_pop(&heap_size);
@@ -1315,6 +1377,7 @@ static int metadata_route_find_visible_path(
 		if (segment_target_visible(view, cur, preferred_pos, target, wall_num, visible_pos, &visible_extra_distance)) {
 			if (path) {
 				path->distance = route_distance[cur] + visible_extra_distance;
+				path->progress_weight = 0;
 				path->terminal_seg = cur;
 				copy_pos(path->terminal_pos, visible_pos);
 				path->terminal_pos_valid = 1;
@@ -1820,27 +1883,6 @@ static void metadata_route_restore_progress(
 			key_targets[key][i].visited = snapshot->key_target_visited[key][i];
 }
 
-static void metadata_route_acquire_ordered_keys(
-    const level_metadata_scan_view *view,
-    level_metadata_state *state,
-    metadata_route_context *route,
-    int depth)
-{
-	static const int key_order[3] = { 0, 2, 1 };
-	int i;
-
-	for (i = 0; i < 3; ++i) {
-		metadata_route_progress_snapshot snapshot;
-		int key_index = key_order[i];
-		if (key_target_count[key_index] <= 0 ||
-		    (route->key_mask & key_bit_for_index(key_index)) != 0)
-			continue;
-		metadata_route_save_progress(state, route, &snapshot);
-		if (!metadata_route_acquire_key(view, state, route, key_index, depth + 1))
-			metadata_route_restore_progress(state, route, &snapshot);
-	}
-}
-
 static int metadata_route_fire_trigger(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
@@ -2044,7 +2086,7 @@ static int metadata_route_select_target(
     const metadata_target *targets,
     int count)
 {
-	double best_distance = DBL_MAX;
+	double best_cost = DBL_MAX;
 	int best = -1;
 	int i;
 
@@ -2052,8 +2094,9 @@ static int metadata_route_select_target(
 		metadata_route_path path;
 		if (!metadata_route_find_path(view, route, targets[i].seg, targets[i].pos, 1, &path))
 			continue;
-		if (path.distance < best_distance) {
-			best_distance = path.distance;
+		double cost = metadata_route_cost(path.distance, path.progress_weight);
+		if (cost < best_cost) {
+			best_cost = cost;
 			best = i;
 		}
 	}
@@ -2165,8 +2208,7 @@ static int metadata_route_append_target_step(
 	if (kind == LEVEL_METADATA_ROUTE_EXIT && view->side_has_exit_trigger) {
 		int s;
 		for (s = 0; s < LEVEL_METADATA_MAX_SIDES; ++s) {
-			if (!view->side_has_exit_trigger(view->user, target->seg, s) &&
-			    view->segment_child(view->user, target->seg, s) != -2)
+			if (!side_has_route_exit(view, target->seg, s))
 				continue;
 			side = s;
 			wall_num = view->wall_num ? view->wall_num(view->user, target->seg, s) : -1;
@@ -2243,7 +2285,6 @@ static int metadata_route_begin_progression(
 		metadata_route_set_problem(state, "missing exit");
 		return 0;
 	}
-	metadata_route_acquire_ordered_keys(view, state, route, 0);
 	if (found_boss) {
 		if (!metadata_route_move_to_target_or_visible(view, state, route, &boss, 0))
 			return 0;

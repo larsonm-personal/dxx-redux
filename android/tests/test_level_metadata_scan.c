@@ -778,7 +778,7 @@ static int test_route_key_uses_longer_open_path(void)
 	return failures;
 }
 
-static int test_route_prefers_ordered_key_chain(void)
+static int test_route_collects_only_required_keys(void)
 {
 	level_metadata_scan_view view = test_view();
 	level_metadata_state state;
@@ -810,16 +810,12 @@ static int test_route_prefers_ordered_key_chain(void)
 	test_object_type[3] = TEST_OBJ_CONTROL_CENTER;
 	test_object_seg[3] = 2;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("ordered key route status", "ok", level_metadata_route_status_name(state.route_status));
-	failures += expect_int("ordered key route steps", 6, state.route_step_count);
-	failures += expect_string("ordered key route blue", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
-	failures += expect_int("ordered key route blue index", 0, state.route_steps[1].key_index);
-	failures += expect_string("ordered key route gold", "key", level_metadata_route_step_kind_name(state.route_steps[2].kind));
-	failures += expect_int("ordered key route gold index", 2, state.route_steps[2].key_index);
-	failures += expect_string("ordered key route red", "key", level_metadata_route_step_kind_name(state.route_steps[3].kind));
-	failures += expect_int("ordered key route red index", 1, state.route_steps[3].key_index);
-	failures += expect_string("ordered key route reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[4].kind));
-	failures += expect_string("ordered key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[5].kind));
+	failures += expect_string("required key route status", "ok", level_metadata_route_status_name(state.route_status));
+	failures += expect_int("required key route steps", 4, state.route_step_count);
+	failures += expect_string("required key route gold", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_int("required key route gold index", 2, state.route_steps[1].key_index);
+	failures += expect_string("required key route reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	failures += expect_string("required key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[3].kind));
 	return failures;
 }
 
@@ -1506,7 +1502,7 @@ int main(void)
 	failures += test_route_key_step();
 	failures += test_route_uses_initial_key_without_powerup();
 	failures += test_route_key_uses_longer_open_path();
-	failures += test_route_prefers_ordered_key_chain();
+	failures += test_route_collects_only_required_keys();
 	failures += test_route_trigger_step();
 	failures += test_route_shootable_trigger_step();
 	failures += test_route_shootable_trigger_precedes_dependency_search();

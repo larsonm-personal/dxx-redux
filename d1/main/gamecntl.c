@@ -82,9 +82,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_log.h"
 #include "android_meta_actions.h"
 #include "android_music_control.h"
-#include "android_rewind.h"
 #include "android_save_meta.h"
-#include <SDL.h>
 #endif
 #include "scores.h"
 
@@ -106,10 +104,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 #include <SDL.h>
-
-#ifdef __ANDROID__
-#include "android_meta_actions.h"
-#endif
 
 // Global Variables -----------------------------------------------------------
 
@@ -353,162 +347,6 @@ void format_time(char *str, int secs_int)
 }
 
 extern int netplayerinfo_on;
-
-#ifdef __ANDROID__
-extern volatile int g_android_open_save_menu;
-extern volatile int g_android_open_load_menu;
-extern volatile int g_android_open_game_menu;
-extern volatile int g_android_difficulty_request;
-extern volatile int g_android_autosave_request_kind;
-
-static void android_clear_saveload_requests(void)
-{
-	g_android_open_save_menu = 0;
-	g_android_open_load_menu = 0;
-}
-
-static int android_handle_pause_saveload_request(window *wind)
-{
-	if (g_android_difficulty_request >= 0) {
-		window_close(wind);
-		return 1;
-	}
-
-	if (!g_android_open_save_menu && !g_android_open_load_menu && !g_android_open_game_menu)
-	{
-		if (g_android_autosave_request_kind) {
-			window_close(wind);
-			return 1;
-		}
-		return 0;
-	}
-
-	if (g_android_open_game_menu) {
-		window_close(wind);
-		return 1;
-	}
-
-	if (g_android_open_save_menu) {
-		if (Player_is_dead) {
-			android_clear_saveload_requests();
-			return 0;
-		}
-	} else if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP)) {
-		android_clear_saveload_requests();
-		return 0;
-	}
-
-	window_close(wind);
-	return 1;
-}
-
-static int android_handle_ingame_saveload_request(void)
-{
-	if (g_android_autosave_request_kind) {
-		int request_kind = g_android_autosave_request_kind;
-		int slotnum = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ?
-			ANDROID_SAVE_META_SLOT_AUTO_EXIT : ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE;
-		const char *desc = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ? "AUTO EXIT" : "AUTO SAVE";
-		int saved = 0;
-
-		g_android_autosave_request_kind = 0;
-		if (Player_is_dead)
-			debug_log(DLOG_GAME, "autosave skipped: D1 player is dead");
-		else
-			saved = state_android_save_to_slot(slotnum, desc, request_kind);
-
-		if (saved)
-			debug_log(DLOG_GAME, "autosave saved: D1 slot %d", slotnum);
-
-		if (request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT) {
-			SDL_Event ev;
-
-			android_force_quit = 1;
-			memset(&ev, 0, sizeof(ev));
-			ev.type = SDL_QUIT;
-			SDL_PushEvent(&ev);
-			debug_log(DLOG_GAME, "autosave exit queued: D1 slot %d", slotnum);
-			return 1;
-		}
-
-		return saved;
-	}
-
-	if (g_android_difficulty_request >= 0) {
-		int difficulty = g_android_difficulty_request;
-		g_android_difficulty_request = -1;
-		return difficulty_change_to(difficulty, DIFFICULTY_CHANGE_RECORD_DEMO);
-	}
-
-	if (g_android_open_game_menu) {
-		g_android_open_game_menu = 0;
-		if (Game_wind && Screen_mode == SCREEN_GAME && window_get_front() == Game_wind) {
-			HandleSystemKey(KEY_ESC);
-			return 1;
-		}
-		return 0;
-	}
-
-	if (g_android_open_save_menu) {
-		android_clear_saveload_requests();
-		if (!Player_is_dead) {
-			state_save_all(0);
-			return 1;
-		}
-		return 0;
-	}
-
-	if (g_android_open_load_menu) {
-		android_clear_saveload_requests();
-		if (!((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP))) {
-			state_restore_all(1);
-			return 1;
-		}
-	}
-
-	if (android_demo_record_toggle_pending) {
-		android_demo_record_toggle_pending = 0;
-		return newdemo_toggle_quick_recording();
-	}
-
-	if (android_rewind_pending) {
-		int rewind_result;
-
-		android_rewind_pending = 0;
-		if ((Game_mode & GM_MULTI_COOP) && !multi_i_am_master()) {
-			multi_send_rewind_request();
-			return 1;
-		}
-		if (Game_mode & GM_MULTI_COOP)
-			rewind_result = multi_perform_rewind_request(Player_num, NULL);
-		else
-			rewind_result = android_rewind_request(NULL);
-		if (rewind_result == ANDROID_REWIND_STATUS_NOT_HOST) {
-			multi_send_rewind_request();
-			return 1;
-		}
-		if (rewind_result == ANDROID_REWIND_STATUS_BLOCKED_MULTIPLAYER) {
-			HUD_init_message_literal(HM_DEFAULT, "Rewind is unavailable in current multiplayer state");
-			return 1;
-		}
-		if (rewind_result == ANDROID_REWIND_STATUS_DISABLED) {
-			HUD_init_message_literal(HM_DEFAULT, "Rewind is disabled");
-			return 1;
-		}
-		if (rewind_result == ANDROID_REWIND_STATUS_NO_POINT) {
-			HUD_init_message_literal(HM_DEFAULT, "No rewind point yet");
-			return 1;
-		}
-		if (rewind_result == ANDROID_REWIND_STATUS_FAILED) {
-			HUD_init_message_literal(HM_DEFAULT, "Rewind failed");
-			return 1;
-		}
-		return 1;
-	}
-
-	return 0;
-}
-#endif
 
 //Process selected keys until game unpaused
 int pause_handler(window *wind, d_event *event, char *msg)

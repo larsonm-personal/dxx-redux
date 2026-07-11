@@ -13,6 +13,8 @@
 #ifndef ANDROID_META_ACTIONS_H
 #define ANDROID_META_ACTIONS_H
 
+struct window;
+
 /* Action IDs -- must match TouchBindings.kt META_* constants */
 #define META_ACTION_OFFSET 1000
 
@@ -96,6 +98,17 @@ extern volatile int android_demo_record_toggle_pending;
 /* Set on UI thread by META_REWIND, consumed on the game thread
  * in gamecntl.c to trigger Android rewind handling. */
 extern volatile int android_rewind_pending;
+
+/* Requests produced by android_input.c and consumed on the game thread. */
+extern volatile int g_android_open_save_menu;
+extern volatile int g_android_open_load_menu;
+extern volatile int g_android_open_game_menu;
+extern volatile int g_android_difficulty_request;
+extern volatile int g_android_autosave_request_kind;
+
+/* Consume Android save/load and related game-thread requests. */
+int android_handle_pause_saveload_request(struct window *wind);
+int android_handle_ingame_saveload_request(void);
 
 /*
  * Dispatch a meta action.  Called from JNI (UI thread).

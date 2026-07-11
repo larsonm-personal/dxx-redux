@@ -3159,6 +3159,28 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail("coop_autosave: active coop game required");
 					break;
 				}
+			} else if (s.field == "android_game_request") {
+#ifdef ANDROID
+				if (s.value == "save") {
+					g_android_open_save_menu = 1;
+					g_android_open_load_menu = 0;
+				} else if (s.value == "load") {
+					g_android_open_save_menu = 0;
+					g_android_open_load_menu = 1;
+				} else if (s.value == "game_menu") {
+					g_android_open_game_menu = 1;
+				} else if (s.value == "auto_minimize") {
+					g_android_autosave_request_kind = ANDROID_SAVE_META_KIND_AUTO_MINIMIZE;
+				} else if (s.value.rfind("difficulty:", 0) == 0) {
+					g_android_difficulty_request = (int) strtol(s.value.c_str() + 11, NULL, 10);
+				} else {
+					stop_script_fail("android_game_request: unknown request");
+					break;
+				}
+#else
+				stop_script_fail("android_game_request: Android-only action");
+				break;
+#endif
 			} else if (s.field == "fire_trigger") {
 				char reason[128];
 				if (!fire_level_trigger(s.value, reason, sizeof(reason))) {

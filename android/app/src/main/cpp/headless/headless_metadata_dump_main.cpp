@@ -274,6 +274,14 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 		for (source_wall = 0; source_wall < Num_walls; ++source_wall) {
 			if (Walls[source_wall].trigger != trigger_num)
 				continue;
+			fprintf(stderr,
+			        "SECRET-AREA-DUMP TRIGGER-SOURCE level=%d trigger=%d type=%d wall=%d seg=%d side=%d\n",
+			        level_num,
+			        trigger_num,
+			        Triggers[trigger_num].type,
+			        source_wall,
+			        Walls[source_wall].segnum,
+			        Walls[source_wall].sidenum);
 			type = Walls[source_wall].type;
 			if (type < 0 || type >= (int) (sizeof(opener_source_type_counts) / sizeof(opener_source_type_counts[0])))
 				type = 0;
@@ -287,6 +295,15 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 			if (seg < 0 || seg >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
 				continue;
 			target_wall = Segments[seg].sides[side].wall_num;
+			fprintf(stderr,
+			        "SECRET-AREA-DUMP TRIGGER-LINK level=%d trigger=%d type=%d link=%d seg=%d side=%d wall=%d\n",
+			        level_num,
+			        trigger_num,
+			        Triggers[trigger_num].type,
+			        link,
+			        seg,
+			        side,
+			        target_wall);
 			if (target_wall < 0 || target_wall >= Num_walls)
 				continue;
 			type = Walls[target_wall].type;
