@@ -19,6 +19,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_game_data.ps1')
+. (Join-Path $PSScriptRoot 'secret_area_baseline_helpers.ps1')
 
 if (-not $BaselinePath) {
     $BaselinePath = Join-RegressionPath $repoRoot 'android' 'test_fixtures' 'secret_area_base_game_baseline.json'
@@ -222,8 +223,16 @@ if (-not (Test-Path -LiteralPath $BaselinePath -PathType Leaf)) {
 
 $expectedText = (Get-Content -LiteralPath $BaselinePath -Raw).Trim()
 $actualText = (Get-Content -LiteralPath $actualPath -Raw).Trim()
-if ($expectedText -ne $actualText) {
+$expected = $expectedText | ConvertFrom-Json
+$diff = Compare-JsonStructure -Expected $expected -Actual $actual
+if ($diff.Total -gt 0) {
+    $formattedDiff = Format-JsonStructureDiff -Diff $diff
+    Write-Host $formattedDiff
     throw "Secret-area baseline changed`nExpected: $BaselinePath`nActual: $actualPath"
 }
 
-Write-Host "Secret-area baseline matched: $BaselinePath"
+if ($expectedText -ne $actualText) {
+    Write-Host "Secret-area baseline matched structurally (representation differs): $BaselinePath"
+} else {
+    Write-Host "Secret-area baseline matched: $BaselinePath"
+}

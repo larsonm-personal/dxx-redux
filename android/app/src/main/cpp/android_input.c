@@ -161,6 +161,7 @@ static void android_get_touch_screen_size(int *screen_w, int *screen_h)
 }
 
 void android_automation_joystick_button(int button, int pressed);
+int android_automation_joystick_axis(int axis, int raw_value, int touch_source);
 
 static int android_handle_delayed_escape_touch(int action, int active,
                                                int *touch_state, SDLKey key)
@@ -1421,6 +1422,34 @@ void android_automation_joystick_button(int button, int pressed)
 	ev.button = (Uint8) button;
 	ev.state = pressed ? SDL_PRESSED : SDL_RELEASED;
 	joy_button_handler(&ev);
+}
+
+/*
+ * Automation already runs on the game thread. Dispatch its axis probes through
+ * the same native handlers synchronously so they cannot be dropped behind the
+ * bounded SDL queue used by concurrent touch, gyro, and controller producers.
+ */
+int android_automation_joystick_axis(int axis, int raw_value, int touch_source)
+{
+	SDL_JoyAxisEvent ev;
+	int processed;
+
+	if (axis < 0 || axis >= 8)
+		return 0;
+	if (raw_value > 32767)
+		raw_value = 32767;
+	if (raw_value < -32768)
+		raw_value = -32768;
+
+	memset(&ev, 0, sizeof(ev));
+	ev.type = SDL_JOYAXISMOTION;
+	ev.which = 0;
+	ev.axis = (Uint8) (axis | (touch_source ? ANDROID_TOUCH_AXIS_FLAG : 0));
+	ev.value = (Sint16) raw_value;
+
+	processed = joy_axisbutton_handler(&ev);
+	processed |= joy_axis_handler(&ev);
+	return processed;
 }
 
 /* ── Automap touch controls ─────────────────────────────────

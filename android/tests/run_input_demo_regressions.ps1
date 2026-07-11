@@ -1,6 +1,9 @@
 #!/usr/bin/env pwsh
 param(
     [string]$DemoRoot,
+    [string[]]$DemoFileName,
+    [string]$ResultArchiveRoot,
+    [string]$ReferenceResultRoot,
     [ValidateSet('auto', 'd1', 'd2')]
     [string]$Game = 'auto',
     [ValidateSet('all', 'd1', 'd2')]
@@ -88,6 +91,37 @@ function Select-RegressionDemos {
         })
 }
 
+function Select-NamedRegressionDemos {
+    param(
+        [object[]]$Demos,
+        [string[]]$RequestedFileNames
+    )
+
+    if (-not $RequestedFileNames -or $RequestedFileNames.Count -eq 0) {
+        return @($Demos)
+    }
+
+    $requested = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($fileName in $RequestedFileNames) {
+        if ([System.IO.Path]::GetFileName($fileName) -ne $fileName) {
+            throw "-DemoFileName accepts file names, not paths: $fileName"
+        }
+        $null = $requested.Add($fileName)
+    }
+
+    $selected = @($Demos | Where-Object { $requested.Contains($_.Name) })
+    $found = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($demo in $selected) {
+        $null = $found.Add($demo.Name)
+    }
+    $missing = @($requested | Where-Object { -not $found.Contains($_) } | Sort-Object)
+    if ($missing.Count -gt 0) {
+        throw "Requested regression demo(s) not found after game filtering: $($missing -join ', ')"
+    }
+
+    return @($selected)
+}
+
 if (-not $DemoRoot) {
     $DemoRoot = Join-Path $repoRoot 'android\regression_demos'
 }
@@ -98,6 +132,17 @@ $resolvedDemoRoot = (Resolve-Path -LiteralPath $DemoRoot).Path
 $allDemos = @(Get-ChildItem -LiteralPath $resolvedDemoRoot -Recurse -Filter '*.dximdemo' -File | Sort-Object FullName)
 $effectiveRecordedGame = Get-EffectiveRecordedGameFilter -RequestedGame $Game -RequestedRecordedGame $RecordedGame -UseD1InD2:$D1InD2
 $demos = @(Select-RegressionDemos -Demos $allDemos -RecordedGameFilter $effectiveRecordedGame)
+$demos = @(Select-NamedRegressionDemos -Demos $demos -RequestedFileNames $DemoFileName)
+
+if ($ReferenceResultRoot) {
+    foreach ($demo in $demos) {
+        $referencePath = Join-Path $ReferenceResultRoot "$($demo.Name).actual.json"
+        if (-not (Test-Path -LiteralPath $referencePath -PathType Leaf)) {
+            Write-Host "RESULT: SKIP (primary replay result unavailable: $referencePath)"
+            exit 0
+        }
+    }
+}
 
 if ($ListOnly) {
     if ($demos.Count -eq 0) {
@@ -188,6 +233,12 @@ for ($index = 0; $index -lt $demos.Count; $index++) {
     }
     if ($KeepSandbox) {
         $args += '-KeepSandbox'
+    }
+    if ($ResultArchiveRoot) {
+        $args += @('-ResultCopyPath', (Join-Path $ResultArchiveRoot "$($demo.Name).actual.json"))
+    }
+    if ($ReferenceResultRoot) {
+        $args += @('-ReferenceResultPath', (Join-Path $ReferenceResultRoot "$($demo.Name).actual.json"))
     }
 
     & $pwsh @args

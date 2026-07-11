@@ -43,6 +43,12 @@
 .PARAMETER ExtractSampleCount
     Number of CD extraction specs to sample when -FullExtracts is not set.
 
+.PARAMETER ExtendedGraphics
+    Add expensive or fault-injected graphics coverage. This replays the
+    complete input-demo corpus through the graphics binaries and includes the
+    forced merged-wall fallback canary. The default profile uses fixed graphics
+    canaries while the full demo corpus runs headlessly.
+
 .EXAMPLE
     .\run_all_tests.ps1
     .\run_all_tests.ps1 -Filter "test_death*"
@@ -58,7 +64,8 @@ param(
     [int]$TestTimeoutSeconds = 120,
     [switch]$SkipDocker,
     [switch]$FullExtracts,
-    [int]$ExtractSampleCount = 1
+    [int]$ExtractSampleCount = 1,
+    [switch]$ExtendedGraphics
 )
 
 $ErrorActionPreference = "Stop"
@@ -69,6 +76,7 @@ $repoRoot = Split-Path $scriptDir
 . "$helpersDir\test_helpers.ps1"
 . (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
+. (Join-Path (Join-Path $scriptDir "tests") "input_demo_graphics_canary_helpers.ps1")
 
 # -- Report directory --
 
@@ -312,6 +320,7 @@ $testTimeouts = @{
     "test_mp"                             = 240
     "test_lan"                            = 240
     "test_server_integration"             = 600
+    "test_secret_area_baseline_diff"      = 60
     "test_test_helpers_process_wait"      = 60
     "test_validate_extract_regression_specs" = 60
     "test_validate_automation_catalog"    = 60
@@ -367,6 +376,7 @@ $noInfraTests = @(
     "test_input_demo_runtime_smoke",
     "test_native_host_unit_tests",
     "test_server_integration",
+    "test_secret_area_baseline_diff",
     "test_input_demo_state_trace_compare",
     "test_input_demo_rng_trace_compare",
     "test_test_helpers_process_wait",
@@ -480,6 +490,13 @@ foreach ($t in $ps1Files) {
 
 $inputDemoRegressionHeadlessWrapper = Join-Path $testsDir "test_input_demo_regressions.ps1"
 $inputDemoRegressionGraphicsWrapper = Join-Path $testsDir "test_input_demo_regressions_graphics.ps1"
+$inputDemoCanaryManifest = Read-InputDemoGraphicsCanaryManifest -ManifestPath (Join-Path $testsDir "input_demo_graphics_canaries.txt")
+$d1GraphicsCanary = $inputDemoCanaryManifest['d1']
+$d2GraphicsCanary = $inputDemoCanaryManifest['d2']
+$inputDemoPrimaryRoot = Join-Path $repoRoot "temp\input_demo_primary_results_$timestamp"
+$d1PrimaryResultRoot = Join-Path $inputDemoPrimaryRoot "d1"
+$d2PrimaryResultRoot = Join-Path $inputDemoPrimaryRoot "d2"
+$d1InD2PrimaryResultRoot = Join-Path $inputDemoPrimaryRoot "d1-in-d2"
 $inputDemoRegressionMatrix = @(
     @{
         Name = "test_input_demo_regressions_d1"
@@ -487,15 +504,7 @@ $inputDemoRegressionMatrix = @(
         RunMode = "headless"
         RecordedGame = "d1"
         Path = $inputDemoRegressionHeadlessWrapper
-        Arguments = @("-RecordedGame", "d1", "-Game", "d1", "-RunMode", "headless")
-    },
-    @{
-        Name = "test_input_demo_regressions_d1_graphics"
-        Section = "d1/graphics"
-        RunMode = "graphics"
-        RecordedGame = "d1"
-        Path = $inputDemoRegressionGraphicsWrapper
-        Arguments = @("-RecordedGame", "d1", "-Game", "d1")
+        Arguments = @("-RecordedGame", "d1", "-Game", "d1", "-RunMode", "headless", "-ResultArchiveRoot", $d1PrimaryResultRoot)
     },
     @{
         Name = "test_input_demo_regressions_d2"
@@ -503,15 +512,7 @@ $inputDemoRegressionMatrix = @(
         RunMode = "headless"
         RecordedGame = "d2"
         Path = $inputDemoRegressionHeadlessWrapper
-        Arguments = @("-RecordedGame", "d2", "-Game", "d2", "-RunMode", "headless")
-    },
-    @{
-        Name = "test_input_demo_regressions_d2_graphics"
-        Section = "d2/graphics"
-        RunMode = "graphics"
-        RecordedGame = "d2"
-        Path = $inputDemoRegressionGraphicsWrapper
-        Arguments = @("-RecordedGame", "d2", "-Game", "d2")
+        Arguments = @("-RecordedGame", "d2", "-Game", "d2", "-RunMode", "headless", "-ResultArchiveRoot", $d2PrimaryResultRoot)
     },
     @{
         Name = "test_input_demo_regressions_d1_in_d2"
@@ -519,22 +520,78 @@ $inputDemoRegressionMatrix = @(
         RunMode = "headless"
         RecordedGame = "d1"
         Path = $inputDemoRegressionHeadlessWrapper
-        Arguments = @("-RecordedGame", "d1", "-Game", "d2", "-RunMode", "headless", "-D1InD2")
-    },
-    @{
-        Name = "test_input_demo_regressions_d1_in_d2_graphics"
-        Section = "d1-in-d2/graphics"
-        RunMode = "graphics"
-        RecordedGame = "d1"
-        Path = $inputDemoRegressionGraphicsWrapper
-        Arguments = @("-RecordedGame", "d1", "-Game", "d2", "-D1InD2")
+        Arguments = @("-RecordedGame", "d1", "-Game", "d2", "-RunMode", "headless", "-D1InD2", "-ResultArchiveRoot", $d1InD2PrimaryResultRoot)
     }
 )
+if ($ExtendedGraphics) {
+    $inputDemoRegressionMatrix += @(
+        @{
+            Name = "test_input_demo_regressions_d1_graphics"
+            Section = "d1/graphics-full"
+            RunMode = "graphics"
+            RecordedGame = "d1"
+            Path = $inputDemoRegressionGraphicsWrapper
+            Arguments = @("-RecordedGame", "d1", "-Game", "d1", "-ReferenceResultRoot", $d1PrimaryResultRoot)
+        },
+        @{
+            Name = "test_input_demo_regressions_d2_graphics"
+            Section = "d2/graphics-full"
+            RunMode = "graphics"
+            RecordedGame = "d2"
+            Path = $inputDemoRegressionGraphicsWrapper
+            Arguments = @("-RecordedGame", "d2", "-Game", "d2", "-ReferenceResultRoot", $d2PrimaryResultRoot)
+        },
+        @{
+            Name = "test_input_demo_regressions_d1_in_d2_graphics"
+            Section = "d1-in-d2/graphics-full"
+            RunMode = "graphics"
+            RecordedGame = "d1"
+            Path = $inputDemoRegressionGraphicsWrapper
+            Arguments = @("-RecordedGame", "d1", "-Game", "d2", "-D1InD2", "-ReferenceResultRoot", $d1InD2PrimaryResultRoot)
+        }
+    )
+} else {
+    $inputDemoRegressionMatrix += @(
+        @{
+            Name = "test_input_demo_regressions_d1_graphics_canary"
+            Section = "d1/graphics-canary"
+            RunMode = "graphics"
+            RecordedGame = "d1"
+            DemoFileName = $d1GraphicsCanary.FileName
+            DemoSha256 = $d1GraphicsCanary.Sha256
+            DemoCount = 1
+            Path = $inputDemoRegressionGraphicsWrapper
+            Arguments = @("-RecordedGame", "d1", "-Game", "d1", "-DemoFileName", $d1GraphicsCanary.FileName, "-ReferenceResultRoot", $d1PrimaryResultRoot)
+        },
+        @{
+            Name = "test_input_demo_regressions_d2_graphics_canary"
+            Section = "d2/graphics-canary"
+            RunMode = "graphics"
+            RecordedGame = "d2"
+            DemoFileName = $d2GraphicsCanary.FileName
+            DemoSha256 = $d2GraphicsCanary.Sha256
+            DemoCount = 1
+            Path = $inputDemoRegressionGraphicsWrapper
+            Arguments = @("-RecordedGame", "d2", "-Game", "d2", "-DemoFileName", $d2GraphicsCanary.FileName, "-ReferenceResultRoot", $d2PrimaryResultRoot)
+        },
+        @{
+            Name = "test_input_demo_regressions_d1_in_d2_graphics_canary"
+            Section = "d1-in-d2/graphics-canary"
+            RunMode = "graphics"
+            RecordedGame = "d1"
+            DemoFileName = $d1GraphicsCanary.FileName
+            DemoSha256 = $d1GraphicsCanary.Sha256
+            DemoCount = 1
+            Path = $inputDemoRegressionGraphicsWrapper
+            Arguments = @("-RecordedGame", "d1", "-Game", "d2", "-D1InD2", "-DemoFileName", $d1GraphicsCanary.FileName, "-ReferenceResultRoot", $d1InD2PrimaryResultRoot)
+        }
+    )
+}
 foreach ($definition in $inputDemoRegressionMatrix) {
     if (-not (Test-Path -LiteralPath $definition.Path -PathType Leaf)) {
         continue
     }
-    $allTests += @{
+    $entry = @{
         Name = $definition.Name
         BaseName = "test_input_demo_regressions"
         Type = "ps1"
@@ -547,11 +604,35 @@ foreach ($definition in $inputDemoRegressionMatrix) {
         DemoSection = $definition.Section
         Arguments = $definition.Arguments
     }
+    if ($definition.ContainsKey("DemoFileName")) {
+        $entry.DemoFileName = $definition.DemoFileName
+        $entry.DemoSha256 = $definition.DemoSha256
+    }
+    if ($definition.ContainsKey("DemoCount")) {
+        $entry.DemoCount = $definition.DemoCount
+    }
+    $allTests += $entry
 }
 
 # Apply filter
 if ($Filter) {
     $allTests = @($allTests | Where-Object { Test-MatchesRequestedFilter -Test $_ -RequestedFilter $Filter })
+}
+
+$extendedGraphicsTests = @("test_merged_wall_two_pass_probe")
+$profileSkipped = @()
+if (-not $ExtendedGraphics) {
+    $allTests = @($allTests | Where-Object {
+            if ($_.Name -in $extendedGraphicsTests) {
+                $profileSkipped += @{
+                    Name = $_.Name
+                    Reason = "requires -ExtendedGraphics"
+                    Type = $_.Type
+                }
+                return $false
+            }
+            return $true
+        })
 }
 
 # Separate manual from runnable
@@ -574,6 +655,14 @@ $runnableTests = @($runnableTests | Where-Object {
             if (-not (Test-InputDemoCorpusAvailable -RecordedGame $recordedGame)) {
                 $fixtureSkipped += @{ Name = $_.Name; Reason = "no input-demo $recordedGame regression fixtures"; Type = $_.Type }
                 $keep = $false
+            } elseif ($_.ContainsKey("DemoFileName")) {
+                $canaryIssue = Get-InputDemoGraphicsCanaryIssue `
+                    -DemoRoot (Join-Path $scriptDir "regression_demos") `
+                    -Entry ([pscustomobject]@{ FileName = $_.DemoFileName; Sha256 = $_.DemoSha256 })
+                if ($canaryIssue) {
+                    $fixtureSkipped += @{ Name = $_.Name; Reason = "input-demo canary unavailable: $canaryIssue"; Type = $_.Type }
+                    $keep = $false
+                }
             }
         } elseif ($_.Name -eq "test_input_demo_determinism_matrix" -and -not $inputDemoDeterminismFixturesAvailable) {
             $fixtureSkipped += @{ Name = $_.Name; Reason = "input-demo determinism fixtures unavailable"; Type = $_.Type }
@@ -600,8 +689,12 @@ $selectedRegressionDemoSections = @($selectedRegressionDemoTests | ForEach-Objec
 $regressionDemoCounts = Get-RegressionDemoGameCounts
 $selectedRegressionDemoReplayCount = 0
 foreach ($test in $selectedRegressionDemoTests) {
-    $recordedGame = if ($test.ContainsKey("DemoRecordedGame")) { $test["DemoRecordedGame"] } else { "all" }
-    $selectedRegressionDemoReplayCount += Get-RegressionDemoCount -RecordedGame $recordedGame
+    if ($test.ContainsKey("DemoCount")) {
+        $selectedRegressionDemoReplayCount += [int]$test.DemoCount
+    } else {
+        $recordedGame = if ($test.ContainsKey("DemoRecordedGame")) { $test["DemoRecordedGame"] } else { "all" }
+        $selectedRegressionDemoReplayCount += Get-RegressionDemoCount -RecordedGame $recordedGame
+    }
 }
 
 function Test-HostToolPrerequisites {
@@ -1142,14 +1235,16 @@ Write-Host "========================================================" -Foregroun
 Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Tests found: $($allTests.Count) total, $($runnableTests.Count) runnable, $($manualSkipped.Count) manual-skipped, $($supportScripts.Count) support-owned" -ForegroundColor White
+Write-Host "Tests found: $($allTests.Count) selected, $($runnableTests.Count) runnable, $($manualSkipped.Count) manual-skipped, $($profileSkipped.Count) profile-skipped, $($supportScripts.Count) support-owned" -ForegroundColor White
 Write-Host "  Tier 0 (no infra):       $($tierNone.Count)"
 Write-Host "  Tier 1 (server only):    $($tierServer.Count)"
 Write-Host "  Tier 2 (single emu):     $($tierSingleEmu.Count)"
 Write-Host "  Tier 3 (extract):        $($tierExtract.Count)"
 Write-Host "  Tier 4 (dual emu):       $($tierDualEmu.Count)"
+$demoGraphicsProfile = if ($ExtendedGraphics) { "full graphics" } else { "graphics canaries" }
 if ($selectedRegressionDemoSections.Count -gt 0) {
     Write-Host "  Demo regressions:      d1=$($regressionDemoCounts['d1']) d2=$($regressionDemoCounts['d2']) demo(s), sections: $($selectedRegressionDemoSections -join ', '), replay runs: $selectedRegressionDemoReplayCount"
+    Write-Host "  Demo profile:          full headless corpus + $demoGraphicsProfile"
 } else {
     Write-Host "  Demo regressions:       0 replay runs selected"
 }
@@ -1197,7 +1292,7 @@ $passCount = 0
 $failCount = 0
 $timeoutCount = 0
 $skipCount = 0
-$infraSkipped = @($fixtureSkipped)
+$infraSkipped = @($profileSkipped) + @($fixtureSkipped)
 $stopEarly = $false
 $totalSw = [System.Diagnostics.Stopwatch]::StartNew()
 
@@ -1356,6 +1451,13 @@ function Get-ReportLogExcerpt {
     $lines = @(Get-Content -LiteralPath $LogFile -ErrorAction SilentlyContinue)
     if ($lines.Count -eq 0) {
         return @()
+    }
+
+    for ($index = 0; $index -lt $lines.Count; $index++) {
+        if ($lines[$index] -match '^Structural diff:') {
+            $end = [Math]::Min($lines.Count - 1, $index + 43)
+            return @($lines[$index..$end])
+        }
     }
 
     $patterns = @(
@@ -1681,6 +1783,9 @@ $md += "- Not run: $($notRun.Count)"
 $md += "- Total time: $totalElapsed"
 $md += "- Per-test timeout: ${TestTimeoutSeconds}s"
 $md += "- Auto-provisioned: emu1=$($script:startedEmu1) emu2=$($script:startedEmu2) server=$(($null -ne $script:autoServerProc)) docker=$($script:startedDocker)"
+if ($selectedRegressionDemoSections.Count -gt 0) {
+    $md += "- Demo profile: full headless corpus + $demoGraphicsProfile; $selectedRegressionDemoReplayCount replay runs; graphics results compared with their primary headless result"
+}
 $md += ""
 $md += "## Results"
 $md += ""

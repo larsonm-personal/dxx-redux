@@ -1,7 +1,6 @@
 // TEST: Merged wall snapshot route regression
-// Verifies the Counterstrike L1 metl154 wall stays on the Android
-// auto-old-texmerge escape hatch for the stock 64x64 asset set,
-// from a backed-off view that also exposes the rock331 behind-face cover.
+// Verifies the Counterstrike L1 metl154 wall uses the normal cached merge
+// route and preserves the rock331 behind-face cover.
 [
     {"_info": {
         "games": ["d2"],
@@ -61,15 +60,26 @@
     {"action": "assert", "expect": {
         "debug_flags.merged_wall_force_two_pass": "0",
         "merged_wall_snapshot.status": "ok",
-        "merged_wall_snapshot.selected_count": {"gte": 3},
-        "merged_wall_snapshot.covers": {"contains": "rock331"}, // this is the green rock type that's in the tunnel behind the transparent metl texture - with the bug, the green tunnel wouldn't be visible
-        "merged_wall_snapshot.faces[0].seg": "83",
-        "merged_wall_snapshot.faces[0].side": "3",
-        "merged_wall_snapshot.faces[0].face": "1",
-        "merged_wall_snapshot.faces[0].center_hit": "true",
-        "merged_wall_snapshot.faces[0].route": "old_texmerge",
-        "merged_wall_snapshot.faces[0].merge_impl": "auto_old_texmerge",
-        "merged_wall_snapshot.faces[0].decision_reason": "tri13_face1_stock_64x64"
+        "merged_wall_snapshot.faces": {"contains_object": {
+            "seg": 83,
+            "side": 3,
+            "face": 1,
+            "center_hit": true,
+            "bbox_area": {"gt": 0},
+            "submit_nv": {"gte": 3},
+            "route": "merge_cached",
+            "merge_impl": "gpu_cached_single"
+        }},
+        "merged_wall_snapshot.covers": {"contains_object": {
+            "seg": 82,
+            "side": 0,
+            "face": 0,
+            "cover_seg": 82,
+            "cover_side": 1,
+            "cover_bot": "rock331",
+            "kind_name": "bbox",
+            "overlap_area": {"gt": 0}
+        }}
     }},
 
     {"action": "log", "message": "=== TEST: Merged wall snapshot route regression -- PASS ==="},

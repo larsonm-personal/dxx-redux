@@ -168,6 +168,7 @@ struct merged_wall_snapshot_target_cover {
 	char face_box[16];
 	char cover_shader[16];
 	char cover_bot[24];
+	char cover_ovl[24];
 };
 
 struct merged_wall_snapshot_result {

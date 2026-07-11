@@ -14,12 +14,16 @@
 
 param(
     [string]$DemoRoot,
+    [string[]]$DemoFileName,
+    [string]$ResultArchiveRoot,
+    [string]$ReferenceResultRoot,
     [ValidateSet('auto', 'd1', 'd2')]
     [string]$Game = 'auto',
     [ValidateSet('all', 'd1', 'd2')]
     [string]$RecordedGame = 'all',
     [int]$TimeoutSeconds = 180,
     [switch]$D1InD2,
+    [switch]$ListOnly,
     [switch]$StopOnFirstFailure
 )
 

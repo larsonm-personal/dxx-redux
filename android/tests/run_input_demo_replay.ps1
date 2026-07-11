@@ -30,6 +30,8 @@ param(
     [switch]$TraceRng,
     [switch]$CompareRngTrace,
     [switch]$SkipExpectedChecks,
+    [string]$ResultCopyPath,
+    [string]$ReferenceResultPath,
     [switch]$D1InD2,
     [switch]$D1InD2StartFromLevel,
     [switch]$AllowMissingActualResult,
@@ -1601,6 +1603,14 @@ $actualResult = $null
 if (-not $missingActualResult) {
     $actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
 }
+$resolvedResultCopyPath = Resolve-AbsolutePath -Path $ResultCopyPath
+if ($actualResult -and $resolvedResultCopyPath) {
+    $resultCopyDirectory = Split-Path -Path $resolvedResultCopyPath -Parent
+    if (-not (Test-Path -LiteralPath $resultCopyDirectory -PathType Container)) {
+        New-Item -ItemType Directory -Path $resultCopyDirectory -Force | Out-Null
+    }
+    Copy-Item -LiteralPath $actualResultPath -Destination $resolvedResultCopyPath -Force
+}
 $expectedForCompare = $normalizedExpectedResult
 $stateTraceCompareError = $null
 $stateTraceExpectedPath = $null
@@ -1611,6 +1621,13 @@ if ($actualResult -and $D1InD2) {
 }
 if ($actualResult -and (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory -Expected $expectedForCompare -Actual $actualResult)) {
     $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $expectedForCompare -Actual $actualResult
+}
+$resolvedReferenceResultPath = Resolve-AbsolutePath -Path $ReferenceResultPath
+if ($resolvedReferenceResultPath) {
+    if (-not (Test-Path -LiteralPath $resolvedReferenceResultPath -PathType Leaf)) {
+        throw "Reference replay result not found: $resolvedReferenceResultPath"
+    }
+    $expectedForCompare = Read-JsonFileAsHashtable -Path $resolvedReferenceResultPath
 }
 if ($resolvedStateLogPath) {
     if (-not (Test-Path -LiteralPath $resolvedStateLogPath)) {
@@ -1675,6 +1692,12 @@ if ($missingActualResult) {
     Write-Host 'Actual: <missing> (state trace/rng trace mode)'
 } else {
     Write-Host "Actual: $(Get-RelativeRepoPath -Path $actualResultPath)"
+}
+if ($resolvedResultCopyPath) {
+    Write-Host "Result copy: $(Get-RelativeRepoPath -Path $resolvedResultCopyPath)"
+}
+if ($resolvedReferenceResultPath) {
+    Write-Host "Reference: $(Get-RelativeRepoPath -Path $resolvedReferenceResultPath)"
 }
 if ($resolvedStateLogPath) {
     Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"

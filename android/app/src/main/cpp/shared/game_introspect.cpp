@@ -23,6 +23,7 @@ using json = nlohmann::json;
 /* Engine headers are pure C -- wrap them for C++ linkage. */
 extern "C" {
 #include "game_introspect.h"
+#include "game_automate.h"
 #include "window.h"
 #include "newmenu.h"
 #include "object.h"
@@ -876,7 +877,8 @@ static json serialize_merged_wall_snapshot()
 			{ "kind_name", std::string(target.kind_name) },
 			{ "face_box", std::string(target.face_box) },
 			{ "cover_shader", std::string(target.cover_shader) },
-			{ "cover_bot", std::string(target.cover_bot) }
+			{ "cover_bot", std::string(target.cover_bot) },
+			{ "cover_ovl", std::string(target.cover_ovl) }
 		};
 	}
 
@@ -1419,6 +1421,24 @@ extern "C" char *game_introspect_get_state(void)
 		j["slide_ud_time"] = (int) Controls.vertical_thrust_time;
 		j["bank_time"] = (int) Controls.bank_time;
 		j["throttle_time"] = (int) Controls.forward_thrust_time;
+
+		/* Stable sample captured by Android's synchronous automation axis probe. */
+		game_automate_axis_probe axis_probe = {};
+		game_automate_get_axis_probe(&axis_probe);
+		j["axis_probe"] = {
+			{ "valid", axis_probe.valid != 0 },
+			{ "generation", axis_probe.generation },
+			{ "axis", axis_probe.axis },
+			{ "raw_value", axis_probe.raw_value },
+			{ "touch_source", axis_probe.touch_source != 0 },
+			{ "processed", axis_probe.processed != 0 },
+			{ "pitch_time", axis_probe.pitch_time },
+			{ "heading_time", axis_probe.heading_time },
+			{ "slide_lr_time", axis_probe.slide_lr_time },
+			{ "slide_ud_time", axis_probe.slide_ud_time },
+			{ "bank_time", axis_probe.bank_time },
+			{ "throttle_time", axis_probe.throttle_time }
+		};
 
 		/* Diagnostic: raw axis state and modifier flags for axis test debugging */
 		j["slide_on_state"] = (int) Controls.slide_on_state;

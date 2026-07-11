@@ -25,6 +25,15 @@ function Get-InputDemoBuildTarget {
     throw "Unsupported game: $GameName"
 }
 
+function Get-InputDemoBuildStampPath {
+    param(
+        [string]$RepoRoot,
+        [string]$GameName
+    )
+
+    return Join-RegressionPath $RepoRoot 'temp' 'input_demo_build_stamps' "$GameName.stamp"
+}
+
 function Get-InputDemoExecutablePath {
     param(
         [string]$RepoRoot,
@@ -128,6 +137,12 @@ function Invoke-InputDemoHostBuild {
     $buildTarget = Get-InputDemoBuildTarget -GameName $GameName
     Write-Host "Build guardrail: rebuilding host target $buildTarget"
     Invoke-RegressionHostBuild -RepoRoot $RepoRoot -Target $buildTarget -Label $GameName
+    $stampPath = Get-InputDemoBuildStampPath -RepoRoot $RepoRoot -GameName $GameName
+    $stampDirectory = Split-Path -Path $stampPath -Parent
+    if (-not (Test-Path -LiteralPath $stampDirectory -PathType Container)) {
+        New-Item -ItemType Directory -Path $stampDirectory -Force | Out-Null
+    }
+    [System.IO.File]::WriteAllText($stampPath, [DateTime]::UtcNow.ToString('O'))
 }
 
 function Get-InputDemoExecutableFreshnessIssue {
@@ -152,7 +167,14 @@ function Get-InputDemoExecutableFreshnessIssue {
     }
 
     $exeItem = Get-Item -LiteralPath $ExecutablePath
-    if ($exeItem.LastWriteTimeUtc -ge $sourceStamp.TimestampUtc) {
+    $buildStampPath = Get-InputDemoBuildStampPath -RepoRoot $RepoRoot -GameName $GameName
+    $buildStampTimeUtc = if (Test-Path -LiteralPath $buildStampPath -PathType Leaf) {
+        (Get-Item -LiteralPath $buildStampPath).LastWriteTimeUtc
+    } else {
+        [DateTime]::MinValue
+    }
+    if ($exeItem.LastWriteTimeUtc -ge $sourceStamp.TimestampUtc -or
+        $buildStampTimeUtc -ge $sourceStamp.TimestampUtc) {
         return $null
     }
 

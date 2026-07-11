@@ -53,6 +53,7 @@ extern "C" {
 #include "screens.h"
 #include "inferno.h"
 #include "key.h"
+#include "kconfig.h"
 #include "playsave.h"
 #include "state.h"
 #include "window.h"
@@ -74,6 +75,7 @@ extern "C" {
 extern "C" void android_test_inject_touch_tap(void);
 extern "C" void android_test_inject_touch_action(int action);
 extern "C" void android_automation_joystick_button(int button, int pressed);
+extern "C" int android_automation_joystick_axis(int axis, int raw_value, int touch_source);
 
 static void automation_enter_launcher(void)
 {
@@ -387,6 +389,7 @@ static int g_select_delta = 0; /* remaining navigation steps (+down, -up) */
 static int g_held_axis_active[8] = { 0 };
 static float g_held_axis_value[8] = { 0.0f };
 static int g_held_axis_touch_source[8] = { 0 };
+static game_automate_axis_probe g_axis_probe = {};
 
 struct automation_load_request {
 	char script_path[512] = "";
@@ -696,17 +699,38 @@ static void inject_axis(int axis, float value, bool touch_source)
 	if (ival > 32767) ival = 32767;
 	if (ival < -32768) ival = -32768;
 
+#ifdef ANDROID
+	/*
+	 * Establish a deterministic one-axis input vector before dispatching the
+	 * target. This isolates the probe from gyro/controller state consumed on a
+	 * prior frame. Each handler call synchronously reaches kconfig on the game
+	 * thread, and the final target sample is captured below.
+	 */
+	for (int clear_axis = 0; clear_axis < 8; ++clear_axis)
+		android_automation_joystick_axis(clear_axis, 0, 0);
+	int processed = android_automation_joystick_axis(axis, ival, touch_source ? 1 : 0);
+
+	++g_axis_probe.generation;
+	g_axis_probe.valid = 1;
+	g_axis_probe.axis = axis;
+	g_axis_probe.raw_value = ival;
+	g_axis_probe.touch_source = touch_source ? 1 : 0;
+	g_axis_probe.processed = processed != 0;
+	g_axis_probe.pitch_time = (int) Controls.pitch_time;
+	g_axis_probe.heading_time = (int) Controls.heading_time;
+	g_axis_probe.slide_lr_time = (int) Controls.sideways_thrust_time;
+	g_axis_probe.slide_ud_time = (int) Controls.vertical_thrust_time;
+	g_axis_probe.bank_time = (int) Controls.bank_time;
+	g_axis_probe.throttle_time = (int) Controls.forward_thrust_time;
+#else
 	SDL_Event ev;
 	memset(&ev, 0, sizeof(ev));
 	ev.type = SDL_JOYAXISMOTION;
 	ev.jaxis.which = 0;
-#ifdef ANDROID
-	ev.jaxis.axis = (Uint8) (axis | (touch_source ? ANDROID_TOUCH_AXIS_FLAG : 0));
-#else
 	ev.jaxis.axis = (Uint8) axis;
-#endif
 	ev.jaxis.value = (Sint16) ival;
 	SDL_PushEvent(&ev);
+#endif
 	if (!g_inject_axis_logged) {
 		LOGI("Injecting axis %d = %.3f (raw %d, touch=%d)", axis, value, ival, touch_source ? 1 : 0);
 		g_inject_axis_logged = 1;
@@ -2247,6 +2271,14 @@ extern "C" void game_automate_load_script(const char *script_path, int start_ste
 	     run_id ? run_id : "");
 }
 
+extern "C" int game_automate_get_axis_probe(game_automate_axis_probe *out_probe)
+{
+	if (!out_probe)
+		return 0;
+	*out_probe = g_axis_probe;
+	return g_axis_probe.valid;
+}
+
 extern "C" void game_automate_tick(void)
 {
 	/* Handle pending load request (from JNI thread) */
@@ -2273,6 +2305,7 @@ extern "C" void game_automate_tick(void)
 			g_step_start = SDL_GetTicks();
 			g_script_start = g_step_start;
 			clear_held_axes();
+			memset(&g_axis_probe, 0, sizeof(g_axis_probe));
 			g_key_phase = 0;
 			g_select_phase = 0;
 			g_select_delta = 0;
@@ -2494,8 +2527,12 @@ extern "C" void game_automate_tick(void)
 			if (g_key_phase == 0 && s.axis_id >= 0 && s.axis_id < 8) {
 				set_held_axis(s.axis_id, s.axis_value, s.axis_touch_source);
 				inject_axis(s.axis_id, s.axis_value, s.axis_touch_source);
-				g_key_phase = 1;
-				g_step_start = now;
+				if (s.post_delay_ms <= 0) {
+					advance_step();
+				} else {
+					g_key_phase = 1;
+					g_step_start = now;
+				}
 			} else if (g_key_phase == 1) {
 				if (elapsed >= (Uint32) s.post_delay_ms) {
 					advance_step();

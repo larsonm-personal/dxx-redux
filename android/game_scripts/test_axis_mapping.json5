@@ -1,42 +1,15 @@
-// TEST: Axis Mapping Regression
-// Verifies that joystick axis bindings are correct for Android touch controls:
-//   Pitch    = axis 3 (right stick Y)
-//   Turn     = axis 2 (right stick X)
-//   Slide LR = axis 0 (left stick X)
-//   Throttle = axis 1 (left stick Y)
-//   Slide UD = axis 7 (virtual, gyro roll mode)
-//   Bank     = axis 6 (virtual, gyro roll mode)
+// TEST: Axis Routing Regression
 //
-// Phase 1: Static check -- assert axis bindings after new-pilot creation.
-// Phase 2: Dynamic check -- send axis events and verify the correct
-//          control timing values become nonzero (heading_time for turn,
-//          sideways_thrust_time for slide, etc.).
-// Phase 3: Negative check -- verify axis 1 does NOT drive pitch or
-//          slide_ud (catches ControllerConfigPage DEFAULT_BINDINGS bug
-//          and the old joy_out[19]=1 bug).
-// Phase 4: Meta action key sequences -- verify the SDL key events that
-//          meta actions dispatch (ESC for game menu, SHIFT+F4 for
-//          Guide-Bot menu, F1 for help) produce the expected game
-//          effects.  Tests modifier key combo injection.
-// Phase 5: Virtual axis tests -- verify axes 6 (Bank) and 7 (Slide U/D)
-//          are bound and produce the expected control timing values.
-//          These are "virtual" axes used by gyro roll mode.
-// Phase 6: Trigger analog axis tests -- verify axes 4 (LT) and 5 (RT)
-//          drive throttle via the axis-button mechanism and do NOT
-//          accidentally drive pitch/heading/slide/bank. Also verifies
-//          sub-threshold trigger values fire nothing.
+// Verifies D1 and D2 gameplay routing for the six analog movement axes. Each
+// send_axis is a synchronous, game-thread probe that neutralizes competing
+// axes and captures the resulting control sample before queued gyro/controller
+// traffic resumes. This deliberately tests native routing, not SDL queue
+// scheduling.
 //
-// Root cause this catches:
-//   1. ControllerConfigPage.kt DEFAULT_BINDINGS had LS_Y -> "Pitch U/D"
-//      instead of "Throttle". When controller_config.json exists, it
-//      overrides the correct C-side defaults, causing LY to drive pitch
-//      (and slide when slide_on modifier is active).
-//   2. The original joy_out[19]=1 bug mapped LY to Slide U/D index.
-//   3. If kc_set_controls() isn't called after android_apply_gamepad_defaults(),
-//      the live kc_joystick[].value array retains DOS defaults:
-//        Pitch=1(LY), Turn=0(LX), Slide=0xFF(unbound)
-//      instead of Android defaults:
-//        Pitch=3(RY), Turn=2(RX), Slide_LR=0(LX), Throttle=1(LY)
+// Ownership is intentionally narrow:
+//   - test_controller_compare_unified owns launcher/game binding parity.
+//   - test_dpad_triggers owns LT/RT axis-button behavior.
+//   - pause/help scripts own ESC and F1 behavior.
 [
     {"_info": {
         "games": ["d1", "d2"],
@@ -59,7 +32,6 @@
         ]
     }},
 
-    // -- Launcher preamble --
     {"action": "enter_launcher"},
     {"action": "reset_state"},
     {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
@@ -70,256 +42,110 @@
     {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 0},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
 
-    {"action": "log", "message": "=== TEST: Axis Mapping Regression ==="},
-
-    // -- Create fresh pilot and launch into game --
-    // The test runner deletes player.plr before launch, so the game
-    // goes straight to "Enter pilot name" with default "player".
-    // Accept the default name to trigger new_player_config() +
-    // android_apply_gamepad_defaults() + kc_set_controls().
+    {"action": "log", "message": "=== TEST: Axis Routing Regression ==="},
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
-
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
-
-    // Mission select
     {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
     {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
-
-    // D1's post-difficulty transition responds more reliably to a direct
-    // Escape here, while D2 still needs skip_briefing.
     {"action": "key", "key": "escape", "when": "d1", "post_delay_ms": 100},
     {"action": "skip_briefing", "when": "d2", "timeout_ms": 10000, "post_delay_ms": 100},
-
-    // Wait for in-game
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
 
-    // -- Phase 1: Static binding assertions --
-    {"action": "log", "message": "Phase 1: Checking axis bindings"},
+    // Right stick X routes only to heading.
+    {"action": "send_axis", "axis": 2, "axis_value": 0.5, "post_delay_ms": 0},
     {"action": "assert", "expect": {
-        "axis_bind_pitch":    "3",
-        "axis_bind_turn":     "2",
-        "axis_bind_slide_lr": "0",
-        "axis_bind_slide_ud": "7",
-        "axis_bind_bank":     "6",
-        "axis_bind_throttle": "1"
+        "axis_probe.valid": true,
+        "axis_probe.axis": 2,
+        "axis_probe.touch_source": false,
+        "axis_probe.processed": true,
+        "axis_probe.heading_time": {"ne": 0},
+        "axis_probe.pitch_time": 0,
+        "axis_probe.slide_lr_time": 0,
+        "axis_probe.slide_ud_time": 0,
+        "axis_probe.bank_time": 0,
+        "axis_probe.throttle_time": 0
     }},
-    {"action": "log", "message": "Phase 1: PASS -- axis bindings correct"},
+    {"action": "send_axis", "axis": 2, "axis_value": 0.0, "post_delay_ms": 0},
 
-    // -- Phase 2: Dynamic axis tests (positive) --
-    // Verify that axis events cause the CORRECT control timing value
-    // to become nonzero, proving the axis->control mapping is correct.
-    //
-    // SDL axis values persist until changed, so heading_time etc.
-    // remain nonzero on the frame after send_axis finishes.
-
-    // 2a: Axis 2 (RX) should cause turning
-    {"action": "log", "message": "Phase 2a: Sending axis 2 (Turn R/L) = 0.5"},
-    {"action": "send_axis", "axis": 2, "axis_value": 0.5, "post_delay_ms": 300},
+    // Left stick X routes only to lateral thrust.
+    {"action": "send_axis", "axis": 0, "axis_value": 0.5, "post_delay_ms": 0},
     {"action": "assert", "expect": {
-        "heading_time": {"ne": 0}
+        "axis_probe.axis": 0,
+        "axis_probe.processed": true,
+        "axis_probe.slide_lr_time": {"ne": 0},
+        "axis_probe.pitch_time": 0,
+        "axis_probe.heading_time": 0,
+        "axis_probe.slide_ud_time": 0,
+        "axis_probe.bank_time": 0,
+        "axis_probe.throttle_time": 0
     }},
-    {"action": "log", "message": "Phase 2a: PASS -- axis 2 drives heading"},
-    {"action": "send_axis", "axis": 2, "axis_value": 0.0, "post_delay_ms": 100},
+    {"action": "send_axis", "axis": 0, "axis_value": 0.0, "post_delay_ms": 0},
 
-    // 2b: Axis 0 (LX) should cause sliding L/R, NOT turning
-    {"action": "log", "message": "Phase 2b: Sending axis 0 (Slide L/R) = 0.5"},
-    {"action": "send_axis", "axis": 0, "axis_value": 0.5, "post_delay_ms": 300},
+    // Right stick Y routes only to pitch.
+    {"action": "send_axis", "axis": 3, "axis_value": 0.5, "post_delay_ms": 0},
     {"action": "assert", "expect": {
-        "slide_lr_time": {"ne": 0},
-        "heading_time":  "0"
+        "axis_probe.axis": 3,
+        "axis_probe.processed": true,
+        "axis_probe.pitch_time": {"ne": 0},
+        "axis_probe.heading_time": 0,
+        "axis_probe.slide_lr_time": 0,
+        "axis_probe.slide_ud_time": 0,
+        "axis_probe.bank_time": 0,
+        "axis_probe.throttle_time": 0
     }},
-    {"action": "log", "message": "Phase 2b: PASS -- axis 0 drives slide L/R, not turn"},
-    {"action": "send_axis", "axis": 0, "axis_value": 0.0, "post_delay_ms": 100},
+    {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 0},
 
-    // 2c: Axis 3 (RY) should cause pitching
-    {"action": "log", "message": "Phase 2c: Sending axis 3 (Pitch U/D) = 0.5"},
-    {"action": "send_axis", "axis": 3, "axis_value": 0.5, "post_delay_ms": 300},
+    // Left stick Y routes only to throttle. This owns the historic LY mapping
+    // regression and proves that LY does not leak into pitch or slide U/D.
+    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 0},
     {"action": "assert", "expect": {
-        "pitch_time": {"ne": 0}
+        "axis_probe.axis": 1,
+        "axis_probe.processed": true,
+        "axis_probe.throttle_time": {"ne": 0},
+        "axis_probe.pitch_time": 0,
+        "axis_probe.heading_time": 0,
+        "axis_probe.slide_lr_time": 0,
+        "axis_probe.slide_ud_time": 0,
+        "axis_probe.bank_time": 0
     }},
-    {"action": "log", "message": "Phase 2c: PASS -- axis 3 drives pitch"},
-    {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 100},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 0},
 
-    // 2d: Axis 1 (LY) should cause forward/back thrust (throttle)
-    {"action": "log", "message": "Phase 2d: Sending axis 1 (Throttle) = 0.5"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 300},
+    // Virtual gyro-roll axes bypass physical-stick deadzones.
+    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 0},
     {"action": "assert", "expect": {
-        "throttle_time": {"ne": 0}
+        "axis_probe.axis": 6,
+        "axis_probe.touch_source": true,
+        "axis_probe.processed": true,
+        "axis_probe.bank_time": {"ne": 0},
+        "axis_probe.pitch_time": 0,
+        "axis_probe.heading_time": 0,
+        "axis_probe.slide_lr_time": 0,
+        "axis_probe.slide_ud_time": 0,
+        "axis_probe.throttle_time": 0
     }},
-    {"action": "log", "message": "Phase 2d: PASS -- axis 1 drives throttle"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 100},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 0},
 
-    // -- Phase 3: Negative tests --
-    // These catch the specific regressions where axis 1 (LY) was
-    // incorrectly mapped to pitch or slide U/D.
-
-    // 3a: Axis 1 should NOT drive pitch (catches ControllerConfigPage bug)
-    {"action": "log", "message": "Phase 3a: Verify axis 1 does NOT drive pitch"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 300},
+    {"action": "send_axis", "axis": 7, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 0},
     {"action": "assert", "expect": {
-        "pitch_time":    "0",
-        "throttle_time": {"ne": 0}
+        "axis_probe.axis": 7,
+        "axis_probe.touch_source": true,
+        "axis_probe.processed": true,
+        "axis_probe.slide_ud_time": {"ne": 0},
+        "axis_probe.pitch_time": 0,
+        "axis_probe.heading_time": 0,
+        "axis_probe.slide_lr_time": 0,
+        "axis_probe.bank_time": 0,
+        "axis_probe.throttle_time": 0
     }},
-    {"action": "log", "message": "Phase 3a: PASS -- axis 1 does not drive pitch"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 100},
+    {"action": "send_axis", "axis": 7, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 0},
 
-    // 3b: Axis 1 should NOT drive slide U/D (slide_ud is on axis 7 now)
-    {"action": "log", "message": "Phase 3b: Verify axis 1 does NOT drive slide U/D"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 300},
-    {"action": "assert", "expect": {
-        "slide_ud_time": "0",
-        "throttle_time": {"ne": 0}
-    }},
-    {"action": "log", "message": "Phase 3b: PASS -- axis 1 does not drive slide U/D"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 100},
-
-    // 3c: Axis 3 should NOT drive throttle (only pitch)
-    {"action": "log", "message": "Phase 3c: Verify axis 3 does NOT drive throttle"},
-    {"action": "send_axis", "axis": 3, "axis_value": 0.5, "post_delay_ms": 300},
-    {"action": "assert", "expect": {
-        "throttle_time": "0",
-        "pitch_time":    {"ne": 0}
-    }},
-    {"action": "log", "message": "Phase 3c: PASS -- axis 3 does not drive throttle"},
-    {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 100},
-
-    // -- Phase 4: Meta action key sequence tests --
-    // Meta actions (android_meta_actions.c) work by injecting SDL key
-    // events when a controller button fires.  These tests verify the
-    // underlying key sequences produce the expected game effects.
-
-    // 4a: ESC key (META_GAME_MENU dispatches SDLK_ESCAPE)
-    //     Should open the in-game options menu over the game window.
-    //     nm_messagebox is blocking, so the menu window should be
-    //     visible on the very next game_automate_tick.  Use wait_for
-    //     instead of instant assert to tolerate any brief window-stack
-    //     transition (the menu window hasn't appeared in the window
-    //     list yet on the same tick as the key injection).
-    {"action": "log", "message": "Phase 4a: ESC key opens in-game menu"},
-    {"action": "assert", "expect": {"game_window_is_front": "true"}},
-    {"action": "key", "key": "esc", "post_delay_ms": 100},
-    {"action": "wait_for", "field": "menu_type", "value": "newmenu", "timeout_ms": 3000},
-    {"action": "assert", "expect": {
-        "game_window_is_front": "false",
-        "menu_type": "newmenu"
-    }},
-    {"action": "log", "message": "Phase 4a: PASS -- ESC opened menu"},
-    // Close the menu and return to game
-    {"action": "key", "key": "esc", "post_delay_ms": 100},
-    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
-    {"action": "log", "message": "Phase 4a: PASS -- menu closed, back in game"},
-
-    // 4b: SHIFT+F4 opens Guide-Bot menu (D2 only)
-    //     Skipped: do_escort_menu() returns early if the buddy is near
-    //     unblasted blastable walls (ok_for_buddy_to_talk check), making
-    //     this unreliable on Level 1.  The key combo injection itself is
-    //     exercised by other meta-action tests.
-
-    // 4c: F1 opens help screen (both D1 and D2)
-    //     show_help() calls newmenu_dotiny(NULL, TXT_KEYS, ...) so
-    //     "KEYS" is the subtitle, not the title.
-    {"action": "log", "message": "Phase 4c: F1 opens help menu"},
-    {"action": "key", "key": "f1", "post_delay_ms": 100},
-    {"action": "wait_for", "field": "menu_type", "value": "newmenu", "timeout_ms": 3000},
-    {"action": "assert", "expect": {
-        "game_window_is_front": "false",
-        "menu_type": "newmenu",
-        "menu_subtitle": "KEYS"
-    }},
-    {"action": "log", "message": "Phase 4c: PASS -- F1 opened help menu with subtitle KEYS"},
-    // Dismiss help
-    {"action": "key", "key": "esc", "post_delay_ms": 100},
-    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
-    {"action": "log", "message": "Phase 4c: PASS -- help menu dismissed"},
-
-    // -- Phase 5: Virtual axis tests (Bank=6, Slide U/D=7) --
-    // These axes are used by gyro "roll" mode. They are registered
-    // in joy.c as virtual touch axes with no physical D-pad buttons,
-    // so mark the injected events as touch-sourced to use the same
-    // zero-deadzone path as runtime touch/gyro input.
-
-    // 5a: Axis 6 (Bank) should cause banking
-    {"action": "log", "message": "Phase 5a: Sending axis 6 (Bank L/R) = 0.5"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 300},
-    {"action": "assert", "expect": {
-        "bank_time": {"ne": 0}
-    }},
-    {"action": "log", "message": "Phase 5a: PASS -- axis 6 drives banking"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 100},
-
-    // 5b: Axis 7 (Slide U/D) should cause vertical thrust
-    {"action": "log", "message": "Phase 5b: Sending axis 7 (Slide U/D) = 0.5"},
-    {"action": "send_axis", "axis": 7, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 300},
-    {"action": "assert", "expect": {
-        "slide_ud_time": {"ne": 0}
-    }},
-    {"action": "log", "message": "Phase 5b: PASS -- axis 7 drives slide U/D"},
-    {"action": "send_axis", "axis": 7, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 100},
-
-    // 5c: Axis 6 should NOT drive heading or pitch
-    {"action": "log", "message": "Phase 5c: Verify axis 6 does NOT drive heading or pitch"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 300},
-    {"action": "assert", "expect": {
-        "heading_time": "0",
-        "pitch_time":   "0"
-    }},
-    {"action": "log", "message": "Phase 5c: PASS -- axis 6 only drives bank"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 100},
-
-    // -- Phase 6: Trigger analog axis tests (LT=4, RT=5) --
-    // With the AXIS_CONTROLS addition of LT/RT, the controller config
-    // UI now allows binding trigger axes as analog controls. With
-    // default bindings, triggers are used as button-like controls
-    // (axis-buttons for accelerate/reverse) not as analog axis bindings.
-    // Verify that sending trigger axis values still drives throttle via
-    // the axis-button mechanism, and does NOT falsely drive pitch,
-    // heading, slide, or bank (which would indicate an accidental
-    // analog axis binding).
-
-    // 6a: RT axis (axis 5, value 0.8) should cause throttle via button
-    {"action": "log", "message": "Phase 6a: RT trigger (axis 5) analog = 0.8"},
-    {"action": "send_axis", "axis": 5, "axis_value": 0.8, "post_delay_ms": 300},
-    {"action": "assert", "expect": {
-        "throttle_time": {"ne": 0},
-        "pitch_time":    "0",
-        "heading_time":  "0",
-        "slide_lr_time": "0",
-        "bank_time":     "0"
-    }},
-    {"action": "log", "message": "Phase 6a: PASS -- RT drives only throttle"},
-    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 100},
-
-    // 6b: LT axis (axis 4, value 0.8) should cause throttle via button
-    {"action": "log", "message": "Phase 6b: LT trigger (axis 4) analog = 0.8"},
-    {"action": "send_axis", "axis": 4, "axis_value": 0.8, "post_delay_ms": 300},
-    {"action": "assert", "expect": {
-        "throttle_time": {"ne": 0},
-        "pitch_time":    "0",
-        "heading_time":  "0",
-        "slide_lr_time": "0",
-        "bank_time":     "0"
-    }},
-    {"action": "log", "message": "Phase 6b: PASS -- LT drives only throttle"},
-    {"action": "send_axis", "axis": 4, "axis_value": 0.0, "post_delay_ms": 100},
-
-    // 6c: RT axis at sub-threshold (0.1) should NOT fire axis-button
-    {"action": "log", "message": "Phase 6c: RT sub-threshold (axis 5) = 0.1"},
-    {"action": "send_axis", "axis": 5, "axis_value": 0.1, "post_delay_ms": 300},
-    {"action": "assert", "expect": {
-        "throttle_time": "0",
-        "pitch_time":    "0"
-    }},
-    {"action": "log", "message": "Phase 6c: PASS -- sub-threshold RT fires nothing"},
-    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 100},
-
-    // -- Done --
-    {"action": "log", "message": "=== TEST: Axis Mapping Regression -- ALL PHASES PASS ==="}
+    {"action": "log", "message": "=== TEST: Axis Routing Regression -- PASS ==="}
 ]

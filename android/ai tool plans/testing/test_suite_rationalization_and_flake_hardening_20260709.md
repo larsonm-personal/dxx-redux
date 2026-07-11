@@ -34,7 +34,18 @@ Reduce duplicate coverage, improve failure signal, and remove structural sources
 
 ## Status
 
-Investigation and the first implementation tranche are complete.
+The first implementation tranche is complete. The second full-report tranche is in progress against `report_20260709_225804.md`.
+
+## Second full-report tranche
+
+Latest full run: 74 passed, 6 failed, 0 timed out, 6 skipped, 0 not run in 1:07:43.
+
+1. [in progress] Reconcile all six failures with their complete logs and durable artifacts
+2. [pending] Collapse duplicate input-demo reporting so one simulation divergence is one primary failure with backend corroboration
+3. [pending] Repair merged-wall diagnostics at the producer/contract boundary rather than weakening assertions
+4. [pending] Replace incidental guidebot route-size assertions with a semantic route contract, while preserving real route defects as failures
+5. [pending] Replace whole-file secret baseline failure output with a normalized structural diff and classify the current change
+6. [pending] Run focused regression tests, builds, code quality, and a representative profile
 
 ## Prior work assessment
 

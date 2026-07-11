@@ -43,6 +43,7 @@ $helpersDir = Join-Path $scriptDir "helpers"
 $repoRoot = Split-Path $scriptDir
 . (Join-Path $helpersDir "test_helpers.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
+. (Join-Path (Join-Path $scriptDir "tests") "input_demo_graphics_canary_helpers.ps1")
 
 if (-not $ReportDir) {
     $ReportDir = Join-Path $repoRoot "temp\test_reports"
@@ -54,10 +55,9 @@ $reportFile = Join-Path $ReportDir "quick_report_$timestamp.md"
 $runTestScript = Join-Path $helpersDir "run_test.ps1"
 
 function New-QuickDemoSubset {
-    param([string]$DestinationRoot)
-
-    $demoFileNames = @(
-        "d2_descent2_level9_20260511_192533.dximdemo"
+    param(
+        [string]$DestinationRoot,
+        $Canary
     )
 
     if (Test-Path -LiteralPath $DestinationRoot) {
@@ -65,18 +65,20 @@ function New-QuickDemoSubset {
     }
     New-Item -ItemType Directory -Path $DestinationRoot -Force | Out-Null
 
-    foreach ($demoFileName in $demoFileNames) {
-        $sourcePath = Join-Path $scriptDir (Join-Path "regression_demos" $demoFileName)
-        if (-not (Test-Path -LiteralPath $sourcePath)) {
-            throw "Quick demo source not found: $sourcePath"
-        }
-        Copy-Item -LiteralPath $sourcePath -Destination (Join-Path $DestinationRoot $demoFileName)
-    }
+    $sourcePath = Resolve-InputDemoGraphicsCanaryPath `
+        -DemoRoot (Join-Path $scriptDir "regression_demos") `
+        -Entry $Canary
+    Copy-Item -LiteralPath $sourcePath -Destination (Join-Path $DestinationRoot $Canary.FileName)
 
     return $DestinationRoot
 }
 
-$quickDemoRoot = New-QuickDemoSubset -DestinationRoot (Join-Path $repoRoot "temp\quick_demo_subset_$timestamp")
+$inputDemoCanaryManifest = Read-InputDemoGraphicsCanaryManifest `
+    -ManifestPath (Join-Path $scriptDir "tests\input_demo_graphics_canaries.txt")
+$quickDemoRoot = New-QuickDemoSubset `
+    -DestinationRoot (Join-Path $repoRoot "temp\quick_demo_subset_$timestamp") `
+    -Canary $inputDemoCanaryManifest['d2']
+$quickPrimaryResultRoot = Join-Path $repoRoot "temp\quick_demo_primary_results_$timestamp"
 $headlessExecutable = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName "d2" -PreferHeadlessConsole
 $headlessFreshnessIssue = Get-InputDemoExecutableFreshnessIssue `
     -RepoRoot $repoRoot `
@@ -90,8 +92,8 @@ $quickTests = @(
     @{ Name = "test_fpcalc_and_acoustid"; Type = "ps1"; RelativePath = "tests\test_fpcalc_and_acoustid.ps1"; HistoricalSeconds = 3 },
     @{ Name = "test_input_demo_rng_trace_compare"; Type = "ps1"; RelativePath = "tests\test_input_demo_rng_trace_compare.ps1"; HistoricalSeconds = 0 },
     @{ Name = "test_input_demo_state_trace_compare"; Type = "ps1"; RelativePath = "tests\test_input_demo_state_trace_compare.ps1"; HistoricalSeconds = 0 },
-    @{ Name = "test_input_demo_regressions_headless_quick"; Type = "ps1"; RelativePath = "tests\test_input_demo_regressions.ps1"; Arguments = @("-DemoRoot", $quickDemoRoot, "-Game", "d2", "-TimeoutSeconds", "120", "-StopOnFirstFailure"); HistoricalSeconds = $headlessHistoricalSeconds },
-    @{ Name = "test_input_demo_regressions_graphics_quick"; Type = "ps1"; RelativePath = "tests\test_input_demo_regressions_graphics.ps1"; Arguments = @("-DemoRoot", $quickDemoRoot, "-Game", "d2", "-TimeoutSeconds", "120", "-StopOnFirstFailure"); HistoricalSeconds = 10 },
+    @{ Name = "test_input_demo_regressions_headless_quick"; Type = "ps1"; RelativePath = "tests\test_input_demo_regressions.ps1"; Arguments = @("-DemoRoot", $quickDemoRoot, "-Game", "d2", "-TimeoutSeconds", "120", "-StopOnFirstFailure", "-ResultArchiveRoot", $quickPrimaryResultRoot); HistoricalSeconds = $headlessHistoricalSeconds },
+    @{ Name = "test_input_demo_regressions_graphics_quick"; Type = "ps1"; RelativePath = "tests\test_input_demo_regressions_graphics.ps1"; Arguments = @("-DemoRoot", $quickDemoRoot, "-Game", "d2", "-TimeoutSeconds", "120", "-StopOnFirstFailure", "-ReferenceResultRoot", $quickPrimaryResultRoot); HistoricalSeconds = 10 },
     @{ Name = "test_quick_record_classic_sidecar"; Type = "json5"; RelativePath = "game_scripts\test_quick_record_classic_sidecar.json5"; HistoricalSeconds = 35 },
     @{ Name = "test_mod_loading"; Type = "json5"; RelativePath = "game_scripts\test_mod_loading.json5"; HistoricalSeconds = 25 },
     @{ Name = "test_launcher_graphics_debug_prefs"; Type = "json5"; RelativePath = "game_scripts\test_launcher_graphics_debug_prefs.json5"; HistoricalSeconds = 27 },

@@ -2977,12 +2977,24 @@ static int merged_wall_cover_is_debug_target(
     float cover_max_sy,
     float overlap_area)
 {
+	struct merged_wall_cached_texmerge_entry *cache_entry = NULL;
 	const char *name = cover_bitmap ? piggy_game_bitmap_name(cover_bitmap) : NULL;
 
-	if (track && track->merged_bitmap == cover_bitmap && merged_wall_find_cached_texmerge_bitmap(cover_bitmap))
-		return 1;
 	if (android_texture_debug_matches_target_name(name))
 		return 1;
+	cache_entry = merged_wall_find_cached_texmerge_bitmap(cover_bitmap);
+	if (cache_entry) {
+		const char *bottom_name = cache_entry->bottom_bmp
+		                              ? piggy_game_bitmap_name(cache_entry->bottom_bmp)
+		                              : NULL;
+		const char *top_name = cache_entry->top_bmp
+		                           ? piggy_game_bitmap_name(cache_entry->top_bmp)
+		                           : NULL;
+
+		if (android_texture_debug_matches_target_name(bottom_name) ||
+		    android_texture_debug_matches_target_name(top_name))
+			return 1;
+	}
 	if (!android_texture_debug_target_is_crosshair())
 		return 0;
 	return merged_wall_cover_matches_crosshair_target(track,
@@ -4016,6 +4028,8 @@ static void merged_wall_log_cover_gpu_readback(const char *kind,
 	grs_bitmap *src;
 	ogl_texture *texture;
 	const char *name;
+	const char *logical_bot_name;
+	const char *logical_ovl_name;
 	GLuint fbo = 0;
 	GLint prev_fbo = 0;
 	GLenum status = GL_FRAMEBUFFER_COMPLETE;
@@ -4033,6 +4047,12 @@ static void merged_wall_log_cover_gpu_readback(const char *kind,
 		return;
 	cache_entry = merged_wall_find_cached_texmerge_bitmap(cover_bitmap);
 	name = piggy_game_bitmap_name(cover_bitmap);
+	logical_bot_name = cache_entry && cache_entry->bottom_bmp
+	                       ? piggy_game_bitmap_name(cache_entry->bottom_bmp)
+	                       : name;
+	logical_ovl_name = cache_entry && cache_entry->top_bmp
+	                       ? piggy_game_bitmap_name(cache_entry->top_bmp)
+	                       : NULL;
 	if (!is_debug_target)
 		return;
 	if (!merged_wall_note_cover_gpu_readback(cache_entry
@@ -4174,7 +4194,9 @@ static void merged_wall_log_cover_gpu_readback(const char *kind,
 		merged_wall_copy_string(target->cover_shader, sizeof(target->cover_shader),
 		                        shader_kind ? shader_kind : "");
 		merged_wall_copy_string(target->cover_bot, sizeof(target->cover_bot),
-		                        name ? name : "");
+		                        logical_bot_name ? logical_bot_name : "");
+		merged_wall_copy_string(target->cover_ovl, sizeof(target->cover_ovl),
+		                        logical_ovl_name ? logical_ovl_name : "");
 	}
 
 	debug_log(DLOG_TEXTURE,

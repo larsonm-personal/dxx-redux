@@ -14,6 +14,9 @@
 
 param(
     [string]$DemoRoot,
+    [string[]]$DemoFileName,
+    [string]$ResultArchiveRoot,
+    [string]$ReferenceResultRoot,
     [ValidateSet('auto', 'd1', 'd2')]
     [string]$Game = 'auto',
     [ValidateSet('all', 'd1', 'd2')]
@@ -22,6 +25,7 @@ param(
     [string]$RunMode = 'headless',
     [int]$TimeoutSeconds = 180,
     [switch]$D1InD2,
+    [switch]$ListOnly,
     [switch]$StopOnFirstFailure
 )
 
@@ -37,11 +41,23 @@ $forwardedParams = @{
 if ($DemoRoot) {
     $forwardedParams.DemoRoot = $DemoRoot
 }
+if ($DemoFileName) {
+    $forwardedParams.DemoFileName = $DemoFileName
+}
+if ($ResultArchiveRoot) {
+    $forwardedParams.ResultArchiveRoot = $ResultArchiveRoot
+}
+if ($ReferenceResultRoot) {
+    $forwardedParams.ReferenceResultRoot = $ReferenceResultRoot
+}
 if ($StopOnFirstFailure) {
     $forwardedParams.StopOnFirstFailure = $true
 }
 if ($D1InD2) {
     $forwardedParams.D1InD2 = $true
+}
+if ($ListOnly) {
+    $forwardedParams.ListOnly = $true
 }
 
 & "$PSScriptRoot\run_input_demo_regressions.ps1" @forwardedParams

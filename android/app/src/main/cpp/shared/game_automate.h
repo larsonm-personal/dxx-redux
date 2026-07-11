@@ -19,6 +19,26 @@ extern "C" {
 #ifdef INTROSPECT_ON
 
 /*
+ * Source-correlated result captured by Android's synchronous send_axis probe.
+ * The snapshot is taken before queued device/sensor events resume, so tests can
+ * assert control routing without sampling a later frame's transient Controls.
+ */
+typedef struct game_automate_axis_probe {
+	unsigned int generation;
+	int valid;
+	int axis;
+	int raw_value;
+	int touch_source;
+	int processed;
+	int pitch_time;
+	int heading_time;
+	int slide_lr_time;
+	int slide_ud_time;
+	int bank_time;
+	int throttle_time;
+} game_automate_axis_probe;
+
+/*
  * Set the directory where automation output files go.
  * Must be called once (from JNI) before the game loop starts.
  */
@@ -38,6 +58,9 @@ void game_automate_load_script(const char *script_path, int start_step, const ch
  * script is active.
  */
 void game_automate_tick(void);
+
+/* Copies the latest synchronous axis probe. Returns nonzero when valid. */
+int game_automate_get_axis_probe(game_automate_axis_probe *out_probe);
 
 #else /* !INTROSPECT_ON */
 
