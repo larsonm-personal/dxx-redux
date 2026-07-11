@@ -492,6 +492,83 @@ int state_android_close_file(rewind_file *file)
 	return result;
 }
 
+int state_android_read_android_metadata_trailer(rewind_file *file,
+                                                android_save_meta_disk *meta)
+{
+	struct PHYSFS_File *physfs_file;
+	PHYSFS_sint64 saved_pos;
+	PHYSFS_sint64 file_len;
+	int have_meta;
+
+	if (!file || !meta)
+		return 0;
+	file_len = rewind_file_length(file);
+	if (!rewind_file_is_memory(file)) {
+		physfs_file = rewind_file_physfs_handle(file);
+		return physfs_file ? android_save_meta_read_physfs(physfs_file, file_len, meta) : 0;
+	}
+
+	saved_pos = rewind_file_tell(file);
+	have_meta = file_len >= (PHYSFS_sint64) sizeof(*meta) &&
+	            rewind_file_seek(file, file_len - (PHYSFS_sint64) sizeof(*meta)) &&
+	            rewind_file_read(file, meta, sizeof(*meta), 1) == 1 &&
+	            android_save_meta_is_valid(meta);
+	rewind_file_seek(file, saved_pos);
+	return have_meta;
+}
+
+int state_android_read_coop_metadata_trailer(rewind_file *file,
+                                             coop_save_metadata *meta)
+{
+	struct PHYSFS_File *physfs_file;
+	PHYSFS_sint64 saved_pos;
+	PHYSFS_sint64 file_len;
+	PHYSFS_sint64 coop_meta_start;
+	android_save_meta_disk android_meta;
+	int have_android_meta;
+	int have_coop_meta = 0;
+
+	if (!file || !meta)
+		return 0;
+
+	if (rewind_file_is_memory(file)) {
+		saved_pos = rewind_file_tell(file);
+		file_len = rewind_file_length(file);
+		have_android_meta = state_android_read_android_metadata_trailer(
+		    file, &android_meta);
+		coop_meta_start = file_len - (PHYSFS_sint64) sizeof(*meta);
+		if (have_android_meta)
+			coop_meta_start -= (PHYSFS_sint64) sizeof(android_save_meta_disk);
+		if (coop_meta_start >= 0 && rewind_file_seek(file, coop_meta_start) &&
+		    rewind_file_read(file, meta, sizeof(*meta), 1) == 1 &&
+		    meta->tag == COOP_SAVE_META_TAG && meta->version >= 1 &&
+		    meta->num_active_players <= MAX_PLAYERS &&
+		    meta->num_absent_players <= COOP_MAX_REMEMBERED_PLAYERS)
+			have_coop_meta = 1;
+		rewind_file_seek(file, saved_pos);
+		return have_coop_meta;
+	}
+
+	physfs_file = rewind_file_physfs_handle(file);
+	if (!physfs_file)
+		return 0;
+
+	saved_pos = rewind_file_tell(file);
+	file_len = rewind_file_length(file);
+	have_android_meta = android_save_meta_read_physfs(
+	    physfs_file, file_len, &android_meta);
+
+	coop_meta_start = file_len - (PHYSFS_sint64) sizeof(coop_save_metadata);
+	if (have_android_meta)
+		coop_meta_start -= (PHYSFS_sint64) sizeof(android_meta);
+	if (coop_meta_start >= 0)
+		have_coop_meta = coop_read_save_metadata(
+		    physfs_file, coop_meta_start, meta);
+
+	rewind_file_seek(file, saved_pos);
+	return have_coop_meta;
+}
+
 void state_android_write_save_metadata(rewind_file *fp, const char *desc,
                                        const char *mission_filename)
 {

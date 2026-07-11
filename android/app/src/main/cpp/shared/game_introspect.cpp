@@ -47,6 +47,7 @@ extern "C" {
 #include "gr.h"
 #include "multi.h"
 #include "songs.h"
+#include "songs_android_shared.h"
 #include "ogl_init.h"
 #include "piggy.h"
 #include "textures.h"
@@ -1235,6 +1236,14 @@ extern "C" char *game_introspect_get_state(void)
 		};
 		if (have_track == 0 && name[0])
 			music["name"] = std::string(name);
+		char *track_list = (char *) malloc(32768);
+		if (track_list) {
+			songs_get_track_list(track_list, 32768);
+			json tracks = json::parse(track_list, nullptr, false);
+			if (tracks.is_array())
+				music["tracks"] = std::move(tracks);
+			free(track_list);
+		}
 		j["music"] = std::move(music);
 	}
 

@@ -55,6 +55,7 @@ extern "C" {
 #include "inferno.h"
 #include "key.h"
 #include "playsave.h"
+#include "songs_android_shared.h"
 #include "state.h"
 #include "window.h"
 #include "newmenu.h"
@@ -301,6 +302,7 @@ enum step_type {
 	STEP_ANALYZE_LEVEL_METADATA_ALL, /* launcher-only: no-op in game engine (skip) */
 	STEP_TRIGGER_ENDLEVEL,           /* call start_endlevel_sequence() */
 	STEP_TRIGGER_LEVELCOMPLETE,      /* call PlayerFinishedLevel(0) directly */
+	STEP_MUSIC_CONTROL,              /* invoke shared Android track controls */
 	STEP_WRITE_CONFIG,               /* launcher-only: no-op in game engine (skip) */
 	STEP_TAP_BUTTON,                 /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_BUTTON,              /* launcher-only: no-op in game engine (skip) */
@@ -352,6 +354,8 @@ struct auto_step {
 	int button_held = 0;                   /* STEP_SEND_BUTTON: 1 = hold (no release) */
 	int button_pressed = 1;                /* STEP_SEND_BUTTON: 0 = release only */
 	int meta_action_id = -1;               /* STEP_META_ACTION: action ID */
+	std::string music_operation;           /* STEP_MUSIC_CONTROL: next, previous, or play */
+	int music_track = -1;                  /* STEP_MUSIC_CONTROL: index for play */
 	int segment = -1;                      /* STEP_FACE_VIEW: target segment */
 	int side = -1;                         /* STEP_FACE_VIEW: target side */
 	int face = 0;                          /* STEP_FACE_VIEW: target face on side */
@@ -494,6 +498,7 @@ static const char *step_type_name(step_type t)
 		case STEP_ANALYZE_LEVEL_METADATA_ALL: return "analyze_level_metadata_all";
 		case STEP_TRIGGER_ENDLEVEL: return "trigger_endlevel";
 		case STEP_TRIGGER_LEVELCOMPLETE: return "trigger_levelcomplete";
+		case STEP_MUSIC_CONTROL: return "music_control";
 		case STEP_WRITE_CONFIG: return "write_config";
 		case STEP_TAP_BUTTON: return "tap_button";
 		case STEP_ASSERT_BUTTON: return "assert_button";
@@ -1814,6 +1819,7 @@ static int parse_script(const char *json_text)
 			else if (action == "analyze_level_metadata_all") s.type = STEP_ANALYZE_LEVEL_METADATA_ALL;
 			else if (action == "trigger_endlevel") s.type = STEP_TRIGGER_ENDLEVEL;
 			else if (action == "trigger_levelcomplete") s.type = STEP_TRIGGER_LEVELCOMPLETE;
+			else if (action == "music_control") s.type = STEP_MUSIC_CONTROL;
 			else if (action == "write_config") s.type = STEP_WRITE_CONFIG;
 			else if (action == "tap_button") s.type = STEP_TAP_BUTTON;
 			else if (action == "assert_button") s.type = STEP_ASSERT_BUTTON;
@@ -1846,6 +1852,8 @@ static int parse_script(const char *json_text)
 			s.button_held = step_json.value("held", 0);
 			s.button_pressed = step_json.value("pressed", 1);
 			s.meta_action_id = step_json.value("id", -1);
+			s.music_operation = step_json.value("operation", "");
+			s.music_track = step_json.value("track", -1);
 			s.segment = step_json.value("segment", -1);
 			s.side = step_json.value("side", -1);
 			s.face = step_json.value("face", 0);
@@ -3073,6 +3081,29 @@ extern "C" void game_automate_tick(void)
 			advance_step();
 			PlayerFinishedLevel(0);
 			break;
+
+		case STEP_MUSIC_CONTROL: {
+			int result;
+
+			if (s.music_operation == "next")
+				result = songs_next_track();
+			else if (s.music_operation == "previous")
+				result = songs_prev_track();
+			else if (s.music_operation == "play")
+				result = songs_play_specific_track(s.music_track);
+			else {
+				stop_script_fail("music_control: unknown operation");
+				break;
+			}
+			if (!result) {
+				stop_script_fail("music_control: track operation failed");
+				break;
+			}
+			LOGI("music_control: operation=%s track=%d result=%d",
+			     s.music_operation.c_str(), s.music_track, result);
+			advance_step();
+			break;
+		}
 
 		case STEP_SET_DEBUG:
 			if (s.field == "tex_overlay")

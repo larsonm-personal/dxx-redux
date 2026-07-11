@@ -51,6 +51,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "auto_net.h"
 #include "coop_save.h"
 #include "songs.h"
+#include "songs_android_shared.h"
 #endif
 
 //version 5  ->  6: added new highest level information

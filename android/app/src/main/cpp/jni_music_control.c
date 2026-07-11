@@ -13,6 +13,7 @@
 #include <android/log.h>
 
 #include "songs.h"
+#include "songs_android_shared.h"
 #include "rbaudio.h"
 #include "config.h"
 #include "digi.h"

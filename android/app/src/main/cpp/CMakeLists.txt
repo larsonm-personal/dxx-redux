@@ -534,6 +534,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_music_control.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/songs_android_shared.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfs_archiver_saf.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_rng_mode.c
@@ -664,6 +665,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
             ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_music_control.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/songs_android_shared.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfs_archiver_saf.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_rng_mode.c
