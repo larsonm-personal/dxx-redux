@@ -71,8 +71,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 2",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 2",
             "seg": 46,
             "side": 5,
             "wall": 0,
@@ -259,8 +259,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 4",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 4",
             "seg": 371,
             "side": 5,
             "wall": 40,
@@ -304,8 +304,8 @@
           {
             "index": 5,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 15",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 15",
             "seg": 378,
             "side": 1,
             "wall": 46,
@@ -338,8 +338,8 @@
           {
             "index": 7,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 12",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 12",
             "seg": 104,
             "side": 4,
             "wall": 104,

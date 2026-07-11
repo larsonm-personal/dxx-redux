@@ -217,7 +217,7 @@
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
         "travel_time_text": "0M:00S",
-        "travel_targets_reached": 0,
+        "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -281,12 +281,10 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
-        "travel_note": "missing reactor",
+        "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "missing reactor",
+          "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -306,7 +304,7 @@
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
         "travel_time_text": "0M:00S",
-        "travel_targets_reached": 0,
+        "travel_targets_reached": 1,
         "travel_targets_total": 1,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -370,12 +368,10 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
-        "travel_note": "missing reactor",
+        "travel_note": "no reactor, exit exists",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "missing reactor",
+          "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },

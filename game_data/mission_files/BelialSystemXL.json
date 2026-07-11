@@ -470,7 +470,7 @@
             "index": 9,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 701,
             "side": 2,
             "wall": 25,
@@ -2436,7 +2436,7 @@
         "travel_distance": 1562.593508588148,
         "travel_time_seconds": 31,
         "travel_time_text": "1M:31S",
-        "travel_targets_reached": 1,
+        "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -2543,8 +2543,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -2680,7 +2678,7 @@
             "index": 2,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 131,
             "side": 4,
             "wall": 158,
@@ -2702,7 +2700,7 @@
             "index": 3,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 201,
             "side": 0,
             "wall": 87,
@@ -2724,7 +2722,7 @@
             "index": 4,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 202,
             "side": 1,
             "wall": 81,

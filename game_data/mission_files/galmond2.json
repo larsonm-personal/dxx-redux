@@ -184,7 +184,7 @@
         "travel_distance": 8955.557602961595,
         "travel_time_seconds": 179,
         "travel_time_text": "3M:59S",
-        "travel_targets_reached": 4,
+        "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
         "guidebot_count": 1,
@@ -203,7 +203,7 @@
             "index": 1,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 279,
             "side": 5,
             "wall": 22,
@@ -234,7 +234,7 @@
             "index": 3,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 328,
             "side": 2,
             "wall": 68,
@@ -320,7 +320,7 @@
             "index": 6,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 168,
             "side": 4,
             "wall": 25,
@@ -444,8 +444,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -467,7 +465,7 @@
         "travel_distance": 13593.77294635653,
         "travel_time_seconds": 272,
         "travel_time_text": "5M:32S",
-        "travel_targets_reached": 5,
+        "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
         "guidebot_count": 1,
@@ -630,8 +628,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -653,7 +649,7 @@
         "travel_distance": 7941.872949763788,
         "travel_time_seconds": 159,
         "travel_time_text": "3M:39S",
-        "travel_targets_reached": 5,
+        "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
         "guidebot_count": 1,
@@ -817,8 +813,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -920,7 +914,7 @@
         "travel_distance": 8112.8892509387315,
         "travel_time_seconds": 162,
         "travel_time_text": "3M:42S",
-        "travel_targets_reached": 6,
+        "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 1,
         "guidebot_count": 1,
@@ -939,7 +933,7 @@
             "index": 1,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 295,
             "side": 5,
             "wall": 114,
@@ -961,7 +955,7 @@
             "index": 2,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 309,
             "side": 0,
             "wall": 116,
@@ -1028,7 +1022,7 @@
             "index": 5,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 259,
             "side": 2,
             "wall": 82,
@@ -1059,7 +1053,7 @@
             "index": 7,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 218,
             "side": 5,
             "wall": 141,
@@ -1157,8 +1151,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1322,7 +1314,7 @@
             "index": 8,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 646,
             "side": 4,
             "wall": 140,
@@ -1452,7 +1444,7 @@
         "travel_distance": 15607.376283170142,
         "travel_time_seconds": 312,
         "travel_time_text": "5M:12S",
-        "travel_targets_reached": 6,
+        "travel_targets_reached": 7,
         "travel_targets_total": 7,
         "travel_key_detours": 3,
         "guidebot_count": 2,
@@ -1586,8 +1578,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1609,7 +1599,7 @@
         "travel_distance": 13650.693687136485,
         "travel_time_seconds": 273,
         "travel_time_text": "5M:33S",
-        "travel_targets_reached": 5,
+        "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
         "guidebot_count": 1,
@@ -1628,7 +1618,7 @@
             "index": 1,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 360,
             "side": 2,
             "wall": 92,
@@ -1650,7 +1640,7 @@
             "index": 2,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 162,
             "side": 0,
             "wall": 70,
@@ -1735,7 +1725,7 @@
             "index": 7,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 606,
             "side": 2,
             "wall": 128,
@@ -1766,7 +1756,7 @@
             "index": 9,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 622,
             "side": 1,
             "wall": 130,
@@ -1830,8 +1820,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1853,7 +1841,7 @@
         "travel_distance": 13963.543867916918,
         "travel_time_seconds": 279,
         "travel_time_text": "5M:39S",
-        "travel_targets_reached": 4,
+        "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
         "guidebot_count": 1,
@@ -1901,7 +1889,7 @@
             "index": 3,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 399,
             "side": 4,
             "wall": 78,
@@ -2004,8 +1992,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"

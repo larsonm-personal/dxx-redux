@@ -109,7 +109,7 @@
             "index": 6,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 181,
             "side": 5,
             "wall": 61,
@@ -297,7 +297,7 @@
         "travel_distance": 2762.4344325428483,
         "travel_time_seconds": 55,
         "travel_time_text": "1M:55S",
-        "travel_targets_reached": 7,
+        "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -618,8 +618,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -693,8 +691,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 22",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 22",
             "seg": 167,
             "side": 4,
             "wall": 79,
@@ -798,7 +796,7 @@
             "index": 10,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 6,
             "side": 4,
             "wall": 19,
@@ -941,8 +939,8 @@
           {
             "index": 4,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 13",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 13",
             "seg": 249,
             "side": 1,
             "wall": 70,
@@ -1404,8 +1402,8 @@
           {
             "index": 7,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 12",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 12",
             "seg": 556,
             "side": 4,
             "wall": 121,
@@ -1623,8 +1621,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 7",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 7",
             "seg": 372,
             "side": 2,
             "wall": 66,
@@ -1739,8 +1737,8 @@
           {
             "index": 9,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 18",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 18",
             "seg": 588,
             "side": 0,
             "wall": 145,
@@ -2271,8 +2269,8 @@
           {
             "index": 1,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 9",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 9",
             "seg": 144,
             "wall": 28,
             "distance": 111.18548309082644,
@@ -2310,7 +2308,7 @@
         "travel_distance": 295.15282180088127,
         "travel_time_seconds": 6,
         "travel_time_text": "0M:06S",
-        "travel_targets_reached": 1,
+        "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -2598,8 +2596,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"

@@ -291,10 +291,10 @@ static const char *escort_route_goal_instruction(void)
 			return "go here and shoot this switch";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
 			return "fly through this trigger";
-		case LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH:
-			return "activate this switch";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER:
+			return "pass through this trigger";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR:
-			return "shoot this hidden wall";
+			return "open this hidden door";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR:
 			return "destroy the reactor";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS:
@@ -628,7 +628,7 @@ static int escort_route_step_guidance_mode(const level_metadata_route_step *step
 				case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
 					return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
 				case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
-				case LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH:
+				case LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER:
 					return ESCORT_ROUTE_GUIDANCE_REACH_OBJECTIVE;
 				default:
 					return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;

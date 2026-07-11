@@ -344,8 +344,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 16",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 16",
             "seg": 417,
             "side": 3,
             "wall": 141,
@@ -1010,8 +1010,8 @@
           {
             "index": 2,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 10",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 10",
             "seg": 135,
             "side": 0,
             "wall": 39,

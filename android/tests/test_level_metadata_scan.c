@@ -1279,7 +1279,7 @@ static int test_route_accepts_any_fired_opener_for_side(void)
 	test_wall_type[0] = TEST_WALL_CLOSED;
 	test_wall_type[1] = TEST_WALL_CLOSED;
 	test_wall_type[2] = TEST_WALL_OPEN;
-	test_wall_type[3] = TEST_WALL_OPEN;
+	test_wall_type[3] = TEST_WALL_DOOR;
 	test_wall_trigger[2] = 0;
 	test_wall_trigger[3] = 1;
 	test_wall_seg[0] = 1;
@@ -1310,7 +1310,8 @@ static int test_route_accepts_any_fired_opener_for_side(void)
 	failures += expect_string("multi-opener route status", "ok", level_metadata_travel_status_name(state.route_status));
 	failures += expect_int("multi-opener route steps", 3, state.route_step_count);
 	failures += expect_string("multi-opener route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
-	failures += expect_string("multi-opener route activation", "fly_through_trigger", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
+	failures += expect_string("multi-opener route label", "Pass through trigger 1", state.route_steps[1].label);
+	failures += expect_string("multi-opener route activation", "pass_through_trigger", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
 	failures += expect_int("multi-opener route trigger", 1, state.route_steps[1].trigger_num);
 	failures += expect_string("multi-opener route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	return failures;
@@ -1334,9 +1335,13 @@ static int test_route_hidden_door_step(void)
 	test_wall_seg[1] = 1;
 	test_wall_sides[1] = 1;
 	level_metadata_scan_level(&view, &state);
+	failures += expect_string("hidden door travel status", "ok", level_metadata_travel_status_name(state.travel_status));
+	failures += expect_string("hidden door travel problem", "", state.travel_problem);
+	failures += expect_int("hidden door travel targets", state.travel_targets_total, state.travel_targets_reached);
 	failures += expect_string("hidden door route status", "ok", level_metadata_travel_status_name(state.route_status));
 	failures += expect_int("hidden door route steps", 3, state.route_step_count);
 	failures += expect_string("hidden door route step", "hidden_door", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_string("hidden door route label", "Open hidden door", state.route_steps[1].label);
 	failures += expect_int("hidden door route segment", 0, state.route_steps[1].seg);
 	failures += expect_int("hidden door route side", 0, state.route_steps[1].side);
 	failures += expect_int("hidden door route wall", 0, state.route_steps[1].wall_num);

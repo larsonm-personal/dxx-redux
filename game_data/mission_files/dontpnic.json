@@ -482,7 +482,7 @@
         "travel_distance": 1025.064918061116,
         "travel_time_seconds": 21,
         "travel_time_text": "0M:21S",
-        "travel_targets_reached": 5,
+        "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 1,
         "guidebot_count": 0,
@@ -527,9 +527,7 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable"
+        ]
       },
       {
         "level_num": 8,
@@ -762,7 +760,7 @@
             "index": 4,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 12,
             "side": 5,
             "wall": 24,
@@ -1258,8 +1256,8 @@
           {
             "index": 1,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 2",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 2",
             "seg": 4,
             "side": 4,
             "wall": 5,
@@ -1630,7 +1628,7 @@
             "index": 2,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 21,
             "side": 5,
             "wall": 19,
@@ -1679,7 +1677,7 @@
         "travel_distance": 554.4268825519588,
         "travel_time_seconds": 11,
         "travel_time_text": "0M:11S",
-        "travel_targets_reached": 5,
+        "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -1733,9 +1731,7 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable"
+        ]
       },
       {
         "level_num": 23,

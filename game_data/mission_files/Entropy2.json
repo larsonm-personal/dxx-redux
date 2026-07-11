@@ -102,8 +102,8 @@
           {
             "index": 4,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 6",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 6",
             "seg": 205,
             "side": 5,
             "wall": 76,
@@ -176,7 +176,7 @@
         "travel_distance": 2387.82556773336,
         "travel_time_seconds": 48,
         "travel_time_text": "1M:48S",
-        "travel_targets_reached": 1,
+        "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -194,8 +194,8 @@
           {
             "index": 1,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 4",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 4",
             "seg": 25,
             "side": 0,
             "wall": 0,
@@ -214,8 +214,8 @@
           {
             "index": 2,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 5",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 5",
             "seg": 58,
             "side": 1,
             "wall": 26,
@@ -234,8 +234,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 14",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 14",
             "seg": 23,
             "side": 2,
             "wall": 16,
@@ -254,8 +254,8 @@
           {
             "index": 4,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 7",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 7",
             "seg": 81,
             "side": 1,
             "wall": 24,
@@ -293,8 +293,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -316,7 +314,7 @@
         "travel_distance": 1060.33587240268,
         "travel_time_seconds": 21,
         "travel_time_text": "0M:21S",
-        "travel_targets_reached": 1,
+        "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -373,8 +371,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -396,7 +392,7 @@
         "travel_distance": 2177.0611313563068,
         "travel_time_seconds": 44,
         "travel_time_text": "1M:44S",
-        "travel_targets_reached": 1,
+        "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
         "guidebot_count": 1,
@@ -497,8 +493,8 @@
           {
             "index": 4,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 8",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 8",
             "seg": 196,
             "side": 0,
             "wall": 35,
@@ -536,8 +532,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
         "notes": [
@@ -561,7 +555,7 @@
         "travel_distance": 4867.796867570272,
         "travel_time_seconds": 97,
         "travel_time_text": "2M:37S",
-        "travel_targets_reached": 1,
+        "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
         "guidebot_count": 0,
@@ -671,8 +665,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"

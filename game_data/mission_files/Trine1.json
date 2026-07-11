@@ -791,8 +791,8 @@
           {
             "index": 1,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 0",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 0",
             "seg": 11,
             "side": 3,
             "wall": 10,
@@ -860,7 +860,7 @@
         "travel_distance": 3113.60525305345,
         "travel_time_seconds": 62,
         "travel_time_text": "1M:02S",
-        "travel_targets_reached": 1,
+        "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
         "guidebot_count": 0,
@@ -905,9 +905,7 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable"
+        ]
       }
     ],
     "target_index": 0

@@ -68,13 +68,13 @@
         "guidebot.route_analysis.steps[1].first_blocking_side": "4",
         "guidebot.route_analysis.steps[1].first_blocking_wall": "61",
         "guidebot.route_goal_active": "true",
-        "guidebot.route_goal_label": {"contains": "Shoot hidden wall"},
+        "guidebot.route_goal_label": {"contains": "Open hidden door"},
         "guidebot.route_goal_objective_kind": "6",
         "guidebot.route_goal_activation_kind": "5",
         "guidebot.route_goal_objective_wall": "61",
         "guidebot.route_goal_guidance_mode_name": "reach_hidden_door",
         "guidebot.route_goal_path_endpoint_seg": {"gte": 0},
-        "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: shoot this hidden wall"}
+        "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: open this hidden door"}
     }},
 
     {"action": "wait_ms", "ms": 7000},

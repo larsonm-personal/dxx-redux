@@ -2883,12 +2883,12 @@ private fun LevelMetadataRouteStep.routeActivationLabel(): String =
             "Fly through trigger"
         }
 
-        "activate_switch" -> {
-            "Activate switch"
+        "pass_through_trigger" -> {
+            "Pass through trigger"
         }
 
         "open_hidden_door" -> {
-            "Shoot hidden wall"
+            "Open hidden door"
         }
 
         "destroy_reactor" -> {

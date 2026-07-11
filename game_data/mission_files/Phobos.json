@@ -133,7 +133,7 @@
         "travel_distance": 20917.228536095787,
         "travel_time_seconds": 418,
         "travel_time_text": "7M:58S",
-        "travel_targets_reached": 11,
+        "travel_targets_reached": 12,
         "travel_targets_total": 12,
         "travel_key_detours": 3,
         "guidebot_count": 1,
@@ -197,8 +197,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"

@@ -24,7 +24,7 @@
         "travel_distance": 27079.892829773435,
         "travel_time_seconds": 542,
         "travel_time_text": "9M:02S",
-        "travel_targets_reached": 7,
+        "travel_targets_reached": 8,
         "travel_targets_total": 8,
         "travel_key_detours": 3,
         "guidebot_count": 0,
@@ -144,9 +144,7 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable"
+        ]
       },
       {
         "level_num": 2,
@@ -218,7 +216,7 @@
         "travel_distance": 26766.96950761587,
         "travel_time_seconds": 535,
         "travel_time_text": "9M:55S",
-        "travel_targets_reached": 11,
+        "travel_targets_reached": 12,
         "travel_targets_total": 12,
         "travel_key_detours": 3,
         "guidebot_count": 0,
@@ -306,9 +304,7 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable"
+        ]
       },
       {
         "level_num": 4,

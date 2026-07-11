@@ -168,8 +168,8 @@ const char *level_metadata_route_activation_kind_name(int kind)
 			return "shoot_switch";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
 			return "fly_through_trigger";
-		case LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH:
-			return "activate_switch";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER:
+			return "pass_through_trigger";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR:
 			return "open_hidden_door";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR:
@@ -1957,7 +1957,7 @@ static int metadata_route_trigger_activation_kind(
 	int wall_type;
 
 	if (!view || !block)
-		return LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH;
+		return LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER;
 	if (view->wall_is_shootable_trigger &&
 	    valid_wall(view, block->source_wall) &&
 	    view->wall_is_shootable_trigger(view->user, block->source_wall))
@@ -1965,7 +1965,7 @@ static int metadata_route_trigger_activation_kind(
 	wall_type = metadata_wall_type(view, block->source_wall);
 	if (wall_type == view->wall_type_open)
 		return LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER;
-	return LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH;
+	return LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER;
 }
 
 static const char *metadata_route_trigger_action_name(int activation_kind)
@@ -1975,8 +1975,8 @@ static const char *metadata_route_trigger_action_name(int activation_kind)
 			return "Shoot switch";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
 			return "Fly-through";
-		case LEVEL_METADATA_ROUTE_ACTIVATION_ACTIVATE_SWITCH:
-			return "Activate switch";
+		case LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER:
+			return "Pass through";
 		default:
 			return "Trigger";
 	}
@@ -2113,7 +2113,7 @@ static int metadata_route_append_hidden_door_step(
 
 	if (!block || block->kind != METADATA_ROUTE_BLOCK_HIDDEN_DOOR || !valid_wall(view, block->wall_num))
 		return 0;
-	step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_HIDDEN_DOOR, "Shoot hidden wall", block->seg, block->side);
+	step = metadata_route_append_step(view, state, route, LEVEL_METADATA_ROUTE_HIDDEN_DOOR, "Open hidden door", block->seg, block->side);
 	if (!step)
 		return 0;
 	step->wall_num = block->wall_num;
@@ -2828,6 +2828,21 @@ static void level_metadata_route_result_clear(level_metadata_state *state)
 	memset(state->route_steps, 0, sizeof(state->route_steps));
 }
 
+static void reconcile_travel_exit_with_route(level_metadata_state *state)
+{
+	if (!state ||
+	    state->route_status != LEVEL_METADATA_TRAVEL_OK ||
+	    state->travel_status == LEVEL_METADATA_TRAVEL_OK ||
+	    state->travel_targets_total <= 0 ||
+	    state->travel_targets_reached + 1 != state->travel_targets_total)
+		return;
+	state->travel_targets_reached++;
+	state->travel_status = LEVEL_METADATA_TRAVEL_OK;
+	state->travel_problem[0] = '\0';
+	if (strcmp(state->travel_note, "missing reactor") == 0)
+		snprintf(state->travel_note, sizeof(state->travel_note), "%s", "no reactor, exit exists");
+}
+
 int level_metadata_scan_end_route(
     const level_metadata_scan_view *view,
     level_metadata_state *state)
@@ -3068,5 +3083,6 @@ int level_metadata_scan_level(const level_metadata_scan_view *view, level_metada
 	collect_travel_time(view, state);
 	collect_guidebot_info(view, state);
 	collect_route_chain(view, state);
+	reconcile_travel_exit_with_route(state);
 	return state->energy_center_count;
 }

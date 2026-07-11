@@ -108,7 +108,7 @@
             "index": 3,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 642,
             "side": 3,
             "wall": 83,
@@ -130,7 +130,7 @@
             "index": 4,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 660,
             "side": 1,
             "wall": 98,
@@ -250,7 +250,7 @@
         "travel_distance": 5288.781771998178,
         "travel_time_seconds": 106,
         "travel_time_text": "2M:46S",
-        "travel_targets_reached": 1,
+        "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 1,
         "guidebot_count": 0,
@@ -295,9 +295,7 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable"
+        ]
       }
     ],
     "target_index": 0

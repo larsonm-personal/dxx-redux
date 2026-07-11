@@ -489,8 +489,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 1",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 1",
             "seg": 264,
             "side": 1,
             "wall": 22,
@@ -750,7 +750,7 @@
         "travel_distance": 6924.892410365751,
         "travel_time_seconds": 138,
         "travel_time_text": "2M:18S",
-        "travel_targets_reached": 5,
+        "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 3,
         "guidebot_count": 0,
@@ -879,8 +879,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -1776,8 +1774,8 @@
           {
             "index": 5,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 0",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 0",
             "seg": 157,
             "side": 5,
             "wall": 50,
@@ -1883,7 +1881,7 @@
         "travel_distance": 3319.236427467415,
         "travel_time_seconds": 66,
         "travel_time_text": "1M:06S",
-        "travel_targets_reached": 5,
+        "travel_targets_reached": 6,
         "travel_targets_total": 6,
         "travel_key_detours": 2,
         "guidebot_count": 0,
@@ -1938,8 +1936,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -2429,8 +2425,8 @@
           {
             "index": 9,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 3",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 3",
             "seg": 254,
             "side": 4,
             "wall": 54,
@@ -2687,7 +2683,7 @@
             "index": 1,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 5,
             "side": 1,
             "wall": 175,

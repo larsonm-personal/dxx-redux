@@ -1845,7 +1845,7 @@
             "index": 9,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
-            "label": "Shoot hidden wall",
+            "label": "Open hidden door",
             "seg": 232,
             "side": 0,
             "wall": 71,

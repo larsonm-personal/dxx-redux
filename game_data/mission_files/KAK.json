@@ -42,8 +42,8 @@
           {
             "index": 1,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 14",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 14",
             "seg": 251,
             "wall": 80,
             "distance": 479.05453651738094,
@@ -133,7 +133,7 @@
         "travel_distance": 524.9171115481818,
         "travel_time_seconds": 10,
         "travel_time_text": "0M:10S",
-        "travel_targets_reached": 1,
+        "travel_targets_reached": 2,
         "travel_targets_total": 2,
         "travel_key_detours": 0,
         "guidebot_count": 0,
@@ -249,8 +249,8 @@
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "activate_switch",
-            "label": "Activate switch trigger 8",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 8",
             "seg": 308,
             "side": 0,
             "wall": 134,
@@ -397,8 +397,6 @@
             "trigger_type": "exit"
           }
         ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable",
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"

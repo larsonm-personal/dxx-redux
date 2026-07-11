@@ -800,7 +800,7 @@
         "travel_distance": 9517.281478226283,
         "travel_time_seconds": 190,
         "travel_time_text": "3M:10S",
-        "travel_targets_reached": 4,
+        "travel_targets_reached": 5,
         "travel_targets_total": 5,
         "travel_key_detours": 3,
         "guidebot_count": 0,
@@ -863,9 +863,7 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "travel_status": "partial",
-        "travel_problem": "exit unreachable"
+        ]
       }
     ],
     "target_index": 0
