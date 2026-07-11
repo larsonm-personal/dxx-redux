@@ -60,7 +60,8 @@
     // Wait for game and verify HAM loaded
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+    {"action": "assert", "expect": {"physfs.search_path": {"contains": ".saf_manifest.json"}}},
     {"action": "introspect"},
 
-    {"action": "log", "message": "=== TEST: SAF Archiver Basic — COMPLETE ==="}
+    {"action": "log", "message": "=== TEST: SAF Archiver Basic -- COMPLETE ==="}
 ]

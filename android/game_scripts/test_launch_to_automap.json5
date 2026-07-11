@@ -6,8 +6,8 @@
     {"_info": {
         "games": ["d1", "d2"],
         "vars": {
-            "d1": {"MISSION": "First Strike", "GAME_NUM": "1"},
-            "d2": {"MISSION": "Counterstrike", "GAME_NUM": "2"}
+            "d1": {"MISSION": "First Strike", "GAME_NUM": "1", "GAME_DIR": "d1x-redux"},
+            "d2": {"MISSION": "Counterstrike", "GAME_NUM": "2", "GAME_DIR": "d2x-redux"}
         },
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -65,6 +65,9 @@
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "assert", "expect": {"physfs.write_dir": {"contains": "${GAME_DIR}"}}},
+    {"action": "assert", "expect": {"physfs.search_path": {"contains": "${GAME_DIR}"}}},
+    {"action": "assert", "expect": {"physfs.search_path": {"contains": "imported/sets/"}}},
 
     {"action": "log", "message": "=== In-game verified -- testing automap ==="},
 

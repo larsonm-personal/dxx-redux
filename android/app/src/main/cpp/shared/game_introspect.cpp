@@ -1574,19 +1574,28 @@ extern "C" char *game_introspect_get_state(void)
 		j["menu_scale"] = scale;
 	}
 
-	/* -- Mounted mods (PhysFS search path .dxa entries) --------------- */
+	/* -- PhysFS paths and mounted mods -------------------------------- */
 	{
+		json physfs;
+		json search_path = json::array();
 		json mods = json::array();
+		const char *base_dir = PHYSFS_getBaseDir();
+		const char *write_dir = PHYSFS_getWriteDir();
 		char **list = PHYSFS_getSearchPath();
 		if (list) {
 			for (char **i = list; *i != NULL; i++) {
 				const char *path = *i;
 				size_t len = strlen(path);
+				search_path.push_back(std::string(path));
 				if (len > 4 && strcmp(path + len - 4, ".dxa") == 0)
 					mods.push_back(std::string(path));
 			}
 			PHYSFS_freeList(list);
 		}
+		physfs["base_dir"] = base_dir ? base_dir : "";
+		physfs["write_dir"] = write_dir ? write_dir : "";
+		physfs["search_path"] = std::move(search_path);
+		j["physfs"] = std::move(physfs);
 		j["mounted_mods"] = std::move(mods);
 	}
 

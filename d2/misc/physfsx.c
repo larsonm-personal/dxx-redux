@@ -19,6 +19,9 @@
 #include "args.h"
 #include "object.h"
 #include "newdemo.h"
+#ifdef ANDROID
+#include "physfsx_android_shared.h"
+#endif
 
 // Initialise PhysicsFS, set up basic search paths and add arguments from .ini file.
 // The .ini file can be in either the user directory or the same directory as the program.
@@ -41,120 +44,7 @@ void PHYSFSX_init(int argc, char *argv[])
 	PHYSFS_permitSymbolicLinks(1);
 
 #ifdef ANDROID
-	/* Android: argv[0] was a PHYSFS_AndroidInit struct, not a string.
-	 * PhysFS already resolved the APK path and internal storage dir via JNI.
-	 * Set up search paths and write dir, then return — skip the unix/mac
-	 * logic below (which assumes argv[0] is a string and tries ~/.d2x-redux). */
-	{
-		const char *pref = PHYSFS_getPrefDir("com.dxxredux", "d2x-redux");
-		if (pref)
-		{
-			/* On Android, PHYSFS_getPrefDir ignores org/app and returns the
-			 * app's files/ dir.  Create d2x-redux/ subdir so D1 and D2 pilot
-			 * files, saves, and configs are fully isolated. */
-			char gamedir[512];
-			snprintf(gamedir, sizeof(gamedir), "%sd2x-redux/", pref);
-			PHYSFS_setWriteDir(pref);
-			PHYSFS_mkdir("d2x-redux");
-			PHYSFS_setWriteDir(gamedir);
-			PHYSFS_addToSearchPath(gamedir, 1);
-			PHYSFS_addToSearchPath(pref, 1);
-		}
-
-		/* Register the SAF leave-in-place archiver so .saf_manifest.json
-		 * can be mounted as a virtual directory of game files. */
-		{
-			extern const PHYSFS_Archiver SAF_Archiver;
-			PHYSFS_registerArchiver(&SAF_Archiver);
-		}
-
-		/* File-set support: if .active_set_path exists and contains a
-		 * non-empty path, prepend that directory so its files take
-		 * priority over filesDir.  The SAF manifest for the active set
-		 * lives in that directory; otherwise fall back to filesDir's. */
-		if (pref)
-		{
-			char asp[512];
-			char setdir[512] = "";
-			char safpath[512];
-			/* gamedir is filesDir/d2x-redux/ — Kotlin writes
-			 * .active_set_path there, so read from the same place. */
-			char gd[512];
-			snprintf(gd, sizeof(gd), "%sd2x-redux/", pref);
-			snprintf(asp, sizeof(asp), "%s.active_set_path", gd);
-			{
-				FILE *f = fopen(asp, "r");
-				if (f) {
-					if (fgets(setdir, sizeof(setdir), f)) {
-						char *nl = strchr(setdir, '\n');
-						if (nl) *nl = '\0';
-						if (strlen(setdir) > 0)
-							PHYSFS_addToSearchPath(setdir, 0); /* prepend */
-					}
-					fclose(f);
-				}
-			}
-
-			/* Mount SAF manifest (from set dir if active, else from pref) */
-			if (strlen(setdir) > 0)
-				snprintf(safpath, sizeof(safpath), "%s/.saf_manifest.json", setdir);
-			else
-				snprintf(safpath, sizeof(safpath), "%s.saf_manifest.json", pref);
-
-			{
-				FILE *sf = fopen(safpath, "r");
-				if (sf) {
-					fclose(sf);
-					PHYSFS_mount(safpath, NULL, 1); /* append after filesDir */
-				}
-			}
-		}
-
-		PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1);
-		PHYSFSX_addRelToSearchPath("data", 1);
-
-		/* Mod support: mount enabled .dxa files listed in .active_mod_paths.
-		 * Kotlin writes the list in UI order, highest priority first.  Mount in
-		 * reverse with prepend so the final PhysFS search path keeps that order. */
-		if (pref)
-		{
-			char modpath[512];
-			char mod_lines[64][512];
-			char mod_mounts[64][64];
-			int mod_count = 0;
-			snprintf(modpath, sizeof(modpath), "%sd2x-redux/.active_mod_paths", pref);
-			FILE *mf = fopen(modpath, "r");
-			if (mf) {
-				char line[512];
-				int i;
-				while (fgets(line, sizeof(line), mf)) {
-					char *nl = strpbrk(line, "\r\n");
-					if (nl) *nl = '\0';
-					if (strlen(line) > 0 && mod_count < (int)(sizeof(mod_lines) / sizeof(mod_lines[0]))) {
-						char *mount = strchr(line, '\t');
-						if (mount) {
-							*mount++ = '\0';
-							snprintf(mod_mounts[mod_count], sizeof(mod_mounts[mod_count]), "%s", mount);
-						} else {
-							mod_mounts[mod_count][0] = '\0';
-						}
-						snprintf(mod_lines[mod_count], sizeof(mod_lines[mod_count]), "%s", line);
-						mod_count++;
-					}
-				}
-				fclose(mf);
-				for (i = mod_count - 1; i >= 0; i--) {
-					const char *mount_point = mod_mounts[i][0] ? mod_mounts[i] : NULL;
-					if (PHYSFS_mount(mod_lines[i], mount_point, 0))
-						con_printf(CON_NORMAL, "PHYSFS: Mounted mod %s%s%s\n", mod_lines[i], mount_point ? " at " : "", mount_point ? mount_point : "");
-					else
-						con_printf(CON_NORMAL, "PHYSFS: Failed to mount mod %s: %s\n", mod_lines[i], PHYSFS_getLastError());
-				}
-			} else {
-				con_printf(CON_NORMAL, "PHYSFS: No .active_mod_paths at %s\n", modpath);
-			}
-		}
-	}
+	physfsx_android_init_search_paths("d2x-redux");
 	/* Android has no real argv (argv[0] is a PhysFS struct, not a string),
 	 * and the full ReadCmdArgs() path changes several GameArg defaults in
 	 * ways that aren't yet fully compatible with the Android build.
