@@ -502,8 +502,9 @@ endif() # OPENGL
 # ──────────────────────────────────────────────────────────────
 set(DXX_TARGET_PREFIX "d1_")
 add_subdirectory("${D1_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d1")
-target_sources(${DXX_TARGET_PREFIX}misc
-               PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c)
+target_sources(
+    ${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/hmp_android_shared.c
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c)
 target_include_directories(${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # ──────────────────────────────────────────────────────────────
@@ -636,8 +637,9 @@ endif()
 # ──────────────────────────────────────────────────────────────
 set(DXX_TARGET_PREFIX "d2_")
 add_subdirectory("${D2_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d2")
-target_sources(${DXX_TARGET_PREFIX}misc
-               PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c)
+target_sources(
+    ${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/hmp_android_shared.c
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfsx_android_shared.c)
 target_include_directories(${DXX_TARGET_PREFIX}misc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # ──────────────────────────────────────────────────────────────

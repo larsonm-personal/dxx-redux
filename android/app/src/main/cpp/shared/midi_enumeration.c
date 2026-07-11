@@ -9,8 +9,9 @@
  * Keep mission name parsing in sync with d2/main/mission.c:read_mission_file().
  */
 
+#include "hmp_android_shared.h"
 #include "midi_enumeration.h"
-#include "midi_preview.h" /* hmp2mid_mem, hog_read_entry, hog_list_entries */
+#include "midi_preview.h" /* hog_read_entry, hog_list_entries */
 #include "u_mem.h"
 
 #include <stdio.h>
@@ -94,10 +95,7 @@ static void sb_append_json_str(strbuf_t *sb, const char *s)
 
 /* ── Track duration via TML ──────────────────────────────────────────── */
 
-/* hmp2mid_mem is in d2/misc/hmp.c (and d1/misc/hmp.c).
- * hog_read_entry and hog_list_entries are in midi_preview.c. */
-extern int hmp2mid_mem(const unsigned char *hmp, int hmp_len,
-                       unsigned char **out_midi, int *out_len);
+/* hog_read_entry and hog_list_entries are in midi_preview.c */
 extern int hog_read_entry(const char *hog_path, const char *entry_name,
                           unsigned char **out_data, int *out_len);
 extern int hog_list_entries(const char *hog_path, const char *ext,

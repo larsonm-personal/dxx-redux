@@ -80,11 +80,6 @@ typedef struct hmp_file {
 hmp_file *hmp_open(const char *filename);
 void hmp_close(hmp_file *hmp);
 void hmp2mid(char *hmp_name, unsigned char **midbuf, unsigned int *midlen);
-#ifdef __ANDROID__
-hmp_file *hmp_open_mem(const unsigned char *buf, int buf_len);
-int hmp2mid_mem(const unsigned char *hmp_data, int hmp_len,
-                unsigned char **out_midi, int *out_len);
-#endif
 #ifdef _WIN32
 void hmp_setvolume(hmp_file *hmp, int volume);
 int hmp_play(hmp_file *hmp, int bLoop);

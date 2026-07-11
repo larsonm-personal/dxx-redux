@@ -13,6 +13,9 @@
 #include "u_mem.h"
 #include "console.h"
 #include "timer.h"
+#ifdef __ANDROID__
+#include "hmp_android_shared.h"
+#endif
 
 #ifdef WORDS_BIGENDIAN
 #define MIDIINT(x) (x)
@@ -778,126 +781,10 @@ void hmp2mid(char *hmp_name, unsigned char **midbuf, unsigned int *midlen)
 }
 
 #ifdef __ANDROID__
-// Android port: parse HMP from a memory buffer (no PHYSFS needed).
-// Used by the launcher MIDI preview player.
-hmp_file *hmp_open_mem(const unsigned char *buf, int buf_len)
-{
-	int i, data, num_tracks, tempo, offset;
-	hmp_file *hmp;
-	unsigned char *p;
-
-	if (!buf || buf_len < 0x308 + 12)
-		return NULL;
-	if (memcmp(buf, "HMIMIDIP", 8) != 0)
-		return NULL;
-
-	CALLOC(hmp, hmp_file, 1);
-	if (!hmp)
-		return NULL;
-
-	memcpy(&num_tracks, buf + 0x30, 4);
-	if ((num_tracks < 1) || (num_tracks > HMP_TRACKS))
-	{
-		hmp_close(hmp);
-		return NULL;
-	}
-	hmp->num_trks = num_tracks;
-
-	memcpy(&tempo, buf + 0x38, 4);
-	hmp->tempo = INTEL_INT(tempo);
-
-	offset = 0x308;
-	for (i = 0; i < num_tracks; i++) {
-		if (offset + 8 > buf_len)
-		{
-			hmp_close(hmp);
-			return NULL;
-		}
-		memcpy(&data, buf + offset + 4, 4);
-		data -= 12;
-		if (data < 0 || offset + 12 + data > buf_len)
-		{
-			hmp_close(hmp);
-			return NULL;
-		}
-		hmp->trks[i].len = data;
-
-		MALLOC(p, unsigned char, data);
-		if (!(hmp->trks[i].data = p))
-		{
-			hmp_close(hmp);
-			return NULL;
-		}
-		memcpy(p, buf + offset + 12, data);
-		hmp->trks[i].loop_set = 0;
-		offset += 12 + data;
-	}
-	hmp->filesize = buf_len;
-	return hmp;
-}
-
-// Android port: convert HMP to MIDI from a memory buffer.
-// Caller must free(*out_midi) when done.
-// Returns 1 on success, 0 on failure.
 int hmp2mid_mem(const unsigned char *hmp_data, int hmp_len,
                 unsigned char **out_midi, int *out_len)
 {
-	int mi, i;
-	short ms, time_div = 0xC0;
-	hmp_file *hmp;
-	unsigned int midlen = 0;
-	unsigned char *midbuf = NULL;
-
-	hmp = hmp_open_mem(hmp_data, hmp_len);
-	if (hmp == NULL)
-		return 0;
-
-	time_div = hmp->tempo*1.6;
-
-	// write MIDI-header
-	midbuf = (unsigned char *) d_realloc(midbuf, midlen + 4);
-	memcpy(&midbuf[midlen], "MThd", 4);
-	midlen += 4;
-	mi = MIDIINT(6);
-	midbuf = (unsigned char *) d_realloc(midbuf, midlen + sizeof(mi));
-	memcpy(&midbuf[midlen], &mi, sizeof(mi));
-	midlen += sizeof(mi);
-	ms = MIDISHORT(1);
-	midbuf = (unsigned char *) d_realloc(midbuf, midlen + sizeof(ms));
-	memcpy(&midbuf[midlen], &ms, sizeof(ms));
-	midlen += sizeof(ms);
-	ms = MIDISHORT(hmp->num_trks);
-	midbuf = (unsigned char *) d_realloc(midbuf, midlen + sizeof(ms));
-	memcpy(&midbuf[midlen], &ms, sizeof(ms));
-	midlen += sizeof(ms);
-	ms = MIDISHORT(time_div);
-	midbuf = (unsigned char *) d_realloc(midbuf, midlen + sizeof(ms));
-	memcpy(&midbuf[midlen], &ms, sizeof(ms));
-	midlen += sizeof(ms);
-	midbuf = (unsigned char *) d_realloc(midbuf, midlen + sizeof(tempo));
-	memcpy(&midbuf[midlen], &tempo, sizeof(tempo));
-	midlen += sizeof(tempo);
-
-	// tracks
-	for (i = 1; i < hmp->num_trks; i++)
-	{
-		int midtrklenpos = 0;
-
-		midbuf = (unsigned char *) d_realloc(midbuf, midlen + 4);
-		memcpy(&midbuf[midlen], "MTrk", 4);
-		midlen += 4;
-		midtrklenpos = midlen;
-		mi = 0;
-		midbuf = (unsigned char *) d_realloc(midbuf, midlen + sizeof(mi));
-		midlen += sizeof(mi);
-		mi = hmptrk2mid(hmp->trks[i].data, hmp->trks[i].len, &midbuf, &midlen);
-		mi = MIDIINT(mi);
-		memcpy(&midbuf[midtrklenpos], &mi, 4);
-	}
-
-	hmp_close(hmp);
-	*out_midi = midbuf;
-	*out_len = (int) midlen;
-	return 1;
+	return hmp_android_convert_mem(hmp_data, hmp_len, out_midi, out_len,
+	                               hmptrk2mid, tempo, sizeof(tempo));
 }
 #endif

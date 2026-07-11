@@ -10,6 +10,7 @@
  */
 
 #include "midi_preview.h"
+#include "hmp_android_shared.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -120,10 +121,6 @@ static SLPlayItf s_player_play = NULL;
 static SLAndroidSimpleBufferQueueItf s_player_bq = NULL;
 static short s_play_bufs[NUM_BUFFERS][BUF_FRAMES * 2];
 static int s_next_buf = 0;
-
-/* HMP to MIDI conversion -- reuses hmp2mid_mem() from d2/misc/hmp.c */
-extern int hmp2mid_mem(const unsigned char *hmp_data, int hmp_len,
-                       unsigned char **out_midi, int *out_len);
 
 /* ── Utility ─────────────────────────────────────────────────────────── */
 
