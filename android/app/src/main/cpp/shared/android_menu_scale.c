@@ -64,6 +64,26 @@ static int compute_destination(android_menu_scale_result *result, int screen_w,
 	return 1;
 }
 
+int android_menu_scale_round_coord(int value, float scale)
+{
+	return (int) (value * scale + 0.5f);
+}
+
+void android_menu_scale_items(newmenu_item *dst, const newmenu_item *src,
+                              int count, float scale)
+{
+	int i;
+
+	for (i = 0; i < count; i++) {
+		dst[i] = src[i];
+		dst[i].x = android_menu_scale_round_coord(src[i].x, scale);
+		dst[i].y = android_menu_scale_round_coord(src[i].y, scale);
+		dst[i].w = android_menu_scale_round_coord(src[i].w, scale);
+		dst[i].h = android_menu_scale_round_coord(src[i].h, scale);
+		dst[i].right_offset = android_menu_scale_round_coord(src[i].right_offset, scale);
+	}
+}
+
 float android_menu_scale_get_target_fill(void)
 {
 	return k_target_fill;
@@ -373,4 +393,24 @@ void android_menu_scale_blit_bitmap_region(grs_bitmap *bitmap,
 	              result->dst.y, 0, source_y, bitmap,
 	              &grd_curscreen->sc_canvas.cv_bitmap);
 #endif
+}
+
+void android_menu_scale_blit_source_region(grs_bitmap *bitmap,
+                                           const android_menu_scale_result *result, int masked)
+{
+	int row;
+	grs_bitmap cropped;
+
+	if (!bitmap || !result || !result->active)
+		return;
+
+	gr_init_bitmap_alloc(&cropped, BM_LINEAR, 0, 0, result->src.w,
+	                     result->src.h, result->src.w);
+	for (row = 0; row < result->src.h; row++)
+		memcpy(cropped.bm_data + row * result->src.w,
+		       bitmap->bm_data + (result->src.y + row) * bitmap->bm_rowsize +
+		           result->src.x,
+		       result->src.w);
+	android_menu_scale_blit_bitmap(&cropped, result, masked);
+	gr_free_bitmap_data(&cropped);
 }

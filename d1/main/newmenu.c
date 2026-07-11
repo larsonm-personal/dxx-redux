@@ -1993,46 +1993,6 @@ static void newmenu_draw_contents(newmenu *menu)
 }
 
 #ifdef ANDROID
-static void android_menu_scale_blit_source_region(grs_bitmap *bitmap,
-                                                  const android_menu_scale_result *result, int masked)
-{
-	int row;
-	grs_bitmap cropped;
-
-	if (!bitmap || !result || !result->active)
-		return;
-
-	gr_init_bitmap_alloc(&cropped, BM_LINEAR, 0, 0, result->src.w,
-	                     result->src.h, result->src.w);
-	for (row = 0; row < result->src.h; row++)
-		memcpy(cropped.bm_data + row * result->src.w,
-		       bitmap->bm_data + (result->src.y + row) * bitmap->bm_rowsize +
-		       result->src.x,
-		       result->src.w);
-	android_menu_scale_blit_bitmap(&cropped, result, masked);
-	gr_free_bitmap_data(&cropped);
-}
-
-static int android_menu_scale_round_coord(int value, float scale)
-{
-	return (int) (value * scale + 0.5f);
-}
-
-static void android_newmenu_scale_items(newmenu_item *dst, const newmenu_item *src,
-                                        int count, float scale)
-{
-	int i;
-
-	for (i = 0; i < count; i++) {
-		dst[i] = src[i];
-		dst[i].x = android_menu_scale_round_coord(src[i].x, scale);
-		dst[i].y = android_menu_scale_round_coord(src[i].y, scale);
-		dst[i].w = android_menu_scale_round_coord(src[i].w, scale);
-		dst[i].h = android_menu_scale_round_coord(src[i].h, scale);
-		dst[i].right_offset = android_menu_scale_round_coord(src[i].right_offset, scale);
-	}
-}
-
 static void android_newmenu_draw_direct_contents(newmenu *menu,
                                                  android_menu_scale_result *result)
 {
@@ -2057,7 +2017,7 @@ static void android_newmenu_draw_direct_contents(newmenu *menu,
 		return;
 
 	menu_copy = *menu;
-	android_newmenu_scale_items(items_copy, menu->items, menu->nitems, scale);
+	android_menu_scale_items(items_copy, menu->items, menu->nitems, scale);
 	menu_copy.items = items_copy;
 	menu_copy.w = android_menu_scale_round_coord(menu->w, scale);
 	menu_copy.h = android_menu_scale_round_coord(menu->h, scale);

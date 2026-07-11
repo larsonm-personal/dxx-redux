@@ -2,6 +2,7 @@
 #define ANDROID_MENU_SCALE_H
 
 #include "gr.h"
+#include "newmenu.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +53,11 @@ void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
 void android_menu_scale_blit_bitmap_region(grs_bitmap *bitmap,
                                            const android_menu_scale_result *result,
                                            int source_y);
+void android_menu_scale_blit_source_region(grs_bitmap *bitmap,
+	const android_menu_scale_result *result, int masked);
+int android_menu_scale_round_coord(int value, float scale);
+void android_menu_scale_items(newmenu_item *dst, const newmenu_item *src,
+	int count, float scale);
 
 #ifdef __cplusplus
 }
