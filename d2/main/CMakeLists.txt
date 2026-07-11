@@ -85,6 +85,7 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/input_demo_newdemo_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_start_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_debug_logging.cpp
+    ../../android/app/src/main/cpp/shared/android_newmenu_text_wrap.c
     )
 
 if(ANDROID)
