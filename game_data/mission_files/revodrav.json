@@ -24,9 +24,6 @@
         "travel_distance": 1968.0,
         "travel_time_seconds": 39,
         "travel_time_text": "1M:39S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -87,9 +84,6 @@
         "travel_distance": 2900.7859414060813,
         "travel_time_seconds": 58,
         "travel_time_text": "1M:58S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -159,9 +153,6 @@
         "travel_distance": 4804.961786078822,
         "travel_time_seconds": 96,
         "travel_time_text": "2M:36S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -259,9 +250,6 @@
         "travel_distance": 3364.784190662981,
         "travel_time_seconds": 67,
         "travel_time_text": "1M:07S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -323,6 +311,7 @@
             "trigger_type": "exit"
           }
         ],
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
         ]
@@ -343,9 +332,6 @@
         "travel_distance": 5259.201458668042,
         "travel_time_seconds": 105,
         "travel_time_text": "2M:45S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -444,9 +430,6 @@
         "travel_distance": 4052.7576485009336,
         "travel_time_seconds": 81,
         "travel_time_text": "1M:21S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -525,9 +508,6 @@
         "travel_distance": 3619.4801757187015,
         "travel_time_seconds": 72,
         "travel_time_text": "1M:12S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -628,9 +608,6 @@
         "travel_distance": 2749.372235256358,
         "travel_time_seconds": 55,
         "travel_time_text": "1M:55S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -692,6 +669,7 @@
             "trigger_type": "exit"
           }
         ],
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
         ]
@@ -712,9 +690,6 @@
         "travel_distance": 4851.751285243184,
         "travel_time_seconds": 97,
         "travel_time_text": "2M:37S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -793,9 +768,6 @@
         "travel_distance": 4740.327431068259,
         "travel_time_seconds": 95,
         "travel_time_text": "2M:35S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -893,9 +865,6 @@
         "travel_distance": 7329.828978240113,
         "travel_time_seconds": 147,
         "travel_time_text": "2M:27S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1014,9 +983,6 @@
         "travel_distance": 4090.935427464017,
         "travel_time_seconds": 82,
         "travel_time_text": "1M:22S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1078,6 +1044,7 @@
             "trigger_type": "exit"
           }
         ],
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
         ]
@@ -1098,9 +1065,6 @@
         "travel_distance": 4936.166580202098,
         "travel_time_seconds": 99,
         "travel_time_text": "2M:39S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1179,9 +1143,6 @@
         "travel_distance": 6551.339508211707,
         "travel_time_seconds": 131,
         "travel_time_text": "2M:11S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1300,9 +1261,6 @@
         "travel_distance": 6459.767322610052,
         "travel_time_seconds": 129,
         "travel_time_text": "2M:09S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1381,9 +1339,6 @@
         "travel_distance": 8728.817065117224,
         "travel_time_seconds": 175,
         "travel_time_text": "3M:55S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1445,6 +1400,7 @@
             "trigger_type": "exit"
           }
         ],
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
         ]
@@ -1465,9 +1421,6 @@
         "travel_distance": 9198.080640249018,
         "travel_time_seconds": 184,
         "travel_time_text": "3M:04S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1546,9 +1499,6 @@
         "travel_distance": 11388.526201546756,
         "travel_time_seconds": 228,
         "travel_time_text": "4M:48S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1627,9 +1577,6 @@
         "travel_distance": 6865.662173187924,
         "travel_time_seconds": 137,
         "travel_time_text": "2M:17S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1708,9 +1655,6 @@
         "travel_distance": 8905.670863096584,
         "travel_time_seconds": 178,
         "travel_time_text": "3M:58S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1772,6 +1716,7 @@
             "trigger_type": "exit"
           }
         ],
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
         ]
@@ -1792,9 +1737,6 @@
         "travel_distance": 5757.146908294578,
         "travel_time_seconds": 115,
         "travel_time_text": "2M:55S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1873,9 +1815,6 @@
         "travel_distance": 5944.780824672851,
         "travel_time_seconds": 119,
         "travel_time_text": "2M:59S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1974,9 +1913,6 @@
         "travel_distance": 11418.983122783304,
         "travel_time_seconds": 228,
         "travel_time_text": "4M:48S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2075,9 +2011,6 @@
         "travel_distance": 6884.249049460979,
         "travel_time_seconds": 138,
         "travel_time_text": "2M:18S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2153,6 +2086,7 @@
             "trigger_type": "exit"
           }
         ],
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
         ]
@@ -2173,9 +2107,6 @@
         "travel_distance": 605.3010935555217,
         "travel_time_seconds": 12,
         "travel_time_text": "0M:12S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2227,9 +2158,6 @@
         "travel_distance": 6119.122070980598,
         "travel_time_seconds": 122,
         "travel_time_text": "2M:02S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2308,9 +2236,6 @@
         "travel_distance": 1490.2054583505824,
         "travel_time_seconds": 30,
         "travel_time_text": "0M:30S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2362,9 +2287,6 @@
         "travel_distance": 11525.295200102088,
         "travel_time_seconds": 231,
         "travel_time_text": "4M:51S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2660,9 +2582,6 @@
         "travel_distance": 5595.4688080800515,
         "travel_time_seconds": 112,
         "travel_time_text": "2M:52S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2743,9 +2662,6 @@
         "travel_distance": 6820.201168110973,
         "travel_time_seconds": 136,
         "travel_time_text": "2M:16S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2807,6 +2723,7 @@
             "trigger_type": "exit"
           }
         ],
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
         ]

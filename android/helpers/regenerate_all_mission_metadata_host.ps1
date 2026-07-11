@@ -306,7 +306,7 @@ function ConvertTo-CheckedInLevelJson {
     $rowStatus = Get-StringProp $Level "status" "ok"
     $notes = @(
         Get-ArrayValue (Get-Prop $Level "notes" @())
-        Get-StringProp $Level "travel_note"
+        Get-StringProp $Level "route_note"
         Get-StringProp $Level "guidebot_placement_note"
         Get-StringProp $Level "guidebot_note"
     ) | Where-Object { $_ } | Select-Object -Unique
@@ -327,22 +327,16 @@ function ConvertTo-CheckedInLevelJson {
         travel_distance = [double](Get-Prop $Level "travel_distance" 0.0)
         travel_time_seconds = $travelTimeSeconds
         travel_time_text = Format-LevelTime -Seconds $travelTimeSeconds
-        travel_targets_reached = [int](Get-Prop $Level "travel_targets_reached" 0)
-        travel_targets_total = [int](Get-Prop $Level "travel_targets_total" 0)
-        travel_key_detours = [int](Get-Prop $Level "travel_key_detours" 0)
         guidebot_count = [int](Get-Prop $Level "guidebot_count" 0)
         guidebot_placed = [bool](Get-Prop $Level "guidebot_placed" $false)
         guidebot_accessible = [bool](Get-Prop $Level "guidebot_accessible" $false)
         route_status = $routeStatus
         route_steps = @(Get-ArrayValue (Get-Prop $Level "route_steps" @()))
     }
-    $travelStatus = Get-StringProp $Level "travel_status" "ok"
-    if ($travelStatus -ne "ok") { $row["travel_status"] = $travelStatus }
-    Add-IfString -Target $row -Name "travel_problem" -Value (Get-StringProp $Level "travel_problem")
-    Add-IfString -Target $row -Name "travel_note" -Value (Get-StringProp $Level "travel_note")
     Add-IfString -Target $row -Name "guidebot_placement_note" -Value (Get-StringProp $Level "guidebot_placement_note")
     Add-IfString -Target $row -Name "guidebot_note" -Value (Get-StringProp $Level "guidebot_note")
     Add-IfString -Target $row -Name "route_problem" -Value (Get-StringProp $Level "route_problem")
+    Add-IfString -Target $row -Name "route_note" -Value (Get-StringProp $Level "route_note")
     $problems = @(Get-ArrayValue (Get-Prop $Level "problems" @())) | Where-Object { $_ }
     if ($problems.Count -gt 0) { $row["problems"] = $problems }
     if ($notes.Count -gt 0) { $row["notes"] = @($notes) }
@@ -548,6 +542,22 @@ function Invoke-HeadlessScan {
     return Get-Content -LiteralPath $RawOutputPath -Raw | ConvertFrom-Json
 }
 
+function Invoke-BuiltinHeadlessScan {
+    param(
+        [Parameter(Mandatory = $true)][ValidateSet("d1", "d2")][string]$Game,
+        [Parameter(Mandatory = $true)][hashtable]$Executables,
+        [Parameter(Mandatory = $true)][hashtable]$DataDirs,
+        [Parameter(Mandatory = $true)][string]$RawOutputPath,
+        [Parameter(Mandatory = $true)][string]$LogPath
+    )
+
+    & $Executables[$Game] -hogdir $DataDirs[$Game] -secretarea-json-out $RawOutputPath > $LogPath 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw (Get-HeadlessFailureSummary -Mission $Game -LogPath $LogPath)
+    }
+    return Get-Content -LiteralPath $RawOutputPath -Raw | ConvertFrom-Json
+}
+
 function Write-SummaryRecord {
     param([Parameter(Mandatory = $true)][System.Collections.IDictionary]$Record)
 
@@ -568,6 +578,17 @@ $dataDirs = @{
 Write-Status "Host mission metadata output: $outDir"
 Write-Status "D1 data: $($dataDirs.d1)"
 Write-Status "D2 data: $($dataDirs.d2)"
+
+$counterstrikeRawPath = Join-Path $rawDir "Counterstrike.metadata.json"
+$counterstrikeLogPath = Join-Path $logsDir "Counterstrike.log"
+$counterstrikeMetadataPath = Join-Path $metadataDir "Counterstrike.json"
+$counterstrikeRegressionPath = Join-Path $zipDir "Counterstrike.json"
+Write-Status "Host metadata: built-in Counterstrike"
+$counterstrikeRaw = Invoke-BuiltinHeadlessScan -Game d2 -Executables $executables -DataDirs $dataDirs -RawOutputPath $counterstrikeRawPath -LogPath $counterstrikeLogPath
+$counterstrike = ConvertTo-CheckedInMissionJson -Raw $counterstrikeRaw -TargetIndex 0 -SourceName "descent2.hog" -MissionFilename "d2"
+Write-JsonValue -Path $counterstrikeMetadataPath -Value $counterstrike
+Copy-Item -LiteralPath $counterstrikeMetadataPath -Destination $counterstrikeRegressionPath -Force
+Write-Status "PASSED: built-in Counterstrike" "Green"
 
 $archives = @(
     Get-ChildItem -LiteralPath $zipDir -File |

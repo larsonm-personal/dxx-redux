@@ -678,7 +678,7 @@ static nlohmann::ordered_json serialize_current_level(int level_num, const char 
 	result["guidebot_accessible"] = metadata && metadata->guidebot_accessible != 0;
 	result["guidebot_placement_note"] = metadata && metadata->guidebot_placement_note[0] ? metadata->guidebot_placement_note : "";
 	result["guidebot_note"] = metadata && metadata->guidebot_note[0] ? metadata->guidebot_note : "";
-	result["route_status"] = metadata ? level_metadata_travel_status_name(metadata->route_status) : "failed";
+	result["route_status"] = metadata ? level_metadata_route_status_name(metadata->route_status) : "failed";
 	result["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
 	result["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
 	result["route_steps"] = serialize_route_steps(metadata);

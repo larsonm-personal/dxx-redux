@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 
-enum level_metadata_travel_status {
-	LEVEL_METADATA_TRAVEL_OK = 0,
-	LEVEL_METADATA_TRAVEL_PARTIAL = 1,
-	LEVEL_METADATA_TRAVEL_FAILED = 2
+enum level_metadata_route_status {
+	LEVEL_METADATA_ROUTE_OK = 0,
+	LEVEL_METADATA_ROUTE_PARTIAL = 1,
+	LEVEL_METADATA_ROUTE_FAILED = 2
 };
 
 enum metadata_route_block_kind {
@@ -107,14 +107,14 @@ void level_metadata_state_clear(level_metadata_state *state)
 		memset(state, 0, sizeof(*state));
 }
 
-const char *level_metadata_travel_status_name(int status)
+const char *level_metadata_route_status_name(int status)
 {
 	switch (status) {
-		case LEVEL_METADATA_TRAVEL_OK:
+		case LEVEL_METADATA_ROUTE_OK:
 			return "ok";
-		case LEVEL_METADATA_TRAVEL_PARTIAL:
+		case LEVEL_METADATA_ROUTE_PARTIAL:
 			return "partial";
-		case LEVEL_METADATA_TRAVEL_FAILED:
+		case LEVEL_METADATA_ROUTE_FAILED:
 			return "failed";
 		default:
 			return "unknown";
@@ -2212,7 +2212,7 @@ static int metadata_route_begin_progression(
 	int found_reactor;
 	int found_boss;
 
-	state->route_status = LEVEL_METADATA_TRAVEL_FAILED;
+	state->route_status = LEVEL_METADATA_ROUTE_FAILED;
 	memset(route, 0, sizeof(*route));
 	if (exit_count_out)
 		*exit_count_out = 0;
@@ -2267,7 +2267,7 @@ static void metadata_route_finish_partial(
     const char *problem)
 {
 	metadata_route_append_unresolved_block(view, state, route);
-	state->route_status = state->route_step_count > 1 ? LEVEL_METADATA_TRAVEL_PARTIAL : LEVEL_METADATA_TRAVEL_FAILED;
+	state->route_status = state->route_step_count > 1 ? LEVEL_METADATA_ROUTE_PARTIAL : LEVEL_METADATA_ROUTE_FAILED;
 	if (!state->route_problem[0])
 		metadata_route_set_problem(state, problem);
 }
@@ -2289,7 +2289,7 @@ static void collect_route_chain(const level_metadata_scan_view *view, level_meta
 		goto route_partial;
 	if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_EXIT, &exit_targets[exit_index], "Exit"))
 		goto route_partial;
-	state->route_status = LEVEL_METADATA_TRAVEL_OK;
+	state->route_status = LEVEL_METADATA_ROUTE_OK;
 	return;
 
 route_partial:
@@ -2314,7 +2314,7 @@ static void level_metadata_route_result_clear(level_metadata_state *state)
 {
 	if (!state)
 		return;
-	state->route_status = LEVEL_METADATA_TRAVEL_FAILED;
+	state->route_status = LEVEL_METADATA_ROUTE_FAILED;
 	state->route_problem[0] = '\0';
 	state->route_step_count = 0;
 	memset(state->route_steps, 0, sizeof(state->route_steps));
@@ -2329,7 +2329,7 @@ int level_metadata_scan_end_route(
 	level_metadata_route_result_clear(state);
 	collect_segment_centers(view);
 	collect_route_chain(view, state);
-	return state->route_status == LEVEL_METADATA_TRAVEL_OK;
+	return state->route_status == LEVEL_METADATA_ROUTE_OK;
 }
 
 int level_metadata_scan_route_to_segment(
@@ -2357,7 +2357,7 @@ int level_metadata_scan_route_to_segment(
 		goto route_partial;
 	if (!metadata_route_append_target_step(view, state, &route, LEVEL_METADATA_ROUTE_UNEXPLORED, &target, "Unexplored"))
 		goto route_partial;
-	state->route_status = LEVEL_METADATA_TRAVEL_OK;
+	state->route_status = LEVEL_METADATA_ROUTE_OK;
 	return 1;
 
 route_partial:
@@ -2530,7 +2530,7 @@ int level_metadata_scan_unexplored_route(
 		if (!metadata_route_append_target_step(
 		        view, state, &route, LEVEL_METADATA_ROUTE_UNEXPLORED, &target, "Unexplored"))
 			continue;
-		state->route_status = LEVEL_METADATA_TRAVEL_OK;
+		state->route_status = LEVEL_METADATA_ROUTE_OK;
 		if (result) {
 			result->component_size = unexplored_component_size[component];
 			result->target_seg = target.seg;

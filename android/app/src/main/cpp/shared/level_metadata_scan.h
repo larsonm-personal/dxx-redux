@@ -101,7 +101,6 @@ typedef struct level_metadata_scan_view {
 	int wall_key_blue;
 	int wall_key_red;
 	int wall_key_gold;
-	int obj_type_none;
 	int obj_type_robot;
 	int obj_type_powerup;
 	int obj_type_control_center;
@@ -205,7 +204,7 @@ int level_metadata_scan_unexplored_route(
     level_metadata_state *state,
     level_metadata_unexplored_route *result);
 int level_metadata_scan_route_edge_cost(const level_metadata_scan_view *view, int seg, int side);
-const char *level_metadata_travel_status_name(int status);
+const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);
 

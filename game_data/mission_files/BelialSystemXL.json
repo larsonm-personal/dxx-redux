@@ -24,9 +24,6 @@
         "travel_distance": 10108.27811971405,
         "travel_time_seconds": 202,
         "travel_time_text": "3M:22S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -158,9 +155,6 @@
         "travel_distance": 15830.457584734837,
         "travel_time_seconds": 317,
         "travel_time_text": "5M:17S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -317,9 +311,6 @@
         "travel_distance": 10991.938656738394,
         "travel_time_seconds": 220,
         "travel_time_text": "4M:40S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -528,6 +519,7 @@
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "guidebot or guidebot start cage placed in this level",
@@ -550,9 +542,6 @@
         "travel_distance": 8940.364763871998,
         "travel_time_seconds": 179,
         "travel_time_text": "3M:59S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -727,6 +716,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "guidebot or guidebot start cage placed in this level"
@@ -748,9 +738,6 @@
         "travel_distance": 10289.295808311153,
         "travel_time_seconds": 206,
         "travel_time_text": "3M:26S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -888,6 +875,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "guidebot or guidebot start cage placed in this level"
@@ -909,9 +897,6 @@
         "travel_distance": 12879.564540279678,
         "travel_time_seconds": 258,
         "travel_time_text": "4M:18S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -1075,6 +1060,7 @@
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "guidebot or guidebot start cage placed in this level",
@@ -1097,9 +1083,6 @@
         "travel_distance": 15351.814784033259,
         "travel_time_seconds": 307,
         "travel_time_text": "5M:07S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -1338,9 +1321,6 @@
         "travel_distance": 12285.075142173982,
         "travel_time_seconds": 246,
         "travel_time_text": "4M:06S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -1512,6 +1492,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "guidebot or guidebot start cage placed in this level"
@@ -1533,9 +1514,6 @@
         "travel_distance": 10774.337933856095,
         "travel_time_seconds": 215,
         "travel_time_text": "4M:35S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -1672,6 +1650,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "guidebot or guidebot start cage placed in this level"
@@ -1693,9 +1672,6 @@
         "travel_distance": 9708.817185769869,
         "travel_time_seconds": 194,
         "travel_time_text": "3M:14S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -1783,6 +1759,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "guidebot or guidebot start cage placed in this level"
@@ -1804,9 +1781,6 @@
         "travel_distance": 12385.254727673386,
         "travel_time_seconds": 248,
         "travel_time_text": "4M:08S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -1997,6 +1971,7 @@
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "guidebot or guidebot start cage placed in this level",
@@ -2019,9 +1994,6 @@
         "travel_distance": 15380.572507463854,
         "travel_time_seconds": 308,
         "travel_time_text": "5M:08S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2183,6 +2155,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"
@@ -2204,9 +2177,6 @@
         "travel_distance": 13701.726578949803,
         "travel_time_seconds": 274,
         "travel_time_text": "5M:34S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2353,6 +2323,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"
@@ -2374,9 +2345,6 @@
         "travel_distance": 164.50672476480008,
         "travel_time_seconds": 3,
         "travel_time_text": "0M:03S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2404,6 +2372,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"
@@ -2425,9 +2394,6 @@
         "travel_distance": 5582.900117460387,
         "travel_time_seconds": 112,
         "travel_time_text": "2M:52S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2553,9 +2519,6 @@
         "travel_distance": 2323.303346457546,
         "travel_time_seconds": 46,
         "travel_time_text": "1M:46S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2611,9 +2574,6 @@
         "travel_distance": 5967.809237869062,
         "travel_time_seconds": 119,
         "travel_time_text": "2M:59S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2827,6 +2787,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "no guidebot or guidebot start cage placed in this level"

@@ -552,7 +552,7 @@ static json serialize_level_metadata_route()
 		result["steps"] = std::move(steps);
 		return result;
 	}
-	result["status"] = level_metadata_travel_status_name(metadata->route_status);
+	result["status"] = level_metadata_route_status_name(metadata->route_status);
 	result["problem"] = metadata->route_problem[0] ? metadata->route_problem : "";
 	count = metadata->route_step_count;
 	if (count < 0)
@@ -700,7 +700,7 @@ static json serialize_guidebot()
 	result["unexplored_target_seg"] = escort_get_unexplored_target_seg();
 	result["unexplored_waypoint_seg"] = escort_get_unexplored_waypoint_seg();
 	result["unexplored_direct_reachable"] = (bool) escort_get_unexplored_direct_reachable();
-	result["route_status"] = route_metadata ? level_metadata_travel_status_name(route_metadata->route_status) : "unavailable";
+	result["route_status"] = route_metadata ? level_metadata_route_status_name(route_metadata->route_status) : "unavailable";
 	result["route_problem"] = route_metadata && route_metadata->route_problem[0] ? route_metadata->route_problem : "";
 	result["route_start_seg"] = route_metadata && route_metadata->route_step_count > 0 ? route_metadata->route_steps[0].seg : -1;
 	result["route_start_matches_buddy"] =

@@ -670,7 +670,7 @@ static json serialize_current_level_row(int level_num, const char *level_file)
 	row["guidebot_accessible"] = metadata && metadata->guidebot_accessible != 0;
 	row["guidebot_placement_note"] = metadata && metadata->guidebot_placement_note[0] ? metadata->guidebot_placement_note : "";
 	row["guidebot_note"] = metadata && metadata->guidebot_note[0] ? metadata->guidebot_note : "";
-	row["route_status"] = metadata ? level_metadata_travel_status_name(metadata->route_status) : "failed";
+	row["route_status"] = metadata ? level_metadata_route_status_name(metadata->route_status) : "failed";
 	row["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
 	row["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
 	row["route_steps"] = serialize_route_steps(metadata);

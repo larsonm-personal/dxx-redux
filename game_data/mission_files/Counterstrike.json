@@ -1,3556 +1,3716 @@
-[
-  {
-    "status": "ok",
-    "source": "descent2.hog",
-    "game": "d2",
-    "mission_name": "Descent 2: Counterstrike!",
-    "mission_filename": "d2",
-    "coop_starts": "1-5",
-    "level_count": 30,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "Ahayweh Gate",
-        "level_file": "d2leva-1.rl2",
-        "robots": 38,
-        "hostages": 4,
-        "secrets": 9,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 4724112.398291526,
-        "mine_volume_normalized": 1.0330664327510186,
-        "mine_volume_text": "1.0x",
-        "travel_distance": 2749.248271542043,
-        "travel_time_seconds": 55,
-        "travel_time_text": "0M:55S",
-        "travel_targets_reached": 6,
-        "travel_targets_total": 6,
-        "travel_key_detours": 1,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "red key",
-            "seg": 27,
-            "distance": 891.5232218581602,
-            "key": "red"
-          },
-          {
-            "index": 2,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 159,
-            "distance": 1275.1220953078534
-          },
-          {
-            "index": 3,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 150,
-            "side": 4,
-            "wall": 31,
-            "distance": 141.74283509326793,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 2,
-        "secret": false,
-        "level_name": "Turnabout Bore",
-        "level_file": "d2leva-2.rl2",
-        "robots": 69,
-        "hostages": 4,
-        "secrets": 8,
-        "matcens": 3,
-        "energy_centers": 3,
-        "mine_volume": 8650962.279285746,
-        "mine_volume_normalized": 1.8917879144783718,
-        "mine_volume_text": "1.9x",
-        "travel_distance": 2869.4112998011906,
-        "travel_time_seconds": 57,
-        "travel_time_text": "0M:57S",
-        "travel_targets_reached": 6,
-        "travel_targets_total": 6,
-        "travel_key_detours": 0,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 217
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 81,
-            "distance": 1279.0548035068105,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "label": "Open door trigger 23",
-            "seg": 81,
-            "side": 2,
-            "wall": 187,
-            "distance": 27.01650657340731,
-            "trigger": 23,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 97,
-                "side": 2,
-                "wall": 121
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 286,
-            "side": 5,
-            "wall": 118,
-            "distance": 396.20924579246173,
-            "opens": [
-              {
-                "seg": 286,
-                "side": 5,
-                "wall": 118
-              },
-              {
-                "seg": 38,
-                "side": 2,
-                "wall": 119
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "label": "Open wall trigger 8",
-            "seg": 157,
-            "wall": 89,
-            "distance": 378.31037173700366,
-            "trigger": 8,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 18,
-                "side": 5,
-                "wall": 68
-              },
-              {
-                "seg": 7,
-                "side": 4,
-                "wall": 67
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "trigger",
-            "label": "Open wall trigger 7",
-            "seg": 144,
-            "wall": 88,
-            "distance": 1139.8151236895656,
-            "trigger": 7,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 127,
-                "side": 5,
-                "wall": 69
-              },
-              {
-                "seg": 144,
-                "side": 5,
-                "wall": 70
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "trigger",
-            "label": "Open wall trigger 21",
-            "seg": 43,
-            "wall": 184,
-            "distance": 1915.508805798844,
-            "trigger": 21,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 130,
-                "side": 4,
-                "wall": 84
-              },
-              {
-                "seg": 116,
-                "side": 0,
-                "wall": 151
-              },
-              {
-                "seg": 116,
-                "side": 2,
-                "wall": 153
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "key",
-            "label": "red key",
-            "seg": 116,
-            "distance": 707.7885754930958,
-            "key": "red"
-          },
-          {
-            "index": 8,
-            "kind": "trigger",
-            "label": "Open wall trigger 20",
-            "seg": 253,
-            "side": 5,
-            "wall": 182,
-            "distance": 1958.99377231245,
-            "trigger": 20,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 248,
-                "side": 0,
-                "wall": 177
-              },
-              {
-                "seg": 257,
-                "side": 2,
-                "wall": 175
-              },
-              {
-                "seg": 248,
-                "side": 2,
-                "wall": 181
-              },
-              {
-                "seg": 257,
-                "side": 0,
-                "wall": 179
-              }
-            ]
-          },
-          {
-            "index": 9,
-            "kind": "trigger",
-            "label": "Open door trigger 3",
-            "seg": 132,
-            "side": 4,
-            "wall": 81,
-            "distance": 288.14058928800046,
-            "trigger": 3,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 255,
-                "side": 4,
-                "wall": 30
-              }
-            ]
-          },
-          {
-            "index": 10,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 105,
-            "side": 4,
-            "wall": 80,
-            "distance": 482.58910570553354,
-            "opens": [
-              {
-                "seg": 105,
-                "side": 4,
-                "wall": 80
-              },
-              {
-                "seg": 92,
-                "side": 5,
-                "wall": 79
-              }
-            ]
-          },
-          {
-            "index": 11,
-            "kind": "trigger",
-            "label": "Open wall trigger 10",
-            "seg": 76,
-            "side": 0,
-            "wall": 97,
-            "distance": 339.8419016510778,
-            "trigger": 10,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 72,
-                "side": 2,
-                "wall": 95
-              },
-              {
-                "seg": 66,
-                "side": 5,
-                "wall": 101
-              }
-            ]
-          },
-          {
-            "index": 12,
-            "kind": "trigger",
-            "label": "Open wall trigger 9",
-            "seg": 76,
-            "side": 2,
-            "wall": 96,
-            "distance": 38.283854310862765,
-            "trigger": 9,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 31,
-                "side": 1,
-                "wall": 91
-              },
-              {
-                "seg": 16,
-                "side": 1,
-                "wall": 93
-              },
-              {
-                "seg": 17,
-                "side": 5,
-                "wall": 105
-              },
-              {
-                "seg": 26,
-                "side": 2,
-                "wall": 104
-              }
-            ]
-          },
-          {
-            "index": 13,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 266,
-            "distance": 369.84148485760136
-          },
-          {
-            "index": 14,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 77,
-            "side": 4,
-            "wall": 78,
-            "distance": 373.1990436011824,
-            "trigger": 2,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 3,
-        "secret": false,
-        "level_name": "wenl mine",
-        "level_file": "d2leva-3.rl2",
-        "robots": 86,
-        "hostages": 4,
-        "secrets": 7,
-        "matcens": 3,
-        "energy_centers": 2,
-        "mine_volume": 12433669.076107772,
-        "mine_volume_normalized": 2.7189882618175276,
-        "mine_volume_text": "2.7x",
-        "travel_distance": 8697.78909256732,
-        "travel_time_seconds": 174,
-        "travel_time_text": "2M:54S",
-        "travel_targets_reached": 6,
-        "travel_targets_total": 6,
-        "travel_key_detours": 3,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 315
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 200,
-            "distance": 1276.966046445126,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 300,
-            "distance": 2007.2458197791411,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 8",
-            "seg": 297,
-            "wall": 108,
-            "distance": 686.3157655949763,
-            "trigger": 8,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 116,
-                "side": 4,
-                "wall": 106
-              },
-              {
-                "seg": 166,
-                "side": 5,
-                "wall": 107
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "label": "red key",
-            "seg": 166,
-            "distance": 69.88732837927788,
-            "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 137,
-            "distance": 974.4492399920796
-          },
-          {
-            "index": 6,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 249,
-            "side": 0,
-            "wall": 58,
-            "distance": 852.0976811731441,
-            "opens": [
-              {
-                "seg": 249,
-                "side": 0,
-                "wall": 58
-              },
-              {
-                "seg": 112,
-                "side": 5,
-                "wall": 59
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 109,
-            "side": 4,
-            "wall": 112,
-            "distance": 90.25002135381473,
-            "trigger": 6,
-            "trigger_type_id": 4,
-            "trigger_type": "secret_exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 4,
-        "secret": false,
-        "level_name": "Robby Station",
-        "level_file": "d2leva-4.rl2",
-        "robots": 59,
-        "hostages": 3,
-        "secrets": 12,
-        "matcens": 7,
-        "energy_centers": 2,
-        "mine_volume": 8105338.361102019,
-        "mine_volume_normalized": 1.7724711609257795,
-        "mine_volume_text": "1.8x",
-        "travel_distance": 2277.491440883534,
-        "travel_time_seconds": 46,
-        "travel_time_text": "0M:46S",
-        "travel_targets_reached": 5,
-        "travel_targets_total": 5,
-        "travel_key_detours": 0,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 52
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 24",
-            "seg": 39,
-            "wall": 150,
-            "distance": 110.15797268510681,
-            "trigger": 24,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 198,
-                "side": 4,
-                "wall": 147
-              },
-              {
-                "seg": 255,
-                "side": 5,
-                "wall": 134
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 199,
-            "distance": 305.1573926375214
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 20",
-            "seg": 171,
-            "side": 5,
-            "wall": 136,
-            "distance": 141.314407348695,
-            "trigger": 20,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 2,
-                "side": 4,
-                "wall": 80
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 179,
-            "side": 4,
-            "wall": 54,
-            "distance": 154.5268258622673,
-            "opens": [
-              {
-                "seg": 179,
-                "side": 4,
-                "wall": 54
-              },
-              {
-                "seg": 180,
-                "side": 5,
-                "wall": 55
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 180,
-            "side": 4,
-            "wall": 154,
-            "distance": 40.00000000465661,
-            "trigger": 25,
-            "trigger_type_id": 4,
-            "trigger_type": "secret_exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 5,
-        "secret": false,
-        "level_name": "Seaspring Gorge",
-        "level_file": "d2levb-1.rl2",
-        "robots": 88,
-        "hostages": 4,
-        "secrets": 16,
-        "matcens": 2,
-        "energy_centers": 3,
-        "mine_volume": 12560920.09285545,
-        "mine_volume_normalized": 2.746815447720853,
-        "mine_volume_text": "2.7x",
-        "travel_distance": 9586.703389069224,
-        "travel_time_seconds": 192,
-        "travel_time_text": "3M:12S",
-        "travel_targets_reached": 6,
-        "travel_targets_total": 6,
-        "travel_key_detours": 2,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 358
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 465,
-            "distance": 1331.1277645872606,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "red key",
-            "seg": 498,
-            "distance": 2193.5868007932677,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 22",
-            "seg": 430,
-            "side": 4,
-            "wall": 94,
-            "distance": 1047.756971316881,
-            "trigger": 22,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 387,
-                "side": 4,
-                "wall": 90
-              },
-              {
-                "seg": 394,
-                "side": 5,
-                "wall": 86
-              },
-              {
-                "seg": 389,
-                "side": 5,
-                "wall": 92
-              },
-              {
-                "seg": 390,
-                "side": 5,
-                "wall": 88
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "label": "Open wall trigger 6",
-            "seg": 441,
-            "side": 4,
-            "wall": 93,
-            "distance": 33.28566342784942,
-            "trigger": 6,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 387,
-                "side": 4,
-                "wall": 90
-              },
-              {
-                "seg": 394,
-                "side": 5,
-                "wall": 86
-              },
-              {
-                "seg": 390,
-                "side": 5,
-                "wall": 88
-              },
-              {
-                "seg": 389,
-                "side": 5,
-                "wall": 92
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 388,
-            "distance": 161.408375128209
-          },
-          {
-            "index": 6,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 331,
-            "side": 4,
-            "wall": 101,
-            "distance": 1506.6879349795802,
-            "opens": [
-              {
-                "seg": 331,
-                "side": 4,
-                "wall": 101
-              },
-              {
-                "seg": 332,
-                "side": 5,
-                "wall": 102
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 332,
-            "side": 4,
-            "wall": 83,
-            "distance": 30.012155762078926,
-            "trigger": 5,
-            "trigger_type_id": 4,
-            "trigger_type": "secret_exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 6,
-        "secret": false,
-        "level_name": "the well",
-        "level_file": "d2levb-2.rl2",
-        "robots": 57,
-        "hostages": 3,
-        "secrets": 3,
-        "matcens": 1,
-        "energy_centers": 1,
-        "mine_volume": 5382040.237691119,
-        "mine_volume_normalized": 1.1769417491600713,
-        "mine_volume_text": "1.2x",
-        "travel_distance": 2516.1529529352074,
-        "travel_time_seconds": 50,
-        "travel_time_text": "0M:50S",
-        "travel_targets_reached": 5,
-        "travel_targets_total": 5,
-        "travel_key_detours": 0,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 22
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 64,
-            "distance": 619.2406004692042,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 83,
-            "distance": 514.2379545695485,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open door trigger 0",
-            "seg": 81,
-            "side": 5,
-            "wall": 32,
-            "distance": 72.49913475128837,
-            "trigger": 0,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 229,
-                "side": 4,
-                "wall": 30
-              },
-              {
-                "seg": 227,
-                "side": 4,
-                "wall": 28
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "label": "red key",
-            "seg": 29,
-            "distance": 599.8246447595873,
-            "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "trigger",
-            "label": "Open wall trigger 4",
-            "seg": 184,
-            "side": 5,
-            "wall": 67,
-            "distance": 507.44085458331045,
-            "trigger": 4,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 28,
-                "side": 5,
-                "wall": 2
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 187,
-            "distance": 125.62726968825235
-          },
-          {
-            "index": 7,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 231,
-            "side": 4,
-            "wall": 34,
-            "distance": 671.7541715611854,
-            "trigger": 1,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 7,
-        "secret": false,
-        "level_name": "coralbank quarry",
-        "level_file": "d2levb-3.rl2",
-        "robots": 85,
-        "hostages": 2,
-        "secrets": 7,
-        "matcens": 5,
-        "energy_centers": 3,
-        "mine_volume": 22634205.28098533,
-        "mine_volume_normalized": 4.94963619329593,
-        "mine_volume_text": "4.9x",
-        "travel_distance": 11721.014828364907,
-        "travel_time_seconds": 234,
-        "travel_time_text": "3M:54S",
-        "travel_targets_reached": 4,
-        "travel_targets_total": 4,
-        "travel_key_detours": 2,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "partial",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 304
-          },
-          {
-            "index": 1,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 170,
-            "side": 0,
-            "wall": 17,
-            "distance": 151.33313024297053,
-            "opens": [
-              {
-                "seg": 170,
-                "side": 0,
-                "wall": 17
-              },
-              {
-                "seg": 247,
-                "side": 5,
-                "wall": 16
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 141,
-            "side": 5,
-            "wall": 15,
-            "distance": 337.9819649616228,
-            "opens": [
-              {
-                "seg": 141,
-                "side": 5,
-                "wall": 15
-              },
-              {
-                "seg": 140,
-                "side": 4,
-                "wall": 14
-              }
-            ]
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key unreachable",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 8,
-        "secret": false,
-        "level_name": "riverbed mine",
-        "level_file": "d2levb-4.rl2",
-        "robots": 61,
-        "hostages": 3,
-        "secrets": 9,
-        "matcens": 6,
-        "energy_centers": 2,
-        "mine_volume": 16009658.900014758,
-        "mine_volume_normalized": 3.500983849448667,
-        "mine_volume_text": "3.5x",
-        "travel_distance": 1647.3900880772485,
-        "travel_time_seconds": 33,
-        "travel_time_text": "0M:33S",
-        "travel_targets_reached": 5,
-        "travel_targets_total": 5,
-        "travel_key_detours": 0,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 18
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 42",
-            "seg": 0,
-            "wall": 221,
-            "distance": 297.512044693557,
-            "trigger": 42,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 269,
-                "side": 4,
-                "wall": 143
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "red key",
-            "seg": 290,
-            "distance": 1113.5063106938737,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 67,
-            "distance": 1185.0937079065984
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 319,
-            "side": 4,
-            "wall": 34,
-            "distance": 941.2474420182947,
-            "trigger": 13,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 9,
-        "secret": false,
-        "level_name": "Firewalker Mine",
-        "level_file": "d2levc-1.rl2",
-        "robots": 113,
-        "hostages": 3,
-        "secrets": 12,
-        "matcens": 1,
-        "energy_centers": 1,
-        "mine_volume": 15266930.86134651,
-        "mine_volume_normalized": 3.3385644697385954,
-        "mine_volume_text": "3.3x",
-        "travel_distance": 5990.5583814232195,
-        "travel_time_seconds": 120,
-        "travel_time_text": "2M:00S",
-        "travel_targets_reached": 5,
-        "travel_targets_total": 5,
-        "travel_key_detours": 1,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 182
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 19",
-            "seg": 200,
-            "wall": 192,
-            "distance": 611.2411834356544,
-            "trigger": 19,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 188,
-                "side": 4,
-                "wall": 189
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 276,
-            "distance": 892.9974379218714,
-            "key": "blue"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 463,
-            "distance": 1572.4361087849584,
-            "key": "gold"
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "label": "red key",
-            "seg": 53,
-            "distance": 1598.854316716189,
-            "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 492,
-            "distance": 1894.2458978203242
-          },
-          {
-            "index": 6,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 38,
-            "side": 4,
-            "wall": 66,
-            "distance": 1037.8846464887945,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 10,
-        "secret": false,
-        "level_name": "lavafalls extraction ctr.",
-        "level_file": "d2levc-2.rl2",
-        "robots": 119,
-        "hostages": 8,
-        "secrets": 9,
-        "matcens": 4,
-        "energy_centers": 1,
-        "mine_volume": 21437023.176574834,
-        "mine_volume_normalized": 4.687837035764458,
-        "mine_volume_text": "4.7x",
-        "travel_distance": 13733.879419566023,
-        "travel_time_seconds": 275,
-        "travel_time_text": "4M:35S",
-        "travel_targets_reached": 10,
-        "travel_targets_total": 10,
-        "travel_key_detours": 2,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 183
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 410,
-            "distance": 1104.6955476024598,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 135,
-            "distance": 1289.2336522310632,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 477,
-            "distance": 3396.7550794826375,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 379,
-            "distance": 2973.577449360493
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 393,
-            "side": 4,
-            "wall": 92,
-            "distance": 702.8785665092724,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 11,
-        "secret": false,
-        "level_name": "coalbank shaft",
-        "level_file": "d2levc-3.rl2",
-        "robots": 81,
-        "hostages": 4,
-        "secrets": 9,
-        "matcens": 5,
-        "energy_centers": 1,
-        "mine_volume": 21733013.971057583,
-        "mine_volume_normalized": 4.752564148162126,
-        "mine_volume_text": "4.8x",
-        "travel_distance": 8519.904403113816,
-        "travel_time_seconds": 170,
-        "travel_time_text": "2M:50S",
-        "travel_targets_reached": 6,
-        "travel_targets_total": 6,
-        "travel_key_detours": 1,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 4",
-            "seg": 419,
-            "side": 2,
-            "wall": 109,
-            "distance": 1264.6587392109775,
-            "trigger": 4,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 373,
-                "side": 2,
-                "wall": 86
-              },
-              {
-                "seg": 370,
-                "side": 4,
-                "wall": 81
-              },
-              {
-                "seg": 372,
-                "side": 4,
-                "wall": 242
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 372,
-            "distance": 160.15412938705953,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 10",
-            "seg": 476,
-            "side": 2,
-            "wall": 149,
-            "distance": 1481.783603940873,
-            "trigger": 10,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 463,
-                "side": 5,
-                "wall": 146
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "label": "Open wall trigger 38",
-            "seg": 530,
-            "side": 3,
-            "wall": 246,
-            "distance": 542.4886382490687,
-            "trigger": 38,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 468,
-                "side": 0,
-                "wall": 153
-              },
-              {
-                "seg": 472,
-                "side": 2,
-                "wall": 151
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "key",
-            "label": "red key",
-            "seg": 436,
-            "distance": 385.7778934177332,
-            "key": "red"
-          },
-          {
-            "index": 6,
-            "kind": "trigger",
-            "label": "Open wall trigger 14",
-            "seg": 508,
-            "side": 1,
-            "wall": 200,
-            "distance": 2560.8401509220403,
-            "trigger": 14,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 497,
-                "side": 3,
-                "wall": 194
-              },
-              {
-                "seg": 496,
-                "side": 3,
-                "wall": 186
-              },
-              {
-                "seg": 507,
-                "side": 3,
-                "wall": 192
-              },
-              {
-                "seg": 499,
-                "side": 3,
-                "wall": 190
-              },
-              {
-                "seg": 504,
-                "side": 3,
-                "wall": 188
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "trigger",
-            "label": "Open wall trigger 13",
-            "seg": 522,
-            "side": 1,
-            "wall": 199,
-            "distance": 448.46507367999897,
-            "trigger": 13,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 516,
-                "side": 4,
-                "wall": 196
-              },
-              {
-                "seg": 524,
-                "side": 5,
-                "wall": 198
-              },
-              {
-                "seg": 509,
-                "side": 2,
-                "wall": 201
-              },
-              {
-                "seg": 509,
-                "side": 4,
-                "wall": 203
-              }
-            ]
-          },
-          {
-            "index": 8,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 523,
-            "distance": 274.67126798519797
-          },
-          {
-            "index": 9,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 200,
-            "side": 4,
-            "wall": 22,
-            "distance": 731.8671064240986,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 12,
-        "secret": false,
-        "level_name": "MAgnacore station",
-        "level_file": "d2levc-4.rl2",
-        "robots": 120,
-        "hostages": 6,
-        "secrets": 18,
-        "matcens": 8,
-        "energy_centers": 6,
-        "mine_volume": 59912803.17825836,
-        "mine_volume_normalized": 13.101700517934578,
-        "mine_volume_text": "13x",
-        "travel_distance": 16546.977341337657,
-        "travel_time_seconds": 331,
-        "travel_time_text": "5M:31S",
-        "travel_targets_reached": 8,
-        "travel_targets_total": 8,
-        "travel_key_detours": 3,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 25
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 11",
-            "seg": 318,
-            "side": 3,
-            "wall": 119,
-            "distance": 2166.8523166944874,
-            "trigger": 11,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 319,
-                "side": 4,
-                "wall": 115
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 452,
-            "distance": 81.73558635290266,
-            "key": "blue"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 230,
-            "distance": 3183.723713386258,
-            "key": "gold"
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "label": "red key",
-            "seg": 390,
-            "distance": 3603.9974104409102,
-            "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 74,
-            "distance": 3287.1677766495723
-          },
-          {
-            "index": 6,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 17,
-            "side": 4,
-            "wall": 81,
-            "distance": 101.48433049692972,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 13,
-        "secret": false,
-        "level_name": "sleetstone tunnels",
-        "level_file": "d2levd-1.rl2",
-        "robots": 45,
-        "hostages": 2,
-        "secrets": 5,
-        "matcens": 1,
-        "energy_centers": 0,
-        "mine_volume": 13295427.432935143,
-        "mine_volume_normalized": 2.90743712935569,
-        "mine_volume_text": "2.9x",
-        "travel_distance": 6441.848992961291,
-        "travel_time_seconds": 129,
-        "travel_time_text": "2M:09S",
-        "travel_targets_reached": 4,
-        "travel_targets_total": 4,
-        "travel_key_detours": 3,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 49
-          },
-          {
-            "index": 1,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 305,
-            "side": 5,
-            "wall": 140,
-            "distance": 433.2781844999349,
-            "opens": [
-              {
-                "seg": 305,
-                "side": 5,
-                "wall": 140
-              },
-              {
-                "seg": 297,
-                "side": 4,
-                "wall": 141
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 295,
-            "distance": 349.2910392187058
-          },
-          {
-            "index": 3,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 192,
-            "side": 5,
-            "wall": 33,
-            "distance": 578.3847336241406,
-            "opens": [
-              {
-                "seg": 192,
-                "side": 5,
-                "wall": 33
-              },
-              {
-                "seg": 31,
-                "side": 4,
-                "wall": 32
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 189,
-            "side": 4,
-            "wall": 66,
-            "distance": 121.2310562561766,
-            "trigger": 9,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 14,
-        "secret": false,
-        "level_name": "arcticon corridor",
-        "level_file": "d2levd-2.rl2",
-        "robots": 88,
-        "hostages": 4,
-        "secrets": 7,
-        "matcens": 2,
-        "energy_centers": 2,
-        "mine_volume": 21182884.44707659,
-        "mine_volume_normalized": 4.63226211108621,
-        "mine_volume_text": "4.6x",
-        "travel_distance": 5211.200510442975,
-        "travel_time_seconds": 104,
-        "travel_time_text": "1M:44S",
-        "travel_targets_reached": 6,
-        "travel_targets_total": 6,
-        "travel_key_detours": 0,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 318
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 13",
-            "seg": 339,
-            "side": 5,
-            "wall": 96,
-            "distance": 1281.1904420178087,
-            "trigger": 13,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 30,
-                "side": 4,
-                "wall": 155
-              },
-              {
-                "seg": 31,
-                "side": 2,
-                "wall": 152
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "label": "Open wall trigger 14",
-            "seg": 293,
-            "side": 0,
-            "wall": 160,
-            "distance": 136.0740315069804,
-            "trigger": 14,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 361,
-                "side": 4,
-                "wall": 63
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 10",
-            "seg": 355,
-            "side": 4,
-            "wall": 144,
-            "distance": 355.66946956843736,
-            "trigger": 10,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 368,
-                "side": 0,
-                "wall": 53
-              },
-              {
-                "seg": 329,
-                "side": 5,
-                "wall": 57
-              },
-              {
-                "seg": 328,
-                "side": 5,
-                "wall": 54
-              },
-              {
-                "seg": 379,
-                "side": 5,
-                "wall": 50
-              },
-              {
-                "seg": 270,
-                "side": 5,
-                "wall": 158
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 361,
-            "distance": 249.55495157111775,
-            "key": "blue"
-          },
-          {
-            "index": 5,
-            "kind": "trigger",
-            "label": "Open wall trigger 5",
-            "seg": 313,
-            "side": 4,
-            "wall": 108,
-            "distance": 1354.4624392443684,
-            "trigger": 5,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 133,
-                "side": 4,
-                "wall": 106
-              },
-              {
-                "seg": 404,
-                "side": 5,
-                "wall": 107
-              },
-              {
-                "seg": 155,
-                "side": 2,
-                "wall": 22
-              },
-              {
-                "seg": 154,
-                "side": 1,
-                "wall": 24
-              },
-              {
-                "seg": 154,
-                "side": 2,
-                "wall": 26
-              },
-              {
-                "seg": 154,
-                "side": 3,
-                "wall": 28
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 85,
-            "side": 4,
-            "wall": 114,
-            "distance": 426.7773459382142,
-            "opens": [
-              {
-                "seg": 85,
-                "side": 4,
-                "wall": 114
-              },
-              {
-                "seg": 335,
-                "side": 4,
-                "wall": 113
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 163,
-            "distance": 308.9650467560936,
-            "key": "gold"
-          },
-          {
-            "index": 8,
-            "kind": "key",
-            "label": "red key",
-            "seg": 61,
-            "distance": 1163.1620364244825,
-            "key": "red"
-          },
-          {
-            "index": 9,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 254,
-            "distance": 1530.9377641899052
-          },
-          {
-            "index": 10,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 242,
-            "side": 4,
-            "wall": 111,
-            "distance": 575.072345348649,
-            "opens": [
-              {
-                "seg": 242,
-                "side": 4,
-                "wall": 111
-              },
-              {
-                "seg": 223,
-                "side": 5,
-                "wall": 112
-              }
-            ]
-          },
-          {
-            "index": 11,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 223,
-            "side": 1,
-            "wall": 118,
-            "distance": 59.99954315316273,
-            "opens": [
-              {
-                "seg": 223,
-                "side": 1,
-                "wall": 118
-              },
-              {
-                "seg": 165,
-                "side": 5,
-                "wall": 117
-              }
-            ]
-          },
-          {
-            "index": 12,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 165,
-            "side": 4,
-            "wall": 116,
-            "distance": 39.9991860741239,
-            "trigger": 7,
-            "trigger_type_id": 4,
-            "trigger_type": "secret_exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 15,
-        "secret": false,
-        "level_name": "icehammer caverns",
-        "level_file": "d2levd-3.rl2",
-        "robots": 98,
-        "hostages": 5,
-        "secrets": 14,
-        "matcens": 5,
-        "energy_centers": 2,
-        "mine_volume": 23312297.52170797,
-        "mine_volume_normalized": 5.097921050458267,
-        "mine_volume_text": "5.1x",
-        "travel_distance": 13574.354736321042,
-        "travel_time_seconds": 271,
-        "travel_time_text": "4M:31S",
-        "travel_targets_reached": 7,
-        "travel_targets_total": 7,
-        "travel_key_detours": 3,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 228
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 186,
-            "distance": 1516.8578624696459,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 290,
-            "distance": 1729.8917436233787,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 464,
-            "distance": 3574.645077162212,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 211,
-            "distance": 4305.145154872689
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 125,
-            "side": 4,
-            "wall": 60,
-            "distance": 1000.2931078709815,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 16,
-        "secret": false,
-        "level_name": "terrafrost catacombs",
-        "level_file": "d2levd-4.rl2",
-        "robots": 130,
-        "hostages": 6,
-        "secrets": 9,
-        "matcens": 5,
-        "energy_centers": 5,
-        "mine_volume": 32987421.974362087,
-        "mine_volume_normalized": 7.213672214283295,
-        "mine_volume_text": "7.2x",
-        "travel_distance": 15136.630062441825,
-        "travel_time_seconds": 303,
-        "travel_time_text": "5M:03S",
-        "travel_targets_reached": 8,
-        "travel_targets_total": 8,
-        "travel_key_detours": 2,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "partial",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 229
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 10",
-            "seg": 4,
-            "side": 4,
-            "wall": 185,
-            "distance": 587.7097104426382,
-            "trigger": 10,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 18,
-                "side": 4,
-                "wall": 174
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "label": "Open wall trigger 11",
-            "seg": 18,
-            "side": 4,
-            "wall": 174,
-            "distance": 39.780029714268544,
-            "trigger": 11,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 24,
-                "side": 4,
-                "wall": 175
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 12",
-            "seg": 24,
-            "side": 4,
-            "wall": 175,
-            "distance": 59.40023561541257,
-            "trigger": 12,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 26,
-                "side": 4,
-                "wall": 177
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 254,
-            "distance": 855.974030702237
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key unreachable",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 17,
-        "secret": false,
-        "level_name": "Y'tor III",
-        "level_file": "d2leve-1.rl2",
-        "robots": 81,
-        "hostages": 0,
-        "secrets": 8,
-        "matcens": 1,
-        "energy_centers": 3,
-        "mine_volume": 13335439.972754667,
-        "mine_volume_normalized": 2.9161870506724674,
-        "mine_volume_text": "2.9x",
-        "travel_distance": 2735.2188627093446,
-        "travel_time_seconds": 55,
-        "travel_time_text": "0M:55S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 439
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 24",
-            "seg": 186,
-            "wall": 151,
-            "distance": 1238.2604422804386,
-            "trigger": 24,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 203,
-                "side": 5,
-                "wall": 141
-              },
-              {
-                "seg": 162,
-                "side": 3,
-                "wall": 139
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 113,
-            "distance": 669.8664404478503,
-            "key": "blue"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 287,
-            "distance": 1304.6007042411281,
-            "key": "gold"
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "label": "red key",
-            "seg": 404,
-            "distance": 1412.5831858239737,
-            "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 29,
-            "distance": 1303.1736032812485
-          },
-          {
-            "index": 6,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 262,
-            "side": 4,
-            "wall": 2,
-            "distance": 1223.477534888899,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 18,
-        "secret": false,
-        "level_name": "Drec'nilbie K'luh",
-        "level_file": "d2leve-2.rl2",
-        "robots": 89,
-        "hostages": 0,
-        "secrets": 6,
-        "matcens": 4,
-        "energy_centers": 3,
-        "mine_volume": 14042565.91881394,
-        "mine_volume_normalized": 3.0708209833590248,
-        "mine_volume_text": "3.1x",
-        "travel_distance": 5267.5138791359395,
-        "travel_time_seconds": 105,
-        "travel_time_text": "1M:45S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 1,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 42
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open door trigger 3",
-            "seg": 4,
-            "side": 5,
-            "wall": 53,
-            "distance": 97.78108938881425,
-            "trigger": 3,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 316,
-                "side": 4,
-                "wall": 38
-              },
-              {
-                "seg": 318,
-                "side": 4,
-                "wall": 40
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "label": "Open door trigger 2",
-            "seg": 2,
-            "side": 5,
-            "wall": 54,
-            "distance": 120,
-            "trigger": 2,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 318,
-                "side": 4,
-                "wall": 40
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open door trigger 7",
-            "seg": 320,
-            "side": 2,
-            "wall": 107,
-            "distance": 237.5780488547035,
-            "trigger": 7,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 320,
-                "side": 0,
-                "wall": 86
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 420,
-            "side": 4,
-            "wall": 105,
-            "distance": 254.73987764035311,
-            "opens": [
-              {
-                "seg": 420,
-                "side": 4,
-                "wall": 105
-              },
-              {
-                "seg": 422,
-                "side": 5,
-                "wall": 106
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 263,
-            "distance": 393.61069575403803,
-            "key": "blue"
-          },
-          {
-            "index": 6,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 250,
-            "distance": 1491.7897738126928,
-            "key": "gold"
-          },
-          {
-            "index": 7,
-            "kind": "key",
-            "label": "red key",
-            "seg": 293,
-            "distance": 722.0474498923119,
-            "key": "red"
-          },
-          {
-            "index": 8,
-            "kind": "trigger",
-            "label": "Open wall trigger 8",
-            "seg": 131,
-            "side": 4,
-            "wall": 110,
-            "distance": 1509.4021104615667,
-            "trigger": 8,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 363,
-                "side": 4,
-                "wall": 108
-              },
-              {
-                "seg": 362,
-                "side": 5,
-                "wall": 109
-              }
-            ]
-          },
-          {
-            "index": 9,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 261,
-            "distance": 338.04613513786865
-          },
-          {
-            "index": 10,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 418,
-            "side": 4,
-            "wall": 46,
-            "distance": 353.43494362405085,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 19,
-        "secret": false,
-        "level_name": "Nep-Hilim S'crub",
-        "level_file": "d2leve-3.rl2",
-        "robots": 76,
-        "hostages": 0,
-        "secrets": 13,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 14731460.529385174,
-        "mine_volume_normalized": 3.2214680971198244,
-        "mine_volume_text": "3.2x",
-        "travel_distance": 5894.522131609935,
-        "travel_time_seconds": 118,
-        "travel_time_text": "1M:58S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 2,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 245
-          },
-          {
-            "index": 1,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 0,
-            "side": 2,
-            "wall": 122,
-            "distance": 437.0338439294199,
-            "opens": [
-              {
-                "seg": 0,
-                "side": 2,
-                "wall": 122
-              },
-              {
-                "seg": 365,
-                "side": 5,
-                "wall": 123
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "label": "Open wall trigger 16",
-            "seg": 365,
-            "side": 0,
-            "wall": 121,
-            "distance": 40,
-            "trigger": 16,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 8,
-                "side": 0,
-                "wall": 98
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 31,
-            "distance": 410,
-            "key": "blue"
-          },
-          {
-            "index": 4,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 33,
-            "side": 0,
-            "wall": 3,
-            "distance": 320,
-            "opens": [
-              {
-                "seg": 33,
-                "side": 0,
-                "wall": 3
-              },
-              {
-                "seg": 83,
-                "side": 5,
-                "wall": 2
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 177,
-            "distance": 690.5418214835438,
-            "key": "gold"
-          },
-          {
-            "index": 6,
-            "kind": "key",
-            "label": "red key",
-            "seg": 273,
-            "distance": 1066.1357698229922,
-            "key": "red"
-          },
-          {
-            "index": 7,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 201,
-            "distance": 1666.4441076898354
-          },
-          {
-            "index": 8,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 327,
-            "side": 4,
-            "wall": 16,
-            "distance": 750.8233474598711,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "guidebot_note": "guidebot is present but not reachable from the start",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level",
-          "guidebot is present but not reachable from the start"
-        ]
-      },
-      {
-        "level_num": 20,
-        "secret": false,
-        "level_name": "Gytowt Station",
-        "level_file": "d2leve-4.rl2",
-        "robots": 95,
-        "hostages": 0,
-        "secrets": 12,
-        "matcens": 7,
-        "energy_centers": 5,
-        "mine_volume": 12855734.26467992,
-        "mine_volume_normalized": 2.811285256889936,
-        "mine_volume_text": "2.8x",
-        "travel_distance": 3834.111959621657,
-        "travel_time_seconds": 77,
-        "travel_time_text": "1M:17S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 2,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 228
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 40",
-            "seg": 168,
-            "side": 5,
-            "wall": 209,
-            "distance": 884.8946032206312,
-            "trigger": 40,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 137,
-                "side": 5,
-                "wall": 19
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 137,
-            "distance": 29.999466683391578,
-            "key": "blue"
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 18",
-            "seg": 174,
-            "side": 1,
-            "wall": 158,
-            "distance": 883.281369736585,
-            "trigger": 18,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 36,
-                "side": 1,
-                "wall": 13
-              },
-              {
-                "seg": 33,
-                "side": 1,
-                "wall": 3
-              },
-              {
-                "seg": 38,
-                "side": 3,
-                "wall": 1
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "label": "Open wall trigger 31",
-            "seg": 252,
-            "wall": 184,
-            "distance": 1121.8833876518795,
-            "trigger": 31,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 219,
-                "side": 4,
-                "wall": 97
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 220,
-            "distance": 152.41543890350474,
-            "key": "gold"
-          },
-          {
-            "index": 6,
-            "kind": "key",
-            "label": "red key",
-            "seg": 69,
-            "distance": 1183.4116646724751,
-            "key": "red"
-          },
-          {
-            "index": 7,
-            "kind": "boss",
-            "label": "Boss robot",
-            "seg": 206,
-            "distance": 787.8288374101498
-          },
-          {
-            "index": 8,
-            "kind": "trigger",
-            "label": "Open wall trigger 37",
-            "seg": 21,
-            "side": 5,
-            "wall": 204,
-            "distance": 305.37617577538094,
-            "trigger": 37,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 369,
-                "side": 3,
-                "wall": 200
-              }
-            ]
-          },
-          {
-            "index": 9,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 462,
-            "side": 4,
-            "wall": 202,
-            "distance": 270.244640912273,
-            "trigger": 36,
-            "trigger_type_id": 4,
-            "trigger_type": "secret_exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 21,
-        "secret": false,
-        "level_name": "N'neri Ring",
-        "level_file": "d2levf-1.rl2",
-        "robots": 65,
-        "hostages": 0,
-        "secrets": 4,
-        "matcens": 1,
-        "energy_centers": 2,
-        "mine_volume": 10206013.051360816,
-        "mine_volume_normalized": 2.2318456054078446,
-        "mine_volume_text": "2.2x",
-        "travel_distance": 4848.7486403382,
-        "travel_time_seconds": 97,
-        "travel_time_text": "1M:37S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 1,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 49
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 12",
-            "seg": 355,
-            "wall": 141,
-            "distance": 284.0626549344662,
-            "trigger": 12,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 200,
-                "side": 1,
-                "wall": 93
-              },
-              {
-                "seg": 216,
-                "side": 5,
-                "wall": 72
-              },
-              {
-                "seg": 216,
-                "side": 1,
-                "wall": 74
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 97,
-            "distance": 766.3203187632253,
-            "key": "blue"
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 4",
-            "seg": 364,
-            "side": 1,
-            "wall": 115,
-            "distance": 1445.1834766084073,
-            "trigger": 4,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 242,
-                "side": 3,
-                "wall": 110
-              },
-              {
-                "seg": 247,
-                "side": 3,
-                "wall": 112
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "label": "Open wall trigger 3",
-            "seg": 363,
-            "side": 4,
-            "wall": 114,
-            "distance": 520.5744049796219,
-            "trigger": 3,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 136,
-                "side": 1,
-                "wall": 44
-              },
-              {
-                "seg": 133,
-                "side": 1,
-                "wall": 46
-              },
-              {
-                "seg": 143,
-                "side": 1,
-                "wall": 42
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "key",
-            "label": "red key",
-            "seg": 243,
-            "distance": 122.69349848478336,
-            "key": "red"
-          },
-          {
-            "index": 6,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 301,
-            "distance": 1769.115755398445
-          },
-          {
-            "index": 7,
-            "kind": "trigger",
-            "label": "Open wall trigger 16",
-            "seg": 119,
-            "wall": 148,
-            "distance": 647.0754319872332,
-            "trigger": 16,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 339,
-                "side": 1,
-                "wall": 121
-              }
-            ]
-          },
-          {
-            "index": 8,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 297,
-            "side": 4,
-            "wall": 66,
-            "distance": 273.145266904167,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 22,
-        "secret": false,
-        "level_name": "Kwod A'rior",
-        "level_file": "d2levf-2.rl2",
-        "robots": 62,
-        "hostages": 0,
-        "secrets": 7,
-        "matcens": 2,
-        "energy_centers": 2,
-        "mine_volume": 20189018.545424905,
-        "mine_volume_normalized": 4.414924034620566,
-        "mine_volume_text": "4.4x",
-        "travel_distance": 11131.303157514585,
-        "travel_time_seconds": 223,
-        "travel_time_text": "3M:43S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 3,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 55
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 163,
-            "distance": 562.8034898959068,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 217,
-            "side": 4,
-            "wall": 30,
-            "distance": 1660.5669520539404,
-            "opens": [
-              {
-                "seg": 217,
-                "side": 4,
-                "wall": 30
-              },
-              {
-                "seg": 318,
-                "side": 5,
-                "wall": 31
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 260,
-            "distance": 560.4636056641314,
-            "key": "gold"
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "label": "red key",
-            "seg": 292,
-            "distance": 2228.3701857045644,
-            "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 339,
-            "distance": 2006.8144265303424
-          },
-          {
-            "index": 6,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 353,
-            "side": 4,
-            "wall": 42,
-            "distance": 968.9162096358597,
-            "trigger": 3,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 23,
-        "secret": false,
-        "level_name": "Iwihml",
-        "level_file": "d2levf-3.rl2",
-        "robots": 54,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 0,
-        "energy_centers": 0,
-        "mine_volume": 8900318.665719323,
-        "mine_volume_normalized": 1.9463170388721482,
-        "mine_volume_text": "1.9x",
-        "travel_distance": 3205.8472605758857,
-        "travel_time_seconds": 64,
-        "travel_time_text": "1M:04S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 1,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 273
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "label": "blue key",
-            "seg": 34,
-            "distance": 922.8205802951449,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "label": "gold key",
-            "seg": 265,
-            "distance": 299.8712224192376,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "label": "red key",
-            "seg": 182,
-            "distance": 874.4011775361924,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "label": "Open door trigger 6",
-            "seg": 253,
-            "wall": 55,
-            "distance": 1110.3016368944652,
-            "trigger": 6,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 255,
-                "side": 4,
-                "wall": 74
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 5,
-            "distance": 169.16196995136247
-          },
-          {
-            "index": 6,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 253,
-            "side": 4,
-            "wall": 59,
-            "distance": 149.00615478592636,
-            "opens": [
-              {
-                "seg": 253,
-                "side": 4,
-                "wall": 59
-              },
-              {
-                "seg": 252,
-                "side": 4,
-                "wall": 58
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 246,
-            "side": 5,
-            "wall": 51,
-            "distance": 68.00477303983418,
-            "opens": [
-              {
-                "seg": 246,
-                "side": 5,
-                "wall": 51
-              },
-              {
-                "seg": 245,
-                "side": 4,
-                "wall": 50
-              }
-            ]
-          },
-          {
-            "index": 8,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 222,
-            "side": 4,
-            "wall": 36,
-            "distance": 392.1826792296205,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": 24,
-        "secret": false,
-        "level_name": "Tycho Brahe",
-        "level_file": "d2levf-4.rl2",
-        "robots": 62,
-        "hostages": 0,
-        "secrets": 5,
-        "matcens": 1,
-        "energy_centers": 1,
-        "mine_volume": 12235923.898723898,
-        "mine_volume_normalized": 2.6757454496720006,
-        "mine_volume_text": "2.7x",
-        "travel_distance": 1602.6196512689887,
-        "travel_time_seconds": 32,
-        "travel_time_text": "0M:32S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 1,
-        "guidebot_placed": true,
-        "guidebot_accessible": true,
-        "route_status": "failed",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 200
-          }
-        ],
-        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "red key unreachable",
-        "notes": [
-          "guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": -1,
-        "secret": true,
-        "level_name": "Segment City",
-        "level_file": "d2leva-s.rl2",
-        "robots": 20,
-        "hostages": 0,
-        "secrets": 2,
-        "matcens": 0,
-        "energy_centers": 2,
-        "mine_volume": 8517854.775650267,
-        "mine_volume_normalized": 1.8626800350801536,
-        "mine_volume_text": "1.9x",
-        "travel_distance": 1201.7252077345474,
-        "travel_time_seconds": 24,
-        "travel_time_text": "0M:24S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 154
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 132,
-            "distance": 2333.3569407978484
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 331,
-            "side": 4,
-            "wall": 111,
-            "distance": 493.34064351895796,
-            "trigger": 14,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": -2,
-        "secret": true,
-        "level_name": "Hurdle Chase",
-        "level_file": "d2levb-s.rl2",
-        "robots": 70,
-        "hostages": 0,
-        "secrets": 2,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 5710124.165769253,
-        "mine_volume_normalized": 1.2486869712562252,
-        "mine_volume_text": "1.2x",
-        "travel_distance": 1790.0928056771945,
-        "travel_time_seconds": 36,
-        "travel_time_text": "0M:36S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 18
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 113,
-            "distance": 1530.5270766171311
-          },
-          {
-            "index": 2,
-            "kind": "hidden_door",
-            "label": "Hidden door",
-            "seg": 247,
-            "side": 0,
-            "wall": 111,
-            "distance": 262.677460358467,
-            "opens": [
-              {
-                "seg": 247,
-                "side": 0,
-                "wall": 111
-              },
-              {
-                "seg": 260,
-                "side": 5,
-                "wall": 112
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "label": "Open wall trigger 13",
-            "seg": 260,
-            "side": 4,
-            "wall": 113,
-            "distance": 39.99694714101395,
-            "trigger": 13,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 164,
-                "side": 4,
-                "wall": 83
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 33,
-            "side": 4,
-            "wall": 81,
-            "distance": 59.998267549612805,
-            "trigger": 12,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": -3,
-        "secret": true,
-        "level_name": "mephisto hardcore",
-        "level_file": "d2levc-s.rl2",
-        "robots": 9,
-        "hostages": 0,
-        "secrets": 11,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 10079863.404743904,
-        "mine_volume_normalized": 2.2042592665496783,
-        "mine_volume_text": "2.2x",
-        "travel_distance": 1637.351817851998,
-        "travel_time_seconds": 33,
-        "travel_time_text": "0M:33S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 56
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 459,
-            "distance": 1324.081080573819
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 463,
-            "side": 4,
-            "wall": 225,
-            "distance": 348.96527281997857,
-            "trigger": 8,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": -4,
-        "secret": true,
-        "level_name": "Galacia caverns",
-        "level_file": "d2levd-s.rl2",
-        "robots": 0,
-        "hostages": 5,
-        "secrets": 2,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 16026917.69771807,
-        "mine_volume_normalized": 3.5047579943194327,
-        "mine_volume_text": "3.5x",
-        "travel_distance": 2281.9582996794816,
-        "travel_time_seconds": 46,
-        "travel_time_text": "0M:46S",
-        "travel_targets_reached": 7,
-        "travel_targets_total": 7,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 45
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 35,
-            "distance": 275.89826038069674
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 45,
-            "side": 4,
-            "wall": 113,
-            "distance": 285.8940998780187,
-            "trigger": 5,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": -5,
-        "secret": true,
-        "level_name": "Ascent Level 1",
-        "level_file": "d2leve-s.rl2",
-        "robots": 20,
-        "hostages": 0,
-        "secrets": 5,
-        "matcens": 0,
-        "energy_centers": 1,
-        "mine_volume": 9632163.781741919,
-        "mine_volume_normalized": 2.1063565467401535,
-        "mine_volume_text": "2.1x",
-        "travel_distance": 619.9474149707853,
-        "travel_time_seconds": 12,
-        "travel_time_text": "0M:12S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 75
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "label": "Open wall trigger 11",
-            "seg": 101,
-            "side": 4,
-            "wall": 152,
-            "distance": 580.818004394964,
-            "trigger": 11,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 7,
-                "side": 5,
-                "wall": 47
-              },
-              {
-                "seg": 14,
-                "side": 5,
-                "wall": 53
-              },
-              {
-                "seg": 5,
-                "side": 4,
-                "wall": 49
-              },
-              {
-                "seg": 15,
-                "side": 5,
-                "wall": 51
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 6,
-            "distance": 297.7052214758993
-          },
-          {
-            "index": 3,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 369,
-            "side": 4,
-            "wall": 134,
-            "distance": 367.7052214758993,
-            "trigger": 4,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      },
-      {
-        "level_num": -6,
-        "secret": true,
-        "level_name": "Chain Reaction",
-        "level_file": "d2levf-s.rl2",
-        "robots": 13,
-        "hostages": 0,
-        "secrets": 2,
-        "matcens": 0,
-        "energy_centers": 0,
-        "mine_volume": 6283071.79627118,
-        "mine_volume_normalized": 1.373978859952572,
-        "mine_volume_text": "1.4x",
-        "travel_distance": 221.7030607164923,
-        "travel_time_seconds": 4,
-        "travel_time_text": "0M:04S",
-        "travel_targets_reached": 2,
-        "travel_targets_total": 2,
-        "travel_key_detours": 0,
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "label": "Start",
-            "seg": 236
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "label": "Reactor",
-            "seg": 20,
-            "distance": 105.8515739945579
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "label": "Exit",
-            "seg": 236,
-            "side": 4,
-            "wall": 17,
-            "distance": 115.85148672193442,
-            "trigger": 4,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
-          }
-        ],
-        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "notes": [
-          "no guidebot or guidebot start cage placed in this level"
-        ]
-      }
-    ],
-    "target_index": 0
-  }
-]
+{
+  "status": "ok",
+  "source": "descent2.hog",
+  "game": "d2",
+  "mission_name": "Descent 2: Counterstrike!",
+  "mission_filename": "d2",
+  "coop_starts": "1-5",
+  "level_count": 30,
+  "levels": [
+    {
+      "level_num": 1,
+      "secret": false,
+      "level_name": "Ahayweh Gate",
+      "level_file": "d2leva-1.rl2",
+      "robots": 38,
+      "hostages": 4,
+      "secrets": 9,
+      "matcens": 0,
+      "energy_centers": 1,
+      "mine_volume": 4724112.398291526,
+      "mine_volume_normalized": 1.0330664327510186,
+      "mine_volume_text": "1.0x",
+      "travel_distance": 2308.3881522592815,
+      "travel_time_seconds": 46,
+      "travel_time_text": "1M:46S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 0
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 27,
+          "distance": 891.5232218581602,
+          "key": "red"
+        },
+        {
+          "index": 2,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 159,
+          "distance": 1275.1220953078534
+        },
+        {
+          "index": 3,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 150,
+          "side": 4,
+          "wall": 31,
+          "distance": 141.74283509326793,
+          "trigger": 0,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 2,
+      "secret": false,
+      "level_name": "Turnabout Bore",
+      "level_file": "d2leva-2.rl2",
+      "robots": 69,
+      "hostages": 4,
+      "secrets": 6,
+      "matcens": 3,
+      "energy_centers": 3,
+      "mine_volume": 8650962.279285746,
+      "mine_volume_normalized": 1.8917879144783718,
+      "mine_volume_text": "1.9x",
+      "travel_distance": 7018.17183846992,
+      "travel_time_seconds": 140,
+      "travel_time_text": "2M:20S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 217
+        },
+        {
+          "index": 1,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 17",
+          "seg": 84,
+          "side": 2,
+          "wall": 154,
+          "distance": 223.38362730081016,
+          "trigger": 17,
+          "trigger_type_id": 7,
+          "trigger_type": "unlock_door",
+          "opens": [
+            {
+              "seg": 85,
+              "side": 4,
+              "wall": 116
+            },
+            {
+              "seg": 235,
+              "side": 5,
+              "wall": 117
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 81,
+          "distance": 1095.8394646943996,
+          "key": "blue"
+        },
+        {
+          "index": 3,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 23",
+          "seg": 81,
+          "side": 2,
+          "wall": 187,
+          "distance": 27.01650657340731,
+          "trigger": 23,
+          "trigger_type_id": 0,
+          "trigger_type": "open_door",
+          "opens": [
+            {
+              "seg": 97,
+              "side": 2,
+              "wall": 121
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 286,
+          "side": 5,
+          "wall": 118,
+          "distance": 396.20924579246173,
+          "opens": [
+            {
+              "seg": 286,
+              "side": 5,
+              "wall": 118
+            },
+            {
+              "seg": 38,
+              "side": 2,
+              "wall": 119
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 21",
+          "seg": 43,
+          "wall": 184,
+          "distance": 626.1927485705381,
+          "trigger": 21,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 130,
+              "side": 4,
+              "wall": 84
+            },
+            {
+              "seg": 116,
+              "side": 0,
+              "wall": 151
+            },
+            {
+              "seg": 116,
+              "side": 2,
+              "wall": 153
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 116,
+          "distance": 707.7885754930958,
+          "key": "red"
+        },
+        {
+          "index": 7,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 19",
+          "seg": 15,
+          "side": 1,
+          "wall": 173,
+          "distance": 285.2709970826822,
+          "trigger": 19,
+          "trigger_type_id": 7,
+          "trigger_type": "unlock_door",
+          "opens": [
+            {
+              "seg": 8,
+              "side": 4,
+              "wall": 126
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 8",
+          "seg": 157,
+          "wall": 89,
+          "distance": 161.30352242787848,
+          "trigger": 8,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 18,
+              "side": 5,
+              "wall": 68
+            },
+            {
+              "seg": 7,
+              "side": 4,
+              "wall": 67
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 7",
+          "seg": 144,
+          "wall": 88,
+          "distance": 1139.8151236895656,
+          "trigger": 7,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 127,
+              "side": 5,
+              "wall": 69
+            },
+            {
+              "seg": 144,
+              "side": 5,
+              "wall": 70
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "kind": "trigger",
+          "activation_kind": "fly_through_trigger",
+          "label": "Fly-through trigger 20",
+          "seg": 253,
+          "side": 5,
+          "wall": 182,
+          "distance": 463.4560474308241,
+          "trigger": 20,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 248,
+              "side": 0,
+              "wall": 177
+            },
+            {
+              "seg": 257,
+              "side": 2,
+              "wall": 175
+            },
+            {
+              "seg": 248,
+              "side": 2,
+              "wall": 181
+            },
+            {
+              "seg": 257,
+              "side": 0,
+              "wall": 179
+            }
+          ]
+        },
+        {
+          "index": 11,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 3",
+          "seg": 132,
+          "side": 4,
+          "wall": 81,
+          "distance": 288.14058928800046,
+          "trigger": 3,
+          "trigger_type_id": 0,
+          "trigger_type": "open_door",
+          "opens": [
+            {
+              "seg": 255,
+              "side": 4,
+              "wall": 30
+            }
+          ]
+        },
+        {
+          "index": 12,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 105,
+          "side": 4,
+          "wall": 80,
+          "distance": 482.58910570553354,
+          "opens": [
+            {
+              "seg": 105,
+              "side": 4,
+              "wall": 80
+            },
+            {
+              "seg": 92,
+              "side": 5,
+              "wall": 79
+            }
+          ]
+        },
+        {
+          "index": 13,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 10",
+          "seg": 76,
+          "side": 0,
+          "wall": 97,
+          "distance": 339.8419016510778,
+          "trigger": 10,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 72,
+              "side": 2,
+              "wall": 95
+            },
+            {
+              "seg": 66,
+              "side": 5,
+              "wall": 101
+            }
+          ]
+        },
+        {
+          "index": 14,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 9",
+          "seg": 76,
+          "side": 2,
+          "wall": 96,
+          "distance": 38.283854310862765,
+          "trigger": 9,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 31,
+              "side": 1,
+              "wall": 91
+            },
+            {
+              "seg": 16,
+              "side": 1,
+              "wall": 93
+            },
+            {
+              "seg": 17,
+              "side": 5,
+              "wall": 105
+            },
+            {
+              "seg": 26,
+              "side": 2,
+              "wall": 104
+            }
+          ]
+        },
+        {
+          "index": 15,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 266,
+          "distance": 369.84148485760136
+        },
+        {
+          "index": 16,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 77,
+          "side": 4,
+          "wall": 78,
+          "distance": 373.1990436011824,
+          "trigger": 2,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 3,
+      "secret": false,
+      "level_name": "wenl mine",
+      "level_file": "d2leva-3.rl2",
+      "robots": 86,
+      "hostages": 4,
+      "secrets": 7,
+      "matcens": 3,
+      "energy_centers": 2,
+      "mine_volume": 12433669.076107772,
+      "mine_volume_normalized": 2.7189882618175276,
+      "mine_volume_text": "2.7x",
+      "travel_distance": 5957.21190271756,
+      "travel_time_seconds": 119,
+      "travel_time_text": "2M:59S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 315
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 200,
+          "distance": 1276.966046445126,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 300,
+          "distance": 2007.2458197791411,
+          "key": "gold"
+        },
+        {
+          "index": 3,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 8",
+          "seg": 297,
+          "wall": 108,
+          "distance": 686.3157655949763,
+          "trigger": 8,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 116,
+              "side": 4,
+              "wall": 106
+            },
+            {
+              "seg": 166,
+              "side": 5,
+              "wall": 107
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 166,
+          "distance": 69.88732837927788,
+          "key": "red"
+        },
+        {
+          "index": 5,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 137,
+          "distance": 974.4492399920796
+        },
+        {
+          "index": 6,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 249,
+          "side": 0,
+          "wall": 58,
+          "distance": 852.0976811731441,
+          "opens": [
+            {
+              "seg": 249,
+              "side": 0,
+              "wall": 58
+            },
+            {
+              "seg": 112,
+              "side": 5,
+              "wall": 59
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 109,
+          "side": 4,
+          "wall": 112,
+          "distance": 90.25002135381473,
+          "trigger": 6,
+          "trigger_type_id": 4,
+          "trigger_type": "secret_exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 4,
+      "secret": false,
+      "level_name": "Robby Station",
+      "level_file": "d2leva-4.rl2",
+      "robots": 59,
+      "hostages": 3,
+      "secrets": 12,
+      "matcens": 7,
+      "energy_centers": 2,
+      "mine_volume": 8105338.361102019,
+      "mine_volume_normalized": 1.7724711609257795,
+      "mine_volume_text": "1.8x",
+      "travel_distance": 5347.129825878897,
+      "travel_time_seconds": 107,
+      "travel_time_text": "2M:47S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 52
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 99,
+          "distance": 1451.2836847582419,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 232,
+          "distance": 2043.4054478765954,
+          "key": "red"
+        },
+        {
+          "index": 3,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 21",
+          "seg": 0,
+          "side": 2,
+          "wall": 14,
+          "distance": 1236.3864706148943,
+          "trigger": 21,
+          "trigger_type_id": 7,
+          "trigger_type": "unlock_door",
+          "opens": [
+            {
+              "seg": 193,
+              "side": 5,
+              "wall": 138
+            },
+            {
+              "seg": 262,
+              "side": 5,
+              "wall": 140
+            },
+            {
+              "seg": 259,
+              "side": 4,
+              "wall": 142
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "trigger",
+          "activation_kind": "fly_through_trigger",
+          "label": "Fly-through trigger 24",
+          "seg": 188,
+          "side": 5,
+          "wall": 150,
+          "distance": 99.72902469463031,
+          "trigger": 24,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 198,
+              "side": 4,
+              "wall": 147
+            },
+            {
+              "seg": 255,
+              "side": 5,
+              "wall": 134
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "boss",
+          "activation_kind": "destroy_boss",
+          "label": "Boss robot",
+          "seg": 199,
+          "distance": 180.48396471891556
+        },
+        {
+          "index": 6,
+          "kind": "trigger",
+          "activation_kind": "fly_through_trigger",
+          "label": "Fly-through trigger 20",
+          "seg": 171,
+          "side": 5,
+          "wall": 136,
+          "distance": 141.314407348695,
+          "trigger": 20,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 2,
+              "side": 4,
+              "wall": 80
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 179,
+          "side": 4,
+          "wall": 54,
+          "distance": 154.5268258622673,
+          "opens": [
+            {
+              "seg": 179,
+              "side": 4,
+              "wall": 54
+            },
+            {
+              "seg": 180,
+              "side": 5,
+              "wall": 55
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 180,
+          "side": 4,
+          "wall": 154,
+          "distance": 40.00000000465661,
+          "trigger": 25,
+          "trigger_type_id": 4,
+          "trigger_type": "secret_exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 5,
+      "secret": false,
+      "level_name": "Seaspring Gorge",
+      "level_file": "d2levb-1.rl2",
+      "robots": 88,
+      "hostages": 4,
+      "secrets": 16,
+      "matcens": 2,
+      "energy_centers": 3,
+      "mine_volume": 12560920.09285545,
+      "mine_volume_normalized": 2.746815447720853,
+      "mine_volume_text": "2.7x",
+      "travel_distance": 6255.617367393727,
+      "travel_time_seconds": 125,
+      "travel_time_text": "2M:05S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 358
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 465,
+          "distance": 1331.1277645872606,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 498,
+          "distance": 2193.5868007932677,
+          "key": "red"
+        },
+        {
+          "index": 3,
+          "kind": "trigger",
+          "activation_kind": "fly_through_trigger",
+          "label": "Fly-through trigger 22",
+          "seg": 430,
+          "side": 4,
+          "wall": 94,
+          "distance": 1047.756971316881,
+          "trigger": 22,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 387,
+              "side": 4,
+              "wall": 90
+            },
+            {
+              "seg": 394,
+              "side": 5,
+              "wall": 86
+            },
+            {
+              "seg": 389,
+              "side": 5,
+              "wall": 92
+            },
+            {
+              "seg": 390,
+              "side": 5,
+              "wall": 88
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 388,
+          "distance": 146.44573995466035
+        },
+        {
+          "index": 5,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 331,
+          "side": 4,
+          "wall": 101,
+          "distance": 1506.6879349795802,
+          "opens": [
+            {
+              "seg": 331,
+              "side": 4,
+              "wall": 101
+            },
+            {
+              "seg": 332,
+              "side": 5,
+              "wall": 102
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 332,
+          "side": 4,
+          "wall": 83,
+          "distance": 30.012155762078926,
+          "trigger": 5,
+          "trigger_type_id": 4,
+          "trigger_type": "secret_exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 6,
+      "secret": false,
+      "level_name": "the well",
+      "level_file": "d2levb-2.rl2",
+      "robots": 57,
+      "hostages": 3,
+      "secrets": 3,
+      "matcens": 1,
+      "energy_centers": 1,
+      "mine_volume": 5382040.237691119,
+      "mine_volume_normalized": 1.1769417491600713,
+      "mine_volume_text": "1.2x",
+      "travel_distance": 3617.781151667559,
+      "travel_time_seconds": 72,
+      "travel_time_text": "1M:12S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 22
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 64,
+          "distance": 619.2406004692042,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 83,
+          "distance": 514.2379545695485,
+          "key": "gold"
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 29,
+          "distance": 1204.5420258375946,
+          "key": "red"
+        },
+        {
+          "index": 4,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 187,
+          "distance": 608.0063992300257
+        },
+        {
+          "index": 5,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 231,
+          "side": 4,
+          "wall": 34,
+          "distance": 671.7541715611854,
+          "trigger": 1,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 7,
+      "secret": false,
+      "level_name": "coralbank quarry",
+      "level_file": "d2levb-3.rl2",
+      "robots": 85,
+      "hostages": 2,
+      "secrets": 7,
+      "matcens": 5,
+      "energy_centers": 3,
+      "mine_volume": 22634205.28098533,
+      "mine_volume_normalized": 4.94963619329593,
+      "mine_volume_text": "4.9x",
+      "travel_distance": 11415.494009455975,
+      "travel_time_seconds": 228,
+      "travel_time_text": "4M:48S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 304
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 317,
+          "distance": 2191.213160331854,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 287,
+          "distance": 4312.707705357164,
+          "key": "gold"
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 648,
+          "distance": 1624.065524344014,
+          "key": "red"
+        },
+        {
+          "index": 4,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 490,
+          "distance": 2682.6646472355737
+        },
+        {
+          "index": 5,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 14",
+          "seg": 483,
+          "side": 3,
+          "wall": 167,
+          "distance": 199.77364573844295,
+          "trigger": 14,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 205,
+              "side": 4,
+              "wall": 91
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 206,
+          "side": 4,
+          "wall": 84,
+          "distance": 405.06932644892476,
+          "trigger": 3,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 8,
+      "secret": false,
+      "level_name": "riverbed mine",
+      "level_file": "d2levb-4.rl2",
+      "robots": 61,
+      "hostages": 3,
+      "secrets": 9,
+      "matcens": 6,
+      "energy_centers": 2,
+      "mine_volume": 16009658.900014758,
+      "mine_volume_normalized": 3.500983849448667,
+      "mine_volume_text": "3.5x",
+      "travel_distance": 3161.298689178169,
+      "travel_time_seconds": 63,
+      "travel_time_text": "1M:03S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 18
+        },
+        {
+          "index": 1,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 42",
+          "seg": 269,
+          "wall": 221,
+          "distance": 301.88745613213575,
+          "trigger": 42,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 269,
+              "side": 4,
+              "wall": 143
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 290,
+          "distance": 733.0700831211396,
+          "key": "red"
+        },
+        {
+          "index": 3,
+          "kind": "boss",
+          "activation_kind": "destroy_boss",
+          "label": "Boss robot",
+          "seg": 67,
+          "distance": 1185.0937079065984
+        },
+        {
+          "index": 4,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 319,
+          "side": 4,
+          "wall": 34,
+          "distance": 941.2474420182947,
+          "trigger": 13,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 9,
+      "secret": false,
+      "level_name": "Firewalker Mine",
+      "level_file": "d2levc-1.rl2",
+      "robots": 113,
+      "hostages": 3,
+      "secrets": 12,
+      "matcens": 1,
+      "energy_centers": 1,
+      "mine_volume": 15266930.86134651,
+      "mine_volume_normalized": 3.3385644697385954,
+      "mine_volume_text": "3.3x",
+      "travel_distance": 7446.904615910622,
+      "travel_time_seconds": 149,
+      "travel_time_text": "2M:29S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 182
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 276,
+          "distance": 1299.8166527111662,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 463,
+          "distance": 1616.1031021741478,
+          "key": "gold"
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 53,
+          "distance": 1598.854316716189,
+          "key": "red"
+        },
+        {
+          "index": 4,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 492,
+          "distance": 1894.2458978203242
+        },
+        {
+          "index": 5,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 38,
+          "side": 4,
+          "wall": 66,
+          "distance": 1037.8846464887945,
+          "trigger": 0,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 10,
+      "secret": false,
+      "level_name": "lavafalls extraction ctr.",
+      "level_file": "d2levc-2.rl2",
+      "robots": 119,
+      "hostages": 8,
+      "secrets": 10,
+      "matcens": 4,
+      "energy_centers": 1,
+      "mine_volume": 21437023.176574834,
+      "mine_volume_normalized": 4.687837035764458,
+      "mine_volume_text": "4.7x",
+      "travel_distance": 1439.692573168826,
+      "travel_time_seconds": 29,
+      "travel_time_text": "0M:29S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "partial",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 183
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 410,
+          "distance": 1439.692573168826,
+          "key": "blue"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "route_problem": "route target unreachable",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 11,
+      "secret": false,
+      "level_name": "coalbank shaft",
+      "level_file": "d2levc-3.rl2",
+      "robots": 81,
+      "hostages": 4,
+      "secrets": 9,
+      "matcens": 5,
+      "energy_centers": 1,
+      "mine_volume": 21733013.971057583,
+      "mine_volume_normalized": 4.752564148162126,
+      "mine_volume_text": "4.8x",
+      "travel_distance": 10098.60944874293,
+      "travel_time_seconds": 202,
+      "travel_time_text": "3M:22S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 0
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 295,
+          "distance": 1992.9787318173028,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 4",
+          "seg": 419,
+          "side": 2,
+          "wall": 109,
+          "distance": 1519.5828529195576,
+          "trigger": 4,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 373,
+              "side": 2,
+              "wall": 86
+            },
+            {
+              "seg": 370,
+              "side": 4,
+              "wall": 81
+            },
+            {
+              "seg": 372,
+              "side": 4,
+              "wall": 242
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 372,
+          "distance": 160.15412938705953,
+          "key": "gold"
+        },
+        {
+          "index": 4,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 10",
+          "seg": 476,
+          "side": 2,
+          "wall": 149,
+          "distance": 1481.783603940873,
+          "trigger": 10,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 463,
+              "side": 5,
+              "wall": 146
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 38",
+          "seg": 530,
+          "side": 3,
+          "wall": 246,
+          "distance": 542.4886382490687,
+          "trigger": 38,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 468,
+              "side": 0,
+              "wall": 153
+            },
+            {
+              "seg": 472,
+              "side": 2,
+              "wall": 151
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 436,
+          "distance": 385.7778934177332,
+          "key": "red"
+        },
+        {
+          "index": 7,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 14",
+          "seg": 508,
+          "side": 1,
+          "wall": 200,
+          "distance": 2560.8401509220403,
+          "trigger": 14,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 497,
+              "side": 3,
+              "wall": 194
+            },
+            {
+              "seg": 496,
+              "side": 3,
+              "wall": 186
+            },
+            {
+              "seg": 507,
+              "side": 3,
+              "wall": 192
+            },
+            {
+              "seg": 499,
+              "side": 3,
+              "wall": 190
+            },
+            {
+              "seg": 504,
+              "side": 3,
+              "wall": 188
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 13",
+          "seg": 522,
+          "side": 1,
+          "wall": 199,
+          "distance": 448.46507367999897,
+          "trigger": 13,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 516,
+              "side": 4,
+              "wall": 196
+            },
+            {
+              "seg": 524,
+              "side": 5,
+              "wall": 198
+            },
+            {
+              "seg": 509,
+              "side": 2,
+              "wall": 201
+            },
+            {
+              "seg": 509,
+              "side": 4,
+              "wall": 203
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 523,
+          "distance": 274.67126798519797
+        },
+        {
+          "index": 10,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 200,
+          "side": 4,
+          "wall": 22,
+          "distance": 731.8671064240986,
+          "trigger": 0,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 12,
+      "secret": false,
+      "level_name": "MAgnacore station",
+      "level_file": "d2levc-4.rl2",
+      "robots": 120,
+      "hostages": 6,
+      "secrets": 18,
+      "matcens": 8,
+      "energy_centers": 6,
+      "mine_volume": 59912803.17825836,
+      "mine_volume_normalized": 13.101700517934578,
+      "mine_volume_text": "13x",
+      "travel_distance": 0.0,
+      "travel_time_seconds": 0,
+      "travel_time_text": "0M:00S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "failed",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 25
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "route_problem": "trigger route dependency loop: trigger 14 source 414:5 wall 136 target 168:5",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 13,
+      "secret": false,
+      "level_name": "sleetstone tunnels",
+      "level_file": "d2levd-1.rl2",
+      "robots": 45,
+      "hostages": 2,
+      "secrets": 6,
+      "matcens": 1,
+      "energy_centers": 0,
+      "mine_volume": 13295427.432935143,
+      "mine_volume_normalized": 2.90743712935569,
+      "mine_volume_text": "2.9x",
+      "travel_distance": 5210.724562422487,
+      "travel_time_seconds": 104,
+      "travel_time_text": "2M:44S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 49
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 123,
+          "distance": 1002.4105179885813,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 233,
+          "distance": 1637.8066792412944,
+          "key": "gold"
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 26,
+          "distance": 694.2881405699025,
+          "key": "red"
+        },
+        {
+          "index": 4,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 295,
+          "distance": 962.9622760357069
+        },
+        {
+          "index": 5,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 189,
+          "side": 4,
+          "wall": 66,
+          "distance": 913.2569485870014,
+          "trigger": 9,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 14,
+      "secret": false,
+      "level_name": "arcticon corridor",
+      "level_file": "d2levd-2.rl2",
+      "robots": 88,
+      "hostages": 4,
+      "secrets": 7,
+      "matcens": 2,
+      "energy_centers": 2,
+      "mine_volume": 21182884.44707659,
+      "mine_volume_normalized": 4.63226211108621,
+      "mine_volume_text": "4.6x",
+      "travel_distance": 10897.861830477292,
+      "travel_time_seconds": 218,
+      "travel_time_text": "4M:38S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 318
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 361,
+          "distance": 1291.1769609186745,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 14",
+          "seg": 293,
+          "side": 0,
+          "wall": 160,
+          "distance": 146.06055040784622,
+          "trigger": 14,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 361,
+              "side": 4,
+              "wall": 63
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 10",
+          "seg": 355,
+          "side": 4,
+          "wall": 144,
+          "distance": 355.66946956843736,
+          "trigger": 10,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 368,
+              "side": 0,
+              "wall": 53
+            },
+            {
+              "seg": 329,
+              "side": 5,
+              "wall": 57
+            },
+            {
+              "seg": 328,
+              "side": 5,
+              "wall": 54
+            },
+            {
+              "seg": 379,
+              "side": 5,
+              "wall": 50
+            },
+            {
+              "seg": 270,
+              "side": 5,
+              "wall": 158
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 163,
+          "distance": 1483.6038176569527,
+          "key": "gold"
+        },
+        {
+          "index": 5,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 61,
+          "distance": 2482.2694621378705,
+          "key": "red"
+        },
+        {
+          "index": 6,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 254,
+          "distance": 1819.3514752283447
+        },
+        {
+          "index": 7,
+          "kind": "trigger",
+          "activation_kind": "pass_through_trigger",
+          "label": "Pass through trigger 5",
+          "seg": 280,
+          "side": 5,
+          "wall": 110,
+          "distance": 1690.0809382662467,
+          "trigger": 5,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 133,
+              "side": 4,
+              "wall": 106
+            },
+            {
+              "seg": 404,
+              "side": 5,
+              "wall": 107
+            },
+            {
+              "seg": 155,
+              "side": 2,
+              "wall": 22
+            },
+            {
+              "seg": 154,
+              "side": 1,
+              "wall": 24
+            },
+            {
+              "seg": 154,
+              "side": 2,
+              "wall": 26
+            },
+            {
+              "seg": 154,
+              "side": 3,
+              "wall": 28
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "kind": "trigger",
+          "activation_kind": "pass_through_trigger",
+          "label": "Pass through trigger 12",
+          "seg": 30,
+          "side": 5,
+          "wall": 153,
+          "distance": 949.9639952030446,
+          "trigger": 12,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 197,
+              "side": 0,
+              "wall": 42
+            },
+            {
+              "seg": 197,
+              "side": 2,
+              "wall": 44
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 242,
+          "side": 4,
+          "wall": 111,
+          "distance": 579.6864318625871,
+          "opens": [
+            {
+              "seg": 242,
+              "side": 4,
+              "wall": 111
+            },
+            {
+              "seg": 223,
+              "side": 5,
+              "wall": 112
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 223,
+          "side": 1,
+          "wall": 118,
+          "distance": 59.99954315316273,
+          "opens": [
+            {
+              "seg": 223,
+              "side": 1,
+              "wall": 118
+            },
+            {
+              "seg": 165,
+              "side": 5,
+              "wall": 117
+            }
+          ]
+        },
+        {
+          "index": 11,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 165,
+          "side": 4,
+          "wall": 116,
+          "distance": 39.9991860741239,
+          "trigger": 7,
+          "trigger_type_id": 4,
+          "trigger_type": "secret_exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 15,
+      "secret": false,
+      "level_name": "icehammer caverns",
+      "level_file": "d2levd-3.rl2",
+      "robots": 98,
+      "hostages": 5,
+      "secrets": 14,
+      "matcens": 5,
+      "energy_centers": 2,
+      "mine_volume": 23312297.52170797,
+      "mine_volume_normalized": 5.097921050458267,
+      "mine_volume_text": "5.1x",
+      "travel_distance": 12126.832945998907,
+      "travel_time_seconds": 243,
+      "travel_time_text": "4M:03S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 228
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 186,
+          "distance": 1516.8578624696459,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 290,
+          "distance": 1729.8917436233787,
+          "key": "gold"
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 464,
+          "distance": 3574.645077162212,
+          "key": "red"
+        },
+        {
+          "index": 4,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 211,
+          "distance": 4305.145154872689
+        },
+        {
+          "index": 5,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 125,
+          "side": 4,
+          "wall": 60,
+          "distance": 1000.2931078709815,
+          "trigger": 0,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 16,
+      "secret": false,
+      "level_name": "terrafrost catacombs",
+      "level_file": "d2levd-4.rl2",
+      "robots": 130,
+      "hostages": 6,
+      "secrets": 9,
+      "matcens": 5,
+      "energy_centers": 5,
+      "mine_volume": 32987421.974362087,
+      "mine_volume_normalized": 7.213672214283295,
+      "mine_volume_text": "7.2x",
+      "travel_distance": 10944.198634525086,
+      "travel_time_seconds": 219,
+      "travel_time_text": "4M:39S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 229
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 88,
+          "distance": 2775.387140541615,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 3",
+          "seg": 513,
+          "wall": 160,
+          "distance": 1494.3423858820177,
+          "trigger": 3,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 514,
+              "side": 4,
+              "wall": 159
+            },
+            {
+              "seg": 491,
+              "side": 4,
+              "wall": 152
+            },
+            {
+              "seg": 14,
+              "side": 4,
+              "wall": 164
+            },
+            {
+              "seg": 3,
+              "side": 4,
+              "wall": 135
+            },
+            {
+              "seg": 411,
+              "side": 4,
+              "wall": 252
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 524,
+          "distance": 165.28029768623338,
+          "key": "gold"
+        },
+        {
+          "index": 4,
+          "kind": "trigger",
+          "activation_kind": "fly_through_trigger",
+          "label": "Fly-through trigger 10",
+          "seg": 4,
+          "side": 4,
+          "wall": 185,
+          "distance": 1245.9401791371995,
+          "trigger": 10,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 18,
+              "side": 4,
+              "wall": 174
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "trigger",
+          "activation_kind": "pass_through_trigger",
+          "label": "Pass through trigger 11",
+          "seg": 18,
+          "side": 4,
+          "wall": 174,
+          "distance": 39.780029714268544,
+          "trigger": 11,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 24,
+              "side": 4,
+              "wall": 175
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "kind": "trigger",
+          "activation_kind": "pass_through_trigger",
+          "label": "Pass through trigger 12",
+          "seg": 24,
+          "side": 4,
+          "wall": 175,
+          "distance": 59.40023561541257,
+          "trigger": 12,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 26,
+              "side": 4,
+              "wall": 177
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 287,
+          "distance": 1210.8460249536872,
+          "key": "red"
+        },
+        {
+          "index": 8,
+          "kind": "boss",
+          "activation_kind": "destroy_boss",
+          "label": "Boss robot",
+          "seg": 254,
+          "distance": 3120.1880848617607
+        },
+        {
+          "index": 9,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 576,
+          "side": 4,
+          "wall": 77,
+          "distance": 833.034256132892,
+          "trigger": 0,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 17,
+      "secret": false,
+      "level_name": "Y'tor III",
+      "level_file": "d2leve-1.rl2",
+      "robots": 81,
+      "hostages": 0,
+      "secrets": 8,
+      "matcens": 1,
+      "energy_centers": 3,
+      "mine_volume": 13335439.972754667,
+      "mine_volume_normalized": 2.9161870506724674,
+      "mine_volume_text": "2.9x",
+      "travel_distance": 7429.667986701392,
+      "travel_time_seconds": 149,
+      "travel_time_text": "2M:29S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 439
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 113,
+          "distance": 611.7195397287696,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 287,
+          "distance": 1304.6007042411281,
+          "key": "gold"
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 404,
+          "distance": 1412.5831858239737,
+          "key": "red"
+        },
+        {
+          "index": 4,
+          "kind": "trigger",
+          "activation_kind": "pass_through_trigger",
+          "label": "Pass through trigger 22",
+          "seg": 348,
+          "side": 5,
+          "wall": 21,
+          "distance": 350.33491841182934,
+          "trigger": 22,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 211,
+              "side": 1,
+              "wall": 138
+            },
+            {
+              "seg": 203,
+              "side": 5,
+              "wall": 141
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 6",
+          "seg": 290,
+          "wall": 77,
+          "distance": 1171.2200964630401,
+          "trigger": 6,
+          "trigger_type_id": 7,
+          "trigger_type": "unlock_door",
+          "opens": [
+            {
+              "seg": 149,
+              "side": 5,
+              "wall": 0
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 29,
+          "distance": 1355.7320071437523
+        },
+        {
+          "index": 7,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 262,
+          "side": 4,
+          "wall": 2,
+          "distance": 1223.477534888899,
+          "trigger": 0,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 18,
+      "secret": false,
+      "level_name": "Drec'nilbie K'luh",
+      "level_file": "d2leve-2.rl2",
+      "robots": 89,
+      "hostages": 0,
+      "secrets": 6,
+      "matcens": 4,
+      "energy_centers": 3,
+      "mine_volume": 14042565.91881394,
+      "mine_volume_normalized": 3.0708209833590248,
+      "mine_volume_text": "3.1x",
+      "travel_distance": 5832.120047202569,
+      "travel_time_seconds": 117,
+      "travel_time_text": "2M:57S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 42
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 263,
+          "distance": 920.5436422351165,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 422,
+          "side": 5,
+          "wall": 106,
+          "distance": 383.6109651577727,
+          "opens": [
+            {
+              "seg": 422,
+              "side": 5,
+              "wall": 106
+            },
+            {
+              "seg": 420,
+              "side": 4,
+              "wall": 105
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 95,
+          "side": 5,
+          "wall": 85,
+          "distance": 244.73954629933877,
+          "opens": [
+            {
+              "seg": 95,
+              "side": 5,
+              "wall": 85
+            },
+            {
+              "seg": 320,
+              "side": 0,
+              "wall": 86
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 320,
+          "side": 5,
+          "wall": 41,
+          "distance": 71.25,
+          "opens": [
+            {
+              "seg": 320,
+              "side": 5,
+              "wall": 41
+            },
+            {
+              "seg": 318,
+              "side": 4,
+              "wall": 40
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 21",
+          "seg": 208,
+          "side": 2,
+          "wall": 143,
+          "distance": 710.989981325874,
+          "trigger": 21,
+          "trigger_type_id": 7,
+          "trigger_type": "unlock_door",
+          "opens": [
+            {
+              "seg": 140,
+              "side": 4,
+              "wall": 74
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 333,
+          "side": 5,
+          "wall": 72,
+          "distance": 578.2103462930284,
+          "opens": [
+            {
+              "seg": 333,
+              "side": 5,
+              "wall": 72
+            },
+            {
+              "seg": 250,
+              "side": 0,
+              "wall": 71
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 250,
+          "distance": 29.9995246332808,
+          "key": "gold"
+        },
+        {
+          "index": 8,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 293,
+          "distance": 691.8928520346718,
+          "key": "red"
+        },
+        {
+          "index": 9,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 8",
+          "seg": 131,
+          "side": 4,
+          "wall": 110,
+          "distance": 1509.4021104615667,
+          "trigger": 8,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 363,
+              "side": 4,
+              "wall": 108
+            },
+            {
+              "seg": 362,
+              "side": 5,
+              "wall": 109
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 261,
+          "distance": 338.04613513786865
+        },
+        {
+          "index": 11,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 418,
+          "side": 4,
+          "wall": 46,
+          "distance": 353.43494362405085,
+          "trigger": 0,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 19,
+      "secret": false,
+      "level_name": "Nep-Hilim S'crub",
+      "level_file": "d2leve-3.rl2",
+      "robots": 76,
+      "hostages": 0,
+      "secrets": 13,
+      "matcens": 0,
+      "energy_centers": 1,
+      "mine_volume": 14731460.529385174,
+      "mine_volume_normalized": 3.2214680971198244,
+      "mine_volume_text": "3.2x",
+      "travel_distance": 5172.519520689468,
+      "travel_time_seconds": 103,
+      "travel_time_text": "2M:43S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": false,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 245
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 31,
+          "distance": 807.0338439294198,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 177,
+          "distance": 882.0824517873497,
+          "key": "gold"
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 273,
+          "distance": 1066.1357698229922,
+          "key": "red"
+        },
+        {
+          "index": 4,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 201,
+          "distance": 1666.4441076898354
+        },
+        {
+          "index": 5,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 327,
+          "side": 4,
+          "wall": 16,
+          "distance": 750.8233474598711,
+          "trigger": 0,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "guidebot_note": "guidebot is present but not reachable from the start",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level",
+        "guidebot is present but not reachable from the start"
+      ]
+    },
+    {
+      "level_num": 20,
+      "secret": false,
+      "level_name": "Gytowt Station",
+      "level_file": "d2leve-4.rl2",
+      "robots": 95,
+      "hostages": 0,
+      "secrets": 13,
+      "matcens": 7,
+      "energy_centers": 5,
+      "mine_volume": 12855734.26467992,
+      "mine_volume_normalized": 2.811285256889936,
+      "mine_volume_text": "2.8x",
+      "travel_distance": 5720.519409100659,
+      "travel_time_seconds": 114,
+      "travel_time_text": "2M:54S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 228
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 137,
+          "distance": 894.8944051387215,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 18",
+          "seg": 174,
+          "side": 1,
+          "wall": 158,
+          "distance": 1004.4648586362738,
+          "trigger": 18,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 36,
+              "side": 1,
+              "wall": 13
+            },
+            {
+              "seg": 33,
+              "side": 1,
+              "wall": 3
+            },
+            {
+              "seg": 38,
+              "side": 3,
+              "wall": 1
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 31",
+          "seg": 252,
+          "wall": 184,
+          "distance": 1121.8833876518795,
+          "trigger": 31,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 219,
+              "side": 4,
+              "wall": 97
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 220,
+          "distance": 152.41543890350474,
+          "key": "gold"
+        },
+        {
+          "index": 5,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 69,
+          "distance": 1183.4116646724751,
+          "key": "red"
+        },
+        {
+          "index": 6,
+          "kind": "boss",
+          "activation_kind": "destroy_boss",
+          "label": "Boss robot",
+          "seg": 206,
+          "distance": 787.8288374101498
+        },
+        {
+          "index": 7,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 37",
+          "seg": 21,
+          "side": 5,
+          "wall": 204,
+          "distance": 305.37617577538094,
+          "trigger": 37,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 369,
+              "side": 3,
+              "wall": 200
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 462,
+          "side": 4,
+          "wall": 202,
+          "distance": 270.244640912273,
+          "trigger": 36,
+          "trigger_type_id": 4,
+          "trigger_type": "secret_exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 21,
+      "secret": false,
+      "level_name": "N'neri Ring",
+      "level_file": "d2levf-1.rl2",
+      "robots": 65,
+      "hostages": 0,
+      "secrets": 4,
+      "matcens": 1,
+      "energy_centers": 2,
+      "mine_volume": 10206013.051360816,
+      "mine_volume_normalized": 2.2318456054078446,
+      "mine_volume_text": "2.2x",
+      "travel_distance": 6159.275558673032,
+      "travel_time_seconds": 123,
+      "travel_time_text": "2M:03S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 49
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 97,
+          "distance": 1035.382748140262,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 4",
+          "seg": 364,
+          "side": 1,
+          "wall": 115,
+          "distance": 1445.1834766084073,
+          "trigger": 4,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 242,
+              "side": 3,
+              "wall": 110
+            },
+            {
+              "seg": 247,
+              "side": 3,
+              "wall": 112
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 243,
+          "distance": 398.52906034165534,
+          "key": "red"
+        },
+        {
+          "index": 4,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 301,
+          "distance": 2359.959574691307
+        },
+        {
+          "index": 5,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 16",
+          "seg": 119,
+          "wall": 148,
+          "distance": 647.0754319872332,
+          "trigger": 16,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 339,
+              "side": 1,
+              "wall": 121
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 297,
+          "side": 4,
+          "wall": 66,
+          "distance": 273.145266904167,
+          "trigger": 0,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 22,
+      "secret": false,
+      "level_name": "Kwod A'rior",
+      "level_file": "d2levf-2.rl2",
+      "robots": 62,
+      "hostages": 0,
+      "secrets": 7,
+      "matcens": 2,
+      "energy_centers": 2,
+      "mine_volume": 20189018.545424905,
+      "mine_volume_normalized": 4.414924034620566,
+      "mine_volume_text": "4.4x",
+      "travel_distance": 5012.204233318543,
+      "travel_time_seconds": 100,
+      "travel_time_text": "2M:40S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "partial",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 55
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 163,
+          "distance": 562.8034898959068,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 217,
+          "side": 4,
+          "wall": 30,
+          "distance": 1660.5669520539404,
+          "opens": [
+            {
+              "seg": 217,
+              "side": 4,
+              "wall": 30
+            },
+            {
+              "seg": 318,
+              "side": 5,
+              "wall": 31
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 260,
+          "distance": 560.4636056641314,
+          "key": "gold"
+        },
+        {
+          "index": 4,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 292,
+          "distance": 2228.3701857045644,
+          "key": "red"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "route_problem": "trigger route dependency loop: trigger 10 source 382:4 wall 105 target 335:5",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 23,
+      "secret": false,
+      "level_name": "Iwihml",
+      "level_file": "d2levf-3.rl2",
+      "robots": 54,
+      "hostages": 0,
+      "secrets": 0,
+      "matcens": 0,
+      "energy_centers": 0,
+      "mine_volume": 8900318.665719323,
+      "mine_volume_normalized": 1.9463170388721482,
+      "mine_volume_text": "1.9x",
+      "travel_distance": 3958.4989204540725,
+      "travel_time_seconds": 79,
+      "travel_time_text": "1M:19S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 273
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 34,
+          "distance": 922.8205802951449,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 265,
+          "distance": 299.8712224192376,
+          "key": "gold"
+        },
+        {
+          "index": 3,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "red key",
+          "seg": 182,
+          "distance": 874.4011775361924,
+          "key": "red"
+        },
+        {
+          "index": 4,
+          "kind": "trigger",
+          "activation_kind": "pass_through_trigger",
+          "label": "Pass through trigger 4",
+          "seg": 221,
+          "wall": 45,
+          "distance": 949.9170459016293,
+          "trigger": 4,
+          "trigger_type_id": 0,
+          "trigger_type": "open_door",
+          "opens": [
+            {
+              "seg": 242,
+              "side": 4,
+              "wall": 48
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "trigger",
+          "activation_kind": "pass_through_trigger",
+          "label": "Pass through trigger 17",
+          "seg": 242,
+          "side": 4,
+          "wall": 48,
+          "distance": 102.56077298215942,
+          "trigger": 17,
+          "trigger_type_id": 0,
+          "trigger_type": "open_door",
+          "opens": [
+            {
+              "seg": 248,
+              "side": 4,
+              "wall": 60
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "kind": "trigger",
+          "activation_kind": "pass_through_trigger",
+          "label": "Pass through trigger 7",
+          "seg": 248,
+          "wall": 53,
+          "distance": 57.999155175739624,
+          "trigger": 7,
+          "trigger_type_id": 0,
+          "trigger_type": "open_door",
+          "opens": [
+            {
+              "seg": 255,
+              "side": 4,
+              "wall": 74
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 5,
+          "distance": 166.49843914142483
+        },
+        {
+          "index": 8,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 222,
+          "side": 4,
+          "wall": 36,
+          "distance": 584.4305270025444,
+          "trigger": 0,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": 24,
+      "secret": false,
+      "level_name": "Tycho Brahe",
+      "level_file": "d2levf-4.rl2",
+      "robots": 62,
+      "hostages": 0,
+      "secrets": 6,
+      "matcens": 1,
+      "energy_centers": 1,
+      "mine_volume": 12235923.898723898,
+      "mine_volume_normalized": 2.6757454496720006,
+      "mine_volume_text": "2.7x",
+      "travel_distance": 1697.9733044023264,
+      "travel_time_seconds": 34,
+      "travel_time_text": "1M:34S",
+      "guidebot_count": 1,
+      "guidebot_placed": true,
+      "guidebot_accessible": true,
+      "route_status": "partial",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 200
+        },
+        {
+          "index": 1,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "blue key",
+          "seg": 315,
+          "distance": 1116.922794791045,
+          "key": "blue"
+        },
+        {
+          "index": 2,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 281,
+          "distance": 581.0505096112817,
+          "key": "gold"
+        }
+      ],
+      "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+      "route_problem": "red key route dependency loop",
+      "notes": [
+        "guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": -1,
+      "secret": true,
+      "level_name": "Segment City",
+      "level_file": "d2leva-s.rl2",
+      "robots": 20,
+      "hostages": 0,
+      "secrets": 1,
+      "matcens": 0,
+      "energy_centers": 2,
+      "mine_volume": 8517854.775650267,
+      "mine_volume_normalized": 1.8626800350801536,
+      "mine_volume_text": "1.9x",
+      "travel_distance": 3459.0551705949665,
+      "travel_time_seconds": 69,
+      "travel_time_text": "1M:09S",
+      "guidebot_count": 0,
+      "guidebot_placed": false,
+      "guidebot_accessible": false,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 154
+        },
+        {
+          "index": 1,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 11",
+          "seg": 232,
+          "side": 0,
+          "wall": 96,
+          "distance": 245.86261439830716,
+          "trigger": 11,
+          "trigger_type_id": 7,
+          "trigger_type": "unlock_door",
+          "opens": [
+            {
+              "seg": 233,
+              "side": 4,
+              "wall": 73
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 2",
+          "seg": 136,
+          "wall": 61,
+          "distance": 226.48346655611957,
+          "trigger": 2,
+          "trigger_type_id": 0,
+          "trigger_type": "open_door",
+          "opens": [
+            {
+              "seg": 64,
+              "side": 4,
+              "wall": 22
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 9",
+          "seg": 249,
+          "side": 4,
+          "wall": 94,
+          "distance": 701.944819959646,
+          "trigger": 9,
+          "trigger_type_id": 0,
+          "trigger_type": "open_door",
+          "opens": [
+            {
+              "seg": 27,
+              "side": 3,
+              "wall": 93
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 10",
+          "seg": 321,
+          "side": 4,
+          "wall": 95,
+          "distance": 89.99979973504426,
+          "trigger": 10,
+          "trigger_type_id": 0,
+          "trigger_type": "open_door",
+          "opens": [
+            {
+              "seg": 281,
+              "side": 4,
+              "wall": 35
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 116,
+          "side": 4,
+          "wall": 56,
+          "distance": 589.6326796752769,
+          "opens": [
+            {
+              "seg": 116,
+              "side": 4,
+              "wall": 56
+            },
+            {
+              "seg": 4,
+              "side": 4,
+              "wall": 57
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "kind": "trigger",
+          "activation_kind": "pass_through_trigger",
+          "label": "Pass through trigger 0",
+          "seg": 4,
+          "wall": 3,
+          "distance": 14.0625,
+          "trigger": 0,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 269,
+              "side": 4,
+              "wall": 58
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 1",
+          "seg": 120,
+          "side": 4,
+          "wall": 60,
+          "distance": 96.60148624323512,
+          "trigger": 1,
+          "trigger_type_id": 7,
+          "trigger_type": "unlock_door",
+          "opens": [
+            {
+              "seg": 163,
+              "side": 4,
+              "wall": 2
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 132,
+          "distance": 906.6848023472274
+        },
+        {
+          "index": 9,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 6",
+          "seg": 117,
+          "side": 5,
+          "wall": 88,
+          "distance": 148.2718238554206,
+          "trigger": 6,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 304,
+              "side": 0,
+              "wall": 43
+            },
+            {
+              "seg": 306,
+              "side": 1,
+              "wall": 37
+            },
+            {
+              "seg": 302,
+              "side": 1,
+              "wall": 41
+            },
+            {
+              "seg": 308,
+              "side": 0,
+              "wall": 39
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 331,
+          "side": 4,
+          "wall": 111,
+          "distance": 439.5111778246897,
+          "trigger": 14,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "no guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": -2,
+      "secret": true,
+      "level_name": "Hurdle Chase",
+      "level_file": "d2levb-s.rl2",
+      "robots": 70,
+      "hostages": 0,
+      "secrets": 2,
+      "matcens": 0,
+      "energy_centers": 1,
+      "mine_volume": 5710124.165769253,
+      "mine_volume_normalized": 1.2486869712562252,
+      "mine_volume_text": "1.2x",
+      "travel_distance": 1893.1997516662248,
+      "travel_time_seconds": 38,
+      "travel_time_text": "1M:38S",
+      "guidebot_count": 0,
+      "guidebot_placed": false,
+      "guidebot_accessible": false,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 18
+        },
+        {
+          "index": 1,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 113,
+          "distance": 1530.5270766171311
+        },
+        {
+          "index": 2,
+          "kind": "hidden_door",
+          "activation_kind": "open_hidden_door",
+          "label": "Open hidden door",
+          "seg": 247,
+          "side": 0,
+          "wall": 111,
+          "distance": 262.677460358467,
+          "opens": [
+            {
+              "seg": 247,
+              "side": 0,
+              "wall": 111
+            },
+            {
+              "seg": 260,
+              "side": 5,
+              "wall": 112
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 13",
+          "seg": 260,
+          "side": 4,
+          "wall": 113,
+          "distance": 39.99694714101395,
+          "trigger": 13,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 164,
+              "side": 4,
+              "wall": 83
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 33,
+          "side": 4,
+          "wall": 81,
+          "distance": 59.998267549612805,
+          "trigger": 12,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "no guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": -3,
+      "secret": true,
+      "level_name": "mephisto hardcore",
+      "level_file": "d2levc-s.rl2",
+      "robots": 9,
+      "hostages": 0,
+      "secrets": 11,
+      "matcens": 0,
+      "energy_centers": 1,
+      "mine_volume": 10079863.404743904,
+      "mine_volume_normalized": 2.2042592665496783,
+      "mine_volume_text": "2.2x",
+      "travel_distance": 1673.0463533937975,
+      "travel_time_seconds": 33,
+      "travel_time_text": "1M:33S",
+      "guidebot_count": 0,
+      "guidebot_placed": false,
+      "guidebot_accessible": false,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 56
+        },
+        {
+          "index": 1,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 459,
+          "distance": 1324.081080573819
+        },
+        {
+          "index": 2,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 463,
+          "side": 4,
+          "wall": 225,
+          "distance": 348.96527281997857,
+          "trigger": 8,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "no guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": -4,
+      "secret": true,
+      "level_name": "Galacia caverns",
+      "level_file": "d2levd-s.rl2",
+      "robots": 0,
+      "hostages": 5,
+      "secrets": 2,
+      "matcens": 0,
+      "energy_centers": 1,
+      "mine_volume": 16026917.69771807,
+      "mine_volume_normalized": 3.5047579943194327,
+      "mine_volume_text": "3.5x",
+      "travel_distance": 561.7923602587155,
+      "travel_time_seconds": 11,
+      "travel_time_text": "0M:11S",
+      "guidebot_count": 0,
+      "guidebot_placed": false,
+      "guidebot_accessible": false,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 45
+        },
+        {
+          "index": 1,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 35,
+          "distance": 275.89826038069674
+        },
+        {
+          "index": 2,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 45,
+          "side": 4,
+          "wall": 113,
+          "distance": 285.8940998780187,
+          "trigger": 5,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "no guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": -5,
+      "secret": true,
+      "level_name": "Ascent Level 1",
+      "level_file": "d2leve-s.rl2",
+      "robots": 20,
+      "hostages": 0,
+      "secrets": 5,
+      "matcens": 0,
+      "energy_centers": 1,
+      "mine_volume": 9632163.781741919,
+      "mine_volume_normalized": 2.1063565467401535,
+      "mine_volume_text": "2.1x",
+      "travel_distance": 2479.2612597837365,
+      "travel_time_seconds": 50,
+      "travel_time_text": "1M:50S",
+      "guidebot_count": 0,
+      "guidebot_placed": false,
+      "guidebot_accessible": false,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 75
+        },
+        {
+          "index": 1,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 11",
+          "seg": 101,
+          "side": 4,
+          "wall": 152,
+          "distance": 580.818004394964,
+          "trigger": 11,
+          "trigger_type_id": 9,
+          "trigger_type": "open_wall",
+          "opens": [
+            {
+              "seg": 7,
+              "side": 5,
+              "wall": 47
+            },
+            {
+              "seg": 14,
+              "side": 5,
+              "wall": 53
+            },
+            {
+              "seg": 5,
+              "side": 4,
+              "wall": 49
+            },
+            {
+              "seg": 15,
+              "side": 5,
+              "wall": 51
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "kind": "trigger",
+          "activation_kind": "shoot_switch",
+          "label": "Shoot switch trigger 2",
+          "seg": 117,
+          "side": 4,
+          "wall": 131,
+          "distance": 1026.7335457898796,
+          "trigger": 2,
+          "trigger_type_id": 7,
+          "trigger_type": "unlock_door",
+          "opens": [
+            {
+              "seg": 29,
+              "side": 5,
+              "wall": 75
+            },
+            {
+              "seg": 27,
+              "side": 5,
+              "wall": 71
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 6,
+          "distance": 504.00448812299373
+        },
+        {
+          "index": 4,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 369,
+          "side": 4,
+          "wall": 134,
+          "distance": 367.7052214758993,
+          "trigger": 4,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "no guidebot or guidebot start cage placed in this level"
+      ]
+    },
+    {
+      "level_num": -6,
+      "secret": true,
+      "level_name": "Chain Reaction",
+      "level_file": "d2levf-s.rl2",
+      "robots": 13,
+      "hostages": 0,
+      "secrets": 2,
+      "matcens": 0,
+      "energy_centers": 0,
+      "mine_volume": 6283071.79627118,
+      "mine_volume_normalized": 1.373978859952572,
+      "mine_volume_text": "1.4x",
+      "travel_distance": 221.7030607164923,
+      "travel_time_seconds": 4,
+      "travel_time_text": "0M:04S",
+      "guidebot_count": 0,
+      "guidebot_placed": false,
+      "guidebot_accessible": false,
+      "route_status": "ok",
+      "route_steps": [
+        {
+          "index": 0,
+          "kind": "start",
+          "activation_kind": "none",
+          "label": "Start",
+          "seg": 236
+        },
+        {
+          "index": 1,
+          "kind": "reactor",
+          "activation_kind": "destroy_reactor",
+          "label": "Reactor",
+          "seg": 20,
+          "distance": 105.8515739945579
+        },
+        {
+          "index": 2,
+          "kind": "exit",
+          "activation_kind": "enter_exit",
+          "label": "Exit",
+          "seg": 236,
+          "side": 4,
+          "wall": 17,
+          "distance": 115.85148672193442,
+          "trigger": 4,
+          "trigger_type_id": 3,
+          "trigger_type": "exit"
+        }
+      ],
+      "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+      "notes": [
+        "no guidebot or guidebot start cage placed in this level"
+      ]
+    }
+  ],
+  "target_index": 0
+}

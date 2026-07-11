@@ -634,7 +634,7 @@ static int test_reactorless_reachable_exit(void)
 	failures += expect_string("route note", "no reactor, exit exists", state.route_note);
 	failures += expect_double("travel distance", 200.0, state.travel_distance);
 	failures += expect_int("travel time", 4, state.travel_time_seconds);
-	failures += expect_string("route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("route steps", 2, state.route_step_count);
 	failures += expect_string("route step 0", "start", level_metadata_route_step_kind_name(state.route_steps[0].kind));
 	failures += expect_string("route step 1", "exit", level_metadata_route_step_kind_name(state.route_steps[1].kind));
@@ -651,7 +651,7 @@ static int test_reactorless_missing_exit(void)
 	test_reset();
 	view.side_has_exit_trigger = NULL;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("missing exit route status", "failed", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("missing exit route status", "failed", level_metadata_route_status_name(state.route_status));
 	failures += expect_string("missing exit route problem", "missing exit", state.route_problem);
 	failures += expect_string("missing exit route note", "missing reactor", state.route_note);
 	return failures;
@@ -670,7 +670,7 @@ static int test_end_route_refresh_preserves_static_metadata(void)
 	level_metadata_scan_end_route(&view, &state);
 	failures += expect_int("route-only energy centers", 37, state.energy_center_count);
 	failures += expect_double("route-only travel distance", 1234.0, state.travel_distance);
-	failures += expect_string("route-only status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("route-only status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("route-only steps", 2, state.route_step_count);
 	return failures;
 }
@@ -697,7 +697,7 @@ static int test_route_key_step(void)
 	test_object_id[0] = TEST_POWERUP_BLUE_KEY;
 	test_object_seg[0] = 0;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("key route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("key route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("key route steps", 3, state.route_step_count);
 	failures += expect_string("key route step", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_int("key route key index", 0, state.route_steps[1].key_index);
@@ -725,7 +725,7 @@ static int test_route_uses_initial_key_without_powerup(void)
 	test_wall_sides[1] = 1;
 	view.initial_key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("initial key route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("initial key route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("initial key route steps", 2, state.route_step_count);
 	failures += expect_string("initial key route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	return failures;
@@ -769,7 +769,7 @@ static int test_route_key_uses_longer_open_path(void)
 	test_object_type[1] = TEST_OBJ_CONTROL_CENTER;
 	test_object_seg[1] = 1;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("longer key route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("longer key route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("longer key route steps", 4, state.route_step_count);
 	failures += expect_string("longer key route key", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_int("longer key route key index", 0, state.route_steps[1].key_index);
@@ -810,7 +810,7 @@ static int test_route_prefers_ordered_key_chain(void)
 	test_object_type[3] = TEST_OBJ_CONTROL_CENTER;
 	test_object_seg[3] = 2;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("ordered key route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("ordered key route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("ordered key route steps", 6, state.route_step_count);
 	failures += expect_string("ordered key route blue", "key", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_int("ordered key route blue index", 0, state.route_steps[1].key_index);
@@ -855,7 +855,7 @@ static int test_route_trigger_step(void)
 	view.trigger_link_segment = test_trigger_link_segment;
 	view.trigger_link_side = test_trigger_link_side;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("trigger route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("trigger route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("trigger route steps", 3, state.route_step_count);
 	failures += expect_string("trigger route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("trigger route label", "Fly-through trigger 0", state.route_steps[1].label);
@@ -902,7 +902,7 @@ static int test_route_shootable_trigger_step(void)
 	view.wall_visible_from_segment = test_wall_visible_from_segment;
 	view.wall_is_shootable_trigger = test_wall_is_shootable_trigger;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("shootable trigger route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("shootable trigger route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("shootable trigger route steps", 3, state.route_step_count);
 	failures += expect_string("shootable trigger route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("shootable trigger route label", "Shoot switch trigger 0", state.route_steps[1].label);
@@ -970,7 +970,7 @@ static int test_route_shootable_trigger_precedes_dependency_search(void)
 	view.wall_visible_from_segment = test_wall_visible_from_segment;
 	view.wall_is_shootable_trigger = test_wall_is_shootable_trigger;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("cross-trigger shoot route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("cross-trigger shoot route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("cross-trigger shoot route steps", 3, state.route_step_count);
 	failures += expect_int("cross-trigger shoot route trigger", 0, state.route_steps[1].trigger_num);
 	failures += expect_int("cross-trigger shoot route segment", 0, state.route_steps[1].seg);
@@ -1011,7 +1011,7 @@ static int test_route_skips_already_opened_trigger_door(void)
 	view.trigger_link_segment = test_trigger_link_segment;
 	view.trigger_link_side = test_trigger_link_side;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("opened trigger door route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("opened trigger door route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("opened trigger door route steps", 2, state.route_step_count);
 	failures += expect_string("opened trigger door route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	return failures;
@@ -1050,7 +1050,7 @@ static int test_route_does_not_reoffer_disabled_trigger(void)
 	view.trigger_link_segment = test_trigger_link_segment;
 	view.trigger_link_side = test_trigger_link_side;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("disabled trigger route status", "failed", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("disabled trigger route status", "failed", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("disabled trigger route steps", 1, state.route_step_count);
 	failures += expect_string("disabled trigger route problem", "exit unreachable", state.route_problem);
 	return failures;
@@ -1088,7 +1088,7 @@ static int test_route_promotes_unreachable_trigger_blocker(void)
 	view.trigger_link_segment = test_trigger_link_segment;
 	view.trigger_link_side = test_trigger_link_side;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("unreachable trigger route status", "partial", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("unreachable trigger route status", "partial", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("unreachable trigger route steps", 2, state.route_step_count);
 	failures += expect_string("unreachable trigger route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_int("unreachable trigger route wall", 2, state.route_steps[1].wall_num);
@@ -1128,7 +1128,7 @@ static int test_segment_route_reuses_trigger_dependencies(void)
 	view.trigger_link_segment = test_trigger_link_segment;
 	view.trigger_link_side = test_trigger_link_side;
 	level_metadata_scan_route_to_segment(&view, 2, &state);
-	failures += expect_string("segment route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("segment route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("segment route steps", 3, state.route_step_count);
 	failures += expect_string("segment route trigger", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("segment route terminal", "unexplored", level_metadata_route_step_kind_name(state.route_steps[2].kind));
@@ -1162,7 +1162,7 @@ static int test_unexplored_route_acquires_key_for_largest_component(void)
 	test_object_id[0] = TEST_POWERUP_BLUE_KEY;
 	test_object_seg[0] = 0;
 	level_metadata_scan_unexplored_route(&view, &state, &result);
-	failures += expect_string("keyed unexplored status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("keyed unexplored status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("keyed unexplored component", 2, result.component_size);
 	failures += expect_int("keyed unexplored target", 1, result.target_seg);
 	failures += expect_int("keyed unexplored waypoint", 0, result.waypoint_seg);
@@ -1197,7 +1197,7 @@ static int test_unexplored_route_keeps_hidden_wall_dependency(void)
 	test_wall_seg[1] = 1;
 	test_wall_sides[1] = 1;
 	level_metadata_scan_unexplored_route(&view, &state, &result);
-	failures += expect_string("hidden unexplored status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("hidden unexplored status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("hidden unexplored component", 2, result.component_size);
 	failures += expect_int("hidden unexplored target", 1, result.target_seg);
 	failures += expect_int("hidden unexplored waypoint", 0, result.waypoint_seg);
@@ -1222,7 +1222,7 @@ static int test_unexplored_route_clears_target_when_fully_explored(void)
 		test_segment_explored[seg] = 1;
 	failures += expect_int("fully explored result", 0, level_metadata_scan_unexplored_route(&view, &state, &result));
 	failures += expect_int("fully explored target", -1, result.target_seg);
-	failures += expect_string("fully explored status", "failed", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("fully explored status", "failed", level_metadata_route_status_name(state.route_status));
 	failures += expect_string("fully explored problem", "no unexplored area", state.route_problem);
 	return failures;
 }
@@ -1248,12 +1248,12 @@ static int test_route_opens_control_center_links_after_reactor(void)
 	test_object_type[0] = TEST_OBJ_CONTROL_CENTER;
 	test_object_seg[0] = 1;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("control center link route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("control center link route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("control center link route steps", 3, state.route_step_count);
 	failures += expect_string("control center link reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("control center link exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	level_metadata_scan_route_to_segment(&view, 2, &state);
-	failures += expect_string("control center unexplored status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("control center unexplored status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("control center unexplored steps", 3, state.route_step_count);
 	failures += expect_string("control center unexplored reactor", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("control center unexplored terminal", "unexplored", level_metadata_route_step_kind_name(state.route_steps[2].kind));
@@ -1302,7 +1302,7 @@ static int test_route_accepts_any_fired_opener_for_side(void)
 	view.trigger_link_segment = test_trigger_link_segment;
 	view.trigger_link_side = test_trigger_link_side;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("multi-opener route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("multi-opener route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("multi-opener route steps", 3, state.route_step_count);
 	failures += expect_string("multi-opener route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("multi-opener route label", "Pass through trigger 1", state.route_steps[1].label);
@@ -1330,7 +1330,7 @@ static int test_route_hidden_door_step(void)
 	test_wall_seg[1] = 1;
 	test_wall_sides[1] = 1;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("hidden door route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("hidden door route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_double("hidden door route distance", 200.0, state.travel_distance);
 	failures += expect_int("hidden door route time", 4, state.travel_time_seconds);
 	failures += expect_int("hidden door route steps", 3, state.route_step_count);
@@ -1366,7 +1366,7 @@ static int test_route_visible_reactor_step(void)
 	view.side_has_exit_trigger = test_start_side_has_exit_trigger;
 	view.target_visible_from_segment = test_target_visible_from_segment;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("visible reactor route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("visible reactor route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("visible reactor route steps", 3, state.route_step_count);
 	failures += expect_string("visible reactor route step", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("visible reactor route activation", "destroy_reactor", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
@@ -1387,7 +1387,7 @@ static int test_route_prefers_boss_over_control_center_segment(void)
 	test_object_id[0] = TEST_ROBOT_BOSS;
 	test_object_seg[0] = 1;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("boss route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("boss route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("boss route steps", 3, state.route_step_count);
 	failures += expect_string("boss route step", "boss", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("boss route label", "Boss robot", state.route_steps[1].label);
@@ -1410,7 +1410,7 @@ static int test_route_prefers_boss_over_reactor_object(void)
 	test_object_id[1] = TEST_ROBOT_BOSS;
 	test_object_seg[1] = 1;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("boss over reactor route status", "ok", level_metadata_travel_status_name(state.route_status));
+	failures += expect_string("boss over reactor route status", "ok", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("boss over reactor route steps", 3, state.route_step_count);
 	failures += expect_string("boss over reactor route step", "boss", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("boss over reactor route label", "Boss robot", state.route_steps[1].label);

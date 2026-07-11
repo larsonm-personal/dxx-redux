@@ -846,6 +846,10 @@ static void level_metadata_copy_route(const level_metadata_state *route_state)
 	         sizeof(Level_metadata_state.route_problem),
 	         "%s",
 	         route_state->route_problem);
+	snprintf(Level_metadata_state.route_note,
+	         sizeof(Level_metadata_state.route_note),
+	         "%s",
+	         route_state->route_note);
 	Level_metadata_state.route_step_count = route_state->route_step_count;
 	memcpy(Level_metadata_state.route_steps,
 	       route_state->route_steps,
@@ -874,7 +878,6 @@ static void level_metadata_initialize_scan_view(void)
 	view->wall_key_red = KEY_RED;
 	view->wall_key_gold = KEY_GOLD;
 	view->wall_clip_hidden = WCF_HIDDEN;
-	view->obj_type_none = OBJ_NONE;
 	view->obj_type_robot = OBJ_ROBOT;
 	view->obj_type_powerup = OBJ_POWERUP;
 	view->obj_type_control_center = OBJ_CNTRLCEN;

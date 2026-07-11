@@ -24,9 +24,6 @@
         "travel_distance": 7980.458527565613,
         "travel_time_seconds": 160,
         "travel_time_text": "3M:40S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -169,9 +166,6 @@
         "travel_distance": 5536.463020608705,
         "travel_time_seconds": 111,
         "travel_time_text": "2M:51S",
-        "travel_targets_reached": 0,
-        "travel_targets_total": 0,
-        "travel_key_detours": 0,
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -292,6 +286,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
           "guidebot or guidebot start cage placed in this level"
