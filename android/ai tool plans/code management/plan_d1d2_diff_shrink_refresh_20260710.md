@@ -81,12 +81,11 @@
 - Combined `newmenu.c` churn fell by 274 lines; the shared implementation is 149 lines plus a 21-line header and is outside the upstream-owned D1/D2 metric
 
 ## Follow-up candidates
-1. Remaining `newmenu.c` touch/listbox helper family
-2. Reassess the private direct-render orchestration only if a later shared menu adapter creates a natural boundary
-3. `state.c`, split by feature ownership before extraction
-4. Continue the established `net_udp.c` shared-helper series
-5. `playsave.c` launcher bridge isolation while preserving the C file-format source of truth
-6. `multi.c` coop helper extraction where the code is Android-scoped
+1. `state.c`, split by feature ownership before extraction
+2. Continue the established `net_udp.c` shared-helper series
+3. `playsave.c` launcher bridge isolation while preserving the C file-format source of truth
+4. `multi.c` coop helper extraction where the code is Android-scoped
+5. Reassess private `newmenu.c` direct-render and touch orchestration only if a later shared menu adapter creates a natural boundary
 
 ## Second slice outcome: shared menu-scale primitives
 - Moved cropped source-region blitting, rounded coordinate scaling, and `newmenu_item` geometry scaling into the existing `android_menu_scale.{c,h}` implementation
@@ -108,6 +107,30 @@
 - `d1/main/newmenu.c` moved from `+1413/-118` to `+1373/-118`
 - `d2/main/newmenu.c` moved from `+1404/-125` to `+1364/-125`
 - Combined `newmenu.c` churn fell by another 80 lines, for 354 lines removed across the first two slices
+
+## Third slice outcome: shared touch diagnostics
+- Added Android-only `android_menu_touch_log.{c,h}` and wired it into both game libraries through the Android CMake target
+- Centralized the identical newmenu/listbox diagnostic formatting, per-category rate limits, mouse event phase names, and menu-scale state capture
+- Kept item hit testing, item-bound calculation, pilot-list policy, reorder state, and event dispatch local because those paths depend on the private `newmenu` and `listbox` layouts
+- Removed the now-unused direct `android_log.h` include from both `newmenu.c` files
+- Stopped at this boundary instead of introducing callbacks around private bounds helpers for a small additional reduction
+
+## Third slice validation
+- Scoped `android/run-code-quality.ps1 -Fix` passed for the new shared implementation and Android CMake path
+- `:app:externalNativeBuildDebug` passed for all configured Android ABIs and both games
+- `run-windows-build.ps1 -Target both` passed, including normal and headless metadata targets
+- The rebuilt APK installed successfully on `emulator-5554`
+- `test_menu_scale_d2.json5` passed all 16 steps
+- `test_autoselect_crash_unified.json5` passed all 74 steps in D1 and all 74 steps in D2
+- An initial attempt to pass `-Game both` to `run_test.ps1` was rejected by its `d1,d2` validation set; the meaningful validation was rerun separately for each game
+- `git diff --check` passed with only existing CRLF normalization warnings
+
+## Third slice metrics
+- Overall D1/D2 report moved from `+51401/-3909` to `+51363/-3909`
+- `d1/main/newmenu.c` moved from `+1373/-118` to `+1354/-118`
+- `d2/main/newmenu.c` moved from `+1364/-125` to `+1345/-125`
+- Combined `newmenu.c` churn fell by another 38 lines, for 392 lines removed across the three slices
+- The remaining touch/listbox bodies are not recommended for immediate extraction without a new natural shared boundary
 
 ## Targets not chosen first
 - `d2/main/input_demo_hooks.c`, `d1/main/input_demo_hooks.c`, `d2/main/d1_in_d2.c`, `d2/main/d1_save_translate.c`, `d2/main/dxa_metadata_patch.cpp`, and `d2/main/d1_custom.c` are branch-added and therefore do not drive this tranche

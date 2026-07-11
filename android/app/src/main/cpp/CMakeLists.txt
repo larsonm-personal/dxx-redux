@@ -563,6 +563,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_profile.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_touch_log.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c
@@ -692,6 +693,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_profile.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_touch_log.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c

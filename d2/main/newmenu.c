@@ -70,9 +70,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef ANDROID
 #include "android_crash_handler.h"
-#include "android_log.h"
 #include "android_menu_reorder.h"
 #include "android_menu_scale.h"
+#include "android_menu_touch_log.h"
 #include "android_newmenu_text_wrap.h"
 #include "android_pilot_listbox_hold.h"
 #endif
@@ -963,17 +963,6 @@ static int newmenu_reorder_poll(newmenu *menu)
 	return 0;
 }
 
-static const char *android_mouse_event_phase(d_event *event)
-{
-	if (!event)
-		return "unknown";
-	if (event->type == EVENT_MOUSE_BUTTON_DOWN)
-		return "down";
-	if (event->type == EVENT_MOUSE_BUTTON_UP)
-		return "up";
-	return "other";
-}
-
 static int android_newmenu_item_at_point(newmenu *menu, int mx, int my,
                                          int *rx1, int *ry1, int *rx2,
                                          int *ry2)
@@ -998,29 +987,25 @@ static int android_newmenu_item_at_point(newmenu *menu, int mx, int my,
 static void android_log_newmenu_touch(newmenu *menu, d_event *event,
                                       int mx, int my)
 {
-	static int diag_count;
-	android_menu_scale_result scale;
+	android_newmenu_touch_log_state state;
 	int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
 	int hit, type = -1;
 	const char *text = "";
 
-	if (!menu || diag_count >= 160)
+	if (!menu)
 		return;
-	diag_count++;
 	hit = android_newmenu_item_at_point(menu, mx, my, &x1, &y1, &x2, &y2);
 	if (hit >= 0 && hit < menu->nitems) {
 		type = menu->items[hit].type;
 		text = menu->items[hit].text ? menu->items[hit].text : "";
 	}
-	android_menu_scale_get_state(&scale);
-	debug_log(DLOG_GAME,
-	          "[newmenu-touch] phase=%s mx=%d my=%d hit=%d citem=%d n=%d scroll=%d max=%d bounds=(%d,%d %dx%d) type=%d title='%s' subtitle='%s' item='%s' scale=%d src=(%d,%d %dx%d) dst=(%d,%d %dx%d)\n",
-	          android_mouse_event_phase(event), mx, my, hit, menu->citem,
-	          menu->nitems, menu->scroll_offset, menu->max_on_menu, x1, y1,
-	          x2 - x1, y2 - y1, type, menu->title ? menu->title : "",
-	          menu->subtitle ? menu->subtitle : "", text, scale.active,
-	          scale.src.x, scale.src.y, scale.src.w, scale.src.h,
-	          scale.dst.x, scale.dst.y, scale.dst.w, scale.dst.h);
+	state = (android_newmenu_touch_log_state) {
+		android_menu_touch_event_phase(event ? event->type : -1), mx, my, hit,
+		menu->citem, menu->nitems, menu->scroll_offset, menu->max_on_menu,
+		x1, y1, x2, y2, type, menu->title ? menu->title : "",
+		menu->subtitle ? menu->subtitle : "", text
+	};
+	android_log_newmenu_touch_state(&state);
 }
 #endif
 
@@ -2749,26 +2734,22 @@ static int android_listbox_item_at_point(listbox *lb, int mx, int my)
 static void android_log_listbox_touch(listbox *lb, const char *phase,
                                       int mx, int my, int item)
 {
-	static int diag_count;
-	android_menu_scale_result scale;
+	android_listbox_touch_log_state state;
 	int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
 	const char *text = "";
 
-	if (!lb || diag_count >= 160)
+	if (!lb)
 		return;
-	diag_count++;
 	if (item >= 0 && item < lb->nitems) {
 		listbox_get_item_bounds(lb, item, &x1, &y1, &x2, &y2);
 		text = lb->item[item] ? lb->item[item] : "";
 	}
-	android_menu_scale_get_state(&scale);
-	debug_log(DLOG_GAME,
-	          "[listbox-touch] %s mx=%d my=%d item=%d citem=%d first=%d n=%d line=%d box=(%d,%d %dx%d) bounds=(%d,%d %dx%d) title='%s' text='%s' scale=%d src=(%d,%d %dx%d) dst=(%d,%d %dx%d)\n",
-	          phase, mx, my, item, lb->citem, lb->first_item, lb->nitems,
-	          lb->line_spacing, lb->box_x, lb->box_y, lb->box_w, lb->height,
-	          x1, y1, x2 - x1, y2 - y1, lb->title ? lb->title : "", text, scale.active,
-	          scale.src.x, scale.src.y, scale.src.w, scale.src.h,
-	          scale.dst.x, scale.dst.y, scale.dst.w, scale.dst.h);
+	state = (android_listbox_touch_log_state) {
+		phase, mx, my, item, lb->citem, lb->first_item, lb->nitems,
+		lb->line_spacing, lb->box_x, lb->box_y, lb->box_w, lb->height,
+		x1, y1, x2, y2, lb->title ? lb->title : "", text
+	};
+	android_log_listbox_touch_state(&state);
 }
 #endif
 
