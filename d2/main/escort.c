@@ -56,6 +56,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "automap.h"
 #include "laser.h"
 #include "escort.h"
+#include "escort_exit_policy.h"
 #include "escort_owner_policy.h"
 #include "secretarea.h"
 #include "collide.h"
@@ -2726,16 +2727,27 @@ static int side_has_exit_trigger(int seg, int side)
 //	Return true if it happened, else return false.
 int find_exit_segment(void)
 {
-	int	i,j;
+	int i, j;
+	int external_segment = -1;
+	int trigger_segment = -1;
 
-	//	---------- Find exit doors ----------
-	for (i=0; i<=Highest_segment_index; i++)
-		for (j=0; j<MAX_SIDES_PER_SEGMENT; j++)
-			if (Segments[i].children[j] == -2 || side_has_exit_trigger(i, j)) {
-				return i;
+	/* Classic D2 routes the Guide-Bot to the external flythrough endpoint. */
+	for (i = 0; i <= Highest_segment_index && external_segment == -1; ++i)
+		for (j = 0; j < MAX_SIDES_PER_SEGMENT; ++j)
+			if (Segments[i].children[j] == -2) {
+				external_segment = i;
+				break;
 			}
 
-	return -1;
+	/* Trigger-only community levels have no external endpoint to select. */
+	for (i = 0; i <= Highest_segment_index && trigger_segment == -1; ++i)
+		for (j = 0; j < MAX_SIDES_PER_SEGMENT; ++j)
+			if (side_has_exit_trigger(i, j)) {
+				trigger_segment = i;
+				break;
+			}
+
+	return escort_exit_segment_preferred(external_segment, trigger_segment);
 }
 
 #define	BUDDY_MARKER_TEXT_LEN	25

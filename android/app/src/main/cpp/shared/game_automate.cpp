@@ -43,6 +43,7 @@ extern "C" {
 #include "game_introspect.h"
 #include "overlay_ringbuf.h"
 #include "android_save_meta.h"
+#include "android_axis_mailbox.h"
 #include "android_log.h"
 #include "android_texture_debug.h"
 #include "android_meta_actions.h"
@@ -53,7 +54,6 @@ extern "C" {
 #include "screens.h"
 #include "inferno.h"
 #include "key.h"
-#include "kconfig.h"
 #include "playsave.h"
 #include "state.h"
 #include "window.h"
@@ -75,7 +75,8 @@ extern "C" {
 extern "C" void android_test_inject_touch_tap(void);
 extern "C" void android_test_inject_touch_action(int action);
 extern "C" void android_automation_joystick_button(int button, int pressed);
-extern "C" int android_automation_joystick_axis(int axis, int raw_value, int touch_source);
+extern "C" android_axis_generation android_joystick_axis_publish(
+    int axis, int raw_value, int touch_source);
 
 static void automation_enter_launcher(void)
 {
@@ -104,10 +105,6 @@ static void automation_enter_launcher(void)
 /* D1 does not have SCREEN_MOVIE */
 #ifndef SCREEN_MOVIE
 #define SCREEN_MOVIE 99
-#endif
-
-#ifndef ANDROID_TOUCH_AXIS_FLAG
-#define ANDROID_TOUCH_AXIS_FLAG 0x80
 #endif
 
 /* Automap_active is defined in automap.c; we just need the extern. */
@@ -344,31 +341,34 @@ struct auto_step {
 	std::string select_text;            /* STEP_SELECT: partial text to match */
 	bool select_non_base_mission = false;
 	bool select_mission = false;
-	bool optional = false;           /* STEP_SELECT: skip instead of fail on timeout */
-	int axis_id = -1;                /* STEP_SEND_AXIS: axis number (0-5) */
-	float axis_value = 0.0f;         /* STEP_SEND_AXIS: value (-1.0 to 1.0) */
-	bool axis_touch_source = false;  /* STEP_SEND_AXIS: mark as touch/virtual source */
-	int button_id = -1;              /* STEP_SEND_BUTTON: button index */
-	int button_held = 0;             /* STEP_SEND_BUTTON: 1 = hold (no release) */
-	int button_pressed = 1;          /* STEP_SEND_BUTTON: 0 = release only */
-	int meta_action_id = -1;         /* STEP_META_ACTION: action ID */
-	int segment = -1;                /* STEP_FACE_VIEW: target segment */
-	int side = -1;                   /* STEP_FACE_VIEW: target side */
-	int face = 0;                    /* STEP_FACE_VIEW: target face on side */
-	float distance = 4.0f;           /* STEP_FACE_VIEW: distance inside segment */
-	float pos_x = 0.0f;              /* STEP_POSE_VIEW: target X position */
-	float pos_y = 0.0f;              /* STEP_POSE_VIEW: target Y position */
-	float pos_z = 0.0f;              /* STEP_POSE_VIEW: target Z position */
-	int pitch = 0;                   /* STEP_POSE_VIEW: exact pitch */
-	int bank = 0;                    /* STEP_POSE_VIEW: exact bank */
-	int heading = 0;                 /* STEP_POSE_VIEW: exact heading */
-	int request_frame = -1;          /* STEP_PROBE_CROSSHAIR: request frame */
-	bool enabled = false;            /* STEP_SET_SECRET_REVEAL */
-	std::string match_label_a;       /* STEP_ASSERT_PROBE_MATCH: first label */
-	std::string match_label_b;       /* STEP_ASSERT_PROBE_MATCH: second label */
-	float hot_xy_tolerance = 0.02f;  /* STEP_ASSERT_PROBE_MATCH: max L-inf distance */
-	int require_hash_match = 0;      /* STEP_ASSERT_PROBE_MATCH: also require render_hash equal */
-	float max_mean_luma_diff = 0.0f; /* STEP_ASSERT_PROBE_MATCH: 0 disables SAD check */
+	bool optional = false;                 /* STEP_SELECT: skip instead of fail on timeout */
+	int axis_id = -1;                      /* STEP_SEND_AXIS: axis number (0-5) */
+	float axis_value = 0.0f;               /* STEP_SEND_AXIS: value (-1.0 to 1.0) */
+	bool axis_touch_source = false;        /* STEP_SEND_AXIS: mark as touch/virtual source */
+	bool axis_saturate_sdl_queue = false;  /* STEP_SEND_AXIS: deterministic queue pressure */
+	bool axis_use_production_path = false; /* STEP_SEND_AXIS: use production mailbox */
+	bool axis_pulse_before_drain = false;  /* STEP_SEND_AXIS: publish value then zero */
+	int button_id = -1;                    /* STEP_SEND_BUTTON: button index */
+	int button_held = 0;                   /* STEP_SEND_BUTTON: 1 = hold (no release) */
+	int button_pressed = 1;                /* STEP_SEND_BUTTON: 0 = release only */
+	int meta_action_id = -1;               /* STEP_META_ACTION: action ID */
+	int segment = -1;                      /* STEP_FACE_VIEW: target segment */
+	int side = -1;                         /* STEP_FACE_VIEW: target side */
+	int face = 0;                          /* STEP_FACE_VIEW: target face on side */
+	float distance = 4.0f;                 /* STEP_FACE_VIEW: distance inside segment */
+	float pos_x = 0.0f;                    /* STEP_POSE_VIEW: target X position */
+	float pos_y = 0.0f;                    /* STEP_POSE_VIEW: target Y position */
+	float pos_z = 0.0f;                    /* STEP_POSE_VIEW: target Z position */
+	int pitch = 0;                         /* STEP_POSE_VIEW: exact pitch */
+	int bank = 0;                          /* STEP_POSE_VIEW: exact bank */
+	int heading = 0;                       /* STEP_POSE_VIEW: exact heading */
+	int request_frame = -1;                /* STEP_PROBE_CROSSHAIR: request frame */
+	bool enabled = false;                  /* STEP_SET_SECRET_REVEAL */
+	std::string match_label_a;             /* STEP_ASSERT_PROBE_MATCH: first label */
+	std::string match_label_b;             /* STEP_ASSERT_PROBE_MATCH: second label */
+	float hot_xy_tolerance = 0.02f;        /* STEP_ASSERT_PROBE_MATCH: max L-inf distance */
+	int require_hash_match = 0;            /* STEP_ASSERT_PROBE_MATCH: also require render_hash equal */
+	float max_mean_luma_diff = 0.0f;       /* STEP_ASSERT_PROBE_MATCH: 0 disables SAD check */
 };
 
 /* -- Script state ----------------------------------------------------- */
@@ -390,6 +390,7 @@ static int g_held_axis_active[8] = { 0 };
 static float g_held_axis_value[8] = { 0.0f };
 static int g_held_axis_touch_source[8] = { 0 };
 static game_automate_axis_probe g_axis_probe = {};
+static int g_axis_dispatch_active = 0;
 
 struct automation_load_request {
 	char script_path[512] = "";
@@ -692,36 +693,71 @@ static void inject_key_combo(const std::string &modifier, const std::string &key
 
 static int g_inject_axis_logged; /* suppress repeated logs for re-injection */
 
-static void inject_axis(int axis, float value, bool touch_source)
+static void inject_axis(int axis, float value, bool touch_source,
+                        bool saturate_sdl_queue, bool use_production_path,
+                        bool pulse_before_drain)
 {
 	/* Clamp to SDL range: -32768..32767 */
 	int ival = (int) (value * 32767.0f);
 	if (ival > 32767) ival = 32767;
 	if (ival < -32768) ival = -32768;
+	int queue_fill_count = 0;
+	int queue_saturated = 0;
+	if (saturate_sdl_queue) {
+		SDL_Event queue_event;
+		memset(&queue_event, 0, sizeof(queue_event));
+		queue_event.type = SDL_USEREVENT;
+		while (queue_fill_count < 4096) {
+			if (SDL_PushEvent(&queue_event) < 0) {
+				queue_saturated = 1;
+				break;
+			}
+			++queue_fill_count;
+		}
+	}
 
 #ifdef ANDROID
-	/*
-	 * Establish a deterministic one-axis input vector before dispatching the
-	 * target. This isolates the probe from gyro/controller state consumed on a
-	 * prior frame. Each handler call synchronously reaches kconfig on the game
-	 * thread, and the final target sample is captured below.
-	 */
-	for (int clear_axis = 0; clear_axis < 8; ++clear_axis)
-		android_automation_joystick_axis(clear_axis, 0, 0);
-	int processed = android_automation_joystick_axis(axis, ival, touch_source ? 1 : 0);
+	int raw_values[ANDROID_AXIS_MAILBOX_AXIS_COUNT] = {};
+	unsigned char touch_sources[ANDROID_AXIS_MAILBOX_AXIS_COUNT] = {};
+	for (int held_axis = 0; held_axis < 8; ++held_axis) {
+		if (!g_held_axis_active[held_axis])
+			continue;
+		int held_raw = (int) (g_held_axis_value[held_axis] * 32767.0f);
+		if (held_raw > 32767) held_raw = 32767;
+		if (held_raw < -32768) held_raw = -32768;
+		raw_values[held_axis] = held_raw;
+		touch_sources[held_axis] = g_held_axis_touch_source[held_axis] != 0;
+	}
 
-	++g_axis_probe.generation;
-	g_axis_probe.valid = 1;
+	if (use_production_path) {
+		android_axis_mailbox_release_automation();
+		g_axis_probe.first_generation = android_joystick_axis_publish(
+		    axis, ival, touch_source ? 1 : 0);
+		g_axis_probe.generation = g_axis_probe.first_generation;
+		if (pulse_before_drain)
+			g_axis_probe.generation = android_joystick_axis_publish(
+			    axis, 0, touch_source ? 1 : 0);
+	} else {
+		g_axis_probe.generation = android_axis_mailbox_publish_automation(
+		    raw_values, touch_sources, axis, ival, touch_source ? 1 : 0);
+		g_axis_probe.first_generation = g_axis_probe.generation;
+	}
+	g_axis_probe.valid = 0;
 	g_axis_probe.axis = axis;
-	g_axis_probe.raw_value = ival;
+	g_axis_probe.raw_value = pulse_before_drain ? 0 : ival;
 	g_axis_probe.touch_source = touch_source ? 1 : 0;
-	g_axis_probe.processed = processed != 0;
-	g_axis_probe.pitch_time = (int) Controls.pitch_time;
-	g_axis_probe.heading_time = (int) Controls.heading_time;
-	g_axis_probe.slide_lr_time = (int) Controls.sideways_thrust_time;
-	g_axis_probe.slide_ud_time = (int) Controls.vertical_thrust_time;
-	g_axis_probe.bank_time = (int) Controls.bank_time;
-	g_axis_probe.throttle_time = (int) Controls.forward_thrust_time;
+	g_axis_probe.processed = 0;
+	g_axis_probe.queue_fill_count = queue_fill_count;
+	g_axis_probe.queue_saturated = queue_saturated;
+	g_axis_probe.sample_count = 0;
+	g_axis_probe.axis_button_down_edges = 0;
+	g_axis_probe.axis_button_up_edges = 0;
+	g_axis_probe.pitch_time = 0;
+	g_axis_probe.heading_time = 0;
+	g_axis_probe.slide_lr_time = 0;
+	g_axis_probe.slide_ud_time = 0;
+	g_axis_probe.bank_time = 0;
+	g_axis_probe.throttle_time = 0;
 #else
 	SDL_Event ev;
 	memset(&ev, 0, sizeof(ev));
@@ -741,6 +777,9 @@ static void clear_held_axes(void)
 {
 	int axis;
 
+#ifdef ANDROID
+	android_axis_mailbox_release_automation();
+#endif
 	for (axis = 0; axis < 8; ++axis) {
 		g_held_axis_active[axis] = 0;
 		g_held_axis_value[axis] = 0.0f;
@@ -762,15 +801,6 @@ static void set_held_axis(int axis, float value, bool touch_source)
 		g_held_axis_value[axis] = value;
 		g_held_axis_touch_source[axis] = touch_source ? 1 : 0;
 	}
-}
-
-static void inject_held_axes(void)
-{
-	int axis;
-
-	for (axis = 0; axis < 8; ++axis)
-		if (g_held_axis_active[axis])
-			inject_axis(axis, g_held_axis_value[axis], g_held_axis_touch_source[axis] != 0);
 }
 
 /* -- Button injection ------------------------------------------------- */
@@ -1809,6 +1839,9 @@ static int parse_script(const char *json_text)
 			s.axis_id = step_json.value("axis", -1);
 			s.axis_value = step_json.value("axis_value", 0.0f);
 			s.axis_touch_source = step_json.value("touch_source", false);
+			s.axis_saturate_sdl_queue = step_json.value("saturate_sdl_queue", false);
+			s.axis_use_production_path = step_json.value("use_production_path", false);
+			s.axis_pulse_before_drain = step_json.value("pulse_before_drain", false);
 			s.button_id = step_json.value("button", -1);
 			s.button_held = step_json.value("held", 0);
 			s.button_pressed = step_json.value("pressed", 1);
@@ -2279,6 +2312,52 @@ extern "C" int game_automate_get_axis_probe(game_automate_axis_probe *out_probe)
 	return g_axis_probe.valid;
 }
 
+extern "C" void game_automate_axis_dispatch_begin(unsigned long long generation,
+                                                  int event_axis,
+                                                  int event_raw_value,
+                                                  int event_touch_source)
+{
+	g_axis_dispatch_active = generation >= g_axis_probe.first_generation &&
+	                         generation <= g_axis_probe.generation &&
+	                         event_axis == g_axis_probe.axis &&
+	                         (g_axis_probe.first_generation != g_axis_probe.generation ||
+	                          (event_raw_value == g_axis_probe.raw_value &&
+	                           (event_touch_source != 0) ==
+	                               (g_axis_probe.touch_source != 0)));
+}
+
+extern "C" void game_automate_axis_dispatch_end(void)
+{
+	g_axis_dispatch_active = 0;
+}
+
+extern "C" void game_automate_axis_button_edge(int pressed)
+{
+	if (!g_axis_dispatch_active)
+		return;
+	if (pressed)
+		++g_axis_probe.axis_button_down_edges;
+	else
+		++g_axis_probe.axis_button_up_edges;
+}
+
+extern "C" void game_automate_observe_axis_controls(
+    int pitch_time, int heading_time, int slide_lr_time, int slide_ud_time,
+    int bank_time, int throttle_time)
+{
+	if (!g_axis_dispatch_active)
+		return;
+	g_axis_probe.valid = 1;
+	g_axis_probe.processed = 1;
+	++g_axis_probe.sample_count;
+	g_axis_probe.pitch_time = pitch_time;
+	g_axis_probe.heading_time = heading_time;
+	g_axis_probe.slide_lr_time = slide_lr_time;
+	g_axis_probe.slide_ud_time = slide_ud_time;
+	g_axis_probe.bank_time = bank_time;
+	g_axis_probe.throttle_time = throttle_time;
+}
+
 extern "C" void game_automate_tick(void)
 {
 	/* Handle pending load request (from JNI thread) */
@@ -2299,12 +2378,12 @@ extern "C" void game_automate_tick(void)
 
 		remove_stale_result();
 		open_log_file();
+		clear_held_axes();
 
 		if (load_script_file(g_active_script)) {
 			g_current_step = request.start_step;
 			g_step_start = SDL_GetTicks();
 			g_script_start = g_step_start;
-			clear_held_axes();
 			memset(&g_axis_probe, 0, sizeof(g_axis_probe));
 			g_key_phase = 0;
 			g_select_phase = 0;
@@ -2323,8 +2402,6 @@ extern "C" void game_automate_tick(void)
 
 	if (!g_active || g_current_step >= (int) g_steps.size())
 		return;
-
-	inject_held_axes();
 
 	auto &s = g_steps[g_current_step];
 	Uint32 now = SDL_GetTicks();
@@ -2525,8 +2602,12 @@ extern "C" void game_automate_tick(void)
 
 		case STEP_SEND_AXIS:
 			if (g_key_phase == 0 && s.axis_id >= 0 && s.axis_id < 8) {
-				set_held_axis(s.axis_id, s.axis_value, s.axis_touch_source);
-				inject_axis(s.axis_id, s.axis_value, s.axis_touch_source);
+				if (!s.axis_use_production_path)
+					set_held_axis(s.axis_id, s.axis_value, s.axis_touch_source);
+				inject_axis(s.axis_id, s.axis_value, s.axis_touch_source,
+				            s.axis_saturate_sdl_queue,
+				            s.axis_use_production_path,
+				            s.axis_pulse_before_drain);
 				if (s.post_delay_ms <= 0) {
 					advance_step();
 				} else {

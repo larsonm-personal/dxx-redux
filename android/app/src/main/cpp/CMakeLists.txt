@@ -546,6 +546,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/merged_wall_debug.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_android.c
@@ -674,6 +675,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/merged_wall_debug.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/ogl_msaa_android.c

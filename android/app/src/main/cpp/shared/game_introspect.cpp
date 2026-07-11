@@ -24,6 +24,7 @@ using json = nlohmann::json;
 extern "C" {
 #include "game_introspect.h"
 #include "game_automate.h"
+#include "android_axis_mailbox.h"
 #include "window.h"
 #include "newmenu.h"
 #include "object.h"
@@ -1398,6 +1399,16 @@ extern "C" char *game_introspect_get_state(void)
 			                 { "value", Controls.joy_axis[i] } });
 		}
 		j["joy_axes"] = std::move(axes);
+#if defined(ANDROID)
+		json axis_button_down_edges = json::array();
+		json axis_button_up_edges = json::array();
+		for (int button = 0; button < 26; ++button) {
+			axis_button_down_edges.push_back(joy_axisbutton_get_down_edges(button));
+			axis_button_up_edges.push_back(joy_axisbutton_get_up_edges(button));
+		}
+		j["axis_button_down_edges"] = std::move(axis_button_down_edges);
+		j["axis_button_up_edges"] = std::move(axis_button_up_edges);
+#endif
 
 		/* Flat keys for easy assertion: axis_bind_pitch, etc.
 		 * These are the axis numbers that each control reads from. */
@@ -1422,22 +1433,40 @@ extern "C" char *game_introspect_get_state(void)
 		j["bank_time"] = (int) Controls.bank_time;
 		j["throttle_time"] = (int) Controls.forward_thrust_time;
 
-		/* Stable sample captured by Android's synchronous automation axis probe. */
+		/* Stable sample captured when kconfig consumes the automation generation. */
 		game_automate_axis_probe axis_probe = {};
 		game_automate_get_axis_probe(&axis_probe);
 		j["axis_probe"] = {
 			{ "valid", axis_probe.valid != 0 },
+			{ "first_generation", axis_probe.first_generation },
 			{ "generation", axis_probe.generation },
 			{ "axis", axis_probe.axis },
 			{ "raw_value", axis_probe.raw_value },
 			{ "touch_source", axis_probe.touch_source != 0 },
 			{ "processed", axis_probe.processed != 0 },
+			{ "queue_fill_count", axis_probe.queue_fill_count },
+			{ "queue_saturated", axis_probe.queue_saturated != 0 },
+			{ "sample_count", axis_probe.sample_count },
+			{ "axis_button_down_edges", axis_probe.axis_button_down_edges },
+			{ "axis_button_up_edges", axis_probe.axis_button_up_edges },
 			{ "pitch_time", axis_probe.pitch_time },
 			{ "heading_time", axis_probe.heading_time },
 			{ "slide_lr_time", axis_probe.slide_lr_time },
 			{ "slide_ud_time", axis_probe.slide_ud_time },
 			{ "bank_time", axis_probe.bank_time },
 			{ "throttle_time", axis_probe.throttle_time }
+		};
+		android_axis_mailbox_diagnostics axis_mailbox = {};
+		android_axis_mailbox_get_diagnostics(&axis_mailbox);
+		j["axis_mailbox"] = {
+			{ "last_published_generation", axis_mailbox.last_published_generation },
+			{ "last_applied_generation", axis_mailbox.last_applied_generation },
+			{ "publish_count", axis_mailbox.publish_count },
+			{ "coalesced_count", axis_mailbox.coalesced_count },
+			{ "drain_count", axis_mailbox.drain_count },
+			{ "dispatch_count", axis_mailbox.dispatch_count },
+			{ "automation_active", axis_mailbox.automation_active != 0 },
+			{ "pending_axis_count", axis_mailbox.pending_axis_count }
 		};
 
 		/* Diagnostic: raw axis state and modifier flags for axis test debugging */

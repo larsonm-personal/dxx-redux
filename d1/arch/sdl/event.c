@@ -15,6 +15,9 @@
 #include "config.h"
 #include "args.h"
 #include "input_demo_hooks.h"
+#ifdef ANDROID
+#include "android_axis_mailbox.h"
+#endif
 #if defined(ANDROID) && defined(OGL)
 #include "game.h"
 #include "inferno.h"
@@ -54,6 +57,11 @@ void event_poll()
 	int clean_uniframe=1;
 	window *wind = window_get_front();
 	int idle = 1;
+
+#ifdef ANDROID
+	if (android_axis_mailbox_drain(!GameArg.CtlNoJoystick) > 0)
+		idle = 0;
+#endif
 	
 	// If the front window changes, exit this loop, otherwise unintended behavior can occur
 	// like pressing 'Return' really fast at 'Difficulty Level' causing multiple games to be started
@@ -134,6 +142,9 @@ void event_flush()
 	SDL_Event event;
 	
 	while (SDL_PollEvent(&event));
+#ifdef ANDROID
+	android_axis_mailbox_flush();
+#endif
 }
 
 int event_init()

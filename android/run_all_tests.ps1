@@ -300,8 +300,6 @@ $tierServerManagedDualEmuTests = @()
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
     "test_autoselect_crash_unified"       = 240
-    "test_axis_mapping"                   = 240
-    "test_dpad_triggers"                 = 420
     "test_keyboard_defaults"              = 240
     "test_engine_prefs_unified"           = 240
     "test_extract"                        = 240

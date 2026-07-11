@@ -1732,6 +1732,7 @@ class MainActivity :
         gyroManager?.pause()
         overlayPoller.removeCallbacksAndMessages(null)
         gamepadButtonEdgeTracker.clear()
+        if (::inputMixer.isInitialized) inputMixer.releaseAll()
         resetTouchOverlayForSuspend()
         // Inject Escape so the engine opens its pause / game menu.
         // This pauses a single-player game while the app is in the background.

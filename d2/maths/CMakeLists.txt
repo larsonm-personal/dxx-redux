@@ -65,6 +65,12 @@ if(NOT ANDROID)
     target_link_libraries(test_input_demo_rng_mode PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_input_demo_rng_mode PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_android_axis_mailbox
+        ../../android/tests/test_android_axis_mailbox.cpp
+        ../../android/app/src/main/cpp/shared/android_axis_mailbox.cpp)
+    target_compile_features(test_android_axis_mailbox PRIVATE cxx_std_11)
+    target_include_directories(test_android_axis_mailbox PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_level_metadata_scan
         ../../android/tests/test_level_metadata_scan.c
         ../../android/app/src/main/cpp/shared/level_metadata_scan.c)
@@ -75,6 +81,10 @@ if(NOT ANDROID)
         ../../android/tests/test_escort_owner_policy.c
         ../main/escort_owner_policy.c)
     target_include_directories(test_escort_owner_policy PRIVATE ../main)
+
+    add_executable(test_escort_exit_policy
+        ../../android/tests/test_escort_exit_policy.c)
+    target_include_directories(test_escort_exit_policy PRIVATE ../main)
 
     add_executable(test_input_demo_controls
         ../../android/tests/test_input_demo_controls.cpp
@@ -144,8 +154,10 @@ if(NOT ANDROID)
             test_android_save_set
             test_android_rewind_policy
             test_input_demo_rng_mode
+            test_android_axis_mailbox
             test_level_metadata_scan
             test_escort_owner_policy
+            test_escort_exit_policy
             test_input_demo_controls
             test_input_demo_fixture
             test_input_demo_recorder

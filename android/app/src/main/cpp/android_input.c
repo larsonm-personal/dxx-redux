@@ -1,13 +1,13 @@
 /*
- * android_input.c — Inject Android touch, key & joystick events into SDL 1.2's event queue.
+ * android_input.c - Bridge Android touch, key, and joystick input to the engine.
  *
  * Touch events are converted to SDL_MOUSEMOTION / SDL_MOUSEBUTTONDOWN / UP.
  * Key events are converted to SDL_KEYDOWN / SDL_KEYUP.
- * Joystick events are converted to SDL_JOYAXISMOTION / SDL_JOYBUTTONDOWN / UP.
+ * Continuous joystick axes use a coalesced latest-state mailbox. Buttons and
+ * discrete input are converted to SDL events.
  *
- * All injection uses SDL_PushEvent() so the existing event_poll() → key_handler()
- * / mouse_button_handler() / mouse_motion_handler() / joy_*_handler() pipeline
- * works unchanged.
+ * The game thread drains axes through joy_axisbutton_handler() and
+ * joy_axis_handler(); event_poll() handles the discrete SDL queue.
  */
 
 #ifdef ANDROID
@@ -20,6 +20,10 @@
 #include "android_log.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
+#include "android_axis_mailbox.h"
+#ifdef INTROSPECT_ON
+#include "game_automate.h"
+#endif
 #include "gr.h"
 #include "input_demo_recorder.h"
 #include "joy.h"
@@ -161,7 +165,6 @@ static void android_get_touch_screen_size(int *screen_w, int *screen_h)
 }
 
 void android_automation_joystick_button(int button, int pressed);
-int android_automation_joystick_axis(int axis, int raw_value, int touch_source);
 
 static int android_handle_delayed_escape_touch(int action, int active,
                                                int *touch_state, SDLKey key)
@@ -1320,9 +1323,8 @@ Java_com_dxxredux_app_MainActivity_nativeTextInput(JNIEnv *env, jobject thiz,
 /* ── Joystick (Android gamepad) ─────────────────────────────
  *
  * The Kotlin side detects a gamepad via InputDevice.SOURCE_JOYSTICK and
- * forwards axis / button events here.  We inject the matching SDL 1.2
- * joystick events, which event_poll() dispatches to joy_axis_handler()
- * and joy_button_handler() in arch/sdl/joy.c.
+ * forwards axis / button events here. Axes publish their latest mixed state
+ * to the game-thread mailbox while buttons retain discrete SDL delivery.
  *
  * joy_init() registers a virtual joystick (index 0) on Android so the
  * axis_map / button_map lookups work correctly.
@@ -1331,15 +1333,23 @@ Java_com_dxxredux_app_MainActivity_nativeTextInput(JNIEnv *env, jobject thiz,
  *   0 = left stick X   1 = left stick Y
  *   2 = right stick X  3 = right stick Y
  *   4 = L trigger       5 = R trigger
+ *   6-7 = gyro virtual axes
+ *   8-10 = configurable controller half-axis combiners
  *
  * Button IDs: 0=A 1=B 2=X 3=Y 4=L1 5=R1 6=Select 7=Start 8=L3 9=R3
  */
 
 static int g_joy_axis_count = 0; /* debug counter */
 
+android_axis_generation android_joystick_axis_publish(int axis, int raw_value,
+                                                      int touch_source)
+{
+	return android_axis_mailbox_publish(axis, raw_value, touch_source);
+}
+
 /*
  * nativeJoystickAxis(axis, value, touchActive)
- *   axis:        axis index 0-5
+ *   axis:        mixed axis index 0-10
  *   value:       -1.0 .. 1.0 (Android MotionEvent range)
  *   touchActive: nonzero when touch currently contributes to this mixed axis
  */
@@ -1348,28 +1358,22 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickAxis(JNIEnv *env, jobject thiz,
                                                       jint axis, jfloat value,
                                                       jboolean touchActive)
 {
-	SDL_Event ev;
 	static int joy_jni_diag_count[8];
 	const int touch_source = touchActive != JNI_FALSE;
-	memset(&ev, 0, sizeof(ev));
-
-	ev.type = SDL_JOYAXISMOTION;
-	ev.jaxis.which = 0; /* virtual joystick 0 */
-	ev.jaxis.axis = (Uint8) (axis | (touch_source ? ANDROID_TOUCH_AXIS_FLAG : 0));
-	ev.jaxis.value = (Sint16) (value * 32767.0f);
+	const int raw_value = (int) (value * 32767.0f);
 	if (touch_source)
 		android_touch_enable_joystick_mode();
 	if (axis >= 0 && axis < 8 && (axis == 2 || axis == 3) && value != 0.0f) {
-		int abs_sdl = ev.jaxis.value < 0 ? -ev.jaxis.value : ev.jaxis.value;
+		int abs_sdl = raw_value < 0 ? -raw_value : raw_value;
 		int count = ++joy_jni_diag_count[axis];
 		if (count <= 24 || (abs_sdl <= 4096 && (count % 8) == 0) || (count % 64) == 0)
-			debug_log(DLOG_GAME, "[joy-jni] axis=%d touch=%d in=%.4f sdl=%d\n", axis, touch_source, value, ev.jaxis.value);
+			debug_log(DLOG_GAME, "[joy-jni] axis=%d touch=%d in=%.4f sdl=%d\n", axis, touch_source, value, raw_value);
 	}
 
-	SDL_PushEvent(&ev);
+	android_joystick_axis_publish(axis, raw_value, touch_source);
 
 	if (++g_joy_axis_count <= 5)
-		LOGI("joystick axis %d = %.3f (sdl %d)", axis, value, ev.jaxis.value);
+		LOGI("joystick axis %d = %.3f (sdl %d)", axis, value, raw_value);
 }
 
 /*
@@ -1424,32 +1428,89 @@ void android_automation_joystick_button(int button, int pressed)
 	joy_button_handler(&ev);
 }
 
-/*
- * Automation already runs on the game thread. Dispatch its axis probes through
- * the same native handlers synchronously so they cannot be dropped behind the
- * bounded SDL queue used by concurrent touch, gyro, and controller producers.
- */
-int android_automation_joystick_axis(int axis, int raw_value, int touch_source)
+int android_axis_mailbox_drain(int joystick_enabled)
 {
-	SDL_JoyAxisEvent ev;
-	int processed;
+	android_axis_mailbox_snapshot snapshot;
+	android_axis_mailbox_transition transition;
+	unsigned char transition_seen[ANDROID_AXIS_MAILBOX_AXIS_COUNT] = { 0 };
+	int transition_raw[ANDROID_AXIS_MAILBOX_AXIS_COUNT] = { 0 };
+	unsigned char transition_touch[ANDROID_AXIS_MAILBOX_AXIS_COUNT] = { 0 };
+	int dispatch_count = 0;
+	int processed_count = 0;
 
-	if (axis < 0 || axis >= 8)
+	if (!android_axis_mailbox_take_snapshot(&snapshot))
 		return 0;
-	if (raw_value > 32767)
-		raw_value = 32767;
-	if (raw_value < -32768)
-		raw_value = -32768;
 
-	memset(&ev, 0, sizeof(ev));
-	ev.type = SDL_JOYAXISMOTION;
-	ev.which = 0;
-	ev.axis = (Uint8) (axis | (touch_source ? ANDROID_TOUCH_AXIS_FLAG : 0));
-	ev.value = (Sint16) raw_value;
+	/* Preserve discrete axis-button crossings while continuous values coalesce. */
+	while (android_axis_mailbox_take_transition(snapshot.batch_generation,
+	                                            &transition)) {
+		SDL_JoyAxisEvent ev;
 
-	processed = joy_axisbutton_handler(&ev);
-	processed |= joy_axis_handler(&ev);
-	return processed;
+		if (!joystick_enabled)
+			continue;
+		memset(&ev, 0, sizeof(ev));
+		ev.type = SDL_JOYAXISMOTION;
+		ev.which = 0;
+		ev.axis = (Uint8) (transition.axis |
+		                   (transition.touch_source ? ANDROID_TOUCH_AXIS_FLAG : 0));
+		ev.value = (Sint16) transition.raw_value;
+#ifdef INTROSPECT_ON
+		game_automate_axis_dispatch_begin(
+		    transition.generation, transition.axis,
+		    transition.raw_value, transition.touch_source);
+#endif
+		if (transition.axis < ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT &&
+		    joy_axisbutton_handler(&ev))
+			++processed_count;
+		if (joy_axis_handler(&ev))
+			++processed_count;
+#ifdef INTROSPECT_ON
+		game_automate_axis_dispatch_end();
+#endif
+		transition_seen[transition.axis] = 1;
+		transition_raw[transition.axis] = transition.raw_value;
+		transition_touch[transition.axis] = transition.touch_source != 0;
+		++dispatch_count;
+	}
+
+	if (!joystick_enabled) {
+		android_axis_mailbox_mark_applied(&snapshot, 0);
+		return 0;
+	}
+
+	for (int axis = 0; axis < ANDROID_AXIS_MAILBOX_AXIS_COUNT; ++axis) {
+		SDL_JoyAxisEvent ev;
+
+		if (!snapshot.should_dispatch[axis])
+			continue;
+		if (transition_seen[axis] &&
+		    transition_raw[axis] == snapshot.raw_value[axis] &&
+		    transition_touch[axis] == snapshot.touch_source[axis])
+			continue;
+		memset(&ev, 0, sizeof(ev));
+		ev.type = SDL_JOYAXISMOTION;
+		ev.which = 0;
+		ev.axis = (Uint8) (axis | (snapshot.touch_source[axis] ? ANDROID_TOUCH_AXIS_FLAG : 0));
+		ev.value = (Sint16) snapshot.raw_value[axis];
+
+#ifdef INTROSPECT_ON
+		game_automate_axis_dispatch_begin(
+		    snapshot.axis_generation[axis], axis,
+		    snapshot.raw_value[axis], snapshot.touch_source[axis]);
+#endif
+		if (axis < ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT &&
+		    joy_axisbutton_handler(&ev))
+			++processed_count;
+		if (joy_axis_handler(&ev))
+			++processed_count;
+#ifdef INTROSPECT_ON
+		game_automate_axis_dispatch_end();
+#endif
+		++dispatch_count;
+	}
+
+	android_axis_mailbox_mark_applied(&snapshot, dispatch_count);
+	return processed_count;
 }
 
 /* ── Automap touch controls ─────────────────────────────────

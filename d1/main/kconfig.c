@@ -56,6 +56,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "android_log.h"
 #include "android_menu_scale.h"
+#ifdef INTROSPECT_ON
+#include "game_automate.h"
+#endif
 #endif
 
 #ifdef OGL
@@ -2047,6 +2050,12 @@ void kconfig_read_controls(d_event *event, int automap_flag)
         }
         Controls.forward_thrust_time = -speed_factor * FrameTime;
     }
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	game_automate_observe_axis_controls(
+		(int) Controls.pitch_time, (int) Controls.heading_time,
+		(int) Controls.sideways_thrust_time, (int) Controls.vertical_thrust_time,
+		(int) Controls.bank_time, (int) Controls.forward_thrust_time);
+#endif
 }
 
 void reset_cruise(void)

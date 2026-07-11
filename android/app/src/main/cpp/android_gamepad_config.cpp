@@ -45,6 +45,7 @@ using json = nlohmann::json;
 /* Engine headers (C linkage) */
 extern "C" {
 #include "shared/android_graphics_options.h"
+#include "shared/android_axis_mailbox.h"
 #include "playsave.h"
 #include "kconfig.h"
 #include "joy.h"
@@ -140,6 +141,8 @@ static bool load_config_into_playercfg(void)
 				int pct = clamp_threshold_pct(thr[axis_map[i].name].get<int>());
 				axis_pct[axis_map[i].axis] = pct;
 				joy_axis_button_deadzone[axis_map[i].axis] = threshold_pct_to_axis_button_deadzone(pct);
+				android_axis_mailbox_set_button_deadzone(
+				    axis_map[i].axis, joy_axis_button_deadzone[axis_map[i].axis]);
 				LOGI("threshold axis=%s pct=%d axisBtnDead=%d",
 				     axis_map[i].name,
 				     pct,

@@ -1,15 +1,14 @@
-// TEST: Axis Routing Regression
+// TEST: Android Input Routing Regression
 //
-// Verifies D1 and D2 gameplay routing for the six analog movement axes. Each
-// send_axis is a synchronous, game-thread probe that neutralizes competing
-// axes and captures the resulting control sample before queued gyro/controller
-// traffic resumes. This deliberately tests native routing, not SDL queue
-// scheduling.
+// Verifies D1 and D2 gameplay routing for analog movement, D-pad buttons, and
+// trigger axis-buttons. Continuous axes use the same coalesced mailbox as
+// production gyro/touch/controller input, and each assertion is correlated to
+// the exact generation consumed by kconfig on the game thread.
 //
 // Ownership is intentionally narrow:
 //   - test_controller_compare_unified owns launcher/game binding parity.
-//   - test_dpad_triggers owns LT/RT axis-button behavior.
-//   - pause/help scripts own ESC and F1 behavior.
+//   - ControllerConfigSerializationTest owns expected static button slots.
+//   - pause scripts own ESC; test_readable_tiny_help_d2 is the F1 canary.
 [
     {"_info": {
         "games": ["d1", "d2"],
@@ -59,30 +58,60 @@
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
 
-    // Right stick X routes only to heading.
-    {"action": "send_axis", "axis": 2, "axis_value": 0.5, "post_delay_ms": 0},
+    // Saturate SDL's discrete event queue and use the same production publisher
+    // as JNI. The continuous axis must still reach kconfig through the mailbox.
+    {"action": "send_axis", "axis": 2, "axis_value": 0.5,
+     "saturate_sdl_queue": true, "use_production_path": true,
+     "post_delay_ms": 0},
     {"action": "assert", "expect": {
         "axis_probe.valid": true,
         "axis_probe.axis": 2,
         "axis_probe.touch_source": false,
         "axis_probe.processed": true,
-        "axis_probe.heading_time": {"ne": 0},
+        "axis_probe.queue_saturated": true,
+        "axis_probe.queue_fill_count": {"gt": 0},
+        "axis_mailbox.automation_active": false,
+        "axis_mailbox.last_applied_generation": {"gt": 0},
+        "axis_probe.heading_time": {"gt": 0}
+    }},
+    {"action": "send_axis", "axis": 2, "axis_value": 0.0,
+     "use_production_path": true, "post_delay_ms": 0},
+
+    // Automation owns a complete vector so multi-axis assertions cannot sample
+    // unrelated gyro/controller traffic.
+    {"action": "send_axis", "axis": 2, "axis_value": 0.5, "post_delay_ms": 0},
+    {"action": "assert", "expect": {
+        "axis_probe.axis": 2,
+        "axis_probe.processed": true,
+        "axis_mailbox.automation_active": true,
+        "axis_probe.heading_time": {"gt": 0},
         "axis_probe.pitch_time": 0,
         "axis_probe.slide_lr_time": 0,
         "axis_probe.slide_ud_time": 0,
         "axis_probe.bank_time": 0,
         "axis_probe.throttle_time": 0
     }},
-    {"action": "send_axis", "axis": 2, "axis_value": 0.0, "post_delay_ms": 0},
 
-    // Left stick X routes only to lateral thrust.
+    // Add left stick X without releasing RX. Both held axes must survive.
     {"action": "send_axis", "axis": 0, "axis_value": 0.5, "post_delay_ms": 0},
     {"action": "assert", "expect": {
         "axis_probe.axis": 0,
         "axis_probe.processed": true,
-        "axis_probe.slide_lr_time": {"ne": 0},
+        "axis_probe.slide_lr_time": {"gt": 0},
+        "axis_probe.heading_time": {"gt": 0},
         "axis_probe.pitch_time": 0,
+        "axis_probe.slide_ud_time": 0,
+        "axis_probe.bank_time": 0,
+        "axis_probe.throttle_time": 0
+    }},
+
+    // Releasing RX must leave LX active and isolated.
+    {"action": "send_axis", "axis": 2, "axis_value": 0.0, "post_delay_ms": 0},
+    {"action": "assert", "expect": {
+        "axis_probe.axis": 2,
         "axis_probe.heading_time": 0,
+        "axis_probe.slide_lr_time": {"gt": 0},
+        "axis_probe.pitch_time": 0,
         "axis_probe.slide_ud_time": 0,
         "axis_probe.bank_time": 0,
         "axis_probe.throttle_time": 0
@@ -94,7 +123,7 @@
     {"action": "assert", "expect": {
         "axis_probe.axis": 3,
         "axis_probe.processed": true,
-        "axis_probe.pitch_time": {"ne": 0},
+        "axis_probe.pitch_time": {"lt": 0},
         "axis_probe.heading_time": 0,
         "axis_probe.slide_lr_time": 0,
         "axis_probe.slide_ud_time": 0,
@@ -109,7 +138,7 @@
     {"action": "assert", "expect": {
         "axis_probe.axis": 1,
         "axis_probe.processed": true,
-        "axis_probe.throttle_time": {"ne": 0},
+        "axis_probe.throttle_time": {"lt": 0},
         "axis_probe.pitch_time": 0,
         "axis_probe.heading_time": 0,
         "axis_probe.slide_lr_time": 0,
@@ -118,34 +147,101 @@
     }},
     {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 0},
 
-    // Virtual gyro-roll axes bypass physical-stick deadzones.
-    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 0},
+    // Gyro roll axes use non-touch source semantics in production.
+    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "post_delay_ms": 0},
     {"action": "assert", "expect": {
         "axis_probe.axis": 6,
-        "axis_probe.touch_source": true,
+        "axis_probe.touch_source": false,
         "axis_probe.processed": true,
-        "axis_probe.bank_time": {"ne": 0},
+        "axis_probe.bank_time": {"lt": 0},
         "axis_probe.pitch_time": 0,
         "axis_probe.heading_time": 0,
         "axis_probe.slide_lr_time": 0,
         "axis_probe.slide_ud_time": 0,
         "axis_probe.throttle_time": 0
     }},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 0},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "post_delay_ms": 0},
 
-    {"action": "send_axis", "axis": 7, "axis_value": 0.5, "touch_source": true, "post_delay_ms": 0},
+    {"action": "send_axis", "axis": 7, "axis_value": 0.5, "post_delay_ms": 0},
     {"action": "assert", "expect": {
         "axis_probe.axis": 7,
-        "axis_probe.touch_source": true,
+        "axis_probe.touch_source": false,
         "axis_probe.processed": true,
-        "axis_probe.slide_ud_time": {"ne": 0},
+        "axis_probe.slide_ud_time": {"gt": 0},
         "axis_probe.pitch_time": 0,
         "axis_probe.heading_time": 0,
         "axis_probe.slide_lr_time": 0,
         "axis_probe.bank_time": 0,
         "axis_probe.throttle_time": 0
     }},
-    {"action": "send_axis", "axis": 7, "axis_value": 0.0, "touch_source": true, "post_delay_ms": 0},
+    {"action": "send_axis", "axis": 7, "axis_value": 0.0, "post_delay_ms": 0},
 
-    {"action": "log", "message": "=== TEST: Axis Routing Regression -- PASS ==="}
+    // D-pad mixer buttons route to the four slide actions.
+    {"action": "send_button", "button": 108, "held": 1},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {"slide_ud_time": {"ne": 0}}},
+    {"action": "send_button", "button": 108, "pressed": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {"slide_ud_time": 0}},
+
+    {"action": "send_button", "button": 109, "held": 1},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {"slide_ud_time": {"ne": 0}}},
+    {"action": "send_button", "button": 109, "pressed": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {"slide_ud_time": 0}},
+
+    {"action": "send_button", "button": 106, "held": 1},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {"slide_lr_time": {"ne": 0}}},
+    {"action": "send_button", "button": 106, "pressed": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {"slide_lr_time": 0}},
+
+    {"action": "send_button", "button": 107, "held": 1},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {"slide_lr_time": {"ne": 0}}},
+    {"action": "send_button", "button": 107, "pressed": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {"slide_lr_time": 0}},
+
+    // Reapplied held triggers must produce one edge, not a pulse every frame.
+    {"action": "send_axis", "axis": 5, "axis_value": 0.8, "post_delay_ms": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "axis_probe.sample_count": {"gte": 4},
+        "raw_joy_axis[5]": {"gt": 0},
+        "joy_buttons[21]": 1,
+        "axis_probe.axis_button_down_edges": 1,
+        "axis_probe.axis_button_up_edges": 0
+    }},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "raw_joy_axis[5]": 0,
+        "joy_buttons[21]": 0,
+        "axis_probe.axis_button_down_edges": 0,
+        "axis_probe.axis_button_up_edges": 1
+    }},
+
+    {"action": "send_axis", "axis": 4, "axis_value": 0.8, "post_delay_ms": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "axis_probe.sample_count": {"gte": 4},
+        "raw_joy_axis[4]": {"gt": 0},
+        "joy_buttons[19]": 1,
+        "axis_probe.axis_button_down_edges": 1,
+        "axis_probe.axis_button_up_edges": 0
+    }},
+    {"action": "send_axis", "axis": 4, "axis_value": 0.0, "post_delay_ms": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "raw_joy_axis[4]": 0,
+        "joy_buttons[19]": 0,
+        "axis_probe.axis_button_down_edges": 0,
+        "axis_probe.axis_button_up_edges": 1
+    }},
+
+    // A complete trigger tap during one stalled frame must retain both edges.
+    {"action": "send_axis", "axis": 5, "axis_value": 0.8,
+     "use_production_path": true, "pulse_before_drain": true,
+     "post_delay_ms": 0},
+    {"action": "wait_for", "timeout_ms": 3000, "expect": {
+        "axis_probe.valid": true,
+        "axis_probe.axis_button_down_edges": 1,
+        "axis_probe.axis_button_up_edges": 1,
+        "raw_joy_axis[5]": 0,
+        "joy_buttons[21]": 0,
+        "axis_mailbox.automation_active": false
+    }},
+
+    {"action": "log", "message": "=== TEST: Android Input Routing -- PASS ==="}
 ]

@@ -28,12 +28,30 @@
 #include "playsave.h"
 #include "kconfig.h"
 #ifdef ANDROID
+#include "android_axis_mailbox.h"
 #include "android_log.h"
+#ifdef INTROSPECT_ON
+#include "game_automate.h"
+#endif
 #endif
 
 int num_joysticks = 0;
 int joy_num_axes = 0;
 int joy_axis_button_deadzone[JOY_MAX_AXES];
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+static unsigned int joy_axisbutton_down_edges[JOY_MAX_BUTTONS];
+static unsigned int joy_axisbutton_up_edges[JOY_MAX_BUTTONS];
+
+unsigned int joy_axisbutton_get_down_edges(int button)
+{
+	return button >= 0 && button < JOY_MAX_BUTTONS ? joy_axisbutton_down_edges[button] : 0;
+}
+
+unsigned int joy_axisbutton_get_up_edges(int button)
+{
+	return button >= 0 && button < JOY_MAX_BUTTONS ? joy_axisbutton_up_edges[button] : 0;
+}
+#endif
 
 /* This struct is a "virtual" joystick, which includes all the axes
  * and buttons of every joystick found.
@@ -202,6 +220,13 @@ static int send_axis_button_event(unsigned button, event_type e)
 	d_event_joystickbutton event;
 
 	Joystick.button_state[button] = (e == EVENT_JOYSTICK_BUTTON_UP) ? 0 : 1;
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	if (e == EVENT_JOYSTICK_BUTTON_UP)
+		++joy_axisbutton_up_edges[button];
+	else
+		++joy_axisbutton_down_edges[button];
+	game_automate_axis_button_edge(e != EVENT_JOYSTICK_BUTTON_UP);
+#endif
 	event.type = e;
 	event.button = button;
 	con_printf(CON_DEBUG, "Sending event %sEVENT_JOYSTICK_BUTTON_DOWN, button %d\n",
@@ -277,6 +302,8 @@ void joy_init()
 	memset(joybutton_text, 0, JOY_MAX_BUTTONS * sizeof(char *));
 	for (i = 0; i < JOY_MAX_AXES; i++)
 		joy_axis_button_deadzone[i] = 38;
+	for (i = 0; i < ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT; ++i)
+		android_axis_mailbox_set_button_deadzone(i, 38);
 
 	{
 		static const char *axis_names[] = {"LX","LY","RX","RY","LT","RT","BK","SU"};
@@ -335,7 +362,7 @@ void joy_init()
 		}
 
 		num_joysticks = 1;
-		con_printf(CON_NORMAL, "android-joystick: registered virtual gamepad (8 axes, %d buttons)\n", Joystick.n_buttons);
+		con_printf(CON_NORMAL, "android-joystick: registered virtual gamepad (%d axes, %d buttons)\n", Joystick.n_axes, Joystick.n_buttons);
 	}
 
 	joy_num_axes = Joystick.n_axes;

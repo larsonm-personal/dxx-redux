@@ -35,6 +35,10 @@ extern void joy_button_handler(SDL_JoyButtonEvent *jbe);
 extern void joy_hat_handler(SDL_JoyHatEvent *jhe);
 extern int joy_axis_handler(SDL_JoyAxisEvent *jae);
 extern int joy_axisbutton_handler(SDL_JoyAxisEvent *jae);
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+extern unsigned int joy_axisbutton_get_down_edges(int button);
+extern unsigned int joy_axisbutton_get_up_edges(int button);
+#endif
 
 extern int joy_axis_button_deadzone[JOY_MAX_AXES];
 extern int joy_apply_deadzone(int value, int deadzone);
