@@ -85,12 +85,33 @@ route_position read_start_position(const level_metadata_scan_view &view)
 	return result;
 }
 
+route_trigger_kind normalize_trigger_kind(
+    const level_metadata_scan_view &view, int raw_type)
+{
+	if (raw_type == view.trigger_type_open_door)
+		return route_trigger_kind::open_door;
+	if (raw_type == view.trigger_type_exit)
+		return route_trigger_kind::exit;
+	if (raw_type == view.trigger_type_secret_exit)
+		return route_trigger_kind::secret_exit;
+	if (raw_type == view.trigger_type_illusion_off)
+		return route_trigger_kind::illusion_off;
+	if (raw_type == view.trigger_type_unlock_door)
+		return route_trigger_kind::unlock_door;
+	if (raw_type == view.trigger_type_open_wall)
+		return route_trigger_kind::open_wall;
+	if (raw_type == view.trigger_type_illusory_wall)
+		return route_trigger_kind::illusory_wall;
+	return route_trigger_kind::other;
+}
+
 std::uint64_t hash_topology(const route_topology &topology)
 {
 	stable_hasher hasher;
 	hasher.add_int(1);
 	hasher.add_int(static_cast<int>(topology.segments.size()));
 	hasher.add_int(static_cast<int>(topology.walls.size()));
+	hasher.add_int(static_cast<int>(topology.triggers.size()));
 	for (const auto &segment : topology.segments) {
 		hash_position(hasher, segment.center);
 		for (const auto &vertex : segment.vertices)
@@ -99,11 +120,23 @@ std::uint64_t hash_topology(const route_topology &topology)
 			hasher.add_int(side.child);
 			hasher.add_int(side.reverse_side);
 			hasher.add_int(side.wall);
+			hasher.add_int(static_cast<int>(side.opener_walls.size()));
+			for (const int opener_wall : side.opener_walls)
+				hasher.add_int(opener_wall);
 		}
 	}
 	for (const auto &wall : topology.walls) {
 		hasher.add_int(wall.segment);
 		hasher.add_int(wall.side);
+	}
+	for (const auto &trigger : topology.triggers) {
+		hasher.add_int(trigger.raw_type);
+		hasher.add_int(static_cast<int>(trigger.kind));
+		hasher.add_int(static_cast<int>(trigger.links.size()));
+		for (const auto &link : trigger.links) {
+			hasher.add_int(link.segment);
+			hasher.add_int(link.side);
+		}
 	}
 	return hasher.value();
 }
@@ -118,6 +151,8 @@ std::uint64_t hash_state(const route_state &state)
 	hasher.add_bool(state.control_center_destroyed);
 	hasher.add_int(static_cast<int>(state.segments.size()));
 	hasher.add_int(static_cast<int>(state.walls.size()));
+	hasher.add_int(static_cast<int>(state.triggers.size()));
+	hasher.add_int(static_cast<int>(state.objects.size()));
 	for (const auto &segment : state.segments) {
 		hasher.add_bool(segment.explored);
 		for (const auto &side : segment.sides) {
@@ -133,6 +168,22 @@ std::uint64_t hash_state(const route_state &state)
 		hasher.add_int(wall.keys);
 		hasher.add_int(wall.clip_flags);
 		hasher.add_int(wall.trigger);
+	}
+	for (const auto &trigger : state.triggers) {
+		hasher.add_int(trigger.flags);
+		hasher.add_bool(trigger.disabled);
+	}
+	for (const auto &object : state.objects) {
+		hasher.add_int(object.segment);
+		hasher.add_int(object.type);
+		hasher.add_int(object.id);
+		hasher.add_int(object.flags);
+		hasher.add_int(object.contains_type);
+		hasher.add_int(object.contains_id);
+		hasher.add_int(object.contains_count);
+		hash_position(hasher, object.position);
+		hasher.add_bool(object.boss);
+		hasher.add_bool(object.companion);
 	}
 	return hasher.value();
 }
@@ -157,12 +208,19 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 		return fail(problem, "invalid route snapshot segment count");
 	if (view.num_walls < 0 || view.num_walls > LEVEL_METADATA_MAX_WALLS)
 		return fail(problem, "invalid route snapshot wall count");
+	if (view.num_triggers < 0 ||
+	    view.num_triggers > LEVEL_METADATA_MAX_TRIGGERS)
+		return fail(problem, "invalid route snapshot trigger count");
 	if (!view.segment_child)
 		return fail(problem, "route snapshot requires segment adjacency");
+	const int object_count = view.object_count ? view.object_count(view.user) : 0;
+	if (object_count < 0 || object_count > LEVEL_METADATA_MAX_OBJECTS)
+		return fail(problem, "invalid route snapshot object count");
 
 	route_snapshot next;
 	next.topology.segments.resize(static_cast<std::size_t>(view.num_segments));
 	next.topology.walls.resize(static_cast<std::size_t>(view.num_walls));
+	next.topology.triggers.resize(static_cast<std::size_t>(view.num_triggers));
 	next.state.start_segment = view.start_segment;
 	next.state.start_position = read_start_position(view);
 	next.state.key_mask = view.initial_key_mask;
@@ -170,6 +228,8 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 	    view.initial_control_center_destroyed != 0;
 	next.state.segments.resize(static_cast<std::size_t>(view.num_segments));
 	next.state.walls.resize(static_cast<std::size_t>(view.num_walls));
+	next.state.triggers.resize(static_cast<std::size_t>(view.num_triggers));
+	next.state.objects.resize(static_cast<std::size_t>(object_count));
 
 	for (int segment_index = 0; segment_index < view.num_segments;
 	     ++segment_index) {
@@ -196,6 +256,17 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 			if (view.wall_num)
 				topology_side.wall = view.wall_num(
 				    view.user, segment_index, side_index);
+			if (view.triggered_side_opener_count &&
+			    view.triggered_side_opener_wall_num) {
+				const int opener_count = view.triggered_side_opener_count(
+				    view.user, segment_index, side_index);
+				if (opener_count < 0 || opener_count > view.num_walls)
+					return fail(problem, "invalid route snapshot opener count");
+				for (int opener = 0; opener < opener_count; ++opener)
+					topology_side.opener_walls.push_back(
+					    view.triggered_side_opener_wall_num(
+					        view.user, segment_index, side_index, opener));
+			}
 			state_side.flyable = view.side_is_flyable &&
 			                     view.side_is_flyable(
 			                         view.user, segment_index, side_index) != 0;
@@ -210,6 +281,58 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 			                          view.side_has_exit_trigger(
 			                              view.user, segment_index, side_index) != 0;
 		}
+	}
+
+	for (int trigger_index = 0; trigger_index < view.num_triggers;
+	     ++trigger_index) {
+		auto &topology_trigger = next.topology.triggers[trigger_index];
+		auto &state_trigger = next.state.triggers[trigger_index];
+		if (view.trigger_type)
+			topology_trigger.raw_type = view.trigger_type(
+			    view.user, trigger_index);
+		topology_trigger.kind = normalize_trigger_kind(
+		    view, topology_trigger.raw_type);
+		if (view.trigger_flags)
+			state_trigger.flags = view.trigger_flags(view.user, trigger_index);
+		state_trigger.disabled = view.trigger_flag_disabled != 0 &&
+		                         (state_trigger.flags &
+		                          view.trigger_flag_disabled) != 0;
+		const int link_count = view.trigger_link_count ? view.trigger_link_count(view.user, trigger_index) : 0;
+		if (link_count < 0 || link_count > LEVEL_METADATA_MAX_ROUTE_LINKS)
+			return fail(problem, "invalid route snapshot trigger link count");
+		for (int link_index = 0; link_index < link_count; ++link_index) {
+			route_topology_trigger_link link;
+			if (view.trigger_link_segment)
+				link.segment = view.trigger_link_segment(
+				    view.user, trigger_index, link_index);
+			if (view.trigger_link_side)
+				link.side = view.trigger_link_side(
+				    view.user, trigger_index, link_index);
+			topology_trigger.links.push_back(link);
+		}
+	}
+
+	for (int object_index = 0; object_index < object_count; ++object_index) {
+		auto &object = next.state.objects[object_index];
+		if (view.object_segment)
+			object.segment = view.object_segment(view.user, object_index);
+		if (view.object_type)
+			object.type = view.object_type(view.user, object_index);
+		if (view.object_id)
+			object.id = view.object_id(view.user, object_index);
+		if (view.object_flags)
+			object.flags = view.object_flags(view.user, object_index);
+		if (view.object_contains_type)
+			object.contains_type = view.object_contains_type(view.user, object_index);
+		if (view.object_contains_id)
+			object.contains_id = view.object_contains_id(view.user, object_index);
+		if (view.object_contains_count)
+			object.contains_count = view.object_contains_count(view.user, object_index);
+		object.position = read_position(view.object_position, view.user, object_index);
+		object.boss = view.object_is_boss &&
+		              view.object_is_boss(view.user, object_index) != 0;
+		object.companion = view.object_is_companion &&
+		                   view.object_is_companion(view.user, object_index) != 0;
 	}
 
 	for (int wall_index = 0; wall_index < view.num_walls; ++wall_index) {
@@ -279,6 +402,10 @@ extern "C" int route_snapshot_build_summary(
 		    static_cast<int>(snapshot.topology.segments.size());
 		summary->wall_count =
 		    static_cast<int>(snapshot.topology.walls.size());
+		summary->trigger_count =
+		    static_cast<int>(snapshot.topology.triggers.size());
+		summary->object_count =
+		    static_cast<int>(snapshot.state.objects.size());
 		summary->start_segment = snapshot.state.start_segment;
 		summary->key_mask = snapshot.state.key_mask;
 		summary->control_center_destroyed =

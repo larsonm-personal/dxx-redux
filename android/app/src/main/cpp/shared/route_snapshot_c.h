@@ -12,6 +12,8 @@ typedef struct route_snapshot_summary {
 	unsigned long long state_hash;
 	int segment_count;
 	int wall_count;
+	int trigger_count;
+	int object_count;
 	int start_segment;
 	int key_mask;
 	int control_center_destroyed;

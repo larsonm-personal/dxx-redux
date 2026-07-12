@@ -542,6 +542,28 @@ static const char *introspect_route_key_name(int key_index)
 	}
 }
 
+static json serialize_route_snapshot(const route_snapshot_summary &snapshot)
+{
+	char topology_hash[17];
+	char state_hash[17];
+	std::snprintf(topology_hash, sizeof(topology_hash), "%016llx",
+	              snapshot.topology_hash);
+	std::snprintf(state_hash, sizeof(state_hash), "%016llx",
+	              snapshot.state_hash);
+	return {
+		{ "topology_hash", topology_hash },
+		{ "state_hash", state_hash },
+		{ "segment_count", snapshot.segment_count },
+		{ "wall_count", snapshot.wall_count },
+		{ "trigger_count", snapshot.trigger_count },
+		{ "object_count", snapshot.object_count },
+		{ "start_segment", snapshot.start_segment },
+		{ "key_mask", snapshot.key_mask },
+		{ "control_center_destroyed",
+		  snapshot.control_center_destroyed != 0 },
+	};
+}
+
 static json serialize_level_metadata_route()
 {
 	const level_metadata_state *metadata = level_metadata_get_state();
@@ -558,24 +580,10 @@ static json serialize_level_metadata_route()
 	}
 	result["status"] = level_metadata_route_status_name(metadata->route_status);
 	result["problem"] = metadata->route_problem[0] ? metadata->route_problem : "";
-	if (level_metadata_get_canonical_route_snapshot(&snapshot)) {
-		char topology_hash[17];
-		char state_hash[17];
-		std::snprintf(topology_hash, sizeof(topology_hash), "%016llx",
-		              snapshot.topology_hash);
-		std::snprintf(state_hash, sizeof(state_hash), "%016llx",
-		              snapshot.state_hash);
-		result["canonical_snapshot"] = {
-			{ "topology_hash", topology_hash },
-			{ "state_hash", state_hash },
-			{ "segment_count", snapshot.segment_count },
-			{ "wall_count", snapshot.wall_count },
-			{ "start_segment", snapshot.start_segment },
-			{ "key_mask", snapshot.key_mask },
-			{ "control_center_destroyed",
-			  snapshot.control_center_destroyed != 0 },
-		};
-	}
+	if (level_metadata_get_canonical_route_snapshot(&snapshot))
+		result["canonical_snapshot"] = serialize_route_snapshot(snapshot);
+	if (level_metadata_get_live_route_snapshot(&snapshot))
+		result["live_snapshot"] = serialize_route_snapshot(snapshot);
 	count = metadata->route_step_count;
 	if (count < 0)
 		count = 0;

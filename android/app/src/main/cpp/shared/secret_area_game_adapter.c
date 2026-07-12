@@ -35,6 +35,8 @@ static secret_area_state Secret_area_state;
 static level_metadata_state Level_metadata_state;
 static route_snapshot_summary Level_metadata_canonical_snapshot;
 static int Level_metadata_canonical_snapshot_valid;
+static route_snapshot_summary Level_metadata_live_snapshot;
+static int Level_metadata_live_snapshot_valid;
 static int Level_metadata_route_start_objnum = -1;
 static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
@@ -961,6 +963,7 @@ static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objn
 	Level_metadata_game_context.start_objnum = start_objnum;
 	view->num_segments = Num_segments;
 	view->num_walls = Num_walls;
+	view->num_triggers = Num_triggers;
 	view->start_segment = secret_area_metadata_start(&Level_metadata_game_context, &start_segment, NULL) ? start_segment : Player_init[Player_num].segnum;
 	view->initial_key_mask = secret_area_current_key_mask();
 	view->initial_control_center_destroyed = Control_center_destroyed != 0;
@@ -979,10 +982,17 @@ static void level_metadata_rescan_current_level_internal(
 
 	Level_metadata_route_start_objnum = start_objnum;
 	Level_metadata_route_start_seg = view->start_segment;
-	if (!route_only)
+	if (!route_only) {
+		Level_metadata_live_snapshot_valid = 0;
 		Level_metadata_canonical_snapshot_valid = route_snapshot_build_summary(
 		    view,
 		    &Level_metadata_canonical_snapshot,
+		    NULL,
+		    0);
+	} else
+		Level_metadata_live_snapshot_valid = route_snapshot_build_summary(
+		    view,
+		    &Level_metadata_live_snapshot,
 		    NULL,
 		    0);
 	if (!route_only)
@@ -1132,6 +1142,14 @@ int level_metadata_get_canonical_route_snapshot(
 	if (!summary || !Level_metadata_canonical_snapshot_valid)
 		return 0;
 	*summary = Level_metadata_canonical_snapshot;
+	return 1;
+}
+
+int level_metadata_get_live_route_snapshot(route_snapshot_summary *summary)
+{
+	if (!summary || !Level_metadata_live_snapshot_valid)
+		return 0;
+	*summary = Level_metadata_live_snapshot;
 	return 1;
 }
 

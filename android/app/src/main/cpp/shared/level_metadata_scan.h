@@ -7,6 +7,8 @@ extern "C" {
 
 #define LEVEL_METADATA_MAX_SEGMENTS                         9000
 #define LEVEL_METADATA_MAX_WALLS                            254
+#define LEVEL_METADATA_MAX_TRIGGERS                         100
+#define LEVEL_METADATA_MAX_OBJECTS                          1000
 #define LEVEL_METADATA_MAX_SIDES                            6
 #define LEVEL_METADATA_MAX_TARGETS                          512
 #define LEVEL_METADATA_MAX_ROUTE_STEPS                      96
@@ -83,6 +85,7 @@ typedef struct level_metadata_route_step {
 typedef struct level_metadata_scan_view {
 	int num_segments;
 	int num_walls;
+	int num_triggers;
 	int start_segment;
 	int initial_key_mask;
 	int initial_control_center_destroyed;
