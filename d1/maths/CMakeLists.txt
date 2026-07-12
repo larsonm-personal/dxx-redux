@@ -77,6 +77,12 @@ if(NOT ANDROID)
     target_link_libraries(test_level_metadata_scan PRIVATE ${DXX_TARGET_PREFIX}maths)
     target_include_directories(test_level_metadata_scan PRIVATE ../../android/app/src/main/cpp/shared)
 
+    add_executable(test_route_snapshot
+        ../../android/tests/test_route_snapshot.cpp
+        ../../android/app/src/main/cpp/shared/route_snapshot.cpp)
+    target_compile_features(test_route_snapshot PRIVATE cxx_std_11)
+    target_include_directories(test_route_snapshot PRIVATE ../../android/app/src/main/cpp/shared)
+
     add_executable(test_input_demo_controls
         ../../android/tests/test_input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp)

@@ -17,6 +17,7 @@
 #include "player.h"
 #include "powerup.h"
 #include "robot.h"
+#include "route_snapshot_c.h"
 #include "secret_area_item_names.h"
 #include "segment.h"
 #include "automap.h"
@@ -32,6 +33,8 @@
 
 static secret_area_state Secret_area_state;
 static level_metadata_state Level_metadata_state;
+static route_snapshot_summary Level_metadata_canonical_snapshot;
+static int Level_metadata_canonical_snapshot_valid;
 static int Level_metadata_route_start_objnum = -1;
 static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
@@ -977,6 +980,12 @@ static void level_metadata_rescan_current_level_internal(
 	Level_metadata_route_start_objnum = start_objnum;
 	Level_metadata_route_start_seg = view->start_segment;
 	if (!route_only)
+		Level_metadata_canonical_snapshot_valid = route_snapshot_build_summary(
+		    view,
+		    &Level_metadata_canonical_snapshot,
+		    NULL,
+		    0);
+	if (!route_only)
 		level_metadata_scan_level(view, &Level_metadata_state);
 	if (route_only) {
 		if (unexplored_result)
@@ -1115,6 +1124,15 @@ const secret_area_state *secret_area_get_state(void)
 const level_metadata_state *level_metadata_get_state(void)
 {
 	return &Level_metadata_state;
+}
+
+int level_metadata_get_canonical_route_snapshot(
+    route_snapshot_summary *summary)
+{
+	if (!summary || !Level_metadata_canonical_snapshot_valid)
+		return 0;
+	*summary = Level_metadata_canonical_snapshot;
+	return 1;
 }
 
 int secret_area_note_segment_entered(int segnum)
