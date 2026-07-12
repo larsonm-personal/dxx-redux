@@ -25,6 +25,13 @@ struct route_search_result {
 	std::string problem;
 };
 
+struct route_search_options {
+	bool optimistic = false;
+	bool prioritize_progress = true;
+	route_key_requirement forbidden_missing_key =
+	    route_key_requirement::none;
+};
+
 struct route_path_result {
 	bool reached = false;
 	double distance = 0.0;
@@ -80,6 +87,12 @@ route_search_result search_routes(
     const route_progress_state &progress,
     bool optimistic);
 
+route_search_result search_routes(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    const route_search_options &options);
+
 route_progress_state initial_route_progress_state(
     const route_snapshot &snapshot,
     const route_query &query);
@@ -103,6 +116,13 @@ route_target_selection select_route_target(
     const route_snapshot &snapshot,
     const route_query &query,
     const route_progress_state &progress,
+    const std::vector<route_target> &targets);
+
+route_target_selection select_key_target(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    route_key_requirement key,
     const std::vector<route_target> &targets);
 
 } // namespace dxx_route

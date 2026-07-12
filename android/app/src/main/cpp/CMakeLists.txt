@@ -613,8 +613,10 @@ target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl tsf)
 if(OPENGL)
     target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID HAVE_LIBPNG)
     target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv3)
-    target_sources(${DXX_TARGET_PREFIX}arch_ogl
-                   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/gles3_shim.c)
+    target_sources(
+        ${DXX_TARGET_PREFIX}arch_ogl
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/gles3_shim.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_egl_surface.c)
     target_include_directories(
         ${DXX_TARGET_PREFIX}arch_ogl PRIVATE ${D1_SRC}/arch/include ${D1_SRC}/main
                                              ${D1_SRC}/include ${CMAKE_CURRENT_SOURCE_DIR}/shared)
@@ -756,8 +758,10 @@ target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl tsf)
 if(OPENGL)
     target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID HAVE_LIBPNG)
     target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv3)
-    target_sources(${DXX_TARGET_PREFIX}arch_ogl
-                   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/gles3_shim.c)
+    target_sources(
+        ${DXX_TARGET_PREFIX}arch_ogl
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/gles3_shim.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_egl_surface.c)
     target_include_directories(
         ${DXX_TARGET_PREFIX}arch_ogl PRIVATE ${D2_SRC}/arch/include ${D2_SRC}/main
                                              ${D2_SRC}/include ${CMAKE_CURRENT_SOURCE_DIR}/shared)

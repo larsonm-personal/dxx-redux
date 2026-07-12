@@ -45,6 +45,7 @@ extern "C" {
 #include "overlay_ringbuf.h"
 #include "android_save_meta.h"
 #include "android_axis_mailbox.h"
+#include "android_graphics_options.h"
 #include "android_log.h"
 #include "android_texture_debug.h"
 #include "android_meta_actions.h"
@@ -3181,6 +3182,20 @@ extern "C" void game_automate_tick(void)
 			else if (s.field == "merged_wall_force_two_pass")
 				g_merged_wall_force_two_pass =
 				    (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) ? 1 : 0;
+			else if (s.field == "graphics_option") {
+				size_t separator = s.value.find(':');
+				if (separator == std::string::npos || separator == 0 ||
+				    separator + 1 >= s.value.size()) {
+					stop_script_fail("graphics_option: expected name:value");
+					break;
+				}
+				std::string name = s.value.substr(0, separator);
+				int value = (int) strtol(s.value.c_str() + separator + 1, NULL, 10);
+				if (!android_graphics_set_option(name.c_str(), value, 0)) {
+					stop_script_fail("graphics_option: unknown option");
+					break;
+				}
+			}
 			else if (s.field == "clear_robots") {
 				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) {
 					char reason[128];

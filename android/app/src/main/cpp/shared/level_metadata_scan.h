@@ -276,6 +276,11 @@ int level_metadata_scan_route_select_targets_shadow(
     const level_metadata_route_target_shadow *targets,
     int count,
     level_metadata_route_target_selection_shadow *selection);
+int level_metadata_scan_route_select_key_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
+    int key_index,
+    level_metadata_route_target_selection_shadow *selection);
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

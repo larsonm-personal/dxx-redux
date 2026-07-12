@@ -11,12 +11,12 @@
 - Keep desktop behavior and upstream compatibility intact
 
 ## Campaign phases
-- [ ] Re-read and synthesize all prior D1/D2 shrink studies, execution plans, and tranche reports
-- [ ] Refresh the live `upstream/main` diff inventory for original D1/D2 files
-- [ ] Build a broad candidate catalog with concrete blocks, payoff, coupling, risk, target helper, and tests
-- [ ] Reconcile stale historical candidates against already-completed work and current source growth
-- [ ] Finish and validate the active `gamecntl.c` save/load dispatch tranche
-- [ ] Rank remaining candidates by net upstream reduction, semantic confidence, and validation cost
+- [x] Re-read and synthesize all prior D1/D2 shrink studies, execution plans, and tranche reports
+- [x] Refresh the live `upstream/main` diff inventory for original D1/D2 files
+- [x] Build a broad candidate catalog with concrete blocks, payoff, coupling, risk, target helper, and tests
+- [x] Reconcile stale historical candidates against already-completed work and current source growth
+- [x] Finish and validate the active `gamecntl.c` save/load dispatch tranche
+- [x] Rank remaining candidates by net upstream reduction, semantic confidence, and validation cost
 - [ ] Process high-value low/medium-risk candidates one tranche at a time
 - [ ] Re-measure and rerank after every completed tranche
 - [ ] Stop only when the remaining good seams are approximately 20 to 40 lines each or are too coupled to justify extraction
@@ -43,3 +43,16 @@
 - D1/D2 aggregate before the active `gamecntl.c` tranche: 341 files, +49969/-3880 against `upstream/main`
 - Active `gamecntl.c` candidate baseline: D1 +455/-9, D2 +728/-13
 - Active extraction target: 310 additions from the paired dispatch bodies, plus safe redundant include cleanup
+
+## Campaign refresh outcome
+- Working catalog: `d1d2_diff_candidate_catalog_20260711.md`
+- Completed active game-control reduction: 324 additions from inherited files
+- Completed DXA-mask reuse: 37 additions removed from D2 OGL
+- Completed masked bitmap scaler move: 97 additions removed and two inherited headers returned to the upstream form
+- Completed OGL runtime texture controls: 302 inherited additions removed, with both GL-thread dispatch paths exercised in both games
+- Completed coop multi-status move: 414 inherited additions removed, with all six Android game/ABI targets linked
+- Completed Android EGL lifecycle: 326 inherited additions removed; both games passed background/resume with recreated surfaces
+- Completed automap metadata overlay: 313 inherited additions removed; objective and secret labels passed focused dual-game coverage
+- Completed Android scaled linear font renderer: 252 inherited additions removed; readability and scale regressions passed
+- Stable aggregate before the active input-demo-probe tranche: 339 files, `+48217/-3887`, a reduction of 1,741 additions from the refreshed `+49958/-3886` inventory
+- Current selected tranche: staged input-demo diagnostic centralization, beginning with stateless collision and AI probes

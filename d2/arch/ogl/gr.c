@@ -56,8 +56,7 @@
 #include "oglprog.h"
 
 #ifdef ANDROID
-#include <android/log.h>
-#include "android_crash_handler.h"
+#include "android_egl_surface.h"
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -65,10 +64,7 @@
 #else
 #ifdef OGLES
 #include <EGL/egl.h>
-#ifdef ANDROID
-#include <android/native_window.h>
-#include "gles3_shim.h"
-#else
+#ifndef ANDROID
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <SDL_syswm.h>
@@ -121,61 +117,22 @@ bool TestEGLError(char* pszLocation)
 
 #if defined(OGLES) && defined(ANDROID)
 
-static int g_egl_recreate_count = 0;
+static struct android_egl_surface_state ogl_android_egl_state = {
+	&eglDisplay,
+	&eglConfig,
+	&eglSurface,
+	&eglContext,
+	ogl_smash_texture_list_internal,
+	ogl_cache_level_textures,
+	0,
+	0,
+	0,
+	0
+};
 
 int ogl_get_egl_recreate_count(void)
 {
-	return g_egl_recreate_count;
-}
-
-/*
- * Recreate the EGL surface after the ANativeWindow has been replaced
- * (e.g. after the app was backgrounded and resumed).  Preserves the
- * EGL context so textures remain valid.  If the context was also lost
- * (rare, memory-pressure case), does a full re-init.
- */
-static void ogl_android_recreate_egl_surface(void)
-{
-	extern ANativeWindow *android_surface_get_native_window(void);
-	ANativeWindow *win = android_surface_get_native_window();
-	if (!win) return;
-
-	con_printf(CON_DEBUG, "EGL: recreating surface after resume\n");
-
-	/* Detach the old surface from the context */
-	eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, eglContext);
-
-	if (eglSurface != EGL_NO_SURFACE) {
-		eglDestroySurface(eglDisplay, eglSurface);
-		eglSurface = EGL_NO_SURFACE;
-	}
-
-	/* Match format and create new surface */
-	EGLint format;
-	eglGetConfigAttrib(eglDisplay, eglConfig, EGL_NATIVE_VISUAL_ID, &format);
-	ANativeWindow_setBuffersGeometry(win, grd_curscreen->sc_w, grd_curscreen->sc_h, format);
-
-	EGLint winAttribs[] = { EGL_RENDER_BUFFER, EGL_BACK_BUFFER, EGL_NONE, EGL_NONE };
-	eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, (EGLNativeWindowType)win, winAttribs);
-	if (eglSurface == EGL_NO_SURFACE) {
-		con_printf(CON_URGENT, "EGL: failed to create new surface after resume\n");
-		return;
-	}
-
-	if (!eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
-		/* Context was lost — full re-init */
-		con_printf(CON_URGENT, "EGL: context lost during resume, doing full re-init\n");
-		EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 1, EGL_NONE, EGL_NONE };
-		eglDestroyContext(eglDisplay, eglContext);
-		eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, contextAttribs);
-		eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
-		ogl_smash_texture_list_internal();
-		ogl_cache_level_textures();
-		con_printf(CON_DEBUG, "EGL: full re-init complete, textures re-cached\n");
-	} else {
-		con_printf(CON_DEBUG, "EGL: surface recreated, context preserved\n");
-	}
-	g_egl_recreate_count++;
+	return android_egl_surface_get_recreate_count(&ogl_android_egl_state);
 }
 #endif /* OGLES && ANDROID */
 
@@ -183,30 +140,10 @@ void ogl_swap_buffers_internal(void)
 {
 #ifdef OGLES
 #ifdef ANDROID
-	{
-		static int s_swap_count = 0;
-		int trace_swap = 0;
-		extern int android_surface_is_paused(void);
-		extern int android_surface_egl_needs_recreate(void);
-		s_swap_count++;
-		trace_swap = (s_swap_count <= 20 || (s_swap_count % 60) == 0);
-		if (trace_swap)
-			crash_breadcrumb_v("ogl_swap_buffers_internal #%d", s_swap_count);
-		if (android_surface_is_paused()) {
-			if (trace_swap)
-				crash_breadcrumb("ogl_swap: paused");
-			return;
-		}
-		if (android_surface_egl_needs_recreate()) {
-			if (trace_swap)
-				crash_breadcrumb("ogl_swap: recreate_egl");
-			ogl_android_recreate_egl_surface();
-		}
-		if (trace_swap)
-			crash_breadcrumb("ogl_swap: eglSwapBuffers");
-	}
-#endif
+	android_egl_surface_swap(&ogl_android_egl_state);
+#else
 	eglSwapBuffers(eglDisplay, eglSurface);
+#endif
 #else
 	SDL_GL_SwapBuffers();
 #endif
@@ -387,7 +324,6 @@ int ogl_init_window(int x, int y)
 	SDL_SysWMinfo info;
 	Window    x11Window = 0;
 	Display*  x11Display = 0;
-#endif
 	EGLint    ver_maj, ver_min;
 	EGLint configAttribs[] =
 	{
@@ -396,31 +332,17 @@ int ogl_init_window(int x, int y)
 		EGL_BLUE_SIZE, 5,
 		EGL_DEPTH_SIZE, 16,
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-#ifdef ANDROID
-		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
-#else
 		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES_BIT,
-#endif
 		EGL_NONE, EGL_NONE
 	};
 
-#ifdef ANDROID
-	/* android port: RGBA8888 framebuffer when ColorDepth=1 in descent.cfg */
-	if (GameCfg.ColorDepth == 1) {
-		configAttribs[1] = 8; /* RED */
-		configAttribs[3] = 8; /* GREEN */
-		configAttribs[5] = 8; /* BLUE */
-	}
-	// Request an OpenGL ES 3.0 context on Android (GLES3 shim)
-        EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE, EGL_NONE };
-#else
 	// explicitely request an OpenGL ES 1.x context
         EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 1, EGL_NONE, EGL_NONE };
-#endif
 	// explicitely request a doublebuffering window
         EGLint winAttribs[] = { EGL_RENDER_BUFFER, EGL_BACK_BUFFER, EGL_NONE, EGL_NONE };
 
 	int iConfigs;
+#endif
 #endif // OGLES
 
 	if (gl_initialized)
@@ -462,72 +384,9 @@ int ogl_init_window(int x, int y)
 #ifdef OGLES
 
 #ifdef ANDROID
-	/* Android: get the ANativeWindow from android_surface.c and create
-	 * an EGL surface directly on it.  No X11, no SDL video mode needed. */
 	ogles_destroy();
-
-	{
-		extern ANativeWindow *android_surface_get_native_window(void);
-		ANativeWindow *win = android_surface_get_native_window();
-
-		eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-		if (eglDisplay == EGL_NO_DISPLAY) {
-			con_printf(CON_URGENT, "EGL: Error querying EGL Display\n");
-		}
-
-		if (!eglInitialize(eglDisplay, &ver_maj, &ver_min)) {
-			con_printf(CON_URGENT, "EGL: Error initializing EGL\n");
-		} else {
-			con_printf(CON_DEBUG, "EGL: Initialized, version: major %i minor %i\n", ver_maj, ver_min);
-		}
-
-		if (!eglChooseConfig(eglDisplay, configAttribs, &eglConfig, 1, &iConfigs) || (iConfigs != 1)) {
-			con_printf(CON_URGENT, "EGL: Error choosing config\n");
-		} else {
-			con_printf(CON_DEBUG, "EGL: config chosen\n");
-			/* android port: query actual color depth from chosen config */
-			extern int ogl_color_depth;
-			EGLint r = 0, g = 0, b = 0;
-			eglGetConfigAttrib(eglDisplay, eglConfig, EGL_RED_SIZE, &r);
-			eglGetConfigAttrib(eglDisplay, eglConfig, EGL_GREEN_SIZE, &g);
-			eglGetConfigAttrib(eglDisplay, eglConfig, EGL_BLUE_SIZE, &b);
-			ogl_color_depth = r + g + b;
-			con_printf(CON_DEBUG, "EGL: color depth R%d G%d B%d (%d-bit)\n", r, g, b, ogl_color_depth);
-		}
-
-		if (win) {
-			/* Match the EGL surface format and set the buffer size to
-			 * the game resolution.  The Android compositor scales the
-			 * buffer to fill the physical display automatically. */
-			EGLint format;
-			eglGetConfigAttrib(eglDisplay, eglConfig, EGL_NATIVE_VISUAL_ID, &format);
-			ANativeWindow_setBuffersGeometry(win, x, y, format);
-
-			eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, (EGLNativeWindowType)win, winAttribs);
-		}
-
-		if (eglSurface == EGL_NO_SURFACE) {
-			con_printf(CON_URGENT, "EGL: Error creating window surface\n");
-		} else {
-			con_printf(CON_DEBUG, "EGL: Created window surface\n");
-		}
-
-		eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, contextAttribs);
-		if (eglContext == EGL_NO_CONTEXT) {
-			con_printf(CON_URGENT, "EGL: Error creating context\n");
-		} else {
-			con_printf(CON_DEBUG, "EGL: Created context\n");
-		}
-
-		eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
-		if (!TestEGLError("eglMakeCurrent")) {
-			con_printf(CON_URGENT, "EGL: Error making current\n");
-		} else {
-			con_printf(CON_DEBUG, "EGL: made context current\n");
-		}
-
-		gles3_shim_init();
-	}
+	android_egl_surface_initialize(&ogl_android_egl_state, x, y,
+		GameCfg.ColorDepth == 1, &ogl_color_depth);
 
 #else /* !ANDROID OGLES path (RPI / X11) */
 
@@ -728,10 +587,7 @@ void ogl_get_verinfo(void)
 		con_printf(CON_VERBOSE, "GL_MAX_TEXTURE_SIZE: %d, using: %d\n", mts, ogl_max_texture_size);
 	}
 #ifdef ANDROID
-	{
-		const char *renderer = (const char *) glGetString(GL_RENDERER);
-		con_printf(CON_NORMAL, "GL_RENDERER: %s", renderer ? renderer : "(null)");
-	}
+	android_egl_surface_log_renderer();
 #endif
 #ifndef OGLES
 	gl_vendor = (const char *) glGetString (GL_VENDOR);
@@ -779,27 +635,8 @@ void ogl_get_verinfo(void)
 		GameCfg.TexFilt = 2;
 #endif
 #ifdef ANDROID
-	/* android port: query anisotropic filtering support on GLES 3.0 */
-	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &ogl_maxanisotropy);
-	__android_log_print(ANDROID_LOG_INFO, "DXX",
-	    "anisotropy: max=%.0f", ogl_maxanisotropy);
-	/* android port: query max MSAA sample count */
-	{
-		extern int ogl_msaa_max_samples;
-		GLint max_s = 0;
-		glGetIntegerv(0x8D57, &max_s); /* GL_MAX_SAMPLES */
-		ogl_msaa_max_samples = (int)max_s;
-		__android_log_print(ANDROID_LOG_INFO, "DXX",
-		    "msaa: max_samples=%d", ogl_msaa_max_samples);
-	}
-	/* android port: check for GPU timer extension */
-	{
-		extern int ogl_gpu_timer_available;
-		const char *exts = (const char *)glGetString(GL_EXTENSIONS);
-		ogl_gpu_timer_available = (exts && strstr(exts, "GL_EXT_disjoint_timer_query")) ? 1 : 0;
-		__android_log_print(ANDROID_LOG_INFO, "DXX",
-		    "gpu_timer: %s", ogl_gpu_timer_available ? "available" : "not available");
-	}
+	android_egl_surface_query_capabilities(&ogl_maxanisotropy,
+		&ogl_msaa_max_samples, &ogl_gpu_timer_available);
 #endif
 }
 

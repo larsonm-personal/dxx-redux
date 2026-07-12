@@ -282,6 +282,53 @@ void android_menu_scale_end_scaled_draw(const android_menu_scale_draw_state *sta
 	FNTScaleY = state->fnt_scale_y;
 }
 
+static void scale_line_masked(unsigned char *in, unsigned char *out, int ilen, int olen)
+{
+	int a = olen / ilen, b = olen % ilen;
+	int c = 0, i;
+	unsigned char *end = out + olen;
+
+	while (out < end) {
+		i = a;
+		c += b;
+		if (c >= ilen) {
+			c -= ilen;
+			goto inside_m;
+		}
+		while (--i >= 0) {
+inside_m:
+			if (*in != 255)
+				*out = *in;
+			out++;
+		}
+		in++;
+	}
+}
+
+static void bitmap_scale_to_masked(grs_bitmap *src, grs_bitmap *dst)
+{
+	unsigned char *s = src->bm_data;
+	unsigned char *d = dst->bm_data;
+	int h = src->bm_h;
+	int a = dst->bm_h / h, b = dst->bm_h % h;
+	int c = 0, i, y;
+
+	for (y = 0; y < h; y++) {
+		i = a;
+		c += b;
+		if (c >= h) {
+			c -= h;
+			goto inside2;
+		}
+		while (--i >= 0) {
+inside2:
+			scale_line_masked(s, d, src->bm_w, dst->bm_w);
+			d += dst->bm_rowsize;
+		}
+		s += src->bm_rowsize;
+	}
+}
+
 void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
                                     const android_menu_scale_result *result, int masked)
 {
@@ -299,7 +346,7 @@ void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
 		if (masked)
 			memset(scaled.bm_data, TRANSPARENCY_COLOR, result->dst.w * result->dst.h);
 		if (masked)
-			gr_bitmap_scale_to_masked(bitmap, &scaled);
+			bitmap_scale_to_masked(bitmap, &scaled);
 		else
 			gr_bitmap_scale_to(bitmap, &scaled);
 		old_flags = scaled.bm_flags;
@@ -326,7 +373,7 @@ void android_menu_scale_blit_bitmap(grs_bitmap *bitmap,
 		                                       result->dst.x, result->dst.y,
 		                                       result->dst.w, result->dst.h);
 		if (masked)
-			gr_bitmap_scale_to_masked(bitmap, &sub->cv_bitmap);
+			bitmap_scale_to_masked(bitmap, &sub->cv_bitmap);
 		else
 			gr_bitmap_scale_to(bitmap, &sub->cv_bitmap);
 		gr_free_sub_canvas(sub);

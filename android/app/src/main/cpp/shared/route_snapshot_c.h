@@ -7,6 +7,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#pragma pack(push, 8)
+#endif
+
 typedef struct route_snapshot_summary {
 	unsigned long long topology_hash;
 	unsigned long long state_hash;
@@ -31,6 +35,10 @@ typedef struct route_snapshot_summary {
 	unsigned int object_generation;
 	unsigned int automap_generation;
 } route_snapshot_summary;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 int route_snapshot_build_summary(const level_metadata_scan_view *view,
                                  route_snapshot_summary *summary,

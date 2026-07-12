@@ -63,7 +63,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "d1_in_d2.h"
 #include "d1_in_d2_semantics.h"
 #include "input_demo_hooks.h"
-#include "input_demo_debug_logging.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -305,89 +304,6 @@ void make_nearby_robot_snipe(void)
 }
 
 int Ai_last_missile_camera = -1;
-
-static int input_demo_trace_ai_schedule_probe_active(object *obj, ai_local *ailp,
-	fix dist_to_player, int previous_visibility, int obj_ref)
-{
-	if (!input_demo_trace_ai_visibility_active(obj) || !ailp)
-		return 0;
-	if (obj_ref < 0)
-		return 1;
-	if (ailp->player_awareness_type >= PA_PLAYER_COLLISION)
-		return 1;
-	if ((dist_to_player <= 0) || (dist_to_player >= F1_0*120))
-		return 0;
-	return previous_visibility ||
-		(ailp->player_awareness_type >= PA_NEARBY_ROBOT_FIRED) ||
-		((obj_ref & 3) == 0);
-}
-
-static void input_demo_log_ai_schedule_probe(const char *label, object *obj, ai_static *aip,
-	ai_local *ailp, fix dist_to_player, int previous_visibility, int obj_ref)
-{
-	char probe[512];
-
-	if (!input_demo_trace_ai_schedule_probe_active(obj, ailp, dist_to_player,
-		previous_visibility, obj_ref) || !obj || !aip)
-		return;
-
-	input_demo_log_ai_schedule_record_probe(label, obj, aip, ailp,
-		previous_visibility, dist_to_player, obj_ref);
-
-	snprintf(probe, sizeof(probe),
-		"step=%s behavior=%d mode=%d cur=%d goal=%d gun=%d prev_vis=%d aware=%d aware_time=%d skip=%d since=%d dist=%d obj_ref=%d goal_seg=%d path=%d/%d retry=%d retry_chain=%d rapid=%d next_fire=%d next_fire2=%d",
-		label,
-		aip->behavior,
-		ailp->mode,
-		aip->CURRENT_STATE,
-		aip->GOAL_STATE,
-		aip->CURRENT_GUN,
-		previous_visibility,
-		ailp->player_awareness_type,
-		ailp->player_awareness_time,
-		aip->SKIP_AI_COUNT,
-		ailp->time_since_processed,
-		dist_to_player,
-		obj_ref,
-		ailp->goal_segment,
-		aip->cur_path_index,
-		aip->path_length,
-		ailp->retry_count,
-		ailp->consecutive_retries,
-		ailp->rapidfire_count,
-		ailp->next_fire,
-		ailp->next_fire2);
-	input_demo_append_replay_probe_message("probe_ai_schedule", obj, probe);
-
-	if (!input_demo_debug_is_enabled())
-		return;
-
-	con_printf(CON_NORMAL,
-		"Input demo AI schedule: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d behavior=%d mode_ai=%d prev_vis=%d aware=%d aware_time=%d skip=%d since=%d dist=%d obj_ref=%d goal_seg=%d path=%d/%d retry=%d retry_chain=%d rapid=%d\n",
-		input_demo_debug_activity_mode_name(),
-		input_demo_trace_frame_index(),
-		(long long)GameTime64,
-		label,
-		(int)(obj - Objects),
-		obj->signature,
-		obj->id,
-		obj->segnum,
-		aip->behavior,
-		ailp->mode,
-		previous_visibility,
-		ailp->player_awareness_type,
-		ailp->player_awareness_time,
-		aip->SKIP_AI_COUNT,
-		ailp->time_since_processed,
-		dist_to_player,
-		obj_ref,
-		ailp->goal_segment,
-		aip->cur_path_index,
-		aip->path_length,
-		ailp->retry_count,
-		ailp->consecutive_retries,
-		ailp->rapidfire_count);
-}
 
 static void d1_in_d2_ai_turn_randomly(vms_vector *vec_to_player, object *obj, fix rate,
 	int previous_visibility)

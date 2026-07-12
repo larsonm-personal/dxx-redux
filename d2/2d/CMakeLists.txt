@@ -7,6 +7,7 @@ add_library(${DXX_TARGET_PREFIX}2d STATIC
 	circle.c
 	disc.c
 	font.c
+	../../android/app/src/main/cpp/shared/android_font_scale.c
 	gpixel.c
 	line.c
 	palette.c

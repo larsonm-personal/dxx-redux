@@ -2512,6 +2512,47 @@ int level_metadata_scan_route_targets_shadow(
 	return 1;
 }
 
+int level_metadata_scan_route_select_key_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
+    int key_index,
+    level_metadata_route_target_selection_shadow *selection)
+{
+	metadata_route_context route;
+	metadata_route_path best_path;
+	int index;
+
+	if (!view || !progress || !selection || key_index < 0 || key_index >= 3 ||
+	    !valid_segment(view, progress->current_seg))
+		return 0;
+	selection->selected_index = -1;
+	selection->distance = DBL_MAX;
+	selection->progress_weight = INT_MAX;
+	if (((progress->key_mask | progress->key_in_progress) &
+	     key_bit_for_index(key_index)) != 0)
+		return 1;
+	collect_segment_centers(view);
+	collect_route_key_targets(view);
+	metadata_route_context_from_progress_shadow(&route, progress);
+	metadata_route_clear_path(&best_path);
+	for (index = 0; index < key_target_count[key_index]; ++index) {
+		metadata_route_path candidate;
+		if (!metadata_route_find_path_forbidden_key(
+		        view, &route, key_targets[key_index][index].seg,
+		        key_targets[key_index][index].pos, 1, key_index, &candidate))
+			continue;
+		if (candidate.distance >= best_path.distance)
+			continue;
+		selection->selected_index = index;
+		best_path = candidate;
+	}
+	if (selection->selected_index >= 0) {
+		selection->distance = best_path.distance;
+		selection->progress_weight = best_path.progress_weight;
+	}
+	return 1;
+}
+
 static void collect_guidebot_info(const level_metadata_scan_view *view, level_metadata_state *state)
 {
 	metadata_route_context route;

@@ -653,6 +653,16 @@ static json serialize_level_metadata_route()
 			{ "first_shared_selection_progress_weight", planner_shadow.first_shared_selection_progress_weight },
 			{ "first_legacy_selection_distance", planner_shadow.first_legacy_selection_distance },
 			{ "first_shared_selection_distance", planner_shadow.first_shared_selection_distance },
+			{ "compared_key_selection_count", planner_shadow.compared_key_selection_count },
+			{ "key_selection_mismatch_count", planner_shadow.key_selection_mismatch_count },
+			{ "first_key_selection_progress_state", planner_shadow.first_key_selection_progress_state },
+			{ "first_key_selection_key", planner_shadow.first_key_selection_key },
+			{ "first_legacy_key_selection_index", planner_shadow.first_legacy_key_selection_index },
+			{ "first_shared_key_selection_index", planner_shadow.first_shared_key_selection_index },
+			{ "first_legacy_key_selection_progress_weight", planner_shadow.first_legacy_key_selection_progress_weight },
+			{ "first_shared_key_selection_progress_weight", planner_shadow.first_shared_key_selection_progress_weight },
+			{ "first_legacy_key_selection_distance", planner_shadow.first_legacy_key_selection_distance },
+			{ "first_shared_key_selection_distance", planner_shadow.first_shared_key_selection_distance },
 		};
 	}
 	count = metadata->route_step_count;

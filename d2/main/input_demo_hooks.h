@@ -50,6 +50,21 @@ void input_demo_log_player_weapon_hit(const char *mode_name, unsigned int frame_
 void input_demo_log_replay_powerup_probe_before(struct object *powerup, int energy_before, int shields_before);
 void input_demo_log_replay_powerup_probe_after(struct object *powerup, int powerup_used, int energy_before, int energy_after, int shields_before, int shields_after);
 void input_demo_log_replay_object_object_collision(struct object *a, struct object *b, const struct vms_vector *collision_point);
+void input_demo_log_replay_collision_pair(const char *kind,
+	struct object *obj0, struct object *obj1,
+	const struct vms_vector *collision_point);
+void input_demo_log_replay_weapon_robot_resolution(const char *kind,
+	struct object *weapon, struct object *robot,
+	const struct vms_vector *collision_point, int32_t damage,
+	int32_t robot_old_shields, int robot_died);
+void input_demo_log_weapon_robot_path_event(const char *step,
+	struct object *weapon, struct object *robot,
+	const struct vms_vector *collision_point, int damage_flag,
+	int boss_invul_flag, int vclip_type, struct object *expl_obj);
+void input_demo_log_debris_collision_event(const char *step,
+	struct object *debris, struct object *weapon, int32_t hitspeed,
+	short hitseg, short hitwall,
+	const struct vms_vector *collision_point);
 void input_demo_log_player_bump_probe(const char *step, struct object *obj0, struct object *obj1,
 	const struct vms_vector *relative_velocity, const struct vms_vector *float_force,
 	int32_t scale_num, int32_t scale_den, int damage_flag);
@@ -117,6 +132,12 @@ void input_demo_note_ai_schedule_detail(const char *kind, struct object *objp,
 void input_demo_log_ai_schedule_record_probe(const char *step_label,
 	struct object *objp, struct ai_static *aip, struct ai_local *ailp,
 	int previous_visibility, int dist_to_player, int obj_ref);
+int input_demo_trace_ai_schedule_probe_active(struct object *obj,
+	struct ai_local *ailp, int32_t dist_to_player,
+	int previous_visibility, int obj_ref);
+void input_demo_log_ai_schedule_probe(const char *label, struct object *obj,
+	struct ai_static *aip, struct ai_local *ailp, int32_t dist_to_player,
+	int previous_visibility, int obj_ref);
 void input_demo_append_replay_probe_message(const char *kind, struct object *objp,
 	const char *message);
 void input_demo_log_awareness_vulcan_roll(struct object *objp, int type, int vulcan_roll, unsigned int sim_calls_before, unsigned int sim_state_before);

@@ -7,6 +7,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#pragma pack(push, 8)
+#endif
+
 typedef struct route_planner_shadow_summary {
 	int compared_progress_state_count;
 	int compared_node_count;
@@ -43,7 +47,21 @@ typedef struct route_planner_shadow_summary {
 	int first_shared_selection_progress_weight;
 	double first_legacy_selection_distance;
 	double first_shared_selection_distance;
+	int compared_key_selection_count;
+	int key_selection_mismatch_count;
+	int first_key_selection_progress_state;
+	int first_key_selection_key;
+	int first_legacy_key_selection_index;
+	int first_shared_key_selection_index;
+	int first_legacy_key_selection_progress_weight;
+	int first_shared_key_selection_progress_weight;
+	double first_legacy_key_selection_distance;
+	double first_shared_key_selection_distance;
 } route_planner_shadow_summary;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 int route_planner_compare_view(
     const level_metadata_scan_view *view,

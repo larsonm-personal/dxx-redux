@@ -201,6 +201,18 @@ route_edge_decision evaluate_route_edge(
     int segment,
     int side)
 {
+	return evaluate_route_edge(
+	    snapshot, query, state, route_key_requirement::none, segment, side);
+}
+
+route_edge_decision evaluate_route_edge(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &state,
+    route_key_requirement forbidden_missing_key,
+    int segment,
+    int side)
+{
 	if (!valid_segment(snapshot, segment) || side < 0 ||
 	    side >= LEVEL_METADATA_MAX_SIDES)
 		return blocked(route_edge_blocker::invalid_topology);
@@ -272,6 +284,7 @@ route_edge_decision evaluate_route_edge(
 	if (wall_state.kind == route_wall_kind::door &&
 	    wall_state.key != route_key_requirement::none &&
 	    wall_state.key != route_key_requirement::unknown &&
+	    wall_state.key != forbidden_missing_key &&
 	    ((state.avoided_key_mask | state.key_in_progress) &
 	     key_bit(wall_state.key)) == 0)
 		return progress(route_edge_blocker::missing_key,

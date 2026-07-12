@@ -500,6 +500,8 @@ int main()
 	assert(planner_summary.target_mismatch_count == 0);
 	assert(planner_summary.compared_target_selection_count == 4);
 	assert(planner_summary.target_selection_mismatch_count == 0);
+	assert(planner_summary.compared_key_selection_count == 12);
+	assert(planner_summary.key_selection_mismatch_count == 0);
 	const auto targets = dxx_route::discover_route_targets(first);
 	assert(targets.reactor_found);
 	assert(targets.reactor.segment == 0);
@@ -537,6 +539,26 @@ int main()
 	assert(!key_targets.keys[0][0].contained);
 	assert(key_targets.keys[2].size() == 1);
 	assert(key_targets.keys[2][0].contained);
+	const auto selected_key = dxx_route::select_key_target(
+	    key_snapshot, planner_query,
+	    dxx_route::initial_route_progress_state(key_snapshot, planner_query),
+	    dxx_route::route_key_requirement::blue, key_targets.keys[0]);
+	assert(selected_key.found);
+	assert(selected_key.selected_index == 0);
+	auto forbidden_key_snapshot = key_snapshot;
+	forbidden_key_snapshot.state.walls[0].kind =
+	    dxx_route::route_wall_kind::door;
+	forbidden_key_snapshot.state.walls[0].hidden = false;
+	forbidden_key_snapshot.state.walls[0].key =
+	    dxx_route::route_key_requirement::blue;
+	forbidden_key_snapshot.state.triggers[0].disabled = true;
+	assert(!dxx_route::select_key_target(
+	            forbidden_key_snapshot, planner_query,
+	            dxx_route::initial_route_progress_state(
+	                forbidden_key_snapshot, planner_query),
+	            dxx_route::route_key_requirement::blue,
+	            key_targets.keys[0])
+	            .found);
 	assert(first.topology.hash != 0);
 	assert(first.state.hash != 0);
 	route_snapshot_summary summary = {};

@@ -7,6 +7,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#pragma pack(push, 8)
+#endif
+
 typedef struct route_edge_shadow_summary {
 	int compared_edge_count;
 	int mismatch_count;
@@ -15,6 +19,10 @@ typedef struct route_edge_shadow_summary {
 	int first_legacy_cost;
 	int first_shared_cost;
 } route_edge_shadow_summary;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 int route_edge_compare_view(
     const level_metadata_scan_view *view,

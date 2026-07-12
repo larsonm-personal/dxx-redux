@@ -70,7 +70,10 @@ Parity has two separate meanings and both must pass:
   - Confirmed zero search mismatches across initial, post-key/reactor, fully opened, and dependency-avoidance states in D1/D2 unit fixtures, all base campaigns, and 1,244 levels from 109 mission archives.
   - Ported deterministic exit target selection using progression weight, endpoint-adjusted geometric distance, stable source-order ties, and the preserved selected segment chain.
   - Confirmed zero target-selection mismatches across all four progression states in D1/D2 unit fixtures, all base campaigns, and 1,244 levels from 109 mission archives.
-  - Semantic step production and live behavior remain on the C planner; dependency target choice for key recovery and trigger sources is the next porting boundary.
+  - Added explicit distance-first and forbidden-missing-key search policy, then ported direct or contained key-recovery target choice with selected path retention.
+  - Confirmed zero key-selection mismatches for blue, red, and gold across all four progression states in D1/D2 unit fixtures, all base campaigns, and 1,244 levels from 109 mission archives.
+  - Fixed MSVC packing for all new snapshot, edge, and planner C ABI summaries after expanded diagnostics exposed engine-header packing leakage.
+  - Semantic step production and live behavior remain on the C planner; trigger-source discovery and firing-position selection are the next porting boundary.
 
 ## Non-Goals
 

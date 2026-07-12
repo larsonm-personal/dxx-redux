@@ -80,6 +80,8 @@ set(D1X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/input_demo_start_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_debug_logging.cpp
     ../../android/app/src/main/cpp/shared/android_newmenu_text_wrap.c
+    ../../android/app/src/main/cpp/shared/coop/coop_multi_status.c
+    ../../android/app/src/main/cpp/shared/automap_metadata_overlay.c
     )
 
 if(ANDROID)

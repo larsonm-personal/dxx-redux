@@ -136,7 +136,6 @@ static struct android_ogl_msaa_state ogl_msaa_state;
 #define ogl_msaa_h ogl_msaa_state.h
 int g_msaa_fbo_bound = 0;       /* 1 while rendering to MSAA FBO */
 static int g_msaa_frame_depth = 0; /* nesting depth: >0 = sub-window render */
-static int ogl_android_effective_texfilt(int texfilt);
 /* android port: GPU timer via EXT_disjoint_timer_query */
 #define GL_TIME_ELAPSED_EXT  0x88BF
 #define GL_GPU_DISJOINT_EXT  0x8FBB
@@ -327,6 +326,18 @@ static GLuint ogl_last_bound_tex = 0;
 
 ogl_texture ogl_texture_list[OGL_TEXTURE_LIST_SIZE];
 int ogl_texture_list_cur;
+#ifdef ANDROID
+static struct android_ogl_texture_filter_state ogl_texture_filter_state = {
+	{ ogl_texture_list, OGL_TEXTURE_LIST_SIZE },
+	&ogl_last_bound_tex,
+	&g_aniso_pending_apply,
+	&g_texfilt_pending_apply,
+	&ogl_aniso_level,
+	&ogl_maxanisotropy,
+	&g_texfilt_level,
+	&GameCfg.TexFilt
+};
+#endif
 
 static inline float minf(float x, float y) { return x < y ? x : y; }
 
@@ -622,60 +633,10 @@ void ogl_bindbmtex(grs_bitmap *bm){
 	}
 	OGL_BINDTEXTURE(bm->gltexture->handle);
 #ifdef ANDROID
-	{
-		int effective_texfilt = ogl_android_effective_texfilt(GameCfg.TexFilt);
-		/* Selective filtering: menu and HUD draws can force nearest on texture
-		 * objects that are also reused by filtered world draws, so restore the
-		 * appropriate state whenever the render context changes.
-		 *
-		 * Font/text textures (OGL_FLAG_NOCOLOR) never have mipmaps and always use
-		 * MenuTexFilt. Fullscreen menu and loading art can also arrive without
-		 * mipmaps on Android, notably through the ETC2/KTX path, so handle both
-		 * mipmapped and non-mipmapped texture objects here. */
-		if (effective_texfilt > 0) {
-			if (bm->gltexture->flags & OGL_FLAG_NOCOLOR) {
-				/* Font texture: filter controlled by MenuTexFilt in all contexts */
-				if (GameCfg.MenuTexFilt) {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				} else {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				}
-			} else if (bm->gltexture->has_mipmaps) {
-				/* World/HUD texture with mipmaps */
-				int use_nearest = 0;
-				if (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
-					use_nearest = 1;
-				else if (g_ogl_render_context == 2 && !GameCfg.HudTexFilt)
-					use_nearest = 1;
-				if (use_nearest) {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				} else {
-					GLenum min_f = effective_texfilt >= 2
-						? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				}
-			} else {
-				/* Non-font texture without mipmaps: restore linear filtering when the
-				 * current context allows it, otherwise force nearest for menu/HUD. */
-				int use_nearest = 0;
-				if (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
-					use_nearest = 1;
-				else if (g_ogl_render_context == 2 && !GameCfg.HudTexFilt)
-					use_nearest = 1;
-				if (use_nearest) {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				} else {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				}
-			}
-		}
-	}
+	android_ogl_apply_bound_texture_filter(
+		bm->gltexture,
+		android_ogl_effective_texfilt(GameCfg.TexFilt, ogl_aniso_level),
+		GameCfg.MenuTexFilt, GameCfg.HudTexFilt, g_ogl_render_context);
 #endif
 	bm->gltexture->numrend++;
 }
@@ -684,126 +645,14 @@ void ogl_bindbmtex(grs_bitmap *bm){
 /* Return total GPU texture memory in use (bytes) */
 int ogl_get_texture_bytes(void)
 {
-	int total = 0, i;
-	for (i = 0; i < OGL_TEXTURE_LIST_SIZE; i++)
-		if (ogl_texture_list[i].handle > 0)
-			total += ogl_texture_list[i].bytes;
-	return total;
-}
-
-/* Re-apply anisotropic filtering to all loaded textures */
-void ogl_apply_anisotropy_all(void)
-{
-	int i, count = 0, total = 0;
-	GLfloat level = (ogl_aniso_level > 1 && ogl_maxanisotropy > 1.0f)
-		? (GLfloat)(ogl_aniso_level < ogl_maxanisotropy ? ogl_aniso_level : (int)ogl_maxanisotropy)
-		: 1.0f;
-	for (i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
-		if (ogl_texture_list[i].handle > 0 && ogl_texture_list[i].has_mipmaps) {
-			glBindTexture(GL_TEXTURE_2D, ogl_texture_list[i].handle);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, level);
-			count++;
-		}
-		if (ogl_texture_list[i].handle > 0) total++;
-	}
-	ogl_last_bound_tex = 0; /* invalidate bind cache */
-	__android_log_print(ANDROID_LOG_INFO, "DXX",
-	    "anisotropy: applied level %.0f to %d/%d mipmapped textures", level, count, total);
-	debug_log(DLOG_GRAPHICS,
-		"anisotropy parameter: level=%.0f applied=%d total=%d",
-		level, count, total);
+	return android_ogl_get_texture_bytes(&ogl_texture_filter_state.texture_list_state);
 }
 
 static void ogl_msaa_destroy_fbo(void);
 
-static int ogl_android_effective_texfilt(int texfilt)
-{
-	/* AF requires mipmap filtering to have any effect on real hardware.
-	 * If AF is on but texfilt is too low, upgrade to trilinear */
-	if (ogl_aniso_level > 0 && texfilt < 2)
-		return 2;
-	return texfilt;
-}
-
-static int ogl_android_apply_texture_filter(ogl_texture *texture, int texfilt, int *generated)
-{
-	if (!texture || texture->handle <= 0)
-		return 0;
-	if (texture->flags & OGL_FLAG_NOCOLOR)
-		return 0;
-	glBindTexture(GL_TEXTURE_2D, texture->handle);
-	if (texfilt > 0) {
-		GLenum min_f = texfilt >= 2
-			? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
-		if (!texture->has_mipmaps) {
-			glGenerateMipmap(GL_TEXTURE_2D);
-			texture->has_mipmaps = 1;
-			if (generated)
-				(*generated)++;
-		}
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	} else {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	}
-	return 1;
-}
-
-static int ogl_android_apply_texture_filters_all(int texfilt, int *generated)
-{
-	int i, updated = 0;
-	if (generated)
-		*generated = 0;
-	for (i = 0; i < OGL_TEXTURE_LIST_SIZE; i++)
-		updated += ogl_android_apply_texture_filter(&ogl_texture_list[i], texfilt, generated);
-	if (updated)
-		ogl_last_bound_tex = 0;
-	return updated;
-}
-
 static void ogl_android_apply_pending_runtime_options(const char *source)
 {
-	if (g_aniso_pending_apply) {
-		int generated = 0;
-		int effective_texfilt;
-		int filter_updated;
-		g_aniso_pending_apply = 0;
-		__sync_synchronize(); /* ensure we read values written before flag */
-		effective_texfilt = ogl_android_effective_texfilt(GameCfg.TexFilt);
-		filter_updated = ogl_android_apply_texture_filters_all(effective_texfilt, &generated);
-		debug_log(DLOG_GRAPHICS,
-			"graphics apply[%s]: aniso=%d effective_texfilt=%d filters=%d mipmaps=%d",
-			source ? source : "unknown", ogl_aniso_level, effective_texfilt,
-			filter_updated, generated);
-		ogl_apply_anisotropy_all();
-	}
-	if (g_texfilt_pending_apply) {
-		int requested_texfilt = g_texfilt_level;
-		int effective_texfilt;
-		struct android_ogl_texture_texfilt_state texfilt_state = {
-			{ ogl_texture_list, OGL_TEXTURE_LIST_SIZE },
-			&ogl_last_bound_tex,
-			&g_texfilt_pending_apply,
-			&g_texfilt_level,
-			&GameCfg.TexFilt
-		};
-
-		debug_log(DLOG_GRAPHICS,
-			"graphics apply[%s]: tex_filt request=%d aniso=%d",
-			source ? source : "unknown", requested_texfilt, ogl_aniso_level);
-		android_ogl_apply_texfilt_all(&texfilt_state);
-		effective_texfilt = ogl_android_effective_texfilt(GameCfg.TexFilt);
-		if (effective_texfilt != GameCfg.TexFilt) {
-			int generated = 0;
-			int filter_updated = ogl_android_apply_texture_filters_all(effective_texfilt, &generated);
-			debug_log(DLOG_GRAPHICS,
-				"graphics apply[%s]: tex_filt effective=%d filters=%d mipmaps=%d",
-				source ? source : "unknown", effective_texfilt,
-				filter_updated, generated);
-		}
-	}
-	g_texfilt_level = GameCfg.TexFilt;
+	android_ogl_apply_pending_texture_options(&ogl_texture_filter_state, source);
 	if (g_msaa_pending_apply) {
 		debug_log(DLOG_GRAPHICS,
 			"graphics apply[%s]: msaa=%d destroy_fbo=%d bound=%d depth=%d size=%dx%d",
@@ -910,7 +759,7 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 		return NULL;
 
 	tex_flags = OGL_FLAG_ALPHA;
-	const int load_texfilt = ogl_android_effective_texfilt(GameCfg.TexFilt);
+	const int load_texfilt = android_ogl_effective_texfilt(GameCfg.TexFilt, ogl_aniso_level);
 	entry->texture = ogl_get_free_texture();
 	const struct android_ogl_texture_runtime_state tex_runtime_state = {
 		{ &ogl_last_bound_tex, &r_texbinds, &r_texbind_reuse },
@@ -3259,7 +3108,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 	lookup_metrics.png_hit_slot = ANDROID_PROFILE_TEXTURE_LOOKUP_NONE;
 	lookup_metrics.png_hit_ext = ANDROID_PROFILE_TEXTURE_LOOKUP_NONE;
 	android_perf_clock_now(&texture_total_start);
-	int load_texfilt = ogl_android_effective_texfilt(texfilt);
+	int load_texfilt = android_ogl_effective_texfilt(texfilt, ogl_aniso_level);
 #else
 	int load_texfilt = texfilt;
 #endif
@@ -3482,7 +3331,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 #ifdef OGL_MERGE
 					if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
 						android_perf_clock_now(&stage_start);
-						android_ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt);
+						android_ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt, ogl_loadtexture);
 						android_perf_clock_now(&stage_end);
 						profile_mask_us += android_perf_elapsed_us(&stage_start, &stage_end);
 						android_cache_profile_add_ms(&g_cache_mask_ms, &stage_start, &stage_end);
@@ -3572,7 +3421,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
 #ifdef ANDROID
 					android_perf_clock_now(&stage_start);
-					android_ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt);
+					android_ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt, ogl_loadtexture);
 					android_perf_clock_now(&stage_end);
 					profile_mask_us += android_perf_elapsed_us(&stage_start, &stage_end);
 					android_cache_profile_add_ms(&g_cache_mask_ms, &stage_start, &stage_end);

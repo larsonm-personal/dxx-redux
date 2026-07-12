@@ -10,11 +10,6 @@
 #include "ogl_texture_android.h"
 #include "pngfile.h"
 
-extern int ogl_loadtexture(unsigned char *data, int dxo, int dyo,
-                           ogl_texture *tex, int bm_flags, int data_format,
-                           int texfilt, const char *bitmapname,
-                           const char *diag_path);
-
 void android_ogl_bind_texture_2d(const struct android_ogl_bind_texture_state *state,
                                  GLuint handle)
 {
@@ -39,6 +34,59 @@ void android_ogl_enable_texture_2d(int *texture_2d_enabled)
 		glEnable(GL_TEXTURE_2D);
 		if (texture_2d_enabled)
 			*texture_2d_enabled = 1;
+	}
+}
+
+int android_ogl_effective_texfilt(int texfilt, int aniso_level)
+{
+	/* AF requires mipmap filtering to have any effect on real hardware.
+	 * If AF is on but texfilt is too low, upgrade to trilinear. */
+	if (aniso_level > 0 && texfilt < 2)
+		return 2;
+	return texfilt;
+}
+
+void android_ogl_apply_bound_texture_filter(ogl_texture *texture, int effective_texfilt,
+                                            int menu_texfilt, int hud_texfilt,
+                                            int render_context)
+{
+	int use_nearest = 0;
+
+	if (!texture || effective_texfilt <= 0)
+		return;
+
+	/* Font/text textures never have mipmaps and always use MenuTexFilt.
+	 * Fullscreen menu and loading art can also arrive without mipmaps on
+	 * Android, notably through the ETC2/KTX path. */
+	if (texture->flags & OGL_FLAG_NOCOLOR) {
+		if (menu_texfilt) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		} else {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		}
+		return;
+	}
+
+	if (render_context == 0 && !menu_texfilt)
+		use_nearest = 1;
+	else if (render_context == 2 && !hud_texfilt)
+		use_nearest = 1;
+
+	if (use_nearest) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	} else if (texture->has_mipmaps) {
+		GLenum min_f = effective_texfilt >= 2
+		                   ? GL_LINEAR_MIPMAP_LINEAR
+		                   : GL_LINEAR_MIPMAP_NEAREST;
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	} else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 }
 
@@ -85,6 +133,53 @@ void android_ogl_apply_anisotropy_all(struct android_ogl_texture_anisotropy_stat
 	*state->last_bound_tex = 0;
 	__android_log_print(ANDROID_LOG_INFO, "DXX",
 	                    "anisotropy: applied level %.0f to %d/%d mipmapped textures", level, count, total);
+	debug_log(DLOG_GRAPHICS,
+	          "anisotropy parameter: level=%.0f applied=%d total=%d",
+	          level, count, total);
+}
+
+static int apply_texture_filter(ogl_texture *texture, int texfilt, int *generated)
+{
+	if (!texture || texture->handle <= 0)
+		return 0;
+	if (texture->flags & OGL_FLAG_NOCOLOR)
+		return 0;
+
+	glBindTexture(GL_TEXTURE_2D, texture->handle);
+	if (texfilt > 0) {
+		GLenum min_f = texfilt >= 2
+		                   ? GL_LINEAR_MIPMAP_LINEAR
+		                   : GL_LINEAR_MIPMAP_NEAREST;
+
+		if (!texture->has_mipmaps) {
+			glGenerateMipmap(GL_TEXTURE_2D);
+			texture->has_mipmaps = 1;
+			if (generated)
+				(*generated)++;
+		}
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	} else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
+	return 1;
+}
+
+static int apply_texture_filters_all(struct android_ogl_texture_filter_state *state,
+                                     int texfilt, int *generated)
+{
+	int i;
+	int updated = 0;
+
+	if (generated)
+		*generated = 0;
+	for (i = 0; i < state->texture_list_state.texture_list_size; i++)
+		updated += apply_texture_filter(&state->texture_list_state.texture_list[i],
+		                                texfilt, generated);
+	if (updated && state->last_bound_tex)
+		*state->last_bound_tex = 0;
+	return updated;
 }
 
 void android_ogl_apply_texfilt_all(struct android_ogl_texture_texfilt_state *state)
@@ -140,13 +235,80 @@ void android_ogl_apply_texfilt_all(struct android_ogl_texture_texfilt_state *sta
 		           updated, texfilt_level);
 }
 
-void android_ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfilt)
+void android_ogl_apply_pending_texture_options(
+    struct android_ogl_texture_filter_state *state, const char *source)
+{
+	if (!state || !state->texture_list_state.texture_list ||
+	    state->texture_list_state.texture_list_size <= 0 ||
+	    !state->aniso_pending_apply || !state->texfilt_pending_apply ||
+	    !state->aniso_level || !state->maxanisotropy ||
+	    !state->requested_texfilt_level || !state->applied_texfilt_level)
+		return;
+
+	if (*state->aniso_pending_apply) {
+		int generated = 0;
+		int effective_texfilt;
+		int filter_updated;
+		struct android_ogl_texture_anisotropy_state anisotropy_state;
+
+		*state->aniso_pending_apply = 0;
+		__sync_synchronize();
+		effective_texfilt = android_ogl_effective_texfilt(
+		    *state->applied_texfilt_level, *state->aniso_level);
+		filter_updated = apply_texture_filters_all(state, effective_texfilt,
+		                                           &generated);
+		debug_log(DLOG_GRAPHICS,
+		          "graphics apply[%s]: aniso=%d effective_texfilt=%d filters=%d mipmaps=%d",
+		          source ? source : "unknown", *state->aniso_level,
+		          effective_texfilt, filter_updated, generated);
+
+		anisotropy_state.texture_list_state = state->texture_list_state;
+		anisotropy_state.last_bound_tex = state->last_bound_tex;
+		anisotropy_state.maxanisotropy = *state->maxanisotropy;
+		anisotropy_state.aniso_level = *state->aniso_level;
+		android_ogl_apply_anisotropy_all(&anisotropy_state);
+	}
+
+	if (*state->texfilt_pending_apply) {
+		int requested_texfilt = *state->requested_texfilt_level;
+		int effective_texfilt;
+		struct android_ogl_texture_texfilt_state texfilt_state = {
+			state->texture_list_state,
+			state->last_bound_tex,
+			state->texfilt_pending_apply,
+			state->requested_texfilt_level,
+			state->applied_texfilt_level
+		};
+
+		debug_log(DLOG_GRAPHICS,
+		          "graphics apply[%s]: tex_filt request=%d aniso=%d",
+		          source ? source : "unknown", requested_texfilt,
+		          *state->aniso_level);
+		android_ogl_apply_texfilt_all(&texfilt_state);
+		effective_texfilt = android_ogl_effective_texfilt(
+		    *state->applied_texfilt_level, *state->aniso_level);
+		if (effective_texfilt != *state->applied_texfilt_level) {
+			int generated = 0;
+			int filter_updated = apply_texture_filters_all(
+			    state, effective_texfilt, &generated);
+
+			debug_log(DLOG_GRAPHICS,
+			          "graphics apply[%s]: tex_filt effective=%d filters=%d mipmaps=%d",
+			          source ? source : "unknown", effective_texfilt,
+			          filter_updated, generated);
+		}
+	}
+	*state->requested_texfilt_level = *state->applied_texfilt_level;
+}
+
+void android_ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfilt,
+                               android_ogl_loadtexture_fn loadtexture)
 {
 	char maskname[256];
 	png_data mdata;
 	int loaded = 0;
 
-	if (!bitmapname || !bitmapname[0] || !bm)
+	if (!bitmapname || !bitmapname[0] || !bm || !loadtexture)
 		return;
 
 	sprintf(maskname, "%s_mask.png", bitmapname);
@@ -176,8 +338,8 @@ void android_ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfi
 		if (bm->gltexture_mask == NULL)
 			ogl_init_texture(bm->gltexture_mask = ogl_get_free_texture(),
 			                 (int) mdata.width, (int) mdata.height, OGL_FLAG_ALPHA);
-		ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0,
-		                texfilt, NULL, NULL);
+		loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0,
+		            texfilt, NULL);
 		bm->gltexture_mask->is_png = 1;
 		free(mask);
 

@@ -7,6 +7,7 @@
 #include "args.h"
 #include "ai.h"
 #include "cntrlcen.h"
+#include "collide.h"
 #include "console.h"
 #include "controls.h"
 #include "d1_in_d2_input_demo.h"
@@ -33,6 +34,7 @@
 #include "playsave.h"
 #include "laser.h"
 #include "segment.h"
+#include "textures.h"
 #include "weapon.h"
 #include "wall.h"
 
@@ -412,6 +414,174 @@ void input_demo_append_replay_probe_message(const char *kind, object *objp,
 		objp ? objp->segnum : -1,
 		message);
 	fclose(file);
+}
+
+void input_demo_log_replay_collision_pair(const char *kind,
+	object *obj0,
+	object *obj1,
+	const vms_vector *collision_point)
+{
+	char probe[512];
+
+	if (!input_demo_replay_is_loaded() ||
+		!input_demo_replay_collision_probe_active() ||
+		!obj0 || !obj1)
+		return;
+	if (!((obj0->type == OBJ_ROBOT && obj1->type == OBJ_PLAYER) ||
+		(obj0->type == OBJ_PLAYER && obj1->type == OBJ_ROBOT) ||
+		(obj0->type == OBJ_ROBOT && obj1->type == OBJ_WEAPON &&
+			obj1->ctype.laser_info.parent_type == OBJ_PLAYER) ||
+		(obj0->type == OBJ_WEAPON && obj0->ctype.laser_info.parent_type == OBJ_PLAYER &&
+			obj1->type == OBJ_ROBOT)))
+		return;
+
+	snprintf(probe, sizeof(probe),
+		"a=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) size=%d shields=%d flags=0x%x parent_type=%d parent=%d parent_sig=%d b=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) size=%d shields=%d flags=0x%x parent_type=%d parent=%d parent_sig=%d cp=(%d,%d,%d)",
+		(int)(obj0 - Objects), obj0->type, obj0->id, obj0->signature,
+		obj0->segnum, obj0->pos.x, obj0->pos.y, obj0->pos.z,
+		obj0->last_pos.x, obj0->last_pos.y, obj0->last_pos.z,
+		obj0->mtype.phys_info.velocity.x, obj0->mtype.phys_info.velocity.y,
+		obj0->mtype.phys_info.velocity.z, obj0->size, obj0->shields,
+		obj0->flags,
+		obj0->type == OBJ_WEAPON ? obj0->ctype.laser_info.parent_type : -1,
+		obj0->type == OBJ_WEAPON ? obj0->ctype.laser_info.parent_num : -1,
+		obj0->type == OBJ_WEAPON ? obj0->ctype.laser_info.parent_signature : -1,
+		(int)(obj1 - Objects), obj1->type, obj1->id, obj1->signature,
+		obj1->segnum, obj1->pos.x, obj1->pos.y, obj1->pos.z,
+		obj1->last_pos.x, obj1->last_pos.y, obj1->last_pos.z,
+		obj1->mtype.phys_info.velocity.x, obj1->mtype.phys_info.velocity.y,
+		obj1->mtype.phys_info.velocity.z, obj1->size, obj1->shields,
+		obj1->flags,
+		obj1->type == OBJ_WEAPON ? obj1->ctype.laser_info.parent_type : -1,
+		obj1->type == OBJ_WEAPON ? obj1->ctype.laser_info.parent_num : -1,
+		obj1->type == OBJ_WEAPON ? obj1->ctype.laser_info.parent_signature : -1,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+	input_demo_append_replay_probe_message(kind, obj0, probe);
+}
+
+void input_demo_log_replay_weapon_robot_resolution(const char *kind,
+	object *weapon,
+	object *robot,
+	const vms_vector *collision_point,
+	fix damage,
+	fix robot_old_shields,
+	int robot_died)
+{
+	char probe[512];
+	int skip_ai_count = -1;
+	int gauss_gate_pass = 0;
+
+	if (!input_demo_replay_is_loaded() ||
+		!input_demo_replay_collision_probe_active() ||
+		!weapon || !robot || weapon->type != OBJ_WEAPON || robot->type != OBJ_ROBOT)
+		return;
+	if (weapon->id == GAUSS_ID) {
+		const ai_static *aip = &robot->ctype.ai_info;
+
+		skip_ai_count = aip->SKIP_AI_COUNT;
+		gauss_gate_pass = !Robot_info[robot->id].companion &&
+			!Robot_info[robot->id].boss_flag &&
+			(skip_ai_count * FrameTime < F1_0);
+	}
+
+	snprintf(probe, sizeof(probe),
+		"weapon_obj=%d weapon_sig=%d weapon_id=%d robot_obj=%d robot_sig=%d robot_id=%d damage=%d shields=%d->%d died=%d gauss_gate=%d skip_ai_count=%d frame_time=%d cp=(%d,%d,%d)",
+		(int)(weapon - Objects), weapon->signature, weapon->id,
+		(int)(robot - Objects), robot->signature, robot->id,
+		damage, robot_old_shields, robot->shields, robot_died,
+		gauss_gate_pass, skip_ai_count, FrameTime,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+	input_demo_append_replay_probe_message(kind, robot, probe);
+}
+
+void input_demo_log_weapon_robot_path_event(const char *step,
+	object *weapon,
+	object *robot,
+	const vms_vector *collision_point,
+	int damage_flag,
+	int boss_invul_flag,
+	int vclip_type,
+	object *expl_obj)
+{
+	char probe[512];
+	const int should_log = weapon &&
+		(input_demo_replay_collision_probe_active() ||
+			weapon->ctype.laser_info.parent_num == Players[Player_num].objnum);
+
+	if (!step || !should_log || !robot ||
+		weapon->type != OBJ_WEAPON || robot->type != OBJ_ROBOT)
+		return;
+
+	snprintf(probe, sizeof(probe),
+		"step=%s weapon_parent_type=%d parent=%d parent_sig=%d damage_flag=%d boss_invul=%d robot_flags=0x%x robot_shields=%d robot_seg=%d vclip=%d expl_obj=%d expl_sig=%d expl_id=%d expl_seg=%d cp=(%d,%d,%d)",
+		step,
+		weapon->ctype.laser_info.parent_type,
+		weapon->ctype.laser_info.parent_num,
+		weapon->ctype.laser_info.parent_signature,
+		damage_flag,
+		boss_invul_flag,
+		robot->flags,
+		robot->shields,
+		robot->segnum,
+		vclip_type,
+		expl_obj ? (int)(expl_obj - Objects) : -1,
+		expl_obj ? expl_obj->signature : -1,
+		expl_obj ? expl_obj->id : -1,
+		expl_obj ? expl_obj->segnum : -1,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+	input_demo_append_replay_probe_message("weapon_robot_path", weapon, probe);
+}
+
+void input_demo_log_debris_collision_event(const char *step,
+	object *debris,
+	object *weapon,
+	fix hitspeed,
+	short hitseg,
+	short hitwall,
+	const vms_vector *collision_point)
+{
+	char probe[512];
+	int wall_damage = 0;
+
+	if (!step || !debris ||
+		!(input_demo_recorder_is_active() || input_demo_replay_is_loaded()))
+		return;
+
+	if (hitseg >= 0 && hitwall >= 0)
+		wall_damage = TmapInfo[Segments[hitseg].sides[hitwall].tmap_num].damage;
+
+	snprintf(probe, sizeof(probe),
+		"step=%s debris=%d/%d/%d/%d/%d life=%d size=%d flags=0x%x phys=0x%x hitspeed=%d hitseg=%d hitwall=%d wall_damage=%d persistent=%d weapon=%d/%d/%d/%d/%d cp=(%d,%d,%d)",
+		step,
+		(int)(debris - Objects),
+		debris->signature,
+		debris->type,
+		debris->id,
+		debris->segnum,
+		debris->lifeleft,
+		debris->size,
+		debris->flags,
+		debris->mtype.phys_info.flags,
+		hitspeed,
+		hitseg,
+		hitwall,
+		wall_damage,
+		PERSISTENT_DEBRIS,
+		weapon ? (int)(weapon - Objects) : -1,
+		weapon ? weapon->signature : -1,
+		weapon ? weapon->type : -1,
+		weapon ? weapon->id : -1,
+		weapon ? weapon->segnum : -1,
+		collision_point ? collision_point->x : 0,
+		collision_point ? collision_point->y : 0,
+		collision_point ? collision_point->z : 0);
+	input_demo_append_replay_probe_message("debris_collision", debris, probe);
 }
 
 static int input_demo_ai_schedule_detail_obj_active(object *objp)
@@ -1185,6 +1355,89 @@ void input_demo_log_ai_schedule_record_probe(const char *step_label,
 		objp->pos.y,
 		objp->pos.z);
 	input_demo_record_frame_event_json(json);
+}
+
+int input_demo_trace_ai_schedule_probe_active(object *obj, ai_local *ailp,
+	fix dist_to_player, int previous_visibility, int obj_ref)
+{
+	if (!input_demo_trace_ai_visibility_active(obj) || !ailp)
+		return 0;
+	if (obj_ref < 0)
+		return 1;
+	if (ailp->player_awareness_type >= PA_PLAYER_COLLISION)
+		return 1;
+	if ((dist_to_player <= 0) || (dist_to_player >= F1_0*120))
+		return 0;
+	return previous_visibility ||
+		(ailp->player_awareness_type >= PA_NEARBY_ROBOT_FIRED) ||
+		((obj_ref & 3) == 0);
+}
+
+void input_demo_log_ai_schedule_probe(const char *label, object *obj, ai_static *aip,
+	ai_local *ailp, fix dist_to_player, int previous_visibility, int obj_ref)
+{
+	char probe[512];
+
+	if (!input_demo_trace_ai_schedule_probe_active(obj, ailp, dist_to_player,
+		previous_visibility, obj_ref) || !obj || !aip)
+		return;
+
+	input_demo_log_ai_schedule_record_probe(label, obj, aip, ailp,
+		previous_visibility, dist_to_player, obj_ref);
+
+	snprintf(probe, sizeof(probe),
+		"step=%s behavior=%d mode=%d cur=%d goal=%d gun=%d prev_vis=%d aware=%d aware_time=%d skip=%d since=%d dist=%d obj_ref=%d goal_seg=%d path=%d/%d retry=%d retry_chain=%d rapid=%d next_fire=%d next_fire2=%d",
+		label,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		aip->CURRENT_GUN,
+		previous_visibility,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		aip->SKIP_AI_COUNT,
+		ailp->time_since_processed,
+		dist_to_player,
+		obj_ref,
+		ailp->goal_segment,
+		aip->cur_path_index,
+		aip->path_length,
+		ailp->retry_count,
+		ailp->consecutive_retries,
+		ailp->rapidfire_count,
+		ailp->next_fire,
+		ailp->next_fire2);
+	input_demo_append_replay_probe_message("probe_ai_schedule", obj, probe);
+
+	if (!input_demo_debug_is_enabled())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo AI schedule: mode=%s frame=%u gt=%lld step=%s obj=%d sig=%d id=%d seg=%d behavior=%d mode_ai=%d prev_vis=%d aware=%d aware_time=%d skip=%d since=%d dist=%d obj_ref=%d goal_seg=%d path=%d/%d retry=%d retry_chain=%d rapid=%d\n",
+		input_demo_debug_activity_mode_name(),
+		input_demo_trace_frame_index(),
+		(long long)GameTime64,
+		label,
+		(int)(obj - Objects),
+		obj->signature,
+		obj->id,
+		obj->segnum,
+		aip->behavior,
+		ailp->mode,
+		previous_visibility,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		aip->SKIP_AI_COUNT,
+		ailp->time_since_processed,
+		dist_to_player,
+		obj_ref,
+		ailp->goal_segment,
+		aip->cur_path_index,
+		aip->path_length,
+		ailp->retry_count,
+		ailp->consecutive_retries,
+		ailp->rapidfire_count);
 }
 
 void input_demo_set_recording_terminal_exit(int terminal_exit)

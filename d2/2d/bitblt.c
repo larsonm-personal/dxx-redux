@@ -597,55 +597,6 @@ inside:
 	}
 }
 
-/* Same as gr_bitmap_scale_to but skips pixels equal to TRANSPARENCY_COLOR (255).
- * Used on Android to scale menu text rendered to an offscreen buffer without
- * overwriting the background beneath. */
-static inline void scale_line_masked(unsigned char *in, unsigned char *out, int ilen, int olen)
-{
-	int a = olen/ilen, b = olen%ilen;
-	int c = 0, i;
-	unsigned char *end = out + olen;
-	while(out<end) {
-		i = a;
-		c += b;
-		if(c >= ilen) {
-			c -= ilen;
-			goto inside_m;
-		}
-		while(--i>=0) {
-inside_m:
-			if (*in != 255)
-				*out = *in;
-			out++;
-		}
-		in++;
-	}
-}
-
-void gr_bitmap_scale_to_masked(grs_bitmap *src, grs_bitmap *dst)
-{
-	unsigned char *s = src->bm_data;
-	unsigned char *d = dst->bm_data;
-	int h = src->bm_h;
-	int a = dst->bm_h/h, b = dst->bm_h%h;
-	int c = 0, i, y;
-
-	for(y=0; y<h; y++) {
-		i = a;
-		c += b;
-		if(c >= h) {
-			c -= h;
-			goto inside2;
-		}
-		while(--i>=0) {
-inside2:
-			scale_line_masked(s, d, src->bm_w, dst->bm_w);
-			d += dst->bm_rowsize;
-		}
-		s += src->bm_rowsize;
-	}
-}
-
 void show_fullscr(grs_bitmap *bm)
 {
 	grs_bitmap * const scr = &grd_curcanv->cv_bitmap;

@@ -219,6 +219,17 @@ route_search_result search_routes(
     const route_progress_state &progress,
     bool optimistic)
 {
+	route_search_options options;
+	options.optimistic = optimistic;
+	return search_routes(snapshot, query, progress, options);
+}
+
+route_search_result search_routes(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    const route_search_options &options)
+{
 	route_search_result result;
 	result.start_segment = progress.current_segment;
 	const int count = static_cast<int>(snapshot.topology.segments.size());
@@ -244,7 +255,7 @@ route_search_result search_routes(
 	start_node.reachable = true;
 	start_node.distance = point_distance(start, start_center);
 	start_node.progress_weight = 0;
-	route_heap heap(result.nodes, true);
+	route_heap heap(result.nodes, options.prioritize_progress);
 	heap.push(result.start_segment);
 	while (!heap.empty()) {
 		const int current = heap.pop();
@@ -254,9 +265,11 @@ route_search_result search_routes(
 			if (!valid_segment(snapshot, child) || closed[child])
 				continue;
 			const auto edge = evaluate_route_edge(
-			    snapshot, query, progress, current, side);
+			    snapshot, query, progress, options.forbidden_missing_key,
+			    current, side);
 			if (edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED ||
-			    (!optimistic && edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS))
+			    (!options.optimistic &&
+			     edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS))
 				continue;
 			const auto &current_center = snapshot.topology.segments[current].center;
 			const auto &child_center = snapshot.topology.segments[child].center;
@@ -267,8 +280,12 @@ route_search_result search_routes(
 			const int progress = result.nodes[current].progress_weight +
 			                     (edge.legacy_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS ? 1 : 0);
 			auto &node = result.nodes[child];
-			if (progress > node.progress_weight ||
-			    (progress == node.progress_weight && distance >= node.distance))
+			if (options.prioritize_progress &&
+			    progress > node.progress_weight)
+				continue;
+			if ((!options.prioritize_progress ||
+			     progress == node.progress_weight) &&
+			    distance >= node.distance)
 				continue;
 			node.reachable = true;
 			node.distance = distance;
@@ -358,6 +375,54 @@ route_target_selection select_route_target(
 	result.found = true;
 	result.distance = best_distance;
 	result.progress_weight = best_progress;
+	result.path = build_route_path(
+	    search, targets[result.selected_index].segment);
+	result.path.distance = best_distance;
+	return result;
+}
+
+route_target_selection select_key_target(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    route_key_requirement key,
+    const std::vector<route_target> &targets)
+{
+	route_target_selection result;
+	const int index = key_index(key);
+	if (index < 0 ||
+	    ((progress.key_mask | progress.key_in_progress) & (1 << index)) != 0)
+		return result;
+	route_search_options options;
+	options.optimistic = true;
+	options.prioritize_progress = false;
+	options.forbidden_missing_key = key;
+	const auto search = search_routes(snapshot, query, progress, options);
+	if (!search.problem.empty())
+		return result;
+	double best_distance = std::numeric_limits<double>::infinity();
+	for (int target_index = 0;
+	     target_index < static_cast<int>(targets.size()); ++target_index) {
+		const auto &target = targets[target_index];
+		if (!valid_segment(snapshot, target.segment) || !target.position.valid ||
+		    !search.nodes[target.segment].reachable)
+			continue;
+		const auto &center = snapshot.topology.segments[target.segment].center;
+		if (!center.valid)
+			continue;
+		const double distance = search.nodes[target.segment].distance +
+		                        point_distance(center, target.position);
+		if (distance >= best_distance)
+			continue;
+		best_distance = distance;
+		result.selected_index = target_index;
+	}
+	if (result.selected_index < 0)
+		return result;
+	result.found = true;
+	result.distance = best_distance;
+	result.progress_weight =
+	    search.nodes[targets[result.selected_index].segment].progress_weight;
 	result.path = build_route_path(
 	    search, targets[result.selected_index].segment);
 	result.path.distance = best_distance;
@@ -656,6 +721,46 @@ extern "C" int route_planner_compare_view(
 				    shared_selection.progress_weight;
 				summary->first_legacy_selection_distance = legacy_selection.distance;
 				summary->first_shared_selection_distance = shared_selection.distance;
+			}
+			const dxx_route::route_key_requirement key_types[3] = {
+				dxx_route::route_key_requirement::blue,
+				dxx_route::route_key_requirement::red,
+				dxx_route::route_key_requirement::gold,
+			};
+			for (int key = 0; key < 3; ++key) {
+				level_metadata_route_target_selection_shadow legacy_key = {};
+				if (!level_metadata_scan_route_select_key_shadow(
+				        view, &legacy_progress, key, &legacy_key)) {
+					copy_problem(problem, problem_capacity,
+					             "legacy key target selection comparison failed");
+					return 0;
+				}
+				const auto shared_key = dxx_route::select_key_target(
+				    snapshot, query, progress, key_types[key],
+				    shared_targets.keys[key]);
+				summary->compared_key_selection_count++;
+				const bool key_mismatch =
+				    legacy_key.selected_index != shared_key.selected_index ||
+				    (legacy_key.selected_index >= 0 &&
+				     (legacy_key.progress_weight != shared_key.progress_weight ||
+				      !distances_match(legacy_key.distance, shared_key.distance)));
+				if (key_mismatch &&
+				    summary->key_selection_mismatch_count++ == 0) {
+					summary->first_key_selection_progress_state = state_index;
+					summary->first_key_selection_key = key;
+					summary->first_legacy_key_selection_index =
+					    legacy_key.selected_index;
+					summary->first_shared_key_selection_index =
+					    shared_key.selected_index;
+					summary->first_legacy_key_selection_progress_weight =
+					    legacy_key.progress_weight;
+					summary->first_shared_key_selection_progress_weight =
+					    shared_key.progress_weight;
+					summary->first_legacy_key_selection_distance =
+					    legacy_key.distance;
+					summary->first_shared_key_selection_distance =
+					    shared_key.distance;
+				}
 			}
 			for (int optimistic = 0; optimistic <= 1; ++optimistic) {
 				std::vector<level_metadata_route_search_node> legacy(view->num_segments);

@@ -61,6 +61,14 @@ route_edge_decision evaluate_route_edge(
     int segment,
     int side);
 
+route_edge_decision evaluate_route_edge(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    route_key_requirement forbidden_missing_key,
+    int segment,
+    int side);
+
 } // namespace dxx_route
 
 #endif
