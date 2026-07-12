@@ -22,6 +22,7 @@ struct route_search_node {
 struct route_search_result {
 	int start_segment = -1;
 	std::vector<route_search_node> nodes;
+	std::vector<int> visit_order;
 	std::string problem;
 };
 
@@ -88,6 +89,29 @@ struct route_trigger_source {
 	route_position source_position;
 };
 
+struct route_visibility_query {
+	void *user = nullptr;
+	bool (*target_visible)(
+	    void *user,
+	    int segment,
+	    const route_position &from,
+	    int target_segment,
+	    const route_position &target) = nullptr;
+	bool (*wall_visible)(
+	    void *user,
+	    int segment,
+	    const route_position &from,
+	    int wall) = nullptr;
+};
+
+struct route_trigger_path_selection {
+	bool found = false;
+	route_trigger_source source;
+	route_path_result path;
+	int terminal_segment = -1;
+	route_position terminal_position;
+};
+
 route_search_result search_routes(
     const route_snapshot &snapshot,
     const route_query &query,
@@ -129,6 +153,13 @@ std::vector<route_trigger_source> discover_trigger_sources(
     const route_progress_state &progress,
     int segment,
     int side);
+
+route_trigger_path_selection select_trigger_firing_path(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    const std::vector<route_trigger_source> &sources,
+    const route_visibility_query &visibility = {});
 
 route_target_selection select_route_target(
     const route_snapshot &snapshot,

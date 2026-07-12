@@ -12,6 +12,7 @@
 #include <physfs.h>
 
 #include "coop_save.h"
+#include "coop_restore_remap.h"
 
 #include "player.h"
 #include "multi.h"
@@ -26,6 +27,8 @@
 #include "cntrlcen.h"
 #include "game.h"
 #include "gameseq.h"
+#include "gameseg.h"
+#include "hudmsg.h"
 #include "mission.h"
 
 #ifdef DXX_BUILD_DESCENT_II
@@ -37,6 +40,74 @@ extern sbyte PKilledFlags[MAX_PLAYERS];
 #endif
 
 extern fix ThisLevelTime;
+
+#ifdef ANDROID
+int coop_remap_restored_players(rewind_file *file,
+	const player restore_players[MAX_PLAYERS],
+	const object restore_objects[MAX_PLAYERS],
+	int coop_player_got[MAX_PLAYERS])
+{
+	coop_save_metadata meta_early;
+	int have_meta = state_android_read_coop_metadata_trailer(file, &meta_early);
+	int got_players = 0;
+	int i;
+
+	for (i = 0; i < MAX_PLAYERS; i++) {
+		object *obj;
+		int saved_slot = -1;
+		int saved_objnum;
+
+		if (!(Players[i].connected == CONNECT_PLAYING ||
+			Players[i].connected == CONNECT_WAITING))
+			continue;
+
+		if (have_meta) {
+			int meta_idx = coop_find_player_in_metadata(Players[i].callsign,
+				Netgame.players[i].client_id, &meta_early);
+			if (meta_idx >= 0 && meta_idx < meta_early.num_active_players)
+				saved_slot = meta_early.active_players[meta_idx].original_slot;
+		}
+
+		if (saved_slot < 0 || saved_slot >= MAX_PLAYERS ||
+			restore_players[saved_slot].connected != CONNECT_PLAYING) {
+			COOPLOG("P%d '%s' not found in save -- spawning fresh", i,
+				Players[i].callsign);
+			HUD_init_message(HM_MULTI, "'%s' not in save -- spawning fresh",
+				Players[i].callsign);
+			continue;
+		}
+
+		saved_objnum = Players[i].objnum;
+		memcpy(&Players[i], &restore_players[saved_slot], sizeof(player));
+		Players[i].objnum = saved_objnum;
+		coop_player_got[i] = 1;
+		got_players++;
+		COOPLOG("mapped P%d '%s' -> save slot %d, objnum=%d", i,
+			Players[i].callsign, saved_slot, saved_objnum);
+
+		obj = &Objects[Players[i].objnum];
+		obj->id = i;
+		obj->control_type = restore_objects[saved_slot].control_type;
+		obj->movement_type = restore_objects[saved_slot].movement_type;
+		obj->render_type = restore_objects[saved_slot].render_type;
+		obj->flags = restore_objects[saved_slot].flags;
+		obj->pos = restore_objects[saved_slot].pos;
+		obj->orient = restore_objects[saved_slot].orient;
+		obj->size = restore_objects[saved_slot].size;
+		obj->shields = restore_objects[saved_slot].shields;
+		obj->lifeleft = restore_objects[saved_slot].lifeleft;
+		obj->mtype.phys_info = restore_objects[saved_slot].mtype.phys_info;
+		obj->rtype.pobj_info = restore_objects[saved_slot].rtype.pobj_info;
+		obj->type = OBJ_PLAYER;
+		multi_reset_player_object(obj);
+		update_object_seg(obj);
+		COOPLOG("P%d post-reset: ct=%d mt=%d phys_flags=0x%x", i,
+			obj->control_type, obj->movement_type, obj->mtype.phys_info.flags);
+	}
+
+	return got_players;
+}
+#endif
 
 #ifdef ANDROID
 #define COOP_SAVE_LOG(level, fmt, ...) COOPLOG(fmt, ##__VA_ARGS__)

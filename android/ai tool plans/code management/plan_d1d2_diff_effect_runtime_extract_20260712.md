@@ -13,3 +13,9 @@ time reset kernel from both upstream-original `effects.c` files.
 - Preserve the exact elapsed-time boundary arithmetic and critical-clip rules.
 - Build both desktop games and every Android ABI, then exercise replay/save
   restore paths that reconstruct animated effects.
+
+## Result
+
+- Both inherited files moved from 87 to 2 additions.  After CMake wiring, 168
+  inherited additions were removed.
+- All three Android ABI targets compile and link the shared effect runtime.

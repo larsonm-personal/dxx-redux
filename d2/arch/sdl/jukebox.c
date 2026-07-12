@@ -208,21 +208,7 @@ void jukebox_load()
 			GameCfg.CMLevelMusicTrack[0] = 0; // number of songs changed so start from beginning.
 		}
 #ifdef __ANDROID__
-		/* Load chromaprint-decoded names sidecar from same dir as M3U */
-		{
-			char names_path[PATH_MAX];
-			const char *sep;
-			strncpy(names_path, GameCfg.CMLevelMusicPath, PATH_MAX - 1);
-			names_path[PATH_MAX - 1] = '\0';
-			sep = strrchr(names_path, '/');
-			if (sep)
-				names_path[sep - names_path + 1] = '\0';
-			else
-				names_path[0] = '\0';
-			strncat(names_path, "custom_music_names.json",
-			        PATH_MAX - 1 - strlen(names_path));
-			jukebox_names_load(names_path);
-		}
+		jukebox_names_load_for_playlist(GameCfg.CMLevelMusicPath);
 #endif
 	}
 	else
@@ -323,24 +309,7 @@ void jukebox_list() {
 #ifdef __ANDROID__
 const char *jukebox_get_track_name(int index)
 {
-	if (!JukeboxSongs.list || index < 0 || index >= JukeboxSongs.num_songs)
-		return NULL;
-	/* Try chromaprint-decoded name first */
-	const char *decoded = jukebox_names_lookup(JukeboxSongs.list[index]);
-	if (decoded && decoded[0])
-		return decoded;
-	/* Fallback: strip path and extension into static buffer */
-	{
-		static char namebuf[64];
-		const char *base = JukeboxSongs.list[index], *p;
-		for (p = base; *p; p++)
-			if (*p == '/' || *p == '\\')
-				base = p + 1;
-		strncpy(namebuf, base, sizeof(namebuf) - 1);
-		namebuf[sizeof(namebuf) - 1] = '\0';
-		p = strrchr(namebuf, '.');
-		if (p) namebuf[p - namebuf] = '\0';
-		return namebuf;
-	}
+	return jukebox_track_display_name(JukeboxSongs.list,
+		JukeboxSongs.num_songs, index);
 }
 #endif

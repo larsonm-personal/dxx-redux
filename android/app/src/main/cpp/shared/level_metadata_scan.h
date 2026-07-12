@@ -231,6 +231,16 @@ typedef struct level_metadata_route_trigger_source_shadow {
 	int source_pos[3];
 } level_metadata_route_trigger_source_shadow;
 
+typedef struct level_metadata_route_trigger_firing_path_shadow {
+	int found;
+	level_metadata_route_trigger_source_shadow source;
+	double distance;
+	int progress_weight;
+	int terminal_seg;
+	int terminal_pos[3];
+	int terminal_pos_valid;
+} level_metadata_route_trigger_firing_path_shadow;
+
 typedef struct level_metadata_state {
 	int energy_center_segment_count;
 	int energy_center_raw_count;
@@ -302,6 +312,12 @@ int level_metadata_scan_route_trigger_sources_shadow(
     level_metadata_route_trigger_source_shadow *sources,
     int capacity,
     int *count);
+int level_metadata_scan_route_trigger_firing_path_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
+    int seg,
+    int side,
+    level_metadata_route_trigger_firing_path_shadow *result);
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

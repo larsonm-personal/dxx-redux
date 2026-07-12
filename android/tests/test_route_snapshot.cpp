@@ -250,6 +250,23 @@ int start_position(void *, int xyz[3])
 	return 1;
 }
 
+struct test_visibility {
+	int segment = -1;
+	int wall = -1;
+	dxx_route::route_position position;
+};
+
+bool wall_visible(
+    void *user,
+    int segment,
+    const dxx_route::route_position &position,
+    int wall)
+{
+	const auto &visible = *static_cast<test_visibility *>(user);
+	return segment == visible.segment && wall == visible.wall &&
+	       position.value == visible.position.value;
+}
+
 level_metadata_scan_view make_view(test_level &level)
 {
 	level_metadata_scan_view view = {};
@@ -503,6 +520,40 @@ int main()
 	assert(trigger_sources[0].source_position.value[0] == 0);
 	assert(trigger_sources[0].source_position.value[1] == 1);
 	assert(trigger_sources[0].source_position.value[2] == 2);
+	const auto direct_firing = dxx_route::select_trigger_firing_path(
+	    triggered_snapshot, planner_query, source_progress, trigger_sources);
+	assert(direct_firing.found);
+	assert(direct_firing.source.source_wall == 0);
+	assert(direct_firing.source.trigger == 0);
+	assert(direct_firing.terminal_segment == 0);
+	assert(direct_firing.terminal_position.value ==
+	       trigger_sources[0].source_position.value);
+	assert(direct_firing.path.reached);
+	assert(direct_firing.path.segments.size() == 1);
+	auto visible_snapshot = triggered_snapshot;
+	visible_snapshot.state.segments[0].sides[0].hard_blocked = true;
+	visible_snapshot.topology.walls[0].segment = 1;
+	visible_snapshot.topology.walls[0].side = 0;
+	visible_snapshot.topology.walls[0].target =
+	    visible_snapshot.topology.segments[1].center;
+	const auto visible_sources = dxx_route::discover_trigger_sources(
+	    visible_snapshot, source_progress, 1, 0);
+	assert(visible_sources.size() == 1);
+	test_visibility visible;
+	visible.segment = 0;
+	visible.wall = 0;
+	visible.position = visible_snapshot.topology.segments[0].center;
+	dxx_route::route_visibility_query visibility;
+	visibility.user = &visible;
+	visibility.wall_visible = wall_visible;
+	const auto visible_firing = dxx_route::select_trigger_firing_path(
+	    visible_snapshot, planner_query, source_progress, visible_sources,
+	    visibility);
+	assert(visible_firing.found);
+	assert(visible_firing.terminal_segment == 0);
+	assert(visible_firing.terminal_position.value == visible.position.value);
+	assert(visible_firing.path.reached);
+	assert(visible_firing.path.segments.size() == 1);
 	source_progress.fired_triggers[0] = 1;
 	assert(dxx_route::discover_trigger_sources(
 	           triggered_snapshot, source_progress, 1, 0)
@@ -538,6 +589,8 @@ int main()
 	assert(planner_summary.compared_trigger_source_edge_count == 48);
 	assert(planner_summary.compared_trigger_source_count == 6);
 	assert(planner_summary.trigger_source_mismatch_count == 0);
+	assert(planner_summary.compared_trigger_firing_path_count == 2);
+	assert(planner_summary.trigger_firing_path_mismatch_count == 0);
 	const auto targets = dxx_route::discover_route_targets(first);
 	assert(targets.reactor_found);
 	assert(targets.reactor.segment == 0);

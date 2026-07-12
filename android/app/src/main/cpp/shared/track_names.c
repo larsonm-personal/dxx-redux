@@ -177,6 +177,23 @@ void jukebox_names_load(const char *json_path)
 	free(buf);
 }
 
+void jukebox_names_load_for_playlist(const char *playlist_path)
+{
+	char names_path[PATH_MAX];
+	const char *separator;
+
+	strncpy(names_path, playlist_path, PATH_MAX - 1);
+	names_path[PATH_MAX - 1] = '\0';
+	separator = strrchr(names_path, '/');
+	if (separator)
+		names_path[separator - names_path + 1] = '\0';
+	else
+		names_path[0] = '\0';
+	strncat(names_path, "custom_music_names.json",
+		PATH_MAX - 1 - strlen(names_path));
+	jukebox_names_load(names_path);
+}
+
 const char *jukebox_names_lookup(const char *filepath)
 {
 	int i;
@@ -213,6 +230,28 @@ static const char *base_name(const char *path)
 		if (*p == '/' || *p == '\\')
 			base = p + 1;
 	return base;
+}
+
+const char *jukebox_track_display_name(char *const *songs, int song_count,
+	int index)
+{
+	static char namebuf[64];
+	const char *decoded;
+	const char *base;
+	char *extension;
+
+	if (!songs || index < 0 || index >= song_count)
+		return NULL;
+	decoded = jukebox_names_lookup(songs[index]);
+	if (decoded && decoded[0])
+		return decoded;
+	base = base_name(songs[index]);
+	strncpy(namebuf, base, sizeof(namebuf) - 1);
+	namebuf[sizeof(namebuf) - 1] = '\0';
+	extension = strrchr(namebuf, '.');
+	if (extension)
+		*extension = '\0';
+	return namebuf;
 }
 
 void mission_music_names_load(void)

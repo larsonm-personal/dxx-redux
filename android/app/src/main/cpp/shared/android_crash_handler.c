@@ -52,6 +52,29 @@ static void write_text(int fd, const char *text)
 	}
 }
 
+void android_fatal_error_exit(const char *message)
+{
+	const char *dir = android_crash_handler_get_dir();
+
+	__android_log_print(ANDROID_LOG_ERROR, TAG, "fatal Error invoked: %s",
+		message ? message : "");
+	if (dir) {
+		char path[600];
+		int fd;
+
+		snprintf(path, sizeof(path), "%s/crash_error_%d.txt", dir,
+			(int)getpid());
+		fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		if (fd >= 0) {
+			write_text(fd, message ? message : "");
+			write_text(fd, "\n");
+			close(fd);
+		}
+	}
+	android_finish_and_exit();
+	_exit(1);
+}
+
 void crash_breadcrumb(const char *msg)
 {
 	int seq = __atomic_fetch_add(&s_crumb_next, 1, __ATOMIC_RELAXED);

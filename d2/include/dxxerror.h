@@ -40,15 +40,7 @@ void set_warn_func(void (*f)(char *s));//specifies the function to call with war
 void clear_warn_func(void (*f)(char *s));//say this function no longer valid
 void Error(const char *fmt,...) __noreturn __attribute_gcc_format((printf, 1, 2));				//exit with error code=1, print message
 #ifdef __ANDROID__
-/* Android port: log assert/Int3 to crash breadcrumbs before aborting.
- * Must be an expression (not statement) because SEG_PTR_2_NUM etc. use
- * Assert inside comma expressions. */
-#include "android_crash_handler.h"
-#undef Assert
-#define Assert(expr) \
-	(!(expr) ? (crash_breadcrumb_v("ASSERT FAIL: %s at %s:%d", \
-		#expr, __FILE__, __LINE__), assert(expr)) : (void)0)
-#define Int3() crash_breadcrumb_v("Int3 at %s:%d", __FILE__, __LINE__)
+#include "android_dxxerror.h"
 #else
 #define Assert assert
 #ifndef NDEBUG		//macros for debugging

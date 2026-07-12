@@ -75,7 +75,7 @@ Parity has two separate meanings and both must pass:
   - Fixed MSVC packing for all new snapshot, edge, and planner C ABI summaries after expanded diagnostics exposed engine-header packing leakage.
   - Ported ordered trigger-source discovery with direct-side-before-reverse-side precedence, stable source-wall ordering, source activation positions, and fired, disabled, non-progress, and in-progress trigger filtering.
   - Added per-side trigger-source shadow comparison in all four progression states, strict headless diagnostics, unit coverage, and live introspection; confirmed zero mismatches in D1/D2 fixtures, all base campaigns, 1,244 levels from 109 mission archives, and the Counterstrike unexplored-goal emulator fixture.
-  - Next slice: port trigger firing-path selection, including candidate ranking, exact visible or directly reachable activation pose, terminal segment, distance, and dependency-loop behavior.
+  - Next slice in progress: port trigger firing-path selection through an engine-neutral visibility callback, including candidate ranking, exact visible or directly reachable activation pose, terminal segment, distance, and dependency-loop behavior.
   - Semantic step production and live behavior remain on the C planner; firing-position selection is the next porting boundary.
 
 ## Non-Goals

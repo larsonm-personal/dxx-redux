@@ -76,6 +76,25 @@ typedef struct route_planner_shadow_summary {
 	int first_shared_trigger_source_side;
 	int first_legacy_trigger_source_pos[3];
 	int first_shared_trigger_source_pos[3];
+	int compared_trigger_firing_path_count;
+	int trigger_firing_path_mismatch_count;
+	int first_trigger_firing_path_progress_state;
+	int first_trigger_firing_path_segment;
+	int first_trigger_firing_path_side;
+	int first_legacy_trigger_firing_path_found;
+	int first_shared_trigger_firing_path_found;
+	int first_legacy_trigger_firing_path_wall;
+	int first_shared_trigger_firing_path_wall;
+	int first_legacy_trigger_firing_path_trigger;
+	int first_shared_trigger_firing_path_trigger;
+	int first_legacy_trigger_firing_path_terminal_segment;
+	int first_shared_trigger_firing_path_terminal_segment;
+	int first_legacy_trigger_firing_path_progress_weight;
+	int first_shared_trigger_firing_path_progress_weight;
+	int first_legacy_trigger_firing_path_terminal_pos[3];
+	int first_shared_trigger_firing_path_terminal_pos[3];
+	double first_legacy_trigger_firing_path_distance;
+	double first_shared_trigger_firing_path_distance;
 } route_planner_shadow_summary;
 
 #ifdef _MSC_VER

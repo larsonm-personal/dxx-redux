@@ -77,6 +77,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_save_meta.h"
 #include "state_android_shared.h"
 #include "coop_save.h"
+#include "coop/coop_restore_remap.h"
 #include "coop_indicator_lines.h"
 #include "android_log.h"
 #include "config.h"
@@ -2343,74 +2344,8 @@ RetryObjectLoading:
 		}
 		#endif
 #ifdef __ANDROID__
-		/* Match current players to saved players using client_id from
-		 * the metadata trailer (preferred) or callsign (fallback).
-		 * Read metadata early by seeking to end of file, then seek back. */
-		{
-			coop_save_metadata meta_early;
-			int have_meta = 0;
-			have_meta = state_android_read_coop_metadata_trailer(fp,
-				&meta_early);
-
-			for (i = 0; i < MAX_PLAYERS; i++)
-			{
-				object *obj;
-				int sav_objnum;
-
-				if (!(Players[i].connected == CONNECT_PLAYING ||
-				      Players[i].connected == CONNECT_WAITING))
-					continue;
-
-				j = -1;
-				/* Try metadata match (client_id first, callsign second) */
-				if (have_meta) {
-					int meta_idx = coop_find_player_in_metadata(
-						Players[i].callsign,
-						Netgame.players[i].client_id,
-						&meta_early);
-					if (meta_idx >= 0 && meta_idx < meta_early.num_active_players)
-						j = meta_early.active_players[meta_idx].original_slot;
-				}
-
-				if (j < 0 || j >= MAX_PLAYERS ||
-				    restore_players[j].connected != CONNECT_PLAYING) {
-					COOPLOG("P%d '%s' not found in save -- spawning fresh", i, Players[i].callsign);
-					HUD_init_message(HM_MULTI, "'%s' not in save -- spawning fresh",
-						Players[i].callsign);
-					continue;
-				}
-
-				sav_objnum = Players[i].objnum;
-				memcpy(&Players[i], &restore_players[j], sizeof(player));
-				Players[i].objnum = sav_objnum;
-				coop_player_got[i] = 1;
-				coop_got_nplayers++;
-				COOPLOG("mapped P%d '%s' -> save slot %d, objnum=%d",
-					i, Players[i].callsign, j, sav_objnum);
-
-				obj = &Objects[Players[i].objnum];
-				// since a player always uses the same object, we just have to copy the saved object properties to the existing one. i hate you...
-				obj->id = i; // assign player object id to player number
-				obj->control_type = restore_objects[j].control_type;
-				obj->movement_type = restore_objects[j].movement_type;
-				obj->render_type = restore_objects[j].render_type;
-				obj->flags = restore_objects[j].flags;
-				obj->pos = restore_objects[j].pos;
-				obj->orient = restore_objects[j].orient;
-				obj->size = restore_objects[j].size;
-				obj->shields = restore_objects[j].shields;
-				obj->lifeleft = restore_objects[j].lifeleft;
-				obj->mtype.phys_info = restore_objects[j].mtype.phys_info;
-				obj->rtype.pobj_info = restore_objects[j].rtype.pobj_info;
-				// make this restored player object an actual player again
-				obj->type = OBJ_PLAYER;
-				multi_reset_player_object(obj);
-				update_object_seg(obj);
-				COOPLOG("P%d post-reset: ct=%d mt=%d phys_flags=0x%x",
-					i, obj->control_type, obj->movement_type,
-					obj->mtype.phys_info.flags);
-			}
-		}
+		coop_got_nplayers = coop_remap_restored_players(fp, restore_players,
+			restore_objects, coop_player_got);
 #else
 		for (i = 0; i < MAX_PLAYERS; i++) // copy restored players to the current slots
 		{

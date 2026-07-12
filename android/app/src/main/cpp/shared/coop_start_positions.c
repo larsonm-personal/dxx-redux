@@ -1,7 +1,9 @@
 #include "coop_start_positions.h"
 #include "game.h"
+#include "gameseq.h"
 #include "gameseg.h"
 #include "object.h"
+#include "player.h"
 #include "polyobj.h"
 
 typedef struct coop_start_offset {

@@ -1693,6 +1693,66 @@ static int metadata_route_find_trigger_firing_path(
 	return found;
 }
 
+int level_metadata_scan_route_trigger_firing_path_shadow(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_progress_shadow *progress,
+    int seg,
+    int side,
+    level_metadata_route_trigger_firing_path_shadow *result)
+{
+	metadata_route_context route;
+	metadata_route_block block;
+	metadata_route_block selected;
+	metadata_route_path path;
+	int child;
+	int source_pos[3];
+
+	if (!view || !progress || !result)
+		return 0;
+	memset(result, 0, sizeof(*result));
+	result->source.target_seg = -1;
+	result->source.target_side = -1;
+	result->source.target_wall = -1;
+	result->source.source_wall = -1;
+	result->source.source_seg = -1;
+	result->source.source_side = -1;
+	result->source.trigger_num = -1;
+	result->source.trigger_type = -1;
+	result->terminal_seg = -1;
+	if (!view->segment_child || !valid_segment(view, seg) ||
+	    side < 0 || side >= LEVEL_METADATA_MAX_SIDES)
+		return 1;
+	child = view->segment_child(view->user, seg, side);
+	if (!valid_segment(view, child))
+		return 1;
+	collect_segment_centers(view);
+	metadata_route_context_from_progress_shadow(&route, progress);
+	if (!metadata_route_edge_trigger_blocker(
+	        view, &route, seg, side, child, &block) ||
+	    !metadata_route_find_trigger_firing_path(
+	        view, &route, &block, &selected, &path))
+		return 1;
+	if (!metadata_route_trigger_source_pos(view, &selected, source_pos))
+		return 0;
+	result->found = 1;
+	result->source.target_seg = selected.seg;
+	result->source.target_side = selected.side;
+	result->source.target_wall = selected.wall_num;
+	result->source.source_wall = selected.source_wall;
+	result->source.source_seg = selected.source_seg;
+	result->source.source_side = selected.source_side;
+	result->source.trigger_num = selected.trigger_num;
+	result->source.trigger_type = selected.trigger_type;
+	copy_pos(result->source.source_pos, source_pos);
+	result->distance = path.distance;
+	result->progress_weight = path.progress_weight;
+	result->terminal_seg = path.terminal_seg;
+	result->terminal_pos_valid = path.terminal_pos_valid;
+	if (path.terminal_pos_valid)
+		copy_pos(result->terminal_pos, path.terminal_pos);
+	return 1;
+}
+
 static void metadata_route_set_problem(level_metadata_state *state, const char *problem)
 {
 	if (!state || state->route_problem[0] || !problem)

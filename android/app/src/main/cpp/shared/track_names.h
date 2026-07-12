@@ -42,10 +42,13 @@ void track_overlay_notify_jukebox(const char *filename);
 /* Load jukebox track names from custom_music_names.json (absolute path).
  * Called from jukebox_load() after reading the M3U playlist. */
 void jukebox_names_load(const char *json_path);
+void jukebox_names_load_for_playlist(const char *playlist_path);
 
 /* Look up a chromaprint-decoded name for a jukebox file path.
  * Returns NULL if no name is known. */
 const char *jukebox_names_lookup(const char *filepath);
+const char *jukebox_track_display_name(char *const *songs, int song_count,
+	int index);
 
 /* Load and look up mission zip built-in/addon music names from PhysFS. */
 void mission_music_names_load(void);

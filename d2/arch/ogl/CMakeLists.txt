@@ -4,7 +4,8 @@ add_library(${DXX_TARGET_PREFIX}arch_ogl STATIC
     )
 
 if(OPENGLMERGE)
-   target_sources(${DXX_TARGET_PREFIX}arch_ogl PRIVATE oglprog.c)
+   target_sources(${DXX_TARGET_PREFIX}arch_ogl PRIVATE oglprog.c
+       ../../../android/app/src/main/cpp/shared/ogl_shader_runtime.c)
 endif()
 
 include_directories(../../include ../include ../../main)

@@ -179,6 +179,134 @@ bool side_has_trigger_source(
 	return false;
 }
 
+route_position weighted_position(
+    const route_position &first,
+    const route_position &second,
+    int second_weight)
+{
+	route_position result;
+	if (!first.valid || !second.valid)
+		return result;
+	const int total = 1 + second_weight;
+	for (int coordinate = 0; coordinate < 3; ++coordinate)
+		result.value[coordinate] = static_cast<int>(
+		    (static_cast<long long>(first.value[coordinate]) +
+		     static_cast<long long>(second.value[coordinate]) * second_weight) /
+		    total);
+	result.valid = true;
+	return result;
+}
+
+bool source_visible_from_position(
+    const route_snapshot &snapshot,
+    const route_trigger_source &source,
+    const route_visibility_query &visibility,
+    int segment,
+    const route_position &position)
+{
+	if (valid_wall(snapshot, source.source_wall) && visibility.wall_visible)
+		return visibility.wall_visible(
+		    visibility.user, segment, position, source.source_wall);
+	return visibility.target_visible &&
+	       visibility.target_visible(
+	           visibility.user, segment, position, source.source_segment,
+	           source.source_position);
+}
+
+bool visible_source_position(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    const route_trigger_source &source,
+    const route_visibility_query &visibility,
+    int segment,
+    route_position &position,
+    double &extra_distance)
+{
+	static constexpr int sample_weights[] = { 3, 7, 15 };
+	static constexpr int side_vertices[LEVEL_METADATA_MAX_SIDES][4] = {
+		{ 7, 6, 2, 3 },
+		{ 0, 4, 7, 3 },
+		{ 0, 1, 5, 4 },
+		{ 2, 6, 5, 1 },
+		{ 4, 5, 6, 7 },
+		{ 3, 2, 1, 0 },
+	};
+	if (!valid_segment(snapshot, segment))
+		return false;
+	const auto &topology_segment = snapshot.topology.segments[segment];
+	if (segment == progress.current_segment && progress.current_position.valid &&
+	    source_visible_from_position(
+	        snapshot, source, visibility, segment, progress.current_position)) {
+		position = progress.current_position;
+		extra_distance = 0.0;
+		return true;
+	}
+	if (!topology_segment.center.valid)
+		return false;
+	if (source_visible_from_position(
+	        snapshot, source, visibility, segment, topology_segment.center)) {
+		position = topology_segment.center;
+		extra_distance = 0.0;
+		return true;
+	}
+	for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+		const auto &side_center = topology_segment.sides[side].center;
+		if (!side_center.valid)
+			continue;
+		for (const int weight : sample_weights) {
+			const auto candidate = weighted_position(
+			    topology_segment.center, side_center, weight);
+			if (!source_visible_from_position(
+			        snapshot, source, visibility, segment, candidate))
+				continue;
+			position = candidate;
+			extra_distance = point_distance(topology_segment.center, candidate);
+			return true;
+		}
+	}
+	for (const auto &vertex : topology_segment.vertices) {
+		if (!vertex.valid)
+			continue;
+		for (const int weight : sample_weights) {
+			const auto candidate = weighted_position(
+			    topology_segment.center, vertex, weight);
+			if (!source_visible_from_position(
+			        snapshot, source, visibility, segment, candidate))
+				continue;
+			position = candidate;
+			extra_distance = point_distance(topology_segment.center, candidate);
+			return true;
+		}
+	}
+	for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+		for (int edge = 0; edge < 4; ++edge) {
+			const auto &first =
+			    topology_segment.vertices[side_vertices[side][edge]];
+			const auto &second = topology_segment.vertices
+			                         [side_vertices[side][(edge + 1) % 4]];
+			if (!first.valid || !second.valid)
+				continue;
+			route_position midpoint;
+			midpoint.valid = true;
+			for (int coordinate = 0; coordinate < 3; ++coordinate)
+				midpoint.value[coordinate] =
+				    (first.value[coordinate] + second.value[coordinate]) / 2;
+			for (const int weight : sample_weights) {
+				const auto candidate = weighted_position(
+				    topology_segment.center, midpoint, weight);
+				if (!source_visible_from_position(
+				        snapshot, source, visibility, segment, candidate))
+					continue;
+				position = candidate;
+				extra_distance = point_distance(
+				    topology_segment.center, candidate);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 int key_index(route_key_requirement key)
 {
 	switch (key) {
@@ -308,6 +436,7 @@ route_search_result search_routes(
 	heap.push(result.start_segment);
 	while (!heap.empty()) {
 		const int current = heap.pop();
+		result.visit_order.push_back(current);
 		closed[current] = 1;
 		for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
 			const int child = snapshot.topology.segments[current].sides[side].child;
@@ -532,6 +661,61 @@ std::vector<route_trigger_source> discover_trigger_sources(
 	return result;
 }
 
+route_trigger_path_selection select_trigger_firing_path(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    const std::vector<route_trigger_source> &sources,
+    const route_visibility_query &visibility)
+{
+	route_trigger_path_selection result;
+	const auto search = search_routes(snapshot, query, progress, false);
+	if (!search.problem.empty())
+		return result;
+	for (const auto &source : sources) {
+		if (!trigger_source_wall_valid(
+		        snapshot, progress, source.source_wall) ||
+		    !valid_trigger(snapshot, source.trigger) ||
+		    state_flag(progress.trigger_in_progress, source.trigger) ||
+		    !source.source_position.valid)
+			continue;
+		route_trigger_path_selection candidate;
+		candidate.source = source;
+		if (valid_segment(snapshot, source.source_segment) &&
+		    search.nodes[source.source_segment].reachable) {
+			candidate.path = build_route_path(
+			    search, source.source_segment);
+			candidate.path.distance += point_distance(
+			    snapshot.topology.segments[source.source_segment].center,
+			    source.source_position);
+			candidate.terminal_segment = source.source_segment;
+			candidate.terminal_position = source.source_position;
+			candidate.found = true;
+		} else {
+			for (const int segment : search.visit_order) {
+				double extra_distance = 0.0;
+				route_position terminal;
+				if (!visible_source_position(
+				        snapshot, progress, source, visibility, segment,
+				        terminal, extra_distance))
+					continue;
+				candidate.path = build_route_path(search, segment);
+				candidate.path.distance += extra_distance;
+				candidate.path.progress_weight = 0;
+				candidate.terminal_segment = segment;
+				candidate.terminal_position = terminal;
+				candidate.found = true;
+				break;
+			}
+		}
+		if (!candidate.found ||
+		    (result.found && candidate.path.distance >= result.path.distance))
+			continue;
+		result = std::move(candidate);
+	}
+	return result;
+}
+
 route_target_inventory discover_route_targets(const route_snapshot &snapshot)
 {
 	route_target_inventory result;
@@ -655,6 +839,34 @@ bool distances_match(double left, double right)
 	return std::fabs(left - right) <= 1e-9;
 }
 
+struct view_visibility_context {
+	const level_metadata_scan_view *view;
+};
+
+bool view_target_visible(
+    void *user,
+    int segment,
+    const dxx_route::route_position &from,
+    int target_segment,
+    const dxx_route::route_position &target)
+{
+	const auto *context = static_cast<view_visibility_context *>(user);
+	return context->view->target_visible_from_segment(
+	           context->view->user, segment, from.value.data(), target_segment,
+	           target.value.data()) != 0;
+}
+
+bool view_wall_visible(
+    void *user,
+    int segment,
+    const dxx_route::route_position &from,
+    int wall)
+{
+	const auto *context = static_cast<view_visibility_context *>(user);
+	return context->view->wall_visible_from_segment(
+	           context->view->user, segment, from.value.data(), wall) != 0;
+}
+
 } // namespace
 
 extern "C" int route_planner_compare_view(
@@ -672,6 +884,9 @@ extern "C" int route_planner_compare_view(
 		summary->first_trigger_source_segment = -1;
 		summary->first_trigger_source_side = -1;
 		summary->first_trigger_source_index = -1;
+		summary->first_trigger_firing_path_progress_state = -1;
+		summary->first_trigger_firing_path_segment = -1;
+		summary->first_trigger_firing_path_side = -1;
 	}
 	copy_problem(problem, problem_capacity, "");
 	if (!view || !summary) {
@@ -689,6 +904,13 @@ extern "C" int route_planner_compare_view(
 		dxx_route::route_query query;
 		query.start = snapshot.state.start_position;
 		query.progression.key_mask = snapshot.state.key_mask;
+		view_visibility_context visibility_context = { view };
+		dxx_route::route_visibility_query visibility;
+		visibility.user = &visibility_context;
+		if (view->target_visible_from_segment)
+			visibility.target_visible = view_target_visible;
+		if (view->wall_visible_from_segment)
+			visibility.wall_visible = view_wall_visible;
 		auto legacy_targets = std::unique_ptr<level_metadata_route_target_inventory_shadow>(
 		    new level_metadata_route_target_inventory_shadow{});
 		if (!level_metadata_scan_route_targets_shadow(view, legacy_targets.get())) {
@@ -803,6 +1025,15 @@ extern "C" int route_planner_compare_view(
 			     wall < static_cast<int>(progress.opened_hidden_walls.size()); ++wall)
 				legacy_progress.opened_hidden_walls[wall] =
 				    progress.opened_hidden_walls[wall];
+			const auto firing_search = dxx_route::search_routes(
+			    snapshot, query, progress, false);
+			if (!firing_search.problem.empty()) {
+				copy_problem(
+				    problem, problem_capacity, firing_search.problem.c_str());
+				return 0;
+			}
+			bool compared_direct_firing = false;
+			bool compared_visible_firing = false;
 			for (int segment = 0; segment < view->num_segments; ++segment) {
 				for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
 					std::array<level_metadata_route_trigger_source_shadow,
@@ -890,6 +1121,102 @@ extern "C" int route_planner_compare_view(
 						        new_source.source_position.value[2];
 						if (mismatch)
 							record_source_mismatch(index);
+					}
+					if (shared_sources.empty() ||
+					    segment != shared_sources.front().target_segment ||
+					    side != shared_sources.front().target_side ||
+					    state_index > 1)
+						continue;
+					bool directly_reachable = false;
+					for (const auto &source : shared_sources)
+						if (source.source_segment >= 0 &&
+						    source.source_segment <
+						        static_cast<int>(firing_search.nodes.size()) &&
+						    firing_search.nodes[source.source_segment].reachable) {
+							directly_reachable = true;
+							break;
+						}
+					if ((directly_reachable && compared_direct_firing) ||
+					    (!directly_reachable && compared_visible_firing))
+						continue;
+					if (directly_reachable)
+						compared_direct_firing = true;
+					else
+						compared_visible_firing = true;
+					level_metadata_route_trigger_firing_path_shadow legacy_firing = {};
+					if (!level_metadata_scan_route_trigger_firing_path_shadow(
+					        view, &legacy_progress, segment, side,
+					        &legacy_firing)) {
+						copy_problem(
+						    problem, problem_capacity,
+						    "legacy trigger firing path comparison failed");
+						return 0;
+					}
+					const auto shared_firing =
+					    dxx_route::select_trigger_firing_path(
+					        snapshot, query, progress, shared_sources,
+					        visibility);
+					summary->compared_trigger_firing_path_count++;
+					const bool firing_mismatch =
+					    legacy_firing.found !=
+					        static_cast<int>(shared_firing.found) ||
+					    (legacy_firing.found &&
+					     (legacy_firing.source.source_wall !=
+					          shared_firing.source.source_wall ||
+					      legacy_firing.source.trigger_num !=
+					          shared_firing.source.trigger ||
+					      legacy_firing.progress_weight !=
+					          shared_firing.path.progress_weight ||
+					      legacy_firing.terminal_seg !=
+					          shared_firing.terminal_segment ||
+					      legacy_firing.terminal_pos_valid !=
+					          static_cast<int>(
+					              shared_firing.terminal_position.valid) ||
+					      legacy_firing.terminal_pos[0] !=
+					          shared_firing.terminal_position.value[0] ||
+					      legacy_firing.terminal_pos[1] !=
+					          shared_firing.terminal_position.value[1] ||
+					      legacy_firing.terminal_pos[2] !=
+					          shared_firing.terminal_position.value[2] ||
+					      !distances_match(
+					          legacy_firing.distance,
+					          shared_firing.path.distance)));
+					if (firing_mismatch &&
+					    summary->trigger_firing_path_mismatch_count++ == 0) {
+						summary->first_trigger_firing_path_progress_state =
+						    state_index;
+						summary->first_trigger_firing_path_segment = segment;
+						summary->first_trigger_firing_path_side = side;
+						summary->first_legacy_trigger_firing_path_found =
+						    legacy_firing.found;
+						summary->first_shared_trigger_firing_path_found =
+						    shared_firing.found;
+						summary->first_legacy_trigger_firing_path_wall =
+						    legacy_firing.source.source_wall;
+						summary->first_shared_trigger_firing_path_wall =
+						    shared_firing.source.source_wall;
+						summary->first_legacy_trigger_firing_path_trigger =
+						    legacy_firing.source.trigger_num;
+						summary->first_shared_trigger_firing_path_trigger =
+						    shared_firing.source.trigger;
+						summary->first_legacy_trigger_firing_path_terminal_segment =
+						    legacy_firing.terminal_seg;
+						summary->first_shared_trigger_firing_path_terminal_segment =
+						    shared_firing.terminal_segment;
+						summary->first_legacy_trigger_firing_path_progress_weight =
+						    legacy_firing.progress_weight;
+						summary->first_shared_trigger_firing_path_progress_weight =
+						    shared_firing.path.progress_weight;
+						for (int coordinate = 0; coordinate < 3; ++coordinate) {
+							summary->first_legacy_trigger_firing_path_terminal_pos[coordinate] =
+							    legacy_firing.terminal_pos[coordinate];
+							summary->first_shared_trigger_firing_path_terminal_pos[coordinate] =
+							    shared_firing.terminal_position.value[coordinate];
+						}
+						summary->first_legacy_trigger_firing_path_distance =
+						    legacy_firing.distance;
+						summary->first_shared_trigger_firing_path_distance =
+						    shared_firing.path.distance;
 					}
 				}
 			}

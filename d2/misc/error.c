@@ -21,10 +21,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdarg.h>
 #include <string.h>
 #ifdef ANDROID
-#include <unistd.h>
-#include <fcntl.h>
 #include "android_crash_handler.h"
-#include "android_log.h"
 #endif
 
 #include "pstypes.h"
@@ -82,26 +79,7 @@ void Error(const char *fmt,...)
 	print_exit_message(exit_message);
 
 #ifdef ANDROID
-	debug_log(DLOG_GAME, "fatal Error invoked: %s", exit_message);
-	/* Android port: write error alongside xCrash tombstones so it survives exit(1).
-	 * Signal handlers don't catch clean exits, so this is the only
-	 * way to get a crash file for Error() calls. */
-	{
-		const char *dir = android_crash_handler_get_dir();
-		if (dir) {
-			char path[600];
-			snprintf(path, sizeof(path), "%s/crash_error_%d.txt",
-			         dir, (int)getpid());
-			int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-			if (fd >= 0) {
-				write(fd, exit_message, strlen(exit_message));
-				write(fd, "\n", 1);
-				close(fd);
-			}
-		}
-	}
-	android_finish_and_exit();
-	_exit(1);
+	android_fatal_error_exit(exit_message);
 #else
 	exit(1);
 #endif

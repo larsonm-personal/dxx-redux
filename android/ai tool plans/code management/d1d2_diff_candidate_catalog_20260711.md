@@ -280,6 +280,7 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C10. SDL mixer Android diagnostics
 
+- Status: complete
 - Files: `d1/arch/sdl/digi_mixer.c +177/-11`, `d2/arch/sdl/digi_mixer.c +173/-11`
 - Regions: handwritten audio declarations, chunk-duration calculation, init diagnostics, latency polling, and SFX-start timing
 - Estimated inherited-file reduction: 200-230 lines
@@ -288,11 +289,16 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 - Known differences: D1 log tag and requested/source-rate variable names
 - Risk: low-medium
 - Validation: a focused fire-weapon SFX test asserting audio probe counters, plus existing fire-primary and fire-secondary scripts
+- Completed result: D1 moved from 177 to 86 additions and D2 from 173 to
+  82.  After four conditional CMake lines per game, 174 inherited additions
+  were removed.  Driver diagnostics now have one public header and shared
+  chunk/init/latency/start logging implementation.
 
 ### P2. Exact duplicated feature kernels
 
 #### C11. Live difficulty runtime
 
+- Status: implementation and Android build validation complete
 - Files: `d1/main/gamecntl.c:159-265`, `d2/main/gamecntl.c:221-327`
 - Exact duplicate: 108 lines per game, 216 total
 - Responsibilities: clamping/history, eligibility, coop host authority, persistence, replay recording, network broadcast, and HUD notification
@@ -300,6 +306,8 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 - Design caution: this is cross-platform engine behavior rather than Android-only behavior. Accept only if the shared translation unit can own the same headers/globals directly without a large operations table.
 - Risk: medium
 - Validation: current live-difficulty assertion, input-demo replay roundtrip, and two-emulator host-authority propagation
+- Completed result: the exact 108-line body moved out of each `gamecntl.c`;
+  after one CMake line per game, 214 inherited additions were removed.
 
 #### C12. Input-demo direct-command dispatcher
 
@@ -313,11 +321,14 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C13. Deterministic effect timeline
 
+- Status: implementation and Android build validation complete
 - Files: both `main/effects.c:40-123`
 - Exact duplicate: 85 lines per game, 170 total
 - Proposed boundary: `effect_runtime_shared.c` with relocated public clamping, loop, bitmap, and reset-to-elapsed-time functions
 - Risk: low-medium
 - Validation: table-driven time-boundary host tests and replay/save restore with animated effects
+- Completed result: both `effects.c` files moved from 87 to 2 additions;
+  after CMake wiring, 168 inherited additions were removed.
 
 #### C14. Kconfig offscreen scaled-render kernel
 
@@ -360,11 +371,15 @@ Estimates below are removal from upstream-original D1/D2 files, not net reposito
 
 #### C18. Missing coop-start fanout
 
+- Status: implementation and Android build validation complete
 - Files: `d1/main/gameseq.c:187-250`, `d2/main/gameseq.c:280-343`
 - Exact duplicate: 65 lines per game, 130 total
 - Proposed boundary: relocate the helper into `coop_start_positions.c`
 - Risk: low-medium
 - Validation: mission with too few coop starts; assert generated positions are valid, distinct, and deterministic in both games
+- Completed result: 64 additions left each `gameseq.c`; after CMake wiring,
+  the inherited-file reduction is 126 additions.  Assignment, counters, and
+  logging remain local while the exact search order is shared.
 
 ### P3. Smaller clean seams and prerequisites
 
