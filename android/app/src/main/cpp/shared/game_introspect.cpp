@@ -591,6 +591,7 @@ static json serialize_level_metadata_route()
 	json steps = json::array();
 	route_snapshot_summary snapshot = {};
 	route_edge_shadow_summary edge_shadow = {};
+	route_planner_shadow_summary planner_shadow = {};
 	int count = 0;
 
 	if (!metadata) {
@@ -613,6 +614,24 @@ static json serialize_level_metadata_route()
 			{ "first_mismatch_side", edge_shadow.first_mismatch_side },
 			{ "first_legacy_cost", edge_shadow.first_legacy_cost },
 			{ "first_shared_cost", edge_shadow.first_shared_cost },
+		};
+	}
+	if (level_metadata_get_route_planner_shadow(&planner_shadow)) {
+		result["planner_shadow"] = {
+			{ "compared_node_count", planner_shadow.compared_node_count },
+			{ "mismatch_count", planner_shadow.mismatch_count },
+			{ "first_mismatch_optimistic", planner_shadow.first_mismatch_optimistic },
+			{ "first_mismatch_segment", planner_shadow.first_mismatch_segment },
+			{ "first_legacy_reachable", planner_shadow.first_legacy_reachable },
+			{ "first_shared_reachable", planner_shadow.first_shared_reachable },
+			{ "first_legacy_progress_weight", planner_shadow.first_legacy_progress_weight },
+			{ "first_shared_progress_weight", planner_shadow.first_shared_progress_weight },
+			{ "first_legacy_parent_segment", planner_shadow.first_legacy_parent_segment },
+			{ "first_shared_parent_segment", planner_shadow.first_shared_parent_segment },
+			{ "first_legacy_parent_side", planner_shadow.first_legacy_parent_side },
+			{ "first_shared_parent_side", planner_shadow.first_shared_parent_side },
+			{ "first_legacy_distance", planner_shadow.first_legacy_distance },
+			{ "first_shared_distance", planner_shadow.first_shared_distance },
 		};
 	}
 	count = metadata->route_step_count;

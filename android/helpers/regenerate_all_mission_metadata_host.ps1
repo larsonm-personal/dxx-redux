@@ -2,7 +2,7 @@
 
 param(
     [switch]$NoRegressionCopy,
-    [switch]$StrictRouteEdgeShadow
+    [switch]$StrictRouteShadow
 )
 
 $ErrorActionPreference = "Stop"
@@ -540,7 +540,7 @@ function Invoke-HeadlessScan {
     $mission = [IO.Path]::GetFileNameWithoutExtension($Descriptor.Name)
     $exe = $Executables[$game]
     $dataDir = $DataDirs[$game]
-    $shadowArgs = if ($StrictRouteEdgeShadow) { @("-route-edge-shadow-strict") } else { @() }
+    $shadowArgs = if ($StrictRouteShadow) { @("-route-shadow-strict") } else { @() }
     & $exe @shadowArgs -hogdir $dataDir -extra-dir $StageDir -mission $mission -secretarea-json-out $RawOutputPath > $LogPath 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw (Get-HeadlessFailureSummary -Mission $mission -LogPath $LogPath)
@@ -557,7 +557,7 @@ function Invoke-BuiltinHeadlessScan {
         [Parameter(Mandatory = $true)][string]$LogPath
     )
 
-    $shadowArgs = if ($StrictRouteEdgeShadow) { @("-route-edge-shadow-strict") } else { @() }
+    $shadowArgs = if ($StrictRouteShadow) { @("-route-shadow-strict") } else { @() }
     & $Executables[$Game] @shadowArgs -hogdir $DataDirs[$Game] -secretarea-json-out $RawOutputPath > $LogPath 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw (Get-HeadlessFailureSummary -Mission $Game -LogPath $LogPath)

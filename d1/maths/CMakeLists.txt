@@ -81,6 +81,7 @@ if(NOT ANDROID)
         ../../android/tests/test_route_snapshot.cpp
         ../../android/app/src/main/cpp/shared/route_snapshot.cpp
         ../../android/app/src/main/cpp/shared/route_edge.cpp
+        ../../android/app/src/main/cpp/shared/route_planner.cpp
         ../../android/app/src/main/cpp/shared/level_metadata_scan.c)
     target_compile_features(test_route_snapshot PRIVATE cxx_std_11)
     target_link_libraries(test_route_snapshot PRIVATE ${DXX_TARGET_PREFIX}maths)

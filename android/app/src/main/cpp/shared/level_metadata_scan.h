@@ -174,6 +174,14 @@ typedef struct level_metadata_unexplored_route {
 	int direct_reachable;
 } level_metadata_unexplored_route;
 
+typedef struct level_metadata_route_search_node {
+	int reachable;
+	double distance;
+	int progress_weight;
+	int parent_seg;
+	int parent_side;
+} level_metadata_route_search_node;
+
 typedef struct level_metadata_state {
 	int energy_center_segment_count;
 	int energy_center_raw_count;
@@ -212,6 +220,11 @@ int level_metadata_scan_unexplored_route(
     level_metadata_state *state,
     level_metadata_unexplored_route *result);
 int level_metadata_scan_route_edge_cost(const level_metadata_scan_view *view, int seg, int side);
+int level_metadata_scan_route_search_shadow(
+    const level_metadata_scan_view *view,
+    int optimistic,
+    level_metadata_route_search_node *nodes,
+    int capacity);
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);

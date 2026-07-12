@@ -51,12 +51,18 @@ Parity has two separate meanings and both must pass:
   - Added independent mutable-state fingerprints and live generations for start, progression, navigation, trigger, object, and automap domains, exposed for canonical/live introspection and future cache keys.
   - Preserved each semantic step's exact analyzer-selected activation position and distinct wall/object aim point through the shared route-step ABI and live introspection; off-center visible firing positions are no longer discarded.
   - Navigator-radius occupancy validation, action-specific hit validation, and event-driven generation hooks remain pending.
-- [ ] Phase 2 in progress: centralize rich edge evaluation after snapshot parity is established.
+- [x] Phase 2 complete: centralize rich edge evaluation after snapshot parity is established.
   - Added a shared C++ edge evaluator with rich blocker/action results and a legacy three-state projection.
   - Added canonical per-side shadow comparison against the active C evaluator, mismatch introspection, and progression/navigator capability unit coverage.
   - Confirmed zero edge-cost mismatches in synthetic D1/D2 fixtures and the Counterstrike level 1 emulator route scan while preserving all 1,274 reviewed corpus route projections.
-  - Add an opt-in strict headless shadow gate and a no-copy host corpus mode so archive regeneration can execute old/new edge parity across every loaded level without rewriting reviewed JSON.
-  - The C planner remains authoritative; corpus-wide strict shadow execution and any discovered semantic gaps remain under review.
+  - Added an opt-in strict headless shadow gate and a no-copy host corpus mode so archive regeneration executes old/new edge parity across every loaded level without rewriting reviewed JSON.
+  - Confirmed zero edge-cost mismatches across all base Descent and Counterstrike levels plus 1,244 levels from 109 mission archives; the remaining archive contains no mission descriptor and was skipped by existing policy.
+  - The C planner remains authoritative; porting semantic dependency planning is the next migration boundary.
+- [ ] Phase 3 in progress: port semantic dependency planning behind corpus shadow comparisons.
+  - Ported deterministic weighted segment search, parent-chain retention, progress weighting, and first-obstruction capture into the shared C++ planner.
+  - Added exact pessimistic/optimistic per-segment shadow comparison for reachability, distance, progress weight, parent segment, and parent side, with strict headless and introspection diagnostics.
+  - Confirmed zero search mismatches in D1/D2 unit fixtures, all base Descent and Counterstrike levels, and 1,244 levels from 109 mission archives.
+  - Semantic step production and live behavior remain on the C planner; target discovery and dependency-state transitions are the next porting boundary.
 
 ## Non-Goals
 

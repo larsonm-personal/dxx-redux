@@ -40,6 +40,8 @@ static route_snapshot_summary Level_metadata_live_snapshot;
 static int Level_metadata_live_snapshot_valid;
 static route_edge_shadow_summary Level_metadata_edge_shadow;
 static int Level_metadata_edge_shadow_valid;
+static route_planner_shadow_summary Level_metadata_planner_shadow;
+static int Level_metadata_planner_shadow_valid;
 static int Level_metadata_route_start_objnum = -1;
 static int Level_metadata_route_start_seg = -1;
 static int Secret_area_reveal_unfound;
@@ -1058,6 +1060,8 @@ static void level_metadata_rescan_current_level_internal(
 			    &Level_metadata_canonical_snapshot);
 		Level_metadata_edge_shadow_valid = route_edge_compare_view(
 		    view, &Level_metadata_edge_shadow, NULL, 0);
+		Level_metadata_planner_shadow_valid = route_planner_compare_view(
+		    view, &Level_metadata_planner_shadow, NULL, 0);
 	} else {
 		route_snapshot_summary previous_snapshot;
 		int previous_valid = Level_metadata_live_snapshot_valid ||
@@ -1245,6 +1249,15 @@ int level_metadata_get_route_edge_shadow(
 	if (!summary || !Level_metadata_edge_shadow_valid)
 		return 0;
 	*summary = Level_metadata_edge_shadow;
+	return 1;
+}
+
+int level_metadata_get_route_planner_shadow(
+    route_planner_shadow_summary *summary)
+{
+	if (!summary || !Level_metadata_planner_shadow_valid)
+		return 0;
+	*summary = Level_metadata_planner_shadow;
 	return 1;
 }
 

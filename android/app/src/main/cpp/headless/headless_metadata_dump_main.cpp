@@ -52,7 +52,7 @@ extern "C" void gameseq_init_network_players(void);
 static unsigned char *headless_screen_pixels = NULL;
 static int secret_area_dump_failed = 0;
 static int secret_area_missing_secret_levels = 0;
-static int route_edge_shadow_strict = 0;
+static int route_shadow_strict = 0;
 
 static std::string dump_metadata_json(const nlohmann::ordered_json &value)
 {
@@ -924,8 +924,9 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 		coop_start_range->add(count_loaded_coop_start_objects());
 	trace_dump_init("rescan_level");
 	secret_area_rescan_current_level();
-	if (route_edge_shadow_strict) {
+	if (route_shadow_strict) {
 		route_edge_shadow_summary shadow = {};
+		route_planner_shadow_summary planner_shadow = {};
 		if (!level_metadata_get_route_edge_shadow(&shadow)) {
 			fprintf(stderr, "SECRET-AREA-DUMP FAIL route edge shadow unavailable level=%d file=%s\n",
 			        level_num, level_file ? level_file : "");
@@ -936,6 +937,24 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 			        level_num, level_file ? level_file : "", shadow.compared_edge_count,
 			        shadow.mismatch_count, shadow.first_mismatch_segment, shadow.first_mismatch_side,
 			        shadow.first_legacy_cost, shadow.first_shared_cost);
+			secret_area_dump_failed = 1;
+		}
+		if (!level_metadata_get_route_planner_shadow(&planner_shadow)) {
+			fprintf(stderr, "SECRET-AREA-DUMP FAIL route planner shadow unavailable level=%d file=%s\n",
+			        level_num, level_file ? level_file : "");
+			secret_area_dump_failed = 1;
+		} else if (planner_shadow.mismatch_count) {
+			fprintf(stderr,
+			        "SECRET-AREA-DUMP FAIL route planner shadow mismatch level=%d file=%s compared=%d mismatches=%d first_mode=%s first_segment=%d legacy_reachable=%d shared_reachable=%d legacy_progress=%d shared_progress=%d legacy_parent=%d:%d shared_parent=%d:%d legacy_distance=%.17g shared_distance=%.17g\n",
+			        level_num, level_file ? level_file : "", planner_shadow.compared_node_count,
+			        planner_shadow.mismatch_count,
+			        planner_shadow.first_mismatch_optimistic ? "optimistic" : "pessimistic",
+			        planner_shadow.first_mismatch_segment,
+			        planner_shadow.first_legacy_reachable, planner_shadow.first_shared_reachable,
+			        planner_shadow.first_legacy_progress_weight, planner_shadow.first_shared_progress_weight,
+			        planner_shadow.first_legacy_parent_segment, planner_shadow.first_legacy_parent_side,
+			        planner_shadow.first_shared_parent_segment, planner_shadow.first_shared_parent_side,
+			        planner_shadow.first_legacy_distance, planner_shadow.first_shared_distance);
 			secret_area_dump_failed = 1;
 		}
 	}
@@ -999,10 +1018,10 @@ int main(int argc, char *argv[])
 	const char *mission = find_arg_value(argc, argv, "-mission");
 	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	int total_secrets = 0;
-	route_edge_shadow_strict = has_arg(argc, argv, "-route-edge-shadow-strict");
+	route_shadow_strict = has_arg(argc, argv, "-route-shadow-strict");
 
 	if (!json_out && !coop_starts_json_out) {
-		fprintf(stderr, "usage: %s (-secretarea-json-out <path> | -coop-starts-json-out <path>) [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>]\n",
+		fprintf(stderr, "usage: %s (-secretarea-json-out <path> | -coop-starts-json-out <path>) [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>] [-route-shadow-strict]\n",
 		        argc > 0 ? argv[0] : "dxx-redux-headless-metadata");
 		return 1;
 	}

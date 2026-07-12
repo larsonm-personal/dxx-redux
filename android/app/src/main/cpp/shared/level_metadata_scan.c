@@ -1386,6 +1386,39 @@ static int metadata_route_find_path_forbidden_key(
 	return 1;
 }
 
+int level_metadata_scan_route_search_shadow(
+    const level_metadata_scan_view *view,
+    int optimistic,
+    level_metadata_route_search_node *nodes,
+    int capacity)
+{
+	metadata_route_context route;
+	int seg;
+
+	if (!view || !nodes || capacity < view->num_segments ||
+	    !valid_segment(view, view->start_segment) || !view->start_position)
+		return 0;
+	collect_segment_centers(view);
+	memset(&route, 0, sizeof(route));
+	route.current_seg = view->start_segment;
+	route.key_mask = view->initial_key_mask &
+	                 (LEVEL_METADATA_KEY_MASK_BLUE |
+	                  LEVEL_METADATA_KEY_MASK_RED |
+	                  LEVEL_METADATA_KEY_MASK_GOLD);
+	route.control_center_destroyed = view->initial_control_center_destroyed != 0;
+	if (!view->start_position(view->user, route.current_pos) ||
+	    !metadata_route_compute_paths(view, &route, -1, optimistic != 0, -1))
+		return 0;
+	for (seg = 0; seg < view->num_segments; ++seg) {
+		nodes[seg].reachable = route_distance[seg] != DBL_MAX;
+		nodes[seg].distance = route_distance[seg];
+		nodes[seg].progress_weight = route_progress_weight[seg];
+		nodes[seg].parent_seg = route_parent_seg[seg];
+		nodes[seg].parent_side = route_parent_side[seg];
+	}
+	return view->num_segments;
+}
+
 static int metadata_route_find_path(
     const level_metadata_scan_view *view,
     const metadata_route_context *route,

@@ -2,6 +2,8 @@
 #include "route_snapshot_c.h"
 #include "route_edge.h"
 #include "route_edge_c.h"
+#include "route_planner.h"
+#include "route_planner_c.h"
 
 #include <cassert>
 #include <cstdlib>
@@ -414,6 +416,45 @@ int main()
 	assert(edge_summary.compared_edge_count ==
 	       2 * LEVEL_METADATA_MAX_SIDES);
 	assert(edge_summary.mismatch_count == 0);
+	dxx_route::route_query planner_query;
+	planner_query.start = first.state.start_position;
+	planner_query.progression.key_mask = first.state.key_mask;
+	const auto pessimistic_search = dxx_route::search_routes(
+	    first, planner_query, false);
+	assert(pessimistic_search.problem.empty());
+	const auto direct_path = dxx_route::build_route_path(
+	    pessimistic_search, 1);
+	assert(direct_path.reached);
+	assert(direct_path.progress_weight == 0);
+	assert(direct_path.segments.size() == 2);
+	assert(direct_path.segments[0] == 0);
+	assert(direct_path.segments[1] == 1);
+	assert(direct_path.sides.size() == 1);
+	assert(direct_path.sides[0] == 0);
+	assert(!direct_path.has_obstruction);
+	auto obstructed_snapshot = first;
+	obstructed_snapshot.state.walls[0].kind = dxx_route::route_wall_kind::door;
+	obstructed_snapshot.state.walls[0].hidden = true;
+	obstructed_snapshot.state.walls[0].key = dxx_route::route_key_requirement::none;
+	const auto optimistic_search = dxx_route::search_routes(
+	    obstructed_snapshot, planner_query, true);
+	const auto obstructed_path = dxx_route::build_route_path(
+	    optimistic_search, 1);
+	assert(obstructed_path.reached);
+	assert(obstructed_path.progress_weight == 1);
+	assert(obstructed_path.has_obstruction);
+	assert(obstructed_path.first_obstruction.action ==
+	       dxx_route::route_required_action::open_hidden_door);
+	route_planner_shadow_summary planner_summary = {};
+	char planner_problem[96] = {};
+	if (!route_planner_compare_view(
+	        &view, &planner_summary, planner_problem, sizeof(planner_problem))) {
+		fprintf(stderr, "route planner comparison failed: %s\n", planner_problem);
+		return 1;
+	}
+	assert(planner_problem[0] == '\0');
+	assert(planner_summary.compared_node_count == 4);
+	assert(planner_summary.mismatch_count == 0);
 	assert(first.topology.hash != 0);
 	assert(first.state.hash != 0);
 	route_snapshot_summary summary = {};
